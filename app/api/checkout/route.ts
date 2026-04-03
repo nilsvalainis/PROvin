@@ -10,8 +10,13 @@ import {
   isValidVin,
   normalizeVin,
 } from "@/lib/order-field-validation";
+import { getClientIpFromRequest } from "@/lib/client-ip";
+import { checkRateLimit } from "@/lib/rate-limit-memory";
 
 export const runtime = "nodejs";
+
+const CHECKOUT_MAX_PER_WINDOW = 40;
+const CHECKOUT_WINDOW_MS = 10 * 60 * 1000;
 
 const NOTES_MAX = 500;
 const NAME_MAX = 120;
@@ -36,6 +41,16 @@ function stripeLocale(locale: string): string {
 }
 
 export async function POST(req: Request) {
+  const ip = getClientIpFromRequest(req);
+  const checkoutRl = checkRateLimit(`checkout:${ip}`, CHECKOUT_MAX_PER_WINDOW, CHECKOUT_WINDOW_MS);
+  if (!checkoutRl.ok) {
+    const copy = await getOrderCopy(routing.defaultLocale);
+    return NextResponse.json(
+      { error: copy.errors.rateLimited },
+      { status: 429, headers: { "Retry-After": String(checkoutRl.retryAfterSec) } },
+    );
+  }
+
   let stripe;
   try {
     stripe = getStripe();

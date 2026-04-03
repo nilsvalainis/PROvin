@@ -1,0 +1,3 @@
+Contact: mailto:perekupadienasgramata@gmail.com
+Preferred-Languages: lv, en
+Canonical: https://provin.lv/.well-known/security.txt

@@ -25,10 +25,10 @@ export default async function AdminOrdersPage() {
           {demoOn ? (
             <>
               {" "}
-              <span className="font-medium text-[var(--color-provin-accent)]">Demo pasūtījumi</span> ir ieslēgti (
-              <code className="rounded bg-slate-100 px-1 text-xs">ADMIN_DEMO_ORDERS</code>
-              ) — tajā skaitā paraugs <span className="font-medium text-[var(--color-apple-text)]">pirms apmaksas</span>{" "}
-              (summa „—”, statuss <span className="font-mono text-xs">unpaid</span>).
+              <span className="font-medium text-[var(--color-provin-accent)]">Demo pasūtījumi</span> ir redzami (noklusējums;
+              izslēgt: <code className="rounded bg-slate-100 px-1 text-xs">ADMIN_DEMO_ORDERS=0</code>) — tajā skaitā paraugs{" "}
+              <span className="font-medium text-[var(--color-apple-text)]">pirms apmaksas</span> (summa „—”, statuss{" "}
+              <span className="font-mono text-xs">unpaid</span>).
             </>
           ) : null}
         </p>
@@ -60,9 +60,8 @@ export default async function AdminOrdersPage() {
           </p>
           {!demoOn ? (
             <p className="mt-4 text-sm text-[var(--color-provin-muted)]">
-              Lokālai priekšskatīšanai vari ieslēgt{" "}
-              <code className="rounded bg-slate-100 px-1 text-xs">ADMIN_DEMO_ORDERS=1</code>{" "}
-              <span className="text-[var(--color-apple-text)]">.env</span> failā.
+              Demo pasūtījumi ir izslēgti — noņem <code className="rounded bg-slate-100 px-1 text-xs">ADMIN_DEMO_ORDERS=0</code> vai
+              neiestati mainīgo, lai tos atkal rādītu (noklusējums).
             </p>
           ) : null}
         </div>

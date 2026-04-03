@@ -15,6 +15,7 @@ export type OrderCopy = {
     stripeConfig: string;
     badRequest: string;
     sessionFailed: string;
+    rateLimited: string;
   };
 };
 

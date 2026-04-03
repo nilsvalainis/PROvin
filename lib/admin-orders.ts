@@ -6,9 +6,11 @@ import { getDemoOrderDetail, getDemoOrderRows } from "@/lib/demo-orders";
 import { getStripe } from "@/lib/stripe";
 import { getOrderFieldsFromSession } from "@/lib/stripe-session";
 
+/** Noklusējums: ieslēgts (lokāli un produkcijā). Izslēgt: `ADMIN_DEMO_ORDERS=0` (vai `false` / `no` / `off`). */
 export function isDemoOrdersEnabled(): boolean {
-  const v = process.env.ADMIN_DEMO_ORDERS ?? "";
-  return v === "1" || v.toLowerCase() === "true";
+  const v = (process.env.ADMIN_DEMO_ORDERS ?? "").trim().toLowerCase();
+  if (v === "0" || v === "false" || v === "no" || v === "off") return false;
+  return true;
 }
 
 export type AdminOrderRow = {
@@ -102,9 +104,9 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
     if (demo) return demo as AdminOrderDetail;
   }
 
-  const stripe = getStripe();
   let session: Stripe.Checkout.Session;
   try {
+    const stripe = getStripe();
     session = await stripe.checkout.sessions.retrieve(sessionId);
   } catch {
     return null;

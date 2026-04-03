@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 
-export function LoginForm() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+type Props = {
+  /** Lokālai izstrādei: aizpilda laukus, ja nav .env */
+  devPrefill?: { username: string; password: string } | null;
+};
+
+export function LoginForm({ devPrefill = null }: Props) {
+  const [username, setUsername] = useState(devPrefill?.username ?? "");
+  const [password, setPassword] = useState(devPrefill?.password ?? "");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 

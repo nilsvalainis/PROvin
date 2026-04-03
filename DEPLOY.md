@@ -24,7 +24,7 @@ Vercel → **Project → Settings → Environment Variables** → vismaz **Produ
 | `ADMIN_SECRET` | garš nejaušs (≥16 rakstzīmes) |
 | `ADMIN_USERNAME` | — |
 | `ADMIN_PASSWORD` | **spēcīga** parole (ne `admin/admin`) |
-| `ADMIN_DEMO_ORDERS` | `0` vai tukšs |
+| `ADMIN_DEMO_ORDERS` | noklusējums: demo ieslēgts; iestatīt `0`, lai paslēptu |
 
 Pārējie pēc `.env.example` (WhatsApp, e-pasti utt.).
 
@@ -70,3 +70,9 @@ Kad lapa atveras kā **`https://provin.lv`**, env **`NEXT_PUBLIC_SITE_URL`** jā
 - **Repository not found** push laikā: pārbaudi GitHub URL un tiesības; repozitorijam jāeksistē un jābūt push tiesībām.
 - Admin panelis: nepublicē paroli; izmanto garu `ADMIN_SECRET` un spēcīgu paroli.
 - Juridisks: privātuma politika ir vietnē; pirms kampaņām var konsultēties ar juristu.
+
+### Drošība (īsumā)
+
+- **HTTP galvenes** (HSTS, X-Frame-Options u.c.) — `next.config.ts`.
+- **Ierobežojums pēc IP** (`/api/admin/login`, `/api/checkout`) — atmiņā uz instanci; vairākās Vercel instancēs tas ir „mīksts”. Ja vajag stingru globālu limitu: **Upstash Redis** + `@upstash/ratelimit` (vēlāk).
+- **security.txt** — `public/.well-known/security.txt` (atjaunini `Contact`, ja mainās e-pasts).

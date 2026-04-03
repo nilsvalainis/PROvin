@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/admin/LoginForm";
-import { adminAuthConfigured, getAdminSession } from "@/lib/admin-auth";
+import {
+  adminAuthConfigured,
+  adminAuthMissingReason,
+  adminUsesLocalDevDefaults,
+  getAdminSession,
+  getDevLoginPrefill,
+} from "@/lib/admin-auth";
 import { getRequestOrigin } from "@/lib/request-origin";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +19,9 @@ export default async function AdminLoginPage() {
   }
 
   const configured = adminAuthConfigured();
+  const missingHint = adminAuthMissingReason();
+  const devDefaults = adminUsesLocalDevDefaults();
+  const devPrefill = getDevLoginPrefill();
   const origin = await getRequestOrigin();
   const adminLoginUrl = `${origin}/admin/login`;
   const isDev = process.env.NODE_ENV === "development";
@@ -29,7 +38,9 @@ export default async function AdminLoginPage() {
           </h1>
           <p className="mt-2 text-sm text-[var(--color-provin-muted)]">
             {configured
-              ? "Ievadi lietotājvārdu un paroli, lai skatītu pasūtījumus."
+              ? devDefaults
+                ? "Lokālā izstrāde: ADMIN_* nav nepieciešami — vari uzreiz pieteikties (lauki aizpildīti)."
+                : "Ievadi lietotājvārdu un paroli, lai skatītu pasūtījumus."
               : "Piekļuve pasūtījumu panelim ir iespējama pēc administratora vides iestatīšanas."}
           </p>
         </header>
@@ -38,6 +49,11 @@ export default async function AdminLoginPage() {
           <div className="space-y-4">
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
               <p className="font-semibold tracking-tight">Vide nav gatava</p>
+              {missingHint ? (
+                <p className="mt-2 rounded-lg border border-amber-300/80 bg-amber-100/50 px-2.5 py-2 text-[13px] font-medium leading-snug text-amber-950">
+                  {missingHint}
+                </p>
+              ) : null}
               <p className="mt-2 leading-relaxed text-amber-950/95">
                 Servera vidē jānorāda administratora parametri (kopēj no{" "}
                 <code className="rounded bg-amber-100/90 px-1.5 py-0.5 font-mono text-[13px]">
@@ -83,6 +99,17 @@ export default async function AdminLoginPage() {
           </div>
         ) : (
           <div className="space-y-6">
+            {devDefaults ? (
+              <div className="rounded-lg border border-[var(--color-provin-accent)]/25 bg-[var(--color-provin-accent-soft)]/90 px-3 py-2.5 text-left text-xs leading-relaxed text-[var(--color-apple-text)]">
+                <p className="font-medium text-[var(--color-provin-accent)]">Tikai lokāli (npm run dev)</p>
+                <p className="mt-1 text-[var(--color-provin-muted)]">
+                  Noklusējums: lietotājvārds <code className="rounded bg-white/80 px-1 font-mono">admin</code>, parole{" "}
+                  <code className="rounded bg-white/80 px-1 font-mono">provin-local-dev</code>. Produkcijā (Vercel)
+                  obligāti iestatiet <code className="font-mono">ADMIN_SECRET</code>,{" "}
+                  <code className="font-mono">ADMIN_USERNAME</code>, <code className="font-mono">ADMIN_PASSWORD</code>.
+                </p>
+              </div>
+            ) : null}
             {isDev ? (
               <div className="rounded-lg border border-slate-200/90 bg-slate-50/90 px-3 py-2.5 text-left text-xs leading-relaxed text-[var(--color-provin-muted)]">
                 <p className="font-medium text-[var(--color-apple-text)]">Šīs sesijas pieteikšanās URL</p>
@@ -97,7 +124,7 @@ export default async function AdminLoginPage() {
                 </p>
               </div>
             ) : null}
-            <LoginForm />
+            <LoginForm devPrefill={devPrefill} />
           </div>
         )}
 

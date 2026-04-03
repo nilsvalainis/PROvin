@@ -35,7 +35,8 @@
       "network": "Tīkla kļūda. Mēģini vēlreiz.",
       "stripeConfig": "Stripe nav konfigurēts (STRIPE_SECRET_KEY).",
       "badRequest": "Nederīgs pieprasījums.",
-      "sessionFailed": "Nav izdevies izveidot apmaksas sesiju."
+      "sessionFailed": "Nav izdevies izveidot apmaksas sesiju.",
+      "rateLimited": "Pārāk daudz pieprasījumu no šīs adreses. Uzgaidi īsu brīdi un mēģini vēlreiz."
     },
     "validation": {
       "vin": "Ievadi derīgu VIN (11–17 rakstzīmes, bez I, O, Q).",

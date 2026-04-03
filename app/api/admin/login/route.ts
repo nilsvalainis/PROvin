@@ -4,10 +4,25 @@ import {
   setAdminSessionCookie,
   verifyAdminCredentials,
 } from "@/lib/admin-auth";
+import { getClientIpFromRequest } from "@/lib/client-ip";
+import { checkRateLimit } from "@/lib/rate-limit-memory";
 
 export const runtime = "nodejs";
 
+/** Brīdinājums pret bruteforce (atmiņā; serverless — katram instancēm sava). */
+const LOGIN_MAX_PER_WINDOW = 20;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+
 export async function POST(req: Request) {
+  const ip = getClientIpFromRequest(req);
+  const limited = checkRateLimit(`admin-login:${ip}`, LOGIN_MAX_PER_WINDOW, LOGIN_WINDOW_MS);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Pārāk daudz mēģinājumu. Uzgaidi un mēģini vēlreiz." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+
   if (!adminAuthConfigured()) {
     return NextResponse.json(
       {
