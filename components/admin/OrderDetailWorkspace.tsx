@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
 import {
   idbGetPortfolio,
   idbSetPortfolio,
@@ -75,6 +76,9 @@ const EMPTY_WORKSPACE: WorkspacePersist = {
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 80 * 1024 * 1024;
+
+const workspaceToolbarBtn =
+  "rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] font-semibold tracking-tight text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50";
 
 function storageKeyWorkspace(sessionId: string) {
   return `provin-admin-workspace-v2-${sessionId}`;
@@ -254,6 +258,32 @@ export function OrderDetailWorkspace({
   const updateWs = useCallback((patch: Partial<WorkspacePersist>) => {
     setWs((prev) => ({ ...prev, ...patch }));
   }, []);
+
+  const workspaceFieldResetKey = `${payload.sessionId}-${workspaceHydrated ? 1 : 0}`;
+
+  const reloadPortfolioFromIdb = useCallback(async () => {
+    setFileError(null);
+    portfolioRef.current.forEach((p) => URL.revokeObjectURL(p.blobUrl));
+    try {
+      await migrateLegacyPortfolioFromLocalStorage(payload.sessionId);
+      const stored = await idbGetPortfolio(payload.sessionId);
+      if (!stored?.length) {
+        setPortfolio([]);
+        return;
+      }
+      const ui: PortfolioEntry[] = stored.map((s) => ({
+        id: s.id,
+        name: s.name,
+        size: s.size,
+        mime: s.mime,
+        addedAt: s.addedAt,
+        blobUrl: URL.createObjectURL(new Blob([s.buffer], { type: s.mime })),
+      }));
+      setPortfolio(ui);
+    } catch {
+      setFileError("Neizdevās pārlādēt portfeli no IndexedDB.");
+    }
+  }, [payload.sessionId]);
 
   useEffect(() => {
     portfolioRef.current = portfolio;
@@ -825,9 +855,23 @@ export function OrderDetailWorkspace({
       </details>
 
       <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-sm">
-        <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">
-          1. Papildu faili — klienta portfelis
-        </h2>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">
+            1. Papildu faili — klienta portfelis
+          </h2>
+          <div className="flex flex-wrap items-center gap-1">
+            <button
+              type="button"
+              className={workspaceToolbarBtn}
+              onClick={() => void persistPortfolio(portfolio)}
+            >
+              Saglabāt
+            </button>
+            <button type="button" className={workspaceToolbarBtn} onClick={() => void reloadPortfolioFromIdb()}>
+              Labot
+            </button>
+          </div>
+        </div>
         <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
           Starptautisko un vietējo vēstures formātu PDF. Glabāšana:{" "}
           <strong className="font-medium text-[var(--color-apple-text)]">IndexedDB</strong>.
@@ -896,7 +940,7 @@ export function OrderDetailWorkspace({
           <strong className="font-medium text-[var(--color-apple-text)]">Informācija nav pieejama</strong>. Sākumā, ja ir
           demo/servera teksts, tas var būt ielādēts „Citi avoti”.
         </p>
-        <div className="mt-2.5 space-y-2.5">
+        <div className="mt-2.5 space-y-3">
           {(
             [
               { key: "csdd" as const, label: "CSDD" },
@@ -905,19 +949,17 @@ export function OrderDetailWorkspace({
               { key: "citi" as const, label: "Citi avoti" },
             ] as const
           ).map(({ key, label }) => (
-            <div key={key}>
-              <label className="text-xs font-medium text-[var(--color-provin-muted)]" htmlFor={`${fileInputId}-${key}`}>
-                {label}
-              </label>
-              <textarea
-                id={`${fileInputId}-${key}`}
-                className="mt-1 min-h-[64px] w-full resize-y rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-1.5 text-sm leading-relaxed text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
-                value={ws[key]}
-                onChange={(e) => updateWs({ [key]: e.target.value })}
-                placeholder={`Ievadi piezīmes: ${label}…`}
-                spellCheck
-              />
-            </div>
+            <AdminSavableTextField
+              key={key}
+              id={`${fileInputId}-${key}`}
+              label={label}
+              value={ws[key]}
+              onChange={(v) => updateWs({ [key]: v })}
+              placeholder={`Ievadi piezīmes: ${label}…`}
+              multiline
+              minHeightClass="min-h-[64px]"
+              resetVersion={workspaceFieldResetKey}
+            />
           ))}
         </div>
 
@@ -948,14 +990,18 @@ export function OrderDetailWorkspace({
         <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
           Galvenais eksperta slēdziens klienta PDF — pēc priekšskata apstiprinājuma.
         </p>
-        <textarea
-          className="mt-2 min-h-[88px] w-full resize-y rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2 text-sm leading-relaxed text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20 disabled:opacity-50"
-          value={ws.iriss}
-          onChange={(e) => updateWs({ iriss: e.target.value })}
-          placeholder="Piem., ko saki IRISS / klientam pēc visa apkopojuma…"
-          disabled={!ws.previewConfirmed}
-          spellCheck
-        />
+        <div className="mt-2">
+          <AdminSavableTextField
+            id={`${fileInputId}-iriss`}
+            label="IRISS teksts"
+            value={ws.iriss}
+            onChange={(v) => updateWs({ iriss: v })}
+            placeholder="Piem., ko saki IRISS / klientam pēc visa apkopojuma…"
+            multiline
+            disabled={!ws.previewConfirmed}
+            resetVersion={workspaceFieldResetKey}
+          />
+        </div>
         {!ws.previewConfirmed ? (
           <p className="mt-2 text-xs text-amber-800">Vispirms apstiprini priekšskatu.</p>
         ) : null}

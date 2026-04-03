@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { AdminSavableAttachmentRow } from "@/components/admin/AdminSavableAttachmentRow";
+import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
 import { formatMoneyEur } from "@/lib/format-money";
 
@@ -46,6 +48,8 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
 
   const [edits, setEdits] = useState<OrderEdits>({});
   const [hydrated, setHydrated] = useState(false);
+  /** Palielinās pie „Atiestatīt…” — atsvaidzina Saglabāt/Labot iekšējos punktus */
+  const [fieldUiRev, setFieldUiRev] = useState(0);
 
   useEffect(() => {
     try {
@@ -81,18 +85,12 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
 
   const resetToServer = () => {
     setEdits({});
+    setFieldUiRev((n) => n + 1);
     try {
       localStorage.removeItem(storageKeyOrderEdits(order.id));
     } catch {
       /* ignore */
     }
-  };
-
-  const updateAttachmentRow = (index: number, field: "label" | "fileName", value: string) => {
-    const base = [...mergedAttachments];
-    if (!base[index]) base[index] = { label: "", fileName: "" };
-    base[index] = { ...base[index], [field]: value };
-    persistEdits({ ...edits, attachments: base });
   };
 
   const addAttachmentRow = () => {
@@ -104,6 +102,8 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
     const base = mergedAttachments.filter((_, i) => i !== index);
     persistEdits({ ...edits, attachments: base });
   };
+
+  const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}-${fieldUiRev}`;
 
   const card =
     "rounded-2xl border border-slate-200/70 bg-white p-4 shadow-[0_2px_20px_rgba(15,23,42,0.04)] sm:p-5";
@@ -189,32 +189,25 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
           <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
             VIN un saiti vari labot darba vajadzībām; izmaiņas saglabājas tikai šajā pārlūkā (localStorage).
           </p>
-          <div className="mt-2.5 space-y-3">
+          <div className="mt-2.5 space-y-4">
+            <AdminSavableTextField
+              id="edit-vin"
+              label="VIN"
+              value={mergedVin}
+              onChange={(v) => persistEdits({ ...edits, vin: v })}
+              placeholder="17 zīmes…"
+              mono
+              resetVersion={orderFieldResetKey}
+            />
             <div>
-              <label className="block text-xs font-medium text-[var(--color-provin-muted)]" htmlFor="edit-vin">
-                VIN
-              </label>
-              <input
-                id="edit-vin"
-                className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-1.5 font-mono text-sm text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
-                value={mergedVin}
-                onChange={(e) => persistEdits({ ...edits, vin: e.target.value })}
-                placeholder="17 zīmes…"
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-[var(--color-provin-muted)]" htmlFor="edit-listing">
-                Sludinājuma saite
-              </label>
-              <input
+              <AdminSavableTextField
                 id="edit-listing"
-                type="url"
-                className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-1.5 text-sm text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
+                label="Sludinājuma saite"
                 value={mergedListing}
-                onChange={(e) => persistEdits({ ...edits, listingUrl: e.target.value })}
+                onChange={(v) => persistEdits({ ...edits, listingUrl: v })}
                 placeholder="https://…"
-                autoComplete="off"
+                inputType="url"
+                resetVersion={orderFieldResetKey}
               />
               {mergedListing.trim() ? (
                 <a
@@ -265,13 +258,16 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
           <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
             Vari labot darba nolūkos (piemēram, atkārtoti iekopēt vai precizēt); oriģināls paliek serverī / Stripe.
           </p>
-          <textarea
-            className="mt-2 min-h-[88px] w-full resize-y rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2 text-sm leading-relaxed text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
-            value={mergedNotes}
-            onChange={(e) => persistEdits({ ...edits, notes: e.target.value })}
-            placeholder="Klienta ziņojums…"
-            spellCheck
-          />
+          <div className="mt-2">
+            <AdminSavableTextField
+              id="edit-notes"
+              value={mergedNotes}
+              onChange={(v) => persistEdits({ ...edits, notes: v })}
+              placeholder="Klienta ziņojums…"
+              multiline
+              resetVersion={orderFieldResetKey}
+            />
+          </div>
         </section>
 
         <section className={card}>
@@ -291,31 +287,18 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
           {mergedAttachments.length > 0 ? (
             <ul className="mt-2.5 space-y-2">
               {mergedAttachments.map((a, i) => (
-                <li key={i} className="rounded-lg border border-slate-100 bg-slate-50/80 p-2.5">
-                  <div className="flex flex-wrap gap-2 sm:gap-3">
-                    <input
-                      className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-[var(--color-apple-text)]"
-                      value={a.label}
-                      onChange={(e) => updateAttachmentRow(i, "label", e.target.value)}
-                      placeholder="Apraksts / avots"
-                      aria-label={`Pielikuma apraksts ${i + 1}`}
-                    />
-                    <input
-                      className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-mono text-xs text-[var(--color-apple-text)]"
-                      value={a.fileName}
-                      onChange={(e) => updateAttachmentRow(i, "fileName", e.target.value)}
-                      placeholder="faila_nosaukums.pdf"
-                      aria-label={`Faila nosaukums ${i + 1}`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeAttachmentRow(i)}
-                      className="shrink-0 text-xs text-red-700 hover:underline"
-                    >
-                      Dzēst
-                    </button>
-                  </div>
-                </li>
+                <AdminSavableAttachmentRow
+                  key={`${order.id}-att-${i}-${orderFieldResetKey}`}
+                  index={i}
+                  row={a}
+                  onChangeRow={(next) => {
+                    const base = [...mergedAttachments];
+                    base[i] = next;
+                    persistEdits({ ...edits, attachments: base });
+                  }}
+                  onRemove={() => removeAttachmentRow(i)}
+                  resetVersion={orderFieldResetKey}
+                />
               ))}
             </ul>
           ) : (
