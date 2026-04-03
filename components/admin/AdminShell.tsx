@@ -9,27 +9,27 @@ export function AdminShell({ children, baseUrl, notice }: Props) {
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--color-provin-surface)] md:flex-row">
-      <aside className="shrink-0 border-b border-slate-200/80 bg-white md:w-56 md:border-b-0 md:border-r md:border-slate-200/80">
-        <div className="flex flex-wrap items-center justify-between gap-3 p-4 md:flex-col md:items-stretch md:p-6">
+      <aside className="shrink-0 border-b border-slate-200/80 bg-white md:w-52 md:border-b-0 md:border-r md:border-slate-200/80">
+        <div className="flex flex-wrap items-center justify-between gap-2 p-3 md:flex-col md:items-stretch md:p-4">
           <div>
             <Link
               href="/admin"
-              className="text-lg font-semibold tracking-tight text-[var(--color-provin-accent)]"
+              className="text-base font-semibold tracking-tight text-[var(--color-provin-accent)]"
             >
               PROVIN
             </Link>
-            <p className="text-xs text-[var(--color-provin-muted)]">Administrēšana</p>
+            <p className="text-[11px] leading-tight text-[var(--color-provin-muted)]">Administrēšana</p>
           </div>
-          <nav className="flex flex-wrap items-center gap-2 md:flex-col md:items-stretch md:gap-3">
+          <nav className="flex flex-wrap items-center gap-1.5 md:flex-col md:items-stretch md:gap-2">
             <Link
               href="/admin"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-apple-text)] hover:bg-[var(--color-provin-accent-soft)]"
+              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-[var(--color-apple-text)] hover:bg-[var(--color-provin-accent-soft)]"
             >
               Pasūtījumi
             </Link>
             <Link
               href="/"
-              className="rounded-lg px-3 py-2 text-sm text-[var(--color-provin-muted)] hover:bg-slate-100 hover:text-[var(--color-apple-text)]"
+              className="rounded-lg px-2.5 py-1.5 text-sm text-[var(--color-provin-muted)] hover:bg-slate-100 hover:text-[var(--color-apple-text)]"
             >
               Uz lapu
             </Link>
@@ -45,7 +45,7 @@ export function AdminShell({ children, baseUrl, notice }: Props) {
           ) : null}
         </div>
       </aside>
-      <div className="min-w-0 flex-1 space-y-6 p-4 sm:p-6 md:p-8">
+      <div className="min-w-0 flex-1 space-y-4 p-3 sm:p-4 md:p-5">
         {notice}
         {children}
       </div>

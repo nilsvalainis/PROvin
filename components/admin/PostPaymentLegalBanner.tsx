@@ -5,17 +5,17 @@ export function PostPaymentLegalBanner() {
   return (
     <aside
       role="alert"
-      className="rounded-xl border border-red-200/90 bg-red-50/95 px-4 py-4 shadow-sm sm:px-5 sm:py-5"
+      className="rounded-lg border border-red-200/90 bg-red-50/95 px-3 py-3 shadow-sm sm:px-4 sm:py-3.5"
     >
-      <h2 className="text-base font-semibold tracking-tight text-red-950">
+      <h2 className="text-sm font-semibold tracking-tight text-red-950">
         Obligāti pēc pirmā saņemtā maksājuma
       </h2>
-      <p className="mt-2 text-sm leading-relaxed text-red-950/90">
+      <p className="mt-1.5 text-sm leading-snug text-red-950/90">
         Stripe uzrāda vismaz vienu apmaksātu pasūtījumu, bet mājas lapā vēl nav pilnu distances līguma
         rekvizītu (tikai zīmols PROVIN.LV). Pirms mārketinga un reāliem Live maksājumiem izpildi
         soļus — tas samazina chargeback risku un sakrīt ar Stripe verifikācijas prasībām.
       </p>
-      <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-red-950/95">
+      <ol className="mt-2.5 list-decimal space-y-1.5 pl-4 text-sm leading-snug text-red-950/95">
         <li>
           <span className="font-medium text-red-950">Vercel (vai cits hosts)</span> — Environment
           Variables:{" "}
@@ -43,7 +43,7 @@ export function PostPaymentLegalBanner() {
           rekvizītiem.
         </li>
       </ol>
-      <p className="mt-4 border-t border-red-200/80 pt-3 text-xs leading-relaxed text-red-900/85">
+      <p className="mt-2.5 border-t border-red-200/80 pt-2 text-[11px] leading-snug text-red-900/85">
         Ja klientam būs strīds par maksājumu, banka vērtēs, vai pirkuma brīdī pakalpojuma sniedzējs
         bija skaidri identificējams. Tikai zīmols bez personas datiem var tikt interpretēts par labu
         klientam.

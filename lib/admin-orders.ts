@@ -27,6 +27,8 @@ export type AdminOrderDetail = AdminOrderRow & {
   listingUrl: string | null;
   customerName: string | null;
   phone: string | null;
+  /** Kā klients vēlas sazināties (no pasūtījuma formas / metadata). */
+  contactMethod: string | null;
   notes: string | null;
   customerDetailsEmail: string | null;
   customerDetailsPhone: string | null;
@@ -122,6 +124,7 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
     vin: order.vin,
     listingUrl: order.listingUrl,
     customerName: order.customerName,
+    contactMethod: order.contactMethod,
     phone,
     notes: order.notes,
     customerDetailsEmail: session.customer_details?.email ?? null,

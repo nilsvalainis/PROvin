@@ -12,6 +12,7 @@
   "dependencies": {
     "next": "^15.2.4",
     "next-intl": "^4.9.0",
+    "pdfjs-dist": "^4.10.38",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "stripe": "^17.7.0"
