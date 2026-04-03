@@ -1,5 +1,7 @@
 # PROVIN — izvietošana uz provin.lv (Vercel)
 
+**Domēns soli pa solim (tīra secība):** skatīt **[DOMAIN-SETUP.md](./DOMAIN-SETUP.md)**.
+
 ## Ātrais ceļš — ko darīt pēc kārtas
 
 ### 1. Vercel projekts no GitHub
