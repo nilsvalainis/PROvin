@@ -3,13 +3,13 @@
     "eyebrow": "Cena un saturs",
     "grid": [
       {
-        "title": "AutoDNA & CarVertical",
+        "title": "Starptautiskās vēstures datubāzes",
         "body": "Eiropas un ASV datubāzes — nobraukums, zādzības, apdrošināšanas gadījumi."
       },
       {
-        "title": "Auto Records",
+        "title": "Ražotāju servisa vēsture",
         "titleStar": true,
-        "body": "Servisa vēsture oficiālajos dīleros (BMW, Mercedes, VAG u.c.)."
+        "body": "Servisa vēsture oficiālajos dīleros (atkarībā no zīmola un pieejamības)."
       },
       {
         "title": "CSDD & LV apdrošinātāji",

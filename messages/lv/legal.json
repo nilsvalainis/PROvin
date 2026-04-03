@@ -2,11 +2,11 @@
   "Legal": {
     "privacyMetaTitle": "Privātuma politika",
     "privacyTitle": "Privātuma politika",
-    "privacyLead": "Šajā dokumentā aprakstīts, kā PROVIN (turpmāk — „mēs”, „pakalpojums”) apstrādā personas datus, kādas sīkdatnes tiek izmantotas un kā jūs varat piekrist vai noraidīt nebūtisko analītiku un pirmās izcelsmes (UTM) informācijas saglabāšanu.",
+    "privacyLead": "Šajā dokumentā aprakstīts, kā pakalpojumu sniedzējs PROVIN (turpmāk — „mēs”, „pakalpojums”) apstrādā personas datus, kādas sīkdatnes tiek izmantotas un kā jūs varat piekrist vai noraidīt nebūtisko analītiku un pirmās izcelsmes (UTM) informācijas saglabāšanu. Pārzinātāja rekvizīti norādīti šī dokumenta sākumā.",
     "sections": [
       {
         "title": "1. Pārzinis",
-        "body": "Par personas datu apstrādi atbild PROVIN pakalpojuma īpašnieks. Kontaktinformācija pieejama vietnes kājenē (e-pasts, WhatsApp). Ja nepieciešams, varat pieprasīt precizētu pārzinātāja rekvizītus tieši saziņas kanālā."
+        "body": "Personas datu pārzinis ir šajā dokumenta sākumā norādītais pakalpojumu sniedzējs. Kontaktinformācija saziņai: vietnes kājenē norādītais e-pasts un WhatsApp."
       },
       {
         "title": "2. Kādus datus apstrādājam",
@@ -39,6 +39,72 @@
       {
         "title": "9. Politikas izmaiņas",
         "body": "Politiku varam atjaunināt. Būtiskas izmaiņas tiks norādītas vietnē vai sīkdatņu joslā, ja nepieciešams."
+      }
+    ],
+    "termsMetaTitle": "Lietošanas noteikumi",
+    "termsTitle": "PROVIN lietošanas noteikumi",
+    "termsUpdated": "Spēkā no: 2026. gada 3. aprīļa",
+    "termsLead": "Šie noteikumi nosaka tiesiskās attiecības starp jums (turpmāk — „Klients”) un PROVIN pakalpojuma sniedzēju (turpmāk — „PROVIN”, „mēs”) par vietnes provin.lv izmantošanu un maksas konsultatīvā pakalpojuma pasūtīšanu. Lūdzu izlasiet tos kopā ar Privātuma politiku. Zemāk norādīti pakalpojumu sniedzēja rekvizīti.",
+    "termsSections": [
+      {
+        "title": "1. Noteikumu piemērošana un piekrišana",
+        "body": "1.1. Šie noteikumi ir piemērojami, izmantojot vietni provin.lv un pasūtot PROVIN piedāvāto pakalpojumu.\n\n1.2. Veicot pasūtījumu un atzīmējot piekrišanu šiem noteikumiem, Klients apliecina, ka ir izlasījis un pilnībā piekrīt visiem noteikumu punktiem, tostarp 3.5. punktā minētajam pilnvarojumam, un piekrīt tūlītējai pakalpojuma izpildei.\n\n1.3. Ja Klients nepiekrīt noteikumiem, pakalpojums nav jāpasūta un vietnes funkcijas, kas prasa līgumu, nav jāizmanto."
+      },
+      {
+        "title": "2. Pakalpojuma būtība un konsultatīvais raksturs",
+        "body": "2.1. PROVIN pamatā sniedz konsultatīvu pakalpojumu: transportlīdzekļa identifikācijas datu, sludinājuma un pieejamās informācijas izvērtējumu, apkopojumu un ieteikumus (turpmāk — „Atskaite” vai „Pakalpojums”). Pakalpojums ir paredzēts, lai palīdzētu pieņemt informētu lēmumu; tas nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze, mehāniķa diagnoze, juridisks spriedums vai oficiāla transportlīdzekļa pārbaude uz ceļa.\n\nPROVIN sniegtais vērtējums ir subjektīvs eksperta viedoklis. Tas nav uzskatāms par juridiski saistošu atzinumu vai tehnisko sertifikātu. PROVIN neuzņemas atbildību par finansiāliem zaudējumiem, kas Klientam var rasties, pieņemot lēmumu par transportlīdzekļa iegādi, balstoties uz šo konsultatīvo viedokli.\n\n2.2. Atskaitē sniegtie secinājumi balstās uz PROVIN profesionālo pieredzi un tajā brīdī pieejamo informāciju. Tiem ir ieteikuma raksturs. Gala lēmumu par transportlīdzekļa iegādi, pārbaudi pie trešajām personām un risku uzņemšanos pieņem vienīgi Klients.\n\n2.3. Pakalpojums nav paredzēts kā pilnīga garantija pret visiem iespējamiem slēptiem defektiem, krāpšanu vai datu nepilnībām avotos, ko PROVIN nekontrolē."
+      },
+      {
+        "title": "3. Informācijas avoti un Pakalpojuma struktūra",
+        "body": "3.1. PROVIN Pakalpojuma sniegšanai izmanto dažādus informācijas avotus, tostarp starptautiskas maksas datubāzes, publiskos reģistrus un lietotāja iesniegto informāciju. Katra avota izmantošana tiek veikta saskaņā ar attiecīgā piegādātāja publiski pieejamiem noteikumiem, B2B partnerības līgumiem vai uz citu tiesisku attiecību pamata.\n\n3.2. Klients neiegādājas piekļuvi trešo pušu datubāzēm, bet gan saņem PROVIN sagatavotu oriģināldarbu (analītisku atzinumu), kurā datu fragmenti var tikt izmantoti citēšanas un interpretācijas nolūkos, ciktāl to pieļauj normatīvie akti.\n\n3.3. PROVIN strukturē Pakalpojumu kā analīzi un konsultāciju. PROVIN nepublicē trešo pušu komerciālo atskaišu pilnu tekstu kā savu produktu un neizmanto trešo pušu saturu veidā, kas pārkāptu piemērojamos noteikumus. PROVIN sagatavotajā Atskaitē netiek izmantoti trešo pušu zīmolu logotipi un netiek automātiski ģenerētas tiešas hipersaites uz trešo pušu maksas atskaišu pilnajām versijām klienta pusē, ja tas neatbilstu piemērojamajam tiesiskajam regulējumam. Atkarībā no pasūtījuma, informācija var tikt iegūta ar līgumiskiem līdzekļiem, no Klienta nodotiem dokumentiem vai no publiski pieejamiem avotiem, ko likumīgi drīkst izmantot analītiskā secinājuma sagatavošanai.\n\n3.5. Klienta pilnvarojums un pakalpojuma struktūra.\nPasūtot Pakalpojumu, Klients nepārprotami pilnvaro PROVIN (kā Klienta tehnisko konsultantu un pārstāvi) Klienta vārdā un interesēs piekļūt trešo pušu informācijas avotiem un datubāzēm, lai iegūtu informāciju par konkrēto transportlīdzekli. Klients piekrīt, ka PROVIN veiktā informācijas ieguve un apmaksa trešo pušu sistēmās tiek veikta kā daļa no Klienta pasūtītā konsultatīvā pakalpojuma izpildes. PROVIN neizplata trešo pušu datus kā patstāvīgu produktu, bet gan izmanto tos kā izejmateriālu personalizēta eksperta atzinuma sagatavošanai Klientam."
+      },
+      {
+        "title": "4. Publiskie un valsts reģistri",
+        "body": "4.1. Ja Pakalpojuma sagatavošanā tiek izmantota informācija no publiskiem vai valsts reģistriem (piemēram, CSDD, LTAB u.tml.), PROVIN to izmanto tikai likumīgos veidos un saskaņā ar piemērojamiem noteikumiem.\n\n4.2. PROVIN neveic neatļautu automatizētu datu vākšanu (piemēram, „scraping”) no trešo pušu sistēmām, ja tas pārkāptu pakalpojuma sniedzēja noteikumus vai tiesību aktus. Ja nākotnē tiek izmantoti komerciāli datu kanāli (piemēram, maksas pieprasījumi uzņēmumiem), tie tiek izmantoti saskaņā ar attiecīgo līgumu."
+      },
+      {
+        "title": "5. Pasūtījums, cena un apmaksa",
+        "body": "5.1. Pasūtījums tiek noformēts elektroniski, norādot PROVIN pieprasīto informāciju (tostarp VIN, sludinājuma saiti un citus laukus pēc vietnes formas).\n\n5.2. Pakalpojuma cena ir norādīta vietnē pasūtījuma brīdī un ietver piemērojamos nodokļus, ja tie ir paredzēti normatīvajos aktos.\n\n5.3. Apmaksu nodrošina trešās puses maksājumu apstrādātājs (piemēram, Stripe). Maksājuma apstrādes tiesiskais pamats un datu apstrāde ir aprakstīta Privātuma politikā un maksājumu apstrādātāja dokumentos."
+      },
+      {
+        "title": "6. Izpilde, piegāde un pieļaujamās novirzes",
+        "body": "6.1. PROVIN cenšas sagatavot un nosūtīt Atskaiti uz Klienta norādīto e-pastu 24 stundu laikā no veiksmīgas apmaksas un pilnīgas pasūtījuma informācijas saņemšanas, ja vietnē nav norādīts citādi.\n\n6.2. Termiņš var tikt pagarināts nepārvaramas varas, tehnisku ierobežojumu, nepieciešamības pēc papildu informācijas no Klienta vai trešās puses pakalpojumu pārtraukumu dēļ. Par būtisku kavējumu PROVIN informēs saprātīgā veidā, ja tas ir iespējams.\n\n6.3. Atskaite tiek piegādāta elektroniski (parasti PDF vai citā vienotā formātā), ja nav norādīts citādi."
+      },
+      {
+        "title": "7. Klienta pienākumi un garantijas par nodoto informāciju",
+        "body": "7.1. Klients nodrošina patiesu, precīzu un pilnīgu informāciju, kas nepieciešama Pakalpojumam (piemēram, pareizu VIN, derīgu sludinājuma saiti).\n\n7.2. Ja Klients iesniedz trešo pušu atskaites, dokumentu kopijas vai citus materiālus, Klients apliecina, ka tam ir tiesības šos materiālus nodot PROVIN Pakalpojuma izpildei un ka to izmantošana nepārkāpj trešo pušu tiesības.\n\n7.3. Klients ir atbildīgs par to, kā izmanto Atskaites saturu, tostarp par lēmumiem trešajām personām (piemēram, pārdevējam) sniegtās informācijas ietvaros."
+      },
+      {
+        "title": "8. Intelektuālā īpašuma tiesības uz PROVIN materiālu",
+        "body": "8.1. PROVIN sagatavotās Atskaites saturs (teksts, struktūra, noformējums, zīmols, ja piemērojams) ir PROVIN intelektuālais īpašums vai tam ir likumīgs lietošanas pamats.\n\n8.2. Klients saņem neekskluzīvu, neparedzamu tiesību izmantot Atskaiti savām personīgām vajadzībām saistībā ar konkrēto transportlīdzekļa izvērtēšanu.\n\n8.3. Bez PROVIN iepriekšējas rakstiskas piekrišanas ir aizliegts Atskaiti pārdot, izplatīt masveidā, publicēt kā pašu komerciālo produktu vai citādi izmantot komerciālos nolūkos tā, ka tas pārkāpj PROVIN tiesības vai trešo pušu tiesības uz avotu materiāliem."
+      },
+      {
+        "title": "9. Atbildības ierobežojums un atrunas",
+        "body": "9.1. PROVIN nav atbildīgs par trešo pušu datu bāžu, reģistru vai pakalpojumu sniegtās informācijas nepilnībām, kavējumiem vai kļūdām, jo PROVIN šos avotus nepilnībā nekontrolē.\n\n9.2. PROVIN nav atbildīgs par netiešiem zaudējumiem (piemēram, izlaidītu peļņu, laika zaudējumu), ja to pieļauj piemērojamie tiesību akti.\n\n9.3. PROVIN kopējā atbildība pret Klientu par vienu pasūtījumu ir ierobežota līdz summai, ko Klients ir samaksājis par šo konkrēto pasūtījumu, izņemot gadījumus, kad likums paredz citādi (piemēram, tīša vaina vai personas bojājumi).\n\n9.4. Neko šajos noteikumos nevar interpretēt kā PROVIN garantiju par transportlīdzekļa tehnisko stāvokli, tiesisko tīrību visos aspektos vai pilnīgu visu risku izslēgšanu."
+      },
+      {
+        "title": "10. Personas dati",
+        "body": "Personas datu apstrādi regulē Privātuma politika, kas ir šo noteikumu neatņemama sastāvdaļa informācijas ziņā par datiem."
+      },
+      {
+        "title": "11. Patērētāja tiesības (atteikšanās no distances līguma)",
+        "body": "11.1. Distances līguma kontekstā patērētājam var būt tiesības atteikties no līguma noteiktā termiņā saskaņā ar Patērētāju tiesību aizsardzības likumu un citiem normatīvajiem aktiem, izņemot likumā un šajā punktā paredzētos gadījumus.\n\n11.2. Atteikuma tiesības nepiemērojas, jo Pakalpojums ir digitāls saturs, kura izpilde sākas tūlītēji ar Klienta piekrišanu, un Klients pasūtījuma formā apliecina, ka ir informēts par tiesību zaudēšanu līdz ar Atskaites piegādi e-pastā. Šī piekrišana tiek fiksēta pirms apmaksas vienotā apstiprinājuma izvēlē kopā ar piekrišanu noteikumiem un Privātuma politikai.\n\n11.3. Citas patērētāja tiesības (piemēram, prasīt atbilstību līgumam vai iesniegt sūdzību) paliek spēkā saskaņā ar piemērojamiem tiesību aktiem."
+      },
+      {
+        "title": "12. Strīdu risināšana",
+        "body": "12.1. Strīdus vispirms cenšamies atrisināt sarunu ceļā, rakstot uz vietnē norādīto kontaktu.\n\n12.2. Ja strīdu neizdodas atrisināt mierīgi, to risina Latvijas Republikas tiesās atbilstoši kompetences noteikumiem, ja obligātie tiesību akti neparedz citādi patērētājam labvēzīgāku jurisdikciju.\n\n12.3. Patērētāji var vērsties arī Patērētāju strīdu risināšanas komisijā vai izmantot citus likumā paredzētos ārpustiesas mehānismus, ja tie ir piemērojami."
+      },
+      {
+        "title": "13. Noteikumu grozījumi",
+        "body": "13.1. PROVIN var grozīt šos noteikumus. Aktuālā redakcija tiek publicēta vietnē. Par pasūtījumiem, kas veikti pirms grozījumiem, piemērojamā ir pasūtījuma brīdī spēkā esošā redakcija, ja likums neparedz citādi."
+      },
+      {
+        "title": "14. Spēkā esošie tiesību akti",
+        "body": "Šiem noteikumiem piemēro Latvijas Republikas tiesību aktus un Eiropas Savienības normatīvos aktus, ciktāl tie ir tieši piemērojami."
+      },
+      {
+        "title": "15. Kontaktinformācija",
+        "body": "Jautājumi par šiem noteikumiem: sazinieties ar pakalpojumu sniedzēju, izmantojot vietnes kājenē norādīto e-pastu vai WhatsApp saziņu."
       }
     ]
   },

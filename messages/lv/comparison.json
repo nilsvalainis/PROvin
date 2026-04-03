@@ -8,14 +8,18 @@
     "caption": "Salīdzinājums starp parasto un PROVIN atskaiti",
     "ariaYes": "Iekļauts",
     "ariaNo": "Nav iekļauts",
+    "ariaHistoryProvin": "Trīs vēstures avoti un papildu salīdzinājums",
+    "tableFootnote": "* Atkarībā no ražotāja, vēstures datu iegūšanai var tikt izmantoti vairāki starptautiski un Latvijas datu avoti.",
     "rows": [
       {
-        "label": "Vēstures avoti",
-        "standardText": "1 avots",
-        "provinText": "3+ avoti"
+        "label": "Vēstures dati",
+        "labelDetail": "(atskaites)",
+        "historyRow": true,
+        "standardYes": true,
+        "provinYes": true
       },
       {
-        "label": "Apvienots datu pārskats",
+        "label": "Vienots atskaišu pārskats",
         "standardYes": false,
         "provinYes": true
       },
@@ -25,19 +29,20 @@
         "provinYes": true
       },
       {
-        "label": "Kritisko risku analīze",
+        "label": "Modeļa agregātu riski",
         "standardYes": false,
         "provinYes": true
       },
       {
-        "label": "Eksperta slēdziens",
+        "label": "Gala vērtējums un ieteikumi",
         "standardYes": false,
         "provinYes": true
       },
       {
-        "label": "Izpildes laiks",
+        "label": "Izpildes garantija",
+        "labelDetail": "(24h laikā)",
         "standardText": "Tūlīt",
-        "provinText": "24 stundu laikā"
+        "provinCheckOnly": true
       }
     ]
   }

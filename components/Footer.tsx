@@ -4,6 +4,7 @@ import { HeroVisual } from "@/components/HeroVisual";
 import { WhatsAppBrandIcon } from "@/components/WhatsAppBrandIcon";
 import { contactMailtoHref, whatsappChatUrl } from "@/lib/contact";
 import { homePath } from "@/lib/paths";
+import { CompanyLegalDisclosure } from "@/components/CompanyLegalDisclosure";
 
 function MailIcon({ className }: { className?: string }) {
   return (
@@ -92,11 +93,23 @@ export async function Footer() {
           </div>
         </div>
 
-        <div className="mx-auto mt-5 max-w-[1024px] space-y-2 border-t border-black/[0.08] pt-4 text-center sm:mt-6 sm:pt-5">
+        <div className="mx-auto mt-5 max-w-[1024px] space-y-3 border-t border-black/[0.08] pt-4 text-center sm:mt-6 sm:pt-5">
+          <div className="mx-auto max-w-[65ch] text-left">
+            <CompanyLegalDisclosure />
+          </div>
           <p className="mx-auto max-w-[65ch] text-[10px] font-normal leading-snug text-[#86868b] sm:text-[11px]">
             {t("disclaimer")}
           </p>
           <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[10px] font-normal leading-snug text-[#aeaeb2] sm:text-[11px]">
+            <Link
+              href="/lietosanas-noteikumi"
+              className="text-[#86868b] underline decoration-black/[0.15] underline-offset-2 transition hover:text-provin-accent hover:decoration-provin-accent/40"
+            >
+              {t("termsOfService")}
+            </Link>
+            <span aria-hidden className="text-[#d2d2d7]">
+              ·
+            </span>
             <Link
               href="/privatuma-politika"
               className="text-[#86868b] underline decoration-black/[0.15] underline-offset-2 transition hover:text-provin-accent hover:decoration-provin-accent/40"

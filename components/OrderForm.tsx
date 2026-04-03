@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
+import { Link } from "@/i18n/navigation";
 
 const labelHero =
   "block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#86868b]";
@@ -26,6 +27,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
   const locale = useLocale();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [withdrawalConsent, setWithdrawalConsent] = useState(false);
   const hero = variant === "hero";
   const compact = variant === "compact";
 
@@ -35,6 +37,10 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    if (!withdrawalConsent) {
+      setError(te("withdrawalRequired"));
+      return;
+    }
     const fd = new FormData(e.currentTarget);
     const name = String(fd.get("name") ?? "").trim();
     const email = String(fd.get("email") ?? "").trim();
@@ -56,6 +62,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
           listingUrl,
           notes: notes || undefined,
           locale,
+          withdrawalConsent: true,
         }),
       });
       const data = (await res.json()) as { url?: string; error?: string; errors?: string[] };
@@ -189,7 +196,9 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         className={
           hero
             ? "mt-8 space-y-4 border-t border-black/[0.08] pt-8"
-            : `mt-4 flex flex-col gap-2 ${compact ? "sm:flex-row sm:items-center sm:justify-between sm:gap-4" : "mt-8 gap-4 border-t border-black/[0.06] pt-8 sm:flex-row sm:items-center sm:justify-between"}`
+            : compact
+              ? "mt-4 flex flex-col gap-3"
+              : "mt-8 flex flex-col gap-3 border-t border-black/[0.06] pt-8"
         }
       >
         {hero ? (
@@ -209,9 +218,43 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 {t("summaryNote")}
               </p>
             </div>
+            <label
+              htmlFor="order-checkout-consent"
+              className="flex cursor-pointer items-start gap-3 rounded-xl border border-black/[0.08] bg-white/60 px-3 py-3 text-left shadow-[0_1px_6px_rgba(0,0,0,0.03)] sm:px-4"
+            >
+              <input
+                id="order-checkout-consent"
+                type="checkbox"
+                name="withdrawalConsent"
+                checked={withdrawalConsent}
+                onChange={(e) => setWithdrawalConsent(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#c7c7cc] text-provin-accent focus:ring-provin-accent/30"
+                aria-label={t("checkoutConsentAria")}
+              />
+              <span className="text-[12px] font-normal leading-snug text-[#424245] sm:text-[13px]">
+                {t.rich("checkoutConsent", {
+                  terms: (chunks) => (
+                    <Link
+                      href="/lietosanas-noteikumi"
+                      className="font-medium text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
+                    >
+                      {chunks}
+                    </Link>
+                  ),
+                  privacy: (chunks) => (
+                    <Link
+                      href="/privatuma-politika"
+                      className="font-medium text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
+                    >
+                      {chunks}
+                    </Link>
+                  ),
+                })}
+              </span>
+            </label>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !withdrawalConsent}
               className="provin-btn flex w-full min-h-[48px] items-center justify-center rounded-full px-8 py-3.5 text-[16px] font-normal shadow-[0_4px_16px_rgba(0,102,214,0.28)] disabled:opacity-60"
             >
               {loading ? t("payLoading") : t("payButton")}
@@ -222,16 +265,54 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
           </>
         ) : (
           <>
-            <button
-              type="submit"
-              disabled={loading}
-              className="provin-btn inline-flex min-h-[44px] w-full min-w-[200px] items-center justify-center rounded-full px-8 py-3 text-[16px] font-normal shadow-[0_4px_16px_rgba(0,102,214,0.28)] disabled:opacity-60 sm:w-auto"
+            <label
+              htmlFor="order-checkout-consent"
+              className="flex cursor-pointer items-start gap-3 rounded-xl border border-black/[0.08] bg-white/80 px-3 py-3 text-left shadow-[0_1px_6px_rgba(0,0,0,0.03)] sm:px-4"
             >
-              {loading ? t("payLoading") : t("payButton")}
-            </button>
-            <p className="text-center text-[10px] font-normal leading-snug text-[#aeaeb2] sm:max-w-[14rem] sm:text-right">
-              {t("stripeNote")}
-            </p>
+              <input
+                id="order-checkout-consent"
+                type="checkbox"
+                name="withdrawalConsent"
+                checked={withdrawalConsent}
+                onChange={(e) => setWithdrawalConsent(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#c7c7cc] text-provin-accent focus:ring-provin-accent/30"
+                aria-label={t("checkoutConsentAria")}
+              />
+              <span className="text-[12px] font-normal leading-snug text-[#424245] sm:text-[13px]">
+                {t.rich("checkoutConsent", {
+                  terms: (chunks) => (
+                    <Link
+                      href="/lietosanas-noteikumi"
+                      className="font-medium text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
+                    >
+                      {chunks}
+                    </Link>
+                  ),
+                  privacy: (chunks) => (
+                    <Link
+                      href="/privatuma-politika"
+                      className="font-medium text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
+                    >
+                      {chunks}
+                    </Link>
+                  ),
+                })}
+              </span>
+            </label>
+            <div
+              className={`flex flex-col gap-2 ${compact ? "sm:flex-row sm:items-center sm:justify-between sm:gap-4" : "sm:flex-row sm:items-center sm:justify-between"}`}
+            >
+              <button
+                type="submit"
+                disabled={loading || !withdrawalConsent}
+                className="provin-btn inline-flex min-h-[44px] w-full min-w-[200px] items-center justify-center rounded-full px-8 py-3 text-[16px] font-normal shadow-[0_4px_16px_rgba(0,102,214,0.28)] disabled:opacity-60 sm:w-auto"
+              >
+                {loading ? t("payLoading") : t("payButton")}
+              </button>
+              <p className="text-center text-[10px] font-normal leading-snug text-[#aeaeb2] sm:max-w-[14rem] sm:text-right">
+                {t("stripeNote")}
+              </p>
+            </div>
           </>
         )}
       </div>

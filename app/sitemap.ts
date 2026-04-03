@@ -28,6 +28,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.4,
     });
+    entries.push({
+      url: `${root}${prefix}/lietosanas-noteikumi`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.4,
+    });
   }
 
   return entries;

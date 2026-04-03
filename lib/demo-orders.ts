@@ -52,10 +52,10 @@ export function getDemoOrderDetail(sessionId: string) {
       customerDetailsPhone: null,
       isDemo: true,
       internalComment:
-        "Salīdzināju VIN ar CarVertical — noskrējiens atbilst pēdējam apkopei. Sludinājumā minētais „viena īpašnieka” neatbilst CSDD datiem (2 īpašnieki). Pirms zvana klientam — pārbaudīt SS.LV sludinājuma screenshot.",
+        "Salīdzināju VIN ar starptautisko vēstures avotu — noskrējiens atbilst pēdējam apkopei. Sludinājumā minētais „viena īpašnieka” neatbilst CSDD datiem (2 īpašnieki). Pirms zvana klientam — pārbaudīt SS.LV sludinājuma screenshot.",
       attachments: [
-        { label: "CarVertical (īss izraksts)", fileName: "CarVertical_WVWZZZ3CZWE123456.pdf" },
-        { label: "AutoDNA / līdzīga atskaite", fileName: "damage_summary_2026-04-02.pdf" },
+        { label: "Vēstures datu avots (īss izraksts)", fileName: "history_excerpt_WVWZZZ3CZWE123456.pdf" },
+        { label: "Bojājumu kopsavilkums", fileName: "damage_summary_2026-04-02.pdf" },
         { label: "Sludinājuma saglabātais PDF", fileName: "sslv_sludinajums_20260402.pdf" },
       ],
     };

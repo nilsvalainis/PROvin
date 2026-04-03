@@ -24,8 +24,11 @@
     "payButton": "Turpināt uz apmaksu",
     "payLoading": "Sagatavo…",
     "stripeNote": "Apmaksa droši caur Stripe; arī karte un dažās ierīcēs Apple/Google Pay.",
+    "checkoutConsent": "Apstiprinu, ka esmu iepazinies ar <terms>Lietošanas noteikumiem</terms> un <privacy>Privātuma politiku</privacy>, pilnvaroju PROVIN iegūt datus manu interesēs, piekrītu tūlītējai pakalpojuma izpildei un apliecinu, ka līdz ar to zaudēju atteikuma tiesības.",
+    "checkoutConsentAria": "Apstiprinājums: noteikumi, privātuma politika, pilnvarojums PROVIN iegūt datus, tūlītēja izpilde, atteikuma tiesību zaudēšana",
     "ariaSummary": "Pasūtījuma kopsavilkums",
     "errors": {
+      "withdrawalRequired": "Lai turpinātu uz apmaksu, atzīmējiet apstiprinājumu (noteikumi, privātuma politika, pilnvarojums un atteikuma tiesības).",
       "checkoutFailed": "Neizdevās sagatavot apmaksu.",
       "noUrl": "Nav saņemta apmaksas saite.",
       "network": "Tīkla kļūda. Mēģini vēlreiz.",

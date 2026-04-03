@@ -5,9 +5,24 @@
     "subtitle": "Īsas atbildes pirms pasūtījuma — ja kaut kas nav skaidrs, raksti kājenē norādītajos kanālos.",
     "items": [
       {
+        "id": "read-report",
+        "q": "Kā saprast auto vēstures atskaites?",
+        "a": "Sāc ar to, ko katra rindiņa patiesībā nozīmē: nobraukuma līknes, negadījumu kategorijas, valstu reģistru atšķirības. Salīdzini avotus un meklē pretrunas — tās bieži ir svarīgākas par vienu „zaļu” rindiņu. PROVIN to izskaidro kontekstā par konkrēto auto un sludinājumu."
+      },
+      {
+        "id": "vin-not-enough",
+        "q": "Kāpēc ar parastu VIN atšifrēšanu nepietiek?",
+        "a": "VIN atklāj identitāti un bieži — pamata vēsturi, bet ne sludinājuma patiesumu, fotogrāfiju saskanību ar bojājumiem, modeļa tipiskās kļūdas vai tirgus cenu. Pilnam skatam vajag vairākus avotus un cilvēka izvērtējumu, nevis vienu automātisku izrakstu."
+      },
+      {
+        "id": "expert-before",
+        "q": "Vai vajag auto ekspertīzi pirms pirkšanas?",
+        "a": "Attālināta vēstures analīze samazina risku pirms brauciena pie pārdevēja, bet tā nav fiziska apskate. Ja auto ir dārgs vai dati ir pretrunīgi, papildu apskate servisā vai pie eksperta paliek ieteicama — PROVIN to norāda slēdzenī, kur tas ir pamatoti."
+      },
+      {
         "id": "diff",
-        "q": "Kā PROVIN atšķiras no CarVertical vai AutoDNA?",
-        "a": "Standarta servisi parasti dod vienu automātisku atskaiti no savas datubāzes. PROVIN apkopo vairākus maksas avotus, pievieno sludinājuma un pārdevēja izvērtējumu un sniedz kopsavilkumu ar komentāriem par konkrēto auto — ne tikai datu izrakstu."
+        "q": "Kā PROVIN atšķiras no parastās VIN atskaites?",
+        "a": "Standarta servisi parasti dod vienu automātisku atskaiti no vienas datubāzes. PROVIN apkopo vairākus maksas avotus, pievieno sludinājuma un pārdevēja izvērtējumu un sniedz kopsavilkumu ar komentāriem par konkrēto auto — ne tikai datu izrakstu."
       },
       {
         "id": "time",

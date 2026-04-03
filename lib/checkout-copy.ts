@@ -8,6 +8,7 @@ export type OrderCopy = {
     phone: string;
   };
   errors: {
+    withdrawalRequired: string;
     checkoutFailed: string;
     noUrl: string;
     network: string;

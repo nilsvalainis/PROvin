@@ -11,9 +11,9 @@
     "confidenceBody": "Jūsu izvēlētā auto dati, specifiskie modeļa riski un cenas pamatotība tiek manuāli analizēta, lai Jūsu redzeslokā nepaliktu nekas nepamanīts. Saņemiet pamatotu un objektīvu slēdzienu, kas sniedz pilnīgu skaidrību droša lēmuma pieņemšanai.",
     "autoRecordsFootnote": "* Var tikt izmantots tikai noteiktiem ražotājiem",
     "features": [
-      { "key": "cv", "label": "CarVertical" },
-      { "key": "dna", "label": "AutoDNA" },
-      { "key": "records", "label": "Auto Records", "star": true },
+      { "key": "cv", "label": "Starptautiskās DB" },
+      { "key": "dna", "label": "Vēstures dati" },
+      { "key": "records", "label": "Servisa vēsture", "star": true },
       { "key": "listing", "label": "Sludinājuma analīze" },
       { "key": "manual", "label": "Manuāla analīze" },
       { "key": "clock", "label": "24h atbilde" }

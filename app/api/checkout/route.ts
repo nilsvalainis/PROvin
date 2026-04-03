@@ -35,6 +35,8 @@ type CheckoutBody = {
   name?: unknown;
   notes?: unknown;
   locale?: unknown;
+  /** Obligāta klienta piekrišana PTN atteikšanās tiesību zaudēšanai (digitāls saturs, tūlītēja izpilde). */
+  withdrawalConsent?: unknown;
 };
 
 const stripeLocales = new Set(["auto", "bg", "cs", "da", "de", "el", "en", "es", "et", "fi", "fil", "fr", "hr", "hu", "id", "it", "ja", "ko", "lt", "lv", "ms", "mt", "nb", "nl", "pl", "pt", "ro", "ru", "sk", "sl", "sv", "th", "tr", "vi", "zh", "zh-HK"]);
@@ -75,8 +77,12 @@ export async function POST(req: Request) {
     typeof raw.name === "string" ? raw.name.trim().slice(0, NAME_MAX) : "";
   const notesRaw = typeof raw.notes === "string" ? raw.notes.trim() : "";
   const notes = notesRaw.slice(0, NOTES_MAX);
+  const withdrawalConsent = raw.withdrawalConsent === true;
 
   const errors: string[] = [];
+  if (!withdrawalConsent) {
+    errors.push(copy.errors.withdrawalRequired);
+  }
   if (!vin || !isValidVin(vin)) {
     errors.push(copy.validation.vin);
   }
@@ -130,6 +136,10 @@ export async function POST(req: Request) {
       listing_url: listingUrl,
       report_delivery: "email",
       phone,
+      /** Klienta apzināta atteikšanās no PTN atteikuma tiesībām (digitāls saturs, tūlītēja izpilde). */
+      withdrawal_waiver_ack: "true",
+      /** Pilnvarojums + noteikumi/privātums — saskaņā ar pasūtījuma formas apstiprinājumu. */
+      authorization_ack: "true",
       ...(name ? { customer_name: name } : {}),
       ...(notes ? { notes } : {}),
     },
