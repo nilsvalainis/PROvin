@@ -1,70 +1,70 @@
-# PROVIN — izvietošana (provin.lv)
+# PROVIN — izvietošana uz provin.lv (Vercel)
 
-Īss ceļš uz **Vercel** + tavs domēns **provin.lv** (Next.js 15 ir ļoti piemērots Vercel).
+## Ātrais ceļš — ko darīt pēc kārtas
 
-## Kas jau sagatavots projektā
+### 1. Vercel projekts no GitHub
 
-- **Git** repozitorijs ar pirmo commitu (`main`). `public/mobile-preview.png` nav iekļauts (liels fails).
-- Instrukcijas zemāk — **Vercel kontu, DNS un Stripe** vari pieslēgt tikai tu** (piekļuve tavām kontā).
+1. Ej uz [vercel.com/new](https://vercel.com/new) un pieslēdzies ar **GitHub**.
+2. **Import** repozitoriju **`nilsvalainis/PROvin`** (vai jaunākais nosaukums, ja mainīji).
+3. **Framework Preset:** Next.js (parasti atpazīst pats).
+4. **Build:** `npm run build` · **Output:** noklusējums.
+5. Spied **Deploy** — pēc minūtes būs **preview URL** (`*.vercel.app`). Tā jau ir „gaisā”, bet vēl bez tava domēna.
 
-## 1. Kods uz Git
+### 2. Vides mainīgie (obligāti pirms vai tūlīt pēc pirmā deploy)
 
-- Ja vēl nav: izveido repozitoriju (GitHub / GitLab / Bitbucket) un push šo projektu.
+Vercel → **Project → Settings → Environment Variables** → vismaz **Production**:
 
-## 2. Vercel projekts
+| Mainīgais | Vērtība |
+|-----------|---------|
+| `NEXT_PUBLIC_SITE_URL` | `https://provin.lv` | bez `/` beigās |
+| `STRIPE_SECRET_KEY` | `sk_test_...` vai `sk_live_...` |
+| `STRIPE_WEBHOOK_SECRET` | pēc 5. punkta |
+| `ADMIN_SECRET` | garš nejaušs (≥16 rakstzīmes) |
+| `ADMIN_USERNAME` | — |
+| `ADMIN_PASSWORD` | **spēcīga** parole (ne `admin/admin`) |
+| `ADMIN_DEMO_ORDERS` | `0` vai tukšs |
 
-1. Ej uz [vercel.com](https://vercel.com), pieslēdzies (iespējams ar GitHub).
-2. **Add New → Project** → izvēlies repozitoriju.
-3. Framework: **Next.js** (atpazīst automātiski).
-4. **Build Command:** `npm run build` (noklusējums).
-5. **Root Directory:** repo sakne (kur ir `package.json`).
+Pārējie pēc `.env.example` (WhatsApp, e-pasti utt.).
 
-## 3. Vides mainīgie (Vercel → Project → Settings → Environment Variables)
+Pēc izmaiņām: **Deployments → … → Redeploy** (vai jauns `git push`).
 
-Iestatīt vismaz **Production** (un vajadzības gadījumā *Preview*):
+### 3. Domēns provin.lv
 
-| Mainīgais | Production piemērs | Piezīme |
-|-----------|-------------------|---------|
-| `NEXT_PUBLIC_SITE_URL` | `https://provin.lv` | **Bez** beigu `/`. Obligāti — Stripe atgriešanās URL un SEO. |
-| `STRIPE_SECRET_KEY` | `sk_live_...` vai `sk_test_...` | Testēšanai var atstāt test atslēgu. |
-| `STRIPE_WEBHOOK_SECRET` | `whsec_...` | No Stripe webhook (skat. zemāk). |
-| `ADMIN_SECRET` | garš nejaušs teksts | Admin panelim `/admin`. |
-| `ADMIN_USERNAME` | — | |
-| `ADMIN_PASSWORD` | spēcīga parole | **Nemaini** `admin/admin` produkcijā. |
-| `ADMIN_DEMO_ORDERS` | `0` vai tukšs | Demo pasūtījumi **izslēgti** dzīvajā vidē. |
-| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | pēc vajadzības | Ja lieto paziņojumus. |
-| `RESEND_API_KEY` / `RESEND_FROM_EMAIL` / `ADMIN_NOTIFY_EMAIL` | pēc vajadzības | E-pasta paziņojumiem. |
+1. Vercel → **Project → Settings → Domains** → **Add** → ieraksti **`provin.lv`**.
+2. Vercel parādīs **DNS ierakstus** (bieži: **A** uz `76.76.21.21` vai **CNAME** uz `cname.vercel-dns.com` — **precīzi skatīt savā Vercel ekrānā**).
+3. Ieej **domēna reģistrā** (kur pirkts `provin.lv`) → **DNS** → pievieno **tos pašus** ierakstus.
+4. Gaidi **5–30 min** (reizēm līdz ~48 h), līdz statusam Vercel ir **Valid Configuration**.
+5. SSL (HTTPS) parasti ieslēdzas automātiski.
 
-Pārējie (`NEXT_PUBLIC_WHATSAPP_URL`, `NEXT_PUBLIC_CONTACT_EMAIL`, utt.) — kā `.env.example`.
+**www:** vari pievienot arī `www.provin.lv` un Vercel iestatīt **redirect** no `www` uz `provin.lv` (vai otrādi) sadaļā Domains.
 
-Pēc izmaiņām: **Deployments → Redeploy** (vai jauns push).
+### 4. Pārliecinies, ka `NEXT_PUBLIC_SITE_URL` = produkcija
 
-## 4. Domēns provin.lv
+Kad lapa atveras kā **`https://provin.lv`**, env **`NEXT_PUBLIC_SITE_URL`** jābūt **`https://provin.lv`**, lai Stripe atgriešanās un SEO būtu pareizi.
 
-1. Vercel → Project → **Settings → Domains** → pievieno `provin.lv` (un opcionāli `www.provin.lv`).
-2. Reģistrā (kur pirkts domēns) iestati **DNS**, kā prasa Vercel (parasti **A** ieraksts uz Vercel IP vai **CNAME** uz `cname.vercel-dns.com` — precīzi rāda Vercel UI).
-3. Gaidi SSL (parasti dažas minūtes pēc DNS propagācijas).
-
-**Galvenais URL:** iestatīt `https://provin.lv` kā primāro un `NEXT_PUBLIC_SITE_URL` atbilstoši.
-
-## 5. Stripe webhook (pēc tam, kad lapa jau atveras ar HTTPS)
+### 5. Stripe webhook (kad jau darbojas `https://provin.lv`)
 
 1. [Stripe Dashboard](https://dashboard.stripe.com) → **Developers → Webhooks** → **Add endpoint**.
 2. URL: `https://provin.lv/api/webhooks/stripe`
-3. Events: vismaz `checkout.session.completed`.
-4. Iekopē **Signing secret** → Vercel env kā `STRIPE_WEBHOOK_SECRET`.
+3. Event: **`checkout.session.completed`**
+4. **Signing secret** → Vercel → `STRIPE_WEBHOOK_SECRET` → **Redeploy**.
 
-Maksājumu testēšanai izmanto **Test mode** atslēgas; pārslēdzoties uz **Live**, nomaini uz `sk_live_...` un izveido jaunu webhook Live vidē.
-
-## 6. Pārbaude
+### 6. Pārbaude
 
 - [ ] `https://provin.lv` — sākumlapa
-- [ ] Pasūtījuma forma → Stripe Checkout → atgriešanās uz `/paldies`
-- [ ] `https://provin.lv/api/webhooks/stripe` — nedrīkst būt 404 (POST izmanto Stripe)
-- [ ] `/admin` — ielogojas ar produkcijas paroli; demo pasūtījumi izslēgti
+- [ ] Pasūtījums → Stripe → atgriešanās uz `/paldies`
+- [ ] `https://provin.lv/admin` — ar produkcijas paroli
+- [ ] Webhook notikumi Stripe (test vai live režīmā)
+
+---
+
+## Kas jau sagatavots projektā
+
+- Git, `.gitignore`, `public/mobile-preview.png` nav repozitorijā.
+- Kods ir paredzēts Vercel + Node (Next.js 15).
 
 ## Piezīmes
 
-- **Admin panelis** publiski neapspiež; izmanto spēcīgu paroli.
-- Juridiski: privātuma politika jau ir vietnē; pirms mārketinga kampaņām pārbaudi tekstu ar juristu.
-- Alternatīva Vercel: jebkurš VPS ar Node (Docker) + `npm run build` + `npm run start` + reverse proxy (Nginx) + SSL — vairāk uzturēšanas.
+- **Repository not found** push laikā: pārbaudi GitHub URL un tiesības; repozitorijam jāeksistē un jābūt push tiesībām.
+- Admin panelis: nepublicē paroli; izmanto garu `ADMIN_SECRET` un spēcīgu paroli.
+- Juridisks: privātuma politika ir vietnē; pirms kampaņām var konsultēties ar juristu.
