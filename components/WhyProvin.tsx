@@ -13,7 +13,7 @@ export async function WhyProvin() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-white to-provin-surface-2/30 px-4 py-10 sm:px-6 sm:py-14">
       <div className="pointer-events-none absolute inset-0 provin-noise opacity-25" aria-hidden />
-      <div className="relative mx-auto max-w-[1024px]">
+      <div className="relative mx-auto min-w-0 max-w-[1024px]">
         <div className="text-center">
           <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("eyebrow")}</p>
           <h2 className="mt-2 text-[28px] font-semibold tracking-tight text-[#1d1d1f] sm:text-[36px] sm:leading-[1.1]">
@@ -28,7 +28,7 @@ export async function WhyProvin() {
           </p>
         </div>
 
-        <div className="mt-10 grid gap-4 lg:grid-cols-2">
+        <div className="mt-10 grid min-w-0 gap-4 lg:grid-cols-2">
           <article className={highlightCardClass}>
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-provin-accent/10 text-provin-accent ring-1 ring-provin-accent/15">
@@ -100,24 +100,23 @@ export async function WhyProvin() {
   );
 }
 
+/** Zvaigznīte pēc pirmā „vārds*” tekstā (atsauce uz kājenes piezīmi). */
 function renderFootnoteStar(text: string) {
-  const idx = text.lastIndexOf("Records*");
+  const idx = text.indexOf("*");
   if (idx === -1) {
     return text;
   }
-  const before = text.slice(0, idx + "Records".length);
-  const after = text.slice(idx + "Records*".length);
   return (
     <>
-      {before}
+      {text.slice(0, idx)}
       <span className="align-super text-[11px] text-[#86868b]">*</span>
-      {after}
+      {text.slice(idx + 1)}
     </>
   );
 }
 
 const highlightCardClass =
-  "provin-lift-strong rounded-2xl border border-provin-accent/15 bg-gradient-to-b from-provin-accent-soft/95 to-[#fbfbfd] p-6 shadow-[0_4px_28px_rgba(0,102,214,0.1)] sm:p-8";
+  "provin-lift-strong min-w-0 rounded-2xl border border-provin-accent/15 bg-gradient-to-b from-provin-accent-soft/95 to-[#fbfbfd] p-6 shadow-[0_4px_28px_rgba(0,102,214,0.1)] sm:p-8";
 
 function IconDoc({ className = "h-4 w-4" }: { className?: string }) {
   return (

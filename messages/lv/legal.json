@@ -2,11 +2,11 @@
   "Legal": {
     "privacyMetaTitle": "Privātuma politika",
     "privacyTitle": "Privātuma politika",
-    "privacyLead": "Šajā dokumentā aprakstīts, kā pakalpojumu sniedzējs PROVIN (turpmāk — „mēs”, „pakalpojums”) apstrādā personas datus, kādas sīkdatnes tiek izmantotas un kā jūs varat piekrist vai noraidīt nebūtisko analītiku un pirmās izcelsmes (UTM) informācijas saglabāšanu. Pārzinātāja rekvizīti norādīti šī dokumenta sākumā.",
+    "privacyLead": "Šajā dokumentā aprakstīts, kā pakalpojumu sniedzējs PROVIN.LV (turpmāk — „mēs”, „pakalpojums”) apstrādā personas datus, kādas sīkdatnes tiek izmantotas un kā jūs varat piekrist vai noraidīt nebūtisko analītiku un pirmās izcelsmes (UTM) informācijas saglabāšanu. Juridiskā identitāte un pārzinātāja rekvizīti norādīti šī dokumenta sākumā.",
     "sections": [
       {
         "title": "1. Pārzinis",
-        "body": "Personas datu pārzinis ir šajā dokumenta sākumā norādītais pakalpojumu sniedzējs. Kontaktinformācija saziņai: vietnes kājenē norādītais e-pasts un WhatsApp."
+        "body": "Personas datu pārzinis ir PROVIN.LV; juridiskā persona un pilni rekvizīti norādīti šī dokumenta sākumā. Kontaktinformācija saziņai: vietnes kājenē norādītais e-pasts un WhatsApp."
       },
       {
         "title": "2. Kādus datus apstrādājam",
@@ -42,9 +42,9 @@
       }
     ],
     "termsMetaTitle": "Lietošanas noteikumi",
-    "termsTitle": "PROVIN lietošanas noteikumi",
+    "termsTitle": "PROVIN.LV lietošanas noteikumi",
     "termsUpdated": "Spēkā no: 2026. gada 3. aprīļa",
-    "termsLead": "Šie noteikumi nosaka tiesiskās attiecības starp jums (turpmāk — „Klients”) un PROVIN pakalpojuma sniedzēju (turpmāk — „PROVIN”, „mēs”) par vietnes provin.lv izmantošanu un maksas konsultatīvā pakalpojuma pasūtīšanu. Lūdzu izlasiet tos kopā ar Privātuma politiku. Zemāk norādīti pakalpojumu sniedzēja rekvizīti.",
+    "termsLead": "Šie noteikumi nosaka tiesiskās attiecības starp jums (turpmāk — „Klients”) un pakalpojuma sniedzēju PROVIN.LV (turpmāk — „mēs”) par vietnes provin.lv izmantošanu un maksas konsultatīvā pakalpojuma pasūtīšanu. Lūdzu izlasiet tos kopā ar Privātuma politiku. Cenas, apmaksas un atmaksas pamatprincipi, kā arī atteikuma tiesību nepiemērošana digitālajam saturam, ir izklāstīti 5. un 11. punktā. Zemāk norādīti juridiskā sniedzēja rekvizīti.",
     "termsSections": [
       {
         "title": "1. Noteikumu piemērošana un piekrišana",
@@ -60,11 +60,11 @@
       },
       {
         "title": "4. Publiskie un valsts reģistri",
-        "body": "4.1. Ja Pakalpojuma sagatavošanā tiek izmantota informācija no publiskiem vai valsts reģistriem (piemēram, CSDD, LTAB u.tml.), PROVIN to izmanto tikai likumīgos veidos un saskaņā ar piemērojamiem noteikumiem.\n\n4.2. PROVIN neveic neatļautu automatizētu datu vākšanu (piemēram, „scraping”) no trešo pušu sistēmām, ja tas pārkāptu pakalpojuma sniedzēja noteikumus vai tiesību aktus. Ja nākotnē tiek izmantoti komerciāli datu kanāli (piemēram, maksas pieprasījumi uzņēmumiem), tie tiek izmantoti saskaņā ar attiecīgo līgumu."
+        "body": "4.1. Ja Pakalpojuma sagatavošanā tiek izmantota informācija no publiskiem vai valsts reģistriem (piemēram, transportlīdzekļu reģistra un apdrošināšanas vēstures dati, kas pieejami publiski Latvijā, u.tml.), PROVIN to izmanto tikai likumīgos veidos un saskaņā ar piemērojamiem noteikumiem.\n\n4.2. PROVIN neveic neatļautu automatizētu datu vākšanu (piemēram, „scraping”) no trešo pušu sistēmām, ja tas pārkāptu pakalpojuma sniedzēja noteikumus vai tiesību aktus. Ja nākotnē tiek izmantoti komerciāli datu kanāli (piemēram, maksas pieprasījumi uzņēmumiem), tie tiek izmantoti saskaņā ar attiecīgo līgumu."
       },
       {
-        "title": "5. Pasūtījums, cena un apmaksa",
-        "body": "5.1. Pasūtījums tiek noformēts elektroniski, norādot PROVIN pieprasīto informāciju (tostarp VIN, sludinājuma saiti un citus laukus pēc vietnes formas).\n\n5.2. Pakalpojuma cena ir norādīta vietnē pasūtījuma brīdī un ietver piemērojamos nodokļus, ja tie ir paredzēti normatīvajos aktos.\n\n5.3. Apmaksu nodrošina trešās puses maksājumu apstrādātājs (piemēram, Stripe). Maksājuma apstrādes tiesiskais pamats un datu apstrāde ir aprakstīta Privātuma politikā un maksājumu apstrādātāja dokumentos."
+        "title": "5. Pasūtījums, cena, apmaksa un atmaksas pamatprincipi",
+        "body": "5.1. Pasūtījums tiek noformēts elektroniski, norādot PROVIN pieprasīto informāciju (tostarp VIN, sludinājuma saiti un citus laukus pēc vietnes formas).\n\n5.2. Pakalpojuma cena ir skaidri norādīta vietnē (pasūtījuma formā / kopsavilkumā) pasūtījuma brīdī un ietver piemērojamos nodokļus, ja tie ir paredzēti normatīvajos aktos. Cena var tikt mainīta nākotnē jauniem pasūtījumiem; par konkrēto pasūtījumu spēkā ir cena, kas bija norādīta pirms apmaksas apstiprināšanas.\n\n5.3. Apmaksu nodrošina trešās puses maksājumu apstrādātājs (piemēram, Stripe). Maksājuma apstrādes tiesiskais pamats un datu apstrāde ir aprakstīta Privātuma politikā un maksājumu apstrādātāja dokumentos.\n\n5.4. Atmaksa un distances līguma atteikšanās: digitāla satura pakalpojumam, kura izpilde sākas pēc Klienta skaidras piekrišanas, piemērojamo tiesību ietvaros atteikuma tiesības var nepiemēroties — pilnīgs izklāsts ir 11. punktā. Ja piemērojami normatīvie akti paredz atmaksu vai strīdu risināšanu citādi, tas tiek ievērots atbilstoši likumam un šo noteikumu 12. punktam."
       },
       {
         "title": "6. Izpilde, piegāde un pieļaujamās novirzes",
@@ -87,8 +87,8 @@
         "body": "Personas datu apstrādi regulē Privātuma politika, kas ir šo noteikumu neatņemama sastāvdaļa informācijas ziņā par datiem."
       },
       {
-        "title": "11. Patērētāja tiesības (atteikšanās no distances līguma)",
-        "body": "11.1. Distances līguma kontekstā patērētājam var būt tiesības atteikties no līguma noteiktā termiņā saskaņā ar Patērētāju tiesību aizsardzības likumu un citiem normatīvajiem aktiem, izņemot likumā un šajā punktā paredzētos gadījumus.\n\n11.2. Atteikuma tiesības nepiemērojas, jo Pakalpojums ir digitāls saturs, kura izpilde sākas tūlītēji ar Klienta piekrišanu, un Klients pasūtījuma formā apliecina, ka ir informēts par tiesību zaudēšanu līdz ar Atskaites piegādi e-pastā. Šī piekrišana tiek fiksēta pirms apmaksas vienotā apstiprinājuma izvēlē kopā ar piekrišanu noteikumiem un Privātuma politikai.\n\n11.3. Citas patērētāja tiesības (piemēram, prasīt atbilstību līgumam vai iesniegt sūdzību) paliek spēkā saskaņā ar piemērojamiem tiesību aktiem."
+        "title": "11. Cena, digitālais saturs un atteikuma tiesības (distances līgums)",
+        "body": "11.1. Distances līguma kontekstā patērētājam var būt tiesības atteikties no līguma noteiktā termiņā saskaņā ar Patērētāju tiesību aizsardzības likumu un citiem normatīvajiem aktiem, izņemot likumā un šajā punktā paredzētos gadījumus.\n\n11.2. Atteikuma tiesību nepiemērošana (digitāls saturs, tūlītēja izpilde). Atteikuma tiesības nepiemērojas, jo Pakalpojums ir digitāls saturs, kura izpilde sākas tūlītēji ar Klienta skaidru piekrišanu, un Klients pasūtījuma formā apliecina, ka ir informēts par tiesību zaudēšanu līdz ar Atskaites piegādi e-pastā. Šī piekrišana tiek fiksēta pirms apmaksas vienotā apstiprinājuma izvēlē kopā ar piekrišanu noteikumiem un Privātuma politikai — tas ir būtisks distances līguma elements.\n\n11.3. Citas patērētāja tiesības (piemēram, prasīt atbilstību līgumam vai iesniegt sūdzību) paliek spēkā saskaņā ar piemērojamiem tiesību aktiem."
       },
       {
         "title": "12. Strīdu risināšana",
@@ -104,7 +104,7 @@
       },
       {
         "title": "15. Kontaktinformācija",
-        "body": "Jautājumi par šiem noteikumiem: sazinieties ar pakalpojumu sniedzēju, izmantojot vietnes kājenē norādīto e-pastu vai WhatsApp saziņu."
+        "body": "Jautājumi par šiem noteikumiem: sazinieties ar PROVIN.LV, izmantojot vietnes kājenē norādīto e-pastu vai WhatsApp saziņu."
       }
     ]
   },

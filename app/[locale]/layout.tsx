@@ -58,7 +58,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     <NextIntlClientProvider messages={messages}>
       <LocaleHtmlLang />
       <Header />
-      <main className="pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+      <main className="min-w-0 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
         {children}
       </main>
       <WhatsAppFab />

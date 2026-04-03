@@ -1,6 +1,7 @@
 {
   "Footer": {
     "body": "Standarta vēstures atskaites sniedz tikai sausus faktus. Mēs veicam padziļinātu izpēti — izvērtējam sludinājumu, analizējam konkrētā modeļa vājās vietas un tirgus vērtību, sniedzot pilnvērtīgu un pārdomātu slēdzienu.",
+    "legalRegionLabel": "Juridiskā informācija un saites",
     "contacts": "Kontakti",
     "contactsHint": "Jautājumi? Sazinies ar mums.",
     "emailCta": "Rakstīt e-pastu",
@@ -8,10 +9,10 @@
     "privacyPolicy": "Privātuma politika",
     "termsOfService": "Lietošanas noteikumi",
     "gdpr": "© {year} PROVIN. Personas datu apstrāde notiek saskaņā ar piemērojamiem tiesību aktiem (GDPR).",
-    "companyProvider": "Pakalpojumu sniedzējs",
+    "companyLegalSubject": "Juridiskais sniedzējs",
     "companyRegNo": "Reģistrācijas numurs",
     "companyLegalAddress": "Juridiskā adrese",
-    "companyIncomplete": "Pakalpojumu sniedzēja rekvizīti drīzumā būs pieejami šajā sadaļā. Jautājumos izmantojiet kājenē norādīto saziņu.",
+    "companyIncomplete": "PROVIN.LV — pakalpojuma sniedzēja rekvizīti drīzumā būs pieejami šajā sadaļā. Jautājumos izmantojiet kājenē norādīto saziņu.",
     "companyIncompleteDev": "Izstrādātājam: iestatiet NEXT_PUBLIC_COMPANY_LEGAL_NAME, NEXT_PUBLIC_COMPANY_REG_NO un NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS (.env vai hosting).",
     "disclaimer": "Datu avotu informācija ir informatīva; eksperta kopsavilkums ir profesionāls viedoklis, nevis juridisks spriedums vai oficiāla tehniskā ekspertīze."
   }

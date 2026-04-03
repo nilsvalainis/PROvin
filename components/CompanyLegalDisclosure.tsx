@@ -1,4 +1,4 @@
-import { getCompanyLegal } from "@/lib/company";
+import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
 import { getTranslations } from "next-intl/server";
 
 type Props = { className?: string };
@@ -9,6 +9,7 @@ type Props = { className?: string };
 export async function CompanyLegalDisclosure({ className }: Props) {
   const t = await getTranslations("Footer");
   const { legalName, regNo, legalAddress, isComplete } = getCompanyLegal();
+  const publicBrand = getCompanyPublicBrand();
 
   if (!isComplete) {
     const isDev = process.env.NODE_ENV === "development";
@@ -32,8 +33,9 @@ export async function CompanyLegalDisclosure({ className }: Props) {
         "not-italic text-[11px] leading-relaxed text-[#6e6e73] sm:text-[12px]"
       }
     >
-      <p>
-        <span className="font-medium text-[#424245]">{t("companyProvider")}:</span> {legalName}
+      <p className="font-medium text-[#424245]">{publicBrand}</p>
+      <p className="mt-1">
+        <span className="font-medium text-[#424245]">{t("companyLegalSubject")}:</span> {legalName}
       </p>
       <p className="mt-0.5">
         <span className="font-medium text-[#424245]">{t("companyRegNo")}:</span> {regNo}

@@ -19,3 +19,9 @@ export function getCompanyLegal(): CompanyLegal {
   const isComplete = Boolean(legalName && regNo && legalAddress);
   return { legalName, regNo, legalAddress, isComplete };
 }
+
+/** Publiskais pakalpojuma zīmols (likumiski — blakus jānorāda juridiskā persona rekvizītos). */
+export function getCompanyPublicBrand(): string {
+  const b = process.env.NEXT_PUBLIC_COMPANY_PUBLIC_BRAND?.trim();
+  return b || "PROVIN.LV";
+}

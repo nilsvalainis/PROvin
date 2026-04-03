@@ -13,7 +13,7 @@ export async function Faq() {
       className="scroll-mt-16 bg-white px-4 py-10 sm:px-6 sm:py-14"
       aria-labelledby="faq-heading"
     >
-      <div className="mx-auto max-w-[720px]">
+      <div className="mx-auto min-w-0 max-w-[720px]">
         <div className="text-center">
           <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("eyebrow")}</p>
           <h2

@@ -14,7 +14,7 @@ export async function HowItWorks() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-white to-provin-surface-2/50 px-4 py-10 sm:px-6 sm:py-14">
       <div className="pointer-events-none absolute inset-0 provin-noise opacity-30" aria-hidden />
-      <div className="relative mx-auto max-w-[1024px]">
+      <div className="relative mx-auto min-w-0 max-w-[1024px]">
         <div className="text-center">
           <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("eyebrow")}</p>
           <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] sm:text-[36px] sm:leading-[1.1]">
@@ -25,7 +25,7 @@ export async function HowItWorks() {
           </p>
         </div>
 
-        <div className="mx-auto mt-10 flex max-w-lg flex-col md:max-w-none md:flex-row md:items-stretch md:justify-center md:gap-0">
+        <div className="mx-auto mt-10 flex min-w-0 max-w-lg flex-col md:max-w-none md:flex-row md:items-stretch md:justify-center md:gap-0">
           {steps.map((s, i) => (
             <Fragment key={s.n}>
               <article className={`${cardClass} flex min-w-0 flex-col`}>

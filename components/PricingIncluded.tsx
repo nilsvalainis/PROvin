@@ -23,14 +23,14 @@ export async function PricingIncluded() {
       className="relative scroll-mt-16 overflow-hidden bg-gradient-to-b from-provin-surface-2 via-[#f5f5f7] to-[#f5f5f7] px-4 py-7 sm:px-6 sm:py-10"
     >
       <div className="pointer-events-none absolute inset-0 provin-noise opacity-40" aria-hidden />
-      <div className="relative mx-auto max-w-[1024px]">
+      <div className="relative mx-auto min-w-0 max-w-[1024px]">
         <div className="text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[12px]">
             {t("eyebrow")}
           </p>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-2.5 sm:mt-7 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
+        <div className="mt-6 grid min-w-0 grid-cols-1 gap-2.5 sm:mt-7 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
           <ReportComparison embedded />
 
           {grid.map((item) => {
@@ -79,7 +79,7 @@ export async function PricingIncluded() {
 }
 
 const cardClass =
-  "provin-lift rounded-xl border border-black/[0.06] bg-[#fbfbfd] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:p-5";
+  "provin-lift min-w-0 rounded-xl border border-black/[0.06] bg-[#fbfbfd] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:p-5";
 
 const irissCardClass =
-  "provin-lift-strong block cursor-pointer rounded-xl border border-provin-accent/20 bg-gradient-to-b from-provin-accent-soft/90 to-[#eef6ff] p-4 text-left shadow-[0_2px_16px_rgba(0,102,214,0.1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:p-5";
+  "provin-lift-strong block min-w-0 cursor-pointer rounded-xl border border-provin-accent/20 bg-gradient-to-b from-provin-accent-soft/90 to-[#eef6ff] p-4 text-left shadow-[0_2px_16px_rgba(0,102,214,0.1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:p-5";

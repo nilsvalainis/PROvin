@@ -22,7 +22,7 @@ export async function IrissSection() {
       />
       <div className="pointer-events-none absolute inset-0 provin-noise opacity-30" aria-hidden />
 
-      <div className="relative mx-auto max-w-[692px]">
+      <div className="relative mx-auto min-w-0 max-w-[692px]">
         <div className="text-center">
           <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("eyebrow")}</p>
           <h2 className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[1.25rem] font-semibold leading-snug tracking-tight text-[#1d1d1f] sm:text-[1.65rem] sm:leading-[1.15]">

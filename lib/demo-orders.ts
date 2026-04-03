@@ -43,7 +43,7 @@ export function getDemoOrderDetail(sessionId: string) {
       paymentStatus: "paid" as const,
       customerEmail: "janis.berzins@inbox.lv",
       vin: "WVWZZZ3CZWE123456",
-      listingUrl: "https://www.ss.lv/msg/lv/transport/cars/bmw/.../abcd.html",
+      listingUrl: "https://example.com/lv/auto-sludinajums/abcd",
       customerName: "Jānis Bērziņš",
       phone: "+371 29123456",
       notes:
@@ -52,7 +52,7 @@ export function getDemoOrderDetail(sessionId: string) {
       customerDetailsPhone: null,
       isDemo: true,
       internalComment:
-        "Salīdzināju VIN ar starptautisko vēstures avotu — noskrējiens atbilst pēdējam apkopei. Sludinājumā minētais „viena īpašnieka” neatbilst CSDD datiem (2 īpašnieki). Pirms zvana klientam — pārbaudīt SS.LV sludinājuma screenshot.",
+        "Salīdzināju VIN ar starptautisko vēstures avotu — noskrējiens atbilst pēdējam apkopei. Sludinājumā minētais „viena īpašnieka” neatbilst valsts reģistra datiem (2 īpašnieki). Pirms zvana klientam — pārbaudīt sludinājuma ekrānuzņēmumu.",
       attachments: [
         { label: "Vēstures datu avots (īss izraksts)", fileName: "history_excerpt_WVWZZZ3CZWE123456.pdf" },
         { label: "Bojājumu kopsavilkums", fileName: "damage_summary_2026-04-02.pdf" },
@@ -69,7 +69,7 @@ export function getDemoOrderDetail(sessionId: string) {
       paymentStatus: "paid" as const,
       customerEmail: "anna.k@example.com",
       vin: "YV1DZ8256C1234567",
-      listingUrl: "https://www.mobile.de/...",
+      listingUrl: "https://example.com/auto/...",
       customerName: "Anna K.",
       phone: "+371 29876543",
       notes: null,

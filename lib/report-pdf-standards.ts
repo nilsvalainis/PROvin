@@ -5,7 +5,8 @@
  * Galvenie principi:
  * - Nav trešo pušu zīmolu logotipu; tikai PROVIN identitāte.
  * - Pirmajā lapā izteiksmīgs bloks „EKSPERTA SLĒDZIENS” (pakalpojums = analīze).
- * - Datu avotu formulējumi vispārināti, piem.: „Saskaņā ar starptautisko datubāzu ierakstiem…”
+ * - Datu avotu formulējumi vispārināti, piem.: „Saskaņā ar starptautisko datubāzu ierakstiem…”, „publiski pieejamie Latvijas reģistra dati…”.
+ * - Tekstā nelietot trešo pušu komerciālu pakalpojumu nosaukumus, kamēr nav līgumiskas tiesības tos piesaistīt.
  * - Krāsas / fonti saskaņā ar provin.lv (ne trešo pušu UI krāsas kā „oficiālas”).
  */
 export const REPORT_PDF_STANDARDS = {

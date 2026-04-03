@@ -8,12 +8,13 @@
     "caption": "Salīdzinājums starp parasto un PROVIN atskaiti",
     "ariaYes": "Iekļauts",
     "ariaNo": "Nav iekļauts",
-    "ariaHistoryProvin": "Trīs vēstures avoti un papildu salīdzinājums",
+    "ariaHistoryStandard": "Viens maksas atskaišu avots",
+    "ariaHistoryProvin": "Vairāk nekā trīs maksas atskaišu avoti (3+)",
     "tableFootnote": "* Atkarībā no ražotāja, vēstures datu iegūšanai var tikt izmantoti vairāki starptautiski un Latvijas datu avoti.",
     "rows": [
       {
         "label": "Vēstures dati",
-        "labelDetail": "(atskaites)",
+        "labelDetail": "(maksas atskaites)",
         "historyRow": true,
         "standardYes": true,
         "provinYes": true

@@ -32,7 +32,7 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
         aria-hidden
       />
 
-      <div className="relative z-10 mx-auto max-w-[692px] px-4 pb-12 pt-10 text-center sm:px-6 sm:pb-14 sm:pt-12">
+      <div className="relative z-10 mx-auto min-w-0 max-w-[692px] px-4 pb-12 pt-10 text-center sm:px-6 sm:pb-14 sm:pt-12">
         <p className="text-[14px] font-normal tracking-wide text-provin-accent sm:text-[17px]">{t("sectionTitle")}</p>
 
         {cancelled && (

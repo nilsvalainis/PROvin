@@ -10,8 +10,8 @@ const inter = Inter({
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html className={`${inter.variable} scroll-smooth`} suppressHydrationWarning>
-      <body className="min-h-dvh font-sans">{children}</body>
+    <html className={`${inter.variable} min-w-0 scroll-smooth`} suppressHydrationWarning>
+      <body className="min-h-dvh min-w-0 overflow-x-clip font-sans">{children}</body>
     </html>
   );
 }

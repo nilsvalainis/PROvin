@@ -1,0 +1,85 @@
+---
+description: Latvijas uzņēmējdarbības un PROVIN juridiskā konteksta vadlīnijas (SDV/MUN, IK, Stripe, rekvizīti)
+alwaysApply: true
+---
+
+# PROVIN — uzņēmējdarbības un publiskās atbilstības konteksts
+
+Šīs vadlīnijas jāievēro, strādājot ar maksājumiem, juridisko tekstu, kājeni, `lib/company.ts`, Stripe integrāciju un klientu komunikāciju.
+
+## 1. SDV (MUN) un pakalpojuma veids
+
+- Auto vēstures analīze kā pakalpojums **ir atļauts** arī fiziskai personai — **Saimnieciskās darbības veicējam (SDV)** MUN režīmā; nav minēts likumisks aizliegums šim produktam.
+- **MUN apgrozījuma limits** Latvijā: **50 000 € gadā** (pēc tam jākļūst par PVN maksātāju vai jāmaina nodokļu režīms).
+
+## 2. Identifikācija rēķinā un vietnē (obligāti, bet vizuāli diskrēti)
+
+- Gada pārskatu un grāmatvedības tiesību akti un distances līgumu prasības prasa **identificējamu pakalpojuma sniedzēju**.
+- Ja darbojas kā **SDV**, „uzņēmuma nosaukums” praksē ir **Vārds Uzvārds**; **reģistrācijas numurs** var būt **personas kods** — pilnībā paslēpt likumiski nevar, bet **kājenē** drīkst lietot **mazu, pelēku tekstu** (likums ievērots, vizuāli diskrēti).
+
+## 2b. Personas koda „vizuālā maskēšana” (kājenes formāts)
+
+- `lib/company.ts` un `CompanyLegalDisclosure` ļauj **nekļūdaini**, bet vizuāli „uzņēmumam līdzīgi” izvadīt piemēram:
+
+  - pirmā rinda: pakalpojuma sniedzējs **PROVIN.LV**,
+  - tad **Reģ. nr.** ar personas kodu formātā, kas izskatās kā parasts numurs (piem. `123456-12345`),
+  - tad **adrese**.
+
+- Cilvēkiem bez LV grāmatvedības konteksta PC bieži neizskatās pēc dzimšanas datiem — likumiski joprojām ir sniedzēja identifikācija.
+
+## 3. Zīmols un klientu uztvere
+
+- Komunikācijā **pakalpojuma sniedzējs** publiski — **PROVIN.LV**; juridiski blakus — [Vārds Uzvārds] un rekvizīti.
+- **Stripe:** Dashboardā kā publiskais / „doing business as” nosaukums — **PROVIN.LV**; bankas izrakstā klienti bieži redzēs formātu līdzīgu **STRIPE* PROVIN.LV** (nevis personas kodu tieši no kartes teksta, ja pareizi iestatīts).
+- **Preču zīme:** PROVIN var reģistrēt kā preču zīmi (orientējoši ~100–200 € PV); tad var lietot formulējumus tipa „PROVIN ir reģistrēta [Vārda Uzvārda] preču zīme” — profesionālāks iespaids.
+
+## 3b. Stripe verifikācijas „āķis” (dokumenti vs publiskā informācija)
+
+- **Verifikācijas dokumenti:** kad Stripe prasa dokumentus, sūtīt **SDV / reālos** papīrus (t.sk. personas kods dokumentos — tas ir konta īpašnieka identitāte).
+- **Public business information** (publiskais nosaukums): **PROVIN.LV** — Stripe **atļauj**, ka fiziska persona (piem. Jānis Bērziņš) tirgo zem šī nosaukuma.
+- **Kritiski:** vietnē kājenē joprojām jābūt **īstajam juridiskajam vārdam** (piem. „Jānis Bērziņš”) **maziem burtiem**, lai Stripe automatizētā pārbaude salīdzinot ar lapu redz **sakritību ar konta īpašnieku**. Publiskais sniedzējs — **PROVIN.LV**; juridiskā persona — atsevišķi rekvizītos.
+
+## 4. Individuālais komersants (IK) kā „zelta vidusceļš”
+
+- **IK** dod juridisko nosaukumu tipa **„IK PROVIN”** un **uzņēmuma reģistrācijas numuru** (piem. sākums ar **4000…**, nevis PC kā galvenais publiskais identifikators) — mazāk „privātās personas” distances sajūta.
+- IK var būt **MUN** ar līdzīgu vienkāršotu grāmatvedību; reģistrācijas izmaksas UR orientējoši **~30–50 €**, termiņš dažas dienas.
+- **Pārejas signāls:** kad apgrozījums tuvojas aptuveni **1000–2000 € mēnesī** (vai agrāk definētais **10–20+ pasūtījumi mēnesī**), **UR — pāreja uz IK PROVIN** ir saprātīgs solis pirms pilnas **SIA**, kad mērogs to attaisno.
+
+## 5. „Zaļā” fāze — praktiski soļi tagad
+
+- **Stripe:** kā **Public Business Name** lietot **PROVIN.LV**; saskaņot ar to, ko klienti redz vietnē.
+- **Vietne:** rekvizītus turpināt izvadīt caur esošo mehānismu (`NEXT_PUBLIC_COMPANY_*`, `CompanyLegalDisclosure`) — **kājene, smalks teksts**; teksti saskan ar `messages/lv/footer.json` utt.
+- **Personas kods:** ja nevēlas publiskot PC, pēc iespējas konsultēties ar **VID** par alternatīviem attēlojumiem (piem. PVN numurs, ja piemērojams); SDV kontekstā bieži sakrīt ar nodokļu maksātāja numuru — precīzi noskaidrot EDS.
+- **Stripe atbilstība:** Stripe ir stingras prasības, lai **vietnē norādītie rekvizīti un uzņēmēja identitāte** atbilstu **konta īpašniekam / verificētajiem datiem** — izmaiņas copy vai env laikā **nekādā gadījumā** nedrīkst maldināt par to, kas faktiski saņem maksājumu.
+
+## 6. Tehniskā saikne ar kodu
+
+- Rekvizīti: `lib/company.ts`, `NEXT_PUBLIC_COMPANY_LEGAL_NAME`, `NEXT_PUBLIC_COMPANY_REG_NO`, `NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS`, `.env.example`.
+- Attēlojums: `components/CompanyLegalDisclosure.tsx`, Footer, lietojuma noteikumi / privātums pēc vajadzības.
+- Ja maina juridisko formu (SDV → IK), atjaunināt **tikai env un tulkojumus**, neizdomājot nepatiesus rekvizītus.
+- Ja lietotājs prasa **PROVIN.LV + Reģ. nr.** rindiņas kājenē, implementēt diskrēti caur esošajiem laukiem / etiķetēm (bez maldinošiem datiem).
+
+## 7. PROVIN „lean” sākuma modelis (konteksts)
+
+- **Zems nodoklis:** MUN (piem. **25 %** no apliekamā peļņas apmēra — precīzi pēc aktuālajām likuma likmēm).
+- **Zemas izmaksas:** nav obligāta grāmatveža / SIA pamatkapitāla sākumposmā.
+- **Automatizācija:** banka (piem. Industra) + **Stripe**.
+- **Juridiskais pamats:** noteikumi, distances līgums, pilnvarojuma / apstrādes modelis.
+- **Produkts:** piem. **49,99 €** analīze — tirgus validācija; pēc izaugsmes **SIA** vai cita forma, kad mērogs un nodokļu optimizācija to attaisno.
+
+Ja lietotājs jautā par **Stripe integrāciju tehniski**, atbildēt kodu un Stripe Dashboard kontekstā; atbilstību kontam un kājeni — pēc šīs rules.
+
+## 8. Publiskais pakalpojuma sniedzējs
+
+- **Pakalpojuma sniedzējs** publiski norādāms kā **PROVIN.LV** (nevis „PROVIN” vai „PROVIN/PROVIN.LV” kā alternatīvas). **`NEXT_PUBLIC_COMPANY_PUBLIC_BRAND`** noklusējums kodā: `PROVIN.LV`; blakus obligātie **juridiskā sniedzēja** rekvizīti (`getCompanyLegal`).
+- `CompanyLegalDisclosure`: pirmā rinda — zīmols; tad juridiskais vārds, reģ. nr., adrese.
+
+## 9. Stripe Test Mode, Go-Live un mobilā kājene
+
+- **Pirms / laikā testa maksājumiem (Stripe Test Mode):** pārliecināties, ka **`getCompanyLegal()` / `CompanyLegalDisclosure` kājenē** patiešām rāda **tos pašus** rekvizītus, kas **Vercel Environment Variables**, ne tikai lokālajā `.env` (`.env` netiek uz GitHub — deploy to neredz).
+- **Bieža kļūda:** aizmirst `NEXT_PUBLIC_COMPANY_*` Production vidē — kājene **tukša** (`companyIncomplete`) — slikts signāls Stripe riskiem.
+- **Stripe URL / Go-Live:** iesniedzot vietnes URL, bieži notiek automātiska skenēšana; **Lietošanas noteikumos** jābūt skaidri saskatāmām sadaļām par **cenu, apmaksu un atmaksu** (5. punkts) un par **atteikuma tiesībām / digitālo saturu** (11. punkts).
+- Pēc **Redeploy:** **production URL** + **mobilais skats** — kājenes rekvizītu bloks **nošķirts** no kontaktu pogām un saitēm; `text-[10px]` — diskrēti, bet salasāmi regulatoram un automatizētajām pārbaudēm.
+- **Checkout:** pilnvarojuma teikumā **PROVIN** kā zīmols / pilnvarotais aģents; **pakalpojuma sniedzējs** juridiski — **PROVIN.LV** + rekvizīti kājenē.
+- **„Zaļās gaismas”:** dzīva lapa ar pilniem rekvizītiem; sakritība ar Stripe/SDV; checkout ar **pilnvarojuma / PTN** ķeksi.
+- **Pēc deploy:** formas tests līdz Checkout, reālā telefona pārbaude (ne tikai DevTools).

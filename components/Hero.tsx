@@ -21,7 +21,7 @@ export async function Hero() {
           className="pointer-events-none absolute inset-0 z-[1] provin-noise opacity-[0.38]"
           aria-hidden
         />
-        <div className="relative z-10 mx-auto max-w-[692px] px-4 pb-10 pt-10 text-center sm:px-6 sm:pb-12 sm:pt-12">
+        <div className="relative z-10 mx-auto min-w-0 max-w-[692px] px-4 pb-10 pt-10 text-center sm:px-6 sm:pb-12 sm:pt-12">
           <p className="text-[14px] font-normal tracking-wide text-provin-accent sm:text-[17px]">
             {t("approved")}
           </p>
@@ -60,7 +60,7 @@ export async function Hero() {
             </a>
           </div>
 
-          <div id="iekļauts" className="mx-auto mt-10 w-full max-w-[640px] scroll-mt-24">
+          <div id="iekļauts" className="mx-auto mt-10 w-full min-w-0 max-w-[640px] scroll-mt-24">
             <div className="rounded-2xl border border-black/[0.08] bg-white/90 px-5 py-6 shadow-[0_8px_40px_rgba(0,0,0,0.07)] backdrop-blur-[1px] sm:px-7 sm:py-8">
               <h2 className="text-center text-[12px] font-semibold uppercase tracking-[0.12em] text-provin-accent">
                 {t("includedTitle")}
@@ -68,11 +68,11 @@ export async function Hero() {
               <p className="mx-auto mt-5 max-w-[54ch] text-center text-[12px] font-normal leading-relaxed text-[#6e6e73] sm:text-[13px]">
                 {t("youGetFootnote")}
               </p>
-              <ul className="mt-6 grid grid-cols-1 gap-2.5 border-t border-black/[0.07] pt-6 text-left sm:grid-cols-2 sm:gap-3">
+              <ul className="mt-6 grid min-w-0 grid-cols-1 gap-2.5 border-t border-black/[0.07] pt-6 text-left sm:grid-cols-2 sm:gap-3">
                 {features.map((f) => (
                   <li
                     key={f.key}
-                    className="provin-lift flex items-center gap-3 rounded-xl border border-black/[0.06] bg-white px-4 py-3 shadow-[0_1px_10px_rgba(0,0,0,0.04)]"
+                    className="provin-lift flex min-w-0 items-center gap-3 rounded-xl border border-black/[0.06] bg-white px-4 py-3 shadow-[0_1px_10px_rgba(0,0,0,0.04)]"
                   >
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f5f6f8] text-provin-accent ring-1 ring-black/[0.04]">
                       <FeatureGlyph kind={f.key as "cv" | "dna" | "records" | "listing" | "manual" | "clock"} />
@@ -95,8 +95,8 @@ export async function Hero() {
       </div>
 
       <div className="relative border-t border-black/[0.06] bg-[#fafbfc]">
-        <div className="mx-auto max-w-[692px] px-4 pb-8 pt-10 text-center sm:px-6 sm:pb-10 sm:pt-10">
-          <div className="mx-auto max-w-[640px] text-left">
+        <div className="mx-auto min-w-0 max-w-[692px] px-4 pb-8 pt-10 text-center sm:px-6 sm:pb-10 sm:pt-10">
+          <div className="mx-auto min-w-0 max-w-[640px] text-left">
             <div className="provin-lift-strong rounded-2xl border border-black/[0.06] bg-[#fbfbfd] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:p-7">
               <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">
                 {t("confidenceTitle")}
