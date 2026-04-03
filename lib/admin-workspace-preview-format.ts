@@ -29,33 +29,208 @@ export function stripListingFluff(text: string): string {
     .join("\n");
 }
 
-/** Tirgus blokam: kopsavilkums → cena/nobraukums → vēsture → pārējais (pēc ss.com ekrānuzņēmuma loģikas). */
+const NBSP = /[\u00A0\u202F]/g;
+
+/** Datums · EUR · km viena rindā (ss.lv „Cenu vēsture”). Atgriež 3 šūnas ar tabu, lai segmentētājs veido tabulu. */
+export function tryTirgusHistoryGridLine(line: string): string | null {
+  const t = line.replace(NBSP, " ").trim();
+  const dm = t.match(/^(\d{1,2}[./]\d{1,2}[./]\d{2,4})\.?\s+/);
+  if (!dm) return null;
+  const rest = t.slice(dm[0].length).trim();
+  const m = rest.match(/^([\d\s]+)\s*(EUR|€)\s+([\d\s]+)\s*km\.?$/i);
+  if (!m) return null;
+  let dateCell = dm[1];
+  if (!dateCell.endsWith(".")) dateCell = `${dateCell}.`;
+  const eur = `${m[1].trim().replace(/\s+/g, " ")} EUR`;
+  const km = `${m[3].trim().replace(/\s+/g, " ")} km`;
+  return `${dateCell}\t${eur}\t${km}`;
+}
+
+function parseTirgusHistoryDate(line: string): number {
+  const tab = tryTirgusHistoryGridLine(line);
+  const first = tab ? tab.split("\t")[0] ?? "" : line;
+  const m = first.match(/(\d{1,2})[./](\d{1,2})[./](\d{2,4})/);
+  if (!m) return 0;
+  const d = parseInt(m[1], 10);
+  const mo = parseInt(m[2], 10);
+  let y = parseInt(m[3], 10);
+  if (y < 100) y += 2000;
+  return y * 400 + mo * 40 + d;
+}
+
+/**
+ * Saplūst salauztas ielīmes (piem. „13 700” + „EUR”, „Izveidots” + „22 dienas atpakaļ”).
+ */
+function mergeTirgusFragmentedLines(lines: string[]): string[] {
+  const out: string[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i] ?? "";
+    const n = lines[i + 1] ?? "";
+
+    if (/^izveidots$/i.test(l) && n && !/^pēdējo\b/i.test(n) && !/^\d{1,2}[./]/.test(n)) {
+      const parts: string[] = [];
+      let j = i + 1;
+      while (j < lines.length && parts.join(" ").length < 100) {
+        const x = lines[j] ?? "";
+        if (/^pēdējo\s+reizi\b/i.test(x) || /^cenas\s+izmaiņas\b/i.test(x) || tryTirgusHistoryGridLine(x)) break;
+        if (/^latvija$/i.test(x) || /^auto$/i.test(x) || /^pārdošanā$/i.test(x)) break;
+        parts.push(x);
+        j++;
+        if (parts.length >= 5) break;
+      }
+      if (parts.length) {
+        out.push(`Izveidots: ${parts.join(" ")}`);
+        i = j;
+        continue;
+      }
+    }
+
+    if (/^pēdējo\s+reizi\s+manīts$/i.test(l) && n && !/^\d{1,2}[./]/.test(n)) {
+      out.push(`Pēdējo reizi manīts: ${n}`);
+      i += 2;
+      continue;
+    }
+
+    if (/^cenas\s+izmaiņas$/i.test(l) && n && n.length <= 40 && !tryTirgusHistoryGridLine(n)) {
+      out.push(`Cenas izmaiņas: ${n}`);
+      i += 2;
+      continue;
+    }
+
+    if (/^[\d\s]+$/.test(l.replace(NBSP, " ")) && /^\s*EUR\s*$/i.test(n)) {
+      out.push(`${l.trim()} EUR`.replace(/\s+/g, " "));
+      i += 2;
+      continue;
+    }
+
+    if (/^[\d\s]+$/.test(l.replace(NBSP, " ")) && /EUR/i.test(n) && n.length <= 14) {
+      out.push(`${l.trim()} ${n.trim()}`.replace(/\s+/g, " "));
+      i += 2;
+      continue;
+    }
+
+    if (/^22$/i.test(l) && /dienas?\s+atpakaļ/i.test(n)) {
+      out.push(`${l} ${n}`);
+      i += 2;
+      continue;
+    }
+
+    out.push(l);
+    i++;
+  }
+  return out;
+}
+
+const CRUMB_ORDER = ["latvija", "auto", "pārdošanā"] as const;
+
+function crumbRank(line: string): number {
+  const t = line.trim().toLowerCase();
+  const idx = CRUMB_ORDER.indexOf(t as (typeof CRUMB_ORDER)[number]);
+  return idx >= 0 ? idx : 99;
+}
+
+function isCrumbLine(line: string): boolean {
+  const t = line.trim().toLowerCase();
+  return CRUMB_ORDER.includes(t as (typeof CRUMB_ORDER)[number]);
+}
+
+function isListingMetaLine(line: string): boolean {
+  return /ss\.(com|lv)\b|sslv|sludinājum/i.test(line) && !/autorizējies/i.test(line);
+}
+
+function isMetaKvLine(line: string): boolean {
+  return /^(izveidots|pēdējo\s+reizi\s+manīts)\s*:/i.test(line);
+}
+
+function isCenasIzmainasLine(line: string): boolean {
+  return /^cenas\s+izmaiņas\s*:/i.test(line) || /^cenas\s+izmaiņas$/i.test(line);
+}
+
+function isHeadlinePriceLine(line: string): boolean {
+  if (tryTirgusHistoryGridLine(line)) return false;
+  if (!/EUR|€/i.test(line)) return false;
+  if (/\d{1,2}[./]\d{1,2}[./]\d{2,4}/.test(line)) return false;
+  if (/\bkm\b/i.test(line)) return false;
+  if (/izveidots|manīts|cenas\s+izmaiņas/i.test(line)) return false;
+  return true;
+}
+
+/**
+ * Tirgus blokam — secība kā tipiskā ss.lv sludinājuma panelī:
+ * saite → kategorija (Latvija / Auto / pārdošanā) → galvenā cena → metadati → cenu izmaiņas → vēstures tabula → pārējais.
+ */
 export function reorderTirgusForPreview(raw: string): string {
   const stripped = stripListingFluff(raw);
-  const lines = stripped.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const meta: string[] = [];
-  const priceBlock: string[] = [];
-  const history: string[] = [];
+  let lines = stripped
+    .split(/\r?\n/)
+    .map((l) => l.replace(NBSP, " ").trim())
+    .filter(Boolean);
+  lines = mergeTirgusFragmentedLines(lines);
+
+  const listingMeta: string[] = [];
+  const crumbs: string[] = [];
+  const headlinePrices: string[] = [];
+  const metaKv: string[] = [];
+  const cenasBlock: string[] = [];
+  const historyRaw: string[] = [];
   const rest: string[] = [];
 
   for (const line of lines) {
-    if (/ss\.(com|lv)\b|sslv|sludinājum/i.test(line) && !/autorizējies/i.test(line)) {
-      meta.push(line);
-    } else if (
-      /\b(auto\s+)?pārdošanā\b|\blatvija\b/i.test(line) ||
-      (/EUR|€/i.test(line) && /(cena|nobrauk|km|izveidots|man[īi]ts|dienas)/i.test(line))
-    ) {
-      priceBlock.push(line);
-    } else if (/\d{1,2}[./]\d{1,2}[./]\d{2,4}/.test(line) && (/EUR|km/i.test(line) || /\d{1,3}(?:\s?\d{3})+\s*km/i.test(line))) {
-      history.push(line);
-    } else if (/cenu\s+izmaiņas|^cena$/i.test(line)) {
-      priceBlock.push(line);
-    } else {
-      rest.push(line);
+    const grid = tryTirgusHistoryGridLine(line);
+    if (grid) {
+      historyRaw.push(grid);
+      continue;
     }
+    if (isListingMetaLine(line)) {
+      listingMeta.push(line);
+      continue;
+    }
+    if (isCrumbLine(line)) {
+      crumbs.push(line);
+      continue;
+    }
+    if (isMetaKvLine(line)) {
+      metaKv.push(line);
+      continue;
+    }
+    if (isCenasIzmainasLine(line)) {
+      cenasBlock.push(line);
+      continue;
+    }
+    if (isHeadlinePriceLine(line)) {
+      headlinePrices.push(line);
+      continue;
+    }
+    if (/\d{1,2}[./]\d{1,2}[./]\d{2,4}/.test(line) && (/EUR|km/i.test(line) || /\d{1,3}(?:\s?\d{3})+\s*km/i.test(line))) {
+      historyRaw.push(tryTirgusHistoryGridLine(line) ?? line);
+      continue;
+    }
+    rest.push(line);
   }
 
-  const ordered = [...meta, ...priceBlock, ...history, ...rest];
+  crumbs.sort((a, b) => crumbRank(a) - crumbRank(b));
+
+  const headlineScore = (s: string) => {
+    const t = s.trim();
+    if (/^\d[\d\s]*\s*(EUR|€)\s*$/i.test(t)) return 0;
+    if (/EUR|€/i.test(t) && !/\bkm\b/i.test(t)) return t.split(/\s+/).length;
+    return 50;
+  };
+  headlinePrices.sort((a, b) => headlineScore(a) - headlineScore(b) || a.length - b.length);
+  const headline = headlinePrices.length > 0 ? [headlinePrices[0]!] : [];
+
+  historyRaw.sort((a, b) => parseTirgusHistoryDate(b) - parseTirgusHistoryDate(a));
+
+  const ordered = [
+    ...listingMeta,
+    ...crumbs,
+    ...headline,
+    ...metaKv,
+    ...cenasBlock,
+    ...historyRaw,
+    ...rest,
+  ];
   return ordered.join("\n");
 }
 

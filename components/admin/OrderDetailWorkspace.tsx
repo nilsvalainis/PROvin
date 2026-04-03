@@ -104,7 +104,13 @@ function formatBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function PreviewSegmentView({ seg }: { seg: PreviewSegment }) {
+function PreviewSegmentView({
+  seg,
+  showTirgusPriceHistoryHeader,
+}: {
+  seg: PreviewSegment;
+  showTirgusPriceHistoryHeader?: boolean;
+}) {
   if (seg.type === "subheading") {
     return (
       <h4 className="mt-3 border-b border-slate-100 pb-1 text-xs font-semibold tracking-wide text-[var(--color-provin-accent)] first:mt-0">
@@ -134,6 +140,15 @@ function PreviewSegmentView({ seg }: { seg: PreviewSegment }) {
     return (
       <div className="overflow-x-auto rounded-lg border border-slate-200/90">
         <table className="w-full min-w-[280px] border-collapse text-left text-xs">
+          {showTirgusPriceHistoryHeader && seg.rows[0]?.length === 3 ? (
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/95 text-[10px] font-bold uppercase tracking-wide text-[var(--color-provin-muted)]">
+                <th className="px-2.5 py-2 text-left font-semibold">Datums</th>
+                <th className="px-2.5 py-2 text-left font-semibold">Cena</th>
+                <th className="px-2.5 py-2 text-left font-semibold">Nobraukums</th>
+              </tr>
+            </thead>
+          ) : null}
           <tbody>
             {seg.rows.map((row, ri) => (
               <tr key={ri} className="border-b border-slate-100 last:border-0">
@@ -172,12 +187,22 @@ function PreviewWorkspaceBody({
     return <p className="mt-1 text-sm italic text-slate-500">Informācija nav pieejama</p>;
   }
   const segments = segmentTextForPreview(text, { variant });
+  const firstTirgusHistoryGridIdx =
+    variant === "tirgus"
+      ? segments.findIndex((s) => s.type === "grid" && s.rows[0]?.length === 3)
+      : -1;
   return (
     <div className="mt-2 space-y-3">
       {segments.length === 0 ? (
         <pre className="whitespace-pre-wrap text-sm text-[var(--color-provin-muted)]">{stripListingFluff(trimmed)}</pre>
       ) : (
-        segments.map((seg, idx) => <PreviewSegmentView key={idx} seg={seg} />)
+        segments.map((seg, idx) => (
+          <PreviewSegmentView
+            key={idx}
+            seg={seg}
+            showTirgusPriceHistoryHeader={idx === firstTirgusHistoryGridIdx}
+          />
+        ))
       )}
     </div>
   );
@@ -248,7 +273,7 @@ export function OrderDetailWorkspace({
         blocks: [
           { label: "CSDD", text: ws.csdd },
           { label: "LTAB", text: ws.ltab },
-          { label: "Tirgus dati", text: ws.tirgus },
+          { label: "Tirgus un sludinājuma piezīmes", text: ws.tirgus },
           { label: "Citi avoti", text: ws.citi },
         ],
         fileNames: portfolio.map((p) => p.name),
@@ -801,7 +826,7 @@ export function OrderDetailWorkspace({
             <PreviewWorkspaceBody text={ws.ltab} variant="default" />
           </li>
           <li>
-            <span className="font-medium">Tirgus dati</span>
+            <span className="font-medium">Tirgus un sludinājuma piezīmes</span>
             <PreviewWorkspaceBody text={ws.tirgus} variant="tirgus" />
           </li>
           <li>
@@ -846,7 +871,10 @@ export function OrderDetailWorkspace({
         <div className="mt-2 space-y-1.5 border-t border-slate-200/80 pt-2 text-sm leading-snug text-[var(--color-provin-muted)]">
           <ol className="list-decimal space-y-0.5 pl-4">
             <li>Pievieno vēstures atskaišu PDF un citus pielikumus.</li>
-            <li>Aizpildi piezīmes laukos: CSDD, LTAB, Tirgus dati, Citi avoti (tukšs → PDF: „Informācija nav pieejama”).</li>
+            <li>
+              Aizpildi piezīmes laukos: CSDD, LTAB, Tirgus un sludinājuma piezīmes, Citi avoti (tukšs → PDF: „Informācija
+              nav pieejama”).
+            </li>
             <li>Spied <strong className="text-[var(--color-apple-text)]">Priekšskats</strong>, pārskati apkopojumu.</li>
             <li>Pēc apstiprinājuma raksti <strong className="text-[var(--color-apple-text)]">IRISS komentāru</strong>.</li>
             <li>Tad aktivizējas <strong className="text-[var(--color-apple-text)]">PDF ģenerēšana</strong> klienta audita atskaitei.</li>
@@ -933,7 +961,7 @@ export function OrderDetailWorkspace({
             [
               { key: "csdd" as const, label: "CSDD" },
               { key: "ltab" as const, label: "LTAB" },
-              { key: "tirgus" as const, label: "Tirgus dati" },
+              { key: "tirgus" as const, label: "Tirgus un sludinājuma piezīmes" },
               { key: "citi" as const, label: "Citi avoti" },
             ] as const
           ).map(({ key, label }) => (
