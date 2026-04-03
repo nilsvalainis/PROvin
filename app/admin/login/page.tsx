@@ -27,8 +27,8 @@ export default async function AdminLoginPage() {
   const isDev = process.env.NODE_ENV === "development";
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-8 shadow-[0_8px_40px_rgba(15,23,42,0.08)]">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-[var(--color-provin-surface)] px-4 py-12">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200/70 bg-white p-8 shadow-[0_8px_40px_rgba(15,23,42,0.07),0_1px_0_rgba(15,23,42,0.04)]">
         <header className="mb-6 text-center">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
             PROVIN

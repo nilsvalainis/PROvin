@@ -5,7 +5,7 @@ export function PostPaymentLegalBanner() {
   return (
     <aside
       role="alert"
-      className="rounded-lg border border-red-200/90 bg-red-50/95 px-3 py-3 shadow-sm sm:px-4 sm:py-3.5"
+      className="rounded-2xl border border-red-200/90 bg-red-50/95 px-4 py-3.5 shadow-[0_2px_16px_rgba(127,29,29,0.06)] sm:px-5 sm:py-4"
     >
       <h2 className="text-sm font-semibold tracking-tight text-red-950">
         Obligāti pēc pirmā saņemtā maksājuma

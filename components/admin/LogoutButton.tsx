@@ -10,7 +10,7 @@ export function LogoutButton() {
     <button
       type="button"
       onClick={() => void logout()}
-      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-[var(--color-apple-text)] shadow-sm hover:bg-slate-50"
+      className="rounded-xl border border-slate-200/90 bg-white px-3 py-2.5 text-sm font-medium text-[var(--color-provin-muted)] transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-[var(--color-apple-text)] md:w-full md:text-center"
     >
       Iziet
     </button>

@@ -1,54 +1,32 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { LogoutButton } from "./LogoutButton";
+import Link from "next/link";
+import { AdminSidebarNav } from "./AdminSidebarNav";
 
 type Props = { children: ReactNode; baseUrl?: string; notice?: ReactNode };
 
 export function AdminShell({ children, baseUrl, notice }: Props) {
-  const adminRoot = baseUrl ? `${baseUrl}/admin` : "/admin";
-
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--color-provin-surface)] md:flex-row">
-      <aside className="shrink-0 border-b border-slate-200/80 bg-white md:w-52 md:border-b-0 md:border-r md:border-slate-200/80">
-        <div className="flex flex-wrap items-center justify-between gap-2 p-3 md:flex-col md:items-stretch md:p-4">
-          <div>
+      <aside className="shrink-0 border-b border-slate-200/70 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm md:w-56 md:border-b-0 md:border-r md:border-slate-200/70 md:shadow-none">
+        <div className="flex flex-wrap items-start justify-between gap-3 p-3 sm:p-4 md:flex-col md:items-stretch">
+          <div className="min-w-0">
             <Link
               href="/admin"
-              className="text-base font-semibold tracking-tight text-[var(--color-provin-accent)]"
+              className="text-[15px] font-semibold tracking-tight text-[var(--color-provin-accent)]"
             >
               PROVIN
             </Link>
-            <p className="text-[11px] leading-tight text-[var(--color-provin-muted)]">Administrēšana</p>
-          </div>
-          <nav className="flex flex-wrap items-center gap-1.5 md:flex-col md:items-stretch md:gap-2">
-            <Link
-              href="/admin"
-              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-[var(--color-apple-text)] hover:bg-[var(--color-provin-accent-soft)]"
-            >
-              Pasūtījumi
-            </Link>
-            <Link
-              href="/"
-              className="rounded-lg px-2.5 py-1.5 text-sm text-[var(--color-provin-muted)] hover:bg-slate-100 hover:text-[var(--color-apple-text)]"
-            >
-              Uz lapu
-            </Link>
-            <LogoutButton />
-          </nav>
-          {baseUrl ? (
-            <p className="hidden w-full break-all text-[10px] leading-snug text-[var(--color-provin-muted)] md:block">
-              <span className="font-medium text-[var(--color-apple-text)]">Panelis:</span>{" "}
-              <a href={adminRoot} className="text-[var(--color-provin-accent)] hover:underline">
-                {adminRoot}
-              </a>
+            <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
+              Administrēšana
             </p>
-          ) : null}
+          </div>
+          <AdminSidebarNav baseUrl={baseUrl} />
         </div>
       </aside>
-      <div className="min-w-0 flex-1 space-y-4 p-3 sm:p-4 md:p-5">
+      <main className="min-w-0 flex-1 space-y-5 p-3 sm:p-5 md:p-8 md:pl-6 lg:pl-10">
         {notice}
         {children}
-      </div>
+      </main>
     </div>
   );
 }
