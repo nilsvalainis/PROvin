@@ -44,7 +44,7 @@
     "termsMetaTitle": "Lietošanas noteikumi",
     "termsTitle": "PROVIN.LV lietošanas noteikumi",
     "termsUpdated": "Spēkā no: 2026. gada 3. aprīļa",
-    "termsLead": "Šie noteikumi nosaka tiesiskās attiecības starp jums (turpmāk — „Klients”) un pakalpojuma sniedzēju PROVIN.LV (turpmāk — „mēs”) par vietnes provin.lv izmantošanu un maksas konsultatīvā pakalpojuma pasūtīšanu. Lūdzu izlasiet tos kopā ar Privātuma politiku. Cenas, apmaksas un atmaksas pamatprincipi, kā arī atteikuma tiesību nepiemērošana digitālajam saturam, ir izklāstīti 5. un 11. punktā. Zemāk norādīti juridiskā sniedzēja rekvizīti.",
+    "termsLead": "Šie noteikumi nosaka tiesiskās attiecības starp jums (turpmāk — „Klients”) un pakalpojuma sniedzēju PROVIN.LV (turpmāk — „mēs”) par vietnes provin.lv izmantošanu un maksas konsultatīvā pakalpojuma pasūtīšanu. Lūdzu izlasiet tos kopā ar Privātuma politiku. Cenas, apmaksas un atmaksas pamatprincipi, kā arī atteikuma tiesību nepiemērošana digitālajam saturam, ir izklāstīti 5. un **11. punktā** (tur — treknrakstā izcelta sadaļa par atteikuma tiesībām un MK 255 22.13.). Zemāk norādīti juridiskā sniedzēja rekvizīti.",
     "termsSections": [
       {
         "title": "1. Noteikumu piemērošana un piekrišana",
@@ -88,7 +88,22 @@
       },
       {
         "title": "11. Cena, digitālais saturs un atteikuma tiesības (distances līgums)",
-        "body": "11.1. Distances līguma kontekstā patērētājam var būt tiesības atteikties no līguma noteiktā termiņā saskaņā ar Patērētāju tiesību aizsardzības likumu un citiem normatīvajiem aktiem, izņemot likumā un šajā punktā paredzētos gadījumus.\n\n11.2. Klients apliecina un piekrīt, ka Pakalpojums sastāv no digitālā satura piegādes, kas netiek piegādāts pastāvīgā datu nesējā. Uzsākot Pakalpojuma izpildi ar Klienta iepriekšēju skaidru piekrišanu un apliecinājumu par atteikuma tiesību zaudēšanu (atzīmējot attiecīgo piekrišanu pasūtījuma formā), Klients zaudē atteikuma tiesības saskaņā ar Ministru kabineta 2014. gada 20. maija noteikumu Nr. 255 „Noteikumi par distances līgumu” 22.13. apakšpunktu un Patērētāju tiesību aizsardzības likumu.\n\n11.3. Citas patērētāja tiesības (piemēram, prasīt atbilstību līgumam vai iesniegt sūdzību) paliek spēkā saskaņā ar piemērojamiem tiesību aktiem."
+        "withdrawalIntro": "**Atteikuma tiesības un atmaksa.** Šajā punktā skaidri noteikts, kā attiecas **atteikuma tiesības** (tiesības atteikties no distances līguma; angliski bieži meklē kā **withdrawal** vai **right of withdrawal**) un **atmaksa** (**refund**), jo īpaši attiecībā uz digitālo saturu un izņēmumu pēc MK 255 22.13.",
+        "searchKeywordsLine": "Lai politikas pārbaudītāji un klienti ātri atrastu šo vietu (piemēram, meklējot lapā vārdus angļu valodā): **refund**, **withdrawal**, **right of withdrawal**.",
+        "subsections": [
+          {
+            "heading": "11.1. Vispārīgi par atteikuma tiesībām",
+            "body": "Distances līguma kontekstā patērētājam var būt tiesības atteikties no līguma noteiktā termiņā saskaņā ar Patērētāju tiesību aizsardzības likumu un citiem normatīvajiem aktiem, izņemot likumā un šajā punktā paredzētos gadījumus."
+          },
+          {
+            "heading": "11.2. Digitālais saturs un MK 2014. gada 20. maija noteikumu Nr. 255 22.13. apakšpunkts",
+            "body": "Klients apliecina un piekrīt, ka Pakalpojums sastāv no digitālā satura piegādes, kas netiek piegādāts pastāvīgā datu nesējā. Uzsākot Pakalpojuma izpildi ar Klienta iepriekšēju skaidru piekrišanu un apliecinājumu par atteikuma tiesību zaudēšanu (atzīmējot attiecīgo piekrišanu pasūtījuma formā), Klients zaudē atteikuma tiesības saskaņā ar Ministru kabineta 2014. gada 20. maija noteikumu Nr. 255 „Noteikumi par distances līgumu” 22.13. apakšpunktu un Patērētāju tiesību aizsardzības likumu."
+          },
+          {
+            "heading": "11.3. Citas patērētāja tiesības",
+            "body": "Citas patērētāja tiesības (piemēram, prasīt atbilstību līgumam vai iesniegt sūdzību) paliek spēkā saskaņā ar piemērojamiem tiesību aktiem."
+          }
+        ]
       },
       {
         "title": "12. Strīdu risināšana",

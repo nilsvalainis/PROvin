@@ -1,6 +1,7 @@
 import "server-only";
 
 import type Stripe from "stripe";
+import { getCompanyLegal } from "@/lib/company";
 import { getDemoOrderDetail, getDemoOrderRows } from "@/lib/demo-orders";
 import { getStripe } from "@/lib/stripe";
 import { getOrderFieldsFromSession } from "@/lib/stripe-session";
@@ -35,11 +36,15 @@ export type AdminOrderDetail = AdminOrderRow & {
   attachments?: { label: string; fileName: string }[];
 };
 
+/** Neļauj admin panelim gaidīt Stripe atbildi bezgalīgi (noklusējuma SDK ~80s ir par garu). */
+const STRIPE_CHECKOUT_LIST_TIMEOUT_MS = 12_000;
+
 export async function listPaidCheckoutSessions(limit = 50): Promise<AdminOrderRow[]> {
   const stripe = getStripe();
-  const res = await stripe.checkout.sessions.list({
-    limit,
-  });
+  const res = await stripe.checkout.sessions.list(
+    { limit },
+    { timeout: STRIPE_CHECKOUT_LIST_TIMEOUT_MS },
+  );
   const rows: AdminOrderRow[] = [];
   for (const s of res.data) {
     if (s.payment_status !== "paid") continue;
@@ -55,6 +60,20 @@ export async function listPaidCheckoutSessions(limit = 50): Promise<AdminOrderRo
     });
   }
   return rows.sort((a, b) => b.created - a.created);
+}
+
+/**
+ * Ja ir vismaz viens reāls apmaksāts Stripe Checkout sesijas ieraksts, bet .env nav pilnu
+ * uzņēmuma rekvizītu — admin panelī jāparāda obligāts brīdinājums (pirms mārketinga / Live).
+ */
+export async function needsUrgentCompanyLegalOnAdmin(): Promise<boolean> {
+  if (getCompanyLegal().isComplete) return false;
+  try {
+    const rows = await listPaidCheckoutSessions(1);
+    return rows.length > 0;
+  } catch {
+    return false;
+  }
 }
 
 export async function listAdminOrders(limit = 50): Promise<{

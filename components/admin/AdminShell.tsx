@@ -2,9 +2,9 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { LogoutButton } from "./LogoutButton";
 
-type Props = { children: ReactNode; baseUrl?: string };
+type Props = { children: ReactNode; baseUrl?: string; notice?: ReactNode };
 
-export function AdminShell({ children, baseUrl }: Props) {
+export function AdminShell({ children, baseUrl, notice }: Props) {
   const adminRoot = baseUrl ? `${baseUrl}/admin` : "/admin";
 
   return (
@@ -45,7 +45,10 @@ export function AdminShell({ children, baseUrl }: Props) {
           ) : null}
         </div>
       </aside>
-      <div className="min-w-0 flex-1 p-4 sm:p-6 md:p-8">{children}</div>
+      <div className="min-w-0 flex-1 space-y-6 p-4 sm:p-6 md:p-8">
+        {notice}
+        {children}
+      </div>
     </div>
   );
 }
