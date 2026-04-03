@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePortfolioFileRow";
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
 import {
   idbGetPortfolio,
@@ -874,7 +875,10 @@ export function OrderDetailWorkspace({
         </div>
         <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
           Starptautisko un vietējo vēstures formātu PDF. Glabāšana:{" "}
-          <strong className="font-medium text-[var(--color-apple-text)]">IndexedDB</strong>.
+          <strong className="font-medium text-[var(--color-apple-text)]">IndexedDB</strong>. Katram failam —{" "}
+          <strong className="font-medium text-[var(--color-apple-text)]">Saglabāt</strong> (ieraksta portfeli) un{" "}
+          <strong className="font-medium text-[var(--color-apple-text)]">Labot</strong> (skats / pilnas darbības), kā pielikumu
+          rindām.
         </p>
         <div className="mt-2.5">
           <input
@@ -897,33 +901,17 @@ export function OrderDetailWorkspace({
         </div>
         {fileError ? <p className="mt-2 text-sm text-amber-800">{fileError}</p> : null}
         {portfolio.length > 0 ? (
-          <ul className="mt-2.5 space-y-1.5">
-            {portfolio.map((p) => (
-              <li
+          <ul className="mt-2.5 space-y-2">
+            {portfolio.map((p, i) => (
+              <AdminSavablePortfolioFileRow
                 key={p.id}
-                className="flex flex-wrap items-center justify-between gap-1.5 rounded-lg border border-slate-100 bg-slate-50/80 px-2.5 py-1.5 text-sm"
-              >
-                <span className="break-all text-[var(--color-apple-text)]">{p.name}</span>
-                <span className="text-xs text-[var(--color-provin-muted)]">
-                  {formatBytes(p.size)} · {new Date(p.addedAt).toLocaleString("lv-LV")}
-                </span>
-                <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto sm:justify-end">
-                  <a
-                    href={p.blobUrl}
-                    download={p.name}
-                    className="text-xs font-medium text-[var(--color-provin-accent)] hover:underline"
-                  >
-                    Lejupielādēt
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => removePortfolio(p.id)}
-                    className="text-xs font-medium text-red-700 hover:underline"
-                  >
-                    Noņemt
-                  </button>
-                </div>
-              </li>
+                index={i}
+                file={p}
+                formatBytes={formatBytes}
+                onPersistAll={() => persistPortfolio(portfolio)}
+                onRemove={() => removePortfolio(p.id)}
+                resetVersion={workspaceFieldResetKey}
+              />
             ))}
           </ul>
         ) : (
