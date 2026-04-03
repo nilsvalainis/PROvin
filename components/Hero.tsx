@@ -10,7 +10,6 @@ export async function Hero() {
   const locale = await getLocale();
   const messages = await getMessages();
   const features = (messages as { Hero: { features: Feature[] } }).Hero.features;
-  const youGetBullets = (messages as { Hero: { youGetBullets: string[] } }).Hero.youGetBullets;
 
   return (
     <section className="border-b border-black/[0.06]">
@@ -36,40 +35,61 @@ export async function Hero() {
             {t("tagline")}
           </p>
 
-          <div className="mt-7 flex flex-col items-center gap-4 sm:mt-8">
+          <div className="mt-7 flex flex-col items-center gap-3 sm:mt-8">
             <Link
               href={orderSectionHref(locale)}
               className="provin-btn inline-flex min-h-[44px] w-full max-w-[320px] items-center justify-center rounded-full px-8 text-[17px] font-normal shadow-[0_4px_16px_rgba(0,102,214,0.32)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:w-auto"
             >
               {t("cta")}
             </Link>
+            <a
+              href="#iekļauts"
+              aria-label={t("includedTitle")}
+              className="inline-flex text-provin-accent transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </a>
           </div>
 
-          <div id="sanemsi" className="mx-auto mt-10 max-w-[640px] scroll-mt-24 text-left">
-            <p className="text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">
-              {t("youGetTitle")}
-            </p>
-            <ul className="mt-3 space-y-2.5">
-              {youGetBullets.map((line) => (
-                <li
-                  key={line}
-                  className="provin-lift-subtle flex gap-3 rounded-xl border border-black/[0.06] bg-white/80 px-3 py-2.5 text-[15px] font-normal leading-snug text-[#424245] shadow-[0_1px_8px_rgba(0,0,0,0.04)] sm:p-3 sm:text-[16px]"
-                >
-                  <span
-                    className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-provin-accent/10 text-provin-accent"
-                    aria-hidden
+          <div id="iekļauts" className="mx-auto mt-10 w-full max-w-[640px] scroll-mt-24">
+            <div className="rounded-2xl border border-black/[0.08] bg-white/90 px-5 py-6 shadow-[0_8px_40px_rgba(0,0,0,0.07)] backdrop-blur-[1px] sm:px-7 sm:py-8">
+              <h2 className="text-center text-[12px] font-semibold uppercase tracking-[0.12em] text-provin-accent">
+                {t("includedTitle")}
+              </h2>
+              <p className="mx-auto mt-5 max-w-[54ch] text-center text-[12px] font-normal leading-relaxed text-[#6e6e73] sm:text-[13px]">
+                {t("youGetFootnote")}
+              </p>
+              <ul className="mt-6 grid grid-cols-1 gap-2.5 border-t border-black/[0.07] pt-6 text-left sm:grid-cols-2 sm:gap-3">
+                {features.map((f) => (
+                  <li
+                    key={f.key}
+                    className="provin-lift flex items-center gap-3 rounded-xl border border-black/[0.06] bg-white px-4 py-3 shadow-[0_1px_10px_rgba(0,0,0,0.04)]"
                   >
-                    <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </span>
-                  <span>{line}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-4 max-w-[65ch] text-[10px] font-normal leading-snug text-[#86868b] sm:text-[11px]">
-              {t("youGetFootnote")}
-            </p>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f5f6f8] text-provin-accent ring-1 ring-black/[0.04]">
+                      <FeatureGlyph kind={f.key as "cv" | "dna" | "records" | "listing" | "manual" | "clock"} />
+                    </span>
+                    <span className="text-left text-[15px] font-medium leading-snug text-[#1d1d1f] sm:text-[16px]">
+                      {f.label}
+                      {f.star ? (
+                        <span className="ml-0.5 align-super text-[11px] font-normal text-[#86868b]">*</span>
+                      ) : null}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-center text-[10px] font-normal leading-snug text-[#86868b] sm:text-[11px]">
+                {t("autoRecordsFootnote")}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -77,33 +97,6 @@ export async function Hero() {
       <div className="relative border-t border-black/[0.06] bg-[#fafbfc]">
         <div className="mx-auto max-w-[692px] px-4 pb-8 pt-10 text-center sm:px-6 sm:pb-10 sm:pt-10">
           <div className="mx-auto max-w-[640px] text-left">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">
-              {t("includedTitle")}
-            </p>
-            <ul className="mt-4 grid grid-cols-1 gap-3 text-left sm:grid-cols-2">
-              {features.map((f) => (
-                <li
-                  key={f.key}
-                  className="provin-lift flex items-center gap-3 rounded-xl border border-black/[0.06] bg-[#fbfbfd] px-4 py-3.5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-provin-accent shadow-sm ring-1 ring-black/[0.04]">
-                    <FeatureGlyph kind={f.key as "cv" | "dna" | "records" | "listing" | "manual" | "clock"} />
-                  </span>
-                  <span className="text-left text-[15px] font-medium leading-snug text-[#1d1d1f] sm:text-[16px]">
-                    {f.label}
-                    {f.star ? (
-                      <span className="ml-0.5 align-super text-[11px] font-normal text-[#86868b]">*</span>
-                    ) : null}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 text-left text-[10px] font-normal leading-snug text-[#86868b] sm:text-[11px]">
-              {t("autoRecordsFootnote")}
-            </p>
-          </div>
-
-          <div className="mx-auto mt-10 max-w-[640px] text-left">
             <div className="provin-lift-strong rounded-2xl border border-black/[0.06] bg-[#fbfbfd] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:p-7">
               <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">
                 {t("confidenceTitle")}

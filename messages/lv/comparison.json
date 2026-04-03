@@ -1,0 +1,44 @@
+{
+  "Comparison": {
+    "sectionEyebrow": "Salīdzinājums",
+    "title": "Kas ir iekļauts?",
+    "colFeature": "Iezīme",
+    "colStandard": "Parasta atskaite",
+    "colProvin": "PROVIN ATSKAITE",
+    "caption": "Salīdzinājums starp parasto un PROVIN atskaiti",
+    "ariaYes": "Iekļauts",
+    "ariaNo": "Nav iekļauts",
+    "rows": [
+      {
+        "label": "Vēstures avoti",
+        "standardText": "1 avots",
+        "provinText": "3+ avoti"
+      },
+      {
+        "label": "Apvienots datu pārskats",
+        "standardYes": false,
+        "provinYes": true
+      },
+      {
+        "label": "Sludinājuma & pārdevēja audits",
+        "standardYes": false,
+        "provinYes": true
+      },
+      {
+        "label": "Kritisko risku analīze",
+        "standardYes": false,
+        "provinYes": true
+      },
+      {
+        "label": "Eksperta slēdziens",
+        "standardYes": false,
+        "provinYes": true
+      },
+      {
+        "label": "Izpildes laiks",
+        "standardText": "Tūlīt",
+        "provinText": "24 stundu laikā"
+      }
+    ]
+  }
+}

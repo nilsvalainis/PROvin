@@ -1,5 +1,6 @@
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { ReportComparison } from "@/components/ReportComparison";
 import { irissAnchorHref } from "@/lib/paths";
 
 type GridItem = {
@@ -15,8 +16,6 @@ export async function PricingIncluded() {
   const irissHref = irissAnchorHref(locale);
   const messages = await getMessages();
   const grid = (messages as { Pricing: { grid: GridItem[] } }).Pricing.grid;
-  const mainBullets = (messages as { Pricing: { mainBullets: string[] } }).Pricing.mainBullets;
-  const stats = (messages as { Pricing: { stats: { value: string; label: string }[] } }).Pricing.stats;
 
   return (
     <section
@@ -29,54 +28,10 @@ export async function PricingIncluded() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[12px]">
             {t("eyebrow")}
           </p>
-          <h2 className="mt-1.5 text-[24px] font-semibold leading-[1.12] tracking-tight text-[#1d1d1f] sm:mt-2 sm:text-[30px] sm:leading-[1.1]">
-            {t("title")}
-          </h2>
-          <p className="mx-auto mt-1.5 max-w-[65ch] text-[15px] font-normal leading-snug text-[#86868b] sm:mt-2 sm:text-[17px] sm:leading-relaxed">
-            {t("subtitle")}
-          </p>
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-2.5 sm:mt-7 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
-          <div
-            className={`provin-lift-strong overflow-hidden rounded-xl border border-black/[0.06] bg-[#fbfbfd] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:col-span-2 sm:p-5 lg:col-span-2`}
-          >
-            <div className="text-left">
-              <p className="inline-flex items-center rounded-full bg-provin-accent/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:px-3 sm:text-[11px]">
-                {t("fullService")}
-              </p>
-              <h3 className="mt-2.5 max-w-none text-[19px] font-semibold leading-[1.2] tracking-tight text-[#1d1d1f] sm:mt-3 sm:text-[22px] sm:leading-[1.15]">
-                {t("mainTitle")}
-              </h3>
-              <ul className="mt-3 space-y-2 text-[14px] leading-snug text-[#6e6e73] sm:mt-4 sm:text-[15px] sm:leading-relaxed">
-                {mainBullets.map((line) => (
-                  <li key={line} className="flex gap-2.5">
-                    <span
-                      className="mt-[0.35rem] flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-provin-accent/10 text-provin-accent sm:h-5 sm:w-5"
-                      aria-hidden
-                    >
-                      <svg className="h-2 w-2 sm:h-2.5 sm:w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
-                    <span>{line}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-x-2 gap-y-2 border-t border-black/[0.06] pt-4 sm:mt-5 sm:grid-cols-4 sm:gap-x-3 sm:pt-4">
-              {stats.map((row) => (
-                <div key={row.label} className="provin-lift-subtle rounded-lg border border-transparent px-0.5 py-0.5">
-                  <p className="text-[17px] font-semibold tabular-nums tracking-tight text-[#1d1d1f] sm:text-[20px]">
-                    {row.value}
-                  </p>
-                  <p className="mt-0.5 text-[10px] font-normal leading-tight text-[#86868b] sm:text-[11px]">
-                    {row.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ReportComparison embedded />
 
           {grid.map((item) => {
             const inner = (

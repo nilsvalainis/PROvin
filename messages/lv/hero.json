@@ -5,18 +5,11 @@
     "title2": "ANALĪZE",
     "tagline": "Kamēr citi pēta atskaites, Jūs saņemat atbildes.",
     "cta": "Pasūtījot analīzi par 49,99 €",
-    "youGetTitle": "SAŅEMSI",
     "youGetFootnote": "Automātiska atskaite rāda datus — PROVIN pievieno salīdzinājumu, sludinājuma izvērtējumu un eksperta interpretāciju.",
     "includedTitle": "Viss jau iekļauts cenā",
     "confidenceTitle": "Pārliecība pirms pirkuma",
     "confidenceBody": "Jūsu izvēlētā auto dati, specifiskie modeļa riski un cenas pamatotība tiek manuāli analizēta, lai Jūsu redzeslokā nepaliktu nekas nepamanīts. Saņemiet pamatotu un objektīvu slēdzienu, kas sniedz pilnīgu skaidrību droša lēmuma pieņemšanai.",
     "autoRecordsFootnote": "* Var tikt izmantots tikai noteiktiem ražotājiem",
-    "youGetBullets": [
-      "Vienots pārskats no vairākiem maksas datu avotiem.",
-      "SS.LV un Mobile.de sludinājuma un pārdevēja izvērtējums",
-      "Kritisko risku analīze un modeļa apskats",
-      "Gatava 24 stundu laikā"
-    ],
     "features": [
       { "key": "cv", "label": "CarVertical" },
       { "key": "dna", "label": "AutoDNA" },

@@ -1,21 +1,6 @@
 {
   "Pricing": {
     "eyebrow": "Cena un saturs",
-    "title": "Kas iekļauts cenā?",
-    "subtitle": "Pilna auto vēstures analīze par vienu fiksētu cenu",
-    "fullService": "Pilns analīzes pakalpojums",
-    "mainTitle": "Viss, kas nepieciešams droša auto pirkuma lēmumam",
-    "mainBullets": [
-      "Pilna analīze no vairākām maksas datubāzēm.",
-      "Profesionāla sludinājuma analīze.",
-      "Personīgs eksperta slēdziens par vienu fiksētu cenu."
-    ],
-    "stats": [
-      { "value": "2+", "label": "Maksas atskaites" },
-      { "value": "24h", "label": "Atbildes laiks" },
-      { "value": "100%", "label": "Manuāla analīze" },
-      { "value": "10+", "label": "Gadu pieredze" }
-    ],
     "grid": [
       {
         "title": "AutoDNA & CarVertical",

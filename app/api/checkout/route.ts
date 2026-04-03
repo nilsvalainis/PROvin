@@ -40,9 +40,8 @@ type CheckoutBody = {
 const stripeLocales = new Set(["auto", "bg", "cs", "da", "de", "el", "en", "es", "et", "fi", "fil", "fr", "hr", "hu", "id", "it", "ja", "ko", "lt", "lv", "ms", "mt", "nb", "nl", "pl", "pt", "ro", "ru", "sk", "sl", "sv", "th", "tr", "vi", "zh", "zh-HK"]);
 
 function stripeLocale(locale: string): string {
-  if (locale === "az") return "en";
   if (stripeLocales.has(locale)) return locale;
-  return "en";
+  return "lv";
 }
 
 export async function POST(req: Request) {

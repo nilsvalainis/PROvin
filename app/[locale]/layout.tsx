@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: t("ogTitle"),
       description: t("ogDescription"),
-      locale: locale === "lv" ? "lv_LV" : locale === "ru" ? "ru_RU" : locale === "az" ? "az_AZ" : "en_US",
+      locale: "lv_LV",
       type: "website",
     },
     robots: { index: true, follow: true },
