@@ -1,0 +1,29 @@
+{
+  "Hero": {
+    "approved": "APPROVED BY IRISS",
+    "title1": "VIN KODA UN SLUDINĀJUMA ",
+    "title2": "ANALĪZE",
+    "tagline": "Kamēr citi pēta atskaites, Jūs saņemat atbildes.",
+    "cta": "Pasūtīt analīzi par 49,99 €",
+    "youGetTitle": "Ko saņemsi",
+    "youGetFootnote": "Automātiska atskaite rāda datus — PROVIN pievieno salīdzinājumu, sludinājuma izvērtējumu un eksperta interpretāciju.",
+    "includedTitle": "Viss jau iekļauts cenā",
+    "confidenceTitle": "Pārliecība pirms pirkuma",
+    "confidenceBody": "Jūsu izvēlētā auto dati, specifiskie modeļa riski un cenas pamatotība tiek manuāli analizēta, lai Jūsu redzeslokā nepaliktu nekas nepamanīts. Saņemiet pamatotu un objektīvu slēdzienu, kas sniedz pilnīgu skaidrību droša lēmuma pieņemšanai.",
+    "autoRecordsFootnote": "* Var tikt izmantots tikai noteiktiem ražotājiem",
+    "youGetBullets": [
+      "Konsolidēts skatījums no vairākām maksas datubāzēm",
+      "Sludinājuma un pārdevēja izvērtējums",
+      "Eksperta kopsavilkums un riski konkrētam modelim",
+      "Atskaite līdz 24 stundām"
+    ],
+    "features": [
+      { "key": "cv", "label": "CarVertical" },
+      { "key": "dna", "label": "AutoDNA" },
+      { "key": "records", "label": "Auto Records", "star": true },
+      { "key": "listing", "label": "Sludinājuma analīze" },
+      { "key": "manual", "label": "Manuāla analīze" },
+      { "key": "clock", "label": "24h atbilde" }
+    ]
+  }
+}

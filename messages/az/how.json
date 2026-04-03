@@ -1,0 +1,27 @@
+{
+  "HowItWorks": {
+    "eyebrow": "Proses",
+    "title": "Necə işləyir",
+    "subtitle": "Tam avtomobil tarixçəsi yoxlamasına 3 sadə addım",
+    "steps": [
+      {
+        "n": "1",
+        "title": "VIN və elan keçidini daxil edin",
+        "body": "Avtomobilin VIN-i və elan keçidi ilə sadə formanı doldurun. 2 dəqiqədən az çəkir."
+      },
+      {
+        "n": "2",
+        "title": "Təhlili ödəyin",
+        "body": "Stripe ilə təhlükəsiz ödəniş. Kartlar, Apple Pay, Google Pay dəstəklənir."
+      },
+      {
+        "n": "3",
+        "title": "Ətraflı hesabat alın",
+        "body": "Uğurlu ödənişdən sonra 24 saat ərzində ekspert qətnaməsi və konkret tövsiyələrlə tam təhlil hesabatı alırsınız."
+      }
+    ],
+    "ctaEyebrow": "Təhlil sifariş et",
+    "ctaHeadline": "24 saat ərzində tam avtomobil təhlili",
+    "ctaButton": "Sifarişə davam et"
+  }
+}

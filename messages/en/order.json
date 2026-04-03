@@ -1,0 +1,43 @@
+{
+  "Order": {
+    "sectionTitle": "Order analysis",
+    "cancelled": "Payment was cancelled. You can fill in the form again.",
+    "footnote": "The full car analysis is prepared and sent to your email within 24 hours.",
+    "nameLabel": "First and last name",
+    "optional": "(optional)",
+    "emailLabel": "Email",
+    "phoneLabel": "Phone",
+    "vinLabel": "VIN",
+    "listingLabel": "Listing URL",
+    "notesLabel": "Notes",
+    "emailHint": "We’ll send the report to this address.",
+    "phoneHint": "Backup contact, e.g. if the email was mistyped.",
+    "vinHint": "Without I, O, Q.",
+    "vinPlaceholder": "17 characters",
+    "notesPlaceholder": "Briefly, if anything important…",
+    "namePlaceholder": "John Smith",
+    "emailPlaceholder": "you@example.com",
+    "phonePlaceholder": "+1 …",
+    "urlPlaceholder": "https://…",
+    "summaryLabel": "Total",
+    "summaryNote": "One-off payment for full VIN and listing analysis.",
+    "payButton": "Continue to payment",
+    "payLoading": "Preparing…",
+    "stripeNote": "Secure payment via Stripe; cards and Apple/Google Pay on supported devices.",
+    "ariaSummary": "Order summary",
+    "errors": {
+      "checkoutFailed": "Could not prepare payment.",
+      "noUrl": "No payment URL received.",
+      "network": "Network error. Please try again.",
+      "stripeConfig": "Stripe is not configured (STRIPE_SECRET_KEY).",
+      "badRequest": "Invalid request.",
+      "sessionFailed": "Could not create checkout session."
+    },
+    "validation": {
+      "vin": "Enter a valid VIN (11–17 characters, without I, O, Q).",
+      "listing": "Enter a valid listing URL (http or https).",
+      "email": "Enter a valid email address.",
+      "phone": "Enter a phone number (for contact after payment)."
+    }
+  }
+}

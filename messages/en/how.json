@@ -1,0 +1,27 @@
+{
+  "HowItWorks": {
+    "eyebrow": "Process",
+    "title": "How it works",
+    "subtitle": "Three simple steps to a full vehicle history check",
+    "steps": [
+      {
+        "n": "1",
+        "title": "Enter the VIN and listing URL",
+        "body": "Fill in a simple form with the car’s VIN and a link to the listing. It takes less than 2 minutes."
+      },
+      {
+        "n": "2",
+        "title": "Pay for the analysis",
+        "body": "Secure payment with Stripe. We support major methods — cards, Apple Pay, Google Pay."
+      },
+      {
+        "n": "3",
+        "title": "Receive a detailed report",
+        "body": "Within 24 hours of successful payment you’ll get a full analysis report with an expert verdict and concrete recommendations."
+      }
+    ],
+    "ctaEyebrow": "Order analysis",
+    "ctaHeadline": "Get full car analysis within 24 hours",
+    "ctaButton": "Continue to order"
+  }
+}

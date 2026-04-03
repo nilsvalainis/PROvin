@@ -1,0 +1,48 @@
+{
+  "Why": {
+    "eyebrow": "Salīdzinājums",
+    "title": "Kāpēc izvēlēties PROVIN?",
+    "subtitle": "Individuāla un visaptveroša pieeja, kas sniedz vairāk nekā standarta auto vēstures atskaite.",
+    "highlightQuote": "Datu izraksts nav lēmums.",
+    "highlightQuoteBody": "Automātiskās atskaites apkopo ierakstus; PROVIN salīdzina avotus, izvērtē sludinājumu un sniedz interpretāciju — ko tas nozīmē tieši šim auto un šim pirkumam.",
+    "block1Eyebrow": "Viena atskaite neparāda visu.",
+    "block1Title": "Kāpēc nepietiek ar vienu atskaiti?",
+    "block1Intro": "Auto vēsture ir kā puzle — neviena datubāze nav perfekta, un dati no dažādiem avotiem bieži atšķiras. Paļaujoties tikai uz vienu atskaiti, Jūs riskējat palaist garām kritiski svarīgu informāciju:",
+    "block1List": [
+      {
+        "t": "Datu nepilnība",
+        "d": "Kamēr viena atskaite uzrāda „tīru” vēsturi, cita var atklāt nopietnus remontus vai odometra manipulācijas."
+      },
+      {
+        "t": "Slēptie riski",
+        "d": "Tikai kritiska sludinājuma analīze — fotogrāfiju, apraksta un detaļu izvērtēšana — ļauj identificēt problēmas, kas datubāzēs var nebūt atspoguļotas."
+      },
+      {
+        "t": "Laika un naudas ietaupījums",
+        "d": "Ar PROVIN Jums vairs nav jātērē laiks un līdzekļi, pērkot atsevišķas atskaites dažādos servisos — mēs apkopojam visu informāciju Jūsu vietā."
+      }
+    ],
+    "block2Eyebrow": "Datu un pieredzes salikums",
+    "block2Title": "Kā mēs saliekam šo puzli?",
+    "block2Intro": "Mēs apvienojam digitālos datus ar savu personīgo pieredzi, lai Jūs iegūtu pilnīgu kopainu:",
+    "puzzleBullets": [
+      {
+        "t": "Neatkarīga datu salīdzināšana",
+        "d": "Analizējam informāciju no vairākiem neatkarīgiem avotiem — AutoDNA, CarVertical, Auto Records* un citām datubāzēm."
+      },
+      {
+        "t": "Specifisku risku analīze",
+        "d": "Izvērtējam konkrētā modeļa potenciāli vājās vietas — dzinēja mezglus, transmisiju, DPF filtrus —, lai Jūs zinātu, kam pievērst uzmanību apskates laikā."
+      },
+      {
+        "t": "Ekspertīze",
+        "d": "Unikāli instrumenti atrod informāciju, kas klasiskajās atskaitēs neparādās. DPF, agregātu uzticamība, cenas atbilstība."
+      },
+      {
+        "t": "Tiešā saziņa",
+        "d": "Nepieciešamības gadījumā mēs paši sazināmies ar pārdevēju, lai noskaidrotu papildu detaļas un pasargātu Jūs no nepatiesas informācijas vai slēptiem riskiem."
+      }
+    ],
+    "autoRecordsFootnote": "* Var tikt izmantots tikai noteiktiem ražotājiem"
+  }
+}

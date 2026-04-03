@@ -1,0 +1,29 @@
+{
+  "Iriss": {
+    "eyebrow": "PROVIN-in arxasında kim var?",
+    "title1": "IRISS",
+    "title2": "Perekupa Dienasgrāmata",
+    "bio1": "IRISS Latviyanın sosial şəbəkələrində avtomobil ticarəti üzrə ən tanınan səslərdən biridir. Avropadan istifadə olunmuş avtomobil satışı və idxalında 10 ildən çox təcrübə markaların zəif tərəfləri və real bazar vəziyyəti haqqında dərin bilik verir.",
+    "bio2": "Maraqlandığınız avtomobilə birbaşa baxış əldə edirsiniz — elan hiylələrini və satıcıların tez-tez demədiklərini görən insandan.",
+    "experienceLabel": "Təcrübə",
+    "years": "10+",
+    "yearsLabel": "il",
+    "pillarTitleFull": "IRISS şərhi",
+    "socialLabel": "IRISS sosial şəbəkələrdə",
+    "pillars": [
+      {
+        "title": "Bazar şəffaflığı",
+        "body": "10 ildən çox müddətdə işim istifadə olunmuş avtomobil ticarətinin arxa planı ilə bağlıdır — gizli riskləri və satıcı hiylələrini dəqiq tapmağa imkan verir."
+      },
+      {
+        "title": "Müstəqil qiymətləndirmə",
+        "body": "Digər dilerlərlə əməkdaşlıq etmirəm — tək məqsədim müştərini maliyyə baxımından əsassız qərarlardan qorumaqdır."
+      },
+      {
+        "title": "Dərin təhlil",
+        "body": "Standart tarixçə hesabatları yalnız quru faktlar verərkən mən onları modelin zəif tərəfləri və bazar dəyəri ilə birləşdirir, tam nəticə təqdim edirəm."
+      }
+    ],
+    "socialSoon": "Keçid tezliklə"
+  }
+}

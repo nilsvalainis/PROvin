@@ -1,0 +1,52 @@
+{
+  "Legal": {
+    "privacyMetaTitle": "Məxfilik siyasəti",
+    "privacyTitle": "Məxfilik siyasəti",
+    "privacyLead": "Bu sənəd PROVIN-in („biz”, „xidmət”) şəxsi məlumatları necə emal etdiyini, hansı çərəzlərdən istifadə olunduğunu və analitika ilə ilk mənbə (UTM) saxlanmasına razılıq vermək və ya rədd etmək üçün seçiminizi izah edir.",
+    "sections": [
+      {
+        "title": "1. Operator",
+        "body": "PROVIN xidmətinin sahibi şəxsi məlumatların emalına cavabdehdir. Əlaqə məlumatları saytın altbilgisindədir (e-poçt, WhatsApp). Tam rekvizitlər bu kanallar vasitəsilə sorğula bilər."
+      },
+      {
+        "title": "2. Hansı məlumatlar",
+        "body": "Sifariş üçün: ad, e-poçt, telefon, VIN, elan linki, mesaj mətni və ödəniş metadatası (Stripe öz qaydaları ilə). Sayt üçün: server səviyyəsində texniki jurnallar (məs. IP, sorğu vaxtı) təhlükəsizlik və dayanıqlıq üçün istifadə oluna bilər."
+      },
+      {
+        "title": "3. Məqsəd və hüquqi əsas",
+        "body": "Müqavilənin icrası və sifarişin emalı (GDPR 6(1)(b)). Qanuni maraqlar: təhlükəsizlik və nasazlıqların aradan qaldırılması (GDPR 6(1)(f)). Analitika və UTM saxlanması — yalnız çərəz bannerində könüllü razılıqdan sonra (GDPR 6(1)(a))."
+      },
+      {
+        "title": "4. Çərəzlər və vacib funksiyalar",
+        "body": "Vacib funksiyalar (dil, sessiya, təhlükəsizlik) xidmətin göstərilməsi üçün obyektiv şəkildə vacibdirsə, ayrıca razılıq olmadan çərəz və ya oxşar texnologiyalardan istifadə oluna bilər."
+      },
+      {
+        "title": "5. Analitika və mənbə (razılıqdan sonra)",
+        "body": "„Analitika”ya razısınızsa, ilk ziyarət haqqında məhdud məlumat saxlaya bilərik: səhifə yolu, mövcud olduqda HTTP referrer və linkdəki marketinq parametrləri (UTM). Məqsəd ziyarətçilərin haradan gəldiyini başa düşməkdir; məlumat satılmır."
+      },
+      {
+        "title": "6. Üçüncü tərəflər",
+        "body": "Ödənişlər: Stripe. Hostinq: seçdiyiniz provayder (məs. Vercel). Gələcəkdə üçüncü tərəf analitikası (məs. Google Analytics) yalnız ayrıca razılıq və bu siyasətin yenilənməsi ilə qoşula bilər."
+      },
+      {
+        "title": "7. Saxlama müddəti",
+        "body": "Sifariş məlumatları xidmət və hüquqi tələblər üçün lazım olduğu qədər saxlanılır. Analitika çərəzlərinin müddəti məhduddur (adətən 180 günə qədər)."
+      },
+      {
+        "title": "8. Hüquqlarınız",
+        "body": "GDPR çərçivəsində giriş, düzəliş, silinmə, məhdudlaşdırma, etiraz və ötürülmə (harada tətbiq olunursa) hüquqlarına maliksiniz. Şikayətetmə orqanına müraciət edə bilərsiniz."
+      },
+      {
+        "title": "9. Dəyişikliklər",
+        "body": "Siyasəti yeniləyə bilərik. Əhəmiyyətli dəyişikliklər saytda və ya lazım olduqda çərəz bannerində göstəriləcək."
+      }
+    ]
+  },
+  "Cookies": {
+    "bannerTitle": "Çərəzlər və məxfilik",
+    "bannerText": "Saytın işi üçün vacib çərəzlərdən istifadə edirik. Razısınızsa, ziyarətçilərin haradan gəldiyini başa düşmək üçün ilk səhifə və marketinq link parametrlərini (UTM) anonim saxlaya bilərik.",
+    "reject": "Yalnız vacib",
+    "acceptAnalytics": "Analitika və saxlamaya razıyam",
+    "privacyLink": "Məxfilik siyasəti"
+  }
+}

@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  --color-apple-text: #1d1d1f;
+  --color-apple-subtle: #86868b;
+  --color-apple-fill: #f5f5f7;
+  /* PROVIN — piesātinātāks akcenta zils */
+  --color-provin-accent: #0066d6;
+  --color-provin-accent-hover: #0052a3;
+  --color-provin-accent-soft: #e8f2fc;
+  --color-provin-accent-muted: #3d7fd0;
+  --color-provin-surface: #fafbfc;
+  --color-provin-surface-2: #f0f2f5;
+  --color-provin-ink: #1d1d1f;
+  /* Saskaņoti ar iepriekšējiem aliasiem */
+  --color-apple-blue: var(--color-provin-accent);
+  --color-apple-blue-hover: var(--color-provin-accent-hover);
+  --color-provin-muted: #86868b;
+  --color-provin-green: var(--color-provin-accent);
+  --color-provin-green-dark: var(--color-provin-accent-hover);
+  --color-canvas: #ffffff;
+  --color-canvas-warm: #f5f5f7;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-[var(--color-apple-text)] antialiased;
+  font-feature-settings: "kern" 1, "liga" 1;
+  /* Papildu horizontālā telpa pie “Dynamic Island” / malām */
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Pieskāriena ierīcēs — Apple / Android vadlīnijas (~44px) galvenajām darbībām */
+@media (pointer: coarse) {
+  .provin-btn:not(.provin-btn--compact) {
+    min-height: 44px;
+  }
+}
+
+/* Vienots „pacelšanās” efekts blokiem — tikai peles ierīcēm; mazāk kustības pie reduced-motion */
+.provin-lift {
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.28s ease,
+    border-color 0.22s ease,
+    background-color 0.22s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .provin-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 38px rgba(15, 23, 42, 0.1);
+    border-color: rgba(15, 23, 42, 0.12);
+  }
+
+  .provin-lift-strong:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 22px 52px rgba(15, 23, 42, 0.13);
+    border-color: rgba(0, 102, 214, 0.22);
+  }
+
+  .provin-lift-subtle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+  }
+
+  .provin-btn:hover {
+    background-color: var(--color-provin-accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 82, 163, 0.38);
+  }
+
+  .provin-btn-ghost:hover {
+    border-color: rgba(0, 102, 214, 0.45);
+    background-color: var(--color-provin-accent-soft);
+    transform: translateY(-1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .provin-lift,
+  .provin-lift-strong,
+  .provin-lift-subtle,
+  .provin-btn,
+  .provin-btn-ghost {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  }
+
+  .provin-lift:hover,
+  .provin-lift-strong:hover,
+  .provin-lift-subtle:hover,
+  .provin-btn:hover,
+  .provin-btn-ghost:hover {
+    transform: none;
+  }
+
+}
+
+.provin-btn {
+  background-color: var(--color-provin-accent);
+  color: white;
+  transition:
+    background-color 0.2s ease,
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.provin-btn-ghost {
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+/* Ļoti viegls „noise” slānis sekciju dziļumam */
+.provin-noise {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+}

@@ -1,0 +1,43 @@
+{
+  "Order": {
+    "sectionTitle": "Təhlil sifariş et",
+    "cancelled": "Ödəniş ləğv edildi. Formanı yenidən doldura bilərsiniz.",
+    "footnote": "Tam avtomobil təhlili 24 saat ərzində hazırlanır və emailinizə göndərilir.",
+    "nameLabel": "Ad və soyad",
+    "optional": "(istəyə bağlı)",
+    "emailLabel": "E-poçt",
+    "phoneLabel": "Telefon",
+    "vinLabel": "VIN",
+    "listingLabel": "Elan keçidi",
+    "notesLabel": "Qeydlər",
+    "emailHint": "Hesabatı bu ünvana göndərəcəyik.",
+    "phoneHint": "Ehtiyat əlaqə, məsələn email səhv yazılıbsa.",
+    "vinHint": "I, O, Q olmadan.",
+    "vinPlaceholder": "17 simvol",
+    "notesPlaceholder": "Qısa, vacibdirsə…",
+    "namePlaceholder": "Ad Soyad",
+    "emailPlaceholder": "siz@nümunə.az",
+    "phonePlaceholder": "+994 …",
+    "urlPlaceholder": "https://…",
+    "summaryLabel": "Cəmi",
+    "summaryNote": "Tam VIN və elan təhlili üçün birdəfəlik ödəniş.",
+    "payButton": "Ödənişə davam et",
+    "payLoading": "Hazırlanır…",
+    "stripeNote": "Stripe ilə təhlükəsiz ödəniş; kartlar və dəstəklənən cihazlarda Apple/Google Pay.",
+    "ariaSummary": "Sifariş xülasəsi",
+    "errors": {
+      "checkoutFailed": "Ödəniş hazırlana bilmədi.",
+      "noUrl": "Ödəniş keçidi alınmadı.",
+      "network": "Şəbəkə xətası. Yenidən cəhd edin.",
+      "stripeConfig": "Stripe konfiqurasiya edilməyib (STRIPE_SECRET_KEY).",
+      "badRequest": "Yanlış sorğu.",
+      "sessionFailed": "Ödəniş sessiyası yaradıla bilmədi."
+    },
+    "validation": {
+      "vin": "Düzgün VIN daxil edin (11–17 simvol, I, O, Q olmadan).",
+      "listing": "Düzgün elan keçidi daxil edin (http və ya https).",
+      "email": "Düzgün e-poçt ünvanı daxil edin.",
+      "phone": "Telefon nömrəsi daxil edin (ödənişdən sonra əlaqə üçün)."
+    }
+  }
+}

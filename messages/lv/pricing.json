@@ -1,0 +1,50 @@
+{
+  "Pricing": {
+    "eyebrow": "Cena un saturs",
+    "title": "Kas iekļauts cenā?",
+    "subtitle": "Pilna auto vēstures analīze par vienu fiksētu cenu",
+    "fullService": "Pilns analīzes pakalpojums",
+    "mainTitle": "Viss, kas nepieciešams droša auto pirkuma lēmumam",
+    "mainBullets": [
+      "Pilna analīze no vairākām maksas datubāzēm.",
+      "Profesionāla sludinājuma analīze.",
+      "Personīgs eksperta slēdziens par vienu fiksētu cenu."
+    ],
+    "stats": [
+      { "value": "2+", "label": "Maksas atskaites" },
+      { "value": "24h", "label": "Atbildes laiks" },
+      { "value": "100%", "label": "Manuāla analīze" },
+      { "value": "10+", "label": "Gadu pieredze" }
+    ],
+    "grid": [
+      {
+        "title": "AutoDNA & CarVertical",
+        "body": "Eiropas un ASV datubāzes — nobraukums, zādzības, apdrošināšanas gadījumi."
+      },
+      {
+        "title": "Auto Records",
+        "titleStar": true,
+        "body": "Servisa vēsture oficiālajos dīleros (BMW, Mercedes, VAG u.c.)."
+      },
+      {
+        "title": "CSDD & LV apdrošinātāji",
+        "body": "Latvijas tehniskās apskates un negadījumu vēstures analīze."
+      },
+      {
+        "title": "Sludinājuma analīze",
+        "body": "Pārdevēja, fotogrāfiju un apraksta izvērtēšana — „zemūdens akmeņi”."
+      },
+      {
+        "title": "Tehnisko risku analīze",
+        "body": "Modeļa vājās vietas un agregātu uzticamība."
+      },
+      {
+        "title": "Approved by IRISS",
+        "body": "Objektīvs kopsavilkums, kas balstīts datos un 10+ gadu pieredzē.",
+        "href": true
+      }
+    ],
+    "irissLink": "Kas ir IRISS?",
+    "autoRecordsFootnote": "* Var tikt izmantots tikai noteiktiem ražotājiem"
+  }
+}

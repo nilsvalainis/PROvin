@@ -1,0 +1,34 @@
+{
+  "Faq": {
+    "eyebrow": "Atbalsts",
+    "title": "Biežāk uzdotie jautājumi",
+    "subtitle": "Īsas atbildes pirms pasūtījuma — ja kaut kas nav skaidrs, raksti kājenē norādītajos kanālos.",
+    "items": [
+      {
+        "id": "diff",
+        "q": "Kā PROVIN atšķiras no CarVertical vai AutoDNA?",
+        "a": "Standarta servisi parasti dod vienu automātisku atskaiti no savas datubāzes. PROVIN apkopo vairākus maksas avotus, pievieno sludinājuma un pārdevēja izvērtējumu un sniedz kopsavilkumu ar komentāriem par konkrēto auto — ne tikai datu izrakstu."
+      },
+      {
+        "id": "time",
+        "q": "Cik ilgi jāgaida rezultātu?",
+        "a": "Mērķis ir piegādāt pilnu analīzi līdz 24 stundām pēc veiksmīgas apmaksas. Ja nepieciešams papildu laiks (piemēram, reti modeļi vai datu kavēšanās), mēs par to informēsim."
+      },
+      {
+        "id": "vin",
+        "q": "Kas ir VIN un kur to atrast?",
+        "a": "VIN ir 17 rakstzīmju identifikators. Parasti tas redzams uz priekšējā stikla, uz šasijas vai dokumentos. Pirms pasūtījuma salīdzini VIN ar sludinājumu un fotogrāfijām."
+      },
+      {
+        "id": "completeness",
+        "q": "Vai dati vienmēr ir pilnīgi?",
+        "a": "Neviena datubāze nav pilnīga. Mēs salīdzinām avotus un norādām, kur informācija ir pretrunīga vai trūkst. Slēdziens palīdz pieņemt lēmumu, bet neaizstāj pārbaudi servisā vai pie jurista."
+      },
+      {
+        "id": "payment",
+        "q": "Kā notiek apmaksa?",
+        "a": "Apmaksa notiek droši caur Stripe. Formā norādi VIN, sludinājuma saiti, e-pastu (uz to nosūtīsim atskaiti) un tālruni rezerves saziņai."
+      }
+    ]
+  }
+}

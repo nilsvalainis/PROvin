@@ -1,0 +1,34 @@
+{
+  "Faq": {
+    "eyebrow": "Support",
+    "title": "Frequently asked questions",
+    "subtitle": "Short answers before you order — if anything is unclear, use the contact channels in the footer.",
+    "items": [
+      {
+        "id": "diff",
+        "q": "How is PROVIN different from CarVertical or AutoDNA?",
+        "a": "Standard services usually offer one automated report from their own database. PROVIN combines several paid sources, adds listing and seller review, and delivers a summary with comments on the specific car — not just a data dump."
+      },
+      {
+        "id": "time",
+        "q": "How long until I get the result?",
+        "a": "We aim to deliver the full analysis within 24 hours of successful payment. If extra time is needed (e.g. rare models or data delays), we’ll let you know."
+      },
+      {
+        "id": "vin",
+        "q": "What is a VIN and where do I find it?",
+        "a": "The VIN is a 17-character identifier. It’s usually on the windscreen, on the chassis, or in documents. Before ordering, compare the VIN with the listing and photos."
+      },
+      {
+        "id": "completeness",
+        "q": "Is the data always complete?",
+        "a": "No database is complete. We compare sources and point out where information conflicts or is missing. The conclusion helps you decide but does not replace a workshop inspection or legal advice."
+      },
+      {
+        "id": "payment",
+        "q": "How does payment work?",
+        "a": "Payment is secure via Stripe. In the form you enter the VIN, listing URL, email (to receive the report), and phone for backup contact."
+      }
+    ]
+  }
+}

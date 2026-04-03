@@ -1,0 +1,29 @@
+{
+  "Hero": {
+    "approved": "APPROVED BY IRISS",
+    "title1": "VIN AND LISTING ",
+    "title2": "ANALYSIS",
+    "tagline": "While others read reports, you get answers.",
+    "cta": "Order analysis for €49.99",
+    "youGetTitle": "What you get",
+    "youGetFootnote": "An automated report shows data — PROVIN adds cross-checks, listing review, and expert interpretation.",
+    "includedTitle": "Already included in the price",
+    "confidenceTitle": "Confidence before you buy",
+    "confidenceBody": "Your chosen car’s data, model-specific risks, and whether the price makes sense are reviewed manually so nothing important slips past you. You receive a grounded, objective conclusion with full clarity for a safe decision.",
+    "autoRecordsFootnote": "* May apply only to certain manufacturers",
+    "youGetBullets": [
+      "A consolidated view from several paid databases",
+      "Listing and seller review",
+      "Expert summary and model-specific risks",
+      "Report within 24 hours"
+    ],
+    "features": [
+      { "key": "cv", "label": "CarVertical" },
+      { "key": "dna", "label": "AutoDNA" },
+      { "key": "records", "label": "Auto Records", "star": true },
+      { "key": "listing", "label": "Listing analysis" },
+      { "key": "manual", "label": "Manual analysis" },
+      { "key": "clock", "label": "24h response" }
+    ]
+  }
+}

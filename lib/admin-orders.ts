@@ -1,0 +1,111 @@
+import "server-only";
+
+import type Stripe from "stripe";
+import { getDemoOrderDetail, getDemoOrderRows } from "@/lib/demo-orders";
+import { getStripe } from "@/lib/stripe";
+import { getOrderFieldsFromSession } from "@/lib/stripe-session";
+
+export function isDemoOrdersEnabled(): boolean {
+  const v = process.env.ADMIN_DEMO_ORDERS ?? "";
+  return v === "1" || v.toLowerCase() === "true";
+}
+
+export type AdminOrderRow = {
+  id: string;
+  created: number;
+  amountTotal: number | null;
+  currency: string | null;
+  paymentStatus: Stripe.Checkout.Session["payment_status"];
+  customerEmail: string | null;
+  vin: string | null;
+  /** Demonstrācijas pasūtījums (ADMIN_DEMO_ORDERS) */
+  isDemo?: boolean;
+};
+
+export type AdminOrderDetail = AdminOrderRow & {
+  listingUrl: string | null;
+  customerName: string | null;
+  phone: string | null;
+  notes: string | null;
+  customerDetailsEmail: string | null;
+  customerDetailsPhone: string | null;
+  /** Tavs komentārs apstrādei (vēlāk — saglabāšana DB) */
+  internalComment?: string | null;
+  /** Pievienotie avoti / atskaites (vēlāk — failu glabātuve) */
+  attachments?: { label: string; fileName: string }[];
+};
+
+export async function listPaidCheckoutSessions(limit = 50): Promise<AdminOrderRow[]> {
+  const stripe = getStripe();
+  const res = await stripe.checkout.sessions.list({
+    limit,
+  });
+  const rows: AdminOrderRow[] = [];
+  for (const s of res.data) {
+    if (s.payment_status !== "paid") continue;
+    const order = getOrderFieldsFromSession(s);
+    rows.push({
+      id: s.id,
+      created: s.created,
+      amountTotal: s.amount_total,
+      currency: s.currency?.toUpperCase() ?? null,
+      paymentStatus: s.payment_status,
+      customerEmail: s.customer_email ?? s.customer_details?.email ?? null,
+      vin: order.vin,
+    });
+  }
+  return rows.sort((a, b) => b.created - a.created);
+}
+
+export async function listAdminOrders(limit = 50): Promise<{
+  rows: AdminOrderRow[];
+  stripeError: string | null;
+}> {
+  let real: AdminOrderRow[] = [];
+  let stripeError: string | null = null;
+  try {
+    real = await listPaidCheckoutSessions(limit);
+  } catch {
+    stripeError =
+      "Neizdevās ielādēt pasūtījumus no Stripe. Pārbaudi, vai serverī ir iestatīts STRIPE_SECRET_KEY.";
+  }
+
+  const demo = isDemoOrdersEnabled() ? (getDemoOrderRows() as AdminOrderRow[]) : [];
+  const rows = [...demo, ...real];
+  return { rows, stripeError };
+}
+
+export async function getCheckoutSessionDetail(sessionId: string): Promise<AdminOrderDetail | null> {
+  if (isDemoOrdersEnabled()) {
+    const demo = getDemoOrderDetail(sessionId);
+    if (demo) return demo as AdminOrderDetail;
+  }
+
+  const stripe = getStripe();
+  let session: Stripe.Checkout.Session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(sessionId);
+  } catch {
+    return null;
+  }
+  if (session.payment_status !== "paid") {
+    return null;
+  }
+  const order = getOrderFieldsFromSession(session);
+  const phone = order.formPhone ?? session.customer_details?.phone ?? null;
+  return {
+    id: session.id,
+    created: session.created,
+    amountTotal: session.amount_total,
+    currency: session.currency?.toUpperCase() ?? null,
+    paymentStatus: session.payment_status,
+    customerEmail: session.customer_email ?? session.customer_details?.email ?? null,
+    vin: order.vin,
+    listingUrl: order.listingUrl,
+    customerName: order.customerName,
+    phone,
+    notes: order.notes,
+    customerDetailsEmail: session.customer_details?.email ?? null,
+    customerDetailsPhone: session.customer_details?.phone ?? null,
+  };
+}

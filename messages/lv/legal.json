@@ -1,0 +1,52 @@
+{
+  "Legal": {
+    "privacyMetaTitle": "Privātuma politika",
+    "privacyTitle": "Privātuma politika",
+    "privacyLead": "Šajā dokumentā aprakstīts, kā PROVIN (turpmāk — „mēs”, „pakalpojums”) apstrādā personas datus, kādas sīkdatnes tiek izmantotas un kā jūs varat piekrist vai noraidīt nebūtisko analītiku un pirmās izcelsmes (UTM) informācijas saglabāšanu.",
+    "sections": [
+      {
+        "title": "1. Pārzinis",
+        "body": "Par personas datu apstrādi atbild PROVIN pakalpojuma īpašnieks. Kontaktinformācija pieejama vietnes kājenē (e-pasts, WhatsApp). Ja nepieciešams, varat pieprasīt precizētu pārzinātāja rekvizītus tieši saziņas kanālā."
+      },
+      {
+        "title": "2. Kādus datus apstrādājam",
+        "body": "Pasūtījuma ietvaros: vārds, e-pasts, tālrunis, VIN, sludinājuma saite, brīvas formas ziņojums un maksājuma metadati (apstrādi veic maksājumu apstrādātājs Stripe saskaņā ar tā politiku). Vietnes lietošanā: tehniskie žurnāli servera līmenī (piemēram, IP adrese, pieprasījuma laiks) var tikt izmantoti drošības un darbspējas nodrošināšanai."
+      },
+      {
+        "title": "3. Mērķi un tiesiskais pamats",
+        "body": "Līguma izpilde un pasūtījuma apstrāde (GDPR 6. panta 1. punkta b) apakšpunkts). Likumīgās intereses: vietnes drošība, kļūdu novēršana (GDPR 6. panta 1. punkta f) apakšpunkts). Analītika un pirmās izcelsmes (UTM) datu saglabāšana — tikai pēc jūsu brīvprātīgas piekrišanas, izmantojot sīkdatņu joslu (GDPR 6. panta 1. punkta a) apakšpunkts)."
+      },
+      {
+        "title": "4. Sīkdatnes un nepieciešamās funkcijas",
+        "body": "Nepieciešamās funkcijas (piemēram, valodas izvēles saglabāšana, sesijas darbība, drošība) var izmantot sīkdatnes vai līdzīgas tehnoloģijas bez atsevišķas piekrišanas, ja tās ir objektīvi nepieciešamas pakalpojuma sniegšanai. Šādu sīkdatņu sarakstu var precizēt pēc pieprasījuma."
+      },
+      {
+        "title": "5. Analītika un izcelsmes dati (pēc piekrišanas)",
+        "body": "Ja jūs sīkdatņu joslā piekrītat „analītikai”, mēs varam saglabāt ierobežotu informāciju par pirmo apmeklējumu: vietnes ceļu, HTTP novirzītāju (referrer), ja pieejams, un mārketinga parametrus no saites (UTM: source, medium, campaign utt.). Mērķis ir saprast, no kurienes lietotāji ierodas (piemēram, TikTok, YouTube, meklētājs), neizsekojot individuāli pāri visām trešo pušu platformām. Šie dati netiek pārdoti."
+      },
+      {
+        "title": "6. Trešās puses",
+        "body": "Maksājumi: Stripe. Vietnes mitināšana: jūsu izvēlētais pakalpojumu sniedzējs (piemēram, Vercel). Nākotnē var tikt pieslēgta trešās puses analītika (piemēram, Google Analytics) — tikai pēc atsevišķas piekrišanas un atbilstošas informācijas šajā politikā."
+      },
+      {
+        "title": "7. Glabāšanas termiņš",
+        "body": "Pasūtījuma un klientu dati tiek glabāti tik ilgi, cik nepieciešams pakalpojuma sniegšanai un juridiskajām prasībām (grāmatvedība, strīdi). Analītikas/izcelsmes sīkdatņu derīguma termiņš ir ierobežots (parasti līdz 180 dienām), ja nav norādīts citādi."
+      },
+      {
+        "title": "8. Jūsu tiesības",
+        "body": "Saskaņā ar GDPR jums ir tiesības piekļūt datiem, tos labot, dzēst, ierobežot apstrādi, iebilst pret apstrādi, kā arī tiesības uz datu pārnesamību (kur piemērojams). Sūdzību var iesniegt uzraudzības iestādē (Latvijā — VDAR)."
+      },
+      {
+        "title": "9. Politikas izmaiņas",
+        "body": "Politiku varam atjaunināt. Būtiskas izmaiņas tiks norādītas vietnē vai sīkdatņu joslā, ja nepieciešams."
+      }
+    ]
+  },
+  "Cookies": {
+    "bannerTitle": "Sīkdatnes un privātums",
+    "bannerText": "Mēs izmantojam nepieciešamās sīkdatnes vietnes darbībai. Ja piekrītat, varam arī saglabāt anonīmu informāciju par pirmo lapu un mārketinga saites parametrus (UTM), lai saprastu, no kurienes apmeklētāji ierodas.",
+    "reject": "Tikai nepieciešamās",
+    "acceptAnalytics": "Piekrītu analītikai un saglabāšanai",
+    "privacyLink": "Privātuma politika"
+  }
+}

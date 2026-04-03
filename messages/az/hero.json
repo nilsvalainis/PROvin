@@ -1,0 +1,29 @@
+{
+  "Hero": {
+    "approved": "APPROVED BY IRISS",
+    "title1": "VIN VƏ ",
+    "title2": "ELAN TƏHLİLİ",
+    "tagline": "Başqaları hesabat oxuyarkən siz cavab alırsınız.",
+    "cta": "Təhlil sifariş et — 49,99 €",
+    "youGetTitle": "Nə əldə edirsiniz",
+    "youGetFootnote": "Avtomatik hesabat məlumat göstərir — PROVIN mənbələri müqayisə edir, elanı təhlil edir və ekspert şərhi verir.",
+    "includedTitle": "Qiymətə artıq daxildir",
+    "confidenceTitle": "Alışdan əvvəl əminlik",
+    "confidenceBody": "Seçdiyiniz avtomobilin məlumatları, modelə xas risklər və qiymətin əsaslılığı əl ilə yoxlanılır ki, vacib heç nə gözdən qaçmasın. Təhlükəsiz qərar üçün tam aydınlıq verən əsaslı və obyektiv nəticə alırsınız.",
+    "autoRecordsFootnote": "* Yalnız müəyyən istehsalçılar üçün",
+    "youGetBullets": [
+      "Bir neçə ödənişli bazadan konsolidə olunmuş baxış",
+      "Elan və satıcı qiymətləndirməsi",
+      "Ekspert xülasəsi və model üzrə risklər",
+      "24 saat ərzində hesabat"
+    ],
+    "features": [
+      { "key": "cv", "label": "CarVertical" },
+      { "key": "dna", "label": "AutoDNA" },
+      { "key": "records", "label": "Auto Records", "star": true },
+      { "key": "listing", "label": "Elan təhlili" },
+      { "key": "manual", "label": "Əl ilə təhlil" },
+      { "key": "clock", "label": "24 saat cavab" }
+    ]
+  }
+}

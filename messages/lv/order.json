@@ -1,0 +1,43 @@
+{
+  "Order": {
+    "sectionTitle": "Pasūtīt analīzi",
+    "cancelled": "Apmaksa tika atcelta. Vari aizpildīt formu vēlreiz.",
+    "footnote": "Pilna auto analīze tiek sagatavota un nosūtīta uz jūsu e‑pastu 24 stundu laikā.",
+    "nameLabel": "Vārds / uzvārds",
+    "optional": "(neobligāti)",
+    "emailLabel": "E-pasts",
+    "phoneLabel": "Tālrunis",
+    "vinLabel": "VIN",
+    "listingLabel": "Sludinājuma saite",
+    "notesLabel": "Piezīmes",
+    "emailHint": "Atskaite nosūtīsim uz šo adresi.",
+    "phoneHint": "Rezerves saziņai, piem. ja e-pasts ievadīts kļūdaini.",
+    "vinHint": "Bez I, O, Q.",
+    "vinPlaceholder": "17 rakstzīmes",
+    "notesPlaceholder": "Īsi, ja ir svarīgi…",
+    "namePlaceholder": "Jānis Bērziņš",
+    "emailPlaceholder": "jānis@piemērs.lv",
+    "phonePlaceholder": "+371 …",
+    "urlPlaceholder": "https://…",
+    "summaryLabel": "Kopā",
+    "summaryNote": "Vienreizējs maksājums par pilnu VIN un sludinājuma analīzi.",
+    "payButton": "Turpināt uz apmaksu",
+    "payLoading": "Sagatavo…",
+    "stripeNote": "Apmaksa droši caur Stripe; arī karte un dažās ierīcēs Apple/Google Pay.",
+    "ariaSummary": "Pasūtījuma kopsavilkums",
+    "errors": {
+      "checkoutFailed": "Neizdevās sagatavot apmaksu.",
+      "noUrl": "Nav saņemta apmaksas saite.",
+      "network": "Tīkla kļūda. Mēģini vēlreiz.",
+      "stripeConfig": "Stripe nav konfigurēts (STRIPE_SECRET_KEY).",
+      "badRequest": "Nederīgs pieprasījums.",
+      "sessionFailed": "Nav izdevies izveidot apmaksas sesiju."
+    },
+    "validation": {
+      "vin": "Ievadi derīgu VIN (11–17 rakstzīmes, bez I, O, Q).",
+      "listing": "Ievadi derīgu sludinājuma saiti (http vai https).",
+      "email": "Ievadi derīgu e-pasta adresi.",
+      "phone": "Ievadi tālruņa numuru (saziņai pēc apmaksas)."
+    }
+  }
+}
