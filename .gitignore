@@ -34,3 +34,4 @@ public/mobile-preview.png
 
 # typescript
 next-env.d.ts
+*.tsbuildinfo

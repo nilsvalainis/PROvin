@@ -62,7 +62,19 @@ export default async function TermsPage({ params }: Props) {
       </div>
 
       <p className="mt-4 text-base leading-relaxed text-[var(--color-provin-muted)]">
-        {renderInlineBold(t("termsLead"))}
+        {t.rich("termsLead", {
+          section11: (chunks) => (
+            <a
+              href="#terms-section-11"
+              className="font-semibold text-provin-accent underline decoration-provin-accent/35 underline-offset-[3px] transition hover:decoration-provin-accent/70"
+            >
+              {chunks}
+            </a>
+          ),
+          note: (chunks) => (
+            <strong className="font-semibold text-[var(--color-apple-text)]">{chunks}</strong>
+          ),
+        })}
       </p>
 
       <div className="mt-10 space-y-8">
