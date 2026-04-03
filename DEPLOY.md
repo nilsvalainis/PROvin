@@ -2,6 +2,11 @@
 
 Īss ceļš uz **Vercel** + tavs domēns **provin.lv** (Next.js 15 ir ļoti piemērots Vercel).
 
+## Kas jau sagatavots projektā
+
+- **Git** repozitorijs ar pirmo commitu (`main`). `public/mobile-preview.png` nav iekļauts (liels fails).
+- Instrukcijas zemāk — **Vercel kontu, DNS un Stripe** vari pieslēgt tikai tu** (piekļuve tavām kontā).
+
 ## 1. Kods uz Git
 
 - Ja vēl nav: izveido repozitoriju (GitHub / GitLab / Bitbucket) un push šo projektu.
