@@ -12,7 +12,6 @@
     "companyLegalSubject": "Juridiskais sniedzējs",
     "companyRegNo": "Reģistrācijas numurs",
     "companyLegalAddress": "Juridiskā adrese",
-    "companyIncomplete": "PROVIN.LV — pakalpojuma sniedzēja rekvizīti drīzumā būs pieejami šajā sadaļā. Jautājumos izmantojiet kājenē norādīto saziņu.",
     "companyIncompleteDev": "Izstrādātājam: iestatiet NEXT_PUBLIC_COMPANY_LEGAL_NAME, NEXT_PUBLIC_COMPANY_REG_NO un NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS (.env vai hosting).",
     "disclaimer": "Datu avotu informācija ir informatīva; eksperta kopsavilkums ir profesionāls viedoklis, nevis juridisks spriedums vai oficiāla tehniskā ekspertīze."
   }

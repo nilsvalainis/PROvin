@@ -94,7 +94,7 @@ Saglabā. Gaidi **10–30 min**.
 
 Pēc tam **Deployments → Redeploy** (vai jauns `git push`).
 
-**Stripe testēšana:** pēc deploy pārbaudi **dzīvajā URL**, ka kājenē **nav** ziņas „rekvizīti drīzumā” — `getCompanyLegal()` jābūt pilnam. Tukša kājene bieži nozīmē aizmirstus `NEXT_PUBLIC_COMPANY_*` hostingā; tas ir arī risks Stripe pārbaudēs. Pirms Live: rekvizīti = Stripe SDV dati, checkout ar **pilnvarojuma** ķeksi.
+**Stripe testēšana:** pēc deploy pārbaudi **dzīvajā URL**, ka kājenē ir **pilni rekvizīti** (juridiskais nosaukums, reģ. nr., adrese), ne tikai **PROVIN.LV** — tas nozīmē, ka `getCompanyLegal()` ir pilns un `NEXT_PUBLIC_COMPANY_*` ir iestatīti hostingā. Ja redzama tikai zīmola rinda bez juridiskajiem datiem — env nav aizpildīts; tas ir arī risks Stripe pārbaudēs. Pirms Live: rekvizīti = Stripe SDV dati, checkout ar **pilnvarojuma** ķeksi.
 
 ---
 
@@ -108,7 +108,7 @@ Atver **`https://provin.lv`** — jāielādējas tava lapa.
 
 1. **Vercel → Production (un vajadzīgās vides)** — `NEXT_PUBLIC_COMPANY_*` un pārējie public mainīgie ir **Environment Variables** panelī, **ne tikai** lokālajā `.env` (`.env` netiek komitēts uz GitHub, tāpēc deploy to neredz).
 2. **Lietošanas noteikumi (`legal.json`)** — jābūt skaidri saskatāmām sadaļām par **cenu, apmaksu un atmaksu** (projektā: **5. punkts**) un par **atteikuma tiesībām / digitālo saturu** (**11. punkts**). Stripe, iesniedzot vietnes URL, bieži automātiski skenē politikas; šīs sadaļas ir prioritāras.
-3. **Pēc deploy** — atvērt **tieši production URL**: kājenē jāredz **PROVIN.LV**, juridiskais sniedzējs, reģ. nr., adrese — bez „rekvizīti drīzumā” un bez `undefined`.
+3. **Pēc deploy** — atvērt **tieši production URL**: kājenē jāredz **PROVIN.LV**, juridiskais sniedzējs, reģ. nr., adrese — ne tikai zīmols; bez `undefined` laukiem.
 4. **Mobilā kājene** — `text-[10px]` ir apzināts kompromiss (diskrēti, bet salasāmi). Pārbaudi, vai rekvizītu bloks ir **vizuāli nošķirts** no kontaktu pogām un no saitēm (Noteikumi / Privātums) — lapā tam ir atsevišķa josla un, šaurā ekrānā, viegla „kartīša” ap rekvizītiem.
 5. **Stripe** — publiskais nosaukums / DBA saskan ar **PROVIN.LV**; juridiskā identitāte kājenē saskan ar konta verifikāciju; checkout ar **pilnvarojuma** ķeksi (tekstā zīmols **PROVIN** kā pilnvarotais aģents).
 

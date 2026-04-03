@@ -3,29 +3,18 @@ import { getStripe } from "@/lib/stripe";
 import { getOrderCopy } from "@/lib/checkout-copy";
 import { homePath } from "@/lib/paths";
 import { routing } from "@/i18n/routing";
+import {
+  isPlausibleListingUrl,
+  isValidOrderEmail,
+  isValidOrderPhone,
+  isValidVin,
+  normalizeVin,
+} from "@/lib/order-field-validation";
 
 export const runtime = "nodejs";
 
 const NOTES_MAX = 500;
 const NAME_MAX = 120;
-
-function normalizeVin(s: string): string {
-  return s.trim().toUpperCase().replace(/\s/g, "");
-}
-
-function isValidHttpUrl(s: string): boolean {
-  try {
-    const u = new URL(s);
-    return u.protocol === "http:" || u.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-function isValidVin(v: string): boolean {
-  if (v.length < 11 || v.length > 17) return false;
-  return /^[A-HJ-NPR-Z0-9]+$/i.test(v);
-}
 
 type CheckoutBody = {
   vin?: unknown;
@@ -86,13 +75,13 @@ export async function POST(req: Request) {
   if (!vin || !isValidVin(vin)) {
     errors.push(copy.validation.vin);
   }
-  if (!listingUrl || !isValidHttpUrl(listingUrl)) {
+  if (!listingUrl || !isPlausibleListingUrl(listingUrl)) {
     errors.push(copy.validation.listing);
   }
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!email || !isValidOrderEmail(email)) {
     errors.push(copy.validation.email);
   }
-  if (!phone || phone.length < 6) {
+  if (!phone || !isValidOrderPhone(phone)) {
     errors.push(copy.validation.phone);
   }
 

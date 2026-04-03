@@ -74,10 +74,15 @@ Ja lietotājs jautā par **Stripe integrāciju tehniski**, atbildēt kodu un Str
 - **Pakalpojuma sniedzējs** publiski norādāms kā **PROVIN.LV** (nevis „PROVIN” vai „PROVIN/PROVIN.LV” kā alternatīvas). **`NEXT_PUBLIC_COMPANY_PUBLIC_BRAND`** noklusējums kodā: `PROVIN.LV`; blakus obligātie **juridiskā sniedzēja** rekvizīti (`getCompanyLegal`).
 - `CompanyLegalDisclosure`: pirmā rinda — zīmols; tad juridiskais vārds, reģ. nr., adrese.
 
+## 8b. MK Nr. 255 un pasūtījuma lauku validācija
+
+- **11.2. punkts** Lietošanas noteikumos satur precīzu atsauci uz **Ministru kabineta 2014. gada 20. maija noteikumu Nr. 255 „Noteikumi par distances līgumu” 22.13. apakšpunktu** (PTAC / uzraudzības kontekstā).
+- Pasūtījuma forma: validācija **`lib/order-field-validation.ts`** + `/api/checkout` — VIN (11–17, alfabēts), e-pasts (@ un domēns ar TLD), tālrunis (≥8 cipari), sludinājuma **pilna saite** uz konkrētu sludinājumu (ne tikai vietnes sakne). Manuāli pirms izpildes jāpārbauda, vai saite atver pareizo sludinājumu.
+
 ## 9. Stripe Test Mode, Go-Live un mobilā kājene
 
 - **Pirms / laikā testa maksājumiem (Stripe Test Mode):** pārliecināties, ka **`getCompanyLegal()` / `CompanyLegalDisclosure` kājenē** patiešām rāda **tos pašus** rekvizītus, kas **Vercel Environment Variables**, ne tikai lokālajā `.env` (`.env` netiek uz GitHub — deploy to neredz).
-- **Bieža kļūda:** aizmirst `NEXT_PUBLIC_COMPANY_*` Production vidē — kājene **tukša** (`companyIncomplete`) — slikts signāls Stripe riskiem.
+- **Bieža kļūda:** aizmirst `NEXT_PUBLIC_COMPANY_*` Production vidē — kājenē redzams tikai **PROVIN.LV** bez juridiskajiem rekvizītiem — slikts signāls Stripe riskiem; pirms Live jāaizpilda env.
 - **Stripe URL / Go-Live:** iesniedzot vietnes URL, bieži notiek automātiska skenēšana; **Lietošanas noteikumos** jābūt skaidri saskatāmām sadaļām par **cenu, apmaksu un atmaksu** (5. punkts) un par **atteikuma tiesībām / digitālo saturu** (11. punkts).
 - Pēc **Redeploy:** **production URL** + **mobilais skats** — kājenes rekvizītu bloks **nošķirts** no kontaktu pogām un saitēm; `text-[10px]` — diskrēti, bet salasāmi regulatoram un automatizētajām pārbaudēm.
 - **Checkout:** pilnvarojuma teikumā **PROVIN** kā zīmols / pilnvarotais aģents; **pakalpojuma sniedzējs** juridiski — **PROVIN.LV** + rekvizīti kājenē.

@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
+import { validateOrderFields } from "@/lib/order-field-validation";
 
 const labelHero =
   "block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#86868b]";
@@ -48,6 +49,12 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
     const vin = String(fd.get("vin") ?? "").trim();
     const listingUrl = String(fd.get("listingUrl") ?? "").trim();
     const notes = String(fd.get("notes") ?? "").trim();
+
+    const fieldError = validateOrderFields({ vin, listingUrl, email, phone });
+    if (fieldError) {
+      setError(te(`validation.${fieldError}`));
+      return;
+    }
 
     setLoading(true);
     try {
@@ -175,6 +182,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             className={inputBase}
             placeholder={t("urlPlaceholder")}
           />
+          <p className={hintClass}>{t("listingHint")}</p>
         </div>
         <div className="sm:col-span-2">
           <label htmlFor="order-notes" className={labelClass}>

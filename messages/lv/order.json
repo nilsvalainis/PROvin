@@ -19,6 +19,7 @@
     "emailPlaceholder": "jānis@piemērs.lv",
     "phonePlaceholder": "+371 …",
     "urlPlaceholder": "https://…",
+    "listingHint": "Ieliec tiešu saiti uz konkrēto sludinājumu (ne tikai portāla sākumlapu). Pēc pasūtījuma saņemšanas mēs pārbaudām, vai saite atver pareizo sludinājumu.",
     "summaryLabel": "Kopā",
     "summaryNote": "Vienreizējs maksājums par pilnu VIN un sludinājuma analīzi.",
     "payButton": "Turpināt uz apmaksu",
@@ -38,9 +39,9 @@
     },
     "validation": {
       "vin": "Ievadi derīgu VIN (11–17 rakstzīmes, bez I, O, Q).",
-      "listing": "Ievadi derīgu sludinājuma saiti (http vai https).",
-      "email": "Ievadi derīgu e-pasta adresi.",
-      "phone": "Ievadi tālruņa numuru (saziņai pēc apmaksas)."
+      "listing": "Ievadi pilnu saiti uz konkrētu sludinājumu (https://… ar ceļu vai parametriem — ne tikai vietnes sākumlapu).",
+      "email": "Ievadi derīgu e-pasta adresi (simbols @ un domēns ar punktu, piem. vārds@piemērs.lv).",
+      "phone": "Ievadi tālruņa numuru ar vismaz 8 cipariem (ar vai bez +371)."
     }
   }
 }
