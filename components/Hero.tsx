@@ -36,31 +36,13 @@ export async function Hero() {
             {t("tagline")}
           </p>
 
-          <div className="mt-7 flex flex-col items-center gap-3 sm:mt-8">
+          <div className="mt-7 flex flex-col items-center gap-4 sm:mt-8">
             <Link
               href={orderSectionHref(locale)}
               className="provin-btn inline-flex min-h-[44px] w-full max-w-[320px] items-center justify-center rounded-full px-8 text-[17px] font-normal shadow-[0_4px_16px_rgba(0,102,214,0.32)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:w-auto"
             >
               {t("cta")}
             </Link>
-            <a
-              href="#sanemsi"
-              className="group flex flex-col items-center gap-1 text-provin-accent transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-                aria-hidden
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] sm:text-[11px]">
-                {t("ctaScrollHint")}
-              </span>
-            </a>
           </div>
 
           <div id="sanemsi" className="mx-auto mt-10 max-w-[640px] scroll-mt-24 text-left">
