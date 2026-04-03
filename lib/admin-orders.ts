@@ -93,15 +93,17 @@ export async function listAdminOrders(limit = 50): Promise<{
       "Neizdevās ielādēt pasūtījumus no Stripe. Pārbaudi, vai serverī ir iestatīts STRIPE_SECRET_KEY.";
   }
 
-  const demo = isDemoOrdersEnabled() ? (getDemoOrderRows() as AdminOrderRow[]) : [];
+  /** Ja Stripe saraksts neizdodas, rādām demo pat tad, ja ADMIN_DEMO_ORDERS=0 — lai admin nav tukšs. */
+  const includeDemo = isDemoOrdersEnabled() || stripeError !== null;
+  const demo = includeDemo ? (getDemoOrderRows() as AdminOrderRow[]) : [];
   const rows = [...demo, ...real];
   return { rows, stripeError };
 }
 
 export async function getCheckoutSessionDetail(sessionId: string): Promise<AdminOrderDetail | null> {
-  if (isDemoOrdersEnabled()) {
-    const demo = getDemoOrderDetail(sessionId);
-    if (demo) return demo as AdminOrderDetail;
+  const demo = getDemoOrderDetail(sessionId);
+  if (demo && isDemoOrdersEnabled()) {
+    return demo as AdminOrderDetail;
   }
 
   let session: Stripe.Checkout.Session;
@@ -109,6 +111,7 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
     const stripe = getStripe();
     session = await stripe.checkout.sessions.retrieve(sessionId);
   } catch {
+    if (demo) return demo as AdminOrderDetail;
     return null;
   }
   if (session.payment_status !== "paid") {
