@@ -57,6 +57,27 @@ function nonWhitespaceCharCount(s: string): number {
   return s.replace(/\s/g, "").length;
 }
 
+const LV_LETTER_CLASS = "A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž";
+
+/**
+ * Daži izdevēju PDF (piem. carVertical) dod katru burtu/ciparu kā atsevišķu virknes elementu →
+ * „2 9 9 5 1 9 k m”. Sakļaujam, lai strādātu nobraukuma un atslēgvārdu meklēšana.
+ */
+function normalizePdfExtractedText(raw: string): string {
+  let t = raw.replace(/\u00a0/g, " ");
+  let prev = "";
+  while (t !== prev) {
+    prev = t;
+    t = t.replace(/(\d)\s+(?=\d)/g, "$1");
+  }
+  t = t.replace(/\b([kK])\s+([mM])\b/g, "$1$2");
+  const re = new RegExp(`\\b([${LV_LETTER_CLASS}])(?:\\s+([${LV_LETTER_CLASS}])){2,}\\b`, "g");
+  for (let i = 0; i < 12; i++) {
+    t = t.replace(re, (chunk) => chunk.replace(/\s+/g, ""));
+  }
+  return t;
+}
+
 const ACCIDENT_HINTS: { re: RegExp; label: string }[] = [
   { re: /\bnegad[īi]jums\b/i, label: "Negadījums (atslēgvārds)" },
   { re: /\bav[āa]rija\b/i, label: "Avārija" },
@@ -154,7 +175,7 @@ async function extractPdfTextWithOptionalOcr(buffer: ArrayBuffer): Promise<{ tex
       .join(" ");
     parts.push(line);
   }
-  let text = parts.join("\n");
+  let text = normalizePdfExtractedText(parts.join("\n"));
   let ocrPages = 0;
 
   const needOcr =
