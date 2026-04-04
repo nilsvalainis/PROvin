@@ -13,7 +13,6 @@ import {
   analyzeVinAndKm,
   segmentTextForPreview,
   stripListingFluff,
-  workspaceBlockToHtml,
   type PreviewSegment,
   type SegmentOptions,
 } from "@/lib/admin-workspace-preview-format";
@@ -22,13 +21,7 @@ import {
   mergeKmForChart,
   type PdfPortfolioFileInsight,
 } from "@/lib/admin-portfolio-pdf-analysis";
-import {
-  CLIENT_REPORT_FOOTER_DISCLAIMER,
-  CLIENT_REPORT_SECTION_LABELS,
-  CLIENT_REPORT_SERVICE_NOTICE,
-  REPORT_PDF_STANDARDS,
-  sanitizeAttachmentFileNameForReport,
-} from "@/lib/report-pdf-standards";
+import { buildClientReportDocumentHtml } from "@/lib/client-report-html";
 
 export type OrderWorkspacePayload = {
   sessionId: string;
@@ -88,14 +81,6 @@ function storageKeyWorkspace(sessionId: string) {
 /** Vecais viena lauka komentārs */
 function storageKeyInternalLegacy(sessionId: string) {
   return `provin-admin-internal-v1-${sessionId}`;
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 function formatBytes(n: number): string {
@@ -500,207 +485,20 @@ export function OrderDetailWorkspace({
     }
 
     const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeStyle: "short" });
-    const money =
-      payload.amountTotal == null
-        ? "—"
-        : new Intl.NumberFormat("lv-LV", { style: "currency", currency: payload.currency ?? "EUR" }).format(
-            payload.amountTotal / 100,
-          );
-
-    const printStyles = `
-      *{box-sizing:border-box;}
-      body{
-        font-family:var(--font-inter,system-ui),-apple-system,"Segoe UI",Roboto,sans-serif;
-        line-height:1.55;max-width:190mm;margin:0 auto;padding:12mm 14mm;color:#1d1d1f;
-        background:#fafbfc;counter-reset:sec;
-      }
-      .sheet{background:#fff;border-radius:12px;box-shadow:0 1px 0 rgba(0,0,0,.06);padding:18mm 16mm;}
-      @media print{.sheet{box-shadow:none;border-radius:0;padding:0}}
-      .report-head{
-        border-bottom:3px solid #0066d6;padding-bottom:14px;margin-bottom:18px;
-        background:linear-gradient(180deg,#fafdff 0%,#fff 100%);
-        margin-left:-4px;margin-right:-4px;padding-left:4px;padding-right:4px;padding-top:4px;border-radius:8px 8px 0 0;
-      }
-      .report-head .brand{font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#0066d6;font-weight:700;}
-      .report-head .brand span{color:#1d1d1f;}
-      .report-head h1{font-size:1.42rem;font-weight:650;margin:8px 0 6px;color:#1d1d1f;letter-spacing:-0.02em;}
-      .report-head .sub{font-size:0.84rem;color:#6e6e73;}
-      .expert-panel{
-        margin:20px 0 22px;padding:16px 18px;border-radius:10px;
-        background:linear-gradient(135deg,#e8f2fc 0%,#f5f9ff 50%,#fff 100%);
-        border:1px solid rgba(0,102,214,.22);border-left:4px solid #0066d6;
-        box-shadow:0 2px 12px rgba(0,102,214,.06);
-      }
-      .expert-panel .expert-title{
-        font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#0066d6;font-weight:700;margin:0 0 10px;
-      }
-      .expert-panel .expert-body{
-        font-size:0.92rem;color:#1d1d1f;white-space:pre-wrap;line-height:1.6;
-      }
-      h2.sec{
-        font-size:0.98rem;font-weight:650;margin:1.25rem 0 0.6rem;color:#1d1d1f;padding-bottom:7px;
-        border-bottom:1px solid #e5e5ea;counter-increment:sec;
-      }
-      h2.sec::before{content:counter(sec) ". ";color:#0066d6;font-weight:750;}
-      h3.sub{font-size:0.89rem;font-weight:600;margin:1rem 0 0.45rem;color:#424245;}
-      h4.sub2{font-size:0.86rem;font-weight:600;margin:0.85rem 0 0.35rem;color:#1d1d1f;}
-      table{width:100%;border-collapse:collapse;font-size:0.82rem;}
-      table.fmt{margin:0.45rem 0;}
-      table.fmt td{padding:7px 10px;border:1px solid #e5e7eb;vertical-align:top;}
-      table.fmt:not(.grid) td:first-child{width:38%;background:#f5f5f7;color:#424245;font-weight:550;}
-      table.fmt.grid td{font-size:0.8rem;}
-      table.fmt.grid td:first-child{width:auto;}
-      table:not(.fmt) td{padding:8px 10px;border:1px solid #e5e7eb;vertical-align:top;}
-      table:not(.fmt) td:first-child{width:36%;background:#f5f5f7;color:#424245;font-weight:550;}
-      pre.block{white-space:pre-wrap;font-size:0.82rem;background:#f5f5f7;border:1px solid #e8e8ed;padding:11px 14px;border-radius:9px;margin:0;}
-      .na{color:#86868b;font-style:italic;}
-      ul{margin:0.4rem 0;padding-left:1.15rem;}
-      li{margin:0.25rem 0;}
-      .hint{font-size:0.76rem;color:#6e6e73;margin-top:0.45rem;line-height:1.45;}
-      .legal-block{
-        margin-top:26px;padding:14px 16px;border-radius:10px;background:#f5f5f7;border:1px solid #e8e8ed;
-        font-size:0.74rem;color:#6e6e73;line-height:1.55;
-      }
-      .legal-block strong{color:#424245;font-weight:600;}
-      .report-foot{margin-top:18px;padding-top:12px;border-top:1px solid #e5e5ea;font-size:0.7rem;color:#aeaeb2;line-height:1.45;}
-      code{font-size:0.78rem;background:#f5f5f7;padding:1px 5px;border-radius:4px;}
-      @media print{
-        body{padding:10mm 12mm;background:#fff;}
-        .sheet{background:#fff}
-        .no-print{display:none!important;}
-      }
-    `;
-
-    const lines: string[] = [];
-    lines.push('<div class="sheet">');
-    lines.push('<div class="report-head">');
-    lines.push(
-      '<div class="brand">PRO<span style="color:#0066d6">VIN</span><span>.LV</span></div>',
-    );
-    lines.push(`<h1>${escapeHtml(CLIENT_REPORT_SECTION_LABELS.mainTitle)}</h1>`);
-    lines.push(
-      `<p class="sub">Ģenerēts: ${escapeHtml(dateFmt.format(new Date()))} · VIN ${escapeHtml(payload.vin ?? "—")}</p>`,
-    );
-    lines.push("</div>");
-
-    lines.push(
-      `<div class="expert-panel"><p class="expert-title">${escapeHtml(REPORT_PDF_STANDARDS.firstPageExpertBlockTitle)}</p>`,
-    );
-    lines.push(`<div class="expert-body">${escapeHtml(ws.iriss.trim())}</div></div>`);
-
-    lines.push(`<h2 class="sec">${escapeHtml(CLIENT_REPORT_SECTION_LABELS.identification)}</h2>`);
-    lines.push(`<table>`);
-    lines.push(`<tr><td>Atsauce (pasūtījums)</td><td><code>${escapeHtml(payload.sessionId)}</code></td></tr>`);
-    lines.push(`<tr><td>Reģistrēts</td><td>${escapeHtml(dateFmt.format(new Date(payload.created * 1000)))}</td></tr>`);
-    lines.push(`<tr><td>Maksājuma statuss</td><td>${escapeHtml(payload.paymentStatus)} · ${escapeHtml(money)}</td></tr>`);
-    lines.push(`</table>`);
-
-    lines.push(`<h2 class="sec">${escapeHtml(CLIENT_REPORT_SECTION_LABELS.attachments)}</h2>`);
-    if (portfolio.length === 0) {
-      lines.push('<p class="na">Nav pievienotu dokumentu.</p>');
-    } else {
-      lines.push("<ul>");
-      for (const p of portfolio) {
-        const disp = sanitizeAttachmentFileNameForReport(p.name);
-        lines.push(`<li>${escapeHtml(disp)} (${formatBytes(p.size)})</li>`);
-      }
-      lines.push("</ul>");
-    }
-
-    if (pdfInsights.length > 0) {
-      lines.push('<h3 class="sub">Teksta izvilkums no pievienotajiem PDF (automātiski)</h3>');
-      lines.push(
-        '<p class="hint">Īss automātisks apkopojums no dokumentu teksta slāņa — riska atslēgvārdi un nobraukuma skaitļi. Salīdzini ar pievienotajiem PDF; vizuālie grafiki šeit nav atveidoti.</p>',
-      );
-      for (const ins of pdfInsights) {
-        const fn = sanitizeAttachmentFileNameForReport(ins.fileName);
-        lines.push(`<h4 class="sub2">${escapeHtml(fn)}</h4>`);
-        lines.push(
-          `<p class="hint">${ins.charCount.toLocaleString("lv-LV")} rakstzīmes · ${ins.kmSamples.length} nobraukuma paraugi</p>`,
-        );
-        if (ins.highlights.length > 0) {
-          lines.push("<ul>");
-          for (const h of ins.highlights) {
-            lines.push(`<li>${escapeHtml(h)}</li>`);
-          }
-          lines.push("</ul>");
-        }
-        if (ins.kmSamples.length > 0) {
-          lines.push('<table class="fmt grid"><tbody>');
-          lines.push("<tr><td>km</td><td>Konteksts</td></tr>");
-          for (const s of ins.kmSamples.slice(0, 32)) {
-            lines.push(
-              `<tr><td>${s.km.toLocaleString("lv-LV")}</td><td>${escapeHtml(s.context ?? "—")}</td></tr>`,
-            );
-          }
-          lines.push("</tbody></table>");
-        }
-      }
-      const kmMerged = mergeKmForChart(pdfInsights);
-      if (kmMerged.length >= 2) {
-        lines.push('<h4 class="sub2">Apvienotie nobraukuma paraugi</h4>');
-        lines.push('<table class="fmt grid"><tbody>');
-        lines.push("<tr><td>km</td><td>Piezīme</td></tr>");
-        for (const pt of kmMerged) {
-          const lbl = sanitizeAttachmentFileNameForReport(pt.label);
-          lines.push(`<tr><td>${pt.km.toLocaleString("lv-LV")}</td><td>${escapeHtml(lbl)}</td></tr>`);
-        }
-        lines.push("</tbody></table>");
-      }
-    }
-
-    lines.push(`<h2 class="sec">${escapeHtml(CLIENT_REPORT_SECTION_LABELS.dataAppendix)}</h2>`);
-    const blocks: {
-      title: string;
-      key: keyof Pick<WorkspacePersist, "csdd" | "ltab" | "tirgus" | "citi">;
-      variant: SegmentOptions["variant"];
-    }[] = [
-      { title: CLIENT_REPORT_SECTION_LABELS.registryNotes, key: "csdd", variant: "default" },
-      { title: CLIENT_REPORT_SECTION_LABELS.insuranceNotes, key: "ltab", variant: "default" },
-      { title: CLIENT_REPORT_SECTION_LABELS.marketNotes, key: "tirgus", variant: "tirgus" },
-      { title: CLIENT_REPORT_SECTION_LABELS.otherNotes, key: "citi", variant: "default" },
-    ];
-    for (const b of blocks) {
-      lines.push(`<h3 class="sub">${escapeHtml(b.title)}</h3>`);
-      lines.push(workspaceBlockToHtml(ws[b.key], b.variant));
-    }
-
-    lines.push(`<h2 class="sec">${escapeHtml(CLIENT_REPORT_SECTION_LABELS.supplementary)}</h2>`);
-    lines.push(`<h3 class="sub">Sludinājuma saite</h3>`);
-    lines.push(
-      `<p>${payload.listingUrl ? escapeHtml(payload.listingUrl) : '<span class="na">—</span>'}</p>`,
-    );
-    lines.push(`<h3 class="sub">Ziņojums no klienta formas</h3>`);
-    lines.push(`<pre class="block">${escapeHtml(payload.notes?.trim() ? payload.notes : "—")}</pre>`);
-
-    lines.push(`<h2 class="sec">${escapeHtml(CLIENT_REPORT_SECTION_LABELS.contacts)}</h2>`);
-    lines.push("<table>");
-    lines.push(`<tr><td>Vārds</td><td>${escapeHtml(payload.customerName ?? "—")}</td></tr>`);
-    lines.push(`<tr><td>E-pasts</td><td>${escapeHtml(payload.customerEmail ?? "—")}</td></tr>`);
-    lines.push(`<tr><td>Tālrunis</td><td>${escapeHtml(payload.customerPhone ?? "—")}</td></tr>`);
-    lines.push("</table>");
-
-    if (payload.isDemo) {
-      lines.push('<p class="hint"><strong>Demonstrācijas dati</strong> — daļa lauku ir parauga rakstura.</p>');
-    }
-
-    lines.push('<div class="legal-block">');
-    lines.push(`<p><strong>Juridisks pārskats.</strong> ${escapeHtml(CLIENT_REPORT_SERVICE_NOTICE)}</p>`);
-    lines.push(`<p style="margin-top:8px">${escapeHtml(CLIENT_REPORT_FOOTER_DISCLAIMER)}</p>`);
-    lines.push("</div>");
-
-    lines.push(
-      '<p class="no-print" style="margin-top:1.5rem"><button type="button" style="padding:10px 22px;font-size:14px;border-radius:999px;border:0;background:#0066d6;color:#fff;cursor:pointer;font-weight:600" onclick="window.print()">Drukāt / saglabāt kā PDF</button></p>',
-    );
-
-    lines.push(
-      `<div class="report-foot">© PROVIN.LV · konsultatīva atskaite · ${escapeHtml(dateFmt.format(new Date()))}</div>`,
-    );
-    lines.push("</div>");
-
-    const html = `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><title>PROVIN ${escapeHtml(
-      payload.vin ?? payload.sessionId,
-    )}</title><style>${printStyles}</style></head><body>${lines.join("\n")}</body></html>`;
+    const html = buildClientReportDocumentHtml({
+      payload: {
+        ...payload,
+        csdd: ws.csdd,
+        ltab: ws.ltab,
+        tirgus: ws.tirgus,
+        citi: ws.citi,
+        iriss: ws.iriss,
+      },
+      portfolio: portfolio.map((p) => ({ name: p.name, size: p.size })),
+      pdfInsights,
+      dateFmt,
+      formatBytes,
+    });
 
     const w = window.open("", "_blank");
     if (!w) {

@@ -15,9 +15,37 @@ export const REPORT_PDF_STANDARDS = {
   sampleInternationalDbWording: "Saskaņā ar starptautisko datubāzu ierakstiem…",
 } as const;
 
+/** PDF atskaites galvenās sadaļas — „Ultra” izkārtojums (numurētas sadaļas). */
+export const CLIENT_REPORT_PDF_SECTIONS = {
+  client: "1. KLIENTA PIEPRASĪJUMS",
+  risk: "2. ĀTRĀ RISKU PĀRBAUDE",
+  vehicle: "3. AUTOMAŠĪNAS DATI",
+  attachments: "Pievienotie dokumenti (portfelis)",
+  odometer: "4. ODOMETRA ANALĪZE UN PROGNOZE",
+  /** Virsraksta pamats; pie skaita → „(N fiksēti gadījumi)” */
+  insurance: "5. APDROŠINĀŠANAS KONTEKSTS",
+  listing: "6. SLUDINĀJUMS UN TIRGUS KONTEKSTS",
+  inspectionPlan: "7. PERSONALIZĒTS APSKATES PLĀNS (pircējam klātienē)",
+  expert: "8. EKSPERTA SLĒDZIENS",
+  sourcesLegend: "DATU AVOTI",
+  /** @deprecated Lietot client */
+  application: "1. KLIENTA PIEPRASĪJUMS",
+  otherContext: "Papildu konteksts",
+} as const;
+
+/** Nobraukuma punktu avotu apzīmējumi PDF tabulā (emoji + teksts). */
+export const REPORT_ODOMETER_SOURCE_LEGEND = [
+  { emoji: "🟢", label: "Latvijas reģistri", key: "lv" as const },
+  { emoji: "🔵", label: "Vēstures atskaite", key: "hist" as const },
+  { emoji: "🟡", label: "Vēstures atskaite (papildu)", key: "hist2" as const },
+  { emoji: "🟠", label: "Oficiālā dīlera dati", key: "dealer" as const },
+  { emoji: "🔴", label: "Citi avoti", key: "other" as const },
+];
+
 /** Klientam redzami PDF sadaļu virsraksti — neinstitūciju oficiālie nosaukumi. */
 export const CLIENT_REPORT_SECTION_LABELS = {
-  mainTitle: "Transportlīdzekļa izvērtējuma atskaite",
+  /** Galvenā rindiņa zem PROVIN.LV */
+  mainTitle: "Transportlīdzekļa izvērtējums",
   registryNotes: "Valsts reģistra un publisko datu piezīmes",
   insuranceNotes: "OCTA un apdrošināšanas konteksta piezīmes",
   marketNotes: "Tirgus un sludinājuma piezīmes",
