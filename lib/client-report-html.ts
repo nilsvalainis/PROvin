@@ -20,6 +20,7 @@ import {
 import {
   earliestInsuranceYearFromClaims,
   extractRegistryStructuredFields,
+  normalizeRoadTaxDisplay,
   parseBrakeAssPairs,
   parseLvRegistryBasics,
   parseTaRating0Snippet,
@@ -722,19 +723,29 @@ function buildLvStructuredSourcesHtml(
 ): string {
   const basics = parseLvRegistryBasics(p.csdd);
   const structured = extractRegistryStructuredFields(p.csdd);
-  const mm = basics.markModel ?? makeModel ?? "—";
-  const regNr = basics.regNr ?? "—";
+  const mm =
+    structured.makeModel?.trim() || basics.markModel || makeModel || "—";
+  const regNr = structured.plateNumber?.trim() || basics.regNr || "—";
   const firstReg =
     structured.firstReg?.trim() || basics.firstReg || extractFirstRegistration(p.csdd) || "—";
-  const euro = basics.euro ?? "—";
+  const euro = structured.euroStandard?.trim() || basics.euro || "—";
   const power =
     structured.enginePower?.trim() ||
     (basics.powerKw ? `${basics.powerKw} kW` : "—");
-  const mass =
+  const grossMass =
     structured.grossWeight?.trim() ||
-    (basics.massKg ? `${basics.massKg} kg` : "—");
+    (basics.grossMassKg ? `${basics.grossMassKg} kg` : "—");
+  const curbMass =
+    structured.curbWeight?.trim() ||
+    (basics.curbWeightKg ? `${basics.curbWeightKg} kg` : "—");
   const fuel = structured.fuelType?.trim() || "—";
-  const road = basics.roadTaxEur ? `${basics.roadTaxEur} EUR` : "—";
+  const smokeRaw = structured.smokeOpacity?.trim() || basics.smokeOpacity?.trim() || "";
+  const smoke = smokeRaw || "—";
+  const regStatus = structured.status?.trim() || "";
+  const roadRaw =
+    structured.roadTax?.trim() ||
+    (basics.roadTaxEur ? `${basics.roadTaxEur} EUR` : "");
+  const road = roadRaw ? normalizeRoadTaxDisplay(roadRaw) : "—";
 
   const taSoon = taValidUntil != null && classifyTaValidity(taValidUntil) === "soon";
   const taCellHtml = taValidUntil
@@ -757,17 +768,27 @@ function buildLvStructuredSourcesHtml(
   );
 
   parts.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.lvRegistry)}</h3>`);
-  parts.push(`<table class="fmt lv-reg-table bordered"><tbody>
-    <tr><td>marka / modelis</td><td><strong>${escapeHtml(mm)}</strong></td></tr>
-    <tr><td>reģ. nr.</td><td>${escapeHtml(regNr)}</td></tr>
-    <tr><td>pirmā reģistrācija</td><td>${escapeHtml(firstReg)}</td></tr>
-    <tr><td>euro / emisijas</td><td>${escapeHtml(euro)}</td></tr>
-    <tr><td>jauda</td><td>${escapeHtml(power)}</td></tr>
-    <tr><td>masa</td><td>${escapeHtml(mass)}</td></tr>
-    <tr><td>degvielas veids</td><td>${escapeHtml(fuel)}</td></tr>
-    <tr><td>nākamā apskate</td><td class="${taSoon ? "td-warn" : ""}">${taCellHtml}</td></tr>
-    <tr><td>ceļa nodoklis (gadā)</td><td>${escapeHtml(road)}</td></tr>
-  </tbody></table>`);
+  const regRows: string[] = [];
+  regRows.push(
+    `<tr><td>marka / modelis</td><td><strong>${escapeHtml(mm)}</strong></td></tr>`,
+    `<tr><td>reģ. nr.</td><td>${escapeHtml(regNr)}</td></tr>`,
+  );
+  if (regStatus)
+    regRows.push(`<tr><td>statuss</td><td>${escapeHtml(regStatus)}</td></tr>`);
+  regRows.push(
+    `<tr><td>pirmā reģistrācija</td><td>${escapeHtml(firstReg)}</td></tr>`,
+    `<tr><td>euro / emisijas</td><td>${escapeHtml(euro)}</td></tr>`,
+    `<tr><td>jauda</td><td>${escapeHtml(power)}</td></tr>`,
+    `<tr><td>pilnā masa</td><td>${escapeHtml(grossMass)}</td></tr>`,
+    `<tr><td>pašmasa</td><td>${escapeHtml(curbMass)}</td></tr>`,
+    `<tr><td>degvielas veids</td><td>${escapeHtml(fuel)}</td></tr>`,
+  );
+  if (smokeRaw) regRows.push(`<tr><td>dūmainības (m⁻¹)</td><td>${escapeHtml(smoke)}</td></tr>`);
+  regRows.push(
+    `<tr><td>nākamā apskate</td><td class="${taSoon ? "td-warn" : ""}">${taCellHtml}</td></tr>`,
+    `<tr><td>ekspluatācijas / ceļa nodoklis (gadā)</td><td>${escapeHtml(road)}</td></tr>`,
+  );
+  parts.push(`<table class="fmt lv-reg-table bordered"><tbody>${regRows.join("\n    ")}</tbody></table>`);
 
   parts.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.lvTa)}</h3>`);
   parts.push(buildTaValidityBanner(taValidUntil));
