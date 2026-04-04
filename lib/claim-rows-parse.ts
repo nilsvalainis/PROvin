@@ -14,6 +14,9 @@ export type ClaimTableRow = {
   sourceNote?: string;
 };
 
+const DAMAGE_HINT =
+  /boj[āa]j|virsb[ūu]v|stikla|stikls|zaud[ēe]j|collision|damage|accident|total\s*loss|piln[īi]g|remont|nok[ļļ]ūš|rezult[āa]t|apr[īi]koj|ķermen|ķermeņa/i;
+
 const CLAIM_CTX =
   /claim|damage|collision|accident|repair|payout|compensation|paid|insurance|total\s*loss|liabilit|indemn|settlement|cost\s+of|body|injur|property\s*damage|ātrie|atlīdz|ierakst|negad|boj[āa]j|av[āa]rij|remont|apr[īi]koj|apr[ēe]k/i;
 
@@ -190,4 +193,66 @@ export function extractClaimRowsForPdfInsight(text: string, sourceOrdinal: numbe
   const dense = parseClaimRowsFromDenseText(text, note);
   const lines = parseClaimRowsFromLineBasedText(text, note);
   return mergeClaimRowLists([dense, lines]);
+}
+
+function isOdometerOrListingNoise(row: ClaimTableRow): boolean {
+  const s = `${row.descShort}\n${row.desc}`.toLowerCase();
+  if (DAMAGE_HINT.test(s)) return false;
+  if (
+    /odometra\s+r[āa]d|ziņots\s+par\s+odometr|nobraukums\s*\d|pārdošanai\s+piedāvātas|dīlera\s+pied|sludinājum|lietots\s+transport/i.test(
+      s,
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function isPdfBoilerplateGarbage(row: ClaimTableRow): boolean {
+  const s = `${row.descShort}\n${row.desc}`;
+  if (/WBAPD[A-HJ-NPR-Z0-9]{10,}/i.test(s)) return true;
+  if (/Auto\s+Vēstures\s+Atskaite|autoDNA/i.test(s) && s.length > 120) return true;
+  if (/Zagto\s+(autom|transport).{0,120}netika\s+atrast/i.test(s)) return true;
+  if (/\d{8}-\d{4}-\d{4}-\d{4}-\d{12}/i.test(s)) return true;
+  if (/Lapa\s+\d+.*Lapa\s+\d+/i.test(s)) return true;
+  if (row.descShort.length > 220) return true;
+  return false;
+}
+
+function isBrokenOcrNoise(row: ClaimTableRow): boolean {
+  const s = row.descShort;
+  if (s.length < 24) return false;
+  const spaced = s.match(/(?:[A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž]\s+){6,}[A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž]/);
+  return Boolean(spaced);
+}
+
+/**
+ * Klienta PDF: atstāj tikai iespējamos bojājumu/atlīdzību ierakstus; izmet PDF „lūžņus” un odometra/sludinājuma rindas.
+ */
+export function filterClaimRowsForClientReport(rows: ClaimTableRow[]): ClaimTableRow[] {
+  const out: ClaimTableRow[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (isPdfBoilerplateGarbage(row)) continue;
+    if (isBrokenOcrNoise(row)) continue;
+    if (isOdometerOrListingNoise(row)) continue;
+    const n = amountToIntRough(row.amount);
+    if (n > 0 && n < 200 && !row.emphasize && !DAMAGE_HINT.test(row.descShort)) continue;
+    const k = `${normalizeDateKey(row.date)}|${n}|${row.descShort.slice(0, 36).toLowerCase()}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(row);
+  }
+  return out.sort((a, b) => sortKey(a) - sortKey(b));
+}
+
+/** Īss bojājuma veids klienta tabulai (simboli + līdz ~28 rakstzīmēm). */
+export function compactDamageKindLabel(row: ClaimTableRow): string {
+  const s = row.descShort.replace(/\s+/g, " ").toLowerCase();
+  if (/stikla|stikls|glass/i.test(s)) return "◆ stikls";
+  if (/virsb[ūu]v|body|ķermen/i.test(s)) return "▢ virsb.";
+  if (/total\s*loss|piln[īi]g|smags|severe|write[\s-]*off/i.test(s)) return "! smags";
+  if (row.emphasize || amountToIntRough(row.amount) >= 5000) return "! augsta ∑";
+  if (/priekš|aizmug|sāna|bumper|buf/i.test(s)) return "◇ zona";
+  return "△ bojāj.";
 }

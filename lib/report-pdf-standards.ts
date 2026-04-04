@@ -15,21 +15,25 @@ export const REPORT_PDF_STANDARDS = {
   sampleInternationalDbWording: "Saskaņā ar starptautisko datubāzu ierakstiem…",
 } as const;
 
-/** PDF atskaites galvenās sadaļas — „Ultra” izkārtojums (numurētas sadaļas). */
+/** PDF atskaites galvenās sadaļas — struktūra: LV avoti → portfelis → kopsavilkums → pretrunas → pārējais. */
 export const CLIENT_REPORT_PDF_SECTIONS = {
   client: "1. KLIENTA PIEPRASĪJUMS",
-  risk: "2. ĀTRĀ RISKU PĀRBAUDE",
-  vehicle: "3. AUTOMAŠĪNAS DATI",
+  /** Admin „2. Avotu piezīmes”: CSDD, LTAB, Tirgus, Citi. */
+  lvSources: "2. LATVIJAS DATU AVOTI",
+  portfolio: "3. PIEVIENOTAIS PORTFELIS (vēstures materiāli)",
+  /** Odometrs + negadījumi + salīdzinošs kopsavilkums. */
+  summary: "4. SALĪDZINOŠAIS KOPSAVILKUMS",
+  historyCompare: "Avotu kopskats",
+  odometer: "Nobraukuma līkne un ieraksti",
+  insurance: "Negadījumu / bojājumu ieraksti",
+  discrepancies: "5. PRETRUNAS, RISKI UN BRĪDINĀJUMI",
+  risk: "Ātrā risku pārbaude",
+  vehicle: "6. IDENTIFIKĀCIJA UN ĪSS REĢISTRA KOPSAVILKUMS",
   attachments: "Pievienotie dokumenti (portfelis)",
-  /** Pirms §4 odometra — starpavotu salīdzinājums (bez failu nosaukumiem klientam). */
-  historyCompare: "Datu avotu salīdzinājums",
-  odometer: "4. ODOMETRA ANALĪZE UN PROGNOZE",
-  /** Virsraksta pamats; pie skaita → „(N fiksēti gadījumi)” */
-  insurance: "5. NEGADĪJUMU VĒSTURE",
-  listing: "6. SLUDINĀJUMS UN TIRGUS KONTEKSTS",
-  inspectionPlan: "7. PERSONALIZĒTS APSKATES PLĀNS (pircējam klātienē)",
-  expert: "8. EKSPERTA SLĒDZIENS",
-  sourcesLegend: "DATU AVOTI",
+  listing: "7. SLUDINĀJUMS (tirgus konteksts)",
+  inspectionPlan: "8. APSKATES PLĀNS KLĀTIENĒ",
+  expert: "9. EKSPERTA SLĒDZIENS",
+  sourcesLegend: "NOBRAUKUMA AVOTU KRĀSU NOZĪME",
   /** @deprecated Lietot client */
   application: "1. KLIENTA PIEPRASĪJUMS",
   otherContext: "Papildu konteksts",
