@@ -56,6 +56,8 @@ type WorkspacePersist = {
   tirgus: string;
   citi: string;
   iriss: string;
+  /** §7 PDF — personalizēts apskates plāns klātienē. */
+  apskatesPlāns: string;
   previewConfirmed: boolean;
 };
 
@@ -65,6 +67,7 @@ const EMPTY_WORKSPACE: WorkspacePersist = {
   tirgus: "",
   citi: "",
   iriss: "",
+  apskatesPlāns: "",
   previewConfirmed: false,
 };
 
@@ -221,9 +224,6 @@ function KmMergeChart({ points }: { points: { km: number; label: string }[] }) {
       <svg viewBox={`0 0 ${w} ${h}`} className="mt-1 w-full max-w-xl text-[var(--color-provin-accent)]" aria-hidden>
         <line x1={padL} y1={padT + innerH} x2={padL + innerW} y2={padT + innerH} stroke="#d4d4d8" strokeWidth="1" />
         <polyline fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" points={poly} />
-        {coords.map((c, i) => (
-          <circle key={i} cx={c.x} cy={c.y} r="3.5" fill="white" stroke="currentColor" strokeWidth="2" />
-        ))}
         <text x={padL} y={h - 6} fontSize="9" fill="#71717a">
           min {minK.toLocaleString("lv-LV")} km — max {maxK.toLocaleString("lv-LV")} km
         </text>
@@ -493,6 +493,7 @@ export function OrderDetailWorkspace({
         tirgus: ws.tirgus,
         citi: ws.citi,
         iriss: ws.iriss,
+        apskatesPlāns: ws.apskatesPlāns,
       },
       portfolio: portfolio.map((p) => ({ name: p.name, size: p.size })),
       pdfInsights,
@@ -656,35 +657,29 @@ export function OrderDetailWorkspace({
   );
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {previewOpen ? previewBody : null}
 
-      <details className="group rounded-xl border border-slate-200/90 bg-gradient-to-b from-slate-50/90 to-white p-3 shadow-sm open:shadow-md">
-        <summary className="cursor-pointer list-none text-sm font-semibold text-[var(--color-apple-text)] marker:content-none [&::-webkit-details-marker]:hidden">
+      <details className="group rounded-lg border border-slate-200/90 bg-gradient-to-b from-slate-50/90 to-white px-2.5 py-2 shadow-sm open:shadow-md">
+        <summary className="cursor-pointer list-none text-xs font-semibold text-[var(--color-apple-text)] marker:content-none [&::-webkit-details-marker]:hidden">
           <span className="inline-flex items-center gap-2">
-            Darba secība (portfelis → avoti → priekšskats → IRISS → PDF)
-            <span className="text-xs font-normal text-[var(--color-provin-muted)] group-open:hidden">(atvērt)</span>
+            Darba secība
+            <span className="text-[11px] font-normal text-[var(--color-provin-muted)] group-open:hidden">(atvērt)</span>
           </span>
         </summary>
-        <div className="mt-2 space-y-1.5 border-t border-slate-200/80 pt-2 text-sm leading-snug text-[var(--color-provin-muted)]">
-          <ol className="list-decimal space-y-0.5 pl-4">
-            <li>Pievieno vēstures atskaišu PDF un citus pielikumus.</li>
-            <li>
-              Aizpildi piezīmes laukos: CSDD, LTAB, Tirgus un sludinājuma piezīmes, Citi avoti (tukšs → PDF: „Informācija
-              nav pieejama”).
-            </li>
-            <li>Spied <strong className="text-[var(--color-apple-text)]">Priekšskats</strong>, pārskati apkopojumu.</li>
-            <li>Pēc apstiprinājuma raksti <strong className="text-[var(--color-apple-text)]">IRISS komentāru</strong>.</li>
-            <li>Tad aktivizējas <strong className="text-[var(--color-apple-text)]">PDF ģenerēšana</strong> klienta audita atskaitei.</li>
+        <div className="mt-1.5 space-y-1 border-t border-slate-200/80 pt-1.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
+          <ol className="list-decimal space-y-0.5 pl-3.5">
+            <li>Portfelis → avoti → priekšskats → IRISS + apskates plāns → PDF.</li>
+            <li>Tukšs avota lauks PDF: „Informācija nav pieejama”.</li>
+            <li>Dati: localStorage + IndexedDB.</li>
           </ol>
-          <p className="text-xs">Dati šajā solī tiek saglabāti pārlūkā (localStorage + IndexedDB), līdz būs servera datubāze.</p>
         </div>
       </details>
 
-      <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">
-            1. Papildu faili — klienta portfelis
+      <section className="rounded-lg border border-slate-200/80 bg-white p-2.5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-1.5">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
+            1. Portfelis
           </h2>
           <div className="flex flex-wrap items-center gap-1">
             <button
@@ -699,14 +694,11 @@ export function OrderDetailWorkspace({
             </button>
           </div>
         </div>
-        <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-          Starptautisko un vietējo vēstures formātu PDF. Glabāšana:{" "}
-          <strong className="font-medium text-[var(--color-apple-text)]">IndexedDB</strong>. Katram failam —{" "}
-          <strong className="font-medium text-[var(--color-apple-text)]">Saglabāt</strong> (ieraksta portfeli) un{" "}
-          <strong className="font-medium text-[var(--color-apple-text)]">Labot</strong> (skats / pilnas darbības), kā pielikumu
-          rindām.
+        <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
+          PDF IndexedDB · <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> /{" "}
+          <strong className="text-[var(--color-apple-text)]">Labot</strong> pie rindas.
         </p>
-        <div className="mt-2.5">
+        <div className="mt-1.5">
           <input
             id={fileInputId}
             type="file"
@@ -727,7 +719,7 @@ export function OrderDetailWorkspace({
         </div>
         {fileError ? <p className="mt-2 text-sm text-amber-800">{fileError}</p> : null}
         {portfolio.length > 0 ? (
-          <ul className="mt-2.5 space-y-2">
+          <ul className="mt-1.5 space-y-1">
             {portfolio.map((p, i) => (
               <AdminSavablePortfolioFileRow
                 key={p.id}
@@ -745,21 +737,19 @@ export function OrderDetailWorkspace({
         )}
       </section>
 
-      <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-sm">
-        <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">
-          2. Piezīmes pēc avota (manuāli)
+      <section className="rounded-lg border border-slate-200/80 bg-white p-2.5 shadow-sm">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
+          2. Avotu piezīmes
         </h2>
-        <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-          Katram blokam savs lauks. Ja atstāj tukšu, PDF ietver tekstu:{" "}
-          <strong className="font-medium text-[var(--color-apple-text)]">Informācija nav pieejama</strong>. Sākumā, ja ir
-          demo/servera teksts, tas var būt ielādēts „Citi avoti”.
+        <p className="mt-0.5 text-[10px] text-[var(--color-provin-muted)]">
+          Tukšs → PDF: <strong className="text-[var(--color-apple-text)]">Informācija nav pieejama</strong>.
         </p>
-        <div className="mt-2.5 space-y-3">
+        <div className="mt-1.5 grid gap-2 md:grid-cols-2">
           {(
             [
               { key: "csdd" as const, label: "CSDD" },
               { key: "ltab" as const, label: "LTAB" },
-              { key: "tirgus" as const, label: "Tirgus un sludinājuma piezīmes" },
+              { key: "tirgus" as const, label: "Tirgus / sludinājums" },
               { key: "citi" as const, label: "Citi avoti" },
             ] as const
           ).map(({ key, label }) => (
@@ -769,75 +759,87 @@ export function OrderDetailWorkspace({
               label={label}
               value={ws[key]}
               onChange={(v) => updateWs({ [key]: v })}
-              placeholder={`Ievadi piezīmes: ${label}…`}
+              placeholder={`${label}…`}
               multiline
-              minHeightClass="min-h-[64px]"
+              minHeightClass="min-h-[52px]"
               resetVersion={workspaceFieldResetKey}
             />
           ))}
         </div>
 
-        <div className="mt-3 border-t border-slate-100 pt-3">
+        <div className="mt-2 border-t border-slate-100 pt-2">
           <button
             type="button"
             onClick={() => setPreviewOpen(true)}
-            className="inline-flex rounded-full border border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)] px-4 py-2 text-sm font-medium text-[var(--color-provin-accent)] hover:bg-[#d4e8fb]"
+            className="inline-flex rounded-full border border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)] px-3 py-1.5 text-xs font-medium text-[var(--color-provin-accent)] hover:bg-[#d4e8fb]"
           >
-            Priekšskats — apkopotā secība
+            Priekšskats
           </button>
           {ws.previewConfirmed ? (
-            <p className="mt-2 text-xs font-medium text-emerald-800">Priekšskats apstiprināts — vari rakstīt IRISS komentāru.</p>
+            <p className="mt-1.5 text-[11px] font-medium text-emerald-800">Apstiprināts — vari rakstīt IRISS.</p>
           ) : (
-            <p className="mt-2 text-xs text-[var(--color-provin-muted)]">Pēc pārskatīšanas apstiprini modālī.</p>
+            <p className="mt-1.5 text-[11px] text-[var(--color-provin-muted)]">Apstiprini modālī.</p>
           )}
         </div>
       </section>
 
       <section
-        className={`rounded-xl border p-3.5 shadow-sm ${
+        className={`rounded-lg border p-2.5 shadow-sm ${
           ws.previewConfirmed
             ? "border-slate-200/80 bg-white"
             : "border-dashed border-slate-200 bg-slate-50/50"
         }`}
       >
-        <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">3. IRISS komentārs</h2>
-        <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-          Galvenais eksperta slēdziens klienta PDF — pēc priekšskata apstiprinājuma.
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
+          3. IRISS + apskates plāns
+        </h2>
+        <p className="mt-0.5 text-[10px] text-[var(--color-provin-muted)]">
+          IRISS = eksperta slēdziens PDF. Zem tā — §7 personalizētais apskates plāns pircējam klātienē.
         </p>
-        <div className="mt-2">
+        <div className="mt-1.5 space-y-2">
           <AdminSavableTextField
             id={`${fileInputId}-iriss`}
-            label="IRISS teksts"
+            label="IRISS (eksperta slēdziens)"
             value={ws.iriss}
             onChange={(v) => updateWs({ iriss: v })}
-            placeholder="Piem., ko saki IRISS / klientam pēc visa apkopojuma…"
+            placeholder="Galvenais kopsavilkums klientam…"
             multiline
             disabled={!ws.previewConfirmed}
+            minHeightClass="min-h-[200px]"
+            textareaExtraClass="max-h-[min(70vh,560px)]"
+            resetVersion={workspaceFieldResetKey}
+          />
+          <AdminSavableTextField
+            id={`${fileInputId}-apskates`}
+            label="Apskates plāns (klātienē)"
+            value={ws.apskatesPlāns}
+            onChange={(v) => updateWs({ apskatesPlāns: v })}
+            placeholder="Piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
+            multiline
+            disabled={!ws.previewConfirmed}
+            minHeightClass="min-h-[100px]"
+            textareaExtraClass="max-h-[min(50vh,400px)]"
             resetVersion={workspaceFieldResetKey}
           />
         </div>
         {!ws.previewConfirmed ? (
-          <p className="mt-2 text-xs text-amber-800">Vispirms apstiprini priekšskatu.</p>
+          <p className="mt-1.5 text-[11px] text-amber-800">Vispirms apstiprini priekšskatu.</p>
         ) : null}
       </section>
 
-      <section className="rounded-xl border border-[var(--color-provin-accent)]/30 bg-[var(--color-provin-accent-soft)]/50 p-3.5">
-        <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">4. Ģenerēt PDF — klienta atskaite</h2>
-        <p className="mt-1 text-sm leading-snug text-[var(--color-provin-muted)]">
-          Pieejams tikai pēc apstiprināta priekšskata un aizpildīta IRISS lauka. Atver druku un saglabā kā PDF.
-        </p>
+      <section className="rounded-lg border border-[var(--color-provin-accent)]/30 bg-[var(--color-provin-accent-soft)]/50 p-2.5">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">4. PDF klientam</h2>
+        <p className="mt-0.5 text-[11px] text-[var(--color-provin-muted)]">Pēc IRISS aizpildes — druka / saglabāt kā PDF.</p>
         <button
           type="button"
           onClick={openPrintReport}
           disabled={!canGeneratePdf}
-          className="mt-3 inline-flex rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-sm font-medium text-white shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45"
+          className="mt-2 inline-flex rounded-full bg-[var(--color-provin-accent)] px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45"
         >
-          Ģenerēt PDF (druka)
+          Ģenerēt PDF
         </button>
         {!canGeneratePdf ? (
-          <p className="mt-2 text-xs text-[var(--color-provin-muted)]">
-            Nepieciešams: apstiprināts priekšskats + IRISS komentārs.
-          </p>
+          <p className="mt-1.5 text-[11px] text-[var(--color-provin-muted)]">Vajag apstiprinātu priekšskatu + IRISS.</p>
         ) : null}
       </section>
     </div>

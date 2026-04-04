@@ -33,6 +33,8 @@ export type ClientReportPayload = {
   tirgus: string;
   citi: string;
   iriss: string;
+  /** §7 Personalizēts apskates plāns — admina lauks zem IRISS. */
+  apskatesPlāns: string;
 };
 
 export type ClientReportPortfolioRow = { name: string; size: number };
@@ -66,11 +68,17 @@ function parseLvDateFragment(s: string): Date | null {
   return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
-function findNextInspectionDate(csdd: string): Date | null {
+/** Nākamās TA datums / derīguma beigas no reģistra piezīmēm. */
+function findTaValidUntilDate(csdd: string): Date | null {
   const patterns = [
     /nākam[āa]\s+(?:tehnisk[āa]?\s+)?apskate\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
     /nākam[āa]\s+TA\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
     /nākam[āa]\s+pārbaude\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
+    /der[īi]g[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
+    /TA\s+der[īi]g[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
+    /tehnisk[āa]s?\s+apskates?\s+der[īi]g[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
+    /apskate\s+sp[ēe]k[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
+    /sp[ēe]k[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
   ];
   for (const re of patterns) {
     const m = csdd.match(re);
@@ -82,12 +90,132 @@ function findNextInspectionDate(csdd: string): Date | null {
   return null;
 }
 
-function isNextInspectionDueWithinThreeMonths(d: Date): boolean {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+type TaValidityClass = "valid" | "soon" | "expired" | "unknown";
+
+function startOfDay(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function classifyTaValidity(validUntil: Date | null): TaValidityClass {
+  if (!validUntil) return "unknown";
+  const today = startOfDay(new Date());
+  const target = startOfDay(validUntil);
+  if (target.getTime() < today.getTime()) return "expired";
   const limit = new Date(today);
   limit.setDate(limit.getDate() + 90);
-  return d.getTime() <= limit.getTime();
+  if (target.getTime() <= limit.getTime()) return "soon";
+  return "valid";
+}
+
+function daysFromTodayTo(target: Date): number {
+  const a = startOfDay(new Date()).getTime();
+  const b = startOfDay(target).getTime();
+  return Math.round((b - a) / 86400000);
+}
+
+function buildTaValidityBanner(validUntil: Date | null): string {
+  const kind = classifyTaValidity(validUntil);
+  const dateStr = validUntil ? validUntil.toLocaleDateString("lv-LV") : "";
+
+  if (kind === "unknown") {
+    return `<div class="ta-status ta-unknown" role="status">
+      <p class="ta-status-title">Tehniskās apskates derīgums</p>
+      <p class="ta-status-text">Tekstā nav automātiski atrasts datums, līdz kuram tehniskā apskate ir derīga (meklējam „nākamā apskate”, „derīga līdz”, „TA derīga līdz” u.c.). Pārbaudiet zemāk esošās piezīmes vai CSDD izrakstu.</p>
+    </div>`;
+  }
+
+  if (kind === "expired") {
+    return `<div class="ta-status ta-expired" role="alert">
+      <p class="ta-status-title">Tehniskā apskate nav spēkā</p>
+      <p class="ta-status-text">Pēc pieejamā datuma <strong>${escapeHtml(dateStr)}</strong> (nākamā apskate / derīguma beigas) transportlīdzeklim <strong>jāveic jauna tehniskā apskate</strong>, lai būtu likumīgi ceļošanai.</p>
+    </div>`;
+  }
+
+  const daysLeft = daysFromTodayTo(validUntil!);
+  if (kind === "soon") {
+    return `<div class="ta-status ta-soon" role="status">
+      <p class="ta-status-title">Tehniskā apskate ir spēkā — termiņš tuvu</p>
+      <p class="ta-status-text">Derīga līdz <strong>${escapeHtml(dateStr)}</strong>. Atlikušas aptuveni <strong>${daysLeft}</strong> dienas (≤ 90 dienām līdz termiņam). Ieteicams laikus pieteikt pārbaudi.</p>
+    </div>`;
+  }
+
+  return `<div class="ta-status ta-ok" role="status">
+    <p class="ta-status-title">Tehniskā apskate ir spēkā</p>
+    <p class="ta-status-text">Derīga līdz <strong>${escapeHtml(dateStr)}</strong>. Līdz termiņam vairāk nekā trīs mēneši (aptuveni <strong>${daysLeft}</strong> dienas).</p>
+  </div>`;
+}
+
+/** Īsas metarindas tikai ar „nākamā apskate: datums” — neiekļaujam vēstures sarakstā. */
+function isOnlyTaValidityMetaLine(line: string): boolean {
+  const l = line.trim();
+  if (l.length > 140) return false;
+  return (
+    /^(?:nākam[āa]|nākamā)\s+(?:tehnisk[āa]?\s+)?(?:apskate|TA|pārbaude)\s*[:\-]?\s*\d{1,2}[./]\d{1,2}[./]\d{2,4}\.?$/i.test(
+      l,
+    ) ||
+    /^der[īi]g[āa]\s+l[īi]dz\s*[:\-]?\s*\d{1,2}[./]\d{1,2}[./]\d{2,4}\.?$/i.test(l) ||
+    /^TA\s+der[īi]g[āa]\s+l[īi]dz\s*[:\-]?\s*\d{1,2}[./]\d{1,2}[./]\d{2,4}\.?$/i.test(l)
+  );
+}
+
+function isTaHistoryContentLine(line: string): boolean {
+  const l = line.trim();
+  if (l.length < 10) return false;
+  if (isOnlyTaValidityMetaLine(l)) return false;
+  if (
+    /(?:pamatpārbaude|atkārtot[āa]?|tehnisk[āa]\s+apskate|\bTA\b|vērtējums\s*[012]|konstat[ēe]tie\s+defekt|defekt[ui])/i.test(
+      l,
+    )
+  ) {
+    return true;
+  }
+  if (
+    /^\d{1,2}[./]\d{1,2}[./]\d{4}/.test(l) &&
+    /(?:apskate|pārbaude|vērtējums|defekt|CSDD|lok[āa]l[āa]|stacij)/i.test(l)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function firstDateInLineSortKey(line: string): number {
+  const m = line.match(/(\d{1,2})[./](\d{1,2})[./](\d{2,4})/);
+  if (!m) return 0;
+  let y = parseInt(m[3], 10);
+  if (y < 100) y += 2000;
+  const mo = parseInt(m[2], 10) - 1;
+  const d = parseInt(m[1], 10);
+  const dt = new Date(y, mo, d);
+  return Number.isNaN(dt.getTime()) ? 0 : dt.getTime();
+}
+
+/** Iepriekšējo TA ierakstu rindas (bez derīguma metarindām), jaunākās augšā. */
+function partitionTaHistoryLines(csdd: string): { historySorted: string[]; restText: string } {
+  const allLines = csdd
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+  const history: string[] = [];
+  const rest: string[] = [];
+  for (const l of allLines) {
+    if (isTaHistoryContentLine(l)) history.push(l);
+    else rest.push(l);
+  }
+  const historySorted = [...history].sort((a, b) => firstDateInLineSortKey(b) - firstDateInLineSortKey(a));
+  return { historySorted, restText: rest.join("\n").trim() };
+}
+
+/** No „citas piezīmes” izņem īsās derīguma rindas, ja datums jau parādīts bannerī. */
+function stripRedundantTaMetaFromRest(restText: string, validUntilKnown: boolean): string {
+  if (!validUntilKnown || !restText.trim()) return restText;
+  return restText
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && !isOnlyTaValidityMetaLine(l))
+    .join("\n")
+    .trim();
 }
 
 function collectTaSeverityWarnings(csdd: string): string[] {
@@ -169,13 +297,17 @@ export function buildOdometerChartPoints(
   return points.sort((a, b) => a.km - b.km);
 }
 
-function splitPointDateAndContext(label: string): { date: string; context: string } {
+/** Tabulai: tikai pirmais datums no etiķetes; ja nav — „—”. */
+function dateOnlyFromOdoLabel(label: string): string {
   const dm = label.match(/\d{1,2}[./]\d{1,2}[./]\d{2,4}/);
-  if (!dm) return { date: "—", context: label };
-  const rest = label.replace(dm[0], "").replace(/^[\s·\-–—]+/, "").trim();
-  return { date: dm[0], context: rest || label };
+  return dm ? dm[0] : "—";
 }
 
+const ALL_TIERS: KmTier[] = ["lv", "hist", "hist2", "dealer", "other"];
+
+/**
+ * Katram avotam (tier) atsevišķa līkne punktu secībā pēc nobraukuma; līknes var krustoties, punkti netiek zīmēti.
+ */
 function buildOdometerSvg(points: OdometerChartPoint[]): string {
   if (points.length === 0) {
     return '<p class="na">Nav izdalītu nobraukuma punktu — aizpildi reģistra piezīmes un/vai pievieno vēstures PDF.</p>';
@@ -188,41 +320,38 @@ function buildOdometerSvg(points: OdometerChartPoint[]): string {
   const padB = 36;
   const innerW = w - padL - padR;
   const innerH = h - padT - padB;
-  const kms = points.map((p) => p.km);
+  const sorted = [...points].sort((a, b) => a.km - b.km);
+  const kms = sorted.map((p) => p.km);
   const minK = Math.min(...kms);
   const maxK = Math.max(...kms);
   const span = Math.max(maxK - minK, 1);
+  const n = sorted.length;
 
-  const coords = points.map((p, i) => {
-    const x = padL + (points.length > 1 ? (i / (points.length - 1)) * innerW : innerW / 2);
+  const coords = sorted.map((p, i) => {
+    const x = padL + (n > 1 ? (i / (n - 1)) * innerW : innerW / 2);
     const y = padT + innerH - ((p.km - minK) / span) * innerH;
-    return { x, y, ...p };
+    return { x, y, km: p.km, tier: p.tier };
   });
 
-  const segments: string[] = [];
-  for (let i = 0; i < coords.length - 1; i++) {
-    const a = coords[i]!;
-    const b = coords[i + 1]!;
-    const col = TIER_COLOR[b.tier];
-    segments.push(
-      `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${col}" stroke-width="2.5" stroke-linecap="round"/>`,
-    );
+  const tierSegments: string[] = [];
+  for (const tier of ALL_TIERS) {
+    const idxs = coords.map((c, i) => (c.tier === tier ? i : -1)).filter((i) => i >= 0);
+    for (let j = 0; j < idxs.length - 1; j++) {
+      const a = coords[idxs[j]!]!;
+      const b = coords[idxs[j + 1]!]!;
+      const col = TIER_COLOR[tier];
+      tierSegments.push(
+        `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${col}" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"/>`,
+      );
+    }
   }
-
-  const circles = coords
-    .map(
-      (c) =>
-        `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="6" fill="${TIER_COLOR[c.tier]}" stroke="#fff" stroke-width="2"/>`,
-    )
-    .join("");
 
   return `
     <div class="chart-wrap">
-      <p class="chart-caption">Nobraukuma dinamikas grafiks (krāsas = datu avoti: 🟢 🔵 🟡 🟠 🔴)</p>
+      <p class="chart-caption">Nobraukuma dinamikas grafiks — atsevišķas krāsainas līknes katram avotam (🟢 🔵 🟡 🟠 🔴), bez punktiem; līknes var krustoties.</p>
       <svg viewBox="0 0 ${w} ${h}" class="odo-chart" aria-hidden="true">
         <line x1="${padL}" y1="${padT + innerH}" x2="${padL + innerW}" y2="${padT + innerH}" stroke="#e5e7eb" stroke-width="1"/>
-        ${segments.join("")}
-        ${circles}
+        ${tierSegments.join("")}
         <text x="${padL}" y="${h - 8}" font-size="10" fill="#71717a">min ${minK.toLocaleString("lv-LV")} km — max ${maxK.toLocaleString("lv-LV")} km</text>
       </svg>
     </div>`;
@@ -315,17 +444,6 @@ function extractVehicleMakeModel(csdd: string): string | null {
     /\b(BMW|Audi|Mercedes-Benz|Mercedes|VW|Volkswagen|Toyota|Volvo|Opel|Ford|Peugeot|Renault|Hyundai|Kia|Škoda|Skoda|Nissan|Mazda|Honda|Citro[ëe]n|Tesla)\s+[A-Za-z0-9][A-Za-z0-9\s\-]{1,32}/i,
   );
   return m ? m[0].trim().replace(/\s{2,}/g, " ") : null;
-}
-
-function extractTaHistoryBullets(csdd: string): string[] {
-  return csdd
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(
-      (l) =>
-        l.length > 12 &&
-        /(?:pamatpārbaude|atkārtot[āa]?|tehnisk[āa]\s+apskate|TA\b|vērtējums\s*[012]|defekt)/i.test(l),
-    );
 }
 
 function estimateYearsFromFirstReg(csdd: string): number | null {
@@ -477,33 +595,6 @@ function buildRiskRows(
   return [legal, mileage, damage, technical];
 }
 
-function buildInspectionChecklist(csdd: string, ltab: string, tirgus: string): string[] {
-  const t = `${csdd}\n${ltab}\n${tirgus}`.toLowerCase();
-  const items: string[] = [];
-  if (/aizmugur|rear|aizmugures|\baizm\./i.test(t)) {
-    items.push(
-      "<strong>Aizmugurējā daļa:</strong> pārbaudiet krāsas biezumu uz bagāžnieka vāka un aizmugures spārniem — vēsturē minēti aizmugures triecieni.",
-    );
-  }
-  if (/total\s*loss|piln[īi]g[aā]\s*boj|šasij|virsb[ūu]ve|balstiek[āa]rt|chassis/i.test(t)) {
-    items.push(
-      "<strong>Stūres iekārta:</strong> braukšanas tests (piem., vibrācijas ~90 km/h), ja vēsturē smags virsbūves / šasijas bojājums vai pilnīga bojāeja.",
-    );
-  }
-  if (/aizmugur|park|sensor|elektron|kamera|rear\s*camera/i.test(t)) {
-    items.push(
-      "<strong>Elektronika:</strong> aizmugures parkošanās sensori / kameras — pēc lieliem remontdarbiem bieži neatjaunoti korekti.",
-    );
-  }
-  if (items.length === 0) {
-    items.push(
-      "<strong>Vispārējs apgājiens:</strong> krāsas vienotība, šuvju simetrija, korozijas pazīmes, riepu nolietojums.",
-    );
-    items.push("<strong>Dzinējs / tehnika:</strong> aukstā starta skaņa, dzesēšana, diagnostika, AC darbība.");
-  }
-  return items;
-}
-
 function splitExpertConclusion(iriss: string): { rating: string | null; summary: string } {
   const t = iriss.trim();
   if (!t) return { rating: null, summary: "" };
@@ -592,6 +683,25 @@ function clientReportPrintCss(): string {
         margin:8px 0;padding:8px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:0.86rem;color:#92400e;
       }
       .listing-delta{color:#b91c1c;font-weight:600;margin-left:6px;}
+      .ta-status{
+        margin:12px 0 16px;padding:14px 16px 16px;border-radius:10px;border:1px solid transparent;
+        border-left-width:5px;
+      }
+      .ta-status-title{margin:0 0 8px;font-size:0.95rem;font-weight:700;color:#14532d;}
+      .ta-status-text{margin:0;font-size:0.88rem;line-height:1.5;color:#166534;}
+      .ta-status.ta-ok{background:#dcfce7;border-color:#86efac;border-left-color:#22c55e;}
+      .ta-status.ta-ok .ta-status-title{color:#14532d;}
+      .ta-status.ta-ok .ta-status-text{color:#166534;}
+      .ta-status.ta-soon{background:#ffedd5;border-color:#fdba74;border-left-color:#ea580c;}
+      .ta-status.ta-soon .ta-status-title{color:#9a3412;}
+      .ta-status.ta-soon .ta-status-text{color:#c2410c;}
+      .ta-status.ta-expired{background:#fee2e2;border-color:#fca5a5;border-left-color:#dc2626;}
+      .ta-status.ta-expired .ta-status-title{color:#991b1b;}
+      .ta-status.ta-expired .ta-status-text{color:#b91c1c;}
+      .ta-status.ta-unknown{background:#f1f5f9;border-color:#cbd5e1;border-left-color:#64748b;}
+      .ta-status.ta-unknown .ta-status-title{color:#334155;}
+      .ta-status.ta-unknown .ta-status-text{color:#475569;}
+      .ta-divider{margin:18px 0 10px;padding-top:14px;border-top:2px solid #e2e8f0;}
       table{width:100%;border-collapse:collapse;font-size:0.82rem;}
       table.fmt{margin:0.5rem 0;}
       table.fmt td,table.fmt th{padding:9px 0;border-bottom:1px solid #e5e7eb;vertical-align:top;}
@@ -626,14 +736,6 @@ function clientReportPrintCss(): string {
       .forecast-warn{margin:0.65rem 0 0;font-size:0.84rem;color:#991b1b;}
       .export-hint{font-size:0.74rem;color:#64748b;margin:10px 0 4px;display:flex;align-items:center;gap:6px;}
       .export-ico{opacity:0.85;}
-      .checklist{margin:0.5rem 0;padding-left:0;list-style:none;counter-reset:plan;}
-      .checklist li{
-        counter-increment:plan;margin:10px 0;font-size:0.86rem;line-height:1.45;
-        position:relative;padding-left:2.6rem;
-      }
-      .checklist li::before{
-        content:counter(plan) ". [ ] ";position:absolute;left:0;color:#64748b;font-weight:600;
-      }
       .expert-verdict{margin:12px 0 8px;}
       .expert-rating{font-size:0.95rem;margin:0 0 10px;}
       .expert-summary-label{font-size:0.82rem;margin:0 0 4px;color:#475569;}
@@ -665,6 +767,7 @@ function clientReportPrintCss(): string {
         body{padding:10mm 12mm;background:#fff;}
         .sheet{background:#fff}
         .no-print{display:none!important;}
+        .ta-status{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       }
     `;
 }
@@ -689,12 +792,10 @@ export function buildClientReportDocumentHtml(args: {
   const insRows = parseInsuranceLikeRows(p.ltab);
   const odoPts = buildOdometerChartPoints(p.csdd, pdfInsights);
   const riskRows = buildRiskRows(p.csdd, p.tirgus, p.ltab, p.citi, insRows);
-  const nextTa = findNextInspectionDate(p.csdd);
-  const nextTaSoon = nextTa ? isNextInspectionDueWithinThreeMonths(nextTa) : false;
+  const taValidUntil = findTaValidUntilDate(p.csdd);
+  const taPartition = partitionTaHistoryLines(p.csdd);
   const makeModel = extractVehicleMakeModel(p.csdd);
   const firstReg = extractFirstRegistration(p.csdd);
-  const taBullets = extractTaHistoryBullets(p.csdd);
-  const checklist = buildInspectionChecklist(p.csdd, p.ltab, p.tirgus);
   const expertParts = splitExpertConclusion(p.iriss);
   const listDelta = listingKmDeltaInfo(p.csdd, p.tirgus);
   const listWarnLong = listingVsOfficialKmWarning(p.csdd, p.tirgus);
@@ -749,12 +850,10 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(
     `<tr><td>Pirmā reģistrācija</td><td>${escapeHtml(firstReg ?? "—")}</td></tr>`,
   );
-  const nextTaCell = nextTa
-    ? nextTaSoon
-      ? `<span class="td-warn">${escapeHtml(nextTa.toLocaleDateString("lv-LV"))} (≤ 90 dienas — uzmanību!)</span>`
-      : escapeHtml(nextTa.toLocaleDateString("lv-LV"))
+  const nextTaCell = taValidUntil
+    ? escapeHtml(taValidUntil.toLocaleDateString("lv-LV"))
     : "—";
-  lines.push(`<tr><td>Nākamā apskate</td><td>${nextTaCell}</td></tr>`);
+  lines.push(`<tr><td>Nākamā apskate / derīga līdz</td><td>${nextTaCell}</td></tr>`);
   lines.push(`<tr><td>VIN</td><td><code>${escapeHtml(p.vin ?? "—")}</code></td></tr>`);
   lines.push(
     `<tr><td>Sludinājuma saite</td><td>${p.listingUrl ? escapeHtml(p.listingUrl) : '<span class="na">—</span>'}</td></tr>`,
@@ -762,21 +861,41 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(`<tr><td>Pasūtījums</td><td><code>${escapeHtml(p.sessionId)}</code> · ${escapeHtml(p.paymentStatus)} · ${escapeHtml(money)}</td></tr>`);
   lines.push(`</tbody></table>`);
 
+  lines.push(`<h3 class="pdf-sub">Tehniskās apskates vēsture</h3>`);
+  lines.push(buildTaValidityBanner(taValidUntil));
+
   const taSev = collectTaSeverityWarnings(p.csdd);
   if (taSev.length > 0) {
     lines.push(
-      `<div class="callout-warn"><strong>TA / defekti:</strong> ${escapeHtml(taSev.join(" "))}</div>`,
+      `<div class="callout-warn"><strong>TA / defekti (no piezīmēm):</strong> ${escapeHtml(taSev.join(" "))}</div>`,
     );
   }
 
-  lines.push(`<h3 class="pdf-sub">Tehniskās apskates vēsture</h3>`);
-  if (taBullets.length > 0) {
-    lines.push("<ul class=\"ta-list\">");
-    for (const b of taBullets) lines.push(`<li>${escapeHtml(b)}</li>`);
+  if (taPartition.historySorted.length > 0) {
+    lines.push(`<div class="ta-divider"></div>`);
+    lines.push(`<h4 class="pdf-sub2">Iepriekšējās tehniskās apskates un pārbužu ieraksti</h4>`);
+    lines.push(`<p class="hint" style="margin-top:0;margin-bottom:8px">Šķirts no derīguma datuma augšā. Secība: jaunākie datumi augšā (pēc pirmā datuma rindā).</p>`);
+    lines.push("<ul class=\"ta-list ta-history\">");
+    for (const b of taPartition.historySorted) {
+      lines.push(`<li>${escapeHtml(b)}</li>`);
+    }
     lines.push("</ul>");
-    lines.push(`<p class="hint">Iekļautas rindas no reģistra piezīmēm, kas satur TA / vērtējumu / defektu kontekstu.</p>`);
-  } else {
+    const restClean = stripRedundantTaMetaFromRest(taPartition.restText, taValidUntil != null);
+    if (restClean.length > 0) {
+      lines.push(`<h4 class="pdf-sub2">Citas reģistra piezīmes</h4>`);
+      lines.push(
+        `<p class="hint" style="margin-top:0;margin-bottom:8px">Teksts, kas netika automātiski klasificēts kā TA pārbaudes rinda.</p>`,
+      );
+      lines.push(workspaceBlockToHtml(restClean, "default"));
+    }
+  } else if (p.csdd.trim()) {
+    lines.push(`<div class="ta-divider"></div>`);
+    lines.push(
+      `<p class="hint" style="margin-top:0">Nav automātiski izdalītas atsevišķas TA rindas — zemāk viss reģistra lauks.</p>`,
+    );
     lines.push(workspaceBlockToHtml(p.csdd, "default"));
+  } else {
+    lines.push('<p class="na">Reģistra piezīmes nav aizpildītas.</p>');
   }
 
   lines.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.attachments)}</h3>`);
@@ -799,29 +918,15 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(buildMileageForecastBlock(odoPts, p.csdd, p.tirgus));
   lines.push(`<h3 class="pdf-sub">Apvienotie punkti (hronoloģiski pēc nobraukuma)</h3>`);
   lines.push(
-    `<table class="fmt odo bordered report-export"><thead><tr><th>Avots</th><th class="tabular">km</th><th>Datums / konteksts</th></tr></thead><tbody>`,
+    `<table class="fmt odo bordered report-export"><thead><tr><th>Avots</th><th class="tabular">km</th><th>Datums</th></tr></thead><tbody>`,
   );
   for (const pt of odoPts) {
-    const { date, context } = splitPointDateAndContext(pt.label);
     lines.push(
-      `<tr><td>${pt.emoji}</td><td class="tabular">${pt.km.toLocaleString("lv-LV")}</td><td>${escapeHtml(date)} · ${escapeHtml(context)}</td></tr>`,
+      `<tr><td>${pt.emoji}</td><td class="tabular">${pt.km.toLocaleString("lv-LV")}</td><td class="tabular">${escapeHtml(dateOnlyFromOdoLabel(pt.label))}</td></tr>`,
     );
   }
   lines.push(`</tbody></table>`);
   lines.push(exportRowHtml());
-
-  if (pdfInsights.length > 0) {
-    lines.push(`<h3 class="pdf-sub">Īss izvilkums no portfeļa PDF</h3>`);
-    for (const ins of pdfInsights) {
-      const fn = sanitizeAttachmentFileNameForReport(ins.fileName);
-      lines.push(`<h4 class="pdf-sub2">${escapeHtml(fn)}</h4>`);
-      if (ins.highlights.length) {
-        lines.push("<ul>");
-        for (const h of ins.highlights) lines.push(`<li>${escapeHtml(h)}</li>`);
-        lines.push("</ul>");
-      }
-    }
-  }
 
   /* 5. Apdrošināšana */
   const insTitle =
@@ -887,14 +992,16 @@ export function buildClientReportDocumentHtml(args: {
   }
   lines.push(workspaceBlockToHtml(p.tirgus, "tirgus"));
 
-  /* 7. Apskates plāns */
+  /* 7. Apskates plāns (admina lauks) */
   lines.push(`<h2 class="pdf-sec">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.inspectionPlan)}</h2>`);
-  lines.push(`<p class="hint" style="margin-bottom:10px">Dodoties apskatīt auto klātienē, pievērsiet uzmanību šiem punktiem (ģenerēts pēc piezīmju atslēgvārdiem):</p>`);
-  lines.push(`<ol class="checklist">`);
-  for (const item of checklist) {
-    lines.push(`<li>${item}</li>`);
+  lines.push(
+    `<p class="hint" style="margin-bottom:10px">Dodoties apskatīt auto klātienē — punkti un piezīmes no eksperta (aizpilda administrācijas panelī zem IRISS komentāra).</p>`,
+  );
+  if (p.apskatesPlāns.trim()) {
+    lines.push(`<pre class="block inspection-plan-block">${escapeHtml(p.apskatesPlāns.trim())}</pre>`);
+  } else {
+    lines.push('<p class="na">Nav aizpildīts — pievienojiet tekstu laukā „Apskates plāns” panelī.</p>');
   }
-  lines.push(`</ol>`);
 
   /* 8. Eksperts */
   lines.push(`<h2 class="pdf-sec">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.expert)}</h2>`);

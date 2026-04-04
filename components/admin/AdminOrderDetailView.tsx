@@ -106,11 +106,11 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
   const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}-${fieldUiRev}`;
 
   const card =
-    "rounded-2xl border border-slate-200/70 bg-white p-4 shadow-[0_2px_20px_rgba(15,23,42,0.04)] sm:p-5";
+    "rounded-xl border border-slate-200/70 bg-white p-3 shadow-[0_1px_12px_rgba(15,23,42,0.05)] sm:p-3.5";
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <Link
           href="/admin"
           className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-3.5 py-2 text-sm font-medium text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/30 hover:bg-[var(--color-provin-accent-soft)]/50"
@@ -129,7 +129,7 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
       </div>
 
       {order.isDemo ? (
-        <div className="mb-5 rounded-2xl border border-amber-200/90 bg-gradient-to-br from-amber-50/95 to-white px-4 py-3.5 text-sm text-amber-950 shadow-sm ring-1 ring-amber-100/80">
+        <div className="mb-3 rounded-xl border border-amber-200/90 bg-gradient-to-br from-amber-50/95 to-white px-3 py-2.5 text-sm text-amber-950 shadow-sm ring-1 ring-amber-100/80">
           <p className="text-xs font-bold uppercase tracking-wide text-amber-800/90">Parauga pasūtījums</p>
           <p className="mt-2 leading-relaxed text-amber-950/90">
             {order.paymentStatus === "unpaid" ? (
@@ -148,23 +148,23 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
         </div>
       ) : null}
 
-      <header className="mb-6 border-b border-slate-200/60 pb-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
+      <header className="mb-4 border-b border-slate-200/60 pb-3">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
           Pasūtījums
         </p>
-        <h1 className="mt-1 font-mono text-2xl font-semibold tracking-tight text-[var(--color-apple-text)]">
+        <h1 className="mt-0.5 font-mono text-xl font-semibold tracking-tight text-[var(--color-apple-text)] sm:text-2xl">
           {mergedVin.trim() || "—"}
         </h1>
-        <p className="mt-1.5 font-mono text-xs text-[var(--color-provin-muted)]">{order.id}</p>
+        <p className="mt-1 font-mono text-[11px] text-[var(--color-provin-muted)]">{order.id}</p>
       </header>
 
-      <div className="space-y-4">
+      <div className="space-y-2.5">
         <section className={card}>
           <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Maksājums</h2>
           <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
             No Stripe / sesijas — šeit nav rediģējams (grāmatvedības un maksājumu ieraksts).
           </p>
-          <dl className="mt-2.5 grid gap-2 text-sm sm:grid-cols-2">
+          <dl className="mt-2 grid gap-1.5 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-[var(--color-provin-muted)]">Summa</dt>
               <dd className="mt-0.5 font-medium tabular-nums text-[var(--color-apple-text)]">
@@ -189,7 +189,7 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
           <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
             VIN un saiti vari labot darba vajadzībām; izmaiņas saglabājas tikai šajā pārlūkā (localStorage).
           </p>
-          <div className="mt-2.5 space-y-4">
+          <div className="mt-2 space-y-2.5">
             <AdminSavableTextField
               id="edit-vin"
               label="VIN"
@@ -229,7 +229,7 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
             No pasūtījuma — <strong className="font-medium text-[var(--color-apple-text)]">nav rediģējami</strong>{" "}
             (personas dati).
           </p>
-          <dl className="mt-2.5 grid gap-2 text-sm sm:grid-cols-2">
+          <dl className="mt-2 grid gap-1.5 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-[var(--color-provin-muted)]">E-pasts</dt>
               <dd className="mt-0.5 break-all text-[var(--color-apple-text)]">
@@ -258,7 +258,7 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
           <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
             Vari labot darba nolūkos (piemēram, atkārtoti iekopēt vai precizēt); oriģināls paliek serverī / Stripe.
           </p>
-          <div className="mt-2">
+          <div className="mt-1.5">
             <AdminSavableTextField
               id="edit-notes"
               value={mergedNotes}
@@ -285,7 +285,7 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
             Nosaukumi darba kārtībai; īstus failus glabā zem „Papildu faili”. Rindas vari pielabot vai dzēst.
           </p>
           {mergedAttachments.length > 0 ? (
-            <ul className="mt-2.5 space-y-2">
+            <ul className="mt-2 space-y-1.5">
               {mergedAttachments.map((a, i) => (
                 <AdminSavableAttachmentRow
                   key={`${order.id}-att-${i}-${orderFieldResetKey}`}

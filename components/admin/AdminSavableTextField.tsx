@@ -21,6 +21,8 @@ export type AdminSavableTextFieldProps = {
   inputType?: "text" | "url";
   /** Kad mainās pasūtījums / hidrācija — atiestata iekšējo „pēdējo saglabāto” punktu */
   resetVersion?: number | string;
+  /** Papildu klases textarea (piem. max augstums, resize). */
+  textareaExtraClass?: string;
 };
 
 export function AdminSavableTextField({
@@ -36,6 +38,7 @@ export function AdminSavableTextField({
   disabled,
   inputType = "text",
   resetVersion,
+  textareaExtraClass = "",
 }: AdminSavableTextFieldProps) {
   const [viewMode, setViewMode] = useState(false);
   const [flash, setFlash] = useState(false);
@@ -110,7 +113,7 @@ export function AdminSavableTextField({
       ) : multiline ? (
         <textarea
           id={id}
-          className={`${fieldClass} resize-y`}
+          className={`${fieldClass} resize-y ${textareaExtraClass}`.trim()}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
