@@ -223,6 +223,7 @@ async function extractPdfTextWithOptionalOcr(buffer: ArrayBuffer): Promise<{ tex
     }
   }
 
+  text = normalizePdfExtractedText(text);
   return { text, ocrPages };
 }
 
