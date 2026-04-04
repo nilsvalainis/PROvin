@@ -107,22 +107,43 @@ function parseLvDateFragment(s: string): Date | null {
   return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
-/** Nākamās TA datums / derīguma beigas no reģistra piezīmēm. */
-function findTaValidUntilDate(csdd: string): Date | null {
+/** DD.MM.YYYY vai ISO pēc ievades lauka (CSDD eksports, tabulas). */
+function parseFlexibleDateFragment(s: string): Date | null {
+  const t = s.trim();
+  if (!t) return null;
+  const lv = parseLvDateFragment(t);
+  if (lv) return lv;
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) {
+    const y = parseInt(iso[1], 10);
+    const mo = parseInt(iso[2], 10) - 1;
+    const d = parseInt(iso[3], 10);
+    const dt = new Date(y, mo, d);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+  }
+  return null;
+}
+
+/** Nākamās TA datums / derīguma beigas no CSDD, LTAB un citām piezīmēm. */
+function findTaValidUntilDate(corpus: string): Date | null {
   const patterns = [
-    /nākam[āa]\s+(?:tehnisk[āa]?\s+)?apskate\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
-    /nākam[āa]\s+TA\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
-    /nākam[āa]\s+pārbaude\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
-    /der[īi]g[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
-    /TA\s+der[īi]g[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
-    /tehnisk[āa]s?\s+apskates?\s+der[īi]g[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
-    /apskate\s+sp[ēe]k[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
-    /sp[ēe]k[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i,
+    // Bieži CSDD / PDF: virsraksts „Nākamās apskates datums” + datums tajā pašā vai nākamajā rindā
+    /nākam[āa]s?\s+(?:tehnisk[āa]s?\s+)?apskates?\s+datums?\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2})/i,
+    /nākam[āa]\s+tehnisk[āa]s?\s+apskates?\s+datums?\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2})/i,
+    /tehnisk[āa]s?\s+apskates?\s+der[īi]gums?\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2})/i,
+    /nākam[āa]\s+(?:tehnisk[āa]?\s+)?apskate\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2})/i,
+    /nākam[āa]\s+TA\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2})/i,
+    /nākam[āa]\s+pārbaude\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2})/i,
+    /der[īi]g[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2})/i,
+    /TA\s+der[īi]g[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2})/i,
+    /tehnisk[āa]s?\s+apskates?\s+der[īi]g[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2})/i,
+    /apskate\s+sp[ēe]k[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2})/i,
+    /sp[ēe]k[āa]\s+l[īi]dz\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2})/i,
   ];
   for (const re of patterns) {
-    const m = csdd.match(re);
+    const m = corpus.match(re);
     if (m?.[1]) {
-      const d = parseLvDateFragment(m[1]);
+      const d = parseFlexibleDateFragment(m[1]);
       if (d) return d;
     }
   }
@@ -161,7 +182,7 @@ function buildTaValidityBanner(validUntil: Date | null): string {
   if (kind === "unknown") {
     return `<div class="ta-status ta-unknown" role="status">
       <p class="ta-status-title">Tehniskās apskates derīgums</p>
-      <p class="ta-status-text">Tekstā nav automātiski atrasts datums, līdz kuram tehniskā apskate ir derīga (meklējam „nākamā apskate”, „derīga līdz”, „TA derīga līdz” u.c.). Pārbaudiet zemāk esošās piezīmes vai CSDD izrakstu.</p>
+      <p class="ta-status-text">Dokumentos derīgums bieži norādīts pie „Nākamās apskates datums”, „Tehniskās apskates derīgums” u.tml. Automātika meklē „nākamā apskate”, „nākamās apskates datums”, „derīga līdz”, „TA derīga līdz” un līdzīgus pierakstus — šeit datums nav ticis atpazīts. Pārbaudiet zemāk esošās piezīmes un CSDD izrakstu.</p>
     </div>`;
   }
 
@@ -1216,7 +1237,7 @@ export function buildClientReportDocumentHtml(args: {
   const odoPts = buildOdometerChartPoints(p.csdd, pdfInsights, p.citi);
   const odoMerged = mergeOdometerPointsForDisplay(odoPts);
   const riskRows = buildRiskRows(p.csdd, p.tirgus, p.ltab, p.citi, allClaimRows);
-  const taValidUntil = findTaValidUntilDate(`${p.csdd}\n${p.citi}`);
+  const taValidUntil = findTaValidUntilDate(`${p.csdd}\n${p.ltab}\n${p.citi}`);
   const makeModel = extractVehicleMakeModel(p.csdd);
   const firstReg = extractFirstRegistration(p.csdd);
   const expertParts = splitExpertConclusion(p.iriss);
