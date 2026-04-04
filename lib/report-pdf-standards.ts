@@ -21,11 +21,11 @@ export const CLIENT_REPORT_PDF_SECTIONS = {
   risk: "2. ĀTRĀ RISKU PĀRBAUDE",
   vehicle: "3. AUTOMAŠĪNAS DATI",
   attachments: "Pievienotie dokumenti (portfelis)",
-  /** Pirms §4 odometra — kopsavilkums no portfeļa PDF analīzes (bez trešo pušu zīmolu nosaukumiem). */
-  historyCompare: "Starptautisko vēstures pārskatu kopsavilkums",
+  /** Pirms §4 odometra — starpavotu salīdzinājums (bez failu nosaukumiem klientam). */
+  historyCompare: "Datu avotu salīdzinājums",
   odometer: "4. ODOMETRA ANALĪZE UN PROGNOZE",
   /** Virsraksta pamats; pie skaita → „(N fiksēti gadījumi)” */
-  insurance: "5. APDROŠINĀŠANAS KONTEKSTS",
+  insurance: "5. NEGADĪJUMU VĒSTURE",
   listing: "6. SLUDINĀJUMS UN TIRGUS KONTEKSTS",
   inspectionPlan: "7. PERSONALIZĒTS APSKATES PLĀNS (pircējam klātienē)",
   expert: "8. EKSPERTA SLĒDZIENS",
@@ -49,7 +49,7 @@ export const CLIENT_REPORT_SECTION_LABELS = {
   /** Galvenā rindiņa zem PROVIN.LV */
   mainTitle: "Transportlīdzekļa izvērtējums",
   registryNotes: "Valsts reģistra un publisko datu piezīmes",
-  insuranceNotes: "OCTA un apdrošināšanas konteksta piezīmes",
+  insuranceNotes: "OCTA, atlīdzības un negadījumu konteksta piezīmes",
   marketNotes: "Tirgus un sludinājuma piezīmes",
   otherNotes: "Papildu piezīmes",
   attachments: "Pievienotie dokumenti",

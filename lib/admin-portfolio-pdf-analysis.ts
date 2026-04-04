@@ -2,6 +2,8 @@
  * Portfeļa PDF teksta izvilkšana (pdf.js) un heuristiska analīze: nobraukums, brīdinājumi.
  */
 
+import { extractClaimRowsForPdfInsight, type ClaimTableRow } from "@/lib/claim-rows-parse";
+
 export type KmSample = {
   km: number;
   /** Datums vai konteksta fragments, ja izdevies izvilkt */
@@ -34,12 +36,26 @@ export function detectHistoryPdfKind(fileName: string, text: string): HistoryPdf
 
 export type PdfPortfolioFileInsight = {
   fileName: string;
+  /** Klienta atskaitē: 1, 2, 3… (nav faila nosaukuma). */
+  sourceOrdinal: number;
   charCount: number;
   kmSamples: KmSample[];
   /** Īsi secinājumi / atslēgvārdi */
   highlights: string[];
   historyKind: HistoryPdfKind;
+  /** Atlīdzības / tāmes rindas, izvilktas no PDF teksta. */
+  claimRows: ClaimTableRow[];
+  /** Cik lapas lasītas ar OCR, ja teksta slānis bija pārāk mazs (bieži — skenēts PDF). */
+  ocrPages?: number;
 };
+
+/** Mazāk par šo — pārlūkā mēģinām OCR pirmās dažas lapas (tikai `window`; serverī netiek lietots). */
+const OCR_TEXT_CHARS_THRESHOLD = 420;
+const OCR_MAX_PAGES = 4;
+
+function nonWhitespaceCharCount(s: string): number {
+  return s.replace(/\s/g, "").length;
+}
 
 const ACCIDENT_HINTS: { re: RegExp; label: string }[] = [
   { re: /\bnegad[īi]jums\b/i, label: "Negadījums (atslēgvārds)" },
@@ -55,10 +71,15 @@ const ACCIDENT_HINTS: { re: RegExp; label: string }[] = [
   { re: /\brecall\b/i, label: "Recall" },
 ];
 
-const KM_WITH_DATE_RE = /(\d{2}\.\d{2}\.\d{4}|\d{4}-\d{2}-\d{2})[^\d]{0,120}?(\d{1,3}(?:[ \u00a0]?\d{3})+)\s*km/gi;
+const KM_WITH_DATE_RE =
+  /(\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2})[^\d]{0,180}?(\d{1,3}(?:[ \u00a0]?\d{3})+)\s*km/gi;
+const KM_THEN_DATE_RE =
+  /(\d{1,3}(?:[ \u00a0]?\d{3})+)\s*km[^\d]{0,140}?(\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2})/gi;
 const KM_PLAIN_RE = /(\d{1,3}(?:[ \u00a0]?\d{3})+)\s*km/gi;
 const ODOMETER_EN = /\bodometer\b[^\d]{0,40}?(\d{5,7})\b/gi;
 const ODOMETER_LV = /odometra\s+r[aā]d[īi]jums[:\s]+(\d{5,7})/gi;
+const MILEAGE_EN = /(?:recorded\s+)?mileage[:\s]+(\d{5,7})\b/gi;
+const ODO_READING_EN = /odometer\s+reading[:\s]+(\d{5,7})\b/gi;
 
 function pushKmUnique(arr: KmSample[], km: number, context?: string) {
   if (km < 1000 || km > 2_000_000) return;
@@ -77,6 +98,12 @@ function extractKmSamples(text: string): KmSample[] {
   }
   KM_WITH_DATE_RE.lastIndex = 0;
 
+  while ((m = KM_THEN_DATE_RE.exec(t)) !== null) {
+    const km = parseInt(m[1].replace(/\s/g, ""), 10);
+    pushKmUnique(out, km, m[2]);
+  }
+  KM_THEN_DATE_RE.lastIndex = 0;
+
   while ((m = KM_PLAIN_RE.exec(t)) !== null) {
     const km = parseInt(m[1].replace(/\s/g, ""), 10);
     pushKmUnique(out, km);
@@ -87,6 +114,12 @@ function extractKmSamples(text: string): KmSample[] {
   }
   while ((m = ODOMETER_LV.exec(t)) !== null) {
     pushKmUnique(out, parseInt(m[1], 10), "odometra rādījums");
+  }
+  while ((m = MILEAGE_EN.exec(t)) !== null) {
+    pushKmUnique(out, parseInt(m[1], 10), "mileage");
+  }
+  while ((m = ODO_READING_EN.exec(t)) !== null) {
+    pushKmUnique(out, parseInt(m[1], 10), "odometer reading");
   }
 
   return out.sort((a, b) => a.km - b.km);
@@ -102,7 +135,7 @@ function extractHighlights(text: string): string[] {
   return [...found];
 }
 
-export async function extractPdfText(buffer: ArrayBuffer): Promise<string> {
+async function extractPdfTextWithOptionalOcr(buffer: ArrayBuffer): Promise<{ text: string; ocrPages: number }> {
   const pdfjs = await import("pdfjs-dist");
   pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -121,39 +154,115 @@ export async function extractPdfText(buffer: ArrayBuffer): Promise<string> {
       .join(" ");
     parts.push(line);
   }
-  return parts.join("\n");
+  let text = parts.join("\n");
+  let ocrPages = 0;
+
+  const needOcr =
+    typeof window !== "undefined" &&
+    nonWhitespaceCharCount(text) < OCR_TEXT_CHARS_THRESHOLD &&
+    pdf.numPages > 0;
+
+  if (needOcr) {
+    try {
+      const { createWorker } = await import("tesseract.js");
+      const worker = await createWorker("eng+lav", undefined, {
+        logger: () => undefined,
+      });
+      try {
+        const maxP = Math.min(OCR_MAX_PAGES, pdf.numPages);
+        const ocrChunks: string[] = [];
+        const maxSide = 1900;
+        for (let p = 1; p <= maxP; p++) {
+          const page = await pdf.getPage(p);
+          const base = page.getViewport({ scale: 1 });
+          let scale = 2;
+          if (base.width * scale > maxSide) scale = maxSide / base.width;
+          if (base.height * scale > maxSide) scale = Math.min(scale, maxSide / base.height);
+          const viewport = page.getViewport({ scale });
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          if (!ctx) break;
+          canvas.width = Math.floor(viewport.width);
+          canvas.height = Math.floor(viewport.height);
+          const task = page.render({ canvasContext: ctx, viewport });
+          await task.promise;
+          const { data } = await worker.recognize(canvas);
+          if (data.text?.trim()) ocrChunks.push(data.text.trim());
+          ocrPages++;
+        }
+        if (ocrChunks.length) {
+          const merged = [text, ...ocrChunks].filter((s) => nonWhitespaceCharCount(s) > 0);
+          text = merged.join("\n");
+        }
+      } finally {
+        await worker.terminate();
+      }
+    } catch {
+      /* OCR neizdevās — atstājam tikai teksta slāņa rezultātu */
+    }
+  }
+
+  return { text, ocrPages };
 }
 
-export async function analyzePdfBuffer(fileName: string, buffer: ArrayBuffer): Promise<PdfPortfolioFileInsight> {
+/** Teksta slānis caur pdf.js; pārlūkā — papildu OCR, ja teksts īss (bieži skenēti PDF). */
+export async function extractPdfText(buffer: ArrayBuffer): Promise<string> {
+  const { text } = await extractPdfTextWithOptionalOcr(buffer);
+  return text;
+}
+
+export async function analyzePdfBuffer(
+  fileName: string,
+  buffer: ArrayBuffer,
+  sourceOrdinal: number,
+): Promise<PdfPortfolioFileInsight> {
   let text = "";
+  let ocrPages = 0;
   try {
-    text = await extractPdfText(buffer);
+    const r = await extractPdfTextWithOptionalOcr(buffer);
+    text = r.text;
+    ocrPages = r.ocrPages;
   } catch {
     return {
       fileName,
+      sourceOrdinal,
       charCount: 0,
       kmSamples: [],
-      highlights: ["PDF tekstu neizdevās izvilkt (bojāts fails vai pdf.js kļūda)."],
+      highlights: ["Tekstu neizdevās izvilkt no datnes (bojāts fails vai lasīšanas kļūda)."],
       historyKind: detectHistoryPdfKind(fileName, ""),
+      claimRows: [],
     };
   }
   const kmSamples = extractKmSamples(text);
-  const highlights = extractHighlights(text);
+  const baseHighlights = extractHighlights(text);
+  const highlights =
+    ocrPages > 0
+      ? [
+          `OCR: automātiski nolasītas ${ocrPages} lapas (trūka teksta slāņa vai vājš teksts). Salīdziniet ar oriģinālu — iespējamas kļūdas.`,
+          ...baseHighlights,
+        ]
+      : baseHighlights;
+  const claimRows = extractClaimRowsForPdfInsight(text, sourceOrdinal);
   return {
     fileName,
+    sourceOrdinal,
     charCount: text.length,
     kmSamples,
     highlights,
     historyKind: detectHistoryPdfKind(fileName, text),
+    claimRows,
+    ...(ocrPages > 0 ? { ocrPages } : {}),
   };
 }
 
+/** Admin priekšskatam / grafikiem — etiķetes bez failu nosaukumiem. */
 export function mergeKmForChart(insights: PdfPortfolioFileInsight[]): { km: number; label: string }[] {
   const merged: { km: number; label: string }[] = [];
   for (const ins of insights) {
+    const base = `Pārskats ${ins.sourceOrdinal}`;
     for (const s of ins.kmSamples) {
-      const label = s.context ? `${ins.fileName} · ${s.context}` : ins.fileName;
-      if (merged.some((m) => Math.abs(m.km - s.km) < 50 && m.label.includes(ins.fileName))) continue;
+      const label = s.context ? `${base} · ${s.context}` : base;
+      if (merged.some((m) => Math.abs(m.km - s.km) < 50 && m.label.startsWith(base))) continue;
       merged.push({ km: s.km, label });
     }
   }

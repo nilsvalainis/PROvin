@@ -408,10 +408,11 @@ export function OrderDetailWorkspace({
     (async () => {
       const out: PdfPortfolioFileInsight[] = [];
       try {
-        for (const p of pdfs) {
+        for (let idx = 0; idx < pdfs.length; idx++) {
+          const p = pdfs[idx]!;
           if (cancelled) return;
           const buf = await fetch(p.blobUrl).then((r) => r.arrayBuffer());
-          const ins = await analyzePdfBuffer(p.name, buf);
+          const ins = await analyzePdfBuffer(p.name, buf, idx + 1);
           out.push(ins);
         }
         if (!cancelled) setPdfInsights(out);
@@ -600,22 +601,38 @@ export function OrderDetailWorkspace({
               </ul>
             )}
             {pdfScanning ? (
-              <p className="mt-2 text-xs text-[var(--color-provin-muted)]">PDF teksta izvilkšana…</p>
+              <p className="mt-2 text-xs text-[var(--color-provin-muted)]">
+                PDF analīze (teksta slānis; ja vajag — OCR pirmajām lapām, var aizņemt līdz minūtei)…
+              </p>
             ) : null}
             {pdfScanError ? <p className="mt-2 text-xs text-amber-800">{pdfScanError}</p> : null}
             {!pdfScanning && pdfInsights.length > 0 ? (
               <div className="mt-3 space-y-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3 text-xs">
                 <p className="font-medium text-[var(--color-apple-text)]">
-                  No PDF automātiski (teksts, nevis vizuālais avots)
+                  No PDF automātiski (teksta slānis; skenētiem — OCR uz pārlūku)
                 </p>
                 <p className="text-[var(--color-provin-muted)]">
-                  Atslēgvārdi (negadījumi, atsaukumi, u.c.) un nobraukuma skaitļi. Salīdzini ar oriģināļiem — tabulas
-                  atšķiras.
+                  Atslēgvārdi (negadījumi, atsaukumi, u.c.) un nobraukuma skaitļi. OCR pirmās līdz četrām lapām, ja teksts
+                  PDF ir īss. Salīdziniet ar oriģināļiem — tabulas atšķiras.
                 </p>
                 {mergedKmPoints.length >= 2 ? <KmMergeChart points={mergedKmPoints} /> : null}
                 {pdfInsights.map((ins, fi) => (
-                  <div key={`${ins.fileName}-${fi}`} className="rounded-lg border border-slate-100 bg-white px-2.5 py-2">
-                    <p className="font-medium text-[var(--color-apple-text)]">{ins.fileName}</p>
+                  <div
+                    key={`${ins.sourceOrdinal}-${fi}`}
+                    className="rounded-lg border border-slate-100 bg-white px-2.5 py-2"
+                  >
+                    <p className="font-medium text-[var(--color-apple-text)]">
+                      Pārskats {ins.sourceOrdinal}
+                      <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">
+                        {ins.fileName}
+                      </span>
+                    </p>
+                    {ins.ocrPages ? (
+                      <p className="mt-0.5 text-[11px] font-medium text-emerald-900">
+                        OCR: {ins.ocrPages} lapas — teksts papildināts no attēla (pirmoreiz jāielādē valodu dati no
+                        tīkla).
+                      </p>
+                    ) : null}
                     {ins.highlights.length > 0 ? (
                       <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[var(--color-provin-muted)]">
                         {ins.highlights.map((h) => (

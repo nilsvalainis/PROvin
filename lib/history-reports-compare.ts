@@ -12,7 +12,9 @@ import {
 export type HistoryCompareRow = {
   historyKind: HistoryPdfKind;
   kindLabel: string;
-  fileDisplay: string;
+  /** Klienta atskaitē: „Datu avots N”. */
+  sourceLabel: string;
+  sourceOrdinal: number;
   minKm: number | null;
   maxKm: number | null;
   nSamples: number;
@@ -30,17 +32,14 @@ export const HISTORY_COMPARE_USAGE_LV: Record<HistoryPdfKind, string> = {
   registry_focus:
     "Mēdz labāk atspoguļot fiksētus ierakstus konkrētā tirgū — noderīgs, ja auto ilgi ekspluatēts viena reģiona ietvaros.",
   generic:
-    "Tips nav automātiski atpazīts: izmantojiet saturu kā papildu pierādījumu līdzās citiem PDF; pārbaudiet faila nosaukumu un tekstu.",
+    "Tips nav automātiski atpazīts — salīdziniet ar citiem avotiem un reģistra datiem; saturs joprojām var saturēt noderīgas norādes.",
 };
 
 function kindOf(ins: PdfPortfolioFileInsight): HistoryPdfKind {
   return ins.historyKind ?? detectHistoryPdfKind(ins.fileName, "");
 }
 
-export function buildHistoryCompareRows(
-  insights: PdfPortfolioFileInsight[],
-  sanitizeFileName: (s: string) => string,
-): HistoryCompareRow[] {
+export function buildHistoryCompareRows(insights: PdfPortfolioFileInsight[]): HistoryCompareRow[] {
   return insights.map((ins) => {
     const kms = ins.kmSamples.map((s) => s.km);
     const minKm = kms.length ? Math.min(...kms) : null;
@@ -51,7 +50,8 @@ export function buildHistoryCompareRows(
     return {
       historyKind: hk,
       kindLabel: HISTORY_PDF_KIND_LABEL_LV[hk],
-      fileDisplay: sanitizeFileName(ins.fileName),
+      sourceLabel: `Datu avots ${ins.sourceOrdinal}`,
+      sourceOrdinal: ins.sourceOrdinal,
       minKm,
       maxKm,
       nSamples: ins.kmSamples.length,
@@ -68,7 +68,7 @@ export function buildHistoryCompareBullets(rows: HistoryCompareRow[]): string[] 
 
   if (rows.length < 2) {
     bullets.push(
-      "Lai redzētu starpavotu salīdzinājumu, pievienojiet portfelī vismaz divus vēstures PDF un ģenerējiet atskaiti atkārtoti.",
+      "Lai redzētu starpavotu salīdzinājumu, importējiet vismaz divas vēstures datnes un atkārtoti ģenerējiet atskaiti.",
     );
   }
 
@@ -99,7 +99,7 @@ export function buildHistoryCompareBullets(rows: HistoryCompareRow[]): string[] 
   let uniqAdded = 0;
   for (const [label, c] of labelCounts) {
     if (c === 1 && rows.length > 1 && uniqAdded < 4) {
-      bullets.push(`Signāls „${label}” parādās tikai vienā no analizētajiem PDF — pārbaudiet saturu arī citās datnēs.`);
+      bullets.push(`Signāls „${label}” parādās tikai vienā avotā — pārbaudiet arī pārējos salīdzinājuma blokus.`);
       uniqAdded++;
     }
   }
@@ -107,14 +107,14 @@ export function buildHistoryCompareBullets(rows: HistoryCompareRow[]): string[] 
   const kinds = new Set(rows.map((r) => r.historyKind));
   if (rows.length >= 2 && kinds.size === 1 && kinds.has("generic")) {
     bullets.push(
-      "Visi PDF ir klasificēti kā vispārīgi — ja datnes satur konkrētu pakalpojuma formātu, pārbaudiet, vai fails nav pārdēvēts (klasifikācija balstās uz nosaukumu un izvilkto tekstu).",
+      "Visi importētie avoti ir klasificēti kā vispārīgi — ja struktūra atšķiras no gaidītās, salīdziniet ar reģistru un citiem avotiem.",
     );
   }
 
   const broken = rows.filter((r) => !r.textOk);
   if (broken.length > 0 && rows.length > 1) {
     bullets.push(
-      "Dažās datnēs tekstu neizdevās pilnībā izvilkt — salīdzinājums balstās uz pieejamo fragmentu; vajadzības gadījumā atveriet oriģinālu PDF manuāli.",
+      "Dažos avotos tekstu neizdevās pilnībā izvilkt — salīdzinājums balstās uz pieejamo fragmentu; vajadzības gadījumā skatiet oriģinālu materiālu.",
     );
   }
 

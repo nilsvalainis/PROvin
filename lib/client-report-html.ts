@@ -4,7 +4,6 @@
 
 import { extractKmCandidates, workspaceBlockToHtml } from "@/lib/admin-workspace-preview-format";
 import {
-  mergeKmForChart,
   type HistoryPdfKind,
   HISTORY_PDF_KIND_LABEL_LV,
   type PdfPortfolioFileInsight,
@@ -14,6 +13,11 @@ import {
   buildHistoryCompareRows,
   HISTORY_COMPARE_USAGE_LV,
 } from "@/lib/history-reports-compare";
+import {
+  mergeClaimRowLists,
+  parseClaimRowsFromLineBasedText,
+  type ClaimTableRow,
+} from "@/lib/claim-rows-parse";
 import {
   CLIENT_REPORT_FOOTER_DISCLAIMER,
   CLIENT_REPORT_PDF_SECTIONS,
@@ -56,6 +60,30 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+/** Minimālas līnijas ikonas (PDF / druka). */
+const ICO = {
+  user: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.75"/></svg>`,
+  shield: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg>`,
+  car: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11M5 11h14v6a1 1 0 0 1-1 1h-1M5 11H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h1m14 0h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7.5" cy="17.5" r="1.5" fill="currentColor"/><circle cx="16.5" cy="17.5" r="1.5" fill="currentColor"/></svg>`,
+  chart: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 3v18h18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M7 16l4-6 4 3 5-8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  alert: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/><path d="M12 9v4M12 17h.01" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>`,
+  tag: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2H2v10l9.29 9.29a1 1 0 0 0 1.41 0l6.59-6.59a1 1 0 0 0 0-1.41L12 2z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1" fill="currentColor"/></svg>`,
+  clip: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><rect x="8" y="2" width="8" height="4" rx="1" stroke="currentColor" stroke-width="1.75"/></svg>`,
+  spark: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 1.6 5.2h5.4l-4.4 3.4 1.7 5.4L12 15.8 7.7 17.2l1.7-5.4L5 8.2h5.4L12 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
+  layers: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg>`,
+};
+
+function sectionHead(icon: string, title: string): string {
+  return `<div class="pdf-sec-head">${icon}<h2 class="pdf-sec">${escapeHtml(title)}</h2></div>`;
+}
+
+const COMPARE_KIND_SHORT: Record<HistoryPdfKind, string> = {
+  euro_network: "Plašs EU",
+  regional_alt: "Papildu DB",
+  registry_focus: "Reģions",
+  generic: "Neapr.",
+};
 
 function flagEmoji(iso2: string): string {
   const c = iso2.trim().toUpperCase();
@@ -259,14 +287,17 @@ const TIER_COLOR: Record<KmTier, string> = {
   other: "#dc2626",
 };
 
-function tierFromMergedLabel(label: string, histAlt: { n: number }): KmTier {
-  const L = label.toLowerCase();
-  if (/reģistr|valsts|csdd|latvij|publisk|lod\b|lokr/i.test(L)) return "lv";
-  if (/d[īi]ler|dealer|salon|ofici[āa]l/i.test(L)) return "dealer";
-  if (/vēstures|atskait|history|report|carvertical|autodna|dna|vertical|boj[āa]j/i.test(L)) {
-    return histAlt.n++ % 2 === 0 ? "hist" : "hist2";
+function tierFromHistoryKind(k: HistoryPdfKind): KmTier {
+  switch (k) {
+    case "euro_network":
+      return "hist";
+    case "regional_alt":
+      return "hist2";
+    case "registry_focus":
+      return "other";
+    default:
+      return "hist";
   }
-  return "other";
 }
 
 export type OdometerChartPoint = {
@@ -308,7 +339,6 @@ export function buildOdometerChartPoints(
   insights: PdfPortfolioFileInsight[],
   citi: string,
 ): OdometerChartPoint[] {
-  const histAlt = { n: 0 };
   const points: OdometerChartPoint[] = [];
   const seen = (km: number) => points.some((p) => Math.abs(p.km - km) < 120);
 
@@ -324,15 +354,21 @@ export function buildOdometerChartPoints(
     });
   }
 
-  for (const p of mergeKmForChart(insights)) {
-    const base = p.label.split(" · ")[0] ?? p.label;
-    const shortLabel = sanitizeAttachmentFileNameForReport(base);
-    const tier = tierFromMergedLabel(p.label + " " + shortLabel, histAlt);
-    if (seen(p.km) && tier !== "lv") continue;
-    if (!seen(p.km)) {
+  for (const ins of insights) {
+    const base = `Pārskats ${ins.sourceOrdinal}`;
+    const tier = tierFromHistoryKind(ins.historyKind);
+    for (const s of ins.kmSamples) {
+      const fullLabel = s.context ? `${base} · ${s.context}` : base;
+      const dupHist = points.some(
+        (x) =>
+          x.tier !== "lv" &&
+          Math.abs(x.km - s.km) < 80 &&
+          odoSourceTitle(x.label) === base,
+      );
+      if (dupHist) continue;
       points.push({
-        km: p.km,
-        label: sanitizeAttachmentFileNameForReport(p.label),
+        km: s.km,
+        label: fullLabel,
         tier,
         emoji: TIER_EMOJI[tier],
         plotIndex: 0,
@@ -349,10 +385,12 @@ export function buildOdometerChartPoints(
   return sorted;
 }
 
-/** Tabulai: tikai pirmais datums no etiķetes; ja nav — „—”. */
+/** Tabulai: pirmais datums no etiķetes (ISO vai LV); ja nav — „—”. */
 function dateOnlyFromOdoLabel(label: string): string {
+  const iso = label.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+  if (iso) return iso[1]!;
   const dm = label.match(/\d{1,2}[./]\d{1,2}[./]\d{2,4}/);
-  return dm ? dm[0] : "—";
+  return dm ? dm[0]! : "—";
 }
 
 function shortOdoContext(label: string, maxLen = 52): string {
@@ -361,9 +399,10 @@ function shortOdoContext(label: string, maxLen = 52): string {
   return `${t.slice(0, maxLen - 1)}…`;
 }
 
-/** Īss avota nosaukums tabulas kolonnai „Avots”. */
+/** Kolonnai „Avots” — tikai publiskā daļa (Pārskats N / reģistrs), bez datņu nosaukumiem. */
 function odoSourceTitle(label: string): string {
   const first = label.split(/\s*·\s*/)[0]?.trim() ?? label;
+  if (/^Pārskats \d+$/i.test(first)) return first;
   return sanitizeAttachmentFileNameForReport(first);
 }
 
@@ -388,7 +427,8 @@ function buildOdometerTableRow(pt: OdometerChartPoint): string {
   const badge = `<span class="odo-dot-badge" style="background:${col}">${pt.plotIndex}</span>`;
   const title = odoSourceTitle(pt.label);
   const ctx = shortOdoContext(pt.label, 72);
-  return `<tr${rowClass}><td class="tabular odo-idx">${pt.plotIndex}</td><td class="odo-graph-cell">${badge}</td><td>${pt.emoji} ${escapeHtml(title)}</td><td class="tabular">${pt.km.toLocaleString("lv-LV")}</td><td class="tabular">${escapeHtml(dateOnlyFromOdoLabel(pt.label))}</td><td>${escapeHtml(ctx)}</td></tr>`;
+  const dot = `<span class="tier-line-dot" style="background:${col}" aria-hidden="true"></span>`;
+  return `<tr${rowClass}><td class="tabular odo-idx">${pt.plotIndex}</td><td class="odo-graph-cell">${badge}</td><td class="odo-src-cell">${dot}<span class="odo-src-txt">${escapeHtml(title)}</span></td><td class="tabular">${pt.km.toLocaleString("lv-LV")}</td><td class="tabular">${escapeHtml(dateOnlyFromOdoLabel(pt.label))}</td><td>${escapeHtml(ctx)}</td></tr>`;
 }
 
 const ALL_TIERS: KmTier[] = ["lv", "hist", "hist2", "dealer", "other"];
@@ -398,10 +438,10 @@ const ALL_TIERS: KmTier[] = ["lv", "hist", "hist2", "dealer", "other"];
  */
 function buildOdometerSvg(points: OdometerChartPoint[]): string {
   if (points.length === 0) {
-    return '<p class="na">Nav izdalītu nobraukuma punktu — aizpildi reģistra piezīmes un/vai pievieno vēstures PDF.</p>';
+    return '<p class="na">Nav izdalītu nobraukuma punktu — pievieno reģistra datus un/vai importē vēstures materiālu salīdzinājumam.</p>';
   }
   const w = 520;
-  const h = 220;
+  const h = 236;
   const padL = 48;
   const padR = 16;
   const padT = 16;
@@ -420,6 +460,14 @@ function buildOdometerSvg(points: OdometerChartPoint[]): string {
     const y = padT + innerH - ((p.km - minK) / span) * innerH;
     return { x, y, km: p.km, tier: p.tier, plotIndex: p.plotIndex };
   });
+
+  const gridLines: string[] = [];
+  for (let g = 0; g <= 4; g++) {
+    const gy = padT + (g / 4) * innerH;
+    gridLines.push(
+      `<line x1="${padL.toFixed(1)}" y1="${gy.toFixed(1)}" x2="${(padL + innerW).toFixed(1)}" y2="${gy.toFixed(1)}" stroke="#eef2f6" stroke-width="1"/>`,
+    );
+  }
 
   const tierSegments: string[] = [];
   for (const tier of ALL_TIERS) {
@@ -445,59 +493,28 @@ function buildOdometerSvg(points: OdometerChartPoint[]): string {
     .join("");
 
   return `
-    <div class="chart-wrap">
-      <p class="chart-caption">Nobraukuma dinamika: krāsainas līknes pa avotiem; apļos — punkta numurs (sakrīt ar tabulas kolonnu „Grafikā”).</p>
+    <div class="chart-card">
+      <p class="chart-caption">Hronoloģija pēc nobraukuma · numurs = tabula · līknes pēc datu avota</p>
       <svg viewBox="0 0 ${w} ${h}" class="odo-chart" aria-hidden="true">
-        <line x1="${padL}" y1="${padT + innerH}" x2="${padL + innerW}" y2="${padT + innerH}" stroke="#e5e7eb" stroke-width="1"/>
+        ${gridLines.join("")}
+        <line x1="${padL}" y1="${padT + innerH}" x2="${padL + innerW}" y2="${padT + innerH}" stroke="#e2e8f0" stroke-width="1.25"/>
         ${tierSegments.join("")}
         ${dots}
-        <text x="${padL}" y="${h - 8}" font-size="10" fill="#71717a">min ${minK.toLocaleString("lv-LV")} km — max ${maxK.toLocaleString("lv-LV")} km</text>
+        <text x="${padL}" y="${h - 6}" font-size="10" fill="#64748b" font-weight="500">Diapazons: ${minK.toLocaleString("lv-LV")} — ${maxK.toLocaleString("lv-LV")} km</text>
       </svg>
     </div>`;
 }
 
-type InsRow = {
-  date: string;
-  desc: string;
-  descShort: string;
-  amount: string;
-  iso: string;
-  emphasize: boolean;
-};
-
-function parseInsuranceLikeRows(ltab: string, citi: string): InsRow[] {
-  const rows: InsRow[] = [];
-  const blob = [ltab, citi].filter((s) => s.trim().length > 0).join("\n");
-  for (const raw of blob.split(/\r?\n/)) {
-    const line = raw.trim();
-    if (line.length < 8) continue;
-    const dm = line.match(/\d{1,2}[./]\d{1,2}[./]\d{2,4}/);
-    const eurM = line.match(/([\d\s\u00A0]{1,14})\s*(EUR|€)/i);
-    if (!dm || !eurM) continue;
-    const amountNum = parseInt(eurM[1].replace(/\s/g, ""), 10);
-    const emphasize =
-      /piln[īi]g[aā]\s*boj[āa]j|total\s*loss|piln[īi]b[āa]\s*zud|smags\s+virsb[ūu]ves/i.test(line) ||
-      (!Number.isNaN(amountNum) && amountNum >= 5000);
-    const isoM = line.match(/\b([A-Z]{2})\b\s*$/);
-    const iso = isoM?.[1] && isoM[1].length === 2 ? isoM[1] : "LV";
-    let descShort = line
-      .replace(dm[0], "")
-      .replace(eurM[0], "")
-      .replace(/\b[A-Z]{2}\b\s*$/, "")
-      .replace(/^[\s,;·\-–—]+/, "")
-      .replace(/\s+/g, " ")
-      .trim();
-    if (descShort.length < 3) descShort = line;
-    rows.push({
-      date: dm[0],
-      desc: line,
-      descShort,
-      amount: `${eurM[1].trim().replace(/\s+/g, " ")} EUR`,
-      iso,
-      emphasize,
-    });
-  }
-  return rows;
+function buildAllClaimRows(
+  ltab: string,
+  citi: string,
+  insights: PdfPortfolioFileInsight[],
+): ClaimTableRow[] {
+  return mergeClaimRowLists([
+    parseClaimRowsFromLineBasedText(ltab, "OCTA / apdrošināšanas lauks"),
+    parseClaimRowsFromLineBasedText(citi, "Citi avoti"),
+    insights.flatMap((i) => i.claimRows),
+  ]);
 }
 
 function officialKmPool(csdd: string, citi: string): number[] {
@@ -568,7 +585,7 @@ function buildMileageForecastBlock(
   citi: string,
 ): string {
   if (points.length < 2) {
-    return `<div class="forecast-box"><p class="forecast-icon">💡</p><div><strong>EKSPERTA PROGNOZE</strong><p class="forecast-body">Nepietiek punktu nobraukuma līknei — pievienojiet vēstures PDF un reģistra datus, lai sistēma varētu aprēķināt vidējo nobraukumu gadā.</p></div></div>`;
+    return `<div class="forecast-box"><div class="forecast-icon" aria-hidden="true">${ICO.spark}</div><div><strong class="forecast-title">Prognoze</strong><p class="forecast-body">Nepietiek punktu līknei — pievienojiet reģistra datus un papildu vēstures materiālu salīdzinājumam.</p></div></div>`;
   }
   const kms = points.map((p) => p.km);
   const minK = Math.min(...kms);
@@ -587,7 +604,7 @@ function buildMileageForecastBlock(
   if (info && info.listingKm < info.maxOfficial - 400) {
     warn = `<p class="forecast-warn">Sludinājumā norādītie <strong>${info.listingKm.toLocaleString("lv-LV")} km</strong> uzskatāmi par <strong>apzināti maldinošiem</strong> salīdzinājumā ar augstāko vērtību no CSDD / reģistra un „Citi avoti” (${info.maxOfficial.toLocaleString("lv-LV")} km; starpība ≈ ${info.deltaLabel}).</p>`;
   }
-  return `<div class="forecast-box"><p class="forecast-icon">💡</p><div><strong>EKSPERTA PROGNOZE</strong>
+  return `<div class="forecast-box"><div class="forecast-icon" aria-hidden="true">${ICO.spark}</div><div><strong class="forecast-title">Prognoze</strong>
     <p class="forecast-body">Pēc pieejamajiem punktiem: nobraukuma starpība <strong>${minK.toLocaleString("lv-LV")} – ${maxK.toLocaleString("lv-LV")} km</strong> aptuveni <strong>${years.toFixed(1)}</strong> gadu posmā → vidēji <strong>~${perYearK}k km gadā</strong> (formula: (pēdējais − pirmais) / gadu skaits).</p>
     <p class="forecast-body">Statistiski sagaidāms diapazons šodien (orientējoši): <strong>${rangeLow.toLocaleString("lv-LV")} – ${rangeHigh.toLocaleString("lv-LV")} km</strong> — salīdziniet ar sludinājumu un vēstures atskaitēm.</p>
     ${warn}
@@ -610,19 +627,19 @@ function buildRiskRows(
   tirgus: string,
   ltab: string,
   citi: string,
-  insRows: InsRow[],
+  insRows: ClaimTableRow[],
 ): RiskRow[] {
   const corpus = `${csdd}\n${ltab}\n${citi}`.toLowerCase();
   const stolen = /zagts|mekl[ēe]šan[āa]|nozagt|asl[īi]\s*zag|wanted|stolen|theft|noziedz/i.test(corpus);
   const legal: RiskRow = stolen
     ? {
         kind: "Juridiskais statuss",
-        statusHtml: '<span class="st-crit">🚩 Kritiski</span>',
+        statusHtml: '<span class="st-crit">Kritiski</span>',
         note: "Tekstā minēti riska signāli attiecībā uz nozagtu transportlīdzekli vai meklēšanu — pārbaudiet oficiālos avotus.",
       }
     : {
         kind: "Juridiskais statuss",
-        statusHtml: '<span class="st-ok">✅ Tīrs</span>',
+        statusHtml: '<span class="st-ok">Tīrs</span>',
         note: "Nav reģistrēts kā zagts vai meklēšanā (pēc pieejamā teksta heuristikas).",
       };
 
@@ -632,7 +649,7 @@ function buildRiskRows(
   if (kmWarn && kmInfo) {
     mileage = {
       kind: "Nobraukuma ticamība",
-      statusHtml: '<span class="st-crit">🚩 Kritiski</span>',
+      statusHtml: '<span class="st-crit">Kritiski</span>',
       note: `Sludinājuma dati nesakrīt ar CSDD / reģistru un „Citi avoti” (≈ ${kmInfo.deltaLabel} pret augstāko fiksāciju).`,
     };
   } else if (
@@ -642,13 +659,13 @@ function buildRiskRows(
   ) {
     mileage = {
       kind: "Nobraukuma ticamība",
-      statusHtml: '<span class="st-warn">⚠️ Nav datu</span>',
+      statusHtml: '<span class="st-warn">Nav datu</span>',
       note: "Nav pietiekami nobraukuma atsauču salīdzināšanai — aizpildiet reģistra un sludinājuma laukus.",
     };
   } else {
     mileage = {
       kind: "Nobraukuma ticamība",
-      statusHtml: '<span class="st-ok">✅ Salīdzināms</span>',
+      statusHtml: '<span class="st-ok">Salīdzināms</span>',
       note: "Nobraukums nav automātiski atzīmēts kā kritiski pretrunīgs ar reģistra rindām.",
     };
   }
@@ -668,19 +685,19 @@ function buildRiskRows(
   if (accCount >= 3 || heavy) {
     damage = {
       kind: "Bojājumu vēsture",
-      statusHtml: '<span class="st-warn">⚠️ Uzmanību</span>',
+      statusHtml: '<span class="st-warn">Uzmanību</span>',
       note: `Fiksēti ${Math.max(accCount, nIns || 1)} negadījumi (pēc tabulas / teksta), t.sk. iespējams smags / pilnīgs bojājums — pārbaudiet detaļas sadaļā „Apdrošināšanas konteksts”.`,
     };
   } else if (nIns === 0 && !/negad[īi]jum|av[āa]rija|boj[āa]j/i.test(insCorpus)) {
     damage = {
       kind: "Bojājumu vēsture",
-      statusHtml: '<span class="st-ok">✅ Nav izcelts</span>',
+      statusHtml: '<span class="st-ok">Nav izcelts</span>',
       note: "Strukturētā tabulā nav atlīdzību rindu; tekstā nav spēcīgu negadījumu atslēgvārdu.",
     };
   } else {
     damage = {
       kind: "Bojājumu vēsture",
-      statusHtml: '<span class="st-warn">⚠️ Uzmanību</span>',
+      statusHtml: '<span class="st-warn">Uzmanību</span>',
       note: "Ir vismaz daži bojājumu / atlīdzību ieraksti — skatīt apdrošināšanas tabulu.",
     };
   }
@@ -692,19 +709,19 @@ function buildRiskRows(
   if (fixed && taSev.length === 0) {
     technical = {
       kind: "Tehniskais stāvoklis",
-      statusHtml: '<span class="st-ok">✅ Labots</span>',
+      statusHtml: '<span class="st-ok">Labots</span>',
       note: "Pēdējie CSDD fiksētie defekti, šķiet, novērsti (tekstā minēta atkārtotā pārbaude ar labu vērtējumu).",
     };
   } else if (taSev.length > 0) {
     technical = {
       kind: "Tehniskais stāvoklis",
-      statusHtml: '<span class="st-warn">⚠️ Uzmanību</span>',
+      statusHtml: '<span class="st-warn">Uzmanību</span>',
       note: taSev.join(" "),
     };
   } else {
     technical = {
       kind: "Tehniskais stāvoklis",
-      statusHtml: '<span class="st-ok">✅ Nav signālu</span>',
+      statusHtml: '<span class="st-ok">Nav signālu</span>',
       note: "TA piezīmēs nav automātiski atrasts vērtējums „2” vai neatrisinātu defektu apraksts.",
     };
   }
@@ -732,7 +749,7 @@ function splitExpertConclusion(iriss: string): { rating: string | null; summary:
 }
 
 function exportRowHtml(): string {
-  return `<p class="export-hint"><span class="export-ico" aria-hidden="true">📋</span> Eksportēt uz pakalpojumu izklājlapas — izmantojiet pogu lapas apakšā vai kopējiet tabulas.</p>`;
+  return "";
 }
 
 function reportFooterScript(): string {
@@ -765,16 +782,15 @@ function clientReportPrintCss(): string {
   return `
       *{box-sizing:border-box;}
       body{
-        font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-        line-height:1.55;max-width:190mm;margin:0 auto;padding:12mm 14mm;color:#1d1d1f;
-        background:#fafbfc;
+        font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+        line-height:1.55;max-width:190mm;margin:0 auto;padding:10mm 12mm;color:#0f172a;
+        background:#f1f5f9;
       }
-      .sheet{background:#fff;border-radius:12px;box-shadow:0 1px 0 rgba(0,0,0,.06);padding:16mm 14mm;}
+      .sheet{background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(15,23,42,.06);padding:14mm 12mm;}
       @media print{.sheet{box-shadow:none;border-radius:0;padding:0}}
       .report-head{
-        border-bottom:3px solid #0066d6;padding-bottom:14px;margin-bottom:20px;
-        background:linear-gradient(180deg,#fafdff 0%,#fff 100%);
-        border-radius:8px 8px 0 0;padding:8px 4px 12px;
+        border-bottom:1px solid #e2e8f0;padding-bottom:16px;margin-bottom:22px;
+        background:transparent;
       }
       .report-head h1{
         display:flex;flex-wrap:wrap;align-items:baseline;gap:0 6px;margin:8px 0 6px;
@@ -785,9 +801,11 @@ function clientReportPrintCss(): string {
       .report-head h1 .title-main{font-weight:650;}
       .report-head .sub{font-size:0.84rem;color:#6e6e73;}
       .vin-inline{display:inline-block;margin-left:6px;padding:2px 10px;background:#f1f5f9;border-radius:6px;font-size:0.82rem;}
+      .pdf-sec-head{display:flex;align-items:center;gap:10px;margin:1.65rem 0 0.55rem;}
+      .pdf-sec-head .pdf-ico{color:#0066d6;flex-shrink:0;}
       h2.pdf-sec{
-        font-size:0.95rem;font-weight:700;margin:1.45rem 0 0.5rem;color:#1d1d1f;padding-bottom:8px;border-bottom:1px solid #d4d4d8;
-        text-transform:uppercase;letter-spacing:0.02em;
+        font-size:1.02rem;font-weight:600;margin:0;flex:1;color:#0f172a;padding:0 0 0 12px;border:none;
+        text-transform:none;letter-spacing:-0.02em;border-left:3px solid #0066d6;
       }
       h3.pdf-sub{font-size:0.9rem;font-weight:600;margin:1rem 0 0.4rem;color:#334155;}
       h4.pdf-sub2{font-size:0.84rem;font-weight:600;margin:0.65rem 0 0.25rem;color:#1d1d1f;}
@@ -852,20 +870,42 @@ function clientReportPrintCss(): string {
       }
       table.fmt.ins td.flag-cell{width:48px;text-align:right;font-size:1.2rem;}
       table.fmt.ins tr.em td{font-weight:700;}
+      table.fmt.ins tr.ins-from-report td{background:#f8fafc;}
+      table.fmt.ins .ins-source{display:block;font-size:0.72rem;color:#64748b;margin-top:4px;line-height:1.35;}
+      .claims-intro{font-size:0.84rem;color:#334155;line-height:1.5;margin:0 0 12px;}
       .td-warn{color:#b91c1c;font-weight:600;}
       pre.block{white-space:pre-wrap;font-size:0.82rem;background:#f8fafc;border:1px solid #e2e8f0;padding:11px 14px;border-radius:9px;margin:0.5rem 0;}
       .na{color:#86868b;font-style:italic;}
       .hint{font-size:0.76rem;color:#6e6e73;margin-top:0.45rem;line-height:1.45;}
       .ta-list{margin:0.4rem 0;padding-left:1.2rem;}
       .ta-list li{margin:0.35rem 0;}
-      .chart-wrap{margin:12px 0;}
-      .chart-caption{font-size:0.78rem;color:#64748b;margin:0 0 6px;}
-      .odo-chart{width:100%;max-width:540px;height:auto;display:block;}
-      .forecast-box{
-        display:flex;gap:12px;align-items:flex-start;margin:14px 0;padding:14px 16px;border-radius:10px;
-        background:linear-gradient(135deg,#fffbeb 0%,#fff 55%);border:1px solid #fde68a;
+      .chart-card,.block-minimal{
+        margin:14px 0;padding:16px 18px;border-radius:12px;border:1px solid #e8eaed;background:#fafbfc;
       }
-      .forecast-icon{font-size:1.35rem;margin:0;line-height:1;}
+      .chart-caption{font-size:0.78rem;color:#64748b;margin:0 0 10px;font-weight:500;}
+      .odo-chart{width:100%;max-width:100%;height:auto;display:block;}
+      .tier-line-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle;}
+      .odo-src-cell{vertical-align:middle;}
+      .odo-src-txt{font-weight:500;color:#334155;}
+      .portfolio-stat{margin:0;font-size:0.88rem;color:#475569;}
+      .portfolio-stat-num{font-size:1.35rem;font-weight:700;color:#0066d6;margin-right:4px;}
+      .compare-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:0 0 18px;}
+      .compare-card{
+        border:1px solid #e8eaed;border-radius:12px;padding:12px 14px;background:#fff;
+      }
+      .compare-card-top{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#0066d6;}
+      .compare-card-type{font-size:0.75rem;color:#64748b;margin:4px 0;}
+      .compare-card-km{font-size:1rem;font-weight:700;color:#0f172a;margin-top:6px;}
+      .compare-card-meta{font-size:0.72rem;color:#94a3b8;margin-top:6px;}
+      .hint-tight{font-size:0.78rem!important;line-height:1.45!important;}
+      .legend-item{display:inline-flex;align-items:center;gap:8px;}
+      .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+      .forecast-box{
+        display:flex;gap:14px;align-items:flex-start;margin:14px 0;padding:16px 18px;border-radius:12px;
+        background:#fffbeb;border:1px solid #fde68a;
+      }
+      .forecast-icon{margin:0;line-height:0;color:#ca8a04;}
+      .forecast-title{display:block;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:#92400e;margin-bottom:4px;}
       .forecast-body{margin:0.4rem 0 0;font-size:0.86rem;color:#1d1d1f;}
       .forecast-warn{margin:0.65rem 0 0;font-size:0.84rem;color:#991b1b;}
       .export-hint{font-size:0.74rem;color:#64748b;margin:10px 0 4px;display:flex;align-items:center;gap:6px;}
@@ -874,9 +914,8 @@ function clientReportPrintCss(): string {
       .expert-rating{font-size:0.95rem;margin:0 0 10px;}
       .expert-summary-label{font-size:0.82rem;margin:0 0 4px;color:#475569;}
       .expert-panel-bottom{
-        margin:8px 0 18px;padding:16px 18px;border-radius:10px;
-        background:linear-gradient(135deg,#e8f2fc 0%,#f5f9ff 50%,#fff 100%);
-        border:1px solid rgba(0,102,214,.22);border-left:4px solid #0066d6;
+        margin:8px 0 18px;padding:18px 20px;border-radius:12px;
+        background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #0066d6;
       }
       .expert-panel-bottom .expert-title{
         font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#0066d6;font-weight:700;margin:0 0 10px;
@@ -891,36 +930,29 @@ function clientReportPrintCss(): string {
       .legend-inline{display:flex;flex-wrap:wrap;gap:10px 18px;font-size:0.78rem;color:#334155;}
       .legend-inline span{white-space:nowrap;}
       .history-compare-panel{
-        margin:22px 0 26px;padding:20px 22px 22px;border-radius:14px;
-        background:linear-gradient(145deg,#f0f9ff 0%,#eff6ff 38%,#fff 100%);
-        border:2px solid #0066d6;
-        box-shadow:0 8px 28px rgba(0,102,214,.12);
+        margin:20px 0 24px;padding:20px 22px;border-radius:14px;
+        background:#fff;border:1px solid #e2e8f0;
+        box-shadow:0 1px 2px rgba(15,23,42,.04);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .history-compare-panel.history-compare-empty{
-        background:linear-gradient(145deg,#f8fafc 0%,#fff 100%);
-        border-color:#94a3b8;
-        box-shadow:0 4px 16px rgba(15,23,42,.06);
+        background:#fafbfc;border-color:#e2e8f0;
       }
-      .history-compare-title{
-        margin:0 0 10px!important;padding-bottom:0!important;
-        font-size:1.06rem!important;letter-spacing:0.03em;color:#0f172a!important;
-        border-bottom:0!important;text-transform:none!important;
-      }
+      .history-compare-panel .pdf-sec-head{margin-top:0;}
       .history-compare-lead{font-size:0.88rem;line-height:1.55;color:#1e293b;margin:0 0 14px;}
       .history-compare-usage-grid{
         display:grid;gap:10px;margin:0 0 16px;
         grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
       }
       .history-compare-usage-card{
-        background:#fff;border:1px solid #bae6fd;border-radius:10px;padding:10px 12px;
+        background:#fafbfc;border:1px solid #e8eaed;border-radius:10px;padding:12px 14px;
         font-size:0.78rem;line-height:1.45;color:#334155;
       }
       .hcu-tag{
-        display:block;font-weight:700;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.07em;color:#0369a1;margin-bottom:6px;
+        display:block;font-weight:700;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;color:#0066d6;margin-bottom:6px;
       }
       table.history-compare-table{font-size:0.78rem;}
-      table.history-compare-table thead th{background:#e0f2fe!important;color:#0c4a6e!important;}
+      table.history-compare-table thead th{background:#f1f5f9!important;color:#334155!important;border-color:#e2e8f0!important;}
       .history-compare-bullets{margin:14px 0 0;padding-left:1.2rem;font-size:0.84rem;line-height:1.55;color:#0f172a;}
       .history-compare-bullets li{margin:6px 0;}
       .history-compare-foot{margin-top:12px!important;}
@@ -943,12 +975,12 @@ function clientReportPrintCss(): string {
 function buildHistoryCompareSectionHtml(insights: PdfPortfolioFileInsight[]): string {
   if (insights.length === 0) {
     return `<div class="history-compare-panel history-compare-empty" role="region">
-      <h2 class="pdf-sec history-compare-title">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.historyCompare)}</h2>
-      <p class="history-compare-lead">Nav portfeļa PDF ar automātiski izvilktu tekstu — pievienojiet vēstures datnes administrācijas panelī un atkārtoti atveriet atskaiti, lai šeit parādītos salīdzinājums virs odometra grafika.</p>
+      ${sectionHead(ICO.layers, CLIENT_REPORT_PDF_SECTIONS.historyCompare)}
+      <p class="history-compare-lead">Nav importēta strukturēta vēstures materiāla — salīdzinājuma bloks aizpildīsies, kad būs vismaz viena analizējama datne.</p>
     </div>`;
   }
 
-  const rows = buildHistoryCompareRows(insights, sanitizeAttachmentFileNameForReport);
+  const rows = buildHistoryCompareRows(insights);
   const bullets = buildHistoryCompareBullets(rows);
   const kindsOrder: HistoryPdfKind[] = ["euro_network", "regional_alt", "registry_focus", "generic"];
   const present = [...new Set(rows.map((r) => r.historyKind))].sort(
@@ -957,10 +989,25 @@ function buildHistoryCompareSectionHtml(insights: PdfPortfolioFileInsight[]): st
 
   const parts: string[] = [];
   parts.push(`<div class="history-compare-panel" role="region">`);
-  parts.push(`<h2 class="pdf-sec history-compare-title">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.historyCompare)}</h2>`);
+  parts.push(sectionHead(ICO.layers, CLIENT_REPORT_PDF_SECTIONS.historyCompare));
   parts.push(
-    `<p class="history-compare-lead">Šeit apkopota <strong>automātiskā PDF teksta analīze</strong> katram portfeļa dokumentam: izceltais nobraukums, riska atslēgvārdi un heuristiski noteikts <strong>pārskata tips</strong> (bez komerciālu zīmolu nosaukumiem klienta PDF). Tā <strong>neaizstāj</strong> manuālu izlasīšanu; zemāk esošais odometra grafiks apvieno punktus no visiem avotiem.</p>`,
+    `<p class="history-compare-lead">Īss <strong>starpavotu salīdzinājums</strong>: kas izcelts katrā importētajā datu kopā, kāds nobraukuma diapazons un kādi riska signāli. Zemāk esošais grafiks un tabula <strong>apvieno visus avotus</strong> vienā skatā.</p>`,
   );
+
+  parts.push(`<div class="compare-strip">`);
+  for (const r of rows) {
+    const kmR =
+      r.minKm != null && r.maxKm != null
+        ? `${r.minKm.toLocaleString("lv-LV")}–${r.maxKm.toLocaleString("lv-LV")} km`
+        : "—";
+    parts.push(`<div class="compare-card">
+      <div class="compare-card-top">${escapeHtml(r.sourceLabel)}</div>
+      <div class="compare-card-type">${escapeHtml(COMPARE_KIND_SHORT[r.historyKind])}</div>
+      <div class="compare-card-km">${escapeHtml(kmR)}</div>
+      <div class="compare-card-meta">${r.nSamples} nobr. · ${r.highlights.length} sign.</div>
+    </div>`);
+  }
+  parts.push(`</div>`);
 
   parts.push(`<div class="history-compare-usage-grid">`);
   for (const k of present) {
@@ -971,7 +1018,7 @@ function buildHistoryCompareSectionHtml(insights: PdfPortfolioFileInsight[]): st
   parts.push(`</div>`);
 
   parts.push(
-    `<table class="fmt bordered history-compare-table report-export" data-export="history-compare"><thead><tr><th>Pārskata tips</th><th>Fails</th><th class="tabular">Nobraukums (min–max)</th><th class="tabular">Ierakstu sk.</th><th>Automātiskie signāli</th><th class="tabular">Teksts</th></tr></thead><tbody>`,
+    `<table class="fmt bordered history-compare-table report-export" data-export="history-compare"><thead><tr><th>Avots</th><th>Datu tips</th><th class="tabular">Nobraukums</th><th class="tabular">Ieraksti</th><th>Signāli</th><th class="tabular">Apjoms</th></tr></thead><tbody>`,
   );
   for (const r of rows) {
     const kmCell =
@@ -980,10 +1027,10 @@ function buildHistoryCompareSectionHtml(insights: PdfPortfolioFileInsight[]): st
         : "—";
     const sig = r.highlights.length ? r.highlights.map((h) => escapeHtml(h)).join(" · ") : "—";
     const textCell = r.textOk
-      ? escapeHtml(`${r.charCount.toLocaleString("lv-LV")} rakstzīmes`)
+      ? escapeHtml(`${r.charCount.toLocaleString("lv-LV")} rakstz.`)
       : '<span class="td-warn">Ierobežots</span>';
     parts.push(
-      `<tr><td>${escapeHtml(r.kindLabel)}</td><td>${escapeHtml(r.fileDisplay)}</td><td class="tabular">${escapeHtml(kmCell)}</td><td class="tabular">${r.nSamples}</td><td>${sig}</td><td class="tabular">${textCell}</td></tr>`,
+      `<tr><td>${escapeHtml(r.sourceLabel)}</td><td>${escapeHtml(r.kindLabel)}</td><td class="tabular">${escapeHtml(kmCell)}</td><td class="tabular">${r.nSamples}</td><td>${sig}</td><td class="tabular">${textCell}</td></tr>`,
     );
   }
   parts.push(`</tbody></table>`);
@@ -997,7 +1044,7 @@ function buildHistoryCompareSectionHtml(insights: PdfPortfolioFileInsight[]): st
   }
 
   parts.push(
-    `<p class="hint history-compare-foot">Tips tiek noteikts pēc datnes nosaukuma un izviltā teksta; ja klasifikācija neatbilst, pārdēvējiet failu vai pievienojiet atpazīstamu fragmentu nosaukumā.</p>`,
+    `<p class="hint history-compare-foot">Avotu tips tiek noteikts automātiski pēc izviltā teksta struktūras — pārbaudiet pretrunas ar reģistra datiem.</p>`,
   );
   parts.push(`</div>`);
   return parts.join("\n");
@@ -1012,6 +1059,7 @@ export function buildClientReportDocumentHtml(args: {
 }): string {
   const { payload, portfolio, pdfInsights, dateFmt, formatBytes } = args;
   const p = payload;
+  const portfolioBytes = portfolio.reduce((s, r) => s + r.size, 0);
 
   const money =
     p.amountTotal == null
@@ -1020,7 +1068,7 @@ export function buildClientReportDocumentHtml(args: {
           p.amountTotal / 100,
         );
 
-  const insRows = parseInsuranceLikeRows(p.ltab, p.citi);
+  const insRows = buildAllClaimRows(p.ltab, p.citi, pdfInsights);
   const odoPts = buildOdometerChartPoints(p.csdd, pdfInsights, p.citi);
   const riskRows = buildRiskRows(p.csdd, p.tirgus, p.ltab, p.citi, insRows);
   const taValidUntil = findTaValidUntilDate(`${p.csdd}\n${p.citi}`);
@@ -1047,7 +1095,7 @@ export function buildClientReportDocumentHtml(args: {
   lines.push("</div>");
 
   /* 1. Klients */
-  lines.push(`<h2 class="pdf-sec">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.client)}</h2>`);
+  lines.push(sectionHead(ICO.user, CLIENT_REPORT_PDF_SECTIONS.client));
   lines.push(`<h3 class="pdf-sub">Ziņojums</h3>`);
   lines.push(
     `<p class="client-msg">${escapeHtml(p.notes?.trim() ? p.notes : "—")}</p>`,
@@ -1061,7 +1109,7 @@ export function buildClientReportDocumentHtml(args: {
   }
 
   /* 2. Riski */
-  lines.push(`<h2 class="pdf-sec">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.risk)}</h2>`);
+  lines.push(sectionHead(ICO.shield, CLIENT_REPORT_PDF_SECTIONS.risk));
   lines.push(
     `<table class="fmt risk report-export" data-export="risk"><thead><tr><th>Pārbaudes veids</th><th>Statuss</th><th>Eksperta piezīme</th></tr></thead><tbody>`,
   );
@@ -1074,7 +1122,7 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(exportRowHtml());
 
   /* 3. Auto */
-  lines.push(`<h2 class="pdf-sec">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.vehicle)}</h2>`);
+  lines.push(sectionHead(ICO.car, CLIENT_REPORT_PDF_SECTIONS.vehicle));
   lines.push(`<table class="fmt"><tbody>`);
   lines.push(
     `<tr><td>Marka, modelis</td><td><strong>${escapeHtml(makeModel ?? "— (ierakstiet reģistra piezīmēs)")}</strong></td></tr>`,
@@ -1132,15 +1180,11 @@ export function buildClientReportDocumentHtml(args: {
 
   lines.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.attachments)}</h3>`);
   if (portfolio.length === 0) {
-    lines.push('<p class="na">Nav pievienotu dokumentu.</p>');
+    lines.push('<p class="na">Nav importēta papildu materiāla.</p>');
   } else {
-    lines.push("<ul>");
-    for (const row of portfolio) {
-      lines.push(
-        `<li>${escapeHtml(sanitizeAttachmentFileNameForReport(row.name))} (${escapeHtml(formatBytes(row.size))})</li>`,
-      );
-    }
-    lines.push("</ul>");
+    lines.push(
+      `<div class="block-minimal"><p class="portfolio-stat"><span class="portfolio-stat-num">${portfolio.length}</span> datnes · kopā <strong>${escapeHtml(formatBytes(portfolioBytes))}</strong></p></div>`,
+    );
   }
   lines.push(exportRowHtml());
 
@@ -1148,15 +1192,15 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(exportRowHtml());
 
   /* 4. Odometrs */
-  lines.push(`<h2 class="pdf-sec">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.odometer)}</h2>`);
+  lines.push(sectionHead(ICO.chart, CLIENT_REPORT_PDF_SECTIONS.odometer));
   lines.push(buildOdometerSvg(odoPts));
   lines.push(buildMileageForecastBlock(odoPts, p.csdd, p.tirgus, p.citi));
   if (citiOdoCallout) {
     lines.push(`<div class="odo-citi-callout"><strong>Citi avoti — odometrs:</strong> ${escapeHtml(citiOdoCallout)}</div>`);
   }
-  lines.push(`<h3 class="pdf-sub">Punkti tabulā = punkti grafikā</h3>`);
+  lines.push(`<h3 class="pdf-sub">Apvienotie punkti (hronoloģiski)</h3>`);
   lines.push(
-    `<p class="hint" style="margin-top:0;margin-bottom:8px">Kolonna „Grafikā” atkārto krāsaino apli ar numuru; kolonna „#” ir tas pats kārtas numurs. Rindas no lauka „Citi avoti” iezīmētas sārti.</p>`,
+    `<p class="hint hint-tight">Skaitļi salīdzina <strong>reģistru</strong>, <strong>katru importēto vēstures avotu</strong> (Pārskats 1, 2…) un <strong>„Citi avoti”</strong>. Grafika numurs = tabulas numurs. Sārtās rindas — no papildu piezīmēm.</p>`,
   );
   lines.push(
     `<table class="fmt odo bordered report-export" data-export="odo"><thead><tr><th>#</th><th>Grafikā</th><th>Avots</th><th class="tabular">km</th><th>Datums</th><th>Konteksts</th></tr></thead><tbody>`,
@@ -1167,34 +1211,51 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(`</tbody></table>`);
   lines.push(exportRowHtml());
 
-  /* 5. Apdrošināšana */
+  /* 5. Negadījumu vēsture (atlīdzības + OCTA konteksts) */
   const insTitle =
     insRows.length > 0
-      ? `${CLIENT_REPORT_PDF_SECTIONS.insurance} (${insRows.length} fiksēti gadījumi)`
+      ? `${CLIENT_REPORT_PDF_SECTIONS.insurance} (${insRows.length} strukturēti ieraksti)`
       : CLIENT_REPORT_PDF_SECTIONS.insurance;
-  lines.push(`<h2 class="pdf-sec">${escapeHtml(insTitle)}</h2>`);
+  lines.push(sectionHead(ICO.alert, insTitle));
+  lines.push(
+    `<p class="claims-intro">Datums, īss apraksts un <strong>EUR summa</strong> — no OCTA lauka, papildu piezīmēm un no katra <strong>vēstures avota</strong> atsevišķi. Pilnu precizitāti pārbaudiet pie sava speciālista.</p>`,
+  );
+  const showClaimSourceCol = insRows.some((r) => Boolean(r.sourceNote?.trim()));
   if (insRows.length > 0) {
+    const thSource = showClaimSourceCol ? "<th>Avots</th>" : "";
     lines.push(
-      `<table class="fmt ins bordered report-export"><thead><tr><th>Datums</th><th>Bojājuma vieta / piezīmes</th><th>Summa (tāme)</th><th class="flag-cell">Valsts</th></tr></thead><tbody>`,
+      `<table class="fmt ins bordered report-export" data-export="claims"><thead><tr><th>Datums</th><th>Bojājums / piezīmes</th><th class="tabular">Summa</th>${thSource}<th class="flag-cell">Valsts</th></tr></thead><tbody>`,
     );
     for (const r of insRows) {
-      const rowClass = r.emphasize ? " class=\"em\"" : "";
-      const descCell = r.emphasize ? `<strong>${escapeHtml(r.descShort)}</strong>` : escapeHtml(r.descShort);
+      const classes = [
+        r.emphasize ? "em" : "",
+        r.sourceNote?.startsWith("Pārskats") ? "ins-from-report" : "",
+      ].filter(Boolean);
+      const rowClass = classes.length ? ` class="${classes.join(" ")}"` : "";
+      const mainDesc = r.emphasize ? `<strong>${escapeHtml(r.descShort)}</strong>` : escapeHtml(r.descShort);
+      const srcInline =
+        !showClaimSourceCol && r.sourceNote?.trim()
+          ? `<span class="ins-source">${escapeHtml(r.sourceNote.trim())}</span>`
+          : "";
+      const descCell = `${mainDesc}${srcInline}`;
+      const sourceTd = showClaimSourceCol
+        ? `<td class="ins-src-cell">${escapeHtml(r.sourceNote?.trim() || "—")}</td>`
+        : "";
       lines.push(
-        `<tr${rowClass}><td>${escapeHtml(r.date)}</td><td>${descCell}</td><td class="tabular">${escapeHtml(r.amount)}</td><td class="flag-cell">${flagEmoji(r.iso)}</td></tr>`,
+        `<tr${rowClass}><td>${escapeHtml(r.date)}</td><td>${descCell}</td><td class="tabular">${escapeHtml(r.amount)}</td>${sourceTd}<td class="flag-cell">${flagEmoji(r.iso)}</td></tr>`,
       );
     }
     lines.push(`</tbody></table>`);
     lines.push(
-      `<p class="hint">Treknraksts: „pilnīga bojāeja” / total loss / smags virsbūves bojājums vai summa ≥ 5000 €. Karogs pēc ISO koda rindas beigās.</p>`,
+      `<p class="hint">Treknraksts: smags bojājums / total loss vai summa ≥ 5000 €. Gaišās rindas — no vēstures avotiem. Valsts pēc ISO, ja noteikta.</p>`,
     );
   } else {
     lines.push(
-      `<p class="hint">Nav automātiski strukturētu rindu — zemāk pilnais OCTA / apdrošināšanas teksts.</p>`,
+      `<p class="hint">Nav strukturētu rindu — importējiet vēstures materiālu un/vai ielieciet OCTA laukā datumu ar EUR. Zemāk — pilnais teksts.</p>`,
     );
   }
   if (p.ltab.trim()) {
-    lines.push(`<h3 class="pdf-sub">Pilns teksts</h3>`);
+    lines.push(`<h3 class="pdf-sub">Pilnais OCTA / apdrošināšanas teksts</h3>`);
     lines.push(workspaceBlockToHtml(p.ltab, "default"));
   } else if (insRows.length === 0) {
     lines.push('<p class="na">Sadaļa nav aizpildīta.</p>');
@@ -1202,14 +1263,14 @@ export function buildClientReportDocumentHtml(args: {
 
   if (p.citi.trim()) {
     lines.push(`<div class="visual-archive">`);
-    lines.push(`<p class="va-title">📷 VIZUĀLAIS ARHĪVS UN PAPILDU KONTEKSTS</p>`);
+    lines.push(`<p class="va-title">Papildu konteksts</p>`);
     lines.push(workspaceBlockToHtml(p.citi, "default"));
     lines.push(`</div>`);
   }
   lines.push(exportRowHtml());
 
   /* 6. Sludinājums */
-  lines.push(`<h2 class="pdf-sec">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.listing)}</h2>`);
+  lines.push(sectionHead(ICO.tag, CLIENT_REPORT_PDF_SECTIONS.listing));
   lines.push("<ul class=\"ta-list\">");
   if (priceAd) {
     lines.push(`<li><strong>Cena sludinājumā:</strong> ${escapeHtml(priceAd)}</li>`);
@@ -1217,7 +1278,7 @@ export function buildClientReportDocumentHtml(args: {
   if (minListingKm != null) {
     let mileLine = `<strong>Sludinājuma nobraukums:</strong> ${minListingKm.toLocaleString("lv-LV")} km`;
     if (listDelta && listDelta.deltaKm >= 400) {
-      mileLine += ` <span class="listing-warn-amber" style="display:inline;padding:2px 6px;border-radius:4px">⚠️ <span class="listing-delta">−${escapeHtml(listDelta.deltaLabel)} pret augstāko CSDD / reģistra un „Citi avoti” fiksāciju</span></span>`;
+      mileLine += ` <span class="listing-warn-amber" style="display:inline;padding:2px 6px;border-radius:4px"><span class="listing-delta">−${escapeHtml(listDelta.deltaLabel)} pret augstāko CSDD / reģistra un „Citi avoti” fiksāciju</span></span>`;
     }
     lines.push(`<li>${mileLine}</li>`);
   }
@@ -1232,18 +1293,18 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(workspaceBlockToHtml(p.tirgus, "tirgus"));
 
   /* 7. Apskates plāns (admina lauks) */
-  lines.push(`<h2 class="pdf-sec">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.inspectionPlan)}</h2>`);
+  lines.push(sectionHead(ICO.clip, CLIENT_REPORT_PDF_SECTIONS.inspectionPlan));
   lines.push(
-    `<p class="hint" style="margin-bottom:10px">Dodoties apskatīt auto klātienē — punkti un piezīmes no eksperta (aizpilda administrācijas panelī zem IRISS komentāra).</p>`,
+    `<p class="hint hint-tight" style="margin-bottom:10px">Klātienes apskatei — īss eksperta checklist.</p>`,
   );
   if (p.apskatesPlāns.trim()) {
     lines.push(`<pre class="block inspection-plan-block">${escapeHtml(p.apskatesPlāns.trim())}</pre>`);
   } else {
-    lines.push('<p class="na">Nav aizpildīts — pievienojiet tekstu laukā „Apskates plāns” panelī.</p>');
+    lines.push('<p class="na">Nav aizpildīts.</p>');
   }
 
   /* 8. Eksperts */
-  lines.push(`<h2 class="pdf-sec">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.expert)}</h2>`);
+  lines.push(sectionHead(ICO.spark, CLIENT_REPORT_PDF_SECTIONS.expert));
   lines.push(`<div class="expert-panel-bottom">`);
   if (expertParts.rating) {
     lines.push(`<div class="expert-verdict"><p class="expert-rating"><strong>Vērtējums:</strong> ${escapeHtml(expertParts.rating)}</p>`);
@@ -1263,11 +1324,14 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(`<h3>${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.sourcesLegend)}</h3>`);
   lines.push(`<div class="legend-inline">`);
   for (const L of REPORT_ODOMETER_SOURCE_LEGEND) {
-    lines.push(`<span>${L.emoji} <strong>${escapeHtml(L.label)}</strong></span>`);
+    const c = TIER_COLOR[L.key];
+    lines.push(
+      `<span class="legend-item"><span class="legend-dot" style="background:${c}"></span><strong>${escapeHtml(L.label)}</strong></span>`,
+    );
   }
   lines.push(`</div>`);
   lines.push(
-    `<p class="hint" style="margin-top:10px">Datu prioritāte: pārklājoties, priekšroka oficiālajiem reģistra datiem (${TIER_EMOJI.lv}).</p>`,
+    `<p class="hint hint-tight" style="margin-top:10px">Pārklājoties, priekšroka <strong>reģistra</strong> datiem.</p>`,
   );
   lines.push(`</div>`);
 
@@ -1297,8 +1361,7 @@ export function buildClientReportDocumentHtml(args: {
   lines.push("</div>");
 
   const title = `PROVIN ${p.vin ?? p.sessionId}`;
-  const html = `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><title>${escapeHtml(
-    title,
-  )}</title><style>${clientReportPrintCss()}</style></head><body>${lines.join("\n")}${reportFooterScript()}</body></html>`;
+  const html = `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/>
+<title>${escapeHtml(title)}</title><style>${clientReportPrintCss()}</style></head><body>${lines.join("\n")}${reportFooterScript()}</body></html>`;
   return html;
 }
