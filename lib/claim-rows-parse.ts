@@ -256,3 +256,17 @@ export function compactDamageKindLabel(row: ClaimTableRow): string {
   if (/priekš|aizmug|sāna|bumper|buf/i.test(s)) return "◇ zona";
   return "△ bojāj.";
 }
+
+/** PDF 4.2 — lakonisks simbolu apraksts (UTF-8 / emoji). */
+export function damageSymbolKindForReport(row: ClaimTableRow): string {
+  const s = row.descShort.replace(/\s+/g, " ").toLowerCase();
+  const amt = amountToIntRough(row.amount);
+  if (/total\s*loss|piln[īi]g[aā]\s*boj|write[\s-]*off/i.test(s) || (row.emphasize && amt >= 4000)) {
+    return "💥 virsbūve (total loss)";
+  }
+  if (/stikla|stikls|glass|vējstikls/i.test(s)) return "🛠️ stikls";
+  if (/sadursm|collision|av[āa]rij|ctr|ctp/i.test(s)) return "🚗 sadursme";
+  if (/virsb[ūu]v|body|ķermen|bumper|buf/i.test(s)) return "🛠️ virsbūve";
+  if (row.emphasize || amt >= 5000) return "💥 augsta ∑";
+  return "🛠️ bojājums";
+}

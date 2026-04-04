@@ -15,27 +15,32 @@ export const REPORT_PDF_STANDARDS = {
   sampleInternationalDbWording: "Saskaņā ar starptautisko datubāzu ierakstiem…",
 } as const;
 
-/** PDF atskaites galvenās sadaļas — struktūra: LV avoti → portfelis → kopsavilkums → pretrunas → pārējais. */
+/** PDF atskaites galvenās sadaļas — romiešu bloki pēc konsultatīvā layout. */
 export const CLIENT_REPORT_PDF_SECTIONS = {
-  client: "1. KLIENTA PIEPRASĪJUMS",
-  /** Admin „2. Avotu piezīmes”: CSDD, LTAB, Tirgus, Citi. */
-  lvSources: "2. LATVIJAS DATU AVOTI",
-  portfolio: "3. PIEVIENOTAIS PORTFELIS (vēstures materiāli)",
-  /** Odometrs + negadījumi + salīdzinošs kopsavilkums. */
-  summary: "4. SALĪDZINOŠAIS KOPSAVILKUMS",
-  historyCompare: "Avotu kopskats",
-  odometer: "Nobraukuma līkne un ieraksti",
-  insurance: "Negadījumu / bojājumu ieraksti",
-  discrepancies: "5. PRETRUNAS, RISKI UN BRĪDINĀJUMI",
+  quickPanel: "I. Pieteikums un ātrās kontroles panelis",
+  /** Admin „Avotu piezīmes”: strukturēti apakšbloki + pilns teksts. */
+  lvSources: "II. Latvijas datu avoti",
+  lvRegistry: "2.1. Reģistra pamatdati",
+  lvTa: "2.2. Tehniskās apskates vēsture",
+  lvOcta: "2.3. OCTA un negadījumi LV",
+  lvFullNotes: "Pilnais avota teksts (reģistrs, OCTA, papildu)",
+  portfolio: "III. Ārvalstu un pievienoto atskaišu dati",
+  summary: "IV. Apvienotais datu kopsavilkums",
+  historyCompare: "Īss kopskats importētajiem PDF",
+  odometer: "4.1. Odometra rādījumu līkne un laika līnija",
+  insurance: "4.2. Apvienotā negadījumu vēsture",
+  discrepancies: "Pretrunas un papildu riski",
   risk: "Ātrā risku pārbaude",
-  vehicle: "6. IDENTIFIKĀCIJA UN ĪSS REĢISTRA KOPSAVILKUMS",
+  listing: "V. Tirgus dati un sludinājums",
+  expertBlock: "VI. Eksperta slēdziens un apskates plāns",
+  sourcesLegend: "Datu avotu krāsu nozīme",
+  /** @deprecated Izmantot quickPanel */
+  client: "I. Pieteikums un ātrās kontroles panelis",
+  vehicle: "Identifikācija",
   attachments: "Pievienotie dokumenti (portfelis)",
-  listing: "7. SLUDINĀJUMS (tirgus konteksts)",
-  inspectionPlan: "8. APSKATES PLĀNS KLĀTIENĒ",
-  expert: "9. EKSPERTA SLĒDZIENS",
-  sourcesLegend: "NOBRAUKUMA AVOTU KRĀSU NOZĪME",
-  /** @deprecated Lietot client */
-  application: "1. KLIENTA PIEPRASĪJUMS",
+  inspectionPlan: "Apskates plāns klātiene",
+  expert: "Eksperta slēdziens",
+  application: "I. Pieteikums un ātrās kontroles panelis",
   otherContext: "Papildu konteksts",
 } as const;
 
@@ -44,8 +49,8 @@ export const REPORT_ODOMETER_SOURCE_LEGEND = [
   { emoji: "🟢", label: "Latvijas reģistri", key: "lv" as const },
   { emoji: "🔵", label: "Vēstures atskaite", key: "hist" as const },
   { emoji: "🟡", label: "Vēstures atskaite (papildu)", key: "hist2" as const },
-  { emoji: "🟠", label: "Oficiālā dīlera dati", key: "dealer" as const },
-  { emoji: "🔴", label: "Citi avoti", key: "other" as const },
+  { emoji: "🟠", label: "Dīlera / ražotāja dati", key: "dealer" as const },
+  { emoji: "🔴", label: "Sludinājums / citi", key: "other" as const },
 ];
 
 /** Klientam redzami PDF sadaļu virsraksti — neinstitūciju oficiālie nosaukumi. */
