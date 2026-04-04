@@ -23,6 +23,8 @@ export type AdminSavableTextFieldProps = {
   resetVersion?: number | string;
   /** Papildu klases textarea (piem. max augstums, resize). */
   textareaExtraClass?: string;
+  /** Ja true — bez Saglabāt/Labot (vadība ārpus komponenta). */
+  hideToolbar?: boolean;
 };
 
 export function AdminSavableTextField({
@@ -39,6 +41,7 @@ export function AdminSavableTextField({
   inputType = "text",
   resetVersion,
   textareaExtraClass = "",
+  hideToolbar = false,
 }: AdminSavableTextFieldProps) {
   const [viewMode, setViewMode] = useState(false);
   const [flash, setFlash] = useState(false);
@@ -80,28 +83,36 @@ export function AdminSavableTextField({
 
   return (
     <div>
-      <div
-        className={`mb-1 flex flex-wrap items-center gap-2 ${label ? "justify-between" : "justify-end"}`}
-      >
-        {label ? (
-          <label className="text-xs font-medium text-[var(--color-provin-muted)]" htmlFor={viewMode ? undefined : id}>
+      {hideToolbar ? (
+        label ? (
+          <label className="mb-1 block text-xs font-medium text-[var(--color-provin-muted)]" htmlFor={viewMode ? undefined : id}>
             {label}
           </label>
-        ) : null}
-        <div className="flex flex-wrap items-center justify-end gap-1">
-          {flash ? (
-            <span className="text-[11px] font-semibold text-emerald-700" role="status">
-              Saglabāts
-            </span>
+        ) : null
+      ) : (
+        <div
+          className={`mb-1 flex flex-wrap items-center gap-2 ${label ? "justify-between" : "justify-end"}`}
+        >
+          {label ? (
+            <label className="text-xs font-medium text-[var(--color-provin-muted)]" htmlFor={viewMode ? undefined : id}>
+              {label}
+            </label>
           ) : null}
-          <button type="button" className={toolbarBtn} onClick={save} disabled={disabled}>
-            Saglabāt
-          </button>
-          <button type="button" className={toolbarBtn} onClick={labot} disabled={disabled}>
-            Labot
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-1">
+            {flash ? (
+              <span className="text-[11px] font-semibold text-emerald-700" role="status">
+                Saglabāts
+              </span>
+            ) : null}
+            <button type="button" className={toolbarBtn} onClick={save} disabled={disabled}>
+              Saglabāt
+            </button>
+            <button type="button" className={toolbarBtn} onClick={labot} disabled={disabled}>
+              Labot
+            </button>
+          </div>
         </div>
-      </div>
+      )}
       {viewMode ? (
         <div
           className={viewBoxClass}

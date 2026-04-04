@@ -8,12 +8,37 @@ export type KmSample = {
   context?: string;
 };
 
+/**
+ * Heuristiska klase pēc faila nosaukuma un PDF teksta — klienta PDF tiek lietots neitrāls nosaukums.
+ * Kartē uz biežāk lietotajiem starptautisko vēstures pārskatu formātiem.
+ */
+export type HistoryPdfKind = "euro_network" | "regional_alt" | "registry_focus" | "generic";
+
+export const HISTORY_PDF_KIND_LABEL_LV: Record<HistoryPdfKind, string> = {
+  euro_network: "Platās Eiropas datu bāzes pārskats",
+  regional_alt: "Papildu starptautiskā pārskata formāts",
+  registry_focus: "Reģistra / valsts uzsvara pārskats",
+  generic: "Vēstures PDF (tips nav klasificēts)",
+};
+
+/** Noteikšana pēc faila un teksta (nav juridiski saistīta ar izdevēju; tikai kopsavilkuma grupēšanai). */
+export function detectHistoryPdfKind(fileName: string, text: string): HistoryPdfKind {
+  const f = fileName.toLowerCase();
+  const t = text.slice(0, 120_000).toLowerCase();
+  const hay = `${f}\n${t}`;
+  if (/car[\s_-]*vertical|carvertical/i.test(hay)) return "euro_network";
+  if (/auto[\s_-]*records|autorecords/i.test(hay)) return "registry_focus";
+  if (/auto[\s_-]*dna|autodna/i.test(hay)) return "regional_alt";
+  return "generic";
+}
+
 export type PdfPortfolioFileInsight = {
   fileName: string;
   charCount: number;
   kmSamples: KmSample[];
   /** Īsi secinājumi / atslēgvārdi */
   highlights: string[];
+  historyKind: HistoryPdfKind;
 };
 
 const ACCIDENT_HINTS: { re: RegExp; label: string }[] = [
@@ -109,6 +134,7 @@ export async function analyzePdfBuffer(fileName: string, buffer: ArrayBuffer): P
       charCount: 0,
       kmSamples: [],
       highlights: ["PDF tekstu neizdevās izvilkt (bojāts fails vai pdf.js kļūda)."],
+      historyKind: detectHistoryPdfKind(fileName, ""),
     };
   }
   const kmSamples = extractKmSamples(text);
@@ -118,6 +144,7 @@ export async function analyzePdfBuffer(fileName: string, buffer: ArrayBuffer): P
     charCount: text.length,
     kmSamples,
     highlights,
+    historyKind: detectHistoryPdfKind(fileName, text),
   };
 }
 

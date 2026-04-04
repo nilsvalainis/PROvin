@@ -21,6 +21,8 @@ export const CLIENT_REPORT_PDF_SECTIONS = {
   risk: "2. ĀTRĀ RISKU PĀRBAUDE",
   vehicle: "3. AUTOMAŠĪNAS DATI",
   attachments: "Pievienotie dokumenti (portfelis)",
+  /** Pirms §4 odometra — kopsavilkums no portfeļa PDF analīzes (bez trešo pušu zīmolu nosaukumiem). */
+  historyCompare: "Starptautisko vēstures pārskatu kopsavilkums",
   odometer: "4. ODOMETRA ANALĪZE UN PROGNOZE",
   /** Virsraksta pamats; pie skaita → „(N fiksēti gadījumi)” */
   insurance: "5. APDROŠINĀŠANAS KONTEKSTS",

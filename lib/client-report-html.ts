@@ -3,7 +3,17 @@
  */
 
 import { extractKmCandidates, workspaceBlockToHtml } from "@/lib/admin-workspace-preview-format";
-import { mergeKmForChart, type PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
+import {
+  mergeKmForChart,
+  type HistoryPdfKind,
+  HISTORY_PDF_KIND_LABEL_LV,
+  type PdfPortfolioFileInsight,
+} from "@/lib/admin-portfolio-pdf-analysis";
+import {
+  buildHistoryCompareBullets,
+  buildHistoryCompareRows,
+  HISTORY_COMPARE_USAGE_LV,
+} from "@/lib/history-reports-compare";
 import {
   CLIENT_REPORT_FOOTER_DISCLAIMER,
   CLIENT_REPORT_PDF_SECTIONS,
@@ -218,13 +228,14 @@ function stripRedundantTaMetaFromRest(restText: string, validUntilKnown: boolean
     .trim();
 }
 
-function collectTaSeverityWarnings(csdd: string): string[] {
-  const t = csdd.toLowerCase();
+function collectTaSeverityWarnings(csdd: string, citi: string): string[] {
+  const corpus = `${csdd}\n${citi}`;
+  const t = corpus.toLowerCase();
   const out: string[] = [];
   if (/\b2\s*\/\s*5\b/.test(t) || /vērt[ēe]jums\s*:\s*2\b/.test(t) || /līmenis\s*:\s*2\b/.test(t)) {
     out.push("Konstatēts zemāks tehniskās apskates vērtējums (piem., „2”) — nepieciešama manuāla pārbaude piezīmēs.");
   }
-  if (/konstat[ēe]tie\s+defekt|defekt[us]*\s*[:(]|boj[āa]jums\s*:\s*ir/i.test(csdd)) {
+  if (/konstat[ēe]tie\s+defekt|defekt[us]*\s*[:(]|boj[āa]jums\s*:\s*ir/i.test(corpus)) {
     out.push("Tekstā minēti konstatētie defekti / bojājumi — izcelti kā riska faktors.");
   }
   return out;
@@ -258,11 +269,44 @@ function tierFromMergedLabel(label: string, histAlt: { n: number }): KmTier {
   return "other";
 }
 
-export type OdometerChartPoint = { km: number; label: string; tier: KmTier; emoji: string };
+export type OdometerChartPoint = {
+  km: number;
+  label: string;
+  tier: KmTier;
+  emoji: string;
+  /** Kārtas numurs grafikā / tabulā pēc nobraukuma (1…n). */
+  plotIndex: number;
+  /** Papildu dati no lauka „Citi avoti”. */
+  fromCiti?: boolean;
+};
+
+function mergeCitiIntoOdometerPoints(points: OdometerChartPoint[], citi: string): void {
+  const seenKm = (km: number) => points.some((p) => Math.abs(p.km - km) < 120);
+  for (const km of extractKmCandidates(citi)) {
+    if (km < 1_000 || km > 2_000_000) continue;
+    const existing = points.find((p) => Math.abs(p.km - km) < 120);
+    if (existing) {
+      existing.fromCiti = true;
+      if (!/citi\s+avoti/i.test(existing.label)) {
+        existing.label = `${existing.label} · Citi avoti`;
+      }
+    } else if (!seenKm(km)) {
+      points.push({
+        km,
+        label: "Citi avoti (piezīmes)",
+        tier: "other",
+        emoji: TIER_EMOJI.other,
+        plotIndex: 0,
+        fromCiti: true,
+      });
+    }
+  }
+}
 
 export function buildOdometerChartPoints(
   csdd: string,
   insights: PdfPortfolioFileInsight[],
+  citi: string,
 ): OdometerChartPoint[] {
   const histAlt = { n: 0 };
   const points: OdometerChartPoint[] = [];
@@ -276,6 +320,7 @@ export function buildOdometerChartPoints(
       label: "Valsts / reģistra piezīmes",
       tier: "lv",
       emoji: TIER_EMOJI.lv,
+      plotIndex: 0,
     });
   }
 
@@ -290,11 +335,18 @@ export function buildOdometerChartPoints(
         label: sanitizeAttachmentFileNameForReport(p.label),
         tier,
         emoji: TIER_EMOJI[tier],
+        plotIndex: 0,
       });
     }
   }
 
-  return points.sort((a, b) => a.km - b.km);
+  mergeCitiIntoOdometerPoints(points, citi);
+
+  const sorted = points.sort((a, b) => a.km - b.km);
+  sorted.forEach((p, i) => {
+    p.plotIndex = i + 1;
+  });
+  return sorted;
 }
 
 /** Tabulai: tikai pirmais datums no etiķetes; ja nav — „—”. */
@@ -303,21 +355,57 @@ function dateOnlyFromOdoLabel(label: string): string {
   return dm ? dm[0] : "—";
 }
 
+function shortOdoContext(label: string, maxLen = 52): string {
+  const t = label.replace(/\s+/g, " ").trim();
+  if (t.length <= maxLen) return t;
+  return `${t.slice(0, maxLen - 1)}…`;
+}
+
+/** Īss avota nosaukums tabulas kolonnai „Avots”. */
+function odoSourceTitle(label: string): string {
+  const first = label.split(/\s*·\s*/)[0]?.trim() ?? label;
+  return sanitizeAttachmentFileNameForReport(first);
+}
+
+/** Brīdinājums, ja „Citi avoti” satur odometra manipulācijas pazīmes. */
+function buildCitiOdometerRollbackCallout(citi: string): string | null {
+  const t = citi.trim();
+  if (!t) return null;
+  const low = t.toLowerCase();
+  if (
+    /rollback|atgriez|atgriezt|atgriezts|odometra\s+sv[īi]rst|nobraukuma\s+manipul|nobraukums\s+p[āa]rsk|r[āa]d[īi]t[āa]j\w*\s+atgriez|viltojums|melots\s+nobrauk/i.test(
+      low,
+    )
+  ) {
+    return "„Citi avoti” satur pazīmes par iespējamu odometra manipulāciju vai rādītāja atkārtotu maiņu — salīdziniet ar grafiku un oficiālajiem punktiem; rindas no šī lauka tabulā iezīmētas.";
+  }
+  return null;
+}
+
+function buildOdometerTableRow(pt: OdometerChartPoint): string {
+  const rowClass = pt.fromCiti ? ' class="odo-row-citi"' : "";
+  const col = TIER_COLOR[pt.tier];
+  const badge = `<span class="odo-dot-badge" style="background:${col}">${pt.plotIndex}</span>`;
+  const title = odoSourceTitle(pt.label);
+  const ctx = shortOdoContext(pt.label, 72);
+  return `<tr${rowClass}><td class="tabular odo-idx">${pt.plotIndex}</td><td class="odo-graph-cell">${badge}</td><td>${pt.emoji} ${escapeHtml(title)}</td><td class="tabular">${pt.km.toLocaleString("lv-LV")}</td><td class="tabular">${escapeHtml(dateOnlyFromOdoLabel(pt.label))}</td><td>${escapeHtml(ctx)}</td></tr>`;
+}
+
 const ALL_TIERS: KmTier[] = ["lv", "hist", "hist2", "dealer", "other"];
 
 /**
- * Katram avotam (tier) atsevišķa līkne punktu secībā pēc nobraukuma; līknes var krustoties, punkti netiek zīmēti.
+ * Katram avotam atsevišķa līkne; virsū punkti ar numuru kā tabulā.
  */
 function buildOdometerSvg(points: OdometerChartPoint[]): string {
   if (points.length === 0) {
     return '<p class="na">Nav izdalītu nobraukuma punktu — aizpildi reģistra piezīmes un/vai pievieno vēstures PDF.</p>';
   }
   const w = 520;
-  const h = 200;
+  const h = 220;
   const padL = 48;
   const padR = 16;
   const padT = 16;
-  const padB = 36;
+  const padB = 40;
   const innerW = w - padL - padR;
   const innerH = h - padT - padB;
   const sorted = [...points].sort((a, b) => a.km - b.km);
@@ -330,7 +418,7 @@ function buildOdometerSvg(points: OdometerChartPoint[]): string {
   const coords = sorted.map((p, i) => {
     const x = padL + (n > 1 ? (i / (n - 1)) * innerW : innerW / 2);
     const y = padT + innerH - ((p.km - minK) / span) * innerH;
-    return { x, y, km: p.km, tier: p.tier };
+    return { x, y, km: p.km, tier: p.tier, plotIndex: p.plotIndex };
   });
 
   const tierSegments: string[] = [];
@@ -341,17 +429,28 @@ function buildOdometerSvg(points: OdometerChartPoint[]): string {
       const b = coords[idxs[j + 1]!]!;
       const col = TIER_COLOR[tier];
       tierSegments.push(
-        `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${col}" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"/>`,
+        `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${col}" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>`,
       );
     }
   }
 
+  const dots = coords
+    .map((c) => {
+      const col = TIER_COLOR[c.tier];
+      return `<g class="odo-vertex">
+        <circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="7" fill="${col}" stroke="#fff" stroke-width="2.5"/>
+        <text x="${c.x.toFixed(1)}" y="${(c.y + 4).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">${c.plotIndex}</text>
+      </g>`;
+    })
+    .join("");
+
   return `
     <div class="chart-wrap">
-      <p class="chart-caption">Nobraukuma dinamikas grafiks — atsevišķas krāsainas līknes katram avotam (🟢 🔵 🟡 🟠 🔴), bez punktiem; līknes var krustoties.</p>
+      <p class="chart-caption">Nobraukuma dinamika: krāsainas līknes pa avotiem; apļos — punkta numurs (sakrīt ar tabulas kolonnu „Grafikā”).</p>
       <svg viewBox="0 0 ${w} ${h}" class="odo-chart" aria-hidden="true">
         <line x1="${padL}" y1="${padT + innerH}" x2="${padL + innerW}" y2="${padT + innerH}" stroke="#e5e7eb" stroke-width="1"/>
         ${tierSegments.join("")}
+        ${dots}
         <text x="${padL}" y="${h - 8}" font-size="10" fill="#71717a">min ${minK.toLocaleString("lv-LV")} km — max ${maxK.toLocaleString("lv-LV")} km</text>
       </svg>
     </div>`;
@@ -366,9 +465,10 @@ type InsRow = {
   emphasize: boolean;
 };
 
-function parseInsuranceLikeRows(ltab: string): InsRow[] {
+function parseInsuranceLikeRows(ltab: string, citi: string): InsRow[] {
   const rows: InsRow[] = [];
-  for (const raw of ltab.split(/\r?\n/)) {
+  const blob = [ltab, citi].filter((s) => s.trim().length > 0).join("\n");
+  for (const raw of blob.split(/\r?\n/)) {
     const line = raw.trim();
     if (line.length < 8) continue;
     const dm = line.match(/\d{1,2}[./]\d{1,2}[./]\d{2,4}/);
@@ -400,12 +500,17 @@ function parseInsuranceLikeRows(ltab: string): InsRow[] {
   return rows;
 }
 
-/** Nobraukuma neatbilstība: sludinājums vs augstākais oficiālais. */
+function officialKmPool(csdd: string, citi: string): number[] {
+  return [...extractKmCandidates(csdd), ...extractKmCandidates(citi)];
+}
+
+/** Nobraukuma neatbilstība: sludinājums vs augstākais no CSDD + Citi avoti. */
 function listingKmDeltaInfo(
   csdd: string,
   tirgus: string,
+  citi: string,
 ): { listingKm: number; maxOfficial: number; deltaKm: number; deltaLabel: string } | null {
-  const official = extractKmCandidates(csdd);
+  const official = officialKmPool(csdd, citi);
   const listing = extractKmCandidates(tirgus);
   if (official.length === 0 || listing.length === 0) return null;
   const maxOff = Math.max(...official);
@@ -417,11 +522,11 @@ function listingKmDeltaInfo(
   return { listingKm: minList, maxOfficial: maxOff, deltaKm, deltaLabel };
 }
 
-function listingVsOfficialKmWarning(csdd: string, tirgus: string): string | null {
-  const info = listingKmDeltaInfo(csdd, tirgus);
+function listingVsOfficialKmWarning(csdd: string, tirgus: string, citi: string): string | null {
+  const info = listingKmDeltaInfo(csdd, tirgus, citi);
   if (!info || info.deltaKm < 400) return null;
   if (info.listingKm < info.maxOfficial - 400) {
-    return `Brīdinājums: sludinājumā norādītais nobraukums (${info.listingKm.toLocaleString("lv-LV")} km) ir zemāks par augstāko reģistra / oficiālajos avotos fiksēto (${info.maxOfficial.toLocaleString("lv-LV")} km) — iespējama odometra neatbilstība; nepieciešama manuāla pārbaude.`;
+    return `Brīdinājums: sludinājumā norādītais nobraukums (${info.listingKm.toLocaleString("lv-LV")} km) ir zemāks par augstāko CSDD / reģistra un „Citi avoti” piezīmēs minēto (${info.maxOfficial.toLocaleString("lv-LV")} km) — iespējama odometra neatbilstība; nepieciešama manuāla pārbaude.`;
   }
   return null;
 }
@@ -456,7 +561,12 @@ function estimateYearsFromFirstReg(csdd: string): number | null {
   return Math.max(0.5, years);
 }
 
-function buildMileageForecastBlock(points: OdometerChartPoint[], csdd: string, tirgus: string): string {
+function buildMileageForecastBlock(
+  points: OdometerChartPoint[],
+  csdd: string,
+  tirgus: string,
+  citi: string,
+): string {
   if (points.length < 2) {
     return `<div class="forecast-box"><p class="forecast-icon">💡</p><div><strong>EKSPERTA PROGNOZE</strong><p class="forecast-body">Nepietiek punktu nobraukuma līknei — pievienojiet vēstures PDF un reģistra datus, lai sistēma varētu aprēķināt vidējo nobraukumu gadā.</p></div></div>`;
   }
@@ -472,10 +582,10 @@ function buildMileageForecastBlock(points: OdometerChartPoint[], csdd: string, t
   const perYearK = Math.round(perYear / 1000);
   const rangeLow = maxK + Math.round(perYear * 0.15);
   const rangeHigh = maxK + Math.round(perYear * 0.45);
-  const info = listingKmDeltaInfo(csdd, tirgus);
+  const info = listingKmDeltaInfo(csdd, tirgus, citi);
   let warn = "";
   if (info && info.listingKm < info.maxOfficial - 400) {
-    warn = `<p class="forecast-warn">Sludinājumā norādītie <strong>${info.listingKm.toLocaleString("lv-LV")} km</strong> uzskatāmi par <strong>apzināti maldinošiem</strong> salīdzinājumā ar oficiāli fiksēto augstāko vērtību (${info.maxOfficial.toLocaleString("lv-LV")} km; starpība ≈ ${info.deltaLabel} pret pēdējo CSDD / reģistra fiksāciju).</p>`;
+    warn = `<p class="forecast-warn">Sludinājumā norādītie <strong>${info.listingKm.toLocaleString("lv-LV")} km</strong> uzskatāmi par <strong>apzināti maldinošiem</strong> salīdzinājumā ar augstāko vērtību no CSDD / reģistra un „Citi avoti” (${info.maxOfficial.toLocaleString("lv-LV")} km; starpība ≈ ${info.deltaLabel}).</p>`;
   }
   return `<div class="forecast-box"><p class="forecast-icon">💡</p><div><strong>EKSPERTA PROGNOZE</strong>
     <p class="forecast-body">Pēc pieejamajiem punktiem: nobraukuma starpība <strong>${minK.toLocaleString("lv-LV")} – ${maxK.toLocaleString("lv-LV")} km</strong> aptuveni <strong>${years.toFixed(1)}</strong> gadu posmā → vidēji <strong>~${perYearK}k km gadā</strong> (formula: (pēdējais − pirmais) / gadu skaits).</p>
@@ -516,16 +626,20 @@ function buildRiskRows(
         note: "Nav reģistrēts kā zagts vai meklēšanā (pēc pieejamā teksta heuristikas).",
       };
 
-  const kmInfo = listingKmDeltaInfo(csdd, tirgus);
-  const kmWarn = listingVsOfficialKmWarning(csdd, tirgus);
+  const kmInfo = listingKmDeltaInfo(csdd, tirgus, citi);
+  const kmWarn = listingVsOfficialKmWarning(csdd, tirgus, citi);
   let mileage: RiskRow;
   if (kmWarn && kmInfo) {
     mileage = {
       kind: "Nobraukuma ticamība",
       statusHtml: '<span class="st-crit">🚩 Kritiski</span>',
-      note: `Sludinājuma dati nesakrīt ar reģistra vēsturi (≈ ${kmInfo.deltaLabel} pret augstāko oficiālo fiksāciju).`,
+      note: `Sludinājuma dati nesakrīt ar CSDD / reģistru un „Citi avoti” (≈ ${kmInfo.deltaLabel} pret augstāko fiksāciju).`,
     };
-  } else if (extractKmCandidates(csdd).length === 0 && extractKmCandidates(tirgus).length === 0) {
+  } else if (
+    extractKmCandidates(csdd).length === 0 &&
+    extractKmCandidates(tirgus).length === 0 &&
+    extractKmCandidates(citi).length === 0
+  ) {
     mileage = {
       kind: "Nobraukuma ticamība",
       statusHtml: '<span class="st-warn">⚠️ Nav datu</span>',
@@ -540,11 +654,14 @@ function buildRiskRows(
   }
 
   const nIns = insRows.length;
-  const heavy = insRows.some((r) => r.emphasize) || /total\s*loss|piln[īi]g[aā]\s*boj|7\s+fiks/i.test(ltab);
+  const insCorpus = `${ltab}\n${citi}`;
+  const heavy =
+    insRows.some((r) => r.emphasize) ||
+    /total\s*loss|piln[īi]g[aā]\s*boj|7\s+fiks/i.test(insCorpus);
   const accCount =
     nIns ||
     (() => {
-      const m = ltab.match(/(\d+)\s*(?:fiks[ēe]ti\s*)?(?:gad[īi]jum|negad[īi]jum)/i);
+      const m = insCorpus.match(/(\d+)\s*(?:fiks[ēe]ti\s*)?(?:gad[īi]jum|negad[īi]jum)/i);
       return m ? parseInt(m[1], 10) : 0;
     })();
   let damage: RiskRow;
@@ -554,7 +671,7 @@ function buildRiskRows(
       statusHtml: '<span class="st-warn">⚠️ Uzmanību</span>',
       note: `Fiksēti ${Math.max(accCount, nIns || 1)} negadījumi (pēc tabulas / teksta), t.sk. iespējams smags / pilnīgs bojājums — pārbaudiet detaļas sadaļā „Apdrošināšanas konteksts”.`,
     };
-  } else if (nIns === 0 && !/negad[īi]jum|av[āa]rija|boj[āa]j/i.test(ltab)) {
+  } else if (nIns === 0 && !/negad[īi]jum|av[āa]rija|boj[āa]j/i.test(insCorpus)) {
     damage = {
       kind: "Bojājumu vēsture",
       statusHtml: '<span class="st-ok">✅ Nav izcelts</span>',
@@ -568,7 +685,7 @@ function buildRiskRows(
     };
   }
 
-  const taSev = collectTaSeverityWarnings(csdd);
+  const taSev = collectTaSeverityWarnings(csdd, citi);
   const fixed =
     /atk[āa]rtot[āa].{0,80}?vērt[ēe]jums\s*0|visi\s+defekti\s+novērst|vērt[ēe]jums\s*:\s*0\b/i.test(csdd);
   let technical: RiskRow;
@@ -715,7 +832,24 @@ function clientReportPrintCss(): string {
       .st-warn{color:#b45309;font-weight:600;}
       .st-crit{color:#b91c1c;font-weight:600;}
       .tabular{font-variant-numeric:tabular-nums;}
-      table.fmt.odo td:nth-child(1){width:40px;text-align:center;font-size:1.05rem;}
+      table.fmt.odo{font-size:0.82rem;}
+      table.fmt.odo thead th{background:linear-gradient(180deg,#f8fafc 0%,#f1f5f9 100%);font-weight:700;color:#334155;border-bottom:2px solid #e2e8f0;}
+      table.fmt.odo tbody tr:nth-child(even){background:#fafafa;}
+      table.fmt.odo .odo-idx{font-weight:700;color:#475569;width:2rem;}
+      table.fmt.odo .odo-graph-cell{text-align:center;width:3.25rem;vertical-align:middle;}
+      .odo-dot-badge{
+        display:inline-flex;align-items:center;justify-content:center;
+        min-width:1.5rem;height:1.5rem;padding:0 4px;border-radius:999px;
+        font-size:0.68rem;font-weight:800;color:#fff;letter-spacing:-0.02em;
+        border:2px solid #fff;box-shadow:0 1px 3px rgba(15,23,42,.18);
+        vertical-align:middle;
+      }
+      tr.odo-row-citi td{background:rgba(254,226,226,.5)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      tr.odo-row-citi td:first-child{box-shadow:inset 4px 0 0 #b91c1c;}
+      .odo-citi-callout{
+        margin:10px 0 12px;padding:10px 14px;border-radius:9px;
+        background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:0.84rem;line-height:1.5;
+      }
       table.fmt.ins td.flag-cell{width:48px;text-align:right;font-size:1.2rem;}
       table.fmt.ins tr.em td{font-weight:700;}
       .td-warn{color:#b91c1c;font-weight:600;}
@@ -756,6 +890,40 @@ function clientReportPrintCss(): string {
       .legend-box h3{margin:0 0 10px;font-size:0.82rem;font-weight:700;color:#1d1d1f;text-transform:uppercase;letter-spacing:0.06em;}
       .legend-inline{display:flex;flex-wrap:wrap;gap:10px 18px;font-size:0.78rem;color:#334155;}
       .legend-inline span{white-space:nowrap;}
+      .history-compare-panel{
+        margin:22px 0 26px;padding:20px 22px 22px;border-radius:14px;
+        background:linear-gradient(145deg,#f0f9ff 0%,#eff6ff 38%,#fff 100%);
+        border:2px solid #0066d6;
+        box-shadow:0 8px 28px rgba(0,102,214,.12);
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .history-compare-panel.history-compare-empty{
+        background:linear-gradient(145deg,#f8fafc 0%,#fff 100%);
+        border-color:#94a3b8;
+        box-shadow:0 4px 16px rgba(15,23,42,.06);
+      }
+      .history-compare-title{
+        margin:0 0 10px!important;padding-bottom:0!important;
+        font-size:1.06rem!important;letter-spacing:0.03em;color:#0f172a!important;
+        border-bottom:0!important;text-transform:none!important;
+      }
+      .history-compare-lead{font-size:0.88rem;line-height:1.55;color:#1e293b;margin:0 0 14px;}
+      .history-compare-usage-grid{
+        display:grid;gap:10px;margin:0 0 16px;
+        grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+      }
+      .history-compare-usage-card{
+        background:#fff;border:1px solid #bae6fd;border-radius:10px;padding:10px 12px;
+        font-size:0.78rem;line-height:1.45;color:#334155;
+      }
+      .hcu-tag{
+        display:block;font-weight:700;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.07em;color:#0369a1;margin-bottom:6px;
+      }
+      table.history-compare-table{font-size:0.78rem;}
+      table.history-compare-table thead th{background:#e0f2fe!important;color:#0c4a6e!important;}
+      .history-compare-bullets{margin:14px 0 0;padding-left:1.2rem;font-size:0.84rem;line-height:1.55;color:#0f172a;}
+      .history-compare-bullets li{margin:6px 0;}
+      .history-compare-foot{margin-top:12px!important;}
       .legal-block{
         margin-top:18px;padding:14px 16px;border-radius:10px;background:#f5f5f7;border:1px solid #e8e8ed;
         font-size:0.74rem;color:#6e6e73;line-height:1.55;
@@ -770,6 +938,69 @@ function clientReportPrintCss(): string {
         .ta-status{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       }
     `;
+}
+
+function buildHistoryCompareSectionHtml(insights: PdfPortfolioFileInsight[]): string {
+  if (insights.length === 0) {
+    return `<div class="history-compare-panel history-compare-empty" role="region">
+      <h2 class="pdf-sec history-compare-title">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.historyCompare)}</h2>
+      <p class="history-compare-lead">Nav portfeļa PDF ar automātiski izvilktu tekstu — pievienojiet vēstures datnes administrācijas panelī un atkārtoti atveriet atskaiti, lai šeit parādītos salīdzinājums virs odometra grafika.</p>
+    </div>`;
+  }
+
+  const rows = buildHistoryCompareRows(insights, sanitizeAttachmentFileNameForReport);
+  const bullets = buildHistoryCompareBullets(rows);
+  const kindsOrder: HistoryPdfKind[] = ["euro_network", "regional_alt", "registry_focus", "generic"];
+  const present = [...new Set(rows.map((r) => r.historyKind))].sort(
+    (a, b) => kindsOrder.indexOf(a) - kindsOrder.indexOf(b),
+  );
+
+  const parts: string[] = [];
+  parts.push(`<div class="history-compare-panel" role="region">`);
+  parts.push(`<h2 class="pdf-sec history-compare-title">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.historyCompare)}</h2>`);
+  parts.push(
+    `<p class="history-compare-lead">Šeit apkopota <strong>automātiskā PDF teksta analīze</strong> katram portfeļa dokumentam: izceltais nobraukums, riska atslēgvārdi un heuristiski noteikts <strong>pārskata tips</strong> (bez komerciālu zīmolu nosaukumiem klienta PDF). Tā <strong>neaizstāj</strong> manuālu izlasīšanu; zemāk esošais odometra grafiks apvieno punktus no visiem avotiem.</p>`,
+  );
+
+  parts.push(`<div class="history-compare-usage-grid">`);
+  for (const k of present) {
+    parts.push(
+      `<div class="history-compare-usage-card"><span class="hcu-tag">${escapeHtml(HISTORY_PDF_KIND_LABEL_LV[k])}</span><p style="margin:0">${escapeHtml(HISTORY_COMPARE_USAGE_LV[k])}</p></div>`,
+    );
+  }
+  parts.push(`</div>`);
+
+  parts.push(
+    `<table class="fmt bordered history-compare-table report-export" data-export="history-compare"><thead><tr><th>Pārskata tips</th><th>Fails</th><th class="tabular">Nobraukums (min–max)</th><th class="tabular">Ierakstu sk.</th><th>Automātiskie signāli</th><th class="tabular">Teksts</th></tr></thead><tbody>`,
+  );
+  for (const r of rows) {
+    const kmCell =
+      r.minKm != null && r.maxKm != null
+        ? `${r.minKm.toLocaleString("lv-LV")} – ${r.maxKm.toLocaleString("lv-LV")} km`
+        : "—";
+    const sig = r.highlights.length ? r.highlights.map((h) => escapeHtml(h)).join(" · ") : "—";
+    const textCell = r.textOk
+      ? escapeHtml(`${r.charCount.toLocaleString("lv-LV")} rakstzīmes`)
+      : '<span class="td-warn">Ierobežots</span>';
+    parts.push(
+      `<tr><td>${escapeHtml(r.kindLabel)}</td><td>${escapeHtml(r.fileDisplay)}</td><td class="tabular">${escapeHtml(kmCell)}</td><td class="tabular">${r.nSamples}</td><td>${sig}</td><td class="tabular">${textCell}</td></tr>`,
+    );
+  }
+  parts.push(`</tbody></table>`);
+
+  if (bullets.length > 0) {
+    parts.push(`<ul class="history-compare-bullets">`);
+    for (const b of bullets) {
+      parts.push(`<li>${escapeHtml(b)}</li>`);
+    }
+    parts.push(`</ul>`);
+  }
+
+  parts.push(
+    `<p class="hint history-compare-foot">Tips tiek noteikts pēc datnes nosaukuma un izviltā teksta; ja klasifikācija neatbilst, pārdēvējiet failu vai pievienojiet atpazīstamu fragmentu nosaukumā.</p>`,
+  );
+  parts.push(`</div>`);
+  return parts.join("\n");
 }
 
 export function buildClientReportDocumentHtml(args: {
@@ -789,16 +1020,17 @@ export function buildClientReportDocumentHtml(args: {
           p.amountTotal / 100,
         );
 
-  const insRows = parseInsuranceLikeRows(p.ltab);
-  const odoPts = buildOdometerChartPoints(p.csdd, pdfInsights);
+  const insRows = parseInsuranceLikeRows(p.ltab, p.citi);
+  const odoPts = buildOdometerChartPoints(p.csdd, pdfInsights, p.citi);
   const riskRows = buildRiskRows(p.csdd, p.tirgus, p.ltab, p.citi, insRows);
-  const taValidUntil = findTaValidUntilDate(p.csdd);
+  const taValidUntil = findTaValidUntilDate(`${p.csdd}\n${p.citi}`);
   const taPartition = partitionTaHistoryLines(p.csdd);
   const makeModel = extractVehicleMakeModel(p.csdd);
   const firstReg = extractFirstRegistration(p.csdd);
   const expertParts = splitExpertConclusion(p.iriss);
-  const listDelta = listingKmDeltaInfo(p.csdd, p.tirgus);
-  const listWarnLong = listingVsOfficialKmWarning(p.csdd, p.tirgus);
+  const listDelta = listingKmDeltaInfo(p.csdd, p.tirgus, p.citi);
+  const listWarnLong = listingVsOfficialKmWarning(p.csdd, p.tirgus, p.citi);
+  const citiOdoCallout = buildCitiOdometerRollbackCallout(p.citi);
   const priceAd = extractListingPriceEur(p.tirgus);
   const listingKms = extractKmCandidates(p.tirgus);
   const minListingKm = listingKms.length ? Math.min(...listingKms) : null;
@@ -864,7 +1096,7 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(`<h3 class="pdf-sub">Tehniskās apskates vēsture</h3>`);
   lines.push(buildTaValidityBanner(taValidUntil));
 
-  const taSev = collectTaSeverityWarnings(p.csdd);
+  const taSev = collectTaSeverityWarnings(p.csdd, p.citi);
   if (taSev.length > 0) {
     lines.push(
       `<div class="callout-warn"><strong>TA / defekti (no piezīmēm):</strong> ${escapeHtml(taSev.join(" "))}</div>`,
@@ -912,18 +1144,25 @@ export function buildClientReportDocumentHtml(args: {
   }
   lines.push(exportRowHtml());
 
+  lines.push(buildHistoryCompareSectionHtml(pdfInsights));
+  lines.push(exportRowHtml());
+
   /* 4. Odometrs */
   lines.push(`<h2 class="pdf-sec">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.odometer)}</h2>`);
   lines.push(buildOdometerSvg(odoPts));
-  lines.push(buildMileageForecastBlock(odoPts, p.csdd, p.tirgus));
-  lines.push(`<h3 class="pdf-sub">Apvienotie punkti (hronoloģiski pēc nobraukuma)</h3>`);
+  lines.push(buildMileageForecastBlock(odoPts, p.csdd, p.tirgus, p.citi));
+  if (citiOdoCallout) {
+    lines.push(`<div class="odo-citi-callout"><strong>Citi avoti — odometrs:</strong> ${escapeHtml(citiOdoCallout)}</div>`);
+  }
+  lines.push(`<h3 class="pdf-sub">Punkti tabulā = punkti grafikā</h3>`);
   lines.push(
-    `<table class="fmt odo bordered report-export"><thead><tr><th>Avots</th><th class="tabular">km</th><th>Datums</th></tr></thead><tbody>`,
+    `<p class="hint" style="margin-top:0;margin-bottom:8px">Kolonna „Grafikā” atkārto krāsaino apli ar numuru; kolonna „#” ir tas pats kārtas numurs. Rindas no lauka „Citi avoti” iezīmētas sārti.</p>`,
+  );
+  lines.push(
+    `<table class="fmt odo bordered report-export" data-export="odo"><thead><tr><th>#</th><th>Grafikā</th><th>Avots</th><th class="tabular">km</th><th>Datums</th><th>Konteksts</th></tr></thead><tbody>`,
   );
   for (const pt of odoPts) {
-    lines.push(
-      `<tr><td>${pt.emoji}</td><td class="tabular">${pt.km.toLocaleString("lv-LV")}</td><td class="tabular">${escapeHtml(dateOnlyFromOdoLabel(pt.label))}</td></tr>`,
-    );
+    lines.push(buildOdometerTableRow(pt));
   }
   lines.push(`</tbody></table>`);
   lines.push(exportRowHtml());
@@ -978,7 +1217,7 @@ export function buildClientReportDocumentHtml(args: {
   if (minListingKm != null) {
     let mileLine = `<strong>Sludinājuma nobraukums:</strong> ${minListingKm.toLocaleString("lv-LV")} km`;
     if (listDelta && listDelta.deltaKm >= 400) {
-      mileLine += ` <span class="listing-warn-amber" style="display:inline;padding:2px 6px;border-radius:4px">⚠️ <span class="listing-delta">−${escapeHtml(listDelta.deltaLabel)} pret pēdējo CSDD / reģistra fiksāciju</span></span>`;
+      mileLine += ` <span class="listing-warn-amber" style="display:inline;padding:2px 6px;border-radius:4px">⚠️ <span class="listing-delta">−${escapeHtml(listDelta.deltaLabel)} pret augstāko CSDD / reģistra un „Citi avoti” fiksāciju</span></span>`;
     }
     lines.push(`<li>${mileLine}</li>`);
   }

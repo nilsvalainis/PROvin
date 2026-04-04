@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePortfolioFileRow";
-import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
 import {
   idbGetPortfolio,
   idbSetPortfolio,
@@ -76,6 +75,12 @@ const MAX_TOTAL_BYTES = 80 * 1024 * 1024;
 
 const workspaceToolbarBtn =
   "rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] font-semibold tracking-tight text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50";
+
+const bulkTextareaClass =
+  "w-full rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-sm leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20";
+
+const bulkReadonlyClass =
+  "w-full rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-sm leading-snug whitespace-pre-wrap text-[var(--color-apple-text)] min-h-[52px]";
 
 function storageKeyWorkspace(sessionId: string) {
   return `provin-admin-workspace-v2-${sessionId}`;
@@ -247,6 +252,12 @@ export function OrderDetailWorkspace({
   const [pdfInsights, setPdfInsights] = useState<PdfPortfolioFileInsight[]>([]);
   const [pdfScanning, setPdfScanning] = useState(false);
   const [pdfScanError, setPdfScanError] = useState<string | null>(null);
+  const [sourcesViewMode, setSourcesViewMode] = useState(false);
+  const [sourcesSnap, setSourcesSnap] = useState({ csdd: "", ltab: "", tirgus: "", citi: "" });
+  const [sourcesFlash, setSourcesFlash] = useState(false);
+  const [expertViewMode, setExpertViewMode] = useState(false);
+  const [expertSnap, setExpertSnap] = useState({ iriss: "", apskatesPlāns: "" });
+  const [expertFlash, setExpertFlash] = useState(false);
   const portfolioBytes = useMemo(() => portfolio.reduce((a, p) => a + p.size, 0), [portfolio]);
 
   const mergedKmPoints = useMemo(() => mergeKmForChart(pdfInsights), [pdfInsights]);
@@ -327,6 +338,14 @@ export function OrderDetailWorkspace({
     }
     setWorkspaceHydrated(true);
   }, [payload.sessionId, payload.serverInternalComment]);
+
+  useEffect(() => {
+    if (!workspaceHydrated) return;
+    setSourcesSnap({ csdd: ws.csdd, ltab: ws.ltab, tirgus: ws.tirgus, citi: ws.citi });
+    setSourcesViewMode(false);
+    setExpertSnap({ iriss: ws.iriss, apskatesPlāns: ws.apskatesPlāns });
+    setExpertViewMode(false);
+  }, [workspaceHydrated, payload.sessionId]); // eslint-disable-line react-hooks/exhaustive-deps -- tikai sesija / hidrācija
 
   useEffect(() => {
     if (!workspaceHydrated) return;
@@ -738,12 +757,39 @@ export function OrderDetailWorkspace({
       </section>
 
       <section className="rounded-lg border border-slate-200/80 bg-white p-2.5 shadow-sm">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
-          2. Avotu piezīmes
-        </h2>
-        <p className="mt-0.5 text-[10px] text-[var(--color-provin-muted)]">
-          Tukšs → PDF: <strong className="text-[var(--color-apple-text)]">Informācija nav pieejama</strong>.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
+              2. Avotu piezīmes
+            </h2>
+            <p className="mt-0.5 text-[10px] text-[var(--color-provin-muted)]">
+              Tukšs → PDF: <strong className="text-[var(--color-apple-text)]">Informācija nav pieejama</strong>. Viens{" "}
+              <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> visiem četriem laukiem.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-1">
+            {sourcesFlash ? (
+              <span className="text-[11px] font-semibold text-emerald-700" role="status">
+                Saglabāts
+              </span>
+            ) : null}
+            <button
+              type="button"
+              className={workspaceToolbarBtn}
+              onClick={() => {
+                setSourcesSnap({ csdd: ws.csdd, ltab: ws.ltab, tirgus: ws.tirgus, citi: ws.citi });
+                setSourcesViewMode(true);
+                setSourcesFlash(true);
+                window.setTimeout(() => setSourcesFlash(false), 2000);
+              }}
+            >
+              Saglabāt
+            </button>
+            <button type="button" className={workspaceToolbarBtn} onClick={() => setSourcesViewMode(false)}>
+              Labot
+            </button>
+          </div>
+        </div>
         <div className="mt-1.5 grid gap-2 md:grid-cols-2">
           {(
             [
@@ -753,17 +799,28 @@ export function OrderDetailWorkspace({
               { key: "citi" as const, label: "Citi avoti" },
             ] as const
           ).map(({ key, label }) => (
-            <AdminSavableTextField
-              key={key}
-              id={`${fileInputId}-${key}`}
-              label={label}
-              value={ws[key]}
-              onChange={(v) => updateWs({ [key]: v })}
-              placeholder={`${label}…`}
-              multiline
-              minHeightClass="min-h-[52px]"
-              resetVersion={workspaceFieldResetKey}
-            />
+            <div key={key}>
+              <div className="mb-0.5 text-xs font-medium text-[var(--color-provin-muted)]">{label}</div>
+              {sourcesViewMode ? (
+                <div className={`${bulkReadonlyClass} min-h-[52px]`}>
+                  {(sourcesSnap[key] ?? "").trim() ? (
+                    sourcesSnap[key]
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  )}
+                </div>
+              ) : (
+                <textarea
+                  id={`${fileInputId}-${key}`}
+                  className={`${bulkTextareaClass} min-h-[52px] resize-y`}
+                  value={ws[key]}
+                  onChange={(e) => updateWs({ [key]: e.target.value })}
+                  placeholder={`${label}…`}
+                  spellCheck
+                  rows={3}
+                />
+              )}
+            </div>
           ))}
         </div>
 
@@ -790,37 +847,85 @@ export function OrderDetailWorkspace({
             : "border-dashed border-slate-200 bg-slate-50/50"
         }`}
       >
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
-          3. IRISS + apskates plāns
-        </h2>
-        <p className="mt-0.5 text-[10px] text-[var(--color-provin-muted)]">
-          IRISS = eksperta slēdziens PDF. Zem tā — §7 personalizētais apskates plāns pircējam klātienē.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
+              3. IRISS + apskates plāns
+            </h2>
+            <p className="mt-0.5 text-[10px] text-[var(--color-provin-muted)]">
+              Viens <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> abiem laukiem.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-1">
+            {expertFlash ? (
+              <span className="text-[11px] font-semibold text-emerald-700" role="status">
+                Saglabāts
+              </span>
+            ) : null}
+            <button
+              type="button"
+              className={workspaceToolbarBtn}
+              disabled={!ws.previewConfirmed}
+              onClick={() => {
+                setExpertSnap({ iriss: ws.iriss, apskatesPlāns: ws.apskatesPlāns });
+                setExpertViewMode(true);
+                setExpertFlash(true);
+                window.setTimeout(() => setExpertFlash(false), 2000);
+              }}
+            >
+              Saglabāt
+            </button>
+            <button
+              type="button"
+              className={workspaceToolbarBtn}
+              disabled={!ws.previewConfirmed}
+              onClick={() => setExpertViewMode(false)}
+            >
+              Labot
+            </button>
+          </div>
+        </div>
         <div className="mt-1.5 space-y-2">
-          <AdminSavableTextField
-            id={`${fileInputId}-iriss`}
-            label="IRISS (eksperta slēdziens)"
-            value={ws.iriss}
-            onChange={(v) => updateWs({ iriss: v })}
-            placeholder="Galvenais kopsavilkums klientam…"
-            multiline
-            disabled={!ws.previewConfirmed}
-            minHeightClass="min-h-[200px]"
-            textareaExtraClass="max-h-[min(70vh,560px)]"
-            resetVersion={workspaceFieldResetKey}
-          />
-          <AdminSavableTextField
-            id={`${fileInputId}-apskates`}
-            label="Apskates plāns (klātienē)"
-            value={ws.apskatesPlāns}
-            onChange={(v) => updateWs({ apskatesPlāns: v })}
-            placeholder="Piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
-            multiline
-            disabled={!ws.previewConfirmed}
-            minHeightClass="min-h-[100px]"
-            textareaExtraClass="max-h-[min(50vh,400px)]"
-            resetVersion={workspaceFieldResetKey}
-          />
+          <div>
+            <div className="mb-0.5 text-xs font-medium text-[var(--color-provin-muted)]">IRISS (eksperta slēdziens)</div>
+            {expertViewMode ? (
+              <div className={`${bulkReadonlyClass} min-h-[200px] max-h-[min(70vh,560px)] overflow-y-auto`}>
+                {expertSnap.iriss.trim() ? expertSnap.iriss : <span className="text-slate-400">—</span>}
+              </div>
+            ) : (
+              <textarea
+                id={`${fileInputId}-iriss`}
+                className={`${bulkTextareaClass} min-h-[200px] max-h-[min(70vh,560px)] resize-y`}
+                value={ws.iriss}
+                onChange={(e) => updateWs({ iriss: e.target.value })}
+                placeholder="Galvenais kopsavilkums klientam…"
+                spellCheck
+                disabled={!ws.previewConfirmed}
+              />
+            )}
+          </div>
+          <div>
+            <div className="mb-0.5 text-xs font-medium text-[var(--color-provin-muted)]">Apskates plāns (klātienē)</div>
+            {expertViewMode ? (
+              <div className={`${bulkReadonlyClass} min-h-[100px] max-h-[min(50vh,400px)] overflow-y-auto`}>
+                {expertSnap.apskatesPlāns.trim() ? (
+                  expertSnap.apskatesPlāns
+                ) : (
+                  <span className="text-slate-400">—</span>
+                )}
+              </div>
+            ) : (
+              <textarea
+                id={`${fileInputId}-apskates`}
+                className={`${bulkTextareaClass} min-h-[100px] max-h-[min(50vh,400px)] resize-y`}
+                value={ws.apskatesPlāns}
+                onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
+                placeholder="Piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
+                spellCheck
+                disabled={!ws.previewConfirmed}
+              />
+            )}
+          </div>
         </div>
         {!ws.previewConfirmed ? (
           <p className="mt-1.5 text-[11px] text-amber-800">Vispirms apstiprini priekšskatu.</p>
