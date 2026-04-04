@@ -20,7 +20,7 @@ const DAMAGE_HINT =
 const CLAIM_CTX =
   /claim|damage|collision|accident|repair|payout|compensation|paid|insurance|total\s*loss|liabilit|indemn|settlement|cost\s+of|body|injur|property\s*damage|ātrie|atlīdz|ierakst|negad|boj[āa]j|av[āa]rij|remont|apr[īi]koj|apr[ēe]k/i;
 
-function amountToIntRough(raw: string): number {
+export function amountToIntRough(raw: string): number {
   const s = raw.replace(/\s/g, "").replace(/\u00a0/g, "");
   const noCents = s.replace(/[.,]\d{2}$/, "");
   const digits = noCents.replace(/[^\d]/g, "");
@@ -257,16 +257,16 @@ export function compactDamageKindLabel(row: ClaimTableRow): string {
   return "△ bojāj.";
 }
 
-/** PDF 4.2 — lakonisks simbolu apraksts (UTF-8 / emoji). */
+/** PDF 4.2 — īsi simboli (drukai / UTF-8). */
 export function damageSymbolKindForReport(row: ClaimTableRow): string {
   const s = row.descShort.replace(/\s+/g, " ").toLowerCase();
   const amt = amountToIntRough(row.amount);
   if (/total\s*loss|piln[īi]g[aā]\s*boj|write[\s-]*off/i.test(s) || (row.emphasize && amt >= 4000)) {
-    return "💥 virsbūve (total loss)";
+    return "💥 TOTAL LOSS";
   }
   if (/stikla|stikls|glass|vējstikls/i.test(s)) return "🛠️ stikls";
-  if (/sadursm|collision|av[āa]rij|ctr|ctp/i.test(s)) return "🚗 sadursme";
-  if (/virsb[ūu]v|body|ķermen|bumper|buf/i.test(s)) return "🛠️ virsbūve";
-  if (row.emphasize || amt >= 5000) return "💥 augsta ∑";
+  if (/sadursm|collision|av[āa]rij/i.test(s)) return "🚗 sadursme";
+  if (/virsb[ūu]v|body|ķermen|bumper|buf/i.test(s)) return "🛠️ Virsbūve";
+  if (row.emphasize || amt >= 5000) return "💥 TOTAL LOSS";
   return "🛠️ bojājums";
 }

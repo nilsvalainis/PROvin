@@ -23,7 +23,6 @@ export const CLIENT_REPORT_PDF_SECTIONS = {
   lvRegistry: "2.1. Reģistra pamatdati",
   lvTa: "2.2. Tehniskās apskates vēsture",
   lvOcta: "2.3. OCTA un negadījumi LV",
-  lvFullNotes: "Pilnais avota teksts (reģistrs, OCTA, papildu)",
   portfolio: "III. Ārvalstu un pievienoto atskaišu dati",
   summary: "IV. Apvienotais datu kopsavilkums",
   historyCompare: "Īss kopskats importētajiem PDF",

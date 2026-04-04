@@ -12,9 +12,101 @@ export type LvRegistryBasics = {
   roadTaxEur: string | null;
 };
 
+/** Strukturēti lauki no tabulas / `atslēga: vērtība` (admin ielīme). */
+export type RegistryStructuredFields = {
+  firstReg: string | null;
+  enginePower: string | null;
+  grossWeight: string | null;
+  fuelType: string | null;
+};
+
 function firstMatch(csdd: string, re: RegExp): string | null {
   const m = csdd.replace(/\r/g, "").match(re);
   return m?.[1]?.trim().replace(/\s{2,}/g, " ") ?? null;
+}
+
+function normKey(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/:\s*$/g, "")
+    .replace(/\s+/g, "_")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * Izlasa `first_reg_date`, `engine_power`, `gross_weight`, `fuel_type` un LV ekvivalentus
+ * no TAB vai kolonnas atdalītiem laukiem.
+ */
+export function extractRegistryStructuredFields(csdd: string): RegistryStructuredFields {
+  const out: RegistryStructuredFields = {
+    firstReg: null,
+    enginePower: null,
+    grossWeight: null,
+    fuelType: null,
+  };
+  for (const raw of csdd.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    let key: string | null = null;
+    let val: string | null = null;
+    const tabs = line.split("\t");
+    if (tabs.length >= 2) {
+      key = tabs[0].replace(/:\s*$/g, "").trim();
+      val = tabs.slice(1).join("\t").trim();
+    } else {
+      const m = line.match(/^([^:]+):\s*(.+)$/);
+      if (m) {
+        key = m[1].trim();
+        val = m[2].trim();
+      }
+    }
+    if (!key || !val) continue;
+    const nk = normKey(key);
+    if (
+      nk === "first_reg_date" ||
+      nk.includes("first_reg") ||
+      nk.includes("pirma_registracija") ||
+      nk.includes("pirmas_registracijas") ||
+      (nk.includes("registr") && nk.includes("dat") && nk.includes("pirm"))
+    ) {
+      out.firstReg = val;
+      continue;
+    }
+    if (
+      nk === "engine_power" ||
+      nk.includes("engine_power") ||
+      nk === "jauda" ||
+      nk.includes("dzineja_jauda") ||
+      nk.includes("motor_power")
+    ) {
+      out.enginePower = val;
+      continue;
+    }
+    if (
+      nk === "gross_weight" ||
+      nk.includes("gross_weight") ||
+      nk.includes("pilna_masa") ||
+      nk.includes("pilnamasa") ||
+      nk.includes("pielaujamamasa") ||
+      nk.includes("pilnas_masas")
+    ) {
+      out.grossWeight = val;
+      continue;
+    }
+    if (
+      nk === "fuel_type" ||
+      nk.includes("fuel_type") ||
+      (nk.includes("fuel") && nk.includes("type")) ||
+      nk.includes("degvielas_veids") ||
+      nk === "degviela"
+    ) {
+      out.fuelType = val;
+      continue;
+    }
+  }
+  return out;
 }
 
 /** Kompakti lauki no reģistra piezīmēm (CSDD eksports). */

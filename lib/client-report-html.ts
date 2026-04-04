@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin-portfolio-pdf-analysis";
 import { buildHistoryCompareBullets, buildHistoryCompareRows } from "@/lib/history-reports-compare";
 import {
+  amountToIntRough,
   damageSymbolKindForReport,
   filterClaimRowsForClientReport,
   mergeClaimRowLists,
@@ -18,6 +19,7 @@ import {
 } from "@/lib/claim-rows-parse";
 import {
   earliestInsuranceYearFromClaims,
+  extractRegistryStructuredFields,
   parseBrakeAssPairs,
   parseLvRegistryBasics,
   parseTaRating0Snippet,
@@ -386,7 +388,10 @@ function dateOnlyFromOdoLabel(label: string): string {
   const iso = label.match(/\b(\d{4}-\d{2}-\d{2})\b/);
   if (iso) return iso[1]!;
   const dm = label.match(/\d{1,2}[./]\d{1,2}[./]\d{2,4}/);
-  return dm ? dm[0]! : "—";
+  if (dm) return dm[0]!;
+  const my = label.match(/\b(\d{1,2})[./](\d{4})\b/);
+  if (my) return `${my[1].padStart(2, "0")}.${my[2]}.`;
+  return "—";
 }
 
 /** Kolonnai „Avots” — tikai publiskā daļa (Pārskats N / reģistrs), bez datņu nosaukumiem. */
@@ -441,23 +446,29 @@ function mergeOdometerPointsForDisplay(pts: OdometerChartPoint[]): OdoMergedRow[
     .sort((a, b) => a.km - b.km);
 }
 
+function odoTierDotSvg(tier: KmTier): string {
+  const col = TIER_COLOR[tier];
+  return `<svg class="odo-dot-svg" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="${col}" stroke="#fff" stroke-width="1"/></svg>`;
+}
+
 function buildOdometerDotsOnlyCell(pts: OdometerChartPoint[]): string {
   const parts = pts.map((p) => {
-    const col = TIER_COLOR[p.tier];
     const hint = escapeHtml(odoSourceTitle(p.label));
-    return `<span class="odo-dot-only" style="background:${col}" title="${hint}" aria-label="${hint}"></span>`;
+    return `<span class="odo-dot-wrap" title="${hint}" aria-label="${hint}">${odoTierDotSvg(p.tier)}</span>`;
   });
   return `<td class="odo-dots-cell">${parts.join("")}</td>`;
 }
 
-function buildOdometerMergedTableRows(merged: OdoMergedRow[]): string {
+function buildOdometerMergedTableRows(merged: OdoMergedRow[], listingMismatch: boolean): string {
   return merged
     .map((row) => {
       const nums = row.pts.map((p) => p.plotIndex).sort((a, b) => a - b);
       const idx = nums.join("+");
       const citiTouch = row.pts.some((p) => p.fromCiti);
       const trCls = citiTouch ? ' class="odo-row-citi"' : "";
-      return `<tr${trCls}><td class="tabular odo-idx">${escapeHtml(idx)}</td>${buildOdometerDotsOnlyCell(row.pts)}<td class="tabular"><strong>${row.km.toLocaleString("lv-LV")} km</strong></td><td class="tabular">${escapeHtml(row.dateStr)}</td></tr>`;
+      const listFlag = listingMismatch && row.pts.some((p) => p.fromListing);
+      const kmHtml = `<strong>${row.km.toLocaleString("lv-LV")} km</strong>${listFlag ? '<span class="odo-rollback-flag"> 🚩</span>' : ""}`;
+      return `<tr${trCls}><td class="tabular odo-idx">${escapeHtml(idx)}</td>${buildOdometerDotsOnlyCell(row.pts)}<td class="tabular">${kmHtml}</td><td class="tabular">${escapeHtml(row.dateStr)}</td></tr>`;
     })
     .join("\n");
 }
@@ -467,6 +478,11 @@ function timeFromDateStr(dateStr: string): number {
   const iso = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (iso) {
     const t = new Date(+iso[1], +iso[2] - 1, +iso[3]).getTime();
+    return Number.isNaN(t) ? Number.MAX_SAFE_INTEGER : t;
+  }
+  const my = dateStr.match(/^(\d{1,2})\.(\d{4})\.?$/);
+  if (my) {
+    const t = new Date(parseInt(my[2], 10), parseInt(my[1], 10) - 1, 15).getTime();
     return Number.isNaN(t) ? Number.MAX_SAFE_INTEGER : t;
   }
   const m = dateStr.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/);
@@ -483,6 +499,8 @@ function formatMonthYearLv(dateStr: string): string {
   if (!dateStr || dateStr === "—") return "—";
   const iso = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (iso) return `${iso[2]}.${iso[1]}.`;
+  const myShort = dateStr.match(/^(\d{1,2})\.(\d{4})\.?$/);
+  if (myShort) return `${myShort[1].padStart(2, "0")}.${myShort[2]}.`;
   const m = dateStr.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/);
   if (m) {
     let y = m[3];
@@ -494,12 +512,63 @@ function formatMonthYearLv(dateStr: string): string {
 
 type ChronoOdoGroup = { sortT: number; dateStr: string; km: number; pts: OdometerChartPoint[] };
 
+const FAR_FUTURE = Number.MAX_SAFE_INTEGER - 86400000 * 365 * 15;
+
+function hasUsableOdoDate(label: string): boolean {
+  const ds = dateOnlyFromOdoLabel(label);
+  if (ds === "—") return false;
+  return timeFromDateStr(ds) < FAR_FUTURE;
+}
+
+/** Datētiem punktiem — laiks no etiķetes; bez datuma — interpolācija starp kaimiņiem pēc km. */
+function assignChronologicalSortTimes(pts: OdometerChartPoint[]): Map<OdometerChartPoint, number> {
+  const map = new Map<OdometerChartPoint, number>();
+  const dated: { p: OdometerChartPoint; t: number; km: number }[] = [];
+  const undated: OdometerChartPoint[] = [];
+  for (const p of pts) {
+    const ds = dateOnlyFromOdoLabel(p.label);
+    if (hasUsableOdoDate(p.label)) {
+      const t = timeFromDateStr(ds);
+      map.set(p, t);
+      dated.push({ p, t, km: p.km });
+    } else {
+      undated.push(p);
+    }
+  }
+  dated.sort((a, b) => a.t - b.t || a.km - b.km);
+  if (dated.length === 0) {
+    const sorted = [...undated].sort((a, b) => a.km - b.km);
+    let t = Date.now() - 86400000 * 365 * 25;
+    for (const p of sorted) {
+      map.set(p, t);
+      t += 86400000;
+    }
+    return map;
+  }
+  const minKm = Math.min(...dated.map((d) => d.km));
+  const maxKm = Math.max(...dated.map((d) => d.km));
+  const minT = dated[0]!.t;
+  const maxT = dated[dated.length - 1]!.t;
+  for (const p of undated) {
+    const below = [...dated].filter((d) => d.km <= p.km).sort((a, b) => b.km - a.km)[0];
+    const above = [...dated].filter((d) => d.km >= p.km).sort((a, b) => a.km - b.km)[0];
+    let t: number;
+    if (!below && !above) t = minT;
+    else if (!below) t = minT - 86400000 * (1 + Math.max(0, minKm - p.km) / 40000);
+    else if (!above) t = maxT + 86400000 * (1 + Math.max(0, p.km - maxKm) / 40000);
+    else if (Math.abs(below.km - above.km) < 1) t = (below.t + above.t) / 2;
+    else
+      t = below.t + ((p.km - below.km) / Math.max(above.km - below.km, 1)) * (above.t - below.t);
+    map.set(p, t);
+  }
+  return map;
+}
+
 function groupOdometerPointsChronologically(pts: OdometerChartPoint[]): ChronoOdoGroup[] {
+  const timeMap = assignChronologicalSortTimes(pts);
   const sortedPts = [...pts].sort((a, b) => {
-    const da = dateOnlyFromOdoLabel(a.label);
-    const db = dateOnlyFromOdoLabel(b.label);
-    const ta = timeFromDateStr(da);
-    const tb = timeFromDateStr(db);
+    const ta = timeMap.get(a)!;
+    const tb = timeMap.get(b)!;
     if (ta !== tb) return ta - tb;
     if (!!a.fromListing !== !!b.fromListing) return a.fromListing ? 1 : -1;
     return a.km - b.km;
@@ -507,7 +576,7 @@ function groupOdometerPointsChronologically(pts: OdometerChartPoint[]): ChronoOd
   const groups: ChronoOdoGroup[] = [];
   for (const p of sortedPts) {
     const dateStr = dateOnlyFromOdoLabel(p.label);
-    const sortT = timeFromDateStr(dateStr);
+    const sortT = timeMap.get(p)!;
     let merged = false;
     for (const g of groups) {
       if (g.dateStr !== dateStr) continue;
@@ -515,26 +584,27 @@ function groupOdometerPointsChronologically(pts: OdometerChartPoint[]): ChronoOd
       const n = g.pts.length;
       g.km = Math.round((g.km * n + p.km) / (n + 1));
       g.pts.push(p);
+      g.sortT = Math.min(g.sortT, sortT);
       merged = true;
       break;
     }
     if (!merged) groups.push({ sortT, dateStr, km: p.km, pts: [p] });
   }
-  groups.sort((a, b) => a.sortT - b.sortT);
+  groups.sort((a, b) => a.sortT - b.sortT || a.km - b.km);
   return groups;
 }
 
-function buildOdometerChronoTimelineHtml(pts: OdometerChartPoint[]): string {
+function buildOdometerChronoTimelineHtml(pts: OdometerChartPoint[], listingMismatch: boolean): string {
   const groups = groupOdometerPointsChronologically(pts);
   if (groups.length === 0) return "";
-  let maxKmPrior = 0;
   const rows: string[] = [];
   for (const g of groups) {
     const hasListing = g.pts.some((p) => p.fromListing);
-    const rollback = hasListing && g.km < maxKmPrior - 400;
-    maxKmPrior = Math.max(maxKmPrior, g.km);
-    const dots = g.pts.map((p) => p.emoji).join("");
-    const flag = rollback ? '<span class="odo-rollback-flag" aria-hidden="true"> 🚩</span>' : "";
+    const dots = g.pts
+      .map((p) => `<span class="odo-dot-wrap" title="${escapeHtml(odoSourceTitle(p.label))}">${odoTierDotSvg(p.tier)}</span>`)
+      .join("");
+    const flag =
+      listingMismatch && hasListing ? '<span class="odo-rollback-flag" aria-hidden="true"> 🚩</span>' : "";
     rows.push(
       `<div class="odo-timeline-row" role="listitem"><span class="odo-tl-date">${escapeHtml(formatMonthYearLv(g.dateStr))}</span><span class="odo-tl-km">${g.km.toLocaleString("lv-LV")} km</span><span class="odo-tl-dots">${dots}${flag}</span></div>`,
     );
@@ -554,7 +624,7 @@ function computeQuickPanelFlags(
 ): QuickPanelFlags {
   const corpus = `${csdd}\n${ltab}\n${citi}`.toLowerCase();
   const stolen = /zagts|mekl[ēe]šan[āa]|nozagt|asl[īi]\s*zag|wanted|stolen|theft|noziedz/i.test(corpus);
-  const mileageCrit = !!listingVsOfficialKmWarning(csdd, tirgus, citi, pdfInsights);
+  const mileageCrit = listingKmStrictlyBelowHistory(csdd, tirgus, citi, pdfInsights);
   const insCorpus = `${ltab}\n${citi}`;
   const heavy =
     insRows.some((r) => r.emphasize) ||
@@ -574,7 +644,7 @@ function computeQuickPanelFlags(
 function buildQuickControlPanelHtml(p: ClientReportPayload, flags: QuickPanelFlags): string {
   const contact = [p.customerName?.trim(), p.customerPhone?.trim()].filter(Boolean).join(" · ") || "—";
   const legalLine = flags.legalWarn ? "⚠️ riska zona" : "✅ tīrs";
-  const mileLine = flags.mileageCrit ? "🚩 kritiski (iesp. atmešana)" : "✅ salīdzināms";
+  const mileLine = flags.mileageCrit ? "🚩 Neatbilstība" : "✅ salīdzināms";
   let dmgLine = "✅ nav izcelts";
   if (flags.damageHeavy) dmgLine = "💥 smagi / total loss";
   else if (flags.damageWarn) dmgLine = "⚠️ ir ieraksti";
@@ -651,12 +721,19 @@ function buildLvStructuredSourcesHtml(
   makeModel: string | null,
 ): string {
   const basics = parseLvRegistryBasics(p.csdd);
+  const structured = extractRegistryStructuredFields(p.csdd);
   const mm = basics.markModel ?? makeModel ?? "—";
   const regNr = basics.regNr ?? "—";
-  const firstReg = basics.firstReg ?? extractFirstRegistration(p.csdd) ?? "—";
+  const firstReg =
+    structured.firstReg?.trim() || basics.firstReg || extractFirstRegistration(p.csdd) || "—";
   const euro = basics.euro ?? "—";
-  const power = basics.powerKw ? `${basics.powerKw} kW` : "—";
-  const mass = basics.massKg ? `${basics.massKg} kg` : "—";
+  const power =
+    structured.enginePower?.trim() ||
+    (basics.powerKw ? `${basics.powerKw} kW` : "—");
+  const mass =
+    structured.grossWeight?.trim() ||
+    (basics.massKg ? `${basics.massKg} kg` : "—");
+  const fuel = structured.fuelType?.trim() || "—";
   const road = basics.roadTaxEur ? `${basics.roadTaxEur} EUR` : "—";
 
   const taSoon = taValidUntil != null && classifyTaValidity(taValidUntil) === "soon";
@@ -676,7 +753,7 @@ function buildLvStructuredSourcesHtml(
   parts.push(`<div class="lv-sources-panel" role="region">`);
   parts.push(sectionHead(ICO.clip, CLIENT_REPORT_PDF_SECTIONS.lvSources));
   parts.push(
-    `<p class="lv-sources-lead">strukturēts izvilkums no <strong>reģistra</strong> un <strong>OCTA</strong>; pilns teksts — šī bloka beigās. tirgus — sadaļā V.</p>`,
+    `<p class="lv-sources-lead">Strukturēti dati <strong>2.1–2.3</strong> (bez neapstrādāta teksta izdrukām). Tirgus — sadaļā V.</p>`,
   );
 
   parts.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.lvRegistry)}</h3>`);
@@ -687,6 +764,7 @@ function buildLvStructuredSourcesHtml(
     <tr><td>euro / emisijas</td><td>${escapeHtml(euro)}</td></tr>
     <tr><td>jauda</td><td>${escapeHtml(power)}</td></tr>
     <tr><td>masa</td><td>${escapeHtml(mass)}</td></tr>
+    <tr><td>degvielas veids</td><td>${escapeHtml(fuel)}</td></tr>
     <tr><td>nākamā apskate</td><td class="${taSoon ? "td-warn" : ""}">${taCellHtml}</td></tr>
     <tr><td>ceļa nodoklis (gadā)</td><td>${escapeHtml(road)}</td></tr>
   </tbody></table>`);
@@ -703,9 +781,7 @@ function buildLvStructuredSourcesHtml(
     }
     parts.push(`</ul>`);
   } else {
-    parts.push(
-      `<p class="hint hint-tight">nav automātiski izdalītu „2” kodu rindu — skat. pilno reģistra tekstu.</p>`,
-    );
+    parts.push(`<p class="hint hint-tight">nav automātiski izdalītu „2” kodu rindu.</p>`);
   }
   if (brakes) {
     parts.push(
@@ -722,39 +798,19 @@ function buildLvStructuredSourcesHtml(
   if (lvRows.length > 0) {
     parts.push(`<p class="pdf-sub2">negadījumi LV</p>`);
     parts.push(
-      `<table class="fmt ins ins-compact bordered"><thead><tr><th>datums</th><th class="tabular">∑</th><th class="flag-cell">valsts</th></tr></thead><tbody>`,
+      `<table class="fmt ins ins-compact bordered"><thead><tr><th>datums</th><th>bojājums</th><th class="tabular">∑</th><th class="flag-cell">valsts</th></tr></thead><tbody>`,
     );
     for (const r of lvRows) {
       const rowClass = r.emphasize ? ' class="em"' : "";
+      const kind = damageSymbolKindForReport(r);
+      const sumCls = amountToIntRough(r.amount) > 5000 ? "tabular ins-sum-high" : "tabular";
       parts.push(
-        `<tr${rowClass}><td>${escapeHtml(r.date)}</td><td class="tabular">${escapeHtml(r.amount)}</td><td class="flag-cell">${flagEmoji(r.iso)}</td></tr>`,
+        `<tr${rowClass}><td>${escapeHtml(r.date)}</td><td>${escapeHtml(kind)}</td><td class="${sumCls}">${escapeHtml(r.amount)}</td><td class="flag-cell">${flagEmoji(r.iso)}</td></tr>`,
       );
     }
     parts.push(`</tbody></table>`);
   } else {
-    parts.push(
-      `<p class="hint hint-tight">nav atsevišķu LV rindu tabulā — skat. apvienoto vēsturi (IV) un pilno OCTA tekstu.</p>`,
-    );
-  }
-
-  parts.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.lvFullNotes)}</h3>`);
-  parts.push(
-    `<p class="hint hint-tight" style="margin-bottom:6px">reģistrs, OCTA, papildu piezīmes (tirgus — sadaļā V).</p>`,
-  );
-  if (p.csdd.trim()) {
-    parts.push(
-      `<p class="lv-source-title" style="margin-top:8px">${escapeHtml(CLIENT_REPORT_SECTION_LABELS.registryNotes)}</p><pre class="lv-source-pre">${escapeHtml(p.csdd.trim())}</pre>`,
-    );
-  } else parts.push('<p class="na lv-source-empty">reģistra lauks nav aizpildīts.</p>');
-  if (p.ltab.trim()) {
-    parts.push(
-      `<p class="lv-source-title" style="margin-top:10px">${escapeHtml(CLIENT_REPORT_SECTION_LABELS.insuranceNotes)}</p><pre class="lv-source-pre">${escapeHtml(p.ltab.trim())}</pre>`,
-    );
-  }
-  if (p.citi.trim()) {
-    parts.push(
-      `<p class="lv-source-title" style="margin-top:10px">${escapeHtml(CLIENT_REPORT_SECTION_LABELS.otherNotes)}</p><pre class="lv-source-pre">${escapeHtml(p.citi.trim())}</pre>`,
-    );
+    parts.push(`<p class="hint hint-tight">nav atsevišķu LV rindu — skat. apvienoto vēsturi (4.2).</p>`);
   }
 
   parts.push(`</div>`);
@@ -900,20 +956,44 @@ function officialKmPool(csdd: string, citi: string, insights: PdfPortfolioFileIn
   return [...extractKmCandidates(csdd), ...extractKmCandidates(citi), ...fromPdf];
 }
 
-/** Nobraukuma neatbilstība: sludinājums vs augstākais no reģistra, PDF un „Citi avoti”. */
+function maxHistoricalKmFromSources(
+  csdd: string,
+  citi: string,
+  insights: PdfPortfolioFileInsight[],
+): number | null {
+  const vals = officialKmPool(csdd, citi, insights);
+  if (vals.length === 0) return null;
+  return Math.max(...vals);
+}
+
+/** Sludinājuma mazākais km < jebkura vēsturiskā ieraksta maksimums (reģistrs, PDF, citi). */
+function listingKmStrictlyBelowHistory(
+  csdd: string,
+  tirgus: string,
+  citi: string,
+  insights: PdfPortfolioFileInsight[],
+): boolean {
+  const listing = extractKmCandidates(tirgus);
+  if (listing.length === 0) return false;
+  const maxH = maxHistoricalKmFromSources(csdd, citi, insights);
+  if (maxH == null) return false;
+  return Math.min(...listing) < maxH;
+}
+
+/** Nobraukuma starpība sludinājumam pret vēsturisko maksimumu (ja ir neatbilstība). */
 function listingKmDeltaInfo(
   csdd: string,
   tirgus: string,
   citi: string,
   insights: PdfPortfolioFileInsight[],
 ): { listingKm: number; maxOfficial: number; deltaKm: number; deltaLabel: string } | null {
-  const official = officialKmPool(csdd, citi, insights);
   const listing = extractKmCandidates(tirgus);
-  if (official.length === 0 || listing.length === 0) return null;
-  const maxOff = Math.max(...official);
+  if (listing.length === 0) return null;
+  const maxOff = maxHistoricalKmFromSources(csdd, citi, insights);
+  if (maxOff == null) return null;
   const minList = Math.min(...listing);
+  if (minList >= maxOff) return null;
   const deltaKm = maxOff - minList;
-  if (deltaKm < 500) return null;
   const k = Math.round(deltaKm / 1000);
   const deltaLabel = k >= 1 ? `~${k}k km` : `${deltaKm.toLocaleString("lv-LV")} km`;
   return { listingKm: minList, maxOfficial: maxOff, deltaKm, deltaLabel };
@@ -925,12 +1005,10 @@ function listingVsOfficialKmWarning(
   citi: string,
   insights: PdfPortfolioFileInsight[],
 ): string | null {
-  const info = listingKmDeltaInfo(csdd, tirgus, citi, insights);
-  if (!info || info.deltaKm < 400) return null;
-  if (info.listingKm < info.maxOfficial - 400) {
-    return `Brīdinājums: sludinājumā norādītais nobraukums (${info.listingKm.toLocaleString("lv-LV")} km) ir zemāks par augstāko reģistra, vēstures PDF un „Citi avoti” fiksāciju (${info.maxOfficial.toLocaleString("lv-LV")} km) — iespējama odometra neatbilstība; nepieciešama manuāla pārbaude.`;
-  }
-  return null;
+  if (!listingKmStrictlyBelowHistory(csdd, tirgus, citi, insights)) return null;
+  const minList = Math.min(...extractKmCandidates(tirgus));
+  const maxOff = maxHistoricalKmFromSources(csdd, citi, insights)!;
+  return `Brīdinājums: sludinājumā norādītais nobraukums (${minList.toLocaleString("lv-LV")} km) ir zemāks par augstāko vēsturisko fiksāciju (${maxOff.toLocaleString("lv-LV")} km) — iespējama odometra neatbilstība.`;
 }
 
 function extractFirstRegistration(csdd: string): string | null {
@@ -987,8 +1065,8 @@ function buildMileageForecastBlock(
   const rangeHigh = maxK + Math.round(perYear * 0.45);
   const info = listingKmDeltaInfo(csdd, tirgus, citi, pdfInsights);
   let warn = "";
-  if (info && info.listingKm < info.maxOfficial - 400) {
-    warn = `<p class="forecast-warn">Sludinājumā norādītie <strong>${info.listingKm.toLocaleString("lv-LV")} km</strong> uzskatāmi par <strong>apzināti maldinošiem</strong> salīdzinājumā ar augstāko vērtību no reģistra, PDF un „Citi avoti” (${info.maxOfficial.toLocaleString("lv-LV")} km; starpība ≈ ${info.deltaLabel}).</p>`;
+  if (info && listingKmStrictlyBelowHistory(csdd, tirgus, citi, pdfInsights)) {
+    warn = `<p class="forecast-warn">Sludinājumā norādītie <strong>${info.listingKm.toLocaleString("lv-LV")} km</strong> ir <strong>zemāki</strong> par augstāko vēsturisko fiksāciju (${info.maxOfficial.toLocaleString("lv-LV")} km; starpība ≈ ${info.deltaLabel}).</p>`;
   }
   return `<div class="forecast-box"><div class="forecast-icon" aria-hidden="true">${ICO.spark}</div><div><strong class="forecast-title">Prognoze</strong>
     <p class="forecast-body">Pēc pieejamajiem punktiem: nobraukuma starpība <strong>${minK.toLocaleString("lv-LV")} – ${maxK.toLocaleString("lv-LV")} km</strong> aptuveni <strong>${years.toFixed(1)}</strong> gadu posmā → vidēji <strong>~${perYearK}k km gadā</strong> (formula: (pēdējais − pirmais) / gadu skaits).</p>
@@ -1031,13 +1109,13 @@ function buildRiskRows(
       };
 
   const kmInfo = listingKmDeltaInfo(csdd, tirgus, citi, pdfInsights);
-  const kmWarn = listingVsOfficialKmWarning(csdd, tirgus, citi, pdfInsights);
+  const kmMismatch = listingKmStrictlyBelowHistory(csdd, tirgus, citi, pdfInsights);
   let mileage: RiskRow;
-  if (kmWarn && kmInfo) {
+  if (kmMismatch && kmInfo) {
     mileage = {
       kind: "Nobraukuma ticamība",
-      statusHtml: '<span class="st-crit">Kritiski</span>',
-      note: `Sludinājuma dati nesakrīt ar reģistru, vēstures PDF un „Citi avoti” (≈ ${kmInfo.deltaLabel} pret augstāko fiksāciju).`,
+      statusHtml: '<span class="st-crit">🚩 Neatbilstība</span>',
+      note: `Sludinājuma nobraukums ir zemāks par augstāko vēsturisko fiksāciju (starpība ≈ ${kmInfo.deltaLabel}).`,
     };
   } else if (
     extractKmCandidates(csdd).length === 0 &&
@@ -1295,7 +1373,9 @@ function clientReportPrintCss(): string {
       .hint-tight{font-size:0.78rem!important;line-height:1.45!important;}
       .legend-item{display:inline-flex;align-items:center;gap:6px;}
       .legend-emoji{font-size:0.85rem;line-height:1;flex-shrink:0;}
-      .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+      .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .ins-sum-high{color:#b91c1c;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .odo-dot-svg{display:inline-block;vertical-align:middle;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       .quick-panel{margin:0 0 8px;}
       .quick-panel-meta{font-size:0.84rem;margin:0.35rem 0;line-height:1.5;color:#334155;}
       .quick-panel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;}
@@ -1568,7 +1648,12 @@ export function buildClientReportDocumentHtml(args: {
     `<p class="hint hint-tight">Tikai emoji punkti — nozīme kā leģendā. 🚩 = iespējama neatbilstība (sludinājums zem iepriekšējā maksimuma).</p>`,
   );
   if (odoPts.length > 0) {
-    lines.push(buildOdometerChronoTimelineHtml(odoPts));
+    lines.push(
+      buildOdometerChronoTimelineHtml(
+        odoPts,
+        listingKmStrictlyBelowHistory(p.csdd, p.tirgus, p.citi, pdfInsights),
+      ),
+    );
   } else {
     lines.push('<p class="na">Nav odometra punktu — aizpildiet reģistra laukus un/vai importējiet PDF.</p>');
   }
@@ -1580,7 +1665,12 @@ export function buildClientReportDocumentHtml(args: {
     lines.push(
       `<table class="fmt odo odo-compact bordered report-export" data-export="odo"><thead><tr><th>#</th><th class="odo-dots-th">punkti</th><th class="tabular">nobraukums</th><th class="tabular">datums</th></tr></thead><tbody>`,
     );
-    lines.push(buildOdometerMergedTableRows(odoMerged));
+    lines.push(
+      buildOdometerMergedTableRows(
+        odoMerged,
+        listingKmStrictlyBelowHistory(p.csdd, p.tirgus, p.citi, pdfInsights),
+      ),
+    );
     lines.push(`</tbody></table>`);
   }
   lines.push(exportRowHtml());
@@ -1591,7 +1681,7 @@ export function buildClientReportDocumentHtml(args: {
       : CLIENT_REPORT_PDF_SECTIONS.insurance;
   lines.push(`<h3 class="pdf-sub">${escapeHtml(insTitle)}</h3>`);
   lines.push(
-    `<p class="claims-intro claims-intro-tight">Visi avoti. Pilns OCTA teksts — <strong>II</strong> blokā.</p>`,
+    `<p class="claims-intro claims-intro-tight">Visi avoti; LV izraksts — <strong>2.3</strong>, pilnais apkopojums — šī tabula.</p>`,
   );
   if (insRows.length > 0) {
     lines.push(
@@ -1600,8 +1690,9 @@ export function buildClientReportDocumentHtml(args: {
     for (const r of insRows) {
       const rowClass = r.emphasize ? ' class="em"' : "";
       const kind = damageSymbolKindForReport(r);
+      const sumCls = amountToIntRough(r.amount) > 5000 ? "tabular ins-sum-high" : "tabular";
       lines.push(
-        `<tr${rowClass}><td>${escapeHtml(r.date)}</td><td>${escapeHtml(kind)}</td><td class="tabular">${escapeHtml(r.amount)}</td><td class="flag-cell">${flagEmoji(r.iso)}</td></tr>`,
+        `<tr${rowClass}><td>${escapeHtml(r.date)}</td><td>${escapeHtml(kind)}</td><td class="${sumCls}">${escapeHtml(r.amount)}</td><td class="flag-cell">${flagEmoji(r.iso)}</td></tr>`,
       );
     }
     lines.push(`</tbody></table>`);
@@ -1639,8 +1730,8 @@ export function buildClientReportDocumentHtml(args: {
   }
   if (minListingKm != null) {
     let mileLine = `<strong>sludinājuma nobraukums:</strong> ${minListingKm.toLocaleString("lv-LV")} km`;
-    if (listDelta && listDelta.deltaKm >= 400) {
-      mileLine += ` <span class="listing-warn-amber" style="display:inline;padding:2px 6px;border-radius:4px"><span class="listing-delta">−${escapeHtml(listDelta.deltaLabel)} pret augstāko reģistra / PDF / „citi”</span></span>`;
+    if (listDelta && listingKmStrictlyBelowHistory(p.csdd, p.tirgus, p.citi, pdfInsights)) {
+      mileLine += ` <span class="listing-warn-amber" style="display:inline;padding:2px 6px;border-radius:4px"><span class="listing-delta">🚩 −${escapeHtml(listDelta.deltaLabel)} pret augstāko vēsturisko fiksāciju</span></span>`;
     }
     lines.push(`<li>${mileLine}</li>`);
   }
