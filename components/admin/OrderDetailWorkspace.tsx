@@ -21,6 +21,7 @@ import {
   type PdfPortfolioFileInsight,
 } from "@/lib/admin-portfolio-pdf-analysis";
 import { buildClientReportDocumentHtml } from "@/lib/client-report-html";
+import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
 
 export type OrderWorkspacePayload = {
   sessionId: string;
@@ -496,12 +497,30 @@ export function OrderDetailWorkspace({
 
   const canGeneratePdf = ws.previewConfirmed && ws.iriss.trim().length > 0;
 
-  const openPrintReport = () => {
+  const openPrintReport = async () => {
     if (!canGeneratePdf) {
       alert(
         "Vispirms: 1) aizpildi avotu laukus un pievieno failus, 2) atver Priekšskatu un apstiprini, 3) ieraksti IRISS komentāru. Tad ģenerē PDF.",
       );
       return;
+    }
+
+    let listingMarket: ListingMarketSnapshot | null = null;
+    const listingUrl = payload.listingUrl?.trim();
+    if (listingUrl) {
+      try {
+        const res = await fetch("/api/admin/scrape-listing", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: listingUrl }),
+        });
+        if (res.ok) {
+          listingMarket = (await res.json()) as ListingMarketSnapshot;
+        }
+      } catch {
+        listingMarket = null;
+      }
     }
 
     const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeStyle: "short" });
@@ -514,6 +533,7 @@ export function OrderDetailWorkspace({
         citi: ws.citi,
         iriss: ws.iriss,
         apskatesPlāns: ws.apskatesPlāns,
+        listingMarket,
       },
       portfolio: portfolio.map((p) => ({ name: p.name, size: p.size })),
       pdfInsights,

@@ -16,6 +16,7 @@ import {
   parseClaimRowsFromLineBasedText,
   type ClaimTableRow,
 } from "@/lib/claim-rows-parse";
+import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
 import {
   CLIENT_REPORT_FOOTER_DISCLAIMER,
   CLIENT_REPORT_PDF_SECTIONS,
@@ -47,6 +48,8 @@ export type ClientReportPayload = {
   iriss: string;
   /** §7 Personalizēts apskates plāns — admina lauks zem IRISS. */
   apskatesPlāns: string;
+  /** ss.lv u.c. automātiski nolasīts pirms PDF (admin API). */
+  listingMarket?: ListingMarketSnapshot | null;
 };
 
 export type ClientReportPortfolioRow = { name: string; size: number };
@@ -419,27 +422,90 @@ function buildOdometerMiniTablesBySource(pts: OdometerChartPoint[]): string {
   return blocks.length ? `<div class="odo-mini-grid">${blocks.join("")}</div>` : "";
 }
 
+function buildListingMarketScrapeHtml(
+  url: string | null | undefined,
+  snap: ListingMarketSnapshot | null | undefined,
+): string {
+  const u = url?.trim();
+  if (!u) return "";
+
+  if (!snap) {
+    return `<div class="lv-scrape"><p class="lv-scrape-line">Sludinājuma automātiskie dati nav ielādēti.</p></div>`;
+  }
+
+  if (!snap.ok) {
+    return `<div class="lv-scrape lv-scrape--warn">
+      <p class="lv-scrape-line">${escapeHtml(snap.note ?? "Neizdevās nolasīt sludinājumu.")}</p>
+      <p class="lv-scrape-link"><a href="${escapeHtml(u)}">atvērt saiti</a></p>
+    </div>`;
+  }
+
+  const parts: string[] = [];
+  parts.push(`<div class="lv-scrape">`);
+  parts.push(`<p class="lv-scrape-title">tirgus dati no ss.lv</p>`);
+  if (snap.daysListed != null && snap.postedDateRaw) {
+    parts.push(
+      `<p class="lv-scrape-line"><strong>pārdošanā:</strong> ~${snap.daysListed} d · kopš ${escapeHtml(snap.postedDateRaw)}</p>`,
+    );
+  } else {
+    parts.push(
+      `<p class="lv-scrape-line"><strong>pārdošanā:</strong> datums „izvietots” lapā nav atpazīts — skat. saiti.</p>`,
+    );
+  }
+  if (snap.currentPriceEur || snap.currentKm) {
+    parts.push(
+      `<p class="lv-scrape-line"><strong>tagad lapā:</strong> ${escapeHtml(snap.currentPriceEur ?? "—")}${snap.currentKm ? ` · ${escapeHtml(snap.currentKm)}` : ""}</p>`,
+    );
+  }
+  if (snap.priceChanges.length > 0) {
+    parts.push(`<p class="lv-scrape-sub">cenu izmaiņas</p>`);
+    parts.push(
+      `<table class="fmt lv-scrape-prices bordered"><thead><tr><th>km</th><th>datums</th><th>cena</th></tr></thead><tbody>`,
+    );
+    for (const r of snap.priceChanges) {
+      parts.push(
+        `<tr><td class="tabular">${escapeHtml(r.km ?? "—")}</td><td class="tabular">${escapeHtml(r.date)}</td><td class="tabular">${escapeHtml(r.priceEur)}</td></tr>`,
+      );
+    }
+    parts.push(`</tbody></table>`);
+  } else if (snap.note) {
+    parts.push(`<p class="hint-tight">${escapeHtml(snap.note)}</p>`);
+  }
+  parts.push(`<p class="lv-scrape-link"><a href="${escapeHtml(u)}">atvērt sludinājumu</a></p>`);
+  parts.push(`</div>`);
+  return parts.join("\n");
+}
+
 function buildLvSourcesBlockHtml(p: ClientReportPayload): string {
-  const blocks: { title: string; body: string }[] = [
-    { title: CLIENT_REPORT_SECTION_LABELS.registryNotes, body: p.csdd.trim() },
-    { title: CLIENT_REPORT_SECTION_LABELS.insuranceNotes, body: p.ltab.trim() },
-    { title: CLIENT_REPORT_SECTION_LABELS.marketNotes, body: p.tirgus.trim() },
-    { title: CLIENT_REPORT_SECTION_LABELS.otherNotes, body: p.citi.trim() },
-  ];
-  const cells = blocks.map(
-    (b) => `<div class="lv-source-cell">
-      <p class="lv-source-title">${escapeHtml(b.title)}</p>
-      ${
-        b.body
-          ? `<pre class="lv-source-pre">${escapeHtml(b.body)}</pre>`
-          : '<p class="na lv-source-empty">Nav aizpildīts.</p>'
-      }
-    </div>`,
-  );
+  const na = '<p class="na lv-source-empty">nav aizpildīts.</p>';
+  const cell = (title: string, inner: string) => `<div class="lv-source-cell">
+    <p class="lv-source-title">${escapeHtml(title)}</p>
+    ${inner}
+  </div>`;
+
+  const c1 = p.csdd.trim()
+    ? cell(CLIENT_REPORT_SECTION_LABELS.registryNotes, `<pre class="lv-source-pre">${escapeHtml(p.csdd.trim())}</pre>`)
+    : cell(CLIENT_REPORT_SECTION_LABELS.registryNotes, na);
+
+  const c2 = p.ltab.trim()
+    ? cell(CLIENT_REPORT_SECTION_LABELS.insuranceNotes, `<pre class="lv-source-pre">${escapeHtml(p.ltab.trim())}</pre>`)
+    : cell(CLIENT_REPORT_SECTION_LABELS.insuranceNotes, na);
+
+  const scrape = buildListingMarketScrapeHtml(p.listingUrl, p.listingMarket);
+  const tirgusManual = p.tirgus.trim()
+    ? `<h4 class="pdf-sub2 lv-tirgus-manual-h">papildu tirgus piezīmes</h4><pre class="lv-source-pre">${escapeHtml(p.tirgus.trim())}</pre>`
+    : "";
+  const c3Inner = scrape || tirgusManual ? `${scrape}${tirgusManual}` : na;
+  const c3 = cell(CLIENT_REPORT_SECTION_LABELS.marketNotes, c3Inner);
+
+  const c4 = p.citi.trim()
+    ? cell(CLIENT_REPORT_SECTION_LABELS.otherNotes, `<pre class="lv-source-pre">${escapeHtml(p.citi.trim())}</pre>`)
+    : cell(CLIENT_REPORT_SECTION_LABELS.otherNotes, na);
+
   return `<div class="lv-sources-panel" role="region">
     ${sectionHead(ICO.clip, CLIENT_REPORT_PDF_SECTIONS.lvSources)}
-    <p class="lv-sources-lead">Viss no admina laukiem <strong>„Avotu piezīmes”</strong> — CSDD, LTAB, tirgus un papildu konteksts. Tālāk portfelis un salīdzinošais kopsavilkums.</p>
-    <div class="lv-source-grid">${cells.join("")}</div>
+    <p class="lv-sources-lead">viss no admina laukiem <strong>„avotu piezīmes”</strong> — reģistrs, OCTA, tirgus un papildu konteksts. pdf drukā viss redzams bez ritināšanas.</p>
+    <div class="lv-source-grid">${c1}${c2}${c3}${c4}</div>
   </div>`;
 }
 
@@ -839,7 +905,7 @@ function clientReportPrintCss(): string {
   return `
       *{box-sizing:border-box;}
       body{
-        font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+        font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
         line-height:1.55;max-width:190mm;margin:0 auto;padding:10mm 12mm;color:#0f172a;
         background:#f1f5f9;
       }
@@ -853,19 +919,19 @@ function clientReportPrintCss(): string {
         display:flex;flex-wrap:wrap;align-items:baseline;gap:0 6px;margin:8px 0 6px;
         font-size:1.28rem;font-weight:650;color:#1d1d1f;letter-spacing:-0.02em;line-height:1.25;
       }
-      .report-head h1 .brand{font-size:0.58em;letter-spacing:0.14em;text-transform:uppercase;color:#0066d6;font-weight:700;}
+      .report-head h1 .brand{font-size:0.58em;letter-spacing:0.06em;text-transform:lowercase;color:#0066d6;font-weight:700;}
       .report-head .brand-sep{color:#94a3b8;font-weight:500;font-size:0.55em;}
-      .report-head h1 .title-main{font-weight:650;}
+      .report-head h1 .title-main{font-weight:650;text-transform:lowercase;}
       .report-head .sub{font-size:0.84rem;color:#6e6e73;}
-      .vin-inline{display:inline-block;margin-left:6px;padding:2px 10px;background:#f1f5f9;border-radius:6px;font-size:0.82rem;}
+      .vin-inline{display:inline-block;margin-left:6px;padding:2px 10px;background:#f1f5f9;border-radius:6px;font-size:0.82rem;text-transform:none;}
       .pdf-sec-head{display:flex;align-items:center;gap:10px;margin:1.65rem 0 0.55rem;}
       .pdf-sec-head .pdf-ico{color:#0066d6;flex-shrink:0;}
       h2.pdf-sec{
         font-size:1.02rem;font-weight:600;margin:0;flex:1;color:#0f172a;padding:0 0 0 12px;border:none;
-        text-transform:none;letter-spacing:-0.02em;border-left:3px solid #0066d6;
+        text-transform:lowercase;letter-spacing:-0.02em;border-left:3px solid #0066d6;
       }
-      h3.pdf-sub{font-size:0.9rem;font-weight:600;margin:1rem 0 0.4rem;color:#334155;}
-      h4.pdf-sub2{font-size:0.84rem;font-weight:600;margin:0.65rem 0 0.25rem;color:#1d1d1f;}
+      h3.pdf-sub{font-size:0.9rem;font-weight:600;margin:1rem 0 0.4rem;color:#334155;text-transform:lowercase;}
+      h4.pdf-sub2{font-size:0.84rem;font-weight:600;margin:0.65rem 0 0.25rem;color:#1d1d1f;text-transform:lowercase;}
       .client-msg{font-style:italic;color:#475569;margin:0.35rem 0 0.75rem;line-height:1.5;}
       .client-klients{margin:0 0 0.5rem;font-size:0.9rem;}
       .callout-warn{
@@ -879,7 +945,7 @@ function clientReportPrintCss(): string {
         margin:12px 0 16px;padding:14px 16px 16px;border-radius:10px;border:1px solid transparent;
         border-left-width:5px;
       }
-      .ta-status-title{margin:0 0 8px;font-size:0.95rem;font-weight:700;color:#14532d;}
+      .ta-status-title{margin:0 0 8px;font-size:0.95rem;font-weight:700;color:#14532d;text-transform:lowercase;}
       .ta-status-text{margin:0;font-size:0.88rem;line-height:1.5;color:#166534;}
       .ta-status.ta-ok{background:#dcfce7;border-color:#86efac;border-left-color:#22c55e;}
       .ta-status.ta-ok .ta-status-title{color:#14532d;}
@@ -897,6 +963,7 @@ function clientReportPrintCss(): string {
       table{width:100%;border-collapse:collapse;font-size:0.82rem;}
       table.fmt{margin:0.5rem 0;}
       table.fmt td,table.fmt th{padding:9px 0;border-bottom:1px solid #e5e7eb;vertical-align:top;}
+      table.fmt thead th{text-transform:lowercase;}
       table.fmt thead th{font-weight:700;font-size:0.78rem;color:#1d1d1f;border-bottom:2px solid #cbd5e1;padding-top:4px;}
       table.fmt.bordered td,table.fmt.bordered th{padding:8px 10px;border:1px solid #e5e7eb;}
       table.fmt.bordered thead th{background:#eef2f7;}
@@ -950,7 +1017,7 @@ function clientReportPrintCss(): string {
       .compare-card{
         border:1px solid #e8eaed;border-radius:12px;padding:12px 14px;background:#fff;
       }
-      .compare-card-top{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#0066d6;}
+      .compare-card-top{font-size:0.72rem;font-weight:700;text-transform:lowercase;letter-spacing:0.04em;color:#0066d6;}
       .compare-card-type{font-size:0.75rem;color:#64748b;margin:4px 0;}
       .compare-card-km{font-size:1rem;font-weight:700;color:#0f172a;margin-top:6px;}
       .compare-card-meta{font-size:0.72rem;color:#94a3b8;margin-top:6px;}
@@ -962,7 +1029,7 @@ function clientReportPrintCss(): string {
         background:#fffbeb;border:1px solid #fde68a;
       }
       .forecast-icon{margin:0;line-height:0;color:#ca8a04;}
-      .forecast-title{display:block;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:#92400e;margin-bottom:4px;}
+      .forecast-title{display:block;font-size:0.72rem;letter-spacing:0.04em;text-transform:lowercase;color:#92400e;margin-bottom:4px;}
       .forecast-body{margin:0.4rem 0 0;font-size:0.86rem;color:#1d1d1f;}
       .forecast-warn{margin:0.65rem 0 0;font-size:0.84rem;color:#991b1b;}
       .export-hint{font-size:0.74rem;color:#64748b;margin:10px 0 4px;display:flex;align-items:center;gap:6px;}
@@ -975,7 +1042,7 @@ function clientReportPrintCss(): string {
         background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #0066d6;
       }
       .expert-panel-bottom .expert-title{
-        font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#0066d6;font-weight:700;margin:0 0 10px;
+        font-size:11px;letter-spacing:0.06em;text-transform:lowercase;color:#0066d6;font-weight:700;margin:0 0 10px;
       }
       .expert-panel-bottom .expert-body{font-size:0.92rem;color:#1d1d1f;white-space:pre-wrap;line-height:1.6;}
       .visual-archive{
@@ -983,7 +1050,7 @@ function clientReportPrintCss(): string {
       }
       .visual-archive .va-title{font-size:0.82rem;font-weight:700;margin:0 0 8px;}
       .legend-box{margin-top:16px;padding:12px 0 8px;border-top:1px solid #e5e7eb;}
-      .legend-box h3{margin:0 0 10px;font-size:0.82rem;font-weight:700;color:#1d1d1f;text-transform:uppercase;letter-spacing:0.06em;}
+      .legend-box h3{margin:0 0 10px;font-size:0.82rem;font-weight:700;color:#1d1d1f;text-transform:lowercase;letter-spacing:0.04em;}
       .legend-inline{display:flex;flex-wrap:wrap;gap:10px 18px;font-size:0.78rem;color:#334155;}
       .legend-inline span{white-space:nowrap;}
       .history-compare-panel{
@@ -1006,7 +1073,7 @@ function clientReportPrintCss(): string {
         font-size:0.78rem;line-height:1.45;color:#334155;
       }
       .hcu-tag{
-        display:block;font-weight:700;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;color:#0066d6;margin-bottom:6px;
+        display:block;font-weight:700;font-size:0.68rem;text-transform:lowercase;letter-spacing:0.04em;color:#0066d6;margin-bottom:6px;
       }
       table.history-compare-table{font-size:0.78rem;}
       table.history-compare-table thead th{background:#f1f5f9!important;color:#334155!important;border-color:#e2e8f0!important;}
@@ -1021,18 +1088,29 @@ function clientReportPrintCss(): string {
       .lv-source-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
       @media(max-width:720px){.lv-source-grid{grid-template-columns:1fr;}}
       .lv-source-cell{border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;background:#fafbfc;}
-      .lv-source-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#0066d6;margin:0 0 8px;}
+      .lv-source-title{font-size:0.72rem;font-weight:700;text-transform:lowercase;letter-spacing:0.04em;color:#0066d6;margin:0 0 8px;}
       .lv-source-pre{
-        margin:0;font-size:0.74rem;line-height:1.45;white-space:pre-wrap;word-break:break-word;
-        max-height:220px;overflow:auto;color:#1e293b;
+        margin:0;font-size:0.72rem;line-height:1.42;white-space:pre-wrap;word-break:break-word;
+        color:#1e293b;text-transform:none;
       }
+      .lv-tirgus-manual-h{margin-top:12px!important;}
+      .lv-scrape{margin:0 0 10px;padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;}
+      .lv-scrape--warn{background:#fffbeb;border-color:#fde68a;}
+      .lv-scrape-title{font-size:0.72rem;font-weight:700;color:#0066d6;margin:0 0 8px;text-transform:lowercase;letter-spacing:0.04em;}
+      .lv-scrape-sub{font-size:0.76rem;font-weight:600;color:#334155;margin:10px 0 6px;text-transform:lowercase;}
+      .lv-scrape-line{font-size:0.78rem;margin:0 0 6px;line-height:1.45;color:#1e293b;text-transform:lowercase;}
+      .lv-scrape-line strong{font-weight:600;text-transform:lowercase;}
+      .lv-scrape-link{font-size:0.74rem;margin:8px 0 0;}
+      .lv-scrape-link a{color:#0066d6;}
+      table.lv-scrape-prices{font-size:0.76rem;}
+      table.lv-scrape-prices thead th{text-transform:lowercase;font-size:0.7rem;}
       .lv-source-empty{margin:0;font-size:0.8rem;}
       .portfolio-panel{margin:20px 0;}
       .portfolio-lead{font-size:0.86rem;margin:0 0 10px;color:#334155;}
       .portfolio-file-list{margin:8px 0 14px;padding-left:1.1rem;font-size:0.82rem;color:#475569;}
       .pdf-insight-cards{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));}
       .pdf-insight-card{border:1px solid #e8eaed;border-radius:10px;padding:10px 12px;background:#fff;}
-      .pdf-insight-head{font-weight:700;font-size:0.82rem;margin:0 0 4px;color:#0f172a;}
+      .pdf-insight-head{font-weight:700;font-size:0.82rem;margin:0 0 4px;color:#0f172a;text-transform:lowercase;}
       .pdf-insight-meta{font-size:0.72rem;color:#64748b;margin:0 0 6px;}
       .pdf-insight-km,.pdf-insight-hi{font-size:0.76rem;margin:4px 0 0;line-height:1.4;color:#334155;}
       table.odo-compact .odo-dots-th{width:88px;}
@@ -1056,7 +1134,9 @@ function clientReportPrintCss(): string {
       }
       .legal-block strong{color:#424245;font-weight:600;}
       .report-foot{margin-top:16px;padding-top:12px;border-top:1px solid #e5e5ea;font-size:0.7rem;color:#aeaeb2;line-height:1.45;}
-      code{font-size:0.78rem;background:#f1f5f9;padding:2px 8px;border-radius:6px;}
+      code{font-size:0.78rem;background:#f1f5f9;padding:2px 8px;border-radius:6px;text-transform:none;}
+      .prov-uc{text-transform:none!important;}
+      .expert-title{text-transform:lowercase;}
       @media print{
         body{padding:10mm 12mm;background:#fff;}
         .sheet{background:#fff}
@@ -1372,12 +1452,15 @@ export function buildClientReportDocumentHtml(args: {
   lines.push("</p>");
 
   lines.push(
-    `<div class="report-foot">© PROVIN.LV · konsultatīva atskaite · ${escapeHtml(dateFmt.format(new Date()))}</div>`,
+    `<div class="report-foot prov-uc">© PROVIN.LV · konsultatīva atskaite · ${escapeHtml(dateFmt.format(new Date()))}</div>`,
   );
   lines.push("</div>");
 
   const title = `PROVIN ${p.vin ?? p.sessionId}`;
   const html = `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <title>${escapeHtml(title)}</title><style>${clientReportPrintCss()}</style></head><body>${lines.join("\n")}${reportFooterScript()}</body></html>`;
   return html;
 }

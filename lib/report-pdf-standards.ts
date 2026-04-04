@@ -52,7 +52,7 @@ export const REPORT_ODOMETER_SOURCE_LEGEND = [
 export const CLIENT_REPORT_SECTION_LABELS = {
   /** Galvenā rindiņa zem PROVIN.LV */
   mainTitle: "Transportlīdzekļa izvērtējums",
-  registryNotes: "Valsts reģistra un publisko datu piezīmes",
+  registryNotes: "Reģistra un publiskie dati (pilns teksts)",
   insuranceNotes: "OCTA, atlīdzības un negadījumu konteksta piezīmes",
   marketNotes: "Tirgus un sludinājuma piezīmes",
   otherNotes: "Papildu piezīmes",
