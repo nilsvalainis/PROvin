@@ -92,7 +92,7 @@ const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 80 * 1024 * 1024;
 
 /** Portfeļa kolonnā pēc noklusējuma redzami pirmie N faili; pārējie — modālā. */
-const PORTFOLIO_INLINE_VISIBLE_MAX = 3;
+const PORTFOLIO_INLINE_VISIBLE_MAX = 2;
 
 const workspaceToolbarBtn =
   "rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] font-semibold tracking-tight text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50";
@@ -298,6 +298,7 @@ export function OrderDetailWorkspace({
   const [workspaceAutosaveFlash, setWorkspaceAutosaveFlash] = useState(false);
   const [workspaceSaveServerOk, setWorkspaceSaveServerOk] = useState(true);
   const [portfolioPersistFlash, setPortfolioPersistFlash] = useState(false);
+  const [portfolioUploadNotice, setPortfolioUploadNotice] = useState<string | null>(null);
   const [portfolioDropActive, setPortfolioDropActive] = useState(false);
   const portfolioDragDepth = useRef(0);
   const skipWorkspaceAutosaveFlash = useRef(true);
@@ -592,7 +593,7 @@ export function OrderDetailWorkspace({
   }, [portfolio]);
 
   const persistPortfolio = useCallback(
-    async (next: PortfolioEntry[]) => {
+    async (next: PortfolioEntry[]): Promise<boolean> => {
       const prev = portfolioRef.current;
       try {
         const stored: StoredPortfolioBlob[] = [];
@@ -615,6 +616,7 @@ export function OrderDetailWorkspace({
         setFileError(null);
         setPortfolioPersistFlash(true);
         window.setTimeout(() => setPortfolioPersistFlash(false), 2000);
+        return true;
       } catch {
         const prevIds = new Set(prev.map((p) => p.id));
         for (const p of next) {
@@ -623,6 +625,7 @@ export function OrderDetailWorkspace({
         setFileError(
           "Neizdevās saglabāt portfeli IndexedDB. Ja kvota joprojām pilna, noņem dažus failus vai izmanto mazākus PDF.",
         );
+        return false;
       }
     },
     [payload.sessionId],
@@ -630,7 +633,9 @@ export function OrderDetailWorkspace({
 
   const onPickFiles = async (files: FileList | null) => {
     setFileError(null);
+    setPortfolioUploadNotice(null);
     if (!files?.length) return;
+    const prevIds = new Set(portfolio.map((p) => p.id));
     const next = [...portfolio];
     let total = next.reduce((s, p) => s + p.size, 0);
     for (let i = 0; i < files.length; i++) {
@@ -656,7 +661,19 @@ export function OrderDetailWorkspace({
         blobUrl,
       });
     }
-    await persistPortfolio(next);
+    const added = next.filter((p) => !prevIds.has(p.id));
+    const ok = await persistPortfolio(next);
+    if (ok && added.length > 0) {
+      const label =
+        added.length === 1
+          ? `Pievienots un saglabāts: ${added[0]!.name}`
+          : `Pievienoti un saglabāti ${added.length} faili`;
+      setPortfolioUploadNotice(label);
+      window.setTimeout(() => setPortfolioUploadNotice(null), 4500);
+      if (next.length > PORTFOLIO_INLINE_VISIBLE_MAX) {
+        setPortfolioAllFilesModalOpen(true);
+      }
+    }
   };
 
   const removePortfolio = (id: string) => {
@@ -971,6 +988,14 @@ export function OrderDetailWorkspace({
         </div>
       </div>
       {fileError ? <p className="mt-1 text-[11px] text-amber-800">{fileError}</p> : null}
+      {portfolioUploadNotice ? (
+        <p
+          className="mt-1 rounded-md border border-emerald-200/90 bg-emerald-50/95 px-2 py-1.5 text-[11px] font-medium leading-snug text-emerald-950"
+          role="status"
+        >
+          {portfolioUploadNotice}
+        </p>
+      ) : null}
       {portfolio.length > 0 ? (
         <div className="mt-1 min-w-0 flex-1">
           <ul className={`${narrowPortfolioLayout ? "space-y-0" : "space-y-0.5"}`}>
