@@ -160,7 +160,7 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
       </header>
 
       <div className="space-y-1.5">
-        <div className="grid grid-cols-1 gap-1.5 xl:grid-cols-3 xl:items-stretch">
+        <div className="grid grid-cols-1 gap-1.5 lg:grid-cols-2 xl:grid-cols-4 xl:items-stretch">
           <section className={`${sectionClass} min-w-0`}>
             <h2 className={sectionTitle}>Maksājums</h2>
             <p className={sectionHint}>No Stripe / sesijas — nav rediģējams.</p>
@@ -284,6 +284,11 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
               </div>
             </dl>
           </section>
+
+          <div
+            id={`admin-portfolio-slot-${order.id}`}
+            className="min-h-0 min-w-0 lg:min-h-[1px]"
+          />
         </div>
 
         <section className={sectionClass}>
@@ -306,6 +311,7 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
         </section>
 
         <OrderDetailWorkspace
+          portfolioPortalDomId={`admin-portfolio-slot-${order.id}`}
           payload={{
             sessionId: order.id,
             isDemo: Boolean(order.isDemo),

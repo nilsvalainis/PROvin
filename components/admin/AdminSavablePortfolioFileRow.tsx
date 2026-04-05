@@ -22,6 +22,8 @@ type Props = {
   onPersistAll: () => void | Promise<void>;
   onRemove: () => void;
   resetVersion?: number | string;
+  /** Šaurā kolonnā (augšējais 4 kolonnu režģis) — mazākas atstarpes un kompaktākas pogas. */
+  compact?: boolean;
 };
 
 export function AdminSavablePortfolioFileRow({
@@ -31,6 +33,7 @@ export function AdminSavablePortfolioFileRow({
   onPersistAll,
   onRemove,
   resetVersion,
+  compact = false,
 }: Props) {
   const [viewMode, setViewMode] = useState(false);
   const [flash, setFlash] = useState(false);
@@ -54,12 +57,18 @@ export function AdminSavablePortfolioFileRow({
   const addedLabel = new Date(file.addedAt).toLocaleString("lv-LV");
 
   return (
-    <li className="rounded-lg border border-slate-200/90 bg-white/90 p-1.5 shadow-sm">
-      <div className="mb-1 flex flex-wrap items-center justify-between gap-1">
+    <li
+      className={`rounded-lg border border-slate-200/90 bg-white/90 shadow-sm ${compact ? "p-1" : "p-1.5"}`}
+    >
+      <div
+        className={`flex flex-wrap items-center justify-between gap-0.5 ${compact ? "mb-0.5 flex-col items-stretch sm:mb-1 sm:flex-row sm:items-center" : "mb-1"}`}
+      >
         <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
           Fails {index + 1}
         </span>
-        <div className="flex flex-wrap items-center gap-0.5">
+        <div
+          className={`flex flex-wrap gap-0.5 ${compact ? "w-full justify-end sm:w-auto" : "items-center"}`}
+        >
           {flash ? (
             <span className="text-[11px] font-semibold text-emerald-700" role="status">
               Saglabāts

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePortfolioFileRow";
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
@@ -262,8 +263,11 @@ function KmMergeChart({ points }: { points: { km: number; label: string }[] }) {
 
 export function OrderDetailWorkspace({
   payload,
+  portfolioPortalDomId,
 }: {
   payload: OrderWorkspacePayload;
+  /** Ja norādīts, „1. Portfelis” tiek renderēts šajā DOM elementā (augšējā 4 kolonnu režģī). */
+  portfolioPortalDomId?: string;
 }) {
   const fileInputId = useId();
   const [ws, setWs] = useState<WorkspacePersist>(EMPTY_WORKSPACE);
@@ -281,7 +285,18 @@ export function OrderDetailWorkspace({
   const [expertViewMode, setExpertViewMode] = useState(false);
   const [expertSnap, setExpertSnap] = useState({ iriss: "", apskatesPlāns: "" });
   const [expertFlash, setExpertFlash] = useState(false);
+  const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
   const portfolioBytes = useMemo(() => portfolio.reduce((a, p) => a + p.size, 0), [portfolio]);
+
+  const narrowPortfolioLayout = Boolean(portfolioPortalDomId);
+
+  useLayoutEffect(() => {
+    if (!portfolioPortalDomId || typeof document === "undefined") {
+      setPortfolioPortalEl(null);
+      return;
+    }
+    setPortfolioPortalEl(document.getElementById(portfolioPortalDomId));
+  }, [portfolioPortalDomId, payload.sessionId]);
 
   const mergedKmPoints = useMemo(() => mergeKmForChart(pdfInsights), [pdfInsights]);
 
@@ -776,9 +791,90 @@ export function OrderDetailWorkspace({
     </div>
   );
 
+  const portfolioShellClass = `${workspaceSectionShell} min-w-0 flex flex-col ${
+    narrowPortfolioLayout ? "h-full max-h-[min(88vh,960px)] overflow-y-auto overflow-x-hidden" : ""
+  }`;
+
+  const portfolioSection = (
+    <section className={portfolioShellClass}>
+      <div
+        className={`flex gap-1 ${narrowPortfolioLayout ? "flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between" : "flex-wrap items-center justify-between"}`}
+      >
+        <h2 className={`${workspaceSectionTitle} shrink-0`}>1. Portfelis</h2>
+        <div
+          className={`flex flex-wrap gap-0.5 ${narrowPortfolioLayout ? "w-full sm:w-auto sm:justify-end" : ""}`}
+        >
+          <button
+            type="button"
+            className={workspaceToolbarBtn}
+            onClick={() => void persistPortfolio(portfolio)}
+          >
+            Saglabāt
+          </button>
+          <button type="button" className={workspaceToolbarBtn} onClick={() => void reloadPortfolioFromIdb()}>
+            Labot
+          </button>
+        </div>
+      </div>
+      <div
+        className={`mt-1 min-w-0 ${narrowPortfolioLayout ? "flex flex-col gap-1" : "flex flex-wrap items-center gap-x-3 gap-y-0.5"}`}
+      >
+        <p
+          className={`text-[10px] leading-tight text-[var(--color-provin-muted)] ${narrowPortfolioLayout ? "" : "max-w-[min(100%,28rem)]"}`}
+        >
+          PDF IndexedDB · <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> /{" "}
+          <strong className="text-[var(--color-apple-text)]">Labot</strong> pie rindas.
+        </p>
+        <div className={`flex min-w-0 flex-wrap items-center gap-1 ${narrowPortfolioLayout ? "flex-col items-stretch" : ""}`}>
+          <input
+            id={fileInputId}
+            type="file"
+            multiple
+            className="sr-only"
+            onChange={(e) => void onPickFiles(e.target.files)}
+          />
+          <label
+            htmlFor={fileInputId}
+            className={`${workspaceToolbarBtn} inline-flex min-w-0 cursor-pointer justify-center ${narrowPortfolioLayout ? "w-full sm:w-auto" : "shrink-0"}`}
+          >
+            Pievienot failus…
+          </label>
+          <span className="text-[10px] leading-tight text-[var(--color-provin-muted)]">
+            līdz {formatBytes(MAX_FILE_BYTES)} / fails · kopā ~{formatBytes(MAX_TOTAL_BYTES)} (
+            {formatBytes(Math.round(portfolioBytes))})
+          </span>
+        </div>
+      </div>
+      {fileError ? <p className="mt-1 text-[11px] text-amber-800">{fileError}</p> : null}
+      {portfolio.length > 0 ? (
+        <ul className={`mt-1 ${narrowPortfolioLayout ? "space-y-0" : "space-y-0.5"}`}>
+          {portfolio.map((p, i) => (
+            <AdminSavablePortfolioFileRow
+              key={p.id}
+              index={i}
+              file={p}
+              formatBytes={formatBytes}
+              onPersistAll={() => persistPortfolio(portfolio)}
+              onRemove={() => removePortfolio(p.id)}
+              resetVersion={workspaceFieldResetKey}
+              compact={narrowPortfolioLayout}
+            />
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-1 text-[11px] leading-tight text-[var(--color-provin-muted)]">Vēl nav pievienotu failu.</p>
+      )}
+    </section>
+  );
+
+  const showPortfolioInline = !portfolioPortalDomId || !portfolioPortalEl;
+  const showPortfolioPortal = Boolean(portfolioPortalDomId && portfolioPortalEl);
+
   return (
     <div className="space-y-1.5">
       {previewOpen ? previewBody : null}
+
+      {showPortfolioPortal ? createPortal(portfolioSection, portfolioPortalEl!) : null}
 
       <details className="group rounded-lg border border-slate-200/90 bg-gradient-to-b from-slate-50/90 to-white px-2.5 py-2 shadow-sm open:shadow-md">
         <summary className="cursor-pointer list-none text-xs font-semibold text-[var(--color-apple-text)] marker:content-none [&::-webkit-details-marker]:hidden">
@@ -796,64 +892,7 @@ export function OrderDetailWorkspace({
         </div>
       </details>
 
-      <section className={workspaceSectionShell}>
-        <div className="flex flex-wrap items-center justify-between gap-1">
-          <h2 className={workspaceSectionTitle}>1. Portfelis</h2>
-          <div className="flex flex-wrap items-center gap-0.5">
-            <button
-              type="button"
-              className={workspaceToolbarBtn}
-              onClick={() => void persistPortfolio(portfolio)}
-            >
-              Saglabāt
-            </button>
-            <button type="button" className={workspaceToolbarBtn} onClick={() => void reloadPortfolioFromIdb()}>
-              Labot
-            </button>
-          </div>
-        </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-          <p className="max-w-[min(100%,28rem)] text-[10px] leading-tight text-[var(--color-provin-muted)]">
-            PDF IndexedDB · <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> /{" "}
-            <strong className="text-[var(--color-apple-text)]">Labot</strong> pie rindas.
-          </p>
-          <input
-            id={fileInputId}
-            type="file"
-            multiple
-            className="sr-only"
-            onChange={(e) => void onPickFiles(e.target.files)}
-          />
-          <label
-            htmlFor={fileInputId}
-            className={`${workspaceToolbarBtn} inline-flex shrink-0 cursor-pointer`}
-          >
-            Pievienot failus…
-          </label>
-          <span className="text-[10px] leading-tight text-[var(--color-provin-muted)]">
-            līdz {formatBytes(MAX_FILE_BYTES)} / fails · kopā ~{formatBytes(MAX_TOTAL_BYTES)} (
-            {formatBytes(Math.round(portfolioBytes))})
-          </span>
-        </div>
-        {fileError ? <p className="mt-1 text-[11px] text-amber-800">{fileError}</p> : null}
-        {portfolio.length > 0 ? (
-          <ul className="mt-1 space-y-0.5">
-            {portfolio.map((p, i) => (
-              <AdminSavablePortfolioFileRow
-                key={p.id}
-                index={i}
-                file={p}
-                formatBytes={formatBytes}
-                onPersistAll={() => persistPortfolio(portfolio)}
-                onRemove={() => removePortfolio(p.id)}
-                resetVersion={workspaceFieldResetKey}
-              />
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-1 text-[11px] leading-tight text-[var(--color-provin-muted)]">Vēl nav pievienotu failu.</p>
-        )}
-      </section>
+      {showPortfolioInline ? portfolioSection : null}
 
       <section className={workspaceSectionShell}>
         <div className="flex flex-wrap items-start justify-between gap-1.5">
