@@ -2,6 +2,19 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePortfolioFileRow";
+import { AdminStructuredSourceBlock } from "@/components/admin/AdminStructuredSourceBlock";
+import {
+  SOURCE_BLOCK_KEYS,
+  SOURCE_BLOCK_LABELS,
+  blockToPlainText,
+  blocksToLegacyFlatFields,
+  createDefaultSourceBlocks,
+  emptyDataRow,
+  hydrateWorkspaceFromStorage,
+  toPdfManualVendorBlocks,
+  type SourceBlockKey,
+  type WorkspaceSourceBlocks,
+} from "@/lib/admin-source-blocks";
 import {
   idbGetPortfolio,
   idbSetPortfolio,
@@ -51,10 +64,7 @@ type PortfolioEntry = {
 };
 
 type WorkspacePersist = {
-  csdd: string;
-  ltab: string;
-  tirgus: string;
-  citi: string;
+  sourceBlocks: WorkspaceSourceBlocks;
   iriss: string;
   /** §7 PDF — personalizēts apskates plāns klātienē. */
   apskatesPlāns: string;
@@ -62,10 +72,7 @@ type WorkspacePersist = {
 };
 
 const EMPTY_WORKSPACE: WorkspacePersist = {
-  csdd: "",
-  ltab: "",
-  tirgus: "",
-  citi: "",
+  sourceBlocks: createDefaultSourceBlocks(),
   iriss: "",
   apskatesPlāns: "",
   previewConfirmed: false,
@@ -84,8 +91,10 @@ const bulkReadonlyClass =
   "w-full rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-sm leading-snug whitespace-pre-wrap text-[var(--color-apple-text)] min-h-[52px]";
 
 function storageKeyWorkspace(sessionId: string) {
-  return `provin-admin-workspace-v2-${sessionId}`;
+  return `provin-admin-workspace-v3-${sessionId}`;
 }
+
+const LEGACY_WORKSPACE_V2_PREFIX = "provin-admin-workspace-v2-";
 
 /** Vecais viena lauka komentārs */
 function storageKeyInternalLegacy(sessionId: string) {
@@ -254,7 +263,7 @@ export function OrderDetailWorkspace({
   const [pdfScanning, setPdfScanning] = useState(false);
   const [pdfScanError, setPdfScanError] = useState<string | null>(null);
   const [sourcesViewMode, setSourcesViewMode] = useState(false);
-  const [sourcesSnap, setSourcesSnap] = useState({ csdd: "", ltab: "", tirgus: "", citi: "" });
+  const [sourcesSnap, setSourcesSnap] = useState<WorkspaceSourceBlocks | null>(null);
   const [sourcesFlash, setSourcesFlash] = useState(false);
   const [expertViewMode, setExpertViewMode] = useState(false);
   const [expertSnap, setExpertSnap] = useState({ iriss: "", apskatesPlāns: "" });
@@ -267,19 +276,24 @@ export function OrderDetailWorkspace({
     () =>
       analyzeVinAndKm({
         orderVin: payload.vin,
-        blocks: [
-          { label: "CSDD", text: ws.csdd },
-          { label: "LTAB", text: ws.ltab },
-          { label: "Tirgus un sludinājuma piezīmes", text: ws.tirgus },
-          { label: "Citi avoti", text: ws.citi },
-        ],
+        blocks: SOURCE_BLOCK_KEYS.map((key) => ({
+          label: SOURCE_BLOCK_LABELS[key],
+          text: blockToPlainText(ws.sourceBlocks[key]),
+        })),
         fileNames: portfolio.map((p) => p.name),
       }),
-    [payload.vin, ws.csdd, ws.ltab, ws.tirgus, ws.citi, portfolio],
+    [payload.vin, ws.sourceBlocks, portfolio],
   );
 
   const updateWs = useCallback((patch: Partial<WorkspacePersist>) => {
     setWs((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  const updateSourceBlock = useCallback((key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]) => {
+    setWs((prev) => ({
+      ...prev,
+      sourceBlocks: { ...prev.sourceBlocks, [key]: block },
+    }));
   }, []);
 
   const workspaceFieldResetKey = `${payload.sessionId}-${workspaceHydrated ? 1 : 0}`;
@@ -315,23 +329,48 @@ export function OrderDetailWorkspace({
   useEffect(() => {
     setWorkspaceHydrated(false);
     try {
-      const raw = localStorage.getItem(storageKeyWorkspace(payload.sessionId));
+      const keyV3 = storageKeyWorkspace(payload.sessionId);
+      const keyV2 = `${LEGACY_WORKSPACE_V2_PREFIX}${payload.sessionId}`;
+      const raw = localStorage.getItem(keyV3) ?? localStorage.getItem(keyV2);
       if (raw) {
-        const p = JSON.parse(raw) as Partial<WorkspacePersist>;
-        setWs({
-          ...EMPTY_WORKSPACE,
-          ...p,
-          previewConfirmed: Boolean(p.previewConfirmed),
-        });
+        const h = hydrateWorkspaceFromStorage(raw);
+        if (h) {
+          setWs({
+            sourceBlocks: h.sourceBlocks,
+            iriss: h.iriss,
+            apskatesPlāns: h.apskatesPlāns,
+            previewConfirmed: Boolean(h.previewConfirmed),
+          });
+          if (!localStorage.getItem(keyV3) && localStorage.getItem(keyV2)) {
+            try {
+              localStorage.setItem(
+                keyV3,
+                JSON.stringify({
+                  sourceBlocks: h.sourceBlocks,
+                  iriss: h.iriss,
+                  apskatesPlāns: h.apskatesPlāns,
+                  previewConfirmed: h.previewConfirmed,
+                }),
+              );
+            } catch {
+              /* quota */
+            }
+          }
+        } else {
+          setWs(EMPTY_WORKSPACE);
+        }
       } else {
         const legacy = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
-        const seed = payload.serverInternalComment?.trim()
-          ? { ...EMPTY_WORKSPACE, citi: payload.serverInternalComment ?? "" }
-          : EMPTY_WORKSPACE;
-        if (legacy) {
-          setWs({ ...seed, citi: legacy, previewConfirmed: false });
+        const serverC = payload.serverInternalComment?.trim();
+        if (legacy || serverC) {
+          const b = createDefaultSourceBlocks();
+          const parts: string[] = [];
+          if (serverC) parts.push(serverC);
+          if (legacy) parts.push(legacy);
+          b.autodna = { rows: [emptyDataRow()], comments: parts.join("\n\n") };
+          setWs({ ...EMPTY_WORKSPACE, sourceBlocks: b, previewConfirmed: false });
         } else {
-          setWs(seed);
+          setWs(EMPTY_WORKSPACE);
         }
       }
     } catch {
@@ -342,7 +381,7 @@ export function OrderDetailWorkspace({
 
   useEffect(() => {
     if (!workspaceHydrated) return;
-    setSourcesSnap({ csdd: ws.csdd, ltab: ws.ltab, tirgus: ws.tirgus, citi: ws.citi });
+    setSourcesSnap(null);
     setSourcesViewMode(false);
     setExpertSnap({ iriss: ws.iriss, apskatesPlāns: ws.apskatesPlāns });
     setExpertViewMode(false);
@@ -497,6 +536,9 @@ export function OrderDetailWorkspace({
 
   const canGeneratePdf = ws.previewConfirmed && ws.iriss.trim().length > 0;
 
+  const blocksForDisplay =
+    sourcesViewMode && sourcesSnap ? sourcesSnap : ws.sourceBlocks;
+
   const openPrintReport = async () => {
     if (!canGeneratePdf) {
       alert(
@@ -524,13 +566,12 @@ export function OrderDetailWorkspace({
     }
 
     const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeStyle: "short" });
+    const flatSources = blocksToLegacyFlatFields(ws.sourceBlocks);
     const html = buildClientReportDocumentHtml({
       payload: {
         ...payload,
-        csdd: ws.csdd,
-        ltab: ws.ltab,
-        tirgus: ws.tirgus,
-        citi: ws.citi,
+        ...flatSources,
+        manualVendorBlocks: toPdfManualVendorBlocks(ws.sourceBlocks),
         iriss: ws.iriss,
         apskatesPlāns: ws.apskatesPlāns,
         listingMarket,
@@ -567,7 +608,7 @@ export function OrderDetailWorkspace({
           Secība: <strong className="text-[var(--color-apple-text)]">1)</strong> portfeļa faili,{" "}
           <strong className="text-[var(--color-apple-text)]">2)</strong> piezīmju bloki pēc avota (tabulas tiek saliktas
           automātiski no ielīmētā teksta). Sludinājumu „liekie” teikumi (piem., autorizācijas aicinājumi) tiek izfiltrēti.
-          Tukši lauki PDF: „Informācija nav pieejama”.
+          Tukši avotu bloki PDF netiek drukāti.
         </p>
 
         {(previewAnalysis.vinIssues.length > 0 || previewAnalysis.kmIssues.length > 0) && (
@@ -672,22 +713,15 @@ export function OrderDetailWorkspace({
               </div>
             ) : null}
           </li>
-          <li>
-            <span className="font-medium">CSDD</span>
-            <PreviewWorkspaceBody text={ws.csdd} variant="default" />
-          </li>
-          <li>
-            <span className="font-medium">LTAB</span>
-            <PreviewWorkspaceBody text={ws.ltab} variant="default" />
-          </li>
-          <li>
-            <span className="font-medium">Tirgus un sludinājuma piezīmes</span>
-            <PreviewWorkspaceBody text={ws.tirgus} variant="tirgus" />
-          </li>
-          <li>
-            <span className="font-medium">Citi avoti</span>
-            <PreviewWorkspaceBody text={ws.citi} variant="default" />
-          </li>
+          {SOURCE_BLOCK_KEYS.map((key) => (
+            <li key={key}>
+              <span className="font-medium">{SOURCE_BLOCK_LABELS[key]}</span>
+              <PreviewWorkspaceBody
+                text={blockToPlainText(ws.sourceBlocks[key])}
+                variant={key === "tirgus" ? "tirgus" : "default"}
+              />
+            </li>
+          ))}
         </ol>
         <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
           <button
@@ -726,7 +760,7 @@ export function OrderDetailWorkspace({
         <div className="mt-1.5 space-y-1 border-t border-slate-200/80 pt-1.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
           <ol className="list-decimal space-y-0.5 pl-3.5">
             <li>Portfelis → avoti → priekšskats → IRISS + apskates plāns → PDF.</li>
-            <li>Tukšs avota lauks PDF: „Informācija nav pieejama”.</li>
+            <li>Tukši avotu bloki PDF netiek iekļauti.</li>
             <li>Dati: localStorage + IndexedDB.</li>
           </ol>
         </div>
@@ -797,11 +831,12 @@ export function OrderDetailWorkspace({
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
-              2. Avotu piezīmes
+              2. Avotu bloki
             </h2>
             <p className="mt-0.5 text-[10px] text-[var(--color-provin-muted)]">
-              Tukšs → PDF: <strong className="text-[var(--color-apple-text)]">Informācija nav pieejama</strong>. Viens{" "}
-              <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> visiem četriem laukiem.
+              Katrā blokā: <strong className="text-[var(--color-apple-text)]">datums · km · bojājumu summa</strong> (rindas{" "}
+              <strong className="text-[var(--color-apple-text)]">+</strong>), tad <strong>komentāri</strong>. Tukši bloki PDF
+              netiek drukāti. Viens <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> visiem.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1">
@@ -814,7 +849,7 @@ export function OrderDetailWorkspace({
               type="button"
               className={workspaceToolbarBtn}
               onClick={() => {
-                setSourcesSnap({ csdd: ws.csdd, ltab: ws.ltab, tirgus: ws.tirgus, citi: ws.citi });
+                setSourcesSnap(JSON.parse(JSON.stringify(ws.sourceBlocks)) as WorkspaceSourceBlocks);
                 setSourcesViewMode(true);
                 setSourcesFlash(true);
                 window.setTimeout(() => setSourcesFlash(false), 2000);
@@ -827,37 +862,15 @@ export function OrderDetailWorkspace({
             </button>
           </div>
         </div>
-        <div className="mt-1.5 grid gap-2 md:grid-cols-2">
-          {(
-            [
-              { key: "csdd" as const, label: "CSDD" },
-              { key: "ltab" as const, label: "LTAB" },
-              { key: "tirgus" as const, label: "Tirgus / sludinājums" },
-              { key: "citi" as const, label: "Citi avoti" },
-            ] as const
-          ).map(({ key, label }) => (
-            <div key={key}>
-              <div className="mb-0.5 text-xs font-medium text-[var(--color-provin-muted)]">{label}</div>
-              {sourcesViewMode ? (
-                <div className={`${bulkReadonlyClass} min-h-[52px]`}>
-                  {(sourcesSnap[key] ?? "").trim() ? (
-                    sourcesSnap[key]
-                  ) : (
-                    <span className="text-slate-400">—</span>
-                  )}
-                </div>
-              ) : (
-                <textarea
-                  id={`${fileInputId}-${key}`}
-                  className={`${bulkTextareaClass} min-h-[52px] resize-y`}
-                  value={ws[key]}
-                  onChange={(e) => updateWs({ [key]: e.target.value })}
-                  placeholder={`${label}…`}
-                  spellCheck
-                  rows={3}
-                />
-              )}
-            </div>
+        <div className="mt-2 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+          {SOURCE_BLOCK_KEYS.map((key) => (
+            <AdminStructuredSourceBlock
+              key={key}
+              blockKey={key}
+              value={blocksForDisplay[key]}
+              readOnly={sourcesViewMode}
+              onChange={(next) => updateSourceBlock(key, next)}
+            />
           ))}
         </div>
 
