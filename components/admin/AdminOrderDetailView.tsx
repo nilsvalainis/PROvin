@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
 import { formatMoneyEur } from "@/lib/format-money";
+import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 
 /** Servera pasūtījums, serializējams uz klientu (bez server-only importiem). */
 export type AdminOrderDetailClientModel = {
@@ -95,12 +96,14 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
 
   const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}-${fieldUiRev}`;
 
-  const sectionClass = "rounded-lg border border-slate-200/80 bg-white p-2.5 shadow-sm";
-  const sectionTitle = "text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]";
-  const sectionHint = "mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]";
-  const dlGrid = "mt-1.5 grid gap-1.5 text-[11px] sm:grid-cols-2";
-  const dtClass = "text-[10px] text-[var(--color-provin-muted)]";
-  const ddClass = "mt-0.5 text-[var(--color-apple-text)]";
+  const sectionClass =
+    "rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm";
+  const sectionTitle = `font-bold uppercase tracking-wide text-[var(--color-apple-text)] ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
+  const sectionHint = "mt-0.5 text-[10px] leading-tight text-[var(--color-provin-muted)]";
+  const metaLabel = "text-[10px] font-medium text-[var(--color-provin-muted)]";
+  const metaValue = "text-[11px] text-[var(--color-apple-text)]";
+  const metaGrid =
+    "mt-1 grid grid-cols-1 gap-x-3 gap-y-0.5 text-[11px] sm:grid-cols-3 sm:gap-y-0";
 
   return (
     <div className="w-full max-w-none">
@@ -152,26 +155,24 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
         <p className="mt-1 font-mono text-[11px] text-[var(--color-provin-muted)]">{order.id}</p>
       </header>
 
-      <div className="space-y-2.5">
+      <div className="space-y-1.5">
         <section className={sectionClass}>
           <h2 className={sectionTitle}>Maksājums</h2>
-          <p className={sectionHint}>
-            No Stripe / sesijas — šeit nav rediģējams (grāmatvedības un maksājumu ieraksts).
-          </p>
-          <dl className={dlGrid}>
-            <div>
-              <dt className={dtClass}>Summa</dt>
-              <dd className={`${ddClass} font-medium tabular-nums`}>
+          <p className={sectionHint}>No Stripe / sesijas — nav rediģējams.</p>
+          <dl className={metaGrid}>
+            <div className="min-w-0">
+              <dt className={metaLabel}>Summa</dt>
+              <dd className={`${metaValue} font-medium tabular-nums`}>
                 {formatMoneyEur(order.amountTotal, order.currency)}
               </dd>
             </div>
-            <div>
-              <dt className={dtClass}>Laiks</dt>
-              <dd className={ddClass}>{dateFmt.format(new Date(order.created * 1000))}</dd>
+            <div className="min-w-0">
+              <dt className={metaLabel}>Laiks</dt>
+              <dd className={metaValue}>{dateFmt.format(new Date(order.created * 1000))}</dd>
             </div>
-            <div>
-              <dt className={dtClass}>Statuss</dt>
-              <dd className={ddClass}>{order.paymentStatus}</dd>
+            <div className="min-w-0">
+              <dt className={metaLabel}>Statuss</dt>
+              <dd className={metaValue}>{order.paymentStatus}</dd>
             </div>
           </dl>
         </section>
@@ -179,19 +180,23 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
         <section className={sectionClass}>
           <h2 className={sectionTitle}>Transportlīdzeklis un sludinājums</h2>
           <p className={sectionHint}>
-            VIN un saiti vari labot darba vajadzībām; izmaiņas saglabājas tikai šajā pārlūkā (localStorage).
+            VIN un saite — tikai šajā pārlūkā (localStorage);{" "}
+            <span className="whitespace-nowrap">Saglabāt / Labot</span> katram laukam.
           </p>
-          <div className="mt-1.5 space-y-2">
-            <AdminSavableTextField
-              id="edit-vin"
-              label="VIN"
-              value={mergedVin}
-              onChange={(v) => persistEdits({ ...edits, vin: v })}
-              placeholder="17 zīmes…"
-              mono
-              resetVersion={orderFieldResetKey}
-            />
-            <div>
+          <div className="mt-1 grid grid-cols-1 gap-2 lg:grid-cols-2 lg:items-start lg:gap-x-3">
+            <div className="min-w-0">
+              <AdminSavableTextField
+                id="edit-vin"
+                label="VIN"
+                value={mergedVin}
+                onChange={(v) => persistEdits({ ...edits, vin: v })}
+                placeholder="17 zīmes…"
+                mono
+                compact
+                resetVersion={orderFieldResetKey}
+              />
+            </div>
+            <div className="min-w-0">
               <AdminSavableTextField
                 id="edit-listing"
                 label="Sludinājuma saite"
@@ -199,6 +204,7 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
                 onChange={(v) => persistEdits({ ...edits, listingUrl: v })}
                 placeholder="https://…"
                 inputType="url"
+                compact
                 resetVersion={orderFieldResetKey}
               />
               {mergedListing.trim() ? (
@@ -206,9 +212,9 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
                   href={mergedListing.trim()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1.5 inline-block text-[11px] font-medium text-[var(--color-provin-accent)] hover:underline"
+                  className="mt-0.5 inline-flex text-[10px] font-medium text-[var(--color-provin-accent)] hover:underline"
                 >
-                  Atvērt saiti jaunā cilnē
+                  Atvērt jaunā cilnē →
                 </a>
               ) : null}
             </div>
@@ -218,27 +224,22 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
         <section className={sectionClass}>
           <h2 className={sectionTitle}>Klienta kontaktdati</h2>
           <p className={sectionHint}>
-            No pasūtījuma — <strong className="font-medium text-[var(--color-apple-text)]">nav rediģējami</strong>{" "}
-            (personas dati).
+            No pasūtījuma — <strong className="font-medium text-[var(--color-apple-text)]">nav rediģējami</strong>.
           </p>
-          <dl className={dlGrid}>
-            <div>
-              <dt className={dtClass}>E-pasts</dt>
-              <dd className={`${ddClass} break-all`}>
+          <dl className={metaGrid}>
+            <div className="min-w-0">
+              <dt className={metaLabel}>E-pasts</dt>
+              <dd className={`${metaValue} break-all`}>
                 {order.customerEmail ?? order.customerDetailsEmail ?? "—"}
               </dd>
             </div>
-            <div>
-              <dt className={dtClass}>Tālrunis</dt>
-              <dd className={ddClass}>{order.phone ?? order.customerDetailsPhone ?? "—"}</dd>
+            <div className="min-w-0">
+              <dt className={metaLabel}>Tālrunis</dt>
+              <dd className={metaValue}>{order.phone ?? order.customerDetailsPhone ?? "—"}</dd>
             </div>
-            <div className="sm:col-span-2">
-              <dt className={dtClass}>Vārds, uzvārds</dt>
-              <dd className={ddClass}>{order.customerName ?? "—"}</dd>
-            </div>
-            <div className="sm:col-span-2">
-              <dt className={dtClass}>Vēlamā saziņa (no formas)</dt>
-              <dd className={ddClass}>{order.contactMethod ?? "—"}</dd>
+            <div className="min-w-0">
+              <dt className={metaLabel}>Vārds, uzvārds</dt>
+              <dd className={metaValue}>{order.customerName ?? "—"}</dd>
             </div>
           </dl>
         </section>
@@ -246,15 +247,17 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
         <section className={sectionClass}>
           <h2 className={sectionTitle}>Komentārs no klienta formas</h2>
           <p className={sectionHint}>
-            Vari labot darba nolūkos (piemēram, atkārtoti iekopēt vai precizēt); oriģināls paliek serverī / Stripe.
+            Labojumi tikai pārlūkā; oriģināls — serverī / Stripe.
           </p>
-          <div className="mt-1.5">
+          <div className="mt-1">
             <AdminSavableTextField
               id="edit-notes"
               value={mergedNotes}
               onChange={(v) => persistEdits({ ...edits, notes: v })}
               placeholder="Klienta ziņojums…"
               multiline
+              compact
+              minHeightClass="min-h-[72px]"
               resetVersion={orderFieldResetKey}
             />
           </div>
