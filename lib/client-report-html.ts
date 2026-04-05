@@ -152,6 +152,50 @@ function parseFlexibleDateFragment(s: string): Date | null {
   return null;
 }
 
+/** „Atgāzu cietās daļiņas” — vesels skaitlis no ievades (tikai cipari). */
+function parseSolidParticleNumeric(raw: string): number | null {
+  const digits = raw.replace(/[^\d]/g, "");
+  if (!digits) return null;
+  const n = parseInt(digits, 10);
+  return Number.isNaN(n) ? null : n;
+}
+
+function formatCsddSolidParticlesCell(v: string): string {
+  const esc = escapeHtml(v);
+  const n = parseSolidParticleNumeric(v);
+  if (n == null) return esc;
+  if (n > 1_000_000) return `<span class="pdf-heat-red">${esc}\u00a0❗</span>`;
+  if (n >= 200_000 && n <= 1_000_000) return `<span class="pdf-heat-orange">${esc}\u00a0⚠️</span>`;
+  return esc;
+}
+
+/** „Nākamās apskates datums”: sarkanā ≤ šodienai; oranžā, ja līdz termiņam ≤ 90 dienas. */
+function formatCsddNextInspectionCell(v: string): string {
+  const esc = escapeHtml(v);
+  const d = parseFlexibleDateFragment(v);
+  if (!d) return esc;
+  const today = startOfDay(new Date());
+  const target = startOfDay(d);
+  const t0 = today.getTime();
+  const d0 = target.getTime();
+  if (d0 <= t0) return `<span class="pdf-heat-red">${esc}</span>`;
+  const days = Math.round((d0 - t0) / 86400000);
+  if (days <= 90) return `<span class="pdf-heat-orange">${esc}</span>`;
+  return esc;
+}
+
+/** „Zaudējumu summa” PDF šūna (EUR). */
+function formatLossAmountEurCell(raw: string): string {
+  const t = raw.trim();
+  const esc = escapeHtml(t);
+  if (!t) return esc;
+  const n = amountToIntRough(raw);
+  if (n <= 0) return esc;
+  if (n < 2000) return `<span class="pdf-heat-orange">${esc}\u00a0⚠️</span>`;
+  if (n > 2001) return `<span class="pdf-heat-red">${esc}\u00a0❗</span>`;
+  return esc;
+}
+
 /** Nākamās TA datums / derīguma beigas no CSDD, LTAB un citām piezīmēm. */
 function findTaValidUntilDate(corpus: string): Date | null {
   const patterns = [
@@ -742,13 +786,13 @@ function buildLvStructuredSourcesHtml(
   const hasStructuredCsdd = Boolean(p.csddForm && csddFormHasContent(p.csddForm));
   const hasLegacyCsddText = p.csdd.trim().length > 0;
   const hasCsdd = hasStructuredCsdd || hasLegacyCsddText;
-  const hasLtab = p.ltab.trim().length > 0;
   const lvRows = insRows.filter((r) => r.iso === "LV");
-  const showOcta = hasLtab || lvRows.length > 0;
-  if (!hasCsdd && !showOcta) return "";
-
   const insDates = insRows.map((r) => r.date);
-  const insFromY = earliestInsuranceYearFromClaims(insDates);
+  const insFromYEarly = earliestInsuranceYearFromClaims(insDates);
+  const hasOctaContent = lvRows.length > 0 || Boolean(insFromYEarly);
+  if (!hasCsdd && !hasOctaContent) return "";
+
+  const insFromY = insFromYEarly;
 
   const parts: string[] = [];
   parts.push(`<div class="lv-sources-panel" role="region">`);
@@ -765,10 +809,11 @@ function buildLvStructuredSourcesHtml(
       for (const { key, label } of CSDD_FORM_SHORT_FIELDS) {
         const v = f[key].trim();
         if (!v) continue;
-        const parsedNext = key === "nextInspectionDate" ? parseFlexibleDateFragment(v) : null;
-        const soon = parsedNext != null && classifyTaValidity(parsedNext) === "soon";
-        const tdClass = soon ? ' class="td-warn"' : "";
-        regRows.push(`<tr><td>${escapeHtml(label)}</td><td${tdClass}>${escapeHtml(v)}</td></tr>`);
+        let cellHtml: string;
+        if (key === "solidParticlesCm3") cellHtml = formatCsddSolidParticlesCell(v);
+        else if (key === "nextInspectionDate") cellHtml = formatCsddNextInspectionCell(v);
+        else cellHtml = escapeHtml(v);
+        regRows.push(`<tr><td>${escapeHtml(label)}</td><td>${cellHtml}</td></tr>`);
       }
       if (regRows.length > 0) {
         parts.push(`<table class="fmt lv-reg-table bordered"><tbody>${regRows.join("\n    ")}</tbody></table>`);
@@ -862,7 +907,7 @@ function buildLvStructuredSourcesHtml(
     }
   }
 
-  if (showOcta) {
+  if (hasOctaContent) {
     parts.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.lvOcta)}</h3>`);
     if (insFromY) {
       parts.push(
@@ -872,14 +917,13 @@ function buildLvStructuredSourcesHtml(
     if (lvRows.length > 0) {
       parts.push(`<p class="pdf-sub2">negadījumi LV</p>`);
       parts.push(
-        `<table class="fmt ins ins-compact bordered"><thead><tr><th>datums</th><th>bojājums</th><th class="tabular">∑</th><th class="flag-cell">valsts</th></tr></thead><tbody>`,
+        `<table class="fmt ins ins-compact bordered"><thead><tr><th>datums</th><th>bojājums</th><th class="tabular">Zaudējumu summa</th><th class="flag-cell">valsts</th></tr></thead><tbody>`,
       );
       for (const r of lvRows) {
         const rowClass = r.emphasize ? ' class="em"' : "";
         const kind = damageSymbolKindForReport(r);
-        const sumCls = amountToIntRough(r.amount) > 5000 ? "tabular ins-sum-high" : "tabular";
         parts.push(
-          `<tr${rowClass}><td>${escapeHtml(r.date)}</td><td>${escapeHtml(kind)}</td><td class="${sumCls}">${escapeHtml(r.amount)}</td><td class="flag-cell">${flagEmoji(r.iso)}</td></tr>`,
+          `<tr${rowClass}><td>${escapeHtml(r.date)}</td><td>${escapeHtml(kind)}</td><td class="tabular">${formatLossAmountEurCell(r.amount)}</td><td class="flag-cell">${flagEmoji(r.iso)}</td></tr>`,
         );
       }
       parts.push(`</tbody></table>`);
@@ -926,13 +970,13 @@ function buildManualVendorBlocksHtml(blocks: ClientManualVendorBlockPdf[] | unde
   for (const b of blocks) {
     parts.push(`<h3 class="pdf-sub prov-uc">${escapeHtml(b.title)}</h3>`);
     if (b.rows.length > 0) {
-      const amountTh = escapeHtml(b.amountColumnLabel ?? "bojājumu summa");
+      const amountTh = escapeHtml(b.amountColumnLabel ?? "Zaudējumu summa");
       parts.push(
-        `<table class="fmt bordered ins-compact"><thead><tr><th>gads / datums</th><th class="tabular">nobraukums</th><th class="tabular">${amountTh}</th></tr></thead><tbody>`,
+        `<table class="fmt bordered ins-compact"><thead><tr><th>Gads / Datums</th><th class="tabular">KM</th><th class="tabular">${amountTh}</th></tr></thead><tbody>`,
       );
       for (const r of b.rows) {
         parts.push(
-          `<tr><td>${escapeHtml(r.date)}</td><td class="tabular">${escapeHtml(r.km)}</td><td class="tabular">${escapeHtml(r.amount)}</td></tr>`,
+          `<tr><td>${escapeHtml(r.date)}</td><td class="tabular">${escapeHtml(r.km)}</td><td class="tabular">${formatLossAmountEurCell(r.amount)}</td></tr>`,
         );
       }
       parts.push(`</tbody></table>`);
@@ -1472,6 +1516,8 @@ function clientReportPrintCss(): string {
       table.fmt.ins .ins-source{display:block;font-size:0.72rem;color:#64748b;margin-top:4px;line-height:1.35;}
       .claims-intro{font-size:0.84rem;color:#334155;line-height:1.5;margin:0 0 12px;}
       .td-warn{color:#b91c1c;font-weight:600;}
+      .pdf-heat-red{color:#b91c1c!important;font-weight:700!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .pdf-heat-orange{color:#c2410c!important;font-weight:700!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       pre.block{white-space:pre-wrap;font-size:0.82rem;background:#f8fafc;border:1px solid #e2e8f0;padding:11px 14px;border-radius:9px;margin:0.5rem 0;}
       .na{color:#86868b;font-style:italic;}
       .hint{font-size:0.76rem;color:#6e6e73;margin-top:0.45rem;line-height:1.45;}
@@ -1820,14 +1866,13 @@ export function buildClientReportDocumentHtml(args: {
       `<p class="claims-intro claims-intro-tight">Visi avoti; LV izraksts — <strong>2.3</strong>, pilnais apkopojums — šī tabula.</p>`,
     );
     lines.push(
-      `<table class="fmt ins ins-compact bordered report-export" data-export="claims"><thead><tr><th>datums</th><th>bojājums</th><th class="tabular">∑</th><th class="flag-cell">valsts</th></tr></thead><tbody>`,
+      `<table class="fmt ins ins-compact bordered report-export" data-export="claims"><thead><tr><th>datums</th><th>bojājums</th><th class="tabular">Zaudējumu summa</th><th class="flag-cell">valsts</th></tr></thead><tbody>`,
     );
     for (const r of insRows) {
       const rowClass = r.emphasize ? ' class="em"' : "";
       const kind = damageSymbolKindForReport(r);
-      const sumCls = amountToIntRough(r.amount) > 5000 ? "tabular ins-sum-high" : "tabular";
       lines.push(
-        `<tr${rowClass}><td>${escapeHtml(r.date)}</td><td>${escapeHtml(kind)}</td><td class="${sumCls}">${escapeHtml(r.amount)}</td><td class="flag-cell">${flagEmoji(r.iso)}</td></tr>`,
+        `<tr${rowClass}><td>${escapeHtml(r.date)}</td><td>${escapeHtml(kind)}</td><td class="tabular">${formatLossAmountEurCell(r.amount)}</td><td class="flag-cell">${flagEmoji(r.iso)}</td></tr>`,
       );
     }
     lines.push(`</tbody></table>`);
