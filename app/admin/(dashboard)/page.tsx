@@ -45,7 +45,7 @@ export default async function AdminOrdersPage() {
           Apstrādes telpa
         </p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--color-apple-text)]">Pasūtījumi</h1>
-        <p className="mt-2 max-w-5xl text-sm leading-relaxed text-[var(--color-provin-muted)]">
+        <p className="mt-2 w-full max-w-none text-sm leading-relaxed text-[var(--color-provin-muted)]">
           Šeit apkopo ierakstus apstrādei: atver rindu, lai redzētu VIN, kontaktus, komentārus un darba zonu ar
           priekšskatījumu. Zemāk ir{" "}
           <span className="font-medium text-[var(--color-apple-text)]">parauga pasūtījumi</span> — vari tos brīvi

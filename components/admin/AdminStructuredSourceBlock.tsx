@@ -1,21 +1,26 @@
 "use client";
 
-import type { SourceBlockKey, SourceBlockState, SourceDataRow } from "@/lib/admin-source-blocks";
+import type { StandardSourceBlockKey, StandardSourceBlockState, SourceDataRow } from "@/lib/admin-source-blocks";
 import { SOURCE_BLOCK_LABELS, emptyDataRow } from "@/lib/admin-source-blocks";
 
 const inp =
   "min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
 type Props = {
-  blockKey: SourceBlockKey;
-  value: SourceBlockState;
+  blockKey: StandardSourceBlockKey;
+  value: StandardSourceBlockState;
   readOnly: boolean;
   disabled?: boolean;
-  onChange: (next: SourceBlockState) => void;
+  onChange: (next: StandardSourceBlockState) => void;
 };
+
+function vendorLossAmountMode(key: StandardSourceBlockKey): boolean {
+  return key === "autodna" || key === "carvertical";
+}
 
 export function AdminStructuredSourceBlock({ blockKey, value, readOnly, disabled, onChange }: Props) {
   const label = SOURCE_BLOCK_LABELS[blockKey];
+  const lossAmountVendor = vendorLossAmountMode(blockKey);
 
   const setRow = (index: number, patch: Partial<SourceDataRow>) => {
     const rows = value.rows.map((r, i) => (i === index ? { ...r, ...patch } : r));
@@ -44,7 +49,12 @@ export function AdminStructuredSourceBlock({ blockKey, value, readOnly, disabled
               <div className="flex min-w-0 flex-1 flex-wrap gap-1 text-[11px] text-[var(--color-provin-muted)]">
                 <span className="rounded bg-white/80 px-1.5 py-0.5">{row.date.trim() || "—"}</span>
                 <span className="rounded bg-white/80 px-1.5 py-0.5">{row.km.trim() || "—"}</span>
-                <span className="rounded bg-white/80 px-1.5 py-0.5">{row.amount.trim() || "—"}</span>
+                <span className="rounded bg-white/80 px-1.5 py-0.5">
+                  {lossAmountVendor ? (
+                    <span className="text-[10px] text-[var(--color-provin-muted)]">Zaudējumu summa: </span>
+                  ) : null}
+                  {row.amount.trim() || "—"}
+                </span>
               </div>
             ) : (
               <>
@@ -66,15 +76,22 @@ export function AdminStructuredSourceBlock({ blockKey, value, readOnly, disabled
                   onChange={(e) => setRow(ri, { km: e.target.value })}
                   aria-label={`${label} nobraukums ${ri + 1}`}
                 />
-                <input
-                  type="text"
-                  className={`${inp} max-w-[7rem]`}
-                  placeholder="€ bojājumi"
-                  value={row.amount}
-                  disabled={disabled}
-                  onChange={(e) => setRow(ri, { amount: e.target.value })}
-                  aria-label={`${label} summa ${ri + 1}`}
-                />
+                <div className={`${lossAmountVendor ? "flex min-w-[7rem] max-w-[12rem] flex-col" : ""}`}>
+                  {lossAmountVendor ? (
+                    <span className="mb-0.5 text-[10px] font-medium text-[var(--color-provin-muted)]">
+                      Zaudējumu summa:
+                    </span>
+                  ) : null}
+                  <input
+                    type="text"
+                    className={`${inp} ${lossAmountVendor ? "max-w-none" : "max-w-[7rem]"}`}
+                    placeholder={lossAmountVendor ? "piem., 2930.00 €" : "€ bojājumi"}
+                    value={row.amount}
+                    disabled={disabled}
+                    onChange={(e) => setRow(ri, { amount: e.target.value })}
+                    aria-label={`${label} ${lossAmountVendor ? "Zaudējumu summa" : "summa"} ${ri + 1}`}
+                  />
+                </div>
                 {value.rows.length > 1 ? (
                   <button
                     type="button"

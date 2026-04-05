@@ -27,7 +27,18 @@ import {
   parseTaRating2DefectLines,
 } from "@/lib/client-report-lv-parse";
 import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
-import type { ClientManualVendorBlockPdf } from "@/lib/admin-source-blocks";
+import type { ClientManualVendorBlockPdf, CsddFormFields, TirgusFormFields } from "@/lib/admin-source-blocks";
+import {
+  CSDD_FORM_SHORT_FIELDS,
+  CSDD_LABEL_COMMENTS,
+  CSDD_LABEL_PREV_RATING,
+  csddFormHasContent,
+  TIRGUS_LABEL_COMMENTS,
+  TIRGUS_LABEL_CREATED,
+  TIRGUS_LABEL_LISTED,
+  TIRGUS_LABEL_PRICE_DROP,
+  tirgusFormHasContent,
+} from "@/lib/admin-source-blocks";
 import {
   CLIENT_REPORT_FOOTER_DISCLAIMER,
   CLIENT_REPORT_PDF_SECTIONS,
@@ -53,8 +64,12 @@ export type ClientReportPayload = {
   contactMethod: string | null;
   notes: string | null;
   csdd: string;
+  /** Ja aizpildīta, PDF 2.1/2.2 CSDD daļa ar tām pašām etiķetēm kā adminā; tukši lauki netiek drukāti. */
+  csddForm?: CsddFormFields | null;
   ltab: string;
   tirgus: string;
+  /** Strukturēti „Tirgus dati” — PDF V ar precīzām etiķetēm; tukši lauki netiek drukāti. */
+  tirgusForm?: TirgusFormFields | null;
   citi: string;
   iriss: string;
   /** §7 Personalizēts apskates plāns — admina lauks zem IRISS. */
@@ -724,7 +739,9 @@ function buildLvStructuredSourcesHtml(
   insRows: ClaimTableRow[],
   makeModel: string | null,
 ): string {
-  const hasCsdd = p.csdd.trim().length > 0;
+  const hasStructuredCsdd = Boolean(p.csddForm && csddFormHasContent(p.csddForm));
+  const hasLegacyCsddText = p.csdd.trim().length > 0;
+  const hasCsdd = hasStructuredCsdd || hasLegacyCsddText;
   const hasLtab = p.ltab.trim().length > 0;
   const lvRows = insRows.filter((r) => r.iso === "LV");
   const showOcta = hasLtab || lvRows.length > 0;
@@ -741,80 +758,107 @@ function buildLvStructuredSourcesHtml(
   );
 
   if (hasCsdd) {
-    const basics = parseLvRegistryBasics(p.csdd);
-    const structured = extractRegistryStructuredFields(p.csdd);
-    const mm =
-      structured.makeModel?.trim() || basics.markModel || makeModel || "—";
-    const regNr = structured.plateNumber?.trim() || basics.regNr || "—";
-    const firstReg =
-      structured.firstReg?.trim() || basics.firstReg || extractFirstRegistration(p.csdd) || "—";
-    const euro = structured.euroStandard?.trim() || basics.euro || "—";
-    const power =
-      structured.enginePower?.trim() ||
-      (basics.powerKw ? `${basics.powerKw} kW` : "—");
-    const grossMass =
-      structured.grossWeight?.trim() ||
-      (basics.grossMassKg ? `${basics.grossMassKg} kg` : "—");
-    const curbMass =
-      structured.curbWeight?.trim() ||
-      (basics.curbWeightKg ? `${basics.curbWeightKg} kg` : "—");
-    const fuel = structured.fuelType?.trim() || "—";
-    const smokeRaw = structured.smokeOpacity?.trim() || basics.smokeOpacity?.trim() || "";
-    const smoke = smokeRaw || "—";
-    const regStatus = structured.status?.trim() || "";
-    const roadRaw =
-      structured.roadTax?.trim() ||
-      (basics.roadTaxEur ? `${basics.roadTaxEur} EUR` : "");
-    const road = roadRaw ? normalizeRoadTaxDisplay(roadRaw) : "—";
-
-    const taSoon = taValidUntil != null && classifyTaValidity(taValidUntil) === "soon";
-    const taCellHtml = taValidUntil
-      ? escapeHtml(taValidUntil.toLocaleDateString("lv-LV"))
-      : "—";
-
-    const ta0 = parseTaRating0Snippet(p.csdd);
-    const ta2 = parseTaRating2DefectLines(p.csdd);
-    const brakes = parseBrakeAssPairs(p.csdd);
-
-    parts.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.lvRegistry)}</h3>`);
-    const regRows: string[] = [];
-    regRows.push(
-      `<tr><td>marka / modelis</td><td><strong>${escapeHtml(mm)}</strong></td></tr>`,
-      `<tr><td>reģ. nr.</td><td>${escapeHtml(regNr)}</td></tr>`,
-    );
-    if (regStatus)
-      regRows.push(`<tr><td>statuss</td><td>${escapeHtml(regStatus)}</td></tr>`);
-    regRows.push(
-      `<tr><td>pirmā reģistrācija</td><td>${escapeHtml(firstReg)}</td></tr>`,
-      `<tr><td>euro / emisijas</td><td>${escapeHtml(euro)}</td></tr>`,
-      `<tr><td>jauda</td><td>${escapeHtml(power)}</td></tr>`,
-      `<tr><td>pilnā masa</td><td>${escapeHtml(grossMass)}</td></tr>`,
-      `<tr><td>pašmasa</td><td>${escapeHtml(curbMass)}</td></tr>`,
-      `<tr><td>degvielas veids</td><td>${escapeHtml(fuel)}</td></tr>`,
-    );
-    if (smokeRaw) regRows.push(`<tr><td>dūmainības (m⁻¹)</td><td>${escapeHtml(smoke)}</td></tr>`);
-    regRows.push(
-      `<tr><td>nākamā apskate</td><td class="${taSoon ? "td-warn" : ""}">${taCellHtml}</td></tr>`,
-      `<tr><td>ekspluatācijas / ceļa nodoklis (gadā)</td><td>${escapeHtml(road)}</td></tr>`,
-    );
-    parts.push(`<table class="fmt lv-reg-table bordered"><tbody>${regRows.join("\n    ")}</tbody></table>`);
-
-    parts.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.lvTa)}</h3>`);
-    parts.push(buildTaValidityBanner(taValidUntil));
-    if (ta0) parts.push(`<p class="lv-ta-snippet">${escapeHtml(ta0)}</p>`);
-    if (ta2.length > 0) {
-      parts.push(
-        `<p class="pdf-sub2" style="margin-top:8px">pamatpārbaude (vērtējums 2) — kodi un trūkumi</p><ul class="lv-ta2-list">`,
-      );
-      for (const line of ta2) {
-        parts.push(`<li>${escapeHtml(line)}</li>`);
+    if (hasStructuredCsdd && p.csddForm) {
+      const f = p.csddForm;
+      parts.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.lvRegistry)}</h3>`);
+      const regRows: string[] = [];
+      for (const { key, label } of CSDD_FORM_SHORT_FIELDS) {
+        const v = f[key].trim();
+        if (!v) continue;
+        const parsedNext = key === "nextInspectionDate" ? parseFlexibleDateFragment(v) : null;
+        const soon = parsedNext != null && classifyTaValidity(parsedNext) === "soon";
+        const tdClass = soon ? ' class="td-warn"' : "";
+        regRows.push(`<tr><td>${escapeHtml(label)}</td><td${tdClass}>${escapeHtml(v)}</td></tr>`);
       }
-      parts.push(`</ul>`);
-    }
-    if (brakes) {
-      parts.push(
-        `<table class="fmt bordered lv-brake-table"><thead><tr><th>Ass 1</th><th>Ass 2</th></tr></thead><tbody><tr><td>${escapeHtml(brakes.ass1)}</td><td>${escapeHtml(brakes.ass2)}</td></tr></tbody></table>`,
+      if (regRows.length > 0) {
+        parts.push(`<table class="fmt lv-reg-table bordered"><tbody>${regRows.join("\n    ")}</tbody></table>`);
+      }
+      if (f.prevInspectionRating.trim()) {
+        parts.push(`<p class="pdf-sub2" style="margin-top:10px">${escapeHtml(CSDD_LABEL_PREV_RATING)}</p>`);
+        parts.push(`<pre class="block manual-vendor-comments">${escapeHtml(f.prevInspectionRating.trim())}</pre>`);
+      }
+      if (f.comments.trim()) {
+        parts.push(`<p class="pdf-sub2" style="margin-top:10px">${escapeHtml(CSDD_LABEL_COMMENTS)}</p>`);
+        parts.push(`<pre class="block manual-vendor-comments">${escapeHtml(f.comments.trim())}</pre>`);
+      }
+      parts.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.lvTa)}</h3>`);
+      parts.push(buildTaValidityBanner(taValidUntil));
+    } else if (hasLegacyCsddText) {
+      const basics = parseLvRegistryBasics(p.csdd);
+      const structured = extractRegistryStructuredFields(p.csdd);
+      const mm =
+        structured.makeModel?.trim() || basics.markModel || makeModel || "—";
+      const regNr = structured.plateNumber?.trim() || basics.regNr || "—";
+      const firstReg =
+        structured.firstReg?.trim() || basics.firstReg || extractFirstRegistration(p.csdd) || "—";
+      const euro = structured.euroStandard?.trim() || basics.euro || "—";
+      const power =
+        structured.enginePower?.trim() ||
+        (basics.powerKw ? `${basics.powerKw} kW` : "—");
+      const grossMass =
+        structured.grossWeight?.trim() ||
+        (basics.grossMassKg ? `${basics.grossMassKg} kg` : "—");
+      const curbMass =
+        structured.curbWeight?.trim() ||
+        (basics.curbWeightKg ? `${basics.curbWeightKg} kg` : "—");
+      const fuel = structured.fuelType?.trim() || "—";
+      const smokeRaw = structured.smokeOpacity?.trim() || basics.smokeOpacity?.trim() || "";
+      const smoke = smokeRaw || "—";
+      const regStatus = structured.status?.trim() || "";
+      const roadRaw =
+        structured.roadTax?.trim() ||
+        (basics.roadTaxEur ? `${basics.roadTaxEur} EUR` : "");
+      const road = roadRaw ? normalizeRoadTaxDisplay(roadRaw) : "—";
+
+      const taSoon = taValidUntil != null && classifyTaValidity(taValidUntil) === "soon";
+      const taCellHtml = taValidUntil
+        ? escapeHtml(taValidUntil.toLocaleDateString("lv-LV"))
+        : "—";
+
+      const ta0 = parseTaRating0Snippet(p.csdd);
+      const ta2 = parseTaRating2DefectLines(p.csdd);
+      const brakes = parseBrakeAssPairs(p.csdd);
+
+      parts.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.lvRegistry)}</h3>`);
+      const regRows: string[] = [];
+      regRows.push(
+        `<tr><td>marka / modelis</td><td><strong>${escapeHtml(mm)}</strong></td></tr>`,
+        `<tr><td>reģ. nr.</td><td>${escapeHtml(regNr)}</td></tr>`,
       );
+      if (regStatus)
+        regRows.push(`<tr><td>statuss</td><td>${escapeHtml(regStatus)}</td></tr>`);
+      regRows.push(
+        `<tr><td>pirmā reģistrācija</td><td>${escapeHtml(firstReg)}</td></tr>`,
+        `<tr><td>euro / emisijas</td><td>${escapeHtml(euro)}</td></tr>`,
+        `<tr><td>jauda</td><td>${escapeHtml(power)}</td></tr>`,
+        `<tr><td>pilnā masa</td><td>${escapeHtml(grossMass)}</td></tr>`,
+        `<tr><td>pašmasa</td><td>${escapeHtml(curbMass)}</td></tr>`,
+        `<tr><td>degvielas veids</td><td>${escapeHtml(fuel)}</td></tr>`,
+      );
+      if (smokeRaw) regRows.push(`<tr><td>dūmainības (m⁻¹)</td><td>${escapeHtml(smoke)}</td></tr>`);
+      regRows.push(
+        `<tr><td>nākamā apskate</td><td class="${taSoon ? "td-warn" : ""}">${taCellHtml}</td></tr>`,
+        `<tr><td>ekspluatācijas / ceļa nodoklis (gadā)</td><td>${escapeHtml(road)}</td></tr>`,
+      );
+      parts.push(`<table class="fmt lv-reg-table bordered"><tbody>${regRows.join("\n    ")}</tbody></table>`);
+
+      parts.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.lvTa)}</h3>`);
+      parts.push(buildTaValidityBanner(taValidUntil));
+      if (ta0) parts.push(`<p class="lv-ta-snippet">${escapeHtml(ta0)}</p>`);
+      if (ta2.length > 0) {
+        parts.push(
+          `<p class="pdf-sub2" style="margin-top:8px">pamatpārbaude (vērtējums 2) — kodi un trūkumi</p><ul class="lv-ta2-list">`,
+        );
+        for (const line of ta2) {
+          parts.push(`<li>${escapeHtml(line)}</li>`);
+        }
+        parts.push(`</ul>`);
+      }
+      if (brakes) {
+        parts.push(
+          `<table class="fmt bordered lv-brake-table"><thead><tr><th>Ass 1</th><th>Ass 2</th></tr></thead><tbody><tr><td>${escapeHtml(brakes.ass1)}</td><td>${escapeHtml(brakes.ass2)}</td></tr></tbody></table>`,
+        );
+      }
     }
   }
 
@@ -846,6 +890,34 @@ function buildLvStructuredSourcesHtml(
   return parts.join("\n");
 }
 
+function buildManualTirgusStructuredHtml(f: TirgusFormFields): string {
+  const rows: string[] = [];
+  if (f.listedForSale.trim()) {
+    rows.push(
+      `<tr><td>${escapeHtml(TIRGUS_LABEL_LISTED)}</td><td>${escapeHtml(f.listedForSale.trim())}</td></tr>`,
+    );
+  }
+  if (f.listingCreated.trim()) {
+    rows.push(
+      `<tr><td>${escapeHtml(TIRGUS_LABEL_CREATED)}</td><td>${escapeHtml(f.listingCreated.trim())}</td></tr>`,
+    );
+  }
+  if (f.priceDrop.trim()) {
+    rows.push(
+      `<tr><td>${escapeHtml(TIRGUS_LABEL_PRICE_DROP)}</td><td>${escapeHtml(f.priceDrop.trim())}</td></tr>`,
+    );
+  }
+  const parts: string[] = [];
+  if (rows.length > 0) {
+    parts.push(`<table class="fmt lv-reg-table bordered"><tbody>${rows.join("\n    ")}</tbody></table>`);
+  }
+  if (f.comments.trim()) {
+    parts.push(`<p class="pdf-sub2" style="margin-top:10px">${escapeHtml(TIRGUS_LABEL_COMMENTS)}</p>`);
+    parts.push(`<pre class="block manual-vendor-comments">${escapeHtml(f.comments.trim())}</pre>`);
+  }
+  return parts.join("\n");
+}
+
 function buildManualVendorBlocksHtml(blocks: ClientManualVendorBlockPdf[] | undefined): string {
   if (!blocks?.length) return "";
   const parts: string[] = [];
@@ -854,8 +926,9 @@ function buildManualVendorBlocksHtml(blocks: ClientManualVendorBlockPdf[] | unde
   for (const b of blocks) {
     parts.push(`<h3 class="pdf-sub prov-uc">${escapeHtml(b.title)}</h3>`);
     if (b.rows.length > 0) {
+      const amountTh = escapeHtml(b.amountColumnLabel ?? "bojājumu summa");
       parts.push(
-        `<table class="fmt bordered ins-compact"><thead><tr><th>gads / datums</th><th class="tabular">nobraukums</th><th class="tabular">bojājumu summa</th></tr></thead><tbody>`,
+        `<table class="fmt bordered ins-compact"><thead><tr><th>gads / datums</th><th class="tabular">nobraukums</th><th class="tabular">${amountTh}</th></tr></thead><tbody>`,
       );
       for (const r of b.rows) {
         parts.push(
@@ -1646,8 +1719,14 @@ export function buildClientReportDocumentHtml(args: {
   reindexOdometerPoints(odoPts);
   const odoMerged = mergeOdometerPointsForDisplay(odoPts);
   const riskRows = buildRiskRows(p.csdd, p.tirgus, p.ltab, p.citi, insRows, pdfInsights);
-  const taValidUntil = findTaValidUntilDate(`${p.csdd}\n${p.ltab}\n${p.citi}`);
-  const makeModel = extractVehicleMakeModel(p.csdd);
+  const taFromCsddForm =
+    p.csddForm?.nextInspectionDate?.trim() != null && p.csddForm.nextInspectionDate.trim()
+      ? parseFlexibleDateFragment(p.csddForm.nextInspectionDate.trim())
+      : null;
+  const taValidUntil =
+    taFromCsddForm ?? findTaValidUntilDate(`${p.csdd}\n${p.ltab}\n${p.citi}`);
+  const makeModel =
+    p.csddForm?.makeModel?.trim() || extractVehicleMakeModel(p.csdd) || null;
   const expertParts = splitExpertConclusion(p.iriss);
   const listDelta = listingKmDeltaInfo(p.csdd, p.tirgus, p.citi, pdfInsights);
   const listWarnLong = listingVsOfficialKmWarning(p.csdd, p.tirgus, p.citi, pdfInsights);
@@ -1777,11 +1856,13 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(exportRowHtml());
 
   const scrapeBlock = buildListingMarketScrapeHtml(p.listingUrl, p.listingMarket);
+  const hasManualTirgusForm = tirgusFormHasContent(p.tirgusForm);
   const hasListingSection =
     Boolean(priceAd) ||
     minListingKm != null ||
     Boolean(p.listingUrl?.trim()) ||
     Boolean(scrapeBlock) ||
+    hasManualTirgusForm ||
     Boolean(p.tirgus.trim());
 
   if (hasListingSection) {
@@ -1807,7 +1888,9 @@ export function buildClientReportDocumentHtml(args: {
       lines.push(`<div class="listing-odo-alert">${escapeHtml(listWarnLong)}</div>`);
     }
     if (scrapeBlock) lines.push(scrapeBlock);
-    if (p.tirgus.trim()) {
+    if (hasManualTirgusForm && p.tirgusForm) {
+      lines.push(buildManualTirgusStructuredHtml(p.tirgusForm));
+    } else if (p.tirgus.trim()) {
       lines.push(
         `<h4 class="pdf-sub2 lv-tirgus-manual-h">papildu tirgus piezīmes</h4><pre class="lv-source-pre">${escapeHtml(p.tirgus.trim())}</pre>`,
       );

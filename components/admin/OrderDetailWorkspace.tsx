@@ -2,17 +2,25 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePortfolioFileRow";
+import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
+import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
 import { AdminStructuredSourceBlock } from "@/components/admin/AdminStructuredSourceBlock";
+import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBlock";
 import {
   SOURCE_BLOCK_KEYS,
   SOURCE_BLOCK_LABELS,
-  blockToPlainText,
+  WORKSPACE_GRID_STANDARD_KEYS,
   blocksToLegacyFlatFields,
   createDefaultSourceBlocks,
+  csddFormToPlainText,
   emptyDataRow,
   hydrateWorkspaceFromStorage,
+  ltabBlockToPlainText,
+  standardBlockToPlainText,
+  tirgusFormToPlainText,
   toPdfManualVendorBlocks,
   type SourceBlockKey,
+  type StandardSourceBlockState,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import {
@@ -278,7 +286,14 @@ export function OrderDetailWorkspace({
         orderVin: payload.vin,
         blocks: SOURCE_BLOCK_KEYS.map((key) => ({
           label: SOURCE_BLOCK_LABELS[key],
-          text: blockToPlainText(ws.sourceBlocks[key]),
+          text:
+            key === "csdd"
+              ? csddFormToPlainText(ws.sourceBlocks.csdd)
+              : key === "ltab"
+                ? ltabBlockToPlainText(ws.sourceBlocks.ltab)
+                : key === "tirgus"
+                  ? tirgusFormToPlainText(ws.sourceBlocks.tirgus)
+                  : standardBlockToPlainText(ws.sourceBlocks[key]),
         })),
         fileNames: portfolio.map((p) => p.name),
       }),
@@ -571,6 +586,8 @@ export function OrderDetailWorkspace({
       payload: {
         ...payload,
         ...flatSources,
+        csddForm: ws.sourceBlocks.csdd,
+        tirgusForm: ws.sourceBlocks.tirgus,
         manualVendorBlocks: toPdfManualVendorBlocks(ws.sourceBlocks),
         iriss: ws.iriss,
         apskatesPlāns: ws.apskatesPlāns,
@@ -717,8 +734,16 @@ export function OrderDetailWorkspace({
             <li key={key}>
               <span className="font-medium">{SOURCE_BLOCK_LABELS[key]}</span>
               <PreviewWorkspaceBody
-                text={blockToPlainText(ws.sourceBlocks[key])}
-                variant={key === "tirgus" ? "tirgus" : "default"}
+                text={
+                  key === "csdd"
+                    ? csddFormToPlainText(ws.sourceBlocks.csdd)
+                    : key === "ltab"
+                      ? ltabBlockToPlainText(ws.sourceBlocks.ltab)
+                      : key === "tirgus"
+                        ? tirgusFormToPlainText(ws.sourceBlocks.tirgus)
+                        : standardBlockToPlainText(ws.sourceBlocks[key])
+                }
+                variant="default"
               />
             </li>
           ))}
@@ -836,9 +861,11 @@ export function OrderDetailWorkspace({
               2. Avotu bloki
             </h2>
             <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-              Katrā blokā: <strong className="text-[var(--color-apple-text)]">datums · km · bojājumu summa</strong> (rindas{" "}
-              <strong className="text-[var(--color-apple-text)]">+</strong>), tad <strong>komentāri</strong>. Tukši bloki PDF
-              netiek drukāti. Viens <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> visiem.
+              <strong className="text-[var(--color-apple-text)]">CSDD</strong> un{" "}
+              <strong className="text-[var(--color-apple-text)]">Tirgus dati</strong> — statiski lauki. Pārējie:{" "}
+              <strong className="text-[var(--color-apple-text)]">datums · km · summa</strong> (rindas{" "}
+              <strong className="text-[var(--color-apple-text)]">+</strong>) un <strong>LTAB</strong> negadījumu rindas. Tukši
+              bloki PDF netiek drukāti. Viens <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> visiem.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1">
@@ -865,15 +892,34 @@ export function OrderDetailWorkspace({
           </div>
         </div>
         <div className="mt-2 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-          {SOURCE_BLOCK_KEYS.map((key) => (
-            <AdminStructuredSourceBlock
-              key={key}
-              blockKey={key}
-              value={blocksForDisplay[key]}
-              readOnly={sourcesViewMode}
-              onChange={(next) => updateSourceBlock(key, next)}
-            />
-          ))}
+          <AdminCsddSourceBlock
+            value={blocksForDisplay.csdd}
+            readOnly={sourcesViewMode}
+            onChange={(next) => updateSourceBlock("csdd", next)}
+          />
+          <AdminTirgusSourceBlock
+            value={blocksForDisplay.tirgus}
+            readOnly={sourcesViewMode}
+            onChange={(next) => updateSourceBlock("tirgus", next)}
+          />
+          {WORKSPACE_GRID_STANDARD_KEYS.map((key) =>
+            key === "ltab" ? (
+              <AdminLtabSourceBlock
+                key={key}
+                value={blocksForDisplay.ltab}
+                readOnly={sourcesViewMode}
+                onChange={(next) => updateSourceBlock("ltab", next)}
+              />
+            ) : (
+              <AdminStructuredSourceBlock
+                key={key}
+                blockKey={key}
+                value={blocksForDisplay[key] as StandardSourceBlockState}
+                readOnly={sourcesViewMode}
+                onChange={(next) => updateSourceBlock(key, next)}
+              />
+            ),
+          )}
         </div>
 
         <div className="mt-2 border-t border-slate-100 pt-2">
