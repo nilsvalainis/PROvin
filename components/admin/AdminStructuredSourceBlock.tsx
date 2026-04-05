@@ -45,9 +45,26 @@ export function AdminStructuredSourceBlock({ blockKey, value, readOnly, disabled
         {value.rows.map((row, ri) => (
           <div key={ri} className="flex flex-wrap items-center gap-1">
             {readOnly ? (
-              <div className="flex min-w-0 flex-1 flex-wrap gap-1 text-[11px] text-[var(--color-provin-muted)]">
-                <span className="rounded bg-white/80 px-1.5 py-0.5">{row.date.trim() || "—"}</span>
-                <span className="rounded bg-white/80 px-1.5 py-0.5">{row.km.trim() || "—"}</span>
+              <div className="flex min-w-0 flex-1 flex-wrap items-end gap-2 text-[11px] text-[var(--color-provin-muted)]">
+                {lossAmountVendor ? (
+                  <>
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="text-[10px] font-medium text-[var(--color-provin-muted)]">Datums</span>
+                      <span className="rounded bg-white/80 px-1.5 py-0.5">{row.date.trim() || "—"}</span>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="text-[10px] font-medium text-[var(--color-provin-muted)]">
+                        Odometra rādījums
+                      </span>
+                      <span className="rounded bg-white/80 px-1.5 py-0.5">{row.km.trim() || "—"}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span className="rounded bg-white/80 px-1.5 py-0.5">{row.date.trim() || "—"}</span>
+                    <span className="rounded bg-white/80 px-1.5 py-0.5">{row.km.trim() || "—"}</span>
+                  </>
+                )}
                 <span className="rounded bg-white/80 px-1.5 py-0.5">
                   {lossAmountVendor ? (
                     <span className="text-[10px] text-[var(--color-provin-muted)]">Zaudējumu summa: </span>
@@ -57,24 +74,56 @@ export function AdminStructuredSourceBlock({ blockKey, value, readOnly, disabled
               </div>
             ) : (
               <>
-                <input
-                  type="text"
-                  className={`${inp} max-w-[7.5rem]`}
-                  placeholder="Gads / Datums"
-                  value={row.date}
-                  disabled={disabled}
-                  onChange={(e) => setRow(ri, { date: e.target.value })}
-                  aria-label={`${label} Gads / Datums ${ri + 1}`}
-                />
-                <input
-                  type="text"
-                  className={`${inp} max-w-[6.5rem]`}
-                  placeholder="KM"
-                  value={row.km}
-                  disabled={disabled}
-                  onChange={(e) => setRow(ri, { km: e.target.value })}
-                  aria-label={`${label} nobraukums ${ri + 1}`}
-                />
+                {lossAmountVendor ? (
+                  <div className="flex min-w-0 max-w-[7.5rem] flex-col">
+                    <span className="mb-0.5 text-[10px] font-medium text-[var(--color-provin-muted)]">Datums</span>
+                    <input
+                      type="text"
+                      className={inp}
+                      placeholder="piem., 2024"
+                      value={row.date}
+                      disabled={disabled}
+                      onChange={(e) => setRow(ri, { date: e.target.value })}
+                      aria-label={`${label} Datums ${ri + 1}`}
+                    />
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    className={`${inp} max-w-[7.5rem]`}
+                    placeholder="Gads / Datums"
+                    value={row.date}
+                    disabled={disabled}
+                    onChange={(e) => setRow(ri, { date: e.target.value })}
+                    aria-label={`${label} Gads / Datums ${ri + 1}`}
+                  />
+                )}
+                {lossAmountVendor ? (
+                  <div className="flex min-w-0 max-w-[6.5rem] flex-col">
+                    <span className="mb-0.5 text-[10px] font-medium text-[var(--color-provin-muted)]">
+                      Odometra rādījums
+                    </span>
+                    <input
+                      type="text"
+                      className={inp}
+                      placeholder="piem., 125 000"
+                      value={row.km}
+                      disabled={disabled}
+                      onChange={(e) => setRow(ri, { km: e.target.value })}
+                      aria-label={`${label} Odometra rādījums ${ri + 1}`}
+                    />
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    className={`${inp} max-w-[6.5rem]`}
+                    placeholder="KM"
+                    value={row.km}
+                    disabled={disabled}
+                    onChange={(e) => setRow(ri, { km: e.target.value })}
+                    aria-label={`${label} nobraukums ${ri + 1}`}
+                  />
+                )}
                 <div className={`${lossAmountVendor ? "flex min-w-[7rem] max-w-[12rem] flex-col" : ""}`}>
                   {lossAmountVendor ? (
                     <span className="mb-0.5 text-[10px] font-medium text-[var(--color-provin-muted)]">
