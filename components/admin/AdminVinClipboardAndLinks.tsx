@@ -25,22 +25,54 @@ function CopyIcon({ className }: { className?: string }) {
 const copyBtnClass =
   "inline-flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-[var(--color-apple-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)] focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-35";
 
+function copyViaExecCommand(text: string): boolean {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 /** Blakus VIN ievades laukam — kopē lauka vērtību (kā redzams) uz starpliktuvi. */
-export function AdminVinCopyButton({ value }: { value: string }) {
+export function AdminVinCopyButton({
+  value,
+  onCopied,
+}: {
+  value: string;
+  /** Pēc veiksmīgas kopēšanas (piem., lai uzsvērtu VIN lauku ~0,5 s). */
+  onCopied?: () => void;
+}) {
   const [copied, setCopied] = useState(false);
   const trimmed = value.trim();
   const canCopy = trimmed.length > 0;
 
   const onCopy = useCallback(async () => {
     if (!canCopy) return;
+    let ok = false;
     try {
-      await navigator.clipboard.writeText(trimmed);
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(trimmed);
+        ok = true;
+      }
+    } catch {
+      ok = false;
+    }
+    if (!ok) ok = copyViaExecCommand(trimmed);
+    if (ok) {
+      onCopied?.();
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard var būt bloķēts (HTTP / atļaujas) */
     }
-  }, [canCopy, trimmed]);
+  }, [canCopy, trimmed, onCopied]);
 
   return (
     <button
@@ -97,7 +129,7 @@ export function AdminVinServiceLinkRow({ vin }: { vin: string }) {
           target="_blank"
           rel="noopener noreferrer"
           className={`${linkPill} bg-yellow-500 text-yellow-950 focus-visible:ring-yellow-600`}
-          title="CarVertical — VIN no URL"
+          title="CarVertical — ?vin= + Tampermonkey skripts (public/userscripts/)"
         >
           CV
         </a>
@@ -115,7 +147,7 @@ export function AdminVinServiceLinkRow({ vin }: { vin: string }) {
           target="_blank"
           rel="noopener noreferrer"
           className={`${linkPill} bg-orange-500 focus-visible:ring-orange-600`}
-          title="Auto-Records — ?vin= (ja lapa neatpazīst, lieto Copy)"
+          title="Auto-Records — ?vin= + Tampermonkey; citādi Copy"
         >
           AR
         </a>

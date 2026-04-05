@@ -49,6 +49,7 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
   const [hydrated, setHydrated] = useState(false);
   /** Palielinās pie „Atiestatīt…” — atsvaidzina Saglabāt/Labot iekšējos punktus */
   const [fieldUiRev, setFieldUiRev] = useState(0);
+  const [vinCopyFlash, setVinCopyFlash] = useState(false);
 
   useEffect(() => {
     try {
@@ -186,7 +187,13 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
               saites ar VIN no URL.
             </p>
             <div className="mt-1 flex min-h-0 min-w-0 flex-col gap-2">
-              <div className="min-w-0">
+              <div
+                className={`min-w-0 rounded-md px-0.5 py-0.5 transition-[box-shadow,background-color] duration-500 ease-out ${
+                  vinCopyFlash
+                    ? "bg-emerald-50/90 shadow-[inset_0_0_0_2px_rgb(16,185,129)]"
+                    : ""
+                }`}
+              >
                 <AdminSavableTextField
                   id="edit-vin"
                   label="VIN"
@@ -196,7 +203,15 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
                   mono
                   compact
                   resetVersion={orderFieldResetKey}
-                  endAdornment={<AdminVinCopyButton value={mergedVin} />}
+                  endAdornment={
+                    <AdminVinCopyButton
+                      value={mergedVin}
+                      onCopied={() => {
+                        setVinCopyFlash(true);
+                        window.setTimeout(() => setVinCopyFlash(false), 500);
+                      }}
+                    />
+                  }
                 />
                 <AdminVinServiceLinkRow vin={mergedVin} />
               </div>
