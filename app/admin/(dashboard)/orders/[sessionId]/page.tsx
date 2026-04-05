@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AdminOrderDetailView } from "@/components/admin/AdminOrderDetailView";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
+import { isOrderDraftStoreEnabled, readOrderDraft } from "@/lib/admin-order-draft-store";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,18 @@ export default async function AdminOrderDetailPage({ params }: Props) {
   if (!order) {
     notFound();
   }
+
+  const orderDraftPersistenceEnabled = isOrderDraftStoreEnabled();
+  const serverOrderDraft = await readOrderDraft(sessionId);
+  const serverWorkspaceJson =
+    serverOrderDraft?.workspace != null
+      ? JSON.stringify({
+          sourceBlocks: serverOrderDraft.workspace.sourceBlocks,
+          iriss: serverOrderDraft.workspace.iriss,
+          apskatesPlāns: serverOrderDraft.workspace.apskatesPlāns,
+          previewConfirmed: serverOrderDraft.workspace.previewConfirmed,
+        })
+      : null;
 
   return (
     <AdminOrderDetailView
@@ -34,6 +47,9 @@ export default async function AdminOrderDetailPage({ params }: Props) {
         attachments: order.attachments,
         isDemo: order.isDemo,
       }}
+      serverOrderDraft={serverOrderDraft}
+      serverWorkspaceJson={serverWorkspaceJson}
+      orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
     />
   );
 }

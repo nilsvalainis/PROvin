@@ -8,6 +8,8 @@ import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/A
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
 import { formatMoneyEur } from "@/lib/format-money";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
+import type { OrderDraftState } from "@/lib/admin-order-draft-types";
+import { orderDraftHasOrderEdits } from "@/lib/admin-order-draft-types";
 
 /** Servera pasūtījums, serializējams uz klientu (bez server-only importiem). */
 export type AdminOrderDetailClientModel = {
@@ -40,7 +42,17 @@ function storageKeyOrderEdits(sessionId: string) {
   return `provin-admin-order-edits-v1-${sessionId}`;
 }
 
-export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientModel }) {
+export function AdminOrderDetailView({
+  order,
+  serverOrderDraft,
+  serverWorkspaceJson,
+  orderDraftPersistenceEnabled,
+}: {
+  order: AdminOrderDetailClientModel;
+  serverOrderDraft: OrderDraftState | null;
+  serverWorkspaceJson: string | null;
+  orderDraftPersistenceEnabled: boolean;
+}) {
   const dateFmt = new Intl.DateTimeFormat("lv-LV", {
     dateStyle: "long",
     timeStyle: "short",
@@ -53,11 +65,28 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
   const [vinCopyFlash, setVinCopyFlash] = useState(false);
   const [listingCopyFlash, setListingCopyFlash] = useState(false);
   const [orderEditsAutosaveFlash, setOrderEditsAutosaveFlash] = useState(false);
+  const [orderEditsSaveServerOk, setOrderEditsSaveServerOk] = useState(true);
   const skipOrderEditsAutosaveFlash = useRef(true);
 
   useEffect(() => {
+    const key = storageKeyOrderEdits(order.id);
+    const fromServer = serverOrderDraft?.orderEdits;
+    if (orderDraftHasOrderEdits(fromServer)) {
+      setEdits({
+        ...(typeof fromServer!.vin === "string" ? { vin: fromServer!.vin } : {}),
+        ...(typeof fromServer!.listingUrl === "string" ? { listingUrl: fromServer!.listingUrl } : {}),
+        ...(typeof fromServer!.notes === "string" ? { notes: fromServer!.notes } : {}),
+      });
+      try {
+        localStorage.setItem(key, JSON.stringify(fromServer));
+      } catch {
+        /* quota */
+      }
+      setHydrated(true);
+      return;
+    }
     try {
-      const raw = localStorage.getItem(storageKeyOrderEdits(order.id));
+      const raw = localStorage.getItem(key);
       if (raw) {
         const p = JSON.parse(raw) as Record<string, unknown>;
         if (p && typeof p === "object") {
@@ -72,7 +101,7 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
       /* ignore */
     }
     setHydrated(true);
-  }, [order.id]);
+  }, [order.id, serverOrderDraft]);
 
   useEffect(() => {
     skipOrderEditsAutosaveFlash.current = true;
@@ -81,19 +110,36 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
   useEffect(() => {
     if (!hydrated) return;
     const t = window.setTimeout(() => {
-      try {
-        localStorage.setItem(storageKeyOrderEdits(order.id), JSON.stringify(edits));
-      } catch {
-        /* quota */
-      }
-      if (skipOrderEditsAutosaveFlash.current) {
-        skipOrderEditsAutosaveFlash.current = false;
-      } else {
-        setOrderEditsAutosaveFlash(true);
-      }
+      void (async () => {
+        try {
+          localStorage.setItem(storageKeyOrderEdits(order.id), JSON.stringify(edits));
+        } catch {
+          /* quota */
+        }
+        let srvOk = !orderDraftPersistenceEnabled;
+        if (orderDraftPersistenceEnabled) {
+          try {
+            const res = await fetch("/api/admin/order-draft", {
+              method: "PATCH",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ sessionId: order.id, orderEdits: edits }),
+            });
+            srvOk = res.ok;
+          } catch {
+            srvOk = false;
+          }
+        }
+        if (skipOrderEditsAutosaveFlash.current) {
+          skipOrderEditsAutosaveFlash.current = false;
+        } else {
+          setOrderEditsSaveServerOk(srvOk);
+          setOrderEditsAutosaveFlash(true);
+        }
+      })();
     }, 800);
     return () => window.clearTimeout(t);
-  }, [edits, hydrated, order.id]);
+  }, [edits, hydrated, order.id, orderDraftPersistenceEnabled]);
 
   useEffect(() => {
     if (!orderEditsAutosaveFlash) return;
@@ -221,13 +267,23 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
             <h2 className={`${sectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
               <span>Transportlīdzeklis un sludinājums</span>
               {orderEditsAutosaveFlash ? (
-                <span className="text-[10px] font-semibold normal-case tracking-normal text-emerald-700" role="status">
-                  Saglabāts
+                <span
+                  className={`text-[10px] font-semibold normal-case tracking-normal ${
+                    orderDraftPersistenceEnabled && !orderEditsSaveServerOk ? "text-amber-800" : "text-emerald-700"
+                  }`}
+                  role="status"
+                >
+                  {!orderDraftPersistenceEnabled
+                    ? "Saglabāts"
+                    : orderEditsSaveServerOk
+                      ? "Saglabāts serverī"
+                      : "Saglabāts lokāli (serveris nav pieejams)"}
                 </span>
               ) : null}
             </h2>
             <p className={sectionHint}>
-              VIN un saite — localStorage (auto pēc ~0,8 s). CV / Tirgus — bāzes URL + Tampermonkey{" "}
+              VIN un saite — auto pēc ~0,8 s (localStorage
+              {orderDraftPersistenceEnabled ? " + JSON serverī" : ""}). CV / Tirgus — Tampermonkey{" "}
               <span className="font-mono text-[9px]">GM_setValue</span> no{" "}
               <span className="font-mono text-[9px]">data-provin-handoff-*</span>; AR —{" "}
               <span className="whitespace-nowrap">?vin=</span>.
@@ -338,13 +394,24 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
           <h2 className={`${sectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
             <span>Komentārs no klienta formas</span>
             {orderEditsAutosaveFlash ? (
-              <span className="text-[10px] font-semibold normal-case tracking-normal text-emerald-700" role="status">
-                Saglabāts
+              <span
+                className={`text-[10px] font-semibold normal-case tracking-normal ${
+                  orderDraftPersistenceEnabled && !orderEditsSaveServerOk ? "text-amber-800" : "text-emerald-700"
+                }`}
+                role="status"
+              >
+                {!orderDraftPersistenceEnabled
+                  ? "Saglabāts"
+                  : orderEditsSaveServerOk
+                    ? "Saglabāts serverī"
+                    : "Saglabāts lokāli (serveris nav pieejams)"}
               </span>
             ) : null}
           </h2>
           <p className={sectionHint}>
-            Labojumi tikai pārlūkā; oriģināls — serverī / Stripe.
+            {orderDraftPersistenceEnabled
+              ? "Melnraksts serverī (JSON) + kopija pārlūkā; oriģinālais klienta teksts — Stripe."
+              : "Tikai pārlūkā; oriģināls — serverī / Stripe."}
           </p>
           <div className="mt-1">
             <AdminSavableTextField
@@ -362,6 +429,8 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
 
         <OrderDetailWorkspace
           portfolioPortalDomId={`admin-portfolio-slot-${order.id}`}
+          serverWorkspaceJson={serverWorkspaceJson}
+          orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
           payload={{
             sessionId: order.id,
             isDemo: Boolean(order.isDemo),

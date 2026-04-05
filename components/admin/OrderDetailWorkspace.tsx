@@ -267,10 +267,15 @@ function KmMergeChart({ points }: { points: { km: number; label: string }[] }) {
 export function OrderDetailWorkspace({
   payload,
   portfolioPortalDomId,
+  serverWorkspaceJson = null,
+  orderDraftPersistenceEnabled = false,
 }: {
   payload: OrderWorkspacePayload;
   /** Ja norādīts, „1. Portfelis” tiek renderēts šajā DOM elementā (augšējā 4 kolonnu režģī). */
   portfolioPortalDomId?: string;
+  /** SSR ielādēts darba zonas JSON (prioritāte pār localStorage). */
+  serverWorkspaceJson?: string | null;
+  orderDraftPersistenceEnabled?: boolean;
 }) {
   const fileInputId = useId();
   const [ws, setWs] = useState<WorkspacePersist>(EMPTY_WORKSPACE);
@@ -291,6 +296,7 @@ export function OrderDetailWorkspace({
   const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
   const [portfolioAllFilesModalOpen, setPortfolioAllFilesModalOpen] = useState(false);
   const [workspaceAutosaveFlash, setWorkspaceAutosaveFlash] = useState(false);
+  const [workspaceSaveServerOk, setWorkspaceSaveServerOk] = useState(true);
   const [portfolioPersistFlash, setPortfolioPersistFlash] = useState(false);
   const [portfolioDropActive, setPortfolioDropActive] = useState(false);
   const portfolioDragDepth = useRef(0);
@@ -367,6 +373,27 @@ export function OrderDetailWorkspace({
   useEffect(() => {
     setWorkspaceHydrated(false);
     try {
+      if (serverWorkspaceJson) {
+        const fromServer = hydrateWorkspaceFromStorage(serverWorkspaceJson);
+        if (fromServer) {
+          setWs({
+            sourceBlocks: fromServer.sourceBlocks,
+            iriss: fromServer.iriss,
+            apskatesPlāns: fromServer.apskatesPlāns,
+            previewConfirmed: Boolean(fromServer.previewConfirmed),
+          });
+          const keyV3 = storageKeyWorkspace(payload.sessionId);
+          try {
+            localStorage.setItem(keyV3, serverWorkspaceJson);
+            const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
+            if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
+          } catch {
+            /* quota */
+          }
+          setWorkspaceHydrated(true);
+          return;
+        }
+      }
       const keyV3 = storageKeyWorkspace(payload.sessionId);
       const keyV2 = `${LEGACY_WORKSPACE_V2_PREFIX}${payload.sessionId}`;
       const raw = localStorage.getItem(keyV3) ?? localStorage.getItem(keyV2);
@@ -415,7 +442,7 @@ export function OrderDetailWorkspace({
       setWs(EMPTY_WORKSPACE);
     }
     setWorkspaceHydrated(true);
-  }, [payload.sessionId, payload.serverInternalComment]);
+  }, [payload.sessionId, payload.serverInternalComment, serverWorkspaceJson]);
 
   useEffect(() => {
     if (!workspaceHydrated) return;
@@ -450,15 +477,41 @@ export function OrderDetailWorkspace({
   useEffect(() => {
     if (!workspaceHydrated) return;
     const t = window.setTimeout(() => {
-      flushWorkspaceToLocalStorage();
-      if (skipWorkspaceAutosaveFlash.current) {
-        skipWorkspaceAutosaveFlash.current = false;
-      } else {
-        setWorkspaceAutosaveFlash(true);
-      }
+      void (async () => {
+        flushWorkspaceToLocalStorage();
+        let srvOk = !orderDraftPersistenceEnabled;
+        if (orderDraftPersistenceEnabled) {
+          const cur = wsPersistRef.current;
+          try {
+            const res = await fetch("/api/admin/order-draft", {
+              method: "PATCH",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sessionId: payload.sessionId,
+                workspace: {
+                  sourceBlocks: cur.sourceBlocks,
+                  iriss: cur.iriss,
+                  apskatesPlāns: cur.apskatesPlāns,
+                  previewConfirmed: cur.previewConfirmed,
+                },
+              }),
+            });
+            srvOk = res.ok;
+          } catch {
+            srvOk = false;
+          }
+        }
+        if (skipWorkspaceAutosaveFlash.current) {
+          skipWorkspaceAutosaveFlash.current = false;
+        } else {
+          setWorkspaceSaveServerOk(srvOk);
+          setWorkspaceAutosaveFlash(true);
+        }
+      })();
     }, 750);
     return () => window.clearTimeout(t);
-  }, [ws, workspaceHydrated, payload.sessionId, flushWorkspaceToLocalStorage]);
+  }, [ws, workspaceHydrated, payload.sessionId, flushWorkspaceToLocalStorage, orderDraftPersistenceEnabled]);
 
   useEffect(() => {
     if (!workspaceAutosaveFlash) return;
@@ -1033,8 +1086,17 @@ export function OrderDetailWorkspace({
             <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
               <span>2. Avotu bloki</span>
               {workspaceAutosaveFlash ? (
-                <span className="text-[10px] font-semibold normal-case tracking-normal text-emerald-700" role="status">
-                  Saglabāts
+                <span
+                  className={`text-[10px] font-semibold normal-case tracking-normal ${
+                    orderDraftPersistenceEnabled && !workspaceSaveServerOk ? "text-amber-800" : "text-emerald-700"
+                  }`}
+                  role="status"
+                >
+                  {!orderDraftPersistenceEnabled
+                    ? "Saglabāts"
+                    : workspaceSaveServerOk
+                      ? "Saglabāts serverī"
+                      : "Saglabāts lokāli (serveris nav pieejams)"}
                 </span>
               ) : null}
             </h2>
@@ -1128,8 +1190,17 @@ export function OrderDetailWorkspace({
             <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
               <span>3. IRISS + apskates plāns</span>
               {workspaceAutosaveFlash ? (
-                <span className="text-[10px] font-semibold normal-case tracking-normal text-emerald-700" role="status">
-                  Saglabāts
+                <span
+                  className={`text-[10px] font-semibold normal-case tracking-normal ${
+                    orderDraftPersistenceEnabled && !workspaceSaveServerOk ? "text-amber-800" : "text-emerald-700"
+                  }`}
+                  role="status"
+                >
+                  {!orderDraftPersistenceEnabled
+                    ? "Saglabāts"
+                    : workspaceSaveServerOk
+                      ? "Saglabāts serverī"
+                      : "Saglabāts lokāli (serveris nav pieejams)"}
                 </span>
               ) : null}
             </h2>
