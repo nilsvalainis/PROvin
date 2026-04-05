@@ -44,7 +44,7 @@ export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
   tirgus: "https://tirgusdati.lv/app/listings/history",
   autodna: "https://www.autodna.com",
   carvertical: "https://www.carvertical.lv",
-  auto_records: "https://www.autorecords.com",
+  auto_records: "https://www.auto-records.com",
 };
 
 /** Virsraksta krāsa admin UI (Tailwind). */
