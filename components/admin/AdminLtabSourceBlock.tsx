@@ -1,7 +1,8 @@
 "use client";
 
+import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { LtabBlockState, LtabIncidentRow } from "@/lib/admin-source-blocks";
-import { SOURCE_BLOCK_LABELS, emptyLtabRow } from "@/lib/admin-source-blocks";
+import { emptyLtabRow } from "@/lib/admin-source-blocks";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -14,8 +15,6 @@ type Props = {
 };
 
 export function AdminLtabSourceBlock({ value, readOnly, disabled, onChange }: Props) {
-  const title = SOURCE_BLOCK_LABELS.ltab;
-
   const setRow = (index: number, patch: Partial<LtabIncidentRow>) => {
     const rows = value.rows.map((r, i) => (i === index ? { ...r, ...patch } : r));
     onChange({ ...value, rows });
@@ -32,9 +31,7 @@ export function AdminLtabSourceBlock({ value, readOnly, disabled, onChange }: Pr
 
   return (
     <div className="rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm sm:col-span-2 lg:col-span-3">
-      <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[var(--color-provin-accent)]">
-        {title}
-      </div>
+      <AdminSourceBlockHeader blockKey="ltab" />
 
       <div className="space-y-2">
         {value.rows.map((row, ri) => (

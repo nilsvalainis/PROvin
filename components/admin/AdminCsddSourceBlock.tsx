@@ -1,11 +1,11 @@
 "use client";
 
+import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { CsddFormFields } from "@/lib/admin-source-blocks";
 import {
   CSDD_FORM_SHORT_FIELDS,
   CSDD_LABEL_COMMENTS,
   CSDD_LABEL_PREV_RATING,
-  SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
 
 const inp =
@@ -21,17 +21,13 @@ type Props = {
 };
 
 export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Props) {
-  const title = SOURCE_BLOCK_LABELS.csdd;
-
   const setField = (key: keyof CsddFormFields, v: string) => {
     onChange({ ...value, [key]: v });
   };
 
   return (
     <div className="rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm sm:col-span-2 lg:col-span-3">
-      <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[var(--color-provin-accent)]">
-        {title}
-      </div>
+      <AdminSourceBlockHeader blockKey="csdd" />
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {CSDD_FORM_SHORT_FIELDS.map(({ key, label }) => (

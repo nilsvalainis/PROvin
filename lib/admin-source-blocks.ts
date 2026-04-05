@@ -37,6 +37,29 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   ltab: "LTAB",
 };
 
+/** Ātrās saites avotiem — tikai admin panelis (ne PDF). */
+export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
+  csdd: "https://e.csdd.lv/tadati/",
+  ltab: "https://services.ltab.lv/lv/VehicleInsAndAcc",
+  tirgus: "https://tirgusdati.lv/app/listings/history",
+  autodna: "https://www.autodna.com",
+  carvertical: "https://www.carvertical.lv",
+  auto_records: "https://www.autorecords.com",
+};
+
+/** Virsraksta krāsa admin UI (Tailwind). */
+export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
+  csdd: "text-emerald-900",
+  ltab: "text-red-900",
+  tirgus: "text-blue-900",
+  autodna: "text-sky-700",
+  carvertical: "text-amber-900",
+  auto_records: "text-orange-900",
+};
+
+/** Avotu virsraksts: +5% pret iepriekšējiem 11px → 11.55px. */
+export const SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS = "text-[11.55px]";
+
 /** CSDD statiskā forma — lauku atslēgas. */
 export type CsddFormFields = {
   makeModel: string;
@@ -281,9 +304,8 @@ export type ClientManualVendorBlockPdf = {
   amountColumnLabel?: string;
 };
 
-function vendorPdfAmountColumnLabel(k: (typeof VENDOR_KEYS)[number]): string {
-  if (k === "autodna" || k === "carvertical") return "Zaudējumu summa";
-  return "bojājumu summa";
+function vendorPdfAmountColumnLabel(): string {
+  return "Zaudējumu summa";
 }
 
 export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientManualVendorBlockPdf[] {
@@ -295,7 +317,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       title: SOURCE_BLOCK_LABELS[k],
       rows: b.rows.filter(rowHasData),
       comments: b.comments.trim(),
-      amountColumnLabel: vendorPdfAmountColumnLabel(k),
+      amountColumnLabel: vendorPdfAmountColumnLabel(),
     });
   }
   return out;

@@ -1,8 +1,8 @@
 "use client";
 
+import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { TirgusFormFields } from "@/lib/admin-source-blocks";
 import {
-  SOURCE_BLOCK_LABELS,
   TIRGUS_LABEL_COMMENTS,
   TIRGUS_LABEL_CREATED,
   TIRGUS_LABEL_LISTED,
@@ -20,17 +20,13 @@ type Props = {
 };
 
 export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange }: Props) {
-  const title = SOURCE_BLOCK_LABELS.tirgus;
-
   const setField = (key: keyof TirgusFormFields, v: string) => {
     onChange({ ...value, [key]: v });
   };
 
   return (
     <div className="rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm sm:col-span-2 lg:col-span-3">
-      <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[var(--color-provin-accent)]">
-        {title}
-      </div>
+      <AdminSourceBlockHeader blockKey="tirgus" />
 
       <div className="flex flex-wrap items-end gap-x-3 gap-y-2 rounded-md border border-slate-200/60 bg-white/50 px-2 py-2">
         {readOnly ? (

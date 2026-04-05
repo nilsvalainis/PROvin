@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { StandardSourceBlockKey, StandardSourceBlockState, SourceDataRow } from "@/lib/admin-source-blocks";
 import { SOURCE_BLOCK_LABELS, emptyDataRow } from "@/lib/admin-source-blocks";
 
@@ -15,7 +16,7 @@ type Props = {
 };
 
 function vendorLossAmountMode(key: StandardSourceBlockKey): boolean {
-  return key === "autodna" || key === "carvertical";
+  return key === "autodna" || key === "carvertical" || key === "auto_records";
 }
 
 export function AdminStructuredSourceBlock({ blockKey, value, readOnly, disabled, onChange }: Props) {
@@ -38,9 +39,7 @@ export function AdminStructuredSourceBlock({ blockKey, value, readOnly, disabled
 
   return (
     <div className="rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm">
-      <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--color-provin-accent)]">
-        {label}
-      </div>
+      <AdminSourceBlockHeader blockKey={blockKey} className="mb-1.5" />
 
       <div className="space-y-1">
         {value.rows.map((row, ri) => (
@@ -61,11 +60,11 @@ export function AdminStructuredSourceBlock({ blockKey, value, readOnly, disabled
                 <input
                   type="text"
                   className={`${inp} max-w-[7.5rem]`}
-                  placeholder="Gads / datums"
+                  placeholder="Gads / Datums"
                   value={row.date}
                   disabled={disabled}
                   onChange={(e) => setRow(ri, { date: e.target.value })}
-                  aria-label={`${label} datums ${ri + 1}`}
+                  aria-label={`${label} Gads / Datums ${ri + 1}`}
                 />
                 <input
                   type="text"
@@ -85,7 +84,7 @@ export function AdminStructuredSourceBlock({ blockKey, value, readOnly, disabled
                   <input
                     type="text"
                     className={`${inp} ${lossAmountVendor ? "max-w-none" : "max-w-[7rem]"}`}
-                    placeholder={lossAmountVendor ? "piem., 2930.00 €" : "€ bojājumi"}
+                    placeholder="piem., 2930.00 €"
                     value={row.amount}
                     disabled={disabled}
                     onChange={(e) => setRow(ri, { amount: e.target.value })}
