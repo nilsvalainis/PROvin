@@ -53,8 +53,8 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
   ltab: "text-red-900",
   tirgus: "text-blue-900",
   autodna: "text-sky-700",
-  carvertical: "text-amber-900",
-  auto_records: "text-orange-900",
+  carvertical: "text-yellow-600",
+  auto_records: "text-orange-500",
 };
 
 /** Avotu virsraksts: +5% pret iepriekšējiem 11px → 11.55px. */
