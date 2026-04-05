@@ -23,7 +23,7 @@ export function AdminShell({ children, baseUrl, notice }: Props) {
           <AdminSidebarNav baseUrl={baseUrl} />
         </div>
       </aside>
-      <main className="min-w-0 flex-1 space-y-5 p-3 sm:p-5 md:p-8 md:pl-6 lg:pl-10">
+      <main className="min-w-0 flex-1 space-y-5 p-3 sm:p-4 md:p-5 lg:p-6">
         {notice}
         {children}
       </main>

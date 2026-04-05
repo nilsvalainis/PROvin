@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { AdminSavableAttachmentRow } from "@/components/admin/AdminSavableAttachmentRow";
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
 import { formatMoneyEur } from "@/lib/format-money";
@@ -32,8 +31,6 @@ type OrderEdits = {
   vin?: string;
   listingUrl?: string;
   notes?: string;
-  /** Ja masīvs definēts ( arī tukšs), aizstāj servera pielikumu sarakstu. */
-  attachments?: { label: string; fileName: string }[] | null;
 };
 
 function storageKeyOrderEdits(sessionId: string) {
@@ -55,8 +52,14 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
     try {
       const raw = localStorage.getItem(storageKeyOrderEdits(order.id));
       if (raw) {
-        const p = JSON.parse(raw) as OrderEdits;
-        if (p && typeof p === "object") setEdits(p);
+        const p = JSON.parse(raw) as Record<string, unknown>;
+        if (p && typeof p === "object") {
+          setEdits({
+            ...(typeof p.vin === "string" ? { vin: p.vin } : {}),
+            ...(typeof p.listingUrl === "string" ? { listingUrl: p.listingUrl } : {}),
+            ...(typeof p.notes === "string" ? { notes: p.notes } : {}),
+          });
+        }
       }
     } catch {
       /* ignore */
@@ -79,9 +82,6 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
   const mergedVin = edits.vin !== undefined ? edits.vin : (order.vin ?? "");
   const mergedListing = edits.listingUrl !== undefined ? edits.listingUrl : (order.listingUrl ?? "");
   const mergedNotes = edits.notes !== undefined ? edits.notes : (order.notes ?? "");
-  const serverAttachments = order.attachments ?? [];
-  const mergedAttachments =
-    edits.attachments !== undefined && edits.attachments !== null ? edits.attachments : serverAttachments;
 
   const resetToServer = () => {
     setEdits({});
@@ -93,23 +93,17 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
     }
   };
 
-  const addAttachmentRow = () => {
-    const base = [...mergedAttachments, { label: "", fileName: "" }];
-    persistEdits({ ...edits, attachments: base });
-  };
-
-  const removeAttachmentRow = (index: number) => {
-    const base = mergedAttachments.filter((_, i) => i !== index);
-    persistEdits({ ...edits, attachments: base });
-  };
-
   const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}-${fieldUiRev}`;
 
-  const card =
-    "rounded-xl border border-slate-200/70 bg-white p-3 shadow-[0_1px_12px_rgba(15,23,42,0.05)] sm:p-3.5";
+  const sectionClass = "rounded-lg border border-slate-200/80 bg-white p-2.5 shadow-sm";
+  const sectionTitle = "text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]";
+  const sectionHint = "mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]";
+  const dlGrid = "mt-1.5 grid gap-1.5 text-[11px] sm:grid-cols-2";
+  const dtClass = "text-[10px] text-[var(--color-provin-muted)]";
+  const ddClass = "mt-0.5 text-[var(--color-apple-text)]";
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="w-full max-w-none">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <Link
           href="/admin"
@@ -159,37 +153,35 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
       </header>
 
       <div className="space-y-2.5">
-        <section className={card}>
-          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Maksājums</h2>
-          <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
+        <section className={sectionClass}>
+          <h2 className={sectionTitle}>Maksājums</h2>
+          <p className={sectionHint}>
             No Stripe / sesijas — šeit nav rediģējams (grāmatvedības un maksājumu ieraksts).
           </p>
-          <dl className="mt-2 grid gap-1.5 text-sm sm:grid-cols-2">
+          <dl className={dlGrid}>
             <div>
-              <dt className="text-[var(--color-provin-muted)]">Summa</dt>
-              <dd className="mt-0.5 font-medium tabular-nums text-[var(--color-apple-text)]">
+              <dt className={dtClass}>Summa</dt>
+              <dd className={`${ddClass} font-medium tabular-nums`}>
                 {formatMoneyEur(order.amountTotal, order.currency)}
               </dd>
             </div>
             <div>
-              <dt className="text-[var(--color-provin-muted)]">Laiks</dt>
-              <dd className="mt-0.5 text-[var(--color-apple-text)]">
-                {dateFmt.format(new Date(order.created * 1000))}
-              </dd>
+              <dt className={dtClass}>Laiks</dt>
+              <dd className={ddClass}>{dateFmt.format(new Date(order.created * 1000))}</dd>
             </div>
             <div>
-              <dt className="text-[var(--color-provin-muted)]">Statuss</dt>
-              <dd className="mt-0.5 text-[var(--color-apple-text)]">{order.paymentStatus}</dd>
+              <dt className={dtClass}>Statuss</dt>
+              <dd className={ddClass}>{order.paymentStatus}</dd>
             </div>
           </dl>
         </section>
 
-        <section className={card}>
-          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Transportlīdzeklis un sludinājums</h2>
-          <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
+        <section className={sectionClass}>
+          <h2 className={sectionTitle}>Transportlīdzeklis un sludinājums</h2>
+          <p className={sectionHint}>
             VIN un saiti vari labot darba vajadzībām; izmaiņas saglabājas tikai šajā pārlūkā (localStorage).
           </p>
-          <div className="mt-2 space-y-2.5">
+          <div className="mt-1.5 space-y-2">
             <AdminSavableTextField
               id="edit-vin"
               label="VIN"
@@ -214,7 +206,7 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
                   href={mergedListing.trim()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2 inline-block text-sm text-[var(--color-provin-accent)] hover:underline"
+                  className="mt-1.5 inline-block text-[11px] font-medium text-[var(--color-provin-accent)] hover:underline"
                 >
                   Atvērt saiti jaunā cilnē
                 </a>
@@ -223,39 +215,37 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
           </div>
         </section>
 
-        <section className={card}>
-          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Klienta kontaktdati</h2>
-          <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
+        <section className={sectionClass}>
+          <h2 className={sectionTitle}>Klienta kontaktdati</h2>
+          <p className={sectionHint}>
             No pasūtījuma — <strong className="font-medium text-[var(--color-apple-text)]">nav rediģējami</strong>{" "}
             (personas dati).
           </p>
-          <dl className="mt-2 grid gap-1.5 text-sm sm:grid-cols-2">
+          <dl className={dlGrid}>
             <div>
-              <dt className="text-[var(--color-provin-muted)]">E-pasts</dt>
-              <dd className="mt-0.5 break-all text-[var(--color-apple-text)]">
+              <dt className={dtClass}>E-pasts</dt>
+              <dd className={`${ddClass} break-all`}>
                 {order.customerEmail ?? order.customerDetailsEmail ?? "—"}
               </dd>
             </div>
             <div>
-              <dt className="text-[var(--color-provin-muted)]">Tālrunis</dt>
-              <dd className="mt-0.5 text-[var(--color-apple-text)]">
-                {order.phone ?? order.customerDetailsPhone ?? "—"}
-              </dd>
+              <dt className={dtClass}>Tālrunis</dt>
+              <dd className={ddClass}>{order.phone ?? order.customerDetailsPhone ?? "—"}</dd>
             </div>
             <div className="sm:col-span-2">
-              <dt className="text-[var(--color-provin-muted)]">Vārds, uzvārds</dt>
-              <dd className="mt-0.5 text-[var(--color-apple-text)]">{order.customerName ?? "—"}</dd>
+              <dt className={dtClass}>Vārds, uzvārds</dt>
+              <dd className={ddClass}>{order.customerName ?? "—"}</dd>
             </div>
             <div className="sm:col-span-2">
-              <dt className="text-[var(--color-provin-muted)]">Vēlamā saziņa (no formas)</dt>
-              <dd className="mt-0.5 text-[var(--color-apple-text)]">{order.contactMethod ?? "—"}</dd>
+              <dt className={dtClass}>Vēlamā saziņa (no formas)</dt>
+              <dd className={ddClass}>{order.contactMethod ?? "—"}</dd>
             </div>
           </dl>
         </section>
 
-        <section className={card}>
-          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Komentārs no klienta formas</h2>
-          <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
+        <section className={sectionClass}>
+          <h2 className={sectionTitle}>Komentārs no klienta formas</h2>
+          <p className={sectionHint}>
             Vari labot darba nolūkos (piemēram, atkārtoti iekopēt vai precizēt); oriģināls paliek serverī / Stripe.
           </p>
           <div className="mt-1.5">
@@ -268,44 +258,6 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
               resetVersion={orderFieldResetKey}
             />
           </div>
-        </section>
-
-        <section className={card}>
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Atsauces / pielikumi (no sistēmas)</h2>
-            <button
-              type="button"
-              onClick={addAttachmentRow}
-              className="text-xs font-medium text-[var(--color-provin-accent)] hover:underline"
-            >
-              + rinda
-            </button>
-          </div>
-          <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-            Nosaukumi darba kārtībai; īstus failus glabā zem „Papildu faili”. Rindas vari pielabot vai dzēst.
-          </p>
-          {mergedAttachments.length > 0 ? (
-            <ul className="mt-2 space-y-1.5">
-              {mergedAttachments.map((a, i) => (
-                <AdminSavableAttachmentRow
-                  key={`${order.id}-att-${i}-${orderFieldResetKey}`}
-                  index={i}
-                  row={a}
-                  onChangeRow={(next) => {
-                    const base = [...mergedAttachments];
-                    base[i] = next;
-                    persistEdits({ ...edits, attachments: base });
-                  }}
-                  onRemove={() => removeAttachmentRow(i)}
-                  resetVersion={orderFieldResetKey}
-                />
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2.5 text-sm text-[var(--color-provin-muted)]">
-              Nav rindu — spied „+ rinda” vai atiestatīt, lai ielādētu servera sarakstu.
-            </p>
-          )}
         </section>
 
         <OrderDetailWorkspace
@@ -324,7 +276,7 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
             contactMethod: order.contactMethod,
             notes: mergedNotes.trim() ? mergedNotes : null,
             serverInternalComment: order.internalComment ?? null,
-            serverAttachments: mergedAttachments,
+            serverAttachments: order.attachments ?? [],
           }}
         />
       </div>

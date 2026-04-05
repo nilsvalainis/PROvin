@@ -600,7 +600,7 @@ export function OrderDetailWorkspace({
       onClick={() => setPreviewOpen(false)}
     >
       <div
-        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-xl"
+        className="max-h-[90vh] w-full max-w-[min(96rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-base font-semibold text-[var(--color-apple-text)]">Priekšskats — apkopota informācija</h3>
@@ -788,7 +788,7 @@ export function OrderDetailWorkspace({
           PDF IndexedDB · <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> /{" "}
           <strong className="text-[var(--color-apple-text)]">Labot</strong> pie rindas.
         </p>
-        <div className="mt-1.5">
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
           <input
             id={fileInputId}
             type="file"
@@ -798,16 +798,16 @@ export function OrderDetailWorkspace({
           />
           <label
             htmlFor={fileInputId}
-            className="inline-flex cursor-pointer rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-[var(--color-apple-text)] shadow-sm hover:bg-slate-50"
+            className={`${workspaceToolbarBtn} inline-flex cursor-pointer`}
           >
             Pievienot failus…
           </label>
-          <span className="ml-3 text-xs text-[var(--color-provin-muted)]">
+          <span className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
             līdz {formatBytes(MAX_FILE_BYTES)} / fails, kopā ~{formatBytes(MAX_TOTAL_BYTES)} (
             {formatBytes(Math.round(portfolioBytes))})
           </span>
         </div>
-        {fileError ? <p className="mt-2 text-sm text-amber-800">{fileError}</p> : null}
+        {fileError ? <p className="mt-1.5 text-[11px] text-amber-800">{fileError}</p> : null}
         {portfolio.length > 0 ? (
           <ul className="mt-1.5 space-y-1">
             {portfolio.map((p, i) => (
@@ -823,7 +823,9 @@ export function OrderDetailWorkspace({
             ))}
           </ul>
         ) : (
-          <p className="mt-2.5 text-sm text-[var(--color-provin-muted)]">Vēl nav pievienotu failu.</p>
+          <p className="mt-1.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
+            Vēl nav pievienotu failu.
+          </p>
         )}
       </section>
 
@@ -833,7 +835,7 @@ export function OrderDetailWorkspace({
             <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
               2. Avotu bloki
             </h2>
-            <p className="mt-0.5 text-[10px] text-[var(--color-provin-muted)]">
+            <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
               Katrā blokā: <strong className="text-[var(--color-apple-text)]">datums · km · bojājumu summa</strong> (rindas{" "}
               <strong className="text-[var(--color-apple-text)]">+</strong>), tad <strong>komentāri</strong>. Tukši bloki PDF
               netiek drukāti. Viens <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> visiem.
@@ -862,7 +864,7 @@ export function OrderDetailWorkspace({
             </button>
           </div>
         </div>
-        <div className="mt-2 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-2 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
           {SOURCE_BLOCK_KEYS.map((key) => (
             <AdminStructuredSourceBlock
               key={key}
@@ -902,7 +904,7 @@ export function OrderDetailWorkspace({
             <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
               3. IRISS + apskates plāns
             </h2>
-            <p className="mt-0.5 text-[10px] text-[var(--color-provin-muted)]">
+            <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
               Viens <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> abiem laukiem.
             </p>
           </div>
@@ -937,7 +939,9 @@ export function OrderDetailWorkspace({
         </div>
         <div className="mt-1.5 space-y-2">
           <div>
-            <div className="mb-0.5 text-xs font-medium text-[var(--color-provin-muted)]">IRISS (eksperta slēdziens)</div>
+            <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+              IRISS (eksperta slēdziens)
+            </div>
             {expertViewMode ? (
               <div className={`${bulkReadonlyClass} min-h-[200px] max-h-[min(70vh,560px)] overflow-y-auto`}>
                 {expertSnap.iriss.trim() ? expertSnap.iriss : <span className="text-slate-400">—</span>}
@@ -955,7 +959,9 @@ export function OrderDetailWorkspace({
             )}
           </div>
           <div>
-            <div className="mb-0.5 text-xs font-medium text-[var(--color-provin-muted)]">Apskates plāns (klātienē)</div>
+            <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+              Apskates plāns (klātienē)
+            </div>
             {expertViewMode ? (
               <div className={`${bulkReadonlyClass} min-h-[100px] max-h-[min(50vh,400px)] overflow-y-auto`}>
                 {expertSnap.apskatesPlāns.trim() ? (
@@ -982,14 +988,16 @@ export function OrderDetailWorkspace({
         ) : null}
       </section>
 
-      <section className="rounded-lg border border-[var(--color-provin-accent)]/30 bg-[var(--color-provin-accent-soft)]/50 p-2.5">
+      <section className="rounded-lg border border-[var(--color-provin-accent)]/30 bg-[var(--color-provin-accent-soft)]/50 p-2.5 shadow-sm">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">4. PDF klientam</h2>
-        <p className="mt-0.5 text-[11px] text-[var(--color-provin-muted)]">Pēc IRISS aizpildes — druka / saglabāt kā PDF.</p>
+        <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
+          Pēc IRISS aizpildes — druka / saglabāt kā PDF.
+        </p>
         <button
           type="button"
           onClick={openPrintReport}
           disabled={!canGeneratePdf}
-          className="mt-2 inline-flex rounded-full bg-[var(--color-provin-accent)] px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45"
+          className={`${workspaceToolbarBtn} mt-1.5 bg-[var(--color-provin-accent)] text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45`}
         >
           Ģenerēt PDF
         </button>
