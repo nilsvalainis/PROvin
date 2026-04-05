@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
+import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/AdminVinClipboardAndLinks";
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
 import { formatMoneyEur } from "@/lib/format-money";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
@@ -102,8 +103,8 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
   const sectionHint = "mt-0.5 text-[10px] leading-tight text-[var(--color-provin-muted)]";
   const metaLabel = "text-[10px] font-medium text-[var(--color-provin-muted)]";
   const metaValue = "text-[11px] text-[var(--color-apple-text)]";
-  const metaGrid =
-    "mt-1 grid grid-cols-1 gap-x-3 gap-y-0.5 text-[11px] sm:grid-cols-3 sm:gap-y-0";
+  /** Šaurā kolonnā — vertikāls saraksts (kopīgs ar xl 3-kolonnu režģi). */
+  const metaStack = "mt-1 flex flex-col gap-1 text-[11px]";
 
   return (
     <div className="w-full max-w-none">
@@ -156,93 +157,101 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
       </header>
 
       <div className="space-y-1.5">
-        <section className={sectionClass}>
-          <h2 className={sectionTitle}>Maksājums</h2>
-          <p className={sectionHint}>No Stripe / sesijas — nav rediģējams.</p>
-          <dl className={metaGrid}>
-            <div className="min-w-0">
-              <dt className={metaLabel}>Summa</dt>
-              <dd className={`${metaValue} font-medium tabular-nums`}>
-                {formatMoneyEur(order.amountTotal, order.currency)}
-              </dd>
-            </div>
-            <div className="min-w-0">
-              <dt className={metaLabel}>Laiks</dt>
-              <dd className={metaValue}>{dateFmt.format(new Date(order.created * 1000))}</dd>
-            </div>
-            <div className="min-w-0">
-              <dt className={metaLabel}>Statuss</dt>
-              <dd className={metaValue}>{order.paymentStatus}</dd>
-            </div>
-          </dl>
-        </section>
+        <div className="grid grid-cols-1 gap-1.5 xl:grid-cols-3 xl:items-stretch">
+          <section className={`${sectionClass} min-w-0`}>
+            <h2 className={sectionTitle}>Maksājums</h2>
+            <p className={sectionHint}>No Stripe / sesijas — nav rediģējams.</p>
+            <dl className={metaStack}>
+              <div className="min-w-0">
+                <dt className={metaLabel}>Summa</dt>
+                <dd className={`${metaValue} font-medium tabular-nums`}>
+                  {formatMoneyEur(order.amountTotal, order.currency)}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className={metaLabel}>Laiks</dt>
+                <dd className={metaValue}>{dateFmt.format(new Date(order.created * 1000))}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className={metaLabel}>Statuss</dt>
+                <dd className={metaValue}>{order.paymentStatus}</dd>
+              </div>
+            </dl>
+          </section>
 
-        <section className={sectionClass}>
-          <h2 className={sectionTitle}>Transportlīdzeklis un sludinājums</h2>
-          <p className={sectionHint}>
-            VIN un saite — tikai šajā pārlūkā (localStorage);{" "}
-            <span className="whitespace-nowrap">Saglabāt / Labot</span> katram laukam.
-          </p>
-          <div className="mt-1 grid grid-cols-1 gap-2 lg:grid-cols-2 lg:items-start lg:gap-x-3">
-            <div className="min-w-0">
-              <AdminSavableTextField
-                id="edit-vin"
-                label="VIN"
-                value={mergedVin}
-                onChange={(v) => persistEdits({ ...edits, vin: v })}
-                placeholder="17 zīmes…"
-                mono
-                compact
-                resetVersion={orderFieldResetKey}
-              />
+          <section className={`${sectionClass} min-w-0`}>
+            <h2 className={sectionTitle}>Transportlīdzeklis un sludinājums</h2>
+            <p className={sectionHint}>
+              VIN un saite — localStorage. <span className="whitespace-nowrap">Saglabāt / Labot</span> katram laukam. Ārējās
+              saites ar VIN no URL.
+            </p>
+            <div className="mt-1 flex min-h-0 min-w-0 flex-col gap-2">
+              <div className="min-w-0">
+                <AdminSavableTextField
+                  id="edit-vin"
+                  label="VIN"
+                  value={mergedVin}
+                  onChange={(v) => persistEdits({ ...edits, vin: v })}
+                  placeholder="17 zīmes…"
+                  mono
+                  compact
+                  resetVersion={orderFieldResetKey}
+                  endAdornment={<AdminVinCopyButton value={mergedVin} />}
+                />
+                <AdminVinServiceLinkRow vin={mergedVin} />
+              </div>
+              <div className="min-w-0">
+                <AdminSavableTextField
+                  id="edit-listing"
+                  label="Sludinājuma saite"
+                  value={mergedListing}
+                  onChange={(v) => persistEdits({ ...edits, listingUrl: v })}
+                  placeholder="https://…"
+                  inputType="url"
+                  compact
+                  resetVersion={orderFieldResetKey}
+                />
+                {mergedListing.trim() ? (
+                  <a
+                    href={mergedListing.trim()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-0.5 inline-flex text-[10px] font-medium text-[var(--color-provin-accent)] hover:underline"
+                  >
+                    Atvērt jaunā cilnē →
+                  </a>
+                ) : null}
+              </div>
             </div>
-            <div className="min-w-0">
-              <AdminSavableTextField
-                id="edit-listing"
-                label="Sludinājuma saite"
-                value={mergedListing}
-                onChange={(v) => persistEdits({ ...edits, listingUrl: v })}
-                placeholder="https://…"
-                inputType="url"
-                compact
-                resetVersion={orderFieldResetKey}
-              />
-              {mergedListing.trim() ? (
-                <a
-                  href={mergedListing.trim()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-0.5 inline-flex text-[10px] font-medium text-[var(--color-provin-accent)] hover:underline"
-                >
-                  Atvērt jaunā cilnē →
-                </a>
-              ) : null}
-            </div>
-          </div>
-        </section>
+          </section>
 
-        <section className={sectionClass}>
-          <h2 className={sectionTitle}>Klienta kontaktdati</h2>
-          <p className={sectionHint}>
-            No pasūtījuma — <strong className="font-medium text-[var(--color-apple-text)]">nav rediģējami</strong>.
-          </p>
-          <dl className={metaGrid}>
-            <div className="min-w-0">
-              <dt className={metaLabel}>E-pasts</dt>
-              <dd className={`${metaValue} break-all`}>
-                {order.customerEmail ?? order.customerDetailsEmail ?? "—"}
-              </dd>
-            </div>
-            <div className="min-w-0">
-              <dt className={metaLabel}>Tālrunis</dt>
-              <dd className={metaValue}>{order.phone ?? order.customerDetailsPhone ?? "—"}</dd>
-            </div>
-            <div className="min-w-0">
-              <dt className={metaLabel}>Vārds, uzvārds</dt>
-              <dd className={metaValue}>{order.customerName ?? "—"}</dd>
-            </div>
-          </dl>
-        </section>
+          <section className={`${sectionClass} min-w-0`}>
+            <h2 className={sectionTitle}>Klienta kontaktdati</h2>
+            <p className={sectionHint}>
+              No pasūtījuma — <strong className="font-medium text-[var(--color-apple-text)]">nav rediģējami</strong>.
+            </p>
+            <dl className={metaStack}>
+              <div className="min-w-0">
+                <dt className={metaLabel}>E-pasts</dt>
+                <dd className={`${metaValue} break-all`}>
+                  {order.customerEmail ?? order.customerDetailsEmail ?? "—"}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className={metaLabel}>Tālrunis</dt>
+                <dd className={metaValue}>{order.phone ?? order.customerDetailsPhone ?? "—"}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className={metaLabel}>Vārds, uzvārds</dt>
+                <dd className={metaValue}>{order.customerName ?? "—"}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className={metaLabel}>Vēlamā saziņa (no formas)</dt>
+                <dd className={metaValue}>{order.contactMethod ?? "—"}</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
 
         <section className={sectionClass}>
           <h2 className={sectionTitle}>Komentārs no klienta formas</h2>

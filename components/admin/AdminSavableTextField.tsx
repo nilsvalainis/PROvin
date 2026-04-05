@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 
 const toolbarBtn =
@@ -30,6 +31,8 @@ export type AdminSavableTextFieldProps = {
   hideToolbar?: boolean;
   /** Kompakts izmērs — saskaņots ar CSDD / LTAB admin laukiem (11px, šauri apmale). */
   compact?: boolean;
+  /** Viendimensiju laukam: elements labajā pusē ievades rindā (piem., Copy). */
+  endAdornment?: ReactNode;
 };
 
 export function AdminSavableTextField({
@@ -48,6 +51,7 @@ export function AdminSavableTextField({
   textareaExtraClass = "",
   hideToolbar = false,
   compact = false,
+  endAdornment,
 }: AdminSavableTextFieldProps) {
   const [viewMode, setViewMode] = useState(false);
   const [flash, setFlash] = useState(false);
@@ -105,6 +109,14 @@ export function AdminSavableTextField({
   const toolbarGap = compact ? "gap-1" : "gap-2";
   const labelRowMb = compact ? "mb-0.5" : "mb-1";
 
+  const flexRowWithAdornment = Boolean(endAdornment && !multiline);
+  const fieldClassSized = flexRowWithAdornment
+    ? fieldClass.replace(/\bw-full\b/, "flex-1 min-w-0")
+    : fieldClass;
+  const viewBoxClassSized = flexRowWithAdornment
+    ? `${fieldClassSized} ${viewMinH} whitespace-pre-wrap`
+    : viewBoxClass;
+
   return (
     <div>
       {hideToolbar ? (
@@ -141,13 +153,26 @@ export function AdminSavableTextField({
         </div>
       )}
       {viewMode ? (
-        <div
-          className={viewBoxClass}
-          id={viewMode ? `${id}-view` : undefined}
-          aria-readonly
-        >
-          {value.trim() ? value : <span className="text-slate-400">—</span>}
-        </div>
+        flexRowWithAdornment ? (
+          <div className="flex min-w-0 items-center gap-1">
+            <div
+              className={viewBoxClassSized}
+              id={`${id}-view`}
+              aria-readonly
+            >
+              {value.trim() ? value : <span className="text-slate-400">—</span>}
+            </div>
+            {endAdornment}
+          </div>
+        ) : (
+          <div
+            className={viewBoxClass}
+            id={`${id}-view`}
+            aria-readonly
+          >
+            {value.trim() ? value : <span className="text-slate-400">—</span>}
+          </div>
+        )
       ) : multiline ? (
         <textarea
           id={id}
@@ -158,6 +183,20 @@ export function AdminSavableTextField({
           spellCheck
           disabled={disabled}
         />
+      ) : flexRowWithAdornment ? (
+        <div className="flex min-w-0 items-center gap-1">
+          <input
+            id={id}
+            type={inputType}
+            className={fieldClassSized}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            autoComplete="off"
+            disabled={disabled}
+          />
+          {endAdornment}
+        </div>
       ) : (
         <input
           id={id}
