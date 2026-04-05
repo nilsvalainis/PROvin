@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { AdminListingUrlEndAdornment } from "@/components/admin/AdminListingUrlToolbar";
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
 import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/AdminVinClipboardAndLinks";
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
@@ -50,6 +51,7 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
   /** Palielinās pie „Atiestatīt…” — atsvaidzina Saglabāt/Labot iekšējos punktus */
   const [fieldUiRev, setFieldUiRev] = useState(0);
   const [vinCopyFlash, setVinCopyFlash] = useState(false);
+  const [listingCopyFlash, setListingCopyFlash] = useState(false);
 
   useEffect(() => {
     try {
@@ -183,12 +185,13 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
           <section className={`${sectionClass} min-w-0`}>
             <h2 className={sectionTitle}>Transportlīdzeklis un sludinājums</h2>
             <p className={sectionHint}>
-              VIN un saite — localStorage. <span className="whitespace-nowrap">Saglabāt / Labot</span> katram laukam. Ārējās
-              saites ar VIN no URL.
+              VIN un saite — localStorage. Copy / īsās saites; CarVertical, Auto-Records, Tirgus dati —{" "}
+              <span className="whitespace-nowrap">?vin= / ?url=</span> + Tampermonkey{" "}
+              <span className="font-mono text-[9px]">/userscripts/</span>.
             </p>
-            <div className="mt-1 flex min-h-0 min-w-0 flex-col gap-2">
+            <div className="mt-1 flex min-h-0 min-w-0 max-w-full flex-col gap-2">
               <div
-                className={`min-w-0 rounded-md px-0.5 py-0.5 transition-[box-shadow,background-color] duration-500 ease-out ${
+                className={`min-w-0 max-w-full overflow-hidden rounded-md px-0.5 py-0.5 transition-[box-shadow,background-color] duration-500 ease-out ${
                   vinCopyFlash
                     ? "bg-emerald-50/90 shadow-[inset_0_0_0_2px_rgb(16,185,129)]"
                     : ""
@@ -215,7 +218,13 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
                 />
                 <AdminVinServiceLinkRow vin={mergedVin} />
               </div>
-              <div className="min-w-0">
+              <div
+                className={`min-w-0 max-w-full overflow-hidden rounded-md px-0.5 py-0.5 transition-[box-shadow,background-color] duration-500 ease-out ${
+                  listingCopyFlash
+                    ? "bg-emerald-50/90 shadow-[inset_0_0_0_2px_rgb(16,185,129)]"
+                    : ""
+                }`}
+              >
                 <AdminSavableTextField
                   id="edit-listing"
                   label="Sludinājuma saite"
@@ -225,6 +234,15 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
                   inputType="url"
                   compact
                   resetVersion={orderFieldResetKey}
+                  endAdornment={
+                    <AdminListingUrlEndAdornment
+                      listingUrl={mergedListing}
+                      onCopySuccess={() => {
+                        setListingCopyFlash(true);
+                        window.setTimeout(() => setListingCopyFlash(false), 500);
+                      }}
+                    />
+                  }
                 />
                 {mergedListing.trim() ? (
                   <a

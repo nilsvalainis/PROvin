@@ -1,12 +1,14 @@
 // ==UserScript==
-// @name         PROVIN — VIN auto-fill (CarVertical, Auto-Records)
+// @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.0.0
-// @description  Nolasa ?vin= no URL un aizpilda VIN laukus; paredzēts kopā ar PROVIN admin saitēm.
+// @version      1.1.0
+// @description  ?vin= (CarVertical, Auto-Records) un ?url= (tirgusdati.lv) lauku aizpilde; kopā ar PROVIN admin saitēm.
 // @match        https://www.carvertical.com/*
 // @match        https://carvertical.com/*
 // @match        https://www.auto-records.com/*
 // @match        https://auto-records.com/*
+// @match        https://tirgusdati.lv/*
+// @match        https://www.tirgusdati.lv/*
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -14,12 +16,8 @@
 (function () {
   "use strict";
 
-  const vinRaw = new URLSearchParams(window.location.search).get("vin");
-  if (!vinRaw || !String(vinRaw).trim()) return;
-
-  const vin = String(vinRaw)
-    .replace(/[\s-]/g, "")
-    .toUpperCase();
+  const host = window.location.hostname.replace(/^www\./, "");
+  const params = new URLSearchParams(window.location.search);
 
   /** React / Vue kontrolētiem inputiem — iestāda native vērtību. */
   function setInputValue(el, value) {
@@ -41,6 +39,60 @@
       /* vecāki pārlūki */
     }
   }
+
+  /* ---------- Tirgus dati: ?url= sludinājuma saite ---------- */
+  if (host.endsWith("tirgusdati.lv")) {
+    const urlParam = params.get("url");
+    if (!urlParam || !String(urlParam).trim()) return;
+
+    let decoded = String(urlParam);
+    try {
+      decoded = decodeURIComponent(decoded);
+    } catch {
+      /* jau dekodēts */
+    }
+
+    function findTirgusListingUrlInput() {
+      const list = document.querySelectorAll("input");
+      for (const el of list) {
+        const ph = (el.getAttribute("placeholder") || "").toLowerCase();
+        if (ph.includes("ievadi") && ph.includes("sludinājuma") && ph.includes("adresi")) return el;
+        if (ph.includes("sludinājuma") && ph.includes("adresi")) return el;
+      }
+      return (
+        document.querySelector(".listing-url-input") ||
+        document.querySelector("#listing_url") ||
+        document.querySelector('input[name="listing_url"]') ||
+        document.querySelector('input[name="url"]')
+      );
+    }
+
+    let tries = 0;
+    const maxTries = 80;
+    let done = false;
+    const interval = window.setInterval(() => {
+      tries += 1;
+      if (done || tries >= maxTries) {
+        window.clearInterval(interval);
+        return;
+      }
+      const el = findTirgusListingUrlInput();
+      if (el && !el.disabled) {
+        setInputValue(el, decoded.trim());
+        done = true;
+        window.clearInterval(interval);
+      }
+    }, 250);
+    return;
+  }
+
+  /* ---------- VIN: CarVertical, Auto-Records ---------- */
+  const vinRaw = params.get("vin");
+  if (!vinRaw || !String(vinRaw).trim()) return;
+
+  const vin = String(vinRaw)
+    .replace(/[\s-]/g, "")
+    .toUpperCase();
 
   function findCarVerticalVinInput() {
     return (
@@ -79,7 +131,6 @@
     );
   }
 
-  const host = window.location.hostname.replace(/^www\./, "");
   const isCV = host.endsWith("carvertical.com");
   const isAR = host.endsWith("auto-records.com");
 

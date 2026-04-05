@@ -1,7 +1,7 @@
 /**
  * VIN normalizācija un ārējo pakalpojumu URL admin paneļa īsajām saitēm.
- * CarVertical / Auto-Records bieži ignorē tikai query — Tampermonkey skripts `public/userscripts/provin-vin-autofill.user.js`
- * lasa `?vin=` un aizpilda laukus (sk. faila komentārus).
+ * CarVertical / Auto-Records / Tirgus dati bieži ignorē query — Tampermonkey
+ * `public/userscripts/provin-vin-autofill.user.js` lasa `?vin=` un `?url=` (sk. failu).
  */
 
 export function normalizeVinForServiceUrls(raw: string): string {
