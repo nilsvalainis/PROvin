@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminListingUrlEndAdornment } from "@/components/admin/AdminListingUrlToolbar";
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
 import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/AdminVinClipboardAndLinks";
@@ -52,6 +52,8 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
   const [fieldUiRev, setFieldUiRev] = useState(0);
   const [vinCopyFlash, setVinCopyFlash] = useState(false);
   const [listingCopyFlash, setListingCopyFlash] = useState(false);
+  const [orderEditsAutosaveFlash, setOrderEditsAutosaveFlash] = useState(false);
+  const skipOrderEditsAutosaveFlash = useRef(true);
 
   useEffect(() => {
     try {
@@ -72,17 +74,50 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
     setHydrated(true);
   }, [order.id]);
 
-  const persistEdits = useCallback(
-    (next: OrderEdits) => {
-      setEdits(next);
+  useEffect(() => {
+    skipOrderEditsAutosaveFlash.current = true;
+  }, [order.id]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const t = window.setTimeout(() => {
       try {
-        localStorage.setItem(storageKeyOrderEdits(order.id), JSON.stringify(next));
+        localStorage.setItem(storageKeyOrderEdits(order.id), JSON.stringify(edits));
       } catch {
         /* quota */
       }
-    },
-    [order.id],
-  );
+      if (skipOrderEditsAutosaveFlash.current) {
+        skipOrderEditsAutosaveFlash.current = false;
+      } else {
+        setOrderEditsAutosaveFlash(true);
+      }
+    }, 800);
+    return () => window.clearTimeout(t);
+  }, [edits, hydrated, order.id]);
+
+  useEffect(() => {
+    if (!orderEditsAutosaveFlash) return;
+    const u = window.setTimeout(() => setOrderEditsAutosaveFlash(false), 1400);
+    return () => window.clearTimeout(u);
+  }, [orderEditsAutosaveFlash]);
+
+  const persistEdits = useCallback((next: OrderEdits) => {
+    setEdits(next);
+  }, []);
+
+  const flushOrderEditsToStorage = useCallback(() => {
+    try {
+      localStorage.setItem(storageKeyOrderEdits(order.id), JSON.stringify(edits));
+    } catch {
+      /* quota */
+    }
+  }, [edits, order.id]);
+
+  useEffect(() => {
+    const onUnload = () => flushOrderEditsToStorage();
+    window.addEventListener("beforeunload", onUnload);
+    return () => window.removeEventListener("beforeunload", onUnload);
+  }, [flushOrderEditsToStorage]);
 
   const mergedVin = edits.vin !== undefined ? edits.vin : (order.vin ?? "");
   const mergedListing = edits.listingUrl !== undefined ? edits.listingUrl : (order.listingUrl ?? "");
@@ -183,11 +218,19 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
           </section>
 
           <section className={`${sectionClass} min-w-0`}>
-            <h2 className={sectionTitle}>Transportlīdzeklis un sludinājums</h2>
+            <h2 className={`${sectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
+              <span>Transportlīdzeklis un sludinājums</span>
+              {orderEditsAutosaveFlash ? (
+                <span className="text-[10px] font-semibold normal-case tracking-normal text-emerald-700" role="status">
+                  Saglabāts
+                </span>
+              ) : null}
+            </h2>
             <p className={sectionHint}>
-              VIN un saite — localStorage. Copy / īsās saites; CarVertical, Auto-Records, Tirgus dati —{" "}
-              <span className="whitespace-nowrap">?vin= / ?url=</span> + Tampermonkey{" "}
-              <span className="font-mono text-[9px]">/userscripts/</span>.
+              VIN un saite — localStorage (auto pēc ~0,8 s). CV / Tirgus — bāzes URL + Tampermonkey{" "}
+              <span className="font-mono text-[9px]">GM_setValue</span> no{" "}
+              <span className="font-mono text-[9px]">data-provin-handoff-*</span>; AR —{" "}
+              <span className="whitespace-nowrap">?vin=</span>.
             </p>
             <div className="mt-1 flex min-h-0 min-w-0 max-w-full flex-col gap-2">
               <div
@@ -292,7 +335,14 @@ export function AdminOrderDetailView({ order }: { order: AdminOrderDetailClientM
         </div>
 
         <section className={sectionClass}>
-          <h2 className={sectionTitle}>Komentārs no klienta formas</h2>
+          <h2 className={`${sectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
+            <span>Komentārs no klienta formas</span>
+            {orderEditsAutosaveFlash ? (
+              <span className="text-[10px] font-semibold normal-case tracking-normal text-emerald-700" role="status">
+                Saglabāts
+              </span>
+            ) : null}
+          </h2>
           <p className={sectionHint}>
             Labojumi tikai pārlūkā; oriģināls — serverī / Stripe.
           </p>

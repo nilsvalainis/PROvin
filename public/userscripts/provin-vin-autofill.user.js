@@ -1,29 +1,71 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.2.0
-// @description  ?vin= (CarVertical, Auto-Records) un ?url= (tirgusdati.lv); React-friendly vērtība + MutationObserver.
+// @version      1.3.0
+// @description  Admin: GM_setValue no saitēm ar data-provin-handoff-*. Mērķi: GM_getValue / ?vin= / ?url=; React-friendly ievade.
+// @match        http://localhost:*/admin*
+// @match        http://127.0.0.1:*/admin*
+// @match        https://provin.lv/admin*
+// @match        https://www.provin.lv/admin*
+// @match        https://*.vercel.app/admin*
 // @match        https://www.carvertical.com/*
 // @match        https://carvertical.com/*
 // @match        https://www.auto-records.com/*
 // @match        https://auto-records.com/*
 // @match        https://tirgusdati.lv/*
 // @match        https://www.tirgusdati.lv/*
-// @grant        none
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_deleteValue
 // @run-at       document-idle
 // ==/UserScript==
 
 (function () {
   "use strict";
 
-  console.log("PROVIN skripts ielādēts: " + window.location.href);
-
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
+  const path = window.location.pathname || "";
+
+  const GM_PENDING_VIN = "provin_pending_vin";
+  const GM_PENDING_URL = "provin_pending_url";
+
+  /* ---------- Admin: saglabāt hand-off pirms jaunas cilnes ---------- */
+  if (path.includes("/admin")) {
+    document.addEventListener(
+      "click",
+      function (ev) {
+        const t = ev.target;
+        if (!t || typeof t.closest !== "function") return;
+        const a = t.closest("a[href]");
+        if (!a || !(a instanceof HTMLAnchorElement)) return;
+        const href = a.getAttribute("href") || "";
+        const vin = (a.dataset.provinHandoffVin || "").trim();
+        if (vin && /carvertical\.com/i.test(href)) {
+          try {
+            GM_setValue(GM_PENDING_VIN, vin);
+          } catch (e) {
+            console.warn("PROVIN admin: GM_setValue VIN", e);
+          }
+        }
+        const listingUrl = (a.dataset.provinHandoffListingUrl || "").trim();
+        if (listingUrl && /tirgusdati\.lv/i.test(href)) {
+          try {
+            GM_setValue(GM_PENDING_URL, listingUrl);
+          } catch (e) {
+            console.warn("PROVIN admin: GM_setValue URL", e);
+          }
+        }
+      },
+      true,
+    );
+    return;
+  }
+
+  console.log("PROVIN skripts ielādēts: " + window.location.href);
 
   /**
    * Imitē reālu ievadi — apiet React 16+ _valueTracker.
-   * (EventInit nesatur `target`; target rodas dispatch laikā.)
    */
   function setNativeValue(element, value) {
     if (!element || (element.tagName !== "INPUT" && element.tagName !== "TEXTAREA")) return;
@@ -53,18 +95,43 @@
     return r.width > 0 && r.height > 0;
   }
 
-  /* ---------- Tirgus dati: ?url= sludinājuma saite ---------- */
-  if (host.endsWith("tirgusdati.lv")) {
-    const urlParam = params.get("url");
-    if (!urlParam || !String(urlParam).trim()) return;
-
-    let decoded = String(urlParam);
+  function consumePendingUrl() {
+    let text = "";
     try {
-      decoded = decodeURIComponent(decoded);
+      const g = GM_getValue(GM_PENDING_URL, "");
+      if (g && String(g).trim()) {
+        text = String(g).trim();
+        GM_deleteValue(GM_PENDING_URL);
+      }
     } catch {
-      /* jau dekodēts */
+      /* ignore */
     }
-    const text = decoded.trim();
+    if (!text) {
+      const ls = localStorage.getItem("provin_pending_url");
+      if (ls && ls.trim()) {
+        text = ls.trim();
+        localStorage.removeItem("provin_pending_url");
+      }
+    }
+    if (!text) {
+      const urlParam = params.get("url");
+      if (urlParam && String(urlParam).trim()) {
+        text = String(urlParam);
+        try {
+          text = decodeURIComponent(text);
+        } catch {
+          /* jau dekodēts */
+        }
+        text = text.trim();
+      }
+    }
+    return text;
+  }
+
+  /* ---------- Tirgus dati: GM / localStorage / ?url= ---------- */
+  if (host.endsWith("tirgusdati.lv")) {
+    const text = consumePendingUrl();
+    if (!text) return;
 
     function findTirgusListingUrlInput() {
       const list = document.querySelectorAll("input");
@@ -112,11 +179,11 @@
     tirgusObs.observe(document.documentElement, { childList: true, subtree: true });
 
     let tries = 0;
-    const maxTries = 120;
+    /** 250 ms solis — pirmais ~2 s (8×) + turpinājums līdz lauks parādās */
     const interval = window.setInterval(() => {
       tries += 1;
       tryFillTirgus();
-      if (done || tries >= maxTries) {
+      if (done || tries >= 140) {
         window.clearInterval(interval);
         if (tirgusObs) tirgusObs.disconnect();
       }
@@ -129,13 +196,41 @@
     return;
   }
 
-  /* ---------- VIN: CarVertical, Auto-Records ---------- */
-  const vinRaw = params.get("vin");
-  if (!vinRaw || !String(vinRaw).trim()) return;
+  function consumePendingVin() {
+    let vin = "";
+    try {
+      const g = GM_getValue(GM_PENDING_VIN, "");
+      if (g && String(g).trim()) {
+        vin = String(g)
+          .replace(/[\s-]/g, "")
+          .toUpperCase();
+        GM_deleteValue(GM_PENDING_VIN);
+      }
+    } catch {
+      /* ignore */
+    }
+    if (!vin) {
+      const ls = localStorage.getItem("provin_pending_vin");
+      if (ls && ls.trim()) {
+        vin = String(ls)
+          .replace(/[\s-]/g, "")
+          .toUpperCase();
+        localStorage.removeItem("provin_pending_vin");
+      }
+    }
+    if (!vin) {
+      const vinRaw = params.get("vin");
+      if (vinRaw && String(vinRaw).trim()) {
+        vin = String(vinRaw)
+          .replace(/[\s-]/g, "")
+          .toUpperCase();
+      }
+    }
+    return vin;
+  }
 
-  const vin = String(vinRaw)
-    .replace(/[\s-]/g, "")
-    .toUpperCase();
+  const vin = consumePendingVin();
+  if (!vin) return;
 
   function findCarVerticalVinInput(extended) {
     const bySelector = [
@@ -174,6 +269,15 @@
       }
     }
     return null;
+  }
+
+  function primeCarVerticalInput(el) {
+    try {
+      el.focus();
+      el.click();
+    } catch {
+      /* ignore */
+    }
   }
 
   function clickCarVerticalCheck() {
@@ -223,12 +327,15 @@
     const elapsed1s = tries >= 4;
     if (isCV) {
       const el = findCarVerticalVinInput(elapsed1s);
-      if (el && !el.disabled) {
-        setNativeValue(el, vin);
+      if (el && !el.disabled && !done) {
         done = true;
         window.clearInterval(interval);
-        console.log("PROVIN CarVertical: aizpildīts VIN lauks", el);
-        window.setTimeout(clickCarVerticalCheck, 400);
+        primeCarVerticalInput(el);
+        window.setTimeout(() => {
+          setNativeValue(el, vin);
+          console.log("PROVIN CarVertical: aizpildīts VIN lauks", el);
+          window.setTimeout(clickCarVerticalCheck, 400);
+        }, 50);
       }
     } else if (isAR) {
       const el = findAutoRecordsVinInput();

@@ -290,6 +290,13 @@ export function OrderDetailWorkspace({
   const [expertFlash, setExpertFlash] = useState(false);
   const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
   const [portfolioAllFilesModalOpen, setPortfolioAllFilesModalOpen] = useState(false);
+  const [workspaceAutosaveFlash, setWorkspaceAutosaveFlash] = useState(false);
+  const [portfolioPersistFlash, setPortfolioPersistFlash] = useState(false);
+  const [portfolioDropActive, setPortfolioDropActive] = useState(false);
+  const portfolioDragDepth = useRef(0);
+  const skipWorkspaceAutosaveFlash = useRef(true);
+  const wsPersistRef = useRef(ws);
+  wsPersistRef.current = ws;
   const portfolioBytes = useMemo(() => portfolio.reduce((a, p) => a + p.size, 0), [portfolio]);
 
   const narrowPortfolioLayout = Boolean(portfolioPortalDomId);
@@ -352,32 +359,6 @@ export function OrderDetailWorkspace({
       sourceBlocks: { ...prev.sourceBlocks, [key]: block },
     }));
   }, []);
-
-  const workspaceFieldResetKey = `${payload.sessionId}-${workspaceHydrated ? 1 : 0}`;
-
-  const reloadPortfolioFromIdb = useCallback(async () => {
-    setFileError(null);
-    portfolioRef.current.forEach((p) => URL.revokeObjectURL(p.blobUrl));
-    try {
-      await migrateLegacyPortfolioFromLocalStorage(payload.sessionId);
-      const stored = await idbGetPortfolio(payload.sessionId);
-      if (!stored?.length) {
-        setPortfolio([]);
-        return;
-      }
-      const ui: PortfolioEntry[] = stored.map((s) => ({
-        id: s.id,
-        name: s.name,
-        size: s.size,
-        mime: s.mime,
-        addedAt: s.addedAt,
-        blobUrl: URL.createObjectURL(new Blob([s.buffer], { type: s.mime })),
-      }));
-      setPortfolio(ui);
-    } catch {
-      setFileError("Neizdevās pārlādēt portfeli no IndexedDB.");
-    }
-  }, [payload.sessionId]);
 
   useEffect(() => {
     portfolioRef.current = portfolio;
@@ -445,15 +426,45 @@ export function OrderDetailWorkspace({
   }, [workspaceHydrated, payload.sessionId]); // eslint-disable-line react-hooks/exhaustive-deps -- tikai sesija / hidrācija
 
   useEffect(() => {
+    skipWorkspaceAutosaveFlash.current = true;
+  }, [payload.sessionId]);
+
+  const flushWorkspaceToLocalStorage = useCallback(() => {
     if (!workspaceHydrated) return;
     try {
-      localStorage.setItem(storageKeyWorkspace(payload.sessionId), JSON.stringify(ws));
+      const cur = wsPersistRef.current;
+      localStorage.setItem(storageKeyWorkspace(payload.sessionId), JSON.stringify(cur));
       const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
       if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
     } catch {
       /* quota */
     }
-  }, [workspaceHydrated, ws, payload.sessionId]);
+  }, [workspaceHydrated, payload.sessionId]);
+
+  useEffect(() => {
+    const onUnload = () => flushWorkspaceToLocalStorage();
+    window.addEventListener("beforeunload", onUnload);
+    return () => window.removeEventListener("beforeunload", onUnload);
+  }, [flushWorkspaceToLocalStorage]);
+
+  useEffect(() => {
+    if (!workspaceHydrated) return;
+    const t = window.setTimeout(() => {
+      flushWorkspaceToLocalStorage();
+      if (skipWorkspaceAutosaveFlash.current) {
+        skipWorkspaceAutosaveFlash.current = false;
+      } else {
+        setWorkspaceAutosaveFlash(true);
+      }
+    }, 750);
+    return () => window.clearTimeout(t);
+  }, [ws, workspaceHydrated, payload.sessionId, flushWorkspaceToLocalStorage]);
+
+  useEffect(() => {
+    if (!workspaceAutosaveFlash) return;
+    const u = window.setTimeout(() => setWorkspaceAutosaveFlash(false), 1400);
+    return () => window.clearTimeout(u);
+  }, [workspaceAutosaveFlash]);
 
   useEffect(() => {
     let cancelled = false;
@@ -529,7 +540,7 @@ export function OrderDetailWorkspace({
 
   const persistPortfolio = useCallback(
     async (next: PortfolioEntry[]) => {
-      setPortfolio(next);
+      const prev = portfolioRef.current;
       try {
         const stored: StoredPortfolioBlob[] = [];
         for (const p of next) {
@@ -544,8 +555,18 @@ export function OrderDetailWorkspace({
           });
         }
         await idbSetPortfolio(payload.sessionId, stored);
+        for (const p of prev) {
+          if (!next.some((n) => n.id === p.id)) URL.revokeObjectURL(p.blobUrl);
+        }
+        setPortfolio(next);
         setFileError(null);
+        setPortfolioPersistFlash(true);
+        window.setTimeout(() => setPortfolioPersistFlash(false), 2000);
       } catch {
+        const prevIds = new Set(prev.map((p) => p.id));
+        for (const p of next) {
+          if (!prevIds.has(p.id)) URL.revokeObjectURL(p.blobUrl);
+        }
         setFileError(
           "Neizdevās saglabāt portfeli IndexedDB. Ja kvota joprojām pilna, noņem dažus failus vai izmanto mazākus PDF.",
         );
@@ -573,7 +594,7 @@ export function OrderDetailWorkspace({
       const mime = file.type || "application/octet-stream";
       const blobUrl = URL.createObjectURL(new Blob([buffer], { type: mime }));
       total += file.size;
-      next.push({
+      next.unshift({
         id: crypto.randomUUID(),
         name: file.name,
         size: file.size,
@@ -831,30 +852,50 @@ export function OrderDetailWorkspace({
       <div
         className={`flex gap-1 ${narrowPortfolioLayout ? "flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between" : "flex-wrap items-center justify-between"}`}
       >
-        <h2 className={`${workspaceSectionTitle} shrink-0`}>1. Portfelis</h2>
-        <div
-          className={`flex flex-wrap gap-0.5 ${narrowPortfolioLayout ? "w-full sm:w-auto sm:justify-end" : ""}`}
-        >
-          <button
-            type="button"
-            className={workspaceToolbarBtn}
-            onClick={() => void persistPortfolio(portfolio)}
-          >
-            Saglabāt
-          </button>
-          <button type="button" className={workspaceToolbarBtn} onClick={() => void reloadPortfolioFromIdb()}>
-            Labot
-          </button>
-        </div>
+        <h2 className={`${workspaceSectionTitle} flex shrink-0 flex-wrap items-baseline gap-x-2 gap-y-0`}>
+          <span>1. Portfelis</span>
+          {portfolioPersistFlash ? (
+            <span className="text-[10px] font-semibold normal-case tracking-normal text-emerald-700" role="status">
+              Saglabāts
+            </span>
+          ) : null}
+        </h2>
       </div>
       <div
-        className={`mt-1 min-w-0 ${narrowPortfolioLayout ? "flex flex-col gap-1" : "flex flex-wrap items-center gap-x-3 gap-y-0.5"}`}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          portfolioDragDepth.current += 1;
+          setPortfolioDropActive(true);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          portfolioDragDepth.current = Math.max(0, portfolioDragDepth.current - 1);
+          if (portfolioDragDepth.current === 0) setPortfolioDropActive(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          portfolioDragDepth.current = 0;
+          setPortfolioDropActive(false);
+          void onPickFiles(e.dataTransfer.files);
+        }}
+        className={`mt-1 min-w-0 rounded-lg border border-dashed px-1.5 py-1.5 transition-colors ${
+          portfolioDropActive
+            ? "border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)]/35"
+            : "border-transparent"
+        } ${narrowPortfolioLayout ? "flex flex-col gap-1" : "flex flex-wrap items-center gap-x-3 gap-y-0.5"}`}
       >
         <p
           className={`text-[10px] leading-tight text-[var(--color-provin-muted)] ${narrowPortfolioLayout ? "" : "max-w-[min(100%,28rem)]"}`}
         >
-          PDF IndexedDB · <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> /{" "}
-          <strong className="text-[var(--color-apple-text)]">Labot</strong> pie rindas.
+          PDF IndexedDB — augšupielāde un saglabāšana <strong className="text-[var(--color-apple-text)]">uzreiz</strong>{" "}
+          pēc izvēles vai nometšanas.
         </p>
         <div className={`flex min-w-0 flex-wrap items-center gap-1 ${narrowPortfolioLayout ? "flex-col items-stretch" : ""}`}>
           <input
@@ -880,15 +921,13 @@ export function OrderDetailWorkspace({
       {portfolio.length > 0 ? (
         <div className="mt-1 min-w-0 flex-1">
           <ul className={`${narrowPortfolioLayout ? "space-y-0" : "space-y-0.5"}`}>
-            {portfolioInlineList.map((p, i) => (
+            {portfolioInlineList.map((p) => (
               <AdminSavablePortfolioFileRow
                 key={p.id}
-                index={i}
+                index={portfolio.indexOf(p)}
                 file={p}
                 formatBytes={formatBytes}
-                onPersistAll={() => persistPortfolio(portfolio)}
                 onRemove={() => removePortfolio(p.id)}
-                resetVersion={workspaceFieldResetKey}
                 compact={narrowPortfolioLayout}
               />
             ))}
@@ -947,9 +986,7 @@ export function OrderDetailWorkspace({
                   index={i}
                   file={p}
                   formatBytes={formatBytes}
-                  onPersistAll={() => persistPortfolio(portfolio)}
                   onRemove={() => removePortfolio(p.id)}
-                  resetVersion={workspaceFieldResetKey}
                   compact
                 />
               ))}
@@ -993,7 +1030,14 @@ export function OrderDetailWorkspace({
       <section className={workspaceSectionShell}>
         <div className="flex flex-wrap items-start justify-between gap-1.5">
           <div className="min-w-0">
-            <h2 className={workspaceSectionTitle}>2. Avotu bloki</h2>
+            <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
+              <span>2. Avotu bloki</span>
+              {workspaceAutosaveFlash ? (
+                <span className="text-[10px] font-semibold normal-case tracking-normal text-emerald-700" role="status">
+                  Saglabāts
+                </span>
+              ) : null}
+            </h2>
             <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
               <strong className="text-[var(--color-apple-text)]">CSDD</strong> un{" "}
               <strong className="text-[var(--color-apple-text)]">Tirgus dati</strong> — statiski lauki. Pārējie:{" "}
@@ -1081,7 +1125,14 @@ export function OrderDetailWorkspace({
       >
         <div className="flex flex-wrap items-start justify-between gap-1.5">
           <div className="min-w-0">
-            <h2 className={workspaceSectionTitle}>3. IRISS + apskates plāns</h2>
+            <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
+              <span>3. IRISS + apskates plāns</span>
+              {workspaceAutosaveFlash ? (
+                <span className="text-[10px] font-semibold normal-case tracking-normal text-emerald-700" role="status">
+                  Saglabāts
+                </span>
+              ) : null}
+            </h2>
             <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
               Viens <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> abiem laukiem.
             </p>

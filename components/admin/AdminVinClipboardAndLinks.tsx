@@ -6,6 +6,7 @@ import {
   buildAutodnaVinCheckUrl,
   buildAutorecordsVinCheckUrl,
   buildCarverticalVinCheckUrl,
+  normalizeVinForServiceUrls,
 } from "@/lib/admin-vin-urls";
 
 const linkPill =
@@ -36,6 +37,7 @@ export function AdminVinServiceLinkRow({ vin }: { vin: string }) {
   const dna = buildAutodnaVinCheckUrl(vin);
   const cv = buildCarverticalVinCheckUrl(vin);
   const ar = buildAutorecordsVinCheckUrl(vin);
+  const cvHandoffVin = normalizeVinForServiceUrls(vin);
 
   return (
     <div className="mt-1 flex flex-wrap items-center gap-1">
@@ -63,7 +65,8 @@ export function AdminVinServiceLinkRow({ vin }: { vin: string }) {
           target="_blank"
           rel="noopener noreferrer"
           className={`${linkPill} bg-yellow-500 text-yellow-950 focus-visible:ring-yellow-600`}
-          title="CarVertical — ?vin= + Tampermonkey skripts (public/userscripts/)"
+          title="CarVertical — bāzes URL + Tampermonkey (GM_*) aizpilda VIN"
+          data-provin-handoff-vin={cvHandoffVin}
         >
           CV
         </a>

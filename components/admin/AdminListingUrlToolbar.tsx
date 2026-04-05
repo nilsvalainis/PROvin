@@ -1,7 +1,7 @@
 "use client";
 
 import { AdminClipboardButton } from "@/components/admin/AdminClipboardButton";
-import { buildTirgusDatiHistoryUrlWithListing } from "@/lib/admin-tirgusdati-url";
+import { buildTirgusDatiOpenUrl } from "@/lib/admin-tirgusdati-url";
 
 /** Tumši zila — kā admin avota blokam „Tirgus dati“ (blue-900). */
 const tirgusPillClass =
@@ -12,9 +12,9 @@ type Props = {
   onCopySuccess?: () => void;
 };
 
-/** Blakus sludinājuma URL laukam: Copy + Tirgus dati (history?url=). */
+/** Blakus sludinājuma URL laukam: Copy + Tirgus dati (sākumlapa; TM hand-off). */
 export function AdminListingUrlEndAdornment({ listingUrl, onCopySuccess }: Props) {
-  const tdHref = buildTirgusDatiHistoryUrlWithListing(listingUrl);
+  const tdHref = buildTirgusDatiOpenUrl(listingUrl);
   const hasUrl = Boolean(tdHref);
 
   return (
@@ -33,7 +33,8 @@ export function AdminListingUrlEndAdornment({ listingUrl, onCopySuccess }: Props
           target="_blank"
           rel="noopener noreferrer"
           className={tirgusPillClass}
-          title="Tirgus dati — vēsture ar ?url= (Tampermonkey aizpilda lauku)"
+          title="Tirgus dati — Tampermonkey (GM_*) ieliek sludinājuma URL"
+          data-provin-handoff-listing-url={listingUrl.trim()}
         >
           Tirgus
         </a>

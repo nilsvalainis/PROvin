@@ -1,7 +1,7 @@
 /**
  * VIN normalizācija un ārējo pakalpojumu URL admin paneļa īsajām saitēm.
- * CarVertical / Auto-Records / Tirgus dati bieži ignorē query — Tampermonkey
- * `public/userscripts/provin-vin-autofill.user.js` lasa `?vin=` un `?url=` (sk. failu).
+ * CarVertical / Tirgus — bāzes URL + Tampermonkey `GM_setValue` hand-off (sk. userscript).
+ * Auto-Records — joprojām `?vin=` + skripts.
  */
 
 export function normalizeVinForServiceUrls(raw: string): string {
@@ -14,10 +14,13 @@ export function buildAutodnaVinCheckUrl(raw: string): string | null {
   return `https://www.autodna.lv/vin/${encodeURIComponent(v)}`;
 }
 
+/** CarVertical atveras bez query — VIN nodod userscript caur GM_* + `data-provin-handoff-vin`. */
+export const CARVERTICAL_LV_BASE_URL = "https://www.carvertical.com/lv";
+
 export function buildCarverticalVinCheckUrl(raw: string): string | null {
   const v = normalizeVinForServiceUrls(raw);
   if (!v) return null;
-  return `https://www.carvertical.com/lv/landing/v3?vin=${encodeURIComponent(v)}`;
+  return CARVERTICAL_LV_BASE_URL;
 }
 
 export function buildAutorecordsVinCheckUrl(raw: string): string | null {
