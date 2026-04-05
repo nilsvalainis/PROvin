@@ -91,6 +91,9 @@ const EMPTY_WORKSPACE: WorkspacePersist = {
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 80 * 1024 * 1024;
 
+/** Portfeļa kolonnā pēc noklusējuma redzami pirmie N faili; pārējie — modālā. */
+const PORTFOLIO_INLINE_VISIBLE_MAX = 3;
+
 const workspaceToolbarBtn =
   "rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] font-semibold tracking-tight text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50";
 
@@ -286,6 +289,7 @@ export function OrderDetailWorkspace({
   const [expertSnap, setExpertSnap] = useState({ iriss: "", apskatesPlāns: "" });
   const [expertFlash, setExpertFlash] = useState(false);
   const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
+  const [portfolioAllFilesModalOpen, setPortfolioAllFilesModalOpen] = useState(false);
   const portfolioBytes = useMemo(() => portfolio.reduce((a, p) => a + p.size, 0), [portfolio]);
 
   const narrowPortfolioLayout = Boolean(portfolioPortalDomId);
@@ -297,6 +301,24 @@ export function OrderDetailWorkspace({
     }
     setPortfolioPortalEl(document.getElementById(portfolioPortalDomId));
   }, [portfolioPortalDomId, payload.sessionId]);
+
+  useEffect(() => {
+    if (!portfolioAllFilesModalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPortfolioAllFilesModalOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [portfolioAllFilesModalOpen]);
+
+  useEffect(() => {
+    if (portfolio.length <= PORTFOLIO_INLINE_VISIBLE_MAX) setPortfolioAllFilesModalOpen(false);
+  }, [portfolio.length]);
 
   const mergedKmPoints = useMemo(() => mergeKmForChart(pdfInsights), [pdfInsights]);
 
@@ -791,9 +813,18 @@ export function OrderDetailWorkspace({
     </div>
   );
 
-  const portfolioShellClass = `${workspaceSectionShell} min-w-0 flex flex-col ${
+  const portfolioShellClass = `${workspaceSectionShell} min-h-[150px] min-w-0 flex flex-col ${
     narrowPortfolioLayout ? "h-full max-h-[min(88vh,960px)] overflow-y-auto overflow-x-hidden" : ""
   }`;
+
+  const portfolioInlineList =
+    portfolio.length > PORTFOLIO_INLINE_VISIBLE_MAX
+      ? portfolio.slice(0, PORTFOLIO_INLINE_VISIBLE_MAX)
+      : portfolio;
+  const portfolioHiddenCount =
+    portfolio.length > PORTFOLIO_INLINE_VISIBLE_MAX
+      ? portfolio.length - PORTFOLIO_INLINE_VISIBLE_MAX
+      : 0;
 
   const portfolioSection = (
     <section className={portfolioShellClass}>
@@ -847,25 +878,86 @@ export function OrderDetailWorkspace({
       </div>
       {fileError ? <p className="mt-1 text-[11px] text-amber-800">{fileError}</p> : null}
       {portfolio.length > 0 ? (
-        <ul className={`mt-1 ${narrowPortfolioLayout ? "space-y-0" : "space-y-0.5"}`}>
-          {portfolio.map((p, i) => (
-            <AdminSavablePortfolioFileRow
-              key={p.id}
-              index={i}
-              file={p}
-              formatBytes={formatBytes}
-              onPersistAll={() => persistPortfolio(portfolio)}
-              onRemove={() => removePortfolio(p.id)}
-              resetVersion={workspaceFieldResetKey}
-              compact={narrowPortfolioLayout}
-            />
-          ))}
-        </ul>
+        <div className="mt-1 min-w-0 flex-1">
+          <ul className={`${narrowPortfolioLayout ? "space-y-0" : "space-y-0.5"}`}>
+            {portfolioInlineList.map((p, i) => (
+              <AdminSavablePortfolioFileRow
+                key={p.id}
+                index={i}
+                file={p}
+                formatBytes={formatBytes}
+                onPersistAll={() => persistPortfolio(portfolio)}
+                onRemove={() => removePortfolio(p.id)}
+                resetVersion={workspaceFieldResetKey}
+                compact={narrowPortfolioLayout}
+              />
+            ))}
+          </ul>
+          {portfolioHiddenCount > 0 ? (
+            <button
+              type="button"
+              className="mt-1 w-full rounded-md border border-dashed border-[var(--color-provin-accent)]/40 bg-white/90 py-1.5 text-center text-[10px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/60 hover:bg-[var(--color-provin-accent-soft)]/40"
+              onClick={() => setPortfolioAllFilesModalOpen(true)}
+            >
+              + vēl {portfolioHiddenCount}{" "}
+              {portfolioHiddenCount === 1 ? "fails" : "faili"}…
+            </button>
+          ) : null}
+        </div>
       ) : (
-        <p className="mt-1 text-[11px] leading-tight text-[var(--color-provin-muted)]">Vēl nav pievienotu failu.</p>
+        <p className="mt-1 flex-1 text-[11px] leading-tight text-[var(--color-provin-muted)]">Vēl nav pievienotu failu.</p>
       )}
     </section>
   );
+
+  const portfolioAllFilesModal =
+    portfolioAllFilesModalOpen && portfolio.length > 0 ? (
+      <div
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-3"
+        role="presentation"
+        onClick={() => setPortfolioAllFilesModalOpen(false)}
+      >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="portfolio-all-files-title"
+          className="flex max-h-[min(85dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 px-3 py-2">
+            <h3
+              id="portfolio-all-files-title"
+              className="text-sm font-semibold text-[var(--color-apple-text)]"
+            >
+              Visi faili ({portfolio.length})
+            </h3>
+            <button
+              type="button"
+              className="rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-[var(--color-apple-text)] hover:bg-slate-50"
+              onClick={() => setPortfolioAllFilesModalOpen(false)}
+            >
+              Aizvērt
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+            <ul className="space-y-0.5">
+              {portfolio.map((p, i) => (
+                <AdminSavablePortfolioFileRow
+                  key={p.id}
+                  index={i}
+                  file={p}
+                  formatBytes={formatBytes}
+                  onPersistAll={() => persistPortfolio(portfolio)}
+                  onRemove={() => removePortfolio(p.id)}
+                  resetVersion={workspaceFieldResetKey}
+                  compact
+                />
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    ) : null;
 
   const showPortfolioInline = !portfolioPortalDomId || !portfolioPortalEl;
   const showPortfolioPortal = Boolean(portfolioPortalDomId && portfolioPortalEl);
@@ -873,6 +965,10 @@ export function OrderDetailWorkspace({
   return (
     <div className="space-y-1.5">
       {previewOpen ? previewBody : null}
+
+      {portfolioAllFilesModal != null && typeof document !== "undefined"
+        ? createPortal(portfolioAllFilesModal, document.body)
+        : null}
 
       {showPortfolioPortal ? createPortal(portfolioSection, portfolioPortalEl!) : null}
 
