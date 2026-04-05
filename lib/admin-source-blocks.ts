@@ -57,8 +57,8 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
   auto_records: "text-orange-500",
 };
 
-/** Avotu virsraksts: +5% pret iepriekšējiem 11px → 11.55px. */
-export const SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS = "text-[11.55px]";
+/** Avotu virsraksta teksta izmērs admin UI (11px, saskaņots ar laukiem). */
+export const SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS = "text-[11px]";
 
 /** CSDD statiskā forma — lauku atslēgas. */
 export type CsddFormFields = {

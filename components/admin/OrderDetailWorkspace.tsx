@@ -9,6 +9,7 @@ import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBloc
 import {
   SOURCE_BLOCK_KEYS,
   SOURCE_BLOCK_LABELS,
+  SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS,
   WORKSPACE_GRID_STANDARD_KEYS,
   blocksToLegacyFlatFields,
   createDefaultSourceBlocks,
@@ -91,6 +92,10 @@ const MAX_TOTAL_BYTES = 80 * 1024 * 1024;
 
 const workspaceToolbarBtn =
   "rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] font-semibold tracking-tight text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50";
+
+const workspaceSectionTitle = `font-bold uppercase tracking-wide text-[var(--color-apple-text)] ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
+
+const workspaceSectionShell = "rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm";
 
 const bulkTextareaClass =
   "w-full rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-sm leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20";
@@ -772,7 +777,7 @@ export function OrderDetailWorkspace({
   );
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {previewOpen ? previewBody : null}
 
       <details className="group rounded-lg border border-slate-200/90 bg-gradient-to-b from-slate-50/90 to-white px-2.5 py-2 shadow-sm open:shadow-md">
@@ -791,12 +796,10 @@ export function OrderDetailWorkspace({
         </div>
       </details>
 
-      <section className="rounded-lg border border-slate-200/80 bg-white p-2.5 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-1.5">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
-            1. Portfelis
-          </h2>
-          <div className="flex flex-wrap items-center gap-1">
+      <section className={workspaceSectionShell}>
+        <div className="flex flex-wrap items-center justify-between gap-1">
+          <h2 className={workspaceSectionTitle}>1. Portfelis</h2>
+          <div className="flex flex-wrap items-center gap-0.5">
             <button
               type="button"
               className={workspaceToolbarBtn}
@@ -809,11 +812,11 @@ export function OrderDetailWorkspace({
             </button>
           </div>
         </div>
-        <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-          PDF IndexedDB · <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> /{" "}
-          <strong className="text-[var(--color-apple-text)]">Labot</strong> pie rindas.
-        </p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+          <p className="max-w-[min(100%,28rem)] text-[10px] leading-tight text-[var(--color-provin-muted)]">
+            PDF IndexedDB · <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> /{" "}
+            <strong className="text-[var(--color-apple-text)]">Labot</strong> pie rindas.
+          </p>
           <input
             id={fileInputId}
             type="file"
@@ -823,18 +826,18 @@ export function OrderDetailWorkspace({
           />
           <label
             htmlFor={fileInputId}
-            className={`${workspaceToolbarBtn} inline-flex cursor-pointer`}
+            className={`${workspaceToolbarBtn} inline-flex shrink-0 cursor-pointer`}
           >
             Pievienot failus…
           </label>
-          <span className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
-            līdz {formatBytes(MAX_FILE_BYTES)} / fails, kopā ~{formatBytes(MAX_TOTAL_BYTES)} (
+          <span className="text-[10px] leading-tight text-[var(--color-provin-muted)]">
+            līdz {formatBytes(MAX_FILE_BYTES)} / fails · kopā ~{formatBytes(MAX_TOTAL_BYTES)} (
             {formatBytes(Math.round(portfolioBytes))})
           </span>
         </div>
-        {fileError ? <p className="mt-1.5 text-[11px] text-amber-800">{fileError}</p> : null}
+        {fileError ? <p className="mt-1 text-[11px] text-amber-800">{fileError}</p> : null}
         {portfolio.length > 0 ? (
-          <ul className="mt-1.5 space-y-1">
+          <ul className="mt-1 space-y-0.5">
             {portfolio.map((p, i) => (
               <AdminSavablePortfolioFileRow
                 key={p.id}
@@ -848,18 +851,14 @@ export function OrderDetailWorkspace({
             ))}
           </ul>
         ) : (
-          <p className="mt-1.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-            Vēl nav pievienotu failu.
-          </p>
+          <p className="mt-1 text-[11px] leading-tight text-[var(--color-provin-muted)]">Vēl nav pievienotu failu.</p>
         )}
       </section>
 
-      <section className="rounded-lg border border-slate-200/80 bg-white p-2.5 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
-              2. Avotu bloki
-            </h2>
+      <section className={workspaceSectionShell}>
+        <div className="flex flex-wrap items-start justify-between gap-1.5">
+          <div className="min-w-0">
+            <h2 className={workspaceSectionTitle}>2. Avotu bloki</h2>
             <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
               <strong className="text-[var(--color-apple-text)]">CSDD</strong> un{" "}
               <strong className="text-[var(--color-apple-text)]">Tirgus dati</strong> — statiski lauki. Pārējie:{" "}
@@ -891,7 +890,7 @@ export function OrderDetailWorkspace({
             </button>
           </div>
         </div>
-        <div className="mt-2 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-1.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           <AdminCsddSourceBlock
             value={blocksForDisplay.csdd}
             readOnly={sourcesViewMode}
@@ -922,34 +921,32 @@ export function OrderDetailWorkspace({
           )}
         </div>
 
-        <div className="mt-2 border-t border-slate-100 pt-2">
+        <div className="mt-1.5 border-t border-slate-200/80 pt-1.5">
           <button
             type="button"
             onClick={() => setPreviewOpen(true)}
-            className="inline-flex rounded-full border border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)] px-3 py-1.5 text-xs font-medium text-[var(--color-provin-accent)] hover:bg-[#d4e8fb]"
+            className="inline-flex rounded-full border border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-provin-accent)] hover:bg-[#d4e8fb]"
           >
             Priekšskats
           </button>
           {ws.previewConfirmed ? (
-            <p className="mt-1.5 text-[11px] font-medium text-emerald-800">Apstiprināts — vari rakstīt IRISS.</p>
+            <p className="mt-1 text-[11px] font-medium text-emerald-800">Apstiprināts — vari rakstīt IRISS.</p>
           ) : (
-            <p className="mt-1.5 text-[11px] text-[var(--color-provin-muted)]">Apstiprini modālī.</p>
+            <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">Apstiprini modālī.</p>
           )}
         </div>
       </section>
 
       <section
-        className={`rounded-lg border p-2.5 shadow-sm ${
+        className={`rounded-lg border p-2 shadow-sm ${
           ws.previewConfirmed
-            ? "border-slate-200/80 bg-white"
+            ? "border-slate-200/90 bg-slate-50/40"
             : "border-dashed border-slate-200 bg-slate-50/50"
         }`}
       >
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
-              3. IRISS + apskates plāns
-            </h2>
+        <div className="flex flex-wrap items-start justify-between gap-1.5">
+          <div className="min-w-0">
+            <h2 className={workspaceSectionTitle}>3. IRISS + apskates plāns</h2>
             <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
               Viens <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> abiem laukiem.
             </p>
@@ -983,7 +980,7 @@ export function OrderDetailWorkspace({
             </button>
           </div>
         </div>
-        <div className="mt-1.5 space-y-2">
+        <div className="mt-1 space-y-1.5">
           <div>
             <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
               IRISS (eksperta slēdziens)
@@ -1030,25 +1027,25 @@ export function OrderDetailWorkspace({
           </div>
         </div>
         {!ws.previewConfirmed ? (
-          <p className="mt-1.5 text-[11px] text-amber-800">Vispirms apstiprini priekšskatu.</p>
+          <p className="mt-1 text-[11px] text-amber-800">Vispirms apstiprini priekšskatu.</p>
         ) : null}
       </section>
 
-      <section className="rounded-lg border border-[var(--color-provin-accent)]/30 bg-[var(--color-provin-accent-soft)]/50 p-2.5 shadow-sm">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">4. PDF klientam</h2>
-        <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
+      <section className="rounded-lg border border-[var(--color-provin-accent)]/30 bg-[var(--color-provin-accent-soft)]/50 p-2 shadow-sm">
+        <h2 className={workspaceSectionTitle}>4. PDF klientam</h2>
+        <p className="mt-0.5 text-[10px] leading-tight text-[var(--color-provin-muted)]">
           Pēc IRISS aizpildes — druka / saglabāt kā PDF.
         </p>
         <button
           type="button"
           onClick={openPrintReport}
           disabled={!canGeneratePdf}
-          className={`${workspaceToolbarBtn} mt-1.5 bg-[var(--color-provin-accent)] text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45`}
+          className={`${workspaceToolbarBtn} mt-1 bg-[var(--color-provin-accent)] text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45`}
         >
           Ģenerēt PDF
         </button>
         {!canGeneratePdf ? (
-          <p className="mt-1.5 text-[11px] text-[var(--color-provin-muted)]">Vajag apstiprinātu priekšskatu + IRISS.</p>
+          <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">Vajag apstiprinātu priekšskatu + IRISS.</p>
         ) : null}
       </section>
     </div>
