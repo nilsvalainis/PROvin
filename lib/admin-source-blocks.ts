@@ -193,14 +193,17 @@ export function emptyCsddFields(): CsddFormFields {
   };
 }
 
-/** Automātiski piešķirama LV ierakstiem. */
+/** Automātiski piešķirama tikai no „Nobraukuma vēsture LV” parsera — nav noklusējuma tukšiem laukiem. */
 export const CSDD_MILEAGE_COUNTRY_LV = "Latvija";
+
+/** Tukšai valstij PDF/admin lasītajā skatā (datu laukā glabājas ""). */
+export const CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL = "Nezināmā";
 
 /** Vienotās tabulas virsraksts (admin + PDF). */
 export const CSDD_MILEAGE_UNIFIED_TITLE = "NOBRAUKUMA VĒSTURE";
 
 export function emptyCsddMileageRow(): CsddMileageRow {
-  return { date: "", odometer: "", country: CSDD_MILEAGE_COUNTRY_LV };
+  return { date: "", odometer: "", country: "" };
 }
 
 export function csddMileageRowHasData(r: CsddMileageRow): boolean {
@@ -220,9 +223,8 @@ export function sortMileageHistoryDescending(rows: CsddMileageRow[]): CsddMileag
 }
 
 /**
- * Viena hronoloģiska vēsture: LV + ārvalstu rindas → dublikātu noņemšana (tas pats datums + tas pats odometrs) → DESC.
- * Ierakstu secība pirms apstrādes: vispirms LV, tad ārvalsti; dublikātam tiek atstāts pirmais.
- * Valsts (`country`) netiek mainīta: tukša paliek tukša, ārvalstu vērtības netiek aizstātas ar „Latvija”.
+ * Viena hronoloģiska vēsture: LV + ārvalstu rindas → dublikātu noņemšana → DESC.
+ * Dublikāts = vienāds **datums + odometrs + valsts** (`mileageDedupKey`). Valsts netiek aizstāta ar „Latvija”.
  */
 export function finalizeMileageHistory(rows: CsddMileageRow[]): CsddMileageRow[] {
   const withData = rows.filter(csddMileageRowHasData);
@@ -237,7 +239,7 @@ export function finalizeMileageHistory(rows: CsddMileageRow[]): CsddMileageRow[]
   return sortMileageHistoryDescending(deduped);
 }
 
-/** Dublikātam jāiekļauj valsts — citādi LV + ārvalsts ar vienu datumu/odometru saplūst un valsts kļūst par pirmo (bieži LV). */
+/** Unikālā atslēga: datums + odometrs + valsts (ne tikai datums+odometrs). */
 function mileageDedupKey(r: CsddMileageRow): string {
   const ts = mileageDateSortKey(r.date);
   const km = normalizeOdometerFromPaste(r.odometer);

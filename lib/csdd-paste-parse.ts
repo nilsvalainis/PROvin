@@ -263,12 +263,22 @@ export function parseMileageHistoryLvBlock(text: string): CsddMileageRow[] {
 const ABROAD_LINE_REGEX =
   /^(\d{2}\.\d{2}\.\d{4})\s+(\d+)(?:\s*km)?\s+(.+)$/iu;
 
-/** Tabi / vairākas atstarpes / NBSP → viena atstarpe, lai regex grupas sakrīt ar reālo ielīmi. */
+/**
+ * NBSP/BOM noņemšana + tikai atstarpju apkopošana starp CIPARIEM (piem. „161 524” → „161524”).
+ * Nav globālas „visas \s+ → viena atstarpe”, lai nesaplūstu struktūra starp odometru / „km” / valsti.
+ */
+function collapseSpacesBetweenDigits(s: string): string {
+  let out = s;
+  let prev = out;
+  do {
+    prev = out;
+    out = out.replace(/(\d)\s+(?=\d)/g, "$1");
+  } while (out !== prev);
+  return out;
+}
+
 function normalizeMileageLineForAbroadRegex(line: string): string {
-  return line
-    .replace(/[\u00A0\uFEFF]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return collapseSpacesBetweenDigits(line.replace(/[\u00A0\uFEFF]/g, " ").trim());
 }
 
 function parseAbroadSpaceLine(sp: string[]): {

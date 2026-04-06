@@ -8,6 +8,7 @@ import { amountToIntRough } from "@/lib/claim-rows-parse";
 import {
   citiAvotiHasContent,
   CSDD_FORM_STRUCTURED_FIELDS,
+  CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
   CSDD_MILEAGE_UNIFIED_TITLE,
   csddFormHasContent,
   csddMileageRowHasData,
@@ -186,7 +187,7 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
       const head = `<tr><th>Datums</th><th>Odometrs (km)</th><th>Valsts</th></tr>`;
       const body = mhRows
         .map((r) => {
-          const country = r.country.trim() || "—";
+          const country = r.country.trim() || CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL;
           return `<tr><td>${escapeHtml(r.date.trim())}</td><td>${escapeHtml(r.odometer.trim())}</td><td>${escapeHtml(country)}</td></tr>`;
         })
         .join("\n");

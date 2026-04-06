@@ -4,6 +4,7 @@ import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeade
 import type { CsddFormFields, CsddMileageRow } from "@/lib/admin-source-blocks";
 import {
   CSDD_FORM_STRUCTURED_FIELDS,
+  CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
   CSDD_MILEAGE_UNIFIED_TITLE,
   emptyCsddMileageRow,
   finalizeMileageHistory,
@@ -169,7 +170,9 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
                   </td>
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{row.country.trim() || "—"}</span>
+                      <span className="text-[var(--color-provin-muted)]">
+                        {row.country.trim() || CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL}
+                      </span>
                     ) : (
                       <input
                         type="text"
