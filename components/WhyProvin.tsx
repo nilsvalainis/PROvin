@@ -14,16 +14,7 @@ export async function WhyProvin() {
     <section className="relative overflow-hidden bg-gradient-to-b from-white to-provin-surface-2/30 px-4 py-10 sm:px-6 sm:py-14">
       <div className="pointer-events-none absolute inset-0 provin-noise opacity-25" aria-hidden />
       <div className="relative mx-auto min-w-0 max-w-[1024px]">
-        <div className="text-center">
-          <h2 className="text-[28px] font-semibold tracking-tight text-[#1d1d1f] sm:text-[36px] sm:leading-[1.1]">
-            {t("title")}
-          </h2>
-          <p className="mx-auto mt-2 max-w-2xl text-[16px] font-normal leading-relaxed text-[#86868b] sm:text-[17px]">
-            {t("subtitle")}
-          </p>
-        </div>
-
-        <div className="mt-10 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
+        <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
           <article className={highlightCardClass}>
             <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("block1Eyebrow")}</p>
             <h3 className="mt-2 text-balance text-[20px] font-semibold uppercase leading-[1.2] tracking-[0.02em] text-[#1d1d1f] sm:text-[22px]">
