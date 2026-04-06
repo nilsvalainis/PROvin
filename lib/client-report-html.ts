@@ -3,11 +3,7 @@
  */
 
 import { extractKmCandidates } from "@/lib/admin-workspace-preview-format";
-import {
-  type HistoryPdfKind,
-  HISTORY_PDF_KIND_LABEL_LV,
-  type PdfPortfolioFileInsight,
-} from "@/lib/admin-portfolio-pdf-analysis";
+import { type HistoryPdfKind, type PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
 import { buildHistoryCompareBullets, buildHistoryCompareRows } from "@/lib/history-reports-compare";
 import {
   amountToIntRough,
@@ -27,7 +23,13 @@ import {
   parseTaRating2DefectLines,
 } from "@/lib/client-report-lv-parse";
 import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
-import type { ClientManualVendorBlockPdf, CsddFormFields, TirgusFormFields } from "@/lib/admin-source-blocks";
+import {
+  SOURCE_BLOCK_LABELS,
+  type ClientManualLtabBlockPdf,
+  type ClientManualVendorBlockPdf,
+  type CsddFormFields,
+  type TirgusFormFields,
+} from "@/lib/admin-source-blocks";
 import {
   CSDD_FORM_SHORT_FIELDS,
   CSDD_LABEL_COMMENTS,
@@ -86,6 +88,8 @@ export type ClientReportPayload = {
   listingMarket?: ListingMarketSnapshot | null;
   /** Manuāli ievadīti trešās puses avoti — tikai ar saturu (tukši bloki netiek drukāti). */
   manualVendorBlocks?: ClientManualVendorBlockPdf[];
+  /** LTAB strukturētais bloks — atsevišķs PDF panelis pēc pārējiem manuālajiem avotiem. */
+  manualLtabBlock?: ClientManualLtabBlockPdf | null;
 };
 
 export type ClientReportPortfolioRow = { name: string; size: number };
@@ -1039,77 +1043,83 @@ function buildManualTirgusStructuredHtml(f: TirgusFormFields): string {
   return parts.join("\n");
 }
 
-function buildManualVendorBlocksHtml(blocks: ClientManualVendorBlockPdf[] | undefined): string {
-  if (!blocks?.length) return "";
+/** Katrs starptautiskais avots — atsevišķs panelis (.pdf-v1-panel), secība kā admin režģī. */
+function pdfIconForVendorTitle(title: string): string {
+  if (title === SOURCE_BLOCK_LABELS.autodna) return ICO.layers;
+  if (title === SOURCE_BLOCK_LABELS.carvertical) return ICO.chart;
+  if (title === SOURCE_BLOCK_LABELS.auto_records) return ICO.spark;
+  return ICO.layers;
+}
+
+function buildManualVendorSinglePanelHtml(b: ClientManualVendorBlockPdf): string {
+  const hasTable = b.rows.length > 0;
+  const hasComments = b.comments.trim().length > 0;
+  if (!hasTable && !hasComments) return "";
   const parts: string[] = [];
-  parts.push(`<div class="manual-vendor-panel" role="region">`);
-  parts.push(sectionHead(ICO.layers, "Pārējie avoti (AutoDNA, CarVertical, Auto-Records, LTAB)"));
-  for (const b of blocks) {
-    parts.push(`<h3 class="pdf-sub prov-uc">${escapeHtml(b.title)}</h3>`);
-    if (b.rows.length > 0) {
-      const amountTh = escapeHtml(b.amountColumnLabel ?? "Zaudējumu summa");
+  const icon = pdfIconForVendorTitle(b.title);
+  parts.push(`<div class="pdf-v1-panel pdf-v1-panel--clean pdf-source-mirror-panel" role="region">`);
+  parts.push(
+    `<div class="pdf-v1-panel-head"><span class="pdf-v1-ico" aria-hidden="true">${icon}</span><p class="pdf-v1-panel-title pdf-v1-panel-title--src">${escapeHtml(b.title)}</p></div>`,
+  );
+  if (hasTable) {
+    const amountTh = escapeHtml(b.amountColumnLabel ?? "Zaudējumu summa");
+    parts.push(
+      `<table class="fmt bordered ins-compact"><thead><tr><th>Gads / Datums</th><th class="tabular">KM</th><th class="tabular">${amountTh}</th></tr></thead><tbody>`,
+    );
+    for (const r of b.rows) {
       parts.push(
-        `<table class="fmt bordered ins-compact"><thead><tr><th>Gads / Datums</th><th class="tabular">KM</th><th class="tabular">${amountTh}</th></tr></thead><tbody>`,
+        `<tr><td>${escapeHtml(r.date)}</td><td class="tabular">${escapeHtml(r.km)}</td><td class="tabular">${formatLossAmountEurCell(r.amount)}</td></tr>`,
       );
-      for (const r of b.rows) {
-        parts.push(
-          `<tr><td>${escapeHtml(r.date)}</td><td class="tabular">${escapeHtml(r.km)}</td><td class="tabular">${formatLossAmountEurCell(r.amount)}</td></tr>`,
-        );
-      }
-      parts.push(`</tbody></table>`);
     }
-    if (b.comments.trim()) {
-      parts.push(`<pre class="block manual-vendor-comments">${escapeHtml(b.comments.trim())}</pre>`);
-    }
+    parts.push(`</tbody></table>`);
+  }
+  if (hasComments) {
+    parts.push(`<pre class="block manual-vendor-comments">${escapeHtml(b.comments.trim())}</pre>`);
   }
   parts.push(`</div>`);
   return parts.join("\n");
 }
 
-function buildPortfolioBlockHtml(
-  portfolio: ClientReportPortfolioRow[],
-  pdfInsights: PdfPortfolioFileInsight[],
-  formatBytes: (n: number) => string,
-  heading: string = CLIENT_REPORT_PDF_SECTIONS.portfolio,
-): string {
-  if (portfolio.length === 0 && pdfInsights.length === 0) return "";
-
-  const portfolioBytes = portfolio.reduce((s, r) => s + r.size, 0);
+function buildManualLtabPanelHtml(b: ClientManualLtabBlockPdf | null | undefined): string {
+  if (!b) return "";
+  const hasTable = b.rows.length > 0;
+  const hasComments = b.comments.trim().length > 0;
+  if (!hasTable && !hasComments) return "";
   const parts: string[] = [];
-  parts.push(`<div class="portfolio-panel" role="region">`);
-  parts.push(sectionHead(ICO.layers, heading));
+  parts.push(`<div class="pdf-v1-panel pdf-v1-panel--clean pdf-source-mirror-panel" role="region">`);
   parts.push(
-    `<p class="portfolio-lead"><strong>${portfolio.length}</strong> datnes · kopā <strong>${escapeHtml(formatBytes(portfolioBytes))}</strong>. Zemāk — automātiski izvilkts kopsavilkums no PDF teksta.</p>`,
+    `<div class="pdf-v1-panel-head"><span class="pdf-v1-ico" aria-hidden="true">${ICO.shield}</span><p class="pdf-v1-panel-title pdf-v1-panel-title--src">${escapeHtml(SOURCE_BLOCK_LABELS.ltab)}</p></div>`,
   );
-  parts.push(`<ul class="portfolio-file-list">`);
-  for (const r of portfolio) {
+  if (hasTable) {
     parts.push(
-      `<li><span class="pf-name">${escapeHtml(sanitizeAttachmentFileNameForReport(r.name))}</span> · ${escapeHtml(formatBytes(r.size))}</li>`,
+      `<table class="fmt bordered ins-compact"><thead><tr><th>Negadījumu skaits</th><th class="tabular">CSNg datums</th><th class="tabular">Zaudējumu summa</th></tr></thead><tbody>`,
     );
-  }
-  parts.push(`</ul>`);
-  if (pdfInsights.length > 0) {
-    parts.push(`<p class="portfolio-lead portfolio-lead-digest">īss izvilkums — unikālie signāli, kas papildina LV datus (pilns teksts datnēs).</p>`);
-    parts.push(`<ul class="portfolio-digest">`);
-    for (const ins of pdfInsights) {
-      const hi = ins.highlights.slice(0, 4).join(" · ") || "—";
-      const km =
-        ins.kmSamples.length > 0
-          ? ins.kmSamples
-              .map(
-                (s) =>
-                  `${s.km.toLocaleString("lv-LV")} km${s.context ? ` (${s.context})` : ""}`,
-              )
-              .join("; ")
-          : "—";
+    for (const r of b.rows) {
       parts.push(
-        `<li><strong>pārskats ${ins.sourceOrdinal}</strong> (${escapeHtml(HISTORY_PDF_KIND_LABEL_LV[ins.historyKind])}) — <span class="portfolio-digest-km">${escapeHtml(km)}</span>. ${escapeHtml(hi)}</li>`,
+        `<tr><td>${escapeHtml(r.incidentNo)}</td><td class="tabular">${escapeHtml(r.csngDate)}</td><td class="tabular">${formatLossAmountEurCell(r.lossAmount)}</td></tr>`,
       );
     }
-    parts.push(`</ul>`);
+    parts.push(`</tbody></table>`);
   }
-  parts.push("</div>");
+  if (hasComments) {
+    parts.push(`<pre class="block manual-vendor-comments">${escapeHtml(b.comments.trim())}</pre>`);
+  }
+  parts.push(`</div>`);
   return parts.join("\n");
+}
+
+function buildInternationalManualSourcePanelsHtml(
+  vendorBlocks: ClientManualVendorBlockPdf[] | undefined,
+  ltabBlock: ClientManualLtabBlockPdf | null | undefined,
+): string {
+  const chunks: string[] = [];
+  for (const b of vendorBlocks ?? []) {
+    const html = buildManualVendorSinglePanelHtml(b);
+    if (html) chunks.push(html);
+  }
+  const ltabHtml = buildManualLtabPanelHtml(ltabBlock);
+  if (ltabHtml) chunks.push(ltabHtml);
+  return chunks.join("\n");
 }
 
 const ALL_TIERS: KmTier[] = ["lv", "hist", "hist2", "dealer", "other"];
@@ -1174,7 +1184,7 @@ function buildOdometerSvg(points: OdometerChartPoint[]): string {
     .join("");
 
   return `
-    <div class="chart-card">
+    <div class="chart-card chart-card--clean">
       <p class="chart-caption">Hronoloģija pēc nobraukuma · numurs = tabula · līknes pēc datu avota</p>
       <svg viewBox="0 0 ${w} ${h}" class="odo-chart" aria-hidden="true">
         ${gridLines.join("")}
@@ -1501,12 +1511,14 @@ function clientReportPrintCss(): string {
   return `
       *{box-sizing:border-box;}
       body{
-        font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-        line-height:1.55;max-width:190mm;margin:0 auto;padding:10mm 12mm;color:#0f172a;
-        background:#f1f5f9;
+        font-family:Inter,sans-serif;
+        font-size:12px;
+        line-height:1.45;max-width:190mm;margin:0 auto;padding:8mm 11mm;color:#1d1d1f;
+        background:#ffffff;
+        -webkit-font-smoothing:antialiased;
       }
-      .sheet{background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(15,23,42,.06);padding:14mm 12mm;}
-      @media print{.sheet{box-shadow:none;border-radius:0;padding:0}}
+      .sheet{background:#fff;border-radius:0;box-shadow:none;padding:0 0 10mm;}
+      @media print{.sheet{padding:0}}
       .report-head{
         border-bottom:1px solid #e2e8f0;padding-bottom:16px;margin-bottom:22px;
         background:transparent;
@@ -1520,14 +1532,14 @@ function clientReportPrintCss(): string {
       .report-head h1 .title-main{font-weight:650;text-transform:lowercase;}
       .report-head .sub{font-size:0.84rem;color:#6e6e73;}
       .vin-inline{display:inline-block;margin-left:6px;padding:2px 10px;background:#f1f5f9;border-radius:6px;font-size:0.82rem;text-transform:none;}
-      .pdf-sec-head{display:flex;align-items:center;gap:10px;margin:1.65rem 0 0.55rem;}
-      .pdf-sec-head .pdf-ico{color:#0066d6;flex-shrink:0;}
+      .pdf-sec-head{display:flex;align-items:center;gap:8px;margin:0.85rem 0 0.35rem;}
+      .pdf-sec-head .pdf-ico{color:#0066d6;flex-shrink:0;width:14px;height:14px;}
       h2.pdf-sec{
-        font-size:1.02rem;font-weight:600;margin:0;flex:1;color:#0f172a;padding:0 0 0 12px;border:none;
-        text-transform:lowercase;letter-spacing:-0.02em;border-left:3px solid #0066d6;
+        font-size:0.88rem;font-weight:600;margin:0;flex:1;color:#1d1d1f;padding:0 0 0 8px;border:none;
+        text-transform:lowercase;letter-spacing:-0.02em;border-left:2px solid #0066d6;
       }
-      h3.pdf-sub{font-size:0.9rem;font-weight:600;margin:1rem 0 0.4rem;color:#334155;text-transform:lowercase;}
-      h4.pdf-sub2{font-size:0.84rem;font-weight:600;margin:0.65rem 0 0.25rem;color:#1d1d1f;text-transform:lowercase;}
+      h3.pdf-sub{font-size:0.78rem;font-weight:600;margin:0.65rem 0 0.25rem;color:#424245;text-transform:lowercase;}
+      h4.pdf-sub2{font-size:0.74rem;font-weight:600;margin:0.45rem 0 0.2rem;color:#1d1d1f;text-transform:lowercase;}
       .client-msg{font-style:italic;color:#475569;margin:0.35rem 0 0.75rem;line-height:1.5;}
       .client-klients{margin:0 0 0.5rem;font-size:0.9rem;}
       .callout-warn{
@@ -1556,13 +1568,13 @@ function clientReportPrintCss(): string {
       .ta-status.ta-unknown .ta-status-title{color:#334155;}
       .ta-status.ta-unknown .ta-status-text{color:#475569;}
       .ta-divider{margin:18px 0 10px;padding-top:14px;border-top:2px solid #e2e8f0;}
-      table{width:100%;border-collapse:collapse;font-size:0.82rem;}
-      table.fmt{margin:0.5rem 0;}
-      table.fmt td,table.fmt th{padding:9px 0;border-bottom:1px solid #e5e7eb;vertical-align:top;}
+      table{width:100%;border-collapse:collapse;font-size:0.72rem;}
+      table.fmt{margin:0.35rem 0;}
+      table.fmt td,table.fmt th{padding:5px 0;border-bottom:1px solid #ececee;vertical-align:top;}
       table.fmt thead th{text-transform:lowercase;}
-      table.fmt thead th{font-weight:700;font-size:0.78rem;color:#1d1d1f;border-bottom:2px solid #cbd5e1;padding-top:4px;}
-      table.fmt.bordered td,table.fmt.bordered th{padding:8px 10px;border:1px solid #e5e7eb;}
-      table.fmt.bordered thead th{background:#eef2f7;}
+      table.fmt thead th{font-weight:600;font-size:0.68rem;color:#424245;border-bottom:1px solid #d2d2d7;padding-top:2px;}
+      table.fmt.bordered td,table.fmt.bordered th{padding:5px 0;border:none;border-bottom:1px solid #ececee;background:transparent;}
+      table.fmt.bordered thead th{background:transparent;border-bottom:1px solid #d2d2d7;}
       table.fmt.risk td,table.fmt.risk th{padding:10px 8px;border-bottom:1px solid #e5e7eb;}
       table.fmt.risk th{background:transparent;font-weight:700;text-align:left;color:#1d1d1f;}
       table.fmt.risk td:nth-child(2){white-space:nowrap;}
@@ -1571,15 +1583,15 @@ function clientReportPrintCss(): string {
       .st-crit{color:#b91c1c;font-weight:600;}
       .tabular{font-variant-numeric:tabular-nums;}
       table.fmt.odo{font-size:0.82rem;}
-      table.fmt.odo thead th{background:linear-gradient(180deg,#f8fafc 0%,#f1f5f9 100%);font-weight:700;color:#334155;border-bottom:2px solid #e2e8f0;}
-      table.fmt.odo tbody tr:nth-child(even){background:#fafafa;}
+      table.fmt.odo thead th{background:transparent;font-weight:600;color:#424245;border-bottom:1px solid #d2d2d7;}
+      table.fmt.odo tbody tr:nth-child(even){background:transparent;}
       table.fmt.odo .odo-idx{font-weight:700;color:#475569;width:2rem;}
       table.fmt.odo .odo-graph-cell{text-align:center;width:3.25rem;vertical-align:middle;}
       .odo-dot-badge{
         display:inline-flex;align-items:center;justify-content:center;
         min-width:1.5rem;height:1.5rem;padding:0 4px;border-radius:999px;
-        font-size:0.68rem;font-weight:800;color:#fff;letter-spacing:-0.02em;
-        border:2px solid #fff;box-shadow:0 1px 3px rgba(15,23,42,.18);
+        font-size:0.65rem;font-weight:700;color:#fff;letter-spacing:-0.02em;
+        border:1px solid rgba(255,255,255,.9);
         vertical-align:middle;
       }
       tr.odo-row-citi td{background:rgba(254,226,226,.5)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -1596,24 +1608,23 @@ function clientReportPrintCss(): string {
       .td-warn{color:#b91c1c;font-weight:600;}
       .pdf-heat-red{color:#b91c1c!important;font-weight:700!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       .pdf-heat-orange{color:#c2410c!important;font-weight:700!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-      pre.block{white-space:pre-wrap;font-size:0.82rem;background:#f8fafc;border:1px solid #e2e8f0;padding:11px 14px;border-radius:9px;margin:0.5rem 0;}
+      pre.block{white-space:pre-wrap;font-size:0.72rem;background:#fafafa;border:none;border-bottom:1px solid #ececee;padding:8px 0;margin:0.35rem 0;border-radius:0;}
       .na{color:#86868b;font-style:italic;}
       .hint{font-size:0.76rem;color:#6e6e73;margin-top:0.45rem;line-height:1.45;}
       .ta-list{margin:0.4rem 0;padding-left:1.2rem;}
       .ta-list li{margin:0.35rem 0;}
       .chart-card,.block-minimal{
-        margin:14px 0;padding:16px 18px;border-radius:12px;border:1px solid #e8eaed;background:#fafbfc;
+        margin:8px 0;padding:0 0 8px;border:none;border-bottom:1px solid #ececee;background:transparent;border-radius:0;
       }
-      .chart-caption{font-size:0.78rem;color:#64748b;margin:0 0 10px;font-weight:500;}
+      .chart-card--clean{margin:6px 0 8px;padding:0 0 6px;}
+      .chart-caption{font-size:0.68rem;color:#86868b;margin:0 0 6px;font-weight:500;}
       .odo-chart{width:100%;max-width:100%;height:auto;display:block;}
       .tier-line-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle;}
       .odo-src-cell{vertical-align:middle;}
       .odo-src-txt{font-weight:500;color:#334155;}
-      .portfolio-stat{margin:0;font-size:0.88rem;color:#475569;}
-      .portfolio-stat-num{font-size:1.35rem;font-weight:700;color:#0066d6;margin-right:4px;}
-      .compare-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:0 0 18px;}
+      .compare-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;margin:0 0 10px;}
       .compare-card{
-        border:1px solid #e8eaed;border-radius:12px;padding:12px 14px;background:#fff;
+        border:none;border-bottom:1px solid #ececee;border-radius:0;padding:6px 4px 8px 0;background:transparent;
       }
       .compare-card-top{font-size:0.72rem;font-weight:700;text-transform:lowercase;letter-spacing:0.04em;color:#0066d6;}
       .compare-card-type{font-size:0.75rem;color:#64748b;margin:4px 0;}
@@ -1627,13 +1638,13 @@ function clientReportPrintCss(): string {
       .odo-dot-svg{display:inline-block;vertical-align:middle;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       .quick-panel{margin:0 0 8px;}
       .quick-panel-meta{font-size:0.84rem;margin:0.35rem 0;line-height:1.5;color:#334155;}
-      .quick-panel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;}
+      .quick-panel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;}
       @media(max-width:640px){.quick-panel-grid{grid-template-columns:1fr;}}
-      .quick-ind{border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;background:#fafbfc;}
+      .quick-ind{border:none;border-bottom:1px solid #ececee;border-radius:0;padding:6px 4px 8px 0;background:transparent;}
       .quick-ind-k{display:block;font-size:0.68rem;font-weight:700;text-transform:lowercase;letter-spacing:0.04em;color:#0066d6;margin-bottom:6px;}
       .quick-ind-v{font-size:0.88rem;font-weight:600;color:#0f172a;}
-      .odo-timeline{margin:10px 0 14px;padding:12px 14px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;}
-      .odo-timeline-row{display:grid;grid-template-columns:5.5rem 1fr auto;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:0.82rem;}
+      .odo-timeline{margin:6px 0 8px;padding:0;border:none;background:transparent;}
+      .odo-timeline-row{display:grid;grid-template-columns:5.5rem 1fr auto;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid #ececee;font-size:0.72rem;}
       .odo-timeline-row:last-child{border-bottom:0;}
       .odo-tl-date{color:#64748b;font-variant-numeric:tabular-nums;}
       .odo-tl-km{font-weight:600;color:#0f172a;font-variant-numeric:tabular-nums;}
@@ -1646,14 +1657,10 @@ function clientReportPrintCss(): string {
       .lv-ta2-list li{margin:4px 0;color:#b91c1c;font-weight:500;}
       .lv-brake-table{font-size:0.78rem;margin-top:8px;}
       .lv-octa-line{font-size:0.82rem;margin:0 0 8px;color:#334155;}
-      .portfolio-digest{margin:8px 0 0;padding-left:1.1rem;font-size:0.8rem;line-height:1.5;color:#334155;}
-      .portfolio-digest li{margin:8px 0;}
-      .portfolio-digest-km{font-weight:600;color:#0f172a;}
-      .portfolio-lead-digest{margin-top:4px!important;}
       .listing-odo-alert{margin:12px 0;padding:10px 14px;border-radius:8px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:0.86rem;font-weight:600;}
       .forecast-box{
-        display:flex;gap:14px;align-items:flex-start;margin:14px 0;padding:16px 18px;border-radius:12px;
-        background:#fffbeb;border:1px solid #fde68a;
+        display:flex;gap:10px;align-items:flex-start;margin:6px 0 8px;padding:6px 0 8px;border:none;border-bottom:1px solid #ececee;
+        background:transparent;border-radius:0;
       }
       .forecast-icon{margin:0;line-height:0;color:#ca8a04;}
       .forecast-title{display:block;font-size:0.72rem;letter-spacing:0.04em;text-transform:lowercase;color:#92400e;margin-bottom:4px;}
@@ -1665,8 +1672,8 @@ function clientReportPrintCss(): string {
       .expert-rating{font-size:0.95rem;margin:0 0 10px;}
       .expert-summary-label{font-size:0.82rem;margin:0 0 4px;color:#475569;}
       .expert-panel-bottom{
-        margin:8px 0 18px;padding:18px 20px;border-radius:12px;
-        background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #0066d6;
+        margin:6px 0 12px;padding:8px 0 10px 10px;border:none;border-left:2px solid #0066d6;border-bottom:1px solid #ececee;
+        background:transparent;border-radius:0;
       }
       .expert-panel-bottom .expert-title{
         font-size:11px;letter-spacing:0.06em;text-transform:lowercase;color:#0066d6;font-weight:700;margin:0 0 10px;
@@ -1681,16 +1688,17 @@ function clientReportPrintCss(): string {
       .legend-inline{display:flex;flex-wrap:wrap;gap:10px 18px;font-size:0.78rem;color:#334155;}
       .legend-inline span{white-space:nowrap;}
       .history-compare-panel{
-        margin:20px 0 24px;padding:20px 22px;border-radius:14px;
-        background:#fff;border:1px solid #e2e8f0;
-        box-shadow:0 1px 2px rgba(15,23,42,.04);
+        margin:8px 0 10px;padding:0 0 8px;border:none;border-bottom:1px solid #ececee;
+        background:transparent;border-radius:0;
+        box-shadow:none;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      .history-compare-panel--clean .pdf-sec-head{margin-top:0;}
       .history-compare-panel.history-compare-empty{
         background:#fafbfc;border-color:#e2e8f0;
       }
       .history-compare-panel .pdf-sec-head{margin-top:0;}
-      .history-compare-lead{font-size:0.88rem;line-height:1.55;color:#1e293b;margin:0 0 14px;}
+      .history-compare-lead{font-size:0.74rem;line-height:1.45;color:#424245;margin:0 0 8px;}
       .history-compare-usage-grid{
         display:grid;gap:10px;margin:0 0 16px;
         grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
@@ -1708,20 +1716,21 @@ function clientReportPrintCss(): string {
       .history-compare-bullets li{margin:6px 0;}
       .history-compare-foot{margin-top:12px!important;}
       .history-compare-slim .history-compare-bullets-slim{margin-top:10px;}
-      .summary-panel{margin:18px 0;padding:0;}
-      .summary-lead{font-size:0.88rem;color:#334155;margin:0 0 16px;line-height:1.5;}
-      .lv-sources-panel{margin:20px 0;}
-      .lv-sources-lead{font-size:0.86rem;color:#334155;margin:0 0 14px;line-height:1.5;}
+      .summary-panel{margin:8px 0;padding:0;}
+      .summary-lead{font-size:0.74rem;color:#424245;margin:0 0 8px;line-height:1.45;}
+      .lv-sources-panel{margin:8px 0;}
+      .tirgus-mirror-panel{margin:8px 0;padding:0 0 8px;border:none;border-bottom:1px solid #ececee;background:transparent;}
+      .lv-sources-lead{font-size:0.74rem;color:#424245;margin:0 0 8px;line-height:1.45;}
       .lv-source-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
       @media(max-width:720px){.lv-source-grid{grid-template-columns:1fr;}}
-      .lv-source-cell{border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;background:#fafbfc;}
+      .lv-source-cell{border:none;border-bottom:1px solid #ececee;border-radius:0;padding:6px 0 8px;background:transparent;}
       .lv-source-title{font-size:0.72rem;font-weight:700;text-transform:lowercase;letter-spacing:0.04em;color:#0066d6;margin:0 0 8px;}
       .lv-source-pre{
         margin:0;font-size:0.72rem;line-height:1.42;white-space:pre-wrap;word-break:break-word;
         color:#1e293b;text-transform:none;
       }
       .lv-tirgus-manual-h{margin-top:12px!important;}
-      .lv-scrape{margin:0 0 10px;padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;}
+      .lv-scrape{margin:0 0 6px;padding:6px 0 8px;border:none;border-bottom:1px solid #ececee;background:transparent;border-radius:0;}
       .lv-scrape--warn{background:#fffbeb;border-color:#fde68a;}
       .lv-scrape-title{font-size:0.72rem;font-weight:700;color:#0066d6;margin:0 0 8px;text-transform:lowercase;letter-spacing:0.04em;}
       .lv-scrape-sub{font-size:0.76rem;font-weight:600;color:#334155;margin:10px 0 6px;text-transform:lowercase;}
@@ -1732,17 +1741,8 @@ function clientReportPrintCss(): string {
       table.lv-scrape-prices{font-size:0.76rem;}
       table.lv-scrape-prices thead th{text-transform:lowercase;font-size:0.7rem;}
       .lv-source-empty{margin:0;font-size:0.8rem;}
-      .manual-vendor-panel{margin:18px 0;padding:14px 16px;border-radius:12px;border:1px solid #e2e8f0;background:#f8fafc;}
-      .manual-vendor-panel .pdf-sec-head{margin-top:0;}
-      .manual-vendor-comments{margin-top:10px;font-size:0.82rem;}
-      .portfolio-panel{margin:20px 0;}
-      .portfolio-lead{font-size:0.86rem;margin:0 0 10px;color:#334155;}
-      .portfolio-file-list{margin:8px 0 14px;padding-left:1.1rem;font-size:0.82rem;color:#475569;}
-      .pdf-insight-cards{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));}
-      .pdf-insight-card{border:1px solid #e8eaed;border-radius:10px;padding:10px 12px;background:#fff;}
-      .pdf-insight-head{font-weight:700;font-size:0.82rem;margin:0 0 4px;color:#0f172a;text-transform:lowercase;}
-      .pdf-insight-meta{font-size:0.72rem;color:#64748b;margin:0 0 6px;}
-      .pdf-insight-km,.pdf-insight-hi{font-size:0.76rem;margin:4px 0 0;line-height:1.4;color:#334155;}
+      .manual-vendor-comments{margin-top:6px;font-size:0.72rem;}
+      .pdf-v1-notes-body{font-size:0.74rem;line-height:1.45;color:#424245;}
       table.odo-compact .odo-dots-th{width:88px;}
       .odo-dots-cell{display:flex;flex-wrap:wrap;align-items:center;gap:6px;vertical-align:middle;}
       .odo-dot-only{
@@ -1759,8 +1759,8 @@ function clientReportPrintCss(): string {
       .ins-compact td,.ins-compact th{padding:7px 8px;}
       .claims-intro-tight{margin-bottom:8px!important;}
       .legal-block{
-        margin-top:18px;padding:14px 16px;border-radius:10px;background:#f5f5f7;border:1px solid #e8e8ed;
-        font-size:0.74rem;color:#6e6e73;line-height:1.55;
+        margin-top:12px;padding:8px 0 0;border-top:1px solid #ececee;border-radius:0;background:transparent;
+        font-size:0.68rem;color:#86868b;line-height:1.45;
       }
       .legal-block strong{color:#424245;font-weight:600;}
       .report-foot{margin-top:16px;padding-top:12px;border-top:1px solid #e5e5ea;font-size:0.7rem;color:#aeaeb2;line-height:1.45;}
@@ -1783,10 +1783,10 @@ function buildHistoryCompareSectionHtml(insights: PdfPortfolioFileInsight[]): st
   const bullets = buildHistoryCompareBullets(rows);
 
   const parts: string[] = [];
-  parts.push(`<div class="history-compare-panel history-compare-slim" role="region">`);
+  parts.push(`<div class="history-compare-panel history-compare-slim history-compare-panel--clean" role="region">`);
   parts.push(sectionHead(ICO.layers, CLIENT_REPORT_PDF_SECTIONS.historyCompare));
   parts.push(
-    `<p class="history-compare-lead">Īss <strong>starpavotu kopskats</strong> importētajiem PDF. Pilns teksts — sadaļā <strong>Portfelis</strong>; salīdzinājums ar LV — grafiks un tabulas zemāk.</p>`,
+    `<p class="history-compare-lead">Īss <strong>starpavotu kopskats</strong> importētajiem PDF. Pilns teksts — avota PDF datnēs; salīdzinājums ar LV — grafiks un tabulas zemāk.</p>`,
   );
 
   parts.push(`<div class="compare-strip">`);
@@ -1813,7 +1813,7 @@ function buildHistoryCompareSectionHtml(insights: PdfPortfolioFileInsight[]): st
   }
 
   parts.push(
-    `<p class="hint history-compare-foot">Avotu tips — automātiska klasifikācija; papildu riski — blakus tabulai IV beigās.</p>`,
+    `<p class="hint history-compare-foot">Avotu tips — automātiska klasifikācija; papildu riski — skat. risku tabulu.</p>`,
   );
   parts.push(`</div>`);
   return parts.join("\n");
@@ -1826,7 +1826,7 @@ export function buildClientReportDocumentHtml(args: {
   dateFmt: Intl.DateTimeFormat;
   formatBytes: (n: number) => string;
 }): string {
-  const { payload, portfolio, pdfInsights, dateFmt, formatBytes } = args;
+  const { payload, pdfInsights, dateFmt } = args;
   const p = payload;
 
   const money =
@@ -1873,17 +1873,17 @@ export function buildClientReportDocumentHtml(args: {
   );
   lines.push("</div></div></header>");
 
-  const payBlock = buildPdfAdminMirrorPaymentBlock(p, money, dateFmt);
+  const payBlock = buildPdfAdminMirrorPaymentBlock(p, money, dateFmt, ICO.chart);
   if (payBlock) {
     lines.push(payBlock);
     lines.push(exportRowHtml());
   }
-  const vehicleBlock = buildPdfAdminMirrorVehicleBlock(p, makeModel);
+  const vehicleBlock = buildPdfAdminMirrorVehicleBlock(p, makeModel, ICO.car);
   if (vehicleBlock) {
     lines.push(vehicleBlock);
     lines.push(exportRowHtml());
   }
-  const clientBlock = buildPdfAdminMirrorClientBlock(p);
+  const clientBlock = buildPdfAdminMirrorClientBlock(p, ICO.user);
   if (clientBlock) {
     lines.push(clientBlock);
     lines.push(exportRowHtml());
@@ -1892,13 +1892,7 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(buildQuickControlPanelHtml(p, quickFlags, { includeNotesLine: false }));
   lines.push(exportRowHtml());
 
-  const portfolioHtml = buildPortfolioBlockHtml(portfolio, pdfInsights, formatBytes, "1. Portfelis");
-  if (portfolioHtml) {
-    lines.push(portfolioHtml);
-    lines.push(exportRowHtml());
-  }
-
-  const notesBlock = buildPdfAdminMirrorNotesBlock(p.notes);
+  const notesBlock = buildPdfAdminMirrorNotesBlock(p.notes, ICO.clip);
   if (notesBlock) {
     lines.push(notesBlock);
     lines.push(exportRowHtml());
@@ -1925,37 +1919,45 @@ export function buildClientReportDocumentHtml(args: {
     lines.push(exportRowHtml());
   }
 
-  const vendorManualHtml = buildManualVendorBlocksHtml(p.manualVendorBlocks);
+  const vendorManualHtml = buildInternationalManualSourcePanelsHtml(p.manualVendorBlocks, p.manualLtabBlock);
   if (vendorManualHtml) {
     lines.push(vendorManualHtml);
     lines.push(exportRowHtml());
   }
 
+  const historyCompareHtml = buildHistoryCompareSectionHtml(pdfInsights);
+  const showSummaryLead =
+    Boolean(historyCompareHtml) || odoPts.length > 0 || insRows.length > 0;
+
   lines.push(`<div class="summary-panel" role="region">`);
   lines.push(sectionHead(ICO.chart, CLIENT_REPORT_PDF_SECTIONS.summary));
-  lines.push(
-    `<p class="summary-lead">Salīdzina <strong>LV</strong> un <strong>importētos</strong> avotus. Laika līnijā — tikai krāsu punkti; 🚩 pie sludinājuma, ja nobraukums zemāks par iepriekš fiksēto.</p>`,
-  );
-  const historyCompareHtml = buildHistoryCompareSectionHtml(pdfInsights);
+  if (showSummaryLead) {
+    lines.push(
+      `<p class="summary-lead">Salīdzina <strong>LV</strong> un <strong>importētos</strong> avotus. Laika līnijā — tikai krāsu punkti; 🚩 pie sludinājuma, ja nobraukums zemāks par iepriekš fiksēto.</p>`,
+    );
+  }
   if (historyCompareHtml) lines.push(historyCompareHtml);
 
   if (odoPts.length > 0) {
     lines.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.odometer)}</h3>`);
     lines.push(buildOdometerSvg(odoPts));
-    lines.push(buildMileageForecastBlock(odoPts, p.csdd, p.tirgus, p.citi, pdfInsights));
+    if (odoPts.length >= 2) {
+      lines.push(buildMileageForecastBlock(odoPts, p.csdd, p.tirgus, p.citi, pdfInsights));
+    }
     if (citiOdoCallout) {
       lines.push(`<div class="odo-citi-callout"><strong>Citi avoti — odometrs:</strong> ${escapeHtml(citiOdoCallout)}</div>`);
     }
-    lines.push(`<h4 class="pdf-sub2">vertikālā laika līnija (hronoloģiski)</h4>`);
-    lines.push(
-      `<p class="hint hint-tight">Tikai emoji punkti — nozīme kā leģendā. 🚩 = iespējama neatbilstība (sludinājums zem iepriekšējā maksimuma).</p>`,
+    const chronoHtml = buildOdometerChronoTimelineHtml(
+      odoPts,
+      listingKmStrictlyBelowHistory(p.csdd, p.tirgus, p.citi, pdfInsights),
     );
-    lines.push(
-      buildOdometerChronoTimelineHtml(
-        odoPts,
-        listingKmStrictlyBelowHistory(p.csdd, p.tirgus, p.citi, pdfInsights),
-      ),
-    );
+    if (chronoHtml) {
+      lines.push(`<h4 class="pdf-sub2">vertikālā laika līnija (hronoloģiski)</h4>`);
+      lines.push(
+        `<p class="hint hint-tight">Tikai emoji punkti — nozīme kā leģendā. 🚩 = iespējama neatbilstība (sludinājums zem iepriekšējā maksimuma).</p>`,
+      );
+      lines.push(chronoHtml);
+    }
     lines.push(`<h4 class="pdf-sub2">apvienotā tabula (pēc nobraukuma)</h4>`);
     lines.push(
       `<p class="hint hint-tight">Kolonna „Avots”: krāsaini punkti; # = grafika numurs.</p>`,
@@ -2083,6 +2085,6 @@ export function buildClientReportDocumentHtml(args: {
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<title>${escapeHtml(title)}</title><style>${clientReportPrintCss()}</style></head><body>${lines.join("\n")}${reportFooterScript()}</body></html>`;
+<title>${escapeHtml(title)}</title><style>${clientReportPrintCss()}</style></head><body class="provin-report-doc">${lines.join("\n")}${reportFooterScript()}</body></html>`;
   return html;
 }

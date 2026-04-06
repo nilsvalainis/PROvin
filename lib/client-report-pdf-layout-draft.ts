@@ -1,6 +1,5 @@
 /**
- * PDF 1. posms — admin paneļa secības uzmetums + PROVIN vizuālais ietvars.
- * (Pilna avotu sadale pa atsevišķiem blokiem — turpmākajos soļos.)
+ * PDF — PROVIN „clean & compact” paneļu izkārtojums (Inter, gaišas līnijas, zīmola akcenti).
  */
 
 function esc(s: string): string {
@@ -9,6 +8,14 @@ function esc(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function pdfV1PanelHead(title: string, titleIconHtml = ""): string {
+  const icon =
+    titleIconHtml.trim() !== ""
+      ? `<span class="pdf-v1-ico" aria-hidden="true">${titleIconHtml}</span>`
+      : "";
+  return `<div class="pdf-v1-panel-head">${icon}<p class="pdf-v1-panel-title">${esc(title)}</p></div>`;
 }
 
 /** Vektora zīmols — drukai / PDF (tumši zils fons, balts teksts, akcenta .LV). */
@@ -22,40 +29,47 @@ export function provincLogoSvg(): string {
     </linearGradient>
   </defs>
   <rect width="220" height="48" rx="12" fill="url(#pdfV1LogoBg)"/>
-  <text x="110" y="32" text-anchor="middle" font-family="Inter,system-ui,-apple-system,BlinkMacSystemFont,sans-serif" font-size="19" font-weight="800" fill="#ffffff" letter-spacing="-0.02em">PROVIN<tspan fill="#6eb6ff">.LV</tspan></text>
+  <text x="110" y="32" text-anchor="middle" font-family="Inter,sans-serif" font-size="19" font-weight="800" fill="#ffffff" letter-spacing="-0.02em">PROVIN<tspan fill="#6eb6ff">.LV</tspan></text>
 </svg>`;
 }
 
 export function pdfLayoutDraftExtraCss(): string {
   return `
       .pdf-v1-hero{
-        margin:-14mm -12mm 22px -12mm;padding:20px 22px 22px;
-        background:linear-gradient(135deg,#0a1628 0%,#122a4a 48%,#0a1628 100%);
-        border-radius:16px 16px 0 0;border-bottom:3px solid #0066d6;
+        margin:-10mm -12mm 14px -12mm;padding:14px 16px 16px;
+        background:#0a1628;
+        border-radius:0 0 0 0;border-bottom:2px solid #0066d6;
       }
       @media print{
-        .pdf-v1-hero{margin:-10mm -12mm 18px;border-radius:0}
+        .pdf-v1-hero{margin:-8mm -12mm 12px;border-bottom:2px solid #0066d6}
         .pdf-v1-hero{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       }
-      .pdf-v1-hero-inner{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-      .pdf-v1-logo{width:200px;max-width:42vw;height:auto;flex-shrink:0;display:block}
+      .pdf-v1-hero-inner{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+      .pdf-v1-logo{width:176px;max-width:40vw;height:auto;flex-shrink:0;display:block}
       .pdf-v1-hero-text{flex:1;min-width:160px}
-      .pdf-v1-doc-title{margin:0;font-size:1.32rem;font-weight:700;color:#fff;letter-spacing:-0.03em;line-height:1.2;text-transform:none}
-      .pdf-v1-meta{margin:8px 0 0;font-size:0.84rem;color:#b9d4f0;line-height:1.45}
-      .pdf-v1-meta code{background:rgba(255,255,255,.14);padding:3px 10px;border-radius:8px;color:#fff;font-size:0.9em}
-      .pdf-v1-panel{
-        margin:16px 0 0;padding:16px 18px;border:1px solid #e2e8f0;border-radius:12px;
-        background:linear-gradient(180deg,#fafbfc 0%,#ffffff 100%);border-left:4px solid #0066d6;
+      .pdf-v1-doc-title{margin:0;font-size:1.05rem;font-weight:600;color:#fff;letter-spacing:-0.02em;line-height:1.25;text-transform:lowercase}
+      .pdf-v1-meta{margin:6px 0 0;font-size:0.72rem;color:#b9d4f0;line-height:1.4}
+      .pdf-v1-meta code{background:rgba(255,255,255,.12);padding:2px 8px;border-radius:6px;color:#fff;font-size:0.9em}
+      .pdf-v1-panel.pdf-v1-panel--clean{
+        margin:8px 0 0;padding:8px 0 10px;border:none;border-radius:0;
+        background:transparent;border-bottom:1px solid #ececee;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      .pdf-v1-panel--clean:last-child{border-bottom:none}
+      .pdf-v1-panel-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;flex-wrap:wrap}
+      .pdf-v1-ico{display:inline-flex;align-items:center;justify-content:center;color:#0066d6;flex-shrink:0}
+      .pdf-v1-ico .pdf-ico{width:14px;height:14px}
       .pdf-v1-panel-title{
-        margin:0 0 12px;font-size:0.72rem;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;color:#0066d6;
+        margin:0;font-size:0.68rem;font-weight:700;letter-spacing:0.04em;text-transform:lowercase;color:#0066d6;
       }
-      .pdf-v1-kv{width:100%;border-collapse:collapse;font-size:0.86rem}
-      .pdf-v1-kv td{padding:8px 10px;border-bottom:1px solid #eef2f6;vertical-align:top}
-      .pdf-v1-kv td:first-child{width:36%;color:#64748b;font-weight:600}
+      .pdf-v1-panel-title--src{text-transform:none;letter-spacing:0.02em;font-size:0.72rem;color:#1d1d1f}
+      .pdf-v1-kv{width:100%;border-collapse:collapse;font-size:0.74rem}
+      .pdf-v1-kv td{padding:4px 0 5px;border-bottom:1px solid #ececee;vertical-align:top}
+      .pdf-v1-kv td:first-child{width:36%;color:#86868b;font-weight:500}
       .pdf-v1-kv tr:last-child td{border-bottom:none}
       .pdf-v1-kv a{color:#0066d6;word-break:break-all}
+      .pdf-source-mirror-panel{margin-top:0}
+      .pdf-source-mirror-panel + .pdf-source-mirror-panel{margin-top:4px;padding-top:6px;border-top:1px solid #f0f0f2}
   `;
 }
 
@@ -63,6 +77,7 @@ export function buildPdfAdminMirrorPaymentBlock(
   p: { created: number; paymentStatus: string; amountTotal: number | null; currency: string | null },
   money: string,
   dateFmt: Intl.DateTimeFormat,
+  titleIconHtml = "",
 ): string {
   const rows: { k: string; v: string; html?: boolean }[] = [];
   if (money !== "—") rows.push({ k: "Summa", v: money });
@@ -72,12 +87,14 @@ export function buildPdfAdminMirrorPaymentBlock(
   const body = rows
     .map((r) => `<tr><td>${esc(r.k)}</td><td>${esc(r.v)}</td></tr>`)
     .join("");
-  return `<div class="pdf-v1-panel" role="region"><p class="pdf-v1-panel-title">Maksājums</p><table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
+  const head = pdfV1PanelHead("maksājums", titleIconHtml);
+  return `<div class="pdf-v1-panel pdf-v1-panel--clean" role="region">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
 }
 
 export function buildPdfAdminMirrorVehicleBlock(
   p: { vin: string | null; listingUrl: string | null },
   makeModel: string | null,
+  titleIconHtml = "",
 ): string {
   const rows: { k: string; v: string }[] = [];
   const vin = p.vin?.trim();
@@ -98,15 +115,19 @@ export function buildPdfAdminMirrorVehicleBlock(
       return `<tr><td>${esc(r.k)}</td><td>${esc(r.v)}</td></tr>`;
     })
     .join("");
-  return `<div class="pdf-v1-panel" role="region"><p class="pdf-v1-panel-title">Transportlīdzeklis un sludinājums</p><table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
+  const head = pdfV1PanelHead("transportlīdzeklis un sludinājums", titleIconHtml);
+  return `<div class="pdf-v1-panel pdf-v1-panel--clean" role="region">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
 }
 
-export function buildPdfAdminMirrorClientBlock(p: {
-  customerName: string | null;
-  customerEmail: string | null;
-  customerPhone: string | null;
-  contactMethod: string | null;
-}): string {
+export function buildPdfAdminMirrorClientBlock(
+  p: {
+    customerName: string | null;
+    customerEmail: string | null;
+    customerPhone: string | null;
+    contactMethod: string | null;
+  },
+  titleIconHtml = "",
+): string {
   const rows: { k: string; v: string }[] = [];
   const name = p.customerName?.trim();
   if (name) rows.push({ k: "Vārds, uzvārds", v: name });
@@ -118,11 +139,13 @@ export function buildPdfAdminMirrorClientBlock(p: {
   if (cm) rows.push({ k: "Vēlamā saziņa", v: cm });
   if (rows.length === 0) return "";
   const body = rows.map((r) => `<tr><td>${esc(r.k)}</td><td>${esc(r.v)}</td></tr>`).join("");
-  return `<div class="pdf-v1-panel" role="region"><p class="pdf-v1-panel-title">Klienta kontaktdati</p><table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
+  const head = pdfV1PanelHead("klienta kontaktdati", titleIconHtml);
+  return `<div class="pdf-v1-panel pdf-v1-panel--clean" role="region">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
 }
 
-export function buildPdfAdminMirrorNotesBlock(notes: string | null | undefined): string {
+export function buildPdfAdminMirrorNotesBlock(notes: string | null | undefined, titleIconHtml = ""): string {
   const t = notes?.trim();
   if (!t) return "";
-  return `<div class="pdf-v1-panel" role="region"><p class="pdf-v1-panel-title">Komentārs no klienta formas</p><p class="client-msg" style="margin:0">${esc(t)}</p></div>`;
+  const head = pdfV1PanelHead("komentārs no klienta formas", titleIconHtml);
+  return `<div class="pdf-v1-panel pdf-v1-panel--clean" role="region">${head}<p class="client-msg pdf-v1-notes-body" style="margin:0">${esc(t)}</p></div>`;
 }
