@@ -6,6 +6,7 @@
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
 import { amountToIntRough } from "@/lib/claim-rows-parse";
 import {
+  autoRecordsBlockHasContent,
   citiAvotiHasContent,
   CSDD_FORM_STRUCTURED_FIELDS,
   CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
@@ -19,6 +20,7 @@ import {
   TIRGUS_LABEL_LISTED,
   TIRGUS_LABEL_PRICE_DROP,
   tirgusFormHasContent,
+  type AutoRecordsBlockState,
   type ClientManualLtabBlockPdf,
   type ClientManualVendorBlockPdf,
   type CitiAvotiBlockState,
@@ -26,6 +28,7 @@ import {
   type ListingAnalysisBlockState,
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
+import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import {
   buildPdfAdminMirrorClientBlock,
   buildPdfAdminMirrorNotesBlock,
@@ -82,6 +85,8 @@ export type ClientReportPayload = {
   apskatesPlāns: string;
   listingMarket?: import("@/lib/listing-scrape").ListingMarketSnapshot | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[];
+  /** AUTO RECORDS — servisa vēsture (PDF: tabula; raw netiek drukāts). */
+  autoRecordsBlock?: AutoRecordsBlockState | null;
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
   citiAvoti?: CitiAvotiBlockState | null;
   listingAnalysis?: ListingAnalysisBlockState | null;
@@ -301,6 +306,36 @@ function vendorPdfIconBrandClass(title: string): string {
   return "pdf-avotu-ico-brand--autodna";
 }
 
+function pdfAutoRecordsCheckIcon(): string {
+  return `<svg class="pdf-ar-status-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 6L9 17l-5-5" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+/** AUTO RECORDS — zebra tabula, zaļa „check” ikona statusa kolonnā. */
+function buildAutoRecordsAvotuSubsection(b: AutoRecordsBlockState | null | undefined): string {
+  if (!b || !autoRecordsBlockHasContent(b)) return "";
+  const rows = b.serviceHistory.filter(autoRecordsRowHasData);
+  const hasComments = b.comments.trim().length > 0;
+  if (rows.length === 0 && !hasComments) return "";
+  const header = pdfAvotuNeutralHeader(ICO.spark, SOURCE_BLOCK_LABELS.auto_records, "pdf-avotu-ico-brand--auto-records");
+  const bodyParts: string[] = [];
+  if (rows.length > 0) {
+    bodyParts.push(
+      `<table class="mirror-table mirror-table--auto-records"><thead><tr><th class="pdf-ar-status-col"></th><th>Datums</th><th class="tabular">Odometrs (km)</th><th>Valsts</th></tr></thead><tbody>`,
+    );
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const zebra = i % 2 === 0 ? "pdf-ar-row--a" : "pdf-ar-row--b";
+      bodyParts.push(
+        `<tr class="${zebra}"><td class="pdf-ar-status-cell">${pdfAutoRecordsCheckIcon()}</td><td>${escapeHtml(r.date)}</td><td class="tabular">${escapeHtml(r.odometer)}</td><td>${escapeHtml(r.country)}</td></tr>`,
+      );
+    }
+    bodyParts.push(`</tbody></table>`);
+  }
+  const bodyHtml = bodyParts.join("");
+  const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--auto-records">${header}<div class="pdf-avotu-body">${bodyHtml}</div></div>`;
+  return wrapPdfAvotuStack(card, hasComments ? pdfAvotuCommentIsland(b.comments) : "");
+}
+
 /** Viena trešā pušu avota apakšbloks zem „AVOTU DATI“. */
 function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf): string {
   const hasTable = b.rows.length > 0;
@@ -414,7 +449,7 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   };
   const autodna = vendorHtml(SOURCE_BLOCK_LABELS.autodna);
   const carvertical = vendorHtml(SOURCE_BLOCK_LABELS.carvertical);
-  const autoRecords = vendorHtml(SOURCE_BLOCK_LABELS.auto_records);
+  const autoRecords = buildAutoRecordsAvotuSubsection(p.autoRecordsBlock ?? null);
 
   const stack = [csdd, autodna, carvertical, autoRecords, ltab, tirgus, citiAvoti].filter(Boolean);
   if (stack.length === 0) return "";
@@ -616,6 +651,17 @@ function clientReportPrintCss(): string {
       .mirror-table--csdd-mh{font-size:9pt!important;margin:2px 0 4px!important;}
       .mirror-table--csdd-mh td,.mirror-table--csdd-mh th{padding:3px 4px!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;}
       .mirror-table--csdd-mh thead th{font-size:9pt!important;}
+      .pdf-avotu-card--auto-records{border:1px solid #e2e8f0;}
+      .mirror-table--auto-records{font-size:9pt!important;margin:2px 0 4px!important;border-collapse:collapse;width:100%;}
+      .mirror-table--auto-records td,.mirror-table--auto-records th{
+        font-size:9pt!important;padding:4px 6px!important;line-height:1.25!important;border-bottom:1px solid #e2e8f0!important;
+      }
+      .mirror-table--auto-records thead th{font-weight:600;color:#334155;font-size:9pt!important;}
+      .pdf-ar-row--a{background:#f8fafc!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .pdf-ar-row--b{background:#eff6ff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .pdf-ar-status-col{width:22px;padding:3px 4px!important;}
+      .pdf-ar-status-cell{text-align:center;vertical-align:middle;}
+      .pdf-ar-status-ico{display:block;margin:0 auto;}
       .tabular{font-variant-numeric:tabular-nums;}
       .pdf-iriss-approved{
         margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #bfdbfe;

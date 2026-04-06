@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePortfolioFileRow";
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
+import { AdminAutoRecordsSourceBlock } from "@/components/admin/AdminAutoRecordsSourceBlock";
 import { AdminStructuredSourceBlock } from "@/components/admin/AdminStructuredSourceBlock";
 import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBlock";
 import { AdminListingAnalysisSourceBlock } from "@/components/admin/AdminListingAnalysisSourceBlock";
@@ -21,6 +22,7 @@ import {
   hydrateWorkspaceFromStorage,
   listingAnalysisToPlainText,
   ltabBlockToPlainText,
+  autoRecordsBlockToPlainText,
   standardBlockToPlainText,
   tirgusFormToPlainText,
   toPdfLtabManualBlock,
@@ -363,7 +365,9 @@ export function OrderDetailWorkspace({
                     ? citiAvotiToPlainText(ws.sourceBlocks.citi_avoti)
                     : key === "listing_analysis"
                       ? listingAnalysisToPlainText(ws.sourceBlocks.listing_analysis)
-                      : standardBlockToPlainText(ws.sourceBlocks[key]),
+                      : key === "auto_records"
+                        ? autoRecordsBlockToPlainText(ws.sourceBlocks.auto_records)
+                        : standardBlockToPlainText(ws.sourceBlocks[key]),
         })),
         fileNames: portfolio.map((p) => p.name),
       }),
@@ -734,6 +738,7 @@ export function OrderDetailWorkspace({
         tirgusForm: ws.sourceBlocks.tirgus,
         manualVendorBlocks: toPdfManualVendorBlocks(ws.sourceBlocks),
         manualLtabBlock: toPdfLtabManualBlock(ws.sourceBlocks.ltab),
+        autoRecordsBlock: ws.sourceBlocks.auto_records,
         citiAvoti: ws.sourceBlocks.citi_avoti,
         listingAnalysis: ws.sourceBlocks.listing_analysis,
         iriss: ws.iriss,
@@ -892,7 +897,9 @@ export function OrderDetailWorkspace({
                           ? citiAvotiToPlainText(ws.sourceBlocks.citi_avoti)
                           : key === "listing_analysis"
                             ? listingAnalysisToPlainText(ws.sourceBlocks.listing_analysis)
-                            : standardBlockToPlainText(ws.sourceBlocks[key])
+                            : key === "auto_records"
+                              ? autoRecordsBlockToPlainText(ws.sourceBlocks.auto_records)
+                              : standardBlockToPlainText(ws.sourceBlocks[key])
                 }
                 variant="default"
               />
@@ -1197,8 +1204,7 @@ export function OrderDetailWorkspace({
               />
             </div>
             <div className="flex min-h-0 h-full min-w-0 flex-col">
-              <AdminStructuredSourceBlock
-                blockKey="auto_records"
+              <AdminAutoRecordsSourceBlock
                 value={blocksForDisplay.auto_records}
                 readOnly={sourcesViewMode}
                 onChange={(next) => updateSourceBlock("auto_records", next)}

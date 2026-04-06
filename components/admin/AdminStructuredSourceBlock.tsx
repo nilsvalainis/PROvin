@@ -16,7 +16,7 @@ type Props = {
 };
 
 function vendorLossAmountMode(key: StandardSourceBlockKey): boolean {
-  return key === "autodna" || key === "carvertical" || key === "auto_records";
+  return key === "autodna" || key === "carvertical";
 }
 
 export function AdminStructuredSourceBlock({ blockKey, value, readOnly, disabled, onChange }: Props) {
