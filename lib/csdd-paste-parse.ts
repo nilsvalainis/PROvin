@@ -257,11 +257,11 @@ export function parseMileageHistoryLvBlock(text: string): CsddMileageRow[] {
 }
 
 /**
- * Ārvalstu rinda: datums + odometrs (cipari) + optional „km” + valsts.
- * Grupas: (1) datums, (2) odometrs, (3) valsts — pēc „km” vai tieši pēc odometra.
+ * Ārvalstu rinda (CSDD teksta rinda). Grupas: 1 = datums, 2 = odometrs, 3 = valsts (pēc optional „km”).
+ * Precīzs variants pēc spec: tikai burti + atstarpes valstī; `/iu` lai ASCII burti arī mazie.
  */
 const ABROAD_LINE_REGEX =
-  /^(\d{2}\.\d{2}\.\d{4})\s+(\d+)(?:\s*km)?\s+([A-ZĀČĒĢĪĶĻŅŠŪŽa-zāčēģīķļņšūž\s,.-]+)$/iu;
+  /^(\d{2}\.\d{2}\.\d{4})\s+(\d+)(?:\s*km)?\s+([A-ZĀČĒĢĪĶĻŅŠŪŽ\s]+)$/iu;
 
 function parseAbroadSpaceLine(sp: string[]): {
   date: string;
@@ -364,8 +364,10 @@ function extractPrevInspectionIsoFromLvFirstRow(raw: string): string | null {
 }
 
 export function parseCsddPaste(raw: string): CsddPasteParseResult {
-  const lvRecords = parseMileageHistoryLvBlock(raw).map((r) => ({
-    ...r,
+  const fromLvBlock = parseMileageHistoryLvBlock(raw);
+  const lvRecords: CsddMileageRow[] = fromLvBlock.map((row) => ({
+    date: row.date,
+    odometer: row.odometer,
     country: CSDD_MILEAGE_COUNTRY_LV,
   }));
   const foreignRecords = parseMileageAbroadBlock(raw);

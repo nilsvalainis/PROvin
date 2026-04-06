@@ -237,11 +237,13 @@ export function finalizeMileageHistory(rows: CsddMileageRow[]): CsddMileageRow[]
   return sortMileageHistoryDescending(deduped);
 }
 
+/** Dublikātam jāiekļauj valsts — citādi LV + ārvalsts ar vienu datumu/odometru saplūst un valsts kļūst par pirmo (bieži LV). */
 function mileageDedupKey(r: CsddMileageRow): string {
   const ts = mileageDateSortKey(r.date);
   const km = normalizeOdometerFromPaste(r.odometer);
-  if (ts !== 0) return `${ts}|${km}`;
-  return `0|${r.date.trim().replace(/\s+/g, "")}|${km}`;
+  const c = r.country.trim();
+  if (ts !== 0) return `${ts}|${km}|${c}`;
+  return `0|${r.date.trim().replace(/\s+/g, "")}|${km}|${c}`;
 }
 
 function mileageDateSortKey(s: string): number {
