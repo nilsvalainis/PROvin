@@ -19,14 +19,18 @@ import {
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
-function flagBorderClass(flag: CsddFieldUiFlag): string {
-  if (flag === "red") return "border-red-500 ring-1 ring-red-500/20";
-  if (flag === "yellow") return "border-amber-400 ring-1 ring-amber-400/25";
-  return "";
+const inpAlertInner =
+  "min-w-0 w-full flex-1 rounded border-0 bg-transparent px-0 py-0 text-[11px] text-[var(--color-apple-text)] focus:outline-none focus:ring-0";
+
+function csddAlertRowClass(flag: Exclude<CsddFieldUiFlag, "none">): string {
+  if (flag === "red") {
+    return "rounded-[4px] border border-[#FEE2E2] bg-[#FEF2F2] pl-2 pr-2 py-1.5 border-l-[3px] border-l-[#EF4444]";
+  }
+  return "rounded-[4px] border border-[#FEF3C7] bg-[#FFFBEB] pl-2 pr-2 py-1.5 border-l-[3px] border-l-[#F59E0B]";
 }
 
-function FieldWarningIcon({ flag }: { flag: Exclude<CsddFieldUiFlag, "none"> }) {
-  const cls = flag === "red" ? "text-red-600" : "text-amber-500";
+function FieldAlertCircleIcon({ flag }: { flag: Exclude<CsddFieldUiFlag, "none"> }) {
+  const cls = flag === "red" ? "text-[#EF4444]" : "text-[#F59E0B]";
   return (
     <span className={`inline-flex shrink-0 ${cls}`} aria-hidden>
       <svg
@@ -40,9 +44,8 @@ function FieldWarningIcon({ flag }: { flag: Exclude<CsddFieldUiFlag, "none"> }) 
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-        <path d="M12 9v4" />
-        <path d="M12 17h.01" />
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 8v4M12 16h.01" />
       </svg>
     </span>
   );
@@ -141,37 +144,58 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
             else if (flag === "yellow") flagTitle = "Brīdinājums: līdz apskatei mazāk par 90 dienām.";
           }
           const showFlag = isFlagField && flag !== "none";
-          const flaggedInputClass = `${inp} min-w-0 flex-1 ${showFlag ? flagBorderClass(flag) : ""}`;
 
           return (
             <div key={key} className="min-w-0">
-              <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">{label}</label>
-              {readOnly ? (
-                isFlagField ? (
-                  <div
-                    className={`flex min-h-[28px] min-w-0 items-center gap-1 rounded-md border bg-white px-2 py-1 text-[11px] text-[var(--color-provin-muted)] ${
-                      showFlag ? flagBorderClass(flag) : "border-slate-200/90"
-                    }`}
-                    title={flagTitle || undefined}
-                  >
-                    <span className="min-w-0 flex-1 whitespace-pre-wrap">
+              {isFlagField && showFlag ? (
+                <div
+                  className={csddAlertRowClass(flag === "red" ? "red" : "yellow")}
+                  title={flagTitle || undefined}
+                  role="group"
+                  aria-label={flagTitle || label}
+                >
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                    <FieldAlertCircleIcon flag={flag === "red" ? "red" : "yellow"} />
+                    <span className="shrink-0 text-[10px] font-medium text-[var(--color-provin-muted)]">{label}</span>
+                    <div className="min-w-0 flex-1">
+                      {readOnly ? (
+                        <div className="min-h-[20px] whitespace-pre-wrap text-[11px] text-[var(--color-apple-text)]">
+                          {strVal.trim() ? strVal : <span className="text-slate-400">—</span>}
+                        </div>
+                      ) : dateKeys.has(key) ? (
+                        <input
+                          type="date"
+                          className={inpAlertInner}
+                          value={strVal}
+                          disabled={disabled}
+                          onChange={(e) => setField(key, e.target.value)}
+                          aria-label={label}
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          className={inpAlertInner}
+                          value={strVal}
+                          disabled={disabled}
+                          onChange={(e) => setField(key, e.target.value)}
+                          aria-label={label}
+                        />
+                      )}
+                    </div>
+                    <FieldAlertCircleIcon flag={flag === "red" ? "red" : "yellow"} />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">{label}</label>
+                  {readOnly ? (
+                    <div className="min-h-[28px] whitespace-pre-wrap rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] text-[var(--color-provin-muted)]">
                       {strVal.trim() ? strVal : <span className="text-slate-400">—</span>}
-                    </span>
-                    {showFlag && (
-                      <FieldWarningIcon flag={flag === "red" ? "red" : "yellow"} />
-                    )}
-                  </div>
-                ) : (
-                  <div className="min-h-[28px] whitespace-pre-wrap rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] text-[var(--color-provin-muted)]">
-                    {strVal.trim() ? strVal : <span className="text-slate-400">—</span>}
-                  </div>
-                )
-              ) : isFlagField ? (
-                <div className="flex min-w-0 items-center gap-1" title={flagTitle || undefined}>
-                  {dateKeys.has(key) ? (
+                    </div>
+                  ) : dateKeys.has(key) ? (
                     <input
                       type="date"
-                      className={flaggedInputClass}
+                      className={inp}
                       value={strVal}
                       disabled={disabled}
                       onChange={(e) => setField(key, e.target.value)}
@@ -180,35 +204,14 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
                   ) : (
                     <input
                       type="text"
-                      className={flaggedInputClass}
+                      className={inp}
                       value={strVal}
                       disabled={disabled}
                       onChange={(e) => setField(key, e.target.value)}
                       aria-label={label}
                     />
                   )}
-                  {showFlag && (
-                    <FieldWarningIcon flag={flag === "red" ? "red" : "yellow"} />
-                  )}
-                </div>
-              ) : dateKeys.has(key) ? (
-                <input
-                  type="date"
-                  className={inp}
-                  value={strVal}
-                  disabled={disabled}
-                  onChange={(e) => setField(key, e.target.value)}
-                  aria-label={label}
-                />
-              ) : (
-                <input
-                  type="text"
-                  className={inp}
-                  value={strVal}
-                  disabled={disabled}
-                  onChange={(e) => setField(key, e.target.value)}
-                  aria-label={label}
-                />
+                </>
               )}
             </div>
           );
