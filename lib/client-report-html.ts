@@ -37,7 +37,6 @@ import {
 import {
   CLIENT_REPORT_FOOTER_DISCLAIMER,
   CLIENT_REPORT_PDF_SECTIONS,
-  CLIENT_REPORT_SERVICE_NOTICE,
   REPORT_PDF_STANDARDS,
 } from "@/lib/report-pdf-standards";
 
@@ -646,8 +645,7 @@ export function buildClientReportDocumentHtml(args: {
   );
 
   lines.push('<div class="legal-block">');
-  lines.push(`<p><strong>Juridisks pārskats.</strong> ${escapeHtml(CLIENT_REPORT_SERVICE_NOTICE)}</p>`);
-  lines.push(`<p style="margin-top:6px">${escapeHtml(CLIENT_REPORT_FOOTER_DISCLAIMER)}</p>`);
+  lines.push(`<p>${escapeHtml(CLIENT_REPORT_FOOTER_DISCLAIMER)}</p>`);
   lines.push("</div>");
 
   if (p.isDemo) {

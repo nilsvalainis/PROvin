@@ -67,12 +67,9 @@ export const CLIENT_REPORT_SECTION_LABELS = {
   contacts: "Kontakti",
 } as const;
 
-/** Kājenes teksts — saskaņots ar mājas lapas kājenes disclaimer (Footer). */
+/** Vienota juridiskā atruna — PDF apakšā (legal-block). */
 export const CLIENT_REPORT_FOOTER_DISCLAIMER =
-  "Datu avotu informācija ir informatīva; eksperta kopsavilkums ir profesionāls viedoklis, nevis juridisks spriedums vai oficiāla tehniskā ekspertīze.";
-
-export const CLIENT_REPORT_SERVICE_NOTICE =
-  "PROVIN sniedz konsultatīvu pakalpojumu: transportlīdzekļa pieejamās informācijas izvērtējumu un ieteikumus. Tas nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze vai juridisks spriedums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.";
+  "PROVIN.LV sniedz konsultatīvu pakalpojumu: transportlīdzekļa pieejamās informācijas izvērtējumu un ieteikumus. Tas nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze vai juridisks spriedums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.";
 
 /** Noņem / aizstāj biežus trešo pušu komerciālos nosaukumus failu nosaukumos PDF sarakstā. */
 export function sanitizeAttachmentFileNameForReport(fileName: string): string {
