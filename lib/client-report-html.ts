@@ -13,9 +13,14 @@ import {
   CSDD_FORM_SHORT_FIELDS,
   CSDD_LABEL_DETAILED_RATING,
   CSDD_LABEL_PREV_INSPECTION_DATA,
+  CSDD_MILEAGE_ABROAD_TITLE,
+  CSDD_MILEAGE_COL_SOURCE,
   CSDD_MILEAGE_HISTORY_TITLE,
   CSDD_TECHNICAL_COMPACT_KEYS,
   csddFormHasContent,
+  csddMileageAbroadRowHasData,
+  csddMileageRowHasData,
+  takeNewestMileageRowsForPdf,
   LISTING_ANALYSIS_SUBSECTIONS,
   SOURCE_BLOCK_LABELS,
   listingAnalysisHasContent,
@@ -31,7 +36,7 @@ import {
   type ListingAnalysisBlockState,
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
-import { defectRowHasData } from "@/lib/csdd-defect-parse";
+import { defectRowHasData, parseDefectRowsFromText } from "@/lib/csdd-defect-parse";
 import {
   buildPdfAdminMirrorClientBlock,
   buildPdfAdminMirrorNotesBlock,
@@ -247,8 +252,15 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
       bodyParts.push(`<p class="pdf-field-label">${escapeHtml(CSDD_LABEL_DETAILED_RATING)}</p>`);
       bodyParts.push(buildCsddDefectTableHtml(f.detailedRatingRows, "current"));
     } else if (f.prevInspectionRating.trim()) {
+      const legacyParsed = parseDefectRowsFromText(f.prevInspectionRating);
       bodyParts.push(`<p class="pdf-field-label">${escapeHtml(CSDD_LABEL_DETAILED_RATING)}</p>`);
-      bodyParts.push(`<pre class="mirror-pre mirror-pre--csdd-dense">${escapeHtml(f.prevInspectionRating.trim())}</pre>`);
+      if (legacyParsed.some(defectRowHasData)) {
+        bodyParts.push(buildCsddDefectTableHtml(legacyParsed, "current"));
+      } else {
+        bodyParts.push(
+          `<pre class="mirror-pre mirror-pre--csdd-dense">${escapeHtml(f.prevInspectionRating.trim())}</pre>`,
+        );
+      }
     }
     if (f.prevInspectionDefectRows.some(defectRowHasData)) {
       bodyParts.push(
@@ -256,9 +268,7 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
       );
       bodyParts.push(buildCsddDefectTableHtml(f.prevInspectionDefectRows, "historic"));
     }
-    const mhRows = f.mileageHistoryLv.filter(
-      (r) => r.date.trim() || r.odometer.trim() || r.distance.trim(),
-    );
+    const mhRows = takeNewestMileageRowsForPdf(f.mileageHistoryLv, csddMileageRowHasData);
     if (mhRows.length > 0) {
       const head = `<tr><th>Datums</th><th>Odometrs</th><th>Nobraukums</th></tr>`;
       const body = mhRows
@@ -269,6 +279,20 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
         .join("\n");
       bodyParts.push(
         `<p class="pdf-field-label pdf-field-label--sub">${escapeHtml(CSDD_MILEAGE_HISTORY_TITLE)}</p>`,
+      );
+      bodyParts.push(`<table class="mirror-table mirror-table--csdd-mh"><thead>${head}</thead><tbody>${body}</tbody></table>`);
+    }
+    const maRows = takeNewestMileageRowsForPdf(f.mileageHistoryAbroad, csddMileageAbroadRowHasData);
+    if (maRows.length > 0) {
+      const head = `<tr><th>Datums</th><th>Odometrs</th><th>${escapeHtml(CSDD_MILEAGE_COL_SOURCE)}</th></tr>`;
+      const body = maRows
+        .map(
+          (r) =>
+            `<tr><td>${escapeHtml(r.date.trim())}</td><td>${escapeHtml(r.odometer.trim())}</td><td>${escapeHtml(r.source.trim())}</td></tr>`,
+        )
+        .join("\n");
+      bodyParts.push(
+        `<p class="pdf-field-label pdf-field-label--sub">${escapeHtml(CSDD_MILEAGE_ABROAD_TITLE)}</p>`,
       );
       bodyParts.push(`<table class="mirror-table mirror-table--csdd-mh"><thead>${head}</thead><tbody>${body}</tbody></table>`);
     }

@@ -2,7 +2,7 @@
  * CSDD „Smart Paste” — neapstrādāta teksta parsēšana admin laukām.
  */
 
-import type { CsddFormFields, CsddMileageHistoryRow } from "@/lib/admin-source-blocks";
+import type { CsddFormFields, CsddMileageAbroadRow, CsddMileageHistoryRow } from "@/lib/admin-source-blocks";
 import { parseDefectRowsFromText, type CsddDefectRow } from "@/lib/csdd-defect-parse";
 
 const LABEL_LINE_RE =
@@ -128,6 +128,7 @@ function isCsddSectionHeaderLine(line: string): boolean {
   if (!t) return false;
   return (
     /^Nobraukuma\s+vēsture/i.test(t) ||
+    /^Nobraukums\s+ārvalst/i.test(t) ||
     /^Tehniskie\s+dati/i.test(t) ||
     /^Detalizētais\s+vērtējums/i.test(t) ||
     /^Novērtējums\s*:/i.test(t) ||
@@ -226,6 +227,60 @@ export function parseMileageHistoryLvBlock(text: string): CsddMileageHistoryRow[
   return rows;
 }
 
+/**
+ * Rindas pēc „Nobraukums ārvalstīs” — Datums | Odometrs | Avots/Valsts.
+ * Trešā kolonna var būt valsts vai ārvalstu reģistra nosaukums.
+ */
+export function parseMileageAbroadBlock(text: string): CsddMileageAbroadRow[] {
+  const lines = text.split(/\r?\n/);
+  const rows: CsddMileageAbroadRow[] = [];
+
+  let i = 0;
+  while (i < lines.length) {
+    if (/Nobraukums\s+ārvalstīs/i.test(lines[i])) {
+      i++;
+      while (i < lines.length) {
+        const L0 = lines[i].trim();
+        if (!L0) {
+          i++;
+          continue;
+        }
+        if (/^\s*(datums|odometrs|avots|valsts|nobraukums)\b/i.test(L0)) {
+          i++;
+          continue;
+        }
+        if (looksLikeSectionHeader(L0) && !/^\d{2}\.\d{2}\.\d{4}/.test(L0)) break;
+
+        const L = L0;
+        const tabs = L.split("\t").map((c) => c.trim());
+        if (tabs.length >= 3 && /^\d{2}\.\d{2}\.\d{4}$/.test(tabs[0])) {
+          rows.push({
+            date: tabs[0],
+            odometer: digitsOnly(tabs[1]) || tabs[1].trim(),
+            source: tabs.slice(2).join(" ").trim(),
+          });
+          i++;
+          continue;
+        }
+        const sp = L.split(/\s+/).filter(Boolean);
+        if (sp.length >= 3 && /^\d{2}\.\d{2}\.\d{4}$/.test(sp[0])) {
+          rows.push({
+            date: sp[0],
+            odometer: digitsOnly(sp[1]) || sp[1],
+            source: sp.slice(2).join(" "),
+          });
+          i++;
+          continue;
+        }
+        break;
+      }
+      break;
+    }
+    i++;
+  }
+  return rows;
+}
+
 /** Pirmās tabulas rindas datums → Nākamās apskates datums (ISO). */
 export function firstMileageRowDateToNextInspectionIso(rows: CsddMileageHistoryRow[]): string | null {
   const first = rows[0];
@@ -235,12 +290,13 @@ export function firstMileageRowDateToNextInspectionIso(rows: CsddMileageHistoryR
 
 type CsddPasteStringKey = Exclude<
   keyof CsddFormFields,
-  "rawUnprocessedData" | "mileageHistoryLv" | "detailedRatingRows" | "prevInspectionDefectRows"
+  "rawUnprocessedData" | "mileageHistoryLv" | "mileageHistoryAbroad" | "detailedRatingRows" | "prevInspectionDefectRows"
 >;
 
 export type CsddPasteParseResult = {
   fieldUpdates: Partial<Pick<CsddFormFields, CsddPasteStringKey>>;
   mileageHistoryLv: CsddMileageHistoryRow[];
+  mileageHistoryAbroad: CsddMileageAbroadRow[];
   nextInspectionIso: string | null;
   detailedRatingRows: CsddDefectRow[] | null;
   prevInspectionDefectRows: CsddDefectRow[] | null;
@@ -285,10 +341,18 @@ export function parseCsddPaste(raw: string): CsddPasteParseResult {
     ip && ip.trim() ? parseDefectRowsFromText(ip) : null;
 
   const mileageHistoryLv = parseMileageHistoryLvBlock(raw);
+  const mileageHistoryAbroad = parseMileageAbroadBlock(raw);
   const nextInspectionIso =
     mileageHistoryLv.length > 0 ? firstMileageRowDateToNextInspectionIso(mileageHistoryLv) : null;
 
-  return { fieldUpdates, mileageHistoryLv, nextInspectionIso, detailedRatingRows, prevInspectionDefectRows };
+  return {
+    fieldUpdates,
+    mileageHistoryLv,
+    mileageHistoryAbroad,
+    nextInspectionIso,
+    detailedRatingRows,
+    prevInspectionDefectRows,
+  };
 }
 
 export function applyCsddPasteToForm(
@@ -309,6 +373,10 @@ export function applyCsddPasteToForm(
 
   if (parsed.mileageHistoryLv.length > 0) {
     next.mileageHistoryLv = parsed.mileageHistoryLv;
+  }
+
+  if (parsed.mileageHistoryAbroad.length > 0) {
+    next.mileageHistoryAbroad = parsed.mileageHistoryAbroad;
   }
 
   if (parsed.nextInspectionIso) {

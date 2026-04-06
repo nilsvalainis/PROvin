@@ -87,6 +87,13 @@ export type CsddMileageHistoryRow = {
   distance: string;
 };
 
+/** Nobraukums ārvalstīs — Datums | Odometrs | Avots/Valsts. */
+export type CsddMileageAbroadRow = {
+  date: string;
+  odometer: string;
+  source: string;
+};
+
 /** CSDD statiskā forma — lauku atslēgas. */
 export type CsddFormFields = {
   /** Tikai admin panelis — ielīmētais neapstrādātais teksts; netiek drukāts PDF. */
@@ -110,6 +117,7 @@ export type CsddFormFields = {
   prevInspectionDefectRows: CsddDefectRow[];
   comments: string;
   mileageHistoryLv: CsddMileageHistoryRow[];
+  mileageHistoryAbroad: CsddMileageAbroadRow[];
 };
 
 /** Etiķetes PDF un admin — precīzi kā specifikācijā. */
@@ -205,17 +213,30 @@ export function emptyCsddFields(): CsddFormFields {
     prevInspectionDefectRows: [],
     comments: "",
     mileageHistoryLv: [],
+    mileageHistoryAbroad: [],
   };
 }
 
 export const CSDD_MILEAGE_HISTORY_TITLE = "Nobraukuma vēsture LV";
+export const CSDD_MILEAGE_ABROAD_TITLE = "Nobraukums ārvalstīs";
+export const CSDD_MILEAGE_COL_SOURCE = "Avots/Valsts";
+
+export { CSDD_MILEAGE_VISIBLE_LIMIT, takeNewestMileageRowsForPdf } from "@/lib/csdd-mileage-display";
 
 export function emptyCsddMileageRow(): CsddMileageHistoryRow {
   return { date: "", odometer: "", distance: "" };
 }
 
-function csddMileageRowHasData(r: CsddMileageHistoryRow): boolean {
+export function emptyCsddMileageAbroadRow(): CsddMileageAbroadRow {
+  return { date: "", odometer: "", source: "" };
+}
+
+export function csddMileageRowHasData(r: CsddMileageHistoryRow): boolean {
   return Boolean(r.date.trim() || r.odometer.trim() || r.distance.trim());
+}
+
+export function csddMileageAbroadRowHasData(r: CsddMileageAbroadRow): boolean {
+  return Boolean(r.date.trim() || r.odometer.trim() || r.source.trim());
 }
 
 export function csddFormHasContent(f: CsddFormFields): boolean {
@@ -225,7 +246,8 @@ export function csddFormHasContent(f: CsddFormFields): boolean {
     f.detailedRatingRows.some(defectRowHasData) ||
     f.prevInspectionDefectRows.some(defectRowHasData) ||
     f.comments.trim().length > 0 ||
-    f.mileageHistoryLv.some(csddMileageRowHasData)
+    f.mileageHistoryLv.some(csddMileageRowHasData) ||
+    f.mileageHistoryAbroad.some(csddMileageAbroadRowHasData)
   );
 }
 
@@ -246,6 +268,14 @@ export function csddFormToPlainText(f: CsddFormFields): string {
     lines.push(CSDD_MILEAGE_HISTORY_TITLE);
     for (const row of mh) {
       const cells = [row.date, row.odometer, row.distance].map((c) => c.replace(/\s+/g, " ").trim()).join("\t");
+      lines.push(cells);
+    }
+  }
+  const ma = f.mileageHistoryAbroad.filter(csddMileageAbroadRowHasData);
+  if (ma.length > 0) {
+    lines.push(CSDD_MILEAGE_ABROAD_TITLE);
+    for (const row of ma) {
+      const cells = [row.date, row.odometer, row.source].map((c) => c.replace(/\s+/g, " ").trim()).join("\t");
       lines.push(cells);
     }
   }
@@ -559,6 +589,21 @@ function parseCsddMileageHistoryRaw(raw: unknown): CsddMileageHistoryRow[] {
   return rows;
 }
 
+function parseCsddMileageAbroadRaw(raw: unknown): CsddMileageAbroadRow[] {
+  if (!Array.isArray(raw)) return [];
+  const rows: CsddMileageAbroadRow[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const x = row as Record<string, unknown>;
+    rows.push({
+      date: String(x.date ?? "").slice(0, 120),
+      odometer: String(x.odometer ?? "").slice(0, 120),
+      source: String(x.source ?? "").slice(0, 240),
+    });
+  }
+  return rows;
+}
+
 function parseDefectRowsArray(raw: unknown): CsddDefectRow[] {
   if (!Array.isArray(raw)) return [];
   const out: CsddDefectRow[] = [];
@@ -584,6 +629,7 @@ function mergeDefectRowsFromLegacy(rows: CsddDefectRow[], legacy: string): CsddD
 function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
   const clip = (v: unknown) => String(v ?? "").slice(0, 4000);
   const mileage = parseCsddMileageHistoryRaw(raw.mileageHistoryLv);
+  const mileageAbroad = parseCsddMileageAbroadRaw(raw.mileageHistoryAbroad);
   const prevInspectionRating = clip(raw.prevInspectionRating);
   const legacyPrevData =
     typeof raw.prevInspectionData === "string" ? clip(raw.prevInspectionData) : "";
@@ -613,6 +659,7 @@ function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
     prevInspectionDefectRows,
     comments: clip(raw.comments),
     mileageHistoryLv: mileage.length > 0 ? mileage : [],
+    mileageHistoryAbroad: mileageAbroad.length > 0 ? mileageAbroad : [],
   };
 }
 
