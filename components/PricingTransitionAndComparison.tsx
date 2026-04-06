@@ -2,6 +2,44 @@ import { getMessages, getTranslations } from "next-intl/server";
 
 type Row = { feature: string; standard: string; provin: string };
 
+/** Standarta kolonna: „Nav” → pelēks X; „1 avots” → dzeltens ✓ + teksts; garš teksts — tikai teksts. */
+function StandardValue({ value }: { value: string }) {
+  const nav = value.trim().toLowerCase() === "nav";
+  if (nav) {
+    return (
+      <span className="inline-flex flex-col items-center justify-center gap-1" title="Nav">
+        <IconX className="h-6 w-6 text-[#c4c4c8]" aria-hidden />
+        <span className="sr-only">Nav</span>
+      </span>
+    );
+  }
+  if (value.trim() === "1 avots") {
+    return (
+      <span className="inline-flex flex-col items-center justify-center gap-1.5 text-center">
+        <IconCheckLimited className="h-5 w-5 shrink-0 text-amber-500" aria-hidden />
+        <span className="text-[10px] font-medium leading-snug text-[#5c5d62] sm:text-[11px]">{value}</span>
+      </span>
+    );
+  }
+  return (
+    <span className="mx-auto block max-w-[20ch] text-[10px] font-medium leading-snug text-[#5c5d62] sm:max-w-[24ch] sm:text-[11px]">
+      {value}
+    </span>
+  );
+}
+
+/** PROVIN kolonna: zaļš ✓ + trekns apakšteksts. */
+function ProvinValue({ value }: { value: string }) {
+  return (
+    <span className="inline-flex flex-col items-center justify-center gap-1.5 text-center">
+      <IconCheck className="h-6 w-6 shrink-0 text-emerald-600" aria-hidden />
+      <span className="max-w-[18ch] text-[11px] font-semibold leading-snug text-[#1d1d1f] sm:text-[12px] sm:leading-snug">
+        {value}
+      </span>
+    </span>
+  );
+}
+
 export async function PricingTransitionAndComparison() {
   const t = await getTranslations("Pricing");
   const messages = await getMessages();
@@ -28,75 +66,55 @@ export async function PricingTransitionAndComparison() {
           {t("comparisonTitle")}
         </h2>
 
-        <p className="mt-3 text-center text-[11px] font-normal text-[#86868b] sm:hidden">
-          {t("comparisonMobileHint")}
-        </p>
-        <div className="mt-4 sm:hidden">
-          <ul className="space-y-3">
-            {rows.map((row, i) => (
-              <li
-                key={i}
-                className="overflow-hidden rounded-xl border border-black/[0.08] bg-white shadow-[0_2px_14px_rgba(15,23,42,0.06)]"
-              >
-                <p className="border-b border-black/[0.06] bg-[#f8f9fb] px-3 py-2.5 text-[12px] font-semibold leading-snug text-[#1d1d1f]">
-                  {row.feature}
-                </p>
-                <div className="grid grid-cols-2 divide-x divide-black/[0.06]">
-                  <div className="px-2.5 py-2.5">
-                    <p className="text-[9px] font-semibold uppercase tracking-wide text-[#86868b]">
-                      {t("comparisonColStandard")}
-                    </p>
-                    <p className="mt-1 text-[11px] font-normal leading-snug text-[#424245]">{row.standard}</p>
-                  </div>
-                  <div className="bg-gradient-to-b from-[#e8f4ff] to-[#dceeff] px-2.5 py-2.5 shadow-[inset_0_0_0_1px_rgba(0,102,214,0.12)]">
-                    <p className="text-[9px] font-bold uppercase tracking-wide text-provin-accent">
-                      {t("comparisonColProvin")}
-                    </p>
-                    <p className="mt-1 text-[11px] font-semibold leading-snug text-[#1d1d1f]">{row.provin}</p>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <p className="mt-3 text-center text-[11px] font-normal text-[#86868b]">{t("comparisonMobileHint")}</p>
 
-        <div className="mt-4 hidden min-w-0 overflow-x-auto overflow-y-hidden rounded-xl border border-black/[0.08] bg-white shadow-[0_4px_24px_rgba(15,23,42,0.07)] sm:block">
-          <table className="w-full min-w-0 table-fixed border-collapse text-left text-[12px] leading-snug lg:text-[13px]">
+        <div className="mt-4 min-w-0 overflow-x-auto rounded-xl border border-black/[0.1] bg-white pb-1 shadow-[0_8px_32px_rgba(76,29,149,0.12)] [-webkit-overflow-scrolling:touch]">
+          <table className="w-full min-w-[min(100%,560px)] border-separate border-spacing-0 text-center text-[11px] leading-tight sm:min-w-[620px] sm:text-[12px]">
             <caption className="sr-only">{t("comparisonTitle")}</caption>
             <thead>
-              <tr className="border-b border-black/[0.08] bg-[#f5f6f8]">
+              <tr>
                 <th
                   scope="col"
-                  className="w-[28%] px-2 py-3 font-bold uppercase tracking-wide text-[#1d1d1f] sm:px-3 lg:px-4"
+                  className="rounded-tl-xl bg-[#4c1d95] px-2 py-3.5 text-left text-[10px] font-bold uppercase tracking-wide text-white sm:px-4 sm:text-[11px] sm:tracking-wider"
                 >
                   {t("comparisonColFeature")}
                 </th>
                 <th
                   scope="col"
-                  className="w-[30%] px-2 py-3 font-bold uppercase tracking-wide text-[#5c5d62] sm:px-3 lg:px-4"
+                  className="bg-[#4c1d95] px-2 py-3.5 text-[10px] font-bold uppercase tracking-wide text-white sm:px-4 sm:text-[11px] sm:tracking-wider"
                 >
                   {t("comparisonColStandard")}
                 </th>
                 <th
                   scope="col"
-                  className="w-[42%] bg-gradient-to-b from-[#e8f4ff] to-[#d6ebff] px-2 py-3 font-bold uppercase tracking-wide text-provin-accent shadow-[inset_0_0_0_1px_rgba(0,102,214,0.14),4px_0_18px_rgba(0,102,214,0.12)] sm:px-3 lg:px-4"
+                  className="rounded-tr-xl bg-[#6d28d9] px-2 py-3.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-[inset_4px_0_12px_rgba(0,0,0,0.12)] sm:px-4 sm:text-[11px] sm:tracking-wider"
                 >
                   {t("comparisonColProvin")}
                 </th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, i) => (
-                <tr key={i} className="border-b border-black/[0.06] last:border-b-0">
-                  <td className="px-2 py-2.5 align-top font-medium text-[#1d1d1f] sm:px-3 lg:px-4 lg:py-3">
-                    {row.feature}
-                  </td>
-                  <td className="px-2 py-2.5 align-top text-[#5c5d62] sm:px-3 lg:px-4 lg:py-3">{row.standard}</td>
-                  <td className="bg-gradient-to-b from-[#f0f7ff] to-[#e5f2fc] px-2 py-2.5 align-top font-semibold text-[#1d1d1f] shadow-[inset_1px_0_0_rgba(0,102,214,0.1),4px_0_14px_rgba(0,102,214,0.08)] sm:px-3 lg:px-4 lg:py-3">
-                    {row.provin}
-                  </td>
-                </tr>
-              ))}
+              {rows.map((row, i) => {
+                const zebra = i % 2 === 1 ? "bg-[#f4f4f7]" : "bg-white";
+                return (
+                  <tr key={i} className={`${zebra} border-b border-black/[0.06] last:border-b-0`}>
+                    <th
+                      scope="row"
+                      className="max-w-[44vw] px-2 py-3 text-left text-[10px] font-medium leading-snug text-[#1d1d1f] sm:max-w-[220px] sm:px-4 sm:text-[12px] sm:leading-snug"
+                    >
+                      {row.feature}
+                    </th>
+                    <td className={`px-2 py-3 align-middle ${zebra}`}>
+                      <StandardValue value={row.standard} />
+                    </td>
+                    <td
+                      className={`px-2 py-3 align-middle shadow-[inset_3px_0_8px_rgba(109,40,217,0.08)] sm:px-3 ${zebra} bg-gradient-to-br from-violet-50/95 to-[#ede9fe]/90`}
+                    >
+                      <ProvinValue value={row.provin} />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -109,5 +127,30 @@ export async function PricingTransitionAndComparison() {
         </p>
       </div>
     </div>
+  );
+}
+
+function IconX({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+}
+
+function IconCheck({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
+/** Ierobežots / daļējs iekļauts — dzeltens checks (ne pilns „premium”). */
+function IconCheckLimited({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.3} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
   );
 }
