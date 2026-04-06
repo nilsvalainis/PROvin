@@ -222,6 +222,7 @@ export function sortMileageHistoryDescending(rows: CsddMileageRow[]): CsddMileag
 /**
  * Viena hronoloģiska vēsture: LV + ārvalstu rindas → dublikātu noņemšana (tas pats datums + tas pats odometrs) → DESC.
  * Ierakstu secība pirms apstrādes: vispirms LV, tad ārvalsti; dublikātam tiek atstāts pirmais.
+ * Valsts (`country`) netiek mainīta: tukša paliek tukša, ārvalstu vērtības netiek aizstātas ar „Latvija”.
  */
 export function finalizeMileageHistory(rows: CsddMileageRow[]): CsddMileageRow[] {
   const withData = rows.filter(csddMileageRowHasData);

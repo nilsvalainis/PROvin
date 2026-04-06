@@ -104,10 +104,10 @@ export function parseCsddTechnicalFields(
 
   let registrationNumber = (st.plateNumber ?? basics.regNr ?? "").trim();
   const regPlateM = raw.match(
-    /Reģistrācijas\s+numurs:\s*([-A-ZĀČĒĢĪĶĻŅŠŪŽ0-9]+?)(?=\s*Pirmās)/i,
+    /Reģistrācijas\s+numurs:\s*([A-ZĀČĒĢĪĶĻŅŠŪŽ0-9\-]+?)(?=Pirmās|$)/i,
   );
   if (regPlateM?.[1]) {
-    registrationNumber = regPlateM[1].trim();
+    registrationNumber = regPlateM[1].replace(/\s+/g, "").trim();
   } else {
     const regEnd = raw.match(
       /Reģistrācijas\s+numurs:\s*([-A-ZĀČĒĢĪĶĻŅŠŪŽ0-9]+)\s*$/im,
@@ -127,12 +127,16 @@ export function parseCsddTechnicalFields(
   }
 
   let enginePowerKw = (st.enginePower ?? basics.powerKw ?? "").trim();
-  const kwLabelM = raw.match(/(?<=Motora maksimālā jauda \(kW\):)\s*(\d+)/i);
-  const kwFallbackM = raw.match(/Motora\s+maksimālā\s+jauda\s*\(kW\)\s*:\s*(\d+)/i);
-  if (kwLabelM?.[1]) {
-    enginePowerKw = kwLabelM[1];
-  } else if (kwFallbackM?.[1]) {
-    enginePowerKw = kwFallbackM[1];
+  const kwExplicit = raw.match(
+    /Motora\s+maksimāl[āa]\s+jauda\s*\(\s*kW\s*\)\s*:\s*(\d+)/i,
+  );
+  const kwLookbehind = raw.match(
+    /(?<=Motora\s+maksimāl[āa]\s+jauda\s*\(\s*kW\s*\)\s*:\s*)(\d+)/i,
+  );
+  if (kwExplicit?.[1]) {
+    enginePowerKw = kwExplicit[1];
+  } else if (kwLookbehind?.[1]) {
+    enginePowerKw = kwLookbehind[1];
   }
   const fuelType = (st.fuelType ?? "").trim();
   const emissionStandard = (st.euroStandard ?? basics.euro ?? "").trim();
@@ -253,11 +257,11 @@ export function parseMileageHistoryLvBlock(text: string): CsddMileageRow[] {
 }
 
 /**
- * Viena ārvalstu rinda: DD.MM.GGGG + odometrs + optional „km” + valsts (ne jaukta ar LV).
- * Grupas: datums, odometrs, valsts (lielie/mazie burti, LV diakritika).
+ * Ārvalstu rinda: datums + odometrs (cipari) + optional „km” + valsts.
+ * Grupas: (1) datums, (2) odometrs, (3) valsts — pēc „km” vai tieši pēc odometra.
  */
 const ABROAD_LINE_REGEX =
-  /^(\d{2}\.\d{2}\.\d{4})\s+([\d\s.,]+)\s*km?\s+([A-ZĀČĒĢĪĶĻŅŠŪŽa-zāčēģīķļņšūž][A-ZĀČĒĢĪĶĻŅŠŪŽa-zāčēģīķļņšūž\s\-]*)$/u;
+  /^(\d{2}\.\d{2}\.\d{4})\s+(\d+)(?:\s*km)?\s+([A-ZĀČĒĢĪĶĻŅŠŪŽa-zāčēģīķļņšūž\s,.-]+)$/iu;
 
 function parseAbroadSpaceLine(sp: string[]): {
   date: string;
@@ -305,7 +309,7 @@ export function parseMileageAbroadBlock(text: string): CsddMileageRow[] {
           rows.push({
             date: rxMatch[1]!,
             odometer: normalizeOdometerFromPaste(rxMatch[2] ?? ""),
-            country: rxMatch[3]!.trim(),
+            country: rxMatch[3]!.replace(/\s+/g, " ").trim(),
           });
           i++;
           continue;
