@@ -107,6 +107,8 @@ export type CsddFormFields = {
   curbWeightKg: string;
   roadTaxYearly: string;
   solidParticlesCm3: string;
+  /** Piem. „Reģistrēts”, „Noņemts no uzskaites”. */
+  registrationStatus: string;
   nextInspectionDate: string;
   prevInspectionDate: string;
   /** CSDD „Detalizētais vērtējums” — brīvais teksts (migrācijai); ja ir detailedRatingRows, tie ir primāri. */
@@ -133,7 +135,8 @@ export const CSDD_FORM_SHORT_FIELDS: {
   { key: "grossMassKg", label: "Pilna masa (kg):" },
   { key: "curbWeightKg", label: "Pašmasa (kg):" },
   { key: "roadTaxYearly", label: "Transportlīdzekļa ekspluatācijas nodoklis" },
-  { key: "solidParticlesCm3", label: "Atgāzu cietās daļiņas (cm-3):" },
+  { key: "solidParticlesCm3", label: "Atgāzu cietās daļiņas (cm-3) / dūmainības koef. (m-1):" },
+  { key: "registrationStatus", label: "Reģistrācijas statuss:" },
   { key: "nextInspectionDate", label: "Nākamās apskates datums:" },
   { key: "prevInspectionDate", label: "Iepriekšējās apskates datums:" },
 ];
@@ -206,6 +209,7 @@ export function emptyCsddFields(): CsddFormFields {
     curbWeightKg: "",
     roadTaxYearly: "",
     solidParticlesCm3: "",
+    registrationStatus: "",
     nextInspectionDate: "",
     prevInspectionDate: "",
     prevInspectionRating: "",
@@ -652,6 +656,7 @@ function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
     curbWeightKg: clip(raw.curbWeightKg),
     roadTaxYearly: clip(raw.roadTaxYearly),
     solidParticlesCm3: clip(raw.solidParticlesCm3),
+    registrationStatus: clip(raw.registrationStatus),
     nextInspectionDate: clip(raw.nextInspectionDate),
     prevInspectionDate: clip(raw.prevInspectionDate),
     prevInspectionRating,

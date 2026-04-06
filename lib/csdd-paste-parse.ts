@@ -60,6 +60,44 @@ function extractNextInspectionDateIsoFromHead(headText: string): string | null {
   return null;
 }
 
+/** „Iepriekšējās apskates datums:” tikai augšējā blokā (ne no vēstures sadaļas). */
+function extractPrevInspectionDateIsoFromHead(headText: string): string | null {
+  const lines = headText.split(/\r?\n/);
+  for (const line of lines) {
+    const m = line.match(/Iepriekšējās\s+apskates\s+datums\s*:\s*(.+)$/i);
+    if (!m?.[1]) continue;
+    const rest = m[1].trim();
+    const dm = rest.match(/\d{2}\.\d{2}\.\d{4}/);
+    if (dm) {
+      const iso = lvDateToIso(dm[0]);
+      return iso || null;
+    }
+    const isoM = rest.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoM) return `${isoM[1]}-${isoM[2]}-${isoM[3]}`;
+  }
+  return null;
+}
+
+function clipParsedScalar(s: string, max = 240): string {
+  return s.replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+/**
+ * Atgāzu cietās daļiņas (cm⁻³) vai dūmainības koeficients (m⁻¹) — pirmā atbilstība.
+ */
+function extractSolidParticlesOrSmokeCoefficient(text: string): string | null {
+  const patterns = [
+    /Atgāzu\s+cietās\s+daļiņas\s*(?:\([^)]+\))?\s*:\s*(.+)$/i,
+    /Dūmainības\s+koeficients\s*(?:\([^)]+\))?\s*:\s*(.+)$/i,
+    /Dūmainības\s+koeficients\s*:\s*(.+)$/i,
+  ];
+  for (const re of patterns) {
+    const v = extractLabeledLine(text, re);
+    if (v) return clipParsedScalar(v, 80);
+  }
+  return null;
+}
+
 function isLikelyStructuredCsddPaste(rawText: string): boolean {
   if (rawText.length > 200) return true;
   return (
@@ -354,6 +392,8 @@ export type CsddPasteParseResult = {
   mileageHistoryLv: CsddMileageHistoryRow[];
   mileageHistoryAbroad: CsddMileageAbroadRow[];
   nextInspectionIso: string | null;
+  /** Iepriekšējās apskates datums — tikai no augšējā bloka (ne vēsture). */
+  prevInspectionIso: string | null;
   detailedRatingRows: CsddDefectRow[] | null;
   prevInspectionDefectRows: CsddDefectRow[] | null;
 };
@@ -392,6 +432,12 @@ export function parseCsddPaste(raw: string): CsddPasteParseResult {
   const tax = extractRoadTaxEur(raw);
   if (tax) fieldUpdates.roadTaxYearly = tax;
 
+  const solid = extractSolidParticlesOrSmokeCoefficient(raw);
+  if (solid) fieldUpdates.solidParticlesCm3 = solid;
+
+  const regStatus = extractLabeledLine(raw, /Reģistrācijas\s+statuss\s*:\s*(.+)$/i);
+  if (regStatus) fieldUpdates.registrationStatus = clipParsedScalar(regStatus, 400);
+
   const textBeforePrevSection = sliceTextBeforeIepriekšējāsApskatesSection(raw);
   const det = extractDetalizētaisVērtējums(textBeforePrevSection);
   const detailedRatingRows =
@@ -405,12 +451,14 @@ export function parseCsddPaste(raw: string): CsddPasteParseResult {
   const mileageHistoryAbroad = parseMileageAbroadBlock(raw);
   const headForNextInspection = sliceTextBeforeNextInspectionHeadBoundary(raw);
   const nextInspectionIso = extractNextInspectionDateIsoFromHead(headForNextInspection);
+  const prevInspectionIso = extractPrevInspectionDateIsoFromHead(headForNextInspection);
 
   return {
     fieldUpdates,
     mileageHistoryLv,
     mileageHistoryAbroad,
     nextInspectionIso,
+    prevInspectionIso,
     detailedRatingRows,
     prevInspectionDefectRows,
   };
@@ -444,6 +492,12 @@ export function applyCsddPasteToForm(
     next.nextInspectionDate = parsed.nextInspectionIso;
   } else if (isLikelyStructuredCsddPaste(rawText)) {
     next.nextInspectionDate = "";
+  }
+
+  if (parsed.prevInspectionIso) {
+    next.prevInspectionDate = parsed.prevInspectionIso;
+  } else if (isLikelyStructuredCsddPaste(rawText)) {
+    next.prevInspectionDate = "";
   }
 
   if (parsed.detailedRatingRows !== null && parsed.detailedRatingRows.length > 0) {

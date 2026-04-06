@@ -239,7 +239,7 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
       const v = (f[key] as string).trim();
       if (!v) continue;
       let cellHtml: string;
-      if (key === "nextInspectionDate") cellHtml = formatCsddNextInspectionCell(v);
+      if (key === "nextInspectionDate" || key === "prevInspectionDate") cellHtml = formatCsddNextInspectionCell(v);
       else cellHtml = escapeHtml(v);
       regRows.push(`<tr><td>${escapeHtml(label)}</td><td>${cellHtml}</td></tr>`);
     }
@@ -647,6 +647,8 @@ function clientReportPrintCss(): string {
       .mirror-table td,.mirror-table th{padding:6px 0;border-bottom:1px solid #f1f5f9;vertical-align:top;text-align:left;}
       .mirror-table thead th{font-weight:600;color:#000;font-size:0.68rem;}
       .mirror-table td:first-child{color:#86868b;width:38%;}
+      .mirror-table--csdd{font-size:9pt!important;}
+      .mirror-table--csdd td,.mirror-table--csdd th{font-size:9pt!important;}
       .mirror-table--csdd td:first-child{
         width:54%;min-width:14em;max-width:62%;white-space:nowrap;color:#86868b;
       }
@@ -662,9 +664,9 @@ function clientReportPrintCss(): string {
       .pdf-field-label--historic{color:#64748b!important;}
       .mirror-table--csdd-defect-current{font-size:9pt!important;margin:2px 0 6px!important;}
       .mirror-table--csdd-defect-current td,.mirror-table--csdd-defect-current th{padding:3px 5px!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;}
-      .mirror-table--csdd-defect-historic{font-size:8pt!important;margin:2px 0 4px!important;color:#64748b!important;}
+      .mirror-table--csdd-defect-historic{font-size:9pt!important;margin:2px 0 4px!important;color:#64748b!important;}
       .mirror-table--csdd-defect-historic td,.mirror-table--csdd-defect-historic th{
-        padding:2px 4px!important;line-height:1.2!important;border-bottom:1px solid #eef2f7!important;
+        padding:3px 4px!important;line-height:1.25!important;border-bottom:1px solid #eef2f7!important;
         color:#64748b!important;
       }
       .mirror-table--csdd-mh{font-size:9pt!important;margin:2px 0 4px!important;}
