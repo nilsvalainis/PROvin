@@ -1,22 +1,26 @@
 {
   "Hero": {
     "approved": "APPROVED BY IRISS",
-    "title1": "VIN KODA UN SLUDINĀJUMA ",
-    "title2": "ANALĪZE",
-    "tagline": "Kamēr citi pēta atskaites, Jūs saņemat atbildes.",
-    "cta": "Pasūtiet par 79,99 €",
-    "youGetFootnote": "Automātiska atskaite rāda datus — PROVIN pievieno salīdzinājumu, sludinājuma izvērtējumu un eksperta interpretāciju.",
-    "includedTitle": "Viss jau iekļauts cenā",
-    "confidenceTitle": "Pārliecība pirms pirkuma",
-    "confidenceBody": "Jūsu izvēlētā auto dati, specifiskie modeļa riski un cenas pamatotība tiek manuāli analizēta, lai Jūsu redzeslokā nepaliktu nekas nepamanīts. Saņemiet pamatotu un objektīvu slēdzienu, kas sniedz pilnīgu skaidrību droša lēmuma pieņemšanai.",
-    "autoRecordsFootnote": "* Var tikt izmantots tikai noteiktiem ražotājiem",
-    "features": [
-      { "key": "cv", "label": "Maksas atskaites" },
-      { "key": "dna", "label": "Vēstures dati" },
-      { "key": "records", "label": "Dīlera vēsture", "star": true },
-      { "key": "listing", "label": "Sludinājuma analīze" },
-      { "key": "manual", "label": "Manuāla analīze" },
-      { "key": "clock", "label": "24h atbilde" }
-    ]
+    "h1Line1": "VIN UN SLUDINĀJUMA",
+    "h1Line2": "AUDITS",
+    "h2": "Tavs personīgais auto detektīvs",
+    "pillars": [
+      {
+        "title": "Info no vairākām maksas datubāzēm",
+        "body": "Vēsture, nobraukums, negadījumi - dažādi avoti"
+      },
+      {
+        "title": "Sludinājuma un pārdevēja analīze",
+        "body": "Fotogrāfiju analīze, apraksta zemteksti, triku atšifrēšana"
+      },
+      {
+        "title": "Modeļa tehnisko risku analīze",
+        "body": "Dzinējs, kārba un konkrētā auto vājās vietas"
+      }
+    ],
+    "cta": "PASŪTĪT ANALĪZI — 79,99 €",
+    "trustHeadline": "Iekļautas vismaz 2–3 starptautiskas maksas vēstures atskaites.",
+    "trustBody": "Atbilde 24 stundu laikā, audits tiek veikts manuāli. Digitālie dati apvienoti ar reālu 10+ gadu pieredzi, lai Jūs saņemtu slēdzienu, nevis tikai PDF failu.",
+    "scrollToPricingAria": "Pāriet uz sadaļu „Cena un saturs”"
   }
 }

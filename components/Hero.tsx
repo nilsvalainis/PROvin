@@ -3,13 +3,24 @@ import { Link } from "@/i18n/navigation";
 import { HeroVisual } from "@/components/HeroVisual";
 import { orderSectionHref } from "@/lib/paths";
 
-type Feature = { key: string; label: string; star?: boolean };
+type Pillar = { title: string; body: string };
+
+/** „APPROVED BY IRISS” paraksts. */
+const signatureTextClass =
+  "font-light uppercase tracking-[0.32em] text-[#8e8e93] sm:tracking-[0.38em] text-[0.5625rem] leading-relaxed sm:text-[0.625rem]";
+
+/**
+ * Apakšvirsraksts — „organiski”: kā parasts teikums zem H1, ne kā zīmogs un ne kā sīks paraksts.
+ * Lasāms izmērs, neitrāls mīksts tonis, normāls svars — lai šķiet redakcionāls, ne UI elements.
+ */
+const heroSubtitleClass =
+  "max-w-[min(100%,34ch)] text-balance font-normal leading-relaxed tracking-tight text-[#4f4f56] text-[15px] sm:text-[17px]";
 
 export async function Hero() {
   const t = await getTranslations("Hero");
   const locale = await getLocale();
   const messages = await getMessages();
-  const features = (messages as { Hero: { features: Feature[] } }).Hero.features;
+  const pillars = (messages as { Hero: { pillars: Pillar[] } }).Hero.pillars;
 
   return (
     <section className="border-b border-black/[0.06]">
@@ -21,89 +32,85 @@ export async function Hero() {
           className="pointer-events-none absolute inset-0 z-[1] provin-noise opacity-[0.38]"
           aria-hidden
         />
-        <div className="relative z-10 mx-auto min-w-0 max-w-[692px] px-4 pb-10 pt-10 text-center sm:px-6 sm:pb-12 sm:pt-12">
-          <p className="text-[14px] font-normal tracking-wide text-provin-accent sm:text-[17px]">
-            {t("approved")}
-          </p>
 
-          <h1 className="mt-2 text-balance text-[28px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]">
-            <span className="text-[#1d1d1f]">{t("title1")}</span>
-            <span className="text-provin-accent">{t("title2")}</span>
-          </h1>
+        <div
+          className="relative z-10 mx-auto flex min-h-[100svh] min-w-0 max-w-[640px] flex-col justify-between gap-4 px-4 pb-5 pt-[max(0.85rem,env(safe-area-inset-top))] text-center md:min-h-0 md:gap-10 md:pb-14 md:pt-14 md:text-center"
+        >
+          <header className="shrink-0 space-y-0">
+            <p className={signatureTextClass} aria-label={t("approved")}>
+              {t("approved")}
+            </p>
 
-          <p className="mx-auto mt-5 max-w-[65ch] text-[17px] font-medium leading-[1.45] text-[#1d1d1f] sm:mt-6 sm:text-[19px] sm:leading-[1.4]">
-            {t("tagline")}
-          </p>
+            <h1 className="mt-5 text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[28px] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]">
+              <span className="block text-[#1d1d1f]">{t("h1Line1")}</span>
+              <span className="mt-0.5 block text-provin-accent sm:mt-1">{t("h1Line2")}</span>
+            </h1>
 
-          <div className="mt-7 flex flex-col items-center gap-3 sm:mt-8">
-            <Link
-              href={orderSectionHref(locale)}
-              className="provin-btn inline-flex min-h-[44px] w-full max-w-[320px] items-center justify-center rounded-full px-8 text-[17px] font-normal shadow-[0_4px_16px_rgba(0,102,214,0.32)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:w-auto"
-            >
-              {t("cta")}
-            </Link>
-            <a
-              href="#iekļauts"
-              aria-label={t("includedTitle")}
-              className="inline-flex text-provin-accent transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-                aria-hidden
+            <h2 className={`mx-auto mt-3 md:mt-4 ${heroSubtitleClass}`}>
+              {t("h2")}
+            </h2>
+          </header>
+
+          <div className="min-h-0 shrink">
+            <ul className="mx-auto grid w-full max-w-[560px] gap-2.5 text-left md:gap-3">
+              {pillars.map((p, i) => (
+                <li key={i}>
+                  <article className="provin-lift-subtle flex min-w-0 gap-3 rounded-2xl border border-black/[0.045] bg-white/55 px-3 py-2.5 shadow-[0_2px_24px_rgba(15,23,42,0.05)] backdrop-blur-[3px] sm:gap-3.5 sm:px-3.5 sm:py-3">
+                    <span
+                      className="flex h-10 w-10 shrink-0 items-center justify-center self-start rounded-full bg-provin-accent-soft/90 text-provin-accent sm:h-11 sm:w-11"
+                      aria-hidden
+                    >
+                      <PillarGlyph index={i} />
+                    </span>
+                    <div className="min-w-0 pt-0.5">
+                      <h3 className="text-[13px] font-semibold leading-tight tracking-tight text-[#1d1d1f] sm:text-[15px]">
+                        {p.title}
+                      </h3>
+                      <p className="mt-1 text-[11px] font-normal leading-snug text-[#6e6e73] sm:text-[12px] sm:leading-relaxed">
+                        {p.body}
+                      </p>
+                    </div>
+                  </article>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="shrink-0 space-y-4 md:space-y-5">
+            <p className="mx-auto max-w-[52ch] text-balance text-center text-[12px] font-medium leading-snug text-[#5c5d62] sm:text-[13px] sm:leading-relaxed">
+              {t("trustHeadline")}
+            </p>
+
+            <div className="flex flex-col items-center">
+              <Link
+                href={orderSectionHref(locale)}
+                className="provin-btn inline-flex min-h-[48px] w-full max-w-[min(100%,340px)] items-center justify-center rounded-full px-6 text-[13px] font-semibold uppercase tracking-[0.06em] shadow-[0_8px_28px_rgba(0,102,214,0.28)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:min-h-[52px] sm:px-10 sm:text-[14px]"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </a>
-          </div>
-
-          <div id="iekļauts" className="mx-auto mt-10 w-full min-w-0 max-w-[640px] scroll-mt-24">
-            <div className="rounded-2xl border border-black/[0.08] bg-white/90 px-5 py-6 shadow-[0_8px_40px_rgba(0,0,0,0.07)] backdrop-blur-[1px] sm:px-7 sm:py-8">
-              <h2 className="text-center text-[12px] font-semibold uppercase tracking-[0.12em] text-provin-accent">
-                {t("includedTitle")}
-              </h2>
-              <p className="mx-auto mt-5 max-w-[54ch] text-center text-[12px] font-normal leading-relaxed text-[#6e6e73] sm:text-[13px]">
-                {t("youGetFootnote")}
-              </p>
-              <ul className="mt-6 grid min-w-0 grid-cols-1 gap-2.5 border-t border-black/[0.07] pt-6 text-left sm:grid-cols-2 sm:gap-3">
-                {features.map((f) => (
-                  <li
-                    key={f.key}
-                    className="provin-lift flex min-w-0 items-center gap-3 rounded-xl border border-black/[0.06] bg-white px-4 py-3 shadow-[0_1px_10px_rgba(0,0,0,0.04)]"
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f5f6f8] text-provin-accent ring-1 ring-black/[0.04]">
-                      <FeatureGlyph kind={f.key as "cv" | "dna" | "records" | "listing" | "manual" | "clock"} />
-                    </span>
-                    <span className="text-left text-[15px] font-medium leading-snug text-[#1d1d1f] sm:text-[16px]">
-                      {f.label}
-                      {f.star ? (
-                        <span className="ml-0.5 align-super text-[11px] font-normal text-[#86868b]">*</span>
-                      ) : null}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-3 text-center text-[10px] font-normal leading-snug text-[#86868b] sm:text-[11px]">
-                {t("autoRecordsFootnote")}
-              </p>
+                {t("cta")}
+              </Link>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="relative border-t border-black/[0.06] bg-[#fafbfc]">
-        <div className="mx-auto min-w-0 max-w-[692px] px-4 pb-8 pt-10 text-center sm:px-6 sm:pb-10 sm:pt-10">
-          <div className="mx-auto min-w-0 max-w-[640px] text-left">
-            <div className="provin-lift-strong rounded-2xl border border-black/[0.06] bg-[#fbfbfd] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:p-7">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">
-                {t("confidenceTitle")}
-              </p>
-              <p className="mt-3 max-w-[65ch] text-[16px] font-normal leading-[1.55] text-[#424245] sm:text-[17px] sm:leading-[1.5]">
-                {t("confidenceBody")}
-              </p>
+            <p className="mx-auto max-w-[52ch] text-balance text-center text-[11px] font-normal leading-relaxed text-[#86868b] sm:text-[12px] sm:leading-relaxed">
+              {t("trustBody")}
+            </p>
+
+            <div className="flex justify-center pt-0.5">
+              <a
+                href="#cena"
+                aria-label={t("scrollToPricingAria")}
+                className="inline-flex text-provin-accent/80 transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.75}
+                  aria-hidden
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </a>
             </div>
           </div>
         </div>
@@ -112,11 +119,23 @@ export async function Hero() {
   );
 }
 
-function FeatureGlyph({ kind }: { kind: "cv" | "dna" | "records" | "listing" | "manual" | "clock" }) {
-  switch (kind) {
-    case "listing":
+function PillarGlyph({ index }: { index: number }) {
+  const cls = "h-5 w-5 sm:h-[22px] sm:w-[22px]";
+  const stroke = 1.75;
+  switch (index) {
+    case 0:
       return (
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={stroke}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4-8-4s-8 1.79-8 4"
+          />
+        </svg>
+      );
+    case 1:
+      return (
+        <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={stroke}>
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -124,40 +143,15 @@ function FeatureGlyph({ kind }: { kind: "cv" | "dna" | "records" | "listing" | "
           />
         </svg>
       );
-    case "cv":
-    case "dna":
-      return (
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <circle cx="12" cy="12" r="9" />
-        </svg>
-      );
-    case "records":
-      return (
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M4 17h10" />
-        </svg>
-      );
-    case "manual":
-      return (
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-          />
-        </svg>
-      );
-    case "clock":
-      return (
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      );
     default:
-      return null;
+      return (
+        <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={stroke}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+      );
   }
 }
