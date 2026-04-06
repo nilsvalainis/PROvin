@@ -17,7 +17,7 @@ type Props = {
 
 export function AdminCitiAvotiSourceBlock({ value, readOnly, disabled, onChange }: Props) {
   return (
-    <div className="flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm">
+    <div className="flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-white p-2 shadow-sm">
       <AdminSourceBlockHeader blockKey="citi_avoti" className="mb-2 shrink-0" />
 
       <div className="mt-auto w-full min-w-0 shrink-0 pt-2">

@@ -35,10 +35,11 @@ import {
   provincLogoSvg,
 } from "@/lib/client-report-pdf-layout-draft";
 import {
+  APPROVED_BY_IRISS_BODY_BG,
   APPROVED_BY_IRISS_HEADER_BG,
   LISTING_ANALYSIS_BODY_BG,
-  SOURCE_BLOCK_HEADER_BG,
-  VENDOR_FALLBACK_HEADER_BG,
+  LISTING_ANALYSIS_HEADER_BG,
+  NEUTRAL_AVOTU_HEADER_BG,
 } from "@/lib/admin-header-gradients";
 import { CLIENT_REPORT_FOOTER_DISCLAIMER } from "@/lib/report-pdf-standards";
 
@@ -153,9 +154,9 @@ function extractVehicleMakeModel(csdd: string): string | null {
   return m ? m[0].trim().replace(/\s{2,}/g, " ") : null;
 }
 
-/** Krāsainā augšējā josla (Colored Header) — ikona + nosaukums, kontrastējošs teksts. */
-function pdfAvotuColoredHeader(iconHtml: string, title: string, modClass: string): string {
-  return `<div class="pdf-avotu-header ${modClass}"><span class="pdf-avotu-header-ico" aria-hidden="true">${iconHtml}</span><h3 class="pdf-avotu-header-title">${escapeHtml(title)}</h3></div>`;
+/** Neitrāla pelēka josla; krāsa tikai ikonā (pdf-avotu-ico-brand--*). */
+function pdfAvotuNeutralHeader(iconHtml: string, title: string, iconBrandClass: string): string {
+  return `<div class="pdf-avotu-header pdf-avotu-header--neutral"><span class="pdf-avotu-header-ico ${iconBrandClass}" aria-hidden="true">${iconHtml}</span><h3 class="pdf-avotu-header-title">${escapeHtml(title)}</h3></div>`;
 }
 
 /** Neatkarīga komentāru „sala” zem datu kartes — bez rāmja, #f9f9f9, slīpraksts. */
@@ -179,7 +180,7 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
   const hasRaw = p.csdd.trim().length > 0;
   if (!hasStruct && !hasRaw) return "";
 
-  const header = pdfAvotuColoredHeader(ICO.clip, PDF_SUB_CSDD, "pdf-avotu-header--csdd");
+  const header = pdfAvotuNeutralHeader(ICO.clip, PDF_SUB_CSDD, "pdf-avotu-ico-brand--csdd");
 
   if (hasStruct && p.csddForm) {
     const f = p.csddForm;
@@ -204,12 +205,12 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
     const bodyHtml = bodyParts.join("\n");
     const card =
       bodyHtml.trim() === ""
-        ? `<div class="pdf-avotu-card pdf-avotu-card--csdd pdf-avotu-card--no-body">${header}</div>`
-        : `<div class="pdf-avotu-card pdf-avotu-card--csdd">${header}<div class="pdf-avotu-body">${bodyHtml}</div></div>`;
+        ? `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`
+        : `<div class="pdf-avotu-card pdf-avotu-card--neutral">${header}<div class="pdf-avotu-body">${bodyHtml}</div></div>`;
     return wrapPdfAvotuStack(card, f.comments.trim() ? pdfAvotuCommentIsland(f.comments) : "");
   }
 
-  const card = `<div class="pdf-avotu-card pdf-avotu-card--csdd">${header}<div class="pdf-avotu-body"><pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre></div></div>`;
+  const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral">${header}<div class="pdf-avotu-body"><pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre></div></div>`;
   return card;
 }
 
@@ -219,7 +220,7 @@ function buildTirgusAvotuSubsection(p: ClientReportPayload): string {
   const hasText = p.tirgus.trim().length > 0;
   if (!hasForm && !hasText) return "";
 
-  const header = pdfAvotuColoredHeader(ICO.tag, PDF_SECTION_TIRGUS_DATI, "pdf-avotu-header--tirgus");
+  const header = pdfAvotuNeutralHeader(ICO.tag, PDF_SECTION_TIRGUS_DATI, "pdf-avotu-ico-brand--tirgus");
   let bodyInner: string;
   let island = "";
 
@@ -253,8 +254,8 @@ function buildTirgusAvotuSubsection(p: ClientReportPayload): string {
 
   const card =
     bodyInner.trim() === ""
-      ? `<div class="pdf-avotu-card pdf-avotu-card--tirgus pdf-avotu-card--no-body">${header}</div>`
-      : `<div class="pdf-avotu-card pdf-avotu-card--tirgus">${header}<div class="pdf-avotu-body">${bodyInner}</div></div>`;
+      ? `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`
+      : `<div class="pdf-avotu-card pdf-avotu-card--neutral">${header}<div class="pdf-avotu-body">${bodyInner}</div></div>`;
   return wrapPdfAvotuStack(card, island);
 }
 
@@ -265,11 +266,11 @@ function pdfIconForVendorTitle(title: string): string {
   return ICO.layers;
 }
 
-function vendorPdfHeaderModifierClass(title: string): string {
-  if (title === SOURCE_BLOCK_LABELS.autodna) return "pdf-avotu-header--autodna";
-  if (title === SOURCE_BLOCK_LABELS.carvertical) return "pdf-avotu-header--carvertical";
-  if (title === SOURCE_BLOCK_LABELS.auto_records) return "pdf-avotu-header--auto-records";
-  return "pdf-avotu-header--vendor-fallback";
+function vendorPdfIconBrandClass(title: string): string {
+  if (title === SOURCE_BLOCK_LABELS.autodna) return "pdf-avotu-ico-brand--autodna";
+  if (title === SOURCE_BLOCK_LABELS.carvertical) return "pdf-avotu-ico-brand--carvertical";
+  if (title === SOURCE_BLOCK_LABELS.auto_records) return "pdf-avotu-ico-brand--auto-records";
+  return "pdf-avotu-ico-brand--autodna";
 }
 
 /** Viena trešā pušu avota apakšbloks zem „AVOTU DATI“. */
@@ -278,8 +279,8 @@ function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf): string {
   const hasComments = b.comments.trim().length > 0;
   if (!hasTable && !hasComments) return "";
   const icon = pdfIconForVendorTitle(b.title);
-  const headerMod = vendorPdfHeaderModifierClass(b.title);
-  const header = pdfAvotuColoredHeader(icon, b.title, headerMod);
+  const iconBrand = vendorPdfIconBrandClass(b.title);
+  const header = pdfAvotuNeutralHeader(icon, b.title, iconBrand);
   const bodyParts: string[] = [];
   if (hasTable) {
     const amountTh = escapeHtml(b.amountColumnLabel ?? "Zaudējumu summa");
@@ -293,12 +294,11 @@ function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf): string {
     }
     bodyParts.push(`</tbody></table>`);
   }
-  const cardMod = headerMod.replace("pdf-avotu-header--", "pdf-avotu-card--");
   const bodyHtml = bodyParts.join("\n");
   const card =
     bodyHtml.trim() === ""
-      ? `<div class="pdf-avotu-card ${cardMod} pdf-avotu-card--no-body">${header}</div>`
-      : `<div class="pdf-avotu-card ${cardMod}">${header}<div class="pdf-avotu-body">${bodyHtml}</div></div>`;
+      ? `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`
+      : `<div class="pdf-avotu-card pdf-avotu-card--neutral">${header}<div class="pdf-avotu-body">${bodyHtml}</div></div>`;
   return wrapPdfAvotuStack(card, hasComments ? pdfAvotuCommentIsland(b.comments) : "");
 }
 
@@ -307,7 +307,7 @@ function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined
   const hasTable = b.rows.length > 0;
   const hasComments = b.comments.trim().length > 0;
   if (!hasTable && !hasComments) return "";
-  const header = pdfAvotuColoredHeader(ICO.shield, SOURCE_BLOCK_LABELS.ltab, "pdf-avotu-header--ltab");
+  const header = pdfAvotuNeutralHeader(ICO.shield, SOURCE_BLOCK_LABELS.ltab, "pdf-avotu-ico-brand--ltab");
   const bodyParts: string[] = [];
   if (hasTable) {
     bodyParts.push(
@@ -323,8 +323,8 @@ function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined
   const bodyHtml = bodyParts.join("\n");
   const card =
     bodyHtml.trim() === ""
-      ? `<div class="pdf-avotu-card pdf-avotu-card--ltab pdf-avotu-card--no-body">${header}</div>`
-      : `<div class="pdf-avotu-card pdf-avotu-card--ltab">${header}<div class="pdf-avotu-body">${bodyHtml}</div></div>`;
+      ? `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`
+      : `<div class="pdf-avotu-card pdf-avotu-card--neutral">${header}<div class="pdf-avotu-body">${bodyHtml}</div></div>`;
   return wrapPdfAvotuStack(card, hasComments ? pdfAvotuCommentIsland(b.comments) : "");
 }
 
@@ -363,8 +363,8 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload): string {
 function buildCitiAvotiAvotuSubsection(p: ClientReportPayload): string {
   const b = p.citiAvoti;
   if (!b || !citiAvotiHasContent(b)) return "";
-  const header = pdfAvotuColoredHeader(ICO.layers, SOURCE_BLOCK_LABELS.citi_avoti, "pdf-avotu-header--citi-avoti");
-  const card = `<div class="pdf-avotu-card pdf-avotu-card--citi-avoti pdf-avotu-card--no-body">${header}</div>`;
+  const header = pdfAvotuNeutralHeader(ICO.layers, SOURCE_BLOCK_LABELS.citi_avoti, "pdf-avotu-ico-brand--citi-avoti");
+  const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`;
   return wrapPdfAvotuStack(card, pdfAvotuCommentIsland(b.comments));
 }
 
@@ -435,16 +435,18 @@ function reportFontGuardScript(): string {
 }
 
 function clientReportPrintCss(): string {
-  const B = SOURCE_BLOCK_HEADER_BG;
-  const irissBg = APPROVED_BY_IRISS_HEADER_BG;
-  const fb = VENDOR_FALLBACK_HEADER_BG;
+  const neutralBg = NEUTRAL_AVOTU_HEADER_BG;
+  const listHdr = LISTING_ANALYSIS_HEADER_BG;
   const listingBodyBg = LISTING_ANALYSIS_BODY_BG;
+  const irissHdr = APPROVED_BY_IRISS_HEADER_BG;
+  const irissBody = APPROVED_BY_IRISS_BODY_BG;
   return `
       *{box-sizing:border-box;}
       html,body,.provin-report-doc{font-family:Inter,sans-serif!important;}
       .provin-report-doc .pdf-vin,.provin-report-doc code,.provin-report-doc kbd,.provin-report-doc samp,.provin-report-doc tt{
         font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;
       }
+      .provin-report-doc .pdf-vin{background:transparent!important;padding:0!important;}
       body{
         font-size:12px;
         line-height:1.45;
@@ -488,31 +490,23 @@ function clientReportPrintCss(): string {
       .pdf-avotu-header-title{
         margin:0;font-size:0.75rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;flex:1;line-height:1.25;
       }
-      .pdf-avotu-header--csdd{background:${B.csdd};color:#fff;}
-      .pdf-avotu-header--csdd .pdf-ico{color:#fff;}
-      .pdf-avotu-header--tirgus{background:${B.tirgus};color:#fff;}
-      .pdf-avotu-header--tirgus .pdf-ico{color:#fff;}
-      .pdf-avotu-header--autodna{background:${B.autodna};color:#fff;}
-      .pdf-avotu-header--autodna .pdf-ico{color:#fff;}
-      .pdf-avotu-header--carvertical{background:${B.carvertical};color:#0f172a;}
-      .pdf-avotu-header--carvertical .pdf-ico{color:#0f172a;}
-      .pdf-avotu-header--auto-records{background:${B.auto_records};color:#fff;}
-      .pdf-avotu-header--auto-records .pdf-ico{color:#fff;}
-      .pdf-avotu-header--ltab{background:${B.ltab};color:#fff;}
-      .pdf-avotu-header--ltab .pdf-ico{color:#fff;}
-      .pdf-avotu-header--vendor-fallback{background:${fb};color:#fff;}
-      .pdf-avotu-header--vendor-fallback .pdf-ico{color:#fff;}
-      .pdf-avotu-header--citi-avoti{background:${B.citi_avoti};color:#fff;}
-      .pdf-avotu-header--citi-avoti .pdf-ico{color:#fff;}
+      .pdf-avotu-header--neutral{background:${neutralBg};color:#334155;}
+      .pdf-avotu-header--neutral .pdf-avotu-header-title{color:#334155;}
+      .pdf-avotu-ico-brand--csdd .pdf-ico{color:#059669;}
+      .pdf-avotu-ico-brand--autodna .pdf-ico{color:#1d4ed8;}
+      .pdf-avotu-ico-brand--carvertical .pdf-ico{color:#d97706;}
+      .pdf-avotu-ico-brand--auto-records .pdf-ico{color:#ea580c;}
+      .pdf-avotu-ico-brand--ltab .pdf-ico{color:#dc2626;}
+      .pdf-avotu-ico-brand--tirgus .pdf-ico{color:#0284c7;}
+      .pdf-avotu-ico-brand--citi-avoti .pdf-ico{color:#7c3aed;}
       .pdf-avotu-body{padding:10px 12px;background:#fff;border-radius:0 0 8px 8px;}
       .pdf-listing-priority{
-        margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #cfe8d4;
-        box-shadow:0 4px 14px rgba(46,125,50,.1);
+        margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #d8ebe0;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-listing-priority-header{
         display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px 10px 0 0;
-        background:${B.listing_analysis};color:#fff;
+        background:${listHdr};color:#fff;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-listing-priority-ico .pdf-ico{width:18px;height:18px;color:#fff;flex-shrink:0;}
@@ -524,13 +518,13 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-listing-analysis-chunk{
-        margin:0 0 8px;padding:8px 10px;background:#f5f5f5;border-radius:4px;
+        margin:0 0 8px;padding:8px 10px;background:#f8fafc;border-radius:4px;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-listing-analysis-chunk:last-child{margin-bottom:0;}
       .pdf-listing-analysis-chunk-pre{font-style:italic;margin:0;}
       .pdf-avotu-comment-island{
-        margin-top:8px;padding:10px 12px;background:#f9f9f9;
+        margin-top:14px;padding:12px 14px;background:#F8FAFC;border-radius:6px;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-avotu-comment-island-label{
@@ -539,13 +533,13 @@ function clientReportPrintCss(): string {
       .pdf-avotu-comment-island-body{font-style:italic;margin:0;}
       .pdf-avotu-zone{
         margin:0 0 12px;padding:12px 14px;border:1px solid #e8eaed;border-radius:10px;
-        background:#f8f9fa;
+        background:#fff;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-avotu-zone .pdf-sec-head{margin-top:0;}
       .pdf-avotu-zone > .pdf-avotu-card{margin-bottom:12px;}
       .pdf-avotu-zone > .pdf-avotu-card:last-child{margin-bottom:0;}
-      .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #ececee;}
+      .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
       .mirror-block-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;}
       .mirror-ico{color:#0066d6;}
@@ -556,7 +550,7 @@ function clientReportPrintCss(): string {
       }
       .mirror-line{font-size:0.72rem;margin:0.25rem 0;line-height:1.45;}
       .mirror-table{width:100%;border-collapse:collapse;font-size:0.72rem;margin:4px 0;}
-      .mirror-table td,.mirror-table th{padding:4px 0;border-bottom:1px solid #ececee;vertical-align:top;text-align:left;}
+      .mirror-table td,.mirror-table th{padding:6px 0;border-bottom:1px solid #f1f5f9;vertical-align:top;text-align:left;}
       .mirror-table thead th{font-weight:600;color:#000;font-size:0.68rem;}
       .mirror-table td:first-child{color:#86868b;width:38%;}
       .mirror-table--csdd td:first-child{
@@ -565,28 +559,29 @@ function clientReportPrintCss(): string {
       .mirror-table--csdd td:nth-child(2){text-align:right;}
       .tabular{font-variant-numeric:tabular-nums;}
       .pdf-iriss-approved{
-        margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #b3d4fc;
-        box-shadow:0 4px 14px rgba(0,102,214,.14);
+        margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #bfdbfe;
+        box-shadow:0 8px 24px rgba(15,23,42,.1);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-iriss-approved-header{
         display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px 10px 0 0;
-        background:${irissBg};color:#0f172a;
+        background:${irissHdr};color:#fff;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-iriss-approved-ico .pdf-ico{width:18px;height:18px;color:#1e293b;flex-shrink:0;}
+      .pdf-iriss-approved-ico .pdf-ico{width:18px;height:18px;color:#fff;flex-shrink:0;}
       .pdf-iriss-approved-title{
         margin:0;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
       }
-      .pdf-iriss-approved-body{padding:12px 14px 14px;background:#e6f2ff;}
+      .pdf-iriss-approved-body{padding:14px 16px 16px;background:${irissBody};}
       .pdf-iriss-approved-subtitle{
         margin:0 0 8px;font-size:0.68rem;font-weight:700;color:#000;letter-spacing:0.06em;text-transform:uppercase;
       }
       .pdf-iriss-approved-text{font-size:0.78rem;}
       .mirror-font-error{padding:16px;color:#991b1b;font-size:13px;}
-      .legal-block{margin-top:12px;padding-top:8px;border-top:1px solid #ececee;font-size:0.68rem;color:#86868b;line-height:1.45;}
-      .report-foot{margin-top:12px;padding-top:8px;border-top:1px solid #ececee;font-size:0.65rem;color:#aeaeb2;}
-      code,.pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;font-size:0.72rem;background:#f5f5f7;padding:1px 6px;border-radius:4px;}
+      .legal-block{margin-top:12px;padding-top:8px;border-top:1px solid #f1f5f9;font-size:0.68rem;color:#86868b;line-height:1.45;}
+      .report-foot{margin-top:12px;padding-top:8px;border-top:1px solid #f1f5f9;font-size:0.65rem;color:#aeaeb2;}
+      code{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;font-size:0.72rem;background:#f5f5f7;padding:1px 6px;border-radius:4px;}
+      .pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;font-size:0.72rem;background:transparent;padding:0;}
       .pdf-flag-num{font-weight:600;}
       @media print{
         body{padding:8mm 10mm;}
@@ -663,7 +658,7 @@ export function buildClientReportDocumentHtml(args: {
   }
 
   lines.push(
-    '<p class="no-print" style="margin-top:12px"><button type="button" style="padding:8px 16px;font-size:12px;border-radius:6px;border:0;background:#0066d6;color:#fff;cursor:pointer;font-family:Inter,sans-serif;font-weight:600" onclick="window.print()">Drukāt / PDF</button></p>',
+    '<p class="no-print" style="margin-top:12px"><button type="button" style="padding:7px 14px;font-size:12px;border-radius:6px;border:1px solid #94a3b8;background:#fff;color:#475569;cursor:pointer;font-family:Inter,sans-serif;font-weight:600" onclick="window.print()">Drukāt / PDF</button></p>',
   );
 
   lines.push(

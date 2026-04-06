@@ -26,7 +26,7 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
   };
 
   return (
-    <div className="rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm">
+    <div className="rounded-lg border border-slate-200/90 bg-white p-2 shadow-sm">
       <AdminSourceBlockHeader blockKey="csdd" />
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">

@@ -48,6 +48,7 @@ import {
 } from "@/lib/admin-portfolio-pdf-analysis";
 import { buildClientReportDocumentHtml } from "@/lib/client-report-html";
 import {
+  APPROVED_BY_IRISS_BODY_BG,
   APPROVED_BY_IRISS_HEADER_BG,
   LISTING_ANALYSIS_BODY_BG,
   SOURCE_BLOCK_HEADER_BG,
@@ -108,7 +109,7 @@ const workspaceToolbarBtn =
 
 const workspaceSectionTitle = `font-bold uppercase tracking-wide text-[var(--color-apple-text)] ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
 
-const workspaceSectionShell = "rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm";
+const workspaceSectionShell = "rounded-lg border border-slate-200/90 bg-white p-2 shadow-sm";
 
 const bulkTextareaClass =
   "w-full rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-sm leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20";
@@ -1339,7 +1340,7 @@ export function OrderDetailWorkspace({
           </div>
         </div>
         <div
-          className={`mt-1.5 overflow-hidden rounded-lg border border-[#b3d4fc] shadow-[0_4px_14px_rgba(0,102,214,0.14)] ${
+          className={`mt-1.5 overflow-hidden rounded-lg border border-sky-200/70 shadow-[0_8px_24px_rgba(15,23,42,0.1)] ${
             ws.previewConfirmed ? "" : "opacity-[0.88]"
           }`}
         >
@@ -1349,7 +1350,7 @@ export function OrderDetailWorkspace({
             contentClassName="gap-2 px-3 py-2.5"
           >
             <svg
-              className="h-4 w-4 shrink-0 text-slate-700"
+              className="h-4 w-4 shrink-0 text-white"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -1362,9 +1363,9 @@ export function OrderDetailWorkspace({
                 d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
               />
             </svg>
-            <span className="text-[11px] font-bold tracking-[0.12em] text-slate-900">APPROVED BY IRISS</span>
+            <span className="text-[11px] font-bold tracking-[0.12em] text-white">APPROVED BY IRISS</span>
           </AdminGradientHeaderBar>
-          <div className="bg-[#e6f2ff] p-2.5">
+          <div className="p-2.5" style={{ background: APPROVED_BY_IRISS_BODY_BG }}>
             <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wide text-[var(--color-apple-text)]">
               KOPSAVILKUMS UN APSKATES PLĀNS
             </h3>
@@ -1420,7 +1421,7 @@ export function OrderDetailWorkspace({
           type="button"
           onClick={openPrintReport}
           disabled={!canGeneratePdf}
-          className={`${workspaceToolbarBtn} mt-1 bg-[var(--color-provin-accent)] text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45`}
+          className={`${workspaceToolbarBtn} mt-1 border border-slate-400/90 bg-white text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45`}
         >
           Ģenerēt PDF
         </button>

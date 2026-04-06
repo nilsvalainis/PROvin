@@ -39,7 +39,7 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-doc-title{margin:0;font-size:0.75rem;font-weight:700;color:#000;letter-spacing:0.06em;line-height:1.3;text-transform:uppercase}
       .pdf-v1-meta{margin:6px 0 0;font-size:0.576rem;color:#6e6e73;line-height:1.4}
       .pdf-v1-meta .pdf-vin{
-        background:#f5f5f7;padding:2px 6px;border-radius:4px;color:#424245;font-size:0.9em;
+        background:transparent;padding:0;color:#424245;font-size:0.9em;
         font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;
       }
       .pdf-surface-card{
@@ -59,7 +59,7 @@ export function pdfLayoutDraftExtraCss(): string {
       }
       .pdf-v1-panel-title--src{letter-spacing:0.04em;font-size:0.75rem;color:#000}
       .pdf-v1-kv{width:100%;border-collapse:collapse;font-size:0.74rem}
-      .pdf-v1-kv td{padding:4px 0 5px;border-bottom:1px solid #ececee;vertical-align:top}
+      .pdf-v1-kv td{padding:6px 0 6px;border-bottom:1px solid #f1f5f9;vertical-align:top}
       .pdf-v1-kv td:first-child{width:36%;color:#86868b;font-weight:500}
       .pdf-v1-kv tr:last-child td{border-bottom:none}
       .pdf-v1-kv a{color:#0066d6;word-break:break-all}

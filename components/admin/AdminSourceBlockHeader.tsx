@@ -6,7 +6,11 @@ import {
   SOURCE_BLOCK_EXTERNAL_URL,
   SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
-import { SOURCE_BLOCK_HEADER_BG, SOURCE_BLOCK_HEADER_TEXT_CLASS } from "@/lib/admin-header-gradients";
+import {
+  SOURCE_BLOCK_BRAND_DOT,
+  SOURCE_BLOCK_HEADER_BG,
+  SOURCE_BLOCK_HEADER_TEXT_CLASS,
+} from "@/lib/admin-header-gradients";
 import { AdminGradientHeaderBar } from "@/components/admin/AdminGradientHeaderBar";
 
 function ExternalLinkIcon({ className }: { className?: string }) {
@@ -41,6 +45,7 @@ export function AdminSourceBlockHeader({ blockKey, className = "mb-2" }: Props) 
   const href = SOURCE_BLOCK_EXTERNAL_URL[blockKey];
   const gradient = SOURCE_BLOCK_HEADER_BG[blockKey];
   const textCls = SOURCE_BLOCK_HEADER_TEXT_CLASS[blockKey];
+  const dotCls = SOURCE_BLOCK_BRAND_DOT[blockKey];
 
   return (
     <AdminGradientHeaderBar gradient={gradient} className={`-mx-2 -mt-2 rounded-t-lg ${className}`}>
@@ -49,10 +54,11 @@ export function AdminSourceBlockHeader({ blockKey, className = "mb-2" }: Props) 
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`${label} — atvērt avotu jaunā cilnē`}
-        className={`inline-flex max-w-full flex-1 items-center gap-1.5 font-bold uppercase tracking-wide underline-offset-2 transition hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)] focus-visible:ring-offset-1 ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS} ${textCls}`}
+        className={`inline-flex max-w-full flex-1 items-center gap-2 font-bold uppercase tracking-wide underline-offset-2 transition hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)] focus-visible:ring-offset-1 ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS} ${textCls}`}
       >
+        <span className={`h-2 w-2 shrink-0 rounded-full ${dotCls}`} aria-hidden />
         <span>{label}</span>
-        <ExternalLinkIcon className="shrink-0 opacity-90" />
+        <ExternalLinkIcon className="shrink-0 opacity-70 text-slate-500" />
       </a>
     </AdminGradientHeaderBar>
   );
