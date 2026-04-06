@@ -246,26 +246,6 @@ function vendorAvotuEdgeClass(title: string): string {
   return "pdf-avotu-sub--vendor-fallback";
 }
 
-const PDF_VENDOR_BLOCK_ORDER: string[] = [
-  SOURCE_BLOCK_LABELS.autodna,
-  SOURCE_BLOCK_LABELS.carvertical,
-  SOURCE_BLOCK_LABELS.auto_records,
-];
-
-function orderVendorBlocksForPdf(blocks: ClientManualVendorBlockPdf[] | undefined): ClientManualVendorBlockPdf[] {
-  const list = blocks ?? [];
-  const byTitle = new Map(list.map((b) => [b.title, b]));
-  const ordered: ClientManualVendorBlockPdf[] = [];
-  for (const t of PDF_VENDOR_BLOCK_ORDER) {
-    const b = byTitle.get(t);
-    if (b) ordered.push(b);
-  }
-  for (const b of list) {
-    if (!PDF_VENDOR_BLOCK_ORDER.includes(b.title)) ordered.push(b);
-  }
-  return ordered;
-}
-
 /** Viena trešā pušu avota apakšbloks zem „AVOTU DATI“. */
 function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf): string {
   const hasTable = b.rows.length > 0;
@@ -345,28 +325,51 @@ function buildListingAnalysisAvotuSubsection(p: ClientReportPayload): string {
   return `<div class="pdf-avotu-sub pdf-avotu-sub--listing-analysis">${inner.join("\n")}</div>`;
 }
 
-/** CSDD → Tirgus → AutoDNA → CarVertical → Auto-Records → LTAB → Sludinājuma analīze vienā vizuālā grupā. */
+function wrapPdfAvotuSlot(cardHtml: string): string {
+  return `<div class="pdf-avotu-slot">${cardHtml}</div>`;
+}
+
+/**
+ * AVOTU DATI: CSDD pilnā platumā, tad 3+3 kolonnu režģis ar fiksētām pozīcijām (tukši sloti paliek tukši).
+ */
 function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
-  const chunks: string[] = [];
   const csdd = buildCsddAvotuSubsection(p);
   const tirgus = buildTirgusAvotuSubsection(p);
-  if (csdd) chunks.push(csdd);
-  if (tirgus) chunks.push(tirgus);
-  for (const b of orderVendorBlocksForPdf(p.manualVendorBlocks)) {
-    const v = buildVendorAvotuSubsection(b);
-    if (v) chunks.push(v);
-  }
   const ltab = buildLtabAvotuSubsection(p.manualLtabBlock);
-  if (ltab) chunks.push(ltab);
   const listing = buildListingAnalysisAvotuSubsection(p);
-  if (listing) chunks.push(listing);
 
-  if (chunks.length === 0) return "";
+  const vendors = p.manualVendorBlocks ?? [];
+  const byTitle = new Map(vendors.map((b) => [b.title, b]));
+  const vendorHtml = (title: string) => {
+    const b = byTitle.get(title);
+    return b ? buildVendorAvotuSubsection(b) : "";
+  };
+  const autodna = vendorHtml(SOURCE_BLOCK_LABELS.autodna);
+  const carvertical = vendorHtml(SOURCE_BLOCK_LABELS.carvertical);
+  const autoRecords = vendorHtml(SOURCE_BLOCK_LABELS.auto_records);
 
-  return `<div class="pdf-avotu-zone" role="region">
-    ${sectionHead(ICO.user, PDF_SECTION_AVOTU_DATI, { noBar: true })}
-    ${chunks.join("\n")}
-  </div>`;
+  const row1Any = Boolean(tirgus || ltab || listing);
+  const row2Any = Boolean(autodna || carvertical || autoRecords);
+  if (!csdd && !row1Any && !row2Any) return "";
+
+  const parts: string[] = [];
+  parts.push(`<div class="pdf-avotu-zone" role="region">`);
+  parts.push(sectionHead(ICO.user, PDF_SECTION_AVOTU_DATI, { noBar: true }));
+  if (csdd) {
+    parts.push(`<div class="pdf-avotu-full">${csdd}</div>`);
+  }
+  if (row1Any) {
+    parts.push(
+      `<div class="pdf-avotu-row">${[tirgus, ltab, listing].map(wrapPdfAvotuSlot).join("")}</div>`,
+    );
+  }
+  if (row2Any) {
+    parts.push(
+      `<div class="pdf-avotu-row">${[autodna, carvertical, autoRecords].map(wrapPdfAvotuSlot).join("")}</div>`,
+    );
+  }
+  parts.push(`</div>`);
+  return parts.join("\n");
 }
 
 function buildSliedziensUnApskateHtml(p: ClientReportPayload): string {
@@ -477,6 +480,18 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-avotu-zone .pdf-sec-head{margin-top:0;}
+      .pdf-avotu-full{width:100%;margin:0 0 10px;}
+      .pdf-avotu-full .pdf-avotu-sub{margin-bottom:0;}
+      .pdf-avotu-row{
+        display:grid;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:8px;
+        margin:0 0 10px;
+        align-items:start;
+      }
+      .pdf-avotu-row:last-child{margin-bottom:0;}
+      .pdf-avotu-slot{min-width:0;min-height:0;}
+      .pdf-avotu-slot .pdf-avotu-sub{margin-bottom:0;}
       .pdf-avotu-sub{
         margin:0 0 10px;padding:10px 12px;background:#fff;border:1px solid #e8eaed;border-radius:8px;
         border-left:4px solid #ccc;
@@ -530,6 +545,7 @@ function clientReportPrintCss(): string {
       @media print{
         body{padding:8mm 10mm;}
         .no-print{display:none!important;}
+        .pdf-avotu-row{break-inside:avoid-page;}
       }
     ` + pdfLayoutDraftExtraCss();
 }

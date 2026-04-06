@@ -12,7 +12,6 @@ import {
   SOURCE_BLOCK_KEYS,
   SOURCE_BLOCK_LABELS,
   SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS,
-  WORKSPACE_GRID_STANDARD_KEYS,
   blocksToLegacyFlatFields,
   createDefaultSourceBlocks,
   csddFormToPlainText,
@@ -25,7 +24,6 @@ import {
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
   type SourceBlockKey,
-  type StandardSourceBlockState,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import {
@@ -1103,7 +1101,10 @@ export function OrderDetailWorkspace({
         <div className="mt-1.5 space-y-1 border-t border-slate-200/80 pt-1.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
           <ol className="list-decimal space-y-0.5 pl-3.5">
             <li>Portfelis → avoti → priekšskats → IRISS + apskates plāns → PDF.</li>
-            <li>Tukši avotu bloki PDF netiek iekļauti.</li>
+            <li>
+              AVOTU DATI PDF: CSDD pilnā platumā; zem tā divas 3 kolonnu rindas — Tirgus dati, LTAB, Sludinājuma
+              analīze; tad AutoDNA, CarVertical, Auto-Records. Tukši lauki un tukši bloki PDF netiek drukāti.
+            </li>
             <li>Dati: localStorage + IndexedDB.</li>
           </ol>
         </div>
@@ -1163,42 +1164,51 @@ export function OrderDetailWorkspace({
             </button>
           </div>
         </div>
-        <div className="mt-1.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          <AdminCsddSourceBlock
-            value={blocksForDisplay.csdd}
-            readOnly={sourcesViewMode}
-            onChange={(next) => updateSourceBlock("csdd", next)}
-          />
-          <AdminTirgusSourceBlock
-            value={blocksForDisplay.tirgus}
-            readOnly={sourcesViewMode}
-            onChange={(next) => updateSourceBlock("tirgus", next)}
-          />
-          {WORKSPACE_GRID_STANDARD_KEYS.map((key) =>
-            key === "ltab" ? (
-              <AdminLtabSourceBlock
-                key={key}
-                value={blocksForDisplay.ltab}
-                readOnly={sourcesViewMode}
-                onChange={(next) => updateSourceBlock("ltab", next)}
-              />
-            ) : key === "listing_analysis" ? (
-              <AdminListingAnalysisSourceBlock
-                key={key}
-                value={blocksForDisplay.listing_analysis}
-                readOnly={sourcesViewMode}
-                onChange={(next) => updateSourceBlock("listing_analysis", next)}
-              />
-            ) : (
-              <AdminStructuredSourceBlock
-                key={key}
-                blockKey={key}
-                value={blocksForDisplay[key] as StandardSourceBlockState}
-                readOnly={sourcesViewMode}
-                onChange={(next) => updateSourceBlock(key, next)}
-              />
-            ),
-          )}
+        <div className="mt-1.5 flex flex-col gap-2">
+          <div className="w-full min-w-0">
+            <AdminCsddSourceBlock
+              value={blocksForDisplay.csdd}
+              readOnly={sourcesViewMode}
+              onChange={(next) => updateSourceBlock("csdd", next)}
+            />
+          </div>
+          <div className="grid min-w-0 gap-2 sm:grid-cols-3">
+            <AdminTirgusSourceBlock
+              value={blocksForDisplay.tirgus}
+              readOnly={sourcesViewMode}
+              onChange={(next) => updateSourceBlock("tirgus", next)}
+            />
+            <AdminLtabSourceBlock
+              value={blocksForDisplay.ltab}
+              readOnly={sourcesViewMode}
+              onChange={(next) => updateSourceBlock("ltab", next)}
+            />
+            <AdminListingAnalysisSourceBlock
+              value={blocksForDisplay.listing_analysis}
+              readOnly={sourcesViewMode}
+              onChange={(next) => updateSourceBlock("listing_analysis", next)}
+            />
+          </div>
+          <div className="grid min-w-0 gap-2 sm:grid-cols-3">
+            <AdminStructuredSourceBlock
+              blockKey="autodna"
+              value={blocksForDisplay.autodna}
+              readOnly={sourcesViewMode}
+              onChange={(next) => updateSourceBlock("autodna", next)}
+            />
+            <AdminStructuredSourceBlock
+              blockKey="carvertical"
+              value={blocksForDisplay.carvertical}
+              readOnly={sourcesViewMode}
+              onChange={(next) => updateSourceBlock("carvertical", next)}
+            />
+            <AdminStructuredSourceBlock
+              blockKey="auto_records"
+              value={blocksForDisplay.auto_records}
+              readOnly={sourcesViewMode}
+              onChange={(next) => updateSourceBlock("auto_records", next)}
+            />
+          </div>
         </div>
 
         <div className="mt-1.5 border-t border-slate-200/80 pt-1.5">

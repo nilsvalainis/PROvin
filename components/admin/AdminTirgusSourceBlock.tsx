@@ -103,7 +103,7 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange }: 
           <textarea
             className="w-full min-h-[72px] resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
             rows={3}
-            placeholder="Papildu piezīmes par tirgus situāciju…"
+            placeholder="Papildu komentāri par tirgus situāciju…"
             value={value.comments}
             disabled={disabled}
             onChange={(e) => setField("comments", e.target.value)}

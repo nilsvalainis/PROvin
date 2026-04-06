@@ -177,7 +177,7 @@ export function AdminStructuredSourceBlock({ blockKey, value, readOnly, disabled
           <textarea
             className="w-full resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
             rows={2}
-            placeholder="Papildu piezīmes par šo avotu…"
+            placeholder="Papildu komentāri par šo avotu…"
             value={value.comments}
             disabled={disabled}
             onChange={(e) => onChange({ ...value, comments: e.target.value })}

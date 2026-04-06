@@ -134,7 +134,7 @@ export function AdminLtabSourceBlock({ value, readOnly, disabled, onChange }: Pr
           <textarea
             className="w-full min-h-[72px] resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
             rows={3}
-            placeholder="Papildu piezīmes par LTAB / OCTA…"
+            placeholder="Papildu komentāri par LTAB / OCTA…"
             value={value.comments}
             disabled={disabled}
             onChange={(e) => onChange({ ...value, comments: e.target.value })}
