@@ -14,7 +14,6 @@ import {
 } from "@/lib/admin-source-blocks";
 import {
   CSDD_FORM_SHORT_FIELDS,
-  CSDD_LABEL_COMMENTS,
   CSDD_LABEL_PREV_RATING,
   csddFormHasContent,
   TIRGUS_LABEL_CREATED,
