@@ -1,6 +1,5 @@
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { ReportComparison } from "@/components/ReportComparison";
 import { irissAnchorHref } from "@/lib/paths";
 
 type GridItem = {
@@ -31,8 +30,6 @@ export async function PricingIncluded() {
         </div>
 
         <div className="mt-6 grid min-w-0 grid-cols-1 gap-2.5 sm:mt-7 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
-          <ReportComparison embedded />
-
           {grid.map((item) => {
             const inner = (
               <>
