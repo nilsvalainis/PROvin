@@ -40,6 +40,14 @@ import {
   tirgusFormHasContent,
 } from "@/lib/admin-source-blocks";
 import {
+  buildPdfAdminMirrorClientBlock,
+  buildPdfAdminMirrorNotesBlock,
+  buildPdfAdminMirrorPaymentBlock,
+  buildPdfAdminMirrorVehicleBlock,
+  pdfLayoutDraftExtraCss,
+  provincLogoSvg,
+} from "@/lib/client-report-pdf-layout-draft";
+import {
   CLIENT_REPORT_FOOTER_DISCLAIMER,
   CLIENT_REPORT_PDF_SECTIONS,
   CLIENT_REPORT_SECTION_LABELS,
@@ -704,16 +712,24 @@ function computeQuickPanelFlags(
   return { legalWarn: stolen, mileageCrit, damageHeavy: heavy, damageWarn };
 }
 
-function buildQuickControlPanelHtml(p: ClientReportPayload, flags: QuickPanelFlags): string {
+function buildQuickControlPanelHtml(
+  p: ClientReportPayload,
+  flags: QuickPanelFlags,
+  opts?: { includeNotesLine?: boolean },
+): string {
+  const includeNotes = opts?.includeNotesLine !== false;
   const contact = [p.customerName?.trim(), p.customerPhone?.trim()].filter(Boolean).join(" · ") || "—";
   const legalLine = flags.legalWarn ? "⚠️ riska zona" : "✅ tīrs";
   const mileLine = flags.mileageCrit ? "🚩 Neatbilstība" : "✅ salīdzināms";
   let dmgLine = "✅ nav izcelts";
   if (flags.damageHeavy) dmgLine = "💥 smagi / total loss";
   else if (flags.damageWarn) dmgLine = "⚠️ ir ieraksti";
+  const notesLine = includeNotes
+    ? `<p class="quick-panel-meta"><strong>ziņojums:</strong> ${escapeHtml(p.notes?.trim() ? p.notes : "—")}</p>`
+    : "";
   return `<div class="quick-panel" role="region">
     ${sectionHead(ICO.user, CLIENT_REPORT_PDF_SECTIONS.quickPanel)}
-    <p class="quick-panel-meta"><strong>ziņojums:</strong> ${escapeHtml(p.notes?.trim() ? p.notes : "—")}</p>
+    ${notesLine}
     <p class="quick-panel-meta"><strong>vin:</strong> <code>${escapeHtml(p.vin ?? "—")}</code> · <strong>kontakts:</strong> ${escapeHtml(contact)}</p>
     <div class="quick-panel-grid">
       <div class="quick-ind"><span class="quick-ind-k">juridiskais</span><span class="quick-ind-v">${legalLine}</span></div>
@@ -777,11 +793,69 @@ function buildListingMarketScrapeHtml(
   return parts.join("\n");
 }
 
+/** Admin secība: Tirgus dati atsevišķi pirms pārējiem manuālajiem avotiem. */
+function buildTirgusListingSectionHtml(
+  p: ClientReportPayload,
+  pdfInsights: PdfPortfolioFileInsight[],
+  ctx: {
+    priceAd: string | null;
+    minListingKm: number | null;
+    listDelta: ReturnType<typeof listingKmDeltaInfo> | null;
+    listWarnLong: string | null;
+    scrapeBlock: string;
+  },
+): string {
+  const hasManualTirgusForm = tirgusFormHasContent(p.tirgusForm);
+  const hasListingSection =
+    Boolean(ctx.priceAd) ||
+    ctx.minListingKm != null ||
+    Boolean(p.listingUrl?.trim()) ||
+    Boolean(ctx.scrapeBlock) ||
+    hasManualTirgusForm ||
+    Boolean(p.tirgus.trim());
+  if (!hasListingSection) return "";
+
+  const parts: string[] = [];
+  parts.push(`<div class="tirgus-mirror-panel" role="region">`);
+  parts.push(sectionHead(ICO.tag, "Tirgus dati"));
+  parts.push('<ul class="ta-list">');
+  if (ctx.priceAd) {
+    parts.push(`<li><strong>cena (no piezīmēm):</strong> ${escapeHtml(ctx.priceAd)}</li>`);
+  }
+  if (ctx.minListingKm != null) {
+    let mileLine = `<strong>sludinājuma nobraukums:</strong> ${ctx.minListingKm.toLocaleString("lv-LV")} km`;
+    if (ctx.listDelta && listingKmStrictlyBelowHistory(p.csdd, p.tirgus, p.citi, pdfInsights)) {
+      mileLine += ` <span class="listing-warn-amber" style="display:inline;padding:2px 6px;border-radius:4px"><span class="listing-delta">🚩 −${escapeHtml(ctx.listDelta.deltaLabel)} pret augstāko vēsturisko fiksāciju</span></span>`;
+    }
+    parts.push(`<li>${mileLine}</li>`);
+  }
+  if (p.listingUrl?.trim()) {
+    parts.push(
+      `<li><strong>saite:</strong> <span style="word-break:break-all">${escapeHtml(p.listingUrl)}</span></li>`,
+    );
+  }
+  parts.push("</ul>");
+  if (ctx.listWarnLong) {
+    parts.push(`<div class="listing-odo-alert">${escapeHtml(ctx.listWarnLong)}</div>`);
+  }
+  if (ctx.scrapeBlock) parts.push(ctx.scrapeBlock);
+  if (hasManualTirgusForm && p.tirgusForm) {
+    parts.push(buildManualTirgusStructuredHtml(p.tirgusForm));
+  } else if (p.tirgus.trim()) {
+    parts.push(
+      `<h4 class="pdf-sub2 lv-tirgus-manual-h">papildu tirgus piezīmes</h4><pre class="lv-source-pre">${escapeHtml(p.tirgus.trim())}</pre>`,
+    );
+  }
+  parts.push("</div>");
+  return parts.join("\n");
+}
+
 function buildLvStructuredSourcesHtml(
   p: ClientReportPayload,
   taValidUntil: Date | null,
   insRows: ClaimTableRow[],
   makeModel: string | null,
+  layoutOpts?: { mainHeading?: string; omitIntroLead?: boolean },
 ): string {
   const hasStructuredCsdd = Boolean(p.csddForm && csddFormHasContent(p.csddForm));
   const hasLegacyCsddText = p.csdd.trim().length > 0;
@@ -795,11 +869,14 @@ function buildLvStructuredSourcesHtml(
   const insFromY = insFromYEarly;
 
   const parts: string[] = [];
-  parts.push(`<div class="lv-sources-panel" role="region">`);
-  parts.push(sectionHead(ICO.clip, CLIENT_REPORT_PDF_SECTIONS.lvSources));
-  parts.push(
-    `<p class="lv-sources-lead">Strukturēti dati <strong>2.1–2.3</strong>. Tirgus — sadaļā V.</p>`,
-  );
+  const mainHeading = layoutOpts?.mainHeading ?? CLIENT_REPORT_PDF_SECTIONS.lvSources;
+  parts.push(`<div class="lv-sources-panel pdf-v1-after-admin" role="region">`);
+  parts.push(sectionHead(ICO.clip, mainHeading));
+  if (!layoutOpts?.omitIntroLead) {
+    parts.push(
+      `<p class="lv-sources-lead">Strukturēti dati <strong>2.1–2.3</strong>. Tirgus — atsevišķā sadaļā zemāk.</p>`,
+    );
+  }
 
   if (hasCsdd) {
     if (hasStructuredCsdd && p.csddForm) {
@@ -966,7 +1043,7 @@ function buildManualVendorBlocksHtml(blocks: ClientManualVendorBlockPdf[] | unde
   if (!blocks?.length) return "";
   const parts: string[] = [];
   parts.push(`<div class="manual-vendor-panel" role="region">`);
-  parts.push(sectionHead(ICO.layers, "Manuāli ievadīti starptautiskie avoti"));
+  parts.push(sectionHead(ICO.layers, "Pārējie avoti (AutoDNA, CarVertical, Auto-Records, LTAB)"));
   for (const b of blocks) {
     parts.push(`<h3 class="pdf-sub prov-uc">${escapeHtml(b.title)}</h3>`);
     if (b.rows.length > 0) {
@@ -993,13 +1070,14 @@ function buildPortfolioBlockHtml(
   portfolio: ClientReportPortfolioRow[],
   pdfInsights: PdfPortfolioFileInsight[],
   formatBytes: (n: number) => string,
+  heading: string = CLIENT_REPORT_PDF_SECTIONS.portfolio,
 ): string {
   if (portfolio.length === 0 && pdfInsights.length === 0) return "";
 
   const portfolioBytes = portfolio.reduce((s, r) => s + r.size, 0);
   const parts: string[] = [];
   parts.push(`<div class="portfolio-panel" role="region">`);
-  parts.push(sectionHead(ICO.layers, CLIENT_REPORT_PDF_SECTIONS.portfolio));
+  parts.push(sectionHead(ICO.layers, heading));
   parts.push(
     `<p class="portfolio-lead"><strong>${portfolio.length}</strong> datnes · kopā <strong>${escapeHtml(formatBytes(portfolioBytes))}</strong>. Zemāk — automātiski izvilkts kopsavilkums no PDF teksta.</p>`,
   );
@@ -1695,7 +1773,7 @@ function clientReportPrintCss(): string {
         .no-print{display:none!important;}
         .ta-status{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       }
-    `;
+    ` + pdfLayoutDraftExtraCss();
 }
 
 function buildHistoryCompareSectionHtml(insights: PdfPortfolioFileInsight[]): string {
@@ -1708,7 +1786,7 @@ function buildHistoryCompareSectionHtml(insights: PdfPortfolioFileInsight[]): st
   parts.push(`<div class="history-compare-panel history-compare-slim" role="region">`);
   parts.push(sectionHead(ICO.layers, CLIENT_REPORT_PDF_SECTIONS.historyCompare));
   parts.push(
-    `<p class="history-compare-lead">Īss <strong>starpavotu kopskats</strong> importētajiem PDF. Pilns teksts — <strong>III</strong>; salīdzinājums ar LV — grafiks un tabulas zemāk.</p>`,
+    `<p class="history-compare-lead">Īss <strong>starpavotu kopskats</strong> importētajiem PDF. Pilns teksts — sadaļā <strong>Portfelis</strong>; salīdzinājums ar LV — grafiks un tabulas zemāk.</p>`,
   );
 
   parts.push(`<div class="compare-strip">`);
@@ -1781,33 +1859,69 @@ export function buildClientReportDocumentHtml(args: {
   const listingKms = extractKmCandidates(p.tirgus);
   const minListingKm = listingKms.length ? Math.min(...listingKms) : null;
   const quickFlags = computeQuickPanelFlags(p.csdd, p.tirgus, p.ltab, p.citi, insRows, pdfInsights);
+  const scrapeBlock = buildListingMarketScrapeHtml(p.listingUrl, p.listingMarket);
 
   const lines: string[] = [];
   lines.push('<div class="sheet">');
-  lines.push('<div class="report-head">');
+  lines.push('<header class="pdf-v1-hero">');
+  lines.push('<div class="pdf-v1-hero-inner">');
+  lines.push(provincLogoSvg());
+  lines.push('<div class="pdf-v1-hero-text">');
+  lines.push(`<h1 class="pdf-v1-doc-title">${escapeHtml(CLIENT_REPORT_SECTION_LABELS.mainTitle)}</h1>`);
   lines.push(
-    `<h1><span class="brand">PROVIN<span style="color:#0066d6">.LV</span></span><span class="brand-sep">|</span><span class="title-main">${escapeHtml(CLIENT_REPORT_SECTION_LABELS.mainTitle)}</span></h1>`,
+    `<p class="pdf-v1-meta">Ģenerēts: ${escapeHtml(dateFmt.format(new Date()))} · VIN <code>${escapeHtml(p.vin ?? "—")}</code></p>`,
   );
-  lines.push(
-    `<p class="sub">Ģenerēts: ${escapeHtml(dateFmt.format(new Date()))}<span class="vin-inline">VIN <code>${escapeHtml(p.vin ?? "—")}</code></span></p>`,
-  );
-  lines.push("</div>");
+  lines.push("</div></div></header>");
 
-  lines.push(buildQuickControlPanelHtml(p, quickFlags));
-  if (p.customerEmail?.trim()) {
-    lines.push(`<p class="hint hint-tight" style="margin-top:-6px">E-pasts: ${escapeHtml(p.customerEmail)}</p>`);
+  const payBlock = buildPdfAdminMirrorPaymentBlock(p, money, dateFmt);
+  if (payBlock) {
+    lines.push(payBlock);
+    lines.push(exportRowHtml());
   }
+  const vehicleBlock = buildPdfAdminMirrorVehicleBlock(p, makeModel);
+  if (vehicleBlock) {
+    lines.push(vehicleBlock);
+    lines.push(exportRowHtml());
+  }
+  const clientBlock = buildPdfAdminMirrorClientBlock(p);
+  if (clientBlock) {
+    lines.push(clientBlock);
+    lines.push(exportRowHtml());
+  }
+
+  lines.push(buildQuickControlPanelHtml(p, quickFlags, { includeNotesLine: false }));
   lines.push(exportRowHtml());
 
-  const lvBlockHtml = buildLvStructuredSourcesHtml(p, taValidUntil, insRows, makeModel);
+  const portfolioHtml = buildPortfolioBlockHtml(portfolio, pdfInsights, formatBytes, "1. Portfelis");
+  if (portfolioHtml) {
+    lines.push(portfolioHtml);
+    lines.push(exportRowHtml());
+  }
+
+  const notesBlock = buildPdfAdminMirrorNotesBlock(p.notes);
+  if (notesBlock) {
+    lines.push(notesBlock);
+    lines.push(exportRowHtml());
+  }
+
+  const lvBlockHtml = buildLvStructuredSourcesHtml(p, taValidUntil, insRows, makeModel, {
+    mainHeading: "CSDD",
+    omitIntroLead: true,
+  });
   if (lvBlockHtml) {
     lines.push(lvBlockHtml);
     lines.push(exportRowHtml());
   }
 
-  const portfolioHtml = buildPortfolioBlockHtml(portfolio, pdfInsights, formatBytes);
-  if (portfolioHtml) {
-    lines.push(portfolioHtml);
+  const tirgusBlockHtml = buildTirgusListingSectionHtml(p, pdfInsights, {
+    priceAd,
+    minListingKm,
+    listDelta,
+    listWarnLong,
+    scrapeBlock,
+  });
+  if (tirgusBlockHtml) {
+    lines.push(tirgusBlockHtml);
     lines.push(exportRowHtml());
   }
 
@@ -1900,49 +2014,6 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(`</div>`);
   lines.push(exportRowHtml());
 
-  const scrapeBlock = buildListingMarketScrapeHtml(p.listingUrl, p.listingMarket);
-  const hasManualTirgusForm = tirgusFormHasContent(p.tirgusForm);
-  const hasListingSection =
-    Boolean(priceAd) ||
-    minListingKm != null ||
-    Boolean(p.listingUrl?.trim()) ||
-    Boolean(scrapeBlock) ||
-    hasManualTirgusForm ||
-    Boolean(p.tirgus.trim());
-
-  if (hasListingSection) {
-    lines.push(sectionHead(ICO.tag, CLIENT_REPORT_PDF_SECTIONS.listing));
-    lines.push('<ul class="ta-list">');
-    if (priceAd) {
-      lines.push(`<li><strong>cena (no piezīmēm):</strong> ${escapeHtml(priceAd)}</li>`);
-    }
-    if (minListingKm != null) {
-      let mileLine = `<strong>sludinājuma nobraukums:</strong> ${minListingKm.toLocaleString("lv-LV")} km`;
-      if (listDelta && listingKmStrictlyBelowHistory(p.csdd, p.tirgus, p.citi, pdfInsights)) {
-        mileLine += ` <span class="listing-warn-amber" style="display:inline;padding:2px 6px;border-radius:4px"><span class="listing-delta">🚩 −${escapeHtml(listDelta.deltaLabel)} pret augstāko vēsturisko fiksāciju</span></span>`;
-      }
-      lines.push(`<li>${mileLine}</li>`);
-    }
-    if (p.listingUrl?.trim()) {
-      lines.push(
-        `<li><strong>saite:</strong> <span style="word-break:break-all">${escapeHtml(p.listingUrl)}</span></li>`,
-      );
-    }
-    lines.push("</ul>");
-    if (listWarnLong) {
-      lines.push(`<div class="listing-odo-alert">${escapeHtml(listWarnLong)}</div>`);
-    }
-    if (scrapeBlock) lines.push(scrapeBlock);
-    if (hasManualTirgusForm && p.tirgusForm) {
-      lines.push(buildManualTirgusStructuredHtml(p.tirgusForm));
-    } else if (p.tirgus.trim()) {
-      lines.push(
-        `<h4 class="pdf-sub2 lv-tirgus-manual-h">papildu tirgus piezīmes</h4><pre class="lv-source-pre">${escapeHtml(p.tirgus.trim())}</pre>`,
-      );
-    }
-    lines.push(exportRowHtml());
-  }
-
   lines.push(sectionHead(ICO.spark, CLIENT_REPORT_PDF_SECTIONS.expertBlock));
   lines.push(`<div class="expert-panel-bottom">`);
   if (expertParts.rating) {
@@ -1957,12 +2028,10 @@ export function buildClientReportDocumentHtml(args: {
     lines.push(`<div class="expert-body">${escapeHtml(expertParts.summary || p.iriss.trim())}</div>`);
   }
   lines.push(`</div>`);
-  lines.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.inspectionPlan)}</h3>`);
-  lines.push(`<p class="hint hint-tight" style="margin-bottom:8px">klātienes checklist.</p>`);
   if (p.apskatesPlāns.trim()) {
+    lines.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.inspectionPlan)}</h3>`);
+    lines.push(`<p class="hint hint-tight" style="margin-bottom:8px">klātienes checklist.</p>`);
     lines.push(`<pre class="block inspection-plan-block">${escapeHtml(p.apskatesPlāns.trim())}</pre>`);
-  } else {
-    lines.push('<p class="na">Nav aizpildīts.</p>');
   }
   lines.push(
     `<p class="hint hint-tight" style="margin-top:10px">pasūtījums: <code>${escapeHtml(p.sessionId)}</code> · ${escapeHtml(p.paymentStatus)} · ${escapeHtml(money)}</p>`,
