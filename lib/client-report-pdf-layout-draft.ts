@@ -28,32 +28,28 @@ export function provincLogoSvg(): string {
       <stop offset="100%" style="stop-color:#0a1628"/>
     </linearGradient>
   </defs>
-  <rect width="220" height="48" rx="12" fill="url(#pdfV1LogoBg)"/>
-  <text x="110" y="32" text-anchor="middle" font-family="Inter,sans-serif" font-size="19" font-weight="800" fill="#ffffff" letter-spacing="-0.02em">PROVIN<tspan fill="#6eb6ff">.LV</tspan></text>
+  <rect width="220" height="48" rx="8" fill="url(#pdfV1LogoBg)"/>
+  <text x="110" y="32" text-anchor="middle" font-family="Inter" font-size="18" font-weight="800" fill="#ffffff" letter-spacing="-0.02em">PROVIN<tspan fill="#6eb6ff">.LV</tspan></text>
 </svg>`;
 }
 
 export function pdfLayoutDraftExtraCss(): string {
   return `
       .pdf-v1-hero{
-        margin:-10mm -12mm 14px -12mm;padding:14px 16px 16px;
-        background:#0a1628;
-        border-radius:0 0 0 0;border-bottom:2px solid #0066d6;
+        margin:0 0 12px;padding:0 0 10px;
+        background:#fff;
+        border-bottom:1px solid #ececee;
       }
-      @media print{
-        .pdf-v1-hero{margin:-8mm -12mm 12px;border-bottom:2px solid #0066d6}
-        .pdf-v1-hero{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-      }
-      .pdf-v1-hero-inner{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-      .pdf-v1-logo{width:176px;max-width:40vw;height:auto;flex-shrink:0;display:block}
+      @media print{.pdf-v1-hero{margin:0 0 10px}}
+      .pdf-v1-hero-inner{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+      .pdf-v1-logo{width:160px;max-width:40vw;height:auto;flex-shrink:0;display:block}
       .pdf-v1-hero-text{flex:1;min-width:160px}
-      .pdf-v1-doc-title{margin:0;font-size:1.05rem;font-weight:600;color:#fff;letter-spacing:-0.02em;line-height:1.25;text-transform:lowercase}
-      .pdf-v1-meta{margin:6px 0 0;font-size:0.72rem;color:#b9d4f0;line-height:1.4}
-      .pdf-v1-meta code{background:rgba(255,255,255,.12);padding:2px 8px;border-radius:6px;color:#fff;font-size:0.9em}
+      .pdf-v1-doc-title{margin:0;font-size:1rem;font-weight:600;color:#1d1d1f;letter-spacing:-0.02em;line-height:1.25;text-transform:lowercase}
+      .pdf-v1-meta{margin:6px 0 0;font-size:0.72rem;color:#424245;line-height:1.4}
+      .pdf-v1-meta code{background:#f5f5f7;padding:2px 8px;border-radius:4px;color:#1d1d1f;font-size:0.9em}
       .pdf-v1-panel.pdf-v1-panel--clean{
-        margin:8px 0 0;padding:8px 0 10px;border:none;border-radius:0;
+        margin:0 0 8px;padding:0 0 8px;border:none;border-radius:0;
         background:transparent;border-bottom:1px solid #ececee;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-v1-panel--clean:last-child{border-bottom:none}
       .pdf-v1-panel-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;flex-wrap:wrap}
