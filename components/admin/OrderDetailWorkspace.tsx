@@ -1107,10 +1107,11 @@ export function OrderDetailWorkspace({
         </summary>
         <div className="mt-1.5 space-y-1 border-t border-slate-200/80 pt-1.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
           <ol className="list-decimal space-y-0.5 pl-3.5">
-            <li>Portfelis → avoti → priekšskats → kopsavilkums un apskates plāns → PDF.</li>
+            <li>Portfelis → avoti → sludinājuma analīze → priekšskats → kopsavilkums un apskates plāns → PDF.</li>
             <li>
-              Avotu bloki: augšā CSDD, tad divas 3 kolonnu rindas (AutoDNA–CarVertical–Auto-Records; LTAB–Tirgus–Citi
-              avoti), apakšā Sludinājuma analīze. PDF: visi bloki secīgi vertikāli. Tukši lauki PDF netiek drukāti.
+              Avotu bloki: CSDD pilnā platumā, tad divas 3 kolonnu rindas (AutoDNA–CarVertical–Auto-Records;
+              LTAB–Tirgus–Citi avoti). Sludinājuma analīze ir atsevišķs bloks. PDF: Avotu dati → Sludinājuma
+              analīze → APPROVED BY IRISS (noslēgums). Tukši lauki PDF netiek drukāti.
             </li>
             <li>Dati: localStorage + IndexedDB.</li>
           </ol>
@@ -1220,11 +1221,37 @@ export function OrderDetailWorkspace({
               />
             </div>
           </div>
-          <div className="w-full min-w-0">
+        </div>
+      </section>
+
+      <section className="min-w-0">
+        <h2 className={workspaceSectionTitle}>3. Sludinājuma analīze</h2>
+        <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
+          Lasīšanas / labošanas režīms kopīgs ar 2. sadaļas rīkjoslu (Saglabāt / Labot).
+        </p>
+        <div className="mt-1.5 overflow-hidden rounded-lg border border-[#a5d6a7] shadow-[0_4px_14px_rgba(46,125,50,0.14)]">
+          <div className="flex items-center gap-2 bg-[#66bb6a] px-3 py-2.5 text-white">
+            <svg
+              className="h-4 w-4 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              aria-hidden
+            >
+              <path
+                strokeLinejoin="round"
+                d="m12 3 1.6 5.2h5.4l-4.4 3.4 1.7 5.4L12 15.8 7.7 17.2l1.7-5.4L5 8.2h5.4L12 3z"
+              />
+            </svg>
+            <span className="text-[11px] font-bold tracking-[0.12em]">SLUDINĀJUMA ANALĪZE</span>
+          </div>
+          <div className="bg-[#e8f5e9] p-2.5">
             <AdminListingAnalysisSourceBlock
               value={blocksForDisplay.listing_analysis}
               readOnly={sourcesViewMode}
               onChange={(next) => updateSourceBlock("listing_analysis", next)}
+              variant="priority"
             />
           </div>
         </div>
@@ -1249,7 +1276,7 @@ export function OrderDetailWorkspace({
         <div className="flex flex-wrap items-start justify-between gap-1.5">
           <div className="min-w-0">
             <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
-              <span>3. Kopsavilkums un apskates plāns</span>
+              <span>4. Kopsavilkums un apskates plāns</span>
               {workspaceAutosaveFlash ? (
                 <span
                   className={`text-[10px] font-semibold normal-case tracking-normal ${
@@ -1368,7 +1395,7 @@ export function OrderDetailWorkspace({
       </section>
 
       <section className="rounded-lg border border-[var(--color-provin-accent)]/30 bg-[var(--color-provin-accent-soft)]/50 p-2 shadow-sm">
-        <h2 className={workspaceSectionTitle}>4. PDF klientam</h2>
+        <h2 className={workspaceSectionTitle}>5. PDF klientam</h2>
         <p className="mt-0.5 text-[10px] leading-tight text-[var(--color-provin-muted)]">
           Pēc kopsavilkuma aizpildes — druka / saglabāt kā PDF.
         </p>

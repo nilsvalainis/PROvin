@@ -322,12 +322,14 @@ function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined
   return wrapPdfAvotuStack(card, hasComments ? pdfAvotuCommentIsland(b.comments) : "");
 }
 
-/** Sludinājuma analīze: viens vienots bloks — krāsains virsraksts + viss saturs ķermenī (nav atsevišķu komentāru salu). */
-function buildListingAnalysisAvotuSubsection(p: ClientReportPayload): string {
+/**
+ * Sludinājuma analīze — patstāvīgs prioritārs bloks (nav „AVOTU DATI” grupā).
+ * Stils līdzīgs APPROVED BY IRISS: pilns platums, zaļa galvene, maigi zaļš ķermenis.
+ */
+function buildListingAnalysisPriorityHtml(p: ClientReportPayload): string {
   const b = p.listingAnalysis;
   if (!b || !listingAnalysisHasContent(b)) return "";
   const L = LISTING_ANALYSIS_SUBSECTIONS;
-  const header = pdfAvotuColoredHeader(ICO.spark, PDF_SECTION_LISTING_ANALYSIS, "pdf-avotu-header--listing-analysis");
   const inner: string[] = [];
   const cat = (title: string, text: string) => {
     const t = text.trim();
@@ -341,7 +343,14 @@ function buildListingAnalysisAvotuSubsection(p: ClientReportPayload): string {
   cat(L.photoAnalysis, b.photoAnalysis);
   cat(L.listingDescription, b.listingDescription);
   if (inner.length === 0) return "";
-  return `<div class="pdf-avotu-card pdf-avotu-card--listing-analysis">${header}<div class="pdf-avotu-body pdf-avotu-body--listing-analysis">${inner.join("\n")}</div></div>`;
+  const parts: string[] = [];
+  parts.push(`<div class="pdf-listing-priority" role="region">`);
+  parts.push(
+    `<div class="pdf-listing-priority-header"><span class="pdf-listing-priority-ico" aria-hidden="true">${ICO.spark}</span><h2 class="pdf-listing-priority-title">${escapeHtml(PDF_SECTION_LISTING_ANALYSIS)}</h2></div>`,
+  );
+  parts.push(`<div class="pdf-listing-priority-body">${inner.join("\n")}</div>`);
+  parts.push(`</div>`);
+  return parts.join("\n");
 }
 
 /** Citi avoti — header + komentāru sala. */
@@ -354,14 +363,14 @@ function buildCitiAvotiAvotuSubsection(p: ClientReportPayload): string {
 }
 
 /**
- * AVOTU DATI (PDF): visi bloki pilnā platumā, vertikāli viens zem otra (secība V6; admin var būt režģis).
+ * AVOTU DATI (PDF): 7 avoti — CSDD, tad AutoDNA / CarVertical / Auto-Records, tad LTAB / Tirgus / Citi avoti.
+ * Sludinājuma analīze ir atsevišķi (buildListingAnalysisPriorityHtml).
  */
 function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   const csdd = buildCsddAvotuSubsection(p);
   const tirgus = buildTirgusAvotuSubsection(p);
   const ltab = buildLtabAvotuSubsection(p.manualLtabBlock);
   const citiAvoti = buildCitiAvotiAvotuSubsection(p);
-  const listing = buildListingAnalysisAvotuSubsection(p);
 
   const vendors = p.manualVendorBlocks ?? [];
   const byTitle = new Map(vendors.map((b) => [b.title, b]));
@@ -373,7 +382,7 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   const carvertical = vendorHtml(SOURCE_BLOCK_LABELS.carvertical);
   const autoRecords = vendorHtml(SOURCE_BLOCK_LABELS.auto_records);
 
-  const stack = [csdd, autodna, carvertical, autoRecords, ltab, tirgus, citiAvoti, listing].filter(Boolean);
+  const stack = [csdd, autodna, carvertical, autoRecords, ltab, tirgus, citiAvoti].filter(Boolean);
   if (stack.length === 0) return "";
 
   const parts: string[] = [];
@@ -384,7 +393,7 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   return parts.join("\n");
 }
 
-/** Galvenais eksperta kopsavilkums — pilnā platumā, virs „AVOTU DATI”. */
+/** Galvenais eksperta kopsavilkums — pilnā platumā, pēdējais lielais bloks pirms juridiskās piezīmes. */
 function buildApprovedByIrissHtml(p: ClientReportPayload): string {
   const iriss = p.iriss.trim();
   const plan = p.apskatesPlāns.trim();
@@ -485,10 +494,20 @@ function clientReportPrintCss(): string {
       .pdf-avotu-header--vendor-fallback .pdf-ico{color:#fff;}
       .pdf-avotu-header--citi-avoti{background:#8d6e63;color:#fff;}
       .pdf-avotu-header--citi-avoti .pdf-ico{color:#fff;}
-      .pdf-avotu-header--listing-analysis{background:#2e7d32;color:#fff;}
-      .pdf-avotu-header--listing-analysis .pdf-ico{color:#fff;}
       .pdf-avotu-body{padding:10px 12px;background:#fff;border-radius:0 0 8px 8px;}
-      .pdf-avotu-body--listing-analysis{padding-top:8px;}
+      .pdf-listing-priority{
+        margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #a5d6a7;
+        box-shadow:0 4px 14px rgba(46,125,50,.14);
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-listing-priority-header{
+        display:flex;align-items:center;gap:10px;padding:10px 14px;background:#66bb6a;color:#fff;
+      }
+      .pdf-listing-priority-ico .pdf-ico{width:18px;height:18px;color:#fff;flex-shrink:0;}
+      .pdf-listing-priority-title{
+        margin:0;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+      }
+      .pdf-listing-priority-body{padding:12px 14px 14px;background:#e8f5e9;}
       .pdf-listing-analysis-chunk{
         margin:0 0 8px;padding:8px 10px;background:#f5f5f5;border-radius:4px;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
@@ -556,7 +575,8 @@ function clientReportPrintCss(): string {
         body{padding:8mm 10mm;}
         .no-print{display:none!important;}
         .pdf-avotu-block-wrap{break-inside:avoid-page;}
-        .pdf-avotu-card.pdf-avotu-card--listing-analysis{break-inside:avoid-page;}
+        .pdf-listing-priority{break-inside:avoid-page;}
+        .pdf-iriss-approved{break-inside:avoid-page;}
       }
     ` + pdfLayoutDraftExtraCss();
 }
@@ -608,11 +628,14 @@ export function buildClientReportDocumentHtml(args: {
   const notesBlock = buildPdfAdminMirrorNotesBlock(p.notes, ICO.clip);
   if (notesBlock) lines.push(notesBlock);
 
-  const approvedHtml = buildApprovedByIrissHtml(p);
-  if (approvedHtml) lines.push(approvedHtml);
-
   const avotuHtml = buildAvotuDatiSectionHtml(p);
   if (avotuHtml) lines.push(avotuHtml);
+
+  const listingPriorityHtml = buildListingAnalysisPriorityHtml(p);
+  if (listingPriorityHtml) lines.push(listingPriorityHtml);
+
+  const approvedHtml = buildApprovedByIrissHtml(p);
+  if (approvedHtml) lines.push(approvedHtml);
 
   lines.push('<div class="legal-block">');
   lines.push(`<p>${escapeHtml(CLIENT_REPORT_FOOTER_DISCLAIMER)}</p>`);
