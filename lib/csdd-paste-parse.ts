@@ -257,11 +257,19 @@ export function parseMileageHistoryLvBlock(text: string): CsddMileageRow[] {
 }
 
 /**
- * Ārvalstu rinda (CSDD teksta rinda). Grupas: 1 = datums, 2 = odometrs, 3 = valsts (pēc optional „km”).
- * Precīzs variants pēc spec: tikai burti + atstarpes valstī; `/iu` lai ASCII burti arī mazie.
+ * Ārvalstu rinda pēc normalizētas rindas. Grupas: 1 = datums, 2 = odometrs, 3 = visa atlikusī valsts (bez vārdnīcas validācijas).
+ * `\s` aptver tabus; 3. grupa ir `.+` — saglabā LIELAJUS burtus un jebkuru CSDD tekstu.
  */
 const ABROAD_LINE_REGEX =
-  /^(\d{2}\.\d{2}\.\d{4})\s+(\d+)(?:\s*km)?\s+([A-ZĀČĒĢĪĶĻŅŠŪŽ\s]+)$/iu;
+  /^(\d{2}\.\d{2}\.\d{4})\s+(\d+)(?:\s*km)?\s+(.+)$/iu;
+
+/** Tabi / vairākas atstarpes / NBSP → viena atstarpe, lai regex grupas sakrīt ar reālo ielīmi. */
+function normalizeMileageLineForAbroadRegex(line: string): string {
+  return line
+    .replace(/[\u00A0\uFEFF]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 function parseAbroadSpaceLine(sp: string[]): {
   date: string;
@@ -302,20 +310,23 @@ export function parseMileageAbroadBlock(text: string): CsddMileageRow[] {
         }
         if (looksLikeSectionHeader(L0) && !/^\d{2}\.\d{2}\.\d{4}/.test(L0)) break;
 
-        const L = L0;
+        const L = normalizeMileageLineForAbroadRegex(L0);
 
-        const rxMatch = L.match(ABROAD_LINE_REGEX);
-        if (rxMatch) {
+        const match = L.match(ABROAD_LINE_REGEX);
+        if (match) {
+          const date = match[1] ?? "";
+          const odometerRaw = match[2] ?? "";
+          const country = match[3] != null && match[3] !== "" ? match[3].trim() : "";
           rows.push({
-            date: rxMatch[1]!,
-            odometer: normalizeOdometerFromPaste(rxMatch[2] ?? ""),
-            country: rxMatch[3]!.replace(/\s+/g, " ").trim(),
+            date,
+            odometer: normalizeOdometerFromPaste(odometerRaw),
+            country,
           });
           i++;
           continue;
         }
 
-        const tabs = L.split("\t").map((c) => c.trim());
+        const tabs = L0.split("\t").map((c) => c.trim());
         if (tabs.length >= 2 && /^\d{2}\.\d{2}\.\d{4}$/.test(tabs[0])) {
           const country =
             tabs.length >= 3 ? tabs.slice(2).join(" ").trim() : "";
