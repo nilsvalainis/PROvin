@@ -9,11 +9,13 @@ export const SOURCE_BLOCK_KEYS = [
   "carvertical",
   "auto_records",
   "ltab",
+  "listing_analysis",
 ] as const;
 
 export type SourceBlockKey = (typeof SOURCE_BLOCK_KEYS)[number];
 
-export type StandardSourceBlockKey = Exclude<SourceBlockKey, "csdd">;
+/** Režģa standarta bloki (bez CSDD, bez Sludinājuma analīzes — atsevišķas formas). */
+export type StandardSourceBlockKey = Exclude<SourceBlockKey, "csdd" | "listing_analysis">;
 
 export const STANDARD_SOURCE_BLOCK_KEYS: StandardSourceBlockKey[] = [
   "tirgus",
@@ -23,10 +25,14 @@ export const STANDARD_SOURCE_BLOCK_KEYS: StandardSourceBlockKey[] = [
   "ltab",
 ];
 
-/** Režģa bloki (bez Tirgus — tam atsevišķs komponents). */
-export const WORKSPACE_GRID_STANDARD_KEYS: StandardSourceBlockKey[] = STANDARD_SOURCE_BLOCK_KEYS.filter(
-  (k) => k !== "tirgus",
-);
+/** Režģa bloki (bez Tirgus — tam atsevišķs komponents). Pēdējais: Sludinājuma analīze. */
+export const WORKSPACE_GRID_STANDARD_KEYS: (StandardSourceBlockKey | "listing_analysis")[] = [
+  "autodna",
+  "carvertical",
+  "auto_records",
+  "ltab",
+  "listing_analysis",
+];
 
 export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   csdd: "CSDD",
@@ -35,6 +41,7 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   carvertical: "CarVertical",
   auto_records: "Auto-Records",
   ltab: "LTAB",
+  listing_analysis: "Sludinājuma analīze",
 };
 
 /** Ātrās saites avotiem — tikai admin panelis (ne PDF). */
@@ -45,6 +52,7 @@ export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
   autodna: "https://www.autodna.com",
   carvertical: "https://www.carvertical.lv",
   auto_records: "https://www.auto-records.com",
+  listing_analysis: "https://www.ss.lv",
 };
 
 /** Virsraksta krāsa admin UI (Tailwind). */
@@ -55,6 +63,7 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
   autodna: "text-sky-700",
   carvertical: "text-yellow-600",
   auto_records: "text-orange-500",
+  listing_analysis: "text-green-700",
 };
 
 /** Avotu virsraksta teksta izmērs admin UI (11px, saskaņots ar laukiem). */
@@ -87,7 +96,7 @@ export const CSDD_FORM_SHORT_FIELDS: {
   { key: "odometer", label: "Odometra rādījums:" },
   { key: "enginePowerKw", label: "Motora maksimālā jauda (kW):" },
   { key: "grossMassKg", label: "Pilna masa (kg):" },
-  { key: "roadTaxYearly", label: "Transportlīdzekļa ekspluatācijas nodoklis (gadā):" },
+  { key: "roadTaxYearly", label: "Transportlīdzekļa ekspluatācijas nodoklis" },
   { key: "solidParticlesCm3", label: "Atgāzu cietās daļiņas (cm-3):" },
   { key: "nextInspectionDate", label: "Nākamās apskates datums:" },
   { key: "prevInspectionDate", label: "Iepriekšējās apskates datums:" },
@@ -195,6 +204,13 @@ export type LtabBlockState = {
   comments: string;
 };
 
+/** Sludinājuma analīze — trīs brīvā teksta lauki (PDF: apakškategorijas ar „Komentāri”). */
+export type ListingAnalysisBlockState = {
+  sellerPortrait: string;
+  photoAnalysis: string;
+  listingDescription: string;
+};
+
 export type WorkspaceSourceBlocks = {
   csdd: CsddFormFields;
   tirgus: TirgusFormFields;
@@ -202,6 +218,7 @@ export type WorkspaceSourceBlocks = {
   carvertical: StandardSourceBlockState;
   auto_records: StandardSourceBlockState;
   ltab: LtabBlockState;
+  listing_analysis: ListingAnalysisBlockState;
 };
 
 export function emptyDataRow(): SourceDataRow {
@@ -220,6 +237,48 @@ export function emptyLtabBlock(): LtabBlockState {
   return { rows: [emptyLtabRow()], comments: "" };
 }
 
+export function emptyListingAnalysisBlock(): ListingAnalysisBlockState {
+  return { sellerPortrait: "", photoAnalysis: "", listingDescription: "" };
+}
+
+export function listingAnalysisHasContent(b: ListingAnalysisBlockState): boolean {
+  return (
+    b.sellerPortrait.trim().length > 0 ||
+    b.photoAnalysis.trim().length > 0 ||
+    b.listingDescription.trim().length > 0
+  );
+}
+
+export const LISTING_ANALYSIS_SUBSECTIONS = {
+  sellerPortrait: "Pārdevēja portrets",
+  photoAnalysis: "Fotogrāfiju analīze",
+  listingDescription: "Sludinājuma apraksts",
+} as const;
+
+export function listingAnalysisToPlainText(b: ListingAnalysisBlockState): string {
+  const L = LISTING_ANALYSIS_SUBSECTIONS;
+  const parts: string[] = [];
+  if (b.sellerPortrait.trim()) {
+    parts.push(`${L.sellerPortrait}\nKomentāri\n${b.sellerPortrait.trim()}`);
+  }
+  if (b.photoAnalysis.trim()) {
+    parts.push(`${L.photoAnalysis}\nKomentāri\n${b.photoAnalysis.trim()}`);
+  }
+  if (b.listingDescription.trim()) {
+    parts.push(`${L.listingDescription}\nKomentāri\n${b.listingDescription.trim()}`);
+  }
+  return parts.join("\n\n");
+}
+
+function parseListingAnalysisRaw(raw: Record<string, unknown>): ListingAnalysisBlockState {
+  const clip = (v: unknown) => String(v ?? "").slice(0, 8000);
+  return {
+    sellerPortrait: clip(raw.sellerPortrait),
+    photoAnalysis: clip(raw.photoAnalysis),
+    listingDescription: clip(raw.listingDescription),
+  };
+}
+
 export function createDefaultSourceBlocks(): WorkspaceSourceBlocks {
   return {
     csdd: emptyCsddFields(),
@@ -228,6 +287,7 @@ export function createDefaultSourceBlocks(): WorkspaceSourceBlocks {
     carvertical: emptyStandardBlock(),
     auto_records: emptyStandardBlock(),
     ltab: emptyLtabBlock(),
+    listing_analysis: emptyListingAnalysisBlock(),
   };
 }
 
@@ -457,6 +517,11 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
   const rawLtab = o.ltab;
   if (rawLtab && typeof rawLtab === "object") {
     base.ltab = parseLtabBlockRaw(rawLtab as Record<string, unknown>);
+  }
+
+  const rawListing = o.listing_analysis;
+  if (rawListing && typeof rawListing === "object") {
+    base.listing_analysis = parseListingAnalysisRaw(rawListing as Record<string, unknown>);
   }
 
   return base;

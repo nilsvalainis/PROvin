@@ -6,10 +6,13 @@
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
 import { amountToIntRough } from "@/lib/claim-rows-parse";
 import {
+  LISTING_ANALYSIS_SUBSECTIONS,
   SOURCE_BLOCK_LABELS,
+  listingAnalysisHasContent,
   type ClientManualLtabBlockPdf,
   type ClientManualVendorBlockPdf,
   type CsddFormFields,
+  type ListingAnalysisBlockState,
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import {
@@ -43,6 +46,7 @@ const PDF_SECTION_TIRGUS_DATI = "TIRGUS DATI";
 const PDF_SECTION_SLIEDZIENS_APSKATE = "SLĒDZIENS UN APSKATES PLĀNS";
 const PDF_SUB_CSDD = "CSDD";
 const PDF_SUB_BLOCK_COMMENTS = "Komentāri";
+const PDF_SECTION_LISTING_ANALYSIS = "SLUDINĀJUMA ANALĪZE";
 
 export type ClientReportPayload = {
   sessionId: string;
@@ -69,6 +73,7 @@ export type ClientReportPayload = {
   listingMarket?: import("@/lib/listing-scrape").ListingMarketSnapshot | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[];
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
+  listingAnalysis?: ListingAnalysisBlockState | null;
 };
 
 export type ClientReportPortfolioRow = { name: string; size: number };
@@ -174,11 +179,6 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
     if (f.comments.trim()) {
       parts.push(`<p class="pdf-field-label">${escapeHtml(PDF_SUB_BLOCK_COMMENTS)}</p>`);
       parts.push(`<pre class="mirror-pre">${escapeHtml(f.comments.trim())}</pre>`);
-    }
-    const nd = f.nextInspectionDate.trim();
-    if (nd) {
-      parts.push(`<p class="pdf-field-label">nākamā apskate (no lauka)</p>`);
-      parts.push(`<p class="mirror-line">${escapeHtml(nd)}</p>`);
     }
   } else if (hasRaw) {
     parts.push(`<pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre>`);
@@ -323,7 +323,29 @@ function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined
   return `<div class="pdf-avotu-sub pdf-avotu-sub--ltab">${parts.join("\n")}</div>`;
 }
 
-/** CSDD → Tirgus → AutoDNA → CarVertical → Auto-Records → LTAB vienā vizuālā grupā. */
+function buildListingAnalysisAvotuSubsection(p: ClientReportPayload): string {
+  const b = p.listingAnalysis;
+  if (!b || !listingAnalysisHasContent(b)) return "";
+  const L = LISTING_ANALYSIS_SUBSECTIONS;
+  const inner: string[] = [];
+  inner.push(
+    `<div class="pdf-subhead"><span class="pdf-subhead-ico" aria-hidden="true">${ICO.spark}</span><h3 class="pdf-sub pdf-sub--with-ico">${escapeHtml(PDF_SECTION_LISTING_ANALYSIS)}</h3></div>`,
+  );
+  const cat = (title: string, text: string) => {
+    const t = text.trim();
+    if (!t) return;
+    inner.push(`<p class="pdf-field-label">${escapeHtml(title)}</p>`);
+    inner.push(`<p class="pdf-field-label pdf-field-label--kom">${escapeHtml(PDF_SUB_BLOCK_COMMENTS)}</p>`);
+    inner.push(`<pre class="mirror-pre">${escapeHtml(t)}</pre>`);
+  };
+  cat(L.sellerPortrait, b.sellerPortrait);
+  cat(L.photoAnalysis, b.photoAnalysis);
+  cat(L.listingDescription, b.listingDescription);
+  if (inner.length <= 1) return "";
+  return `<div class="pdf-avotu-sub pdf-avotu-sub--listing-analysis">${inner.join("\n")}</div>`;
+}
+
+/** CSDD → Tirgus → AutoDNA → CarVertical → Auto-Records → LTAB → Sludinājuma analīze vienā vizuālā grupā. */
 function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   const chunks: string[] = [];
   const csdd = buildCsddAvotuSubsection(p);
@@ -336,6 +358,8 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   }
   const ltab = buildLtabAvotuSubsection(p.manualLtabBlock);
   if (ltab) chunks.push(ltab);
+  const listing = buildListingAnalysisAvotuSubsection(p);
+  if (listing) chunks.push(listing);
 
   if (chunks.length === 0) return "";
 
@@ -343,6 +367,39 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
     ${sectionHead(ICO.user, PDF_SECTION_AVOTU_DATI, { noBar: true })}
     ${chunks.join("\n")}
   </div>`;
+}
+
+function buildSliedziensUnApskateHtml(p: ClientReportPayload): string {
+  const iriss = p.iriss.trim();
+  const plan = p.apskatesPlāns.trim();
+  if (!iriss && !plan) return "";
+  const expertParts = splitExpertConclusion(p.iriss);
+  const parts: string[] = [];
+  parts.push(`<div class="mirror-block pdf-surface-card mirror-block--expert" role="region">`);
+  parts.push(sectionHead(ICO.spark, PDF_SECTION_SLIEDZIENS_APSKATE, { noBar: true }));
+  if (iriss) {
+    parts.push(`<div class="expert-panel">`);
+    if (expertParts.rating) {
+      parts.push(
+        `<div class="expert-verdict"><p class="expert-rating"><strong>Vērtējums:</strong> ${escapeHtml(expertParts.rating)}</p>`,
+      );
+      if (expertParts.summary) {
+        parts.push(`<p class="expert-summary-label"><strong>Eksperta kopsavilkums</strong></p>`);
+        parts.push(`<div class="expert-body">${escapeHtml(expertParts.summary)}</div>`);
+      }
+      parts.push(`</div>`);
+    } else {
+      parts.push(`<p class="expert-summary-label">${escapeHtml(REPORT_PDF_STANDARDS.firstPageExpertBlockTitle)}</p>`);
+      parts.push(`<div class="expert-body">${escapeHtml(expertParts.summary || iriss)}</div>`);
+    }
+    parts.push(`</div>`);
+  }
+  if (plan) {
+    parts.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.inspectionPlan)}</h3>`);
+    parts.push(`<pre class="mirror-pre">${escapeHtml(plan)}</pre>`);
+  }
+  parts.push(`</div>`);
+  return parts.join("\n");
 }
 
 function splitExpertConclusion(iriss: string): { rating: string | null; summary: string } {
@@ -423,6 +480,7 @@ function clientReportPrintCss(): string {
       .pdf-avotu-sub{
         margin:0 0 10px;padding:10px 12px;background:#fff;border:1px solid #e8eaed;border-radius:8px;
         border-left:4px solid #ccc;
+        box-shadow:0 1px 3px rgba(15,23,42,.06);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-avotu-sub:last-child{margin-bottom:0;}
@@ -440,6 +498,9 @@ function clientReportPrintCss(): string {
       .pdf-avotu-sub--ltab .pdf-subhead-ico{color:#4caf50;}
       .pdf-avotu-sub--vendor-fallback{border-left-color:#666666;}
       .pdf-avotu-sub--vendor-fallback .pdf-subhead-ico{color:#666666;}
+      .pdf-avotu-sub--listing-analysis{border-left-color:#90ee90;}
+      .pdf-avotu-sub--listing-analysis .pdf-subhead-ico{color:#2e7d32;}
+      .pdf-field-label--kom{font-size:0.62rem;font-weight:600;margin:0.15rem 0 0.2rem;color:#424245;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #ececee;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
       .mirror-block-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;}
@@ -491,7 +552,6 @@ export function buildClientReportDocumentHtml(args: {
 
   const makeModel =
     p.csddForm?.makeModel?.trim() || extractVehicleMakeModel(p.csdd) || null;
-  const expertParts = splitExpertConclusion(p.iriss);
 
   const lines: string[] = [];
   lines.push('<div class="sheet">');
@@ -500,9 +560,13 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(provincLogoSvg());
   lines.push('<div class="pdf-v1-hero-text">');
   lines.push(`<h1 class="pdf-v1-doc-title">${escapeHtml(PDF_MAIN_TITLE)}</h1>`);
-  lines.push(
-    `<p class="pdf-v1-meta">Ģenerēts: ${escapeHtml(dateFmt.format(new Date()))} · VIN <span class="pdf-vin">${escapeHtml(p.vin ?? "—")}</span></p>`,
-  );
+  {
+    const vin = p.vin?.trim();
+    const vinHtml = vin
+      ? ` · VIN <span class="pdf-vin">${escapeHtml(vin)}</span>`
+      : "";
+    lines.push(`<p class="pdf-v1-meta">Ģenerēts: ${escapeHtml(dateFmt.format(new Date()))}${vinHtml}</p>`);
+  }
   lines.push("</div></div></header>");
 
   const payBlock = buildPdfAdminMirrorPaymentBlock(p, money, dateFmt, ICO.chart);
@@ -520,27 +584,8 @@ export function buildClientReportDocumentHtml(args: {
   const avotuHtml = buildAvotuDatiSectionHtml(p);
   if (avotuHtml) lines.push(avotuHtml);
 
-  lines.push(`<div class="mirror-block pdf-surface-card mirror-block--expert" role="region">`);
-  lines.push(sectionHead(ICO.spark, PDF_SECTION_SLIEDZIENS_APSKATE, { noBar: true }));
-  lines.push(`<div class="expert-panel">`);
-  if (expertParts.rating) {
-    lines.push(`<div class="expert-verdict"><p class="expert-rating"><strong>Vērtējums:</strong> ${escapeHtml(expertParts.rating)}</p>`);
-    if (expertParts.summary) {
-      lines.push(`<p class="expert-summary-label"><strong>Eksperta kopsavilkums</strong></p>`);
-      lines.push(`<div class="expert-body">${escapeHtml(expertParts.summary)}</div>`);
-    }
-    lines.push(`</div>`);
-  } else {
-    lines.push(`<p class="expert-summary-label">${escapeHtml(REPORT_PDF_STANDARDS.firstPageExpertBlockTitle)}</p>`);
-    lines.push(`<div class="expert-body">${escapeHtml(expertParts.summary || p.iriss.trim())}</div>`);
-  }
-  lines.push(`</div>`);
-
-  if (p.apskatesPlāns.trim()) {
-    lines.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.inspectionPlan)}</h3>`);
-    lines.push(`<pre class="mirror-pre">${escapeHtml(p.apskatesPlāns.trim())}</pre>`);
-  }
-  lines.push(`</div>`);
+  const sliedziensHtml = buildSliedziensUnApskateHtml(p);
+  if (sliedziensHtml) lines.push(sliedziensHtml);
 
   lines.push(
     `<p class="mirror-line mirror-line--meta">pasūtījums: <span class="pdf-vin">${escapeHtml(p.sessionId)}</span> · ${escapeHtml(p.paymentStatus)} · ${escapeHtml(money)}</p>`,

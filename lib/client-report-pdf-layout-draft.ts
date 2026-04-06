@@ -63,6 +63,7 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-kv td:first-child{width:36%;color:#86868b;font-weight:500}
       .pdf-v1-kv tr:last-child td{border-bottom:none}
       .pdf-v1-kv a{color:#0066d6;word-break:break-all}
+      .pdf-v1-listing-link{color:#0066d6;word-break:break-all;text-decoration:underline}
       .pdf-v1-kv .pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;}
       .pdf-source-mirror-panel{margin-top:0}
       .pdf-source-mirror-panel + .pdf-source-mirror-panel{margin-top:4px;padding-top:6px;border-top:1px solid #f0f0f2}
@@ -92,9 +93,11 @@ export function buildPdfAdminMirrorVehicleBlock(
   makeModel: string | null,
   titleIconHtml = "",
 ): string {
-  const rows: { k: string; v: string }[] = [];
+  const rows: { k: string; v: string; isLink?: boolean }[] = [];
   const vin = p.vin?.trim();
   if (vin) rows.push({ k: "VIN", v: vin });
+  const url = p.listingUrl?.trim();
+  if (url) rows.push({ k: "Sludinājuma saite", v: url, isLink: true });
   const mm = makeModel?.trim();
   if (mm) rows.push({ k: "Marka / modelis (no datiem)", v: mm });
   if (rows.length === 0) return "";
@@ -102,6 +105,10 @@ export function buildPdfAdminMirrorVehicleBlock(
     .map((r) => {
       if (r.k === "VIN") {
         return `<tr><td>${esc(r.k)}</td><td><span class="pdf-vin">${esc(r.v)}</span></td></tr>`;
+      }
+      if (r.isLink) {
+        const u = esc(r.v);
+        return `<tr><td>${esc(r.k)}</td><td><a href="${u}" class="pdf-v1-listing-link">${u}</a></td></tr>`;
       }
       return `<tr><td>${esc(r.k)}</td><td>${esc(r.v)}</td></tr>`;
     })
@@ -126,8 +133,6 @@ export function buildPdfAdminMirrorClientBlock(
   if (em) rows.push({ k: "E-pasts", v: em });
   const ph = p.customerPhone?.trim();
   if (ph) rows.push({ k: "Tālrunis", v: ph });
-  const cm = p.contactMethod?.trim();
-  if (cm) rows.push({ k: "Vēlamā saziņa", v: cm });
   if (rows.length === 0) return "";
   const body = rows.map((r) => `<tr><td>${esc(r.k)}</td><td>${esc(r.v)}</td></tr>`).join("");
   const head = pdfV1PanelHead("klienta kontaktdati", titleIconHtml);

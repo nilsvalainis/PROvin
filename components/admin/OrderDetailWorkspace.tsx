@@ -7,6 +7,7 @@ import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
 import { AdminStructuredSourceBlock } from "@/components/admin/AdminStructuredSourceBlock";
 import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBlock";
+import { AdminListingAnalysisSourceBlock } from "@/components/admin/AdminListingAnalysisSourceBlock";
 import {
   SOURCE_BLOCK_KEYS,
   SOURCE_BLOCK_LABELS,
@@ -17,6 +18,7 @@ import {
   csddFormToPlainText,
   emptyDataRow,
   hydrateWorkspaceFromStorage,
+  listingAnalysisToPlainText,
   ltabBlockToPlainText,
   standardBlockToPlainText,
   tirgusFormToPlainText,
@@ -350,7 +352,9 @@ export function OrderDetailWorkspace({
                 ? ltabBlockToPlainText(ws.sourceBlocks.ltab)
                 : key === "tirgus"
                   ? tirgusFormToPlainText(ws.sourceBlocks.tirgus)
-                  : standardBlockToPlainText(ws.sourceBlocks[key]),
+                  : key === "listing_analysis"
+                    ? listingAnalysisToPlainText(ws.sourceBlocks.listing_analysis)
+                    : standardBlockToPlainText(ws.sourceBlocks[key]),
         })),
         fileNames: portfolio.map((p) => p.name),
       }),
@@ -721,6 +725,7 @@ export function OrderDetailWorkspace({
         tirgusForm: ws.sourceBlocks.tirgus,
         manualVendorBlocks: toPdfManualVendorBlocks(ws.sourceBlocks),
         manualLtabBlock: toPdfLtabManualBlock(ws.sourceBlocks.ltab),
+        listingAnalysis: ws.sourceBlocks.listing_analysis,
         iriss: ws.iriss,
         apskatesPlāns: ws.apskatesPlāns,
         listingMarket,
@@ -873,7 +878,9 @@ export function OrderDetailWorkspace({
                       ? ltabBlockToPlainText(ws.sourceBlocks.ltab)
                       : key === "tirgus"
                         ? tirgusFormToPlainText(ws.sourceBlocks.tirgus)
-                        : standardBlockToPlainText(ws.sourceBlocks[key])
+                        : key === "listing_analysis"
+                          ? listingAnalysisToPlainText(ws.sourceBlocks.listing_analysis)
+                          : standardBlockToPlainText(ws.sourceBlocks[key])
                 }
                 variant="default"
               />
@@ -1128,8 +1135,9 @@ export function OrderDetailWorkspace({
               <strong className="text-[var(--color-apple-text)]">CSDD</strong> un{" "}
               <strong className="text-[var(--color-apple-text)]">Tirgus dati</strong> — statiski lauki. Pārējie:{" "}
               <strong className="text-[var(--color-apple-text)]">datums · km · summa</strong> (rindas{" "}
-              <strong className="text-[var(--color-apple-text)]">+</strong>) un <strong>LTAB</strong> negadījumu rindas. Tukši
-              bloki PDF netiek drukāti. Viens <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> visiem.
+              <strong className="text-[var(--color-apple-text)]">+</strong>), <strong>LTAB</strong> negadījumu rindas un{" "}
+              <strong className="text-[var(--color-apple-text)]">Sludinājuma analīze</strong> (trīs komentāru lauki). Tukši
+              lauki PDF netiek drukāti. Viens <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> visiem.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1">
@@ -1173,6 +1181,13 @@ export function OrderDetailWorkspace({
                 value={blocksForDisplay.ltab}
                 readOnly={sourcesViewMode}
                 onChange={(next) => updateSourceBlock("ltab", next)}
+              />
+            ) : key === "listing_analysis" ? (
+              <AdminListingAnalysisSourceBlock
+                key={key}
+                value={blocksForDisplay.listing_analysis}
+                readOnly={sourcesViewMode}
+                onChange={(next) => updateSourceBlock("listing_analysis", next)}
               />
             ) : (
               <AdminStructuredSourceBlock
