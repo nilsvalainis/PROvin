@@ -251,7 +251,30 @@ export function parseMileageHistoryLvBlock(text: string): CsddMileageRow[] {
 }
 
 /**
- * „Nobraukums ārvalstīs” — Datums | Odometrs | Valsts (trešā kolonna).
+ * Viena ārvalstu rinda: DD.MM.GGGG + odometrs + optional „km” + valsts (ne jaukta ar LV).
+ * Grupas: datums, odometrs, valsts (lielie/mazie burti, LV diakritika).
+ */
+const ABROAD_LINE_REGEX =
+  /^(\d{2}\.\d{2}\.\d{4})\s+([\d\s.,]+)\s*km?\s+([A-ZĀČĒĢĪĶĻŅŠŪŽa-zāčēģīķļņšūž][A-ZĀČĒĢĪĶĻŅŠŪŽa-zāčēģīķļņšūž\s\-]*)$/u;
+
+function parseAbroadSpaceLine(sp: string[]): {
+  date: string;
+  odometer: string;
+  country: string;
+} | null {
+  if (sp.length < 2 || !/^\d{2}\.\d{2}\.\d{4}$/.test(sp[0] ?? "")) return null;
+  const date = sp[0]!;
+  const odometer = normalizeOdometerFromPaste(sp[1] ?? "");
+  if (sp.length === 2) return { date, odometer, country: "" };
+  if (sp[2]!.toLowerCase() === "km") {
+    if (sp.length >= 4) return { date, odometer, country: sp.slice(3).join(" ").trim() };
+    return { date, odometer, country: "" };
+  }
+  return { date, odometer, country: sp.slice(2).join(" ").trim() };
+}
+
+/**
+ * „Nobraukums ārvalstīs” — Datums | Odometrs | Valsts (trešā kolonna / regex).
  */
 export function parseMileageAbroadBlock(text: string): CsddMileageRow[] {
   const lines = text.split(/\r?\n/);
@@ -274,6 +297,18 @@ export function parseMileageAbroadBlock(text: string): CsddMileageRow[] {
         if (looksLikeSectionHeader(L0) && !/^\d{2}\.\d{2}\.\d{4}/.test(L0)) break;
 
         const L = L0;
+
+        const rxMatch = L.match(ABROAD_LINE_REGEX);
+        if (rxMatch) {
+          rows.push({
+            date: rxMatch[1]!,
+            odometer: normalizeOdometerFromPaste(rxMatch[2] ?? ""),
+            country: rxMatch[3]!.trim(),
+          });
+          i++;
+          continue;
+        }
+
         const tabs = L.split("\t").map((c) => c.trim());
         if (tabs.length >= 2 && /^\d{2}\.\d{2}\.\d{4}$/.test(tabs[0])) {
           const country =
@@ -287,20 +322,12 @@ export function parseMileageAbroadBlock(text: string): CsddMileageRow[] {
           continue;
         }
         const sp = L.split(/\s+/).filter(Boolean);
-        if (sp.length >= 3 && /^\d{2}\.\d{2}\.\d{4}$/.test(sp[0])) {
+        const fromSp = parseAbroadSpaceLine(sp);
+        if (fromSp) {
           rows.push({
-            date: sp[0],
-            odometer: normalizeOdometerFromPaste(sp[1] ?? ""),
-            country: sp.slice(2).join(" ").trim(),
-          });
-          i++;
-          continue;
-        }
-        if (sp.length >= 2 && /^\d{2}\.\d{2}\.\d{4}$/.test(sp[0])) {
-          rows.push({
-            date: sp[0],
-            odometer: normalizeOdometerFromPaste(sp[1] ?? ""),
-            country: "",
+            date: fromSp.date,
+            odometer: fromSp.odometer,
+            country: fromSp.country,
           });
           i++;
           continue;
@@ -321,9 +348,12 @@ export type CsddPasteParseResult = {
 };
 
 export function parseCsddPaste(raw: string): CsddPasteParseResult {
-  const fromLv = parseMileageHistoryLvBlock(raw);
-  const fromAbroad = parseMileageAbroadBlock(raw);
-  const mileageHistory = finalizeMileageHistory([...fromLv, ...fromAbroad]);
+  const lvRecords = parseMileageHistoryLvBlock(raw).map((r) => ({
+    ...r,
+    country: CSDD_MILEAGE_COUNTRY_LV,
+  }));
+  const foreignRecords = parseMileageAbroadBlock(raw);
+  const mileageHistory = finalizeMileageHistory([...lvRecords, ...foreignRecords]);
   const headForDates = sliceTextBeforeNextInspectionHeadBoundary(raw);
   const nextInspectionIso = extractNextInspectionDateIsoFromHead(headForDates);
   const prevInspectionIso = extractPrevInspectionDateIsoFromHead(headForDates);

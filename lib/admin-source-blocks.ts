@@ -613,8 +613,8 @@ function parseCsddMileageUnifiedRaw(raw: unknown): CsddMileageRow[] {
   for (const row of raw) {
     if (!row || typeof row !== "object") continue;
     const x = row as Record<string, unknown>;
-    const country =
-      "country" in x ? String(x.country ?? "").slice(0, 120).trim() : CSDD_MILEAGE_COUNTRY_LV;
+    /** Bez „country” JSON atslēgas nenoklusējam LV — citādi ārvalstu rindas kļūst par „Latvija”. */
+    const country = "country" in x ? String(x.country ?? "").slice(0, 120).trim() : "";
     rows.push({
       date: String(x.date ?? "").slice(0, 120),
       odometer: String(x.odometer ?? "").slice(0, 120),
