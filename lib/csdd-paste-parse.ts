@@ -52,23 +52,6 @@ function extractNextInspectionDateIsoFromHead(headText: string): string | null {
   return null;
 }
 
-function extractPrevInspectionDateIsoFromHead(headText: string): string | null {
-  const lines = headText.split(/\r?\n/);
-  for (const line of lines) {
-    const m = line.match(/Iepriekšējās\s+apskates\s+datums\s*:\s*(.+)$/i);
-    if (!m?.[1]) continue;
-    const rest = m[1].trim();
-    const dm = rest.match(/\d{2}\.\d{2}\.\d{4}/);
-    if (dm) {
-      const iso = lvDateToIso(dm[0]);
-      return iso || null;
-    }
-    const isoM = rest.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (isoM) return `${isoM[1]}-${isoM[2]}-${isoM[3]}`;
-  }
-  return null;
-}
-
 export function isLikelyStructuredCsddPaste(rawText: string): boolean {
   if (rawText.length > 200) return true;
   return (
@@ -109,7 +92,7 @@ function looseLvDateToIso(s: string): string {
 
 /**
  * Tehniskie lauki no ielīmēta CSDD teksta (atslēga:vērtība, TAB, regex).
- * Neiekļauj raw, nobraukumu, nākamās/iepriekšējās apskates datumus (tos ņem no augšas).
+ * Nākamās apskates datums paste laikā tiek ņemts no dokumenta augšas; iepriekšējās — no LV nobraukuma tabulas (applyCsddPasteToForm).
  */
 export function parseCsddTechnicalFields(
   raw: string,
@@ -118,7 +101,19 @@ export function parseCsddTechnicalFields(
   const basics = parseLvRegistryBasics(raw);
 
   const makeModel = (st.makeModel ?? basics.markModel ?? "").trim();
-  const registrationNumber = (st.plateNumber ?? basics.regNr ?? "").trim();
+
+  let registrationNumber = (st.plateNumber ?? basics.regNr ?? "").trim();
+  const regPlateM = raw.match(
+    /Reģistrācijas\s+numurs:\s*([-A-ZĀČĒĢĪĶĻŅŠŪŽ0-9]+?)(?=\s*Pirmās)/i,
+  );
+  if (regPlateM?.[1]) {
+    registrationNumber = regPlateM[1].trim();
+  } else {
+    const regEnd = raw.match(
+      /Reģistrācijas\s+numurs:\s*([-A-ZĀČĒĢĪĶĻŅŠŪŽ0-9]+)\s*$/im,
+    );
+    if (regEnd?.[1]) registrationNumber = regEnd[1].trim();
+  }
 
   const firstRegSrc = st.firstReg ?? basics.firstReg;
   const firstRegistration = firstRegSrc
@@ -131,7 +126,14 @@ export function parseCsddTechnicalFields(
     if (m) engineDisplacementCm3 = m[1].replace(/\s+/g, "").replace(",", ".");
   }
 
-  const enginePowerKw = (st.enginePower ?? basics.powerKw ?? "").trim();
+  let enginePowerKw = (st.enginePower ?? basics.powerKw ?? "").trim();
+  const kwLabelM = raw.match(/(?<=Motora maksimālā jauda \(kW\):)\s*(\d+)/i);
+  const kwFallbackM = raw.match(/Motora\s+maksimālā\s+jauda\s*\(kW\)\s*:\s*(\d+)/i);
+  if (kwLabelM?.[1]) {
+    enginePowerKw = kwLabelM[1];
+  } else if (kwFallbackM?.[1]) {
+    enginePowerKw = kwFallbackM[1];
+  }
   const fuelType = (st.fuelType ?? "").trim();
   const emissionStandard = (st.euroStandard ?? basics.euro ?? "").trim();
 
@@ -344,8 +346,18 @@ export function parseMileageAbroadBlock(text: string): CsddMileageRow[] {
 export type CsddPasteParseResult = {
   mileageHistory: CsddMileageRow[];
   nextInspectionIso: string | null;
+  /** Iepriekšējās apskates datums — no „Nobraukuma vēsture LV” pirmās (augšējās) rindas. */
   prevInspectionIso: string | null;
 };
+
+/** Iepriekšējās apskates datums = pirmās rindas datums LV nobraukuma tabulā (CSDD augšā). */
+function extractPrevInspectionIsoFromLvFirstRow(raw: string): string | null {
+  const lv = parseMileageHistoryLvBlock(raw);
+  const d = lv[0]?.date?.trim();
+  if (!d) return null;
+  const iso = looseLvDateToIso(d);
+  return iso || null;
+}
 
 export function parseCsddPaste(raw: string): CsddPasteParseResult {
   const lvRecords = parseMileageHistoryLvBlock(raw).map((r) => ({
@@ -356,7 +368,7 @@ export function parseCsddPaste(raw: string): CsddPasteParseResult {
   const mileageHistory = finalizeMileageHistory([...lvRecords, ...foreignRecords]);
   const headForDates = sliceTextBeforeNextInspectionHeadBoundary(raw);
   const nextInspectionIso = extractNextInspectionDateIsoFromHead(headForDates);
-  const prevInspectionIso = extractPrevInspectionDateIsoFromHead(headForDates);
+  const prevInspectionIso = extractPrevInspectionIsoFromLvFirstRow(raw);
   return {
     mileageHistory,
     nextInspectionIso,
