@@ -1171,42 +1171,54 @@ export function OrderDetailWorkspace({
               onChange={(next) => updateSourceBlock("csdd", next)}
             />
           </div>
-          <div className="grid min-w-0 grid-cols-3 gap-2 items-stretch">
-            <AdminStructuredSourceBlock
-              blockKey="autodna"
-              value={blocksForDisplay.autodna}
-              readOnly={sourcesViewMode}
-              onChange={(next) => updateSourceBlock("autodna", next)}
-            />
-            <AdminStructuredSourceBlock
-              blockKey="carvertical"
-              value={blocksForDisplay.carvertical}
-              readOnly={sourcesViewMode}
-              onChange={(next) => updateSourceBlock("carvertical", next)}
-            />
-            <AdminStructuredSourceBlock
-              blockKey="auto_records"
-              value={blocksForDisplay.auto_records}
-              readOnly={sourcesViewMode}
-              onChange={(next) => updateSourceBlock("auto_records", next)}
-            />
+          <div className="grid min-h-0 min-w-0 grid-cols-3 gap-2 items-stretch">
+            <div className="flex min-h-0 h-full min-w-0 flex-col">
+              <AdminStructuredSourceBlock
+                blockKey="autodna"
+                value={blocksForDisplay.autodna}
+                readOnly={sourcesViewMode}
+                onChange={(next) => updateSourceBlock("autodna", next)}
+              />
+            </div>
+            <div className="flex min-h-0 h-full min-w-0 flex-col">
+              <AdminStructuredSourceBlock
+                blockKey="carvertical"
+                value={blocksForDisplay.carvertical}
+                readOnly={sourcesViewMode}
+                onChange={(next) => updateSourceBlock("carvertical", next)}
+              />
+            </div>
+            <div className="flex min-h-0 h-full min-w-0 flex-col">
+              <AdminStructuredSourceBlock
+                blockKey="auto_records"
+                value={blocksForDisplay.auto_records}
+                readOnly={sourcesViewMode}
+                onChange={(next) => updateSourceBlock("auto_records", next)}
+              />
+            </div>
           </div>
-          <div className="grid min-w-0 grid-cols-3 gap-2 items-stretch">
-            <AdminLtabSourceBlock
-              value={blocksForDisplay.ltab}
-              readOnly={sourcesViewMode}
-              onChange={(next) => updateSourceBlock("ltab", next)}
-            />
-            <AdminTirgusSourceBlock
-              value={blocksForDisplay.tirgus}
-              readOnly={sourcesViewMode}
-              onChange={(next) => updateSourceBlock("tirgus", next)}
-            />
-            <AdminCitiAvotiSourceBlock
-              value={blocksForDisplay.citi_avoti}
-              readOnly={sourcesViewMode}
-              onChange={(next) => updateSourceBlock("citi_avoti", next)}
-            />
+          <div className="grid min-h-0 min-w-0 grid-cols-3 gap-2 items-stretch">
+            <div className="flex min-h-0 h-full min-w-0 flex-col">
+              <AdminLtabSourceBlock
+                value={blocksForDisplay.ltab}
+                readOnly={sourcesViewMode}
+                onChange={(next) => updateSourceBlock("ltab", next)}
+              />
+            </div>
+            <div className="flex min-h-0 h-full min-w-0 flex-col">
+              <AdminTirgusSourceBlock
+                value={blocksForDisplay.tirgus}
+                readOnly={sourcesViewMode}
+                onChange={(next) => updateSourceBlock("tirgus", next)}
+              />
+            </div>
+            <div className="flex min-h-0 h-full min-w-0 flex-col">
+              <AdminCitiAvotiSourceBlock
+                value={blocksForDisplay.citi_avoti}
+                readOnly={sourcesViewMode}
+                onChange={(next) => updateSourceBlock("citi_avoti", next)}
+              />
+            </div>
           </div>
           <div className="w-full min-w-0">
             <AdminListingAnalysisSourceBlock

@@ -26,9 +26,10 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange }: 
 
   return (
     <div className="flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm">
-      <AdminSourceBlockHeader blockKey="tirgus" />
+      <AdminSourceBlockHeader blockKey="tirgus" className="mb-2 shrink-0" />
 
-      <div className="flex flex-wrap items-end gap-x-3 gap-y-2 rounded-md border border-slate-200/60 bg-white/50 px-2 py-2">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="flex flex-wrap items-end gap-x-3 gap-y-2 rounded-md border border-slate-200/60 bg-white/50 px-2 py-2">
         {readOnly ? (
           <div className="flex min-w-0 flex-1 flex-wrap gap-2 text-[11px] text-[var(--color-provin-muted)]">
             <span className="rounded bg-white/90 px-1.5 py-0.5">
@@ -89,9 +90,10 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange }: 
             </div>
           </>
         )}
+        </div>
       </div>
 
-      <div className="mt-3 w-full min-w-0">
+      <div className="mt-auto w-full min-w-0 shrink-0 pt-2">
         <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
           {TIRGUS_LABEL_COMMENTS}
         </label>

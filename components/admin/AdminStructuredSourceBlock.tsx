@@ -39,9 +39,10 @@ export function AdminStructuredSourceBlock({ blockKey, value, readOnly, disabled
 
   return (
     <div className="flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm">
-      <AdminSourceBlockHeader blockKey={blockKey} className="mb-1.5" />
+      <AdminSourceBlockHeader blockKey={blockKey} className="mb-1.5 shrink-0" />
 
-      <div className="space-y-1">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="space-y-1">
         {value.rows.map((row, ri) => (
           <div key={ri} className="flex flex-wrap items-center gap-1">
             {readOnly ? (
@@ -165,9 +166,10 @@ export function AdminStructuredSourceBlock({ blockKey, value, readOnly, disabled
             +
           </button>
         ) : null}
+        </div>
       </div>
 
-      <div className="mt-2">
+      <div className="mt-auto w-full min-w-0 shrink-0 pt-2">
         <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">Komentāri</label>
         {readOnly ? (
           <div className="min-h-[40px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
