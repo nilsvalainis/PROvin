@@ -304,6 +304,12 @@ export type ClientManualVendorBlockPdf = {
   amountColumnLabel?: string;
 };
 
+/** Strukturēts LTAB bloks PDF — atsevišķi panelī pēc AutoDNA / CV / Auto-Records (kā admin režģī). */
+export type ClientManualLtabBlockPdf = {
+  rows: LtabIncidentRow[];
+  comments: string;
+};
+
 function vendorPdfAmountColumnLabel(): string {
   return "Zaudējumu summa";
 }
@@ -321,6 +327,14 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
     });
   }
   return out;
+}
+
+export function toPdfLtabManualBlock(b: LtabBlockState): ClientManualLtabBlockPdf | null {
+  if (!ltabBlockHasContent(b)) return null;
+  return {
+    rows: b.rows.filter(ltabRowHasData),
+    comments: b.comments.trim(),
+  };
 }
 
 function parseStandardBlockRaw(raw: Record<string, unknown>): StandardSourceBlockState {
