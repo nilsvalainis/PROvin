@@ -44,21 +44,25 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-hero-inner{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
       .pdf-v1-logo{width:160px;max-width:40vw;height:auto;flex-shrink:0;display:block}
       .pdf-v1-hero-text{flex:1;min-width:160px}
-      .pdf-v1-doc-title{margin:0;font-size:1rem;font-weight:600;color:#1d1d1f;letter-spacing:-0.02em;line-height:1.25;text-transform:lowercase}
+      .pdf-v1-doc-title{margin:0;font-size:0.75rem;font-weight:700;color:#1d1d1f;letter-spacing:0.06em;line-height:1.3;text-transform:uppercase}
       .pdf-v1-meta{margin:6px 0 0;font-size:0.72rem;color:#424245;line-height:1.4}
-      .pdf-v1-meta code{background:#f5f5f7;padding:2px 8px;border-radius:4px;color:#1d1d1f;font-size:0.9em}
-      .pdf-v1-panel.pdf-v1-panel--clean{
-        margin:0 0 8px;padding:0 0 8px;border:none;border-radius:0;
-        background:transparent;border-bottom:1px solid #ececee;
+      .pdf-v1-meta .pdf-vin{background:#f5f5f7;padding:2px 8px;border-radius:4px;color:#1d1d1f;font-size:0.9em;font-family:Inter,sans-serif!important}
+      .pdf-surface-card{
+        margin:0 0 12px;padding:12px 14px;border:1px solid #e8eaed;border-radius:10px;
+        background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.07);
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-v1-panel--clean:last-child{border-bottom:none}
+      .pdf-v1-panel.pdf-v1-panel--clean{
+        margin:0 0 12px;padding:12px 14px;border:1px solid #e8eaed;border-radius:10px;
+        background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.07);
+      }
       .pdf-v1-panel-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;flex-wrap:wrap}
       .pdf-v1-ico{display:inline-flex;align-items:center;justify-content:center;color:#0066d6;flex-shrink:0}
       .pdf-v1-ico .pdf-ico{width:14px;height:14px}
       .pdf-v1-panel-title{
-        margin:0;font-size:0.68rem;font-weight:700;letter-spacing:0.04em;text-transform:lowercase;color:#0066d6;
+        margin:0;font-size:0.75rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#0066d6;
       }
-      .pdf-v1-panel-title--src{text-transform:none;letter-spacing:0.02em;font-size:0.72rem;color:#1d1d1f}
+      .pdf-v1-panel-title--src{letter-spacing:0.04em;font-size:0.75rem;color:#1d1d1f}
       .pdf-v1-kv{width:100%;border-collapse:collapse;font-size:0.74rem}
       .pdf-v1-kv td{padding:4px 0 5px;border-bottom:1px solid #ececee;vertical-align:top}
       .pdf-v1-kv td:first-child{width:36%;color:#86868b;font-weight:500}
@@ -84,7 +88,7 @@ export function buildPdfAdminMirrorPaymentBlock(
     .map((r) => `<tr><td>${esc(r.k)}</td><td>${esc(r.v)}</td></tr>`)
     .join("");
   const head = pdfV1PanelHead("maksājums", titleIconHtml);
-  return `<div class="pdf-v1-panel pdf-v1-panel--clean" role="region">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
+  return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
 }
 
 export function buildPdfAdminMirrorVehicleBlock(
@@ -95,24 +99,19 @@ export function buildPdfAdminMirrorVehicleBlock(
   const rows: { k: string; v: string }[] = [];
   const vin = p.vin?.trim();
   if (vin) rows.push({ k: "VIN", v: vin });
-  const url = p.listingUrl?.trim();
-  if (url) rows.push({ k: "Sludinājuma saite", v: url });
   const mm = makeModel?.trim();
   if (mm) rows.push({ k: "Marka / modelis (no datiem)", v: mm });
   if (rows.length === 0) return "";
   const body = rows
     .map((r) => {
-      if (r.k === "Sludinājuma saite") {
-        return `<tr><td>${esc(r.k)}</td><td><a href="${esc(r.v)}">${esc(r.v)}</a></td></tr>`;
-      }
       if (r.k === "VIN") {
-        return `<tr><td>${esc(r.k)}</td><td><code>${esc(r.v)}</code></td></tr>`;
+        return `<tr><td>${esc(r.k)}</td><td><span class="pdf-vin">${esc(r.v)}</span></td></tr>`;
       }
       return `<tr><td>${esc(r.k)}</td><td>${esc(r.v)}</td></tr>`;
     })
     .join("");
   const head = pdfV1PanelHead("transportlīdzeklis un sludinājums", titleIconHtml);
-  return `<div class="pdf-v1-panel pdf-v1-panel--clean" role="region">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
+  return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
 }
 
 export function buildPdfAdminMirrorClientBlock(
@@ -136,12 +135,12 @@ export function buildPdfAdminMirrorClientBlock(
   if (rows.length === 0) return "";
   const body = rows.map((r) => `<tr><td>${esc(r.k)}</td><td>${esc(r.v)}</td></tr>`).join("");
   const head = pdfV1PanelHead("klienta kontaktdati", titleIconHtml);
-  return `<div class="pdf-v1-panel pdf-v1-panel--clean" role="region">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
+  return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
 }
 
 export function buildPdfAdminMirrorNotesBlock(notes: string | null | undefined, titleIconHtml = ""): string {
   const t = notes?.trim();
   if (!t) return "";
   const head = pdfV1PanelHead("komentārs no klienta formas", titleIconHtml);
-  return `<div class="pdf-v1-panel pdf-v1-panel--clean" role="region">${head}<p class="client-msg pdf-v1-notes-body" style="margin:0">${esc(t)}</p></div>`;
+  return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}<p class="client-msg pdf-v1-notes-body" style="margin:0">${esc(t)}</p></div>`;
 }
