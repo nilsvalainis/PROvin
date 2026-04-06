@@ -1,26 +1,22 @@
 {
   "HowItWorks": {
-    "title": "Kā tas darbojas",
-    "subtitle": "Vienkārši 3 soļi līdz pilnīgai auto vēstures pārbaudei",
+    "title": "KĀ TAS DARBOJAS",
     "steps": [
       {
         "n": "1",
         "title": "Ievadi VIN kodu un sludinājuma saiti",
-        "body": "Aizpildi vienkāršo formu ar auto VIN numuru un saiti uz sludinājumu. Process aizņem mazāk nekā 2 minūtes."
+        "body": ""
       },
       {
         "n": "2",
-        "title": "Apmaksā analīzi",
-        "body": "Droša apmaksa ar Stripe. Atbalstām visas galvenās maksājumu metodes — kartes, Apple Pay, Google Pay."
+        "title": "Apmaksā auditu",
+        "body": ""
       },
       {
         "n": "3",
-        "title": "Saņem detalizētu atskaiti",
-        "body": "Līdz 24 stundām pēc veiksmīgas apmaksas saņemsi vispusīgu analīzes atskaiti ar eksperta verdiktu un konkrētiem ieteikumiem."
+        "title": "Saņem detalizētu atskaiti 24 stundu laikā",
+        "body": ""
       }
-    ],
-    "ctaEyebrow": "Pasūtiet analīzi",
-    "ctaHeadline": "Saņemiet pilnu auto analīzi līdz 24 stundām",
-    "ctaButton": "Pasūtiet par 79,99 €"
+    ]
   }
 }
