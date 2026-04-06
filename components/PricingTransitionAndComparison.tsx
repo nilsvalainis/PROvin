@@ -1,6 +1,4 @@
-import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
-import { orderSectionHref } from "@/lib/paths";
+import { getMessages, getTranslations } from "next-intl/server";
 
 type Row = { feature: string; standard: string; provin: string };
 
@@ -42,64 +40,63 @@ function ProvinValue({ value }: { value: string }) {
   );
 }
 
+/** PROVIN slejas šūna: metālisks tonis + „izcelts” rāmis (vienots vertikāli). */
+function provinHeaderClass() {
+  return [
+    "relative z-[2] min-w-[132px] rounded-tr-xl border-2 border-b-0 border-l-provin-accent/50 border-r-provin-accent/50 border-t-provin-accent/50",
+    "bg-gradient-to-b from-[#5aa3eb] via-provin-accent to-provin-accent-hover",
+    "px-2 py-3.5 text-[10px] font-bold uppercase tracking-wide text-white",
+    "shadow-[inset_0_2px_0_rgba(255,255,255,0.38),inset_0_-3px_6px_rgba(0,0,0,0.18),0_0_0_1px_rgba(255,255,255,0.12)_inset,4px_0_28px_rgba(0,102,214,0.28)]",
+    "sm:min-w-[148px] sm:px-4 sm:text-[11px] sm:tracking-wider",
+  ].join(" ");
+}
+
+function provinBodyClass(isLast: boolean) {
+  const base = [
+    "relative z-[1] min-w-[132px] border-2 border-t-0 border-l-provin-accent/40 border-r-provin-accent/40",
+    "bg-gradient-to-br from-[#fafdff] via-[#e8f4fc] to-[#d0e4f8]",
+    "shadow-[inset_0_1px_0_rgba(255,255,255,0.92),inset_0_-2px_4px_rgba(0,82,163,0.07),4px_0_20px_rgba(0,102,214,0.12)]",
+    "px-2 py-3 align-middle ring-1 ring-inset ring-white/70 sm:min-w-[148px] sm:px-3",
+  ];
+  if (isLast) {
+    base.push(
+      "rounded-br-xl border-b-2 border-b-provin-accent/45",
+      "shadow-[inset_0_1px_0_rgba(255,255,255,0.92),inset_0_-2px_4px_rgba(0,82,163,0.07),4px_0_24px_rgba(0,102,214,0.16),0_6px_0_-2px_rgba(0,102,214,0.12)]",
+    );
+  }
+  return base.join(" ");
+}
+
 export async function PricingTransitionAndComparison() {
   const t = await getTranslations("Pricing");
-  const locale = await getLocale();
-  const orderHref = orderSectionHref(locale);
   const messages = await getMessages();
   const rows = (messages as { Pricing: { comparisonRows: Row[] } }).Pricing.comparisonRows;
 
   return (
     <div className="mt-6 min-w-0 space-y-8 sm:mt-8">
-      <div
-        className="relative overflow-hidden rounded-2xl bg-[#14161c] px-4 py-8 text-center shadow-[0_12px_40px_rgba(0,0,0,0.2)] sm:px-8 sm:py-10"
-        role="region"
-        aria-label={t("transitionQuoteAria")}
-      >
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(0,102,214,0.18),transparent_55%)]"
-          aria-hidden
-        />
-        <p className="relative text-balance text-[1.125rem] font-semibold leading-snug tracking-tight text-white sm:text-[1.375rem] sm:leading-tight md:text-2xl">
-          {t("transitionQuotePart1")}
-          <Link
-            href={orderHref}
-            className="text-white underline decoration-white/45 underline-offset-[3px] transition hover:decoration-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-          >
-            {t("transitionQuoteLink")}
-          </Link>
-          {t("transitionQuotePart2")}
-        </p>
-      </div>
-
       <div className="min-w-0">
         <h2 className="text-balance text-center text-[13px] font-bold uppercase leading-tight tracking-[0.06em] text-[#1d1d1f] sm:text-[14px] md:text-[15px]">
           {t("comparisonTitle")}
         </h2>
 
-        <p className="mt-3 text-center text-[11px] font-normal text-[#86868b]">{t("comparisonMobileHint")}</p>
-
-        <div className="mt-4 min-w-0 overflow-x-auto rounded-xl border border-black/[0.1] bg-white pb-1 shadow-[0_8px_32px_rgba(76,29,149,0.12)] [-webkit-overflow-scrolling:touch]">
+        <div className="mt-5 min-w-0 overflow-x-auto rounded-xl border border-provin-accent/20 bg-white pb-1 shadow-[0_8px_36px_rgba(0,102,214,0.14)] [-webkit-overflow-scrolling:touch]">
           <table className="w-full min-w-[min(100%,560px)] border-separate border-spacing-0 text-center text-[11px] leading-tight sm:min-w-[620px] sm:text-[12px]">
             <caption className="sr-only">{t("comparisonTitle")}</caption>
             <thead>
               <tr>
                 <th
                   scope="col"
-                  className="rounded-tl-xl bg-[#4c1d95] px-2 py-3.5 text-left text-[10px] font-bold uppercase tracking-wide text-white sm:px-4 sm:text-[11px] sm:tracking-wider"
+                  className="rounded-tl-xl bg-provin-accent px-2 py-3.5 text-left text-[10px] font-bold uppercase tracking-wide text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] sm:px-4 sm:text-[11px] sm:tracking-wider"
                 >
                   {t("comparisonColFeature")}
                 </th>
                 <th
                   scope="col"
-                  className="bg-[#4c1d95] px-2 py-3.5 text-[10px] font-bold uppercase tracking-wide text-white sm:px-4 sm:text-[11px] sm:tracking-wider"
+                  className="bg-provin-accent px-2 py-3.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] sm:px-4 sm:text-[11px] sm:tracking-wider"
                 >
                   {t("comparisonColStandard")}
                 </th>
-                <th
-                  scope="col"
-                  className="rounded-tr-xl bg-[#6d28d9] px-2 py-3.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-[inset_4px_0_12px_rgba(0,0,0,0.12)] sm:px-4 sm:text-[11px] sm:tracking-wider"
-                >
+                <th scope="col" className={provinHeaderClass()}>
                   {t("comparisonColProvin")}
                 </th>
               </tr>
@@ -107,6 +104,7 @@ export async function PricingTransitionAndComparison() {
             <tbody>
               {rows.map((row, i) => {
                 const zebra = i % 2 === 1 ? "bg-[#f4f4f7]" : "bg-white";
+                const isLast = i === rows.length - 1;
                 return (
                   <tr key={i} className={`${zebra} border-b border-black/[0.06] last:border-b-0`}>
                     <th
@@ -118,9 +116,7 @@ export async function PricingTransitionAndComparison() {
                     <td className={`px-2 py-3 align-middle ${zebra}`}>
                       <StandardValue value={row.standard} />
                     </td>
-                    <td
-                      className={`px-2 py-3 align-middle shadow-[inset_3px_0_8px_rgba(109,40,217,0.08)] sm:px-3 ${zebra} bg-gradient-to-br from-violet-50/95 to-[#ede9fe]/90`}
-                    >
+                    <td className={provinBodyClass(isLast)}>
                       <ProvinValue value={row.provin} />
                     </td>
                   </tr>

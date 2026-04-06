@@ -1,12 +1,7 @@
 {
   "Pricing": {
     "eyebrow": "Cena un saturs",
-    "transitionQuoteAria": "Neviena datubāze nav perfekta. Pārbaudi visur!",
-    "transitionQuotePart1": "Neviena ",
-    "transitionQuoteLink": "datubāze",
-    "transitionQuotePart2": " nav perfekta. Pārbaudi visur!",
     "comparisonTitle": "KĀDĒĻ IZVĒLĒTIES PROVIN AUDITU?",
-    "comparisonMobileHint": "Salīdzinājuma tabula: ritini horizontāli, ja nepieciešams. PROVIN kolonna izcelta.",
     "comparisonColFeature": "IEZĪME",
     "comparisonColStandard": "STANDARTA ATSKAITE",
     "comparisonColProvin": "PROVIN AUDITS",
@@ -43,7 +38,7 @@
       }
     ],
     "comparisonTagline": "Kamēr jūs pētat atskaites, mēs sniedzam atbildes.",
-    "comparisonTableFootnote": "Vēstures dati tiek iegūti no vairākiem starptautiskiem un Latvijas avotiem, gan maksas, gan bezmaksas, atkarībā no ražotāja.",
+    "comparisonTableFootnote": "Visi dati tiek iegūti no vairākiem starptautiskiem un Latvijas avotiem, gan maksas, gan bezmaksas, atkarībā no ražotāja.",
     "grid": [
       {
         "title": "Starptautiskās vēstures datubāzes",
