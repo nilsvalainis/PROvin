@@ -694,7 +694,7 @@ export function OrderDetailWorkspace({
   const openPrintReport = async () => {
     if (!canGeneratePdf) {
       alert(
-        "Vispirms: 1) aizpildi avotu laukus un pievieno failus, 2) atver Priekšskatu un apstiprini, 3) ieraksti IRISS komentāru. Tad ģenerē PDF.",
+        "Vispirms: 1) aizpildi avotu laukus un pievieno failus, 2) atver Priekšskatu un apstiprini, 3) aizpildi kopsavilkuma bloku. Tad ģenerē PDF.",
       );
       return;
     }
@@ -908,7 +908,7 @@ export function OrderDetailWorkspace({
             }}
             className="rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-95"
           >
-            Apstiprinu — turpināt uz IRISS komentāru
+            Apstiprinu — turpināt uz kopsavilkumu
           </button>
         </div>
       </div>
@@ -1107,7 +1107,7 @@ export function OrderDetailWorkspace({
         </summary>
         <div className="mt-1.5 space-y-1 border-t border-slate-200/80 pt-1.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
           <ol className="list-decimal space-y-0.5 pl-3.5">
-            <li>Portfelis → avoti → priekšskats → IRISS + apskates plāns → PDF.</li>
+            <li>Portfelis → avoti → priekšskats → kopsavilkums un apskates plāns → PDF.</li>
             <li>
               Avotu bloki: augšā CSDD, tad divas 3 kolonnu rindas (AutoDNA–CarVertical–Auto-Records; LTAB–Tirgus–Citi
               avoti), apakšā Sludinājuma analīze. PDF: visi bloki secīgi vertikāli. Tukši lauki PDF netiek drukāti.
@@ -1238,24 +1238,18 @@ export function OrderDetailWorkspace({
             Priekšskats
           </button>
           {ws.previewConfirmed ? (
-            <p className="mt-1 text-[11px] font-medium text-emerald-800">Apstiprināts — vari rakstīt IRISS.</p>
+            <p className="mt-1 text-[11px] font-medium text-emerald-800">Apstiprināts — vari rakstīt kopsavilkumu.</p>
           ) : (
             <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">Apstiprini modālī.</p>
           )}
         </div>
       </section>
 
-      <section
-        className={`rounded-lg border p-2 shadow-sm ${
-          ws.previewConfirmed
-            ? "border-slate-200/90 bg-slate-50/40"
-            : "border-dashed border-slate-200 bg-slate-50/50"
-        }`}
-      >
+      <section className="min-w-0">
         <div className="flex flex-wrap items-start justify-between gap-1.5">
           <div className="min-w-0">
             <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
-              <span>3. IRISS + apskates plāns</span>
+              <span>3. Kopsavilkums un apskates plāns</span>
               {workspaceAutosaveFlash ? (
                 <span
                   className={`text-[10px] font-semibold normal-case tracking-normal ${
@@ -1304,50 +1298,68 @@ export function OrderDetailWorkspace({
             </button>
           </div>
         </div>
-        <div className="mt-1 space-y-1.5">
-          <div>
-            <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
-              IRISS (eksperta slēdziens)
-            </div>
-            {expertViewMode ? (
-              <div className={`${bulkReadonlyClass} min-h-[200px] max-h-[min(70vh,560px)] overflow-y-auto`}>
-                {expertSnap.iriss.trim() ? expertSnap.iriss : <span className="text-slate-400">—</span>}
-              </div>
-            ) : (
-              <textarea
-                id={`${fileInputId}-iriss`}
-                className={`${bulkTextareaClass} min-h-[200px] max-h-[min(70vh,560px)] resize-y`}
-                value={ws.iriss}
-                onChange={(e) => updateWs({ iriss: e.target.value })}
-                placeholder="Galvenais kopsavilkums klientam…"
-                spellCheck
-                disabled={!ws.previewConfirmed}
+        <div
+          className={`mt-1.5 overflow-hidden rounded-lg border border-[#b3d4fc] shadow-[0_4px_14px_rgba(0,102,214,0.14)] ${
+            ws.previewConfirmed ? "" : "opacity-[0.88]"
+          }`}
+        >
+          <div className="flex items-center gap-2 bg-[#0066d6] px-3 py-2.5 text-white">
+            <svg
+              className="h-4 w-4 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.75}
+              aria-hidden
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
               />
-            )}
+            </svg>
+            <span className="text-[11px] font-bold tracking-[0.12em]">APPROVED BY IRISS</span>
           </div>
-          <div>
-            <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
-              Apskates plāns (klātienē)
+          <div className="bg-[#e6f2ff] p-2.5">
+            <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wide text-[var(--color-apple-text)]">
+              KOPSAVILKUMS UN APSKATES PLĀNS
+            </h3>
+            <div className="space-y-2">
+              {expertViewMode ? (
+                <div className={`${bulkReadonlyClass} min-h-[200px] max-h-[min(70vh,560px)] overflow-y-auto whitespace-pre-wrap`}>
+                  {expertSnap.iriss.trim() ? expertSnap.iriss : <span className="text-slate-400">—</span>}
+                </div>
+              ) : (
+                <textarea
+                  id={`${fileInputId}-iriss`}
+                  className={`${bulkTextareaClass} min-h-[200px] max-h-[min(70vh,560px)] resize-y bg-white/90`}
+                  value={ws.iriss}
+                  onChange={(e) => updateWs({ iriss: e.target.value })}
+                  placeholder="Galvenais kopsavilkums klientam…"
+                  spellCheck
+                  disabled={!ws.previewConfirmed}
+                />
+              )}
+              {expertViewMode ? (
+                <div className={`${bulkReadonlyClass} min-h-[100px] max-h-[min(50vh,400px)] overflow-y-auto whitespace-pre-wrap`}>
+                  {expertSnap.apskatesPlāns.trim() ? (
+                    expertSnap.apskatesPlāns
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  )}
+                </div>
+              ) : (
+                <textarea
+                  id={`${fileInputId}-apskates`}
+                  className={`${bulkTextareaClass} min-h-[100px] max-h-[min(50vh,400px)] resize-y bg-white/90`}
+                  value={ws.apskatesPlāns}
+                  onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
+                  placeholder="Apskates plāns klātienē — piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
+                  spellCheck
+                  disabled={!ws.previewConfirmed}
+                />
+              )}
             </div>
-            {expertViewMode ? (
-              <div className={`${bulkReadonlyClass} min-h-[100px] max-h-[min(50vh,400px)] overflow-y-auto`}>
-                {expertSnap.apskatesPlāns.trim() ? (
-                  expertSnap.apskatesPlāns
-                ) : (
-                  <span className="text-slate-400">—</span>
-                )}
-              </div>
-            ) : (
-              <textarea
-                id={`${fileInputId}-apskates`}
-                className={`${bulkTextareaClass} min-h-[100px] max-h-[min(50vh,400px)] resize-y`}
-                value={ws.apskatesPlāns}
-                onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
-                placeholder="Piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
-                spellCheck
-                disabled={!ws.previewConfirmed}
-              />
-            )}
           </div>
         </div>
         {!ws.previewConfirmed ? (
@@ -1358,7 +1370,7 @@ export function OrderDetailWorkspace({
       <section className="rounded-lg border border-[var(--color-provin-accent)]/30 bg-[var(--color-provin-accent-soft)]/50 p-2 shadow-sm">
         <h2 className={workspaceSectionTitle}>4. PDF klientam</h2>
         <p className="mt-0.5 text-[10px] leading-tight text-[var(--color-provin-muted)]">
-          Pēc IRISS aizpildes — druka / saglabāt kā PDF.
+          Pēc kopsavilkuma aizpildes — druka / saglabāt kā PDF.
         </p>
         <button
           type="button"
@@ -1369,7 +1381,9 @@ export function OrderDetailWorkspace({
           Ģenerēt PDF
         </button>
         {!canGeneratePdf ? (
-          <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">Vajag apstiprinātu priekšskatu + IRISS.</p>
+          <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">
+            Vajag apstiprinātu priekšskatu un kopsavilkumu.
+          </p>
         ) : null}
       </section>
     </div>

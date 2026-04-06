@@ -3,14 +3,14 @@
  *
  * Galvenie principi:
  * - Nav trešo pušu zīmolu logotipu; tikai PROVIN identitāte.
- * - Pirmajā lapā izteiksmīgs bloks „EKSPERTA SLĒDZIENS” (pakalpojums = analīze).
+ * - Galvenais kopsavilkuma bloks „APPROVED BY IRISS” / „KOPSAVILKUMS UN APSKATES PLĀNS”.
  * - Datu avotu virsraksti PDF klientam — vispārināti, bez oficiālo institūciju precīziem nosaukumiem.
  * - Tekstā nelietot trešo pušu komerciālu pakalpojumu nosaukumus, kamēr nav līgumiskas tiesības tos piesaistīt.
  * - Krāsas / fonti saskaņā ar provin.lv (ne trešo pušu UI krāsas kā „oficiālas”).
  */
 
 export const REPORT_PDF_STANDARDS = {
-  firstPageExpertBlockTitle: "EKSPERTA SLĒDZIENS",
+  firstPageExpertBlockTitle: "KOPSAVILKUMS UN APSKATES PLĀNS",
   /** Paraugs teikumam, ja atspoguļo starptautisko DB saturu bez zīmola nosaukumiem */
   sampleInternationalDbWording: "Saskaņā ar starptautisko datubāzu ierakstiem…",
 } as const;
@@ -31,14 +31,14 @@ export const CLIENT_REPORT_PDF_SECTIONS = {
   discrepancies: "Pretrunas un papildu riski",
   risk: "Ātrā risku pārbaude",
   listing: "V. Tirgus dati un sludinājums",
-  expertBlock: "VI. Eksperta slēdziens un apskates plāns",
+  expertBlock: "VI. Kopsavilkums un apskates plāns",
   sourcesLegend: "Datu avotu krāsu nozīme",
   /** @deprecated Izmantot quickPanel */
   client: "I. Pieteikums un ātrās kontroles panelis",
   vehicle: "Identifikācija",
   attachments: "Pievienotie dokumenti (portfelis)",
-  inspectionPlan: "Apskates plāns klātiene",
-  expert: "Eksperta slēdziens",
+  inspectionPlan: "Apskates plāns (integrēts kopsavilkumā)",
+  expert: "Kopsavilkums",
   application: "I. Pieteikums un ātrās kontroles panelis",
   otherContext: "Papildu konteksts",
 } as const;

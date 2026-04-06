@@ -34,17 +34,14 @@ import {
   pdfLayoutDraftExtraCss,
   provincLogoSvg,
 } from "@/lib/client-report-pdf-layout-draft";
-import {
-  CLIENT_REPORT_FOOTER_DISCLAIMER,
-  CLIENT_REPORT_PDF_SECTIONS,
-  REPORT_PDF_STANDARDS,
-} from "@/lib/report-pdf-standards";
+import { CLIENT_REPORT_FOOTER_DISCLAIMER } from "@/lib/report-pdf-standards";
 
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
 const PDF_SECTION_AVOTU_DATI = "AVOTU DATI";
 const PDF_SECTION_TIRGUS_DATI = "TIRGUS DATI";
-const PDF_SECTION_SLIEDZIENS_APSKATE = "SLĒDZIENS UN APSKATES PLĀNS";
+const PDF_APPROVED_BY_IRISS = "APPROVED BY IRISS";
+const PDF_KOPSAVILKUMS_UN_APSKATES_PLANS = "KOPSAVILKUMS UN APSKATES PLĀNS";
 const PDF_SUB_CSDD = "CSDD";
 const PDF_SUB_BLOCK_COMMENTS = "Komentāri";
 const PDF_SECTION_LISTING_ANALYSIS = "SLUDINĀJUMA ANALĪZE";
@@ -387,56 +384,22 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   return parts.join("\n");
 }
 
-function buildSliedziensUnApskateHtml(p: ClientReportPayload): string {
+/** Galvenais eksperta kopsavilkums — pilnā platumā, virs „AVOTU DATI”. */
+function buildApprovedByIrissHtml(p: ClientReportPayload): string {
   const iriss = p.iriss.trim();
   const plan = p.apskatesPlāns.trim();
   if (!iriss && !plan) return "";
-  const expertParts = splitExpertConclusion(p.iriss);
+  const body = [iriss, plan].filter(Boolean).join("\n\n");
   const parts: string[] = [];
-  parts.push(`<div class="mirror-block pdf-surface-card mirror-block--expert" role="region">`);
-  parts.push(sectionHead(ICO.spark, PDF_SECTION_SLIEDZIENS_APSKATE, { noBar: true }));
-  if (iriss) {
-    parts.push(`<div class="expert-panel">`);
-    if (expertParts.rating) {
-      parts.push(
-        `<div class="expert-verdict"><p class="expert-rating"><strong>Vērtējums:</strong> ${escapeHtml(expertParts.rating)}</p>`,
-      );
-      if (expertParts.summary) {
-        parts.push(`<p class="expert-summary-label"><strong>Eksperta kopsavilkums</strong></p>`);
-        parts.push(`<div class="expert-body">${escapeHtml(expertParts.summary)}</div>`);
-      }
-      parts.push(`</div>`);
-    } else {
-      parts.push(`<p class="expert-summary-label">${escapeHtml(REPORT_PDF_STANDARDS.firstPageExpertBlockTitle)}</p>`);
-      parts.push(`<div class="expert-body">${escapeHtml(expertParts.summary || iriss)}</div>`);
-    }
-    parts.push(`</div>`);
-  }
-  if (plan) {
-    parts.push(`<h3 class="pdf-sub">${escapeHtml(CLIENT_REPORT_PDF_SECTIONS.inspectionPlan)}</h3>`);
-    parts.push(`<pre class="mirror-pre">${escapeHtml(plan)}</pre>`);
-  }
-  parts.push(`</div>`);
+  parts.push(`<div class="pdf-iriss-approved" role="region">`);
+  parts.push(
+    `<div class="pdf-iriss-approved-header"><span class="pdf-iriss-approved-ico" aria-hidden="true">${ICO.shield}</span><h2 class="pdf-iriss-approved-title">${escapeHtml(PDF_APPROVED_BY_IRISS)}</h2></div>`,
+  );
+  parts.push(`<div class="pdf-iriss-approved-body">`);
+  parts.push(`<h3 class="pdf-iriss-approved-subtitle">${escapeHtml(PDF_KOPSAVILKUMS_UN_APSKATES_PLANS)}</h3>`);
+  parts.push(`<pre class="mirror-pre pdf-iriss-approved-text">${escapeHtml(body)}</pre>`);
+  parts.push(`</div></div>`);
   return parts.join("\n");
-}
-
-function splitExpertConclusion(iriss: string): { rating: string | null; summary: string } {
-  const t = iriss.trim();
-  if (!t) return { rating: null, summary: "" };
-  const lines = t.split(/\r?\n/);
-  const first = lines[0]?.trim() ?? "";
-  const looksLikeHeadline =
-    first.length <= 88 &&
-    (/^(IZSKATĀS|UZMANĪBU|ĻOTI|BR[ĪI]DIN|OK|LABI|SLIKTI|NAV\s+IETEIC|IETEIC|NEIESAK)/i.test(first) ||
-      /[!?⚠️✅🚩]/.test(first) ||
-      /^.{1,55}!$/.test(first));
-  if (looksLikeHeadline && lines.length > 1) {
-    return { rating: first, summary: lines.slice(1).join("\n").trim() };
-  }
-  if (looksLikeHeadline && lines.length === 1) {
-    return { rating: first, summary: "" };
-  }
-  return { rating: null, summary: t };
 }
 
 function reportFontGuardScript(): string {
@@ -567,16 +530,27 @@ function clientReportPrintCss(): string {
       }
       .mirror-table--csdd td:nth-child(2){text-align:right;}
       .tabular{font-variant-numeric:tabular-nums;}
-      .mirror-block--expert .expert-panel{margin:0;padding:0;border-top:none;}
-      .expert-panel{margin:8px 0 0;padding:6px 0 0;border-top:1px solid #ececee;}
-      .expert-body{font-size:0.78rem;white-space:pre-wrap;line-height:1.5;color:#1d1d1f;}
-      .expert-rating{font-size:0.78rem;margin:0 0 6px;}
-      .expert-summary-label{font-size:0.72rem;margin:0 0 4px;color:#424245;}
+      .pdf-iriss-approved{
+        margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #b3d4fc;
+        box-shadow:0 4px 14px rgba(0,102,214,.14);
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-iriss-approved-header{
+        display:flex;align-items:center;gap:10px;padding:10px 14px;background:#0066d6;color:#fff;
+      }
+      .pdf-iriss-approved-ico .pdf-ico{width:18px;height:18px;color:#fff;flex-shrink:0;}
+      .pdf-iriss-approved-title{
+        margin:0;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+      }
+      .pdf-iriss-approved-body{padding:12px 14px 14px;background:#e6f2ff;}
+      .pdf-iriss-approved-subtitle{
+        margin:0 0 8px;font-size:0.68rem;font-weight:700;color:#000;letter-spacing:0.06em;text-transform:uppercase;
+      }
+      .pdf-iriss-approved-text{font-size:0.78rem;}
       .mirror-font-error{padding:16px;color:#991b1b;font-size:13px;}
       .legal-block{margin-top:12px;padding-top:8px;border-top:1px solid #ececee;font-size:0.68rem;color:#86868b;line-height:1.45;}
       .report-foot{margin-top:12px;padding-top:8px;border-top:1px solid #ececee;font-size:0.65rem;color:#aeaeb2;}
       code,.pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;font-size:0.72rem;background:#f5f5f7;padding:1px 6px;border-radius:4px;}
-      .mirror-line--meta .pdf-vin{background:transparent;padding:0;}
       .pdf-flag-num{font-weight:600;}
       @media print{
         body{padding:8mm 10mm;}
@@ -634,15 +608,11 @@ export function buildClientReportDocumentHtml(args: {
   const notesBlock = buildPdfAdminMirrorNotesBlock(p.notes, ICO.clip);
   if (notesBlock) lines.push(notesBlock);
 
+  const approvedHtml = buildApprovedByIrissHtml(p);
+  if (approvedHtml) lines.push(approvedHtml);
+
   const avotuHtml = buildAvotuDatiSectionHtml(p);
   if (avotuHtml) lines.push(avotuHtml);
-
-  const sliedziensHtml = buildSliedziensUnApskateHtml(p);
-  if (sliedziensHtml) lines.push(sliedziensHtml);
-
-  lines.push(
-    `<p class="mirror-line mirror-line--meta">pasūtījums: <span class="pdf-vin">${escapeHtml(p.sessionId)}</span> · ${escapeHtml(p.paymentStatus)} · ${escapeHtml(money)}</p>`,
-  );
 
   lines.push('<div class="legal-block">');
   lines.push(`<p>${escapeHtml(CLIENT_REPORT_FOOTER_DISCLAIMER)}</p>`);
