@@ -8,11 +8,13 @@ import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
 import { AdminStructuredSourceBlock } from "@/components/admin/AdminStructuredSourceBlock";
 import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBlock";
 import { AdminListingAnalysisSourceBlock } from "@/components/admin/AdminListingAnalysisSourceBlock";
+import { AdminCitiAvotiSourceBlock } from "@/components/admin/AdminCitiAvotiSourceBlock";
 import {
   SOURCE_BLOCK_KEYS,
   SOURCE_BLOCK_LABELS,
   SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS,
   blocksToLegacyFlatFields,
+  citiAvotiToPlainText,
   createDefaultSourceBlocks,
   csddFormToPlainText,
   emptyDataRow,
@@ -350,9 +352,11 @@ export function OrderDetailWorkspace({
                 ? ltabBlockToPlainText(ws.sourceBlocks.ltab)
                 : key === "tirgus"
                   ? tirgusFormToPlainText(ws.sourceBlocks.tirgus)
-                  : key === "listing_analysis"
-                    ? listingAnalysisToPlainText(ws.sourceBlocks.listing_analysis)
-                    : standardBlockToPlainText(ws.sourceBlocks[key]),
+                  : key === "citi_avoti"
+                    ? citiAvotiToPlainText(ws.sourceBlocks.citi_avoti)
+                    : key === "listing_analysis"
+                      ? listingAnalysisToPlainText(ws.sourceBlocks.listing_analysis)
+                      : standardBlockToPlainText(ws.sourceBlocks[key]),
         })),
         fileNames: portfolio.map((p) => p.name),
       }),
@@ -723,6 +727,7 @@ export function OrderDetailWorkspace({
         tirgusForm: ws.sourceBlocks.tirgus,
         manualVendorBlocks: toPdfManualVendorBlocks(ws.sourceBlocks),
         manualLtabBlock: toPdfLtabManualBlock(ws.sourceBlocks.ltab),
+        citiAvoti: ws.sourceBlocks.citi_avoti,
         listingAnalysis: ws.sourceBlocks.listing_analysis,
         iriss: ws.iriss,
         apskatesPlāns: ws.apskatesPlāns,
@@ -876,9 +881,11 @@ export function OrderDetailWorkspace({
                       ? ltabBlockToPlainText(ws.sourceBlocks.ltab)
                       : key === "tirgus"
                         ? tirgusFormToPlainText(ws.sourceBlocks.tirgus)
-                        : key === "listing_analysis"
-                          ? listingAnalysisToPlainText(ws.sourceBlocks.listing_analysis)
-                          : standardBlockToPlainText(ws.sourceBlocks[key])
+                        : key === "citi_avoti"
+                          ? citiAvotiToPlainText(ws.sourceBlocks.citi_avoti)
+                          : key === "listing_analysis"
+                            ? listingAnalysisToPlainText(ws.sourceBlocks.listing_analysis)
+                            : standardBlockToPlainText(ws.sourceBlocks[key])
                 }
                 variant="default"
               />
@@ -1102,8 +1109,8 @@ export function OrderDetailWorkspace({
           <ol className="list-decimal space-y-0.5 pl-3.5">
             <li>Portfelis → avoti → priekšskats → IRISS + apskates plāns → PDF.</li>
             <li>
-              Avotu bloki šeit: 3 kolonnu režģis (ievadei). PDF: tie paši bloki vertikāli, pilnā platumā. Tukši lauki un
-              tukši bloki PDF netiek drukāti.
+              Avotu bloki: augšā CSDD, tad divas 3 kolonnu rindas (AutoDNA–CarVertical–Auto-Records; LTAB–Tirgus–Citi
+              avoti), apakšā Sludinājuma analīze. PDF: visi bloki secīgi vertikāli. Tukši lauki PDF netiek drukāti.
             </li>
             <li>Dati: localStorage + IndexedDB.</li>
           </ol>
@@ -1165,23 +1172,6 @@ export function OrderDetailWorkspace({
             />
           </div>
           <div className="grid min-w-0 grid-cols-3 gap-2 items-stretch">
-            <AdminTirgusSourceBlock
-              value={blocksForDisplay.tirgus}
-              readOnly={sourcesViewMode}
-              onChange={(next) => updateSourceBlock("tirgus", next)}
-            />
-            <AdminLtabSourceBlock
-              value={blocksForDisplay.ltab}
-              readOnly={sourcesViewMode}
-              onChange={(next) => updateSourceBlock("ltab", next)}
-            />
-            <AdminListingAnalysisSourceBlock
-              value={blocksForDisplay.listing_analysis}
-              readOnly={sourcesViewMode}
-              onChange={(next) => updateSourceBlock("listing_analysis", next)}
-            />
-          </div>
-          <div className="grid min-w-0 grid-cols-3 gap-2 items-stretch">
             <AdminStructuredSourceBlock
               blockKey="autodna"
               value={blocksForDisplay.autodna}
@@ -1199,6 +1189,30 @@ export function OrderDetailWorkspace({
               value={blocksForDisplay.auto_records}
               readOnly={sourcesViewMode}
               onChange={(next) => updateSourceBlock("auto_records", next)}
+            />
+          </div>
+          <div className="grid min-w-0 grid-cols-3 gap-2 items-stretch">
+            <AdminLtabSourceBlock
+              value={blocksForDisplay.ltab}
+              readOnly={sourcesViewMode}
+              onChange={(next) => updateSourceBlock("ltab", next)}
+            />
+            <AdminTirgusSourceBlock
+              value={blocksForDisplay.tirgus}
+              readOnly={sourcesViewMode}
+              onChange={(next) => updateSourceBlock("tirgus", next)}
+            />
+            <AdminCitiAvotiSourceBlock
+              value={blocksForDisplay.citi_avoti}
+              readOnly={sourcesViewMode}
+              onChange={(next) => updateSourceBlock("citi_avoti", next)}
+            />
+          </div>
+          <div className="w-full min-w-0">
+            <AdminListingAnalysisSourceBlock
+              value={blocksForDisplay.listing_analysis}
+              readOnly={sourcesViewMode}
+              onChange={(next) => updateSourceBlock("listing_analysis", next)}
             />
           </div>
         </div>

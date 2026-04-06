@@ -6,11 +6,13 @@
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
 import { amountToIntRough } from "@/lib/claim-rows-parse";
 import {
+  citiAvotiHasContent,
   LISTING_ANALYSIS_SUBSECTIONS,
   SOURCE_BLOCK_LABELS,
   listingAnalysisHasContent,
   type ClientManualLtabBlockPdf,
   type ClientManualVendorBlockPdf,
+  type CitiAvotiBlockState,
   type CsddFormFields,
   type ListingAnalysisBlockState,
   type TirgusFormFields,
@@ -73,6 +75,7 @@ export type ClientReportPayload = {
   listingMarket?: import("@/lib/listing-scrape").ListingMarketSnapshot | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[];
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
+  citiAvoti?: CitiAvotiBlockState | null;
   listingAnalysis?: ListingAnalysisBlockState | null;
 };
 
@@ -324,13 +327,23 @@ function buildListingAnalysisAvotuSubsection(p: ClientReportPayload): string {
   return `<div class="pdf-avotu-sub pdf-avotu-sub--listing-analysis">${inner.join("\n")}</div>`;
 }
 
+/** Citi avoti — viens komentāra lauks (PDF V6). */
+function buildCitiAvotiAvotuSubsection(p: ClientReportPayload): string {
+  const b = p.citiAvoti;
+  if (!b || !citiAvotiHasContent(b)) return "";
+  const subhead = `<div class="pdf-subhead"><span class="pdf-subhead-ico" aria-hidden="true">${ICO.layers}</span><h3 class="pdf-sub pdf-sub--with-ico">${escapeHtml(SOURCE_BLOCK_LABELS.citi_avoti)}</h3></div>`;
+  const edge = `<div class="pdf-avotu-edge pdf-avotu-edge--citi-avoti">${subhead}</div>`;
+  return `<div class="pdf-avotu-sub">${edge}${pdfCommentBlockHtml(b.comments)}</div>`;
+}
+
 /**
- * AVOTU DATI (PDF): visi bloki pilnā platumā, vertikāli viens zem otra (admin panelī var būt 3 kolonnu režģis).
+ * AVOTU DATI (PDF): visi bloki pilnā platumā, vertikāli viens zem otra (secība V6; admin var būt režģis).
  */
 function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   const csdd = buildCsddAvotuSubsection(p);
   const tirgus = buildTirgusAvotuSubsection(p);
   const ltab = buildLtabAvotuSubsection(p.manualLtabBlock);
+  const citiAvoti = buildCitiAvotiAvotuSubsection(p);
   const listing = buildListingAnalysisAvotuSubsection(p);
 
   const vendors = p.manualVendorBlocks ?? [];
@@ -343,7 +356,7 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   const carvertical = vendorHtml(SOURCE_BLOCK_LABELS.carvertical);
   const autoRecords = vendorHtml(SOURCE_BLOCK_LABELS.auto_records);
 
-  const stack = [csdd, tirgus, ltab, listing, autodna, carvertical, autoRecords].filter(Boolean);
+  const stack = [csdd, autodna, carvertical, autoRecords, ltab, tirgus, citiAvoti, listing].filter(Boolean);
   if (stack.length === 0) return "";
 
   const parts: string[] = [];
@@ -483,6 +496,8 @@ function clientReportPrintCss(): string {
       .pdf-avotu-edge--ltab .pdf-subhead-ico{color:#4caf50;}
       .pdf-avotu-edge--vendor-fallback{border-left-color:#666666;}
       .pdf-avotu-edge--vendor-fallback .pdf-subhead-ico{color:#666666;}
+      .pdf-avotu-edge--citi-avoti{border-left-color:#8d6e63;}
+      .pdf-avotu-edge--citi-avoti .pdf-subhead-ico{color:#8d6e63;}
       .pdf-avotu-zone{
         margin:0 0 12px;padding:12px 14px;border:1px solid #e8eaed;border-radius:10px;
         background:#f8f9fa;

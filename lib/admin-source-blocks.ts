@@ -4,18 +4,19 @@
 
 export const SOURCE_BLOCK_KEYS = [
   "csdd",
-  "tirgus",
   "autodna",
   "carvertical",
   "auto_records",
   "ltab",
+  "tirgus",
+  "citi_avoti",
   "listing_analysis",
 ] as const;
 
 export type SourceBlockKey = (typeof SOURCE_BLOCK_KEYS)[number];
 
-/** Režģa standarta bloki (bez CSDD, bez Sludinājuma analīzes — atsevišķas formas). */
-export type StandardSourceBlockKey = Exclude<SourceBlockKey, "csdd" | "listing_analysis">;
+/** Režģa standarta bloki (rindas + komentāri; bez CSDD, citi_avoti, Sludinājuma analīzes). */
+export type StandardSourceBlockKey = Exclude<SourceBlockKey, "csdd" | "listing_analysis" | "citi_avoti">;
 
 export const STANDARD_SOURCE_BLOCK_KEYS: StandardSourceBlockKey[] = [
   "tirgus",
@@ -25,15 +26,6 @@ export const STANDARD_SOURCE_BLOCK_KEYS: StandardSourceBlockKey[] = [
   "ltab",
 ];
 
-/** Režģa bloki (bez Tirgus — tam atsevišķs komponents). Pēdējais: Sludinājuma analīze. */
-export const WORKSPACE_GRID_STANDARD_KEYS: (StandardSourceBlockKey | "listing_analysis")[] = [
-  "autodna",
-  "carvertical",
-  "auto_records",
-  "ltab",
-  "listing_analysis",
-];
-
 export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   csdd: "CSDD",
   tirgus: "Tirgus dati",
@@ -41,6 +33,7 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   carvertical: "CarVertical",
   auto_records: "Auto-Records",
   ltab: "LTAB",
+  citi_avoti: "Citi avoti",
   listing_analysis: "Sludinājuma analīze",
 };
 
@@ -52,6 +45,7 @@ export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
   autodna: "https://www.autodna.com",
   carvertical: "https://www.carvertical.lv",
   auto_records: "https://www.auto-records.com",
+  citi_avoti: "https://www.provin.lv",
   listing_analysis: "https://www.ss.lv",
 };
 
@@ -63,6 +57,7 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
   autodna: "text-sky-700",
   carvertical: "text-yellow-600",
   auto_records: "text-orange-500",
+  citi_avoti: "text-stone-700",
   listing_analysis: "text-green-700",
 };
 
@@ -204,6 +199,11 @@ export type LtabBlockState = {
   comments: string;
 };
 
+/** Citi avoti — viens brīvā teksta lauks (PDF: „Komentāri” zonā). */
+export type CitiAvotiBlockState = {
+  comments: string;
+};
+
 /** Sludinājuma analīze — trīs brīvā teksta lauki (PDF: apakškategorijas ar „Komentāri”). */
 export type ListingAnalysisBlockState = {
   sellerPortrait: string;
@@ -218,6 +218,7 @@ export type WorkspaceSourceBlocks = {
   carvertical: StandardSourceBlockState;
   auto_records: StandardSourceBlockState;
   ltab: LtabBlockState;
+  citi_avoti: CitiAvotiBlockState;
   listing_analysis: ListingAnalysisBlockState;
 };
 
@@ -235,6 +236,18 @@ export function emptyLtabRow(): LtabIncidentRow {
 
 export function emptyLtabBlock(): LtabBlockState {
   return { rows: [emptyLtabRow()], comments: "" };
+}
+
+export function emptyCitiAvotiBlock(): CitiAvotiBlockState {
+  return { comments: "" };
+}
+
+export function citiAvotiHasContent(b: CitiAvotiBlockState): boolean {
+  return b.comments.trim().length > 0;
+}
+
+export function citiAvotiToPlainText(b: CitiAvotiBlockState): string {
+  return b.comments.trim();
 }
 
 export function emptyListingAnalysisBlock(): ListingAnalysisBlockState {
@@ -287,6 +300,7 @@ export function createDefaultSourceBlocks(): WorkspaceSourceBlocks {
     carvertical: emptyStandardBlock(),
     auto_records: emptyStandardBlock(),
     ltab: emptyLtabBlock(),
+    citi_avoti: emptyCitiAvotiBlock(),
     listing_analysis: emptyListingAnalysisBlock(),
   };
 }
@@ -348,11 +362,16 @@ export function blocksToLegacyFlatFields(blocks: WorkspaceSourceBlocks): {
   tirgus: string;
   citi: string;
 } {
+  const vendorPlain = mergeVendorBlocksPlain(blocks);
+  const extra = blocks.citi_avoti.comments.trim();
+  const citiParts: string[] = [];
+  if (vendorPlain) citiParts.push(vendorPlain);
+  if (extra) citiParts.push(`【${SOURCE_BLOCK_LABELS.citi_avoti}】\n${extra}`);
   return {
     csdd: csddFormToPlainText(blocks.csdd),
     ltab: ltabBlockToPlainText(blocks.ltab),
     tirgus: tirgusFormToPlainText(blocks.tirgus),
-    citi: mergeVendorBlocksPlain(blocks),
+    citi: citiParts.join("\n\n"),
   };
 }
 
@@ -524,7 +543,18 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
     base.listing_analysis = parseListingAnalysisRaw(rawListing as Record<string, unknown>);
   }
 
+  const rawCitiAvoti = o.citi_avoti;
+  if (rawCitiAvoti && typeof rawCitiAvoti === "object") {
+    base.citi_avoti = parseCitiAvotiRaw(rawCitiAvoti as Record<string, unknown>);
+  }
+
   return base;
+}
+
+function parseCitiAvotiRaw(raw: Record<string, unknown>): CitiAvotiBlockState {
+  return {
+    comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
+  };
 }
 
 export function migrateFlatWorkspaceToBlocks(flat: {
@@ -538,10 +568,7 @@ export function migrateFlatWorkspaceToBlocks(flat: {
   if (flat.ltab?.trim()) b.ltab = { rows: [emptyLtabRow()], comments: flat.ltab.trim() };
   if (flat.tirgus?.trim()) b.tirgus = { ...emptyTirgusFields(), comments: flat.tirgus.trim() };
   if (flat.citi?.trim()) {
-    b.autodna = {
-      rows: [emptyDataRow()],
-      comments: `Iepriekš „Citi avoti”:\n${flat.citi.trim()}`,
-    };
+    b.citi_avoti = { comments: flat.citi.trim() };
   }
   return b;
 }
