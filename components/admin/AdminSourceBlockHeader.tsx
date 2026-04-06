@@ -2,11 +2,12 @@
 
 import type { SourceBlockKey } from "@/lib/admin-source-blocks";
 import {
-  SOURCE_BLOCK_ADMIN_TITLE_COLOR,
   SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS,
   SOURCE_BLOCK_EXTERNAL_URL,
   SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
+import { SOURCE_BLOCK_HEADER_BG, SOURCE_BLOCK_HEADER_TEXT_CLASS } from "@/lib/admin-header-gradients";
+import { AdminGradientHeaderBar } from "@/components/admin/AdminGradientHeaderBar";
 
 function ExternalLinkIcon({ className }: { className?: string }) {
   return (
@@ -38,26 +39,21 @@ type Props = {
 export function AdminSourceBlockHeader({ blockKey, className = "mb-2" }: Props) {
   const label = SOURCE_BLOCK_LABELS[blockKey];
   const href = SOURCE_BLOCK_EXTERNAL_URL[blockKey];
-  const color = SOURCE_BLOCK_ADMIN_TITLE_COLOR[blockKey];
-
-  const content = (
-    <>
-      <span>{label}</span>
-      <ExternalLinkIcon className="shrink-0 opacity-80" />
-    </>
-  );
+  const gradient = SOURCE_BLOCK_HEADER_BG[blockKey];
+  const textCls = SOURCE_BLOCK_HEADER_TEXT_CLASS[blockKey];
 
   return (
-    <div className={className}>
+    <AdminGradientHeaderBar gradient={gradient} className={`-mx-2 -mt-2 rounded-t-lg ${className}`}>
       <a
         href={href}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`${label} — atvērt avotu jaunā cilnē`}
-        className={`inline-flex max-w-full items-center gap-1.5 font-bold uppercase tracking-wide underline-offset-2 transition hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)] focus-visible:ring-offset-1 ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS} ${color}`}
+        className={`inline-flex max-w-full flex-1 items-center gap-1.5 font-bold uppercase tracking-wide underline-offset-2 transition hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)] focus-visible:ring-offset-1 ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS} ${textCls}`}
       >
-        {content}
+        <span>{label}</span>
+        <ExternalLinkIcon className="shrink-0 opacity-90" />
       </a>
-    </div>
+    </AdminGradientHeaderBar>
   );
 }

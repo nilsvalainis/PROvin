@@ -47,6 +47,8 @@ import {
   type PdfPortfolioFileInsight,
 } from "@/lib/admin-portfolio-pdf-analysis";
 import { buildClientReportDocumentHtml } from "@/lib/client-report-html";
+import { APPROVED_BY_IRISS_HEADER_BG, SOURCE_BLOCK_HEADER_BG } from "@/lib/admin-header-gradients";
+import { AdminGradientHeaderBar } from "@/components/admin/AdminGradientHeaderBar";
 import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
 
 export type OrderWorkspacePayload = {
@@ -1230,9 +1232,13 @@ export function OrderDetailWorkspace({
           Lasīšanas / labošanas režīms kopīgs ar 2. sadaļas rīkjoslu (Saglabāt / Labot).
         </p>
         <div className="mt-1.5 overflow-hidden rounded-lg border border-[#a5d6a7] shadow-[0_4px_14px_rgba(46,125,50,0.14)]">
-          <div className="flex items-center gap-2 bg-[#66bb6a] px-3 py-2.5 text-white">
+          <AdminGradientHeaderBar
+            gradient={SOURCE_BLOCK_HEADER_BG.listing_analysis}
+            className="rounded-t-lg"
+            contentClassName="gap-2 px-3 py-2.5"
+          >
             <svg
-              className="h-4 w-4 shrink-0"
+              className="h-4 w-4 shrink-0 text-white"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -1244,8 +1250,8 @@ export function OrderDetailWorkspace({
                 d="m12 3 1.6 5.2h5.4l-4.4 3.4 1.7 5.4L12 15.8 7.7 17.2l1.7-5.4L5 8.2h5.4L12 3z"
               />
             </svg>
-            <span className="text-[11px] font-bold tracking-[0.12em]">SLUDINĀJUMA ANALĪZE</span>
-          </div>
+            <span className="text-[11px] font-bold tracking-[0.12em] text-white">SLUDINĀJUMA ANALĪZE</span>
+          </AdminGradientHeaderBar>
           <div className="bg-[#e8f5e9] p-2.5">
             <AdminListingAnalysisSourceBlock
               value={blocksForDisplay.listing_analysis}
@@ -1330,9 +1336,13 @@ export function OrderDetailWorkspace({
             ws.previewConfirmed ? "" : "opacity-[0.88]"
           }`}
         >
-          <div className="flex items-center gap-2 bg-[#0066d6] px-3 py-2.5 text-white">
+          <AdminGradientHeaderBar
+            gradient={APPROVED_BY_IRISS_HEADER_BG}
+            className="rounded-t-lg"
+            contentClassName="gap-2 px-3 py-2.5"
+          >
             <svg
-              className="h-4 w-4 shrink-0"
+              className="h-4 w-4 shrink-0 text-slate-700"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -1345,8 +1355,8 @@ export function OrderDetailWorkspace({
                 d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
               />
             </svg>
-            <span className="text-[11px] font-bold tracking-[0.12em]">APPROVED BY IRISS</span>
-          </div>
+            <span className="text-[11px] font-bold tracking-[0.12em] text-slate-900">APPROVED BY IRISS</span>
+          </AdminGradientHeaderBar>
           <div className="bg-[#e6f2ff] p-2.5">
             <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wide text-[var(--color-apple-text)]">
               KOPSAVILKUMS UN APSKATES PLĀNS

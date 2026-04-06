@@ -34,6 +34,11 @@ import {
   pdfLayoutDraftExtraCss,
   provincLogoSvg,
 } from "@/lib/client-report-pdf-layout-draft";
+import {
+  APPROVED_BY_IRISS_HEADER_BG,
+  SOURCE_BLOCK_HEADER_BG,
+  VENDOR_FALLBACK_HEADER_BG,
+} from "@/lib/admin-header-gradients";
 import { CLIENT_REPORT_FOOTER_DISCLAIMER } from "@/lib/report-pdf-standards";
 
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
@@ -429,6 +434,9 @@ function reportFontGuardScript(): string {
 }
 
 function clientReportPrintCss(): string {
+  const B = SOURCE_BLOCK_HEADER_BG;
+  const irissBg = APPROVED_BY_IRISS_HEADER_BG;
+  const fb = VENDOR_FALLBACK_HEADER_BG;
   return `
       *{box-sizing:border-box;}
       html,body,.provin-report-doc{font-family:Inter,sans-serif!important;}
@@ -472,27 +480,43 @@ function clientReportPrintCss(): string {
       .pdf-avotu-header{
         display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px 8px 0 0;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
+        position:relative;overflow:hidden;
       }
+      .pdf-avotu-header::before{
+        content:"";position:absolute;inset:0;z-index:0;
+        background:linear-gradient(105deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.1) 40%,rgba(255,255,255,0.28) 50%,rgba(255,255,255,0.1) 60%,rgba(255,255,255,0) 100%);
+        pointer-events:none;
+      }
+      .pdf-avotu-header::after{
+        content:"";position:absolute;inset:0;z-index:0;
+        background:linear-gradient(180deg,rgba(255,255,255,0.16) 0%,rgba(255,255,255,0) 44%);
+        pointer-events:none;
+      }
+      .pdf-avotu-header-ico,.pdf-avotu-header-title{position:relative;z-index:1;}
       .pdf-avotu-header-ico{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
       .pdf-avotu-header-ico .pdf-ico{width:14px;height:14px;}
       .pdf-avotu-header-title{
         margin:0;font-size:0.75rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;flex:1;line-height:1.25;
       }
-      .pdf-avotu-header--csdd{background:#00aaff;color:#fff;}
+      .pdf-avotu-header--csdd{background:${B.csdd};color:#fff;}
       .pdf-avotu-header--csdd .pdf-ico{color:#fff;}
-      .pdf-avotu-header--tirgus{background:#ff7700;color:#fff;}
+      .pdf-avotu-header--tirgus{background:${B.tirgus};color:#fff;}
       .pdf-avotu-header--tirgus .pdf-ico{color:#fff;}
-      .pdf-avotu-header--autodna{background:#003366;color:#fff;}
+      .pdf-avotu-header--autodna{background:${B.autodna};color:#fff;}
       .pdf-avotu-header--autodna .pdf-ico{color:#fff;}
-      .pdf-avotu-header--carvertical{background:#ffcc00;color:#1d1d1f;}
-      .pdf-avotu-header--carvertical .pdf-ico{color:#1d1d1f;}
-      .pdf-avotu-header--auto-records{background:#666666;color:#fff;}
+      .pdf-avotu-header--carvertical{background:${B.carvertical};color:#fff;}
+      .pdf-avotu-header--carvertical .pdf-ico{color:#fff;}
+      .pdf-avotu-header--carvertical .pdf-avotu-header-title,
+      .pdf-avotu-header--carvertical .pdf-avotu-header-ico .pdf-ico{
+        text-shadow:0 1px 2px rgba(0,0,0,0.45);
+      }
+      .pdf-avotu-header--auto-records{background:${B.auto_records};color:#fff;}
       .pdf-avotu-header--auto-records .pdf-ico{color:#fff;}
-      .pdf-avotu-header--ltab{background:#4caf50;color:#fff;}
+      .pdf-avotu-header--ltab{background:${B.ltab};color:#fff;}
       .pdf-avotu-header--ltab .pdf-ico{color:#fff;}
-      .pdf-avotu-header--vendor-fallback{background:#666666;color:#fff;}
+      .pdf-avotu-header--vendor-fallback{background:${fb};color:#fff;}
       .pdf-avotu-header--vendor-fallback .pdf-ico{color:#fff;}
-      .pdf-avotu-header--citi-avoti{background:#8d6e63;color:#fff;}
+      .pdf-avotu-header--citi-avoti{background:${B.citi_avoti};color:#fff;}
       .pdf-avotu-header--citi-avoti .pdf-ico{color:#fff;}
       .pdf-avotu-body{padding:10px 12px;background:#fff;border-radius:0 0 8px 8px;}
       .pdf-listing-priority{
@@ -501,8 +525,22 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-listing-priority-header{
-        display:flex;align-items:center;gap:10px;padding:10px 14px;background:#66bb6a;color:#fff;
+        display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px 10px 0 0;
+        background:${B.listing_analysis};color:#fff;
+        position:relative;overflow:hidden;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      .pdf-listing-priority-header::before{
+        content:"";position:absolute;inset:0;z-index:0;
+        background:linear-gradient(105deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.1) 40%,rgba(255,255,255,0.28) 50%,rgba(255,255,255,0.1) 60%,rgba(255,255,255,0) 100%);
+        pointer-events:none;
+      }
+      .pdf-listing-priority-header::after{
+        content:"";position:absolute;inset:0;z-index:0;
+        background:linear-gradient(180deg,rgba(255,255,255,0.16) 0%,rgba(255,255,255,0) 44%);
+        pointer-events:none;
+      }
+      .pdf-listing-priority-ico,.pdf-listing-priority-title{position:relative;z-index:1;}
       .pdf-listing-priority-ico .pdf-ico{width:18px;height:18px;color:#fff;flex-shrink:0;}
       .pdf-listing-priority-title{
         margin:0;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
@@ -555,9 +593,23 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-iriss-approved-header{
-        display:flex;align-items:center;gap:10px;padding:10px 14px;background:#0066d6;color:#fff;
+        display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px 10px 0 0;
+        background:${irissBg};color:#0f172a;
+        position:relative;overflow:hidden;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-iriss-approved-ico .pdf-ico{width:18px;height:18px;color:#fff;flex-shrink:0;}
+      .pdf-iriss-approved-header::before{
+        content:"";position:absolute;inset:0;z-index:0;
+        background:linear-gradient(105deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.22) 42%,rgba(255,255,255,0.38) 50%,rgba(255,255,255,0.14) 58%,rgba(255,255,255,0) 100%);
+        pointer-events:none;
+      }
+      .pdf-iriss-approved-header::after{
+        content:"";position:absolute;inset:0;z-index:0;
+        background:linear-gradient(180deg,rgba(255,255,255,0.35) 0%,rgba(255,255,255,0.08) 35%,rgba(255,255,255,0) 52%);
+        pointer-events:none;
+      }
+      .pdf-iriss-approved-ico,.pdf-iriss-approved-title{position:relative;z-index:1;}
+      .pdf-iriss-approved-ico .pdf-ico{width:18px;height:18px;color:#1e293b;flex-shrink:0;}
       .pdf-iriss-approved-title{
         margin:0;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
       }
