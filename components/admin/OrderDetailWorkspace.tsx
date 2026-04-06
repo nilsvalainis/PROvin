@@ -1102,8 +1102,8 @@ export function OrderDetailWorkspace({
           <ol className="list-decimal space-y-0.5 pl-3.5">
             <li>Portfelis → avoti → priekšskats → IRISS + apskates plāns → PDF.</li>
             <li>
-              AVOTU DATI PDF: CSDD pilnā platumā; zem tā divas 3 kolonnu rindas — Tirgus dati, LTAB, Sludinājuma
-              analīze; tad AutoDNA, CarVertical, Auto-Records. Tukši lauki un tukši bloki PDF netiek drukāti.
+              Avotu bloki šeit: 3 kolonnu režģis (ievadei). PDF: tie paši bloki vertikāli, pilnā platumā. Tukši lauki un
+              tukši bloki PDF netiek drukāti.
             </li>
             <li>Dati: localStorage + IndexedDB.</li>
           </ol>

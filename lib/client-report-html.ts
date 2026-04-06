@@ -324,12 +324,8 @@ function buildListingAnalysisAvotuSubsection(p: ClientReportPayload): string {
   return `<div class="pdf-avotu-sub pdf-avotu-sub--listing-analysis">${inner.join("\n")}</div>`;
 }
 
-function wrapPdfAvotuSlot(cardHtml: string): string {
-  return `<div class="pdf-avotu-slot">${cardHtml}</div>`;
-}
-
 /**
- * AVOTU DATI: CSDD pilnā platumā, tad 3+3 kolonnu režģis ar fiksētām pozīcijām (tukši sloti paliek tukši).
+ * AVOTU DATI (PDF): visi bloki pilnā platumā, vertikāli viens zem otra (admin panelī var būt 3 kolonnu režģis).
  */
 function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   const csdd = buildCsddAvotuSubsection(p);
@@ -347,26 +343,13 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   const carvertical = vendorHtml(SOURCE_BLOCK_LABELS.carvertical);
   const autoRecords = vendorHtml(SOURCE_BLOCK_LABELS.auto_records);
 
-  const row1Any = Boolean(tirgus || ltab || listing);
-  const row2Any = Boolean(autodna || carvertical || autoRecords);
-  if (!csdd && !row1Any && !row2Any) return "";
+  const stack = [csdd, tirgus, ltab, listing, autodna, carvertical, autoRecords].filter(Boolean);
+  if (stack.length === 0) return "";
 
   const parts: string[] = [];
   parts.push(`<div class="pdf-avotu-zone" role="region">`);
   parts.push(sectionHead(ICO.user, PDF_SECTION_AVOTU_DATI, { noBar: true }));
-  if (csdd) {
-    parts.push(`<div class="pdf-avotu-full">${csdd}</div>`);
-  }
-  if (row1Any) {
-    parts.push(
-      `<div class="pdf-avotu-row">${[tirgus, ltab, listing].map(wrapPdfAvotuSlot).join("")}</div>`,
-    );
-  }
-  if (row2Any) {
-    parts.push(
-      `<div class="pdf-avotu-row">${[autodna, carvertical, autoRecords].map(wrapPdfAvotuSlot).join("")}</div>`,
-    );
-  }
+  parts.push(stack.join("\n"));
   parts.push(`</div>`);
   return parts.join("\n");
 }
@@ -506,18 +489,6 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-avotu-zone .pdf-sec-head{margin-top:0;}
-      .pdf-avotu-full{width:100%;margin:0 0 10px;}
-      .pdf-avotu-full .pdf-avotu-sub{margin-bottom:0;}
-      .pdf-avotu-row{
-        display:grid;
-        grid-template-columns:repeat(3,minmax(0,1fr));
-        gap:8px;
-        margin:0 0 10px;
-        align-items:start;
-      }
-      .pdf-avotu-row:last-child{margin-bottom:0;}
-      .pdf-avotu-slot{min-width:0;min-height:0;}
-      .pdf-avotu-slot .pdf-avotu-sub{margin-bottom:0;}
       .pdf-avotu-sub{
         margin:0 0 10px;padding:10px 12px;background:#fff;border:1px solid #e8eaed;border-radius:8px;
         box-shadow:0 1px 3px rgba(15,23,42,.06);
@@ -560,7 +531,7 @@ function clientReportPrintCss(): string {
       @media print{
         body{padding:8mm 10mm;}
         .no-print{display:none!important;}
-        .pdf-avotu-row{break-inside:avoid-page;}
+        .pdf-avotu-sub{break-inside:avoid-page;}
       }
     ` + pdfLayoutDraftExtraCss();
 }
