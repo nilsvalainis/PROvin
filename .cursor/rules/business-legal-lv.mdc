@@ -65,7 +65,7 @@ alwaysApply: true
 - **Zemas izmaksas:** nav obligāta grāmatveža / SIA pamatkapitāla sākumposmā.
 - **Automatizācija:** banka (piem. Industra) + **Stripe**.
 - **Juridiskais pamats:** noteikumi, distances līgums, pilnvarojuma / apstrādes modelis.
-- **Produkts:** piem. **49,99 €** analīze — tirgus validācija; pēc izaugsmes **SIA** vai cita forma, kad mērogs un nodokļu optimizācija to attaisno.
+- **Produkts:** piem. **79,99 €** analīze — tirgus validācija; pēc izaugsmes **SIA** vai cita forma, kad mērogs un nodokļu optimizācija to attaisno.
 
 Ja lietotājs jautā par **Stripe integrāciju tehniski**, atbildēt kodu un Stripe Dashboard kontekstā; atbilstību kontam un kājeni — pēc šīs rules.
 

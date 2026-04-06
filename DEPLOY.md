@@ -51,6 +51,13 @@ Kad lapa atveras kā **`https://provin.lv`**, env **`NEXT_PUBLIC_SITE_URL`** jā
 3. Event: **`checkout.session.completed`**
 4. **Signing secret** → Vercel → `STRIPE_WEBHOOK_SECRET` → **Redeploy**.
 
+### Lokālais tests (Stripe CLI)
+
+1. [Stripe CLI](https://stripe.com/docs/stripe-cli) — `stripe login`.
+2. Vienā terminālī: `npm run dev` (Next.js uz `localhost:3000`).
+3. Citā: `npm run stripe:listen` — CLI izdrukās **`whsec_…`** — ieliec `.env.local` kā **`STRIPE_WEBHOOK_SECRET`** (tikai šim termināļa sesijas laikam derīgs).
+4. Testa maksājums caur lapu — webhook nonāk uz lokālo `/api/webhooks/stripe`.
+
 ### 6. Pārbaude
 
 - [ ] `https://provin.lv` — sākumlapa

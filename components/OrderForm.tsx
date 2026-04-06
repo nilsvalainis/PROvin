@@ -219,7 +219,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               <div className="flex items-baseline justify-between gap-4">
                 <span className="text-[13px] font-medium text-[#6e6e73]">{t("summaryLabel")}</span>
                 <span className="text-[1.65rem] font-semibold tabular-nums tracking-tight text-[#1d1d1f] sm:text-[1.75rem]">
-                  49,99&nbsp;€
+                  79,99&nbsp;€
                 </span>
               </div>
               <p className="mt-2 text-[11px] font-normal leading-snug text-[#86868b] sm:text-[12px]">

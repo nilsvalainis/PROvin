@@ -15,6 +15,13 @@ import { checkRateLimit } from "@/lib/rate-limit-memory";
 
 export const runtime = "nodejs";
 
+export async function GET() {
+  return NextResponse.json(
+    { error: "Izmanto POST ar JSON (pasūtījuma lauki)." },
+    { status: 405, headers: { Allow: "POST" } },
+  );
+}
+
 const CHECKOUT_MAX_PER_WINDOW = 40;
 const CHECKOUT_WINDOW_MS = 10 * 60 * 1000;
 
@@ -127,7 +134,7 @@ export async function POST(req: Request) {
             name: misc.Misc.checkoutProductName,
             description: misc.Misc.checkoutProductDesc,
           },
-          unit_amount: 4999,
+          unit_amount: 7999,
         },
         quantity: 1,
       },

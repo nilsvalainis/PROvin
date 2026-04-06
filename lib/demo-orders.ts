@@ -26,7 +26,7 @@ export function getDemoOrderRows() {
     {
       id: DEMO_IDS.full,
       created: created("2026-04-02T14:30:00+03:00"),
-      amountTotal: 4999,
+      amountTotal: 7999,
       currency: "EUR",
       paymentStatus: "paid" as const,
       customerEmail: "janis.berzins@inbox.lv",
@@ -36,7 +36,7 @@ export function getDemoOrderRows() {
     {
       id: DEMO_IDS.simple,
       created: created("2026-03-28T10:15:00+03:00"),
-      amountTotal: 4999,
+      amountTotal: 7999,
       currency: "EUR",
       paymentStatus: "paid" as const,
       customerEmail: "anna.k@example.com",
@@ -77,7 +77,7 @@ export function getDemoOrderDetail(sessionId: string) {
     return {
       id: DEMO_IDS.full,
       created: created("2026-04-02T14:30:00+03:00"),
-      amountTotal: 4999,
+      amountTotal: 7999,
       currency: "EUR",
       paymentStatus: "paid" as const,
       customerEmail: "janis.berzins@inbox.lv",
@@ -104,7 +104,7 @@ export function getDemoOrderDetail(sessionId: string) {
     return {
       id: DEMO_IDS.simple,
       created: created("2026-03-28T10:15:00+03:00"),
-      amountTotal: 4999,
+      amountTotal: 7999,
       currency: "EUR",
       paymentStatus: "paid" as const,
       customerEmail: "anna.k@example.com",
