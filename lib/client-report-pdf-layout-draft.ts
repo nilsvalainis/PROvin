@@ -44,7 +44,7 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-hero-inner{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
       .pdf-v1-logo{width:160px;max-width:40vw;height:auto;flex-shrink:0;display:block}
       .pdf-v1-hero-text{flex:1;min-width:160px}
-      .pdf-v1-doc-title{margin:0;font-size:0.75rem;font-weight:700;color:#1d1d1f;letter-spacing:0.06em;line-height:1.3;text-transform:uppercase}
+      .pdf-v1-doc-title{margin:0;font-size:0.75rem;font-weight:700;color:#000;letter-spacing:0.06em;line-height:1.3;text-transform:uppercase}
       .pdf-v1-meta{margin:6px 0 0;font-size:0.72rem;color:#424245;line-height:1.4}
       .pdf-v1-meta .pdf-vin{background:#f5f5f7;padding:2px 8px;border-radius:4px;color:#1d1d1f;font-size:0.9em;font-family:Inter,sans-serif!important}
       .pdf-surface-card{
@@ -60,9 +60,9 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-ico{display:inline-flex;align-items:center;justify-content:center;color:#0066d6;flex-shrink:0}
       .pdf-v1-ico .pdf-ico{width:14px;height:14px}
       .pdf-v1-panel-title{
-        margin:0;font-size:0.75rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#0066d6;
+        margin:0;font-size:0.75rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#000;
       }
-      .pdf-v1-panel-title--src{letter-spacing:0.04em;font-size:0.75rem;color:#1d1d1f}
+      .pdf-v1-panel-title--src{letter-spacing:0.04em;font-size:0.75rem;color:#000}
       .pdf-v1-kv{width:100%;border-collapse:collapse;font-size:0.74rem}
       .pdf-v1-kv td{padding:4px 0 5px;border-bottom:1px solid #ececee;vertical-align:top}
       .pdf-v1-kv td:first-child{width:36%;color:#86868b;font-weight:500}

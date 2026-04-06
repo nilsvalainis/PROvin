@@ -3,7 +3,6 @@
  * Nav apvienoto tabulu, grafiku, prognožu vai automātisku risku kopsavilkumu.
  */
 
-import { extractKmCandidates } from "@/lib/admin-workspace-preview-format";
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
 import { amountToIntRough } from "@/lib/claim-rows-parse";
 import {
@@ -145,93 +144,17 @@ function extractVehicleMakeModel(csdd: string): string | null {
   return m ? m[0].trim().replace(/\s{2,}/g, " ") : null;
 }
 
-function officialKmPool(csdd: string, citi: string, insights: PdfPortfolioFileInsight[]): number[] {
-  const fromPdf = insights.flatMap((i) => i.kmSamples.map((s) => s.km));
-  return [...extractKmCandidates(csdd), ...extractKmCandidates(citi), ...fromPdf];
-}
-
-function maxHistoricalKmFromSources(
-  csdd: string,
-  citi: string,
-  insights: PdfPortfolioFileInsight[],
-): number | null {
-  const vals = officialKmPool(csdd, citi, insights);
-  if (vals.length === 0) return null;
-  return Math.max(...vals);
-}
-
-function listingKmStrictlyBelowHistory(
-  csdd: string,
-  tirgus: string,
-  citi: string,
-  insights: PdfPortfolioFileInsight[],
-): boolean {
-  const listing = extractKmCandidates(tirgus);
-  if (listing.length === 0) return false;
-  const maxH = maxHistoricalKmFromSources(csdd, citi, insights);
-  if (maxH == null) return false;
-  return Math.min(...listing) < maxH;
-}
-
-type QuickPanelFlags = { legalWarn: boolean; mileageCrit: boolean; damageHeavy: boolean; damageWarn: boolean };
-
-/** Ātrais panelis: heuristikas tikai pēc admin teksta laukiem (bez portfeļa PDF). */
-function computeQuickPanelFlags(
-  csdd: string,
-  tirgus: string,
-  ltab: string,
-  citi: string,
-): QuickPanelFlags {
-  const corpus = `${csdd}\n${ltab}\n${citi}`.toLowerCase();
-  const stolen = /zagts|mekl[ēe]šan[āa]|nozagt|asl[īi]\s*zag|wanted|stolen|theft|noziedz/i.test(corpus);
-  const mileageCrit = listingKmStrictlyBelowHistory(csdd, tirgus, citi, []);
-  const insCorpus = `${ltab}\n${citi}`;
-  const heavy = /total\s*loss|piln[īi]g[aā]\s*boj|7\s+fiks/i.test(insCorpus);
-  const m = insCorpus.match(/(\d+)\s*(?:fiks[ēe]ti\s*)?(?:gad[īi]jum|negad[īi]jum)/i);
-  const accCount = m ? parseInt(m[1], 10) : 0;
-  const damageWarn =
-    !heavy && (accCount >= 1 || /negad[īi]jum|av[āa]rija|boj[āa]j/i.test(insCorpus));
-  return { legalWarn: stolen, mileageCrit, damageHeavy: heavy, damageWarn };
-}
-
-function buildQuickControlPanelHtml(
-  p: ClientReportPayload,
-  flags: QuickPanelFlags,
-  opts?: { includeNotesLine?: boolean },
-): string {
-  const includeNotes = opts?.includeNotesLine !== false;
-  const legalLine = flags.legalWarn ? "⚠️ riska zona" : "✅ tīrs";
-  const mileLine = flags.mileageCrit ? "🚩 Neatbilstība" : "✅ salīdzināms";
-  let dmgLine = "✅ nav izcelts";
-  if (flags.damageHeavy) dmgLine = "💥 smagi / total loss";
-  else if (flags.damageWarn) dmgLine = "⚠️ ir ieraksti";
-  const notesLine = includeNotes
-    ? `<p class="quick-panel-meta"><strong>ziņojums:</strong> ${escapeHtml(p.notes?.trim() ? p.notes : "—")}</p>`
-    : "";
-  return `<div class="quick-panel pdf-surface-card" role="region">
-    ${sectionHead(ICO.user, PDF_SECTION_AVOTU_DATI, { noBar: true })}
-    ${notesLine}
-    <div class="quick-panel-grid">
-      <div class="quick-ind"><span class="quick-ind-k">juridiskais</span><span class="quick-ind-v">${legalLine}</span></div>
-      <div class="quick-ind"><span class="quick-ind-k">nobraukuma ticamība</span><span class="quick-ind-v">${mileLine}</span></div>
-      <div class="quick-ind"><span class="quick-ind-k">bojājumu vēsture</span><span class="quick-ind-v">${dmgLine}</span></div>
-    </div>
-  </div>`;
-}
-
-/** CSDD — tikai admin lauki vai neapstrādāts teksts. */
-function buildCsddMirrorHtml(p: ClientReportPayload): string {
+/** CSDD — apakšbloks zem „AVOTU DATI“. */
+function buildCsddAvotuSubsection(p: ClientReportPayload): string {
   const hasStruct = Boolean(p.csddForm && csddFormHasContent(p.csddForm));
   const hasRaw = p.csdd.trim().length > 0;
   if (!hasStruct && !hasRaw) return "";
 
   const parts: string[] = [];
-  parts.push(`<div class="mirror-block pdf-surface-card" role="region">`);
-  parts.push(sectionHead(ICO.clip, SOURCE_BLOCK_LABELS.csdd));
+  parts.push(`<h3 class="pdf-sub">${escapeHtml(PDF_SUB_CSDD)}</h3>`);
 
   if (hasStruct && p.csddForm) {
     const f = p.csddForm;
-    parts.push(`<h3 class="pdf-sub">${escapeHtml(PDF_SUB_CSDD)}</h3>`);
     const regRows: string[] = [];
     for (const { key, label } of CSDD_FORM_SHORT_FIELDS) {
       const v = f[key].trim();
@@ -246,23 +169,23 @@ function buildCsddMirrorHtml(p: ClientReportPayload): string {
       parts.push(`<table class="mirror-table"><tbody>${regRows.join("\n")}</tbody></table>`);
     }
     if (f.prevInspectionRating.trim()) {
-      parts.push(`<p class="pdf-sub">${escapeHtml(CSDD_LABEL_PREV_RATING)}</p>`);
+      parts.push(`<p class="pdf-field-label">${escapeHtml(CSDD_LABEL_PREV_RATING)}</p>`);
       parts.push(`<pre class="mirror-pre">${escapeHtml(f.prevInspectionRating.trim())}</pre>`);
     }
     if (f.comments.trim()) {
-      parts.push(`<p class="pdf-sub">${escapeHtml(CSDD_LABEL_COMMENTS)}</p>`);
+      parts.push(`<p class="pdf-field-label">${escapeHtml(CSDD_LABEL_COMMENTS)}</p>`);
       parts.push(`<pre class="mirror-pre">${escapeHtml(f.comments.trim())}</pre>`);
     }
     const nd = f.nextInspectionDate.trim();
     if (nd) {
-      parts.push(`<p class="pdf-sub">nākamā apskate (no lauka)</p>`);
+      parts.push(`<p class="pdf-field-label">nākamā apskate (no lauka)</p>`);
       parts.push(`<p class="mirror-line">${escapeHtml(nd)}</p>`);
     }
   } else if (hasRaw) {
     parts.push(`<pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre>`);
   }
-  parts.push(`</div>`);
-  return parts.join("\n");
+
+  return `<div class="pdf-avotu-sub">${parts.join("\n")}</div>`;
 }
 
 function buildManualTirgusStructuredHtml(f: TirgusFormFields): string {
@@ -287,47 +210,54 @@ function buildManualTirgusStructuredHtml(f: TirgusFormFields): string {
     parts.push(`<table class="mirror-table"><tbody>${rows.join("\n")}</tbody></table>`);
   }
   if (f.comments.trim()) {
-    parts.push(`<p class="pdf-sub">${escapeHtml(TIRGUS_LABEL_COMMENTS)}</p>`);
+    parts.push(`<p class="pdf-field-label">${escapeHtml(TIRGUS_LABEL_COMMENTS)}</p>`);
     parts.push(`<pre class="mirror-pre">${escapeHtml(f.comments.trim())}</pre>`);
   }
   return parts.join("\n");
 }
 
-/** Tirgus — tikai admin lauki vai neapstrādāts teksts (bez sludinājuma saites PDF). */
-function buildTirgusMirrorHtml(p: ClientReportPayload): string {
+/** Tirgus — apakšbloks zem „AVOTU DATI“. */
+function buildTirgusAvotuSubsection(p: ClientReportPayload): string {
   const hasForm = tirgusFormHasContent(p.tirgusForm);
   const hasText = p.tirgus.trim().length > 0;
   if (!hasForm && !hasText) return "";
 
-  const parts: string[] = [];
-  parts.push(`<div class="mirror-block pdf-surface-card" role="region">`);
-  parts.push(sectionHead(ICO.tag, PDF_SECTION_TIRGUS_DATI, { noBar: true }));
+  const inner: string[] = [`<h3 class="pdf-sub">${escapeHtml(PDF_SECTION_TIRGUS_DATI)}</h3>`];
   if (hasForm && p.tirgusForm) {
-    parts.push(buildManualTirgusStructuredHtml(p.tirgusForm));
+    inner.push(buildManualTirgusStructuredHtml(p.tirgusForm));
   } else if (hasText) {
-    parts.push(`<pre class="mirror-pre">${escapeHtml(p.tirgus.trim())}</pre>`);
+    inner.push(`<pre class="mirror-pre">${escapeHtml(p.tirgus.trim())}</pre>`);
   }
-  parts.push(`</div>`);
-  return parts.join("\n");
+  return `<div class="pdf-avotu-sub">${inner.join("\n")}</div>`;
 }
 
-function pdfIconForVendorTitle(title: string): string {
-  if (title === SOURCE_BLOCK_LABELS.autodna) return ICO.layers;
-  if (title === SOURCE_BLOCK_LABELS.carvertical) return ICO.chart;
-  if (title === SOURCE_BLOCK_LABELS.auto_records) return ICO.spark;
-  return ICO.layers;
+const PDF_VENDOR_BLOCK_ORDER: string[] = [
+  SOURCE_BLOCK_LABELS.autodna,
+  SOURCE_BLOCK_LABELS.carvertical,
+  SOURCE_BLOCK_LABELS.auto_records,
+];
+
+function orderVendorBlocksForPdf(blocks: ClientManualVendorBlockPdf[] | undefined): ClientManualVendorBlockPdf[] {
+  const list = blocks ?? [];
+  const byTitle = new Map(list.map((b) => [b.title, b]));
+  const ordered: ClientManualVendorBlockPdf[] = [];
+  for (const t of PDF_VENDOR_BLOCK_ORDER) {
+    const b = byTitle.get(t);
+    if (b) ordered.push(b);
+  }
+  for (const b of list) {
+    if (!PDF_VENDOR_BLOCK_ORDER.includes(b.title)) ordered.push(b);
+  }
+  return ordered;
 }
 
-function buildManualVendorSinglePanelHtml(b: ClientManualVendorBlockPdf): string {
+/** Viena trešā pušu avota apakšbloks zem „AVOTU DATI“. */
+function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf): string {
   const hasTable = b.rows.length > 0;
   const hasComments = b.comments.trim().length > 0;
   if (!hasTable && !hasComments) return "";
-  const icon = pdfIconForVendorTitle(b.title);
   const parts: string[] = [];
-  parts.push(`<div class="mirror-block mirror-block--src pdf-surface-card" role="region">`);
-  parts.push(
-    `<div class="mirror-block-head"><span class="mirror-ico" aria-hidden="true">${icon}</span><p class="mirror-block-title">${escapeHtml(b.title)}</p></div>`,
-  );
+  parts.push(`<h3 class="pdf-sub">${escapeHtml(b.title)}</h3>`);
   if (hasTable) {
     const amountTh = escapeHtml(b.amountColumnLabel ?? "Zaudējumu summa");
     parts.push(
@@ -341,23 +271,19 @@ function buildManualVendorSinglePanelHtml(b: ClientManualVendorBlockPdf): string
     parts.push(`</tbody></table>`);
   }
   if (hasComments) {
-    parts.push(`<p class="pdf-sub">piezīmes</p>`);
+    parts.push(`<p class="pdf-field-label">piezīmes</p>`);
     parts.push(`<pre class="mirror-pre">${escapeHtml(b.comments.trim())}</pre>`);
   }
-  parts.push(`</div>`);
-  return parts.join("\n");
+  return `<div class="pdf-avotu-sub">${parts.join("\n")}</div>`;
 }
 
-function buildManualLtabPanelHtml(b: ClientManualLtabBlockPdf | null | undefined): string {
+function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined): string {
   if (!b) return "";
   const hasTable = b.rows.length > 0;
   const hasComments = b.comments.trim().length > 0;
   if (!hasTable && !hasComments) return "";
   const parts: string[] = [];
-  parts.push(`<div class="mirror-block mirror-block--src pdf-surface-card" role="region">`);
-  parts.push(
-    `<div class="mirror-block-head"><span class="mirror-ico" aria-hidden="true">${ICO.shield}</span><p class="mirror-block-title">${escapeHtml(SOURCE_BLOCK_LABELS.ltab)}</p></div>`,
-  );
+  parts.push(`<h3 class="pdf-sub">${escapeHtml(SOURCE_BLOCK_LABELS.ltab)}</h3>`);
   if (hasTable) {
     parts.push(
       `<table class="mirror-table"><thead><tr><th>Negadījumu skaits</th><th class="tabular">CSNg datums</th><th class="tabular">Zaudējumu summa</th></tr></thead><tbody>`,
@@ -370,21 +296,32 @@ function buildManualLtabPanelHtml(b: ClientManualLtabBlockPdf | null | undefined
     parts.push(`</tbody></table>`);
   }
   if (hasComments) {
-    parts.push(`<p class="pdf-sub">piezīmes</p>`);
+    parts.push(`<p class="pdf-field-label">piezīmes</p>`);
     parts.push(`<pre class="mirror-pre">${escapeHtml(b.comments.trim())}</pre>`);
   }
-  parts.push(`</div>`);
-  return parts.join("\n");
+  return `<div class="pdf-avotu-sub">${parts.join("\n")}</div>`;
 }
 
-/** AutoDNA → CarVertical → Auto-Records (bez LTAB). */
-function buildVendorManualPanelsHtml(vendorBlocks: ClientManualVendorBlockPdf[] | undefined): string {
+/** CSDD → Tirgus → AutoDNA → CarVertical → Auto-Records → LTAB vienā vizuālā grupā. */
+function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   const chunks: string[] = [];
-  for (const b of vendorBlocks ?? []) {
-    const html = buildManualVendorSinglePanelHtml(b);
-    if (html) chunks.push(html);
+  const csdd = buildCsddAvotuSubsection(p);
+  const tirgus = buildTirgusAvotuSubsection(p);
+  if (csdd) chunks.push(csdd);
+  if (tirgus) chunks.push(tirgus);
+  for (const b of orderVendorBlocksForPdf(p.manualVendorBlocks)) {
+    const v = buildVendorAvotuSubsection(b);
+    if (v) chunks.push(v);
   }
-  return chunks.join("\n");
+  const ltab = buildLtabAvotuSubsection(p.manualLtabBlock);
+  if (ltab) chunks.push(ltab);
+
+  if (chunks.length === 0) return "";
+
+  return `<div class="pdf-avotu-zone" role="region">
+    ${sectionHead(ICO.user, PDF_SECTION_AVOTU_DATI, { noBar: true })}
+    ${chunks.join("\n")}
+  </div>`;
 }
 
 function splitExpertConclusion(iriss: string): { rating: string | null; summary: string } {
@@ -442,14 +379,23 @@ function clientReportPrintCss(): string {
       .pdf-sec-head--nobar{margin-top:0;}
       .pdf-sec-head .pdf-ico{color:#0066d6;width:14px;height:14px;flex-shrink:0;}
       h2.pdf-sec{
-        font-size:0.75rem;font-weight:700;margin:0;flex:1;color:#1d1d1f;letter-spacing:0.06em;line-height:1.3;
+        font-size:0.75rem;font-weight:700;margin:0;flex:1;color:#000;letter-spacing:0.06em;line-height:1.3;
         padding:0 0 0 8px;border-left:2px solid #0066d6;text-transform:uppercase;
       }
       h2.pdf-sec--nobar{border-left:none;padding-left:0;}
-      h3.pdf-sub{font-size:0.75rem;font-weight:700;margin:0.5rem 0 0.25rem;color:#424245;text-transform:uppercase;letter-spacing:0.05em;}
+      h3.pdf-sub{font-size:0.75rem;font-weight:700;margin:0.6rem 0 0.35rem;color:#000;text-transform:uppercase;letter-spacing:0.05em;}
+      h3.pdf-sub:first-child{margin-top:0;}
+      .pdf-field-label{font-size:0.68rem;font-weight:600;margin:0.45rem 0 0.2rem;color:#000;letter-spacing:0.02em;}
+      .pdf-avotu-zone{
+        margin:0 0 12px;padding:12px 14px;border:1px solid #e8eaed;border-radius:10px;
+        background:#f8f9fa;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-avotu-zone .pdf-sec-head{margin-top:0;}
+      .pdf-avotu-sub{margin:0 0 10px;padding:0 0 10px;border-bottom:1px solid #e2e5e9;}
+      .pdf-avotu-sub:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #ececee;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
-      .mirror-block--src .mirror-block-title{margin:0;font-size:0.75rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#1d1d1f;}
       .mirror-block-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;}
       .mirror-ico{color:#0066d6;}
       .mirror-ico .pdf-ico{width:14px;height:14px;}
@@ -460,16 +406,9 @@ function clientReportPrintCss(): string {
       .mirror-line{font-size:0.72rem;margin:0.25rem 0;line-height:1.45;}
       .mirror-table{width:100%;border-collapse:collapse;font-size:0.72rem;margin:4px 0;}
       .mirror-table td,.mirror-table th{padding:4px 0;border-bottom:1px solid #ececee;vertical-align:top;text-align:left;}
-      .mirror-table thead th{font-weight:600;color:#424245;font-size:0.68rem;}
+      .mirror-table thead th{font-weight:600;color:#000;font-size:0.68rem;}
       .mirror-table td:first-child{color:#86868b;width:38%;}
       .tabular{font-variant-numeric:tabular-nums;}
-      .quick-panel{margin:0 0 8px;}
-      .quick-panel-meta{font-size:0.72rem;margin:0.25rem 0;line-height:1.45;color:#424245;}
-      .quick-panel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;}
-      @media(max-width:640px){.quick-panel-grid{grid-template-columns:1fr;}}
-      .quick-ind{padding:4px 0;border-bottom:1px solid #ececee;}
-      .quick-ind-k{display:block;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#0066d6;margin-bottom:2px;}
-      .quick-ind-v{font-size:0.72rem;color:#1d1d1f;}
       .mirror-block--expert .expert-panel{margin:0;padding:0;border-top:none;}
       .expert-panel{margin:8px 0 0;padding:6px 0 0;border-top:1px solid #ececee;}
       .expert-body{font-size:0.78rem;white-space:pre-wrap;line-height:1.5;color:#1d1d1f;}
@@ -507,7 +446,6 @@ export function buildClientReportDocumentHtml(args: {
   const makeModel =
     p.csddForm?.makeModel?.trim() || extractVehicleMakeModel(p.csdd) || null;
   const expertParts = splitExpertConclusion(p.iriss);
-  const quickFlags = computeQuickPanelFlags(p.csdd, p.tirgus, p.ltab, p.citi);
 
   const lines: string[] = [];
   lines.push('<div class="sheet">');
@@ -530,22 +468,11 @@ export function buildClientReportDocumentHtml(args: {
   const clientBlock = buildPdfAdminMirrorClientBlock(p, ICO.user);
   if (clientBlock) lines.push(clientBlock);
 
-  lines.push(buildQuickControlPanelHtml(p, quickFlags, { includeNotesLine: false }));
-
   const notesBlock = buildPdfAdminMirrorNotesBlock(p.notes, ICO.clip);
   if (notesBlock) lines.push(notesBlock);
 
-  const csddHtml = buildCsddMirrorHtml(p);
-  if (csddHtml) lines.push(csddHtml);
-
-  const tirgusHtml = buildTirgusMirrorHtml(p);
-  if (tirgusHtml) lines.push(tirgusHtml);
-
-  const vendorHtml = buildVendorManualPanelsHtml(p.manualVendorBlocks);
-  if (vendorHtml) lines.push(vendorHtml);
-
-  const ltabHtml = buildManualLtabPanelHtml(p.manualLtabBlock);
-  if (ltabHtml) lines.push(ltabHtml);
+  const avotuHtml = buildAvotuDatiSectionHtml(p);
+  if (avotuHtml) lines.push(avotuHtml);
 
   lines.push(`<div class="mirror-block pdf-surface-card mirror-block--expert" role="region">`);
   lines.push(sectionHead(ICO.spark, PDF_SECTION_SLIEDZIENS_APSKATE, { noBar: true }));
