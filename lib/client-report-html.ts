@@ -36,6 +36,7 @@ import {
 } from "@/lib/client-report-pdf-layout-draft";
 import {
   APPROVED_BY_IRISS_HEADER_BG,
+  LISTING_ANALYSIS_BODY_BG,
   SOURCE_BLOCK_HEADER_BG,
   VENDOR_FALLBACK_HEADER_BG,
 } from "@/lib/admin-header-gradients";
@@ -437,6 +438,7 @@ function clientReportPrintCss(): string {
   const B = SOURCE_BLOCK_HEADER_BG;
   const irissBg = APPROVED_BY_IRISS_HEADER_BG;
   const fb = VENDOR_FALLBACK_HEADER_BG;
+  const listingBodyBg = LISTING_ANALYSIS_BODY_BG;
   return `
       *{box-sizing:border-box;}
       html,body,.provin-report-doc{font-family:Inter,sans-serif!important;}
@@ -504,8 +506,8 @@ function clientReportPrintCss(): string {
       .pdf-avotu-header--citi-avoti .pdf-ico{color:#fff;}
       .pdf-avotu-body{padding:10px 12px;background:#fff;border-radius:0 0 8px 8px;}
       .pdf-listing-priority{
-        margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #a5d6a7;
-        box-shadow:0 4px 14px rgba(46,125,50,.14);
+        margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #cfe8d4;
+        box-shadow:0 4px 14px rgba(46,125,50,.1);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-listing-priority-header{
@@ -517,7 +519,10 @@ function clientReportPrintCss(): string {
       .pdf-listing-priority-title{
         margin:0;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
       }
-      .pdf-listing-priority-body{padding:12px 14px 14px;background:#e8f5e9;}
+      .pdf-listing-priority-body{
+        padding:12px 14px 14px;background:${listingBodyBg};
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
       .pdf-listing-analysis-chunk{
         margin:0 0 8px;padding:8px 10px;background:#f5f5f5;border-radius:4px;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;

@@ -47,7 +47,11 @@ import {
   type PdfPortfolioFileInsight,
 } from "@/lib/admin-portfolio-pdf-analysis";
 import { buildClientReportDocumentHtml } from "@/lib/client-report-html";
-import { APPROVED_BY_IRISS_HEADER_BG, SOURCE_BLOCK_HEADER_BG } from "@/lib/admin-header-gradients";
+import {
+  APPROVED_BY_IRISS_HEADER_BG,
+  LISTING_ANALYSIS_BODY_BG,
+  SOURCE_BLOCK_HEADER_BG,
+} from "@/lib/admin-header-gradients";
 import { AdminGradientHeaderBar } from "@/components/admin/AdminGradientHeaderBar";
 import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
 
@@ -1231,7 +1235,7 @@ export function OrderDetailWorkspace({
         <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
           Lasīšanas / labošanas režīms kopīgs ar 2. sadaļas rīkjoslu (Saglabāt / Labot).
         </p>
-        <div className="mt-1.5 overflow-hidden rounded-lg border border-[#a5d6a7] shadow-[0_4px_14px_rgba(46,125,50,0.14)]">
+        <div className="mt-1.5 overflow-hidden rounded-lg border border-[#cfe8d4] shadow-[0_4px_14px_rgba(46,125,50,0.1)]">
           <AdminGradientHeaderBar
             gradient={SOURCE_BLOCK_HEADER_BG.listing_analysis}
             className="rounded-t-lg"
@@ -1252,7 +1256,10 @@ export function OrderDetailWorkspace({
             </svg>
             <span className="text-[11px] font-bold tracking-[0.12em] text-white">SLUDINĀJUMA ANALĪZE</span>
           </AdminGradientHeaderBar>
-          <div className="bg-[#e8f5e9] p-2.5">
+          <div
+            className="p-2.5"
+            style={{ background: LISTING_ANALYSIS_BODY_BG, WebkitPrintColorAdjust: "exact" }}
+          >
             <AdminListingAnalysisSourceBlock
               value={blocksForDisplay.listing_analysis}
               readOnly={sourcesViewMode}

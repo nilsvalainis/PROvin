@@ -1,28 +1,28 @@
 /**
- * Avotu un prioritāro bloku galvenes: viena krāsa ar maigu „metālisku” dziļumu
- * (tikai tā paša toņa gaišākas/tumšākas malas — bez raibām krāsu pārēm).
+ * Avotu un prioritāro bloku galvenes: viena krāsa ar maigu „metālisku” dziļumu.
+ * Krāsas ~25% maigākas (pasteļu / muted metallic), bez agresīvas piesātinājuma.
  */
 
 import type { SourceBlockKey } from "@/lib/admin-source-blocks";
 
 /** Metālisks: vieglāks augšējā kreisajā stūrī, tumšāks apakšējā labajā. */
 const G = {
-  /** CSDD & Sludinājuma analīze: tumši zaļš */
-  csdd: "linear-gradient(148deg, #1a5f3f 0%, #14532d 46%, #0d3d2a 100%)",
-  /** AutoDNA: tumši zils */
-  autodna: "linear-gradient(148deg, #1a3048 0%, #1e3a5f 46%, #0f2135 100%)",
-  /** CarVertical: spilgti dzeltens */
-  carvertical: "linear-gradient(148deg, #fde047 0%, #facc15 46%, #eab308 100%)",
-  /** Auto-Records: oranžs */
-  auto_records: "linear-gradient(148deg, #fb923c 0%, #ea580c 46%, #c2410c 100%)",
-  /** LTAB: tumši sarkans */
-  ltab: "linear-gradient(148deg, #a31e1e 0%, #7f1d1d 46%, #5c0a0a 100%)",
-  /** Tirgus dati: tumši zils (citāds metālisks nekā AutoDNA) */
-  tirgus: "linear-gradient(148deg, #1a4a6e 0%, #0c4a6e 46%, #0a3d55 100%)",
-  /** Citi avoti: violets */
-  citi_avoti: "linear-gradient(148deg, #6d28d9 0%, #5b21b6 46%, #4c1d95 100%)",
+  /** CSDD & Sludinājuma analīze: maigs zaļš */
+  csdd: "linear-gradient(148deg, #4a7d68 0%, #3d6b5a 46%, #2f5a4a 100%)",
+  /** AutoDNA: maigs tumši zils */
+  autodna: "linear-gradient(148deg, #3d5a6e 0%, #455a7a 46%, #2f3f52 100%)",
+  /** CarVertical: maigs dzeltens */
+  carvertical: "linear-gradient(148deg, #fef3c7 0%, #fde68a 46%, #fcd34d 100%)",
+  /** Auto-Records: maigs oranžs */
+  auto_records: "linear-gradient(148deg, #fdba8c 0%, #ea9a6a 46%, #d48758 100%)",
+  /** LTAB: maigs sarkans */
+  ltab: "linear-gradient(148deg, #b85555 0%, #a04444 46%, #8a3a3a 100%)",
+  /** Tirgus dati: maigs zils (citāds nekā AutoDNA) */
+  tirgus: "linear-gradient(148deg, #4a7d9a 0%, #3d6b8a 46%, #335a72 100%)",
+  /** Citi avoti: maigs violets */
+  citi_avoti: "linear-gradient(148deg, #9b7bd4 0%, #8b6bc8 46%, #7a5ab0 100%)",
   /** Kā CSDD */
-  listing_analysis: "linear-gradient(148deg, #1a5f3f 0%, #14532d 46%, #0d3d2a 100%)",
+  listing_analysis: "linear-gradient(148deg, #4a7d68 0%, #3d6b5a 46%, #2f5a4a 100%)",
 } as const satisfies Record<SourceBlockKey, string>;
 
 export const SOURCE_BLOCK_HEADER_BG: Record<SourceBlockKey, string> = G;
@@ -39,9 +39,12 @@ export const SOURCE_BLOCK_HEADER_TEXT_CLASS: Record<SourceBlockKey, string> = {
   listing_analysis: "text-white",
 };
 
-/** Approved by IRISS: sudraba / metāliski pelēks (premium zīmogs) */
+/** Approved by IRISS: maigs sudraba / metālisks */
 export const APPROVED_BY_IRISS_HEADER_BG =
-  "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 28%, #cbd5e1 52%, #94a3b8 78%, #d1d5db 100%)";
+  "linear-gradient(135deg, #fafbfc 0%, #eef2f6 28%, #e2e8f0 52%, #cbd5e1 78%, #e8edf2 100%)";
 
 export const VENDOR_FALLBACK_HEADER_BG =
-  "linear-gradient(148deg, #52525b 0%, #3f3f46 50%, #27272a 100%)";
+  "linear-gradient(148deg, #6b7280 0%, #5a6170 50%, #4b5258 100%)";
+
+export const LISTING_ANALYSIS_BODY_BG =
+  "linear-gradient(to bottom, #f2faf2 0%, #ffffff 100%)";
