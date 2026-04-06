@@ -10,7 +10,7 @@ type Props = {
   children: ReactNode;
 };
 
-/** Kopīga josla ar lineāru gradientu (bez atsevišķa „shine” overlay). */
+/** Kopīga josla: viena krāsa ar maigu metālisku dziļumu (background string no admin-header-gradients). */
 export function AdminGradientHeaderBar({
   gradient,
   className = "",

@@ -488,14 +488,14 @@ function clientReportPrintCss(): string {
       }
       .pdf-avotu-header--csdd{background:${B.csdd};color:#fff;}
       .pdf-avotu-header--csdd .pdf-ico{color:#fff;}
-      .pdf-avotu-header--tirgus{background:${B.tirgus};color:#0f172a;}
-      .pdf-avotu-header--tirgus .pdf-ico{color:#0f172a;}
-      .pdf-avotu-header--autodna{background:${B.autodna};color:#0f172a;}
-      .pdf-avotu-header--autodna .pdf-ico{color:#0f172a;}
-      .pdf-avotu-header--carvertical{background:${B.carvertical};color:#1e3a8a;}
-      .pdf-avotu-header--carvertical .pdf-ico{color:#1e3a8a;}
-      .pdf-avotu-header--auto-records{background:${B.auto_records};color:#0f172a;}
-      .pdf-avotu-header--auto-records .pdf-ico{color:#0f172a;}
+      .pdf-avotu-header--tirgus{background:${B.tirgus};color:#fff;}
+      .pdf-avotu-header--tirgus .pdf-ico{color:#fff;}
+      .pdf-avotu-header--autodna{background:${B.autodna};color:#fff;}
+      .pdf-avotu-header--autodna .pdf-ico{color:#fff;}
+      .pdf-avotu-header--carvertical{background:${B.carvertical};color:#0f172a;}
+      .pdf-avotu-header--carvertical .pdf-ico{color:#0f172a;}
+      .pdf-avotu-header--auto-records{background:${B.auto_records};color:#fff;}
+      .pdf-avotu-header--auto-records .pdf-ico{color:#fff;}
       .pdf-avotu-header--ltab{background:${B.ltab};color:#fff;}
       .pdf-avotu-header--ltab .pdf-ico{color:#fff;}
       .pdf-avotu-header--vendor-fallback{background:${fb};color:#fff;}

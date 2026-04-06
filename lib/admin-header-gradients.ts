@@ -1,44 +1,47 @@
 /**
- * Avotu un prioritāro bloku galveneņu lineārie gradienti (PDF + Admin).
+ * Avotu un prioritāro bloku galvenes: viena krāsa ar maigu „metālisku” dziļumu
+ * (tikai tā paša toņa gaišākas/tumšākas malas — bez raibām krāsu pārēm).
  */
 
 import type { SourceBlockKey } from "@/lib/admin-source-blocks";
 
+/** Metālisks: vieglāks augšējā kreisajā stūrī, tumšāks apakšējā labajā. */
 const G = {
-  /** CSDD: tumši zaļš → zaļš */
-  csdd: "linear-gradient(135deg, #064e3b 0%, #166534 52%, #22c55e 100%)",
-  /** AutoDNA: tumši zils → oranžs → balts */
-  autodna: "linear-gradient(135deg, #0a1628 0%, #1e3a5f 32%, #ea580c 68%, #ffffff 100%)",
-  /** CarVertical: spilgti dzeltens → balts → tumši zils */
-  carvertical: "linear-gradient(90deg, #facc15 0%, #fefce8 38%, #ffffff 48%, #1e3a8a 100%)",
-  /** Auto-Records: oranžs → melns → balts */
-  auto_records: "linear-gradient(135deg, #ea580c 0%, #171717 42%, #ffffff 100%)",
-  /** LTAB: tumši sarkans → bordo */
-  ltab: "linear-gradient(135deg, #7f1d1d 0%, #5c0a0a 50%, #4c0519 100%)",
-  /** Tirgus: tumši zils → balts → rozā */
-  tirgus: "linear-gradient(135deg, #0c4a6e 0%, #ffffff 45%, #fbcfe8 85%, #f472b6 100%)",
-  /** Citi avoti: violets → gaišs (balts teksts uz violetu–lavandu) */
-  citi_avoti: "linear-gradient(135deg, #4c1d95 0%, #6d28d9 42%, #a78bfa 85%, #e9d5ff 100%)",
-  /** Sludinājuma analīze: kā CSDD */
-  listing_analysis: "linear-gradient(135deg, #064e3b 0%, #166534 52%, #22c55e 100%)",
+  /** CSDD & Sludinājuma analīze: tumši zaļš */
+  csdd: "linear-gradient(148deg, #1a5f3f 0%, #14532d 46%, #0d3d2a 100%)",
+  /** AutoDNA: tumši zils */
+  autodna: "linear-gradient(148deg, #1a3048 0%, #1e3a5f 46%, #0f2135 100%)",
+  /** CarVertical: spilgti dzeltens */
+  carvertical: "linear-gradient(148deg, #fde047 0%, #facc15 46%, #eab308 100%)",
+  /** Auto-Records: oranžs */
+  auto_records: "linear-gradient(148deg, #fb923c 0%, #ea580c 46%, #c2410c 100%)",
+  /** LTAB: tumši sarkans */
+  ltab: "linear-gradient(148deg, #a31e1e 0%, #7f1d1d 46%, #5c0a0a 100%)",
+  /** Tirgus dati: tumši zils (citāds metālisks nekā AutoDNA) */
+  tirgus: "linear-gradient(148deg, #1a4a6e 0%, #0c4a6e 46%, #0a3d55 100%)",
+  /** Citi avoti: violets */
+  citi_avoti: "linear-gradient(148deg, #6d28d9 0%, #5b21b6 46%, #4c1d95 100%)",
+  /** Kā CSDD */
+  listing_analysis: "linear-gradient(148deg, #1a5f3f 0%, #14532d 46%, #0d3d2a 100%)",
 } as const satisfies Record<SourceBlockKey, string>;
 
 export const SOURCE_BLOCK_HEADER_BG: Record<SourceBlockKey, string> = G;
 
-/** Teksta krāsa uz joslas (balts / tumši zils / tumšs uz gaišu galu). */
+/** Teksts uz joslas: balts uz tumšiem; dzeltens — tumšs. */
 export const SOURCE_BLOCK_HEADER_TEXT_CLASS: Record<SourceBlockKey, string> = {
   csdd: "text-white",
   ltab: "text-white",
-  tirgus: "text-slate-900",
-  autodna: "text-slate-900",
-  carvertical: "text-blue-900",
-  auto_records: "text-slate-900",
-  citi_avoti: "text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]",
+  tirgus: "text-white",
+  autodna: "text-white",
+  carvertical: "text-slate-900",
+  auto_records: "text-white",
+  citi_avoti: "text-white",
   listing_analysis: "text-white",
 };
 
-/** APPROVED BY IRISS: gaiši zils → sudrabs */
+/** Approved by IRISS: sudraba / metāliski pelēks (premium zīmogs) */
 export const APPROVED_BY_IRISS_HEADER_BG =
-  "linear-gradient(135deg, #bae6fd 0%, #dbeafe 28%, #e2e8f0 55%, #94a3b8 82%, #cbd5e1 100%)";
+  "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 28%, #cbd5e1 52%, #94a3b8 78%, #d1d5db 100%)";
 
-export const VENDOR_FALLBACK_HEADER_BG = "linear-gradient(135deg, #4b5563 0%, #1f2937 100%)";
+export const VENDOR_FALLBACK_HEADER_BG =
+  "linear-gradient(148deg, #52525b 0%, #3f3f46 50%, #27272a 100%)";
