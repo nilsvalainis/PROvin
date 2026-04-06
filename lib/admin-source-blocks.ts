@@ -3,7 +3,12 @@
  */
 
 import type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
-import { autoRecordsRowHasData, sortAutoRecordsDescending } from "./auto-records-paste-parse";
+import {
+  autoRecordsRowHasData,
+  formatAutoRecordsDateForOutput,
+  normalizeAutoRecordsOdometer,
+  sortAutoRecordsDescending,
+} from "./auto-records-paste-parse";
 
 export type { AutoRecordsServiceRow };
 
@@ -506,7 +511,13 @@ export function autoRecordsBlockHasContent(b: AutoRecordsBlockState): boolean {
 export function autoRecordsBlockToPlainText(b: AutoRecordsBlockState): string {
   const lines: string[] = [];
   for (const r of b.serviceHistory.filter(autoRecordsRowHasData)) {
-    lines.push([r.date, r.odometer, r.country].map((x) => x.replace(/\s+/g, " ").trim()).join("\t"));
+    lines.push(
+      [
+        formatAutoRecordsDateForOutput(r.date),
+        normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
+        r.country.replace(/\s+/g, " ").trim(),
+      ].join("\t"),
+    );
   }
   if (b.comments.trim()) lines.push(`Komentāri\n${b.comments.trim()}`);
   if (b.rawUnprocessedData.trim()) lines.push(b.rawUnprocessedData.trim());
@@ -628,9 +639,14 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
       })
       .filter(autoRecordsRowHasData);
     const sorted = sortAutoRecordsDescending(serviceHistory);
+    const normalized = sorted.map((r) => ({
+      date: formatAutoRecordsDateForOutput(r.date),
+      odometer: normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
+      country: r.country.replace(/\s+/g, " ").trim(),
+    }));
     return {
       rawUnprocessedData: String(raw.rawUnprocessedData ?? "").slice(0, 500_000),
-      serviceHistory: sorted.length > 0 ? sorted : [emptyAutoRecordsServiceRow()],
+      serviceHistory: normalized.length > 0 ? normalized : [emptyAutoRecordsServiceRow()],
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
     };
   }

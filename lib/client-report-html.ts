@@ -28,7 +28,11 @@ import {
   type ListingAnalysisBlockState,
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
-import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
+import {
+  autoRecordsRowHasData,
+  formatAutoRecordsDateForOutput,
+  normalizeAutoRecordsOdometer,
+} from "@/lib/auto-records-paste-parse";
 import {
   buildPdfAdminMirrorClientBlock,
   buildPdfAdminMirrorNotesBlock,
@@ -301,11 +305,7 @@ function vendorPdfIconBrandClass(title: string): string {
   return "pdf-avotu-ico-brand--autodna";
 }
 
-function pdfAutoRecordsCheckIcon(): string {
-  return `<svg class="pdf-ar-status-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 6L9 17l-5-5" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-}
-
-/** AUTO RECORDS — zebra tabula, zaļa „check” ikona statusa kolonnā. */
+/** AUTO RECORDS — tā pati tabulas struktūra kā CSDD nobraukumam (mirror-table--csdd-mh). */
 function buildAutoRecordsAvotuSubsection(b: AutoRecordsBlockState | null | undefined): string {
   if (!b || !autoRecordsBlockHasContent(b)) return "";
   const rows = b.serviceHistory.filter(autoRecordsRowHasData);
@@ -314,20 +314,22 @@ function buildAutoRecordsAvotuSubsection(b: AutoRecordsBlockState | null | undef
   const header = pdfAvotuNeutralHeader(ICO.spark, SOURCE_BLOCK_LABELS.auto_records, "pdf-avotu-ico-brand--auto-records");
   const bodyParts: string[] = [];
   if (rows.length > 0) {
+    const head = `<tr><th>Datums</th><th>Odometrs (km)</th><th>Valsts</th></tr>`;
+    const body = rows
+      .map((r) => {
+        const dateOut = formatAutoRecordsDateForOutput(r.date);
+        const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
+        const countryOut = r.country.trim();
+        return `<tr><td>${escapeHtml(dateOut)}</td><td class="tabular">${escapeHtml(odoOut)}</td><td>${escapeHtml(countryOut)}</td></tr>`;
+      })
+      .join("\n");
     bodyParts.push(
-      `<table class="mirror-table mirror-table--auto-records"><thead><tr><th class="pdf-ar-status-col"></th><th>Datums</th><th class="tabular">Odometrs (km)</th><th>Valsts</th></tr></thead><tbody>`,
+      `<p class="pdf-field-label pdf-field-label--sub">${escapeHtml(CSDD_MILEAGE_UNIFIED_TITLE)}</p>`,
     );
-    for (let i = 0; i < rows.length; i++) {
-      const r = rows[i];
-      const zebra = i % 2 === 0 ? "pdf-ar-row--a" : "pdf-ar-row--b";
-      bodyParts.push(
-        `<tr class="${zebra}"><td class="pdf-ar-status-cell">${pdfAutoRecordsCheckIcon()}</td><td>${escapeHtml(r.date)}</td><td class="tabular">${escapeHtml(r.odometer)}</td><td>${escapeHtml(r.country)}</td></tr>`,
-      );
-    }
-    bodyParts.push(`</tbody></table>`);
+    bodyParts.push(`<table class="mirror-table mirror-table--csdd-mh"><thead>${head}</thead><tbody>${body}</tbody></table>`);
   }
   const bodyHtml = bodyParts.join("");
-  const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--auto-records">${header}<div class="pdf-avotu-body">${bodyHtml}</div></div>`;
+  const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral">${header}<div class="pdf-avotu-body">${bodyHtml}</div></div>`;
   return wrapPdfAvotuStack(card, hasComments ? pdfAvotuCommentIsland(b.comments) : "");
 }
 
@@ -650,17 +652,6 @@ function clientReportPrintCss(): string {
       .mirror-table--csdd-mh{font-size:9pt!important;margin:2px 0 4px!important;}
       .mirror-table--csdd-mh td,.mirror-table--csdd-mh th{padding:3px 4px!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;}
       .mirror-table--csdd-mh thead th{font-size:9pt!important;}
-      .pdf-avotu-card--auto-records{border:1px solid #e2e8f0;}
-      .mirror-table--auto-records{font-size:9pt!important;margin:2px 0 4px!important;border-collapse:collapse;width:100%;}
-      .mirror-table--auto-records td,.mirror-table--auto-records th{
-        font-size:9pt!important;padding:4px 6px!important;line-height:1.25!important;border-bottom:1px solid #e2e8f0!important;
-      }
-      .mirror-table--auto-records thead th{font-weight:600;color:#334155;font-size:9pt!important;}
-      .pdf-ar-row--a{background:#f8fafc!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-      .pdf-ar-row--b{background:#eff6ff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-      .pdf-ar-status-col{width:22px;padding:3px 4px!important;}
-      .pdf-ar-status-cell{text-align:center;vertical-align:middle;}
-      .pdf-ar-status-ico{display:block;margin:0 auto;}
       .tabular{font-variant-numeric:tabular-nums;}
       .pdf-iriss-approved{
         margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #bfdbfe;

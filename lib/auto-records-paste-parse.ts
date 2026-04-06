@@ -24,6 +24,37 @@ export function normalizeAutoRecordsOdometer(raw: string): string {
   return t.replace(/,/g, "").replace(/\D/g, "");
 }
 
+/** ISO (YYYY-MM-DD) → DD.MM.YYYY; jau DD.MM.YYYY → normalizē padding. */
+export function formatAutoRecordsDateForOutput(raw: string): string {
+  const t = raw.trim();
+  if (!t) return "";
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) {
+    const y = +iso[1];
+    const m = +iso[2];
+    const d = +iso[3];
+    return `${String(d).padStart(2, "0")}.${String(m).padStart(2, "0")}.${y}`;
+  }
+  const lv = t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (lv) {
+    const d = +lv[1];
+    const m = +lv[2];
+    const y = +lv[3];
+    return `${String(d).padStart(2, "0")}.${String(m).padStart(2, "0")}.${y}`;
+  }
+  return t;
+}
+
+/** Kārtošanai: ISO vai DD.MM.YYYY → laika zīmogs (ms). */
+export function autoRecordsDateSortKey(s: string): number {
+  const t = s.trim();
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return Date.UTC(+iso[1], +iso[2] - 1, +iso[3]);
+  const lv = t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (lv) return Date.UTC(+lv[3], +lv[2] - 1, +lv[1]);
+  return 0;
+}
+
 function isHeaderLine(line: string): boolean {
   const l = line.toLowerCase();
   if (l.includes("event date") && l.includes("event location")) return true;
@@ -43,7 +74,7 @@ function parseDataLine(line: string): AutoRecordsServiceRow | null {
       return {
         date,
         odometer: normalizeAutoRecordsOdometer(odoRaw),
-        country: extractCountryFromLocation(loc),
+        country: extractCountryFromLocation(loc).replace(/\s+/g, " ").trim(),
       };
     }
   }
@@ -57,19 +88,23 @@ function parseDataLine(line: string): AutoRecordsServiceRow | null {
   if (kmMatch && kmMatch.index !== undefined) {
     locPart = rest.slice(0, kmMatch.index).trim();
   }
-  return { date, odometer, country: extractCountryFromLocation(locPart) };
+  return {
+    date,
+    odometer,
+    country: extractCountryFromLocation(locPart).replace(/\s+/g, " ").trim(),
+  };
 }
 
-/** Jaunākais augšā (pēc datuma, tad odometra); rindas bez datuma — apakšā. */
+/** Jaunākais augšā (pēc datuma DD.MM.YYYY / ISO, tad odometra); rindas bez derīga datuma — apakšā. */
 export function sortAutoRecordsDescending(rows: AutoRecordsServiceRow[]): AutoRecordsServiceRow[] {
   return [...rows].sort((a, b) => {
-    const da = a.date.trim();
-    const db = b.date.trim();
-    if (!da && !db) return 0;
-    if (!da) return 1;
-    if (!db) return -1;
-    const d = db.localeCompare(da);
-    if (d !== 0) return d;
+    const ka = autoRecordsDateSortKey(a.date);
+    const kb = autoRecordsDateSortKey(b.date);
+    if (ka !== kb) {
+      if (ka === 0) return 1;
+      if (kb === 0) return -1;
+      return kb - ka;
+    }
     const na = parseInt(a.odometer.replace(/\D/g, ""), 10) || 0;
     const nb = parseInt(b.odometer.replace(/\D/g, ""), 10) || 0;
     return nb - na;
@@ -94,7 +129,12 @@ export function parseAutoRecordsPaste(raw: string): AutoRecordsServiceRow[] {
     const row = parseDataLine(line);
     if (row && row.date) out.push(row);
   }
-  return sortAutoRecordsDescending(out);
+  const sorted = sortAutoRecordsDescending(out);
+  return sorted.map((r) => ({
+    date: formatAutoRecordsDateForOutput(r.date),
+    odometer: normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
+    country: r.country.replace(/\s+/g, " ").trim(),
+  }));
 }
 
 export function autoRecordsRowHasData(r: AutoRecordsServiceRow): boolean {
