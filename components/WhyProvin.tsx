@@ -22,10 +22,6 @@ export async function WhyProvin() {
           <p className="mx-auto mt-2 max-w-2xl text-[16px] font-normal leading-relaxed text-[#86868b] sm:text-[17px]">
             {t("subtitle")}
           </p>
-          <p className="provin-lift-subtle mx-auto mt-6 max-w-2xl rounded-2xl border border-provin-accent/18 bg-gradient-to-b from-provin-accent-soft/80 to-[#fbfbfd] px-5 py-4 text-left text-[15px] font-normal leading-relaxed text-[#424245] sm:px-6 sm:py-5 sm:text-[16px]">
-            <span className="font-semibold text-[#1d1d1f]">{t("highlightQuote")} </span>
-            {t("highlightQuoteBody")}
-          </p>
         </div>
 
         <div className="mt-10 grid min-w-0 gap-4 lg:grid-cols-2">
