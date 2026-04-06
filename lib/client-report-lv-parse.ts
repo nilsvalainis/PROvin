@@ -27,6 +27,7 @@ export type LvRegistryBasics = {
 export type RegistryStructuredFields = {
   firstReg: string | null;
   enginePower: string | null;
+  engineDisplacementCm3: string | null;
   grossWeight: string | null;
   curbWeight: string | null;
   fuelType: string | null;
@@ -36,6 +37,7 @@ export type RegistryStructuredFields = {
   makeModel: string | null;
   plateNumber: string | null;
   status: string | null;
+  particulateMatter: string | null;
 };
 
 function firstMatch(csdd: string, re: RegExp): string | null {
@@ -91,6 +93,7 @@ export function extractRegistryStructuredFields(csdd: string): RegistryStructure
   const out: RegistryStructuredFields = {
     firstReg: null,
     enginePower: null,
+    engineDisplacementCm3: null,
     grossWeight: null,
     curbWeight: null,
     fuelType: null,
@@ -100,6 +103,7 @@ export function extractRegistryStructuredFields(csdd: string): RegistryStructure
     makeModel: null,
     plateNumber: null,
     status: null,
+    particulateMatter: null,
   };
   for (const raw of csdd.split(/\r?\n/)) {
     const line = raw.trim();
@@ -137,6 +141,15 @@ export function extractRegistryStructuredFields(csdd: string): RegistryStructure
       nk.includes("motor_power")
     ) {
       out.enginePower = val;
+      continue;
+    }
+    if (
+      nk.includes("motor_tilpums") ||
+      nk.includes("engine_displacement") ||
+      (nk.includes("tilpums") && (nk.includes("cm") || nk.includes("dzineja") || nk.includes("motor"))) ||
+      nk.includes("displacement")
+    ) {
+      out.engineDisplacementCm3 = val;
       continue;
     }
     if (
@@ -213,8 +226,22 @@ export function extractRegistryStructuredFields(csdd: string): RegistryStructure
       out.plateNumber = val;
       continue;
     }
-    if (nk === "status" || nk === "vehicle_status" || nk.includes("uzskate")) {
+    if (
+      nk === "status" ||
+      nk === "vehicle_status" ||
+      nk.includes("uzskate") ||
+      nk.includes("registracijas_status") ||
+      (nk.includes("registr") && nk.includes("status"))
+    ) {
       out.status = val;
+      continue;
+    }
+    if (
+      nk.includes("cietas_dalinas") ||
+      nk.includes("atgazu_cietas") ||
+      nk.includes("particulate")
+    ) {
+      out.particulateMatter = val;
       continue;
     }
   }

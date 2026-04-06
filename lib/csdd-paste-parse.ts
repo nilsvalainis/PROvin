@@ -1,5 +1,5 @@
 /**
- * CSDD „Smart Paste” — apskates datumi (augša) + apvienota nobraukuma tabula (Datums | Odometrs | Valsts).
+ * CSDD „Smart Paste” — tehniskie pamatdati + apskates datumi (augša) + apvienota nobraukuma tabula.
  */
 
 import {
@@ -10,6 +10,11 @@ import {
   type CsddFormFields,
   type CsddMileageRow,
 } from "@/lib/admin-source-blocks";
+import {
+  extractRegistryStructuredFields,
+  normalizeRoadTaxDisplay,
+  parseLvRegistryBasics,
+} from "@/lib/client-report-lv-parse";
 
 /** Rindas, pēc kurām „Nākamās / Iepriekšējās apskates datums” vairs nedrīkst ņemt. */
 const NEXT_INSPECTION_HEAD_BOUNDARY_RES = [
@@ -82,6 +87,89 @@ export function lvDateToIso(lv: string): string {
   if (!m) return "";
   const [, d, mo, y] = m;
   return `${y}-${mo}-${d}`;
+}
+
+/** CSDD datuma teksts → YYYY-MM-DD, ja iespējams. */
+function looseLvDateToIso(s: string): string {
+  const t = s.trim();
+  const strict = lvDateToIso(t);
+  if (strict) return strict;
+  const m = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})/);
+  if (m) {
+    let y = Number(m[3]);
+    if (y < 100) y += y < 50 ? 2000 : 1900;
+    const d = m[1].padStart(2, "0");
+    const mo = m[2].padStart(2, "0");
+    return `${y}-${mo}-${d}`;
+  }
+  const isoL = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoL) return `${isoL[1]}-${isoL[2]}-${isoL[3]}`;
+  return "";
+}
+
+/**
+ * Tehniskie lauki no ielīmēta CSDD teksta (atslēga:vērtība, TAB, regex).
+ * Neiekļauj raw, nobraukumu, nākamās/iepriekšējās apskates datumus (tos ņem no augšas).
+ */
+export function parseCsddTechnicalFields(
+  raw: string,
+): Omit<CsddFormFields, "rawUnprocessedData" | "mileageHistory" | "nextInspectionDate" | "prevInspectionDate"> {
+  const st = extractRegistryStructuredFields(raw);
+  const basics = parseLvRegistryBasics(raw);
+
+  const makeModel = (st.makeModel ?? basics.markModel ?? "").trim();
+  const registrationNumber = (st.plateNumber ?? basics.regNr ?? "").trim();
+
+  const firstRegSrc = st.firstReg ?? basics.firstReg;
+  const firstRegistration = firstRegSrc
+    ? looseLvDateToIso(firstRegSrc) || firstRegSrc.trim()
+    : "";
+
+  let engineDisplacementCm3 = (st.engineDisplacementCm3 ?? "").trim();
+  if (!engineDisplacementCm3) {
+    const m = raw.match(/motora\s+tilpums\s*[:\s]*([\d\s.,]+)\s*(?:cm³|cm3|kub\.?\s*cm)/i);
+    if (m) engineDisplacementCm3 = m[1].replace(/\s+/g, "").replace(",", ".");
+  }
+
+  const enginePowerKw = (st.enginePower ?? basics.powerKw ?? "").trim();
+  const fuelType = (st.fuelType ?? "").trim();
+  const emissionStandard = (st.euroStandard ?? basics.euro ?? "").trim();
+
+  let grossMassKg = (st.grossWeight ?? basics.grossMassKg ?? "").trim();
+  if (grossMassKg) grossMassKg = grossMassKg.replace(/\s+/g, " ");
+
+  let curbMassKg = (st.curbWeight ?? basics.curbWeightKg ?? "").trim();
+  if (curbMassKg) curbMassKg = curbMassKg.replace(/\s+/g, " ");
+
+  let roadTaxEur = st.roadTax ?? basics.roadTaxEur;
+  roadTaxEur = roadTaxEur ? normalizeRoadTaxDisplay(roadTaxEur) : "";
+
+  const registrationStatus = (st.status ?? "").trim();
+
+  let opacityCoefficient = (st.smokeOpacity ?? basics.smokeOpacity ?? "").trim();
+  if (opacityCoefficient) opacityCoefficient = opacityCoefficient.replace(/\s+/g, " ").slice(0, 80);
+
+  let particulateMatter = (st.particulateMatter ?? "").trim();
+  if (!particulateMatter) {
+    const m = raw.match(/(?:atgāzu\s+)?cietās\s+daļiņas\s*[:\s]*([^\n]+)/i);
+    if (m) particulateMatter = m[1].trim().slice(0, 120);
+  }
+
+  return {
+    makeModel,
+    registrationNumber,
+    firstRegistration,
+    engineDisplacementCm3,
+    enginePowerKw,
+    fuelType,
+    emissionStandard,
+    grossMassKg,
+    curbMassKg,
+    roadTaxEur,
+    registrationStatus,
+    opacityCoefficient,
+    particulateMatter,
+  };
 }
 
 function isCsddSectionHeaderLine(line: string): boolean {
@@ -247,13 +335,14 @@ export function parseCsddPaste(raw: string): CsddPasteParseResult {
 }
 
 /**
- * Katrs raw lauka mainījums: forma tiek atiestatīta uz tikai parsēto (tīrīšana no vecajiem laukiem).
+ * Katrs raw lauka mainījums: forma tiek atiestatīta uz parsēto (tīrīšana no vecajiem laukiem).
  */
 export function applyCsddPasteToForm(
   current: CsddFormFields,
   rawText: string,
   parsed: CsddPasteParseResult,
 ): CsddFormFields {
+  const tech = parseCsddTechnicalFields(rawText);
   let nextInspectionDate = "";
   let prevInspectionDate = "";
   if (parsed.nextInspectionIso) {
@@ -269,6 +358,7 @@ export function applyCsddPasteToForm(
 
   return {
     ...emptyCsddFields(),
+    ...tech,
     rawUnprocessedData: rawText,
     nextInspectionDate,
     prevInspectionDate,

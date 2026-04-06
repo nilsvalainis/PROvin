@@ -3,7 +3,7 @@
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { CsddFormFields, CsddMileageRow } from "@/lib/admin-source-blocks";
 import {
-  CSDD_FORM_SHORT_FIELDS,
+  CSDD_FORM_STRUCTURED_FIELDS,
   CSDD_MILEAGE_UNIFIED_TITLE,
   emptyCsddMileageRow,
   finalizeMileageHistory,
@@ -13,7 +13,11 @@ import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
-const dateKeys = new Set<keyof CsddFormFields>(["nextInspectionDate", "prevInspectionDate"]);
+const dateKeys = new Set<keyof CsddFormFields>([
+  "firstRegistration",
+  "nextInspectionDate",
+  "prevInspectionDate",
+]);
 
 type Props = {
   value: CsddFormFields;
@@ -85,7 +89,7 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
       </div>
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {CSDD_FORM_SHORT_FIELDS.map(({ key, label }) => {
+        {CSDD_FORM_STRUCTURED_FIELDS.map(({ key, label }) => {
           const strVal = value[key] as string;
           return (
             <div key={key} className="min-w-0">

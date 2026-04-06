@@ -84,26 +84,56 @@ export type CsddMileageAbroadRow = {
 };
 
 /**
- * CSDD forma: neapstrādātais teksts (tikai admin) + apskates datumi no augšas + apvienota nobraukuma tabula.
+ * CSDD forma: neapstrādātais teksts (tikai admin) + tehniskie pamatdati + nobraukuma tabula.
  * PDF atspoguļo tikai strukturētos laukus (ne raw).
  */
 export type CsddFormFields = {
   /** Tikai admin — ielīmētais teksts; netiek drukāts PDF. */
   rawUnprocessedData: string;
+  makeModel: string;
+  registrationNumber: string;
+  /** HTML date (YYYY-MM-DD) vai teksts no CSDD. */
+  firstRegistration: string;
   nextInspectionDate: string;
   prevInspectionDate: string;
+  engineDisplacementCm3: string;
+  enginePowerKw: string;
+  fuelType: string;
+  emissionStandard: string;
+  grossMassKg: string;
+  curbMassKg: string;
+  roadTaxEur: string;
+  registrationStatus: string;
+  opacityCoefficient: string;
+  particulateMatter: string;
   /** Hronoloģiski sakārtots (jaunākais augšā): Datums | Odometrs | Valsts. */
   mileageHistory: CsddMileageRow[];
 };
 
-/** Apskates datumu lauki (PDF + admin). */
-export const CSDD_FORM_SHORT_FIELDS: {
+/** Tehniskie + apskates lauki (secība = Admin / PDF). */
+export const CSDD_FORM_STRUCTURED_FIELDS: {
   key: keyof CsddFormFields;
   label: string;
 }[] = [
+  { key: "makeModel", label: "Marka, modelis:" },
+  { key: "registrationNumber", label: "Reģistrācijas numurs:" },
+  { key: "firstRegistration", label: "Pirmā reģistrācija:" },
   { key: "nextInspectionDate", label: "Nākamās apskates datums:" },
   { key: "prevInspectionDate", label: "Iepriekšējās apskates datums:" },
+  { key: "engineDisplacementCm3", label: "Motora tilpums (cm³):" },
+  { key: "enginePowerKw", label: "Motora maksimālā jauda (kW):" },
+  { key: "fuelType", label: "Degvielas veids:" },
+  { key: "emissionStandard", label: "Emisiju standarts:" },
+  { key: "grossMassKg", label: "Pilna masa (kg):" },
+  { key: "curbMassKg", label: "Pašmasa (kg):" },
+  { key: "roadTaxEur", label: "Ekspluatācijas nodoklis (EUR):" },
+  { key: "registrationStatus", label: "Reģistrācijas statuss:" },
+  { key: "opacityCoefficient", label: "Dūmainības koeficients (m⁻¹):" },
+  { key: "particulateMatter", label: "Atgāzu cietās daļiņas:" },
 ];
+
+/** @deprecated Lietot CSDD_FORM_STRUCTURED_FIELDS */
+export const CSDD_FORM_SHORT_FIELDS = CSDD_FORM_STRUCTURED_FIELDS;
 
 /** Tirgus dati — admin un PDF etiķetes (precīzi). */
 export type TirgusFormFields = {
@@ -144,8 +174,21 @@ export function tirgusFormToPlainText(f: TirgusFormFields): string {
 export function emptyCsddFields(): CsddFormFields {
   return {
     rawUnprocessedData: "",
+    makeModel: "",
+    registrationNumber: "",
+    firstRegistration: "",
     nextInspectionDate: "",
     prevInspectionDate: "",
+    engineDisplacementCm3: "",
+    enginePowerKw: "",
+    fuelType: "",
+    emissionStandard: "",
+    grossMassKg: "",
+    curbMassKg: "",
+    roadTaxEur: "",
+    registrationStatus: "",
+    opacityCoefficient: "",
+    particulateMatter: "",
     mileageHistory: [],
   };
 }
@@ -223,7 +266,7 @@ function mileageDateSortKey(s: string): number {
 /** Strukturētie lauki PDF atskaitei (bez raw). */
 export function csddFormHasContent(f: CsddFormFields): boolean {
   return (
-    CSDD_FORM_SHORT_FIELDS.some(({ key }) => (f[key] as string).trim().length > 0) ||
+    CSDD_FORM_STRUCTURED_FIELDS.some(({ key }) => (f[key] as string).trim().length > 0) ||
     f.mileageHistory.some(csddMileageRowHasData)
   );
 }
@@ -231,7 +274,7 @@ export function csddFormHasContent(f: CsddFormFields): boolean {
 /** Teksts km/VIN heuristiku (`extractKmCandidates`, u.c.) — ietver arī raw. */
 export function csddFormToPlainText(f: CsddFormFields): string {
   const lines: string[] = [];
-  for (const { key, label } of CSDD_FORM_SHORT_FIELDS) {
+  for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
     const v = (f[key] as string).trim();
     if (v) lines.push(`${label} ${v}`);
   }
@@ -598,13 +641,33 @@ function mergeLegacyMileageArrays(
   return finalizeMileageHistory(out);
 }
 
-function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
-  const clip = (v: unknown) => String(v ?? "").slice(0, 4000);
-  const base = {
-    rawUnprocessedData: clip(raw.rawUnprocessedData),
-    nextInspectionDate: clip(raw.nextInspectionDate),
-    prevInspectionDate: clip(raw.prevInspectionDate),
+function clipCsddField(v: unknown, max: number): string {
+  return String(v ?? "").slice(0, max);
+}
+
+function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFields, "mileageHistory"> {
+  return {
+    rawUnprocessedData: clipCsddField(raw.rawUnprocessedData, 4000),
+    makeModel: clipCsddField(raw.makeModel, 240),
+    registrationNumber: clipCsddField(raw.registrationNumber, 40),
+    firstRegistration: clipCsddField(raw.firstRegistration, 40),
+    nextInspectionDate: clipCsddField(raw.nextInspectionDate, 40),
+    prevInspectionDate: clipCsddField(raw.prevInspectionDate, 40),
+    engineDisplacementCm3: clipCsddField(raw.engineDisplacementCm3, 40),
+    enginePowerKw: clipCsddField(raw.enginePowerKw, 40),
+    fuelType: clipCsddField(raw.fuelType, 80),
+    emissionStandard: clipCsddField(raw.emissionStandard, 40),
+    grossMassKg: clipCsddField(raw.grossMassKg, 40),
+    curbMassKg: clipCsddField(raw.curbMassKg, 40),
+    roadTaxEur: clipCsddField(raw.roadTaxEur, 80),
+    registrationStatus: clipCsddField(raw.registrationStatus, 120),
+    opacityCoefficient: clipCsddField(raw.opacityCoefficient, 40),
+    particulateMatter: clipCsddField(raw.particulateMatter, 80),
   };
+}
+
+function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
+  const base = parseCsddStoredFieldsRaw(raw);
   if ("mileageHistory" in raw && Array.isArray(raw.mileageHistory)) {
     const unified = parseCsddMileageUnifiedRaw(raw.mileageHistory).filter(csddMileageRowHasData);
     return {
@@ -662,6 +725,8 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
       "mileageHistoryLv" in c ||
       "mileageHistoryAbroad" in c ||
       "makeModel" in c ||
+      "registrationNumber" in c ||
+      "firstRegistration" in c ||
       "detailedRatingRows" in c ||
       "prevInspectionDefectRows" in c;
     if (hasStructuredCsdd) {

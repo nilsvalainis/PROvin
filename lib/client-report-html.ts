@@ -7,7 +7,7 @@ import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis
 import { amountToIntRough } from "@/lib/claim-rows-parse";
 import {
   citiAvotiHasContent,
-  CSDD_FORM_SHORT_FIELDS,
+  CSDD_FORM_STRUCTURED_FIELDS,
   CSDD_MILEAGE_UNIFIED_TITLE,
   csddFormHasContent,
   csddMileageRowHasData,
@@ -169,11 +169,11 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
     const f = p.csddForm;
     const bodyParts: string[] = [];
     const regRows: string[] = [];
-    for (const { key, label } of CSDD_FORM_SHORT_FIELDS) {
+    for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
       const v = (f[key] as string).trim();
       if (!v) continue;
       const cellHtml =
-        key === "nextInspectionDate" || key === "prevInspectionDate"
+        key === "nextInspectionDate" || key === "prevInspectionDate" || key === "firstRegistration"
           ? formatCsddNextInspectionCell(v)
           : escapeHtml(v);
       regRows.push(`<tr><td>${escapeHtml(label)}</td><td>${cellHtml}</td></tr>`);
