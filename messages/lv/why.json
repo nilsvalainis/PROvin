@@ -3,42 +3,42 @@
     "eyebrow": "Salīdzinājums",
     "title": "Kāpēc izvēlēties PROVIN?",
     "subtitle": "Individuāla un visaptveroša pieeja, kas sniedz vairāk nekā standarta auto vēstures atskaite.",
-    "block1Eyebrow": "Viena atskaite neparāda visu.",
-    "block1Title": "Kāpēc nepietiek ar vienu atskaiti?",
-    "block1Intro": "Auto vēsture ir kā puzle — neviena datubāze nav perfekta, un dati no dažādiem avotiem bieži atšķiras. Paļaujoties tikai uz vienu atskaiti, Jūs riskējat palaist garām kritiski svarīgu informāciju:",
+    "block1Eyebrow": "Problematika",
+    "block1Title": "KĀDĒĻ NEPIETIEK AR VIENU ATSKAITI?",
+    "block1Subtitle": "Kamēr Jūs pētat atskaites, mēs sniedzam atbildes.",
     "block1List": [
       {
         "t": "Datu nepilnība",
-        "d": "Kamēr viena atskaite uzrāda „tīru” vēsturi, cita var atklāt nopietnus remontus vai odometra manipulācijas."
+        "d": "Viena atskaite var uzrādīt „tīru” vēsturi, bet cita atklāj nopietnus remontus vai odometra manipulācijas."
       },
       {
         "t": "Slēptie riski",
-        "d": "Tikai kritiska sludinājuma analīze — fotogrāfiju, apraksta un detaļu izvērtēšana — ļauj identificēt problēmas, kas datubāzēs var nebūt atspoguļotas."
+        "d": "Robots redz tikai datus. Tikai kritiska sludinājuma analīze — fotogrāfiju un detaļu izvērtēšana — ļauj identificēt problēmas, kas nav fiksētas datubāzēs."
       },
       {
-        "t": "Laika un naudas ietaupījums",
-        "d": "Ar PROVIN Jums vairs nav jātērē laiks un līdzekļi, pērkot atsevišķas atskaites dažādos servisos — mēs apkopojam visu informāciju Jūsu vietā."
+        "t": "Zaudēti resursi",
+        "d": "Nav jēgas tērēt laiku un naudu, pērkot atsevišķas atskaites dažādos servisos. Mēs veicam pilnu pārbaudi Jūsu vietā."
       }
     ],
-    "block2Eyebrow": "Datu un pieredzes salikums",
-    "block2Title": "Kā mēs saliekam šo puzli?",
-    "block2Intro": "Mēs apvienojam digitālos datus ar savu personīgo pieredzi, lai Jūs iegūtu pilnīgu kopainu:",
+    "block2Eyebrow": "Risinājums",
+    "block2Title": "KĀ MĒS SALIEKAM ŠO PUZLI?",
+    "block2Subtitle": "Digitālie dati apvienoti ar reālu 10+ gadu pieredzi.",
     "puzzleBullets": [
       {
         "t": "Neatkarīga datu salīdzināšana",
-        "d": "Analizējam informāciju no vairākiem neatkarīgiem avotiem — starptautiskām vēstures datubāzēm, ražotāju servisa reģistriem* un citiem pieejamajiem resursiem."
+        "d": "Analizējam informāciju no vairākiem neatkarīgiem avotiem — starptautiskām datubāzēm, dīleru servisa reģistriem* un citiem resursiem."
       },
       {
-        "t": "Specifisku risku analīze",
-        "d": "Izvērtējam konkrētā modeļa potenciāli vājās vietas — dzinēja mezglus, transmisiju, DPF filtrus —, lai Jūs zinātu, kam pievērst uzmanību apskates laikā."
+        "t": "Specifisku risku audits",
+        "d": "Izvērtējam konkrētā modeļa agregātu vājās vietas un tipiskās tehniskās problēmas."
       },
       {
-        "t": "Ekspertīze",
-        "d": "Unikāli instrumenti atrod informāciju, kas klasiskajās atskaitēs neparādās. DPF, agregātu uzticamība, cenas atbilstība."
+        "t": "Padziļināta ekspertīze",
+        "d": "Pārbaudām nobraukumu, atbilstību tirgus vērtībai un reālo uzticamību, nevis tikai sausus faktus."
       },
       {
-        "t": "Tiešā saziņa",
-        "d": "Nepieciešamības gadījumā mēs paši sazināmies ar pārdevēju, lai noskaidrotu papildu detaļas un pasargātu Jūs no nepatiesas informācijas vai slēptiem riskiem."
+        "t": "Tiešā saziņa (Premium)",
+        "d": "Nepieciešamības gadījumā mēs paši sazināmies ar pārdevēju, lai noskaidrotu detaļas un pasargātu Jūs no slēptiem riskiem."
       }
     ],
     "autoRecordsFootnote": "* Var tikt izmantots tikai noteiktiem ražotājiem"

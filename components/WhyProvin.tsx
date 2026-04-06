@@ -24,20 +24,13 @@ export async function WhyProvin() {
           </p>
         </div>
 
-        <div className="mt-10 grid min-w-0 gap-4 lg:grid-cols-2">
+        <div className="mt-10 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
           <article className={highlightCardClass}>
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-provin-accent/10 text-provin-accent ring-1 ring-provin-accent/15">
-                <IconDoc className="h-7 w-7" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("block1Eyebrow")}</p>
-                <h3 className="mt-2 text-[21px] font-semibold leading-[1.2] tracking-tight text-[#1d1d1f] sm:text-[23px]">
-                  {t("block1Title")}
-                </h3>
-                <p className="mt-4 text-[15px] font-normal leading-relaxed text-[#424245] sm:text-[16px]">{t("block1Intro")}</p>
-              </div>
-            </div>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("block1Eyebrow")}</p>
+            <h3 className="mt-2 text-balance text-[20px] font-semibold uppercase leading-[1.2] tracking-[0.02em] text-[#1d1d1f] sm:text-[22px]">
+              {t("block1Title")}
+            </h3>
+            <p className="mt-3 text-[15px] font-medium leading-relaxed text-[#5c5d62] sm:text-[16px]">{t("block1Subtitle")}</p>
             <ul className="mt-6 space-y-3 border-t border-provin-accent/12 pt-6">
               {block1List.map((item, i) => (
                 <li
@@ -47,28 +40,21 @@ export async function WhyProvin() {
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[12px] font-semibold text-white">
                     {i + 1}
                   </span>
-                  <div className="min-w-0 text-[14px] font-normal leading-relaxed text-[#86868b] sm:text-[15px]">
-                    <span className="font-semibold text-[#1d1d1f]">{item.t}</span>
-                    <span className="text-[#86868b]"> — {item.d}</span>
-                  </div>
+                  <p className="min-w-0 text-[14px] font-normal leading-relaxed text-[#86868b] sm:text-[15px]">
+                    <span className="font-semibold text-[#1d1d1f]">{item.t}:</span>{" "}
+                    <span className="text-[#86868b]">{item.d}</span>
+                  </p>
                 </li>
               ))}
             </ul>
           </article>
 
           <article className={highlightCardClass}>
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-provin-accent/10 text-provin-accent ring-1 ring-provin-accent/15">
-                <IconShield className="h-7 w-7" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("block2Eyebrow")}</p>
-                <h3 className="mt-2 text-[21px] font-semibold leading-[1.2] tracking-tight text-[#1d1d1f] sm:text-[23px]">
-                  {t("block2Title")}
-                </h3>
-                <p className="mt-4 text-[15px] font-normal leading-relaxed text-[#424245] sm:text-[16px]">{t("block2Intro")}</p>
-              </div>
-            </div>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("block2Eyebrow")}</p>
+            <h3 className="mt-2 text-balance text-[20px] font-semibold uppercase leading-[1.2] tracking-[0.02em] text-[#1d1d1f] sm:text-[22px]">
+              {t("block2Title")}
+            </h3>
+            <p className="mt-3 text-[15px] font-medium leading-relaxed text-[#5c5d62] sm:text-[16px]">{t("block2Subtitle")}</p>
             <ul className="mt-6 space-y-3 border-t border-provin-accent/12 pt-6">
               {puzzleBullets.map((item, i) => (
                 <li
@@ -78,11 +64,10 @@ export async function WhyProvin() {
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[12px] font-semibold text-white">
                     {i + 1}
                   </span>
-                  <div className="min-w-0 text-[14px] font-normal leading-relaxed text-[#86868b] sm:text-[15px]">
-                    <span className="font-semibold text-[#1d1d1f]">{item.t}</span>
-                    <span className="text-[#86868b]"> — </span>
+                  <p className="min-w-0 text-[14px] font-normal leading-relaxed text-[#86868b] sm:text-[15px]">
+                    <span className="font-semibold text-[#1d1d1f]">{item.t}:</span>{" "}
                     <span className="text-[#86868b]">{renderFootnoteStar(item.d)}</span>
-                  </div>
+                  </p>
                 </li>
               ))}
             </ul>
@@ -112,28 +97,4 @@ function renderFootnoteStar(text: string) {
 }
 
 const highlightCardClass =
-  "provin-lift-strong min-w-0 rounded-2xl border border-provin-accent/15 bg-gradient-to-b from-provin-accent-soft/95 to-[#fbfbfd] p-6 shadow-[0_4px_28px_rgba(0,102,214,0.1)] sm:p-8";
-
-function IconDoc({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-      />
-    </svg>
-  );
-}
-
-function IconShield({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-      />
-    </svg>
-  );
-}
+  "provin-lift-strong flex min-h-0 min-w-0 flex-col rounded-2xl border border-provin-accent/15 bg-gradient-to-b from-provin-accent-soft/95 to-[#fbfbfd] p-6 shadow-[0_4px_28px_rgba(0,102,214,0.1)] sm:p-8";
