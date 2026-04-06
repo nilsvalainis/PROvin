@@ -22,8 +22,8 @@ export default async function HomePage({
       <WhyProvin />
       <IrissSection />
       <HowItWorks />
-      <Faq />
       <FinalCta cancelled={cancelled} />
+      <Faq />
       <Footer />
     </>
   );
