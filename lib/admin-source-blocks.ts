@@ -153,7 +153,8 @@ export function emptyCsddFields(): CsddFormFields {
 /** Automātiski piešķirama LV ierakstiem. */
 export const CSDD_MILEAGE_COUNTRY_LV = "Latvija";
 
-export const CSDD_MILEAGE_UNIFIED_TITLE = "Nobraukuma vēsture";
+/** Vienotās tabulas virsraksts (admin + PDF). */
+export const CSDD_MILEAGE_UNIFIED_TITLE = "NOBRAUKUMA VĒSTURE";
 
 export function emptyCsddMileageRow(): CsddMileageRow {
   return { date: "", odometer: "", country: CSDD_MILEAGE_COUNTRY_LV };
@@ -173,6 +174,30 @@ export function normalizeOdometerFromPaste(raw: string): string {
 /** Jaunākie augšā (dilstošā secībā pēc datuma). */
 export function sortMileageHistoryDescending(rows: CsddMileageRow[]): CsddMileageRow[] {
   return [...rows].sort((a, b) => mileageDateSortKey(b.date) - mileageDateSortKey(a.date));
+}
+
+/**
+ * Viena hronoloģiska vēsture: LV + ārvalstu rindas → dublikātu noņemšana (tas pats datums + tas pats odometrs) → DESC.
+ * Ierakstu secība pirms apstrādes: vispirms LV, tad ārvalsti; dublikātam tiek atstāts pirmais.
+ */
+export function finalizeMileageHistory(rows: CsddMileageRow[]): CsddMileageRow[] {
+  const withData = rows.filter(csddMileageRowHasData);
+  const seen = new Set<string>();
+  const deduped: CsddMileageRow[] = [];
+  for (const r of withData) {
+    const k = mileageDedupKey(r);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    deduped.push(r);
+  }
+  return sortMileageHistoryDescending(deduped);
+}
+
+function mileageDedupKey(r: CsddMileageRow): string {
+  const ts = mileageDateSortKey(r.date);
+  const km = normalizeOdometerFromPaste(r.odometer);
+  if (ts !== 0) return `${ts}|${km}`;
+  return `0|${r.date.trim().replace(/\s+/g, "")}|${km}`;
 }
 
 function mileageDateSortKey(s: string): number {
@@ -570,7 +595,7 @@ function mergeLegacyMileageArrays(
     if (!r.date.trim() && !r.odometer.trim()) continue;
     out.push({ date: r.date, odometer: r.odometer, country: "" });
   }
-  return sortMileageHistoryDescending(out);
+  return finalizeMileageHistory(out);
 }
 
 function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
@@ -584,7 +609,7 @@ function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
     const unified = parseCsddMileageUnifiedRaw(raw.mileageHistory).filter(csddMileageRowHasData);
     return {
       ...base,
-      mileageHistory: unified.length > 0 ? sortMileageHistoryDescending(unified) : [],
+      mileageHistory: unified.length > 0 ? finalizeMileageHistory(unified) : [],
     };
   }
   const mileage = parseCsddMileageHistoryRaw(raw.mileageHistoryLv);

@@ -5,8 +5,8 @@
 import {
   CSDD_MILEAGE_COUNTRY_LV,
   emptyCsddFields,
+  finalizeMileageHistory,
   normalizeOdometerFromPaste,
-  sortMileageHistoryDescending,
   type CsddFormFields,
   type CsddMileageRow,
 } from "@/lib/admin-source-blocks";
@@ -235,7 +235,7 @@ export type CsddPasteParseResult = {
 export function parseCsddPaste(raw: string): CsddPasteParseResult {
   const fromLv = parseMileageHistoryLvBlock(raw);
   const fromAbroad = parseMileageAbroadBlock(raw);
-  const mileageHistory = sortMileageHistoryDescending([...fromLv, ...fromAbroad]);
+  const mileageHistory = finalizeMileageHistory([...fromLv, ...fromAbroad]);
   const headForDates = sliceTextBeforeNextInspectionHeadBoundary(raw);
   const nextInspectionIso = extractNextInspectionDateIsoFromHead(headForDates);
   const prevInspectionIso = extractPrevInspectionDateIsoFromHead(headForDates);

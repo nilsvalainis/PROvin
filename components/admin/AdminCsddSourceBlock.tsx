@@ -6,7 +6,7 @@ import {
   CSDD_FORM_SHORT_FIELDS,
   CSDD_MILEAGE_UNIFIED_TITLE,
   emptyCsddMileageRow,
-  sortMileageHistoryDescending,
+  finalizeMileageHistory,
 } from "@/lib/admin-source-blocks";
 import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
 
@@ -39,7 +39,7 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
     const base = value.mileageHistory.length > 0 ? [...value.mileageHistory] : [emptyCsddMileageRow()];
     const row = base[index] ?? emptyCsddMileageRow();
     base[index] = { ...row, ...patch };
-    onChange({ ...value, mileageHistory: sortMileageHistoryDescending(base) });
+    onChange({ ...value, mileageHistory: finalizeMileageHistory(base) });
   };
 
   const addMileageRow = () => {
@@ -47,7 +47,7 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
       value.mileageHistory.length > 0 ? value.mileageHistory : [emptyCsddMileageRow()];
     onChange({
       ...value,
-      mileageHistory: sortMileageHistoryDescending([...base, emptyCsddMileageRow()]),
+      mileageHistory: finalizeMileageHistory([...base, emptyCsddMileageRow()]),
     });
   };
 
