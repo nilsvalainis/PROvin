@@ -16,8 +16,7 @@ export async function HowItWorks() {
       <div className="pointer-events-none absolute inset-0 provin-noise opacity-30" aria-hidden />
       <div className="relative mx-auto min-w-0 max-w-[1024px]">
         <div className="text-center">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("eyebrow")}</p>
-          <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] sm:text-[36px] sm:leading-[1.1]">
+          <h2 className="text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] sm:text-[36px] sm:leading-[1.1]">
             {t("title")}
           </h2>
           <p className="mx-auto mt-2 max-w-[65ch] text-[16px] font-normal text-[#86868b] sm:text-[17px]">

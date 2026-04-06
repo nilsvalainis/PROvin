@@ -33,7 +33,27 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
       />
 
       <div className="relative z-10 mx-auto min-w-0 max-w-[692px] px-4 pb-12 pt-10 text-center sm:px-6 sm:pb-14 sm:pt-12">
-        <p className="text-[14px] font-normal tracking-wide text-provin-accent sm:text-[17px]">{t("sectionTitle")}</p>
+        <div className="flex flex-col items-center gap-1.5">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[13px]">
+            {t("sectionTitle")}
+          </p>
+          <a
+            href="#order-form"
+            aria-label={t("scrollToFormAria")}
+            className="inline-flex text-provin-accent/80 transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
+          >
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.75}
+              aria-hidden
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </a>
+        </div>
 
         {cancelled && (
           <p
@@ -44,7 +64,7 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
           </p>
         )}
 
-        <div className="mx-auto mt-10 max-w-[560px] text-left">
+        <div id="order-form" className="mx-auto mt-10 max-w-[560px] scroll-mt-28 text-left sm:scroll-mt-32">
           <OrderForm variant="hero" className="!mt-0" />
         </div>
 

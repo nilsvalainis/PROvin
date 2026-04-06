@@ -1,6 +1,7 @@
 {
   "Order": {
     "sectionTitle": "Pasūtīt analīzi",
+    "scrollToFormAria": "Pāriet uz pasūtījuma formu",
     "cancelled": "Apmaksa tika atcelta. Vari aizpildīt formu vēlreiz.",
     "footnote": "Pilna auto analīze tiek sagatavota un nosūtīta uz jūsu e‑pastu 24 stundu laikā.",
     "nameLabel": "Vārds / uzvārds",

@@ -22,8 +22,7 @@ export async function IrissSection() {
 
       <div className="relative mx-auto min-w-0 max-w-[692px]">
         <div className="text-center">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("eyebrow")}</p>
-          <h2 className="mt-2 text-balance text-[1.35rem] font-semibold leading-snug tracking-tight text-[#1d1d1f] sm:text-[1.65rem] sm:leading-[1.15]">
+          <h2 className="text-balance text-[1.35rem] font-semibold leading-snug tracking-tight text-[#1d1d1f] sm:text-[1.65rem] sm:leading-[1.15]">
             {t("title")}
           </h2>
         </div>

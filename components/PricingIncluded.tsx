@@ -24,12 +24,6 @@ export async function PricingIncluded() {
     >
       <div className="pointer-events-none absolute inset-0 provin-noise opacity-40" aria-hidden />
       <div className="relative mx-auto min-w-0 max-w-[1024px]">
-        <div className="text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[12px]">
-            {t("eyebrow")}
-          </p>
-        </div>
-
         <PricingTransitionAndComparison />
 
         <div className="mt-8 grid min-w-0 grid-cols-1 gap-2.5 sm:mt-10 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">

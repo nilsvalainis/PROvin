@@ -15,10 +15,9 @@ export async function Faq() {
     >
       <div className="mx-auto min-w-0 max-w-[720px]">
         <div className="text-center">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("eyebrow")}</p>
           <h2
             id="faq-heading"
-            className="mt-2 text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] sm:text-[32px]"
+            className="text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] sm:text-[32px]"
           >
             {t("title")}
           </h2>
