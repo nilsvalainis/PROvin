@@ -1,29 +1,13 @@
 {
   "Iriss": {
-    "eyebrow": "Kas stāv aiz PROVIN?",
-    "title1": "IRISS",
-    "title2": "Perekupa Dienasgrāmata",
-    "bio1": "IRISS ir viens no atpazīstamākajiem auto tirdzniecības nozares pārzinātājiem Latvijas sociālajos tīklos. Vairāk nekā 10 gadu pieredze lietotu auto tirdzniecībā un importā no Eiropas apvieno padziļinātas zināšanas par auto markām, to vājajām vietām un reālo tirgus situāciju.",
-    "bio2": "Jūs iegūstat tiešu skatījumu uz noskatīto auto no cilvēka, kurš redz cauri gan sludinājumu trikiem, gan tam, ko pārdevēji bieži cenšas noklusēt.",
+    "eyebrow": "KAS IR IRISS?",
+    "title": "KAS IR IRISS?",
+    "bio1": "IRISS ir viens no atpazīstamākajiem auto tirdzniecības nozares pārzinātājiem Latvijas sociālajos tīklos. Viņa vairāk nekā 10 gadu pieredze lietotu auto tirdzniecībā un importā no Eiropas apvieno padziļinātas zināšanas par auto markām, to specifiskajām vājajām vietām un reālo tirgus situāciju, kas ļauj nekļūdīgi identificēt slēptos riskus un pārdevēju izmantotos paņēmienus.",
+    "bio2": "Izmantojot PROVIN auditu, Jūs iegūstat tiešu un godīgu skatījumu uz noskatīto auto no cilvēka, kurš redz cauri gan sludinājumu trikiem, gan tam, ko tirgotāji visbiežāk cenšas noklusēt. Tas nav tikai datu apkopojums – tā ir reāla pieredze un individuāls darbs, kas strādā Jūsu drošībai.",
     "experienceLabel": "Pieredze",
     "years": "10+",
     "yearsLabel": "gadi",
-    "pillarTitleFull": "IRISS komentārs",
     "socialLabel": "IRISS sociālie tīkli",
-    "pillars": [
-      {
-        "title": "Tirgus caurredzamība",
-        "body": "Mana ikdiena jau vairāk nekā 10 gadus ir cieši saistīta ar lietotu auto tirdzniecības aizkulisēm, kas ļauj precīzi identificēt slēptos riskus un pārdevēju trikus."
-      },
-      {
-        "title": "Neatkarīgs vērtējums",
-        "body": "Es nesadarbojos ar citiem automašīnu tirgotājiem, tāpēc mans vienīgais mērķis ir pasargāt klientu no finansiāli nepamatotiem lēmumiem."
-      },
-      {
-        "title": "Padziļināta analīze",
-        "body": "Kamēr standarta vēstures atskaites sniedz tikai sausus faktus, es tos sasaistu ar konkrētā modeļa vājajām vietām un tirgus vērtību, piedāvājot pilnvērtīgu slēdzienu."
-      }
-    ],
     "socialSoon": "Saite drīzumā"
   }
 }

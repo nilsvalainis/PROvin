@@ -1,11 +1,7 @@
-import { getMessages, getTranslations } from "next-intl/server";
-
-type Pillar = { title: string; body: string };
+import { getTranslations } from "next-intl/server";
 
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
-  const messages = await getMessages();
-  const pillars = (messages as { Iriss: { pillars: Pillar[] } }).Iriss.pillars;
 
   const socialTiktok = process.env.NEXT_PUBLIC_IRISS_TIKTOK_URL?.trim();
   const socialYoutube = process.env.NEXT_PUBLIC_IRISS_YOUTUBE_URL?.trim();
@@ -13,9 +9,11 @@ export async function IrissSection() {
 
   return (
     <section
-      id="kas-stav-aiz-provin"
+      id="kas-ir-iriss"
       className="relative scroll-mt-16 overflow-hidden bg-gradient-to-b from-provin-accent-soft/90 via-[#f5f5f7] to-provin-surface-2 px-4 py-10 sm:px-6 sm:py-16"
     >
+      {/* Vecs enkurs — grāmatzīmes uz /#kas-stav-aiz-provin joprojām darbojas */}
+      <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(0,102,214,0.16),transparent)]"
         aria-hidden
@@ -25,12 +23,8 @@ export async function IrissSection() {
       <div className="relative mx-auto min-w-0 max-w-[692px]">
         <div className="text-center">
           <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("eyebrow")}</p>
-          <h2 className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[1.25rem] font-semibold leading-snug tracking-tight text-[#1d1d1f] sm:text-[1.65rem] sm:leading-[1.15]">
-            <span>{t("title1")}</span>
-            <span className="font-normal text-[#86868b]" aria-hidden>
-              |
-            </span>
-            <span className="text-balance">{t("title2")}</span>
+          <h2 className="mt-2 text-balance text-[1.35rem] font-semibold leading-snug tracking-tight text-[#1d1d1f] sm:text-[1.65rem] sm:leading-[1.15]">
+            {t("title")}
           </h2>
         </div>
 
@@ -57,47 +51,10 @@ export async function IrissSection() {
             </div>
           </div>
         </div>
-
-        <div
-          id="iriss-komentars"
-          className="mt-7 overflow-hidden rounded-xl border border-black/[0.08] bg-white shadow-[0_2px_16px_rgba(0,0,0,0.04)] sm:mt-8"
-        >
-          <div className="border-b border-black/[0.06] bg-gradient-to-r from-provin-accent-soft/60 via-[#f5f9fc] to-white px-4 py-3 sm:px-5 sm:py-3.5">
-            <div className="flex items-center justify-center gap-2 sm:justify-start sm:gap-2.5">
-              <span
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-provin-accent shadow-sm ring-1 ring-provin-accent/10"
-                aria-hidden
-              >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </span>
-              <span className="text-[13px] font-semibold tracking-tight text-[#1d1d1f] sm:text-[14px]">{t("pillarTitleFull")}</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2.5 bg-white p-3 sm:gap-3 sm:p-4">
-            {pillars.map((p) => (
-              <div key={p.title} className={pillarCardClass}>
-                <div className="flex flex-col gap-2.5">
-                  <h3 className="text-left text-[16px] font-semibold leading-snug tracking-tight text-[#1d1d1f] sm:text-[17px]">
-                    {p.title}
-                  </h3>
-                  <p className="text-left text-[13px] font-normal leading-relaxed text-[#424245] sm:text-[14px] sm:leading-[1.55]">
-                    {p.body}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </section>
   );
 }
-
-const pillarCardClass =
-  "provin-lift group relative overflow-hidden rounded-lg border border-black/[0.06] bg-white p-4 shadow-[0_1px_8px_rgba(0,0,0,0.04)] sm:p-4";
 
 function IrissSocialIcons({
   tiktok,

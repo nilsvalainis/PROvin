@@ -1,5 +1,6 @@
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { PricingTransitionAndComparison } from "@/components/PricingTransitionAndComparison";
 import { irissAnchorHref } from "@/lib/paths";
 
 type GridItem = {
@@ -29,7 +30,9 @@ export async function PricingIncluded() {
           </p>
         </div>
 
-        <div className="mt-6 grid min-w-0 grid-cols-1 gap-2.5 sm:mt-7 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
+        <PricingTransitionAndComparison />
+
+        <div className="mt-8 grid min-w-0 grid-cols-1 gap-2.5 sm:mt-10 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
           {grid.map((item) => {
             const inner = (
               <>

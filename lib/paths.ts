@@ -19,5 +19,5 @@ export function faqHashHref(locale: string): string {
 
 export function irissAnchorHref(locale: string): string {
   const base = homePath(locale);
-  return base === "/" ? "/#kas-stav-aiz-provin" : `${base}#kas-stav-aiz-provin`;
+  return base === "/" ? "/#kas-ir-iriss" : `${base}#kas-ir-iriss`;
 }
