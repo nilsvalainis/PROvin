@@ -8,6 +8,69 @@ import { parseDefectRowsFromText, type CsddDefectRow } from "@/lib/csdd-defect-p
 const LABEL_LINE_RE =
   /^[A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž0-9][^:\n]{0,80}:\s*\S/;
 
+/** Rindas, pēc kurām „Nākamās apskates datums” vairs nedrīkst ņemt (vēsturiskās sadaļas / nobraukums). */
+const NEXT_INSPECTION_HEAD_BOUNDARY_RES = [
+  /^\s*Iepriekšējās\s+apskates\s+dati\b/i,
+  /^\s*Nobraukuma\s+vēsture/i,
+  /^\s*Nobraukums\s+ārvalst/i,
+];
+
+/**
+ * Teksts līdz pirmajam vēsturiskās sadaļas / nobraukuma virsrakstam (ieskaitot to neņem).
+ * „Nākamās apskates datums” meklē tikai šeit — ne no nobraukuma tabulas, ne no Iepriekšējās apskates.
+ */
+function sliceTextBeforeNextInspectionHeadBoundary(text: string): string {
+  const lines = text.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const L = lines[i];
+    if (!L.trim()) continue;
+    for (const re of NEXT_INSPECTION_HEAD_BOUNDARY_RES) {
+      if (re.test(L)) return lines.slice(0, i).join("\n");
+    }
+  }
+  return text;
+}
+
+/** Teksts pirms pirmā „Iepriekšējās apskates dati” — lai „Detalizētais vērtējums” netiktu ņemts no vēstures bloka. */
+function sliceTextBeforeIepriekšējāsApskatesSection(text: string): string {
+  const lines = text.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\s*Iepriekšējās\s+apskates\s+dati\b/i.test(lines[i].trim())) {
+      return lines.slice(0, i).join("\n");
+    }
+  }
+  return text;
+}
+
+/** Tikai rindiņa ar atslēgu „Nākamās apskates datums:” augšējā blokā → ISO datums. */
+function extractNextInspectionDateIsoFromHead(headText: string): string | null {
+  const lines = headText.split(/\r?\n/);
+  for (const line of lines) {
+    const m = line.match(/Nākamās\s+apskates\s+datums\s*:\s*(.+)$/i);
+    if (!m?.[1]) continue;
+    const rest = m[1].trim();
+    const dm = rest.match(/\d{2}\.\d{2}\.\d{4}/);
+    if (dm) {
+      const iso = lvDateToIso(dm[0]);
+      return iso || null;
+    }
+    const isoM = rest.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoM) return `${isoM[1]}-${isoM[2]}-${isoM[3]}`;
+  }
+  return null;
+}
+
+function isLikelyStructuredCsddPaste(rawText: string): boolean {
+  if (rawText.length > 200) return true;
+  return (
+    /\bIepriekšējās\s+apskates\s+dati\b/i.test(rawText) ||
+    /\bNobraukuma\s+vēsture/i.test(rawText) ||
+    /\bNobraukums\s+ārvalst/i.test(rawText) ||
+    /\bTehniskie\s+dati\b/i.test(rawText) ||
+    /\bMarka\s*,\s*modelis\b/i.test(rawText)
+  );
+}
+
 /** DD.MM.GGGG → YYYY-MM-DD (HTML date input). */
 export function lvDateToIso(lv: string): string {
   const t = lv.trim();
@@ -107,7 +170,7 @@ function extractRatingBlockAfterDigit(
   return block.join("\n").trim() || null;
 }
 
-/** Primāri „Detalizētais vērtējums:”, citādi „Novērtējums:”. */
+/** Primāri „Detalizētais vērtējums:”, citādi „Novērtējums:”. Ievadi — tikai teksts pirms „Iepriekšējās apskates dati”. */
 function extractDetalizētaisVērtējums(text: string): string | null {
   const lines = text.split(/\r?\n/);
   for (let i = 0; i < lines.length; i++) {
@@ -281,13 +344,6 @@ export function parseMileageAbroadBlock(text: string): CsddMileageAbroadRow[] {
   return rows;
 }
 
-/** Pirmās tabulas rindas datums → Nākamās apskates datums (ISO). */
-export function firstMileageRowDateToNextInspectionIso(rows: CsddMileageHistoryRow[]): string | null {
-  const first = rows[0];
-  if (!first?.date?.trim()) return null;
-  return lvDateToIso(first.date);
-}
-
 type CsddPasteStringKey = Exclude<
   keyof CsddFormFields,
   "rawUnprocessedData" | "mileageHistoryLv" | "mileageHistoryAbroad" | "detailedRatingRows" | "prevInspectionDefectRows"
@@ -302,6 +358,10 @@ export type CsddPasteParseResult = {
   prevInspectionDefectRows: CsddDefectRow[] | null;
 };
 
+/**
+ * Parsēšana no augšas uz leju: vispirms augšējā bloka lauki un „Detalizētais vērtējums”
+ * (tikai pirms „Iepriekšējās apskates dati”), tad atsevišķi nobraukums un vēstures tabula.
+ */
 export function parseCsddPaste(raw: string): CsddPasteParseResult {
   const fieldUpdates: Partial<Pick<CsddFormFields, CsddPasteStringKey>> = {};
 
@@ -332,7 +392,8 @@ export function parseCsddPaste(raw: string): CsddPasteParseResult {
   const tax = extractRoadTaxEur(raw);
   if (tax) fieldUpdates.roadTaxYearly = tax;
 
-  const det = extractDetalizētaisVērtējums(raw);
+  const textBeforePrevSection = sliceTextBeforeIepriekšējāsApskatesSection(raw);
+  const det = extractDetalizētaisVērtējums(textBeforePrevSection);
   const detailedRatingRows =
     det && det.trim() ? parseDefectRowsFromText(det) : null;
 
@@ -342,8 +403,8 @@ export function parseCsddPaste(raw: string): CsddPasteParseResult {
 
   const mileageHistoryLv = parseMileageHistoryLvBlock(raw);
   const mileageHistoryAbroad = parseMileageAbroadBlock(raw);
-  const nextInspectionIso =
-    mileageHistoryLv.length > 0 ? firstMileageRowDateToNextInspectionIso(mileageHistoryLv) : null;
+  const headForNextInspection = sliceTextBeforeNextInspectionHeadBoundary(raw);
+  const nextInspectionIso = extractNextInspectionDateIsoFromHead(headForNextInspection);
 
   return {
     fieldUpdates,
@@ -381,6 +442,8 @@ export function applyCsddPasteToForm(
 
   if (parsed.nextInspectionIso) {
     next.nextInspectionDate = parsed.nextInspectionIso;
+  } else if (isLikelyStructuredCsddPaste(rawText)) {
+    next.nextInspectionDate = "";
   }
 
   if (parsed.detailedRatingRows !== null && parsed.detailedRatingRows.length > 0) {
