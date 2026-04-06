@@ -10,9 +10,43 @@ import {
   finalizeMileageHistory,
 } from "@/lib/admin-source-blocks";
 import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
+import {
+  getNextInspectionDateUiFlag,
+  getParticulateMatterUiFlag,
+  type CsddFieldUiFlag,
+} from "@/lib/csdd-ui-flags";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
+
+function flagBorderClass(flag: CsddFieldUiFlag): string {
+  if (flag === "red") return "border-red-500 ring-1 ring-red-500/20";
+  if (flag === "yellow") return "border-amber-400 ring-1 ring-amber-400/25";
+  return "";
+}
+
+function FieldWarningIcon({ flag }: { flag: Exclude<CsddFieldUiFlag, "none"> }) {
+  const cls = flag === "red" ? "text-red-600" : "text-amber-500";
+  return (
+    <span className={`inline-flex shrink-0 ${cls}`} aria-hidden>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+        <path d="M12 9v4" />
+        <path d="M12 17h.01" />
+      </svg>
+    </span>
+  );
+}
 
 const dateKeys = new Set<keyof CsddFormFields>([
   "firstRegistration",
@@ -92,12 +126,70 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {CSDD_FORM_STRUCTURED_FIELDS.map(({ key, label }) => {
           const strVal = value[key] as string;
+          const isFlagField = key === "particulateMatter" || key === "nextInspectionDate";
+          let flag: CsddFieldUiFlag = "none";
+          let flagTitle = "";
+          if (key === "particulateMatter") {
+            flag = getParticulateMatterUiFlag(strVal);
+            if (flag === "red") flagTitle = "Brīdinājums: vērtība virs 1 000 000.";
+            else if (flag === "yellow") flagTitle = "Brīdinājums: vērtība virs 100 000.";
+          } else if (key === "nextInspectionDate") {
+            flag = getNextInspectionDateUiFlag(strVal);
+            if (flag === "red")
+              flagTitle =
+                "Brīdinājums: apskates datums nokavēts vai līdz tam mazāk par 30 dienām.";
+            else if (flag === "yellow") flagTitle = "Brīdinājums: līdz apskatei mazāk par 90 dienām.";
+          }
+          const showFlag = isFlagField && flag !== "none";
+          const flaggedInputClass = `${inp} min-w-0 flex-1 ${showFlag ? flagBorderClass(flag) : ""}`;
+
           return (
             <div key={key} className="min-w-0">
               <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">{label}</label>
               {readOnly ? (
-                <div className="min-h-[28px] whitespace-pre-wrap rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] text-[var(--color-provin-muted)]">
-                  {strVal.trim() ? strVal : <span className="text-slate-400">—</span>}
+                isFlagField ? (
+                  <div
+                    className={`flex min-h-[28px] min-w-0 items-center gap-1 rounded-md border bg-white px-2 py-1 text-[11px] text-[var(--color-provin-muted)] ${
+                      showFlag ? flagBorderClass(flag) : "border-slate-200/90"
+                    }`}
+                    title={flagTitle || undefined}
+                  >
+                    <span className="min-w-0 flex-1 whitespace-pre-wrap">
+                      {strVal.trim() ? strVal : <span className="text-slate-400">—</span>}
+                    </span>
+                    {showFlag && (
+                      <FieldWarningIcon flag={flag === "red" ? "red" : "yellow"} />
+                    )}
+                  </div>
+                ) : (
+                  <div className="min-h-[28px] whitespace-pre-wrap rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] text-[var(--color-provin-muted)]">
+                    {strVal.trim() ? strVal : <span className="text-slate-400">—</span>}
+                  </div>
+                )
+              ) : isFlagField ? (
+                <div className="flex min-w-0 items-center gap-1" title={flagTitle || undefined}>
+                  {dateKeys.has(key) ? (
+                    <input
+                      type="date"
+                      className={flaggedInputClass}
+                      value={strVal}
+                      disabled={disabled}
+                      onChange={(e) => setField(key, e.target.value)}
+                      aria-label={label}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      className={flaggedInputClass}
+                      value={strVal}
+                      disabled={disabled}
+                      onChange={(e) => setField(key, e.target.value)}
+                      aria-label={label}
+                    />
+                  )}
+                  {showFlag && (
+                    <FieldWarningIcon flag={flag === "red" ? "red" : "yellow"} />
+                  )}
                 </div>
               ) : dateKeys.has(key) ? (
                 <input
