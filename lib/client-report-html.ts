@@ -8,10 +8,8 @@ import { amountToIntRough } from "@/lib/claim-rows-parse";
 import {
   citiAvotiHasContent,
   CSDD_FORM_SHORT_FIELDS,
-  CSDD_MILEAGE_ABROAD_TITLE,
-  CSDD_MILEAGE_HISTORY_TITLE,
+  CSDD_MILEAGE_UNIFIED_TITLE,
   csddFormHasContent,
-  csddMileageAbroadRowHasData,
   csddMileageRowHasData,
   LISTING_ANALYSIS_SUBSECTIONS,
   SOURCE_BLOCK_LABELS,
@@ -183,31 +181,17 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
     if (regRows.length > 0) {
       bodyParts.push(`<table class="mirror-table mirror-table--csdd"><tbody>${regRows.join("\n")}</tbody></table>`);
     }
-    const mhRows = f.mileageHistoryLv.filter(csddMileageRowHasData);
+    const mhRows = f.mileageHistory.filter(csddMileageRowHasData);
     if (mhRows.length > 0) {
-      const head = `<tr><th>Datums</th><th>Odometrs</th></tr>`;
+      const head = `<tr><th>Datums</th><th>Odometrs (km)</th><th>Valsts</th></tr>`;
       const body = mhRows
-        .map(
-          (r) =>
-            `<tr><td>${escapeHtml(r.date.trim())}</td><td>${escapeHtml(r.odometer.trim())}</td></tr>`,
-        )
+        .map((r) => {
+          const country = r.country.trim() || "—";
+          return `<tr><td>${escapeHtml(r.date.trim())}</td><td>${escapeHtml(r.odometer.trim())}</td><td>${escapeHtml(country)}</td></tr>`;
+        })
         .join("\n");
       bodyParts.push(
-        `<p class="pdf-field-label pdf-field-label--sub">${escapeHtml(CSDD_MILEAGE_HISTORY_TITLE)}</p>`,
-      );
-      bodyParts.push(`<table class="mirror-table mirror-table--csdd-mh"><thead>${head}</thead><tbody>${body}</tbody></table>`);
-    }
-    const maRows = f.mileageHistoryAbroad.filter(csddMileageAbroadRowHasData);
-    if (maRows.length > 0) {
-      const head = `<tr><th>Datums</th><th>Odometrs</th></tr>`;
-      const body = maRows
-        .map(
-          (r) =>
-            `<tr><td>${escapeHtml(r.date.trim())}</td><td>${escapeHtml(r.odometer.trim())}</td></tr>`,
-        )
-        .join("\n");
-      bodyParts.push(
-        `<p class="pdf-field-label pdf-field-label--sub">${escapeHtml(CSDD_MILEAGE_ABROAD_TITLE)}</p>`,
+        `<p class="pdf-field-label pdf-field-label--sub">${escapeHtml(CSDD_MILEAGE_UNIFIED_TITLE)}</p>`,
       );
       bodyParts.push(`<table class="mirror-table mirror-table--csdd-mh"><thead>${head}</thead><tbody>${body}</tbody></table>`);
     }

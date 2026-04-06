@@ -1,13 +1,12 @@
 "use client";
 
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
-import type { CsddFormFields, CsddMileageAbroadRow, CsddMileageHistoryRow } from "@/lib/admin-source-blocks";
+import type { CsddFormFields, CsddMileageRow } from "@/lib/admin-source-blocks";
 import {
   CSDD_FORM_SHORT_FIELDS,
-  CSDD_MILEAGE_ABROAD_TITLE,
-  CSDD_MILEAGE_HISTORY_TITLE,
-  emptyCsddMileageAbroadRow,
+  CSDD_MILEAGE_UNIFIED_TITLE,
   emptyCsddMileageRow,
+  sortMileageHistoryDescending,
 } from "@/lib/admin-source-blocks";
 import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
 
@@ -33,40 +32,22 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
     onChange(applyCsddPasteToForm(value, raw, parsed));
   };
 
-  const lvRows = value.mileageHistoryLv.length > 0 ? value.mileageHistoryLv : [emptyCsddMileageRow()];
-  const abroadRows =
-    value.mileageHistoryAbroad.length > 0 ? value.mileageHistoryAbroad : [emptyCsddMileageAbroadRow()];
+  const mileageRows =
+    value.mileageHistory.length > 0 ? value.mileageHistory : [emptyCsddMileageRow()];
 
-  const setMileage = (index: number, patch: Partial<CsddMileageHistoryRow>) => {
-    const base = value.mileageHistoryLv.length > 0 ? [...value.mileageHistoryLv] : [emptyCsddMileageRow()];
+  const setMileage = (index: number, patch: Partial<CsddMileageRow>) => {
+    const base = value.mileageHistory.length > 0 ? [...value.mileageHistory] : [emptyCsddMileageRow()];
     const row = base[index] ?? emptyCsddMileageRow();
     base[index] = { ...row, ...patch };
-    onChange({ ...value, mileageHistoryLv: base });
+    onChange({ ...value, mileageHistory: sortMileageHistoryDescending(base) });
   };
 
   const addMileageRow = () => {
     const base =
-      value.mileageHistoryLv.length > 0 ? value.mileageHistoryLv : [emptyCsddMileageRow()];
+      value.mileageHistory.length > 0 ? value.mileageHistory : [emptyCsddMileageRow()];
     onChange({
       ...value,
-      mileageHistoryLv: [...base, emptyCsddMileageRow()],
-    });
-  };
-
-  const setAbroad = (index: number, patch: Partial<CsddMileageAbroadRow>) => {
-    const base =
-      value.mileageHistoryAbroad.length > 0 ? [...value.mileageHistoryAbroad] : [emptyCsddMileageAbroadRow()];
-    const row = base[index] ?? emptyCsddMileageAbroadRow();
-    base[index] = { ...row, ...patch };
-    onChange({ ...value, mileageHistoryAbroad: base });
-  };
-
-  const addAbroadRow = () => {
-    const base =
-      value.mileageHistoryAbroad.length > 0 ? value.mileageHistoryAbroad : [emptyCsddMileageAbroadRow()];
-    onChange({
-      ...value,
-      mileageHistoryAbroad: [...base, emptyCsddMileageAbroadRow()],
+      mileageHistory: sortMileageHistoryDescending([...base, emptyCsddMileageRow()]),
     });
   };
 
@@ -139,18 +120,19 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
 
       <div className="mt-3 border-t border-slate-200/80 pt-2">
         <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
-          {CSDD_MILEAGE_HISTORY_TITLE}
+          {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
         <div className="overflow-x-auto rounded-lg border border-slate-200/90">
-          <table className="w-full min-w-[240px] border-collapse text-[11px]">
+          <table className="w-full min-w-[280px] border-collapse text-[11px]">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
                 <th className="px-2 py-1">Datums</th>
-                <th className="px-2 py-1">Odometrs</th>
+                <th className="px-2 py-1">Odometrs (km)</th>
+                <th className="px-2 py-1">Valsts</th>
               </tr>
             </thead>
             <tbody>
-              {lvRows.map((row, i) => (
+              {mileageRows.map((row, i) => (
                 <tr key={i} className="border-b border-slate-100 last:border-b-0">
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
@@ -162,7 +144,7 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
                         value={row.date}
                         disabled={disabled}
                         onChange={(e) => setMileage(i, { date: e.target.value })}
-                        aria-label={`Nobraukuma vēsture datums rinda ${i + 1}`}
+                        aria-label={`Nobraukuma datums rinda ${i + 1}`}
                       />
                     )}
                   </td>
@@ -181,6 +163,20 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
                       />
                     )}
                   </td>
+                  <td className="px-2 py-1 align-top">
+                    {readOnly ? (
+                      <span className="text-[var(--color-provin-muted)]">{row.country.trim() || "—"}</span>
+                    ) : (
+                      <input
+                        type="text"
+                        className={inp}
+                        value={row.country}
+                        disabled={disabled}
+                        onChange={(e) => setMileage(i, { country: e.target.value })}
+                        aria-label={`Valsts rinda ${i + 1}`}
+                      />
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -191,66 +187,6 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
             type="button"
             className="mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
             onClick={addMileageRow}
-          >
-            + Rinda
-          </button>
-        )}
-      </div>
-
-      <div className="mt-3 border-t border-slate-200/80 pt-2">
-        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
-          {CSDD_MILEAGE_ABROAD_TITLE}
-        </p>
-        <div className="overflow-x-auto rounded-lg border border-slate-200/90">
-          <table className="w-full min-w-[240px] border-collapse text-[11px]">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
-                <th className="px-2 py-1">Datums</th>
-                <th className="px-2 py-1">Odometrs</th>
-              </tr>
-            </thead>
-            <tbody>
-              {abroadRows.map((row, i) => (
-                <tr key={i} className="border-b border-slate-100 last:border-b-0">
-                  <td className="px-2 py-1 align-top">
-                    {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{row.date.trim() || "—"}</span>
-                    ) : (
-                      <input
-                        type="text"
-                        className={inp}
-                        value={row.date}
-                        disabled={disabled}
-                        onChange={(e) => setAbroad(i, { date: e.target.value })}
-                        aria-label={`Nobraukums ārvalstīs datums rinda ${i + 1}`}
-                      />
-                    )}
-                  </td>
-                  <td className="px-2 py-1 align-top">
-                    {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{row.odometer.trim() || "—"}</span>
-                    ) : (
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        className={inp}
-                        value={row.odometer}
-                        disabled={disabled}
-                        onChange={(e) => setAbroad(i, { odometer: e.target.value })}
-                        aria-label={`Nobraukums ārvalstīs odometrs rinda ${i + 1}`}
-                      />
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {!readOnly && !disabled && (
-          <button
-            type="button"
-            className="mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
-            onClick={addAbroadRow}
           >
             + Rinda
           </button>

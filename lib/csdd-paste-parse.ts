@@ -1,12 +1,14 @@
 /**
- * CSDD „Smart Paste” — tikai apskates datumi (augša) + nobraukuma tabulas (Datums | Odometrs).
+ * CSDD „Smart Paste” — apskates datumi (augša) + apvienota nobraukuma tabula (Datums | Odometrs | Valsts).
  */
 
 import {
+  CSDD_MILEAGE_COUNTRY_LV,
   emptyCsddFields,
+  normalizeOdometerFromPaste,
+  sortMileageHistoryDescending,
   type CsddFormFields,
-  type CsddMileageAbroadRow,
-  type CsddMileageHistoryRow,
+  type CsddMileageRow,
 } from "@/lib/admin-source-blocks";
 
 /** Rindas, pēc kurām „Nākamās / Iepriekšējās apskates datums” vairs nedrīkst ņemt. */
@@ -82,10 +84,6 @@ export function lvDateToIso(lv: string): string {
   return `${y}-${mo}-${d}`;
 }
 
-function digitsOnly(s: string): string {
-  return s.replace(/[^\d]/g, "");
-}
-
 function isCsddSectionHeaderLine(line: string): boolean {
   const t = line.trim();
   if (!t) return false;
@@ -111,21 +109,24 @@ function looksLikeSectionHeader(line: string): boolean {
   return false;
 }
 
-function pushLvRow(rows: CsddMileageHistoryRow[], date: string, odometerRaw: string): void {
-  const odometer = digitsOnly(odometerRaw) || odometerRaw.trim();
-  rows.push({ date, odometer });
+function pushLvRow(rows: CsddMileageRow[], date: string, odometerRaw: string): void {
+  rows.push({
+    date,
+    odometer: normalizeOdometerFromPaste(odometerRaw),
+    country: CSDD_MILEAGE_COUNTRY_LV,
+  });
 }
 
 /**
- * „Nobraukuma vēsture LV” — Datums | Odometrs (trešā kolonna, ja ir, tiek ignorēta).
+ * „Nobraukuma vēsture LV” — Datums | Odometrs; valsts = Latvija.
  */
-export function parseMileageHistoryLvBlock(text: string): CsddMileageHistoryRow[] {
+export function parseMileageHistoryLvBlock(text: string): CsddMileageRow[] {
   const lines = text.split(/\r?\n/);
-  const rows: CsddMileageHistoryRow[] = [];
+  const rows: CsddMileageRow[] = [];
 
   let i = 0;
   while (i < lines.length) {
-    if (/Nobraukuma\s+vēsture\s+LV/i.test(lines[i])) {
+    if (/Nobraukuma\s+vēsture(?:\s+LV)?/i.test(lines[i])) {
       i++;
       while (i < lines.length) {
         const L0 = lines[i].trim();
@@ -162,11 +163,11 @@ export function parseMileageHistoryLvBlock(text: string): CsddMileageHistoryRow[
 }
 
 /**
- * „Nobraukums ārvalstīs” — Datums | Odometrs (papildu kolonnas ignorētas).
+ * „Nobraukums ārvalstīs” — Datums | Odometrs | Valsts (trešā kolonna).
  */
-export function parseMileageAbroadBlock(text: string): CsddMileageAbroadRow[] {
+export function parseMileageAbroadBlock(text: string): CsddMileageRow[] {
   const lines = text.split(/\r?\n/);
-  const rows: CsddMileageAbroadRow[] = [];
+  const rows: CsddMileageRow[] = [];
 
   let i = 0;
   while (i < lines.length) {
@@ -187,18 +188,31 @@ export function parseMileageAbroadBlock(text: string): CsddMileageAbroadRow[] {
         const L = L0;
         const tabs = L.split("\t").map((c) => c.trim());
         if (tabs.length >= 2 && /^\d{2}\.\d{2}\.\d{4}$/.test(tabs[0])) {
+          const country =
+            tabs.length >= 3 ? tabs.slice(2).join(" ").trim() : "";
           rows.push({
             date: tabs[0],
-            odometer: digitsOnly(tabs[1]) || tabs[1].trim(),
+            odometer: normalizeOdometerFromPaste(tabs[1] ?? ""),
+            country,
           });
           i++;
           continue;
         }
         const sp = L.split(/\s+/).filter(Boolean);
+        if (sp.length >= 3 && /^\d{2}\.\d{2}\.\d{4}$/.test(sp[0])) {
+          rows.push({
+            date: sp[0],
+            odometer: normalizeOdometerFromPaste(sp[1] ?? ""),
+            country: sp.slice(2).join(" ").trim(),
+          });
+          i++;
+          continue;
+        }
         if (sp.length >= 2 && /^\d{2}\.\d{2}\.\d{4}$/.test(sp[0])) {
           rows.push({
             date: sp[0],
-            odometer: digitsOnly(sp[1]) || sp[1],
+            odometer: normalizeOdometerFromPaste(sp[1] ?? ""),
+            country: "",
           });
           i++;
           continue;
@@ -213,21 +227,20 @@ export function parseMileageAbroadBlock(text: string): CsddMileageAbroadRow[] {
 }
 
 export type CsddPasteParseResult = {
-  mileageHistoryLv: CsddMileageHistoryRow[];
-  mileageHistoryAbroad: CsddMileageAbroadRow[];
+  mileageHistory: CsddMileageRow[];
   nextInspectionIso: string | null;
   prevInspectionIso: string | null;
 };
 
 export function parseCsddPaste(raw: string): CsddPasteParseResult {
-  const mileageHistoryLv = parseMileageHistoryLvBlock(raw);
-  const mileageHistoryAbroad = parseMileageAbroadBlock(raw);
+  const fromLv = parseMileageHistoryLvBlock(raw);
+  const fromAbroad = parseMileageAbroadBlock(raw);
+  const mileageHistory = sortMileageHistoryDescending([...fromLv, ...fromAbroad]);
   const headForDates = sliceTextBeforeNextInspectionHeadBoundary(raw);
   const nextInspectionIso = extractNextInspectionDateIsoFromHead(headForDates);
   const prevInspectionIso = extractPrevInspectionDateIsoFromHead(headForDates);
   return {
-    mileageHistoryLv,
-    mileageHistoryAbroad,
+    mileageHistory,
     nextInspectionIso,
     prevInspectionIso,
   };
@@ -259,7 +272,6 @@ export function applyCsddPasteToForm(
     rawUnprocessedData: rawText,
     nextInspectionDate,
     prevInspectionDate,
-    mileageHistoryLv: parsed.mileageHistoryLv,
-    mileageHistoryAbroad: parsed.mileageHistoryAbroad,
+    mileageHistory: parsed.mileageHistory,
   };
 }

@@ -64,20 +64,27 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
 /** Avotu virsraksta teksta izmērs admin UI (11px, saskaņots ar laukiem). */
 export const SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS = "text-[11px]";
 
-/** Nobraukuma vēsture LV — Datums | Odometrs. */
+/** Vienota nobraukuma rinda: LV ierakstiem valsts = „Latvija”. */
+export type CsddMileageRow = {
+  date: string;
+  odometer: string;
+  country: string;
+};
+
+/** Nobraukuma vēsture LV — Datums | Odometrs (migrācijai no vecā JSON). */
 export type CsddMileageHistoryRow = {
   date: string;
   odometer: string;
 };
 
-/** Nobraukums ārvalstīs — Datums | Odometrs. */
+/** Nobraukums ārvalstīs — migrācijai. */
 export type CsddMileageAbroadRow = {
   date: string;
   odometer: string;
 };
 
 /**
- * CSDD forma: neapstrādātais teksts (tikai admin) + apskates datumi no augšas + nobraukuma tabulas.
+ * CSDD forma: neapstrādātais teksts (tikai admin) + apskates datumi no augšas + apvienota nobraukuma tabula.
  * PDF atspoguļo tikai strukturētos laukus (ne raw).
  */
 export type CsddFormFields = {
@@ -85,8 +92,8 @@ export type CsddFormFields = {
   rawUnprocessedData: string;
   nextInspectionDate: string;
   prevInspectionDate: string;
-  mileageHistoryLv: CsddMileageHistoryRow[];
-  mileageHistoryAbroad: CsddMileageAbroadRow[];
+  /** Hronoloģiski sakārtots (jaunākais augšā): Datums | Odometrs | Valsts. */
+  mileageHistory: CsddMileageRow[];
 };
 
 /** Apskates datumu lauki (PDF + admin). */
@@ -139,36 +146,60 @@ export function emptyCsddFields(): CsddFormFields {
     rawUnprocessedData: "",
     nextInspectionDate: "",
     prevInspectionDate: "",
-    mileageHistoryLv: [],
-    mileageHistoryAbroad: [],
+    mileageHistory: [],
   };
 }
 
-export const CSDD_MILEAGE_HISTORY_TITLE = "Nobraukuma vēsture LV";
-export const CSDD_MILEAGE_ABROAD_TITLE = "Nobraukums ārvalstīs";
+/** Automātiski piešķirama LV ierakstiem. */
+export const CSDD_MILEAGE_COUNTRY_LV = "Latvija";
 
-export function emptyCsddMileageRow(): CsddMileageHistoryRow {
-  return { date: "", odometer: "" };
+export const CSDD_MILEAGE_UNIFIED_TITLE = "Nobraukuma vēsture";
+
+export function emptyCsddMileageRow(): CsddMileageRow {
+  return { date: "", odometer: "", country: CSDD_MILEAGE_COUNTRY_LV };
 }
 
-export function emptyCsddMileageAbroadRow(): CsddMileageAbroadRow {
-  return { date: "", odometer: "" };
-}
-
-export function csddMileageRowHasData(r: CsddMileageHistoryRow): boolean {
+export function csddMileageRowHasData(r: CsddMileageRow): boolean {
   return Boolean(r.date.trim() || r.odometer.trim());
 }
 
-export function csddMileageAbroadRowHasData(r: CsddMileageAbroadRow): boolean {
-  return Boolean(r.date.trim() || r.odometer.trim());
+/** Odometrs no ielīmēta teksta — noņem atstarpes, „km”, atstāj ciparus. */
+export function normalizeOdometerFromPaste(raw: string): string {
+  const t = raw.replace(/\s+/g, " ").trim().replace(/\s*km\s*$/i, "").trim();
+  const digits = t.replace(/[^\d]/g, "");
+  return digits || t;
+}
+
+/** Jaunākie augšā (dilstošā secībā pēc datuma). */
+export function sortMileageHistoryDescending(rows: CsddMileageRow[]): CsddMileageRow[] {
+  return [...rows].sort((a, b) => mileageDateSortKey(b.date) - mileageDateSortKey(a.date));
+}
+
+function mileageDateSortKey(s: string): number {
+  const t = s.trim();
+  const dm = t.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (dm) {
+    const d = Number(dm[1]);
+    const mo = Number(dm[2]);
+    const y = Number(dm[3]);
+    if (d >= 1 && d <= 31 && mo >= 1 && mo <= 12 && y >= 1900 && y <= 2100) {
+      return new Date(y, mo - 1, d).getTime();
+    }
+    return 0;
+  }
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) {
+    const ts = new Date(t).getTime();
+    return Number.isNaN(ts) ? 0 : ts;
+  }
+  return 0;
 }
 
 /** Strukturētie lauki PDF atskaitei (bez raw). */
 export function csddFormHasContent(f: CsddFormFields): boolean {
   return (
     CSDD_FORM_SHORT_FIELDS.some(({ key }) => (f[key] as string).trim().length > 0) ||
-    f.mileageHistoryLv.some(csddMileageRowHasData) ||
-    f.mileageHistoryAbroad.some(csddMileageAbroadRowHasData)
+    f.mileageHistory.some(csddMileageRowHasData)
   );
 }
 
@@ -179,18 +210,15 @@ export function csddFormToPlainText(f: CsddFormFields): string {
     const v = (f[key] as string).trim();
     if (v) lines.push(`${label} ${v}`);
   }
-  const mh = f.mileageHistoryLv.filter(csddMileageRowHasData);
+  const mh = f.mileageHistory.filter(csddMileageRowHasData);
   if (mh.length > 0) {
-    lines.push(CSDD_MILEAGE_HISTORY_TITLE);
+    lines.push(CSDD_MILEAGE_UNIFIED_TITLE);
     for (const row of mh) {
-      lines.push([row.date, row.odometer].map((c) => c.replace(/\s+/g, " ").trim()).join("\t"));
-    }
-  }
-  const ma = f.mileageHistoryAbroad.filter(csddMileageAbroadRowHasData);
-  if (ma.length > 0) {
-    lines.push(CSDD_MILEAGE_ABROAD_TITLE);
-    for (const row of ma) {
-      lines.push([row.date, row.odometer].map((c) => c.replace(/\s+/g, " ").trim()).join("\t"));
+      lines.push(
+        [row.date, row.odometer, row.country]
+          .map((c) => c.replace(/\s+/g, " ").trim())
+          .join("\t"),
+      );
     }
   }
   if (f.rawUnprocessedData.trim()) lines.push(f.rawUnprocessedData.trim());
@@ -511,16 +539,60 @@ function parseCsddMileageAbroadRaw(raw: unknown): CsddMileageAbroadRow[] {
   return rows;
 }
 
+function parseCsddMileageUnifiedRaw(raw: unknown): CsddMileageRow[] {
+  if (!Array.isArray(raw)) return [];
+  const rows: CsddMileageRow[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const x = row as Record<string, unknown>;
+    const country =
+      "country" in x ? String(x.country ?? "").slice(0, 120).trim() : CSDD_MILEAGE_COUNTRY_LV;
+    rows.push({
+      date: String(x.date ?? "").slice(0, 120),
+      odometer: String(x.odometer ?? "").slice(0, 120),
+      country,
+    });
+  }
+  return rows;
+}
+
+/** Vecā JSON struktūra → apvienots masīvs; ārvalstu rindām bez valsts — tukša (PDF: „—”). */
+function mergeLegacyMileageArrays(
+  lv: CsddMileageHistoryRow[],
+  abroad: CsddMileageAbroadRow[],
+): CsddMileageRow[] {
+  const out: CsddMileageRow[] = [];
+  for (const r of lv) {
+    if (!r.date.trim() && !r.odometer.trim()) continue;
+    out.push({ date: r.date, odometer: r.odometer, country: CSDD_MILEAGE_COUNTRY_LV });
+  }
+  for (const r of abroad) {
+    if (!r.date.trim() && !r.odometer.trim()) continue;
+    out.push({ date: r.date, odometer: r.odometer, country: "" });
+  }
+  return sortMileageHistoryDescending(out);
+}
+
 function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
   const clip = (v: unknown) => String(v ?? "").slice(0, 4000);
-  const mileage = parseCsddMileageHistoryRaw(raw.mileageHistoryLv);
-  const mileageAbroad = parseCsddMileageAbroadRaw(raw.mileageHistoryAbroad);
-  return {
+  const base = {
     rawUnprocessedData: clip(raw.rawUnprocessedData),
     nextInspectionDate: clip(raw.nextInspectionDate),
     prevInspectionDate: clip(raw.prevInspectionDate),
-    mileageHistoryLv: mileage.length > 0 ? mileage : [],
-    mileageHistoryAbroad: mileageAbroad.length > 0 ? mileageAbroad : [],
+  };
+  if ("mileageHistory" in raw && Array.isArray(raw.mileageHistory)) {
+    const unified = parseCsddMileageUnifiedRaw(raw.mileageHistory).filter(csddMileageRowHasData);
+    return {
+      ...base,
+      mileageHistory: unified.length > 0 ? sortMileageHistoryDescending(unified) : [],
+    };
+  }
+  const mileage = parseCsddMileageHistoryRaw(raw.mileageHistoryLv);
+  const mileageAbroad = parseCsddMileageAbroadRaw(raw.mileageHistoryAbroad);
+  const merged = mergeLegacyMileageArrays(mileage, mileageAbroad);
+  return {
+    ...base,
+    mileageHistory: merged,
   };
 }
 
@@ -561,6 +633,7 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
       "fields" in c ||
       "rawUnprocessedData" in c ||
       "nextInspectionDate" in c ||
+      "mileageHistory" in c ||
       "mileageHistoryLv" in c ||
       "mileageHistoryAbroad" in c ||
       "makeModel" in c ||
