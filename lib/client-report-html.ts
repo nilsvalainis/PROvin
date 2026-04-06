@@ -7,28 +7,31 @@ import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis
 import { amountToIntRough } from "@/lib/claim-rows-parse";
 import {
   citiAvotiHasContent,
-  LISTING_ANALYSIS_SUBSECTIONS,
-  SOURCE_BLOCK_LABELS,
-  listingAnalysisHasContent,
-  type ClientManualLtabBlockPdf,
-  type ClientManualVendorBlockPdf,
-  type CitiAvotiBlockState,
-  type CsddFormFields,
-  type ListingAnalysisBlockState,
-  type TirgusFormFields,
-} from "@/lib/admin-source-blocks";
-import {
+  CSDD_DEFECT_COL_CODE,
+  CSDD_DEFECT_COL_DEFECTS,
+  CSDD_DEFECT_COL_RATING,
   CSDD_FORM_SHORT_FIELDS,
   CSDD_LABEL_DETAILED_RATING,
   CSDD_LABEL_PREV_INSPECTION_DATA,
   CSDD_MILEAGE_HISTORY_TITLE,
   CSDD_TECHNICAL_COMPACT_KEYS,
   csddFormHasContent,
+  LISTING_ANALYSIS_SUBSECTIONS,
+  SOURCE_BLOCK_LABELS,
+  listingAnalysisHasContent,
   TIRGUS_LABEL_CREATED,
   TIRGUS_LABEL_LISTED,
   TIRGUS_LABEL_PRICE_DROP,
   tirgusFormHasContent,
+  type ClientManualLtabBlockPdf,
+  type ClientManualVendorBlockPdf,
+  type CitiAvotiBlockState,
+  type CsddDefectRow,
+  type CsddFormFields,
+  type ListingAnalysisBlockState,
+  type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
+import { defectRowHasData } from "@/lib/csdd-defect-parse";
 import {
   buildPdfAdminMirrorClientBlock,
   buildPdfAdminMirrorNotesBlock,
@@ -179,6 +182,23 @@ function wrapPdfAvotuStack(cardHtml: string, islandHtml: string): string {
 
 const CSDD_TECH_KEYS_SET = new Set<string>(CSDD_TECHNICAL_COMPACT_KEYS);
 
+function buildCsddDefectTableHtml(rows: CsddDefectRow[], variant: "current" | "historic"): string {
+  const filtered = rows.filter(defectRowHasData);
+  if (filtered.length === 0) return "";
+  const th = `<tr><th>${escapeHtml(CSDD_DEFECT_COL_CODE)}</th><th>${escapeHtml(CSDD_DEFECT_COL_RATING)}</th><th>${escapeHtml(CSDD_DEFECT_COL_DEFECTS)}</th></tr>`;
+  const tb = filtered
+    .map(
+      (r) =>
+        `<tr><td>${escapeHtml(r.code.trim())}</td><td>${escapeHtml(r.rating.trim())}</td><td>${escapeHtml(r.defects.trim())}</td></tr>`,
+    )
+    .join("\n");
+  const cls =
+    variant === "historic"
+      ? "mirror-table mirror-table--csdd-defect mirror-table--csdd-defect-historic"
+      : "mirror-table mirror-table--csdd-defect mirror-table--csdd-defect-current";
+  return `<table class="${cls}"><thead>${th}</thead><tbody>${tb}</tbody></table>`;
+}
+
 /** Tehniskie lauki (kW, masas, dūmainība) — viena kompakta rinda (2–3 vērtības). */
 function buildCsddTechnicalCompactRowHtml(f: CsddFormFields): string | null {
   const kw = f.enginePowerKw.trim();
@@ -223,13 +243,18 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
     if (regRows.length > 0) {
       bodyParts.push(`<table class="mirror-table mirror-table--csdd"><tbody>${regRows.join("\n")}</tbody></table>`);
     }
-    if (f.prevInspectionRating.trim()) {
+    if (f.detailedRatingRows.some(defectRowHasData)) {
+      bodyParts.push(`<p class="pdf-field-label">${escapeHtml(CSDD_LABEL_DETAILED_RATING)}</p>`);
+      bodyParts.push(buildCsddDefectTableHtml(f.detailedRatingRows, "current"));
+    } else if (f.prevInspectionRating.trim()) {
       bodyParts.push(`<p class="pdf-field-label">${escapeHtml(CSDD_LABEL_DETAILED_RATING)}</p>`);
       bodyParts.push(`<pre class="mirror-pre mirror-pre--csdd-dense">${escapeHtml(f.prevInspectionRating.trim())}</pre>`);
     }
-    if (f.prevInspectionData.trim()) {
-      bodyParts.push(`<p class="pdf-field-label">${escapeHtml(CSDD_LABEL_PREV_INSPECTION_DATA)}</p>`);
-      bodyParts.push(`<pre class="mirror-pre mirror-pre--csdd-dense">${escapeHtml(f.prevInspectionData.trim())}</pre>`);
+    if (f.prevInspectionDefectRows.some(defectRowHasData)) {
+      bodyParts.push(
+        `<p class="pdf-field-label pdf-field-label--historic">${escapeHtml(CSDD_LABEL_PREV_INSPECTION_DATA)}</p>`,
+      );
+      bodyParts.push(buildCsddDefectTableHtml(f.prevInspectionDefectRows, "historic"));
     }
     const mhRows = f.mileageHistoryLv.filter(
       (r) => r.date.trim() || r.odometer.trim() || r.distance.trim(),
@@ -610,6 +635,14 @@ function clientReportPrintCss(): string {
       .pdf-csdd-tech-line:last-child{margin-bottom:0;}
       .pdf-csdd-tech-bit{color:#1d1d1f;}
       .mirror-pre--csdd-dense{font-size:9pt!important;line-height:1.3!important;margin:0 0 4px!important;}
+      .pdf-field-label--historic{color:#64748b!important;}
+      .mirror-table--csdd-defect-current{font-size:9pt!important;margin:2px 0 6px!important;}
+      .mirror-table--csdd-defect-current td,.mirror-table--csdd-defect-current th{padding:3px 5px!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;}
+      .mirror-table--csdd-defect-historic{font-size:8pt!important;margin:2px 0 4px!important;color:#64748b!important;}
+      .mirror-table--csdd-defect-historic td,.mirror-table--csdd-defect-historic th{
+        padding:2px 4px!important;line-height:1.2!important;border-bottom:1px solid #eef2f7!important;
+        color:#64748b!important;
+      }
       .mirror-table--csdd-mh{font-size:9pt!important;margin:2px 0 4px!important;}
       .mirror-table--csdd-mh td,.mirror-table--csdd-mh th{padding:3px 4px!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;}
       .mirror-table--csdd-mh thead th{font-size:9pt!important;}

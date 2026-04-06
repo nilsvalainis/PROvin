@@ -3,6 +3,7 @@
  */
 
 import type { CsddFormFields, CsddMileageHistoryRow } from "@/lib/admin-source-blocks";
+import { parseDefectRowsFromText, type CsddDefectRow } from "@/lib/csdd-defect-parse";
 
 const LABEL_LINE_RE =
   /^[A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž0-9][^:\n]{0,80}:\s*\S/;
@@ -232,12 +233,17 @@ export function firstMileageRowDateToNextInspectionIso(rows: CsddMileageHistoryR
   return lvDateToIso(first.date);
 }
 
-type CsddPasteStringKey = Exclude<keyof CsddFormFields, "rawUnprocessedData" | "mileageHistoryLv">;
+type CsddPasteStringKey = Exclude<
+  keyof CsddFormFields,
+  "rawUnprocessedData" | "mileageHistoryLv" | "detailedRatingRows" | "prevInspectionDefectRows"
+>;
 
 export type CsddPasteParseResult = {
   fieldUpdates: Partial<Pick<CsddFormFields, CsddPasteStringKey>>;
   mileageHistoryLv: CsddMileageHistoryRow[];
   nextInspectionIso: string | null;
+  detailedRatingRows: CsddDefectRow[] | null;
+  prevInspectionDefectRows: CsddDefectRow[] | null;
 };
 
 export function parseCsddPaste(raw: string): CsddPasteParseResult {
@@ -271,16 +277,18 @@ export function parseCsddPaste(raw: string): CsddPasteParseResult {
   if (tax) fieldUpdates.roadTaxYearly = tax;
 
   const det = extractDetalizētaisVērtējums(raw);
-  if (det) fieldUpdates.prevInspectionRating = det;
+  const detailedRatingRows =
+    det && det.trim() ? parseDefectRowsFromText(det) : null;
 
   const ip = extractIepriekšējāsApskatesDati(raw);
-  if (ip) fieldUpdates.prevInspectionData = ip;
+  const prevInspectionDefectRows =
+    ip && ip.trim() ? parseDefectRowsFromText(ip) : null;
 
   const mileageHistoryLv = parseMileageHistoryLvBlock(raw);
   const nextInspectionIso =
     mileageHistoryLv.length > 0 ? firstMileageRowDateToNextInspectionIso(mileageHistoryLv) : null;
 
-  return { fieldUpdates, mileageHistoryLv, nextInspectionIso };
+  return { fieldUpdates, mileageHistoryLv, nextInspectionIso, detailedRatingRows, prevInspectionDefectRows };
 }
 
 export function applyCsddPasteToForm(
@@ -305,6 +313,15 @@ export function applyCsddPasteToForm(
 
   if (parsed.nextInspectionIso) {
     next.nextInspectionDate = parsed.nextInspectionIso;
+  }
+
+  if (parsed.detailedRatingRows !== null && parsed.detailedRatingRows.length > 0) {
+    next.detailedRatingRows = parsed.detailedRatingRows;
+    next.prevInspectionRating = "";
+  }
+
+  if (parsed.prevInspectionDefectRows !== null && parsed.prevInspectionDefectRows.length > 0) {
+    next.prevInspectionDefectRows = parsed.prevInspectionDefectRows;
   }
 
   return next;

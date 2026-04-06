@@ -2,6 +2,22 @@
  * Strukturēti avotu bloki admin portfelī → sintēze uz PDF / km / VIN heuristiku.
  */
 
+import { defectRowHasData, parseDefectRowsFromText, type CsddDefectRow } from "@/lib/csdd-defect-parse";
+
+export type { CsddDefectRow } from "@/lib/csdd-defect-parse";
+export { emptyCsddDefectRow } from "@/lib/csdd-defect-parse";
+
+function defectRowsToPlainText(rows: CsddDefectRow[]): string {
+  if (!rows.some(defectRowHasData)) return "";
+  return rows
+    .filter(defectRowHasData)
+    .map((r) => {
+      const bits = [r.code.trim(), r.rating.trim(), r.defects.trim()].filter(Boolean);
+      return bits.join("\n");
+    })
+    .join("\n\n");
+}
+
 export const SOURCE_BLOCK_KEYS = [
   "csdd",
   "autodna",
@@ -86,10 +102,12 @@ export type CsddFormFields = {
   solidParticlesCm3: string;
   nextInspectionDate: string;
   prevInspectionDate: string;
-  /** CSDD „Detalizētais vērtējums” (iepriekšējā nosaukuma lauks JSON: prevInspectionRating). */
+  /** CSDD „Detalizētais vērtējums” — brīvais teksts (migrācijai); ja ir detailedRatingRows, tie ir primāri. */
   prevInspectionRating: string;
-  /** Bloks „Iepriekšējās apskates dati” — kods, novērtējums, trūkumi; tukšs → nav PDF. */
-  prevInspectionData: string;
+  /** Aktuālā apskate: Kods | Novērtējums | Trūkumi. */
+  detailedRatingRows: CsddDefectRow[];
+  /** Vēsturiskie defekti no „Iepriekšējās apskates dati”. */
+  prevInspectionDefectRows: CsddDefectRow[];
   comments: string;
   mileageHistoryLv: CsddMileageHistoryRow[];
 };
@@ -118,6 +136,10 @@ export const CSDD_LABEL_DETAILED_RATING = "Detalizētais vērtējums:";
 export const CSDD_LABEL_PREV_RATING = CSDD_LABEL_DETAILED_RATING;
 /** Apakšvirsraksts blokam „Iepriekšējās apskates dati”. */
 export const CSDD_LABEL_PREV_INSPECTION_DATA = "Iepriekšējās apskates dati";
+/** PDF / admin tabulu kolonnas (defektu rindas). */
+export const CSDD_DEFECT_COL_CODE = "Kods";
+export const CSDD_DEFECT_COL_RATING = "Novērtējums";
+export const CSDD_DEFECT_COL_DEFECTS = "Trūkumi vai bojājumi";
 export const CSDD_LABEL_COMMENTS = "Komentāri:";
 
 /** Lauki, ko PDF kārto vienā kompaktā tehniskajā rindā (2–3 vērtības). */
@@ -179,7 +201,8 @@ export function emptyCsddFields(): CsddFormFields {
     nextInspectionDate: "",
     prevInspectionDate: "",
     prevInspectionRating: "",
-    prevInspectionData: "",
+    detailedRatingRows: [],
+    prevInspectionDefectRows: [],
     comments: "",
     mileageHistoryLv: [],
   };
@@ -199,7 +222,8 @@ export function csddFormHasContent(f: CsddFormFields): boolean {
   return (
     CSDD_FORM_SHORT_FIELDS.some(({ key }) => (f[key] as string).trim().length > 0) ||
     f.prevInspectionRating.trim().length > 0 ||
-    f.prevInspectionData.trim().length > 0 ||
+    f.detailedRatingRows.some(defectRowHasData) ||
+    f.prevInspectionDefectRows.some(defectRowHasData) ||
     f.comments.trim().length > 0 ||
     f.mileageHistoryLv.some(csddMileageRowHasData)
   );
@@ -225,8 +249,11 @@ export function csddFormToPlainText(f: CsddFormFields): string {
       lines.push(cells);
     }
   }
-  if (f.prevInspectionRating.trim()) lines.push(`${CSDD_LABEL_DETAILED_RATING}\n${f.prevInspectionRating.trim()}`);
-  if (f.prevInspectionData.trim()) lines.push(`${CSDD_LABEL_PREV_INSPECTION_DATA}\n${f.prevInspectionData.trim()}`);
+  const detPlain =
+    f.detailedRatingRows.some(defectRowHasData) ? defectRowsToPlainText(f.detailedRatingRows) : f.prevInspectionRating.trim();
+  if (detPlain) lines.push(`${CSDD_LABEL_DETAILED_RATING}\n${detPlain}`);
+  const histPlain = defectRowsToPlainText(f.prevInspectionDefectRows);
+  if (histPlain) lines.push(`${CSDD_LABEL_PREV_INSPECTION_DATA}\n${histPlain}`);
   if (f.comments.trim()) lines.push(`${CSDD_LABEL_COMMENTS}\n${f.comments.trim()}`);
   return lines.join("\n");
 }
@@ -532,9 +559,42 @@ function parseCsddMileageHistoryRaw(raw: unknown): CsddMileageHistoryRow[] {
   return rows;
 }
 
+function parseDefectRowsArray(raw: unknown): CsddDefectRow[] {
+  if (!Array.isArray(raw)) return [];
+  const out: CsddDefectRow[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const x = row as Record<string, unknown>;
+    out.push({
+      code: String(x.code ?? "").slice(0, 120),
+      rating: String(x.rating ?? "").slice(0, 2000),
+      defects: String(x.defects ?? "").slice(0, 8000),
+    });
+  }
+  return out;
+}
+
+function mergeDefectRowsFromLegacy(rows: CsddDefectRow[], legacy: string): CsddDefectRow[] {
+  if (rows.some(defectRowHasData)) return rows;
+  const t = legacy.trim();
+  if (!t) return [];
+  return parseDefectRowsFromText(t);
+}
+
 function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
   const clip = (v: unknown) => String(v ?? "").slice(0, 4000);
   const mileage = parseCsddMileageHistoryRaw(raw.mileageHistoryLv);
+  const prevInspectionRating = clip(raw.prevInspectionRating);
+  const legacyPrevData =
+    typeof raw.prevInspectionData === "string" ? clip(raw.prevInspectionData) : "";
+  const detailedRatingRows = mergeDefectRowsFromLegacy(
+    parseDefectRowsArray(raw.detailedRatingRows),
+    prevInspectionRating,
+  );
+  const prevInspectionDefectRows = mergeDefectRowsFromLegacy(
+    parseDefectRowsArray(raw.prevInspectionDefectRows),
+    legacyPrevData,
+  );
   return {
     rawUnprocessedData: clip(raw.rawUnprocessedData),
     makeModel: clip(raw.makeModel),
@@ -548,8 +608,9 @@ function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
     solidParticlesCm3: clip(raw.solidParticlesCm3),
     nextInspectionDate: clip(raw.nextInspectionDate),
     prevInspectionDate: clip(raw.prevInspectionDate),
-    prevInspectionRating: clip(raw.prevInspectionRating),
-    prevInspectionData: clip(raw.prevInspectionData),
+    prevInspectionRating,
+    detailedRatingRows,
+    prevInspectionDefectRows,
     comments: clip(raw.comments),
     mileageHistoryLv: mileage.length > 0 ? mileage : [],
   };
