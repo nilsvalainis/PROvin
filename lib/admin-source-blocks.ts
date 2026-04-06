@@ -86,7 +86,10 @@ export type CsddFormFields = {
   solidParticlesCm3: string;
   nextInspectionDate: string;
   prevInspectionDate: string;
+  /** CSDD „Detalizētais vērtējums” (iepriekšējā nosaukuma lauks JSON: prevInspectionRating). */
   prevInspectionRating: string;
+  /** Bloks „Iepriekšējās apskates dati” — kods, novērtējums, trūkumi; tukšs → nav PDF. */
+  prevInspectionData: string;
   comments: string;
   mileageHistoryLv: CsddMileageHistoryRow[];
 };
@@ -109,8 +112,21 @@ export const CSDD_FORM_SHORT_FIELDS: {
   { key: "prevInspectionDate", label: "Iepriekšējās apskates datums:" },
 ];
 
-export const CSDD_LABEL_PREV_RATING = "Iepriekšējās apskates vērtējums:";
+/** PDF / admin — precīzs CSDD avota nosaukums. */
+export const CSDD_LABEL_DETAILED_RATING = "Detalizētais vērtējums:";
+/** @deprecated Lietot CSDD_LABEL_DETAILED_RATING */
+export const CSDD_LABEL_PREV_RATING = CSDD_LABEL_DETAILED_RATING;
+/** Apakšvirsraksts blokam „Iepriekšējās apskates dati”. */
+export const CSDD_LABEL_PREV_INSPECTION_DATA = "Iepriekšējās apskates dati";
 export const CSDD_LABEL_COMMENTS = "Komentāri:";
+
+/** Lauki, ko PDF kārto vienā kompaktā tehniskajā rindā (2–3 vērtības). */
+export const CSDD_TECHNICAL_COMPACT_KEYS = [
+  "enginePowerKw",
+  "grossMassKg",
+  "curbWeightKg",
+  "solidParticlesCm3",
+] as const satisfies readonly (keyof CsddFormFields)[];
 
 /** Tirgus dati — admin un PDF etiķetes (precīzi). */
 export type TirgusFormFields = {
@@ -163,6 +179,7 @@ export function emptyCsddFields(): CsddFormFields {
     nextInspectionDate: "",
     prevInspectionDate: "",
     prevInspectionRating: "",
+    prevInspectionData: "",
     comments: "",
     mileageHistoryLv: [],
   };
@@ -182,6 +199,7 @@ export function csddFormHasContent(f: CsddFormFields): boolean {
   return (
     CSDD_FORM_SHORT_FIELDS.some(({ key }) => (f[key] as string).trim().length > 0) ||
     f.prevInspectionRating.trim().length > 0 ||
+    f.prevInspectionData.trim().length > 0 ||
     f.comments.trim().length > 0 ||
     f.mileageHistoryLv.some(csddMileageRowHasData)
   );
@@ -207,7 +225,8 @@ export function csddFormToPlainText(f: CsddFormFields): string {
       lines.push(cells);
     }
   }
-  if (f.prevInspectionRating.trim()) lines.push(`${CSDD_LABEL_PREV_RATING}\n${f.prevInspectionRating.trim()}`);
+  if (f.prevInspectionRating.trim()) lines.push(`${CSDD_LABEL_DETAILED_RATING}\n${f.prevInspectionRating.trim()}`);
+  if (f.prevInspectionData.trim()) lines.push(`${CSDD_LABEL_PREV_INSPECTION_DATA}\n${f.prevInspectionData.trim()}`);
   if (f.comments.trim()) lines.push(`${CSDD_LABEL_COMMENTS}\n${f.comments.trim()}`);
   return lines.join("\n");
 }
@@ -530,6 +549,7 @@ function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
     nextInspectionDate: clip(raw.nextInspectionDate),
     prevInspectionDate: clip(raw.prevInspectionDate),
     prevInspectionRating: clip(raw.prevInspectionRating),
+    prevInspectionData: clip(raw.prevInspectionData),
     comments: clip(raw.comments),
     mileageHistoryLv: mileage.length > 0 ? mileage : [],
   };

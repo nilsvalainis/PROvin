@@ -19,8 +19,10 @@ import {
 } from "@/lib/admin-source-blocks";
 import {
   CSDD_FORM_SHORT_FIELDS,
-  CSDD_LABEL_PREV_RATING,
+  CSDD_LABEL_DETAILED_RATING,
+  CSDD_LABEL_PREV_INSPECTION_DATA,
   CSDD_MILEAGE_HISTORY_TITLE,
+  CSDD_TECHNICAL_COMPACT_KEYS,
   csddFormHasContent,
   TIRGUS_LABEL_CREATED,
   TIRGUS_LABEL_LISTED,
@@ -175,6 +177,26 @@ function wrapPdfAvotuStack(cardHtml: string, islandHtml: string): string {
   return `<div class="pdf-avotu-block-wrap">${cardHtml}${islandHtml}</div>`;
 }
 
+const CSDD_TECH_KEYS_SET = new Set<string>(CSDD_TECHNICAL_COMPACT_KEYS);
+
+/** Tehniskie lauki (kW, masas, dūmainība) — viena kompakta rinda (2–3 vērtības). */
+function buildCsddTechnicalCompactRowHtml(f: CsddFormFields): string | null {
+  const kw = f.enginePowerKw.trim();
+  const gross = f.grossMassKg.trim();
+  const curb = f.curbWeightKg.trim();
+  const solid = f.solidParticlesCm3.trim();
+  const chunks: string[] = [];
+  if (kw) chunks.push(`<span class="pdf-csdd-tech-bit">kW: ${escapeHtml(kw)}</span>`);
+  if (gross) chunks.push(`<span class="pdf-csdd-tech-bit">Pilna masa: ${escapeHtml(gross)} kg</span>`);
+  if (curb) chunks.push(`<span class="pdf-csdd-tech-bit">Pašmasa: ${escapeHtml(curb)} kg</span>`);
+  const line1 = chunks.length > 0 ? `<div class="pdf-csdd-tech-line">${chunks.join(" · ")}</div>` : "";
+  const line2 = solid
+    ? `<div class="pdf-csdd-tech-line">Atgāzu cietās daļiņas (cm⁻³): ${formatCsddSolidParticlesCell(solid)}</div>`
+    : "";
+  if (!line1 && !line2) return null;
+  return `<tr><td colspan="2" class="pdf-csdd-tech-compact">${line1}${line2}</td></tr>`;
+}
+
 /** CSDD — Colored Header + datu ķermenis; komentāri atsevišķi zem kartes. */
 function buildCsddAvotuSubsection(p: ClientReportPayload): string {
   const hasStruct = Boolean(p.csddForm && csddFormHasContent(p.csddForm));
@@ -188,20 +210,26 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
     const bodyParts: string[] = [];
     const regRows: string[] = [];
     for (const { key, label } of CSDD_FORM_SHORT_FIELDS) {
+      if (CSDD_TECH_KEYS_SET.has(key)) continue;
       const v = (f[key] as string).trim();
       if (!v) continue;
       let cellHtml: string;
-      if (key === "solidParticlesCm3") cellHtml = formatCsddSolidParticlesCell(v);
-      else if (key === "nextInspectionDate") cellHtml = formatCsddNextInspectionCell(v);
+      if (key === "nextInspectionDate") cellHtml = formatCsddNextInspectionCell(v);
       else cellHtml = escapeHtml(v);
       regRows.push(`<tr><td>${escapeHtml(label)}</td><td>${cellHtml}</td></tr>`);
     }
+    const techRow = buildCsddTechnicalCompactRowHtml(f);
+    if (techRow) regRows.push(techRow);
     if (regRows.length > 0) {
       bodyParts.push(`<table class="mirror-table mirror-table--csdd"><tbody>${regRows.join("\n")}</tbody></table>`);
     }
     if (f.prevInspectionRating.trim()) {
-      bodyParts.push(`<p class="pdf-field-label">${escapeHtml(CSDD_LABEL_PREV_RATING)}</p>`);
-      bodyParts.push(`<pre class="mirror-pre">${escapeHtml(f.prevInspectionRating.trim())}</pre>`);
+      bodyParts.push(`<p class="pdf-field-label">${escapeHtml(CSDD_LABEL_DETAILED_RATING)}</p>`);
+      bodyParts.push(`<pre class="mirror-pre mirror-pre--csdd-dense">${escapeHtml(f.prevInspectionRating.trim())}</pre>`);
+    }
+    if (f.prevInspectionData.trim()) {
+      bodyParts.push(`<p class="pdf-field-label">${escapeHtml(CSDD_LABEL_PREV_INSPECTION_DATA)}</p>`);
+      bodyParts.push(`<pre class="mirror-pre mirror-pre--csdd-dense">${escapeHtml(f.prevInspectionData.trim())}</pre>`);
     }
     const mhRows = f.mileageHistoryLv.filter(
       (r) => r.date.trim() || r.odometer.trim() || r.distance.trim(),
@@ -574,6 +602,17 @@ function clientReportPrintCss(): string {
         width:54%;min-width:14em;max-width:62%;white-space:nowrap;color:#86868b;
       }
       .mirror-table--csdd td:nth-child(2){text-align:right;}
+      .mirror-table--csdd td.pdf-csdd-tech-compact{
+        width:auto;max-width:none;white-space:normal;padding:4px 0 6px;
+        font-size:9pt;line-height:1.25;color:#1d1d1f;text-align:left;border-bottom:1px solid #f1f5f9;
+      }
+      .pdf-csdd-tech-line{font-size:9pt;line-height:1.25;margin:0 0 3px;}
+      .pdf-csdd-tech-line:last-child{margin-bottom:0;}
+      .pdf-csdd-tech-bit{color:#1d1d1f;}
+      .mirror-pre--csdd-dense{font-size:9pt!important;line-height:1.3!important;margin:0 0 4px!important;}
+      .mirror-table--csdd-mh{font-size:9pt!important;margin:2px 0 4px!important;}
+      .mirror-table--csdd-mh td,.mirror-table--csdd-mh th{padding:3px 4px!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;}
+      .mirror-table--csdd-mh thead th{font-size:9pt!important;}
       .tabular{font-variant-numeric:tabular-nums;}
       .pdf-iriss-approved{
         margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #bfdbfe;

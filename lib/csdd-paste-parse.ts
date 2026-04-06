@@ -87,36 +87,87 @@ function extractRoadTaxEur(text: string): string | null {
 }
 
 /**
- * Novērtējums: — viss teksts pēc pirmā skaitļa (piem. „1 - Ar pieļaujamiem…”).
+ * „Detalizētais vērtējums:“ / „Novērtējums:“ — teksts pēc pirmā skaitļa rindas sākumā.
  */
-function extractNovertejums(text: string): string | null {
-  const lines = text.split(/\r?\n/);
-  let start = -1;
-  for (let i = 0; i < lines.length; i++) {
-    if (/^\s*Novērtējums\s*:/i.test(lines[i])) {
-      start = i;
-      break;
-    }
-  }
-  if (start < 0) return null;
-  const firstLine = lines[start].replace(/^\s*Novērtējums\s*:\s*/i, "").trim();
+function extractRatingBlockAfterDigit(
+  lines: string[],
+  startIdx: number,
+  stripHeaderRe: RegExp,
+): string | null {
+  const firstLine = lines[startIdx].replace(stripHeaderRe, "").trim();
   const afterNum = firstLine.replace(/^\d+\s*/, "").trim();
   const block: string[] = afterNum ? [afterNum] : [];
-  for (let j = start + 1; j < lines.length; j++) {
+  for (let j = startIdx + 1; j < lines.length; j++) {
     const L = lines[j];
     if (!L.trim()) break;
     if (LABEL_LINE_RE.test(L.trim())) break;
     block.push(L.trim());
   }
-  const out = block.join("\n").trim();
-  return out || null;
+  return block.join("\n").trim() || null;
+}
+
+/** Primāri „Detalizētais vērtējums:”, citādi „Novērtējums:”. */
+function extractDetalizētaisVērtējums(text: string): string | null {
+  const lines = text.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\s*Detalizētais\s+vērtējums\s*:/i.test(lines[i])) {
+      return extractRatingBlockAfterDigit(lines, i, /^\s*Detalizētais\s+vērtējums\s*:\s*/i);
+    }
+  }
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\s*Novērtējums\s*:/i.test(lines[i])) {
+      return extractRatingBlockAfterDigit(lines, i, /^\s*Novērtējums\s*:\s*/i);
+    }
+  }
+  return null;
+}
+
+function isCsddSectionHeaderLine(line: string): boolean {
+  const t = line.trim();
+  if (!t) return false;
+  return (
+    /^Nobraukuma\s+vēsture/i.test(t) ||
+    /^Tehniskie\s+dati/i.test(t) ||
+    /^Detalizētais\s+vērtējums/i.test(t) ||
+    /^Novērtējums\s*:/i.test(t) ||
+    /^Iepriekšējās\s+apskates\s+dati\b/i.test(t) ||
+    /^Ceļa\s+nodoklis/i.test(t) ||
+    /^Marka\s*,\s*modelis/i.test(t) ||
+    /^Pirmās\s+reģistrācijas/i.test(t)
+  );
+}
+
+/** Bloks pēc virsraksta „Iepriekšējās apskates dati”. */
+function extractIepriekšējāsApskatesDati(text: string): string | null {
+  const lines = text.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^\s*Iepriekšējās\s+apskates\s+dati\b/i.test(lines[i].trim())) continue;
+    const out: string[] = [];
+    for (let j = i + 1; j < lines.length; j++) {
+      const L = lines[j];
+      const t = L.trim();
+      if (!t) {
+        let k = j + 1;
+        while (k < lines.length && !lines[k].trim()) k++;
+        if (k < lines.length && isCsddSectionHeaderLine(lines[k])) break;
+        out.push(L);
+        continue;
+      }
+      if (isCsddSectionHeaderLine(L)) break;
+      out.push(L);
+    }
+    const s = out.join("\n").trim();
+    return s || null;
+  }
+  return null;
 }
 
 function looksLikeSectionHeader(line: string): boolean {
   const t = line.trim();
   if (!t) return false;
   if (/Nobraukuma\s+vēsture/i.test(t)) return false;
-  if (/^(Tehniskie dati|Ceļa nodoklis|Iepriekšējās)/i.test(t)) return true;
+  if (isCsddSectionHeaderLine(line)) return true;
+  if (/^(Tehniskie dati|Ceļa nodoklis)/i.test(t)) return true;
   return false;
 }
 
@@ -219,8 +270,11 @@ export function parseCsddPaste(raw: string): CsddPasteParseResult {
   const tax = extractRoadTaxEur(raw);
   if (tax) fieldUpdates.roadTaxYearly = tax;
 
-  const nov = extractNovertejums(raw);
-  if (nov) fieldUpdates.prevInspectionRating = nov;
+  const det = extractDetalizētaisVērtējums(raw);
+  if (det) fieldUpdates.prevInspectionRating = det;
+
+  const ip = extractIepriekšējāsApskatesDati(raw);
+  if (ip) fieldUpdates.prevInspectionData = ip;
 
   const mileageHistoryLv = parseMileageHistoryLvBlock(raw);
   const nextInspectionIso =
