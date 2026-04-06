@@ -10,7 +10,7 @@ type Props = {
   children: ReactNode;
 };
 
-/** Kopīga josla ar lineāru gradientu un „shine” slāņiem (PDF stila analogs). */
+/** Kopīga josla ar lineāru gradientu (bez atsevišķa „shine” overlay). */
 export function AdminGradientHeaderBar({
   gradient,
   className = "",
@@ -22,14 +22,6 @@ export function AdminGradientHeaderBar({
       <div
         className="absolute inset-0 z-0"
         style={{ background: gradient, WebkitPrintColorAdjust: "exact" }}
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(105deg,transparent_0%,rgba(255,255,255,0.1)_40%,rgba(255,255,255,0.26)_50%,transparent_100%)]"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,transparent_45%)]"
         aria-hidden
       />
       <div className={`relative z-[1] flex items-center gap-2 ${contentClassName}`}>{children}</div>
