@@ -223,14 +223,16 @@ export function sortMileageHistoryDescending(rows: CsddMileageRow[]): CsddMileag
 }
 
 /**
- * Viena hronoloģiska vēsture: LV + ārvalstu rindas → dublikātu noņemšana → DESC.
- * Dublikāts = vienāds **datums + odometrs + valsts** (`mileageDedupKey`). Valsts netiek aizstāta ar „Latvija”.
+ * Viena hronoloģiska vēsture: apvieno LV + ārvalstu masīvus.
+ * 1) Ja vienāds datums+odometrs vairākos ierakstos → saglabā to ar **konkrētu valsti**, nevis „Latvija”, ja tāda ir.
+ * 2) Pēc tam precīzi dublikāti (datums+odometrs+valsts) tiek noņemti.
  */
 export function finalizeMileageHistory(rows: CsddMileageRow[]): CsddMileageRow[] {
   const withData = rows.filter(csddMileageRowHasData);
+  const merged = mergeDuplicateDateKmPreferNonLv(withData);
   const seen = new Set<string>();
   const deduped: CsddMileageRow[] = [];
-  for (const r of withData) {
+  for (const r of merged) {
     const k = mileageDedupKey(r);
     if (seen.has(k)) continue;
     seen.add(k);
@@ -239,7 +241,38 @@ export function finalizeMileageHistory(rows: CsddMileageRow[]): CsddMileageRow[]
   return sortMileageHistoryDescending(deduped);
 }
 
-/** Unikālā atslēga: datums + odometrs + valsts (ne tikai datums+odometrs). */
+/** Atslēga: datums + odometrs (bez valsts) — saplūdināšanai, ja abi bloki dod vienu un to pašu dienu/km. */
+function mileageDedupKeyDateKm(r: CsddMileageRow): string {
+  const ts = mileageDateSortKey(r.date);
+  const km = normalizeOdometerFromPaste(r.odometer);
+  if (ts !== 0) return `${ts}|${km}`;
+  return `0|${r.date.trim().replace(/\s+/g, "")}|${km}`;
+}
+
+function mergeDuplicateDateKmPreferNonLv(rows: CsddMileageRow[]): CsddMileageRow[] {
+  const map = new Map<string, CsddMileageRow[]>();
+  for (const r of rows) {
+    const k = mileageDedupKeyDateKm(r);
+    const arr = map.get(k) ?? [];
+    arr.push(r);
+    map.set(k, arr);
+  }
+  const out: CsddMileageRow[] = [];
+  for (const group of map.values()) {
+    if (group.length === 1) {
+      out.push(group[0]!);
+      continue;
+    }
+    const specific = group.find(
+      (r) => r.country.trim() && r.country.trim() !== CSDD_MILEAGE_COUNTRY_LV,
+    );
+    if (specific) out.push(specific);
+    else out.push(group[0]!);
+  }
+  return out;
+}
+
+/** Unikālā atslēga: datums + odometrs + valsts. */
 function mileageDedupKey(r: CsddMileageRow): string {
   const ts = mileageDateSortKey(r.date);
   const km = normalizeOdometerFromPaste(r.odometer);

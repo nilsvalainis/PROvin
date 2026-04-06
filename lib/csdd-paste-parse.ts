@@ -203,6 +203,11 @@ function looksLikeSectionHeader(line: string): boolean {
   return false;
 }
 
+/** Ārvalstu bloka iekšienē — LV sadaļas sākums jāpārtrauc pirms mēģinājuma parsēt rindu kā ārvalstu. */
+function isNobraukumaVestureHeaderLine(line: string): boolean {
+  return /Nobraukuma\s+vēsture/i.test(line.trim());
+}
+
 function pushLvRow(rows: CsddMileageRow[], date: string, odometerRaw: string): void {
   rows.push({
     date,
@@ -212,7 +217,7 @@ function pushLvRow(rows: CsddMileageRow[], date: string, odometerRaw: string): v
 }
 
 /**
- * „Nobraukuma vēsture LV” — Datums | Odometrs; valsts = Latvija.
+ * „Nobraukuma vēsture LV” — viss fails, jebkāda bloku secība; var būt vairāki LV bloki.
  */
 export function parseMileageHistoryLvBlock(text: string): CsddMileageRow[] {
   const lines = text.split(/\r?\n/);
@@ -249,7 +254,7 @@ export function parseMileageHistoryLvBlock(text: string): CsddMileageRow[] {
         }
         break;
       }
-      break;
+      continue;
     }
     i++;
   }
@@ -298,7 +303,7 @@ function parseAbroadSpaceLine(sp: string[]): {
 }
 
 /**
- * „Nobraukums ārvalstīs” — Datums | Odometrs | Valsts (trešā kolonna / regex).
+ * „Nobraukums ārvalstīs” — viss fails, jebkāda secība pret LV; var būt vairāki ārvalstu bloki.
  */
 export function parseMileageAbroadBlock(text: string): CsddMileageRow[] {
   const lines = text.split(/\r?\n/);
@@ -314,6 +319,7 @@ export function parseMileageAbroadBlock(text: string): CsddMileageRow[] {
           i++;
           continue;
         }
+        if (isNobraukumaVestureHeaderLine(L0)) break;
         if (/^\s*(datums|odometrs|avots|valsts|nobraukums)\b/i.test(L0)) {
           i++;
           continue;
@@ -361,7 +367,7 @@ export function parseMileageAbroadBlock(text: string): CsddMileageRow[] {
         }
         break;
       }
-      break;
+      continue;
     }
     i++;
   }
@@ -392,7 +398,8 @@ export function parseCsddPaste(raw: string): CsddPasteParseResult {
     country: CSDD_MILEAGE_COUNTRY_LV,
   }));
   const foreignRecords = parseMileageAbroadBlock(raw);
-  const mileageHistory = finalizeMileageHistory([...lvRecords, ...foreignRecords]);
+  const totalMileage = [...lvRecords, ...foreignRecords];
+  const mileageHistory = finalizeMileageHistory(totalMileage);
   const headForDates = sliceTextBeforeNextInspectionHeadBoundary(raw);
   const nextInspectionIso = extractNextInspectionDateIsoFromHead(headForDates);
   const prevInspectionIso = extractPrevInspectionIsoFromLvFirstRow(raw);
