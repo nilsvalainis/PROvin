@@ -7,20 +7,12 @@ import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis
 import { amountToIntRough } from "@/lib/claim-rows-parse";
 import {
   citiAvotiHasContent,
-  CSDD_DEFECT_COL_CODE,
-  CSDD_DEFECT_COL_DEFECTS,
-  CSDD_DEFECT_COL_RATING,
   CSDD_FORM_SHORT_FIELDS,
-  CSDD_LABEL_DETAILED_RATING,
-  CSDD_LABEL_PREV_INSPECTION_DATA,
   CSDD_MILEAGE_ABROAD_TITLE,
-  CSDD_MILEAGE_COL_SOURCE,
   CSDD_MILEAGE_HISTORY_TITLE,
-  CSDD_TECHNICAL_COMPACT_KEYS,
   csddFormHasContent,
   csddMileageAbroadRowHasData,
   csddMileageRowHasData,
-  takeNewestMileageRowsForPdf,
   LISTING_ANALYSIS_SUBSECTIONS,
   SOURCE_BLOCK_LABELS,
   listingAnalysisHasContent,
@@ -31,12 +23,10 @@ import {
   type ClientManualLtabBlockPdf,
   type ClientManualVendorBlockPdf,
   type CitiAvotiBlockState,
-  type CsddDefectRow,
   type CsddFormFields,
   type ListingAnalysisBlockState,
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
-import { defectRowHasData, parseDefectRowsFromText } from "@/lib/csdd-defect-parse";
 import {
   buildPdfAdminMirrorClientBlock,
   buildPdfAdminMirrorNotesBlock,
@@ -121,22 +111,6 @@ function sectionHead(icon: string, title: string, opts?: { noBar?: boolean }): s
   return `<div class="pdf-sec-head${headExtra}">${icon}<h2 class="pdf-sec${hExtra}">${escapeHtml(title)}</h2></div>`;
 }
 
-function parseSolidParticleNumeric(raw: string): number | null {
-  const digits = raw.replace(/[^\d]/g, "");
-  if (!digits) return null;
-  const n = parseInt(digits, 10);
-  return Number.isNaN(n) ? null : n;
-}
-
-function formatCsddSolidParticlesCell(v: string): string {
-  const esc = escapeHtml(v);
-  const n = parseSolidParticleNumeric(v);
-  if (n == null) return esc;
-  if (n > 1_000_000) return `<span class="pdf-flag-num">${esc}</span>`;
-  if (n >= 200_000 && n <= 1_000_000) return `<span class="pdf-flag-num">${esc}</span>`;
-  return esc;
-}
-
 function formatCsddNextInspectionCell(v: string): string {
   return escapeHtml(v);
 }
@@ -185,44 +159,7 @@ function wrapPdfAvotuStack(cardHtml: string, islandHtml: string): string {
   return `<div class="pdf-avotu-block-wrap">${cardHtml}${islandHtml}</div>`;
 }
 
-const CSDD_TECH_KEYS_SET = new Set<string>(CSDD_TECHNICAL_COMPACT_KEYS);
-
-function buildCsddDefectTableHtml(rows: CsddDefectRow[], variant: "current" | "historic"): string {
-  const filtered = rows.filter(defectRowHasData);
-  if (filtered.length === 0) return "";
-  const th = `<tr><th>${escapeHtml(CSDD_DEFECT_COL_CODE)}</th><th>${escapeHtml(CSDD_DEFECT_COL_RATING)}</th><th>${escapeHtml(CSDD_DEFECT_COL_DEFECTS)}</th></tr>`;
-  const tb = filtered
-    .map(
-      (r) =>
-        `<tr><td>${escapeHtml(r.code.trim())}</td><td>${escapeHtml(r.rating.trim())}</td><td>${escapeHtml(r.defects.trim())}</td></tr>`,
-    )
-    .join("\n");
-  const cls =
-    variant === "historic"
-      ? "mirror-table mirror-table--csdd-defect mirror-table--csdd-defect-historic"
-      : "mirror-table mirror-table--csdd-defect mirror-table--csdd-defect-current";
-  return `<table class="${cls}"><thead>${th}</thead><tbody>${tb}</tbody></table>`;
-}
-
-/** Tehniskie lauki (kW, masas, dūmainība) — viena kompakta rinda (2–3 vērtības). */
-function buildCsddTechnicalCompactRowHtml(f: CsddFormFields): string | null {
-  const kw = f.enginePowerKw.trim();
-  const gross = f.grossMassKg.trim();
-  const curb = f.curbWeightKg.trim();
-  const solid = f.solidParticlesCm3.trim();
-  const chunks: string[] = [];
-  if (kw) chunks.push(`<span class="pdf-csdd-tech-bit">kW: ${escapeHtml(kw)}</span>`);
-  if (gross) chunks.push(`<span class="pdf-csdd-tech-bit">Pilna masa: ${escapeHtml(gross)} kg</span>`);
-  if (curb) chunks.push(`<span class="pdf-csdd-tech-bit">Pašmasa: ${escapeHtml(curb)} kg</span>`);
-  const line1 = chunks.length > 0 ? `<div class="pdf-csdd-tech-line">${chunks.join(" · ")}</div>` : "";
-  const line2 = solid
-    ? `<div class="pdf-csdd-tech-line">Atgāzu cietās daļiņas (cm⁻³): ${formatCsddSolidParticlesCell(solid)}</div>`
-    : "";
-  if (!line1 && !line2) return null;
-  return `<tr><td colspan="2" class="pdf-csdd-tech-compact">${line1}${line2}</td></tr>`;
-}
-
-/** CSDD — Colored Header + datu ķermenis; komentāri atsevišķi zem kartes. */
+/** CSDD — apskates datumi + nobraukuma tabulas (pilns eksports); raw nav PDF. */
 function buildCsddAvotuSubsection(p: ClientReportPayload): string {
   const hasStruct = Boolean(p.csddForm && csddFormHasContent(p.csddForm));
   const hasRaw = p.csdd.trim().length > 0;
@@ -235,46 +172,24 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
     const bodyParts: string[] = [];
     const regRows: string[] = [];
     for (const { key, label } of CSDD_FORM_SHORT_FIELDS) {
-      if (CSDD_TECH_KEYS_SET.has(key)) continue;
       const v = (f[key] as string).trim();
       if (!v) continue;
-      let cellHtml: string;
-      if (key === "nextInspectionDate" || key === "prevInspectionDate") cellHtml = formatCsddNextInspectionCell(v);
-      else cellHtml = escapeHtml(v);
+      const cellHtml =
+        key === "nextInspectionDate" || key === "prevInspectionDate"
+          ? formatCsddNextInspectionCell(v)
+          : escapeHtml(v);
       regRows.push(`<tr><td>${escapeHtml(label)}</td><td>${cellHtml}</td></tr>`);
     }
-    const techRow = buildCsddTechnicalCompactRowHtml(f);
-    if (techRow) regRows.push(techRow);
     if (regRows.length > 0) {
       bodyParts.push(`<table class="mirror-table mirror-table--csdd"><tbody>${regRows.join("\n")}</tbody></table>`);
     }
-    if (f.detailedRatingRows.some(defectRowHasData)) {
-      bodyParts.push(`<p class="pdf-field-label">${escapeHtml(CSDD_LABEL_DETAILED_RATING)}</p>`);
-      bodyParts.push(buildCsddDefectTableHtml(f.detailedRatingRows, "current"));
-    } else if (f.prevInspectionRating.trim()) {
-      const legacyParsed = parseDefectRowsFromText(f.prevInspectionRating);
-      bodyParts.push(`<p class="pdf-field-label">${escapeHtml(CSDD_LABEL_DETAILED_RATING)}</p>`);
-      if (legacyParsed.some(defectRowHasData)) {
-        bodyParts.push(buildCsddDefectTableHtml(legacyParsed, "current"));
-      } else {
-        bodyParts.push(
-          `<pre class="mirror-pre mirror-pre--csdd-dense">${escapeHtml(f.prevInspectionRating.trim())}</pre>`,
-        );
-      }
-    }
-    if (f.prevInspectionDefectRows.some(defectRowHasData)) {
-      bodyParts.push(
-        `<p class="pdf-field-label pdf-field-label--historic">${escapeHtml(CSDD_LABEL_PREV_INSPECTION_DATA)}</p>`,
-      );
-      bodyParts.push(buildCsddDefectTableHtml(f.prevInspectionDefectRows, "historic"));
-    }
-    const mhRows = takeNewestMileageRowsForPdf(f.mileageHistoryLv, csddMileageRowHasData);
+    const mhRows = f.mileageHistoryLv.filter(csddMileageRowHasData);
     if (mhRows.length > 0) {
-      const head = `<tr><th>Datums</th><th>Odometrs</th><th>Nobraukums</th></tr>`;
+      const head = `<tr><th>Datums</th><th>Odometrs</th></tr>`;
       const body = mhRows
         .map(
           (r) =>
-            `<tr><td>${escapeHtml(r.date.trim())}</td><td>${escapeHtml(r.odometer.trim())}</td><td>${escapeHtml(r.distance.trim())}</td></tr>`,
+            `<tr><td>${escapeHtml(r.date.trim())}</td><td>${escapeHtml(r.odometer.trim())}</td></tr>`,
         )
         .join("\n");
       bodyParts.push(
@@ -282,13 +197,13 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
       );
       bodyParts.push(`<table class="mirror-table mirror-table--csdd-mh"><thead>${head}</thead><tbody>${body}</tbody></table>`);
     }
-    const maRows = takeNewestMileageRowsForPdf(f.mileageHistoryAbroad, csddMileageAbroadRowHasData);
+    const maRows = f.mileageHistoryAbroad.filter(csddMileageAbroadRowHasData);
     if (maRows.length > 0) {
-      const head = `<tr><th>Datums</th><th>Odometrs</th><th>${escapeHtml(CSDD_MILEAGE_COL_SOURCE)}</th></tr>`;
+      const head = `<tr><th>Datums</th><th>Odometrs</th></tr>`;
       const body = maRows
         .map(
           (r) =>
-            `<tr><td>${escapeHtml(r.date.trim())}</td><td>${escapeHtml(r.odometer.trim())}</td><td>${escapeHtml(r.source.trim())}</td></tr>`,
+            `<tr><td>${escapeHtml(r.date.trim())}</td><td>${escapeHtml(r.odometer.trim())}</td></tr>`,
         )
         .join("\n");
       bodyParts.push(
@@ -301,7 +216,7 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
       bodyHtml.trim() === ""
         ? `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`
         : `<div class="pdf-avotu-card pdf-avotu-card--neutral">${header}<div class="pdf-avotu-body">${bodyHtml}</div></div>`;
-    return wrapPdfAvotuStack(card, f.comments.trim() ? pdfAvotuCommentIsland(f.comments) : "");
+    return card;
   }
 
   const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral">${header}<div class="pdf-avotu-body"><pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre></div></div>`;
@@ -725,7 +640,9 @@ export function buildClientReportDocumentHtml(args: {
         );
 
   const makeModel =
-    p.csddForm?.makeModel?.trim() || extractVehicleMakeModel(p.csdd) || null;
+    extractVehicleMakeModel(p.csddForm?.rawUnprocessedData ?? "") ||
+    extractVehicleMakeModel(p.csdd) ||
+    null;
 
   const lines: string[] = [];
   lines.push('<div class="sheet">');

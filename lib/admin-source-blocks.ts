@@ -2,22 +2,6 @@
  * Strukturēti avotu bloki admin portfelī → sintēze uz PDF / km / VIN heuristiku.
  */
 
-import { defectRowHasData, parseDefectRowsFromText, type CsddDefectRow } from "@/lib/csdd-defect-parse";
-
-export type { CsddDefectRow } from "@/lib/csdd-defect-parse";
-export { emptyCsddDefectRow } from "@/lib/csdd-defect-parse";
-
-function defectRowsToPlainText(rows: CsddDefectRow[]): string {
-  if (!rows.some(defectRowHasData)) return "";
-  return rows
-    .filter(defectRowHasData)
-    .map((r) => {
-      const bits = [r.code.trim(), r.rating.trim(), r.defects.trim()].filter(Boolean);
-      return bits.join("\n");
-    })
-    .join("\n\n");
-}
-
 export const SOURCE_BLOCK_KEYS = [
   "csdd",
   "autodna",
@@ -80,86 +64,39 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
 /** Avotu virsraksta teksta izmērs admin UI (11px, saskaņots ar laukiem). */
 export const SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS = "text-[11px]";
 
-/** Nobraukuma vēsture LV — viena rinda (admin + PDF tabula). */
+/** Nobraukuma vēsture LV — Datums | Odometrs. */
 export type CsddMileageHistoryRow = {
   date: string;
   odometer: string;
-  distance: string;
 };
 
-/** Nobraukums ārvalstīs — Datums | Odometrs | Avots/Valsts. */
+/** Nobraukums ārvalstīs — Datums | Odometrs. */
 export type CsddMileageAbroadRow = {
   date: string;
   odometer: string;
-  source: string;
 };
 
-/** CSDD statiskā forma — lauku atslēgas. */
+/**
+ * CSDD forma: neapstrādātais teksts (tikai admin) + apskates datumi no augšas + nobraukuma tabulas.
+ * PDF atspoguļo tikai strukturētos laukus (ne raw).
+ */
 export type CsddFormFields = {
-  /** Tikai admin panelis — ielīmētais neapstrādātais teksts; netiek drukāts PDF. */
+  /** Tikai admin — ielīmētais teksts; netiek drukāts PDF. */
   rawUnprocessedData: string;
-  makeModel: string;
-  firstRegDate: string;
-  regNumber: string;
-  odometer: string;
-  enginePowerKw: string;
-  grossMassKg: string;
-  curbWeightKg: string;
-  roadTaxYearly: string;
-  solidParticlesCm3: string;
-  /** Piem. „Reģistrēts”, „Noņemts no uzskaites”. */
-  registrationStatus: string;
   nextInspectionDate: string;
   prevInspectionDate: string;
-  /** CSDD „Detalizētais vērtējums” — brīvais teksts (migrācijai); ja ir detailedRatingRows, tie ir primāri. */
-  prevInspectionRating: string;
-  /** Aktuālā apskate: Kods | Novērtējums | Trūkumi. */
-  detailedRatingRows: CsddDefectRow[];
-  /** Vēsturiskie defekti no „Iepriekšējās apskates dati”. */
-  prevInspectionDefectRows: CsddDefectRow[];
-  comments: string;
   mileageHistoryLv: CsddMileageHistoryRow[];
   mileageHistoryAbroad: CsddMileageAbroadRow[];
 };
 
-/** Etiķetes PDF un admin — precīzi kā specifikācijā. */
+/** Apskates datumu lauki (PDF + admin). */
 export const CSDD_FORM_SHORT_FIELDS: {
   key: keyof CsddFormFields;
   label: string;
 }[] = [
-  { key: "makeModel", label: "Marka/modelis:" },
-  { key: "firstRegDate", label: "Pirmās reģistrācijas datums:" },
-  { key: "regNumber", label: "Reģistrācijas numurs:" },
-  { key: "odometer", label: "Odometra rādījums:" },
-  { key: "enginePowerKw", label: "Motora maksimālā jauda (kW):" },
-  { key: "grossMassKg", label: "Pilna masa (kg):" },
-  { key: "curbWeightKg", label: "Pašmasa (kg):" },
-  { key: "roadTaxYearly", label: "Transportlīdzekļa ekspluatācijas nodoklis" },
-  { key: "solidParticlesCm3", label: "Atgāzu cietās daļiņas (cm-3) / dūmainības koef. (m-1):" },
-  { key: "registrationStatus", label: "Reģistrācijas statuss:" },
   { key: "nextInspectionDate", label: "Nākamās apskates datums:" },
   { key: "prevInspectionDate", label: "Iepriekšējās apskates datums:" },
 ];
-
-/** PDF / admin — precīzs CSDD avota nosaukums. */
-export const CSDD_LABEL_DETAILED_RATING = "Detalizētais vērtējums:";
-/** @deprecated Lietot CSDD_LABEL_DETAILED_RATING */
-export const CSDD_LABEL_PREV_RATING = CSDD_LABEL_DETAILED_RATING;
-/** Apakšvirsraksts blokam „Iepriekšējās apskates dati”. */
-export const CSDD_LABEL_PREV_INSPECTION_DATA = "Iepriekšējās apskates dati";
-/** PDF / admin tabulu kolonnas (defektu rindas). */
-export const CSDD_DEFECT_COL_CODE = "Kods";
-export const CSDD_DEFECT_COL_RATING = "Novērtējums";
-export const CSDD_DEFECT_COL_DEFECTS = "Trūkumi vai bojājumi";
-export const CSDD_LABEL_COMMENTS = "Komentāri:";
-
-/** Lauki, ko PDF kārto vienā kompaktā tehniskajā rindā (2–3 vērtības). */
-export const CSDD_TECHNICAL_COMPACT_KEYS = [
-  "enginePowerKw",
-  "grossMassKg",
-  "curbWeightKg",
-  "solidParticlesCm3",
-] as const satisfies readonly (keyof CsddFormFields)[];
 
 /** Tirgus dati — admin un PDF etiķetes (precīzi). */
 export type TirgusFormFields = {
@@ -200,22 +137,8 @@ export function tirgusFormToPlainText(f: TirgusFormFields): string {
 export function emptyCsddFields(): CsddFormFields {
   return {
     rawUnprocessedData: "",
-    makeModel: "",
-    firstRegDate: "",
-    regNumber: "",
-    odometer: "",
-    enginePowerKw: "",
-    grossMassKg: "",
-    curbWeightKg: "",
-    roadTaxYearly: "",
-    solidParticlesCm3: "",
-    registrationStatus: "",
     nextInspectionDate: "",
     prevInspectionDate: "",
-    prevInspectionRating: "",
-    detailedRatingRows: [],
-    prevInspectionDefectRows: [],
-    comments: "",
     mileageHistoryLv: [],
     mileageHistoryAbroad: [],
   };
@@ -223,72 +146,54 @@ export function emptyCsddFields(): CsddFormFields {
 
 export const CSDD_MILEAGE_HISTORY_TITLE = "Nobraukuma vēsture LV";
 export const CSDD_MILEAGE_ABROAD_TITLE = "Nobraukums ārvalstīs";
-export const CSDD_MILEAGE_COL_SOURCE = "Avots/Valsts";
-
-export { CSDD_MILEAGE_VISIBLE_LIMIT, takeNewestMileageRowsForPdf } from "@/lib/csdd-mileage-display";
 
 export function emptyCsddMileageRow(): CsddMileageHistoryRow {
-  return { date: "", odometer: "", distance: "" };
+  return { date: "", odometer: "" };
 }
 
 export function emptyCsddMileageAbroadRow(): CsddMileageAbroadRow {
-  return { date: "", odometer: "", source: "" };
+  return { date: "", odometer: "" };
 }
 
 export function csddMileageRowHasData(r: CsddMileageHistoryRow): boolean {
-  return Boolean(r.date.trim() || r.odometer.trim() || r.distance.trim());
+  return Boolean(r.date.trim() || r.odometer.trim());
 }
 
 export function csddMileageAbroadRowHasData(r: CsddMileageAbroadRow): boolean {
-  return Boolean(r.date.trim() || r.odometer.trim() || r.source.trim());
+  return Boolean(r.date.trim() || r.odometer.trim());
 }
 
+/** Strukturētie lauki PDF atskaitei (bez raw). */
 export function csddFormHasContent(f: CsddFormFields): boolean {
   return (
     CSDD_FORM_SHORT_FIELDS.some(({ key }) => (f[key] as string).trim().length > 0) ||
-    f.prevInspectionRating.trim().length > 0 ||
-    f.detailedRatingRows.some(defectRowHasData) ||
-    f.prevInspectionDefectRows.some(defectRowHasData) ||
-    f.comments.trim().length > 0 ||
     f.mileageHistoryLv.some(csddMileageRowHasData) ||
     f.mileageHistoryAbroad.some(csddMileageAbroadRowHasData)
   );
 }
 
-/** Teksts km/VIN heuristiku (`extractKmCandidates`, u.c.). */
+/** Teksts km/VIN heuristiku (`extractKmCandidates`, u.c.) — ietver arī raw. */
 export function csddFormToPlainText(f: CsddFormFields): string {
   const lines: string[] = [];
   for (const { key, label } of CSDD_FORM_SHORT_FIELDS) {
     const v = (f[key] as string).trim();
     if (v) lines.push(`${label} ${v}`);
   }
-  if (f.odometer.trim()) {
-    const o = f.odometer.replace(/\s/g, "");
-    if (o && !lines.some((l) => /\d/.test(l) && l.includes(o)))
-      lines.push(`${o} km`);
-  }
   const mh = f.mileageHistoryLv.filter(csddMileageRowHasData);
   if (mh.length > 0) {
     lines.push(CSDD_MILEAGE_HISTORY_TITLE);
     for (const row of mh) {
-      const cells = [row.date, row.odometer, row.distance].map((c) => c.replace(/\s+/g, " ").trim()).join("\t");
-      lines.push(cells);
+      lines.push([row.date, row.odometer].map((c) => c.replace(/\s+/g, " ").trim()).join("\t"));
     }
   }
   const ma = f.mileageHistoryAbroad.filter(csddMileageAbroadRowHasData);
   if (ma.length > 0) {
     lines.push(CSDD_MILEAGE_ABROAD_TITLE);
     for (const row of ma) {
-      const cells = [row.date, row.odometer, row.source].map((c) => c.replace(/\s+/g, " ").trim()).join("\t");
-      lines.push(cells);
+      lines.push([row.date, row.odometer].map((c) => c.replace(/\s+/g, " ").trim()).join("\t"));
     }
   }
-  const detPlain =
-    f.detailedRatingRows.some(defectRowHasData) ? defectRowsToPlainText(f.detailedRatingRows) : f.prevInspectionRating.trim();
-  if (detPlain) lines.push(`${CSDD_LABEL_DETAILED_RATING}\n${detPlain}`);
-  const histPlain = defectRowsToPlainText(f.prevInspectionDefectRows);
-  if (histPlain) lines.push(`${CSDD_LABEL_PREV_INSPECTION_DATA}\n${histPlain}`);
-  if (f.comments.trim()) lines.push(`${CSDD_LABEL_COMMENTS}\n${f.comments.trim()}`);
+  if (f.rawUnprocessedData.trim()) lines.push(f.rawUnprocessedData.trim());
   return lines.join("\n");
 }
 
@@ -587,7 +492,6 @@ function parseCsddMileageHistoryRaw(raw: unknown): CsddMileageHistoryRow[] {
     rows.push({
       date: String(x.date ?? "").slice(0, 120),
       odometer: String(x.odometer ?? "").slice(0, 120),
-      distance: String(x.distance ?? "").slice(0, 120),
     });
   }
   return rows;
@@ -602,67 +506,19 @@ function parseCsddMileageAbroadRaw(raw: unknown): CsddMileageAbroadRow[] {
     rows.push({
       date: String(x.date ?? "").slice(0, 120),
       odometer: String(x.odometer ?? "").slice(0, 120),
-      source: String(x.source ?? "").slice(0, 240),
     });
   }
   return rows;
-}
-
-function parseDefectRowsArray(raw: unknown): CsddDefectRow[] {
-  if (!Array.isArray(raw)) return [];
-  const out: CsddDefectRow[] = [];
-  for (const row of raw) {
-    if (!row || typeof row !== "object") continue;
-    const x = row as Record<string, unknown>;
-    out.push({
-      code: String(x.code ?? "").slice(0, 120),
-      rating: String(x.rating ?? "").slice(0, 2000),
-      defects: String(x.defects ?? "").slice(0, 8000),
-    });
-  }
-  return out;
-}
-
-function mergeDefectRowsFromLegacy(rows: CsddDefectRow[], legacy: string): CsddDefectRow[] {
-  if (rows.some(defectRowHasData)) return rows;
-  const t = legacy.trim();
-  if (!t) return [];
-  return parseDefectRowsFromText(t);
 }
 
 function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
   const clip = (v: unknown) => String(v ?? "").slice(0, 4000);
   const mileage = parseCsddMileageHistoryRaw(raw.mileageHistoryLv);
   const mileageAbroad = parseCsddMileageAbroadRaw(raw.mileageHistoryAbroad);
-  const prevInspectionRating = clip(raw.prevInspectionRating);
-  const legacyPrevData =
-    typeof raw.prevInspectionData === "string" ? clip(raw.prevInspectionData) : "";
-  const detailedRatingRows = mergeDefectRowsFromLegacy(
-    parseDefectRowsArray(raw.detailedRatingRows),
-    prevInspectionRating,
-  );
-  const prevInspectionDefectRows = mergeDefectRowsFromLegacy(
-    parseDefectRowsArray(raw.prevInspectionDefectRows),
-    legacyPrevData,
-  );
   return {
     rawUnprocessedData: clip(raw.rawUnprocessedData),
-    makeModel: clip(raw.makeModel),
-    firstRegDate: clip(raw.firstRegDate),
-    regNumber: clip(raw.regNumber),
-    odometer: clip(raw.odometer),
-    enginePowerKw: clip(raw.enginePowerKw),
-    grossMassKg: clip(raw.grossMassKg),
-    curbWeightKg: clip(raw.curbWeightKg),
-    roadTaxYearly: clip(raw.roadTaxYearly),
-    solidParticlesCm3: clip(raw.solidParticlesCm3),
-    registrationStatus: clip(raw.registrationStatus),
     nextInspectionDate: clip(raw.nextInspectionDate),
     prevInspectionDate: clip(raw.prevInspectionDate),
-    prevInspectionRating,
-    detailedRatingRows,
-    prevInspectionDefectRows,
-    comments: clip(raw.comments),
     mileageHistoryLv: mileage.length > 0 ? mileage : [],
     mileageHistoryAbroad: mileageAbroad.length > 0 ? mileageAbroad : [],
   };
@@ -686,11 +542,11 @@ function parseTirgusBlockRaw(raw: Record<string, unknown>): TirgusFormFields {
   return emptyTirgusFields();
 }
 
-/** Vecais CSDD { rows, comments } → forma (teksts komentāros). */
+/** Vecais CSDD { rows, comments } → raw laukā (migrācijas teksts). */
 export function migrateLegacyCsddBlock(old: StandardSourceBlockState): CsddFormFields {
   const t = standardBlockToPlainText(old).trim();
   if (!t) return emptyCsddFields();
-  return { ...emptyCsddFields(), comments: t };
+  return { ...emptyCsddFields(), rawUnprocessedData: t };
 }
 
 export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSourceBlocks {
@@ -701,7 +557,16 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
   const rawCsdd = o.csdd;
   if (rawCsdd && typeof rawCsdd === "object") {
     const c = rawCsdd as Record<string, unknown>;
-    if ("makeModel" in c || "fields" in c) {
+    const hasStructuredCsdd =
+      "fields" in c ||
+      "rawUnprocessedData" in c ||
+      "nextInspectionDate" in c ||
+      "mileageHistoryLv" in c ||
+      "mileageHistoryAbroad" in c ||
+      "makeModel" in c ||
+      "detailedRatingRows" in c ||
+      "prevInspectionDefectRows" in c;
+    if (hasStructuredCsdd) {
       const fields = c.fields && typeof c.fields === "object" ? (c.fields as Record<string, unknown>) : c;
       base.csdd = { ...emptyCsddFields(), ...parseCsddFieldsRaw(fields) };
     } else if ("rows" in c || "comments" in c) {
@@ -752,7 +617,7 @@ export function migrateFlatWorkspaceToBlocks(flat: {
   citi?: string;
 }): WorkspaceSourceBlocks {
   const b = createDefaultSourceBlocks();
-  if (flat.csdd?.trim()) b.csdd = { ...emptyCsddFields(), comments: flat.csdd.trim() };
+  if (flat.csdd?.trim()) b.csdd = { ...emptyCsddFields(), rawUnprocessedData: flat.csdd.trim() };
   if (flat.ltab?.trim()) b.ltab = { rows: [emptyLtabRow()], comments: flat.ltab.trim() };
   if (flat.tirgus?.trim()) b.tirgus = { ...emptyTirgusFields(), comments: flat.tirgus.trim() };
   if (flat.citi?.trim()) {
