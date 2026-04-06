@@ -18,35 +18,27 @@ function pdfV1PanelHead(title: string, titleIconHtml = ""): string {
   return `<div class="pdf-v1-panel-head">${icon}<p class="pdf-v1-panel-title">${esc(title)}</p></div>`;
 }
 
-/** Vektora zīmols — drukai / PDF (tumši zils fons, balts teksts, akcenta .LV). */
+/** Vārda zīme PDF galvenē — tumšs teksts uz baltas lapas, bez krāsaina logo fona. */
 export function provincLogoSvg(): string {
-  return `<svg class="pdf-v1-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" role="img" aria-label="PROVIN.LV">
-  <defs>
-    <linearGradient id="pdfV1LogoBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0a1628"/>
-      <stop offset="55%" style="stop-color:#0f2847"/>
-      <stop offset="100%" style="stop-color:#0a1628"/>
-    </linearGradient>
-  </defs>
-  <rect width="220" height="48" rx="8" fill="url(#pdfV1LogoBg)"/>
-  <text x="110" y="32" text-anchor="middle" font-family="Inter" font-size="18" font-weight="800" fill="#ffffff" letter-spacing="-0.02em">PROVIN<tspan fill="#6eb6ff">.LV</tspan></text>
+  return `<svg class="pdf-v1-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" role="img" aria-label="PROVIN.LV">
+  <text x="0" y="28" font-family="Inter, sans-serif" font-size="20" font-weight="800" fill="#000000" letter-spacing="-0.02em">PROVIN<tspan fill="#0066d6">.LV</tspan></text>
 </svg>`;
 }
 
 export function pdfLayoutDraftExtraCss(): string {
   return `
       .pdf-v1-hero{
-        margin:0 0 12px;padding:0 0 10px;
+        margin:0 0 12px;padding:0;
         background:#fff;
-        border-bottom:1px solid #ececee;
+        border:0;
       }
       @media print{.pdf-v1-hero{margin:0 0 10px}}
       .pdf-v1-hero-inner{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
       .pdf-v1-logo{width:160px;max-width:40vw;height:auto;flex-shrink:0;display:block}
       .pdf-v1-hero-text{flex:1;min-width:160px}
       .pdf-v1-doc-title{margin:0;font-size:0.75rem;font-weight:700;color:#000;letter-spacing:0.06em;line-height:1.3;text-transform:uppercase}
-      .pdf-v1-meta{margin:6px 0 0;font-size:0.72rem;color:#424245;line-height:1.4}
-      .pdf-v1-meta .pdf-vin{background:#f5f5f7;padding:2px 8px;border-radius:4px;color:#1d1d1f;font-size:0.9em;font-family:Inter,sans-serif!important}
+      .pdf-v1-meta{margin:6px 0 0;font-size:0.576rem;color:#6e6e73;line-height:1.4}
+      .pdf-v1-meta .pdf-vin{background:#f5f5f7;padding:2px 6px;border-radius:4px;color:#424245;font-size:0.9em;font-family:Inter,sans-serif!important}
       .pdf-surface-card{
         margin:0 0 12px;padding:12px 14px;border:1px solid #e8eaed;border-radius:10px;
         background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.07);
