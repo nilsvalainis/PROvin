@@ -25,7 +25,7 @@ export function AdminListingAnalysisSourceBlock({ value, readOnly, disabled, onC
   ];
 
   return (
-    <div className="rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm">
+    <div className="flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm">
       <AdminSourceBlockHeader blockKey="listing_analysis" className="mb-1.5" />
       <div className="space-y-2">
         {fields.map(({ key, title }) => (

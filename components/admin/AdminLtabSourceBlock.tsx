@@ -30,7 +30,7 @@ export function AdminLtabSourceBlock({ value, readOnly, disabled, onChange }: Pr
   };
 
   return (
-    <div className="rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm sm:col-span-2 lg:col-span-3">
+    <div className="flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm">
       <AdminSourceBlockHeader blockKey="ltab" />
 
       <div className="space-y-2">

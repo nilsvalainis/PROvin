@@ -25,7 +25,7 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange }: 
   };
 
   return (
-    <div className="rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm sm:col-span-2 lg:col-span-3">
+    <div className="flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm">
       <AdminSourceBlockHeader blockKey="tirgus" />
 
       <div className="flex flex-wrap items-end gap-x-3 gap-y-2 rounded-md border border-slate-200/60 bg-white/50 px-2 py-2">

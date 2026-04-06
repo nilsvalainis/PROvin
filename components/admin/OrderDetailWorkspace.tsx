@@ -1132,14 +1132,6 @@ export function OrderDetailWorkspace({
                 </span>
               ) : null}
             </h2>
-            <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-              <strong className="text-[var(--color-apple-text)]">CSDD</strong> un{" "}
-              <strong className="text-[var(--color-apple-text)]">Tirgus dati</strong> — statiski lauki. Pārējie:{" "}
-              <strong className="text-[var(--color-apple-text)]">datums · km · summa</strong> (rindas{" "}
-              <strong className="text-[var(--color-apple-text)]">+</strong>), <strong>LTAB</strong> negadījumu rindas un{" "}
-              <strong className="text-[var(--color-apple-text)]">Sludinājuma analīze</strong> (trīs komentāru lauki). Tukši
-              lauki PDF netiek drukāti. Viens <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> visiem.
-            </p>
           </div>
           <div className="flex flex-wrap items-center gap-1">
             {sourcesFlash ? (
@@ -1172,7 +1164,7 @@ export function OrderDetailWorkspace({
               onChange={(next) => updateSourceBlock("csdd", next)}
             />
           </div>
-          <div className="grid min-w-0 gap-2 sm:grid-cols-3">
+          <div className="grid min-w-0 grid-cols-3 gap-2 items-stretch">
             <AdminTirgusSourceBlock
               value={blocksForDisplay.tirgus}
               readOnly={sourcesViewMode}
@@ -1189,7 +1181,7 @@ export function OrderDetailWorkspace({
               onChange={(next) => updateSourceBlock("listing_analysis", next)}
             />
           </div>
-          <div className="grid min-w-0 gap-2 sm:grid-cols-3">
+          <div className="grid min-w-0 grid-cols-3 gap-2 items-stretch">
             <AdminStructuredSourceBlock
               blockKey="autodna"
               value={blocksForDisplay.autodna}
