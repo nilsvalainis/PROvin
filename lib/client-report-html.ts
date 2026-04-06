@@ -42,6 +42,11 @@ import {
   NEUTRAL_AVOTU_HEADER_BG,
 } from "@/lib/admin-header-gradients";
 import { CLIENT_REPORT_FOOTER_DISCLAIMER } from "@/lib/report-pdf-standards";
+import {
+  getNextInspectionDateUiFlag,
+  getParticulateMatterUiFlag,
+  type CsddFieldUiFlag,
+} from "@/lib/csdd-ui-flags";
 
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
@@ -110,8 +115,40 @@ function sectionHead(icon: string, title: string, opts?: { noBar?: boolean }): s
   return `<div class="pdf-sec-head${headExtra}">${icon}<h2 class="pdf-sec${hExtra}">${escapeHtml(title)}</h2></div>`;
 }
 
+/** PDF brīdinājumu rāmji — saskaņoti ar UI (lib/csdd-ui-flags). */
+const PDF_FLAG_BORDER_YELLOW = "#EAB308";
+const PDF_FLAG_BORDER_RED = "#EF4444";
+
+function pdfCsddWarningTriangleHtml(): string {
+  return `<svg class="pdf-csdd-flag-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 9v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+}
+
+function wrapCsddPdfFlaggedValue(innerEscaped: string, flag: Exclude<CsddFieldUiFlag, "none">): string {
+  const tier = flag === "red" ? "red" : "yellow";
+  const ico = pdfCsddWarningTriangleHtml();
+  return `<span class="pdf-csdd-flag-wrap pdf-csdd-flag-wrap--${tier}">${ico}<span class="pdf-csdd-flag-text">${innerEscaped}</span></span>`;
+}
+
 function formatCsddNextInspectionCell(v: string): string {
   return escapeHtml(v);
+}
+
+function formatCsddPdfValueCell(key: keyof CsddFormFields, v: string): string {
+  const isDateKey =
+    key === "nextInspectionDate" || key === "prevInspectionDate" || key === "firstRegistration";
+  const innerEscaped = isDateKey ? formatCsddNextInspectionCell(v) : escapeHtml(v);
+
+  if (key === "particulateMatter") {
+    const flag = getParticulateMatterUiFlag(v);
+    if (flag === "none") return innerEscaped;
+    return wrapCsddPdfFlaggedValue(innerEscaped, flag);
+  }
+  if (key === "nextInspectionDate") {
+    const flag = getNextInspectionDateUiFlag(v);
+    if (flag === "none") return innerEscaped;
+    return wrapCsddPdfFlaggedValue(innerEscaped, flag);
+  }
+  return innerEscaped;
 }
 
 function formatLossAmountEurCell(raw: string): string {
@@ -173,10 +210,7 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
     for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
       const v = (f[key] as string).trim();
       if (!v) continue;
-      const cellHtml =
-        key === "nextInspectionDate" || key === "prevInspectionDate" || key === "firstRegistration"
-          ? formatCsddNextInspectionCell(v)
-          : escapeHtml(v);
+      const cellHtml = formatCsddPdfValueCell(key, v);
       regRows.push(`<tr><td>${escapeHtml(label)}</td><td>${cellHtml}</td></tr>`);
     }
     if (regRows.length > 0) {
@@ -553,6 +587,16 @@ function clientReportPrintCss(): string {
         width:54%;min-width:14em;max-width:62%;white-space:nowrap;color:#86868b;
       }
       .mirror-table--csdd td:nth-child(2){text-align:right;}
+      .pdf-csdd-flag-wrap{
+        display:inline-flex;align-items:center;gap:3px;border:1px solid ${PDF_FLAG_BORDER_YELLOW};border-radius:2px;
+        padding:1px 4px;line-height:1.2;vertical-align:middle;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-csdd-flag-wrap--red{border-color:${PDF_FLAG_BORDER_RED};}
+      .pdf-csdd-flag-wrap--yellow{border-color:${PDF_FLAG_BORDER_YELLOW};}
+      .pdf-csdd-flag-ico{flex-shrink:0;width:10px;height:10px;display:block;color:${PDF_FLAG_BORDER_YELLOW};}
+      .pdf-csdd-flag-wrap--red .pdf-csdd-flag-ico{color:${PDF_FLAG_BORDER_RED};}
+      .pdf-csdd-flag-text{color:#1d1d1f;}
       .mirror-table--csdd td.pdf-csdd-tech-compact{
         width:auto;max-width:none;white-space:normal;padding:4px 0 6px;
         font-size:9pt;line-height:1.25;color:#1d1d1f;text-align:left;border-bottom:1px solid #f1f5f9;
