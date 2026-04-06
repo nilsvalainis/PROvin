@@ -20,8 +20,8 @@ function pdfV1PanelHead(title: string, titleIconHtml = ""): string {
 
 /** Vārda zīme PDF galvenē — tumšs teksts uz baltas lapas, bez krāsaina logo fona. */
 export function provincLogoSvg(): string {
-  return `<svg class="pdf-v1-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" role="img" aria-label="PROVIN.LV">
-  <text x="0" y="28" font-family="Inter, sans-serif" font-size="20" font-weight="800" fill="#000000" letter-spacing="-0.02em">PROVIN<tspan fill="#0066d6">.LV</tspan></text>
+  return `<svg class="pdf-v1-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 48" role="img" aria-label="PROVIN.LV">
+  <text x="0" y="34" font-family="Inter, sans-serif" font-size="28" font-weight="800" fill="#000000" letter-spacing="-0.02em">PROVIN<tspan fill="#0066d6">.LV</tspan></text>
 </svg>`;
 }
 
@@ -34,11 +34,14 @@ export function pdfLayoutDraftExtraCss(): string {
       }
       @media print{.pdf-v1-hero{margin:0 0 10px}}
       .pdf-v1-hero-inner{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-      .pdf-v1-logo{width:160px;max-width:40vw;height:auto;flex-shrink:0;display:block}
+      .pdf-v1-logo{width:220px;max-width:46vw;height:auto;flex-shrink:0;display:block}
       .pdf-v1-hero-text{flex:1;min-width:160px}
       .pdf-v1-doc-title{margin:0;font-size:0.75rem;font-weight:700;color:#000;letter-spacing:0.06em;line-height:1.3;text-transform:uppercase}
       .pdf-v1-meta{margin:6px 0 0;font-size:0.576rem;color:#6e6e73;line-height:1.4}
-      .pdf-v1-meta .pdf-vin{background:#f5f5f7;padding:2px 6px;border-radius:4px;color:#424245;font-size:0.9em;font-family:Inter,sans-serif!important}
+      .pdf-v1-meta .pdf-vin{
+        background:#f5f5f7;padding:2px 6px;border-radius:4px;color:#424245;font-size:0.9em;
+        font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;
+      }
       .pdf-surface-card{
         margin:0 0 12px;padding:12px 14px;border:1px solid #e8eaed;border-radius:10px;
         background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.07);
@@ -60,6 +63,7 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-kv td:first-child{width:36%;color:#86868b;font-weight:500}
       .pdf-v1-kv tr:last-child td{border-bottom:none}
       .pdf-v1-kv a{color:#0066d6;word-break:break-all}
+      .pdf-v1-kv .pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;}
       .pdf-source-mirror-panel{margin-top:0}
       .pdf-source-mirror-panel + .pdf-source-mirror-panel{margin-top:4px;padding-top:6px;border-top:1px solid #f0f0f2}
   `;

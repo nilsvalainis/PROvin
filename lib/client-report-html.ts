@@ -184,7 +184,7 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
     parts.push(`<pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre>`);
   }
 
-  return `<div class="pdf-avotu-sub">${parts.join("\n")}</div>`;
+  return `<div class="pdf-avotu-sub pdf-avotu-sub--csdd">${parts.join("\n")}</div>`;
 }
 
 function buildManualTirgusStructuredHtml(f: TirgusFormFields): string {
@@ -221,13 +221,29 @@ function buildTirgusAvotuSubsection(p: ClientReportPayload): string {
   const hasText = p.tirgus.trim().length > 0;
   if (!hasForm && !hasText) return "";
 
-  const inner: string[] = [`<h3 class="pdf-sub">${escapeHtml(PDF_SECTION_TIRGUS_DATI)}</h3>`];
+  const inner: string[] = [
+    `<div class="pdf-subhead"><span class="pdf-subhead-ico" aria-hidden="true">${ICO.tag}</span><h3 class="pdf-sub pdf-sub--with-ico">${escapeHtml(PDF_SECTION_TIRGUS_DATI)}</h3></div>`,
+  ];
   if (hasForm && p.tirgusForm) {
     inner.push(buildManualTirgusStructuredHtml(p.tirgusForm));
   } else if (hasText) {
     inner.push(`<pre class="mirror-pre">${escapeHtml(p.tirgus.trim())}</pre>`);
   }
-  return `<div class="pdf-avotu-sub">${inner.join("\n")}</div>`;
+  return `<div class="pdf-avotu-sub pdf-avotu-sub--tirgus">${inner.join("\n")}</div>`;
+}
+
+function pdfIconForVendorTitle(title: string): string {
+  if (title === SOURCE_BLOCK_LABELS.autodna) return ICO.layers;
+  if (title === SOURCE_BLOCK_LABELS.carvertical) return ICO.chart;
+  if (title === SOURCE_BLOCK_LABELS.auto_records) return ICO.spark;
+  return ICO.layers;
+}
+
+function vendorAvotuEdgeClass(title: string): string {
+  if (title === SOURCE_BLOCK_LABELS.autodna) return "pdf-avotu-sub--autodna";
+  if (title === SOURCE_BLOCK_LABELS.carvertical) return "pdf-avotu-sub--carvertical";
+  if (title === SOURCE_BLOCK_LABELS.auto_records) return "pdf-avotu-sub--auto-records";
+  return "pdf-avotu-sub--vendor-fallback";
 }
 
 const PDF_VENDOR_BLOCK_ORDER: string[] = [
@@ -256,7 +272,11 @@ function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf): string {
   const hasComments = b.comments.trim().length > 0;
   if (!hasTable && !hasComments) return "";
   const parts: string[] = [];
-  parts.push(`<h3 class="pdf-sub">${escapeHtml(b.title)}</h3>`);
+  const icon = pdfIconForVendorTitle(b.title);
+  const edge = vendorAvotuEdgeClass(b.title);
+  parts.push(
+    `<div class="pdf-subhead"><span class="pdf-subhead-ico" aria-hidden="true">${icon}</span><h3 class="pdf-sub pdf-sub--with-ico">${escapeHtml(b.title)}</h3></div>`,
+  );
   if (hasTable) {
     const amountTh = escapeHtml(b.amountColumnLabel ?? "Zaudējumu summa");
     parts.push(
@@ -273,7 +293,7 @@ function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf): string {
     parts.push(`<p class="pdf-field-label">${escapeHtml(PDF_SUB_BLOCK_COMMENTS)}</p>`);
     parts.push(`<pre class="mirror-pre">${escapeHtml(b.comments.trim())}</pre>`);
   }
-  return `<div class="pdf-avotu-sub">${parts.join("\n")}</div>`;
+  return `<div class="pdf-avotu-sub ${edge}">${parts.join("\n")}</div>`;
 }
 
 function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined): string {
@@ -282,7 +302,9 @@ function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined
   const hasComments = b.comments.trim().length > 0;
   if (!hasTable && !hasComments) return "";
   const parts: string[] = [];
-  parts.push(`<h3 class="pdf-sub">${escapeHtml(SOURCE_BLOCK_LABELS.ltab)}</h3>`);
+  parts.push(
+    `<div class="pdf-subhead"><span class="pdf-subhead-ico" aria-hidden="true">${ICO.shield}</span><h3 class="pdf-sub pdf-sub--with-ico">${escapeHtml(SOURCE_BLOCK_LABELS.ltab)}</h3></div>`,
+  );
   if (hasTable) {
     parts.push(
       `<table class="mirror-table"><thead><tr><th>Negadījumu skaits</th><th class="tabular">CSNg datums</th><th class="tabular">Zaudējumu summa</th></tr></thead><tbody>`,
@@ -298,7 +320,7 @@ function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined
     parts.push(`<p class="pdf-field-label">${escapeHtml(PDF_SUB_BLOCK_COMMENTS)}</p>`);
     parts.push(`<pre class="mirror-pre">${escapeHtml(b.comments.trim())}</pre>`);
   }
-  return `<div class="pdf-avotu-sub">${parts.join("\n")}</div>`;
+  return `<div class="pdf-avotu-sub pdf-avotu-sub--ltab">${parts.join("\n")}</div>`;
 }
 
 /** CSDD → Tirgus → AutoDNA → CarVertical → Auto-Records → LTAB vienā vizuālā grupā. */
@@ -363,6 +385,9 @@ function clientReportPrintCss(): string {
   return `
       *{box-sizing:border-box;}
       html,body,.provin-report-doc{font-family:Inter,sans-serif!important;}
+      .provin-report-doc .pdf-vin,.provin-report-doc code,.provin-report-doc kbd,.provin-report-doc samp,.provin-report-doc tt{
+        font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;
+      }
       body{
         font-size:12px;
         line-height:1.45;
@@ -385,7 +410,7 @@ function clientReportPrintCss(): string {
       h3.pdf-sub{font-size:0.75rem;font-weight:700;margin:0.6rem 0 0.35rem;color:#000;text-transform:uppercase;letter-spacing:0.05em;}
       h3.pdf-sub:first-child{margin-top:0;}
       .pdf-subhead{display:flex;align-items:center;gap:8px;margin:0 0 0.4rem;}
-      .pdf-subhead-ico{display:inline-flex;align-items:center;justify-content:center;color:#0066d6;flex-shrink:0;}
+      .pdf-subhead-ico{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
       .pdf-subhead-ico .pdf-ico{width:14px;height:14px;}
       h3.pdf-sub.pdf-sub--with-ico{margin:0;border-left:none;padding:0;}
       .pdf-field-label{font-size:0.68rem;font-weight:600;margin:0.45rem 0 0.2rem;color:#000;letter-spacing:0.02em;}
@@ -395,8 +420,26 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-avotu-zone .pdf-sec-head{margin-top:0;}
-      .pdf-avotu-sub{margin:0 0 10px;padding:0 0 10px;border-bottom:1px solid #e2e5e9;}
-      .pdf-avotu-sub:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+      .pdf-avotu-sub{
+        margin:0 0 10px;padding:10px 12px;background:#fff;border:1px solid #e8eaed;border-radius:8px;
+        border-left:4px solid #ccc;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-avotu-sub:last-child{margin-bottom:0;}
+      .pdf-avotu-sub--csdd{border-left-color:#00aaff;}
+      .pdf-avotu-sub--csdd .pdf-subhead-ico{color:#00aaff;}
+      .pdf-avotu-sub--tirgus{border-left-color:#ff7700;}
+      .pdf-avotu-sub--tirgus .pdf-subhead-ico{color:#ff7700;}
+      .pdf-avotu-sub--autodna{border-left-color:#003366;}
+      .pdf-avotu-sub--autodna .pdf-subhead-ico{color:#003366;}
+      .pdf-avotu-sub--carvertical{border-left-color:#ffcc00;}
+      .pdf-avotu-sub--carvertical .pdf-subhead-ico{color:#ffcc00;}
+      .pdf-avotu-sub--auto-records{border-left-color:#666666;}
+      .pdf-avotu-sub--auto-records .pdf-subhead-ico{color:#666666;}
+      .pdf-avotu-sub--ltab{border-left-color:#4caf50;}
+      .pdf-avotu-sub--ltab .pdf-subhead-ico{color:#4caf50;}
+      .pdf-avotu-sub--vendor-fallback{border-left-color:#666666;}
+      .pdf-avotu-sub--vendor-fallback .pdf-subhead-ico{color:#666666;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #ececee;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
       .mirror-block-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;}
@@ -420,7 +463,7 @@ function clientReportPrintCss(): string {
       .mirror-font-error{padding:16px;color:#991b1b;font-size:13px;}
       .legal-block{margin-top:12px;padding-top:8px;border-top:1px solid #ececee;font-size:0.68rem;color:#86868b;line-height:1.45;}
       .report-foot{margin-top:12px;padding-top:8px;border-top:1px solid #ececee;font-size:0.65rem;color:#aeaeb2;}
-      code,.pdf-vin{font-family:Inter,sans-serif!important;font-size:0.72rem;background:#f5f5f7;padding:1px 6px;border-radius:4px;}
+      code,.pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;font-size:0.72rem;background:#f5f5f7;padding:1px 6px;border-radius:4px;}
       .mirror-line--meta .pdf-vin{background:transparent;padding:0;}
       .pdf-flag-num{font-weight:600;}
       @media print{
