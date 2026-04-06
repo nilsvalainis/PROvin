@@ -7,7 +7,7 @@ import { WhatsAppBrandIcon } from "@/components/WhatsAppBrandIcon";
 export function WhatsAppFab() {
   const t = useTranslations("Misc");
   const className =
-    "provin-btn fixed z-50 flex h-14 w-14 min-h-[48px] min-w-[48px] items-center justify-center rounded-full text-white shadow-[0_8px_28px_rgba(0,102,214,0.4)] active:scale-95 bottom-[max(1.25rem,env(safe-area-inset-bottom,0px))] right-[max(1.25rem,env(safe-area-inset-right,0px))]";
+    "provin-btn provin-btn--compact fixed z-50 flex h-[50px] w-[50px] min-h-[43px] min-w-[43px] items-center justify-center rounded-full text-white shadow-[0_7px_25px_rgba(0,102,214,0.4)] active:scale-95 bottom-[max(1.25rem,env(safe-area-inset-bottom,0px))] right-[max(1.25rem,env(safe-area-inset-right,0px))]";
 
   return (
     <a
@@ -17,7 +17,7 @@ export function WhatsAppFab() {
       className={className}
       aria-label={t("whatsappFab")}
     >
-      <WhatsAppBrandIcon className="h-[1.65rem] w-[1.65rem]" />
+      <WhatsAppBrandIcon className="h-[1.49rem] w-[1.49rem]" />
     </a>
   );
 }

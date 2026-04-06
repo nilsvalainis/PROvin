@@ -52,7 +52,7 @@ export async function HowItWorks() {
           <p className="mt-2 text-[20px] font-semibold tracking-tight text-[#1d1d1f] sm:text-[24px]">{t("ctaHeadline")}</p>
           <Link
             href={orderSectionHref(locale)}
-            className="provin-btn mt-5 inline-flex min-h-[44px] w-full max-w-xs items-center justify-center rounded-full px-8 text-[17px] font-normal shadow-[0_4px_16px_rgba(0,102,214,0.32)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:w-auto"
+            className="provin-btn provin-btn--compact mt-5 inline-flex min-h-[40px] w-full max-w-xs items-center justify-center rounded-full px-7 text-[15px] font-normal shadow-[0_4px_14px_rgba(0,102,214,0.32)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:w-auto"
           >
             {t("ctaButton")}
           </Link>

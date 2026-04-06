@@ -20,7 +20,7 @@ export async function Header() {
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3">
           <Link
             href={orderHref}
-            className="provin-btn inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-full px-4 text-[12px] font-normal shadow-[0_2px_12px_rgba(0,102,214,0.28)] sm:min-h-0 sm:py-2 sm:text-[14px]"
+            className="provin-btn provin-btn--compact inline-flex min-h-[40px] shrink-0 items-center justify-center rounded-full px-3.5 text-[11px] font-normal shadow-[0_2px_11px_rgba(0,102,214,0.28)] sm:min-h-0 sm:py-[7px] sm:text-[13px]"
           >
             {t("order")}
           </Link>
