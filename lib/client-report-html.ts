@@ -20,6 +20,7 @@ import {
 import {
   CSDD_FORM_SHORT_FIELDS,
   CSDD_LABEL_PREV_RATING,
+  CSDD_MILEAGE_HISTORY_TITLE,
   csddFormHasContent,
   TIRGUS_LABEL_CREATED,
   TIRGUS_LABEL_LISTED,
@@ -187,7 +188,7 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
     const bodyParts: string[] = [];
     const regRows: string[] = [];
     for (const { key, label } of CSDD_FORM_SHORT_FIELDS) {
-      const v = f[key].trim();
+      const v = (f[key] as string).trim();
       if (!v) continue;
       let cellHtml: string;
       if (key === "solidParticlesCm3") cellHtml = formatCsddSolidParticlesCell(v);
@@ -201,6 +202,22 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
     if (f.prevInspectionRating.trim()) {
       bodyParts.push(`<p class="pdf-field-label">${escapeHtml(CSDD_LABEL_PREV_RATING)}</p>`);
       bodyParts.push(`<pre class="mirror-pre">${escapeHtml(f.prevInspectionRating.trim())}</pre>`);
+    }
+    const mhRows = f.mileageHistoryLv.filter(
+      (r) => r.date.trim() || r.odometer.trim() || r.distance.trim(),
+    );
+    if (mhRows.length > 0) {
+      const head = `<tr><th>Datums</th><th>Odometrs</th><th>Nobraukums</th></tr>`;
+      const body = mhRows
+        .map(
+          (r) =>
+            `<tr><td>${escapeHtml(r.date.trim())}</td><td>${escapeHtml(r.odometer.trim())}</td><td>${escapeHtml(r.distance.trim())}</td></tr>`,
+        )
+        .join("\n");
+      bodyParts.push(
+        `<p class="pdf-field-label pdf-field-label--sub">${escapeHtml(CSDD_MILEAGE_HISTORY_TITLE)}</p>`,
+      );
+      bodyParts.push(`<table class="mirror-table mirror-table--csdd-mh"><thead>${head}</thead><tbody>${body}</tbody></table>`);
     }
     const bodyHtml = bodyParts.join("\n");
     const card =

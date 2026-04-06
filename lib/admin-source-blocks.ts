@@ -64,20 +64,31 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
 /** Avotu virsraksta teksta izmērs admin UI (11px, saskaņots ar laukiem). */
 export const SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS = "text-[11px]";
 
+/** Nobraukuma vēsture LV — viena rinda (admin + PDF tabula). */
+export type CsddMileageHistoryRow = {
+  date: string;
+  odometer: string;
+  distance: string;
+};
+
 /** CSDD statiskā forma — lauku atslēgas. */
 export type CsddFormFields = {
+  /** Tikai admin panelis — ielīmētais neapstrādātais teksts; netiek drukāts PDF. */
+  rawUnprocessedData: string;
   makeModel: string;
   firstRegDate: string;
   regNumber: string;
   odometer: string;
   enginePowerKw: string;
   grossMassKg: string;
+  curbWeightKg: string;
   roadTaxYearly: string;
   solidParticlesCm3: string;
   nextInspectionDate: string;
   prevInspectionDate: string;
   prevInspectionRating: string;
   comments: string;
+  mileageHistoryLv: CsddMileageHistoryRow[];
 };
 
 /** Etiķetes PDF un admin — precīzi kā specifikācijā. */
@@ -91,6 +102,7 @@ export const CSDD_FORM_SHORT_FIELDS: {
   { key: "odometer", label: "Odometra rādījums:" },
   { key: "enginePowerKw", label: "Motora maksimālā jauda (kW):" },
   { key: "grossMassKg", label: "Pilna masa (kg):" },
+  { key: "curbWeightKg", label: "Pašmasa (kg):" },
   { key: "roadTaxYearly", label: "Transportlīdzekļa ekspluatācijas nodoklis" },
   { key: "solidParticlesCm3", label: "Atgāzu cietās daļiņas (cm-3):" },
   { key: "nextInspectionDate", label: "Nākamās apskates datums:" },
@@ -138,38 +150,62 @@ export function tirgusFormToPlainText(f: TirgusFormFields): string {
 
 export function emptyCsddFields(): CsddFormFields {
   return {
+    rawUnprocessedData: "",
     makeModel: "",
     firstRegDate: "",
     regNumber: "",
     odometer: "",
     enginePowerKw: "",
     grossMassKg: "",
+    curbWeightKg: "",
     roadTaxYearly: "",
     solidParticlesCm3: "",
     nextInspectionDate: "",
     prevInspectionDate: "",
     prevInspectionRating: "",
     comments: "",
+    mileageHistoryLv: [],
   };
 }
 
+export const CSDD_MILEAGE_HISTORY_TITLE = "Nobraukuma vēsture LV";
+
+export function emptyCsddMileageRow(): CsddMileageHistoryRow {
+  return { date: "", odometer: "", distance: "" };
+}
+
+function csddMileageRowHasData(r: CsddMileageHistoryRow): boolean {
+  return Boolean(r.date.trim() || r.odometer.trim() || r.distance.trim());
+}
+
 export function csddFormHasContent(f: CsddFormFields): boolean {
-  return CSDD_FORM_SHORT_FIELDS.some(({ key }) => f[key].trim()) ||
+  return (
+    CSDD_FORM_SHORT_FIELDS.some(({ key }) => (f[key] as string).trim().length > 0) ||
     f.prevInspectionRating.trim().length > 0 ||
-    f.comments.trim().length > 0;
+    f.comments.trim().length > 0 ||
+    f.mileageHistoryLv.some(csddMileageRowHasData)
+  );
 }
 
 /** Teksts km/VIN heuristiku (`extractKmCandidates`, u.c.). */
 export function csddFormToPlainText(f: CsddFormFields): string {
   const lines: string[] = [];
   for (const { key, label } of CSDD_FORM_SHORT_FIELDS) {
-    const v = f[key].trim();
+    const v = (f[key] as string).trim();
     if (v) lines.push(`${label} ${v}`);
   }
   if (f.odometer.trim()) {
     const o = f.odometer.replace(/\s/g, "");
     if (o && !lines.some((l) => /\d/.test(l) && l.includes(o)))
       lines.push(`${o} km`);
+  }
+  const mh = f.mileageHistoryLv.filter(csddMileageRowHasData);
+  if (mh.length > 0) {
+    lines.push(CSDD_MILEAGE_HISTORY_TITLE);
+    for (const row of mh) {
+      const cells = [row.date, row.odometer, row.distance].map((c) => c.replace(/\s+/g, " ").trim()).join("\t");
+      lines.push(cells);
+    }
   }
   if (f.prevInspectionRating.trim()) lines.push(`${CSDD_LABEL_PREV_RATING}\n${f.prevInspectionRating.trim()}`);
   if (f.comments.trim()) lines.push(`${CSDD_LABEL_COMMENTS}\n${f.comments.trim()}`);
@@ -462,21 +498,40 @@ function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
   };
 }
 
+function parseCsddMileageHistoryRaw(raw: unknown): CsddMileageHistoryRow[] {
+  if (!Array.isArray(raw)) return [];
+  const rows: CsddMileageHistoryRow[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const x = row as Record<string, unknown>;
+    rows.push({
+      date: String(x.date ?? "").slice(0, 120),
+      odometer: String(x.odometer ?? "").slice(0, 120),
+      distance: String(x.distance ?? "").slice(0, 120),
+    });
+  }
+  return rows;
+}
+
 function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
   const clip = (v: unknown) => String(v ?? "").slice(0, 4000);
+  const mileage = parseCsddMileageHistoryRaw(raw.mileageHistoryLv);
   return {
+    rawUnprocessedData: clip(raw.rawUnprocessedData),
     makeModel: clip(raw.makeModel),
     firstRegDate: clip(raw.firstRegDate),
     regNumber: clip(raw.regNumber),
     odometer: clip(raw.odometer),
     enginePowerKw: clip(raw.enginePowerKw),
     grossMassKg: clip(raw.grossMassKg),
+    curbWeightKg: clip(raw.curbWeightKg),
     roadTaxYearly: clip(raw.roadTaxYearly),
     solidParticlesCm3: clip(raw.solidParticlesCm3),
     nextInspectionDate: clip(raw.nextInspectionDate),
     prevInspectionDate: clip(raw.prevInspectionDate),
     prevInspectionRating: clip(raw.prevInspectionRating),
     comments: clip(raw.comments),
+    mileageHistoryLv: mileage.length > 0 ? mileage : [],
   };
 }
 
@@ -515,7 +570,7 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
     const c = rawCsdd as Record<string, unknown>;
     if ("makeModel" in c || "fields" in c) {
       const fields = c.fields && typeof c.fields === "object" ? (c.fields as Record<string, unknown>) : c;
-      base.csdd = parseCsddFieldsRaw(fields);
+      base.csdd = { ...emptyCsddFields(), ...parseCsddFieldsRaw(fields) };
     } else if ("rows" in c || "comments" in c) {
       base.csdd = migrateLegacyCsddBlock(parseStandardBlockRaw(c));
     }
