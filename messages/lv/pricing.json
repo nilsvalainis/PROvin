@@ -1,7 +1,10 @@
 {
   "Pricing": {
     "eyebrow": "Cena un saturs",
-    "transitionQuote": "Neviena datubāze nav perfekta. PROVIN rāda visu.",
+    "transitionQuoteAria": "Neviena datubāze nav perfekta. Pārbaudi visur!",
+    "transitionQuotePart1": "Neviena ",
+    "transitionQuoteLink": "datubāze",
+    "transitionQuotePart2": " nav perfekta. Pārbaudi visur!",
     "comparisonTitle": "KĀDĒĻ IZVĒLĒTIES PROVIN AUDITU?",
     "comparisonMobileHint": "Salīdzinājuma tabula: ritini horizontāli, ja nepieciešams. PROVIN kolonna izcelta.",
     "comparisonColFeature": "IEZĪME",
@@ -29,9 +32,9 @@
         "provin": "Dzinējs, ātrumkārba un vājās vietas"
       },
       {
-        "feature": "Skaidrs slēdziens: PIRKT / NEPIRKT",
+        "feature": "Reāls novērtējums",
         "standard": "Nav",
-        "provin": "Jūsu sirdsmiera garantija"
+        "provin": "Detalizēts un argumentēts"
       },
       {
         "feature": "Analīzes veids",

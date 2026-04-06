@@ -1,4 +1,6 @@
-import { getMessages, getTranslations } from "next-intl/server";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
+import { orderSectionHref } from "@/lib/paths";
 
 type Row = { feature: string; standard: string; provin: string };
 
@@ -42,6 +44,8 @@ function ProvinValue({ value }: { value: string }) {
 
 export async function PricingTransitionAndComparison() {
   const t = await getTranslations("Pricing");
+  const locale = await getLocale();
+  const orderHref = orderSectionHref(locale);
   const messages = await getMessages();
   const rows = (messages as { Pricing: { comparisonRows: Row[] } }).Pricing.comparisonRows;
 
@@ -50,14 +54,21 @@ export async function PricingTransitionAndComparison() {
       <div
         className="relative overflow-hidden rounded-2xl bg-[#14161c] px-4 py-8 text-center shadow-[0_12px_40px_rgba(0,0,0,0.2)] sm:px-8 sm:py-10"
         role="region"
-        aria-label={t("transitionQuote")}
+        aria-label={t("transitionQuoteAria")}
       >
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(0,102,214,0.18),transparent_55%)]"
           aria-hidden
         />
         <p className="relative text-balance text-[1.125rem] font-semibold leading-snug tracking-tight text-white sm:text-[1.375rem] sm:leading-tight md:text-2xl">
-          {t("transitionQuote")}
+          {t("transitionQuotePart1")}
+          <Link
+            href={orderHref}
+            className="text-white underline decoration-white/45 underline-offset-[3px] transition hover:decoration-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+          >
+            {t("transitionQuoteLink")}
+          </Link>
+          {t("transitionQuotePart2")}
         </p>
       </div>
 
