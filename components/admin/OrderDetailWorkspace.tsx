@@ -92,8 +92,8 @@ const EMPTY_WORKSPACE: WorkspacePersist = {
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 80 * 1024 * 1024;
 
-/** Portfeļa kolonnā pēc noklusējuma redzami pirmie N faili; pārējie — modālā. */
-const PORTFOLIO_INLINE_VISIBLE_MAX = 2;
+/** Portfeļa kolonnā pēc noklusējuma redzams pirmā fails; pārējie — modālā. */
+const PORTFOLIO_INLINE_VISIBLE_MAX = 1;
 
 const workspaceToolbarBtn =
   "rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] font-semibold tracking-tight text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50";
@@ -671,9 +671,6 @@ export function OrderDetailWorkspace({
           : `Pievienoti un saglabāti ${added.length} faili`;
       setPortfolioUploadNotice(label);
       window.setTimeout(() => setPortfolioUploadNotice(null), 4500);
-      if (next.length > PORTFOLIO_INLINE_VISIBLE_MAX) {
-        setPortfolioAllFilesModalOpen(true);
-      }
     }
   };
 
