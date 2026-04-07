@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Order" });
   return {
-    title: t("sectionTitle"),
+    title: t("metaTitle"),
     description:
       "Pasūtījuma forma: VIN, sludinājuma saite, saziņas dati. Droša apmaksa ar Stripe.",
   };

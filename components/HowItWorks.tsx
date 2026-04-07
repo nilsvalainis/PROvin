@@ -12,12 +12,12 @@ export async function HowItWorks() {
   const steps = (messages as { HowItWorks: { steps: Step[] } }).HowItWorks.steps;
 
   return (
-    <div className="relative z-10 px-4 pb-1 pt-1 sm:px-6 sm:pb-2 sm:pt-2">
+    <div className="relative z-10 px-4 pb-2.5 pt-2 sm:px-6 sm:pb-2.5 sm:pt-2">
       <div className={`relative ${homeContentMaxClass}`}>
-        <div className="mx-auto flex min-w-0 max-w-lg flex-col md:max-w-none md:flex-row md:items-center md:justify-center md:gap-1">
+        <div className="mx-auto flex min-w-0 max-w-lg flex-col gap-1 md:max-w-none md:flex-row md:items-center md:justify-center md:gap-1">
           {steps.map((s, i) => (
             <Fragment key={s.n}>
-              <article className="group flex min-w-0 flex-1 flex-col items-center justify-center px-2 py-1 text-center sm:px-3 md:w-[180px] md:flex-none">
+              <article className="group flex min-w-0 flex-1 flex-col items-center justify-center px-2 py-0 text-center sm:px-3 md:w-[180px] md:flex-none">
                 <div
                   className="text-provin-accent drop-shadow-[0_4px_12px_rgba(15,23,42,0.12)] transition-transform duration-200 group-hover:scale-[1.03]"
                   aria-hidden
@@ -35,7 +35,7 @@ export async function HowItWorks() {
               </article>
               {i < steps.length - 1 && (
                 <>
-                  <div className="flex justify-center py-1 md:hidden" aria-hidden>
+                  <div className="flex justify-center md:hidden" aria-hidden>
                     <span className={connectorClass}>
                       <NavChevronDown />
                     </span>

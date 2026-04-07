@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import { NavChevronDown } from "@/components/NavChevron";
 import { OrderForm } from "@/components/OrderForm";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
-import { homeSectionEyebrowClass } from "@/lib/home-layout";
 
 export function OrderSection({ cancelled }: { cancelled: boolean }) {
   const t = useTranslations("Order");
@@ -25,11 +24,8 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
       id={ORDER_SECTION_ID}
       className="relative z-10 scroll-mt-[calc(2.75rem+1px)] sm:scroll-mt-12"
     >
-      <div className="relative mx-auto min-w-0 max-w-[1000px] px-4 pb-4 pt-1 text-center sm:px-6 sm:pb-5 sm:pt-2">
-        <div className="flex flex-col items-center gap-1.5">
-          <p className={homeSectionEyebrowClass}>
-            {t("sectionTitle")}
-          </p>
+      <div className="relative mx-auto min-w-0 max-w-[1000px] px-4 pb-4 pt-2 text-center sm:px-6 sm:pb-5 sm:pt-2">
+        <div className="flex justify-center">
           <a
             href="#order-form"
             aria-label={t("scrollToFormAria")}
