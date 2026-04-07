@@ -2,6 +2,7 @@ import { getMessages, getTranslations } from "next-intl/server";
 import {
   comparisonTableHeaderAccentClass,
   comparisonTableHeaderMutedClass,
+  comparisonTableFeatureCellClass,
   homeSectionEyebrowClass,
 } from "@/lib/home-layout";
 
@@ -88,7 +89,7 @@ export async function PricingTransitionAndComparison() {
                   <tr key={i} className="border-b border-black/[0.06] last:border-b-0">
                     <th
                       scope="row"
-                      className={`max-w-[44vw] px-2 py-3 text-left text-[13px] font-medium leading-snug text-[#1d1d1f] sm:max-w-[220px] sm:px-4 sm:text-[14px] sm:leading-snug ${zebra}`}
+                      className={`max-w-[44vw] px-2 py-3 text-left ${comparisonTableFeatureCellClass} sm:max-w-[220px] sm:px-4 ${zebra}`}
                     >
                       {row.feature}
                     </th>

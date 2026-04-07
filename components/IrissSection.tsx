@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { comparisonTableHeaderMutedClass } from "@/lib/home-layout";
+import { comparisonTableFeatureCellClass, homeSectionEyebrowClass } from "@/lib/home-layout";
 
 /** Saskaņots ar 9 bloku režģa kartītēm (`PricingIncluded`): apmale + ēna, fons caurspīdīgs. */
 const irissCardClass =
@@ -22,7 +22,7 @@ export async function IrissSection() {
       <div className="relative mx-auto w-full max-w-[1000px]">
         <div className={irissCardClass}>
           <div className="text-center">
-            <h2 className={`${comparisonTableHeaderMutedClass} text-balance text-center`}>{t("title")}</h2>
+            <h2 className={`${homeSectionEyebrowClass} text-balance`}>{t("title")}</h2>
           </div>
 
           <IrissSocialIcons
@@ -35,8 +35,8 @@ export async function IrissSection() {
 
           <div className="mt-6 flex w-full min-w-0 flex-col gap-6 sm:mt-7 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
             <div className="min-w-0 flex-1 space-y-4 text-left">
-              <p className="text-[16px] font-normal leading-relaxed text-[#1d1d1f] sm:text-[17px]">{t("bio1")}</p>
-              <p className="text-[16px] font-normal leading-relaxed text-[#1d1d1f] sm:text-[17px]">{t("bio2")}</p>
+              <p className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>{t("bio1")}</p>
+              <p className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>{t("bio2")}</p>
             </div>
             <div className="flex shrink-0 flex-col items-center justify-center self-center rounded-xl bg-provin-accent px-5 py-4 text-center text-white shadow-[0_4px_16px_rgba(0,0,0,0.15)] sm:min-w-[140px] sm:self-start">
               <p className="text-[11px] font-medium uppercase tracking-wider text-white/90">{t("experienceLabel")}</p>

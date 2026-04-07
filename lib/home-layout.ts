@@ -19,3 +19,9 @@ export const comparisonTableHeaderMutedClass = `${comparisonTableHeaderBaseClass
 
 /** PROVIN kolonna tabulas galvenē. */
 export const comparisonTableHeaderAccentClass = `${comparisonTableHeaderBaseClass} text-provin-accent`;
+
+/**
+ * Salīdzinājuma tabulas pirmās kolonnas (IEZĪME) rindiņu teksts — tas pats izmērs un svars kā šūnām zem „STANDARTA ATSKAITE”.
+ */
+export const comparisonTableFeatureCellClass =
+  "text-[13px] font-medium leading-snug text-[#1d1d1f] sm:text-[14px] sm:leading-snug";
