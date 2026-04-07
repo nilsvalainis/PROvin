@@ -17,13 +17,13 @@ export async function HowItWorks() {
         <div className="mx-auto flex min-w-0 max-w-lg flex-col md:max-w-none md:flex-row md:items-stretch md:justify-center md:gap-0">
           {steps.map((s, i) => (
             <Fragment key={s.n}>
-              <article className={`${cardClass} flex min-w-0 flex-col justify-center`}>
-                <div className="flex items-start gap-4">
-                  <StepBadge n={s.n} />
-                  <h3 className="min-w-0 flex-1 pt-1 text-[17px] font-semibold leading-snug tracking-tight text-[#1d1d1f] sm:text-[18px]">
-                    {s.title}
-                  </h3>
+              <article className={`${cardClass} flex min-w-0 flex-col items-center justify-center text-center`}>
+                <div className="flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-provin-accent text-white shadow-[0_10px_24px_rgba(0,102,214,0.28)] ring-2 ring-white sm:h-[80px] sm:w-[80px]">
+                  <StepIcon n={s.n} />
                 </div>
+                <h3 className="mt-4 text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[13px]">
+                  {s.title}
+                </h3>
                 {s.body.trim() ? (
                   <p className="mt-4 max-w-[65ch] text-[13px] font-normal leading-relaxed text-[#86868b] sm:text-[14px]">
                     {s.body}
@@ -53,15 +53,30 @@ export async function HowItWorks() {
 }
 
 const cardClass =
-  "provin-lift flex-1 rounded-xl border border-black/[0.06] bg-[#fbfbfd] p-5 text-left shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:p-6";
+  "provin-lift flex-1 rounded-xl border border-black/[0.06] bg-[#fbfbfd] p-5 sm:p-6";
 
-function StepBadge({ n }: { n: string }) {
+function StepIcon({ n }: { n: string }) {
+  const className = "h-8 w-8 sm:h-9 sm:w-9";
+  if (n === "1") {
+    return (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+        <rect x="5" y="4.5" width="14" height="15" rx="2" />
+        <path d="M8 8h8M8 12h8M8 16h5" />
+      </svg>
+    );
+  }
+  if (n === "2") {
+    return (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+        <rect x="3.5" y="6.5" width="17" height="11" rx="2" />
+        <path d="M3.5 10.5h17M8 15h3" />
+      </svg>
+    );
+  }
   return (
-    <div
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[17px] font-semibold tabular-nums text-white shadow-[0_4px_12px_rgba(0,0,0,0.14)] ring-2 ring-white"
-      aria-hidden
-    >
-      {n}
-    </div>
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+      <path d="M12 3.8 18.5 6v5.4c0 4.1-2.8 7.2-6.5 8.8-3.7-1.6-6.5-4.7-6.5-8.8V6z" />
+      <path d="m9.5 12.2 1.8 1.8 3.4-3.4" />
+    </svg>
   );
 }

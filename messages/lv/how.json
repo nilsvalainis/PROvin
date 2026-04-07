@@ -3,7 +3,7 @@
     "steps": [
       {
         "n": "1",
-        "title": "Ievadi VIN kodu un sludinājuma saiti",
+        "title": "Aizpildi formu",
         "body": ""
       },
       {
@@ -13,7 +13,7 @@
       },
       {
         "n": "3",
-        "title": "Saņem detalizētu atskaiti 24 stundu laikā",
+        "title": "Saņem atskaiti",
         "body": ""
       }
     ]
