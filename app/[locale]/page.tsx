@@ -32,14 +32,12 @@ export default async function HomePage({
           <Hero />
           <HowItWorks />
           <FinalCta cancelled={cancelled} />
-
-          <section id="cena" className="px-4 pt-8 sm:px-6 md:pt-10">
-            <div className="mx-auto w-full max-w-[1200px]">
+          <PricingIncluded />
+          <section id="cena" className="px-4 pt-6 sm:px-6 md:pt-8">
+            <div className="mx-auto w-full max-w-[1000px]">
               <PricingTransitionAndComparison />
             </div>
           </section>
-
-          <PricingIncluded />
           <IrissSection />
 
           <p className="mx-auto px-4 pb-8 text-center text-[10px] font-normal leading-snug text-[#86868b] sm:px-6 sm:pb-10 sm:text-[11px]">

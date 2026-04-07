@@ -1,7 +1,7 @@
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { irissAnchorHref } from "@/lib/paths";
-import { homeContentMaxClass, sectionH2Class } from "@/lib/home-layout";
+import { sectionH2Class } from "@/lib/home-layout";
 
 type GridItem = {
   title: string;
@@ -10,7 +10,7 @@ type GridItem = {
 };
 
 const pillarRowClass =
-  "provin-lift-subtle flex min-h-0 gap-3.5 rounded-xl border border-black/[0.08] bg-white p-4 text-left shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:p-5";
+  "provin-lift-subtle flex min-h-0 gap-3 rounded-xl border border-black/[0.08] bg-white p-3.5 text-left shadow-[0_2px_10px_rgba(0,0,0,0.04)] sm:p-4";
 
 export async function PricingIncluded() {
   const t = await getTranslations("Pricing");
@@ -21,7 +21,7 @@ export async function PricingIncluded() {
 
   return (
     <section className="relative px-4 py-8 sm:px-6 md:py-12">
-      <div className={`relative ${homeContentMaxClass}`}>
+      <div className="relative mx-auto w-full max-w-[1000px]">
         <h2 className={`${sectionH2Class} text-center uppercase tracking-[0.04em]`}>{t("workTitle")}</h2>
         <ul className="mt-6 grid list-none grid-cols-1 gap-3 sm:mt-8 sm:grid-cols-2 lg:grid-cols-3">
             {grid.map((item, i) => {
@@ -34,7 +34,7 @@ export async function PricingIncluded() {
                     <h3 className="text-[15px] font-semibold leading-snug tracking-tight text-[#1d1d1f] sm:text-[16px]">
                       {item.title}
                     </h3>
-                    <p className="mt-1.5 text-[13px] font-normal leading-relaxed text-[#86868b] sm:text-[14px] sm:leading-relaxed">
+                    <p className="mt-1 text-[12px] font-normal leading-relaxed text-[#86868b] sm:text-[13px] sm:leading-relaxed">
                       {item.body}
                     </p>
                     {item.href ? (

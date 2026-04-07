@@ -24,7 +24,7 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
       id={ORDER_SECTION_ID}
       className="relative z-10 scroll-mt-[calc(2.75rem+1px)] sm:scroll-mt-12"
     >
-      <div className="relative mx-auto min-w-0 max-w-[692px] px-4 pb-12 pt-6 text-center sm:px-6 sm:pb-14 sm:pt-8">
+      <div className="relative mx-auto min-w-0 max-w-[1000px] px-4 pb-12 pt-6 text-center sm:px-6 sm:pb-14 sm:pt-8">
         <div className="flex flex-col items-center gap-1.5">
           <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[13px]">
             {t("sectionTitle")}

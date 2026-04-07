@@ -51,26 +51,26 @@ export async function PricingTransitionAndComparison() {
       <div className="min-w-0">
         <h2 className={`${sectionH2Class} text-center uppercase tracking-[0.04em]`}>{t("comparisonTitle")}</h2>
 
-        <div className="mt-5 min-w-0 w-full overflow-x-auto rounded-xl border border-black/[0.06] bg-white/96 shadow-none [-webkit-overflow-scrolling:touch] sm:mt-6">
+        <div className="mt-5 min-w-0 w-full overflow-x-auto rounded-xl border border-black/[0.05] bg-transparent shadow-none [-webkit-overflow-scrolling:touch] sm:mt-6">
           <table className="w-full min-w-[min(100%,560px)] border-separate border-spacing-0 text-center text-[13px] leading-snug sm:min-w-[620px] sm:text-[14px]">
             <caption className="sr-only">{t("comparisonTitle")}</caption>
             <thead>
               <tr>
                 <th
                   scope="col"
-                  className="rounded-tl-xl bg-[#e8e8ed] px-2 py-3.5 text-left text-[10px] font-bold uppercase tracking-wide text-[#5c5d62] sm:px-4 sm:text-[11px] sm:tracking-wider"
+                  className="rounded-tl-xl bg-transparent px-2 py-3.5 text-left text-[10px] font-bold uppercase tracking-wide text-[#5c5d62] sm:px-4 sm:text-[11px] sm:tracking-wider"
                 >
                   {t("comparisonColFeature")}
                 </th>
                 <th
                   scope="col"
-                  className="bg-[#e8e8ed] px-2 py-3.5 text-[10px] font-bold uppercase tracking-wide text-[#5c5d62] sm:px-4 sm:text-[11px] sm:tracking-wider"
+                  className="bg-transparent px-2 py-3.5 text-[10px] font-bold uppercase tracking-wide text-[#5c5d62] sm:px-4 sm:text-[11px] sm:tracking-wider"
                 >
                   {t("comparisonColStandard")}
                 </th>
                 <th
                   scope="col"
-                  className="rounded-tr-xl bg-provin-accent px-2 py-3.5 text-[10px] font-bold uppercase tracking-wide text-white sm:px-4 sm:text-[11px] sm:tracking-wider"
+                  className="rounded-tr-xl border border-provin-accent/30 bg-provin-accent-soft px-2 py-3.5 text-[10px] font-bold uppercase tracking-wide text-provin-accent sm:px-4 sm:text-[11px] sm:tracking-wider"
                 >
                   {t("comparisonColProvin")}
                 </th>
@@ -78,8 +78,8 @@ export async function PricingTransitionAndComparison() {
             </thead>
             <tbody>
               {rows.map((row, i) => {
-                const zebra = i % 2 === 1 ? "bg-[#f5f5f7]" : "bg-white";
-                const provinBg = i % 2 === 1 ? "bg-[#e0eef9]" : "bg-provin-accent-soft";
+                const zebra = i % 2 === 1 ? "bg-black/[0.015]" : "bg-transparent";
+                const provinBg = i % 2 === 1 ? "bg-[#e8f2fc]" : "bg-provin-accent-soft";
                 return (
                   <tr key={i} className="border-b border-black/[0.06] last:border-b-0">
                     <th
@@ -91,7 +91,7 @@ export async function PricingTransitionAndComparison() {
                     <td className={`px-2 py-3 align-middle ${zebra}`}>
                       <StandardValue value={row.standard} />
                     </td>
-                    <td className={`border-l border-black/[0.06] px-2 py-3 align-middle sm:px-3 ${provinBg}`}>
+                    <td className={`border-l border-provin-accent/25 px-2 py-3 align-middle sm:px-3 ${provinBg}`}>
                       <ProvinValue value={row.provin} />
                     </td>
                   </tr>
