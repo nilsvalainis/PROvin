@@ -183,7 +183,7 @@ export function AdminOrderDetailView({
   const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}-${fieldUiRev}`;
 
   const sectionClass =
-    "rounded-lg border border-slate-200/90 bg-slate-50/40 p-2 shadow-sm";
+    "rounded-xl bg-slate-50/40 p-2 shadow-sm ring-1 ring-slate-200/70";
   const sectionTitle = `font-bold uppercase tracking-wide text-[var(--color-apple-text)] ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
   const sectionHint = "mt-0.5 text-[10px] leading-tight text-[var(--color-provin-muted)]";
   const metaLabel = "text-[10px] font-medium text-[var(--color-provin-muted)]";
@@ -192,7 +192,7 @@ export function AdminOrderDetailView({
   const metaStack = "mt-1 flex flex-col gap-1 text-[11px]";
 
   return (
-    <div className="w-full max-w-none">
+    <div className="mx-auto w-full max-w-[1600px] px-8">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <Link
           href="/admin"
@@ -242,8 +242,8 @@ export function AdminOrderDetailView({
       </header>
 
       <div className="space-y-1.5">
-        <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2 xl:items-stretch">
-          <section className={`${sectionClass} min-w-0`}>
+        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-4 xl:items-stretch">
+          <section id="admin-order-section-maksajums" className={`${sectionClass} min-w-0`}>
             <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
               <SectionLineIcon id="wallet" className="!h-5 !w-5" />
               Maksājums
@@ -267,7 +267,7 @@ export function AdminOrderDetailView({
             </dl>
           </section>
 
-          <section className={`${sectionClass} min-w-0`}>
+          <section id="admin-order-section-transports" className={`${sectionClass} min-w-0`}>
             <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
               <SectionLineIcon id="car" className="!h-5 !w-5" />
               <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
@@ -363,85 +363,88 @@ export function AdminOrderDetailView({
               </div>
             </div>
           </section>
+
+          <section id="admin-order-section-klienta" className={`${sectionClass} min-w-0`}>
+            <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
+              <SectionLineIcon id="user" className="!h-5 !w-5" />
+              Klienta dati
+            </h2>
+            <p className={sectionHint}>
+              No pasūtījuma — <strong className="font-medium text-[var(--color-apple-text)]">nav rediģējami</strong>.
+            </p>
+            <dl className={metaStack}>
+              <div className="min-w-0">
+                <dt className={metaLabel}>E-pasts</dt>
+                <dd className={`${metaValue} break-all`}>
+                  {order.customerEmail ?? order.customerDetailsEmail ?? "—"}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className={metaLabel}>Tālrunis</dt>
+                <dd className={metaValue}>{order.phone ?? order.customerDetailsPhone ?? "—"}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className={metaLabel}>Vārds, uzvārds</dt>
+                <dd className={metaValue}>{order.customerName ?? "—"}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className={metaLabel}>Vēlamā saziņa (no formas)</dt>
+                <dd className={metaValue}>{order.contactMethod ?? "—"}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <div
+            id={`admin-portfolio-slot-${order.id}`}
+            className="min-h-0 min-w-0 rounded-xl bg-white/80 shadow-sm ring-1 ring-slate-200/70 xl:min-h-[140px]"
+          />
         </div>
+
+        <section id="admin-order-section-komentars" className={sectionClass}>
+          <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
+            <SectionLineIcon id="messageSquare" className="!h-5 !w-5" />
+            <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
+              <span>Klienta komentārs</span>
+              {orderEditsAutosaveFlash ? (
+                <span
+                  className={`text-[10px] font-semibold normal-case tracking-normal ${
+                    orderDraftPersistenceEnabled && !orderEditsSaveServerOk ? "text-amber-800" : "text-emerald-700"
+                  }`}
+                  role="status"
+                >
+                  {!orderDraftPersistenceEnabled
+                    ? "Saglabāts"
+                    : orderEditsSaveServerOk
+                      ? "Saglabāts serverī"
+                      : "Saglabāts lokāli (serveris nav pieejams)"}
+                </span>
+              ) : null}
+            </span>
+          </h2>
+          <p className={sectionHint}>
+            {orderDraftPersistenceEnabled
+              ? "Melnraksts serverī (JSON) + kopija pārlūkā; oriģinālais klienta teksts — Stripe."
+              : "Tikai pārlūkā; oriģināls — serverī / Stripe."}
+          </p>
+          <div className="mt-1">
+            <AdminSavableTextField
+              id="edit-notes"
+              value={mergedNotes}
+              onChange={(v) => persistEdits({ ...edits, notes: v })}
+              placeholder="Klienta ziņojums…"
+              multiline
+              compact
+              minHeightClass="min-h-[56px]"
+              resetVersion={orderFieldResetKey}
+            />
+          </div>
+        </section>
 
         <OrderDetailWorkspace
           portfolioPortalDomId={`admin-portfolio-slot-${order.id}`}
+          portfolioPortalTargetInParent
           serverWorkspaceJson={serverWorkspaceJson}
           orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
-          sidebarExtras={
-            <>
-              <section className={`${sectionClass} p-1.5`}>
-                <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
-                  <SectionLineIcon id="user" className="!h-5 !w-5" />
-                  Klienta dati
-                </h2>
-                <p className={sectionHint}>
-                  No pasūtījuma — <strong className="font-medium text-[var(--color-apple-text)]">nav rediģējami</strong>.
-                </p>
-                <dl className={metaStack}>
-                  <div className="min-w-0">
-                    <dt className={metaLabel}>E-pasts</dt>
-                    <dd className={`${metaValue} break-all`}>
-                      {order.customerEmail ?? order.customerDetailsEmail ?? "—"}
-                    </dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className={metaLabel}>Tālrunis</dt>
-                    <dd className={metaValue}>{order.phone ?? order.customerDetailsPhone ?? "—"}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className={metaLabel}>Vārds, uzvārds</dt>
-                    <dd className={metaValue}>{order.customerName ?? "—"}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className={metaLabel}>Vēlamā saziņa (no formas)</dt>
-                    <dd className={metaValue}>{order.contactMethod ?? "—"}</dd>
-                  </div>
-                </dl>
-              </section>
-
-              <section className={`${sectionClass} p-1.5`}>
-                <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
-                  <SectionLineIcon id="messageSquare" className="!h-5 !w-5" />
-                  <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
-                    <span>Klienta komentārs</span>
-                    {orderEditsAutosaveFlash ? (
-                      <span
-                        className={`text-[10px] font-semibold normal-case tracking-normal ${
-                          orderDraftPersistenceEnabled && !orderEditsSaveServerOk ? "text-amber-800" : "text-emerald-700"
-                        }`}
-                        role="status"
-                      >
-                        {!orderDraftPersistenceEnabled
-                          ? "Saglabāts"
-                          : orderEditsSaveServerOk
-                            ? "Saglabāts serverī"
-                            : "Saglabāts lokāli (serveris nav pieejams)"}
-                      </span>
-                    ) : null}
-                  </span>
-                </h2>
-                <p className={sectionHint}>
-                  {orderDraftPersistenceEnabled
-                    ? "Melnraksts serverī (JSON) + kopija pārlūkā; oriģinālais klienta teksts — Stripe."
-                    : "Tikai pārlūkā; oriģināls — serverī / Stripe."}
-                </p>
-                <div className="mt-1">
-                  <AdminSavableTextField
-                    id="edit-notes"
-                    value={mergedNotes}
-                    onChange={(v) => persistEdits({ ...edits, notes: v })}
-                    placeholder="Klienta ziņojums…"
-                    multiline
-                    compact
-                    minHeightClass="min-h-[56px]"
-                    resetVersion={orderFieldResetKey}
-                  />
-                </div>
-              </section>
-            </>
-          }
           payload={{
             sessionId: order.id,
             isDemo: Boolean(order.isDemo),

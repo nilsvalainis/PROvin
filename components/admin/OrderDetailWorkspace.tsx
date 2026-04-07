@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePortfolioFileRow";
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
@@ -11,6 +10,11 @@ import { AdminVendorAvotuSourceBlock } from "@/components/admin/AdminVendorAvotu
 import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBlock";
 import { AdminListingAnalysisSourceBlock } from "@/components/admin/AdminListingAnalysisSourceBlock";
 import { AdminCitiAvotiSourceBlock } from "@/components/admin/AdminCitiAvotiSourceBlock";
+import {
+  AdminOrderProgressNavStrip,
+  AdminOrderProgressSidebar,
+} from "@/components/admin/AdminOrderProgressNav";
+import type { AdminProgressNavItem } from "@/components/admin/AdminOrderProgressNav";
 import {
   SOURCE_BLOCK_KEYS,
   SOURCE_BLOCK_LABELS,
@@ -61,11 +65,15 @@ import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banne
 import { SUBHEADING_ICON } from "@/lib/section-icons";
 import {
   TRAFFIC_HEADER_STRIP_CLASS,
+  alertBannersTrafficLevel,
   autoRecordsTrafficLevel,
   citiAvotiTrafficLevel,
   csddTrafficLevel,
+  expertSummaryTrafficLevel,
   listingSectionTrafficLevel,
   ltabTrafficLevel,
+  pdfSectionTrafficLevel,
+  portfolioFilesTrafficLevel,
   vendorAvotuTrafficLevel,
 } from "@/lib/admin-block-traffic-status";
 import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
@@ -125,7 +133,8 @@ const workspaceToolbarBtn =
 
 const workspaceSectionTitle = `font-bold uppercase tracking-wide text-[var(--color-apple-text)] ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
 
-const workspaceSectionShell = "rounded-lg border border-slate-200/90 bg-white p-2 shadow-sm";
+const workspaceSectionShell =
+  "rounded-xl bg-white p-2 shadow-sm ring-1 ring-slate-200/70";
 
 const bulkTextareaClass =
   "w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -293,18 +302,18 @@ function KmMergeChart({ points }: { points: { km: number; label: string }[] }) {
 export function OrderDetailWorkspace({
   payload,
   portfolioPortalDomId,
+  portfolioPortalTargetInParent = false,
   serverWorkspaceJson = null,
   orderDraftPersistenceEnabled = false,
-  sidebarExtras,
 }: {
   payload: OrderWorkspacePayload;
   /** Ja norādīts, „1. Pielikumi” tiek renderēts šajā DOM elementā (kreisās kolonnas augšā). */
   portfolioPortalDomId?: string;
+  /** Ja `true`, vecāka komponents jau renderē `<div id={portfolioPortalDomId} />` (bez dublikāta ID). */
+  portfolioPortalTargetInParent?: boolean;
   /** SSR ielādēts darba zonas JSON (prioritāte pār localStorage). */
   serverWorkspaceJson?: string | null;
   orderDraftPersistenceEnabled?: boolean;
-  /** Labā kolonna zem IRISS — kompakti „Klienta dati” / komentārs utt. */
-  sidebarExtras?: ReactNode;
 }) {
   const fileInputId = useId();
   const [ws, setWs] = useState<WorkspacePersist>(EMPTY_WORKSPACE);
@@ -750,6 +759,50 @@ export function OrderDetailWorkspace({
     };
   }, [blocksDisplaySafe]);
 
+  const progressNavItems = useMemo((): AdminProgressNavItem[] => {
+    const expertLvl = expertSummaryTrafficLevel({
+      iriss: ws.iriss,
+      apskatesPlāns: ws.apskatesPlāns,
+      cenasAtbilstiba: ws.cenasAtbilstiba,
+      previewConfirmed: ws.previewConfirmed,
+    });
+    const pdfLvl = pdfSectionTrafficLevel(
+      canGeneratePdf,
+      Boolean(ws.iriss.trim() || ws.apskatesPlāns.trim() || ws.cenasAtbilstiba.trim()),
+    );
+    const items: AdminProgressNavItem[] = [
+      { id: "admin-order-section-pielikumi", label: "1. Pielikumi", level: portfolioFilesTrafficLevel(portfolio.length) },
+      { id: "admin-order-block-csdd", label: SOURCE_BLOCK_LABELS.csdd, level: traffic.csdd },
+      { id: "admin-order-block-autodna", label: SOURCE_BLOCK_LABELS.autodna, level: traffic.autodna },
+      { id: "admin-order-block-carvertical", label: SOURCE_BLOCK_LABELS.carvertical, level: traffic.carvertical },
+      { id: "admin-order-block-auto-records", label: SOURCE_BLOCK_LABELS.auto_records, level: traffic.auto_records },
+      { id: "admin-order-block-ltab", label: SOURCE_BLOCK_LABELS.ltab, level: traffic.ltab },
+      { id: "admin-order-block-citi-avoti", label: SOURCE_BLOCK_LABELS.citi_avoti, level: traffic.citi_avoti },
+      { id: "admin-order-section-sludinajums", label: "3. Sludinājuma analīze", level: traffic.listingSection },
+    ];
+    if (provinAlertBanners.length > 0) {
+      items.push({
+        id: "admin-order-section-bridinajumi",
+        label: "Brīdinājumi (PDF)",
+        level: alertBannersTrafficLevel(provinAlertBanners.length),
+      });
+    }
+    items.push(
+      { id: "admin-order-section-kopsavilkums", label: "4. Kopsavilkums (IRISS)", level: expertLvl },
+      { id: "admin-order-section-pdf", label: "5. PDF klientam", level: pdfLvl },
+    );
+    return items;
+  }, [
+    portfolio.length,
+    traffic,
+    provinAlertBanners.length,
+    ws.iriss,
+    ws.apskatesPlāns,
+    ws.cenasAtbilstiba,
+    ws.previewConfirmed,
+    canGeneratePdf,
+  ]);
+
   const openPrintReport = async () => {
     if (!canGeneratePdf) {
       alert(
@@ -994,7 +1047,7 @@ export function OrderDetailWorkspace({
       : 0;
 
   const portfolioSection = (
-    <section className={portfolioShellClass}>
+    <section id="admin-order-section-pielikumi" className={portfolioShellClass}>
       <div
         className={`flex gap-1 ${narrowPortfolioLayout ? "flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between" : "flex-wrap items-center justify-between"}`}
       >
@@ -1163,9 +1216,13 @@ export function OrderDetailWorkspace({
 
       {showPortfolioPortal ? createPortal(portfolioSection, portfolioPortalEl!) : null}
 
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,65%)_minmax(0,35%)] xl:items-start">
+      <div className="xl:grid xl:grid-cols-[10.5rem_minmax(0,1fr)] xl:gap-5 xl:items-start">
+        <AdminOrderProgressSidebar items={progressNavItems} />
         <div className="min-w-0 space-y-1.5">
-          {portfolioPortalDomId ? <div id={portfolioPortalDomId} className="min-h-0 min-w-0" /> : null}
+          <AdminOrderProgressNavStrip items={progressNavItems} />
+          {portfolioPortalDomId && !portfolioPortalTargetInParent ? (
+            <div id={portfolioPortalDomId} className="min-h-0 min-w-0" />
+          ) : null}
           {showPortfolioInline ? portfolioSection : null}
 
       <section className={workspaceSectionShell}>
@@ -1213,7 +1270,7 @@ export function OrderDetailWorkspace({
           </div>
         </div>
         <div className="mt-1.5 flex flex-col gap-2">
-          <div className="w-full min-w-0">
+          <div id="admin-order-block-csdd" className="w-full min-w-0">
             <AdminCsddSourceBlock
               value={blocksForDisplay.csdd}
               readOnly={sourcesViewMode}
@@ -1221,8 +1278,8 @@ export function OrderDetailWorkspace({
               trafficFillLevel={traffic.csdd}
             />
           </div>
-          <div className="grid min-h-0 min-w-0 grid-cols-3 gap-2 items-stretch">
-            <div className="flex min-h-0 h-full min-w-0 flex-col">
+          <div className="grid min-h-0 min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3 items-stretch">
+            <div id="admin-order-block-autodna" className="flex min-h-0 h-full min-w-0 flex-col">
               <AdminVendorAvotuSourceBlock
                 blockKey="autodna"
                 value={blocksForDisplay.autodna}
@@ -1232,7 +1289,7 @@ export function OrderDetailWorkspace({
                 collapsible
               />
             </div>
-            <div className="flex min-h-0 h-full min-w-0 flex-col">
+            <div id="admin-order-block-carvertical" className="flex min-h-0 h-full min-w-0 flex-col">
               <AdminVendorAvotuSourceBlock
                 blockKey="carvertical"
                 value={blocksForDisplay.carvertical}
@@ -1242,7 +1299,7 @@ export function OrderDetailWorkspace({
                 collapsible
               />
             </div>
-            <div className="flex min-h-0 h-full min-w-0 flex-col">
+            <div id="admin-order-block-auto-records" className="flex min-h-0 h-full min-w-0 flex-col">
               <AdminAutoRecordsSourceBlock
                 value={blocksForDisplay.auto_records}
                 readOnly={sourcesViewMode}
@@ -1252,8 +1309,8 @@ export function OrderDetailWorkspace({
               />
             </div>
           </div>
-          <div className="grid min-h-0 min-w-0 grid-cols-2 gap-2 items-stretch">
-            <div className="flex min-h-0 h-full min-w-0 flex-col">
+          <div className="grid min-h-0 min-w-0 grid-cols-1 gap-2 md:grid-cols-2 items-stretch">
+            <div id="admin-order-block-ltab" className="flex min-h-0 h-full min-w-0 flex-col">
               <AdminLtabSourceBlock
                 value={blocksForDisplay.ltab}
                 readOnly={sourcesViewMode}
@@ -1262,7 +1319,7 @@ export function OrderDetailWorkspace({
                 collapsible
               />
             </div>
-            <div className="flex min-h-0 h-full min-w-0 flex-col">
+            <div id="admin-order-block-citi-avoti" className="flex min-h-0 h-full min-w-0 flex-col">
               <AdminCitiAvotiSourceBlock
                 value={blocksForDisplay.citi_avoti}
                 readOnly={sourcesViewMode}
@@ -1275,14 +1332,14 @@ export function OrderDetailWorkspace({
         </div>
       </section>
 
-      <section className="min-w-0">
+      <section id="admin-order-section-sludinajums" className="min-w-0">
         <h2 className={workspaceSectionTitle}>3. Sludinājuma analīze</h2>
         <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
           Lasīšanas / labošanas režīms kopīgs ar 2. sadaļas rīkjoslu (Saglabāt / Labot).
         </p>
-        <div className="mt-1.5 overflow-hidden rounded-lg border border-slate-200/90 shadow-sm">
+        <div className="mt-1.5 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200/70">
           <div
-            className={`flex items-center gap-2.5 border-b border-slate-200/90 bg-white px-2 py-1.5 ${TRAFFIC_HEADER_STRIP_CLASS[traffic.listingSection]}`}
+            className={`flex items-center gap-2.5 border-b border-slate-100 bg-white px-2 py-1.5 ${TRAFFIC_HEADER_STRIP_CLASS[traffic.listingSection]}`}
           >
             <SectionLineIcon id="search" />
             <span className="text-[11px] font-bold uppercase tracking-wide text-slate-900">SLUDINĀJUMA ANALĪZE</span>
@@ -1327,30 +1384,8 @@ export function OrderDetailWorkspace({
         </div>
       </section>
 
-      <section className="rounded-lg border border-[var(--color-provin-accent)]/30 bg-[var(--color-provin-accent-soft)]/50 p-2 shadow-sm">
-        <h2 className={workspaceSectionTitle}>5. PDF klientam</h2>
-        <p className="mt-0.5 text-[10px] leading-tight text-[var(--color-provin-muted)]">
-          Pēc kopsavilkuma aizpildes — druka / saglabāt kā PDF.
-        </p>
-        <button
-          type="button"
-          onClick={openPrintReport}
-          disabled={!canGeneratePdf}
-          className={`${workspaceToolbarBtn} mt-1 border border-slate-400/90 bg-white text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45`}
-        >
-          Ģenerēt PDF
-        </button>
-        {!canGeneratePdf ? (
-          <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">
-            Vajag apstiprinātu priekšskatu, kopsavilkumu un cenas atbilstības komentāru.
-          </p>
-        ) : null}
-      </section>
-        </div>
-
-        <aside className="min-w-0 space-y-2 xl:max-h-[calc(100dvh-1.25rem)] xl:overflow-y-auto xl:overscroll-contain">
           {provinAlertBanners.length > 0 ? (
-            <section className={workspaceSectionShell}>
+            <section id="admin-order-section-bridinajumi" className={workspaceSectionShell}>
               <h2 className={`${workspaceSectionTitle} mb-1.5`}>Brīdinājumi (PDF)</h2>
               <div className="space-y-2">
                 <AdminProvinAlertBanners banners={provinAlertBanners} />
@@ -1358,8 +1393,7 @@ export function OrderDetailWorkspace({
             </section>
           ) : null}
 
-          <div className="min-w-0 xl:sticky xl:top-3 xl:z-[2]">
-            <section className="min-w-0">
+            <section id="admin-order-section-kopsavilkums" className="min-w-0">
               <div className="flex flex-wrap items-start justify-between gap-1.5">
                 <div className="min-w-0">
                   <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
@@ -1417,7 +1451,7 @@ export function OrderDetailWorkspace({
                 </div>
               </div>
               <div
-                className={`mt-1.5 overflow-hidden rounded-lg border border-sky-200/70 shadow-[0_8px_24px_rgba(15,23,42,0.1)] ${
+                className={`mt-1.5 overflow-hidden rounded-xl shadow-sm ring-1 ring-sky-200/60 ${
                   ws.previewConfirmed ? "" : "opacity-[0.88]"
                 }`}
               >
@@ -1525,10 +1559,30 @@ export function OrderDetailWorkspace({
                 <p className="mt-1 text-[11px] text-amber-800">Vispirms apstiprini priekšskatu.</p>
               ) : null}
             </section>
-          </div>
 
-          {sidebarExtras}
-        </aside>
+      <section
+        id="admin-order-section-pdf"
+        className="rounded-xl bg-[var(--color-provin-accent-soft)]/50 p-2 shadow-sm ring-1 ring-[var(--color-provin-accent)]/25"
+      >
+        <h2 className={workspaceSectionTitle}>5. PDF klientam</h2>
+        <p className="mt-0.5 text-[10px] leading-tight text-[var(--color-provin-muted)]">
+          Pēc kopsavilkuma aizpildes — druka / saglabāt kā PDF.
+        </p>
+        <button
+          type="button"
+          onClick={openPrintReport}
+          disabled={!canGeneratePdf}
+          className={`${workspaceToolbarBtn} mt-1 border border-slate-300/90 bg-white text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45`}
+        >
+          Ģenerēt PDF
+        </button>
+        {!canGeneratePdf ? (
+          <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">
+            Vajag apstiprinātu priekšskatu, kopsavilkumu un cenas atbilstības komentāru.
+          </p>
+        ) : null}
+      </section>
+        </div>
       </div>
     </div>
   );

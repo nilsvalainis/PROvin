@@ -127,3 +127,37 @@ export function listingSectionTrafficLevel(
   const b = listingAnalysisTrafficLevel(listing);
   return order[a] < order[b] ? b : a;
 }
+
+/** Pielikumu skaits — 0 = tukšs. */
+export function portfolioFilesTrafficLevel(fileCount: number): TrafficFillLevel {
+  if (fileCount <= 0) return "empty";
+  return "complete";
+}
+
+/** 4. sadaļa — Kopsavilkums / IRISS (trīs lauki + priekšskata apstiprinājums). */
+export function expertSummaryTrafficLevel(p: {
+  iriss: string;
+  apskatesPlāns: string;
+  cenasAtbilstiba: string;
+  previewConfirmed: boolean;
+}): TrafficFillLevel {
+  const a = p.iriss.trim();
+  const b = p.apskatesPlāns.trim();
+  const c = p.cenasAtbilstiba.trim();
+  if (!a && !b && !c) return "empty";
+  if (a && b && c && p.previewConfirmed) return "complete";
+  return "partial";
+}
+
+/** 5. PDF — gatavs ģenerēšanai vs daļēji / tukšs. */
+export function pdfSectionTrafficLevel(canGeneratePdf: boolean, hasAnyExpertText: boolean): TrafficFillLevel {
+  if (canGeneratePdf) return "complete";
+  if (hasAnyExpertText) return "partial";
+  return "empty";
+}
+
+/** Brīdinājumu josla — nav = „zaļš”, ir = uzmanība. */
+export function alertBannersTrafficLevel(bannerCount: number): TrafficFillLevel {
+  if (bannerCount <= 0) return "complete";
+  return "partial";
+}
