@@ -24,8 +24,8 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
       id={ORDER_SECTION_ID}
       className="relative z-10 scroll-mt-[calc(2.75rem+1px)] sm:scroll-mt-12"
     >
-      <div className="relative mx-auto min-w-0 max-w-[1000px] px-4 pb-4 pt-2 text-center sm:px-6 sm:pb-5 sm:pt-2">
-        <div className="flex justify-center">
+      <div className="relative mx-auto min-w-0 max-w-[1000px] px-4 pb-4 pt-4 text-center sm:px-6 sm:pb-5 sm:pt-4">
+        <div className="flex w-full flex-col items-center gap-4">
           <a
             href="#order-form"
             aria-label={t("scrollToFormAria")}
@@ -33,19 +33,19 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
           >
             <NavChevronDown />
           </a>
-        </div>
 
-        {cancelled && (
-          <p
-            className="mx-auto mt-4 max-w-md rounded-xl border border-black/[0.06] bg-white/80 px-4 py-3 text-[13px] font-normal text-[#424245] shadow-[0_1px_8px_rgba(0,0,0,0.04)] backdrop-blur-sm"
-            role="status"
-          >
-            {t("cancelled")}
-          </p>
-        )}
+          {cancelled && (
+            <p
+              className="mx-auto max-w-md rounded-xl border border-black/[0.06] bg-white/80 px-4 py-3 text-[13px] font-normal text-[#424245] shadow-[0_1px_8px_rgba(0,0,0,0.04)] backdrop-blur-sm"
+              role="status"
+            >
+              {t("cancelled")}
+            </p>
+          )}
 
-        <div id="order-form" className="mx-auto mt-5 max-w-[560px] scroll-mt-24 text-left sm:mt-6 sm:scroll-mt-28">
-          <OrderForm variant="hero" className="!mt-0" />
+          <div id="order-form" className="mx-auto w-full max-w-[560px] scroll-mt-24 text-left sm:scroll-mt-28">
+            <OrderForm variant="hero" className="!mt-0" />
+          </div>
         </div>
 
         {t("footnote").trim() ? (

@@ -33,7 +33,8 @@ export const homeSoftBandGradientClass =
   "bg-gradient-to-b from-[#f9fafc] via-[#f3f5f8] to-[#e8ecf0]";
 
 /**
- * 3 soļu sadaļa: pakāpeniski tumšāks vidū, sapludinājums ar gaišāku fonu augšā un apakšā (ne cieta kaste).
+ * 3 soļu josla: viens plūdens linear-gradient (gaišs → nedaudz tumšāks zili-pelēks → gaišs),
+ * bez asām robežām pret Hero / anketu. Sānu sapludinājums — caur `HowItWorks` malu slāņiem.
  */
 export const homeHowItWorksBandClass =
-  "bg-[linear-gradient(to_bottom,#ffffff_0%,#f7f9fc_12%,#eef2f7_38%,#e2e8f0_50%,#eef2f7_62%,#f7f9fc_88%,#ffffff_100%)]";
+  "bg-[linear-gradient(180deg,#ffffff_0%,#f9fafc_8%,#f1f4f9_28%,#dfe7f0_50%,#f1f4f9_72%,#f9fafc_92%,#ffffff_100%)]";

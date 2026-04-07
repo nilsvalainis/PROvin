@@ -14,22 +14,14 @@ export async function HowItWorks() {
   return (
     <section className={`relative z-10 overflow-hidden ${homeHowItWorksBandClass}`}>
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-20 bg-gradient-to-b from-white via-white/40 to-transparent sm:h-24"
+        className="pointer-events-none absolute inset-y-0 left-0 z-0 w-[min(5rem,22vw)] bg-gradient-to-r from-[#fafbfd]/95 to-transparent"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-20 bg-gradient-to-t from-white via-white/40 to-transparent sm:h-24"
+        className="pointer-events-none absolute inset-y-0 right-0 z-0 w-[min(5rem,22vw)] bg-gradient-to-l from-[#fafbfd]/95 to-transparent"
         aria-hidden
       />
-      <div
-        className="pointer-events-none absolute inset-y-0 left-0 z-0 w-[min(5rem,22vw)] bg-gradient-to-r from-white/90 to-transparent"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-y-0 right-0 z-0 w-[min(5rem,22vw)] bg-gradient-to-l from-white/90 to-transparent"
-        aria-hidden
-      />
-      <div className="relative z-10 px-4 pb-3 pt-3 sm:px-6 sm:pb-4 sm:pt-4">
+      <div className="relative z-10 px-4 py-4 sm:px-6 sm:py-4">
         <div className={`relative ${homeContentMaxClass}`}>
           <div className="mx-auto flex min-w-0 max-w-lg flex-col gap-1 md:max-w-none md:flex-row md:items-center md:justify-center md:gap-1">
             {steps.map((s, i) => (
