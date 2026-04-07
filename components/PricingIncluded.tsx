@@ -43,6 +43,11 @@ export async function PricingIncluded() {
                   <p className="mt-1.5 text-[13px] font-normal leading-relaxed text-[#86868b] sm:text-[14px] sm:leading-relaxed">
                     {item.body}
                   </p>
+                  {item.titleStar ? (
+                    <p className="mt-2 text-[10px] font-normal leading-snug text-[#86868b] sm:text-[11px]">
+                      {t("autoRecordsFootnote")}
+                    </p>
+                  ) : null}
                   {item.href ? (
                     <p className="mt-2 text-[11px] font-medium text-provin-accent sm:text-[12px]">
                       {t("irissLink")} <span aria-hidden>↓</span>

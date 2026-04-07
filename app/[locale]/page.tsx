@@ -1,4 +1,3 @@
-import { AutoRecordsSiteFootnote } from "@/components/AutoRecordsSiteFootnote";
 import { Faq } from "@/components/Faq";
 import { FinalCta } from "@/components/FinalCta";
 import { Hero } from "@/components/Hero";
@@ -37,7 +36,6 @@ export default async function HomePage({
         </div>
       </section>
       <Faq />
-      <AutoRecordsSiteFootnote />
       <Footer />
     </>
   );

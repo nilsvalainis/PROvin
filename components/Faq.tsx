@@ -20,9 +20,6 @@ export async function Faq() {
           <h2 id="faq-heading" className={sectionH2Class}>
             {t("title")}
           </h2>
-          <p className="mx-auto mt-2 max-w-[65ch] text-[16px] font-normal leading-relaxed text-[#86868b] sm:text-[17px]">
-            {t("subtitle")}
-          </p>
         </div>
 
         <div className="mt-10 space-y-3">
