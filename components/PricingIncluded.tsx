@@ -27,7 +27,7 @@ export async function PricingIncluded() {
             {grid.map((item, i) => {
               const inner = (
                 <>
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-provin-accent text-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] ring-2 ring-white">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center self-start rounded-full bg-provin-accent-soft/90 text-provin-accent sm:h-11 sm:w-11">
                     <GridIcon index={i} />
                   </span>
                   <div className="min-w-0 flex-1 pt-0.5">
@@ -70,104 +70,38 @@ export async function PricingIncluded() {
 }
 
 function GridIcon({ index }: { index: number }) {
-  const className = "h-4 w-4";
-  switch (index) {
-    case 0:
-      return <IconGlobe className={className} />;
-    case 1:
-      return <IconClipboard className={className} />;
-    case 2:
-      return <IconHome className={className} />;
-    case 3:
-      return <IconSearch className={className} />;
-    case 4:
-      return <IconGear className={className} />;
-    case 5:
-      return <IconCompare className={className} />;
-    case 6:
-      return <IconScale className={className} />;
-    case 7:
-      return <IconPhone className={className} />;
-    default:
-      return <IconShield className={className} />;
+  const cls = "h-5 w-5 sm:h-[22px] sm:w-[22px]";
+  const stroke = 1.75;
+  const kind = index % 3;
+  if (kind === 0) {
+    return (
+      <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={stroke} aria-hidden>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4-8-4s-8 1.79-8 4"
+        />
+      </svg>
+    );
   }
-}
-
-function IconGlobe({ className }: { className?: string }) {
+  if (kind === 1) {
+    return (
+      <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={stroke} aria-hidden>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        />
+      </svg>
+    );
+  }
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <circle cx="12" cy="12" r="8" />
-      <path d="M4 12h16M12 4a13 13 0 0 1 0 16M12 4a13 13 0 0 0 0 16" />
-    </svg>
-  );
-}
-
-function IconClipboard({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <rect x="7" y="5" width="10" height="14" rx="2" />
-      <path d="M9 5.5h6M10 3h4v2h-4z" />
-    </svg>
-  );
-}
-
-function IconHome({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path d="M4 11.5 12 5l8 6.5" />
-      <path d="M6.5 10.5V19h11v-8.5" />
-    </svg>
-  );
-}
-
-function IconSearch({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <circle cx="11" cy="11" r="6" />
-      <path d="m16 16 4 4" />
-    </svg>
-  );
-}
-
-function IconGear({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <circle cx="12" cy="12" r="3.5" />
-      <path d="M12 4.5v2.2M12 17.3v2.2M6.7 6.7l1.6 1.6M15.7 15.7l1.6 1.6M4.5 12h2.2M17.3 12h2.2M6.7 17.3l1.6-1.6M15.7 8.3l1.6-1.6" />
-    </svg>
-  );
-}
-
-function IconCompare({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path d="M6 7h8M6 12h12M6 17h8" />
-      <path d="m16 5 3 2-3 2M18 15l-3 2 3 2" />
-    </svg>
-  );
-}
-
-function IconScale({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path d="M12 5v14M7 7h10M4.5 10.5h5l-2.5 4zM14.5 10.5h5l-2.5 4zM8 19h8" />
-    </svg>
-  );
-}
-
-function IconPhone({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path d="M7.5 4.5h3l1.2 3.2-2 1.3a13.3 13.3 0 0 0 5.3 5.3l1.3-2 3.2 1.2v3a2 2 0 0 1-2.2 2A15.8 15.8 0 0 1 5.5 6.7a2 2 0 0 1 2-2.2z" />
-    </svg>
-  );
-}
-
-function IconShield({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path d="M12 3.8 18.5 6v5.4c0 4.1-2.8 7.2-6.5 8.8-3.7-1.6-6.5-4.7-6.5-8.8V6z" />
-      <path d="m9.5 12.2 1.8 1.8 3.4-3.4" />
+    <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={stroke} aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
     </svg>
   );
 }
