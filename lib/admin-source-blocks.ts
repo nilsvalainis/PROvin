@@ -491,6 +491,9 @@ export const LISTING_ANALYSIS_SUBSECTIONS = {
   listingDescription: "Sludinājuma apraksts",
 } as const;
 
+/** Tirgus dati integrēti „Sludinājuma analīzē” (PDF + admin). */
+export const LISTING_HISTORY_SUBSECTION_TITLE = "Sludinājuma vēsture";
+
 export function listingAnalysisToPlainText(b: ListingAnalysisBlockState): string {
   const L = LISTING_ANALYSIS_SUBSECTIONS;
   const parts: string[] = [];

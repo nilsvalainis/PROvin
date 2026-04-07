@@ -17,16 +17,23 @@ type Props = {
   readOnly: boolean;
   disabled?: boolean;
   onChange: (next: TirgusFormFields) => void;
+  /** Ievietots „Sludinājuma analīzē” — bez atsevišķas „Tirgus dati” galvenes un ārējā kartītes. */
+  variant?: "default" | "embedded";
 };
 
-export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange }: Props) {
+export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, variant = "default" }: Props) {
   const setField = (key: keyof TirgusFormFields, v: string) => {
     onChange({ ...value, [key]: v });
   };
 
+  const shell =
+    variant === "embedded"
+      ? "flex h-full min-h-0 flex-col"
+      : "flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-white p-2 shadow-sm";
+
   return (
-    <div className="flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-white p-2 shadow-sm">
-      <AdminSourceBlockHeader blockKey="tirgus" className="mb-2 shrink-0" />
+    <div className={shell}>
+      {variant === "default" ? <AdminSourceBlockHeader blockKey="tirgus" className="mb-2 shrink-0" /> : null}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">

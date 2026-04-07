@@ -12,6 +12,7 @@ import {
   LISTING_ANALYSIS_SUBSECTIONS,
   SOURCE_BLOCK_LABELS,
   listingAnalysisHasContent,
+  LISTING_HISTORY_SUBSECTION_TITLE,
   ltabRowHasData,
   NEGADIJUMU_VESTURE_TITLE,
   TIRGUS_LABEL_CREATED,
@@ -64,7 +65,6 @@ import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
 const PDF_SECTION_AVOTU_DATI = "AVOTU DATI";
-const PDF_SECTION_TIRGUS_DATI = "TIRGUS DATI";
 const PDF_APPROVED_BY_IRISS = "APPROVED BY IRISS";
 const PDF_KOPSAVILKUMS_UN_APSKATES_PLANS = "KOPSAVILKUMS UN APSKATES PLĀNS";
 const PDF_SUB_CSDD = "CSDD";
@@ -293,16 +293,13 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
   return card;
 }
 
-/** Tirgus — Colored Header + dati; komentāri sala zem kartes. */
-function buildTirgusAvotuSubsection(p: ClientReportPayload): string {
+/** Tirgus dati — HTML ķermenis „Sludinājuma vēsture” apakšsadaļai (bez ārējās kartes). */
+function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
   const hasForm = tirgusFormHasContent(p.tirgusForm);
   const hasText = p.tirgus.trim().length > 0;
   if (!hasForm && !hasText) return "";
 
-  const header = pdfAvotuNeutralHeader(ICO.tag, PDF_SECTION_TIRGUS_DATI, "pdf-avotu-ico-brand--tirgus");
-  let bodyInner: string;
-  let island = "";
-
+  const parts: string[] = [];
   if (hasForm && p.tirgusForm) {
     const f = p.tirgusForm;
     const rows: string[] = [];
@@ -325,17 +322,12 @@ function buildTirgusAvotuSubsection(p: ClientReportPayload): string {
       rows.length > 0
         ? `<table class="mirror-table"><tbody>${rows.join("\n")}</tbody></table>`
         : "";
-    bodyInner = table;
-    if (f.comments.trim()) island = pdfAvotuCommentIsland(f.comments);
+    if (table) parts.push(table);
+    if (f.comments.trim()) parts.push(pdfAvotuCommentIsland(f.comments));
   } else {
-    bodyInner = `<pre class="mirror-pre">${escapeHtml(p.tirgus.trim())}</pre>`;
+    parts.push(`<pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(p.tirgus.trim())}</pre>`);
   }
-
-  const card =
-    bodyInner.trim() === ""
-      ? `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`
-      : `<div class="pdf-avotu-card pdf-avotu-card--neutral">${header}<div class="pdf-avotu-body">${bodyInner}</div></div>`;
-  return wrapPdfAvotuStack(card, island);
+  return parts.join("\n");
 }
 
 function pdfIconForVendorTitle(title: string): string {
@@ -420,25 +412,32 @@ function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined
 }
 
 /**
- * Sludinājuma analīze — patstāvīgs prioritārs bloks (nav „AVOTU DATI” grupā).
- * Stils līdzīgs APPROVED BY IRISS: pilns platums, zaļa galvene, maigi zaļš ķermenis.
+ * Sludinājuma analīze — patstāvīgs bloks: vispirms „Sludinājuma vēsture” (tirgus dati), tad pārējās apakšsadaļas.
  */
 function buildListingAnalysisPriorityHtml(p: ClientReportPayload): string {
+  const tirgusBody = buildTirgusListingHistoryBodyHtml(p);
   const b = p.listingAnalysis;
-  if (!b || !listingAnalysisHasContent(b)) return "";
-  const L = LISTING_ANALYSIS_SUBSECTIONS;
+  const hasListingFields = Boolean(b && listingAnalysisHasContent(b));
+
   const inner: string[] = [];
-  const cat = (title: string, text: string) => {
-    const t = text.trim();
-    if (!t) return;
-    inner.push(`<p class="pdf-field-label">${escapeHtml(title)}</p>`);
-    inner.push(
-      `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(t)}</pre></div>`,
-    );
-  };
-  cat(L.sellerPortrait, b.sellerPortrait);
-  cat(L.photoAnalysis, b.photoAnalysis);
-  cat(L.listingDescription, b.listingDescription);
+  if (tirgusBody) {
+    inner.push(`<p class="pdf-field-label">${escapeHtml(LISTING_HISTORY_SUBSECTION_TITLE)}</p>`);
+    inner.push(`<div class="pdf-listing-analysis-chunk">${tirgusBody}</div>`);
+  }
+  if (b && hasListingFields) {
+    const L = LISTING_ANALYSIS_SUBSECTIONS;
+    const cat = (title: string, text: string) => {
+      const t = text.trim();
+      if (!t) return;
+      inner.push(`<p class="pdf-field-label">${escapeHtml(title)}</p>`);
+      inner.push(
+        `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(t)}</pre></div>`,
+      );
+    };
+    cat(L.sellerPortrait, b.sellerPortrait);
+    cat(L.photoAnalysis, b.photoAnalysis);
+    cat(L.listingDescription, b.listingDescription);
+  }
   if (inner.length === 0) return "";
   const parts: string[] = [];
   parts.push(`<div class="pdf-listing-priority" role="region">`);
@@ -460,12 +459,11 @@ function buildCitiAvotiAvotuSubsection(p: ClientReportPayload): string {
 }
 
 /**
- * AVOTU DATI (PDF): 7 avoti — CSDD, tad AutoDNA / CarVertical / Auto-Records, tad LTAB / Tirgus / Citi avoti.
- * Sludinājuma analīze ir atsevišķi (buildListingAnalysisPriorityHtml).
+ * AVOTU DATI (PDF): CSDD, AutoDNA / CarVertical / Auto-Records, LTAB, Citi avoti.
+ * Tirgus dati ir integrēti „Sludinājuma analīzē” (buildListingAnalysisPriorityHtml).
  */
 function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   const csdd = buildCsddAvotuSubsection(p);
-  const tirgus = buildTirgusAvotuSubsection(p);
   const ltab = buildLtabAvotuSubsection(p.manualLtabBlock);
   const citiAvoti = buildCitiAvotiAvotuSubsection(p);
 
@@ -479,7 +477,7 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   const carvertical = vendorHtml(SOURCE_BLOCK_LABELS.carvertical);
   const autoRecords = buildAutoRecordsAvotuSubsection(p.autoRecordsBlock ?? null);
 
-  const stack = [csdd, autodna, carvertical, autoRecords, ltab, tirgus, citiAvoti].filter(Boolean);
+  const stack = [csdd, autodna, carvertical, autoRecords, ltab, citiAvoti].filter(Boolean);
   if (stack.length === 0) return "";
 
   const parts: string[] = [];
@@ -919,11 +917,11 @@ export function buildClientReportDocumentHtml(args: {
   const unifiedMileageHtml = buildUnifiedMileageTableHtml(p);
   if (unifiedMileageHtml) lines.push(unifiedMileageHtml);
 
-  const avotuHtml = buildAvotuDatiSectionHtml(p);
-  if (avotuHtml) lines.push(avotuHtml);
-
   const listingPriorityHtml = buildListingAnalysisPriorityHtml(p);
   if (listingPriorityHtml) lines.push(listingPriorityHtml);
+
+  const avotuHtml = buildAvotuDatiSectionHtml(p);
+  if (avotuHtml) lines.push(avotuHtml);
 
   const approvedHtml = buildApprovedByIrissHtml(p);
   if (approvedHtml) lines.push(approvedHtml);

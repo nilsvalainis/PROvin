@@ -22,6 +22,7 @@ import {
   hydrateWorkspaceFromStorage,
   listingAnalysisToPlainText,
   ltabBlockToPlainText,
+  LISTING_HISTORY_SUBSECTION_TITLE,
   autoRecordsBlockToPlainText,
   standardBlockToPlainText,
   vendorAvotuBlockToPlainText,
@@ -1153,11 +1154,11 @@ export function OrderDetailWorkspace({
         </summary>
         <div className="mt-1.5 space-y-1 border-t border-slate-200/80 pt-1.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
           <ol className="list-decimal space-y-0.5 pl-3.5">
-            <li>Pielikumi → avoti → sludinājuma analīze → priekšskats → kopsavilkums un apskates plāns → PDF.</li>
+            <li>Pielikumi → sludinājuma analīze (ar tirgus datiem) → avoti → priekšskats → kopsavilkums un apskates plāns → PDF.</li>
             <li>
-              Avotu bloki: CSDD pilnā platumā, tad divas 3 kolonnu rindas (AutoDNA–CarVertical–Auto-Records;
-              LTAB–Tirgus–Citi avoti). Sludinājuma analīze ir atsevišķs bloks. PDF: Avotu dati → Sludinājuma
-              analīze → APPROVED BY IRISS (noslēgums). Tukši lauki PDF netiek drukāti.
+              Sludinājuma analīze ir augšā: „Sludinājuma vēsture” (tirgus dati) + komentāru lauki. Avotu bloki: CSDD
+              pilnā platumā, tad AutoDNA–CarVertical–Auto-Records, tad LTAB un Citi avoti. PDF: Sludinājuma analīze
+              (tirgus integrēts) → Avotu dati → APPROVED BY IRISS. Tukši lauki PDF netiek drukāti.
             </li>
             <li>Dati: localStorage + IndexedDB.</li>
           </ol>
@@ -1176,11 +1177,77 @@ export function OrderDetailWorkspace({
         </section>
       ) : null}
 
+      <section className="min-w-0">
+        <h2 className={workspaceSectionTitle}>2. Sludinājuma analīze</h2>
+        <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
+          Lasīšanas / labošanas režīms kopīgs ar 3. sadaļas rīkjoslu (Saglabāt / Labot).
+        </p>
+        <div className="mt-1.5 overflow-hidden rounded-lg border border-[#cfe8d4] shadow-[0_4px_14px_rgba(46,125,50,0.1)]">
+          <AdminGradientHeaderBar
+            gradient={SOURCE_BLOCK_HEADER_BG.listing_analysis}
+            className="rounded-t-lg"
+            contentClassName="gap-2 px-3 py-2.5"
+          >
+            <svg
+              className="h-4 w-4 shrink-0 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              aria-hidden
+            >
+              <path
+                strokeLinejoin="round"
+                d="m12 3 1.6 5.2h5.4l-4.4 3.4 1.7 5.4L12 15.8 7.7 17.2l1.7-5.4L5 8.2h5.4L12 3z"
+              />
+            </svg>
+            <span className="text-[11px] font-bold tracking-[0.12em] text-white">SLUDINĀJUMA ANALĪZE</span>
+          </AdminGradientHeaderBar>
+          <div
+            className="p-2.5"
+            style={{ background: LISTING_ANALYSIS_BODY_BG, WebkitPrintColorAdjust: "exact" }}
+          >
+            <div className="mb-3 min-w-0">
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
+                {LISTING_HISTORY_SUBSECTION_TITLE}
+              </p>
+              <AdminTirgusSourceBlock
+                value={blocksForDisplay.tirgus}
+                readOnly={sourcesViewMode}
+                onChange={(next) => updateSourceBlock("tirgus", next)}
+                variant="embedded"
+              />
+            </div>
+            <AdminListingAnalysisSourceBlock
+              value={blocksForDisplay.listing_analysis}
+              readOnly={sourcesViewMode}
+              onChange={(next) => updateSourceBlock("listing_analysis", next)}
+              variant="priority"
+            />
+          </div>
+        </div>
+
+        <div className="mt-1.5 border-t border-slate-200/80 pt-1.5">
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(true)}
+            className="inline-flex rounded-full border border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-provin-accent)] hover:bg-[#d4e8fb]"
+          >
+            Priekšskats
+          </button>
+          {ws.previewConfirmed ? (
+            <p className="mt-1 text-[11px] font-medium text-emerald-800">Apstiprināts — vari rakstīt kopsavilkumu.</p>
+          ) : (
+            <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">Apstiprini modālī.</p>
+          )}
+        </div>
+      </section>
+
       <section className={workspaceSectionShell}>
         <div className="flex flex-wrap items-start justify-between gap-1.5">
           <div className="min-w-0">
             <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
-              <span>2. Avotu bloki</span>
+              <span>3. Avotu bloki</span>
               {workspaceAutosaveFlash ? (
                 <span
                   className={`text-[10px] font-semibold normal-case tracking-normal ${
@@ -1253,19 +1320,12 @@ export function OrderDetailWorkspace({
               />
             </div>
           </div>
-          <div className="grid min-h-0 min-w-0 grid-cols-3 gap-2 items-stretch">
+          <div className="grid min-h-0 min-w-0 grid-cols-2 gap-2 items-stretch">
             <div className="flex min-h-0 h-full min-w-0 flex-col">
               <AdminLtabSourceBlock
                 value={blocksForDisplay.ltab}
                 readOnly={sourcesViewMode}
                 onChange={(next) => updateSourceBlock("ltab", next)}
-              />
-            </div>
-            <div className="flex min-h-0 h-full min-w-0 flex-col">
-              <AdminTirgusSourceBlock
-                value={blocksForDisplay.tirgus}
-                readOnly={sourcesViewMode}
-                onChange={(next) => updateSourceBlock("tirgus", next)}
               />
             </div>
             <div className="flex min-h-0 h-full min-w-0 flex-col">
@@ -1276,61 +1336,6 @@ export function OrderDetailWorkspace({
               />
             </div>
           </div>
-        </div>
-      </section>
-
-      <section className="min-w-0">
-        <h2 className={workspaceSectionTitle}>3. Sludinājuma analīze</h2>
-        <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-          Lasīšanas / labošanas režīms kopīgs ar 2. sadaļas rīkjoslu (Saglabāt / Labot).
-        </p>
-        <div className="mt-1.5 overflow-hidden rounded-lg border border-[#cfe8d4] shadow-[0_4px_14px_rgba(46,125,50,0.1)]">
-          <AdminGradientHeaderBar
-            gradient={SOURCE_BLOCK_HEADER_BG.listing_analysis}
-            className="rounded-t-lg"
-            contentClassName="gap-2 px-3 py-2.5"
-          >
-            <svg
-              className="h-4 w-4 shrink-0 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              aria-hidden
-            >
-              <path
-                strokeLinejoin="round"
-                d="m12 3 1.6 5.2h5.4l-4.4 3.4 1.7 5.4L12 15.8 7.7 17.2l1.7-5.4L5 8.2h5.4L12 3z"
-              />
-            </svg>
-            <span className="text-[11px] font-bold tracking-[0.12em] text-white">SLUDINĀJUMA ANALĪZE</span>
-          </AdminGradientHeaderBar>
-          <div
-            className="p-2.5"
-            style={{ background: LISTING_ANALYSIS_BODY_BG, WebkitPrintColorAdjust: "exact" }}
-          >
-            <AdminListingAnalysisSourceBlock
-              value={blocksForDisplay.listing_analysis}
-              readOnly={sourcesViewMode}
-              onChange={(next) => updateSourceBlock("listing_analysis", next)}
-              variant="priority"
-            />
-          </div>
-        </div>
-
-        <div className="mt-1.5 border-t border-slate-200/80 pt-1.5">
-          <button
-            type="button"
-            onClick={() => setPreviewOpen(true)}
-            className="inline-flex rounded-full border border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-provin-accent)] hover:bg-[#d4e8fb]"
-          >
-            Priekšskats
-          </button>
-          {ws.previewConfirmed ? (
-            <p className="mt-1 text-[11px] font-medium text-emerald-800">Apstiprināts — vari rakstīt kopsavilkumu.</p>
-          ) : (
-            <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">Apstiprini modālī.</p>
-          )}
         </div>
       </section>
 
