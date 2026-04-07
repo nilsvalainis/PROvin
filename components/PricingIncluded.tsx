@@ -20,10 +20,10 @@ export async function PricingIncluded() {
   const grid = (messages as { Pricing: { grid: GridItem[] } }).Pricing.grid;
 
   return (
-    <section className="relative px-4 py-8 sm:px-6 md:py-12">
+    <section className="relative px-4 py-4 sm:px-6 sm:py-5 md:py-7">
       <div className="relative mx-auto w-full max-w-[1000px]">
         <h2 className={`${sectionH2Class} text-center uppercase tracking-[0.04em]`}>{t("workTitle")}</h2>
-        <ul className="mt-6 grid list-none grid-cols-1 gap-3 sm:mt-8 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-4 grid list-none grid-cols-1 gap-3 sm:mt-5 sm:grid-cols-2 lg:grid-cols-3">
             {grid.map((item, i) => {
               const inner = (
                 <>

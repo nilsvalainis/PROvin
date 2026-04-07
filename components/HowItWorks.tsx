@@ -12,19 +12,19 @@ export async function HowItWorks() {
   const steps = (messages as { HowItWorks: { steps: Step[] } }).HowItWorks.steps;
 
   return (
-    <div className="relative z-10 px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-4">
+    <div className="relative z-10 px-4 pb-1 pt-1 sm:px-6 sm:pb-2 sm:pt-2">
       <div className={`relative ${homeContentMaxClass}`}>
         <div className="mx-auto flex min-w-0 max-w-lg flex-col md:max-w-none md:flex-row md:items-stretch md:justify-center md:gap-0">
           {steps.map((s, i) => (
             <Fragment key={s.n}>
-              <article className="flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-2 text-center sm:px-4">
+              <article className="group flex min-w-0 flex-1 flex-col items-center justify-center px-2 py-1 text-center sm:px-3">
                 <div
-                  className="text-provin-accent drop-shadow-[0_6px_18px_rgba(15,23,42,0.12)]"
+                  className="text-provin-accent drop-shadow-[0_4px_12px_rgba(15,23,42,0.12)] transition-transform duration-200 group-hover:scale-[1.03]"
                   aria-hidden
                 >
                   <StepIcon n={s.n} />
                 </div>
-                <h3 className="mt-4 text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[13px]">
+                <h3 className="mt-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-provin-accent sm:text-[12px]">
                   {s.title}
                 </h3>
                 {s.body.trim() ? (
@@ -35,7 +35,7 @@ export async function HowItWorks() {
               </article>
               {i < steps.length - 1 && (
                 <>
-                  <div className="flex justify-center py-3 md:hidden" aria-hidden>
+                  <div className="flex justify-center py-1 md:hidden" aria-hidden>
                     <span className={connectorClass}>
                       <NavChevronDown />
                     </span>
@@ -58,7 +58,7 @@ export async function HowItWorks() {
 const BLUE = "var(--color-provin-accent)";
 
 function StepIcon({ n }: { n: string }) {
-  const box = "h-[76px] w-[76px] sm:h-[84px] sm:w-[84px]";
+  const box = "h-[56px] w-[56px] sm:h-[62px] sm:w-[62px]";
   if (n === "1") {
     return (
       <svg className={box} viewBox="0 0 24 24" fill="none" aria-hidden>
