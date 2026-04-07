@@ -60,9 +60,7 @@ import {
 } from "@/lib/admin-header-gradients";
 import { AdminGradientHeaderBar } from "@/components/admin/AdminGradientHeaderBar";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
-import { UnifiedMileageIframe } from "@/components/admin/UnifiedMileageIframe";
 import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
-import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
 import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
 
 export type OrderWorkspacePayload = {
@@ -729,16 +727,6 @@ export function OrderDetailWorkspace({
     [blocksForDisplay],
   );
 
-  const hasUnifiedMileagePreview = useMemo(
-    () =>
-      collectUnifiedMileageRows({
-        csddForm: blocksForDisplay.csdd,
-        autoRecordsBlock: blocksForDisplay.auto_records,
-        manualVendorBlocks: toPdfManualVendorBlocks(blocksForDisplay),
-      }).length > 0,
-    [blocksForDisplay],
-  );
-
   const openPrintReport = async () => {
     if (!canGeneratePdf) {
       alert(
@@ -1152,34 +1140,13 @@ export function OrderDetailWorkspace({
 
       {showPortfolioPortal ? createPortal(portfolioSection, portfolioPortalEl!) : null}
 
-      <details className="group rounded-lg border border-slate-200/90 bg-gradient-to-b from-slate-50/90 to-white px-2.5 py-2 shadow-sm open:shadow-md">
-        <summary className="cursor-pointer list-none text-xs font-semibold text-[var(--color-apple-text)] marker:content-none [&::-webkit-details-marker]:hidden">
-          <span className="inline-flex items-center gap-2">
-            Darba secība
-            <span className="text-[11px] font-normal text-[var(--color-provin-muted)] group-open:hidden">(atvērt)</span>
-          </span>
-        </summary>
-        <div className="mt-1.5 space-y-1 border-t border-slate-200/80 pt-1.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-          <ol className="list-decimal space-y-0.5 pl-3.5">
-            <li>Pielikumi → avoti → sludinājuma analīze (ar tirgus datiem) → priekšskats → kopsavilkums un apskates plāns → PDF.</li>
-            <li>
-              Avotu bloki: CSDD pilnā platumā, tad AutoDNA–CarVertical–Auto-Records, tad LTAB un Citi avoti. Tad sludinājuma
-              analīze: „Sludinājuma vēsture” (tirgus dati) + pārējās apakšsadaļas. PDF: Sludinājuma analīze (tirgus integrēts) →
-              Avotu dati → APPROVED BY IRISS. Tukši lauki PDF netiek drukāti.
-            </li>
-            <li>Dati: localStorage + IndexedDB.</li>
-          </ol>
-        </div>
-      </details>
-
       {showPortfolioInline ? portfolioSection : null}
 
-      {provinAlertBanners.length > 0 || hasUnifiedMileagePreview ? (
+      {provinAlertBanners.length > 0 ? (
         <section className={workspaceSectionShell}>
-          <h2 className={`${workspaceSectionTitle} mb-1.5`}>Brīdinājumi un nobraukums (PDF)</h2>
+          <h2 className={`${workspaceSectionTitle} mb-1.5`}>Brīdinājumi (PDF)</h2>
           <div className="space-y-2">
             <AdminProvinAlertBanners banners={provinAlertBanners} />
-            <UnifiedMileageIframe blocks={blocksForDisplay} />
           </div>
         </section>
       ) : null}
@@ -1289,10 +1256,10 @@ export function OrderDetailWorkspace({
           <AdminGradientHeaderBar
             gradient={SOURCE_BLOCK_HEADER_BG.listing_analysis}
             className="rounded-t-lg"
-            contentClassName="gap-2 px-3 py-2.5"
+            contentClassName="gap-1.5 px-2.5 py-1"
           >
             <svg
-              className="h-4 w-4 shrink-0 text-white"
+              className="h-3.5 w-3.5 shrink-0 text-white"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -1304,14 +1271,14 @@ export function OrderDetailWorkspace({
                 d="m12 3 1.6 5.2h5.4l-4.4 3.4 1.7 5.4L12 15.8 7.7 17.2l1.7-5.4L5 8.2h5.4L12 3z"
               />
             </svg>
-            <span className="text-[11px] font-bold tracking-[0.12em] text-white">SLUDINĀJUMA ANALĪZE</span>
+            <span className="text-[10px] font-bold tracking-[0.12em] text-white">SLUDINĀJUMA ANALĪZE</span>
           </AdminGradientHeaderBar>
           <div
-            className="space-y-4 p-2.5"
+            className="space-y-2 p-1.5"
             style={{ background: LISTING_ANALYSIS_BODY_BG, WebkitPrintColorAdjust: "exact" }}
           >
             <div className="min-w-0">
-              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
+              <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
                 {LISTING_HISTORY_SUBSECTION_TITLE}
               </p>
               <AdminTirgusSourceBlock
@@ -1319,14 +1286,16 @@ export function OrderDetailWorkspace({
                 readOnly={sourcesViewMode}
                 onChange={(next) => updateSourceBlock("tirgus", next)}
                 variant="embedded"
+                compact
               />
             </div>
-            <div className="min-w-0 border-t border-emerald-200/50 pt-3">
+            <div className="min-w-0 border-t border-emerald-200/50 pt-2">
               <AdminListingAnalysisSourceBlock
                 value={blocksDisplaySafe.listing_analysis}
                 readOnly={sourcesViewMode}
                 onChange={(next) => updateSourceBlock("listing_analysis", next)}
                 variant="priority"
+                compact
               />
             </div>
           </div>
@@ -1413,10 +1382,10 @@ export function OrderDetailWorkspace({
           <AdminGradientHeaderBar
             gradient={APPROVED_BY_IRISS_HEADER_BG}
             className="rounded-t-lg"
-            contentClassName="gap-2 px-3 py-2.5"
+            contentClassName="gap-1.5 px-2.5 py-1"
           >
             <svg
-              className="h-4 w-4 shrink-0 text-white"
+              className="h-3.5 w-3.5 shrink-0 text-white"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -1429,21 +1398,21 @@ export function OrderDetailWorkspace({
                 d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
               />
             </svg>
-            <span className="text-[11px] font-bold tracking-[0.12em] text-white">APPROVED BY IRISS</span>
+            <span className="text-[10px] font-bold tracking-[0.12em] text-white">APPROVED BY IRISS</span>
           </AdminGradientHeaderBar>
-          <div className="p-2.5" style={{ background: APPROVED_BY_IRISS_BODY_BG }}>
-            <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wide text-[var(--color-apple-text)]">
+          <div className="p-1.5" style={{ background: APPROVED_BY_IRISS_BODY_BG }}>
+            <h3 className="mb-1 text-[9px] font-bold uppercase tracking-wide text-[var(--color-apple-text)]">
               KOPSAVILKUMS UN APSKATES PLĀNS
             </h3>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {expertViewMode ? (
-                <div className={`${bulkReadonlyClass} min-h-[200px] max-h-[min(70vh,560px)] overflow-y-auto whitespace-pre-wrap`}>
+                <div className={`${bulkReadonlyClass} min-h-[120px] max-h-[min(45vh,400px)] overflow-y-auto whitespace-pre-wrap`}>
                   {expertSnap.iriss.trim() ? expertSnap.iriss : <span className="text-slate-400">—</span>}
                 </div>
               ) : (
                 <textarea
                   id={`${fileInputId}-iriss`}
-                  className={`${bulkTextareaClass} min-h-[200px] max-h-[min(70vh,560px)] resize-y bg-white/90`}
+                  className={`${bulkTextareaClass} min-h-[120px] max-h-[min(45vh,400px)] resize-y bg-white/90`}
                   value={ws.iriss}
                   onChange={(e) => updateWs({ iriss: e.target.value })}
                   placeholder="Galvenais kopsavilkums klientam…"
@@ -1452,7 +1421,7 @@ export function OrderDetailWorkspace({
                 />
               )}
               {expertViewMode ? (
-                <div className={`${bulkReadonlyClass} min-h-[100px] max-h-[min(50vh,400px)] overflow-y-auto whitespace-pre-wrap`}>
+                <div className={`${bulkReadonlyClass} min-h-[72px] max-h-[min(35vh,280px)] overflow-y-auto whitespace-pre-wrap`}>
                   {expertSnap.apskatesPlāns.trim() ? (
                     expertSnap.apskatesPlāns
                   ) : (
@@ -1462,7 +1431,7 @@ export function OrderDetailWorkspace({
               ) : (
                 <textarea
                   id={`${fileInputId}-apskates`}
-                  className={`${bulkTextareaClass} min-h-[100px] max-h-[min(50vh,400px)] resize-y bg-white/90`}
+                  className={`${bulkTextareaClass} min-h-[72px] max-h-[min(35vh,280px)] resize-y bg-white/90`}
                   value={ws.apskatesPlāns}
                   onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
                   placeholder="Apskates plāns klātienē — piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
@@ -1471,7 +1440,7 @@ export function OrderDetailWorkspace({
                 />
               )}
               {expertViewMode ? (
-                <div className={`${bulkReadonlyClass} min-h-[80px] max-h-[min(40vh,320px)] overflow-y-auto whitespace-pre-wrap`}>
+                <div className={`${bulkReadonlyClass} min-h-[56px] max-h-[min(28vh,220px)] overflow-y-auto whitespace-pre-wrap`}>
                   {expertSnap.cenasAtbilstiba.trim() ? (
                     expertSnap.cenasAtbilstiba
                   ) : (
@@ -1481,7 +1450,7 @@ export function OrderDetailWorkspace({
               ) : (
                 <textarea
                   id={`${fileInputId}-cenas-atbilstiba`}
-                  className={`${bulkTextareaClass} min-h-[80px] max-h-[min(40vh,320px)] resize-y bg-white/90`}
+                  className={`${bulkTextareaClass} min-h-[56px] max-h-[min(28vh,220px)] resize-y bg-white/90`}
                   value={ws.cenasAtbilstiba}
                   onChange={(e) => updateWs({ cenasAtbilstiba: e.target.value })}
                   placeholder="Cenas atbilstība balstoties uz mūsu rīcībā esošajiem datiem:"
