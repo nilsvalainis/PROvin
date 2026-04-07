@@ -16,6 +16,7 @@ export type OrderDraftWorkspaceBody = {
   apskatesPlāns: string;
   cenasAtbilstiba: string;
   previewConfirmed: boolean;
+  pdfVisibility?: import("@/lib/pdf-visibility").PdfVisibilitySettings;
 };
 
 export type OrderDraftState = {

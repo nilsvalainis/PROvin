@@ -92,7 +92,19 @@ export function computeOdometerAnomalyBySourceOrder(rows: UnifiedMileageRow[]): 
   return map;
 }
 
-export function collectUnifiedMileageRows(p: UnifiedMileageSourcePayload): UnifiedMileageRow[] {
+export type CollectUnifiedMileageOptions = {
+  /** Neiekļaut CSDD `mileageHistory` rindas (CSDD bloks var būt PDF, bet ne šī tabula). */
+  omitCsddMileage?: boolean;
+  /** Neiekļaut AUTO RECORDS servisa vēsturi. */
+  omitAutoRecords?: boolean;
+  /** Neiekļaut konkrētus trešās puses avotus pēc nosaukuma (`SOURCE_BLOCK_LABELS`). */
+  omitVendorBlockTitles?: Set<string>;
+};
+
+export function collectUnifiedMileageRows(
+  p: UnifiedMileageSourcePayload,
+  options?: CollectUnifiedMileageOptions,
+): UnifiedMileageRow[] {
   const rows: UnifiedMileageRow[] = [];
   let sourceOrder = 0;
   const pushRow = (dateRaw: string, odometerRaw: string, countryRaw: string) => {
@@ -109,19 +121,28 @@ export function collectUnifiedMileageRows(p: UnifiedMileageSourcePayload): Unifi
     sourceOrder += 1;
   };
 
-  const csddRows = p.csddForm?.mileageHistory.filter(csddMileageRowHasData) ?? [];
-  for (const r of csddRows) {
-    pushRow(r.date, r.odometer, r.country);
+  if (!options?.omitCsddMileage) {
+    const csddRows = p.csddForm?.mileageHistory.filter(csddMileageRowHasData) ?? [];
+    for (const r of csddRows) {
+      pushRow(r.date, r.odometer, r.country);
+    }
   }
 
+  if (options?.omitAutoRecords) {
+    /* skip auto records */
+  } else {
   const autoRows = p.autoRecordsBlock?.serviceHistory.filter(autoRecordsRowHasData) ?? [];
   for (const r of autoRows) {
     const dateOut = formatAutoRecordsDateForOutput(r.date);
     const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
     pushRow(dateOut, odoOut, r.country);
   }
+  }
 
-  const vendorRows = (p.manualVendorBlocks ?? []).flatMap((b) => b.mileageRows.filter(autoRecordsRowHasData));
+  const omitTitles = options?.omitVendorBlockTitles;
+  const vendorRows = (p.manualVendorBlocks ?? [])
+    .filter((b) => !omitTitles || !omitTitles.has(b.title))
+    .flatMap((b) => b.mileageRows.filter(autoRecordsRowHasData));
   for (const r of vendorRows) {
     const dateOut = formatAutoRecordsDateForOutput(r.date);
     const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");

@@ -57,6 +57,8 @@ import {
   type PdfPortfolioFileInsight,
 } from "@/lib/admin-portfolio-pdf-analysis";
 import { buildClientReportDocumentHtml } from "@/lib/client-report-html";
+import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
+import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { APPROVED_BY_IRISS_BODY_BG, APPROVED_BY_IRISS_HEADER_BG } from "@/lib/admin-header-gradients";
 import { AdminGradientHeaderBar } from "@/components/admin/AdminGradientHeaderBar";
 import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
@@ -305,6 +307,9 @@ export function OrderDetailWorkspace({
   portfolioPortalTargetInParent = false,
   serverWorkspaceJson = null,
   orderDraftPersistenceEnabled = false,
+  pdfVisibility,
+  onPdfVisibilityChange,
+  alertsPortalDomId,
 }: {
   payload: OrderWorkspacePayload;
   /** Ja norādīts, „1. Pielikumi” tiek renderēts šajā DOM elementā (kreisās kolonnas augšā). */
@@ -314,6 +319,10 @@ export function OrderDetailWorkspace({
   /** SSR ielādēts darba zonas JSON (prioritāte pār localStorage). */
   serverWorkspaceJson?: string | null;
   orderDraftPersistenceEnabled?: boolean;
+  pdfVisibility: PdfVisibilitySettings;
+  onPdfVisibilityChange: (patch: Partial<PdfVisibilitySettings>) => void;
+  /** Brīdinājumu bloks virs „Maksājums” (vecākā kolonnā). */
+  alertsPortalDomId?: string;
 }) {
   const fileInputId = useId();
   const [ws, setWs] = useState<WorkspacePersist>(EMPTY_WORKSPACE);
@@ -332,6 +341,7 @@ export function OrderDetailWorkspace({
   const [expertSnap, setExpertSnap] = useState({ iriss: "", apskatesPlāns: "", cenasAtbilstiba: "" });
   const [expertFlash, setExpertFlash] = useState(false);
   const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
+  const [alertsPortalEl, setAlertsPortalEl] = useState<HTMLElement | null>(null);
   const [portfolioAllFilesModalOpen, setPortfolioAllFilesModalOpen] = useState(false);
   const [workspaceAutosaveFlash, setWorkspaceAutosaveFlash] = useState(false);
   const [workspaceSaveServerOk, setWorkspaceSaveServerOk] = useState(true);
@@ -342,6 +352,8 @@ export function OrderDetailWorkspace({
   const skipWorkspaceAutosaveFlash = useRef(true);
   const wsPersistRef = useRef(ws);
   wsPersistRef.current = ws;
+  const pdfVisibilityRef = useRef(pdfVisibility);
+  pdfVisibilityRef.current = pdfVisibility;
   const portfolioBytes = useMemo(() => portfolio.reduce((a, p) => a + p.size, 0), [portfolio]);
 
   const narrowPortfolioLayout = Boolean(portfolioPortalDomId);
@@ -353,6 +365,14 @@ export function OrderDetailWorkspace({
     }
     setPortfolioPortalEl(document.getElementById(portfolioPortalDomId));
   }, [portfolioPortalDomId, payload.sessionId]);
+
+  useLayoutEffect(() => {
+    if (!alertsPortalDomId || typeof document === "undefined") {
+      setAlertsPortalEl(null);
+      return;
+    }
+    setAlertsPortalEl(document.getElementById(alertsPortalDomId));
+  }, [alertsPortalDomId, payload.sessionId]);
 
   useEffect(() => {
     if (!portfolioAllFilesModalOpen) return;
@@ -430,6 +450,7 @@ export function OrderDetailWorkspace({
             cenasAtbilstiba: fromServer.cenasAtbilstiba,
             previewConfirmed: Boolean(fromServer.previewConfirmed),
           });
+          onPdfVisibilityChange(mergePdfVisibility(fromServer.pdfVisibility));
           const keyV3 = storageKeyWorkspace(payload.sessionId);
           try {
             localStorage.setItem(keyV3, serverWorkspaceJson);
@@ -455,6 +476,7 @@ export function OrderDetailWorkspace({
             cenasAtbilstiba: h.cenasAtbilstiba,
             previewConfirmed: Boolean(h.previewConfirmed),
           });
+          onPdfVisibilityChange(mergePdfVisibility(h.pdfVisibility));
           if (!localStorage.getItem(keyV3) && localStorage.getItem(keyV2)) {
             try {
               localStorage.setItem(
@@ -465,6 +487,7 @@ export function OrderDetailWorkspace({
                   apskatesPlāns: h.apskatesPlāns,
                   cenasAtbilstiba: h.cenasAtbilstiba,
                   previewConfirmed: h.previewConfirmed,
+                  pdfVisibility: mergePdfVisibility(h.pdfVisibility),
                 }),
               );
             } catch {
@@ -473,6 +496,7 @@ export function OrderDetailWorkspace({
           }
         } else {
           setWs(EMPTY_WORKSPACE);
+          onPdfVisibilityChange(mergePdfVisibility(undefined));
         }
       } else {
         const legacy = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
@@ -484,15 +508,18 @@ export function OrderDetailWorkspace({
           if (legacy) parts.push(legacy);
           b.autodna = { ...emptyVendorAvotuBlock(), comments: parts.join("\n\n") };
           setWs({ ...EMPTY_WORKSPACE, sourceBlocks: b, previewConfirmed: false });
+          onPdfVisibilityChange(mergePdfVisibility(undefined));
         } else {
           setWs(EMPTY_WORKSPACE);
+          onPdfVisibilityChange(mergePdfVisibility(undefined));
         }
       }
     } catch {
       setWs(EMPTY_WORKSPACE);
+      onPdfVisibilityChange(mergePdfVisibility(undefined));
     }
     setWorkspaceHydrated(true);
-  }, [payload.sessionId, payload.serverInternalComment, serverWorkspaceJson]);
+  }, [payload.sessionId, payload.serverInternalComment, serverWorkspaceJson, onPdfVisibilityChange]);
 
   useEffect(() => {
     if (!workspaceHydrated) return;
@@ -510,7 +537,10 @@ export function OrderDetailWorkspace({
     if (!workspaceHydrated) return;
     try {
       const cur = wsPersistRef.current;
-      localStorage.setItem(storageKeyWorkspace(payload.sessionId), JSON.stringify(cur));
+      localStorage.setItem(
+        storageKeyWorkspace(payload.sessionId),
+        JSON.stringify({ ...cur, pdfVisibility: pdfVisibilityRef.current }),
+      );
       const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
       if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
     } catch {
@@ -545,6 +575,7 @@ export function OrderDetailWorkspace({
                   apskatesPlāns: cur.apskatesPlāns,
                   cenasAtbilstiba: cur.cenasAtbilstiba,
                   previewConfirmed: cur.previewConfirmed,
+                  pdfVisibility: pdfVisibilityRef.current,
                 },
               }),
             });
@@ -562,7 +593,14 @@ export function OrderDetailWorkspace({
       })();
     }, 750);
     return () => window.clearTimeout(t);
-  }, [ws, workspaceHydrated, payload.sessionId, flushWorkspaceToLocalStorage, orderDraftPersistenceEnabled]);
+  }, [
+    ws,
+    pdfVisibility,
+    workspaceHydrated,
+    payload.sessionId,
+    flushWorkspaceToLocalStorage,
+    orderDraftPersistenceEnabled,
+  ]);
 
   useEffect(() => {
     if (!workspaceAutosaveFlash) return;
@@ -770,32 +808,83 @@ export function OrderDetailWorkspace({
       canGeneratePdf,
       Boolean(ws.iriss.trim() || ws.apskatesPlāns.trim() || ws.cenasAtbilstiba.trim()),
     );
-    const items: AdminProgressNavItem[] = [
-      { id: "admin-order-section-pielikumi", label: "1. Pielikumi", level: portfolioFilesTrafficLevel(portfolio.length) },
-      { id: "admin-order-block-csdd", label: SOURCE_BLOCK_LABELS.csdd, level: traffic.csdd },
-      { id: "admin-order-block-autodna", label: SOURCE_BLOCK_LABELS.autodna, level: traffic.autodna },
-      { id: "admin-order-block-carvertical", label: SOURCE_BLOCK_LABELS.carvertical, level: traffic.carvertical },
-      { id: "admin-order-block-auto-records", label: SOURCE_BLOCK_LABELS.auto_records, level: traffic.auto_records },
-      { id: "admin-order-block-ltab", label: SOURCE_BLOCK_LABELS.ltab, level: traffic.ltab },
-      { id: "admin-order-block-citi-avoti", label: SOURCE_BLOCK_LABELS.citi_avoti, level: traffic.citi_avoti },
-      { id: "admin-order-section-sludinajums", label: "3. Sludinājuma analīze", level: traffic.listingSection },
-    ];
+    const v = pdfVisibility;
+    const items: AdminProgressNavItem[] = [];
     if (provinAlertBanners.length > 0) {
       items.push({
         id: "admin-order-section-bridinajumi",
         label: "Brīdinājumi (PDF)",
         level: alertBannersTrafficLevel(provinAlertBanners.length),
+        pdfIncluded: v.alerts,
       });
     }
     items.push(
-      { id: "admin-order-section-kopsavilkums", label: "4. Kopsavilkums (IRISS)", level: expertLvl },
-      { id: "admin-order-section-pdf", label: "5. PDF klientam", level: pdfLvl },
+      { id: "admin-order-section-maksajums", label: "Maksājums", level: "complete", pdfIncluded: v.payment },
+      {
+        id: "admin-order-section-transports",
+        label: "Transports / sludinājums",
+        level: "complete",
+        pdfIncluded: v.vehicle,
+      },
+      { id: "admin-order-section-klienta", label: "Klienta dati", level: "complete", pdfIncluded: v.client },
+      { id: "admin-order-section-komentars", label: "Klienta komentārs", level: "complete", pdfIncluded: v.notes },
+      {
+        id: "admin-order-section-pielikumi",
+        label: "1. Pielikumi",
+        level: portfolioFilesTrafficLevel(portfolio.length),
+        pdfIncluded: v.portfolio,
+      },
+      {
+        id: "admin-order-block-csdd",
+        label: SOURCE_BLOCK_LABELS.csdd,
+        level: traffic.csdd,
+        pdfIncluded: v.csdd,
+      },
+      {
+        id: "admin-order-block-autodna",
+        label: SOURCE_BLOCK_LABELS.autodna,
+        level: traffic.autodna,
+        pdfIncluded: v.autodna,
+      },
+      {
+        id: "admin-order-block-carvertical",
+        label: SOURCE_BLOCK_LABELS.carvertical,
+        level: traffic.carvertical,
+        pdfIncluded: v.carvertical,
+      },
+      {
+        id: "admin-order-block-auto-records",
+        label: SOURCE_BLOCK_LABELS.auto_records,
+        level: traffic.auto_records,
+        pdfIncluded: v.auto_records,
+      },
+      { id: "admin-order-block-ltab", label: SOURCE_BLOCK_LABELS.ltab, level: traffic.ltab, pdfIncluded: v.ltab },
+      {
+        id: "admin-order-block-citi-avoti",
+        label: SOURCE_BLOCK_LABELS.citi_avoti,
+        level: traffic.citi_avoti,
+        pdfIncluded: v.citi_avoti,
+      },
+      {
+        id: "admin-order-section-sludinajums",
+        label: "3. Sludinājuma analīze",
+        level: traffic.listingSection,
+        pdfIncluded: v.sludinajums,
+      },
+      {
+        id: "admin-order-section-kopsavilkums",
+        label: "4. Kopsavilkums (IRISS)",
+        level: expertLvl,
+        pdfIncluded: v.iriss,
+      },
+      { id: "admin-order-section-pdf", label: "5. PDF klientam", level: pdfLvl, pdfIncluded: true },
     );
     return items;
   }, [
     portfolio.length,
     traffic,
     provinAlertBanners.length,
+    pdfVisibility,
     ws.iriss,
     ws.apskatesPlāns,
     ws.cenasAtbilstiba,
@@ -846,6 +935,7 @@ export function OrderDetailWorkspace({
         apskatesPlāns: ws.apskatesPlāns,
         cenasAtbilstiba: ws.cenasAtbilstiba,
         listingMarket,
+        pdfVisibility,
       },
       portfolio: portfolio.map((p) => ({ name: p.name, size: p.size })),
       pdfInsights,
@@ -1051,14 +1141,20 @@ export function OrderDetailWorkspace({
       <div
         className={`flex gap-1 ${narrowPortfolioLayout ? "flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between" : "flex-wrap items-center justify-between"}`}
       >
-        <h2 className={`${workspaceSectionTitle} flex shrink-0 flex-wrap items-baseline gap-x-2 gap-y-0`}>
-          <span>1. Pielikumi</span>
-          {portfolioPersistFlash ? (
-            <span className="text-[10px] font-semibold normal-case tracking-normal text-emerald-700" role="status">
-              Saglabāts
-            </span>
-          ) : null}
-        </h2>
+        <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-2 gap-y-1">
+          <h2 className={`${workspaceSectionTitle} flex shrink-0 flex-wrap items-baseline gap-x-2 gap-y-0`}>
+            <span>1. Pielikumi</span>
+            {portfolioPersistFlash ? (
+              <span className="text-[10px] font-semibold normal-case tracking-normal text-emerald-700" role="status">
+                Saglabāts
+              </span>
+            ) : null}
+          </h2>
+          <AdminPdfIncludeToggle
+            checked={pdfVisibility.portfolio}
+            onChange={(next) => onPdfVisibilityChange({ portfolio: next })}
+          />
+        </div>
       </div>
       <div
         onDragEnter={(e) => {
@@ -1206,6 +1302,24 @@ export function OrderDetailWorkspace({
   const showPortfolioInline = !portfolioPortalDomId || !portfolioPortalEl;
   const showPortfolioPortal = Boolean(portfolioPortalDomId && portfolioPortalEl);
 
+  const alertsSection =
+    provinAlertBanners.length > 0 ? (
+      <section id="admin-order-section-bridinajumi" className={`${workspaceSectionShell} mb-1.5`}>
+        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+          <h2 className={workspaceSectionTitle}>Brīdinājumi (PDF)</h2>
+          <AdminPdfIncludeToggle
+            checked={pdfVisibility.alerts}
+            onChange={(next) => onPdfVisibilityChange({ alerts: next })}
+          />
+        </div>
+        <div className="space-y-2">
+          <AdminProvinAlertBanners banners={provinAlertBanners} />
+        </div>
+      </section>
+    ) : null;
+
+  const showAlertsPortal = Boolean(alertsPortalDomId && alertsPortalEl);
+
   return (
     <div className="space-y-1.5">
       {previewOpen ? previewBody : null}
@@ -1213,6 +1327,11 @@ export function OrderDetailWorkspace({
       {portfolioAllFilesModal != null && typeof document !== "undefined"
         ? createPortal(portfolioAllFilesModal, document.body)
         : null}
+
+      {alertsPortalDomId && showAlertsPortal && alertsSection
+        ? createPortal(alertsSection, alertsPortalEl!)
+        : null}
+      {!alertsPortalDomId && alertsSection}
 
       {showPortfolioPortal ? createPortal(portfolioSection, portfolioPortalEl!) : null}
 
@@ -1267,6 +1386,17 @@ export function OrderDetailWorkspace({
             <button type="button" className={workspaceToolbarBtn} onClick={() => setSourcesViewMode(false)}>
               Labot
             </button>
+            <span className="hidden w-full sm:inline sm:w-px sm:h-4 sm:bg-slate-200" aria-hidden />
+            <AdminPdfIncludeToggle
+              checked={pdfVisibility.unifiedMileage}
+              onChange={(next) => onPdfVisibilityChange({ unifiedMileage: next })}
+            />
+            <span className="text-[9px] font-medium text-[var(--color-provin-muted)]">Nobraukuma tabula PDF</span>
+            <AdminPdfIncludeToggle
+              checked={pdfVisibility.unifiedIncidents}
+              onChange={(next) => onPdfVisibilityChange({ unifiedIncidents: next })}
+            />
+            <span className="text-[9px] font-medium text-[var(--color-provin-muted)]">Negadījumi PDF</span>
           </div>
         </div>
         <div className="mt-1.5 flex flex-col gap-2">
@@ -1276,6 +1406,10 @@ export function OrderDetailWorkspace({
               readOnly={sourcesViewMode}
               onChange={(next) => updateSourceBlock("csdd", next)}
               trafficFillLevel={traffic.csdd}
+              pdfIncludeBlock={pdfVisibility.csdd}
+              onPdfIncludeBlockChange={(next) => onPdfVisibilityChange({ csdd: next })}
+              pdfIncludeMileageTable={pdfVisibility.csddMileageTable}
+              onPdfIncludeMileageTableChange={(next) => onPdfVisibilityChange({ csddMileageTable: next })}
             />
           </div>
           <div className="grid min-h-0 min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3 items-stretch">
@@ -1287,6 +1421,8 @@ export function OrderDetailWorkspace({
                 onChange={(next) => updateSourceBlock("autodna", next)}
                 trafficFillLevel={traffic.autodna}
                 collapsible
+                pdfInclude={pdfVisibility.autodna}
+                onPdfIncludeChange={(next) => onPdfVisibilityChange({ autodna: next })}
               />
             </div>
             <div id="admin-order-block-carvertical" className="flex min-h-0 h-full min-w-0 flex-col">
@@ -1297,6 +1433,8 @@ export function OrderDetailWorkspace({
                 onChange={(next) => updateSourceBlock("carvertical", next)}
                 trafficFillLevel={traffic.carvertical}
                 collapsible
+                pdfInclude={pdfVisibility.carvertical}
+                onPdfIncludeChange={(next) => onPdfVisibilityChange({ carvertical: next })}
               />
             </div>
             <div id="admin-order-block-auto-records" className="flex min-h-0 h-full min-w-0 flex-col">
@@ -1306,6 +1444,8 @@ export function OrderDetailWorkspace({
                 onChange={(next) => updateSourceBlock("auto_records", next)}
                 trafficFillLevel={traffic.auto_records}
                 collapsible
+                pdfInclude={pdfVisibility.auto_records}
+                onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
               />
             </div>
           </div>
@@ -1317,6 +1457,8 @@ export function OrderDetailWorkspace({
                 onChange={(next) => updateSourceBlock("ltab", next)}
                 trafficFillLevel={traffic.ltab}
                 collapsible
+                pdfInclude={pdfVisibility.ltab}
+                onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
               />
             </div>
             <div id="admin-order-block-citi-avoti" className="flex min-h-0 h-full min-w-0 flex-col">
@@ -1326,6 +1468,8 @@ export function OrderDetailWorkspace({
                 onChange={(next) => updateSourceBlock("citi_avoti", next)}
                 trafficFillLevel={traffic.citi_avoti}
                 collapsible
+                pdfInclude={pdfVisibility.citi_avoti}
+                onPdfIncludeChange={(next) => onPdfVisibilityChange({ citi_avoti: next })}
               />
             </div>
           </div>
@@ -1333,7 +1477,13 @@ export function OrderDetailWorkspace({
       </section>
 
       <section id="admin-order-section-sludinajums" className="min-w-0">
-        <h2 className={workspaceSectionTitle}>3. Sludinājuma analīze</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className={workspaceSectionTitle}>3. Sludinājuma analīze</h2>
+          <AdminPdfIncludeToggle
+            checked={pdfVisibility.sludinajums}
+            onChange={(next) => onPdfVisibilityChange({ sludinajums: next })}
+          />
+        </div>
         <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
           Lasīšanas / labošanas režīms kopīgs ar 2. sadaļas rīkjoslu (Saglabāt / Labot).
         </p>
@@ -1384,15 +1534,6 @@ export function OrderDetailWorkspace({
         </div>
       </section>
 
-          {provinAlertBanners.length > 0 ? (
-            <section id="admin-order-section-bridinajumi" className={workspaceSectionShell}>
-              <h2 className={`${workspaceSectionTitle} mb-1.5`}>Brīdinājumi (PDF)</h2>
-              <div className="space-y-2">
-                <AdminProvinAlertBanners banners={provinAlertBanners} />
-              </div>
-            </section>
-          ) : null}
-
             <section id="admin-order-section-kopsavilkums" className="min-w-0">
               <div className="flex flex-wrap items-start justify-between gap-1.5">
                 <div className="min-w-0">
@@ -1418,6 +1559,10 @@ export function OrderDetailWorkspace({
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-1">
+                  <AdminPdfIncludeToggle
+                    checked={pdfVisibility.iriss}
+                    onChange={(next) => onPdfVisibilityChange({ iriss: next })}
+                  />
                   {expertFlash ? (
                     <span className="text-[11px] font-semibold text-emerald-700" role="status">
                       Saglabāts

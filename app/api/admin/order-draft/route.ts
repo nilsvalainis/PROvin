@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { patchOrderDraft } from "@/lib/admin-order-draft-store";
 import type { OrderDraftOrderEdits, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
+import { mergePdfVisibility } from "@/lib/pdf-visibility";
 
 export const maxDuration = 30;
 
@@ -25,6 +26,7 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
     apskatesPlāns: typeof o.apskatesPlāns === "string" ? o.apskatesPlāns : "",
     cenasAtbilstiba: typeof o.cenasAtbilstiba === "string" ? o.cenasAtbilstiba : "",
     previewConfirmed: Boolean(o.previewConfirmed),
+    pdfVisibility: mergePdfVisibility(o.pdfVisibility),
   };
 }
 

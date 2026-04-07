@@ -2,6 +2,7 @@
  * Strukturēti avotu bloki admin portfelī → sintēze uz PDF / km / VIN heuristiku.
  */
 
+import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
 import {
   autoRecordsRowHasData,
@@ -1094,6 +1095,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   apskatesPlāns: string;
   cenasAtbilstiba: string;
   previewConfirmed: boolean;
+  pdfVisibility: PdfVisibilitySettings;
 } | null {
   if (!raw) return null;
   try {
@@ -1117,6 +1119,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
       apskatesPlāns: typeof p.apskatesPlāns === "string" ? p.apskatesPlāns : "",
       cenasAtbilstiba: typeof p.cenasAtbilstiba === "string" ? p.cenasAtbilstiba : "",
       previewConfirmed: Boolean(p.previewConfirmed),
+      pdfVisibility: mergePdfVisibility(p.pdfVisibility),
     };
   } catch {
     return null;

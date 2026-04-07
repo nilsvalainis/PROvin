@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import type { OrderDraftOrderEdits, OrderDraftState, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
+import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 
 const DEFAULT_RELATIVE_DIR = ".data/admin-order-drafts";
@@ -49,6 +50,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
       apskatesPlāns: typeof w.apskatesPlāns === "string" ? w.apskatesPlāns : "",
       cenasAtbilstiba: typeof w.cenasAtbilstiba === "string" ? w.cenasAtbilstiba : "",
       previewConfirmed: Boolean(w.previewConfirmed),
+      pdfVisibility: w.pdfVisibility ? mergePdfVisibility(w.pdfVisibility) : undefined,
     });
     const h = hydrateWorkspaceFromStorage(json);
     if (h) {
@@ -58,6 +60,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         apskatesPlāns: h.apskatesPlāns,
         cenasAtbilstiba: h.cenasAtbilstiba,
         previewConfirmed: h.previewConfirmed,
+        pdfVisibility: h.pdfVisibility,
       };
     }
   }
@@ -97,6 +100,7 @@ export async function patchOrderDraft(
       apskatesPlāns: workspacePatch.apskatesPlāns,
       cenasAtbilstiba: workspacePatch.cenasAtbilstiba,
       previewConfirmed: workspacePatch.previewConfirmed,
+      pdfVisibility: workspacePatch.pdfVisibility,
     });
     const h = hydrateWorkspaceFromStorage(json);
     if (!h) return { ok: false, error: "invalid_workspace" };
@@ -106,6 +110,7 @@ export async function patchOrderDraft(
       apskatesPlāns: h.apskatesPlāns,
       cenasAtbilstiba: h.cenasAtbilstiba,
       previewConfirmed: h.previewConfirmed,
+      pdfVisibility: h.pdfVisibility,
     };
   }
 

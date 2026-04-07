@@ -12,6 +12,8 @@ export type AdminProgressNavItem = {
   id: string;
   label: string;
   level: TrafficFillLevel;
+  /** false — PDF izslēgts (blāvs). */
+  pdfIncluded?: boolean;
 };
 
 function scrollToSection(id: string) {
@@ -20,14 +22,17 @@ function scrollToSection(id: string) {
 }
 
 function NavButton({ item }: { item: AdminProgressNavItem }) {
+  const faded = item.pdfIncluded === false;
   return (
     <button
       type="button"
       onClick={() => scrollToSection(item.id)}
-      className="flex w-full min-w-0 items-start gap-2 rounded-lg px-1.5 py-1 text-left text-[10px] font-medium leading-snug text-[var(--color-apple-text)] transition hover:bg-slate-100/90"
+      className={`flex w-full min-w-0 items-start gap-2 rounded-lg px-1.5 py-1 text-left text-[10px] font-medium leading-snug transition hover:bg-slate-100/90 ${
+        faded ? "text-[var(--color-provin-muted)] opacity-45" : "text-[var(--color-apple-text)]"
+      }`}
     >
       <span
-        className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${DOT[item.level]}`}
+        className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${faded ? "opacity-40" : ""} ${DOT[item.level]}`}
         aria-hidden
       />
       <span className="min-w-0 break-words">{item.label}</span>
@@ -70,9 +75,14 @@ export function AdminOrderProgressNavStrip({ items }: { items: AdminProgressNavI
           key={item.id}
           type="button"
           onClick={() => scrollToSection(item.id)}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200/80 bg-white px-2 py-1 text-[10px] font-medium text-[var(--color-apple-text)] shadow-sm"
+          className={`flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200/80 bg-white px-2 py-1 text-[10px] font-medium shadow-sm ${
+            item.pdfIncluded === false ? "text-[var(--color-provin-muted)] opacity-45" : "text-[var(--color-apple-text)]"
+          }`}
         >
-          <span className={`h-2 w-2 shrink-0 rounded-full ${DOT[item.level]}`} aria-hidden />
+          <span
+            className={`h-2 w-2 shrink-0 rounded-full ${item.pdfIncluded === false ? "opacity-40" : ""} ${DOT[item.level]}`}
+            aria-hidden
+          />
           <span className="max-w-[9rem] truncate">{item.label}</span>
         </button>
       ))}

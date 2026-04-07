@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
+import { DEFAULT_PDF_VISIBILITY, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
 import { AdminListingUrlEndAdornment } from "@/components/admin/AdminListingUrlToolbar";
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
@@ -68,6 +70,10 @@ export function AdminOrderDetailView({
   const [orderEditsAutosaveFlash, setOrderEditsAutosaveFlash] = useState(false);
   const [orderEditsSaveServerOk, setOrderEditsSaveServerOk] = useState(true);
   const skipOrderEditsAutosaveFlash = useRef(true);
+  const [pdfVisibility, setPdfVisibility] = useState<PdfVisibilitySettings>(DEFAULT_PDF_VISIBILITY);
+  const patchPdfVisibility = useCallback((patch: Partial<PdfVisibilitySettings>) => {
+    setPdfVisibility((prev) => ({ ...prev, ...patch }));
+  }, []);
 
   useEffect(() => {
     const key = storageKeyOrderEdits(order.id);
@@ -241,13 +247,21 @@ export function AdminOrderDetailView({
         <p className="mt-1 font-mono text-[11px] text-[var(--color-provin-muted)]">{order.id}</p>
       </header>
 
+      <div id={`admin-order-alerts-slot-${order.id}`} className="min-w-0" />
+
       <div className="space-y-1.5">
         <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-4 xl:items-stretch">
           <section id="admin-order-section-maksajums" className={`${sectionClass} min-w-0`}>
-            <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
-              <SectionLineIcon id="wallet" className="!h-5 !w-5" />
-              Maksājums
-            </h2>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
+                <SectionLineIcon id="wallet" className="!h-5 !w-5" />
+                Maksājums
+              </h2>
+              <AdminPdfIncludeToggle
+                checked={pdfVisibility.payment}
+                onChange={(next) => patchPdfVisibility({ payment: next })}
+              />
+            </div>
             <p className={sectionHint}>No Stripe / sesijas — nav rediģējams.</p>
             <dl className={metaStack}>
               <div className="min-w-0">
@@ -268,10 +282,11 @@ export function AdminOrderDetailView({
           </section>
 
           <section id="admin-order-section-transports" className={`${sectionClass} min-w-0`}>
-            <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
-              <SectionLineIcon id="car" className="!h-5 !w-5" />
-              <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
-                <span>Transportlīdzeklis un sludinājums</span>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
+                <SectionLineIcon id="car" className="!h-5 !w-5" />
+                <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
+                  <span>Transportlīdzeklis un sludinājums</span>
               {orderEditsAutosaveFlash ? (
                 <span
                   className={`text-[10px] font-semibold normal-case tracking-normal ${
@@ -286,8 +301,13 @@ export function AdminOrderDetailView({
                       : "Saglabāts lokāli (serveris nav pieejams)"}
                 </span>
               ) : null}
-              </span>
-            </h2>
+                </span>
+              </h2>
+              <AdminPdfIncludeToggle
+                checked={pdfVisibility.vehicle}
+                onChange={(next) => patchPdfVisibility({ vehicle: next })}
+              />
+            </div>
             <p className={sectionHint}>
               VIN un saite — auto pēc ~0,8 s (localStorage
               {orderDraftPersistenceEnabled ? " + JSON serverī" : ""}). CV / Tirgus — Tampermonkey{" "}
@@ -365,10 +385,16 @@ export function AdminOrderDetailView({
           </section>
 
           <section id="admin-order-section-klienta" className={`${sectionClass} min-w-0`}>
-            <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
-              <SectionLineIcon id="user" className="!h-5 !w-5" />
-              Klienta dati
-            </h2>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
+                <SectionLineIcon id="user" className="!h-5 !w-5" />
+                Klienta dati
+              </h2>
+              <AdminPdfIncludeToggle
+                checked={pdfVisibility.client}
+                onChange={(next) => patchPdfVisibility({ client: next })}
+              />
+            </div>
             <p className={sectionHint}>
               No pasūtījuma — <strong className="font-medium text-[var(--color-apple-text)]">nav rediģējami</strong>.
             </p>
@@ -401,10 +427,11 @@ export function AdminOrderDetailView({
         </div>
 
         <section id="admin-order-section-komentars" className={sectionClass}>
-          <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
-            <SectionLineIcon id="messageSquare" className="!h-5 !w-5" />
-            <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
-              <span>Klienta komentārs</span>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
+              <SectionLineIcon id="messageSquare" className="!h-5 !w-5" />
+              <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
+                <span>Klienta komentārs</span>
               {orderEditsAutosaveFlash ? (
                 <span
                   className={`text-[10px] font-semibold normal-case tracking-normal ${
@@ -419,8 +446,13 @@ export function AdminOrderDetailView({
                       : "Saglabāts lokāli (serveris nav pieejams)"}
                 </span>
               ) : null}
-            </span>
-          </h2>
+              </span>
+            </h2>
+            <AdminPdfIncludeToggle
+              checked={pdfVisibility.notes}
+              onChange={(next) => patchPdfVisibility({ notes: next })}
+            />
+          </div>
           <p className={sectionHint}>
             {orderDraftPersistenceEnabled
               ? "Melnraksts serverī (JSON) + kopija pārlūkā; oriģinālais klienta teksts — Stripe."
@@ -445,6 +477,9 @@ export function AdminOrderDetailView({
           portfolioPortalTargetInParent
           serverWorkspaceJson={serverWorkspaceJson}
           orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
+          pdfVisibility={pdfVisibility}
+          onPdfVisibilityChange={patchPdfVisibility}
+          alertsPortalDomId={`admin-order-alerts-slot-${order.id}`}
           payload={{
             sessionId: order.id,
             isDemo: Boolean(order.isDemo),

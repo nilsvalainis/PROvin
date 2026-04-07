@@ -20,6 +20,7 @@ import {
 } from "@/lib/auto-records-paste-parse";
 import { SUBHEADING_ICON } from "@/lib/section-icons";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
+import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -34,6 +35,8 @@ type Props = {
   trafficFillLevel?: TrafficFillLevel;
   collapsible?: boolean;
   defaultCollapsed?: boolean;
+  pdfInclude: boolean;
+  onPdfIncludeChange: (next: boolean) => void;
 };
 
 export function AdminAutoRecordsSourceBlock({
@@ -44,6 +47,8 @@ export function AdminAutoRecordsSourceBlock({
   trafficFillLevel,
   collapsible = false,
   defaultCollapsed = true,
+  pdfInclude,
+  onPdfIncludeChange,
 }: Props) {
   const [collapsed, setCollapsed] = useState(collapsible ? defaultCollapsed : false);
   const showBody = !collapsible || !collapsed;
@@ -89,6 +94,9 @@ export function AdminAutoRecordsSourceBlock({
         trafficFillLevel={trafficFillLevel}
         className={`shrink-0 ${trafficFillLevel ? "mb-0" : "mb-1.5"}`}
       />
+      <div className={`flex justify-end ${trafficFillLevel ? "px-2 pb-1" : "pb-1"}`}>
+        <AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} />
+      </div>
 
       {collapsible ? (
         <button

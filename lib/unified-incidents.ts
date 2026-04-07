@@ -17,12 +17,19 @@ function incidentRowHasLossAmount(r: LtabIncidentRow): boolean {
   return Boolean(r.lossAmount.trim());
 }
 
+export type CollectUnifiedIncidentOptions = {
+  omitVendorBlockTitles?: Set<string>;
+  omitLtab?: boolean;
+};
+
 export function collectUnifiedIncidentRows(args: {
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
+  options?: CollectUnifiedIncidentOptions;
 }): UnifiedIncidentRow[] {
   const out: UnifiedIncidentRow[] = [];
   let sourceOrder = 0;
+  const omitTitles = args.options?.omitVendorBlockTitles;
   const push = (r: LtabIncidentRow) => {
     if (!incidentRowHasLossAmount(r)) return;
     const d = r.csngDate.trim();
@@ -35,9 +42,12 @@ export function collectUnifiedIncidentRows(args: {
     });
   };
   for (const b of args.manualVendorBlocks ?? []) {
+    if (omitTitles?.has(b.title)) continue;
     for (const r of b.incidentRows) push(r);
   }
-  for (const r of args.manualLtabBlock?.rows ?? []) push(r);
+  if (!args.options?.omitLtab) {
+    for (const r of args.manualLtabBlock?.rows ?? []) push(r);
+  }
   return out;
 }
 

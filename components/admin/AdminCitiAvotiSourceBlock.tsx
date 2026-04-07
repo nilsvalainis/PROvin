@@ -11,6 +11,8 @@ type Props = {
   onChange: (next: CitiAvotiBlockState) => void;
   trafficFillLevel?: TrafficFillLevel;
   collapsible?: boolean;
+  pdfInclude: boolean;
+  onPdfIncludeChange: (next: boolean) => void;
 };
 
 /** Citi avoti — tā pati struktūra kā AutoDNA / CarVertical (nobraukums + negadījumi + komentāri). */
@@ -21,6 +23,8 @@ export function AdminCitiAvotiSourceBlock({
   onChange,
   trafficFillLevel,
   collapsible,
+  pdfInclude,
+  onPdfIncludeChange,
 }: Props) {
   return (
     <AdminVendorAvotuSourceBlock
@@ -31,6 +35,8 @@ export function AdminCitiAvotiSourceBlock({
       onChange={onChange}
       trafficFillLevel={trafficFillLevel}
       collapsible={collapsible}
+      pdfInclude={pdfInclude}
+      onPdfIncludeChange={onPdfIncludeChange}
     />
   );
 }

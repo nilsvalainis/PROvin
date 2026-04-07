@@ -21,6 +21,7 @@ import {
   getParticulateMatterUiFlag,
   type CsddFieldUiFlag,
 } from "@/lib/csdd-ui-flags";
+import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -70,11 +71,25 @@ type Props = {
   disabled?: boolean;
   onChange: (next: CsddFormFields) => void;
   trafficFillLevel?: TrafficFillLevel;
+  pdfIncludeBlock: boolean;
+  onPdfIncludeBlockChange: (next: boolean) => void;
+  pdfIncludeMileageTable: boolean;
+  onPdfIncludeMileageTableChange: (next: boolean) => void;
 };
 
 const mileCell = "px-1.5 py-0.5";
 
-export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange, trafficFillLevel }: Props) {
+export function AdminCsddSourceBlock({
+  value,
+  readOnly,
+  disabled,
+  onChange,
+  trafficFillLevel,
+  pdfIncludeBlock,
+  onPdfIncludeBlockChange,
+  pdfIncludeMileageTable,
+  onPdfIncludeMileageTableChange,
+}: Props) {
   const setField = (key: keyof CsddFormFields, v: string) => {
     onChange({ ...value, [key]: v });
   };
@@ -112,6 +127,9 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange, traf
         trafficFillLevel={trafficFillLevel}
         className={trafficFillLevel ? "mb-0" : "mb-2"}
       />
+      <div className={`flex justify-end ${trafficFillLevel ? "px-2 pb-1" : "pb-1"}`}>
+        <AdminPdfIncludeToggle checked={pdfIncludeBlock} onChange={onPdfIncludeBlockChange} />
+      </div>
 
       <div className={trafficFillLevel ? "space-y-2 p-2" : "space-y-2"}>
       <div className="mb-2 min-w-0">
@@ -239,10 +257,13 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange, traf
       </div>
 
       <div className="mt-3 border-t border-slate-200/80 pt-2">
-        <p className="mb-1.5 flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
-          <SectionLineIcon id={SUBHEADING_ICON.mileage} />
-          {CSDD_MILEAGE_UNIFIED_TITLE}
-        </p>
+        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+          <p className="flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+            <SectionLineIcon id={SUBHEADING_ICON.mileage} />
+            {CSDD_MILEAGE_UNIFIED_TITLE}
+          </p>
+          <AdminPdfIncludeToggle checked={pdfIncludeMileageTable} onChange={onPdfIncludeMileageTableChange} />
+        </div>
         <div
           className="overflow-x-auto rounded-lg border border-slate-200/90"
           data-provin-mileage-table={PROVIN_MILEAGE_TABLE_DOM_KIND}

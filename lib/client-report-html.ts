@@ -56,6 +56,7 @@ import {
 import {
   collectUnifiedMileageRows,
   computeOdometerAnomalyBySourceOrder,
+  type CollectUnifiedMileageOptions,
   type UnifiedMileageRow,
   type UnifiedMileageSourcePayload,
 } from "@/lib/unified-mileage";
@@ -66,6 +67,7 @@ import {
 } from "@/lib/csdd-ui-flags";
 import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
+import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
@@ -76,6 +78,15 @@ const PDF_IRISS_SECTION_3 = "3. Cenas atbilstība";
 const PDF_SUB_CSDD = "CSDD";
 const PDF_SUB_BLOCK_COMMENTS = "Komentāri";
 const PDF_SECTION_LISTING_ANALYSIS = "SLUDINĀJUMA ANALĪZE";
+
+function vendorTitlesOmittedForPdf(vis: PdfVisibilitySettings): Set<string> {
+  const L = SOURCE_BLOCK_LABELS;
+  const s = new Set<string>();
+  if (!vis.autodna) s.add(L.autodna);
+  if (!vis.carvertical) s.add(L.carvertical);
+  if (!vis.citi_avoti) s.add(L.citi_avoti);
+  return s;
+}
 
 /** Mājaslapas primārais zils — grafiks, akcenti. */
 const PDF_BRAND_BLUE = "#0061D2";
@@ -113,6 +124,8 @@ export type ClientReportPayload = {
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
   citiAvoti?: CitiAvotiBlockState | null;
   listingAnalysis?: ListingAnalysisBlockState | null;
+  /** Ja nav — PDF iekļauj visu (admin noklusējums). */
+  pdfVisibility?: PdfVisibilitySettings | null;
 };
 
 export type ClientReportPortfolioRow = { name: string; size: number };
@@ -272,8 +285,11 @@ function buildMileageHistoryTableHtml(rows: UnifiedMileageRow[], anomalyBySource
   return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 
-export function buildUnifiedMileageTableHtml(p: UnifiedMileageSourcePayload): string {
-  const collected = collectUnifiedMileageRows(p);
+export function buildUnifiedMileageTableHtml(
+  p: UnifiedMileageSourcePayload,
+  mileageOpts?: CollectUnifiedMileageOptions,
+): string {
+  const collected = collectUnifiedMileageRows(p, mileageOpts);
   if (collected.length === 0) return "";
 
   const anomalyBySourceOrder = computeOdometerAnomalyBySourceOrder(collected);
@@ -319,10 +335,15 @@ function buildIncidentHistoryTableHtml(rows: UnifiedIncidentRow[]): string {
 }
 
 /** Apvienota negadījumu tabula (AutoDNA, CarVertical, LTAB, Citi avoti) — tikai rindas ar aizpildītu zaudējumu summu. */
-function buildUnifiedIncidentsTableHtml(p: ClientReportPayload): string {
+function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
+  if (!vis.unifiedIncidents) return "";
   const collected = collectUnifiedIncidentRows({
     manualVendorBlocks: p.manualVendorBlocks ?? null,
     manualLtabBlock: p.manualLtabBlock ?? null,
+    options: {
+      omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
+      omitLtab: !vis.ltab,
+    },
   });
   if (collected.length === 0) return "";
   const rows = sortUnifiedIncidentsNewestFirst(collected);
@@ -331,7 +352,8 @@ function buildUnifiedIncidentsTableHtml(p: ClientReportPayload): string {
 }
 
 /** CSDD — apskates datumi + strukturētie lauki (viena galvenā līmeņa zona, kā NOBRAUKUMA VĒSTURE). */
-function buildCsddAvotuSubsection(p: ClientReportPayload): string {
+function buildCsddAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
+  if (!vis.csdd) return "";
   const hasStruct = Boolean(p.csddForm && csddFormHasContent(p.csddForm));
   const hasRaw = p.csdd.trim().length > 0;
   if (!hasStruct && !hasRaw) return "";
@@ -405,7 +427,11 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
 }
 
 /** AUTO RECORDS — PDF blokā rādam komentārus; nobraukums ir vienotajā tabulā augšā. */
-function buildAutoRecordsAvotuSubsection(b: AutoRecordsBlockState | null | undefined): string {
+function buildAutoRecordsAvotuSubsection(
+  b: AutoRecordsBlockState | null | undefined,
+  vis: PdfVisibilitySettings,
+): string {
+  if (!vis.auto_records) return "";
   if (!b || !autoRecordsBlockHasContent(b)) return "";
   const hasComments = b.comments.trim().length > 0;
   if (!hasComments) return "";
@@ -415,7 +441,10 @@ function buildAutoRecordsAvotuSubsection(b: AutoRecordsBlockState | null | undef
 }
 
 /** Trešās puses avots — tikai komentāri (nobraukums un negadījumi ir vienotajās tabulās augšā). */
-function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf): string {
+function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf, vis: PdfVisibilitySettings): string {
+  const L = SOURCE_BLOCK_LABELS;
+  if (b.title === L.autodna && !vis.autodna) return "";
+  if (b.title === L.carvertical && !vis.carvertical) return "";
   const hasComments = b.comments.trim().length > 0;
   if (!hasComments) return "";
   const head = sectionHeadBrand(sectionIconPdfHtml(vendorPdfTitleToIconId(b.title)), b.title);
@@ -423,7 +452,11 @@ function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf): string {
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
 
-function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined): string {
+function buildLtabAvotuSubsection(
+  b: ClientManualLtabBlockPdf | null | undefined,
+  vis: PdfVisibilitySettings,
+): string {
+  if (!vis.ltab) return "";
   if (!b) return "";
   const hasComments = b.comments.trim().length > 0;
   if (!hasComments) return "";
@@ -435,7 +468,8 @@ function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined
 /**
  * Sludinājuma analīze — patstāvīgs bloks: vispirms „Sludinājuma vēsture” (tirgus dati), tad pārējās apakšsadaļas.
  */
-function buildListingAnalysisPriorityHtml(p: ClientReportPayload): string {
+function buildListingAnalysisPriorityHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
+  if (!vis.sludinajums) return "";
   const tirgusBody = buildTirgusListingHistoryBodyHtml(p);
   const b = p.listingAnalysis;
   const hasListingFields = Boolean(b && listingAnalysisHasContent(b));
@@ -469,7 +503,8 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload): string {
 }
 
 /** Citi avoti — tīri komentāri (nobraukums un negadījumi ir vienotajās tabulās augšā). */
-function buildCitiAvotiAvotuSubsection(p: ClientReportPayload): string {
+function buildCitiAvotiAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
+  if (!vis.citi_avoti) return "";
   const b = p.citiAvoti;
   if (!b || !b.comments.trim()) return "";
   const head = sectionHeadBrand(sectionIconPdfHtml("layers"), SOURCE_BLOCK_LABELS.citi_avoti);
@@ -481,20 +516,20 @@ function buildCitiAvotiAvotuSubsection(p: ClientReportPayload): string {
  * Avotu apakšsadaļas (PDF): katra patstāvīga pilna platuma zona — CSDD, AutoDNA, CarVertical, utt.
  * Nav kopējā „Avotu bloki“ mātes sadaļas.
  */
-function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
-  const csdd = buildCsddAvotuSubsection(p);
-  const ltab = buildLtabAvotuSubsection(p.manualLtabBlock);
-  const citiAvoti = buildCitiAvotiAvotuSubsection(p);
+function buildAvotuDatiSectionHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
+  const csdd = buildCsddAvotuSubsection(p, vis);
+  const ltab = buildLtabAvotuSubsection(p.manualLtabBlock, vis);
+  const citiAvoti = buildCitiAvotiAvotuSubsection(p, vis);
 
   const vendors = p.manualVendorBlocks ?? [];
   const byTitle = new Map(vendors.map((b) => [b.title, b]));
   const vendorHtml = (title: string) => {
     const b = byTitle.get(title);
-    return b ? buildVendorAvotuSubsection(b) : "";
+    return b ? buildVendorAvotuSubsection(b, vis) : "";
   };
   const autodna = vendorHtml(SOURCE_BLOCK_LABELS.autodna);
   const carvertical = vendorHtml(SOURCE_BLOCK_LABELS.carvertical);
-  const autoRecords = buildAutoRecordsAvotuSubsection(p.autoRecordsBlock ?? null);
+  const autoRecords = buildAutoRecordsAvotuSubsection(p.autoRecordsBlock ?? null, vis);
 
   const stack = [csdd, autodna, carvertical, autoRecords, ltab, citiAvoti].filter(Boolean);
   if (stack.length === 0) return "";
@@ -502,7 +537,8 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
 }
 
 /** Galvenais eksperta kopsavilkums — pilnā platumā, pēdējais lielais bloks pirms juridiskās piezīmes. */
-function buildApprovedByIrissHtml(p: ClientReportPayload): string {
+function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
+  if (!vis.iriss) return "";
   const iriss = p.iriss.trim();
   const plan = p.apskatesPlāns.trim();
   const priceFit = p.cenasAtbilstiba.trim();
@@ -898,6 +934,7 @@ export function buildClientReportDocumentHtml(args: {
   formatBytes: (n: number) => string;
 }): string {
   const { payload: p, dateFmt } = args;
+  const vis = mergePdfVisibility(p.pdfVisibility);
 
   const money =
     p.amountTotal == null
@@ -927,39 +964,50 @@ export function buildClientReportDocumentHtml(args: {
   }
   lines.push("</div></div></header>");
 
-  const alertBannersHtml = buildPdfAlertBannersHtml(
-    computeProvinAlertBannersFromPayloadSlice({
-      csddForm: p.csddForm,
-      autoRecordsBlock: p.autoRecordsBlock ?? null,
-      manualVendorBlocks: p.manualVendorBlocks ?? null,
-      manualLtabBlock: p.manualLtabBlock ?? null,
-      tirgusForm: p.tirgusForm ?? null,
-    }),
-  );
+  const alertBannersHtml = vis.alerts
+    ? buildPdfAlertBannersHtml(
+        computeProvinAlertBannersFromPayloadSlice({
+          csddForm: p.csddForm,
+          autoRecordsBlock: p.autoRecordsBlock ?? null,
+          manualVendorBlocks: p.manualVendorBlocks ?? null,
+          manualLtabBlock: p.manualLtabBlock ?? null,
+          tirgusForm: p.tirgusForm ?? null,
+        }),
+      )
+    : "";
   if (alertBannersHtml) lines.push(alertBannersHtml);
 
-  const payBlock = buildPdfAdminMirrorPaymentBlock(p, money, dateFmt, sectionIconPdfHtml("wallet"));
+  const payBlock = vis.payment
+    ? buildPdfAdminMirrorPaymentBlock(p, money, dateFmt, sectionIconPdfHtml("wallet"))
+    : "";
   if (payBlock) lines.push(payBlock);
-  const vehicleBlock = buildPdfAdminMirrorVehicleBlock(p, makeModel, sectionIconPdfHtml("car"));
+  const vehicleBlock = vis.vehicle ? buildPdfAdminMirrorVehicleBlock(p, makeModel, sectionIconPdfHtml("car")) : "";
   if (vehicleBlock) lines.push(vehicleBlock);
-  const clientBlock = buildPdfAdminMirrorClientBlock(p, sectionIconPdfHtml("user"));
+  const clientBlock = vis.client ? buildPdfAdminMirrorClientBlock(p, sectionIconPdfHtml("user")) : "";
   if (clientBlock) lines.push(clientBlock);
-  const notesBlock = buildPdfAdminMirrorNotesBlock(p.notes, sectionIconPdfHtml("messageSquare"));
+  const notesBlock = vis.notes ? buildPdfAdminMirrorNotesBlock(p.notes, sectionIconPdfHtml("messageSquare")) : "";
   if (notesBlock) lines.push(notesBlock);
 
-  const unifiedMileageHtml = buildUnifiedMileageTableHtml(p);
+  const mileageOpts: CollectUnifiedMileageOptions | undefined = vis.unifiedMileage
+    ? {
+        omitCsddMileage: !vis.csdd || !vis.csddMileageTable,
+        omitAutoRecords: !vis.auto_records,
+        omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
+      }
+    : undefined;
+  const unifiedMileageHtml = vis.unifiedMileage ? buildUnifiedMileageTableHtml(p, mileageOpts) : "";
   if (unifiedMileageHtml) lines.push(unifiedMileageHtml);
 
-  const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(p);
+  const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(p, vis);
   if (unifiedIncidentsHtml) lines.push(unifiedIncidentsHtml);
 
-  const avotuHtml = buildAvotuDatiSectionHtml(p);
+  const avotuHtml = buildAvotuDatiSectionHtml(p, vis);
   if (avotuHtml) lines.push(avotuHtml);
 
-  const listingPriorityHtml = buildListingAnalysisPriorityHtml(p);
+  const listingPriorityHtml = buildListingAnalysisPriorityHtml(p, vis);
   if (listingPriorityHtml) lines.push(listingPriorityHtml);
 
-  const approvedHtml = buildApprovedByIrissHtml(p);
+  const approvedHtml = buildApprovedByIrissHtml(p, vis);
   if (approvedHtml) lines.push(approvedHtml);
 
   lines.push('<div class="legal-block">');
