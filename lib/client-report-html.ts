@@ -67,7 +67,9 @@ import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
 const PDF_SECTION_AVOTU_DATI = "AVOTU DATI";
 const PDF_APPROVED_BY_IRISS = "APPROVED BY IRISS";
-const PDF_KOPSAVILKUMS_UN_APSKATES_PLANS = "KOPSAVILKUMS UN APSKATES PLĀNS";
+const PDF_IRISS_SECTION_1 = "1. Kopsavilkums";
+const PDF_IRISS_SECTION_2 = "2. Ieteikumi klātienes apskatei";
+const PDF_IRISS_SECTION_3 = "3. Cenas atbilstība";
 const PDF_SUB_CSDD = "CSDD";
 const PDF_SUB_BLOCK_COMMENTS = "Komentāri";
 const PDF_SECTION_LISTING_ANALYSIS = "SLUDINĀJUMA ANALĪZE";
@@ -503,15 +505,30 @@ function buildApprovedByIrissHtml(p: ClientReportPayload): string {
   const priceFitBlock = priceFit
     ? `Cenas atbilstība balstoties uz mūsu rīcībā esošajiem datiem:\n${priceFit}`
     : "";
-  const body = [iriss, plan, priceFitBlock].filter(Boolean).join("\n\n");
   const parts: string[] = [];
   parts.push(`<div class="pdf-iriss-approved" role="region">`);
   parts.push(
     `<div class="pdf-iriss-approved-header"><span class="pdf-iriss-approved-ico" aria-hidden="true">${ICO.shield}</span><h2 class="pdf-iriss-approved-title">${escapeHtml(PDF_APPROVED_BY_IRISS)}</h2></div>`,
   );
   parts.push(`<div class="pdf-iriss-approved-body">`);
-  parts.push(`<h3 class="pdf-iriss-approved-subtitle">${escapeHtml(PDF_KOPSAVILKUMS_UN_APSKATES_PLANS)}</h3>`);
-  parts.push(`<pre class="mirror-pre pdf-iriss-approved-text">${escapeHtml(body)}</pre>`);
+  if (iriss) {
+    parts.push(`<div class="pdf-iriss-approved-part">`);
+    parts.push(`<h3 class="pdf-iriss-approved-subsection">${escapeHtml(PDF_IRISS_SECTION_1)}</h3>`);
+    parts.push(`<pre class="mirror-pre pdf-iriss-approved-text">${escapeHtml(iriss)}</pre>`);
+    parts.push(`</div>`);
+  }
+  if (plan) {
+    parts.push(`<div class="pdf-iriss-approved-part">`);
+    parts.push(`<h3 class="pdf-iriss-approved-subsection">${escapeHtml(PDF_IRISS_SECTION_2)}</h3>`);
+    parts.push(`<pre class="mirror-pre pdf-iriss-approved-text">${escapeHtml(plan)}</pre>`);
+    parts.push(`</div>`);
+  }
+  if (priceFitBlock) {
+    parts.push(`<div class="pdf-iriss-approved-part">`);
+    parts.push(`<h3 class="pdf-iriss-approved-subsection">${escapeHtml(PDF_IRISS_SECTION_3)}</h3>`);
+    parts.push(`<pre class="mirror-pre pdf-iriss-approved-text">${escapeHtml(priceFitBlock)}</pre>`);
+    parts.push(`</div>`);
+  }
   parts.push(`</div></div>`);
   return parts.join("\n");
 }
@@ -840,6 +857,10 @@ function clientReportPrintCss(): string {
       .pdf-iriss-approved-body{padding:14px 16px 16px;background:${irissBody};}
       .pdf-iriss-approved-subtitle{
         margin:0 0 8px;font-size:0.68rem;font-weight:700;color:#000;letter-spacing:0.06em;text-transform:uppercase;
+      }
+      .pdf-iriss-approved-part:not(:first-child){margin-top:10px;}
+      .pdf-iriss-approved-subsection{
+        margin:0 0 6px;font-size:0.72rem;font-weight:700;color:#000;letter-spacing:0.02em;text-transform:none;
       }
       .pdf-iriss-approved-text{font-size:0.78rem;}
       .mirror-font-error{padding:16px;color:#991b1b;font-size:13px;}

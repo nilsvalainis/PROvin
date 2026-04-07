@@ -3,14 +3,14 @@
  *
  * Galvenie principi:
  * - Nav trešo pušu zīmolu logotipu; tikai PROVIN identitāte.
- * - Galvenais kopsavilkuma bloks „APPROVED BY IRISS” / „KOPSAVILKUMS UN APSKATES PLĀNS”.
+ * - Galvenais kopsavilkuma bloks „APPROVED BY IRISS” (apakšsadaļas: Kopsavilkums, Ieteikumi klātienes apskatei, Cenas atbilstība).
  * - Datu avotu virsraksti PDF klientam — vispārināti, bez oficiālo institūciju precīziem nosaukumiem.
  * - Tekstā nelietot trešo pušu komerciālu pakalpojumu nosaukumus, kamēr nav līgumiskas tiesības tos piesaistīt.
  * - Krāsas / fonti saskaņā ar provin.lv (ne trešo pušu UI krāsas kā „oficiālas”).
  */
 
 export const REPORT_PDF_STANDARDS = {
-  firstPageExpertBlockTitle: "KOPSAVILKUMS UN APSKATES PLĀNS",
+  firstPageExpertBlockTitle: "Kopsavilkums · Ieteikumi klātienes apskatei · Cenas atbilstība",
   /** Paraugs teikumam, ja atspoguļo starptautisko DB saturu bez zīmola nosaukumiem */
   sampleInternationalDbWording: "Saskaņā ar starptautisko datubāzu ierakstiem…",
 } as const;
@@ -31,7 +31,7 @@ export const CLIENT_REPORT_PDF_SECTIONS = {
   discrepancies: "Pretrunas un papildu riski",
   risk: "Ātrā risku pārbaude",
   listing: "V. Tirgus dati un sludinājums",
-  expertBlock: "VI. Kopsavilkums un apskates plāns",
+  expertBlock: "VI. Kopsavilkums, ieteikumi un cenas atbilstība",
   sourcesLegend: "Datu avotu krāsu nozīme",
   /** @deprecated Izmantot quickPanel */
   client: "I. Pieteikums un ātrās kontroles panelis",

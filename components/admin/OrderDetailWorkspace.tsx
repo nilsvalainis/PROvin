@@ -1321,7 +1321,7 @@ export function OrderDetailWorkspace({
         <div className="flex flex-wrap items-start justify-between gap-1.5">
           <div className="min-w-0">
             <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
-              <span>4. Kopsavilkums un apskates plāns</span>
+              <span>4. Kopsavilkums, ieteikumi un cenas atbilstība</span>
               {workspaceAutosaveFlash ? (
                 <span
                   className={`text-[10px] font-semibold normal-case tracking-normal ${
@@ -1401,63 +1401,69 @@ export function OrderDetailWorkspace({
             <span className="text-[10px] font-bold tracking-[0.12em] text-white">APPROVED BY IRISS</span>
           </AdminGradientHeaderBar>
           <div className="p-1.5" style={{ background: APPROVED_BY_IRISS_BODY_BG }}>
-            <h3 className="mb-1 text-[9px] font-bold uppercase tracking-wide text-[var(--color-apple-text)]">
-              KOPSAVILKUMS UN APSKATES PLĀNS
-            </h3>
             <div className="space-y-1.5">
-              {expertViewMode ? (
-                <div className={`${bulkReadonlyClass} min-h-[120px] max-h-[min(45vh,400px)] overflow-y-auto whitespace-pre-wrap`}>
-                  {expertSnap.iriss.trim() ? expertSnap.iriss : <span className="text-slate-400">—</span>}
-                </div>
-              ) : (
-                <textarea
-                  id={`${fileInputId}-iriss`}
-                  className={`${bulkTextareaClass} min-h-[120px] max-h-[min(45vh,400px)] resize-y bg-white/90`}
-                  value={ws.iriss}
-                  onChange={(e) => updateWs({ iriss: e.target.value })}
-                  placeholder="Galvenais kopsavilkums klientam…"
-                  spellCheck
-                  disabled={!ws.previewConfirmed}
-                />
-              )}
-              {expertViewMode ? (
-                <div className={`${bulkReadonlyClass} min-h-[72px] max-h-[min(35vh,280px)] overflow-y-auto whitespace-pre-wrap`}>
-                  {expertSnap.apskatesPlāns.trim() ? (
-                    expertSnap.apskatesPlāns
-                  ) : (
-                    <span className="text-slate-400">—</span>
-                  )}
-                </div>
-              ) : (
-                <textarea
-                  id={`${fileInputId}-apskates`}
-                  className={`${bulkTextareaClass} min-h-[72px] max-h-[min(35vh,280px)] resize-y bg-white/90`}
-                  value={ws.apskatesPlāns}
-                  onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
-                  placeholder="Apskates plāns klātienē — piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
-                  spellCheck
-                  disabled={!ws.previewConfirmed}
-                />
-              )}
-              {expertViewMode ? (
-                <div className={`${bulkReadonlyClass} min-h-[56px] max-h-[min(28vh,220px)] overflow-y-auto whitespace-pre-wrap`}>
-                  {expertSnap.cenasAtbilstiba.trim() ? (
-                    expertSnap.cenasAtbilstiba
-                  ) : (
-                    <span className="text-slate-400">—</span>
-                  )}
-                </div>
-              ) : (
-                <textarea
-                  id={`${fileInputId}-cenas-atbilstiba`}
-                  className={`${bulkTextareaClass} min-h-[56px] max-h-[min(28vh,220px)] resize-y bg-white/90`}
-                  value={ws.cenasAtbilstiba}
-                  onChange={(e) => updateWs({ cenasAtbilstiba: e.target.value })}
-                  placeholder="Cenas atbilstība balstoties uz mūsu rīcībā esošajiem datiem:"
-                  spellCheck
-                  disabled={!ws.previewConfirmed}
-                />
-              )}
+              <div className="min-w-0">
+                <p className="mb-0.5 text-[9px] font-semibold text-[var(--color-apple-text)]">1. Kopsavilkums</p>
+                {expertViewMode ? (
+                  <div className={`${bulkReadonlyClass} min-h-[120px] max-h-[min(45vh,400px)] overflow-y-auto whitespace-pre-wrap`}>
+                    {expertSnap.iriss.trim() ? expertSnap.iriss : <span className="text-slate-400">—</span>}
+                  </div>
+                ) : (
+                  <textarea
+                    id={`${fileInputId}-iriss`}
+                    className={`${bulkTextareaClass} min-h-[120px] max-h-[min(45vh,400px)] resize-y bg-white/90`}
+                    value={ws.iriss}
+                    onChange={(e) => updateWs({ iriss: e.target.value })}
+                    placeholder="Galvenais kopsavilkums klientam…"
+                    spellCheck
+                    disabled={!ws.previewConfirmed}
+                  />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="mb-0.5 text-[9px] font-semibold text-[var(--color-apple-text)]">2. Ieteikumi klātienes apskatei</p>
+                {expertViewMode ? (
+                  <div className={`${bulkReadonlyClass} min-h-[72px] max-h-[min(35vh,280px)] overflow-y-auto whitespace-pre-wrap`}>
+                    {expertSnap.apskatesPlāns.trim() ? (
+                      expertSnap.apskatesPlāns
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
+                  </div>
+                ) : (
+                  <textarea
+                    id={`${fileInputId}-apskates`}
+                    className={`${bulkTextareaClass} min-h-[72px] max-h-[min(35vh,280px)] resize-y bg-white/90`}
+                    value={ws.apskatesPlāns}
+                    onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
+                    placeholder="piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
+                    spellCheck
+                    disabled={!ws.previewConfirmed}
+                  />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="mb-0.5 text-[9px] font-semibold text-[var(--color-apple-text)]">3. Cenas atbilstība</p>
+                {expertViewMode ? (
+                  <div className={`${bulkReadonlyClass} min-h-[56px] max-h-[min(28vh,220px)] overflow-y-auto whitespace-pre-wrap`}>
+                    {expertSnap.cenasAtbilstiba.trim() ? (
+                      expertSnap.cenasAtbilstiba
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
+                  </div>
+                ) : (
+                  <textarea
+                    id={`${fileInputId}-cenas-atbilstiba`}
+                    className={`${bulkTextareaClass} min-h-[56px] max-h-[min(28vh,220px)] resize-y bg-white/90`}
+                    value={ws.cenasAtbilstiba}
+                    onChange={(e) => updateWs({ cenasAtbilstiba: e.target.value })}
+                    placeholder="Balstoties uz mūsu rīcībā esošajiem datiem…"
+                    spellCheck
+                    disabled={!ws.previewConfirmed}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -67,7 +67,7 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, va
                 <input
                   type="text"
                   className={inp}
-                  placeholder='piem., "22 dienas"'
+                  placeholder="piem., 22"
                   value={val.listedForSale}
                   disabled={disabled}
                   onChange={(e) => setField("listedForSale", e.target.value)}
