@@ -16,10 +16,10 @@ function OrderSectionFallback() {
   );
 }
 
-export function FinalCta({ cancelled }: { cancelled: boolean }) {
+export function FinalCta({ cancelled, compactLayout = false }: { cancelled: boolean; compactLayout?: boolean }) {
   return (
     <Suspense fallback={<OrderSectionFallback />}>
-      <OrderSection cancelled={cancelled} />
+      <OrderSection cancelled={cancelled} compactLayout={compactLayout} />
     </Suspense>
   );
 }

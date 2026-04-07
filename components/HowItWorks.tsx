@@ -7,24 +7,42 @@ const connectorClass = "inline-flex shrink-0 text-provin-accent/80";
 
 type Step = { n: string; title: string; body: string };
 
-export async function HowItWorks() {
+export async function HowItWorks({ compact = false }: { compact?: boolean }) {
   const messages = await getMessages();
   const steps = (messages as { HowItWorks: { steps: Step[] } }).HowItWorks.steps;
 
   return (
-    <div className="relative z-10 px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-4">
-      <div className={`relative ${homeContentMaxClass}`}>
-        <div className="mx-auto flex min-w-0 max-w-lg flex-col md:max-w-none md:flex-row md:items-stretch md:justify-center md:gap-0">
+    <div className={compact ? "relative z-10" : "relative z-10 px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-4"}>
+      <div className={compact ? "relative" : `relative ${homeContentMaxClass}`}>
+        <div
+          className={
+            compact
+              ? "mx-auto flex min-w-0 max-w-full flex-col gap-1"
+              : "mx-auto flex min-w-0 max-w-lg flex-col md:max-w-none md:flex-row md:items-stretch md:justify-center md:gap-0"
+          }
+        >
           {steps.map((s, i) => (
             <Fragment key={s.n}>
-              <article className="flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-2 text-center sm:px-4">
+              <article
+                className={
+                  compact
+                    ? "flex min-w-0 items-center gap-2.5 rounded-xl border border-black/[0.06] bg-white/70 px-2.5 py-2 text-left shadow-[0_1px_6px_rgba(0,0,0,0.04)] backdrop-blur-[2px]"
+                    : "flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-2 text-center sm:px-4"
+                }
+              >
                 <div
                   className="text-provin-accent drop-shadow-[0_6px_18px_rgba(15,23,42,0.12)]"
                   aria-hidden
                 >
-                  <StepIcon n={s.n} />
+                  <StepIcon n={s.n} compact={compact} />
                 </div>
-                <h3 className="mt-4 text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[13px]">
+                <h3
+                  className={
+                    compact
+                      ? "text-[11px] font-semibold uppercase tracking-[0.08em] text-provin-accent sm:text-[12px]"
+                      : "mt-4 text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[13px]"
+                  }
+                >
                   {s.title}
                 </h3>
                 {s.body.trim() ? (
@@ -35,12 +53,15 @@ export async function HowItWorks() {
               </article>
               {i < steps.length - 1 && (
                 <>
-                  <div className="flex justify-center py-3 md:hidden" aria-hidden>
+                  <div className={compact ? "flex justify-center py-0.5" : "flex justify-center py-3 md:hidden"} aria-hidden>
                     <span className={connectorClass}>
                       <NavChevronDown />
                     </span>
                   </div>
-                  <div className="hidden shrink-0 items-center justify-center self-center px-2 md:flex" aria-hidden>
+                  <div
+                    className={compact ? "hidden" : "hidden shrink-0 items-center justify-center self-center px-2 md:flex"}
+                    aria-hidden
+                  >
                     <span className={connectorClass}>
                       <NavChevronRight />
                     </span>
@@ -57,8 +78,8 @@ export async function HowItWorks() {
 
 const BLUE = "var(--color-provin-accent)";
 
-function StepIcon({ n }: { n: string }) {
-  const box = "h-[76px] w-[76px] sm:h-[84px] sm:w-[84px]";
+function StepIcon({ n, compact = false }: { n: string; compact?: boolean }) {
+  const box = compact ? "h-[52px] w-[52px] sm:h-[58px] sm:w-[58px]" : "h-[76px] w-[76px] sm:h-[84px] sm:w-[84px]";
   if (n === "1") {
     return (
       <svg className={box} viewBox="0 0 24 24" fill="none" aria-hidden>

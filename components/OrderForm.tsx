@@ -12,7 +12,7 @@ const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
 
 const inputHero =
-  "mt-2 w-full rounded-xl border border-black/[0.06] bg-white/80 px-4 py-3 text-[16px] font-normal text-[#1d1d1f] shadow-[0_1px_8px_rgba(0,0,0,0.04)] outline-none backdrop-blur-sm transition placeholder:text-[#aeaeb2] focus:border-provin-accent/35 focus:ring-2 focus:ring-provin-accent/15 sm:text-[17px]";
+  "mt-1.5 w-full rounded-xl border border-black/[0.06] bg-white/80 px-3.5 py-2.5 text-[15px] font-normal text-[#1d1d1f] shadow-[0_1px_8px_rgba(0,0,0,0.04)] outline-none backdrop-blur-sm transition placeholder:text-[#aeaeb2] focus:border-provin-accent/35 focus:ring-2 focus:ring-provin-accent/15 sm:text-[16px]";
 
 const inputDefault =
   "mt-1 w-full rounded-lg border border-black/[0.1] bg-white px-3 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition placeholder:text-[#aeaeb2] focus:border-provin-accent/35 focus:ring-1 focus:ring-provin-accent/25 sm:text-[16px]";
@@ -92,12 +92,12 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
 
   const formShell =
     hero
-      ? `space-y-5 ${className ?? ""}`
+      ? `space-y-4 ${className ?? ""}`
       : compact
         ? `mt-6 space-y-4 border-t border-black/[0.06] pt-6 ${className ?? ""}`
         : `provin-lift-strong mt-10 rounded-3xl border border-black/[0.06] bg-gradient-to-b from-[#f5f5f7] to-provin-surface-2 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.05)] sm:p-10 ${className ?? ""}`;
 
-  const gridGap = hero ? "gap-5" : compact ? "gap-4" : "gap-6";
+  const gridGap = hero ? "gap-4" : compact ? "gap-4" : "gap-6";
   const notesRows = hero ? 3 : compact ? 3 : 4;
 
   const hintClass = hero ? "mt-1.5 text-[11px] font-normal leading-snug text-[#86868b]" : "mt-1 text-[11px] font-normal leading-snug text-[#86868b]";
@@ -203,7 +203,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
       <div
         className={
           hero
-            ? "mt-8 space-y-4 border-t border-black/[0.08] pt-8"
+            ? "mt-5 space-y-3 border-t border-black/[0.08] pt-4"
             : compact
               ? "mt-4 flex flex-col gap-3"
               : "mt-8 flex flex-col gap-3 border-t border-black/[0.06] pt-8"
@@ -212,7 +212,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         {hero ? (
           <>
             <div
-              className="rounded-xl border border-black/[0.06] bg-white/70 px-4 py-4 shadow-[0_1px_8px_rgba(0,0,0,0.04)] backdrop-blur-sm sm:px-5"
+              className="rounded-xl border border-black/[0.05] bg-white/55 px-4 py-3 shadow-[0_1px_6px_rgba(0,0,0,0.03)] backdrop-blur-sm sm:px-4.5"
               role="group"
               aria-label={t("ariaSummary")}
             >
@@ -263,7 +263,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             <button
               type="submit"
               disabled={loading || !withdrawalConsent}
-              className="provin-btn provin-btn--compact flex w-full min-h-[43px] items-center justify-center rounded-full px-7 py-3 text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60"
+              className="provin-btn provin-btn--compact flex w-full min-h-[43px] items-center justify-center rounded-xl px-7 py-3 text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60"
             >
               {loading ? t("payLoading") : t("payButton")}
             </button>

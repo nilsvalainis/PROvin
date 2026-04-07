@@ -7,7 +7,7 @@ import { NavChevronDown } from "@/components/NavChevron";
 import { OrderForm } from "@/components/OrderForm";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
 
-export function OrderSection({ cancelled }: { cancelled: boolean }) {
+export function OrderSection({ cancelled, compactLayout = false }: { cancelled: boolean; compactLayout?: boolean }) {
   const t = useTranslations("Order");
   const searchParams = useSearchParams();
 
@@ -24,7 +24,13 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
       id={ORDER_SECTION_ID}
       className="relative z-10 scroll-mt-[calc(2.75rem+1px)] sm:scroll-mt-12"
     >
-      <div className="relative mx-auto min-w-0 max-w-[1000px] px-4 pb-12 pt-6 text-center sm:px-6 sm:pb-14 sm:pt-8">
+      <div
+        className={
+          compactLayout
+            ? "relative mx-auto min-w-0 max-w-none px-0 pb-2 pt-0 text-center"
+            : "relative mx-auto min-w-0 max-w-[1000px] px-4 pb-12 pt-6 text-center sm:px-6 sm:pb-14 sm:pt-8"
+        }
+      >
         <div className="flex flex-col items-center gap-1.5">
           <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[13px]">
             {t("sectionTitle")}
@@ -47,11 +53,24 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
           </p>
         )}
 
-        <div id="order-form" className="mx-auto mt-10 max-w-[560px] scroll-mt-28 text-left sm:scroll-mt-32">
+        <div
+          id="order-form"
+          className={
+            compactLayout
+              ? "mx-auto mt-4 max-w-none scroll-mt-24 text-left"
+              : "mx-auto mt-10 max-w-[560px] scroll-mt-28 text-left sm:scroll-mt-32"
+          }
+        >
           <OrderForm variant="hero" className="!mt-0" />
         </div>
 
-        <p className="mx-auto mt-8 max-w-[42ch] text-[10px] font-normal leading-relaxed text-[#86868b] sm:mt-10 sm:text-[11px]">
+        <p
+          className={
+            compactLayout
+              ? "mx-auto mt-4 max-w-[42ch] text-[10px] font-normal leading-relaxed text-[#86868b] sm:text-[11px]"
+              : "mx-auto mt-8 max-w-[42ch] text-[10px] font-normal leading-relaxed text-[#86868b] sm:mt-10 sm:text-[11px]"
+          }
+        >
           {t("footnote")}
         </p>
       </div>
