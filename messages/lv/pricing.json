@@ -40,39 +40,39 @@
     "grid": [
       {
         "title": "Starptautiskās datubāzes",
-        "body": "Eiropas un ASV reģistru analīze: nobraukuma vēsture, zādzību pārbaude un fiksētie negadījumi ārzemēs."
+        "body": "Eiropas un ASV reģistru analīze: nobraukums, zādzības un fiksēti negadījumi ārzemēs."
       },
       {
-        "title": "Oficiālo dīleru datu kopsavilkums*",
-        "body": "Piekļuve autorizēto servisu reģistriem, kas ļauj izsekot spēkrata nobraukuma dinamikai un fiksētajiem vēstures ierakstiem dīleru tīklā."
+        "title": "Dīleru dati*",
+        "body": "Piekļuve autorizēto servisu datiem: nobraukuma dinamika un fiksētie vēstures ieraksti."
       },
       {
         "title": "Latvijas reģistru analīze",
-        "body": "Padziļināti tehniskās apskates, nobraukuma un reģistrācijas dati, kā arī publiski pieejamās informācijas izvērtējums par apdrošināšanas gadījumiem Latvijā."
+        "body": "Padziļināta tehniskās apskates, nobraukuma un negadījumu vēstures pārbaude vietējā tirgū."
       },
       {
-        "title": "Sludinājuma analīze",
-        "body": "Profesionāls fotogrāfiju un apraksta izvērtējums, lai identificētu potenciālas nepilnības un indikācijas, kas var liecināt par neatbilstībām."
+        "title": "Sludinājuma audits",
+        "body": "Fotogrāfiju un apraksta analīze, lai identificētu slēptas neatbilstības un pārdevēja trikus."
       },
       {
-        "title": "Tehnisko mezglu analīze",
-        "body": "Konkrētā modeļa dzinēja, transmisijas un citu galveno agregātu izvērtējums. Balstoties uz 10+ gadu reālo pieredzi un servisu statistiku, mēs sniedzam uzticamības prognozi un brīdinām par potenciāliem ekspluatācijas riskiem nākotnē."
+        "title": "Tehnisko risku analīze",
+        "body": "Dzinēja, transmisijas un agregātu izvērtējums: uzticamības prognoze un ekspluatācijas riski."
       },
       {
         "title": "Datu analīze un interpretācija",
         "body": "Atskaites ir jāprot lasīt. Mēs ne tikai salīdzinām datus no vairākiem avotiem, bet arī izvērtējam negadījumu kontekstu. Robots saskata tikai faktu, bet mēs analizējam bojājumu apmēru un to ietekmi uz auto tālāko ekspluatāciju, nošķirot nebūtiskus skrāpējumus no kritiskiem strukturāliem bojājumiem."
       },
       {
-        "title": "Pirkuma lietderības izvērtējums",
-        "body": "Vērtējums par cenas un kvalitātes attiecību, balstoties uz pieejamo digitālo informāciju. Mūsu analīze palīdz pieņemt pamatotu lēmumu: vai konkrētais auto ir padziļinātas (fiziskas) pārbaudes vērts."
+        "title": "Pirkuma lietderība",
+        "body": "Cenas un kvalitātes attiecības analīze palīdz pieņemt lēmumu, vai auto ir klātienes pārbaudes vērts."
       },
       {
-        "title": "Tiešā saziņa",
-        "body": "Nepieciešamības gadījumā mēs paši sazināmies ar pārdevēju, lai uzdotu neērtus jautājumus un iegūtu papildu faktus."
+        "title": "Papildu konsultācija",
+        "body": "Iespēja pēc atskaites saņemšanas uzdot precizējošus jautājumus un kopīgi izrunāt iegūtos datus."
       },
       {
         "title": "Approved by IRISS",
-        "body": "Objektīvs kopsavilkums un argumentēts vērtējums. Balstoties uz visaptverošu risku analīzi un 10+ gadu reālo pieredzi lietotu auto tirdzniecībā, mēs sniedzam skaidru rekomendāciju par darījuma atbilstību tā tirgus vērtībai.",
+        "body": "Argumentēts slēdziens un rekomendācija, kas balstīta datos un 10+ gadu reālā pieredzē.",
         "href": true
       }
     ],
