@@ -81,9 +81,11 @@ export async function Hero() {
               </Link>
             </div>
 
-            <p className="mx-auto max-w-[52ch] text-balance text-center text-[11px] font-normal leading-relaxed text-[#86868b] sm:text-[12px] sm:leading-relaxed">
-              {t("trustBody")}
-            </p>
+            {t("trustBody").trim() ? (
+              <p className="mx-auto max-w-[52ch] text-balance text-center text-[11px] font-normal leading-relaxed text-[#86868b] sm:text-[12px] sm:leading-relaxed">
+                {t("trustBody")}
+              </p>
+            ) : null}
 
             <div className="flex justify-center pt-0.5">
               <a
