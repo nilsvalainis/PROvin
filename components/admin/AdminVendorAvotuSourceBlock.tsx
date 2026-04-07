@@ -24,7 +24,7 @@ import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
-type BlockKey = "autodna" | "carvertical";
+type BlockKey = "autodna" | "carvertical" | "citi_avoti";
 
 type Props = {
   blockKey: BlockKey;

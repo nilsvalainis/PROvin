@@ -43,7 +43,7 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   carvertical: "CarVertical",
   auto_records: "AUTO RECORDS",
   ltab: "LTAB",
-  citi_avoti: "Citi avoti",
+  citi_avoti: "CITI AVOTI",
   listing_analysis: "Sludinājuma analīze",
 };
 
@@ -409,10 +409,8 @@ export type VendorAvotuBlockState = {
   comments: string;
 };
 
-/** Citi avoti — viens brīvā teksta lauks (PDF: „Komentāri” zonā). */
-export type CitiAvotiBlockState = {
-  comments: string;
-};
+/** Citi avoti — tā pati struktūra kā AutoDNA / CarVertical (nobraukums + negadījumi + komentāri). */
+export type CitiAvotiBlockState = VendorAvotuBlockState;
 
 /** Sludinājuma analīze — trīs brīvā teksta lauki (PDF: apakškategorijas ar „Komentāri”). */
 export type ListingAnalysisBlockState = {
@@ -465,15 +463,7 @@ export function emptyVendorAvotuBlock(): VendorAvotuBlockState {
 }
 
 export function emptyCitiAvotiBlock(): CitiAvotiBlockState {
-  return { comments: "" };
-}
-
-export function citiAvotiHasContent(b: CitiAvotiBlockState): boolean {
-  return b.comments.trim().length > 0;
-}
-
-export function citiAvotiToPlainText(b: CitiAvotiBlockState): string {
-  return b.comments.trim();
+  return emptyVendorAvotuBlock();
 }
 
 export function emptyListingAnalysisBlock(): ListingAnalysisBlockState {
@@ -634,6 +624,14 @@ export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState): string {
   return lines.join("\n");
 }
 
+export function citiAvotiHasContent(b: CitiAvotiBlockState): boolean {
+  return vendorAvotuBlockHasContent(b);
+}
+
+export function citiAvotiToPlainText(b: CitiAvotiBlockState): string {
+  return vendorAvotuBlockToPlainText(b);
+}
+
 /** Zaudējumu summas avoti (AutoDNA, CarVertical) — ne AUTO RECORDS. */
 const LOSS_VENDOR_KEYS = ["autodna", "carvertical"] as const satisfies readonly StandardSourceBlockKey[];
 
@@ -656,10 +654,10 @@ export function blocksToLegacyFlatFields(blocks: WorkspaceSourceBlocks): {
   citi: string;
 } {
   const vendorPlain = mergeVendorBlocksPlain(blocks);
-  const extra = blocks.citi_avoti.comments.trim();
+  const citiPlain = vendorAvotuBlockToPlainText(blocks.citi_avoti).trim();
   const citiParts: string[] = [];
   if (vendorPlain) citiParts.push(vendorPlain);
-  if (extra) citiParts.push(`【${SOURCE_BLOCK_LABELS.citi_avoti}】\n${extra}`);
+  if (citiPlain) citiParts.push(`【${SOURCE_BLOCK_LABELS.citi_avoti}】\n${citiPlain}`);
   return {
     csdd: csddFormToPlainText(blocks.csdd),
     ltab: ltabBlockToPlainText(blocks.ltab),
@@ -691,6 +689,15 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       mileageRows: b.serviceHistory.filter(autoRecordsRowHasData),
       incidentRows: b.incidents.filter(ltabRowHasData),
       comments: b.comments.trim(),
+    });
+  }
+  const citi = blocks.citi_avoti;
+  if (vendorAvotuBlockHasContent(citi)) {
+    out.push({
+      title: SOURCE_BLOCK_LABELS.citi_avoti,
+      mileageRows: citi.serviceHistory.filter(autoRecordsRowHasData),
+      incidentRows: citi.incidents.filter(ltabRowHasData),
+      comments: citi.comments.trim(),
     });
   }
   return out;
@@ -1058,9 +1065,11 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
 }
 
 function parseCitiAvotiRaw(raw: Record<string, unknown>): CitiAvotiBlockState {
-  return {
-    comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
-  };
+  if ("serviceHistory" in raw || "incidents" in raw) {
+    return parseVendorAvotuBlockRaw(raw);
+  }
+  const legacy = typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "";
+  return { ...emptyVendorAvotuBlock(), comments: legacy };
 }
 
 export function migrateFlatWorkspaceToBlocks(flat: {
@@ -1074,7 +1083,7 @@ export function migrateFlatWorkspaceToBlocks(flat: {
   if (flat.ltab?.trim()) b.ltab = { rows: [emptyLtabRow()], comments: flat.ltab.trim() };
   if (flat.tirgus?.trim()) b.tirgus = { ...emptyTirgusFields(), comments: flat.tirgus.trim() };
   if (flat.citi?.trim()) {
-    b.citi_avoti = { comments: flat.citi.trim() };
+    b.citi_avoti = { ...emptyVendorAvotuBlock(), comments: flat.citi.trim() };
   }
   return b;
 }

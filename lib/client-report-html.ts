@@ -6,7 +6,6 @@
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
 import {
   autoRecordsBlockHasContent,
-  citiAvotiHasContent,
   CSDD_FORM_STRUCTURED_FIELDS,
   csddFormHasContent,
   LISTING_ANALYSIS_SUBSECTIONS,
@@ -14,7 +13,6 @@ import {
   listingAnalysisHasContent,
   LISTING_ANALYSIS_COMMENT_LABEL,
   LISTING_HISTORY_SUBSECTION_TITLE,
-  ltabRowHasData,
   NEGADIJUMU_VESTURE_TITLE,
   TIRGUS_LABEL_CREATED,
   TIRGUS_LABEL_LISTED,
@@ -50,6 +48,11 @@ import {
 } from "@/lib/provin-alert-banners";
 import { CLIENT_REPORT_FOOTER_DISCLAIMER } from "@/lib/report-pdf-standards";
 import { buildUnifiedMileageChartWrapHtml } from "@/lib/unified-mileage-chart";
+import {
+  collectUnifiedIncidentRows,
+  sortUnifiedIncidentsNewestFirst,
+  type UnifiedIncidentRow,
+} from "@/lib/unified-incidents";
 import {
   collectUnifiedMileageRows,
   computeOdometerAnomalyBySourceOrder,
@@ -265,6 +268,27 @@ export function buildUnifiedMileageTableHtml(p: UnifiedMileageSourcePayload): st
   return `<div class="pdf-unified-mileage-zone" role="region">${sectionHead(ICO.chart, "NOBRAUKUMA VĒSTURE", { noBar: true })}${chartHtml}${tablesHtml}</div>`;
 }
 
+function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
+  const lossCell = formatLossAmountEurCell(r.lossAmount);
+  const flag = pdfCountryFlagEmoji(r.country);
+  const aria = escapeHtml(r.country.trim() || "—");
+  return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo">${lossCell}</td><td class="pdf-mileage-cell-flag"><span class="pdf-country-flag" role="img" aria-label="${aria}">${flag}</span></td></tr>`;
+}
+
+/** Apvienota negadījumu tabula (AutoDNA, CarVertical, LTAB, Citi avoti) — tikai rindas ar aizpildītu zaudējumu summu. */
+function buildUnifiedIncidentsTableHtml(p: ClientReportPayload): string {
+  const collected = collectUnifiedIncidentRows({
+    manualVendorBlocks: p.manualVendorBlocks ?? null,
+    manualLtabBlock: p.manualLtabBlock ?? null,
+  });
+  if (collected.length === 0) return "";
+  const rows = sortUnifiedIncidentsNewestFirst(collected);
+  const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-flag" /></colgroup>`;
+  const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Zaudējuma summa</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
+  const tablesHtml = `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table" role="table">${colgroup}<thead>${head}</thead><tbody>${rows.map(buildUnifiedIncidentRowHtml).join("\n")}</tbody></table></div>`;
+  return `<div class="pdf-unified-incidents-zone" role="region">${sectionHead(ICO.chart, NEGADIJUMU_VESTURE_TITLE, { noBar: true })}${tablesHtml}</div>`;
+}
+
 /** CSDD — apskates datumi + nobraukuma tabulas (pilns eksports); raw nav PDF. */
 function buildCsddAvotuSubsection(p: ClientReportPayload): string {
   const hasStruct = Boolean(p.csddForm && csddFormHasContent(p.csddForm));
@@ -371,61 +395,24 @@ function buildAutoRecordsAvotuSubsection(b: AutoRecordsBlockState | null | undef
   return wrapPdfAvotuStack(card, hasComments ? pdfAvotuCommentIsland(b.comments) : "");
 }
 
-/** Viena trešā pušu avota apakšbloks zem „AVOTU DATI“ — negadījumi (kā LTAB); nobraukums ir vienotajā tabulā augšā. */
+/** Viena trešā pušu avota apakšbloks zem „AVOTU DATI“ — tikai komentāri (nobraukums un negadījumi ir vienotajās tabulās augšā). */
 function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf): string {
-  const incidentRows = b.incidentRows.filter(ltabRowHasData);
   const hasComments = b.comments.trim().length > 0;
-  if (incidentRows.length === 0 && !hasComments) return "";
+  if (!hasComments) return "";
   const icon = pdfIconForVendorTitle(b.title);
   const iconBrand = vendorPdfIconBrandClass(b.title);
   const header = pdfAvotuNeutralHeader(icon, b.title, iconBrand);
-  const bodyParts: string[] = [];
-  if (incidentRows.length > 0) {
-    bodyParts.push(
-      `<p class="pdf-field-label pdf-field-label--sub">${escapeHtml(NEGADIJUMU_VESTURE_TITLE)}</p>`,
-    );
-    bodyParts.push(
-      `<table class="mirror-table"><thead><tr><th>Negadījumu skaits</th><th class="tabular">CSNg datums</th><th class="tabular">Zaudējumu summa</th></tr></thead><tbody>`,
-    );
-    for (const r of incidentRows) {
-      bodyParts.push(
-        `<tr><td>${escapeHtml(r.incidentNo)}</td><td class="tabular">${escapeHtml(r.csngDate)}</td><td class="tabular">${formatLossAmountEurCell(r.lossAmount)}</td></tr>`,
-      );
-    }
-    bodyParts.push(`</tbody></table>`);
-  }
-  const bodyHtml = bodyParts.join("");
-  const card =
-    bodyHtml.trim() === ""
-      ? `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`
-      : `<div class="pdf-avotu-card pdf-avotu-card--neutral">${header}<div class="pdf-avotu-body">${bodyHtml}</div></div>`;
-  return wrapPdfAvotuStack(card, hasComments ? pdfAvotuCommentIsland(b.comments) : "");
+  const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`;
+  return wrapPdfAvotuStack(card, pdfAvotuCommentIsland(b.comments));
 }
 
 function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined): string {
   if (!b) return "";
-  const hasTable = b.rows.length > 0;
   const hasComments = b.comments.trim().length > 0;
-  if (!hasTable && !hasComments) return "";
+  if (!hasComments) return "";
   const header = pdfAvotuNeutralHeader(ICO.shield, SOURCE_BLOCK_LABELS.ltab, "pdf-avotu-ico-brand--ltab");
-  const bodyParts: string[] = [];
-  if (hasTable) {
-    bodyParts.push(
-      `<table class="mirror-table"><thead><tr><th>Datums</th><th class="tabular">Zaudējumu summa</th><th>Valsts</th></tr></thead><tbody>`,
-    );
-    for (const r of b.rows) {
-      bodyParts.push(
-        `<tr><td class="tabular">${escapeHtml(r.csngDate)}</td><td class="tabular">${formatLossAmountEurCell(r.lossAmount)}</td><td>${escapeHtml(r.incidentNo)}</td></tr>`,
-      );
-    }
-    bodyParts.push(`</tbody></table>`);
-  }
-  const bodyHtml = bodyParts.join("\n");
-  const card =
-    bodyHtml.trim() === ""
-      ? `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`
-      : `<div class="pdf-avotu-card pdf-avotu-card--neutral">${header}<div class="pdf-avotu-body">${bodyHtml}</div></div>`;
-  return wrapPdfAvotuStack(card, hasComments ? pdfAvotuCommentIsland(b.comments) : "");
+  const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`;
+  return wrapPdfAvotuStack(card, pdfAvotuCommentIsland(b.comments));
 }
 
 /**
@@ -466,10 +453,10 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload): string {
   return parts.join("\n");
 }
 
-/** Citi avoti — header + komentāru sala. */
+/** Citi avoti — tīri komentāri (nobraukums un negadījumi ir vienotajās tabulās augšā). */
 function buildCitiAvotiAvotuSubsection(p: ClientReportPayload): string {
   const b = p.citiAvoti;
-  if (!b || !citiAvotiHasContent(b)) return "";
+  if (!b || !b.comments.trim()) return "";
   const header = pdfAvotuNeutralHeader(ICO.layers, SOURCE_BLOCK_LABELS.citi_avoti, "pdf-avotu-ico-brand--citi-avoti");
   const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`;
   return wrapPdfAvotuStack(card, pdfAvotuCommentIsland(b.comments));
@@ -477,6 +464,7 @@ function buildCitiAvotiAvotuSubsection(p: ClientReportPayload): string {
 
 /**
  * AVOTU DATI (PDF): CSDD, AutoDNA / CarVertical / Auto-Records, LTAB, Citi avoti.
+ * Nobraukuma un negadījumu tabulas ir augšā (NOBRAUKUMA / NEGADĪJUMU VĒSTURE); šeit — komentāri un CSDD.
  * Tirgus dati ir integrēti „Sludinājuma analīzē” (buildListingAnalysisPriorityHtml).
  */
 function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
@@ -674,6 +662,11 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-unified-mileage-zone .pdf-sec-head{margin-top:0;}
+      .pdf-unified-incidents-zone{
+        margin:0 0 12px;padding:12px 14px;border:1px solid #e8eaed;border-radius:10px;background:#fff;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-unified-incidents-zone .pdf-sec-head{margin-top:0;}
       .pdf-mileage-history-table-wrap{
         width:100%;margin:6px 0 0;border-radius:8px;overflow:hidden;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
@@ -953,6 +946,9 @@ export function buildClientReportDocumentHtml(args: {
 
   const unifiedMileageHtml = buildUnifiedMileageTableHtml(p);
   if (unifiedMileageHtml) lines.push(unifiedMileageHtml);
+
+  const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(p);
+  if (unifiedIncidentsHtml) lines.push(unifiedIncidentsHtml);
 
   const avotuHtml = buildAvotuDatiSectionHtml(p);
   if (avotuHtml) lines.push(avotuHtml);
