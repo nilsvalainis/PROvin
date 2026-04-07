@@ -39,7 +39,7 @@ export async function Footer() {
         aria-hidden
       />
 
-      <div className="relative z-10 mx-auto min-w-0 max-w-[1024px] px-4 py-6 sm:px-6 sm:py-7 lg:py-8">
+      <div className="relative z-10 mx-auto min-w-0 max-w-[1200px] px-4 py-6 sm:px-6 sm:py-7 lg:py-8">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-stretch sm:gap-0">
           <div className="min-w-0 flex-1 sm:pr-6 lg:pr-8">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-provin-accent sm:text-[12px]">
@@ -94,7 +94,7 @@ export async function Footer() {
         </div>
 
         <div
-          className="mx-auto mt-6 max-w-[1024px] space-y-4 border-t border-black/[0.08] pt-5 text-center sm:mt-8 sm:space-y-3 sm:pt-6"
+          className="mx-auto mt-6 max-w-[1200px] space-y-4 border-t border-black/[0.08] pt-5 text-center sm:mt-8 sm:space-y-3 sm:pt-6"
           role="region"
           aria-label={t("legalRegionLabel")}
         >

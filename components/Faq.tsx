@@ -1,4 +1,5 @@
 import { getMessages, getTranslations } from "next-intl/server";
+import { sectionH2Class } from "@/lib/home-layout";
 
 type FaqItem = { id: string; q: string; a: string };
 
@@ -15,10 +16,7 @@ export async function Faq() {
     >
       <div className="mx-auto min-w-0 max-w-[720px]">
         <div className="text-center">
-          <h2
-            id="faq-heading"
-            className="text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] sm:text-[32px]"
-          >
+          <h2 id="faq-heading" className={sectionH2Class}>
             {t("title")}
           </h2>
           <p className="mx-auto mt-2 max-w-[65ch] text-[16px] font-normal leading-relaxed text-[#86868b] sm:text-[17px]">

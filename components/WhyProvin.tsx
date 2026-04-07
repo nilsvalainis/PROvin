@@ -1,4 +1,5 @@
 import { getMessages, getTranslations } from "next-intl/server";
+import { homeContentMaxClass, sectionH2Class } from "@/lib/home-layout";
 
 type ListItem = { t: string; d: string };
 type PuzzleItem = { t: string; d: string };
@@ -11,23 +12,20 @@ export async function WhyProvin() {
   const puzzleBullets = why.puzzleBullets;
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-white to-provin-surface-2/30 px-4 py-10 sm:px-6 sm:py-14">
-      <div className="pointer-events-none absolute inset-0 provin-noise opacity-25" aria-hidden />
-      <div className="relative mx-auto min-w-0 max-w-[1024px]">
-        <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
+    <section className="relative bg-white px-4 pb-10 pt-8 sm:px-6 sm:pb-12 sm:pt-10">
+      <div className={`relative ${homeContentMaxClass}`}>
+        <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-6">
           <article className={highlightCardClass}>
             <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("block1Eyebrow")}</p>
-            <h3 className="mt-2 text-balance text-[20px] font-semibold uppercase leading-[1.2] tracking-[0.02em] text-[#1d1d1f] sm:text-[22px]">
-              {t("block1Title")}
-            </h3>
+            <h2 className={`${sectionH2Class} mt-2 uppercase tracking-[0.02em]`}>{t("block1Title")}</h2>
             <p className="mt-3 text-[15px] font-medium leading-relaxed text-[#5c5d62] sm:text-[16px]">{t("block1Subtitle")}</p>
             <ul className="mt-6 space-y-3 border-t border-provin-accent/12 pt-6">
               {block1List.map((item, i) => (
                 <li
                   key={item.t}
-                  className="provin-lift-subtle flex gap-3.5 rounded-xl border border-black/[0.06] bg-white/90 p-4 shadow-sm backdrop-blur-sm"
+                  className="provin-lift-subtle flex gap-3.5 rounded-xl border border-provin-accent/15 bg-white p-4 shadow-[0_2px_12px_rgba(0,102,214,0.06)] sm:p-5"
                 >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[12px] font-semibold text-white">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[12px] font-semibold text-white shadow-[0_2px_8px_rgba(0,102,214,0.3)]">
                     {i + 1}
                   </span>
                   <p className="min-w-0 text-[14px] font-normal leading-relaxed text-[#86868b] sm:text-[15px]">
@@ -41,17 +39,15 @@ export async function WhyProvin() {
 
           <article className={highlightCardClass}>
             <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("block2Eyebrow")}</p>
-            <h3 className="mt-2 text-balance text-[20px] font-semibold uppercase leading-[1.2] tracking-[0.02em] text-[#1d1d1f] sm:text-[22px]">
-              {t("block2Title")}
-            </h3>
+            <h2 className={`${sectionH2Class} mt-2 uppercase tracking-[0.02em]`}>{t("block2Title")}</h2>
             <p className="mt-3 text-[15px] font-medium leading-relaxed text-[#5c5d62] sm:text-[16px]">{t("block2Subtitle")}</p>
             <ul className="mt-6 space-y-3 border-t border-provin-accent/12 pt-6">
               {puzzleBullets.map((item, i) => (
                 <li
                   key={item.t}
-                  className="provin-lift-subtle flex gap-3.5 rounded-xl border border-black/[0.06] bg-white/90 p-4 shadow-sm backdrop-blur-sm"
+                  className="provin-lift-subtle flex gap-3.5 rounded-xl border border-provin-accent/15 bg-white p-4 shadow-[0_2px_12px_rgba(0,102,214,0.06)] sm:p-5"
                 >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[12px] font-semibold text-white">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[12px] font-semibold text-white shadow-[0_2px_8px_rgba(0,102,214,0.3)]">
                     {i + 1}
                   </span>
                   <p className="min-w-0 text-[14px] font-normal leading-relaxed text-[#86868b] sm:text-[15px]">
@@ -63,15 +59,11 @@ export async function WhyProvin() {
             </ul>
           </article>
         </div>
-        <p className="mx-auto mt-8 max-w-[1024px] text-center text-[10px] font-normal leading-snug text-[#86868b] sm:text-[11px]">
-          {t("autoRecordsFootnote")}
-        </p>
       </div>
     </section>
   );
 }
 
-/** Zvaigznīte pēc pirmā „vārds*” tekstā (atsauce uz kājenes piezīmi). */
 function renderFootnoteStar(text: string) {
   const idx = text.indexOf("*");
   if (idx === -1) {

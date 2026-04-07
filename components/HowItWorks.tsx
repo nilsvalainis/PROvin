@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import { getMessages, getTranslations } from "next-intl/server";
+import { homeContentMaxClass, sectionH2Class } from "@/lib/home-layout";
 
 type Step = { n: string; title: string; body: string };
 
@@ -11,11 +12,9 @@ export async function HowItWorks() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-white to-provin-surface-2/50 px-4 py-10 sm:px-6 sm:py-14">
       <div className="pointer-events-none absolute inset-0 provin-noise opacity-30" aria-hidden />
-      <div className="relative mx-auto min-w-0 max-w-[1024px]">
+      <div className={`relative ${homeContentMaxClass}`}>
         <div className="text-center">
-          <h2 className="text-balance text-[26px] font-semibold uppercase leading-tight tracking-[0.02em] text-[#1d1d1f] sm:text-[32px] sm:leading-[1.1]">
-            {t("title")}
-          </h2>
+          <h2 className={`${sectionH2Class} uppercase tracking-[0.04em]`}>{t("title")}</h2>
         </div>
 
         <div className="mx-auto mt-10 flex min-w-0 max-w-lg flex-col md:max-w-none md:flex-row md:items-stretch md:justify-center md:gap-0">

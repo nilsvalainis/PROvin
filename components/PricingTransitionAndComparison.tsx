@@ -1,4 +1,5 @@
 import { getMessages, getTranslations } from "next-intl/server";
+import { sectionH2Class } from "@/lib/home-layout";
 
 type Row = { feature: string; standard: string; provin: string };
 
@@ -46,13 +47,11 @@ export async function PricingTransitionAndComparison() {
   const rows = (messages as { Pricing: { comparisonRows: Row[] } }).Pricing.comparisonRows;
 
   return (
-    <div className="mt-6 min-w-0 space-y-8 sm:mt-8">
+    <div className="min-w-0 space-y-0">
       <div className="min-w-0">
-        <h2 className="text-balance text-center text-[13px] font-bold uppercase leading-tight tracking-[0.06em] text-[#1d1d1f] sm:text-[14px] md:text-[15px]">
-          {t("comparisonTitle")}
-        </h2>
+        <h2 className={`${sectionH2Class} text-center uppercase tracking-[0.04em]`}>{t("comparisonTitle")}</h2>
 
-        <div className="mt-4 min-w-0 overflow-x-auto rounded-xl border border-provin-accent/20 bg-white pb-1 shadow-[0_8px_32px_rgba(0,102,214,0.12)] [-webkit-overflow-scrolling:touch]">
+        <div className="mt-5 min-w-0 w-full overflow-x-auto rounded-xl border border-provin-accent/20 bg-white pb-1 shadow-[0_8px_32px_rgba(0,102,214,0.12)] [-webkit-overflow-scrolling:touch] sm:mt-6">
           <table className="w-full min-w-[min(100%,560px)] border-separate border-spacing-0 text-center text-[11px] leading-tight sm:min-w-[620px] sm:text-[12px]">
             <caption className="sr-only">{t("comparisonTitle")}</caption>
             <thead>
@@ -103,10 +102,10 @@ export async function PricingTransitionAndComparison() {
           </table>
         </div>
 
-        <p className="mx-auto mt-5 max-w-[52ch] text-balance text-center text-[13px] font-medium leading-relaxed text-[#3a3a3e] sm:mt-6 sm:text-[14px]">
+        <p className="mx-auto mt-5 max-w-[52ch] text-balance text-center text-[15px] font-medium leading-relaxed text-[#3a3a3e] sm:mt-6 sm:text-[16px]">
           {t("comparisonTagline")}
         </p>
-        <p className="mx-auto mt-3 max-w-[60ch] text-balance text-center text-[10px] font-normal leading-relaxed text-[#86868b] sm:text-[11px]">
+        <p className="mx-auto mt-3 max-w-[60ch] text-balance text-center text-[13px] font-normal leading-relaxed text-[#86868b] sm:text-[14px]">
           {t("comparisonTableFootnote")}
         </p>
       </div>

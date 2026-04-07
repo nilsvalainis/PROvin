@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { homeContentMaxClass, sectionH2Class } from "@/lib/home-layout";
 
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
@@ -8,23 +9,12 @@ export async function IrissSection() {
   const socialInstagram = process.env.NEXT_PUBLIC_IRISS_INSTAGRAM_URL?.trim();
 
   return (
-    <section
-      id="kas-ir-iriss"
-      className="relative scroll-mt-16 overflow-hidden bg-gradient-to-b from-provin-accent-soft/90 via-[#f5f5f7] to-provin-surface-2 px-4 py-10 sm:px-6 sm:py-16"
-    >
-      {/* Vecs enkurs — grāmatzīmes uz /#kas-stav-aiz-provin joprojām darbojas */}
+    <section id="kas-ir-iriss" className="relative scroll-mt-16 bg-white px-4 pb-12 pt-10 sm:px-6 sm:pb-16 sm:pt-12">
       <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(0,102,214,0.16),transparent)]"
-        aria-hidden
-      />
-      <div className="pointer-events-none absolute inset-0 provin-noise opacity-30" aria-hidden />
 
-      <div className="relative mx-auto min-w-0 max-w-[692px]">
+      <div className={`relative ${homeContentMaxClass}`}>
         <div className="text-center">
-          <h2 className="text-balance text-[1.35rem] font-semibold leading-snug tracking-tight text-[#1d1d1f] sm:text-[1.65rem] sm:leading-[1.15]">
-            {t("title")}
-          </h2>
+          <h2 className={sectionH2Class}>{t("title")}</h2>
         </div>
 
         <IrissSocialIcons
@@ -35,7 +25,7 @@ export async function IrissSection() {
           socialSoon={t("socialSoon")}
         />
 
-        <div className="provin-lift-strong mt-8 rounded-2xl border-2 border-provin-accent/25 bg-white p-6 shadow-[0_8px_40px_rgba(0,102,214,0.14)] ring-1 ring-provin-accent/10 sm:p-8">
+        <div className="provin-lift-strong mx-auto mt-8 max-w-[720px] rounded-2xl border border-provin-accent/15 bg-white p-6 shadow-[0_8px_40px_rgba(0,102,214,0.1)] sm:mt-10 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
             <div className="space-y-4 text-left">
               <p className="text-[16px] font-normal leading-relaxed text-[#1d1d1f] sm:text-[17px]">{t("bio1")}</p>
@@ -69,7 +59,7 @@ function IrissSocialIcons({
   socialSoon: string;
 }) {
   const btnClass =
-    "flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.1] bg-white/90 text-[#1d1d1f] shadow-sm transition hover:border-provin-accent/35 hover:text-provin-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent";
+    "flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.1] bg-white text-[#1d1d1f] shadow-sm transition hover:border-provin-accent/35 hover:text-provin-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent";
 
   const disabledClass = `${btnClass} cursor-default opacity-60 hover:border-black/[0.1] hover:text-[#1d1d1f]`;
 
