@@ -815,8 +815,24 @@ function clientReportPrintCss(): string {
       .pdf-unified-mileage-split-wrap{
         display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;align-items:start;width:100%;
       }
+      .pdf-unified-mileage-split-wrap:not(.pdf-unified-mileage-split-wrap--single){
+        position:relative;
+      }
+      .pdf-unified-mileage-split-wrap:not(.pdf-unified-mileage-split-wrap--single)::before{
+        content:"";
+        position:absolute;
+        left:50%;
+        top:0;
+        bottom:0;
+        width:1px;
+        transform:translateX(-50%);
+        background:#000;
+        pointer-events:none;
+        z-index:1;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
       .pdf-unified-mileage-split-wrap:not(.pdf-unified-mileage-split-wrap--single)>.pdf-unified-mileage-split:first-child{
-        border-right:1px solid #000;padding-right:7px;box-sizing:border-box;
+        padding-right:7px;box-sizing:border-box;
       }
       .pdf-unified-mileage-split-wrap:not(.pdf-unified-mileage-split-wrap--single)>.pdf-unified-mileage-split:last-child{
         padding-left:7px;box-sizing:border-box;
