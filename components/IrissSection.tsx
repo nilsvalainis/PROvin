@@ -1,12 +1,12 @@
 import { getTranslations } from "next-intl/server";
 import { comparisonTableFeatureCellClass, homeSectionEyebrowClass } from "@/lib/home-layout";
 
-/** Saskaņots ar 9 bloku režģa kartītēm (`PricingIncluded`): apmale + ēna, fons caurspīdīgs. */
-const irissCardClass =
-  "provin-lift-subtle rounded-xl border border-black/[0.08] bg-transparent p-3.5 shadow-[0_2px_10px_rgba(0,0,0,0.04)] sm:p-4";
+/** Maigs vertikālais tonis — gaišāks augšā, nedaudz tumšāks apakšā; sadaļas apakšā nogriežas pirms BUJ (`bg-white`). */
+const irissSectionBgClass = "bg-gradient-to-b from-[#f9fafc] via-[#f3f5f8] to-[#e8ecf0]";
 
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
+  const tPricing = await getTranslations("Pricing");
 
   const socialTiktok = process.env.NEXT_PUBLIC_IRISS_TIKTOK_URL?.trim();
   const socialYoutube = process.env.NEXT_PUBLIC_IRISS_YOUTUBE_URL?.trim();
@@ -15,7 +15,7 @@ export async function IrissSection() {
   return (
     <section
       id="kas-ir-iriss"
-      className="relative scroll-mt-16 overflow-hidden bg-transparent px-4 py-10 sm:px-6 sm:py-16"
+      className={`relative scroll-mt-16 overflow-hidden px-4 pb-0 pt-10 sm:px-6 sm:pt-16 ${irissSectionBgClass}`}
     >
       <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
 
@@ -34,13 +34,15 @@ export async function IrissSection() {
           />
         </div>
 
-        <div className={`${irissCardClass} mt-7 sm:mt-8`}>
-          <div className="mx-auto max-w-[65ch] space-y-4 text-center">
-            <p className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>{t("bio1")}</p>
-            <p className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>{t("bio2")}</p>
-          </div>
+        <div className="mx-auto mt-7 max-w-[65ch] space-y-4 text-center sm:mt-8">
+          <p className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>{t("bio1")}</p>
+          <p className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>{t("bio2")}</p>
         </div>
       </div>
+
+      <p className="mx-auto mt-10 max-w-[1000px] px-4 pb-8 text-center text-[10px] font-normal leading-snug text-[#86868b] sm:px-6 sm:pb-10 sm:text-[11px]">
+        {tPricing("autoRecordsFootnote")}
+      </p>
     </section>
   );
 }

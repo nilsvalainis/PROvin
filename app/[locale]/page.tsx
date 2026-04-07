@@ -39,10 +39,6 @@ export default async function HomePage({
             </div>
           </section>
           <IrissSection />
-
-          <p className="mx-auto px-4 pb-8 text-center text-[10px] font-normal leading-snug text-[#86868b] sm:px-6 sm:pb-10 sm:text-[11px]">
-            * Var tikt izmantots tikai noteiktiem ražotājiem.
-          </p>
         </div>
       </div>
       <Faq />
