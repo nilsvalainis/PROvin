@@ -53,7 +53,12 @@ export function pdfLayoutDraftExtraCss(): string {
       }
       .pdf-v1-panel-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;flex-wrap:wrap}
       .pdf-v1-ico{display:inline-flex;align-items:center;justify-content:center;color:#0061D2;flex-shrink:0}
-      .pdf-v1-ico .pdf-ico{width:18px;height:18px}
+      .pdf-v1-ico .pdf-ico{width:20px;height:20px}
+      .pdf-v1-notes-client-wrap{
+        margin:0;padding:10px 12px;border-radius:12px;background:#F6FFF8;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-v1-notes-body{font-style:italic;color:#000;line-height:1.45}
       .pdf-v1-panel-title{
         margin:0;font-size:0.75rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#000;
       }
@@ -143,5 +148,5 @@ export function buildPdfAdminMirrorNotesBlock(notes: string | null | undefined, 
   const t = notes?.trim();
   if (!t) return "";
   const head = pdfV1PanelHead("klienta komentārs", titleIconHtml);
-  return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}<p class="client-msg pdf-v1-notes-body" style="margin:0">${esc(t)}</p></div>`;
+  return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}<div class="pdf-v1-notes-client-wrap"><p class="client-msg pdf-v1-notes-body" style="margin:0">${esc(t)}</p></div></div>`;
 }

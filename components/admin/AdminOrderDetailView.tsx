@@ -245,7 +245,7 @@ export function AdminOrderDetailView({
         <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2 xl:items-stretch">
           <section className={`${sectionClass} min-w-0`}>
             <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
-              <SectionLineIcon id="wallet" />
+              <SectionLineIcon id="wallet" className="!h-5 !w-5" />
               Maksājums
             </h2>
             <p className={sectionHint}>No Stripe / sesijas — nav rediģējams.</p>
@@ -269,7 +269,7 @@ export function AdminOrderDetailView({
 
           <section className={`${sectionClass} min-w-0`}>
             <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
-              <SectionLineIcon id="car" />
+              <SectionLineIcon id="car" className="!h-5 !w-5" />
               <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
                 <span>Transportlīdzeklis un sludinājums</span>
               {orderEditsAutosaveFlash ? (
@@ -373,7 +373,7 @@ export function AdminOrderDetailView({
             <>
               <section className={`${sectionClass} p-1.5`}>
                 <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
-                  <SectionLineIcon id="user" />
+                  <SectionLineIcon id="user" className="!h-5 !w-5" />
                   Klienta dati
                 </h2>
                 <p className={sectionHint}>
@@ -403,7 +403,7 @@ export function AdminOrderDetailView({
 
               <section className={`${sectionClass} p-1.5`}>
                 <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
-                  <SectionLineIcon id="messageSquare" />
+                  <SectionLineIcon id="messageSquare" className="!h-5 !w-5" />
                   <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
                     <span>Klienta komentārs</span>
                     {orderEditsAutosaveFlash ? (

@@ -183,7 +183,7 @@ function pdfPriceDropDownArrowHtml(): string {
 function formatTirgusPriceDropCellHtml(raw: string): string {
   const t = raw.trim();
   if (!t) return escapeHtml(t);
-  return `<span class="pdf-price-drop-wrap"><span class="pdf-price-drop-ico" aria-hidden="true">${pdfPriceDropDownArrowHtml()}</span><span>${escapeHtml(t)}</span></span>`;
+  return `<span class="pdf-price-drop-wrap"><span class="pdf-price-drop-ico" aria-hidden="true">${pdfPriceDropDownArrowHtml()}</span><span class="tabular pdf-price-drop-val">${escapeHtml(t)}</span></span>`;
 }
 
 function formatLossAmountEurCell(raw: string): string {
@@ -507,7 +507,7 @@ function buildApprovedByIrissHtml(p: ClientReportPayload): string {
   const parts: string[] = [];
   parts.push(`<div class="pdf-iriss-approved" role="region">`);
   parts.push(
-    `<div class="pdf-iriss-approved-header"><span class="pdf-iriss-approved-ico" aria-hidden="true">${sectionIconPdfHtml("star")}</span><h2 class="pdf-iriss-approved-title">${escapeHtml(PDF_APPROVED_BY_IRISS)}</h2></div>`,
+    `<div class="pdf-iriss-approved-header"><span class="pdf-iriss-approved-ico" aria-hidden="true">${sectionIconPdfHtml("shieldCheck")}</span><h2 class="pdf-iriss-approved-title">${escapeHtml(PDF_APPROVED_BY_IRISS)}</h2></div>`,
   );
   parts.push(`<div class="pdf-iriss-approved-body">`);
   if (iriss) {
@@ -760,11 +760,12 @@ function clientReportPrintCss(): string {
       }
       .pdf-num-warn{font-size:9pt!important;line-height:1.2;font-family:Inter,sans-serif!important;vertical-align:middle;}
       .pdf-num-warn--red .pdf-num-warn-digits,.pdf-num-warn--yellow .pdf-num-warn-digits{
-        color:#1d1d1f!important;font-weight:600!important;
+        color:#000!important;font-weight:600!important;
       }
       .pdf-loss-amt-ico,.pdf-warn-tri-ico{flex-shrink:0;display:block;width:13px;height:13px;}
       .pdf-warn-tri-ico--lg{width:17px!important;height:17px!important;}
       .pdf-price-drop-wrap{display:inline-flex;align-items:center;gap:6px;vertical-align:middle;}
+      .pdf-price-drop-val{color:#000!important;font-weight:600!important;}
       .pdf-price-drop-ico{display:inline-flex;align-items:center;justify-content:center;line-height:0;}
       .pdf-price-drop-arrow{flex-shrink:0;display:block;width:17px;height:17px;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}

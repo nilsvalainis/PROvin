@@ -1247,6 +1247,8 @@ export function OrderDetailWorkspace({
                 value={blocksForDisplay.auto_records}
                 readOnly={sourcesViewMode}
                 onChange={(next) => updateSourceBlock("auto_records", next)}
+                trafficFillLevel={traffic.auto_records}
+                collapsible
               />
             </div>
           </div>
@@ -1256,6 +1258,8 @@ export function OrderDetailWorkspace({
                 value={blocksForDisplay.ltab}
                 readOnly={sourcesViewMode}
                 onChange={(next) => updateSourceBlock("ltab", next)}
+                trafficFillLevel={traffic.ltab}
+                collapsible
               />
             </div>
             <div className="flex min-h-0 h-full min-w-0 flex-col">
