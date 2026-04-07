@@ -392,11 +392,11 @@ function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined
   const bodyParts: string[] = [];
   if (hasTable) {
     bodyParts.push(
-      `<table class="mirror-table"><thead><tr><th>Negadījumu skaits</th><th class="tabular">CSNg datums</th><th class="tabular">Zaudējumu summa</th></tr></thead><tbody>`,
+      `<table class="mirror-table"><thead><tr><th>Datums</th><th class="tabular">Zaudējumu summa</th><th>Valsts</th></tr></thead><tbody>`,
     );
     for (const r of b.rows) {
       bodyParts.push(
-        `<tr><td>${escapeHtml(r.incidentNo)}</td><td class="tabular">${escapeHtml(r.csngDate)}</td><td class="tabular">${formatLossAmountEurCell(r.lossAmount)}</td></tr>`,
+        `<tr><td class="tabular">${escapeHtml(r.csngDate)}</td><td class="tabular">${formatLossAmountEurCell(r.lossAmount)}</td><td>${escapeHtml(r.incidentNo)}</td></tr>`,
       );
     }
     bodyParts.push(`</tbody></table>`);

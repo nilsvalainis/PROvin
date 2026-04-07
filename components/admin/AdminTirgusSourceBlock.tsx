@@ -29,67 +29,65 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange }: 
       <AdminSourceBlockHeader blockKey="tirgus" className="mb-2 shrink-0" />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="flex flex-wrap items-end gap-x-3 gap-y-2 rounded-md border border-slate-200/60 bg-white/50 px-2 py-2">
-        {readOnly ? (
-          <div className="flex min-w-0 flex-1 flex-wrap gap-2 text-[11px] text-[var(--color-provin-muted)]">
-            <span className="rounded bg-white/90 px-1.5 py-0.5">
-              <span className="text-[10px] text-[var(--color-provin-muted)]">{TIRGUS_LABEL_LISTED}</span>{" "}
-              {value.listedForSale.trim() || "—"}
-            </span>
-            <span className="rounded bg-white/90 px-1.5 py-0.5">
-              <span className="text-[10px] text-[var(--color-provin-muted)]">{TIRGUS_LABEL_CREATED}</span>{" "}
-              {value.listingCreated.trim() || "—"}
-            </span>
-            <span className="rounded bg-white/90 px-1.5 py-0.5">
-              <span className="text-[10px] text-[var(--color-provin-muted)]">{TIRGUS_LABEL_PRICE_DROP}</span>{" "}
-              {value.priceDrop.trim() || "—"}
-            </span>
-          </div>
-        ) : (
-          <>
-            <div className="min-w-[6.5rem] flex-1 sm:max-w-[12rem]">
-              <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                {TIRGUS_LABEL_LISTED}
-              </label>
-              <input
-                type="text"
-                className={inp}
-                placeholder='piem., "22 dienas"'
-                value={value.listedForSale}
-                disabled={disabled}
-                onChange={(e) => setField("listedForSale", e.target.value)}
-                aria-label={TIRGUS_LABEL_LISTED}
-              />
-            </div>
-            <div className="min-w-[9rem] max-w-[11rem] flex-1">
-              <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                {TIRGUS_LABEL_CREATED}
-              </label>
-              <input
-                type="date"
-                className={inp}
-                value={value.listingCreated}
-                disabled={disabled}
-                onChange={(e) => setField("listingCreated", e.target.value)}
-                aria-label={TIRGUS_LABEL_CREATED}
-              />
-            </div>
-            <div className="min-w-[8rem] flex-1 sm:max-w-[14rem]">
-              <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                {TIRGUS_LABEL_PRICE_DROP}
-              </label>
-              <input
-                type="text"
-                className={inp}
-                placeholder='piem., "-500€"'
-                value={value.priceDrop}
-                disabled={disabled}
-                onChange={(e) => setField("priceDrop", e.target.value)}
-                aria-label={TIRGUS_LABEL_PRICE_DROP}
-              />
-            </div>
-          </>
-        )}
+        <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">
+          <table className="w-full min-w-[280px] border-collapse text-[11px]">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
+                <th className="px-2 py-1">{TIRGUS_LABEL_LISTED}</th>
+                <th className="px-2 py-1">{TIRGUS_LABEL_CREATED}</th>
+                <th className="px-2 py-1">{TIRGUS_LABEL_PRICE_DROP}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-slate-100">
+                <td className="px-2 py-1 align-top">
+                  {readOnly ? (
+                    <span className="text-[var(--color-provin-muted)]">{value.listedForSale.trim() || "—"}</span>
+                  ) : (
+                    <input
+                      type="text"
+                      className={inp}
+                      placeholder='piem., "22 dienas"'
+                      value={value.listedForSale}
+                      disabled={disabled}
+                      onChange={(e) => setField("listedForSale", e.target.value)}
+                      aria-label={TIRGUS_LABEL_LISTED}
+                    />
+                  )}
+                </td>
+                <td className="px-2 py-1 align-top">
+                  {readOnly ? (
+                    <span className="text-[var(--color-provin-muted)]">{value.listingCreated.trim() || "—"}</span>
+                  ) : (
+                    <input
+                      type="text"
+                      className={inp}
+                      placeholder="piem., 2024"
+                      value={value.listingCreated}
+                      disabled={disabled}
+                      onChange={(e) => setField("listingCreated", e.target.value)}
+                      aria-label={TIRGUS_LABEL_CREATED}
+                    />
+                  )}
+                </td>
+                <td className="px-2 py-1 align-top">
+                  {readOnly ? (
+                    <span className="text-[var(--color-provin-muted)]">{value.priceDrop.trim() || "—"}</span>
+                  ) : (
+                    <input
+                      type="text"
+                      className={inp}
+                      placeholder='piem., "-500€"'
+                      value={value.priceDrop}
+                      disabled={disabled}
+                      onChange={(e) => setField("priceDrop", e.target.value)}
+                      aria-label={TIRGUS_LABEL_PRICE_DROP}
+                    />
+                  )}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
