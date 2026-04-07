@@ -156,6 +156,7 @@ export type TirgusFormFields = {
 export const TIRGUS_LABEL_LISTED = "Auto pārdošanā:";
 export const TIRGUS_LABEL_CREATED = "Izveidots:";
 export const TIRGUS_LABEL_PRICE_DROP = "Cenas kritums:";
+/** Senā atsauce; jaunajā UI izmanto LISTING_ANALYSIS_COMMENT_LABEL. */
 export const TIRGUS_LABEL_COMMENTS = "Komentāri:";
 
 export function emptyTirgusFields(): TirgusFormFields {
@@ -177,7 +178,9 @@ export function tirgusFormToPlainText(f: TirgusFormFields): string {
   if (f.listedForSale.trim()) lines.push(`${TIRGUS_LABEL_LISTED} ${f.listedForSale.trim()}`);
   if (f.listingCreated.trim()) lines.push(`${TIRGUS_LABEL_CREATED} ${f.listingCreated.trim()}`);
   if (f.priceDrop.trim()) lines.push(`${TIRGUS_LABEL_PRICE_DROP} ${f.priceDrop.trim()}`);
-  if (f.comments.trim()) lines.push(`${TIRGUS_LABEL_COMMENTS}\n${f.comments.trim()}`);
+  if (f.comments.trim()) {
+    lines.push(`${LISTING_ANALYSIS_COMMENT_LABEL}\n${f.comments.trim()}`);
+  }
   return lines.join("\n");
 }
 
@@ -493,6 +496,9 @@ export const LISTING_ANALYSIS_SUBSECTIONS = {
 
 /** Tirgus dati integrēti „Sludinājuma analīzē” (PDF + admin). */
 export const LISTING_HISTORY_SUBSECTION_TITLE = "Sludinājuma vēsture";
+
+/** Vienots komentāru lauka apzīmējums „Sludinājuma analīzē” un apakšsadaļās. */
+export const LISTING_ANALYSIS_COMMENT_LABEL = "Komentāri";
 
 export function listingAnalysisToPlainText(b: ListingAnalysisBlockState): string {
   const L = LISTING_ANALYSIS_SUBSECTIONS;

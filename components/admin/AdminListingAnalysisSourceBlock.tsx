@@ -2,6 +2,7 @@
 
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import {
+  LISTING_ANALYSIS_COMMENT_LABEL,
   LISTING_ANALYSIS_SUBSECTIONS,
   type ListingAnalysisBlockState,
 } from "@/lib/admin-source-blocks";
@@ -51,7 +52,9 @@ export function AdminListingAnalysisSourceBlock({
             <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
               {title}
             </p>
-            <p className="mb-0.5 text-[10px] font-medium text-[var(--color-provin-muted)]">Komentāri</p>
+            <p className="mb-0.5 text-[10px] font-medium text-[var(--color-provin-muted)]">
+              {LISTING_ANALYSIS_COMMENT_LABEL}
+            </p>
             {readOnly ? (
               <div
                 className={

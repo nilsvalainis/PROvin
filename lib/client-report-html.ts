@@ -12,6 +12,7 @@ import {
   LISTING_ANALYSIS_SUBSECTIONS,
   SOURCE_BLOCK_LABELS,
   listingAnalysisHasContent,
+  LISTING_ANALYSIS_COMMENT_LABEL,
   LISTING_HISTORY_SUBSECTION_TITLE,
   ltabRowHasData,
   NEGADIJUMU_VESTURE_TITLE,
@@ -323,7 +324,12 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
         ? `<table class="mirror-table"><tbody>${rows.join("\n")}</tbody></table>`
         : "";
     if (table) parts.push(table);
-    if (f.comments.trim()) parts.push(pdfAvotuCommentIsland(f.comments));
+    if (f.comments.trim()) {
+      parts.push(`<p class="pdf-field-label">${escapeHtml(LISTING_ANALYSIS_COMMENT_LABEL)}</p>`);
+      parts.push(
+        `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(f.comments.trim())}</pre></div>`,
+      );
+    }
   } else {
     parts.push(`<pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(p.tirgus.trim())}</pre>`);
   }
