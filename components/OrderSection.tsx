@@ -51,9 +51,11 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
           <OrderForm variant="hero" className="!mt-0" />
         </div>
 
-        <p className="mx-auto mt-4 max-w-[42ch] text-[10px] font-normal leading-relaxed text-[#86868b] sm:mt-5 sm:text-[11px]">
-          {t("footnote")}
-        </p>
+        {t("footnote").trim() ? (
+          <p className="mx-auto mt-4 max-w-[42ch] text-[10px] font-normal leading-relaxed text-[#86868b] sm:mt-5 sm:text-[11px]">
+            {t("footnote")}
+          </p>
+        ) : null}
       </div>
     </section>
   );
