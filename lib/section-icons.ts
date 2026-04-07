@@ -33,7 +33,9 @@ export type SectionIconId =
   | "database"
   | "barChart"
   | "layers"
-  | "camera";
+  | "camera"
+  | "fileSearch"
+  | "priceTag";
 
 /**
  * SVG iekšējais saturs (bez <svg>), stroke caur currentColor.
@@ -61,11 +63,21 @@ export const SECTION_ICON_INNER: Record<SectionIconId, string> = {
   barChart: `<path d="M12 20V10M18 20V4M6 20v-4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>`,
   layers: `<path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>`,
   camera: `<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.75"/>`,
+  /** Dokuments + lupa — PDF „1. Kopsavilkums” (IRISS). */
+  fileSearch: `<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="17.5" cy="17.5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="m21 21-2.35-2.35" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
+  /** Cenu birka — PDF „3. Cenas atbilstība” (IRISS). */
+  priceTag: `<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7" cy="7" r="1.5" fill="currentColor"/>`,
 };
 
 export function sectionIconPdfHtml(id: SectionIconId): string {
   const inner = SECTION_ICON_INNER[id];
   return `<svg class="pdf-ico" width="${SECTION_ICON_PX}" height="${SECTION_ICON_PX}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${inner}</svg>`;
+}
+
+/** PDF — tā pati līniju stila ikona ar pielāgotu izmēru (piem. IRISS apakšpunkti). */
+export function sectionIconPdfHtmlSized(id: SectionIconId, sizePx: number): string {
+  const inner = SECTION_ICON_INNER[id];
+  return `<svg class="pdf-ico" width="${sizePx}" height="${sizePx}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${inner}</svg>`;
 }
 
 /** Admin avotu bloku galvenēm. */

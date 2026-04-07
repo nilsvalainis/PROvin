@@ -40,7 +40,12 @@ import {
   buildPdfAlertBannersHtml,
   computeProvinAlertBannersFromPayloadSlice,
 } from "@/lib/provin-alert-banners";
-import { sectionIconPdfHtml, vendorPdfTitleToIconId } from "@/lib/section-icons";
+import {
+  sectionIconPdfHtml,
+  sectionIconPdfHtmlSized,
+  vendorPdfTitleToIconId,
+  type SectionIconId,
+} from "@/lib/section-icons";
 import { CLIENT_REPORT_FOOTER_DISCLAIMER } from "@/lib/report-pdf-standards";
 import { buildUnifiedMileageChartWrapHtml } from "@/lib/unified-mileage-chart";
 import {
@@ -143,7 +148,8 @@ function pdfListingAnalysisFieldIconHtml(title: string): string {
   return sectionIconPdfHtml("fileText");
 }
 
-function pdfIrissSubsectionH3(iconHtml: string, title: string): string {
+function pdfIrissSubsectionH3(iconId: SectionIconId, title: string): string {
+  const iconHtml = sectionIconPdfHtmlSized(iconId, 16);
   return `<h3 class="pdf-iriss-approved-subsection"><span class="pdf-iriss-sub-ico" aria-hidden="true">${iconHtml}</span><span class="pdf-iriss-sub-text">${escapeHtml(title)}</span></h3>`;
 }
 
@@ -507,24 +513,24 @@ function buildApprovedByIrissHtml(p: ClientReportPayload): string {
   const parts: string[] = [];
   parts.push(`<div class="pdf-iriss-approved" role="region">`);
   parts.push(
-    `<div class="pdf-iriss-approved-header"><span class="pdf-iriss-approved-ico" aria-hidden="true">${sectionIconPdfHtml("shieldCheck")}</span><h2 class="pdf-iriss-approved-title">${escapeHtml(PDF_APPROVED_BY_IRISS)}</h2></div>`,
+    `<div class="pdf-iriss-approved-header"><span class="pdf-sec-ico-bubble pdf-iriss-main-bubble" aria-hidden="true">${sectionIconPdfHtmlSized("shieldCheck", 20)}</span><h2 class="pdf-iriss-approved-title">${escapeHtml(PDF_APPROVED_BY_IRISS)}</h2></div>`,
   );
   parts.push(`<div class="pdf-iriss-approved-body">`);
   if (iriss) {
     parts.push(`<div class="pdf-iriss-approved-part">`);
-    parts.push(pdfIrissSubsectionH3(sectionIconPdfHtml("listChecks"), PDF_IRISS_SECTION_1));
+    parts.push(pdfIrissSubsectionH3("fileSearch", PDF_IRISS_SECTION_1));
     parts.push(`<pre class="mirror-pre pdf-iriss-approved-text">${escapeHtml(iriss)}</pre>`);
     parts.push(`</div>`);
   }
   if (plan) {
     parts.push(`<div class="pdf-iriss-approved-part">`);
-    parts.push(pdfIrissSubsectionH3(sectionIconPdfHtml("clipboard"), PDF_IRISS_SECTION_2));
+    parts.push(pdfIrissSubsectionH3("car", PDF_IRISS_SECTION_2));
     parts.push(`<pre class="mirror-pre pdf-iriss-approved-text">${escapeHtml(plan)}</pre>`);
     parts.push(`</div>`);
   }
   if (priceFitBlock) {
     parts.push(`<div class="pdf-iriss-approved-part">`);
-    parts.push(pdfIrissSubsectionH3(sectionIconPdfHtml("scale"), PDF_IRISS_SECTION_3));
+    parts.push(pdfIrissSubsectionH3("priceTag", PDF_IRISS_SECTION_3));
     parts.push(`<pre class="mirror-pre pdf-iriss-approved-text">${escapeHtml(priceFitBlock)}</pre>`);
     parts.push(`</div>`);
   }
@@ -617,7 +623,7 @@ function clientReportPrintCss(): string {
       .pdf-field-label-ico .pdf-ico{width:18px;height:18px;color:${PDF_BRAND_BLUE};}
       .pdf-listing-analysis-stack{width:100%;}
       .pdf-listing-analysis-chunk{
-        margin:0 0 8px;padding:8px 0;background:#fff;border-bottom:1px solid #E0E0E0;
+        margin:0 0 8px;padding:8px 0;background:#fff;border-bottom:1px solid #f1f5f9;
       }
       .pdf-listing-analysis-chunk:last-child{margin-bottom:0;border-bottom:none;}
       .pdf-listing-analysis-chunk-pre{font-style:italic;margin:0;}
@@ -633,6 +639,11 @@ function clientReportPrintCss(): string {
       .pdf-avotu-comment-island-body{font-style:italic;margin:0;}
       .pdf-unified-mileage-zone{margin:0 0 18px;padding:16px 18px;}
       .pdf-unified-mileage-zone .pdf-sec-head{margin-top:0;}
+      .pdf-listing-analysis-root.pdf-surface-card{
+        border:1px solid #f1f5f9;
+        box-shadow:0 2px 12px rgba(15,23,42,.05);
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
       .pdf-unified-incidents-zone{margin:0 0 18px;padding:16px 18px;}
       .pdf-unified-incidents-zone .pdf-sec-head{margin-top:0;}
       .pdf-mileage-dual{
@@ -821,21 +832,23 @@ function clientReportPrintCss(): string {
       .mirror-table--csdd-mh thead th{font-size:9pt!important;}
       .tabular{font-variant-numeric:tabular-nums;}
       .pdf-iriss-approved{
-        margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;
-        box-shadow:0 4px 20px rgba(15,23,42,.07);
+        margin:0 0 14px;border-radius:12px;overflow:hidden;border:1px solid #f1f5f9;
+        box-shadow:0 2px 14px rgba(15,23,42,.06);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-iriss-approved-header{
-        display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px 10px 0 0;
-        background:#fff;border-bottom:1px solid #e2e8f0;
+        display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px 12px 0 0;
+        background:#fff;border-bottom:1px solid #f1f5f9;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-iriss-approved-ico{color:${PDF_BRAND_BLUE};flex-shrink:0;line-height:0;}
-      .pdf-iriss-approved-ico .pdf-ico{width:18px;height:18px;}
+      .pdf-iriss-approved-header .pdf-iriss-main-bubble{
+        width:40px!important;height:40px!important;flex-shrink:0;
+      }
+      .pdf-iriss-main-bubble .pdf-ico{width:20px;height:20px;}
       .pdf-iriss-approved-title{
         margin:0;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0f172a;
       }
-      .pdf-iriss-approved-body{padding:14px 16px 16px;background:#f8fafc;}
+      .pdf-iriss-approved-body{padding:14px 16px 16px;background:#fff;}
       .pdf-iriss-approved-subtitle{
         margin:0 0 8px;font-size:0.68rem;font-weight:700;color:#000;letter-spacing:0.06em;text-transform:uppercase;
       }
@@ -843,8 +856,8 @@ function clientReportPrintCss(): string {
       .pdf-iriss-approved-subsection{
         display:flex;align-items:flex-start;gap:8px;margin:0 0 6px;font-size:0.72rem;font-weight:700;color:#000;letter-spacing:0.02em;text-transform:none;
       }
-      .pdf-iriss-sub-ico{flex-shrink:0;line-height:0;}
-      .pdf-iriss-sub-ico .pdf-ico{width:18px;height:18px;color:${PDF_BRAND_BLUE};}
+      .pdf-iriss-sub-ico{flex-shrink:0;line-height:0;color:${PDF_BRAND_BLUE};}
+      .pdf-iriss-sub-ico .pdf-ico{width:16px;height:16px;}
       .pdf-iriss-sub-text{flex:1;min-width:0;}
       .pdf-iriss-approved-text{font-size:0.78rem;}
       .mirror-font-error{padding:16px;color:#991b1b;font-size:13px;}
