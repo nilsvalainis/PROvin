@@ -2,6 +2,7 @@
 
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import {
+  emptyListingAnalysisBlock,
   LISTING_ANALYSIS_COMMENT_LABEL,
   LISTING_ANALYSIS_SUBSECTIONS,
   type ListingAnalysisBlockState,
@@ -11,7 +12,7 @@ const ta =
   "min-h-[72px] w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
 type Props = {
-  value: ListingAnalysisBlockState;
+  value?: ListingAnalysisBlockState | null;
   readOnly: boolean;
   disabled?: boolean;
   onChange: (next: ListingAnalysisBlockState) => void;
@@ -26,6 +27,7 @@ export function AdminListingAnalysisSourceBlock({
   onChange,
   variant = "default",
 }: Props) {
+  const v = value ?? emptyListingAnalysisBlock();
   const L = LISTING_ANALYSIS_SUBSECTIONS;
   const fields: { key: keyof ListingAnalysisBlockState; title: string }[] = [
     { key: "sellerPortrait", title: L.sellerPortrait },
@@ -35,7 +37,7 @@ export function AdminListingAnalysisSourceBlock({
 
   const shell =
     variant === "priority"
-      ? "flex h-full min-h-0 flex-col"
+      ? "w-full min-w-0 flex flex-col"
       : "flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-white p-2 shadow-sm";
 
   const taPriority =
@@ -63,15 +65,15 @@ export function AdminListingAnalysisSourceBlock({
                     : "min-h-[48px] whitespace-pre-wrap rounded-md border border-slate-100 bg-white/90 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
                 }
               >
-                {value[key].trim() || "—"}
+                {v[key].trim() || "—"}
               </div>
             ) : (
               <textarea
                 className={variant === "priority" ? taPriority : ta}
                 disabled={disabled}
                 rows={4}
-                value={value[key]}
-                onChange={(e) => onChange({ ...value, [key]: e.target.value })}
+                value={v[key]}
+                onChange={(e) => onChange({ ...v, [key]: e.target.value })}
                 placeholder=""
                 aria-label={`${title} — Komentāri`}
               />

@@ -3,6 +3,7 @@
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { TirgusFormFields } from "@/lib/admin-source-blocks";
 import {
+  emptyTirgusFields,
   LISTING_ANALYSIS_COMMENT_LABEL,
   LISTING_HISTORY_SUBSECTION_TITLE,
   TIRGUS_LABEL_CREATED,
@@ -20,7 +21,7 @@ const taEmbedded =
   "min-h-[72px] w-full rounded-md border border-emerald-200/90 bg-white/95 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/25";
 
 type Props = {
-  value: TirgusFormFields;
+  value?: TirgusFormFields | null;
   readOnly: boolean;
   disabled?: boolean;
   onChange: (next: TirgusFormFields) => void;
@@ -29,13 +30,14 @@ type Props = {
 };
 
 export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, variant = "default" }: Props) {
+  const val = value ?? emptyTirgusFields();
   const setField = (key: keyof TirgusFormFields, v: string) => {
-    onChange({ ...value, [key]: v });
+    onChange({ ...val, [key]: v });
   };
 
   const shell =
     variant === "embedded"
-      ? "flex h-full min-h-0 flex-col"
+      ? "w-full min-w-0 flex flex-col"
       : "flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-white p-2 shadow-sm";
 
   const tableBlock = (
@@ -52,13 +54,13 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, va
           <tr className="border-b border-slate-100">
             <td className="px-2 py-1 align-top">
               {readOnly ? (
-                <span className="text-[var(--color-provin-muted)]">{value.listedForSale.trim() || "—"}</span>
+                <span className="text-[var(--color-provin-muted)]">{val.listedForSale.trim() || "—"}</span>
               ) : (
                 <input
                   type="text"
                   className={inp}
                   placeholder='piem., "22 dienas"'
-                  value={value.listedForSale}
+                  value={val.listedForSale}
                   disabled={disabled}
                   onChange={(e) => setField("listedForSale", e.target.value)}
                   aria-label={TIRGUS_LABEL_LISTED}
@@ -67,13 +69,13 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, va
             </td>
             <td className="px-2 py-1 align-top">
               {readOnly ? (
-                <span className="text-[var(--color-provin-muted)]">{value.listingCreated.trim() || "—"}</span>
+                <span className="text-[var(--color-provin-muted)]">{val.listingCreated.trim() || "—"}</span>
               ) : (
                 <input
                   type="text"
                   className={inp}
                   placeholder="piem., 2024"
-                  value={value.listingCreated}
+                  value={val.listingCreated}
                   disabled={disabled}
                   onChange={(e) => setField("listingCreated", e.target.value)}
                   aria-label={TIRGUS_LABEL_CREATED}
@@ -82,13 +84,13 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, va
             </td>
             <td className="px-2 py-1 align-top">
               {readOnly ? (
-                <span className="text-[var(--color-provin-muted)]">{value.priceDrop.trim() || "—"}</span>
+                <span className="text-[var(--color-provin-muted)]">{val.priceDrop.trim() || "—"}</span>
               ) : (
                 <input
                   type="text"
                   className={inp}
                   placeholder='piem., "-500€"'
-                  value={value.priceDrop}
+                  value={val.priceDrop}
                   disabled={disabled}
                   onChange={(e) => setField("priceDrop", e.target.value)}
                   aria-label={TIRGUS_LABEL_PRICE_DROP}
@@ -112,14 +114,14 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, va
         <p className="mb-0.5 text-[10px] font-medium text-[var(--color-provin-muted)]">{LISTING_ANALYSIS_COMMENT_LABEL}</p>
         {readOnly ? (
           <div className={commentsReadonlyClassEmbedded}>
-            {value.comments.trim() ? value.comments : <span className="text-slate-400">—</span>}
+            {val.comments.trim() ? val.comments : <span className="text-slate-400">—</span>}
           </div>
         ) : (
           <textarea
             className={taEmbedded}
             rows={4}
             placeholder=""
-            value={value.comments}
+            value={val.comments}
             disabled={disabled}
             onChange={(e) => setField("comments", e.target.value)}
             aria-label={`${LISTING_HISTORY_SUBSECTION_TITLE} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
@@ -131,14 +133,14 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, va
         <p className="mb-0.5 text-[10px] font-medium text-[var(--color-provin-muted)]">{LISTING_ANALYSIS_COMMENT_LABEL}</p>
         {readOnly ? (
           <div className={commentsReadonlyClassDefault}>
-            {value.comments.trim() ? value.comments : <span className="text-slate-400">—</span>}
+            {val.comments.trim() ? val.comments : <span className="text-slate-400">—</span>}
           </div>
         ) : (
           <textarea
             className={taDefault}
             rows={4}
             placeholder="Papildu komentāri par sludinājuma vēsturi…"
-            value={value.comments}
+            value={val.comments}
             disabled={disabled}
             onChange={(e) => setField("comments", e.target.value)}
             aria-label={`Tirgus — ${LISTING_ANALYSIS_COMMENT_LABEL}`}

@@ -23,6 +23,7 @@ import {
   listingAnalysisToPlainText,
   ltabBlockToPlainText,
   LISTING_HISTORY_SUBSECTION_TITLE,
+  mergeSourceBlocksWithDefaults,
   autoRecordsBlockToPlainText,
   standardBlockToPlainText,
   vendorAvotuBlockToPlainText,
@@ -717,6 +718,12 @@ export function OrderDetailWorkspace({
   const blocksForDisplay =
     sourcesViewMode && sourcesSnap ? sourcesSnap : ws.sourceBlocks;
 
+  /** Veci / bojāti snapšoti — vienmēr pilda trūkstošos laukus (piem. listing_analysis). */
+  const blocksDisplaySafe = useMemo(
+    () => mergeSourceBlocksWithDefaults(blocksForDisplay as unknown),
+    [blocksForDisplay],
+  );
+
   const provinAlertBanners = useMemo(
     () => computeProvinAlertBannersFromWorkspace(blocksForDisplay),
     [blocksForDisplay],
@@ -1204,26 +1211,28 @@ export function OrderDetailWorkspace({
             <span className="text-[11px] font-bold tracking-[0.12em] text-white">SLUDINĀJUMA ANALĪZE</span>
           </AdminGradientHeaderBar>
           <div
-            className="p-2.5"
+            className="space-y-4 p-2.5"
             style={{ background: LISTING_ANALYSIS_BODY_BG, WebkitPrintColorAdjust: "exact" }}
           >
-            <div className="mb-3 min-w-0">
+            <div className="min-w-0">
               <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
                 {LISTING_HISTORY_SUBSECTION_TITLE}
               </p>
               <AdminTirgusSourceBlock
-                value={blocksForDisplay.tirgus}
+                value={blocksDisplaySafe.tirgus}
                 readOnly={sourcesViewMode}
                 onChange={(next) => updateSourceBlock("tirgus", next)}
                 variant="embedded"
               />
             </div>
-            <AdminListingAnalysisSourceBlock
-              value={blocksForDisplay.listing_analysis}
-              readOnly={sourcesViewMode}
-              onChange={(next) => updateSourceBlock("listing_analysis", next)}
-              variant="priority"
-            />
+            <div className="min-w-0 border-t border-emerald-200/50 pt-3">
+              <AdminListingAnalysisSourceBlock
+                value={blocksDisplaySafe.listing_analysis}
+                readOnly={sourcesViewMode}
+                onChange={(next) => updateSourceBlock("listing_analysis", next)}
+                variant="priority"
+              />
+            </div>
           </div>
         </div>
 
