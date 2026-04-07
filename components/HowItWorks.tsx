@@ -12,7 +12,7 @@ export async function HowItWorks() {
   const steps = (messages as { HowItWorks: { steps: Step[] } }).HowItWorks.steps;
 
   return (
-    <div className="relative z-10 px-4 pb-4 pt-10 sm:px-6 sm:pb-6 sm:pt-14">
+    <div className="relative z-10 px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-4">
       <div className={`relative ${homeContentMaxClass}`}>
         <div className="mx-auto flex min-w-0 max-w-lg flex-col md:max-w-none md:flex-row md:items-stretch md:justify-center md:gap-0">
           {steps.map((s, i) => (
