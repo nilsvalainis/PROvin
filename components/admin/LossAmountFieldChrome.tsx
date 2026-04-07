@@ -20,23 +20,26 @@ function LossAmountAlertIcon({ tier }: { tier: "yellow" | "red" }) {
   );
 }
 
+const numericWarnInner =
+  "min-w-0 flex-1 font-semibold border-0 bg-transparent shadow-none ring-0 [&_input]:border-0 [&_input]:bg-transparent [&_input]:shadow-none [&_input]:ring-0 [&_input]:focus:ring-0";
+
 /**
- * „Zaudējumu summa” lauks — maigs fons + (!) ikona kreisajā pusē ārpus šūnas; bez sarkanās/dzeltenās kontūras (neitrāla apmale kā citiem laukiem).
+ * „Zaudējumu summa” — skaitlis krāsā (sarkans/dzeltens), viena (!) ikona kreisajā pusē; bez rāmja un fona.
  */
 export function LossAmountFieldChrome({ value, children }: { value: string; children: ReactNode }) {
   const flag = getLossAmountUiFlag(value);
   if (flag === "none") return <>{children}</>;
   const tier = flag === "red" ? "red" : "yellow";
-  const frame =
+  const textCls =
     tier === "red"
-      ? "rounded-md border border-slate-200 bg-rose-50 px-1.5 py-0.5"
-      : "rounded-md border border-slate-200 bg-yellow-50 px-1.5 py-0.5";
+      ? "text-red-600 [&_input]:text-red-600 [&_span]:text-red-600"
+      : "text-yellow-600 [&_input]:text-yellow-600 [&_span]:text-yellow-600";
   return (
     <span className="inline-flex max-w-full items-center gap-2">
       <span className="flex shrink-0 items-center self-center" aria-hidden>
         <LossAmountAlertIcon tier={tier} />
       </span>
-      <span className={`min-w-0 flex-1 ${frame}`}>{children}</span>
+      <span className={`${numericWarnInner} ${textCls}`}>{children}</span>
     </span>
   );
 }

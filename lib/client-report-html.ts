@@ -176,7 +176,7 @@ function formatLossAmountEurCell(raw: string): string {
   if (flag === "none") return esc;
   const tier = flag === "red" ? "red" : "yellow";
   const ico = pdfLossAmountAlertIconHtml(tier);
-  return `<span class="pdf-data-alert-wrap"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="pdf-loss-amt pdf-loss-amt--${tier}"><span class="tabular pdf-loss-amt-num">${esc}</span></span></span>`;
+  return `<span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--${tier}"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="tabular pdf-num-warn-digits">${esc}</span></span>`;
 }
 
 function formatListedForSaleDaysCellHtml(raw: string): string {
@@ -184,7 +184,7 @@ function formatListedForSaleDaysCellHtml(raw: string): string {
   const esc = escapeHtml(t);
   if (!t || !shouldShowListedForSaleCriticalBanner(raw)) return esc;
   const ico = pdfLossAmountAlertIconHtml("red");
-  return `<span class="pdf-data-alert-wrap"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="pdf-loss-amt pdf-loss-amt--red"><span class="tabular pdf-loss-amt-num">${esc}</span></span></span>`;
+  return `<span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--red"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="tabular pdf-num-warn-digits">${esc}</span></span>`;
 }
 
 function extractVehicleMakeModel(csdd: string): string | null {
@@ -230,7 +230,7 @@ function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow, anomalyBySourceOr
   const rowClass = anom ? "pdf-mileage-history-row pdf-mileage-history-row--anomaly" : "pdf-mileage-history-row";
   const ico = pdfLossAmountAlertIconHtml("red");
   const odoTd = anom
-    ? `<td class="tabular pdf-mileage-cell-odo"><span class="pdf-data-alert-wrap"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="pdf-mileage-odo-inner pdf-mileage-odo-inner--anomaly"><span class="tabular">${odoEscaped}</span></span></span></td>`
+    ? `<td class="tabular pdf-mileage-cell-odo"><span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--red"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="tabular pdf-num-warn-digits">${odoEscaped}</span></span></td>`
     : `<td class="tabular pdf-mileage-cell-odo"><span class="pdf-mileage-odo-value">${odoEscaped}</span></td>`;
   return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td>${odoTd}<td class="pdf-mileage-cell-flag"><span class="pdf-country-flag" role="img" aria-label="${aria}">${flag}</span></td></tr>`;
 }
@@ -695,12 +695,6 @@ function clientReportPrintCss(): string {
         text-align:right!important;vertical-align:middle!important;
       }
       .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
-      .pdf-mileage-odo-inner--anomaly{
-        display:inline-flex;align-items:center;justify-content:center;padding:2px 7px;border-radius:5px;
-        border:1px solid #e2e8f0;background:#fff1f2;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-mileage-odo-inner--anomaly .tabular{color:#D32F2F!important;font-weight:600!important;}
       .pdf-country-flag{
         font-style:normal;font-variant:normal;letter-spacing:0;
         font-size:1.05em;line-height:1;display:inline-flex;align-items:center;justify-content:center;
@@ -762,18 +756,9 @@ function clientReportPrintCss(): string {
       .pdf-csdd-alert-wrap{
         display:flex;align-items:center;gap:6px;width:100%;
       }
-      .pdf-loss-amt{
-        display:inline-flex;align-items:center;justify-content:center;
-        max-width:100%;padding:3px 7px;border-radius:5px;font-size:9pt!important;line-height:1.2;
-        font-family:Inter,sans-serif!important;vertical-align:middle;
-        border:1px solid #e2e8f0;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-loss-amt--yellow{background:#fefce8;}
-      .pdf-loss-amt--red{background:#fff1f2;}
-      .pdf-loss-amt-num{font-weight:600;}
-      .pdf-loss-amt--yellow .pdf-loss-amt-num{color:#B45309!important;}
-      .pdf-loss-amt--red .pdf-loss-amt-num{color:#D32F2F!important;}
+      .pdf-num-warn{font-size:9pt!important;line-height:1.2;font-family:Inter,sans-serif!important;vertical-align:middle;}
+      .pdf-num-warn--red .pdf-num-warn-digits{color:#FF0000!important;font-weight:600!important;}
+      .pdf-num-warn--yellow .pdf-num-warn-digits{color:#EAB308!important;font-weight:600!important;}
       .pdf-loss-amt-ico{flex-shrink:0;display:block;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}

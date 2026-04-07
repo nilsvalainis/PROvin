@@ -19,7 +19,6 @@ import {
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
-import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -240,9 +239,7 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                             className={
                               !row.lossAmount.trim()
                                 ? "text-[var(--color-provin-muted)]"
-                                : getLossAmountUiFlag(row.lossAmount) === "red"
-                                  ? "font-semibold text-[#B91C1C]"
-                                  : "font-semibold text-amber-900"
+                                : "font-semibold"
                             }
                           >
                             {row.lossAmount.trim() || "—"}

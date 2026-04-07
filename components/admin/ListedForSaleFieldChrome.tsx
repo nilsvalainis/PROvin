@@ -20,8 +20,11 @@ function ListedSaleAlertIcon() {
   );
 }
 
+const numericWarnInner =
+  "min-w-0 flex-1 font-semibold border-0 bg-transparent shadow-none ring-0 text-red-600 [&_input]:border-0 [&_input]:bg-transparent [&_input]:text-red-600 [&_input]:shadow-none [&_input]:ring-0 [&_input]:focus:ring-0 [&_span]:text-red-600";
+
 /**
- * „Auto pārdošanā (dienas)” — gaiši sārts fons un (!) kreisajā pusē, ja dienu skaits > 200; neitrāla apmale (bez sarkanās kontūras).
+ * „Auto pārdošanā (dienas)” — sarkans skaitlis, (!) kreisajā pusē; bez rāmja un fona.
  */
 export function ListedForSaleFieldChrome({ value, children }: { value: string; children: ReactNode }) {
   if (!shouldShowListedForSaleCriticalBanner(value)) return <>{children}</>;
@@ -30,9 +33,7 @@ export function ListedForSaleFieldChrome({ value, children }: { value: string; c
       <span className="flex shrink-0 items-center self-center" aria-hidden>
         <ListedSaleAlertIcon />
       </span>
-      <span className="min-w-0 flex-1 rounded-md border border-slate-200 bg-rose-50 px-1.5 py-0.5">
-        {children}
-      </span>
+      <span className={numericWarnInner}>{children}</span>
     </span>
   );
 }
