@@ -24,24 +24,25 @@ const inp =
 const inpAlertInner =
   "min-w-0 w-full flex-1 rounded border-0 bg-transparent px-0 py-0 text-[11px] text-[var(--color-apple-text)] focus:outline-none focus:ring-0";
 
-function csddAlertRowClass(flag: Exclude<CsddFieldUiFlag, "none">): string {
+/** Vienots 2px taisnstūra rāmis — ikona atrodas ārpus (kreisajā pusē), nevis rāmī. */
+function csddAlertFrameClass(flag: Exclude<CsddFieldUiFlag, "none">): string {
   if (flag === "red") {
-    return "rounded-[4px] border border-[#FEE2E2] bg-[#FEF2F2] pl-2 pr-2 py-1.5 border-l-[3px] border-l-[#EF4444]";
+    return "rounded-md border-[2px] border-solid border-[#FF0000] bg-red-50/95 px-2 py-1.5";
   }
-  return "rounded-[4px] border border-[#FEF3C7] bg-[#FFFBEB] pl-2 pr-2 py-1.5 border-l-[3px] border-l-[#F59E0B]";
+  return "rounded-md border-[2px] border-solid border-[#FFD700] bg-yellow-50/95 px-2 py-1.5";
 }
 
 function FieldAlertCircleIcon({ flag }: { flag: Exclude<CsddFieldUiFlag, "none"> }) {
-  const cls = flag === "red" ? "text-[#EF4444]" : "text-[#F59E0B]";
+  const stroke = flag === "red" ? "#FF0000" : "#FFD700";
   return (
-    <span className={`inline-flex shrink-0 ${cls}`} aria-hidden>
+    <span className="inline-flex shrink-0 items-center self-center" aria-hidden>
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="14"
-        height="14"
+        width="12"
+        height="12"
         viewBox="0 0 24 24"
         fill="none"
-        stroke="currentColor"
+        stroke={stroke}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -151,40 +152,43 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
             <div key={key} className="min-w-0">
               {isFlagField && showFlag ? (
                 <div
-                  className={csddAlertRowClass(flag === "red" ? "red" : "yellow")}
+                  className="flex min-w-0 items-center gap-2"
                   title={flagTitle || undefined}
                   role="group"
                   aria-label={flagTitle || label}
                 >
-                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                    <FieldAlertCircleIcon flag={flag === "red" ? "red" : "yellow"} />
-                    <span className="shrink-0 text-[10px] font-medium text-[var(--color-provin-muted)]">{label}</span>
-                    <div className="min-w-0 flex-1">
-                      {readOnly ? (
-                        <div className="min-h-[20px] whitespace-pre-wrap text-[11px] text-[var(--color-apple-text)]">
-                          {strVal.trim() ? strVal : <span className="text-slate-400">—</span>}
-                        </div>
-                      ) : dateKeys.has(key) ? (
-                        <input
-                          type="date"
-                          className={inpAlertInner}
-                          value={strVal}
-                          disabled={disabled}
-                          onChange={(e) => setField(key, e.target.value)}
-                          aria-label={label}
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          className={inpAlertInner}
-                          value={strVal}
-                          disabled={disabled}
-                          onChange={(e) => setField(key, e.target.value)}
-                          aria-label={label}
-                        />
-                      )}
+                  <FieldAlertCircleIcon flag={flag === "red" ? "red" : "yellow"} />
+                  <div
+                    className={`min-w-0 flex-1 ${csddAlertFrameClass(flag === "red" ? "red" : "yellow")}`}
+                  >
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="shrink-0 text-[10px] font-medium text-[var(--color-provin-muted)]">{label}</span>
+                      <div className="min-w-0 flex-1">
+                        {readOnly ? (
+                          <div className="min-h-[20px] whitespace-pre-wrap text-[11px] text-[var(--color-apple-text)]">
+                            {strVal.trim() ? strVal : <span className="text-slate-400">—</span>}
+                          </div>
+                        ) : dateKeys.has(key) ? (
+                          <input
+                            type="date"
+                            className={inpAlertInner}
+                            value={strVal}
+                            disabled={disabled}
+                            onChange={(e) => setField(key, e.target.value)}
+                            aria-label={label}
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            className={inpAlertInner}
+                            value={strVal}
+                            disabled={disabled}
+                            onChange={(e) => setField(key, e.target.value)}
+                            aria-label={label}
+                          />
+                        )}
+                      </div>
                     </div>
-                    <FieldAlertCircleIcon flag={flag === "red" ? "red" : "yellow"} />
                   </div>
                 </div>
               ) : (
