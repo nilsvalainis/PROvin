@@ -3,6 +3,7 @@ import { Faq } from "@/components/Faq";
 import { FinalCta } from "@/components/FinalCta";
 import { Hero } from "@/components/Hero";
 import { HeroVisual } from "@/components/HeroVisual";
+import { HowItWorks } from "@/components/HowItWorks";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
 import { WhyProvin } from "@/components/WhyProvin";
@@ -31,6 +32,7 @@ export default async function HomePage({
             className="pointer-events-none absolute inset-0 z-[1] provin-noise opacity-[0.38]"
             aria-hidden
           />
+          <HowItWorks />
           <FinalCta cancelled={cancelled} />
         </div>
       </section>
