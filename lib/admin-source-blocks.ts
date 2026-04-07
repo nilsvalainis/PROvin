@@ -215,11 +215,25 @@ export const CSDD_MILEAGE_UNIFIED_TITLE = "NOBRAUKUMA VĒSTURE";
 /** AutoDNA / CarVertical — negadījumu apakšsekcija (saskaņots ar LTAB loģiku). */
 export const NEGADIJUMU_VESTURE_TITLE = "NEGADĪJUMU VĒSTURE";
 
-/** Automatizētai datu vākšanai — `name` / `data-provin-field` (ar rindas indeksu tabulas laukiem). */
+/**
+ * Nobraukuma tabulu kolonnu semantika: «Datums», «Odometrs (km)», «Valsts».
+ * Vienoti visiem avotu blokiem ar šo tabulu (CSDD, AUTO RECORDS, AutoDNA, CarVertical).
+ * Lieto `data-provin-field` + `data-provin-block` + `data-row-index` (un zem `data-provin-mileage-table`).
+ */
+export const PROVIN_MILEAGE_TABLE_FIELD = {
+  datums: "nobraukuma_vesture_datums",
+  odometrsKm: "nobraukuma_vesture_odometrs",
+  valsts: "nobraukuma_vesture_valsts",
+} as const;
+
+/** Nobraukuma tabulas konteinera `data-provin-mileage-table` vērtība (DOM atlasei). */
+export const PROVIN_MILEAGE_TABLE_DOM_KIND = "nobraukuma_vesture";
+
+/** AutoDNA / CarVertical — visi lauki (ieskaitot nobraukumu un negadījumus). */
 export const PROVIN_VENDOR_FIELD = {
-  nobraukumaDatums: "nobraukuma_vesture_datums",
-  nobraukumaOdometrs: "nobraukuma_vesture_odometrs",
-  nobraukumaValsts: "nobraukuma_vesture_valsts",
+  nobraukumaDatums: PROVIN_MILEAGE_TABLE_FIELD.datums,
+  nobraukumaOdometrs: PROVIN_MILEAGE_TABLE_FIELD.odometrsKm,
+  nobraukumaValsts: PROVIN_MILEAGE_TABLE_FIELD.valsts,
   negadijumuSkaits: "negadijumu_skaits",
   csngDatums: "csng_datums",
   zaudejumuSumma: "zaudejumu_summa",

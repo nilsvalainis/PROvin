@@ -8,6 +8,8 @@ import {
   CSDD_MILEAGE_UNIFIED_TITLE,
   emptyCsddMileageRow,
   finalizeMileageHistory,
+  PROVIN_MILEAGE_TABLE_DOM_KIND,
+  PROVIN_MILEAGE_TABLE_FIELD,
 } from "@/lib/admin-source-blocks";
 import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
 import {
@@ -222,13 +224,23 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
         <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
-        <div className="overflow-x-auto rounded-lg border border-slate-200/90">
+        <div
+          className="overflow-x-auto rounded-lg border border-slate-200/90"
+          data-provin-mileage-table={PROVIN_MILEAGE_TABLE_DOM_KIND}
+          data-provin-block="csdd"
+        >
           <table className="w-full min-w-[280px] border-collapse text-[11px]">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
-                <th className="px-2 py-1">Datums</th>
-                <th className="px-2 py-1">Odometrs (km)</th>
-                <th className="px-2 py-1">Valsts</th>
+                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}>
+                  Datums
+                </th>
+                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}>
+                  Odometrs (km)
+                </th>
+                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}>
+                  Valsts
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -236,13 +248,25 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
                 <tr key={i} className="border-b border-slate-100 last:border-b-0">
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{row.date.trim() || "—"}</span>
+                      <span
+                        className="text-[var(--color-provin-muted)]"
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}
+                        data-provin-block="csdd"
+                        data-row-index={i}
+                      >
+                        {row.date.trim() || "—"}
+                      </span>
                     ) : (
                       <input
                         type="text"
                         className={inp}
                         value={row.date}
                         disabled={disabled}
+                        id={`csdd-${PROVIN_MILEAGE_TABLE_FIELD.datums}-${i}`}
+                        name={`${PROVIN_MILEAGE_TABLE_FIELD.datums}[${i}]`}
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}
+                        data-provin-block="csdd"
+                        data-row-index={i}
                         onChange={(e) => setMileage(i, { date: e.target.value })}
                         aria-label={`Nobraukuma datums rinda ${i + 1}`}
                       />
@@ -250,7 +274,14 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
                   </td>
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{row.odometer.trim() || "—"}</span>
+                      <span
+                        className="text-[var(--color-provin-muted)]"
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}
+                        data-provin-block="csdd"
+                        data-row-index={i}
+                      >
+                        {row.odometer.trim() || "—"}
+                      </span>
                     ) : (
                       <input
                         type="text"
@@ -258,6 +289,11 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
                         className={inp}
                         value={row.odometer}
                         disabled={disabled}
+                        id={`csdd-${PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}-${i}`}
+                        name={`${PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}[${i}]`}
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}
+                        data-provin-block="csdd"
+                        data-row-index={i}
                         onChange={(e) => setMileage(i, { odometer: e.target.value })}
                         aria-label={`Odometrs rinda ${i + 1}`}
                       />
@@ -265,7 +301,12 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
                   </td>
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">
+                      <span
+                        className="text-[var(--color-provin-muted)]"
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}
+                        data-provin-block="csdd"
+                        data-row-index={i}
+                      >
                         {row.country.trim() || CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL}
                       </span>
                     ) : (
@@ -274,6 +315,11 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
                         className={inp}
                         value={row.country}
                         disabled={disabled}
+                        id={`csdd-${PROVIN_MILEAGE_TABLE_FIELD.valsts}-${i}`}
+                        name={`${PROVIN_MILEAGE_TABLE_FIELD.valsts}[${i}]`}
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}
+                        data-provin-block="csdd"
+                        data-row-index={i}
                         onChange={(e) => setMileage(i, { country: e.target.value })}
                         aria-label={`Valsts rinda ${i + 1}`}
                       />

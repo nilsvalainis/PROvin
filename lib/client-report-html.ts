@@ -1,6 +1,6 @@
 /**
  * Klienta PDF atskaite — tikai admin paneļa ievadīto datu spogulis.
- * Nav apvienoto tabulu, grafiku, prognožu vai automātisku risku kopsavilkumu.
+ * Ar vienotu nobraukuma tabulu PDF augšdaļā (visi avoti kopā).
  */
 
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
@@ -10,7 +10,6 @@ import {
   citiAvotiHasContent,
   CSDD_FORM_STRUCTURED_FIELDS,
   CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
-  CSDD_MILEAGE_UNIFIED_TITLE,
   csddFormHasContent,
   csddMileageRowHasData,
   LISTING_ANALYSIS_SUBSECTIONS,
@@ -195,6 +194,88 @@ function wrapPdfAvotuStack(cardHtml: string, islandHtml: string): string {
   return `<div class="pdf-avotu-block-wrap">${cardHtml}${islandHtml}</div>`;
 }
 
+type UnifiedMileageRow = {
+  date: string;
+  odometer: string;
+  country: string;
+  sortableTime: number;
+  sourceOrder: number;
+};
+
+function parseMileageDateForSort(raw: string): number {
+  const t = raw.trim();
+  if (!t) return Number.NEGATIVE_INFINITY;
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) {
+    const y = Number.parseInt(iso[1] ?? "", 10);
+    const m = Number.parseInt(iso[2] ?? "", 10);
+    const d = Number.parseInt(iso[3] ?? "", 10);
+    return Date.UTC(y, Math.max(0, m - 1), d);
+  }
+  const lv = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/);
+  if (lv) {
+    const d = Number.parseInt(lv[1] ?? "", 10);
+    const m = Number.parseInt(lv[2] ?? "", 10);
+    const yRaw = Number.parseInt(lv[3] ?? "", 10);
+    const y = yRaw < 100 ? 2000 + yRaw : yRaw;
+    return Date.UTC(y, Math.max(0, m - 1), d);
+  }
+  const ts = Date.parse(t);
+  return Number.isNaN(ts) ? Number.NEGATIVE_INFINITY : ts;
+}
+
+function buildUnifiedMileageTableHtml(p: ClientReportPayload): string {
+  const rows: UnifiedMileageRow[] = [];
+  let sourceOrder = 0;
+  const pushRow = (dateRaw: string, odometerRaw: string, countryRaw: string) => {
+    const date = dateRaw.trim();
+    const odometer = odometerRaw.trim();
+    if (!date || !odometer) return;
+    rows.push({
+      date,
+      odometer,
+      country: countryRaw.trim() || CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
+      sortableTime: parseMileageDateForSort(date),
+      sourceOrder,
+    });
+    sourceOrder += 1;
+  };
+
+  const csddRows = p.csddForm?.mileageHistory.filter(csddMileageRowHasData) ?? [];
+  for (const r of csddRows) {
+    pushRow(r.date, r.odometer, r.country);
+  }
+
+  const autoRows = p.autoRecordsBlock?.serviceHistory.filter(autoRecordsRowHasData) ?? [];
+  for (const r of autoRows) {
+    const dateOut = formatAutoRecordsDateForOutput(r.date);
+    const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
+    pushRow(dateOut, odoOut, r.country);
+  }
+
+  const vendorRows = (p.manualVendorBlocks ?? []).flatMap((b) => b.mileageRows.filter(autoRecordsRowHasData));
+  for (const r of vendorRows) {
+    const dateOut = formatAutoRecordsDateForOutput(r.date);
+    const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
+    pushRow(dateOut, odoOut, r.country);
+  }
+
+  if (rows.length === 0) return "";
+  rows.sort((a, b) => {
+    if (a.sortableTime !== b.sortableTime) return b.sortableTime - a.sortableTime;
+    return a.sourceOrder - b.sourceOrder;
+  });
+
+  const head = `<tr><th>Datums</th><th>Odometrs (km)</th><th>Valsts</th></tr>`;
+  const body = rows
+    .map(
+      (r) =>
+        `<tr><td>${escapeHtml(r.date)}</td><td class="tabular">${escapeHtml(r.odometer)}</td><td>${escapeHtml(r.country)}</td></tr>`,
+    )
+    .join("\n");
+  return `<div class="pdf-unified-mileage-zone" role="region">${sectionHead(ICO.chart, "NOBRAUKUMA VĒSTURE", { noBar: true })}<table class="mirror-table mirror-table--csdd-mh"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+}
+
 /** CSDD — apskates datumi + nobraukuma tabulas (pilns eksports); raw nav PDF. */
 function buildCsddAvotuSubsection(p: ClientReportPayload): string {
   const hasStruct = Boolean(p.csddForm && csddFormHasContent(p.csddForm));
@@ -222,20 +303,6 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
     }
     if (regRows.length > 0) {
       bodyParts.push(`<table class="mirror-table mirror-table--csdd"><tbody>${regRows.join("\n")}</tbody></table>`);
-    }
-    const mhRows = f.mileageHistory.filter(csddMileageRowHasData);
-    if (mhRows.length > 0) {
-      const head = `<tr><th>Datums</th><th>Odometrs (km)</th><th>Valsts</th></tr>`;
-      const body = mhRows
-        .map((r) => {
-          const country = r.country.trim() || CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL;
-          return `<tr><td>${escapeHtml(r.date.trim())}</td><td>${escapeHtml(r.odometer.trim())}</td><td>${escapeHtml(country)}</td></tr>`;
-        })
-        .join("\n");
-      bodyParts.push(
-        `<p class="pdf-field-label pdf-field-label--sub">${escapeHtml(CSDD_MILEAGE_UNIFIED_TITLE)}</p>`,
-      );
-      bodyParts.push(`<table class="mirror-table mirror-table--csdd-mh"><thead>${head}</thead><tbody>${body}</tbody></table>`);
     }
     const bodyHtml = bodyParts.join("\n");
     const card =
@@ -308,59 +375,25 @@ function vendorPdfIconBrandClass(title: string): string {
   return "pdf-avotu-ico-brand--autodna";
 }
 
-/** AUTO RECORDS — tā pati tabulas struktūra kā CSDD nobraukumam (mirror-table--csdd-mh). */
+/** AUTO RECORDS — PDF blokā rādam komentārus; nobraukums ir vienotajā tabulā augšā. */
 function buildAutoRecordsAvotuSubsection(b: AutoRecordsBlockState | null | undefined): string {
   if (!b || !autoRecordsBlockHasContent(b)) return "";
-  const rows = b.serviceHistory.filter(autoRecordsRowHasData);
   const hasComments = b.comments.trim().length > 0;
-  if (rows.length === 0 && !hasComments) return "";
+  if (!hasComments) return "";
   const header = pdfAvotuNeutralHeader(ICO.spark, SOURCE_BLOCK_LABELS.auto_records, "pdf-avotu-ico-brand--auto-records");
-  const bodyParts: string[] = [];
-  if (rows.length > 0) {
-    const head = `<tr><th>Datums</th><th>Odometrs (km)</th><th>Valsts</th></tr>`;
-    const body = rows
-      .map((r) => {
-        const dateOut = formatAutoRecordsDateForOutput(r.date);
-        const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
-        const countryOut = r.country.trim();
-        return `<tr><td>${escapeHtml(dateOut)}</td><td class="tabular">${escapeHtml(odoOut)}</td><td>${escapeHtml(countryOut)}</td></tr>`;
-      })
-      .join("\n");
-    bodyParts.push(
-      `<p class="pdf-field-label pdf-field-label--sub">${escapeHtml(CSDD_MILEAGE_UNIFIED_TITLE)}</p>`,
-    );
-    bodyParts.push(`<table class="mirror-table mirror-table--csdd-mh"><thead>${head}</thead><tbody>${body}</tbody></table>`);
-  }
-  const bodyHtml = bodyParts.join("");
-  const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral">${header}<div class="pdf-avotu-body">${bodyHtml}</div></div>`;
+  const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`;
   return wrapPdfAvotuStack(card, hasComments ? pdfAvotuCommentIsland(b.comments) : "");
 }
 
-/** Viena trešā pušu avota apakšbloks zem „AVOTU DATI“ — nobraukums (kā AUTO RECORDS) + negadījumi (kā LTAB). */
+/** Viena trešā pušu avota apakšbloks zem „AVOTU DATI“ — negadījumi (kā LTAB); nobraukums ir vienotajā tabulā augšā. */
 function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf): string {
-  const mileageRows = b.mileageRows.filter(autoRecordsRowHasData);
   const incidentRows = b.incidentRows.filter(ltabRowHasData);
   const hasComments = b.comments.trim().length > 0;
-  if (mileageRows.length === 0 && incidentRows.length === 0 && !hasComments) return "";
+  if (incidentRows.length === 0 && !hasComments) return "";
   const icon = pdfIconForVendorTitle(b.title);
   const iconBrand = vendorPdfIconBrandClass(b.title);
   const header = pdfAvotuNeutralHeader(icon, b.title, iconBrand);
   const bodyParts: string[] = [];
-  if (mileageRows.length > 0) {
-    const head = `<tr><th>Datums</th><th>Odometrs (km)</th><th>Valsts</th></tr>`;
-    const body = mileageRows
-      .map((r) => {
-        const dateOut = formatAutoRecordsDateForOutput(r.date);
-        const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
-        const countryOut = r.country.trim();
-        return `<tr><td>${escapeHtml(dateOut)}</td><td class="tabular">${escapeHtml(odoOut)}</td><td>${escapeHtml(countryOut)}</td></tr>`;
-      })
-      .join("\n");
-    bodyParts.push(
-      `<p class="pdf-field-label pdf-field-label--sub">${escapeHtml(CSDD_MILEAGE_UNIFIED_TITLE)}</p>`,
-    );
-    bodyParts.push(`<table class="mirror-table mirror-table--csdd-mh"><thead>${head}</thead><tbody>${body}</tbody></table>`);
-  }
   if (incidentRows.length > 0) {
     bodyParts.push(
       `<p class="pdf-field-label pdf-field-label--sub">${escapeHtml(NEGADIJUMU_VESTURE_TITLE)}</p>`,
@@ -624,6 +657,11 @@ function clientReportPrintCss(): string {
       .pdf-avotu-zone .pdf-sec-head{margin-top:0;}
       .pdf-avotu-zone > .pdf-avotu-card{margin-bottom:12px;}
       .pdf-avotu-zone > .pdf-avotu-card:last-child{margin-bottom:0;}
+      .pdf-unified-mileage-zone{
+        margin:0 0 12px;padding:12px 14px;border:1px solid #e8eaed;border-radius:10px;background:#fff;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-unified-mileage-zone .pdf-sec-head{margin-top:0;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
       .mirror-block-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;}
@@ -761,6 +799,9 @@ export function buildClientReportDocumentHtml(args: {
 
   const notesBlock = buildPdfAdminMirrorNotesBlock(p.notes, ICO.clip);
   if (notesBlock) lines.push(notesBlock);
+
+  const unifiedMileageHtml = buildUnifiedMileageTableHtml(p);
+  if (unifiedMileageHtml) lines.push(unifiedMileageHtml);
 
   const avotuHtml = buildAvotuDatiSectionHtml(p);
   if (avotuHtml) lines.push(avotuHtml);

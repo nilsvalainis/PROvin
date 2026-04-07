@@ -5,6 +5,8 @@ import type { LtabIncidentRow, VendorAvotuBlockState } from "@/lib/admin-source-
 import {
   CSDD_MILEAGE_UNIFIED_TITLE,
   NEGADIJUMU_VESTURE_TITLE,
+  PROVIN_MILEAGE_TABLE_DOM_KIND,
+  PROVIN_MILEAGE_TABLE_FIELD,
   PROVIN_VENDOR_FIELD,
   emptyAutoRecordsServiceRow,
   emptyLtabRow,
@@ -75,13 +77,23 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
         <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
-        <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">
+        <div
+          className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90"
+          data-provin-mileage-table={PROVIN_MILEAGE_TABLE_DOM_KIND}
+          data-provin-block={blockKey}
+        >
           <table className="w-full min-w-[280px] border-collapse text-[11px]">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
-                <th className="px-2 py-1">Datums</th>
-                <th className="px-2 py-1">Odometrs (km)</th>
-                <th className="px-2 py-1">Valsts</th>
+                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}>
+                  Datums
+                </th>
+                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}>
+                  Odometrs (km)
+                </th>
+                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}>
+                  Valsts
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -89,7 +101,12 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                 <tr key={i} className="border-b border-slate-100 last:border-b-0">
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">
+                      <span
+                        className="text-[var(--color-provin-muted)]"
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}
+                        data-provin-block={blockKey}
+                        data-row-index={i}
+                      >
                         {formatAutoRecordsDateForOutput(row.date).trim() || "—"}
                       </span>
                     ) : (
@@ -101,6 +118,7 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                         id={`${idBase}-${PROVIN_VENDOR_FIELD.nobraukumaDatums}-${i}`}
                         name={`${PROVIN_VENDOR_FIELD.nobraukumaDatums}[${i}]`}
                         data-provin-field={PROVIN_VENDOR_FIELD.nobraukumaDatums}
+                        data-provin-block={blockKey}
                         data-row-index={i}
                         onChange={(e) => setMileageRow(i, { date: e.target.value })}
                         aria-label={`${blockKey} ${PROVIN_VENDOR_FIELD.nobraukumaDatums} ${i + 1}`}
@@ -109,7 +127,14 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                   </td>
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{row.odometer.trim() || "—"}</span>
+                      <span
+                        className="text-[var(--color-provin-muted)]"
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}
+                        data-provin-block={blockKey}
+                        data-row-index={i}
+                      >
+                        {row.odometer.trim() || "—"}
+                      </span>
                     ) : (
                       <input
                         type="text"
@@ -120,6 +145,7 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                         id={`${idBase}-${PROVIN_VENDOR_FIELD.nobraukumaOdometrs}-${i}`}
                         name={`${PROVIN_VENDOR_FIELD.nobraukumaOdometrs}[${i}]`}
                         data-provin-field={PROVIN_VENDOR_FIELD.nobraukumaOdometrs}
+                        data-provin-block={blockKey}
                         data-row-index={i}
                         onChange={(e) =>
                           setMileageRow(i, { odometer: normalizeAutoRecordsOdometer(e.target.value) })
@@ -130,7 +156,14 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                   </td>
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{row.country.trim() || "—"}</span>
+                      <span
+                        className="text-[var(--color-provin-muted)]"
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}
+                        data-provin-block={blockKey}
+                        data-row-index={i}
+                      >
+                        {row.country.trim() || "—"}
+                      </span>
                     ) : (
                       <input
                         type="text"
@@ -140,6 +173,7 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                         id={`${idBase}-${PROVIN_VENDOR_FIELD.nobraukumaValsts}-${i}`}
                         name={`${PROVIN_VENDOR_FIELD.nobraukumaValsts}[${i}]`}
                         data-provin-field={PROVIN_VENDOR_FIELD.nobraukumaValsts}
+                        data-provin-block={blockKey}
                         data-row-index={i}
                         onChange={(e) => setMileageRow(i, { country: e.target.value })}
                         aria-label={`${blockKey} ${PROVIN_VENDOR_FIELD.nobraukumaValsts} ${i + 1}`}

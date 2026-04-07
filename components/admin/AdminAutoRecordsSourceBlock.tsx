@@ -2,7 +2,12 @@
 
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { AutoRecordsBlockState, AutoRecordsServiceRow } from "@/lib/admin-source-blocks";
-import { CSDD_MILEAGE_UNIFIED_TITLE, emptyAutoRecordsServiceRow } from "@/lib/admin-source-blocks";
+import {
+  CSDD_MILEAGE_UNIFIED_TITLE,
+  PROVIN_MILEAGE_TABLE_DOM_KIND,
+  PROVIN_MILEAGE_TABLE_FIELD,
+  emptyAutoRecordsServiceRow,
+} from "@/lib/admin-source-blocks";
 import {
   autoRecordsRowHasData,
   formatAutoRecordsDateForOutput,
@@ -82,13 +87,23 @@ export function AdminAutoRecordsSourceBlock({ value, readOnly, disabled, onChang
         <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
-        <div className="overflow-x-auto rounded-lg border border-slate-200/90">
+        <div
+          className="overflow-x-auto rounded-lg border border-slate-200/90"
+          data-provin-mileage-table={PROVIN_MILEAGE_TABLE_DOM_KIND}
+          data-provin-block="auto_records"
+        >
           <table className="w-full min-w-[280px] border-collapse text-[11px]">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
-                <th className="px-2 py-1">Datums</th>
-                <th className="px-2 py-1">Odometrs (km)</th>
-                <th className="px-2 py-1">Valsts</th>
+                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}>
+                  Datums
+                </th>
+                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}>
+                  Odometrs (km)
+                </th>
+                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}>
+                  Valsts
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -96,7 +111,12 @@ export function AdminAutoRecordsSourceBlock({ value, readOnly, disabled, onChang
                 <tr key={i} className="border-b border-slate-100 last:border-b-0">
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">
+                      <span
+                        className="text-[var(--color-provin-muted)]"
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}
+                        data-provin-block="auto_records"
+                        data-row-index={i}
+                      >
                         {formatAutoRecordsDateForOutput(row.date).trim() || "—"}
                       </span>
                     ) : (
@@ -105,6 +125,11 @@ export function AdminAutoRecordsSourceBlock({ value, readOnly, disabled, onChang
                         className={inp}
                         value={row.date}
                         disabled={disabled}
+                        id={`auto_records-${PROVIN_MILEAGE_TABLE_FIELD.datums}-${i}`}
+                        name={`${PROVIN_MILEAGE_TABLE_FIELD.datums}[${i}]`}
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}
+                        data-provin-block="auto_records"
+                        data-row-index={i}
                         onChange={(e) => setRow(i, { date: e.target.value })}
                         aria-label={`AUTO RECORDS datums ${i + 1}`}
                       />
@@ -112,7 +137,14 @@ export function AdminAutoRecordsSourceBlock({ value, readOnly, disabled, onChang
                   </td>
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{row.odometer.trim() || "—"}</span>
+                      <span
+                        className="text-[var(--color-provin-muted)]"
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}
+                        data-provin-block="auto_records"
+                        data-row-index={i}
+                      >
+                        {row.odometer.trim() || "—"}
+                      </span>
                     ) : (
                       <input
                         type="text"
@@ -120,6 +152,11 @@ export function AdminAutoRecordsSourceBlock({ value, readOnly, disabled, onChang
                         className={inp}
                         value={row.odometer}
                         disabled={disabled}
+                        id={`auto_records-${PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}-${i}`}
+                        name={`${PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}[${i}]`}
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}
+                        data-provin-block="auto_records"
+                        data-row-index={i}
                         onChange={(e) =>
                           setRow(i, { odometer: normalizeAutoRecordsOdometer(e.target.value) })
                         }
@@ -129,13 +166,25 @@ export function AdminAutoRecordsSourceBlock({ value, readOnly, disabled, onChang
                   </td>
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{row.country.trim() || "—"}</span>
+                      <span
+                        className="text-[var(--color-provin-muted)]"
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}
+                        data-provin-block="auto_records"
+                        data-row-index={i}
+                      >
+                        {row.country.trim() || "—"}
+                      </span>
                     ) : (
                       <input
                         type="text"
                         className={inp}
                         value={row.country}
                         disabled={disabled}
+                        id={`auto_records-${PROVIN_MILEAGE_TABLE_FIELD.valsts}-${i}`}
+                        name={`${PROVIN_MILEAGE_TABLE_FIELD.valsts}[${i}]`}
+                        data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}
+                        data-provin-block="auto_records"
+                        data-row-index={i}
                         onChange={(e) => setRow(i, { country: e.target.value })}
                         aria-label={`AUTO RECORDS valsts ${i + 1}`}
                       />
