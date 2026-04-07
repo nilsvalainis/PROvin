@@ -1,11 +1,10 @@
-import { getMessages, getTranslations } from "next-intl/server";
-import { homeContentMaxClass, sectionH2Class } from "@/lib/home-layout";
+import { getMessages } from "next-intl/server";
+import { homeContentMaxClass } from "@/lib/home-layout";
 
 type ListItem = { t: string; d: string };
 type PuzzleItem = { t: string; d: string };
 
 export async function WhyProvin() {
-  const t = await getTranslations("Why");
   const messages = await getMessages();
   const why = (messages as { Why: { block1List: ListItem[]; puzzleBullets: PuzzleItem[] } }).Why;
   const block1List = why.block1List;
@@ -16,9 +15,7 @@ export async function WhyProvin() {
       <div className={`relative ${homeContentMaxClass}`}>
         <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-6">
           <article className={highlightCardClass}>
-            <h2 className={`${sectionH2Class} uppercase tracking-[0.02em]`}>{t("block1Title")}</h2>
-            <p className="mt-3 text-[15px] font-medium leading-relaxed text-[#5c5d62] sm:text-[16px]">{t("block1Subtitle")}</p>
-            <ul className="mt-6 space-y-3 border-t border-black/[0.08] pt-6">
+            <ul className="space-y-3">
               {block1List.map((item, i) => (
                 <li
                   key={item.t}
@@ -37,9 +34,7 @@ export async function WhyProvin() {
           </article>
 
           <article className={highlightCardClass}>
-            <h2 className={`${sectionH2Class} uppercase tracking-[0.02em]`}>{t("block2Title")}</h2>
-            <p className="mt-3 text-[15px] font-medium leading-relaxed text-[#5c5d62] sm:text-[16px]">{t("block2Subtitle")}</p>
-            <ul className="mt-6 space-y-3 border-t border-black/[0.08] pt-6">
+            <ul className="space-y-3">
               {puzzleBullets.map((item, i) => (
                 <li
                   key={item.t}

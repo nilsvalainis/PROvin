@@ -1,7 +1,5 @@
 {
   "Why": {
-    "block1Title": "KĀDĒĻ NEPIETIEK AR VIENU ATSKAITI?",
-    "block1Subtitle": "Kamēr Jūs pētat atskaites, mēs sniedzam atbildes.",
     "block1List": [
       {
         "t": "Datu nepilnība",
@@ -16,8 +14,6 @@
         "d": "Nav jēgas tērēt laiku un naudu, pērkot atsevišķas atskaites dažādos servisos. Mēs veicam pilnu pārbaudi Jūsu vietā."
       }
     ],
-    "block2Title": "KĀ MĒS SALIEKAM ŠO PUZLI?",
-    "block2Subtitle": "Digitālie dati apvienoti ar reālu 10+ gadu pieredzi.",
     "puzzleBullets": [
       {
         "t": "Neatkarīga datu salīdzināšana",
