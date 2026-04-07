@@ -11,14 +11,10 @@ export async function IrissSection() {
   return (
     <section
       id="kas-ir-iriss"
-      className="relative scroll-mt-16 overflow-hidden bg-gradient-to-b from-provin-accent-soft/90 via-[#f5f5f7] to-provin-surface-2 px-4 py-10 sm:px-6 sm:py-16"
+      className="relative scroll-mt-16 overflow-hidden bg-white px-4 py-10 sm:px-6 sm:py-16"
     >
       <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(0,102,214,0.16),transparent)]"
-        aria-hidden
-      />
-      <div className="pointer-events-none absolute inset-0 provin-noise opacity-30" aria-hidden />
+      <div className="pointer-events-none absolute inset-0 provin-noise opacity-20" aria-hidden />
 
       <div className={`relative ${homeContentMaxClass}`}>
         <div className="text-center">

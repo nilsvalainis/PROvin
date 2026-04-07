@@ -51,7 +51,7 @@ export async function PricingTransitionAndComparison() {
       <div className="min-w-0">
         <h2 className={`${sectionH2Class} text-center uppercase tracking-[0.04em]`}>{t("comparisonTitle")}</h2>
 
-        <div className="mt-5 min-w-0 w-full overflow-x-auto rounded-xl border border-black/[0.08] bg-white shadow-[0_2px_12px_rgba(0,0,0,0.04)] [-webkit-overflow-scrolling:touch] sm:mt-6">
+        <div className="mt-5 min-w-0 w-full overflow-x-auto rounded-xl border border-black/[0.06] bg-white shadow-[0_1px_6px_rgba(15,23,42,0.03)] [-webkit-overflow-scrolling:touch] sm:mt-6">
           <table className="w-full min-w-[min(100%,560px)] border-separate border-spacing-0 text-center text-[13px] leading-snug sm:min-w-[620px] sm:text-[14px]">
             <caption className="sr-only">{t("comparisonTitle")}</caption>
             <thead>
