@@ -33,7 +33,7 @@ export async function IrissSection() {
           socialSoon={t("socialSoon")}
         />
 
-        <div className="provin-lift-strong mt-8 w-full rounded-2xl border border-black/[0.1] bg-white p-6 shadow-[0_8px_32px_rgba(0,0,0,0.07)] sm:mt-10 sm:p-8">
+        <div className="provin-lift-strong mt-8 w-full rounded-2xl border border-black/[0.1] bg-gradient-to-b from-[#f5f5f7] to-[#fbfbfd] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.07)] sm:mt-10 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
             <div className="min-w-0 flex-1 space-y-4 text-left">
               <p className="text-[16px] font-normal leading-relaxed text-[#1d1d1f] sm:text-[17px]">{t("bio1")}</p>
