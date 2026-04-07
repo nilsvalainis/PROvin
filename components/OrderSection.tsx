@@ -24,7 +24,7 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
       id={ORDER_SECTION_ID}
       className="relative z-10 scroll-mt-[calc(2.75rem+1px)] sm:scroll-mt-12"
     >
-      <div className="relative mx-auto min-w-0 max-w-[1000px] px-4 pb-6 pt-2 text-center sm:px-6 sm:pb-8 sm:pt-3">
+      <div className="relative mx-auto min-w-0 max-w-[1000px] px-4 pb-4 pt-1 text-center sm:px-6 sm:pb-5 sm:pt-2">
         <div className="flex flex-col items-center gap-1.5">
           <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[13px]">
             {t("sectionTitle")}
@@ -47,12 +47,12 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
           </p>
         )}
 
-        <div id="order-form" className="mx-auto mt-5 max-w-[560px] scroll-mt-24 text-left sm:mt-6 sm:scroll-mt-28">
+        <div id="order-form" className="mx-auto mt-4 max-w-[560px] scroll-mt-24 text-left sm:mt-5 sm:scroll-mt-28">
           <OrderForm variant="hero" className="!mt-0" />
         </div>
 
         {t("footnote").trim() ? (
-          <p className="mx-auto mt-4 max-w-[42ch] text-[10px] font-normal leading-relaxed text-[#86868b] sm:mt-5 sm:text-[11px]">
+          <p className="mx-auto mt-3 max-w-[42ch] text-[10px] font-normal leading-relaxed text-[#86868b] sm:mt-4 sm:text-[11px]">
             {t("footnote")}
           </p>
         ) : null}

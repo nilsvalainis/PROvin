@@ -14,10 +14,10 @@ export async function HowItWorks() {
   return (
     <div className="relative z-10 px-4 pb-1 pt-1 sm:px-6 sm:pb-2 sm:pt-2">
       <div className={`relative ${homeContentMaxClass}`}>
-        <div className="mx-auto flex min-w-0 max-w-lg flex-col md:max-w-none md:flex-row md:items-stretch md:justify-center md:gap-0">
+        <div className="mx-auto flex min-w-0 max-w-lg flex-col md:max-w-none md:flex-row md:items-center md:justify-center md:gap-1">
           {steps.map((s, i) => (
             <Fragment key={s.n}>
-              <article className="group flex min-w-0 flex-1 flex-col items-center justify-center px-2 py-1 text-center sm:px-3">
+              <article className="group flex min-w-0 flex-1 flex-col items-center justify-center px-2 py-1 text-center sm:px-3 md:w-[180px] md:flex-none">
                 <div
                   className="text-provin-accent drop-shadow-[0_4px_12px_rgba(15,23,42,0.12)] transition-transform duration-200 group-hover:scale-[1.03]"
                   aria-hidden
@@ -40,7 +40,7 @@ export async function HowItWorks() {
                       <NavChevronDown />
                     </span>
                   </div>
-                  <div className="hidden shrink-0 items-center justify-center self-center px-2 md:flex" aria-hidden>
+                  <div className="hidden h-full w-6 shrink-0 items-center justify-center self-center md:flex" aria-hidden>
                     <span className={connectorClass}>
                       <NavChevronRight />
                     </span>
