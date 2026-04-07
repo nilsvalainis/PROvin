@@ -20,11 +20,11 @@ export async function IrissSection() {
       <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
 
       <div className="relative mx-auto w-full max-w-[1000px]">
-        <div className={irissCardClass}>
-          <div className="text-center">
-            <h2 className={`${homeSectionEyebrowClass} text-balance`}>{t("title")}</h2>
-          </div>
+        <div className="text-center">
+          <h2 className={`${homeSectionEyebrowClass} text-balance`}>{t("title")}</h2>
+        </div>
 
+        <div className="mt-5 flex justify-center">
           <IrissSocialIcons
             tiktok={socialTiktok}
             youtube={socialYoutube}
@@ -32,16 +32,18 @@ export async function IrissSection() {
             socialLabel={t("socialLabel")}
             socialSoon={t("socialSoon")}
           />
+        </div>
 
-          <div className="mt-6 flex w-full min-w-0 flex-col gap-6 sm:mt-7 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+        <div className={`${irissCardClass} mt-7 sm:mt-8`}>
+          <div className="flex w-full min-w-0 flex-col gap-7 sm:flex-row sm:items-start sm:justify-between sm:gap-8 lg:gap-10">
             <div className="min-w-0 flex-1 space-y-4 text-left">
               <p className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>{t("bio1")}</p>
               <p className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>{t("bio2")}</p>
             </div>
-            <div className="flex shrink-0 flex-col items-center justify-center self-center rounded-xl bg-provin-accent px-5 py-4 text-center text-white shadow-[0_4px_16px_rgba(0,0,0,0.15)] sm:min-w-[140px] sm:self-start">
+            <div className="mx-auto flex w-full max-w-[200px] shrink-0 flex-col items-center justify-center rounded-xl bg-provin-accent px-6 py-5 text-center text-white shadow-[0_4px_16px_rgba(0,0,0,0.12)] sm:mx-0 sm:w-auto sm:max-w-none sm:min-w-[152px] sm:self-start sm:py-5">
               <p className="text-[11px] font-medium uppercase tracking-wider text-white/90">{t("experienceLabel")}</p>
-              <p className="mt-1 text-[32px] font-semibold tabular-nums leading-none tracking-tight sm:text-[36px]">{t("years")}</p>
-              <p className="mt-1 text-[12px] font-normal text-white/90">{t("yearsLabel")}</p>
+              <p className="mt-1.5 text-[34px] font-semibold tabular-nums leading-none tracking-tight sm:text-[38px]">{t("years")}</p>
+              <p className="mt-1.5 text-[12px] font-normal text-white/90">{t("yearsLabel")}</p>
             </div>
           </div>
         </div>
@@ -69,7 +71,7 @@ function IrissSocialIcons({
   const disabledClass = `${btnClass} cursor-default opacity-60 hover:border-black/[0.1] hover:text-[#1d1d1f]`;
 
   return (
-    <ul className="mt-5 flex list-none flex-wrap items-center justify-center gap-3 sm:mt-5" aria-label={socialLabel}>
+    <ul className="flex list-none flex-wrap items-center justify-center gap-3" aria-label={socialLabel}>
       <li>
         {tiktok ? (
           <a href={tiktok} target="_blank" rel="noopener noreferrer" className={btnClass} aria-label="TikTok">
