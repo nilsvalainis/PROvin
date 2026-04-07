@@ -22,7 +22,7 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
   return (
     <section
       id={ORDER_SECTION_ID}
-      className="relative z-[1] scroll-mt-[calc(2.75rem+1px)] border-b border-black/[0.06] sm:scroll-mt-12"
+      className="relative z-10 scroll-mt-[calc(2.75rem+1px)] sm:scroll-mt-12"
     >
       <div className="relative mx-auto min-w-0 max-w-[692px] px-4 pb-12 pt-6 text-center sm:px-6 sm:pb-14 sm:pt-8">
         <div className="flex flex-col items-center gap-1.5">

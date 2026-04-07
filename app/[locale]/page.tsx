@@ -2,7 +2,7 @@ import { AutoRecordsSiteFootnote } from "@/components/AutoRecordsSiteFootnote";
 import { Faq } from "@/components/Faq";
 import { FinalCta } from "@/components/FinalCta";
 import { Hero } from "@/components/Hero";
-import { HowItWorks } from "@/components/HowItWorks";
+import { HeroVisual } from "@/components/HeroVisual";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
 import { WhyProvin } from "@/components/WhyProvin";
@@ -22,10 +22,17 @@ export default async function HomePage({
       <PricingIncluded />
       <WhyProvin />
       <IrissSection />
-      <section className="relative overflow-hidden bg-gradient-to-b from-white to-provin-surface-2/50">
-        <div className="pointer-events-none absolute inset-0 provin-noise opacity-30" aria-hidden />
-        <HowItWorks />
-        <FinalCta cancelled={cancelled} />
+      <section className="border-b border-black/[0.06]">
+        <div className="relative overflow-hidden">
+          <div className="pointer-events-none absolute inset-0 z-0">
+            <HeroVisual />
+          </div>
+          <div
+            className="pointer-events-none absolute inset-0 z-[1] provin-noise opacity-[0.38]"
+            aria-hidden
+          />
+          <FinalCta cancelled={cancelled} />
+        </div>
       </section>
       <Faq />
       <AutoRecordsSiteFootnote />
