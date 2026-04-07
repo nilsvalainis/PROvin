@@ -57,6 +57,10 @@ import {
   SOURCE_BLOCK_HEADER_BG,
 } from "@/lib/admin-header-gradients";
 import { AdminGradientHeaderBar } from "@/components/admin/AdminGradientHeaderBar";
+import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
+import { UnifiedMileageIframe } from "@/components/admin/UnifiedMileageIframe";
+import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
+import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
 import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
 
 export type OrderWorkspacePayload = {
@@ -106,7 +110,7 @@ const EMPTY_WORKSPACE: WorkspacePersist = {
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 80 * 1024 * 1024;
 
-/** Portfeļa kolonnā pēc noklusējuma redzams pirmā fails; pārējie — modālā. */
+/** Pielikumu kolonnā pēc noklusējuma redzams pirmā fails; pārējie — modālā. */
 const PORTFOLIO_INLINE_VISIBLE_MAX = 1;
 
 const workspaceToolbarBtn =
@@ -286,7 +290,7 @@ export function OrderDetailWorkspace({
   orderDraftPersistenceEnabled = false,
 }: {
   payload: OrderWorkspacePayload;
-  /** Ja norādīts, „1. Portfelis” tiek renderēts šajā DOM elementā (augšējā 4 kolonnu režģī). */
+  /** Ja norādīts, „1. Pielikumi” tiek renderēts šajā DOM elementā (augšējā 4 kolonnu režģī). */
   portfolioPortalDomId?: string;
   /** SSR ielādēts darba zonas JSON (prioritāte pār localStorage). */
   serverWorkspaceJson?: string | null;
@@ -712,6 +716,21 @@ export function OrderDetailWorkspace({
   const blocksForDisplay =
     sourcesViewMode && sourcesSnap ? sourcesSnap : ws.sourceBlocks;
 
+  const provinAlertBanners = useMemo(
+    () => computeProvinAlertBannersFromWorkspace(blocksForDisplay),
+    [blocksForDisplay],
+  );
+
+  const hasUnifiedMileagePreview = useMemo(
+    () =>
+      collectUnifiedMileageRows({
+        csddForm: blocksForDisplay.csdd,
+        autoRecordsBlock: blocksForDisplay.auto_records,
+        manualVendorBlocks: toPdfManualVendorBlocks(blocksForDisplay),
+      }).length > 0,
+    [blocksForDisplay],
+  );
+
   const openPrintReport = async () => {
     if (!canGeneratePdf) {
       alert(
@@ -785,7 +804,7 @@ export function OrderDetailWorkspace({
       >
         <h3 className="text-base font-semibold text-[var(--color-apple-text)]">Priekšskats — apkopota informācija</h3>
         <p className="mt-1.5 text-sm leading-snug text-[var(--color-provin-muted)]">
-          Secība: <strong className="text-[var(--color-apple-text)]">1)</strong> portfeļa faili,{" "}
+          Secība: <strong className="text-[var(--color-apple-text)]">1)</strong> pielikumu faili,{" "}
           <strong className="text-[var(--color-apple-text)]">2)</strong> piezīmju bloki pēc avota (tabulas tiek saliktas
           automātiski no ielīmētā teksta). Sludinājumu „liekie” teikumi (piem., autorizācijas aicinājumi) tiek izfiltrēti.
           Tukši avotu bloki PDF netiek drukāti.
@@ -961,7 +980,7 @@ export function OrderDetailWorkspace({
         className={`flex gap-1 ${narrowPortfolioLayout ? "flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between" : "flex-wrap items-center justify-between"}`}
       >
         <h2 className={`${workspaceSectionTitle} flex shrink-0 flex-wrap items-baseline gap-x-2 gap-y-0`}>
-          <span>1. Portfelis</span>
+          <span>1. Pielikumi</span>
           {portfolioPersistFlash ? (
             <span className="text-[10px] font-semibold normal-case tracking-normal text-emerald-700" role="status">
               Saglabāts
@@ -1134,7 +1153,7 @@ export function OrderDetailWorkspace({
         </summary>
         <div className="mt-1.5 space-y-1 border-t border-slate-200/80 pt-1.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
           <ol className="list-decimal space-y-0.5 pl-3.5">
-            <li>Portfelis → avoti → sludinājuma analīze → priekšskats → kopsavilkums un apskates plāns → PDF.</li>
+            <li>Pielikumi → avoti → sludinājuma analīze → priekšskats → kopsavilkums un apskates plāns → PDF.</li>
             <li>
               Avotu bloki: CSDD pilnā platumā, tad divas 3 kolonnu rindas (AutoDNA–CarVertical–Auto-Records;
               LTAB–Tirgus–Citi avoti). Sludinājuma analīze ir atsevišķs bloks. PDF: Avotu dati → Sludinājuma
@@ -1146,6 +1165,16 @@ export function OrderDetailWorkspace({
       </details>
 
       {showPortfolioInline ? portfolioSection : null}
+
+      {provinAlertBanners.length > 0 || hasUnifiedMileagePreview ? (
+        <section className={workspaceSectionShell}>
+          <h2 className={`${workspaceSectionTitle} mb-1.5`}>Brīdinājumi un nobraukums (PDF)</h2>
+          <div className="space-y-2">
+            <AdminProvinAlertBanners banners={provinAlertBanners} />
+            <UnifiedMileageIframe blocks={blocksForDisplay} />
+          </div>
+        </section>
+      ) : null}
 
       <section className={workspaceSectionShell}>
         <div className="flex flex-wrap items-start justify-between gap-1.5">

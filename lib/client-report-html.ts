@@ -9,9 +9,7 @@ import {
   autoRecordsBlockHasContent,
   citiAvotiHasContent,
   CSDD_FORM_STRUCTURED_FIELDS,
-  CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
   csddFormHasContent,
-  csddMileageRowHasData,
   LISTING_ANALYSIS_SUBSECTIONS,
   SOURCE_BLOCK_LABELS,
   listingAnalysisHasContent,
@@ -30,11 +28,6 @@ import {
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import {
-  autoRecordsRowHasData,
-  formatAutoRecordsDateForOutput,
-  normalizeAutoRecordsOdometer,
-} from "@/lib/auto-records-paste-parse";
-import {
   buildPdfAdminMirrorClientBlock,
   buildPdfAdminMirrorNotesBlock,
   buildPdfAdminMirrorPaymentBlock,
@@ -50,7 +43,18 @@ import {
   NEUTRAL_AVOTU_HEADER_BG,
 } from "@/lib/admin-header-gradients";
 import { pdfCountryFlagEmoji } from "@/lib/pdf-country-flags";
+import {
+  buildPdfAlertBannersHtml,
+  computeProvinAlertBannersFromPayloadSlice,
+} from "@/lib/provin-alert-banners";
 import { CLIENT_REPORT_FOOTER_DISCLAIMER } from "@/lib/report-pdf-standards";
+import { buildUnifiedMileageChartWrapHtml } from "@/lib/unified-mileage-chart";
+import {
+  collectUnifiedMileageRows,
+  computeOdometerAnomalyBySourceOrder,
+  type UnifiedMileageRow,
+  type UnifiedMileageSourcePayload,
+} from "@/lib/unified-mileage";
 import {
   getNextInspectionDateUiFlag,
   getParticulateMatterUiFlag,
@@ -200,213 +204,34 @@ function wrapPdfAvotuStack(cardHtml: string, islandHtml: string): string {
   return `<div class="pdf-avotu-block-wrap">${cardHtml}${islandHtml}</div>`;
 }
 
-type UnifiedMileageRow = {
-  date: string;
-  odometer: string;
-  country: string;
-  sortableTime: number;
-  sourceOrder: number;
-};
-
-function parseOdometerKm(raw: string): number | null {
-  const digits = raw.replace(/\D/g, "");
-  if (!digits) return null;
-  const n = Number.parseInt(digits, 10);
-  if (n < 100 || n > 2_000_000) return null;
-  return n;
+function pdfOdometerAnomalyIconsInner(odometerEscaped: string): string {
+  const ico = `<svg class="pdf-mileage-odo-anomaly-ico" width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="#FF0000" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="#FF0000" stroke-width="2" stroke-linecap="round"/></svg>`;
+  return `<span class="pdf-mileage-odo-anomaly-inner">${ico}<span class="tabular">${odometerEscaped}</span>${ico}</span>`;
 }
 
-function parseMileageDateForSort(raw: string): number {
-  const t = raw.trim();
-  if (!t) return Number.NEGATIVE_INFINITY;
-  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (iso) {
-    const y = Number.parseInt(iso[1] ?? "", 10);
-    const m = Number.parseInt(iso[2] ?? "", 10);
-    const d = Number.parseInt(iso[3] ?? "", 10);
-    return Date.UTC(y, Math.max(0, m - 1), d);
-  }
-  const lv = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/);
-  if (lv) {
-    const d = Number.parseInt(lv[1] ?? "", 10);
-    const m = Number.parseInt(lv[2] ?? "", 10);
-    const yRaw = Number.parseInt(lv[3] ?? "", 10);
-    const y = yRaw < 100 ? 2000 + yRaw : yRaw;
-    return Date.UTC(y, Math.max(0, m - 1), d);
-  }
-  const ts = Date.parse(t);
-  return Number.isNaN(ts) ? Number.NEGATIVE_INFINITY : ts;
-}
-
-function collectUnifiedMileageRows(p: ClientReportPayload): UnifiedMileageRow[] {
-  const rows: UnifiedMileageRow[] = [];
-  let sourceOrder = 0;
-  const pushRow = (dateRaw: string, odometerRaw: string, countryRaw: string) => {
-    const date = dateRaw.trim();
-    const odometer = odometerRaw.trim();
-    if (!date || !odometer) return;
-    rows.push({
-      date,
-      odometer,
-      country: countryRaw.trim() || CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
-      sortableTime: parseMileageDateForSort(date),
-      sourceOrder,
-    });
-    sourceOrder += 1;
-  };
-
-  const csddRows = p.csddForm?.mileageHistory.filter(csddMileageRowHasData) ?? [];
-  for (const r of csddRows) {
-    pushRow(r.date, r.odometer, r.country);
-  }
-
-  const autoRows = p.autoRecordsBlock?.serviceHistory.filter(autoRecordsRowHasData) ?? [];
-  for (const r of autoRows) {
-    const dateOut = formatAutoRecordsDateForOutput(r.date);
-    const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
-    pushRow(dateOut, odoOut, r.country);
-  }
-
-  const vendorRows = (p.manualVendorBlocks ?? []).flatMap((b) => b.mileageRows.filter(autoRecordsRowHasData));
-  for (const r of vendorRows) {
-    const dateOut = formatAutoRecordsDateForOutput(r.date);
-    const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
-    pushRow(dateOut, odoOut, r.country);
-  }
-
-  return rows;
-}
-
-function catmullRomSvgPath(points: { x: number; y: number }[]): string {
-  if (points.length === 0) return "";
-  if (points.length === 1) {
-    const p = points[0]!;
-    return `M ${p.x} ${p.y}`;
-  }
-  let d = `M ${points[0]!.x} ${points[0]!.y}`;
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = i > 0 ? points[i - 1]! : points[0]!;
-    const p1 = points[i]!;
-    const p2 = points[i + 1]!;
-    const p3 = i + 2 < points.length ? points[i + 2]! : p2;
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
-    d += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
-  }
-  return d;
-}
-
-/** Grafiks: laika ass — tikai gadi, pa kreisi vecākais, pa labi jaunākais; līkne augšup. */
-function buildUnifiedMileageChartSvg(rows: UnifiedMileageRow[]): string {
-  const series = rows
-    .map((r) => {
-      const km = parseOdometerKm(r.odometer);
-      if (km == null || r.sortableTime === Number.NEGATIVE_INFINITY) return null;
-      return { t: r.sortableTime, km };
-    })
-    .filter((x): x is { t: number; km: number } => x != null)
-    .sort((a, b) => a.t - b.t);
-
-  if (series.length === 0) return "";
-
-  const tMin = series[0]!.t;
-  const tMax = series[series.length - 1]!.t;
-  let kmMin = Math.min(...series.map((s) => s.km));
-  let kmMax = Math.max(...series.map((s) => s.km));
-  if (kmMin === kmMax) {
-    kmMin = Math.max(0, kmMin - 1);
-    kmMax += 1;
-  }
-  const kmPad = (kmMax - kmMin) * 0.06;
-  kmMin -= kmPad;
-  kmMax += kmPad;
-
-  const W = 520;
-  const H = 132;
-  const padL = 12;
-  const padR = 12;
-  const padT = 14;
-  const padB = 28;
-  const plotW = W - padL - padR;
-  const plotH = H - padT - padB;
-
-  const xOf = (t: number) => {
-    if (tMax === tMin) return padL + plotW / 2;
-    return padL + ((t - tMin) / (tMax - tMin)) * plotW;
-  };
-  const yOf = (km: number) => padT + plotH - ((km - kmMin) / (kmMax - kmMin)) * plotH;
-
-  const pts = series.map((s) => ({ x: xOf(s.t), y: yOf(s.km) }));
-  const pathD = catmullRomSvgPath(pts);
-
-  const yStart = new Date(tMin).getUTCFullYear();
-  const yEnd = new Date(tMax).getUTCFullYear();
-  const yearSpan = Math.max(0, yEnd - yStart);
-  const yearStep = yearSpan <= 10 ? 1 : 2;
-  const tickSet = new Set<number>();
-  for (let y = yStart; y <= yEnd; y += yearStep) {
-    tickSet.add(y);
-  }
-  tickSet.add(yEnd);
-  const tickYears = [...tickSet].sort((a, b) => a - b);
-
-  const gridLines: string[] = [];
-  const yearLabels: string[] = [];
-  for (const y of tickYears) {
-    const tx = Date.UTC(y, 0, 1);
-    let gx = xOf(tx);
-    gx = Math.min(padL + plotW, Math.max(padL, gx));
-    gridLines.push(
-      `<line class="pdf-mileage-chart-grid" x1="${gx.toFixed(1)}" y1="${padT}" x2="${gx.toFixed(1)}" y2="${padT + plotH}" />`,
-    );
-    yearLabels.push(
-      `<text class="pdf-mileage-chart-year" x="${gx.toFixed(1)}" y="${H - 6}" text-anchor="middle">${y}</text>`,
-    );
-  }
-
-  const dotR = series.length === 1 ? 4 : 3;
-  const dots = pts
-    .map((p) => `<circle class="pdf-mileage-chart-dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${dotR}" />`)
-    .join("");
-
-  const pathHtml =
-    series.length === 1
-      ? ""
-      : `<path class="pdf-mileage-chart-path" fill="none" d="${pathD}" />`;
-
-  const svgInner = `
-<svg class="pdf-mileage-chart-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Nobraukuma līkne pēc gada">
-  ${gridLines.join("\n  ")}
-  ${pathHtml}
-  ${dots}
-  ${yearLabels.join("\n  ")}
-</svg>
-<div class="pdf-mileage-chart-legend">
-  <span class="pdf-mileage-chart-legend-line" aria-hidden="true"></span>
-  <span class="pdf-mileage-chart-legend-text">Nobraukums</span>
-</div>`.trim();
-
-  return `<div class="pdf-mileage-chart-wrap">${svgInner}</div>`;
-}
-
-function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow): string {
+function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow, anomalyBySourceOrder: Map<number, boolean>): string {
   const flag = pdfCountryFlagEmoji(r.country);
   const aria = escapeHtml(r.country);
-  return `<tr><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo">${escapeHtml(r.odometer)}</td><td class="pdf-mileage-cell-flag"><span class="pdf-country-flag" role="img" aria-label="${aria}">${flag}</span></td></tr>`;
+  const odoEscaped = escapeHtml(r.odometer);
+  const anom = anomalyBySourceOrder.get(r.sourceOrder) === true;
+  const odoTd = anom
+    ? `<td class="tabular pdf-mileage-cell-odo pdf-mileage-cell-odo--anomaly">${pdfOdometerAnomalyIconsInner(odoEscaped)}</td>`
+    : `<td class="tabular pdf-mileage-cell-odo">${odoEscaped}</td>`;
+  return `<tr><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td>${odoTd}<td class="pdf-mileage-cell-flag"><span class="pdf-country-flag" role="img" aria-label="${aria}">${flag}</span></td></tr>`;
 }
 
-function buildUnifiedMileageTableHtml(p: ClientReportPayload): string {
+export function buildUnifiedMileageTableHtml(p: UnifiedMileageSourcePayload): string {
   const collected = collectUnifiedMileageRows(p);
   if (collected.length === 0) return "";
+
+  const anomalyBySourceOrder = computeOdometerAnomalyBySourceOrder(collected);
 
   const rows = [...collected].sort((a, b) => {
     if (a.sortableTime !== b.sortableTime) return b.sortableTime - a.sortableTime;
     return a.sourceOrder - b.sourceOrder;
   });
 
-  const chartHtml = buildUnifiedMileageChartSvg(collected);
+  const chartHtml = buildUnifiedMileageChartWrapHtml(collected, anomalyBySourceOrder);
 
   const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-flag" /></colgroup>`;
   const head = `<tr><th class="pdf-mileage-th-date">Datums</th><th class="pdf-mileage-th-odo">Odometrs (km)</th><th class="pdf-mileage-th-flag">Valsts</th></tr>`;
@@ -414,10 +239,11 @@ function buildUnifiedMileageTableHtml(p: ClientReportPayload): string {
   const leftRows = rows.slice(0, mid);
   const rightRows = rows.slice(mid);
   const tableClass = "mirror-table mirror-table--csdd-mh pdf-unified-mileage-split";
-  const leftTable = `<table class="${tableClass}">${colgroup}<thead>${head}</thead><tbody>${leftRows.map(buildUnifiedMileageTableRowHtml).join("\n")}</tbody></table>`;
+  const rowHtml = (r: UnifiedMileageRow) => buildUnifiedMileageTableRowHtml(r, anomalyBySourceOrder);
+  const leftTable = `<table class="${tableClass}">${colgroup}<thead>${head}</thead><tbody>${leftRows.map(rowHtml).join("\n")}</tbody></table>`;
   const rightTable =
     rightRows.length > 0
-      ? `<table class="${tableClass}">${colgroup}<thead>${head}</thead><tbody>${rightRows.map(buildUnifiedMileageTableRowHtml).join("\n")}</tbody></table>`
+      ? `<table class="${tableClass}">${colgroup}<thead>${head}</thead><tbody>${rightRows.map(rowHtml).join("\n")}</tbody></table>`
       : "";
   const splitWrapClass =
     rightTable === "" ? "pdf-unified-mileage-split-wrap pdf-unified-mileage-split-wrap--single" : "pdf-unified-mileage-split-wrap";
@@ -702,6 +528,11 @@ function reportFontGuardScript(): string {
 </script>`;
 }
 
+/** Admin iframe priekšskatam — pilns PDF drukas CSS (izolēts iframe). */
+export function getClientReportPrintCss(): string {
+  return clientReportPrintCss();
+}
+
 function clientReportPrintCss(): string {
   const neutralBg = NEUTRAL_AVOTU_HEADER_BG;
   const listHdr = LISTING_ANALYSIS_HEADER_BG;
@@ -906,6 +737,28 @@ function clientReportPrintCss(): string {
         flex-shrink:0;
       }
       .pdf-mileage-chart-legend-text{font-weight:500;color:#64748b;}
+      .pdf-mileage-chart-dot--anomaly{
+        fill:#ef4444!important;stroke:#b91c1c!important;stroke-width:1.75!important;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-mileage-cell-odo--anomaly{
+        border:2px solid #FF0000!important;background:rgba(255,0,0,0.05)!important;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-mileage-odo-anomaly-inner{display:inline-flex;align-items:center;justify-content:flex-end;gap:4px;width:100%;}
+      .pdf-mileage-odo-anomaly-ico{flex-shrink:0;display:block;}
+      .pdf-alert-banners-stack{margin:0 0 10px;}
+      .pdf-alert-banner{
+        display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:8px;
+        background:#fff5f5;border-left:5px solid #dc2626;border-radius:0 6px 6px 0;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-alert-banner:last-child{margin-bottom:0;}
+      .pdf-alert-banner-text{
+        flex:1;margin:0;font-size:8pt;line-height:1.35;color:#374151;font-family:Inter,sans-serif!important;
+      }
+      .pdf-alert-banner-ico{flex-shrink:0;display:block;color:#dc2626;}
+      .pdf-alert-banner .pdf-alert-banner-ico:last-child{margin-left:auto;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
       .mirror-block-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;}
@@ -993,6 +846,7 @@ function clientReportPrintCss(): string {
         .pdf-unified-mileage-split-wrap{break-inside:avoid-page;}
         .pdf-listing-priority{break-inside:avoid-page;}
         .pdf-iriss-approved{break-inside:avoid-page;}
+        .pdf-alert-banners-stack{break-inside:avoid-page;}
       }
     ` + pdfLayoutDraftExtraCss();
 }
@@ -1033,6 +887,16 @@ export function buildClientReportDocumentHtml(args: {
     lines.push(`<p class="pdf-v1-meta">Ģenerēts: ${escapeHtml(dateFmt.format(new Date()))}${vinHtml}</p>`);
   }
   lines.push("</div></div></header>");
+
+  const alertBannersHtml = buildPdfAlertBannersHtml(
+    computeProvinAlertBannersFromPayloadSlice({
+      csddForm: p.csddForm,
+      autoRecordsBlock: p.autoRecordsBlock ?? null,
+      manualVendorBlocks: p.manualVendorBlocks ?? null,
+      manualLtabBlock: p.manualLtabBlock ?? null,
+    }),
+  );
+  if (alertBannersHtml) lines.push(alertBannersHtml);
 
   const payBlock = buildPdfAdminMirrorPaymentBlock(p, money, dateFmt, ICO.chart);
   if (payBlock) lines.push(payBlock);
