@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { homeSectionEyebrowClass } from "@/lib/home-layout";
+import { comparisonTableHeaderMutedClass } from "@/lib/home-layout";
 
 /** Saskaņots ar 9 bloku režģa kartītēm (`PricingIncluded`): apmale + ēna, fons caurspīdīgs. */
 const irissCardClass =
@@ -22,7 +22,7 @@ export async function IrissSection() {
       <div className="relative mx-auto w-full max-w-[1000px]">
         <div className={irissCardClass}>
           <div className="text-center">
-            <h2 className={`${homeSectionEyebrowClass} text-balance`}>{t("title")}</h2>
+            <h2 className={`${comparisonTableHeaderMutedClass} text-balance text-center`}>{t("title")}</h2>
           </div>
 
           <IrissSocialIcons

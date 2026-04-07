@@ -1,5 +1,9 @@
 import { getMessages, getTranslations } from "next-intl/server";
-import { homeSectionEyebrowClass } from "@/lib/home-layout";
+import {
+  comparisonTableHeaderAccentClass,
+  comparisonTableHeaderMutedClass,
+  homeSectionEyebrowClass,
+} from "@/lib/home-layout";
 
 type Row = { feature: string; standard: string; provin: string };
 
@@ -58,19 +62,19 @@ export async function PricingTransitionAndComparison() {
               <tr>
                 <th
                   scope="col"
-                  className="rounded-tl-xl bg-transparent px-2 py-3.5 text-left text-[10px] font-bold uppercase tracking-wide text-[#5c5d62] sm:px-4 sm:text-[11px] sm:tracking-wider"
+                  className={`rounded-tl-xl bg-transparent px-2 py-3.5 text-left ${comparisonTableHeaderMutedClass} sm:px-4`}
                 >
                   {t("comparisonColFeature")}
                 </th>
                 <th
                   scope="col"
-                  className="bg-transparent px-2 py-3.5 text-[10px] font-bold uppercase tracking-wide text-[#5c5d62] sm:px-4 sm:text-[11px] sm:tracking-wider"
+                  className={`bg-transparent px-2 py-3.5 ${comparisonTableHeaderMutedClass} sm:px-4`}
                 >
                   {t("comparisonColStandard")}
                 </th>
                 <th
                   scope="col"
-                  className="rounded-tr-xl border border-provin-accent/30 bg-provin-accent-soft px-2 py-3.5 text-[10px] font-bold uppercase tracking-wide text-provin-accent sm:px-4 sm:text-[11px] sm:tracking-wider"
+                  className={`rounded-tr-xl border border-provin-accent/30 bg-provin-accent-soft px-2 py-3.5 ${comparisonTableHeaderAccentClass} sm:px-4`}
                 >
                   {t("comparisonColProvin")}
                 </th>
