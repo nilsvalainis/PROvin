@@ -17,8 +17,11 @@ export async function HowItWorks() {
         <div className="mx-auto flex min-w-0 max-w-lg flex-col md:max-w-none md:flex-row md:items-stretch md:justify-center md:gap-0">
           {steps.map((s, i) => (
             <Fragment key={s.n}>
-              <article className={`${cardClass} flex min-w-0 flex-col items-center justify-center text-center`}>
-                <div className="flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-provin-accent text-white shadow-[0_10px_24px_rgba(0,102,214,0.28)] ring-2 ring-white sm:h-[80px] sm:w-[80px]">
+              <article className="flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-2 text-center sm:px-4">
+                <div
+                  className="text-provin-accent drop-shadow-[0_6px_18px_rgba(15,23,42,0.12)]"
+                  aria-hidden
+                >
                   <StepIcon n={s.n} />
                 </div>
                 <h3 className="mt-4 text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[13px]">
@@ -52,31 +55,44 @@ export async function HowItWorks() {
   );
 }
 
-const cardClass =
-  "provin-lift flex-1 rounded-xl border border-black/[0.06] bg-[#fbfbfd] p-5 sm:p-6";
-
 function StepIcon({ n }: { n: string }) {
-  const className = "h-8 w-8 sm:h-9 sm:w-9";
+  const box = "h-[76px] w-[76px] sm:h-[84px] sm:w-[84px]";
   if (n === "1") {
     return (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-        <rect x="5" y="4.5" width="14" height="15" rx="2" />
-        <path d="M8 8h8M8 12h8M8 16h5" />
+      <svg className={box} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="5" y="3.5" width="14" height="17" rx="2" fill="white" stroke="currentColor" strokeWidth={1.5} />
+        <path
+          d="M8 8.5h8M8 12h8M8 15.5h5.5"
+          stroke="currentColor"
+          strokeWidth={1.25}
+          strokeLinecap="round"
+        />
       </svg>
     );
   }
   if (n === "2") {
     return (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-        <rect x="3.5" y="6.5" width="17" height="11" rx="2" />
-        <path d="M3.5 10.5h17M8 15h3" />
+      <svg className={box} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="3.5" y="6" width="17" height="12" rx="2.5" fill="white" stroke="currentColor" strokeWidth={1.5} />
+        <rect x="5.5" y="8.5" width="4" height="3" rx="0.6" fill="white" stroke="currentColor" strokeWidth={1.2} />
+        <path d="M3.5 11.5h17" stroke="currentColor" strokeWidth={1.25} strokeLinecap="round" opacity={0.35} />
+        <path d="M14 15.5h5" stroke="currentColor" strokeWidth={1.15} strokeLinecap="round" />
       </svg>
     );
   }
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path d="M12 3.8 18.5 6v5.4c0 4.1-2.8 7.2-6.5 8.8-3.7-1.6-6.5-4.7-6.5-8.8V6z" />
-      <path d="m9.5 12.2 1.8 1.8 3.4-3.4" />
+    <svg className={box} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="5" y="3" width="14" height="17" rx="2" fill="white" stroke="currentColor" strokeWidth={1.5} />
+      <path d="M8 7h8M8 9.8h6" stroke="currentColor" strokeWidth={1.15} strokeLinecap="round" />
+      <path d="M5 12.5h14" stroke="currentColor" strokeWidth={1} strokeLinecap="round" opacity={0.2} />
+      <circle cx="12" cy="16.5" r="3" fill="white" stroke="currentColor" strokeWidth={1.35} />
+      <path
+        d="m10.25 16.5 1.15 1.15 2.45-2.45"
+        stroke="currentColor"
+        strokeWidth={1.2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
