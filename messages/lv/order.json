@@ -26,7 +26,7 @@
     "payButton": "Turpināt uz apmaksu",
     "payLoading": "Sagatavo…",
     "stripeNote": "Droša apmaksa ar Stripe, bankas karti un Apple/Google Pay.",
-    "checkoutConsent": "Apstiprinu, ka esmu iepazinies ar <terms>Lietošanas noteikumiem</terms> un <privacy>Privātuma politiku</privacy>, pilnvaroju PROVIN iegūt datus manu interesēs, piekrītu tūlītējai pakalpojuma izpildei un apliecinu, ka līdz ar to zaudēju atteikuma tiesības.",
+    "checkoutConsent": "Apstiprinu, ka esmu iepazinies ar <terms>Lietošanas noteikumiem</terms> un <privacy>Privātuma politiku</privacy>.",
     "checkoutConsentAria": "Apstiprinājums: noteikumi, privātuma politika, pilnvarojums PROVIN iegūt datus, tūlītēja izpilde, atteikuma tiesību zaudēšana",
     "ariaSummary": "Pasūtījuma kopsavilkums",
     "errors": {
