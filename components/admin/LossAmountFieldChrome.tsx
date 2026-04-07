@@ -21,7 +21,7 @@ function LossAmountAlertIcon({ tier }: { tier: "yellow" | "red" }) {
 }
 
 /**
- * „Zaudējumu summa” lauks — ierāmējums un (!) ikonas, ja summa ir zem / virs 1000 EUR sliekšņa.
+ * „Zaudējumu summa” lauks — maigs fons + (!) ikona kreisajā pusē ārpus šūnas; bez sarkanās/dzeltenās kontūras (neitrāla apmale kā citiem laukiem).
  */
 export function LossAmountFieldChrome({ value, children }: { value: string; children: ReactNode }) {
   const flag = getLossAmountUiFlag(value);
@@ -29,8 +29,8 @@ export function LossAmountFieldChrome({ value, children }: { value: string; chil
   const tier = flag === "red" ? "red" : "yellow";
   const frame =
     tier === "red"
-      ? "rounded-md border-[2px] border-solid border-[#FF0000] bg-red-50/95 px-1.5 py-0.5"
-      : "rounded-md border-[2px] border-solid border-[#FFD700] bg-yellow-50/95 px-1.5 py-0.5";
+      ? "rounded-md border border-slate-200 bg-rose-50 px-1.5 py-0.5"
+      : "rounded-md border border-slate-200 bg-yellow-50 px-1.5 py-0.5";
   return (
     <span className="inline-flex max-w-full items-center gap-2">
       <span className="flex shrink-0 items-center self-center" aria-hidden>

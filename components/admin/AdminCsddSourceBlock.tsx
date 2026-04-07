@@ -24,12 +24,12 @@ const inp =
 const inpAlertInner =
   "min-w-0 w-full flex-1 rounded border-0 bg-transparent px-0 py-0 text-[11px] text-[var(--color-apple-text)] focus:outline-none focus:ring-0";
 
-/** Vienots 2px taisnstūra rāmis — ikona atrodas ārpus (kreisajā pusē), nevis rāmī. */
+/** Maigs fons, neitrāla apmale (kā `inp`); krāsainā kontūra nav — brīdinājumu rāda ikona kreisajā pusē. */
 function csddAlertFrameClass(flag: Exclude<CsddFieldUiFlag, "none">): string {
   if (flag === "red") {
-    return "rounded-md border-[2px] border-solid border-[#FF0000] bg-red-50/95 px-2 py-1.5";
+    return "rounded-md border border-slate-200 bg-rose-50 px-2 py-1.5";
   }
-  return "rounded-md border-[2px] border-solid border-[#FFD700] bg-yellow-50/95 px-2 py-1.5";
+  return "rounded-md border border-slate-200 bg-yellow-50 px-2 py-1.5";
 }
 
 function FieldAlertCircleIcon({ flag }: { flag: Exclude<CsddFieldUiFlag, "none"> }) {

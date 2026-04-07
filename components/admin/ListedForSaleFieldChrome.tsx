@@ -21,7 +21,7 @@ function ListedSaleAlertIcon() {
 }
 
 /**
- * „Auto pārdošanā (dienas)” — sarkans rāmis un gaiši sārts fons, ja dienu skaits > 200.
+ * „Auto pārdošanā (dienas)” — gaiši sārts fons un (!) kreisajā pusē, ja dienu skaits > 200; neitrāla apmale (bez sarkanās kontūras).
  */
 export function ListedForSaleFieldChrome({ value, children }: { value: string; children: ReactNode }) {
   if (!shouldShowListedForSaleCriticalBanner(value)) return <>{children}</>;
@@ -30,7 +30,7 @@ export function ListedForSaleFieldChrome({ value, children }: { value: string; c
       <span className="flex shrink-0 items-center self-center" aria-hidden>
         <ListedSaleAlertIcon />
       </span>
-      <span className="min-w-0 flex-1 rounded-md border-[2px] border-solid border-[#FF0000] bg-rose-50/95 px-1.5 py-0.5">
+      <span className="min-w-0 flex-1 rounded-md border border-slate-200 bg-rose-50 px-1.5 py-0.5">
         {children}
       </span>
     </span>
