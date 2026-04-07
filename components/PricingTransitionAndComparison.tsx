@@ -1,5 +1,5 @@
 import { getMessages, getTranslations } from "next-intl/server";
-import { sectionH2Class } from "@/lib/home-layout";
+import { homeSectionEyebrowClass } from "@/lib/home-layout";
 
 type Row = { feature: string; standard: string; provin: string };
 
@@ -49,7 +49,7 @@ export async function PricingTransitionAndComparison() {
   return (
     <div className="min-w-0 space-y-0">
       <div className="min-w-0">
-        <h2 className={`${sectionH2Class} text-center uppercase tracking-[0.04em]`}>{t("comparisonTitle")}</h2>
+        <h2 className={`${homeSectionEyebrowClass} text-balance text-center`}>{t("comparisonTitle")}</h2>
 
         <div className="mt-5 min-w-0 w-full overflow-x-auto rounded-xl border border-black/[0.05] bg-transparent shadow-none [-webkit-overflow-scrolling:touch] sm:mt-6">
           <table className="w-full min-w-[min(100%,560px)] border-separate border-spacing-0 text-center text-[13px] leading-snug sm:min-w-[620px] sm:text-[14px]">

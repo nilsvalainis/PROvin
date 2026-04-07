@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { NavChevronDown } from "@/components/NavChevron";
 import { OrderForm } from "@/components/OrderForm";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
+import { homeSectionEyebrowClass } from "@/lib/home-layout";
 
 export function OrderSection({ cancelled }: { cancelled: boolean }) {
   const t = useTranslations("Order");
@@ -26,7 +27,7 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
     >
       <div className="relative mx-auto min-w-0 max-w-[1000px] px-4 pb-4 pt-1 text-center sm:px-6 sm:pb-5 sm:pt-2">
         <div className="flex flex-col items-center gap-1.5">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[13px]">
+          <p className={homeSectionEyebrowClass}>
             {t("sectionTitle")}
           </p>
           <a

@@ -1,6 +1,6 @@
 import { getMessages, getTranslations } from "next-intl/server";
 import { NavChevronDown } from "@/components/NavChevron";
-import { sectionH2Class } from "@/lib/home-layout";
+import { homeSectionEyebrowClass } from "@/lib/home-layout";
 
 type FaqItem = { id: string; q: string; a: string };
 
@@ -17,7 +17,7 @@ export async function Faq() {
     >
       <div className="mx-auto min-w-0 max-w-[720px]">
         <div className="text-center">
-          <h2 id="faq-heading" className={sectionH2Class}>
+          <h2 id="faq-heading" className={`${homeSectionEyebrowClass} text-balance`}>
             {t("title")}
           </h2>
         </div>

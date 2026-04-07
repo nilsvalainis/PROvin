@@ -2,8 +2,8 @@
 export const homeContentMaxClass = "mx-auto min-w-0 w-full max-w-[1200px]";
 
 /**
- * H2 līmenis zem Hero — saskaņots ar „KAS IR IRISS?” virsrakstu (izmērs, svars, tracking).
+ * Zem-Hero sadaļu virsraksts — tāds pats kā Order „Pasūtīt analīzi” (`Order.sectionTitle`).
  * Nelietot Hero sadaļā.
  */
-export const sectionH2Class =
-  "text-balance text-[1.35rem] font-semibold leading-snug tracking-tight text-[#1d1d1f] sm:text-[1.65rem] sm:leading-[1.15]";
+export const homeSectionEyebrowClass =
+  "text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[13px]";

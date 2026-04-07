@@ -1,7 +1,7 @@
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { irissAnchorHref } from "@/lib/paths";
-import { sectionH2Class } from "@/lib/home-layout";
+import { homeSectionEyebrowClass } from "@/lib/home-layout";
 
 type GridItem = {
   title: string;
@@ -22,7 +22,7 @@ export async function PricingIncluded() {
   return (
     <section className="relative px-4 pb-4 pt-2 sm:px-6 sm:pb-5 sm:pt-3 md:pb-6 md:pt-4">
       <div className="relative mx-auto w-full max-w-[1000px]">
-        <h2 className={`${sectionH2Class} text-center uppercase tracking-[0.04em]`}>{t("workTitle")}</h2>
+        <h2 className={`${homeSectionEyebrowClass} text-balance text-center`}>{t("workTitle")}</h2>
         <ul className="mt-4 grid list-none grid-cols-1 gap-3 sm:mt-5 sm:grid-cols-2 lg:grid-cols-3">
             {grid.map((item, i) => {
               const inner = (

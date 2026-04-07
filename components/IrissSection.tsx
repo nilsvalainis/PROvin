@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { homeContentMaxClass, sectionH2Class } from "@/lib/home-layout";
+import { homeContentMaxClass, homeSectionEyebrowClass } from "@/lib/home-layout";
 
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
@@ -17,7 +17,7 @@ export async function IrissSection() {
 
       <div className={`relative ${homeContentMaxClass}`}>
         <div className="text-center">
-          <h2 className={sectionH2Class}>{t("title")}</h2>
+          <h2 className={`${homeSectionEyebrowClass} text-balance`}>{t("title")}</h2>
         </div>
 
         <IrissSocialIcons
