@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
+import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
 import type { AutoRecordsBlockState, AutoRecordsServiceRow } from "@/lib/admin-source-blocks";
 import {
   CSDD_MILEAGE_UNIFIED_TITLE,
@@ -15,6 +16,7 @@ import {
   parseAutoRecordsPaste,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
+import { SUBHEADING_ICON } from "@/lib/section-icons";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -84,7 +86,8 @@ export function AdminAutoRecordsSourceBlock({ value, readOnly, disabled, onChang
           />
         )}
 
-        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+        <p className="mb-1.5 flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+          <SectionLineIcon id={SUBHEADING_ICON.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
         <div

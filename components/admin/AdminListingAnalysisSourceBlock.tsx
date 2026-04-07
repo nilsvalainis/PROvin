@@ -1,12 +1,20 @@
 "use client";
 
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
+import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
 import {
   emptyListingAnalysisBlock,
   LISTING_ANALYSIS_COMMENT_LABEL,
   LISTING_ANALYSIS_SUBSECTIONS,
   type ListingAnalysisBlockState,
 } from "@/lib/admin-source-blocks";
+import type { SectionIconId } from "@/lib/section-icons";
+
+function listingAnalysisFieldIcon(key: keyof ListingAnalysisBlockState): SectionIconId {
+  if (key === "sellerPortrait") return "user";
+  if (key === "photoAnalysis") return "camera";
+  return "fileText";
+}
 
 const ta =
   "min-h-[72px] w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -62,10 +70,11 @@ export function AdminListingAnalysisSourceBlock({
             <p
               className={
                 dense
-                  ? "mb-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]"
-                  : "mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]"
+                  ? "mb-0.5 flex items-center gap-2.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]"
+                  : "mb-0.5 flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]"
               }
             >
+              <SectionLineIcon id={listingAnalysisFieldIcon(key)} />
               {title}
             </p>
             <p

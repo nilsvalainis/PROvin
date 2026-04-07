@@ -35,12 +35,12 @@ import {
   provincLogoSvg,
 } from "@/lib/client-report-pdf-layout-draft";
 import { contactMailtoHref, whatsappChatUrl } from "@/lib/contact";
-import { APPROVED_BY_IRISS_BODY_BG, APPROVED_BY_IRISS_HEADER_BG } from "@/lib/admin-header-gradients";
 import { pdfCountryFlagEmoji } from "@/lib/pdf-country-flags";
 import {
   buildPdfAlertBannersHtml,
   computeProvinAlertBannersFromPayloadSlice,
 } from "@/lib/provin-alert-banners";
+import { sectionIconPdfHtml, vendorPdfTitleToIconId } from "@/lib/section-icons";
 import { CLIENT_REPORT_FOOTER_DISCLAIMER } from "@/lib/report-pdf-standards";
 import { buildUnifiedMileageChartWrapHtml } from "@/lib/unified-mileage-chart";
 import {
@@ -120,26 +120,23 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-const ICO = {
-  user: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.75"/></svg>`,
-  shield: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg>`,
-  car: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11M5 11h14v6a1 1 0 0 1-1 1h-1M5 11H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h1m14 0h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7.5" cy="17.5" r="1.5" fill="currentColor"/><circle cx="16.5" cy="17.5" r="1.5" fill="currentColor"/></svg>`,
-  chart: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 3v18h18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M7 16l4-6 4 3 5-8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-  tag: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2H2v10l9.29 9.29a1 1 0 0 0 1.41 0l6.59-6.59a1 1 0 0 0 0-1.41L12 2z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1" fill="currentColor"/></svg>`,
-  clip: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><rect x="8" y="2" width="8" height="4" rx="1" stroke="currentColor" stroke-width="1.75"/></svg>`,
-  spark: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 1.6 5.2h5.4l-4.4 3.4 1.7 5.4L12 15.8 7.7 17.2l1.7-5.4L5 8.2h5.4L12 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
-  layers: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg>`,
-  clock: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M12 7v6l4 2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-  alertTriangle: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>`,
-};
-
 function sectionHeadBrand(icon: string, title: string): string {
   return `<div class="pdf-sec-head pdf-sec-head--brand"><span class="pdf-sec-ico-bubble" aria-hidden="true">${icon}</span><h2 class="pdf-sec pdf-sec--nobar">${escapeHtml(title)}</h2></div>`;
 }
 
-/** Zaļš smalks akcents — sludinājuma analīze un avotu apakšbloki (PDF). */
-function sectionHeadBrandGreen(icon: string, title: string): string {
-  return `<div class="pdf-sec-head pdf-sec-head--brand pdf-sec-head--accent-green"><span class="pdf-sec-ico-bubble pdf-sec-ico-bubble--green" aria-hidden="true">${icon}</span><h2 class="pdf-sec pdf-sec--nobar">${escapeHtml(title)}</h2></div>`;
+function pdfFieldLabelWithIcon(iconHtml: string, label: string): string {
+  return `<p class="pdf-field-label pdf-field-label--row"><span class="pdf-field-label-ico" aria-hidden="true">${iconHtml}</span><span>${escapeHtml(label)}</span></p>`;
+}
+
+function pdfListingAnalysisFieldIconHtml(title: string): string {
+  const L = LISTING_ANALYSIS_SUBSECTIONS;
+  if (title === L.sellerPortrait) return sectionIconPdfHtml("user");
+  if (title === L.photoAnalysis) return sectionIconPdfHtml("camera");
+  return sectionIconPdfHtml("fileText");
+}
+
+function pdfIrissSubsectionH3(iconHtml: string, title: string): string {
+  return `<h3 class="pdf-iriss-approved-subsection"><span class="pdf-iriss-sub-ico" aria-hidden="true">${iconHtml}</span><span class="pdf-iriss-sub-text">${escapeHtml(title)}</span></h3>`;
 }
 
 function formatCsddNextInspectionCell(v: string): string {
@@ -277,7 +274,7 @@ export function buildUnifiedMileageTableHtml(p: UnifiedMileageSourcePayload): st
       ? `<p class="pdf-mileage-smart-note" role="note">Rādīti pēdējie 10 ieraksti un visi ar odometra anomāliju; vēl ${hiddenCount} ieraksti nav rādīti.</p>`
       : "";
 
-  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${sectionHeadBrand(ICO.clock, "NOBRAUKUMA VĒSTURE")}${chartHtml}${dualTables}${note}</div>`;
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("clock"), "NOBRAUKUMA VĒSTURE")}${chartHtml}${dualTables}${note}</div>`;
 }
 
 function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
@@ -310,7 +307,7 @@ function buildUnifiedIncidentsTableHtml(p: ClientReportPayload): string {
     rows.length <= 3
       ? buildIncidentHistoryTableHtml(rows)
       : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildIncidentHistoryTableHtml(left)}</div><div class="pdf-mileage-dual__cell">${buildIncidentHistoryTableHtml(right)}</div></div>`;
-  return `<div class="pdf-unified-incidents-zone pdf-surface-card" role="region">${sectionHeadBrand(ICO.alertTriangle, NEGADIJUMU_VESTURE_TITLE)}${tablesHtml}</div>`;
+  return `<div class="pdf-unified-incidents-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE)}${tablesHtml}</div>`;
 }
 
 /** CSDD — apskates datumi + strukturētie lauki (viena galvenā līmeņa zona, kā NOBRAUKUMA VĒSTURE). */
@@ -319,7 +316,7 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
   const hasRaw = p.csdd.trim().length > 0;
   if (!hasStruct && !hasRaw) return "";
 
-  const head = sectionHeadBrandGreen(ICO.clip, PDF_SUB_CSDD);
+  const head = sectionHeadBrand(sectionIconPdfHtml("fileText"), PDF_SUB_CSDD);
 
   if (hasStruct && p.csddForm) {
     const f = p.csddForm;
@@ -387,19 +384,12 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
   return parts.join("\n");
 }
 
-function pdfIconForVendorTitle(title: string): string {
-  if (title === SOURCE_BLOCK_LABELS.autodna) return ICO.layers;
-  if (title === SOURCE_BLOCK_LABELS.carvertical) return ICO.chart;
-  if (title === SOURCE_BLOCK_LABELS.auto_records) return ICO.spark;
-  return ICO.layers;
-}
-
 /** AUTO RECORDS — PDF blokā rādam komentārus; nobraukums ir vienotajā tabulā augšā. */
 function buildAutoRecordsAvotuSubsection(b: AutoRecordsBlockState | null | undefined): string {
   if (!b || !autoRecordsBlockHasContent(b)) return "";
   const hasComments = b.comments.trim().length > 0;
   if (!hasComments) return "";
-  const head = sectionHeadBrandGreen(ICO.spark, SOURCE_BLOCK_LABELS.auto_records);
+  const head = sectionHeadBrand(sectionIconPdfHtml("wrench"), SOURCE_BLOCK_LABELS.auto_records);
   const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(b.comments)}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
@@ -408,8 +398,7 @@ function buildAutoRecordsAvotuSubsection(b: AutoRecordsBlockState | null | undef
 function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf): string {
   const hasComments = b.comments.trim().length > 0;
   if (!hasComments) return "";
-  const icon = pdfIconForVendorTitle(b.title);
-  const head = sectionHeadBrandGreen(icon, b.title);
+  const head = sectionHeadBrand(sectionIconPdfHtml(vendorPdfTitleToIconId(b.title)), b.title);
   const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(b.comments)}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
@@ -418,7 +407,7 @@ function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined
   if (!b) return "";
   const hasComments = b.comments.trim().length > 0;
   if (!hasComments) return "";
-  const head = sectionHeadBrandGreen(ICO.shield, SOURCE_BLOCK_LABELS.ltab);
+  const head = sectionHeadBrand(sectionIconPdfHtml("shield"), SOURCE_BLOCK_LABELS.ltab);
   const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(b.comments)}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
@@ -433,7 +422,7 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload): string {
 
   const inner: string[] = [];
   if (tirgusBody) {
-    inner.push(`<p class="pdf-field-label">${escapeHtml(LISTING_HISTORY_SUBSECTION_TITLE)}</p>`);
+    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("history"), LISTING_HISTORY_SUBSECTION_TITLE));
     inner.push(`<div class="pdf-listing-analysis-chunk">${tirgusBody}</div>`);
   }
   if (b && hasListingFields) {
@@ -441,7 +430,7 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload): string {
     const cat = (title: string, text: string) => {
       const t = text.trim();
       if (!t) return;
-      inner.push(`<p class="pdf-field-label">${escapeHtml(title)}</p>`);
+      inner.push(pdfFieldLabelWithIcon(pdfListingAnalysisFieldIconHtml(title), title));
       inner.push(
         `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(t)}</pre></div>`,
       );
@@ -453,7 +442,7 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload): string {
   if (inner.length === 0) return "";
   const parts: string[] = [];
   parts.push(`<div class="pdf-unified-mileage-zone pdf-surface-card pdf-listing-analysis-root" role="region">`);
-  parts.push(sectionHeadBrandGreen(ICO.spark, PDF_SECTION_LISTING_ANALYSIS));
+  parts.push(sectionHeadBrand(sectionIconPdfHtml("search"), PDF_SECTION_LISTING_ANALYSIS));
   parts.push(`<div class="pdf-source-section-body pdf-listing-analysis-stack">${inner.join("\n")}</div>`);
   parts.push(`</div>`);
   return parts.join("\n");
@@ -463,7 +452,7 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload): string {
 function buildCitiAvotiAvotuSubsection(p: ClientReportPayload): string {
   const b = p.citiAvoti;
   if (!b || !b.comments.trim()) return "";
-  const head = sectionHeadBrandGreen(ICO.layers, SOURCE_BLOCK_LABELS.citi_avoti);
+  const head = sectionHeadBrand(sectionIconPdfHtml("layers"), SOURCE_BLOCK_LABELS.citi_avoti);
   const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(b.comments)}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
@@ -504,24 +493,24 @@ function buildApprovedByIrissHtml(p: ClientReportPayload): string {
   const parts: string[] = [];
   parts.push(`<div class="pdf-iriss-approved" role="region">`);
   parts.push(
-    `<div class="pdf-iriss-approved-header"><span class="pdf-iriss-approved-ico" aria-hidden="true">${ICO.shield}</span><h2 class="pdf-iriss-approved-title">${escapeHtml(PDF_APPROVED_BY_IRISS)}</h2></div>`,
+    `<div class="pdf-iriss-approved-header"><span class="pdf-iriss-approved-ico" aria-hidden="true">${sectionIconPdfHtml("star")}</span><h2 class="pdf-iriss-approved-title">${escapeHtml(PDF_APPROVED_BY_IRISS)}</h2></div>`,
   );
   parts.push(`<div class="pdf-iriss-approved-body">`);
   if (iriss) {
     parts.push(`<div class="pdf-iriss-approved-part">`);
-    parts.push(`<h3 class="pdf-iriss-approved-subsection">${escapeHtml(PDF_IRISS_SECTION_1)}</h3>`);
+    parts.push(pdfIrissSubsectionH3(sectionIconPdfHtml("listChecks"), PDF_IRISS_SECTION_1));
     parts.push(`<pre class="mirror-pre pdf-iriss-approved-text">${escapeHtml(iriss)}</pre>`);
     parts.push(`</div>`);
   }
   if (plan) {
     parts.push(`<div class="pdf-iriss-approved-part">`);
-    parts.push(`<h3 class="pdf-iriss-approved-subsection">${escapeHtml(PDF_IRISS_SECTION_2)}</h3>`);
+    parts.push(pdfIrissSubsectionH3(sectionIconPdfHtml("clipboard"), PDF_IRISS_SECTION_2));
     parts.push(`<pre class="mirror-pre pdf-iriss-approved-text">${escapeHtml(plan)}</pre>`);
     parts.push(`</div>`);
   }
   if (priceFitBlock) {
     parts.push(`<div class="pdf-iriss-approved-part">`);
-    parts.push(`<h3 class="pdf-iriss-approved-subsection">${escapeHtml(PDF_IRISS_SECTION_3)}</h3>`);
+    parts.push(pdfIrissSubsectionH3(sectionIconPdfHtml("scale"), PDF_IRISS_SECTION_3));
     parts.push(`<pre class="mirror-pre pdf-iriss-approved-text">${escapeHtml(priceFitBlock)}</pre>`);
     parts.push(`</div>`);
   }
@@ -568,8 +557,6 @@ export function getClientReportPrintCss(): string {
 }
 
 function clientReportPrintCss(): string {
-  const irissHdr = APPROVED_BY_IRISS_HEADER_BG;
-  const irissBody = APPROVED_BY_IRISS_BODY_BG;
   return `
       *{box-sizing:border-box;}
       html,body,.provin-report-doc{font-family:Inter,sans-serif!important;}
@@ -609,16 +596,11 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-sec-ico-bubble .pdf-ico{width:18px;height:18px;}
-      .pdf-sec-ico-bubble--green{
-        background:rgba(5,150,105,0.1);color:#059669;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-sec-ico-bubble--green .pdf-ico{width:18px;height:18px;}
-      .pdf-sec-head--accent-green{
-        margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid rgba(5,150,105,0.22);
-      }
       .pdf-source-section-body{width:100%;margin:0;padding:0;}
       .pdf-field-label{font-size:0.68rem;font-weight:600;margin:0.45rem 0 0.2rem;color:#334155;letter-spacing:0.02em;}
+      .pdf-field-label--row{display:flex;align-items:center;gap:8px;}
+      .pdf-field-label-ico{flex-shrink:0;line-height:0;}
+      .pdf-field-label-ico .pdf-ico{width:18px;height:18px;color:${PDF_BRAND_BLUE};}
       .pdf-listing-analysis-stack{width:100%;}
       .pdf-listing-analysis-chunk{
         margin:0 0 8px;padding:8px 0;background:#fff;border-bottom:1px solid #E0E0E0;
@@ -626,7 +608,7 @@ function clientReportPrintCss(): string {
       .pdf-listing-analysis-chunk:last-child{margin-bottom:0;border-bottom:none;}
       .pdf-listing-analysis-chunk-pre{font-style:italic;margin:0;}
       .pdf-avotu-comment-island{
-        margin:10px 0 0;padding:10px 0 0;border-top:1px solid rgba(5,150,105,0.2);background:#fff;
+        margin:10px 0 0;padding:10px 0 0;border-top:1px solid #e2e8f0;background:#fff;
       }
       .pdf-source-section-body > .pdf-avotu-comment-island:first-child{
         margin-top:0;padding-top:0;border-top:none;
@@ -809,27 +791,31 @@ function clientReportPrintCss(): string {
       .mirror-table--csdd-mh thead th{font-size:9pt!important;}
       .tabular{font-variant-numeric:tabular-nums;}
       .pdf-iriss-approved{
-        margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #bfdbfe;
-        box-shadow:0 8px 24px rgba(15,23,42,.1);
+        margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;
+        box-shadow:0 4px 20px rgba(15,23,42,.07);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-iriss-approved-header{
         display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px 10px 0 0;
-        background:${irissHdr};color:#fff;
+        background:#fff;border-bottom:1px solid #e2e8f0;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-iriss-approved-ico .pdf-ico{width:18px;height:18px;color:#fff;flex-shrink:0;}
+      .pdf-iriss-approved-ico{color:${PDF_BRAND_BLUE};flex-shrink:0;line-height:0;}
+      .pdf-iriss-approved-ico .pdf-ico{width:18px;height:18px;}
       .pdf-iriss-approved-title{
-        margin:0;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+        margin:0;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0f172a;
       }
-      .pdf-iriss-approved-body{padding:14px 16px 16px;background:${irissBody};}
+      .pdf-iriss-approved-body{padding:14px 16px 16px;background:#f8fafc;}
       .pdf-iriss-approved-subtitle{
         margin:0 0 8px;font-size:0.68rem;font-weight:700;color:#000;letter-spacing:0.06em;text-transform:uppercase;
       }
       .pdf-iriss-approved-part:not(:first-child){margin-top:10px;}
       .pdf-iriss-approved-subsection{
-        margin:0 0 6px;font-size:0.72rem;font-weight:700;color:#000;letter-spacing:0.02em;text-transform:none;
+        display:flex;align-items:flex-start;gap:8px;margin:0 0 6px;font-size:0.72rem;font-weight:700;color:#000;letter-spacing:0.02em;text-transform:none;
       }
+      .pdf-iriss-sub-ico{flex-shrink:0;line-height:0;}
+      .pdf-iriss-sub-ico .pdf-ico{width:18px;height:18px;color:${PDF_BRAND_BLUE};}
+      .pdf-iriss-sub-text{flex:1;min-width:0;}
       .pdf-iriss-approved-text{font-size:0.78rem;}
       .mirror-font-error{padding:16px;color:#991b1b;font-size:13px;}
       .legal-block{margin-top:12px;padding-top:8px;border-top:1px solid #f1f5f9;font-size:0.68rem;color:#86868b;line-height:1.45;}
@@ -909,13 +895,13 @@ export function buildClientReportDocumentHtml(args: {
   );
   if (alertBannersHtml) lines.push(alertBannersHtml);
 
-  const payBlock = buildPdfAdminMirrorPaymentBlock(p, money, dateFmt, ICO.chart);
+  const payBlock = buildPdfAdminMirrorPaymentBlock(p, money, dateFmt, sectionIconPdfHtml("wallet"));
   if (payBlock) lines.push(payBlock);
-  const vehicleBlock = buildPdfAdminMirrorVehicleBlock(p, makeModel, ICO.car);
+  const vehicleBlock = buildPdfAdminMirrorVehicleBlock(p, makeModel, sectionIconPdfHtml("car"));
   if (vehicleBlock) lines.push(vehicleBlock);
-  const clientBlock = buildPdfAdminMirrorClientBlock(p, ICO.user);
+  const clientBlock = buildPdfAdminMirrorClientBlock(p, sectionIconPdfHtml("user"));
   if (clientBlock) lines.push(clientBlock);
-  const notesBlock = buildPdfAdminMirrorNotesBlock(p.notes, ICO.clip);
+  const notesBlock = buildPdfAdminMirrorNotesBlock(p.notes, sectionIconPdfHtml("messageSquare"));
   if (notesBlock) lines.push(notesBlock);
 
   const unifiedMileageHtml = buildUnifiedMileageTableHtml(p);

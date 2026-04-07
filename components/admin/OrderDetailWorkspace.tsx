@@ -52,15 +52,12 @@ import {
   type PdfPortfolioFileInsight,
 } from "@/lib/admin-portfolio-pdf-analysis";
 import { buildClientReportDocumentHtml } from "@/lib/client-report-html";
-import {
-  APPROVED_BY_IRISS_BODY_BG,
-  APPROVED_BY_IRISS_HEADER_BG,
-  LISTING_ANALYSIS_BODY_BG,
-  SOURCE_BLOCK_HEADER_BG,
-} from "@/lib/admin-header-gradients";
+import { APPROVED_BY_IRISS_BODY_BG, APPROVED_BY_IRISS_HEADER_BG } from "@/lib/admin-header-gradients";
 import { AdminGradientHeaderBar } from "@/components/admin/AdminGradientHeaderBar";
+import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
 import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
+import { SUBHEADING_ICON } from "@/lib/section-icons";
 import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
 
 export type OrderWorkspacePayload = {
@@ -1252,33 +1249,15 @@ export function OrderDetailWorkspace({
         <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
           Lasīšanas / labošanas režīms kopīgs ar 2. sadaļas rīkjoslu (Saglabāt / Labot).
         </p>
-        <div className="mt-1.5 overflow-hidden rounded-lg border border-[#cfe8d4] shadow-[0_4px_14px_rgba(46,125,50,0.1)]">
-          <AdminGradientHeaderBar
-            gradient={SOURCE_BLOCK_HEADER_BG.listing_analysis}
-            className="rounded-t-lg"
-            contentClassName="gap-2 px-2 py-1.5"
-          >
-            <svg
-              className="h-4 w-4 shrink-0 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              aria-hidden
-            >
-              <path
-                strokeLinejoin="round"
-                d="m12 3 1.6 5.2h5.4l-4.4 3.4 1.7 5.4L12 15.8 7.7 17.2l1.7-5.4L5 8.2h5.4L12 3z"
-              />
-            </svg>
-            <span className="text-[11px] font-bold uppercase tracking-wide text-white">SLUDINĀJUMA ANALĪZE</span>
-          </AdminGradientHeaderBar>
-          <div
-            className="space-y-2 p-2"
-            style={{ background: LISTING_ANALYSIS_BODY_BG, WebkitPrintColorAdjust: "exact" }}
-          >
+        <div className="mt-1.5 overflow-hidden rounded-lg border border-slate-200/90 shadow-sm">
+          <div className="flex items-center gap-2.5 border-b border-slate-200/90 bg-white px-2 py-1.5">
+            <SectionLineIcon id="search" />
+            <span className="text-[11px] font-bold uppercase tracking-wide text-slate-900">SLUDINĀJUMA ANALĪZE</span>
+          </div>
+          <div className="space-y-2 bg-slate-50/40 p-2">
             <div className="min-w-0">
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
+              <p className="mb-1 flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
+                <SectionLineIcon id={SUBHEADING_ICON.listingHistory} />
                 {LISTING_HISTORY_SUBSECTION_TITLE}
               </p>
               <AdminTirgusSourceBlock
@@ -1288,7 +1267,7 @@ export function OrderDetailWorkspace({
                 variant="embedded"
               />
             </div>
-            <div className="min-w-0 border-t border-emerald-200/50 pt-2">
+            <div className="min-w-0 border-t border-slate-200/80 pt-2">
               <AdminListingAnalysisSourceBlock
                 value={blocksDisplaySafe.listing_analysis}
                 readOnly={sourcesViewMode}

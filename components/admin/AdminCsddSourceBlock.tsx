@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
+import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
 import type { CsddFormFields, CsddMileageRow } from "@/lib/admin-source-blocks";
 import {
   CSDD_FORM_STRUCTURED_FIELDS,
@@ -12,6 +13,7 @@ import {
   PROVIN_MILEAGE_TABLE_FIELD,
 } from "@/lib/admin-source-blocks";
 import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
+import { SUBHEADING_ICON } from "@/lib/section-icons";
 import {
   getNextInspectionDateUiFlag,
   getParticulateMatterUiFlag,
@@ -225,7 +227,8 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
       </div>
 
       <div className="mt-3 border-t border-slate-200/80 pt-2">
-        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+        <p className="mb-1.5 flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+          <SectionLineIcon id={SUBHEADING_ICON.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
         <div

@@ -2,6 +2,7 @@
 
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
+import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
 import type { LtabIncidentRow, VendorAvotuBlockState } from "@/lib/admin-source-blocks";
 import {
   CSDD_MILEAGE_UNIFIED_TITLE,
@@ -19,6 +20,7 @@ import {
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
+import { SUBHEADING_ICON } from "@/lib/section-icons";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -75,7 +77,8 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
       <AdminSourceBlockHeader blockKey={blockKey} className="mb-1.5 shrink-0" />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+        <p className="mb-1.5 flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+          <SectionLineIcon id={SUBHEADING_ICON.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
         <div
@@ -197,7 +200,8 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
         ) : null}
 
         <div className="mt-4 border-t border-slate-200 pt-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+          <p className="mb-2 flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+            <SectionLineIcon id={SUBHEADING_ICON.incidents} />
             {NEGADIJUMU_VESTURE_TITLE}
           </p>
           <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">

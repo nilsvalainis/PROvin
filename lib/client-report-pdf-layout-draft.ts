@@ -53,7 +53,7 @@ export function pdfLayoutDraftExtraCss(): string {
       }
       .pdf-v1-panel-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;flex-wrap:wrap}
       .pdf-v1-ico{display:inline-flex;align-items:center;justify-content:center;color:#0061D2;flex-shrink:0}
-      .pdf-v1-ico .pdf-ico{width:14px;height:14px}
+      .pdf-v1-ico .pdf-ico{width:18px;height:18px}
       .pdf-v1-panel-title{
         margin:0;font-size:0.75rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#000;
       }
