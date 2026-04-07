@@ -22,17 +22,18 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
   return (
     <section
       id={ORDER_SECTION_ID}
-      className="relative z-10 overflow-visible scroll-mt-[calc(2.75rem+1px)] sm:scroll-mt-12"
+      className="relative z-10 scroll-mt-[calc(2.75rem+1px)] sm:scroll-mt-12"
     >
-      <a
-        href="#order-form"
-        aria-label={t("scrollToFormAria")}
-        className="absolute left-1/2 top-0 z-20 inline-flex -translate-x-1/2 -translate-y-1/2 text-provin-accent/80 transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
-      >
-        <NavChevronDown />
-      </a>
-
-      <div className="relative mx-auto min-w-0 max-w-[1000px] px-4 pb-4 pt-7 text-center sm:px-6 sm:pb-5 sm:pt-8">
+      <div className="relative mx-auto min-w-0 max-w-[1000px] px-4 pb-4 pt-2 text-center sm:px-6 sm:pb-5 sm:pt-2">
+        <div className="flex h-10 items-center justify-center sm:h-11">
+          <a
+            href="#order-form"
+            aria-label={t("scrollToFormAria")}
+            className="inline-flex text-provin-accent/80 transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
+          >
+            <NavChevronDown />
+          </a>
+        </div>
         <div className="flex w-full flex-col items-center gap-4">
           {cancelled && (
             <p

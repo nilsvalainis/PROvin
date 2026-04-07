@@ -1,6 +1,5 @@
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { NavChevronDown } from "@/components/NavChevron";
 import { orderSectionHref } from "@/lib/paths";
 
 type Pillar = { title: string; body: string };
@@ -87,15 +86,6 @@ export async function Hero() {
               </p>
             ) : null}
 
-            <div className="flex justify-center pt-0.5">
-              <a
-                href="#cena"
-                aria-label={t("scrollToPricingAria")}
-                className="inline-flex text-provin-accent/80 transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
-              >
-                <NavChevronDown />
-              </a>
-            </div>
           </div>
       </div>
     </section>

@@ -15,6 +15,11 @@ export async function HowItWorks() {
     <section className="relative z-10 overflow-visible bg-transparent">
       <div className="relative px-4 py-4 sm:px-6 sm:py-4">
         <div className={`relative ${homeContentMaxClass}`}>
+          <div className="flex h-10 items-center justify-center sm:h-11" aria-hidden>
+            <span className={connectorClass}>
+              <NavChevronDown />
+            </span>
+          </div>
           <div className="relative mx-auto flex min-w-0 max-w-lg flex-col gap-1 md:max-w-none md:flex-row md:items-stretch md:justify-center md:gap-1">
             {steps.map((s, i) => (
               <Fragment key={s.n}>
@@ -41,14 +46,9 @@ export async function HowItWorks() {
                         <NavChevronDown />
                       </span>
                     </div>
-                    <div
-                      className="relative hidden h-full w-6 shrink-0 self-stretch md:flex md:items-center md:justify-center"
-                      aria-hidden
-                    >
-                      <span className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
-                        <span className={connectorClass}>
-                          <NavChevronRight />
-                        </span>
+                    <div className="hidden h-[62px] w-6 shrink-0 self-start items-center justify-center md:flex" aria-hidden>
+                      <span className={connectorClass}>
+                        <NavChevronRight />
                       </span>
                     </div>
                   </>
