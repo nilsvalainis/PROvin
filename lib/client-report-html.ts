@@ -27,13 +27,11 @@ import {
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import {
-  buildPdfAdminMirrorClientBlock,
-  buildPdfAdminMirrorNotesBlock,
-  buildPdfAdminMirrorPaymentBlock,
-  buildPdfAdminMirrorVehicleBlock,
+  buildPdfOrderSummaryGridHtml,
   pdfLayoutDraftExtraCss,
   provincLogoSvg,
 } from "@/lib/client-report-pdf-layout-draft";
+import { contactMailtoHref, whatsappChatUrl } from "@/lib/contact";
 import {
   APPROVED_BY_IRISS_BODY_BG,
   APPROVED_BY_IRISS_HEADER_BG,
@@ -78,8 +76,9 @@ const PDF_SUB_CSDD = "CSDD";
 const PDF_SUB_BLOCK_COMMENTS = "Komentāri";
 const PDF_SECTION_LISTING_ANALYSIS = "SLUDINĀJUMA ANALĪZE";
 
-/** PDF nobraukuma līkne — gaiši zils akcents (tuvs PROVIN logo #0066d6). */
-const PDF_MILEAGE_CHART_LINE = "#5BA3F5";
+/** Mājaslapas primārais zils — grafiks, akcenti. */
+const PDF_BRAND_BLUE = "#0061D2";
+const PDF_MILEAGE_CHART_LINE = PDF_BRAND_BLUE;
 const PDF_MILEAGE_CHART_GRID = "#e8eaed";
 const PDF_MILEAGE_CHART_AXIS = "#9ca3af";
 
@@ -134,7 +133,13 @@ const ICO = {
   clip: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><rect x="8" y="2" width="8" height="4" rx="1" stroke="currentColor" stroke-width="1.75"/></svg>`,
   spark: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 1.6 5.2h5.4l-4.4 3.4 1.7 5.4L12 15.8 7.7 17.2l1.7-5.4L5 8.2h5.4L12 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
   layers: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg>`,
+  clock: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M12 7v6l4 2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  alertTriangle: `<svg class="pdf-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>`,
 };
+
+function sectionHeadBrand(icon: string, title: string): string {
+  return `<div class="pdf-sec-head pdf-sec-head--brand"><span class="pdf-sec-ico-bubble" aria-hidden="true">${icon}</span><h2 class="pdf-sec pdf-sec--nobar">${escapeHtml(title)}</h2></div>`;
+}
 
 function sectionHead(icon: string, title: string, opts?: { noBar?: boolean }): string {
   const noBar = opts?.noBar === true;
@@ -164,7 +169,7 @@ function buildCsddPdfAlertRowHtml(
 }
 
 function pdfLossAmountAlertIconHtml(tier: "yellow" | "red"): string {
-  const stroke = tier === "red" ? "#FF0000" : "#FFD700";
+  const stroke = tier === "red" ? "#FF4D4D" : "#FFC107";
   return `<svg class="pdf-loss-amt-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="${stroke}" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/></svg>`;
 }
 
@@ -235,6 +240,30 @@ function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow, anomalyBySourceOr
   return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td>${odoTd}<td class="pdf-mileage-cell-flag"><span class="pdf-country-flag" role="img" aria-label="${aria}">${flag}</span></td></tr>`;
 }
 
+/** Pēdējie 10 ieraksti (jaunākie) + visas anomālijas; pārējie tiek paslēpti. */
+function filterMileageRowsForPdfSmartView(
+  rowsSortedNewestFirst: UnifiedMileageRow[],
+  anomalyBySourceOrder: Map<number, boolean>,
+): { display: UnifiedMileageRow[]; hiddenCount: number } {
+  const n = rowsSortedNewestFirst.length;
+  if (n <= 10) return { display: rowsSortedNewestFirst, hiddenCount: 0 };
+  const keys = new Set<number>();
+  for (let i = 0; i < 10; i++) keys.add(rowsSortedNewestFirst[i]!.sourceOrder);
+  for (const r of rowsSortedNewestFirst) {
+    if (anomalyBySourceOrder.get(r.sourceOrder)) keys.add(r.sourceOrder);
+  }
+  const display = rowsSortedNewestFirst.filter((r) => keys.has(r.sourceOrder));
+  return { display, hiddenCount: n - display.length };
+}
+
+function buildMileageHistoryTableHtml(rows: UnifiedMileageRow[], anomalyBySourceOrder: Map<number, boolean>): string {
+  if (rows.length === 0) return "";
+  const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-flag" /></colgroup>`;
+  const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Odometrs (km)</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
+  const body = rows.map((r) => buildUnifiedMileageTableRowHtml(r, anomalyBySourceOrder)).join("\n");
+  return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+}
+
 export function buildUnifiedMileageTableHtml(p: UnifiedMileageSourcePayload): string {
   const collected = collectUnifiedMileageRows(p);
   if (collected.length === 0) return "";
@@ -246,14 +275,25 @@ export function buildUnifiedMileageTableHtml(p: UnifiedMileageSourcePayload): st
     return a.sourceOrder - b.sourceOrder;
   });
 
-  const chartHtml = buildUnifiedMileageChartWrapHtml(collected, anomalyBySourceOrder);
+  const { display, hiddenCount } = filterMileageRowsForPdfSmartView(rows, anomalyBySourceOrder);
+  const chartHtml = buildUnifiedMileageChartWrapHtml(collected, anomalyBySourceOrder, { compact: true });
 
-  const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-flag" /></colgroup>`;
-  const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Odometrs (km)</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
-  const rowHtml = (r: UnifiedMileageRow) => buildUnifiedMileageTableRowHtml(r, anomalyBySourceOrder);
-  const tablesHtml = `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table" role="table">${colgroup}<thead>${head}</thead><tbody>${rows.map(rowHtml).join("\n")}</tbody></table></div>`;
+  const mid = Math.ceil(display.length / 2) || 0;
+  const leftRows = display.slice(0, mid);
+  const rightRows = display.slice(mid);
+  const dualTables =
+    display.length === 0
+      ? ""
+      : display.length <= 4
+        ? buildMileageHistoryTableHtml(display, anomalyBySourceOrder)
+        : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(leftRows, anomalyBySourceOrder)}</div><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(rightRows, anomalyBySourceOrder)}</div></div>`;
 
-  return `<div class="pdf-unified-mileage-zone" role="region">${sectionHead(ICO.chart, "NOBRAUKUMA VĒSTURE", { noBar: true })}${chartHtml}${tablesHtml}</div>`;
+  const note =
+    hiddenCount > 0
+      ? `<p class="pdf-mileage-smart-note" role="note">Rādīti pēdējie 10 ieraksti un visi ar odometra anomāliju; vēl ${hiddenCount} ieraksti nav rādīti.</p>`
+      : "";
+
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${sectionHeadBrand(ICO.clock, "NOBRAUKUMA VĒSTURE")}${chartHtml}${dualTables}${note}</div>`;
 }
 
 function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
@@ -261,6 +301,14 @@ function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
   const flag = pdfCountryFlagEmoji(r.country);
   const aria = escapeHtml(r.country.trim() || "—");
   return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo">${lossCell}</td><td class="pdf-mileage-cell-flag"><span class="pdf-country-flag" role="img" aria-label="${aria}">${flag}</span></td></tr>`;
+}
+
+function buildIncidentHistoryTableHtml(rows: UnifiedIncidentRow[]): string {
+  if (rows.length === 0) return "";
+  const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-flag" /></colgroup>`;
+  const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Zaudējuma summa</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
+  const body = rows.map(buildUnifiedIncidentRowHtml).join("\n");
+  return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 
 /** Apvienota negadījumu tabula (AutoDNA, CarVertical, LTAB, Citi avoti) — tikai rindas ar aizpildītu zaudējumu summu. */
@@ -271,10 +319,14 @@ function buildUnifiedIncidentsTableHtml(p: ClientReportPayload): string {
   });
   if (collected.length === 0) return "";
   const rows = sortUnifiedIncidentsNewestFirst(collected);
-  const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-flag" /></colgroup>`;
-  const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Zaudējuma summa</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
-  const tablesHtml = `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table" role="table">${colgroup}<thead>${head}</thead><tbody>${rows.map(buildUnifiedIncidentRowHtml).join("\n")}</tbody></table></div>`;
-  return `<div class="pdf-unified-incidents-zone" role="region">${sectionHead(ICO.chart, NEGADIJUMU_VESTURE_TITLE, { noBar: true })}${tablesHtml}</div>`;
+  const mid = Math.ceil(rows.length / 2);
+  const left = rows.slice(0, mid);
+  const right = rows.slice(mid);
+  const tablesHtml =
+    rows.length <= 3
+      ? buildIncidentHistoryTableHtml(rows)
+      : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildIncidentHistoryTableHtml(left)}</div><div class="pdf-mileage-dual__cell">${buildIncidentHistoryTableHtml(right)}</div></div>`;
+  return `<div class="pdf-unified-incidents-zone pdf-surface-card" role="region">${sectionHeadBrand(ICO.alertTriangle, NEGADIJUMU_VESTURE_TITLE)}${tablesHtml}</div>`;
 }
 
 /** CSDD — apskates datumi + nobraukuma tabulas (pilns eksports); raw nav PDF. */
@@ -518,6 +570,22 @@ function buildApprovedByIrissHtml(p: ClientReportPayload): string {
   return parts.join("\n");
 }
 
+function buildPdfFooterCtaHtml(): string {
+  const mail = contactMailtoHref();
+  const wa = whatsappChatUrl();
+  return `<footer class="pdf-footer-cta" role="contentinfo">
+  <div class="pdf-footer-cta__inner">
+    <div class="pdf-footer-cta__logo">${provincLogoSvg().replace('class="pdf-v1-logo"', 'class="pdf-v1-logo pdf-footer-cta__logo-img"')}</div>
+    <p class="pdf-footer-cta__line">
+      <a href="${escapeHtml(mail)}" class="pdf-footer-cta__link">E-pasts</a>
+      <span class="pdf-footer-cta__sep"> · </span>
+      <a href="${escapeHtml(wa)}" class="pdf-footer-cta__link" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+    </p>
+    <p class="pdf-footer-cta__hint">Jautājumi pēc atskates — sazinieties ar PROVIN.LV</p>
+  </div>
+</footer>`;
+}
+
 function reportFontGuardScript(): string {
   return `<script>
 (function(){
@@ -555,21 +623,21 @@ function clientReportPrintCss(): string {
       .provin-report-doc .pdf-vin{background:transparent!important;padding:0!important;}
       body{
         font-size:12px;
-        line-height:1.45;
+        line-height:1.62;
         max-width:190mm;
         margin:0 auto;
-        padding:8mm 11mm;
-        color:#1d1d1f;
+        padding:10mm 12mm;
+        color:#0f172a;
         background:#fff;
         -webkit-font-smoothing:antialiased;
       }
       .sheet{background:#fff;padding:0;}
       .pdf-sec-head{display:flex;align-items:center;gap:8px;margin:0.75rem 0 0.35rem;}
       .pdf-sec-head--nobar{margin-top:0;}
-      .pdf-sec-head .pdf-ico{color:#0066d6;width:14px;height:14px;flex-shrink:0;}
+      .pdf-sec-head .pdf-ico{color:${PDF_BRAND_BLUE};width:14px;height:14px;flex-shrink:0;}
       h2.pdf-sec{
-        font-size:0.75rem;font-weight:700;margin:0;flex:1;color:#000;letter-spacing:0.06em;line-height:1.3;
-        padding:0 0 0 8px;border-left:2px solid #0066d6;text-transform:uppercase;
+        font-size:0.75rem;font-weight:700;margin:0;flex:1;color:#0f172a;letter-spacing:0.06em;line-height:1.35;
+        padding:0 0 0 8px;border-left:2px solid ${PDF_BRAND_BLUE};text-transform:uppercase;
       }
       h2.pdf-sec--nobar{border-left:none;padding-left:0;}
       h3.pdf-sub{font-size:0.75rem;font-weight:700;margin:0.6rem 0 0.35rem;color:#000;text-transform:uppercase;letter-spacing:0.05em;}
@@ -578,7 +646,14 @@ function clientReportPrintCss(): string {
       .pdf-subhead-ico{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
       .pdf-subhead-ico .pdf-ico{width:14px;height:14px;}
       h3.pdf-sub.pdf-sub--with-ico{margin:0;border-left:none;padding:0;}
-      .pdf-field-label{font-size:0.68rem;font-weight:600;margin:0.45rem 0 0.2rem;color:#000;letter-spacing:0.02em;}
+      .pdf-sec-head--brand{align-items:center;gap:10px;margin:0 0 12px;}
+      .pdf-sec-ico-bubble{
+        display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;
+        background:rgba(0,97,210,0.1);color:${PDF_BRAND_BLUE};flex-shrink:0;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-sec-ico-bubble .pdf-ico{width:18px;height:18px;}
+      .pdf-field-label{font-size:0.68rem;font-weight:600;margin:0.45rem 0 0.2rem;color:#334155;letter-spacing:0.02em;}
       .pdf-avotu-block-wrap{margin:0 0 12px;}
       .pdf-avotu-block-wrap:last-child{margin-bottom:0;}
       .pdf-avotu-card{
@@ -607,7 +682,8 @@ function clientReportPrintCss(): string {
       .pdf-avotu-ico-brand--citi-avoti .pdf-ico{color:#7c3aed;}
       .pdf-avotu-body{padding:10px 12px;background:#fff;border-radius:0 0 8px 8px;}
       .pdf-listing-priority{
-        margin:0 0 14px;border-radius:10px;overflow:hidden;border:1px solid #d8ebe0;
+        margin:0 0 18px;border-radius:16px;overflow:hidden;border:0;
+        box-shadow:0 4px 20px rgba(15,23,42,.07);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-listing-priority-header{
@@ -638,23 +714,24 @@ function clientReportPrintCss(): string {
       }
       .pdf-avotu-comment-island-body{font-style:italic;margin:0;}
       .pdf-avotu-zone{
-        margin:0 0 12px;padding:12px 14px;border:1px solid #e8eaed;border-radius:10px;
-        background:#fff;
+        margin:0 0 18px;padding:16px 18px;border:0;border-radius:16px;
+        background:#fff;box-shadow:0 4px 20px rgba(15,23,42,.07);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-avotu-zone .pdf-sec-head{margin-top:0;}
       .pdf-avotu-zone > .pdf-avotu-card{margin-bottom:12px;}
       .pdf-avotu-zone > .pdf-avotu-card:last-child{margin-bottom:0;}
-      .pdf-unified-mileage-zone{
-        margin:0 0 12px;padding:12px 14px;border:1px solid #e8eaed;border-radius:10px;background:#fff;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
+      .pdf-unified-mileage-zone{margin:0 0 18px;padding:16px 18px;}
       .pdf-unified-mileage-zone .pdf-sec-head{margin-top:0;}
-      .pdf-unified-incidents-zone{
-        margin:0 0 12px;padding:12px 14px;border:1px solid #e8eaed;border-radius:10px;background:#fff;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
+      .pdf-unified-incidents-zone{margin:0 0 18px;padding:16px 18px;}
       .pdf-unified-incidents-zone .pdf-sec-head{margin-top:0;}
+      .pdf-mileage-dual{
+        display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;align-items:start;margin:8px 0 0;
+      }
+      .pdf-mileage-dual__cell{min-width:0;}
+      .pdf-mileage-smart-note{
+        margin:10px 0 0;font-size:0.62rem;color:#64748b;line-height:1.4;font-style:italic;
+      }
       .pdf-mileage-history-table-wrap{
         width:100%;margin:6px 0 0;border-radius:8px;overflow:hidden;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
@@ -702,10 +779,12 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-mileage-chart-wrap{
-        margin:0 0 12px;padding:0;border-radius:8px;border:1px solid #e8eaed;background:#fff;
+        margin:0 0 10px;padding:8px 10px 4px;border-radius:12px;border:0;background:#fff;
+        box-shadow:0 1px 0 rgba(15,23,42,.06) inset;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-mileage-chart-svg{display:block;width:100%;max-width:520px;height:auto;margin:0 auto;}
+      .pdf-mileage-chart-wrap--compact .pdf-mileage-chart-svg{max-height:92px;}
+      .pdf-mileage-chart-svg{display:block;width:100%;max-width:480px;height:auto;margin:0 auto;}
       .pdf-mileage-chart-grid{stroke:${PDF_MILEAGE_CHART_GRID};stroke-width:1;fill:none;}
       .pdf-mileage-chart-path{
         stroke:${PDF_MILEAGE_CHART_LINE};stroke-width:2.25;fill:none;stroke-linecap:round;stroke-linejoin:round;
@@ -737,10 +816,10 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-alert-banner--red{
-        background:#fff5f5;border-left:5px solid #dc2626;color:#dc2626;
+        background:#fff8f8;border-left:5px solid #FF4D4D;color:#FF4D4D;
       }
       .pdf-alert-banner--yellow{
-        background:#fffbeb;border-left:5px solid #f59e0b;color:#f59e0b;
+        background:#fffdf5;border-left:5px solid #FFC107;color:#FFC107;
       }
       .pdf-alert-banner-text{
         flex:1;margin:0;font-size:8pt;line-height:1.35;color:#374151;font-family:Inter,sans-serif!important;
@@ -757,13 +836,13 @@ function clientReportPrintCss(): string {
         display:flex;align-items:center;gap:6px;width:100%;
       }
       .pdf-num-warn{font-size:9pt!important;line-height:1.2;font-family:Inter,sans-serif!important;vertical-align:middle;}
-      .pdf-num-warn--red .pdf-num-warn-digits{color:#FF0000!important;font-weight:600!important;}
-      .pdf-num-warn--yellow .pdf-num-warn-digits{color:#EAB308!important;font-weight:600!important;}
+      .pdf-num-warn--red .pdf-num-warn-digits{color:#FF4D4D!important;font-weight:600!important;}
+      .pdf-num-warn--yellow .pdf-num-warn-digits{color:#FFC107!important;font-weight:600!important;}
       .pdf-loss-amt-ico{flex-shrink:0;display:block;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
       .mirror-block-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;}
-      .mirror-ico{color:#0066d6;}
+      .mirror-ico{color:${PDF_BRAND_BLUE};}
       .mirror-ico .pdf-ico{width:14px;height:14px;}
       .mirror-pre{
         white-space:pre-wrap;font-size:0.72rem;margin:0;padding:0;font-family:Inter,sans-serif!important;
@@ -837,7 +916,19 @@ function clientReportPrintCss(): string {
       .pdf-iriss-approved-text{font-size:0.78rem;}
       .mirror-font-error{padding:16px;color:#991b1b;font-size:13px;}
       .legal-block{margin-top:12px;padding-top:8px;border-top:1px solid #f1f5f9;font-size:0.68rem;color:#86868b;line-height:1.45;}
-      .report-foot{margin-top:12px;padding-top:8px;border-top:1px solid #f1f5f9;font-size:0.65rem;color:#aeaeb2;}
+      .report-foot{margin-top:12px;padding-top:8px;border-top:1px solid #f1f5f9;font-size:0.65rem;color:#94a3b8;}
+      .pdf-footer-cta{
+        margin-top:16px;padding:16px 18px;border-radius:14px;background:#fff;
+        box-shadow:0 4px 20px rgba(15,23,42,.07);text-align:center;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-footer-cta__inner{max-width:100%;}
+      .pdf-footer-cta__logo{margin:0 auto 8px}
+      .pdf-footer-cta__logo-img{display:block;width:180px;max-width:100%;height:auto;margin:0 auto}
+      .pdf-footer-cta__line{margin:0;font-size:0.72rem;font-weight:600;}
+      .pdf-footer-cta__link{color:${PDF_BRAND_BLUE}!important;text-decoration:none;}
+      .pdf-footer-cta__sep{color:#94a3b8;margin:0 4px;}
+      .pdf-footer-cta__hint{margin:8px 0 0;font-size:0.62rem;color:#64748b;}
       code{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;font-size:0.72rem;background:#f5f5f7;padding:1px 6px;border-radius:4px;}
       .pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;font-size:0.72rem;background:transparent;padding:0;}
       .pdf-flag-num{font-weight:600;}
@@ -902,17 +993,14 @@ export function buildClientReportDocumentHtml(args: {
   );
   if (alertBannersHtml) lines.push(alertBannersHtml);
 
-  const payBlock = buildPdfAdminMirrorPaymentBlock(p, money, dateFmt, ICO.chart);
-  if (payBlock) lines.push(payBlock);
+  const approvedHtml = buildApprovedByIrissHtml(p);
+  if (approvedHtml) lines.push(approvedHtml);
 
-  const vehicleBlock = buildPdfAdminMirrorVehicleBlock(p, makeModel, ICO.car);
-  if (vehicleBlock) lines.push(vehicleBlock);
+  const summaryGrid = buildPdfOrderSummaryGridHtml(p, money, dateFmt, makeModel, ICO.car);
+  if (summaryGrid) lines.push(summaryGrid);
 
-  const clientBlock = buildPdfAdminMirrorClientBlock(p, ICO.user);
-  if (clientBlock) lines.push(clientBlock);
-
-  const notesBlock = buildPdfAdminMirrorNotesBlock(p.notes, ICO.clip);
-  if (notesBlock) lines.push(notesBlock);
+  const listingPriorityHtml = buildListingAnalysisPriorityHtml(p);
+  if (listingPriorityHtml) lines.push(listingPriorityHtml);
 
   const unifiedMileageHtml = buildUnifiedMileageTableHtml(p);
   if (unifiedMileageHtml) lines.push(unifiedMileageHtml);
@@ -922,13 +1010,6 @@ export function buildClientReportDocumentHtml(args: {
 
   const avotuHtml = buildAvotuDatiSectionHtml(p);
   if (avotuHtml) lines.push(avotuHtml);
-
-  /** Kā admin darba telpā: 2. avoti → 3. sludinājuma analīze → 4. APPROVED BY IRISS. */
-  const listingPriorityHtml = buildListingAnalysisPriorityHtml(p);
-  if (listingPriorityHtml) lines.push(listingPriorityHtml);
-
-  const approvedHtml = buildApprovedByIrissHtml(p);
-  if (approvedHtml) lines.push(approvedHtml);
 
   lines.push('<div class="legal-block">');
   lines.push(`<p>${escapeHtml(CLIENT_REPORT_FOOTER_DISCLAIMER)}</p>`);
@@ -945,6 +1026,7 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(
     `<div class="report-foot">© PROVIN.LV · konsultatīva atskaite · ${escapeHtml(dateFmt.format(new Date()))}</div>`,
   );
+  lines.push(buildPdfFooterCtaHtml());
   lines.push("</div>");
 
   const title = `PROVIN ${p.vin ?? p.sessionId}`;

@@ -6,9 +6,9 @@
   --color-apple-text: #1d1d1f;
   --color-apple-subtle: #86868b;
   --color-apple-fill: #f5f5f7;
-  /* PROVIN — piesātinātāks akcenta zils */
-  --color-provin-accent: #0066d6;
-  --color-provin-accent-hover: #0052a3;
+  /* PROVIN — mājaslapas primārais zils (PDF / UI) */
+  --color-provin-accent: #0061d2;
+  --color-provin-accent-hover: #004a9e;
   --color-provin-accent-soft: #e8f2fc;
   --color-provin-accent-muted: #3d7fd0;
   --color-provin-surface: #fafbfc;

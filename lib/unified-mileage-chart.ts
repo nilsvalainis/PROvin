@@ -4,7 +4,7 @@
 
 import { sortMileageChronological, parseOdometerKm, type UnifiedMileageRow } from "@/lib/unified-mileage";
 
-const PDF_MILEAGE_CHART_LINE = "#5BA3F5";
+const PDF_MILEAGE_CHART_LINE = "#0061D2";
 const PDF_MILEAGE_CHART_GRID = "#e8eaed";
 const PDF_MILEAGE_CHART_AXIS = "#9ca3af";
 
@@ -35,7 +35,9 @@ function catmullRomSvgPath(points: { x: number; y: number }[]): string {
 export function buildUnifiedMileageChartWrapHtml(
   rows: UnifiedMileageRow[],
   anomalyBySourceOrder: Map<number, boolean>,
+  opts?: { compact?: boolean },
 ): string {
+  const compact = opts?.compact === true;
   const chrono = sortMileageChronological(rows);
   const series = chrono
     .map((r) => {
@@ -59,12 +61,12 @@ export function buildUnifiedMileageChartWrapHtml(
   kmMin -= kmPad;
   kmMax += kmPad;
 
-  const W = 520;
-  const H = 132;
+  const W = compact ? 480 : 520;
+  const H = compact ? 86 : 132;
   const padL = 12;
   const padR = 12;
-  const padT = 14;
-  const padB = 28;
+  const padT = compact ? 10 : 14;
+  const padB = compact ? 22 : 28;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
 
@@ -131,7 +133,8 @@ export function buildUnifiedMileageChartWrapHtml(
   <span class="pdf-mileage-chart-legend-text">Nobraukums</span>
 </div>`.trim();
 
-  return `<div class="pdf-mileage-chart-wrap">${svgInner}</div>`;
+  const wrapCls = compact ? "pdf-mileage-chart-wrap pdf-mileage-chart-wrap--compact" : "pdf-mileage-chart-wrap";
+  return `<div class="${wrapCls}">${svgInner}</div>`;
 }
 
 export { PDF_MILEAGE_CHART_LINE, PDF_MILEAGE_CHART_GRID, PDF_MILEAGE_CHART_AXIS };
