@@ -16,8 +16,7 @@ export async function WhyProvin() {
       <div className={`relative ${homeContentMaxClass}`}>
         <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-6">
           <article className={highlightCardClass}>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("block1Eyebrow")}</p>
-            <h2 className={`${sectionH2Class} mt-2 uppercase tracking-[0.02em]`}>{t("block1Title")}</h2>
+            <h2 className={`${sectionH2Class} uppercase tracking-[0.02em]`}>{t("block1Title")}</h2>
             <p className="mt-3 text-[15px] font-medium leading-relaxed text-[#5c5d62] sm:text-[16px]">{t("block1Subtitle")}</p>
             <ul className="mt-6 space-y-3 border-t border-provin-accent/12 pt-6">
               {block1List.map((item, i) => (
@@ -38,8 +37,7 @@ export async function WhyProvin() {
           </article>
 
           <article className={highlightCardClass}>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent">{t("block2Eyebrow")}</p>
-            <h2 className={`${sectionH2Class} mt-2 uppercase tracking-[0.02em]`}>{t("block2Title")}</h2>
+            <h2 className={`${sectionH2Class} uppercase tracking-[0.02em]`}>{t("block2Title")}</h2>
             <p className="mt-3 text-[15px] font-medium leading-relaxed text-[#5c5d62] sm:text-[16px]">{t("block2Subtitle")}</p>
             <ul className="mt-6 space-y-3 border-t border-provin-accent/12 pt-6">
               {puzzleBullets.map((item, i) => (
