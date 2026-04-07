@@ -101,13 +101,6 @@ export async function PricingTransitionAndComparison() {
             </tbody>
           </table>
         </div>
-
-        <p className="mx-auto mt-5 max-w-[52ch] text-balance text-center text-[15px] font-medium leading-relaxed text-[#3a3a3e] sm:mt-6 sm:text-[16px]">
-          {t("comparisonTagline")}
-        </p>
-        <p className="mx-auto mt-3 max-w-[60ch] text-balance text-center text-[13px] font-normal leading-relaxed text-[#86868b] sm:text-[14px]">
-          {t("comparisonTableFootnote")}
-        </p>
       </div>
     </div>
   );
