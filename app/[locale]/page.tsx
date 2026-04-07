@@ -30,16 +30,8 @@ export default async function HomePage({
 
         <div className="relative z-10">
           <Hero />
-          <section className="px-4 pb-2 sm:px-6 sm:pb-4">
-            <div className="mx-auto grid w-full max-w-[1000px] grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start lg:gap-6">
-              <div className="lg:col-span-4">
-                <HowItWorks compact />
-              </div>
-              <div className="lg:col-span-8">
-                <FinalCta cancelled={cancelled} compactLayout />
-              </div>
-            </div>
-          </section>
+          <HowItWorks />
+          <FinalCta cancelled={cancelled} />
           <PricingIncluded />
           <section id="cena" className="px-4 pt-6 sm:px-6 md:pt-8">
             <div className="mx-auto w-full max-w-[1000px]">
