@@ -61,8 +61,8 @@ body {
 
   .provin-lift-strong:hover {
     transform: translateY(-4px);
-    box-shadow: 0 22px 52px rgba(15, 23, 42, 0.13);
-    border-color: rgba(0, 102, 214, 0.22);
+    box-shadow: 0 22px 52px rgba(15, 23, 42, 0.12);
+    border-color: rgba(15, 23, 42, 0.14);
   }
 
   .provin-lift-subtle:hover {
@@ -73,12 +73,12 @@ body {
   .provin-btn:hover {
     background-color: var(--color-provin-accent-hover);
     transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(0, 82, 163, 0.38);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
   }
 
   .provin-btn-ghost:hover {
-    border-color: rgba(0, 102, 214, 0.45);
-    background-color: var(--color-provin-accent-soft);
+    border-color: rgba(15, 23, 42, 0.14);
+    background-color: #f5f5f7;
     transform: translateY(-1px);
   }
 }

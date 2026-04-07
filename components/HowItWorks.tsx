@@ -58,7 +58,7 @@ const cardClass =
 function StepBadge({ n }: { n: string }) {
   return (
     <div
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[17px] font-semibold tabular-nums text-white shadow-[0_4px_14px_rgba(0,102,214,0.35)] ring-2 ring-white"
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[17px] font-semibold tabular-nums text-white shadow-[0_4px_12px_rgba(0,0,0,0.14)] ring-2 ring-white"
       aria-hidden
     >
       {n}

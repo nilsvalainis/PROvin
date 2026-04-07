@@ -24,7 +24,7 @@ export default async function ThanksPage({ searchParams, params }: Props) {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-24 text-center sm:px-8">
-      <div className="provin-lift-strong mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-provin-accent text-white shadow-[0_6px_24px_rgba(0,102,214,0.35)]">
+      <div className="provin-lift-strong mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-provin-accent text-white shadow-[0_6px_20px_rgba(0,0,0,0.14)]">
         <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>

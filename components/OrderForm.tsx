@@ -263,7 +263,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             <button
               type="submit"
               disabled={loading || !withdrawalConsent}
-              className="provin-btn provin-btn--compact flex w-full min-h-[43px] items-center justify-center rounded-full px-7 py-3 text-[14px] font-normal shadow-[0_4px_14px_rgba(0,102,214,0.28)] disabled:opacity-60"
+              className="provin-btn provin-btn--compact flex w-full min-h-[43px] items-center justify-center rounded-full px-7 py-3 text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60"
             >
               {loading ? t("payLoading") : t("payButton")}
             </button>
@@ -313,7 +313,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               <button
                 type="submit"
                 disabled={loading || !withdrawalConsent}
-                className="provin-btn provin-btn--compact inline-flex min-h-[40px] w-full min-w-[180px] items-center justify-center rounded-full px-7 py-[10px] text-[14px] font-normal shadow-[0_4px_14px_rgba(0,102,214,0.28)] disabled:opacity-60 sm:w-auto"
+                className="provin-btn provin-btn--compact inline-flex min-h-[40px] w-full min-w-[180px] items-center justify-center rounded-full px-7 py-[10px] text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60 sm:w-auto"
               >
                 {loading ? t("payLoading") : t("payButton")}
               </button>

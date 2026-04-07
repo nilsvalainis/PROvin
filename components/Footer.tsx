@@ -53,7 +53,7 @@ export async function Footer() {
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-provin-accent/10 text-provin-accent transition group-hover:bg-provin-accent/15">
                   <MailIcon className="h-4 w-4" />
                 </span>
-                <span className="border-b border-dashed border-black/[0.12] pb-px group-hover:border-provin-accent/35">
+                <span className="border-b border-dashed border-black/[0.12] pb-px group-hover:border-black/[0.22]">
                   {t("emailCta")}
                 </span>
               </a>
@@ -66,7 +66,7 @@ export async function Footer() {
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-provin-accent/10 text-provin-accent transition group-hover:bg-provin-accent/15">
                   <WhatsAppBrandIcon className="h-[18px] w-[18px]" />
                 </span>
-                <span className="border-b border-dashed border-black/[0.12] pb-px group-hover:border-provin-accent/35">
+                <span className="border-b border-dashed border-black/[0.12] pb-px group-hover:border-black/[0.22]">
                   {t("whatsapp")}
                 </span>
               </a>
@@ -74,7 +74,7 @@ export async function Footer() {
           </div>
 
           <div
-            className="hidden shrink-0 self-stretch sm:block sm:w-[2px] sm:rounded-full sm:bg-provin-accent/85"
+            className="hidden shrink-0 self-stretch sm:block sm:w-[2px] sm:rounded-full sm:bg-black/[0.1]"
             aria-hidden
           />
 

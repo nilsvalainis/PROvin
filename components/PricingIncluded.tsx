@@ -12,7 +12,7 @@ type GridItem = {
 };
 
 const pillarRowClass =
-  "provin-lift-subtle flex min-h-0 gap-3.5 rounded-xl border border-provin-accent/15 bg-white p-4 text-left shadow-[0_2px_12px_rgba(0,102,214,0.06)] sm:p-5";
+  "provin-lift-subtle flex min-h-0 gap-3.5 rounded-xl border border-black/[0.08] bg-white p-4 text-left shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:p-5";
 
 export async function PricingIncluded() {
   const t = await getTranslations("Pricing");
@@ -30,7 +30,7 @@ export async function PricingIncluded() {
           {grid.map((item, i) => {
             const inner = (
               <>
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[12px] font-semibold text-white shadow-[0_2px_8px_rgba(0,102,214,0.3)]">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[12px] font-semibold text-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
                   {i + 1}
                 </span>
                 <div className="min-w-0 flex-1 pt-0.5">
@@ -56,7 +56,7 @@ export async function PricingIncluded() {
                 <li key={item.title} className="min-w-0">
                   <Link
                     href={irissHref}
-                    className={`${pillarRowClass} block min-h-[100%] transition hover:border-provin-accent/30 hover:shadow-[0_4px_20px_rgba(0,102,214,0.1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent`}
+                    className={`${pillarRowClass} block min-h-[100%] transition hover:border-black/[0.12] hover:shadow-[0_4px_20px_rgba(0,0,0,0.07)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent`}
                   >
                     {inner}
                   </Link>

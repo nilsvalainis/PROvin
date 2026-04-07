@@ -51,7 +51,7 @@ export async function PricingTransitionAndComparison() {
       <div className="min-w-0">
         <h2 className={`${sectionH2Class} text-center uppercase tracking-[0.04em]`}>{t("comparisonTitle")}</h2>
 
-        <div className="mt-5 min-w-0 w-full overflow-x-auto rounded-xl border border-provin-accent/20 bg-white pb-1 shadow-[0_8px_32px_rgba(0,102,214,0.12)] [-webkit-overflow-scrolling:touch] sm:mt-6">
+        <div className="mt-5 min-w-0 w-full overflow-x-auto rounded-xl border border-black/[0.1] bg-white pb-1 shadow-[0_8px_32px_rgba(0,0,0,0.06)] [-webkit-overflow-scrolling:touch] sm:mt-6">
           <table className="w-full min-w-[min(100%,560px)] border-separate border-spacing-0 text-center text-[11px] leading-tight sm:min-w-[620px] sm:text-[12px]">
             <caption className="sr-only">{t("comparisonTitle")}</caption>
             <thead>
@@ -91,7 +91,7 @@ export async function PricingTransitionAndComparison() {
                       <StandardValue value={row.standard} />
                     </td>
                     <td
-                      className={`px-2 py-3 align-middle shadow-[inset_3px_0_8px_rgba(0,102,214,0.1)] sm:px-3 ${zebra} bg-gradient-to-br from-provin-accent-soft/95 to-[#eef6ff]/90`}
+                      className={`px-2 py-3 align-middle shadow-[inset_3px_0_8px_rgba(0,0,0,0.04)] sm:px-3 ${zebra} bg-gradient-to-br from-[#f6f7f9] to-[#eceef2]/90`}
                     >
                       <ProvinValue value={row.provin} />
                     </td>

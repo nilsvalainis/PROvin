@@ -18,13 +18,13 @@ export async function WhyProvin() {
           <article className={highlightCardClass}>
             <h2 className={`${sectionH2Class} uppercase tracking-[0.02em]`}>{t("block1Title")}</h2>
             <p className="mt-3 text-[15px] font-medium leading-relaxed text-[#5c5d62] sm:text-[16px]">{t("block1Subtitle")}</p>
-            <ul className="mt-6 space-y-3 border-t border-provin-accent/12 pt-6">
+            <ul className="mt-6 space-y-3 border-t border-black/[0.08] pt-6">
               {block1List.map((item, i) => (
                 <li
                   key={item.t}
-                  className="provin-lift-subtle flex gap-3.5 rounded-xl border border-provin-accent/15 bg-white p-4 shadow-[0_2px_12px_rgba(0,102,214,0.06)] sm:p-5"
+                  className="provin-lift-subtle flex gap-3.5 rounded-xl border border-black/[0.08] bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:p-5"
                 >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[12px] font-semibold text-white shadow-[0_2px_8px_rgba(0,102,214,0.3)]">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[12px] font-semibold text-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
                     {i + 1}
                   </span>
                   <p className="min-w-0 text-[14px] font-normal leading-relaxed text-[#86868b] sm:text-[15px]">
@@ -39,13 +39,13 @@ export async function WhyProvin() {
           <article className={highlightCardClass}>
             <h2 className={`${sectionH2Class} uppercase tracking-[0.02em]`}>{t("block2Title")}</h2>
             <p className="mt-3 text-[15px] font-medium leading-relaxed text-[#5c5d62] sm:text-[16px]">{t("block2Subtitle")}</p>
-            <ul className="mt-6 space-y-3 border-t border-provin-accent/12 pt-6">
+            <ul className="mt-6 space-y-3 border-t border-black/[0.08] pt-6">
               {puzzleBullets.map((item, i) => (
                 <li
                   key={item.t}
-                  className="provin-lift-subtle flex gap-3.5 rounded-xl border border-provin-accent/15 bg-white p-4 shadow-[0_2px_12px_rgba(0,102,214,0.06)] sm:p-5"
+                  className="provin-lift-subtle flex gap-3.5 rounded-xl border border-black/[0.08] bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:p-5"
                 >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[12px] font-semibold text-white shadow-[0_2px_8px_rgba(0,102,214,0.3)]">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-provin-accent text-[12px] font-semibold text-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
                     {i + 1}
                   </span>
                   <p className="min-w-0 text-[14px] font-normal leading-relaxed text-[#86868b] sm:text-[15px]">
@@ -77,4 +77,4 @@ function renderFootnoteStar(text: string) {
 }
 
 const highlightCardClass =
-  "provin-lift-strong flex min-h-0 min-w-0 flex-col rounded-2xl border border-provin-accent/15 bg-gradient-to-b from-provin-accent-soft/95 to-[#fbfbfd] p-6 shadow-[0_4px_28px_rgba(0,102,214,0.1)] sm:p-8";
+  "provin-lift-strong flex min-h-0 min-w-0 flex-col rounded-2xl border border-black/[0.08] bg-gradient-to-b from-[#f5f5f7] to-[#fbfbfd] p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] sm:p-8";

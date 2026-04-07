@@ -33,13 +33,13 @@ export async function IrissSection() {
           socialSoon={t("socialSoon")}
         />
 
-        <div className="provin-lift-strong mt-8 w-full rounded-2xl border-2 border-provin-accent/25 bg-white p-6 shadow-[0_8px_40px_rgba(0,102,214,0.14)] ring-1 ring-provin-accent/10 sm:mt-10 sm:p-8">
+        <div className="provin-lift-strong mt-8 w-full rounded-2xl border border-black/[0.1] bg-white p-6 shadow-[0_8px_32px_rgba(0,0,0,0.07)] sm:mt-10 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
             <div className="min-w-0 flex-1 space-y-4 text-left">
               <p className="text-[16px] font-normal leading-relaxed text-[#1d1d1f] sm:text-[17px]">{t("bio1")}</p>
               <p className="text-[16px] font-normal leading-relaxed text-[#1d1d1f] sm:text-[17px]">{t("bio2")}</p>
             </div>
-            <div className="flex shrink-0 flex-col items-center justify-center rounded-xl bg-provin-accent px-5 py-4 text-center text-white shadow-[0_4px_20px_rgba(0,102,214,0.38)] sm:min-w-[140px]">
+            <div className="flex shrink-0 flex-col items-center justify-center rounded-xl bg-provin-accent px-5 py-4 text-center text-white shadow-[0_4px_16px_rgba(0,0,0,0.15)] sm:min-w-[140px]">
               <p className="text-[11px] font-medium uppercase tracking-wider text-white/90">{t("experienceLabel")}</p>
               <p className="mt-1 text-[32px] font-semibold tabular-nums leading-none tracking-tight sm:text-[36px]">
                 {t("years")}
@@ -67,7 +67,7 @@ function IrissSocialIcons({
   socialSoon: string;
 }) {
   const btnClass =
-    "flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.1] bg-white/90 text-[#1d1d1f] shadow-sm transition hover:border-provin-accent/35 hover:text-provin-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent";
+    "flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.1] bg-white/90 text-[#1d1d1f] shadow-sm transition hover:border-black/[0.18] hover:text-provin-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent";
 
   const disabledClass = `${btnClass} cursor-default opacity-60 hover:border-black/[0.1] hover:text-[#1d1d1f]`;
 
