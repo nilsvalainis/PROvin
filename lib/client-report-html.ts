@@ -143,14 +143,6 @@ function sectionHead(icon: string, title: string, opts?: { noBar?: boolean }): s
   return `<div class="pdf-sec-head${headExtra}">${icon}<h2 class="pdf-sec${hExtra}">${escapeHtml(title)}</h2></div>`;
 }
 
-function pdfCsddAlertCircleHtml(): string {
-  return `<svg class="pdf-csdd-alert-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
-}
-
-function pdfCsddAlertTriangleHtml(): string {
-  return `<svg class="pdf-csdd-alert-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
-}
-
 function formatCsddNextInspectionCell(v: string): string {
   return escapeHtml(v);
 }
@@ -167,12 +159,12 @@ function buildCsddPdfAlertRowHtml(
   flag: Exclude<CsddFieldUiFlag, "none">,
 ): string {
   const tier = flag === "red" ? "red" : "yellow";
-  const ico = flag === "red" ? pdfCsddAlertCircleHtml() : pdfCsddAlertTriangleHtml();
-  return `<tr><td colspan="2" class="pdf-csdd-alert-td"><div class="pdf-csdd-alert pdf-csdd-alert--${tier}">${ico}<span class="pdf-csdd-alert-label">${labelEscaped}</span><span class="pdf-csdd-alert-val">${valueEscaped}</span>${ico}</div></td></tr>`;
+  const ico = pdfLossAmountAlertIconHtml(tier);
+  return `<tr><td colspan="2" class="pdf-csdd-alert-td"><div class="pdf-csdd-alert-wrap"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><div class="pdf-csdd-alert pdf-csdd-alert--${tier}"><span class="pdf-csdd-alert-label">${labelEscaped}</span><span class="pdf-csdd-alert-val">${valueEscaped}</span></div></div></td></tr>`;
 }
 
 function pdfLossAmountAlertIconHtml(tier: "yellow" | "red"): string {
-  const stroke = tier === "red" ? "#DC2626" : "#F59E0B";
+  const stroke = tier === "red" ? "#FF0000" : "#FFD700";
   return `<svg class="pdf-loss-amt-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="${stroke}" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/></svg>`;
 }
 
@@ -184,7 +176,7 @@ function formatLossAmountEurCell(raw: string): string {
   if (flag === "none") return esc;
   const tier = flag === "red" ? "red" : "yellow";
   const ico = pdfLossAmountAlertIconHtml(tier);
-  return `<span class="pdf-loss-amt pdf-loss-amt--${tier}">${ico}<span class="tabular pdf-loss-amt-num">${esc}</span>${ico}</span>`;
+  return `<span class="pdf-data-alert-wrap"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="pdf-loss-amt pdf-loss-amt--${tier}"><span class="tabular pdf-loss-amt-num">${esc}</span></span></span>`;
 }
 
 function formatListedForSaleDaysCellHtml(raw: string): string {
@@ -192,7 +184,7 @@ function formatListedForSaleDaysCellHtml(raw: string): string {
   const esc = escapeHtml(t);
   if (!t || !shouldShowListedForSaleCriticalBanner(raw)) return esc;
   const ico = pdfLossAmountAlertIconHtml("red");
-  return `<span class="pdf-loss-amt pdf-loss-amt--red">${ico}<span class="tabular pdf-loss-amt-num">${esc}</span>${ico}</span>`;
+  return `<span class="pdf-data-alert-wrap"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="pdf-loss-amt pdf-loss-amt--red"><span class="tabular pdf-loss-amt-num">${esc}</span></span></span>`;
 }
 
 function extractVehicleMakeModel(csdd: string): string | null {
@@ -230,19 +222,15 @@ function wrapPdfAvotuStack(cardHtml: string, islandHtml: string): string {
   return `<div class="pdf-avotu-block-wrap">${cardHtml}${islandHtml}</div>`;
 }
 
-function pdfOdometerAnomalyValueHtml(odometerEscaped: string): string {
-  const ico = `<svg class="pdf-mileage-odo-anomaly-ico" width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="#D32F2F" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="#D32F2F" stroke-width="2" stroke-linecap="round"/></svg>`;
-  return `<span class="pdf-mileage-odo-value pdf-mileage-odo-value--anomaly">${ico}<span class="tabular">${odometerEscaped}</span></span>`;
-}
-
 function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow, anomalyBySourceOrder: Map<number, boolean>): string {
   const flag = pdfCountryFlagEmoji(r.country);
   const aria = escapeHtml(r.country);
   const odoEscaped = escapeHtml(r.odometer);
   const anom = anomalyBySourceOrder.get(r.sourceOrder) === true;
   const rowClass = anom ? "pdf-mileage-history-row pdf-mileage-history-row--anomaly" : "pdf-mileage-history-row";
+  const ico = pdfLossAmountAlertIconHtml("red");
   const odoTd = anom
-    ? `<td class="tabular pdf-mileage-cell-odo">${pdfOdometerAnomalyValueHtml(odoEscaped)}</td>`
+    ? `<td class="tabular pdf-mileage-cell-odo"><span class="pdf-data-alert-wrap"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="pdf-mileage-odo-inner pdf-mileage-odo-inner--anomaly"><span class="tabular">${odoEscaped}</span></span></span></td>`
     : `<td class="tabular pdf-mileage-cell-odo"><span class="pdf-mileage-odo-value">${odoEscaped}</span></td>`;
   return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td>${odoTd}<td class="pdf-mileage-cell-flag"><span class="pdf-country-flag" role="img" aria-label="${aria}">${flag}</span></td></tr>`;
 }
@@ -696,14 +684,6 @@ function clientReportPrintCss(): string {
         background:#f9fafb!important;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-mileage-history-table tbody tr.pdf-mileage-history-row--anomaly{
-        background:rgba(255,0,0,0.03)!important;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-mileage-history-table tbody tr.pdf-mileage-history-row--anomaly td:first-child{
-        box-shadow:inset 3px 0 0 #FF4D4D;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
       .pdf-mileage-history-table th.pdf-mileage-th-date{text-align:left!important;}
       .pdf-mileage-history-table th.pdf-mileage-th-odo{text-align:center!important;}
       .pdf-mileage-history-table th.pdf-mileage-th-flag{text-align:right!important;}
@@ -714,10 +694,13 @@ function clientReportPrintCss(): string {
       .pdf-mileage-history-table td.pdf-mileage-cell-flag{
         text-align:right!important;vertical-align:middle!important;
       }
-      .pdf-mileage-odo-value{display:inline-flex;align-items:center;justify-content:center;gap:4px;color:#1d1d1f;font-weight:500;}
-      .pdf-mileage-odo-value--anomaly{color:#D32F2F!important;font-weight:600!important;}
-      .pdf-mileage-odo-value--anomaly .tabular{color:#D32F2F!important;}
-      .pdf-mileage-odo-anomaly-ico{flex-shrink:0;display:block;}
+      .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
+      .pdf-mileage-odo-inner--anomaly{
+        display:inline-flex;align-items:center;justify-content:center;padding:2px 7px;border-radius:5px;
+        border:1px solid #e2e8f0;background:#fff1f2;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-mileage-odo-inner--anomaly .tabular{color:#D32F2F!important;font-weight:600!important;}
       .pdf-country-flag{
         font-style:normal;font-variant:normal;letter-spacing:0;
         font-size:1.05em;line-height:1;display:inline-flex;align-items:center;justify-content:center;
@@ -772,18 +755,22 @@ function clientReportPrintCss(): string {
       .pdf-alert-banner--red .pdf-alert-banner-text{color:#374151;}
       .pdf-alert-banner--yellow .pdf-alert-banner-text{color:#374151;}
       .pdf-alert-banner .pdf-alert-banner-ico:last-child{margin-left:auto;}
+      .pdf-data-alert-wrap{
+        display:inline-flex;align-items:center;gap:6px;max-width:100%;vertical-align:middle;
+      }
+      .pdf-data-alert-ico{flex-shrink:0;display:block;line-height:0;}
+      .pdf-csdd-alert-wrap{
+        display:flex;align-items:center;gap:6px;width:100%;
+      }
       .pdf-loss-amt{
-        display:inline-flex;align-items:center;justify-content:center;gap:5px;
+        display:inline-flex;align-items:center;justify-content:center;
         max-width:100%;padding:3px 7px;border-radius:5px;font-size:9pt!important;line-height:1.2;
         font-family:Inter,sans-serif!important;vertical-align:middle;
+        border:1px solid #e2e8f0;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-loss-amt--yellow{
-        border:1px solid #F59E0B;background:#FFFBEB;
-      }
-      .pdf-loss-amt--red{
-        border:1px solid #EF4444;background:#FEF2F2;
-      }
+      .pdf-loss-amt--yellow{background:#fefce8;}
+      .pdf-loss-amt--red{background:#fff1f2;}
       .pdf-loss-amt-num{font-weight:600;}
       .pdf-loss-amt--yellow .pdf-loss-amt-num{color:#B45309!important;}
       .pdf-loss-amt--red .pdf-loss-amt-num{color:#D32F2F!important;}
@@ -812,14 +799,12 @@ function clientReportPrintCss(): string {
         width:100%!important;max-width:none!important;padding:4px 0!important;border-bottom:1px solid #f1f5f9!important;
       }
       .pdf-csdd-alert{
-        display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:4px;font-size:9pt!important;line-height:1.25;
-        border:1px solid #FEF3C7;background:#FFFBEB;border-left:3px solid #F59E0B;
+        flex:1;display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:4px;font-size:9pt!important;line-height:1.25;
+        border:1px solid #e2e8f0;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-csdd-alert--red{border-color:#FEE2E2;background:#FEF2F2;border-left-color:#EF4444;}
-      .pdf-csdd-alert--yellow{border-color:#FEF3C7;background:#FFFBEB;border-left-color:#F59E0B;}
-      .pdf-csdd-alert-ico{flex-shrink:0;width:10px;height:10px;display:block;color:#F59E0B;}
-      .pdf-csdd-alert--red .pdf-csdd-alert-ico{color:#EF4444;}
+      .pdf-csdd-alert--red{background:#fff1f2;}
+      .pdf-csdd-alert--yellow{background:#fefce8;}
       .pdf-csdd-alert-label{color:#86868b;font-weight:600;white-space:nowrap;}
       .pdf-csdd-alert-val{color:#1d1d1f;text-align:right;flex:1;min-width:0;}
       .mirror-table--csdd td.pdf-csdd-tech-compact{
