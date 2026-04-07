@@ -35,16 +35,9 @@ export async function IrissSection() {
         </div>
 
         <div className={`${irissCardClass} mt-7 sm:mt-8`}>
-          <div className="flex w-full min-w-0 flex-col gap-7 sm:flex-row sm:items-start sm:justify-between sm:gap-8 lg:gap-10">
-            <div className="min-w-0 flex-1 space-y-4 text-left">
-              <p className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>{t("bio1")}</p>
-              <p className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>{t("bio2")}</p>
-            </div>
-            <div className="mx-auto flex w-full max-w-[200px] shrink-0 flex-col items-center justify-center rounded-xl bg-provin-accent px-6 py-5 text-center text-white shadow-[0_4px_16px_rgba(0,0,0,0.12)] sm:mx-0 sm:w-auto sm:max-w-none sm:min-w-[152px] sm:self-start sm:py-5">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-white/90">{t("experienceLabel")}</p>
-              <p className="mt-1.5 text-[34px] font-semibold tabular-nums leading-none tracking-tight sm:text-[38px]">{t("years")}</p>
-              <p className="mt-1.5 text-[12px] font-normal text-white/90">{t("yearsLabel")}</p>
-            </div>
+          <div className="mx-auto max-w-[65ch] space-y-4 text-center">
+            <p className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>{t("bio1")}</p>
+            <p className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>{t("bio2")}</p>
           </div>
         </div>
       </div>
