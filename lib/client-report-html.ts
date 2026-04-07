@@ -996,9 +996,6 @@ export function buildClientReportDocumentHtml(args: {
   );
   if (alertBannersHtml) lines.push(alertBannersHtml);
 
-  const approvedHtml = buildApprovedByIrissHtml(p);
-  if (approvedHtml) lines.push(approvedHtml);
-
   const payBlock = buildPdfAdminMirrorPaymentBlock(p, money, dateFmt, ICO.chart);
   if (payBlock) lines.push(payBlock);
   const vehicleBlock = buildPdfAdminMirrorVehicleBlock(p, makeModel, ICO.car);
@@ -1008,9 +1005,6 @@ export function buildClientReportDocumentHtml(args: {
   const notesBlock = buildPdfAdminMirrorNotesBlock(p.notes, ICO.clip);
   if (notesBlock) lines.push(notesBlock);
 
-  const listingPriorityHtml = buildListingAnalysisPriorityHtml(p);
-  if (listingPriorityHtml) lines.push(listingPriorityHtml);
-
   const unifiedMileageHtml = buildUnifiedMileageTableHtml(p);
   if (unifiedMileageHtml) lines.push(unifiedMileageHtml);
 
@@ -1019,6 +1013,12 @@ export function buildClientReportDocumentHtml(args: {
 
   const avotuHtml = buildAvotuDatiSectionHtml(p);
   if (avotuHtml) lines.push(avotuHtml);
+
+  const listingPriorityHtml = buildListingAnalysisPriorityHtml(p);
+  if (listingPriorityHtml) lines.push(listingPriorityHtml);
+
+  const approvedHtml = buildApprovedByIrissHtml(p);
+  if (approvedHtml) lines.push(approvedHtml);
 
   lines.push('<div class="legal-block">');
   lines.push(`<p>${escapeHtml(CLIENT_REPORT_FOOTER_DISCLAIMER)}</p>`);
