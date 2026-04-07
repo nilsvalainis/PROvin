@@ -56,38 +56,36 @@ export async function HowItWorks() {
 }
 
 const BLUE = "var(--color-provin-accent)";
-const INK = "#111827";
 
 function StepIcon({ n }: { n: string }) {
   const box = "h-[76px] w-[76px] sm:h-[84px] sm:w-[84px]";
   if (n === "1") {
     return (
       <svg className={box} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <rect x="5" y="4.5" width="14" height="15" rx="2.25" stroke={INK} strokeWidth={1.7} />
-        <path d="M8 8.5h8M8 12h8M8 15.5h5.5" stroke={INK} strokeWidth={1.55} strokeLinecap="round" />
-        <path d="M6.8 6.4h10.4" stroke={BLUE} strokeWidth={1.9} strokeLinecap="round" />
-        <circle cx="16.2" cy="6.4" r="1.05" fill={BLUE} />
+        <path
+          d="M6.2 3.8h11.6c1 0 1.8.8 1.8 1.8v12.8c0 1-.8 1.8-1.8 1.8H6.2c-1 0-1.8-.8-1.8-1.8V5.6c0-1 .8-1.8 1.8-1.8z"
+          fill={BLUE}
+        />
+        <path d="M7.6 8.4h8.8M7.6 11.8h8.8M7.6 15.2h5.7" stroke="#ffffff" strokeWidth={1.35} strokeLinecap="round" />
+        <path d="M6.9 6.3h10.2" stroke="#ffffff" strokeOpacity={0.55} strokeWidth={1.1} strokeLinecap="round" />
       </svg>
     );
   }
   if (n === "2") {
     return (
       <svg className={box} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <rect x="3.5" y="6.5" width="17" height="11" rx="2.5" stroke={INK} strokeWidth={1.7} />
-        <path d="M3.7 10.7h16.6" stroke={INK} strokeWidth={1.3} strokeOpacity={0.5} strokeLinecap="round" />
-        <rect x="5.4" y="12.2" width="4.4" height="3.4" rx="0.7" stroke={BLUE} strokeWidth={1.4} />
-        <path d="M13.7 14.1h5.2" stroke={INK} strokeWidth={1.2} strokeLinecap="round" />
-        <path d="M13.7 15.9h3.6" stroke={BLUE} strokeWidth={1.6} strokeLinecap="round" />
-        <circle cx="18.8" cy="8.4" r="0.95" fill={BLUE} />
+        <path d="M4.2 6.1h15.6c1.1 0 2 .9 2 2v7.8c0 1.1-.9 2-2 2H4.2c-1.1 0-2-.9-2-2V8.1c0-1.1.9-2 2-2z" fill={BLUE} />
+        <path d="M2.6 10.6h18.8" stroke="#ffffff" strokeOpacity={0.5} strokeWidth={1.15} strokeLinecap="round" />
+        <rect x="5.1" y="12.3" width="4.5" height="3.3" rx="0.6" stroke="#ffffff" strokeWidth={1.15} />
+        <path d="M13.6 14.2h5.2M13.6 15.9h3.6" stroke="#ffffff" strokeWidth={1.2} strokeLinecap="round" />
       </svg>
     );
   }
   return (
     <svg className={box} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M12 3.8 18.5 6v5.4c0 4.1-2.8 7.2-6.5 8.8-3.7-1.6-6.5-4.7-6.5-8.8V6z" stroke={INK} strokeWidth={1.7} />
-      <path d="M12 6.3c1.8.8 3 1.4 3 1.4v3.8c0 2.6-1.7 4.5-3 5.2-1.3-.7-3-2.6-3-5.2V7.7s1.2-.6 3-1.4z" stroke={BLUE} strokeWidth={1.35} />
-      <path d="m9.7 12.3 1.6 1.6 3.1-3.1" stroke={BLUE} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="17.8" cy="8" r="0.95" fill={BLUE} />
+      <path d="M12 3.4 18.8 5.9v5.8c0 4.4-2.9 7.7-6.8 9.3-3.9-1.6-6.8-4.9-6.8-9.3V5.9z" fill={BLUE} />
+      <path d="m9.4 12.3 1.9 1.9 3.6-3.6" stroke="#ffffff" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 6.4c2 .9 3.3 1.6 3.3 1.6v3.9c0 2.7-1.8 4.8-3.3 5.5-1.5-.7-3.3-2.8-3.3-5.5V8s1.3-.7 3.3-1.6z" stroke="#ffffff" strokeOpacity={0.45} strokeWidth={1} />
     </svg>
   );
 }
