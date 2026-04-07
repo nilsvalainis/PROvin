@@ -1,5 +1,6 @@
 "use client";
 
+import { ListedForSaleFieldChrome } from "@/components/admin/ListedForSaleFieldChrome";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { TirgusFormFields } from "@/lib/admin-source-blocks";
 import {
@@ -61,19 +62,21 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, va
         <tbody>
           <tr className="border-b border-slate-100">
             <td className={`${cellPad} align-top`}>
-              {readOnly ? (
-                <span className="text-[var(--color-provin-muted)]">{val.listedForSale.trim() || "—"}</span>
-              ) : (
-                <input
-                  type="text"
-                  className={inp}
-                  placeholder="piem., 22"
-                  value={val.listedForSale}
-                  disabled={disabled}
-                  onChange={(e) => setField("listedForSale", e.target.value)}
-                  aria-label={TIRGUS_LABEL_LISTED}
-                />
-              )}
+              <ListedForSaleFieldChrome value={val.listedForSale}>
+                {readOnly ? (
+                  <span className="text-[var(--color-provin-muted)]">{val.listedForSale.trim() || "—"}</span>
+                ) : (
+                  <input
+                    type="text"
+                    className={`${inp} min-w-0`}
+                    placeholder="piem., 22"
+                    value={val.listedForSale}
+                    disabled={disabled}
+                    onChange={(e) => setField("listedForSale", e.target.value)}
+                    aria-label={TIRGUS_LABEL_LISTED}
+                  />
+                )}
+              </ListedForSaleFieldChrome>
             </td>
             <td className={`${cellPad} align-top`}>
               {readOnly ? (

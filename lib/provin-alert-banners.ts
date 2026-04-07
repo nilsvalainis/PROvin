@@ -7,7 +7,9 @@ import {
   type ClientManualLtabBlockPdf,
   type ClientManualVendorBlockPdf,
   type CsddFormFields,
+  type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
+import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 import {
   getNextInspectionDateUiFlag,
   getParticulateMatterUiFlag,
@@ -27,7 +29,12 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 
-export type ProvinAlertBannerKind = "odometer" | "incidents" | "particulate" | "inspection";
+export type ProvinAlertBannerKind =
+  | "odometer"
+  | "tirgus_high_supply"
+  | "incidents"
+  | "particulate"
+  | "inspection";
 
 /** Banera vizuālais līmenis — sakrīt ar avotu dzelteno/sarkano. */
 export type ProvinAlertSeverity = "red" | "yellow";
@@ -41,6 +48,8 @@ export type ProvinAlertBanner = {
 export const PROVIN_ALERT_TEXT = {
   odometer:
     "Uzmanību! Transportlīdzekļa vēsturē konstatētas odometra rādījumu neatbilstības (anomālijas).",
+  tirgus_high_supply:
+    "Uzmanību! Tirgū fiksēts ļoti liels identisku modeļu piedāvājums (virs 200 auto), kas var ietekmēt tālākpārdošanas vērtību un likviditāti.",
   incidents:
     "Brīdinājums: Transportlīdzeklim reģistrēti ceļu satiksmes negadījumi vai fiksēti būtiski zaudējumu atlīdzības prasījumi.",
   particulate:
@@ -97,6 +106,7 @@ export function computeProvinAlertBanners(args: {
   csddForm: CsddFormFields | null | undefined;
   manualLtabBlock: ClientManualLtabBlockPdf | null | undefined;
   manualVendorBlocks: ClientManualVendorBlockPdf[] | undefined;
+  tirgusForm?: TirgusFormFields | null;
   referenceDate?: Date;
 }): ProvinAlertBanner[] {
   const ref = args.referenceDate ?? new Date();
@@ -105,6 +115,14 @@ export function computeProvinAlertBanners(args: {
   const anomalyMap = computeOdometerAnomalyBySourceOrder(args.unifiedMileageRows);
   if (hasAnyOdometerAnomaly(anomalyMap)) {
     out.push({ kind: "odometer", text: PROVIN_ALERT_TEXT.odometer, severity: "red" });
+  }
+
+  if (args.tirgusForm && shouldShowListedForSaleCriticalBanner(args.tirgusForm.listedForSale)) {
+    out.push({
+      kind: "tirgus_high_supply",
+      text: PROVIN_ALERT_TEXT.tirgus_high_supply,
+      severity: "red",
+    });
   }
 
   const incSev = computeIncidentBannerSeverity(args.manualLtabBlock, args.manualVendorBlocks);
@@ -137,6 +155,7 @@ export function computeProvinAlertBannersFromPayloadSlice(
     csddForm?: CsddFormFields | null;
     manualLtabBlock?: ClientManualLtabBlockPdf | null;
     manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
+    tirgusForm?: TirgusFormFields | null;
   },
   referenceDate?: Date,
 ): ProvinAlertBanner[] {
@@ -146,6 +165,7 @@ export function computeProvinAlertBannersFromPayloadSlice(
     csddForm: p.csddForm,
     manualLtabBlock: p.manualLtabBlock,
     manualVendorBlocks: p.manualVendorBlocks ?? undefined,
+    tirgusForm: p.tirgusForm,
     referenceDate,
   });
 }
@@ -190,6 +210,7 @@ export function computeProvinAlertBannersFromWorkspace(
       autoRecordsBlock: ws.auto_records,
       manualVendorBlocks: toPdfManualVendorBlocks(ws),
       manualLtabBlock: toPdfLtabManualBlock(ws.ltab),
+      tirgusForm: ws.tirgus,
     },
     referenceDate,
   );

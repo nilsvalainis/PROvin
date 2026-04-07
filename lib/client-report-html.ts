@@ -62,6 +62,7 @@ import {
   type CsddFieldUiFlag,
 } from "@/lib/csdd-ui-flags";
 import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
+import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
@@ -181,6 +182,14 @@ function formatLossAmountEurCell(raw: string): string {
   const tier = flag === "red" ? "red" : "yellow";
   const ico = pdfLossAmountAlertIconHtml(tier);
   return `<span class="pdf-loss-amt pdf-loss-amt--${tier}">${ico}<span class="tabular pdf-loss-amt-num">${esc}</span>${ico}</span>`;
+}
+
+function formatListedForSaleDaysCellHtml(raw: string): string {
+  const t = raw.trim();
+  const esc = escapeHtml(t);
+  if (!t || !shouldShowListedForSaleCriticalBanner(raw)) return esc;
+  const ico = pdfLossAmountAlertIconHtml("red");
+  return `<span class="pdf-loss-amt pdf-loss-amt--red">${ico}<span class="tabular pdf-loss-amt-num">${esc}</span>${ico}</span>`;
 }
 
 function extractVehicleMakeModel(csdd: string): string | null {
@@ -308,7 +317,7 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
     const rows: string[] = [];
     if (f.listedForSale.trim()) {
       rows.push(
-        `<tr><td>${escapeHtml(TIRGUS_LABEL_LISTED)}</td><td>${escapeHtml(f.listedForSale.trim())}</td></tr>`,
+        `<tr><td>${escapeHtml(TIRGUS_LABEL_LISTED)}</td><td>${formatListedForSaleDaysCellHtml(f.listedForSale)}</td></tr>`,
       );
     }
     if (f.listingCreated.trim()) {
@@ -925,6 +934,7 @@ export function buildClientReportDocumentHtml(args: {
       autoRecordsBlock: p.autoRecordsBlock ?? null,
       manualVendorBlocks: p.manualVendorBlocks ?? null,
       manualLtabBlock: p.manualLtabBlock ?? null,
+      tirgusForm: p.tirgusForm ?? null,
     }),
   );
   if (alertBannersHtml) lines.push(alertBannersHtml);
