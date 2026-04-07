@@ -55,16 +55,26 @@ export async function HowItWorks() {
   );
 }
 
+const BLUE = "var(--color-provin-accent)";
+const BLUE_SOFT = "#e8f2fc";
+
 function StepIcon({ n }: { n: string }) {
   const box = "h-[76px] w-[76px] sm:h-[84px] sm:w-[84px]";
   if (n === "1") {
     return (
       <svg className={box} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <rect x="5" y="3.5" width="14" height="17" rx="2" fill="white" stroke="currentColor" strokeWidth={1.5} />
+        <defs>
+          <linearGradient id="how-form-face-1" x1="5" y1="4.5" x2="5" y2="19.5" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#ffffff" />
+            <stop offset="1" stopColor={BLUE_SOFT} />
+          </linearGradient>
+        </defs>
+        <rect x="5" y="4.5" width="14" height="15" rx="2" fill="url(#how-form-face-1)" stroke={BLUE} strokeWidth={1.75} />
+        <rect x="6.25" y="5.5" width="11.5" height="3.35" rx="0.75" fill={BLUE} fillOpacity={0.28} />
         <path
-          d="M8 8.5h8M8 12h8M8 15.5h5.5"
-          stroke="currentColor"
-          strokeWidth={1.25}
+          d="M8 11.1h8M8 14.1h8M8 17.1h5"
+          stroke={BLUE}
+          strokeWidth={1.65}
           strokeLinecap="round"
         />
       </svg>
@@ -73,23 +83,51 @@ function StepIcon({ n }: { n: string }) {
   if (n === "2") {
     return (
       <svg className={box} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <rect x="3.5" y="6" width="17" height="12" rx="2.5" fill="white" stroke="currentColor" strokeWidth={1.5} />
-        <rect x="5.5" y="8.5" width="4" height="3" rx="0.6" fill="white" stroke="currentColor" strokeWidth={1.2} />
-        <path d="M3.5 11.5h17" stroke="currentColor" strokeWidth={1.25} strokeLinecap="round" opacity={0.35} />
-        <path d="M14 15.5h5" stroke="currentColor" strokeWidth={1.15} strokeLinecap="round" />
+        <defs>
+          <linearGradient id="how-card-body-2" x1="3.5" y1="6.5" x2="3.5" y2="17.5" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#ffffff" />
+            <stop offset="1" stopColor={BLUE_SOFT} />
+          </linearGradient>
+        </defs>
+        <rect x="3.5" y="6.5" width="17" height="11" rx="2.25" fill="url(#how-card-body-2)" stroke={BLUE} strokeWidth={1.75} />
+        <rect x="3.5" y="6.5" width="17" height="4.35" rx="2.25" fill={BLUE} fillOpacity={0.24} />
+        <path d="M3.5 10.75h17" stroke={BLUE} strokeOpacity={0.45} strokeWidth={1.35} strokeLinecap="round" />
+        <rect x="5.5" y="12.25" width="4.25" height="3.25" rx="0.65" fill="#ffffff" stroke={BLUE} strokeWidth={1.45} />
+        <path
+          d="M7.1 13.9h1.1M7.1 14.9h1.1"
+          stroke={BLUE}
+          strokeOpacity={0.55}
+          strokeWidth={0.9}
+          strokeLinecap="round"
+        />
+        <path d="M13.5 15.5h5.5" stroke={BLUE} strokeOpacity={0.35} strokeWidth={1.2} strokeLinecap="round" />
       </svg>
     );
   }
   return (
     <svg className={box} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="5" y="3" width="14" height="17" rx="2" fill="white" stroke="currentColor" strokeWidth={1.5} />
-      <path d="M8 7h8M8 9.8h6" stroke="currentColor" strokeWidth={1.15} strokeLinecap="round" />
-      <path d="M5 12.5h14" stroke="currentColor" strokeWidth={1} strokeLinecap="round" opacity={0.2} />
-      <circle cx="12" cy="16.5" r="3" fill="white" stroke="currentColor" strokeWidth={1.35} />
+      <defs>
+        <linearGradient id="how-shield-fill-3" x1="12" y1="3.8" x2="12" y2="20.5" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#ffffff" />
+          <stop offset="1" stopColor={BLUE_SOFT} />
+        </linearGradient>
+      </defs>
       <path
-        d="m10.25 16.5 1.15 1.15 2.45-2.45"
-        stroke="currentColor"
-        strokeWidth={1.2}
+        d="M12 3.8 18.5 6v5.4c0 4.1-2.8 7.2-6.5 8.8-3.7-1.6-6.5-4.7-6.5-8.8V6z"
+        fill="url(#how-shield-fill-3)"
+        stroke={BLUE}
+        strokeWidth={1.75}
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 5.9c2.1 1 3.5 1.7 3.5 1.7v4.1c0 2.9-1.9 5.1-3.5 5.9-1.6-.8-3.5-3-3.5-5.9V7.6s1.4-.7 3.5-1.7z"
+        fill={BLUE}
+        fillOpacity={0.1}
+      />
+      <path
+        d="m9.5 12.2 1.8 1.8 3.4-3.4"
+        stroke={BLUE}
+        strokeWidth={2.1}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
