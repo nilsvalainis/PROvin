@@ -170,24 +170,21 @@ export function computeProvinAlertBannersFromPayloadSlice(
   });
 }
 
-function pdfAlertBannerCircleIconHtml(): string {
-  return `<svg class="pdf-alert-banner-ico pdf-alert-banner-ico--circle" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
-}
-
+/** PDF: 16px → ~21px (+30%); sarkans/dzeltens — vienāds trijstūnis ar izsaukumu. */
 function pdfAlertBannerTriangleIconHtml(): string {
-  return `<svg class="pdf-alert-banner-ico pdf-alert-banner-ico--triangle" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+  return `<svg class="pdf-alert-banner-ico pdf-alert-banner-ico--triangle" width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
 }
 
-function pdfAlertBannerIconsHtml(severity: ProvinAlertSeverity): string {
-  return severity === "red" ? pdfAlertBannerCircleIconHtml() : pdfAlertBannerTriangleIconHtml();
+function pdfAlertBannerIconsHtml(): string {
+  return pdfAlertBannerTriangleIconHtml();
 }
 
-/** PDF HTML: 8px atstarpe starp joslām; dzeltens = trijstūris, sarkans = aplis. */
+/** PDF HTML: 8px atstarpe starp joslām; ikonas — trijstūņi (admin UI atšķirīgs). */
 export function buildPdfAlertBannersHtml(banners: ProvinAlertBanner[]): string {
   if (banners.length === 0) return "";
   const blocks = banners.map(
     (b) =>
-      `<div class="pdf-alert-banner pdf-alert-banner--${b.severity}" role="alert" data-provin-alert="${b.kind}" data-provin-severity="${b.severity}">${pdfAlertBannerIconsHtml(b.severity)}<p class="pdf-alert-banner-text">${escapeHtmlPdf(b.text)}</p>${pdfAlertBannerIconsHtml(b.severity)}</div>`,
+      `<div class="pdf-alert-banner pdf-alert-banner--${b.severity}" role="alert" data-provin-alert="${b.kind}" data-provin-severity="${b.severity}">${pdfAlertBannerIconsHtml()}<p class="pdf-alert-banner-text">${escapeHtmlPdf(b.text)}</p>${pdfAlertBannerIconsHtml()}</div>`,
   );
   return `<div class="pdf-alert-banners-stack">${blocks.join("\n")}</div>`;
 }

@@ -35,13 +35,7 @@ import {
   provincLogoSvg,
 } from "@/lib/client-report-pdf-layout-draft";
 import { contactMailtoHref, whatsappChatUrl } from "@/lib/contact";
-import {
-  APPROVED_BY_IRISS_BODY_BG,
-  APPROVED_BY_IRISS_HEADER_BG,
-  LISTING_ANALYSIS_BODY_BG,
-  LISTING_ANALYSIS_HEADER_BG,
-  NEUTRAL_AVOTU_HEADER_BG,
-} from "@/lib/admin-header-gradients";
+import { APPROVED_BY_IRISS_BODY_BG, APPROVED_BY_IRISS_HEADER_BG } from "@/lib/admin-header-gradients";
 import { pdfCountryFlagEmoji } from "@/lib/pdf-country-flags";
 import {
   buildPdfAlertBannersHtml,
@@ -70,7 +64,6 @@ import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
-const PDF_SECTION_AVOTU_DATI = "AVOTU DATI";
 const PDF_APPROVED_BY_IRISS = "APPROVED BY IRISS";
 const PDF_IRISS_SECTION_1 = "1. Kopsavilkums";
 const PDF_IRISS_SECTION_2 = "2. Ieteikumi klātienes apskatei";
@@ -144,11 +137,9 @@ function sectionHeadBrand(icon: string, title: string): string {
   return `<div class="pdf-sec-head pdf-sec-head--brand"><span class="pdf-sec-ico-bubble" aria-hidden="true">${icon}</span><h2 class="pdf-sec pdf-sec--nobar">${escapeHtml(title)}</h2></div>`;
 }
 
-function sectionHead(icon: string, title: string, opts?: { noBar?: boolean }): string {
-  const noBar = opts?.noBar === true;
-  const headExtra = noBar ? " pdf-sec-head--nobar" : "";
-  const hExtra = noBar ? " pdf-sec--nobar" : "";
-  return `<div class="pdf-sec-head${headExtra}">${icon}<h2 class="pdf-sec${hExtra}">${escapeHtml(title)}</h2></div>`;
+/** Zaļš smalks akcents — sludinājuma analīze un avotu apakšbloki (PDF). */
+function sectionHeadBrandGreen(icon: string, title: string): string {
+  return `<div class="pdf-sec-head pdf-sec-head--brand pdf-sec-head--accent-green"><span class="pdf-sec-ico-bubble pdf-sec-ico-bubble--green" aria-hidden="true">${icon}</span><h2 class="pdf-sec pdf-sec--nobar">${escapeHtml(title)}</h2></div>`;
 }
 
 function formatCsddNextInspectionCell(v: string): string {
@@ -173,7 +164,7 @@ function buildCsddPdfAlertRowHtml(
 
 function pdfLossAmountAlertIconHtml(tier: "yellow" | "red"): string {
   const stroke = tier === "red" ? "#FF4D4D" : "#FFC107";
-  return `<svg class="pdf-loss-amt-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="${stroke}" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/></svg>`;
+  return `<svg class="pdf-loss-amt-ico pdf-warn-tri-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/></svg>`;
 }
 
 function formatLossAmountEurCell(raw: string): string {
@@ -210,12 +201,7 @@ function extractVehicleMakeModel(csdd: string): string | null {
   return m ? m[0].trim().replace(/\s{2,}/g, " ") : null;
 }
 
-/** Neitrāla pelēka josla; krāsa tikai ikonā (pdf-avotu-ico-brand--*). */
-function pdfAvotuNeutralHeader(iconHtml: string, title: string, iconBrandClass: string): string {
-  return `<div class="pdf-avotu-header pdf-avotu-header--neutral"><span class="pdf-avotu-header-ico ${iconBrandClass}" aria-hidden="true">${iconHtml}</span><h3 class="pdf-avotu-header-title">${escapeHtml(title)}</h3></div>`;
-}
-
-/** Neatkarīga komentāru „sala” zem datu kartes — bez rāmja, #f9f9f9, slīpraksts. */
+/** Komentāru bloks zem avota (PDF — balts, minimāls). */
 function pdfAvotuCommentIsland(text: string): string {
   const t = text.trim();
   if (!t) return "";
@@ -223,11 +209,6 @@ function pdfAvotuCommentIsland(text: string): string {
     <p class="pdf-avotu-comment-island-label">${escapeHtml(PDF_SUB_BLOCK_COMMENTS)}</p>
     <pre class="mirror-pre pdf-avotu-comment-island-body">${escapeHtml(t)}</pre>
   </div>`;
-}
-
-function wrapPdfAvotuStack(cardHtml: string, islandHtml: string): string {
-  if (!islandHtml) return cardHtml;
-  return `<div class="pdf-avotu-block-wrap">${cardHtml}${islandHtml}</div>`;
 }
 
 function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow, anomalyBySourceOrder: Map<number, boolean>): string {
@@ -332,17 +313,16 @@ function buildUnifiedIncidentsTableHtml(p: ClientReportPayload): string {
   return `<div class="pdf-unified-incidents-zone pdf-surface-card" role="region">${sectionHeadBrand(ICO.alertTriangle, NEGADIJUMU_VESTURE_TITLE)}${tablesHtml}</div>`;
 }
 
-/** CSDD — apskates datumi + nobraukuma tabulas (pilns eksports); raw nav PDF. */
+/** CSDD — apskates datumi + strukturētie lauki (viena galvenā līmeņa zona, kā NOBRAUKUMA VĒSTURE). */
 function buildCsddAvotuSubsection(p: ClientReportPayload): string {
   const hasStruct = Boolean(p.csddForm && csddFormHasContent(p.csddForm));
   const hasRaw = p.csdd.trim().length > 0;
   if (!hasStruct && !hasRaw) return "";
 
-  const header = pdfAvotuNeutralHeader(ICO.clip, PDF_SUB_CSDD, "pdf-avotu-ico-brand--csdd");
+  const head = sectionHeadBrandGreen(ICO.clip, PDF_SUB_CSDD);
 
   if (hasStruct && p.csddForm) {
     const f = p.csddForm;
-    const bodyParts: string[] = [];
     const regRows: string[] = [];
     for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
       const v = (f[key] as string).trim();
@@ -357,19 +337,12 @@ function buildCsddAvotuSubsection(p: ClientReportPayload): string {
         regRows.push(`<tr><td>${escapeHtml(label)}</td><td>${valueHtml}</td></tr>`);
       }
     }
-    if (regRows.length > 0) {
-      bodyParts.push(`<table class="mirror-table mirror-table--csdd"><tbody>${regRows.join("\n")}</tbody></table>`);
-    }
-    const bodyHtml = bodyParts.join("\n");
-    const card =
-      bodyHtml.trim() === ""
-        ? `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`
-        : `<div class="pdf-avotu-card pdf-avotu-card--neutral">${header}<div class="pdf-avotu-body">${bodyHtml}</div></div>`;
-    return card;
+    if (regRows.length === 0) return "";
+    const bodyHtml = `<table class="mirror-table mirror-table--csdd"><tbody>${regRows.join("\n")}</tbody></table>`;
+    return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-source-section-body">${bodyHtml}</div></div>`;
   }
 
-  const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral">${header}<div class="pdf-avotu-body"><pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre></div></div>`;
-  return card;
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-source-section-body"><pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre></div></div>`;
 }
 
 /** Tirgus dati — HTML ķermenis „Sludinājuma vēsture” apakšsadaļai (bez ārējās kartes). */
@@ -421,41 +394,33 @@ function pdfIconForVendorTitle(title: string): string {
   return ICO.layers;
 }
 
-function vendorPdfIconBrandClass(title: string): string {
-  if (title === SOURCE_BLOCK_LABELS.autodna) return "pdf-avotu-ico-brand--autodna";
-  if (title === SOURCE_BLOCK_LABELS.carvertical) return "pdf-avotu-ico-brand--carvertical";
-  if (title === SOURCE_BLOCK_LABELS.auto_records) return "pdf-avotu-ico-brand--auto-records";
-  return "pdf-avotu-ico-brand--autodna";
-}
-
 /** AUTO RECORDS — PDF blokā rādam komentārus; nobraukums ir vienotajā tabulā augšā. */
 function buildAutoRecordsAvotuSubsection(b: AutoRecordsBlockState | null | undefined): string {
   if (!b || !autoRecordsBlockHasContent(b)) return "";
   const hasComments = b.comments.trim().length > 0;
   if (!hasComments) return "";
-  const header = pdfAvotuNeutralHeader(ICO.spark, SOURCE_BLOCK_LABELS.auto_records, "pdf-avotu-ico-brand--auto-records");
-  const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`;
-  return wrapPdfAvotuStack(card, hasComments ? pdfAvotuCommentIsland(b.comments) : "");
+  const head = sectionHeadBrandGreen(ICO.spark, SOURCE_BLOCK_LABELS.auto_records);
+  const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(b.comments)}</div>`;
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
 
-/** Viena trešā pušu avota apakšbloks zem „AVOTU DATI“ — tikai komentāri (nobraukums un negadījumi ir vienotajās tabulās augšā). */
+/** Trešās puses avots — tikai komentāri (nobraukums un negadījumi ir vienotajās tabulās augšā). */
 function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf): string {
   const hasComments = b.comments.trim().length > 0;
   if (!hasComments) return "";
   const icon = pdfIconForVendorTitle(b.title);
-  const iconBrand = vendorPdfIconBrandClass(b.title);
-  const header = pdfAvotuNeutralHeader(icon, b.title, iconBrand);
-  const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`;
-  return wrapPdfAvotuStack(card, pdfAvotuCommentIsland(b.comments));
+  const head = sectionHeadBrandGreen(icon, b.title);
+  const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(b.comments)}</div>`;
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
 
 function buildLtabAvotuSubsection(b: ClientManualLtabBlockPdf | null | undefined): string {
   if (!b) return "";
   const hasComments = b.comments.trim().length > 0;
   if (!hasComments) return "";
-  const header = pdfAvotuNeutralHeader(ICO.shield, SOURCE_BLOCK_LABELS.ltab, "pdf-avotu-ico-brand--ltab");
-  const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`;
-  return wrapPdfAvotuStack(card, pdfAvotuCommentIsland(b.comments));
+  const head = sectionHeadBrandGreen(ICO.shield, SOURCE_BLOCK_LABELS.ltab);
+  const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(b.comments)}</div>`;
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
 
 /**
@@ -487,11 +452,9 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload): string {
   }
   if (inner.length === 0) return "";
   const parts: string[] = [];
-  parts.push(`<div class="pdf-listing-priority" role="region">`);
-  parts.push(
-    `<div class="pdf-listing-priority-header"><span class="pdf-listing-priority-ico" aria-hidden="true">${ICO.spark}</span><h2 class="pdf-listing-priority-title">${escapeHtml(PDF_SECTION_LISTING_ANALYSIS)}</h2></div>`,
-  );
-  parts.push(`<div class="pdf-listing-priority-body">${inner.join("\n")}</div>`);
+  parts.push(`<div class="pdf-unified-mileage-zone pdf-surface-card pdf-listing-analysis-root" role="region">`);
+  parts.push(sectionHeadBrandGreen(ICO.spark, PDF_SECTION_LISTING_ANALYSIS));
+  parts.push(`<div class="pdf-source-section-body pdf-listing-analysis-stack">${inner.join("\n")}</div>`);
   parts.push(`</div>`);
   return parts.join("\n");
 }
@@ -500,15 +463,14 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload): string {
 function buildCitiAvotiAvotuSubsection(p: ClientReportPayload): string {
   const b = p.citiAvoti;
   if (!b || !b.comments.trim()) return "";
-  const header = pdfAvotuNeutralHeader(ICO.layers, SOURCE_BLOCK_LABELS.citi_avoti, "pdf-avotu-ico-brand--citi-avoti");
-  const card = `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`;
-  return wrapPdfAvotuStack(card, pdfAvotuCommentIsland(b.comments));
+  const head = sectionHeadBrandGreen(ICO.layers, SOURCE_BLOCK_LABELS.citi_avoti);
+  const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(b.comments)}</div>`;
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
 
 /**
- * AVOTU DATI (PDF): CSDD, AutoDNA / CarVertical / Auto-Records, LTAB, Citi avoti.
- * Nobraukuma un negadījumu tabulas ir augšā (NOBRAUKUMA / NEGADĪJUMU VĒSTURE); šeit — komentāri un CSDD.
- * Tirgus dati ir integrēti „Sludinājuma analīzē” (buildListingAnalysisPriorityHtml).
+ * Avotu apakšsadaļas (PDF): katra patstāvīga pilna platuma zona — CSDD, AutoDNA, CarVertical, utt.
+ * Nav kopējā „Avotu bloki“ mātes sadaļas.
  */
 function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
   const csdd = buildCsddAvotuSubsection(p);
@@ -527,13 +489,7 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
 
   const stack = [csdd, autodna, carvertical, autoRecords, ltab, citiAvoti].filter(Boolean);
   if (stack.length === 0) return "";
-
-  const parts: string[] = [];
-  parts.push(`<div class="pdf-avotu-zone" role="region">`);
-  parts.push(sectionHead(ICO.user, PDF_SECTION_AVOTU_DATI, { noBar: true }));
-  parts.push(stack.join("\n"));
-  parts.push(`</div>`);
-  return parts.join("\n");
+  return stack.join("\n");
 }
 
 /** Galvenais eksperta kopsavilkums — pilnā platumā, pēdējais lielais bloks pirms juridiskās piezīmes. */
@@ -612,9 +568,6 @@ export function getClientReportPrintCss(): string {
 }
 
 function clientReportPrintCss(): string {
-  const neutralBg = NEUTRAL_AVOTU_HEADER_BG;
-  const listHdr = LISTING_ANALYSIS_HEADER_BG;
-  const listingBodyBg = LISTING_ANALYSIS_BODY_BG;
   const irissHdr = APPROVED_BY_IRISS_HEADER_BG;
   const irissBody = APPROVED_BY_IRISS_BODY_BG;
   return `
@@ -656,74 +609,32 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-sec-ico-bubble .pdf-ico{width:18px;height:18px;}
+      .pdf-sec-ico-bubble--green{
+        background:rgba(5,150,105,0.1);color:#059669;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-sec-ico-bubble--green .pdf-ico{width:18px;height:18px;}
+      .pdf-sec-head--accent-green{
+        margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid rgba(5,150,105,0.22);
+      }
+      .pdf-source-section-body{width:100%;margin:0;padding:0;}
       .pdf-field-label{font-size:0.68rem;font-weight:600;margin:0.45rem 0 0.2rem;color:#334155;letter-spacing:0.02em;}
-      .pdf-avotu-block-wrap{margin:0 0 12px;}
-      .pdf-avotu-block-wrap:last-child{margin-bottom:0;}
-      .pdf-avotu-card{
-        border:1px solid #e8eaed;border-radius:8px;overflow:hidden;background:#fff;
-        box-shadow:0 1px 3px rgba(15,23,42,.06);
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-avotu-card--no-body .pdf-avotu-header{border-radius:8px;}
-      .pdf-avotu-header{
-        display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px 8px 0 0;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-avotu-header-ico{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
-      .pdf-avotu-header-ico .pdf-ico{width:14px;height:14px;}
-      .pdf-avotu-header-title{
-        margin:0;font-size:0.75rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;flex:1;line-height:1.25;
-      }
-      .pdf-avotu-header--neutral{background:${neutralBg};color:#334155;}
-      .pdf-avotu-header--neutral .pdf-avotu-header-title{color:#334155;}
-      .pdf-avotu-ico-brand--csdd .pdf-ico{color:#059669;}
-      .pdf-avotu-ico-brand--autodna .pdf-ico{color:#1d4ed8;}
-      .pdf-avotu-ico-brand--carvertical .pdf-ico{color:#d97706;}
-      .pdf-avotu-ico-brand--auto-records .pdf-ico{color:#ea580c;}
-      .pdf-avotu-ico-brand--ltab .pdf-ico{color:#dc2626;}
-      .pdf-avotu-ico-brand--tirgus .pdf-ico{color:#0284c7;}
-      .pdf-avotu-ico-brand--citi-avoti .pdf-ico{color:#7c3aed;}
-      .pdf-avotu-body{padding:10px 12px;background:#fff;border-radius:0 0 8px 8px;}
-      .pdf-listing-priority{
-        margin:0 0 18px;border-radius:16px;overflow:hidden;border:0;
-        box-shadow:0 4px 20px rgba(15,23,42,.07);
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-listing-priority-header{
-        display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px 10px 0 0;
-        background:${listHdr};color:#fff;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-listing-priority-ico .pdf-ico{width:18px;height:18px;color:#fff;flex-shrink:0;}
-      .pdf-listing-priority-title{
-        margin:0;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
-      }
-      .pdf-listing-priority-body{
-        padding:12px 14px 14px;background:${listingBodyBg};
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
+      .pdf-listing-analysis-stack{width:100%;}
       .pdf-listing-analysis-chunk{
-        margin:0 0 8px;padding:8px 10px;background:#f8fafc;border-radius:4px;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+        margin:0 0 8px;padding:8px 0;background:#fff;border-bottom:1px solid #E0E0E0;
       }
-      .pdf-listing-analysis-chunk:last-child{margin-bottom:0;}
+      .pdf-listing-analysis-chunk:last-child{margin-bottom:0;border-bottom:none;}
       .pdf-listing-analysis-chunk-pre{font-style:italic;margin:0;}
       .pdf-avotu-comment-island{
-        margin-top:14px;padding:12px 14px;background:#F8FAFC;border-radius:6px;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+        margin:10px 0 0;padding:10px 0 0;border-top:1px solid rgba(5,150,105,0.2);background:#fff;
+      }
+      .pdf-source-section-body > .pdf-avotu-comment-island:first-child{
+        margin-top:0;padding-top:0;border-top:none;
       }
       .pdf-avotu-comment-island-label{
         font-size:0.65rem;font-weight:700;margin:0 0 5px;color:#000;letter-spacing:0.06em;text-transform:uppercase;
       }
       .pdf-avotu-comment-island-body{font-style:italic;margin:0;}
-      .pdf-avotu-zone{
-        margin:0 0 18px;padding:16px 18px;border:0;border-radius:16px;
-        background:#fff;box-shadow:0 4px 20px rgba(15,23,42,.07);
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-avotu-zone .pdf-sec-head{margin-top:0;}
-      .pdf-avotu-zone > .pdf-avotu-card{margin-bottom:12px;}
-      .pdf-avotu-zone > .pdf-avotu-card:last-child{margin-bottom:0;}
       .pdf-unified-mileage-zone{margin:0 0 18px;padding:16px 18px;}
       .pdf-unified-mileage-zone .pdf-sec-head{margin-top:0;}
       .pdf-unified-incidents-zone{margin:0 0 18px;padding:16px 18px;}
@@ -827,21 +738,24 @@ function clientReportPrintCss(): string {
       .pdf-alert-banner-text{
         flex:1;margin:0;font-size:8pt;line-height:1.35;color:#374151;font-family:Inter,sans-serif!important;
       }
-      .pdf-alert-banner-ico{flex-shrink:0;display:block;}
+      .pdf-alert-banner-ico{flex-shrink:0;display:block;width:21px;height:21px;}
+      .pdf-alert-banner--red .pdf-alert-banner-ico{color:#FF4D4D;}
+      .pdf-alert-banner--yellow .pdf-alert-banner-ico{color:#FFC107;}
       .pdf-alert-banner--red .pdf-alert-banner-text{color:#374151;}
       .pdf-alert-banner--yellow .pdf-alert-banner-text{color:#374151;}
       .pdf-alert-banner .pdf-alert-banner-ico:last-child{margin-left:auto;}
       .pdf-data-alert-wrap{
-        display:inline-flex;align-items:center;gap:6px;max-width:100%;vertical-align:middle;
+        display:inline-flex;align-items:center;gap:8px;max-width:100%;vertical-align:middle;
       }
       .pdf-data-alert-ico{flex-shrink:0;display:block;line-height:0;}
       .pdf-csdd-alert-wrap{
-        display:flex;align-items:center;gap:6px;width:100%;
+        display:flex;align-items:center;gap:8px;width:100%;
       }
       .pdf-num-warn{font-size:9pt!important;line-height:1.2;font-family:Inter,sans-serif!important;vertical-align:middle;}
-      .pdf-num-warn--red .pdf-num-warn-digits{color:#FF4D4D!important;font-weight:600!important;}
-      .pdf-num-warn--yellow .pdf-num-warn-digits{color:#FFC107!important;font-weight:600!important;}
-      .pdf-loss-amt-ico{flex-shrink:0;display:block;}
+      .pdf-num-warn--red .pdf-num-warn-digits,.pdf-num-warn--yellow .pdf-num-warn-digits{
+        color:#1d1d1f!important;font-weight:600!important;
+      }
+      .pdf-loss-amt-ico,.pdf-warn-tri-ico{flex-shrink:0;display:block;width:13px;height:13px;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
       .mirror-block-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;}
@@ -866,12 +780,12 @@ function clientReportPrintCss(): string {
         width:100%!important;max-width:none!important;padding:4px 0!important;border-bottom:1px solid #f1f5f9!important;
       }
       .pdf-csdd-alert{
-        flex:1;display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:4px;font-size:9pt!important;line-height:1.25;
-        border:1px solid #e2e8f0;
+        flex:1;display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;font-size:9pt!important;line-height:1.25;
+        border:1px solid #e8eaed;background:#fff;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-csdd-alert--red{background:#fff1f2;}
-      .pdf-csdd-alert--yellow{background:#fefce8;}
+      .pdf-csdd-alert--red{border-left:3px solid #FF4D4D;}
+      .pdf-csdd-alert--yellow{border-left:3px solid #FFC107;}
       .pdf-csdd-alert-label{color:#86868b;font-weight:600;white-space:nowrap;}
       .pdf-csdd-alert-val{color:#1d1d1f;text-align:right;flex:1;min-width:0;}
       .mirror-table--csdd td.pdf-csdd-tech-compact{
@@ -938,10 +852,9 @@ function clientReportPrintCss(): string {
       @media print{
         body{padding:8mm 10mm;}
         .no-print{display:none!important;}
-        .pdf-avotu-block-wrap{break-inside:avoid-page;}
         .pdf-mileage-chart-wrap{break-inside:avoid-page;}
         .pdf-mileage-history-table-wrap{break-inside:avoid-page;}
-        .pdf-listing-priority{break-inside:avoid-page;}
+        .pdf-listing-analysis-root{break-inside:avoid-page;}
         .pdf-iriss-approved{break-inside:avoid-page;}
         .pdf-alert-banners-stack{break-inside:avoid-page;}
       }
