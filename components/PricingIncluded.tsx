@@ -1,7 +1,7 @@
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { irissAnchorHref } from "@/lib/paths";
-import { homeContentMaxClass } from "@/lib/home-layout";
+import { homeContentMaxClass, sectionH2Class } from "@/lib/home-layout";
 
 type GridItem = {
   title: string;
@@ -20,14 +20,10 @@ export async function PricingIncluded() {
   const grid = (messages as { Pricing: { grid: GridItem[] } }).Pricing.grid;
 
   return (
-    <section id="cena" className="relative scroll-mt-16 px-4 py-8 sm:px-6 md:py-12">
+    <section className="relative px-4 py-8 sm:px-6 md:py-12">
       <div className={`relative ${homeContentMaxClass}`}>
-        <div className="rounded-2xl border border-black/[0.08] bg-white p-5 shadow-[0_6px_24px_rgba(15,23,42,0.06)] sm:p-7">
-          <h2 className="text-center text-[1.25rem] font-semibold leading-snug tracking-tight text-[#1d1d1f] sm:text-[1.5rem]">
-            {t("workTitle")}
-          </h2>
-
-          <ul className="mt-6 grid list-none grid-cols-1 gap-3 sm:mt-8 sm:grid-cols-2 lg:grid-cols-3">
+        <h2 className={`${sectionH2Class} text-center uppercase tracking-[0.04em]`}>{t("workTitle")}</h2>
+        <ul className="mt-6 grid list-none grid-cols-1 gap-3 sm:mt-8 sm:grid-cols-2 lg:grid-cols-3">
             {grid.map((item, i) => {
               const inner = (
                 <>
@@ -67,11 +63,7 @@ export async function PricingIncluded() {
                 </li>
               );
             })}
-          </ul>
-          <p className="mt-4 text-center text-[10px] font-normal leading-snug text-[#86868b] sm:text-[11px]">
-            {t("autoRecordsFootnote")}
-          </p>
-        </div>
+        </ul>
       </div>
     </section>
   );

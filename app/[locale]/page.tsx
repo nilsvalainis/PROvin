@@ -1,6 +1,7 @@
 import { Faq } from "@/components/Faq";
 import { FinalCta } from "@/components/FinalCta";
 import { Hero } from "@/components/Hero";
+import { HeroVisual } from "@/components/HeroVisual";
 import { HowItWorks } from "@/components/HowItWorks";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
@@ -17,36 +18,35 @@ export default async function HomePage({
 
   return (
     <>
-      <Hero />
-      <section className="bg-gradient-to-b from-white via-[#f8fafc] to-[#f0f4f8]">
-        <HowItWorks />
-      </section>
-
-      <section className="bg-gradient-to-b from-[#f0f4f8] to-[#eef3f8]">
-        <PricingIncluded />
-      </section>
-
-      <section className="bg-white px-4 pt-8 sm:px-6 md:pt-12">
-        <div className="mx-auto w-full max-w-[1200px]">
-          <PricingTransitionAndComparison />
+      <div className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 z-0">
+          <HeroVisual />
         </div>
-      </section>
+        <div className="pointer-events-none absolute inset-0 z-[1] provin-noise opacity-[0.32]" aria-hidden />
+        <div
+          className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(to_bottom,#ffffff,#f0f4f8,#ffffff)] opacity-80"
+          aria-hidden
+        />
 
-      <section className="bg-white">
-        <IrissSection />
-      </section>
+        <div className="relative z-10">
+          <Hero />
+          <HowItWorks />
+          <FinalCta cancelled={cancelled} />
 
-      <section className="border-b border-black/[0.06] bg-white">
-        <div className="relative overflow-hidden">
-          <div
-            className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(to_bottom,#ffffff,#f0f4f8,#ffffff)] opacity-85"
-            aria-hidden
-          />
-          <div className="relative z-10">
-            <FinalCta cancelled={cancelled} />
-          </div>
+          <section id="cena" className="px-4 pt-8 sm:px-6 md:pt-10">
+            <div className="mx-auto w-full max-w-[1200px]">
+              <PricingTransitionAndComparison />
+            </div>
+          </section>
+
+          <PricingIncluded />
+          <IrissSection />
+
+          <p className="mx-auto px-4 pb-8 text-center text-[10px] font-normal leading-snug text-[#86868b] sm:px-6 sm:pb-10 sm:text-[11px]">
+            * Var tikt izmantots tikai noteiktiem ražotājiem.
+          </p>
         </div>
-      </section>
+      </div>
       <Faq />
       <Footer />
     </>

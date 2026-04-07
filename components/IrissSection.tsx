@@ -11,10 +11,9 @@ export async function IrissSection() {
   return (
     <section
       id="kas-ir-iriss"
-      className="relative scroll-mt-16 overflow-hidden bg-white px-4 py-10 sm:px-6 sm:py-16"
+      className="relative scroll-mt-16 overflow-hidden bg-transparent px-4 py-10 sm:px-6 sm:py-16"
     >
       <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
-      <div className="pointer-events-none absolute inset-0 provin-noise opacity-20" aria-hidden />
 
       <div className={`relative ${homeContentMaxClass}`}>
         <div className="text-center">

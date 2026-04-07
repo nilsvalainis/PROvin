@@ -1,6 +1,5 @@
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { HeroVisual } from "@/components/HeroVisual";
 import { NavChevronDown } from "@/components/NavChevron";
 import { orderSectionHref } from "@/lib/paths";
 
@@ -24,19 +23,10 @@ export async function Hero() {
   const pillars = (messages as { Hero: { pillars: Pillar[] } }).Hero.pillars;
 
   return (
-    <section className="border-b border-black/[0.06]">
-      <div className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 z-0">
-          <HeroVisual />
-        </div>
-        <div
-          className="pointer-events-none absolute inset-0 z-[1] provin-noise opacity-[0.38]"
-          aria-hidden
-        />
-
-        <div
-          className="relative z-10 mx-auto flex min-h-[100svh] min-w-0 max-w-[640px] flex-col justify-between gap-4 px-4 pb-5 pt-[max(0.85rem,env(safe-area-inset-top))] text-center md:min-h-0 md:gap-10 md:pb-14 md:pt-14 md:text-center"
-        >
+    <section>
+      <div
+        className="mx-auto flex min-h-[100svh] min-w-0 max-w-[640px] flex-col justify-between gap-4 px-4 pb-5 pt-[max(0.85rem,env(safe-area-inset-top))] text-center md:min-h-0 md:gap-10 md:pb-14 md:pt-14 md:text-center"
+      >
           <header className="shrink-0 space-y-0">
             <p className={signatureTextClass} aria-label={t("approved")}>
               {t("approved")}
@@ -105,7 +95,6 @@ export async function Hero() {
               </a>
             </div>
           </div>
-        </div>
       </div>
     </section>
   );
