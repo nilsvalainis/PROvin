@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
@@ -22,11 +23,14 @@ import {
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
 import { SUBHEADING_ICON } from "@/lib/section-icons";
+import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
 type BlockKey = "autodna" | "carvertical" | "citi_avoti";
+
+const mileCell = "px-1.5 py-0.5";
 
 type Props = {
   blockKey: BlockKey;
@@ -34,9 +38,23 @@ type Props = {
   readOnly: boolean;
   disabled?: boolean;
   onChange: (next: VendorAvotuBlockState) => void;
+  trafficFillLevel?: TrafficFillLevel;
+  /** Salokāms saturs zem galvenes — noklusējums sākumā sakļauts. */
+  collapsible?: boolean;
+  defaultCollapsed?: boolean;
 };
 
-export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disabled, onChange }: Props) {
+export function AdminVendorAvotuSourceBlock({
+  blockKey,
+  value,
+  readOnly,
+  disabled,
+  onChange,
+  trafficFillLevel,
+  collapsible = false,
+  defaultCollapsed = true,
+}: Props) {
+  const [collapsed, setCollapsed] = useState(collapsible ? defaultCollapsed : false);
   const displayRows =
     value.serviceHistory.length > 0
       ? sortAutoRecordsDescending([...value.serviceHistory])
@@ -73,11 +91,35 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
 
   const idBase = blockKey;
 
-  return (
-    <div className="flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-white p-2 shadow-sm">
-      <AdminSourceBlockHeader blockKey={blockKey} className="mb-1.5 shrink-0" />
+  const showBody = !collapsible || !collapsed;
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+  return (
+    <div
+      className={`flex min-h-0 flex-col rounded-lg border border-slate-200/90 bg-white shadow-sm overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}
+    >
+      <AdminSourceBlockHeader
+        blockKey={blockKey}
+        trafficFillLevel={trafficFillLevel}
+        className={`shrink-0 ${trafficFillLevel ? "mb-0" : "mb-1.5"}`}
+      />
+
+      {collapsible ? (
+        <button
+          type="button"
+          className="flex w-full shrink-0 items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/60 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)] hover:bg-slate-50"
+          onClick={() => setCollapsed((c) => !c)}
+          aria-expanded={showBody}
+        >
+          <span>{showBody ? "Slēpt laukus" : "Rādīt laukus"}</span>
+          <span className="text-slate-400" aria-hidden>
+            {showBody ? "▾" : "▸"}
+          </span>
+        </button>
+      ) : null}
+
+      {showBody ? (
+      <>
+      <div className={`min-h-0 flex-1 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>
         <p className="mb-1.5 flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
           <SectionLineIcon id={SUBHEADING_ICON.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}
@@ -90,13 +132,13 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
           <table className="w-full min-w-[280px] border-collapse text-[11px]">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
-                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}>
+                <th className={mileCell} data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}>
                   Datums
                 </th>
-                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}>
+                <th className={mileCell} data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}>
                   Odometrs (km)
                 </th>
-                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}>
+                <th className={mileCell} data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}>
                   Valsts
                 </th>
               </tr>
@@ -104,7 +146,7 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
             <tbody>
               {displayRows.map((row, i) => (
                 <tr key={i} className="border-b border-slate-100 last:border-b-0">
-                  <td className="px-2 py-1 align-top">
+                  <td className={`${mileCell} align-top`}>
                     {readOnly ? (
                       <span
                         className="text-[var(--color-provin-muted)]"
@@ -130,7 +172,7 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                       />
                     )}
                   </td>
-                  <td className="px-2 py-1 align-top">
+                  <td className={`${mileCell} align-top`}>
                     {readOnly ? (
                       <span
                         className="text-[var(--color-provin-muted)]"
@@ -159,7 +201,7 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                       />
                     )}
                   </td>
-                  <td className="px-2 py-1 align-top">
+                  <td className={`${mileCell} align-top`}>
                     {readOnly ? (
                       <CountryFlagWithCode
                         countryLabel={row.country.trim() || "—"}
@@ -207,16 +249,16 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
             <table className="w-full min-w-[280px] border-collapse text-[11px]">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
-                  <th className="px-2 py-1">Datums</th>
-                  <th className="px-2 py-1">Zaudējumu summa:</th>
-                  <th className="px-2 py-1">Valsts</th>
-                  {!readOnly ? <th className="w-9 px-2 py-1" aria-hidden /> : null}
+                  <th className={mileCell}>Datums</th>
+                  <th className={mileCell}>Zaudējumu summa:</th>
+                  <th className={mileCell}>Valsts</th>
+                  {!readOnly ? <th className={`w-9 ${mileCell}`} aria-hidden /> : null}
                 </tr>
               </thead>
               <tbody>
                 {value.incidents.map((row, ri) => (
                   <tr key={ri} className="border-b border-slate-100 last:border-b-0">
-                    <td className="px-2 py-1 align-top">
+                    <td className={`${mileCell} align-top`}>
                       {readOnly ? (
                         <span className="text-[var(--color-provin-muted)]">{row.csngDate.trim() || "—"}</span>
                       ) : (
@@ -235,7 +277,7 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                         />
                       )}
                     </td>
-                    <td className="px-2 py-1 align-top">
+                    <td className={`${mileCell} align-top`}>
                       <LossAmountFieldChrome value={row.lossAmount}>
                         {readOnly ? (
                           <span
@@ -264,7 +306,7 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                         )}
                       </LossAmountFieldChrome>
                     </td>
-                    <td className="px-2 py-1 align-top">
+                    <td className={`${mileCell} align-top`}>
                       {readOnly ? (
                         <CountryFlagWithCode countryLabel={row.incidentNo.trim() || "—"} />
                       ) : (
@@ -284,7 +326,7 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                       )}
                     </td>
                     {!readOnly ? (
-                      <td className="px-2 py-1 align-top">
+                      <td className={`${mileCell} align-top`}>
                         {value.incidents.length > 1 ? (
                           <button
                             type="button"
@@ -315,7 +357,7 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
         </div>
       </div>
 
-      <div className="mt-auto w-full min-w-0 shrink-0 pt-2">
+      <div className={`mt-auto w-full min-w-0 shrink-0 pt-2 ${trafficFillLevel ? "px-2 pb-2" : ""}`}>
         <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">Komentāri</label>
         {readOnly ? (
           <div className="min-h-[40px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
@@ -332,6 +374,8 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
           />
         )}
       </div>
+      </>
+      ) : null}
     </div>
   );
 }

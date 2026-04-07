@@ -14,6 +14,7 @@ import {
   PROVIN_MILEAGE_TABLE_FIELD,
 } from "@/lib/admin-source-blocks";
 import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
+import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { SUBHEADING_ICON } from "@/lib/section-icons";
 import {
   getNextInspectionDateUiFlag,
@@ -68,9 +69,12 @@ type Props = {
   readOnly: boolean;
   disabled?: boolean;
   onChange: (next: CsddFormFields) => void;
+  trafficFillLevel?: TrafficFillLevel;
 };
 
-export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Props) {
+const mileCell = "px-1.5 py-0.5";
+
+export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange, trafficFillLevel }: Props) {
   const setField = (key: keyof CsddFormFields, v: string) => {
     onChange({ ...value, [key]: v });
   };
@@ -100,9 +104,16 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
   };
 
   return (
-    <div className="rounded-lg border border-slate-200/90 bg-white p-2 shadow-sm">
-      <AdminSourceBlockHeader blockKey="csdd" />
+    <div
+      className={`rounded-lg border border-slate-200/90 bg-white shadow-sm overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}
+    >
+      <AdminSourceBlockHeader
+        blockKey="csdd"
+        trafficFillLevel={trafficFillLevel}
+        className={trafficFillLevel ? "mb-0" : "mb-2"}
+      />
 
+      <div className={trafficFillLevel ? "space-y-2 p-2" : "space-y-2"}>
       <div className="mb-2 min-w-0">
         <label
           className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]"
@@ -240,13 +251,13 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
           <table className="w-full min-w-[280px] border-collapse text-[11px]">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
-                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}>
+                <th className={mileCell} data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}>
                   Datums
                 </th>
-                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}>
+                <th className={mileCell} data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.odometrsKm}>
                   Odometrs (km)
                 </th>
-                <th className="px-2 py-1" data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}>
+                <th className={mileCell} data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}>
                   Valsts
                 </th>
               </tr>
@@ -254,7 +265,7 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
             <tbody>
               {mileageRows.map((row, i) => (
                 <tr key={i} className="border-b border-slate-100 last:border-b-0">
-                  <td className="px-2 py-1 align-top">
+                  <td className={`${mileCell} align-top`}>
                     {readOnly ? (
                       <span
                         className="text-[var(--color-provin-muted)]"
@@ -280,7 +291,7 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
                       />
                     )}
                   </td>
-                  <td className="px-2 py-1 align-top">
+                  <td className={`${mileCell} align-top`}>
                     {readOnly ? (
                       <span
                         className="text-[var(--color-provin-muted)]"
@@ -307,7 +318,7 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
                       />
                     )}
                   </td>
-                  <td className="px-2 py-1 align-top">
+                  <td className={`${mileCell} align-top`}>
                     {readOnly ? (
                       <CountryFlagWithCode
                         countryLabel={row.country.trim() || CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL}
@@ -345,6 +356,7 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
             + Rinda
           </button>
         )}
+      </div>
       </div>
     </div>
   );

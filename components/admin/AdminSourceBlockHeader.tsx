@@ -10,6 +10,8 @@ import { SOURCE_BLOCK_HEADER_BG, SOURCE_BLOCK_HEADER_TEXT_CLASS } from "@/lib/ad
 import { AdminGradientHeaderBar } from "@/components/admin/AdminGradientHeaderBar";
 import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
 import { SOURCE_BLOCK_ICON } from "@/lib/section-icons";
+import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
+import { TRAFFIC_HEADER_STRIP_CLASS } from "@/lib/admin-block-traffic-status";
 
 function ExternalLinkIcon({ className }: { className?: string }) {
   return (
@@ -36,16 +38,22 @@ type Props = {
   blockKey: SourceBlockKey;
   /** Noklusējums: mb-2 */
   className?: string;
+  /** Aizpildījuma indikators (admin) — kreisā maliņa + maigs tonis ap gradienta galveni. */
+  trafficFillLevel?: TrafficFillLevel;
 };
 
-export function AdminSourceBlockHeader({ blockKey, className = "mb-2" }: Props) {
+export function AdminSourceBlockHeader({ blockKey, className = "mb-2", trafficFillLevel }: Props) {
   const label = SOURCE_BLOCK_LABELS[blockKey];
   const href = SOURCE_BLOCK_EXTERNAL_URL[blockKey];
   const gradient = SOURCE_BLOCK_HEADER_BG[blockKey];
   const textCls = SOURCE_BLOCK_HEADER_TEXT_CLASS[blockKey];
 
-  return (
-    <AdminGradientHeaderBar gradient={gradient} className={`-mx-2 -mt-2 rounded-t-lg ${className}`}>
+  const gradientClassName = trafficFillLevel
+    ? `rounded-t-lg ${className}`
+    : `-mx-2 -mt-2 rounded-t-lg ${className}`;
+
+  const bar = (
+    <AdminGradientHeaderBar gradient={gradient} className={gradientClassName}>
       <a
         href={href}
         target="_blank"
@@ -59,4 +67,14 @@ export function AdminSourceBlockHeader({ blockKey, className = "mb-2" }: Props) 
       </a>
     </AdminGradientHeaderBar>
   );
+
+  if (trafficFillLevel) {
+    return (
+      <div className={`mb-2 overflow-hidden rounded-t-lg ${TRAFFIC_HEADER_STRIP_CLASS[trafficFillLevel]}`}>
+        {bar}
+      </div>
+    );
+  }
+
+  return bar;
 }
