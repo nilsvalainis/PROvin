@@ -317,13 +317,7 @@ function buildUnifiedIncidentsTableHtml(p: ClientReportPayload): string {
   });
   if (collected.length === 0) return "";
   const rows = sortUnifiedIncidentsNewestFirst(collected);
-  const mid = Math.ceil(rows.length / 2);
-  const left = rows.slice(0, mid);
-  const right = rows.slice(mid);
-  const tablesHtml =
-    rows.length <= 3
-      ? buildIncidentHistoryTableHtml(rows)
-      : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildIncidentHistoryTableHtml(left)}</div><div class="pdf-mileage-dual__cell">${buildIncidentHistoryTableHtml(right)}</div></div>`;
+  const tablesHtml = buildIncidentHistoryTableHtml(rows);
   return `<div class="pdf-unified-incidents-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE)}${tablesHtml}</div>`;
 }
 
