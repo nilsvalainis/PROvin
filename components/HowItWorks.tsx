@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { getMessages } from "next-intl/server";
 import { NavChevronDown, NavChevronRight } from "@/components/NavChevron";
-import { homeContentMaxClass } from "@/lib/home-layout";
+import { homeContentMaxClass, homeSoftBandGradientClass } from "@/lib/home-layout";
 
 const connectorClass = "inline-flex shrink-0 text-provin-accent/80";
 
@@ -12,46 +12,56 @@ export async function HowItWorks() {
   const steps = (messages as { HowItWorks: { steps: Step[] } }).HowItWorks.steps;
 
   return (
-    <div className="relative z-10 px-4 pb-2.5 pt-2 sm:px-6 sm:pb-2.5 sm:pt-2">
-      <div className={`relative ${homeContentMaxClass}`}>
-        <div className="mx-auto flex min-w-0 max-w-lg flex-col gap-1 md:max-w-none md:flex-row md:items-center md:justify-center md:gap-1">
-          {steps.map((s, i) => (
-            <Fragment key={s.n}>
-              <article className="group flex min-w-0 flex-1 flex-col items-center justify-center px-2 py-0 text-center sm:px-3 md:w-[180px] md:flex-none">
-                <div
-                  className="text-provin-accent drop-shadow-[0_4px_12px_rgba(15,23,42,0.12)] transition-transform duration-200 group-hover:scale-[1.03]"
-                  aria-hidden
-                >
-                  <StepIcon n={s.n} />
-                </div>
-                <h3 className="mt-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-provin-accent sm:text-[12px]">
-                  {s.title}
-                </h3>
-                {s.body.trim() ? (
-                  <p className="mt-4 max-w-[65ch] text-[13px] font-normal leading-relaxed text-[#86868b] sm:text-[14px]">
-                    {s.body}
-                  </p>
-                ) : null}
-              </article>
-              {i < steps.length - 1 && (
-                <>
-                  <div className="flex justify-center md:hidden" aria-hidden>
-                    <span className={connectorClass}>
-                      <NavChevronDown />
-                    </span>
+    <section className={`relative z-10 overflow-hidden ${homeSoftBandGradientClass}`}>
+      <div
+        className="pointer-events-none absolute inset-y-0 left-0 z-0 w-[min(5rem,22vw)] bg-gradient-to-r from-white/85 to-transparent"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-y-0 right-0 z-0 w-[min(5rem,22vw)] bg-gradient-to-l from-white/85 to-transparent"
+        aria-hidden
+      />
+      <div className="relative z-10 px-4 pb-2.5 pt-2 sm:px-6 sm:pb-2.5 sm:pt-2">
+        <div className={`relative ${homeContentMaxClass}`}>
+          <div className="mx-auto flex min-w-0 max-w-lg flex-col gap-1 md:max-w-none md:flex-row md:items-center md:justify-center md:gap-1">
+            {steps.map((s, i) => (
+              <Fragment key={s.n}>
+                <article className="group flex min-w-0 flex-1 flex-col items-center justify-center px-2 py-0 text-center sm:px-3 md:w-[180px] md:flex-none">
+                  <div
+                    className="text-provin-accent drop-shadow-[0_4px_12px_rgba(15,23,42,0.12)] transition-transform duration-200 group-hover:scale-[1.03]"
+                    aria-hidden
+                  >
+                    <StepIcon n={s.n} />
                   </div>
-                  <div className="hidden h-full w-6 shrink-0 items-center justify-center self-center md:flex" aria-hidden>
-                    <span className={connectorClass}>
-                      <NavChevronRight />
-                    </span>
-                  </div>
-                </>
-              )}
-            </Fragment>
-          ))}
+                  <h3 className="mt-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-provin-accent sm:text-[12px]">
+                    {s.title}
+                  </h3>
+                  {s.body.trim() ? (
+                    <p className="mt-4 max-w-[65ch] text-[13px] font-normal leading-relaxed text-[#86868b] sm:text-[14px]">
+                      {s.body}
+                    </p>
+                  ) : null}
+                </article>
+                {i < steps.length - 1 && (
+                  <>
+                    <div className="flex justify-center md:hidden" aria-hidden>
+                      <span className={connectorClass}>
+                        <NavChevronDown />
+                      </span>
+                    </div>
+                    <div className="hidden h-full w-6 shrink-0 items-center justify-center self-center md:flex" aria-hidden>
+                      <span className={connectorClass}>
+                        <NavChevronRight />
+                      </span>
+                    </div>
+                  </>
+                )}
+              </Fragment>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 

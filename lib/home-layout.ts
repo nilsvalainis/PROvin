@@ -25,3 +25,9 @@ export const comparisonTableHeaderAccentClass = `${comparisonTableHeaderBaseClas
  */
 export const comparisonTableFeatureCellClass =
   "text-[13px] font-medium leading-snug text-[#1d1d1f] sm:text-[14px] sm:leading-snug";
+
+/**
+ * Maigs vertikālais „vilnis” — gaišāks augšā, nedaudz tumšāks lejā (IRISS, 3 soļu sadaļa).
+ */
+export const homeSoftBandGradientClass =
+  "bg-gradient-to-b from-[#f9fafc] via-[#f3f5f8] to-[#e8ecf0]";

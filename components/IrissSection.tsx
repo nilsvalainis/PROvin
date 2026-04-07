@@ -1,8 +1,9 @@
 import { getTranslations } from "next-intl/server";
-import { comparisonTableFeatureCellClass, homeSectionEyebrowClass } from "@/lib/home-layout";
-
-/** Maigs vertikālais tonis — gaišāks augšā, nedaudz tumšāks apakšā; sadaļas apakšā nogriežas pirms BUJ (`bg-white`). */
-const irissSectionBgClass = "bg-gradient-to-b from-[#f9fafc] via-[#f3f5f8] to-[#e8ecf0]";
+import {
+  comparisonTableFeatureCellClass,
+  homeSectionEyebrowClass,
+  homeSoftBandGradientClass,
+} from "@/lib/home-layout";
 
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
@@ -15,7 +16,7 @@ export async function IrissSection() {
   return (
     <section
       id="kas-ir-iriss"
-      className={`relative scroll-mt-16 overflow-hidden px-4 pb-0 pt-10 sm:px-6 sm:pt-16 ${irissSectionBgClass}`}
+      className={`relative scroll-mt-16 overflow-hidden px-4 pb-0 pt-10 sm:px-6 sm:pt-16 ${homeSoftBandGradientClass}`}
     >
       <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
 
