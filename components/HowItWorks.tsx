@@ -1,6 +1,9 @@
 import { Fragment } from "react";
 import { getMessages, getTranslations } from "next-intl/server";
+import { NavChevronDown, NavChevronRight } from "@/components/NavChevron";
 import { homeContentMaxClass, sectionH2Class } from "@/lib/home-layout";
+
+const connectorClass = "inline-flex shrink-0 text-provin-accent/80";
 
 type Step = { n: string; title: string; body: string };
 
@@ -10,8 +13,7 @@ export async function HowItWorks() {
   const steps = (messages as { HowItWorks: { steps: Step[] } }).HowItWorks.steps;
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-white to-provin-surface-2/50 px-4 py-10 sm:px-6 sm:py-14">
-      <div className="pointer-events-none absolute inset-0 provin-noise opacity-30" aria-hidden />
+    <div className="relative z-[1] px-4 pb-4 pt-10 sm:px-6 sm:pb-6 sm:pt-14">
       <div className={`relative ${homeContentMaxClass}`}>
         <div className="text-center">
           <h2 className={`${sectionH2Class} uppercase tracking-[0.04em]`}>{t("title")}</h2>
@@ -35,15 +37,23 @@ export async function HowItWorks() {
               </article>
               {i < steps.length - 1 && (
                 <>
-                  <ArrowDown />
-                  <ArrowRight />
+                  <div className="flex justify-center py-3 md:hidden" aria-hidden>
+                    <span className={connectorClass}>
+                      <NavChevronDown />
+                    </span>
+                  </div>
+                  <div className="hidden shrink-0 items-center justify-center self-center px-2 md:flex" aria-hidden>
+                    <span className={connectorClass}>
+                      <NavChevronRight />
+                    </span>
+                  </div>
                 </>
               )}
             </Fragment>
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -57,37 +67,6 @@ function StepBadge({ n }: { n: string }) {
       aria-hidden
     >
       {n}
-    </div>
-  );
-}
-
-function ArrowRight() {
-  return (
-    <div
-      className="hidden shrink-0 items-center justify-center self-center px-1 md:flex"
-      aria-hidden
-    >
-      <div className="flex items-center gap-0">
-        <div className="h-px w-4 bg-gradient-to-r from-provin-accent/25 to-provin-accent/45 sm:w-6" />
-        <svg className="h-5 w-5 shrink-0 text-provin-accent/55" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
-        </svg>
-        <div className="h-px w-4 bg-gradient-to-r from-provin-accent/45 to-provin-accent/15 sm:w-6" />
-      </div>
-    </div>
-  );
-}
-
-function ArrowDown() {
-  return (
-    <div className="flex justify-center py-3 md:hidden" aria-hidden>
-      <div className="flex flex-col items-center gap-0">
-        <div className="h-5 w-px bg-gradient-to-b from-provin-accent/35 to-provin-accent/50" />
-        <svg className="-mt-px h-5 w-5 text-provin-accent/55" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
-        </svg>
-        <div className="h-3 w-px bg-gradient-to-b from-provin-accent/50 to-transparent" />
-      </div>
     </div>
   );
 }

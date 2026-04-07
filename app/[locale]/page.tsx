@@ -22,8 +22,11 @@ export default async function HomePage({
       <PricingIncluded />
       <WhyProvin />
       <IrissSection />
-      <HowItWorks />
-      <FinalCta cancelled={cancelled} />
+      <section className="relative overflow-hidden bg-gradient-to-b from-white to-provin-surface-2/50">
+        <div className="pointer-events-none absolute inset-0 provin-noise opacity-30" aria-hidden />
+        <HowItWorks />
+        <FinalCta cancelled={cancelled} />
+      </section>
       <Faq />
       <AutoRecordsSiteFootnote />
       <Footer />

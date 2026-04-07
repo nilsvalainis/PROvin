@@ -1,6 +1,7 @@
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { HeroVisual } from "@/components/HeroVisual";
+import { NavChevronDown } from "@/components/NavChevron";
 import { orderSectionHref } from "@/lib/paths";
 
 type Pillar = { title: string; body: string };
@@ -100,16 +101,7 @@ export async function Hero() {
                 aria-label={t("scrollToPricingAria")}
                 className="inline-flex text-provin-accent/80 transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
               >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.75}
-                  aria-hidden
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
+                <NavChevronDown />
               </a>
             </div>
           </div>
