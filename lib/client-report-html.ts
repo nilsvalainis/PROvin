@@ -49,6 +49,7 @@ import {
   LISTING_ANALYSIS_HEADER_BG,
   NEUTRAL_AVOTU_HEADER_BG,
 } from "@/lib/admin-header-gradients";
+import { pdfCountryFlagEmoji } from "@/lib/pdf-country-flags";
 import { CLIENT_REPORT_FOOTER_DISCLAIMER } from "@/lib/report-pdf-standards";
 import {
   getNextInspectionDateUiFlag,
@@ -390,6 +391,12 @@ function buildUnifiedMileageChartSvg(rows: UnifiedMileageRow[]): string {
   return `<div class="pdf-mileage-chart-wrap">${svgInner}</div>`;
 }
 
+function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow): string {
+  const flag = pdfCountryFlagEmoji(r.country);
+  const aria = escapeHtml(r.country);
+  return `<tr><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo">${escapeHtml(r.odometer)}</td><td class="pdf-mileage-cell-flag"><span class="pdf-country-flag" role="img" aria-label="${aria}">${flag}</span></td></tr>`;
+}
+
 function buildUnifiedMileageTableHtml(p: ClientReportPayload): string {
   const collected = collectUnifiedMileageRows(p);
   if (collected.length === 0) return "";
@@ -402,13 +409,20 @@ function buildUnifiedMileageTableHtml(p: ClientReportPayload): string {
   const chartHtml = buildUnifiedMileageChartSvg(collected);
 
   const head = `<tr><th>Datums</th><th>Odometrs (km)</th><th>Valsts</th></tr>`;
-  const body = rows
-    .map(
-      (r) =>
-        `<tr><td>${escapeHtml(r.date)}</td><td class="tabular">${escapeHtml(r.odometer)}</td><td>${escapeHtml(r.country)}</td></tr>`,
-    )
-    .join("\n");
-  return `<div class="pdf-unified-mileage-zone" role="region">${sectionHead(ICO.chart, "NOBRAUKUMA VĒSTURE", { noBar: true })}${chartHtml}<table class="mirror-table mirror-table--csdd-mh"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  const mid = Math.ceil(rows.length / 2);
+  const leftRows = rows.slice(0, mid);
+  const rightRows = rows.slice(mid);
+  const tableClass = "mirror-table mirror-table--csdd-mh pdf-unified-mileage-split";
+  const leftTable = `<table class="${tableClass}"><thead>${head}</thead><tbody>${leftRows.map(buildUnifiedMileageTableRowHtml).join("\n")}</tbody></table>`;
+  const rightTable =
+    rightRows.length > 0
+      ? `<table class="${tableClass}"><thead>${head}</thead><tbody>${rightRows.map(buildUnifiedMileageTableRowHtml).join("\n")}</tbody></table>`
+      : "";
+  const splitWrapClass =
+    rightTable === "" ? "pdf-unified-mileage-split-wrap pdf-unified-mileage-split-wrap--single" : "pdf-unified-mileage-split-wrap";
+  const tablesHtml = `<div class="${splitWrapClass}">${leftTable}${rightTable}</div>`;
+
+  return `<div class="pdf-unified-mileage-zone" role="region">${sectionHead(ICO.chart, "NOBRAUKUMA VĒSTURE", { noBar: true })}${chartHtml}${tablesHtml}</div>`;
 }
 
 /** CSDD — apskates datumi + nobraukuma tabulas (pilns eksports); raw nav PDF. */
@@ -797,6 +811,38 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-unified-mileage-zone .pdf-sec-head{margin-top:0;}
+      .pdf-unified-mileage-split-wrap{
+        display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 14px;align-items:start;width:100%;
+      }
+      .pdf-unified-mileage-split-wrap--single{grid-template-columns:minmax(0,1fr);}
+      .pdf-unified-mileage-zone .pdf-unified-mileage-split{
+        margin:2px 0 4px!important;font-size:8pt!important;font-family:Inter,sans-serif!important;
+        -webkit-font-feature-settings:"tnum" 1;font-feature-settings:"tnum" 1;
+      }
+      .pdf-unified-mileage-zone .pdf-unified-mileage-split td,
+      .pdf-unified-mileage-zone .pdf-unified-mileage-split th{
+        font-size:8pt!important;line-height:1.25!important;padding:2px 4px!important;border-bottom:1px solid #f1f5f9!important;
+        font-family:Inter,sans-serif!important;
+      }
+      .pdf-unified-mileage-zone .pdf-unified-mileage-split thead th{
+        font-weight:600!important;color:#000!important;font-size:8pt!important;
+      }
+      .pdf-unified-mileage-zone .pdf-unified-mileage-split td:first-child{width:auto!important;max-width:none!important;}
+      .pdf-unified-mileage-zone .pdf-unified-mileage-split td.pdf-mileage-cell-date{
+        color:#86868b!important;font-weight:500!important;white-space:nowrap;
+      }
+      .pdf-unified-mileage-zone .pdf-unified-mileage-split td.pdf-mileage-cell-odo{
+        color:#1d1d1f!important;text-align:right!important;
+      }
+      .pdf-unified-mileage-zone .pdf-unified-mileage-split td.pdf-mileage-cell-flag{
+        text-align:center!important;width:1.75rem;vertical-align:middle!important;
+      }
+      .pdf-country-flag{
+        font-style:normal;font-variant:normal;letter-spacing:0;
+        font-size:1.05em;line-height:1;display:inline-flex;align-items:center;justify-content:center;
+        font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",Inter,sans-serif;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
       .pdf-mileage-chart-wrap{
         margin:0 0 12px;padding:0;border-radius:8px;border:1px solid #e8eaed;background:#fff;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
@@ -905,6 +951,7 @@ function clientReportPrintCss(): string {
         .no-print{display:none!important;}
         .pdf-avotu-block-wrap{break-inside:avoid-page;}
         .pdf-mileage-chart-wrap{break-inside:avoid-page;}
+        .pdf-unified-mileage-split-wrap{break-inside:avoid-page;}
         .pdf-listing-priority{break-inside:avoid-page;}
         .pdf-iriss-approved{break-inside:avoid-page;}
       }
