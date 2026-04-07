@@ -27,7 +27,13 @@ export const comparisonTableFeatureCellClass =
   "text-[13px] font-medium leading-snug text-[#1d1d1f] sm:text-[14px] sm:leading-snug";
 
 /**
- * Maigs vertikālais „vilnis” — gaišāks augšā, nedaudz tumšāks lejā (IRISS, 3 soļu sadaļa).
+ * Maigs vertikālais „vilnis” — gaišāks augšā, nedaudz tumšāks lejā (IRISS).
  */
 export const homeSoftBandGradientClass =
   "bg-gradient-to-b from-[#f9fafc] via-[#f3f5f8] to-[#e8ecf0]";
+
+/**
+ * 3 soļu sadaļa: pakāpeniski tumšāks vidū, sapludinājums ar gaišāku fonu augšā un apakšā (ne cieta kaste).
+ */
+export const homeHowItWorksBandClass =
+  "bg-[linear-gradient(to_bottom,#ffffff_0%,#f7f9fc_12%,#eef2f7_38%,#e2e8f0_50%,#eef2f7_62%,#f7f9fc_88%,#ffffff_100%)]";
