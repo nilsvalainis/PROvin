@@ -165,109 +165,104 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
             {NEGADIJUMU_VESTURE_TITLE}
           </p>
-          <div className="space-y-2">
-            {value.incidents.map((row, ri) => (
-              <div
-                key={ri}
-                className="flex flex-wrap items-end gap-x-3 gap-y-2 rounded-md border border-slate-200/60 bg-white/50 px-2 py-2"
-              >
-                {readOnly ? (
-                  <div className="flex min-w-0 flex-1 flex-wrap gap-2 text-[11px] text-[var(--color-provin-muted)]">
-                    <span className="rounded bg-white/90 px-1.5 py-0.5">
-                      <span className="text-[10px] text-[var(--color-provin-muted)]">Negadījumu skaits:</span>{" "}
-                      {row.incidentNo.trim() || "—"}
-                    </span>
-                    <span className="rounded bg-white/90 px-1.5 py-0.5">
-                      <span className="text-[10px] text-[var(--color-provin-muted)]">CSNg Datums:</span>{" "}
-                      {row.csngDate.trim() || "—"}
-                    </span>
-                    <span className="rounded bg-white/90 px-1.5 py-0.5">
-                      <span className="text-[10px] text-[var(--color-provin-muted)]">Zaudējumu summa:</span>{" "}
-                      {row.lossAmount.trim() || "—"}
-                    </span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="w-[6.5rem] min-w-[5.5rem] shrink-0">
-                      <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                        Negadījumu skaits:
-                      </label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        className={inp}
-                        placeholder="1"
-                        value={row.incidentNo}
-                        disabled={disabled}
-                        id={`${idBase}-${PROVIN_VENDOR_FIELD.negadijumuSkaits}-${ri}`}
-                        name={`${PROVIN_VENDOR_FIELD.negadijumuSkaits}[${ri}]`}
-                        data-provin-field={PROVIN_VENDOR_FIELD.negadijumuSkaits}
-                        data-row-index={ri}
-                        onChange={(e) => setIncidentRow(ri, { incidentNo: e.target.value })}
-                        aria-label={`Negadījumu skaits, ${blockKey}, rinda ${ri + 1}`}
-                      />
-                    </div>
-                    <div className="min-w-[9rem] max-w-[11rem] flex-1">
-                      <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                        CSNg Datums:
-                      </label>
-                      <input
-                        type="date"
-                        className={inp}
-                        value={row.csngDate}
-                        disabled={disabled}
-                        id={`${idBase}-${PROVIN_VENDOR_FIELD.csngDatums}-${ri}`}
-                        name={`${PROVIN_VENDOR_FIELD.csngDatums}[${ri}]`}
-                        data-provin-field={PROVIN_VENDOR_FIELD.csngDatums}
-                        data-row-index={ri}
-                        onChange={(e) => setIncidentRow(ri, { csngDate: e.target.value })}
-                        aria-label={`CSNg Datums, ${blockKey}, rinda ${ri + 1}`}
-                      />
-                    </div>
-                    <div className="min-w-[8rem] flex-1 sm:max-w-[14rem]">
-                      <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                        Zaudējumu summa:
-                      </label>
-                      <input
-                        type="text"
-                        className={inp}
-                        placeholder="2930.00 €"
-                        value={row.lossAmount}
-                        disabled={disabled}
-                        id={`${idBase}-${PROVIN_VENDOR_FIELD.zaudejumuSumma}-${ri}`}
-                        name={`${PROVIN_VENDOR_FIELD.zaudejumuSumma}[${ri}]`}
-                        data-provin-field={PROVIN_VENDOR_FIELD.zaudejumuSumma}
-                        data-row-index={ri}
-                        onChange={(e) => setIncidentRow(ri, { lossAmount: e.target.value })}
-                        aria-label={`Zaudējumu summa, ${blockKey}, rinda ${ri + 1}`}
-                      />
-                    </div>
-                    {value.incidents.length > 1 ? (
-                      <button
-                        type="button"
-                        disabled={disabled}
-                        className="mb-0.5 shrink-0 self-end rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
-                        onClick={() => removeIncidentRow(ri)}
-                        title="Noņemt rindu"
-                      >
-                        ×
-                      </button>
+          <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">
+            <table className="w-full min-w-[280px] border-collapse text-[11px]">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
+                  <th className="px-2 py-1">Datums</th>
+                  <th className="px-2 py-1">Zaudējumu summa:</th>
+                  <th className="px-2 py-1">Valsts</th>
+                  {!readOnly ? <th className="w-9 px-2 py-1" aria-hidden /> : null}
+                </tr>
+              </thead>
+              <tbody>
+                {value.incidents.map((row, ri) => (
+                  <tr key={ri} className="border-b border-slate-100 last:border-b-0">
+                    <td className="px-2 py-1 align-top">
+                      {readOnly ? (
+                        <span className="text-[var(--color-provin-muted)]">{row.csngDate.trim() || "—"}</span>
+                      ) : (
+                        <input
+                          type="date"
+                          className={inp}
+                          value={row.csngDate}
+                          disabled={disabled}
+                          id={`${idBase}-${PROVIN_VENDOR_FIELD.csngDatums}-${ri}`}
+                          name={`${PROVIN_VENDOR_FIELD.csngDatums}[${ri}]`}
+                          data-provin-field={PROVIN_VENDOR_FIELD.csngDatums}
+                          data-row-index={ri}
+                          onChange={(e) => setIncidentRow(ri, { csngDate: e.target.value })}
+                          aria-label={`Datums, ${blockKey}, rinda ${ri + 1}`}
+                        />
+                      )}
+                    </td>
+                    <td className="px-2 py-1 align-top">
+                      {readOnly ? (
+                        <span className="text-[var(--color-provin-muted)]">{row.lossAmount.trim() || "—"}</span>
+                      ) : (
+                        <input
+                          type="text"
+                          className={inp}
+                          placeholder="2930.00 €"
+                          value={row.lossAmount}
+                          disabled={disabled}
+                          id={`${idBase}-${PROVIN_VENDOR_FIELD.zaudejumuSumma}-${ri}`}
+                          name={`${PROVIN_VENDOR_FIELD.zaudejumuSumma}[${ri}]`}
+                          data-provin-field={PROVIN_VENDOR_FIELD.zaudejumuSumma}
+                          data-row-index={ri}
+                          onChange={(e) => setIncidentRow(ri, { lossAmount: e.target.value })}
+                          aria-label={`Zaudējumu summa, ${blockKey}, rinda ${ri + 1}`}
+                        />
+                      )}
+                    </td>
+                    <td className="px-2 py-1 align-top">
+                      {readOnly ? (
+                        <span className="text-[var(--color-provin-muted)]">{row.incidentNo.trim() || "—"}</span>
+                      ) : (
+                        <input
+                          type="text"
+                          className={inp}
+                          placeholder="Latvija"
+                          value={row.incidentNo}
+                          disabled={disabled}
+                          id={`${idBase}-${PROVIN_VENDOR_FIELD.negadijumuSkaits}-${ri}`}
+                          name={`${PROVIN_VENDOR_FIELD.negadijumuSkaits}[${ri}]`}
+                          data-provin-field={PROVIN_VENDOR_FIELD.negadijumuSkaits}
+                          data-row-index={ri}
+                          onChange={(e) => setIncidentRow(ri, { incidentNo: e.target.value })}
+                          aria-label={`Valsts, ${blockKey}, rinda ${ri + 1}`}
+                        />
+                      )}
+                    </td>
+                    {!readOnly ? (
+                      <td className="px-2 py-1 align-top">
+                        {value.incidents.length > 1 ? (
+                          <button
+                            type="button"
+                            disabled={disabled}
+                            className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
+                            onClick={() => removeIncidentRow(ri)}
+                            title="Noņemt rindu"
+                          >
+                            ×
+                          </button>
+                        ) : null}
+                      </td>
                     ) : null}
-                  </>
-                )}
-              </div>
-            ))}
-            {!readOnly && !disabled ? (
-              <button
-                type="button"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-dashed border-slate-300 bg-white text-base font-semibold text-[var(--color-provin-accent)] hover:border-[var(--color-provin-accent)]/50 hover:bg-slate-50"
-                onClick={addIncidentRow}
-                title="Pievienot negadījumu"
-              >
-                +
-              </button>
-            ) : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+          {!readOnly && !disabled ? (
+            <button
+              type="button"
+              className="mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
+              onClick={addIncidentRow}
+            >
+              + Rinda
+            </button>
+          ) : null}
         </div>
       </div>
 
