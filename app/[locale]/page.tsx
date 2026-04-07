@@ -5,7 +5,6 @@ import { HeroVisual } from "@/components/HeroVisual";
 import { HowItWorks } from "@/components/HowItWorks";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
-import { WhyProvin } from "@/components/WhyProvin";
 import { Footer } from "@/components/Footer";
 
 export default async function HomePage({
@@ -20,7 +19,6 @@ export default async function HomePage({
     <>
       <Hero />
       <PricingIncluded />
-      <WhyProvin />
       <IrissSection />
       <section className="border-b border-black/[0.06]">
         <div className="relative overflow-hidden">
