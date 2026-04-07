@@ -135,13 +135,13 @@ export function buildPdfAdminMirrorClientBlock(
   if (ph) rows.push({ k: "Tālrunis", v: ph });
   if (rows.length === 0) return "";
   const body = rows.map((r) => `<tr><td>${esc(r.k)}</td><td>${esc(r.v)}</td></tr>`).join("");
-  const head = pdfV1PanelHead("klienta kontaktdati", titleIconHtml);
+  const head = pdfV1PanelHead("klienta dati", titleIconHtml);
   return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
 }
 
 export function buildPdfAdminMirrorNotesBlock(notes: string | null | undefined, titleIconHtml = ""): string {
   const t = notes?.trim();
   if (!t) return "";
-  const head = pdfV1PanelHead("komentārs no klienta formas", titleIconHtml);
+  const head = pdfV1PanelHead("klienta komentārs", titleIconHtml);
   return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}<p class="client-msg pdf-v1-notes-body" style="margin:0">${esc(t)}</p></div>`;
 }

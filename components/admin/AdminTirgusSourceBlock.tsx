@@ -2,6 +2,7 @@
 
 import { ListedForSaleFieldChrome } from "@/components/admin/ListedForSaleFieldChrome";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
+import { PriceDropArrowIcon } from "@/components/icons/PriceDropArrowIcon";
 import type { TirgusFormFields } from "@/lib/admin-source-blocks";
 import {
   emptyTirgusFields,
@@ -104,17 +105,27 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, va
             </td>
             <td className={`${cellPad} align-top`}>
               {readOnly ? (
-                <span className="text-[var(--color-provin-muted)]">{val.priceDrop.trim() || "—"}</span>
+                val.priceDrop.trim() ? (
+                  <span className="inline-flex items-center gap-1.5 text-[var(--color-provin-muted)]">
+                    <PriceDropArrowIcon />
+                    {val.priceDrop.trim()}
+                  </span>
+                ) : (
+                  <span className="text-[var(--color-provin-muted)]">—</span>
+                )
               ) : (
-                <input
-                  type="text"
-                  className={inp}
-                  placeholder='piem., "-500€"'
-                  value={val.priceDrop}
-                  disabled={disabled}
-                  onChange={(e) => setField("priceDrop", e.target.value)}
-                  aria-label={TIRGUS_LABEL_PRICE_DROP}
-                />
+                <span className="inline-flex w-full min-w-0 items-center gap-1.5">
+                  <PriceDropArrowIcon className="shrink-0" />
+                  <input
+                    type="text"
+                    className={`${inp} min-w-0 flex-1`}
+                    placeholder='piem., "-500€"'
+                    value={val.priceDrop}
+                    disabled={disabled}
+                    onChange={(e) => setField("priceDrop", e.target.value)}
+                    aria-label={TIRGUS_LABEL_PRICE_DROP}
+                  />
+                </span>
               )}
             </td>
           </tr>

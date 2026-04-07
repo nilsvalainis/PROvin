@@ -172,6 +172,17 @@ function pdfLossAmountAlertIconHtml(tier: "yellow" | "red"): string {
   return `<svg class="pdf-loss-amt-ico pdf-warn-tri-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/></svg>`;
 }
 
+/** Sarkana bultiņa uz leju — krāsa kā pdf-warn (sarkanajam), izmērs +30% pret 13px trijstūri (~17px). */
+function pdfPriceDropDownArrowHtml(): string {
+  return `<svg class="pdf-price-drop-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 5v14" stroke="#FF4D4D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="m19 12-7 7-7-7" stroke="#FF4D4D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+function formatTirgusPriceDropCellHtml(raw: string): string {
+  const t = raw.trim();
+  if (!t) return escapeHtml(t);
+  return `<span class="pdf-price-drop-wrap"><span class="pdf-price-drop-ico" aria-hidden="true">${pdfPriceDropDownArrowHtml()}</span><span>${escapeHtml(t)}</span></span>`;
+}
+
 function formatLossAmountEurCell(raw: string): string {
   const t = raw.trim();
   const esc = escapeHtml(t);
@@ -370,7 +381,7 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
     }
     if (f.priceDrop.trim()) {
       rows.push(
-        `<tr><td>${escapeHtml(TIRGUS_LABEL_PRICE_DROP)}</td><td>${escapeHtml(f.priceDrop.trim())}</td></tr>`,
+        `<tr><td>${escapeHtml(TIRGUS_LABEL_PRICE_DROP)}</td><td>${formatTirgusPriceDropCellHtml(f.priceDrop)}</td></tr>`,
       );
     }
     const table =
@@ -755,6 +766,9 @@ function clientReportPrintCss(): string {
         color:#1d1d1f!important;font-weight:600!important;
       }
       .pdf-loss-amt-ico,.pdf-warn-tri-ico{flex-shrink:0;display:block;width:13px;height:13px;}
+      .pdf-price-drop-wrap{display:inline-flex;align-items:center;gap:6px;vertical-align:middle;}
+      .pdf-price-drop-ico{display:inline-flex;align-items:center;justify-content:center;line-height:0;}
+      .pdf-price-drop-arrow{flex-shrink:0;display:block;width:17px;height:17px;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
       .mirror-block-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;}

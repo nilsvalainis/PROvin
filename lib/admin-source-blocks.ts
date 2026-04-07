@@ -155,7 +155,7 @@ export type TirgusFormFields = {
 
 export const TIRGUS_LABEL_LISTED = "Auto pārdošanā (dienas):";
 export const TIRGUS_LABEL_CREATED = "Izveidots:";
-export const TIRGUS_LABEL_PRICE_DROP = "Cenas kritums:";
+export const TIRGUS_LABEL_PRICE_DROP = "Cenas kritums (eiro):";
 /** Senā atsauce; jaunajā UI izmanto LISTING_ANALYSIS_COMMENT_LABEL. */
 export const TIRGUS_LABEL_COMMENTS = "Komentāri:";
 

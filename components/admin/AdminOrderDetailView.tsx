@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
 import { AdminListingUrlEndAdornment } from "@/components/admin/AdminListingUrlToolbar";
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
 import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/AdminVinClipboardAndLinks";
@@ -243,7 +244,10 @@ export function AdminOrderDetailView({
       <div className="space-y-1.5">
         <div className="grid grid-cols-1 gap-1.5 lg:grid-cols-2 xl:grid-cols-4 xl:items-stretch">
           <section className={`${sectionClass} min-w-0`}>
-            <h2 className={sectionTitle}>Maksājums</h2>
+            <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
+              <SectionLineIcon id="wallet" />
+              Maksājums
+            </h2>
             <p className={sectionHint}>No Stripe / sesijas — nav rediģējams.</p>
             <dl className={metaStack}>
               <div className="min-w-0">
@@ -264,8 +268,10 @@ export function AdminOrderDetailView({
           </section>
 
           <section className={`${sectionClass} min-w-0`}>
-            <h2 className={`${sectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
-              <span>Transportlīdzeklis un sludinājums</span>
+            <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
+              <SectionLineIcon id="car" />
+              <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
+                <span>Transportlīdzeklis un sludinājums</span>
               {orderEditsAutosaveFlash ? (
                 <span
                   className={`text-[10px] font-semibold normal-case tracking-normal ${
@@ -280,6 +286,7 @@ export function AdminOrderDetailView({
                       : "Saglabāts lokāli (serveris nav pieejams)"}
                 </span>
               ) : null}
+              </span>
             </h2>
             <p className={sectionHint}>
               VIN un saite — auto pēc ~0,8 s (localStorage
@@ -358,7 +365,10 @@ export function AdminOrderDetailView({
           </section>
 
           <section className={`${sectionClass} min-w-0`}>
-            <h2 className={sectionTitle}>Klienta kontaktdati</h2>
+            <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
+              <SectionLineIcon id="user" />
+              Klienta dati
+            </h2>
             <p className={sectionHint}>
               No pasūtījuma — <strong className="font-medium text-[var(--color-apple-text)]">nav rediģējami</strong>.
             </p>
@@ -391,8 +401,10 @@ export function AdminOrderDetailView({
         </div>
 
         <section className={sectionClass}>
-          <h2 className={`${sectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
-            <span>Komentārs no klienta formas</span>
+          <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0`}>
+            <SectionLineIcon id="messageSquare" />
+            <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
+              <span>Klienta komentārs</span>
             {orderEditsAutosaveFlash ? (
               <span
                 className={`text-[10px] font-semibold normal-case tracking-normal ${
@@ -407,6 +419,7 @@ export function AdminOrderDetailView({
                     : "Saglabāts lokāli (serveris nav pieejams)"}
               </span>
             ) : null}
+            </span>
           </h2>
           <p className={sectionHint}>
             {orderDraftPersistenceEnabled
