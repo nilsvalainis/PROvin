@@ -167,9 +167,12 @@ function buildCsddPdfAlertRowHtml(
   return `<tr><td colspan="2" class="pdf-csdd-alert-td"><div class="pdf-csdd-alert-wrap"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><div class="pdf-csdd-alert pdf-csdd-alert--${tier}"><span class="pdf-csdd-alert-label">${labelEscaped}</span><span class="pdf-csdd-alert-val">${valueEscaped}</span></div></div></td></tr>`;
 }
 
-function pdfLossAmountAlertIconHtml(tier: "yellow" | "red"): string {
+function pdfLossAmountAlertIconHtml(tier: "yellow" | "red", size: "sm" | "lg" = "sm"): string {
   const stroke = tier === "red" ? "#FF4D4D" : "#FFC107";
-  return `<svg class="pdf-loss-amt-ico pdf-warn-tri-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/></svg>`;
+  const px = size === "lg" ? 17 : 13;
+  const cls =
+    size === "lg" ? "pdf-loss-amt-ico pdf-warn-tri-ico pdf-warn-tri-ico--lg" : "pdf-loss-amt-ico pdf-warn-tri-ico";
+  return `<svg class="${cls}" width="${px}" height="${px}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/></svg>`;
 }
 
 /** Sarkana bultiņa uz leju — krāsa kā pdf-warn (sarkanajam), izmērs +30% pret 13px trijstūri (~17px). */
@@ -198,7 +201,7 @@ function formatListedForSaleDaysCellHtml(raw: string): string {
   const t = raw.trim();
   const esc = escapeHtml(t);
   if (!t || !shouldShowListedForSaleCriticalBanner(raw)) return esc;
-  const ico = pdfLossAmountAlertIconHtml("red");
+  const ico = pdfLossAmountAlertIconHtml("red", "lg");
   return `<span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--red"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="tabular pdf-num-warn-digits">${esc}</span></span>`;
 }
 
@@ -760,6 +763,7 @@ function clientReportPrintCss(): string {
         color:#1d1d1f!important;font-weight:600!important;
       }
       .pdf-loss-amt-ico,.pdf-warn-tri-ico{flex-shrink:0;display:block;width:13px;height:13px;}
+      .pdf-warn-tri-ico--lg{width:17px!important;height:17px!important;}
       .pdf-price-drop-wrap{display:inline-flex;align-items:center;gap:6px;vertical-align:middle;}
       .pdf-price-drop-ico{display:inline-flex;align-items:center;justify-content:center;line-height:0;}
       .pdf-price-drop-arrow{flex-shrink:0;display:block;width:17px;height:17px;}

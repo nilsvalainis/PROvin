@@ -49,7 +49,7 @@ export const PROVIN_ALERT_TEXT = {
   odometer:
     "Uzmanību! Transportlīdzekļa vēsturē konstatētas odometra rādījumu neatbilstības (anomālijas).",
   tirgus_high_supply:
-    "Uzmanību! Tirgū fiksēts ļoti liels identisku modeļu piedāvājums (virs 200 auto), kas var ietekmēt tālākpārdošanas vērtību un likviditāti.",
+    "Brīdinājums: Transportlīdzeklis tirgū atrodas neierasti ilgi (virs 200 dienām), kas var liecināt par zemu likviditāti vai slēptiem defektiem.",
   incidents:
     "Brīdinājums: Transportlīdzeklim reģistrēti ceļu satiksmes negadījumi vai fiksēti būtiski zaudējumu atlīdzības prasījumi.",
   particulate:

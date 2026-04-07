@@ -1,5 +1,6 @@
 /**
- * „Auto pārdošanā (dienas)” lauks — kritiskais slieksnis tirgus piedāvājuma brīdinājumam.
+ * „Auto pārdošanā (dienas)” — kopējais dienu skaits, cik ilgi transportlīdzeklis ir publicēts
+ * sludinājumu portālos (atrašanās laiks tirgū). Virs 200 dienām — sarkans baneris un šūnas akcents.
  */
 
 /** Pirmā pilnā skaitliskā vērtība no teksta (piem. "22", "250", "250 dienas"). */
