@@ -1,5 +1,6 @@
 "use client";
 
+import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { LtabIncidentRow, VendorAvotuBlockState } from "@/lib/admin-source-blocks";
 import {
@@ -18,6 +19,7 @@ import {
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
+import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -232,23 +234,35 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                       )}
                     </td>
                     <td className="px-2 py-1 align-top">
-                      {readOnly ? (
-                        <span className="text-[var(--color-provin-muted)]">{row.lossAmount.trim() || "—"}</span>
-                      ) : (
-                        <input
-                          type="text"
-                          className={inp}
-                          placeholder="2930.00 €"
-                          value={row.lossAmount}
-                          disabled={disabled}
-                          id={`${idBase}-${PROVIN_VENDOR_FIELD.zaudejumuSumma}-${ri}`}
-                          name={`${PROVIN_VENDOR_FIELD.zaudejumuSumma}[${ri}]`}
-                          data-provin-field={PROVIN_VENDOR_FIELD.zaudejumuSumma}
-                          data-row-index={ri}
-                          onChange={(e) => setIncidentRow(ri, { lossAmount: e.target.value })}
-                          aria-label={`Zaudējumu summa, ${blockKey}, rinda ${ri + 1}`}
-                        />
-                      )}
+                      <LossAmountFieldChrome value={row.lossAmount}>
+                        {readOnly ? (
+                          <span
+                            className={
+                              !row.lossAmount.trim()
+                                ? "text-[var(--color-provin-muted)]"
+                                : getLossAmountUiFlag(row.lossAmount) === "red"
+                                  ? "font-semibold text-[#B91C1C]"
+                                  : "font-semibold text-amber-900"
+                            }
+                          >
+                            {row.lossAmount.trim() || "—"}
+                          </span>
+                        ) : (
+                          <input
+                            type="text"
+                            className={`${inp} max-w-full border-0 bg-transparent shadow-none ring-0 focus:ring-0`}
+                            placeholder="2930.00 €"
+                            value={row.lossAmount}
+                            disabled={disabled}
+                            id={`${idBase}-${PROVIN_VENDOR_FIELD.zaudejumuSumma}-${ri}`}
+                            name={`${PROVIN_VENDOR_FIELD.zaudejumuSumma}[${ri}]`}
+                            data-provin-field={PROVIN_VENDOR_FIELD.zaudejumuSumma}
+                            data-row-index={ri}
+                            onChange={(e) => setIncidentRow(ri, { lossAmount: e.target.value })}
+                            aria-label={`Zaudējumu summa, ${blockKey}, rinda ${ri + 1}`}
+                          />
+                        )}
+                      </LossAmountFieldChrome>
                     </td>
                     <td className="px-2 py-1 align-top">
                       {readOnly ? (

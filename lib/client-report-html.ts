@@ -4,7 +4,6 @@
  */
 
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
-import { amountToIntRough } from "@/lib/claim-rows-parse";
 import {
   autoRecordsBlockHasContent,
   citiAvotiHasContent,
@@ -60,6 +59,7 @@ import {
   getParticulateMatterUiFlag,
   type CsddFieldUiFlag,
 } from "@/lib/csdd-ui-flags";
+import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
@@ -140,6 +140,10 @@ function pdfCsddAlertCircleHtml(): string {
   return `<svg class="pdf-csdd-alert-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
 }
 
+function pdfCsddAlertTriangleHtml(): string {
+  return `<svg class="pdf-csdd-alert-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+}
+
 function formatCsddNextInspectionCell(v: string): string {
   return escapeHtml(v);
 }
@@ -156,17 +160,24 @@ function buildCsddPdfAlertRowHtml(
   flag: Exclude<CsddFieldUiFlag, "none">,
 ): string {
   const tier = flag === "red" ? "red" : "yellow";
-  const ico = pdfCsddAlertCircleHtml();
+  const ico = flag === "red" ? pdfCsddAlertCircleHtml() : pdfCsddAlertTriangleHtml();
   return `<tr><td colspan="2" class="pdf-csdd-alert-td"><div class="pdf-csdd-alert pdf-csdd-alert--${tier}">${ico}<span class="pdf-csdd-alert-label">${labelEscaped}</span><span class="pdf-csdd-alert-val">${valueEscaped}</span>${ico}</div></td></tr>`;
+}
+
+function pdfLossAmountAlertIconHtml(tier: "yellow" | "red"): string {
+  const stroke = tier === "red" ? "#DC2626" : "#F59E0B";
+  return `<svg class="pdf-loss-amt-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="${stroke}" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/></svg>`;
 }
 
 function formatLossAmountEurCell(raw: string): string {
   const t = raw.trim();
   const esc = escapeHtml(t);
   if (!t) return esc;
-  const n = amountToIntRough(raw);
-  if (n <= 0) return esc;
-  return esc;
+  const flag = getLossAmountUiFlag(raw);
+  if (flag === "none") return esc;
+  const tier = flag === "red" ? "red" : "yellow";
+  const ico = pdfLossAmountAlertIconHtml(tier);
+  return `<span class="pdf-loss-amt pdf-loss-amt--${tier}">${ico}<span class="tabular pdf-loss-amt-num">${esc}</span>${ico}</span>`;
 }
 
 function extractVehicleMakeModel(csdd: string): string | null {
@@ -718,18 +729,42 @@ function clientReportPrintCss(): string {
         fill:#ef4444!important;stroke:#b91c1c!important;stroke-width:1.75!important;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-alert-banners-stack{margin:0 0 10px;}
+      .pdf-alert-banners-stack{
+        display:flex;flex-direction:column;gap:8px;margin:0 0 10px;
+      }
       .pdf-alert-banner{
-        display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:8px;
-        background:#fff5f5;border-left:5px solid #dc2626;border-radius:0 6px 6px 0;
+        display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:0 6px 6px 0;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-alert-banner:last-child{margin-bottom:0;}
+      .pdf-alert-banner--red{
+        background:#fff5f5;border-left:5px solid #dc2626;color:#dc2626;
+      }
+      .pdf-alert-banner--yellow{
+        background:#fffbeb;border-left:5px solid #f59e0b;color:#f59e0b;
+      }
       .pdf-alert-banner-text{
         flex:1;margin:0;font-size:8pt;line-height:1.35;color:#374151;font-family:Inter,sans-serif!important;
       }
-      .pdf-alert-banner-ico{flex-shrink:0;display:block;color:#dc2626;}
+      .pdf-alert-banner-ico{flex-shrink:0;display:block;}
+      .pdf-alert-banner--red .pdf-alert-banner-text{color:#374151;}
+      .pdf-alert-banner--yellow .pdf-alert-banner-text{color:#374151;}
       .pdf-alert-banner .pdf-alert-banner-ico:last-child{margin-left:auto;}
+      .pdf-loss-amt{
+        display:inline-flex;align-items:center;justify-content:center;gap:5px;
+        max-width:100%;padding:3px 7px;border-radius:5px;font-size:9pt!important;line-height:1.2;
+        font-family:Inter,sans-serif!important;vertical-align:middle;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-loss-amt--yellow{
+        border:1px solid #F59E0B;background:#FFFBEB;
+      }
+      .pdf-loss-amt--red{
+        border:1px solid #EF4444;background:#FEF2F2;
+      }
+      .pdf-loss-amt-num{font-weight:600;}
+      .pdf-loss-amt--yellow .pdf-loss-amt-num{color:#B45309!important;}
+      .pdf-loss-amt--red .pdf-loss-amt-num{color:#D32F2F!important;}
+      .pdf-loss-amt-ico{flex-shrink:0;display:block;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
       .mirror-block-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;}

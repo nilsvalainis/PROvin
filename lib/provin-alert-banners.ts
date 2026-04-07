@@ -1,5 +1,5 @@
 /**
- * Dinamiskie brīdinājuma baneri (PDF + admin) — tikai dzeltenā/sarkanā statusa gadījumos.
+ * Dinamiskie brīdinājuma baneri (PDF + admin) — krāsa atbilst avotu līmenim (dzeltens / sarkans).
  */
 
 import {
@@ -11,7 +11,9 @@ import {
 import {
   getNextInspectionDateUiFlag,
   getParticulateMatterUiFlag,
+  type CsddFieldUiFlag,
 } from "@/lib/csdd-ui-flags";
+import { aggregateLossAmountFlags } from "@/lib/loss-amount-ui";
 import {
   computeOdometerAnomalyBySourceOrder,
   collectUnifiedMileageRows,
@@ -25,14 +27,15 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 
-/** Kritiskā zaudējumu summa (EUR, veseli) — saskaņota ar claim-rows-parse „emphasize” slieksni. */
-export const CRITICAL_LOSS_AMOUNT_EUR = 5000;
-
 export type ProvinAlertBannerKind = "odometer" | "incidents" | "particulate" | "inspection";
+
+/** Banera vizuālais līmenis — sakrīt ar avotu dzelteno/sarkano. */
+export type ProvinAlertSeverity = "red" | "yellow";
 
 export type ProvinAlertBanner = {
   kind: ProvinAlertBannerKind;
   text: string;
+  severity: ProvinAlertSeverity;
 };
 
 export const PROVIN_ALERT_TEXT = {
@@ -45,6 +48,10 @@ export const PROVIN_ALERT_TEXT = {
   inspection:
     "Brīdinājums: Transportlīdzeklim nav derīgas tehniskās apskates vai tās termiņš drīzumā beidzas.",
 } as const;
+
+function flagToSeverity(f: Exclude<CsddFieldUiFlag, "none">): ProvinAlertSeverity {
+  return f === "red" ? "red" : "yellow";
+}
 
 function collectIncidentRows(
   ltab: ClientManualLtabBlockPdf | null | undefined,
@@ -62,7 +69,22 @@ function collectIncidentRows(
   return out;
 }
 
-/** Vismaz viens negadījuma/atlīdzības ieraksts (vai zaudējums ≥ kritiskās robežas — strukturētajos datos tas ir daļa no rindām). */
+/**
+ * Negadījumu banera severitāte: balstīta uz „Zaudējumu summa” laukiem.
+ * Ja rindas ir, bet visas summas tukšas → dzeltens (brīdinājums bez skaitliskās summas).
+ */
+export function computeIncidentBannerSeverity(
+  ltab: ClientManualLtabBlockPdf | null | undefined,
+  vendors: ClientManualVendorBlockPdf[] | undefined,
+): ProvinAlertSeverity | null {
+  const rows = collectIncidentRows(ltab, vendors);
+  if (rows.length === 0) return null;
+  const agg = aggregateLossAmountFlags(rows.map((r) => r.lossAmount));
+  if (agg === "red") return "red";
+  if (agg === "yellow") return "yellow";
+  return "yellow";
+}
+
 export function shouldShowIncidentBanner(
   ltab: ClientManualLtabBlockPdf | null | undefined,
   vendors: ClientManualVendorBlockPdf[] | undefined,
@@ -82,21 +104,28 @@ export function computeProvinAlertBanners(args: {
 
   const anomalyMap = computeOdometerAnomalyBySourceOrder(args.unifiedMileageRows);
   if (hasAnyOdometerAnomaly(anomalyMap)) {
-    out.push({ kind: "odometer", text: PROVIN_ALERT_TEXT.odometer });
+    out.push({ kind: "odometer", text: PROVIN_ALERT_TEXT.odometer, severity: "red" });
   }
 
-  if (shouldShowIncidentBanner(args.manualLtabBlock, args.manualVendorBlocks)) {
-    out.push({ kind: "incidents", text: PROVIN_ALERT_TEXT.incidents });
+  const incSev = computeIncidentBannerSeverity(args.manualLtabBlock, args.manualVendorBlocks);
+  if (incSev !== null) {
+    out.push({ kind: "incidents", text: PROVIN_ALERT_TEXT.incidents, severity: incSev });
   }
 
   const pm = args.csddForm?.particulateMatter?.trim() ?? "";
-  if (pm && getParticulateMatterUiFlag(pm) !== "none") {
-    out.push({ kind: "particulate", text: PROVIN_ALERT_TEXT.particulate });
+  if (pm) {
+    const f = getParticulateMatterUiFlag(pm);
+    if (f !== "none") {
+      out.push({ kind: "particulate", text: PROVIN_ALERT_TEXT.particulate, severity: flagToSeverity(f) });
+    }
   }
 
   const next = args.csddForm?.nextInspectionDate?.trim() ?? "";
-  if (next && getNextInspectionDateUiFlag(next, ref) !== "none") {
-    out.push({ kind: "inspection", text: PROVIN_ALERT_TEXT.inspection });
+  if (next) {
+    const f = getNextInspectionDateUiFlag(next, ref);
+    if (f !== "none") {
+      out.push({ kind: "inspection", text: PROVIN_ALERT_TEXT.inspection, severity: flagToSeverity(f) });
+    }
   }
 
   return out;
@@ -121,17 +150,24 @@ export function computeProvinAlertBannersFromPayloadSlice(
   });
 }
 
-function pdfAlertCircleIconHtml(): string {
-  return `<svg class="pdf-alert-banner-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="#dc2626" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="#dc2626" stroke-width="2" stroke-linecap="round"/></svg>`;
+function pdfAlertBannerCircleIconHtml(): string {
+  return `<svg class="pdf-alert-banner-ico pdf-alert-banner-ico--circle" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
 }
 
-/** PDF HTML: rozā fons, kreisā sarkanā mala, alert ikonas sākumā un beigās. */
+function pdfAlertBannerTriangleIconHtml(): string {
+  return `<svg class="pdf-alert-banner-ico pdf-alert-banner-ico--triangle" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+}
+
+function pdfAlertBannerIconsHtml(severity: ProvinAlertSeverity): string {
+  return severity === "red" ? pdfAlertBannerCircleIconHtml() : pdfAlertBannerTriangleIconHtml();
+}
+
+/** PDF HTML: 8px atstarpe starp joslām; dzeltens = trijstūris, sarkans = aplis. */
 export function buildPdfAlertBannersHtml(banners: ProvinAlertBanner[]): string {
   if (banners.length === 0) return "";
-  const ico = pdfAlertCircleIconHtml();
   const blocks = banners.map(
     (b) =>
-      `<div class="pdf-alert-banner" role="alert" data-provin-alert="${b.kind}">${ico}<p class="pdf-alert-banner-text">${escapeHtmlPdf(b.text)}</p>${ico}</div>`,
+      `<div class="pdf-alert-banner pdf-alert-banner--${b.severity}" role="alert" data-provin-alert="${b.kind}" data-provin-severity="${b.severity}">${pdfAlertBannerIconsHtml(b.severity)}<p class="pdf-alert-banner-text">${escapeHtmlPdf(b.text)}</p>${pdfAlertBannerIconsHtml(b.severity)}</div>`,
   );
   return `<div class="pdf-alert-banners-stack">${blocks.join("\n")}</div>`;
 }
