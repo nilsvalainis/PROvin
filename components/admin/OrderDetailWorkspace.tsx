@@ -6,7 +6,7 @@ import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePor
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
 import { AdminAutoRecordsSourceBlock } from "@/components/admin/AdminAutoRecordsSourceBlock";
-import { AdminStructuredSourceBlock } from "@/components/admin/AdminStructuredSourceBlock";
+import { AdminVendorAvotuSourceBlock } from "@/components/admin/AdminVendorAvotuSourceBlock";
 import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBlock";
 import { AdminListingAnalysisSourceBlock } from "@/components/admin/AdminListingAnalysisSourceBlock";
 import { AdminCitiAvotiSourceBlock } from "@/components/admin/AdminCitiAvotiSourceBlock";
@@ -18,12 +18,13 @@ import {
   citiAvotiToPlainText,
   createDefaultSourceBlocks,
   csddFormToPlainText,
-  emptyDataRow,
+  emptyVendorAvotuBlock,
   hydrateWorkspaceFromStorage,
   listingAnalysisToPlainText,
   ltabBlockToPlainText,
   autoRecordsBlockToPlainText,
   standardBlockToPlainText,
+  vendorAvotuBlockToPlainText,
   tirgusFormToPlainText,
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
@@ -369,7 +370,9 @@ export function OrderDetailWorkspace({
                       ? listingAnalysisToPlainText(ws.sourceBlocks.listing_analysis)
                       : key === "auto_records"
                         ? autoRecordsBlockToPlainText(ws.sourceBlocks.auto_records)
-                        : standardBlockToPlainText(ws.sourceBlocks[key]),
+                        : key === "autodna" || key === "carvertical"
+                          ? vendorAvotuBlockToPlainText(ws.sourceBlocks[key])
+                          : standardBlockToPlainText(ws.sourceBlocks[key]),
         })),
         fileNames: portfolio.map((p) => p.name),
       }),
@@ -456,7 +459,7 @@ export function OrderDetailWorkspace({
           const parts: string[] = [];
           if (serverC) parts.push(serverC);
           if (legacy) parts.push(legacy);
-          b.autodna = { rows: [emptyDataRow()], comments: parts.join("\n\n") };
+          b.autodna = { ...emptyVendorAvotuBlock(), comments: parts.join("\n\n") };
           setWs({ ...EMPTY_WORKSPACE, sourceBlocks: b, previewConfirmed: false });
         } else {
           setWs(EMPTY_WORKSPACE);
@@ -907,7 +910,9 @@ export function OrderDetailWorkspace({
                             ? listingAnalysisToPlainText(ws.sourceBlocks.listing_analysis)
                             : key === "auto_records"
                               ? autoRecordsBlockToPlainText(ws.sourceBlocks.auto_records)
-                              : standardBlockToPlainText(ws.sourceBlocks[key])
+                              : key === "autodna" || key === "carvertical"
+                                ? vendorAvotuBlockToPlainText(ws.sourceBlocks[key])
+                                : standardBlockToPlainText(ws.sourceBlocks[key])
                 }
                 variant="default"
               />
@@ -1196,7 +1201,7 @@ export function OrderDetailWorkspace({
           </div>
           <div className="grid min-h-0 min-w-0 grid-cols-3 gap-2 items-stretch">
             <div className="flex min-h-0 h-full min-w-0 flex-col">
-              <AdminStructuredSourceBlock
+              <AdminVendorAvotuSourceBlock
                 blockKey="autodna"
                 value={blocksForDisplay.autodna}
                 readOnly={sourcesViewMode}
@@ -1204,7 +1209,7 @@ export function OrderDetailWorkspace({
               />
             </div>
             <div className="flex min-h-0 h-full min-w-0 flex-col">
-              <AdminStructuredSourceBlock
+              <AdminVendorAvotuSourceBlock
                 blockKey="carvertical"
                 value={blocksForDisplay.carvertical}
                 readOnly={sourcesViewMode}

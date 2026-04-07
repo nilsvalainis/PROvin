@@ -16,6 +16,8 @@ import {
   LISTING_ANALYSIS_SUBSECTIONS,
   SOURCE_BLOCK_LABELS,
   listingAnalysisHasContent,
+  ltabRowHasData,
+  NEGADIJUMU_VESTURE_TITLE,
   TIRGUS_LABEL_CREATED,
   TIRGUS_LABEL_LISTED,
   TIRGUS_LABEL_PRICE_DROP,
@@ -334,28 +336,46 @@ function buildAutoRecordsAvotuSubsection(b: AutoRecordsBlockState | null | undef
   return wrapPdfAvotuStack(card, hasComments ? pdfAvotuCommentIsland(b.comments) : "");
 }
 
-/** Viena trešā pušu avota apakšbloks zem „AVOTU DATI“. */
+/** Viena trešā pušu avota apakšbloks zem „AVOTU DATI“ — nobraukums (kā AUTO RECORDS) + negadījumi (kā LTAB). */
 function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf): string {
-  const hasTable = b.rows.length > 0;
+  const mileageRows = b.mileageRows.filter(autoRecordsRowHasData);
+  const incidentRows = b.incidentRows.filter(ltabRowHasData);
   const hasComments = b.comments.trim().length > 0;
-  if (!hasTable && !hasComments) return "";
+  if (mileageRows.length === 0 && incidentRows.length === 0 && !hasComments) return "";
   const icon = pdfIconForVendorTitle(b.title);
   const iconBrand = vendorPdfIconBrandClass(b.title);
   const header = pdfAvotuNeutralHeader(icon, b.title, iconBrand);
   const bodyParts: string[] = [];
-  if (hasTable) {
-    const amountTh = escapeHtml(b.amountColumnLabel ?? "Zaudējumu summa");
+  if (mileageRows.length > 0) {
+    const head = `<tr><th>Datums</th><th>Odometrs (km)</th><th>Valsts</th></tr>`;
+    const body = mileageRows
+      .map((r) => {
+        const dateOut = formatAutoRecordsDateForOutput(r.date);
+        const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
+        const countryOut = r.country.trim();
+        return `<tr><td>${escapeHtml(dateOut)}</td><td class="tabular">${escapeHtml(odoOut)}</td><td>${escapeHtml(countryOut)}</td></tr>`;
+      })
+      .join("\n");
     bodyParts.push(
-      `<table class="mirror-table"><thead><tr><th>Gads / Datums</th><th class="tabular">KM</th><th class="tabular">${amountTh}</th></tr></thead><tbody>`,
+      `<p class="pdf-field-label pdf-field-label--sub">${escapeHtml(CSDD_MILEAGE_UNIFIED_TITLE)}</p>`,
     );
-    for (const r of b.rows) {
+    bodyParts.push(`<table class="mirror-table mirror-table--csdd-mh"><thead>${head}</thead><tbody>${body}</tbody></table>`);
+  }
+  if (incidentRows.length > 0) {
+    bodyParts.push(
+      `<p class="pdf-field-label pdf-field-label--sub">${escapeHtml(NEGADIJUMU_VESTURE_TITLE)}</p>`,
+    );
+    bodyParts.push(
+      `<table class="mirror-table"><thead><tr><th>Negadījumu skaits</th><th class="tabular">CSNg datums</th><th class="tabular">Zaudējumu summa</th></tr></thead><tbody>`,
+    );
+    for (const r of incidentRows) {
       bodyParts.push(
-        `<tr><td>${escapeHtml(r.date)}</td><td class="tabular">${escapeHtml(r.km)}</td><td class="tabular">${formatLossAmountEurCell(r.amount)}</td></tr>`,
+        `<tr><td>${escapeHtml(r.incidentNo)}</td><td class="tabular">${escapeHtml(r.csngDate)}</td><td class="tabular">${formatLossAmountEurCell(r.lossAmount)}</td></tr>`,
       );
     }
     bodyParts.push(`</tbody></table>`);
   }
-  const bodyHtml = bodyParts.join("\n");
+  const bodyHtml = bodyParts.join("");
   const card =
     bodyHtml.trim() === ""
       ? `<div class="pdf-avotu-card pdf-avotu-card--neutral pdf-avotu-card--no-body">${header}</div>`

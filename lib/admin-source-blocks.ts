@@ -212,6 +212,19 @@ export const CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL = "Nezināmā";
 /** Vienotās tabulas virsraksts (admin + PDF). */
 export const CSDD_MILEAGE_UNIFIED_TITLE = "NOBRAUKUMA VĒSTURE";
 
+/** AutoDNA / CarVertical — negadījumu apakšsekcija (saskaņots ar LTAB loģiku). */
+export const NEGADIJUMU_VESTURE_TITLE = "NEGADĪJUMU VĒSTURE";
+
+/** Automatizētai datu vākšanai — `name` / `data-provin-field` (ar rindas indeksu tabulas laukiem). */
+export const PROVIN_VENDOR_FIELD = {
+  nobraukumaDatums: "nobraukuma_vesture_datums",
+  nobraukumaOdometrs: "nobraukuma_vesture_odometrs",
+  nobraukumaValsts: "nobraukuma_vesture_valsts",
+  negadijumuSkaits: "negadijumu_skaits",
+  csngDatums: "csng_datums",
+  zaudejumuSumma: "zaudejumu_summa",
+} as const;
+
 export function emptyCsddMileageRow(): CsddMileageRow {
   return { date: "", odometer: "", country: "" };
 }
@@ -372,6 +385,13 @@ export type LtabBlockState = {
   comments: string;
 };
 
+/** AutoDNA / CarVertical — nobraukums (kā AUTO RECORDS) + negadījumi (kā LTAB). */
+export type VendorAvotuBlockState = {
+  serviceHistory: AutoRecordsServiceRow[];
+  incidents: LtabIncidentRow[];
+  comments: string;
+};
+
 /** Citi avoti — viens brīvā teksta lauks (PDF: „Komentāri” zonā). */
 export type CitiAvotiBlockState = {
   comments: string;
@@ -387,8 +407,8 @@ export type ListingAnalysisBlockState = {
 export type WorkspaceSourceBlocks = {
   csdd: CsddFormFields;
   tirgus: TirgusFormFields;
-  autodna: StandardSourceBlockState;
-  carvertical: StandardSourceBlockState;
+  autodna: VendorAvotuBlockState;
+  carvertical: VendorAvotuBlockState;
   auto_records: AutoRecordsBlockState;
   ltab: LtabBlockState;
   citi_avoti: CitiAvotiBlockState;
@@ -417,6 +437,14 @@ export function emptyLtabRow(): LtabIncidentRow {
 
 export function emptyLtabBlock(): LtabBlockState {
   return { rows: [emptyLtabRow()], comments: "" };
+}
+
+export function emptyVendorAvotuBlock(): VendorAvotuBlockState {
+  return {
+    serviceHistory: [emptyAutoRecordsServiceRow()],
+    incidents: [emptyLtabRow()],
+    comments: "",
+  };
 }
 
 export function emptyCitiAvotiBlock(): CitiAvotiBlockState {
@@ -477,8 +505,8 @@ export function createDefaultSourceBlocks(): WorkspaceSourceBlocks {
   return {
     csdd: emptyCsddFields(),
     tirgus: emptyTirgusFields(),
-    autodna: emptyStandardBlock(),
-    carvertical: emptyStandardBlock(),
+    autodna: emptyVendorAvotuBlock(),
+    carvertical: emptyVendorAvotuBlock(),
     auto_records: emptyAutoRecordsBlock(),
     ltab: emptyLtabBlock(),
     citi_avoti: emptyCitiAvotiBlock(),
@@ -549,13 +577,47 @@ export function ltabBlockToPlainText(b: LtabBlockState): string {
   return [...lines, ...(c ? [c] : [])].join("\n");
 }
 
+export function vendorAvotuBlockHasContent(b: VendorAvotuBlockState): boolean {
+  return (
+    b.serviceHistory.some(autoRecordsRowHasData) ||
+    b.incidents.some(ltabRowHasData) ||
+    b.comments.trim().length > 0
+  );
+}
+
+export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState): string {
+  const lines: string[] = [];
+  const mh = b.serviceHistory.filter(autoRecordsRowHasData);
+  if (mh.length > 0) {
+    lines.push(CSDD_MILEAGE_UNIFIED_TITLE);
+    for (const r of mh) {
+      lines.push(
+        [
+          formatAutoRecordsDateForOutput(r.date),
+          normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
+          r.country.replace(/\s+/g, " ").trim(),
+        ].join("\t"),
+      );
+    }
+  }
+  const inc = b.incidents.filter(ltabRowHasData);
+  if (inc.length > 0) {
+    lines.push(NEGADIJUMU_VESTURE_TITLE);
+    for (const r of inc) {
+      lines.push([r.incidentNo.trim(), r.csngDate.trim(), r.lossAmount.trim()].join("\t"));
+    }
+  }
+  if (b.comments.trim()) lines.push(`Komentāri\n${b.comments.trim()}`);
+  return lines.join("\n");
+}
+
 /** Zaudējumu summas avoti (AutoDNA, CarVertical) — ne AUTO RECORDS. */
 const LOSS_VENDOR_KEYS = ["autodna", "carvertical"] as const satisfies readonly StandardSourceBlockKey[];
 
 export function mergeVendorBlocksPlain(blocks: WorkspaceSourceBlocks): string {
   const parts: string[] = [];
   for (const k of LOSS_VENDOR_KEYS) {
-    const t = standardBlockToPlainText(blocks[k]);
+    const t = vendorAvotuBlockToPlainText(blocks[k]);
     if (!t) continue;
     parts.push(`【${SOURCE_BLOCK_LABELS[k]}】\n${t}`);
   }
@@ -585,10 +647,9 @@ export function blocksToLegacyFlatFields(blocks: WorkspaceSourceBlocks): {
 
 export type ClientManualVendorBlockPdf = {
   title: string;
-  rows: SourceDataRow[];
+  mileageRows: AutoRecordsServiceRow[];
+  incidentRows: LtabIncidentRow[];
   comments: string;
-  /** Trešās kolonnas virsraksts PDF tabulā. */
-  amountColumnLabel?: string;
 };
 
 /** Strukturēts LTAB bloks PDF — atsevišķi panelī pēc AutoDNA / CV / Auto-Records (kā admin režģī). */
@@ -597,20 +658,16 @@ export type ClientManualLtabBlockPdf = {
   comments: string;
 };
 
-function vendorPdfAmountColumnLabel(): string {
-  return "Zaudējumu summa";
-}
-
 export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientManualVendorBlockPdf[] {
   const out: ClientManualVendorBlockPdf[] = [];
   for (const k of LOSS_VENDOR_KEYS) {
     const b = blocks[k];
-    if (!standardBlockHasContent(b)) continue;
+    if (!vendorAvotuBlockHasContent(b)) continue;
     out.push({
       title: SOURCE_BLOCK_LABELS[k],
-      rows: b.rows.filter(rowHasData),
+      mileageRows: b.serviceHistory.filter(autoRecordsRowHasData),
+      incidentRows: b.incidents.filter(ltabRowHasData),
       comments: b.comments.trim(),
-      amountColumnLabel: vendorPdfAmountColumnLabel(),
     });
   }
   return out;
@@ -678,6 +735,82 @@ function parseStandardBlockRaw(raw: Record<string, unknown>): StandardSourceBloc
     rows: rows.length > 0 ? rows : [emptyDataRow()],
     comments,
   };
+}
+
+export function migrateLegacyVendorBlock(legacy: StandardSourceBlockState): VendorAvotuBlockState {
+  const rows = legacy.rows;
+  const mileageFromLegacy = rows
+    .map((r) => ({
+      date: formatAutoRecordsDateForOutput(r.date),
+      odometer: normalizeAutoRecordsOdometer(r.km) || r.km.replace(/\D/g, ""),
+      country: "",
+    }))
+    .filter(autoRecordsRowHasData);
+  const sorted = sortAutoRecordsDescending(mileageFromLegacy);
+  const serviceHistory = sorted.length > 0 ? sorted : [emptyAutoRecordsServiceRow()];
+
+  const incidentsFromAmount = rows
+    .filter((r) => r.amount.trim().length > 0)
+    .map((r) => ({
+      incidentNo: "",
+      csngDate: r.date.trim().slice(0, 120),
+      lossAmount: r.amount.trim().slice(0, 120),
+    }));
+  const incidents = incidentsFromAmount.length > 0 ? incidentsFromAmount : [emptyLtabRow()];
+
+  return {
+    serviceHistory,
+    incidents,
+    comments: legacy.comments,
+  };
+}
+
+function normalizeVendorMileageRowsFromRaw(rowsIn: unknown[]): AutoRecordsServiceRow[] {
+  const serviceHistory: AutoRecordsServiceRow[] = rowsIn
+    .map((row) => {
+      if (!row || typeof row !== "object") return emptyAutoRecordsServiceRow();
+      const x = row as Record<string, unknown>;
+      return {
+        date: String(x.date ?? "").slice(0, 40),
+        odometer: String(x.odometer ?? "").slice(0, 40),
+        country: String(x.country ?? "").slice(0, 120),
+      };
+    })
+    .filter(autoRecordsRowHasData);
+  const sorted = sortAutoRecordsDescending(serviceHistory);
+  const normalized = sorted.map((r) => ({
+    date: formatAutoRecordsDateForOutput(r.date),
+    odometer: normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
+    country: r.country.replace(/\s+/g, " ").trim(),
+  }));
+  return normalized.length > 0 ? normalized : [emptyAutoRecordsServiceRow()];
+}
+
+function normalizeVendorIncidentsFromRaw(rowsIn: unknown[]): LtabIncidentRow[] {
+  const rows: LtabIncidentRow[] = rowsIn.map((row) => {
+    if (!row || typeof row !== "object") return emptyLtabRow();
+    const x = row as Record<string, unknown>;
+    return {
+      incidentNo: String(x.incidentNo ?? "").slice(0, 120),
+      csngDate: String(x.csngDate ?? "").slice(0, 120),
+      lossAmount: String(x.lossAmount ?? "").slice(0, 120),
+    };
+  });
+  const filtered = rows.filter(ltabRowHasData);
+  return filtered.length > 0 ? filtered : [emptyLtabRow()];
+}
+
+function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBlockState {
+  if ("serviceHistory" in raw || "incidents" in raw) {
+    const shIn = Array.isArray(raw.serviceHistory) ? raw.serviceHistory : [];
+    const incIn = Array.isArray(raw.incidents) ? raw.incidents : [];
+    return {
+      serviceHistory: normalizeVendorMileageRowsFromRaw(shIn as unknown[]),
+      incidents: normalizeVendorIncidentsFromRaw(incIn as unknown[]),
+      comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
+    };
+  }
+  return migrateLegacyVendorBlock(parseStandardBlockRaw(raw));
 }
 
 function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
@@ -869,11 +1002,13 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
     base.auto_records = parseAutoRecordsBlockRaw(rawAutoRecords as Record<string, unknown>);
   }
 
-  for (const key of STANDARD_SOURCE_BLOCK_KEYS) {
-    if (key === "ltab" || key === "tirgus" || key === "auto_records") continue;
-    const raw = o[key];
-    if (!raw || typeof raw !== "object") continue;
-    base[key] = parseStandardBlockRaw(raw as Record<string, unknown>);
+  const rawAutodna = o.autodna;
+  if (rawAutodna && typeof rawAutodna === "object") {
+    base.autodna = parseVendorAvotuBlockRaw(rawAutodna as Record<string, unknown>);
+  }
+  const rawCarvertical = o.carvertical;
+  if (rawCarvertical && typeof rawCarvertical === "object") {
+    base.carvertical = parseVendorAvotuBlockRaw(rawCarvertical as Record<string, unknown>);
   }
 
   const rawTirgus = o.tirgus;
