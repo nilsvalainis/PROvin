@@ -944,11 +944,12 @@ export function buildClientReportDocumentHtml(args: {
   const unifiedMileageHtml = buildUnifiedMileageTableHtml(p);
   if (unifiedMileageHtml) lines.push(unifiedMileageHtml);
 
-  const listingPriorityHtml = buildListingAnalysisPriorityHtml(p);
-  if (listingPriorityHtml) lines.push(listingPriorityHtml);
-
   const avotuHtml = buildAvotuDatiSectionHtml(p);
   if (avotuHtml) lines.push(avotuHtml);
+
+  /** Kā admin darba telpā: 2. avoti → 3. sludinājuma analīze → 4. APPROVED BY IRISS. */
+  const listingPriorityHtml = buildListingAnalysisPriorityHtml(p);
+  if (listingPriorityHtml) lines.push(listingPriorityHtml);
 
   const approvedHtml = buildApprovedByIrissHtml(p);
   if (approvedHtml) lines.push(approvedHtml);
