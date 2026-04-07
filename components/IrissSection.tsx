@@ -33,19 +33,21 @@ export async function IrissSection() {
           socialSoon={t("socialSoon")}
         />
 
-        <div className="provin-lift-strong mt-8 w-full rounded-2xl border border-black/[0.1] bg-gradient-to-b from-[#f5f5f7] to-[#fbfbfd] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.07)] sm:mt-10 sm:p-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-            <div className="min-w-0 flex-1 space-y-4 text-left">
+        <div className="mt-8 flex w-full min-w-0 flex-col gap-8 sm:mt-10 sm:flex-row sm:items-start sm:justify-between sm:gap-10">
+          <div className="provin-lift-strong min-w-0 flex-1 rounded-2xl border border-black/[0.1] bg-gradient-to-b from-[#f5f5f7] to-[#fbfbfd] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.07)] sm:p-8">
+            <div className="space-y-4 text-left">
               <p className="text-[16px] font-normal leading-relaxed text-[#1d1d1f] sm:text-[17px]">{t("bio1")}</p>
               <p className="text-[16px] font-normal leading-relaxed text-[#1d1d1f] sm:text-[17px]">{t("bio2")}</p>
             </div>
-            <div className="flex shrink-0 flex-col items-center justify-center rounded-xl bg-provin-accent px-5 py-4 text-center text-white shadow-[0_4px_16px_rgba(0,0,0,0.15)] sm:min-w-[140px]">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-white/90">{t("experienceLabel")}</p>
-              <p className="mt-1 text-[32px] font-semibold tabular-nums leading-none tracking-tight sm:text-[36px]">
-                {t("years")}
-              </p>
-              <p className="mt-1 text-[12px] font-normal text-white/90">{t("yearsLabel")}</p>
-            </div>
+          </div>
+          <div className="flex shrink-0 flex-col items-center text-center sm:items-end sm:pt-1 sm:text-right">
+            <p className="text-[13px] font-medium leading-tight text-[#1d1d1f] sm:text-[14px]">{t("experienceLabel")}</p>
+            <p
+              className="mt-1 text-[2.5rem] font-extrabold tabular-nums leading-none tracking-tight text-provin-accent sm:text-[2.75rem] [text-shadow:0_1px_2px_rgba(0,102,214,0.18)]"
+            >
+              {t("years")}
+            </p>
+            <p className="mt-1 text-[13px] font-normal leading-tight text-[#1d1d1f] sm:text-[14px]">{t("yearsLabel")}</p>
           </div>
         </div>
       </div>
