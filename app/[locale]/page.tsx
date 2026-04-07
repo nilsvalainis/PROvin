@@ -3,6 +3,7 @@ import { FinalCta } from "@/components/FinalCta";
 import { Hero } from "@/components/Hero";
 import { HeroVisual } from "@/components/HeroVisual";
 import { HowItWorks } from "@/components/HowItWorks";
+import { homeFlowModuleGradientClass } from "@/lib/home-layout";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
 import { PricingTransitionAndComparison } from "@/components/PricingTransitionAndComparison";
@@ -29,9 +30,17 @@ export default async function HomePage({
         />
 
         <div className="relative z-10">
-          <Hero />
-          <HowItWorks />
-          <FinalCta cancelled={cancelled} />
+          <div className="relative">
+            <div
+              className={`pointer-events-none absolute inset-0 z-0 ${homeFlowModuleGradientClass}`}
+              aria-hidden
+            />
+            <div className="relative z-10">
+              <Hero />
+              <HowItWorks />
+              <FinalCta cancelled={cancelled} />
+            </div>
+          </div>
           <PricingIncluded />
           <section id="cena" className="px-4 pt-6 sm:px-6 md:pt-8">
             <div className="mx-auto w-full max-w-[1000px]">

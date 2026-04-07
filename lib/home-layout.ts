@@ -33,8 +33,9 @@ export const homeSoftBandGradientClass =
   "bg-gradient-to-b from-[#f9fafc] via-[#f3f5f8] to-[#e8ecf0]";
 
 /**
- * 3 soļu josla: viens plūdens linear-gradient (gaišs → nedaudz tumšāks zili-pelēks → gaišs),
- * bez asām robežām pret Hero / anketu. Sānu sapludinājums — caur `HowItWorks` malu slāņiem.
+ * Viena plūstoša virsma: Hero → 3 soļi → anketa (vienā `relative` blokā ar `absolute inset-0` gradientu).
+ * Garas, maigas krāsu pārējas — bez asas horizontālas joslas pie pogas / soļiem.
  */
-export const homeHowItWorksBandClass =
-  "bg-[linear-gradient(180deg,#ffffff_0%,#f9fafc_8%,#f1f4f9_28%,#dfe7f0_50%,#f1f4f9_72%,#f9fafc_92%,#ffffff_100%)]";
+/** Augšā caurspīdīgs, lai zem tā paliek HeroVisual + globālais overlay — bez „krāsas kastes” pār visu ekrānu. */
+export const homeFlowModuleGradientClass =
+  "bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0)_14%,rgba(250,251,252,0.42)_24%,rgba(238,242,248,0.78)_38%,rgba(228,234,242,0.92)_50%,rgba(238,242,248,0.78)_62%,rgba(250,251,252,0.5)_78%,rgba(255,255,255,0.96)_100%)]";

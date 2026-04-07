@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { getMessages } from "next-intl/server";
 import { NavChevronDown, NavChevronRight } from "@/components/NavChevron";
-import { homeContentMaxClass, homeHowItWorksBandClass } from "@/lib/home-layout";
+import { homeContentMaxClass } from "@/lib/home-layout";
 
 const connectorClass = "inline-flex shrink-0 text-provin-accent/80";
 
@@ -12,18 +12,10 @@ export async function HowItWorks() {
   const steps = (messages as { HowItWorks: { steps: Step[] } }).HowItWorks.steps;
 
   return (
-    <section className={`relative z-10 overflow-hidden ${homeHowItWorksBandClass}`}>
-      <div
-        className="pointer-events-none absolute inset-y-0 left-0 z-0 w-[min(5rem,22vw)] bg-gradient-to-r from-[#fafbfd]/95 to-transparent"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-y-0 right-0 z-0 w-[min(5rem,22vw)] bg-gradient-to-l from-[#fafbfd]/95 to-transparent"
-        aria-hidden
-      />
-      <div className="relative z-10 px-4 py-4 sm:px-6 sm:py-4">
+    <section className="relative z-10 overflow-visible bg-transparent">
+      <div className="relative px-4 py-4 sm:px-6 sm:py-4">
         <div className={`relative ${homeContentMaxClass}`}>
-          <div className="mx-auto flex min-w-0 max-w-lg flex-col gap-1 md:max-w-none md:flex-row md:items-center md:justify-center md:gap-1">
+          <div className="relative mx-auto flex min-w-0 max-w-lg flex-col gap-1 md:max-w-none md:flex-row md:items-stretch md:justify-center md:gap-1">
             {steps.map((s, i) => (
               <Fragment key={s.n}>
                 <article className="group flex min-w-0 flex-1 flex-col items-center justify-center px-2 py-0 text-center sm:px-3 md:w-[180px] md:flex-none">
@@ -49,9 +41,14 @@ export async function HowItWorks() {
                         <NavChevronDown />
                       </span>
                     </div>
-                    <div className="hidden h-full w-6 shrink-0 items-center justify-center self-center md:flex" aria-hidden>
-                      <span className={connectorClass}>
-                        <NavChevronRight />
+                    <div
+                      className="relative hidden h-full w-6 shrink-0 self-stretch md:flex md:items-center md:justify-center"
+                      aria-hidden
+                    >
+                      <span className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+                        <span className={connectorClass}>
+                          <NavChevronRight />
+                        </span>
                       </span>
                     </div>
                   </>
