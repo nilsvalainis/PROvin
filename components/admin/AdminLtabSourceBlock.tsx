@@ -1,6 +1,7 @@
 "use client";
 
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
+import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { LtabBlockState, LtabIncidentRow } from "@/lib/admin-source-blocks";
 import { emptyLtabRow } from "@/lib/admin-source-blocks";
@@ -90,7 +91,7 @@ export function AdminLtabSourceBlock({ value, readOnly, disabled, onChange }: Pr
                   </td>
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{row.incidentNo.trim() || "—"}</span>
+                      <CountryFlagWithCode countryLabel={row.incidentNo.trim() || "—"} />
                     ) : (
                       <input
                         type="text"

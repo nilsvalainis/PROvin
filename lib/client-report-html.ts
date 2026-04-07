@@ -35,7 +35,7 @@ import {
   provincLogoSvg,
 } from "@/lib/client-report-pdf-layout-draft";
 import { contactMailtoHref, whatsappChatUrl } from "@/lib/contact";
-import { pdfCountryFlagEmoji } from "@/lib/pdf-country-flags";
+import { pdfCountryCodeLetters, pdfCountryFlagEmoji } from "@/lib/pdf-country-flags";
 import {
   buildPdfAlertBannersHtml,
   computeProvinAlertBannersFromPayloadSlice,
@@ -118,6 +118,14 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function buildPdfCountryFlagCellHtml(countryLabel: string): string {
+  const flag = pdfCountryFlagEmoji(countryLabel);
+  const code = pdfCountryCodeLetters(countryLabel);
+  const ariaLabel = escapeHtml(countryLabel.trim() || "—");
+  const codeEsc = escapeHtml(code);
+  return `<span class="pdf-country-flag-wrap" role="img" aria-label="${ariaLabel}"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span class="pdf-country-code">${codeEsc}</span></span>`;
 }
 
 function sectionHeadBrand(icon: string, title: string): string {
@@ -209,8 +217,7 @@ function pdfAvotuCommentIsland(text: string): string {
 }
 
 function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow, anomalyBySourceOrder: Map<number, boolean>): string {
-  const flag = pdfCountryFlagEmoji(r.country);
-  const aria = escapeHtml(r.country);
+  const flagCell = buildPdfCountryFlagCellHtml(r.country);
   const odoEscaped = escapeHtml(r.odometer);
   const anom = anomalyBySourceOrder.get(r.sourceOrder) === true;
   const rowClass = anom ? "pdf-mileage-history-row pdf-mileage-history-row--anomaly" : "pdf-mileage-history-row";
@@ -218,7 +225,7 @@ function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow, anomalyBySourceOr
   const odoTd = anom
     ? `<td class="tabular pdf-mileage-cell-odo"><span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--red"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="tabular pdf-num-warn-digits">${odoEscaped}</span></span></td>`
     : `<td class="tabular pdf-mileage-cell-odo"><span class="pdf-mileage-odo-value">${odoEscaped}</span></td>`;
-  return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td>${odoTd}<td class="pdf-mileage-cell-flag"><span class="pdf-country-flag" role="img" aria-label="${aria}">${flag}</span></td></tr>`;
+  return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td>${odoTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
 }
 
 /** Pēdējie 10 ieraksti (jaunākie) + visas anomālijas; pārējie tiek paslēpti. */
@@ -279,9 +286,8 @@ export function buildUnifiedMileageTableHtml(p: UnifiedMileageSourcePayload): st
 
 function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
   const lossCell = formatLossAmountEurCell(r.lossAmount);
-  const flag = pdfCountryFlagEmoji(r.country);
-  const aria = escapeHtml(r.country.trim() || "—");
-  return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo">${lossCell}</td><td class="pdf-mileage-cell-flag"><span class="pdf-country-flag" role="img" aria-label="${aria}">${flag}</span></td></tr>`;
+  const flagCell = buildPdfCountryFlagCellHtml(r.country);
+  return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo">${lossCell}</td><td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
 }
 
 function buildIncidentHistoryTableHtml(rows: UnifiedIncidentRow[]): string {
@@ -668,11 +674,22 @@ function clientReportPrintCss(): string {
         text-align:right!important;vertical-align:middle!important;
       }
       .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
+      .pdf-country-flag-wrap{
+        display:inline-flex;align-items:center;justify-content:flex-end;gap:8px;
+        font-family:Inter,sans-serif!important;font-size:11px!important;
+        font-weight:500!important;color:#374151!important;line-height:1.2;
+      }
       .pdf-country-flag{
         font-style:normal;font-variant:normal;letter-spacing:0;
-        font-size:1.05em;line-height:1;display:inline-flex;align-items:center;justify-content:center;
+        font-size:1.2075em;line-height:1;display:inline-flex;align-items:center;justify-content:center;
+        flex-shrink:0;
         font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",Inter,sans-serif;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-country-code{
+        letter-spacing:0.04em;font-variant-numeric:tabular-nums;text-transform:uppercase;
+        font-family:Inter,sans-serif!important;font-size:11px!important;font-weight:500!important;
+        color:#374151!important;
       }
       .pdf-mileage-chart-wrap{
         margin:0 0 10px;padding:8px 10px 4px;border-radius:12px;border:0;background:#fff;

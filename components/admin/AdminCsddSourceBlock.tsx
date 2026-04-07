@@ -1,5 +1,6 @@
 "use client";
 
+import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
 import type { CsddFormFields, CsddMileageRow } from "@/lib/admin-source-blocks";
@@ -308,14 +309,12 @@ export function AdminCsddSourceBlock({ value, readOnly, disabled, onChange }: Pr
                   </td>
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
-                      <span
-                        className="text-[var(--color-provin-muted)]"
+                      <CountryFlagWithCode
+                        countryLabel={row.country.trim() || CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL}
                         data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}
                         data-provin-block="csdd"
                         data-row-index={i}
-                      >
-                        {row.country.trim() || CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL}
-                      </span>
+                      />
                     ) : (
                       <input
                         type="text"

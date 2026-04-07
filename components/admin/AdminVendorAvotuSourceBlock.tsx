@@ -1,6 +1,7 @@
 "use client";
 
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
+import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
 import type { LtabIncidentRow, VendorAvotuBlockState } from "@/lib/admin-source-blocks";
@@ -160,14 +161,12 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                   </td>
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
-                      <span
-                        className="text-[var(--color-provin-muted)]"
+                      <CountryFlagWithCode
+                        countryLabel={row.country.trim() || "—"}
                         data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}
                         data-provin-block={blockKey}
                         data-row-index={i}
-                      >
-                        {row.country.trim() || "—"}
-                      </span>
+                      />
                     ) : (
                       <input
                         type="text"
@@ -267,7 +266,7 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                     </td>
                     <td className="px-2 py-1 align-top">
                       {readOnly ? (
-                        <span className="text-[var(--color-provin-muted)]">{row.incidentNo.trim() || "—"}</span>
+                        <CountryFlagWithCode countryLabel={row.incidentNo.trim() || "—"} />
                       ) : (
                         <input
                           type="text"

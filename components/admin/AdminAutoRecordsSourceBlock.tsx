@@ -1,5 +1,6 @@
 "use client";
 
+import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
 import type { AutoRecordsBlockState, AutoRecordsServiceRow } from "@/lib/admin-source-blocks";
@@ -169,14 +170,12 @@ export function AdminAutoRecordsSourceBlock({ value, readOnly, disabled, onChang
                   </td>
                   <td className="px-2 py-1 align-top">
                     {readOnly ? (
-                      <span
-                        className="text-[var(--color-provin-muted)]"
+                      <CountryFlagWithCode
+                        countryLabel={row.country.trim() || "—"}
                         data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}
                         data-provin-block="auto_records"
                         data-row-index={i}
-                      >
-                        {row.country.trim() || "—"}
-                      </span>
+                      />
                     ) : (
                       <input
                         type="text"

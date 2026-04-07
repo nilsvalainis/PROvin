@@ -210,3 +210,13 @@ export function pdfCountryFlagEmoji(countryLabel: string): string {
   if (!iso) return PDF_COUNTRY_FLAG_EU;
   return iso2ToRegionalFlag(iso);
 }
+
+/**
+ * ISO 3166-1 alpha-2 burti (lielie), lai rādītu blakus karogam PDF/UI.
+ * Neatpazīta valsts → `EU` (saskan ar ES karoga emocijzīmi).
+ */
+export function pdfCountryCodeLetters(countryLabel: string): string {
+  const iso = countryLabelToIso2(countryLabel);
+  if (!iso) return "EU";
+  return iso;
+}
