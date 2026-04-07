@@ -183,8 +183,9 @@ export function AdminVendorAvotuSourceBlock({ blockKey, value, readOnly, disable
                         <span className="text-[var(--color-provin-muted)]">{row.csngDate.trim() || "—"}</span>
                       ) : (
                         <input
-                          type="date"
+                          type="text"
                           className={inp}
+                          placeholder="piem., 2024"
                           value={row.csngDate}
                           disabled={disabled}
                           id={`${idBase}-${PROVIN_VENDOR_FIELD.csngDatums}-${ri}`}
