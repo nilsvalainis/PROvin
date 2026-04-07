@@ -27,7 +27,10 @@ import {
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import {
-  buildPdfOrderSummaryGridHtml,
+  buildPdfAdminMirrorClientBlock,
+  buildPdfAdminMirrorNotesBlock,
+  buildPdfAdminMirrorPaymentBlock,
+  buildPdfAdminMirrorVehicleBlock,
   pdfLayoutDraftExtraCss,
   provincLogoSvg,
 } from "@/lib/client-report-pdf-layout-draft";
@@ -996,8 +999,14 @@ export function buildClientReportDocumentHtml(args: {
   const approvedHtml = buildApprovedByIrissHtml(p);
   if (approvedHtml) lines.push(approvedHtml);
 
-  const summaryGrid = buildPdfOrderSummaryGridHtml(p, money, dateFmt, makeModel, ICO.car);
-  if (summaryGrid) lines.push(summaryGrid);
+  const payBlock = buildPdfAdminMirrorPaymentBlock(p, money, dateFmt, ICO.chart);
+  if (payBlock) lines.push(payBlock);
+  const vehicleBlock = buildPdfAdminMirrorVehicleBlock(p, makeModel, ICO.car);
+  if (vehicleBlock) lines.push(vehicleBlock);
+  const clientBlock = buildPdfAdminMirrorClientBlock(p, ICO.user);
+  if (clientBlock) lines.push(clientBlock);
+  const notesBlock = buildPdfAdminMirrorNotesBlock(p.notes, ICO.clip);
+  if (notesBlock) lines.push(notesBlock);
 
   const listingPriorityHtml = buildListingAnalysisPriorityHtml(p);
   if (listingPriorityHtml) lines.push(listingPriorityHtml);

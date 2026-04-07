@@ -67,70 +67,7 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-kv .pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;}
       .pdf-source-mirror-panel{margin-top:0}
       .pdf-source-mirror-panel + .pdf-source-mirror-panel{margin-top:4px;padding-top:6px;border-top:1px solid #f0f0f2}
-      .pdf-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin:0;padding:0}
-      @media print{.pdf-summary-grid{break-inside:avoid-page}}
-      .pdf-summary-grid .pdf-v1-kv{font-size:0.74rem}
   `;
-}
-
-export type PdfOrderSummaryGridInput = {
-  created: number;
-  paymentStatus: string;
-  amountTotal: number | null;
-  currency: string | null;
-  vin: string | null;
-  listingUrl: string | null;
-  customerName: string | null;
-  customerEmail: string | null;
-  customerPhone: string | null;
-  notes: string | null;
-};
-
-/** Divu kolonnu pasūtījuma / transportlīdzekļa / klienta kopsavilkums (PDF titullapas bloks). */
-export function buildPdfOrderSummaryGridHtml(
-  p: PdfOrderSummaryGridInput,
-  money: string,
-  dateFmt: Intl.DateTimeFormat,
-  makeModel: string | null,
-  titleIconHtml: string,
-): string {
-  const rows: { k: string; v: string; isLink?: boolean }[] = [];
-  if (money !== "—") rows.push({ k: "Summa", v: money });
-  rows.push({ k: "Pasūtījuma laiks", v: dateFmt.format(new Date(p.created * 1000)) });
-  if (p.paymentStatus?.trim()) rows.push({ k: "Maksājuma statuss", v: p.paymentStatus });
-  const vin = p.vin?.trim();
-  if (vin) rows.push({ k: "VIN", v: vin });
-  const url = p.listingUrl?.trim();
-  if (url) rows.push({ k: "Sludinājuma saite", v: url, isLink: true });
-  const mm = makeModel?.trim();
-  if (mm) rows.push({ k: "Marka / modelis", v: mm });
-  const name = p.customerName?.trim();
-  if (name) rows.push({ k: "Klients", v: name });
-  const em = p.customerEmail?.trim();
-  if (em) rows.push({ k: "E-pasts", v: em });
-  const ph = p.customerPhone?.trim();
-  if (ph) rows.push({ k: "Tālrunis", v: ph });
-  const notes = p.notes?.trim();
-  if (notes) rows.push({ k: "Komentārs no formas", v: notes });
-
-  if (rows.length === 0) return "";
-
-  const rowHtml = (r: { k: string; v: string; isLink?: boolean }) => {
-    if (r.k === "VIN") {
-      return `<tr><td>${esc(r.k)}</td><td><span class="pdf-vin">${esc(r.v)}</span></td></tr>`;
-    }
-    if (r.isLink) {
-      const u = esc(r.v);
-      return `<tr><td>${esc(r.k)}</td><td><a href="${u}" class="pdf-v1-listing-link">${u}</a></td></tr>`;
-    }
-    return `<tr><td>${esc(r.k)}</td><td>${esc(r.v)}</td></tr>`;
-  };
-
-  const mid = Math.ceil(rows.length / 2);
-  const left = rows.slice(0, mid).map(rowHtml).join("");
-  const right = rows.slice(mid).map(rowHtml).join("");
-  const head = pdfV1PanelHead("Pamatinformācija", titleIconHtml);
-  return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card pdf-summary-grid-card" role="region">${head}<div class="pdf-summary-grid"><div class="pdf-summary-grid__col"><table class="pdf-v1-kv"><tbody>${left}</tbody></table></div><div class="pdf-summary-grid__col"><table class="pdf-v1-kv"><tbody>${right}</tbody></table></div></div></div>`;
 }
 
 export function buildPdfAdminMirrorPaymentBlock(
