@@ -44,7 +44,7 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
           </p>
         )}
 
-        <div id="order-form" className="mx-auto mt-4 max-w-[560px] scroll-mt-24 text-left sm:mt-5 sm:scroll-mt-28">
+        <div id="order-form" className="mx-auto mt-5 max-w-[560px] scroll-mt-24 text-left sm:mt-6 sm:scroll-mt-28">
           <OrderForm variant="hero" className="!mt-0" />
         </div>
 
