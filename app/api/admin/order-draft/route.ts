@@ -23,6 +23,7 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
     sourceBlocks: o.sourceBlocks,
     iriss: typeof o.iriss === "string" ? o.iriss : "",
     apskatesPlāns: typeof o.apskatesPlāns === "string" ? o.apskatesPlāns : "",
+    cenasAtbilstiba: typeof o.cenasAtbilstiba === "string" ? o.cenasAtbilstiba : "",
     previewConfirmed: Boolean(o.previewConfirmed),
   };
 }

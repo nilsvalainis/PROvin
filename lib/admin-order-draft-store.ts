@@ -47,6 +47,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
       sourceBlocks: w.sourceBlocks,
       iriss: typeof w.iriss === "string" ? w.iriss : "",
       apskatesPlāns: typeof w.apskatesPlāns === "string" ? w.apskatesPlāns : "",
+      cenasAtbilstiba: typeof w.cenasAtbilstiba === "string" ? w.cenasAtbilstiba : "",
       previewConfirmed: Boolean(w.previewConfirmed),
     });
     const h = hydrateWorkspaceFromStorage(json);
@@ -55,6 +56,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         sourceBlocks: h.sourceBlocks,
         iriss: h.iriss,
         apskatesPlāns: h.apskatesPlāns,
+        cenasAtbilstiba: h.cenasAtbilstiba,
         previewConfirmed: h.previewConfirmed,
       };
     }
@@ -93,6 +95,7 @@ export async function patchOrderDraft(
       sourceBlocks: workspacePatch.sourceBlocks,
       iriss: workspacePatch.iriss,
       apskatesPlāns: workspacePatch.apskatesPlāns,
+      cenasAtbilstiba: workspacePatch.cenasAtbilstiba,
       previewConfirmed: workspacePatch.previewConfirmed,
     });
     const h = hydrateWorkspaceFromStorage(json);
@@ -101,6 +104,7 @@ export async function patchOrderDraft(
       sourceBlocks: h.sourceBlocks,
       iriss: h.iriss,
       apskatesPlāns: h.apskatesPlāns,
+      cenasAtbilstiba: h.cenasAtbilstiba,
       previewConfirmed: h.previewConfirmed,
     };
   }

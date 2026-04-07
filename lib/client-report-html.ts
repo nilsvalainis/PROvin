@@ -87,6 +87,7 @@ export type ClientReportPayload = {
   citi: string;
   iriss: string;
   apskatesPlāns: string;
+  cenasAtbilstiba: string;
   listingMarket?: import("@/lib/listing-scrape").ListingMarketSnapshot | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[];
   /** AUTO RECORDS — servisa vēsture (PDF: tabula; raw netiek drukāts). */
@@ -463,8 +464,12 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload): string {
 function buildApprovedByIrissHtml(p: ClientReportPayload): string {
   const iriss = p.iriss.trim();
   const plan = p.apskatesPlāns.trim();
-  if (!iriss && !plan) return "";
-  const body = [iriss, plan].filter(Boolean).join("\n\n");
+  const priceFit = p.cenasAtbilstiba.trim();
+  if (!iriss && !plan && !priceFit) return "";
+  const priceFitBlock = priceFit
+    ? `Cenas atbilstība balstoties uz mūsu rīcībā esošajiem datiem:\n${priceFit}`
+    : "";
+  const body = [iriss, plan, priceFitBlock].filter(Boolean).join("\n\n");
   const parts: string[] = [];
   parts.push(`<div class="pdf-iriss-approved" role="region">`);
   parts.push(

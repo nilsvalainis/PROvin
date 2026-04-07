@@ -925,6 +925,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   sourceBlocks: WorkspaceSourceBlocks;
   iriss: string;
   apskatesPlāns: string;
+  cenasAtbilstiba: string;
   previewConfirmed: boolean;
 } | null {
   if (!raw) return null;
@@ -947,6 +948,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
       sourceBlocks,
       iriss: typeof p.iriss === "string" ? p.iriss : "",
       apskatesPlāns: typeof p.apskatesPlāns === "string" ? p.apskatesPlāns : "",
+      cenasAtbilstiba: typeof p.cenasAtbilstiba === "string" ? p.cenasAtbilstiba : "",
       previewConfirmed: Boolean(p.previewConfirmed),
     };
   } catch {

@@ -22,6 +22,7 @@ export default async function AdminOrderDetailPage({ params }: Props) {
           sourceBlocks: serverOrderDraft.workspace.sourceBlocks,
           iriss: serverOrderDraft.workspace.iriss,
           apskatesPlāns: serverOrderDraft.workspace.apskatesPlāns,
+          cenasAtbilstiba: serverOrderDraft.workspace.cenasAtbilstiba,
           previewConfirmed: serverOrderDraft.workspace.previewConfirmed,
         })
       : null;

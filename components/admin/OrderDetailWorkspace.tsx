@@ -90,6 +90,7 @@ type WorkspacePersist = {
   iriss: string;
   /** §7 PDF — personalizēts apskates plāns klātienē. */
   apskatesPlāns: string;
+  cenasAtbilstiba: string;
   previewConfirmed: boolean;
 };
 
@@ -97,6 +98,7 @@ const EMPTY_WORKSPACE: WorkspacePersist = {
   sourceBlocks: createDefaultSourceBlocks(),
   iriss: "",
   apskatesPlāns: "",
+  cenasAtbilstiba: "",
   previewConfirmed: false,
 };
 
@@ -303,7 +305,7 @@ export function OrderDetailWorkspace({
   const [sourcesSnap, setSourcesSnap] = useState<WorkspaceSourceBlocks | null>(null);
   const [sourcesFlash, setSourcesFlash] = useState(false);
   const [expertViewMode, setExpertViewMode] = useState(false);
-  const [expertSnap, setExpertSnap] = useState({ iriss: "", apskatesPlāns: "" });
+  const [expertSnap, setExpertSnap] = useState({ iriss: "", apskatesPlāns: "", cenasAtbilstiba: "" });
   const [expertFlash, setExpertFlash] = useState(false);
   const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
   const [portfolioAllFilesModalOpen, setPortfolioAllFilesModalOpen] = useState(false);
@@ -399,6 +401,7 @@ export function OrderDetailWorkspace({
             sourceBlocks: fromServer.sourceBlocks,
             iriss: fromServer.iriss,
             apskatesPlāns: fromServer.apskatesPlāns,
+            cenasAtbilstiba: fromServer.cenasAtbilstiba,
             previewConfirmed: Boolean(fromServer.previewConfirmed),
           });
           const keyV3 = storageKeyWorkspace(payload.sessionId);
@@ -423,6 +426,7 @@ export function OrderDetailWorkspace({
             sourceBlocks: h.sourceBlocks,
             iriss: h.iriss,
             apskatesPlāns: h.apskatesPlāns,
+            cenasAtbilstiba: h.cenasAtbilstiba,
             previewConfirmed: Boolean(h.previewConfirmed),
           });
           if (!localStorage.getItem(keyV3) && localStorage.getItem(keyV2)) {
@@ -433,6 +437,7 @@ export function OrderDetailWorkspace({
                   sourceBlocks: h.sourceBlocks,
                   iriss: h.iriss,
                   apskatesPlāns: h.apskatesPlāns,
+                  cenasAtbilstiba: h.cenasAtbilstiba,
                   previewConfirmed: h.previewConfirmed,
                 }),
               );
@@ -467,7 +472,7 @@ export function OrderDetailWorkspace({
     if (!workspaceHydrated) return;
     setSourcesSnap(null);
     setSourcesViewMode(false);
-    setExpertSnap({ iriss: ws.iriss, apskatesPlāns: ws.apskatesPlāns });
+    setExpertSnap({ iriss: ws.iriss, apskatesPlāns: ws.apskatesPlāns, cenasAtbilstiba: ws.cenasAtbilstiba });
     setExpertViewMode(false);
   }, [workspaceHydrated, payload.sessionId]); // eslint-disable-line react-hooks/exhaustive-deps -- tikai sesija / hidrācija
 
@@ -512,6 +517,7 @@ export function OrderDetailWorkspace({
                   sourceBlocks: cur.sourceBlocks,
                   iriss: cur.iriss,
                   apskatesPlāns: cur.apskatesPlāns,
+                  cenasAtbilstiba: cur.cenasAtbilstiba,
                   previewConfirmed: cur.previewConfirmed,
                 },
               }),
@@ -697,7 +703,8 @@ export function OrderDetailWorkspace({
     void persistPortfolio(portfolio.filter((p) => p.id !== id));
   };
 
-  const canGeneratePdf = ws.previewConfirmed && ws.iriss.trim().length > 0;
+  const canGeneratePdf =
+    ws.previewConfirmed && ws.iriss.trim().length > 0 && ws.cenasAtbilstiba.trim().length > 0;
 
   const blocksForDisplay =
     sourcesViewMode && sourcesSnap ? sourcesSnap : ws.sourceBlocks;
@@ -705,7 +712,7 @@ export function OrderDetailWorkspace({
   const openPrintReport = async () => {
     if (!canGeneratePdf) {
       alert(
-        "Vispirms: 1) aizpildi avotu laukus un pievieno failus, 2) atver Priekšskatu un apstiprini, 3) aizpildi kopsavilkuma bloku. Tad ģenerē PDF.",
+        "Vispirms: 1) aizpildi avotu laukus un pievieno failus, 2) atver Priekšskatu un apstiprini, 3) aizpildi kopsavilkumu un lauku \"Cenas atbilstība balstoties uz mūsu rīcībā esošajiem datiem\". Tad ģenerē PDF.",
       );
       return;
     }
@@ -743,6 +750,7 @@ export function OrderDetailWorkspace({
         listingAnalysis: ws.sourceBlocks.listing_analysis,
         iriss: ws.iriss,
         apskatesPlāns: ws.apskatesPlāns,
+        cenasAtbilstiba: ws.cenasAtbilstiba,
         listingMarket,
       },
       portfolio: portfolio.map((p) => ({ name: p.name, size: p.size })),
@@ -1327,7 +1335,11 @@ export function OrderDetailWorkspace({
               className={workspaceToolbarBtn}
               disabled={!ws.previewConfirmed}
               onClick={() => {
-                setExpertSnap({ iriss: ws.iriss, apskatesPlāns: ws.apskatesPlāns });
+                setExpertSnap({
+                  iriss: ws.iriss,
+                  apskatesPlāns: ws.apskatesPlāns,
+                  cenasAtbilstiba: ws.cenasAtbilstiba,
+                });
                 setExpertViewMode(true);
                 setExpertFlash(true);
                 window.setTimeout(() => setExpertFlash(false), 2000);
@@ -1410,6 +1422,25 @@ export function OrderDetailWorkspace({
                   disabled={!ws.previewConfirmed}
                 />
               )}
+              {expertViewMode ? (
+                <div className={`${bulkReadonlyClass} min-h-[80px] max-h-[min(40vh,320px)] overflow-y-auto whitespace-pre-wrap`}>
+                  {expertSnap.cenasAtbilstiba.trim() ? (
+                    expertSnap.cenasAtbilstiba
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  )}
+                </div>
+              ) : (
+                <textarea
+                  id={`${fileInputId}-cenas-atbilstiba`}
+                  className={`${bulkTextareaClass} min-h-[80px] max-h-[min(40vh,320px)] resize-y bg-white/90`}
+                  value={ws.cenasAtbilstiba}
+                  onChange={(e) => updateWs({ cenasAtbilstiba: e.target.value })}
+                  placeholder="Cenas atbilstība balstoties uz mūsu rīcībā esošajiem datiem:"
+                  spellCheck
+                  disabled={!ws.previewConfirmed}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -1433,7 +1464,7 @@ export function OrderDetailWorkspace({
         </button>
         {!canGeneratePdf ? (
           <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">
-            Vajag apstiprinātu priekšskatu un kopsavilkumu.
+            Vajag apstiprinātu priekšskatu, kopsavilkumu un cenas atbilstības komentāru.
           </p>
         ) : null}
       </section>

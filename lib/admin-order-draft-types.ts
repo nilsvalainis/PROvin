@@ -14,6 +14,7 @@ export type OrderDraftWorkspaceBody = {
   sourceBlocks: unknown;
   iriss: string;
   apskatesPlāns: string;
+  cenasAtbilstiba: string;
   previewConfirmed: boolean;
 };
 
