@@ -15,9 +15,27 @@ export const LV_LISTING_ANALYSIS_SYSTEM_PROMPT =
 
 const MAX_INPUT_CHARS = 48_000;
 
+/**
+ * v1 REST ceļš: `/v1/models/{modelId}:generateContent` — viens `models/` segments;
+ * `modelId` ir resursa id (piem. `gemini-1.5-flash`), nevis pilns ceļš `models/...`.
+ */
+const DEFAULT_GEMINI_MODEL_ID = "gemini-1.5-flash";
+
+function getGeminiModelIdForUrl(): string {
+  const raw = process.env.GEMINI_MODEL?.trim();
+  if (raw) {
+    if (raw.length > 80 || !/^[a-zA-Z0-9._-]+$/.test(raw)) {
+      return DEFAULT_GEMINI_MODEL_ID;
+    }
+    return raw;
+  }
+  return DEFAULT_GEMINI_MODEL_ID;
+}
+
 function geminiGenerateContentUrl(apiKey: string): string {
+  const modelId = getGeminiModelIdForUrl();
   const q = encodeURIComponent(apiKey);
-  return `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${q}`;
+  return `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${q}`;
 }
 
 type GeminiGenerateBody = {
