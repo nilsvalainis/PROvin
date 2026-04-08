@@ -1,5 +1,6 @@
 /**
- * Admin: sludinājuma analīze caur Google Gemini. Atslēga: `process.env.GEMINI_API_KEY` (tikai serverī).
+ * Sludinājuma ievades analīze → „Pārdošanas sludinājuma konteksts” (Google Gemini).
+ * Atslēga tikai serverī: `process.env.GEMINI_API_KEY`.
  */
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
@@ -11,6 +12,11 @@ import {
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  console.log(
+    "Serveris mēģina lietot atslēgu:",
+    process.env.GEMINI_API_KEY ? "Atrasta" : "Nav atrasta",
+  );
+
   const ok = await getAdminSession();
   if (!ok) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });

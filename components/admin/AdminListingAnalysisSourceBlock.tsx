@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Sludinājuma analīze: AI poga izsauc `/api/admin/ai-listing-analysis-lv`; `GEMINI_API_KEY` tikai serverī.
+ * Sludinājuma analīze: AI poga izsauc `POST /api/ai/analyze`; `GEMINI_API_KEY` tikai API route serverī.
  */
 
 import { Loader2 } from "lucide-react";
@@ -56,7 +56,7 @@ export function AdminListingAnalysisSourceBlock({
     setAnalyzing(true);
     setAnalyzeErr(null);
     try {
-      const res = await fetch("/api/admin/ai-listing-analysis-lv", {
+      const res = await fetch("/api/ai/analyze", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
