@@ -34,7 +34,6 @@ import {
   pdfLayoutDraftExtraCss,
   provincLogoSvg,
 } from "@/lib/client-report-pdf-layout-draft";
-import { contactMailtoHref, whatsappChatUrl } from "@/lib/contact";
 import { pdfCountryCodeLetters, pdfCountryFlagEmoji } from "@/lib/pdf-country-flags";
 import {
   buildPdfAlertBannersHtml,
@@ -575,18 +574,13 @@ function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySett
 }
 
 function buildPdfFooterCtaHtml(): string {
-  const mail = contactMailtoHref();
-  const wa = whatsappChatUrl();
+  const logo = provincLogoSvg().replace(
+    'class="pdf-v1-logo"',
+    'class="pdf-v1-logo pdf-footer-cta__logo-img"',
+  );
   return `<footer class="pdf-footer-cta" role="contentinfo">
-  <div class="pdf-footer-cta__inner">
-    <div class="pdf-footer-cta__logo">${provincLogoSvg().replace('class="pdf-v1-logo"', 'class="pdf-v1-logo pdf-footer-cta__logo-img"')}</div>
-    <p class="pdf-footer-cta__line">
-      <a href="${escapeHtml(mail)}" class="pdf-footer-cta__link">E-pasts</a>
-      <span class="pdf-footer-cta__sep"> · </span>
-      <a href="${escapeHtml(wa)}" class="pdf-footer-cta__link" target="_blank" rel="noopener noreferrer">WhatsApp</a>
-    </p>
-    <p class="pdf-footer-cta__hint">Jautājumi pēc atskates — sazinieties ar PROVIN.LV</p>
-  </div>
+${logo}
+<p class="pdf-footer-cta__tagline">Jautājumi pēc atskates — sazinieties ar PROVIN.LV</p>
 </footer>`;
 }
 
@@ -900,17 +894,12 @@ function clientReportPrintCss(): string {
       .legal-block{margin-top:12px;padding-top:8px;border-top:1px solid #f1f5f9;font-size:0.68rem;color:#86868b;line-height:1.45;}
       .report-foot{margin-top:12px;padding-top:8px;border-top:1px solid #f1f5f9;font-size:0.65rem;color:#94a3b8;}
       .pdf-footer-cta{
-        margin-top:16px;padding:16px 18px;border-radius:14px;background:#fff;
-        box-shadow:0 4px 20px rgba(15,23,42,.07);text-align:center;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+        margin:6px 0 0;padding:0;border:none;background:transparent;box-shadow:none;text-align:center;
       }
-      .pdf-footer-cta__inner{max-width:100%;}
-      .pdf-footer-cta__logo{margin:0 auto 8px}
-      .pdf-footer-cta__logo-img{display:block;width:180px;max-width:100%;height:auto;margin:0 auto}
-      .pdf-footer-cta__line{margin:0;font-size:0.72rem;font-weight:600;}
-      .pdf-footer-cta__link{color:${PDF_BRAND_BLUE}!important;text-decoration:none;}
-      .pdf-footer-cta__sep{color:#94a3b8;margin:0 4px;}
-      .pdf-footer-cta__hint{margin:8px 0 0;font-size:0.62rem;color:#64748b;}
+      .pdf-footer-cta__logo-img{display:block;width:118px;max-width:46%;height:auto;margin:0 auto 3px}
+      .pdf-footer-cta__tagline{
+        margin:0;padding:0;font-size:0.56rem;font-weight:400;line-height:1.35;color:#94a3b8;
+      }
       code{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;font-size:0.72rem;background:#f5f5f7;padding:1px 6px;border-radius:4px;}
       .pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;font-size:0.72rem;background:transparent;padding:0;}
       .pdf-flag-num{font-weight:600;}
