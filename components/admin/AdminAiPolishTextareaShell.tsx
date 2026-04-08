@@ -46,7 +46,7 @@ export function AdminAiPolishTextareaShell({
       const data = (await res.json()) as { text?: string; error?: string };
       if (!res.ok) {
         if (data.error === "missing_openai_key") {
-          setError("Nav OPENAI_API_KEY (.env.local)");
+          setError("Nav API atslēgas — skat. .env.local");
         } else {
           setError("Neizdevās");
         }
@@ -88,7 +88,10 @@ export function AdminAiPolishTextareaShell({
         )}
       </button>
       {error ? (
-        <p className="pointer-events-none absolute bottom-0 left-0 right-8 truncate text-[9px] text-amber-800/90" title={error}>
+        <p
+          className="pointer-events-none absolute bottom-0 left-0 right-8 truncate text-[9px] text-amber-800/90"
+          title="Projekta saknē (mapē ar package.json) izveido vai papildini .env.local: OPENAI_API_KEY=sk-… — pēc tam restartē npm run dev. Produkcijā: Vercel → Environment Variables."
+        >
           {error}
         </p>
       ) : null}
