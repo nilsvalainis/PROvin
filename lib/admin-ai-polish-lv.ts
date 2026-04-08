@@ -1,5 +1,10 @@
 import "server-only";
 
+/**
+ * Google Gemini (server only). `GEMINI_API_KEY` lasa tikai šeit no `process.env`;
+ * klienta komponenti nedrīkst izsaukt šī moduļa funkcijas — tikai `app/api/admin/*` maršruti.
+ */
+
 /** Google Gemini — latviešu gramatikas / stila labošana (admin). */
 export const LV_POLISH_SYSTEM_PROMPT =
   "Tu esi profesionāls latviešu valodas redaktors un auto eksperta asistents. Tavs uzdevums ir izlabot gramatikas, interpunkcijas un drukas kļūdas iesniegtajā tekstā. Saglabā profesionālu, objektīvu toni, kas raksturīgs auto tehniskajām atskaitēm. Nemaini tehnisko informāciju (VIN, cenas, datus). Ja tekstā ir žargons, aizstāj to ar literāru valodu. Atgriez TIKAI laboto tekstu bez komentāriem.";
@@ -13,7 +18,7 @@ const MAX_INPUT_CHARS = 48_000;
 const GEMINI_MODEL = "gemini-1.5-flash";
 
 /**
- * Lasīšana pie katra pieprasījuma (API route).
+ * Tikai servera API maršrutiem. Atslēga: vienīgi `process.env.GEMINI_API_KEY`.
  * Lokāli: `.env.local` vai `.env` projekta saknē; pēc izmaiņām restartē `npm run dev`.
  */
 export function getGeminiApiKeyFromEnv(): string | null {

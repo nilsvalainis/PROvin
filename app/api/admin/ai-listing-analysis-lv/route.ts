@@ -1,3 +1,6 @@
+/**
+ * Admin: sludinājuma analīze caur Google Gemini. Atslēga: `process.env.GEMINI_API_KEY` (tikai serverī).
+ */
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import {

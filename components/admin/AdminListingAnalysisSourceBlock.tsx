@@ -1,5 +1,9 @@
 "use client";
 
+/**
+ * Sludinājuma analīze: AI poga izsauc `/api/admin/ai-listing-analysis-lv`; `GEMINI_API_KEY` tikai serverī.
+ */
+
 import { Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
@@ -62,8 +66,12 @@ export function AdminListingAnalysisSourceBlock({
       if (!res.ok) {
         if (data.error === "missing_gemini_key") {
           setAnalyzeErr("Nav GEMINI_API_KEY");
+        } else if (res.status === 401 || data.error === "unauthorized") {
+          setAnalyzeErr("Gemini: nav admin piekļuves");
+        } else if (data.error === "analysis_failed") {
+          setAnalyzeErr("Gemini: neizdevās analizēt sludinājumu");
         } else {
-          setAnalyzeErr("Neizdevās");
+          setAnalyzeErr("Gemini: neizdevās");
         }
         return;
       }
@@ -71,7 +79,7 @@ export function AdminListingAnalysisSourceBlock({
         onChange({ ...v, listingSalesContext: data.text });
       }
     } catch {
-      setAnalyzeErr("Tīkls");
+      setAnalyzeErr("Gemini: neizdevās savienoties");
     } finally {
       setAnalyzing(false);
     }

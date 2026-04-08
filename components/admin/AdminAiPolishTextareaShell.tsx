@@ -1,5 +1,9 @@
 "use client";
 
+/**
+ * Gramatikas ✨ — tikai UI. Pieprasījumi iet uz `/api/admin/ai-polish-lv`; `GEMINI_API_KEY` paliek serverī.
+ */
+
 import { Loader2 } from "lucide-react";
 import {
   cloneElement,
@@ -47,8 +51,12 @@ export function AdminAiPolishTextareaShell({
       if (!res.ok) {
         if (data.error === "missing_gemini_key") {
           setError("Nav GEMINI_API_KEY");
+        } else if (res.status === 401 || data.error === "unauthorized") {
+          setError("Gemini: nav admin piekļuves");
+        } else if (data.error === "polish_failed") {
+          setError("Gemini: neizdevās apstrādāt tekstu");
         } else {
-          setError("Neizdevās");
+          setError("Gemini: neizdevās");
         }
         return;
       }
@@ -56,7 +64,7 @@ export function AdminAiPolishTextareaShell({
         onPolished(data.text);
       }
     } catch {
-      setError("Tīkls");
+      setError("Gemini: neizdevās savienoties");
     } finally {
       setLoading(false);
     }
