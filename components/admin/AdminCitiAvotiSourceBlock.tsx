@@ -10,7 +10,7 @@ type Props = {
   disabled?: boolean;
   onChange: (next: CitiAvotiBlockState) => void;
   trafficFillLevel?: TrafficFillLevel;
-  collapsible?: boolean;
+  sessionId: string;
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
 };
@@ -22,7 +22,7 @@ export function AdminCitiAvotiSourceBlock({
   disabled,
   onChange,
   trafficFillLevel,
-  collapsible,
+  sessionId,
   pdfInclude,
   onPdfIncludeChange,
 }: Props) {
@@ -34,7 +34,7 @@ export function AdminCitiAvotiSourceBlock({
       disabled={disabled}
       onChange={onChange}
       trafficFillLevel={trafficFillLevel}
-      collapsible={collapsible}
+      sessionId={sessionId}
       pdfInclude={pdfInclude}
       onPdfIncludeChange={onPdfIncludeChange}
     />

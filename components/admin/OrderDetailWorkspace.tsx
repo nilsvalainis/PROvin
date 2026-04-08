@@ -1410,6 +1410,7 @@ export function OrderDetailWorkspace({
               onPdfIncludeBlockChange={(next) => onPdfVisibilityChange({ csdd: next })}
               pdfIncludeMileageTable={pdfVisibility.csddMileageTable}
               onPdfIncludeMileageTableChange={(next) => onPdfVisibilityChange({ csddMileageTable: next })}
+              sessionId={payload.sessionId}
             />
           </div>
           <div className="grid min-h-0 min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3 items-stretch">
@@ -1420,7 +1421,7 @@ export function OrderDetailWorkspace({
                 readOnly={sourcesViewMode}
                 onChange={(next) => updateSourceBlock("autodna", next)}
                 trafficFillLevel={traffic.autodna}
-                collapsible
+                sessionId={payload.sessionId}
                 pdfInclude={pdfVisibility.autodna}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ autodna: next })}
               />
@@ -1432,7 +1433,7 @@ export function OrderDetailWorkspace({
                 readOnly={sourcesViewMode}
                 onChange={(next) => updateSourceBlock("carvertical", next)}
                 trafficFillLevel={traffic.carvertical}
-                collapsible
+                sessionId={payload.sessionId}
                 pdfInclude={pdfVisibility.carvertical}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ carvertical: next })}
               />
@@ -1443,7 +1444,7 @@ export function OrderDetailWorkspace({
                 readOnly={sourcesViewMode}
                 onChange={(next) => updateSourceBlock("auto_records", next)}
                 trafficFillLevel={traffic.auto_records}
-                collapsible
+                sessionId={payload.sessionId}
                 pdfInclude={pdfVisibility.auto_records}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
               />
@@ -1456,7 +1457,7 @@ export function OrderDetailWorkspace({
                 readOnly={sourcesViewMode}
                 onChange={(next) => updateSourceBlock("ltab", next)}
                 trafficFillLevel={traffic.ltab}
-                collapsible
+                sessionId={payload.sessionId}
                 pdfInclude={pdfVisibility.ltab}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
               />
@@ -1467,7 +1468,7 @@ export function OrderDetailWorkspace({
                 readOnly={sourcesViewMode}
                 onChange={(next) => updateSourceBlock("citi_avoti", next)}
                 trafficFillLevel={traffic.citi_avoti}
-                collapsible
+                sessionId={payload.sessionId}
                 pdfInclude={pdfVisibility.citi_avoti}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ citi_avoti: next })}
               />

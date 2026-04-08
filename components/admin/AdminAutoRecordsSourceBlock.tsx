@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
@@ -21,6 +20,7 @@ import {
 import { SUBHEADING_ICON } from "@/lib/section-icons";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
+import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -33,8 +33,7 @@ type Props = {
   disabled?: boolean;
   onChange: (next: AutoRecordsBlockState) => void;
   trafficFillLevel?: TrafficFillLevel;
-  collapsible?: boolean;
-  defaultCollapsed?: boolean;
+  sessionId: string;
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
 };
@@ -45,13 +44,10 @@ export function AdminAutoRecordsSourceBlock({
   disabled,
   onChange,
   trafficFillLevel,
-  collapsible = false,
-  defaultCollapsed = true,
+  sessionId,
   pdfInclude,
   onPdfIncludeChange,
 }: Props) {
-  const [collapsed, setCollapsed] = useState(collapsible ? defaultCollapsed : false);
-  const showBody = !collapsible || !collapsed;
   const handleRaw = (raw: string) => {
     if (/ODOMETER\s+CHECK/i.test(raw)) {
       const parsed = parseAutoRecordsPaste(raw);
@@ -86,34 +82,19 @@ export function AdminAutoRecordsSourceBlock({
   };
 
   return (
-    <div
-      className={`flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-white shadow-sm overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}
+    <AdminCollapsibleShell
+      sessionId={sessionId}
+      blockId="auto-records"
+      header={
+        <AdminSourceBlockHeader
+          blockKey="auto_records"
+          trafficFillLevel={trafficFillLevel}
+          className={`shrink-0 ${trafficFillLevel ? "mb-0" : "mb-0"}`}
+        />
+      }
+      headerActions={<AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} />}
     >
-      <AdminSourceBlockHeader
-        blockKey="auto_records"
-        trafficFillLevel={trafficFillLevel}
-        className={`shrink-0 ${trafficFillLevel ? "mb-0" : "mb-1.5"}`}
-      />
-      <div className={`flex justify-end ${trafficFillLevel ? "px-2 pb-1" : "pb-1"}`}>
-        <AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} />
-      </div>
-
-      {collapsible ? (
-        <button
-          type="button"
-          className="flex w-full shrink-0 items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/60 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)] hover:bg-slate-50"
-          onClick={() => setCollapsed((c) => !c)}
-          aria-expanded={showBody}
-        >
-          <span>{showBody ? "Slēpt laukus" : "Rādīt laukus"}</span>
-          <span className="text-slate-400" aria-hidden>
-            {showBody ? "▾" : "▸"}
-          </span>
-        </button>
-      ) : null}
-
-      {showBody ? (
-        <>
+      <div className={`flex h-full min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}>
           <div className={`min-h-0 flex-1 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>
         <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
           Paste RAW data here
@@ -272,8 +253,7 @@ export function AdminAutoRecordsSourceBlock({
           />
         )}
           </div>
-        </>
-      ) : null}
-    </div>
+      </div>
+    </AdminCollapsibleShell>
   );
 }

@@ -22,6 +22,7 @@ import {
   type CsddFieldUiFlag,
 } from "@/lib/csdd-ui-flags";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
+import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -75,6 +76,9 @@ type Props = {
   onPdfIncludeBlockChange: (next: boolean) => void;
   pdfIncludeMileageTable: boolean;
   onPdfIncludeMileageTableChange: (next: boolean) => void;
+  sessionId: string;
+  /** localStorage atslēgai — noklusējums `csdd`. */
+  collapseBlockId?: string;
 };
 
 const mileCell = "px-1.5 py-0.5";
@@ -89,6 +93,8 @@ export function AdminCsddSourceBlock({
   onPdfIncludeBlockChange,
   pdfIncludeMileageTable,
   onPdfIncludeMileageTableChange,
+  sessionId,
+  collapseBlockId = "csdd",
 }: Props) {
   const setField = (key: keyof CsddFormFields, v: string) => {
     onChange({ ...value, [key]: v });
@@ -119,19 +125,21 @@ export function AdminCsddSourceBlock({
   };
 
   return (
-    <div
-      className={`rounded-lg border border-slate-200/90 bg-white shadow-sm overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}
-    >
-      <AdminSourceBlockHeader
-        blockKey="csdd"
-        trafficFillLevel={trafficFillLevel}
-        className={trafficFillLevel ? "mb-0" : "mb-2"}
-      />
-      <div className={`flex justify-end ${trafficFillLevel ? "px-2 pb-1" : "pb-1"}`}>
+    <AdminCollapsibleShell
+      sessionId={sessionId}
+      blockId={collapseBlockId}
+      header={
+        <AdminSourceBlockHeader
+          blockKey="csdd"
+          trafficFillLevel={trafficFillLevel}
+          className={trafficFillLevel ? "mb-0" : "mb-0"}
+        />
+      }
+      headerActions={
         <AdminPdfIncludeToggle checked={pdfIncludeBlock} onChange={onPdfIncludeBlockChange} />
-      </div>
-
-      <div className={trafficFillLevel ? "space-y-2 p-2" : "space-y-2"}>
+      }
+    >
+      <div className={trafficFillLevel ? "space-y-2 p-2" : "space-y-2 p-2"}>
       <div className="mb-2 min-w-0">
         <label
           className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]"
@@ -379,6 +387,6 @@ export function AdminCsddSourceBlock({
         )}
       </div>
       </div>
-    </div>
+    </AdminCollapsibleShell>
   );
 }
