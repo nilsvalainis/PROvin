@@ -341,6 +341,7 @@ export function OrderDetailWorkspace({
   const [expertViewMode, setExpertViewMode] = useState(false);
   const [expertSnap, setExpertSnap] = useState({ iriss: "", apskatesPlāns: "", cenasAtbilstiba: "" });
   const [expertFlash, setExpertFlash] = useState(false);
+  const [stickySummaryMinimized, setStickySummaryMinimized] = useState(false);
   const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
   const [alertsPortalEl, setAlertsPortalEl] = useState<HTMLElement | null>(null);
   const [portfolioAllFilesModalOpen, setPortfolioAllFilesModalOpen] = useState(false);
@@ -425,6 +426,11 @@ export function OrderDetailWorkspace({
 
   const updateWs = useCallback((patch: Partial<WorkspacePersist>) => {
     setWs((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  const setIrissSummary = useCallback((next: string) => {
+    setWs((prev) => ({ ...prev, iriss: next }));
+    setExpertSnap((prev) => ({ ...prev, iriss: next }));
   }, []);
 
   const updateSourceBlock = useCallback((key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]) => {
@@ -1573,7 +1579,6 @@ export function OrderDetailWorkspace({
                   <button
                     type="button"
                     className={workspaceToolbarBtn}
-                    disabled={!ws.previewConfirmed}
                     onClick={() => {
                       setExpertSnap({
                         iriss: ws.iriss,
@@ -1590,7 +1595,6 @@ export function OrderDetailWorkspace({
                   <button
                     type="button"
                     className={workspaceToolbarBtn}
-                    disabled={!ws.previewConfirmed}
                     onClick={() => setExpertViewMode(false)}
                   >
                     Labot
@@ -1598,9 +1602,7 @@ export function OrderDetailWorkspace({
                 </div>
               </div>
               <div
-                className={`mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] ${
-                  ws.previewConfirmed ? "" : "opacity-[0.88]"
-                }`}
+                className="mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)]"
               >
                 <ListingAnalysisMainBlockTitleRow
                   icon={IRISS_CHROME_LUCIDE.mainSection}
@@ -1620,10 +1622,9 @@ export function OrderDetailWorkspace({
                         id={`${fileInputId}-iriss`}
                         className={`${bulkTextareaClass} min-h-[120px] max-h-[min(45vh,400px)] resize-y bg-white/60`}
                         value={ws.iriss}
-                        onChange={(e) => updateWs({ iriss: e.target.value })}
+                        onChange={(e) => setIrissSummary(e.target.value)}
                         placeholder="Galvenais kopsavilkums klientam…"
                         spellCheck
-                        disabled={!ws.previewConfirmed}
                       />
                     )}
                   </ListingAnalysisSubsectionHeading>
@@ -1645,7 +1646,6 @@ export function OrderDetailWorkspace({
                         onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
                         placeholder="piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
                         spellCheck
-                        disabled={!ws.previewConfirmed}
                       />
                     )}
                   </ListingAnalysisSubsectionHeading>
@@ -1668,14 +1668,15 @@ export function OrderDetailWorkspace({
                         onChange={(e) => updateWs({ cenasAtbilstiba: e.target.value })}
                         placeholder="Balstoties uz mūsu rīcībā esošajiem datiem…"
                         spellCheck
-                        disabled={!ws.previewConfirmed}
                       />
                     )}
                   </ListingAnalysisSubsectionHeading>
                 </div>
               </div>
               {!ws.previewConfirmed ? (
-                <p className="mt-1 text-[11px] text-amber-800">Vispirms apstiprini priekšskatu.</p>
+                <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">
+                  Kopsavilkumu vari rakstīt uzreiz; priekšskatā vari apstiprināt vēlāk.
+                </p>
               ) : null}
             </section>
 
@@ -1703,6 +1704,33 @@ export function OrderDetailWorkspace({
       </section>
         </div>
       </div>
+      <aside
+        className={`hidden xl:block fixed left-3 top-24 z-30 w-[22rem] rounded-xl border-0 bg-white/70 backdrop-blur-sm shadow-[0_2px_22px_rgba(15,23,42,0.08)] ${
+          stickySummaryMinimized ? "p-2" : "p-3"
+        }`}
+        aria-label="Peldošais kopsavilkuma logs"
+      >
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-600">1. Kopsavilkums (Sticky)</p>
+          <button
+            type="button"
+            className="rounded-md border border-slate-200/80 bg-white/80 px-2 py-1 text-[10px] text-slate-600 hover:bg-slate-50"
+            onClick={() => setStickySummaryMinimized((v) => !v)}
+          >
+            {stickySummaryMinimized ? "Atvērt" : "Minimizēt"}
+          </button>
+        </div>
+        {!stickySummaryMinimized ? (
+          <textarea
+            className={`${bulkTextareaClass} min-h-[220px] w-full resize-y bg-white/70`}
+            value={ws.iriss}
+            onChange={(e) => setIrissSummary(e.target.value)}
+            placeholder="Raksti kopsavilkumu šeit — saturs sinhronizējas ar 4. sadaļas 1. lauku."
+            spellCheck
+            aria-label="Peldošais kopsavilkuma lauks"
+          />
+        ) : null}
+      </aside>
     </div>
   );
 }
