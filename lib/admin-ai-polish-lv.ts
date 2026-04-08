@@ -15,27 +15,10 @@ export const LV_LISTING_ANALYSIS_SYSTEM_PROMPT =
 
 const MAX_INPUT_CHARS = 48_000;
 
-/**
- * v1beta REST ceļš: `/v1beta/models/{modelId}:generateContent` — viens `models/` segments.
- * Free Tier: noklusējums `gemini-1.5-flash` (bez `-001`).
- */
-const DEFAULT_GEMINI_MODEL_ID = "gemini-1.5-flash";
-
-function getGeminiModelIdForUrl(): string {
-  const raw = process.env.GEMINI_MODEL?.trim();
-  if (raw) {
-    if (raw.length > 80 || !/^[a-zA-Z0-9._-]+$/.test(raw)) {
-      return DEFAULT_GEMINI_MODEL_ID;
-    }
-    return raw;
-  }
-  return DEFAULT_GEMINI_MODEL_ID;
-}
-
+/** Free Tier: tikai `gemini-1.5-flash` (bez `-001`, `-latest`, `-pro`). */
 function geminiGenerateContentUrl(apiKey: string): string {
-  const modelId = getGeminiModelIdForUrl();
   const q = encodeURIComponent(apiKey);
-  return `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${q}`;
+  return `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${q}`;
 }
 
 type GeminiGenerateBody = {
@@ -89,6 +72,17 @@ async function geminiGenerateContent(
 
   if (response.status !== 200) {
     const errBody = await response.text();
+    let payloadForLog: string;
+    try {
+      payloadForLog = JSON.stringify(JSON.parse(errBody) as unknown);
+    } catch {
+      payloadForLog = errBody;
+    }
+    console.error("[Gemini] HTTP status nav 200:", {
+      status: response.status,
+      statusText: response.statusText,
+      body: payloadForLog,
+    });
     throw new Error(errBody);
   }
 
