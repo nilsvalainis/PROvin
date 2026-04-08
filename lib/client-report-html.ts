@@ -7,25 +7,28 @@ import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis
 import {
   autoRecordsBlockHasContent,
   CSDD_FORM_STRUCTURED_FIELDS,
+  citiAvotiHasContent,
   csddFormHasContent,
   LISTING_ANALYSIS_SUBSECTIONS,
   SOURCE_BLOCK_LABELS,
   listingAnalysisHasContent,
   LISTING_ANALYSIS_COMMENT_LABEL,
   LISTING_HISTORY_SUBSECTION_TITLE,
+  ltabRowHasData,
   NEGADIJUMU_VESTURE_TITLE,
   TIRGUS_LABEL_CREATED,
   TIRGUS_LABEL_LISTED,
   TIRGUS_LABEL_PRICE_DROP,
   tirgusFormHasContent,
   type AutoRecordsBlockState,
+  type CitiAvotiBlockState,
   type ClientManualLtabBlockPdf,
   type ClientManualVendorBlockPdf,
-  type CitiAvotiBlockState,
   type CsddFormFields,
   type ListingAnalysisBlockState,
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
+import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import {
   buildPdfAdminMirrorClientBlock,
   buildPdfAdminMirrorNotesBlock,
@@ -133,6 +136,114 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+const PDF_PROVIN_SOURCES_TITLE = "PROVIN atskaites ģenerēšanā izmantotie avoti";
+const PDF_PROVIN_SOURCES_L1 = "Maksas vēstures atskaites";
+const PDF_PROVIN_SOURCES_L2 = "Publiskas Eiropas datubāzes";
+const PDF_PROVIN_SOURCES_L3 = "Citi avoti";
+
+function capSourceCount(n: number): number {
+  return Math.min(Math.max(0, n), 9);
+}
+
+function vendorPdfBlockHasData(b: ClientManualVendorBlockPdf | undefined): boolean {
+  if (!b) return false;
+  return (
+    b.mileageRows.length > 0 ||
+    b.incidentRows.length > 0 ||
+    b.comments.trim().length > 0
+  );
+}
+
+function getVendorPdfBlock(p: ClientReportPayload, title: string): ClientManualVendorBlockPdf | undefined {
+  return (p.manualVendorBlocks ?? []).find((x) => x.title === title);
+}
+
+function payloadCsddHasData(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
+  if (!vis.csdd) return false;
+  if (p.csddForm && csddFormHasContent(p.csddForm)) return true;
+  return p.csdd.trim().length > 0;
+}
+
+function payloadAutoRecordsHasData(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
+  if (!vis.auto_records) return false;
+  return Boolean(p.autoRecordsBlock && autoRecordsBlockHasContent(p.autoRecordsBlock));
+}
+
+function payloadLtabHasData(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
+  if (!vis.ltab) return false;
+  const b = p.manualLtabBlock;
+  if (!b) return false;
+  return b.rows.length > 0 || b.comments.trim().length > 0;
+}
+
+function payloadSludinajumsHasData(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
+  if (!vis.sludinajums) return false;
+  const hasTirgus = tirgusFormHasContent(p.tirgusForm) || (p.tirgus?.trim().length ?? 0) > 0;
+  const la = p.listingAnalysis;
+  const hasListing = la != null && listingAnalysisHasContent(la);
+  return hasTirgus || hasListing;
+}
+
+function countCitiAvotiFilledParts(b: CitiAvotiBlockState): number {
+  let c = 0;
+  if (b.serviceHistory.some(autoRecordsRowHasData)) c++;
+  if (b.incidents.some(ltabRowHasData)) c++;
+  if (b.comments.trim()) c++;
+  return capSourceCount(c);
+}
+
+function computeProvinPdfSourcesUsedCounts(
+  p: ClientReportPayload,
+  vis: PdfVisibilitySettings,
+): { n1: number; n2: number; n3: number } {
+  const L = SOURCE_BLOCK_LABELS;
+  let n1 = 0;
+  if (payloadCsddHasData(p, vis)) n1++;
+  if (vis.autodna && vendorPdfBlockHasData(getVendorPdfBlock(p, L.autodna))) n1++;
+  if (vis.carvertical && vendorPdfBlockHasData(getVendorPdfBlock(p, L.carvertical))) n1++;
+  if (payloadAutoRecordsHasData(p, vis)) n1++;
+  n1 = capSourceCount(n1);
+
+  let n2 = 0;
+  if (payloadCsddHasData(p, vis)) n2++;
+  if (payloadLtabHasData(p, vis)) n2++;
+  if (payloadSludinajumsHasData(p, vis)) n2++;
+  n2 = capSourceCount(n2);
+
+  let n3 = 0;
+  if (vis.citi_avoti && p.citiAvoti && citiAvotiHasContent(p.citiAvoti)) {
+    n3 = countCitiAvotiFilledParts(p.citiAvoti);
+  }
+  n3 = capSourceCount(n3);
+
+  return { n1, n2, n3 };
+}
+
+function buildProvinPdfSourcesUsedStripHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
+  const { n1, n2, n3 } = computeProvinPdfSourcesUsedCounts(p, vis);
+  if (n1 + n2 + n3 === 0) return "";
+
+  const cards = [
+    { n: n1, label: PDF_PROVIN_SOURCES_L1 },
+    { n: n2, label: PDF_PROVIN_SOURCES_L2 },
+    { n: n3, label: PDF_PROVIN_SOURCES_L3 },
+  ].filter((c) => c.n > 0);
+
+  const body = cards
+    .map(
+      (c) => `<div class="pdf-provin-sources-card" role="group" aria-label="${escapeHtml(c.label)}">
+  <div class="pdf-provin-sources-card__num">${escapeHtml(String(c.n))}</div>
+  <p class="pdf-provin-sources-card__label">${escapeHtml(c.label)}</p>
+</div>`,
+    )
+    .join("");
+
+  return `<section class="pdf-provin-sources-wrap pdf-surface-card" role="region" aria-labelledby="pdf-provin-sources-h">
+  <h2 id="pdf-provin-sources-h" class="pdf-provin-sources-title">${escapeHtml(PDF_PROVIN_SOURCES_TITLE)}</h2>
+  <div class="pdf-provin-sources-row">${body}</div>
+</section>`;
 }
 
 function buildPdfCountryFlagCellHtml(countryLabel: string): string {
@@ -663,6 +774,34 @@ function clientReportPrintCss(): string {
       .pdf-avotu-comment-island-body{font-style:italic;margin:0;}
       .pdf-unified-mileage-zone{margin:0 0 18px;padding:16px 18px;}
       .pdf-unified-mileage-zone .pdf-sec-head{margin-top:0;}
+      .pdf-provin-sources-wrap{margin:0 0 18px;padding:16px 18px;}
+      h2.pdf-provin-sources-title{
+        margin:0 0 14px;text-align:center;font-size:0.9rem;font-weight:700;color:#0f172a;
+        letter-spacing:0.02em;line-height:1.3;
+      }
+      .pdf-provin-sources-row{
+        display:flex;flex-wrap:wrap;justify-content:center;align-items:stretch;
+        gap:14px 18px;width:100%;
+      }
+      .pdf-provin-sources-card{
+        width:40mm;height:40mm;min-width:36mm;min-height:36mm;max-width:100%;
+        box-sizing:border-box;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;
+        text-align:center;
+        padding:8px 10px;
+        border:1px solid #e2e8f0;border-radius:14px;
+        background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);
+        box-shadow:0 4px 14px rgba(15,23,42,0.07),inset 0 1px 0 rgba(255,255,255,0.9);
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-provin-sources-card__num{
+        font-size:2.05rem;font-weight:700;line-height:1;color:#0061D2;
+        font-variant-numeric:tabular-nums;
+      }
+      .pdf-provin-sources-card__label{
+        margin:10px 0 0;padding:0;font-size:0.62rem;font-weight:600;color:#475569;
+        line-height:1.35;max-width:34mm;
+      }
       .pdf-listing-analysis-root.pdf-surface-card{
         border:1px solid #f1f5f9;
         box-shadow:0 2px 12px rgba(15,23,42,.05);
@@ -876,6 +1015,7 @@ function clientReportPrintCss(): string {
         .pdf-listing-analysis-root{break-inside:avoid-page;}
         .pdf-iriss-approved{break-inside:avoid-page;}
         .pdf-alert-banners-stack{break-inside:avoid-page;}
+        .pdf-provin-sources-wrap{break-inside:avoid-page;}
       }
     ` + pdfLayoutDraftExtraCss();
 }
@@ -941,6 +1081,9 @@ export function buildClientReportDocumentHtml(args: {
   if (clientBlock) lines.push(clientBlock);
   const notesBlock = vis.notes ? buildPdfAdminMirrorNotesBlock(p.notes, sectionIconPdfHtml("messageSquare")) : "";
   if (notesBlock) lines.push(notesBlock);
+
+  const provinSourcesStrip = buildProvinPdfSourcesUsedStripHtml(p, vis);
+  if (provinSourcesStrip) lines.push(provinSourcesStrip);
 
   const mileageOpts: CollectUnifiedMileageOptions | undefined = vis.unifiedMileage
     ? {
