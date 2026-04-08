@@ -22,7 +22,7 @@ export const LV_LISTING_ANALYSIS_SYSTEM_PROMPT =
 
 const MAX_INPUT_CHARS = 48_000;
 
-const GEMINI_MODEL = "gemini-1.5-flash";
+const GEMINI_MODEL = "gemini-1.5-flash-latest";
 
 const SAFETY_SETTINGS = [
   { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
