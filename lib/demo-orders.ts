@@ -1,6 +1,8 @@
 import "server-only";
 
 const DEMO_IDS = {
+  /** Tukšs veidne — manuālai aizpildīšanai un testiem. */
+  blank: "demo_order_blank",
   /** Pilns paraugs (kā pēc apmaksas). */
   full: "demo_order_full",
   simple: "demo_order_simple",
@@ -13,6 +15,16 @@ const created = (iso: string) => Math.floor(new Date(iso).getTime() / 1000);
 /** Demo rindas sarakstam (augšā — jaunākie). */
 export function getDemoOrderRows() {
   return [
+    {
+      id: DEMO_IDS.blank,
+      created: created("2026-04-08T12:00:00+03:00"),
+      amountTotal: 7999,
+      currency: "EUR",
+      paymentStatus: "paid" as const,
+      customerEmail: null,
+      vin: null,
+      isDemo: true,
+    },
     {
       id: DEMO_IDS.unpaid,
       created: created("2026-04-03T19:45:00+03:00"),
@@ -47,6 +59,27 @@ export function getDemoOrderRows() {
 }
 
 export function getDemoOrderDetail(sessionId: string) {
+  if (sessionId === DEMO_IDS.blank) {
+    return {
+      id: DEMO_IDS.blank,
+      created: created("2026-04-08T12:00:00+03:00"),
+      amountTotal: 7999,
+      currency: "EUR",
+      paymentStatus: "paid" as const,
+      customerEmail: null,
+      vin: null,
+      listingUrl: null,
+      customerName: null,
+      contactMethod: null,
+      phone: null,
+      notes: null,
+      customerDetailsEmail: null,
+      customerDetailsPhone: null,
+      isDemo: true,
+      internalComment: null,
+      attachments: [],
+    };
+  }
   if (sessionId === DEMO_IDS.unpaid) {
     return {
       id: DEMO_IDS.unpaid,
