@@ -15,10 +15,13 @@ export const LV_LISTING_ANALYSIS_SYSTEM_PROMPT =
 
 const MAX_INPUT_CHARS = 48_000;
 
-/** Free Tier: tikai `gemini-1.5-flash` (bez `-001`, `-latest`, `-pro`). */
-function geminiGenerateContentUrl(apiKey: string): string {
+const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const MODEL_FLASH = "gemini-1.5-flash";
+const MODEL_PRO = "gemini-1.5-pro";
+
+function geminiGenerateContentUrl(apiKey: string, modelId: string): string {
   const q = encodeURIComponent(apiKey);
-  return `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${q}`;
+  return `${GEMINI_API_BASE}/${modelId}:generateContent?key=${q}`;
 }
 
 type GeminiGenerateBody = {
@@ -56,19 +59,37 @@ async function geminiGenerateContent(
   }
   const text = userText.slice(0, MAX_INPUT_CHARS);
   const prompt = systemPrompt + text;
-  const url = geminiGenerateContentUrl(key);
   const body: GeminiGenerateBody = {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: { temperature },
   };
+  const bodyJson = JSON.stringify(body);
 
   console.log("Sūtu pieprasījumu uz Gemini Free Tier...");
 
-  const response = await fetch(url, {
+  let url = geminiGenerateContentUrl(key, MODEL_FLASH);
+  let response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: bodyJson,
   });
+
+  if (response.status === 404) {
+    const flash404 = await response.text();
+    let flash404Log: string;
+    try {
+      flash404Log = JSON.stringify(JSON.parse(flash404) as unknown);
+    } catch {
+      flash404Log = flash404;
+    }
+    console.warn("[Gemini] gemini-1.5-flash → 404, mēģinu gemini-1.5-pro:", flash404Log);
+    url = geminiGenerateContentUrl(key, MODEL_PRO);
+    response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: bodyJson,
+    });
+  }
 
   if (response.status !== 200) {
     const errBody = await response.text();

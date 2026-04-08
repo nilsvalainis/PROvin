@@ -11,6 +11,7 @@ import {
 
 export const maxDuration = 60;
 export const runtime = "nodejs";
+export const preferredRegion = "fra1";
 
 export async function POST(req: Request) {
   try {
