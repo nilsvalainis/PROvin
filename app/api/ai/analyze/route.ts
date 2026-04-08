@@ -1,12 +1,12 @@
 /**
- * Sludinājuma ievades analīze → „Pārdošanas sludinājuma konteksts” (Google Gemini).
- * Atslēga tikai serverī: `process.env.GEMINI_API_KEY`.
+ * Sludinājuma ievades analīze → „Pārdošanas sludinājuma konteksts” (Groq Llama 3).
+ * Atslēga tikai serverī: `process.env.GROQ_API_KEY`.
  */
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import {
-  analyzeListingPasteForSalesContextWithGemini,
-  getGeminiApiKeyFromEnv,
+  analyzeListingPasteForSalesContextWithGroq,
+  getGroqApiKeyFromEnv,
 } from "@/lib/admin-ai-polish-lv";
 
 export const maxDuration = 60;
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   try {
     console.log(
       "Serveris mēģina lietot atslēgu:",
-      process.env.GEMINI_API_KEY ? "Atrasta" : "Nav atrasta",
+      process.env.GROQ_API_KEY ? "Atrasta" : "Nav atrasta",
     );
 
     const ok = await getAdminSession();
@@ -25,9 +25,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    const apiKey = getGeminiApiKeyFromEnv();
+    const apiKey = getGroqApiKeyFromEnv();
     if (!apiKey) {
-      return NextResponse.json({ error: "missing_gemini_key" }, { status: 503 });
+      return NextResponse.json({ error: "missing_groq_key" }, { status: 503 });
     }
 
     let body: unknown;
@@ -45,11 +45,11 @@ export async function POST(req: Request) {
     }
 
     try {
-      const analyzed = await analyzeListingPasteForSalesContextWithGemini(text);
+      const analyzed = await analyzeListingPasteForSalesContextWithGroq(text);
       return NextResponse.json({ text: analyzed });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
-      console.error("[ai/analyze] Gemini:", msg);
+      console.error("[ai/analyze] Groq:", msg);
       return NextResponse.json({ error: "analysis_failed", detail: msg }, { status: 502 });
     }
   } catch (e) {

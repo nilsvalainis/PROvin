@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Sludinājuma analīze: AI poga izsauc `POST /api/ai/analyze`; `GEMINI_API_KEY` tikai API route serverī.
+ * Sludinājuma analīze: AI poga izsauc `POST /api/ai/analyze`; `GROQ_API_KEY` tikai API route serverī.
  */
 
 import { Loader2 } from "lucide-react";
@@ -64,14 +64,14 @@ export function AdminListingAnalysisSourceBlock({
       });
       const data = (await res.json()) as { text?: string; error?: string };
       if (!res.ok) {
-        if (data.error === "missing_gemini_key") {
-          setAnalyzeErr("Nav GEMINI_API_KEY");
+        if (data.error === "missing_groq_key") {
+          setAnalyzeErr("Nav GROQ_API_KEY");
         } else if (res.status === 401 || data.error === "unauthorized") {
-          setAnalyzeErr("Gemini: nav admin piekļuves");
+          setAnalyzeErr("Groq: nav admin piekļuves");
         } else if (data.error === "analysis_failed") {
-          setAnalyzeErr("Gemini: neizdevās analizēt sludinājumu");
+          setAnalyzeErr("Groq: neizdevās analizēt sludinājumu");
         } else {
-          setAnalyzeErr("Gemini: neizdevās");
+          setAnalyzeErr("Groq: neizdevās");
         }
         return;
       }
@@ -79,7 +79,7 @@ export function AdminListingAnalysisSourceBlock({
         onChange({ ...v, listingSalesContext: data.text });
       }
     } catch {
-      setAnalyzeErr("Gemini: neizdevās savienoties");
+      setAnalyzeErr("Groq: neizdevās savienoties");
     } finally {
       setAnalyzing(false);
     }
@@ -165,7 +165,7 @@ export function AdminListingAnalysisSourceBlock({
               className="inline-flex items-center justify-center gap-1.5 rounded-md border border-blue-700 bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
               disabled={readOnly || disabled || analyzing || !v.listingPasteRaw.trim()}
               onClick={() => void runListingAnalyze()}
-              title="Analizēt ar Google Gemini — rezultāts lauks „Pārdošanas sludinājuma konteksts”"
+              title="Analizēt ar Groq (Llama 3) — rezultāts lauks „Pārdošanas sludinājuma konteksts”"
               aria-busy={analyzing}
             >
               {analyzing ? (

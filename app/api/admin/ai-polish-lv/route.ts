@@ -1,9 +1,9 @@
 /**
- * Admin: latviešu gramatikas labošana caur Google Gemini. Atslēga: `process.env.GEMINI_API_KEY` (tikai serverī).
+ * Admin: latviešu gramatikas labošana caur Groq (Llama 3). Atslēga: `process.env.GROQ_API_KEY` (tikai serverī).
  */
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { getGeminiApiKeyFromEnv, polishLatvianTextWithGemini } from "@/lib/admin-ai-polish-lv";
+import { getGroqApiKeyFromEnv, polishLatvianTextWithGroq } from "@/lib/admin-ai-polish-lv";
 
 export const maxDuration = 60;
 export const runtime = "nodejs";
@@ -16,9 +16,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    const apiKey = getGeminiApiKeyFromEnv();
+    const apiKey = getGroqApiKeyFromEnv();
     if (!apiKey) {
-      return NextResponse.json({ error: "missing_gemini_key" }, { status: 503 });
+      return NextResponse.json({ error: "missing_groq_key" }, { status: 503 });
     }
 
     let body: unknown;
@@ -36,11 +36,11 @@ export async function POST(req: Request) {
     }
 
     try {
-      const polished = await polishLatvianTextWithGemini(text);
+      const polished = await polishLatvianTextWithGroq(text);
       return NextResponse.json({ text: polished });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
-      console.error("[ai-polish-lv] Gemini:", msg);
+      console.error("[ai-polish-lv] Groq:", msg);
       return NextResponse.json({ error: "polish_failed", detail: msg }, { status: 502 });
     }
   } catch (e) {

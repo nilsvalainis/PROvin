@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Gramatikas ✨ — tikai UI. Pieprasījumi iet uz `/api/admin/ai-polish-lv`; `GEMINI_API_KEY` paliek serverī.
+ * Gramatikas ✨ — tikai UI. Pieprasījumi iet uz `/api/admin/ai-polish-lv`; `GROQ_API_KEY` paliek serverī.
  */
 
 import { Loader2 } from "lucide-react";
@@ -49,14 +49,14 @@ export function AdminAiPolishTextareaShell({
       });
       const data = (await res.json()) as { text?: string; error?: string };
       if (!res.ok) {
-        if (data.error === "missing_gemini_key") {
-          setError("Nav GEMINI_API_KEY");
+        if (data.error === "missing_groq_key") {
+          setError("Nav GROQ_API_KEY");
         } else if (res.status === 401 || data.error === "unauthorized") {
-          setError("Gemini: nav admin piekļuves");
+          setError("Groq: nav admin piekļuves");
         } else if (data.error === "polish_failed") {
-          setError("Gemini: neizdevās apstrādāt tekstu");
+          setError("Groq: neizdevās apstrādāt tekstu");
         } else {
-          setError("Gemini: neizdevās");
+          setError("Groq: neizdevās");
         }
         return;
       }
@@ -64,7 +64,7 @@ export function AdminAiPolishTextareaShell({
         onPolished(data.text);
       }
     } catch {
-      setError("Gemini: neizdevās savienoties");
+      setError("Groq: neizdevās savienoties");
     } finally {
       setLoading(false);
     }
@@ -85,9 +85,9 @@ export function AdminAiPolishTextareaShell({
         className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-none border-0 bg-transparent p-0 text-[15px] leading-none text-[#0061D2] shadow-none transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
         onClick={() => void run()}
         disabled={disabled || loading || !value.trim()}
-        title="Google Gemini: labot latviešu gramatiku un stilu"
+        title="Groq (Llama 3): labot latviešu gramatiku un stilu"
         aria-busy={loading}
-        aria-label="Google Gemini: labot latviešu gramatiku un stilu"
+        aria-label="Groq (Llama 3): labot latviešu gramatiku un stilu"
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin text-[#0061D2]" aria-hidden />
@@ -98,7 +98,7 @@ export function AdminAiPolishTextareaShell({
       {error ? (
         <p
           className="pointer-events-none absolute bottom-0 left-0 right-8 truncate text-[9px] text-amber-800/90"
-          title="Projekta saknē (mapē ar package.json) izveido vai papildini .env.local: GEMINI_API_KEY=… (Google AI Studio) — pēc tam restartē npm run dev. Produkcijā: Vercel → Environment Variables."
+          title="Projekta saknē (mapē ar package.json) izveido vai papildini .env.local: GROQ_API_KEY=… (console.groq.com) — pēc tam restartē npm run dev. Produkcijā: Vercel → Environment Variables."
         >
           {error}
         </p>
