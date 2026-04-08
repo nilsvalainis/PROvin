@@ -336,13 +336,10 @@ function buildIncidentHistoryTableHtml(rows: UnifiedIncidentRow[]): string {
 /** Apvienota negadījumu tabula (AutoDNA, CarVertical, LTAB, Citi avoti) — tikai rindas ar aizpildītu zaudējumu summu. */
 function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   if (!vis.unifiedIncidents) return "";
+  // Per-source „Rādīt laukus” nefiltrē datus no šīs apvienotās sadaļas — tikai atsevišķos avotu blokus.
   const collected = collectUnifiedIncidentRows({
     manualVendorBlocks: p.manualVendorBlocks ?? null,
     manualLtabBlock: p.manualLtabBlock ?? null,
-    options: {
-      omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
-      omitLtab: !vis.ltab,
-    },
   });
   if (collected.length === 0) return "";
   const rows = sortUnifiedIncidentsNewestFirst(collected);
