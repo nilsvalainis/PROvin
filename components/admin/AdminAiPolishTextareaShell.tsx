@@ -13,8 +13,8 @@ import {
 type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement>;
 
 /**
- * Apakšējā labajā stūrī — ✨ AI gramatikas labošana (LV). Bērns: viens `<textarea>`.
- * Pievieno iekšējo atstarpi, lai teksts nepārklājas ar pogu.
+ * Augšējā labajā stūrī — ✨ AI gramatikas labošana (LV). Bērns: viens `<textarea>`.
+ * Iekšējā atstarpe, lai teksts nepārklājas ar ikonu.
  */
 export function AdminAiPolishTextareaShell({
   value,
@@ -46,7 +46,7 @@ export function AdminAiPolishTextareaShell({
       const data = (await res.json()) as { text?: string; error?: string };
       if (!res.ok) {
         if (data.error === "missing_openai_key") {
-          setError("Nav OPENAI_API_KEY");
+          setError("Nav OPENAI_API_KEY (.env.local)");
         } else {
           setError("Neizdevās");
         }
@@ -67,24 +67,28 @@ export function AdminAiPolishTextareaShell({
   }
 
   const ta = children as ReactElement<TextareaProps>;
-  const mergedClass = [ta.props.className, "pb-8 pr-9"].filter(Boolean).join(" ");
+  const mergedClass = [ta.props.className, "pt-8 pr-9"].filter(Boolean).join(" ");
 
   return (
     <div className="relative">
       {cloneElement(ta, { className: mergedClass })}
       <button
         type="button"
-        className="absolute bottom-1.5 right-1.5 inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200/60 bg-white/55 text-[13px] text-amber-600/90 shadow-sm backdrop-blur-sm transition hover:bg-white/85 disabled:cursor-not-allowed disabled:opacity-40"
+        className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-none border-0 bg-transparent p-0 text-[15px] leading-none text-[#0061D2] shadow-none transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
         onClick={() => void run()}
         disabled={disabled || loading || !value.trim()}
         title="AI: labot latviešu gramatiku un stilu"
         aria-busy={loading}
         aria-label="AI: labot latviešu gramatiku un stilu"
       >
-        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-600" aria-hidden /> : <span aria-hidden>✨</span>}
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin text-[#0061D2]" aria-hidden />
+        ) : (
+          <span aria-hidden>✨</span>
+        )}
       </button>
       {error ? (
-        <p className="pointer-events-none absolute bottom-0 left-0 right-10 truncate text-[9px] text-amber-800/90" title={error}>
+        <p className="pointer-events-none absolute bottom-0 left-0 right-8 truncate text-[9px] text-amber-800/90" title={error}>
           {error}
         </p>
       ) : null}
