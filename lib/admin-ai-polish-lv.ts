@@ -1,7 +1,7 @@
 import "server-only";
 
 /**
- * Google Gemini (server only) — tiešs REST izsaukums uz stabilo `/v1/` API.
+ * Google Gemini (server only) — tiešs REST izsaukums uz `/v1beta/` (v1 bieži met 404 šim modelim).
  * `GEMINI_API_KEY` no `process.env`; klienta komponenti izsauc tikai API maršrutus.
  */
 
@@ -16,10 +16,10 @@ export const LV_LISTING_ANALYSIS_SYSTEM_PROMPT =
 const MAX_INPUT_CHARS = 48_000;
 
 /**
- * v1 REST ceļš: `/v1/models/{modelId}:generateContent` — viens `models/` segments;
- * `modelId` ir resursa id (piem. `gemini-1.5-flash`), nevis pilns ceļš `models/...`.
+ * v1beta REST ceļš: `/v1beta/models/{modelId}:generateContent` — viens `models/` segments.
+ * Noklusējums ar versijas sufiksu — `gemini-1.5-flash` bieži neatrodas bez `-001`.
  */
-const DEFAULT_GEMINI_MODEL_ID = "gemini-1.5-flash";
+const DEFAULT_GEMINI_MODEL_ID = "gemini-1.5-flash-001";
 
 function getGeminiModelIdForUrl(): string {
   const raw = process.env.GEMINI_MODEL?.trim();
@@ -35,7 +35,7 @@ function getGeminiModelIdForUrl(): string {
 function geminiGenerateContentUrl(apiKey: string): string {
   const modelId = getGeminiModelIdForUrl();
   const q = encodeURIComponent(apiKey);
-  return `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${q}`;
+  return `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${q}`;
 }
 
 type GeminiGenerateBody = {
