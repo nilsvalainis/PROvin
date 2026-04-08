@@ -17,9 +17,9 @@ const MAX_INPUT_CHARS = 48_000;
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-/** Gramatikai — ātrs; analīzei — jaudīgāks. */
-const GROQ_MODEL_POLISH = "llama3-8b-8192";
-const GROQ_MODEL_ANALYZE = "llama3-70b-8192";
+/** Gramatikai — ātrs; analīzei — jaunākais / jaudīgāks (Groq atjauninātie id). */
+const GROQ_MODEL_POLISH = "llama-3.1-8b-instant";
+const GROQ_MODEL_ANALYZE = "llama-3.3-70b-specdec";
 
 type GroqChatBody = {
   model: string;
