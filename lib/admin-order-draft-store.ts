@@ -6,6 +6,7 @@ import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import type { OrderDraftOrderEdits, OrderDraftState, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
+import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 
 const DEFAULT_RELATIVE_DIR = ".data/admin-order-drafts";
 
@@ -85,6 +86,7 @@ export async function patchOrderDraft(
   sessionId: string,
   patch: { orderEdits?: OrderDraftOrderEdits; workspace?: OrderDraftWorkspaceBody | null },
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
+  try {
   const dir = resolveDraftDir();
   if (!dir) return { ok: false, error: "store_disabled" };
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
@@ -95,10 +97,10 @@ export async function patchOrderDraft(
   let workspacePatch: OrderDraftWorkspaceBody | null | undefined = patch.workspace;
   if (workspacePatch !== undefined && workspacePatch !== null) {
     const json = JSON.stringify({
-      sourceBlocks: workspacePatch.sourceBlocks,
-      iriss: workspacePatch.iriss,
-      apskatesPlāns: workspacePatch.apskatesPlāns,
-      cenasAtbilstiba: workspacePatch.cenasAtbilstiba,
+      sourceBlocks: deepSanitizeDraftStrings(workspacePatch.sourceBlocks),
+      iriss: sanitizeDraftTextForStorage(workspacePatch.iriss),
+      apskatesPlāns: sanitizeDraftTextForStorage(workspacePatch.apskatesPlāns),
+      cenasAtbilstiba: sanitizeDraftTextForStorage(workspacePatch.cenasAtbilstiba),
       previewConfirmed: workspacePatch.previewConfirmed,
       pdfVisibility: workspacePatch.pdfVisibility,
     });
@@ -116,7 +118,20 @@ export async function patchOrderDraft(
 
   const prev = await readOrderDraft(sessionId);
   /** Pilns `edits` objekts no klienta — aizstāj, nevis merge pa laukiem. */
-  const nextOrderEdits = patch.orderEdits !== undefined ? { ...patch.orderEdits } : prev?.orderEdits ?? {};
+  const nextOrderEdits =
+    patch.orderEdits !== undefined
+      ? {
+          ...(typeof patch.orderEdits.vin === "string"
+            ? { vin: sanitizeDraftTextForStorage(patch.orderEdits.vin, 64) }
+            : {}),
+          ...(typeof patch.orderEdits.listingUrl === "string"
+            ? { listingUrl: sanitizeDraftTextForStorage(patch.orderEdits.listingUrl, 8000) }
+            : {}),
+          ...(typeof patch.orderEdits.notes === "string"
+            ? { notes: sanitizeDraftTextForStorage(patch.orderEdits.notes) }
+            : {}),
+        }
+      : prev?.orderEdits ?? {};
   const nextWorkspace =
     workspacePatch !== undefined ? workspacePatch : prev?.workspace ?? null;
   const updatedAt = new Date().toISOString();
@@ -140,4 +155,8 @@ export async function patchOrderDraft(
   }
 
   return { ok: true, updatedAt };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: `patch_failed:${msg}` };
+  }
 }

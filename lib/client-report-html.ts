@@ -194,6 +194,7 @@ function countCitiAvotiFilledParts(b: CitiAvotiBlockState): number {
   return capSourceCount(c);
 }
 
+/** Tikai payload datu apkopošana PDF drukai — bez AI izsaukumiem un bez DB tiešās piekļuves. */
 function computeProvinPdfSourcesUsedCounts(
   p: ClientReportPayload,
   vis: PdfVisibilitySettings,
