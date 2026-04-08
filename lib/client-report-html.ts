@@ -769,24 +769,24 @@ function clientReportPrintCss(): string {
         display:flex;flex-direction:column;gap:8px;margin:0 0 10px;
       }
       .pdf-alert-banner{
-        display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:0 6px 6px 0;
+        display:flex;align-items:flex-start;gap:12px;padding:6px 12px 6px 14px;border-radius:8px;
+        box-shadow:0 2px 16px rgba(15,23,42,0.06);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-alert-banner--red{
-        background:#fff8f8;border-left:5px solid #FF4D4D;color:#FF4D4D;
+        background:rgba(255,77,77,0.04);border-left:2px solid #FF4D4D;color:#FF4D4D;
       }
       .pdf-alert-banner--yellow{
-        background:#fffdf5;border-left:5px solid #FFC107;color:#FFC107;
+        background:rgba(255,193,7,0.04);border-left:2px solid #FFC107;color:#FFC107;
       }
       .pdf-alert-banner-text{
-        flex:1;margin:0;font-size:8pt;line-height:1.35;color:#374151;font-family:Inter,sans-serif!important;
+        flex:1;margin:0;font-size:8pt;line-height:1.35;color:#1d1d1f;font-weight:400;font-family:Inter,sans-serif!important;
       }
-      .pdf-alert-banner-ico{flex-shrink:0;display:block;width:21px;height:21px;}
+      .pdf-alert-banner-ico{flex-shrink:0;display:block;width:18px;height:18px;margin-top:1px;}
       .pdf-alert-banner--red .pdf-alert-banner-ico{color:#FF4D4D;}
       .pdf-alert-banner--yellow .pdf-alert-banner-ico{color:#FFC107;}
-      .pdf-alert-banner--red .pdf-alert-banner-text{color:#374151;}
-      .pdf-alert-banner--yellow .pdf-alert-banner-text{color:#374151;}
-      .pdf-alert-banner .pdf-alert-banner-ico:last-child{margin-left:auto;}
+      .pdf-alert-banner--red .pdf-alert-banner-text{color:#1d1d1f;}
+      .pdf-alert-banner--yellow .pdf-alert-banner-text{color:#1d1d1f;}
       .pdf-data-alert-wrap{
         display:inline-flex;align-items:center;gap:8px;max-width:100%;vertical-align:middle;
       }

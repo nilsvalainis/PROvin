@@ -23,6 +23,7 @@ import {
 } from "@/lib/csdd-ui-flags";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+import { AlertTriangle } from "lucide-react";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -33,29 +34,16 @@ const inpAlertInner =
 /** Maigs fons, neitrāla apmale (kā `inp`); krāsainā kontūra nav — brīdinājumu rāda ikona kreisajā pusē. */
 function csddAlertFrameClass(flag: Exclude<CsddFieldUiFlag, "none">): string {
   if (flag === "red") {
-    return "rounded-md border border-slate-200 bg-rose-50 px-2 py-1.5";
+    return "rounded-lg border-l-2 border-l-[#FF4D4D] bg-[#FF4D4D]/[0.04] px-3 py-1.5 shadow-[0_2px_16px_rgba(15,23,42,0.06)]";
   }
-  return "rounded-md border border-slate-200 bg-yellow-50 px-2 py-1.5";
+  return "rounded-lg border-l-2 border-l-[#FFC107] bg-[#FFC107]/[0.04] px-3 py-1.5 shadow-[0_2px_16px_rgba(15,23,42,0.06)]";
 }
 
-function FieldAlertCircleIcon({ flag }: { flag: Exclude<CsddFieldUiFlag, "none"> }) {
-  const stroke = flag === "red" ? "#FF0000" : "#FFD700";
+function FieldAlertTriangleIcon({ flag }: { flag: Exclude<CsddFieldUiFlag, "none"> }) {
+  const cls = flag === "red" ? "text-[#FF4D4D]" : "text-[#FFC107]";
   return (
     <span className="inline-flex shrink-0 items-center self-center" aria-hidden>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="12"
-        height="12"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={stroke}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 8v4M12 16h.01" />
-      </svg>
+      <AlertTriangle className={`h-4 w-4 ${cls} [stroke-width:1.5]`} strokeWidth={1.5} />
     </span>
   );
 }
@@ -197,12 +185,12 @@ export function AdminCsddSourceBlock({
                   role="group"
                   aria-label={flagTitle || label}
                 >
-                  <FieldAlertCircleIcon flag={flag === "red" ? "red" : "yellow"} />
+                  <FieldAlertTriangleIcon flag={flag === "red" ? "red" : "yellow"} />
                   <div
                     className={`min-w-0 flex-1 ${csddAlertFrameClass(flag === "red" ? "red" : "yellow")}`}
                   >
                     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="shrink-0 text-[10px] font-medium text-[var(--color-provin-muted)]">{label}</span>
+                      <span className="shrink-0 text-[10px] font-normal text-[var(--color-provin-muted)]">{label}</span>
                       <div className="min-w-0 flex-1">
                         {readOnly ? (
                           <div className="min-h-[20px] whitespace-pre-wrap text-[11px] text-[var(--color-apple-text)]">

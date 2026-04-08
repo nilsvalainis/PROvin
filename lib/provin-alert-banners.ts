@@ -172,7 +172,7 @@ export function computeProvinAlertBannersFromPayloadSlice(
 
 /** PDF: 16px → ~21px (+30%); sarkans/dzeltens — vienāds trijstūnis ar izsaukumu. */
 function pdfAlertBannerTriangleIconHtml(): string {
-  return `<svg class="pdf-alert-banner-ico pdf-alert-banner-ico--triangle" width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+  return `<svg class="pdf-alert-banner-ico pdf-alert-banner-ico--triangle" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
 }
 
 function pdfAlertBannerIconsHtml(): string {
@@ -184,7 +184,7 @@ export function buildPdfAlertBannersHtml(banners: ProvinAlertBanner[]): string {
   if (banners.length === 0) return "";
   const blocks = banners.map(
     (b) =>
-      `<div class="pdf-alert-banner pdf-alert-banner--${b.severity}" role="alert" data-provin-alert="${b.kind}" data-provin-severity="${b.severity}">${pdfAlertBannerIconsHtml()}<p class="pdf-alert-banner-text">${escapeHtmlPdf(b.text)}</p>${pdfAlertBannerIconsHtml()}</div>`,
+      `<div class="pdf-alert-banner pdf-alert-banner--${b.severity}" role="alert" data-provin-alert="${b.kind}" data-provin-severity="${b.severity}">${pdfAlertBannerIconsHtml()}<p class="pdf-alert-banner-text">${escapeHtmlPdf(b.text)}</p></div>`,
   );
   return `<div class="pdf-alert-banners-stack">${blocks.join("\n")}</div>`;
 }
