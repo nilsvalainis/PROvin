@@ -17,7 +17,9 @@ export function ListingAnalysisMainBlockTitleRow({
     <div
       className={`flex items-center gap-2 border-b-0 bg-transparent px-2 py-1.5 ${trafficStripClass}`}
     >
-      <AdminProvinLucide icon={Icon} size={ADMIN_LUCIDE_SIZE + 1} />
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-provin-accent-soft)]">
+        <AdminProvinLucide icon={Icon} size={ADMIN_LUCIDE_SIZE + 1} />
+      </span>
       <span className="text-[10px] font-medium uppercase tracking-wide text-slate-600">{title}</span>
     </div>
   );

@@ -41,9 +41,7 @@ import {
 } from "@/lib/provin-alert-banners";
 import {
   sectionIconPdfHtml,
-  sectionIconPdfHtmlSized,
   vendorPdfTitleToIconId,
-  type SectionIconId,
 } from "@/lib/section-icons";
 import { CLIENT_REPORT_FOOTER_DISCLAIMER } from "@/lib/report-pdf-standards";
 import { buildUnifiedMileageChartWrapHtml } from "@/lib/unified-mileage-chart";
@@ -158,11 +156,6 @@ function pdfListingAnalysisFieldIconHtml(title: string): string {
   if (title === L.sellerPortrait) return sectionIconPdfHtml("award");
   if (title === L.photoAnalysis) return sectionIconPdfHtml("scanSearch");
   return sectionIconPdfHtml("fileText");
-}
-
-function pdfIrissSubsectionH3(iconId: SectionIconId, title: string): string {
-  const iconHtml = sectionIconPdfHtmlSized(iconId, 16);
-  return `<h3 class="pdf-iriss-approved-subsection"><span class="pdf-iriss-sub-ico" aria-hidden="true">${iconHtml}</span><span class="pdf-iriss-sub-text">${escapeHtml(title)}</span></h3>`;
 }
 
 function formatCsddNextInspectionCell(v: string): string {
@@ -473,7 +466,7 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload, vis: PdfVisibi
   const inner: string[] = [];
   if (tirgusBody) {
     inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("history"), LISTING_HISTORY_SUBSECTION_TITLE));
-    inner.push(`<div class="pdf-listing-analysis-chunk">${tirgusBody}</div>`);
+    inner.push(`<div class="pdf-listing-analysis-chunk pdf-listing-history-frame">${tirgusBody}</div>`);
   }
   if (b && hasListingFields) {
     const L = LISTING_ANALYSIS_SUBSECTIONS;
@@ -542,31 +535,27 @@ function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySett
   const priceFitBlock = priceFit
     ? `Cenas atbilstība balstoties uz mūsu rīcībā esošajiem datiem:\n${priceFit}`
     : "";
-  const parts: string[] = [];
-  parts.push(`<div class="pdf-iriss-approved" role="region">`);
-  parts.push(
-    `<div class="pdf-iriss-approved-header"><span class="pdf-sec-ico-wrap pdf-iriss-main-ico" aria-hidden="true">${sectionIconPdfHtmlSized("shieldCheck", 18)}</span><h2 class="pdf-iriss-approved-title">${escapeHtml(PDF_APPROVED_BY_IRISS)}</h2></div>`,
-  );
-  parts.push(`<div class="pdf-iriss-approved-body">`);
+  const inner: string[] = [];
   if (iriss) {
-    parts.push(`<div class="pdf-iriss-approved-part">`);
-    parts.push(pdfIrissSubsectionH3("fileSearch", PDF_IRISS_SECTION_1));
-    parts.push(`<pre class="mirror-pre pdf-iriss-approved-text">${escapeHtml(iriss)}</pre>`);
-    parts.push(`</div>`);
+    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("fileSearch"), PDF_IRISS_SECTION_1));
+    inner.push(`<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(iriss)}</pre></div>`);
   }
   if (plan) {
-    parts.push(`<div class="pdf-iriss-approved-part">`);
-    parts.push(pdfIrissSubsectionH3("car", PDF_IRISS_SECTION_2));
-    parts.push(`<pre class="mirror-pre pdf-iriss-approved-text">${escapeHtml(plan)}</pre>`);
-    parts.push(`</div>`);
+    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("car"), PDF_IRISS_SECTION_2));
+    inner.push(`<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(plan)}</pre></div>`);
   }
   if (priceFitBlock) {
-    parts.push(`<div class="pdf-iriss-approved-part">`);
-    parts.push(pdfIrissSubsectionH3("priceTag", PDF_IRISS_SECTION_3));
-    parts.push(`<pre class="mirror-pre pdf-iriss-approved-text">${escapeHtml(priceFitBlock)}</pre>`);
-    parts.push(`</div>`);
+    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("priceTag"), PDF_IRISS_SECTION_3));
+    inner.push(
+      `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(priceFitBlock)}</pre></div>`,
+    );
   }
-  parts.push(`</div></div>`);
+  if (inner.length === 0) return "";
+  const parts: string[] = [];
+  parts.push(`<div class="pdf-unified-mileage-zone pdf-surface-card pdf-listing-analysis-root pdf-iriss-approved" role="region">`);
+  parts.push(sectionHeadBrand(sectionIconPdfHtml("shieldCheck"), PDF_APPROVED_BY_IRISS));
+  parts.push(`<div class="pdf-source-section-body pdf-listing-analysis-stack">${inner.join("\n")}</div>`);
+  parts.push(`</div>`);
   return parts.join("\n");
 }
 
@@ -641,6 +630,10 @@ function clientReportPrintCss(): string {
         display:inline-flex;align-items:center;justify-content:center;color:${PDF_BRAND_BLUE};flex-shrink:0;
       }
       .pdf-sec-ico-wrap .pdf-ico{width:16px;height:16px;}
+      .pdf-listing-analysis-root .pdf-sec-ico-wrap,
+      .pdf-iriss-approved .pdf-sec-ico-wrap{
+        width:26px;height:26px;border-radius:999px;background:rgba(0,97,210,0.1);
+      }
       .pdf-source-section-body{width:100%;margin:0;padding:0;}
       .pdf-field-label{font-size:0.68rem;font-weight:600;margin:0.45rem 0 0.2rem;color:#334155;letter-spacing:0.02em;}
       .pdf-field-label--row{display:flex;align-items:center;gap:8px;}
@@ -649,6 +642,12 @@ function clientReportPrintCss(): string {
       .pdf-listing-analysis-stack{width:100%;}
       .pdf-listing-analysis-chunk{
         margin:0 0 8px;padding:8px 0;background:#fff;border-bottom:1px solid #f1f5f9;
+      }
+      .pdf-listing-history-frame{
+        border:1px solid rgba(0,0,0,0.06);
+        border-radius:8px;
+        background:rgba(15,23,42,0.015);
+        padding:10px 10px;
       }
       .pdf-listing-analysis-chunk:last-child{margin-bottom:0;border-bottom:none;}
       .pdf-listing-analysis-chunk-pre{font-style:italic;margin:0;}
@@ -856,33 +855,6 @@ function clientReportPrintCss(): string {
       .mirror-table--csdd-mh td,.mirror-table--csdd-mh th{padding:3px 4px!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;}
       .mirror-table--csdd-mh thead th{font-size:9pt!important;}
       .tabular{font-variant-numeric:tabular-nums;}
-      .pdf-iriss-approved{
-        margin:0 0 14px;border-radius:12px;overflow:hidden;border:1px solid #f1f5f9;
-        box-shadow:0 2px 14px rgba(15,23,42,.06);
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-iriss-approved-header{
-        display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px 12px 0 0;
-        background:#fff;border-bottom:1px solid #f1f5f9;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-iriss-approved-header .pdf-iriss-main-ico{flex-shrink:0;}
-      .pdf-iriss-main-ico .pdf-ico{width:18px;height:18px;}
-      .pdf-iriss-approved-title{
-        margin:0;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0f172a;
-      }
-      .pdf-iriss-approved-body{padding:14px 16px 16px;background:#fff;}
-      .pdf-iriss-approved-subtitle{
-        margin:0 0 8px;font-size:0.68rem;font-weight:700;color:#000;letter-spacing:0.06em;text-transform:uppercase;
-      }
-      .pdf-iriss-approved-part:not(:first-child){margin-top:10px;}
-      .pdf-iriss-approved-subsection{
-        display:flex;align-items:flex-start;gap:8px;margin:0 0 6px;font-size:0.72rem;font-weight:700;color:#000;letter-spacing:0.02em;text-transform:none;
-      }
-      .pdf-iriss-sub-ico{flex-shrink:0;line-height:0;color:${PDF_BRAND_BLUE};}
-      .pdf-iriss-sub-ico .pdf-ico{width:16px;height:16px;}
-      .pdf-iriss-sub-text{flex:1;min-width:0;}
-      .pdf-iriss-approved-text{font-size:0.78rem;}
       .mirror-font-error{padding:16px;color:#991b1b;font-size:13px;}
       .legal-block{margin-top:12px;padding-top:8px;border-top:1px solid #f1f5f9;font-size:0.68rem;color:#86868b;line-height:1.45;}
       .report-foot{margin-top:12px;padding-top:8px;border-top:1px solid #f1f5f9;font-size:0.65rem;color:#94a3b8;}

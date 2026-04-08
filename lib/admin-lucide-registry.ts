@@ -10,6 +10,7 @@ import {
   CircleUser,
   CreditCard,
   Database,
+  FileSearch,
   History,
   Layers,
   MessageSquare,
@@ -19,6 +20,7 @@ import {
   Search,
   Shield,
   ShieldCheck,
+  Tag,
   FileText,
 } from "lucide-react";
 
@@ -43,6 +45,13 @@ export const META_ORDER_LUCIDE = {
 export const LISTING_ANALYSIS_CHROME_LUCIDE = {
   mainSection: Search,
   listingHistory: History,
+} as const;
+
+export const IRISS_CHROME_LUCIDE = {
+  mainSection: ShieldCheck,
+  summary: FileSearch,
+  inspection: CarFront,
+  priceFit: Tag,
 } as const;
 
 export const LISTING_ANALYSIS_FIELD_LUCIDE: Record<

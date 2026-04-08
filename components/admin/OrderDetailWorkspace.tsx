@@ -59,15 +59,13 @@ import {
 import { buildClientReportDocumentHtml } from "@/lib/client-report-html";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
-import { APPROVED_BY_IRISS_BODY_BG, APPROVED_BY_IRISS_HEADER_BG } from "@/lib/admin-header-gradients";
-import { AdminGradientHeaderBar } from "@/components/admin/AdminGradientHeaderBar";
 import {
   ListingAnalysisMainBlockTitleRow,
   ListingAnalysisSubsectionHeading,
 } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
 import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
-import { LISTING_ANALYSIS_CHROME_LUCIDE } from "@/lib/admin-lucide-registry";
+import { IRISS_CHROME_LUCIDE, LISTING_ANALYSIS_CHROME_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
   TRAFFIC_HEADER_STRIP_CLASS,
   alertBannersTrafficLevel,
@@ -1502,12 +1500,14 @@ export function OrderDetailWorkspace({
               icon={LISTING_ANALYSIS_CHROME_LUCIDE.listingHistory}
               title={LISTING_HISTORY_SUBSECTION_TITLE}
             >
-              <AdminTirgusSourceBlock
-                value={blocksDisplaySafe.tirgus}
-                readOnly={sourcesViewMode}
-                onChange={(next) => updateSourceBlock("tirgus", next)}
-                variant="embedded"
-              />
+              <div className="rounded-lg border border-[#E2E8F0] bg-transparent px-2 py-2">
+                <AdminTirgusSourceBlock
+                  value={blocksDisplaySafe.tirgus}
+                  readOnly={sourcesViewMode}
+                  onChange={(next) => updateSourceBlock("tirgus", next)}
+                  variant="embedded"
+                />
+              </div>
             </ListingAnalysisSubsectionHeading>
             <div className="min-w-0 border-t border-slate-200/75 pt-4">
               <AdminListingAnalysisSourceBlock
@@ -1598,108 +1598,80 @@ export function OrderDetailWorkspace({
                 </div>
               </div>
               <div
-                className={`mt-1.5 overflow-hidden rounded-xl shadow-sm ring-1 ring-sky-200/60 ${
+                className={`mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] ${
                   ws.previewConfirmed ? "" : "opacity-[0.88]"
                 }`}
               >
-                <AdminGradientHeaderBar
-                  gradient={APPROVED_BY_IRISS_HEADER_BG}
-                  className="rounded-t-lg"
-                  contentClassName="gap-2 px-2 py-1.5"
-                >
-                  <svg
-                    className="h-4 w-4 shrink-0 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.75}
-                    aria-hidden
+                <ListingAnalysisMainBlockTitleRow
+                  icon={IRISS_CHROME_LUCIDE.mainSection}
+                  title="APPROVED BY IRISS"
+                  trafficStripClass=""
+                />
+                <div className="space-y-3 bg-transparent px-2 pb-2 pt-2">
+                  <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.summary} title="1. Kopsavilkums">
+                    {expertViewMode ? (
+                      <div
+                        className={`${bulkReadonlyClass} min-h-[120px] max-h-[min(45vh,400px)] overflow-y-auto whitespace-pre-wrap`}
+                      >
+                        {expertSnap.iriss.trim() ? expertSnap.iriss : <span className="text-slate-400">—</span>}
+                      </div>
+                    ) : (
+                      <textarea
+                        id={`${fileInputId}-iriss`}
+                        className={`${bulkTextareaClass} min-h-[120px] max-h-[min(45vh,400px)] resize-y bg-white/60`}
+                        value={ws.iriss}
+                        onChange={(e) => updateWs({ iriss: e.target.value })}
+                        placeholder="Galvenais kopsavilkums klientam…"
+                        spellCheck
+                        disabled={!ws.previewConfirmed}
+                      />
+                    )}
+                  </ListingAnalysisSubsectionHeading>
+                  <ListingAnalysisSubsectionHeading
+                    icon={IRISS_CHROME_LUCIDE.inspection}
+                    title="2. Ieteikumi klātienes apskatei"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
-                    />
-                  </svg>
-                  <span className="text-[11px] font-bold uppercase tracking-wide text-white">APPROVED BY IRISS</span>
-                </AdminGradientHeaderBar>
-                <div className="p-2" style={{ background: APPROVED_BY_IRISS_BODY_BG }}>
-                  <div className="space-y-2">
-                    <div className="min-w-0">
-                      <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                        1. Kopsavilkums
-                      </label>
-                      {expertViewMode ? (
-                        <div
-                          className={`${bulkReadonlyClass} min-h-[120px] max-h-[min(45vh,400px)] overflow-y-auto whitespace-pre-wrap`}
-                        >
-                          {expertSnap.iriss.trim() ? expertSnap.iriss : <span className="text-slate-400">—</span>}
-                        </div>
-                      ) : (
-                        <textarea
-                          id={`${fileInputId}-iriss`}
-                          className={`${bulkTextareaClass} min-h-[120px] max-h-[min(45vh,400px)] resize-y bg-white`}
-                          value={ws.iriss}
-                          onChange={(e) => updateWs({ iriss: e.target.value })}
-                          placeholder="Galvenais kopsavilkums klientam…"
-                          spellCheck
-                          disabled={!ws.previewConfirmed}
-                        />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                        2. Ieteikumi klātienes apskatei
-                      </label>
-                      {expertViewMode ? (
-                        <div
-                          className={`${bulkReadonlyClass} min-h-[72px] max-h-[min(35vh,280px)] overflow-y-auto whitespace-pre-wrap`}
-                        >
-                          {expertSnap.apskatesPlāns.trim() ? (
-                            expertSnap.apskatesPlāns
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </div>
-                      ) : (
-                        <textarea
-                          id={`${fileInputId}-apskates`}
-                          className={`${bulkTextareaClass} min-h-[72px] max-h-[min(35vh,280px)] resize-y bg-white`}
-                          value={ws.apskatesPlāns}
-                          onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
-                          placeholder="piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
-                          spellCheck
-                          disabled={!ws.previewConfirmed}
-                        />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                        3. Cenas atbilstība
-                      </label>
-                      {expertViewMode ? (
-                        <div
-                          className={`${bulkReadonlyClass} min-h-[56px] max-h-[min(28vh,220px)] overflow-y-auto whitespace-pre-wrap`}
-                        >
-                          {expertSnap.cenasAtbilstiba.trim() ? (
-                            expertSnap.cenasAtbilstiba
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </div>
-                      ) : (
-                        <textarea
-                          id={`${fileInputId}-cenas-atbilstiba`}
-                          className={`${bulkTextareaClass} min-h-[56px] max-h-[min(28vh,220px)] resize-y bg-white`}
-                          value={ws.cenasAtbilstiba}
-                          onChange={(e) => updateWs({ cenasAtbilstiba: e.target.value })}
-                          placeholder="Balstoties uz mūsu rīcībā esošajiem datiem…"
-                          spellCheck
-                          disabled={!ws.previewConfirmed}
-                        />
-                      )}
-                    </div>
-                  </div>
+                    {expertViewMode ? (
+                      <div
+                        className={`${bulkReadonlyClass} min-h-[72px] max-h-[min(35vh,280px)] overflow-y-auto whitespace-pre-wrap`}
+                      >
+                        {expertSnap.apskatesPlāns.trim() ? expertSnap.apskatesPlāns : <span className="text-slate-400">—</span>}
+                      </div>
+                    ) : (
+                      <textarea
+                        id={`${fileInputId}-apskates`}
+                        className={`${bulkTextareaClass} min-h-[72px] max-h-[min(35vh,280px)] resize-y bg-white/60`}
+                        value={ws.apskatesPlāns}
+                        onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
+                        placeholder="piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
+                        spellCheck
+                        disabled={!ws.previewConfirmed}
+                      />
+                    )}
+                  </ListingAnalysisSubsectionHeading>
+                  <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.priceFit} title="3. Cenas atbilstība">
+                    {expertViewMode ? (
+                      <div
+                        className={`${bulkReadonlyClass} min-h-[56px] max-h-[min(28vh,220px)] overflow-y-auto whitespace-pre-wrap`}
+                      >
+                        {expertSnap.cenasAtbilstiba.trim() ? (
+                          expertSnap.cenasAtbilstiba
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </div>
+                    ) : (
+                      <textarea
+                        id={`${fileInputId}-cenas-atbilstiba`}
+                        className={`${bulkTextareaClass} min-h-[56px] max-h-[min(28vh,220px)] resize-y bg-white/60`}
+                        value={ws.cenasAtbilstiba}
+                        onChange={(e) => updateWs({ cenasAtbilstiba: e.target.value })}
+                        placeholder="Balstoties uz mūsu rīcībā esošajiem datiem…"
+                        spellCheck
+                        disabled={!ws.previewConfirmed}
+                      />
+                    )}
+                  </ListingAnalysisSubsectionHeading>
                 </div>
               </div>
               {!ws.previewConfirmed ? (
