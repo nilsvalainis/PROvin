@@ -1,7 +1,7 @@
 "use client";
 
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
-import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
+import { ListingAnalysisSubsectionHeading } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import {
   emptyListingAnalysisBlock,
   LISTING_ANALYSIS_COMMENT_LABEL,
@@ -64,19 +64,14 @@ export function AdminListingAnalysisSourceBlock({
       {variant === "default" ? (
         <AdminSourceBlockHeader blockKey="listing_analysis" className="mb-1.5" />
       ) : null}
-      <div className={dense ? "space-y-1.5" : "space-y-2"}>
+      <div className={dense ? "space-y-3" : "space-y-4"}>
         {fields.map(({ key, title }) => (
-          <div key={key}>
-            <p
-              className={
-                dense
-                  ? "mb-0.5 flex items-center gap-2.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]"
-                  : "mb-0.5 flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]"
-              }
-            >
-              <SectionLineIcon id={listingAnalysisFieldIcon(key)} />
-              {title}
-            </p>
+          <ListingAnalysisSubsectionHeading
+            key={key}
+            iconId={listingAnalysisFieldIcon(key)}
+            title={title}
+            compact={dense}
+          >
             <p
               className={
                 dense
@@ -109,7 +104,7 @@ export function AdminListingAnalysisSourceBlock({
                 aria-label={`${title} — Komentāri`}
               />
             )}
-          </div>
+          </ListingAnalysisSubsectionHeading>
         ))}
       </div>
     </div>

@@ -61,7 +61,10 @@ import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle"
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { APPROVED_BY_IRISS_BODY_BG, APPROVED_BY_IRISS_HEADER_BG } from "@/lib/admin-header-gradients";
 import { AdminGradientHeaderBar } from "@/components/admin/AdminGradientHeaderBar";
-import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
+import {
+  ListingAnalysisMainBlockTitleRow,
+  ListingAnalysisSubsectionHeading,
+} from "@/components/admin/AdminListingAnalysisSectionChrome";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
 import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
 import { SUBHEADING_ICON } from "@/lib/section-icons";
@@ -1489,26 +1492,24 @@ export function OrderDetailWorkspace({
           Lasīšanas / labošanas režīms kopīgs ar 2. sadaļas rīkjoslu (Saglabāt / Labot).
         </p>
         <div className="mt-1.5 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200/70">
-          <div
-            className={`flex items-center gap-2.5 border-b border-slate-100 bg-white px-2 py-1.5 ${TRAFFIC_HEADER_STRIP_CLASS[traffic.listingSection]}`}
-          >
-            <SectionLineIcon id="search" />
-            <span className="text-[11px] font-bold uppercase tracking-wide text-slate-900">SLUDINĀJUMA ANALĪZE</span>
-          </div>
-          <div className="space-y-2 bg-slate-50/40 p-2">
-            <div className="min-w-0">
-              <p className="mb-1 flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">
-                <SectionLineIcon id={SUBHEADING_ICON.listingHistory} />
-                {LISTING_HISTORY_SUBSECTION_TITLE}
-              </p>
+          <ListingAnalysisMainBlockTitleRow
+            iconId="search"
+            title="SLUDINĀJUMA ANALĪZE"
+            trafficStripClass={TRAFFIC_HEADER_STRIP_CLASS[traffic.listingSection]}
+          />
+          <div className="space-y-4 bg-slate-50/40 px-2 pb-2 pt-3">
+            <ListingAnalysisSubsectionHeading
+              iconId={SUBHEADING_ICON.listingHistory}
+              title={LISTING_HISTORY_SUBSECTION_TITLE}
+            >
               <AdminTirgusSourceBlock
                 value={blocksDisplaySafe.tirgus}
                 readOnly={sourcesViewMode}
                 onChange={(next) => updateSourceBlock("tirgus", next)}
                 variant="embedded"
               />
-            </div>
-            <div className="min-w-0 border-t border-slate-200/80 pt-2">
+            </ListingAnalysisSubsectionHeading>
+            <div className="min-w-0 border-t border-slate-200/75 pt-4">
               <AdminListingAnalysisSourceBlock
                 value={blocksDisplaySafe.listing_analysis}
                 readOnly={sourcesViewMode}
