@@ -2,6 +2,7 @@
 
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
+import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { LtabBlockState, LtabIncidentRow } from "@/lib/admin-source-blocks";
 import { emptyLtabRow } from "@/lib/admin-source-blocks";
@@ -121,13 +122,12 @@ export function AdminLtabSourceBlock({
                         {readOnly ? (
                           <CountryFlagWithCode countryLabel={row.incidentNo.trim() || "—"} />
                         ) : (
-                          <input
-                            type="text"
+                          <AdminCountryCombobox
                             className={inp}
                             placeholder="Latvija"
                             value={row.incidentNo}
                             disabled={disabled}
-                            onChange={(e) => setRow(ri, { incidentNo: e.target.value })}
+                            onChange={(next) => setRow(ri, { incidentNo: next })}
                             aria-label={`LTAB Valsts, rinda ${ri + 1}`}
                           />
                         )}

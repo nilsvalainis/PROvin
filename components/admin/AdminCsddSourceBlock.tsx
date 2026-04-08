@@ -23,6 +23,7 @@ import {
 } from "@/lib/csdd-ui-flags";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AlertTriangle } from "lucide-react";
 
 const inp =
@@ -344,8 +345,7 @@ export function AdminCsddSourceBlock({
                         data-row-index={i}
                       />
                     ) : (
-                      <input
-                        type="text"
+                      <AdminCountryCombobox
                         className={inp}
                         value={row.country}
                         disabled={disabled}
@@ -354,7 +354,7 @@ export function AdminCsddSourceBlock({
                         data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}
                         data-provin-block="csdd"
                         data-row-index={i}
-                        onChange={(e) => setMileage(i, { country: e.target.value })}
+                        onChange={(next) => setMileage(i, { country: next })}
                         aria-label={`Valsts rinda ${i + 1}`}
                       />
                     )}

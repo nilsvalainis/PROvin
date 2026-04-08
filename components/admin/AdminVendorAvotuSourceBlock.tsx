@@ -2,6 +2,7 @@
 
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
+import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import type { LtabIncidentRow, VendorAvotuBlockState } from "@/lib/admin-source-blocks";
@@ -197,8 +198,7 @@ export function AdminVendorAvotuSourceBlock({
                         data-row-index={i}
                       />
                     ) : (
-                      <input
-                        type="text"
+                      <AdminCountryCombobox
                         className={inp}
                         value={row.country}
                         disabled={disabled}
@@ -207,7 +207,7 @@ export function AdminVendorAvotuSourceBlock({
                         data-provin-field={PROVIN_VENDOR_FIELD.nobraukumaValsts}
                         data-provin-block={blockKey}
                         data-row-index={i}
-                        onChange={(e) => setMileageRow(i, { country: e.target.value })}
+                        onChange={(next) => setMileageRow(i, { country: next })}
                         aria-label={`${blockKey} ${PROVIN_VENDOR_FIELD.nobraukumaValsts} ${i + 1}`}
                       />
                     )}
@@ -297,8 +297,7 @@ export function AdminVendorAvotuSourceBlock({
                       {readOnly ? (
                         <CountryFlagWithCode countryLabel={row.incidentNo.trim() || "—"} />
                       ) : (
-                        <input
-                          type="text"
+                        <AdminCountryCombobox
                           className={inp}
                           placeholder="Latvija"
                           value={row.incidentNo}
@@ -307,7 +306,7 @@ export function AdminVendorAvotuSourceBlock({
                           name={`${PROVIN_VENDOR_FIELD.negadijumuSkaits}[${ri}]`}
                           data-provin-field={PROVIN_VENDOR_FIELD.negadijumuSkaits}
                           data-row-index={ri}
-                          onChange={(e) => setIncidentRow(ri, { incidentNo: e.target.value })}
+                          onChange={(next) => setIncidentRow(ri, { incidentNo: next })}
                           aria-label={`Valsts, ${blockKey}, rinda ${ri + 1}`}
                         />
                       )}

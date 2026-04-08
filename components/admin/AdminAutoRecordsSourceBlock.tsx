@@ -1,6 +1,7 @@
 "use client";
 
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
+import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import type { AutoRecordsBlockState, AutoRecordsServiceRow } from "@/lib/admin-source-blocks";
@@ -205,8 +206,7 @@ export function AdminAutoRecordsSourceBlock({
                         data-row-index={i}
                       />
                     ) : (
-                      <input
-                        type="text"
+                      <AdminCountryCombobox
                         className={inp}
                         value={row.country}
                         disabled={disabled}
@@ -215,7 +215,7 @@ export function AdminAutoRecordsSourceBlock({
                         data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}
                         data-provin-block="auto_records"
                         data-row-index={i}
-                        onChange={(e) => setRow(i, { country: e.target.value })}
+                        onChange={(next) => setRow(i, { country: next })}
                         aria-label={`AUTO RECORDS valsts ${i + 1}`}
                       />
                     )}
