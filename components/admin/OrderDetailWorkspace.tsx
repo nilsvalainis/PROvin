@@ -81,6 +81,7 @@ import {
 } from "@/lib/admin-block-traffic-status";
 import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
 import { ChevronDown } from "lucide-react";
+import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 
 export type OrderWorkspacePayload = {
   sessionId: string;
@@ -1366,14 +1367,16 @@ export function OrderDetailWorkspace({
                 </button>
               </div>
               {!stickySummaryMinimized ? (
-                <textarea
-                  className={`${bulkTextareaClass} min-h-[180px] w-full resize-y bg-white/80`}
-                  value={ws.iriss}
-                  onChange={(e) => setIrissSummary(e.target.value)}
-                  placeholder="Raksti šeit — sinhronizējas ar 4. sadaļas 1. lauku."
-                  spellCheck
-                  aria-label="Kopsavilkums (sānu panelis)"
-                />
+                <AdminAiPolishTextareaShell value={ws.iriss} onPolished={setIrissSummary}>
+                  <textarea
+                    className={`${bulkTextareaClass} min-h-[180px] w-full resize-y bg-white/80`}
+                    value={ws.iriss}
+                    onChange={(e) => setIrissSummary(e.target.value)}
+                    placeholder="Raksti šeit — sinhronizējas ar 4. sadaļas 1. lauku."
+                    spellCheck
+                    aria-label="Kopsavilkums (sānu panelis)"
+                  />
+                </AdminAiPolishTextareaShell>
               ) : null}
             </>
           }
@@ -1652,14 +1655,16 @@ export function OrderDetailWorkspace({
                         {expertSnap.iriss.trim() ? expertSnap.iriss : <span className="text-slate-400">—</span>}
                       </div>
                     ) : (
-                      <textarea
-                        id={`${fileInputId}-iriss`}
-                        className={`${bulkTextareaClass} min-h-[120px] max-h-[min(45vh,400px)] resize-y bg-white/60`}
-                        value={ws.iriss}
-                        onChange={(e) => setIrissSummary(e.target.value)}
-                        placeholder="Galvenais kopsavilkums klientam…"
-                        spellCheck
-                      />
+                      <AdminAiPolishTextareaShell value={ws.iriss} onPolished={setIrissSummary}>
+                        <textarea
+                          id={`${fileInputId}-iriss`}
+                          className={`${bulkTextareaClass} min-h-[120px] max-h-[min(45vh,400px)] resize-y bg-white/60`}
+                          value={ws.iriss}
+                          onChange={(e) => setIrissSummary(e.target.value)}
+                          placeholder="Galvenais kopsavilkums klientam…"
+                          spellCheck
+                        />
+                      </AdminAiPolishTextareaShell>
                     )}
                   </ListingAnalysisSubsectionHeading>
                   <ListingAnalysisSubsectionHeading
@@ -1673,14 +1678,19 @@ export function OrderDetailWorkspace({
                         {expertSnap.apskatesPlāns.trim() ? expertSnap.apskatesPlāns : <span className="text-slate-400">—</span>}
                       </div>
                     ) : (
-                      <textarea
-                        id={`${fileInputId}-apskates`}
-                        className={`${bulkTextareaClass} min-h-[72px] max-h-[min(35vh,280px)] resize-y bg-white/60`}
+                      <AdminAiPolishTextareaShell
                         value={ws.apskatesPlāns}
-                        onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
-                        placeholder="piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
-                        spellCheck
-                      />
+                        onPolished={(next) => updateWs({ apskatesPlāns: next })}
+                      >
+                        <textarea
+                          id={`${fileInputId}-apskates`}
+                          className={`${bulkTextareaClass} min-h-[72px] max-h-[min(35vh,280px)] resize-y bg-white/60`}
+                          value={ws.apskatesPlāns}
+                          onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
+                          placeholder="piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
+                          spellCheck
+                        />
+                      </AdminAiPolishTextareaShell>
                     )}
                   </ListingAnalysisSubsectionHeading>
                   <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.priceFit} title="3. Cenas atbilstība">
@@ -1695,14 +1705,19 @@ export function OrderDetailWorkspace({
                         )}
                       </div>
                     ) : (
-                      <textarea
-                        id={`${fileInputId}-cenas-atbilstiba`}
-                        className={`${bulkTextareaClass} min-h-[56px] max-h-[min(28vh,220px)] resize-y bg-white/60`}
+                      <AdminAiPolishTextareaShell
                         value={ws.cenasAtbilstiba}
-                        onChange={(e) => updateWs({ cenasAtbilstiba: e.target.value })}
-                        placeholder="Balstoties uz mūsu rīcībā esošajiem datiem…"
-                        spellCheck
-                      />
+                        onPolished={(next) => updateWs({ cenasAtbilstiba: next })}
+                      >
+                        <textarea
+                          id={`${fileInputId}-cenas-atbilstiba`}
+                          className={`${bulkTextareaClass} min-h-[56px] max-h-[min(28vh,220px)] resize-y bg-white/60`}
+                          value={ws.cenasAtbilstiba}
+                          onChange={(e) => updateWs({ cenasAtbilstiba: e.target.value })}
+                          placeholder="Balstoties uz mūsu rīcībā esošajiem datiem…"
+                          spellCheck
+                        />
+                      </AdminAiPolishTextareaShell>
                     )}
                   </ListingAnalysisSubsectionHeading>
                 </div>

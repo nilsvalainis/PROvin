@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { ListingAnalysisSubsectionHeading } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import {
@@ -88,15 +89,21 @@ export function AdminListingAnalysisSourceBlock({
                 {v[key].trim() || "—"}
               </div>
             ) : (
-              <textarea
-                className={pri ? (dense ? taPriorityCompact : taPriority) : ta}
-                disabled={disabled}
-                rows={dense ? 2 : 4}
+              <AdminAiPolishTextareaShell
                 value={v[key]}
-                onChange={(e) => onChange({ ...v, [key]: e.target.value })}
-                placeholder=""
-                aria-label={`${title} — Komentāri`}
-              />
+                onPolished={(next) => onChange({ ...v, [key]: next })}
+                disabled={disabled}
+              >
+                <textarea
+                  className={pri ? (dense ? taPriorityCompact : taPriority) : ta}
+                  disabled={disabled}
+                  rows={dense ? 2 : 4}
+                  value={v[key]}
+                  onChange={(e) => onChange({ ...v, [key]: e.target.value })}
+                  placeholder=""
+                  aria-label={`${title} — Komentāri`}
+                />
+              </AdminAiPolishTextareaShell>
             )}
           </ListingAnalysisSubsectionHeading>
         ))}

@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
@@ -170,14 +171,20 @@ export function AdminLtabSourceBlock({
                 {value.comments.trim() ? value.comments : <span className="text-slate-400">—</span>}
               </div>
             ) : (
-              <textarea
-                className="w-full min-h-[72px] resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
-                rows={3}
-                placeholder="Papildu komentāri par LTAB / OCTA…"
+              <AdminAiPolishTextareaShell
                 value={value.comments}
+                onPolished={(next) => onChange({ ...value, comments: next })}
                 disabled={disabled}
-                onChange={(e) => onChange({ ...value, comments: e.target.value })}
-              />
+              >
+                <textarea
+                  className="w-full min-h-[72px] resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
+                  rows={3}
+                  placeholder="Papildu komentāri par LTAB / OCTA…"
+                  value={value.comments}
+                  disabled={disabled}
+                  onChange={(e) => onChange({ ...value, comments: e.target.value })}
+                />
+              </AdminAiPolishTextareaShell>
             )}
           </div>
       </div>

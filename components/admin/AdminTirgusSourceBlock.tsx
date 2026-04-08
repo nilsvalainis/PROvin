@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { ListedForSaleFieldChrome } from "@/components/admin/ListedForSaleFieldChrome";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { PriceDropArrowIcon } from "@/components/icons/PriceDropArrowIcon";
@@ -157,15 +158,21 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, va
             {val.comments.trim() ? val.comments : <span className="text-slate-400">—</span>}
           </div>
         ) : (
-          <textarea
-            className={embDense ? taEmbeddedCompact : taEmbedded}
-            rows={embDense ? 2 : 4}
-            placeholder=""
+          <AdminAiPolishTextareaShell
             value={val.comments}
+            onPolished={(next) => setField("comments", next)}
             disabled={disabled}
-            onChange={(e) => setField("comments", e.target.value)}
-            aria-label={`${LISTING_HISTORY_SUBSECTION_TITLE} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-          />
+          >
+            <textarea
+              className={embDense ? taEmbeddedCompact : taEmbedded}
+              rows={embDense ? 2 : 4}
+              placeholder=""
+              value={val.comments}
+              disabled={disabled}
+              onChange={(e) => setField("comments", e.target.value)}
+              aria-label={`${LISTING_HISTORY_SUBSECTION_TITLE} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+            />
+          </AdminAiPolishTextareaShell>
         )}
       </div>
     ) : (
@@ -176,15 +183,21 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, va
             {val.comments.trim() ? val.comments : <span className="text-slate-400">—</span>}
           </div>
         ) : (
-          <textarea
-            className={taDefault}
-            rows={4}
-            placeholder="Papildu komentāri par sludinājuma vēsturi…"
+          <AdminAiPolishTextareaShell
             value={val.comments}
+            onPolished={(next) => setField("comments", next)}
             disabled={disabled}
-            onChange={(e) => setField("comments", e.target.value)}
-            aria-label={`Tirgus — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-          />
+          >
+            <textarea
+              className={taDefault}
+              rows={4}
+              placeholder="Papildu komentāri par sludinājuma vēsturi…"
+              value={val.comments}
+              disabled={disabled}
+              onChange={(e) => setField("comments", e.target.value)}
+              aria-label={`Tirgus — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+            />
+          </AdminAiPolishTextareaShell>
         )}
       </div>
     );

@@ -23,6 +23,7 @@ import {
 } from "@/lib/csdd-ui-flags";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AlertTriangle } from "lucide-react";
 
@@ -145,16 +146,22 @@ export function AdminCsddSourceBlock({
             )}
           </div>
         ) : (
-          <textarea
-            id="csdd_raw_data"
-            className="w-full min-h-[96px] resize-y rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
-            rows={5}
+          <AdminAiPolishTextareaShell
             value={value.rawUnprocessedData}
+            onPolished={(next) => handleRawInput(next)}
             disabled={disabled}
-            placeholder="Ielīmē šeit visu tekstu no CSDD…"
-            onChange={(e) => handleRawInput(e.target.value)}
-            aria-label="CSDD neapstrādātie dati"
-          />
+          >
+            <textarea
+              id="csdd_raw_data"
+              className="w-full min-h-[96px] resize-y rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
+              rows={5}
+              value={value.rawUnprocessedData}
+              disabled={disabled}
+              placeholder="Ielīmē šeit visu tekstu no CSDD…"
+              onChange={(e) => handleRawInput(e.target.value)}
+              aria-label="CSDD neapstrādātie dati"
+            />
+          </AdminAiPolishTextareaShell>
         )}
       </div>
 

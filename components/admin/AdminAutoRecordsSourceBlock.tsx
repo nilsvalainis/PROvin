@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
@@ -105,15 +106,21 @@ export function AdminAutoRecordsSourceBlock({
             {value.rawUnprocessedData.trim() ? value.rawUnprocessedData : <span className="text-slate-400">—</span>}
           </div>
         ) : (
-          <textarea
-            className="mb-2 w-full min-h-[88px] resize-y rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
-            rows={4}
+          <AdminAiPolishTextareaShell
             value={value.rawUnprocessedData}
+            onPolished={(next) => handleRaw(next)}
             disabled={disabled}
-            placeholder="Ielīmē tekstu, kas sākas ar ODOMETER CHECK…"
-            onChange={(e) => handleRaw(e.target.value)}
-            aria-label="AUTO RECORDS neapstrādātie dati"
-          />
+          >
+            <textarea
+              className="mb-2 w-full min-h-[88px] resize-y rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
+              rows={4}
+              value={value.rawUnprocessedData}
+              disabled={disabled}
+              placeholder="Ielīmē tekstu, kas sākas ar ODOMETER CHECK…"
+              onChange={(e) => handleRaw(e.target.value)}
+              aria-label="AUTO RECORDS neapstrādātie dati"
+            />
+          </AdminAiPolishTextareaShell>
         )}
 
         <p className="mb-1.5 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
@@ -243,14 +250,20 @@ export function AdminAutoRecordsSourceBlock({
             {value.comments.trim() ? value.comments : <span className="text-slate-400">—</span>}
           </div>
         ) : (
-          <textarea
-            className="w-full resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
-            rows={2}
-            placeholder="Papildu piezīmes…"
+          <AdminAiPolishTextareaShell
             value={value.comments}
+            onPolished={(next) => onChange({ ...value, comments: next })}
             disabled={disabled}
-            onChange={(e) => onChange({ ...value, comments: e.target.value })}
-          />
+          >
+            <textarea
+              className="w-full resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
+              rows={2}
+              placeholder="Papildu piezīmes…"
+              value={value.comments}
+              disabled={disabled}
+              onChange={(e) => onChange({ ...value, comments: e.target.value })}
+            />
+          </AdminAiPolishTextareaShell>
         )}
           </div>
       </div>

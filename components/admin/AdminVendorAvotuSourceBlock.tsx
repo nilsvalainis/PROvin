@@ -2,6 +2,7 @@
 
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
+import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
@@ -350,14 +351,20 @@ export function AdminVendorAvotuSourceBlock({
             {value.comments.trim() ? value.comments : <span className="text-slate-400">—</span>}
           </div>
         ) : (
-          <textarea
-            className="w-full resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
-            rows={2}
-            placeholder="Papildu komentāri par šo avotu…"
+          <AdminAiPolishTextareaShell
             value={value.comments}
+            onPolished={(next) => onChange({ ...value, comments: next })}
             disabled={disabled}
-            onChange={(e) => onChange({ ...value, comments: e.target.value })}
-          />
+          >
+            <textarea
+              className="w-full resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
+              rows={2}
+              placeholder="Papildu komentāri par šo avotu…"
+              value={value.comments}
+              disabled={disabled}
+              onChange={(e) => onChange({ ...value, comments: e.target.value })}
+            />
+          </AdminAiPolishTextareaShell>
         )}
       </div>
       </div>

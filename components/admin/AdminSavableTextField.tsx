@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 
 const toolbarBtn =
   "rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] font-semibold tracking-tight text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-40";
@@ -174,15 +175,17 @@ export function AdminSavableTextField({
           </div>
         )
       ) : multiline ? (
-        <textarea
-          id={id}
-          className={`${fieldClass} resize-y ${textareaExtraClass}`.trim()}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          spellCheck
-          disabled={disabled}
-        />
+        <AdminAiPolishTextareaShell value={value} onPolished={onChange} disabled={disabled}>
+          <textarea
+            id={id}
+            className={`${fieldClass} resize-y ${textareaExtraClass}`.trim()}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            spellCheck
+            disabled={disabled}
+          />
+        </AdminAiPolishTextareaShell>
       ) : flexRowWithAdornment ? (
         <div className="flex min-w-0 items-center gap-1">
           <input
