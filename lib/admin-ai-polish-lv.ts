@@ -1,7 +1,7 @@
 import "server-only";
 
 /**
- * Google Gemini (server only) — tiešs REST izsaukums uz `/v1beta/` (v1 bieži met 404 šim modelim).
+ * Google Gemini (server only) — AI Studio Free Tier: `/v1beta/models/gemini-1.5-flash:generateContent`.
  * `GEMINI_API_KEY` no `process.env`; klienta komponenti izsauc tikai API maršrutus.
  */
 
@@ -17,9 +17,9 @@ const MAX_INPUT_CHARS = 48_000;
 
 /**
  * v1beta REST ceļš: `/v1beta/models/{modelId}:generateContent` — viens `models/` segments.
- * Noklusējums ar versijas sufiksu — `gemini-1.5-flash` bieži neatrodas bez `-001`.
+ * Free Tier: noklusējums `gemini-1.5-flash` (bez `-001`).
  */
-const DEFAULT_GEMINI_MODEL_ID = "gemini-1.5-flash-001";
+const DEFAULT_GEMINI_MODEL_ID = "gemini-1.5-flash";
 
 function getGeminiModelIdForUrl(): string {
   const raw = process.env.GEMINI_MODEL?.trim();
@@ -78,6 +78,8 @@ async function geminiGenerateContent(
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: { temperature },
   };
+
+  console.log("Sūtu pieprasījumu uz Gemini Free Tier...");
 
   const response = await fetch(url, {
     method: "POST",
