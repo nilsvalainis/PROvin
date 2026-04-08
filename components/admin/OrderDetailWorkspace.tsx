@@ -80,6 +80,7 @@ import {
   vendorAvotuTrafficLevel,
 } from "@/lib/admin-block-traffic-status";
 import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
+import { ChevronDown } from "lucide-react";
 
 export type OrderWorkspacePayload = {
   sessionId: string;
@@ -1342,8 +1343,41 @@ export function OrderDetailWorkspace({
 
       {showPortfolioPortal ? createPortal(portfolioSection, portfolioPortalEl!) : null}
 
-      <div className="xl:grid xl:grid-cols-[10.5rem_minmax(0,1fr)] xl:gap-5 xl:items-start">
-        <AdminOrderProgressSidebar items={progressNavItems} />
+      <div className="xl:grid xl:grid-cols-[12rem_minmax(0,1fr)] xl:gap-5 xl:items-start">
+        <AdminOrderProgressSidebar
+          items={progressNavItems}
+          summaryPanel={
+            <>
+              <div className="mb-1.5 flex items-center justify-between gap-1">
+                <p className="min-w-0 text-[9px] font-bold uppercase tracking-wide text-[var(--color-provin-muted)]">
+                  1. Kopsavilkums
+                </p>
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-200/80 bg-white/90 text-slate-600 hover:bg-slate-50"
+                  aria-expanded={!stickySummaryMinimized}
+                  aria-label={stickySummaryMinimized ? "Rādīt kopsavilkumu" : "Sakļaut kopsavilkumu"}
+                  onClick={() => setStickySummaryMinimized((v) => !v)}
+                >
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform ${stickySummaryMinimized ? "-rotate-90" : ""}`}
+                    aria-hidden
+                  />
+                </button>
+              </div>
+              {!stickySummaryMinimized ? (
+                <textarea
+                  className={`${bulkTextareaClass} min-h-[180px] w-full resize-y bg-white/80`}
+                  value={ws.iriss}
+                  onChange={(e) => setIrissSummary(e.target.value)}
+                  placeholder="Raksti šeit — sinhronizējas ar 4. sadaļas 1. lauku."
+                  spellCheck
+                  aria-label="Kopsavilkums (sānu panelis)"
+                />
+              ) : null}
+            </>
+          }
+        />
         <div className="min-w-0 space-y-1.5">
           <AdminOrderProgressNavStrip items={progressNavItems} />
           {portfolioPortalDomId && !portfolioPortalTargetInParent ? (
@@ -1704,33 +1738,6 @@ export function OrderDetailWorkspace({
       </section>
         </div>
       </div>
-      <aside
-        className={`hidden xl:block fixed left-3 top-24 z-30 w-[22rem] rounded-xl border-0 bg-white/70 backdrop-blur-sm shadow-[0_2px_22px_rgba(15,23,42,0.08)] ${
-          stickySummaryMinimized ? "p-2" : "p-3"
-        }`}
-        aria-label="Peldošais kopsavilkuma logs"
-      >
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-600">1. Kopsavilkums (Sticky)</p>
-          <button
-            type="button"
-            className="rounded-md border border-slate-200/80 bg-white/80 px-2 py-1 text-[10px] text-slate-600 hover:bg-slate-50"
-            onClick={() => setStickySummaryMinimized((v) => !v)}
-          >
-            {stickySummaryMinimized ? "Atvērt" : "Minimizēt"}
-          </button>
-        </div>
-        {!stickySummaryMinimized ? (
-          <textarea
-            className={`${bulkTextareaClass} min-h-[220px] w-full resize-y bg-white/70`}
-            value={ws.iriss}
-            onChange={(e) => setIrissSummary(e.target.value)}
-            placeholder="Raksti kopsavilkumu šeit — saturs sinhronizējas ar 4. sadaļas 1. lauku."
-            spellCheck
-            aria-label="Peldošais kopsavilkuma lauks"
-          />
-        ) : null}
-      </aside>
     </div>
   );
 }
