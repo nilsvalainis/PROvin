@@ -11,7 +11,6 @@
     "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
     "lucide-react": "^0.468.0",
     "next": "^15.2.4",
     "next-intl": "^4.9.0",

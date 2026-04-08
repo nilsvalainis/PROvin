@@ -109,7 +109,9 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
   let session: Stripe.Checkout.Session;
   try {
     const stripe = getStripe();
-    session = await stripe.checkout.sessions.retrieve(sessionId);
+    session = await stripe.checkout.sessions.retrieve(sessionId, {
+      timeout: 10_000,
+    });
   } catch {
     if (demo) return demo as AdminOrderDetail;
     return null;
