@@ -45,8 +45,8 @@ export function AdminAiPolishTextareaShell({
       });
       const data = (await res.json()) as { text?: string; error?: string };
       if (!res.ok) {
-        if (data.error === "missing_openai_key") {
-          setError("Nav API atslēgas — skat. .env.local");
+        if (data.error === "missing_gemini_key") {
+          setError("Nav GEMINI_API_KEY");
         } else {
           setError("Neizdevās");
         }
@@ -77,9 +77,9 @@ export function AdminAiPolishTextareaShell({
         className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-none border-0 bg-transparent p-0 text-[15px] leading-none text-[#0061D2] shadow-none transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
         onClick={() => void run()}
         disabled={disabled || loading || !value.trim()}
-        title="AI: labot latviešu gramatiku un stilu"
+        title="Google Gemini: labot latviešu gramatiku un stilu"
         aria-busy={loading}
-        aria-label="AI: labot latviešu gramatiku un stilu"
+        aria-label="Google Gemini: labot latviešu gramatiku un stilu"
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin text-[#0061D2]" aria-hidden />
@@ -90,7 +90,7 @@ export function AdminAiPolishTextareaShell({
       {error ? (
         <p
           className="pointer-events-none absolute bottom-0 left-0 right-8 truncate text-[9px] text-amber-800/90"
-          title="Projekta saknē (mapē ar package.json) izveido vai papildini .env.local: OPENAI_API_KEY=sk-… — pēc tam restartē npm run dev. Produkcijā: Vercel → Environment Variables."
+          title="Projekta saknē (mapē ar package.json) izveido vai papildini .env.local: GEMINI_API_KEY=… (Google AI Studio) — pēc tam restartē npm run dev. Produkcijā: Vercel → Environment Variables."
         >
           {error}
         </p>

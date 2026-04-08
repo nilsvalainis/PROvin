@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { polishLatvianTextWithOpenAi } from "@/lib/admin-ai-polish-lv";
+import { getGeminiApiKeyFromEnv, polishLatvianTextWithGemini } from "@/lib/admin-ai-polish-lv";
 
 export const maxDuration = 60;
 
@@ -8,6 +8,11 @@ export async function POST(req: Request) {
   const ok = await getAdminSession();
   if (!ok) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const apiKey = getGeminiApiKeyFromEnv();
+  if (!apiKey) {
+    return NextResponse.json({ error: "missing_gemini_key" }, { status: 503 });
   }
 
   let body: unknown;
@@ -25,13 +30,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    const polished = await polishLatvianTextWithOpenAi(text);
+    const polished = await polishLatvianTextWithGemini(text, apiKey);
     return NextResponse.json({ text: polished });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
-    if (msg === "missing_openai_key") {
-      return NextResponse.json({ error: "missing_openai_key" }, { status: 503 });
-    }
     return NextResponse.json({ error: "polish_failed", detail: msg }, { status: 502 });
   }
 }
