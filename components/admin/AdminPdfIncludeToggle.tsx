@@ -11,11 +11,11 @@ export function AdminPdfIncludeToggle({
   id?: string;
 }) {
   return (
-    <label className="inline-flex cursor-pointer select-none items-center gap-1.5 text-[10px] font-medium text-[var(--color-provin-muted)]">
+    <label className="inline-flex cursor-pointer select-none items-center gap-1.5 text-[10px] font-medium text-[var(--color-provin-muted)] opacity-60 transition-opacity hover:opacity-100">
       <input
         id={id}
         type="checkbox"
-        className="h-3.5 w-3.5 shrink-0 rounded border-slate-300 text-[var(--color-provin-accent)] focus:ring-[var(--color-provin-accent)]/25"
+        className="h-3.5 w-3.5 shrink-0 rounded border-slate-300/80 text-[var(--color-provin-accent)] opacity-90 focus:ring-[var(--color-provin-accent)]/25"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />

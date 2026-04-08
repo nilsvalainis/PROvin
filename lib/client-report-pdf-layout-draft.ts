@@ -13,7 +13,7 @@ function esc(s: string): string {
 function pdfV1PanelHead(title: string, titleIconHtml = ""): string {
   const icon =
     titleIconHtml.trim() !== ""
-      ? `<span class="pdf-sec-ico-bubble pdf-v1-panel-ico-bubble" aria-hidden="true">${titleIconHtml}</span>`
+      ? `<span class="pdf-sec-ico-wrap pdf-v1-panel-ico-wrap" aria-hidden="true">${titleIconHtml}</span>`
       : "";
   return `<div class="pdf-v1-panel-head">${icon}<p class="pdf-v1-panel-title">${esc(title)}</p></div>`;
 }
@@ -52,8 +52,8 @@ export function pdfLayoutDraftExtraCss(): string {
         background:#fff;box-shadow:0 4px 20px rgba(15,23,42,.07);
       }
       .pdf-v1-panel-head{display:flex;align-items:center;gap:10px;margin:0 0 6px;flex-wrap:wrap}
-      .pdf-v1-panel-ico-bubble{flex-shrink:0}
-      .pdf-v1-panel-ico-bubble .pdf-ico{width:18px;height:18px}
+      .pdf-v1-panel-ico-wrap{flex-shrink:0}
+      .pdf-v1-panel-ico-wrap .pdf-ico{width:16px;height:16px}
       .pdf-v1-notes-client-wrap{
         margin:0;padding:10px 12px;border-radius:12px;background:#F6FFF8;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;

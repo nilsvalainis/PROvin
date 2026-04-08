@@ -10,15 +10,15 @@ function accordionStorageKey(sessionId: string, blockId: string) {
 function CaretIcon({ expanded }: { expanded: boolean }) {
   return (
     <svg
-      width="16"
-      height="16"
+      width="15"
+      height="15"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={`shrink-0 transition-transform duration-200 ${expanded ? "rotate-0" : "-rotate-90"}`}
+      className={`shrink-0 opacity-50 transition-opacity duration-200 hover:opacity-100 group-hover:opacity-100 ${expanded ? "rotate-0" : "-rotate-90"}`}
       aria-hidden
     >
       <path d="m6 9 6 6 6-6" />
@@ -86,7 +86,9 @@ export function AdminCollapsibleShell({
   const strip = trafficLevel ? TRAFFIC_HEADER_STRIP_CLASS[trafficLevel] : "";
 
   return (
-    <div className={`overflow-hidden rounded-lg border border-slate-200/90 bg-white shadow-sm ${strip} ${className}`}>
+    <div
+      className={`overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] ${strip} ${className}`}
+    >
       <div className="flex min-w-0 items-stretch gap-0">
         <div
           className="min-w-0 flex-1 cursor-pointer select-none"
@@ -105,15 +107,17 @@ export function AdminCollapsibleShell({
         </div>
         <div
           data-accordion-no-toggle
-          className="flex shrink-0 flex-col items-stretch justify-center gap-1 border-l border-slate-200/80 bg-slate-50/50 px-2 py-1.5"
+          className="group flex shrink-0 flex-col items-stretch justify-center gap-0.5 border-l-0 bg-transparent px-1.5 py-1"
         >
           {headerActions ? (
-            <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">{headerActions}</div>
+            <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 opacity-70 transition-opacity hover:opacity-100">
+              {headerActions}
+            </div>
           ) : null}
           <button
             type="button"
             data-accordion-no-toggle
-            className="flex h-8 w-full min-w-[2rem] items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-200/50 hover:text-slate-900"
+            className="flex h-7 w-full min-w-[1.75rem] items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-200/40 hover:text-slate-800"
             aria-expanded={!collapsed}
             aria-label={collapsed ? "Atvērt bloku" : "Sakļaut bloku"}
             onClick={(e) => {
@@ -125,7 +129,7 @@ export function AdminCollapsibleShell({
           </button>
         </div>
       </div>
-      {!collapsed ? <div className="border-t border-slate-100/90">{children}</div> : null}
+      {!collapsed ? <div className="border-t-0 pt-0">{children}</div> : null}
     </div>
   );
 }

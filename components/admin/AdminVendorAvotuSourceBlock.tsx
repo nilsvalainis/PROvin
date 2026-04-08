@@ -3,7 +3,7 @@
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
-import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
+import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import type { LtabIncidentRow, VendorAvotuBlockState } from "@/lib/admin-source-blocks";
 import {
   CSDD_MILEAGE_UNIFIED_TITLE,
@@ -21,7 +21,7 @@ import {
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
-import { SUBHEADING_ICON } from "@/lib/section-icons";
+import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
@@ -107,8 +107,8 @@ export function AdminVendorAvotuSourceBlock({
     >
       <div className={`flex min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}>
       <div className={`min-h-0 flex-1 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>
-        <p className="mb-1.5 flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
-          <SectionLineIcon id={SUBHEADING_ICON.mileage} />
+        <p className="mb-1.5 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+          <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
         <div
@@ -228,8 +228,8 @@ export function AdminVendorAvotuSourceBlock({
         ) : null}
 
         <div className="mt-4 border-t border-slate-200 pt-3">
-          <p className="mb-2 flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
-            <SectionLineIcon id={SUBHEADING_ICON.incidents} />
+          <p className="mb-2 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            <AdminProvinLucide icon={SUBHEADING_LUCIDE.incidents} />
             {NEGADIJUMU_VESTURE_TITLE}
           </p>
           <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">

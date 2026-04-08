@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { DEFAULT_PDF_VISIBILITY, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
-import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
+import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
+import { META_ORDER_LUCIDE } from "@/lib/admin-lucide-registry";
 import { AdminListingUrlEndAdornment } from "@/components/admin/AdminListingUrlToolbar";
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
 import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/AdminVinClipboardAndLinks";
@@ -189,12 +190,12 @@ export function AdminOrderDetailView({
 
   const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}-${fieldUiRev}`;
 
-  /** AdminCollapsibleShell — iepriekšējais `rounded-xl … ring-1` meta bloku izskats (bez iekšējā `p-2`). */
+  /** Levitējošs meta bloks — caurspīdīgs, bez rāmja. */
   const metaAccordionShellClass =
-    "rounded-xl !bg-slate-50/40 shadow-sm ring-1 ring-slate-200/70 border-slate-200/80";
-  const sectionTitle = `font-bold uppercase tracking-wide text-[var(--color-apple-text)] ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
+    "rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)]";
+  const sectionTitle = `font-medium uppercase tracking-wide text-slate-600 ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
   const sectionHint = "mt-0.5 text-[10px] leading-tight text-[var(--color-provin-muted)]";
-  const metaLabel = "text-[10px] font-medium text-[var(--color-provin-muted)]";
+  const metaLabel = "text-[9px] font-medium text-slate-400";
   const metaValue = "text-[11px] text-[var(--color-apple-text)]";
   /** Šaurā kolonnā — vertikāls saraksts (kopīgs ar xl 3-kolonnu režģi). */
   const metaStack = "mt-1 flex flex-col gap-1 text-[11px]";
@@ -260,7 +261,7 @@ export function AdminOrderDetailView({
               className={metaAccordionShellClass}
               header={
                 <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0 px-2 py-2`}>
-                  <SectionLineIcon id="wallet" className="!h-5 !w-5" />
+                  <AdminProvinLucide icon={META_ORDER_LUCIDE.payment} />
                   Maksājums
                 </h2>
               }
@@ -300,7 +301,7 @@ export function AdminOrderDetailView({
               className={metaAccordionShellClass}
               header={
                 <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0 px-2 py-2`}>
-                  <SectionLineIcon id="car" className="!h-5 !w-5" />
+                  <AdminProvinLucide icon={META_ORDER_LUCIDE.vehicle} />
                   <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
                     <span>Transportlīdzeklis un sludinājums</span>
                     {orderEditsAutosaveFlash ? (
@@ -413,7 +414,7 @@ export function AdminOrderDetailView({
               className={metaAccordionShellClass}
               header={
                 <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0 px-2 py-2`}>
-                  <SectionLineIcon id="user" className="!h-5 !w-5" />
+                  <AdminProvinLucide icon={META_ORDER_LUCIDE.client} />
                   Klienta dati
                 </h2>
               }
@@ -466,7 +467,7 @@ export function AdminOrderDetailView({
             className={metaAccordionShellClass}
             header={
               <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0 px-2 py-2`}>
-                <SectionLineIcon id="messageSquare" className="!h-5 !w-5" />
+                <AdminProvinLucide icon={META_ORDER_LUCIDE.notes} />
                 <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
                   <span>Klienta komentārs</span>
                   {orderEditsAutosaveFlash ? (

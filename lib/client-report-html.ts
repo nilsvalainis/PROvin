@@ -146,7 +146,7 @@ function buildPdfCountryFlagCellHtml(countryLabel: string): string {
 }
 
 function sectionHeadBrand(icon: string, title: string): string {
-  return `<div class="pdf-sec-head pdf-sec-head--brand"><span class="pdf-sec-ico-bubble" aria-hidden="true">${icon}</span><h2 class="pdf-sec pdf-sec--nobar">${escapeHtml(title)}</h2></div>`;
+  return `<div class="pdf-sec-head pdf-sec-head--brand"><span class="pdf-sec-ico-wrap" aria-hidden="true">${icon}</span><h2 class="pdf-sec pdf-sec--nobar">${escapeHtml(title)}</h2></div>`;
 }
 
 function pdfFieldLabelWithIcon(iconHtml: string, label: string): string {
@@ -155,8 +155,8 @@ function pdfFieldLabelWithIcon(iconHtml: string, label: string): string {
 
 function pdfListingAnalysisFieldIconHtml(title: string): string {
   const L = LISTING_ANALYSIS_SUBSECTIONS;
-  if (title === L.sellerPortrait) return sectionIconPdfHtml("user");
-  if (title === L.photoAnalysis) return sectionIconPdfHtml("camera");
+  if (title === L.sellerPortrait) return sectionIconPdfHtml("award");
+  if (title === L.photoAnalysis) return sectionIconPdfHtml("scanSearch");
   return sectionIconPdfHtml("fileText");
 }
 
@@ -316,7 +316,7 @@ export function buildUnifiedMileageTableHtml(
       ? `<p class="pdf-mileage-smart-note" role="note">Rādīti pēdējie 10 ieraksti un visi ar odometra anomāliju; vēl ${hiddenCount} ieraksti nav rādīti.</p>`
       : "";
 
-  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("clock"), "NOBRAUKUMA VĒSTURE")}${chartHtml}${dualTables}${note}</div>`;
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE")}${chartHtml}${dualTables}${note}</div>`;
 }
 
 function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
@@ -357,7 +357,7 @@ function buildCsddAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilitySett
   const hasRaw = p.csdd.trim().length > 0;
   if (!hasStruct && !hasRaw) return "";
 
-  const head = sectionHeadBrand(sectionIconPdfHtml("fileText"), PDF_SUB_CSDD);
+  const head = sectionHeadBrand(sectionIconPdfHtml("scrollText"), PDF_SUB_CSDD);
 
   if (hasStruct && p.csddForm) {
     const f = p.csddForm;
@@ -434,7 +434,7 @@ function buildAutoRecordsAvotuSubsection(
   if (!b || !autoRecordsBlockHasContent(b)) return "";
   const hasComments = b.comments.trim().length > 0;
   if (!hasComments) return "";
-  const head = sectionHeadBrand(sectionIconPdfHtml("wrench"), SOURCE_BLOCK_LABELS.auto_records);
+  const head = sectionHeadBrand(sectionIconPdfHtml("shieldCheck"), SOURCE_BLOCK_LABELS.auto_records);
   const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(b.comments)}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
@@ -548,7 +548,7 @@ function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySett
   const parts: string[] = [];
   parts.push(`<div class="pdf-iriss-approved" role="region">`);
   parts.push(
-    `<div class="pdf-iriss-approved-header"><span class="pdf-sec-ico-bubble pdf-iriss-main-bubble" aria-hidden="true">${sectionIconPdfHtmlSized("shieldCheck", 20)}</span><h2 class="pdf-iriss-approved-title">${escapeHtml(PDF_APPROVED_BY_IRISS)}</h2></div>`,
+    `<div class="pdf-iriss-approved-header"><span class="pdf-sec-ico-wrap pdf-iriss-main-ico" aria-hidden="true">${sectionIconPdfHtmlSized("shieldCheck", 18)}</span><h2 class="pdf-iriss-approved-title">${escapeHtml(PDF_APPROVED_BY_IRISS)}</h2></div>`,
   );
   parts.push(`<div class="pdf-iriss-approved-body">`);
   if (iriss) {
@@ -627,9 +627,9 @@ function clientReportPrintCss(): string {
       .sheet{background:#fff;padding:0;}
       .pdf-sec-head{display:flex;align-items:center;gap:8px;margin:0.75rem 0 0.35rem;}
       .pdf-sec-head--nobar{margin-top:0;}
-      .pdf-sec-head .pdf-ico{color:${PDF_BRAND_BLUE};width:14px;height:14px;flex-shrink:0;}
+      .pdf-sec-head .pdf-ico{color:${PDF_BRAND_BLUE};width:16px;height:16px;flex-shrink:0;opacity:0.88;}
       h2.pdf-sec{
-        font-size:0.75rem;font-weight:700;margin:0;flex:1;color:#0f172a;letter-spacing:0.06em;line-height:1.35;
+        font-size:0.72rem;font-weight:500;margin:0;flex:1;color:#475569;letter-spacing:0.06em;line-height:1.35;
         padding:0 0 0 8px;border-left:2px solid ${PDF_BRAND_BLUE};text-transform:uppercase;
       }
       h2.pdf-sec--nobar{border-left:none;padding-left:0;}
@@ -640,12 +640,10 @@ function clientReportPrintCss(): string {
       .pdf-subhead-ico .pdf-ico{width:14px;height:14px;}
       h3.pdf-sub.pdf-sub--with-ico{margin:0;border-left:none;padding:0;}
       .pdf-sec-head--brand{align-items:center;gap:10px;margin:0 0 12px;}
-      .pdf-sec-ico-bubble{
-        display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;
-        background:rgba(0,97,210,0.1);color:${PDF_BRAND_BLUE};flex-shrink:0;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      .pdf-sec-ico-wrap{
+        display:inline-flex;align-items:center;justify-content:center;color:${PDF_BRAND_BLUE};flex-shrink:0;
       }
-      .pdf-sec-ico-bubble .pdf-ico{width:18px;height:18px;}
+      .pdf-sec-ico-wrap .pdf-ico{width:16px;height:16px;}
       .pdf-source-section-body{width:100%;margin:0;padding:0;}
       .pdf-field-label{font-size:0.68rem;font-weight:600;margin:0.45rem 0 0.2rem;color:#334155;letter-spacing:0.02em;}
       .pdf-field-label--row{display:flex;align-items:center;gap:8px;}
@@ -871,10 +869,8 @@ function clientReportPrintCss(): string {
         background:#fff;border-bottom:1px solid #f1f5f9;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-iriss-approved-header .pdf-iriss-main-bubble{
-        width:40px!important;height:40px!important;flex-shrink:0;
-      }
-      .pdf-iriss-main-bubble .pdf-ico{width:20px;height:20px;}
+      .pdf-iriss-approved-header .pdf-iriss-main-ico{flex-shrink:0;}
+      .pdf-iriss-main-ico .pdf-ico{width:18px;height:18px;}
       .pdf-iriss-approved-title{
         margin:0;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0f172a;
       }
@@ -967,12 +963,12 @@ export function buildClientReportDocumentHtml(args: {
   if (alertBannersHtml) lines.push(alertBannersHtml);
 
   const payBlock = vis.payment
-    ? buildPdfAdminMirrorPaymentBlock(p, money, dateFmt, sectionIconPdfHtml("wallet"))
+    ? buildPdfAdminMirrorPaymentBlock(p, money, dateFmt, sectionIconPdfHtml("creditCard"))
     : "";
   if (payBlock) lines.push(payBlock);
-  const vehicleBlock = vis.vehicle ? buildPdfAdminMirrorVehicleBlock(p, makeModel, sectionIconPdfHtml("car")) : "";
+  const vehicleBlock = vis.vehicle ? buildPdfAdminMirrorVehicleBlock(p, makeModel, sectionIconPdfHtml("carFront")) : "";
   if (vehicleBlock) lines.push(vehicleBlock);
-  const clientBlock = vis.client ? buildPdfAdminMirrorClientBlock(p, sectionIconPdfHtml("user")) : "";
+  const clientBlock = vis.client ? buildPdfAdminMirrorClientBlock(p, sectionIconPdfHtml("userCircle")) : "";
   if (clientBlock) lines.push(clientBlock);
   const notesBlock = vis.notes ? buildPdfAdminMirrorNotesBlock(p.notes, sectionIconPdfHtml("messageSquare")) : "";
   if (notesBlock) lines.push(notesBlock);

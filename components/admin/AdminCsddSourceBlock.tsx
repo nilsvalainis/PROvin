@@ -2,7 +2,7 @@
 
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
-import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
+import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import type { CsddFormFields, CsddMileageRow } from "@/lib/admin-source-blocks";
 import {
   CSDD_FORM_STRUCTURED_FIELDS,
@@ -15,7 +15,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
-import { SUBHEADING_ICON } from "@/lib/section-icons";
+import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
   getNextInspectionDateUiFlag,
   getParticulateMatterUiFlag,
@@ -266,8 +266,8 @@ export function AdminCsddSourceBlock({
 
       <div className="mt-3 border-t border-slate-200/80 pt-2">
         <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-          <p className="flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
-            <SectionLineIcon id={SUBHEADING_ICON.mileage} />
+          <p className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
             {CSDD_MILEAGE_UNIFIED_TITLE}
           </p>
           <AdminPdfIncludeToggle checked={pdfIncludeMileageTable} onChange={onPdfIncludeMileageTableChange} />

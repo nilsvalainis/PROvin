@@ -8,16 +8,10 @@ import {
   LISTING_ANALYSIS_SUBSECTIONS,
   type ListingAnalysisBlockState,
 } from "@/lib/admin-source-blocks";
-import type { SectionIconId } from "@/lib/section-icons";
-
-function listingAnalysisFieldIcon(key: keyof ListingAnalysisBlockState): SectionIconId {
-  if (key === "sellerPortrait") return "user";
-  if (key === "photoAnalysis") return "camera";
-  return "fileText";
-}
+import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
 
 const ta =
-  "min-h-[72px] w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
+  "min-h-[72px] w-full rounded-md border border-slate-200/50 bg-transparent px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20";
 
 type Props = {
   value?: ListingAnalysisBlockState | null;
@@ -49,12 +43,12 @@ export function AdminListingAnalysisSourceBlock({
   const shell =
     variant === "priority"
       ? "w-full min-w-0 flex flex-col"
-      : "flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-white p-2 shadow-sm";
+      : "flex h-full min-h-0 flex-col rounded-xl border-0 bg-transparent p-2 shadow-[0_2px_22px_rgba(15,23,42,0.055)]";
 
   const taPriority =
-    "min-h-[72px] w-full rounded-md border border-emerald-200/90 bg-white/95 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/25";
+    "min-h-[72px] w-full rounded-md border border-emerald-200/45 bg-transparent px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-emerald-500/70 focus:outline-none focus:ring-1 focus:ring-emerald-500/20";
   const taPriorityCompact =
-    "min-h-[52px] w-full rounded-md border border-emerald-200/90 bg-white/95 px-1.5 py-1 text-[10px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/25";
+    "min-h-[52px] w-full rounded-md border border-emerald-200/45 bg-transparent px-1.5 py-1 text-[10px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-emerald-500/70 focus:outline-none focus:ring-1 focus:ring-emerald-500/20";
 
   const pri = variant === "priority";
   const dense = compact && pri;
@@ -68,15 +62,15 @@ export function AdminListingAnalysisSourceBlock({
         {fields.map(({ key, title }) => (
           <ListingAnalysisSubsectionHeading
             key={key}
-            iconId={listingAnalysisFieldIcon(key)}
+            icon={LISTING_ANALYSIS_FIELD_LUCIDE[key]}
             title={title}
             compact={dense}
           >
             <p
               className={
                 dense
-                  ? "mb-0.5 text-[9px] font-medium text-[var(--color-provin-muted)]"
-                  : "mb-0.5 text-[10px] font-medium text-[var(--color-provin-muted)]"
+                  ? "mb-0.5 text-[9px] font-medium text-slate-400"
+                  : "mb-0.5 text-[10px] font-medium text-slate-400"
               }
             >
               {LISTING_ANALYSIS_COMMENT_LABEL}
@@ -86,9 +80,9 @@ export function AdminListingAnalysisSourceBlock({
                 className={
                   pri
                     ? dense
-                      ? "min-h-[32px] whitespace-pre-wrap rounded border border-emerald-100 bg-white/95 px-1.5 py-1 text-[10px] text-[var(--color-provin-muted)]"
-                      : "min-h-[48px] whitespace-pre-wrap rounded-md border border-emerald-100 bg-white/95 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
-                    : "min-h-[48px] whitespace-pre-wrap rounded-md border border-slate-100 bg-white/90 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
+                      ? "min-h-[32px] whitespace-pre-wrap rounded border border-emerald-100/50 bg-transparent px-1.5 py-1 text-[10px] text-slate-500"
+                      : "min-h-[48px] whitespace-pre-wrap rounded-md border border-emerald-100/50 bg-transparent px-2 py-1.5 text-[11px] text-slate-500"
+                    : "min-h-[48px] whitespace-pre-wrap rounded-md border border-slate-200/40 bg-transparent px-2 py-1.5 text-[11px] text-slate-500"
                 }
               >
                 {v[key].trim() || "—"}

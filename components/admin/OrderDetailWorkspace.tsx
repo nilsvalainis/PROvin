@@ -67,7 +67,7 @@ import {
 } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
 import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
-import { SUBHEADING_ICON } from "@/lib/section-icons";
+import { LISTING_ANALYSIS_CHROME_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
   TRAFFIC_HEADER_STRIP_CLASS,
   alertBannersTrafficLevel,
@@ -136,7 +136,7 @@ const PORTFOLIO_INLINE_VISIBLE_MAX = 1;
 const workspaceToolbarBtn =
   "rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] font-semibold tracking-tight text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50";
 
-const workspaceSectionTitle = `font-bold uppercase tracking-wide text-[var(--color-apple-text)] ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
+const workspaceSectionTitle = `font-medium uppercase tracking-wide text-slate-600 ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
 
 const workspaceSectionShell =
   "rounded-xl bg-white p-2 shadow-sm ring-1 ring-slate-200/70";
@@ -1491,15 +1491,15 @@ export function OrderDetailWorkspace({
         <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
           Lasīšanas / labošanas režīms kopīgs ar 2. sadaļas rīkjoslu (Saglabāt / Labot).
         </p>
-        <div className="mt-1.5 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200/70">
+        <div className="mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)]">
           <ListingAnalysisMainBlockTitleRow
-            iconId="search"
+            icon={LISTING_ANALYSIS_CHROME_LUCIDE.mainSection}
             title="SLUDINĀJUMA ANALĪZE"
             trafficStripClass={TRAFFIC_HEADER_STRIP_CLASS[traffic.listingSection]}
           />
-          <div className="space-y-4 bg-slate-50/40 px-2 pb-2 pt-3">
+          <div className="space-y-3 bg-transparent px-2 pb-2 pt-2">
             <ListingAnalysisSubsectionHeading
-              iconId={SUBHEADING_ICON.listingHistory}
+              icon={LISTING_ANALYSIS_CHROME_LUCIDE.listingHistory}
               title={LISTING_HISTORY_SUBSECTION_TITLE}
             >
               <AdminTirgusSourceBlock

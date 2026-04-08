@@ -2,7 +2,7 @@
 
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
-import { SectionLineIcon } from "@/components/icons/SectionLineIcon";
+import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import type { AutoRecordsBlockState, AutoRecordsServiceRow } from "@/lib/admin-source-blocks";
 import {
   CSDD_MILEAGE_UNIFIED_TITLE,
@@ -17,7 +17,7 @@ import {
   parseAutoRecordsPaste,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
-import { SUBHEADING_ICON } from "@/lib/section-icons";
+import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
@@ -115,8 +115,8 @@ export function AdminAutoRecordsSourceBlock({
           />
         )}
 
-        <p className="mb-1.5 flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
-          <SectionLineIcon id={SUBHEADING_ICON.mileage} />
+        <p className="mb-1.5 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+          <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
         <div
