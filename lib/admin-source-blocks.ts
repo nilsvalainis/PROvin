@@ -413,11 +413,14 @@ export type VendorAvotuBlockState = {
 /** Citi avoti — tā pati struktūra kā AutoDNA / CarVertical (nobraukums + negadījumi + komentāri). */
 export type CitiAvotiBlockState = VendorAvotuBlockState;
 
-/** Sludinājuma analīze — trīs brīvā teksta lauki (PDF: apakškategorijas ar „Komentāri”). */
+/** Sludinājuma analīze — brīvā teksta lauki; iekopētais apraksts netiek drukāts PDF (tikai pārdošanas konteksts). */
 export type ListingAnalysisBlockState = {
   sellerPortrait: string;
   photoAnalysis: string;
-  listingDescription: string;
+  /** Iekopēts neapstrādāts sludinājuma teksts — tikai adminā, nav PDF. */
+  listingPasteRaw: string;
+  /** Eksperta / AI sagatavots konteksts — PDF. */
+  listingSalesContext: string;
 };
 
 export type WorkspaceSourceBlocks = {
@@ -468,22 +471,26 @@ export function emptyCitiAvotiBlock(): CitiAvotiBlockState {
 }
 
 export function emptyListingAnalysisBlock(): ListingAnalysisBlockState {
-  return { sellerPortrait: "", photoAnalysis: "", listingDescription: "" };
+  return { sellerPortrait: "", photoAnalysis: "", listingPasteRaw: "", listingSalesContext: "" };
 }
 
 export function listingAnalysisHasContent(b: ListingAnalysisBlockState): boolean {
   return (
     b.sellerPortrait.trim().length > 0 ||
     b.photoAnalysis.trim().length > 0 ||
-    b.listingDescription.trim().length > 0
+    b.listingPasteRaw.trim().length > 0 ||
+    b.listingSalesContext.trim().length > 0
   );
 }
 
 export const LISTING_ANALYSIS_SUBSECTIONS = {
   sellerPortrait: "Pārdevēja portrets",
   photoAnalysis: "Fotogrāfiju analīze",
-  listingDescription: "Sludinājuma apraksts",
+  listingSalesContext: "Pārdošanas sludinājuma konteksts",
 } as const;
+
+/** Lauks A — ievade analīzei; nav PDF. */
+export const LISTING_ANALYSIS_LISTING_PASTE_LABEL = "Sludinājuma apraksts (iekopēšanai)";
 
 /** Tirgus dati integrēti „Sludinājuma analīzē” (PDF + admin). */
 export const LISTING_HISTORY_SUBSECTION_TITLE = "Sludinājuma vēsture";
@@ -500,18 +507,27 @@ export function listingAnalysisToPlainText(b: ListingAnalysisBlockState): string
   if (b.photoAnalysis.trim()) {
     parts.push(`${L.photoAnalysis}\nKomentāri\n${b.photoAnalysis.trim()}`);
   }
-  if (b.listingDescription.trim()) {
-    parts.push(`${L.listingDescription}\nKomentāri\n${b.listingDescription.trim()}`);
+  if (b.listingSalesContext.trim()) {
+    parts.push(`${L.listingSalesContext}\nKomentāri\n${b.listingSalesContext.trim()}`);
   }
   return parts.join("\n\n");
 }
 
 function parseListingAnalysisRaw(raw: Record<string, unknown>): ListingAnalysisBlockState {
   const clip = (v: unknown) => String(v ?? "").slice(0, 8000);
+  const sellerPortrait = clip(raw.sellerPortrait);
+  const photoAnalysis = clip(raw.photoAnalysis);
+  const listingPasteRaw = clip(raw.listingPasteRaw);
+  let listingSalesContext = clip(raw.listingSalesContext);
+  const legacyListingDescription = clip(raw.listingDescription);
+  if (!listingSalesContext && legacyListingDescription) {
+    listingSalesContext = legacyListingDescription;
+  }
   return {
-    sellerPortrait: clip(raw.sellerPortrait),
-    photoAnalysis: clip(raw.photoAnalysis),
-    listingDescription: clip(raw.listingDescription),
+    sellerPortrait,
+    photoAnalysis,
+    listingPasteRaw,
+    listingSalesContext,
   };
 }
 

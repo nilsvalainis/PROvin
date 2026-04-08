@@ -480,7 +480,7 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload, vis: PdfVisibi
     };
     cat(L.sellerPortrait, b.sellerPortrait);
     cat(L.photoAnalysis, b.photoAnalysis);
-    cat(L.listingDescription, b.listingDescription);
+    cat(L.listingSalesContext, b.listingSalesContext);
   }
   if (inner.length === 0) return "";
   const parts: string[] = [];

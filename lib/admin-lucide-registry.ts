@@ -21,6 +21,7 @@ import {
   Shield,
   ShieldCheck,
   Tag,
+  ClipboardPaste,
   FileText,
 } from "lucide-react";
 
@@ -55,12 +56,13 @@ export const IRISS_CHROME_LUCIDE = {
 } as const;
 
 export const LISTING_ANALYSIS_FIELD_LUCIDE: Record<
-  "sellerPortrait" | "photoAnalysis" | "listingDescription",
+  "sellerPortrait" | "photoAnalysis" | "listingPasteRaw" | "listingSalesContext",
   LucideIcon
 > = {
   sellerPortrait: Award,
   photoAnalysis: ScanSearch,
-  listingDescription: FileText,
+  listingPasteRaw: ClipboardPaste,
+  listingSalesContext: FileText,
 };
 
 export const SUBHEADING_LUCIDE = {

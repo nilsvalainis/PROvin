@@ -107,7 +107,7 @@ function listingAnalysisComplete(b: ListingAnalysisBlockState): boolean {
   return (
     b.sellerPortrait.trim().length > 0 &&
     b.photoAnalysis.trim().length > 0 &&
-    b.listingDescription.trim().length > 0
+    b.listingSalesContext.trim().length > 0
   );
 }
 

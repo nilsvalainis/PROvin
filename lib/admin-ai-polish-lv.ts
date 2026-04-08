@@ -4,6 +4,10 @@ import "server-only";
 export const LV_POLISH_SYSTEM_PROMPT =
   "Tu esi profesionāls latviešu valodas redaktors un auto eksperta asistents. Tavs uzdevums ir izlabot gramatikas, interpunkcijas un drukas kļūdas iesniegtajā tekstā. Saglabā profesionālu, objektīvu toni, kas raksturīgs auto tehniskajām atskaitēm. Nemaini tehnisko informāciju (VIN, cenas, datus). Ja tekstā ir žargons, aizstāj to ar literāru valodu. Atgriez TIKAI laboto tekstu bez komentāriem.";
 
+/** Sludinājuma iekopētais apraksts → pārdošanas konteksts eksperta atskaitei (admin). */
+export const LV_LISTING_ANALYSIS_SYSTEM_PROMPT =
+  "Tu esi auto tirgus un tehniskās atskaites asistents. Lietotājs iesniedz sludinājuma aprakstu (bieži neapkoptu, kopētu no portāla). Izveido īsu, profesionālu tekstu latviešu valodā laukam „Pārdošanas sludinājuma konteksts”: izcel galveno pārdošanas vēstījumu, būtiskās tehniskās norādes, cenu/ nobraukuma kontekstu (ja minēts), acīmredzamas pretrunas vai riskus. Saglabā objektīvu toni. Atgriez TIKAI gatavo tekstu bez ievada, kopsavilkuma virsraksta vai paskaidrojumiem par uzdevumu.";
+
 const MAX_INPUT_CHARS = 48_000;
 
 const GEMINI_MODEL = "gemini-1.5-flash";
@@ -33,15 +37,20 @@ function extractGeminiText(data: GeminiGenerateResponse): string | null {
   return out || null;
 }
 
-export async function polishLatvianTextWithGemini(raw: string, apiKey: string): Promise<string> {
-  const text = raw.slice(0, MAX_INPUT_CHARS);
+async function geminiGenerateWithSystemPrompt(
+  apiKey: string,
+  systemPrompt: string,
+  userText: string,
+  temperature: number,
+): Promise<string> {
+  const text = userText.slice(0, MAX_INPUT_CHARS);
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       systemInstruction: {
-        parts: [{ text: LV_POLISH_SYSTEM_PROMPT }],
+        parts: [{ text: systemPrompt }],
       },
       contents: [
         {
@@ -50,7 +59,7 @@ export async function polishLatvianTextWithGemini(raw: string, apiKey: string): 
         },
       ],
       generationConfig: {
-        temperature: 0.2,
+        temperature,
       },
     }),
   });
@@ -70,4 +79,12 @@ export async function polishLatvianTextWithGemini(raw: string, apiKey: string): 
     throw new Error("gemini_empty_response");
   }
   return out;
+}
+
+export async function polishLatvianTextWithGemini(raw: string, apiKey: string): Promise<string> {
+  return geminiGenerateWithSystemPrompt(apiKey, LV_POLISH_SYSTEM_PROMPT, raw, 0.2);
+}
+
+export async function analyzeListingPasteForSalesContextWithGemini(raw: string, apiKey: string): Promise<string> {
+  return geminiGenerateWithSystemPrompt(apiKey, LV_LISTING_ANALYSIS_SYSTEM_PROMPT, raw, 0.35);
 }
