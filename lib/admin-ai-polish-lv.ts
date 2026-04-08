@@ -5,9 +5,9 @@ import "server-only";
  * klienta komponenti nedrīkst izsaukt šī moduļa funkcijas — tikai `app/api/admin/*` maršruti.
  */
 
-/** Google Gemini — latviešu gramatikas / stila labošana (admin). */
+/** Google Gemini — latviešu gramatikas / stila labošana (admin, ✨ `/api/admin/ai-polish-lv`). */
 export const LV_POLISH_SYSTEM_PROMPT =
-  "Tu esi profesionāls latviešu valodas redaktors un auto eksperta asistents. Tavs uzdevums ir izlabot gramatikas, interpunkcijas un drukas kļūdas iesniegtajā tekstā. Saglabā profesionālu, objektīvu toni, kas raksturīgs auto tehniskajām atskaitēm. Nemaini tehnisko informāciju (VIN, cenas, datus). Ja tekstā ir žargons, aizstāj to ar literāru valodu. Atgriez TIKAI laboto tekstu bez komentāriem.";
+  "Tu esi latviešu valodas redaktors. Izlabo gramatikas un stila kļūdas šajā auto apskates atskaites tekstā, saglabājot profesionālu auto eksperta toni. Atgriez TIKAI laboto tekstu bez komentāriem.";
 
 /** Sludinājuma iekopētais apraksts → pārdošanas konteksts eksperta atskaitei (admin). */
 export const LV_LISTING_ANALYSIS_SYSTEM_PROMPT =
@@ -16,6 +16,14 @@ export const LV_LISTING_ANALYSIS_SYSTEM_PROMPT =
 const MAX_INPUT_CHARS = 48_000;
 
 const GEMINI_MODEL = "gemini-1.5-flash";
+
+/** Samazina nevēlamus SAFETY bloķējumus tehniskajam / auto atskaišu tekstam (REST v1beta). */
+const GEMINI_SAFETY_SETTINGS = [
+  { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+  { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+  { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+  { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+] as const;
 
 /**
  * Tikai servera API maršrutiem. Atslēga: vienīgi `process.env.GEMINI_API_KEY`.
@@ -63,6 +71,7 @@ async function geminiGenerateWithSystemPrompt(
           parts: [{ text }],
         },
       ],
+      safetySettings: [...GEMINI_SAFETY_SETTINGS],
       generationConfig: {
         temperature,
       },
