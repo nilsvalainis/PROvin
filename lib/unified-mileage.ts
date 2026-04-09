@@ -6,6 +6,7 @@ import {
   CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
   csddMileageRowHasData,
   type AutoRecordsBlockState,
+  type CitiAvotiBlockState,
   type ClientManualVendorBlockPdf,
   type CsddFormFields,
 } from "@/lib/admin-source-blocks";
@@ -27,6 +28,7 @@ export type UnifiedMileageSourcePayload = {
   csddForm?: CsddFormFields | null;
   autoRecordsBlock?: AutoRecordsBlockState | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
+  citiAvotiBlock?: CitiAvotiBlockState | null;
 };
 
 export function parseMileageDateForSort(raw: string): number {
@@ -149,7 +151,63 @@ export function collectUnifiedMileageRows(
     pushRow(dateOut, odoOut, r.country);
   }
 
-  return rows;
+  /**
+   * "Citi avoti" komentāri (legacy / manuāla ievade) — mēģina nolasīt
+   * Datums/Odometrs/Valsts ierakstus, ja tie nav ielikti strukturētajās rindās.
+   */
+  const citiComments = p.citiAvotiBlock?.comments?.trim() ?? "";
+  if (citiComments) {
+    const parsed = parseCitiAvotiMileageFromComments(citiComments);
+    for (const r of parsed) {
+      const dateOut = formatAutoRecordsDateForOutput(r.date);
+      const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
+      pushRow(dateOut, odoOut, r.country);
+    }
+  }
+
+  const dedup = new Set<string>();
+  const out: UnifiedMileageRow[] = [];
+  for (const r of rows) {
+    const k = `${r.date.trim().toLowerCase()}|${r.odometer.replace(/\D/g, "")}|${r.country.trim().toLowerCase()}`;
+    if (dedup.has(k)) continue;
+    dedup.add(k);
+    out.push(r);
+  }
+  return out;
+}
+
+function parseCitiAvotiMileageFromComments(raw: string): { date: string; odometer: string; country: string }[] {
+  const out: { date: string; odometer: string; country: string }[] = [];
+  const lines = raw
+    .split(/\r?\n/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+
+  for (const line of lines) {
+    if (/^NOBRAUKUMA\s+VĒSTURE$/i.test(line) || /datums\s*\|\s*odometrs\s*\|\s*valsts/i.test(line)) {
+      continue;
+    }
+
+    const cols = line.split(/\s*\|\s*|\t+/).map((x) => x.trim());
+    if (cols.length >= 3 && isLikelyDate(cols[0] ?? "") && /\d/.test(cols[1] ?? "")) {
+      out.push({ date: cols[0]!, odometer: cols[1]!, country: cols[2]! });
+      continue;
+    }
+
+    const kv = line.match(
+      /datums\s*[:\-]\s*([^,;|]+)\s*[,;|]\s*odometrs\s*[:\-]\s*([^,;|]+)\s*[,;|]\s*valsts\s*[:\-]\s*(.+)$/i,
+    );
+    if (kv) {
+      out.push({ date: kv[1]!.trim(), odometer: kv[2]!.trim(), country: kv[3]!.trim() });
+    }
+  }
+
+  return out;
+}
+
+function isLikelyDate(raw: string): boolean {
+  const t = raw.trim();
+  return /^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/.test(t) || /^(\d{4})-(\d{2})-(\d{2})$/.test(t);
 }
 
 export function hasAnyOdometerAnomaly(anomalyBySourceOrder: Map<number, boolean>): boolean {

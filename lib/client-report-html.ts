@@ -1044,6 +1044,7 @@ export function buildClientReportDocumentHtml(args: {
           csddForm: p.csddForm,
           autoRecordsBlock: p.autoRecordsBlock ?? null,
           manualVendorBlocks: p.manualVendorBlocks ?? null,
+          citiAvotiBlock: p.citiAvoti ?? null,
           manualLtabBlock: p.manualLtabBlock ?? null,
           tirgusForm: p.tirgusForm ?? null,
         }),

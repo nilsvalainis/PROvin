@@ -206,6 +206,7 @@ export function computeProvinAlertBannersFromWorkspace(
       csddForm: ws.csdd,
       autoRecordsBlock: ws.auto_records,
       manualVendorBlocks: toPdfManualVendorBlocks(ws),
+      citiAvotiBlock: ws.citi_avoti,
       manualLtabBlock: toPdfLtabManualBlock(ws.ltab),
       tirgusForm: ws.tirgus,
     },
