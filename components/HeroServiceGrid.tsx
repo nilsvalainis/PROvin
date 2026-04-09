@@ -14,13 +14,14 @@ const HERO_SVC_ICONS = [Globe2, ScanSearch, AlertTriangle, Headphones] as const;
 const heroSvcIconClass =
   "h-8 w-8 shrink-0 text-[#0061D2] [stroke-width:1.5] sm:h-[32px] sm:w-[32px]";
 
-/** Kartīte: 9-bloku ēna + kreisā akcenta līnija + hover. */
+/** Kartīte: spēcīgāka ēna (≈2×), bez kreisās malas rāmja; bez provin-lift-subtle, lai nav CSS hover konflikta. */
 const heroSvcCardClass =
   [
-    "provin-lift-subtle flex min-h-0 gap-3 rounded-xl border-0 border-l-4 border-l-blue-600 bg-transparent py-3.5 pl-4 pr-3.5 text-left",
-    "shadow-[0_2px_22px_rgba(15,23,42,0.055)] transition-[transform,box-shadow] duration-200 ease-out will-change-transform",
-    "hover:scale-[1.01] hover:shadow-md",
-    "sm:gap-3.5 sm:py-4 sm:pl-5 sm:pr-4",
+    "flex min-h-0 gap-3 rounded-xl border-0 bg-transparent py-3.5 px-4 text-left",
+    "shadow-[0_4px_44px_rgba(15,23,42,0.11)] transition-[transform,box-shadow] duration-200 ease-out will-change-transform",
+    "hover:scale-[1.01] hover:shadow-[0_10px_48px_rgba(15,23,42,0.15)]",
+    "motion-reduce:hover:scale-100 motion-reduce:hover:shadow-[0_4px_44px_rgba(15,23,42,0.11)]",
+    "sm:gap-3.5 sm:py-4 sm:px-5",
   ].join(" ");
 
 const iconShellClass =
@@ -40,8 +41,8 @@ export function HeroServiceGrid({ items }: { items: HeroServiceItem[] }) {
   ];
 
   return (
-    <div className="mx-auto -mt-11 w-full max-w-[56.448rem] rounded-[3rem] bg-blue-50/30 p-8 backdrop-blur-[1px] sm:-mt-12 sm:p-10 md:p-12">
-      <ul className="mx-auto flex w-full min-w-0 max-w-[37.632rem] list-none flex-col gap-3 sm:max-w-[42.336rem]">
+    <div className="mx-auto -mt-4 w-full max-w-[67.7376rem] rounded-[3rem] bg-blue-50/30 p-8 backdrop-blur-[1px] sm:-mt-5 sm:p-10 md:p-12">
+      <ul className="mx-auto flex w-full min-w-0 max-w-[33.8688rem] list-none flex-col gap-3 sm:max-w-[38.1024rem]">
         {rows.map(({ item, index }) => {
           const Icon = HERO_SVC_ICONS[index] ?? Globe2;
           return (
