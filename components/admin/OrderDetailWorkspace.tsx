@@ -141,6 +141,10 @@ const PORTFOLIO_INLINE_VISIBLE_MAX = 1;
 const workspaceToolbarBtn =
   "rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] font-semibold tracking-tight text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50";
 
+/** Apakšējā josla — PDF Priekšskats un Ģenerēt PDF (vienāds izskats). */
+const wizardPdfFooterPill =
+  "inline-flex rounded-full border border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)] px-3 py-1.5 text-[11px] font-semibold text-[var(--color-provin-accent)] transition hover:bg-[#d4e8fb] disabled:cursor-not-allowed disabled:opacity-45";
+
 const workspaceSectionTitle = `font-medium uppercase tracking-wide text-slate-600 ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
 
 const workspaceSectionShell =
@@ -1703,18 +1707,14 @@ export function OrderDetailWorkspace({
             </button>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setPreviewOpen(true)}
-              className="inline-flex rounded-full border border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)] px-3 py-1.5 text-[11px] font-semibold text-[var(--color-provin-accent)] hover:bg-[#d4e8fb]"
-            >
+            <button type="button" onClick={() => setPreviewOpen(true)} className={wizardPdfFooterPill}>
               PDF Priekšskats
             </button>
             <button
               type="button"
               onClick={() => void openPrintReport()}
               disabled={!canGeneratePdf}
-              className={`${workspaceToolbarBtn} border border-slate-300/90 bg-[var(--color-provin-accent)] text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45`}
+              className={wizardPdfFooterPill}
             >
               Ģenerēt PDF
             </button>
