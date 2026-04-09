@@ -19,7 +19,7 @@ import {
 import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
 
 const ta =
-  "min-h-[72px] w-full rounded-md border border-slate-200/50 bg-transparent px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20";
+  "min-h-[72px] w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20";
 
 type Props = {
   value?: ListingAnalysisBlockState | null;
@@ -121,9 +121,9 @@ export function AdminListingAnalysisSourceBlock({
       : "flex h-full min-h-0 flex-col rounded-xl border-0 bg-transparent p-2 shadow-[0_2px_22px_rgba(15,23,42,0.055)]";
 
   const taPriority =
-    "min-h-[72px] w-full rounded-md border border-emerald-200/45 bg-transparent px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-emerald-500/70 focus:outline-none focus:ring-1 focus:ring-emerald-500/20";
+    "min-h-[72px] w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-emerald-500/70 focus:outline-none focus:ring-1 focus:ring-emerald-500/25 dark:focus:border-emerald-400/80";
   const taPriorityCompact =
-    "min-h-[52px] w-full rounded-md border border-emerald-200/45 bg-transparent px-1.5 py-1 text-[10px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-emerald-500/70 focus:outline-none focus:ring-1 focus:ring-emerald-500/20";
+    "min-h-[52px] w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-1.5 py-1 text-[10px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-emerald-500/70 focus:outline-none focus:ring-1 focus:ring-emerald-500/25 dark:focus:border-emerald-400/80";
 
   const pri = variant === "priority";
   const dense = compact && pri;

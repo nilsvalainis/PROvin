@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "visparigi",
+      "label": "Vispārīgi",
+      "phrases": [
+        "Datu avoti salīdzināti pēc pieejamības; ieteicams pārbaudīt oriģināldokumentus.",
+        "Informācija sagatavota pēc pasūtījuma brīdī pieejamajiem avotiem.",
+        "Pirms pirkuma ieteicama neatkarīga tehniskā apskate."
+      ]
+    },
+    {
+      "id": "nobraukums",
+      "label": "Nobraukums",
+      "phrases": [
+        "Nobraukuma vērtības atšķiras starp avotiem — salīdzināt ar pielikumiem.",
+        "Pēdējais fiksētais nobraukums (pēc avota): ",
+        "Nobraukuma vēsture nav pilnīga visos avotos."
+      ]
+    },
+    {
+      "id": "ltab",
+      "label": "LTAB / negadījumi",
+      "phrases": [
+        "LTAB dati attiecas uz reģistrētajiem apdrošināšanas gadījumiem.",
+        "Konkrētajā periodā LTAB ieraksti nav identificēti vai nav pieejami.",
+        "Ieteicams salīdzināt ar CSDD un komerciālajiem pārskatiem."
+      ]
+    },
+    {
+      "id": "cena",
+      "label": "Cena un tirgus",
+      "phrases": [
+        "Sludinājuma cena salīdzināma ar līdzīgu modeļu piedāvājumiem.",
+        "Cenas dinamika sludinājumā atspoguļo pārdevēja stratēģiju.",
+        "Tirgus konteksts balstīts uz pieejamajiem sludinājumu datiem."
+      ]
+    }
+  ]
+}

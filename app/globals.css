@@ -123,3 +123,30 @@ body {
 .provin-noise {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
 }
+
+/* Admin UI mainīgie (noklusējums — gaišs; tumšais ar .admin-order-page.dark) */
+:root {
+  --admin-field-bg: #ffffff;
+  --admin-field-border: #e2e8f0;
+  --admin-field-text: var(--color-apple-text);
+  --admin-field-placeholder: #94a3b8;
+  --admin-surface-elevated: #ffffff;
+  --admin-nav-bg: rgba(255, 255, 255, 0.95);
+  --admin-footer-bg: rgba(255, 255, 255, 0.95);
+  --admin-border-subtle: rgba(226, 232, 240, 0.85);
+}
+
+.admin-order-page.dark {
+  --color-apple-text: #e4e4e7;
+  --color-provin-muted: #a1a1aa;
+  --color-canvas: #09090b;
+  --color-provin-accent-soft: rgba(56, 189, 248, 0.12);
+  --admin-field-bg: #3f3f46;
+  --admin-field-border: #52525b;
+  --admin-field-text: #e4e4e7;
+  --admin-field-placeholder: #a1a1aa;
+  --admin-surface-elevated: #27272a;
+  --admin-nav-bg: rgba(9, 9, 11, 0.92);
+  --admin-footer-bg: rgba(9, 9, 11, 0.92);
+  --admin-border-subtle: rgba(63, 63, 70, 0.95);
+}

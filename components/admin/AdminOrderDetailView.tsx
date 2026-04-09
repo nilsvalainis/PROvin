@@ -76,6 +76,7 @@ export function AdminOrderDetailView({
   const patchPdfVisibility = useCallback((patch: Partial<PdfVisibilitySettings>) => {
     setPdfVisibility((prev) => ({ ...prev, ...patch }));
   }, []);
+  const [adminDark, setAdminDark] = useState(false);
 
   useEffect(() => {
     const key = storageKeyOrderEdits(order.id);
@@ -115,6 +116,29 @@ export function AdminOrderDetailView({
   useEffect(() => {
     skipOrderEditsAutosaveFlash.current = true;
   }, [order.id]);
+
+  useEffect(() => {
+    try {
+      const s = localStorage.getItem("provin-admin-dark");
+      if (s === "1") setAdminDark(true);
+      else if (s === "0") setAdminDark(false);
+      else setAdminDark(window.matchMedia("(prefers-color-scheme: dark)").matches);
+    } catch {
+      setAdminDark(false);
+    }
+  }, []);
+
+  const toggleAdminDark = useCallback(() => {
+    setAdminDark((d) => {
+      const n = !d;
+      try {
+        localStorage.setItem("provin-admin-dark", n ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return n;
+    });
+  }, []);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -193,9 +217,8 @@ export function AdminOrderDetailView({
   /** Levitējošs meta bloks — caurspīdīgs, bez rāmja. */
   const metaAccordionShellClass =
     "rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)]";
-  const sectionTitle = `font-medium uppercase tracking-wide text-slate-600 ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
-  const sectionHint = "mt-0.5 text-[10px] leading-tight text-[var(--color-provin-muted)]";
-  const metaLabel = "text-[9px] font-medium text-slate-400";
+  const sectionTitle = `font-medium uppercase tracking-wide text-[var(--color-provin-muted)] ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
+  const metaLabel = "text-[9px] font-medium text-[var(--color-provin-muted)]";
   const metaValue = "text-[11px] text-[var(--color-apple-text)]";
   /** Šaurā kolonnā — vertikāls saraksts (kopīgs ar xl 3-kolonnu režģi). */
   const metaStack = "mt-1 flex flex-col gap-1 text-[11px]";
@@ -222,7 +245,6 @@ export function AdminOrderDetailView({
               }
             >
               <div className="space-y-1 px-2 pb-2">
-                <p className={sectionHint}>No Stripe / sesijas — nav rediģējams.</p>
                 <dl className={metaStack}>
                   <div className="min-w-0">
                     <dt className={metaLabel}>Summa</dt>
@@ -278,14 +300,7 @@ export function AdminOrderDetailView({
               }
             >
               <div className="space-y-1 px-2 pb-2">
-            <p className={sectionHint}>
-              VIN un saite — auto pēc ~0,8 s (localStorage
-              {orderDraftPersistenceEnabled ? " + JSON serverī" : ""}). CV / Tirgus — Tampermonkey{" "}
-              <span className="font-mono text-[9px]">GM_setValue</span> no{" "}
-              <span className="font-mono text-[9px]">data-provin-handoff-*</span>; AR —{" "}
-              <span className="whitespace-nowrap">?vin=</span>.
-            </p>
-            <div className="mt-1 flex min-h-0 min-w-0 max-w-full flex-col gap-2">
+            <div className="mt-0 flex min-h-0 min-w-0 max-w-full flex-col gap-2">
               <div
                 className={`min-w-0 max-w-full overflow-hidden rounded-md px-0.5 py-0.5 transition-[box-shadow,background-color] duration-500 ease-out ${
                   vinCopyFlash
@@ -377,10 +392,6 @@ export function AdminOrderDetailView({
               }
             >
               <div className="space-y-1 px-2 pb-2">
-                <p className={sectionHint}>
-                  No pasūtījuma —{" "}
-                  <strong className="font-medium text-[var(--color-apple-text)]">nav rediģējami</strong>.
-                </p>
                 <dl className={metaStack}>
                   <div className="min-w-0">
                     <dt className={metaLabel}>E-pasts</dt>
@@ -395,10 +406,6 @@ export function AdminOrderDetailView({
                   <div className="min-w-0">
                     <dt className={metaLabel}>Vārds, uzvārds</dt>
                     <dd className={metaValue}>{order.customerName ?? "—"}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className={metaLabel}>Vēlamā saziņa (no formas)</dt>
-                    <dd className={metaValue}>{order.contactMethod ?? "—"}</dd>
                   </div>
                 </dl>
               </div>
@@ -446,12 +453,7 @@ export function AdminOrderDetailView({
             }
           >
             <div className="space-y-1 px-2 pb-2">
-              <p className={sectionHint}>
-                {orderDraftPersistenceEnabled
-                  ? "Melnraksts serverī (JSON) + kopija pārlūkā; oriģinālais klienta teksts — Stripe."
-                  : "Tikai pārlūkā; oriģināls — serverī / Stripe."}
-              </p>
-              <div className="mt-1">
+              <div className="mt-0">
                 <AdminSavableTextField
                   id="edit-notes"
                   value={mergedNotes}
@@ -471,7 +473,10 @@ export function AdminOrderDetailView({
   );
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-6 sm:px-10">
+    <div
+      className={`admin-order-page min-h-screen bg-[var(--color-canvas)] text-[var(--color-apple-text)] transition-[background-color,color] duration-200 ${adminDark ? "dark" : ""}`}
+    >
+      <div className="mx-auto w-full max-w-[min(76.8rem,calc(100vw-1.25rem))] px-5 sm:px-8">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Link
@@ -522,19 +527,20 @@ export function AdminOrderDetailView({
         </div>
       ) : null}
 
-      <header className="mb-4 border-b border-slate-200/60 pb-3">
+      <header className="mb-4 border-b border-[var(--admin-border-subtle)] pb-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
           Pasūtījums
         </p>
         <h1 className="mt-0.5 font-mono text-xl font-semibold tracking-tight text-[var(--color-apple-text)] sm:text-2xl">
           {mergedVin.trim() || "—"}
         </h1>
-        <p className="mt-1 font-mono text-[11px] text-[var(--color-provin-muted)]">{order.id}</p>
       </header>
 
       <div id={`admin-order-alerts-slot-${order.id}`} className="min-w-0" />
 
       <OrderDetailWorkspace
+        adminDark={adminDark}
+        onToggleAdminDark={toggleAdminDark}
         dashboardSlot={dashboardSlot}
         portfolioPortalDomId={`admin-portfolio-slot-${order.id}`}
         portfolioPortalTargetInParent
@@ -561,6 +567,7 @@ export function AdminOrderDetailView({
           serverAttachments: order.attachments ?? [],
         }}
       />
+      </div>
     </div>
   );
 }

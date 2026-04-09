@@ -82,11 +82,18 @@ import {
   Link2,
   ListChecks,
   MessageSquare,
+  Moon,
   Newspaper,
   Scale,
+  Sun,
 } from "lucide-react";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
+import {
+  AdminCommonPhrasesDrawer,
+  AdminCommonPhrasesDrawerTrigger,
+} from "@/components/admin/AdminCommonPhrasesDrawer";
+import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
 
 export type OrderWorkspacePayload = {
   sessionId: string;
@@ -138,20 +145,24 @@ const MAX_TOTAL_BYTES = 80 * 1024 * 1024;
 /** Pielikumu kolonnā pēc noklusējuma redzams pirmā fails; pārējie — modālā. */
 const PORTFOLIO_INLINE_VISIBLE_MAX = 1;
 
+const ADMIN_CONTENT_MAX = "max-w-[min(76.8rem,calc(100vw-1.25rem))]";
+
 const workspaceToolbarBtn =
-  "rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] font-semibold tracking-tight text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50";
+  "rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2 py-1 text-[11px] font-semibold tracking-tight text-[var(--color-apple-text)] shadow-sm transition hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 
-/** Apakšējā josla — PDF Priekšskats un Ģenerēt PDF (vienāds izskats). */
-const wizardPdfFooterPill =
-  "inline-flex rounded-full border border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)] px-3 py-1.5 text-[11px] font-semibold text-[var(--color-provin-accent)] transition hover:bg-[#d4e8fb] disabled:cursor-not-allowed disabled:opacity-45";
+const wizardFooterBtnBase =
+  "inline-flex h-9 min-w-[7.25rem] shrink-0 items-center justify-center rounded-lg px-3 py-2 text-[11px] font-semibold tracking-tight transition disabled:cursor-not-allowed disabled:opacity-40";
+const wizardFooterNav = `${wizardFooterBtnBase} border border-slate-300 bg-white text-slate-800 shadow-sm hover:bg-slate-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700`;
+const wizardFooterPreview = `${wizardFooterBtnBase} border border-amber-600/35 bg-[#FFD700] text-amber-950 shadow-sm hover:bg-[#ffe033]`;
+const wizardFooterPdf = `${wizardFooterBtnBase} border border-emerald-800/40 bg-[#22C55E] text-white shadow-sm hover:bg-[#16a34a]`;
 
-const workspaceSectionTitle = `font-medium uppercase tracking-wide text-slate-600 ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
+const workspaceSectionTitle = `font-medium uppercase tracking-wide text-[var(--color-provin-muted)] ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
 
 const workspaceSectionShell =
-  "rounded-xl bg-white p-2 shadow-sm ring-1 ring-slate-200/70";
+  "rounded-xl bg-[var(--admin-surface-elevated)] p-2 shadow-sm ring-1 ring-[var(--admin-border-subtle)]";
 
 const bulkTextareaClass =
-  "w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
+  "w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
 const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
   empty: "bg-zinc-400",
@@ -334,6 +345,8 @@ function KmMergeChart({ points }: { points: { km: number; label: string }[] }) {
 
 export function OrderDetailWorkspace({
   payload,
+  adminDark,
+  onToggleAdminDark,
   dashboardSlot,
   portfolioPortalDomId,
   portfolioPortalTargetInParent = false,
@@ -344,6 +357,8 @@ export function OrderDetailWorkspace({
   alertsPortalDomId,
 }: {
   payload: OrderWorkspacePayload;
+  adminDark: boolean;
+  onToggleAdminDark: () => void;
   /** 0. solis — maksājums, transports, klients, pielikumi, komentārs (vecāka 2×2 režģis). */
   dashboardSlot?: ReactNode;
   /** Ja norādīts, „1. Pielikumi” tiek renderēts šajā DOM elementā (kreisās kolonnas augšā). */
@@ -370,17 +385,15 @@ export function OrderDetailWorkspace({
   const [pdfScanError, setPdfScanError] = useState<string | null>(null);
   const [wizardStep, setWizardStep] = useState(0);
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [phrasesOpen, setPhrasesOpen] = useState(false);
   const [vinBarCopyFlash, setVinBarCopyFlash] = useState(false);
   const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
   const [alertsPortalEl, setAlertsPortalEl] = useState<HTMLElement | null>(null);
   const [portfolioAllFilesModalOpen, setPortfolioAllFilesModalOpen] = useState(false);
-  const [workspaceAutosaveFlash, setWorkspaceAutosaveFlash] = useState(false);
-  const [workspaceSaveServerOk, setWorkspaceSaveServerOk] = useState(true);
   const [portfolioPersistFlash, setPortfolioPersistFlash] = useState(false);
   const [portfolioUploadNotice, setPortfolioUploadNotice] = useState<string | null>(null);
   const [portfolioDropActive, setPortfolioDropActive] = useState(false);
   const portfolioDragDepth = useRef(0);
-  const skipWorkspaceAutosaveFlash = useRef(true);
   const wsPersistRef = useRef(ws);
   wsPersistRef.current = ws;
   const pdfVisibilityRef = useRef(pdfVisibility);
@@ -556,10 +569,6 @@ export function OrderDetailWorkspace({
     setWorkspaceHydrated(true);
   }, [payload.sessionId, payload.serverInternalComment, serverWorkspaceJson, onPdfVisibilityChange]);
 
-  useEffect(() => {
-    skipWorkspaceAutosaveFlash.current = true;
-  }, [payload.sessionId]);
-
   const flushWorkspaceToLocalStorage = useCallback(() => {
     if (!workspaceHydrated) return;
     try {
@@ -586,11 +595,10 @@ export function OrderDetailWorkspace({
     const t = window.setTimeout(() => {
       void (async () => {
         flushWorkspaceToLocalStorage();
-        let srvOk = !orderDraftPersistenceEnabled;
         if (orderDraftPersistenceEnabled) {
           const cur = wsPersistRef.current;
           try {
-            const res = await fetch("/api/admin/order-draft", {
+            await fetch("/api/admin/order-draft", {
               method: "PATCH",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -606,16 +614,9 @@ export function OrderDetailWorkspace({
                 },
               }),
             });
-            srvOk = res.ok;
           } catch {
-            srvOk = false;
+            /* ignore */
           }
-        }
-        if (skipWorkspaceAutosaveFlash.current) {
-          skipWorkspaceAutosaveFlash.current = false;
-        } else {
-          setWorkspaceSaveServerOk(srvOk);
-          setWorkspaceAutosaveFlash(true);
         }
       })();
     }, 750);
@@ -628,12 +629,6 @@ export function OrderDetailWorkspace({
     flushWorkspaceToLocalStorage,
     orderDraftPersistenceEnabled,
   ]);
-
-  useEffect(() => {
-    if (!workspaceAutosaveFlash) return;
-    const u = window.setTimeout(() => setWorkspaceAutosaveFlash(false), 1400);
-    return () => window.clearTimeout(u);
-  }, [workspaceAutosaveFlash]);
 
   useEffect(() => {
     let cancelled = false;
@@ -858,6 +853,11 @@ export function OrderDetailWorkspace({
     [],
   );
 
+  const wizardProgressPct = useMemo(
+    () => workspaceWizardProgressPct(wizardStepLevels),
+    [wizardStepLevels],
+  );
+
   const irissAutosizeRef = useRef<HTMLTextAreaElement>(null);
   const apskatesAutosizeRef = useRef<HTMLTextAreaElement>(null);
   const cenasAutosizeRef = useRef<HTMLTextAreaElement>(null);
@@ -938,13 +938,13 @@ export function OrderDetailWorkspace({
 
   const previewBody = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className={`admin-order-page fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 ${adminDark ? "dark" : ""}`}
       role="dialog"
       aria-modal="true"
       onClick={() => setPreviewOpen(false)}
     >
       <div
-        className="max-h-[90vh] w-full max-w-[min(96rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-xl"
+        className="max-h-[90vh] w-full max-w-[min(96rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] p-4 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-base font-semibold text-[var(--color-apple-text)]">Priekšskats — apkopota informācija</h3>
@@ -1163,7 +1163,27 @@ export function OrderDetailWorkspace({
           setPortfolioDropActive(false);
           void onPickFiles(e.dataTransfer.files);
         }}
-        className={`mt-1 min-w-0 rounded-lg border border-dashed px-1.5 py-1.5 transition-colors ${
+        onPaste={(e) => {
+          const items = e.clipboardData?.items;
+          if (!items?.length) return;
+          for (let i = 0; i < items.length; i++) {
+            const it = items[i];
+            if (it?.kind === "file" && it.type.startsWith("image/")) {
+              e.preventDefault();
+              const f = it.getAsFile();
+              if (f) {
+                const dt = new DataTransfer();
+                dt.items.add(f);
+                void onPickFiles(dt.files);
+              }
+              return;
+            }
+          }
+        }}
+        tabIndex={0}
+        role="region"
+        aria-label="Pielikumu zona"
+        className={`mt-1 min-w-0 rounded-lg border border-dashed px-1.5 py-1.5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/35 ${
           portfolioDropActive
             ? "border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)]/35"
             : "border-transparent"
@@ -1172,8 +1192,7 @@ export function OrderDetailWorkspace({
         <p
           className={`text-[10px] leading-tight text-[var(--color-provin-muted)] ${narrowPortfolioLayout ? "" : "max-w-[min(100%,28rem)]"}`}
         >
-          PDF IndexedDB — augšupielāde un saglabāšana <strong className="text-[var(--color-apple-text)]">uzreiz</strong>{" "}
-          pēc izvēles vai nometšanas.
+          Velc, izvēlies vai ielīmē attēlu šeit (zonai jābūt fokusā).
         </p>
         <div className={`flex min-w-0 flex-wrap items-center gap-1 ${narrowPortfolioLayout ? "flex-col items-stretch" : ""}`}>
           <input
@@ -1238,7 +1257,7 @@ export function OrderDetailWorkspace({
   const portfolioAllFilesModal =
     portfolioAllFilesModalOpen && portfolio.length > 0 ? (
       <div
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-3"
+        className={`admin-order-page fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-3 ${adminDark ? "dark" : ""}`}
         role="presentation"
         onClick={() => setPortfolioAllFilesModalOpen(false)}
       >
@@ -1246,10 +1265,10 @@ export function OrderDetailWorkspace({
           role="dialog"
           aria-modal="true"
           aria-labelledby="portfolio-all-files-title"
-          className="flex max-h-[min(85dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+          className="flex max-h-[min(85dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] shadow-xl"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 px-3 py-2">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--admin-border-subtle)] px-3 py-2">
             <h3
               id="portfolio-all-files-title"
               className="text-sm font-semibold text-[var(--color-apple-text)]"
@@ -1318,7 +1337,7 @@ export function OrderDetailWorkspace({
           onClick={() => setCommentDialogOpen(false)}
         >
           <div
-            className="max-h-[min(80vh,520px)] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-xl"
+            className="max-h-[min(80vh,520px)] w-full max-w-lg overflow-y-auto rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] p-4 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-2">
@@ -1327,16 +1346,13 @@ export function OrderDetailWorkspace({
               </h3>
               <button
                 type="button"
-                className="rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
+                className="rounded-md border border-[var(--admin-border-subtle)] px-2 py-1 text-[11px] font-semibold text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:hover:bg-white/10"
                 onClick={() => setCommentDialogOpen(false)}
               >
                 Aizvērt
               </button>
             </div>
-            <p className="mt-2 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-              Informatīvi — rediģēšana caur citiem rīkiem; šeit tikai lasīšana.
-            </p>
-            <pre className="mt-3 max-h-[min(50vh,360px)] overflow-auto whitespace-pre-wrap rounded-lg border border-slate-100 bg-slate-50/90 p-3 text-[11px] text-[var(--color-apple-text)]">
+            <pre className="mt-3 max-h-[min(50vh,360px)] overflow-auto whitespace-pre-wrap rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.03] p-3 text-[11px] text-[var(--color-apple-text)] dark:bg-white/[0.05]">
               {payload.serverInternalComment?.trim() ? payload.serverInternalComment : "Nav ieraksta."}
             </pre>
           </div>
@@ -1354,20 +1370,23 @@ export function OrderDetailWorkspace({
 
       {showPortfolioPortal ? createPortal(portfolioSection, portfolioPortalEl!) : null}
 
+      <AdminCommonPhrasesDrawer open={phrasesOpen} onClose={() => setPhrasesOpen(false)} />
+
       <nav
-        className="sticky top-0 z-30 -mx-1 border-b border-slate-200/80 bg-white/95 px-1 py-2 backdrop-blur-sm"
+        className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-2 backdrop-blur-sm"
         aria-label="Soli pa solim"
       >
-        <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-wrap items-center gap-2">
+        <div className={`mx-auto flex w-full min-w-0 flex-wrap items-center gap-2 ${ADMIN_CONTENT_MAX}`}>
           <button
             type="button"
-            className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 bg-white px-2 text-slate-600 shadow-sm transition hover:bg-slate-50"
+            className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2 text-[var(--color-apple-text)] shadow-sm transition hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
             title="Iekšējais komentārs"
             aria-label="Atvērt iekšējā komentāra logu"
             onClick={() => setCommentDialogOpen(true)}
           >
             <MessageSquare className="h-4 w-4" aria-hidden />
           </button>
+          <AdminCommonPhrasesDrawerTrigger open={phrasesOpen} onOpen={() => setPhrasesOpen(true)} />
           <div className="flex min-w-0 flex-1 flex-wrap items-stretch gap-1 sm:gap-1.5">
             {wizardStepsUi.map(({ label, Icon }, idx) => {
               const lvl = wizardStepLevels[idx] ?? "empty";
@@ -1380,13 +1399,13 @@ export function OrderDetailWorkspace({
                   className={`flex min-w-0 max-w-[7.5rem] flex-1 flex-col items-center gap-0.5 rounded-lg border px-1 py-1 text-center transition sm:max-w-none sm:flex-row sm:justify-start sm:gap-1.5 sm:px-2 ${
                     active
                       ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
-                      : "border-transparent hover:bg-slate-50"
+                      : "border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                   }`}
                 >
-                  <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+                  <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-black/[0.06] text-[var(--color-provin-muted)] dark:bg-white/10">
                     <Icon className="h-3.5 w-3.5" aria-hidden />
                     <span
-                      className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-2 ring-white ${WIZARD_STEP_DOT[lvl]}`}
+                      className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-2 ring-[var(--admin-surface-elevated)] ${WIZARD_STEP_DOT[lvl]}`}
                       title={`Aizpildījums: ${lvl}`}
                     />
                   </span>
@@ -1402,8 +1421,8 @@ export function OrderDetailWorkspace({
             })}
           </div>
           <div
-            className={`flex min-w-0 max-w-full shrink-0 items-center gap-1 rounded-lg border border-slate-200/80 bg-slate-50/90 px-2 py-1 font-mono text-[10px] text-[var(--color-apple-text)] sm:text-[11px] ${
-              vinBar ? "" : "text-slate-400"
+            className={`flex min-w-0 max-w-full shrink-0 items-center gap-1 rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.03] px-2 py-1 font-mono text-[10px] text-[var(--color-apple-text)] dark:bg-white/[0.06] sm:text-[11px] ${
+              vinBar ? "" : "text-[var(--color-provin-muted)]"
             }`}
             title="VIN"
           >
@@ -1418,29 +1437,42 @@ export function OrderDetailWorkspace({
               />
             ) : null}
             {vinBarCopyFlash ? (
-              <span className="text-[9px] font-semibold text-emerald-700" role="status">
+              <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400" role="status">
                 OK
               </span>
             ) : null}
+            <button
+              type="button"
+              onClick={onToggleAdminDark}
+              className="ml-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] transition hover:bg-black/[0.05] dark:hover:bg-white/10"
+              title={adminDark ? "Gaišais režīms" : "Tumšais režīms"}
+              aria-label={adminDark ? "Pārslēgt uz gaišo režīmu" : "Pārslēgt uz tumšo režīmu"}
+            >
+              {adminDark ? <Sun className="h-3.5 w-3.5" aria-hidden /> : <Moon className="h-3.5 w-3.5" aria-hidden />}
+            </button>
           </div>
         </div>
-        {workspaceAutosaveFlash ? (
-          <p
-            className={`mx-auto mt-1 max-w-5xl px-1 text-[10px] font-medium ${
-              orderDraftPersistenceEnabled && !workspaceSaveServerOk ? "text-amber-800" : "text-emerald-700"
-            }`}
-            role="status"
+        <div className={`mx-auto mt-2 px-1 ${ADMIN_CONTENT_MAX}`}>
+          <div
+            className="h-1 w-full overflow-hidden rounded-full bg-black/[0.08] dark:bg-white/10"
+            role="progressbar"
+            aria-valuenow={wizardProgressPct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Aizpildījuma progress"
           >
-            {!orderDraftPersistenceEnabled
-              ? "Darba zona saglabāta lokāli."
-              : workspaceSaveServerOk
-                ? "Darba zona saglabāta serverī."
-                : "Darba zona saglabāta lokāli (serveris nav pieejams)."}
+            <div
+              className="h-full rounded-full bg-emerald-500 transition-[width] duration-300 ease-out dark:bg-emerald-400"
+              style={{ width: `${wizardProgressPct}%` }}
+            />
+          </div>
+          <p className="mt-0.5 text-end text-[9px] font-medium tabular-nums text-[var(--color-provin-muted)]">
+            {wizardProgressPct}%
           </p>
-        ) : null}
+        </div>
       </nav>
 
-      <div className="mx-auto w-full max-w-5xl min-w-0 space-y-3 px-1 pt-3">
+      <div className={`mx-auto w-full min-w-0 space-y-3 px-1 pt-3 ${ADMIN_CONTENT_MAX}`}>
         {portfolioPortalDomId && !portfolioPortalTargetInParent ? (
           <div id={portfolioPortalDomId} className="min-h-0 min-w-0" />
         ) : null}
@@ -1562,10 +1594,7 @@ export function OrderDetailWorkspace({
                 onChange={(next) => onPdfVisibilityChange({ sludinajums: next })}
               />
             </div>
-            <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-              Mainījumi saglabājas automātiski. Priekšskatu atver apakšējā joslā.
-            </p>
-            <div className="mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)]">
+            <div className="mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] dark:shadow-[0_2px_22px_rgba(0,0,0,0.4)]">
               <ListingAnalysisMainBlockTitleRow
                 icon={LISTING_ANALYSIS_CHROME_LUCIDE.mainSection}
                 title="SLUDINĀJUMA ANALĪZE"
@@ -1596,11 +1625,6 @@ export function OrderDetailWorkspace({
                 </div>
               </div>
             </div>
-            {ws.previewConfirmed ? (
-              <p className="mt-2 text-[11px] font-medium text-emerald-800">Priekšskats apstiprināts.</p>
-            ) : (
-              <p className="mt-2 text-[11px] text-[var(--color-provin-muted)]">Atver „PDF Priekšskats” un apstiprini modālī.</p>
-            )}
           </section>
         ) : null}
 
@@ -1611,16 +1635,13 @@ export function OrderDetailWorkspace({
                 <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
                   <span>Kopsavilkums un cenas atbilstība</span>
                 </h2>
-                <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-                  Lauki augstumā pielāgojas saturam; saglabāšana automātiska.
-                </p>
               </div>
               <AdminPdfIncludeToggle
                 checked={pdfVisibility.iriss}
                 onChange={(next) => onPdfVisibilityChange({ iriss: next })}
               />
             </div>
-            <div className="mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)]">
+            <div className="mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] dark:shadow-[0_2px_22px_rgba(0,0,0,0.4)]">
               <ListingAnalysisMainBlockTitleRow
                 icon={IRISS_CHROME_LUCIDE.mainSection}
                 title="APPROVED BY IRISS"
@@ -1632,7 +1653,7 @@ export function OrderDetailWorkspace({
                     <textarea
                       ref={irissAutosizeRef}
                       id={`${fileInputId}-iriss`}
-                      className={`${bulkTextareaClass} min-h-[120px] resize-none overflow-hidden bg-white/60`}
+                      className={`${bulkTextareaClass} min-h-[120px] resize-none overflow-hidden`}
                       value={ws.iriss}
                       onChange={(e) => setIrissSummary(e.target.value)}
                       placeholder="Galvenais kopsavilkums klientam…"
@@ -1651,7 +1672,7 @@ export function OrderDetailWorkspace({
                     <textarea
                       ref={apskatesAutosizeRef}
                       id={`${fileInputId}-apskates`}
-                      className={`${bulkTextareaClass} min-h-[72px] resize-none overflow-hidden bg-white/60`}
+                      className={`${bulkTextareaClass} min-h-[72px] resize-none overflow-hidden`}
                       value={ws.apskatesPlāns}
                       onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
                       placeholder="piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
@@ -1667,7 +1688,7 @@ export function OrderDetailWorkspace({
                     <textarea
                       ref={cenasAutosizeRef}
                       id={`${fileInputId}-cenas-atbilstiba`}
-                      className={`${bulkTextareaClass} min-h-[56px] resize-none overflow-hidden bg-white/60`}
+                      className={`${bulkTextareaClass} min-h-[56px] resize-none overflow-hidden`}
                       value={ws.cenasAtbilstiba}
                       onChange={(e) => updateWs({ cenasAtbilstiba: e.target.value })}
                       placeholder="Balstoties uz mūsu rīcībā esošajiem datiem…"
@@ -1677,54 +1698,40 @@ export function OrderDetailWorkspace({
                 </ListingAnalysisSubsectionHeading>
               </div>
             </div>
-            {!ws.previewConfirmed ? (
-              <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">
-                Kopsavilkumu vari rakstīt uzreiz; priekšskatā vari apstiprināt vēlāk.
-              </p>
-            ) : null}
           </section>
         ) : null}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200/90 bg-white/95 px-3 py-2.5 shadow-[0_-4px_24px_rgba(15,23,42,0.06)] backdrop-blur-sm">
-        <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              className={`${workspaceToolbarBtn} disabled:cursor-not-allowed disabled:opacity-40`}
-              disabled={wizardStep <= 0}
-              onClick={() => setWizardStep((s) => Math.max(0, s - 1))}
-            >
-              Atpakaļ
-            </button>
-            <button
-              type="button"
-              className={workspaceToolbarBtn}
-              disabled={wizardStep >= WIZARD_STEP_COUNT - 1}
-              onClick={() => setWizardStep((s) => Math.min(WIZARD_STEP_COUNT - 1, s + 1))}
-            >
-              Turpināt
-            </button>
-          </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <button type="button" onClick={() => setPreviewOpen(true)} className={wizardPdfFooterPill}>
-              PDF Priekšskats
-            </button>
-            <button
-              type="button"
-              onClick={() => void openPrintReport()}
-              disabled={!canGeneratePdf}
-              className={wizardPdfFooterPill}
-            >
-              Ģenerēt PDF
-            </button>
-          </div>
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--admin-border-subtle)] bg-[var(--admin-footer-bg)] px-3 py-2.5 shadow-[0_-4px_24px_rgba(15,23,42,0.06)] backdrop-blur-sm dark:shadow-[0_-4px_24px_rgba(0,0,0,0.35)]">
+        <div className={`mx-auto flex w-full min-w-0 flex-wrap items-center justify-end gap-2 ${ADMIN_CONTENT_MAX}`}>
+          <button
+            type="button"
+            className={wizardFooterNav}
+            disabled={wizardStep <= 0}
+            onClick={() => setWizardStep((s) => Math.max(0, s - 1))}
+          >
+            Atpakaļ
+          </button>
+          <button
+            type="button"
+            className={wizardFooterNav}
+            disabled={wizardStep >= WIZARD_STEP_COUNT - 1}
+            onClick={() => setWizardStep((s) => Math.min(WIZARD_STEP_COUNT - 1, s + 1))}
+          >
+            Turpināt
+          </button>
+          <button type="button" onClick={() => setPreviewOpen(true)} className={wizardFooterPreview}>
+            PDF Priekšskats
+          </button>
+          <button
+            type="button"
+            onClick={() => void openPrintReport()}
+            disabled={!canGeneratePdf}
+            className={wizardFooterPdf}
+          >
+            Ģenerēt PDF
+          </button>
         </div>
-        {!canGeneratePdf ? (
-          <p className="mx-auto mt-1 max-w-5xl text-[10px] text-[var(--color-provin-muted)]">
-            PDF: vajag apstiprinātu priekšskatu, kopsavilkumu un „Cenas atbilstību”.
-          </p>
-        ) : null}
       </div>
     </div>
   );
