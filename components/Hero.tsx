@@ -1,6 +1,6 @@
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { HeroPuzzleGrid } from "@/components/HeroPuzzleGrid";
+import { HeroServiceGrid } from "@/components/HeroServiceGrid";
 import { orderSectionHref } from "@/lib/paths";
 
 type Pillar = { title: string; body: string };
@@ -43,7 +43,7 @@ export async function Hero() {
           </header>
 
           <div className="min-h-0 shrink">
-            <HeroPuzzleGrid pillars={pillars} />
+            <HeroServiceGrid items={pillars} />
           </div>
 
           <div className="shrink-0 space-y-4 md:space-y-5">

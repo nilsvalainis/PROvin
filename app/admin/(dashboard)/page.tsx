@@ -19,11 +19,6 @@ export default async function AdminOrdersPage() {
   const onlyDemoShown = orders.length > 0 && orders.every((o) => o.isDemo);
   const hasStripeIssue = Boolean(stripeError);
 
-  const dateFmt = new Intl.DateTimeFormat("lv-LV", {
-    dateStyle: "short",
-    timeStyle: "short",
-  });
-
   return (
     <div className="w-full max-w-none">
       <header className="border-b border-slate-200/70 pb-6">
@@ -93,7 +88,7 @@ export default async function AdminOrdersPage() {
       ) : null}
 
       {orders.length > 0 ? (
-        <AdminOrdersTable orders={ordersWithInvoice} dateFmt={dateFmt} />
+        <AdminOrdersTable orders={ordersWithInvoice} />
       ) : null}
     </div>
   );
