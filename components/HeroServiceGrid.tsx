@@ -1,61 +1,57 @@
-import { Cpu, Database, FileSearch, MessagesSquare } from "lucide-react";
+import { AlertTriangle, Globe2, Headphones, ScanSearch } from "lucide-react";
 
 export type HeroServiceItem = {
   title: string;
   body: string;
 };
 
-const iconStroke = 1.75;
+/**
+ * Tās pašas Lucide ikonas kā Pricing 9-bloku režģī:
+ * Starptautiskās datubāzes, Sludinājuma audits, Tehnisko risku analīze, Papildu konsultācija.
+ */
+const HERO_SVC_ICONS = [Globe2, ScanSearch, AlertTriangle, Headphones] as const;
 
-function ServiceIcon({ index }: { index: number }) {
-  const cls = "h-[1.15rem] w-[1.15rem] shrink-0 text-provin-accent sm:h-5 sm:w-5";
-  switch (index) {
-    case 0:
-      return <Database className={cls} aria-hidden strokeWidth={iconStroke} />;
-    case 1:
-      return <FileSearch className={cls} aria-hidden strokeWidth={iconStroke} />;
-    case 2:
-      return <Cpu className={cls} aria-hidden strokeWidth={iconStroke} />;
-    default:
-      return <MessagesSquare className={cls} aria-hidden strokeWidth={iconStroke} />;
-  }
-}
+/** Pricing `iconClass` ir 32px (h-8); +20% ≈ 38.4px → 2.4rem */
+const heroSvcIconClass =
+  "h-[2.4rem] w-[2.4rem] shrink-0 text-[#0061D2] [stroke-width:1.5] sm:h-[2.4rem] sm:w-[2.4rem]";
+
+/** 1:1 ar `PricingIncluded` pillarRowClass — caurspīdīgs, tā pati ēna/apmale (border-0). */
+const heroSvcCardClass =
+  "provin-lift-subtle flex min-h-0 gap-3 rounded-xl border-0 bg-transparent p-3.5 text-left shadow-[0_2px_22px_rgba(15,23,42,0.055)] sm:gap-3.5 sm:p-4";
 
 /**
- * Hero: četri horizontāli bloki vertikālā sarakstā — baltas kartītes, mīksta ēna, gaiši pelēks fons.
+ * Hero: 2×2 režģis (mobile + desktop), vizuāli kā „Kas iekļauts auditā?” 9 bloku kartītes.
  */
 export function HeroServiceGrid({ items }: { items: HeroServiceItem[] }) {
   const [a, b, c, d] = items;
   if (!a || !b || !c || !d) return null;
   const rows = [
-    { item: a, index: 0 },
-    { item: b, index: 1 },
-    { item: c, index: 2 },
-    { item: d, index: 3 },
-  ] as const;
+    { item: a, index: 0 as const },
+    { item: b, index: 1 as const },
+    { item: c, index: 2 as const },
+    { item: d, index: 3 as const },
+  ];
 
   return (
-    <div className="mx-auto w-full max-w-[min(100%,440px)] rounded-[2rem] bg-[#ececf0] p-3 sm:p-3.5">
-      <ul className="flex list-none flex-col gap-2.5 sm:gap-3">
-        {rows.map(({ item, index }) => (
-          <li key={`hero-svc-${index}`}>
-            <article className="flex flex-row items-start gap-3 rounded-[2rem] bg-white px-4 py-3.5 text-left shadow-sm sm:gap-4 sm:px-5 sm:py-4">
-              <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8f1fc] sm:h-10 sm:w-10"
-                aria-hidden
-              >
-                <ServiceIcon index={index} />
-              </div>
+    <ul className="mx-auto grid w-full max-w-[min(100%,34rem)] list-none grid-cols-2 gap-3">
+      {rows.map(({ item, index }) => {
+        const Icon = HERO_SVC_ICONS[index] ?? Globe2;
+        return (
+          <li key={`hero-svc-${index}`} className="min-w-0">
+            <article className={`${heroSvcCardClass} h-full items-start`}>
+              <Icon className={heroSvcIconClass} aria-hidden strokeWidth={1.5} />
               <div className="min-w-0 flex-1 pt-0.5">
-                <h3 className="text-[13px] font-semibold leading-snug tracking-tight text-[#1d1d1f] sm:text-[14px]">
+                <h3 className="text-[15px] font-medium leading-snug tracking-tight text-[#1d1d1f] sm:text-[16px]">
                   {item.title}
                 </h3>
-                <p className="mt-1 text-[11px] font-normal leading-relaxed text-[#6e6e73] sm:text-[12px]">{item.body}</p>
+                <p className="mt-1 text-[12px] font-normal leading-relaxed text-[#86868b] sm:text-[13px] sm:leading-relaxed">
+                  {item.body}
+                </p>
               </div>
             </article>
           </li>
-        ))}
-      </ul>
-    </div>
+        );
+      })}
+    </ul>
   );
 }
