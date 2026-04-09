@@ -17,8 +17,9 @@ import {
 } from "@/lib/csdd-ui-flags";
 import { aggregateLossAmountFlags } from "@/lib/loss-amount-ui";
 import {
-  computeOdometerAnomalyBySourceOrder,
   collectUnifiedMileageRows,
+  computeOdometerAnomalyBySourceOrder,
+  filterDuplicateOdometerKmReadings,
   hasAnyOdometerAnomaly,
   type UnifiedMileageRow,
   type UnifiedMileageSourcePayload,
@@ -159,7 +160,7 @@ export function computeProvinAlertBannersFromPayloadSlice(
   },
   referenceDate?: Date,
 ): ProvinAlertBanner[] {
-  const rows = collectUnifiedMileageRows(p);
+  const rows = filterDuplicateOdometerKmReadings(collectUnifiedMileageRows(p));
   return computeProvinAlertBanners({
     unifiedMileageRows: rows,
     csddForm: p.csddForm,

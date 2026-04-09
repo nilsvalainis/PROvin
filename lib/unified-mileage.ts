@@ -75,6 +75,48 @@ export function sortMileageChronological(rows: UnifiedMileageRow[]): UnifiedMile
   });
 }
 
+const MS_PER_DAY = 86_400_000;
+
+/**
+ * PDF / grafiks: atkārtoti rādījumi ar to pašu km — viena kalendāra diena vai secīgi pēc hronoloģijas.
+ * Atstāj agrāko ierakstu katram (diena, km) pārī; rindām bez derīga datuma — tikai secīgi dublētu km apkopošana.
+ */
+export function filterDuplicateOdometerKmReadings(rows: UnifiedMileageRow[]): UnifiedMileageRow[] {
+  const sorted = sortMileageChronological(rows);
+  const out: UnifiedMileageRow[] = [];
+  const seenDayKm = new Set<string>();
+  let lastKmNoDay: number | null = null;
+
+  for (const r of sorted) {
+    const km = parseOdometerKm(r.odometer);
+    const t = r.sortableTime;
+    const hasCalDay =
+      Number.isFinite(t) && t !== Number.NEGATIVE_INFINITY && t !== Number.POSITIVE_INFINITY;
+
+    if (km === null) {
+      out.push(r);
+      lastKmNoDay = null;
+      continue;
+    }
+
+    if (hasCalDay) {
+      lastKmNoDay = null;
+      const dayKey = Math.floor(t / MS_PER_DAY);
+      const dedupeKey = `${dayKey}|${km}`;
+      if (seenDayKm.has(dedupeKey)) continue;
+      seenDayKm.add(dedupeKey);
+      out.push(r);
+      continue;
+    }
+
+    if (lastKmNoDay !== null && km === lastKmNoDay) continue;
+    lastKmNoDay = km;
+    out.push(r);
+  }
+
+  return out;
+}
+
 /**
  * Back-roll: ja V_current < V_previous (hronoloģiski iepriekšējais derīgais odometrs), isAnomaly = true.
  */

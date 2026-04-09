@@ -35,6 +35,9 @@ import {
   buildPdfAdminMirrorPaymentBlock,
   buildPdfAdminMirrorVehicleBlock,
   pdfLayoutDraftExtraCss,
+  pdfProvinLvWordmarkHtml,
+  pdfProvinWordmarkHtml,
+  PDF_BRAND_BLUE_HEX,
   provincLogoSvg,
 } from "@/lib/client-report-pdf-layout-draft";
 import { pdfCountryCodeLetters, pdfCountryFlagEmoji } from "@/lib/pdf-country-flags";
@@ -56,6 +59,7 @@ import {
 import {
   collectUnifiedMileageRows,
   computeOdometerAnomalyBySourceOrder,
+  filterDuplicateOdometerKmReadings,
   type CollectUnifiedMileageOptions,
   type UnifiedMileageRow,
   type UnifiedMileageSourcePayload,
@@ -88,9 +92,8 @@ function vendorTitlesOmittedForPdf(vis: PdfVisibilitySettings): Set<string> {
   return s;
 }
 
-/** Mājaslapas primārais zils — grafiks, akcenti. */
-const PDF_BRAND_BLUE = "#0061D2";
-const PDF_MILEAGE_CHART_LINE = PDF_BRAND_BLUE;
+/** Mājaslapas primārais zils — grafiks, akcenti (`PDF_BRAND_BLUE_HEX`). */
+const PDF_MILEAGE_CHART_LINE = PDF_BRAND_BLUE_HEX;
 const PDF_MILEAGE_CHART_GRID = "#e8eaed";
 const PDF_MILEAGE_CHART_AXIS = "#9ca3af";
 
@@ -138,7 +141,7 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-const PDF_PROVIN_SOURCES_TITLE = "PROVIN atskaites ģenerēšanā izmantotie avoti";
+const PDF_PROVIN_SOURCES_TITLE_SUFFIX = " atskaites ģenerēšanā izmantotie avoti";
 const PDF_PROVIN_SOURCES_L1 = "Maksas vēstures atskaites";
 const PDF_PROVIN_SOURCES_L2 = "Publiskas Eiropas datubāzes";
 const PDF_PROVIN_SOURCES_L3 = "Citi avoti";
@@ -232,19 +235,9 @@ function buildProvinPdfSourcesUsedStripHtml(p: ClientReportPayload, vis: PdfVisi
     { n: n3, label: PDF_PROVIN_SOURCES_L3 },
   ].filter((c) => c.n > 0);
 
-  const body = cards
-    .map(
-      (c) => `<div class="pdf-provin-sources-card" role="group" aria-label="${escapeHtml(c.label)}">
-  <div class="pdf-provin-sources-card__num">${escapeHtml(String(c.n))}</div>
-  <p class="pdf-provin-sources-card__label">${escapeHtml(c.label)}</p>
-</div>`,
-    )
-    .join("");
-
-  return `<section class="pdf-provin-sources-wrap pdf-surface-card" role="region" aria-labelledby="pdf-provin-sources-h">
-  <h2 id="pdf-provin-sources-h" class="pdf-provin-sources-title">${escapeHtml(PDF_PROVIN_SOURCES_TITLE)}</h2>
-  <div class="pdf-provin-sources-row">${body}</div>
-</section>`;
+  const head = `<div class="pdf-v1-panel-head"><p id="pdf-provin-sources-h" class="pdf-v1-panel-title pdf-v1-panel-title--provin-sources">${pdfProvinWordmarkHtml()}${escapeHtml(PDF_PROVIN_SOURCES_TITLE_SUFFIX)}</p></div>`;
+  const body = cards.map((c) => `<tr><td>${escapeHtml(c.label)}</td><td>${escapeHtml(String(c.n))}</td></tr>`).join("");
+  return `<section class="pdf-provin-sources-wrap pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region" aria-labelledby="pdf-provin-sources-h">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table></section>`;
 }
 
 function buildPdfCountryFlagCellHtml(countryLabel: string): string {
@@ -388,15 +381,18 @@ export function buildUnifiedMileageTableHtml(
   );
   if (collected.length === 0) return "";
 
-  const anomalyBySourceOrder = computeOdometerAnomalyBySourceOrder(collected);
+  const mileageRows = filterDuplicateOdometerKmReadings(collected);
+  if (mileageRows.length === 0) return "";
 
-  const rows = [...collected].sort((a, b) => {
+  const anomalyBySourceOrder = computeOdometerAnomalyBySourceOrder(mileageRows);
+
+  const rows = [...mileageRows].sort((a, b) => {
     if (a.sortableTime !== b.sortableTime) return b.sortableTime - a.sortableTime;
     return a.sourceOrder - b.sourceOrder;
   });
 
   const display = rows;
-  const chartHtml = buildUnifiedMileageChartWrapHtml(collected, anomalyBySourceOrder, { compact: true });
+  const chartHtml = buildUnifiedMileageChartWrapHtml(mileageRows, anomalyBySourceOrder, { compact: true });
 
   const mid = Math.ceil(display.length / 2) || 0;
   const leftRows = display.slice(0, mid);
@@ -408,7 +404,7 @@ export function buildUnifiedMileageTableHtml(
         ? buildMileageHistoryTableHtml(display, anomalyBySourceOrder)
         : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(leftRows, anomalyBySourceOrder)}</div><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(rightRows, anomalyBySourceOrder)}</div></div>`;
 
-  const sourceCount = new Set(collected.map((r) => r.sourceLabel)).size;
+  const sourceCount = new Set(mileageRows.map((r) => r.sourceLabel)).size;
   const sourceCountHtml = `<p class="pdf-source-count-note">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</p>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE")}${chartHtml}${dualTables}${sourceCountHtml}</div>`;
 }
@@ -416,7 +412,7 @@ export function buildUnifiedMileageTableHtml(
 function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
   const lossCell = formatLossAmountEurCell(r.lossAmount);
   const flagCell = buildPdfCountryFlagCellHtml(r.country);
-  return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo">${lossCell}</td><td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
+  return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo pdf-mileage-cell-loss">${lossCell}</td><td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
 }
 
 function buildIncidentHistoryTableHtml(rows: UnifiedIncidentRow[]): string {
@@ -601,7 +597,7 @@ function buildCitiAvotiAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilit
   if (!b || !b.comments.trim()) return "";
   const head = sectionHeadBrand(sectionIconPdfHtml("layers"), SOURCE_BLOCK_LABELS.citi_avoti);
   const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(b.comments)}</div>`;
-  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card pdf-citi-avoti-plain" role="region">${head}${body}</div>`;
 }
 
 /**
@@ -669,7 +665,7 @@ function buildPdfFooterCtaHtml(): string {
   );
   return `<footer class="pdf-footer-cta" role="contentinfo">
 ${logo}
-<p class="pdf-footer-cta__tagline">Jautājumi pēc atskates — sazinieties ar PROVIN.LV</p>
+<p class="pdf-footer-cta__tagline">Jautājumi pēc atskates — sazinieties ar ${pdfProvinLvWordmarkHtml()}</p>
 </footer>`;
 }
 
@@ -716,10 +712,10 @@ function clientReportPrintCss(): string {
       .sheet{background:#fff;padding:0;}
       .pdf-sec-head{display:flex;align-items:center;gap:8px;margin:0.75rem 0 0.35rem;}
       .pdf-sec-head--nobar{margin-top:0;}
-      .pdf-sec-head .pdf-ico{color:${PDF_BRAND_BLUE};width:16px;height:16px;flex-shrink:0;opacity:0.88;}
+      .pdf-sec-head .pdf-ico{color:${PDF_BRAND_BLUE_HEX};width:16px;height:16px;flex-shrink:0;opacity:0.88;}
       h2.pdf-sec{
         font-size:0.72rem;font-weight:500;margin:0;flex:1;color:#475569;letter-spacing:0.06em;line-height:1.35;
-        padding:0 0 0 8px;border-left:2px solid ${PDF_BRAND_BLUE};text-transform:uppercase;
+        padding:0 0 0 8px;border-left:2px solid ${PDF_BRAND_BLUE_HEX};text-transform:uppercase;
       }
       h2.pdf-sec--nobar{border-left:none;padding-left:0;}
       h3.pdf-sub{font-size:0.75rem;font-weight:700;margin:0.6rem 0 0.35rem;color:#000;text-transform:uppercase;letter-spacing:0.05em;}
@@ -730,7 +726,7 @@ function clientReportPrintCss(): string {
       h3.pdf-sub.pdf-sub--with-ico{margin:0;border-left:none;padding:0;}
       .pdf-sec-head--brand{align-items:center;gap:10px;margin:0 0 12px;}
       .pdf-sec-ico-wrap{
-        display:inline-flex;align-items:center;justify-content:center;color:${PDF_BRAND_BLUE};flex-shrink:0;
+        display:inline-flex;align-items:center;justify-content:center;color:${PDF_BRAND_BLUE_HEX};flex-shrink:0;
       }
       .pdf-sec-ico-wrap .pdf-ico{width:16px;height:16px;}
       .pdf-listing-analysis-root .pdf-sec-ico-wrap,
@@ -741,7 +737,7 @@ function clientReportPrintCss(): string {
       .pdf-field-label{font-size:0.68rem;font-weight:600;margin:0.45rem 0 0.2rem;color:#334155;letter-spacing:0.02em;}
       .pdf-field-label--row{display:flex;align-items:center;gap:8px;}
       .pdf-field-label-ico{flex-shrink:0;line-height:0;}
-      .pdf-field-label-ico .pdf-ico{width:18px;height:18px;color:${PDF_BRAND_BLUE};}
+      .pdf-field-label-ico .pdf-ico{width:18px;height:18px;color:${PDF_BRAND_BLUE_HEX};}
       .pdf-listing-analysis-stack{width:100%;}
       .pdf-listing-analysis-chunk{
         margin:0 0 8px;padding:8px 0;background:#fff;border-bottom:1px solid #f1f5f9;
@@ -753,7 +749,7 @@ function clientReportPrintCss(): string {
         padding:10px 10px;
       }
       .pdf-listing-analysis-chunk:last-child{margin-bottom:0;border-bottom:none;}
-      .pdf-listing-analysis-chunk-pre{font-style:italic;margin:0;}
+      .pdf-listing-analysis-chunk-pre{font-style:normal;margin:0;}
       .pdf-avotu-comment-island{
         margin:10px 0 0;padding:10px 0 0;border-top:1px solid #e2e8f0;background:#fff;
       }
@@ -764,35 +760,16 @@ function clientReportPrintCss(): string {
         font-size:0.65rem;font-weight:700;margin:0 0 5px;color:#000;letter-spacing:0.06em;text-transform:uppercase;
       }
       .pdf-avotu-comment-island-body{font-style:italic;margin:0;}
+      .pdf-citi-avoti-plain .pdf-avotu-comment-island-body{font-style:normal;}
       .pdf-unified-mileage-zone{margin:0 0 18px;padding:16px 18px;}
       .pdf-unified-mileage-zone .pdf-sec-head{margin-top:0;}
-      .pdf-provin-sources-wrap{margin:0 0 18px;padding:16px 18px;}
-      h2.pdf-provin-sources-title{
-        margin:0 0 14px;text-align:center;font-size:0.9rem;font-weight:700;color:#0f172a;
-        letter-spacing:0.02em;line-height:1.3;
-      }
-      .pdf-provin-sources-row{
-        display:flex;flex-wrap:wrap;justify-content:center;align-items:stretch;
-        gap:14px 18px;width:100%;
-      }
-      .pdf-provin-sources-card{
-        width:40mm;height:40mm;min-width:36mm;min-height:36mm;max-width:100%;
-        box-sizing:border-box;
-        display:flex;flex-direction:column;align-items:center;justify-content:center;
-        text-align:center;
-        padding:8px 10px;
-        border:1px solid #e2e8f0;border-radius:14px;
-        background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);
-        box-shadow:0 4px 14px rgba(15,23,42,0.07),inset 0 1px 0 rgba(255,255,255,0.9);
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-provin-sources-card__num{
-        font-size:2.05rem;font-weight:700;line-height:1;color:#0061D2;
-        font-variant-numeric:tabular-nums;
-      }
-      .pdf-provin-sources-card__label{
-        margin:10px 0 0;padding:0;font-size:0.62rem;font-weight:600;color:#475569;
-        line-height:1.35;max-width:34mm;
+      .pdf-provin-sources-wrap{margin:0 0 18px;}
+      .pdf-v1-panel-title--provin-sources{
+        text-transform:none;
+        letter-spacing:0.02em;
+        color:#0f172a;
+        font-size:0.9rem;
+        line-height:1.3;
       }
       .pdf-listing-analysis-root.pdf-surface-card{
         border:1px solid #f1f5f9;
@@ -844,6 +821,7 @@ function clientReportPrintCss(): string {
         color:#374151!important;font-weight:500!important;white-space:nowrap;text-align:left!important;
       }
       .pdf-mileage-history-table td.pdf-mileage-cell-odo{text-align:center!important;}
+      .pdf-mileage-history-table td.pdf-mileage-cell-loss{text-align:left!important;}
       .pdf-mileage-history-table td.pdf-mileage-cell-flag{
         text-align:right!important;vertical-align:middle!important;
       }
@@ -944,7 +922,7 @@ function clientReportPrintCss(): string {
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
       .mirror-block-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;}
-      .mirror-ico{color:${PDF_BRAND_BLUE};}
+      .mirror-ico{color:${PDF_BRAND_BLUE_HEX};}
       .mirror-ico .pdf-ico{width:14px;height:14px;}
       .mirror-pre{
         white-space:pre-wrap;font-size:0.72rem;margin:0;padding:0;font-family:Inter,sans-serif!important;
@@ -1108,7 +1086,15 @@ export function buildClientReportDocumentHtml(args: {
   if (approvedHtml) lines.push(approvedHtml);
 
   lines.push('<div class="legal-block">');
-  lines.push(`<p>${escapeHtml(CLIENT_REPORT_FOOTER_DISCLAIMER)}</p>`);
+  {
+    const d = CLIENT_REPORT_FOOTER_DISCLAIMER;
+    const prefix = "PROVIN.LV";
+    const legalP =
+      d.startsWith(prefix) && d.length > prefix.length
+        ? `<p>${pdfProvinLvWordmarkHtml()}${escapeHtml(d.slice(prefix.length))}</p>`
+        : `<p>${escapeHtml(d)}</p>`;
+    lines.push(legalP);
+  }
   lines.push("</div>");
 
   if (p.isDemo) {
@@ -1120,7 +1106,7 @@ export function buildClientReportDocumentHtml(args: {
   );
 
   lines.push(
-    `<div class="report-foot">© PROVIN.LV · konsultatīva atskaite · ${escapeHtml(dateFmt.format(new Date()))}</div>`,
+    `<div class="report-foot">© ${pdfProvinLvWordmarkHtml()} · konsultatīva atskaite · ${escapeHtml(dateFmt.format(new Date()))}</div>`,
   );
   lines.push(buildPdfFooterCtaHtml());
   lines.push("</div>");

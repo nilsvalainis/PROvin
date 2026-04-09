@@ -10,6 +10,19 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/** Mājaslapas / PDF zīmola zils — sakrīt ar `globals.css` `--color-provin-accent` un `PROVIN_SECTION_ICON_HEX`. */
+export const PDF_BRAND_BLUE_HEX = "#0061D2";
+
+/** HTML: „PROVIN” bez .lv — PRO melns, VIN zils. */
+export function pdfProvinWordmarkHtml(): string {
+  return `<span class="pdf-provin-wordmark"><span class="pdf-provin-wordmark-pro">PRO</span><span class="pdf-provin-wordmark-vin">VIN</span></span>`;
+}
+
+/** HTML: „PROVIN.LV” — PRO un .LV melni, VIN zils. */
+export function pdfProvinLvWordmarkHtml(): string {
+  return `<span class="pdf-provin-wordmark"><span class="pdf-provin-wordmark-pro">PRO</span><span class="pdf-provin-wordmark-vin">VIN</span><span class="pdf-provin-wordmark-pro">.LV</span></span>`;
+}
+
 function pdfV1PanelHead(title: string, titleIconHtml = ""): string {
   const icon =
     titleIconHtml.trim() !== ""
@@ -21,7 +34,9 @@ function pdfV1PanelHead(title: string, titleIconHtml = ""): string {
 /** Vārda zīme PDF galvenē — tumšs teksts uz baltas lapas, bez krāsaina logo fona. */
 export function provincLogoSvg(): string {
   return `<svg class="pdf-v1-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 48" role="img" aria-label="PROVIN.LV">
-  <text x="0" y="34" font-family="Inter, sans-serif" font-size="28" font-weight="800" fill="#000000" letter-spacing="-0.02em">PROVIN<tspan fill="#0061D2">.LV</tspan></text>
+  <text font-family="Inter, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.02em">
+    <tspan x="0" y="34" fill="#000000">PRO</tspan><tspan fill="${PDF_BRAND_BLUE_HEX}">VIN</tspan><tspan fill="#000000">.LV</tspan>
+  </text>
 </svg>`;
 }
 
@@ -67,8 +82,11 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-kv td{padding:6px 0 6px;border-bottom:1px solid #f1f5f9;vertical-align:top}
       .pdf-v1-kv td:first-child{width:36%;color:#86868b;font-weight:500}
       .pdf-v1-kv tr:last-child td{border-bottom:none}
-      .pdf-v1-kv a{color:#0061D2;word-break:break-all}
-      .pdf-v1-listing-link{color:#0061D2;word-break:break-all;text-decoration:underline}
+      .pdf-provin-wordmark{font-weight:inherit;letter-spacing:inherit;white-space:nowrap}
+      .pdf-provin-wordmark-pro{color:#000}
+      .pdf-provin-wordmark-vin{color:${PDF_BRAND_BLUE_HEX}}
+      .pdf-v1-kv a{color:${PDF_BRAND_BLUE_HEX};word-break:break-all}
+      .pdf-v1-listing-link{color:${PDF_BRAND_BLUE_HEX};word-break:break-all;text-decoration:underline}
       .pdf-v1-kv .pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;}
       .pdf-source-mirror-panel{margin-top:0}
       .pdf-source-mirror-panel + .pdf-source-mirror-panel{margin-top:4px;padding-top:6px;border-top:1px solid #f0f0f2}
