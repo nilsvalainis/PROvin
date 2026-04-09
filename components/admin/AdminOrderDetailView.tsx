@@ -10,6 +10,7 @@ import { AdminListingUrlEndAdornment } from "@/components/admin/AdminListingUrlT
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
 import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
 import { formatMoneyEur } from "@/lib/format-money";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
@@ -41,7 +42,19 @@ type OrderEdits = {
   vin?: string;
   listingUrl?: string;
   notes?: string;
+  internalComment?: string;
 };
+
+function initialEditsFromServerDraft(serverOrderDraft: OrderDraftState | null): OrderEdits {
+  const fromServer = serverOrderDraft?.orderEdits;
+  if (!orderDraftHasOrderEdits(fromServer)) return {};
+  return {
+    ...(typeof fromServer!.vin === "string" ? { vin: fromServer!.vin } : {}),
+    ...(typeof fromServer!.listingUrl === "string" ? { listingUrl: fromServer!.listingUrl } : {}),
+    ...(typeof fromServer!.notes === "string" ? { notes: fromServer!.notes } : {}),
+    ...(typeof fromServer!.internalComment === "string" ? { internalComment: fromServer!.internalComment } : {}),
+  };
+}
 
 function storageKeyOrderEdits(sessionId: string) {
   return `provin-admin-order-edits-v1-${sessionId}`;
@@ -63,10 +76,8 @@ export function AdminOrderDetailView({
     timeStyle: "short",
   });
 
-  const [edits, setEdits] = useState<OrderEdits>({});
+  const [edits, setEdits] = useState<OrderEdits>(() => initialEditsFromServerDraft(serverOrderDraft));
   const [hydrated, setHydrated] = useState(false);
-  /** Palielinās pie „Atiestatīt…” — atsvaidzina Saglabāt/Labot iekšējos punktus */
-  const [fieldUiRev, setFieldUiRev] = useState(0);
   const [vinCopyFlash, setVinCopyFlash] = useState(false);
   const [listingCopyFlash, setListingCopyFlash] = useState(false);
   const [orderEditsAutosaveFlash, setOrderEditsAutosaveFlash] = useState(false);
@@ -86,6 +97,9 @@ export function AdminOrderDetailView({
         ...(typeof fromServer!.vin === "string" ? { vin: fromServer!.vin } : {}),
         ...(typeof fromServer!.listingUrl === "string" ? { listingUrl: fromServer!.listingUrl } : {}),
         ...(typeof fromServer!.notes === "string" ? { notes: fromServer!.notes } : {}),
+        ...(typeof fromServer!.internalComment === "string"
+          ? { internalComment: fromServer!.internalComment }
+          : {}),
       });
       try {
         localStorage.setItem(key, JSON.stringify(fromServer));
@@ -104,6 +118,7 @@ export function AdminOrderDetailView({
             ...(typeof p.vin === "string" ? { vin: p.vin } : {}),
             ...(typeof p.listingUrl === "string" ? { listingUrl: p.listingUrl } : {}),
             ...(typeof p.notes === "string" ? { notes: p.notes } : {}),
+            ...(typeof p.internalComment === "string" ? { internalComment: p.internalComment } : {}),
           });
         }
       }
@@ -126,18 +141,6 @@ export function AdminOrderDetailView({
     } catch {
       setAdminDark(false);
     }
-  }, []);
-
-  const toggleAdminDark = useCallback(() => {
-    setAdminDark((d) => {
-      const n = !d;
-      try {
-        localStorage.setItem("provin-admin-dark", n ? "1" : "0");
-      } catch {
-        /* ignore */
-      }
-      return n;
-    });
   }, []);
 
   useEffect(() => {
@@ -201,18 +204,10 @@ export function AdminOrderDetailView({
   const mergedVin = edits.vin !== undefined ? edits.vin : (order.vin ?? "");
   const mergedListing = edits.listingUrl !== undefined ? edits.listingUrl : (order.listingUrl ?? "");
   const mergedNotes = edits.notes !== undefined ? edits.notes : (order.notes ?? "");
+  const mergedInternalComment =
+    edits.internalComment !== undefined ? edits.internalComment : (order.internalComment ?? "");
 
-  const resetToServer = () => {
-    setEdits({});
-    setFieldUiRev((n) => n + 1);
-    try {
-      localStorage.removeItem(storageKeyOrderEdits(order.id));
-    } catch {
-      /* ignore */
-    }
-  };
-
-  const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}-${fieldUiRev}`;
+  const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}`;
 
   /** Levitējošs meta bloks — caurspīdīgs, bez rāmja. */
   const metaAccordionShellClass =
@@ -476,12 +471,13 @@ export function AdminOrderDetailView({
     <div
       className={`admin-order-page min-h-screen bg-[var(--color-canvas)] text-[var(--color-apple-text)] transition-[background-color,color] duration-200 ${adminDark ? "dark" : ""}`}
     >
-      <div className="mx-auto w-full max-w-[min(76.8rem,calc(100vw-1.25rem))] px-5 sm:px-8">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="mx-auto w-full max-w-[min(76.8rem,calc(100vw-1.25rem))] px-3 pt-0 sm:px-5">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <AdminCollapsedMenuButton />
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <Link
             href="/admin"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-3.5 py-2 text-sm font-medium text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/30 hover:bg-[var(--color-provin-accent-soft)]/50"
+            className="inline-flex items-center gap-1 rounded-full border border-slate-200/90 bg-white px-2.5 py-1.5 text-[11px] font-medium text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/30 hover:bg-[var(--color-provin-accent-soft)]/50"
           >
             <span aria-hidden>←</span> Visi pasūtījumi
           </Link>
@@ -490,21 +486,12 @@ export function AdminOrderDetailView({
               href={`/api/admin/invoice/${encodeURIComponent(order.id)}/pdf`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-3.5 py-2 text-sm font-medium text-[var(--color-apple-text)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-slate-50"
+              className="inline-flex items-center gap-1 rounded-full border border-slate-200/90 bg-white px-2.5 py-1.5 text-[11px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-slate-50"
             >
               Rēķins
             </a>
           ) : null}
         </div>
-        {hydrated ? (
-          <button
-            type="button"
-            onClick={resetToServer}
-            className="text-xs font-medium text-[var(--color-provin-muted)] underline decoration-slate-300 underline-offset-2 hover:text-[var(--color-apple-text)]"
-          >
-            Atiestatīt rediģētos laukus (izņemot tavu iekšējo komentāru un portfeli)
-          </button>
-        ) : null}
       </div>
 
       {order.isDemo ? (
@@ -527,11 +514,11 @@ export function AdminOrderDetailView({
         </div>
       ) : null}
 
-      <header className="mb-4 border-b border-[var(--admin-border-subtle)] pb-3">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
+      <header className="mb-3 border-b border-[var(--admin-border-subtle)] pb-2">
+        <p className="text-[8px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
           Pasūtījums
         </p>
-        <h1 className="mt-0.5 font-mono text-xl font-semibold tracking-tight text-[var(--color-apple-text)] sm:text-2xl">
+        <h1 className="mt-0.5 font-mono text-base font-medium tracking-tight text-[var(--color-apple-text)] sm:text-xl">
           {mergedVin.trim() || "—"}
         </h1>
       </header>
@@ -540,7 +527,8 @@ export function AdminOrderDetailView({
 
       <OrderDetailWorkspace
         adminDark={adminDark}
-        onToggleAdminDark={toggleAdminDark}
+        internalCommentDraft={mergedInternalComment}
+        onInternalCommentChange={(v) => setEdits((prev) => ({ ...prev, internalComment: v }))}
         dashboardSlot={dashboardSlot}
         portfolioPortalDomId={`admin-portfolio-slot-${order.id}`}
         portfolioPortalTargetInParent

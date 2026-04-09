@@ -1,11 +1,22 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AdminSidebarNav } from "./AdminSidebarNav";
 
 const SIDEBAR_COLLAPSED_KEY = "provin-admin-sidebar-collapsed";
+
+type AdminShellLayoutValue = {
+  sidebarCollapsed: boolean;
+  expandSidebar: () => void;
+};
+
+const AdminShellLayoutContext = createContext<AdminShellLayoutValue | null>(null);
+
+export function useAdminShellLayout() {
+  return useContext(AdminShellLayoutContext);
+}
 
 type Props = { children: ReactNode; baseUrl?: string; notice?: ReactNode };
 
@@ -33,6 +44,11 @@ export function AdminShell({ children, baseUrl, notice }: Props) {
 
   const expandSidebar = useCallback(() => setSidebarCollapsed(false), []);
   const collapseSidebar = useCallback(() => setSidebarCollapsed(true), []);
+
+  const shellLayoutValue = useMemo(
+    () => ({ sidebarCollapsed, expandSidebar }),
+    [sidebarCollapsed, expandSidebar],
+  );
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--color-provin-surface)] md:flex-row">
@@ -72,26 +88,12 @@ export function AdminShell({ children, baseUrl, notice }: Props) {
           <AdminSidebarNav baseUrl={baseUrl} />
         </div>
       </aside>
-      <main className="min-w-0 w-full max-w-none flex-1 space-y-5 p-3 sm:p-4 md:p-5 lg:p-6">
-        {sidebarCollapsed ? (
-          <div className="-mt-1 flex justify-start">
-            <button
-              type="button"
-              onClick={expandSidebar}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200/90 bg-white px-3 py-2 text-sm font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
-              aria-label="Rādīt galveno izvēlni"
-              title="Rādīt izvēlni"
-            >
-              <span className="text-base leading-none" aria-hidden>
-                ☰
-              </span>
-              <span>Izvēlne</span>
-            </button>
-          </div>
-        ) : null}
-        {notice}
-        <div className="w-full min-w-0 max-w-none">{children}</div>
-      </main>
+      <AdminShellLayoutContext.Provider value={shellLayoutValue}>
+        <main className="min-w-0 w-full max-w-none flex-1 space-y-3 p-2 sm:px-3 sm:pb-4 md:px-4 md:pb-5 lg:px-5 lg:pb-6 pt-1.5 sm:pt-2">
+          {notice}
+          <div className="w-full min-w-0 max-w-none">{children}</div>
+        </main>
+      </AdminShellLayoutContext.Provider>
     </div>
   );
 }

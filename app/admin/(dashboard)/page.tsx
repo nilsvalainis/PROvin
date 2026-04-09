@@ -1,6 +1,7 @@
 import { isDemoOrdersEnabled, listAdminOrders } from "@/lib/admin-orders";
 import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
+import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
 
 export const dynamic = "force-dynamic";
@@ -23,27 +24,29 @@ export default async function AdminOrdersPage() {
 
   return (
     <div className="w-full max-w-none">
-      <header className="border-b border-slate-200/70 pb-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
+      <AdminDashboardHeaderWithMenu>
+        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
           Apstrādes telpa
         </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--color-apple-text)]">Pasūtījumi</h1>
-        <p className="mt-2 w-full max-w-none text-sm leading-relaxed text-[var(--color-provin-muted)]">
+        <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
+          Pasūtījumi
+        </h1>
+        <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
           Šeit apkopo ierakstus apstrādei: atver rindu, lai redzētu VIN, kontaktus, komentārus un darba zonu ar
           priekšskatījumu. Zemāk ir{" "}
           <span className="font-medium text-[var(--color-apple-text)]">parauga pasūtījumi</span> — vari tos brīvi
           slīpēt, kamēr neesi gatavs pieslēgt īstu maksājumu plūsmu.
         </p>
         {demoPrefOn ? (
-          <p className="mt-2 text-xs leading-relaxed text-[var(--color-provin-muted)]">
+          <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-provin-muted)]">
             Demo rindas pēc noklusējuma ir ieslēgtas. Paslēpt:{" "}
-            <code className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-[var(--color-apple-text)]">
+            <code className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-apple-text)]">
               ADMIN_DEMO_ORDERS=0
             </code>
             .
           </p>
         ) : null}
-      </header>
+      </AdminDashboardHeaderWithMenu>
 
       {hasStripeIssue && orders.length > 0 ? (
         <div

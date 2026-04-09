@@ -82,10 +82,8 @@ import {
   Link2,
   ListChecks,
   MessageSquare,
-  Moon,
   Newspaper,
   Scale,
-  Sun,
 } from "lucide-react";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
@@ -346,7 +344,8 @@ function KmMergeChart({ points }: { points: { km: number; label: string }[] }) {
 export function OrderDetailWorkspace({
   payload,
   adminDark,
-  onToggleAdminDark,
+  internalCommentDraft,
+  onInternalCommentChange,
   dashboardSlot,
   portfolioPortalDomId,
   portfolioPortalTargetInParent = false,
@@ -358,7 +357,8 @@ export function OrderDetailWorkspace({
 }: {
   payload: OrderWorkspacePayload;
   adminDark: boolean;
-  onToggleAdminDark: () => void;
+  internalCommentDraft: string;
+  onInternalCommentChange: (value: string) => void;
   /** 0. solis — maksājums, transports, klients, pielikumi, komentārs (vecāka 2×2 režģis). */
   dashboardSlot?: ReactNode;
   /** Ja norādīts, „1. Pielikumi” tiek renderēts šajā DOM elementā (kreisās kolonnas augšā). */
@@ -1342,7 +1342,7 @@ export function OrderDetailWorkspace({
           >
             <div className="flex items-center justify-between gap-2">
               <h3 id="admin-internal-comment-title" className="text-sm font-semibold text-[var(--color-apple-text)]">
-                Iekšējais komentārs (serveris)
+                Iekšējais komentārs
               </h3>
               <button
                 type="button"
@@ -1352,9 +1352,16 @@ export function OrderDetailWorkspace({
                 Aizvērt
               </button>
             </div>
-            <pre className="mt-3 max-h-[min(50vh,360px)] overflow-auto whitespace-pre-wrap rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.03] p-3 text-[11px] text-[var(--color-apple-text)] dark:bg-white/[0.05]">
-              {payload.serverInternalComment?.trim() ? payload.serverInternalComment : "Nav ieraksta."}
-            </pre>
+            <p className="mt-2 text-[10px] leading-snug text-[var(--color-provin-muted)]">
+              Glabājas pasūtījuma melnrakstā; netiek iekļauts klienta PDF. Saglabājas automātiski.
+            </p>
+            <textarea
+              className={`${bulkTextareaClass} mt-2 min-h-[min(40vh,280px)] resize-y`}
+              value={internalCommentDraft}
+              onChange={(e) => onInternalCommentChange(e.target.value)}
+              placeholder="Piezīmes par šo auto…"
+              aria-label="Iekšējais komentārs"
+            />
           </div>
         </div>
       ) : null}
@@ -1373,18 +1380,18 @@ export function OrderDetailWorkspace({
       <AdminCommonPhrasesDrawer open={phrasesOpen} onClose={() => setPhrasesOpen(false)} />
 
       <nav
-        className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-2 backdrop-blur-sm"
+        className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm"
         aria-label="Soli pa solim"
       >
         <div className={`mx-auto flex w-full min-w-0 flex-wrap items-center gap-2 ${ADMIN_CONTENT_MAX}`}>
           <button
             type="button"
-            className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2 text-[var(--color-apple-text)] shadow-sm transition hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+            className="inline-flex h-7 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-1.5 text-[var(--color-apple-text)] shadow-sm transition hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
             title="Iekšējais komentārs"
             aria-label="Atvērt iekšējā komentāra logu"
             onClick={() => setCommentDialogOpen(true)}
           >
-            <MessageSquare className="h-4 w-4" aria-hidden />
+            <MessageSquare className="h-3.5 w-3.5" aria-hidden />
           </button>
           <AdminCommonPhrasesDrawerTrigger open={phrasesOpen} onOpen={() => setPhrasesOpen(true)} />
           <div className="flex min-w-0 flex-1 flex-wrap items-stretch gap-1 sm:gap-1.5">
@@ -1421,7 +1428,7 @@ export function OrderDetailWorkspace({
             })}
           </div>
           <div
-            className={`flex min-w-0 max-w-full shrink-0 items-center gap-1 rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.03] px-2 py-1 font-mono text-[10px] text-[var(--color-apple-text)] dark:bg-white/[0.06] sm:text-[11px] ${
+            className={`flex min-w-0 max-w-full shrink-0 items-center gap-1 rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.03] px-1.5 py-0.5 font-mono text-[8px] font-medium text-[var(--color-apple-text)] dark:bg-white/[0.06] sm:text-[9px] ${
               vinBar ? "" : "text-[var(--color-provin-muted)]"
             }`}
             title="VIN"
@@ -1437,19 +1444,10 @@ export function OrderDetailWorkspace({
               />
             ) : null}
             {vinBarCopyFlash ? (
-              <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400" role="status">
+              <span className="text-[8px] font-semibold text-emerald-600 dark:text-emerald-400" role="status">
                 OK
               </span>
             ) : null}
-            <button
-              type="button"
-              onClick={onToggleAdminDark}
-              className="ml-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] transition hover:bg-black/[0.05] dark:hover:bg-white/10"
-              title={adminDark ? "Gaišais režīms" : "Tumšais režīms"}
-              aria-label={adminDark ? "Pārslēgt uz gaišo režīmu" : "Pārslēgt uz tumšo režīmu"}
-            >
-              {adminDark ? <Sun className="h-3.5 w-3.5" aria-hidden /> : <Moon className="h-3.5 w-3.5" aria-hidden />}
-            </button>
           </div>
         </div>
         <div className={`mx-auto mt-2 px-1 ${ADMIN_CONTENT_MAX}`}>

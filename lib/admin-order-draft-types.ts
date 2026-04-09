@@ -7,6 +7,8 @@ export type OrderDraftOrderEdits = {
   vin?: string;
   listingUrl?: string;
   notes?: string;
+  /** Admin piezīmes — melnrakstā; nav klienta PDF. */
+  internalComment?: string;
 };
 
 /** Tīrs JSON — `sourceBlocks` validē serverī ar `hydrateWorkspaceFromStorage`. */

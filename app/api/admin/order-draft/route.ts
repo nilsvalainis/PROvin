@@ -19,6 +19,7 @@ function parseOrderEditsObject(v: unknown): OrderDraftOrderEdits | null {
   if (typeof o.vin === "string") out.vin = o.vin;
   if (typeof o.listingUrl === "string") out.listingUrl = o.listingUrl;
   if (typeof o.notes === "string") out.notes = o.notes;
+  if (typeof o.internalComment === "string") out.internalComment = o.internalComment;
   return out;
 }
 

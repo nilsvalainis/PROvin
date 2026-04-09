@@ -46,6 +46,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
     if (typeof e.vin === "string") orderEdits.vin = e.vin;
     if (typeof e.listingUrl === "string") orderEdits.listingUrl = e.listingUrl;
     if (typeof e.notes === "string") orderEdits.notes = e.notes;
+    if (typeof e.internalComment === "string") orderEdits.internalComment = e.internalComment;
   }
   let workspace: OrderDraftWorkspaceBody | null = null;
   if (o.workspace && typeof o.workspace === "object") {
@@ -138,6 +139,9 @@ export async function patchOrderDraft(
             : {}),
           ...(typeof patch.orderEdits.notes === "string"
             ? { notes: sanitizeDraftTextForStorage(patch.orderEdits.notes) }
+            : {}),
+          ...(typeof patch.orderEdits.internalComment === "string"
+            ? { internalComment: sanitizeDraftTextForStorage(patch.orderEdits.internalComment) }
             : {}),
         }
       : prev?.orderEdits ?? {};
