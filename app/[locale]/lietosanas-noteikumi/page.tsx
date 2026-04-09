@@ -117,6 +117,13 @@ export default async function TermsPage({ params }: Props) {
           );
         })}
       </div>
+
+      <section id="pakalpojuma-sniedzeja-informacija" className="mt-10 scroll-mt-24">
+        <h2 className="text-lg font-semibold text-[var(--color-apple-text)]">Pakalpojuma sniedzēja informācija</h2>
+        <div className="mt-3 rounded-xl border border-black/[0.06] bg-[#f5f5f7]/70 px-4 py-3 sm:px-5">
+          <CompanyLegalDisclosure className="not-italic text-[12px] leading-relaxed text-[#6e6e73]" />
+        </div>
+      </section>
     </article>
   );
 }

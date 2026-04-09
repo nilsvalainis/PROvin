@@ -4,7 +4,8 @@ import { HeroVisual } from "@/components/HeroVisual";
 import { WhatsAppBrandIcon } from "@/components/WhatsAppBrandIcon";
 import { contactMailtoHref, whatsappChatUrl } from "@/lib/contact";
 import { homePath } from "@/lib/paths";
-import { CompanyLegalDisclosure } from "@/components/CompanyLegalDisclosure";
+import { getCompanyLegal } from "@/lib/company";
+import { FooterLegalRekviziti } from "@/components/FooterLegalRekviziti";
 
 function MailIcon({ className }: { className?: string }) {
   return (
@@ -24,6 +25,7 @@ export async function Footer() {
   const mailHref = contactMailtoHref();
   const waHref = whatsappChatUrl();
   const homeHref = homePath(locale);
+  const { legalName, regNo, legalAddress } = getCompanyLegal();
 
   const linkRow =
     "group inline-flex items-center gap-2 rounded-lg py-1 text-[13px] font-medium text-[#1d1d1f] transition-colors hover:text-provin-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent";
@@ -98,11 +100,6 @@ export async function Footer() {
           role="region"
           aria-label={t("legalRegionLabel")}
         >
-          <div className="mx-auto max-w-[65ch] text-left">
-            <div className="max-sm:rounded-xl max-sm:border max-sm:border-black/[0.08] max-sm:bg-white/[0.72] max-sm:px-3 max-sm:py-3.5 max-sm:shadow-[0_1px_0_rgba(0,0,0,0.04)]">
-              <CompanyLegalDisclosure className="not-italic text-[10px] leading-snug text-[#6e6e73] sm:text-[11px] sm:leading-relaxed" />
-            </div>
-          </div>
           <p className="mx-auto max-w-[65ch] text-[10px] font-normal leading-snug text-[#86868b] sm:text-[11px]">
             {t("disclaimer")}
           </p>
@@ -127,6 +124,9 @@ export async function Footer() {
             </span>
             <span>{t("gdpr", { year: new Date().getFullYear() })}</span>
           </p>
+          <div className="py-4 text-center">
+            <FooterLegalRekviziti legalName={legalName} regNo={regNo} legalAddress={legalAddress} />
+          </div>
         </div>
       </div>
     </footer>
