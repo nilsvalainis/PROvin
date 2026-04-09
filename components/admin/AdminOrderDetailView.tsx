@@ -203,12 +203,24 @@ export function AdminOrderDetailView({
   return (
     <div className="mx-auto w-full max-w-[1600px] px-8">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <Link
-          href="/admin"
-          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-3.5 py-2 text-sm font-medium text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/30 hover:bg-[var(--color-provin-accent-soft)]/50"
-        >
-          <span aria-hidden>←</span> Visi pasūtījumi
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-3.5 py-2 text-sm font-medium text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/30 hover:bg-[var(--color-provin-accent-soft)]/50"
+          >
+            <span aria-hidden>←</span> Visi pasūtījumi
+          </Link>
+          {order.paymentStatus === "paid" && order.amountTotal != null ? (
+            <a
+              href={`/api/admin/invoice/${encodeURIComponent(order.id)}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-3.5 py-2 text-sm font-medium text-[var(--color-apple-text)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-slate-50"
+            >
+              Rēķins
+            </a>
+          ) : null}
+        </div>
         {hydrated ? (
           <button
             type="button"

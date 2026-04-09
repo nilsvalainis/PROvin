@@ -23,6 +23,9 @@ export type OrderDraftState = {
   orderEdits: OrderDraftOrderEdits;
   workspace: OrderDraftWorkspaceBody | null;
   updatedAt: string;
+  /** Relatīva saite uz saglabātu PDF rēķinu (pēc pirmās ģenerēšanas), piem. `/api/admin/invoice/cs_…/pdf` */
+  invoicePdfUrl?: string;
+  invoicePdfGeneratedAt?: string;
 };
 
 export function orderDraftHasOrderEdits(e: OrderDraftOrderEdits | undefined): boolean {

@@ -18,6 +18,11 @@ function resolveDraftDir(): string | null {
   return path.join(process.cwd(), DEFAULT_RELATIVE_DIR);
 }
 
+/** Pasūtījuma JSON glabāšanas sakne (`.data/admin-order-drafts` vai `ADMIN_ORDER_DRAFT_DIR`). */
+export function getOrderDraftStorageDir(): string | null {
+  return resolveDraftDir();
+}
+
 export function isOrderDraftStoreEnabled(): boolean {
   return resolveDraftDir() !== null;
 }
@@ -67,7 +72,10 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
   }
   const updatedAt = typeof o.updatedAt === "string" ? o.updatedAt : new Date(0).toISOString();
   if (typeof o.sessionId === "string" && o.sessionId !== sessionId) return null;
-  return { orderEdits, workspace, updatedAt };
+  const invoicePdfUrl = typeof o.invoicePdfUrl === "string" ? o.invoicePdfUrl : undefined;
+  const invoicePdfGeneratedAt =
+    typeof o.invoicePdfGeneratedAt === "string" ? o.invoicePdfGeneratedAt : undefined;
+  return { orderEdits, workspace, updatedAt, invoicePdfUrl, invoicePdfGeneratedAt };
 }
 
 export async function readOrderDraft(sessionId: string): Promise<OrderDraftState | null> {
@@ -141,6 +149,8 @@ export async function patchOrderDraft(
     updatedAt,
     orderEdits: nextOrderEdits,
     workspace: nextWorkspace,
+    ...(prev?.invoicePdfUrl != null ? { invoicePdfUrl: prev.invoicePdfUrl } : {}),
+    ...(prev?.invoicePdfGeneratedAt != null ? { invoicePdfGeneratedAt: prev.invoicePdfGeneratedAt } : {}),
   };
 
   try {
@@ -159,4 +169,38 @@ export async function patchOrderDraft(
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: `patch_failed:${msg}` };
   }
+}
+
+/** Saglabā rēķina PDF saiti pasūtījuma JSON (vienā mapē ar order draft). */
+export async function patchOrderDraftInvoiceMetadata(
+  sessionId: string,
+  meta: { invoicePdfUrl: string; invoicePdfGeneratedAt: string },
+): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
+  const dir = resolveDraftDir();
+  if (!dir) return { ok: false, error: "store_disabled" };
+  if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
+
+  const prev = await readOrderDraft(sessionId);
+  const updatedAt = new Date().toISOString();
+  const doc = {
+    sessionId,
+    updatedAt,
+    orderEdits: prev?.orderEdits ?? {},
+    workspace: prev?.workspace ?? null,
+    invoicePdfUrl: meta.invoicePdfUrl,
+    invoicePdfGeneratedAt: meta.invoicePdfGeneratedAt,
+  };
+
+  try {
+    await fs.mkdir(dir, { recursive: true });
+    const fp = draftFilePath(dir, sessionId);
+    const tmp = `${fp}.tmp`;
+    await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
+    await fs.rename(tmp, fp);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: `write_failed:${msg}` };
+  }
+
+  return { ok: true, updatedAt };
 }
