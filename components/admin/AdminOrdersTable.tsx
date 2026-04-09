@@ -3,19 +3,9 @@
 import Link from "next/link";
 import { FileText } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
+import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
 
-export type AdminOrdersTableRow = {
-  id: string;
-  created: number;
-  amountTotal: number | null;
-  currency: string | null;
-  paymentStatus: string;
-  customerEmail: string | null;
-  vin: string | null;
-  isDemo?: boolean;
-  /** No pasūtījuma JSON pēc PDF saglabāšanas; ja nav — izmanto noklusējuma API ceļu. */
-  invoicePdfUrl: string | null;
-};
+export type AdminOrdersTableRow = SerializedAdminOrderTableRow;
 
 function PaymentStatusPill({ status }: { status: string }) {
   const s = status.toLowerCase();

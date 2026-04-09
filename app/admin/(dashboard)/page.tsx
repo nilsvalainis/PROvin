@@ -1,4 +1,5 @@
 import { isDemoOrdersEnabled, listAdminOrders } from "@/lib/admin-orders";
+import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
 
@@ -15,6 +16,7 @@ export default async function AdminOrdersPage() {
       };
     }),
   );
+  const tableOrders = serializeAdminOrderTableRows(ordersWithInvoice);
   const demoPrefOn = isDemoOrdersEnabled();
   const onlyDemoShown = orders.length > 0 && orders.every((o) => o.isDemo);
   const hasStripeIssue = Boolean(stripeError);
@@ -88,7 +90,7 @@ export default async function AdminOrdersPage() {
       ) : null}
 
       {orders.length > 0 ? (
-        <AdminOrdersTable orders={ordersWithInvoice} />
+        <AdminOrdersTable orders={tableOrders} />
       ) : null}
     </div>
   );
