@@ -377,7 +377,15 @@ export function buildUnifiedMileageTableHtml(
   p: UnifiedMileageSourcePayload,
   mileageOpts?: CollectUnifiedMileageOptions,
 ): string {
-  const collected = collectUnifiedMileageRows(p, mileageOpts);
+  const collected = collectUnifiedMileageRows(
+    {
+      csddForm: p.csddForm,
+      autoRecordsBlock: p.autoRecordsBlock,
+      manualVendorBlocks: p.manualVendorBlocks,
+      citiAvotiBlock: "citiAvoti" in p ? (p as ClientReportPayload).citiAvoti ?? null : p.citiAvotiBlock ?? null,
+    },
+    mileageOpts,
+  );
   if (collected.length === 0) return "";
 
   const anomalyBySourceOrder = computeOdometerAnomalyBySourceOrder(collected);
@@ -400,7 +408,9 @@ export function buildUnifiedMileageTableHtml(
         ? buildMileageHistoryTableHtml(display, anomalyBySourceOrder)
         : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(leftRows, anomalyBySourceOrder)}</div><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(rightRows, anomalyBySourceOrder)}</div></div>`;
 
-  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE")}${chartHtml}${dualTables}</div>`;
+  const sourceCount = new Set(collected.map((r) => r.sourceLabel)).size;
+  const sourceCountHtml = `<p class="pdf-source-count-note">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</p>`;
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE")}${chartHtml}${dualTables}${sourceCountHtml}</div>`;
 }
 
 function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
@@ -428,7 +438,9 @@ function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfVisibili
   if (collected.length === 0) return "";
   const rows = sortUnifiedIncidentsNewestFirst(collected);
   const tablesHtml = buildIncidentHistoryTableHtml(rows);
-  return `<div class="pdf-unified-incidents-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE)}${tablesHtml}</div>`;
+  const sourceCount = new Set(collected.map((r) => r.sourceLabel)).size;
+  const sourceCountHtml = `<p class="pdf-source-count-note">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</p>`;
+  return `<div class="pdf-unified-incidents-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE)}${tablesHtml}${sourceCountHtml}</div>`;
 }
 
 /** CSDD — apskates datumi + strukturētie lauki (viena galvenā līmeņa zona, kā NOBRAUKUMA VĒSTURE). */
@@ -858,7 +870,7 @@ function clientReportPrintCss(): string {
         box-shadow:0 1px 0 rgba(15,23,42,.06) inset;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-mileage-chart-wrap--compact .pdf-mileage-chart-svg{max-height:92px;}
+      .pdf-mileage-chart-wrap--compact .pdf-mileage-chart-svg{max-height:120px;}
       .pdf-mileage-chart-svg{display:block;width:100%;max-width:480px;height:auto;margin:0 auto;}
       .pdf-mileage-chart-grid{stroke:${PDF_MILEAGE_CHART_GRID};stroke-width:1;fill:none;}
       .pdf-mileage-chart-path{
@@ -869,8 +881,9 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-mileage-chart-year{
-        fill:${PDF_MILEAGE_CHART_AXIS};font-family:Inter,sans-serif;font-size:8.5px;font-weight:500;
+        fill:${PDF_MILEAGE_CHART_AXIS};font-family:Inter,sans-serif;font-size:8px;font-weight:500;
       }
+      .pdf-mileage-chart-wrap--compact .pdf-mileage-chart-year{font-size:7.5px;}
       .pdf-mileage-chart-legend{
         display:flex;align-items:center;gap:6px;padding:0 10px 8px 12px;font-size:0.62rem;color:#64748b;
       }
@@ -879,6 +892,12 @@ function clientReportPrintCss(): string {
         flex-shrink:0;
       }
       .pdf-mileage-chart-legend-text{font-weight:500;color:#64748b;}
+      .pdf-source-count-note{
+        margin:8px 0 0;
+        font-size:0.62rem;
+        color:#64748b;
+        line-height:1.4;
+      }
       .pdf-mileage-chart-dot--anomaly{
         fill:#ef4444!important;stroke:#b91c1c!important;stroke-width:1.75!important;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;

@@ -43,14 +43,14 @@ export function buildUnifiedMileageChartWrapHtml(
     .map((r) => {
       const km = parseOdometerKm(r.odometer);
       if (km == null || r.sortableTime === Number.NEGATIVE_INFINITY) return null;
-      return { t: r.sortableTime, km, sourceOrder: r.sourceOrder };
+      return { year: new Date(r.sortableTime).getUTCFullYear(), km, sourceOrder: r.sourceOrder };
     })
-    .filter((x): x is { t: number; km: number; sourceOrder: number } => x != null);
+    .filter((x): x is { year: number; km: number; sourceOrder: number } => x != null);
 
   if (series.length === 0) return "";
 
-  const tMin = series[0]!.t;
-  const tMax = series[series.length - 1]!.t;
+  const yMin = series[0]!.year;
+  const yMax = series[series.length - 1]!.year;
   let kmMin = Math.min(...series.map((s) => s.km));
   let kmMax = Math.max(...series.map((s) => s.km));
   if (kmMin === kmMax) {
@@ -62,7 +62,7 @@ export function buildUnifiedMileageChartWrapHtml(
   kmMax += kmPad;
 
   const W = compact ? 480 : 520;
-  const H = compact ? 86 : 132;
+  const H = compact ? 112 : 172;
   const padL = 12;
   const padR = 12;
   const padT = compact ? 10 : 14;
@@ -70,22 +70,22 @@ export function buildUnifiedMileageChartWrapHtml(
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
 
-  const xOf = (t: number) => {
-    if (tMax === tMin) return padL + plotW / 2;
-    return padL + ((t - tMin) / (tMax - tMin)) * plotW;
+  const xOf = (year: number) => {
+    if (yMax === yMin) return padL + plotW / 2;
+    return padL + ((year - yMin) / (yMax - yMin)) * plotW;
   };
   const yOf = (km: number) => padT + plotH - ((km - kmMin) / (kmMax - kmMin)) * plotH;
 
   const pts = series.map((s) => ({
-    x: xOf(s.t),
+    x: xOf(s.year),
     y: yOf(s.km),
     sourceOrder: s.sourceOrder,
   }));
   const pathPts = pts.map((p) => ({ x: p.x, y: p.y }));
   const pathD = catmullRomSvgPath(pathPts);
 
-  const yStart = new Date(tMin).getUTCFullYear();
-  const yEnd = new Date(tMax).getUTCFullYear();
+  const yStart = yMin;
+  const yEnd = yMax;
   const yearSpan = Math.max(0, yEnd - yStart);
   const yearStep = yearSpan <= 10 ? 1 : 2;
   const tickSet = new Set<number>();
@@ -98,8 +98,7 @@ export function buildUnifiedMileageChartWrapHtml(
   const gridLines: string[] = [];
   const yearLabels: string[] = [];
   for (const y of tickYears) {
-    const tx = Date.UTC(y, 0, 1);
-    let gx = xOf(tx);
+    let gx = xOf(y);
     gx = Math.min(padL + plotW, Math.max(padL, gx));
     gridLines.push(
       `<line class="pdf-mileage-chart-grid" x1="${gx.toFixed(1)}" y1="${padT}" x2="${gx.toFixed(1)}" y2="${padT + plotH}" />`,

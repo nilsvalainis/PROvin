@@ -11,6 +11,7 @@ export type UnifiedIncidentRow = {
   country: string;
   sortableTime: number;
   sourceOrder: number;
+  sourceLabel: string;
 };
 
 function incidentRowHasLossAmount(r: LtabIncidentRow): boolean {
@@ -30,7 +31,7 @@ export function collectUnifiedIncidentRows(args: {
   const out: UnifiedIncidentRow[] = [];
   let sourceOrder = 0;
   const omitTitles = args.options?.omitVendorBlockTitles;
-  const push = (r: LtabIncidentRow) => {
+  const push = (r: LtabIncidentRow, sourceLabel: string) => {
     if (!incidentRowHasLossAmount(r)) return;
     const d = r.csngDate.trim();
     out.push({
@@ -39,14 +40,15 @@ export function collectUnifiedIncidentRows(args: {
       country: r.incidentNo.trim() || "—",
       sortableTime: parseMileageDateForSort(d),
       sourceOrder: sourceOrder++,
+      sourceLabel: sourceLabel.trim() || "Nezināms avots",
     });
   };
   for (const b of args.manualVendorBlocks ?? []) {
     if (omitTitles?.has(b.title)) continue;
-    for (const r of b.incidentRows) push(r);
+    for (const r of b.incidentRows) push(r, b.title);
   }
   if (!args.options?.omitLtab) {
-    for (const r of args.manualLtabBlock?.rows ?? []) push(r);
+    for (const r of args.manualLtabBlock?.rows ?? []) push(r, "LTAB");
   }
   return out;
 }

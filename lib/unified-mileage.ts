@@ -22,6 +22,7 @@ export type UnifiedMileageRow = {
   country: string;
   sortableTime: number;
   sourceOrder: number;
+  sourceLabel: string;
 };
 
 export type UnifiedMileageSourcePayload = {
@@ -109,7 +110,7 @@ export function collectUnifiedMileageRows(
 ): UnifiedMileageRow[] {
   const rows: UnifiedMileageRow[] = [];
   let sourceOrder = 0;
-  const pushRow = (dateRaw: string, odometerRaw: string, countryRaw: string) => {
+  const pushRow = (dateRaw: string, odometerRaw: string, countryRaw: string, sourceLabelRaw: string) => {
     const date = dateRaw.trim();
     const odometer = odometerRaw.trim();
     if (!date || !odometer) return;
@@ -119,6 +120,7 @@ export function collectUnifiedMileageRows(
       country: countryRaw.trim() || CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
       sortableTime: parseMileageDateForSort(date),
       sourceOrder,
+      sourceLabel: sourceLabelRaw.trim() || "Nezināms avots",
     });
     sourceOrder += 1;
   };
@@ -126,7 +128,7 @@ export function collectUnifiedMileageRows(
   if (!options?.omitCsddMileage) {
     const csddRows = p.csddForm?.mileageHistory.filter(csddMileageRowHasData) ?? [];
     for (const r of csddRows) {
-      pushRow(r.date, r.odometer, r.country);
+      pushRow(r.date, r.odometer, r.country, "CSDD");
     }
   }
 
@@ -137,18 +139,18 @@ export function collectUnifiedMileageRows(
   for (const r of autoRows) {
     const dateOut = formatAutoRecordsDateForOutput(r.date);
     const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
-    pushRow(dateOut, odoOut, r.country);
+    pushRow(dateOut, odoOut, r.country, "AUTO RECORDS");
   }
   }
 
   const omitTitles = options?.omitVendorBlockTitles;
-  const vendorRows = (p.manualVendorBlocks ?? [])
-    .filter((b) => !omitTitles || !omitTitles.has(b.title))
-    .flatMap((b) => b.mileageRows.filter(autoRecordsRowHasData));
-  for (const r of vendorRows) {
-    const dateOut = formatAutoRecordsDateForOutput(r.date);
-    const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
-    pushRow(dateOut, odoOut, r.country);
+  const vendors = (p.manualVendorBlocks ?? []).filter((b) => !omitTitles || !omitTitles.has(b.title));
+  for (const b of vendors) {
+    for (const r of b.mileageRows.filter(autoRecordsRowHasData)) {
+      const dateOut = formatAutoRecordsDateForOutput(r.date);
+      const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
+      pushRow(dateOut, odoOut, r.country, b.title);
+    }
   }
 
   /**
@@ -161,14 +163,14 @@ export function collectUnifiedMileageRows(
     for (const r of parsed) {
       const dateOut = formatAutoRecordsDateForOutput(r.date);
       const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
-      pushRow(dateOut, odoOut, r.country);
+      pushRow(dateOut, odoOut, r.country, "CITI AVOTI");
     }
   }
 
   const dedup = new Set<string>();
   const out: UnifiedMileageRow[] = [];
   for (const r of rows) {
-    const k = `${r.date.trim().toLowerCase()}|${r.odometer.replace(/\D/g, "")}|${r.country.trim().toLowerCase()}`;
+    const k = `${r.date.trim().toLowerCase()}|${r.odometer.replace(/\D/g, "")}|${r.country.trim().toLowerCase()}|${r.sourceLabel.trim().toLowerCase()}`;
     if (dedup.has(k)) continue;
     dedup.add(k);
     out.push(r);
