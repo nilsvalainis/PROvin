@@ -365,22 +365,6 @@ function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow, anomalyBySourceOr
   return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td>${odoTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
 }
 
-/** Pēdējie 10 ieraksti (jaunākie) + visas anomālijas; pārējie tiek paslēpti. */
-function filterMileageRowsForPdfSmartView(
-  rowsSortedNewestFirst: UnifiedMileageRow[],
-  anomalyBySourceOrder: Map<number, boolean>,
-): { display: UnifiedMileageRow[]; hiddenCount: number } {
-  const n = rowsSortedNewestFirst.length;
-  if (n <= 10) return { display: rowsSortedNewestFirst, hiddenCount: 0 };
-  const keys = new Set<number>();
-  for (let i = 0; i < 10; i++) keys.add(rowsSortedNewestFirst[i]!.sourceOrder);
-  for (const r of rowsSortedNewestFirst) {
-    if (anomalyBySourceOrder.get(r.sourceOrder)) keys.add(r.sourceOrder);
-  }
-  const display = rowsSortedNewestFirst.filter((r) => keys.has(r.sourceOrder));
-  return { display, hiddenCount: n - display.length };
-}
-
 function buildMileageHistoryTableHtml(rows: UnifiedMileageRow[], anomalyBySourceOrder: Map<number, boolean>): string {
   if (rows.length === 0) return "";
   const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-flag" /></colgroup>`;
@@ -403,7 +387,7 @@ export function buildUnifiedMileageTableHtml(
     return a.sourceOrder - b.sourceOrder;
   });
 
-  const { display, hiddenCount } = filterMileageRowsForPdfSmartView(rows, anomalyBySourceOrder);
+  const display = rows;
   const chartHtml = buildUnifiedMileageChartWrapHtml(collected, anomalyBySourceOrder, { compact: true });
 
   const mid = Math.ceil(display.length / 2) || 0;
@@ -416,12 +400,7 @@ export function buildUnifiedMileageTableHtml(
         ? buildMileageHistoryTableHtml(display, anomalyBySourceOrder)
         : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(leftRows, anomalyBySourceOrder)}</div><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(rightRows, anomalyBySourceOrder)}</div></div>`;
 
-  const note =
-    hiddenCount > 0
-      ? `<p class="pdf-mileage-smart-note" role="note">Rādīti pēdējie 10 ieraksti un visi ar odometra anomāliju; vēl ${hiddenCount} ieraksti nav rādīti.</p>`
-      : "";
-
-  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE")}${chartHtml}${dualTables}${note}</div>`;
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE")}${chartHtml}${dualTables}</div>`;
 }
 
 function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {

@@ -17,9 +17,9 @@ const MAX_INPUT_CHARS = 48_000;
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-/** Gramatikai — ātrs; analīzei — jaunākais / jaudīgāks (Groq atjauninātie id). */
+/** Gramatikai — ātrs; analīzei — stabilāks Free Tier modelis. */
 const GROQ_MODEL_POLISH = "llama-3.1-8b-instant";
-const GROQ_MODEL_ANALYZE = "llama-3.3-70b-specdec";
+const GROQ_MODEL_ANALYZE = "llama-3.1-70b-versatile";
 
 type GroqChatBody = {
   model: string;
@@ -105,6 +105,63 @@ export async function polishLatvianTextWithGroq(raw: string): Promise<string> {
   return groqChatComplete(GROQ_MODEL_POLISH, LV_POLISH_SYSTEM_PROMPT, raw, 0.2);
 }
 
+function extractJsonLikeBlock(text: string): string | null {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fenced?.[1]) return fenced[1].trim();
+  const obj = text.match(/\{[\s\S]*\}/);
+  if (obj?.[0]) return obj[0].trim();
+  return null;
+}
+
+function coerceListingAnalysisText(raw: string): string {
+  const text = raw.trim();
+  if (!text) {
+    throw new Error("analysis_empty_output");
+  }
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    if (parsed && typeof parsed === "object") {
+      const obj = parsed as Record<string, unknown>;
+      const candidate =
+        (typeof obj.text === "string" && obj.text) ||
+        (typeof obj.content === "string" && obj.content) ||
+        (typeof obj.summary === "string" && obj.summary) ||
+        (typeof obj.result === "string" && obj.result) ||
+        "";
+      const out = candidate.trim();
+      if (out) return out;
+    }
+  } catch {
+    // Not a raw JSON payload; try fenced/embedded JSON next.
+  }
+
+  try {
+    const maybeJson = extractJsonLikeBlock(text);
+    if (maybeJson) {
+      const parsed = JSON.parse(maybeJson) as unknown;
+      if (parsed && typeof parsed === "object") {
+        const obj = parsed as Record<string, unknown>;
+        const candidate =
+          (typeof obj.text === "string" && obj.text) ||
+          (typeof obj.content === "string" && obj.content) ||
+          (typeof obj.summary === "string" && obj.summary) ||
+          (typeof obj.result === "string" && obj.result) ||
+          "";
+        const out = candidate.trim();
+        if (out) return out;
+      }
+    }
+  } catch {
+    // Embedded JSON is malformed; fall through to plain text.
+  }
+
+  if (/[A-Za-z\u00C0-\u024F\u1E00-\u1EFF]/.test(text)) {
+    return text;
+  }
+  throw new Error("analysis_unparseable_output");
+}
+
 export async function analyzeListingPasteForSalesContextWithGroq(raw: string): Promise<string> {
-  return groqChatComplete(GROQ_MODEL_ANALYZE, LV_LISTING_ANALYSIS_SYSTEM_PROMPT, raw, 0.35);
+  const out = await groqChatComplete(GROQ_MODEL_ANALYZE, LV_LISTING_ANALYSIS_SYSTEM_PROMPT, raw, 0.35);
+  return coerceListingAnalysisText(out);
 }

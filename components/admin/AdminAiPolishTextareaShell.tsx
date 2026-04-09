@@ -40,9 +40,9 @@ export function AdminAiPolishTextareaShell({
     if (disabled || loading) return;
     const t = value.trim();
     if (!t) return;
+    setOriginalText(value);
     setLoading(true);
     setError(null);
-    const snapshotBeforeAi = value;
     try {
       const res = await fetch("/api/admin/ai-polish-lv", {
         method: "POST",
@@ -64,7 +64,6 @@ export function AdminAiPolishTextareaShell({
         return;
       }
       if (typeof data.text === "string") {
-        setOriginalText(snapshotBeforeAi);
         onPolished(data.text);
       }
     } catch {
@@ -74,7 +73,7 @@ export function AdminAiPolishTextareaShell({
     }
   }, [disabled, loading, onPolished, value]);
 
-  const canUndo = originalText !== "" && value !== originalText;
+  const canUndo = originalText !== "";
 
   const handleUndo = useCallback(() => {
     if (!originalText) return;
