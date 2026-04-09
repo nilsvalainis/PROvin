@@ -45,9 +45,8 @@ function invoicePdfHref(row: AdminOrdersTableRow): string | null {
   return row.invoicePdfUrl ?? `/api/admin/invoice/${encodeURIComponent(row.id)}/pdf`;
 }
 
-const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short" });
-
 export function AdminOrdersTable({ orders }: { orders: AdminOrdersTableRow[] }) {
+  const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short" });
   return (
     <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
       <div className="overflow-x-auto">
