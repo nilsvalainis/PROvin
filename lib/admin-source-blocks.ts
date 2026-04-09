@@ -263,13 +263,23 @@ export function sortMileageHistoryDescending(rows: CsddMileageRow[]): CsddMileag
   return [...rows].sort((a, b) => mileageDateSortKey(b.date) - mileageDateSortKey(a.date));
 }
 
+/** No masīva gala saglabā tukšas melnraksta rindas (admin „+ Rinda”; `mergeSourceBlocksWithDefaults`). */
+function splitTrailingEmptyBy<T>(rows: T[], hasData: (r: T) => boolean): { head: T[]; trailing: T[] } {
+  let end = rows.length;
+  while (end > 0 && !hasData(rows[end - 1]!)) end--;
+  return { head: rows.slice(0, end), trailing: rows.slice(end) };
+}
+
 /**
  * Viena hronoloģiska vēsture: apvieno LV + ārvalstu masīvus.
  * 1) Ja vienāds datums+odometrs vairākos ierakstos → saglabā to ar **konkrētu valsti**, nevis „Latvija”, ja tāda ir.
  * 2) Pēc tam precīzi dublikāti (datums+odometrs+valsts) tiek noņemti.
+ * 3) Vienmērīgi tukšās rindas masīva **galā** paliek (rediģēšanai), nevis tiek atmestas.
  */
 export function finalizeMileageHistory(rows: CsddMileageRow[]): CsddMileageRow[] {
-  const withData = rows.filter(csddMileageRowHasData);
+  const { head, trailing } = splitTrailingEmptyBy(rows, csddMileageRowHasData);
+  const withData = head.filter(csddMileageRowHasData);
+  if (withData.length === 0) return trailing;
   const merged = mergeDuplicateDateKmPreferNonLv(withData);
   const seen = new Set<string>();
   const deduped: CsddMileageRow[] = [];
@@ -279,7 +289,7 @@ export function finalizeMileageHistory(rows: CsddMileageRow[]): CsddMileageRow[]
     seen.add(k);
     deduped.push(r);
   }
-  return sortMileageHistoryDescending(deduped);
+  return [...sortMileageHistoryDescending(deduped), ...trailing];
 }
 
 /** Atslēga: datums + odometrs (bez valsts) — saplūdināšanai, ja abi bloki dod vienu un to pašu dienu/km. */
@@ -728,29 +738,41 @@ export function toPdfLtabManualBlock(b: LtabBlockState): ClientManualLtabBlockPd
   };
 }
 
+function mapUnknownArrayToAutoRecordsRows(rowsIn: unknown[]): AutoRecordsServiceRow[] {
+  return rowsIn.map((row) => {
+    if (!row || typeof row !== "object") return emptyAutoRecordsServiceRow();
+    const x = row as Record<string, unknown>;
+    return {
+      date: String(x.date ?? "").slice(0, 40),
+      odometer: String(x.odometer ?? "").slice(0, 40),
+      country: String(x.country ?? "").slice(0, 120),
+    };
+  });
+}
+
+function normalizeParsedAutoRecordsRows(rawRows: AutoRecordsServiceRow[]): AutoRecordsServiceRow[] {
+  const { head, trailing } = splitTrailingEmptyBy(rawRows, autoRecordsRowHasData);
+  const dataRows = head.filter(autoRecordsRowHasData);
+  const sorted = sortAutoRecordsDescending(dataRows);
+  const clip = (r: AutoRecordsServiceRow) => ({
+    date: formatAutoRecordsDateForOutput(r.date),
+    odometer: normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
+    country: r.country.replace(/\s+/g, " ").trim(),
+  });
+  const normalized = sorted.map(clip);
+  const normalizedTrailing = trailing.map(clip);
+  const out = [...normalized, ...normalizedTrailing];
+  return out.length > 0 ? out : [emptyAutoRecordsServiceRow()];
+}
+
 function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBlockState {
   if ("serviceHistory" in raw || "rawUnprocessedData" in raw) {
     const rowsIn = Array.isArray(raw.serviceHistory) ? raw.serviceHistory : [];
-    const serviceHistory: AutoRecordsServiceRow[] = rowsIn
-      .map((row) => {
-        if (!row || typeof row !== "object") return emptyAutoRecordsServiceRow();
-        const x = row as Record<string, unknown>;
-        return {
-          date: String(x.date ?? "").slice(0, 40),
-          odometer: String(x.odometer ?? "").slice(0, 40),
-          country: String(x.country ?? "").slice(0, 120),
-        };
-      })
-      .filter(autoRecordsRowHasData);
-    const sorted = sortAutoRecordsDescending(serviceHistory);
-    const normalized = sorted.map((r) => ({
-      date: formatAutoRecordsDateForOutput(r.date),
-      odometer: normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
-      country: r.country.replace(/\s+/g, " ").trim(),
-    }));
+    const rawRows = mapUnknownArrayToAutoRecordsRows(rowsIn);
+    const normalized = normalizeParsedAutoRecordsRows(rawRows);
     return {
       rawUnprocessedData: String(raw.rawUnprocessedData ?? "").slice(0, 500_000),
-      serviceHistory: normalized.length > 0 ? normalized : [emptyAutoRecordsServiceRow()],
+      serviceHistory: normalized,
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
     };
   }
@@ -813,24 +835,7 @@ export function migrateLegacyVendorBlock(legacy: StandardSourceBlockState): Vend
 }
 
 function normalizeVendorMileageRowsFromRaw(rowsIn: unknown[]): AutoRecordsServiceRow[] {
-  const serviceHistory: AutoRecordsServiceRow[] = rowsIn
-    .map((row) => {
-      if (!row || typeof row !== "object") return emptyAutoRecordsServiceRow();
-      const x = row as Record<string, unknown>;
-      return {
-        date: String(x.date ?? "").slice(0, 40),
-        odometer: String(x.odometer ?? "").slice(0, 40),
-        country: String(x.country ?? "").slice(0, 120),
-      };
-    })
-    .filter(autoRecordsRowHasData);
-  const sorted = sortAutoRecordsDescending(serviceHistory);
-  const normalized = sorted.map((r) => ({
-    date: formatAutoRecordsDateForOutput(r.date),
-    odometer: normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
-    country: r.country.replace(/\s+/g, " ").trim(),
-  }));
-  return normalized.length > 0 ? normalized : [emptyAutoRecordsServiceRow()];
+  return normalizeParsedAutoRecordsRows(mapUnknownArrayToAutoRecordsRows(rowsIn));
 }
 
 function normalizeVendorIncidentsFromRaw(rowsIn: unknown[]): LtabIncidentRow[] {
@@ -843,8 +848,10 @@ function normalizeVendorIncidentsFromRaw(rowsIn: unknown[]): LtabIncidentRow[] {
       lossAmount: String(x.lossAmount ?? "").slice(0, 120),
     };
   });
-  const filtered = rows.filter(ltabRowHasData);
-  return filtered.length > 0 ? filtered : [emptyLtabRow()];
+  const { head, trailing } = splitTrailingEmptyBy(rows, ltabRowHasData);
+  const dataRows = head.filter(ltabRowHasData);
+  const out = [...dataRows, ...trailing];
+  return out.length > 0 ? out : [emptyLtabRow()];
 }
 
 function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBlockState {
@@ -862,6 +869,7 @@ function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBloc
 
 function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
   const rowsIn = Array.isArray(raw.rows) ? raw.rows : [];
+  const comments = typeof raw.comments === "string" ? raw.comments : "";
   const rows: LtabIncidentRow[] = rowsIn.map((row) => {
     if (!row || typeof row !== "object") return emptyLtabRow();
     const x = row as Record<string, unknown>;
@@ -878,10 +886,14 @@ function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
       lossAmount: String(x.amount ?? "").slice(0, 120),
     };
   });
-  const filtered = rows.filter(ltabRowHasData);
-  const comments = typeof raw.comments === "string" ? raw.comments : "";
+  if (rows.length === 0) {
+    return { rows: [emptyLtabRow()], comments };
+  }
+  const { head, trailing } = splitTrailingEmptyBy(rows, ltabRowHasData);
+  const dataRows = head.filter(ltabRowHasData);
+  const combined = [...dataRows, ...trailing];
   return {
-    rows: filtered.length > 0 ? filtered : [emptyLtabRow()],
+    rows: combined.length > 0 ? combined : [emptyLtabRow()],
     comments,
   };
 }
@@ -976,10 +988,10 @@ function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFi
 function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
   const base = parseCsddStoredFieldsRaw(raw);
   if ("mileageHistory" in raw && Array.isArray(raw.mileageHistory)) {
-    const unified = parseCsddMileageUnifiedRaw(raw.mileageHistory).filter(csddMileageRowHasData);
+    const unified = parseCsddMileageUnifiedRaw(raw.mileageHistory);
     return {
       ...base,
-      mileageHistory: unified.length > 0 ? finalizeMileageHistory(unified) : [],
+      mileageHistory: finalizeMileageHistory(unified),
     };
   }
   const mileage = parseCsddMileageHistoryRaw(raw.mileageHistoryLv);
