@@ -97,9 +97,9 @@ export function AdminAiPolishTextareaShell({
           className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-none border-0 bg-transparent p-0 text-[15px] leading-none text-[#0061D2] shadow-none transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
           onClick={() => void run()}
           disabled={disabled || loading || !value.trim()}
-          title="Groq (Llama 3): labot latviešu gramatiku un stilu"
+          title="Labot gramatiku"
           aria-busy={loading}
-          aria-label="Groq (Llama 3): labot latviešu gramatiku un stilu"
+          aria-label="Labot gramatiku"
         >
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin text-[#0061D2]" aria-hidden />

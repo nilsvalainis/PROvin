@@ -5,9 +5,9 @@ import "server-only";
  * `GROQ_API_KEY` no `process.env`; klienta komponenti izsauc tikai API maršrutus.
  */
 
-/** Latviešu gramatikas / stila labošana (admin, ✨ `/api/admin/ai-polish-lv`). */
+/** Latviešu gramatikas labošana (admin, ✨ `/api/admin/ai-polish-lv`). */
 export const LV_POLISH_SYSTEM_PROMPT =
-  "Tu esi latviešu valodas redaktors. Izlabo gramatikas un stila kļūdas šajā auto apskates atskaites tekstā, saglabājot profesionālu auto eksperta toni. Atgriez TIKAI laboto tekstu bez komentāriem.";
+  "Tavs uzdevums ir labot TIKAI gramatikas, interpunkcijas un pareizrakstības kļūdas latviešu valodā. NEMAINI teksta stilu, toni vai vārdu izvēli, ja vien tie nav gramatiski nepareizi. Saglabā autora oriģinālo izteiksmes veidu.";
 
 /** Sludinājuma iekopētais apraksts → pārdošanas konteksts eksperta atskaitei (admin). */
 export const LV_LISTING_ANALYSIS_SYSTEM_PROMPT =

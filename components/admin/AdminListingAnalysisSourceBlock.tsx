@@ -165,13 +165,13 @@ export function AdminListingAnalysisSourceBlock({
               className="inline-flex items-center justify-center gap-1.5 rounded-md border border-blue-700 bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
               disabled={readOnly || disabled || analyzing || !v.listingPasteRaw.trim()}
               onClick={() => void runListingAnalyze()}
-              title="Analizēt ar Groq (Llama 3) — rezultāts lauks „Pārdošanas sludinājuma konteksts”"
+              title="Labot gramatiku — Groq aizpilda lauku „Pārdošanas sludinājuma konteksts”"
               aria-busy={analyzing}
             >
               {analyzing ? (
                 <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
               ) : null}
-              Analizēt ar AI 🤖
+              Labot gramatiku 🤖
             </button>
           </div>
           {analyzeErr ? (
