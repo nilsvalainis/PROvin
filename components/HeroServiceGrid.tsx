@@ -40,8 +40,8 @@ export function HeroServiceGrid({ items }: { items: HeroServiceItem[] }) {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-3xl rounded-[3rem] bg-blue-50/30 p-8 backdrop-blur-[1px] sm:p-10 md:p-12">
-      <ul className="mx-auto flex w-full min-w-0 max-w-lg list-none flex-col gap-3 sm:max-w-xl">
+    <div className="mx-auto w-full max-w-[50.4rem] rounded-[3rem] bg-blue-50/30 p-8 backdrop-blur-[1px] sm:p-10 md:p-12">
+      <ul className="mx-auto flex w-full min-w-0 max-w-[33.6rem] list-none flex-col gap-3 sm:max-w-[37.8rem]">
         {rows.map(({ item, index }) => {
           const Icon = HERO_SVC_ICONS[index] ?? Globe2;
           return (
