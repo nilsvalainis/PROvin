@@ -6,16 +6,20 @@
     "h2": "Tavs personīgais auto detektīvs",
     "pillars": [
       {
-        "title": "Apvienoti dati no vairākām maksas datubāzēm",
-        "body": "Vēsture, nobraukums, negadījumi - dažādi avoti"
+        "title": "Maksas datubāzes",
+        "body": "Vēsture, nobraukums, negadījumi"
       },
       {
-        "title": "Sludinājuma un pārdevēja analīze",
-        "body": "SS.LV, Mobile.de u.c. fotogrāfiju analīze, apraksta zemteksti, triku atšifrēšana"
+        "title": "Sludinājuma analīze",
+        "body": "SS.LV, Mobile.de u.c."
       },
       {
-        "title": "Modeļa tehnisko risku analīze",
+        "title": "Tehnisko mezglu analīze",
         "body": "Dzinējs, ātrumkārba un vājās vietas"
+      },
+      {
+        "title": "Papildu konsultācija",
+        "body": "Iespēja uzdot precizējošus jautājumus"
       }
     ],
     "cta": "PASŪTĪT ANALĪZI — 79,99 €",
