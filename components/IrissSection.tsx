@@ -8,6 +8,8 @@ import {
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
   const tPricing = await getTranslations("Pricing");
+  const rawParagraphs = t.raw("bodyParagraphs");
+  const bodyParagraphs = Array.isArray(rawParagraphs) ? (rawParagraphs as string[]) : [];
 
   const socialTiktok = process.env.NEXT_PUBLIC_IRISS_TIKTOK_URL?.trim();
   const socialYoutube = process.env.NEXT_PUBLIC_IRISS_YOUTUBE_URL?.trim();
@@ -36,8 +38,11 @@ export async function IrissSection() {
         </div>
 
         <div className="mx-auto mt-7 max-w-[65ch] space-y-4 text-center sm:mt-8">
-          <p className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>{t("bio1")}</p>
-          <p className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>{t("bio2")}</p>
+          {bodyParagraphs.map((para, i) => (
+            <p key={i} className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>
+              {para}
+            </p>
+          ))}
         </div>
       </div>
 

@@ -1,8 +1,12 @@
 {
   "Iriss": {
     "title": "KAS IR IRISS?",
-    "bio1": "IRISS ir viens no atpazīstamākajiem auto tirdzniecības nozares pārzinātājiem Latvijas sociālajos tīklos. Viņa vairāk nekā 10 gadu pieredze lietotu auto tirdzniecībā un importā no Eiropas apvieno padziļinātas zināšanas par auto markām, to specifiskajām vājajām vietām un reālo tirgus situāciju, kas ļauj nekļūdīgi identificēt slēptos riskus un pārdevēju izmantotos paņēmienus.",
-    "bio2": "Izmantojot PROVIN auditu, Jūs iegūstat tiešu un godīgu skatījumu uz noskatīto auto no cilvēka, kurš redz cauri gan sludinājumu trikiem, gan tam, ko tirgotāji visbiežāk cenšas noklusēt. Tas nav tikai datu apkopojums – tā ir reāla pieredze un individuāls darbs, kas strādā Jūsu drošībai.",
+    "bodyParagraphs": [
+      "Automašīnas iegāde ir atbildīgs lēmums, kurā izšķiroša nozīme ir zināšanām. Ar 10+ gadu pieredzi lietotu auto importā no Eiropas, IRISS apvieno padziļinātu izpratni par auto marku specifiku, tirgus īpatnībām un pārdevēju mārketinga paņēmieniem.",
+      "Šī pieredze, papildināta ar zināšanām par tirdzniecības psiholoģiju, ļauj mums saskatīt slēptos riskus un defektus tur, kur citi redz tikai pievilcīgu sludinājumu.",
+      "PROVIN audits nav tikai faktu pārbaude — tas ir Tavs personīgais interešu aizstāvis un filtrs starp Tevi un sliktu darījumu. Mēs nodrošinām objektīvu un neatkarīgu izvērtējumu, balstītu reālā nozares pieredzē, ar vienu skaidru mērķi — atklāt to, ko pārdevēji mēģina noklusēt.",
+      "Pērkot lietotu auto, Tu spēlē pret cilvēkiem, kuri zina vairāk. Un mūsu uzdevums ir vienkāršs: neļaut Tev nopirkt problēmu. Tā ir izvēle, kas ietekmē Tavu ikdienas kvalitāti, drošību un ilgtermiņa izmaksas."
+    ],
     "experienceLabel": "Pieredze",
     "years": "10+",
     "yearsLabel": "gadi",
