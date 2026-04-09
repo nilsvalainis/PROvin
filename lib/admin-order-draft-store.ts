@@ -75,7 +75,8 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
   const invoicePdfUrl = typeof o.invoicePdfUrl === "string" ? o.invoicePdfUrl : undefined;
   const invoicePdfGeneratedAt =
     typeof o.invoicePdfGeneratedAt === "string" ? o.invoicePdfGeneratedAt : undefined;
-  return { orderEdits, workspace, updatedAt, invoicePdfUrl, invoicePdfGeneratedAt };
+  const invoiceNumber = typeof o.invoiceNumber === "string" ? o.invoiceNumber : undefined;
+  return { orderEdits, workspace, updatedAt, invoicePdfUrl, invoicePdfGeneratedAt, invoiceNumber };
 }
 
 export async function readOrderDraft(sessionId: string): Promise<OrderDraftState | null> {
@@ -149,6 +150,7 @@ export async function patchOrderDraft(
     updatedAt,
     orderEdits: nextOrderEdits,
     workspace: nextWorkspace,
+    ...(prev?.invoiceNumber != null ? { invoiceNumber: prev.invoiceNumber } : {}),
     ...(prev?.invoicePdfUrl != null ? { invoicePdfUrl: prev.invoicePdfUrl } : {}),
     ...(prev?.invoicePdfGeneratedAt != null ? { invoicePdfGeneratedAt: prev.invoicePdfGeneratedAt } : {}),
   };
@@ -171,10 +173,10 @@ export async function patchOrderDraft(
   }
 }
 
-/** Saglabā rēķina PDF saiti pasūtījuma JSON (vienā mapē ar order draft). */
-export async function patchOrderDraftInvoiceMetadata(
+/** Saglabā rēķina laukus pasūtījuma JSON (numurs, PDF saite). */
+export async function upsertOrderDraftInvoiceFields(
   sessionId: string,
-  meta: { invoicePdfUrl: string; invoicePdfGeneratedAt: string },
+  fields: Partial<{ invoiceNumber: string; invoicePdfUrl: string; invoicePdfGeneratedAt: string }>,
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   const dir = resolveDraftDir();
   if (!dir) return { ok: false, error: "store_disabled" };
@@ -187,8 +189,10 @@ export async function patchOrderDraftInvoiceMetadata(
     updatedAt,
     orderEdits: prev?.orderEdits ?? {},
     workspace: prev?.workspace ?? null,
-    invoicePdfUrl: meta.invoicePdfUrl,
-    invoicePdfGeneratedAt: meta.invoicePdfGeneratedAt,
+    ...(prev?.invoiceNumber != null ? { invoiceNumber: prev.invoiceNumber } : {}),
+    ...(prev?.invoicePdfUrl != null ? { invoicePdfUrl: prev.invoicePdfUrl } : {}),
+    ...(prev?.invoicePdfGeneratedAt != null ? { invoicePdfGeneratedAt: prev.invoicePdfGeneratedAt } : {}),
+    ...fields,
   };
 
   try {
@@ -203,4 +207,12 @@ export async function patchOrderDraftInvoiceMetadata(
   }
 
   return { ok: true, updatedAt };
+}
+
+/** @deprecated Lietot `upsertOrderDraftInvoiceFields`. */
+export async function patchOrderDraftInvoiceMetadata(
+  sessionId: string,
+  meta: { invoicePdfUrl: string; invoicePdfGeneratedAt: string },
+): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
+  return upsertOrderDraftInvoiceFields(sessionId, meta);
 }

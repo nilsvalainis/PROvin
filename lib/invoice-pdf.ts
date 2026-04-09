@@ -4,8 +4,12 @@ import fs from "fs/promises";
 import path from "path";
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
+import {
+  buildInvoiceServiceLineDescription,
+  getInvoicePvnFooterText,
+  type InvoiceOrderPayload,
+} from "@/lib/generate-invoice-html";
 import { formatMoneyEur } from "@/lib/format-money";
-import { getInvoiceLineDescription, getInvoicePvnFooterText, type InvoiceOrderPayload } from "@/lib/invoice-html";
 
 const INTER_FILES = path.join(process.cwd(), "node_modules/@fontsource/inter/files");
 
@@ -87,12 +91,12 @@ function drawParagraph(ctx: Ctx, text: string, size: number, color = INK, f?: PD
 export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<Uint8Array> {
   const legal = getCompanyLegal();
   const brand = getCompanyPublicBrand();
-  const lineDesc = getInvoiceLineDescription();
+  const lineDesc = buildInvoiceServiceLineDescription(order);
   const pvnFooter = getInvoicePvnFooterText();
   const money = formatMoneyEur(order.amountTotal, order.currency);
   const email = order.customerEmail ?? order.customerDetailsEmail ?? "—";
   const vin = order.vin?.trim() || "—";
-  const invoiceNo = order.id;
+  const invoiceNo = order.invoiceNumber;
 
   const dateFmt = new Intl.DateTimeFormat("lv-LV", {
     dateStyle: "long",
@@ -234,7 +238,7 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
   });
   sy -= 26;
   ctx.page.drawText("PVN likme", { x: boxLeft + pad, y: sy, size: 10, font, color: MUTED });
-  const pvnLab = "0% (N/A)";
+  const pvnLab = "0%";
   ctx.page.drawText(pvnLab, {
     x: boxLeft + boxW - pad - font.widthOfTextAtSize(pvnLab, 10),
     y: sy,

@@ -2,9 +2,14 @@ import "server-only";
 
 import fs from "fs/promises";
 import path from "path";
-import { getOrderDraftStorageDir, isSafeOrderDraftSessionId, patchOrderDraftInvoiceMetadata } from "@/lib/admin-order-draft-store";
+import {
+  getOrderDraftStorageDir,
+  isSafeOrderDraftSessionId,
+  upsertOrderDraftInvoiceFields,
+} from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { buildInvoicePdfBytes } from "@/lib/invoice-pdf";
+import { getOrCreateInvoiceNumber } from "@/lib/invoice-number";
 
 export function resolveInvoiceDir(): string | null {
   const base = getOrderDraftStorageDir();
@@ -45,16 +50,16 @@ export async function writeInvoicePdfToDisk(sessionId: string, bytes: Uint8Array
 }
 
 /**
- * Ģenerē un saglabā PDF, ja glabātuve ieslēgta un fails vēl nav.
- * Izsaucams no Stripe webhook pēc apmaksas.
+ * Pēc apmaksas: piešķir PRV numuru, saglabā JSON, ģenerē PDF uz disku (ja glabātuve ieslēgta).
  */
-export async function ensureInvoicePdfPersisted(sessionId: string): Promise<void> {
-  if (!resolveInvoiceDir()) return;
-  const existing = await readInvoicePdfFromDisk(sessionId);
-  if (existing) return;
-
+export async function persistPaidOrderInvoice(sessionId: string): Promise<void> {
   const order = await getCheckoutSessionDetail(sessionId);
   if (!order || order.paymentStatus !== "paid" || order.amountTotal == null) return;
+
+  const invoiceNumber = await getOrCreateInvoiceNumber(sessionId, order.created);
+
+  if (!resolveInvoiceDir()) return;
+  if (await readInvoicePdfFromDisk(sessionId)) return;
 
   const bytes = await buildInvoicePdfBytes({
     id: order.id,
@@ -64,14 +69,20 @@ export async function ensureInvoicePdfPersisted(sessionId: string): Promise<void
     customerEmail: order.customerEmail,
     customerDetailsEmail: order.customerDetailsEmail,
     vin: order.vin,
+    invoiceNumber,
   });
 
   const ok = await writeInvoicePdfToDisk(sessionId, bytes);
   if (!ok) return;
 
   const relUrl = `/api/admin/invoice/${encodeURIComponent(sessionId)}/pdf`;
-  await patchOrderDraftInvoiceMetadata(sessionId, {
+  await upsertOrderDraftInvoiceFields(sessionId, {
     invoicePdfUrl: relUrl,
     invoicePdfGeneratedAt: new Date().toISOString(),
   });
+}
+
+/** @deprecated Lietot `persistPaidOrderInvoice`. */
+export async function ensureInvoicePdfPersisted(sessionId: string): Promise<void> {
+  await persistPaidOrderInvoice(sessionId);
 }

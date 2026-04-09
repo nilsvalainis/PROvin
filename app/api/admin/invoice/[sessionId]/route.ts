@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
-import { buildInvoiceHtml } from "@/lib/invoice-html";
+import { buildInvoiceHtml } from "@/lib/generate-invoice-html";
+import { getOrCreateInvoiceNumber } from "@/lib/invoice-number";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -30,6 +31,8 @@ export async function GET(_req: Request, ctx: RouteContext) {
     );
   }
 
+  const invoiceNumber = await getOrCreateInvoiceNumber(order.id, order.created);
+
   const html = buildInvoiceHtml({
     id: order.id,
     created: order.created,
@@ -38,6 +41,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
     customerEmail: order.customerEmail,
     customerDetailsEmail: order.customerDetailsEmail,
     vin: order.vin,
+    invoiceNumber,
   });
 
   return new NextResponse(html, {

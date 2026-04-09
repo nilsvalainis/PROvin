@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { patchOrderDraftInvoiceMetadata } from "@/lib/admin-order-draft-store";
+import { upsertOrderDraftInvoiceFields } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { buildInvoicePdfBytes } from "@/lib/invoice-pdf";
+import { getOrCreateInvoiceNumber } from "@/lib/invoice-number";
 import { readInvoicePdfFromDisk, resolveInvoiceDir, writeInvoicePdfToDisk } from "@/lib/invoice-storage";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +11,8 @@ export const runtime = "nodejs";
 
 type RouteContext = { params: Promise<{ sessionId: string }> };
 
-function pdfHeaders(sessionId: string, bytes: Uint8Array) {
-  const safeName = `invoice-${sessionId.replace(/[^\w.-]+/g, "_")}.pdf`;
+function pdfHeaders(sessionId: string, invoiceNumber: string, bytes: Uint8Array) {
+  const safeName = `invoice-${invoiceNumber.replace(/[^\w.-]+/g, "_")}.pdf`;
   return {
     "Content-Type": "application/pdf",
     "Content-Length": String(bytes.byteLength),
@@ -42,9 +43,14 @@ export async function GET(_req: Request, ctx: RouteContext) {
     );
   }
 
+  const invoiceNumber = await getOrCreateInvoiceNumber(sessionId, order.created);
+
   const cached = await readInvoicePdfFromDisk(sessionId);
   if (cached) {
-    return new NextResponse(Buffer.from(cached), { status: 200, headers: pdfHeaders(sessionId, cached) });
+    return new NextResponse(Buffer.from(cached), {
+      status: 200,
+      headers: pdfHeaders(sessionId, invoiceNumber, cached),
+    });
   }
 
   const bytes = await buildInvoicePdfBytes({
@@ -55,18 +61,22 @@ export async function GET(_req: Request, ctx: RouteContext) {
     customerEmail: order.customerEmail,
     customerDetailsEmail: order.customerDetailsEmail,
     vin: order.vin,
+    invoiceNumber,
   });
 
   if (resolveInvoiceDir()) {
     const wrote = await writeInvoicePdfToDisk(sessionId, bytes);
     if (wrote) {
       const relUrl = `/api/admin/invoice/${encodeURIComponent(sessionId)}/pdf`;
-      await patchOrderDraftInvoiceMetadata(sessionId, {
+      await upsertOrderDraftInvoiceFields(sessionId, {
         invoicePdfUrl: relUrl,
         invoicePdfGeneratedAt: new Date().toISOString(),
       });
     }
   }
 
-  return new NextResponse(Buffer.from(bytes), { status: 200, headers: pdfHeaders(sessionId, bytes) });
+  return new NextResponse(Buffer.from(bytes), {
+    status: 200,
+    headers: pdfHeaders(sessionId, invoiceNumber, bytes),
+  });
 }

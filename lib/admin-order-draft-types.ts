@@ -26,6 +26,8 @@ export type OrderDraftState = {
   /** Relatīva saite uz saglabātu PDF rēķinu (pēc pirmās ģenerēšanas), piem. `/api/admin/invoice/cs_…/pdf` */
   invoicePdfUrl?: string;
   invoicePdfGeneratedAt?: string;
+  /** Piem. PRV-2026-0001 */
+  invoiceNumber?: string;
 };
 
 export function orderDraftHasOrderEdits(e: OrderDraftOrderEdits | undefined): boolean {

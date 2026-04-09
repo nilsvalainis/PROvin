@@ -3,6 +3,7 @@
     "title": "Paldies! Maksājums saņemts",
     "body": "Tavs pasūtījums ir reģistrēts. Drīz saņemsi apstiprinājumu e-pastā; mūsu komanda uzsāks datu apkopošanu un analīzi.",
     "sessionLabel": "Sesijas ID:",
+    "downloadInvoice": "Lejuplādēt rēķinu (PDF)",
     "back": "Atpakaļ uz sākumu"
   }
 }

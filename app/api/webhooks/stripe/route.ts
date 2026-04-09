@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { notifyAdminEmail, notifyAdminTelegram } from "@/lib/notify";
-import { ensureInvoicePdfPersisted } from "@/lib/invoice-storage";
+import { persistPaidOrderInvoice } from "@/lib/invoice-storage";
 import { releaseStripeEvent, tryBeginStripeEvent } from "@/lib/stripe-webhook-dedupe";
 import { getOrderFieldsFromSession } from "@/lib/stripe-session";
 import { getStripe } from "@/lib/stripe";
@@ -86,8 +86,8 @@ export async function POST(req: Request) {
 
       console.info("PROVIN order:", payload);
 
-      void ensureInvoicePdfPersisted(session.id).catch((err) => {
-        console.error("invoice pdf persist:", err);
+      void persistPaidOrderInvoice(session.id).catch((err) => {
+        console.error("invoice persist:", err);
       });
     } catch (e) {
       releaseStripeEvent(event.id);

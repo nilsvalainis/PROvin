@@ -36,6 +36,14 @@ export default async function ThanksPage({ searchParams, params }: Props) {
           {t("sessionLabel")} {sid}
         </p>
       )}
+      {sid && (
+        <a
+          href={`/api/invoice/download?session_id=${encodeURIComponent(sid)}`}
+          className="provin-btn provin-lift-subtle mt-6 inline-flex min-h-[44px] items-center justify-center rounded-full bg-provin-accent px-6 text-[17px] font-normal text-white shadow-[0_6px_20px_rgba(0,97,210,0.25)]"
+        >
+          {t("downloadInvoice")}
+        </a>
+      )}
       <Link
         href="/"
         className="provin-btn-ghost provin-lift-subtle mt-10 inline-flex min-h-[44px] items-center justify-center rounded-full border border-black/[0.12] bg-white px-6 text-[17px] font-normal text-provin-accent shadow-sm"
