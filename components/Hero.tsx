@@ -25,7 +25,7 @@ export async function Hero() {
   return (
     <section>
       <div
-        className="mx-auto flex min-w-0 max-w-[640px] flex-col text-center max-sm:min-h-0 max-sm:justify-start max-sm:gap-7 max-sm:px-5 max-sm:pb-10 max-sm:pt-[max(1.75rem,env(safe-area-inset-top))] sm:min-h-[100svh] sm:justify-between sm:gap-4 sm:px-4 sm:pb-4 sm:pt-[max(0.85rem,env(safe-area-inset-top))] md:min-h-0 md:gap-10 md:pb-5 md:pt-14 md:text-center"
+        className="mx-auto flex min-w-0 max-w-[min(100%,44.8rem)] flex-col text-center max-sm:min-h-0 max-sm:justify-start max-sm:gap-7 max-sm:px-5 max-sm:pb-10 max-sm:pt-[max(1.75rem,env(safe-area-inset-top))] sm:min-h-[100svh] sm:justify-between sm:gap-4 sm:px-4 sm:pb-4 sm:pt-[max(0.85rem,env(safe-area-inset-top))] md:min-h-0 md:gap-10 md:pb-5 md:pt-14 md:text-center"
       >
           <header className="shrink-0 space-y-0">
             <p className={signatureTextClass} aria-label={t("approved")}>
