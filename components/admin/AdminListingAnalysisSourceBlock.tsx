@@ -5,7 +5,7 @@
  */
 
 import { Loader2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { ListingAnalysisSubsectionHeading } from "@/components/admin/AdminListingAnalysisSectionChrome";
@@ -30,6 +30,8 @@ type Props = {
   variant?: "default" | "priority";
   /** Zemāks augstums (admin kompaktais skats). */
   compact?: boolean;
+  /** Teksta lauku augstums pēc scrollHeight (+ aptuveni viena rinda). */
+  autoGrow?: boolean;
 };
 
 export function AdminListingAnalysisSourceBlock({
@@ -39,6 +41,7 @@ export function AdminListingAnalysisSourceBlock({
   onChange,
   variant = "default",
   compact = false,
+  autoGrow = false,
 }: Props) {
   const v = value ?? emptyListingAnalysisBlock();
   const L = LISTING_ANALYSIS_SUBSECTIONS;
@@ -49,6 +52,33 @@ export function AdminListingAnalysisSourceBlock({
 
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeErr, setAnalyzeErr] = useState<string | null>(null);
+  const refSeller = useRef<HTMLTextAreaElement>(null);
+  const refPhoto = useRef<HTMLTextAreaElement>(null);
+  const refPaste = useRef<HTMLTextAreaElement>(null);
+  const refSales = useRef<HTMLTextAreaElement>(null);
+
+  const bumpTa = useCallback((el: HTMLTextAreaElement | null) => {
+    if (!autoGrow || !el) return;
+    const lh = parseFloat(getComputedStyle(el).lineHeight) || 16;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight + lh}px`;
+  }, [autoGrow]);
+
+  useLayoutEffect(() => {
+    if (!autoGrow || readOnly) return;
+    bumpTa(refSeller.current);
+    bumpTa(refPhoto.current);
+    bumpTa(refPaste.current);
+    bumpTa(refSales.current);
+  }, [
+    autoGrow,
+    readOnly,
+    bumpTa,
+    v.sellerPortrait,
+    v.photoAnalysis,
+    v.listingPasteRaw,
+    v.listingSalesContext,
+  ]);
 
   const runListingAnalyze = useCallback(async () => {
     const t = v.listingPasteRaw.trim();
@@ -141,7 +171,8 @@ export function AdminListingAnalysisSourceBlock({
                 disabled={disabled}
               >
                 <textarea
-                  className={pri ? (dense ? taPriorityCompact : taPriority) : ta}
+                  ref={key === "sellerPortrait" ? refSeller : refPhoto}
+                  className={`${pri ? (dense ? taPriorityCompact : taPriority) : ta} ${autoGrow && !readOnly ? "resize-none overflow-hidden" : ""}`}
                   disabled={disabled}
                   rows={dense ? 2 : 4}
                   value={v[key]}
@@ -193,7 +224,8 @@ export function AdminListingAnalysisSourceBlock({
             </div>
           ) : (
             <textarea
-              className={pasteTaClass}
+              ref={refPaste}
+              className={`${pasteTaClass} ${autoGrow && !readOnly ? "resize-none overflow-hidden" : ""}`}
               disabled={disabled}
               rows={dense ? 2 : 4}
               value={v.listingPasteRaw}
@@ -237,7 +269,8 @@ export function AdminListingAnalysisSourceBlock({
               disabled={disabled}
             >
               <textarea
-                className={pri ? (dense ? taPriorityCompact : taPriority) : ta}
+                ref={refSales}
+                className={`${pri ? (dense ? taPriorityCompact : taPriority) : ta} ${autoGrow && !readOnly ? "resize-none overflow-hidden" : ""}`}
                 disabled={disabled}
                 rows={dense ? 2 : 4}
                 value={v.listingSalesContext}

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePortfolioFileRow";
@@ -10,11 +11,6 @@ import { AdminVendorAvotuSourceBlock } from "@/components/admin/AdminVendorAvotu
 import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBlock";
 import { AdminListingAnalysisSourceBlock } from "@/components/admin/AdminListingAnalysisSourceBlock";
 import { AdminCitiAvotiSourceBlock } from "@/components/admin/AdminCitiAvotiSourceBlock";
-import {
-  AdminOrderProgressNavStrip,
-  AdminOrderProgressSidebar,
-} from "@/components/admin/AdminOrderProgressNav";
-import type { AdminProgressNavItem } from "@/components/admin/AdminOrderProgressNav";
 import {
   SOURCE_BLOCK_KEYS,
   SOURCE_BLOCK_LABELS,
@@ -68,20 +64,29 @@ import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banne
 import { IRISS_CHROME_LUCIDE, LISTING_ANALYSIS_CHROME_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
   TRAFFIC_HEADER_STRIP_CLASS,
-  alertBannersTrafficLevel,
   autoRecordsTrafficLevel,
   citiAvotiTrafficLevel,
   csddTrafficLevel,
   expertSummaryTrafficLevel,
   listingSectionTrafficLevel,
   ltabTrafficLevel,
-  pdfSectionTrafficLevel,
-  portfolioFilesTrafficLevel,
+  type TrafficFillLevel,
   vendorAvotuTrafficLevel,
 } from "@/lib/admin-block-traffic-status";
 import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
-import { ChevronDown } from "lucide-react";
+import {
+  CarFront,
+  ClipboardList,
+  LayoutDashboard,
+  Layers,
+  Link2,
+  ListChecks,
+  MessageSquare,
+  Newspaper,
+  Scale,
+} from "lucide-react";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
+import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 
 export type OrderWorkspacePayload = {
   sessionId: string;
@@ -144,8 +149,27 @@ const workspaceSectionShell =
 const bulkTextareaClass =
   "w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
-const bulkReadonlyClass =
-  "w-full rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] leading-snug whitespace-pre-wrap text-[var(--color-provin-muted)] min-h-[52px]";
+const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
+  empty: "bg-zinc-400",
+  partial: "bg-amber-400",
+  complete: "bg-emerald-500",
+};
+
+const WIZARD_STEP_COUNT = 8;
+
+function dashboardWizardTrafficLevel(p: OrderWorkspacePayload): TrafficFillLevel {
+  const vin = (p.vin ?? "").trim();
+  const listing = (p.listingUrl ?? "").trim();
+  const email = (p.customerEmail ?? "").trim();
+  if (vin && listing && email) return "complete";
+  if (vin || listing || email) return "partial";
+  return "empty";
+}
+
+function worstTrafficLevel(a: TrafficFillLevel, b: TrafficFillLevel): TrafficFillLevel {
+  const order: Record<TrafficFillLevel, number> = { empty: 0, partial: 1, complete: 2 };
+  return order[a] <= order[b] ? a : b;
+}
 
 function storageKeyWorkspace(sessionId: string) {
   return `provin-admin-workspace-v3-${sessionId}`;
@@ -306,6 +330,7 @@ function KmMergeChart({ points }: { points: { km: number; label: string }[] }) {
 
 export function OrderDetailWorkspace({
   payload,
+  dashboardSlot,
   portfolioPortalDomId,
   portfolioPortalTargetInParent = false,
   serverWorkspaceJson = null,
@@ -315,6 +340,8 @@ export function OrderDetailWorkspace({
   alertsPortalDomId,
 }: {
   payload: OrderWorkspacePayload;
+  /** 0. solis — maksājums, transports, klients, pielikumi, komentārs (vecāka 2×2 režģis). */
+  dashboardSlot?: ReactNode;
   /** Ja norādīts, „1. Pielikumi” tiek renderēts šajā DOM elementā (kreisās kolonnas augšā). */
   portfolioPortalDomId?: string;
   /** Ja `true`, vecāka komponents jau renderē `<div id={portfolioPortalDomId} />` (bez dublikāta ID). */
@@ -337,13 +364,9 @@ export function OrderDetailWorkspace({
   const [pdfInsights, setPdfInsights] = useState<PdfPortfolioFileInsight[]>([]);
   const [pdfScanning, setPdfScanning] = useState(false);
   const [pdfScanError, setPdfScanError] = useState<string | null>(null);
-  const [sourcesViewMode, setSourcesViewMode] = useState(false);
-  const [sourcesSnap, setSourcesSnap] = useState<WorkspaceSourceBlocks | null>(null);
-  const [sourcesFlash, setSourcesFlash] = useState(false);
-  const [expertViewMode, setExpertViewMode] = useState(false);
-  const [expertSnap, setExpertSnap] = useState({ iriss: "", apskatesPlāns: "", cenasAtbilstiba: "" });
-  const [expertFlash, setExpertFlash] = useState(false);
-  const [stickySummaryMinimized, setStickySummaryMinimized] = useState(false);
+  const [wizardStep, setWizardStep] = useState(0);
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [vinBarCopyFlash, setVinBarCopyFlash] = useState(false);
   const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
   const [alertsPortalEl, setAlertsPortalEl] = useState<HTMLElement | null>(null);
   const [portfolioAllFilesModalOpen, setPortfolioAllFilesModalOpen] = useState(false);
@@ -432,7 +455,6 @@ export function OrderDetailWorkspace({
 
   const setIrissSummary = useCallback((next: string) => {
     setWs((prev) => ({ ...prev, iriss: next }));
-    setExpertSnap((prev) => ({ ...prev, iriss: next }));
   }, []);
 
   const updateSourceBlock = useCallback((key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]) => {
@@ -529,14 +551,6 @@ export function OrderDetailWorkspace({
     }
     setWorkspaceHydrated(true);
   }, [payload.sessionId, payload.serverInternalComment, serverWorkspaceJson, onPdfVisibilityChange]);
-
-  useEffect(() => {
-    if (!workspaceHydrated) return;
-    setSourcesSnap(null);
-    setSourcesViewMode(false);
-    setExpertSnap({ iriss: ws.iriss, apskatesPlāns: ws.apskatesPlāns, cenasAtbilstiba: ws.cenasAtbilstiba });
-    setExpertViewMode(false);
-  }, [workspaceHydrated, payload.sessionId]); // eslint-disable-line react-hooks/exhaustive-deps -- tikai sesija / hidrācija
 
   useEffect(() => {
     skipWorkspaceAutosaveFlash.current = true;
@@ -779,18 +793,15 @@ export function OrderDetailWorkspace({
   const canGeneratePdf =
     ws.previewConfirmed && ws.iriss.trim().length > 0 && ws.cenasAtbilstiba.trim().length > 0;
 
-  const blocksForDisplay =
-    sourcesViewMode && sourcesSnap ? sourcesSnap : ws.sourceBlocks;
-
-  /** Veci / bojāti snapšoti — vienmēr pilda trūkstošos laukus (piem. listing_analysis). */
+  /** Veci / bojāti lokālie JSON — vienmēr pilda trūkstošos laukus (piem. listing_analysis). */
   const blocksDisplaySafe = useMemo(
-    () => mergeSourceBlocksWithDefaults(blocksForDisplay as unknown),
-    [blocksForDisplay],
+    () => mergeSourceBlocksWithDefaults(ws.sourceBlocks as unknown),
+    [ws.sourceBlocks],
   );
 
   const provinAlertBanners = useMemo(
-    () => computeProvinAlertBannersFromWorkspace(blocksForDisplay),
-    [blocksForDisplay],
+    () => computeProvinAlertBannersFromWorkspace(ws.sourceBlocks),
+    [ws.sourceBlocks],
   );
 
   const traffic = useMemo(() => {
@@ -806,100 +817,59 @@ export function OrderDetailWorkspace({
     };
   }, [blocksDisplaySafe]);
 
-  const progressNavItems = useMemo((): AdminProgressNavItem[] => {
-    const expertLvl = expertSummaryTrafficLevel({
-      iriss: ws.iriss,
-      apskatesPlāns: ws.apskatesPlāns,
-      cenasAtbilstiba: ws.cenasAtbilstiba,
-      previewConfirmed: ws.previewConfirmed,
-    });
-    const pdfLvl = pdfSectionTrafficLevel(
-      canGeneratePdf,
-      Boolean(ws.iriss.trim() || ws.apskatesPlāns.trim() || ws.cenasAtbilstiba.trim()),
-    );
-    const v = pdfVisibility;
-    const items: AdminProgressNavItem[] = [];
-    if (provinAlertBanners.length > 0) {
-      items.push({
-        id: "admin-order-section-bridinajumi",
-        label: "Brīdinājumi (PDF)",
-        level: alertBannersTrafficLevel(provinAlertBanners.length),
-        pdfIncluded: v.alerts,
-      });
+  const expertTraffic = expertSummaryTrafficLevel({
+    iriss: ws.iriss,
+    apskatesPlāns: ws.apskatesPlāns,
+    cenasAtbilstiba: ws.cenasAtbilstiba,
+    previewConfirmed: ws.previewConfirmed,
+  });
+
+  const wizardStepLevels = useMemo((): TrafficFillLevel[] => {
+    const dash = dashboardWizardTrafficLevel(payload);
+    const vendors = worstTrafficLevel(traffic.autodna, traffic.carvertical);
+    return [
+      dash,
+      traffic.csdd,
+      vendors,
+      traffic.auto_records,
+      traffic.ltab,
+      traffic.citi_avoti,
+      traffic.listingSection,
+      expertTraffic,
+    ];
+  }, [payload, traffic, expertTraffic]);
+
+  const wizardStepsUi = useMemo(
+    () =>
+      [
+        { label: "Pārskats", Icon: LayoutDashboard },
+        { label: "CSDD", Icon: ClipboardList },
+        { label: "Datu serv.", Icon: Layers },
+        { label: "Auto Records", Icon: CarFront },
+        { label: "LTAB", Icon: Scale },
+        { label: "Citi avoti", Icon: Link2 },
+        { label: "Sludinājums", Icon: Newspaper },
+        { label: "Kopsavilkums", Icon: ListChecks },
+      ] as const,
+    [],
+  );
+
+  const irissAutosizeRef = useRef<HTMLTextAreaElement>(null);
+  const apskatesAutosizeRef = useRef<HTMLTextAreaElement>(null);
+  const cenasAutosizeRef = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const bump = (el: HTMLTextAreaElement | null) => {
+      if (!el) return;
+      const lh = parseFloat(getComputedStyle(el).lineHeight) || 16;
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight + lh}px`;
+    };
+    if (wizardStep === 7) {
+      bump(irissAutosizeRef.current);
+      bump(apskatesAutosizeRef.current);
+      bump(cenasAutosizeRef.current);
     }
-    items.push(
-      { id: "admin-order-section-maksajums", label: "Maksājums", level: "complete", pdfIncluded: v.payment },
-      {
-        id: "admin-order-section-transports",
-        label: "Transports / sludinājums",
-        level: "complete",
-        pdfIncluded: v.vehicle,
-      },
-      { id: "admin-order-section-klienta", label: "Klienta dati", level: "complete", pdfIncluded: v.client },
-      { id: "admin-order-section-komentars", label: "Klienta komentārs", level: "complete", pdfIncluded: v.notes },
-      {
-        id: "admin-order-section-pielikumi",
-        label: "1. Pielikumi",
-        level: portfolioFilesTrafficLevel(portfolio.length),
-        pdfIncluded: v.portfolio,
-      },
-      {
-        id: "admin-order-block-csdd",
-        label: SOURCE_BLOCK_LABELS.csdd,
-        level: traffic.csdd,
-        pdfIncluded: v.csdd,
-      },
-      {
-        id: "admin-order-block-autodna",
-        label: SOURCE_BLOCK_LABELS.autodna,
-        level: traffic.autodna,
-        pdfIncluded: v.autodna,
-      },
-      {
-        id: "admin-order-block-carvertical",
-        label: SOURCE_BLOCK_LABELS.carvertical,
-        level: traffic.carvertical,
-        pdfIncluded: v.carvertical,
-      },
-      {
-        id: "admin-order-block-auto-records",
-        label: SOURCE_BLOCK_LABELS.auto_records,
-        level: traffic.auto_records,
-        pdfIncluded: v.auto_records,
-      },
-      { id: "admin-order-block-ltab", label: SOURCE_BLOCK_LABELS.ltab, level: traffic.ltab, pdfIncluded: v.ltab },
-      {
-        id: "admin-order-block-citi-avoti",
-        label: SOURCE_BLOCK_LABELS.citi_avoti,
-        level: traffic.citi_avoti,
-        pdfIncluded: v.citi_avoti,
-      },
-      {
-        id: "admin-order-section-sludinajums",
-        label: "3. Sludinājuma analīze",
-        level: traffic.listingSection,
-        pdfIncluded: v.sludinajums,
-      },
-      {
-        id: "admin-order-section-kopsavilkums",
-        label: "4. Kopsavilkums (IRISS)",
-        level: expertLvl,
-        pdfIncluded: v.iriss,
-      },
-      { id: "admin-order-section-pdf", label: "5. PDF klientam", level: pdfLvl, pdfIncluded: true },
-    );
-    return items;
-  }, [
-    portfolio.length,
-    traffic,
-    provinAlertBanners.length,
-    pdfVisibility,
-    ws.iriss,
-    ws.apskatesPlāns,
-    ws.cenasAtbilstiba,
-    ws.previewConfirmed,
-    canGeneratePdf,
-  ]);
+  }, [wizardStep, ws.iriss, ws.apskatesPlāns, ws.cenasAtbilstiba]);
 
   const openPrintReport = async () => {
     if (!canGeneratePdf) {
@@ -1329,9 +1299,45 @@ export function OrderDetailWorkspace({
 
   const showAlertsPortal = Boolean(alertsPortalDomId && alertsPortalEl);
 
+  const vinBar = (payload.vin ?? "").trim();
+
   return (
-    <div className="space-y-1.5">
+    <div className="relative min-w-0 pb-24">
       {previewOpen ? previewBody : null}
+
+      {commentDialogOpen ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="admin-internal-comment-title"
+          onClick={() => setCommentDialogOpen(false)}
+        >
+          <div
+            className="max-h-[min(80vh,520px)] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h3 id="admin-internal-comment-title" className="text-sm font-semibold text-[var(--color-apple-text)]">
+                Iekšējais komentārs (serveris)
+              </h3>
+              <button
+                type="button"
+                className="rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
+                onClick={() => setCommentDialogOpen(false)}
+              >
+                Aizvērt
+              </button>
+            </div>
+            <p className="mt-2 text-[11px] leading-snug text-[var(--color-provin-muted)]">
+              Informatīvi — rediģēšana caur citiem rīkiem; šeit tikai lasīšana.
+            </p>
+            <pre className="mt-3 max-h-[min(50vh,360px)] overflow-auto whitespace-pre-wrap rounded-lg border border-slate-100 bg-slate-50/90 p-3 text-[11px] text-[var(--color-apple-text)]">
+              {payload.serverInternalComment?.trim() ? payload.serverInternalComment : "Nav ieraksta."}
+            </pre>
+          </div>
+        </div>
+      ) : null}
 
       {portfolioAllFilesModal != null && typeof document !== "undefined"
         ? createPortal(portfolioAllFilesModal, document.body)
@@ -1344,125 +1350,141 @@ export function OrderDetailWorkspace({
 
       {showPortfolioPortal ? createPortal(portfolioSection, portfolioPortalEl!) : null}
 
-      <div className="xl:grid xl:grid-cols-[12rem_minmax(0,1fr)] xl:gap-5 xl:items-start">
-        <AdminOrderProgressSidebar
-          items={progressNavItems}
-          summaryPanel={
-            <>
-              <div className="mb-1.5 flex items-center justify-between gap-1">
-                <p className="min-w-0 text-[9px] font-bold uppercase tracking-wide text-[var(--color-provin-muted)]">
-                  1. Kopsavilkums
-                </p>
+      <nav
+        className="sticky top-0 z-30 -mx-1 border-b border-slate-200/80 bg-white/95 px-1 py-2 backdrop-blur-sm"
+        aria-label="Soli pa solim"
+      >
+        <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 bg-white px-2 text-slate-600 shadow-sm transition hover:bg-slate-50"
+            title="Iekšējais komentārs"
+            aria-label="Atvērt iekšējā komentāra logu"
+            onClick={() => setCommentDialogOpen(true)}
+          >
+            <MessageSquare className="h-4 w-4" aria-hidden />
+          </button>
+          <div className="flex min-w-0 flex-1 flex-wrap items-stretch gap-1 sm:gap-1.5">
+            {wizardStepsUi.map(({ label, Icon }, idx) => {
+              const lvl = wizardStepLevels[idx] ?? "empty";
+              const active = wizardStep === idx;
+              return (
                 <button
+                  key={label}
                   type="button"
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-200/80 bg-white/90 text-slate-600 hover:bg-slate-50"
-                  aria-expanded={!stickySummaryMinimized}
-                  aria-label={stickySummaryMinimized ? "Rādīt kopsavilkumu" : "Sakļaut kopsavilkumu"}
-                  onClick={() => setStickySummaryMinimized((v) => !v)}
-                >
-                  <ChevronDown
-                    className={`h-3.5 w-3.5 transition-transform ${stickySummaryMinimized ? "-rotate-90" : ""}`}
-                    aria-hidden
-                  />
-                </button>
-              </div>
-              {!stickySummaryMinimized ? (
-                <AdminAiPolishTextareaShell value={ws.iriss} onPolished={setIrissSummary}>
-                  <textarea
-                    className={`${bulkTextareaClass} min-h-[180px] w-full resize-y bg-white/80`}
-                    value={ws.iriss}
-                    onChange={(e) => setIrissSummary(e.target.value)}
-                    placeholder="Raksti šeit — sinhronizējas ar 4. sadaļas 1. lauku."
-                    spellCheck
-                    aria-label="Kopsavilkums (sānu panelis)"
-                  />
-                </AdminAiPolishTextareaShell>
-              ) : null}
-            </>
-          }
-        />
-        <div className="min-w-0 space-y-1.5">
-          <AdminOrderProgressNavStrip items={progressNavItems} />
-          {portfolioPortalDomId && !portfolioPortalTargetInParent ? (
-            <div id={portfolioPortalDomId} className="min-h-0 min-w-0" />
-          ) : null}
-          {showPortfolioInline ? portfolioSection : null}
-
-      <section className={workspaceSectionShell}>
-        <div className="flex flex-wrap items-start justify-between gap-1.5">
-          <div className="min-w-0">
-            <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
-              <span>2. Avotu bloki</span>
-              {workspaceAutosaveFlash ? (
-                <span
-                  className={`text-[10px] font-semibold normal-case tracking-normal ${
-                    orderDraftPersistenceEnabled && !workspaceSaveServerOk ? "text-amber-800" : "text-emerald-700"
+                  onClick={() => setWizardStep(idx)}
+                  className={`flex min-w-0 max-w-[7.5rem] flex-1 flex-col items-center gap-0.5 rounded-lg border px-1 py-1 text-center transition sm:max-w-none sm:flex-row sm:justify-start sm:gap-1.5 sm:px-2 ${
+                    active
+                      ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
+                      : "border-transparent hover:bg-slate-50"
                   }`}
-                  role="status"
                 >
-                  {!orderDraftPersistenceEnabled
-                    ? "Saglabāts"
-                    : workspaceSaveServerOk
-                      ? "Saglabāts serverī"
-                      : "Saglabāts lokāli (serveris nav pieejams)"}
-                </span>
-              ) : null}
-            </h2>
+                  <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+                    <Icon className="h-3.5 w-3.5" aria-hidden />
+                    <span
+                      className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-2 ring-white ${WIZARD_STEP_DOT[lvl]}`}
+                      title={`Aizpildījums: ${lvl}`}
+                    />
+                  </span>
+                  <span
+                    className={`line-clamp-2 w-full text-[9px] font-semibold uppercase leading-tight tracking-tight sm:line-clamp-1 sm:text-left ${
+                      active ? "text-[var(--color-apple-text)]" : "text-[var(--color-provin-muted)]"
+                    }`}
+                  >
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <div className="flex flex-wrap items-center gap-1">
-            {sourcesFlash ? (
-              <span className="text-[11px] font-semibold text-emerald-700" role="status">
-                Saglabāts
+          <div
+            className={`flex min-w-0 max-w-full shrink-0 items-center gap-1 rounded-lg border border-slate-200/80 bg-slate-50/90 px-2 py-1 font-mono text-[10px] text-[var(--color-apple-text)] sm:text-[11px] ${
+              vinBar ? "" : "text-slate-400"
+            }`}
+            title="VIN"
+          >
+            <span className="max-w-[10rem] truncate sm:max-w-[14rem]">{vinBar || "— VIN —"}</span>
+            {vinBar ? (
+              <AdminVinCopyButton
+                value={vinBar}
+                onCopied={() => {
+                  setVinBarCopyFlash(true);
+                  window.setTimeout(() => setVinBarCopyFlash(false), 600);
+                }}
+              />
+            ) : null}
+            {vinBarCopyFlash ? (
+              <span className="text-[9px] font-semibold text-emerald-700" role="status">
+                OK
               </span>
             ) : null}
-            <button
-              type="button"
-              className={workspaceToolbarBtn}
-              onClick={() => {
-                setSourcesSnap(JSON.parse(JSON.stringify(ws.sourceBlocks)) as WorkspaceSourceBlocks);
-                setSourcesViewMode(true);
-                setSourcesFlash(true);
-                window.setTimeout(() => setSourcesFlash(false), 2000);
-              }}
-            >
-              Saglabāt
-            </button>
-            <button type="button" className={workspaceToolbarBtn} onClick={() => setSourcesViewMode(false)}>
-              Labot
-            </button>
-            <span className="hidden w-full sm:inline sm:w-px sm:h-4 sm:bg-slate-200" aria-hidden />
-            <AdminPdfIncludeToggle
-              checked={pdfVisibility.unifiedMileage}
-              onChange={(next) => onPdfVisibilityChange({ unifiedMileage: next })}
-            />
-            <span className="text-[9px] font-medium text-[var(--color-provin-muted)]">Nobraukuma tabula PDF</span>
-            <AdminPdfIncludeToggle
-              checked={pdfVisibility.unifiedIncidents}
-              onChange={(next) => onPdfVisibilityChange({ unifiedIncidents: next })}
-            />
-            <span className="text-[9px] font-medium text-[var(--color-provin-muted)]">Negadījumi PDF</span>
           </div>
         </div>
-        <div className="mt-1.5 flex flex-col gap-2">
-          <div id="admin-order-block-csdd" className="w-full min-w-0">
-            <AdminCsddSourceBlock
-              value={blocksForDisplay.csdd}
-              readOnly={sourcesViewMode}
-              onChange={(next) => updateSourceBlock("csdd", next)}
-              trafficFillLevel={traffic.csdd}
-              pdfIncludeBlock={pdfVisibility.csdd}
-              onPdfIncludeBlockChange={(next) => onPdfVisibilityChange({ csdd: next })}
-              pdfIncludeMileageTable={pdfVisibility.csddMileageTable}
-              onPdfIncludeMileageTableChange={(next) => onPdfVisibilityChange({ csddMileageTable: next })}
-              sessionId={payload.sessionId}
-            />
+        {workspaceAutosaveFlash ? (
+          <p
+            className={`mx-auto mt-1 max-w-5xl px-1 text-[10px] font-medium ${
+              orderDraftPersistenceEnabled && !workspaceSaveServerOk ? "text-amber-800" : "text-emerald-700"
+            }`}
+            role="status"
+          >
+            {!orderDraftPersistenceEnabled
+              ? "Darba zona saglabāta lokāli."
+              : workspaceSaveServerOk
+                ? "Darba zona saglabāta serverī."
+                : "Darba zona saglabāta lokāli (serveris nav pieejams)."}
+          </p>
+        ) : null}
+      </nav>
+
+      <div className="mx-auto w-full max-w-5xl min-w-0 space-y-3 px-1 pt-3">
+        {portfolioPortalDomId && !portfolioPortalTargetInParent ? (
+          <div id={portfolioPortalDomId} className="min-h-0 min-w-0" />
+        ) : null}
+        {showPortfolioInline ? portfolioSection : null}
+
+        {dashboardSlot ? (
+          <div className={wizardStep === 0 ? "space-y-3" : "hidden"} aria-hidden={wizardStep !== 0}>
+            {dashboardSlot}
           </div>
-          <div className="grid min-h-0 min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3 items-stretch">
-            <div id="admin-order-block-autodna" className="flex min-h-0 h-full min-w-0 flex-col">
+        ) : null}
+
+        {wizardStep === 1 ? (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/60 px-2 py-1.5">
+              <AdminPdfIncludeToggle
+                checked={pdfVisibility.unifiedMileage}
+                onChange={(next) => onPdfVisibilityChange({ unifiedMileage: next })}
+              />
+              <span className="text-[9px] font-medium text-[var(--color-provin-muted)]">Nobraukuma tabula PDF</span>
+              <AdminPdfIncludeToggle
+                checked={pdfVisibility.unifiedIncidents}
+                onChange={(next) => onPdfVisibilityChange({ unifiedIncidents: next })}
+              />
+              <span className="text-[9px] font-medium text-[var(--color-provin-muted)]">Negadījumi PDF</span>
+            </div>
+            <div id="admin-order-block-csdd" className="w-full min-w-0">
+              <AdminCsddSourceBlock
+                value={blocksDisplaySafe.csdd}
+                readOnly={false}
+                onChange={(next) => updateSourceBlock("csdd", next)}
+                trafficFillLevel={traffic.csdd}
+                pdfIncludeBlock={pdfVisibility.csdd}
+                onPdfIncludeBlockChange={(next) => onPdfVisibilityChange({ csdd: next })}
+                pdfIncludeMileageTable={pdfVisibility.csddMileageTable}
+                onPdfIncludeMileageTableChange={(next) => onPdfVisibilityChange({ csddMileageTable: next })}
+                sessionId={payload.sessionId}
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {wizardStep === 2 ? (
+          <div className="grid min-h-0 min-w-0 grid-cols-1 gap-3 lg:grid-cols-2">
+            <div id="admin-order-block-autodna" className="flex min-h-0 min-w-0 flex-col">
               <AdminVendorAvotuSourceBlock
                 blockKey="autodna"
-                value={blocksForDisplay.autodna}
-                readOnly={sourcesViewMode}
+                value={blocksDisplaySafe.autodna}
+                readOnly={false}
                 onChange={(next) => updateSourceBlock("autodna", next)}
                 trafficFillLevel={traffic.autodna}
                 sessionId={payload.sessionId}
@@ -1470,11 +1492,11 @@ export function OrderDetailWorkspace({
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ autodna: next })}
               />
             </div>
-            <div id="admin-order-block-carvertical" className="flex min-h-0 h-full min-w-0 flex-col">
+            <div id="admin-order-block-carvertical" className="flex min-h-0 min-w-0 flex-col">
               <AdminVendorAvotuSourceBlock
                 blockKey="carvertical"
-                value={blocksForDisplay.carvertical}
-                readOnly={sourcesViewMode}
+                value={blocksDisplaySafe.carvertical}
+                readOnly={false}
                 onChange={(next) => updateSourceBlock("carvertical", next)}
                 trafficFillLevel={traffic.carvertical}
                 sessionId={payload.sessionId}
@@ -1482,276 +1504,227 @@ export function OrderDetailWorkspace({
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ carvertical: next })}
               />
             </div>
-            <div id="admin-order-block-auto-records" className="flex min-h-0 h-full min-w-0 flex-col">
-              <AdminAutoRecordsSourceBlock
-                value={blocksForDisplay.auto_records}
-                readOnly={sourcesViewMode}
-                onChange={(next) => updateSourceBlock("auto_records", next)}
-                trafficFillLevel={traffic.auto_records}
-                sessionId={payload.sessionId}
-                pdfInclude={pdfVisibility.auto_records}
-                onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
-              />
-            </div>
           </div>
-          <div className="grid min-h-0 min-w-0 grid-cols-1 gap-2 md:grid-cols-2 items-stretch">
-            <div id="admin-order-block-ltab" className="flex min-h-0 h-full min-w-0 flex-col">
-              <AdminLtabSourceBlock
-                value={blocksForDisplay.ltab}
-                readOnly={sourcesViewMode}
-                onChange={(next) => updateSourceBlock("ltab", next)}
-                trafficFillLevel={traffic.ltab}
-                sessionId={payload.sessionId}
-                pdfInclude={pdfVisibility.ltab}
-                onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
-              />
-            </div>
-            <div id="admin-order-block-citi-avoti" className="flex min-h-0 h-full min-w-0 flex-col">
-              <AdminCitiAvotiSourceBlock
-                value={blocksForDisplay.citi_avoti}
-                readOnly={sourcesViewMode}
-                onChange={(next) => updateSourceBlock("citi_avoti", next)}
-                trafficFillLevel={traffic.citi_avoti}
-                sessionId={payload.sessionId}
-                pdfInclude={pdfVisibility.citi_avoti}
-                onPdfIncludeChange={(next) => onPdfVisibilityChange({ citi_avoti: next })}
-              />
-            </div>
+        ) : null}
+
+        {wizardStep === 3 ? (
+          <div id="admin-order-block-auto-records" className="min-w-0">
+            <AdminAutoRecordsSourceBlock
+              value={blocksDisplaySafe.auto_records}
+              readOnly={false}
+              onChange={(next) => updateSourceBlock("auto_records", next)}
+              trafficFillLevel={traffic.auto_records}
+              sessionId={payload.sessionId}
+              pdfInclude={pdfVisibility.auto_records}
+              onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
+            />
           </div>
-        </div>
-      </section>
+        ) : null}
 
-      <section id="admin-order-section-sludinajums" className="min-w-0">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className={workspaceSectionTitle}>3. Sludinājuma analīze</h2>
-          <AdminPdfIncludeToggle
-            checked={pdfVisibility.sludinajums}
-            onChange={(next) => onPdfVisibilityChange({ sludinajums: next })}
-          />
-        </div>
-        <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-          Lasīšanas / labošanas režīms kopīgs ar 2. sadaļas rīkjoslu (Saglabāt / Labot).
-        </p>
-        <div className="mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)]">
-          <ListingAnalysisMainBlockTitleRow
-            icon={LISTING_ANALYSIS_CHROME_LUCIDE.mainSection}
-            title="SLUDINĀJUMA ANALĪZE"
-            trafficStripClass={TRAFFIC_HEADER_STRIP_CLASS[traffic.listingSection]}
-          />
-          <div className="space-y-3 bg-transparent px-2 pb-2 pt-2">
-            <ListingAnalysisSubsectionHeading
-              icon={LISTING_ANALYSIS_CHROME_LUCIDE.listingHistory}
-              title={LISTING_HISTORY_SUBSECTION_TITLE}
-            >
-              <div className="rounded-lg border border-[#E2E8F0] bg-transparent px-2 py-2">
-                <AdminTirgusSourceBlock
-                  value={blocksDisplaySafe.tirgus}
-                  readOnly={sourcesViewMode}
-                  onChange={(next) => updateSourceBlock("tirgus", next)}
-                  variant="embedded"
-                />
-              </div>
-            </ListingAnalysisSubsectionHeading>
-            <div className="min-w-0 border-t border-slate-200/75 pt-4">
-              <AdminListingAnalysisSourceBlock
-                value={blocksDisplaySafe.listing_analysis}
-                readOnly={sourcesViewMode}
-                onChange={(next) => updateSourceBlock("listing_analysis", next)}
-                variant="priority"
+        {wizardStep === 4 ? (
+          <div id="admin-order-block-ltab" className="min-w-0">
+            <AdminLtabSourceBlock
+              value={blocksDisplaySafe.ltab}
+              readOnly={false}
+              onChange={(next) => updateSourceBlock("ltab", next)}
+              trafficFillLevel={traffic.ltab}
+              sessionId={payload.sessionId}
+              pdfInclude={pdfVisibility.ltab}
+              onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
+            />
+          </div>
+        ) : null}
+
+        {wizardStep === 5 ? (
+          <div id="admin-order-block-citi-avoti" className="min-w-0">
+            <AdminCitiAvotiSourceBlock
+              value={blocksDisplaySafe.citi_avoti}
+              readOnly={false}
+              onChange={(next) => updateSourceBlock("citi_avoti", next)}
+              trafficFillLevel={traffic.citi_avoti}
+              sessionId={payload.sessionId}
+              pdfInclude={pdfVisibility.citi_avoti}
+              onPdfIncludeChange={(next) => onPdfVisibilityChange({ citi_avoti: next })}
+            />
+          </div>
+        ) : null}
+
+        {wizardStep === 6 ? (
+          <section id="admin-order-section-sludinajums" className="min-w-0">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className={workspaceSectionTitle}>Sludinājuma analīze</h2>
+              <AdminPdfIncludeToggle
+                checked={pdfVisibility.sludinajums}
+                onChange={(next) => onPdfVisibilityChange({ sludinajums: next })}
               />
             </div>
-          </div>
-        </div>
-
-        <div className="mt-1.5 border-t border-slate-200/80 pt-1.5">
-          <button
-            type="button"
-            onClick={() => setPreviewOpen(true)}
-            className="inline-flex rounded-full border border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-provin-accent)] hover:bg-[#d4e8fb]"
-          >
-            Priekšskats
-          </button>
-          {ws.previewConfirmed ? (
-            <p className="mt-1 text-[11px] font-medium text-emerald-800">Apstiprināts — vari rakstīt kopsavilkumu.</p>
-          ) : (
-            <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">Apstiprini modālī.</p>
-          )}
-        </div>
-      </section>
-
-            <section id="admin-order-section-kopsavilkums" className="min-w-0">
-              <div className="flex flex-wrap items-start justify-between gap-1.5">
-                <div className="min-w-0">
-                  <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
-                    <span>4. Kopsavilkums, ieteikumi un cenas atbilstība</span>
-                    {workspaceAutosaveFlash ? (
-                      <span
-                        className={`text-[10px] font-semibold normal-case tracking-normal ${
-                          orderDraftPersistenceEnabled && !workspaceSaveServerOk ? "text-amber-800" : "text-emerald-700"
-                        }`}
-                        role="status"
-                      >
-                        {!orderDraftPersistenceEnabled
-                          ? "Saglabāts"
-                          : workspaceSaveServerOk
-                            ? "Saglabāts serverī"
-                            : "Saglabāts lokāli (serveris nav pieejams)"}
-                      </span>
-                    ) : null}
-                  </h2>
-                  <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-                    Viens <strong className="text-[var(--color-apple-text)]">Saglabāt</strong> visiem trim laukiem.
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-1">
-                  <AdminPdfIncludeToggle
-                    checked={pdfVisibility.iriss}
-                    onChange={(next) => onPdfVisibilityChange({ iriss: next })}
+            <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
+              Mainījumi saglabājas automātiski. Priekšskatu atver apakšējā joslā.
+            </p>
+            <div className="mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)]">
+              <ListingAnalysisMainBlockTitleRow
+                icon={LISTING_ANALYSIS_CHROME_LUCIDE.mainSection}
+                title="SLUDINĀJUMA ANALĪZE"
+                trafficStripClass={TRAFFIC_HEADER_STRIP_CLASS[traffic.listingSection]}
+              />
+              <div className="space-y-3 bg-transparent px-2 pb-2 pt-2">
+                <ListingAnalysisSubsectionHeading
+                  icon={LISTING_ANALYSIS_CHROME_LUCIDE.listingHistory}
+                  title={LISTING_HISTORY_SUBSECTION_TITLE}
+                >
+                  <div className="rounded-lg border border-[#E2E8F0] bg-transparent px-2 py-2">
+                    <AdminTirgusSourceBlock
+                      value={blocksDisplaySafe.tirgus}
+                      readOnly={false}
+                      onChange={(next) => updateSourceBlock("tirgus", next)}
+                      variant="embedded"
+                    />
+                  </div>
+                </ListingAnalysisSubsectionHeading>
+                <div className="min-w-0 border-t border-slate-200/75 pt-4">
+                  <AdminListingAnalysisSourceBlock
+                    value={blocksDisplaySafe.listing_analysis}
+                    readOnly={false}
+                    onChange={(next) => updateSourceBlock("listing_analysis", next)}
+                    variant="priority"
+                    autoGrow
                   />
-                  {expertFlash ? (
-                    <span className="text-[11px] font-semibold text-emerald-700" role="status">
-                      Saglabāts
-                    </span>
-                  ) : null}
-                  <button
-                    type="button"
-                    className={workspaceToolbarBtn}
-                    onClick={() => {
-                      setExpertSnap({
-                        iriss: ws.iriss,
-                        apskatesPlāns: ws.apskatesPlāns,
-                        cenasAtbilstiba: ws.cenasAtbilstiba,
-                      });
-                      setExpertViewMode(true);
-                      setExpertFlash(true);
-                      window.setTimeout(() => setExpertFlash(false), 2000);
-                    }}
-                  >
-                    Saglabāt
-                  </button>
-                  <button
-                    type="button"
-                    className={workspaceToolbarBtn}
-                    onClick={() => setExpertViewMode(false)}
-                  >
-                    Labot
-                  </button>
                 </div>
               </div>
-              <div
-                className="mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)]"
-              >
-                <ListingAnalysisMainBlockTitleRow
-                  icon={IRISS_CHROME_LUCIDE.mainSection}
-                  title="APPROVED BY IRISS"
-                  trafficStripClass=""
-                />
-                <div className="space-y-3 bg-transparent px-2 pb-2 pt-2">
-                  <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.summary} title="1. Kopsavilkums">
-                    {expertViewMode ? (
-                      <div
-                        className={`${bulkReadonlyClass} min-h-[120px] max-h-[min(45vh,400px)] overflow-y-auto whitespace-pre-wrap`}
-                      >
-                        {expertSnap.iriss.trim() ? expertSnap.iriss : <span className="text-slate-400">—</span>}
-                      </div>
-                    ) : (
-                      <AdminAiPolishTextareaShell value={ws.iriss} onPolished={setIrissSummary}>
-                        <textarea
-                          id={`${fileInputId}-iriss`}
-                          className={`${bulkTextareaClass} min-h-[120px] max-h-[min(45vh,400px)] resize-y bg-white/60`}
-                          value={ws.iriss}
-                          onChange={(e) => setIrissSummary(e.target.value)}
-                          placeholder="Galvenais kopsavilkums klientam…"
-                          spellCheck
-                        />
-                      </AdminAiPolishTextareaShell>
-                    )}
-                  </ListingAnalysisSubsectionHeading>
-                  <ListingAnalysisSubsectionHeading
-                    icon={IRISS_CHROME_LUCIDE.inspection}
-                    title="2. Ieteikumi klātienes apskatei"
-                  >
-                    {expertViewMode ? (
-                      <div
-                        className={`${bulkReadonlyClass} min-h-[72px] max-h-[min(35vh,280px)] overflow-y-auto whitespace-pre-wrap`}
-                      >
-                        {expertSnap.apskatesPlāns.trim() ? expertSnap.apskatesPlāns : <span className="text-slate-400">—</span>}
-                      </div>
-                    ) : (
-                      <AdminAiPolishTextareaShell
-                        value={ws.apskatesPlāns}
-                        onPolished={(next) => updateWs({ apskatesPlāns: next })}
-                      >
-                        <textarea
-                          id={`${fileInputId}-apskates`}
-                          className={`${bulkTextareaClass} min-h-[72px] max-h-[min(35vh,280px)] resize-y bg-white/60`}
-                          value={ws.apskatesPlāns}
-                          onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
-                          placeholder="piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
-                          spellCheck
-                        />
-                      </AdminAiPolishTextareaShell>
-                    )}
-                  </ListingAnalysisSubsectionHeading>
-                  <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.priceFit} title="3. Cenas atbilstība">
-                    {expertViewMode ? (
-                      <div
-                        className={`${bulkReadonlyClass} min-h-[56px] max-h-[min(28vh,220px)] overflow-y-auto whitespace-pre-wrap`}
-                      >
-                        {expertSnap.cenasAtbilstiba.trim() ? (
-                          expertSnap.cenasAtbilstiba
-                        ) : (
-                          <span className="text-slate-400">—</span>
-                        )}
-                      </div>
-                    ) : (
-                      <AdminAiPolishTextareaShell
-                        value={ws.cenasAtbilstiba}
-                        onPolished={(next) => updateWs({ cenasAtbilstiba: next })}
-                      >
-                        <textarea
-                          id={`${fileInputId}-cenas-atbilstiba`}
-                          className={`${bulkTextareaClass} min-h-[56px] max-h-[min(28vh,220px)] resize-y bg-white/60`}
-                          value={ws.cenasAtbilstiba}
-                          onChange={(e) => updateWs({ cenasAtbilstiba: e.target.value })}
-                          placeholder="Balstoties uz mūsu rīcībā esošajiem datiem…"
-                          spellCheck
-                        />
-                      </AdminAiPolishTextareaShell>
-                    )}
-                  </ListingAnalysisSubsectionHeading>
-                </div>
-              </div>
-              {!ws.previewConfirmed ? (
-                <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">
-                  Kopsavilkumu vari rakstīt uzreiz; priekšskatā vari apstiprināt vēlāk.
-                </p>
-              ) : null}
-            </section>
+            </div>
+            {ws.previewConfirmed ? (
+              <p className="mt-2 text-[11px] font-medium text-emerald-800">Priekšskats apstiprināts.</p>
+            ) : (
+              <p className="mt-2 text-[11px] text-[var(--color-provin-muted)]">Atver „PDF Priekšskats” un apstiprini modālī.</p>
+            )}
+          </section>
+        ) : null}
 
-      <section
-        id="admin-order-section-pdf"
-        className="rounded-xl bg-[var(--color-provin-accent-soft)]/50 p-2 shadow-sm ring-1 ring-[var(--color-provin-accent)]/25"
-      >
-        <h2 className={workspaceSectionTitle}>5. PDF klientam</h2>
-        <p className="mt-0.5 text-[10px] leading-tight text-[var(--color-provin-muted)]">
-          Pēc kopsavilkuma aizpildes — druka / saglabāt kā PDF.
-        </p>
-        <button
-          type="button"
-          onClick={openPrintReport}
-          disabled={!canGeneratePdf}
-          className={`${workspaceToolbarBtn} mt-1 border border-slate-300/90 bg-white text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45`}
-        >
-          Ģenerēt PDF
-        </button>
+        {wizardStep === 7 ? (
+          <section id="admin-order-section-kopsavilkums" className="min-w-0">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
+                  <span>Kopsavilkums un cenas atbilstība</span>
+                </h2>
+                <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
+                  Lauki augstumā pielāgojas saturam; saglabāšana automātiska.
+                </p>
+              </div>
+              <AdminPdfIncludeToggle
+                checked={pdfVisibility.iriss}
+                onChange={(next) => onPdfVisibilityChange({ iriss: next })}
+              />
+            </div>
+            <div className="mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)]">
+              <ListingAnalysisMainBlockTitleRow
+                icon={IRISS_CHROME_LUCIDE.mainSection}
+                title="APPROVED BY IRISS"
+                trafficStripClass=""
+              />
+              <div className="space-y-3 bg-transparent px-2 pb-2 pt-2">
+                <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.summary} title="1. Kopsavilkums">
+                  <AdminAiPolishTextareaShell value={ws.iriss} onPolished={setIrissSummary}>
+                    <textarea
+                      ref={irissAutosizeRef}
+                      id={`${fileInputId}-iriss`}
+                      className={`${bulkTextareaClass} min-h-[120px] resize-none overflow-hidden bg-white/60`}
+                      value={ws.iriss}
+                      onChange={(e) => setIrissSummary(e.target.value)}
+                      placeholder="Galvenais kopsavilkums klientam…"
+                      spellCheck
+                    />
+                  </AdminAiPolishTextareaShell>
+                </ListingAnalysisSubsectionHeading>
+                <ListingAnalysisSubsectionHeading
+                  icon={IRISS_CHROME_LUCIDE.inspection}
+                  title="2. Ieteikumi klātienes apskatei"
+                >
+                  <AdminAiPolishTextareaShell
+                    value={ws.apskatesPlāns}
+                    onPolished={(next) => updateWs({ apskatesPlāns: next })}
+                  >
+                    <textarea
+                      ref={apskatesAutosizeRef}
+                      id={`${fileInputId}-apskates`}
+                      className={`${bulkTextareaClass} min-h-[72px] resize-none overflow-hidden bg-white/60`}
+                      value={ws.apskatesPlāns}
+                      onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
+                      placeholder="piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
+                      spellCheck
+                    />
+                  </AdminAiPolishTextareaShell>
+                </ListingAnalysisSubsectionHeading>
+                <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.priceFit} title="3. Cenas atbilstība">
+                  <AdminAiPolishTextareaShell
+                    value={ws.cenasAtbilstiba}
+                    onPolished={(next) => updateWs({ cenasAtbilstiba: next })}
+                  >
+                    <textarea
+                      ref={cenasAutosizeRef}
+                      id={`${fileInputId}-cenas-atbilstiba`}
+                      className={`${bulkTextareaClass} min-h-[56px] resize-none overflow-hidden bg-white/60`}
+                      value={ws.cenasAtbilstiba}
+                      onChange={(e) => updateWs({ cenasAtbilstiba: e.target.value })}
+                      placeholder="Balstoties uz mūsu rīcībā esošajiem datiem…"
+                      spellCheck
+                    />
+                  </AdminAiPolishTextareaShell>
+                </ListingAnalysisSubsectionHeading>
+              </div>
+            </div>
+            {!ws.previewConfirmed ? (
+              <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">
+                Kopsavilkumu vari rakstīt uzreiz; priekšskatā vari apstiprināt vēlāk.
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200/90 bg-white/95 px-3 py-2.5 shadow-[0_-4px_24px_rgba(15,23,42,0.06)] backdrop-blur-sm">
+        <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className={`${workspaceToolbarBtn} disabled:cursor-not-allowed disabled:opacity-40`}
+              disabled={wizardStep <= 0}
+              onClick={() => setWizardStep((s) => Math.max(0, s - 1))}
+            >
+              Atpakaļ
+            </button>
+            <button
+              type="button"
+              className={workspaceToolbarBtn}
+              disabled={wizardStep >= WIZARD_STEP_COUNT - 1}
+              onClick={() => setWizardStep((s) => Math.min(WIZARD_STEP_COUNT - 1, s + 1))}
+            >
+              Turpināt
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              className="inline-flex rounded-full border border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)] px-3 py-1.5 text-[11px] font-semibold text-[var(--color-provin-accent)] hover:bg-[#d4e8fb]"
+            >
+              PDF Priekšskats
+            </button>
+            <button
+              type="button"
+              onClick={() => void openPrintReport()}
+              disabled={!canGeneratePdf}
+              className={`${workspaceToolbarBtn} border border-slate-300/90 bg-[var(--color-provin-accent)] text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45`}
+            >
+              Ģenerēt PDF
+            </button>
+          </div>
+        </div>
         {!canGeneratePdf ? (
-          <p className="mt-1 text-[11px] text-[var(--color-provin-muted)]">
-            Vajag apstiprinātu priekšskatu, kopsavilkumu un cenas atbilstības komentāru.
+          <p className="mx-auto mt-1 max-w-5xl text-[10px] text-[var(--color-provin-muted)]">
+            PDF: vajag apstiprinātu priekšskatu, kopsavilkumu un „Cenas atbilstību”.
           </p>
         ) : null}
-      </section>
-        </div>
       </div>
     </div>
   );

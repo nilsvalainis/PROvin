@@ -36,6 +36,7 @@ export function AdminCollapsibleShell({
   blockId,
   trafficLevel,
   defaultCollapsed = false,
+  disableCollapse = true,
   header,
   headerActions,
   children,
@@ -46,6 +47,8 @@ export function AdminCollapsibleShell({
   /** Ja norādīts, papildus kreisā „luksofora” josla uz visa apvalka (meta blokiem bez iekšējā header). */
   trafficLevel?: TrafficFillLevel;
   defaultCollapsed?: boolean;
+  /** Ja true — bloks vienmēr atvērts, bez sakļaušanas (wizard / bez akordeoniem). */
+  disableCollapse?: boolean;
   header: React.ReactNode;
   headerActions?: React.ReactNode;
   children: React.ReactNode;
@@ -54,6 +57,7 @@ export function AdminCollapsibleShell({
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   useEffect(() => {
+    if (disableCollapse) return;
     try {
       const raw = localStorage.getItem(accordionStorageKey(sessionId, blockId));
       if (raw === "1") setCollapsed(true);
@@ -62,15 +66,16 @@ export function AdminCollapsibleShell({
     } catch {
       setCollapsed(defaultCollapsed);
     }
-  }, [sessionId, blockId, defaultCollapsed]);
+  }, [sessionId, blockId, defaultCollapsed, disableCollapse]);
 
   useEffect(() => {
+    if (disableCollapse) return;
     try {
       localStorage.setItem(accordionStorageKey(sessionId, blockId), collapsed ? "1" : "0");
     } catch {
       /* quota */
     }
-  }, [sessionId, blockId, collapsed]);
+  }, [sessionId, blockId, collapsed, disableCollapse]);
 
   const toggle = useCallback(() => setCollapsed((c) => !c), []);
 
@@ -84,6 +89,27 @@ export function AdminCollapsibleShell({
   );
 
   const strip = trafficLevel ? TRAFFIC_HEADER_STRIP_CLASS[trafficLevel] : "";
+
+  if (disableCollapse) {
+    return (
+      <div
+        className={`overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] ${strip} ${className}`}
+      >
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-2 px-2 py-2">
+          <div className="min-w-0 flex-1">{header}</div>
+          {headerActions ? (
+            <div
+              data-accordion-no-toggle
+              className="flex shrink-0 flex-wrap items-center justify-end gap-x-2 gap-y-1"
+            >
+              {headerActions}
+            </div>
+          ) : null}
+        </div>
+        <div className="border-t-0 px-2 pb-2 pt-0">{children}</div>
+      </div>
+    );
+  }
 
   return (
     <div

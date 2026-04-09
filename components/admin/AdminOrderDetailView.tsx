@@ -200,72 +200,9 @@ export function AdminOrderDetailView({
   /** Šaurā kolonnā — vertikāls saraksts (kopīgs ar xl 3-kolonnu režģi). */
   const metaStack = "mt-1 flex flex-col gap-1 text-[11px]";
 
-  return (
-    <div className="mx-auto w-full max-w-[1600px] px-8">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/admin"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-3.5 py-2 text-sm font-medium text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/30 hover:bg-[var(--color-provin-accent-soft)]/50"
-          >
-            <span aria-hidden>←</span> Visi pasūtījumi
-          </Link>
-          {order.paymentStatus === "paid" && order.amountTotal != null ? (
-            <a
-              href={`/api/admin/invoice/${encodeURIComponent(order.id)}/pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-3.5 py-2 text-sm font-medium text-[var(--color-apple-text)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-slate-50"
-            >
-              Rēķins
-            </a>
-          ) : null}
-        </div>
-        {hydrated ? (
-          <button
-            type="button"
-            onClick={resetToServer}
-            className="text-xs font-medium text-[var(--color-provin-muted)] underline decoration-slate-300 underline-offset-2 hover:text-[var(--color-apple-text)]"
-          >
-            Atiestatīt rediģētos laukus (izņemot tavu iekšējo komentāru un portfeli)
-          </button>
-        ) : null}
-      </div>
-
-      {order.isDemo ? (
-        <div className="mb-3 rounded-xl border border-amber-200/90 bg-gradient-to-br from-amber-50/95 to-white px-3 py-2.5 text-sm text-amber-950 shadow-sm ring-1 ring-amber-100/80">
-          <p className="text-xs font-bold uppercase tracking-wide text-amber-800/90">Parauga pasūtījums</p>
-          <p className="mt-2 leading-relaxed text-amber-950/90">
-            {order.paymentStatus === "unpaid" ? (
-              <>
-                Šis paraugs imitē klientu, kas vēl <strong className="font-semibold">nav pabeidzis maksājumu</strong>{" "}
-                Stripe Checkout — nav īsts neapmaksāts sesijas ieraksts, bet tā pati informācija (VIN, kontakti,
-                komentāri, pielikumu saraksts), ko redzēsi pēc turpmākās integrācijas.
-              </>
-            ) : (
-              <>
-                Šī ir parauga datu kopa — nav īsts Stripe maksājums. Tā parāda, kā izskatīsies tavi
-                komentāri un pielikumu saraksts pēc turpmākās integrācijas.
-              </>
-            )}
-          </p>
-        </div>
-      ) : null}
-
-      <header className="mb-4 border-b border-slate-200/60 pb-3">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
-          Pasūtījums
-        </p>
-        <h1 className="mt-0.5 font-mono text-xl font-semibold tracking-tight text-[var(--color-apple-text)] sm:text-2xl">
-          {mergedVin.trim() || "—"}
-        </h1>
-        <p className="mt-1 font-mono text-[11px] text-[var(--color-provin-muted)]">{order.id}</p>
-      </header>
-
-      <div id={`admin-order-alerts-slot-${order.id}`} className="min-w-0" />
-
-      <div className="space-y-1.5">
-        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-4 xl:items-stretch">
+  const dashboardSlot = (
+    <>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
           <section id="admin-order-section-maksajums" className="min-w-0">
             <AdminCollapsibleShell
               sessionId={order.id}
@@ -364,6 +301,7 @@ export function AdminOrderDetailView({
                   placeholder="17 zīmes…"
                   mono
                   compact
+                  hideToolbar
                   resetVersion={orderFieldResetKey}
                   endAdornment={
                     <AdminVinCopyButton
@@ -392,6 +330,7 @@ export function AdminOrderDetailView({
                   placeholder="https://…"
                   inputType="url"
                   compact
+                  hideToolbar
                   resetVersion={orderFieldResetKey}
                   endAdornment={
                     <AdminListingUrlEndAdornment
@@ -468,9 +407,9 @@ export function AdminOrderDetailView({
 
           <div
             id={`admin-portfolio-slot-${order.id}`}
-            className="min-h-0 min-w-0 rounded-xl bg-white/80 shadow-sm ring-1 ring-slate-200/70 xl:min-h-[140px]"
+            className="min-h-[120px] min-w-0 rounded-xl bg-white/80 shadow-sm ring-1 ring-slate-200/70 sm:min-h-[140px]"
           />
-        </div>
+      </div>
 
         <section id="admin-order-section-komentars" className="min-w-0">
           <AdminCollapsibleShell
@@ -520,6 +459,7 @@ export function AdminOrderDetailView({
                   placeholder="Klienta ziņojums…"
                   multiline
                   compact
+                  hideToolbar
                   minHeightClass="min-h-[56px]"
                   resetVersion={orderFieldResetKey}
                 />
@@ -527,34 +467,100 @@ export function AdminOrderDetailView({
             </div>
           </AdminCollapsibleShell>
         </section>
+    </>
+  );
 
-        <OrderDetailWorkspace
-          portfolioPortalDomId={`admin-portfolio-slot-${order.id}`}
-          portfolioPortalTargetInParent
-          serverWorkspaceJson={serverWorkspaceJson}
-          orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
-          pdfVisibility={pdfVisibility}
-          onPdfVisibilityChange={patchPdfVisibility}
-          alertsPortalDomId={`admin-order-alerts-slot-${order.id}`}
-          payload={{
-            sessionId: order.id,
-            isDemo: Boolean(order.isDemo),
-            vin: mergedVin.trim() || null,
-            created: order.created,
-            amountTotal: order.amountTotal,
-            currency: order.currency,
-            paymentStatus: order.paymentStatus,
-            listingUrl: mergedListing.trim() || null,
-            customerEmail: order.customerEmail ?? order.customerDetailsEmail,
-            customerPhone: order.phone ?? order.customerDetailsPhone,
-            customerName: order.customerName,
-            contactMethod: order.contactMethod,
-            notes: mergedNotes.trim() ? mergedNotes : null,
-            serverInternalComment: order.internalComment ?? null,
-            serverAttachments: order.attachments ?? [],
-          }}
-        />
+  return (
+    <div className="mx-auto w-full max-w-5xl px-6 sm:px-10">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-3.5 py-2 text-sm font-medium text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/30 hover:bg-[var(--color-provin-accent-soft)]/50"
+          >
+            <span aria-hidden>←</span> Visi pasūtījumi
+          </Link>
+          {order.paymentStatus === "paid" && order.amountTotal != null ? (
+            <a
+              href={`/api/admin/invoice/${encodeURIComponent(order.id)}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-3.5 py-2 text-sm font-medium text-[var(--color-apple-text)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-slate-50"
+            >
+              Rēķins
+            </a>
+          ) : null}
+        </div>
+        {hydrated ? (
+          <button
+            type="button"
+            onClick={resetToServer}
+            className="text-xs font-medium text-[var(--color-provin-muted)] underline decoration-slate-300 underline-offset-2 hover:text-[var(--color-apple-text)]"
+          >
+            Atiestatīt rediģētos laukus (izņemot tavu iekšējo komentāru un portfeli)
+          </button>
+        ) : null}
       </div>
+
+      {order.isDemo ? (
+        <div className="mb-3 rounded-xl border border-amber-200/90 bg-gradient-to-br from-amber-50/95 to-white px-3 py-2.5 text-sm text-amber-950 shadow-sm ring-1 ring-amber-100/80">
+          <p className="text-xs font-bold uppercase tracking-wide text-amber-800/90">Parauga pasūtījums</p>
+          <p className="mt-2 leading-relaxed text-amber-950/90">
+            {order.paymentStatus === "unpaid" ? (
+              <>
+                Šis paraugs imitē klientu, kas vēl <strong className="font-semibold">nav pabeidzis maksājumu</strong>{" "}
+                Stripe Checkout — nav īsts neapmaksāts sesijas ieraksts, bet tā pati informācija (VIN, kontakti,
+                komentāri, pielikumu saraksts), ko redzēsi pēc turpmākās integrācijas.
+              </>
+            ) : (
+              <>
+                Šī ir parauga datu kopa — nav īsts Stripe maksājums. Tā parāda, kā izskatīsies tavi
+                komentāri un pielikumu saraksts pēc turpmākās integrācijas.
+              </>
+            )}
+          </p>
+        </div>
+      ) : null}
+
+      <header className="mb-4 border-b border-slate-200/60 pb-3">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
+          Pasūtījums
+        </p>
+        <h1 className="mt-0.5 font-mono text-xl font-semibold tracking-tight text-[var(--color-apple-text)] sm:text-2xl">
+          {mergedVin.trim() || "—"}
+        </h1>
+        <p className="mt-1 font-mono text-[11px] text-[var(--color-provin-muted)]">{order.id}</p>
+      </header>
+
+      <div id={`admin-order-alerts-slot-${order.id}`} className="min-w-0" />
+
+      <OrderDetailWorkspace
+        dashboardSlot={dashboardSlot}
+        portfolioPortalDomId={`admin-portfolio-slot-${order.id}`}
+        portfolioPortalTargetInParent
+        serverWorkspaceJson={serverWorkspaceJson}
+        orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
+        pdfVisibility={pdfVisibility}
+        onPdfVisibilityChange={patchPdfVisibility}
+        alertsPortalDomId={`admin-order-alerts-slot-${order.id}`}
+        payload={{
+          sessionId: order.id,
+          isDemo: Boolean(order.isDemo),
+          vin: mergedVin.trim() || null,
+          created: order.created,
+          amountTotal: order.amountTotal,
+          currency: order.currency,
+          paymentStatus: order.paymentStatus,
+          listingUrl: mergedListing.trim() || null,
+          customerEmail: order.customerEmail ?? order.customerDetailsEmail,
+          customerPhone: order.phone ?? order.customerDetailsPhone,
+          customerName: order.customerName,
+          contactMethod: order.contactMethod,
+          notes: mergedNotes.trim() ? mergedNotes : null,
+          serverInternalComment: order.internalComment ?? null,
+          serverAttachments: order.attachments ?? [],
+        }}
+      />
     </div>
   );
 }
