@@ -6,17 +6,22 @@ export type HeroServiceItem = {
 };
 
 /**
- * Tās pašas Lucide ikonas kā līdz šim (Pricing 9-bloku atbilstība):
+ * Tās pašas Lucide ikonas kā Pricing 9-bloku režģim:
  * Globe2, ScanSearch, AlertTriangle, Headphones.
  */
 const HERO_SVC_ICONS = [Globe2, ScanSearch, AlertTriangle, Headphones] as const;
 
-const iconInCircleClass =
-  "h-[1.2rem] w-[1.2rem] shrink-0 text-[#0061D2] sm:h-5 sm:w-5 [stroke-width:1.5]";
+/** 1:1 ar `PricingIncluded` — outline, bez apļa fona. */
+const heroSvcIconClass =
+  "h-8 w-8 shrink-0 text-[#0061D2] [stroke-width:1.5] sm:h-[32px] sm:w-[32px]";
+
+/** 1:1 ar `PricingIncluded` pillarRowClass (caurspīdīgs, rounded-xl, tā pati ēna). */
+const heroSvcPillarClass =
+  "provin-lift-subtle flex min-h-0 gap-3 rounded-xl border-0 bg-transparent p-3.5 text-left shadow-[0_2px_22px_rgba(15,23,42,0.055)] sm:gap-3.5 sm:p-4";
 
 /**
- * Hero: viena kolonna, 4 horizontāli bloki — balts, rounded-[2rem], maiga ēna;
- * ikona gaiši zilā aplī, teksts pa labi, pa kreisi.
+ * Hero: 4 horizontāli bloki viena zem otra, pilnā platumā, bez pelēka apvalka —
+ * tieši uz lapas fona, stils kā 9-bloku režģa kartītēm.
  */
 export function HeroServiceGrid({ items }: { items: HeroServiceItem[] }) {
   const [a, b, c, d] = items;
@@ -29,32 +34,23 @@ export function HeroServiceGrid({ items }: { items: HeroServiceItem[] }) {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-[min(100%,440px)] rounded-[2rem] bg-[#ececf0] p-3 sm:p-3.5">
-      <ul className="flex list-none flex-col gap-2.5 sm:gap-3">
-        {rows.map(({ item, index }) => {
-          const Icon = HERO_SVC_ICONS[index] ?? Globe2;
-          return (
-            <li key={`hero-svc-${index}`} className="min-w-0">
-              <article className="flex flex-row items-start gap-3 rounded-[2rem] bg-white px-4 py-3.5 text-left shadow-sm sm:gap-4 sm:px-5 sm:py-4">
-                <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8f1fc] sm:h-10 sm:w-10"
-                  aria-hidden
-                >
-                  <Icon className={iconInCircleClass} aria-hidden strokeWidth={1.5} />
-                </div>
-                <div className="min-w-0 flex-1 pt-0.5">
-                  <h3 className="text-[13px] font-semibold leading-snug tracking-tight text-[#1d1d1f] sm:text-[15px] sm:font-medium">
-                    {item.title}
-                  </h3>
-                  <p className="mt-1 text-[11px] font-normal leading-relaxed text-[#6e6e73] sm:text-[12px]">
-                    {item.body}
-                  </p>
-                </div>
-              </article>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+    <ul className="mx-auto flex w-full min-w-0 max-w-full list-none flex-col gap-3">
+      {rows.map(({ item, index }) => {
+        const Icon = HERO_SVC_ICONS[index] ?? Globe2;
+        return (
+          <li key={`hero-svc-${index}`} className={`${heroSvcPillarClass} min-w-0`}>
+            <Icon className={heroSvcIconClass} aria-hidden strokeWidth={1.5} />
+            <div className="min-w-0 flex-1 pt-0.5">
+              <h3 className="text-[15px] font-medium leading-snug tracking-tight text-[#1d1d1f] sm:text-[16px]">
+                {item.title}
+              </h3>
+              <p className="mt-1 text-[12px] font-normal leading-relaxed text-[#86868b] sm:text-[13px] sm:leading-relaxed">
+                {item.body}
+              </p>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
