@@ -2,9 +2,11 @@ import { Playfair_Display } from "next/font/google";
 import { ArrowRight } from "lucide-react";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { HeroServiceGrid, type HeroServiceItem } from "@/components/HeroServiceGrid";
+import { HeroServiceGrid } from "@/components/HeroServiceGrid";
 import { approvedByIrissSignatureHeroClass } from "@/lib/home-layout";
 import { orderSectionHref } from "@/lib/paths";
+
+type Pillar = { title: string; body: string };
 
 /** „Auto detektīvs” — serif italic pret tehnisko H1 (Playfair Display). */
 const heroSubtitleFont = Playfair_Display({
@@ -19,7 +21,7 @@ export async function Hero() {
   const t = await getTranslations("Hero");
   const locale = await getLocale();
   const messages = await getMessages();
-  const pillars = (messages as { Hero: { pillars: HeroServiceItem[] } }).Hero.pillars;
+  const pillars = (messages as { Hero: { pillars: Pillar[] } }).Hero.pillars;
 
   return (
     <section>
@@ -42,11 +44,7 @@ export async function Hero() {
           </header>
 
           <div className="min-h-0 shrink">
-            <HeroServiceGrid
-              items={pillars}
-              headline={t("serviceGridHeadline")}
-              featuredBadge={t("featuredBadge")}
-            />
+            <HeroServiceGrid items={pillars} />
           </div>
 
           <div className="shrink-0 space-y-4 md:space-y-5">
