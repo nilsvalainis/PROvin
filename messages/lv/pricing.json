@@ -1,43 +1,6 @@
 {
   "Pricing": {
-    "workTitle": "KAS IEKĻAUTS AUDITĀ?",
-    "comparisonTitle": "KĀDĒĻ IZVĒLĒTIES PROVIN AUDITU?",
-    "comparisonMobileLead": "Atšķirībā no parastas atskaites, PROVIN audits piedāvā:",
-    "comparisonColFeature": "IEZĪME",
-    "comparisonColStandard": "STANDARTA ATSKAITE",
-    "comparisonColProvin": "PROVIN AUDITS",
-    "comparisonRows": [
-      {
-        "feature": "Vēstures dati (t.s. maksas atskaites)",
-        "standard": "1 avots",
-        "provin": "Visi pieejamie avoti (3+)"
-      },
-      {
-        "feature": "Datu salīdzināšana un analīze",
-        "standard": "Nav",
-        "provin": "Visu datu analīze"
-      },
-      {
-        "feature": "Sludinājuma un pārdevēja analīze",
-        "standard": "Nav",
-        "provin": "Detalizēta izpēte"
-      },
-      {
-        "feature": "Tipiski tehnisko mezglu riski",
-        "standard": "Nav",
-        "provin": "Dzinējs, ātrumkārba un vājās vietas"
-      },
-      {
-        "feature": "Reāls novērtējums",
-        "standard": "Nav",
-        "provin": "Detalizēts un argumentēts"
-      },
-      {
-        "feature": "Analīzes veids",
-        "standard": "Automātisks algoritms (tūlītējs)",
-        "provin": "Manuāls darbs (līdz 24h)"
-      }
-    ],
+    "workTitle": "KAS IEKĻAUTS AUDITA CENĀ?",
     "grid": [
       {
         "title": "Starptautiskās datubāzes",

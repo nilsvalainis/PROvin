@@ -47,7 +47,10 @@ export async function PricingIncluded() {
   const grid = (messages as { Pricing: { grid: GridItem[] } }).Pricing.grid;
 
   return (
-    <section className="relative px-4 pb-4 pt-2 sm:px-6 sm:pb-5 sm:pt-3 md:pb-6 md:pt-4">
+    <section
+      id="cena"
+      className="relative scroll-mt-16 px-4 pb-4 pt-2 sm:px-6 sm:pb-5 sm:pt-3 md:pb-6 md:pt-4"
+    >
       <div className="relative mx-auto w-full max-w-[1000px]">
         <h2 className={`${homeSectionEyebrowClass} text-balance text-center`}>{t("workTitle")}</h2>
         <ul className="mt-4 grid list-none grid-cols-1 gap-3 sm:mt-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -90,6 +93,9 @@ export async function PricingIncluded() {
             );
           })}
         </ul>
+        <p className="mt-4 max-w-[65ch] text-left text-xs font-normal leading-snug text-[#86868b] sm:text-sm">
+          {t("autoRecordsFootnote")}
+        </p>
       </div>
     </section>
   );

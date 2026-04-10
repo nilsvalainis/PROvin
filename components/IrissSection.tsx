@@ -15,7 +15,6 @@ const irissBodyProseClass =
 
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
-  const tPricing = await getTranslations("Pricing");
 
   const socialTiktok = process.env.NEXT_PUBLIC_IRISS_TIKTOK_URL?.trim();
   const socialYoutube = process.env.NEXT_PUBLIC_IRISS_YOUTUBE_URL?.trim();
@@ -54,10 +53,6 @@ export async function IrissSection() {
           <p className={`${irissBodyProseClass} text-balance`}>{t.rich("body3", irissRichBody)}</p>
         </div>
       </div>
-
-      <p className="mx-auto mt-10 max-w-[1000px] px-4 pb-8 text-center text-[10px] font-normal leading-snug text-[#86868b] sm:px-6 sm:pb-10 sm:text-[11px]">
-        {tPricing("autoRecordsFootnote")}
-      </p>
     </section>
   );
 }
