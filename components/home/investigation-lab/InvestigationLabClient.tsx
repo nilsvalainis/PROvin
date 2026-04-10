@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, useSpring } from "framer-motion";
 import { ArrowRight, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useFineHover, useDisableNoiseGrain } from "@/hooks/use-viewport-capabilities";
@@ -37,11 +37,13 @@ function MagneticIconShell({
   magneticEnabled: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [off, setOff] = useState({ x: 0, y: 0 });
+  const x = useSpring(0, { stiffness: 200, damping: 25 });
+  const y = useSpring(0, { stiffness: 200, damping: 25 });
 
   useLayoutEffect(() => {
     if (!magneticEnabled || !mouse || !ref.current) {
-      setOff({ x: 0, y: 0 });
+      x.set(0);
+      y.set(0);
       return;
     }
     const r = ref.current.getBoundingClientRect();
@@ -49,20 +51,17 @@ function MagneticIconShell({
     const cy = r.top + r.height / 2;
     const dist = Math.hypot(mouse.x - cx, mouse.y - cy);
     if (dist > 160) {
-      setOff({ x: 0, y: 0 });
+      x.set(0);
+      y.set(0);
       return;
     }
     const pull = 0.14 * (1 - dist / 160);
-    setOff({ x: (mouse.x - cx) * pull, y: (mouse.y - cy) * pull });
-  }, [mouse, magneticEnabled]);
+    x.set((mouse.x - cx) * pull);
+    y.set((mouse.y - cy) * pull);
+  }, [mouse, magneticEnabled, x, y]);
 
   return (
-    <motion.div
-      ref={ref}
-      animate={{ x: off.x, y: off.y }}
-      transition={{ type: "spring", stiffness: 320, damping: 24 }}
-      className="inline-flex will-change-transform"
-    >
+    <motion.div ref={ref} style={{ x, y }} className="inline-flex transform-gpu will-change-transform">
       {children}
     </motion.div>
   );
@@ -212,7 +211,7 @@ export function InvestigationLabClient({
       ref={sectionRef}
       id="izmeklesanas-lab"
       aria-labelledby="investigation-lab-trust"
-      className="relative isolate overflow-hidden bg-[#050505] px-4 py-16 text-white sm:px-6 sm:py-20 lg:py-28"
+      className="relative isolate overflow-hidden bg-transparent px-4 py-16 text-white sm:px-6 sm:py-20 lg:py-28"
       onMouseMove={fineHover ? onMouseMove : undefined}
       onMouseLeave={fineHover ? onMouseLeave : undefined}
     >
@@ -220,9 +219,9 @@ export function InvestigationLabClient({
         <div className="pointer-events-none absolute inset-0 z-0 provin-noise-dark opacity-[0.35]" aria-hidden />
       ) : null}
 
-      <div className="relative z-10 mx-auto grid max-w-[1200px] gap-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-16 lg:gap-x-14">
+      <div className="relative z-[5] mx-auto grid max-w-[1200px] gap-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-16 lg:gap-x-14">
         <div className="relative flex min-h-[min(100vh,720px)] flex-col justify-start overflow-hidden lg:sticky lg:top-28 lg:max-h-[calc(100dvh-7rem)] lg:min-h-[calc(100dvh-8rem)]">
-          <span className="provin-lab-scanner-line z-20" aria-hidden />
+          <span className="provin-lab-scanner-line z-[6]" aria-hidden />
           <p
             id="investigation-lab-trust"
             className="mx-auto max-w-[52ch] text-left text-[12px] font-medium leading-snug text-zinc-400 sm:text-[13px] sm:leading-relaxed"
@@ -255,7 +254,7 @@ export function InvestigationLabClient({
 
             const IconNode = (
               <Icon
-                className={`h-9 w-9 transition-[filter,color] duration-300 will-change-transform sm:h-10 sm:w-10 ${
+                className={`h-9 w-9 transition-[filter,color] duration-300 will-change-[filter,color] sm:h-10 sm:w-10 ${
                   hot ? "text-[#e8eef8] drop-shadow-[0_0_22px_rgba(59,130,246,0.7)]" : "text-[#c0c4cc]"
                 }`}
                 strokeWidth={1.25}
@@ -270,25 +269,23 @@ export function InvestigationLabClient({
                   cardRefs.current[i] = el;
                 }}
                 data-index={i}
-                layout
-                transition={{ layout: { duration: 0.22, ease: [0.22, 1, 0.36, 1] } }}
                 onMouseEnter={() => fineHover && setHoveredIndex(i)}
                 onMouseLeave={() => fineHover && setHoveredIndex((h) => (h === i ? null : h))}
-                className={`origin-center will-change-transform transition-[transform,opacity] duration-500 ease-out ${
-                  reduceMotion
-                    ? "scale-100 opacity-100"
-                    : scrollActive
-                      ? "scale-[1.03] opacity-100"
-                      : "scale-100 opacity-[0.56]"
+                className={`origin-center transform-gpu will-change-[opacity,transform] transition-opacity duration-300 ease-out ${
+                  reduceMotion ? "opacity-100" : scrollActive ? "opacity-100" : "opacity-[0.62]"
                 }`}
               >
                 <div
-                  className="rounded-2xl p-px transition-[background,box-shadow] duration-300"
+                  className="rounded-2xl p-px transition-[box-shadow,background] duration-300 ease-out"
                   style={{
                     background: hot
                       ? "linear-gradient(45deg, #3b82f6, #60a5fa, #2563eb)"
                       : "linear-gradient(45deg, #C0C0C0, #FFFFFF, #C0C0C0)",
-                    boxShadow: hot ? "0 0 0 1px rgba(59,130,246,0.35), 0 18px 48px rgba(59,130,246,0.12)" : undefined,
+                    boxShadow: hot
+                      ? "0 0 0 1px rgba(59,130,246,0.35), 0 0 28px rgba(59,130,246,0.2), 0 18px 48px rgba(59,130,246,0.1)"
+                      : scrollActive
+                        ? "0 0 20px rgba(255,255,255,0.06)"
+                        : undefined,
                   }}
                 >
                   <div className="flex flex-col gap-5 rounded-2xl border border-white/[0.04] bg-zinc-950/50 px-6 py-7 backdrop-blur-md sm:flex-row sm:items-start sm:gap-6 sm:px-8 sm:py-8">
@@ -315,7 +312,7 @@ export function InvestigationLabClient({
 
       {fineHover && !reduceMotion ? (
         <div
-          className="pointer-events-none absolute inset-0 z-20 will-change-[background]"
+          className="pointer-events-none absolute inset-0 z-[1] will-change-[background]"
           style={overlayBg}
           aria-hidden
         />

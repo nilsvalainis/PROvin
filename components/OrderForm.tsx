@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
+import { MagneticSpring } from "@/components/home/MagneticSpring";
 import { validateOrderFields } from "@/lib/order-field-validation";
 
 const labelHero =
@@ -14,7 +15,7 @@ const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
 
 const inputHero =
-  "relative z-10 mt-1.5 box-border min-h-11 w-full rounded-none border-0 border-b border-[#b8bcc4]/45 bg-transparent px-0 py-2.5 text-[15px] font-normal text-white outline-none transition will-change-[border-color,box-shadow] placeholder:text-[#b8bcc4]/45 focus:border-provin-accent focus:shadow-[0_0_16px_rgba(0,97,210,0.35)] focus:ring-0 sm:min-h-0 sm:text-[16px]";
+  "relative z-10 mt-1.5 box-border min-h-11 w-full rounded-none border-0 border-b-[0.5px] border-[#b8bcc4]/50 bg-transparent px-0 py-2.5 text-[15px] font-normal text-white outline-none transition will-change-[border-color,box-shadow] placeholder:text-[#b8bcc4]/45 focus:border-provin-accent focus:shadow-[0_0_16px_rgba(0,97,210,0.35)] focus:ring-0 sm:min-h-0 sm:text-[16px]";
 
 const inputDefault =
   "mt-1 box-border min-h-11 w-full rounded-lg border border-black/[0.1] bg-white px-3 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition placeholder:text-[#aeaeb2] focus:border-provin-accent/35 focus:ring-1 focus:ring-provin-accent/25 sm:min-h-0 sm:text-[16px]";
@@ -95,7 +96,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
 
   const formShell =
     hero
-      ? `space-y-4 rounded-2xl border border-white/[0.08] bg-white/5 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-lg will-change-[backdrop-filter] sm:p-6 ${className ?? ""}`
+      ? `space-y-4 rounded-2xl border border-white/[0.1] bg-[#0a0a0a]/80 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-2xl will-change-[backdrop-filter] sm:p-6 ${className ?? ""}`
       : compact
         ? `mt-6 space-y-4 border-t border-black/[0.06] pt-6 ${className ?? ""}`
         : `provin-lift-strong mt-10 rounded-3xl border border-black/[0.06] bg-gradient-to-b from-[#f5f5f7] to-provin-surface-2 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.05)] sm:p-10 ${className ?? ""}`;
@@ -259,7 +260,15 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             >
               <div className="flex items-baseline justify-between gap-4">
                 <span className="text-[13px] font-medium text-[#b8bcc4]">{t("summaryLabel")}</span>
-                <span className="text-[1.65rem] font-semibold tabular-nums tracking-tight text-white sm:text-[1.75rem]">
+                <span className="relative isolate text-[1.65rem] font-semibold tabular-nums tracking-tight text-white sm:text-[1.75rem]">
+                  <span
+                    className="pointer-events-none absolute inset-0 -z-10 rounded-lg opacity-90 blur-md will-change-[filter]"
+                    style={{
+                      background:
+                        "radial-gradient(ellipse 85% 120% at 50% 50%, rgba(59,130,246,0.35) 0%, rgba(192,200,212,0.22) 42%, transparent 72%)",
+                    }}
+                    aria-hidden
+                  />
                   79,99&nbsp;€
                 </span>
               </div>
@@ -301,20 +310,22 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 })}
               </span>
             </label>
-            <button
-              type="submit"
-              disabled={loading || !withdrawalConsent}
-              className="provin-btn provin-btn--compact mx-auto flex min-h-11 w-full max-w-[min(100%,17rem)] items-center justify-center gap-2 rounded-xl px-5 py-3 text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60 sm:min-h-[46px]"
-            >
-              {loading ? (
-                t("payLoading")
-              ) : (
-                <>
-                  {t("payButton")}
-                  <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                </>
-              )}
-            </button>
+            <MagneticSpring className="mx-auto w-full max-w-[min(100%,17rem)]">
+              <button
+                type="submit"
+                disabled={loading || !withdrawalConsent}
+                className="provin-btn provin-btn--compact mx-auto flex min-h-11 w-full max-w-[min(100%,17rem)] transform-gpu items-center justify-center gap-2 rounded-xl px-5 py-3 text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] will-change-transform disabled:opacity-60 sm:min-h-[46px]"
+              >
+                {loading ? (
+                  t("payLoading")
+                ) : (
+                  <>
+                    {t("payButton")}
+                    <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                  </>
+                )}
+              </button>
+            </MagneticSpring>
             <p className="text-center text-[10px] font-normal leading-relaxed text-[#b8bcc4]/75 sm:text-[11px]">
               {t("stripeNote")}
             </p>

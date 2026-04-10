@@ -1,6 +1,7 @@
 import { Faq } from "@/components/Faq";
 import { FinalCta } from "@/components/FinalCta";
 import { HomePageMotionShell } from "@/components/home/HomePageMotionShell";
+import { CinematicHomeShell } from "@/components/home/CinematicHomeShell";
 import { MarketingHero } from "@/components/home/MarketingHero";
 import { InvestigationLabSection } from "@/components/home/investigation-lab/InvestigationLabSection";
 import { HeroVisual } from "@/components/HeroVisual";
@@ -20,39 +21,43 @@ export default async function HomePage({
 
   return (
     <HomePageMotionShell>
-      <MarketingHero />
-      <InvestigationLabSection />
-      <HowItWorks tone="dark" />
+      <CinematicHomeShell>
+        <MarketingHero />
+        <InvestigationLabSection />
+        <HowItWorks tone="dark" />
 
-      <div
-        id="site-content"
-        className="relative overflow-hidden scroll-mt-14 border-t border-white/10 bg-[#050505] text-white"
-      >
-        <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.2]">
-          <HeroVisual />
-        </div>
-        <div className="pointer-events-none absolute inset-0 z-[1] provin-noise opacity-[0.18]" aria-hidden />
         <div
-          className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(to_bottom,#050505,#0a1020,#050505)] opacity-[0.9]"
-          aria-hidden
-        />
+          id="site-content"
+          className="relative overflow-hidden scroll-mt-14 border-t border-white/10 bg-transparent text-white"
+        >
+          <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.18]">
+            <HeroVisual />
+          </div>
+          <div className="pointer-events-none absolute inset-0 z-[1] provin-noise opacity-[0.16]" aria-hidden />
+          <div
+            className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(to_bottom,#050505,#0a1020,#050505)] opacity-[0.85]"
+            aria-hidden
+          />
 
-        <div className="relative z-10">
-          <div className="relative">
-            <div
-              className={`pointer-events-none absolute inset-0 z-0 ${homeFlowModuleGradientTerminalClass}`}
-              aria-hidden
-            />
-            <div className="relative z-10 pt-10 sm:pt-14 md:pt-16">
-              <FinalCta cancelled={cancelled} />
+          <div className="relative z-10">
+            <div className="relative overflow-hidden rounded-t-[1.75rem] border border-white/10 border-b-0 bg-[#0a0a0a]/80 shadow-[0_-24px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
+              <div className="relative">
+                <div
+                  className={`pointer-events-none absolute inset-0 z-0 ${homeFlowModuleGradientTerminalClass}`}
+                  aria-hidden
+                />
+                <div className="relative z-10 pt-10 sm:pt-14 md:pt-16">
+                  <FinalCta cancelled={cancelled} />
+                </div>
+              </div>
+              <PricingIncluded />
+              <IrissSection />
             </div>
           </div>
-          <PricingIncluded />
-          <IrissSection />
         </div>
-      </div>
-      <Faq />
-      <Footer />
+        <Faq />
+        <Footer />
+      </CinematicHomeShell>
     </HomePageMotionShell>
   );
 }

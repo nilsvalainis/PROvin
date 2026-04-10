@@ -47,12 +47,13 @@ export function PricingIncludedClient({ grid, irissHref, irissLinkLabel }: Prici
     <ul className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-5">
       {grid.map((item, i) => {
         const Icon = GRID_LUCIDE_ICONS[i] ?? Globe2;
+        const titleShimmer = item.title.toLowerCase().includes("iriss");
         const inner = (
           <>
             <Icon className={iconClass} aria-hidden strokeWidth={1.5} />
             <div className="min-w-0 flex-1 pt-0.5">
               <h3 className="text-[15px] font-medium leading-snug tracking-tight text-white sm:text-[16px]">
-                {item.title}
+                {titleShimmer ? <span className="provin-chrome-shimmer">{item.title}</span> : item.title}
               </h3>
               <p className="mt-1 text-[12px] font-normal leading-relaxed text-[#b8bcc4] sm:text-[13px] sm:leading-relaxed">
                 {item.body}

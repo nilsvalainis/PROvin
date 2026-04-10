@@ -209,6 +209,45 @@ body {
     0 14px 36px rgba(59, 130, 246, 0.35);
 }
 
+@keyframes provin-chrome-shimmer-sweep {
+  0% {
+    transform: translateX(-130%);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.65;
+  }
+  42% {
+    transform: translateX(130%);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateX(130%);
+    opacity: 0;
+  }
+}
+
+.provin-chrome-shimmer {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+}
+
+.provin-chrome-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: -3px -50%;
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 62%
+  );
+  animation: provin-chrome-shimmer-sweep 3s ease-in-out infinite;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
 /* Admin UI mainīgie (noklusējums — gaišs; tumšais ar .admin-order-page.dark) */
 :root {
   --admin-field-bg: #ffffff;

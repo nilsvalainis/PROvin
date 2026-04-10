@@ -29,8 +29,8 @@ export function SilverTiltFrame({ children, className = "", innerClassName = "" 
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const springX = useSpring(x, { stiffness: 280, damping: 28 });
-  const springY = useSpring(y, { stiffness: 280, damping: 28 });
+  const springX = useSpring(x, { stiffness: 200, damping: 25 });
+  const springY = useSpring(y, { stiffness: 200, damping: 25 });
   const rotateX = useTransform(springY, [-0.5, 0.5], [5.5, -5.5]);
   const rotateY = useTransform(springX, [-0.5, 0.5], [-5.5, 5.5]);
 

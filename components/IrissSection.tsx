@@ -30,7 +30,9 @@ export async function IrissSection() {
       <div className="relative mx-auto w-full max-w-[1000px]">
         <div className="text-center">
           <h2 className={homeSectionTitleClass}>{t("title")}</h2>
-          <p className={irissSectionSubtitleClass}>{t("subtitle")}</p>
+          <p className={irissSectionSubtitleClass}>
+            <span className="provin-chrome-shimmer">{t("subtitle")}</span>
+          </p>
         </div>
 
         <div className="mt-5 flex justify-center">
