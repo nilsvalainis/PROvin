@@ -1,7 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { MessageCircle } from "lucide-react";
 import { HeroVisual } from "@/components/HeroVisual";
-import { WhatsAppBrandIcon } from "@/components/WhatsAppBrandIcon";
 import { contactMailtoHref, whatsappChatUrl } from "@/lib/contact";
 import { homePath } from "@/lib/paths";
 import { getCompanyLegal } from "@/lib/company";
@@ -19,6 +19,12 @@ function MailIcon({ className }: { className?: string }) {
   );
 }
 
+const contactLinkClass =
+  "group inline-flex items-center gap-3 rounded-lg py-2 text-[13px] font-medium text-[#374151] transition-all duration-300 ease-in-out hover:text-provin-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:py-2.5";
+
+const contactIconShellClass =
+  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition-all duration-300 ease-in-out group-hover:bg-provin-accent/10 group-hover:text-provin-accent";
+
 export async function Footer() {
   const t = await getTranslations("Footer");
   const locale = await getLocale();
@@ -27,35 +33,32 @@ export async function Footer() {
   const homeHref = homePath(locale);
   const { legalName, regNo, legalAddress } = getCompanyLegal();
 
-  const linkRow =
-    "group inline-flex items-center gap-2 rounded-lg py-1 text-[13px] font-medium text-[#1d1d1f] transition-colors hover:text-provin-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent";
-
   return (
-    <footer className="relative overflow-hidden border-t border-black/[0.06]">
+    <footer className="relative overflow-hidden border-t border-[#ececec] bg-white">
       <div className="pointer-events-none absolute inset-0 z-0">
         <HeroVisual />
       </div>
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-white/75 via-white/40 to-transparent" aria-hidden />
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-white/85 via-white/55 to-white" aria-hidden />
       <div
-        className="pointer-events-none absolute inset-0 z-[1] provin-noise opacity-[0.28]"
+        className="pointer-events-none absolute inset-0 z-[1] provin-noise opacity-[0.2]"
         aria-hidden
       />
 
-      <div className="relative z-10 mx-auto min-w-0 max-w-[1200px] px-4 py-6 sm:px-6 sm:py-7 lg:py-8">
-        <div className="flex flex-col gap-8 sm:flex-row sm:items-stretch sm:gap-0">
-          <div className="min-w-0 flex-1 sm:pr-6 lg:pr-8">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-provin-accent sm:text-[12px]">
+      <div className="relative z-10 mx-auto min-w-0 max-w-[1200px] px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-14 lg:gap-20">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-provin-accent sm:text-[12px]">
               {t("contacts")}
             </p>
-            <p className="mt-2 text-[12px] font-normal leading-snug text-[#424245] sm:mt-2.5 sm:text-[13px] sm:leading-relaxed">
+            <p className="mt-2 text-[12px] font-normal leading-relaxed text-[#6b7280] sm:mt-2.5 sm:text-[13px]">
               {t("contactsHint")}
             </p>
-            <div className="mt-3 flex flex-col gap-2 sm:mt-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
-              <a href={mailHref} className={linkRow}>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-provin-accent/10 text-provin-accent transition group-hover:bg-provin-accent/15">
+            <div className="mt-4 flex flex-col gap-1 sm:mt-5">
+              <a href={mailHref} className={contactLinkClass}>
+                <span className={contactIconShellClass}>
                   <MailIcon className="h-4 w-4" />
                 </span>
-                <span className="border-b border-dashed border-black/[0.12] pb-px group-hover:border-black/[0.22]">
+                <span className="border-b border-dashed border-neutral-300 pb-px transition-colors duration-300 group-hover:border-provin-accent/40">
                   {t("emailCta")}
                 </span>
               </a>
@@ -63,68 +66,63 @@ export async function Footer() {
                 href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={linkRow}
+                className={contactLinkClass}
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-provin-accent/10 text-provin-accent transition group-hover:bg-provin-accent/15">
-                  <WhatsAppBrandIcon className="h-[18px] w-[18px]" />
+                <span className={contactIconShellClass}>
+                  <MessageCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden />
                 </span>
-                <span className="border-b border-dashed border-black/[0.12] pb-px group-hover:border-black/[0.22]">
+                <span className="border-b border-dashed border-neutral-300 pb-px transition-colors duration-300 group-hover:border-provin-accent/40">
                   {t("whatsapp")}
                 </span>
               </a>
             </div>
           </div>
 
-          <div
-            className="hidden shrink-0 self-stretch sm:block sm:w-[2px] sm:rounded-full sm:bg-black/[0.1]"
-            aria-hidden
-          />
-
-          <div className="min-w-0 flex-1 sm:pl-6 lg:pl-8">
+          <div className="min-w-0">
             <Link
               href={homeHref}
-              className="inline-flex text-[18px] font-semibold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent sm:text-[19px]"
+              className="inline-flex text-[18px] font-semibold tracking-tight text-[#1d1d1f] transition-all duration-300 ease-in-out hover:text-provin-accent sm:text-[19px]"
             >
               <span>PRO</span>
               <span className="text-provin-accent">VIN</span>
             </Link>
 
-            <p className="mt-2.5 max-w-[42rem] text-[12px] font-normal leading-snug text-[#424245] sm:mt-3 sm:text-[13px] sm:leading-relaxed">
+            <p className="mt-3 max-w-[42rem] text-[11px] font-normal leading-[1.8] text-[#6b7280] sm:mt-4 sm:text-[12px]">
               {t("body")}
             </p>
           </div>
         </div>
 
         <div
-          className="mx-auto mt-6 max-w-[1200px] space-y-4 border-t border-black/[0.08] pt-5 text-center sm:mt-8 sm:space-y-3 sm:pt-6"
+          className="mx-auto mt-10 max-w-[1200px] space-y-4 border-t border-[#ececec] pt-8 text-center sm:mt-12 sm:space-y-3 sm:pt-10"
           role="region"
           aria-label={t("legalRegionLabel")}
         >
-          <p className="mx-auto max-w-[65ch] text-[10px] font-normal leading-snug text-[#86868b] sm:text-[11px]">
+          <p className="mx-auto max-w-[65ch] text-[9px] font-normal leading-relaxed text-[#9ca3af] sm:text-[10px]">
             {t("disclaimer")}
           </p>
-          <p className="mx-auto flex max-w-[65ch] flex-wrap items-center justify-center gap-x-2 gap-y-1 border-t border-black/[0.06] pt-4 text-[10px] font-normal leading-snug text-[#aeaeb2] sm:border-t-0 sm:pt-0 sm:text-[11px]">
+          <p className="mx-auto flex max-w-[65ch] flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[9px] font-normal leading-relaxed text-[#b0b0b8] sm:text-[10px]">
             <Link
               href="/lietosanas-noteikumi"
-              className="text-[#86868b] underline decoration-black/[0.15] underline-offset-2 transition hover:text-provin-accent hover:decoration-provin-accent/40"
+              className="text-[#9ca3af] underline decoration-neutral-300 underline-offset-2 transition-all duration-300 ease-in-out hover:text-provin-accent hover:decoration-provin-accent/40"
             >
               {t("termsOfService")}
             </Link>
-            <span aria-hidden className="text-[#d2d2d7]">
+            <span aria-hidden className="text-[#d8d8dc]">
               ·
             </span>
             <Link
               href="/privatuma-politika"
-              className="text-[#86868b] underline decoration-black/[0.15] underline-offset-2 transition hover:text-provin-accent hover:decoration-provin-accent/40"
+              className="text-[#9ca3af] underline decoration-neutral-300 underline-offset-2 transition-all duration-300 ease-in-out hover:text-provin-accent hover:decoration-provin-accent/40"
             >
               {t("privacyPolicy")}
             </Link>
-            <span aria-hidden className="text-[#d2d2d7]">
+            <span aria-hidden className="text-[#d8d8dc]">
               ·
             </span>
             <span>{t("gdpr", { year: new Date().getFullYear() })}</span>
           </p>
-          <div className="py-4 text-center">
+          <div className="py-3 text-center">
             <FooterLegalRekviziti legalName={legalName} regNo={regNo} legalAddress={legalAddress} />
           </div>
         </div>

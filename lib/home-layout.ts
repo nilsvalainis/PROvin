@@ -21,9 +21,9 @@ export const approvedByIrissSignatureHeroClass = `${approvedByIrissSignatureBase
 /** Kas ir IRISS? — apakšvirsraksts: tā pati estētika, ~2× izmērs, nedaudz platāka līnija. */
 export const irissSectionSubtitleClass = `${approvedByIrissSignatureBaseClass} mx-auto max-w-[min(100%,52ch)] text-balance text-[1.125rem] sm:text-[1.25rem]`;
 
-/** Salīdzinājuma tabulas galvenes bāze (izmērs, svars) — krāsu dod `Muted` vai `Accent`. */
+/** Salīdzinājuma tabulas galvenes bāze — trekns, uppercase, plašāka tracking. */
 export const comparisonTableHeaderBaseClass =
-  "text-[10px] font-bold uppercase tracking-wide sm:text-[11px] sm:tracking-wider";
+  "text-[10px] font-bold uppercase tracking-[0.14em] sm:text-[11px] sm:tracking-[0.16em]";
 
 /**
  * Salīdzinājuma tabulas galvenes „IEZĪME” / „STANDARTA ATSKAITE” — pelēks.

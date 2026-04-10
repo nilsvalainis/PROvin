@@ -28,7 +28,7 @@ export function FooterLegalRekviziti({ legalName, regNo, legalAddress }: Props) 
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center justify-center text-[9px] text-gray-300 underline decoration-gray-300/70 underline-offset-2 transition hover:text-gray-400"
+        className="inline-flex items-center justify-center text-[8px] text-[#c4c4c8] underline decoration-[#d8d8dc] underline-offset-2 transition-all duration-300 ease-in-out hover:text-[#9ca3af]"
         aria-expanded={open}
         aria-controls="footer-rekviziti"
       >
@@ -36,7 +36,7 @@ export function FooterLegalRekviziti({ legalName, regNo, legalAddress }: Props) 
       </button>
       <p
         id="footer-rekviziti"
-        className={`mx-auto mt-1 max-w-[70ch] text-center text-[9px] leading-snug text-gray-300 transition-opacity duration-150 ${
+        className={`mx-auto mt-1 max-w-[70ch] text-center text-[8px] leading-relaxed text-[#c4c4c8] transition-all duration-300 ease-in-out ${
           open ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         }`}
       >

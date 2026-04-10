@@ -1,5 +1,5 @@
+import { ChevronDown } from "lucide-react";
 import { getMessages, getTranslations } from "next-intl/server";
-import { NavChevronDown } from "@/components/NavChevron";
 import { homeSectionEyebrowClass } from "@/lib/home-layout";
 
 type FaqItem = { id: string; q: string; a: string };
@@ -22,24 +22,23 @@ export async function Faq() {
           </h2>
         </div>
 
-        <div className="mt-10 space-y-3">
+        <div className="mt-10 divide-y divide-[#e5e7eb]">
           {items.map((item) => (
             <details
               key={item.id}
-              className="provin-lift group rounded-xl border border-black/[0.06] bg-[#fbfbfd] px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:px-5 sm:py-4"
+              className="group border-0 bg-transparent shadow-none transition-all duration-300 ease-in-out open:bg-black/[0.02]"
             >
-              <summary className="cursor-pointer list-none text-left text-[15px] font-semibold leading-snug text-[#1d1d1f] sm:text-[16px] [&::-webkit-details-marker]:hidden">
-                <span className="flex items-start justify-between gap-3">
-                  <span className="transition-colors group-hover:text-provin-accent">{item.q}</span>
-                  <span
-                    className="mt-0.5 shrink-0 text-provin-accent transition group-open:rotate-180"
-                    aria-hidden
-                  >
-                    <NavChevronDown />
-                  </span>
+              <summary className="flex cursor-pointer list-none items-start justify-between gap-4 py-4 pl-1 pr-1 text-left transition-all duration-300 ease-in-out sm:py-5 sm:pl-2 sm:pr-2 [&::-webkit-details-marker]:hidden">
+                <span className="min-w-0 flex-1 text-[1.1rem] font-semibold leading-snug tracking-tight text-[#1d1d1f] transition-colors duration-300 group-hover:text-provin-accent sm:leading-snug">
+                  {item.q}
                 </span>
+                <ChevronDown
+                  className="mt-1 h-4 w-4 shrink-0 text-[#9ca3af] transition-transform duration-300 ease-in-out group-open:rotate-180 group-open:text-provin-accent"
+                  strokeWidth={1.75}
+                  aria-hidden
+                />
               </summary>
-              <p className="mt-3 max-w-[65ch] border-t border-black/[0.06] pt-3 text-[14px] font-normal leading-relaxed text-[#6e6e73] sm:text-[15px]">
+              <p className="max-w-[65ch] pb-5 pl-1 pr-10 text-[14px] font-normal leading-relaxed text-[#6b7280] transition-colors duration-300 sm:pb-6 sm:pl-2 sm:text-[15px] sm:leading-relaxed">
                 {item.a}
               </p>
             </details>
