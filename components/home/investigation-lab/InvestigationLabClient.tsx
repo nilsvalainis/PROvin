@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
+import { ArrowRight, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useFineHover, useDisableNoiseGrain } from "@/hooks/use-viewport-capabilities";
 import {
@@ -19,11 +19,9 @@ export type InvestigationLabPillar = { title: string; body: string };
 
 export type InvestigationLabClientProps = {
   pillars: InvestigationLabPillar[];
-  eyebrow: string;
-  stickyTitle: string;
-  stickyLead: string;
-  ctaLabel: string;
-  scannerAria: string;
+  trustHeadline: string;
+  trustBody: string;
+  cta: string;
   orderHref: string;
 };
 
@@ -72,11 +70,9 @@ function MagneticIconShell({
 
 export function InvestigationLabClient({
   pillars,
-  eyebrow,
-  stickyTitle,
-  stickyLead,
-  ctaLabel,
-  scannerAria,
+  trustHeadline,
+  trustBody,
+  cta,
   orderHref,
 }: InvestigationLabClientProps) {
   const reduceMotion = useReducedMotion();
@@ -215,7 +211,7 @@ export function InvestigationLabClient({
     <section
       ref={sectionRef}
       id="izmeklesanas-lab"
-      aria-labelledby="investigation-lab-title"
+      aria-labelledby="investigation-lab-trust"
       className="relative isolate overflow-hidden bg-[#050505] px-4 py-16 text-white sm:px-6 sm:py-20 lg:py-28"
       onMouseMove={fineHover ? onMouseMove : undefined}
       onMouseLeave={fineHover ? onMouseLeave : undefined}
@@ -226,25 +222,26 @@ export function InvestigationLabClient({
 
       <div className="relative z-10 mx-auto grid max-w-[1200px] gap-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-16 lg:gap-x-14">
         <div className="relative flex min-h-[min(100vh,720px)] flex-col justify-start overflow-hidden lg:sticky lg:top-28 lg:max-h-[calc(100dvh-7rem)] lg:min-h-[calc(100dvh-8rem)]">
-          <p className="sr-only">{scannerAria}</p>
           <span className="provin-lab-scanner-line z-20" aria-hidden />
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#b8bcc4]">{eyebrow}</p>
-          <h2
-            id="investigation-lab-title"
-            className="mt-4 max-w-[16ch] text-4xl font-bold leading-[1.05] tracking-[-0.03em] text-white sm:text-5xl lg:text-[3.25rem]"
+          <p
+            id="investigation-lab-trust"
+            className="mx-auto max-w-[52ch] text-left text-[12px] font-medium leading-snug text-zinc-400 sm:text-[13px] sm:leading-relaxed"
           >
-            {stickyTitle}
-          </h2>
-          <p className="mt-6 max-w-md text-sm font-extralight leading-relaxed text-[#b8bcc4] sm:text-base">
-            {stickyLead}
+            {trustHeadline}
           </p>
-          <div className="mt-10 lg:mt-auto">
+          <div className="mt-6 space-y-4 md:space-y-5 lg:mt-auto">
             <Link
               href={orderHref}
-              className="lab-chrome-cta inline-flex min-h-11 items-center justify-center rounded-full px-7 text-[13px] font-bold tracking-wide text-[#0061d2] transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#3b82f6]"
+              className="lab-chrome-cta provin-btn--compact inline-flex min-h-[43px] w-fit max-w-[min(100%,17.5rem)] items-center justify-center gap-2 rounded-full px-5 text-[12px] font-semibold uppercase tracking-[0.06em] shadow-[0_7px_24px_rgba(0,0,0,0.12)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:min-h-[46px] sm:px-6 sm:text-[13px]"
             >
-              {ctaLabel}
+              {cta}
+              <ArrowRight className="h-4 w-4 shrink-0 opacity-95" strokeWidth={2} aria-hidden />
             </Link>
+            {trustBody.trim() ? (
+              <p className="max-w-[52ch] text-left text-[11px] font-normal leading-relaxed text-zinc-500 sm:text-[12px] sm:leading-relaxed">
+                {trustBody}
+              </p>
+            ) : null}
           </div>
         </div>
 
