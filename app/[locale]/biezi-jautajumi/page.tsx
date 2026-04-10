@@ -29,7 +29,7 @@ export default async function FaqPage() {
           </Link>
         </div>
       </div>
-      <Faq />
+      <Faq tone="light" />
     </>
   );
 }

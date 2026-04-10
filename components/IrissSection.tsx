@@ -4,14 +4,14 @@ import { homeSectionTitleClass, irissSectionSubtitleClass } from "@/lib/home-lay
 
 /** Melns trekns — tas pats izmērs kā BUJ atbilžu pamattekstam. */
 const irissAccent = (chunks: ReactNode) => (
-  <strong className="font-bold text-[#1a1a1a]">{chunks}</strong>
+  <strong className="font-bold text-white">{chunks}</strong>
 );
 
 const irissRichBody = { accent: irissAccent };
 
 /** Saskaņots ar <Faq> atbilžu rindkopu: text-[14px] sm:text-[15px], leading 1.75. */
 const irissBodyProseClass =
-  "text-[14px] font-normal leading-[1.75] text-[#1a1a1a] sm:text-[15px]";
+  "text-[14px] font-normal leading-[1.75] text-[#b8bcc4] sm:text-[15px]";
 
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
@@ -23,7 +23,7 @@ export async function IrissSection() {
   return (
     <section
       id="kas-ir-iriss"
-      className="relative scroll-mt-16 overflow-hidden bg-white px-4 pb-0 pt-10 sm:px-6 sm:pt-16"
+      className="relative scroll-mt-16 overflow-hidden bg-[#050505] px-4 pb-0 pt-10 sm:px-6 sm:pt-16"
     >
       <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
 
@@ -67,9 +67,9 @@ function IrissSocialIcons({
   socialSoon: string;
 }) {
   const btnClass =
-    "flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.1] bg-white/90 text-[#1d1d1f] shadow-sm transition hover:border-black/[0.18] hover:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1a1a]";
+    "flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-[#b8bcc4] shadow-sm transition will-change-[box-shadow,border-color] hover:border-provin-accent/45 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent";
 
-  const disabledClass = `${btnClass} cursor-default opacity-60 hover:border-black/[0.1] hover:text-[#1d1d1f]`;
+  const disabledClass = `${btnClass} cursor-default opacity-55 hover:border-white/15 hover:bg-white/[0.06] hover:text-[#b8bcc4] hover:shadow-none`;
 
   return (
     <ul className="flex list-none flex-wrap items-center justify-center gap-3" aria-label={socialLabel}>

@@ -1,19 +1,20 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
 import { validateOrderFields } from "@/lib/order-field-validation";
 
 const labelHero =
-  "block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#86868b]";
+  "block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#b8bcc4]";
 
 const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
 
 const inputHero =
-  "mt-1.5 box-border min-h-11 w-full rounded-none border-0 border-b-2 border-[#e5e7eb] bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition placeholder:text-[#c8c8cd] focus:border-provin-accent focus:ring-0 sm:min-h-0 sm:text-[16px]";
+  "relative z-10 mt-1.5 box-border min-h-11 w-full rounded-none border-0 border-b border-[#b8bcc4]/45 bg-transparent px-0 py-2.5 text-[15px] font-normal text-white outline-none transition will-change-[border-color,box-shadow] placeholder:text-[#b8bcc4]/45 focus:border-provin-accent focus:shadow-[0_0_16px_rgba(0,97,210,0.35)] focus:ring-0 sm:min-h-0 sm:text-[16px]";
 
 const inputDefault =
   "mt-1 box-border min-h-11 w-full rounded-lg border border-black/[0.1] bg-white px-3 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition placeholder:text-[#aeaeb2] focus:border-provin-accent/35 focus:ring-1 focus:ring-provin-accent/25 sm:min-h-0 sm:text-[16px]";
@@ -30,6 +31,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [withdrawalConsent, setWithdrawalConsent] = useState(false);
+  const [vinValue, setVinValue] = useState("");
   const hero = variant === "hero";
   const compact = variant === "compact";
 
@@ -93,7 +95,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
 
   const formShell =
     hero
-      ? `space-y-4 ${className ?? ""}`
+      ? `space-y-4 rounded-2xl border border-white/[0.08] bg-white/5 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-lg will-change-[backdrop-filter] sm:p-6 ${className ?? ""}`
       : compact
         ? `mt-6 space-y-4 border-t border-black/[0.06] pt-6 ${className ?? ""}`
         : `provin-lift-strong mt-10 rounded-3xl border border-black/[0.06] bg-gradient-to-b from-[#f5f5f7] to-provin-surface-2 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.05)] sm:p-10 ${className ?? ""}`;
@@ -101,7 +103,12 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
   const gridGap = hero ? "gap-4" : compact ? "gap-4" : "gap-6";
   const notesRows = hero ? 3 : compact ? 3 : 4;
 
-  const hintClass = hero ? "mt-1.5 text-[11px] font-normal leading-snug text-[#86868b]" : "mt-1 text-[11px] font-normal leading-snug text-[#86868b]";
+  const hintClass = hero
+    ? "mt-1.5 text-[11px] font-normal leading-snug text-[#b8bcc4]/85"
+    : "mt-1 text-[11px] font-normal leading-snug text-[#86868b]";
+
+  const optionalMutedClass = hero ? "text-[#b8bcc4]/55" : "text-[#aeaeb2]";
+  const reqStarClass = hero ? "text-red-400" : "text-red-600";
 
   return (
     <form onSubmit={onSubmit} className={formShell} noValidate>
@@ -109,7 +116,9 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         <div className="sm:col-span-2">
           <label htmlFor="order-name" className={labelClass}>
             {t("nameLabel")}{" "}
-            <span className="font-normal normal-case tracking-normal text-[#aeaeb2]">{t("optional")}</span>
+            <span className={`font-normal normal-case tracking-normal ${optionalMutedClass}`}>
+              {t("optional")}
+            </span>
           </label>
           <input
             id="order-name"
@@ -124,7 +133,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         <div className="sm:col-span-2 sm:grid sm:grid-cols-2 sm:gap-4">
           <div>
             <label htmlFor="order-email" className={labelClass}>
-              {t("emailLabel")} <span className="text-red-600">*</span>
+              {t("emailLabel")} <span className={reqStarClass}>*</span>
             </label>
             <input
               id="order-email"
@@ -139,7 +148,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
           </div>
           <div>
             <label htmlFor="order-phone" className={labelClass}>
-              {t("phoneLabel")} <span className="text-red-600">*</span>
+              {t("phoneLabel")} <span className={reqStarClass}>*</span>
             </label>
             <input
               id="order-phone"
@@ -155,25 +164,54 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         </div>
         <div className="sm:col-span-2">
           <label htmlFor="order-vin" className={labelClass}>
-            {t("vinLabel")} <span className="text-red-600">*</span>
+            {t("vinLabel")} <span className={reqStarClass}>*</span>
           </label>
-          <input
-            id="order-vin"
-            name="vin"
-            type="text"
-            required
-            maxLength={17}
-            spellCheck={false}
-            className={`${inputBase} font-mono uppercase tracking-wide`}
-            placeholder={t("vinPlaceholder")}
-          />
-          <p className={hero ? "mt-1.5 text-[11px] font-normal text-[#aeaeb2]" : "mt-1 text-[11px] font-normal text-[#aeaeb2]"}>
+          <div className="relative">
+            <AnimatePresence>
+              {hero && vinValue.length > 0 ? (
+                <motion.div
+                  key="vin-scan"
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <motion.div
+                    className="absolute inset-y-0 w-[42%] will-change-transform bg-gradient-to-r from-transparent via-[rgba(59,130,246,0.28)] to-transparent"
+                    initial={{ x: "-45%" }}
+                    animate={{ x: "240%" }}
+                    transition={{ duration: 2.75, repeat: Infinity, ease: "linear" }}
+                  />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+            <input
+              id="order-vin"
+              name="vin"
+              type="text"
+              required
+              maxLength={17}
+              spellCheck={false}
+              value={vinValue}
+              onChange={(e) => setVinValue(e.target.value.toUpperCase().slice(0, 17))}
+              className={`${inputBase} font-mono uppercase tracking-wide`}
+              placeholder={t("vinPlaceholder")}
+            />
+          </div>
+          <p
+            className={
+              hero
+                ? "mt-1.5 text-[11px] font-normal text-[#b8bcc4]/75"
+                : "mt-1 text-[11px] font-normal text-[#aeaeb2]"
+            }
+          >
             {t("vinHint")}
           </p>
         </div>
         <div className="sm:col-span-2">
           <label htmlFor="order-url" className={labelClass}>
-            {t("listingLabel")} <span className="text-red-600">*</span>
+            {t("listingLabel")} <span className={reqStarClass}>*</span>
           </label>
           <input
             id="order-url"
@@ -188,7 +226,9 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         <div className="sm:col-span-2">
           <label htmlFor="order-notes" className={labelClass}>
             {t("notesLabel")}{" "}
-            <span className="font-normal normal-case tracking-normal text-[#aeaeb2]">{t("optional")}</span>
+            <span className={`font-normal normal-case tracking-normal ${optionalMutedClass}`}>
+              {t("optional")}
+            </span>
           </label>
           <textarea
             id="order-notes"
@@ -204,7 +244,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
       <div
         className={
           hero
-            ? "mt-5 space-y-3 border-t border-black/[0.08] pt-4"
+            ? "mt-5 space-y-3 border-t border-white/10 pt-4"
             : compact
               ? "mt-4 flex flex-col gap-3"
               : "mt-8 flex flex-col gap-3 border-t border-black/[0.06] pt-8"
@@ -213,23 +253,23 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         {hero ? (
           <>
             <div
-              className="rounded-xl border border-black/[0.05] bg-white/55 px-4 py-3 shadow-[0_1px_6px_rgba(0,0,0,0.03)] backdrop-blur-sm sm:px-4"
+              className="rounded-xl border border-white/[0.08] bg-white/[0.06] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-md will-change-[backdrop-filter] sm:px-4"
               role="group"
               aria-label={t("ariaSummary")}
             >
               <div className="flex items-baseline justify-between gap-4">
-                <span className="text-[13px] font-medium text-[#6e6e73]">{t("summaryLabel")}</span>
-                <span className="text-[1.65rem] font-semibold tabular-nums tracking-tight text-[#1d1d1f] sm:text-[1.75rem]">
+                <span className="text-[13px] font-medium text-[#b8bcc4]">{t("summaryLabel")}</span>
+                <span className="text-[1.65rem] font-semibold tabular-nums tracking-tight text-white sm:text-[1.75rem]">
                   79,99&nbsp;€
                 </span>
               </div>
-              <p className="mt-2 text-[11px] font-normal leading-snug text-[#86868b] sm:text-[12px]">
+              <p className="mt-2 text-[11px] font-normal leading-snug text-[#b8bcc4]/90 sm:text-[12px]">
                 {t("summaryNote")}
               </p>
             </div>
             <label
               htmlFor="order-checkout-consent"
-              className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-black/[0.08] bg-white/60 px-3 py-3 text-left shadow-[0_1px_6px_rgba(0,0,0,0.03)] sm:min-h-0 sm:px-4"
+              className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-white/[0.1] bg-white/[0.05] px-3 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-md will-change-[backdrop-filter] sm:min-h-0 sm:px-4"
             >
               <input
                 id="order-checkout-consent"
@@ -237,10 +277,10 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 name="withdrawalConsent"
                 checked={withdrawalConsent}
                 onChange={(e) => setWithdrawalConsent(e.target.checked)}
-                className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#c7c7cc] text-provin-accent focus:ring-provin-accent/30 sm:h-4 sm:w-4"
+                className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#b8bcc4]/50 bg-transparent text-provin-accent focus:ring-provin-accent/30 sm:h-4 sm:w-4"
                 aria-label={t("checkoutConsentAria")}
               />
-              <span className="text-[12px] font-normal leading-snug text-[#424245] sm:text-[13px]">
+              <span className="text-[12px] font-normal leading-snug text-[#b8bcc4] sm:text-[13px]">
                 {t.rich("checkoutConsent", {
                   terms: (chunks) => (
                     <Link
@@ -275,7 +315,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 </>
               )}
             </button>
-            <p className="text-center text-[10px] font-normal leading-relaxed text-[#aeaeb2] sm:text-[11px]">
+            <p className="text-center text-[10px] font-normal leading-relaxed text-[#b8bcc4]/75 sm:text-[11px]">
               {t("stripeNote")}
             </p>
           </>
@@ -337,7 +377,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         <p
           className={
             hero
-              ? "mt-5 rounded-xl border border-red-200 bg-red-50/90 px-4 py-3 text-center text-[13px] font-normal text-red-800 backdrop-blur-sm"
+              ? "mt-5 rounded-xl border border-red-400/35 bg-red-950/50 px-4 py-3 text-center text-[13px] font-normal text-red-200 backdrop-blur-sm"
               : "mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-center text-[13px] font-normal text-red-800"
           }
           role="alert"

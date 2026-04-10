@@ -24,7 +24,7 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
       id={ORDER_SECTION_ID}
       className="relative z-10 scroll-mt-[calc(2.75rem+1px)] sm:scroll-mt-12"
     >
-      <div className="relative mx-auto min-w-0 max-w-[1000px] px-4 pb-4 pt-2 text-center sm:px-6 sm:pb-5 sm:pt-2">
+      <div className="relative mx-auto min-w-0 max-w-[1000px] px-4 pb-4 pt-2 text-center text-[#b8bcc4] sm:px-6 sm:pb-5 sm:pt-2">
         <div className="flex h-10 items-center justify-center sm:h-11">
           <a
             href="#order-form"
@@ -37,7 +37,7 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
         <div className="flex w-full flex-col items-center gap-4">
           {cancelled && (
             <p
-              className="mx-auto max-w-md rounded-xl border border-black/[0.06] bg-white/80 px-4 py-3 text-[13px] font-normal text-[#424245] shadow-[0_1px_8px_rgba(0,0,0,0.04)] backdrop-blur-sm"
+              className="mx-auto max-w-md rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-[13px] font-normal text-[#b8bcc4] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md"
               role="status"
             >
               {t("cancelled")}
@@ -50,7 +50,7 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
         </div>
 
         {t("footnote").trim() ? (
-          <p className="mx-auto mt-3 max-w-[42ch] text-[10px] font-normal leading-relaxed text-[#86868b] sm:mt-4 sm:text-[11px]">
+          <p className="mx-auto mt-3 max-w-[42ch] text-[10px] font-normal leading-relaxed text-[#b8bcc4]/85 sm:mt-4 sm:text-[11px]">
             {t("footnote")}
           </p>
         ) : null}

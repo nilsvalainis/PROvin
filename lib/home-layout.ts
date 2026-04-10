@@ -55,3 +55,7 @@ export const homeSoftBandGradientClass =
 /** Augšā caurspīdīgs, lai zem tā paliek HeroVisual + globālais overlay — bez „krāsas kastes” pār visu ekrānu. */
 export const homeFlowModuleGradientClass =
   "bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0)_14%,rgba(250,251,252,0.42)_24%,rgba(238,242,248,0.78)_38%,rgba(228,234,242,0.92)_50%,rgba(238,242,248,0.78)_62%,rgba(250,251,252,0.5)_78%,rgba(255,255,255,0.96)_100%)]";
+
+/** Tumšā diagnostikas plūsma virs #050505 (pasūtījuma bloks). */
+export const homeFlowModuleGradientTerminalClass =
+  "bg-[linear-gradient(180deg,rgba(5,5,5,0)_0%,rgba(5,5,5,0)_12%,rgba(12,18,28,0.55)_35%,rgba(18,32,52,0.35)_55%,rgba(8,12,20,0.72)_100%)]";

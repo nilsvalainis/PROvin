@@ -23,7 +23,9 @@ export async function HowItWorks({ tone = "light" }: { tone?: "light" | "dark" }
   const body = dark ? "text-zinc-400" : "text-[#86868b]";
 
   return (
-    <section className="relative z-10 overflow-visible bg-transparent">
+    <section
+      className={`relative z-10 overflow-visible ${dark ? "bg-[#050505]" : "bg-transparent"}`}
+    >
       <div className="relative px-4 py-4 sm:px-6 sm:py-4">
         <div className={`relative ${homeContentMaxClass}`}>
           <div className="flex h-10 items-center justify-center sm:h-11" aria-hidden>
