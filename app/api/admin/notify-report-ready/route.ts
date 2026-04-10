@@ -1,0 +1,58 @@
+import { NextResponse } from "next/server";
+import { getAdminSession } from "@/lib/admin-auth";
+import { sendReportReadyEmail } from "@/lib/email/send-transactional";
+import { getCheckoutSessionDetail } from "@/lib/admin-orders";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+/**
+ * Kad eksperts ir apstiprinājis atskaiti — nosūta klientam paziņojumu (Resend).
+ * POST JSON: { "sessionId": "cs_..." }
+ */
+export async function POST(req: Request) {
+  if (!(await getAdminSession())) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+
+  const sessionId =
+    typeof body === "object" &&
+    body !== null &&
+    "sessionId" in body &&
+    typeof (body as { sessionId: unknown }).sessionId === "string"
+      ? (body as { sessionId: string }).sessionId.trim()
+      : "";
+
+  if (!sessionId) {
+    return NextResponse.json({ error: "missing_session_id" }, { status: 400 });
+  }
+
+  const order = await getCheckoutSessionDetail(sessionId);
+  if (!order || order.paymentStatus !== "paid") {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  const to = order.customerEmail ?? order.customerDetailsEmail;
+  if (!to?.trim()) {
+    return NextResponse.json({ error: "no_customer_email" }, { status: 400 });
+  }
+
+  try {
+    await sendReportReadyEmail({
+      to: to.trim(),
+      vin: order.vin?.trim() || "—",
+    });
+  } catch (e) {
+    console.error("[api/admin/notify-report-ready]", e);
+    return NextResponse.json({ error: "send_failed" }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}

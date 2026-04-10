@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { Header } from "@/components/Header";
 import { LocaleHtmlLang } from "@/components/LocaleHtmlLang";
 import { CookieConsent } from "@/components/CookieConsent";
+import { LenisProvider } from "@/components/providers/LenisProvider";
 import { WhatsAppFab } from "@/components/WhatsAppFab";
 import { routing } from "@/i18n/routing";
 
@@ -56,13 +57,15 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <NextIntlClientProvider messages={messages}>
-      <LocaleHtmlLang />
-      <Header />
-      <main className="min-w-0 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
-        {children}
-      </main>
-      <WhatsAppFab />
-      <CookieConsent />
+      <LenisProvider>
+        <LocaleHtmlLang />
+        <Header />
+        <main className="min-w-0 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+          {children}
+        </main>
+        <WhatsAppFab />
+        <CookieConsent />
+      </LenisProvider>
     </NextIntlClientProvider>
   );
 }

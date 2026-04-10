@@ -1,5 +1,6 @@
 import { Faq } from "@/components/Faq";
 import { FinalCta } from "@/components/FinalCta";
+import { HomePageMotionShell } from "@/components/home/HomePageMotionShell";
 import { Hero } from "@/components/Hero";
 import { HeroVisual } from "@/components/HeroVisual";
 import { HowItWorks } from "@/components/HowItWorks";
@@ -17,7 +18,7 @@ export default async function HomePage({
   const cancelled = sp.atcelts === "1";
 
   return (
-    <>
+    <HomePageMotionShell>
       <div className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 z-0">
           <HeroVisual />
@@ -46,6 +47,6 @@ export default async function HomePage({
       </div>
       <Faq />
       <Footer />
-    </>
+    </HomePageMotionShell>
   );
 }

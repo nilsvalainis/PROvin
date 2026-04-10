@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { sendPaymentConfirmationEmail } from "@/lib/email/send-transactional";
 import { notifyAdminEmail, notifyAdminTelegram } from "@/lib/notify";
 import { persistPaidOrderInvoice } from "@/lib/invoice-storage";
 import { releaseStripeEvent, tryBeginStripeEvent } from "@/lib/stripe-webhook-dedupe";
@@ -82,6 +83,20 @@ export async function POST(req: Request) {
         await notifyAdminEmail(payload);
       } catch (e) {
         console.error("Email notify:", e);
+      }
+
+      if (email) {
+        try {
+          await sendPaymentConfirmationEmail({
+            to: email,
+            sessionId: session.id,
+            amountTotal: payload.amountTotal,
+            currency: payload.currency,
+            vin: payload.vin,
+          });
+        } catch (e) {
+          console.error("Customer payment confirmation email:", e);
+        }
       }
 
       console.info("PROVIN order:", payload);

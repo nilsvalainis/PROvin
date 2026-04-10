@@ -1,25 +1,18 @@
-type OrderPayload = {
-  sessionId: string;
-  customerEmail: string | null;
-  customerPhone: string | null;
-  customerName: string | null;
-  vin: string | null;
-  listingUrl: string | null;
-  contactMethod: string | null;
-  notes: string | null;
-  amountTotal: string | null;
-  currency: string | null;
-};
+import type { OrderEmailPayload } from "@/lib/email/types";
+import { sendAdminNewOrderNotificationEmail } from "@/lib/email/send-transactional";
 
-function contactLabel(v: string | null): string {
-  if (v === "whatsapp") return "WhatsApp";
-  if (v === "telegram") return "Telegram";
-  return v ?? "—";
+export type OrderPayload = OrderEmailPayload;
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 function formatMessage(p: OrderPayload): string {
   const deliveryLine = p.contactMethod
-    ? `<b>Saziņas veids (vecā forma):</b> ${escapeHtml(contactLabel(p.contactMethod))}`
+    ? `<b>Saziņas veids:</b> ${escapeHtml(contactLabel(p.contactMethod))}`
     : `<b>Atskaite klientam:</b> e-pastā`;
 
   return [
@@ -28,7 +21,7 @@ function formatMessage(p: OrderPayload): string {
     `<b>Session:</b> <code>${escapeHtml(p.sessionId)}</code>`,
     `<b>Vārds:</b> ${escapeHtml(p.customerName ?? "—")}`,
     `<b>E-pasts:</b> ${escapeHtml(p.customerEmail ?? "—")}`,
-    `<b>Tālrunis (rezerve):</b> ${escapeHtml(p.customerPhone ?? "—")}`,
+    `<b>Tālrunis:</b> ${escapeHtml(p.customerPhone ?? "—")}`,
     `<b>VIN:</b> ${escapeHtml(p.vin ?? "—")}`,
     `<b>Sludinājums:</b> ${escapeHtml(p.listingUrl ?? "—")}`,
     deliveryLine,
@@ -39,11 +32,10 @@ function formatMessage(p: OrderPayload): string {
     .join("\n");
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+function contactLabel(v: string | null): string {
+  if (v === "whatsapp") return "WhatsApp";
+  if (v === "telegram") return "Telegram";
+  return v ?? "—";
 }
 
 export async function notifyAdminTelegram(payload: OrderPayload): Promise<void> {
@@ -72,49 +64,7 @@ export async function notifyAdminTelegram(payload: OrderPayload): Promise<void> 
 }
 
 export async function notifyAdminEmail(payload: OrderPayload): Promise<void> {
-  const to = process.env.ADMIN_NOTIFY_EMAIL;
+  const to = process.env.ADMIN_NOTIFY_EMAIL?.trim();
   if (!to) return;
-
-  const subject = `PROVIN: jauns maksājums — ${payload.vin ?? payload.sessionId}`;
-  const text = formatMessage(payload).replace(/<[^>]+>/g, "");
-
-  const resendKey = process.env.RESEND_API_KEY;
-  if (resendKey) {
-    const r = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: process.env.RESEND_FROM_EMAIL ?? "PROVIN <onboarding@resend.dev>",
-        to: [to],
-        subject,
-        text,
-      }),
-    });
-    if (!r.ok) throw new Error(`Resend failed: ${await r.text()}`);
-    return;
-  }
-
-  const mailgunDomain = process.env.MAILGUN_DOMAIN;
-  const mailgunKey = process.env.MAILGUN_API_KEY;
-  if (mailgunDomain && mailgunKey) {
-    const form = new URLSearchParams();
-    form.set("from", "PROVIN <noreply@" + mailgunDomain + ">");
-    form.set("to", to);
-    form.set("subject", subject);
-    form.set("text", text);
-
-    const r = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
-      method: "POST",
-      headers: {
-        Authorization: "Basic " + Buffer.from(`api:${mailgunKey}`).toString("base64"),
-      },
-      body: form,
-    });
-    if (!r.ok) throw new Error(`Mailgun failed: ${await r.text()}`);
-  }
+  await sendAdminNewOrderNotificationEmail(payload, to);
 }
-
-export type { OrderPayload };
