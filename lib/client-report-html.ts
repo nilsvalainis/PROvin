@@ -821,7 +821,19 @@ function clientReportPrintCss(): string {
         color:#374151!important;font-weight:500!important;white-space:nowrap;text-align:left!important;
       }
       .pdf-mileage-history-table td.pdf-mileage-cell-odo{text-align:center!important;}
-      .pdf-mileage-history-table td.pdf-mileage-cell-loss{text-align:left!important;}
+      .pdf-mileage-history-table td.pdf-mileage-cell-loss{
+        text-align:center!important;
+      }
+      .pdf-mileage-history-table td.pdf-mileage-cell-loss .pdf-data-alert-wrap{
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        flex-wrap:wrap!important;
+        gap:8px!important;
+        max-width:100%!important;
+        text-align:center!important;
+        vertical-align:middle!important;
+      }
       .pdf-mileage-history-table td.pdf-mileage-cell-flag{
         text-align:right!important;vertical-align:middle!important;
       }
