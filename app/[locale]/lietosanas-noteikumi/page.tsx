@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
-import { CompanyLegalDisclosure } from "@/components/CompanyLegalDisclosure";
+import { CompanyLegalOneLine } from "@/components/CompanyLegalOneLine";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -56,10 +56,6 @@ export default async function TermsPage({ params }: Props) {
         {t("termsTitle")}
       </h1>
       <p className="mt-2 text-sm text-[var(--color-provin-muted)]">{t("termsUpdated")}</p>
-
-      <div className="mt-6 rounded-xl border border-black/[0.06] bg-[#f5f5f7]/80 px-4 py-3 sm:px-5">
-        <CompanyLegalDisclosure className="text-[13px] leading-relaxed text-[#424245]" />
-      </div>
 
       <p className="mt-4 text-base leading-relaxed text-[var(--color-provin-muted)]">
         {t.rich("termsLead", {
@@ -118,12 +114,9 @@ export default async function TermsPage({ params }: Props) {
         })}
       </div>
 
-      <section id="pakalpojuma-sniedzeja-informacija" className="mt-10 scroll-mt-24">
-        <h2 className="text-lg font-semibold text-[var(--color-apple-text)]">Pakalpojuma sniedzēja informācija</h2>
-        <div className="mt-3 rounded-xl border border-black/[0.06] bg-[#f5f5f7]/70 px-4 py-3 sm:px-5">
-          <CompanyLegalDisclosure className="not-italic text-[12px] leading-relaxed text-[#6e6e73]" />
-        </div>
-      </section>
+      <div className="mt-14 border-0 pt-8">
+        <CompanyLegalOneLine variant="juridiska" />
+      </div>
     </article>
   );
 }

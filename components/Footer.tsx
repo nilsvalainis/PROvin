@@ -4,8 +4,7 @@ import { MessageCircle } from "lucide-react";
 import { HeroVisual } from "@/components/HeroVisual";
 import { contactMailtoHref, whatsappChatUrl } from "@/lib/contact";
 import { homePath } from "@/lib/paths";
-import { getCompanyLegal } from "@/lib/company";
-import { FooterLegalRekviziti } from "@/components/FooterLegalRekviziti";
+import { CompanyLegalOneLine } from "@/components/CompanyLegalOneLine";
 
 function MailIcon({ className }: { className?: string }) {
   return (
@@ -31,8 +30,6 @@ export async function Footer() {
   const mailHref = contactMailtoHref();
   const waHref = whatsappChatUrl();
   const homeHref = homePath(locale);
-  const { legalName, regNo, legalAddress } = getCompanyLegal();
-
   return (
     <footer className="relative overflow-hidden border-t border-[#ececec] bg-white">
       <div className="pointer-events-none absolute inset-0 z-0">
@@ -122,8 +119,8 @@ export async function Footer() {
             </span>
             <span>{t("gdpr", { year: new Date().getFullYear() })}</span>
           </p>
-          <div className="py-3 text-center">
-            <FooterLegalRekviziti legalName={legalName} regNo={regNo} legalAddress={legalAddress} />
+          <div className="pt-2 text-center">
+            <CompanyLegalOneLine variant="pakalpojums" />
           </div>
         </div>
       </div>

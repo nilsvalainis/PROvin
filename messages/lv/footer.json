@@ -9,6 +9,8 @@
     "privacyPolicy": "Privātuma politika",
     "termsOfService": "Lietošanas noteikumi",
     "gdpr": "© {year} PROVIN. Personas datu apstrāde notiek saskaņā ar piemērojamiem tiesību aktiem (GDPR).",
+    "legalInlinePrefixJuridiska": "Juridiskā informācija:",
+    "legalInlinePrefixPakalpojums": "Pakalpojuma sniedzējs:",
     "companyLegalSubject": "Juridiskais sniedzējs",
     "companyRegNo": "Reģistrācijas numurs",
     "companyLegalAddress": "Juridiskā adrese",
