@@ -50,7 +50,10 @@ export async function PricingIncluded() {
     <section className="relative px-4 pb-4 pt-2 sm:px-6 sm:pb-5 sm:pt-3 md:pb-6 md:pt-4">
       <div className="relative mx-auto w-full max-w-[1000px]">
         <h2 className={`${homeSectionEyebrowClass} text-balance text-center`}>{t("workTitle")}</h2>
-        <ul className="mt-4 grid list-none grid-cols-1 gap-3 sm:mt-5 sm:grid-cols-2 lg:grid-cols-3">
+        <p className="mb-6 mt-2 text-center text-xs font-normal leading-relaxed text-gray-500 sm:text-sm">
+          {t("workManufacturersNote")}
+        </p>
+        <ul className="grid list-none grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {grid.map((item, i) => {
             const Icon = GRID_LUCIDE_ICONS[i] ?? Globe2;
             const inner = (
