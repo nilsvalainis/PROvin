@@ -3,6 +3,7 @@ import {
   comparisonTableFeatureCellClass,
   homeSectionEyebrowClass,
   homeSoftBandGradientClass,
+  irissSectionSubtitleClass,
 } from "@/lib/home-layout";
 
 export async function IrissSection() {
@@ -25,6 +26,7 @@ export async function IrissSection() {
       <div className="relative mx-auto w-full max-w-[1000px]">
         <div className="text-center">
           <h2 className={`${homeSectionEyebrowClass} text-balance`}>{t("title")}</h2>
+          <p className={`mt-2.5 ${irissSectionSubtitleClass}`}>{t("subtitle")}</p>
         </div>
 
         <div className="mt-5 flex justify-center">

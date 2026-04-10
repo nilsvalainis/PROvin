@@ -8,6 +8,19 @@ export const homeContentMaxClass = "mx-auto min-w-0 w-full max-w-[1200px]";
 export const homeSectionEyebrowClass =
   "text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[13px]";
 
+/**
+ * „APPROVED BY IRISS” paraksts Hero augšā — mīksts pelēks, light, plaša burtu distance.
+ * IRISS sadaļas apakšvirsraksts lieto to pašu bāzi ar `irissSectionSubtitleClass` (2× lielāks teksts).
+ */
+export const approvedByIrissSignatureBaseClass =
+  "font-light uppercase tracking-[0.32em] text-[#8e8e93] sm:tracking-[0.38em] leading-relaxed";
+
+/** Hero — mazais paraksta izmērs. */
+export const approvedByIrissSignatureHeroClass = `${approvedByIrissSignatureBaseClass} text-[0.5625rem] sm:text-[0.625rem]`;
+
+/** Kas ir IRISS? — apakšvirsraksts: tā pati estētika, ~2× izmērs, nedaudz platāka līnija. */
+export const irissSectionSubtitleClass = `${approvedByIrissSignatureBaseClass} mx-auto max-w-[min(100%,52ch)] text-balance text-[1.125rem] sm:text-[1.25rem]`;
+
 /** Salīdzinājuma tabulas galvenes bāze (izmērs, svars) — krāsu dod `Muted` vai `Accent`. */
 export const comparisonTableHeaderBaseClass =
   "text-[10px] font-bold uppercase tracking-wide sm:text-[11px] sm:tracking-wider";
