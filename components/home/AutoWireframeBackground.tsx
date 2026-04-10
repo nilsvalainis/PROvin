@@ -1,15 +1,19 @@
 /**
- * Fixed full-screen wireframe layer (z-0, pointer-events: none).
- * Silhouette + corner markers — content should sit in a sibling at z-10.
+ * Fixed wireframe layer (z-[2], pointer-events: none) — virs sudraba, zem satura (z-10).
+ * Opacity: `calc(0.2 - var(--home-surface-t) * 0.15)`.
  */
 export function AutoWireframeBackground() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-[2] overflow-hidden"
     >
-      <div className="flex h-full w-full items-center justify-center">
-        <div className="provin-wireframe-float w-[min(88vw,780px)] px-4 opacity-[0.1]">
+      <div
+        className="h-full w-full"
+        style={{ opacity: "calc(0.2 - var(--home-surface-t, 0) * 0.15)" }}
+      >
+        <div className="flex h-full w-full items-center justify-center">
+          <div className="provin-wireframe-float w-[min(88vw,780px)] px-4">
           <svg
             className="h-auto w-full text-[#c4c8d0]"
             viewBox="0 0 400 110"
@@ -77,13 +81,14 @@ export function AutoWireframeBackground() {
               d="M 32 62 L 58 56 M 318 58 L 344 64"
             />
           </svg>
+          </div>
         </div>
-      </div>
 
-      <Crosshair className="left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))]" />
+        <Crosshair className="left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))]" />
       <Crosshair className="right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))]" />
       <Crosshair className="bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))]" />
-      <Crosshair className="bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))]" />
+        <Crosshair className="bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))]" />
+      </div>
     </div>
   );
 }
@@ -91,7 +96,7 @@ export function AutoWireframeBackground() {
 function Crosshair({ className }: { className: string }) {
   return (
     <div
-      className={`pointer-events-none fixed z-0 h-3 w-3 opacity-10 ${className}`}
+      className={`pointer-events-none fixed z-0 h-3 w-3 ${className}`}
       aria-hidden
     >
       <svg viewBox="0 0 12 12" className="h-full w-full text-[#c4c8d0]" fill="none">

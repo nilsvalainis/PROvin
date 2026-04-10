@@ -1,6 +1,7 @@
 import { Faq } from "@/components/Faq";
 import { FinalCta } from "@/components/FinalCta";
 import { AutoWireframeBackground } from "@/components/home/AutoWireframeBackground";
+import { HomeScrollSurface } from "@/components/home/HomeScrollSurface";
 import { HomeProcessRail } from "@/components/home/HomeProcessRail";
 import { MarketingHero } from "@/components/home/MarketingHero";
 import { InvestigationLabSection } from "@/components/home/investigation-lab/InvestigationLabSection";
@@ -18,27 +19,30 @@ export default async function HomePage({
   const cancelled = sp.atcelts === "1";
 
   return (
-    <div className="relative min-w-0 bg-[#050505]">
+    <HomeScrollSurface>
       <AutoWireframeBackground />
       <div className="relative z-10 min-w-0">
         <HomeProcessRail />
         <MarketingHero />
-        <InvestigationLabSection />
-        <HowItWorks tone="dark" />
 
-        <div
-          id="site-content"
-          className="relative scroll-mt-14 border-t border-white/10 bg-transparent text-white"
-        >
-          <div className="relative z-10 pt-10 sm:pt-14 md:pt-16">
-            <FinalCta cancelled={cancelled} />
+        <div className="home-below-hero">
+          <InvestigationLabSection />
+          <HowItWorks tone="light" />
+
+          <div
+            id="site-content"
+            className="home-site-rule home-body-ink relative scroll-mt-14 border-t border-transparent bg-transparent"
+          >
+            <div className="relative z-10 pt-10 sm:pt-14 md:pt-16">
+              <FinalCta cancelled={cancelled} />
+            </div>
+            <PricingIncluded />
+            <IrissSection />
           </div>
-          <PricingIncluded />
-          <IrissSection />
+          <Faq />
+          <Footer />
         </div>
-        <Faq />
-        <Footer />
       </div>
-    </div>
+    </HomeScrollSurface>
   );
 }

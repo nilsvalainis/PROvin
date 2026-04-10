@@ -3,6 +3,7 @@
 import { Menu, X } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { useHomeSurfaceT } from "@/hooks/use-home-surface-t";
 
 export type HeaderClientProps = {
   orderLabel: string;
@@ -56,16 +57,22 @@ export function HeaderClient({
   const isHome = pathname === "/" || pathname === "";
   const isFaq = pathname.includes("biezi-jautajumi");
   const isOrderSection = isHome && hash.includes("pasutit");
+  const homeSurfaceT = useHomeSurfaceT();
+  const homeSilverHeader = isHome && homeSurfaceT > 0.22;
 
   const headerSurface = isHome
-    ? "border-b border-white/10 bg-[#050505] pt-[env(safe-area-inset-top,0px)]"
+    ? homeSilverHeader
+      ? "border-b border-black/[0.08] bg-[#e8eaed]/75 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-[#e8eaed]/65"
+      : "border-b border-white/10 bg-[#050505]/72 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-[#050505]/60"
     : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
   const logoClass = isHome
-    ? "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-white transition-colors hover:text-white/90 sm:min-h-0 sm:min-w-0"
+    ? homeSilverHeader
+      ? "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-[#050505] transition-colors hover:text-[#0a0a0a] sm:min-h-0 sm:min-w-0"
+      : "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-white transition-colors hover:text-white/90 sm:min-h-0 sm:min-w-0"
     : "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent sm:min-h-0 sm:min-w-0";
 
-  const navMuted = isHome ? "text-white/90" : "text-[#1d1d1f]";
+  const navMuted = isHome ? (homeSilverHeader ? "text-[#1d1d1f]/90" : "text-white/90") : "text-[#1d1d1f]";
 
   const orderBtnClass =
     "provin-btn provin-btn--compact inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-4 text-[13px] font-semibold text-white shadow-[0_2px_10px_rgba(0,0,0,0.2)] sm:min-h-10 sm:px-5";
@@ -112,7 +119,9 @@ export function HeaderClient({
               onClick={() => setOpen(true)}
               className={
                 isHome
-                  ? "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/20 bg-[#050505] text-white shadow-sm transition hover:border-white/35"
+                  ? homeSilverHeader
+                    ? "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-black/[0.12] bg-white/90 text-[#050505] shadow-sm transition hover:border-black/20"
+                    : "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/20 bg-[#050505]/90 text-white shadow-sm transition hover:border-white/35"
                   : "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#1d1d1f] shadow-sm transition hover:bg-slate-50"
               }
               aria-expanded={open}

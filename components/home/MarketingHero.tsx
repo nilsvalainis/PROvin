@@ -12,9 +12,14 @@ export function MarketingHero() {
 
   return (
     <section
+      id="home-hero"
       className="relative flex min-h-[100dvh] min-h-[100svh] flex-col justify-center bg-transparent px-5 pb-16 pt-[max(5.5rem,env(safe-area-inset-top,0px)+3.25rem)] text-white sm:px-8 sm:pb-20 sm:pt-[max(5.5rem,env(safe-area-inset-top,0px)+3rem)]"
       aria-labelledby="marketing-hero-title"
     >
+      <div
+        className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_50%,#111111_0%,#050505_100%)]"
+        aria-hidden
+      />
       <div className="relative z-10 mx-auto flex w-full max-w-[min(100%,53.76rem)] flex-col items-center text-center">
         <header className="flex shrink-0 flex-col items-center gap-6 sm:gap-7 md:gap-8">
           <p className={approvedByIrissSignatureHeroClass} aria-label={t("approved")}>

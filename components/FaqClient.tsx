@@ -58,7 +58,7 @@ export function FaqClient({ title, items, tone = "dark" }: FaqClientProps) {
   return (
     <section
       id="biezi-jautajumi"
-      className="scroll-mt-16 bg-transparent px-4 py-10 sm:px-6 sm:py-14"
+      className="home-body-ink scroll-mt-16 bg-transparent px-4 py-10 sm:px-6 sm:py-14"
       aria-labelledby="faq-heading"
     >
       <div className="mx-auto min-w-0 max-w-[680px]">

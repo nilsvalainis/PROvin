@@ -2,16 +2,14 @@ import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
 import { homeSectionTitleClass, irissSectionSubtitleClass } from "@/lib/home-layout";
 
-/** Melns trekns — tas pats izmērs kā BUJ atbilžu pamattekstam. */
-const irissAccent = (chunks: ReactNode) => (
-  <strong className="font-bold text-white">{chunks}</strong>
-);
+/** Trekns — krāsu dod `.home-iriss-prose strong`. */
+const irissAccent = (chunks: ReactNode) => <strong className="font-bold">{chunks}</strong>;
 
 const irissRichBody = { accent: irissAccent };
 
 /** Saskaņots ar <Faq> atbilžu rindkopu: text-[14px] sm:text-[15px], leading 1.75. */
 const irissBodyProseClass =
-  "text-[14px] font-normal leading-[1.75] text-[#b8bcc4] sm:text-[15px]";
+  "home-iriss-prose text-[14px] font-normal leading-[1.75] sm:text-[15px]";
 
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
@@ -23,14 +21,14 @@ export async function IrissSection() {
   return (
     <section
       id="kas-ir-iriss"
-      className="relative scroll-mt-16 overflow-hidden bg-transparent px-4 pb-0 pt-10 sm:px-6 sm:pt-16"
+      className="home-body-ink relative scroll-mt-16 overflow-hidden bg-transparent px-4 pb-0 pt-10 sm:px-6 sm:pt-16"
     >
       <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
 
       <div className="relative mx-auto w-full max-w-[1000px]">
         <div className="text-center">
           <h2 className={homeSectionTitleClass}>{t("title")}</h2>
-          <p className={irissSectionSubtitleClass}>{t("subtitle")}</p>
+          <p className={`${irissSectionSubtitleClass} home-muted-foreground`}>{t("subtitle")}</p>
         </div>
 
         <div className="mt-5 flex justify-center">

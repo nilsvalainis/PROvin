@@ -49,7 +49,7 @@ export async function PricingIncluded() {
   return (
     <section
       id="cena"
-      className="relative scroll-mt-16 px-4 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-5 md:pb-8 md:pt-6"
+      className="home-body-ink relative scroll-mt-16 px-4 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-5 md:pb-8 md:pt-6"
     >
       <div className="relative mx-auto w-full max-w-[1000px]">
         <h2 className={homeSectionTitleClass}>{t("workTitle")}</h2>
@@ -95,7 +95,7 @@ export async function PricingIncluded() {
             );
           })}
         </ul>
-        <p className="mt-4 max-w-[65ch] text-left text-xs font-normal leading-snug text-[#b8bcc4] sm:text-sm">
+        <p className="home-muted-foreground mt-4 max-w-[65ch] text-left text-xs font-normal leading-snug sm:text-sm">
           {t("autoRecordsFootnote")}
         </p>
       </div>
