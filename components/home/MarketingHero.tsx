@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
+import { useDisableNoiseGrain } from "@/hooks/use-viewport-capabilities";
 
 const TITLE = "VIN UN SLUDINĀJUMA AUDITS";
 const SUBTITLE = "TAVS PERSONĪGAIS AUTO DETEKTĪVS";
@@ -55,6 +56,7 @@ function StaggeredText({
  * Pilnekrāna tumšais Hero — tipogrāfija, burtu stagger, trokšņa slānis, scroll indikators.
  */
 export function MarketingHero() {
+  const disableGrain = useDisableNoiseGrain();
   const titleLen = Array.from(TITLE).length;
   const subtitleDelay = titleLen * 0.026 + 0.12;
 
@@ -63,10 +65,12 @@ export function MarketingHero() {
       className="relative flex min-h-[100dvh] min-h-[100svh] flex-col justify-center bg-[#050505] px-5 pb-16 pt-[max(5.5rem,env(safe-area-inset-top,0px)+3.25rem)] text-white sm:px-8 sm:pb-20 sm:pt-[max(5.5rem,env(safe-area-inset-top,0px)+3rem)]"
       aria-labelledby="marketing-hero-title"
     >
-      <div
-        className="pointer-events-none absolute inset-0 z-0 provin-noise-dark opacity-[0.45]"
-        aria-hidden
-      />
+      {!disableGrain ? (
+        <div
+          className="pointer-events-none absolute inset-0 z-0 provin-noise-dark opacity-[0.45]"
+          aria-hidden
+        />
+      ) : null}
 
       <div className="relative z-10 mx-auto flex w-full max-w-[min(100%,52rem)] flex-col items-center text-center">
         <h1
@@ -90,7 +94,7 @@ export function MarketingHero() {
 
       <a
         href="#site-content"
-        className="provin-scroll-hint absolute bottom-[max(1.25rem,env(safe-area-inset-bottom,0px))] left-1/2 z-10 flex flex-col items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/45 transition-colors hover:text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/40 sm:bottom-8 sm:text-[11px]"
+        className="provin-scroll-hint absolute bottom-[max(1.25rem,env(safe-area-inset-bottom,0px))] left-1/2 z-10 flex min-h-11 min-w-11 flex-col items-center justify-center gap-2 rounded-full px-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/45 transition-colors hover:text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/40 sm:bottom-8 sm:min-h-0 sm:min-w-0 sm:text-[11px]"
       >
         <span>Scroll to explore</span>
         <ChevronDown className="h-4 w-4 opacity-80" strokeWidth={2} aria-hidden />

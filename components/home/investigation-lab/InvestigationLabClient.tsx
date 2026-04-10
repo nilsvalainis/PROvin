@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
+import { useFineHover, useDisableNoiseGrain } from "@/hooks/use-viewport-capabilities";
 import {
   useCallback,
   useEffect,
@@ -31,17 +32,17 @@ type MouseClient = { x: number; y: number };
 function MagneticIconShell({
   children,
   mouse,
-  reduceMotion,
+  magneticEnabled,
 }: {
   children: ReactNode;
   mouse: MouseClient | null;
-  reduceMotion: boolean;
+  magneticEnabled: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [off, setOff] = useState({ x: 0, y: 0 });
 
   useLayoutEffect(() => {
-    if (reduceMotion || !mouse || !ref.current) {
+    if (!magneticEnabled || !mouse || !ref.current) {
       setOff({ x: 0, y: 0 });
       return;
     }
@@ -55,14 +56,14 @@ function MagneticIconShell({
     }
     const pull = 0.14 * (1 - dist / 160);
     setOff({ x: (mouse.x - cx) * pull, y: (mouse.y - cy) * pull });
-  }, [mouse, reduceMotion]);
+  }, [mouse, magneticEnabled]);
 
   return (
     <motion.div
       ref={ref}
       animate={{ x: off.x, y: off.y }}
       transition={{ type: "spring", stiffness: 320, damping: 24 }}
-      className="inline-flex"
+      className="inline-flex will-change-transform"
     >
       {children}
     </motion.div>
@@ -79,6 +80,10 @@ export function InvestigationLabClient({
   orderHref,
 }: InvestigationLabClientProps) {
   const reduceMotion = useReducedMotion();
+  const fineHover = useFineHover();
+  const disableGrain = useDisableNoiseGrain();
+  const magneticEnabled = fineHover && !reduceMotion;
+
   const sectionRef = useRef<HTMLElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const rafRef = useRef<number | null>(null);
@@ -91,7 +96,7 @@ export function InvestigationLabClient({
 
   const onMouseMove = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
-      if (reduceMotion) return;
+      if (!fineHover || reduceMotion) return;
       const run = () => {
         rafRef.current = null;
         const sec = sectionRef.current;
@@ -119,7 +124,7 @@ export function InvestigationLabClient({
         rafRef.current = requestAnimationFrame(run);
       }
     },
-    [reduceMotion],
+    [fineHover, reduceMotion],
   );
 
   const onMouseLeave = useCallback(() => {
@@ -144,36 +149,67 @@ export function InvestigationLabClient({
     const list = pillars.map((_, i) => cardRefs.current[i]).filter(Boolean) as HTMLDivElement[];
     if (list.length === 0) return;
 
-    const obs = new IntersectionObserver(
-      (entries) => {
-        let bestI = 0;
-        let bestR = 0;
-        for (const en of entries) {
-          const i = Number((en.target as HTMLElement).dataset.index);
-          if (Number.isNaN(i)) continue;
-          if (en.intersectionRatio > bestR) {
-            bestR = en.intersectionRatio;
-            bestI = i;
+    if (fineHover) {
+      const obs = new IntersectionObserver(
+        (entries) => {
+          let bestI = 0;
+          let bestR = 0;
+          for (const en of entries) {
+            const i = Number((en.target as HTMLElement).dataset.index);
+            if (Number.isNaN(i)) continue;
+            if (en.intersectionRatio > bestR) {
+              bestR = en.intersectionRatio;
+              bestI = i;
+            }
           }
-        }
-        if (bestR > 0.2) setActiveIndex(bestI);
-      },
-      { root: null, rootMargin: "-18% 0px -22% 0px", threshold: [0.08, 0.16, 0.24, 0.32, 0.48, 0.64, 0.8, 0.95] },
-    );
+          if (bestR > 0.2) setActiveIndex(bestI);
+        },
+        {
+          root: null,
+          rootMargin: "-18% 0px -22% 0px",
+          threshold: [0.08, 0.16, 0.24, 0.32, 0.48, 0.64, 0.8, 0.95],
+        },
+      );
+      list.forEach((el) => obs.observe(el));
+      return () => {
+        obs.disconnect();
+        if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      };
+    }
 
-    list.forEach((el) => obs.observe(el));
+    const updateFromScroll = () => {
+      const cy = window.innerHeight / 2;
+      let best = 0;
+      let bestD = Number.POSITIVE_INFINITY;
+      list.forEach((el, i) => {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > window.innerHeight) return;
+        const mid = r.top + r.height / 2;
+        const d = Math.abs(mid - cy);
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      });
+      setActiveIndex(best);
+    };
+
+    updateFromScroll();
+    window.addEventListener("scroll", updateFromScroll, { passive: true });
+    window.addEventListener("resize", updateFromScroll);
     return () => {
-      obs.disconnect();
+      window.removeEventListener("scroll", updateFromScroll);
+      window.removeEventListener("resize", updateFromScroll);
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     };
-  }, [pillars]);
+  }, [fineHover, pillars]);
 
   const overlayBg =
-    reduceMotion
-      ? undefined
-      : {
+    fineHover && !reduceMotion
+      ? {
           background: `radial-gradient(ellipse min(100%, 420px) min(100%, 520px) at ${spot.x}px ${spot.y}px, rgba(5,5,5,0) 0%, rgba(5,5,5,0.55) 52%, rgba(5,5,5,0.88) 100%)`,
-        };
+        }
+      : undefined;
 
   return (
     <section
@@ -181,10 +217,12 @@ export function InvestigationLabClient({
       id="izmeklesanas-lab"
       aria-labelledby="investigation-lab-title"
       className="relative isolate overflow-hidden bg-[#050505] px-4 py-16 text-white sm:px-6 sm:py-20 lg:py-28"
-      onMouseMove={onMouseMove}
-      onMouseLeave={onMouseLeave}
+      onMouseMove={fineHover ? onMouseMove : undefined}
+      onMouseLeave={fineHover ? onMouseLeave : undefined}
     >
-      <div className="pointer-events-none absolute inset-0 z-0 provin-noise-dark opacity-[0.35]" aria-hidden />
+      {!disableGrain ? (
+        <div className="pointer-events-none absolute inset-0 z-0 provin-noise-dark opacity-[0.35]" aria-hidden />
+      ) : null}
 
       <div className="relative z-10 mx-auto grid max-w-[1200px] gap-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-16 lg:gap-x-14">
         <div className="relative flex min-h-[min(100vh,720px)] flex-col justify-start overflow-hidden lg:sticky lg:top-28 lg:max-h-[calc(100dvh-7rem)] lg:min-h-[calc(100dvh-8rem)]">
@@ -203,7 +241,7 @@ export function InvestigationLabClient({
           <div className="mt-10 lg:mt-auto">
             <Link
               href={orderHref}
-              className="lab-chrome-cta inline-flex min-h-[48px] items-center justify-center rounded-full px-7 text-[13px] font-bold tracking-wide text-[#0061d2] transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#3b82f6]"
+              className="lab-chrome-cta inline-flex min-h-11 items-center justify-center rounded-full px-7 text-[13px] font-bold tracking-wide text-[#0061d2] transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#3b82f6]"
             >
               {ctaLabel}
             </Link>
@@ -213,12 +251,15 @@ export function InvestigationLabClient({
         <div className="flex flex-col gap-6 lg:gap-8">
           {pillars.map((p, i) => {
             const Icon = ICONS[i] ?? FileText;
-            const hot = hoveredIndex === i || spotLitIndex === i;
+            const pointerHot = fineHover && (hoveredIndex === i || spotLitIndex === i);
+            const scrollHot = !fineHover && activeIndex === i;
+            const hot = pointerHot || scrollHot;
             const scrollActive = !reduceMotion && activeIndex === i;
+
             const IconNode = (
               <Icon
-                className={`h-9 w-9 transition-[filter,color] duration-300 sm:h-10 sm:w-10 ${
-                  hot ? "text-[#e8eef8] drop-shadow-[0_0_20px_rgba(59,130,246,0.65)]" : "text-[#c0c4cc]"
+                className={`h-9 w-9 transition-[filter,color] duration-300 will-change-transform sm:h-10 sm:w-10 ${
+                  hot ? "text-[#e8eef8] drop-shadow-[0_0_22px_rgba(59,130,246,0.7)]" : "text-[#c0c4cc]"
                 }`}
                 strokeWidth={1.25}
                 aria-hidden
@@ -226,15 +267,17 @@ export function InvestigationLabClient({
             );
 
             return (
-              <div
+              <motion.div
                 key={`${p.title}-${i}`}
                 ref={(el) => {
                   cardRefs.current[i] = el;
                 }}
                 data-index={i}
-                onMouseEnter={() => setHoveredIndex(i)}
-                onMouseLeave={() => setHoveredIndex((h) => (h === i ? null : h))}
-                className={`origin-center transition-[transform,opacity] duration-500 ease-out will-change-transform ${
+                layout
+                transition={{ layout: { duration: 0.22, ease: [0.22, 1, 0.36, 1] } }}
+                onMouseEnter={() => fineHover && setHoveredIndex(i)}
+                onMouseLeave={() => fineHover && setHoveredIndex((h) => (h === i ? null : h))}
+                className={`origin-center will-change-transform transition-[transform,opacity] duration-500 ease-out ${
                   reduceMotion
                     ? "scale-100 opacity-100"
                     : scrollActive
@@ -253,7 +296,7 @@ export function InvestigationLabClient({
                 >
                   <div className="flex flex-col gap-5 rounded-2xl border border-white/[0.04] bg-zinc-950/50 px-6 py-7 backdrop-blur-md sm:flex-row sm:items-start sm:gap-6 sm:px-8 sm:py-8">
                     <div className="flex shrink-0 justify-center sm:pt-1">
-                      <MagneticIconShell mouse={mouseClient} reduceMotion={!!reduceMotion}>
+                      <MagneticIconShell mouse={mouseClient} magneticEnabled={magneticEnabled}>
                         {IconNode}
                       </MagneticIconShell>
                     </div>
@@ -267,15 +310,15 @@ export function InvestigationLabClient({
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
       </div>
 
-      {!reduceMotion ? (
+      {fineHover && !reduceMotion ? (
         <div
-          className="pointer-events-none absolute inset-0 z-20"
+          className="pointer-events-none absolute inset-0 z-20 will-change-[background]"
           style={overlayBg}
           aria-hidden
         />

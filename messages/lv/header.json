@@ -1,6 +1,9 @@
 {
   "Header": {
     "faq": "Jautājumi",
-    "order": "Pasūtīt"
+    "order": "Pasūtīt",
+    "navHome": "Sākums",
+    "menuOpen": "Atvērt izvēlni",
+    "menuClose": "Aizvērt izvēlni"
   }
 }

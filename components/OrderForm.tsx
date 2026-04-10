@@ -13,10 +13,10 @@ const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
 
 const inputHero =
-  "mt-1.5 w-full rounded-none border-0 border-b-2 border-[#e5e7eb] bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition placeholder:text-[#c8c8cd] focus:border-provin-accent focus:ring-0 sm:text-[16px]";
+  "mt-1.5 box-border min-h-11 w-full rounded-none border-0 border-b-2 border-[#e5e7eb] bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition placeholder:text-[#c8c8cd] focus:border-provin-accent focus:ring-0 sm:min-h-0 sm:text-[16px]";
 
 const inputDefault =
-  "mt-1 w-full rounded-lg border border-black/[0.1] bg-white px-3 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition placeholder:text-[#aeaeb2] focus:border-provin-accent/35 focus:ring-1 focus:ring-provin-accent/25 sm:text-[16px]";
+  "mt-1 box-border min-h-11 w-full rounded-lg border border-black/[0.1] bg-white px-3 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition placeholder:text-[#aeaeb2] focus:border-provin-accent/35 focus:ring-1 focus:ring-provin-accent/25 sm:min-h-0 sm:text-[16px]";
 
 type OrderFormProps = {
   className?: string;
@@ -195,7 +195,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             name="notes"
             rows={notesRows}
             maxLength={500}
-            className={`${inputBase} min-h-[72px] resize-y`}
+            className={`${inputBase} min-h-[88px] resize-y sm:min-h-[72px]`}
             placeholder={t("notesPlaceholder")}
           />
         </div>
@@ -229,7 +229,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             </div>
             <label
               htmlFor="order-checkout-consent"
-              className="flex cursor-pointer items-start gap-3 rounded-xl border border-black/[0.08] bg-white/60 px-3 py-3 text-left shadow-[0_1px_6px_rgba(0,0,0,0.03)] sm:px-4"
+              className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-black/[0.08] bg-white/60 px-3 py-3 text-left shadow-[0_1px_6px_rgba(0,0,0,0.03)] sm:min-h-0 sm:px-4"
             >
               <input
                 id="order-checkout-consent"
@@ -237,7 +237,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 name="withdrawalConsent"
                 checked={withdrawalConsent}
                 onChange={(e) => setWithdrawalConsent(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#c7c7cc] text-provin-accent focus:ring-provin-accent/30"
+                className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#c7c7cc] text-provin-accent focus:ring-provin-accent/30 sm:h-4 sm:w-4"
                 aria-label={t("checkoutConsentAria")}
               />
               <span className="text-[12px] font-normal leading-snug text-[#424245] sm:text-[13px]">
@@ -264,7 +264,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             <button
               type="submit"
               disabled={loading || !withdrawalConsent}
-              className="provin-btn provin-btn--compact mx-auto flex min-h-[43px] w-full max-w-[min(100%,17rem)] items-center justify-center gap-2 rounded-xl px-5 py-3 text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60"
+              className="provin-btn provin-btn--compact mx-auto flex min-h-11 w-full max-w-[min(100%,17rem)] items-center justify-center gap-2 rounded-xl px-5 py-3 text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60 sm:min-h-[46px]"
             >
               {loading ? (
                 t("payLoading")
@@ -283,7 +283,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
           <>
             <label
               htmlFor="order-checkout-consent"
-              className="flex cursor-pointer items-start gap-3 rounded-xl border border-black/[0.08] bg-white/80 px-3 py-3 text-left shadow-[0_1px_6px_rgba(0,0,0,0.03)] sm:px-4"
+              className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-black/[0.08] bg-white/80 px-3 py-3 text-left shadow-[0_1px_6px_rgba(0,0,0,0.03)] sm:min-h-0 sm:px-4"
             >
               <input
                 id="order-checkout-consent"
@@ -291,7 +291,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 name="withdrawalConsent"
                 checked={withdrawalConsent}
                 onChange={(e) => setWithdrawalConsent(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#c7c7cc] text-provin-accent focus:ring-provin-accent/30"
+                className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#c7c7cc] text-provin-accent focus:ring-provin-accent/30 sm:h-4 sm:w-4"
                 aria-label={t("checkoutConsentAria")}
               />
               <span className="text-[12px] font-normal leading-snug text-[#424245] sm:text-[13px]">
@@ -321,7 +321,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               <button
                 type="submit"
                 disabled={loading || !withdrawalConsent}
-                className="provin-btn provin-btn--compact inline-flex min-h-[40px] w-full min-w-[180px] items-center justify-center rounded-full px-7 py-[10px] text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60 sm:w-auto"
+                className="provin-btn provin-btn--compact inline-flex min-h-11 w-full min-w-[180px] items-center justify-center rounded-full px-7 py-[10px] text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60 sm:w-auto sm:min-h-10"
               >
                 {loading ? t("payLoading") : t("payButton")}
               </button>
