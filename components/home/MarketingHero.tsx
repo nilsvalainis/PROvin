@@ -12,7 +12,7 @@ export function MarketingHero() {
 
   return (
     <section
-      className="relative flex min-h-[100dvh] min-h-[100svh] flex-col justify-center bg-[#050505] px-5 pb-16 pt-[max(5.5rem,env(safe-area-inset-top,0px)+3.25rem)] text-white sm:px-8 sm:pb-20 sm:pt-[max(5.5rem,env(safe-area-inset-top,0px)+3rem)]"
+      className="relative flex min-h-[100dvh] min-h-[100svh] flex-col justify-center bg-transparent px-5 pb-16 pt-[max(5.5rem,env(safe-area-inset-top,0px)+3.25rem)] text-white sm:px-8 sm:pb-20 sm:pt-[max(5.5rem,env(safe-area-inset-top,0px)+3rem)]"
       aria-labelledby="marketing-hero-title"
     >
       <div className="relative z-10 mx-auto flex w-full max-w-[min(100%,53.76rem)] flex-col items-center text-center">

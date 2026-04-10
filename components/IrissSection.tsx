@@ -23,7 +23,7 @@ export async function IrissSection() {
   return (
     <section
       id="kas-ir-iriss"
-      className="relative scroll-mt-16 overflow-hidden bg-[#050505] px-4 pb-0 pt-10 sm:px-6 sm:pt-16"
+      className="relative scroll-mt-16 overflow-hidden bg-transparent px-4 pb-0 pt-10 sm:px-6 sm:pt-16"
     >
       <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
 

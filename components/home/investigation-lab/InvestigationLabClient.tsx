@@ -24,7 +24,7 @@ export function InvestigationLabClient({
     <section
       id="izmeklesanas-lab"
       aria-labelledby="investigation-lab-trust"
-      className="relative isolate overflow-hidden bg-[#050505] px-4 py-16 text-white sm:px-6 sm:py-20 lg:py-28"
+      className="relative isolate overflow-hidden bg-transparent px-4 py-16 text-white sm:px-6 sm:py-20 lg:py-28"
     >
       <div className="relative z-[5] mx-auto grid max-w-[1200px] gap-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-16 lg:gap-x-14">
         <div className="relative flex flex-col justify-start lg:sticky lg:top-28 lg:max-h-[calc(100dvh-7rem)] lg:self-start">

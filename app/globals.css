@@ -133,6 +133,33 @@ body {
   transform: translateX(-50%);
 }
 
+/* Wireframe fons — lēna „elpošana” (tikai transform, GPU) */
+@keyframes provin-wireframe-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate3d(10px, -10px, 0);
+  }
+  50% {
+    transform: translate3d(-10px, -8px, 0);
+  }
+  75% {
+    transform: translate3d(-8px, 10px, 0);
+  }
+}
+
+.provin-wireframe-float {
+  animation: provin-wireframe-float 10s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .provin-wireframe-float {
+    animation: none;
+  }
+}
+
 /* Investigation Lab — „chrome” CTA (sudrabs → zils hover) */
 .lab-chrome-cta {
   background: linear-gradient(165deg, #f0f0f0 0%, #ffffff 38%, #d4d4d8 62%, #b8b8bc 100%);

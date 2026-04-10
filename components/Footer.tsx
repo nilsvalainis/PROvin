@@ -31,7 +31,7 @@ export async function Footer() {
   const waHref = whatsappChatUrl();
   const homeHref = homePath(locale);
   return (
-    <footer className="relative overflow-hidden border-t border-white/10 bg-[#050505]">
+    <footer className="relative overflow-hidden border-t border-white/10 bg-transparent">
       <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.12]">
         <HeroVisual />
       </div>
