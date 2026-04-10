@@ -46,10 +46,10 @@ export function MarketingHero() {
           <div className="mt-2 flex w-full max-w-[min(100%,24rem)] flex-col items-center gap-3 sm:mt-3">
             <Link
               href={orderSectionHref(locale)}
-              className="provin-btn provin-btn--compact provin-btn-metallic inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.08em] shadow-none sm:min-h-12 sm:px-6 sm:text-[12px] sm:tracking-[0.1em]"
+              className="provin-btn provin-btn--compact inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-center text-[13px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_4px_20px_rgba(0,102,255,0.4)] sm:min-h-[3.25rem] sm:px-8 sm:text-[14px] sm:tracking-[0.07em]"
             >
               <span className="text-balance">{t("cta")}</span>
-              <ArrowRight className="h-4 w-4 shrink-0 opacity-75" strokeWidth={2} aria-hidden />
+              <ArrowRight className="h-4 w-4 shrink-0 opacity-90" strokeWidth={2.25} aria-hidden />
             </Link>
           </div>
         </header>

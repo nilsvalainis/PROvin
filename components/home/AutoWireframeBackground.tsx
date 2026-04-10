@@ -1,5 +1,5 @@
 /**
- * Fixed wireframe (z-[2]) — sports-coupe profile, opacity 0.1 → 0.05 with --home-surface-t.
+ * Fixed wireframe (z-[2]) — virs sudraba slāņa (z-[1]); opacity 0.15 → 0.05 ar --home-surface-t.
  */
 export function AutoWireframeBackground() {
   return (
@@ -9,7 +9,7 @@ export function AutoWireframeBackground() {
     >
       <div
         className="h-full w-full"
-        style={{ opacity: "calc(0.1 - var(--home-surface-t, 0) * 0.05)" }}
+        style={{ opacity: "calc(0.15 - var(--home-surface-t, 0) * 0.1)" }}
       >
         <div className="flex h-full w-full items-center justify-center">
           <div className="provin-wireframe-float w-[min(90vw,820px)] px-4">
@@ -25,7 +25,7 @@ export function AutoWireframeBackground() {
                 fill="none"
                 vectorEffect="non-scaling-stroke"
                 stroke="currentColor"
-                strokeWidth={0.3}
+                strokeWidth={0.55}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 d="
@@ -46,7 +46,7 @@ export function AutoWireframeBackground() {
                 fill="none"
                 vectorEffect="non-scaling-stroke"
                 stroke="currentColor"
-                strokeWidth={0.3}
+                strokeWidth={0.55}
                 strokeLinecap="round"
                 d="M 118 46 C 248 28 392 30 488 56"
               />
@@ -54,7 +54,7 @@ export function AutoWireframeBackground() {
                 fill="none"
                 vectorEffect="non-scaling-stroke"
                 stroke="currentColor"
-                strokeWidth={0.3}
+                strokeWidth={0.55}
                 cx="152"
                 cy="100"
                 rx="24"
@@ -64,7 +64,7 @@ export function AutoWireframeBackground() {
                 fill="none"
                 vectorEffect="non-scaling-stroke"
                 stroke="currentColor"
-                strokeWidth={0.3}
+                strokeWidth={0.55}
                 cx="368"
                 cy="100"
                 rx="26"
@@ -74,7 +74,7 @@ export function AutoWireframeBackground() {
                 fill="none"
                 vectorEffect="non-scaling-stroke"
                 stroke="currentColor"
-                strokeWidth={0.3}
+                strokeWidth={0.55}
                 strokeLinecap="round"
                 d="M 34 76 L 78 64 M 458 66 L 502 78"
               />
@@ -95,7 +95,7 @@ function Crosshair({ className }: { className: string }) {
   return (
     <div className={`pointer-events-none fixed z-0 h-3 w-3 ${className}`} aria-hidden>
       <svg viewBox="0 0 12 12" className="h-full w-full text-[#c4c8d0]" fill="none">
-        <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth={0.3} vectorEffect="non-scaling-stroke" />
+        <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth={0.55} vectorEffect="non-scaling-stroke" />
       </svg>
     </div>
   );

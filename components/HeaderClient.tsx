@@ -75,10 +75,7 @@ export function HeaderClient({
   const navMuted = isHome ? (homeSilverHeader ? "text-[#1d1d1f]/90" : "text-white/90") : "text-[#1d1d1f]";
 
   const orderBtnClass =
-    "provin-btn provin-btn--compact inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-4 text-[13px] font-semibold text-white shadow-[0_2px_10px_rgba(0,0,0,0.2)] sm:min-h-10 sm:px-5";
-
-  const orderBtnMetallicClass =
-    "provin-btn provin-btn--compact provin-btn-metallic inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-4 text-[13px] font-semibold sm:min-h-10 sm:px-5";
+    "provin-btn provin-btn--compact inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-5 text-[13px] font-bold text-white shadow-[0_2px_14px_rgba(0,102,255,0.35)] sm:min-h-10 sm:px-6";
 
   const navLinkClass = (active: boolean) =>
     [
@@ -108,13 +105,13 @@ export function HeaderClient({
             >
               {faqLabel}
             </Link>
-            <Link href={orderHref} className={isHome ? orderBtnMetallicClass : orderBtnClass}>
+            <Link href={orderHref} className={orderBtnClass}>
               {orderLabel}
             </Link>
           </nav>
 
           <div className="flex items-center gap-2 md:hidden">
-            <Link href={orderHref} className={isHome ? `${orderBtnMetallicClass} text-[12px]` : `${orderBtnClass} text-[12px]`}>
+            <Link href={orderHref} className={`${orderBtnClass} text-[12px] sm:text-[13px]`}>
               {orderLabel}
             </Link>
             <button
@@ -173,7 +170,7 @@ export function HeaderClient({
                   onClick={close}
                   className={
                     isHome
-                      ? `${orderBtnMetallicClass} mt-2 w-full justify-center text-[12px] uppercase tracking-[0.06em]`
+                      ? `${orderBtnClass} mt-2 w-full justify-center text-[12px] font-bold uppercase tracking-[0.06em]`
                       : navLinkClass(isOrderSection)
                   }
                 >
