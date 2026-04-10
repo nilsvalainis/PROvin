@@ -1,4 +1,3 @@
-import { Playfair_Display } from "next/font/google";
 import { ArrowRight } from "lucide-react";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
@@ -8,14 +7,9 @@ import { orderSectionHref } from "@/lib/paths";
 
 type Pillar = { title: string; body: string };
 
-/** „Auto detektīvs” — serif italic pret tehnisko H1 (Playfair Display). */
-const heroSubtitleFont = Playfair_Display({
-  subsets: ["latin", "latin-ext"],
-  style: ["italic"],
-  weight: ["400"],
-});
-
-const heroSubtitleClass = `max-w-[min(100%,40ch)] text-balance text-center text-[1.1rem] font-normal leading-relaxed tracking-normal text-[#4b5563] ${heroSubtitleFont.className}`;
+/** Slogan zem H1 — sans, mazs, pelēks, plata tracking kā paraksts. */
+const heroTaglineClass =
+  "max-w-[min(100%,42ch)] text-balance text-center text-sm font-normal uppercase leading-relaxed tracking-widest text-gray-500 sm:text-base";
 
 export async function Hero() {
   const t = await getTranslations("Hero");
@@ -38,7 +32,7 @@ export async function Hero() {
               <span className="mt-0.5 block text-provin-accent sm:mt-1">{t("h1Line2")}</span>
             </h1>
 
-            <h2 className={`mx-auto mt-3 md:mt-4 ${heroSubtitleClass}`}>
+            <h2 className={`mx-auto mt-8 sm:mt-9 md:mt-10 ${heroTaglineClass}`}>
               {t("h2")}
             </h2>
           </header>
