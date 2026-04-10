@@ -1,16 +1,28 @@
+import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
 import {
-  comparisonTableFeatureCellClass,
   homeSectionEyebrowClass,
   homeSoftBandGradientClass,
   irissSectionSubtitleClass,
 } from "@/lib/home-layout";
 
+const irissBodyStrong = (chunks: ReactNode) => (
+  <strong className="font-semibold text-[#1d1d1f]">{chunks}</strong>
+);
+
+const irissRichBold = { b: irissBodyStrong };
+
+/** Pamatteksts: lasāmība ≥1.6 line-height, centrēts. */
+const irissBodyProseClass =
+  "text-[15px] font-normal leading-[1.65] tracking-tight text-[#1d1d1f] sm:text-[16px] sm:leading-[1.6]";
+
+/** Bloks A — galvenā vēsts (~1.5× pret pamata fontu). */
+const irissQuoteClass =
+  "text-[22px] font-medium leading-snug tracking-tight text-[#1d1d1f] text-balance sm:text-[24px] sm:leading-snug";
+
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
   const tPricing = await getTranslations("Pricing");
-  const rawParagraphs = t.raw("bodyParagraphs");
-  const bodyParagraphs = Array.isArray(rawParagraphs) ? (rawParagraphs as string[]) : [];
 
   const socialTiktok = process.env.NEXT_PUBLIC_IRISS_TIKTOK_URL?.trim();
   const socialYoutube = process.env.NEXT_PUBLIC_IRISS_YOUTUBE_URL?.trim();
@@ -39,12 +51,19 @@ export async function IrissSection() {
           />
         </div>
 
-        <div className="mx-auto mt-7 max-w-[65ch] space-y-4 text-center sm:mt-8">
-          {bodyParagraphs.map((para, i) => (
-            <p key={i} className={`${comparisonTableFeatureCellClass} !leading-relaxed`}>
-              {para}
-            </p>
-          ))}
+        <div className="mx-auto mt-10 max-w-[min(100%,65ch)] text-center sm:mt-12">
+          <p
+            className={`${irissQuoteClass} mx-auto mb-10 max-w-[52ch] pt-2 sm:mb-12 sm:pt-3`}
+          >
+            {t.rich("bodyQuote", irissRichBold)}
+          </p>
+          <p className={`${irissBodyProseClass} mx-auto mb-8 max-w-[65ch] text-balance sm:mb-9`}>
+            {t.rich("bodyB", irissRichBold)}
+          </p>
+          <p className={`${irissBodyProseClass} mx-auto mb-8 max-w-[65ch] text-balance sm:mb-9`}>
+            {t.rich("bodyC", irissRichBold)}
+          </p>
+          <p className={`${irissBodyProseClass} mx-auto max-w-[65ch] text-balance`}>{t("bodyD")}</p>
         </div>
       </div>
 
