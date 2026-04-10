@@ -129,68 +129,8 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='nd'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23nd)' opacity='0.055'/%3E%3C/svg%3E");
 }
 
-@keyframes provin-scroll-hint-y {
-  0%,
-  100% {
-    transform: translateX(-50%) translateY(0);
-  }
-  50% {
-    transform: translateX(-50%) translateY(8px);
-  }
-}
-
 .provin-scroll-hint {
   transform: translateX(-50%);
-  animation: provin-scroll-hint-y 2.2s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .provin-scroll-hint {
-    animation: none;
-  }
-}
-
-/* Investigation Lab — skenera līnija sticky kolonnā (~5s cikls) */
-@keyframes provin-lab-scanner {
-  0% {
-    top: -4%;
-    opacity: 0;
-  }
-  6% {
-    opacity: 1;
-  }
-  44% {
-    top: 104%;
-    opacity: 1;
-  }
-  52% {
-    opacity: 0;
-  }
-  100% {
-    top: 104%;
-    opacity: 0;
-  }
-}
-
-.provin-lab-scanner-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  border-radius: 9999px;
-  background: linear-gradient(90deg, #c0c0c0, #ffffff, #3b82f6, #ffffff, #c0c0c0);
-  box-shadow:
-    0 0 16px rgba(59, 130, 246, 0.55),
-    0 0 32px rgba(59, 130, 246, 0.2);
-  pointer-events: none;
-  animation: provin-lab-scanner 5s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .provin-lab-scanner-line {
-    animation: none;
-    opacity: 0;
-  }
 }
 
 /* Investigation Lab — „chrome” CTA (sudrabs → zils hover) */
@@ -207,45 +147,6 @@ body {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
     0 14px 36px rgba(59, 130, 246, 0.35);
-}
-
-@keyframes provin-chrome-shimmer-sweep {
-  0% {
-    transform: translateX(-130%);
-    opacity: 0;
-  }
-  8% {
-    opacity: 0.65;
-  }
-  42% {
-    transform: translateX(130%);
-    opacity: 0.55;
-  }
-  100% {
-    transform: translateX(130%);
-    opacity: 0;
-  }
-}
-
-.provin-chrome-shimmer {
-  position: relative;
-  display: inline-block;
-  overflow: hidden;
-}
-
-.provin-chrome-shimmer::after {
-  content: "";
-  position: absolute;
-  inset: -3px -50%;
-  background: linear-gradient(
-    105deg,
-    transparent 38%,
-    rgba(255, 255, 255, 0.55) 50%,
-    transparent 62%
-  );
-  animation: provin-chrome-shimmer-sweep 3s ease-in-out infinite;
-  pointer-events: none;
-  will-change: transform, opacity;
 }
 
 /* Admin UI mainīgie (noklusējums — gaišs; tumšais ar .admin-order-page.dark) */

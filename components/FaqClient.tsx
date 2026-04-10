@@ -1,7 +1,6 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { SilverTiltFrame } from "@/components/home/SilverTiltFrame";
 import { homeSectionTitleClass } from "@/lib/home-layout";
 
 export type FaqItem = { id: string; q: string; a: string };
@@ -62,18 +61,21 @@ export function FaqClient({ title, items, tone = "dark" }: FaqClientProps) {
       className="scroll-mt-16 bg-[#050505] px-4 py-10 sm:px-6 sm:py-14"
       aria-labelledby="faq-heading"
     >
-      <div className="mx-auto min-w-0 max-w-[680px] perspective-[1000px]">
+      <div className="mx-auto min-w-0 max-w-[680px]">
         <div className="text-center">
           <h2 id="faq-heading" className={homeSectionTitleClass}>
             {title}
           </h2>
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {items.map((item) => (
-            <SilverTiltFrame key={item.id}>
+            <div
+              key={item.id}
+              className="rounded-xl border border-white/[0.08] bg-[#121212] px-4 py-1 sm:px-5"
+            >
               <details className="group border-0 bg-transparent shadow-none open:bg-transparent">
-                <summary className="flex min-h-11 cursor-pointer list-none items-start justify-between gap-3 px-4 py-4 text-left sm:min-h-0 sm:gap-4 sm:px-5 sm:py-[1.125rem] [&::-webkit-details-marker]:hidden">
+                <summary className="flex min-h-11 cursor-pointer list-none items-start justify-between gap-3 py-4 text-left sm:min-h-0 sm:gap-4 sm:py-[1.125rem] [&::-webkit-details-marker]:hidden">
                   <span className="min-w-0 flex-1 text-[15px] font-medium leading-snug tracking-tight text-white sm:text-[16px] sm:leading-snug">
                     {item.q}
                   </span>
@@ -83,11 +85,11 @@ export function FaqClient({ title, items, tone = "dark" }: FaqClientProps) {
                     aria-hidden
                   />
                 </summary>
-                <p className="max-w-[65ch] px-4 pb-4 pr-6 text-[14px] font-normal leading-[1.75] text-[#b8bcc4] sm:px-5 sm:pb-5 sm:text-[15px] sm:leading-[1.75]">
+                <p className="max-w-[65ch] pb-4 pr-2 text-[14px] font-normal leading-[1.75] text-[#b8bcc4] sm:pb-5 sm:pr-6 sm:text-[15px] sm:leading-[1.75]">
                   {item.a}
                 </p>
               </details>
-            </SilverTiltFrame>
+            </div>
           ))}
         </div>
       </div>
