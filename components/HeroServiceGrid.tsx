@@ -11,22 +11,16 @@ export type HeroServiceItem = {
  */
 const HERO_SVC_ICONS = [Globe2, ScanSearch, AlertTriangle, Headphones] as const;
 
-/** Hero 4 bloki — tikai šeit; 9-bloku režģis paliek ar zilo akcentu. */
-const HERO_ICON_ACCENT: readonly { color: string; hover: string }[] = [
-  { color: "text-violet-600", hover: "md:group-hover:text-violet-600" },
-  { color: "text-emerald-800", hover: "md:group-hover:text-emerald-800" },
-  { color: "text-amber-500", hover: "md:group-hover:text-amber-500" },
-  { color: "text-[#0061D2]", hover: "md:group-hover:text-[#0061D2]" },
-];
+/** Pārējiem 3 blokiem — kā iepriekš: pelēka ikona, zils hover. */
+const heroSvcIconDefaultClass =
+  "h-8 w-8 shrink-0 text-[#6b7280] transition-colors duration-200 group-hover:text-[#0061D2] [stroke-width:1.5] sm:h-[32px] sm:w-[32px]";
+
+/** „Tehnisko risku analīze” (3. bloks): mobilā dzeltena, desktop pelēka līdz hover. */
+const heroSvcIconRiskClass =
+  "h-8 w-8 shrink-0 text-amber-500 transition-colors duration-200 md:text-[#6b7280] md:group-hover:text-amber-500 [stroke-width:1.5] sm:h-[32px] sm:w-[32px]";
 
 function heroSvcIconClass(index: number): string {
-  const a = HERO_ICON_ACCENT[index] ?? HERO_ICON_ACCENT[0]!;
-  return [
-    "h-8 w-8 shrink-0 [stroke-width:1.5] transition-colors duration-200 sm:h-[32px] sm:w-[32px]",
-    a.color,
-    "md:text-[#6b7280]",
-    a.hover,
-  ].join(" ");
+  return index === 2 ? heroSvcIconRiskClass : heroSvcIconDefaultClass;
 }
 
 /** 2×2 režģis: feature card, pelēka ikona → zila hover; viegla ēna tikai hover. */
@@ -39,9 +33,8 @@ const heroSvcCardClass =
     "sm:gap-3.5 sm:p-4",
   ].join(" ");
 
-/** Tikai ikonai krāsa; apvalks — neitrāls, desktop hover viegli tumšāks (bez zilā). */
 const iconShellClass =
-  "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#f9fafb] transition-colors duration-200 md:group-hover:bg-[#f3f4f6] sm:h-11 sm:w-11 sm:rounded-xl";
+  "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#f9fafb] transition-colors duration-200 group-hover:bg-[#e8f2fc] sm:h-11 sm:w-11 sm:rounded-xl";
 
 /**
  * Hero: 4 bloki 2×2 režģī; glass apvalks, balts / viegli caurspīdīgs.
