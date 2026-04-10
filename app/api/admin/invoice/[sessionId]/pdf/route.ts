@@ -30,9 +30,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
   const { sessionId } = await ctx.params;
   const order = await getCheckoutSessionDetail(sessionId);
   if (!order) {
-    console.error("[api/admin/invoice/pdf] no order for session (Stripe retrieve failed, unpaid, or unknown id)", {
-      sessionId,
-    });
+    console.error("[api/admin/invoice/pdf] Order not found for session:", sessionId);
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
@@ -69,17 +67,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
       invoiceNumber,
     });
   } catch (error) {
-    console.error(
-      "[api/admin/invoice/pdf] buildInvoicePdfBytes failed",
-      {
-        sessionId,
-        invoiceNumber,
-        paymentStatus: order.paymentStatus,
-        amountTotal: order.amountTotal,
-        hasCustomerEmail: Boolean(order.customerEmail ?? order.customerDetailsEmail),
-      },
-      error,
-    );
+    console.error("[api/admin/invoice/pdf] PDF generation failed:", error);
     return NextResponse.json({ error: "pdf_generation_failed" }, { status: 500 });
   }
 

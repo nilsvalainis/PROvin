@@ -29,7 +29,11 @@ export async function GET(req: Request) {
   }
 
   const order = await getCheckoutSessionDetail(sessionId);
-  if (!order || order.paymentStatus !== "paid" || order.amountTotal == null) {
+  if (!order) {
+    console.error("[api/invoice/download] Order not found for session:", sessionId);
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+  if (order.paymentStatus !== "paid" || order.amountTotal == null) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
@@ -59,11 +63,7 @@ export async function GET(req: Request) {
       invoiceNumber,
     });
   } catch (error) {
-    console.error(
-      "[api/invoice/download] buildInvoicePdfBytes failed",
-      { sessionId, invoiceNumber },
-      error,
-    );
+    console.error("[api/invoice/download] PDF generation failed:", error);
     return NextResponse.json({ error: "pdf_generation_failed" }, { status: 500 });
   }
 

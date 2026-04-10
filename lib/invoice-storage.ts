@@ -51,19 +51,19 @@ export async function writeInvoicePdfToDisk(sessionId: string, bytes: Uint8Array
 
 /**
  * Pēc apmaksas: piešķir PRV numuru, saglabā JSON, ģenerē PDF uz disku (ja glabātuve ieslēgta).
+ * Ja saglabāšana neizdodas — met kļūdu augšup (pēc žurnāla).
  */
 export async function persistPaidOrderInvoice(sessionId: string): Promise<void> {
-  const order = await getCheckoutSessionDetail(sessionId);
-  if (!order || order.paymentStatus !== "paid" || order.amountTotal == null) return;
-
-  const invoiceNumber = await getOrCreateInvoiceNumber(sessionId, order.created);
-
-  if (!resolveInvoiceDir()) return;
-  if (await readInvoicePdfFromDisk(sessionId)) return;
-
-  let bytes: Uint8Array;
   try {
-    bytes = await buildInvoicePdfBytes({
+    const order = await getCheckoutSessionDetail(sessionId);
+    if (!order || order.paymentStatus !== "paid" || order.amountTotal == null) return;
+
+    const invoiceNumber = await getOrCreateInvoiceNumber(sessionId, order.created);
+
+    if (!resolveInvoiceDir()) return;
+    if (await readInvoicePdfFromDisk(sessionId)) return;
+
+    const bytes = await buildInvoicePdfBytes({
       id: order.id,
       created: order.created,
       amountTotal: order.amountTotal,
@@ -73,23 +73,24 @@ export async function persistPaidOrderInvoice(sessionId: string): Promise<void> 
       vin: order.vin,
       invoiceNumber,
     });
+
+    const wrote = await writeInvoicePdfToDisk(sessionId, bytes);
+    if (!wrote) {
+      throw new Error(`writeInvoicePdfToDisk failed for session ${sessionId}`);
+    }
+
+    const relUrl = `/api/admin/invoice/${encodeURIComponent(sessionId)}/pdf`;
+    const meta = await upsertOrderDraftInvoiceFields(sessionId, {
+      invoicePdfUrl: relUrl,
+      invoicePdfGeneratedAt: new Date().toISOString(),
+    });
+    if (!meta.ok) {
+      throw new Error(meta.error ?? "upsertOrderDraftInvoiceFields failed");
+    }
   } catch (error) {
-    console.error(
-      "[invoice-storage] persistPaidOrderInvoice buildInvoicePdfBytes failed",
-      { sessionId, invoiceNumber },
-      error,
-    );
-    return;
+    console.error("[invoice-storage] Failed to persist invoice data:", error);
+    throw error;
   }
-
-  const ok = await writeInvoicePdfToDisk(sessionId, bytes);
-  if (!ok) return;
-
-  const relUrl = `/api/admin/invoice/${encodeURIComponent(sessionId)}/pdf`;
-  await upsertOrderDraftInvoiceFields(sessionId, {
-    invoicePdfUrl: relUrl,
-    invoicePdfGeneratedAt: new Date().toISOString(),
-  });
 }
 
 /** @deprecated Lietot `persistPaidOrderInvoice`. */

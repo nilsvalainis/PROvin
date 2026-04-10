@@ -8,15 +8,22 @@ export type CompanyLegal = {
   regNo: string;
   /** Juridiskā adrese viena rindiņā */
   legalAddress: string;
-  /** Vai visi trīs lauki aizpildīti */
+  /** Vai visi trīs lauki aizpildīti no vides mainīgajiem (nevis noklusējumi) */
   isComplete: boolean;
 };
 
+const FALLBACK_COMPANY_LEGAL_NAME = "Nils Valainis";
+const FALLBACK_COMPANY_REG_NO = "09118711109";
+const FALLBACK_COMPANY_LEGAL_ADDRESS = "Jana 3, Tukums, LV3101";
+
 export function getCompanyLegal(): CompanyLegal {
-  const legalName = process.env.NEXT_PUBLIC_COMPANY_LEGAL_NAME?.trim() ?? "";
-  const regNo = process.env.NEXT_PUBLIC_COMPANY_REG_NO?.trim() ?? "";
-  const legalAddress = process.env.NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS?.trim() ?? "";
-  const isComplete = Boolean(legalName && regNo && legalAddress);
+  const envName = process.env.NEXT_PUBLIC_COMPANY_LEGAL_NAME?.trim();
+  const envReg = process.env.NEXT_PUBLIC_COMPANY_REG_NO?.trim();
+  const envAddr = process.env.NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS?.trim();
+  const legalName = envName || FALLBACK_COMPANY_LEGAL_NAME;
+  const regNo = envReg || FALLBACK_COMPANY_REG_NO;
+  const legalAddress = envAddr || FALLBACK_COMPANY_LEGAL_ADDRESS;
+  const isComplete = Boolean(envName && envReg && envAddr);
   return { legalName, regNo, legalAddress, isComplete };
 }
 
