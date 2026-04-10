@@ -42,7 +42,7 @@ export default async function HomePage({
             </div>
           </div>
           <PricingIncluded />
-          <section id="cena" className="px-4 pt-6 sm:px-6 md:pt-8">
+          <section id="cena" className="px-4 pt-0 sm:px-6 md:pt-8">
             <div className="mx-auto w-full max-w-[1000px]">
               <PricingTransitionAndComparison />
             </div>
