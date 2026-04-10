@@ -1,19 +1,17 @@
 import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
-import { homeSectionEyebrowClass, irissSectionSubtitleClass } from "@/lib/home-layout";
+import { irissSectionSubtitleClass } from "@/lib/home-layout";
 
-/** Zīmola zils, trekns, ~+27–30% pret 15/16px pamattekstu, kompakts tracking. */
+/** Melns trekns — tas pats izmērs kā BUJ atbilžu pamattekstam. */
 const irissAccent = (chunks: ReactNode) => (
-  <strong className="inline-block font-bold tracking-[-0.02em] text-provin-accent [font-size:1.21875rem] leading-[1.35] sm:[font-size:1.3rem]">
-    {chunks}
-  </strong>
+  <strong className="font-bold text-[#1a1a1a]">{chunks}</strong>
 );
 
 const irissRichBody = { accent: irissAccent };
 
-/** Pamatteksts: monocroms, centrēts, „premium” interlineārs. */
+/** Saskaņots ar <Faq> atbilžu rindkopu: text-[14px] sm:text-[15px], leading 1.75. */
 const irissBodyProseClass =
-  "text-[15px] font-normal leading-[1.8] tracking-normal text-[#1a1a1a] sm:text-[16px]";
+  "text-[14px] font-normal leading-[1.75] text-[#1a1a1a] sm:text-[15px]";
 
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
@@ -32,7 +30,11 @@ export async function IrissSection() {
 
       <div className="relative mx-auto w-full max-w-[1000px]">
         <div className="text-center">
-          <h2 className={`${homeSectionEyebrowClass} text-balance`}>{t("title")}</h2>
+          <h2
+            className="text-balance text-[11px] font-semibold tracking-normal text-[#6b7280] sm:text-[12px]"
+          >
+            {t("title")}
+          </h2>
           <p className={`mt-2.5 ${irissSectionSubtitleClass}`}>{t("subtitle")}</p>
         </div>
 
@@ -49,8 +51,7 @@ export async function IrissSection() {
         <div className="mx-auto mt-10 max-w-[750px] text-center sm:mt-12">
           <p className={`${irissBodyProseClass} mb-12 text-balance`}>{t.rich("body1", irissRichBody)}</p>
           <p className={`${irissBodyProseClass} mb-12 text-balance`}>{t.rich("body2", irissRichBody)}</p>
-          <p className={`${irissBodyProseClass} mb-12 text-balance`}>{t.rich("body3", irissRichBody)}</p>
-          <p className={`${irissBodyProseClass} text-balance`}>{t.rich("body4", irissRichBody)}</p>
+          <p className={`${irissBodyProseClass} text-balance`}>{t.rich("body3", irissRichBody)}</p>
         </div>
       </div>
 
@@ -75,7 +76,7 @@ function IrissSocialIcons({
   socialSoon: string;
 }) {
   const btnClass =
-    "flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.1] bg-white/90 text-[#1d1d1f] shadow-sm transition hover:border-black/[0.18] hover:text-provin-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent";
+    "flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.1] bg-white/90 text-[#1d1d1f] shadow-sm transition hover:border-black/[0.18] hover:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1a1a]";
 
   const disabledClass = `${btnClass} cursor-default opacity-60 hover:border-black/[0.1] hover:text-[#1d1d1f]`;
 
