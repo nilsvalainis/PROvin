@@ -7,10 +7,6 @@ import { orderSectionHref } from "@/lib/paths";
 
 type Pillar = { title: string; body: string };
 
-/** Slogan zem H1 — sans, mazs, pelēks, plata tracking kā paraksts. */
-const heroTaglineClass =
-  "max-w-[min(100%,42ch)] text-balance text-center text-sm font-normal uppercase leading-relaxed tracking-widest text-gray-500 sm:text-base";
-
 export async function Hero() {
   const t = await getTranslations("Hero");
   const locale = await getLocale();
@@ -22,19 +18,21 @@ export async function Hero() {
       <div
         className="mx-auto flex min-w-0 max-w-[min(100%,53.76rem)] flex-col text-center max-sm:min-h-0 max-sm:justify-start max-sm:gap-8 max-sm:px-5 max-sm:pb-10 max-sm:pt-[max(1.75rem,env(safe-area-inset-top))] sm:min-h-[100svh] sm:justify-between sm:gap-6 sm:px-4 sm:pb-4 sm:pt-[max(0.85rem,env(safe-area-inset-top))] md:min-h-0 md:gap-12 md:pb-6 md:pt-14 md:text-center"
       >
-          <header className="shrink-0 space-y-0">
+          <header className="flex shrink-0 flex-col items-center gap-6 sm:gap-7 md:gap-8">
             <p className={approvedByIrissSignatureHeroClass} aria-label={t("approved")}>
               {t("approved")}
             </p>
 
-            <h1 className="mt-5 text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[28px] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]">
+            <h1 className="text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[28px] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]">
               <span className="block text-[#1d1d1f]">{t("h1Line1")}</span>
               <span className="mt-0.5 block text-provin-accent sm:mt-1">{t("h1Line2")}</span>
             </h1>
 
-            <h2 className={`mx-auto mt-8 sm:mt-9 md:mt-10 ${heroTaglineClass}`}>
+            <p
+              className={`${approvedByIrissSignatureHeroClass} max-w-[min(100%,52ch)] text-balance`}
+            >
               {t("h2")}
-            </h2>
+            </p>
           </header>
 
           <div className="min-h-0 shrink">
