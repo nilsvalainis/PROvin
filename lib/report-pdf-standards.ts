@@ -67,9 +67,26 @@ export const CLIENT_REPORT_SECTION_LABELS = {
   contacts: "Kontakti",
 } as const;
 
-/** Vienota juridiskā atruna — PDF apakšā (legal-block). */
+/** Vienota juridiskā atruna — PDF kreisā kolonna zem „SVARĪGA INFORMĀCIJA”. */
 export const CLIENT_REPORT_FOOTER_DISCLAIMER =
   "PROVIN.LV sniedz konsultatīvu pakalpojumu: transportlīdzekļa pieejamās informācijas izvērtējumu un ieteikumus. Tas nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze vai juridisks spriedums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.";
+
+/** PDF kājene — virsraksts kreisajai juridiskajai kolonnai. */
+export const PDF_SITE_FOOTER_IMPORTANT_TITLE = "SVARĪGA INFORMĀCIJA";
+
+/**
+ * PDF labā kolonna — kopsavilkums (saskan ar `messages/lv/footer.json` „body”,
+ * lai atskaite un vietne lieto vienu vēstījumu).
+ */
+export const PDF_SITE_FOOTER_VALUE_BODY =
+  "Standarta vēstures atskaites sniedz tikai sausus faktus. Mēs veicam padziļinātu izpēti — izvērtējam sludinājumu, analizējam konkrētā modeļa vājās vietas un tirgus vērtību, sniedzot pilnvērtīgu un pārdomātu slēdzienu.";
+
+/** PDF apakšjosla — tikai nosaukumi, bez hipersaitēm (drukai). */
+export const PDF_SITE_FOOTER_LEGAL_LABELS_STATIC = "Lietošanas noteikumi · Privātuma politika";
+
+/** Mazais GDPR / apstrādes teikums zem autortiesībām. */
+export const PDF_SITE_FOOTER_GDPR_LINE =
+  "Personas datu apstrāde notiek saskaņā ar piemērojamiem tiesību aktiem (GDPR).";
 
 /** Noņem / aizstāj biežus trešo pušu komerciālos nosaukumus failu nosaukumos PDF sarakstā. */
 export function sanitizeAttachmentFileNameForReport(fileName: string): string {
