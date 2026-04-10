@@ -1,14 +1,17 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { ArrowRight, ChevronDown } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { approvedByIrissSignatureHeroClass } from "@/lib/home-layout";
+import { orderSectionHref } from "@/lib/paths";
 
 /**
  * Pilnekrāna tumšais Hero — saturs no `Hero` ziņojumiem (kā pirms pārlikuma).
  */
 export function MarketingHero() {
   const t = useTranslations("Hero");
+  const locale = useLocale();
 
   return (
     <section
@@ -39,6 +42,16 @@ export function MarketingHero() {
           >
             {t("h2")}
           </p>
+
+          <div className="mt-2 flex w-full max-w-[min(100%,24rem)] flex-col items-center gap-3 sm:mt-3">
+            <Link
+              href={orderSectionHref(locale)}
+              className="provin-btn provin-btn--compact provin-btn-metallic inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.08em] shadow-none sm:min-h-12 sm:px-6 sm:text-[12px] sm:tracking-[0.1em]"
+            >
+              <span className="text-balance">{t("cta")}</span>
+              <ArrowRight className="h-4 w-4 shrink-0 opacity-75" strokeWidth={2} aria-hidden />
+            </Link>
+          </div>
         </header>
       </div>
 

@@ -77,6 +77,9 @@ export function HeaderClient({
   const orderBtnClass =
     "provin-btn provin-btn--compact inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-4 text-[13px] font-semibold text-white shadow-[0_2px_10px_rgba(0,0,0,0.2)] sm:min-h-10 sm:px-5";
 
+  const orderBtnMetallicClass =
+    "provin-btn provin-btn--compact provin-btn-metallic inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-4 text-[13px] font-semibold sm:min-h-10 sm:px-5";
+
   const navLinkClass = (active: boolean) =>
     [
       "flex min-h-11 items-center rounded-xl px-4 text-lg font-medium tracking-tight transition-colors",
@@ -105,13 +108,13 @@ export function HeaderClient({
             >
               {faqLabel}
             </Link>
-            <Link href={orderHref} className={orderBtnClass}>
+            <Link href={orderHref} className={isHome ? orderBtnMetallicClass : orderBtnClass}>
               {orderLabel}
             </Link>
           </nav>
 
           <div className="flex items-center gap-2 md:hidden">
-            <Link href={orderHref} className={`${orderBtnClass} text-[12px]`}>
+            <Link href={orderHref} className={isHome ? `${orderBtnMetallicClass} text-[12px]` : `${orderBtnClass} text-[12px]`}>
               {orderLabel}
             </Link>
             <button
@@ -165,7 +168,15 @@ export function HeaderClient({
                 <Link href={faqHref} onClick={close} className={navLinkClass(isFaq)}>
                   {faqLabel}
                 </Link>
-                <Link href={orderHref} onClick={close} className={navLinkClass(isOrderSection)}>
+                <Link
+                  href={orderHref}
+                  onClick={close}
+                  className={
+                    isHome
+                      ? `${orderBtnMetallicClass} mt-2 w-full justify-center text-[12px] uppercase tracking-[0.06em]`
+                      : navLinkClass(isOrderSection)
+                  }
+                >
                   {orderLabel}
                 </Link>
               </nav>

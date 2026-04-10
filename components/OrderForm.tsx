@@ -283,7 +283,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             <button
               type="submit"
               disabled={loading || !withdrawalConsent}
-              className="provin-btn provin-btn--compact mx-auto flex min-h-11 w-full max-w-[min(100%,17rem)] items-center justify-center gap-2 rounded-xl px-5 py-3 text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60 sm:min-h-[46px]"
+              className="provin-btn provin-btn--compact provin-btn-metallic mx-auto flex min-h-11 w-full max-w-[min(100%,17rem)] items-center justify-center gap-2 rounded-xl px-5 py-3 text-[14px] font-normal shadow-none disabled:opacity-60 sm:min-h-[46px]"
             >
               {loading ? (
                 t("payLoading")

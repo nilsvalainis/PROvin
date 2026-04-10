@@ -81,6 +81,16 @@ body {
     box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
   }
 
+  .provin-btn.provin-btn-metallic:hover:not(:disabled) {
+    background: linear-gradient(135deg, #e5e7eb 0%, #ffffff 100%);
+    color: #050505;
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      0 0 0 1px rgba(0, 97, 210, 0.2),
+      0 10px 36px rgba(0, 97, 210, 0.32);
+  }
+
   .provin-btn-ghost:hover {
     border-color: rgba(15, 23, 42, 0.14);
     background-color: #f5f5f7;
@@ -101,7 +111,8 @@ body {
   .provin-lift-strong:hover,
   .provin-lift-subtle:hover,
   .provin-btn:hover,
-  .provin-btn-ghost:hover {
+  .provin-btn-ghost:hover,
+  .provin-btn.provin-btn-metallic:hover:not(:disabled) {
     transform: none;
   }
 
@@ -114,6 +125,26 @@ body {
     background-color 0.2s ease,
     transform 0.22s ease,
     box-shadow 0.22s ease;
+}
+
+/* Metālisks PASŪTĪT — sudrabs→balts, smalka maliņa, zils mirdzums hover */
+.provin-btn.provin-btn-metallic {
+  background: linear-gradient(135deg, #e5e7eb 0%, #ffffff 100%);
+  color: #050505;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 1px 2px rgba(15, 23, 42, 0.06);
+  transition:
+    box-shadow 0.28s ease,
+    transform 0.22s ease,
+    border-color 0.22s ease,
+    color 0.2s ease;
+}
+
+.provin-btn.provin-btn-metallic:disabled {
+  opacity: 0.55;
+  transform: none;
 }
 
 .provin-btn-ghost {
@@ -162,6 +193,18 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .provin-wireframe-float {
     animation: none;
+  }
+}
+
+/* Kreisā procesa sliede — etiķetes seko --home-surface-t */
+.home-rail-label {
+  color: color-mix(in oklab, #fafafa calc((1 - var(--home-surface-t)) * 100%), #050505);
+  transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-rail-label {
+    transition: none;
   }
 }
 
