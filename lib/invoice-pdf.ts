@@ -1,5 +1,8 @@
 import "server-only";
 
+import fs from "node:fs/promises";
+import path from "node:path";
+
 import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
@@ -11,32 +14,22 @@ import {
 import { formatMoneyEur } from "@/lib/format-money";
 
 /**
- * Inter latin-ext (400/700) no publiska CDN — bez lasīšanas no node_modules (ENOENT uz Vercel).
+ * Inter 4.1 statiskie TTF (extras/ttf no oficiālā Inter izlaiduma, OFL) — pilns latīņu diapazons,
+ * nevis WOFF2 apakškopa; ar @pdf-lib/fontkit + subset mazāks PDF nekā pilna embed.
  * Standarta Helvetica pdf-lib nevar kodēt latviešu diakritiku (WinAnsi).
  */
-const INTER_FONT_PKG = "5.2.8";
-const INTER_FILES_BASE = `https://unpkg.com/@fontsource/inter@${INTER_FONT_PKG}/files`;
+const INTER_REG_PATH = path.join(process.cwd(), "public", "fonts", "invoice-inter", "Inter-Regular.ttf");
+const INTER_BOLD_PATH = path.join(process.cwd(), "public", "fonts", "invoice-inter", "Inter-Bold.ttf");
 
 let interFontBytesCache: Promise<{ reg: Uint8Array; bold: Uint8Array }> | null = null;
 
 async function loadInterFontBytes(): Promise<{ reg: Uint8Array; bold: Uint8Array }> {
   if (!interFontBytesCache) {
     interFontBytesCache = (async () => {
-      const urls = {
-        reg: `${INTER_FILES_BASE}/inter-latin-ext-400-normal.woff2`,
-        bold: `${INTER_FILES_BASE}/inter-latin-ext-700-normal.woff2`,
-      };
-      const [res400, res700] = await Promise.all([fetch(urls.reg), fetch(urls.bold)]);
-      if (!res400.ok) {
-        throw new Error(`Inter 400 fetch failed: ${res400.status} ${urls.reg}`);
-      }
-      if (!res700.ok) {
-        throw new Error(`Inter 700 fetch failed: ${res700.status} ${urls.bold}`);
-      }
-      const [ab400, ab700] = await Promise.all([res400.arrayBuffer(), res700.arrayBuffer()]);
+      const [regBuf, boldBuf] = await Promise.all([fs.readFile(INTER_REG_PATH), fs.readFile(INTER_BOLD_PATH)]);
       return {
-        reg: new Uint8Array(ab400),
-        bold: new Uint8Array(ab700),
+        reg: new Uint8Array(regBuf),
+        bold: new Uint8Array(boldBuf),
       };
     })();
   }
@@ -122,8 +115,8 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
   const { reg, bold } = await loadInterFontBytes();
-  const font = await pdfDoc.embedFont(reg);
-  const fontBold = await pdfDoc.embedFont(bold);
+  const font = await pdfDoc.embedFont(reg, { subset: true });
+  const fontBold = await pdfDoc.embedFont(bold, { subset: true });
 
   const pageW = 595;
   const pageH = 842;
