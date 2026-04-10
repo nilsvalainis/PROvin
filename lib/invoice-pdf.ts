@@ -1,8 +1,6 @@
 import "server-only";
 
 import fontkit from "@pdf-lib/fontkit";
-import fs from "fs/promises";
-import path from "path";
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
 import {
@@ -12,21 +10,37 @@ import {
 } from "@/lib/generate-invoice-html";
 import { formatMoneyEur } from "@/lib/format-money";
 
-const INTER_FILES = path.join(process.cwd(), "node_modules/@fontsource/inter/files");
+/**
+ * Inter latin-ext (400/700) no publiska CDN — bez lasīšanas no node_modules (ENOENT uz Vercel).
+ * Standarta Helvetica pdf-lib nevar kodēt latviešu diakritiku (WinAnsi).
+ */
+const INTER_FONT_PKG = "5.2.8";
+const INTER_FILES_BASE = `https://unpkg.com/@fontsource/inter@${INTER_FONT_PKG}/files`;
 
-let font400Cache: Uint8Array | null = null;
-let font700Cache: Uint8Array | null = null;
+let interFontBytesCache: Promise<{ reg: Uint8Array; bold: Uint8Array }> | null = null;
 
 async function loadInterFontBytes(): Promise<{ reg: Uint8Array; bold: Uint8Array }> {
-  if (!font400Cache || !font700Cache) {
-    const [r, b] = await Promise.all([
-      fs.readFile(path.join(INTER_FILES, "inter-latin-ext-400-normal.woff")),
-      fs.readFile(path.join(INTER_FILES, "inter-latin-ext-700-normal.woff")),
-    ]);
-    font400Cache = new Uint8Array(r);
-    font700Cache = new Uint8Array(b);
+  if (!interFontBytesCache) {
+    interFontBytesCache = (async () => {
+      const urls = {
+        reg: `${INTER_FILES_BASE}/inter-latin-ext-400-normal.woff2`,
+        bold: `${INTER_FILES_BASE}/inter-latin-ext-700-normal.woff2`,
+      };
+      const [res400, res700] = await Promise.all([fetch(urls.reg), fetch(urls.bold)]);
+      if (!res400.ok) {
+        throw new Error(`Inter 400 fetch failed: ${res400.status} ${urls.reg}`);
+      }
+      if (!res700.ok) {
+        throw new Error(`Inter 700 fetch failed: ${res700.status} ${urls.bold}`);
+      }
+      const [ab400, ab700] = await Promise.all([res400.arrayBuffer(), res700.arrayBuffer()]);
+      return {
+        reg: new Uint8Array(ab400),
+        bold: new Uint8Array(ab700),
+      };
+    })();
   }
-  return { reg: font400Cache, bold: font700Cache };
+  return interFontBytesCache;
 }
 
 function wrapText(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
