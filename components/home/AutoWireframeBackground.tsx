@@ -1,14 +1,13 @@
 /**
- * Fixed wireframe zem sudraba slāņa: z-0 (pēc melnā z-0), sudrabs z-[1].
- * Īslaicīgi: balta līnija + fiksēta 0.5 opacity — viegli pārbaudīt renderi.
+ * Fixed wireframe virs scroll fona (parasti z-[10]); īslaicīgi balta līnija + opacity 0.4.
  */
 export function AutoWireframeBackground() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-[10] overflow-hidden"
     >
-      <div className="h-full w-full" style={{ opacity: 0.5 }}>
+      <div className="h-full w-full" style={{ opacity: 0.4 }}>
         <div className="flex h-full w-full items-center justify-center">
           <div className="provin-wireframe-float w-[min(90vw,820px)] px-4">
             <svg

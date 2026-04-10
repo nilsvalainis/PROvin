@@ -19,9 +19,11 @@ export default async function HomePage({
   const cancelled = sp.atcelts === "1";
 
   return (
-    <HomeScrollSurface belowSilver={<AutoWireframeBackground />}>
-      <div className="relative z-10 min-w-0 bg-transparent">
-        <HomeProcessRail />
+    <>
+      <HomeScrollSurface />
+      <AutoWireframeBackground />
+      <HomeProcessRail />
+      <div className="relative z-20 min-w-0 bg-transparent">
         <MarketingHero />
 
         <div className="home-below-hero home-body-ink bg-transparent">
@@ -42,6 +44,6 @@ export default async function HomePage({
           <Footer />
         </div>
       </div>
-    </HomeScrollSurface>
+    </>
   );
 }
