@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
@@ -12,7 +13,7 @@ const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
 
 const inputHero =
-  "mt-1.5 w-full rounded-xl border border-black/[0.06] bg-white/80 px-3.5 py-2.5 text-[15px] font-normal text-[#1d1d1f] shadow-[0_1px_8px_rgba(0,0,0,0.04)] outline-none backdrop-blur-sm transition placeholder:text-[#aeaeb2] focus:border-provin-accent/35 focus:ring-2 focus:ring-provin-accent/15 sm:text-[16px]";
+  "mt-1.5 w-full rounded-none border-0 border-b-2 border-[#e5e7eb] bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition placeholder:text-[#c8c8cd] focus:border-provin-accent focus:ring-0 sm:text-[16px]";
 
 const inputDefault =
   "mt-1 w-full rounded-lg border border-black/[0.1] bg-white px-3 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition placeholder:text-[#aeaeb2] focus:border-provin-accent/35 focus:ring-1 focus:ring-provin-accent/25 sm:text-[16px]";
@@ -263,9 +264,16 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             <button
               type="submit"
               disabled={loading || !withdrawalConsent}
-              className="provin-btn provin-btn--compact flex w-full min-h-[43px] items-center justify-center rounded-xl px-7 py-3 text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60"
+              className="provin-btn provin-btn--compact mx-auto flex min-h-[43px] w-full max-w-[min(100%,17rem)] items-center justify-center gap-2 rounded-xl px-5 py-3 text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60"
             >
-              {loading ? t("payLoading") : t("payButton")}
+              {loading ? (
+                t("payLoading")
+              ) : (
+                <>
+                  {t("payButton")}
+                  <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                </>
+              )}
             </button>
             <p className="text-center text-[10px] font-normal leading-relaxed text-[#aeaeb2] sm:text-[11px]">
               {t("stripeNote")}

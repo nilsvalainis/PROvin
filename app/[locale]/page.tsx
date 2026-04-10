@@ -25,7 +25,7 @@ export default async function HomePage({
         </div>
         <div className="pointer-events-none absolute inset-0 z-[1] provin-noise opacity-[0.32]" aria-hidden />
         <div
-          className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(to_bottom,#ffffff,#f0f4f8,#ffffff)] opacity-80"
+          className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(to_bottom,#ffffff,#f9fafb,#ffffff)] opacity-90"
           aria-hidden
         />
 
