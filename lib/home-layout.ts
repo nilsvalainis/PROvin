@@ -8,6 +8,9 @@ export const homeContentMaxClass = "mx-auto min-w-0 w-full max-w-[1200px]";
 export const homeSectionEyebrowClass =
   "text-[12px] font-semibold uppercase tracking-[0.1em] text-provin-accent sm:text-[13px]";
 
+/** Vienots H2 zem Hero (Cena, IRISS, BUJ): zils eyebrow + centrēts + vienāda atstarpe līdz saturam zemāk. */
+export const homeSectionTitleClass = `${homeSectionEyebrowClass} text-balance text-center mb-4 sm:mb-5`;
+
 /**
  * „APPROVED BY IRISS” paraksts Hero augšā — mīksts pelēks, light, plaša burtu distance.
  * IRISS sadaļas apakšvirsraksts lieto to pašu bāzi ar `irissSectionSubtitleClass` (2× lielāks teksts).

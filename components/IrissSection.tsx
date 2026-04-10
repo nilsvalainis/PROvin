@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
-import { irissSectionSubtitleClass } from "@/lib/home-layout";
+import { homeSectionTitleClass, irissSectionSubtitleClass } from "@/lib/home-layout";
 
 /** Melns trekns — tas pats izmērs kā BUJ atbilžu pamattekstam. */
 const irissAccent = (chunks: ReactNode) => (
@@ -29,12 +29,8 @@ export async function IrissSection() {
 
       <div className="relative mx-auto w-full max-w-[1000px]">
         <div className="text-center">
-          <h2
-            className="text-balance text-[11px] font-semibold tracking-normal text-[#6b7280] sm:text-[12px]"
-          >
-            {t("title")}
-          </h2>
-          <p className={`mt-2.5 ${irissSectionSubtitleClass}`}>{t("subtitle")}</p>
+          <h2 className={homeSectionTitleClass}>{t("title")}</h2>
+          <p className={irissSectionSubtitleClass}>{t("subtitle")}</p>
         </div>
 
         <div className="mt-5 flex justify-center">

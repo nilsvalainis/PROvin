@@ -1,5 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { getMessages, getTranslations } from "next-intl/server";
+import { homeSectionTitleClass } from "@/lib/home-layout";
 
 type FaqItem = { id: string; q: string; a: string };
 
@@ -16,15 +17,12 @@ export async function Faq() {
     >
       <div className="mx-auto min-w-0 max-w-[680px]">
         <div className="text-center">
-          <h2
-            id="faq-heading"
-            className="text-balance text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6b7280] sm:text-[12px]"
-          >
+          <h2 id="faq-heading" className={homeSectionTitleClass}>
             {t("title")}
           </h2>
         </div>
 
-        <div className="mt-8 divide-y divide-[#ececec] sm:mt-10">
+        <div className="divide-y divide-[#ececec]">
           {items.map((item) => (
             <details
               key={item.id}
