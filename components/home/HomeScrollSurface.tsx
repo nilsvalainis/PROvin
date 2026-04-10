@@ -8,8 +8,8 @@ type HomeScrollSurfaceProps = {
 };
 
 /**
- * Fixed black base + silver (#e5e7eb + grain) masked below the hero (soft edge).
- * Sets `--home-surface-t` on `document.documentElement` for header / typography.
+ * Fixed black base + silver (#e5e7eb + grain), masked below hero with a soft vertical gradient.
+ * Sets `--home-surface-t` on `document.documentElement` (0→1 over first 600px scroll).
  */
 export function HomeScrollSurface({ children }: HomeScrollSurfaceProps) {
   const silverRef = useRef<HTMLDivElement>(null);
@@ -33,10 +33,10 @@ export function HomeScrollSurface({ children }: HomeScrollSurfaceProps) {
         }
         const b = hero.getBoundingClientRect().bottom;
         const vh = window.innerHeight;
-        const fade = 96;
-        const start = Math.max(0, b - fade);
-        const end = Math.min(vh, b + fade * 0.5);
-        const grad = `linear-gradient(to bottom, transparent 0px, transparent ${start}px, black ${end}px, black 100%)`;
+        const feather = 160;
+        const t0 = Math.max(0, b - feather);
+        const t1 = Math.min(vh, b + feather * 0.45);
+        const grad = `linear-gradient(to bottom, transparent 0px, transparent ${t0}px, black ${t1}px, black 100%)`;
         el.style.maskImage = grad;
         el.style.webkitMaskImage = grad;
       }
@@ -53,7 +53,7 @@ export function HomeScrollSurface({ children }: HomeScrollSurfaceProps) {
   }, []);
 
   return (
-    <div className="relative min-w-0">
+    <div className="relative min-h-dvh min-w-0 bg-transparent">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[#050505]" aria-hidden />
 
       <div

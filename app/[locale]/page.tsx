@@ -21,11 +21,11 @@ export default async function HomePage({
   return (
     <HomeScrollSurface>
       <AutoWireframeBackground />
-      <div className="relative z-10 min-w-0">
+      <div className="relative z-10 min-w-0 bg-transparent">
         <HomeProcessRail />
         <MarketingHero />
 
-        <div className="home-below-hero">
+        <div className="home-below-hero bg-transparent">
           <InvestigationLabSection />
           <HowItWorks tone="light" />
 
