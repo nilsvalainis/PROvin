@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 
 const railHeightClass = "min-h-[min(52vh,420px)]";
 
-/** Kreisā sleja: etiķetes pa kreisi no līnijas; `left` = kā `max-w-[1200px]` slejas satura sākums (px-4 / sm:px-6). */
+/** Kreisā sleja: etiķetes pa kreisi no līnijas; provizorisks `left-4` + augsts z-index redzamībai. */
 export function HomeProcessRail() {
   const t = useTranslations("HomeProcess");
 
@@ -16,7 +16,7 @@ export function HomeProcessRail() {
 
   return (
     <aside
-      className="pointer-events-none fixed top-1/2 z-[35] hidden -translate-y-1/2 lg:block left-[max(calc(1rem+env(safe-area-inset-left,0px)),calc(50%-37.5rem+1rem))] sm:left-[max(calc(1.5rem+env(safe-area-inset-left,0px)),calc(50%-37.5rem+1.5rem))]"
+      className="pointer-events-none fixed left-4 top-1/2 z-[50] hidden -translate-y-1/2 md:block"
       aria-hidden
     >
       <div className={`flex items-stretch gap-3 ${railHeightClass}`}>

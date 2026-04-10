@@ -1,20 +1,18 @@
 /**
- * Fixed wireframe (z-[2]) — virs sudraba slāņa (z-[1]); opacity 0.15 → 0.05 ar --home-surface-t.
+ * Fixed wireframe zem sudraba slāņa: z-0 (pēc melnā z-0), sudrabs z-[1].
+ * Īslaicīgi: balta līnija + fiksēta 0.5 opacity — viegli pārbaudīt renderi.
  */
 export function AutoWireframeBackground() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-[2] overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
     >
-      <div
-        className="h-full w-full"
-        style={{ opacity: "calc(0.15 - var(--home-surface-t, 0) * 0.1)" }}
-      >
+      <div className="h-full w-full" style={{ opacity: 0.5 }}>
         <div className="flex h-full w-full items-center justify-center">
           <div className="provin-wireframe-float w-[min(90vw,820px)] px-4">
             <svg
-              className="h-auto w-full text-[#c4c8d0]"
+              className="h-auto w-full"
               viewBox="0 0 520 136"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
@@ -24,7 +22,7 @@ export function AutoWireframeBackground() {
               <path
                 fill="none"
                 vectorEffect="non-scaling-stroke"
-                stroke="currentColor"
+                stroke="white"
                 strokeWidth={0.55}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -45,7 +43,7 @@ export function AutoWireframeBackground() {
               <path
                 fill="none"
                 vectorEffect="non-scaling-stroke"
-                stroke="currentColor"
+                stroke="white"
                 strokeWidth={0.55}
                 strokeLinecap="round"
                 d="M 118 46 C 248 28 392 30 488 56"
@@ -53,7 +51,7 @@ export function AutoWireframeBackground() {
               <ellipse
                 fill="none"
                 vectorEffect="non-scaling-stroke"
-                stroke="currentColor"
+                stroke="white"
                 strokeWidth={0.55}
                 cx="152"
                 cy="100"
@@ -63,7 +61,7 @@ export function AutoWireframeBackground() {
               <ellipse
                 fill="none"
                 vectorEffect="non-scaling-stroke"
-                stroke="currentColor"
+                stroke="white"
                 strokeWidth={0.55}
                 cx="368"
                 cy="100"
@@ -73,7 +71,7 @@ export function AutoWireframeBackground() {
               <path
                 fill="none"
                 vectorEffect="non-scaling-stroke"
-                stroke="currentColor"
+                stroke="white"
                 strokeWidth={0.55}
                 strokeLinecap="round"
                 d="M 34 76 L 78 64 M 458 66 L 502 78"
@@ -94,8 +92,8 @@ export function AutoWireframeBackground() {
 function Crosshair({ className }: { className: string }) {
   return (
     <div className={`pointer-events-none fixed z-0 h-3 w-3 ${className}`} aria-hidden>
-      <svg viewBox="0 0 12 12" className="h-full w-full text-[#c4c8d0]" fill="none">
-        <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth={0.55} vectorEffect="non-scaling-stroke" />
+      <svg viewBox="0 0 12 12" className="h-full w-full" fill="none">
+        <path d="M6 1v10M1 6h10" stroke="white" strokeWidth={0.55} vectorEffect="non-scaling-stroke" />
       </svg>
     </div>
   );

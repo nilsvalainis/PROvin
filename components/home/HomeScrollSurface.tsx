@@ -4,14 +4,16 @@ import { type ReactNode, useEffect, useRef } from "react";
 import { computeHomeSurfaceT } from "@/lib/home-surface";
 
 type HomeScrollSurfaceProps = {
+  /** Renders between black (z-0) and silver (z-[1]) — e.g. wireframe; must be passed from a Server Component. */
+  belowSilver?: ReactNode;
   children: ReactNode;
 };
 
 /**
- * Fixed black base + silver (#e5e7eb + grain), masked below hero with a soft vertical gradient.
+ * Fixed black base (z-0) → optional belowSilver (z-0) → silver grain (z-[1]) → children.
  * Sets `--home-surface-t` on `document.documentElement` (0→1 over first 600px scroll).
  */
-export function HomeScrollSurface({ children }: HomeScrollSurfaceProps) {
+export function HomeScrollSurface({ belowSilver, children }: HomeScrollSurfaceProps) {
   const silverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,6 +57,8 @@ export function HomeScrollSurface({ children }: HomeScrollSurfaceProps) {
   return (
     <div className="relative min-h-dvh min-w-0 bg-transparent">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[#050505]" aria-hidden />
+
+      {belowSilver}
 
       <div
         ref={silverRef}
