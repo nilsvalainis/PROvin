@@ -1,5 +1,6 @@
 import "server-only";
 
+import fontkit from "@pdf-lib/fontkit";
 import fs from "fs/promises";
 import path from "path";
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
@@ -105,6 +106,7 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
   const invoiceDate = dateFmt.format(new Date(order.created * 1000));
 
   const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit);
   const { reg, bold } = await loadInterFontBytes();
   const font = await pdfDoc.embedFont(reg);
   const fontBold = await pdfDoc.embedFont(bold);

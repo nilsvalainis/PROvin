@@ -112,7 +112,15 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
     session = await stripe.checkout.sessions.retrieve(sessionId, {
       timeout: 10_000,
     });
-  } catch {
+  } catch (error) {
+    console.error(
+      "[admin-orders] checkout.sessions.retrieve failed",
+      {
+        sessionId,
+        stripeSecretKeySet: Boolean(process.env.STRIPE_SECRET_KEY?.trim()),
+      },
+      error,
+    );
     if (demo) return demo as AdminOrderDetail;
     return null;
   }

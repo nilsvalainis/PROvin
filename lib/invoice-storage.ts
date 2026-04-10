@@ -61,16 +61,26 @@ export async function persistPaidOrderInvoice(sessionId: string): Promise<void> 
   if (!resolveInvoiceDir()) return;
   if (await readInvoicePdfFromDisk(sessionId)) return;
 
-  const bytes = await buildInvoicePdfBytes({
-    id: order.id,
-    created: order.created,
-    amountTotal: order.amountTotal,
-    currency: order.currency,
-    customerEmail: order.customerEmail,
-    customerDetailsEmail: order.customerDetailsEmail,
-    vin: order.vin,
-    invoiceNumber,
-  });
+  let bytes: Uint8Array;
+  try {
+    bytes = await buildInvoicePdfBytes({
+      id: order.id,
+      created: order.created,
+      amountTotal: order.amountTotal,
+      currency: order.currency,
+      customerEmail: order.customerEmail,
+      customerDetailsEmail: order.customerDetailsEmail,
+      vin: order.vin,
+      invoiceNumber,
+    });
+  } catch (error) {
+    console.error(
+      "[invoice-storage] persistPaidOrderInvoice buildInvoicePdfBytes failed",
+      { sessionId, invoiceNumber },
+      error,
+    );
+    return;
+  }
 
   const ok = await writeInvoicePdfToDisk(sessionId, bytes);
   if (!ok) return;

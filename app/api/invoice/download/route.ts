@@ -46,16 +46,26 @@ export async function GET(req: Request) {
   }
 
   const invoiceNumber = await getOrCreateInvoiceNumber(sessionId, order.created);
-  const bytes = await buildInvoicePdfBytes({
-    id: order.id,
-    created: order.created,
-    amountTotal: order.amountTotal,
-    currency: order.currency,
-    customerEmail: order.customerEmail,
-    customerDetailsEmail: order.customerDetailsEmail,
-    vin: order.vin,
-    invoiceNumber,
-  });
+  let bytes: Uint8Array;
+  try {
+    bytes = await buildInvoicePdfBytes({
+      id: order.id,
+      created: order.created,
+      amountTotal: order.amountTotal,
+      currency: order.currency,
+      customerEmail: order.customerEmail,
+      customerDetailsEmail: order.customerDetailsEmail,
+      vin: order.vin,
+      invoiceNumber,
+    });
+  } catch (error) {
+    console.error(
+      "[api/invoice/download] buildInvoicePdfBytes failed",
+      { sessionId, invoiceNumber },
+      error,
+    );
+    return NextResponse.json({ error: "pdf_generation_failed" }, { status: 500 });
+  }
 
   return new NextResponse(Buffer.from(bytes), { status: 200, headers: pdfHeaders(invoiceNumber, bytes) });
 }

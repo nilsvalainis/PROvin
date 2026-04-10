@@ -30,6 +30,9 @@ export async function GET(_req: Request, ctx: RouteContext) {
   const { sessionId } = await ctx.params;
   const order = await getCheckoutSessionDetail(sessionId);
   if (!order) {
+    console.error("[api/admin/invoice/pdf] no order for session (Stripe retrieve failed, unpaid, or unknown id)", {
+      sessionId,
+    });
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
@@ -53,16 +56,32 @@ export async function GET(_req: Request, ctx: RouteContext) {
     });
   }
 
-  const bytes = await buildInvoicePdfBytes({
-    id: order.id,
-    created: order.created,
-    amountTotal: order.amountTotal,
-    currency: order.currency,
-    customerEmail: order.customerEmail,
-    customerDetailsEmail: order.customerDetailsEmail,
-    vin: order.vin,
-    invoiceNumber,
-  });
+  let bytes: Uint8Array;
+  try {
+    bytes = await buildInvoicePdfBytes({
+      id: order.id,
+      created: order.created,
+      amountTotal: order.amountTotal,
+      currency: order.currency,
+      customerEmail: order.customerEmail,
+      customerDetailsEmail: order.customerDetailsEmail,
+      vin: order.vin,
+      invoiceNumber,
+    });
+  } catch (error) {
+    console.error(
+      "[api/admin/invoice/pdf] buildInvoicePdfBytes failed",
+      {
+        sessionId,
+        invoiceNumber,
+        paymentStatus: order.paymentStatus,
+        amountTotal: order.amountTotal,
+        hasCustomerEmail: Boolean(order.customerEmail ?? order.customerDetailsEmail),
+      },
+      error,
+    );
+    return NextResponse.json({ error: "pdf_generation_failed" }, { status: 500 });
+  }
 
   if (resolveInvoiceDir()) {
     const wrote = await writeInvoicePdfToDisk(sessionId, bytes);
