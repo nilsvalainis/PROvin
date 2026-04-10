@@ -2,13 +2,9 @@
   "Iriss": {
     "title": "KAS IR IRISS?",
     "subtitle": "IRISS | Perekupa Dienasgrāmata",
-    "bodyQuote": "<lead>Pērkot lietotu auto, Tu spēlē pret cilvēkiem, kuri zina vairāk.</lead> <mission>Un mūsu uzdevums ir vienkāršs: neļaut Tev nopirkt problēmu.</mission>",
-    "bodyB": "<lead>Automašīnas iegāde ir atbildīgs lēmums, kurā izšķiroša nozīme ir zināšanām.</lead> Ar <b>10+ gadu pieredzi</b> lietotu automašīnu importā no Eiropas, IRISS apvieno padziļinātu izpratni par auto marku specifiku, tirgus īpatnībām un pārdevēju paņēmieniem. Šī pieredze ļauj mums saskatīt slēptos riskus un problēmas tur, kur citi redz tikai pievilcīgu sludinājumu.",
-    "bodyC": "<lead><b>PROVIN audits</b> nav tikai vēstures atskaite vai faktu pārbaude — tas ir Tavs personīgais interešu aizstāvis un filtrs starp Tevi un sliktu darījumu.</lead> Mēs nodrošinām objektīvu un neatkarīgu izvērtējumu, kas balstīts reālā nozares pieredzē, ar vienu skaidru mērķi — atklāt to, ko pārdevējs mēģina noklusēt.",
-    "bodyD": "<lead>Tā ir izvēle, kas ietekmē Tavu ikdienas kvalitāti, drošību un ilgtermiņa izmaksas.</lead>",
-    "experienceLabel": "Pieredze",
-    "years": "10+",
-    "yearsLabel": "gadi",
+    "body1": "Automašīnas iegāde ir atbildīgs lēmums, kurā izšķiroša nozīme ir zināšanām. Ar <b>10+ gadu pieredzi</b> lietotu automašīnu importā no Eiropas, IRISS apvieno padziļinātu izpratni par auto marku specifiku, tirgus īpatnībām un pārdevēju paņēmieniem. Šī pieredze ļauj mums saskatīt slēptos riskus un problēmas tur, kur citi redz tikai pievilcīgu sludinājumu.",
+    "body2": "<b>PROVIN audits</b> nav tikai vēstures atskaite un faktu pārbaude — tas ir Tavs personīgais interešu aizstāvis un filtrs starp Tevi un sliktu darījumu. Jo pērkot lietotu auto, Tev būs jāspēlē pret cilvēkiem, kuri bieži zina vairāk nekā stāsta. Un mūsu uzdevums ir vienkāršs: <b>neļaut Tev nopirkt problēmu</b>.",
+    "body3": "Mēs nodrošinām objektīvu un neatkarīgu izvērtējumu, balstītu reālā nozares pieredzē, ar vienu skaidru mērķi — atklāt to, ko pārdevējs mēģina noklusēt. Tā ir izvēle, kas ietekmē Tavu ikdienas kvalitāti, drošību un ilgtermiņa izmaksas.",
     "socialLabel": "IRISS sociālie tīkli",
     "socialSoon": "Saite drīzumā"
   }

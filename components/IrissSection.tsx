@@ -1,33 +1,16 @@
 import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
-import {
-  homeSectionEyebrowClass,
-  homeSoftBandGradientClass,
-  irissSectionSubtitleClass,
-} from "@/lib/home-layout";
+import { homeSectionEyebrowClass, irissSectionSubtitleClass } from "@/lib/home-layout";
 
 const irissBodyStrong = (chunks: ReactNode) => (
-  <strong className="font-semibold text-[#1d1d1f]">{chunks}</strong>
+  <strong className="font-bold text-[#1a1a1a]">{chunks}</strong>
 );
 
-const irissLead = (chunks: ReactNode) => (
-  <span className="font-semibold text-[#1d1d1f]">{chunks}</span>
-);
+const irissRichBody = { b: irissBodyStrong };
 
-const irissMission = (chunks: ReactNode) => (
-  <strong className="font-bold text-provin-accent">{chunks}</strong>
-);
-
-const irissRichBody = { b: irissBodyStrong, lead: irissLead };
-const irissRichQuote = { ...irissRichBody, mission: irissMission };
-
-/** Pamatteksts: line-height 1.7, centrēts. */
+/** Pamatteksts: monocroms, centrēts, „premium” interlineārs. */
 const irissBodyProseClass =
-  "text-[15px] font-normal leading-[1.7] tracking-tight text-[#1d1d1f] sm:text-[16px]";
-
-/** Bloks A — galvenā vēsts (~1.5×); pirmais teikums 600, misijas teikums zils trekns. */
-const irissQuoteClass =
-  "text-[22px] font-normal leading-[1.45] tracking-tight text-[#1d1d1f] text-balance sm:text-[24px] sm:leading-[1.4]";
+  "text-[15px] font-normal leading-[1.8] tracking-normal text-[#1a1a1a] sm:text-[16px]";
 
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
@@ -40,7 +23,7 @@ export async function IrissSection() {
   return (
     <section
       id="kas-ir-iriss"
-      className={`relative scroll-mt-16 overflow-hidden px-4 pb-0 pt-10 sm:px-6 sm:pt-16 ${homeSoftBandGradientClass}`}
+      className="relative scroll-mt-16 overflow-hidden bg-white px-4 pb-0 pt-10 sm:px-6 sm:pt-16"
     >
       <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
 
@@ -60,19 +43,10 @@ export async function IrissSection() {
           />
         </div>
 
-        <div className="mx-auto mt-10 max-w-[800px] text-center sm:mt-12">
-          <p className={`${irissQuoteClass} mx-auto mb-[40px] max-w-[800px] pt-2 sm:pt-3`}>
-            {t.rich("bodyQuote", irissRichQuote)}
-          </p>
-          <p className={`${irissBodyProseClass} mx-auto mb-[40px] max-w-[800px] text-balance`}>
-            {t.rich("bodyB", irissRichBody)}
-          </p>
-          <p className={`${irissBodyProseClass} mx-auto mb-[40px] max-w-[800px] text-balance`}>
-            {t.rich("bodyC", irissRichBody)}
-          </p>
-          <p className={`${irissBodyProseClass} mx-auto max-w-[800px] text-balance`}>
-            {t.rich("bodyD", irissRichBody)}
-          </p>
+        <div className="mx-auto mt-10 max-w-[750px] text-center sm:mt-12">
+          <p className={`${irissBodyProseClass} mb-12 text-balance`}>{t.rich("body1", irissRichBody)}</p>
+          <p className={`${irissBodyProseClass} mb-12 text-balance`}>{t.rich("body2", irissRichBody)}</p>
+          <p className={`${irissBodyProseClass} text-balance`}>{t.rich("body3", irissRichBody)}</p>
         </div>
       </div>
 
