@@ -2,11 +2,14 @@ import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
 import { homeSectionEyebrowClass, irissSectionSubtitleClass } from "@/lib/home-layout";
 
-const irissBodyStrong = (chunks: ReactNode) => (
-  <strong className="font-bold text-[#1a1a1a]">{chunks}</strong>
+/** Zīmola zils, trekns, ~+27–30% pret 15/16px pamattekstu, kompakts tracking. */
+const irissAccent = (chunks: ReactNode) => (
+  <strong className="inline-block font-bold tracking-[-0.02em] text-provin-accent [font-size:1.21875rem] leading-[1.35] sm:[font-size:1.3rem]">
+    {chunks}
+  </strong>
 );
 
-const irissRichBody = { b: irissBodyStrong };
+const irissRichBody = { accent: irissAccent };
 
 /** Pamatteksts: monocroms, centrēts, „premium” interlineārs. */
 const irissBodyProseClass =
@@ -46,7 +49,8 @@ export async function IrissSection() {
         <div className="mx-auto mt-10 max-w-[750px] text-center sm:mt-12">
           <p className={`${irissBodyProseClass} mb-12 text-balance`}>{t.rich("body1", irissRichBody)}</p>
           <p className={`${irissBodyProseClass} mb-12 text-balance`}>{t.rich("body2", irissRichBody)}</p>
-          <p className={`${irissBodyProseClass} text-balance`}>{t.rich("body3", irissRichBody)}</p>
+          <p className={`${irissBodyProseClass} mb-12 text-balance`}>{t.rich("body3", irissRichBody)}</p>
+          <p className={`${irissBodyProseClass} text-balance`}>{t.rich("body4", irissRichBody)}</p>
         </div>
       </div>
 
