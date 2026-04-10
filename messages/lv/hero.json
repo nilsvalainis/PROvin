@@ -4,22 +4,28 @@
     "h1Line1": "VIN UN SLUDINĀJUMA",
     "h1Line2": "AUDITS",
     "h2": "Tavs personīgais auto detektīvs",
+    "serviceGridHeadline": "Kā mēs Tevi pasargājam no slikta darījuma",
+    "featuredBadge": "Svarīgākais",
     "pillars": [
       {
         "title": "Maksas atskaites",
-        "body": "Vēsture, nobraukums, avārijas."
+        "body": "Vēsture, nobraukums un avārijas vienuviet.",
+        "hoverHint": "Viss svarīgākais vienuviet — pirms pārdevēja stāsta."
       },
       {
         "title": "Sludinājuma analīze",
-        "body": "SS.LV, Mobile.de u.c."
+        "body": "Sludinājumu izvērtēšana (SS.LV, Mobile.de u.c.).",
+        "hoverHint": "Objektīvs skatījums bez pārdevēja ietekmes."
       },
       {
         "title": "Tehnisko risku analīze",
-        "body": "Modeļa vājās vietas."
+        "body": "Slēptie defekti un modeļu vājās vietas.",
+        "hoverHint": "Palīdz izvairīties no slēptiem riskiem."
       },
       {
         "title": "Konsultācija",
-        "body": "Iespēja izrunāt iegūtos datus."
+        "body": "Skaidrs skaidrojums un ieteikumi lēmuma pieņemšanai.",
+        "hoverHint": "Skaidrs ceļš uz pārliecinātu lēmumu."
       }
     ],
     "cta": "PASŪTĪT ANALĪZI — 79,99 €",
