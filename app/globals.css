@@ -150,6 +150,65 @@ body {
   }
 }
 
+/* Investigation Lab — skenera līnija sticky kolonnā (~5s cikls) */
+@keyframes provin-lab-scanner {
+  0% {
+    top: -4%;
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  44% {
+    top: 104%;
+    opacity: 1;
+  }
+  52% {
+    opacity: 0;
+  }
+  100% {
+    top: 104%;
+    opacity: 0;
+  }
+}
+
+.provin-lab-scanner-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #c0c0c0, #ffffff, #3b82f6, #ffffff, #c0c0c0);
+  box-shadow:
+    0 0 16px rgba(59, 130, 246, 0.55),
+    0 0 32px rgba(59, 130, 246, 0.2);
+  pointer-events: none;
+  animation: provin-lab-scanner 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .provin-lab-scanner-line {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Investigation Lab — „chrome” CTA (sudrabs → zils hover) */
+.lab-chrome-cta {
+  background: linear-gradient(165deg, #f0f0f0 0%, #ffffff 38%, #d4d4d8 62%, #b8b8bc 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.lab-chrome-cta:hover {
+  background: linear-gradient(165deg, #0061d2 0%, #3b82f6 45%, #0050a8 100%);
+  color: #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 14px 36px rgba(59, 130, 246, 0.35);
+}
+
 /* Admin UI mainīgie (noklusējums — gaišs; tumšais ar .admin-order-page.dark) */
 :root {
   --admin-field-bg: #ffffff;
