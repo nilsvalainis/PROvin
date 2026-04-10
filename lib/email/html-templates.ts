@@ -74,12 +74,18 @@ export function adminNewOrderHtml(lines: { label: string; value: string }[]): st
   return shell(inner);
 }
 
-export function reportReadyHtml(opts: { siteUrl: string; vin: string; contactMailto: string }): string {
+export function reportReadyHtml(opts: {
+  siteUrl: string;
+  vin: string;
+  contactMailto: string;
+  replyEmail: string;
+}): string {
   const inner = `
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Jūsu audits ir gatavs</p>
-<p style="margin:0 0 20px;color:${MUTED};font-size:15px;">Eksperta kopsavilkums transportlīdzeklim ar VIN <strong>${esc(opts.vin)}</strong> ir sagatavots. Sīkāku informāciju un PDF nosūtīsim atbilstoši norunātajam saziņas veidam.</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Jūsu pasūtītais PROVIN audits ir pabeigts!</p>
+<p style="margin:0 0 16px;color:${MUTED};font-size:15px;">Eksperta atskaite transportlīdzeklim ar VIN <strong>${esc(opts.vin)}</strong> ir sagatavota.</p>
+<p style="margin:0 0 20px;color:${INK};font-size:15px;"><strong>Kā saņemt rezultātus:</strong> PDF un papildu materiālus nosūtām uz jūsu pasūtījumā norādīto e-pastu vai pēc iepriekš saskaņotā kanāla. Atbildot uz šo vēstuli, ziņa nonāks pie mums — <span style="color:${INK};">${esc(opts.replyEmail)}</span> (Reply-To).</p>
 ${ctaButton(opts.contactMailto, "Sazināties ar PROVIN")}
-<p style="margin:16px 0 0;font-size:13px;color:${MUTED};">Vai atveriet <a href="${esc(opts.siteUrl)}" style="color:${BRAND};text-decoration:none;">provin.lv</a>.</p>
+<p style="margin:16px 0 0;font-size:13px;color:${MUTED};">Vai atveriet <a href="${esc(opts.siteUrl)}" style="color:${BRAND};text-decoration:none;font-weight:500;">provin.lv</a>.</p>
 `;
   return shell(inner);
 }

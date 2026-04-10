@@ -50,8 +50,9 @@ export async function POST(req: Request) {
       vin: order.vin?.trim() || "—",
     });
   } catch (e) {
+    const message = e instanceof Error ? e.message : "Nezināma kļūda";
     console.error("[api/admin/notify-report-ready]", e);
-    return NextResponse.json({ error: "send_failed" }, { status: 500 });
+    return NextResponse.json({ error: "send_failed", message }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

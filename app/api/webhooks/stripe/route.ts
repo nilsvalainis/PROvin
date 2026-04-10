@@ -94,9 +94,12 @@ export async function POST(req: Request) {
             currency: payload.currency,
             vin: payload.vin,
           });
+          console.info("[stripe webhook] payment confirmation email sent", { sessionId: session.id, to: email });
         } catch (e) {
-          console.error("Customer payment confirmation email:", e);
+          console.error("[stripe webhook] Customer payment confirmation email failed:", e);
         }
+      } else {
+        console.warn("[stripe webhook] checkout.session.completed: no customer email — payment confirmation skipped");
       }
 
       console.info("PROVIN order:", payload);

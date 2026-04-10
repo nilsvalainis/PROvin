@@ -112,7 +112,7 @@ export async function sendPaymentConfirmationEmail(opts: {
 }): Promise<void> {
   const resend = getResend();
   if (!resend) {
-    console.warn("[email] RESEND_API_KEY missing — payment confirmation e-pasts netika nosūtīts.");
+    console.error("[email] RESEND_API_KEY missing — payment confirmation e-pasts netika nosūtīts.");
     return;
   }
 
@@ -149,32 +149,53 @@ export async function sendPaymentConfirmationEmail(opts: {
     ].join("\n"),
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[email] sendPaymentConfirmationEmail Resend:", error);
+    throw new Error(error.message);
+  }
 }
 
 /** Klients: eksperts apstiprinājis — paziņojums, ka audits gatavs (saziņas CTA). */
 export async function sendReportReadyEmail(opts: { to: string; vin: string }): Promise<void> {
   const resend = getResend();
   if (!resend) {
-    console.warn("[email] RESEND_API_KEY missing — report-ready e-pasts netika nosūtīts.");
-    return;
+    const msg = "RESEND_API_KEY nav iestatīts — e-pasts netika nosūtīts.";
+    console.error("[email]", msg);
+    throw new Error(msg);
   }
 
   const siteUrl = getSiteOrigin();
+  const replyTo = getResendReplyTo();
   const html = reportReadyHtml({
     siteUrl,
     vin: opts.vin.trim() || "—",
     contactMailto: contactMailtoHref(),
+    replyEmail: replyTo,
   });
 
   const { error } = await resend.emails.send({
     from: getResendFromAddress(),
     to: [opts.to],
-    replyTo: getResendReplyTo(),
-    subject: `PROVIN — Jūsu audits ir gatavs (${opts.vin?.trim() || "VIN"})`,
+    replyTo,
+    subject: `PROVIN — Jūsu pasūtītais audits ir pabeigts (${opts.vin?.trim() || "VIN"})`,
     html,
-    text: `Labdien!\n\nJūsu PROVIN audits transportlīdzeklim ${opts.vin ?? "—"} ir gatavs. Sazinieties ar mums: ${contactMailtoHref()}\n\n${siteUrl}`,
+    text: [
+      "Labdien!",
+      "",
+      "Jūsu pasūtītais PROVIN audits ir pabeigts!",
+      "",
+      `Transportlīdzeklis (VIN): ${opts.vin?.trim() || "—"}`,
+      "",
+      "Atskaites PDF un detaļas nosūtām uz šo e-pasta adresi vai pēc iepriekš norunātā saziņas veida.",
+      `Atbilžu adrese (Reply-To): ${replyTo}`,
+      "",
+      `Vietne: ${siteUrl}`,
+      `Saziņa (e-pasts): ${contactMailtoHref()}`,
+    ].join("\n"),
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[email] sendReportReadyEmail Resend:", error);
+    throw new Error(error.message);
+  }
 }
