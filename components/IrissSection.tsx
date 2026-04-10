@@ -10,15 +10,24 @@ const irissBodyStrong = (chunks: ReactNode) => (
   <strong className="font-semibold text-[#1d1d1f]">{chunks}</strong>
 );
 
-const irissRichBold = { b: irissBodyStrong };
+const irissLead = (chunks: ReactNode) => (
+  <span className="font-semibold text-[#1d1d1f]">{chunks}</span>
+);
 
-/** Pamatteksts: lasāmība ≥1.6 line-height, centrēts. */
+const irissMission = (chunks: ReactNode) => (
+  <strong className="font-bold text-provin-accent">{chunks}</strong>
+);
+
+const irissRichBody = { b: irissBodyStrong, lead: irissLead };
+const irissRichQuote = { ...irissRichBody, mission: irissMission };
+
+/** Pamatteksts: line-height 1.7, centrēts. */
 const irissBodyProseClass =
-  "text-[15px] font-normal leading-[1.65] tracking-tight text-[#1d1d1f] sm:text-[16px] sm:leading-[1.6]";
+  "text-[15px] font-normal leading-[1.7] tracking-tight text-[#1d1d1f] sm:text-[16px]";
 
-/** Bloks A — galvenā vēsts (~1.5× pret pamata fontu). */
+/** Bloks A — galvenā vēsts (~1.5×); pirmais teikums 600, misijas teikums zils trekns. */
 const irissQuoteClass =
-  "text-[22px] font-medium leading-snug tracking-tight text-[#1d1d1f] text-balance sm:text-[24px] sm:leading-snug";
+  "text-[22px] font-normal leading-[1.45] tracking-tight text-[#1d1d1f] text-balance sm:text-[24px] sm:leading-[1.4]";
 
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
@@ -51,19 +60,19 @@ export async function IrissSection() {
           />
         </div>
 
-        <div className="mx-auto mt-10 max-w-[min(100%,65ch)] text-center sm:mt-12">
-          <p
-            className={`${irissQuoteClass} mx-auto mb-10 max-w-[52ch] pt-2 sm:mb-12 sm:pt-3`}
-          >
-            {t.rich("bodyQuote", irissRichBold)}
+        <div className="mx-auto mt-10 max-w-[800px] text-center sm:mt-12">
+          <p className={`${irissQuoteClass} mx-auto mb-[40px] max-w-[800px] pt-2 sm:pt-3`}>
+            {t.rich("bodyQuote", irissRichQuote)}
           </p>
-          <p className={`${irissBodyProseClass} mx-auto mb-8 max-w-[65ch] text-balance sm:mb-9`}>
-            {t.rich("bodyB", irissRichBold)}
+          <p className={`${irissBodyProseClass} mx-auto mb-[40px] max-w-[800px] text-balance`}>
+            {t.rich("bodyB", irissRichBody)}
           </p>
-          <p className={`${irissBodyProseClass} mx-auto mb-8 max-w-[65ch] text-balance sm:mb-9`}>
-            {t.rich("bodyC", irissRichBold)}
+          <p className={`${irissBodyProseClass} mx-auto mb-[40px] max-w-[800px] text-balance`}>
+            {t.rich("bodyC", irissRichBody)}
           </p>
-          <p className={`${irissBodyProseClass} mx-auto max-w-[65ch] text-balance`}>{t("bodyD")}</p>
+          <p className={`${irissBodyProseClass} mx-auto max-w-[800px] text-balance`}>
+            {t.rich("bodyD", irissRichBody)}
+          </p>
         </div>
       </div>
 
