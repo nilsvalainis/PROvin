@@ -39,6 +39,10 @@ const iconClass =
 const pillarRowClass =
   "provin-lift-subtle flex min-h-0 gap-3 rounded-xl border-0 bg-transparent p-3.5 text-left shadow-[0_2px_22px_rgba(15,23,42,0.055)] sm:gap-3.5 sm:p-4";
 
+/** Tās pašas ķermeņa īpašības kā kartīšu aprakstu rindkopām — piezīmei zem režģa. */
+const gridCardBodyClass =
+  "text-[12px] font-normal leading-relaxed text-[#86868b] sm:text-[13px] sm:leading-relaxed";
+
 export async function PricingIncluded() {
   const t = await getTranslations("Pricing");
   const locale = await getLocale();
@@ -60,9 +64,7 @@ export async function PricingIncluded() {
                   <h3 className="text-[15px] font-medium leading-snug tracking-tight text-[#1d1d1f] sm:text-[16px]">
                     {item.title}
                   </h3>
-                  <p className="mt-1 text-[12px] font-normal leading-relaxed text-[#86868b] sm:text-[13px] sm:leading-relaxed">
-                    {item.body}
-                  </p>
+                  <p className={`mt-1 ${gridCardBodyClass}`}>{item.body}</p>
                   {item.href ? (
                     <p className="mt-2 text-[11px] font-medium text-provin-accent sm:text-[12px]">
                       {t("irissLink")} <span aria-hidden>↓</span>
@@ -90,6 +92,7 @@ export async function PricingIncluded() {
             );
           })}
         </ul>
+        <p className={`mt-6 text-left ${gridCardBodyClass}`}>{t("workManufacturersNote")}</p>
       </div>
     </section>
   );
