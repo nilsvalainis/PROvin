@@ -1,7 +1,7 @@
 import { Faq } from "@/components/Faq";
 import { FinalCta } from "@/components/FinalCta";
 import { HomePageMotionShell } from "@/components/home/HomePageMotionShell";
-import { Hero } from "@/components/Hero";
+import { MarketingHero } from "@/components/home/MarketingHero";
 import { HeroVisual } from "@/components/HeroVisual";
 import { HowItWorks } from "@/components/HowItWorks";
 import { homeFlowModuleGradientClass } from "@/lib/home-layout";
@@ -19,7 +19,9 @@ export default async function HomePage({
 
   return (
     <HomePageMotionShell>
-      <div className="relative overflow-hidden">
+      <MarketingHero />
+
+      <div id="site-content" className="relative overflow-hidden scroll-mt-14 bg-white text-[var(--color-apple-text)]">
         <div className="pointer-events-none absolute inset-0 z-0">
           <HeroVisual />
         </div>
@@ -35,8 +37,7 @@ export default async function HomePage({
               className={`pointer-events-none absolute inset-0 z-0 ${homeFlowModuleGradientClass}`}
               aria-hidden
             />
-            <div className="relative z-10">
-              <Hero />
+            <div className="relative z-10 pt-10 sm:pt-14 md:pt-16">
               <HowItWorks />
               <FinalCta cancelled={cancelled} />
             </div>

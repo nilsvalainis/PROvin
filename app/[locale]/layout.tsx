@@ -13,7 +13,7 @@ import { routing } from "@/i18n/routing";
 type Props = { children: ReactNode; params: Promise<{ locale: string }> };
 
 export const viewport: Viewport = {
-  themeColor: "#0066d6",
+  themeColor: "#050505",
   width: "device-width",
   initialScale: 1,
   /** iPhone / Android ar izcirtumu — lai `env(safe-area-inset-*)` strādā */

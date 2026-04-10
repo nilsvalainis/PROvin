@@ -6,11 +6,17 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 
 /**
- * Maigs ritinājums (Lenis). Lieto visā lapā zem Header.
+ * Maigs inerciālais ritinājums (Lenis) — visā publiskajā lapā zem Header.
  */
 export function LenisProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
-    const lenis = new Lenis({ autoRaf: true });
+    const lenis = new Lenis({
+      autoRaf: true,
+      lerp: 0.085,
+      wheelMultiplier: 0.92,
+      touchMultiplier: 1.05,
+      smoothWheel: true,
+    });
     return () => {
       lenis.destroy();
     };

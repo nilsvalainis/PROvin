@@ -124,6 +124,32 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
 }
 
+/* Tumšā Hero — smalks grauds (CSS/SVG, bez attēla failiem) */
+.provin-noise-dark {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='nd'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23nd)' opacity='0.055'/%3E%3C/svg%3E");
+}
+
+@keyframes provin-scroll-hint-y {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(8px);
+  }
+}
+
+.provin-scroll-hint {
+  transform: translateX(-50%);
+  animation: provin-scroll-hint-y 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .provin-scroll-hint {
+    animation: none;
+  }
+}
+
 /* Admin UI mainīgie (noklusējums — gaišs; tumšais ar .admin-order-page.dark) */
 :root {
   --admin-field-bg: #ffffff;
