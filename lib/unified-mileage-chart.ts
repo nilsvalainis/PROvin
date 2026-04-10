@@ -4,7 +4,9 @@
 
 import { sortMileageChronological, parseOdometerKm, type UnifiedMileageRow } from "@/lib/unified-mileage";
 
-const PDF_MILEAGE_CHART_LINE = "#0061D2";
+import { PDF_BRAND_BLUE_HEX } from "@/lib/client-report-pdf-layout-draft";
+
+const PDF_MILEAGE_CHART_LINE = PDF_BRAND_BLUE_HEX;
 const PDF_MILEAGE_CHART_GRID = "#e8eaed";
 const PDF_MILEAGE_CHART_AXIS = "#9ca3af";
 

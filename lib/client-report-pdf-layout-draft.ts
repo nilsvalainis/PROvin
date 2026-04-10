@@ -58,19 +58,22 @@ export function pdfLayoutDraftExtraCss(): string {
         font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;
       }
       .pdf-surface-card{
-        margin:0 0 16px;padding:14px 16px;border:0;border-radius:14px;
-        background:#fff;box-shadow:0 4px 20px rgba(15,23,42,.07);
+        margin:0 0 14px;padding:12px 14px;border:1px solid #f1f5f9;border-radius:8px;
+        background:#fff;box-shadow:0 1px 4px rgba(15,23,42,.05);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-v1-panel.pdf-v1-panel--clean{
-        margin:0 0 16px;padding:14px 16px;border:0;border-radius:14px;
-        background:#fff;box-shadow:0 4px 20px rgba(15,23,42,.07);
+        margin:0 0 14px;padding:12px 14px;border:1px solid #f1f5f9;border-radius:8px;
+        background:#fff;box-shadow:0 1px 4px rgba(15,23,42,.05);
       }
-      .pdf-v1-panel-head{display:flex;align-items:center;gap:10px;margin:0 0 6px;flex-wrap:wrap}
+      .pdf-v1-panel-head{
+        display:flex;align-items:center;gap:10px;margin:0 0 8px;flex-wrap:wrap;
+        padding:0 0 0 10px;border-left:2px solid ${PDF_BRAND_BLUE_HEX};
+      }
       .pdf-v1-panel-ico-wrap{flex-shrink:0}
       .pdf-v1-panel-ico-wrap .pdf-ico{width:16px;height:16px}
       .pdf-v1-notes-client-wrap{
-        margin:0;padding:10px 12px;border-radius:12px;background:#F6FFF8;
+        margin:0;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;background:#fafafa;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-v1-notes-body{font-style:italic;color:#000;line-height:1.45}

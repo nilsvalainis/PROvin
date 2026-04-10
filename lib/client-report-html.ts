@@ -693,6 +693,7 @@ export function getClientReportPrintCss(): string {
 
 function clientReportPrintCss(): string {
   return `
+      @page{margin:0;size:auto;}
       *{box-sizing:border-box;}
       html,body,.provin-report-doc{font-family:Inter,sans-serif!important;}
       .provin-report-doc .pdf-vin,.provin-report-doc code,.provin-report-doc kbd,.provin-report-doc samp,.provin-report-doc tt{
@@ -706,8 +707,17 @@ function clientReportPrintCss(): string {
         margin:0 auto;
         padding:10mm 12mm;
         color:#0f172a;
-        background:#fff;
+        background:#fff!important;
         -webkit-font-smoothing:antialiased;
+      }
+      .provin-report-doc .pdf-v1-panel--clean,
+      .provin-report-doc .pdf-unified-mileage-zone,
+      .provin-report-doc .pdf-unified-incidents-zone,
+      .provin-report-doc .pdf-provin-sources-wrap,
+      .provin-report-doc .pdf-alert-banners-stack{
+        break-inside:avoid;
+        page-break-inside:avoid;
+        -webkit-column-break-inside:avoid;
       }
       .sheet{background:#fff;padding:0;}
       .pdf-sec-head{display:flex;align-items:center;gap:8px;margin:0.75rem 0 0.35rem;}
@@ -743,9 +753,9 @@ function clientReportPrintCss(): string {
         margin:0 0 8px;padding:8px 0;background:#fff;border-bottom:1px solid #f1f5f9;
       }
       .pdf-listing-history-frame{
-        border:1px solid rgba(0,0,0,0.06);
-        border-radius:8px;
-        background:rgba(15,23,42,0.015);
+        border:1px solid #f1f5f9;
+        border-radius:6px;
+        background:#fff;
         padding:10px 10px;
       }
       .pdf-listing-analysis-chunk:last-child{margin-bottom:0;border-bottom:none;}
@@ -761,7 +771,7 @@ function clientReportPrintCss(): string {
       }
       .pdf-avotu-comment-island-body{font-style:italic;margin:0;}
       .pdf-citi-avoti-plain .pdf-avotu-comment-island-body{font-style:normal;}
-      .pdf-unified-mileage-zone{margin:0 0 18px;padding:16px 18px;}
+      .pdf-unified-mileage-zone{margin:0 0 14px;padding:12px 14px;background:#fff!important;border:1px solid #f1f5f9;border-radius:8px;box-shadow:0 1px 4px rgba(15,23,42,.05);}
       .pdf-unified-mileage-zone .pdf-sec-head{margin-top:0;}
       .pdf-provin-sources-wrap{margin:0 0 18px;}
       .pdf-v1-panel-title--provin-sources{
@@ -772,11 +782,11 @@ function clientReportPrintCss(): string {
         line-height:1.3;
       }
       .pdf-listing-analysis-root.pdf-surface-card{
-        border:1px solid #f1f5f9;
-        box-shadow:0 2px 12px rgba(15,23,42,.05);
+        border:1px solid #f1f5f9;border-radius:8px;
+        box-shadow:0 1px 4px rgba(15,23,42,.05);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-unified-incidents-zone{margin:0 0 18px;padding:16px 18px;}
+      .pdf-unified-incidents-zone{margin:0 0 14px;padding:12px 14px;background:#fff!important;border:1px solid #f1f5f9;border-radius:8px;box-shadow:0 1px 4px rgba(15,23,42,.05);}
       .pdf-unified-incidents-zone .pdf-sec-head{margin-top:0;}
       .pdf-mileage-dual{
         display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;align-items:start;margin:8px 0 0;
@@ -786,7 +796,7 @@ function clientReportPrintCss(): string {
         margin:10px 0 0;font-size:0.62rem;color:#64748b;line-height:1.4;font-style:italic;
       }
       .pdf-mileage-history-table-wrap{
-        width:100%;margin:6px 0 0;border-radius:8px;overflow:hidden;
+        width:100%;margin:6px 0 0;border-radius:6px;overflow:hidden;border:1px solid #f1f5f9;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-mileage-history-table{
@@ -856,15 +866,15 @@ function clientReportPrintCss(): string {
         color:#374151!important;
       }
       .pdf-mileage-chart-wrap{
-        margin:0 0 10px;padding:8px 10px 4px;border-radius:12px;border:0;background:#fff;
-        box-shadow:0 1px 0 rgba(15,23,42,.06) inset;
+        margin:0 0 10px;padding:8px 10px 4px;border-radius:8px;border:1px solid #f1f5f9;background:#fff;
+        box-shadow:0 1px 3px rgba(15,23,42,.04);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-mileage-chart-wrap--compact .pdf-mileage-chart-svg{max-height:120px;}
       .pdf-mileage-chart-svg{display:block;width:100%;max-width:480px;height:auto;margin:0 auto;}
       .pdf-mileage-chart-grid{stroke:${PDF_MILEAGE_CHART_GRID};stroke-width:1;fill:none;}
       .pdf-mileage-chart-path{
-        stroke:${PDF_MILEAGE_CHART_LINE};stroke-width:2.25;fill:none;stroke-linecap:round;stroke-linejoin:round;
+        stroke:${PDF_MILEAGE_CHART_LINE};stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round;
       }
       .pdf-mileage-chart-dot{
         fill:#fff;stroke:${PDF_MILEAGE_CHART_LINE};stroke-width:1.75;
@@ -997,16 +1007,33 @@ function clientReportPrintCss(): string {
       .pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;font-size:0.72rem;background:transparent;padding:0;}
       .pdf-flag-num{font-weight:600;}
       @media print{
-        body{padding:8mm 10mm;}
+        @page{margin:0;size:auto;}
+        html,body{
+          margin:0!important;
+          padding:10mm 11mm!important;
+          background:#fff!important;
+          -webkit-print-color-adjust:exact!important;
+          print-color-adjust:exact!important;
+          color-adjust:exact!important;
+        }
+        body{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
         .no-print{display:none!important;}
-        .pdf-mileage-chart-wrap{break-inside:avoid-page;}
-        .pdf-mileage-history-table-wrap{break-inside:avoid-page;}
-        .pdf-listing-analysis-root{break-inside:avoid-page;}
-        .pdf-iriss-approved{break-inside:avoid-page;}
-        .pdf-alert-banners-stack{break-inside:avoid-page;}
-        .pdf-provin-sources-wrap{break-inside:avoid-page;}
+        thead{display:table-header-group;}
+        tfoot{display:table-footer-group;}
+        .pdf-v1-panel--clean,.pdf-unified-mileage-zone,.pdf-unified-incidents-zone,.pdf-provin-sources-wrap,.pdf-alert-banners-stack,.pdf-mileage-chart-wrap,.pdf-mileage-history-table-wrap,.pdf-listing-analysis-root,.pdf-iriss-approved,.mirror-block.pdf-surface-card{
+          break-inside:avoid-page!important;
+          page-break-inside:avoid!important;
+        }
       }
-    ` + pdfLayoutDraftExtraCss();
+    ` +
+    pdfLayoutDraftExtraCss() +
+    `
+      .provin-report-doc .pdf-unified-mileage-zone.pdf-surface-card,
+      .provin-report-doc .pdf-unified-incidents-zone.pdf-surface-card{
+        margin:0 0 14px!important;padding:12px 14px!important;border:1px solid #f1f5f9!important;border-radius:8px!important;
+        background:#fff!important;box-shadow:0 1px 4px rgba(15,23,42,.05)!important;
+      }
+    `;
 }
 
 export function buildClientReportDocumentHtml(args: {
@@ -1123,11 +1150,13 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(buildPdfFooterCtaHtml());
   lines.push("</div>");
 
-  const title = `PROVIN ${p.vin ?? p.sessionId}`;
+  const vinForFile = (p.vin?.trim().replace(/[^A-Za-z0-9]/g, "_") || "nav_VIN").slice(0, 48);
+  const docTitle = `Atskaite_${vinForFile}.pdf`;
   const html = `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/>
+<meta name="color-scheme" content="light"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<title>${escapeHtml(title)}</title><style>${clientReportPrintCss()}</style></head><body class="provin-report-doc">${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
+<title>${escapeHtml(docTitle)}</title><style>${clientReportPrintCss()}</style></head><body class="provin-report-doc">${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
   return html;
 }

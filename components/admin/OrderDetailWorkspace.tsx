@@ -934,6 +934,23 @@ export function OrderDetailWorkspace({
     w.document.open();
     w.document.write(html);
     w.document.close();
+
+    const vinSlug = (payload.vin?.trim().replace(/[^A-Za-z0-9]/g, "_") || "nav_VIN").slice(0, 48);
+    const printTitle = `Atskaite_${vinSlug}.pdf`;
+    let printed = false;
+    const schedulePrint = () => {
+      if (printed) return;
+      printed = true;
+      try {
+        w.document.title = printTitle;
+        w.focus();
+        w.print();
+      } catch {
+        printed = false;
+      }
+    };
+    w.addEventListener("load", () => window.setTimeout(schedulePrint, 450), { once: true });
+    window.setTimeout(schedulePrint, 900);
   };
 
   const previewBody = (
