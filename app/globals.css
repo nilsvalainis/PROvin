@@ -89,6 +89,15 @@ body {
     background-color: var(--color-provin-accent-hover);
   }
 
+  .provin-btn.home-hero-cta-liquid:hover {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.07),
+      0 14px 52px rgba(0, 102, 255, 0.44),
+      0 0 88px rgba(0, 102, 255, 0.26),
+      0 0 140px rgba(0, 102, 255, 0.16),
+      0 0 200px rgba(0, 102, 255, 0.1);
+  }
+
   .provin-btn-ghost:hover {
     border-color: rgba(15, 23, 42, 0.14);
     background-color: #f5f5f7;
@@ -152,6 +161,121 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='hg'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23hg)' opacity='0.2'/%3E%3C/svg%3E");
   background-size: 130px 130px;
   opacity: 0.08;
+}
+
+/* VARIANT 3 — Liquid titanium: Hero šķidrie sudraba / zilie slāņi (--liquid-t no JS, 0…1) */
+.home-hero-liquid-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(72px);
+  pointer-events: none;
+  will-change: transform;
+  opacity: 0.38;
+}
+
+.home-hero-liquid-blob-1 {
+  width: min(148vw, 76rem);
+  height: min(125vh, 54rem);
+  left: -20%;
+  top: -18%;
+  background: radial-gradient(
+    closest-side,
+    rgba(238, 242, 248, 0.55) 0%,
+    rgba(188, 198, 214, 0.22) 38%,
+    rgba(90, 98, 112, 0) 72%
+  );
+  transform: translate3d(
+    calc(-6% + (var(--liquid-t, 0.35) * 24%)),
+    calc(2% + (var(--liquid-t, 0.35) * 16%)),
+    0
+  );
+}
+
+.home-hero-liquid-blob-2 {
+  width: min(120vw, 58rem);
+  height: min(100vh, 44rem);
+  right: -24%;
+  top: -8%;
+  background: radial-gradient(
+    closest-side,
+    rgba(0, 120, 255, 0.42) 0%,
+    rgba(0, 72, 168, 0.16) 45%,
+    transparent 70%
+  );
+  mix-blend-mode: soft-light;
+  opacity: 0.48;
+  transform: translate3d(
+    calc(4% - (var(--liquid-t, 0.35) * 28%)),
+    calc(8% + (var(--liquid-t, 0.35) * 20%)),
+    0
+  );
+}
+
+.home-hero-liquid-blob-3 {
+  width: min(100vw, 48rem);
+  height: min(85vh, 36rem);
+  left: 18%;
+  bottom: -30%;
+  background: radial-gradient(
+    closest-side,
+    rgba(210, 218, 230, 0.35) 0%,
+    rgba(120, 132, 152, 0.12) 50%,
+    transparent 72%
+  );
+  opacity: 0.32;
+  transform: translate3d(
+    calc(var(--liquid-t, 0.35) * -18%),
+    calc(-4% - var(--liquid-t, 0.35) * 12%),
+    0
+  );
+}
+
+.home-hero-liquid-blob-4 {
+  width: min(88vw, 40rem);
+  height: min(70vh, 30rem);
+  right: 8%;
+  bottom: -22%;
+  background: radial-gradient(
+    closest-side,
+    rgba(0, 90, 210, 0.28) 0%,
+    rgba(40, 70, 120, 0.08) 55%,
+    transparent 75%
+  );
+  mix-blend-mode: plus-lighter;
+  opacity: 0.22;
+  transform: translate3d(
+    calc(10% + (var(--liquid-t, 0.35) * 14%)),
+    calc(-6% + (var(--liquid-t, 0.35) * 22%)),
+    0
+  );
+}
+
+@supports not (mix-blend-mode: plus-lighter) {
+  .home-hero-liquid-blob-4 {
+    mix-blend-mode: screen;
+    opacity: 0.14;
+  }
+}
+
+.home-hero-liquid-veil {
+  background: radial-gradient(ellipse 92% 85% at 50% 42%, transparent 32%, rgba(5, 5, 5, 0.55) 100%);
+  pointer-events: none;
+}
+
+.home-hero-cta-liquid {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 12px 48px rgba(0, 102, 255, 0.36),
+    0 0 72px rgba(0, 102, 255, 0.22),
+    0 0 120px rgba(0, 102, 255, 0.14),
+    0 0 160px rgba(0, 102, 255, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-liquid-blob {
+    transform: none !important;
+    will-change: auto;
+  }
 }
 
 /**
