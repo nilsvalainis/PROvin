@@ -72,8 +72,13 @@ export function IrissStaggerShell({
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReduceMotion(mq.matches);
     const onMq = () => setReduceMotion(mq.matches);
-    mq.addEventListener("change", onMq);
-    return () => mq.removeEventListener("change", onMq);
+    /* Safari < 14: tikai addListener/removeListener */
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", onMq);
+      return () => mq.removeEventListener("change", onMq);
+    }
+    mq.addListener(onMq);
+    return () => mq.removeListener(onMq);
   }, []);
 
   useLayoutEffect(() => {
@@ -93,17 +98,36 @@ export function IrissStaggerShell({
     };
 
     measure();
-    const ro = new ResizeObserver(() => measure());
-    ro.observe(el);
-    return () => ro.disconnect();
+    if (typeof ResizeObserver === "undefined") {
+      return () => {};
+    }
+    let ro: ResizeObserver | null = null;
+    try {
+      ro = new ResizeObserver(() => measure());
+      ro.observe(el);
+    } catch {
+      return () => {};
+    }
+    return () => ro?.disconnect();
   }, []);
 
   useLayoutEffect(() => {
     const p = pathMainRef.current;
     if (!p || !pathD || !dims) return;
 
-    const len = p.getTotalLength();
-    if (!Number.isFinite(len) || len < 8) return;
+    let len = 0;
+    try {
+      len = p.getTotalLength();
+    } catch {
+      pathLenRef.current = 0;
+      setTicks([]);
+      return;
+    }
+    if (!Number.isFinite(len) || len < 8) {
+      pathLenRef.current = 0;
+      setTicks([]);
+      return;
+    }
 
     pathLenRef.current = len;
 
@@ -115,7 +139,12 @@ export function IrissStaggerShell({
       node.style.strokeDasharray = dash;
     });
 
-    const sampled = sampleThreadTicks(p, dims.w, dims.h);
+    let sampled: ThreadTick[] = [];
+    try {
+      sampled = sampleThreadTicks(p, dims.w, dims.h);
+    } catch {
+      sampled = [];
+    }
     setTicks(sampled);
 
     if (reduceMotion) {
@@ -153,25 +182,32 @@ export function IrissStaggerShell({
 
   useEffect(() => {
     const root = sectionRef.current;
-    if (!root || reduceMotion) return;
+    if (!root || reduceMotion || typeof IntersectionObserver === "undefined") return;
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          const idx = Number((e.target as HTMLElement).dataset.irissIndex);
-          if (!Number.isFinite(idx) || idx < 0 || idx > 2) continue;
-          if (e.isIntersecting) {
-            setReveal((prev) => {
-              if (prev[idx]) return prev;
-              const next = [...prev];
-              next[idx] = true;
-              return next;
-            });
+    let io: IntersectionObserver | null = null;
+    try {
+      io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            const raw = (e.target as HTMLElement).getAttribute("data-iriss-index");
+            const idx = raw == null ? NaN : Number(raw);
+            if (!Number.isFinite(idx) || idx < 0 || idx > 2) continue;
+            if (e.isIntersecting) {
+              setReveal((prev) => {
+                if (prev[idx]) return prev;
+                const next = [...prev];
+                next[idx] = true;
+                return next;
+              });
+            }
           }
-        }
-      },
-      { root: null, rootMargin: "0px 0px -6% 0px", threshold: [0, 0.12, 0.22] },
-    );
+        },
+        { root: null, rootMargin: "0px 0px -6% 0px", threshold: [0, 0.12, 0.22] },
+      );
+    } catch {
+      return;
+    }
+    if (!io) return;
 
     root.querySelectorAll("[data-iriss-index]").forEach((el) => io.observe(el));
     return () => io.disconnect();
