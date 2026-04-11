@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
+import { HomeSpeedometerBackground } from "@/components/home/HomeSpeedometerBackground";
 import { ViewportCornerMarks } from "@/components/home/ViewportCornerMarks";
 
 type HomeScrollSurfaceProps = {
@@ -19,6 +20,8 @@ export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProp
       <div className="pointer-events-none fixed inset-0 z-[2] home-deep-canvas-glow" aria-hidden />
 
       <div className="pointer-events-none fixed inset-0 z-[3] home-canvas-banding-dither" aria-hidden />
+
+      <HomeSpeedometerBackground />
 
       {wireframe}
 

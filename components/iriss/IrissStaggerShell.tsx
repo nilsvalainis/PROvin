@@ -69,6 +69,7 @@ export function IrissStaggerShell({
   }, [dims]);
 
   useLayoutEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReduceMotion(mq.matches);
     const onMq = () => setReduceMotion(mq.matches);
@@ -91,31 +92,38 @@ export function IrissStaggerShell({
     const el = sectionRef.current;
     if (!el) return;
 
-    const measure = () => {
+    let ro: ResizeObserver | null = null;
+    let raf = 0;
+
+    const flush = () => {
+      raf = 0;
+      /* Tikai offsetHeight — max(offset,scroll) + RO var izsaukt setState katru kadru un „Maximum update depth”. */
       const w = Math.max(32, Math.round(el.offsetWidth));
-      const oh = Math.round(el.offsetHeight);
-      const sh = Math.round(el.scrollHeight);
-      /* offsetHeight reizēm ir zemāks, kamēr layout/opacity vēl „krīt”; scrollHeight saturam jāatbilst. */
-      const h = Math.max(100, Math.max(oh, sh));
+      const h = Math.max(100, Math.round(el.offsetHeight));
       setDims((prev) => (prev && prev.w === w && prev.h === h ? prev : { w, h }));
     };
 
-    measure();
-    requestAnimationFrame(() => {
-      measure();
-      requestAnimationFrame(measure);
-    });
-    if (typeof ResizeObserver === "undefined") {
-      return () => {};
+    const schedule = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(flush);
+    };
+
+    schedule();
+    requestAnimationFrame(schedule);
+
+    if (typeof ResizeObserver !== "undefined") {
+      try {
+        ro = new ResizeObserver(schedule);
+        ro.observe(el);
+      } catch {
+        /* ResizeObserver dažos režīmos var mest */
+      }
     }
-    let ro: ResizeObserver | null = null;
-    try {
-      ro = new ResizeObserver(() => measure());
-      ro.observe(el);
-    } catch {
-      return () => {};
-    }
-    return () => ro?.disconnect();
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      ro?.disconnect();
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -233,12 +241,15 @@ export function IrissStaggerShell({
     const obs = io;
     root.querySelectorAll("[data-iriss-index]").forEach((el) => obs.observe(el));
 
-    const t = window.setTimeout(() => {
-      setReveal((prev) => (prev.every(Boolean) ? prev : [true, true, true]));
-    }, 2800);
+    let revealTimer: number | undefined;
+    if (typeof window !== "undefined") {
+      revealTimer = window.setTimeout(() => {
+        setReveal((prev) => (prev.every(Boolean) ? prev : [true, true, true]));
+      }, 2800);
+    }
 
     return () => {
-      window.clearTimeout(t);
+      if (revealTimer !== undefined) window.clearTimeout(revealTimer);
       obs.disconnect();
     };
   }, [reduceMotion]);
