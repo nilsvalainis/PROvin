@@ -8,9 +8,9 @@ import { orderSectionHref } from "@/lib/paths";
 
 const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
 
-/** Stikla karte — garena taisnstūra forma: režģa platums 2×, augstums ~0.7× iepriekšējā. */
+/** Stikla karte — garena taisnstūra; augstums −20%, režģa platums +10% (konteineris). */
 const PILLAR_GLASS =
-  "flex min-h-[5rem] w-full max-w-none flex-col justify-center rounded-lg border border-white/12 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-[36px] sm:min-h-[6.875rem]";
+  "flex min-h-[4rem] w-full max-w-none flex-col justify-center rounded-lg border border-white/12 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-[36px] sm:min-h-[5.5rem]";
 
 type HeroPillar = { ref: string; title: string; body: string };
 
@@ -50,14 +50,14 @@ export function MarketingHero() {
             {t("h2")}
           </p>
 
-          {/* 2×2 garenas kartes: režģa platums 2× iepriekšējam, augstums −30% */}
+          {/* 2×2 garenas kartes: režģa platums +10%, bloku min-augstums −20% */}
           <div className="flex w-full justify-center">
-            <div className="grid w-full max-w-full grid-cols-2 justify-items-stretch gap-x-2 gap-y-2 sm:max-w-[min(100%,37rem)] sm:gap-x-3 sm:gap-y-2.5 md:max-w-[min(100%,40.5rem)]">
+            <div className="grid w-full max-w-full grid-cols-2 justify-items-stretch gap-x-2 gap-y-2 sm:max-w-[min(100%,40.7rem)] sm:gap-x-3 sm:gap-y-2.5 md:max-w-[min(100%,44.55rem)]">
               {pillars.map((p, i) => {
                 const Icon = PILLAR_ICONS[i] ?? FileText;
                 return (
                   <article key={`${p.title}-${i}`} className={PILLAR_GLASS}>
-                    <div className="flex h-full min-h-0 w-full flex-row items-start gap-2 px-2 py-2.5 text-left sm:items-center sm:gap-3.5 sm:px-[1.125rem] sm:py-3 md:gap-[1.125rem] md:px-6 md:py-4">
+                    <div className="flex h-full min-h-0 w-full flex-row items-start gap-2 px-2 py-2 text-left sm:items-center sm:gap-3.5 sm:px-5 sm:py-2.5 md:px-6 md:py-3">
                       <Icon
                         className="mt-0.5 h-7 w-7 shrink-0 text-[#0066ff] sm:mt-0 sm:h-[1.875rem] sm:w-[1.875rem] md:h-[2.25rem] md:w-[2.25rem]"
                         strokeWidth={1.5}
