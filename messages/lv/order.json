@@ -2,8 +2,6 @@
   "Order": {
     "metaTitle": "Pasūtīt analīzi",
     "scrollToFormAria": "Pāriet uz pasūtījuma formu",
-    "sheetTitle": "Pasūtījuma specifikācija",
-    "sheetSubtitle": "Norādi VIN, tiešu sludinājuma saiti un saziņas datus. Pēc apmaksas uzsākam analīzi.",
     "cancelled": "Apmaksa tika atcelta. Vari aizpildīt formu vēlreiz.",
     "footnote": "",
     "nameLabel": "Vārds / uzvārds",
