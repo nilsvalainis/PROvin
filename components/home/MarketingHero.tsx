@@ -28,29 +28,32 @@ export function MarketingHero() {
   return (
     <section
       id="home-hero"
-      className="relative flex min-h-[100dvh] min-h-[100svh] flex-col justify-center overflow-x-hidden bg-[#050505] px-4 pb-[max(5.5rem,calc(3.5rem+env(safe-area-inset-bottom,0px)))] pt-[max(1.5rem,env(safe-area-inset-top,0px)+1.25rem)] text-white sm:px-8 sm:pb-20 sm:pt-[max(2.25rem,env(safe-area-inset-top,0px)+1.75rem)]"
+      className="home-content-atmosphere relative flex min-h-[100dvh] min-h-[100svh] flex-col justify-center overflow-x-hidden px-4 pb-[max(5.5rem,calc(3.5rem+env(safe-area-inset-bottom,0px)))] pt-[max(1.5rem,env(safe-area-inset-top,0px)+1.25rem)] text-white sm:px-8 sm:pb-20 sm:pt-[max(2.25rem,env(safe-area-inset-top,0px)+1.75rem)]"
       aria-labelledby="marketing-hero-title"
     >
+      <div className="home-content-atmosphere__base" aria-hidden />
+      <div className="home-content-atmosphere__glow" aria-hidden />
+
       <div className="relative z-10 mx-auto flex w-full max-w-[min(100%,53.76rem)] flex-col items-center">
         <header className="relative z-20 flex w-full shrink-0 flex-col items-center gap-5 text-center sm:gap-7 md:gap-8">
-          <p className={`${approvedByIrissSignatureHeroClass} text-white/70`} aria-label={t("approved")}>
+          <p className={`${approvedByIrissSignatureHeroClass} text-[#a0a0a0]`} aria-label={t("approved")}>
             {t("approved")}
           </p>
 
           <h1
             id="marketing-hero-title"
-            className="w-full text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]"
+            className="w-full text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-[#f0f0f0] max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]"
           >
             <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
               <span className={heroH1BlueKeywordClass}>{t("h1Vin")}</span>
-              <span className="text-white">{t("h1Un")}</span>
+              <span className="text-[#f0f0f0]">{t("h1Un")}</span>
               <span className={heroH1BlueKeywordClass}>{t("h1Sludinajuma")}</span>
             </span>
-            <span className="mt-0.5 block text-white sm:mt-1">{t("h1Line2")}</span>
+            <span className="mt-0.5 block text-[#f0f0f0] sm:mt-1">{t("h1Line2")}</span>
           </h1>
 
           <p
-            className={`${approvedByIrissSignatureHeroClass} max-w-[min(100%,52ch)] text-balance tracking-[-0.02em] text-white/70`}
+            className={`${approvedByIrissSignatureHeroClass} max-w-[min(100%,52ch)] text-balance tracking-[-0.02em] text-[#a0a0a0]`}
           >
             {t("h2")}
           </p>
@@ -75,11 +78,11 @@ export function MarketingHero() {
                       aria-hidden
                     />
                     <div className="flex min-w-0 flex-col items-center gap-2">
-                      <h3 className="text-balance text-[11px] font-semibold uppercase leading-snug tracking-tight text-[#e5e7eb] sm:text-[13px] md:text-[14px]">
+                      <h3 className="text-balance text-[11px] font-semibold uppercase leading-snug tracking-tight text-[#f0f0f0] sm:text-[13px] md:text-[14px]">
                         {p.title}
                       </h3>
                       {p.body ? (
-                        <p className="text-balance text-[10px] font-light leading-snug text-[#e5e7eb]/72 sm:text-[12px] sm:leading-relaxed md:text-[13px]">
+                        <p className="text-balance text-[10px] font-light leading-snug text-[#a0a0a0] sm:text-[12px] sm:leading-relaxed md:text-[13px]">
                           {p.body}
                         </p>
                       ) : null}
@@ -107,7 +110,7 @@ export function MarketingHero() {
       <a
         href="#site-content"
         aria-label={t("scrollToPricingAria")}
-        className="absolute bottom-[max(0.375rem,env(safe-area-inset-bottom,0px))] left-1/2 z-30 flex w-[min(100%,calc(100vw-1.5rem))] max-w-[22rem] min-h-[44px] -translate-x-1/2 touch-manipulation flex-col items-center justify-center gap-1 rounded-full px-3 py-2 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-white/45 transition-colors hover:text-white/70 active:bg-white/[0.06] active:text-white/55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/40 sm:bottom-5 sm:min-h-[2.75rem] sm:w-max sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
+        className="absolute bottom-[max(0.375rem,env(safe-area-inset-bottom,0px))] left-1/2 z-30 flex w-[min(100%,calc(100vw-1.5rem))] max-w-[22rem] min-h-[44px] -translate-x-1/2 touch-manipulation flex-col items-center justify-center gap-1 rounded-full px-3 py-2 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-[#a0a0a0]/75 transition-colors hover:text-[#a0a0a0] active:bg-white/[0.06] active:text-[#a0a0a0]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/40 sm:bottom-5 sm:min-h-[2.75rem] sm:w-max sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
       >
         <span className="w-full text-balance text-center">{t("scrollToPricingAria")}</span>
         <ChevronDown className="mx-auto h-4 w-4 shrink-0 opacity-80" strokeWidth={2} aria-hidden />
