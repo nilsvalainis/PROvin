@@ -13,7 +13,7 @@ const stepIconClassDark =
   "h-[1.68rem] w-[1.68rem] shrink-0 text-zinc-500 transition-colors group-hover:text-[#0061D2] [stroke-width:1.5] max-[360px]:h-[1.4rem] max-[360px]:w-[1.4rem] sm:h-[2.3625rem] sm:w-[2.3625rem]";
 
 const stepIconClassSilver =
-  "h-[1.68rem] w-[1.68rem] shrink-0 text-[#050505] transition-opacity group-hover:opacity-80 [stroke-width:1.5] max-[360px]:h-[1.4rem] max-[360px]:w-[1.4rem] sm:h-[2.3625rem] sm:w-[2.3625rem]";
+  "h-[1.68rem] w-[1.68rem] shrink-0 text-[#0066ff] transition-opacity group-hover:opacity-90 [stroke-width:1.5] max-[360px]:h-[1.4rem] max-[360px]:w-[1.4rem] sm:h-[2.3625rem] sm:w-[2.3625rem]";
 
 export function HowItWorksClient({
   steps,

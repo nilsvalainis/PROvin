@@ -230,11 +230,6 @@ header .home-body-ink {
   transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Pasūtījuma forma (Hero variants) — viegls stikls; apmales no Tailwind */
-.order-form-hero-shell {
-  background-color: rgba(255, 255, 255, 0.04);
-}
-
 .home-muted-foreground {
   color: color-mix(in oklab, #d4d4d8 calc((1 - var(--home-surface-t)) * 100%), #52525b);
   transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);

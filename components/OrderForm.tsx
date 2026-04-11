@@ -91,9 +91,12 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
     }
   }
 
+  const formGlassHero =
+    "space-y-4 rounded-2xl border border-white/60 bg-white/40 p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.82),inset_0_-1px_0_rgba(15,23,42,0.08)] backdrop-blur-[30px] sm:p-6";
+
   const formShell =
     hero
-      ? `order-form-hero-shell space-y-4 rounded-[2px] border border-[#050505]/20 p-5 sm:p-6 ${className ?? ""}`
+      ? `${formGlassHero} ${className ?? ""}`
       : compact
         ? `mt-6 space-y-4 border-t border-black/[0.06] pt-6 ${className ?? ""}`
         : `provin-lift-strong mt-10 rounded-3xl border border-black/[0.06] bg-gradient-to-b from-[#f5f5f7] to-provin-surface-2 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.05)] sm:p-10 ${className ?? ""}`;
@@ -221,7 +224,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
       <div
         className={
           hero
-            ? "mt-5 space-y-3 border-t border-[#050505]/15 pt-4"
+            ? "mt-5 space-y-3 border-t border-white/35 pt-4"
             : compact
               ? "mt-4 flex flex-col gap-3"
               : "mt-8 flex flex-col gap-3 border-t border-black/[0.06] pt-8"
@@ -230,7 +233,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         {hero ? (
           <>
             <div
-              className="rounded-[2px] border border-[#050505]/25 bg-white/[0.04] px-4 py-3 sm:px-4"
+              className="rounded-xl border border-white/50 bg-white/30 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-md sm:px-4"
               role="group"
               aria-label={t("ariaSummary")}
             >
@@ -246,7 +249,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             </div>
             <label
               htmlFor="order-checkout-consent"
-              className="flex min-h-11 cursor-pointer items-start gap-3 rounded-[2px] border border-[#050505]/25 bg-white/[0.04] px-3 py-3 text-left sm:min-h-0 sm:px-4"
+              className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-white/50 bg-white/25 px-3 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-md sm:min-h-0 sm:px-4"
             >
               <input
                 id="order-checkout-consent"
@@ -254,7 +257,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 name="withdrawalConsent"
                 checked={withdrawalConsent}
                 onChange={(e) => setWithdrawalConsent(e.target.checked)}
-                className="mt-0.5 h-5 w-5 shrink-0 rounded border border-[#050505] bg-transparent accent-[#050505] focus:outline-none focus:ring-1 focus:ring-[#050505]/30 sm:h-4 sm:w-4"
+                className="mt-0.5 h-5 w-5 shrink-0 rounded border border-[#050505]/35 bg-transparent accent-[#0066ff] focus:outline-none focus:ring-1 focus:ring-[#0066ff]/35 sm:h-4 sm:w-4"
                 aria-label={t("checkoutConsentAria")}
               />
               <span className="text-[12px] font-normal leading-snug text-[#050505] sm:text-[13px]">
@@ -262,7 +265,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                   terms: (chunks) => (
                     <Link
                       href="/lietosanas-noteikumi"
-                      className="font-medium text-[#050505] underline decoration-[#050505]/35 underline-offset-2 transition hover:decoration-[#050505]/60"
+                      className="font-medium text-[#0066ff] underline decoration-[#0066ff]/35 underline-offset-2 transition hover:decoration-[#0066ff]/70"
                     >
                       {chunks}
                     </Link>
@@ -270,7 +273,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                   privacy: (chunks) => (
                     <Link
                       href="/privatuma-politika"
-                      className="font-medium text-[#050505] underline decoration-[#050505]/35 underline-offset-2 transition hover:decoration-[#050505]/60"
+                      className="font-medium text-[#0066ff] underline decoration-[#0066ff]/35 underline-offset-2 transition hover:decoration-[#0066ff]/70"
                     >
                       {chunks}
                     </Link>

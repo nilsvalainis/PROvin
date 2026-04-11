@@ -1,15 +1,38 @@
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import {
+  AlertTriangle,
+  Building2,
+  Globe2,
+  Headphones,
+  Scale,
+  ScanSearch,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { irissAnchorHref } from "@/lib/paths";
 import { homeSectionTitleSilverClass } from "@/lib/home-layout";
-import { BlueprintExplodedConnector } from "@/components/home/BlueprintExplodedConnector";
-import { BlueprintFourColumnRow, BlueprintGridCell } from "@/components/home/BlueprintSpecGrid";
+import { PREMIUM_GLASS_CARD } from "@/lib/premium-glass";
 
 type GridItem = {
   title: string;
   body: string;
   href?: boolean;
 };
+
+const GRID_LUCIDE_ICONS: LucideIcon[] = [
+  Globe2,
+  Building2,
+  Shield,
+  ScanSearch,
+  AlertTriangle,
+  Sparkles,
+  Scale,
+  Headphones,
+  ShieldCheck,
+];
 
 const PRICING_REFS = [
   "REF. 911-PR",
@@ -22,36 +45,16 @@ const PRICING_REFS = [
   "REF. 911-HD",
 ] as const;
 
-function PricingNodeBlock({
-  refTag,
-  title,
-  body,
-  columnIndex,
-  irissLink,
-}: {
-  refTag: string;
-  title: string;
-  body: string;
-  columnIndex: number;
-  irissLink?: string;
-}) {
-  const edge = columnIndex < 2 ? "left" : "right";
-  return (
-    <div className="flex w-full flex-col items-center">
-      <div className="flex max-w-[min(100%,30ch)] flex-col items-center text-center">
-        <p className="mb-[5px] font-mono text-[7px] font-medium uppercase tracking-[0.06em] text-[#050505]">{refTag}</p>
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#050505]">{title}</h3>
-        <p className="mt-1.5 text-[10px] font-normal leading-relaxed text-[#050505]/70">{body}</p>
-        {irissLink ? (
-          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.08em] text-[#050505]/70">
-            {irissLink} <span aria-hidden>↓</span>
-          </p>
-        ) : null}
-      </div>
-      <BlueprintExplodedConnector edge={edge} />
-    </div>
-  );
-}
+const CARD_SHIFT = [
+  "lg:z-[11]",
+  "lg:z-[12] lg:-mt-6 lg:translate-x-[-2%]",
+  "lg:z-[13] lg:-mt-6 lg:translate-x-[1%]",
+  "lg:z-[14] lg:-mt-6 lg:-translate-x-[1%]",
+  "lg:z-[15] lg:-mt-6 lg:translate-x-[2%]",
+  "lg:z-[16] lg:-mt-6 lg:-translate-x-[2%]",
+  "lg:z-[17] lg:-mt-6 lg:translate-x-[1%]",
+  "lg:z-[18] lg:-mt-6 lg:-translate-x-[3%]",
+] as const;
 
 export async function PricingIncluded() {
   const t = await getTranslations("Pricing");
@@ -60,73 +63,68 @@ export async function PricingIncluded() {
   const messages = await getMessages();
   const grid = (messages as { Pricing: { grid: GridItem[] } }).Pricing.grid;
 
-  const rowA = grid.slice(0, 4);
-  const rowB = grid.slice(4, 8);
-
   return (
     <section
       id="cena"
-      className="relative scroll-mt-16 bg-transparent px-5 pb-8 pt-6 text-[#050505] sm:px-6 sm:pb-10 sm:pt-8 md:pb-12 md:pt-10"
+      className="relative scroll-mt-16 bg-transparent px-4 pb-8 pt-6 text-[#050505] sm:px-6 sm:pb-10 sm:pt-8 md:pb-12 md:pt-10"
     >
-      <div className="relative mx-auto w-full max-w-[1200px]">
+      <div className="relative mx-auto w-full max-w-[1040px]">
         <h2 className={homeSectionTitleSilverClass}>{t("workTitle")}</h2>
 
-        <BlueprintFourColumnRow className="mt-8 sm:mt-10">
-          {rowA.map((item, i) => {
+        <ul className="relative isolate mt-8 flex list-none flex-col items-center gap-5 sm:mt-10 sm:gap-6 lg:mt-12 lg:min-h-[480px] lg:flex-row lg:flex-wrap lg:items-start lg:justify-center lg:gap-x-2 lg:gap-y-10">
+          {grid.map((item, i) => {
+            const Icon = GRID_LUCIDE_ICONS[i] ?? Globe2;
             const refTag = PRICING_REFS[i] ?? `REF. 911-${String(i + 1).padStart(2, "0")}`;
-            const cell = (
-              <PricingNodeBlock
-                refTag={refTag}
-                title={item.title}
-                body={item.body}
-                columnIndex={i}
-                irissLink={item.href ? t("irissLink") : undefined}
-              />
+            const shift = CARD_SHIFT[i] ?? "lg:z-10";
+
+            const inner = (
+              <div className="flex gap-3 sm:gap-3.5">
+                <div className="flex shrink-0 flex-col items-center gap-1 sm:items-start">
+                  <Icon className="h-8 w-8 shrink-0 text-[#0066ff] sm:h-9 sm:w-9" aria-hidden strokeWidth={1.25} />
+                  <span className="font-mono text-[7px] font-semibold uppercase tracking-[0.08em] text-[#050505]/80">
+                    {refTag}
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <h3 className="text-[14px] font-semibold leading-snug tracking-tight text-[#050505] sm:text-[15px]">
+                    {item.title}
+                  </h3>
+                  <p className="mt-1 text-[11px] font-normal leading-relaxed text-[#050505]/85 sm:text-[12px] sm:leading-relaxed">
+                    {item.body}
+                  </p>
+                  {item.href ? (
+                    <p className="mt-2 text-[11px] font-medium text-[#0066ff] sm:text-[12px]">
+                      {t("irissLink")} <span aria-hidden>↓</span>
+                    </p>
+                  ) : null}
+                </div>
+              </div>
             );
-            return (
-              <BlueprintGridCell key={item.title} columnIndex={i}>
-                {item.href ? (
+
+            const cardClass = `${PREMIUM_GLASS_CARD} w-full max-w-[20rem] px-4 py-3.5 sm:px-5 sm:py-4 max-lg:shadow-sm lg:relative lg:max-w-[15.75rem] ${shift}`;
+
+            if (item.href) {
+              return (
+                <li key={item.title} className="relative z-0 w-full max-w-[20rem] lg:w-auto">
                   <Link
                     href={irissHref}
-                    className="block w-full transition-opacity hover:opacity-80 focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#050505]/20"
+                    className={`${cardClass} block text-left transition hover:brightness-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066ff]/40`}
                   >
-                    {cell}
+                    {inner}
                   </Link>
-                ) : (
-                  cell
-                )}
-              </BlueprintGridCell>
+                </li>
+              );
+            }
+
+            return (
+              <li key={item.title} className={`relative z-0 w-full max-w-[20rem] lg:w-auto ${cardClass}`}>
+                {inner}
+              </li>
             );
           })}
-        </BlueprintFourColumnRow>
+        </ul>
 
-        {rowB.length > 0 ? (
-          <BlueprintFourColumnRow className="mt-14 border-t-[0.5px] border-black/[0.05] pt-14 sm:mt-16 sm:pt-16 lg:mt-20 lg:pt-20">
-            {rowB.map((item, i) => {
-              const idx = i + 4;
-              const refTag = PRICING_REFS[idx] ?? `REF. 911-${String(idx + 1).padStart(2, "0")}`;
-              const cell = (
-                <PricingNodeBlock refTag={refTag} title={item.title} body={item.body} columnIndex={i} />
-              );
-              return (
-                <BlueprintGridCell key={item.title} columnIndex={i}>
-                  {item.href ? (
-                    <Link
-                      href={irissHref}
-                      className="block w-full transition-opacity hover:opacity-80 focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#050505]/20"
-                    >
-                      {cell}
-                    </Link>
-                  ) : (
-                    cell
-                  )}
-                </BlueprintGridCell>
-              );
-            })}
-          </BlueprintFourColumnRow>
-        ) : null}
-
-        <p className="mt-10 max-w-[65ch] text-left text-[10px] font-normal leading-snug text-[#050505]/70 sm:mt-12">
+        <p className="mt-8 max-w-[65ch] text-left text-[11px] font-normal leading-snug text-[#050505]/88 sm:mt-10 sm:text-xs sm:leading-snug">
           {t("autoRecordsFootnote")}
         </p>
       </div>
