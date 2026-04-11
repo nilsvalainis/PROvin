@@ -22,6 +22,28 @@
         "body": "Iespēja izrunāt iegūtos datus."
       }
     ],
+    "diagramNodes": [
+      {
+        "id": "[SYS-01]",
+        "title": "Maksas atskaites",
+        "body": "Vēsture, nobraukums, avārijas."
+      },
+      {
+        "id": "[SYS-02]",
+        "title": "Sludinājuma analīze",
+        "body": "SS.LV, Mobile.de u.c."
+      },
+      {
+        "id": "[SYS-03]",
+        "title": "Tehnisko risku analīze",
+        "body": "Modeļa vājās vietas."
+      },
+      {
+        "id": "[SYS-04]",
+        "title": "Konsultācija",
+        "body": "Iespēja izrunāt iegūtos datus."
+      }
+    ],
     "cta": "PASŪTĪT ANALĪZI — 79,99 €",
     "trustHeadline": "Manuāls audits 24h laikā. Lai Jūs saņemtu atbildes, nevis tikai PDF failu.",
     "trustBody": "",

@@ -173,6 +173,35 @@ body {
   }
 }
 
+/* Hero savienojumu shēma — līnijas un mezgli sinhroni ar sudraba scroll (--home-surface-t) */
+.home-hero-diagram-stroke {
+  fill: none;
+  stroke: color-mix(in oklab, rgba(255, 255, 255, 0.92) calc((1 - var(--home-surface-t)) * 100%), #050505);
+  transition: stroke 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.home-hero-diagram-ink {
+  color: color-mix(in oklab, #fafafa calc((1 - var(--home-surface-t)) * 100%), #050505);
+  transition: color 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.home-hero-diagram-muted {
+  color: color-mix(
+    in oklab,
+    rgba(250, 250, 250, 0.78) calc((1 - var(--home-surface-t)) * 100%),
+    rgba(5, 5, 5, 0.75)
+  );
+  transition: color 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-diagram-stroke,
+  .home-hero-diagram-ink,
+  .home-hero-diagram-muted {
+    transition: none;
+  }
+}
+
 /* Kreisā procesa sliede — etiķetes seko --home-surface-t */
 .home-rail-label {
   color: color-mix(in oklab, #fafafa calc((1 - var(--home-surface-t)) * 100%), #050505);
