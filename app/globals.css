@@ -348,6 +348,30 @@ body {
   -webkit-mask-composite: source-in;
 }
 
+/* Safari / vecāki WebKit, kur nav `mask-composite: intersect` — viena mīksta elipse, bez sānu „kastes”. */
+@supports not (mask-composite: intersect) {
+  .home-iriss-stagger-atmosphere {
+    mask-image: radial-gradient(
+      ellipse 132% 94% at 50% 50%,
+      #000 0%,
+      #000 52%,
+      rgba(0, 0, 0, 0.72) 70%,
+      rgba(0, 0, 0, 0.2) 88%,
+      transparent 100%
+    );
+    -webkit-mask-image: radial-gradient(
+      ellipse 132% 94% at 50% 50%,
+      #000 0%,
+      #000 52%,
+      rgba(0, 0, 0, 0.72) 70%,
+      rgba(0, 0, 0, 0.2) 88%,
+      transparent 100%
+    );
+    mask-composite: unset;
+    -webkit-mask-composite: source-over;
+  }
+}
+
 .home-footer-scrim {
   opacity: 1;
 }
