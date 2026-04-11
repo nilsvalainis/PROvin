@@ -66,9 +66,7 @@ export function HeaderClient({
     : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
   const logoClass = isHome
-    ? homeSilverHeader
-      ? "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-[#050505] transition-opacity hover:opacity-80 sm:min-h-0 sm:min-w-0"
-      : "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-white transition-colors hover:text-white/90 sm:min-h-0 sm:min-w-0"
+    ? "home-body-ink flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight transition-opacity hover:opacity-80 sm:min-h-0 sm:min-w-0"
     : "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent sm:min-h-0 sm:min-w-0";
 
   const navMuted = isHome ? (homeSilverHeader ? "text-[#050505]" : "text-white/72") : "text-[#1d1d1f]";
@@ -92,11 +90,11 @@ export function HeaderClient({
 
   return (
     <>
-      <header className={`sticky top-0 z-40 ${headerSurface}`}>
+      <header className={`sticky top-0 z-50 isolate ${headerSurface}`}>
         <div className="mx-auto flex min-h-12 max-w-[980px] items-center justify-between gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:min-h-11 sm:gap-3 sm:px-6 lg:max-w-[1024px]">
           <Link href="/" className={logoClass}>
             <span>PRO</span>
-            <span className={homeSilverHeader && isHome ? "text-[#050505]" : "text-provin-accent"}>VIN</span>
+            <span className={isHome ? "" : "text-provin-accent"}>VIN</span>
           </Link>
 
           <nav className="hidden min-w-0 items-center gap-6 md:flex md:flex-1 md:justify-end">

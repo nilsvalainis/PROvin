@@ -224,6 +224,17 @@ body {
   transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Logo galvenē — tā pati tinte kā zem Hero (nav .home-below-hero vecāka) */
+header .home-body-ink {
+  color: color-mix(in oklab, #fafafa calc((1 - var(--home-surface-t)) * 100%), #050505);
+  transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Pasūtījuma forma (Hero variants) — viegls stikls; apmales no Tailwind */
+.order-form-hero-shell {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
 .home-muted-foreground {
   color: color-mix(in oklab, #d4d4d8 calc((1 - var(--home-surface-t)) * 100%), #52525b);
   transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
@@ -267,6 +278,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .home-below-hero .home-body-ink,
+  header .home-body-ink,
   .home-muted-foreground,
   .home-iriss-prose,
   .home-iriss-prose strong,
