@@ -25,7 +25,7 @@
 }
 
 :root {
-  /* Home: scroll ramp disabled — full dark engineering shell (HomeScrollSurface sets 0) */
+  /* Home: ink ramp 0…1 from scroll (full #050505 ink at 50% silver; HomeScrollSurface drives) */
   --home-surface-t: 0;
 }
 
