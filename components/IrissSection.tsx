@@ -1,15 +1,17 @@
-import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
-import { homeSectionTitleClass, irissSectionSubtitleClass } from "@/lib/home-layout";
-
-/** Trekns — krāsu dod `.home-iriss-prose strong`. */
-const irissAccent = (chunks: ReactNode) => <strong className="font-bold">{chunks}</strong>;
-
-const irissRichBody = { accent: irissAccent };
+import {
+  homeContentMaxClass,
+  homeSectionTitleClass,
+  irissSectionSubtitleClass,
+  irissStaggerHeadingClass,
+} from "@/lib/home-layout";
 
 /** Saskaņots ar <Faq> atbilžu rindkopu: text-[14px] sm:text-[15px], leading 1.75. */
 const irissBodyProseClass =
   "home-iriss-prose text-[14px] font-normal leading-[1.75] sm:text-[15px]";
+
+/** Plūdena vertikālā atstarpe starp stagger blokiem. */
+const irissStaggerStackGapClass = "py-[clamp(3.25rem,7vw,5.5rem)] sm:py-[clamp(3.75rem,8vw,6.25rem)]";
 
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
@@ -25,7 +27,7 @@ export async function IrissSection() {
     >
       <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
 
-      <div className="relative mx-auto w-full max-w-[1000px]">
+      <div className={`relative ${homeContentMaxClass}`}>
         <div className="text-center">
           <h2 className={homeSectionTitleClass}>{t("title")}</h2>
           <p className={`${irissSectionSubtitleClass} home-muted-foreground`}>{t("subtitle")}</p>
@@ -41,10 +43,36 @@ export async function IrissSection() {
           />
         </div>
 
-        <div className="mx-auto mt-10 max-w-[750px] text-center sm:mt-12">
-          <p className={`${irissBodyProseClass} mb-12 text-balance`}>{t.rich("body1", irissRichBody)}</p>
-          <p className={`${irissBodyProseClass} mb-12 text-balance`}>{t.rich("body2", irissRichBody)}</p>
-          <p className={`${irissBodyProseClass} text-balance`}>{t.rich("body3", irissRichBody)}</p>
+        <div className="mt-12 sm:mt-14 md:mt-16">
+          {/* Bloks 1: saturs labajā pusē; kreisā — rezerve animācijai */}
+          <div
+            className={`grid grid-cols-1 gap-y-5 lg:grid-cols-2 lg:gap-x-10 xl:gap-x-16 ${irissStaggerStackGapClass}`}
+          >
+            <div className="hidden min-h-[8rem] lg:block" aria-hidden />
+            <div className="min-w-0 max-w-[min(100%,38rem)] lg:justify-self-end lg:text-right">
+              <h3 className={irissStaggerHeadingClass}>{t("block1Heading")}</h3>
+              <p className={`${irissBodyProseClass} mt-4 text-balance`}>{t("block1Body")}</p>
+            </div>
+          </div>
+
+          {/* Bloks 2: centrēts; ļoti viegls fona „elpas” slānis starp blokiem */}
+          <div
+            className={`${irissStaggerStackGapClass} bg-[radial-gradient(ellipse_85%_120%_at_50%_40%,rgba(255,255,255,0.045)_0%,transparent_62%)]`}
+          >
+            <div className="mx-auto min-w-0 max-w-[min(100%,42rem)] px-1 text-center sm:px-2">
+              <h3 className={`${irissStaggerHeadingClass} mx-auto max-w-[min(100%,52ch)]`}>{t("block2Heading")}</h3>
+              <p className={`${irissBodyProseClass} mt-4 whitespace-pre-line text-balance`}>{t("block2Body")}</p>
+            </div>
+          </div>
+
+          {/* Bloks 3: saturs kreisajā pusē; labā — rezerve */}
+          <div className={`grid grid-cols-1 gap-y-5 lg:grid-cols-2 lg:gap-x-10 xl:gap-x-16 ${irissStaggerStackGapClass}`}>
+            <div className="min-w-0 max-w-[min(100%,38rem)] text-left">
+              <h3 className={irissStaggerHeadingClass}>{t("block3Heading")}</h3>
+              <p className={`${irissBodyProseClass} mt-4 text-balance`}>{t("block3Body")}</p>
+            </div>
+            <div className="hidden min-h-[8rem] lg:block" aria-hidden />
+          </div>
         </div>
       </div>
     </section>

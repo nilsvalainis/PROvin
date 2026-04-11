@@ -39,6 +39,13 @@ export const heroH1BlueKeywordClass =
 /** Kas ir IRISS? — apakšvirsraksts: tā pati estētika, ~2× izmērs, nedaudz platāka līnija. */
 export const irissSectionSubtitleClass = `${approvedByIrissSignatureBaseClass} mx-auto max-w-[min(100%,52ch)] text-balance text-[1.125rem] sm:text-[1.25rem]`;
 
+/**
+ * IRISS staggered bloku virsraksti — līdzīgi „IRISS | Perekupa Dienasgrāmata”
+ * (light, uppercase, plašs tracking); nedaudz šaurāks tracking garām rindiņām.
+ */
+export const irissStaggerHeadingClass =
+  "font-light uppercase tracking-[0.2em] text-balance text-[#e5e7eb] leading-snug sm:tracking-[0.24em] md:tracking-[0.28em] text-[0.9375rem] sm:text-[1.0625rem] md:text-[1.125rem]";
+
 /** Salīdzinājuma tabulas galvenes bāze — trekns, uppercase, plašāka tracking. */
 export const comparisonTableHeaderBaseClass =
   "text-[10px] font-bold uppercase tracking-[0.14em] sm:text-[11px] sm:tracking-[0.16em]";

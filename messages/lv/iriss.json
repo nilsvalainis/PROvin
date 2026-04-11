@@ -2,9 +2,12 @@
   "Iriss": {
     "title": "KAS SLĒPJAS AIZ PROVIN?",
     "subtitle": "IRISS | Perekupa Dienasgrāmata",
-    "body1": "Automašīnas iegāde ir atbildīgs lēmums, kurā izšķiroša nozīme ir zināšanām. Ar <accent>vairāk nekā 10 gadu pieredzi</accent> lietotu automašīnu importā no Eiropas, IRISS apvieno padziļinātu izpratni par auto marku specifiku, tirgus īpatnībām un pārdevēju paņēmieniem. Šī pieredze ļauj saskatīt <accent>slēptos riskus un problēmas</accent> tur, kur citi redz tikai pievilcīgu sludinājumu.",
-    "body2": "<accent>PROVIN audits</accent> nav tikai VIN koda pārbaude — tas ir <accent>Tavs personīgais interešu aizstāvis</accent> un filtrs starp Tevi un <accent>„nepareizo” izvēli</accent>. Lietotu auto tirgū Tev būs jāspēlē pret pieredzi, kas robežojas ar viltību. <accent>Viņu trumpis ir tas, ko viņi noklusē.</accent> <accent>Mūsu - spēja atklāt visas kārtis.</accent>",
-    "body3": "Mēs nodrošinām <accent>objektīvu un neatkarīgu izvērtējumu</accent>, balstītu reālā nozares pieredzē, ar vienu skaidru mērķi — <accent>atklāt to, ko pārdevējs mēģina noklusēt.</accent> Šis ir unikāls instruments, kas var palīdzēt ietekmēt Tavu ikdienas kvalitāti, drošību un <accent>uzturēšanas izmaksas</accent>.",
+    "block1Heading": "Automašīnas iegāde ir atbildīgs lēmums, kurā izšķiroša nozīme ir zināšanām",
+    "block1Body": "Ar vairāk nekā 10 gadu pieredzi lietotu automašīnu importā no Eiropas, IRISS apvieno padziļinātu izpratni par auto marku specifiku, tirgus īpatnībām un pārdevēju paņēmieniem. Šī pieredze ļauj saskatīt slēptos riskus tur, kur citi redz tikai pievilcīgu sludinājumu.",
+    "block2Heading": "Tavs personīgais interešu aizstāvis",
+    "block2Body": "Mūsu audits nav tikai VIN koda pārbaude — tas ir Tavs personīgais interešu aizstāvis lietotu auto tirgū, kurā Tev būs jāspēlē pret pieredzi, kas bieži robežojas ar viltību.\n\nViņu trumpis ir tas, ko viņi noklusē. Mūsu — spēja atklāt visas kārtis.",
+    "block3Heading": "Instruments, kas palīdz pieņemt gudru lēmumu",
+    "block3Body": "Mēs nodrošinām objektīvu un neatkarīgu izvērtējumu, balstītu reālā nozares pieredzē, ar vienu skaidru mērķi — atklāt to, ko pārdevējs mēģina noslēpt. Tas nav tikai audits. Tas ir instruments, kas palīdz pieņemt gudru lēmumu, samazināt riskus un kontrolēt nākotnes izmaksas — ietekmējot Tavu drošību un ikdienas kvalitāti.",
     "socialLabel": "IRISS sociālie tīkli",
     "socialSoon": "Saite drīzumā"
   }
