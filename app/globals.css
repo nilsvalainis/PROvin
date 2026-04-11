@@ -138,7 +138,8 @@ body {
 /* Mājas tumšais čaulas grauds — blīvs tehnisks „film grain” (pilnekrāna slānis) */
 .home-tech-grain {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='hg'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23hg)' opacity='0.2'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
+  background-size: 130px 130px;
+  opacity: 0.08;
 }
 
 .provin-scroll-hint {

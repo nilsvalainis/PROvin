@@ -16,7 +16,7 @@ export function AutoWireframeBackground() {
           vectorEffect="non-scaling-stroke"
           stroke="#ffffff"
           strokeDasharray="2 4"
-          strokeOpacity={0.12}
+          strokeOpacity={0.08}
           strokeWidth={0.55}
           strokeLinecap="butt"
           d="M 200 250 C 400 150, 700 150, 900 250"
