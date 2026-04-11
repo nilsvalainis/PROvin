@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation";
 const ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
 
 const GLASS =
-  "rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.03] to-white/[0.01] backdrop-blur-md";
+  "rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.03] to-white/[0.01] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] backdrop-blur-md";
 
 export type InvestigationLabPillar = { title: string; body: string };
 
@@ -61,7 +61,7 @@ export function InvestigationLabClient({
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
                   <div className="flex shrink-0 justify-center sm:pt-1">
                     <Icon
-                      className="h-9 w-9 shrink-0 text-white/45 sm:h-10 sm:w-10"
+                      className="h-9 w-9 shrink-0 text-[#0066ff] sm:h-10 sm:w-10"
                       strokeWidth={1.25}
                       aria-hidden
                     />

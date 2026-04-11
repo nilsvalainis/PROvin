@@ -21,7 +21,7 @@ export function MarketingHero() {
     >
       <div className="relative z-10 mx-auto flex w-full max-w-[min(100%,53.76rem)] flex-col items-center text-center">
         <header className="flex shrink-0 flex-col items-center gap-6 sm:gap-7 md:gap-8">
-          <p className={approvedByIrissSignatureHeroClass} aria-label={t("approved")}>
+          <p className={`${approvedByIrissSignatureHeroClass} text-white/70`} aria-label={t("approved")}>
             {t("approved")}
           </p>
 
@@ -34,7 +34,7 @@ export function MarketingHero() {
           </h1>
 
           <p
-            className={`${approvedByIrissSignatureHeroClass} max-w-[min(100%,52ch)] text-balance text-zinc-300`}
+            className={`${approvedByIrissSignatureHeroClass} max-w-[min(100%,52ch)] text-balance tracking-[-0.02em] text-white/70`}
           >
             {t("h2")}
           </p>

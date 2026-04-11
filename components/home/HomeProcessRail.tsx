@@ -2,8 +2,6 @@
 
 import { useTranslations } from "next-intl";
 
-const railHeightClass = "min-h-[min(48vh,380px)]";
-
 /** Viena instance, fiksēts kreisais malas spraudnis — bez scroll pozicionēšanas. */
 export function HomeProcessRail() {
   const t = useTranslations("HomeProcess");
@@ -19,13 +17,13 @@ export function HomeProcessRail() {
       className="pointer-events-none fixed left-8 top-1/2 z-50 hidden -translate-y-1/2 lg:flex lg:flex-row lg:items-stretch lg:gap-4"
       aria-hidden
     >
-      <div className={`flex min-h-0 flex-col justify-between py-1 ${railHeightClass}`}>
+      <div className="flex min-h-0 flex-col gap-6">
         {steps.map((s) => (
           <p
             key={s.n}
             className="home-rail-label max-w-[10rem] text-left sm:max-w-[11rem]"
           >
-            <span className="font-[family-name:var(--font-inter)] text-[10px] font-medium tabular-nums tracking-[0.38em] text-white/55 sm:text-[11px] sm:tracking-[0.42em]">
+            <span className="font-[family-name:var(--font-inter)] text-[10px] font-medium tabular-nums tracking-[0.38em] text-white/60 sm:text-[11px] sm:tracking-[0.42em]">
               {s.n}
             </span>
             <span className="mx-1.5 font-[family-name:var(--font-inter)] text-[10px] text-white/25 sm:text-[11px]" aria-hidden>
@@ -38,7 +36,7 @@ export function HomeProcessRail() {
         ))}
       </div>
       <div
-        className={`shrink-0 self-stretch bg-white/[0.12] ${railHeightClass}`}
+        className="my-0 shrink-0 self-stretch bg-white/[0.12]"
         style={{ width: "0.5px" }}
         aria-hidden
       />
