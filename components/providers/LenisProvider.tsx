@@ -10,6 +10,7 @@ import { useEffect } from "react";
  */
 export function LenisProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
     let lenis: Lenis | null = null;
     try {
       lenis = new Lenis({

@@ -1,8 +1,17 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { type ReactNode } from "react";
-import { HomeSpeedometerBackground } from "@/components/home/HomeSpeedometerBackground";
 import { ViewportCornerMarks } from "@/components/home/ViewportCornerMarks";
+
+/** Tikai klients — izvairās no SSR/hydration atšķirībām ar SVG useId / clipPath (bieža „Application error” iemesla). */
+const HomeSpeedometerBackground = dynamic(
+  () =>
+    import("@/components/home/HomeSpeedometerBackground").then((m) => ({
+      default: m.HomeSpeedometerBackground,
+    })),
+  { ssr: false, loading: () => null },
+);
 
 type HomeScrollSurfaceProps = {
   wireframe?: ReactNode;

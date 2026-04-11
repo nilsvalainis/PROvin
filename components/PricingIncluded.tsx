@@ -43,7 +43,8 @@ export async function PricingIncluded() {
   const locale = await getLocale();
   const irissHref = irissAnchorHref(locale);
   const messages = await getMessages();
-  const grid = (messages as { Pricing: { grid: GridItem[] } }).Pricing.grid;
+  const raw = (messages as { Pricing?: { grid?: GridItem[] } }).Pricing?.grid;
+  const grid = Array.isArray(raw) ? raw : [];
 
   return (
     <section

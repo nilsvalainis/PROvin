@@ -11,7 +11,8 @@ export async function HowItWorks({
   variant?: "default" | "silver";
 }) {
   const messages = await getMessages();
-  const steps = (messages as { HowItWorks: { steps: Step[] } }).HowItWorks.steps;
+  const raw = (messages as { HowItWorks?: { steps?: Step[] } }).HowItWorks?.steps;
+  const steps = Array.isArray(raw) ? raw : [];
 
   return <HowItWorksClient steps={steps} tone={tone} variant={variant} />;
 }

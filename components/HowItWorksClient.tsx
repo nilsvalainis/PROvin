@@ -18,11 +18,11 @@ const stepIconClassSilver =
 const ICON_ROW_H = "h-11";
 
 export function HowItWorksClient({
-  steps,
+  steps = [],
   tone = "light",
   variant = "default",
 }: {
-  steps: Step[];
+  steps?: Step[];
   tone?: "light" | "dark";
   variant?: "default" | "silver";
 }) {
@@ -53,7 +53,7 @@ export function HowItWorksClient({
                     >
                       {s.title}
                     </h3>
-                    {s.body.trim() ? (
+                    {s.body?.trim() ? (
                       <p
                         className={`mt-1.5 w-full text-balance text-[10px] font-normal leading-snug sm:mt-2 sm:text-[11px] sm:leading-relaxed ${body}`}
                       >

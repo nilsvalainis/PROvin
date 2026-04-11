@@ -7,11 +7,11 @@ export type FaqItem = { id: string; q: string; a: string };
 
 type FaqClientProps = {
   title: string;
-  items: FaqItem[];
+  items?: FaqItem[];
   tone?: "light" | "dark" | "silver";
 };
 
-export function FaqClient({ title, items, tone = "dark" }: FaqClientProps) {
+export function FaqClient({ title, items = [], tone = "dark" }: FaqClientProps) {
   if (tone === "silver") {
     return (
       <section
