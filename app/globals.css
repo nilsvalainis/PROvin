@@ -71,6 +71,21 @@ body {
   user-select: none;
 }
 
+/* Hero virsraksta HUD — režģis un uzraksti ~20% kontrastīgāki */
+.marketing-hero-hud .tech-bg {
+  opacity: 0.075;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+}
+
+.marketing-hero-hud .data-label {
+  color: rgba(210, 210, 210, 0.5);
+  letter-spacing: 1.65px;
+  font-size: 10.5px;
+  opacity: 0.135;
+}
+
 /* === DATA LINES === */
 .data-lines {
   position: absolute;
@@ -123,7 +138,10 @@ body {
 /* === PERFORMANCE === */
 .tech-bg,
 .pulse,
-.focus-ring {
+.focus-ring,
+.hero-speedo-bezel,
+.hero-speedo-needle,
+.vin-speedo-needle {
   will-change: transform;
 }
 
@@ -132,15 +150,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-.vin-orbit-1 {
-  animation: rotateSlow 20s linear infinite;
-}
-
-.vin-orbit-2 {
-  animation: rotateReverse 30s linear infinite;
-}
-
 /* === ANIMATIONS === */
+.hero-speedo-bezel {
+  animation: rotateSlow 56s linear infinite;
+}
+
+.hero-speedo-needle {
+  animation: heroSpeedoNeedleSweep 7s ease-in-out infinite alternate;
+}
+
+.vin-speedo-needle {
+  animation: heroSpeedoNeedleSweep 5.5s ease-in-out infinite alternate;
+}
+
 @keyframes rotateSlow {
   from {
     transform: rotate(0deg);
@@ -150,12 +172,20 @@ body {
   }
 }
 
-@keyframes rotateReverse {
+@keyframes heroSpeedoNeedleSweep {
   from {
-    transform: rotate(360deg);
+    transform: rotate(-52deg);
   }
   to {
-    transform: rotate(0deg);
+    transform: rotate(52deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-speedo-bezel,
+  .hero-speedo-needle,
+  .vin-speedo-needle {
+    animation: none !important;
   }
 }
 

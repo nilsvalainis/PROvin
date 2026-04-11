@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
+import { VinInputSpeedometerDeco } from "@/components/home/VinInputSpeedometerDeco";
 import { validateOrderFields } from "@/lib/order-field-validation";
 
 const labelHero =
@@ -166,7 +167,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             {t("vinLabel")} <span className={reqStarClass}>*</span>
           </label>
           {hero ? (
-            <div className="vin-wrapper w-full">
+            <div className="vin-wrapper w-full overflow-visible pb-8">
               <input
                 id="order-vin"
                 name="vin"
@@ -181,8 +182,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                   el.value = el.value.toUpperCase().slice(0, 17);
                 }}
               />
-              <div className="focus-ring vin-orbit-1" aria-hidden />
-              <div className="focus-ring vin-orbit-2" aria-hidden />
+              <VinInputSpeedometerDeco />
             </div>
           ) : (
             <input
