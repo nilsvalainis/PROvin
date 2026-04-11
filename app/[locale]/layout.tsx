@@ -3,10 +3,10 @@ import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { Header } from "@/components/Header";
 import { LocaleHtmlLang } from "@/components/LocaleHtmlLang";
 import { CookieConsent } from "@/components/CookieConsent";
 import { LenisProvider } from "@/components/providers/LenisProvider";
+import { SiteSectionRail } from "@/components/home/SiteSectionRail";
 import { WhatsAppFab } from "@/components/WhatsAppFab";
 import { routing } from "@/i18n/routing";
 
@@ -59,8 +59,8 @@ export default async function LocaleLayout({ children, params }: Props) {
     <NextIntlClientProvider messages={messages}>
       <LenisProvider>
         <LocaleHtmlLang />
-        <Header />
-        <main className="min-w-0 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+        <SiteSectionRail />
+        <main className="min-w-0 pt-[env(safe-area-inset-top,0px)] pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
           {children}
         </main>
         <WhatsAppFab />

@@ -33,17 +33,6 @@ const GRID_LUCIDE_ICONS: LucideIcon[] = [
   ShieldCheck,
 ];
 
-const PRICING_REFS = [
-  "REF. 911-PR",
-  "REF. 911-BL",
-  "REF. 911-SH",
-  "REF. 911-SC",
-  "REF. 911-AL",
-  "REF. 911-SP",
-  "REF. 911-SL",
-  "REF. 911-HD",
-] as const;
-
 const iconClass = "h-8 w-8 shrink-0 text-[#0066ff] [stroke-width:1.5] sm:h-[32px] sm:w-[32px]";
 
 const GLASS =
@@ -66,14 +55,10 @@ export async function PricingIncluded() {
         <ul className="grid list-none grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4">
           {grid.map((item, i) => {
             const Icon = GRID_LUCIDE_ICONS[i] ?? Globe2;
-            const refTag = PRICING_REFS[i] ?? `REF. 911-${String(i + 1).padStart(2, "0")}`;
             const inner = (
               <div className="flex gap-3 sm:gap-3.5">
-                <div className="flex shrink-0 flex-col items-center gap-1 pt-0.5 sm:items-start">
+                <div className="flex shrink-0 items-start pt-0.5">
                   <Icon className={iconClass} aria-hidden strokeWidth={1.5} />
-                  <span className="font-mono text-[6px] font-semibold uppercase tracking-[0.1em] text-[#0066ff]">
-                    {refTag}
-                  </span>
                 </div>
                 <div className="min-w-0 flex-1 pt-0.5">
                   <h3 className="home-body-ink text-[15px] font-medium leading-snug tracking-tight sm:text-[16px]">

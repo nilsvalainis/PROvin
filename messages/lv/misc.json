@@ -6,9 +6,12 @@
     "checkoutProductName": "PROVIN — VIN un sludinājuma analīze",
     "checkoutProductDesc": "Pilna datu analīze vairākās datubāzēs, sludinājuma analīze un eksperta slēdziens."
   },
-  "HomeProcess": {
-    "rail01": "IEVADS",
-    "rail02": "ANALĪZE",
-    "rail03": "PASŪTĪT"
+  "SiteRail": {
+    "navAria": "Galvenās sadaļas",
+    "sakums": "Sākums",
+    "pasutit": "Pasūtīt",
+    "audits": "Audits",
+    "iriss": "IRISS",
+    "buj": "BUJ"
   }
 }

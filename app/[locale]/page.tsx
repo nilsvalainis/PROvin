@@ -2,7 +2,6 @@ import { Faq } from "@/components/Faq";
 import { FinalCta } from "@/components/FinalCta";
 import { AutoWireframeBackground } from "@/components/home/AutoWireframeBackground";
 import { HomeScrollSurface } from "@/components/home/HomeScrollSurface";
-import { HomeProcessRail } from "@/components/home/HomeProcessRail";
 import { MarketingHero } from "@/components/home/MarketingHero";
 import { HowItWorks } from "@/components/HowItWorks";
 import { IrissSection } from "@/components/IrissSection";
@@ -20,7 +19,6 @@ export default async function HomePage({
   return (
     <HomeScrollSurface wireframe={<AutoWireframeBackground />}>
       <div className="relative z-10 min-w-0 bg-transparent">
-        <HomeProcessRail />
         <MarketingHero />
 
         <div className="home-below-hero home-body-ink bg-transparent">
