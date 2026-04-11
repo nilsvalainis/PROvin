@@ -2,9 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-const railHeightClass = "min-h-[min(52vh,420px)]";
-
-/** Kreisā sleja — augsts z-index, `flex-row-reverse` + `items-center` pēc lapas specifikācijas. */
+/** Kreisā sleja — kreisā mala kā `max-w-[1200px]` + `px-8` iekšējai saturam; etiķetes pa kreisi no līnijas. */
 export function HomeProcessRail() {
   const t = useTranslations("HomeProcess");
 
@@ -16,10 +14,10 @@ export function HomeProcessRail() {
 
   return (
     <aside
-      className="pointer-events-none fixed left-6 top-1/2 z-[100] hidden -translate-y-1/2 lg:flex flex-row-reverse items-center gap-4"
+      className="pointer-events-none fixed bottom-8 left-4 top-[calc(5.5rem+env(safe-area-inset-top,0px))] z-[100] hidden min-h-0 lg:left-[max(1.5rem,calc(50%-600px-4rem))] lg:flex lg:flex-row lg:items-stretch lg:gap-4"
       aria-hidden
     >
-      <div className={`flex min-h-0 flex-col justify-between py-1 ${railHeightClass}`}>
+      <div className="flex min-h-0 flex-1 flex-col justify-between py-1">
         {steps.map((s) => (
           <p
             key={s.n}
@@ -33,7 +31,7 @@ export function HomeProcessRail() {
           </p>
         ))}
       </div>
-      <div className={`w-[0.5px] shrink-0 self-stretch bg-[#b8bcc4]/40 ${railHeightClass}`} />
+      <div className="w-[0.5px] shrink-0 self-stretch bg-[#b8bcc4]/40" />
     </aside>
   );
 }

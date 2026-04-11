@@ -34,10 +34,10 @@ const GRID_LUCIDE_ICONS: LucideIcon[] = [
 ];
 
 const iconClass =
-  "h-8 w-8 shrink-0 text-[#0061D2] [stroke-width:1.5] sm:h-[32px] sm:w-[32px]";
+  "h-8 w-8 shrink-0 text-[#0066ff] [stroke-width:1.5] sm:h-[32px] sm:w-[32px]";
 
 const cardClass =
-  "flex min-h-0 gap-3 rounded-xl border border-white/[0.08] bg-[#121212] p-3.5 text-left sm:gap-3.5 sm:p-4";
+  "flex min-h-0 gap-3 rounded-xl border border-white/[0.1] bg-white/[0.02] p-3.5 text-left backdrop-blur-2xl supports-[backdrop-filter]:bg-white/[0.02] sm:gap-3.5 sm:p-4";
 
 export async function PricingIncluded() {
   const t = await getTranslations("Pricing");

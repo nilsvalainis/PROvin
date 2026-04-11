@@ -56,12 +56,12 @@ export function InvestigationLabClient({
             return (
               <div
                 key={`${p.title}-${i}`}
-                className="rounded-2xl border border-white/[0.08] bg-[#121212] p-6 sm:p-8"
+                className="rounded-2xl border border-white/[0.1] bg-white/[0.02] p-6 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/[0.02] sm:p-8"
               >
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
                   <div className="flex shrink-0 justify-center sm:pt-1">
                     <Icon
-                      className="h-9 w-9 shrink-0 text-[#0061D2] sm:h-10 sm:w-10"
+                      className="h-9 w-9 shrink-0 text-[#0066ff] sm:h-10 sm:w-10"
                       strokeWidth={1.25}
                       aria-hidden
                     />
@@ -69,7 +69,7 @@ export function InvestigationLabClient({
                   <div className="min-w-0 flex-1 text-center sm:text-left">
                     <h3 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{p.title}</h3>
                     {p.body ? (
-                      <p className="mt-3 text-sm font-extralight leading-relaxed text-[#b8bcc4] sm:text-[15px]">
+                      <p className="home-muted-foreground mt-3 text-sm font-extralight leading-relaxed sm:text-[15px]">
                         {p.body}
                       </p>
                     ) : null}

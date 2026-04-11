@@ -20,7 +20,7 @@ export function MarketingHero() {
       aria-labelledby="marketing-hero-title"
     >
       <div
-        className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_50%,#111111_0%,#050505_100%)]"
+        className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_88%_72%_at_50%_48%,#121212_0%,#0f0f0f_32%,rgba(15,15,15,0.55)_55%,rgba(15,15,15,0)_78%)]"
         aria-hidden
       />
       <div className="relative z-10 mx-auto flex w-full max-w-[min(100%,53.76rem)] flex-col items-center text-center">
@@ -46,10 +46,12 @@ export function MarketingHero() {
           <div className="mt-2 flex w-full max-w-[min(100%,24rem)] flex-col items-center gap-3 sm:mt-3">
             <Link
               href={orderSectionHref(locale)}
-              className="provin-btn provin-btn--compact inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-center text-[13px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_4px_20px_rgba(0,102,255,0.4)] sm:min-h-[3.25rem] sm:px-8 sm:text-[14px] sm:tracking-[0.07em]"
+              className="provin-btn provin-btn--compact inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#0066ff] px-7 py-3.5 text-center text-[13px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_4px_28px_rgba(0,102,255,0.45)] sm:min-h-[3.25rem] sm:px-8 sm:text-[14px] sm:tracking-[0.07em]"
             >
-              <span className="text-balance">{t("cta")}</span>
-              <ArrowRight className="h-4 w-4 shrink-0 opacity-90" strokeWidth={2.25} aria-hidden />
+              <span className="inline-flex max-w-full items-center justify-center gap-2 text-center">
+                <span className="min-w-0 text-balance">{t("cta")}</span>
+                <ArrowRight className="h-4 w-4 shrink-0 opacity-95" strokeWidth={2.25} aria-hidden />
+              </span>
             </Link>
           </div>
         </header>

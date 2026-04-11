@@ -184,12 +184,12 @@ body {
 
 /* Zem Hero — teksts pāriet uz #050505; 0.4s smooth (scroll still drives --home-surface-t) */
 .home-below-hero .home-body-ink {
-  color: color-mix(in oklab, #f4f4f5 calc((1 - var(--home-surface-t)) * 100%), #050505);
+  color: color-mix(in oklab, #fafafa calc((1 - var(--home-surface-t)) * 100%), #0a0a0a);
   transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .home-muted-foreground {
-  color: color-mix(in oklab, #a1a1aa calc((1 - var(--home-surface-t)) * 100%), #64748b);
+  color: color-mix(in oklab, #d4d4d8 calc((1 - var(--home-surface-t)) * 100%), #52525b);
   transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -202,7 +202,7 @@ body {
 }
 
 .home-iriss-prose {
-  color: color-mix(in oklab, #b8bcc4 calc((1 - var(--home-surface-t)) * 100%), #475569);
+  color: color-mix(in oklab, #c8ccd4 calc((1 - var(--home-surface-t)) * 100%), #475569);
   transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
