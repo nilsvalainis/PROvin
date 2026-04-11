@@ -58,9 +58,12 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <LenisProvider>
+        <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
+          <div className="tech-bg" />
+        </div>
         <LocaleHtmlLang />
         <SiteSectionRail />
-        <main className="min-w-0 pt-[env(safe-area-inset-top,0px)] pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+        <main className="relative z-10 min-w-0 pt-[env(safe-area-inset-top,0px)] pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
           {children}
         </main>
         <WhatsAppFab />
