@@ -1,50 +1,50 @@
 /**
  * Viens nepārtraukts „inženierijas pavediens” IRISS stagger zonā (platums × augstums px).
  * Asimetrisks: kreisā augša → centrs → kreisā/leņķī apakša.
+ *
+ * Bez iekšējām arrow funkcijām — SWC minify reizēm salauž slēgumu saiti ar parametriem
+ * (ReferenceError: w / widthPx is not defined moduļa ielādē).
  */
 export function buildIrissThreadPath(widthPx: number, heightPx: number): string {
-  const u = (t: number) => t * widthPx;
-  const k = (t: number) => t * heightPx;
-
   return [
     "M",
-    u(0.065),
-    k(0.045),
+    0.065 * widthPx,
+    0.045 * heightPx,
     "C",
-    u(0.02),
-    k(0.16),
-    u(0.2),
-    k(0.11),
-    u(0.26),
-    k(0.24),
+    0.02 * widthPx,
+    0.16 * heightPx,
+    0.2 * widthPx,
+    0.11 * heightPx,
+    0.26 * widthPx,
+    0.24 * heightPx,
     "C",
-    u(0.36),
-    k(0.3),
-    u(0.5),
-    k(0.36),
-    u(0.54),
-    k(0.44),
+    0.36 * widthPx,
+    0.3 * heightPx,
+    0.5 * widthPx,
+    0.36 * heightPx,
+    0.54 * widthPx,
+    0.44 * heightPx,
     "C",
-    u(0.62),
-    k(0.52),
-    u(0.48),
-    k(0.58),
-    u(0.34),
-    k(0.6),
+    0.62 * widthPx,
+    0.52 * heightPx,
+    0.48 * widthPx,
+    0.58 * heightPx,
+    0.34 * widthPx,
+    0.6 * heightPx,
     "C",
-    u(0.14),
-    k(0.64),
-    u(0.08),
-    k(0.76),
-    u(0.22),
-    k(0.82),
+    0.14 * widthPx,
+    0.64 * heightPx,
+    0.08 * widthPx,
+    0.76 * heightPx,
+    0.22 * widthPx,
+    0.82 * heightPx,
     "C",
-    u(0.38),
-    k(0.88),
-    u(0.52),
-    k(0.94),
-    u(0.46),
-    k(0.985),
+    0.38 * widthPx,
+    0.88 * heightPx,
+    0.52 * widthPx,
+    0.94 * heightPx,
+    0.46 * widthPx,
+    0.985 * heightPx,
   ].join(" ");
 }
 
@@ -99,5 +99,5 @@ export function sectionScrollProgress(rect: DOMRectReadOnly, vh: number): number
   return Math.pow(clamped, 0.94);
 }
 
-/** Fiksēts pavediens „Kā tas darbojas” diagrammai (viewBox 100×44) — moduļa līmenī, lai nav riska ar minifier. */
+/** Fiksēts pavediens „Kā tas darbojas” diagrammai (viewBox 100×44). */
 export const IRISS_THREAD_PATH_VIEW_100_44 = buildIrissThreadPath(100, 44);
