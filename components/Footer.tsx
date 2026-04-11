@@ -122,9 +122,14 @@ export async function Footer() {
             </span>
             <span>{t("gdpr", { year: new Date().getFullYear() })}</span>
           </p>
-          <div className="pt-2 text-center">
-            <CompanyLegalOneLine variant="pakalpojums" tone="dark" />
-          </div>
+          <details className="group mx-auto pt-2 text-center">
+            <summary className="mx-auto inline-flex cursor-pointer list-none select-none items-center justify-center rounded-md px-2 py-1 text-[10px] font-normal uppercase tracking-[0.14em] text-[#3f4248] transition-colors hover:bg-white/[0.04] hover:text-[#55585f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/20 [&::-webkit-details-marker]:hidden">
+              {t("serviceProviderDisclosureSummary")}
+            </summary>
+            <div className="mt-2.5 border-t border-white/[0.06] pt-2.5">
+              <CompanyLegalOneLine omitPrefix variant="pakalpojums" tone="dark" />
+            </div>
+          </details>
         </div>
       </div>
     </footer>

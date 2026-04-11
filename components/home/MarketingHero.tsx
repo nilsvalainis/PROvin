@@ -13,14 +13,10 @@ import { orderSectionHref } from "@/lib/paths";
 
 const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
 
-/** Stikla karte — garena taisnstūra; augstums −20%, režģa platums +10% (konteineris). */
-const PILLAR_GLASS =
-  "flex min-h-[4rem] w-full max-w-none flex-col justify-center rounded-lg border border-white/12 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-[36px] sm:min-h-[5.5rem]";
-
 type HeroPillar = { ref: string; title: string; body: string };
 
 /**
- * Pilnekrāna tumšais Hero — četri pīlāri 2×2 (garena taisnstūra) starp apakšvirsrakstu un CTA.
+ * Pilnekrāna tumšais Hero — četri inženieru pīlāri vienā rindā zem CTA (bez „kastēm”).
  */
 export function MarketingHero() {
   const t = useTranslations("Hero");
@@ -59,38 +55,6 @@ export function MarketingHero() {
             {t("h2")}
           </p>
 
-          {/* 2×2 garenas kartes: režģa platums +10%, bloku min-augstums −20% */}
-          <div className={homeMarketingPillarGridShellClass}>
-            <div
-              className={`grid grid-cols-2 justify-items-stretch gap-x-2 gap-y-2 sm:gap-x-3 sm:gap-y-2.5 ${homeMarketingPillarGridWidthClass}`}
-            >
-              {pillars.map((p, i) => {
-                const Icon = PILLAR_ICONS[i] ?? FileText;
-                return (
-                  <article key={`${p.title}-${i}`} className={PILLAR_GLASS}>
-                    <div className="flex h-full min-h-0 w-full flex-row items-start gap-2 px-2 py-2 text-left sm:items-center sm:gap-3.5 sm:px-5 sm:py-2.5 md:px-6 md:py-3">
-                      <Icon
-                        className="mt-0.5 h-7 w-7 shrink-0 text-[#0066ff] sm:mt-0 sm:h-[1.875rem] sm:w-[1.875rem] md:h-[2.25rem] md:w-[2.25rem]"
-                        strokeWidth={1.5}
-                        aria-hidden
-                      />
-                      <div className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">
-                        <h3 className="text-[12px] font-semibold leading-[1.25] tracking-tight text-white sm:text-[15px] sm:leading-snug md:text-[17px]">
-                          {p.title}
-                        </h3>
-                        {p.body ? (
-                          <p className="mt-1 text-[11px] font-light leading-snug text-white/70 sm:mt-1.5 sm:text-[13.5px] sm:leading-snug md:text-[15px] md:leading-relaxed">
-                            {p.body}
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-
           <div className="mt-4 flex w-full flex-col items-center sm:mt-5 md:mt-6">
             <Link
               href={orderSectionHref(locale)}
@@ -101,6 +65,39 @@ export function MarketingHero() {
                 <ArrowRight className="h-4 w-4 shrink-0 opacity-95" strokeWidth={2.25} aria-hidden />
               </span>
             </Link>
+          </div>
+
+          {/* Četri pīlāri — horizontāla spec-rinda zem CTA; ikona ↔ virsraksts ar gap-6 */}
+          <div className={`${homeMarketingPillarGridShellClass} mt-7 w-full sm:mt-9`}>
+            <div
+              className={`grid w-full grid-cols-2 gap-x-5 gap-y-10 border-b border-white/[0.12] pb-8 sm:grid-cols-4 sm:gap-x-7 md:gap-x-8 ${homeMarketingPillarGridWidthClass}`}
+            >
+              {pillars.map((p, i) => {
+                const Icon = PILLAR_ICONS[i] ?? FileText;
+                return (
+                  <article
+                    key={`${p.title}-${i}`}
+                    className="flex min-h-0 min-w-0 flex-col items-center gap-6 px-1 text-center sm:px-2"
+                  >
+                    <Icon
+                      className="h-8 w-8 shrink-0 text-[#0066ff] sm:h-9 sm:w-9 md:h-10 md:w-10"
+                      strokeWidth={1.5}
+                      aria-hidden
+                    />
+                    <div className="flex min-w-0 flex-col items-center gap-2">
+                      <h3 className="text-balance text-[11px] font-semibold uppercase leading-snug tracking-tight text-white sm:text-[13px] md:text-[14px]">
+                        {p.title}
+                      </h3>
+                      {p.body ? (
+                        <p className="text-balance text-[10px] font-light leading-snug text-white/65 sm:text-[12px] sm:leading-relaxed md:text-[13px]">
+                          {p.body}
+                        </p>
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
           </div>
         </header>
       </div>

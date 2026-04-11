@@ -8,9 +8,12 @@ import { getTranslations } from "next-intl/server";
 export async function CompanyLegalOneLine({
   variant,
   tone = "light",
+  omitPrefix = false,
 }: {
   variant: "juridiska" | "pakalpojums";
   tone?: "light" | "dark";
+  /** Ja true — tikai rekvizītu rinda (piem. pēc summary „Pakalpojuma sniedzējs”). */
+  omitPrefix?: boolean;
 }) {
   const t = await getTranslations("Footer");
   const { legalName, regNo, legalAddress, isComplete } = getCompanyLegal();
@@ -26,7 +29,7 @@ export async function CompanyLegalOneLine({
     const isDev = process.env.NODE_ENV === "development";
     return (
       <p className={cls}>
-        <span>{prefix} </span>
+        {omitPrefix ? null : <span>{prefix} </span>}
         {publicBrand}
         {isDev ? (
           <span
@@ -41,7 +44,7 @@ export async function CompanyLegalOneLine({
 
   return (
     <p className={cls}>
-      <span>{prefix} </span>
+      {omitPrefix ? null : <span>{prefix} </span>}
       {legalName}, Reģ. nr. {regNo}, {legalAddress}
     </p>
   );
