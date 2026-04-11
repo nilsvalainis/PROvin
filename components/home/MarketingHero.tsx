@@ -10,6 +10,7 @@ import {
   homeMarketingPillarGridWidthClass,
 } from "@/lib/home-layout";
 import { orderSectionHref } from "@/lib/paths";
+import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 
 const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
 
@@ -53,6 +54,8 @@ export function MarketingHero() {
           >
             {t("h2")}
           </p>
+
+          <DiagnosticScanLine className="mx-auto mt-1 max-w-[min(100%,42rem)] sm:mt-1.5" />
 
           {/* Četri pīlāri — viena horizontāla rinda virs CTA; ikona ↔ virsraksts tieši gap-6 */}
           <div className={`${homeMarketingPillarGridShellClass} mt-4 w-full sm:mt-5 md:mt-6`}>
