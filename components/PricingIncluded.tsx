@@ -34,10 +34,10 @@ const GRID_LUCIDE_ICONS: LucideIcon[] = [
 ];
 
 const iconClass =
-  "h-8 w-8 shrink-0 text-[#0066ff] [stroke-width:1.5] sm:h-[32px] sm:w-[32px]";
+  "h-8 w-8 shrink-0 text-[#050505] [stroke-width:1.5] sm:h-[32px] sm:w-[32px]";
 
 const GLASS =
-  "rounded-xl border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.03] to-white/[0.01] backdrop-blur-md";
+  "rounded-xl border border-white/60 bg-white/40 shadow-xl shadow-[0_40px_120px_-28px_rgba(0,0,0,0.055),0_18px_48px_-16px_rgba(0,0,0,0.04)] backdrop-blur-[20px]";
 
 export async function PricingIncluded() {
   const t = await getTranslations("Pricing");
@@ -80,7 +80,7 @@ export async function PricingIncluded() {
                 <li key={item.title} className="min-w-0">
                   <Link
                     href={irissHref}
-                    className={`${GLASS} flex min-h-0 min-h-[100%] gap-3 p-3.5 text-left transition hover:border-white/[0.12] sm:gap-3.5 sm:p-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent`}
+                    className={`${GLASS} flex min-h-0 min-h-[100%] gap-3 p-3.5 text-left transition hover:border-white/70 sm:gap-3.5 sm:p-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent`}
                   >
                     {inner}
                   </Link>

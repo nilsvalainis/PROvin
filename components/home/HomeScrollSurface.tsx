@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useLayoutEffect, useRef } from "react";
+import { SilverBlueprintPaper } from "@/components/home/SilverBlueprintPaper";
 import { ViewportCornerMarks } from "@/components/home/ViewportCornerMarks";
 import { computeHomeSilverFadeProgress, computeHomeSurfaceT } from "@/lib/home-surface";
 
@@ -37,11 +38,13 @@ export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProp
       {/* Single fixed silver; black overlay fades on scroll (no stacked gray ramps). */}
       <div className="pointer-events-none fixed inset-0 z-0 bg-[#e5e7eb]" aria-hidden />
 
+      <SilverBlueprintPaper />
+
       {wireframe}
 
       <div
         ref={blackRef}
-        className="pointer-events-none fixed inset-0 z-[2] bg-[#050505]"
+        className="pointer-events-none fixed inset-0 z-[3] bg-[#050505]"
         style={{ opacity: 1 }}
         aria-hidden
       />
