@@ -94,6 +94,7 @@ export function IrissStaggerShell({
 
     let ro: ResizeObserver | null = null;
     let raf = 0;
+    let roDebounce: number | undefined;
 
     const flush = () => {
       raf = 0;
@@ -109,12 +110,20 @@ export function IrissStaggerShell({
       raf = requestAnimationFrame(flush);
     };
 
+    const scheduleFromRo = () => {
+      if (roDebounce !== undefined) window.clearTimeout(roDebounce);
+      roDebounce = window.setTimeout(() => {
+        roDebounce = undefined;
+        schedule();
+      }, 48);
+    };
+
     schedule();
     requestAnimationFrame(schedule);
 
     if (typeof ResizeObserver !== "undefined") {
       try {
-        ro = new ResizeObserver(schedule);
+        ro = new ResizeObserver(scheduleFromRo);
         ro.observe(el);
       } catch {
         /* ResizeObserver dažos režīmos var mest */
@@ -122,6 +131,7 @@ export function IrissStaggerShell({
     }
 
     return () => {
+      if (roDebounce !== undefined) window.clearTimeout(roDebounce);
       if (raf) cancelAnimationFrame(raf);
       ro?.disconnect();
     };
@@ -240,7 +250,13 @@ export function IrissStaggerShell({
     }
 
     const obs = io;
-    root.querySelectorAll("[data-iriss-index]").forEach((el) => obs.observe(el));
+    root.querySelectorAll("[data-iriss-index]").forEach((node) => {
+      try {
+        obs.observe(node);
+      } catch {
+        /* dažos WebKit variantos observe var mest */
+      }
+    });
 
     let revealTimer: number | undefined;
     if (typeof window !== "undefined") {
@@ -275,12 +291,13 @@ export function IrissStaggerShell({
       });
     };
 
+    /* Bezgalīgs rAF + Lenis / ritināšana = pārslodze un reizēm nestabils WebKit; rAF tikai kamēr „velkas” pie mērķa. */
     const tick = () => {
       try {
         const section = sectionRef.current?.getBoundingClientRect();
         const vh = window.innerHeight;
         if (!section) {
-          rafRef.current = requestAnimationFrame(tick);
+          rafRef.current = null;
           return;
         }
 
@@ -305,21 +322,35 @@ export function IrissStaggerShell({
         setPathDashOffset(pathGhostARef, smoothGhostARef.current, len);
         setPathDashOffset(pathGhostBRef, smoothGhostBRef.current, len);
         fadeTicks(smoothMainRef.current);
-      } catch {
-        /* neļaujam rAF salauzt visu lapu */
-      }
 
-      rafRef.current = requestAnimationFrame(tick);
+        const settled =
+          Math.abs(targetRef.current - smoothMainRef.current) < 0.014 &&
+          Math.abs(targetRef.current - smoothGhostARef.current) < 0.02 &&
+          Math.abs(targetRef.current - smoothGhostBRef.current) < 0.022;
+
+        if (!settled) {
+          rafRef.current = requestAnimationFrame(tick);
+        } else {
+          rafRef.current = null;
+        }
+      } catch {
+        rafRef.current = null;
+      }
     };
 
-    const bump = () => {};
-    window.addEventListener("scroll", bump, { passive: true });
-    window.addEventListener("resize", bump, { passive: true });
-    rafRef.current = requestAnimationFrame(tick);
+    const kick = () => {
+      if (rafRef.current == null) {
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    kick();
+    window.addEventListener("scroll", kick, { passive: true });
+    window.addEventListener("resize", kick, { passive: true });
 
     return () => {
-      window.removeEventListener("scroll", bump);
-      window.removeEventListener("resize", bump);
+      window.removeEventListener("scroll", kick);
+      window.removeEventListener("resize", kick);
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     };
   }, [reduceMotion]);
@@ -384,17 +415,16 @@ export function IrissStaggerShell({
             d={pathD}
             fill="none"
             stroke={GLOW}
-            strokeWidth={1.05}
+            strokeWidth={1.35}
             strokeLinecap="round"
             strokeLinejoin="round"
-            opacity={0.3}
+            opacity={0.22}
             vectorEffect="non-scaling-stroke"
-            style={{ filter: "blur(2.8px)" }}
           />
           <g ref={tickGroupRef}>
             {ticks.map((t, i) => (
               <line
-                key={`iriss-tick-${i}-${Math.round(t.s * 1000)}`}
+                key={`iriss-tick-${i}`}
                 data-s={String(t.s)}
                 x1={t.x1}
                 y1={t.y1}

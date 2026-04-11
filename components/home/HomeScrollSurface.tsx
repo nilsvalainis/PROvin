@@ -1,17 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { type ReactNode } from "react";
 import { ViewportCornerMarks } from "@/components/home/ViewportCornerMarks";
-
-/** Tikai klients — izvairās no SSR/hydration atšķirībām ar SVG useId / clipPath (bieža „Application error” iemesla). */
-const HomeSpeedometerBackground = dynamic(
-  () =>
-    import("@/components/home/HomeSpeedometerBackground").then((m) => ({
-      default: m.HomeSpeedometerBackground,
-    })),
-  { ssr: false, loading: () => null },
-);
 
 type HomeScrollSurfaceProps = {
   wireframe?: ReactNode;
@@ -20,6 +10,7 @@ type HomeScrollSurfaceProps = {
 
 /**
  * Pilna lapa — ciets #050505 + oklch „titanium” atspīdums + dither (bez banding / ovāla).
+ * Spidometra fona animācija īslaicīgi izņemta — tā bija saistīta ar klienta avārijām; failu `HomeSpeedometerBackground` var atkal pieslēgt pēc stabilizācijas.
  */
 export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProps) {
   return (
@@ -29,8 +20,6 @@ export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProp
       <div className="pointer-events-none fixed inset-0 z-[2] home-deep-canvas-glow" aria-hidden />
 
       <div className="pointer-events-none fixed inset-0 z-[3] home-canvas-banding-dither" aria-hidden />
-
-      <HomeSpeedometerBackground />
 
       {wireframe}
 
