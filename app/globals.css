@@ -154,10 +154,6 @@ body {
   opacity: 0.08;
 }
 
-.provin-scroll-hint {
-  transform: translateX(-50%);
-}
-
 /* Wireframe fons — lēna „elpošana” (tikai transform, GPU) */
 @keyframes provin-wireframe-float {
   0%,

@@ -93,10 +93,10 @@ export function MarketingHero() {
       <a
         href="#site-content"
         aria-label={t("scrollToPricingAria")}
-        className="provin-scroll-hint absolute bottom-[max(1.25rem,env(safe-area-inset-bottom,0px))] left-1/2 z-30 flex min-h-11 min-w-11 max-w-[min(100%,20rem)] -translate-x-1/2 flex-col items-center justify-center gap-2 rounded-full px-3 text-center text-[10px] font-semibold uppercase leading-snug tracking-[0.18em] text-white/45 transition-colors hover:text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/40 sm:bottom-8 sm:min-h-0 sm:min-w-0 sm:text-[11px] sm:tracking-[0.2em]"
+        className="absolute bottom-[max(0.5rem,env(safe-area-inset-bottom,0px))] left-1/2 z-30 flex w-max min-h-11 max-w-[min(100%,22rem)] -translate-x-1/2 flex-col items-center justify-center gap-1.5 rounded-full px-4 py-2 text-center text-[10px] font-semibold uppercase leading-snug tracking-[0.18em] text-white/45 transition-colors hover:text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/40 sm:bottom-5 sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
       >
-        <span className="text-balance">{t("scrollToPricingAria")}</span>
-        <ChevronDown className="h-4 w-4 shrink-0 opacity-80" strokeWidth={2} aria-hidden />
+        <span className="w-full text-balance text-center">{t("scrollToPricingAria")}</span>
+        <ChevronDown className="mx-auto h-4 w-4 shrink-0 opacity-80" strokeWidth={2} aria-hidden />
       </a>
     </section>
   );
