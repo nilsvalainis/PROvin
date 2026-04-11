@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { IrissStaggerShell } from "@/components/iriss/IrissStaggerShell";
+import { IrissStaggerWithBoundary } from "@/components/iriss/IrissStaggerWithBoundary";
 import {
   homeContentMaxClass,
   homeSectionTitleClass,
@@ -44,7 +44,7 @@ export async function IrissSection() {
           />
         </div>
 
-        <IrissStaggerShell
+        <IrissStaggerWithBoundary
           headingClassName={irissStaggerHeadingClass}
           bodyClassName={irissBodyProseClass}
           gapClassName={irissStaggerBlockGapClass}

@@ -94,5 +94,7 @@ export function sectionScrollProgress(rect: DOMRectReadOnly, vh: number): number
   const denom = rect.height + vh;
   if (denom <= 0) return 0;
   const raw = (vh - rect.top) / denom;
-  return Math.min(1, Math.max(0, Math.pow(raw, 0.94)));
+  /* Vispirms 0…1, tad pow — negatīvs raw + daļskaitļa pakāpe dod NaN un salauž lerp. */
+  const clamped = Math.min(1, Math.max(0, raw));
+  return Math.pow(clamped, 0.94);
 }

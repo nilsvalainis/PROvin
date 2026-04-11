@@ -221,36 +221,51 @@ export function IrissStaggerShell({
       if (!g) return;
       const len = pathLenRef.current;
       if (len <= 0) return;
+      if (!Number.isFinite(drawT)) return;
       const fade = Math.max(12, len * 0.038);
       const head = drawT * len;
       g.querySelectorAll("line[data-s]").forEach((el) => {
-        const s = Number((el as SVGLineElement).dataset.s);
+        const rawS = el.getAttribute("data-s");
+        const s = rawS == null ? NaN : Number(rawS);
         if (!Number.isFinite(s)) return;
         const o = head >= s ? Math.min(0.9, (head - s) / fade) : 0;
-        (el as SVGLineElement).setAttribute("stroke-opacity", String(o));
+        el.setAttribute("stroke-opacity", String(o));
       });
     };
 
     const tick = () => {
-      const section = sectionRef.current?.getBoundingClientRect();
-      const vh = window.innerHeight;
-      if (!section) {
-        rafRef.current = requestAnimationFrame(tick);
-        return;
+      try {
+        const section = sectionRef.current?.getBoundingClientRect();
+        const vh = window.innerHeight;
+        if (!section) {
+          rafRef.current = requestAnimationFrame(tick);
+          return;
+        }
+
+        const tgt = sectionScrollProgress(section, vh);
+        targetRef.current = Number.isFinite(tgt) ? tgt : 0;
+
+        smoothMainRef.current += (targetRef.current - smoothMainRef.current) * LERP_MAIN;
+        smoothGhostARef.current += (targetRef.current - smoothGhostARef.current) * LERP_GHOST_A;
+        smoothGhostBRef.current += (targetRef.current - smoothGhostBRef.current) * LERP_GHOST_B;
+
+        if (!Number.isFinite(smoothMainRef.current)) smoothMainRef.current = targetRef.current;
+        if (!Number.isFinite(smoothGhostARef.current)) smoothGhostARef.current = targetRef.current;
+        if (!Number.isFinite(smoothGhostBRef.current)) smoothGhostBRef.current = targetRef.current;
+
+        smoothMainRef.current = Math.min(1, Math.max(0, smoothMainRef.current));
+        smoothGhostARef.current = Math.min(1, Math.max(0, smoothGhostARef.current));
+        smoothGhostBRef.current = Math.min(1, Math.max(0, smoothGhostBRef.current));
+
+        const len = pathLenRef.current;
+        setPathDashOffset(pathMainRef, smoothMainRef.current, len);
+        setPathDashOffset(pathGlowRef, smoothMainRef.current, len);
+        setPathDashOffset(pathGhostARef, smoothGhostARef.current, len);
+        setPathDashOffset(pathGhostBRef, smoothGhostBRef.current, len);
+        fadeTicks(smoothMainRef.current);
+      } catch {
+        /* neļaujam rAF salauzt visu lapu */
       }
-
-      targetRef.current = sectionScrollProgress(section, vh);
-
-      smoothMainRef.current += (targetRef.current - smoothMainRef.current) * LERP_MAIN;
-      smoothGhostARef.current += (targetRef.current - smoothGhostARef.current) * LERP_GHOST_A;
-      smoothGhostBRef.current += (targetRef.current - smoothGhostBRef.current) * LERP_GHOST_B;
-
-      const len = pathLenRef.current;
-      setPathDashOffset(pathMainRef, smoothMainRef.current, len);
-      setPathDashOffset(pathGlowRef, smoothMainRef.current, len);
-      setPathDashOffset(pathGhostARef, smoothGhostARef.current, len);
-      setPathDashOffset(pathGhostBRef, smoothGhostBRef.current, len);
-      fadeTicks(smoothMainRef.current);
 
       rafRef.current = requestAnimationFrame(tick);
     };
@@ -335,10 +350,10 @@ export function IrissStaggerShell({
             style={{ filter: "blur(2.8px)" }}
           />
           <g ref={tickGroupRef}>
-            {ticks.map((t) => (
+            {ticks.map((t, i) => (
               <line
-                key={t.s}
-                data-s={t.s}
+                key={`iriss-tick-${i}-${Math.round(t.s * 1000)}`}
+                data-s={String(t.s)}
                 x1={t.x1}
                 y1={t.y1}
                 x2={t.x2}
