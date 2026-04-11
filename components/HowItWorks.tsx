@@ -8,7 +8,7 @@ export async function HowItWorks({
   variant = "default",
 }: {
   tone?: "light" | "dark";
-  variant?: "default" | "silver" | "deepReflection";
+  variant?: "default" | "silver";
 }) {
   const messages = await getMessages();
   const raw = (messages as { HowItWorks?: { steps?: Step[] } }).HowItWorks?.steps;
