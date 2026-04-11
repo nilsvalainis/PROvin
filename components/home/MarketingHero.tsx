@@ -10,7 +10,7 @@ const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCirc
 
 /** Stikla karte — garena taisnstūra forma: režģa platums 2×, augstums ~0.7× iepriekšējā. */
 const PILLAR_GLASS =
-  "flex min-h-[4.9rem] w-full max-w-none flex-col justify-center rounded-lg border border-white/12 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-[36px] sm:min-h-[5.6rem]";
+  "flex min-h-[6rem] w-full max-w-none flex-col justify-center rounded-lg border border-white/12 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-[36px] sm:min-h-[6.875rem]";
 
 type HeroPillar = { ref: string; title: string; body: string };
 
@@ -57,14 +57,18 @@ export function MarketingHero() {
                 const Icon = PILLAR_ICONS[i] ?? FileText;
                 return (
                   <article key={`${p.title}-${i}`} className={PILLAR_GLASS}>
-                    <div className="flex h-full min-h-0 w-full flex-row items-center gap-2.5 px-3 py-2.5 text-left sm:gap-3 sm:px-4 sm:py-3">
-                      <Icon className="h-5 w-5 shrink-0 text-[#0066ff] sm:h-6 sm:w-6" strokeWidth={1.25} aria-hidden />
+                    <div className="flex h-full min-h-0 w-full flex-row items-center gap-3.5 px-[1.125rem] py-3 text-left sm:gap-[1.125rem] sm:px-6 sm:py-4">
+                      <Icon
+                        className="h-[1.875rem] w-[1.875rem] shrink-0 text-[#0066ff] sm:h-[2.25rem] sm:w-[2.25rem]"
+                        strokeWidth={1.875}
+                        aria-hidden
+                      />
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-[10px] font-semibold leading-snug tracking-tight text-white sm:text-[11px]">
+                        <h3 className="text-[15px] font-semibold leading-snug tracking-tight text-white sm:text-[17px]">
                           {p.title}
                         </h3>
                         {p.body ? (
-                          <p className="mt-0.5 text-[9px] font-light leading-snug text-white/70 sm:mt-1 sm:text-[10px] sm:leading-relaxed">
+                          <p className="mt-1 text-[13.5px] font-light leading-snug text-white/70 sm:mt-1.5 sm:text-[15px] sm:leading-relaxed">
                             {p.body}
                           </p>
                         ) : null}
