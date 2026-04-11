@@ -10,15 +10,24 @@ import { useEffect } from "react";
  */
 export function LenisProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
-    const lenis = new Lenis({
-      autoRaf: true,
-      lerp: 0.085,
-      wheelMultiplier: 0.92,
-      touchMultiplier: 1.05,
-      smoothWheel: true,
-    });
+    let lenis: Lenis | null = null;
+    try {
+      lenis = new Lenis({
+        autoRaf: true,
+        lerp: 0.085,
+        wheelMultiplier: 0.92,
+        touchMultiplier: 1.05,
+        smoothWheel: true,
+      });
+    } catch {
+      /* Dažās videēs Lenis var mest — lapa joprojām darbojas bez smooth scroll. */
+    }
     return () => {
-      lenis.destroy();
+      try {
+        lenis?.destroy();
+      } catch {
+        /* ignore */
+      }
     };
   }, []);
 

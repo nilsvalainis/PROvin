@@ -50,38 +50,43 @@ export function HomeSpeedometerBackground() {
 
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     const applyFrame = () => {
-      const p = scrollProgress01();
-      const targetSpeed = p * GAUGE_SPEED_MAX;
-      const targetOdo = p * 9_999_999;
+      try {
+        const p = scrollProgress01();
+        const targetSpeed = p * GAUGE_SPEED_MAX;
+        const targetOdo = p * 9_999_999;
 
-      if (mq.matches) {
-        smoothSpeedRef.current = targetSpeed;
-        smoothOdoRef.current = targetOdo;
-      } else {
-        smoothSpeedRef.current += (targetSpeed - smoothSpeedRef.current) * 0.11;
-        smoothOdoRef.current += (targetOdo - smoothOdoRef.current) * 0.14;
-      }
+        if (mq.matches) {
+          smoothSpeedRef.current = targetSpeed;
+          smoothOdoRef.current = targetOdo;
+        } else {
+          smoothSpeedRef.current += (targetSpeed - smoothSpeedRef.current) * 0.11;
+          smoothOdoRef.current += (targetOdo - smoothOdoRef.current) * 0.14;
+        }
 
-      const s = smoothSpeedRef.current;
-      const theta = speedToAngleRad(Number.isFinite(s) ? s : 0);
-      const tip = polar(CX, CY, NEEDLE_LEN, theta);
-      needleLineRef.current?.setAttribute("x2", String(tip.x));
-      needleLineRef.current?.setAttribute("y2", String(tip.y));
+        const s = smoothSpeedRef.current;
+        const theta = speedToAngleRad(Number.isFinite(s) ? s : 0);
+        const tip = polar(CX, CY, NEEDLE_LEN, theta);
+        needleLineRef.current?.setAttribute("x2", String(tip.x));
+        needleLineRef.current?.setAttribute("y2", String(tip.y));
 
-      const raw = smoothOdoRef.current;
-      for (let i = 0; i < 7; i++) {
-        const pow = 10 ** (6 - i);
-        digitStripRefs.current[i]?.setAttribute("transform", `translate(0, ${digitScrollY(raw, pow)})`);
-      }
+        const raw = smoothOdoRef.current;
+        for (let i = 0; i < 7; i++) {
+          const pow = 10 ** (6 - i);
+          const ty = digitScrollY(Number.isFinite(raw) ? raw : 0, pow);
+          digitStripRefs.current[i]?.setAttribute("transform", `translate(0, ${Number.isFinite(ty) ? ty : 0})`);
+        }
 
-      const settle =
-        mq.matches ||
-        (Math.abs(targetSpeed - smoothSpeedRef.current) < 0.035 &&
-          Math.abs(targetOdo - smoothOdoRef.current) < 1.5);
+        const settle =
+          mq.matches ||
+          (Math.abs(targetSpeed - smoothSpeedRef.current) < 0.035 &&
+            Math.abs(targetOdo - smoothOdoRef.current) < 1.5);
 
-      if (!settle) {
-        rafRef.current = requestAnimationFrame(applyFrame);
-      } else {
+        if (!settle) {
+          rafRef.current = requestAnimationFrame(applyFrame);
+        } else {
+          rafRef.current = null;
+        }
+      } catch {
         rafRef.current = null;
       }
     };
@@ -120,17 +125,6 @@ export function HomeSpeedometerBackground() {
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          <filter
-            id={filterId}
-            x="-6%"
-            y="-6%"
-            width="112%"
-            height="112%"
-            colorInterpolationFilters="sRGB"
-          >
-            <feDropShadow dx="0" dy="0" stdDeviation="0.85" floodColor={BLUE} floodOpacity="0.48" />
-            <feDropShadow dx="0" dy="1" stdDeviation="0.28" floodColor={BLUE} floodOpacity="0.2" />
-          </filter>
           {Array.from({ length: 7 }).map((_, i) => (
             <clipPath id={`${filterId}-d${i}`} key={`clip-${filterId}-${i}`}>
               <rect x={ODO_X + i * DIGIT_W} y={ODO_Y} width={DIGIT_W - 0.5} height={DIGIT_H + 1} rx="0.5" />
@@ -138,7 +132,30 @@ export function HomeSpeedometerBackground() {
           ))}
         </defs>
 
-        <g filter={`url(#${filterId})`} stroke={SILVER} vectorEffect="non-scaling-stroke">
+        {/* Zila „ēna” — dublētas nobīdītas līnijas (bez SVG filter — mazāk WebKit avāriju). */}
+        <g stroke={BLUE} strokeOpacity={0.22} vectorEffect="non-scaling-stroke" pointerEvents="none">
+          {ticks.map((tk) => {
+            const th = speedToAngleRad(tk.value);
+            const ox = 0.55;
+            const oy = 0.55;
+            const pOut = polar(CX, CY, tk.outerR, th);
+            const pIn = polar(CX, CY, tk.innerR, th);
+            const sw =
+              tk.kind === "major" ? 0.62 : tk.kind === "medium" ? 0.48 : 0.38;
+            return (
+              <line
+                key={`tb-${tk.value}-${tk.kind}`}
+                x1={pIn.x + ox}
+                y1={pIn.y + oy}
+                x2={pOut.x + ox}
+                y2={pOut.y + oy}
+                strokeWidth={sw}
+                strokeLinecap="butt"
+              />
+            );
+          })}
+        </g>
+        <g stroke={SILVER} vectorEffect="non-scaling-stroke" pointerEvents="none">
           {ticks.map((tk) => {
             const th = speedToAngleRad(tk.value);
             const pOut = polar(CX, CY, tk.outerR, th);

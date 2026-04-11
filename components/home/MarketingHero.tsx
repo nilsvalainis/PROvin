@@ -21,7 +21,8 @@ type HeroPillar = { title: string; body: string };
 export function MarketingHero() {
   const t = useTranslations("Hero");
   const locale = useLocale();
-  const pillars = t.raw("pillars") as HeroPillar[];
+  const rawPillars = t.raw("pillars");
+  const pillars: HeroPillar[] = Array.isArray(rawPillars) ? (rawPillars as HeroPillar[]) : [];
 
   return (
     <section

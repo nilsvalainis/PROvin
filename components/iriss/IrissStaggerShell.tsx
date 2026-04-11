@@ -97,6 +97,7 @@ export function IrissStaggerShell({
 
     const flush = () => {
       raf = 0;
+      if (!el.isConnected) return;
       /* Tikai offsetHeight — max(offset,scroll) + RO var izsaukt setState katru kadru un „Maximum update depth”. */
       const w = Math.max(32, Math.round(el.offsetWidth));
       const h = Math.max(100, Math.round(el.offsetHeight));
