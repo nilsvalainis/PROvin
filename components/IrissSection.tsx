@@ -27,8 +27,8 @@ export async function IrissSection() {
 
       <div className="relative mx-auto w-full max-w-[1000px]">
         <div className="text-center">
-          <h2 className={homeSectionTitleClass}>{t("title")}</h2>
-          <p className={`${irissSectionSubtitleClass} home-muted-foreground`}>{t("subtitle")}</p>
+          <h2 className={`${homeSectionTitleClass} text-[#050505]`}>{t("title")}</h2>
+          <p className={`${irissSectionSubtitleClass} text-[#050505]/85`}>{t("subtitle")}</p>
         </div>
 
         <div className="mt-5 flex justify-center">
@@ -42,9 +42,15 @@ export async function IrissSection() {
         </div>
 
         <div className="mx-auto mt-10 max-w-[750px] text-center sm:mt-12">
-          <p className={`${irissBodyProseClass} mb-12 text-balance`}>{t.rich("body1", irissRichBody)}</p>
-          <p className={`${irissBodyProseClass} mb-12 text-balance`}>{t.rich("body2", irissRichBody)}</p>
-          <p className={`${irissBodyProseClass} text-balance`}>{t.rich("body3", irissRichBody)}</p>
+          <p className={`${irissBodyProseClass} mb-12 text-balance text-[#050505] [&_strong]:text-[#050505]`}>
+            {t.rich("body1", irissRichBody)}
+          </p>
+          <p className={`${irissBodyProseClass} mb-12 text-balance text-[#050505] [&_strong]:text-[#050505]`}>
+            {t.rich("body2", irissRichBody)}
+          </p>
+          <p className={`${irissBodyProseClass} text-balance text-[#050505] [&_strong]:text-[#050505]`}>
+            {t.rich("body3", irissRichBody)}
+          </p>
         </div>
       </div>
     </section>

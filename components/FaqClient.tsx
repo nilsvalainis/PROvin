@@ -8,13 +8,52 @@ export type FaqItem = { id: string; q: string; a: string };
 type FaqClientProps = {
   title: string;
   items: FaqItem[];
-  tone?: "light" | "dark";
+  tone?: "light" | "dark" | "silver";
 };
 
 export function FaqClient({ title, items, tone = "dark" }: FaqClientProps) {
-  const dark = tone === "dark";
+  if (tone === "silver") {
+    return (
+      <section
+        id="biezi-jautajumi"
+        className="scroll-mt-16 bg-transparent px-4 py-10 sm:px-6 sm:py-14"
+        aria-labelledby="faq-heading"
+      >
+        <div className="mx-auto min-w-0 max-w-[680px]">
+          <div className="text-center">
+            <h2 id="faq-heading" className={`${homeSectionTitleClass} text-[#050505]`}>
+              {title}
+            </h2>
+          </div>
 
-  if (!dark) {
+          <div className="divide-y divide-[#050505]/12">
+            {items.map((item) => (
+              <details
+                key={item.id}
+                className="group border-0 bg-transparent shadow-none open:bg-transparent"
+              >
+                <summary className="flex cursor-pointer list-none items-start justify-between gap-3 py-4 text-left sm:gap-4 sm:py-[1.125rem] [&::-webkit-details-marker]:hidden">
+                  <span className="min-w-0 flex-1 text-[15px] font-medium leading-snug tracking-tight text-[#050505] sm:text-[16px] sm:leading-snug">
+                    {item.q}
+                  </span>
+                  <ChevronDown
+                    className="mt-0.5 h-4 w-4 shrink-0 text-[#050505]/45 transition-transform duration-200 ease-out group-open:rotate-180"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                </summary>
+                <p className="max-w-[65ch] pb-4 pr-2 text-[14px] font-normal leading-[1.75] text-[#050505]/82 sm:pb-5 sm:pr-6 sm:text-[15px] sm:leading-[1.75]">
+                  {item.a}
+                </p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (tone === "light") {
     return (
       <section
         id="biezi-jautajumi"

@@ -15,10 +15,9 @@ export function AutoWireframeBackground() {
           fill="none"
           vectorEffect="non-scaling-stroke"
           stroke="#ffffff"
-          strokeDasharray="2 4"
-          strokeOpacity={0.08}
+          strokeOpacity={0.02}
           strokeWidth={0.55}
-          strokeLinecap="butt"
+          strokeLinecap="round"
           d="M 200 250 C 400 150, 700 150, 900 250"
         />
       </svg>

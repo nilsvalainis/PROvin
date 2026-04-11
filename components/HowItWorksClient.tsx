@@ -12,11 +12,24 @@ const stepIconClass =
 const stepIconClassDark =
   "h-[1.68rem] w-[1.68rem] shrink-0 text-zinc-500 transition-colors group-hover:text-[#0061D2] [stroke-width:1.5] max-[360px]:h-[1.4rem] max-[360px]:w-[1.4rem] sm:h-[2.3625rem] sm:w-[2.3625rem]";
 
-export function HowItWorksClient({ steps, tone = "light" }: { steps: Step[]; tone?: "light" | "dark" }) {
+const stepIconClassSilver =
+  "h-[1.68rem] w-[1.68rem] shrink-0 text-[#050505] transition-colors group-hover:text-[#0061d2] [stroke-width:1.5] max-[360px]:h-[1.4rem] max-[360px]:w-[1.4rem] sm:h-[2.3625rem] sm:w-[2.3625rem]";
+
+export function HowItWorksClient({
+  steps,
+  tone = "light",
+  variant = "default",
+}: {
+  steps: Step[];
+  tone?: "light" | "dark";
+  variant?: "default" | "silver";
+}) {
   const dark = tone === "dark";
-  const dash = dark ? "border-zinc-600" : "border-[#d1d5db]";
-  const title = dark ? "text-zinc-100" : "text-[#1d1d1f]";
-  const body = dark ? "text-zinc-400" : "text-[#86868b]";
+  const silver = variant === "silver";
+
+  const dash = silver ? "border-[#050505]/14" : dark ? "border-zinc-600" : "border-[#d1d5db]";
+  const title = silver ? "text-[#050505]" : dark ? "text-zinc-100" : "text-[#1d1d1f]";
+  const body = silver ? "text-[#050505]/82" : dark ? "text-zinc-400" : "text-[#86868b]";
 
   return (
     <section className="home-body-ink relative z-10 overflow-visible bg-transparent">
@@ -31,7 +44,7 @@ export function HowItWorksClient({ steps, tone = "light" }: { steps: Step[]; ton
                 {steps.map((s, i) => (
                   <Fragment key={`icon-${s.n}`}>
                     <div className="group flex min-w-0 flex-1 basis-0 justify-center">
-                      <StepIcon n={s.n} dark={dark} />
+                      <StepIcon n={s.n} dark={dark} silver={silver} />
                     </div>
                     {i < steps.length - 1 ? (
                       <div
@@ -67,8 +80,8 @@ export function HowItWorksClient({ steps, tone = "light" }: { steps: Step[]; ton
   );
 }
 
-function StepIcon({ n, dark }: { n: string; dark?: boolean }) {
-  const cls = dark ? stepIconClassDark : stepIconClass;
+function StepIcon({ n, dark, silver }: { n: string; dark?: boolean; silver?: boolean }) {
+  const cls = silver ? stepIconClassSilver : dark ? stepIconClassDark : stepIconClass;
   if (n === "1") {
     return <ClipboardPenLine className={cls} aria-hidden strokeWidth={1.5} />;
   }
