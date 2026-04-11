@@ -15,6 +15,7 @@
     "phoneHint": "Rezerves saziņai, piem. ja e-pasts ievadīts kļūdaini.",
     "vinHint": "Bez I, O, Q.",
     "vinPlaceholder": "17 rakstzīmes",
+    "vinPlaceholderHero": "Ievadiet VIN numuru",
     "notesPlaceholder": "Īsi, ja ir svarīgi…",
     "namePlaceholder": "Jānis Bērziņš",
     "emailPlaceholder": "jānis@piemērs.lv",

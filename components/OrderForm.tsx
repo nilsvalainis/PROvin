@@ -165,20 +165,41 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
           <label htmlFor="order-vin" className={labelClass}>
             {t("vinLabel")} <span className={reqStarClass}>*</span>
           </label>
-          <input
-            id="order-vin"
-            name="vin"
-            type="text"
-            required
-            maxLength={17}
-            spellCheck={false}
-            className={`${inputBase} font-mono uppercase tracking-wide`}
-            placeholder={t("vinPlaceholder")}
-            onChange={(e) => {
-              const el = e.target;
-              el.value = el.value.toUpperCase().slice(0, 17);
-            }}
-          />
+          {hero ? (
+            <div className="vin-wrapper w-full">
+              <input
+                id="order-vin"
+                name="vin"
+                type="text"
+                required
+                maxLength={17}
+                spellCheck={false}
+                className={`${inputBase} font-mono uppercase tracking-wide`}
+                placeholder={t("vinPlaceholderHero")}
+                onChange={(e) => {
+                  const el = e.target;
+                  el.value = el.value.toUpperCase().slice(0, 17);
+                }}
+              />
+              <div className="focus-ring vin-orbit-1" aria-hidden />
+              <div className="focus-ring vin-orbit-2" aria-hidden />
+            </div>
+          ) : (
+            <input
+              id="order-vin"
+              name="vin"
+              type="text"
+              required
+              maxLength={17}
+              spellCheck={false}
+              className={`${inputBase} font-mono uppercase tracking-wide`}
+              placeholder={t("vinPlaceholder")}
+              onChange={(e) => {
+                const el = e.target;
+                el.value = el.value.toUpperCase().slice(0, 17);
+              }}
+            />
+          )}
           <p className={hero ? "mt-1.5 text-[11px] font-normal text-[#e5e7eb]/52" : "mt-1 text-[11px] font-normal text-[#aeaeb2]"}>
             {t("vinHint")}
           </p>

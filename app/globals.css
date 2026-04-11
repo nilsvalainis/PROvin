@@ -122,11 +122,11 @@ body {
   pointer-events: none;
 }
 
-.ring-1 {
+.vin-orbit-1 {
   animation: rotateSlow 20s linear infinite;
 }
 
-.ring-2 {
+.vin-orbit-2 {
   animation: rotateReverse 30s linear infinite;
 }
 
