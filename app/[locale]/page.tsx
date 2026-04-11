@@ -22,7 +22,7 @@ export default async function HomePage({
         <MarketingHero />
 
         <div className="home-below-hero home-below-hero-cloud-layer home-body-ink">
-          <HowItWorks tone="dark" variant="liquidTitanium" />
+          <HowItWorks tone="dark" />
 
           <div
             id="site-content"
