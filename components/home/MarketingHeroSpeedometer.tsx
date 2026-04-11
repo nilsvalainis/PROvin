@@ -23,7 +23,7 @@ export function MarketingHeroSpeedometer() {
 
   return (
     <svg
-      className="hero-speedo pointer-events-none absolute left-1/2 top-[56%] z-[1] w-[min(100%,17.5rem)] -translate-x-1/2 -translate-y-1/2 opacity-[0.28] sm:w-[min(100%,20rem)] sm:opacity-[0.32]"
+      className="hero-speedo pointer-events-none absolute left-1/2 top-[84%] z-[1] w-[min(100%,52.5rem)] -translate-x-1/2 -translate-y-1/2 opacity-[0.28] sm:top-[86%] sm:w-[min(100%,60rem)] sm:opacity-[0.32]"
       viewBox="0 0 240 132"
       fill="none"
       aria-hidden
