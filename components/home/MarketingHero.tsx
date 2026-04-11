@@ -80,14 +80,14 @@ export function MarketingHero() {
             </div>
           </div>
 
-          <div className="mt-4 flex w-full max-w-[min(100%,24rem)] flex-col items-center sm:mt-5 md:mt-6">
+          <div className="mt-4 flex w-full flex-col items-center sm:mt-5 md:mt-6">
             <Link
               href={orderSectionHref(locale)}
-              className="provin-btn provin-btn--compact inline-flex min-h-9 w-full touch-manipulation items-center justify-center rounded-full bg-[#0066ff] px-[1.125rem] py-2.5 text-center text-[9px] font-bold uppercase tracking-[0.045em] text-white shadow-[0_0_17px_rgba(0,102,255,0.2)] ring-1 ring-white/10 active:brightness-95 sm:min-h-[2.4375rem] sm:px-6 sm:text-[11px] sm:tracking-[0.0525em]"
+              className="provin-btn provin-btn--compact inline-flex w-auto max-w-[min(100%,calc(100vw-2rem))] min-h-12 touch-manipulation items-center justify-center rounded-full bg-[#0066ff] px-6 py-3.5 text-center text-[12px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_0_22px_rgba(0,102,255,0.2)] ring-1 ring-white/10 active:brightness-95 sm:min-h-[3.25rem] sm:px-8 sm:text-[14px] sm:tracking-[0.07em]"
             >
-              <span className="inline-flex max-w-full items-center justify-center gap-1.5 text-center">
-                <span className="min-w-0 text-balance">{t("cta")}</span>
-                <ArrowRight className="h-3 w-3 shrink-0 opacity-95" strokeWidth={2.25} aria-hidden />
+              <span className="inline-flex items-center justify-center gap-2 text-center">
+                <span className="min-w-0 whitespace-nowrap">{t("cta")}</span>
+                <ArrowRight className="h-4 w-4 shrink-0 opacity-95" strokeWidth={2.25} aria-hidden />
               </span>
             </Link>
           </div>
