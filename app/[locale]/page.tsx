@@ -19,11 +19,9 @@ export default async function HomePage({
   const cancelled = sp.atcelts === "1";
 
   return (
-    <>
-      <HomeScrollSurface />
-      <AutoWireframeBackground />
-      <HomeProcessRail />
-      <div className="relative z-20 min-w-0 bg-transparent">
+    <HomeScrollSurface wireframe={<AutoWireframeBackground />}>
+      <div className="relative z-10 min-w-0 bg-transparent">
+        <HomeProcessRail />
         <MarketingHero />
 
         <div className="home-below-hero home-body-ink bg-transparent">
@@ -34,7 +32,7 @@ export default async function HomePage({
             id="site-content"
             className="home-site-rule home-body-ink relative scroll-mt-14 border-t border-transparent bg-transparent"
           >
-            <div className="relative z-10 pt-10 sm:pt-14 md:pt-16">
+            <div className="relative z-10 bg-transparent pt-10 sm:pt-14 md:pt-16">
               <FinalCta cancelled={cancelled} />
             </div>
             <PricingIncluded />
@@ -44,6 +42,6 @@ export default async function HomePage({
           <Footer />
         </div>
       </div>
-    </>
+    </HomeScrollSurface>
   );
 }
