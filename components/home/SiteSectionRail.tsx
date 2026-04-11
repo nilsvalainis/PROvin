@@ -89,30 +89,41 @@ export function SiteSectionRail() {
       return;
     }
     if (normalizedPath !== "/" && normalizedPath !== "") return;
-
-    const fromHash = activeFromHash(typeof window !== "undefined" ? window.location.hash : hash);
-    if (fromHash !== null) {
-      setActive(fromHash);
-      return;
-    }
     setActive(activeFromScroll());
-  }, [hash, normalizedPath, pathname]);
+  }, [normalizedPath, pathname]);
+
+  /** Hash tikai hashchange / sākumā; scroll vienmēr atjauno pēc pozīcijas (neiesalst uz #). */
+  const applyHashIfPresent = useCallback(() => {
+    if (normalizedPath !== "/" && normalizedPath !== "") return;
+    const fromHash = activeFromHash(typeof window !== "undefined" ? window.location.hash : hash);
+    if (fromHash !== null) setActive(fromHash);
+    else setActive(activeFromScroll());
+  }, [hash, normalizedPath]);
 
   useEffect(() => {
     if (!showRail) return;
     recomputeActive();
+    let raf = 0;
     const onScroll = () => {
       if (normalizedPath !== "/" && normalizedPath !== "") return;
-      if (activeFromHash(window.location.hash) !== null) return;
-      setActive(activeFromScroll());
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setActive(activeFromScroll()));
     };
     window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("scroll", onScroll, { passive: true, capture: true });
     window.addEventListener("resize", recomputeActive);
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("resize", recomputeActive);
     };
-  }, [hash, normalizedPath, pathname, recomputeActive, showRail]);
+  }, [normalizedPath, pathname, recomputeActive, showRail]);
+
+  useEffect(() => {
+    if (!showRail) return;
+    applyHashIfPresent();
+  }, [applyHashIfPresent, hash, showRail]);
 
   useLayoutEffect(() => {
     if (!showRail) return;
