@@ -50,7 +50,7 @@ export function MarketingHero() {
             {t("h2")}
           </p>
 
-          {/* 2×2 starp apakšvirsrakstu un CTA: šaurāks ~¾, augstāks ~⁴⁄₃ */}
+          {/* 2×2 starp apakšvirsrakstu un CTA (~3/4 platums, ~4/3 augstums) */}
           <div className="flex w-full justify-center px-1">
             <div className="grid w-full max-w-[18.5rem] grid-cols-2 justify-items-center gap-x-2 gap-y-2.5 sm:max-w-[20.25rem] sm:gap-x-2.5 sm:gap-y-3">
               {pillars.map((p, i) => {
