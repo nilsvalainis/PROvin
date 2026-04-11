@@ -1,17 +1,26 @@
 "use client";
 
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { approvedByIrissSignatureHeroClass } from "@/lib/home-layout";
 import { orderSectionHref } from "@/lib/paths";
 
+const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
+
+/** Stikla karte — starp apakšvirsrakstu un CTA; ~4/3 augstums, ~3/4 platums salīdzinājumā ar iepriekšējo joslu. */
+const PILLAR_GLASS =
+  "flex min-h-[7rem] w-full max-w-[9rem] flex-col justify-center rounded-lg border border-white/12 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-[36px] sm:min-h-[8rem] sm:max-w-[9.5rem]";
+
+type HeroPillar = { ref: string; title: string; body: string };
+
 /**
- * Pilnekrāna tumšais Hero — virsraksts un CTA; pīlāri atrodas `HeroPillarStrip` zem fold.
+ * Pilnekrāna tumšais Hero — četri pīlāri 2×2 starp apakšvirsrakstu un CTA.
  */
 export function MarketingHero() {
   const t = useTranslations("Hero");
   const locale = useLocale();
+  const pillars = t.raw("pillars") as HeroPillar[];
 
   return (
     <section
@@ -41,7 +50,33 @@ export function MarketingHero() {
             {t("h2")}
           </p>
 
-          <div className="mt-2 flex w-full max-w-[min(100%,24rem)] flex-col items-center gap-3 sm:mt-3">
+          {/* 2×2 starp apakšvirsrakstu un CTA: šaurāks ~¾, augstāks ~⁴⁄₃ */}
+          <div className="flex w-full justify-center px-1">
+            <div className="grid w-full max-w-[18.5rem] grid-cols-2 justify-items-center gap-x-2 gap-y-2.5 sm:max-w-[20.25rem] sm:gap-x-2.5 sm:gap-y-3">
+              {pillars.map((p, i) => {
+                const Icon = PILLAR_ICONS[i] ?? FileText;
+                return (
+                  <article key={`${p.title}-${i}`} className={PILLAR_GLASS}>
+                    <div className="flex h-full w-full flex-row items-start gap-2 px-2.5 py-5 text-left sm:gap-2.5 sm:px-3 sm:py-6">
+                      <Icon className="h-5 w-5 shrink-0 text-[#0066ff] sm:h-6 sm:w-6" strokeWidth={1.25} aria-hidden />
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-[10px] font-semibold leading-snug tracking-tight text-white sm:text-[11px]">
+                          {p.title}
+                        </h3>
+                        {p.body ? (
+                          <p className="mt-1 text-[9px] font-light leading-relaxed text-white/70 sm:mt-1.5 sm:text-[10px]">
+                            {p.body}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-0 flex w-full max-w-[min(100%,24rem)] flex-col items-center gap-3 sm:mt-0">
             <Link
               href={orderSectionHref(locale)}
               className="provin-btn provin-btn--compact inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#0066ff] px-7 py-3.5 text-center text-[13px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_0_22px_rgba(0,102,255,0.2)] ring-1 ring-white/10 sm:min-h-[3.25rem] sm:px-8 sm:text-[14px] sm:tracking-[0.07em]"

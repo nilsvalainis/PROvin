@@ -3,7 +3,6 @@ import { FinalCta } from "@/components/FinalCta";
 import { AutoWireframeBackground } from "@/components/home/AutoWireframeBackground";
 import { HomeScrollSurface } from "@/components/home/HomeScrollSurface";
 import { HomeProcessRail } from "@/components/home/HomeProcessRail";
-import { HeroPillarStrip } from "@/components/home/HeroPillarStrip";
 import { MarketingHero } from "@/components/home/MarketingHero";
 import { HowItWorks } from "@/components/HowItWorks";
 import { IrissSection } from "@/components/IrissSection";
@@ -25,7 +24,6 @@ export default async function HomePage({
         <MarketingHero />
 
         <div className="home-below-hero home-body-ink bg-transparent">
-          <HeroPillarStrip />
           <HowItWorks tone="dark" />
 
           <div
