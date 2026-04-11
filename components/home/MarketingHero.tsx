@@ -60,7 +60,7 @@ export function MarketingHero() {
           {/* Četri pīlāri — viena horizontāla rinda virs CTA; ikona ↔ virsraksts tieši gap-6 */}
           <div className={`${homeMarketingPillarGridShellClass} mt-4 w-full sm:mt-5 md:mt-6`}>
             <div
-              className={`flex w-full flex-row flex-nowrap justify-between gap-3 overflow-x-auto border-b border-white/[0.12] pb-8 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-5 md:gap-6 [&::-webkit-scrollbar]:hidden ${homeMarketingPillarGridWidthClass}`}
+              className={`flex w-full flex-row flex-nowrap justify-between gap-3 overflow-x-auto pb-8 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-5 md:gap-6 [&::-webkit-scrollbar]:hidden ${homeMarketingPillarGridWidthClass}`}
             >
               {pillars.map((p, i) => {
                 const Icon = PILLAR_ICONS[i] ?? FileText;
