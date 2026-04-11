@@ -13,7 +13,7 @@ const stepIconClassDark =
   "h-[1.68rem] w-[1.68rem] shrink-0 text-zinc-500 transition-colors group-hover:text-[#0061D2] [stroke-width:1.5] max-[360px]:h-[1.4rem] max-[360px]:w-[1.4rem] sm:h-[2.3625rem] sm:w-[2.3625rem]";
 
 const stepIconClassSilver =
-  "h-[1.68rem] w-[1.68rem] shrink-0 text-[#050505] transition-colors group-hover:text-[#0061d2] [stroke-width:1.5] max-[360px]:h-[1.4rem] max-[360px]:w-[1.4rem] sm:h-[2.3625rem] sm:w-[2.3625rem]";
+  "h-[1.68rem] w-[1.68rem] shrink-0 text-[#050505] transition-opacity group-hover:opacity-80 [stroke-width:1.5] max-[360px]:h-[1.4rem] max-[360px]:w-[1.4rem] sm:h-[2.3625rem] sm:w-[2.3625rem]";
 
 export function HowItWorksClient({
   steps,
@@ -29,7 +29,7 @@ export function HowItWorksClient({
 
   const dash = silver ? "border-[#050505]/14" : dark ? "border-zinc-600" : "border-[#d1d5db]";
   const title = silver ? "text-[#050505]" : dark ? "text-zinc-100" : "text-[#1d1d1f]";
-  const body = silver ? "text-[#050505]/82" : dark ? "text-zinc-400" : "text-[#86868b]";
+  const body = silver ? "text-[#050505]" : dark ? "text-zinc-400" : "text-[#86868b]";
 
   return (
     <section className="home-body-ink relative z-10 overflow-visible bg-transparent">

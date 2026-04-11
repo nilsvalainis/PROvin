@@ -37,12 +37,12 @@ export function FaqClient({ title, items, tone = "dark" }: FaqClientProps) {
                     {item.q}
                   </span>
                   <ChevronDown
-                    className="mt-0.5 h-4 w-4 shrink-0 text-[#050505]/45 transition-transform duration-200 ease-out group-open:rotate-180"
+                    className="mt-0.5 h-4 w-4 shrink-0 text-[#050505] transition-transform duration-200 ease-out group-open:rotate-180"
                     strokeWidth={1.5}
                     aria-hidden
                   />
                 </summary>
-                <p className="max-w-[65ch] pb-4 pr-2 text-[14px] font-normal leading-[1.75] text-[#050505]/82 sm:pb-5 sm:pr-6 sm:text-[15px] sm:leading-[1.75]">
+                <p className="max-w-[65ch] pb-4 pr-2 text-[14px] font-normal leading-[1.75] text-[#050505] sm:pb-5 sm:pr-6 sm:text-[15px] sm:leading-[1.75]">
                   {item.a}
                 </p>
               </details>

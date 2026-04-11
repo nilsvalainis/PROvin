@@ -71,9 +71,9 @@ function IrissSocialIcons({
   socialSoon: string;
 }) {
   const btnClass =
-    "flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-[#b8bcc4] shadow-sm transition will-change-[box-shadow,border-color] hover:border-provin-accent/45 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent";
+    "flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-full border border-[#050505]/15 bg-transparent text-[#050505] transition-colors hover:border-[#050505]/28 hover:bg-[#050505]/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#050505]/25";
 
-  const disabledClass = `${btnClass} cursor-default opacity-55 hover:border-white/15 hover:bg-white/[0.06] hover:text-[#b8bcc4] hover:shadow-none`;
+  const disabledClass = `${btnClass} cursor-default opacity-50 hover:border-[#050505]/15 hover:bg-transparent hover:text-[#050505]`;
 
   return (
     <ul className="flex list-none flex-wrap items-center justify-center gap-3" aria-label={socialLabel}>

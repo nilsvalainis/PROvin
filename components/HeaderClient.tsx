@@ -67,14 +67,15 @@ export function HeaderClient({
 
   const logoClass = isHome
     ? homeSilverHeader
-      ? "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-[#050505] transition-colors hover:text-[#0a0a0a] sm:min-h-0 sm:min-w-0"
+      ? "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-[#050505] transition-opacity hover:opacity-80 sm:min-h-0 sm:min-w-0"
       : "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-white transition-colors hover:text-white/90 sm:min-h-0 sm:min-w-0"
     : "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent sm:min-h-0 sm:min-w-0";
 
-  const navMuted = isHome ? (homeSilverHeader ? "text-[#1d1d1f]/90" : "text-white/72") : "text-[#1d1d1f]";
+  const navMuted = isHome ? (homeSilverHeader ? "text-[#050505]" : "text-white/72") : "text-[#1d1d1f]";
 
-  const orderBtnClass =
-    "provin-btn provin-btn--compact inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-5 text-[13px] font-bold text-white shadow-[0_0_18px_rgba(0,102,255,0.14)] ring-1 ring-white/10 sm:min-h-10 sm:px-6";
+  const orderBtnClass = homeSilverHeader
+    ? "provin-btn provin-btn--compact home-cta-blueprint inline-flex min-h-11 shrink-0 items-center justify-center rounded-[2px] px-5 text-[13px] font-bold text-white ring-0 shadow-none sm:min-h-10 sm:px-6"
+    : "provin-btn provin-btn--compact inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-5 text-[13px] font-bold text-white shadow-[0_0_18px_rgba(0,102,255,0.14)] ring-1 ring-white/10 sm:min-h-10 sm:px-6";
 
   const navLinkClass = (active: boolean) =>
     [
@@ -82,26 +83,27 @@ export function HeaderClient({
       active ? "text-[#3b82f6]" : `${navMuted} hover:text-provin-accent`,
     ].join(" ");
 
+  const desktopNavClass = (active: boolean) => {
+    if (isHome && homeSilverHeader) {
+      return `text-sm font-medium transition-opacity ${active ? "font-semibold text-[#050505]" : "text-[#050505] hover:opacity-70"}`;
+    }
+    return `text-sm font-medium transition-colors ${active ? "text-provin-accent" : `${navMuted} hover:text-provin-accent`}`;
+  };
+
   return (
     <>
       <header className={`sticky top-0 z-40 ${headerSurface}`}>
         <div className="mx-auto flex min-h-12 max-w-[980px] items-center justify-between gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:min-h-11 sm:gap-3 sm:px-6 lg:max-w-[1024px]">
           <Link href="/" className={logoClass}>
             <span>PRO</span>
-            <span className="text-provin-accent">VIN</span>
+            <span className={homeSilverHeader && isHome ? "text-[#050505]" : "text-provin-accent"}>VIN</span>
           </Link>
 
           <nav className="hidden min-w-0 items-center gap-6 md:flex md:flex-1 md:justify-end">
-            <Link
-              href="/"
-              className={`text-sm font-medium transition-colors ${isHome && !isFaq && !isOrderSection ? "text-provin-accent" : `${navMuted} hover:text-provin-accent`}`}
-            >
+            <Link href="/" className={desktopNavClass(isHome && !isFaq && !isOrderSection)}>
               {navHome}
             </Link>
-            <Link
-              href={faqHref}
-              className={`text-sm font-medium transition-colors ${isFaq ? "text-provin-accent" : `${navMuted} hover:text-provin-accent`}`}
-            >
+            <Link href={faqHref} className={desktopNavClass(isFaq)}>
               {faqLabel}
             </Link>
             <Link href={orderHref} className={orderBtnClass}>

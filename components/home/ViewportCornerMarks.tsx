@@ -1,9 +1,9 @@
 /**
- * Fixed viewport corner cues — minimal + marks (very faint on silver paper).
+ * Fixed viewport corner + marks — tone follows hero vs silver via CSS variable.
  */
 export function ViewportCornerMarks() {
   const cross = (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className="text-white/[0.06]">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className="text-current">
       <path
         d="M8 0.5V15.5M0.5 8H15.5"
         stroke="currentColor"
@@ -15,7 +15,7 @@ export function ViewportCornerMarks() {
   );
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[6]" aria-hidden>
+    <div className="home-viewport-corner-mark pointer-events-none fixed inset-0 z-[6]" aria-hidden>
       <div className="absolute left-[max(1rem,env(safe-area-inset-left,0px))] top-[max(1rem,env(safe-area-inset-top,0px))]">
         {cross}
       </div>
