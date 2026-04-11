@@ -3,7 +3,12 @@
 import { ArrowRight, ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { approvedByIrissSignatureHeroClass, heroH1BluePillClass } from "@/lib/home-layout";
+import {
+  approvedByIrissSignatureHeroClass,
+  heroH1BluePillClass,
+  homeMarketingPillarGridShellClass,
+  homeMarketingPillarGridWidthClass,
+} from "@/lib/home-layout";
 import { orderSectionHref } from "@/lib/paths";
 
 const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
@@ -55,8 +60,10 @@ export function MarketingHero() {
           </p>
 
           {/* 2×2 garenas kartes: režģa platums +10%, bloku min-augstums −20% */}
-          <div className="flex w-full justify-center">
-            <div className="grid w-full max-w-full grid-cols-2 justify-items-stretch gap-x-2 gap-y-2 sm:max-w-[min(100%,40.7rem)] sm:gap-x-3 sm:gap-y-2.5 md:max-w-[min(100%,44.55rem)]">
+          <div className={homeMarketingPillarGridShellClass}>
+            <div
+              className={`grid grid-cols-2 justify-items-stretch gap-x-2 gap-y-2 sm:gap-x-3 sm:gap-y-2.5 ${homeMarketingPillarGridWidthClass}`}
+            >
               {pillars.map((p, i) => {
                 const Icon = PILLAR_ICONS[i] ?? FileText;
                 return (

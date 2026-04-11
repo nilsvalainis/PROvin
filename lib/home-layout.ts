@@ -1,6 +1,13 @@
 /** Vienots maks. platums lapas vidus slejai (tabula, kartītes, Why, IRISS). */
 export const homeContentMaxClass = "mx-auto min-w-0 w-full max-w-[1200px]";
 
+/** Centrēšanas čaula — MarketingHero 2×2 režģis un How it works soļu rinda (1:1 platums). */
+export const homeMarketingPillarGridShellClass = "flex w-full justify-center";
+
+/** 2×2 pīlāru režģa maks. platums; jālieto arī 3 soļu blokam zem Hero. */
+export const homeMarketingPillarGridWidthClass =
+  "w-full min-w-0 max-w-full sm:max-w-[min(100%,40.7rem)] md:max-w-[min(100%,44.55rem)]";
+
 /**
  * Zem-Hero sadaļu virsraksts — maza trekna uppercase, provin zilā.
  * Nelietot Hero sadaļā.
