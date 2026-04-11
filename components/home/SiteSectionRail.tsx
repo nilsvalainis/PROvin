@@ -32,6 +32,7 @@ function activeFromHash(raw: string): number | null {
 }
 
 function activeFromScroll(): number {
+  if (typeof window === "undefined" || typeof document === "undefined") return 0;
   const line = window.scrollY + window.innerHeight * 0.22;
   let idx = 0;
   for (let i = 0; i < HOME_SCROLL_IDS.length; i++) {
@@ -43,14 +44,16 @@ function activeFromScroll(): number {
   return idx;
 }
 
-function routeActiveIndex(pathname: string): number | null {
+function routeActiveIndex(pathname: string | null | undefined): number | null {
+  if (pathname == null) return null;
   const p = pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
   if (p === "/pasutit") return 1;
   if (p === "/biezi-jautajumi") return 4;
   return null;
 }
 
-function normalizePath(pathname: string) {
+function normalizePath(pathname: string | null | undefined): string {
+  if (pathname == null) return "";
   return pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
 }
 
@@ -60,7 +63,7 @@ function normalizePath(pathname: string) {
 export function SiteSectionRail() {
   const t = useTranslations("SiteRail");
   const locale = useLocale();
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const hash = useHash();
   const [active, setActive] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);

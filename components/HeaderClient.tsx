@@ -34,7 +34,7 @@ export function HeaderClient({
   menuOpenLabel,
   menuCloseLabel,
 }: HeaderClientProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const hash = useHash();
   const [open, setOpen] = useState(false);
 
