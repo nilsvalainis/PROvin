@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import {
+  buildIrissThreadPath,
+  sampleThreadTicks,
+  sectionScrollProgress,
+  type ThreadTick,
+} from "@/lib/iriss-thread";
 
-const LERP = 0.088;
+const LERP_MAIN = 0.084;
+const LERP_GHOST_A = 0.069;
+const LERP_GHOST_B = 0.054;
 
-/** Asimetrisks loks kreisajā „rezerves” zonā (viewBox 0–400 × 0–520). */
-const GAUGE_PATH_D =
-  "M 44 468 C 38 220 108 118 168 248 S 198 360 172 402";
+const SILVER = "#C0C0C0";
+const GLOW = "#0066ff";
 
 type IrissStaggerShellProps = {
   headingClassName: string;
@@ -20,28 +27,10 @@ type IrissStaggerShellProps = {
   block3Body: string;
 };
 
-function clamp01(n: number) {
-  return Math.min(1, Math.max(0, n));
-}
-
-function computeDrawTarget(
-  section: DOMRectReadOnly,
-  block1: DOMRectReadOnly | null,
-  vh: number,
-): number {
-  const range = section.height + vh;
-  if (range <= 0) return 0;
-  const tGlobal = clamp01((vh - section.top) / range);
-
-  let peak = 0.35;
-  if (block1) {
-    const cy = (block1.top + block1.bottom) / 2;
-    const sigma = vh * 0.24;
-    const dx = (cy - vh * 0.5) / sigma;
-    peak = Math.exp(-dx * dx);
-  }
-
-  return clamp01(Math.pow(tGlobal, 0.82) * (0.28 + 0.72 * peak));
+function setPathDashOffset(ref: RefObject<SVGPathElement | null>, t: number, len: number) {
+  const node = ref.current;
+  if (!node || len <= 0) return;
+  node.style.strokeDashoffset = `${len * (1 - t)}`;
 }
 
 export function IrissStaggerShell({
@@ -56,17 +45,28 @@ export function IrissStaggerShell({
   block3Body,
 }: IrissStaggerShellProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const block1RowRef = useRef<HTMLDivElement>(null);
-  const pathRef = useRef<SVGPathElement>(null);
-  const glowPathRef = useRef<SVGPathElement>(null);
+  const pathMainRef = useRef<SVGPathElement>(null);
+  const pathGlowRef = useRef<SVGPathElement>(null);
+  const pathGhostARef = useRef<SVGPathElement>(null);
+  const pathGhostBRef = useRef<SVGPathElement>(null);
+  const tickGroupRef = useRef<SVGGElement>(null);
 
   const pathLenRef = useRef(0);
-  const smoothedRef = useRef(0);
   const targetRef = useRef(0);
+  const smoothMainRef = useRef(0);
+  const smoothGhostARef = useRef(0);
+  const smoothGhostBRef = useRef(0);
   const rafRef = useRef<number | null>(null);
 
+  const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
+  const [ticks, setTicks] = useState<ThreadTick[]>([]);
   const [reveal, setReveal] = useState(() => [false, false, false]);
   const [reduceMotion, setReduceMotion] = useState(false);
+
+  const pathD = useMemo(() => {
+    if (!dims || dims.w < 8 || dims.h < 8) return "";
+    return buildIrissThreadPath(dims.w, dims.h);
+  }, [dims]);
 
   useLayoutEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -83,25 +83,73 @@ export function IrissStaggerShell({
   }, [reduceMotion]);
 
   useLayoutEffect(() => {
-    const p = pathRef.current;
-    if (!p) return;
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const w = Math.max(32, Math.round(el.offsetWidth));
+      const h = Math.max(100, Math.round(el.offsetHeight));
+      setDims((prev) => (prev && prev.w === w && prev.h === h ? prev : { w, h }));
+    };
+
+    measure();
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useLayoutEffect(() => {
+    const p = pathMainRef.current;
+    if (!p || !pathD || !dims) return;
+
     const len = p.getTotalLength();
+    if (!Number.isFinite(len) || len < 8) return;
+
     pathLenRef.current = len;
-    p.style.strokeDasharray = `${len}`;
-    const g = glowPathRef.current;
-    if (g) {
-      g.style.strokeDasharray = `${len}`;
-    }
+
+    const dash = `${len}`;
+    const paths = [pathMainRef, pathGlowRef, pathGhostARef, pathGhostBRef];
+    paths.forEach((ref) => {
+      const node = ref.current;
+      if (!node) return;
+      node.style.strokeDasharray = dash;
+    });
+
+    const sampled = sampleThreadTicks(p, dims.w, dims.h);
+    setTicks(sampled);
+
     if (reduceMotion) {
-      smoothedRef.current = 1;
+      paths.forEach((ref) => {
+        const node = ref.current;
+        if (!node) return;
+        node.style.strokeDashoffset = "0";
+      });
+      smoothMainRef.current = 1;
+      smoothGhostARef.current = 1;
+      smoothGhostBRef.current = 1;
       targetRef.current = 1;
-      p.style.strokeDashoffset = "0";
-      if (g) g.style.strokeDashoffset = "0";
+      requestAnimationFrame(() => {
+        tickGroupRef.current?.querySelectorAll("line[data-s]").forEach((el) => {
+          (el as SVGLineElement).setAttribute("stroke-opacity", "0.72");
+        });
+      });
     } else {
-      p.style.strokeDashoffset = `${len}`;
-      if (g) g.style.strokeDashoffset = `${len}`;
+      paths.forEach((ref) => {
+        const node = ref.current;
+        if (!node) return;
+        node.style.strokeDashoffset = dash;
+      });
+      const t = targetRef.current;
+      smoothMainRef.current = t;
+      smoothGhostARef.current = t;
+      smoothGhostBRef.current = t;
+      requestAnimationFrame(() => {
+        tickGroupRef.current?.querySelectorAll("line[data-s]").forEach((el) => {
+          (el as SVGLineElement).setAttribute("stroke-opacity", "0");
+        });
+      });
     }
-  }, [reduceMotion]);
+  }, [pathD, dims, reduceMotion]);
 
   useEffect(() => {
     const root = sectionRef.current;
@@ -132,6 +180,21 @@ export function IrissStaggerShell({
   useEffect(() => {
     if (reduceMotion) return;
 
+    const fadeTicks = (drawT: number) => {
+      const g = tickGroupRef.current;
+      if (!g) return;
+      const len = pathLenRef.current;
+      if (len <= 0) return;
+      const fade = Math.max(12, len * 0.038);
+      const head = drawT * len;
+      g.querySelectorAll("line[data-s]").forEach((el) => {
+        const s = Number((el as SVGLineElement).dataset.s);
+        if (!Number.isFinite(s)) return;
+        const o = head >= s ? Math.min(0.9, (head - s) / fade) : 0;
+        (el as SVGLineElement).setAttribute("stroke-opacity", String(o));
+      });
+    };
+
     const tick = () => {
       const section = sectionRef.current?.getBoundingClientRect();
       const vh = window.innerHeight;
@@ -140,23 +203,23 @@ export function IrissStaggerShell({
         return;
       }
 
-      const b1 = block1RowRef.current?.getBoundingClientRect() ?? null;
-      targetRef.current = computeDrawTarget(section, b1, vh);
+      targetRef.current = sectionScrollProgress(section, vh);
 
-      smoothedRef.current += (targetRef.current - smoothedRef.current) * LERP;
+      smoothMainRef.current += (targetRef.current - smoothMainRef.current) * LERP_MAIN;
+      smoothGhostARef.current += (targetRef.current - smoothGhostARef.current) * LERP_GHOST_A;
+      smoothGhostBRef.current += (targetRef.current - smoothGhostBRef.current) * LERP_GHOST_B;
+
       const len = pathLenRef.current;
-      const off = len * (1 - smoothedRef.current);
-      const p = pathRef.current;
-      const g = glowPathRef.current;
-      if (p && len > 0) p.style.strokeDashoffset = `${off}`;
-      if (g && len > 0) g.style.strokeDashoffset = `${off}`;
+      setPathDashOffset(pathMainRef, smoothMainRef.current, len);
+      setPathDashOffset(pathGlowRef, smoothMainRef.current, len);
+      setPathDashOffset(pathGhostARef, smoothGhostARef.current, len);
+      setPathDashOffset(pathGhostBRef, smoothGhostBRef.current, len);
+      fadeTicks(smoothMainRef.current);
 
       rafRef.current = requestAnimationFrame(tick);
     };
 
-    const bump = () => {
-      /* scroll/resize: mērķis tiek pārrēķināts nākamajā tick */
-    };
+    const bump = () => {};
     window.addEventListener("scroll", bump, { passive: true });
     window.addEventListener("resize", bump, { passive: true });
     rafRef.current = requestAnimationFrame(tick);
@@ -177,45 +240,97 @@ export function IrissStaggerShell({
     return on ? `${base} translate-y-0 opacity-100` : `${base} translate-y-[10px] opacity-0`;
   };
 
+  const w = dims?.w ?? 0;
+  const h = dims?.h ?? 0;
+  const gAx = w * 0.0068;
+  const gAy = -h * 0.0045;
+  const gBx = -w * 0.0055;
+  const gBy = h * 0.0038;
+
   return (
     <div ref={sectionRef} className="relative isolate mt-12 sm:mt-14 md:mt-16">
       <div className="home-iriss-stagger-atmosphere" aria-hidden />
 
-      <svg
-        className="pointer-events-none absolute inset-0 z-[1] h-full w-full overflow-visible"
-        viewBox="0 0 400 520"
-        preserveAspectRatio="xMidYMid meet"
-        aria-hidden
-      >
-        <path
-          ref={glowPathRef}
-          d={GAUGE_PATH_D}
-          fill="none"
-          stroke="#0066ff"
-          strokeWidth={1.15}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          opacity={0.28}
-          vectorEffect="non-scaling-stroke"
-          style={{ filter: "blur(2.5px)" }}
-        />
-        <path
-          ref={pathRef}
-          d={GAUGE_PATH_D}
-          fill="none"
-          stroke="rgba(200,204,212,0.62)"
-          strokeWidth={0.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
+      {dims && pathD ? (
+        <svg
+          className="pointer-events-none absolute inset-0 z-[1] h-full w-full overflow-visible"
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${w} ${h}`}
+          preserveAspectRatio="none"
+          aria-hidden
+        >
+          <g transform={`translate(${gBx},${gBy})`}>
+            <path
+              ref={pathGhostBRef}
+              d={pathD}
+              fill="none"
+              stroke={SILVER}
+              strokeWidth={0.35}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={0.2}
+              vectorEffect="non-scaling-stroke"
+            />
+          </g>
+          <g transform={`translate(${gAx},${gAy})`}>
+            <path
+              ref={pathGhostARef}
+              d={pathD}
+              fill="none"
+              stroke={SILVER}
+              strokeWidth={0.38}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={0.26}
+              vectorEffect="non-scaling-stroke"
+            />
+          </g>
+          <path
+            ref={pathGlowRef}
+            d={pathD}
+            fill="none"
+            stroke={GLOW}
+            strokeWidth={1.05}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity={0.3}
+            vectorEffect="non-scaling-stroke"
+            style={{ filter: "blur(2.8px)" }}
+          />
+          <g ref={tickGroupRef}>
+            {ticks.map((t) => (
+              <line
+                key={t.s}
+                data-s={t.s}
+                x1={t.x1}
+                y1={t.y1}
+                x2={t.x2}
+                y2={t.y2}
+                stroke={SILVER}
+                strokeWidth={0.5}
+                vectorEffect="non-scaling-stroke"
+                strokeOpacity={reduceMotion ? 0.72 : 0}
+              />
+            ))}
+          </g>
+          <path
+            ref={pathMainRef}
+            d={pathD}
+            fill="none"
+            stroke={SILVER}
+            strokeWidth={0.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      ) : null}
 
       <div
         className={`relative z-[2] flex flex-col ${gapClassName} pt-[clamp(0.75rem,2vw,1.25rem)] pb-[clamp(2.5rem,6vw,4.5rem)]`}
       >
         <div
-          ref={block1RowRef}
           data-iriss-index="0"
           className={`grid grid-cols-1 gap-y-5 lg:grid-cols-2 lg:gap-x-10 xl:gap-x-16 ${revealClass(0)}`}
         >
