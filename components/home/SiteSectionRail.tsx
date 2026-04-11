@@ -6,7 +6,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { faqHashHref, homePath, irissAnchorHref } from "@/lib/paths";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
 
-const HOME_SCROLL_IDS = ["home-hero", ORDER_SECTION_ID, "cena", "kas-ir-iriss", "biezi-jautajumi"] as const;
+const HOME_SCROLL_IDS = ["home-hero", ORDER_SECTION_ID, "cena", "kas-ir-iriss", "biezi-jautajumi", "kontakti"] as const;
 
 function useHash(): string {
   const [hash, setHash] = useState("");
@@ -27,6 +27,7 @@ function activeFromHash(raw: string): number | null {
   if (h === "cena") return 2;
   if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) return 3;
   if (h === "biezi-jautajumi") return 4;
+  if (h === "kontakti") return 5;
   return null;
 }
 
@@ -54,7 +55,7 @@ function normalizePath(pathname: string) {
 }
 
 /**
- * Kreisā mala — piecu galveno sadaļu plāns ar zilu indikatoru (lg+).
+ * Kreisā mala — galveno sadaļu plāns (vienāds vertikālais sadalījums) ar zilu indikatoru (lg+).
  */
 export function SiteSectionRail() {
   const t = useTranslations("SiteRail");
@@ -73,12 +74,14 @@ export function SiteSectionRail() {
     const base = homePath(locale);
     const cenaHref = base === "/" ? "/#cena" : `${base}#cena`;
     const bujHref = normalizedPath === "/biezi-jautajumi" ? "/biezi-jautajumi" : faqHashHref(locale);
+    const kontaktiHref = base === "/" ? "/#kontakti" : `${base}#kontakti`;
     return [
       { href: base === "/" ? "/" : base, labelKey: "sakums" as const },
       { href: "/pasutit", labelKey: "pasutit" as const },
       { href: cenaHref, labelKey: "audits" as const },
       { href: irissAnchorHref(locale), labelKey: "iriss" as const },
       { href: bujHref, labelKey: "buj" as const },
+      { href: kontaktiHref, labelKey: "kontakti" as const },
     ] as const;
   }, [locale, normalizedPath]);
 
