@@ -56,7 +56,7 @@ export function InvestigationLabClient({
             return (
               <div
                 key={`${p.title}-${i}`}
-                className="rounded-2xl border border-white/[0.1] bg-white/[0.02] p-6 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/[0.02] sm:p-8"
+                className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/[0.03] sm:p-8"
               >
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
                   <div className="flex shrink-0 justify-center sm:pt-1">
@@ -67,7 +67,7 @@ export function InvestigationLabClient({
                     />
                   </div>
                   <div className="min-w-0 flex-1 text-center sm:text-left">
-                    <h3 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{p.title}</h3>
+                    <h3 className="home-body-ink text-xl font-bold tracking-tight sm:text-2xl">{p.title}</h3>
                     {p.body ? (
                       <p className="home-muted-foreground mt-3 text-sm font-extralight leading-relaxed sm:text-[15px]">
                         {p.body}

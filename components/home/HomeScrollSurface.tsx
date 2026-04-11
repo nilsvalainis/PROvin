@@ -4,14 +4,10 @@ import { type ReactNode, useEffect, useRef } from "react";
 import { computeHomeSurfaceT } from "@/lib/home-surface";
 
 type HomeScrollSurfaceProps = {
-  /** Flyline / wireframe starp melno (z-0) un sudrabu (z-2). */
   wireframe?: ReactNode;
   children?: ReactNode;
 };
 
-/**
- * Slāņi: melns z-0 → flyline z-1 → viens sudraba slānis z-2 (tikai fog gradient + grauds, bez maskām) → saturs z-10.
- */
 export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProps) {
   const silverRef = useRef<HTMLDivElement>(null);
 
@@ -22,9 +18,7 @@ export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProp
     const tick = () => {
       const t = computeHomeSurfaceT();
       root.style.setProperty("--home-surface-t", String(t));
-      if (el) {
-        el.style.opacity = String(t);
-      }
+      if (el) el.style.opacity = String(t);
     };
 
     tick();
@@ -45,7 +39,7 @@ export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProp
 
       <div
         ref={silverRef}
-        className="home-silver-fog-unified pointer-events-none fixed inset-0 z-[2]"
+        className="provin-silver-grain pointer-events-none fixed inset-0 z-[2] [mask-image:linear-gradient(to_bottom,transparent_0%,black_40vh,black_100%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,black_40vh,black_100%)]"
         style={{ opacity: 0 }}
         aria-hidden
       />

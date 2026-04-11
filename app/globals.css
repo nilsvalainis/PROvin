@@ -184,17 +184,6 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='sg'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23sg)' opacity='0.07'/%3E%3C/svg%3E");
 }
 
-/* Mājas sudrabs: viens slānis — dūmains linear-gradient + tas pats grauds (bez papildu maskām). */
-.home-silver-fog-unified {
-  background-image:
-    linear-gradient(to bottom, transparent 0%, #e5e7eb 30vh, #e5e7eb 100%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='sg'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23sg)' opacity='0.07'/%3E%3C/svg%3E");
-  background-repeat: no-repeat, repeat;
-  background-size:
-    100% 100%,
-    128px 128px;
-}
-
 /* Zem Hero — teksts pāriet uz #050505; 0.4s smooth (scroll still drives --home-surface-t) */
 .home-below-hero .home-body-ink {
   color: color-mix(in oklab, #fafafa calc((1 - var(--home-surface-t)) * 100%), #050505);
@@ -215,7 +204,7 @@ body {
 }
 
 .home-iriss-prose {
-  color: color-mix(in oklab, #c8ccd4 calc((1 - var(--home-surface-t)) * 100%), #475569);
+  color: color-mix(in oklab, #c8ccd4 calc((1 - var(--home-surface-t)) * 100%), #050505);
   transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -229,12 +218,12 @@ body {
 }
 
 .home-footer-ink {
-  color: color-mix(in oklab, #b8bcc4 calc((1 - var(--home-surface-t)) * 100%), #475569);
+  color: color-mix(in oklab, #b8bcc4 calc((1 - var(--home-surface-t)) * 100%), #050505);
   transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .home-footer-link {
-  color: color-mix(in oklab, #b8bcc4 calc((1 - var(--home-surface-t)) * 100%), #475569);
+  color: color-mix(in oklab, #b8bcc4 calc((1 - var(--home-surface-t)) * 100%), #050505);
   transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 

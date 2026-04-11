@@ -37,7 +37,7 @@ const iconClass =
   "h-8 w-8 shrink-0 text-[#0066ff] [stroke-width:1.5] sm:h-[32px] sm:w-[32px]";
 
 const cardClass =
-  "flex min-h-0 gap-3 rounded-xl border border-white/[0.1] bg-white/[0.02] p-3.5 text-left backdrop-blur-2xl supports-[backdrop-filter]:bg-white/[0.02] sm:gap-3.5 sm:p-4";
+  "flex min-h-0 gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3.5 text-left backdrop-blur-2xl supports-[backdrop-filter]:bg-white/[0.03] sm:gap-3.5 sm:p-4";
 
 export async function PricingIncluded() {
   const t = await getTranslations("Pricing");
@@ -60,10 +60,10 @@ export async function PricingIncluded() {
               <>
                 <Icon className={iconClass} aria-hidden strokeWidth={1.5} />
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <h3 className="text-[15px] font-medium leading-snug tracking-tight text-white sm:text-[16px]">
+                  <h3 className="home-body-ink text-[15px] font-medium leading-snug tracking-tight sm:text-[16px]">
                     {item.title}
                   </h3>
-                  <p className="mt-1 text-[12px] font-normal leading-relaxed text-[#b8bcc4] sm:text-[13px] sm:leading-relaxed">
+                  <p className="home-muted-foreground mt-1 text-[12px] font-normal leading-relaxed sm:text-[13px] sm:leading-relaxed">
                     {item.body}
                   </p>
                   {item.href ? (
