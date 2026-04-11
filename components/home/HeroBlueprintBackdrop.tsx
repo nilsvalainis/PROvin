@@ -1,45 +1,103 @@
 "use client";
 
 import type { RefObject } from "react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { buildHeroBlueprintThreadPath, buildHeroChassisBlueprintPath } from "@/lib/hero-blueprint-paths";
 import { sectionScrollProgress } from "@/lib/iriss-thread";
 
 const VB = 100;
 
+function safeScrollProgress(node: HTMLElement): number {
+  try {
+    const vh = window.innerHeight;
+    if (!Number.isFinite(vh) || vh <= 0) return 0;
+    return sectionScrollProgress(node.getBoundingClientRect(), vh);
+  } catch {
+    return 0;
+  }
+}
+
+/** Safari / vecāki WebKit — `MediaQueryList.addEventListener` nav visur. */
+function subscribeMediaQueryChange(mq: MediaQueryList, cb: () => void): () => void {
+  const mql = mq as MediaQueryList & {
+    addListener?: (listener: (this: MediaQueryList, ev: MediaQueryListEvent) => void) => void;
+    removeListener?: (listener: (this: MediaQueryList, ev: MediaQueryListEvent) => void) => void;
+  };
+  try {
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", cb);
+      return () => mq.removeEventListener("change", cb);
+    }
+    mql.addListener?.(cb);
+    return () => mql.removeListener?.(cb);
+  } catch {
+    return () => {};
+  }
+}
+
 export function HeroBlueprintBackdrop({ sectionRef }: { sectionRef: RefObject<HTMLElement | null> }) {
+  const gridRef = useRef<HTMLDivElement>(null);
+  const chassisRef = useRef<SVGPathElement>(null);
+  const threadRef = useRef<SVGPathElement>(null);
+
   useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
+    let rafId = 0;
+    let mq: MediaQueryList | null = null;
 
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let raf = 0;
+    try {
+      mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    } catch {
+      mq = null;
+    }
 
-    const apply = () => {
-      const node = sectionRef.current;
-      if (!node) return;
-      const p = mq.matches ? 1 : sectionScrollProgress(node.getBoundingClientRect(), window.innerHeight);
-      node.style.setProperty("--hero-blueprint-p", p.toFixed(5));
+    const paint = () => {
+      const root = sectionRef.current;
+      if (!root) return;
+
+      const reduced = mq?.matches === true;
+      let p = 1;
+      if (!reduced) {
+        p = safeScrollProgress(root);
+        if (!Number.isFinite(p)) p = 0;
+      }
+
+      const grid = gridRef.current;
+      if (grid) {
+        grid.style.opacity = String(0.2 + p * 0.42);
+        grid.style.transform = reduced ? "none" : `scale(${0.982 + p * 0.028})`;
+      }
+
+      const dashOff = reduced ? 0 : 1 - p;
+      const offStr = String(dashOff);
+      for (const path of [chassisRef.current, threadRef.current]) {
+        if (!path) continue;
+        path.style.strokeDasharray = "1";
+        path.style.strokeDashoffset = offStr;
+      }
     };
 
     const schedule = () => {
-      if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        apply();
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        try {
+          paint();
+        } catch {
+          /* dekoratīvs slānis — nedrīkst gāzt lapu */
+        }
       });
     };
 
-    apply();
+    schedule();
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule, { passive: true });
-    mq.addEventListener("change", schedule);
+    const unsubMq = mq ? subscribeMediaQueryChange(mq, schedule) : () => {};
 
     return () => {
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
-      mq.removeEventListener("change", schedule);
-      if (raf) cancelAnimationFrame(raf);
+      unsubMq();
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, [sectionRef]);
 
@@ -48,7 +106,7 @@ export function HeroBlueprintBackdrop({ sectionRef }: { sectionRef: RefObject<HT
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden" aria-hidden>
-      <div className="home-hero-blueprint-grid absolute inset-0" />
+      <div ref={gridRef} className="home-hero-blueprint-grid absolute inset-0" />
       <svg
         className="absolute inset-0 h-full w-full"
         viewBox={`0 0 ${VB} ${VB}`}
@@ -56,8 +114,8 @@ export function HeroBlueprintBackdrop({ sectionRef }: { sectionRef: RefObject<HT
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <path className="home-hero-blueprint-draw-line" pathLength={1} d={chassisD} />
-        <path className="home-hero-blueprint-draw-line home-hero-blueprint-thread" pathLength={1} d={threadD} />
+        <path ref={chassisRef} className="home-hero-blueprint-draw-line" pathLength={1} d={chassisD} />
+        <path ref={threadRef} className="home-hero-blueprint-draw-line home-hero-blueprint-thread" pathLength={1} d={threadD} />
       </svg>
     </div>
   );

@@ -88,13 +88,14 @@ export function HowItWorksClient({
                   className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[4.75rem] overflow-hidden"
                   aria-hidden
                 >
-                  <svg className="h-full w-full" viewBox="0 0 100 44" preserveAspectRatio="none" fill="none">
-                    <path
-                      d={threadMiniD}
-                      className="home-how-diagram-thread-bg"
-                      vectorEffect="non-scaling-stroke"
-                      strokeLinecap="square"
-                    />
+                  <svg
+                    className="h-full w-full"
+                    viewBox="0 0 100 44"
+                    preserveAspectRatio="xMidYMin meet"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d={threadMiniD} className="home-how-diagram-thread-bg" strokeLinecap="square" />
                   </svg>
                 </div>
               </>
