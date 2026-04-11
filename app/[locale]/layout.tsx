@@ -60,6 +60,18 @@ export default async function LocaleLayout({ children, params }: Props) {
       <LenisProvider>
         <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
           <div className="tech-bg" />
+          <div className="data-label" style={{ top: "20%", left: "30%" }}>
+            VIN_SCAN
+          </div>
+          <div className="data-label" style={{ top: "60%", left: "70%" }}>
+            ECU_DATA
+          </div>
+          <div className="data-label" style={{ top: "40%", left: "50%" }}>
+            MILEAGE_LOG
+          </div>
+          <div className="data-label" style={{ top: "75%", left: "20%" }}>
+            REG_CHECK
+          </div>
         </div>
         <LocaleHtmlLang />
         <SiteSectionRail />
