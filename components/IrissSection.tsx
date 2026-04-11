@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
-import { homeSectionTitleClass, irissSectionSubtitleClass } from "@/lib/home-layout";
+import { homeSectionTitleSilverClass, irissSectionSubtitleClass } from "@/lib/home-layout";
 
 /** Trekns — krāsu dod `.home-iriss-prose strong`. */
 const irissAccent = (chunks: ReactNode) => <strong className="font-bold">{chunks}</strong>;
@@ -27,8 +27,8 @@ export async function IrissSection() {
 
       <div className="relative mx-auto w-full max-w-[1000px]">
         <div className="text-center">
-          <h2 className={`${homeSectionTitleClass} text-[#050505]`}>{t("title")}</h2>
-          <p className={`${irissSectionSubtitleClass} text-[#050505]/85`}>{t("subtitle")}</p>
+          <h2 className={homeSectionTitleSilverClass}>{t("title")}</h2>
+          <p className={`${irissSectionSubtitleClass} font-medium !text-[#050505]`}>{t("subtitle")}</p>
         </div>
 
         <div className="mt-5 flex justify-center">

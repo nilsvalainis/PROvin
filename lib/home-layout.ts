@@ -11,6 +11,10 @@ export const homeSectionEyebrowClass =
 /** Vienots H2 zem Hero (Cena, IRISS, BUJ): zils eyebrow + centrēts + vienāda atstarpe līdz saturam zemāk. */
 export const homeSectionTitleClass = `${homeSectionEyebrowClass} text-balance text-center mb-4 sm:mb-5`;
 
+/** Sudraba lapa — sadaļu virsraksti bez akcenta, tīrs #050505. */
+export const homeSectionTitleSilverClass =
+  "text-[12px] font-semibold uppercase tracking-[0.1em] text-balance text-center text-[#050505] mb-4 sm:mb-5 sm:text-[13px]";
+
 /**
  * „APPROVED BY IRISS” paraksts Hero augšā — mīksts pelēks, light, plaša burtu distance.
  * IRISS sadaļas apakšvirsraksts lieto to pašu bāzi ar `irissSectionSubtitleClass` (2× lielāks teksts).

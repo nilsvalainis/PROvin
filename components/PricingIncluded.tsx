@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { irissAnchorHref } from "@/lib/paths";
-import { homeSectionTitleClass } from "@/lib/home-layout";
+import { homeSectionTitleSilverClass } from "@/lib/home-layout";
 import { SILVER_GLASS_CARD } from "@/lib/silver-glass";
 
 type GridItem = {
@@ -58,9 +58,9 @@ export async function PricingIncluded() {
       className="relative scroll-mt-16 bg-transparent px-4 pb-8 pt-6 text-[#050505] sm:px-6 sm:pb-10 sm:pt-8 md:pb-12 md:pt-10"
     >
       <div className="relative mx-auto w-full max-w-[1040px]">
-        <h2 className={`${homeSectionTitleClass} text-[#050505]`}>{t("workTitle")}</h2>
+        <h2 className={homeSectionTitleSilverClass}>{t("workTitle")}</h2>
 
-        <ul className="relative mt-6 flex list-none flex-col items-center gap-4 sm:mt-8 lg:mt-10 lg:min-h-[520px] lg:flex-row lg:flex-wrap lg:items-start lg:justify-center lg:gap-x-0 lg:gap-y-8">
+        <ul className="relative isolate mt-6 flex list-none flex-col items-center gap-5 sm:mt-8 sm:gap-6 lg:mt-10 lg:min-h-[520px] lg:flex-row lg:flex-wrap lg:items-start lg:justify-center lg:gap-x-0 lg:gap-y-8">
           {grid.map((item, i) => {
             const Icon = GRID_LUCIDE_ICONS[i] ?? Globe2;
             const refTag = PRICING_REFS[i] ?? `REF. 911-${String(i + 1).padStart(2, "0")}`;
@@ -97,13 +97,13 @@ export async function PricingIncluded() {
               </div>
             );
 
-            const cardClass = `${SILVER_GLASS_CARD} w-full max-w-[20rem] px-4 py-3.5 sm:px-5 sm:py-4 lg:-ml-5 lg:max-w-[15.5rem] lg:first:ml-0 ${shift}`;
+            const cardClass = `${SILVER_GLASS_CARD} w-full max-w-[20rem] px-4 py-3.5 sm:px-5 sm:py-4 max-lg:shadow-md lg:-ml-5 lg:max-w-[15.5rem] lg:first:ml-0 ${shift}`;
 
-            const zCls = ["z-[11]", "z-[12]", "z-[13]", "z-[14]", "z-[15]", "z-[16]", "z-[17]", "z-[18]"][i] ?? "z-[10]";
+            const zClsLg = ["lg:z-[11]", "lg:z-[12]", "lg:z-[13]", "lg:z-[14]", "lg:z-[15]", "lg:z-[16]", "lg:z-[17]", "lg:z-[18]"][i] ?? "lg:z-[10]";
 
             if (item.href) {
               return (
-                <li key={item.title} className={`relative w-full max-w-[20rem] lg:w-auto ${zCls}`}>
+                <li key={item.title} className={`relative z-0 w-full max-w-[20rem] lg:w-auto ${zClsLg}`}>
                   <Link
                     href={irissHref}
                     className={`${cardClass} block text-left transition hover:border-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent lg:relative`}
@@ -115,7 +115,7 @@ export async function PricingIncluded() {
             }
 
             return (
-              <li key={item.title} className={`relative ${zCls} ${cardClass} lg:relative`}>
+              <li key={item.title} className={`relative z-0 ${zClsLg} ${cardClass} lg:relative`}>
                 {inner}
               </li>
             );

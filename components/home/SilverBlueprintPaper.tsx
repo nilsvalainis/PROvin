@@ -3,8 +3,8 @@
  */
 const GRID_STYLE = {
   backgroundImage: [
-    "repeating-linear-gradient(0deg, transparent 0, transparent calc(100px - 0.5px), rgba(255,255,255,0.05) calc(100px - 0.5px), rgba(255,255,255,0.05) 100px)",
-    "repeating-linear-gradient(90deg, transparent 0, transparent calc(100px - 0.5px), rgba(255,255,255,0.05) calc(100px - 0.5px), rgba(255,255,255,0.05) 100px)",
+    "repeating-linear-gradient(0deg, transparent 0, transparent calc(100px - 0.5px), rgba(255,255,255,0.03) calc(100px - 0.5px), rgba(255,255,255,0.03) 100px)",
+    "repeating-linear-gradient(90deg, transparent 0, transparent calc(100px - 0.5px), rgba(255,255,255,0.03) calc(100px - 0.5px), rgba(255,255,255,0.03) 100px)",
   ].join(","),
 } as const;
 

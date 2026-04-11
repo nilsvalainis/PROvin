@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { homeSectionTitleClass } from "@/lib/home-layout";
+import { homeSectionTitleClass, homeSectionTitleSilverClass } from "@/lib/home-layout";
 
 export type FaqItem = { id: string; q: string; a: string };
 
@@ -21,7 +21,7 @@ export function FaqClient({ title, items, tone = "dark" }: FaqClientProps) {
       >
         <div className="mx-auto min-w-0 max-w-[680px]">
           <div className="text-center">
-            <h2 id="faq-heading" className={`${homeSectionTitleClass} text-[#050505]`}>
+            <h2 id="faq-heading" className={homeSectionTitleSilverClass}>
               {title}
             </h2>
           </div>
