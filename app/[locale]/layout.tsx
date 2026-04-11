@@ -7,7 +7,6 @@ import { LocaleHtmlLang } from "@/components/LocaleHtmlLang";
 import { CookieConsent } from "@/components/CookieConsent";
 import { LenisProvider } from "@/components/providers/LenisProvider";
 import { SiteSectionRail } from "@/components/home/SiteSectionRail";
-import { TechBgLightParallax } from "@/components/TechBgLightParallax";
 import { WhatsAppFab } from "@/components/WhatsAppFab";
 import { routing } from "@/i18n/routing";
 
@@ -59,7 +58,6 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <LenisProvider>
-        <TechBgLightParallax />
         <LocaleHtmlLang />
         <SiteSectionRail />
         <main className="relative z-10 min-w-0 pt-[env(safe-area-inset-top,0px)] pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
