@@ -36,8 +36,8 @@ const GRID_LUCIDE_ICONS: LucideIcon[] = [
 const iconClass =
   "h-8 w-8 shrink-0 text-[#0066ff] [stroke-width:1.5] sm:h-[32px] sm:w-[32px]";
 
-const cardClass =
-  "flex min-h-0 gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3.5 text-left backdrop-blur-2xl supports-[backdrop-filter]:bg-white/[0.03] sm:gap-3.5 sm:p-4";
+const GLASS =
+  "rounded-xl backdrop-blur-2xl bg-white/[0.03] border border-white/[0.08] shadow-2xl";
 
 export async function PricingIncluded() {
   const t = await getTranslations("Pricing");
@@ -49,7 +49,7 @@ export async function PricingIncluded() {
   return (
     <section
       id="cena"
-      className="home-body-ink relative scroll-mt-16 px-4 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-5 md:pb-8 md:pt-6"
+      className="home-body-ink relative scroll-mt-16 bg-transparent px-4 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-5 md:pb-8 md:pt-6"
     >
       <div className="relative mx-auto w-full max-w-[1000px]">
         <h2 className={homeSectionTitleClass}>{t("workTitle")}</h2>
@@ -80,7 +80,7 @@ export async function PricingIncluded() {
                 <li key={item.title} className="min-w-0">
                   <Link
                     href={irissHref}
-                    className={`${cardClass} block min-h-[100%] transition hover:border-white/[0.12] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent`}
+                    className={`${GLASS} flex min-h-0 min-h-[100%] gap-3 p-3.5 text-left transition hover:border-white/[0.12] sm:gap-3.5 sm:p-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent`}
                   >
                     {inner}
                   </Link>
@@ -89,7 +89,7 @@ export async function PricingIncluded() {
             }
 
             return (
-              <li key={item.title} className={`${cardClass} min-w-0`}>
+              <li key={item.title} className={`${GLASS} flex min-h-0 gap-3 p-3.5 sm:gap-3.5 sm:p-4`}>
                 {inner}
               </li>
             );

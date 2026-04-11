@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef } from "react";
+import { type CSSProperties, type ReactNode, useEffect } from "react";
 import { computeHomeSurfaceT } from "@/lib/home-surface";
 
 type HomeScrollSurfaceProps = {
@@ -9,18 +9,11 @@ type HomeScrollSurfaceProps = {
 };
 
 export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProps) {
-  const silverRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const root = document.documentElement;
-    const el = silverRef.current;
-
     const tick = () => {
-      const t = computeHomeSurfaceT();
-      root.style.setProperty("--home-surface-t", String(t));
-      if (el) el.style.opacity = String(t);
+      root.style.setProperty("--home-surface-t", String(computeHomeSurfaceT()));
     };
-
     tick();
     window.addEventListener("scroll", tick, { passive: true });
     window.addEventListener("resize", tick);
@@ -31,6 +24,16 @@ export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProp
     };
   }, []);
 
+  const silverStyle: CSSProperties = {
+    background: "#e5e7eb",
+    maskImage: "linear-gradient(to bottom, transparent 0%, black 45vh)",
+    WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 45vh)",
+    maskSize: "100% 100%",
+    WebkitMaskSize: "100% 100%",
+    maskRepeat: "no-repeat",
+    WebkitMaskRepeat: "no-repeat",
+  };
+
   return (
     <div className="relative z-0 min-h-dvh min-w-0 bg-transparent">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[#050505]" aria-hidden />
@@ -38,9 +41,8 @@ export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProp
       {wireframe}
 
       <div
-        ref={silverRef}
-        className="provin-silver-grain pointer-events-none fixed inset-0 z-[2] [mask-image:linear-gradient(to_bottom,transparent_0%,black_40vh,black_100%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,black_40vh,black_100%)]"
-        style={{ opacity: 0 }}
+        className="pointer-events-none fixed inset-0 z-[2]"
+        style={silverStyle}
         aria-hidden
       />
 
