@@ -93,11 +93,18 @@ export function IrissStaggerShell({
 
     const measure = () => {
       const w = Math.max(32, Math.round(el.offsetWidth));
-      const h = Math.max(100, Math.round(el.offsetHeight));
+      const oh = Math.round(el.offsetHeight);
+      const sh = Math.round(el.scrollHeight);
+      /* offsetHeight reizēm ir zemāks, kamēr layout/opacity vēl „krīt”; scrollHeight saturam jāatbilst. */
+      const h = Math.max(100, Math.max(oh, sh));
       setDims((prev) => (prev && prev.w === w && prev.h === h ? prev : { w, h }));
     };
 
     measure();
+    requestAnimationFrame(() => {
+      measure();
+      requestAnimationFrame(measure);
+    });
     if (typeof ResizeObserver === "undefined") {
       return () => {};
     }
@@ -182,7 +189,12 @@ export function IrissStaggerShell({
 
   useEffect(() => {
     const root = sectionRef.current;
-    if (!root || reduceMotion || typeof IntersectionObserver === "undefined") return;
+    if (!root || reduceMotion) return;
+
+    if (typeof IntersectionObserver === "undefined") {
+      setReveal([true, true, true]);
+      return;
+    }
 
     let io: IntersectionObserver | null = null;
     try {
@@ -202,15 +214,33 @@ export function IrissStaggerShell({
             }
           }
         },
-        { root: null, rootMargin: "0px 0px -6% 0px", threshold: [0, 0.12, 0.22] },
+        {
+          root: null,
+          /* Agrāk -6% bieži nekad nesasniedza slieksni → bloki palika opacity-0 */
+          rootMargin: "0px",
+          threshold: [0, 0.05, 0.12],
+        },
       );
     } catch {
+      setReveal([true, true, true]);
       return;
     }
-    if (!io) return;
+    if (!io) {
+      setReveal([true, true, true]);
+      return;
+    }
 
-    root.querySelectorAll("[data-iriss-index]").forEach((el) => io.observe(el));
-    return () => io.disconnect();
+    const obs = io;
+    root.querySelectorAll("[data-iriss-index]").forEach((el) => obs.observe(el));
+
+    const t = window.setTimeout(() => {
+      setReveal((prev) => (prev.every(Boolean) ? prev : [true, true, true]));
+    }, 2800);
+
+    return () => {
+      window.clearTimeout(t);
+      obs.disconnect();
+    };
   }, [reduceMotion]);
 
   useEffect(() => {
