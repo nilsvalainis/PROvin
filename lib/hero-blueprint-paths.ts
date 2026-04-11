@@ -1,11 +1,11 @@
 import { buildIrissThreadPath } from "@/lib/iriss-thread";
 
 /**
- * Vienkāršota „šasijas / klāja” līniju grupa (CAD plāna fragments), w×h px telpā.
+ * Vienkāršota „šasijas / klāja” līniju grupa (CAD plāna fragments), platums × augstums px.
  */
-export function buildHeroChassisBlueprintPath(w: number, h: number): string {
-  const u = (t: number) => t * w;
-  const k = (t: number) => t * h;
+export function buildHeroChassisBlueprintPath(widthPx: number, heightPx: number): string {
+  const u = (t: number) => t * widthPx;
+  const k = (t: number) => t * heightPx;
 
   return [
     "M",
@@ -74,6 +74,8 @@ export function buildHeroChassisBlueprintPath(w: number, h: number): string {
   ].join(" ");
 }
 
-export function buildHeroBlueprintThreadPath(w: number, h: number): string {
-  return buildIrissThreadPath(w, h);
-}
+const HERO_BLUEPRINT_VB = 100;
+
+/** Hero SVG viewBox 100×100 — uzbūvēts moduļa ielādē (ne komponenta renderī). */
+export const HERO_BLUEPRINT_CHASSIS_PATH_VB = buildHeroChassisBlueprintPath(HERO_BLUEPRINT_VB, HERO_BLUEPRINT_VB);
+export const HERO_BLUEPRINT_THREAD_PATH_VB = buildIrissThreadPath(HERO_BLUEPRINT_VB, HERO_BLUEPRINT_VB);

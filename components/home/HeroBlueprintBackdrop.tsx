@@ -2,7 +2,7 @@
 
 import type { RefObject } from "react";
 import { useEffect, useRef } from "react";
-import { buildHeroBlueprintThreadPath, buildHeroChassisBlueprintPath } from "@/lib/hero-blueprint-paths";
+import { HERO_BLUEPRINT_CHASSIS_PATH_VB, HERO_BLUEPRINT_THREAD_PATH_VB } from "@/lib/hero-blueprint-paths";
 import { sectionScrollProgress } from "@/lib/iriss-thread";
 
 const VB = 100;
@@ -101,9 +101,6 @@ export function HeroBlueprintBackdrop({ sectionRef }: { sectionRef: RefObject<HT
     };
   }, [sectionRef]);
 
-  const chassisD = buildHeroChassisBlueprintPath(VB, VB);
-  const threadD = buildHeroBlueprintThreadPath(VB, VB);
-
   return (
     <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden" aria-hidden>
       <div ref={gridRef} className="home-hero-blueprint-grid absolute inset-0" />
@@ -114,8 +111,8 @@ export function HeroBlueprintBackdrop({ sectionRef }: { sectionRef: RefObject<HT
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <path ref={chassisRef} className="home-hero-blueprint-draw-line" pathLength={1} d={chassisD} />
-        <path ref={threadRef} className="home-hero-blueprint-draw-line home-hero-blueprint-thread" pathLength={1} d={threadD} />
+        <path ref={chassisRef} className="home-hero-blueprint-draw-line" pathLength={1} d={HERO_BLUEPRINT_CHASSIS_PATH_VB} />
+        <path ref={threadRef} className="home-hero-blueprint-draw-line home-hero-blueprint-thread" pathLength={1} d={HERO_BLUEPRINT_THREAD_PATH_VB} />
       </svg>
     </div>
   );

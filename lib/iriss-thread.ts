@@ -1,10 +1,10 @@
 /**
- * Viens nepārtraukts „inženierijas pavediens” IRISS stagger zonā (w×h = sekcijas px).
+ * Viens nepārtraukts „inženierijas pavediens” IRISS stagger zonā (platums × augstums px).
  * Asimetrisks: kreisā augša → centrs → kreisā/leņķī apakša.
  */
-export function buildIrissThreadPath(w: number, h: number): string {
-  const u = (t: number) => t * w;
-  const k = (t: number) => t * h;
+export function buildIrissThreadPath(widthPx: number, heightPx: number): string {
+  const u = (t: number) => t * widthPx;
+  const k = (t: number) => t * heightPx;
 
   return [
     "M",
@@ -60,11 +60,11 @@ export type ThreadTick = {
 /**
  * Perpendikulāras 1px atzīmes gar ceļu (stratēģiski — aptuveni vienāds solis).
  */
-export function sampleThreadTicks(path: SVGPathElement, w: number, h: number): ThreadTick[] {
+export function sampleThreadTicks(path: SVGPathElement, widthPx: number, heightPx: number): ThreadTick[] {
   const len = path.getTotalLength();
   if (!Number.isFinite(len) || len < 16) return [];
 
-  const m = Math.min(w, h);
+  const m = Math.min(widthPx, heightPx);
   const halfTick = Math.max(3, m * 0.011);
   const spacing = Math.max(22, len / 34);
   const out: ThreadTick[] = [];
@@ -98,3 +98,6 @@ export function sectionScrollProgress(rect: DOMRectReadOnly, vh: number): number
   const clamped = Math.min(1, Math.max(0, raw));
   return Math.pow(clamped, 0.94);
 }
+
+/** Fiksēts pavediens „Kā tas darbojas” diagrammai (viewBox 100×44) — moduļa līmenī, lai nav riska ar minifier. */
+export const IRISS_THREAD_PATH_VIEW_100_44 = buildIrissThreadPath(100, 44);

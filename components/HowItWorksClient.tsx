@@ -2,7 +2,7 @@
 
 import { Fragment } from "react";
 import { ClipboardPenLine, CreditCard, ScrollText } from "lucide-react";
-import { buildIrissThreadPath } from "@/lib/iriss-thread";
+import { IRISS_THREAD_PATH_VIEW_100_44 } from "@/lib/iriss-thread";
 import { homeMarketingPillarGridShellClass, homeMarketingPillarGridWidthClass } from "@/lib/home-layout";
 
 type Step = { n: string; title: string; body: string };
@@ -69,8 +69,6 @@ export function HowItWorksClient({
         ? "text-zinc-400"
         : "text-[#86868b]";
 
-  const threadMiniD = buildIrissThreadPath(100, 44);
-
   return (
     <section className="home-body-ink relative z-10 overflow-x-hidden bg-transparent">
       <div className="relative px-3 py-5 sm:px-6 sm:py-4">
@@ -95,7 +93,7 @@ export function HowItWorksClient({
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
-                    <path d={threadMiniD} className="home-how-diagram-thread-bg" strokeLinecap="square" />
+                    <path d={IRISS_THREAD_PATH_VIEW_100_44} className="home-how-diagram-thread-bg" strokeLinecap="square" />
                   </svg>
                 </div>
               </>
