@@ -37,7 +37,7 @@ const iconClass =
   "h-8 w-8 shrink-0 text-[#0066ff] [stroke-width:1.5] sm:h-[32px] sm:w-[32px]";
 
 const GLASS =
-  "rounded-xl backdrop-blur-2xl bg-white/[0.03] border border-white/[0.08] shadow-2xl";
+  "rounded-xl border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.03] to-white/[0.01] backdrop-blur-md";
 
 export async function PricingIncluded() {
   const t = await getTranslations("Pricing");

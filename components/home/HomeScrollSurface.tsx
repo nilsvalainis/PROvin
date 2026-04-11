@@ -1,7 +1,7 @@
 "use client";
 
-import { type CSSProperties, type ReactNode, useEffect } from "react";
-import { computeHomeSurfaceT } from "@/lib/home-surface";
+import { type ReactNode, useEffect } from "react";
+import { ViewportCornerMarks } from "@/components/home/ViewportCornerMarks";
 
 type HomeScrollSurfaceProps = {
   wireframe?: ReactNode;
@@ -11,40 +11,27 @@ type HomeScrollSurfaceProps = {
 export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProps) {
   useEffect(() => {
     const root = document.documentElement;
-    const tick = () => {
-      root.style.setProperty("--home-surface-t", String(computeHomeSurfaceT()));
-    };
-    tick();
-    window.addEventListener("scroll", tick, { passive: true });
-    window.addEventListener("resize", tick);
+    root.style.setProperty("--home-surface-t", "0");
     return () => {
-      window.removeEventListener("scroll", tick);
-      window.removeEventListener("resize", tick);
       root.style.removeProperty("--home-surface-t");
     };
   }, []);
 
-  const silverStyle: CSSProperties = {
-    background: "#e5e7eb",
-    maskImage: "linear-gradient(to bottom, transparent 0%, black 45vh)",
-    WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 45vh)",
-    maskSize: "100% 100%",
-    WebkitMaskSize: "100% 100%",
-    maskRepeat: "no-repeat",
-    WebkitMaskRepeat: "no-repeat",
-  };
-
   return (
-    <div className="relative z-0 min-h-dvh min-w-0 bg-transparent">
+    <div className="relative z-0 min-h-dvh min-w-0 bg-[#050505]">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[#050505]" aria-hidden />
+
+      {/* Subtle center lift — edges stay deep black */}
+      <div
+        className="pointer-events-none fixed inset-0 z-[2] bg-[radial-gradient(ellipse_72%_58%_at_50%_38%,rgba(255,255,255,0.045)_0%,rgba(5,5,5,0.35)_48%,#050505_78%)]"
+        aria-hidden
+      />
 
       {wireframe}
 
-      <div
-        className="pointer-events-none fixed inset-0 z-[2]"
-        style={silverStyle}
-        aria-hidden
-      />
+      <div className="pointer-events-none fixed inset-0 z-[4] home-tech-grain mix-blend-overlay" aria-hidden />
+
+      <ViewportCornerMarks />
 
       {children}
     </div>

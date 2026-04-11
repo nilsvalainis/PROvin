@@ -19,10 +19,6 @@ export function MarketingHero() {
       className="relative flex min-h-[100dvh] min-h-[100svh] flex-col justify-center bg-transparent px-5 pb-16 pt-[max(5.5rem,env(safe-area-inset-top,0px)+3.25rem)] text-white sm:px-8 sm:pb-20 sm:pt-[max(5.5rem,env(safe-area-inset-top,0px)+3rem)]"
       aria-labelledby="marketing-hero-title"
     >
-      <div
-        className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_88%_72%_at_50%_48%,#121212_0%,#0f0f0f_32%,rgba(15,15,15,0.55)_55%,rgba(15,15,15,0)_78%)]"
-        aria-hidden
-      />
       <div className="relative z-10 mx-auto flex w-full max-w-[min(100%,53.76rem)] flex-col items-center text-center">
         <header className="flex shrink-0 flex-col items-center gap-6 sm:gap-7 md:gap-8">
           <p className={approvedByIrissSignatureHeroClass} aria-label={t("approved")}>
@@ -46,7 +42,7 @@ export function MarketingHero() {
           <div className="mt-2 flex w-full max-w-[min(100%,24rem)] flex-col items-center gap-3 sm:mt-3">
             <Link
               href={orderSectionHref(locale)}
-              className="provin-btn provin-btn--compact inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#0066ff] px-7 py-3.5 text-center text-[13px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_4px_28px_rgba(0,102,255,0.45)] sm:min-h-[3.25rem] sm:px-8 sm:text-[14px] sm:tracking-[0.07em]"
+              className="provin-btn provin-btn--compact inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#0066ff] px-7 py-3.5 text-center text-[13px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_0_22px_rgba(0,102,255,0.2)] ring-1 ring-white/10 sm:min-h-[3.25rem] sm:px-8 sm:text-[14px] sm:tracking-[0.07em]"
             >
               <span className="inline-flex max-w-full items-center justify-center gap-2 text-center">
                 <span className="min-w-0 text-balance">{t("cta")}</span>

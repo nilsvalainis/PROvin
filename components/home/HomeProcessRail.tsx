@@ -23,17 +23,25 @@ export function HomeProcessRail() {
         {steps.map((s) => (
           <p
             key={s.n}
-            className="home-rail-label max-w-[10rem] text-left text-[10px] font-semibold uppercase leading-tight tracking-[0.22em] sm:max-w-[11rem] sm:text-[11px] sm:tracking-[0.24em]"
+            className="home-rail-label max-w-[10rem] text-left sm:max-w-[11rem]"
           >
-            <span className="opacity-70">{s.n}</span>
-            <span className="mx-1 opacity-40" aria-hidden>
+            <span className="font-[family-name:var(--font-inter)] text-[10px] font-medium tabular-nums tracking-[0.38em] text-white/55 sm:text-[11px] sm:tracking-[0.42em]">
+              {s.n}
+            </span>
+            <span className="mx-1.5 font-[family-name:var(--font-inter)] text-[10px] text-white/25 sm:text-[11px]" aria-hidden>
               /
             </span>
-            <span className="tracking-[0.18em] sm:tracking-[0.2em]">{s.label}</span>
+            <span className="font-[family-name:var(--font-inter)] text-[10px] font-semibold uppercase leading-tight tracking-[0.22em] text-white/45 sm:text-[11px] sm:tracking-[0.24em]">
+              {s.label}
+            </span>
           </p>
         ))}
       </div>
-      <div className={`w-[0.5px] shrink-0 self-stretch bg-[#b8bcc4]/40 ${railHeightClass}`} />
+      <div
+        className={`shrink-0 self-stretch bg-white/[0.12] ${railHeightClass}`}
+        style={{ width: "0.5px" }}
+        aria-hidden
+      />
     </aside>
   );
 }

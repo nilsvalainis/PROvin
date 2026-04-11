@@ -26,7 +26,7 @@ export default async function HomePage({
 
         <div className="home-below-hero home-body-ink bg-transparent">
           <InvestigationLabSection />
-          <HowItWorks tone="light" />
+          <HowItWorks tone="dark" />
 
           <div
             id="site-content"
