@@ -127,25 +127,30 @@ export function SiteSectionRail() {
 
   useLayoutEffect(() => {
     if (!showRail) return;
-    const track = trackRef.current;
-    const link = linkRefs.current[active];
-    if (!track || !link) return;
-    const tr = track.getBoundingClientRect();
-    const lr = link.getBoundingClientRect();
-    const center = lr.top + lr.height / 2 - tr.top;
-    const h = 18;
-    setDot({ top: Math.max(0, Math.min(center - h / 2, tr.height - h)), height: h });
+    const updateDot = () => {
+      const track = trackRef.current;
+      const link = linkRefs.current[active];
+      if (!track || !link) return;
+      const tr = track.getBoundingClientRect();
+      const lr = link.getBoundingClientRect();
+      const center = lr.top + lr.height / 2 - tr.top;
+      const h = 18;
+      setDot({ top: Math.max(0, Math.min(center - h / 2, tr.height - h)), height: h });
+    };
+    updateDot();
+    window.addEventListener("resize", updateDot);
+    return () => window.removeEventListener("resize", updateDot);
   }, [active, showRail]);
 
   if (!showRail) return null;
 
   return (
     <nav
-      className="pointer-events-auto fixed left-[max(0.65rem,env(safe-area-inset-left,0px))] top-1/2 z-40 hidden -translate-y-1/2 lg:flex"
+      className="pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.65rem,env(safe-area-inset-left,0px))] top-[max(1rem,env(safe-area-inset-top,0px))] z-40 hidden min-h-0 w-max flex-col lg:flex"
       aria-label={t("navAria")}
     >
-      <div className="flex flex-row items-stretch gap-3">
-        <div ref={trackRef} className="relative w-1 self-stretch">
+      <div className="flex h-full min-h-0 w-max flex-1 flex-row items-stretch gap-3">
+        <div ref={trackRef} className="relative h-full min-h-0 w-1 shrink-0">
           <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-white/[0.14]" aria-hidden />
           <div
             className="absolute left-1/2 w-[3px] -translate-x-1/2 rounded-full bg-[#0066ff] shadow-[0_0_14px_rgba(0,102,255,0.45)] motion-reduce:!transition-none"
@@ -157,9 +162,9 @@ export function SiteSectionRail() {
             aria-hidden
           />
         </div>
-        <ul className="flex flex-col gap-4 py-0.5">
+        <ul className="flex h-full min-h-0 flex-1 flex-col">
           {sections.map((s, i) => (
-            <li key={s.labelKey}>
+            <li key={s.labelKey} className="flex min-h-0 flex-1 flex-col justify-center">
               <Link
                 ref={(el) => {
                   linkRefs.current[i] = el;
