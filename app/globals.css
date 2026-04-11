@@ -277,7 +277,8 @@ body {
 .home-iriss-stagger-atmosphere {
   pointer-events: none;
   position: absolute;
-  inset: -3rem -8% -3rem -8%;
+  /* Tikai vertikāls „bleed” — horizontāls -8% lika redzamas sānu kontūras */
+  inset: -3rem 0 -3rem 0;
   z-index: 0;
   background-image:
     radial-gradient(
@@ -299,30 +300,52 @@ body {
       rgba(255, 255, 255, 0.006) 86%,
       rgba(255, 255, 255, 0) 100%
     );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 0, 0, 0.35) 9%,
-    rgba(0, 0, 0, 0.92) 18%,
-    #000 26%,
-    #000 74%,
-    rgba(0, 0, 0, 0.92) 82%,
-    rgba(0, 0, 0, 0.35) 91%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 0, 0, 0.35) 9%,
-    rgba(0, 0, 0, 0.92) 18%,
-    #000 26%,
-    #000 74%,
-    rgba(0, 0, 0, 0.92) 82%,
-    rgba(0, 0, 0, 0.35) 91%,
-    transparent 100%
-  );
+  /* Vertikāli + horizontāli — abu režģa malu „kaste” pazūd (mask-composite = alpha reizinājums) */
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.35) 9%,
+      rgba(0, 0, 0, 0.92) 18%,
+      #000 26%,
+      #000 74%,
+      rgba(0, 0, 0, 0.92) 82%,
+      rgba(0, 0, 0, 0.35) 91%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(0, 0, 0, 0.2) 6%,
+      #000 14%,
+      #000 86%,
+      rgba(0, 0, 0, 0.2) 94%,
+      transparent 100%
+    );
+  mask-composite: intersect;
   mask-size: 100% 100%;
-  -webkit-mask-size: 100% 100%;
+  -webkit-mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.35) 9%,
+      rgba(0, 0, 0, 0.92) 18%,
+      #000 26%,
+      #000 74%,
+      rgba(0, 0, 0, 0.92) 82%,
+      rgba(0, 0, 0, 0.35) 91%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(0, 0, 0, 0.2) 6%,
+      #000 14%,
+      #000 86%,
+      rgba(0, 0, 0, 0.2) 94%,
+      transparent 100%
+    );
+  -webkit-mask-composite: source-in;
 }
 
 .home-footer-scrim {
