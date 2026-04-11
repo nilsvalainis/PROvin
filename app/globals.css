@@ -136,7 +136,7 @@ body {
   box-shadow:
     0 0 5px 0 rgba(0, 102, 255, 0.22),
     0 0 12px 1px rgba(0, 102, 255, 0.08);
-  animation: provin-diagnostic-scan-sweep 6.8s ease-in-out infinite;
+  animation: provin-diagnostic-scan-sweep 3.4s ease-in-out infinite;
 }
 
 @keyframes provin-diagnostic-scan-sweep {
