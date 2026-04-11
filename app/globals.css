@@ -34,8 +34,14 @@ html {
   overscroll-behavior: none;
 }
 
+/* === BASE BACKGROUND === */
 body {
-  @apply bg-white text-[var(--color-apple-text)] antialiased;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(0, 102, 255, 0.08), transparent 40%),
+    linear-gradient(180deg, #0a0f1a 0%, #05080f 100%);
+  color: white;
+  overflow-x: hidden;
+  @apply antialiased;
   font-feature-settings: "kern" 1, "liga" 1;
   overscroll-behavior: none;
   /* Papildu horizontālā telpa pie “Dynamic Island” / malām */
