@@ -1,24 +1,35 @@
 "use client";
 
-import { ReactLenis } from "lenis/react";
 import type { ReactNode } from "react";
+import { useEffect } from "react";
+import Lenis from "lenis";
+import "lenis/dist/lenis.css";
 
 /**
- * Globāls Lenis smooth scroll (`root`). `html` izmanto `scroll-behavior: auto`, lai nav dubultas gludināšanas.
+ * Gluds ritinājums mārketinga lapām (`app/[locale]`). Ja `prefers-reduced-motion`,
+ * Lenis nepalaiž — saglabājas sistēmas ritināšana.
  */
 export function LenisProvider({ children }: { children: ReactNode }) {
-  return (
-    <ReactLenis
-      root
-      options={{
-        lerp: 0.085,
-        smoothWheel: true,
-        wheelMultiplier: 0.92,
-        touchMultiplier: 1,
-        autoRaf: true,
-      }}
-    >
-      {children}
-    </ReactLenis>
-  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const root = document.documentElement;
+    root.classList.add("lenis");
+
+    const lenis = new Lenis({
+      autoRaf: true,
+      lerp: 0.09,
+      smoothWheel: true,
+      anchors: true,
+      stopInertiaOnNavigate: true,
+    });
+
+    return () => {
+      lenis.destroy();
+      root.classList.remove("lenis");
+    };
+  }, []);
+
+  return <>{children}</>;
 }
