@@ -185,29 +185,23 @@ body {
   mix-blend-mode: overlay;
 }
 
-/* Pasūtījuma forma — sudraba līnija + zils apgaismojums zem tās (fokusā #0066ff) */
-.order-hero-line-field {
-  border-bottom-width: 0 !important;
-  box-shadow:
-    0 1px 0 0 #c0c0c0,
-    0 4px 10px -4px rgba(0, 102, 255, 0.3);
-  transition:
-    box-shadow 0.2s ease,
-    color 0.2s ease;
-}
-
-.order-hero-line-field:focus,
-.order-hero-line-field:focus-visible {
-  outline: none;
-  box-shadow:
-    0 1px 0 0 #0066ff,
-    0 6px 16px -3px rgba(0, 102, 255, 0.48);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .order-hero-line-field {
-    transition: none;
-  }
+/**
+ * Zem Hero — maigs „mākonis” virs #050505; augšā blīvi #050505, lai nav šķiras ar Hero.
+ */
+.home-below-hero-cloud-layer {
+  background-color: #050505;
+  background-image:
+    linear-gradient(
+      180deg,
+      #050505 0%,
+      #050505 4%,
+      color-mix(in oklab, #050505 78%, #12151a) 14%,
+      color-mix(in oklab, #050505 45%, #141820) 28%,
+      rgba(5, 5, 5, 0) 52%
+    ),
+    radial-gradient(ellipse 125% 90% at 22% 18%, oklch(0.26 0.02 266 / 0.2) 0%, transparent 58%),
+    radial-gradient(ellipse 110% 80% at 82% 12%, oklch(0.24 0.018 268 / 0.16) 0%, transparent 52%),
+    radial-gradient(ellipse 95% 70% at 50% 45%, oklch(0.22 0.015 265 / 0.12) 0%, transparent 50%);
 }
 
 /* Wireframe fons — lēna „elpošana” (tikai transform, GPU) */

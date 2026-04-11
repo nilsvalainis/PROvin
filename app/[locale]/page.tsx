@@ -21,12 +21,12 @@ export default async function HomePage({
       <div className="relative z-10 min-w-0 bg-transparent">
         <MarketingHero />
 
-        <div className="home-below-hero home-body-ink bg-transparent">
+        <div className="home-below-hero home-below-hero-cloud-layer home-body-ink">
           <HowItWorks tone="dark" />
 
           <div
             id="site-content"
-            className="home-site-rule home-body-ink relative scroll-mt-14 border-t border-transparent bg-transparent"
+            className="home-body-ink relative scroll-mt-14 border-0 bg-transparent"
           >
             <div className="relative z-10 bg-transparent pt-10 sm:pt-14 md:pt-16">
               <FinalCta cancelled={cancelled} />

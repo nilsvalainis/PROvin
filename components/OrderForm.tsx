@@ -12,9 +12,9 @@ const labelHero =
 const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
 
-/** Dark cockpit: silver-ink teksts, sudraba līnija + zils apgaismojums — `.order-hero-line-field` */
+/** Dark cockpit: tikai apakšējā sudraba līnija (bez box-shadow — novērš malu zilo/balto artefaktus) */
 const inputHero =
-  "order-hero-line-field relative z-10 mt-2 box-border min-h-11 w-full rounded-none border-0 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#e5e7eb] outline-none transition-[box-shadow,color] placeholder:text-[#e5e7eb]/38 focus:shadow-none focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
+  "relative z-10 mt-2 box-border min-h-11 w-full appearance-none rounded-none border-x-0 border-t-0 border-b border-solid border-[#c0c0c0] bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#e5e7eb] shadow-none outline-none ring-0 transition-[border-color,color] placeholder:text-[#e5e7eb]/38 focus:border-[#0066ff] focus:shadow-none focus:outline-none focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
 
 const inputDefault =
   "mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505]/75 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition-[border-color] placeholder:text-[#86868b] focus:border-provin-accent focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
