@@ -72,6 +72,23 @@ body {
   user-select: none;
 }
 
+/* === DATA LINES === */
+.data-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.data-lines svg {
+  width: 100%;
+  height: 100%;
+}
+
+.data-line {
+  stroke: rgba(255, 255, 255, 0.2);
+  stroke-width: 0.5;
+}
+
 /* Pieskāriena ierīcēs — Apple / Android vadlīnijas (~44px) galvenajām darbībām */
 @media (pointer: coarse) {
   .provin-btn:not(.provin-btn--compact) {
