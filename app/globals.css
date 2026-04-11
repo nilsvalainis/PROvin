@@ -89,6 +89,24 @@ body {
   stroke-width: 0.5;
 }
 
+/* === DATA PULSE === */
+.pulse {
+  fill: #0066ff;
+  opacity: 0.8;
+  animation: pulseMove linear infinite;
+  animation-duration: 6s;
+  will-change: transform;
+}
+
+@keyframes pulseMove {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(120px);
+  }
+}
+
 /* Pieskāriena ierīcēs — Apple / Android vadlīnijas (~44px) galvenajām darbībām */
 @media (pointer: coarse) {
   .provin-btn:not(.provin-btn--compact) {
