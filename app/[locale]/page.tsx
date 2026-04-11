@@ -4,7 +4,6 @@ import { AutoWireframeBackground } from "@/components/home/AutoWireframeBackgrou
 import { HomeScrollSurface } from "@/components/home/HomeScrollSurface";
 import { HomeProcessRail } from "@/components/home/HomeProcessRail";
 import { MarketingHero } from "@/components/home/MarketingHero";
-import { InvestigationLabSection } from "@/components/home/investigation-lab/InvestigationLabSection";
 import { HowItWorks } from "@/components/HowItWorks";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
@@ -25,7 +24,6 @@ export default async function HomePage({
         <MarketingHero />
 
         <div className="home-below-hero home-body-ink bg-transparent">
-          <InvestigationLabSection />
           <HowItWorks tone="dark" />
 
           <div

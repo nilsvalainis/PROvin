@@ -1,37 +1,138 @@
 "use client";
 
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { approvedByIrissSignatureHeroClass } from "@/lib/home-layout";
 import { orderSectionHref } from "@/lib/paths";
 
+const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
+
+/** Premium glass — hero pillars (5877bb0: blur 30px, white/10 on black, inset edge). */
+const HERO_PILLAR_GLASS =
+  "rounded-xl border border-white/15 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-[30px]";
+
+const PILLAR_POS = [
+  "lg:left-[max(0.75rem,env(safe-area-inset-left))] lg:right-auto lg:top-[15%] lg:bottom-auto",
+  "lg:right-[max(0.75rem,env(safe-area-inset-right))] lg:left-auto lg:top-[15%] lg:bottom-auto",
+  "lg:left-[max(0.75rem,env(safe-area-inset-left))] lg:right-auto lg:top-auto lg:bottom-[max(5.5rem,env(safe-area-inset-bottom,0px)+4rem)]",
+  "lg:right-[max(0.75rem,env(safe-area-inset-right))] lg:left-auto lg:top-auto lg:bottom-[max(5.5rem,env(safe-area-inset-bottom,0px)+4rem)]",
+] as const;
+
+type HeroPillar = { ref: string; title: string; body: string };
+
 /**
- * Pilnekrāna tumšais Hero — saturs no `Hero` ziņojumiem.
+ * Pilnekrāna tumšais Hero — saturs no `Hero` ziņojumiem; četri pīlāri orbītā ap virsrakstu (lg+).
  */
 export function MarketingHero() {
   const t = useTranslations("Hero");
   const locale = useLocale();
+  const pillars = t.raw("pillars") as HeroPillar[];
+
+  const sectionRef = useRef<HTMLElement>(null);
+  const titleBlockRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<(HTMLElement | null)[]>([null, null, null, null]);
+  const [pathDs, setPathDs] = useState<string[]>([]);
+
+  const updateBlueprintLines = useCallback(() => {
+    const section = sectionRef.current;
+    const titleEl = titleBlockRef.current;
+    if (!section || !titleEl || typeof window === "undefined") return;
+    if (!window.matchMedia("(min-width: 1024px)").matches) {
+      setPathDs([]);
+      return;
+    }
+
+    const s = section.getBoundingClientRect();
+    const tRect = titleEl.getBoundingClientRect();
+
+    const corners = [
+      { x: tRect.left - s.left, y: tRect.top - s.top },
+      { x: tRect.right - s.left, y: tRect.top - s.top },
+      { x: tRect.left - s.left, y: tRect.bottom - s.top },
+      { x: tRect.right - s.left, y: tRect.bottom - s.top },
+    ];
+
+    const next: string[] = [];
+    for (let i = 0; i < 4; i++) {
+      const card = cardRefs.current[i];
+      if (!card) continue;
+      const r = card.getBoundingClientRect();
+      const ax = r.left + r.width / 2 - s.left;
+      const ay = r.top + r.height / 2 - s.top;
+      const c = corners[i];
+      if (!c) continue;
+      next.push(`M ${c.x} ${c.y} L ${ax} ${ay}`);
+    }
+    setPathDs(next);
+  }, []);
+
+  useLayoutEffect(() => {
+    const run = () => requestAnimationFrame(updateBlueprintLines);
+    run();
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const ro = new ResizeObserver(run);
+    ro.observe(section);
+
+    window.addEventListener("resize", run);
+
+    const mq = window.matchMedia("(min-width: 1024px)");
+    mq.addEventListener("change", run);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", run);
+      mq.removeEventListener("change", run);
+    };
+  }, [updateBlueprintLines]);
 
   return (
     <section
+      ref={sectionRef}
       id="home-hero"
-      className="relative flex min-h-[100dvh] min-h-[100svh] flex-col justify-center bg-transparent px-5 pb-16 pt-[max(5.5rem,env(safe-area-inset-top,0px)+3.25rem)] text-white sm:px-8 sm:pb-20 sm:pt-[max(5.5rem,env(safe-area-inset-top,0px)+3rem)]"
+      className="relative flex min-h-[100dvh] min-h-[100svh] flex-col justify-center overflow-hidden bg-transparent px-5 pb-16 pt-[max(5.5rem,env(safe-area-inset-top,0px)+3.25rem)] text-white sm:px-8 sm:pb-20 sm:pt-[max(5.5rem,env(safe-area-inset-top,0px)+3rem)]"
       aria-labelledby="marketing-hero-title"
     >
+      {pathDs.length > 0 ? (
+        <svg
+          className="pointer-events-none absolute inset-0 z-[6] h-full w-full"
+          aria-hidden
+          width="100%"
+          height="100%"
+          preserveAspectRatio="none"
+        >
+          {pathDs.map((d, i) => (
+            <path
+              key={i}
+              d={d}
+              fill="none"
+              stroke="rgba(0,102,255,0.2)"
+              strokeWidth={0.5}
+              strokeDasharray="2 4"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+        </svg>
+      ) : null}
+
       <div className="relative z-10 mx-auto flex w-full max-w-[min(100%,53.76rem)] flex-col items-center text-center">
-        <header className="flex shrink-0 flex-col items-center gap-6 sm:gap-7 md:gap-8">
+        <header className="relative z-20 flex w-full shrink-0 flex-col items-center gap-6 sm:gap-7 md:gap-8">
           <p className={`${approvedByIrissSignatureHeroClass} text-white/70`} aria-label={t("approved")}>
             {t("approved")}
           </p>
 
-          <h1
-            id="marketing-hero-title"
-            className="text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[28px] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]"
-          >
-            <span className="block text-white">{t("h1Line1")}</span>
-            <span className="mt-0.5 block text-provin-accent sm:mt-1">{t("h1Line2")}</span>
-          </h1>
+          <div ref={titleBlockRef} className="w-full">
+            <h1
+              id="marketing-hero-title"
+              className="text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[28px] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]"
+            >
+              <span className="block text-white">{t("h1Line1")}</span>
+              <span className="mt-0.5 block text-white sm:mt-1">{t("h1Line2")}</span>
+            </h1>
+          </div>
 
           <p
             className={`${approvedByIrissSignatureHeroClass} max-w-[min(100%,52ch)] text-balance tracking-[-0.02em] text-white/70`}
@@ -53,10 +154,37 @@ export function MarketingHero() {
         </header>
       </div>
 
+      {pillars.map((p, i) => {
+        const Icon = PILLAR_ICONS[i] ?? FileText;
+        const pos = PILLAR_POS[i] ?? PILLAR_POS[0];
+        return (
+          <article
+            key={`${p.ref}-${p.title}`}
+            ref={(el) => {
+              cardRefs.current[i] = el;
+            }}
+            className={`${HERO_PILLAR_GLASS} relative z-20 mx-auto mt-3 w-full max-w-sm px-4 py-4 first:mt-10 sm:px-5 sm:py-5 sm:first:mt-12 lg:absolute lg:mt-0 lg:w-[min(100%,13.5rem)] lg:max-w-none lg:first:mt-0 xl:w-[14.5rem] ${pos}`}
+          >
+            <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:gap-4 sm:text-left lg:flex-col lg:items-center lg:text-center">
+              <div className="flex shrink-0 flex-col items-center gap-1">
+                <Icon className="h-8 w-8 shrink-0 text-[#0066ff] sm:h-9 sm:w-9" strokeWidth={1.25} aria-hidden />
+                <span className="font-mono text-[6px] font-semibold uppercase tracking-[0.1em] text-[#0066ff]">
+                  {p.ref}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-semibold tracking-tight text-white sm:text-base">{p.title}</h3>
+                {p.body ? <p className="mt-1.5 text-xs font-light leading-relaxed text-white/70 sm:text-[13px]">{p.body}</p> : null}
+              </div>
+            </div>
+          </article>
+        );
+      })}
+
       <a
         href="#site-content"
         aria-label={t("scrollToPricingAria")}
-        className="provin-scroll-hint absolute bottom-[max(1.25rem,env(safe-area-inset-bottom,0px))] left-1/2 z-10 flex min-h-11 min-w-11 max-w-[min(100%,20rem)] flex-col items-center justify-center gap-2 rounded-full px-3 text-center text-[10px] font-semibold uppercase leading-snug tracking-[0.18em] text-white/45 transition-colors hover:text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/40 sm:bottom-8 sm:min-h-0 sm:min-w-0 sm:text-[11px] sm:tracking-[0.2em]"
+        className="provin-scroll-hint absolute bottom-[max(1.25rem,env(safe-area-inset-bottom,0px))] left-1/2 z-30 flex min-h-11 min-w-11 max-w-[min(100%,20rem)] -translate-x-1/2 flex-col items-center justify-center gap-2 rounded-full px-3 text-center text-[10px] font-semibold uppercase leading-snug tracking-[0.18em] text-white/45 transition-colors hover:text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/40 sm:bottom-8 sm:min-h-0 sm:min-w-0 sm:text-[11px] sm:tracking-[0.2em]"
       >
         <span className="text-balance">{t("scrollToPricingAria")}</span>
         <ChevronDown className="h-4 w-4 shrink-0 opacity-80" strokeWidth={2} aria-hidden />
