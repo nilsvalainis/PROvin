@@ -54,6 +54,45 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* === HERO SPEEDOMETER (dekoratīvs) === */
+.hero-speedo-bezel,
+.hero-speedo-needle {
+  will-change: transform;
+}
+
+.hero-speedo-bezel {
+  animation: rotateSlow 56s linear infinite;
+}
+
+.hero-speedo-needle {
+  animation: heroSpeedoNeedleSweep 7s ease-in-out infinite alternate;
+}
+
+@keyframes rotateSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes heroSpeedoNeedleSweep {
+  from {
+    transform: rotate(-52deg);
+  }
+  to {
+    transform: rotate(52deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-speedo-bezel,
+  .hero-speedo-needle {
+    animation: none !important;
+  }
+}
+
 /* Pieskāriena ierīcēs — Apple / Android vadlīnijas (~44px) galvenajām darbībām */
 @media (pointer: coarse) {
   .provin-btn:not(.provin-btn--compact) {

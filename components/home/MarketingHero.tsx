@@ -10,6 +10,7 @@ import {
   homeMarketingPillarGridWidthClass,
 } from "@/lib/home-layout";
 import { orderSectionHref } from "@/lib/paths";
+import { MarketingHeroSpeedometer } from "@/components/home/MarketingHeroSpeedometer";
 
 const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
 
@@ -36,17 +37,20 @@ export function MarketingHero() {
             {t("approved")}
           </p>
 
-          <h1
-            id="marketing-hero-title"
-            className="text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]"
-          >
-            <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
-              <span className={heroH1BlueKeywordClass}>{t("h1Vin")}</span>
-              <span className="text-white">{t("h1Un")}</span>
-              <span className={heroH1BlueKeywordClass}>{t("h1Sludinajuma")}</span>
-            </span>
-            <span className="mt-0.5 block text-white sm:mt-1">{t("h1Line2")}</span>
-          </h1>
+          <div className="relative w-full">
+            <MarketingHeroSpeedometer />
+            <h1
+              id="marketing-hero-title"
+              className="relative z-10 text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]"
+            >
+              <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
+                <span className={heroH1BlueKeywordClass}>{t("h1Vin")}</span>
+                <span className="text-white">{t("h1Un")}</span>
+                <span className={heroH1BlueKeywordClass}>{t("h1Sludinajuma")}</span>
+              </span>
+              <span className="mt-0.5 block text-white sm:mt-1">{t("h1Line2")}</span>
+            </h1>
+          </div>
 
           <p
             className={`${approvedByIrissSignatureHeroClass} max-w-[min(100%,52ch)] text-balance tracking-[-0.02em] text-white/70`}
