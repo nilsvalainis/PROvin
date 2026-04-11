@@ -2,7 +2,6 @@
 
 import { Fragment } from "react";
 import { ClipboardPenLine, CreditCard, ScrollText } from "lucide-react";
-import { IRISS_THREAD_PATH_VIEW_100_44 } from "@/lib/iriss-thread";
 import { homeMarketingPillarGridShellClass, homeMarketingPillarGridWidthClass } from "@/lib/home-layout";
 
 type Step = { n: string; title: string; body: string };
@@ -16,29 +15,7 @@ const stepIconClassDark =
 const stepIconClassSilver =
   "h-8 w-8 shrink-0 text-[#0066ff] transition-opacity group-hover:opacity-90 [stroke-width:1.5] sm:h-[2.3625rem] sm:w-[2.3625rem]";
 
-const stepIconClassTechnical =
-  "h-8 w-8 shrink-0 text-[#C0C0C0] opacity-95 transition-opacity group-hover:opacity-100 [stroke-width:1.5] sm:h-[2.3625rem] sm:w-[2.3625rem]";
-
 const ICON_ROW_H = "h-11";
-
-function DiagramCornerPlus({ pos }: { pos: "tl" | "tr" | "bl" | "br" }) {
-  const cls =
-    pos === "tl"
-      ? "left-0 top-0 -translate-x-1/2 -translate-y-1/2"
-      : pos === "tr"
-        ? "right-0 top-0 translate-x-1/2 -translate-y-1/2"
-        : pos === "bl"
-          ? "bottom-0 left-0 -translate-x-1/2 translate-y-1/2"
-          : "bottom-0 right-0 translate-x-1/2 translate-y-1/2";
-  return (
-    <span
-      className={`pointer-events-none absolute z-[2] select-none text-[10px] font-light leading-none text-[rgba(192,192,192,0.58)] ${cls}`}
-      aria-hidden
-    >
-      +
-    </span>
-  );
-}
 
 export function HowItWorksClient({
   steps = [],
@@ -47,73 +24,29 @@ export function HowItWorksClient({
 }: {
   steps?: Step[];
   tone?: "light" | "dark";
-  variant?: "default" | "silver" | "technicalDiagram";
+  variant?: "default" | "silver";
 }) {
   const dark = tone === "dark";
   const silver = variant === "silver";
-  const technicalDiagram = variant === "technicalDiagram";
 
   const dash = silver ? "border-[#050505]/14" : dark ? "border-zinc-600" : "border-[#d1d5db]";
-  const title = silver
-    ? "text-[#050505]"
-    : technicalDiagram
-      ? "text-[#C0C0C0]"
-      : dark
-        ? "text-zinc-100"
-        : "text-[#1d1d1f]";
-  const body = silver
-    ? "text-[#050505]"
-    : technicalDiagram
-      ? "text-[#a1a1aa]"
-      : dark
-        ? "text-zinc-400"
-        : "text-[#86868b]";
+  const title = silver ? "text-[#050505]" : dark ? "text-zinc-100" : "text-[#1d1d1f]";
+  const body = silver ? "text-[#050505]" : dark ? "text-zinc-400" : "text-[#86868b]";
 
   return (
     <section className="home-body-ink relative z-10 overflow-x-hidden bg-transparent">
       <div className="relative px-3 py-5 sm:px-6 sm:py-4">
         <div className={homeMarketingPillarGridShellClass}>
-          <div
-            className={`relative ${homeMarketingPillarGridWidthClass} ${technicalDiagram ? "home-how-diagram-frame" : ""}`}
-          >
-            {technicalDiagram ? (
-              <>
-                <DiagramCornerPlus pos="tl" />
-                <DiagramCornerPlus pos="tr" />
-                <DiagramCornerPlus pos="bl" />
-                <DiagramCornerPlus pos="br" />
-                <div
-                  className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[4.75rem] overflow-hidden"
-                  aria-hidden
-                >
-                  <svg
-                    className="h-full w-full"
-                    viewBox="0 0 100 44"
-                    preserveAspectRatio="xMidYMin meet"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d={IRISS_THREAD_PATH_VIEW_100_44} className="home-how-diagram-thread-bg" strokeLinecap="square" />
-                  </svg>
-                </div>
-              </>
-            ) : null}
-
-            {!technicalDiagram ? (
-              <div className={`flex ${ICON_ROW_H} items-center justify-center`} aria-hidden>
-                <div className={`h-8 w-px border-l border-dashed ${dash}`} />
-              </div>
-            ) : (
-              <div className={`relative z-[1] flex ${ICON_ROW_H} items-end justify-center pb-0.5`} aria-hidden>
-                <div className="h-7 w-[0.5px] shrink-0 bg-[rgba(192,192,192,0.48)]" />
-              </div>
-            )}
-            <div className="relative z-[1] flex flex-row items-start justify-center gap-0 px-1 sm:px-0.5">
+          <div className={`relative ${homeMarketingPillarGridWidthClass}`}>
+            <div className={`flex ${ICON_ROW_H} items-center justify-center`} aria-hidden>
+              <div className={`h-8 w-px border-l border-dashed ${dash}`} />
+            </div>
+            <div className="flex flex-row items-start justify-center gap-0 px-1 sm:px-0.5">
               {steps.map((s, i) => (
                 <Fragment key={`step-${s.n}`}>
-                  <article className="group relative z-[1] flex min-w-0 flex-1 basis-0 flex-col items-center text-center">
+                  <article className="group flex min-w-0 flex-1 basis-0 flex-col items-center text-center">
                     <div className={`flex w-full ${ICON_ROW_H} shrink-0 items-center justify-center`}>
-                      <StepIcon n={s.n} dark={dark} silver={silver} technicalDiagram={technicalDiagram} />
+                      <StepIcon n={s.n} dark={dark} silver={silver} />
                     </div>
                     <h3
                       className={`mt-2 w-full text-balance text-[10px] font-medium uppercase leading-snug tracking-[0.08em] sm:mt-2.5 sm:text-[10px] sm:tracking-[0.1em] ${title}`}
@@ -134,11 +67,7 @@ export function HowItWorksClient({
                       className={`mx-0.5 flex min-h-0 min-w-[0.5rem] flex-1 items-center sm:mx-2 sm:min-w-[1.25rem] ${ICON_ROW_H}`}
                       aria-hidden
                     >
-                      {technicalDiagram ? (
-                        <div className="h-[0.5px] w-full shrink-0 bg-[rgba(192,192,192,0.48)]" />
-                      ) : (
-                        <div className={`h-0 w-full border-t border-dashed ${dash}`} />
-                      )}
+                      <div className={`h-0 w-full border-t border-dashed ${dash}`} />
                     </div>
                   ) : null}
                 </Fragment>
@@ -151,24 +80,8 @@ export function HowItWorksClient({
   );
 }
 
-function StepIcon({
-  n,
-  dark,
-  silver,
-  technicalDiagram,
-}: {
-  n: string;
-  dark?: boolean;
-  silver?: boolean;
-  technicalDiagram?: boolean;
-}) {
-  const cls = silver
-    ? stepIconClassSilver
-    : technicalDiagram
-      ? stepIconClassTechnical
-      : dark
-        ? stepIconClassDark
-        : stepIconClass;
+function StepIcon({ n, dark, silver }: { n: string; dark?: boolean; silver?: boolean }) {
+  const cls = silver ? stepIconClassSilver : dark ? stepIconClassDark : stepIconClass;
   if (n === "1") {
     return <ClipboardPenLine className={cls} aria-hidden strokeWidth={1.5} />;
   }

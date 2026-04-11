@@ -1,12 +1,11 @@
 "use client";
 
-import { useRef } from "react";
 import { ArrowRight, ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { HeroBlueprintBackdrop } from "@/components/home/HeroBlueprintBackdrop";
 import {
   approvedByIrissSignatureHeroClass,
+  heroH1BlueKeywordClass,
   homeMarketingPillarGridShellClass,
   homeMarketingPillarGridWidthClass,
 } from "@/lib/home-layout";
@@ -19,25 +18,18 @@ type HeroPillar = { title: string; body: string };
 /**
  * Pilnekrāna tumšais Hero — četri inženieru pīlāri vienā rindā zem CTA (bez „kastēm”).
  */
-/** VARIANT 2 — CAD: sudrabs bez spīduma / ēnas. */
-const heroBlueprintTitleClass = "text-[#C0C0C0] [text-shadow:none]";
-
 export function MarketingHero() {
   const t = useTranslations("Hero");
   const locale = useLocale();
   const rawPillars = t.raw("pillars");
   const pillars: HeroPillar[] = Array.isArray(rawPillars) ? (rawPillars as HeroPillar[]) : [];
-  const sectionRef = useRef<HTMLElement | null>(null);
 
   return (
     <section
-      ref={sectionRef}
       id="home-hero"
       className="relative flex min-h-[100dvh] min-h-[100svh] flex-col justify-center overflow-x-hidden bg-[#050505] px-4 pb-[max(5.5rem,calc(3.5rem+env(safe-area-inset-bottom,0px)))] pt-[max(1.5rem,env(safe-area-inset-top,0px)+1.25rem)] text-white sm:px-8 sm:pb-20 sm:pt-[max(2.25rem,env(safe-area-inset-top,0px)+1.75rem)]"
       aria-labelledby="marketing-hero-title"
     >
-      <HeroBlueprintBackdrop sectionRef={sectionRef} />
-
       <div className="relative z-10 mx-auto flex w-full max-w-[min(100%,53.76rem)] flex-col items-center">
         <header className="relative z-20 flex w-full shrink-0 flex-col items-center gap-5 text-center sm:gap-7 md:gap-8">
           <p className={`${approvedByIrissSignatureHeroClass} text-white/70`} aria-label={t("approved")}>
@@ -47,14 +39,14 @@ export function MarketingHero() {
           <div className="w-full">
             <h1
               id="marketing-hero-title"
-              className={`text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px] ${heroBlueprintTitleClass}`}
+              className="text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]"
             >
               <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
-                <span className="whitespace-nowrap font-semibold">{t("h1Vin")}</span>
-                <span>{t("h1Un")}</span>
-                <span className="whitespace-nowrap font-semibold">{t("h1Sludinajuma")}</span>
+                <span className={heroH1BlueKeywordClass}>{t("h1Vin")}</span>
+                <span className="text-white">{t("h1Un")}</span>
+                <span className={heroH1BlueKeywordClass}>{t("h1Sludinajuma")}</span>
               </span>
-              <span className="mt-0.5 block sm:mt-1">{t("h1Line2")}</span>
+              <span className="mt-0.5 block text-white sm:mt-1">{t("h1Line2")}</span>
             </h1>
           </div>
 
@@ -94,7 +86,7 @@ export function MarketingHero() {
                       aria-hidden
                     />
                     <div className="flex min-w-0 flex-col items-center gap-2">
-                      <h3 className="text-balance text-[11px] font-semibold uppercase leading-snug tracking-tight text-[#C0C0C0] sm:text-[13px] md:text-[14px]">
+                      <h3 className="text-balance text-[11px] font-semibold uppercase leading-snug tracking-tight text-[#e5e7eb] sm:text-[13px] md:text-[14px]">
                         {p.title}
                       </h3>
                       {p.body ? (

@@ -1,50 +1,50 @@
 /**
- * Viens nepārtraukts „inženierijas pavediens” IRISS stagger zonā (platums × augstums px).
+ * Viens nepārtraukts „inženierijas pavediens” IRISS stagger zonā (w×h = sekcijas px).
  * Asimetrisks: kreisā augša → centrs → kreisā/leņķī apakša.
- *
- * Bez iekšējām arrow funkcijām — SWC minify reizēm salauž slēgumu saiti ar parametriem
- * (ReferenceError: w / widthPx is not defined moduļa ielādē).
  */
-export function buildIrissThreadPath(widthPx: number, heightPx: number): string {
+export function buildIrissThreadPath(w: number, h: number): string {
+  const u = (t: number) => t * w;
+  const k = (t: number) => t * h;
+
   return [
     "M",
-    0.065 * widthPx,
-    0.045 * heightPx,
+    u(0.065),
+    k(0.045),
     "C",
-    0.02 * widthPx,
-    0.16 * heightPx,
-    0.2 * widthPx,
-    0.11 * heightPx,
-    0.26 * widthPx,
-    0.24 * heightPx,
+    u(0.02),
+    k(0.16),
+    u(0.2),
+    k(0.11),
+    u(0.26),
+    k(0.24),
     "C",
-    0.36 * widthPx,
-    0.3 * heightPx,
-    0.5 * widthPx,
-    0.36 * heightPx,
-    0.54 * widthPx,
-    0.44 * heightPx,
+    u(0.36),
+    k(0.3),
+    u(0.5),
+    k(0.36),
+    u(0.54),
+    k(0.44),
     "C",
-    0.62 * widthPx,
-    0.52 * heightPx,
-    0.48 * widthPx,
-    0.58 * heightPx,
-    0.34 * widthPx,
-    0.6 * heightPx,
+    u(0.62),
+    k(0.52),
+    u(0.48),
+    k(0.58),
+    u(0.34),
+    k(0.6),
     "C",
-    0.14 * widthPx,
-    0.64 * heightPx,
-    0.08 * widthPx,
-    0.76 * heightPx,
-    0.22 * widthPx,
-    0.82 * heightPx,
+    u(0.14),
+    k(0.64),
+    u(0.08),
+    k(0.76),
+    u(0.22),
+    k(0.82),
     "C",
-    0.38 * widthPx,
-    0.88 * heightPx,
-    0.52 * widthPx,
-    0.94 * heightPx,
-    0.46 * widthPx,
-    0.985 * heightPx,
+    u(0.38),
+    k(0.88),
+    u(0.52),
+    k(0.94),
+    u(0.46),
+    k(0.985),
   ].join(" ");
 }
 
@@ -60,11 +60,11 @@ export type ThreadTick = {
 /**
  * Perpendikulāras 1px atzīmes gar ceļu (stratēģiski — aptuveni vienāds solis).
  */
-export function sampleThreadTicks(path: SVGPathElement, widthPx: number, heightPx: number): ThreadTick[] {
+export function sampleThreadTicks(path: SVGPathElement, w: number, h: number): ThreadTick[] {
   const len = path.getTotalLength();
   if (!Number.isFinite(len) || len < 16) return [];
 
-  const m = Math.min(widthPx, heightPx);
+  const m = Math.min(w, h);
   const halfTick = Math.max(3, m * 0.011);
   const spacing = Math.max(22, len / 34);
   const out: ThreadTick[] = [];
@@ -98,6 +98,3 @@ export function sectionScrollProgress(rect: DOMRectReadOnly, vh: number): number
   const clamped = Math.min(1, Math.max(0, raw));
   return Math.pow(clamped, 0.94);
 }
-
-/** Fiksēts pavediens „Kā tas darbojas” diagrammai (viewBox 100×44). */
-export const IRISS_THREAD_PATH_VIEW_100_44 = buildIrissThreadPath(100, 44);

@@ -158,42 +158,6 @@ body {
  * Dark cockpit — oklch multi-stop „titanium” atspīdums uz #050505 (bez cietām ovālām malām).
  * + ļoti viegls dither pret gradient banding.
  */
-/* VARIANT 2 — Technical diagram: režģis; opacity/transform un stroke-dash — JS (Safari drošībai). */
-.home-hero-blueprint-grid {
-  transform-origin: 50% 42%;
-  opacity: 0.28;
-  transform: scale(0.99);
-  background-image:
-    linear-gradient(to right, rgba(192, 192, 192, 0.16) 0.5px, transparent 0.5px),
-    linear-gradient(to bottom, rgba(192, 192, 192, 0.16) 0.5px, transparent 0.5px);
-  background-size: 26px 26px;
-  background-position: center center;
-}
-
-.home-hero-blueprint-draw-line {
-  fill: none;
-  stroke: rgba(192, 192, 192, 0.2);
-  stroke-width: 0.45;
-  vector-effect: non-scaling-stroke;
-  stroke-linecap: square;
-  stroke-linejoin: miter;
-}
-
-.home-hero-blueprint-thread {
-  stroke: rgba(192, 192, 192, 0.14);
-}
-
-.home-how-diagram-frame {
-  border: 0.5px solid rgba(192, 192, 192, 0.32);
-  padding: 0.65rem 0.4rem 0.85rem;
-}
-
-.home-how-diagram-thread-bg {
-  fill: none;
-  stroke: rgba(192, 192, 192, 0.2);
-  stroke-width: 0.45;
-}
-
 .home-deep-canvas-glow {
   background:
     radial-gradient(
