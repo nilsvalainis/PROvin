@@ -59,7 +59,6 @@ body {
     linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 48px 48px;
   opacity: 0.06;
-  will-change: transform;
 }
 
 /* === DATA LABELS === */
@@ -95,7 +94,6 @@ body {
   opacity: 0.8;
   animation: pulseMove linear infinite;
   animation-duration: 6s;
-  will-change: transform;
 }
 
 @keyframes pulseMove {
@@ -120,6 +118,18 @@ body {
   border-radius: 999px;
   border: 0.5px solid rgba(255, 255, 255, 0.2);
   pointer-events: none;
+}
+
+/* === PERFORMANCE === */
+.tech-bg,
+.pulse,
+.focus-ring {
+  will-change: transform;
+}
+
+* {
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 .vin-orbit-1 {
