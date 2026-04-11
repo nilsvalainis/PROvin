@@ -8,35 +8,6 @@ import { ORDER_SECTION_ID } from "@/lib/order-section";
 
 const HOME_SCROLL_IDS = ["home-hero", ORDER_SECTION_ID, "cena", "kas-ir-iriss", "biezi-jautajumi", "kontakti"] as const;
 
-const RAIL_COUNT = HOME_SCROLL_IDS.length;
-
-function equalLinkPercents(n: number): number[] {
-  return Array.from({ length: n }, (_, i) => ((i + 0.5) / n) * 100);
-}
-
-/** Kartē katrai sadaļai vertikālo centru pret pilnu dokumenta augstumu (TOC pret saturu). */
-function measureLinkPercentsFromDom(): number[] {
-  const scrollH = Math.max(
-    document.documentElement.scrollHeight,
-    document.body?.scrollHeight ?? 0,
-    1,
-  );
-
-  const centers = HOME_SCROLL_IDS.map((id) => {
-    const el = document.getElementById(id);
-    if (!el) return null;
-    const r = el.getBoundingClientRect();
-    return r.top + window.scrollY + r.height / 2;
-  });
-
-  if (centers.some((c) => c == null)) return equalLinkPercents(RAIL_COUNT);
-
-  return centers.map((center) => {
-    const pct = ((center as number) / scrollH) * 100;
-    return Math.min(97, Math.max(3, pct));
-  });
-}
-
 function useHash(): string {
   const [hash, setHash] = useState("");
   useEffect(() => {
@@ -84,7 +55,7 @@ function normalizePath(pathname: string) {
 }
 
 /**
- * Kreisā mala — sadaļu nosaukumi vertikāli sakrīt ar atbilstošo bloku pozīciju lapā; zils indikators (lg+).
+ * Kreisā mala — vienādas vertikālās atstarpes starp sadaļām; zilais indikators pie aktīvās (atbilst ritināšanai) (lg+).
  */
 export function SiteSectionRail() {
   const t = useTranslations("SiteRail");
@@ -92,7 +63,6 @@ export function SiteSectionRail() {
   const pathname = usePathname();
   const hash = useHash();
   const [active, setActive] = useState(0);
-  const [linkPercents, setLinkPercents] = useState<number[]>(() => equalLinkPercents(RAIL_COUNT));
   const trackRef = useRef<HTMLDivElement>(null);
   const linkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const [dot, setDot] = useState({ top: 0, height: 18 });
@@ -160,22 +130,6 @@ export function SiteSectionRail() {
 
   useLayoutEffect(() => {
     if (!showRail) return;
-    const updatePercents = () => setLinkPercents(measureLinkPercentsFromDom());
-    updatePercents();
-    const ro = new ResizeObserver(() => updatePercents());
-    ro.observe(document.documentElement);
-    window.addEventListener("resize", updatePercents);
-    const onLoad = () => updatePercents();
-    window.addEventListener("load", onLoad, { once: true });
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", updatePercents);
-      window.removeEventListener("load", onLoad);
-    };
-  }, [showRail, normalizedPath]);
-
-  useLayoutEffect(() => {
-    if (!showRail) return;
     const updateDot = () => {
       const track = trackRef.current;
       const link = linkRefs.current[active];
@@ -189,7 +143,7 @@ export function SiteSectionRail() {
     updateDot();
     window.addEventListener("resize", updateDot);
     return () => window.removeEventListener("resize", updateDot);
-  }, [active, showRail, linkPercents]);
+  }, [active, showRail]);
 
   if (!showRail) return null;
 
@@ -211,13 +165,9 @@ export function SiteSectionRail() {
             aria-hidden
           />
         </div>
-        <ul className="relative h-full min-h-0 flex-1">
+        <ul className="flex h-full min-h-0 flex-1 flex-col">
           {sections.map((s, i) => (
-            <li
-              key={s.labelKey}
-              className="absolute left-0 right-0 -translate-y-1/2 transition-[top] duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-              style={{ top: `${linkPercents[i] ?? (100 / RAIL_COUNT) * (i + 0.5)}%` }}
-            >
+            <li key={s.labelKey} className="flex min-h-0 flex-1 flex-col justify-center">
               <Link
                 ref={(el) => {
                   linkRefs.current[i] = el;
