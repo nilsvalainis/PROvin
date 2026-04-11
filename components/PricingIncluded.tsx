@@ -12,8 +12,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
+import { AbstractDataSparkline } from "@/components/AbstractDataSparkline";
 import { irissAnchorHref } from "@/lib/paths";
-import { homeSectionTitleClass } from "@/lib/home-layout";
+import { homeSectionEyebrowClass } from "@/lib/home-layout";
 
 type GridItem = {
   title: string;
@@ -52,7 +53,13 @@ export async function PricingIncluded() {
       className="home-body-ink relative scroll-mt-16 bg-transparent px-4 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-5 md:pb-8 md:pt-6"
     >
       <div className="relative mx-auto w-full max-w-[1000px]">
-        <h2 className={homeSectionTitleClass}>{t("workTitle")}</h2>
+        <div className="mb-4 flex flex-col items-center gap-2 sm:mb-5 sm:gap-2.5">
+          <AbstractDataSparkline
+            tone="dark"
+            className="h-3.5 w-[min(100%,288px)] sm:h-[15px] sm:w-[min(100%,320px)]"
+          />
+          <h2 className={`${homeSectionEyebrowClass} text-balance text-center`}>{t("workTitle")}</h2>
+        </div>
         <ul className="grid list-none grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4">
           {grid.map((item, i) => {
             const Icon = GRID_LUCIDE_ICONS[i] ?? Globe2;

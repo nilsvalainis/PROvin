@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
+import { AbstractDataSparkline } from "@/components/AbstractDataSparkline";
 import { homeSectionTitleClass, homeSectionTitleSilverClass } from "@/lib/home-layout";
 
 export type FaqItem = { id: string; q: string; a: string };
@@ -21,6 +22,10 @@ export function FaqClient({ title, items = [], tone = "dark" }: FaqClientProps) 
       >
         <div className="mx-auto min-w-0 max-w-[680px]">
           <div className="text-center">
+            <AbstractDataSparkline
+              tone="silver"
+              className="mx-auto mb-2 h-3.5 w-[min(100%,288px)] sm:mb-2.5 sm:h-[15px] sm:w-[min(100%,320px)]"
+            />
             <h2 id="faq-heading" className={homeSectionTitleSilverClass}>
               {title}
             </h2>
@@ -62,6 +67,10 @@ export function FaqClient({ title, items = [], tone = "dark" }: FaqClientProps) 
       >
         <div className="mx-auto min-w-0 max-w-[680px]">
           <div className="text-center">
+            <AbstractDataSparkline
+              tone="light"
+              className="mx-auto mb-2 h-3.5 w-[min(100%,288px)] sm:mb-2.5 sm:h-[15px] sm:w-[min(100%,320px)]"
+            />
             <h2 id="faq-heading" className={homeSectionTitleClass}>
               {title}
             </h2>
@@ -102,6 +111,10 @@ export function FaqClient({ title, items = [], tone = "dark" }: FaqClientProps) 
     >
       <div className="mx-auto min-w-0 max-w-[680px]">
         <div className="text-center">
+          <AbstractDataSparkline
+            tone="dark"
+            className="mx-auto mb-2 h-3.5 w-[min(100%,288px)] sm:mb-2.5 sm:h-[15px] sm:w-[min(100%,320px)]"
+          />
           <h2 id="faq-heading" className={homeSectionTitleClass}>
             {title}
           </h2>
