@@ -337,17 +337,29 @@ body {
 .home-below-hero-cloud-layer {
   background-color: #050505;
   background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='bd'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23bd)' opacity='0.22'/%3E%3C/svg%3E"),
     linear-gradient(
       180deg,
       #050505 0%,
-      #050505 4%,
-      color-mix(in oklab, #050505 78%, #12151a) 14%,
-      color-mix(in oklab, #050505 45%, #141820) 28%,
-      rgba(5, 5, 5, 0) 52%
+      #050505 8%,
+      color-mix(in oklab, #050505 88%, #101318) 18%,
+      color-mix(in oklab, #050505 72%, #12151a) 26%,
+      color-mix(in oklab, #050505 58%, #131820) 34%,
+      color-mix(in oklab, #050505 42%, #141820) 44%,
+      rgba(5, 5, 5, 0.35) 58%,
+      rgba(5, 5, 5, 0) 72%
     ),
-    radial-gradient(ellipse 125% 90% at 22% 18%, oklch(0.26 0.02 266 / 0.2) 0%, transparent 58%),
-    radial-gradient(ellipse 110% 80% at 82% 12%, oklch(0.24 0.018 268 / 0.16) 0%, transparent 52%),
-    radial-gradient(ellipse 95% 70% at 50% 45%, oklch(0.22 0.015 265 / 0.12) 0%, transparent 50%);
+    radial-gradient(ellipse 130% 95% at 22% 20%, oklch(0.26 0.018 266 / 0.09) 0%, oklch(0.2 0.014 266 / 0.03) 45%, transparent 68%),
+    radial-gradient(ellipse 118% 88% at 82% 14%, oklch(0.24 0.016 268 / 0.075) 0%, oklch(0.18 0.012 268 / 0.025) 48%, transparent 62%),
+    radial-gradient(ellipse 105% 78% at 50% 48%, oklch(0.22 0.012 265 / 0.055) 0%, transparent 58%);
+  background-size:
+    140px 140px,
+    auto,
+    auto,
+    auto,
+    auto;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  background-blend-mode: overlay, normal, normal, normal, normal;
 }
 
 /* Wireframe fons — lēna „elpošana” (tikai transform, GPU) */
@@ -426,26 +438,19 @@ body {
   /* Tikai vertikāls „bleed” — horizontāls -8% lika redzamas sānu kontūras */
   inset: -3rem 0 -3rem 0;
   z-index: 0;
+  /* Dither + ļoti zems kontrasts — bez redzamas joslu pārejas */
   background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='ir'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23ir)' opacity='0.28'/%3E%3C/svg%3E"),
     radial-gradient(
-      ellipse 135% 90% at 50% 48%,
-      oklch(0.31 0.032 266 / 0.068) 0%,
-      oklch(0.27 0.022 266 / 0.032) 42%,
-      transparent 72%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.003) 6%,
-      rgba(255, 255, 255, 0.01) 18%,
-      rgba(255, 255, 255, 0.018) 32%,
-      rgba(255, 255, 255, 0.024) 45%,
-      rgba(255, 255, 255, 0.026) 50%,
-      rgba(255, 255, 255, 0.022) 58%,
-      rgba(255, 255, 255, 0.014) 72%,
-      rgba(255, 255, 255, 0.006) 86%,
-      rgba(255, 255, 255, 0) 100%
+      ellipse 150% 105% at 50% 50%,
+      oklch(0.3 0.024 266 / 0.028) 0%,
+      oklch(0.26 0.018 266 / 0.014) 38%,
+      oklch(0.22 0.012 266 / 0.006) 55%,
+      transparent 78%
     );
+  background-size: 160px 160px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+  background-blend-mode: overlay, normal;
   /* Vertikāli + horizontāli — abu režģa malu „kaste” pazūd (mask-composite = alpha reizinājums) */
   mask-image:
     linear-gradient(
