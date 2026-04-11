@@ -30,8 +30,8 @@ export function HowItWorksClient({
   const silver = variant === "silver";
 
   const dash = silver ? "border-[#050505]/14" : dark ? "border-zinc-600" : "border-[#d1d5db]";
-  const title = silver ? "text-[#050505]" : dark ? "text-zinc-100" : "text-[#1d1d1f]";
-  const body = silver ? "text-[#050505]" : dark ? "text-zinc-400" : "text-[#86868b]";
+  const title = silver ? "text-[#050505]" : dark ? "text-white/90" : "text-[#1d1d1f]";
+  const body = silver ? "text-[#050505]" : dark ? "text-gray-400/80" : "text-[#86868b]";
 
   const impulseAnchorRef = useRef<HTMLDivElement | null>(null);
   const [impulseOn, setImpulseOn] = useState(false);

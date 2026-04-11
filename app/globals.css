@@ -278,37 +278,6 @@ body {
 }
 
 /**
- * Dark cockpit — oklch multi-stop „titanium” atspīdums uz #050505 (bez cietām ovālām malām).
- * + ļoti viegls dither pret gradient banding.
- */
-.home-deep-canvas-glow {
-  background:
-    radial-gradient(
-      ellipse 165% 150% at 50% 40%,
-      oklch(0.4 0.02 268 / 0) 0%,
-      oklch(0.38 0.024 268 / 0.04) 12%,
-      oklch(0.36 0.028 267 / 0.075) 26%,
-      oklch(0.32 0.026 266 / 0.1) 42%,
-      oklch(0.26 0.02 265 / 0.095) 58%,
-      oklch(0.18 0.014 264 / 0.055) 76%,
-      oklch(0.1 0.008 264 / 0) 100%
-    ),
-    radial-gradient(
-      ellipse 190% 120% at 50% 112%,
-      oklch(0.34 0.022 266 / 0.065) 0%,
-      oklch(0.22 0.016 266 / 0.035) 38%,
-      oklch(0.12 0.01 266 / 0) 68%
-    );
-}
-
-.home-canvas-banding-dither {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='bd'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23bd)' opacity='0.35'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
-  opacity: 0.028;
-  mix-blend-mode: overlay;
-}
-
-/**
  * Zem Hero — maigs „mākonis” virs #050505; augšā blīvi #050505, lai nav šķiras ar Hero.
  */
 .home-below-hero-cloud-layer {
