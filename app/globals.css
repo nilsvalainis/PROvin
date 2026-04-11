@@ -154,6 +154,62 @@ body {
   opacity: 0.08;
 }
 
+/**
+ * Dark cockpit — oklch multi-stop „titanium” atspīdums uz #050505 (bez cietām ovālām malām).
+ * + ļoti viegls dither pret gradient banding.
+ */
+.home-deep-canvas-glow {
+  background:
+    radial-gradient(
+      ellipse 165% 150% at 50% 40%,
+      oklch(0.4 0.02 268 / 0) 0%,
+      oklch(0.38 0.024 268 / 0.04) 12%,
+      oklch(0.36 0.028 267 / 0.075) 26%,
+      oklch(0.32 0.026 266 / 0.1) 42%,
+      oklch(0.26 0.02 265 / 0.095) 58%,
+      oklch(0.18 0.014 264 / 0.055) 76%,
+      oklch(0.1 0.008 264 / 0) 100%
+    ),
+    radial-gradient(
+      ellipse 190% 120% at 50% 112%,
+      oklch(0.34 0.022 266 / 0.065) 0%,
+      oklch(0.22 0.016 266 / 0.035) 38%,
+      oklch(0.12 0.01 266 / 0) 68%
+    );
+}
+
+.home-canvas-banding-dither {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='bd'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23bd)' opacity='0.35'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  opacity: 0.028;
+  mix-blend-mode: overlay;
+}
+
+/* Pasūtījuma forma — sudraba līnija + zils apgaismojums zem tās (fokusā #0066ff) */
+.order-hero-line-field {
+  border-bottom-width: 0 !important;
+  box-shadow:
+    0 1px 0 0 #c0c0c0,
+    0 4px 10px -4px rgba(0, 102, 255, 0.3);
+  transition:
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+}
+
+.order-hero-line-field:focus,
+.order-hero-line-field:focus-visible {
+  outline: none;
+  box-shadow:
+    0 1px 0 0 #0066ff,
+    0 6px 16px -3px rgba(0, 102, 255, 0.48);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-hero-line-field {
+    transition: none;
+  }
+}
+
 /* Wireframe fons — lēna „elpošana” (tikai transform, GPU) */
 @keyframes provin-wireframe-float {
   0%,
@@ -181,10 +237,10 @@ body {
   }
 }
 
-/* Kreisā procesa sliede — etiķetes seko --home-surface-t */
+/* Kreisā procesa sliede — tumšais cockpit (sudraba etiķetes) */
 .home-rail-label {
-  color: color-mix(in oklab, #fafafa calc((1 - var(--home-surface-t)) * 100%), #050505);
-  transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  color: #b8bcc8;
+  transition: color 0.2s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -199,70 +255,51 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='sg'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23sg)' opacity='0.07'/%3E%3C/svg%3E");
 }
 
-/* Zem Hero — teksts pāriet uz #050505; lineāri mīksts pārejas līknis (scroll → --home-surface-t) */
+/* Zem Hero — tumšais režīms: „silver-ink”, bez scroll → tumša tinte uz melnu */
 .home-below-hero .home-body-ink {
-  color: color-mix(in oklab, #fafafa calc((1 - var(--home-surface-t)) * 100%), #050505);
-  transition: color 0.35s linear;
+  color: #e5e7eb;
 }
 
 .home-muted-foreground {
-  color: color-mix(in oklab, #d4d4d8 calc((1 - var(--home-surface-t)) * 100%), #52525b);
-  transition: color 0.35s linear;
+  color: #a1a5ad;
 }
 
 .home-site-rule {
-  border-top-color: color-mix(
-    in oklab,
-    rgba(255, 255, 255, 0.14) calc((1 - var(--home-surface-t)) * 100%),
-    rgba(15, 23, 42, 0.14)
-  );
+  border-top-color: rgba(255, 255, 255, 0.12);
 }
 
 .home-iriss-prose {
-  color: color-mix(in oklab, #c8ccd4 calc((1 - var(--home-surface-t)) * 100%), #050505);
-  transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  color: #d1d5db;
 }
 
 .home-iriss-prose strong {
-  color: color-mix(in oklab, #ffffff calc((1 - var(--home-surface-t)) * 100%), #050505);
-  transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  color: #f3f4f6;
 }
 
 .home-footer-scrim {
-  opacity: calc(1 - var(--home-surface-t) * 0.94);
+  opacity: 1;
 }
 
 .home-footer-ink {
-  color: color-mix(in oklab, #b8bcc4 calc((1 - var(--home-surface-t)) * 100%), #050505);
-  transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  color: #c8ccd4;
 }
 
 .home-footer-link {
-  color: color-mix(in oklab, #b8bcc4 calc((1 - var(--home-surface-t)) * 100%), #050505);
-  transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  color: #c8ccd4;
 }
 
 .home-footer-link:hover {
-  color: color-mix(in oklab, #ffffff calc((1 - var(--home-surface-t)) * 100%), #0061d2);
+  color: #0066ff;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-below-hero .home-body-ink,
-  .home-muted-foreground,
-  .home-iriss-prose,
-  .home-iriss-prose strong,
-  .home-footer-ink,
-  .home-footer-link {
+  .home-rail-label {
     transition: none;
   }
 }
 
 .home-footer-rule {
-  border-top-color: color-mix(
-    in oklab,
-    rgba(255, 255, 255, 0.14) calc((1 - var(--home-surface-t)) * 100%),
-    rgba(15, 23, 42, 0.12)
-  );
+  border-top-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Investigation Lab — „chrome” CTA (sudrabs → zils hover) */

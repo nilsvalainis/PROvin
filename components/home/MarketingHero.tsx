@@ -85,11 +85,11 @@ export function MarketingHero() {
                       aria-hidden
                     />
                     <div className="flex min-w-0 flex-col items-center gap-2">
-                      <h3 className="text-balance text-[11px] font-semibold uppercase leading-snug tracking-tight text-white sm:text-[13px] md:text-[14px]">
+                      <h3 className="text-balance text-[11px] font-semibold uppercase leading-snug tracking-tight text-[#e5e7eb] sm:text-[13px] md:text-[14px]">
                         {p.title}
                       </h3>
                       {p.body ? (
-                        <p className="text-balance text-[10px] font-light leading-snug text-white/65 sm:text-[12px] sm:leading-relaxed md:text-[13px]">
+                        <p className="text-balance text-[10px] font-light leading-snug text-[#e5e7eb]/72 sm:text-[12px] sm:leading-relaxed md:text-[13px]">
                           {p.body}
                         </p>
                       ) : null}

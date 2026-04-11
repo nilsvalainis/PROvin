@@ -7,14 +7,14 @@ import { Link } from "@/i18n/navigation";
 import { validateOrderFields } from "@/lib/order-field-validation";
 
 const labelHero =
-  "block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#050505]";
+  "block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#e5e7eb]";
 
 const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
 
-/** Hero: spec līnija — tikai border-b #050505, teksts #050505, placeholder viegls */
+/** Dark cockpit: silver-ink teksts, sudraba līnija + zils apgaismojums — `.order-hero-line-field` */
 const inputHero =
-  "relative z-10 mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505] bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#050505] outline-none transition-[border-color,box-shadow] placeholder:text-[#050505]/38 focus:border-[#0066ff] focus:shadow-none focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
+  "order-hero-line-field relative z-10 mt-2 box-border min-h-11 w-full rounded-none border-0 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#e5e7eb] outline-none transition-[box-shadow,color] placeholder:text-[#e5e7eb]/38 focus:shadow-none focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
 
 const inputDefault =
   "mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505]/75 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition-[border-color] placeholder:text-[#86868b] focus:border-provin-accent focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
@@ -103,11 +103,11 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
   const notesRows = hero ? 3 : compact ? 3 : 4;
 
   const hintClass = hero
-    ? "mt-1.5 text-[11px] font-normal leading-snug text-[#050505]/58"
+    ? "mt-1.5 text-[11px] font-normal leading-snug text-[#e5e7eb]/55"
     : "mt-1 text-[11px] font-normal leading-snug text-[#86868b]";
 
-  const optionalMutedClass = hero ? "text-[#050505]/48" : "text-[#aeaeb2]";
-  const reqStarClass = hero ? "text-red-600" : "text-red-600";
+  const optionalMutedClass = hero ? "text-[#e5e7eb]/45" : "text-[#aeaeb2]";
+  const reqStarClass = hero ? "text-red-400" : "text-red-600";
 
   return (
     <form onSubmit={onSubmit} className={formShell} noValidate>
@@ -179,7 +179,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               el.value = el.value.toUpperCase().slice(0, 17);
             }}
           />
-          <p className={hero ? "mt-1.5 text-[11px] font-normal text-[#050505]/55" : "mt-1 text-[11px] font-normal text-[#aeaeb2]"}>
+          <p className={hero ? "mt-1.5 text-[11px] font-normal text-[#e5e7eb]/52" : "mt-1 text-[11px] font-normal text-[#aeaeb2]"}>
             {t("vinHint")}
           </p>
         </div>
@@ -218,7 +218,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
       <div
         className={
           hero
-            ? "mt-6 space-y-5 border-t border-[#050505]/22 pt-5"
+            ? "mt-6 space-y-5 border-t border-[#c0c0c0]/25 pt-5"
             : compact
               ? "mt-4 flex flex-col gap-3"
               : "mt-8 flex flex-col gap-3 border-t border-black/[0.06] pt-8"
@@ -226,18 +226,18 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
       >
         {hero ? (
           <>
-            <div className="border-b border-[#050505] pb-4" role="group" aria-label={t("ariaSummary")}>
+            <div className="border-b border-[#c0c0c0]/35 pb-4" role="group" aria-label={t("ariaSummary")}>
               <div className="flex items-baseline justify-between gap-4">
-                <span className="text-[13px] font-medium text-[#050505]">{t("summaryLabel")}</span>
-                <span className="text-[1.65rem] font-semibold tabular-nums tracking-tight text-[#050505] sm:text-[1.75rem]">
+                <span className="text-[13px] font-medium text-[#e5e7eb]">{t("summaryLabel")}</span>
+                <span className="text-[1.85rem] font-bold tabular-nums tracking-tight text-[#c0c0c0] sm:text-[2rem]">
                   79,99&nbsp;€
                 </span>
               </div>
-              <p className="mt-2 text-[11px] font-normal leading-snug text-[#050505]/62 sm:text-[12px]">{t("summaryNote")}</p>
+              <p className="mt-2 text-[11px] font-normal leading-snug text-[#e5e7eb]/58 sm:text-[12px]">{t("summaryNote")}</p>
             </div>
             <label
               htmlFor="order-checkout-consent"
-              className="flex min-h-11 cursor-pointer items-start gap-3 border-b border-[#050505] pb-4 text-left sm:min-h-0"
+              className="flex min-h-11 cursor-pointer items-start gap-3 border-b border-[#c0c0c0]/35 pb-4 text-left sm:min-h-0"
             >
               <input
                 id="order-checkout-consent"
@@ -245,10 +245,10 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 name="withdrawalConsent"
                 checked={withdrawalConsent}
                 onChange={(e) => setWithdrawalConsent(e.target.checked)}
-                className="mt-1 h-4 w-4 shrink-0 rounded border-[#050505] bg-transparent text-provin-accent focus:ring-1 focus:ring-[#0066ff]/30 sm:mt-0.5 sm:h-4 sm:w-4"
+                className="mt-1 h-4 w-4 shrink-0 rounded border-[#c0c0c0] bg-transparent text-provin-accent focus:ring-1 focus:ring-[#0066ff]/40 sm:mt-0.5 sm:h-4 sm:w-4"
                 aria-label={t("checkoutConsentAria")}
               />
-              <span className="text-[12px] font-normal leading-snug text-[#050505] sm:text-[13px]">
+              <span className="text-[12px] font-normal leading-snug text-[#e5e7eb] sm:text-[13px]">
                 {t.rich("checkoutConsent", {
                   terms: (chunks) => (
                     <Link
@@ -272,7 +272,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             <button
               type="submit"
               disabled={loading || !withdrawalConsent}
-              className="provin-btn provin-btn--compact mx-auto mt-1 flex min-h-12 w-full max-w-[min(100%,20rem)] items-center justify-center gap-2.5 rounded-full px-7 py-3.5 text-center text-[15px] font-bold text-white shadow-[0_4px_20px_rgba(0,102,255,0.35)] disabled:opacity-60 sm:min-h-[50px]"
+              className="provin-btn provin-btn--compact home-cta-blueprint mx-auto mt-1 flex min-h-12 w-full max-w-[min(100%,20rem)] items-center justify-center gap-2.5 rounded-none px-7 py-3.5 text-center text-[15px] font-bold text-[#f3f4f6] hover:!translate-y-0 disabled:opacity-60 sm:min-h-[50px]"
             >
               {loading ? (
                 t("payLoading")
@@ -283,7 +283,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 </>
               )}
             </button>
-            <p className="text-center text-[10px] font-normal leading-relaxed text-[#050505]/52 sm:text-[11px]">{t("stripeNote")}</p>
+            <p className="text-center text-[10px] font-normal leading-relaxed text-[#e5e7eb]/48 sm:text-[11px]">{t("stripeNote")}</p>
           </>
         ) : (
           <>
@@ -343,7 +343,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         <p
           className={
             hero
-              ? "mt-5 border-b border-red-700/45 bg-transparent px-1 py-3 text-center text-[13px] font-normal text-red-800"
+              ? "mt-5 border-b border-red-500/40 bg-transparent px-1 py-3 text-center text-[13px] font-normal text-red-300"
               : "mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-center text-[13px] font-normal text-red-800"
           }
           role="alert"
