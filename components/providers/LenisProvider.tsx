@@ -1,35 +1,43 @@
 "use client";
 
+import type { LenisOptions } from "lenis";
+import { ReactLenis } from "lenis/react";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
-import Lenis from "lenis";
+import { useEffect, useMemo, useState } from "react";
 import "lenis/dist/lenis.css";
 
-/**
- * Gluds ritinājums mārketinga lapām (`app/[locale]`). Ja `prefers-reduced-motion`,
- * Lenis nepalaiž — saglabājas sistēmas ritināšana.
- */
-export function LenisProvider({ children }: { children: ReactNode }) {
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduced(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return reduced;
+}
 
-    const root = document.documentElement;
-    root.classList.add("lenis");
-
-    const lenis = new Lenis({
-      autoRaf: true,
-      lerp: 0.09,
+export function LenisProvider({ children }: { children: ReactNode }) {
+  const reducedMotion = usePrefersReducedMotion();
+  const options = useMemo<LenisOptions>(
+    () => ({
+      lerp: 0.11,
       smoothWheel: true,
       anchors: true,
-      stopInertiaOnNavigate: true,
-    });
+      autoRaf: true,
+      orientation: "vertical",
+    }),
+    [],
+  );
 
-    return () => {
-      lenis.destroy();
-      root.classList.remove("lenis");
-    };
-  }, []);
+  if (reducedMotion) {
+    return <>{children}</>;
+  }
 
-  return <>{children}</>;
+  return (
+    <ReactLenis root options={options}>
+      {children}
+    </ReactLenis>
+  );
 }
