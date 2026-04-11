@@ -10,7 +10,7 @@ type HomeScrollSurfaceProps = {
 };
 
 /**
- * Slāņi: melns z-0 → wireframe z-1 → sudrabs z-2 (tumšs→sudrabs ar vieglu masku + scroll opacity) → saturs z-10.
+ * Slāņi: melns z-0 → flyline z-1 → viens sudraba slānis z-2 (tikai fog gradient + grauds, bez maskām) → saturs z-10.
  */
 export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProps) {
   const silverRef = useRef<HTMLDivElement>(null);
@@ -45,16 +45,10 @@ export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProp
 
       <div
         ref={silverRef}
-        className="pointer-events-none fixed inset-0 z-[2] [mask-image:linear-gradient(to_bottom,transparent_0%,black_18vh,black_100%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,black_18vh,black_100%)]"
+        className="home-silver-fog-unified pointer-events-none fixed inset-0 z-[2]"
         style={{ opacity: 0 }}
         aria-hidden
-      >
-        <div
-          className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(229,231,235,0)_0%,#e5e7eb_20vh,#e5e7eb_100%)]"
-          aria-hidden
-        />
-        <div className="provin-silver-grain absolute inset-0 bg-[#e5e7eb]" aria-hidden />
-      </div>
+      />
 
       {children}
     </div>
