@@ -7,14 +7,14 @@ import { Link } from "@/i18n/navigation";
 import { validateOrderFields } from "@/lib/order-field-validation";
 
 const labelHero =
-  "block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#4b4e56]";
+  "block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#050505]";
 
 const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
 
-/** Hero (sudraba virsma): tikai apakšējā līnija — tehnisks spec izskats */
+/** Hero: spec līnija — tikai border-b #050505, teksts #050505, placeholder viegls */
 const inputHero =
-  "relative z-10 mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505] bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#050505] outline-none transition-[border-color,box-shadow] placeholder:text-[#71767e] focus:border-[#0066ff] focus:shadow-none focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
+  "relative z-10 mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505] bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#050505] outline-none transition-[border-color,box-shadow] placeholder:text-[#050505]/38 focus:border-[#0066ff] focus:shadow-none focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
 
 const inputDefault =
   "mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505]/75 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition-[border-color] placeholder:text-[#86868b] focus:border-provin-accent focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
@@ -94,7 +94,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
 
   const formShell =
     hero
-      ? `home-body-ink space-y-5 rounded-none border-0 bg-white/[0.035] px-1 py-5 sm:px-2 sm:py-6 ${className ?? ""}`
+      ? `space-y-5 rounded-none border-0 bg-transparent px-1 py-5 sm:px-2 sm:py-6 ${className ?? ""}`
       : compact
         ? `mt-6 space-y-4 border-t border-black/[0.06] pt-6 ${className ?? ""}`
         : `mt-10 space-y-6 rounded-none border-0 border-y border-black/[0.08] bg-white/[0.55] px-5 py-8 sm:px-10 sm:py-10 ${className ?? ""}`;
@@ -103,10 +103,10 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
   const notesRows = hero ? 3 : compact ? 3 : 4;
 
   const hintClass = hero
-    ? "mt-1.5 text-[11px] font-normal leading-snug text-[#5c616a]"
+    ? "mt-1.5 text-[11px] font-normal leading-snug text-[#050505]/58"
     : "mt-1 text-[11px] font-normal leading-snug text-[#86868b]";
 
-  const optionalMutedClass = hero ? "text-[#6b7078]" : "text-[#aeaeb2]";
+  const optionalMutedClass = hero ? "text-[#050505]/48" : "text-[#aeaeb2]";
   const reqStarClass = hero ? "text-red-600" : "text-red-600";
 
   return (
@@ -179,7 +179,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               el.value = el.value.toUpperCase().slice(0, 17);
             }}
           />
-          <p className={hero ? "mt-1.5 text-[11px] font-normal text-[#5c616a]" : "mt-1 text-[11px] font-normal text-[#aeaeb2]"}>
+          <p className={hero ? "mt-1.5 text-[11px] font-normal text-[#050505]/55" : "mt-1 text-[11px] font-normal text-[#aeaeb2]"}>
             {t("vinHint")}
           </p>
         </div>
@@ -218,7 +218,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
       <div
         className={
           hero
-            ? "mt-6 space-y-5 border-t border-[#050505]/10 pt-5"
+            ? "mt-6 space-y-5 border-t border-[#050505]/22 pt-5"
             : compact
               ? "mt-4 flex flex-col gap-3"
               : "mt-8 flex flex-col gap-3 border-t border-black/[0.06] pt-8"
@@ -226,18 +226,18 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
       >
         {hero ? (
           <>
-            <div className="border-b border-[#050505]/18 pb-4" role="group" aria-label={t("ariaSummary")}>
+            <div className="border-b border-[#050505] pb-4" role="group" aria-label={t("ariaSummary")}>
               <div className="flex items-baseline justify-between gap-4">
-                <span className="text-[13px] font-medium text-[#3a3d44]">{t("summaryLabel")}</span>
+                <span className="text-[13px] font-medium text-[#050505]">{t("summaryLabel")}</span>
                 <span className="text-[1.65rem] font-semibold tabular-nums tracking-tight text-[#050505] sm:text-[1.75rem]">
                   79,99&nbsp;€
                 </span>
               </div>
-              <p className="mt-2 text-[11px] font-normal leading-snug text-[#5c616a] sm:text-[12px]">{t("summaryNote")}</p>
+              <p className="mt-2 text-[11px] font-normal leading-snug text-[#050505]/62 sm:text-[12px]">{t("summaryNote")}</p>
             </div>
             <label
               htmlFor="order-checkout-consent"
-              className="flex min-h-11 cursor-pointer items-start gap-3 border-b border-[#050505]/12 pb-4 text-left sm:min-h-0"
+              className="flex min-h-11 cursor-pointer items-start gap-3 border-b border-[#050505] pb-4 text-left sm:min-h-0"
             >
               <input
                 id="order-checkout-consent"
@@ -245,10 +245,10 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 name="withdrawalConsent"
                 checked={withdrawalConsent}
                 onChange={(e) => setWithdrawalConsent(e.target.checked)}
-                className="mt-1 h-4 w-4 shrink-0 rounded border-[#050505]/40 bg-transparent text-provin-accent focus:ring-1 focus:ring-[#0066ff]/30 sm:mt-0.5 sm:h-4 sm:w-4"
+                className="mt-1 h-4 w-4 shrink-0 rounded border-[#050505] bg-transparent text-provin-accent focus:ring-1 focus:ring-[#0066ff]/30 sm:mt-0.5 sm:h-4 sm:w-4"
                 aria-label={t("checkoutConsentAria")}
               />
-              <span className="text-[12px] font-normal leading-snug text-[#2f3238] sm:text-[13px]">
+              <span className="text-[12px] font-normal leading-snug text-[#050505] sm:text-[13px]">
                 {t.rich("checkoutConsent", {
                   terms: (chunks) => (
                     <Link
@@ -283,7 +283,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 </>
               )}
             </button>
-            <p className="text-center text-[10px] font-normal leading-relaxed text-[#5c616a] sm:text-[11px]">{t("stripeNote")}</p>
+            <p className="text-center text-[10px] font-normal leading-relaxed text-[#050505]/52 sm:text-[11px]">{t("stripeNote")}</p>
           </>
         ) : (
           <>
@@ -343,7 +343,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         <p
           className={
             hero
-              ? "mt-5 border-b border-red-600/50 bg-red-500/[0.06] px-1 py-3 text-center text-[13px] font-normal text-red-800"
+              ? "mt-5 border-b border-red-700/45 bg-transparent px-1 py-3 text-center text-[13px] font-normal text-red-800"
               : "mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-center text-[13px] font-normal text-red-800"
           }
           role="alert"

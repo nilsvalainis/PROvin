@@ -8,22 +8,18 @@
     "h2": "TAVS PERSONĪGAIS AUTO DETEKTĪVS",
     "pillars": [
       {
-        "ref": "REF. 911-DB",
         "title": "Maksas atskaites",
         "body": "Vēsture, nobraukums, avārijas."
       },
       {
-        "ref": "REF. 911-LN",
         "title": "Sludinājuma analīze",
         "body": "SS.LV, Mobile.de u.c."
       },
       {
-        "ref": "REF. 911-RS",
         "title": "Tehnisko risku analīze",
         "body": "Modeļa vājās vietas."
       },
       {
-        "ref": "REF. 911-CS",
         "title": "Konsultācija",
         "body": "Iespēja izrunāt iegūtos datus."
       }

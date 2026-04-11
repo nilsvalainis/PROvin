@@ -2,14 +2,20 @@
 
 import { type ReactNode, useEffect } from "react";
 import { ViewportCornerMarks } from "@/components/home/ViewportCornerMarks";
+import { ORDER_SECTION_ID } from "@/lib/order-section";
 
 type HomeScrollSurfaceProps = {
   wireframe?: ReactNode;
   children?: ReactNode;
 };
 
+/** ease-in-out — garāka „titanium” līkne bez krasām robežām */
+function easeInOutCubic(x: number): number {
+  return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+}
+
 /**
- * Pilna lapa — dziļš sudraba/tumšs fons ar plūstošu radiālo slāni; `--home-surface-t` 0→1 lineāri ritināšanā.
+ * Pilna lapa — dziļš #050505 + „brushed titanium” sudrabs; `--home-surface-t` sākas pie pasūtījuma bloka un aug līdz lapas beigām.
  */
 export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProps) {
   useEffect(() => {
@@ -21,10 +27,22 @@ export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProp
       raf = requestAnimationFrame(() => {
         const y = window.scrollY;
         const vh = window.innerHeight || 1;
-        const start = vh * 0.22;
-        const span = vh * 1.05;
+        const docMax = Math.max(document.documentElement.scrollHeight - vh, 1);
+
+        const anchor =
+          document.getElementById(ORDER_SECTION_ID) ?? document.getElementById("order-form");
+        let start: number;
+        if (anchor) {
+          const top = anchor.getBoundingClientRect().top + y;
+          start = Math.max(0, top - vh * 0.04);
+        } else {
+          start = vh * 0.2;
+        }
+
+        const span = Math.max(docMax - start, vh * 1.65);
         const raw = (y - start) / span;
-        const t = Math.min(1, Math.max(0, raw));
+        const clamped = Math.min(1, Math.max(0, raw));
+        const t = easeInOutCubic(clamped);
         root.style.setProperty("--home-surface-t", t.toFixed(4));
       });
     };
@@ -47,24 +65,24 @@ export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProp
     <div className="relative z-0 min-h-dvh min-w-0 bg-[#050505]">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[#050505]" aria-hidden />
 
-      {/* Plūstošs metāla tonis — vairāki radiālie slāņi + izplūšana, bez cietas „ovāla” kontūras */}
+      {/* Tumšāks „titanium” sudrabs (~#a0a0a0 virsotne), izplūdis bloom + daudzslāņu pāreja */}
       <div className="pointer-events-none fixed inset-0 z-[2] overflow-hidden" aria-hidden>
         <div
-          className="absolute left-1/2 top-[36%] h-[min(165vw,2000px)] w-[min(165vw,2000px)] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.92]"
+          className="absolute left-1/2 top-[38%] h-[min(175vw,2200px)] w-[min(175vw,2200px)] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.88]"
           style={{
             background:
-              "radial-gradient(circle at 50% 50%, rgba(236,238,242,0.16) 0%, rgba(200,204,212,0.09) 22%, rgba(100,104,116,0.22) 48%, rgba(28,30,36,0.72) 72%, rgba(8,8,10,0.96) 100%)",
-            filter: "blur(72px)",
+              "radial-gradient(circle at 50% 50%, rgba(160,160,164,0.14) 0%, rgba(118,120,126,0.075) 24%, rgba(72,74,80,0.2) 50%, rgba(26,28,32,0.78) 74%, rgba(6,6,8,0.97) 100%)",
+            filter: "blur(88px)",
           }}
         />
         <div
           className="absolute inset-0"
           style={{
             background: [
-              "radial-gradient(circle at 50% 40%, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.028) 20%, rgba(255,255,255,0.01) 38%, transparent 58%)",
-              "radial-gradient(ellipse 100% 55% at 50% 0%, rgba(210,214,222,0.06) 0%, transparent 50%)",
-              "radial-gradient(ellipse 90% 65% at 50% 100%, rgba(70,74,84,0.14) 0%, transparent 52%)",
-              "linear-gradient(180deg, rgba(5,5,5,0) 0%, rgba(5,5,5,0.35) 52%, rgba(5,5,5,0.78) 82%, #050505 100%)",
+              "radial-gradient(circle at 50% 42%, rgba(148,148,152,0.055) 0%, rgba(100,102,108,0.028) 22%, transparent 52%)",
+              "radial-gradient(ellipse 105% 58% at 50% 0%, rgba(130,132,138,0.05) 0%, transparent 48%)",
+              "radial-gradient(ellipse 95% 70% at 50% 100%, rgba(55,58,64,0.12) 0%, transparent 54%)",
+              "linear-gradient(180deg, rgba(5,5,5,0) 0%, rgba(5,5,5,0.28) 48%, rgba(5,5,5,0.72) 80%, #050505 100%)",
             ].join(", "),
           }}
         />

@@ -13,7 +13,7 @@ import { orderSectionHref } from "@/lib/paths";
 
 const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
 
-type HeroPillar = { ref: string; title: string; body: string };
+type HeroPillar = { title: string; body: string };
 
 /**
  * Pilnekrāna tumšais Hero — četri inženieru pīlāri vienā rindā zem CTA (bez „kastēm”).
@@ -67,17 +67,17 @@ export function MarketingHero() {
             </Link>
           </div>
 
-          {/* Četri pīlāri — horizontāla spec-rinda zem CTA; ikona ↔ virsraksts ar gap-6 */}
+          {/* Četri pīlāri — viena horizontāla rinda zem CTA; ikona ↔ virsraksts tieši gap-6 */}
           <div className={`${homeMarketingPillarGridShellClass} mt-7 w-full sm:mt-9`}>
             <div
-              className={`grid w-full grid-cols-2 gap-x-5 gap-y-10 border-b border-white/[0.12] pb-8 sm:grid-cols-4 sm:gap-x-7 md:gap-x-8 ${homeMarketingPillarGridWidthClass}`}
+              className={`flex w-full flex-row flex-nowrap justify-between gap-3 overflow-x-auto border-b border-white/[0.12] pb-8 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-5 md:gap-6 [&::-webkit-scrollbar]:hidden ${homeMarketingPillarGridWidthClass}`}
             >
               {pillars.map((p, i) => {
                 const Icon = PILLAR_ICONS[i] ?? FileText;
                 return (
                   <article
                     key={`${p.title}-${i}`}
-                    className="flex min-h-0 min-w-0 flex-col items-center gap-6 px-1 text-center sm:px-2"
+                    className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-6 px-0.5 text-center sm:px-1"
                   >
                     <Icon
                       className="h-8 w-8 shrink-0 text-[#0066ff] sm:h-9 sm:w-9 md:h-10 md:w-10"
