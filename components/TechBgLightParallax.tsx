@@ -10,7 +10,7 @@ export function TechBgLightParallax() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const onScroll = () => {
-      const y = window.scrollY * 0.1;
+      const y = window.scrollY * 0.13;
       document.querySelectorAll(".tech-bg").forEach((el) => {
         (el as HTMLElement).style.transform = `translateY(${y}px)`;
       });

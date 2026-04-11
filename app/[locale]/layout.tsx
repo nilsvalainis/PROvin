@@ -60,21 +60,6 @@ export default async function LocaleLayout({ children, params }: Props) {
     <NextIntlClientProvider locale={locale} messages={messages}>
       <LenisProvider>
         <TechBgLightParallax />
-        <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
-          <div className="tech-bg" />
-          <div className="data-label" style={{ top: "20%", left: "30%" }}>
-            VIN_SCAN
-          </div>
-          <div className="data-label" style={{ top: "60%", left: "70%" }}>
-            ECU_DATA
-          </div>
-          <div className="data-label" style={{ top: "40%", left: "50%" }}>
-            MILEAGE_LOG
-          </div>
-          <div className="data-label" style={{ top: "75%", left: "20%" }}>
-            REG_CHECK
-          </div>
-        </div>
         <LocaleHtmlLang />
         <SiteSectionRail />
         <main className="relative z-10 min-w-0 pt-[env(safe-area-inset-top,0px)] pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">

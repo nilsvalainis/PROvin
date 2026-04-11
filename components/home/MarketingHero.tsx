@@ -10,6 +10,7 @@ import {
   homeMarketingPillarGridWidthClass,
 } from "@/lib/home-layout";
 import { orderSectionHref } from "@/lib/paths";
+import { MarketingHeroHudBackdrop } from "@/components/home/MarketingHeroHudBackdrop";
 
 const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
 
@@ -36,10 +37,11 @@ export function MarketingHero() {
             {t("approved")}
           </p>
 
-          <div className="w-full">
+          <div className="relative w-full">
+            <MarketingHeroHudBackdrop />
             <h1
               id="marketing-hero-title"
-              className="text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]"
+              className="relative z-10 text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]"
             >
               <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
                 <span className={heroH1BlueKeywordClass}>{t("h1Vin")}</span>
