@@ -17,7 +17,7 @@ const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCirc
 type HeroPillar = { title: string; body: string };
 
 /**
- * Pilnekrāna tumšais Hero — četri inženieru pīlāri vienā rindā zem CTA (bez „kastēm”).
+ * Pilnekrāna tumšais Hero — četri inženieru pīlāri vienā rindā virs CTA (bez „kastēm”).
  */
 export function MarketingHero() {
   const t = useTranslations("Hero");
@@ -58,20 +58,8 @@ export function MarketingHero() {
             {t("h2")}
           </p>
 
-          <div className="mt-4 flex w-full flex-col items-center sm:mt-5 md:mt-6">
-            <Link
-              href={orderSectionHref(locale)}
-              className="provin-btn provin-btn--compact inline-flex w-auto max-w-[min(100%,calc(100vw-2rem))] min-h-12 touch-manipulation items-center justify-center rounded-full bg-[#0066ff] px-6 py-3.5 text-center text-[12px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_0_22px_rgba(0,102,255,0.2)] ring-1 ring-white/10 active:brightness-95 sm:min-h-[3.25rem] sm:px-8 sm:text-[14px] sm:tracking-[0.07em]"
-            >
-              <span className="inline-flex items-center justify-center gap-2 text-center">
-                <span className="min-w-0 whitespace-nowrap">{t("cta")}</span>
-                <ArrowRight className="h-4 w-4 shrink-0 opacity-95" strokeWidth={2.25} aria-hidden />
-              </span>
-            </Link>
-          </div>
-
-          {/* Četri pīlāri — viena horizontāla rinda zem CTA; ikona ↔ virsraksts tieši gap-6 */}
-          <div className={`${homeMarketingPillarGridShellClass} mt-7 w-full sm:mt-9`}>
+          {/* Četri pīlāri — viena horizontāla rinda virs CTA; ikona ↔ virsraksts tieši gap-6 */}
+          <div className={`${homeMarketingPillarGridShellClass} mt-4 w-full sm:mt-5 md:mt-6`}>
             <div
               className={`flex w-full flex-row flex-nowrap justify-between gap-3 overflow-x-auto border-b border-white/[0.12] pb-8 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-5 md:gap-6 [&::-webkit-scrollbar]:hidden ${homeMarketingPillarGridWidthClass}`}
             >
@@ -101,6 +89,18 @@ export function MarketingHero() {
                 );
               })}
             </div>
+          </div>
+
+          <div className="mt-7 flex w-full flex-col items-center sm:mt-9">
+            <Link
+              href={orderSectionHref(locale)}
+              className="provin-btn provin-btn--compact inline-flex w-auto max-w-[min(100%,calc(100vw-2rem))] min-h-12 touch-manipulation items-center justify-center rounded-full bg-[#0066ff] px-6 py-3.5 text-center text-[12px] font-bold uppercase tracking-[0.06em] text-white shadow-[0_0_22px_rgba(0,102,255,0.2)] ring-1 ring-white/10 active:brightness-95 sm:min-h-[3.25rem] sm:px-8 sm:text-[14px] sm:tracking-[0.07em]"
+            >
+              <span className="inline-flex items-center justify-center gap-2 text-center">
+                <span className="min-w-0 whitespace-nowrap">{t("cta")}</span>
+                <ArrowRight className="h-4 w-4 shrink-0 opacity-95" strokeWidth={2.25} aria-hidden />
+              </span>
+            </Link>
           </div>
         </header>
       </div>
