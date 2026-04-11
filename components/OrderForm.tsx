@@ -4,7 +4,6 @@ import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
-import { VinInputSpeedometerDeco } from "@/components/home/VinInputSpeedometerDeco";
 import { validateOrderFields } from "@/lib/order-field-validation";
 
 const labelHero =
@@ -167,23 +166,20 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             {t("vinLabel")} <span className={reqStarClass}>*</span>
           </label>
           {hero ? (
-            <div className="vin-wrapper w-full overflow-visible pb-8">
-              <input
-                id="order-vin"
-                name="vin"
-                type="text"
-                required
-                maxLength={17}
-                spellCheck={false}
-                className={`${inputBase} font-mono uppercase tracking-wide`}
-                placeholder={t("vinPlaceholderHero")}
-                onChange={(e) => {
-                  const el = e.target;
-                  el.value = el.value.toUpperCase().slice(0, 17);
-                }}
-              />
-              <VinInputSpeedometerDeco />
-            </div>
+            <input
+              id="order-vin"
+              name="vin"
+              type="text"
+              required
+              maxLength={17}
+              spellCheck={false}
+              className={`${inputBase} w-full font-mono uppercase tracking-wide`}
+              placeholder={t("vinPlaceholderHero")}
+              onChange={(e) => {
+                const el = e.target;
+                el.value = el.value.toUpperCase().slice(0, 17);
+              }}
+            />
           ) : (
             <input
               id="order-vin"

@@ -120,12 +120,6 @@ body {
   }
 }
 
-/* === VIN WRAPPER === */
-.vin-wrapper {
-  position: relative;
-  display: inline-block;
-}
-
 /* === RINGS === */
 .focus-ring {
   position: absolute;
@@ -140,8 +134,7 @@ body {
 .pulse,
 .focus-ring,
 .hero-speedo-bezel,
-.hero-speedo-needle,
-.vin-speedo-needle {
+.hero-speedo-needle {
   will-change: transform;
 }
 
@@ -157,10 +150,6 @@ body {
 
 .hero-speedo-needle {
   animation: heroSpeedoNeedleSweep 7s ease-in-out infinite alternate;
-}
-
-.vin-speedo-needle {
-  animation: heroSpeedoNeedleSweep 5.5s ease-in-out infinite alternate;
 }
 
 @keyframes rotateSlow {
@@ -183,8 +172,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .hero-speedo-bezel,
-  .hero-speedo-needle,
-  .vin-speedo-needle {
+  .hero-speedo-needle {
     animation: none !important;
   }
 }
