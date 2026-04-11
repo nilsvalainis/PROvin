@@ -107,6 +107,48 @@ body {
   }
 }
 
+/* === VIN WRAPPER === */
+.vin-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* === RINGS === */
+.focus-ring {
+  position: absolute;
+  inset: -12px;
+  border-radius: 999px;
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+}
+
+.ring-1 {
+  animation: rotateSlow 20s linear infinite;
+}
+
+.ring-2 {
+  animation: rotateReverse 30s linear infinite;
+}
+
+/* === ANIMATIONS === */
+@keyframes rotateSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rotateReverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
 /* Pieskāriena ierīcēs — Apple / Android vadlīnijas (~44px) galvenajām darbībām */
 @media (pointer: coarse) {
   .provin-btn:not(.provin-btn--compact) {
