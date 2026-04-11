@@ -166,44 +166,6 @@ body {
   }
 }
 
-/* Abstrakts „nobraukuma vilnis” / sparkline (zem kontrasta SVG, lēna amplitūda) */
-.provin-mileage-sparkline__drift {
-  transform-box: fill-box;
-  transform-origin: 50% 50%;
-  animation: provin-mileage-sparkline-drift 26s ease-in-out infinite alternate;
-}
-
-.provin-mileage-sparkline__breathe {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation: provin-mileage-sparkline-breathe 17s ease-in-out infinite alternate;
-}
-
-@keyframes provin-mileage-sparkline-drift {
-  from {
-    transform: translateX(-2px);
-  }
-  to {
-    transform: translateX(2px);
-  }
-}
-
-@keyframes provin-mileage-sparkline-breathe {
-  from {
-    transform: scaleY(0.66);
-  }
-  to {
-    transform: scaleY(1.06);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .provin-mileage-sparkline__drift,
-  .provin-mileage-sparkline__breathe {
-    animation: none !important;
-  }
-}
-
 /* Pieskāriena ierīcēs — Apple / Android vadlīnijas (~44px) galvenajām darbībām */
 @media (pointer: coarse) {
   .provin-btn:not(.provin-btn--compact) {
