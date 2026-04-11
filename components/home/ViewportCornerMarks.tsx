@@ -1,11 +1,11 @@
 /**
- * Fixed viewport corner + marks — tone follows hero vs silver via CSS variable.
+ * Stūru + atzīmes — zīmols #0066ff (CAD akcents).
  */
 export function ViewportCornerMarks() {
   const cross = (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className="text-current">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden className="text-[#0066ff]/85">
       <path
-        d="M8 0.5V15.5M0.5 8H15.5"
+        d="M9 0.5V17.5M0.5 9H17.5"
         stroke="currentColor"
         strokeWidth={0.5}
         vectorEffect="non-scaling-stroke"
@@ -15,7 +15,7 @@ export function ViewportCornerMarks() {
   );
 
   return (
-    <div className="home-viewport-corner-mark pointer-events-none fixed inset-0 z-[6]" aria-hidden>
+    <div className="pointer-events-none fixed inset-0 z-[6]" aria-hidden>
       <div className="absolute left-[max(1rem,env(safe-area-inset-left,0px))] top-[max(1rem,env(safe-area-inset-top,0px))]">
         {cross}
       </div>

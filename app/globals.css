@@ -129,21 +129,6 @@ body {
   box-shadow: none !important;
 }
 
-.home-viewport-corner-mark {
-  color: color-mix(
-    in oklab,
-    rgba(255, 255, 255, 0.12) calc((1 - var(--home-surface-t)) * 100%),
-    rgba(0, 0, 0, 0.15)
-  );
-  transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-viewport-corner-mark {
-    transition: none;
-  }
-}
-
 .provin-btn-ghost {
   transition:
     border-color 0.2s ease,
@@ -224,12 +209,6 @@ body {
   transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Logo galvenē — tā pati tinte kā zem Hero (nav .home-below-hero vecāka) */
-header .home-body-ink {
-  color: color-mix(in oklab, #fafafa calc((1 - var(--home-surface-t)) * 100%), #050505);
-  transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
 .home-muted-foreground {
   color: color-mix(in oklab, #d4d4d8 calc((1 - var(--home-surface-t)) * 100%), #52525b);
   transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
@@ -273,7 +252,6 @@ header .home-body-ink {
 
 @media (prefers-reduced-motion: reduce) {
   .home-below-hero .home-body-ink,
-  header .home-body-ink,
   .home-muted-foreground,
   .home-iriss-prose,
   .home-iriss-prose strong,

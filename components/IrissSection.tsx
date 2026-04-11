@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
-import { homeSectionTitleSilverClass, irissSectionSubtitleClass } from "@/lib/home-layout";
+import { homeSectionTitleClass, irissSectionSubtitleClass } from "@/lib/home-layout";
 
 /** Trekns — krāsu dod `.home-iriss-prose strong`. */
 const irissAccent = (chunks: ReactNode) => <strong className="font-bold">{chunks}</strong>;
@@ -27,8 +27,8 @@ export async function IrissSection() {
 
       <div className="relative mx-auto w-full max-w-[1000px]">
         <div className="text-center">
-          <h2 className={homeSectionTitleSilverClass}>{t("title")}</h2>
-          <p className={`${irissSectionSubtitleClass} font-medium !text-[#050505]`}>{t("subtitle")}</p>
+          <h2 className={homeSectionTitleClass}>{t("title")}</h2>
+          <p className={`${irissSectionSubtitleClass} home-muted-foreground`}>{t("subtitle")}</p>
         </div>
 
         <div className="mt-5 flex justify-center">
@@ -42,15 +42,9 @@ export async function IrissSection() {
         </div>
 
         <div className="mx-auto mt-10 max-w-[750px] text-center sm:mt-12">
-          <p className={`${irissBodyProseClass} mb-12 text-balance text-[#050505] [&_strong]:text-[#050505]`}>
-            {t.rich("body1", irissRichBody)}
-          </p>
-          <p className={`${irissBodyProseClass} mb-12 text-balance text-[#050505] [&_strong]:text-[#050505]`}>
-            {t.rich("body2", irissRichBody)}
-          </p>
-          <p className={`${irissBodyProseClass} text-balance text-[#050505] [&_strong]:text-[#050505]`}>
-            {t.rich("body3", irissRichBody)}
-          </p>
+          <p className={`${irissBodyProseClass} mb-12 text-balance`}>{t.rich("body1", irissRichBody)}</p>
+          <p className={`${irissBodyProseClass} mb-12 text-balance`}>{t.rich("body2", irissRichBody)}</p>
+          <p className={`${irissBodyProseClass} text-balance`}>{t.rich("body3", irissRichBody)}</p>
         </div>
       </div>
     </section>
@@ -71,9 +65,9 @@ function IrissSocialIcons({
   socialSoon: string;
 }) {
   const btnClass =
-    "flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-full border border-[#050505]/15 bg-transparent text-[#050505] transition-colors hover:border-[#050505]/28 hover:bg-[#050505]/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#050505]/25";
+    "flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-[#b8bcc4] shadow-sm transition will-change-[box-shadow,border-color] hover:border-provin-accent/45 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent";
 
-  const disabledClass = `${btnClass} cursor-default opacity-50 hover:border-[#050505]/15 hover:bg-transparent hover:text-[#050505]`;
+  const disabledClass = `${btnClass} cursor-default opacity-55 hover:border-white/15 hover:bg-white/[0.06] hover:text-[#b8bcc4] hover:shadow-none`;
 
   return (
     <ul className="flex list-none flex-wrap items-center justify-center gap-3" aria-label={socialLabel}>

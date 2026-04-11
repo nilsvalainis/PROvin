@@ -3,7 +3,7 @@
 import { Menu, X } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { useHomeSilverFadeProgress } from "@/hooks/use-home-silver-fade";
+
 export type HeaderClientProps = {
   orderLabel: string;
   orderHref: string;
@@ -56,24 +56,19 @@ export function HeaderClient({
   const isHome = pathname === "/" || pathname === "";
   const isFaq = pathname.includes("biezi-jautajumi");
   const isOrderSection = isHome && hash.includes("pasutit");
-  const silverFade = useHomeSilverFadeProgress();
-  const homeSilverHeader = isHome && silverFade > 0.32;
 
   const headerSurface = isHome
-    ? homeSilverHeader
-      ? "border-b border-black/[0.08] bg-[#e8eaed]/75 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-[#e8eaed]/65"
-      : "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)]"
+    ? "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)]"
     : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
   const logoClass = isHome
-    ? "home-body-ink flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight transition-opacity hover:opacity-80 sm:min-h-0 sm:min-w-0"
+    ? "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-white transition-colors hover:text-white/90 sm:min-h-0 sm:min-w-0"
     : "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent sm:min-h-0 sm:min-w-0";
 
-  const navMuted = isHome ? (homeSilverHeader ? "text-[#050505]" : "text-white/72") : "text-[#1d1d1f]";
+  const navMuted = isHome ? "text-white/72" : "text-[#1d1d1f]";
 
-  const orderBtnClass = homeSilverHeader
-    ? "provin-btn provin-btn--compact home-cta-blueprint inline-flex min-h-11 shrink-0 items-center justify-center rounded-[2px] px-5 text-[13px] font-bold text-white ring-0 shadow-none sm:min-h-10 sm:px-6"
-    : "provin-btn provin-btn--compact inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-5 text-[13px] font-bold text-white shadow-[0_0_18px_rgba(0,102,255,0.14)] ring-1 ring-white/10 sm:min-h-10 sm:px-6";
+  const orderBtnClass =
+    "provin-btn provin-btn--compact inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-5 text-[13px] font-bold text-white shadow-[0_0_18px_rgba(0,102,255,0.14)] ring-1 ring-white/10 sm:min-h-10 sm:px-6";
 
   const navLinkClass = (active: boolean) =>
     [
@@ -81,12 +76,8 @@ export function HeaderClient({
       active ? "text-[#3b82f6]" : `${navMuted} hover:text-provin-accent`,
     ].join(" ");
 
-  const desktopNavClass = (active: boolean) => {
-    if (isHome && homeSilverHeader) {
-      return `text-sm font-medium transition-opacity ${active ? "font-semibold text-[#050505]" : "text-[#050505] hover:opacity-70"}`;
-    }
-    return `text-sm font-medium transition-colors ${active ? "text-provin-accent" : `${navMuted} hover:text-provin-accent`}`;
-  };
+  const desktopNavClass = (active: boolean) =>
+    `text-sm font-medium transition-colors ${active ? "text-provin-accent" : `${navMuted} hover:text-provin-accent`}`;
 
   return (
     <>
@@ -94,7 +85,7 @@ export function HeaderClient({
         <div className="mx-auto flex min-h-12 max-w-[980px] items-center justify-between gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:min-h-11 sm:gap-3 sm:px-6 lg:max-w-[1024px]">
           <Link href="/" className={logoClass}>
             <span>PRO</span>
-            <span className={isHome ? "" : "text-provin-accent"}>VIN</span>
+            <span className="text-provin-accent">VIN</span>
           </Link>
 
           <nav className="hidden min-w-0 items-center gap-6 md:flex md:flex-1 md:justify-end">
@@ -118,9 +109,7 @@ export function HeaderClient({
               onClick={() => setOpen(true)}
               className={
                 isHome
-                  ? homeSilverHeader
-                    ? "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-black/[0.12] bg-white/90 text-[#050505] shadow-sm transition hover:border-black/20"
-                    : "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/15 bg-transparent text-white shadow-none transition hover:border-white/30"
+                  ? "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/15 bg-transparent text-white shadow-none transition hover:border-white/30"
                   : "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#1d1d1f] shadow-sm transition hover:bg-slate-50"
               }
               aria-expanded={open}

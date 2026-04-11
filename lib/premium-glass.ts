@@ -1,3 +1,3 @@
-/** High-end glass cards (CAD + interface) — matches 5877bb0-era lab / pricing. */
+/** Premium glass — dziļš blur, iekšējā „biezuma” mala (5877bb0 estētika). */
 export const PREMIUM_GLASS_CARD =
-  "rounded-2xl border border-white/60 bg-white/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.82),inset_0_-1px_0_rgba(15,23,42,0.08)] backdrop-blur-[30px]";
+  "rounded-2xl border border-white/15 bg-gradient-to-br from-white/[0.14] via-white/[0.07] to-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-2px_0_rgba(0,0,0,0.5)] backdrop-blur-[40px]";

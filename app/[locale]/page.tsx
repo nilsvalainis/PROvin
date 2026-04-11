@@ -26,7 +26,7 @@ export default async function HomePage({
 
         <div className="home-below-hero home-body-ink bg-transparent">
           <InvestigationLabSection />
-          <HowItWorks tone="light" variant="silver" />
+          <HowItWorks tone="dark" />
 
           <div
             id="site-content"
@@ -38,7 +38,7 @@ export default async function HomePage({
             <PricingIncluded />
             <IrissSection />
           </div>
-          <Faq tone="silver" />
+          <Faq />
           <Footer />
         </div>
       </div>

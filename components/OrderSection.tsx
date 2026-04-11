@@ -29,7 +29,7 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
           <a
             href="#order-form"
             aria-label={t("scrollToFormAria")}
-            className="inline-flex text-[#0066ff]/90 transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066ff]/40"
+            className="inline-flex text-provin-accent/80 transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
           >
             <NavChevronDown />
           </a>
@@ -37,7 +37,7 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
         <div className="flex w-full flex-col items-center gap-4">
           {cancelled && (
             <p
-              className="mx-auto max-w-md rounded-2xl border border-white/60 bg-white/40 px-4 py-3 text-[13px] font-normal text-[#050505] shadow-[inset_0_1px_1px_rgba(255,255,255,0.75)] backdrop-blur-[30px]"
+              className="mx-auto max-w-md rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-[13px] font-normal text-[#b8bcc4] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
               role="status"
             >
               {t("cancelled")}
