@@ -25,6 +25,10 @@ export const approvedByIrissSignatureBaseClass =
 /** Hero — mazais paraksta izmērs. */
 export const approvedByIrissSignatureHeroClass = `${approvedByIrissSignatureBaseClass} text-[0.5625rem] sm:text-[0.625rem]`;
 
+/** Hero H1 pirmā rinda — zilās atslēgvārdu „pogas” (#0066ff), kā galvenajā CTA. */
+export const heroH1BluePillClass =
+  "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-[#0066ff] px-[0.45em] py-[0.1em] font-semibold text-white shadow-[0_0_20px_rgba(0,102,255,0.28)] ring-1 ring-white/12 sm:px-[0.5em] sm:py-[0.11em]";
+
 /** Kas ir IRISS? — apakšvirsraksts: tā pati estētika, ~2× izmērs, nedaudz platāka līnija. */
 export const irissSectionSubtitleClass = `${approvedByIrissSignatureBaseClass} mx-auto max-w-[min(100%,52ch)] text-balance text-[1.125rem] sm:text-[1.25rem]`;
 

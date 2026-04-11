@@ -1,7 +1,9 @@
 {
   "Hero": {
     "approved": "APPROVED BY IRISS",
-    "h1Line1": "VIN UN SLUDINĀJUMA",
+    "h1Vin": "VIN",
+    "h1Un": "UN",
+    "h1Sludinajuma": "SLUDINĀJUMA",
     "h1Line2": "AUDITS",
     "h2": "TAVS PERSONĪGAIS AUTO DETEKTĪVS",
     "pillars": [

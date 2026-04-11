@@ -2,7 +2,7 @@ import { ArrowRight } from "lucide-react";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { HeroServiceGrid } from "@/components/HeroServiceGrid";
-import { approvedByIrissSignatureHeroClass } from "@/lib/home-layout";
+import { approvedByIrissSignatureHeroClass, heroH1BluePillClass } from "@/lib/home-layout";
 import { orderSectionHref } from "@/lib/paths";
 
 type Pillar = { title: string; body: string };
@@ -24,7 +24,11 @@ export async function Hero() {
             </p>
 
             <h1 className="text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[28px] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]">
-              <span className="block text-[#1d1d1f]">{t("h1Line1")}</span>
+              <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
+                <span className={heroH1BluePillClass}>{t("h1Vin")}</span>
+                <span className="text-[#1d1d1f]">{t("h1Un")}</span>
+                <span className={heroH1BluePillClass}>{t("h1Sludinajuma")}</span>
+              </span>
               <span className="mt-0.5 block text-provin-accent sm:mt-1">{t("h1Line2")}</span>
             </h1>
 
