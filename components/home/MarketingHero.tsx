@@ -13,11 +13,12 @@ const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCirc
 const HERO_PILLAR_GLASS =
   "rounded-xl border border-white/15 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-[30px]";
 
+/** ~25% tighter orbit than prior hub (image_22): nudge in from edges + toward vertical center. */
 const PILLAR_POS = [
-  "lg:left-[max(0.75rem,env(safe-area-inset-left))] lg:right-auto lg:top-[15%] lg:bottom-auto",
-  "lg:right-[max(0.75rem,env(safe-area-inset-right))] lg:left-auto lg:top-[15%] lg:bottom-auto",
-  "lg:left-[max(0.75rem,env(safe-area-inset-left))] lg:right-auto lg:top-auto lg:bottom-[max(5.5rem,env(safe-area-inset-bottom,0px)+4rem)]",
-  "lg:right-[max(0.75rem,env(safe-area-inset-right))] lg:left-auto lg:top-auto lg:bottom-[max(5.5rem,env(safe-area-inset-bottom,0px)+4rem)]",
+  "lg:left-[clamp(0.75rem,calc(env(safe-area-inset-left,0px)+5.5vw),3.5rem)] lg:right-auto lg:top-[19%] lg:bottom-auto",
+  "lg:right-[clamp(0.75rem,calc(env(safe-area-inset-right,0px)+5.5vw),3.5rem)] lg:left-auto lg:top-[19%] lg:bottom-auto",
+  "lg:left-[clamp(0.75rem,calc(env(safe-area-inset-left,0px)+5.5vw),3.5rem)] lg:right-auto lg:top-auto lg:bottom-[max(6.75rem,calc(env(safe-area-inset-bottom,0px)+5.25rem))]",
+  "lg:right-[clamp(0.75rem,calc(env(safe-area-inset-right,0px)+5.5vw),3.5rem)] lg:left-auto lg:top-auto lg:bottom-[max(6.75rem,calc(env(safe-area-inset-bottom,0px)+5.25rem))]",
 ] as const;
 
 type HeroPillar = { ref: string; title: string; body: string };
@@ -46,24 +47,43 @@ export function MarketingHero() {
 
     const s = section.getBoundingClientRect();
     const tRect = titleEl.getBoundingClientRect();
+    const tCenterX = tRect.left + tRect.width / 2;
+    const tCenterY = tRect.top + tRect.height / 2;
+    const insetPx = Math.min(20, Math.max(10, Math.min(tRect.width, tRect.height) * 0.07));
 
-    const corners = [
-      { x: tRect.left - s.left, y: tRect.top - s.top },
-      { x: tRect.right - s.left, y: tRect.top - s.top },
-      { x: tRect.left - s.left, y: tRect.bottom - s.top },
-      { x: tRect.right - s.left, y: tRect.bottom - s.top },
+    const rawCorners: [number, number][] = [
+      [tRect.left, tRect.top],
+      [tRect.right, tRect.top],
+      [tRect.left, tRect.bottom],
+      [tRect.right, tRect.bottom],
     ];
+
+    const insetTowardCenter = (cornerX: number, cornerY: number) => {
+      const vx = tCenterX - cornerX;
+      const vy = tCenterY - cornerY;
+      const len = Math.hypot(vx, vy) || 1;
+      return {
+        x: cornerX + (vx / len) * insetPx - s.left,
+        y: cornerY + (vy / len) * insetPx - s.top,
+      };
+    };
+
+    /** Nearest point on card rect to title center — cleaner endpoint than center when cards sit close. */
+    const closestOnCardToTitle = (r: DOMRect) => {
+      const x = Math.min(Math.max(tCenterX, r.left), r.right) - s.left;
+      const y = Math.min(Math.max(tCenterY, r.top), r.bottom) - s.top;
+      return { x, y };
+    };
 
     const next: string[] = [];
     for (let i = 0; i < 4; i++) {
       const card = cardRefs.current[i];
       if (!card) continue;
       const r = card.getBoundingClientRect();
-      const ax = r.left + r.width / 2 - s.left;
-      const ay = r.top + r.height / 2 - s.top;
-      const c = corners[i];
-      if (!c) continue;
-      next.push(`M ${c.x} ${c.y} L ${ax} ${ay}`);
+      const [cx, cy] = rawCorners[i] ?? [tRect.left, tRect.top];
+      const start = insetTowardCenter(cx, cy);
+      const end = closestOnCardToTitle(r);
+      next.push(`M ${start.x} ${start.y} L ${end.x} ${end.y}`);
     }
     setPathDs(next);
   }, []);
@@ -159,18 +179,15 @@ export function MarketingHero() {
         const pos = PILLAR_POS[i] ?? PILLAR_POS[0];
         return (
           <article
-            key={`${p.ref}-${p.title}`}
+            key={`${p.title}-${i}`}
             ref={(el) => {
               cardRefs.current[i] = el;
             }}
             className={`${HERO_PILLAR_GLASS} relative z-20 mx-auto mt-3 w-full max-w-sm px-4 py-4 first:mt-10 sm:px-5 sm:py-5 sm:first:mt-12 lg:absolute lg:mt-0 lg:w-[min(100%,13.5rem)] lg:max-w-none lg:first:mt-0 xl:w-[14.5rem] ${pos}`}
           >
             <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:gap-4 sm:text-left lg:flex-col lg:items-center lg:text-center">
-              <div className="flex shrink-0 flex-col items-center gap-1">
+              <div className="flex shrink-0 flex-col items-center">
                 <Icon className="h-8 w-8 shrink-0 text-[#0066ff] sm:h-9 sm:w-9" strokeWidth={1.25} aria-hidden />
-                <span className="font-mono text-[6px] font-semibold uppercase tracking-[0.1em] text-[#0066ff]">
-                  {p.ref}
-                </span>
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-sm font-semibold tracking-tight text-white sm:text-base">{p.title}</h3>
