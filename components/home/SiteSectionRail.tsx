@@ -67,7 +67,7 @@ export function SiteSectionRail() {
   const hash = useHash();
   const [active, setActive] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
-  const linkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const linkRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const [dot, setDot] = useState({ top: 0, height: 18 });
 
   const normalizedPath = useMemo(() => normalizePath(pathname), [pathname]);
@@ -171,18 +171,22 @@ export function SiteSectionRail() {
         <ul className="flex h-full min-h-0 flex-1 flex-col">
           {sections.map((s, i) => (
             <li key={s.labelKey} className="flex min-h-0 flex-1 flex-col justify-center">
-              <Link
+              <span
                 ref={(el) => {
                   linkRefs.current[i] = el;
                 }}
-                href={s.href}
-                className={`block max-w-[9.5rem] text-left text-[10px] font-semibold uppercase leading-snug tracking-[0.14em] transition-colors motion-reduce:transition-none lg:max-w-[10.5rem] lg:text-[11px] lg:tracking-[0.16em] ${
-                  i === active ? "text-white" : "text-white/38 hover:text-white/55"
-                }`}
-                aria-current={i === active ? "location" : undefined}
+                className="block min-w-0"
               >
-                {t(s.labelKey)}
-              </Link>
+                <Link
+                  href={s.href}
+                  className={`block max-w-[9.5rem] text-left text-[10px] font-semibold uppercase leading-snug tracking-[0.14em] transition-colors motion-reduce:transition-none lg:max-w-[10.5rem] lg:text-[11px] lg:tracking-[0.16em] ${
+                    i === active ? "text-white" : "text-white/38 hover:text-white/55"
+                  }`}
+                  aria-current={i === active ? "location" : undefined}
+                >
+                  {t(s.labelKey)}
+                </Link>
+              </span>
             </li>
           ))}
         </ul>

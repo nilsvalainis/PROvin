@@ -1,5 +1,4 @@
 import { getTranslations } from "next-intl/server";
-import { IrissStaggerShell } from "@/components/iriss/IrissStaggerShell";
 import {
   homeContentMaxClass,
   homeSectionTitleClass,
@@ -44,17 +43,34 @@ export async function IrissSection() {
           />
         </div>
 
-        <IrissStaggerShell
-          headingClassName={irissStaggerHeadingClass}
-          bodyClassName={irissBodyProseClass}
-          gapClassName={irissStaggerBlockGapClass}
-          block1Heading={t("block1Heading")}
-          block1Body={t("block1Body")}
-          block2Heading={t("block2Heading")}
-          block2Body={t("block2Body")}
-          block3Heading={t("block3Heading")}
-          block3Body={t("block3Body")}
-        />
+        {/* Bez klienta „stagger” / SVG — tas bija saistīts ar Application error; saturs paliek tas pats. */}
+        <div className="relative isolate mt-12 sm:mt-14 md:mt-16">
+          <div className="home-iriss-stagger-atmosphere" aria-hidden />
+          <div
+            className={`relative z-[2] flex flex-col ${irissStaggerBlockGapClass} pt-[clamp(0.75rem,2vw,1.25rem)] pb-[clamp(2.5rem,6vw,4.5rem)]`}
+          >
+            <div className="grid grid-cols-1 gap-y-5 lg:grid-cols-2 lg:gap-x-10 xl:gap-x-16">
+              <div className="hidden min-h-[8rem] lg:block" aria-hidden />
+              <div className="min-w-0 max-w-[min(100%,38rem)] lg:justify-self-end lg:text-right">
+                <h3 className={irissStaggerHeadingClass}>{t("block1Heading")}</h3>
+                <p className={`${irissBodyProseClass} mt-4 text-balance`}>{t("block1Body")}</p>
+              </div>
+            </div>
+
+            <div className="mx-auto min-w-0 max-w-[min(100%,42rem)] px-1 text-center sm:px-2">
+              <h3 className={`${irissStaggerHeadingClass} mx-auto max-w-[min(100%,52ch)]`}>{t("block2Heading")}</h3>
+              <p className={`${irissBodyProseClass} mt-4 whitespace-pre-line text-balance`}>{t("block2Body")}</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-y-5 lg:grid-cols-2 lg:gap-x-10 xl:gap-x-16">
+              <div className="min-w-0 max-w-[min(100%,38rem)] text-left">
+                <h3 className={irissStaggerHeadingClass}>{t("block3Heading")}</h3>
+                <p className={`${irissBodyProseClass} mt-4 text-balance`}>{t("block3Body")}</p>
+              </div>
+              <div className="hidden min-h-[8rem] lg:block" aria-hidden />
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
