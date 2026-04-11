@@ -10,8 +10,8 @@ import {
 const irissBodyProseClass =
   "home-iriss-prose text-[14px] font-normal leading-[1.75] sm:text-[15px]";
 
-/** Plūdena vertikālā atstarpe starp stagger blokiem. */
-const irissStaggerStackGapClass = "py-[clamp(3.25rem,7vw,5.5rem)] sm:py-[clamp(3.75rem,8vw,6.25rem)]";
+/** Vertikālā atstarpe starp stagger blokiem — tikai `gap`, lai nav dubultas padding joslas. */
+const irissStaggerBlockGapClass = "gap-y-[clamp(2.75rem,6.5vw,4.75rem)] sm:gap-y-[clamp(3rem,7vw,5.25rem)]";
 
 export async function IrissSection() {
   const t = await getTranslations("Iriss");
@@ -23,7 +23,7 @@ export async function IrissSection() {
   return (
     <section
       id="kas-ir-iriss"
-      className="home-body-ink relative scroll-mt-16 overflow-hidden bg-transparent px-4 pb-0 pt-10 sm:px-6 sm:pt-16"
+      className="home-body-ink relative scroll-mt-16 bg-transparent px-4 pb-0 pt-10 sm:px-6 sm:pt-16"
     >
       <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
 
@@ -43,35 +43,36 @@ export async function IrissSection() {
           />
         </div>
 
-        <div className="mt-12 sm:mt-14 md:mt-16">
-          {/* Bloks 1: saturs labajā pusē; kreisā — rezerve animācijai */}
-          <div
-            className={`grid grid-cols-1 gap-y-5 lg:grid-cols-2 lg:gap-x-10 xl:gap-x-16 ${irissStaggerStackGapClass}`}
-          >
-            <div className="hidden min-h-[8rem] lg:block" aria-hidden />
-            <div className="min-w-0 max-w-[min(100%,38rem)] lg:justify-self-end lg:text-right">
-              <h3 className={irissStaggerHeadingClass}>{t("block1Heading")}</h3>
-              <p className={`${irissBodyProseClass} mt-4 text-balance`}>{t("block1Body")}</p>
-            </div>
-          </div>
+        <div className="relative isolate mt-12 sm:mt-14 md:mt-16">
+          {/* Viens fona slānis + maska — mīkstas malas pret pārējo lapu un starp trim teksta blokiem */}
+          <div className="home-iriss-stagger-atmosphere" aria-hidden />
 
-          {/* Bloks 2: centrēts; ļoti viegls fona „elpas” slānis starp blokiem */}
           <div
-            className={`${irissStaggerStackGapClass} bg-[radial-gradient(ellipse_85%_120%_at_50%_40%,rgba(255,255,255,0.045)_0%,transparent_62%)]`}
+            className={`relative z-[1] flex flex-col ${irissStaggerBlockGapClass} pt-[clamp(0.75rem,2vw,1.25rem)] pb-[clamp(2.5rem,6vw,4.5rem)]`}
           >
+            {/* Bloks 1: saturs labajā pusē; kreisā — rezerve animācijai */}
+            <div className="grid grid-cols-1 gap-y-5 lg:grid-cols-2 lg:gap-x-10 xl:gap-x-16">
+              <div className="hidden min-h-[8rem] lg:block" aria-hidden />
+              <div className="min-w-0 max-w-[min(100%,38rem)] lg:justify-self-end lg:text-right">
+                <h3 className={irissStaggerHeadingClass}>{t("block1Heading")}</h3>
+                <p className={`${irissBodyProseClass} mt-4 text-balance`}>{t("block1Body")}</p>
+              </div>
+            </div>
+
+            {/* Bloks 2: centrēts */}
             <div className="mx-auto min-w-0 max-w-[min(100%,42rem)] px-1 text-center sm:px-2">
               <h3 className={`${irissStaggerHeadingClass} mx-auto max-w-[min(100%,52ch)]`}>{t("block2Heading")}</h3>
               <p className={`${irissBodyProseClass} mt-4 whitespace-pre-line text-balance`}>{t("block2Body")}</p>
             </div>
-          </div>
 
-          {/* Bloks 3: saturs kreisajā pusē; labā — rezerve */}
-          <div className={`grid grid-cols-1 gap-y-5 lg:grid-cols-2 lg:gap-x-10 xl:gap-x-16 ${irissStaggerStackGapClass}`}>
-            <div className="min-w-0 max-w-[min(100%,38rem)] text-left">
-              <h3 className={irissStaggerHeadingClass}>{t("block3Heading")}</h3>
-              <p className={`${irissBodyProseClass} mt-4 text-balance`}>{t("block3Body")}</p>
+            {/* Bloks 3: saturs kreisajā pusē; labā — rezerve */}
+            <div className="grid grid-cols-1 gap-y-5 lg:grid-cols-2 lg:gap-x-10 xl:gap-x-16">
+              <div className="min-w-0 max-w-[min(100%,38rem)] text-left">
+                <h3 className={irissStaggerHeadingClass}>{t("block3Heading")}</h3>
+                <p className={`${irissBodyProseClass} mt-4 text-balance`}>{t("block3Body")}</p>
+              </div>
+              <div className="hidden min-h-[8rem] lg:block" aria-hidden />
             </div>
-            <div className="hidden min-h-[8rem] lg:block" aria-hidden />
           </div>
         </div>
       </div>

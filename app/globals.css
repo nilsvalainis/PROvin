@@ -270,6 +270,61 @@ body {
   color: #f3f4f6;
 }
 
+/**
+ * IRISS stagger — viens fona slānis: viens plašs radālis + daudzpunktu lineārais vilnis,
+ * lai nav „grāvju” starp vairākiem radāļiem; maska mīkstina slāņa augšanu/apakšu pret pārējo lapu.
+ */
+.home-iriss-stagger-atmosphere {
+  pointer-events: none;
+  position: absolute;
+  inset: -3rem -8% -3rem -8%;
+  z-index: 0;
+  background-image:
+    radial-gradient(
+      ellipse 135% 90% at 50% 48%,
+      oklch(0.31 0.032 266 / 0.068) 0%,
+      oklch(0.27 0.022 266 / 0.032) 42%,
+      transparent 72%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.003) 6%,
+      rgba(255, 255, 255, 0.01) 18%,
+      rgba(255, 255, 255, 0.018) 32%,
+      rgba(255, 255, 255, 0.024) 45%,
+      rgba(255, 255, 255, 0.026) 50%,
+      rgba(255, 255, 255, 0.022) 58%,
+      rgba(255, 255, 255, 0.014) 72%,
+      rgba(255, 255, 255, 0.006) 86%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.35) 9%,
+    rgba(0, 0, 0, 0.92) 18%,
+    #000 26%,
+    #000 74%,
+    rgba(0, 0, 0, 0.92) 82%,
+    rgba(0, 0, 0, 0.35) 91%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.35) 9%,
+    rgba(0, 0, 0, 0.92) 18%,
+    #000 26%,
+    #000 74%,
+    rgba(0, 0, 0, 0.92) 82%,
+    rgba(0, 0, 0, 0.35) 91%,
+    transparent 100%
+  );
+  mask-size: 100% 100%;
+  -webkit-mask-size: 100% 100%;
+}
+
 .home-footer-scrim {
   opacity: 1;
 }
