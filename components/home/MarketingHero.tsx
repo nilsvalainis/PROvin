@@ -8,14 +8,14 @@ import { orderSectionHref } from "@/lib/paths";
 
 const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
 
-/** Stikla karte — starp apakšvirsrakstu un CTA; ~4/3 augstums, ~3/4 platums salīdzinājumā ar iepriekšējo joslu. */
+/** Stikla karte — garena taisnstūra forma: režģa platums 2×, augstums ~0.7× iepriekšējā. */
 const PILLAR_GLASS =
-  "flex min-h-[7rem] w-full max-w-[9rem] flex-col justify-center rounded-lg border border-white/12 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-[36px] sm:min-h-[8rem] sm:max-w-[9.5rem]";
+  "flex min-h-[4.9rem] w-full max-w-none flex-col justify-center rounded-lg border border-white/12 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-[36px] sm:min-h-[5.6rem]";
 
 type HeroPillar = { ref: string; title: string; body: string };
 
 /**
- * Pilnekrāna tumšais Hero — četri pīlāri 2×2 starp apakšvirsrakstu un CTA.
+ * Pilnekrāna tumšais Hero — četri pīlāri 2×2 (garena taisnstūra) starp apakšvirsrakstu un CTA.
  */
 export function MarketingHero() {
   const t = useTranslations("Hero");
@@ -50,21 +50,21 @@ export function MarketingHero() {
             {t("h2")}
           </p>
 
-          {/* 2×2 starp apakšvirsrakstu un CTA (~3/4 platums, ~4/3 augstums) */}
+          {/* 2×2 garenas kartes: režģa platums 2× iepriekšējam, augstums −30% */}
           <div className="flex w-full justify-center px-1">
-            <div className="grid w-full max-w-[18.5rem] grid-cols-2 justify-items-center gap-x-2 gap-y-2.5 sm:max-w-[20.25rem] sm:gap-x-2.5 sm:gap-y-3">
+            <div className="grid w-full max-w-[min(100%,37rem)] grid-cols-2 justify-items-stretch gap-x-2.5 gap-y-2 sm:max-w-[min(100%,40.5rem)] sm:gap-x-3 sm:gap-y-2.5">
               {pillars.map((p, i) => {
                 const Icon = PILLAR_ICONS[i] ?? FileText;
                 return (
                   <article key={`${p.title}-${i}`} className={PILLAR_GLASS}>
-                    <div className="flex h-full w-full flex-row items-start gap-2 px-2.5 py-5 text-left sm:gap-2.5 sm:px-3 sm:py-6">
+                    <div className="flex h-full min-h-0 w-full flex-row items-center gap-2.5 px-3 py-2.5 text-left sm:gap-3 sm:px-4 sm:py-3">
                       <Icon className="h-5 w-5 shrink-0 text-[#0066ff] sm:h-6 sm:w-6" strokeWidth={1.25} aria-hidden />
                       <div className="min-w-0 flex-1">
                         <h3 className="text-[10px] font-semibold leading-snug tracking-tight text-white sm:text-[11px]">
                           {p.title}
                         </h3>
                         {p.body ? (
-                          <p className="mt-1 text-[9px] font-light leading-relaxed text-white/70 sm:mt-1.5 sm:text-[10px]">
+                          <p className="mt-0.5 text-[9px] font-light leading-snug text-white/70 sm:mt-1 sm:text-[10px] sm:leading-relaxed">
                             {p.body}
                           </p>
                         ) : null}
