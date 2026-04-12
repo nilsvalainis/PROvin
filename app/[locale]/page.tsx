@@ -21,27 +21,33 @@ export default async function HomePage({
   return (
     <HomeScrollSurface wireframe={<AutoWireframeBackground />}>
       <div className="relative z-10 min-w-0 bg-transparent">
-        <MarketingHero homeOrbitPreset="s19" />
+        <MarketingHero homeOrbitPreset="s20" />
 
-        <div className="home-below-hero home-below-hero-cloud-layer home-body-ink">
-          <HowItWorks tone="dark" />
+        <div className="home-below-hero home-body-ink">
+          <div className="home-prod-band home-prod-band-a">
+            <HowItWorks tone="dark" />
+          </div>
 
           <div
             className={`home-body-ink ${homeContentMaxClass} h-px bg-white/[0.07]`}
             aria-hidden
           />
 
-          <div
-            id="site-content"
-            className="home-body-ink relative scroll-mt-14 border-0 bg-transparent"
-          >
-            <div className="relative z-10 bg-transparent pt-10 sm:pt-14 md:pt-16">
-              <FinalCta cancelled={cancelled} />
+          <div className="home-prod-band home-prod-band-b">
+            <div
+              id="site-content"
+              className="home-body-ink relative scroll-mt-14 border-0 bg-transparent"
+            >
+              <div className="relative z-10 bg-transparent pt-10 sm:pt-14 md:pt-16">
+                <FinalCta cancelled={cancelled} />
+              </div>
+              <PricingIncluded />
+              <IrissSection />
             </div>
-            <PricingIncluded />
-            <IrissSection />
           </div>
-          <Faq />
+          <div className="home-prod-band home-prod-band-c">
+            <Faq />
+          </div>
           <Footer />
         </div>
       </div>

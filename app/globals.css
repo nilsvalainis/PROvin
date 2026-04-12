@@ -352,8 +352,26 @@ body {
 }
 
 /**
- * Zem Hero — vienots #050505; globālais Deep Focus (`HomeDepthBackground`) dod dziļumu.
+ * Zem Hero — joslas kā `/demo/design-direction` (band A/B/C); fona bāzi dod `HomeDepthBackground`.
  */
+.home-prod-band {
+  position: relative;
+  overflow-x: clip;
+}
+
+.home-prod-band-a {
+  background: radial-gradient(ellipse 120% 80% at 50% 0%, rgb(0 60 140 / 0.18), transparent 55%), #030304;
+}
+
+.home-prod-band-b {
+  background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(255 255 255 / 0.04), transparent 45%), #040406;
+}
+
+.home-prod-band-c {
+  background: linear-gradient(180deg, #040406 0%, #050508 40%, #030304 100%);
+}
+
+/** Atpakaļsaderība: vecā klase vairs nav obligāta, bet saglabā tīru #050505, ja kaut kur lietota. */
 .home-below-hero-cloud-layer {
   background-color: #050505;
 }

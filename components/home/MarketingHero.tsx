@@ -34,12 +34,12 @@ const pillarTitleClassC =
   "line-clamp-2 max-h-[2.4em] min-h-[2.4em] w-full max-w-[13.5rem] whitespace-pre-line text-[9px] font-semibold uppercase leading-[1.25] tracking-tight text-white/95 sm:text-[10px]";
 
 /** Produkcijas hero orbitālais izskats — neietekmē `id` (paliek `home-hero` sānu joslai). */
-export type MarketingHeroHomeOrbitPreset = "s19";
+export type MarketingHeroHomeOrbitPreset = "s19" | "s20";
 
 export type MarketingHeroProps = {
   /** Salīdzināšanas demo — `/demo/hero-variants`; noklusējumā nav. */
   demoVariant?: HeroVisualDemoVariant;
-  /** Produkcija: S19 „Sānu sudrabs” + pilna gredzenu rotācija; nedrīkst lietot kopā ar `demoVariant`. */
+  /** Produkcija: S19 / S20 (melns+sudrabs, pilna gredzenu rotācija); nedrīkst lietot kopā ar `demoVariant`. */
   homeOrbitPreset?: MarketingHeroHomeOrbitPreset;
   /** Sekcijas `id` (demo: `demo-hero-a` utt.). */
   sectionDomId?: string;
@@ -73,14 +73,16 @@ export function MarketingHero({
   const isC = dv === "c";
   const isB = dv === "b";
   const isOrbitDemo = Boolean(demoVariant && isOrbitFamilyVariant(demoVariant));
+  const homeOrbitKey =
+    !demoVariant && (homeOrbitPreset === "s19" || homeOrbitPreset === "s20") ? homeOrbitPreset : undefined;
   const orbitUiClass =
     isOrbitDemo
       ? `marketing-hero-orbit-base marketing-hero-orbit--${demoVariant}`
-      : !demoVariant && homeOrbitPreset === "s19"
-        ? "marketing-hero-orbit-base marketing-hero-orbit--s19"
+      : homeOrbitKey
+        ? `marketing-hero-orbit-base marketing-hero-orbit--${homeOrbitKey}`
         : "";
   const isOrbitVisual = Boolean(orbitUiClass);
-  const dataHeroVariantForCss = demoVariant ?? (!demoVariant && homeOrbitPreset === "s19" ? "s19" : undefined);
+  const dataHeroVariantForCss = demoVariant ?? homeOrbitKey;
   const orbitRingsMode = isOrbitVisual ? (demoVariant ? demoOrbitRings : "spin") : "spin";
 
   const scanBlockOrbit = (
