@@ -60,7 +60,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       <LenisProvider>
         <LocaleHtmlLang />
         <SiteSectionRail />
-        <main className="relative z-10 min-w-0 pt-[env(safe-area-inset-top,0px)] pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+        <main className="relative z-10 min-w-0 max-w-full overflow-x-clip pt-[env(safe-area-inset-top,0px)] pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
           {children}
         </main>
         <WhatsAppFab />
