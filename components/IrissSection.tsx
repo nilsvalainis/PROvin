@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import {
   homeSectionTitleClass,
   irissSectionSubtitleClass,
@@ -42,14 +43,23 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         <div className="mx-auto mt-10 max-w-[36rem] space-y-10 text-left">
           <div>
             <h3 className="text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">{t("block1Heading")}</h3>
+            <div className="mt-3 w-full">
+              <DiagnosticScanLine variant="rail" className="w-full" />
+            </div>
             <p className="demo-design-dir__body mt-3">{t("block1Body")}</p>
           </div>
           <div>
             <h3 className="text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">{t("block2Heading")}</h3>
+            <div className="mt-3 w-full">
+              <DiagnosticScanLine variant="rail" className="w-full" />
+            </div>
             <p className="demo-design-dir__body mt-3 whitespace-pre-line">{t("block2Body")}</p>
           </div>
           <div>
             <h3 className="text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">{t("block3Heading")}</h3>
+            <div className="mt-3 w-full">
+              <DiagnosticScanLine variant="rail" className="w-full" />
+            </div>
             <p className="demo-design-dir__body mt-3">{t("block3Body")}</p>
           </div>
         </div>
@@ -89,19 +99,28 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
               <div className="hidden min-h-[8rem] lg:block" aria-hidden />
               <div className="min-w-0 max-w-[min(100%,38rem)] lg:justify-self-end lg:text-right">
                 <h3 className={irissStaggerHeadingClass}>{t("block1Heading")}</h3>
-                <p className={`${irissBodyProseClass} mt-4 text-balance`}>{t("block1Body")}</p>
+                <div className="mt-3 w-full lg:ml-auto lg:max-w-[min(100%,38rem)]">
+                  <DiagnosticScanLine variant="rail" className="w-full" />
+                </div>
+                <p className={`${irissBodyProseClass} mt-3 text-balance`}>{t("block1Body")}</p>
               </div>
             </div>
 
             <div className="mx-auto min-w-0 max-w-[min(100%,42rem)] px-1 text-center sm:px-2">
               <h3 className={`${irissStaggerHeadingClass} mx-auto max-w-[min(100%,52ch)]`}>{t("block2Heading")}</h3>
-              <p className={`${irissBodyProseClass} mt-4 whitespace-pre-line text-balance`}>{t("block2Body")}</p>
+              <div className="mx-auto mt-3 w-full max-w-[min(100%,52ch)]">
+                <DiagnosticScanLine variant="rail" className="w-full" />
+              </div>
+              <p className={`${irissBodyProseClass} mt-3 whitespace-pre-line text-balance`}>{t("block2Body")}</p>
             </div>
 
             <div className="grid grid-cols-1 gap-y-5 lg:grid-cols-2 lg:gap-x-10 xl:gap-x-16">
               <div className="min-w-0 max-w-[min(100%,38rem)] text-left">
                 <h3 className={irissStaggerHeadingClass}>{t("block3Heading")}</h3>
-                <p className={`${irissBodyProseClass} mt-4 text-balance`}>{t("block3Body")}</p>
+                <div className="mt-3 w-full">
+                  <DiagnosticScanLine variant="rail" className="w-full" />
+                </div>
+                <p className={`${irissBodyProseClass} mt-3 text-balance`}>{t("block3Body")}</p>
               </div>
               <div className="hidden min-h-[8rem] lg:block" aria-hidden />
             </div>
