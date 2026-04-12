@@ -35,7 +35,11 @@
   pointer-events: none;
   border: 1px solid var(--orbit-border-outer);
   opacity: var(--orbit-opacity-outer);
-  transform: translate(-50%, -50%);
+  /* Atsevišķs translate + rotate, lai rotācija būtu tieši ap riņķa centru (ne „orbitē” apkārt). */
+  translate: -50% -50%;
+  rotate: 0deg;
+  transform-origin: 50% 50%;
+  will-change: rotate;
 }
 
 .marketing-hero-orbit-base.marketing-hero-section::after {
@@ -50,11 +54,6 @@
   animation: hero-orbit-spin-b var(--orbit-dur-b) linear infinite;
 }
 
-.marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"]::before,
-.marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"]::after {
-  animation: none !important;
-}
-
 .marketing-hero-orbit-base.marketing-hero-section > div,
 .marketing-hero-orbit-base.marketing-hero-section > header {
   position: relative;
@@ -66,21 +65,66 @@
 }
 
 @keyframes hero-orbit-spin-a {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
+  to {
+    rotate: 360deg;
   }
+}
+
+@keyframes hero-orbit-spin-b {
+  to {
+    rotate: -360deg;
+  }
+}
+
+/* Pārlūki bez atsevišķās rotate animācijas — tā pati vizuālā rotācija ap centru. */
+@supports not (rotate: 0deg) {
+  .marketing-hero-orbit-base.marketing-hero-section::before,
+  .marketing-hero-orbit-base.marketing-hero-section::after {
+    translate: unset;
+    rotate: unset;
+    will-change: transform;
+    transform: translate(-50%, -50%);
+  }
+
+  .marketing-hero-orbit-base.marketing-hero-section::after {
+    animation: hero-orbit-spin-a-legacy var(--orbit-dur-a) linear infinite;
+  }
+
+  .marketing-hero-orbit-base.marketing-hero-section::before {
+    animation: hero-orbit-spin-b-legacy var(--orbit-dur-b) linear infinite;
+  }
+
+  .demo-orbit-mini::before,
+  .demo-orbit-mini::after {
+    translate: unset;
+    rotate: unset;
+    transform: translate(-50%, -50%);
+  }
+
+  .demo-orbit-mini::after {
+    animation: hero-orbit-spin-a-legacy 14s linear infinite;
+  }
+
+  .demo-orbit-mini::before {
+    animation: hero-orbit-spin-b-legacy 18s linear infinite;
+  }
+}
+
+@keyframes hero-orbit-spin-a-legacy {
   to {
     transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 
-@keyframes hero-orbit-spin-b {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
+@keyframes hero-orbit-spin-b-legacy {
   to {
     transform: translate(-50%, -50%) rotate(-360deg);
   }
+}
+
+.marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"]::before,
+.marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"]::after {
+  animation: none !important;
 }
 
 /* —— Atsauce I —— */
@@ -306,7 +350,9 @@
   height: 78%;
   border-radius: 50%;
   border: 1px solid rgb(255 255 255 / 0.12);
-  transform: translate(-50%, -50%);
+  translate: -50% -50%;
+  rotate: 0deg;
+  transform-origin: 50% 50%;
   pointer-events: none;
 }
 
@@ -330,12 +376,12 @@
   .marketing-hero-orbit-base.marketing-hero-section::before,
   .marketing-hero-orbit-base.marketing-hero-section::after {
     animation: none !important;
-    transform: translate(-50%, -50%) !important;
+    rotate: 0deg !important;
   }
 
   .demo-orbit-mini::before,
   .demo-orbit-mini::after {
     animation: none !important;
-    transform: translate(-50%, -50%) !important;
+    rotate: 0deg !important;
   }
 }
