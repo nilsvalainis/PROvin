@@ -29,8 +29,14 @@ export const homeSectionTitleSilverClass =
 export const approvedByIrissSignatureBaseClass =
   "font-light uppercase tracking-[0.32em] text-[#8e8e93] sm:tracking-[0.38em] leading-relaxed";
 
-/** Hero — mazais paraksta izmērs. */
-export const approvedByIrissSignatureHeroClass = `${approvedByIrissSignatureBaseClass} text-[0.5625rem] sm:text-[0.625rem]`;
+/**
+ * Hero — mazais paraksta izmērs + lasāmība pret Deep Focus (neliels „halo” pret joslām).
+ */
+export const approvedByIrissSignatureHeroClass = `${approvedByIrissSignatureBaseClass} text-[0.5625rem] sm:text-[0.625rem] text-[#bcc6d4] [text-shadow:0_1px_0_rgba(0,0,0,0.55),0_0_22px_rgba(5,5,5,0.65)]`;
+
+/** Hero apakšvirsraksts — tā pati pelēcība kā „IRISS” rindiņai, nedaudz lielāks tonis. */
+export const homeHeroSubtitleClass =
+  "text-[#c4ccd8] [text-shadow:0_1px_0_rgba(0,0,0,0.5),0_0_18px_rgba(5,5,5,0.55)]";
 
 /** Hero H1 pirmā rinda — zilie atslēgvārdi (VIN, SLUDINĀJUMA), tikai teksta krāsa #0066ff. */
 export const heroH1BlueKeywordClass =
