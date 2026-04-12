@@ -169,6 +169,21 @@ body {
   }
 }
 
+/* Hero pasūtījuma lauki: fokusā gaiši zils fons; zilā „rāmja” nav — tikai apakšējā skenēšanas līnija */
+.order-form-hero-field:focus-within {
+  background-color: rgb(186 210 255 / 0.78);
+}
+
+.order-form-hero-field:focus-within input,
+.order-form-hero-field:focus-within textarea {
+  color: rgb(15 23 42);
+}
+
+.order-form-hero-field:focus-within input::placeholder,
+.order-form-hero-field:focus-within textarea::placeholder {
+  color: rgb(30 41 59 / 0.48);
+}
+
 /* Sākumlapas / tumšā UI — viena pogu estētika (kā hero „Turpināt”) */
 .provin-home-pill-cta {
   box-sizing: border-box;

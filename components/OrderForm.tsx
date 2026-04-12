@@ -15,7 +15,7 @@ const labelDefault =
 
 /** Dark cockpit: laukam bez apakšējās robežas — līniju un zilo impulsu dod `HeroFieldScanLine`. */
 const inputHeroNoBottom =
-  "relative z-10 box-border min-h-11 w-full appearance-none rounded-none border-0 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#e5e7eb] shadow-none outline-none ring-0 transition-[color,box-shadow] placeholder:text-[#e5e7eb]/38 focus:shadow-none focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-0 sm:min-h-0 sm:text-[16px]";
+  "relative z-10 box-border min-h-11 w-full appearance-none rounded-none border-0 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#e5e7eb] shadow-none outline-none ring-0 transition-[color,background-color] placeholder:text-[#e5e7eb]/38 focus:shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
 
 const inputDefault =
   "mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505]/75 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition-[border-color] placeholder:text-[#86868b] focus:border-provin-accent focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
@@ -27,9 +27,9 @@ type OrderFormProps = {
 
 function HeroFieldScanLine({ children }: { children: ReactNode }) {
   return (
-    <div className="order-form-hero-field mt-2">
+    <div className="order-form-hero-field relative z-0 mt-2 rounded-sm px-2 py-1 -mx-0.5 transition-[background-color] duration-200 ease-out motion-reduce:transition-none">
       {children}
-      <DiagnosticScanLine variant="rail" className="order-form-hero-scan w-full" />
+      <DiagnosticScanLine variant="rail" className="order-form-hero-scan relative z-[1] w-full" />
     </div>
   );
 }
