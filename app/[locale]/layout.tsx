@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { LocaleHtmlLang } from "@/components/LocaleHtmlLang";
 import { CookieConsent } from "@/components/CookieConsent";
 import { LenisProvider } from "@/components/providers/LenisProvider";
+import { SiteOrderCtaPin } from "@/components/home/SiteOrderCtaPin";
 import { SiteSectionRail } from "@/components/home/SiteSectionRail";
 import { WhatsAppFab } from "@/components/WhatsAppFab";
 import { routing } from "@/i18n/routing";
@@ -60,6 +61,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       <LenisProvider>
         <LocaleHtmlLang />
         <SiteSectionRail />
+        <SiteOrderCtaPin />
         <main className="relative z-10 min-w-0 max-w-full overflow-x-clip pt-[env(safe-area-inset-top,0px)] pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
           {children}
         </main>
