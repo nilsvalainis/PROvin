@@ -4,6 +4,7 @@ import { useId } from "react";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { NavChevronDown } from "@/components/NavChevron";
 import { ApprovedByIrissReveal } from "@/components/home/ApprovedByIrissReveal";
 import { MarketingHeroSpeedometer } from "@/components/home/MarketingHeroSpeedometer";
 import type { HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
@@ -56,7 +57,7 @@ const sectionBasePad =
   "px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1rem,env(safe-area-inset-top,0px)+0.75rem)] sm:px-8 sm:pb-9 sm:pt-[max(1.25rem,env(safe-area-inset-top,0px)+1rem)]";
 
 /**
- * Pilnekrāna tumšais Hero: „APPROVED…” + H1 ekrāna centrā; četras ikonas apakšā; „Turpināt”.
+ * Pilnekrāna tumšais Hero: „APPROVED…” + H1 ekrāna centrā; četras ikonas apakšā; scroll uz saturu (design: tikai zila bultiņa).
  * `demoVariant` ieslēdz tikai vizuālos variantus demo lapā.
  */
 export function MarketingHero({
@@ -240,16 +241,22 @@ export function MarketingHero({
         aria-label={t("scrollToPricingAria")}
         className={
           designDirection
-            ? "provin-home-pill-cta provin-home-pill-cta--stack group mt-3 shrink-0 touch-manipulation self-center sm:mt-4"
+            ? "group mt-3 inline-flex shrink-0 touch-manipulation items-center justify-center self-center text-provin-accent/80 transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:mt-4"
             : "group mx-auto mt-2 flex min-h-[44px] w-full max-w-[22rem] touch-manipulation flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-white/55 shadow-[0_16px_40px_rgb(0_0_0/0.35)] transition-[border-color,background-color,color,box-shadow] duration-200 hover:border-[#0066ff]/28 hover:bg-[#0066ff]/[0.09] hover:text-white/85 active:bg-white/[0.07] sm:mt-2.5 sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
         }
       >
-        <span className={`text-balance text-center${designDirection ? "" : " w-full"}`}>{t("scrollToPricingAria")}</span>
-        <ChevronDown
-          className={`mx-auto h-4 w-4 shrink-0 transition-transform duration-200 group-hover:translate-y-0.5 ${designDirection ? "text-[#7eb6ff]/90" : "text-[#0066ff] opacity-95"}`}
-          strokeWidth={2}
-          aria-hidden
-        />
+        {designDirection ? (
+          <NavChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:translate-y-0.5" />
+        ) : (
+          <>
+            <span className="w-full text-balance text-center">{t("scrollToPricingAria")}</span>
+            <ChevronDown
+              className="mx-auto h-4 w-4 shrink-0 text-[#0066ff] opacity-95 transition-transform duration-200 group-hover:translate-y-0.5"
+              strokeWidth={2}
+              aria-hidden
+            />
+          </>
+        )}
       </a>
     </>
   );
