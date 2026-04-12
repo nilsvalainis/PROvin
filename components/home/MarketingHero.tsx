@@ -72,8 +72,9 @@ export function MarketingHero({
   const silhouetteLensCenterGradId = `${silhouetteIdBase}-lens-center`;
   const silhouetteLensClipId = `${silhouetteIdBase}-lens-clip`;
   const silhouetteScanGradId = `${silhouetteIdBase}-scan-grad`;
+  /* Kātiņš: iepriekš L 102 102 → par 50 % īsāks (galapunkts puses ceļā uz oriģinālo galu) */
   const silhouetteScanPathD =
-    "M 70 44 A 26 26 0 1 1 18 44 A 26 26 0 1 1 70 44 M 64 64 L 102 102";
+    "M 70 44 A 26 26 0 1 1 18 44 A 26 26 0 1 1 70 44 M 64 64 L 83 83";
   const t = useTranslations("Hero");
   const rawPillars = t.raw("pillars");
   const pillars: HeroPillar[] = Array.isArray(rawPillars) ? (rawPillars as HeroPillar[]) : [];
@@ -334,7 +335,7 @@ export function MarketingHero({
                 vectorEffect="non-scaling-stroke"
               />
               <path
-                d="M 64 64 L 102 102"
+                d="M 64 64 L 83 83"
                 stroke={`url(#${silhouetteGradId})`}
                 strokeWidth="0.55"
                 strokeLinecap="round"
