@@ -92,21 +92,37 @@
     drop-shadow(0 0 32px rgb(200 210 230 / 0.069));
 }
 
-/* Kontūra: nepārtraukti zils „kometas” segments ar vieglu ēnu (pathLength=100). */
-.marketing-hero-orbit-silhouette__scan-path {
+/* Skenēšana: kā `provin-diagnostic-scan-line__pulse` — spilgts segments + plašāka „halo” slānis zemāk */
+.marketing-hero-orbit-silhouette__scan-path--glow {
   fill: none;
-  stroke: rgb(0 102 255 / 0.92);
-  stroke-width: 0.95;
+  stroke: rgb(0 102 255 / 0.38);
+  stroke-width: 2.05;
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
-  opacity: 1;
-  stroke-dasharray: 6 94;
+  stroke-dasharray: 14 86;
   stroke-dashoffset: 0;
+  opacity: 0.92;
   filter:
-    drop-shadow(0 0 2px rgb(0 102 255 / 0.75))
-    drop-shadow(0 1px 3px rgb(0 0 0 / 0.45))
-    drop-shadow(0 0 10px rgb(0 102 255 / 0.4));
+    drop-shadow(0 0 4px rgb(0 102 255 / 0.45))
+    drop-shadow(0 0 14px rgb(0 102 255 / 0.22));
+  animation: marketing-hero-orbit-silhouette-scan var(--provin-scan-loop-dur, calc((7s / 3) * 2)) linear infinite;
+}
+
+.marketing-hero-orbit-silhouette__scan-path:not(.marketing-hero-orbit-silhouette__scan-path--glow) {
+  fill: none;
+  /* stroke krāsu dod SVG linearGradient (MarketingHero) */
+  stroke-width: 1.05;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 14 86;
+  stroke-dashoffset: 0;
+  opacity: 1;
+  filter:
+    drop-shadow(0 0 2px rgb(0 102 255 / 0.9))
+    drop-shadow(0 0 8px rgb(0 102 255 / 0.42))
+    drop-shadow(0 1px 3px rgb(0 0 0 / 0.4));
   animation: marketing-hero-orbit-silhouette-scan var(--provin-scan-loop-dur, calc((7s / 3) * 2)) linear infinite;
 }
 
