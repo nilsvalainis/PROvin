@@ -10,7 +10,7 @@ export function OrbitRingsExplainer({ domId }: OrbitRingsExplainerProps) {
   return (
     <div
       id={domId}
-      className="demo-orbit-mini-lab scroll-mt-[calc(5.5rem+env(safe-area-inset-top,0px))] border-t border-white/10 px-4 py-6 sm:px-6 lg:scroll-mt-28"
+      className="demo-orbit-mini-lab scroll-mt-[max(0.35rem,env(safe-area-inset-top,0px)+2.75rem)] border-t border-white/10 px-4 py-6 sm:px-6 lg:scroll-mt-24"
     >
       <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">Orbitālie gredzeni</h2>
       <p className="mt-2 max-w-[42rem] text-[12px] leading-relaxed text-white/45">

@@ -14,7 +14,7 @@ export function DemoStudioNav() {
   return (
     <nav
       className="sticky z-[28] border-b border-white/[0.08] bg-[#030304]/92 py-2 backdrop-blur-md supports-[backdrop-filter]:bg-[#030304]/78"
-      style={{ top: "max(3.25rem, calc(env(safe-area-inset-top, 0px) + 2.75rem))" }}
+      style={{ top: "max(0.35rem, env(safe-area-inset-top, 0px))" }}
       aria-label="Demo studijas sadaļas"
     >
       <div className="mx-auto flex max-w-[min(72rem,calc(100vw-2rem))] flex-wrap items-center gap-2 px-4 sm:px-6">

@@ -37,14 +37,12 @@ export function HeaderClient({
   const pathname = usePathname() ?? "";
   const normalizedPath =
     pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
-  const isDemoVisualHub = normalizedPath === "/demo" || normalizedPath.startsWith("/demo/");
   /** Lapas ar `SiteSectionRail` (lg+): logo kreisā mala līdz ar „Sākums” uzraksta sākumu (sk. sliedes HTML). */
   const logoAlignWithRailSakums =
     normalizedPath === "/" ||
     normalizedPath === "" ||
     normalizedPath === "/pasutit" ||
-    normalizedPath === "/biezi-jautajumi" ||
-    isDemoVisualHub;
+    normalizedPath === "/biezi-jautajumi";
   const hash = useHash();
   const [open, setOpen] = useState(false);
 
@@ -66,7 +64,7 @@ export function HeaderClient({
   const isHome = pathname === "/" || pathname === "";
   const isFaq = pathname.includes("biezi-jautajumi");
   const isOrderSection = isHome && hash.includes("pasutit");
-  const isDarkHeaderSurface = isHome || isDemoVisualHub;
+  const isDarkHeaderSurface = isHome;
 
   const headerSurface = isDarkHeaderSurface
     ? "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)]"

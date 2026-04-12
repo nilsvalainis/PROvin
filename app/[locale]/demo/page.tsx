@@ -29,7 +29,7 @@ export default async function DemoStudioPage({ params }: PageProps) {
 
       <section
         id="demo-studio-intro"
-        className="scroll-mt-[calc(5.5rem+env(safe-area-inset-top,0px))] border-b border-white/[0.07] bg-[#040406] px-4 py-10 sm:px-6 sm:py-14 lg:scroll-mt-28"
+        className="scroll-mt-[max(0.35rem,env(safe-area-inset-top,0px)+2.75rem)] border-b border-white/[0.07] bg-[#040406] px-4 py-10 sm:px-6 sm:py-14 lg:scroll-mt-24"
       >
         <div className="mx-auto max-w-[min(72rem,calc(100vw-2rem))]">
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/40">PROVIN · vizuālā demo studija</p>

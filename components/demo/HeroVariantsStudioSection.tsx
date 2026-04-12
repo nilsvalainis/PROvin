@@ -88,8 +88,63 @@ function DemoSlab({ variant }: { variant: HeroVisualDemoVariant }) {
   );
 }
 
+/** Pilns hero demo ievads — tas pats saturs kā iepriekšējā `/demo/hero-variants` sticky galvā. */
+function HeroVariantsDemoIntroHeader({ sticky, scrollTopClass }: { sticky: boolean; scrollTopClass?: string }) {
+  const wrap = sticky ? "sticky top-0 z-[70]" : scrollTopClass ?? "scroll-mt-20";
+  return (
+    <header className={`${wrap} border-b border-white/10 bg-black/90 px-4 py-3 backdrop-blur-md sm:px-6`}>
+      <h1 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/90">Hero — orbit demo</h1>
+      <p className="mt-1 max-w-[60rem] text-[13px] leading-relaxed text-white/55">
+        Atsauce: <strong className="text-white/80">I</strong> (Orbital halos) un <strong className="text-white/80">J10</strong> (Pelēks · augšas gaisma). Tad{" "}
+        <strong className="text-white/80">S1–S20</strong> — tikai melni un sudraba toņi fona gradientos. S1–S6 ar dekoratīvu spidometra šautru. Visos orbitālajos
+        blokos, tostarp <strong className="text-white/80">S19</strong> un <strong className="text-white/80">S20</strong>, centrālie gredzeni pilnībā rotē ap savu
+        asi; statiskais salīdzinājums — tikai lapas apakšā, mazajā demonstrācijā.
+      </p>
+      <p className="mt-2 text-[11px] text-white/40">
+        Ceļš: <span className="font-mono text-white/55">/demo/hero-variants</span>
+        <span className="mx-2 text-white/25" aria-hidden>
+          ·
+        </span>
+        <Link
+          href="/demo/design-direction"
+          className="text-sky-400/90 underline decoration-sky-500/30 underline-offset-2 hover:text-sky-300"
+        >
+          Layout / stila virziens (demo)
+        </Link>
+      </p>
+      <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white/35">Tiešā saite uz rotējošajiem gredzeniem ·</p>
+      <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+        <a
+          href="#demo-hero-s19"
+          className="text-[11px] text-sky-400/90 underline decoration-sky-500/30 underline-offset-2 hover:text-sky-300"
+        >
+          S19 — Sānu sudrabs
+        </a>
+        <span className="text-white/20" aria-hidden>
+          ·
+        </span>
+        <a
+          href="#demo-hero-s20"
+          className="text-[11px] text-sky-400/90 underline decoration-sky-500/30 underline-offset-2 hover:text-sky-300"
+        >
+          S20 — pilna rotācija
+        </a>
+        <span className="text-white/20" aria-hidden>
+          ·
+        </span>
+        <a
+          href="#demo-silver-series"
+          className="text-[11px] text-white/45 underline decoration-white/20 underline-offset-2 hover:text-white/70"
+        >
+          S1–S20 josla
+        </a>
+      </p>
+    </header>
+  );
+}
+
 export type HeroVariantsStudioSectionProps = {
-  /** `standalone` — pilna „lapas” galva kā `/demo/hero-variants`; `embedded` — kompakts ievads `/demo` studijā. */
+  /** `standalone` — `/demo/hero-variants`; `embedded` — iekš `/demo` ar to pašu ievadu kā atsevišķajā lapā. */
   layout: "standalone" | "embedded";
 };
 
@@ -100,76 +155,11 @@ export function HeroVariantsStudioSection({ layout }: HeroVariantsStudioSectionP
   return (
     <>
       {embedded ? (
-        <div
-          id="demo-studio-hero"
-          className="scroll-mt-[calc(5.5rem+env(safe-area-inset-top,0px))] border-b border-white/10 bg-black/40 px-4 py-6 sm:px-6 lg:scroll-mt-28"
-        >
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Demo studija</p>
-          <h2 className="mt-2 text-lg font-semibold tracking-tight text-white/95 sm:text-xl">Hero — orbit varianti</h2>
-          <p className="mt-2 max-w-[60rem] text-[13px] leading-relaxed text-white/55">
-            Atsauce <strong className="text-white/80">I</strong> un <strong className="text-white/80">J10</strong>, tad{" "}
-            <strong className="text-white/80">S1–S20</strong> — melni/sudraba orbiti; S1–S6 ar spidometru.{" "}
-            <Link href="/demo/hero-variants" className="text-sky-400/90 underline decoration-sky-500/30 underline-offset-2 hover:text-sky-300">
-              Tikai šī sadaļa
-            </Link>{" "}
-            (pilns logs ar sticky aprakstu).
-          </p>
+        <div id="demo-studio-hero">
+          <HeroVariantsDemoIntroHeader sticky={false} scrollTopClass="scroll-mt-[max(0.35rem,env(safe-area-inset-top,0px)+2.75rem)] lg:scroll-mt-24" />
         </div>
       ) : (
-        <header className="sticky top-0 z-[70] border-b border-white/10 bg-black/90 px-4 py-3 backdrop-blur-md sm:px-6">
-          <h1 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/90">Hero — orbit demo</h1>
-          <p className="mt-1 max-w-[60rem] text-[13px] leading-relaxed text-white/55">
-            Atsauce: <strong className="text-white/80">I</strong> (Orbital halos) un <strong className="text-white/80">J10</strong> (Pelēks · augšas gaisma). Tad{" "}
-            <strong className="text-white/80">S1–S20</strong> — tikai melni un sudraba toņi fona gradientos. S1–S6 ar dekoratīvu spidometra šautru. Visos orbitālajos
-            blokos, tostarp <strong className="text-white/80">S19</strong> un <strong className="text-white/80">S20</strong>, centrālie gredzeni pilnībā rotē ap savu
-            asi; statiskais salīdzinājums — tikai lapas apakšā, mazajā demonstrācijā.
-          </p>
-          <p className="mt-2 text-[11px] text-white/40">
-            <Link href="/demo" className="text-sky-400/90 underline decoration-sky-500/30 underline-offset-2 hover:text-sky-300">
-              Apvienotā demo studija
-            </Link>
-            <span className="mx-2 text-white/25" aria-hidden>
-              ·
-            </span>
-            <span className="font-mono text-white/55">/demo/hero-variants</span>
-            <span className="mx-2 text-white/25" aria-hidden>
-              ·
-            </span>
-            <Link
-              href="/demo/design-direction"
-              className="text-sky-400/90 underline decoration-sky-500/30 underline-offset-2 hover:text-sky-300"
-            >
-              Layout demo
-            </Link>
-          </p>
-          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white/35">Tiešā saite uz rotējošajiem gredzeniem ·</p>
-          <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-            <a
-              href="#demo-hero-s19"
-              className="text-[11px] text-sky-400/90 underline decoration-sky-500/30 underline-offset-2 hover:text-sky-300"
-            >
-              S19 — Sānu sudrabs
-            </a>
-            <span className="text-white/20" aria-hidden>
-              ·
-            </span>
-            <a
-              href="#demo-hero-s20"
-              className="text-[11px] text-sky-400/90 underline decoration-sky-500/30 underline-offset-2 hover:text-sky-300"
-            >
-              S20 — pilna rotācija
-            </a>
-            <span className="text-white/20" aria-hidden>
-              ·
-            </span>
-            <a
-              href="#demo-silver-series"
-              className="text-[11px] text-white/45 underline decoration-white/20 underline-offset-2 hover:text-white/70"
-            >
-              S1–S20 josla
-            </a>
-          </p>
-        </header>
+        <HeroVariantsDemoIntroHeader sticky />
       )}
 
       <section aria-label="Orbitālie demo varianti">
