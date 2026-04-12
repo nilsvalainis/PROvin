@@ -178,10 +178,8 @@ export function SiteSectionRail() {
           <div className="w-0.5 shrink-0" />
           <div className="flex flex-row items-center gap-2.5 pb-3 pt-0.5">
             <span className="h-1 w-1 shrink-0 opacity-0" />
-            <span className="select-none text-[11px] font-semibold uppercase tracking-[0.2em] lg:text-[12px]">
-              <span className="text-[#000000] [text-shadow:0_0_6px_rgba(255,255,255,0.5),0_0_1px_rgba(255,255,255,0.35)]">
-                PRO
-              </span>
+            <span className="select-none text-[15.4px] font-semibold uppercase tracking-[0.2em] lg:text-[16.8px]">
+              <span className="text-white">PRO</span>
               <span className="text-[#0066ff]">VIN</span>
             </span>
           </div>
