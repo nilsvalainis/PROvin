@@ -68,7 +68,7 @@ export function HeaderClient({
   const navMuted = isHome ? "text-white/72" : "text-[#1d1d1f]";
 
   const orderBtnClass =
-    "provin-btn provin-btn--compact inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-5 text-[13px] font-bold text-white shadow-[0_0_18px_rgba(0,102,255,0.14)] ring-1 ring-white/10 sm:min-h-10 sm:px-6";
+    "provin-btn provin-btn--compact inline-flex min-h-10 shrink-0 items-center justify-center rounded-full px-[1.125rem] text-[12px] font-bold text-white shadow-[0_0_18px_rgba(0,102,255,0.14)] ring-1 ring-white/10 sm:min-h-9 sm:px-[1.35rem] sm:text-[12px]";
 
   const navLinkClass = (active: boolean) =>
     [
@@ -101,7 +101,7 @@ export function HeaderClient({
           </nav>
 
           <div className="flex items-center gap-2 md:hidden">
-            <Link href={orderHref} className={`${orderBtnClass} text-[12px] sm:text-[13px]`}>
+            <Link href={orderHref} className={`${orderBtnClass} text-[11px] sm:text-[12px]`}>
               {orderLabel}
             </Link>
             <button
@@ -158,7 +158,7 @@ export function HeaderClient({
                   onClick={close}
                   className={
                     isHome
-                      ? `${orderBtnClass} mt-2 w-full justify-center text-[12px] font-bold uppercase tracking-[0.06em]`
+                      ? `${orderBtnClass} mt-2 w-full justify-center text-[11px] font-bold uppercase tracking-[0.06em]`
                       : navLinkClass(isOrderSection)
                   }
                 >

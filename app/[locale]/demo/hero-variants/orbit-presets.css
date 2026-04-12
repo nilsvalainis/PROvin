@@ -2,8 +2,8 @@
  * Orbital halos — `marketing-hero-orbit-base` + `marketing-hero-orbit--{i|j10|s1…s20}`.
  * Melns + sudrabs: tikai `s1`–`s20` (un pārkrāsots `j10` fons / gredzeni).
  *
- * 3D: `perspective` uz skatuves, diski ar `rotateX` (slīpi riņķi), pleci ar pretēju `rotateY` —
- * dziļums mainās, riņķi krustojas (pāri / zem). Nav plakana `rotateZ` + ēna triks.
+ * 3D: skatuvei `perspective: 1200px`, `preserve-3d`; diski ar `rotateX` (monētas slīpums), pleci ar
+ * `rotateY` (0→360° ārējais, 0→−360° iekšējais). Dziļums — krustošanās.
  */
 
 .marketing-hero-orbit-base.marketing-hero-section {
@@ -12,14 +12,13 @@
   --orbit-h-outer: min(100vw, 48rem);
   --orbit-w-inner: min(78vw, 36rem);
   --orbit-h-inner: min(78vw, 36rem);
-  --orbit-border-outer: rgb(0 120 255 / 0.08);
-  --orbit-border-inner: rgb(255 255 255 / 0.06);
-  --orbit-opacity-outer: 0.7;
-  --orbit-opacity-inner: 0.7;
+  --orbit-border-outer: rgb(0 120 255 / 0.096);
+  --orbit-border-inner: rgb(255 255 255 / 0.072);
+  --orbit-opacity-outer: 0.84;
+  --orbit-opacity-inner: 0.84;
   --orbit-dur-a: 22s;
   --orbit-dur-b: 30s;
   --orbit-bg: radial-gradient(ellipse 100% 90% at 50% 100%, rgb(0 40 100 / 0.35), #020204 55%);
-  --orbit-perspective: clamp(28rem, 125vw, 96rem);
   --orbit-tilt-outer: 78deg;
   --orbit-tilt-inner: 84deg;
   --orbit-inner-roll: 13deg;
@@ -36,8 +35,8 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  perspective: var(--orbit-perspective);
-  -webkit-perspective: var(--orbit-perspective);
+  perspective: 1200px;
+  -webkit-perspective: 1200px;
   perspective-origin: 50% var(--orbit-y);
   -webkit-perspective-origin: 50% var(--orbit-y);
   transform-style: preserve-3d;
@@ -61,7 +60,7 @@
   top: calc(var(--orbit-y) - var(--orbit-h-outer) / 2);
   width: var(--orbit-w-outer);
   height: var(--orbit-h-outer);
-  animation: hero-orbit-arm-spin-b var(--orbit-dur-b) linear infinite;
+  animation: hero-orbit-arm-spin-a var(--orbit-dur-b) linear infinite;
 }
 
 .marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-arm--inner {
@@ -69,7 +68,7 @@
   top: calc(var(--orbit-y) - var(--orbit-h-inner) / 2);
   width: var(--orbit-w-inner);
   height: var(--orbit-h-inner);
-  animation: hero-orbit-arm-spin-a var(--orbit-dur-a) linear infinite;
+  animation: hero-orbit-arm-spin-b var(--orbit-dur-a) linear infinite;
 }
 
 .marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-disk {
@@ -103,8 +102,34 @@
   z-index: 1;
 }
 
-.marketing-hero-orbit-base .marketing-hero-title {
+.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-title {
+  font-size: clamp(1.115625rem, calc(4.675vw + 0.2975rem), 1.4875rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
   text-shadow: 0 0 48px rgb(0 100 255 / 0.15);
+}
+
+@media (min-width: 640px) {
+  .marketing-hero-orbit-base.marketing-hero-section .marketing-hero-title {
+    font-size: 34px;
+    line-height: 1.05;
+  }
+}
+
+@media (min-width: 1024px) {
+  .marketing-hero-orbit-base.marketing-hero-section .marketing-hero-title {
+    font-size: 41px;
+  }
+}
+
+/* Šaurā ekrānā — centrs zemāk, slīpums „plakāks”, lai projicētais elipse vairāk aptver H1. */
+@media (max-width: 639px) {
+  .marketing-hero-orbit-base.marketing-hero-section {
+    --orbit-y: 50%;
+    --orbit-tilt-outer: 66deg;
+    --orbit-tilt-inner: 72deg;
+    --orbit-inner-roll: 12deg;
+  }
 }
 
 @keyframes hero-orbit-arm-spin-a {
@@ -297,10 +322,10 @@
 }
 .marketing-hero-orbit-base.marketing-hero-orbit--s19.marketing-hero-section {
   --orbit-bg: radial-gradient(ellipse 60% 80% at 100% 50%, rgb(180 185 195 / 0.1), #000 55%), #000;
-  --orbit-border-outer: rgb(255 255 255 / 0.1);
-  --orbit-border-inner: rgb(185 190 200 / 0.11);
-  --orbit-opacity-outer: 0.78;
-  --orbit-opacity-inner: 0.82;
+  --orbit-border-outer: rgb(255 255 255 / 0.12);
+  --orbit-border-inner: rgb(185 190 200 / 0.132);
+  --orbit-opacity-outer: 0.936;
+  --orbit-opacity-inner: 0.984;
   --orbit-dur-a: 27s;
   --orbit-dur-b: 35s;
 }
@@ -347,8 +372,8 @@
 .demo-orbit-mini-stage {
   position: absolute;
   inset: 0;
-  perspective: 11rem;
-  -webkit-perspective: 11rem;
+  perspective: 1200px;
+  -webkit-perspective: 1200px;
   perspective-origin: 50% 50%;
   -webkit-perspective-origin: 50% 50%;
   transform-style: preserve-3d;
@@ -372,7 +397,7 @@
   top: calc(50% - 2.145rem);
   width: 4.29rem;
   height: 4.29rem;
-  animation: hero-orbit-arm-spin-b 18s linear infinite;
+  animation: hero-orbit-arm-spin-a 18s linear infinite;
 }
 
 .demo-orbit-mini-arm--inner {
@@ -380,7 +405,7 @@
   top: calc(50% - 1.43rem);
   width: 2.86rem;
   height: 2.86rem;
-  animation: hero-orbit-arm-spin-a 14s linear infinite;
+  animation: hero-orbit-arm-spin-b 14s linear infinite;
 }
 
 .demo-orbit-mini-disk {
