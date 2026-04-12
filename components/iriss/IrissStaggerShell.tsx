@@ -372,9 +372,7 @@ export function IrissStaggerShell({
   const gBy = h * 0.0038;
 
   return (
-    <div ref={sectionRef} className="relative isolate mt-12 sm:mt-14 md:mt-16">
-      <div className="home-iriss-stagger-atmosphere" aria-hidden />
-
+    <div ref={sectionRef} className="relative mt-12 sm:mt-14 md:mt-16">
       {dims && pathD ? (
         <svg
           className="pointer-events-none absolute inset-0 z-[1] h-full w-full overflow-visible"

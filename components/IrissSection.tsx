@@ -44,10 +44,9 @@ export async function IrissSection() {
         </div>
 
         {/* Bez klienta „stagger” / SVG — tas bija saistīts ar Application error; saturs paliek tas pats. */}
-        <div className="relative isolate mt-12 sm:mt-14 md:mt-16">
-          <div className="home-iriss-stagger-atmosphere" aria-hidden />
+        <div className="relative mt-12 sm:mt-14 md:mt-16">
           <div
-            className={`relative z-[2] flex flex-col ${irissStaggerBlockGapClass} pt-[clamp(0.75rem,2vw,1.25rem)] pb-[clamp(2.5rem,6vw,4.5rem)]`}
+            className={`relative flex flex-col ${irissStaggerBlockGapClass} pt-[clamp(0.75rem,2vw,1.25rem)] pb-[clamp(2.5rem,6vw,4.5rem)]`}
           >
             <div className="grid grid-cols-1 gap-y-5 lg:grid-cols-2 lg:gap-x-10 xl:gap-x-16">
               <div className="hidden min-h-[8rem] lg:block" aria-hidden />

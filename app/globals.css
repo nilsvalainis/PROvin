@@ -356,37 +356,6 @@ body {
   color: #f3f4f6;
 }
 
-/**
- * IRISS teksta zona — viena mīksta pelēka radāla gaisma, kas visās malās ļoti pakāpeniski kļūst par #050505;
- * maiga pulsācija caur brightness (bez grauda, maskām un tekstūras slāņiem).
- */
-.home-iriss-stagger-atmosphere {
-  pointer-events: none;
-  position: absolute;
-  inset: -4rem -14% -4.5rem -14%;
-  z-index: 0;
-  background: radial-gradient(
-    ellipse 118% 104% at 50% 46%,
-    rgb(198 206 218 / 0.38) 0%,
-    rgb(168 176 190 / 0.22) 14%,
-    rgb(128 136 150 / 0.12) 28%,
-    rgb(82 88 100 / 0.06) 42%,
-    rgb(38 40 46 / 0.03) 56%,
-    #0a0a0c 78%,
-    #050505 100%
-  );
-  animation: home-iriss-atmosphere-pulse 7.5s ease-in-out infinite alternate;
-}
-
-@keyframes home-iriss-atmosphere-pulse {
-  0% {
-    filter: brightness(0.94);
-  }
-  100% {
-    filter: brightness(1.07);
-  }
-}
-
 .home-footer-scrim {
   opacity: 1;
 }
@@ -435,11 +404,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .home-rail-label {
     transition: none;
-  }
-
-  .home-iriss-stagger-atmosphere {
-    animation: none;
-    filter: none;
   }
 
   [data-how-it-works-impulse="on"] .how-it-works-draw-ring {
