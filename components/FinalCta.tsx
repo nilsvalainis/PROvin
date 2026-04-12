@@ -16,10 +16,16 @@ function OrderSectionFallback() {
   );
 }
 
-export function FinalCta({ cancelled }: { cancelled: boolean }) {
+export function FinalCta({
+  cancelled,
+  orderEmbedded = false,
+}: {
+  cancelled: boolean;
+  orderEmbedded?: boolean;
+}) {
   return (
     <Suspense fallback={<OrderSectionFallback />}>
-      <OrderSection cancelled={cancelled} />
+      <OrderSection cancelled={cancelled} embedded={orderEmbedded} />
     </Suspense>
   );
 }

@@ -28,7 +28,6 @@ export function HowItWorksClient({
 }) {
   const dark = tone === "dark";
   const silver = variant === "silver";
-  const designDirShell = dark && !silver;
 
   const dash = silver ? "border-[#050505]/14" : dark ? "border-zinc-600" : "border-[#d1d5db]";
   const title = silver ? "text-[#050505]" : dark ? "text-white/90" : "text-[#1d1d1f]";
@@ -59,13 +58,7 @@ export function HowItWorksClient({
       className="home-body-ink relative z-10 overflow-x-hidden bg-transparent"
       data-how-it-works-impulse={impulseOn ? "on" : "off"}
     >
-      <div
-        className={
-          designDirShell
-            ? "demo-design-dir__shell relative pb-5 pt-3 sm:pb-4 sm:pt-3"
-            : "relative px-4 pb-5 pt-3 sm:px-6 sm:pb-4 sm:pt-3"
-        }
-      >
+      <div className="relative px-4 pb-5 pt-3 sm:px-6 sm:pb-4 sm:pt-3">
         <div className={homeMarketingPillarGridShellClass}>
           <div className={`relative ${homeMarketingPillarGridWidthClass}`}>
             <div className={`flex ${ICON_ROW_H} items-center justify-center`} aria-hidden>

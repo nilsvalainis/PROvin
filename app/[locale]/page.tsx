@@ -1,12 +1,14 @@
-import { Faq } from "@/components/Faq";
+import { getTranslations } from "next-intl/server";
+import { Footer } from "@/components/Footer";
 import { FinalCta } from "@/components/FinalCta";
 import { AutoWireframeBackground } from "@/components/home/AutoWireframeBackground";
+import { HomeFaqSection } from "@/components/home/HomeFaqSection";
+import { HomeMetaIntroSection } from "@/components/home/HomeMetaIntroSection";
 import { HomeScrollSurface } from "@/components/home/HomeScrollSurface";
+import { HowItWorksSignalGrid } from "@/components/home/HowItWorksSignalGrid";
 import { MarketingHero } from "@/components/home/MarketingHero";
-import { HowItWorks } from "@/components/HowItWorks";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
-import { Footer } from "@/components/Footer";
 
 export default async function HomePage({
   searchParams,
@@ -16,35 +18,53 @@ export default async function HomePage({
 }) {
   const sp = await searchParams;
   const cancelled = sp.atcelts === "1";
+  const tHero = await getTranslations("Hero");
 
   return (
     <HomeScrollSurface wireframe={<AutoWireframeBackground />}>
       <div className="relative z-10 min-w-0 bg-transparent">
         <MarketingHero homeOrbitPreset="s20" />
 
-        <div className="home-below-hero home-body-ink demo-design-dir min-w-0">
-          <div className="demo-design-dir__section demo-design-dir__section--band-a">
-            <HowItWorks tone="dark" />
-          </div>
+        <div className="demo-design-dir min-w-0 pb-24 pt-4 text-white sm:pt-8">
+          <HomeMetaIntroSection />
 
-          <div className="demo-design-dir__shell home-body-ink h-px bg-white/[0.07]" aria-hidden />
-
-          <div className="demo-design-dir__section demo-design-dir__section--band-b">
-            <div
-              id="site-content"
-              className="home-body-ink relative scroll-mt-14 border-0 bg-transparent"
-            >
-              <div className="relative z-10 bg-transparent pt-10 sm:pt-14 md:pt-16">
-                <FinalCta cancelled={cancelled} />
+          <div id="site-content" className="home-body-ink scroll-mt-14">
+            <section className="demo-design-dir__section demo-design-dir__section--band-b py-16 sm:py-20">
+              <div className="demo-design-dir__shell">
+                <p className="demo-design-dir__body max-w-[40rem]">{tHero("trustHeadline")}</p>
+                <div className="relative mt-10 rounded-2xl border border-white/[0.07] bg-black/25 py-12">
+                  <div className="demo-design-dir__axis-line opacity-100" aria-hidden />
+                </div>
+                <div className="mt-10">
+                  <FinalCta cancelled={cancelled} orderEmbedded />
+                </div>
               </div>
-              <PricingIncluded />
-              <IrissSection />
+            </section>
+
+            <section className="demo-design-dir__section demo-design-dir__section--band-c py-16 sm:py-20">
+              <HowItWorksSignalGrid />
+            </section>
+
+            <section className="demo-design-dir__section demo-design-dir__section--band-a py-16 sm:py-20">
+              <div className="demo-design-dir__shell">
+                <PricingIncluded embedded />
+              </div>
+            </section>
+
+            <section className="demo-design-dir__section demo-design-dir__section--band-b py-16 sm:py-20">
+              <div className="demo-design-dir__shell">
+                <IrissSection editorialColumn />
+              </div>
+            </section>
+          </div>
+
+          <HomeFaqSection />
+
+          <section className="demo-design-dir__section border-t border-white/[0.06] py-14">
+            <div className="demo-design-dir__shell">
+              <Footer />
             </div>
-          </div>
-          <div className="demo-design-dir__section demo-design-dir__section--band-c">
-            <Faq />
-          </div>
-          <Footer />
+          </section>
         </div>
       </div>
     </HomeScrollSurface>

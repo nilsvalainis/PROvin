@@ -7,7 +7,14 @@ import { NavChevronDown } from "@/components/NavChevron";
 import { OrderForm } from "@/components/OrderForm";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
 
-export function OrderSection({ cancelled }: { cancelled: boolean }) {
+export function OrderSection({
+  cancelled,
+  embedded = false,
+}: {
+  cancelled: boolean;
+  /** `true` — vecāks jau satur `demo-design-dir__shell` (sākumlapas design-direction izkārtojums). */
+  embedded?: boolean;
+}) {
   const t = useTranslations("Order");
   const searchParams = useSearchParams();
 
@@ -24,7 +31,13 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
       id={ORDER_SECTION_ID}
       className="relative z-10 scroll-mt-[calc(2.75rem+1px)] sm:scroll-mt-12"
     >
-      <div className="demo-design-dir__shell home-muted-foreground relative pb-4 pt-2 text-center sm:pb-5 sm:pt-2">
+      <div
+        className={
+          embedded
+            ? "home-muted-foreground relative pb-4 pt-2 text-center sm:pb-5 sm:pt-2"
+            : "demo-design-dir__shell home-muted-foreground relative pb-4 pt-2 text-center sm:pb-5 sm:pt-2"
+        }
+      >
         <div className="flex h-10 items-center justify-center sm:h-11">
           <a
             href="#order-form"

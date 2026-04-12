@@ -38,7 +38,7 @@ const iconClass = "h-8 w-8 shrink-0 text-[#0066ff] [stroke-width:1.5] sm:h-[32px
 const PRICING_CARD =
   "demo-design-dir__card flex min-h-0 gap-3 p-3.5 transition-colors sm:gap-3.5 sm:p-4";
 
-export async function PricingIncluded() {
+export async function PricingIncluded({ embedded = false }: { embedded?: boolean } = {}) {
   const t = await getTranslations("Pricing");
   const locale = await getLocale();
   const irissHref = irissAnchorHref(locale);
@@ -46,17 +46,19 @@ export async function PricingIncluded() {
   const raw = (messages as { Pricing?: { grid?: GridItem[] } }).Pricing?.grid;
   const grid = Array.isArray(raw) ? raw : [];
 
-  return (
-    <section
-      id="cena"
-      className="home-body-ink relative scroll-mt-16 bg-transparent pb-6 pt-4 sm:pb-8 sm:pt-5 md:pb-8 md:pt-6"
-    >
-      <div className="demo-design-dir__shell relative">
-        <h2 className={homeSectionTitleClass}>{t("workTitle")}</h2>
-        <ul className="grid list-none grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4">
-          {grid.map((item, i) => {
+  const inner = (
+    <>
+      <h2 className={embedded ? "demo-design-dir__title mt-2 max-w-[48rem]" : homeSectionTitleClass}>{t("workTitle")}</h2>
+      <ul
+        className={
+          embedded
+            ? "mt-10 grid list-none grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4"
+            : "grid list-none grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4"
+        }
+      >
+        {grid.map((item, i) => {
             const Icon = GRID_LUCIDE_ICONS[i] ?? Globe2;
-            const inner = (
+            const cellContent = (
               <div className="flex gap-3 sm:gap-3.5">
                 <div className="flex shrink-0 items-start pt-0.5">
                   <Icon className={iconClass} aria-hidden strokeWidth={1.5} />
@@ -84,7 +86,7 @@ export async function PricingIncluded() {
                     href={irissHref}
                     className={`${PRICING_CARD} min-h-[100%] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066ff]/50`}
                   >
-                    {inner}
+                    {cellContent}
                   </Link>
                 </li>
               );
@@ -92,15 +94,31 @@ export async function PricingIncluded() {
 
             return (
               <li key={item.title} className={`${PRICING_CARD}`}>
-                {inner}
+                {cellContent}
               </li>
             );
           })}
-        </ul>
-        <p className="mt-4 max-w-[65ch] text-left text-[10px] font-normal leading-snug text-white/[0.22] sm:text-[12px]">
-          {t("autoRecordsFootnote")}
-        </p>
+      </ul>
+      <p className="mt-4 max-w-[65ch] text-left text-[10px] font-normal leading-snug text-white/[0.22] sm:text-[12px]">
+        {t("autoRecordsFootnote")}
+      </p>
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div id="cena" className="home-body-ink scroll-mt-16">
+        {inner}
       </div>
+    );
+  }
+
+  return (
+    <section
+      id="cena"
+      className="home-body-ink relative scroll-mt-16 bg-transparent pb-6 pt-4 sm:pb-8 sm:pt-5 md:pb-8 md:pt-6"
+    >
+      <div className="demo-design-dir__shell relative">{inner}</div>
     </section>
   );
 }

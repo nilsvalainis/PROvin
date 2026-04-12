@@ -1,5 +1,9 @@
 import { getTranslations } from "next-intl/server";
-import { homeSectionTitleClass, irissSectionSubtitleClass, irissStaggerHeadingClass } from "@/lib/home-layout";
+import {
+  homeSectionTitleClass,
+  irissSectionSubtitleClass,
+  irissStaggerHeadingClass,
+} from "@/lib/home-layout";
 
 /** Saskaņots ar <Faq> atbilžu rindkopu: text-[14px] sm:text-[15px], leading 1.75. */
 const irissBodyProseClass =
@@ -8,12 +12,50 @@ const irissBodyProseClass =
 /** Vertikālā atstarpe starp stagger blokiem — tikai `gap`, lai nav dubultas padding joslas. */
 const irissStaggerBlockGapClass = "gap-y-[clamp(2.75rem,6.5vw,4.75rem)] sm:gap-y-[clamp(3rem,7vw,5.25rem)]";
 
-export async function IrissSection() {
+export async function IrissSection({ editorialColumn = false }: { editorialColumn?: boolean } = {}) {
   const t = await getTranslations("Iriss");
 
   const socialTiktok = process.env.NEXT_PUBLIC_IRISS_TIKTOK_URL?.trim();
   const socialYoutube = process.env.NEXT_PUBLIC_IRISS_YOUTUBE_URL?.trim();
   const socialInstagram = process.env.NEXT_PUBLIC_IRISS_INSTAGRAM_URL?.trim();
+
+  if (editorialColumn) {
+    return (
+      <div id="kas-ir-iriss" className="home-body-ink scroll-mt-16 pb-0 pt-10 sm:pt-16">
+        <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
+
+        <div className="text-center">
+          <h2 className="demo-design-dir__title mx-auto max-w-[40rem]">{t("title")}</h2>
+          <p className="demo-design-dir__body mx-auto mt-3 max-w-[36rem]">{t("subtitle")}</p>
+        </div>
+
+        <div className="mt-5 flex justify-center">
+          <IrissSocialIcons
+            tiktok={socialTiktok}
+            youtube={socialYoutube}
+            instagram={socialInstagram}
+            socialLabel={t("socialLabel")}
+            socialSoon={t("socialSoon")}
+          />
+        </div>
+
+        <div className="mx-auto mt-10 max-w-[36rem] space-y-10 text-left">
+          <div>
+            <h3 className="text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">{t("block1Heading")}</h3>
+            <p className="demo-design-dir__body mt-3">{t("block1Body")}</p>
+          </div>
+          <div>
+            <h3 className="text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">{t("block2Heading")}</h3>
+            <p className="demo-design-dir__body mt-3 whitespace-pre-line">{t("block2Body")}</p>
+          </div>
+          <div>
+            <h3 className="text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">{t("block3Heading")}</h3>
+            <p className="demo-design-dir__body mt-3">{t("block3Body")}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <section
