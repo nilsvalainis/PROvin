@@ -21,7 +21,7 @@ const pillarTitleClass =
 const pillarTitleClassC =
   "line-clamp-2 max-h-[2.4em] min-h-[2.4em] w-full max-w-[13.5rem] whitespace-pre-line text-[9px] font-semibold uppercase leading-[1.25] tracking-tight text-white/95 sm:text-[10px]";
 
-export type HeroVisualDemoVariant = "a" | "b" | "c" | "d";
+export type HeroVisualDemoVariant = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i";
 
 export type MarketingHeroProps = {
   /** Salīdzināšanas demo — `/demo/hero-variants`; noklusējumā nav. */
@@ -56,9 +56,9 @@ export function MarketingHero({ demoVariant, sectionDomId }: MarketingHeroProps 
       className="marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]"
     >
       <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
-        <span className={heroH1BlueKeywordClass}>{t("h1Vin")}</span>
+        <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Vin")}</span>
         <span className="text-white/95">{t("h1Un")}</span>
-        <span className={heroH1BlueKeywordClass}>{t("h1Sludinajuma")}</span>
+        <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Sludinajuma")}</span>
       </span>
       <span className="marketing-hero-title-line2 mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
     </h1>
