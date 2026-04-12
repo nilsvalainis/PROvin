@@ -191,12 +191,16 @@ export function MarketingHero({
         <div
           className={
             designDirection
-              ? "w-full"
+              ? `mx-auto min-w-0 ${homeMarketingPillarGridWidthClass}`
               : "marketing-hero-pillar-dock w-full rounded-2xl border border-white/[0.08] bg-[rgb(3_4_6/0.55)] px-2 py-3 shadow-[0_20px_52px_rgb(0_0_0/0.42)] backdrop-blur-md sm:px-3 sm:py-4 md:px-4"
           }
         >
           <div
-            className={`flex w-full flex-row flex-nowrap justify-between gap-2 sm:gap-4 md:gap-5 ${homeMarketingPillarGridWidthClass}`}
+            className={
+              designDirection
+                ? "flex w-full flex-row flex-nowrap justify-center gap-2 sm:gap-4 md:gap-5"
+                : `flex w-full flex-row flex-nowrap justify-between gap-2 sm:gap-4 md:gap-5 ${homeMarketingPillarGridWidthClass}`
+            }
           >
           {pillars.map((p, i) => {
             const Icon = PILLAR_ICONS[i] ?? FileText;
