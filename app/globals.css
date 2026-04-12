@@ -351,26 +351,6 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='nd'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23nd)' opacity='0.055'/%3E%3C/svg%3E");
 }
 
-/**
- * Zem Hero — joslas kā `/demo/design-direction` (band A/B/C); fona bāzi dod `HomeDepthBackground`.
- */
-.home-prod-band {
-  position: relative;
-  overflow-x: clip;
-}
-
-.home-prod-band-a {
-  background: radial-gradient(ellipse 120% 80% at 50% 0%, rgb(0 60 140 / 0.18), transparent 55%), #030304;
-}
-
-.home-prod-band-b {
-  background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(255 255 255 / 0.04), transparent 45%), #040406;
-}
-
-.home-prod-band-c {
-  background: linear-gradient(180deg, #040406 0%, #050508 40%, #030304 100%);
-}
-
 /** Atpakaļsaderība: vecā klase vairs nav obligāta, bet saglabā tīru #050505, ja kaut kur lietota. */
 .home-below-hero-cloud-layer {
   background-color: #050505;

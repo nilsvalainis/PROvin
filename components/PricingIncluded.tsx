@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { irissAnchorHref } from "@/lib/paths";
-import { homeContentMaxClass, homeSectionTitleClass } from "@/lib/home-layout";
+import { homeSectionTitleClass } from "@/lib/home-layout";
 
 type GridItem = {
   title: string;
@@ -35,8 +35,8 @@ const GRID_LUCIDE_ICONS: LucideIcon[] = [
 
 const iconClass = "h-8 w-8 shrink-0 text-[#0066ff] [stroke-width:1.5] sm:h-[32px] sm:w-[32px]";
 
-const GLASS =
-  "rounded-xl border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.03] to-white/[0.01] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-[32px]";
+const PRICING_CARD =
+  "demo-design-dir__card flex min-h-0 gap-3 p-3.5 transition-colors sm:gap-3.5 sm:p-4";
 
 export async function PricingIncluded() {
   const t = await getTranslations("Pricing");
@@ -49,9 +49,9 @@ export async function PricingIncluded() {
   return (
     <section
       id="cena"
-      className="home-body-ink relative scroll-mt-16 bg-transparent px-4 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-5 md:pb-8 md:pt-6"
+      className="home-body-ink relative scroll-mt-16 bg-transparent pb-6 pt-4 sm:pb-8 sm:pt-5 md:pb-8 md:pt-6"
     >
-      <div className={`relative ${homeContentMaxClass}`}>
+      <div className="demo-design-dir__shell relative">
         <h2 className={homeSectionTitleClass}>{t("workTitle")}</h2>
         <ul className="grid list-none grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4">
           {grid.map((item, i) => {
@@ -82,7 +82,7 @@ export async function PricingIncluded() {
                 <li key={item.title} className="min-w-0">
                   <Link
                     href={irissHref}
-                    className={`${GLASS} flex min-h-0 min-h-[100%] gap-3 p-3.5 text-left transition hover:border-white/[0.12] sm:gap-3.5 sm:p-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066ff]/50`}
+                    className={`${PRICING_CARD} min-h-[100%] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066ff]/50`}
                   >
                     {inner}
                   </Link>
@@ -91,7 +91,7 @@ export async function PricingIncluded() {
             }
 
             return (
-              <li key={item.title} className={`${GLASS} flex min-h-0 gap-3 p-3.5 sm:gap-3.5 sm:p-4`}>
+              <li key={item.title} className={`${PRICING_CARD}`}>
                 {inner}
               </li>
             );

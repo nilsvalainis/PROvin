@@ -1,5 +1,6 @@
 /**
- * Tikai `/demo/design-direction` — izolēts no pārējās lapas (root: `.demo-design-dir`).
+ * Layout / stila virziens — `.demo-design-dir` sakne.
+ * Lieto arī sākumlapas zem-Hero blokiem (`app/[locale]/page.tsx`), lai `__shell`, `__section`, `__card` utt. strādātu produkcijā.
  */
 .demo-design-dir {
   --dd-max: 72rem;
@@ -242,4 +243,22 @@
     opacity: 1;
     transform: translate(20%, -50%);
   }
+}
+
+/* BUJ (details) — tā pati virsmu / robežu valoda kā __faq-row */
+.demo-design-dir__faq-item {
+  border-radius: 0.75rem;
+  border: 1px solid var(--dd-line);
+  background: var(--dd-surface);
+  overflow: hidden;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.demo-design-dir__faq-item:hover {
+  border-color: rgb(0 102 255 / 0.22);
+  box-shadow:
+    0 0 0 1px rgb(0 102 255 / 0.08),
+    0 10px 28px rgb(0 0 0 / 0.28);
 }

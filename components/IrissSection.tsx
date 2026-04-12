@@ -1,10 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import {
-  homeContentMaxClass,
-  homeSectionTitleClass,
-  irissSectionSubtitleClass,
-  irissStaggerHeadingClass,
-} from "@/lib/home-layout";
+import { homeSectionTitleClass, irissSectionSubtitleClass, irissStaggerHeadingClass } from "@/lib/home-layout";
 
 /** Saskaņots ar <Faq> atbilžu rindkopu: text-[14px] sm:text-[15px], leading 1.75. */
 const irissBodyProseClass =
@@ -23,11 +18,11 @@ export async function IrissSection() {
   return (
     <section
       id="kas-ir-iriss"
-      className="home-body-ink relative scroll-mt-16 bg-transparent px-4 pb-0 pt-10 sm:px-6 sm:pt-16"
+      className="home-body-ink relative scroll-mt-16 bg-transparent pb-0 pt-10 sm:pt-16"
     >
       <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
 
-      <div className={`relative ${homeContentMaxClass}`}>
+      <div className="demo-design-dir__shell relative">
         <div className="text-center">
           <h2 className={homeSectionTitleClass}>{t("title")}</h2>
           <p className={`${irissSectionSubtitleClass} home-muted-foreground`}>{t("subtitle")}</p>

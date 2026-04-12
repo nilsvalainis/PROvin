@@ -7,7 +7,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
 import { Footer } from "@/components/Footer";
-import { homeContentMaxClass } from "@/lib/home-layout";
+import "./demo/design-direction/demo-design-direction.css";
 
 export default async function HomePage({
   searchParams,
@@ -23,17 +23,14 @@ export default async function HomePage({
       <div className="relative z-10 min-w-0 bg-transparent">
         <MarketingHero homeOrbitPreset="s20" />
 
-        <div className="home-below-hero home-body-ink">
-          <div className="home-prod-band home-prod-band-a">
+        <div className="home-below-hero home-body-ink demo-design-dir min-w-0">
+          <div className="demo-design-dir__section demo-design-dir__section--band-a">
             <HowItWorks tone="dark" />
           </div>
 
-          <div
-            className={`home-body-ink ${homeContentMaxClass} h-px bg-white/[0.07]`}
-            aria-hidden
-          />
+          <div className="demo-design-dir__shell home-body-ink h-px bg-white/[0.07]" aria-hidden />
 
-          <div className="home-prod-band home-prod-band-b">
+          <div className="demo-design-dir__section demo-design-dir__section--band-b">
             <div
               id="site-content"
               className="home-body-ink relative scroll-mt-14 border-0 bg-transparent"
@@ -45,7 +42,7 @@ export default async function HomePage({
               <IrissSection />
             </div>
           </div>
-          <div className="home-prod-band home-prod-band-c">
+          <div className="demo-design-dir__section demo-design-dir__section--band-c">
             <Faq />
           </div>
           <Footer />

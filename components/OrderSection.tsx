@@ -5,7 +5,6 @@ import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { NavChevronDown } from "@/components/NavChevron";
 import { OrderForm } from "@/components/OrderForm";
-import { homeContentMaxClass } from "@/lib/home-layout";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
 
 export function OrderSection({ cancelled }: { cancelled: boolean }) {
@@ -25,7 +24,7 @@ export function OrderSection({ cancelled }: { cancelled: boolean }) {
       id={ORDER_SECTION_ID}
       className="relative z-10 scroll-mt-[calc(2.75rem+1px)] sm:scroll-mt-12"
     >
-      <div className={`home-muted-foreground relative ${homeContentMaxClass} px-4 pb-4 pt-2 text-center sm:px-6 sm:pb-5 sm:pt-2`}>
+      <div className="demo-design-dir__shell home-muted-foreground relative pb-4 pt-2 text-center sm:pb-5 sm:pt-2">
         <div className="flex h-10 items-center justify-center sm:h-11">
           <a
             href="#order-form"
