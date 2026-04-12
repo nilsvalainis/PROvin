@@ -2,7 +2,8 @@
  * Orbital halos — `marketing-hero-orbit-base` + `marketing-hero-orbit--{i|j10|s1…s20}`.
  * Melns + sudrabs: tikai `s1`–`s20` (un pārkrāsots `j10` fons / gredzeni).
  *
- * Gredzeni: divi statiski `span` — abi sekcijas ģeometriskajā centrā (`50%` + `translate(-50%,-50%)`).
+ * Gredzeni (demo / salīdzinājums): divi statiski `span` — centrā (`50%` + `translate(-50%,-50%)`).
+ * Produkcija (`MarketingHero` bez `demoVariant`): plāns SVG palielināmais stikls — `.marketing-hero-orbit-silhouette`.
  */
 
 .marketing-hero-orbit-base.marketing-hero-section {
@@ -60,6 +61,49 @@
   border: 1px solid var(--orbit-border-inner);
   opacity: var(--orbit-opacity-inner);
   box-shadow: var(--orbit-ring-glow);
+}
+
+.marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-silhouette {
+  display: block;
+  box-sizing: border-box;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 0;
+  width: min(88vw, 46rem, 86dvh);
+  max-width: 46rem;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  opacity: 0.48;
+  animation: marketing-hero-orbit-silhouette-drift 52s ease-in-out infinite;
+}
+
+.marketing-hero-orbit-silhouette__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 0 28px rgb(200 210 230 / 0.055));
+}
+
+@keyframes marketing-hero-orbit-silhouette-drift {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate3d(0, 0, 0);
+  }
+  33% {
+    transform: translate(-50%, -50%) translate3d(5px, -4px, 0);
+  }
+  66% {
+    transform: translate(-50%, -50%) translate3d(-4px, 4px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-silhouette {
+    animation: none;
+  }
 }
 
 .marketing-hero-orbit-base.marketing-hero-section > div {

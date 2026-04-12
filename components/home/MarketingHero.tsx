@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -35,12 +36,12 @@ const pillarTitleClassC =
   "line-clamp-2 max-h-[2.4em] min-h-[2.4em] w-full max-w-[13.5rem] whitespace-pre-line text-[9px] font-semibold uppercase leading-[1.25] tracking-tight text-white/95 sm:text-[10px]";
 
 /** Produkcijas hero orbitālais izskats — neietekmē `id` (paliek `home-hero` sānu joslai). */
-export type MarketingHeroHomeOrbitPreset = "s19" | "s20";
+export type MarketingHeroHomeOrbitPreset = "s12" | "s19" | "s20";
 
 export type MarketingHeroProps = {
   /** Salīdzināšanas demo — `/demo/hero-variants`; noklusējumā nav. */
   demoVariant?: HeroVisualDemoVariant;
-  /** Produkcija: S19 / S20 (melns+sudrabs, pilna gredzenu rotācija); nedrīkst lietot kopā ar `demoVariant`. */
+  /** Produkcija: S12 / S19 / S20 (melns+sudrabs); nedrīkst lietot kopā ar `demoVariant`. */
   homeOrbitPreset?: MarketingHeroHomeOrbitPreset;
   /** Sākumlapa: tipogrāfija / CTA saskaņā ar `demo-design-dir` virzienu. */
   designDirection?: boolean;
@@ -67,6 +68,7 @@ export function MarketingHero({
   demoOrbitRings = "spin",
   designDirection = false,
 }: MarketingHeroProps = {}) {
+  const silhouetteGradId = useId().replace(/:/g, "");
   const t = useTranslations("Hero");
   const rawPillars = t.raw("pillars");
   const pillars: HeroPillar[] = Array.isArray(rawPillars) ? (rawPillars as HeroPillar[]) : [];
@@ -78,7 +80,9 @@ export function MarketingHero({
   const isB = dv === "b";
   const isOrbitDemo = Boolean(demoVariant && isOrbitFamilyVariant(demoVariant));
   const homeOrbitKey =
-    !demoVariant && (homeOrbitPreset === "s19" || homeOrbitPreset === "s20") ? homeOrbitPreset : undefined;
+    !demoVariant && (homeOrbitPreset === "s12" || homeOrbitPreset === "s19" || homeOrbitPreset === "s20")
+      ? homeOrbitPreset
+      : undefined;
   const orbitUiClass =
     isOrbitDemo
       ? `marketing-hero-orbit-base marketing-hero-orbit--${demoVariant}`
@@ -88,6 +92,7 @@ export function MarketingHero({
   const isOrbitVisual = Boolean(orbitUiClass);
   const dataHeroVariantForCss = demoVariant ?? homeOrbitKey;
   const orbitRingsMode = isOrbitVisual ? (demoVariant ? demoOrbitRings : "spin") : "spin";
+  const orbitGlassSilhouette = Boolean(isOrbitVisual && !demoVariant);
 
   const scanBlockOrbit = (
     <div className="marketing-hero-scan-wrap marketing-hero-scan-wrap--orbit mx-auto flex w-full max-w-[min(100%,17rem)] justify-center sm:max-w-[min(100%,18.5rem)]">
@@ -250,10 +255,47 @@ export function MarketingHero({
       aria-labelledby={titleId}
     >
       {isOrbitVisual ? (
-        <>
-          <span className="marketing-hero-orbit-ring-outer" aria-hidden />
-          <span className="marketing-hero-orbit-ring-inner" aria-hidden />
-        </>
+        orbitGlassSilhouette ? (
+          <span className="marketing-hero-orbit-silhouette" aria-hidden>
+            <svg className="marketing-hero-orbit-silhouette__svg" viewBox="0 0 112 112" xmlns="http://www.w3.org/2000/svg" fill="none">
+              <defs>
+                <linearGradient id={silhouetteGradId} x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="rgb(230 235 245)" stopOpacity="0.2" />
+                  <stop offset="52%" stopColor="rgb(150 160 180)" stopOpacity="0.09" />
+                  <stop offset="100%" stopColor="rgb(210 218 232)" stopOpacity="0.16" />
+                </linearGradient>
+              </defs>
+              <circle
+                cx="44"
+                cy="44"
+                r="26"
+                stroke={`url(#${silhouetteGradId})`}
+                strokeWidth="0.55"
+                vectorEffect="non-scaling-stroke"
+              />
+              <circle cx="44" cy="44" r="20.5" stroke="rgb(255 255 255 / 0.055)" strokeWidth="0.42" vectorEffect="non-scaling-stroke" />
+              <path
+                d="M 29 37 Q 44 31 59 37"
+                stroke="rgb(255 255 255 / 0.065)"
+                strokeWidth="0.4"
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+              />
+              <path
+                d="M 64 64 L 102 102"
+                stroke={`url(#${silhouetteGradId})`}
+                strokeWidth="0.55"
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+          </span>
+        ) : (
+          <>
+            <span className="marketing-hero-orbit-ring-outer" aria-hidden />
+            <span className="marketing-hero-orbit-ring-inner" aria-hidden />
+          </>
+        )
       ) : null}
       {demoSpeedometer ? <MarketingHeroSpeedometer tone={demoVariant?.startsWith("s") ? "mono" : "default"} /> : null}
 
