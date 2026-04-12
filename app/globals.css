@@ -270,47 +270,11 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='nd'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23nd)' opacity='0.055'/%3E%3C/svg%3E");
 }
 
-/* Mājas scroll-parallax „tech” atmosfēra — divi vāji radāļi (īstenība: `HomeTechBgParallax.tsx`) */
-.home-tech-bg-parallax {
-  contain: strict;
-}
-
-/* Mājas tumšais čaulas grauds — blīvs tehnisks „film grain” (pilnekrāna slānis) */
-.home-tech-grain {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='hg'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23hg)' opacity='0.2'/%3E%3C/svg%3E");
-  background-size: 130px 130px;
-  opacity: 0.08;
-}
-
 /**
- * Zem Hero — maigs „mākonis” virs #050505; augšā blīvi #050505, lai nav šķiras ar Hero.
+ * Zem Hero — vienots #050505; globālais Deep Focus (`HomeDepthBackground`) dod dziļumu.
  */
 .home-below-hero-cloud-layer {
   background-color: #050505;
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='bd'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23bd)' opacity='0.22'/%3E%3C/svg%3E"),
-    linear-gradient(
-      180deg,
-      #050505 0%,
-      #050505 8%,
-      color-mix(in oklab, #050505 88%, #101318) 18%,
-      color-mix(in oklab, #050505 72%, #12151a) 26%,
-      color-mix(in oklab, #050505 58%, #131820) 34%,
-      color-mix(in oklab, #050505 42%, #141820) 44%,
-      rgba(5, 5, 5, 0.35) 58%,
-      rgba(5, 5, 5, 0) 72%
-    ),
-    radial-gradient(ellipse 130% 95% at 22% 20%, oklch(0.26 0.018 266 / 0.09) 0%, oklch(0.2 0.014 266 / 0.03) 45%, transparent 68%),
-    radial-gradient(ellipse 118% 88% at 82% 14%, oklch(0.24 0.016 268 / 0.075) 0%, oklch(0.18 0.012 268 / 0.025) 48%, transparent 62%),
-    radial-gradient(ellipse 105% 78% at 50% 48%, oklch(0.22 0.012 265 / 0.055) 0%, transparent 58%);
-  background-size:
-    140px 140px,
-    auto,
-    auto,
-    auto,
-    auto;
-  background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat;
-  background-blend-mode: overlay, normal, normal, normal, normal;
 }
 
 /* Wireframe fons — lēna „elpošana” (tikai transform, GPU) */
