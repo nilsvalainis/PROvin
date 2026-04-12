@@ -29,7 +29,7 @@ export function MarketingHero() {
   return (
     <section
       id="home-hero"
-      className="home-content-atmosphere relative flex min-h-[100dvh] min-h-[100svh] flex-col justify-center overflow-x-hidden px-4 pb-[max(5.5rem,calc(3.5rem+env(safe-area-inset-bottom,0px)))] pt-[max(1.5rem,env(safe-area-inset-top,0px)+1.25rem)] text-white sm:px-8 sm:pb-20 sm:pt-[max(2.25rem,env(safe-area-inset-top,0px)+1.75rem)]"
+      className="home-content-atmosphere relative flex min-h-[100dvh] min-h-[100svh] flex-col justify-center overflow-hidden px-4 pb-[max(5.5rem,calc(3.5rem+env(safe-area-inset-bottom,0px)))] pt-[max(1.5rem,env(safe-area-inset-top,0px)+1.25rem)] text-white sm:px-8 sm:pb-20 sm:pt-[max(2.25rem,env(safe-area-inset-top,0px)+1.75rem)]"
       aria-labelledby="marketing-hero-title"
     >
       <div className="relative z-10 mx-auto flex w-full max-w-[min(100%,53.76rem)] flex-col items-center">

@@ -2,7 +2,7 @@ export function AutoWireframeBackground() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-[3] flex justify-center overflow-x-clip overflow-y-visible opacity-[0.34] blur-[2.5px] sm:opacity-[0.28] sm:blur-[3.5px]"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[3] flex justify-center overflow-x-clip overflow-y-visible opacity-[0.26] sm:opacity-[0.22]"
     >
       <svg
         className="w-[min(280vw,3400px)] max-w-none shrink-0 -translate-y-[4%] sm:-translate-y-[6%]"
