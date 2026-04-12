@@ -95,7 +95,7 @@
 /* Kontūra: nepārtraukti zils „kometas” segments ar vieglu ēnu (pathLength=100). */
 .marketing-hero-orbit-silhouette__scan-path {
   fill: none;
-  stroke: rgb(200 220 248 / 0.92);
+  stroke: rgb(0 102 255 / 0.92);
   stroke-width: 0.95;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -104,11 +104,32 @@
   stroke-dasharray: 6 94;
   stroke-dashoffset: 0;
   filter:
-    drop-shadow(0 0 2px rgb(0 102 255 / 0.55))
+    drop-shadow(0 0 2px rgb(0 102 255 / 0.75))
     drop-shadow(0 1px 3px rgb(0 0 0 / 0.45))
-    drop-shadow(0 0 10px rgb(0 102 255 / 0.24));
-  /* 3× ātrāk nekā iepriekšējie 7 s */
-  animation: marketing-hero-orbit-silhouette-scan var(--provin-scan-loop-dur, calc(7s / 3)) linear infinite;
+    drop-shadow(0 0 10px rgb(0 102 255 / 0.4));
+  animation: marketing-hero-orbit-silhouette-scan var(--provin-scan-loop-dur, calc((7s / 3) * 2)) linear infinite;
+}
+
+/* Virsraksts palielināmā stikla lēcas centrā (sākumlapas hero) */
+.marketing-hero-orbit-silhouette__lens-title {
+  position: absolute;
+  left: 39.25%;
+  top: 39.25%;
+  z-index: 1;
+  width: 24%;
+  max-width: 10.5rem;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  text-wrap: balance;
+  font-size: clamp(0.5rem, min(1.85vw, 2.1dvh), 0.8125rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  color: rgb(255 255 255 / 0.9);
+  text-shadow:
+    0 0 10px rgb(0 102 255 / 0.22),
+    0 1px 2px rgb(0 0 0 / 0.55);
+  pointer-events: none;
 }
 
 @keyframes marketing-hero-orbit-silhouette-scan {
@@ -459,11 +480,28 @@
   letter-spacing: 0.06em;
 }
 
+/* Tikai „AUDITS” zem lēcas — pilna virsraksta skala (nav otrās rindas 0.78em) */
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2--primary-solo {
+  margin-top: 0;
+  font-size: clamp(1.35rem, 4.8vw + 0.28rem, 2.05rem);
+  letter-spacing: -0.02em;
+}
+
 @media (min-width: 640px) {
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2 {
     margin-top: 0.3rem;
     font-size: 0.82em;
     letter-spacing: 0.08em;
+  }
+
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2--primary-solo {
+    font-size: clamp(1.55rem, 3.1vw + 0.42rem, 2.35rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2--primary-solo {
+    font-size: clamp(1.7rem, 2.2vw + 0.85rem, 2.55rem);
   }
 }
 

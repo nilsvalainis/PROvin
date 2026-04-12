@@ -97,6 +97,9 @@ export function MarketingHero({
   const orbitGlassSilhouette = Boolean(isOrbitVisual && !demoVariant);
   /** Sākumlapa: vertikālais centrs starp augšu un pīlāriem + tipogrāfijas skala (`data-hero-orbit-home`). */
   const orbitHomeCenterLayout = Boolean(designDirection && isOrbitVisual && !isB);
+  /** Sākumlapa ar palielināmo stiklu: apakšvirsrakstu nerāda; „VIN un sludinājuma analīze” ir lēcas tekstā. */
+  const homeGlassLensCopy = Boolean(designDirection && orbitGlassSilhouette && !demoVariant);
+  const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
 
   const heroTitleStack = (
     <div className="flex w-full flex-col items-center text-center">
@@ -108,22 +111,32 @@ export function MarketingHero({
             : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]`
         }
       >
-        <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
-          <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Vin")}</span>
-          <span className="text-white/95">{t("h1Un")}</span>
-          <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Sludinajuma")}</span>
-        </span>
-        <span className="marketing-hero-title-line2 mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
+        {homeGlassLensCopy ? (
+          <span className="marketing-hero-title-line2 marketing-hero-title-line2--primary-solo block text-white/95">
+            {t("h1Line2")}
+          </span>
+        ) : (
+          <>
+            <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
+              <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Vin")}</span>
+              <span className="text-white/95">{t("h1Un")}</span>
+              <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Sludinajuma")}</span>
+            </span>
+            <span className="marketing-hero-title-line2 mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
+          </>
+        )}
       </h1>
-      <p
-        className={
-          designDirection
-            ? `demo-design-dir__body mx-auto mt-3 max-w-[min(100%,36rem)] text-balance text-center${orbitHomeCenterLayout ? " marketing-hero__tagline" : ""}`
-            : `${homeHeroSubtitleClass} mx-auto mt-2.5 max-w-[min(100%,36rem)] text-balance text-[11px] font-medium uppercase leading-snug tracking-[0.14em] text-white/48 sm:mt-3 sm:text-[12px] sm:tracking-[0.16em]`
-        }
-      >
-        {t("h2")}
-      </p>
+      {!hideHeroSubtitle ? (
+        <p
+          className={
+            designDirection
+              ? `demo-design-dir__body mx-auto mt-3 max-w-[min(100%,36rem)] text-balance text-center${orbitHomeCenterLayout ? " marketing-hero__tagline" : ""}`
+              : `${homeHeroSubtitleClass} mx-auto mt-2.5 max-w-[min(100%,36rem)] text-balance text-[11px] font-medium uppercase leading-snug tracking-[0.14em] text-white/48 sm:mt-3 sm:text-[12px] sm:tracking-[0.16em]`
+          }
+        >
+          {t("h2")}
+        </p>
+      ) : null}
     </div>
   );
 
@@ -253,8 +266,8 @@ export function MarketingHero({
     >
       {isOrbitVisual ? (
         orbitGlassSilhouette ? (
-          <span className="marketing-hero-orbit-silhouette" aria-hidden>
-            <svg className="marketing-hero-orbit-silhouette__svg" viewBox="0 0 112 112" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <span className="marketing-hero-orbit-silhouette">
+            <svg className="marketing-hero-orbit-silhouette__svg" viewBox="0 0 112 112" xmlns="http://www.w3.org/2000/svg" fill="none" aria-hidden>
               <defs>
                 <clipPath id={silhouetteLensClipId}>
                   <circle cx="44" cy="44" r="25.4" />
@@ -312,6 +325,9 @@ export function MarketingHero({
                 pathLength="100"
               />
             </svg>
+            {homeGlassLensCopy ? (
+              <span className="marketing-hero-orbit-silhouette__lens-title">{t("lensTitle")}</span>
+            ) : null}
           </span>
         ) : (
           <>

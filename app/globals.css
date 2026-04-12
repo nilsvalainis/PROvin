@@ -27,8 +27,8 @@
 :root {
   /* Home: ink ramp 0…1 from scroll (full #050505 ink at 50% silver; HomeScrollSurface drives) */
   --home-surface-t: 0;
-  /* Zilā skrejošā impulsa periods — saskaņots ar hero palielināmo stiklu (nepārtraukta līnija) */
-  --provin-scan-loop-dur: calc(7s / 3);
+  /* Zilā skrejošā impulsa periods — 2× garāks nekā iepriekš (50 % lēnāks skrējiens) */
+  --provin-scan-loop-dur: calc((7s / 3) * 2);
 }
 
 html {
@@ -138,14 +138,14 @@ body {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(0 102 255 / 0.12) 34%,
-    rgb(230 236 248 / 0.36) 50%,
-    rgb(0 102 255 / 0.12) 66%,
+    rgb(0 102 255 / 0.2) 32%,
+    rgb(0 102 255 / 0.95) 50%,
+    rgb(0 102 255 / 0.2) 68%,
     transparent 100%
   );
   box-shadow:
-    0 0 4px 0 rgb(0 102 255 / 0.16),
-    0 0 10px 0 rgb(0 102 255 / 0.05);
+    0 0 5px 0 rgb(0 102 255 / 0.45),
+    0 0 14px 0 rgb(0 102 255 / 0.28);
   opacity: 1;
   animation: provin-diagnostic-scan-along-track var(--provin-scan-loop-dur) linear infinite;
 }
