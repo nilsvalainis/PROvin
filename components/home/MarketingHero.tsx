@@ -97,7 +97,7 @@ export function MarketingHero({
   const orbitGlassSilhouette = Boolean(isOrbitVisual && !demoVariant);
   /** Sākumlapa: vertikālais centrs starp augšu un pīlāriem + tipogrāfijas skala (`data-hero-orbit-home`). */
   const orbitHomeCenterLayout = Boolean(designDirection && isOrbitVisual && !isB);
-  /** Sākumlapa ar palielināmo stiklu: apakšvirsrakstu nerāda; „VIN un sludinājuma analīze” ir lēcas tekstā. */
+  /** Sākumlapa ar palielināmo stiklu: apakšvirsrakstu nerāda; virsraksts lēcas tekstā (`lensLine1` + `lensLine2`). */
   const homeGlassLensCopy = Boolean(designDirection && orbitGlassSilhouette && !demoVariant);
   const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
 
@@ -115,7 +115,7 @@ export function MarketingHero({
       >
         {homeGlassLensCopy ? (
           <>
-            {t("lensTitle")} — {t("h1Line2")}
+            {t("lensLine1")} {t("lensLine2")}
           </>
         ) : (
           <>
@@ -329,8 +329,8 @@ export function MarketingHero({
             </svg>
             {homeGlassLensCopy ? (
               <span className="marketing-hero-orbit-silhouette__lens-stack">
-                <span className="marketing-hero-orbit-silhouette__lens-line1">{t("lensTitle")}</span>
-                <span className="marketing-hero-orbit-silhouette__lens-line2">{t("h1Line2")}</span>
+                <span className="marketing-hero-orbit-silhouette__lens-line1">{t("lensLine1")}</span>
+                <span className="marketing-hero-orbit-silhouette__lens-line2">{t("lensLine2")}</span>
               </span>
             ) : null}
           </span>

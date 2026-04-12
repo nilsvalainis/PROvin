@@ -126,14 +126,15 @@
   transform: translate(-50%, -50%);
   text-align: center;
   text-transform: uppercase;
+  /* Bāzes izmērs pirmajai rindai; otrā rinda = 1.3em (+30 %) */
+  font-size: clamp(0.54rem, min(1.86vw, 2.1dvh), 0.865rem);
   pointer-events: none;
 }
 
 .marketing-hero-orbit-silhouette__lens-line1 {
   max-width: 100%;
   text-wrap: balance;
-  /* +20 % pret iepriekšējo skalu */
-  font-size: clamp(0.54rem, min(1.86vw, 2.1dvh), 0.865rem);
+  font-size: 1em;
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1.18;
@@ -146,7 +147,7 @@
 .marketing-hero-orbit-silhouette__lens-line2 {
   max-width: 100%;
   text-wrap: balance;
-  font-size: clamp(0.744rem, min(2.82vw, 3.18dvh), 1.2rem);
+  font-size: 1.3em;
   font-weight: 700;
   letter-spacing: 0.08em;
   line-height: 1.05;
