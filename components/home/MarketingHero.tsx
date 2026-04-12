@@ -33,7 +33,7 @@ export function MarketingHero() {
     >
       <div className="relative z-10 mx-auto flex w-full max-w-[min(100%,53.76rem)] flex-col items-center">
         <header className="relative z-20 flex w-full shrink-0 flex-col items-center gap-5 text-center sm:gap-7 md:gap-8">
-          <p className={`${approvedByIrissSignatureHeroClass} text-white/70`} aria-label={t("approved")}>
+          <p className={`${approvedByIrissSignatureHeroClass} text-white/65`} aria-label={t("approved")}>
             {t("approved")}
           </p>
 
