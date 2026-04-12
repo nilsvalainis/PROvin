@@ -2,8 +2,9 @@
 
 import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
+import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { validateOrderFields } from "@/lib/order-field-validation";
 
 const labelHero =
@@ -12,9 +13,9 @@ const labelHero =
 const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
 
-/** Dark cockpit: tikai apakšējā sudraba līnija (bez box-shadow — novērš malu zilo/balto artefaktus) */
-const inputHero =
-  "relative z-10 mt-2 box-border min-h-11 w-full appearance-none rounded-none border-x-0 border-t-0 border-b border-solid border-[#c0c0c0] bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#e5e7eb] shadow-none outline-none ring-0 transition-[border-color,color] placeholder:text-[#e5e7eb]/38 focus:border-[#0066ff] focus:shadow-none focus:outline-none focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
+/** Dark cockpit: laukam bez apakšējās robežas — līniju un zilo impulsu dod `HeroFieldScanLine`. */
+const inputHeroNoBottom =
+  "relative z-10 box-border min-h-11 w-full appearance-none rounded-none border-0 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#e5e7eb] shadow-none outline-none ring-0 transition-[color,box-shadow] placeholder:text-[#e5e7eb]/38 focus:shadow-none focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-0 sm:min-h-0 sm:text-[16px]";
 
 const inputDefault =
   "mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505]/75 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition-[border-color] placeholder:text-[#86868b] focus:border-provin-accent focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
@@ -23,6 +24,15 @@ type OrderFormProps = {
   className?: string;
   variant?: "default" | "compact" | "hero";
 };
+
+function HeroFieldScanLine({ children }: { children: ReactNode }) {
+  return (
+    <div className="order-form-hero-field mt-2">
+      {children}
+      <DiagnosticScanLine variant="rail" className="order-form-hero-scan w-full" />
+    </div>
+  );
+}
 
 export function OrderForm({ className, variant = "default" }: OrderFormProps) {
   const t = useTranslations("Order");
@@ -35,7 +45,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
   const compact = variant === "compact";
 
   const labelClass = hero ? labelHero : labelDefault;
-  const inputBase = hero ? inputHero : inputDefault;
+  const inputBase = hero ? inputHeroNoBottom : inputDefault;
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -119,45 +129,87 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               {t("optional")}
             </span>
           </label>
-          <input
-            id="order-name"
-            name="name"
-            type="text"
-            autoComplete="name"
-            maxLength={120}
-            className={inputBase}
-            placeholder={t("namePlaceholder")}
-          />
+          {hero ? (
+            <HeroFieldScanLine>
+              <input
+                id="order-name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                maxLength={120}
+                className={inputBase}
+                placeholder={t("namePlaceholder")}
+              />
+            </HeroFieldScanLine>
+          ) : (
+            <input
+              id="order-name"
+              name="name"
+              type="text"
+              autoComplete="name"
+              maxLength={120}
+              className={inputBase}
+              placeholder={t("namePlaceholder")}
+            />
+          )}
         </div>
         <div className="sm:col-span-2 sm:grid sm:grid-cols-2 sm:gap-4">
           <div>
             <label htmlFor="order-email" className={labelClass}>
               {t("emailLabel")} <span className={reqStarClass}>*</span>
             </label>
-            <input
-              id="order-email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              className={inputBase}
-              placeholder={t("emailPlaceholder")}
-            />
+            {hero ? (
+              <HeroFieldScanLine>
+                <input
+                  id="order-email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  className={inputBase}
+                  placeholder={t("emailPlaceholder")}
+                />
+              </HeroFieldScanLine>
+            ) : (
+              <input
+                id="order-email"
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                className={inputBase}
+                placeholder={t("emailPlaceholder")}
+              />
+            )}
             <p className={hintClass}>{t("emailHint")}</p>
           </div>
           <div>
             <label htmlFor="order-phone" className={labelClass}>
               {t("phoneLabel")} <span className={reqStarClass}>*</span>
             </label>
-            <input
-              id="order-phone"
-              name="phone"
-              type="tel"
-              required
-              autoComplete="tel"
-              className={inputBase}
-              placeholder={t("phonePlaceholder")}
-            />
+            {hero ? (
+              <HeroFieldScanLine>
+                <input
+                  id="order-phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  autoComplete="tel"
+                  className={inputBase}
+                  placeholder={t("phonePlaceholder")}
+                />
+              </HeroFieldScanLine>
+            ) : (
+              <input
+                id="order-phone"
+                name="phone"
+                type="tel"
+                required
+                autoComplete="tel"
+                className={inputBase}
+                placeholder={t("phonePlaceholder")}
+              />
+            )}
             <p className={hintClass}>{t("phoneHint")}</p>
           </div>
         </div>
@@ -166,20 +218,22 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             {t("vinLabel")} <span className={reqStarClass}>*</span>
           </label>
           {hero ? (
-            <input
-              id="order-vin"
-              name="vin"
-              type="text"
-              required
-              maxLength={17}
-              spellCheck={false}
-              className={`${inputBase} w-full font-mono uppercase tracking-wide`}
-              placeholder={t("vinPlaceholderHero")}
-              onChange={(e) => {
-                const el = e.target;
-                el.value = el.value.toUpperCase().slice(0, 17);
-              }}
-            />
+            <HeroFieldScanLine>
+              <input
+                id="order-vin"
+                name="vin"
+                type="text"
+                required
+                maxLength={17}
+                spellCheck={false}
+                className={`${inputBase} w-full font-mono uppercase tracking-wide`}
+                placeholder={t("vinPlaceholderHero")}
+                onChange={(e) => {
+                  const el = e.target;
+                  el.value = el.value.toUpperCase().slice(0, 17);
+                }}
+              />
+            </HeroFieldScanLine>
           ) : (
             <input
               id="order-vin"
@@ -204,14 +258,27 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
           <label htmlFor="order-url" className={labelClass}>
             {t("listingLabel")} <span className={reqStarClass}>*</span>
           </label>
-          <input
-            id="order-url"
-            name="listingUrl"
-            type="url"
-            required
-            className={inputBase}
-            placeholder={t("urlPlaceholder")}
-          />
+          {hero ? (
+            <HeroFieldScanLine>
+              <input
+                id="order-url"
+                name="listingUrl"
+                type="url"
+                required
+                className={inputBase}
+                placeholder={t("urlPlaceholder")}
+              />
+            </HeroFieldScanLine>
+          ) : (
+            <input
+              id="order-url"
+              name="listingUrl"
+              type="url"
+              required
+              className={inputBase}
+              placeholder={t("urlPlaceholder")}
+            />
+          )}
           <p className={hintClass}>{t("listingHint")}</p>
         </div>
         <div className="sm:col-span-2">
@@ -221,14 +288,27 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               {t("optional")}
             </span>
           </label>
-          <textarea
-            id="order-notes"
-            name="notes"
-            rows={notesRows}
-            maxLength={500}
-            className={`${inputBase} min-h-[88px] resize-y sm:min-h-[72px]`}
-            placeholder={t("notesPlaceholder")}
-          />
+          {hero ? (
+            <HeroFieldScanLine>
+              <textarea
+                id="order-notes"
+                name="notes"
+                rows={notesRows}
+                maxLength={500}
+                className={`${inputBase} min-h-[88px] resize-y sm:min-h-[72px]`}
+                placeholder={t("notesPlaceholder")}
+              />
+            </HeroFieldScanLine>
+          ) : (
+            <textarea
+              id="order-notes"
+              name="notes"
+              rows={notesRows}
+              maxLength={500}
+              className={`${inputBase} min-h-[88px] resize-y sm:min-h-[72px]`}
+              placeholder={t("notesPlaceholder")}
+            />
+          )}
         </div>
       </div>
 
