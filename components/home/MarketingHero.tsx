@@ -2,6 +2,8 @@
 
 import { ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
+import { ApprovedByIrissReveal } from "@/components/home/ApprovedByIrissReveal";
 import {
   approvedByIrissSignatureHeroClass,
   heroH1BlueKeywordClass,
@@ -34,10 +36,13 @@ export function MarketingHero() {
     >
       <div className="min-h-0" aria-hidden />
 
-      <header className="mx-auto flex w-full max-w-[min(100%,53.76rem)] min-h-0 flex-col items-center justify-center gap-5 self-center text-center sm:gap-6 md:gap-7">
-        <p className={approvedByIrissSignatureHeroClass} aria-label={t("approved")}>
-          {t("approved")}
-        </p>
+      <header className="mx-auto flex w-full max-w-[min(100%,53.76rem)] min-h-0 flex-col items-center justify-center gap-4 self-center text-center sm:gap-5 md:gap-6">
+        <ApprovedByIrissReveal text={t("approved")} className={approvedByIrissSignatureHeroClass} />
+
+        <DiagnosticScanLine
+          variant="rail"
+          className="mx-auto w-full max-w-[min(100%,22rem)] pt-0.5 sm:max-w-[min(100%,26rem)]"
+        />
 
         <h1
           id="marketing-hero-title"

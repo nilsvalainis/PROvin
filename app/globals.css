@@ -179,6 +179,112 @@ body {
   }
 }
 
+/* Hero skenēšanas līnija — kā kreisā rail: ļoti viegls tracks + maigs zils impulss */
+.provin-diagnostic-scan-line--rail .provin-diagnostic-scan-line__track {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.03) 10%,
+    rgb(255 255 255 / 0.07) 50%,
+    rgb(255 255 255 / 0.03) 90%,
+    transparent 100%
+  );
+}
+
+.provin-diagnostic-scan-line--rail .provin-diagnostic-scan-line__pulse {
+  width: clamp(1.5rem, 9vw, 2.35rem);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(0 102 255 / 0.12) 34%,
+    rgb(230 236 248 / 0.36) 50%,
+    rgb(0 102 255 / 0.12) 66%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 4px 0 rgb(0 102 255 / 0.16),
+    0 0 10px 0 rgb(0 102 255 / 0.05);
+  animation-duration: 4.25s;
+}
+
+/* Hero — „APPROVED BY IRISS” burtu ierašanās + shine */
+.hero-approved-reveal {
+  position: relative;
+  display: inline-block;
+}
+
+.hero-approved-reveal__shine {
+  position: absolute;
+  inset: -4px -18%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hero-approved-reveal__shine-sweep {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 48%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.07) 36%,
+    rgb(255 255 255 / 0.45) 50%,
+    rgb(255 255 255 / 0.09) 64%,
+    transparent 100%
+  );
+  transform: translateX(-135%);
+  animation: hero-approved-shine-sweep 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--hero-approved-shine-delay, 0.75s);
+}
+
+.hero-approved-char {
+  display: inline-block;
+  opacity: 0;
+  animation: hero-approved-char-in 0.48s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes hero-approved-char-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-0.38em);
+    filter: blur(3px);
+  }
+  60% {
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    text-shadow:
+      0 0 14px rgb(188 198 212 / 0.35),
+      0 1px 0 rgb(0 0 0 / 0.55);
+  }
+}
+
+@keyframes hero-approved-shine-sweep {
+  to {
+    transform: translateX(240%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-approved-char {
+    animation: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    text-shadow: inherit;
+  }
+
+  .hero-approved-reveal__shine-sweep {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
+
 /* Pieskāriena ierīcēs — Apple / Android vadlīnijas (~44px) galvenajām darbībām */
 @media (pointer: coarse) {
   .provin-btn:not(.provin-btn--compact) {
