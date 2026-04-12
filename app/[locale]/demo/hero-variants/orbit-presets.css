@@ -2,8 +2,9 @@
  * Orbital halos — `marketing-hero-orbit-base` + `marketing-hero-orbit--{i|j10|s1…s20}`.
  * Melns + sudrabs: tikai `s1`–`s20` (un pārkrāsots `j10` fons / gredzeni).
  *
- * Gredzenu rotācija: tikai `transform: rotate(...)` keyframes (bez atsevišķā `rotate:`).
- * `span` ar `display: block`, lai Safari / mobilie pārlūki uztver transformējamu kasti.
+ * Rotācija: `transform` keyframes (`translate3d(0,0,0)` + `rotate`) — WebKit slānis + globālais
+ * `* { backface-visibility: hidden }` ne „iesaldē” gredzenu. Vieglas asimetriskas `box-shadow`,
+ * jo perfekti apaļš vienmērīgs `border` rotējot vizuāli nemainās (simetrija).
  */
 
 .marketing-hero-orbit-base.marketing-hero-section {
@@ -36,6 +37,8 @@
   pointer-events: none;
   transform-origin: 50% 50%;
   will-change: transform;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
 }
 
 .marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-outer {
@@ -45,6 +48,8 @@
   height: var(--orbit-h-outer);
   border: 1px solid var(--orbit-border-outer);
   opacity: var(--orbit-opacity-outer);
+  /* Asimetrisks highlights — rotācija kļūst redzama (apaļš vienmērīgs rings citādi „nekustas”). */
+  box-shadow: 14px -12px 28px -16px rgb(255 255 255 / 0.14);
   animation: hero-orbit-spin-b var(--orbit-dur-b) linear infinite;
 }
 
@@ -55,6 +60,7 @@
   height: var(--orbit-h-inner);
   border: 1px solid var(--orbit-border-inner);
   opacity: var(--orbit-opacity-inner);
+  box-shadow: -12px 14px 24px -14px rgb(255 255 255 / 0.1);
   animation: hero-orbit-spin-a var(--orbit-dur-a) linear infinite;
 }
 
@@ -70,26 +76,26 @@
 
 @keyframes hero-orbit-spin-a {
   from {
-    transform: rotate(0deg);
+    transform: translate3d(0, 0, 0) rotate(0deg);
   }
   to {
-    transform: rotate(360deg);
+    transform: translate3d(0, 0, 0) rotate(360deg);
   }
 }
 
 @keyframes hero-orbit-spin-b {
   from {
-    transform: rotate(0deg);
+    transform: translate3d(0, 0, 0) rotate(0deg);
   }
   to {
-    transform: rotate(-360deg);
+    transform: translate3d(0, 0, 0) rotate(-360deg);
   }
 }
 
 .marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"] > .marketing-hero-orbit-ring-outer,
 .marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"] > .marketing-hero-orbit-ring-inner {
   animation: none !important;
-  transform: rotate(0deg);
+  transform: translate3d(0, 0, 0) rotate(0deg);
   will-change: auto;
 }
 
@@ -315,6 +321,8 @@
   border: 1px solid rgb(255 255 255 / 0.12);
   transform-origin: 50% 50%;
   pointer-events: none;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
 }
 
 /* 5.5rem × 0.78 / 0.52 — fiksēti rem, lai ar transform: rotate() keyframes nesaplūstu. */
@@ -323,6 +331,7 @@
   height: 4.29rem;
   left: calc(50% - 2.145rem);
   top: calc(50% - 2.145rem);
+  box-shadow: 6px -4px 12px -6px rgb(255 255 255 / 0.2);
   animation: hero-orbit-spin-b 18s linear infinite;
 }
 
@@ -332,13 +341,14 @@
   left: calc(50% - 1.43rem);
   top: calc(50% - 1.43rem);
   border-color: rgb(160 165 175 / 0.18);
+  box-shadow: -5px 5px 10px -5px rgb(255 255 255 / 0.15);
   animation: hero-orbit-spin-a 14s linear infinite;
 }
 
 .demo-orbit-mini--static::before,
 .demo-orbit-mini--static::after {
   animation: none !important;
-  transform: rotate(0deg);
+  transform: translate3d(0, 0, 0) rotate(0deg);
 }
 
 /* Bez prefers-reduced-motion apstādināšanas — dekoratīvie gredzeni mājas lapā vienmēr griežas. */
