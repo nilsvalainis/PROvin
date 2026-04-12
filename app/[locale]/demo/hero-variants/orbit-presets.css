@@ -1,0 +1,382 @@
+/**
+ * Orbital halos — bāze (I + J1–J20). Mainīgie uz sekcijas ar klasēm
+ * `marketing-hero-orbit-base` + `marketing-hero-orbit--{i|jN}`.
+ */
+
+.marketing-hero-orbit-base.marketing-hero-section {
+  --orbit-y: 42%;
+  --orbit-w-outer: min(100vw, 48rem);
+  --orbit-h-outer: min(100vw, 48rem);
+  --orbit-w-inner: min(78vw, 36rem);
+  --orbit-h-inner: min(78vw, 36rem);
+  --orbit-border-outer: rgb(0 120 255 / 0.08);
+  --orbit-border-inner: rgb(255 255 255 / 0.06);
+  --orbit-opacity-outer: 0.7;
+  --orbit-opacity-inner: 0.7;
+  --orbit-dur-a: 22s;
+  --orbit-dur-b: 30s;
+  --orbit-bg: radial-gradient(ellipse 100% 90% at 50% 100%, rgb(0 40 100 / 0.35), #020204 55%);
+
+  position: relative;
+  isolation: isolate;
+  background: var(--orbit-bg);
+}
+
+.marketing-hero-orbit-base.marketing-hero-section::before,
+.marketing-hero-orbit-base.marketing-hero-section::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: var(--orbit-y);
+  z-index: 0;
+  width: var(--orbit-w-outer);
+  height: var(--orbit-h-outer);
+  border-radius: 50%;
+  pointer-events: none;
+  border: 1px solid var(--orbit-border-outer);
+  opacity: var(--orbit-opacity-outer);
+  transform: translate(-50%, -50%);
+}
+
+.marketing-hero-orbit-base.marketing-hero-section::after {
+  width: var(--orbit-w-inner);
+  height: var(--orbit-h-inner);
+  border-color: var(--orbit-border-inner);
+  opacity: var(--orbit-opacity-inner);
+  animation: hero-orbit-spin-a var(--orbit-dur-a) linear infinite;
+}
+
+.marketing-hero-orbit-base.marketing-hero-section::before {
+  animation: hero-orbit-spin-b var(--orbit-dur-b) linear infinite;
+}
+
+.marketing-hero-orbit-base.marketing-hero-section > div,
+.marketing-hero-orbit-base.marketing-hero-section > header {
+  position: relative;
+  z-index: 1;
+}
+
+.marketing-hero-orbit-base .marketing-hero-title {
+  text-shadow: 0 0 48px rgb(0 100 255 / 0.15);
+}
+
+@keyframes hero-orbit-spin-a {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes hero-orbit-spin-b {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
+}
+
+/* —— J1–J5: melns / aukstā zila —— */
+.marketing-hero-orbit-base.marketing-hero-orbit--j1.marketing-hero-section {
+  --orbit-bg: radial-gradient(ellipse 115% 100% at 50% 110%, rgb(0 70 160 / 0.55), #000 52%), #000;
+  --orbit-border-outer: rgb(0 210 255 / 0.14);
+  --orbit-border-inner: rgb(160 230 255 / 0.1);
+  --orbit-dur-a: 28s;
+  --orbit-dur-b: 38s;
+  --orbit-y: 40%;
+}
+.marketing-hero-orbit--j1 .marketing-hero-title {
+  letter-spacing: -0.045em !important;
+}
+.marketing-hero-orbit--j1 .marketing-hero-title-line2 {
+  opacity: 0.7;
+}
+.marketing-hero-orbit--j1 .marketing-hero-pillar-icon {
+  color: rgb(100 200 255);
+  transform: scale(0.9);
+}
+.marketing-hero-orbit--j1 .marketing-hero-pillar-title {
+  color: rgb(198 218 238 / 0.9);
+  letter-spacing: 0.05em;
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j2.marketing-hero-section {
+  --orbit-bg: linear-gradient(185deg, #000 0%, #03060c 40%, #000 100%);
+  --orbit-border-outer: rgb(0 130 255 / 0.2);
+  --orbit-border-inner: rgb(255 255 255 / 0.05);
+  --orbit-w-inner: min(65vw, 30rem);
+  --orbit-h-inner: min(65vw, 30rem);
+  --orbit-dur-a: 18s;
+  --orbit-dur-b: 26s;
+}
+.marketing-hero-orbit--j2 .marketing-hero-h1-blue {
+  text-shadow: 0 0 28px rgb(0 140 255 / 0.45);
+}
+.marketing-hero-orbit--j2 .marketing-hero-pillar-icon {
+  stroke-width: 1.35;
+  color: rgb(0 150 255);
+}
+.marketing-hero-orbit--j2 .marketing-hero-pillar-title {
+  font-size: 8.5px !important;
+  letter-spacing: 0.08em;
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j3.marketing-hero-section {
+  --orbit-bg: radial-gradient(circle at 50% 120%, rgb(0 40 90 / 0.7), #000 45%), #000;
+  --orbit-border-outer: rgb(255 255 255 / 0.07);
+  --orbit-opacity-outer: 0.55;
+  --orbit-opacity-inner: 0.85;
+  --orbit-dur-a: 34s;
+  --orbit-dur-b: 48s;
+}
+.marketing-hero-orbit--j3 .marketing-hero-title {
+  filter: drop-shadow(0 4px 24px rgb(0 0 0 / 0.9));
+}
+.marketing-hero-orbit--j3 .marketing-hero-pillar:nth-child(odd) .marketing-hero-pillar-icon {
+  color: #5cf;
+}
+.marketing-hero-orbit--j3 .marketing-hero-pillar:nth-child(even) .marketing-hero-pillar-icon {
+  color: #8af;
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j4.marketing-hero-section {
+  --orbit-bg: conic-gradient(from 210deg at 50% 80%, #000, #061830 40%, #000 70%), #000;
+  --orbit-w-outer: min(115vw, 52rem);
+  --orbit-h-outer: min(115vw, 52rem);
+  --orbit-border-outer: rgb(0 180 255 / 0.11);
+  --orbit-dur-a: 40s;
+  --orbit-dur-b: 52s;
+}
+.marketing-hero-orbit--j4 .marketing-hero-title {
+  font-size: clamp(1.05rem, 4.5vw, 1.55rem) !important;
+}
+@media (min-width: 640px) {
+  .marketing-hero-orbit--j4 .marketing-hero-title {
+    font-size: clamp(1.65rem, 3.2vw, 2.1rem) !important;
+  }
+}
+.marketing-hero-orbit--j4 .marketing-hero-pillar-title {
+  text-transform: uppercase;
+  opacity: 0.92;
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j5.marketing-hero-section {
+  --orbit-bg: radial-gradient(ellipse 90% 70% at 50% 100%, rgb(0 100 200 / 0.25), #020202 60%), #020202;
+  --orbit-y: 44%;
+  --orbit-border-inner: rgb(0 255 220 / 0.09);
+  --orbit-dur-a: 16s;
+  --orbit-dur-b: 22s;
+}
+.marketing-hero-orbit--j5 .marketing-hero-pillar-icon {
+  filter: drop-shadow(0 0 6px rgb(0 200 255 / 0.35));
+}
+
+/* —— J6–J10: pelēks / sudrabs —— */
+.marketing-hero-orbit-base.marketing-hero-orbit--j6.marketing-hero-section {
+  --orbit-bg: radial-gradient(ellipse 100% 85% at 50% 100%, rgb(60 70 90 / 0.35), #0c0e12 55%), #0c0e12;
+  --orbit-border-outer: rgb(200 210 225 / 0.12);
+  --orbit-border-inner: rgb(255 255 255 / 0.08);
+  --orbit-dur-a: 32s;
+  --orbit-dur-b: 44s;
+}
+.marketing-hero-orbit--j6 .marketing-hero-title-line2 {
+  color: rgb(200 205 215 / 0.75) !important;
+}
+.marketing-hero-orbit--j6 .marketing-hero-pillar-title {
+  color: rgb(175 185 200 / 0.95);
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j7.marketing-hero-section {
+  --orbit-bg: linear-gradient(180deg, #141820 0%, #080a0e 50%, #000 100%);
+  --orbit-border-outer: rgb(255 255 255 / 0.09);
+  --orbit-w-inner: min(55vw, 26rem);
+  --orbit-h-inner: min(55vw, 26rem);
+  --orbit-dur-a: 24s;
+  --orbit-dur-b: 32s;
+}
+.marketing-hero-orbit--j7 .marketing-hero-h1-blue {
+  color: #7eb6ff !important;
+}
+.marketing-hero-orbit--j7 .marketing-hero-pillar-icon {
+  color: rgb(180 195 215);
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j8.marketing-hero-section {
+  --orbit-bg: radial-gradient(ellipse 120% 90% at 30% 100%, rgb(90 100 120 / 0.4), #0a0c10 50%), #0a0c10;
+  --orbit-y: 38%;
+  --orbit-opacity-outer: 0.5;
+  --orbit-dur-a: 36s;
+  --orbit-dur-b: 28s;
+}
+.marketing-hero-orbit--j8 .marketing-hero-title {
+  letter-spacing: -0.02em !important;
+}
+.marketing-hero-orbit--j8 .marketing-hero-pillar-title {
+  letter-spacing: 0.1em;
+  font-size: 8px !important;
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j9.marketing-hero-section {
+  --orbit-bg: #101218;
+  --orbit-border-outer: rgb(255 255 255 / 0.14);
+  --orbit-border-inner: rgb(180 190 210 / 0.1);
+  --orbit-w-outer: min(90vw, 42rem);
+  --orbit-h-outer: min(90vw, 42rem);
+}
+.marketing-hero-orbit--j9 .marketing-hero-pillar-icon {
+  transform: scale(1.05);
+  opacity: 0.95;
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j10.marketing-hero-section {
+  --orbit-bg: radial-gradient(circle at 50% 0%, rgb(40 48 62 / 0.5), #06070a 55%), #06070a;
+  --orbit-border-inner: rgb(120 200 255 / 0.07);
+  --orbit-dur-a: 20s;
+  --orbit-dur-b: 36s;
+}
+.marketing-hero-orbit--j10 .marketing-hero-title-line2 {
+  letter-spacing: 0.18em !important;
+  font-size: 0.72em !important;
+}
+
+/* —— J11–J15: zils / neons —— */
+.marketing-hero-orbit-base.marketing-hero-orbit--j11.marketing-hero-section {
+  --orbit-bg: radial-gradient(ellipse 100% 95% at 50% 105%, rgb(0 60 180 / 0.65), #020814 48%), #020814;
+  --orbit-border-outer: rgb(0 160 255 / 0.22);
+  --orbit-border-inner: rgb(100 220 255 / 0.12);
+  --orbit-dur-a: 26s;
+  --orbit-dur-b: 34s;
+}
+.marketing-hero-orbit--j11 .marketing-hero-h1-blue {
+  color: #4db8ff !important;
+}
+.marketing-hero-orbit--j11 .marketing-hero-pillar-icon {
+  color: #3af;
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j12.marketing-hero-section {
+  --orbit-bg: linear-gradient(200deg, #001030 0%, #02040a 45%, #000 100%);
+  --orbit-w-outer: min(108vw, 54rem);
+  --orbit-h-outer: min(108vw, 54rem);
+  --orbit-border-outer: rgb(80 140 255 / 0.15);
+  --orbit-dur-a: 30s;
+  --orbit-dur-b: 42s;
+}
+.marketing-hero-orbit--j12 .marketing-hero-pillar:nth-child(1) .marketing-hero-pillar-icon {
+  color: #6cf;
+}
+.marketing-hero-orbit--j12 .marketing-hero-pillar:nth-child(2) .marketing-hero-pillar-icon {
+  color: #8af;
+}
+.marketing-hero-orbit--j12 .marketing-hero-pillar:nth-child(3) .marketing-hero-pillar-icon {
+  color: #6cf;
+}
+.marketing-hero-orbit--j12 .marketing-hero-pillar:nth-child(4) .marketing-hero-pillar-icon {
+  color: #adf;
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j13.marketing-hero-section {
+  --orbit-bg: radial-gradient(ellipse 80% 60% at 50% 100%, rgb(0 100 255 / 0.45), #010206 60%), #010206;
+  --orbit-y: 48%;
+  --orbit-w-inner: min(88vw, 40rem);
+  --orbit-h-inner: min(88vw, 40rem);
+  --orbit-dur-a: 14s;
+  --orbit-dur-b: 20s;
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j14.marketing-hero-section {
+  --orbit-bg: radial-gradient(ellipse 130% 100% at 50% 90%, rgb(20 80 200 / 0.5), #030510 50%), #030510;
+  --orbit-border-inner: rgb(200 240 255 / 0.1);
+  --orbit-opacity-outer: 0.85;
+  --orbit-dur-a: 44s;
+  --orbit-dur-b: 60s;
+}
+.marketing-hero-orbit--j14 .marketing-hero-title {
+  text-shadow: 0 0 80px rgb(0 120 255 / 0.22);
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j15.marketing-hero-section {
+  --orbit-bg: conic-gradient(from 120deg at 50% 75%, #02060c, #001848 35%, #02060c), #02060c;
+  --orbit-border-outer: rgb(0 200 255 / 0.1);
+  --orbit-dur-a: 22s;
+  --orbit-dur-b: 30s;
+}
+.marketing-hero-orbit--j15 .marketing-hero-pillar-title {
+  color: rgb(210 230 255 / 0.82);
+}
+
+/* —— J16–J20: jaukts / dramatisks —— */
+.marketing-hero-orbit-base.marketing-hero-orbit--j16.marketing-hero-section {
+  --orbit-bg: radial-gradient(ellipse 100% 80% at 20% 100%, rgb(80 0 120 / 0.25), #040208 55%), #040208;
+  --orbit-border-outer: rgb(160 100 255 / 0.14);
+  --orbit-border-inner: rgb(0 180 255 / 0.1);
+  --orbit-dur-a: 28s;
+  --orbit-dur-b: 36s;
+}
+.marketing-hero-orbit--j16 .marketing-hero-h1-blue {
+  color: #9cf !important;
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j17.marketing-hero-section {
+  --orbit-bg: #000;
+  --orbit-w-outer: min(70vw, 32rem);
+  --orbit-h-outer: min(70vw, 32rem);
+  --orbit-w-inner: min(95vw, 46rem);
+  --orbit-h-inner: min(95vw, 46rem);
+  --orbit-border-outer: rgb(255 255 255 / 0.06);
+  --orbit-border-inner: rgb(0 120 255 / 0.15);
+  --orbit-y: 36%;
+  --orbit-dur-a: 35s;
+  --orbit-dur-b: 25s;
+}
+.marketing-hero-orbit--j17 .marketing-hero-title {
+  letter-spacing: 0.02em !important;
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j18.marketing-hero-section {
+  --orbit-bg: radial-gradient(ellipse 90% 70% at 50% 0%, rgb(30 80 160 / 0.35), #020305 70%), #020305;
+  --orbit-border-outer: rgb(0 255 200 / 0.1);
+  --orbit-dur-a: 19s;
+  --orbit-dur-b: 27s;
+}
+.marketing-hero-orbit--j18 .marketing-hero-pillar-icon {
+  transform: scale(1.08);
+  stroke-width: 1.65;
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j19.marketing-hero-section {
+  --orbit-bg: linear-gradient(165deg, #050a14 0%, #101a2a 35%, #020408 100%);
+  --orbit-opacity-outer: 0.4;
+  --orbit-opacity-inner: 0.95;
+  --orbit-dur-a: 50s;
+  --orbit-dur-b: 38s;
+}
+.marketing-hero-orbit--j19 .marketing-hero-title-line2 {
+  font-weight: 200 !important;
+  opacity: 0.65;
+}
+
+.marketing-hero-orbit-base.marketing-hero-orbit--j20.marketing-hero-section {
+  --orbit-bg: radial-gradient(ellipse 140% 110% at 50% 100%, rgb(0 80 200 / 0.55), rgb(0 0 0 / 0.9) 42%), #000;
+  --orbit-border-outer: rgb(255 255 255 / 0.11);
+  --orbit-border-inner: rgb(0 180 255 / 0.18);
+  --orbit-w-outer: min(125vw, 58rem);
+  --orbit-h-outer: min(125vw, 58rem);
+  --orbit-w-inner: min(50vw, 24rem);
+  --orbit-h-inner: min(50vw, 24rem);
+  --orbit-dur-a: 24s;
+  --orbit-dur-b: 40s;
+}
+.marketing-hero-orbit--j20 .marketing-hero-title {
+  filter: drop-shadow(0 0 20px rgb(0 150 255 / 0.25));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-hero-orbit-base.marketing-hero-section::before,
+  .marketing-hero-orbit-base.marketing-hero-section::after {
+    animation: none !important;
+    transform: translate(-50%, -50%) !important;
+  }
+}

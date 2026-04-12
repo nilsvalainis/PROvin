@@ -336,67 +336,7 @@
   }
 }
 
-/* —— I: Orbital halos —— */
-[data-hero-variant="i"].marketing-hero-section {
-  position: relative;
-  isolation: isolate;
-  background: radial-gradient(ellipse 100% 90% at 50% 100%, rgb(0 40 100 / 0.35), #020204 55%);
-}
-
-[data-hero-variant="i"].marketing-hero-section::before,
-[data-hero-variant="i"].marketing-hero-section::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 42%;
-  z-index: 0;
-  width: min(100vw, 48rem);
-  height: min(100vw, 48rem);
-  border-radius: 50%;
-  pointer-events: none;
-  border: 1px solid rgb(0 120 255 / 0.08);
-  opacity: 0.7;
-  transform: translate(-50%, -50%);
-}
-
-[data-hero-variant="i"].marketing-hero-section::after {
-  width: min(78vw, 36rem);
-  height: min(78vw, 36rem);
-  border-color: rgb(255 255 255 / 0.06);
-  animation: hero-v-i-orbit-a 22s linear infinite;
-}
-
-[data-hero-variant="i"].marketing-hero-section::before {
-  animation: hero-v-i-orbit-b 30s linear infinite;
-}
-
-[data-hero-variant="i"].marketing-hero-section > div,
-[data-hero-variant="i"].marketing-hero-section > header {
-  position: relative;
-  z-index: 1;
-}
-
-[data-hero-variant="i"] .marketing-hero-title {
-  text-shadow: 0 0 48px rgb(0 100 255 / 0.15);
-}
-
-@keyframes hero-v-i-orbit-a {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
-
-@keyframes hero-v-i-orbit-b {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  to {
-    transform: translate(-50%, -50%) rotate(-360deg);
-  }
-}
+/* —— I + J1–J20 orbital: skat. orbit-presets.css —— */
 
 /* ═══════════ prefers-reduced-motion ═══════════ */
 @media (prefers-reduced-motion: reduce) {
@@ -417,9 +357,4 @@
     opacity: 0.55;
   }
 
-  [data-hero-variant="i"].marketing-hero-section::before,
-  [data-hero-variant="i"].marketing-hero-section::after {
-    animation: none !important;
-    transform: translate(-50%, -50%) !important;
-  }
 }

@@ -4,12 +4,17 @@ import { ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type Lucid
 import { useTranslations } from "next-intl";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { ApprovedByIrissReveal } from "@/components/home/ApprovedByIrissReveal";
+import type { HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
+import { isOrbitFamilyVariant } from "@/lib/hero-orbit-j-presets";
 import {
   approvedByIrissSignatureHeroClass,
   heroH1BlueKeywordClass,
   homeMarketingPillarGridShellClass,
   homeMarketingPillarGridWidthClass,
 } from "@/lib/home-layout";
+
+export type { HeroOrbitSubvariant, HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
+export { HERO_ORBIT_SUBVARIANTS, isOrbitFamilyVariant } from "@/lib/hero-orbit-j-presets";
 
 const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
 
@@ -20,8 +25,6 @@ const pillarTitleClass =
 
 const pillarTitleClassC =
   "line-clamp-2 max-h-[2.4em] min-h-[2.4em] w-full max-w-[13.5rem] whitespace-pre-line text-[9px] font-semibold uppercase leading-[1.25] tracking-tight text-white/95 sm:text-[10px]";
-
-export type HeroVisualDemoVariant = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i";
 
 export type MarketingHeroProps = {
   /** Salīdzināšanas demo — `/demo/hero-variants`; noklusējumā nav. */
@@ -43,6 +46,10 @@ export function MarketingHero({ demoVariant, sectionDomId }: MarketingHeroProps 
   const titleId = demoVariant ? `marketing-hero-title-${demoVariant}` : "marketing-hero-title";
   const isC = demoVariant === "c";
   const isB = demoVariant === "b";
+  const orbitUiClass =
+    demoVariant && isOrbitFamilyVariant(demoVariant)
+      ? `marketing-hero-orbit-base marketing-hero-orbit--${demoVariant}`
+      : "";
 
   const scanBlock = (
     <div className="marketing-hero-scan-wrap mx-auto w-full max-w-[min(100%,22rem)] pt-0.5 sm:max-w-[min(100%,26rem)]">
@@ -89,7 +96,7 @@ export function MarketingHero({ demoVariant, sectionDomId }: MarketingHeroProps 
     <section
       id={sectionId}
       data-hero-variant={demoVariant}
-      className="marketing-hero-section home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1rem,env(safe-area-inset-top,0px)+0.75rem)] text-white sm:px-8 sm:pb-9 sm:pt-[max(1.25rem,env(safe-area-inset-top,0px)+1rem)]"
+      className={`marketing-hero-section home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1rem,env(safe-area-inset-top,0px)+0.75rem)] text-white sm:px-8 sm:pb-9 sm:pt-[max(1.25rem,env(safe-area-inset-top,0px)+1rem)] ${orbitUiClass}`.trim()}
       aria-labelledby={titleId}
     >
       <div className="min-h-0" aria-hidden />
