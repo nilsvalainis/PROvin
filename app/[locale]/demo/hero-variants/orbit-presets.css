@@ -1,6 +1,9 @@
 /**
  * Orbital halos — `marketing-hero-orbit-base` + `marketing-hero-orbit--{i|j10|s1…s20}`.
  * Melns + sudrabs: tikai `s1`–`s20` (un pārkrāsots `j10` fons / gredzeni).
+ *
+ * Gredzenu rotācija: tikai `transform: rotate(...)` keyframes (bez atsevišķā `rotate:`).
+ * `span` ar `display: block`, lai Safari / mobilie pārlūki uztver transformējamu kasti.
  */
 
 .marketing-hero-orbit-base.marketing-hero-section {
@@ -25,13 +28,13 @@
 /* DOM spani (MarketingHero), nevis ::before/::after — uzticamāka animācija uz grid sekcijas. */
 .marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-outer,
 .marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-inner {
+  display: block;
   box-sizing: border-box;
   position: absolute;
   z-index: 0;
   border-radius: 9999px;
   pointer-events: none;
-  transform: rotate(0deg);
-  transform-origin: center center;
+  transform-origin: 50% 50%;
   will-change: transform;
 }
 
@@ -86,6 +89,8 @@
 .marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"] > .marketing-hero-orbit-ring-outer,
 .marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"] > .marketing-hero-orbit-ring-inner {
   animation: none !important;
+  transform: rotate(0deg);
+  will-change: auto;
 }
 
 /* —— Atsauce I —— */
@@ -304,11 +309,11 @@
 .demo-orbit-mini::before,
 .demo-orbit-mini::after {
   content: "";
+  display: block;
   position: absolute;
   border-radius: 50%;
   border: 1px solid rgb(255 255 255 / 0.12);
-  transform: rotate(0deg);
-  transform-origin: center center;
+  transform-origin: 50% 50%;
   pointer-events: none;
 }
 
@@ -333,6 +338,7 @@
 .demo-orbit-mini--static::before,
 .demo-orbit-mini--static::after {
   animation: none !important;
+  transform: rotate(0deg);
 }
 
 /* Bez prefers-reduced-motion apstādināšanas — dekoratīvie gredzeni mājas lapā vienmēr griežas. */
