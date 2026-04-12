@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
-import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { faqHashHref, homePath, irissAnchorHref } from "@/lib/paths";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
 
@@ -177,20 +176,9 @@ export function SiteSectionRail() {
       <div className="relative z-10 flex h-full min-h-0 w-max flex-1 flex-row items-stretch gap-3.5 pl-0.5">
         <div ref={trackRef} className="relative h-full min-h-0 w-0.5 shrink-0">
           <div
-            className="pointer-events-none absolute inset-y-1.5 left-1/2 z-0 flex w-2 -translate-x-1/2 items-center justify-center overflow-hidden"
+            className="absolute inset-y-1.5 left-1/2 z-0 w-px -translate-x-1/2 bg-white/[0.06] transition-[background-color] duration-700 ease-out group-hover/rail:bg-white/[0.11] group-focus-within/rail:bg-white/[0.11]"
             aria-hidden
-          >
-            <div
-              className="absolute left-1/2 top-1/2 flex w-[min(100vh,52rem)] items-center justify-center"
-              style={{
-                height: "1px",
-                transform: "translate(-50%, -50%) rotate(90deg)",
-                transformOrigin: "center",
-              }}
-            >
-              <DiagnosticScanLine variant="rail" className="w-[min(100vh,52rem)]" />
-            </div>
-          </div>
+          />
           <div
             className="absolute left-1/2 w-[2px] -translate-x-1/2 rounded-full bg-[#0066ff] opacity-90 shadow-[0_0_10px_rgba(0,102,255,0.28)] transition-[top,box-shadow,opacity,height] duration-700 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:!transition-none group-hover/rail:opacity-100 group-hover/rail:shadow-[0_0_14px_rgba(0,102,255,0.38)]"
             style={{
