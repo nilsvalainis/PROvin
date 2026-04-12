@@ -95,7 +95,7 @@
 /* Kontūra: nepārtraukti zils „kometas” segments ar vieglu ēnu (pathLength=100). */
 .marketing-hero-orbit-silhouette__scan-path {
   fill: none;
-  stroke: rgb(140 200 255 / 0.97);
+  stroke: rgb(200 220 248 / 0.92);
   stroke-width: 0.95;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -104,9 +104,9 @@
   stroke-dasharray: 6 94;
   stroke-dashoffset: 0;
   filter:
-    drop-shadow(0 0 2px rgb(0 102 255 / 0.62))
+    drop-shadow(0 0 2px rgb(0 102 255 / 0.55))
     drop-shadow(0 1px 3px rgb(0 0 0 / 0.45))
-    drop-shadow(0 0 10px rgb(0 102 255 / 0.28));
+    drop-shadow(0 0 10px rgb(0 102 255 / 0.24));
   /* 3× ātrāk nekā iepriekšējie 7 s */
   animation: marketing-hero-orbit-silhouette-scan var(--provin-scan-loop-dur, calc(7s / 3)) linear infinite;
 }

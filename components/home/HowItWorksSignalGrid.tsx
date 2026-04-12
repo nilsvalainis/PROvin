@@ -19,7 +19,7 @@ function HowItWorksConnectorMobile() {
       <div className="w-full max-w-[14rem]">
         <DiagnosticScanLine variant="rail" className="w-full" />
       </div>
-      <ChevronDown className="h-4 w-4 shrink-0 text-[rgb(130_190_255/0.82)]" strokeWidth={1.35} />
+      <ChevronDown className="h-4 w-4 shrink-0 text-[rgb(0_102_255/0.88)]" strokeWidth={1.35} />
     </div>
   );
 }
@@ -34,7 +34,7 @@ function HowItWorksConnectorDesktop() {
       <div className="relative w-full">
         <DiagnosticScanLine variant="rail" className="w-full" />
         <ChevronRight
-          className="pointer-events-none absolute left-1/2 top-1/2 z-[1] h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[rgb(130_190_255/0.9)] lg:h-6 lg:w-6"
+          className="pointer-events-none absolute left-1/2 top-1/2 z-[1] h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-[rgb(0_102_255/0.88)] lg:h-6 lg:w-6"
           strokeWidth={1.25}
         />
       </div>
@@ -46,16 +46,17 @@ function HowItWorksConnectorDesktop() {
  * Trīs soļu bloki — bez kartes rāmja; lielas ikonas; starp soļiem tieva sliede + zils impulss (kā pasūtījuma forma).
  */
 export async function HowItWorksSignalGrid() {
-  const tOrder = await getTranslations("Order");
-  const tHero = await getTranslations("Hero");
+  const tHow = await getTranslations("HowItWorks");
   const messages = await getMessages();
   const raw = (messages as { HowItWorks?: { steps?: Step[] } }).HowItWorks?.steps;
   const steps = Array.isArray(raw) ? raw : [];
 
   return (
     <div className="demo-design-dir__shell">
-      <p className="demo-design-dir__kicker">{tOrder("summaryNote")}</p>
-      <h2 className="demo-design-dir__title mt-2 max-w-[48rem]">{tHero("h2")}</h2>
+      <h2 className="demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance text-center">{tHow("sectionTitle")}</h2>
+      <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance text-center text-[12px] font-normal leading-relaxed text-white/55 sm:mt-4 sm:text-[13px]">
+        {tHow("sectionSubtitle")}
+      </p>
       <div className="mt-10 flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between sm:gap-2 lg:gap-5">
         {steps.map((s, i) => {
           const Icon = STEP_ICONS[iconIndexForStep(s.n)] ?? STEP_ICONS[0];
@@ -72,7 +73,7 @@ export async function HowItWorksSignalGrid() {
                   }}
                 />
                 <Icon
-                  className="relative z-[1] h-12 w-12 shrink-0 text-[rgb(130_190_255/0.95)] sm:h-14 sm:w-14 lg:h-16 lg:w-16"
+                  className="relative z-[1] h-12 w-12 shrink-0 text-[rgb(0_102_255/0.88)] sm:h-14 sm:w-14 lg:h-16 lg:w-16"
                   strokeWidth={1.1}
                   aria-hidden
                 />

@@ -115,64 +115,6 @@ body {
   display: block;
   height: 1px;
   width: 100%;
-  /* Spēcīgāka centrā, gandrīz pazūd malās — saskaņojas ar Deep Focus spīdumu */
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.02) 7%,
-    rgba(255, 255, 255, 0.055) 18%,
-    rgba(255, 255, 255, 0.1) 32%,
-    rgba(255, 255, 255, 0.16) 50%,
-    rgba(255, 255, 255, 0.1) 68%,
-    rgba(255, 255, 255, 0.055) 82%,
-    rgba(255, 255, 255, 0.02) 93%,
-    transparent 100%
-  );
-}
-
-.provin-diagnostic-scan-line__pulse {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: clamp(2.25rem, 14vw, 3.25rem);
-  height: 1px;
-  margin-top: -0.5px;
-  border-radius: 9999px;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(0, 102, 255, 0.2) 28%,
-    rgba(230, 236, 248, 0.55) 50%,
-    rgba(0, 102, 255, 0.2) 72%,
-    transparent 100%
-  );
-  box-shadow:
-    0 0 5px 0 rgba(0, 102, 255, 0.22),
-    0 0 12px 1px rgba(0, 102, 255, 0.08);
-  opacity: 1;
-  animation: provin-diagnostic-scan-loop-linear var(--provin-scan-loop-dur) linear infinite;
-}
-
-@keyframes provin-diagnostic-scan-loop-linear {
-  0% {
-    transform: translate(-50%, -50%) translateX(-120%);
-  }
-  100% {
-    transform: translate(-50%, -50%) translateX(120%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .provin-diagnostic-scan-line__pulse {
-    animation: none !important;
-    opacity: 0;
-  }
-}
-
-/* Hero skenēšanas līnija — kā kreisā rail: ļoti viegls tracks + maigs zils impulss */
-.provin-diagnostic-scan-line--rail .provin-diagnostic-scan-line__track {
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -183,8 +125,16 @@ body {
   );
 }
 
-.provin-diagnostic-scan-line--rail .provin-diagnostic-scan-line__pulse {
+.provin-diagnostic-scan-line__pulse {
+  position: absolute;
+  top: 50%;
+  left: 0%;
   width: clamp(1.5rem, 9vw, 2.35rem);
+  height: 1px;
+  margin-top: -0.5px;
+  border-radius: 9999px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -196,6 +146,27 @@ body {
   box-shadow:
     0 0 4px 0 rgb(0 102 255 / 0.16),
     0 0 10px 0 rgb(0 102 255 / 0.05);
+  opacity: 1;
+  animation: provin-diagnostic-scan-along-track var(--provin-scan-loop-dur) linear infinite;
+}
+
+/* Impulsa centrs no līnijas sākuma līdz beigām; linear infinite — bez aiztures starp cikliem */
+@keyframes provin-diagnostic-scan-along-track {
+  0% {
+    left: 0%;
+    transform: translate(-50%, -50%);
+  }
+  100% {
+    left: 100%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .provin-diagnostic-scan-line__pulse {
+    animation: none !important;
+    opacity: 0;
+  }
 }
 
 /* Sākumlapas / tumšā UI — viena pogu estētika (kā hero „Turpināt”) */

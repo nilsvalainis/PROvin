@@ -306,15 +306,25 @@
 .demo-design-dir__hero-scan::after {
   content: "";
   position: absolute;
-  left: 50%;
+  left: 0%;
   top: 50%;
-  width: 3rem;
+  width: clamp(1.5rem, 9vw, 2.35rem);
   height: 1px;
+  border-radius: 9999px;
   transform: translate(-50%, -50%);
-  background: linear-gradient(90deg, transparent, rgb(0 102 255 / 0.55), transparent);
-  box-shadow: 0 0 12px rgb(0 102 255 / 0.35);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(0 102 255 / 0.12) 34%,
+    rgb(230 236 248 / 0.36) 50%,
+    rgb(0 102 255 / 0.12) 66%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 4px 0 rgb(0 102 255 / 0.16),
+    0 0 10px 0 rgb(0 102 255 / 0.05);
   opacity: 1;
-  animation: provin-diagnostic-scan-loop-linear var(--provin-scan-loop-dur, calc(7s / 3)) linear infinite;
+  animation: provin-diagnostic-scan-along-track var(--provin-scan-loop-dur, calc(7s / 3)) linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
