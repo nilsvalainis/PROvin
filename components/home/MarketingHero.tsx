@@ -130,10 +130,14 @@ export function MarketingHero({
       aria-labelledby={titleId}
     >
       {isOrbitVisual ? (
-        <>
-          <span className="marketing-hero-orbit-ring-outer" aria-hidden />
-          <span className="marketing-hero-orbit-ring-inner" aria-hidden />
-        </>
+        <div className="marketing-hero-orbit-3d-stage" aria-hidden>
+          <div className="marketing-hero-orbit-arm marketing-hero-orbit-arm--outer">
+            <span className="marketing-hero-orbit-disk marketing-hero-orbit-disk--outer" />
+          </div>
+          <div className="marketing-hero-orbit-arm marketing-hero-orbit-arm--inner">
+            <span className="marketing-hero-orbit-disk marketing-hero-orbit-disk--inner" />
+          </div>
+        </div>
       ) : null}
       {demoSpeedometer ? <MarketingHeroSpeedometer tone={demoVariant?.startsWith("s") ? "mono" : "default"} /> : null}
       <div className="min-h-0" aria-hidden />

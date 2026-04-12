@@ -2,9 +2,8 @@
  * Orbital halos — `marketing-hero-orbit-base` + `marketing-hero-orbit--{i|j10|s1…s20}`.
  * Melns + sudrabs: tikai `s1`–`s20` (un pārkrāsots `j10` fons / gredzeni).
  *
- * Rotācija: `transform` keyframes (`translate3d(0,0,0)` + `rotate`) — WebKit slānis + globālais
- * `* { backface-visibility: hidden }` ne „iesaldē” gredzenu. Vieglas asimetriskas `box-shadow`,
- * jo perfekti apaļš vienmērīgs `border` rotējot vizuāli nemainās (simetrija).
+ * 3D: `perspective` uz skatuves, diski ar `rotateX` (slīpi riņķi), pleci ar pretēju `rotateY` —
+ * dziļums mainās, riņķi krustojas (pāri / zem). Nav plakana `rotateZ` + ēna triks.
  */
 
 .marketing-hero-orbit-base.marketing-hero-section {
@@ -20,51 +19,85 @@
   --orbit-dur-a: 22s;
   --orbit-dur-b: 30s;
   --orbit-bg: radial-gradient(ellipse 100% 90% at 50% 100%, rgb(0 40 100 / 0.35), #020204 55%);
+  --orbit-perspective: clamp(28rem, 125vw, 96rem);
+  --orbit-tilt-outer: 78deg;
+  --orbit-tilt-inner: 84deg;
+  --orbit-inner-roll: 13deg;
 
   position: relative;
-  isolation: isolate;
+  /* Bez isolation: isolate — citādi WebKit bieži „izlīdzina” 3D starp pleciem. */
   background: var(--orbit-bg);
+  overflow-x: visible !important;
 }
 
-/* DOM spani (MarketingHero), nevis ::before/::after — uzticamāka animācija uz grid sekcijas. */
-.marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-outer,
-.marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-inner {
+.marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-3d-stage {
   display: block;
-  box-sizing: border-box;
   position: absolute;
+  inset: 0;
   z-index: 0;
-  border-radius: 9999px;
   pointer-events: none;
+  perspective: var(--orbit-perspective);
+  -webkit-perspective: var(--orbit-perspective);
+  perspective-origin: 50% var(--orbit-y);
+  -webkit-perspective-origin: 50% var(--orbit-y);
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  overflow: visible;
+}
+
+.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-arm {
+  position: absolute;
+  display: block;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
   transform-origin: 50% 50%;
   will-change: transform;
   backface-visibility: visible;
   -webkit-backface-visibility: visible;
 }
 
-.marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-outer {
+.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-arm--outer {
   left: calc(50% - var(--orbit-w-outer) / 2);
   top: calc(var(--orbit-y) - var(--orbit-h-outer) / 2);
   width: var(--orbit-w-outer);
   height: var(--orbit-h-outer);
-  border: 1px solid var(--orbit-border-outer);
-  opacity: var(--orbit-opacity-outer);
-  /* Asimetrisks highlights — rotācija kļūst redzama (apaļš vienmērīgs rings citādi „nekustas”). */
-  box-shadow: 14px -12px 28px -16px rgb(255 255 255 / 0.14);
-  animation: hero-orbit-spin-b var(--orbit-dur-b) linear infinite;
+  animation: hero-orbit-arm-spin-b var(--orbit-dur-b) linear infinite;
 }
 
-.marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-inner {
+.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-arm--inner {
   left: calc(50% - var(--orbit-w-inner) / 2);
   top: calc(var(--orbit-y) - var(--orbit-h-inner) / 2);
   width: var(--orbit-w-inner);
   height: var(--orbit-h-inner);
-  border: 1px solid var(--orbit-border-inner);
-  opacity: var(--orbit-opacity-inner);
-  box-shadow: -12px 14px 24px -14px rgb(255 255 255 / 0.1);
-  animation: hero-orbit-spin-a var(--orbit-dur-a) linear infinite;
+  animation: hero-orbit-arm-spin-a var(--orbit-dur-a) linear infinite;
 }
 
-.marketing-hero-orbit-base.marketing-hero-section > div,
+.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-disk {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+}
+
+.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-disk--outer {
+  border: 1px solid var(--orbit-border-outer);
+  opacity: var(--orbit-opacity-outer);
+  transform: translate3d(0, 0, 0) rotateX(var(--orbit-tilt-outer));
+}
+
+.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-disk--inner {
+  border: 1px solid var(--orbit-border-inner);
+  opacity: var(--orbit-opacity-inner);
+  transform: translate3d(0, 0, 0) rotateX(var(--orbit-tilt-inner)) rotateZ(var(--orbit-inner-roll));
+}
+
+.marketing-hero-orbit-base.marketing-hero-section > div:not(.marketing-hero-orbit-3d-stage),
 .marketing-hero-orbit-base.marketing-hero-section > header {
   position: relative;
   z-index: 1;
@@ -74,28 +107,28 @@
   text-shadow: 0 0 48px rgb(0 100 255 / 0.15);
 }
 
-@keyframes hero-orbit-spin-a {
+@keyframes hero-orbit-arm-spin-a {
   from {
-    transform: translate3d(0, 0, 0) rotate(0deg);
+    transform: translate3d(0, 0, 0) rotateY(0deg);
   }
   to {
-    transform: translate3d(0, 0, 0) rotate(360deg);
+    transform: translate3d(0, 0, 0) rotateY(360deg);
   }
 }
 
-@keyframes hero-orbit-spin-b {
+@keyframes hero-orbit-arm-spin-b {
   from {
-    transform: translate3d(0, 0, 0) rotate(0deg);
+    transform: translate3d(0, 0, 0) rotateY(0deg);
   }
   to {
-    transform: translate3d(0, 0, 0) rotate(-360deg);
+    transform: translate3d(0, 0, 0) rotateY(-360deg);
   }
 }
 
-.marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"] > .marketing-hero-orbit-ring-outer,
-.marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"] > .marketing-hero-orbit-ring-inner {
+.marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"] .marketing-hero-orbit-arm--outer,
+.marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"] .marketing-hero-orbit-arm--inner {
   animation: none !important;
-  transform: translate3d(0, 0, 0) rotate(0deg);
+  transform: translate3d(0, 0, 0) rotateY(0deg);
   will-change: auto;
 }
 
@@ -297,7 +330,7 @@
   color: rgb(200 205 215 / 0.88);
 }
 
-/* —— Mini demo: gredzenu animācijas „demontāža” (bez MarketingHero) —— */
+/* —— Mini demo: tā pati 3D loģika kā hero (skat. OrbitRingsExplainer) —— */
 .demo-orbit-mini-lab {
   border-color: rgb(255 255 255 / 0.12);
   background: radial-gradient(ellipse 80% 70% at 50% 100%, rgb(120 125 135 / 0.2), #050506 65%), #030303;
@@ -307,48 +340,77 @@
   position: relative;
   width: 5.5rem;
   height: 5.5rem;
-  border-radius: 50%;
-  border: 1px solid rgb(200 205 215 / 0.2);
-  isolation: isolate;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(200 205 215 / 0.18);
 }
 
-.demo-orbit-mini::before,
-.demo-orbit-mini::after {
-  content: "";
-  display: block;
+.demo-orbit-mini-stage {
   position: absolute;
-  border-radius: 50%;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  inset: 0;
+  perspective: 11rem;
+  -webkit-perspective: 11rem;
+  perspective-origin: 50% 50%;
+  -webkit-perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  overflow: visible;
+}
+
+.demo-orbit-mini-arm {
+  position: absolute;
+  display: block;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
   transform-origin: 50% 50%;
-  pointer-events: none;
+  will-change: transform;
   backface-visibility: visible;
   -webkit-backface-visibility: visible;
 }
 
-/* 5.5rem × 0.78 / 0.52 — fiksēti rem, lai ar transform: rotate() keyframes nesaplūstu. */
-.demo-orbit-mini::before {
-  width: 4.29rem;
-  height: 4.29rem;
+.demo-orbit-mini-arm--outer {
   left: calc(50% - 2.145rem);
   top: calc(50% - 2.145rem);
-  box-shadow: 6px -4px 12px -6px rgb(255 255 255 / 0.2);
-  animation: hero-orbit-spin-b 18s linear infinite;
+  width: 4.29rem;
+  height: 4.29rem;
+  animation: hero-orbit-arm-spin-b 18s linear infinite;
 }
 
-.demo-orbit-mini::after {
-  width: 2.86rem;
-  height: 2.86rem;
+.demo-orbit-mini-arm--inner {
   left: calc(50% - 1.43rem);
   top: calc(50% - 1.43rem);
-  border-color: rgb(160 165 175 / 0.18);
-  box-shadow: -5px 5px 10px -5px rgb(255 255 255 / 0.15);
-  animation: hero-orbit-spin-a 14s linear infinite;
+  width: 2.86rem;
+  height: 2.86rem;
+  animation: hero-orbit-arm-spin-a 14s linear infinite;
 }
 
-.demo-orbit-mini--static::before,
-.demo-orbit-mini--static::after {
+.demo-orbit-mini-disk {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+}
+
+.demo-orbit-mini-disk--outer {
+  transform: translate3d(0, 0, 0) rotateX(78deg);
+}
+
+.demo-orbit-mini-disk--inner {
+  border-color: rgb(160 165 175 / 0.22);
+  transform: translate3d(0, 0, 0) rotateX(84deg) rotateZ(13deg);
+}
+
+.demo-orbit-mini--static .demo-orbit-mini-arm--outer,
+.demo-orbit-mini--static .demo-orbit-mini-arm--inner {
   animation: none !important;
-  transform: translate3d(0, 0, 0) rotate(0deg);
+  transform: translate3d(0, 0, 0) rotateY(0deg);
+  will-change: auto;
 }
 
 /* Bez prefers-reduced-motion apstādināšanas — dekoratīvie gredzeni mājas lapā vienmēr griežas. */
