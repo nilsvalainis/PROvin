@@ -111,12 +111,17 @@ body {
   display: block;
   height: 1px;
   width: 100%;
+  /* Spēcīgāka centrā, gandrīz pazūd malās — saskaņojas ar Deep Focus spīdumu */
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.07) 12%,
-    rgba(255, 255, 255, 0.14) 50%,
-    rgba(255, 255, 255, 0.07) 88%,
+    rgba(255, 255, 255, 0.02) 7%,
+    rgba(255, 255, 255, 0.055) 18%,
+    rgba(255, 255, 255, 0.1) 32%,
+    rgba(255, 255, 255, 0.16) 50%,
+    rgba(255, 255, 255, 0.1) 68%,
+    rgba(255, 255, 255, 0.055) 82%,
+    rgba(255, 255, 255, 0.02) 93%,
     transparent 100%
   );
 }
