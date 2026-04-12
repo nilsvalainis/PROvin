@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { DesignDirectionLayoutDemo } from "@/components/demo/DesignDirectionLayoutDemo";
 import { routing } from "@/i18n/routing";
-import "./demo-design-direction.css";
 
 export const metadata: Metadata = {
   title: "Demo: layout un stila virziens",

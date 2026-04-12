@@ -6,7 +6,6 @@ import { DesignDirectionLayoutDemo } from "@/components/demo/DesignDirectionLayo
 import { HeroVariantsStudioSection } from "@/components/demo/HeroVariantsStudioSection";
 import "@/components/home/hero-orbit-styles";
 import { routing } from "@/i18n/routing";
-import "./design-direction/demo-design-direction.css";
 
 export const metadata: Metadata = {
   title: "Demo studija — hero, layout, orbit",

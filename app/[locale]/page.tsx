@@ -7,7 +7,6 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
 import { Footer } from "@/components/Footer";
-import "./demo/design-direction/demo-design-direction.css";
 
 export default async function HomePage({
   searchParams,

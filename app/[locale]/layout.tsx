@@ -12,11 +12,12 @@ import { SiteOrderCtaPin } from "@/components/home/SiteOrderCtaPin";
 import { SiteSectionRail } from "@/components/home/SiteSectionRail";
 import { WhatsAppFab } from "@/components/WhatsAppFab";
 import { routing } from "@/i18n/routing";
+import "./demo/design-direction/demo-design-direction.css";
 
 type Props = { children: ReactNode; params: Promise<{ locale: string }> };
 
 export const viewport: Viewport = {
-  themeColor: "#050505",
+  themeColor: "#030304",
   width: "device-width",
   initialScale: 1,
   /** iPhone / Android ar izcirtumu — lai `env(safe-area-inset-*)` strādā */
