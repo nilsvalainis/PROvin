@@ -2,7 +2,6 @@
 
 import { type ReactNode } from "react";
 import { HomeDepthBackground } from "@/components/home/HomeDepthBackground";
-import { ViewportCornerMarks } from "@/components/home/ViewportCornerMarks";
 
 type HomeScrollSurfaceProps = {
   wireframe?: ReactNode;
@@ -10,7 +9,7 @@ type HomeScrollSurfaceProps = {
 };
 
 /**
- * Mājas čaula: pamattonis (#050505) → Deep Focus spīdums (z-1) → wireframe → saturs (z-10).
+ * Mājas čaula: pamattonis (#050505) → Deep Focus spīdums (z-1) → wireframe → saturs (z-10). Bez stūru zīmēm.
  */
 export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProps) {
   return (
@@ -18,8 +17,6 @@ export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProp
       <HomeDepthBackground />
 
       {wireframe}
-
-      <ViewportCornerMarks />
 
       {children}
     </div>
