@@ -74,7 +74,7 @@ export async function HowItWorksSignalGrid() {
                 />
                 <Icon
                   className="relative z-[1] h-12 w-12 shrink-0 text-[rgb(0_102_255/0.88)] sm:h-14 sm:w-14 lg:h-16 lg:w-16"
-                  strokeWidth={1.1}
+                  strokeWidth={0.88}
                   aria-hidden
                 />
                 <p className="relative z-[1] whitespace-pre-line text-[11px] font-semibold uppercase leading-snug tracking-[0.12em] text-white/90 sm:text-[11.5px]">
