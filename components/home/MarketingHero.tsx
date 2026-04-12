@@ -42,6 +42,8 @@ export type MarketingHeroProps = {
   demoVariant?: HeroVisualDemoVariant;
   /** Produkcija: S19 / S20 (melns+sudrabs, pilna gredzenu rotācija); nedrīkst lietot kopā ar `demoVariant`. */
   homeOrbitPreset?: MarketingHeroHomeOrbitPreset;
+  /** Sākumlapa: tipogrāfija / CTA saskaņā ar `demo-design-dir` virzienu. */
+  designDirection?: boolean;
   /** Sekcijas `id` (demo: `demo-hero-a` utt.). */
   sectionDomId?: string;
   /** Dekoratīvs spidometrs zem virsraksta (demo). */
@@ -63,6 +65,7 @@ export function MarketingHero({
   sectionDomId,
   demoSpeedometer = false,
   demoOrbitRings = "spin",
+  designDirection = false,
 }: MarketingHeroProps = {}) {
   const t = useTranslations("Hero");
   const rawPillars = t.raw("pillars");
@@ -104,7 +107,7 @@ export function MarketingHero({
         id={titleId}
         className={
           isOrbitVisual
-            ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold text-white/95 max-[380px]:tracking-[-0.025em]`
+            ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold tracking-[-0.02em] text-white/95 max-[380px]:tracking-[-0.025em]${designDirection ? " max-w-[min(100%,40rem)]" : ""}`
             : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]`
         }
       >
@@ -116,14 +119,27 @@ export function MarketingHero({
         <span className="marketing-hero-title-line2 mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
       </h1>
       <p
-        className={`${homeHeroSubtitleClass} mx-auto mt-2.5 max-w-[min(100%,36rem)] text-balance text-[11px] font-medium uppercase leading-snug tracking-[0.14em] text-white/48 sm:mt-3 sm:text-[12px] sm:tracking-[0.16em]`}
+        className={
+          designDirection
+            ? "demo-design-dir__body mx-auto mt-3 max-w-[min(100%,36rem)] text-balance text-center"
+            : `${homeHeroSubtitleClass} mx-auto mt-2.5 max-w-[min(100%,36rem)] text-balance text-[11px] font-medium uppercase leading-snug tracking-[0.14em] text-white/48 sm:mt-3 sm:text-[12px] sm:tracking-[0.16em]`
+        }
       >
         {t("h2")}
       </p>
     </div>
   );
 
-  const approvedBlock = <ApprovedByIrissReveal text={t("approved")} className={approvedByIrissSignatureHeroClass} />;
+  const approvedBlock = (
+    <ApprovedByIrissReveal
+      text={t("approved")}
+      className={
+        designDirection
+          ? "demo-design-dir__kicker text-center !tracking-[0.24em] sm:!tracking-[0.28em]"
+          : approvedByIrissSignatureHeroClass
+      }
+    />
+  );
 
   /** Orbit: 1fr / auto / 1fr pār `min-h-[100dvh]` — skenēšanas līnijas vertikālais centrs sakrīt ar riņķu centru. */
   const orbitHeroHeader = isB ? (
@@ -167,7 +183,13 @@ export function MarketingHero({
   const pillarsAndCta = (
     <>
       <div className={pillarGridClass}>
-        <div className="marketing-hero-pillar-dock w-full rounded-2xl border border-white/[0.08] bg-[rgb(3_4_6/0.55)] px-2 py-3 shadow-[0_20px_52px_rgb(0_0_0/0.42)] backdrop-blur-md sm:px-3 sm:py-4 md:px-4">
+        <div
+          className={
+            designDirection
+              ? "w-full"
+              : "marketing-hero-pillar-dock w-full rounded-2xl border border-white/[0.08] bg-[rgb(3_4_6/0.55)] px-2 py-3 shadow-[0_20px_52px_rgb(0_0_0/0.42)] backdrop-blur-md sm:px-3 sm:py-4 md:px-4"
+          }
+        >
           <div
             className={`flex w-full flex-row flex-nowrap justify-between gap-2 sm:gap-4 md:gap-5 ${homeMarketingPillarGridWidthClass}`}
           >
@@ -175,7 +197,9 @@ export function MarketingHero({
             const Icon = PILLAR_ICONS[i] ?? FileText;
             const articleClass = isC
               ? "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-row items-start gap-2.5 px-1 text-left sm:gap-3 sm:px-1"
-              : "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2 px-0.5 text-center sm:gap-2.5 sm:px-0.5";
+              : designDirection
+                ? "marketing-hero-pillar demo-design-dir__card flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2.5 px-2 py-3 text-center sm:gap-3 sm:px-3 sm:py-4"
+                : "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2 px-0.5 text-center sm:gap-2.5 sm:px-0.5";
             const iconClass = isC
               ? "marketing-hero-pillar-icon mt-0.5 h-5 w-5 shrink-0 text-[#0066ff] sm:h-5 sm:w-5"
               : "marketing-hero-pillar-icon h-7 w-7 shrink-0 text-[#0066ff] sm:h-7 sm:w-7 md:h-8 md:w-8";
@@ -194,11 +218,15 @@ export function MarketingHero({
         href={demoVariant ? "#" : "#site-content"}
         onClick={demoVariant ? (e) => e.preventDefault() : undefined}
         aria-label={t("scrollToPricingAria")}
-        className="group mx-auto mt-2 flex min-h-[44px] w-full max-w-[22rem] touch-manipulation flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-white/55 shadow-[0_16px_40px_rgb(0_0_0/0.35)] transition-[border-color,background-color,color,box-shadow] duration-200 hover:border-[#0066ff]/28 hover:bg-[#0066ff]/[0.09] hover:text-white/85 active:bg-white/[0.07] sm:mt-2.5 sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
+        className={
+          designDirection
+            ? "group mx-auto mt-3 inline-flex min-h-[44px] w-full max-w-[20rem] touch-manipulation items-center justify-center gap-2 rounded-full border border-[#0066ff]/35 bg-[#0066ff]/12 px-5 py-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7eb6ff] transition hover:bg-[#0066ff]/20 hover:text-white active:bg-[#0066ff]/25 sm:mt-4 sm:max-w-[22rem]"
+            : "group mx-auto mt-2 flex min-h-[44px] w-full max-w-[22rem] touch-manipulation flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-white/55 shadow-[0_16px_40px_rgb(0_0_0/0.35)] transition-[border-color,background-color,color,box-shadow] duration-200 hover:border-[#0066ff]/28 hover:bg-[#0066ff]/[0.09] hover:text-white/85 active:bg-white/[0.07] sm:mt-2.5 sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
+        }
       >
         <span className="w-full text-balance text-center">{t("scrollToPricingAria")}</span>
         <ChevronDown
-          className="mx-auto h-4 w-4 shrink-0 text-[#0066ff] opacity-95 transition-transform duration-200 group-hover:translate-y-0.5"
+          className={`mx-auto h-4 w-4 shrink-0 transition-transform duration-200 group-hover:translate-y-0.5 ${designDirection ? "text-[#7eb6ff]/90" : "text-[#0066ff] opacity-95"}`}
           strokeWidth={2}
           aria-hidden
         />
@@ -206,9 +234,12 @@ export function MarketingHero({
     </>
   );
 
-  const sectionClassOrbit = `marketing-hero-section home-content-atmosphere relative flex min-h-[min(100dvh,100svh)] w-full flex-col overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}`.trim();
+  const designDirHeroChrome =
+    designDirection && isOrbitVisual ? " demo-design-dir__section demo-design-dir__section--band-a" : "";
 
-  const sectionClassGrid = `marketing-hero-section home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}`.trim();
+  const sectionClassOrbit = `marketing-hero-section home-content-atmosphere relative flex min-h-[min(100dvh,100svh)] w-full flex-col overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}${designDirHeroChrome}`.trim();
+
+  const sectionClassGrid = `marketing-hero-section home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}${designDirHeroChrome}`.trim();
 
   return (
     <section

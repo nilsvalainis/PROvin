@@ -24,16 +24,16 @@ export default async function HomePage({
   return (
     <HomeScrollSurface wireframe={<AutoWireframeBackground />}>
       <div className="relative z-10 min-w-0 bg-transparent">
-        <MarketingHero homeOrbitPreset="s20" />
-
-        <div className="demo-design-dir min-w-0 pb-24 pt-4 text-white sm:pt-8">
+        <div className="demo-design-dir min-w-0 pb-24 text-white">
+          <MarketingHero homeOrbitPreset="s20" designDirection />
           <HomeMetaIntroSection />
 
           <div id="site-content" className="home-body-ink scroll-mt-14">
             <section className="demo-design-dir__section demo-design-dir__section--band-b py-16 sm:py-20">
               <div className="demo-design-dir__shell">
                 <a href="#order-form" className="demo-design-dir__order-jump">
-                  <span className="relative z-[1] max-w-[28rem] text-balance">{tOrder("scrollToFormAria")}</span>
+                  <div className="demo-design-dir__axis-line" aria-hidden />
+                  <span className="relative z-[1] max-w-[min(100%,28rem)] text-balance">{tOrder("scrollToFormAria")}</span>
                   <ChevronDown className="demo-design-dir__order-jump-chevron relative z-[1] h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
                 </a>
                 <div className="mt-10">

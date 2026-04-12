@@ -206,7 +206,7 @@
   color: rgb(200 205 215 / 0.78);
 }
 
-/* Saites uz pasūtījuma formu — stikla virsma, zils akcents uz hover */
+/* Saites uz pasūtījuma formu — stikla virsma, centrālā ass, zils akcents uz hover */
 .demo-design-dir__order-jump {
   position: relative;
   display: flex;
@@ -226,15 +226,17 @@
   -webkit-backdrop-filter: blur(14px);
   text-align: center;
   text-decoration: none;
-  color: rgb(210 215 225 / 0.82);
-  font-size: 0.8125rem;
+  color: rgb(220 225 235 / 0.9);
+  font-size: 0.9375rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
+  line-height: 1.45;
   transition:
     border-color 0.22s ease,
     box-shadow 0.22s ease,
     background 0.22s ease,
     color 0.22s ease;
+  overflow: hidden;
 }
 
 .demo-design-dir__order-jump::before {
@@ -246,6 +248,18 @@
   opacity: 0;
   background: radial-gradient(ellipse 95% 70% at 50% 0%, rgb(0 102 255 / 0.12), transparent 58%);
   transition: opacity 0.25s ease;
+}
+
+/* Vertikālā ass — kā demo ass rāmis; zem satura slāņa */
+.demo-design-dir__order-jump .demo-design-dir__axis-line {
+  position: absolute;
+  left: 50%;
+  top: 0.85rem;
+  bottom: 0.85rem;
+  width: 1px;
+  transform: translateX(-50%);
+  opacity: 0.45;
+  z-index: 0;
 }
 
 .demo-design-dir__order-jump:hover {
