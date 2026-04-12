@@ -35,6 +35,14 @@ export function HeaderClient({
   menuCloseLabel,
 }: HeaderClientProps) {
   const pathname = usePathname() ?? "";
+  const normalizedPath =
+    pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
+  /** Lapas, kurās ir kreisā `SiteSectionRail` (lg+) — logo nobīde, lai nepārklāj sliedes līnijas. */
+  const logoClearLeftRail =
+    normalizedPath === "/" ||
+    normalizedPath === "" ||
+    normalizedPath === "/pasutit" ||
+    normalizedPath === "/biezi-jautajumi";
   const hash = useHash();
   const [open, setOpen] = useState(false);
 
@@ -61,9 +69,14 @@ export function HeaderClient({
     ? "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)]"
     : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
-  const logoClass = isHome
-    ? "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-white transition-colors hover:text-white/90 sm:min-h-0 sm:min-w-0"
-    : "flex min-h-11 min-w-11 items-center text-[21px] font-semibold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent sm:min-h-0 sm:min-w-0";
+  const logoClass = [
+    isHome
+      ? "flex min-h-11 min-w-11 shrink-0 items-center text-[21px] font-semibold tracking-tight text-white transition-colors hover:text-white/90 sm:min-h-0 sm:min-w-0"
+      : "flex min-h-11 min-w-11 shrink-0 items-center text-[21px] font-semibold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent sm:min-h-0 sm:min-w-0",
+    logoClearLeftRail ? "lg:ml-[11.5rem]" : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const navMuted = isHome ? "text-white/72" : "text-[#1d1d1f]";
 
@@ -81,7 +94,7 @@ export function HeaderClient({
 
   return (
     <>
-      <header className={`sticky top-0 z-50 isolate ${headerSurface}`}>
+      <header className={`sticky top-0 z-[32] isolate ${headerSurface}`}>
         <div className="mx-auto flex min-h-12 max-w-[980px] items-center justify-between gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:min-h-11 sm:gap-3 sm:px-6 lg:max-w-[1024px]">
           <Link href="/" className={logoClass}>
             <span>PRO</span>
