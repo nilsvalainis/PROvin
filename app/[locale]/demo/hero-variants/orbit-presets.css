@@ -2,15 +2,15 @@
  * Orbital halos — `marketing-hero-orbit-base` + `marketing-hero-orbit--{i|j10|s1…s20}`.
  * Melns + sudrabs: tikai `s1`–`s20` (un pārkrāsots `j10` fons / gredzeni).
  *
- * Gredzeni: divi statiski `span` (ārējais / iekšējais), bez animācijas — līdz tālākai iterācijai.
+ * Gredzeni: divi statiski `span` — ārējais sekcijas centrā; iekšējais ap `header` (Iriss + līnija + H1).
  */
 
 .marketing-hero-orbit-base.marketing-hero-section {
   --orbit-y: 42%;
-  --orbit-w-outer: min(100vw, 48rem);
-  --orbit-h-outer: min(100vw, 48rem);
-  --orbit-w-inner: min(78vw, 36rem);
-  --orbit-h-inner: min(78vw, 36rem);
+  --orbit-w-outer: min(82vw, 36rem, 76dvh);
+  --orbit-h-outer: min(82vw, 36rem, 76dvh);
+  --orbit-w-inner: min(72vw, 26rem, 62dvh);
+  --orbit-h-inner: min(72vw, 26rem, 62dvh);
   --orbit-border-outer: rgb(0 120 255 / 0.096);
   --orbit-border-inner: rgb(255 255 255 / 0.072);
   --orbit-opacity-outer: 0.84;
@@ -18,14 +18,16 @@
   --orbit-dur-a: 22s;
   --orbit-dur-b: 30s;
   --orbit-bg: radial-gradient(ellipse 100% 90% at 50% 100%, rgb(0 40 100 / 0.35), #020204 55%);
+  --orbit-ring-glow: 0 0 22px rgb(0 102 255 / 0.09), 0 0 48px rgb(0 120 255 / 0.05);
 
   position: relative;
   isolation: isolate;
   background: var(--orbit-bg);
+  overflow: visible !important;
 }
 
 .marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-outer,
-.marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-inner {
+.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-header-cluster > .marketing-hero-orbit-ring-inner {
   display: block;
   box-sizing: border-box;
   position: absolute;
@@ -38,25 +40,34 @@
 }
 
 .marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-outer {
-  left: calc(50% - var(--orbit-w-outer) / 2);
-  top: calc(var(--orbit-y) - var(--orbit-h-outer) / 2);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   width: var(--orbit-w-outer);
   height: var(--orbit-h-outer);
   border: 1px solid var(--orbit-border-outer);
   opacity: var(--orbit-opacity-outer);
+  box-shadow: var(--orbit-ring-glow);
 }
 
-.marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-inner {
-  left: calc(50% - var(--orbit-w-inner) / 2);
-  top: calc(var(--orbit-y) - var(--orbit-h-inner) / 2);
+.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-header-cluster > .marketing-hero-orbit-ring-inner {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   width: var(--orbit-w-inner);
   height: var(--orbit-h-inner);
   border: 1px solid var(--orbit-border-inner);
   opacity: var(--orbit-opacity-inner);
+  box-shadow: var(--orbit-ring-glow);
 }
 
 .marketing-hero-orbit-base.marketing-hero-section > div,
-.marketing-hero-orbit-base.marketing-hero-section > header {
+.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-header-cluster {
+  position: relative;
+  z-index: 1;
+}
+
+.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-header-cluster > header {
   position: relative;
   z-index: 1;
 }
