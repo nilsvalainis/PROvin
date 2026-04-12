@@ -1,12 +1,9 @@
-import { ChevronDown } from "lucide-react";
-import { getTranslations } from "next-intl/server";
 import { Footer } from "@/components/Footer";
 import { FinalCta } from "@/components/FinalCta";
 import { AutoWireframeBackground } from "@/components/home/AutoWireframeBackground";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { HomeMetaIntroSection } from "@/components/home/HomeMetaIntroSection";
 import { HomeScrollSurface } from "@/components/home/HomeScrollSurface";
-import { HowItWorksSignalGrid } from "@/components/home/HowItWorksSignalGrid";
 import { MarketingHero } from "@/components/home/MarketingHero";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
@@ -19,8 +16,6 @@ export default async function HomePage({
 }) {
   const sp = await searchParams;
   const cancelled = sp.atcelts === "1";
-  const tOrder = await getTranslations("Order");
-
   return (
     <HomeScrollSurface wireframe={<AutoWireframeBackground />}>
       <div className="relative z-10 min-w-0 bg-transparent">
@@ -31,23 +26,8 @@ export default async function HomePage({
           <div id="site-content" className="home-body-ink scroll-mt-14">
             <section className="demo-design-dir__section demo-design-dir__section--band-b py-16 sm:py-20">
               <div className="demo-design-dir__shell">
-                <div className="flex w-full justify-center">
-                  <a
-                    href="#order-form"
-                    className="provin-home-pill-cta provin-home-pill-cta--stack inline-flex touch-manipulation"
-                  >
-                    <span className="text-balance">{tOrder("scrollToFormAria")}</span>
-                    <ChevronDown className="h-5 w-5 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
-                  </a>
-                </div>
-                <div className="mt-10">
-                  <FinalCta cancelled={cancelled} orderEmbedded />
-                </div>
+                <FinalCta cancelled={cancelled} orderEmbedded />
               </div>
-            </section>
-
-            <section className="demo-design-dir__section demo-design-dir__section--band-c py-16 sm:py-20">
-              <HowItWorksSignalGrid />
             </section>
 
             <section className="demo-design-dir__section demo-design-dir__section--band-a py-16 sm:py-20">

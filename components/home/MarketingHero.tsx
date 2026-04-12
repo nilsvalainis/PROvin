@@ -6,6 +6,7 @@ import { ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type Lucid
 import { useTranslations } from "next-intl";
 import { ApprovedByIrissReveal } from "@/components/home/ApprovedByIrissReveal";
 import { MarketingHeroSpeedometer } from "@/components/home/MarketingHeroSpeedometer";
+import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import type { HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
 import { isOrbitFamilyVariant } from "@/lib/hero-orbit-j-presets";
 import {
@@ -76,6 +77,7 @@ export function MarketingHero({
   const silhouetteScanPathD =
     "M 70 44 A 26 26 0 1 1 18 44 A 26 26 0 1 1 70 44 M 64 64 L 83 83";
   const t = useTranslations("Hero");
+  const tOrder = useTranslations("Order");
   const rawPillars = t.raw("pillars");
   const pillars: HeroPillar[] = Array.isArray(rawPillars) ? (rawPillars as HeroPillar[]) : [];
 
@@ -376,7 +378,26 @@ export function MarketingHero({
                   {approvedBlock}
                 </div>
                 <div className="pointer-events-auto absolute inset-x-0 top-1/2 z-[1] flex -translate-y-1/2 flex-col items-center justify-center px-4 sm:px-8">
-                  {heroTitleStack}
+                  <div className="flex w-full flex-col items-center">
+                    {heroTitleStack}
+                    {orbitHomeCenterLayout && homeGlassLensCopy ? (
+                      <div className="mt-5 flex w-full max-w-[min(100%,36rem)] flex-col items-center gap-3 sm:mt-6">
+                        <p className="demo-design-dir__body mx-auto max-w-[min(100%,36rem)] text-balance text-center">
+                          {t("h2")}
+                        </p>
+                        <div className="w-full max-w-[14rem]">
+                          <DiagnosticScanLine variant="rail" className="w-full" />
+                        </div>
+                        <a
+                          href="#order-form"
+                          className="provin-home-pill-cta provin-home-pill-cta--stack mt-0.5 inline-flex touch-manipulation"
+                        >
+                          <span className="text-balance text-center">{tOrder("scrollToFormAria")}</span>
+                          <ChevronDown className="h-5 w-5 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
+                        </a>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </div>
               <div className="relative z-[2] mx-auto flex w-full max-w-[min(100%,53.76rem)] shrink-0 flex-col items-center pt-3 sm:pt-5">
