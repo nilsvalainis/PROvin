@@ -106,15 +106,17 @@ export function MarketingHero({
       <h1
         id={titleId}
         className={
-          isOrbitVisual
-            ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold tracking-[-0.02em] text-white/95 max-[380px]:tracking-[-0.025em]${designDirection ? " max-w-[min(100%,40rem)]" : ""}`
-            : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]`
+          homeGlassLensCopy && isOrbitVisual
+            ? "sr-only"
+            : isOrbitVisual
+              ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold tracking-[-0.02em] text-white/95 max-[380px]:tracking-[-0.025em]${designDirection ? " max-w-[min(100%,40rem)]" : ""}`
+              : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]`
         }
       >
         {homeGlassLensCopy ? (
-          <span className="marketing-hero-title-line2 marketing-hero-title-line2--primary-solo block text-white/95">
-            {t("h1Line2")}
-          </span>
+          <>
+            {t("lensTitle")} — {t("h1Line2")}
+          </>
         ) : (
           <>
             <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
@@ -326,7 +328,10 @@ export function MarketingHero({
               />
             </svg>
             {homeGlassLensCopy ? (
-              <span className="marketing-hero-orbit-silhouette__lens-title">{t("lensTitle")}</span>
+              <span className="marketing-hero-orbit-silhouette__lens-stack">
+                <span className="marketing-hero-orbit-silhouette__lens-line1">{t("lensTitle")}</span>
+                <span className="marketing-hero-orbit-silhouette__lens-line2">{t("h1Line2")}</span>
+              </span>
             ) : null}
           </span>
         ) : (
