@@ -103,6 +103,8 @@ export function MarketingHero({
   /** Sākumlapa ar palielināmo stiklu: apakšvirsrakstu nerāda; virsraksts lēcas tekstā (`lensLine1` + `lensLine2`). */
   const homeGlassLensCopy = Boolean(designDirection && orbitGlassSilhouette && !demoVariant);
   const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
+  /** Sākumlapa: bez „APPROVED BY IRISS” hero augšā (kopā ar `HomeMetaIntroSection` virzienu). */
+  const hideHomeApprovedByIriss = Boolean(designDirection && !demoVariant);
 
   const heroTitleStack = (
     <div className="flex w-full flex-col items-center text-center">
@@ -145,7 +147,7 @@ export function MarketingHero({
     </div>
   );
 
-  const approvedBlock = (
+  const approvedBlock = hideHomeApprovedByIriss ? null : (
     <ApprovedByIrissReveal
       text={t("approved")}
       className={
