@@ -97,7 +97,7 @@ export async function PricingIncluded() {
             );
           })}
         </ul>
-        <p className="home-muted-foreground mt-4 max-w-[65ch] text-left text-xs font-normal leading-snug sm:text-sm">
+        <p className="mt-4 max-w-[65ch] text-left text-[10px] font-normal leading-snug text-white/[0.22] sm:text-[12px]">
           {t("autoRecordsFootnote")}
         </p>
       </div>
