@@ -1,88 +1,63 @@
 import type { Metadata } from "next";
+import { Fragment } from "react";
 import { setRequestLocale } from "next-intl/server";
-import { MarketingHero, HERO_ORBIT_SUBVARIANTS, type HeroVisualDemoVariant } from "@/components/home/MarketingHero";
-import type { HeroOrbitSubvariant } from "@/lib/hero-orbit-j-presets";
+import { MarketingHero } from "@/components/home/MarketingHero";
+import {
+  HERO_DEMO_SPEEDOMETER_VARIANTS,
+  HERO_SILVER_BLACK_SUBVARIANTS,
+  type HeroSilverBlackSubvariant,
+  type HeroVisualDemoVariant,
+} from "@/lib/hero-orbit-j-presets";
 import { routing } from "@/i18n/routing";
+import { OrbitRingsExplainer } from "./OrbitRingsExplainer";
 import "./orbit-presets.css";
-import "./variants.css";
 
-const J_ORBIT_THEMES: { title: string; desc: string }[] = [
-  { title: "Melns · cyan gredzeni", desc: "Pilnīgi melns, spilgti zili gredzeni; H1 šaurāks tracking; ikonas mazākas, zilgana." },
-  { title: "Melns · dubultzils", desc: "Tumšs gradients; ātrāka rotācija; pīlāru teksts mazāks; zilajiem vārdiem spīdums." },
-  { title: "Melns · balta aura", desc: "Pelēks starojums; nepāra ikonas cyan, pāra — lavanda; kontrasts." },
-  { title: "Melns · conic", desc: "Konisks fona tonis; lielāks ārējais gredzens; H1 nedaudz mazāks clamp." },
-  { title: "Tumši · zila jūra", desc: "Zila „jūra” lejā; iekšējais gredzens tirkīza; drop-shadow uz ikonām." },
-  { title: "Pelēks · sudrabs", desc: "Charcoal fons; sudraba gredzeni; otrā H1 rinda pelēcīgāka; pīlāru teksts auksti pelēks." },
-  { title: "Pelēks · šaurie gredzeni", desc: "Augsts panels; mazāks iekšējais gredzens; zilie vārdi gaišāki; ikonas sudrabzilas." },
-  { title: "Pelēks · offset", desc: "Pelēks radials sānis; gredzeni lēnāki; pīlāru tracking platāks, micro teksts." },
-  { title: "Pelēks · kompakts", desc: "Šaurāki gredzeni; baltāka ārējā līnija; ikonas nedaudz lielākas." },
-  { title: "Pelēks · augšas gaisma", desc: "Gaisma no augšas; otrā rinda ar plašu tracking; orbitālais ritms vidējs." },
-  { title: "Zils · dziļš neons", desc: "Spēcīgs zils apakšā; neona gredzeni; zilās atslēgvārdi gaišāki; ikonas tirkīza." },
-  { title: "Zils · liels lauks", desc: "Milzīgs ārējais gredzens; četras ikonas dažādās zilās niansēs." },
-  { title: "Zils · ātrs", desc: "Ātra rotācija; zils stars no apakšas; kompaktāks iekšējais gredzens." },
-  { title: "Zils · lēns epics", desc: "Ļoti lēna rotācija; spēcīgs zils spīdums ap H1; gaišas iekšējās līnijas." },
-  { title: "Zils · conic jūra", desc: "Konisks zils tonis; pīlāru teksts gaiši zils; orbitālā elpa." },
-  { title: "Violetzils", desc: "Violeti-zils gradients fons; violeti ārējais, zils iekšējais gredzens; H1 zilie vārdi lavanda." },
-  { title: "Melns · apgriezti gredzeni", desc: "Liels iekšējais, mazāks ārējais — otra secība vizuāli; lēna rotācija." },
-  { title: "Zils · ikonas lielākas", desc: "Zils highlights; ikonas scale + biezāks stroke; orbitālais ritms dinamisks." },
-  { title: "Pelēks · H1 vieglāks", desc: "Pelēks radials; otrā rinda ļoti vieglas svara; gredzeni lēni." },
-  { title: "Zils · max drama", desc: "Milzīgs ārējais gredzens, mazs iekšējais; spēcīgs zils stars; kontrasta virsotne." },
-];
+const REFERENCE_VARIANTS = ["i", "j10"] as const satisfies readonly HeroVisualDemoVariant[];
 
-const J_ORBIT_META: Record<HeroOrbitSubvariant, { title: string; desc: string }> = Object.fromEntries(
-  HERO_ORBIT_SUBVARIANTS.map((id, i) => {
-    const t = J_ORBIT_THEMES[i];
-    if (!t) throw new Error(`Missing orbit theme for ${id}`);
-    return [id, t] as const;
-  }),
-) as Record<HeroOrbitSubvariant, { title: string; desc: string }>;
-
-const VARIANT_META: Record<HeroVisualDemoVariant, { title: string; desc: string }> = {
-  a: {
-    title: "Editorial + mist",
-    desc: "Dziļāks fons, spēcīgāka „migla” aiz virsraksta, smalkāks H1.",
+const SILVER_META: Record<HeroSilverBlackSubvariant, { title: string; desc: string }> = {
+  s1: { title: "Melns · smalki sudraba gredzeni", desc: "Tīrs melns; plānas sudraba līnijas; vidējs temps." },
+  s2: { title: "Sudraba migla augšā", desc: "Gaisma no augšas; kontrasta gredzeni." },
+  s3: { title: "Charcoal slīnis", desc: "Lineārs gradients; mazāks iekšējais gredzens." },
+  s4: { title: "Sudrabs apakšā", desc: "Ātrs griešanās ritms; spīdīgāka ārējā mala." },
+  s5: { title: "Pelēks highlights", desc: "Lēns; zema ārējā gredzena caurspīdība." },
+  s6: { title: "Konisks pelēks", desc: "Conic fons; dinamisks ātrums." },
+  s7: { title: "Plats ārējais lauks", desc: "Liels ārējais, šaurs iekšējais." },
+  s8: { title: "Augsta kontrasta gredzeni", desc: "Spēcīgākas robežas; līdzsvars ārējais/iekšējais." },
+  s9: { title: "Pelēks centrs", desc: "Viegls highlights centrā; „elpojošs” fons." },
+  s10: { title: "Vertikālais gradients", desc: "Pelēka josla vidū; sudraba ārējās līnijas." },
+  s11: { title: "Sudrabs no kreisās", desc: "Asimetrisks radials; alternējošs spin temps." },
+  s12: { title: "Apakšas aura", desc: "Gaisma no apakšas; gaišākas iekšējās līnijas." },
+  s13: { title: "Augšas panelis", desc: "Šaurāks lauks; ātrāka rotācija." },
+  s14: { title: "Plats iekšējais", desc: "Liels iekšējais gredzens; lēns ārējais." },
+  s15: { title: "Dziļš pelēks", desc: "Vignette; centrēts orbitālais punkts." },
+  s16: { title: "Diskrēts highlights", desc: "Augšējā kreisā „lāsa”; smalki gredzeni." },
+  s17: { title: "Zems kontrasts", desc: "Ļoti pelēks; gandrīz statisks iespaids." },
+  s18: { title: "Horizontāla sudraba josla", desc: "Gaisma no augšas kā josla." },
+  s19: { title: "Sānu sudrabs", desc: "Asimetrisks fons; vidējs ritms." },
+  s20: {
+    title: "Sudraba slīnis · pilna orbitālā rotācija",
+    desc: "Līdzīgs S19, bet cits fona slīnis; abi centrālie gredzeni griežas ap savu asi (::before / ::after).",
   },
-  b: {
-    title: "Glass cockpit",
-    desc: "Spēcīgāks stikls, zila kontūra, pīlāru kaste ar dziļumu.",
-  },
-  c: {
-    title: "Typographic sculpture",
-    desc: "Ikonas kreisajā, teksts pa kreisi; „AUDITS” kā otrais slānis.",
-  },
-  d: {
-    title: "Cinematic thread",
-    desc: "Zilā kinematogrāfiskā aura + spēcīgāks pavediens zem skenēšanas.",
-  },
-  e: {
-    title: "Aurora drift",
-    desc: "Daudzslāņu zils/violeti/teal aurora + lēna „elpa” virs fona.",
-  },
-  f: {
-    title: "Blueprint mesh",
-    desc: "Perspektīvs režģis + dziļš vignette — „diagnostikas telpa”.",
-  },
-  g: {
-    title: "Spotlight + gradient H1",
-    desc: "Augšējais spotlight; VIN/SLUDINĀJUMA ar gradienta metāla zilumu.",
-  },
-  h: {
-    title: "Silver horizon",
-    desc: "Horizontāla sudraba josla ar ļoti lēnu pulsāciju centrā.",
-  },
-  i: {
-    title: "Orbital halos (oriģināls)",
-    desc: "Divi rotējoši gredzeni — bāzes izskats; J1–J20 ir šīs pašas loģikas variācijas.",
-  },
-  ...J_ORBIT_META,
 };
 
-const ROW_FIRST: HeroVisualDemoVariant[] = ["a", "b", "c", "d"];
-const ROW_SECOND: HeroVisualDemoVariant[] = ["e", "f", "g", "h", "i"];
-const ROW_ORBIT_J: HeroVisualDemoVariant[] = [...HERO_ORBIT_SUBVARIANTS];
+const VARIANT_META: Record<HeroVisualDemoVariant, { title: string; desc: string }> = {
+  i: {
+    title: "Orbital halos (atsauce)",
+    desc: "Oriģinālais zilais orbitālais virziens — salīdzinājumam ar melnu/sudrabu sēriju.",
+  },
+  j10: {
+    title: "Pelēks · augšas gaisma (atsauce)",
+    desc: "Atskaites variants; fons un gredzeni tikai melni / sudraba toņi.",
+  },
+  ...SILVER_META,
+};
+
+const DEMO_ORDER: HeroVisualDemoVariant[] = [...REFERENCE_VARIANTS, ...HERO_SILVER_BLACK_SUBVARIANTS];
+
+const SPEEDO_SET = new Set<string>(HERO_DEMO_SPEEDOMETER_VARIANTS);
 
 export const metadata: Metadata = {
-  title: "Hero vizuālie varianti (A–I + J1–J20)",
+  title: "Hero orbit — melns / sudrabs (demo)",
   robots: { index: false, follow: false },
 };
 
@@ -94,21 +69,34 @@ export function generateStaticParams() {
 
 function DemoSlab({ variant }: { variant: HeroVisualDemoVariant }) {
   const m = VARIANT_META[variant];
-  const letter = variant.toUpperCase();
+  const label = variant.toUpperCase();
+  const speedo = SPEEDO_SET.has(variant);
 
   return (
     <div className="flex w-full items-stretch border-b border-white/[0.09]">
       <div className="min-h-[100dvh] min-h-[100svh] min-w-0 flex-1">
-        <MarketingHero demoVariant={variant} sectionDomId={`demo-hero-${variant}`} />
+        <MarketingHero
+          demoVariant={variant}
+          sectionDomId={`demo-hero-${variant}`}
+          demoSpeedometer={speedo}
+          demoOrbitRings="spin"
+        />
       </div>
       <aside
         className="sticky top-0 flex min-h-[100dvh] min-h-[100svh] w-10 shrink-0 flex-col items-center justify-center gap-2 border-l border-white/15 bg-gradient-to-b from-[#07142c] via-[#030308] to-[#050510] py-6 shadow-[inset_1px_0_0_rgba(255,255,255,0.04)] sm:w-[3.25rem] sm:py-8"
-        aria-label={`Variants ${letter}: ${m.title}. ${m.desc}`}
+        aria-label={`Variants ${label}: ${m.title}. ${m.desc}`}
       >
-        <span className="select-none text-[1.45rem] font-black leading-none tracking-tight text-[#4b9dff] sm:text-[1.85rem]">{letter}</span>
+        <span className="select-none text-[1.25rem] font-black leading-none tracking-tight text-[#4b9dff] sm:text-[1.55rem]">
+          {label}
+        </span>
         <span className="hidden max-w-[9rem] px-1 text-center text-[8px] font-medium uppercase leading-tight tracking-[0.12em] text-white/40 sm:block">
           {m.title}
         </span>
+        {speedo ? (
+          <span className="hidden text-[7px] font-semibold uppercase tracking-widest text-amber-200/80 sm:block" title="Ar spidometra šautru">
+            RPM
+          </span>
+        ) : null}
       </aside>
     </div>
   );
@@ -121,48 +109,64 @@ export default async function HeroVariantsDemoPage({ params }: PageProps) {
   return (
     <div className="min-w-0 bg-black text-white">
       <header className="sticky top-0 z-[70] border-b border-white/10 bg-black/90 px-4 py-3 backdrop-blur-md sm:px-6">
-        <h1 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/90">Hero — demo A–I + J1–J20</h1>
+        <h1 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/90">Hero — orbit demo</h1>
         <p className="mt-1 max-w-[60rem] text-[13px] leading-relaxed text-white/55">
-          <strong className="text-white/75">A–D</strong> un <strong className="text-white/75">E–I</strong> kā iepriekš. Zemāk{' '}
-          <strong className="text-white/75">J1–J20</strong> — tā pati orbitalā gredženu ideja kā <strong className="text-white/75">I</strong>, bet ar atšķirīgiem
-          foniem (melns / pelēks / zils), gredženu ātrumu, izmēru un tipogrāfiju / ikonu niansēm. Katram blokam labajā malā apzīmējums (piem.{' '}
-          <span className="font-semibold text-[#6ea8ff]">J7</span>). „APPROVED BY IRISS” + animācija un skenēšanas līnija visur.
+          Atsauce: <strong className="text-white/80">I</strong> (Orbital halos) un <strong className="text-white/80">J10</strong> (Pelēks · augšas gaisma). Tad{' '}
+          <strong className="text-white/80">S1–S20</strong> — tikai melni un sudraba toņi fona gradientos. S1–S6 ar dekoratīvu spidometra šautru. Visos orbitālajos
+          blokos, tostarp <strong className="text-white/80">S19</strong> un <strong className="text-white/80">S20</strong>, centrālie gredzeni pilnībā rotē ap savu
+          asi; statiskais salīdzinājums — tikai lapas apakšā, mazajā demonstrācijā.
         </p>
         <p className="mt-2 text-[11px] text-white/40">
-          URL: <span className="font-mono text-white/55">/demo/hero-variants</span>
+          Ceļš: <span className="font-mono text-white/55">/demo/hero-variants</span>
+        </p>
+        <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white/35">Tiešā saite uz rotējošajiem gredzeniem ·</p>
+        <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+          <a
+            href="#demo-hero-s19"
+            className="text-[11px] text-sky-400/90 underline decoration-sky-500/30 underline-offset-2 hover:text-sky-300"
+          >
+            S19 — Sānu sudrabs
+          </a>
+          <span className="text-white/20" aria-hidden>
+            ·
+          </span>
+          <a
+            href="#demo-hero-s20"
+            className="text-[11px] text-sky-400/90 underline decoration-sky-500/30 underline-offset-2 hover:text-sky-300"
+          >
+            S20 — pilna rotācija
+          </a>
+          <span className="text-white/20" aria-hidden>
+            ·
+          </span>
+          <a
+            href="#demo-silver-series"
+            className="text-[11px] text-white/45 underline decoration-white/20 underline-offset-2 hover:text-white/70"
+          >
+            S1–S20 josla
+          </a>
         </p>
       </header>
 
-      <section aria-label="Varianti A līdz D">
-        <h2 className="sr-only">A–D</h2>
-        {ROW_FIRST.map((v) => (
-          <DemoSlab key={v} variant={v} />
+      <section aria-label="Orbitālie demo varianti">
+        <h2 className="sr-only">I, J10, S1–S20</h2>
+        {DEMO_ORDER.map((v, idx) => (
+          <Fragment key={v}>
+            {idx === REFERENCE_VARIANTS.length ? (
+              <div
+                id="demo-silver-series"
+                className="scroll-mt-28 border-y border-white/10 bg-white/[0.04] px-4 py-2.5 text-center sm:px-6"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/50">S1 — S20 · melns / sudrabs</p>
+                <p className="mt-0.5 text-[11px] text-white/38">Seši ar spidometru; S19–S20 — pilna gredzenu rotācija.</p>
+              </div>
+            ) : null}
+            <DemoSlab variant={v} />
+          </Fragment>
         ))}
       </section>
 
-      <div className="border-y border-[#0066ff]/25 bg-gradient-to-r from-[#0066ff]/10 via-transparent to-[#0066ff]/10 px-4 py-3 text-center sm:px-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#7ab8ff]">E — I</p>
-        <p className="mt-1 text-[12px] text-white/45">Iepriekšējie „grandiozākie” virzieni.</p>
-      </div>
-
-      <section aria-label="Varianti E līdz I">
-        <h2 className="sr-only">E–I</h2>
-        {ROW_SECOND.map((v) => (
-          <DemoSlab key={v} variant={v} />
-        ))}
-      </section>
-
-      <div className="border-y border-white/10 bg-gradient-to-r from-white/[0.06] via-transparent to-white/[0.06] px-4 py-3 text-center sm:px-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">J1 — J20 · orbitalās variācijas (pēc I)</p>
-        <p className="mt-1 text-[12px] text-white/45">Tā pati divu gredženu loģika; mainās fons, krāsas, ātrums, izmēri, H1 un pīlāru stils.</p>
-      </div>
-
-      <section aria-label="Orbital apakšvarianti J1 līdz J20">
-        <h2 className="sr-only">J1–J20</h2>
-        {ROW_ORBIT_J.map((v) => (
-          <DemoSlab key={v} variant={v} />
-        ))}
-      </section>
+      <OrbitRingsExplainer />
     </div>
   );
 }

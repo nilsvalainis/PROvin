@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 const CX = 120;
 const CY = 108;
 const R = 76;
@@ -9,10 +11,13 @@ function polar(deg: number, radius = R) {
   return { x: CX + radius * Math.cos(rad), y: CY - radius * Math.sin(rad) };
 }
 
+export type MarketingHeroSpeedometerTone = "default" | "mono";
+
 /**
  * Dekoratīvs pusloka spidometrs — zem hero virsraksta (bez interakcijas).
  */
-export function MarketingHeroSpeedometer() {
+export function MarketingHeroSpeedometer({ tone = "default" }: { tone?: MarketingHeroSpeedometerTone }) {
+  const gradId = useId().replace(/:/g, "");
   const ticks: { angle: number; major: boolean }[] = [];
   for (let a = 212; a <= 328; a += 10) {
     ticks.push({ angle: a, major: (a - 212) % 20 === 0 });
@@ -20,6 +25,7 @@ export function MarketingHeroSpeedometer() {
 
   const arcStart = polar(212);
   const arcEnd = polar(328);
+  const mono = tone === "mono";
 
   return (
     <svg
@@ -29,10 +35,20 @@ export function MarketingHeroSpeedometer() {
       aria-hidden
     >
       <defs>
-        <linearGradient id="hero-speedo-grad" x1="0" y1="0" x2="240" y2="0">
-          <stop offset="0%" stopColor="#0066ff" stopOpacity="0.45" />
-          <stop offset="55%" stopColor="#ffffff" stopOpacity="0.2" />
-          <stop offset="100%" stopColor="#0066ff" stopOpacity="0.35" />
+        <linearGradient id={gradId} x1="0" y1="0" x2="240" y2="0">
+          {mono ? (
+            <>
+              <stop offset="0%" stopColor="#b8bcc8" stopOpacity="0.5" />
+              <stop offset="50%" stopColor="#f0f2f8" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#8f96a8" stopOpacity="0.45" />
+            </>
+          ) : (
+            <>
+              <stop offset="0%" stopColor="#0066ff" stopOpacity="0.45" />
+              <stop offset="55%" stopColor="#ffffff" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="#0066ff" stopOpacity="0.35" />
+            </>
+          )}
         </linearGradient>
       </defs>
       <g className="hero-speedo-bezel" style={{ transformOrigin: `${CX}px ${CY}px` }}>
@@ -40,7 +56,7 @@ export function MarketingHeroSpeedometer() {
           cx={CX}
           cy={CY}
           r={R + 4}
-          stroke="url(#hero-speedo-grad)"
+          stroke={`url(#${gradId})`}
           strokeWidth="0.35"
           opacity={0.55}
         />
@@ -73,10 +89,10 @@ export function MarketingHeroSpeedometer() {
           y1={CY}
           x2={CX}
           y2={CY - R + 10}
-          stroke="#0066ff"
+          stroke={mono ? "#d4d8e2" : "#0066ff"}
           strokeWidth="1.75"
           strokeLinecap="round"
-          opacity={0.72}
+          opacity={mono ? 0.78 : 0.72}
         />
         <circle cx={CX} cy={CY} r={3.5} fill="rgba(5,5,5,0.55)" stroke="rgba(255,255,255,0.28)" strokeWidth="0.5" />
       </g>

@@ -4,6 +4,7 @@ import { ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type Lucid
 import { useTranslations } from "next-intl";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { ApprovedByIrissReveal } from "@/components/home/ApprovedByIrissReveal";
+import { MarketingHeroSpeedometer } from "@/components/home/MarketingHeroSpeedometer";
 import type { HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
 import { isOrbitFamilyVariant } from "@/lib/hero-orbit-j-presets";
 import {
@@ -13,8 +14,13 @@ import {
   homeMarketingPillarGridWidthClass,
 } from "@/lib/home-layout";
 
-export type { HeroOrbitSubvariant, HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
-export { HERO_ORBIT_SUBVARIANTS, isOrbitFamilyVariant } from "@/lib/hero-orbit-j-presets";
+export type { HeroOrbitSubvariant, HeroSilverBlackSubvariant, HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
+export {
+  HERO_DEMO_SPEEDOMETER_VARIANTS,
+  HERO_ORBIT_SUBVARIANTS,
+  HERO_SILVER_BLACK_SUBVARIANTS,
+  isOrbitFamilyVariant,
+} from "@/lib/hero-orbit-j-presets";
 
 const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
 
@@ -26,30 +32,52 @@ const pillarTitleClass =
 const pillarTitleClassC =
   "line-clamp-2 max-h-[2.4em] min-h-[2.4em] w-full max-w-[13.5rem] whitespace-pre-line text-[9px] font-semibold uppercase leading-[1.25] tracking-tight text-white/95 sm:text-[10px]";
 
+/** Produkcijas hero orbitālais izskats — neietekmē `id` (paliek `home-hero` sānu joslai). */
+export type MarketingHeroHomeOrbitPreset = "s19";
+
 export type MarketingHeroProps = {
   /** Salīdzināšanas demo — `/demo/hero-variants`; noklusējumā nav. */
   demoVariant?: HeroVisualDemoVariant;
+  /** Produkcija: S19 „Sānu sudrabs” + pilna gredzenu rotācija; nedrīkst lietot kopā ar `demoVariant`. */
+  homeOrbitPreset?: MarketingHeroHomeOrbitPreset;
   /** Sekcijas `id` (demo: `demo-hero-a` utt.). */
   sectionDomId?: string;
+  /** Dekoratīvs spidometrs zem virsraksta (demo). */
+  demoSpeedometer?: boolean;
+  /** Orbitālo gredzenu pseudo-elementu animācija: `static` = apstādināts (demo). */
+  demoOrbitRings?: "spin" | "static";
 };
 
 /**
  * Pilnekrāna tumšais Hero: „APPROVED…” + H1 ekrāna centrā; četras ikonas apakšā; „Turpināt”.
  * `demoVariant` ieslēdz tikai vizuālos variantus demo lapā.
  */
-export function MarketingHero({ demoVariant, sectionDomId }: MarketingHeroProps = {}) {
+export function MarketingHero({
+  demoVariant,
+  homeOrbitPreset,
+  sectionDomId,
+  demoSpeedometer = false,
+  demoOrbitRings = "spin",
+}: MarketingHeroProps = {}) {
   const t = useTranslations("Hero");
   const rawPillars = t.raw("pillars");
   const pillars: HeroPillar[] = Array.isArray(rawPillars) ? (rawPillars as HeroPillar[]) : [];
 
   const sectionId = sectionDomId ?? (demoVariant ? `demo-hero-${demoVariant}` : "home-hero");
   const titleId = demoVariant ? `marketing-hero-title-${demoVariant}` : "marketing-hero-title";
-  const isC = demoVariant === "c";
-  const isB = demoVariant === "b";
+  const dv = demoVariant as string | undefined;
+  const isC = dv === "c";
+  const isB = dv === "b";
+  const isOrbitDemo = Boolean(demoVariant && isOrbitFamilyVariant(demoVariant));
   const orbitUiClass =
-    demoVariant && isOrbitFamilyVariant(demoVariant)
+    isOrbitDemo
       ? `marketing-hero-orbit-base marketing-hero-orbit--${demoVariant}`
-      : "";
+      : !demoVariant && homeOrbitPreset === "s19"
+        ? "marketing-hero-orbit-base marketing-hero-orbit--s19"
+        : "";
+  const isOrbitVisual = Boolean(orbitUiClass);
+  const dataHeroVariantForCss = demoVariant ?? (!demoVariant && homeOrbitPreset === "s19" ? "s19" : undefined);
+  const orbitRingsMode = isOrbitVisual ? (demoVariant ? demoOrbitRings : "spin") : "spin";
 
   const scanBlock = (
     <div className="marketing-hero-scan-wrap mx-auto w-full max-w-[min(100%,22rem)] pt-0.5 sm:max-w-[min(100%,26rem)]">
@@ -95,10 +123,12 @@ export function MarketingHero({ demoVariant, sectionDomId }: MarketingHeroProps 
   return (
     <section
       id={sectionId}
-      data-hero-variant={demoVariant}
-      className={`marketing-hero-section home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1rem,env(safe-area-inset-top,0px)+0.75rem)] text-white sm:px-8 sm:pb-9 sm:pt-[max(1.25rem,env(safe-area-inset-top,0px)+1rem)] ${orbitUiClass}`.trim()}
+      data-hero-variant={dataHeroVariantForCss}
+      data-orbit-rings={isOrbitVisual ? orbitRingsMode : undefined}
+      className={`marketing-hero-section home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1rem,env(safe-area-inset-top,0px)+0.75rem)] text-white sm:px-8 sm:pb-9 sm:pt-[max(1.25rem,env(safe-area-inset-top,0px)+1rem)] ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}`.trim()}
       aria-labelledby={titleId}
     >
+      {demoSpeedometer ? <MarketingHeroSpeedometer tone={demoVariant?.startsWith("s") ? "mono" : "default"} /> : null}
       <div className="min-h-0" aria-hidden />
 
       {headerWrapped}

@@ -1,49 +1,52 @@
 /**
- * Orbital „I” saimes demo apakšvarianti (J1–J20) — `/demo/hero-variants`.
+ * Hero demo orbitālās saimes identifikatori — `/demo/hero-variants`.
+ * Atsauces: `i` (Orbital halos), `j10` (Pelēks · augšas gaisma), `s1`–`s20` (melns + sudrabs).
  */
 
-export const HERO_ORBIT_SUBVARIANTS = [
-  "j1",
-  "j2",
-  "j3",
-  "j4",
-  "j5",
-  "j6",
-  "j7",
-  "j8",
-  "j9",
-  "j10",
-  "j11",
-  "j12",
-  "j13",
-  "j14",
-  "j15",
-  "j16",
-  "j17",
-  "j18",
-  "j19",
-  "j20",
+export const HERO_SILVER_BLACK_SUBVARIANTS = [
+  "s1",
+  "s2",
+  "s3",
+  "s4",
+  "s5",
+  "s6",
+  "s7",
+  "s8",
+  "s9",
+  "s10",
+  "s11",
+  "s12",
+  "s13",
+  "s14",
+  "s15",
+  "s16",
+  "s17",
+  "s18",
+  "s19",
+  "s20",
 ] as const;
 
-export type HeroOrbitSubvariant = (typeof HERO_ORBIT_SUBVARIANTS)[number];
+/** @deprecated Lietot `HERO_SILVER_BLACK_SUBVARIANTS` */
+export const HERO_ORBIT_SUBVARIANTS = HERO_SILVER_BLACK_SUBVARIANTS;
 
-export type HeroVisualDemoVariant =
-  | "a"
-  | "b"
-  | "c"
-  | "d"
-  | "e"
-  | "f"
-  | "g"
-  | "h"
-  | "i"
-  | HeroOrbitSubvariant;
+export type HeroSilverBlackSubvariant = (typeof HERO_SILVER_BLACK_SUBVARIANTS)[number];
 
-export function isHeroOrbitSubvariant(s: string): s is HeroOrbitSubvariant {
-  return (HERO_ORBIT_SUBVARIANTS as readonly string[]).includes(s);
+/** @deprecated Lietot `HeroSilverBlackSubvariant` */
+export type HeroOrbitSubvariant = HeroSilverBlackSubvariant;
+
+export type HeroVisualDemoVariant = "i" | "j10" | HeroSilverBlackSubvariant;
+
+export function isHeroSilverBlackSubvariant(s: string): s is HeroSilverBlackSubvariant {
+  return (HERO_SILVER_BLACK_SUBVARIANTS as readonly string[]).includes(s);
 }
 
-export function isOrbitFamilyVariant(s: string | undefined): s is "i" | HeroOrbitSubvariant {
-  if (s === "i") return true;
-  return typeof s === "string" && isHeroOrbitSubvariant(s);
+/** @deprecated */
+export const isHeroOrbitSubvariant = isHeroSilverBlackSubvariant;
+
+export function isOrbitFamilyVariant(s: string | undefined): s is "i" | "j10" | HeroSilverBlackSubvariant {
+  if (s === "i" || s === "j10") return true;
+  return typeof s === "string" && isHeroSilverBlackSubvariant(s);
 }
+
+/** Demo varianti ar dekoratīvo spidometru (MarketingHeroSpeedometer). */
+export const HERO_DEMO_SPEEDOMETER_VARIANTS: readonly HeroVisualDemoVariant[] = ["s1", "s2", "s3", "s4", "s5", "s6"];

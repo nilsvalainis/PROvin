@@ -122,42 +122,37 @@ export function CookieConsent() {
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-[100] border-t border-slate-200/90 bg-white/95 px-4 py-4 shadow-[0_-8px_32px_rgba(15,23,42,0.12)] backdrop-blur-md sm:px-6"
+      className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] left-[max(0.75rem,env(safe-area-inset-left,0px))] z-[100] w-[min(18.5rem,calc(100vw-1.5rem))] rounded-lg border border-white/12 bg-slate-950/88 px-3 py-2.5 shadow-[0_8px_28px_rgba(0,0,0,0.35)] backdrop-blur-md"
       role="dialog"
       aria-labelledby="cookie-consent-title"
     >
-      <div className="mx-auto flex max-w-4xl flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-        <div className="min-w-0 flex-1">
-          <h2
-            id="cookie-consent-title"
-            className="text-sm font-semibold text-[var(--color-apple-text)]"
-          >
+      <div className="flex flex-col gap-2">
+        <div className="min-w-0">
+          <h2 id="cookie-consent-title" className="text-[11px] font-semibold leading-tight tracking-tight text-white/90">
             {t("bannerTitle")}
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-[var(--color-provin-muted)]">
-            {t("bannerText")}
-          </p>
-          <p className="mt-2 text-xs text-[var(--color-provin-muted)]">
+          <p className="mt-1.5 text-[10px] leading-snug text-white/55 sm:text-[11px]">{t("bannerText")}</p>
+          <p className="mt-1.5 text-[10px] leading-none">
             <Link
               href="/privatuma-politika"
-              className="font-medium text-[var(--color-provin-accent)] underline decoration-[var(--color-provin-accent)]/35 underline-offset-2 hover:decoration-[var(--color-provin-accent)]"
+              className="font-medium text-sky-400/95 underline decoration-sky-400/30 underline-offset-2 hover:text-sky-300 hover:decoration-sky-300/50"
             >
               {t("privacyLink")}
             </Link>
           </p>
         </div>
-        <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-1.5 border-t border-white/[0.08] pt-2">
           <button
             type="button"
             onClick={onNecessary}
-            className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-[var(--color-apple-text)] shadow-sm hover:bg-slate-50"
+            className="w-full rounded-md border border-white/15 bg-white/[0.06] px-2 py-1.5 text-center text-[10px] font-medium leading-tight text-white/75 transition hover:border-white/25 hover:bg-white/[0.1] sm:text-[11px]"
           >
             {t("reject")}
           </button>
           <button
             type="button"
             onClick={onAnalytics}
-            className="provin-btn rounded-full px-4 py-2.5 text-sm font-medium"
+            className="w-full rounded-md bg-[var(--color-provin-accent)] px-2 py-1.5 text-center text-[10px] font-semibold leading-tight text-white shadow-sm transition hover:opacity-95 active:opacity-90 sm:text-[11px]"
           >
             {t("acceptAnalytics")}
           </button>

@@ -7,6 +7,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
 import { Footer } from "@/components/Footer";
+import "./demo/hero-variants/orbit-presets.css";
 
 export default async function HomePage({
   searchParams,
@@ -20,7 +21,7 @@ export default async function HomePage({
   return (
     <HomeScrollSurface wireframe={<AutoWireframeBackground />}>
       <div className="relative z-10 min-w-0 bg-transparent">
-        <MarketingHero />
+        <MarketingHero homeOrbitPreset="s19" />
 
         <div className="home-below-hero home-below-hero-cloud-layer home-body-ink">
           <HowItWorks tone="dark" />
