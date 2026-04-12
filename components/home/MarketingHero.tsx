@@ -95,6 +95,8 @@ export function MarketingHero({
   const dataHeroVariantForCss = demoVariant ?? homeOrbitKey;
   const orbitRingsMode = isOrbitVisual ? (demoVariant ? demoOrbitRings : "spin") : "spin";
   const orbitGlassSilhouette = Boolean(isOrbitVisual && !demoVariant);
+  /** Sākumlapa: vertikālais centrs starp augšu un pīlāriem + tipogrāfijas skala (`data-hero-orbit-home`). */
+  const orbitHomeCenterLayout = Boolean(designDirection && isOrbitVisual && !isB);
 
   const heroTitleStack = (
     <div className="flex w-full flex-col items-center text-center">
@@ -116,7 +118,7 @@ export function MarketingHero({
       <p
         className={
           designDirection
-            ? "demo-design-dir__body mx-auto mt-3 max-w-[min(100%,36rem)] text-balance text-center"
+            ? `demo-design-dir__body mx-auto mt-3 max-w-[min(100%,36rem)] text-balance text-center${orbitHomeCenterLayout ? " marketing-hero__tagline" : ""}`
             : `${homeHeroSubtitleClass} mx-auto mt-2.5 max-w-[min(100%,36rem)] text-balance text-[11px] font-medium uppercase leading-snug tracking-[0.14em] text-white/48 sm:mt-3 sm:text-[12px] sm:tracking-[0.16em]`
         }
       >
@@ -245,6 +247,7 @@ export function MarketingHero({
       id={sectionId}
       data-hero-variant={dataHeroVariantForCss}
       data-orbit-rings={isOrbitVisual ? orbitRingsMode : undefined}
+      data-hero-orbit-home={orbitHomeCenterLayout ? "" : undefined}
       className={isOrbitVisual ? sectionClassOrbit : sectionClassGrid}
       aria-labelledby={titleId}
     >
@@ -263,14 +266,14 @@ export function MarketingHero({
                   r="20"
                   gradientUnits="userSpaceOnUse"
                 >
-                  <stop offset="0%" stopColor="rgb(0 102 255)" stopOpacity="0.065" />
-                  <stop offset="40%" stopColor="rgb(0 102 255)" stopOpacity="0.022" />
+                  <stop offset="0%" stopColor="rgb(0 102 255)" stopOpacity="0.072" />
+                  <stop offset="40%" stopColor="rgb(0 102 255)" stopOpacity="0.024" />
                   <stop offset="100%" stopColor="rgb(0 102 255)" stopOpacity="0" />
                 </radialGradient>
                 <linearGradient id={silhouetteGradId} x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="rgb(230 235 245)" stopOpacity="0.23" />
-                  <stop offset="52%" stopColor="rgb(150 160 180)" stopOpacity="0.104" />
-                  <stop offset="100%" stopColor="rgb(210 218 232)" stopOpacity="0.184" />
+                  <stop offset="0%" stopColor="rgb(230 235 245)" stopOpacity="0.253" />
+                  <stop offset="52%" stopColor="rgb(150 160 180)" stopOpacity="0.114" />
+                  <stop offset="100%" stopColor="rgb(210 218 232)" stopOpacity="0.202" />
                 </linearGradient>
               </defs>
               <circle
@@ -288,10 +291,10 @@ export function MarketingHero({
                 strokeWidth="0.55"
                 vectorEffect="non-scaling-stroke"
               />
-              <circle cx="44" cy="44" r="20.5" stroke="rgb(255 255 255 / 0.063)" strokeWidth="0.42" vectorEffect="non-scaling-stroke" />
+              <circle cx="44" cy="44" r="20.5" stroke="rgb(255 255 255 / 0.069)" strokeWidth="0.42" vectorEffect="non-scaling-stroke" />
               <path
                 d="M 29 37 Q 44 31 59 37"
-                stroke="rgb(255 255 255 / 0.075)"
+                stroke="rgb(255 255 255 / 0.083)"
                 strokeWidth="0.4"
                 strokeLinecap="round"
                 vectorEffect="non-scaling-stroke"
@@ -320,12 +323,30 @@ export function MarketingHero({
       {demoSpeedometer ? <MarketingHeroSpeedometer tone={demoVariant?.startsWith("s") ? "mono" : "default"} /> : null}
 
       {isOrbitVisual ? (
-        <>
-          {orbitHeroHeader}
-          <div className="relative z-[2] mx-auto mt-auto flex min-h-0 w-full max-w-[min(100%,53.76rem)] flex-1 flex-col justify-end pt-3 sm:pt-5">
-            {pillarsAndCta}
+        orbitHomeCenterLayout ? (
+          <div className="relative z-[1] flex min-h-0 w-full flex-1 flex-col">
+            <div className="grid min-h-0 w-full flex-1 grid-rows-[1fr_auto]">
+              <div className="relative min-h-0">
+                <div className="pointer-events-auto absolute inset-x-0 top-0 z-[1] flex justify-center px-4 sm:px-8">
+                  {approvedBlock}
+                </div>
+                <div className="pointer-events-auto absolute inset-x-0 top-1/2 z-[1] flex -translate-y-1/2 flex-col items-center justify-center px-4 sm:px-8">
+                  {heroTitleStack}
+                </div>
+              </div>
+              <div className="relative z-[2] mx-auto w-full max-w-[min(100%,53.76rem)] shrink-0 pt-3 sm:pt-5">
+                {pillarsAndCta}
+              </div>
+            </div>
           </div>
-        </>
+        ) : (
+          <>
+            {orbitHeroHeader}
+            <div className="relative z-[2] mx-auto mt-auto flex min-h-0 w-full max-w-[min(100%,53.76rem)] flex-1 flex-col justify-end pt-3 sm:pt-5">
+              {pillarsAndCta}
+            </div>
+          </>
+        )
       ) : (
         <>
           <div className="min-h-0" aria-hidden />

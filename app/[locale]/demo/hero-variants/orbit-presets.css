@@ -68,16 +68,17 @@
   box-sizing: border-box;
   position: absolute;
   left: 50%;
-  top: 50%;
+  /* mazliet augstāk + ~15 % lielāks (platums) */
+  top: 45%;
   z-index: 0;
-  width: min(88vw, 46rem, 86dvh);
-  max-width: 46rem;
+  width: min(calc(88vw * 1.15), 52.9rem, calc(86dvh * 1.15));
+  max-width: 52.9rem;
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
   transform-origin: 50% 50%;
   pointer-events: none;
-  /* +15 % pret iepriekšējo 0.48 */
-  opacity: 0.552;
+  /* +15 %, tad +10 % redzamībai */
+  opacity: 0.607;
   animation: marketing-hero-orbit-silhouette-drift 52s ease-in-out infinite;
 }
 
@@ -85,13 +86,16 @@
   display: block;
   width: 100%;
   height: auto;
-  filter: drop-shadow(0 0 28px rgb(200 210 230 / 0.063));
+  filter:
+    drop-shadow(0 0 0.75px rgb(0 0 0 / 0.5))
+    drop-shadow(0 1px 2px rgb(0 0 0 / 0.38))
+    drop-shadow(0 0 32px rgb(200 210 230 / 0.069));
 }
 
 /* Kontūra: nepārtraukti zils „kometas” segments ar vieglu ēnu (pathLength=100). */
 .marketing-hero-orbit-silhouette__scan-path {
   fill: none;
-  stroke: rgb(100 175 255 / 0.92);
+  stroke: rgb(140 200 255 / 0.97);
   stroke-width: 0.95;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -100,10 +104,11 @@
   stroke-dasharray: 6 94;
   stroke-dashoffset: 0;
   filter:
-    drop-shadow(0 0 2px rgb(0 102 255 / 0.55))
+    drop-shadow(0 0 2px rgb(0 102 255 / 0.62))
     drop-shadow(0 1px 3px rgb(0 0 0 / 0.45))
-    drop-shadow(0 0 10px rgb(0 102 255 / 0.22));
-  animation: marketing-hero-orbit-silhouette-scan 7s linear infinite;
+    drop-shadow(0 0 10px rgb(0 102 255 / 0.28));
+  /* 3× ātrāk nekā iepriekšējie 7 s */
+  animation: marketing-hero-orbit-silhouette-scan calc(7s / 3) linear infinite;
 }
 
 @keyframes marketing-hero-orbit-silhouette-scan {
@@ -422,4 +427,47 @@
   left: calc(50% - 1.43rem);
   top: calc(50% - 1.43rem);
   border-color: rgb(160 165 175 / 0.18);
+}
+
+/* Sākumlapa (orbit + design-direction): H1 + apakšvirsraksts ~+30 %; vertikālais centrs starp augšu un pīlāriem — sk. MarketingHero grid */
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
+  max-width: min(100%, 22.75rem);
+  font-size: clamp(1.05625rem, 3.12vw + 0.26rem, 1.38125rem);
+  line-height: 1.12;
+  letter-spacing: -0.018em;
+}
+
+@media (min-width: 640px) {
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
+    max-width: min(100%, 28.6rem);
+    font-size: clamp(1.3rem, 2.08vw + 0.455rem, 1.625rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+}
+
+@media (min-width: 1024px) {
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
+    max-width: min(100%, 33.8rem);
+    font-size: clamp(1.4625rem, 1.43vw + 0.845rem, 1.7875rem);
+  }
+}
+
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2 {
+  margin-top: 0.2rem;
+  font-size: 0.78em;
+  letter-spacing: 0.06em;
+}
+
+@media (min-width: 640px) {
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2 {
+    margin-top: 0.3rem;
+    font-size: 0.82em;
+    letter-spacing: 0.08em;
+  }
+}
+
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero__tagline {
+  font-size: 1.1375rem;
+  line-height: 1.65;
 }
