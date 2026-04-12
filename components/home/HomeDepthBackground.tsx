@@ -3,33 +3,53 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 /**
- * Mājas „Deep Focus” fons caur Canvas (nevis CSS blur + gradient slāņi).
- * Augstāks DPR + gluds alpha(t) + trokšņa pattern — parasti ievērojami mazāk joslu nekā CSS.
+ * Mājas „Deep Focus” fons — Canvas. Platām / augstas DPR ekrāniem: augstāks
+ * iekšējais izšķirtspējas mērogs, vairāk gradienta soļu, lielāka trokšņa flīze.
  */
 
 const BASE = "#050505";
+const DESKTOP_MIN_CSS_W = 1024;
+const MAX_CANVAS_EDGE = 4096;
 
-let noiseTile: HTMLCanvasElement | null = null;
+const noiseTiles: { s?: HTMLCanvasElement; l?: HTMLCanvasElement } = {};
 
-function getNoiseTile(): HTMLCanvasElement {
-  if (noiseTile) return noiseTile;
-  const s = 128;
+function buildNoiseTile(size: 128 | 320): HTMLCanvasElement {
   const c = document.createElement("canvas");
-  c.width = s;
-  c.height = s;
+  c.width = size;
+  c.height = size;
   const n = c.getContext("2d");
   if (!n) return c;
-  const img = n.createImageData(s, s);
+  const img = n.createImageData(size, size);
   for (let i = 0; i < img.data.length; i += 4) {
     const v = (Math.random() * 255) | 0;
     img.data[i] = v;
     img.data[i + 1] = v;
     img.data[i + 2] = v;
-    img.data[i + 3] = 38;
+    img.data[i + 3] = size >= 320 ? 34 : 38;
   }
   n.putImageData(img, 0, 0);
-  noiseTile = c;
   return c;
+}
+
+function getNoiseTile(desktop: boolean): HTMLCanvasElement {
+  if (desktop) {
+    if (!noiseTiles.l) noiseTiles.l = buildNoiseTile(320);
+    return noiseTiles.l;
+  }
+  if (!noiseTiles.s) noiseTiles.s = buildNoiseTile(128);
+  return noiseTiles.s;
+}
+
+function resolveDpr(cssW: number, cssH: number, desktop: boolean): number {
+  const raw = window.devicePixelRatio ?? 1;
+  let dpr = desktop ? Math.min(raw, 3) : Math.min(raw, 2);
+  const bw = () => Math.floor(cssW * dpr);
+  const bh = () => Math.floor(cssH * dpr);
+  while (bw() > MAX_CANVAS_EDGE || bh() > MAX_CANVAS_EDGE) {
+    dpr *= 0.94;
+    if (dpr < 1) return 1;
+  }
+  return dpr;
 }
 
 function paintAtmosphere(canvas: HTMLCanvasElement) {
@@ -38,7 +58,8 @@ function paintAtmosphere(canvas: HTMLCanvasElement) {
 
   const cssW = Math.max(1, Math.floor(window.innerWidth));
   const cssH = Math.max(1, Math.floor(window.innerHeight));
-  const dpr = Math.min(window.devicePixelRatio ?? 1, 2);
+  const desktop = cssW >= DESKTOP_MIN_CSS_W;
+  const dpr = resolveDpr(cssW, cssH, desktop);
 
   canvas.width = Math.floor(cssW * dpr);
   canvas.height = Math.floor(cssH * dpr);
@@ -51,31 +72,32 @@ function paintAtmosphere(canvas: HTMLCanvasElement) {
 
   const cx = cssW * 0.5;
   const cy = cssH * 0.43;
-  const r = Math.max(cssW, cssH) * 0.92;
+  const r = Math.max(cssW, cssH) * (desktop ? 0.98 : 0.92);
   const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
 
-  const stops = 36;
-  for (let i = 0; i <= stops; i++) {
-    const t = i / stops;
-    const a = 0.079 * Math.pow(1 - t, 2.35);
-    g.addColorStop(t, `rgba(255,255,255,${a.toFixed(5)})`);
+  const nStops = desktop ? 72 : 40;
+  for (let i = 0; i <= nStops; i++) {
+    const t = i / nStops;
+    const a = 0.079 * Math.pow(1 - t, desktop ? 2.5 : 2.35);
+    const rgb = i % 2 === 0 ? "255,255,255" : "252,253,255";
+    g.addColorStop(t, `rgba(${rgb},${a.toFixed(5)})`);
   }
 
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, cssW, cssH);
 
-  const pat = ctx.createPattern(getNoiseTile(), "repeat");
+  const pat = ctx.createPattern(getNoiseTile(desktop), "repeat");
   if (pat) {
     ctx.save();
     ctx.globalCompositeOperation = "soft-light";
-    ctx.globalAlpha = 0.32;
+    ctx.globalAlpha = desktop ? 0.36 : 0.32;
     ctx.fillStyle = pat;
     ctx.fillRect(0, 0, cssW, cssH);
     ctx.restore();
 
     ctx.save();
     ctx.globalCompositeOperation = "overlay";
-    ctx.globalAlpha = 0.05;
+    ctx.globalAlpha = desktop ? 0.065 : 0.05;
     ctx.fillStyle = pat;
     ctx.fillRect(0, 0, cssW, cssH);
     ctx.restore();
