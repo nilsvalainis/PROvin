@@ -3,10 +3,18 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
-import { faqHashHref, homePath, irissAnchorHref } from "@/lib/paths";
+import { faqHashHref, homeIntroHashHref, homePath, irissAnchorHref, orderSectionHref } from "@/lib/paths";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
 
-const HOME_SCROLL_IDS = ["home-hero", ORDER_SECTION_ID, "cena", "kas-ir-iriss", "biezi-jautajumi", "kontakti"] as const;
+const HOME_SCROLL_IDS = [
+  "home-hero",
+  "home-intro",
+  ORDER_SECTION_ID,
+  "cena",
+  "kas-ir-iriss",
+  "biezi-jautajumi",
+  "kontakti",
+] as const;
 
 function useHash(): string {
   const [hash, setHash] = useState("");
@@ -23,11 +31,12 @@ function activeFromHash(raw: string): number | null {
   const h = raw.replace(/^#/, "").toLowerCase();
   if (!h) return null;
   if (h === "home-hero") return 0;
-  if (h === ORDER_SECTION_ID || h === "order-form" || h === "site-content") return 1;
-  if (h === "cena") return 2;
-  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) return 3;
-  if (h === "biezi-jautajumi") return 4;
-  if (h === "kontakti") return 5;
+  if (h === "home-intro") return 1;
+  if (h === ORDER_SECTION_ID || h === "order-form" || h === "site-content") return 2;
+  if (h === "cena") return 3;
+  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) return 4;
+  if (h === "biezi-jautajumi") return 5;
+  if (h === "kontakti") return 6;
   return null;
 }
 
@@ -49,8 +58,8 @@ function activeFromScroll(): number {
 function routeActiveIndex(pathname: string | null | undefined): number | null {
   if (pathname == null) return null;
   const p = pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
-  if (p === "/pasutit") return 1;
-  if (p === "/biezi-jautajumi") return 4;
+  if (p === "/pasutit") return 2;
+  if (p === "/biezi-jautajumi") return 5;
   return null;
 }
 
@@ -89,9 +98,10 @@ export function SiteSectionRail() {
     const kontaktiHref = base === "/" ? "/#kontakti" : `${base}#kontakti`;
     return [
       { href: base === "/" ? "/" : base, labelKey: "sakums" as const },
-      { href: "/pasutit", labelKey: "pasutit" as const },
-      { href: cenaHref, labelKey: "audits" as const },
-      { href: irissAnchorHref(locale), labelKey: "iriss" as const },
+      { href: homeIntroHashHref(locale), labelKey: "kasTasIr" as const },
+      { href: orderSectionHref(locale), labelKey: "pasutit" as const },
+      { href: cenaHref, labelKey: "kasIekljauts" as const },
+      { href: irissAnchorHref(locale), labelKey: "approvedIriss" as const },
       { href: bujHref, labelKey: "buj" as const },
       { href: kontaktiHref, labelKey: "kontakti" as const },
     ] as const;
@@ -160,7 +170,7 @@ export function SiteSectionRail() {
   if (!showRail) return null;
 
   const linkBase =
-    "group/link flex max-w-[9.5rem] items-start gap-2.5 text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-[color,opacity] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none lg:max-w-[10.5rem] lg:text-[10px] lg:tracking-[0.19em]";
+    "group/link flex max-w-[11rem] items-start gap-2.5 text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-[color,opacity] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none lg:max-w-[13rem] lg:text-[10px] lg:tracking-[0.19em]";
 
   return (
     <nav

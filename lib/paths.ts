@@ -5,6 +5,12 @@ export function homePath(locale: string): string {
   return locale === routing.defaultLocale ? "/" : `/${locale}`;
 }
 
+/** Sākumlapas ievads (`HomeMetaIntroSection`). */
+export function homeIntroHashHref(locale: string): string {
+  const base = homePath(locale);
+  return base === "/" ? "/#home-intro" : `${base}#home-intro`;
+}
+
 /** Link to order section on the home page, e.g. `/#pasutit` or `/en#pasutit`. */
 export function orderSectionHref(locale: string): string {
   const base = homePath(locale);

@@ -9,9 +9,10 @@
   "SiteRail": {
     "navAria": "Galvenās sadaļas",
     "sakums": "Sākums",
+    "kasTasIr": "Kas tas ir?",
     "pasutit": "Pasūtīt",
-    "audits": "Audits",
-    "iriss": "IRISS",
+    "kasIekljauts": "Kas iekļauts?",
+    "approvedIriss": "APPROVED BY IRISS",
     "buj": "BUJ",
     "kontakti": "Kontakti"
   }
