@@ -33,6 +33,8 @@ function activeFromHash(raw: string): number | null {
 
 function activeFromScroll(): number {
   if (typeof window === "undefined" || typeof document === "undefined") return 0;
+  /* Lapas augšā bez ritināšanas — vienmēr „Sākums”, lai nesāktu uz „Pasūtīt” no mērķa līnijas noapaļošanas. */
+  if (window.scrollY < 8) return 0;
   const line = window.scrollY + window.innerHeight * 0.22;
   let idx = 0;
   for (let i = 0; i < HOME_SCROLL_IDS.length; i++) {
@@ -152,7 +154,7 @@ export function SiteSectionRail() {
   if (!showRail) return null;
 
   const linkBase =
-    "group/link flex max-w-[9.5rem] items-start gap-2.5 text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-[color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none lg:max-w-[10.5rem] lg:text-[10px] lg:tracking-[0.19em]";
+    "group/link flex max-w-[9.5rem] items-start gap-2.5 text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-[color,opacity] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none lg:max-w-[10.5rem] lg:text-[10px] lg:tracking-[0.19em]";
 
   return (
     <nav
@@ -161,22 +163,23 @@ export function SiteSectionRail() {
     >
       {/* Plašāks „tuvuma” lauks + diskrēts fons tikai pie hover / tastatūras */}
       <div
-        className="pointer-events-none absolute -inset-x-2 -inset-y-6 left-0 z-0 rounded-r-[1.85rem] bg-gradient-to-r from-black/50 via-black/14 to-transparent opacity-0 transition-opacity duration-500 ease-out group-hover/rail:opacity-100 group-focus-within/rail:opacity-100 motion-reduce:transition-none"
+        className="pointer-events-none absolute -inset-x-2 -inset-y-6 left-0 z-0 rounded-r-[1.85rem] bg-gradient-to-r from-black/50 via-black/14 to-transparent opacity-0 transition-opacity duration-700 ease-[cubic-bezier(0.33,0.86,0.2,1)] group-hover/rail:opacity-100 group-focus-within/rail:opacity-100 motion-reduce:transition-none"
         aria-hidden
       />
 
       <div className="relative z-10 flex h-full min-h-0 w-max flex-1 flex-row items-stretch gap-3.5 pl-0.5">
         <div ref={trackRef} className="relative h-full min-h-0 w-0.5 shrink-0">
           <div
-            className="absolute inset-y-1.5 left-1/2 w-px -translate-x-1/2 bg-white/[0.06] transition-[background-color] duration-500 ease-out group-hover/rail:bg-white/[0.11] group-focus-within/rail:bg-white/[0.11]"
+            className="absolute inset-y-1.5 left-1/2 w-px -translate-x-1/2 bg-white/[0.06] transition-[background-color] duration-700 ease-out group-hover/rail:bg-white/[0.11] group-focus-within/rail:bg-white/[0.11]"
             aria-hidden
           />
           <div
-            className="absolute left-1/2 w-[2px] -translate-x-1/2 rounded-full bg-[#0066ff] opacity-90 shadow-[0_0_10px_rgba(0,102,255,0.28)] transition-[top,box-shadow,opacity,height] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:!transition-none group-hover/rail:opacity-100 group-hover/rail:shadow-[0_0_14px_rgba(0,102,255,0.38)]"
+            className="absolute left-1/2 w-[2px] -translate-x-1/2 rounded-full bg-[#0066ff] opacity-90 shadow-[0_0_10px_rgba(0,102,255,0.28)] transition-[top,box-shadow,opacity,height] duration-700 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:!transition-none group-hover/rail:opacity-100 group-hover/rail:shadow-[0_0_14px_rgba(0,102,255,0.38)]"
             style={{
               top: dot.top,
               height: dot.height,
-              transition: "top 280ms cubic-bezier(0.22, 1, 0.36, 1), height 200ms ease, box-shadow 400ms ease, opacity 400ms ease",
+              transition:
+                "top 520ms cubic-bezier(0.33, 0.86, 0.2, 1), height 360ms cubic-bezier(0.33, 0.86, 0.2, 1), box-shadow 600ms ease-out, opacity 600ms ease-out",
             }}
             aria-hidden
           />
@@ -197,15 +200,15 @@ export function SiteSectionRail() {
                     className={`${linkBase} ${
                       isActive
                         ? "text-white"
-                        : "text-white/[0.22] group-hover/rail:text-white/[0.48] group-focus-within/rail:text-white/[0.48] hover:!translate-x-1 hover:!text-white/90 motion-reduce:hover:!translate-x-0"
-                    } focus-visible:text-white focus-visible:ring-1 focus-visible:ring-[#0066ff]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent motion-reduce:focus-visible:translate-x-0`}
+                        : "text-white/[0.22] group-hover/rail:text-white/[0.42] group-focus-within/rail:text-white/[0.42] hover:text-white/85"
+                    } focus-visible:text-white focus-visible:ring-1 focus-visible:ring-[#0066ff]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`}
                     aria-current={isActive ? "location" : undefined}
                   >
                     <span
-                      className={`mt-[0.4em] h-1 w-1 shrink-0 rounded-full bg-[#0066ff] transition-[opacity,transform,box-shadow] duration-300 ease-out motion-reduce:transition-none ${
+                      className={`mt-[0.4em] h-1 w-1 shrink-0 rounded-full bg-[#0066ff] transition-[opacity,transform,box-shadow] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none ${
                         isActive
                           ? "scale-100 opacity-100 shadow-[0_0_7px_rgba(0,102,255,0.55)]"
-                          : "scale-75 opacity-0 group-hover/link:scale-100 group-hover/link:opacity-80 group-focus-visible/link:scale-100 group-focus-visible/link:opacity-90"
+                          : "scale-[0.85] opacity-0 group-hover/link:scale-100 group-hover/link:opacity-70 group-focus-visible/link:scale-100 group-focus-visible/link:opacity-85"
                       }`}
                       aria-hidden
                     />
