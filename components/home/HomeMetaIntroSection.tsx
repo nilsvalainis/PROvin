@@ -1,10 +1,9 @@
 import { getTranslations } from "next-intl/server";
 
 /**
- * Sākumlapas ievads — tā pati kompozīcija kā `DesignDirectionHeroIntro`, tikai `Hero` + `Meta` tulkojumi.
+ * Sākumlapas ievads — `Meta.homeIntroTitle` / `homeIntroBody` (neparasti ar lapas `<title>` / SEO aprakstu).
  */
 export async function HomeMetaIntroSection() {
-  const tHero = await getTranslations("Hero");
   const tMeta = await getTranslations("Meta");
 
   return (
@@ -14,9 +13,12 @@ export async function HomeMetaIntroSection() {
     >
       <div className="demo-design-dir__shell relative text-center">
         <div className="demo-design-dir__axis-line opacity-80" aria-hidden />
-        <p className="demo-design-dir__kicker relative z-[1]">{tHero("approved")}</p>
-        <h1 className="demo-design-dir__title relative z-[1] mx-auto mt-4 max-w-[40rem]">{tMeta("title")}</h1>
-        <p className="demo-design-dir__body relative z-[1] mx-auto mt-4 max-w-[36rem]">{tMeta("description")}</p>
+        <h1 className="demo-design-dir__title relative z-[1] mx-auto mt-4 max-w-[min(100%,40rem)] text-balance">
+          {tMeta("homeIntroTitle")}
+        </h1>
+        <p className="demo-design-dir__body relative z-[1] mx-auto mt-4 max-w-[min(100%,42rem)] text-balance sm:mt-5">
+          {tMeta("homeIntroBody")}
+        </p>
         <div className="demo-design-dir__hero-scan relative z-[1]" aria-hidden />
       </div>
     </section>
