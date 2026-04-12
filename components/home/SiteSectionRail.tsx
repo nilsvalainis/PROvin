@@ -79,7 +79,8 @@ export function SiteSectionRail() {
     normalizedPath === "" ||
     normalizedPath === "/pasutit" ||
     normalizedPath === "/biezi-jautajumi" ||
-    normalizedPath === "/demo/design-direction";
+    normalizedPath === "/demo" ||
+    normalizedPath.startsWith("/demo/");
 
   const sections = useMemo(() => {
     const base = homePath(locale);
