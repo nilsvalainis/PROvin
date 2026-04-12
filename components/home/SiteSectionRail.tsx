@@ -173,58 +173,73 @@ export function SiteSectionRail() {
         aria-hidden
       />
 
-      <div className="relative z-10 flex h-full min-h-0 w-max flex-1 flex-row items-stretch gap-3.5 pl-0.5">
-        <div ref={trackRef} className="relative h-full min-h-0 w-0.5 shrink-0">
-          <div
-            className="absolute inset-y-1.5 left-1/2 z-0 w-px -translate-x-1/2 bg-white/[0.06] transition-[background-color] duration-700 ease-out group-hover/rail:bg-white/[0.11] group-focus-within/rail:bg-white/[0.11]"
-            aria-hidden
-          />
-          <div
-            className="absolute left-1/2 w-[2px] -translate-x-1/2 rounded-full bg-[#0066ff] opacity-90 shadow-[0_0_10px_rgba(0,102,255,0.28)] transition-[top,box-shadow,opacity,height] duration-700 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:!transition-none group-hover/rail:opacity-100 group-hover/rail:shadow-[0_0_14px_rgba(0,102,255,0.38)]"
-            style={{
-              top: dot.top,
-              height: dot.height,
-              transition:
-                "top 520ms cubic-bezier(0.33, 0.86, 0.2, 1), height 360ms cubic-bezier(0.33, 0.86, 0.2, 1), box-shadow 600ms ease-out, opacity 600ms ease-out",
-            }}
-            aria-hidden
-          />
+      <div className="relative z-10 flex h-full min-h-0 w-max flex-1 flex-col">
+        <div className="flex shrink-0 flex-row gap-3.5 pl-0.5" aria-hidden>
+          <div className="w-0.5 shrink-0" />
+          <div className="flex flex-row items-center gap-2.5 pb-3 pt-0.5">
+            <span className="h-1 w-1 shrink-0 opacity-0" />
+            <span className="select-none text-[11px] font-semibold uppercase tracking-[0.2em] lg:text-[12px]">
+              <span className="text-[#000000] [text-shadow:0_0_6px_rgba(255,255,255,0.5),0_0_1px_rgba(255,255,255,0.35)]">
+                PRO
+              </span>
+              <span className="text-[#0066ff]">VIN</span>
+            </span>
+          </div>
         </div>
-        <ul className="flex h-full min-h-0 flex-1 flex-col">
-          {sections.map((s, i) => {
-            const isActive = i === active;
-            return (
-              <li key={s.labelKey} className="flex min-h-0 flex-1 flex-col justify-center">
-                <span
-                  ref={(el) => {
-                    linkRefs.current[i] = el;
-                  }}
-                  className="block min-w-0"
-                >
-                  <Link
-                    href={s.href}
-                    className={`${linkBase} ${
-                      isActive
-                        ? "text-white"
-                        : "text-white/[0.22] group-hover/rail:text-white/[0.42] group-focus-within/rail:text-white/[0.42] hover:text-white/85"
-                    } focus-visible:text-white focus-visible:ring-1 focus-visible:ring-[#0066ff]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`}
-                    aria-current={isActive ? "location" : undefined}
+
+        <div className="flex min-h-0 flex-1 flex-row items-stretch gap-3.5 pl-0.5">
+          <div ref={trackRef} className="relative h-full min-h-0 w-0.5 shrink-0">
+            <div
+              className="absolute inset-y-1.5 left-1/2 z-0 w-px -translate-x-1/2 bg-white/[0.06] transition-[background-color] duration-700 ease-out group-hover/rail:bg-white/[0.11] group-focus-within/rail:bg-white/[0.11]"
+              aria-hidden
+            />
+            <div
+              className="absolute left-1/2 w-[2px] -translate-x-1/2 rounded-full bg-[#0066ff] opacity-90 shadow-[0_0_10px_rgba(0,102,255,0.28)] transition-[top,box-shadow,opacity,height] duration-700 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:!transition-none group-hover/rail:opacity-100 group-hover/rail:shadow-[0_0_14px_rgba(0,102,255,0.38)]"
+              style={{
+                top: dot.top,
+                height: dot.height,
+                transition:
+                  "top 520ms cubic-bezier(0.33, 0.86, 0.2, 1), height 360ms cubic-bezier(0.33, 0.86, 0.2, 1), box-shadow 600ms ease-out, opacity 600ms ease-out",
+              }}
+              aria-hidden
+            />
+          </div>
+          <ul className="flex h-full min-h-0 flex-1 flex-col">
+            {sections.map((s, i) => {
+              const isActive = i === active;
+              return (
+                <li key={s.labelKey} className="flex min-h-0 flex-1 flex-col justify-center">
+                  <span
+                    ref={(el) => {
+                      linkRefs.current[i] = el;
+                    }}
+                    className="block min-w-0"
                   >
-                    <span
-                      className={`mt-[0.4em] h-1 w-1 shrink-0 rounded-full bg-[#0066ff] transition-[opacity,transform,box-shadow] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none ${
+                    <Link
+                      href={s.href}
+                      className={`${linkBase} ${
                         isActive
-                          ? "scale-100 opacity-100 shadow-[0_0_7px_rgba(0,102,255,0.55)]"
-                          : "scale-[0.85] opacity-0 group-hover/link:scale-100 group-hover/link:opacity-70 group-focus-visible/link:scale-100 group-focus-visible/link:opacity-85"
-                      }`}
-                      aria-hidden
-                    />
-                    <span className="min-w-0">{t(s.labelKey)}</span>
-                  </Link>
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+                          ? "text-white"
+                          : "text-white/[0.22] group-hover/rail:text-white/[0.42] group-focus-within/rail:text-white/[0.42] hover:text-white/85"
+                      } focus-visible:text-white focus-visible:ring-1 focus-visible:ring-[#0066ff]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`}
+                      aria-current={isActive ? "location" : undefined}
+                    >
+                      <span
+                        className={`mt-[0.4em] h-1 w-1 shrink-0 rounded-full bg-[#0066ff] transition-[opacity,transform,box-shadow] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none ${
+                          isActive
+                            ? "scale-100 opacity-100 shadow-[0_0_7px_rgba(0,102,255,0.55)]"
+                            : "scale-[0.85] opacity-0 group-hover/link:scale-100 group-hover/link:opacity-70 group-focus-visible/link:scale-100 group-focus-visible/link:opacity-85"
+                        }`}
+                        aria-hidden
+                      />
+                      <span className="min-w-0">{t(s.labelKey)}</span>
+                    </Link>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </div>
     </nav>
   );

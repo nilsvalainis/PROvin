@@ -1,12 +1,11 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { orderSectionHref } from "@/lib/paths";
 
 /**
- * Globāla „PASŪTĪT” — fiksēta lapas labajā augšējā stūrī (neatkarīgi no ritināšanas).
+ * Globāla „Pasūtīt” — labais augšējais stūris, tā pati pill estētika kā `WhatsAppFab`.
  */
 export function SiteOrderCtaPin() {
   const locale = useLocale();
@@ -16,10 +15,9 @@ export function SiteOrderCtaPin() {
     <Link
       href={orderSectionHref(locale)}
       aria-label={t("cta")}
-      className="provin-home-pill-cta provin-home-pill-cta--fit fixed right-[max(0.65rem,env(safe-area-inset-right,0px))] top-[max(0.55rem,calc(env(safe-area-inset-top,0px)+0.35rem))] z-[45] touch-manipulation px-[0.9rem] py-[0.45rem] shadow-[0_0_18px_rgba(0,102,255,0.22)] active:brightness-95 sm:px-[1.125rem]"
+      className="provin-home-pill-cta provin-home-pill-cta--fit fixed right-[max(1.25rem,env(safe-area-inset-right,0px))] top-[max(1.25rem,env(safe-area-inset-top,0px))] z-[48] touch-manipulation whitespace-nowrap shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
     >
-      <span className="whitespace-nowrap">{t("orderPin")}</span>
-      <ArrowRight className="h-3 w-3 shrink-0 opacity-95 sm:h-3.5 sm:w-3.5" strokeWidth={2.25} aria-hidden />
+      {t("orderPin")}
     </Link>
   );
 }
