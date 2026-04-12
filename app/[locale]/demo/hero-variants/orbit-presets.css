@@ -372,16 +372,4 @@
   animation: none !important;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .marketing-hero-orbit-base.marketing-hero-section::before,
-  .marketing-hero-orbit-base.marketing-hero-section::after {
-    animation: none !important;
-    rotate: 0deg !important;
-  }
-
-  .demo-orbit-mini::before,
-  .demo-orbit-mini::after {
-    animation: none !important;
-    rotate: 0deg !important;
-  }
-}
+/* Bez prefers-reduced-motion apstādināšanas — dekoratīvie gredzeni mājas lapā vienmēr griežas. */
