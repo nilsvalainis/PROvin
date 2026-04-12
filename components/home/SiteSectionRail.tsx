@@ -202,12 +202,12 @@ export function SiteSectionRail() {
               aria-hidden
             />
             <div
-              className="absolute left-1/2 w-[2px] -translate-x-1/2 rounded-full bg-[#0066ff] opacity-90 shadow-[0_0_10px_rgba(0,102,255,0.28)] transition-[top,box-shadow,opacity,height] duration-700 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:!transition-none group-hover/rail:opacity-100 group-hover/rail:shadow-[0_0_14px_rgba(0,102,255,0.38)]"
+              className="absolute left-1/2 top-0 w-[2px] rounded-full bg-[#0066ff] opacity-90 shadow-[0_0_10px_rgba(0,102,255,0.28)] will-change-transform motion-reduce:!transition-none group-hover/rail:opacity-100 group-hover/rail:shadow-[0_0_14px_rgba(0,102,255,0.38)]"
               style={{
-                top: dot.top,
                 height: dot.height,
+                transform: `translate3d(-50%, ${dot.top}px, 0)`,
                 transition:
-                  "top 520ms cubic-bezier(0.33, 0.86, 0.2, 1), height 360ms cubic-bezier(0.33, 0.86, 0.2, 1), box-shadow 600ms ease-out, opacity 600ms ease-out",
+                  "transform 0.78s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s ease-out, opacity 0.4s ease-out",
               }}
               aria-hidden
             />
