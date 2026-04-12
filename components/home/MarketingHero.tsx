@@ -29,7 +29,7 @@ export function MarketingHero() {
   return (
     <section
       id="home-hero"
-      className="home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-hidden bg-transparent px-4 pb-[max(1.25rem,env(safe-area-inset-bottom,0px)+0.5rem)] pt-[max(1rem,env(safe-area-inset-top,0px)+0.75rem)] text-white sm:px-8 sm:pb-8 sm:pt-[max(1.25rem,env(safe-area-inset-top,0px)+1rem)]"
+      className="home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1rem,env(safe-area-inset-top,0px)+0.75rem)] text-white sm:px-8 sm:pb-9 sm:pt-[max(1.25rem,env(safe-area-inset-top,0px)+1rem)]"
       aria-labelledby="marketing-hero-title"
     >
       <div className="min-h-0" aria-hidden />
@@ -79,7 +79,7 @@ export function MarketingHero() {
         <a
           href="#site-content"
           aria-label={t("scrollToPricingAria")}
-          className="mx-auto flex min-h-[44px] w-full max-w-[22rem] touch-manipulation flex-col items-center justify-center gap-1 rounded-full px-4 py-2.5 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-[#a0a0a0]/80 transition-colors hover:text-[#a0a0a0] active:bg-white/[0.06] sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
+          className="mx-auto mt-1 flex min-h-[44px] w-full max-w-[22rem] touch-manipulation flex-col items-center justify-center gap-1 rounded-full px-4 py-2.5 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-[#a0a0a0]/80 transition-colors hover:text-[#a0a0a0] active:bg-white/[0.06] sm:mt-1.5 sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
         >
           <span className="w-full text-balance text-center">{t("scrollToPricingAria")}</span>
           <ChevronDown className="mx-auto h-4 w-4 shrink-0 opacity-80" strokeWidth={2} aria-hidden />
