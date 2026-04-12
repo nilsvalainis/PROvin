@@ -117,23 +117,25 @@
   top: 39.29%;
   z-index: 1;
   display: flex;
-  width: 34%;
-  max-width: 11rem;
+  width: 36%;
+  max-width: 12.5rem;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(0.12rem, 0.35dvh, 0.28rem);
+  gap: clamp(0.14rem, 0.42dvh, 0.34rem);
   transform: translate(-50%, -50%);
   text-align: center;
+  text-transform: uppercase;
   pointer-events: none;
 }
 
 .marketing-hero-orbit-silhouette__lens-line1 {
   max-width: 100%;
   text-wrap: balance;
-  font-size: clamp(0.45rem, min(1.55vw, 1.75dvh), 0.72rem);
+  /* +20 % pret iepriekšējo skalu */
+  font-size: clamp(0.54rem, min(1.86vw, 2.1dvh), 0.865rem);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.04em;
   line-height: 1.18;
   color: rgb(255 255 255 / 0.9);
   text-shadow:
@@ -144,11 +146,10 @@
 .marketing-hero-orbit-silhouette__lens-line2 {
   max-width: 100%;
   text-wrap: balance;
-  font-size: clamp(0.62rem, min(2.35vw, 2.65dvh), 1rem);
+  font-size: clamp(0.744rem, min(2.82vw, 3.18dvh), 1.2rem);
   font-weight: 700;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.08em;
   line-height: 1.05;
-  text-transform: uppercase;
   color: rgb(255 255 255 / 0.96);
   text-shadow:
     0 0 12px rgb(0 102 255 / 0.2),
