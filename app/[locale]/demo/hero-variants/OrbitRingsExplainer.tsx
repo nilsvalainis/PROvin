@@ -10,7 +10,8 @@ export function OrbitRingsExplainer() {
         <code className="rounded bg-white/[0.06] px-1 font-mono text-[11px] text-white/60">::before</code> un{' '}
         <code className="rounded bg-white/[0.06] px-1 font-mono text-[11px] text-white/60">::after</code>; abi centrēti vienā punktā (
         <code className="font-mono text-[11px] text-white/60">left: 50%</code>, <code className="font-mono text-[11px] text-white/60">top: var(--orbit-y)</code>
-        ), tad <code className="font-mono text-[11px] text-white/60">transform: translate(-50%, -50%) rotate(…)</code> — tātad{' '}
+        ), tad <code className="font-mono text-[11px] text-white/60">transform: rotate(…)</code> ap fiksētu centru (
+        <code className="font-mono text-[11px] text-white/60">calc(50% - platumu/2)</code>) — tātad{' '}
         <strong className="font-medium text-white/60">griešanās ap savu asi</strong> (punktu sekcijas centrā). Animācijas:{' '}
         <code className="rounded bg-white/[0.06] px-1 font-mono text-[11px] text-white/60">hero-orbit-spin-a</code> un{' '}
         <code className="rounded bg-white/[0.06] px-1 font-mono text-[11px] text-white/60">hero-orbit-spin-b</code> ar pretējiem virzieniem. Pilnekrāna{' '}

@@ -26,32 +26,33 @@
 .marketing-hero-orbit-base.marketing-hero-section::after {
   content: "";
   position: absolute;
-  left: 50%;
-  top: var(--orbit-y);
   z-index: 0;
-  width: var(--orbit-w-outer);
-  height: var(--orbit-h-outer);
   border-radius: 50%;
   pointer-events: none;
+  transform: rotate(0deg);
+  transform-origin: center center;
+  will-change: transform;
+}
+
+/* Centrs (50%, var(--orbit-y))) — tikai rotate keyframes, maksimāla pārlūku saderība. */
+.marketing-hero-orbit-base.marketing-hero-section::before {
+  left: calc(50% - var(--orbit-w-outer) / 2);
+  top: calc(var(--orbit-y) - var(--orbit-h-outer) / 2);
+  width: var(--orbit-w-outer);
+  height: var(--orbit-h-outer);
   border: 1px solid var(--orbit-border-outer);
   opacity: var(--orbit-opacity-outer);
-  /* Atsevišķs translate + rotate, lai rotācija būtu tieši ap riņķa centru (ne „orbitē” apkārt). */
-  translate: -50% -50%;
-  rotate: 0deg;
-  transform-origin: 50% 50%;
-  will-change: rotate;
+  animation: hero-orbit-spin-b var(--orbit-dur-b) linear infinite;
 }
 
 .marketing-hero-orbit-base.marketing-hero-section::after {
+  left: calc(50% - var(--orbit-w-inner) / 2);
+  top: calc(var(--orbit-y) - var(--orbit-h-inner) / 2);
   width: var(--orbit-w-inner);
   height: var(--orbit-h-inner);
-  border-color: var(--orbit-border-inner);
+  border: 1px solid var(--orbit-border-inner);
   opacity: var(--orbit-opacity-inner);
   animation: hero-orbit-spin-a var(--orbit-dur-a) linear infinite;
-}
-
-.marketing-hero-orbit-base.marketing-hero-section::before {
-  animation: hero-orbit-spin-b var(--orbit-dur-b) linear infinite;
 }
 
 .marketing-hero-orbit-base.marketing-hero-section > div,
@@ -65,60 +66,20 @@
 }
 
 @keyframes hero-orbit-spin-a {
+  from {
+    transform: rotate(0deg);
+  }
   to {
-    rotate: 360deg;
+    transform: rotate(360deg);
   }
 }
 
 @keyframes hero-orbit-spin-b {
+  from {
+    transform: rotate(0deg);
+  }
   to {
-    rotate: -360deg;
-  }
-}
-
-/* Pārlūki bez atsevišķās rotate animācijas — tā pati vizuālā rotācija ap centru. */
-@supports not (rotate: 0deg) {
-  .marketing-hero-orbit-base.marketing-hero-section::before,
-  .marketing-hero-orbit-base.marketing-hero-section::after {
-    translate: unset;
-    rotate: unset;
-    will-change: transform;
-    transform: translate(-50%, -50%);
-  }
-
-  .marketing-hero-orbit-base.marketing-hero-section::after {
-    animation: hero-orbit-spin-a-legacy var(--orbit-dur-a) linear infinite;
-  }
-
-  .marketing-hero-orbit-base.marketing-hero-section::before {
-    animation: hero-orbit-spin-b-legacy var(--orbit-dur-b) linear infinite;
-  }
-
-  .demo-orbit-mini::before,
-  .demo-orbit-mini::after {
-    translate: unset;
-    rotate: unset;
-    transform: translate(-50%, -50%);
-  }
-
-  .demo-orbit-mini::after {
-    animation: hero-orbit-spin-a-legacy 14s linear infinite;
-  }
-
-  .demo-orbit-mini::before {
-    animation: hero-orbit-spin-b-legacy 18s linear infinite;
-  }
-}
-
-@keyframes hero-orbit-spin-a-legacy {
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
-
-@keyframes hero-orbit-spin-b-legacy {
-  to {
-    transform: translate(-50%, -50%) rotate(-360deg);
+    transform: rotate(-360deg);
   }
 }
 
@@ -344,27 +305,29 @@
 .demo-orbit-mini::after {
   content: "";
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 78%;
-  height: 78%;
   border-radius: 50%;
   border: 1px solid rgb(255 255 255 / 0.12);
-  translate: -50% -50%;
-  rotate: 0deg;
-  transform-origin: 50% 50%;
+  transform: rotate(0deg);
+  transform-origin: center center;
   pointer-events: none;
 }
 
-.demo-orbit-mini::after {
-  width: 52%;
-  height: 52%;
-  border-color: rgb(160 165 175 / 0.18);
-  animation: hero-orbit-spin-a 14s linear infinite;
+/* 5.5rem × 0.78 / 0.52 — fiksēti rem, lai ar transform: rotate() keyframes nesaplūstu. */
+.demo-orbit-mini::before {
+  width: 4.29rem;
+  height: 4.29rem;
+  left: calc(50% - 2.145rem);
+  top: calc(50% - 2.145rem);
+  animation: hero-orbit-spin-b 18s linear infinite;
 }
 
-.demo-orbit-mini::before {
-  animation: hero-orbit-spin-b 18s linear infinite;
+.demo-orbit-mini::after {
+  width: 2.86rem;
+  height: 2.86rem;
+  left: calc(50% - 1.43rem);
+  top: calc(50% - 1.43rem);
+  border-color: rgb(160 165 175 / 0.18);
+  animation: hero-orbit-spin-a 14s linear infinite;
 }
 
 .demo-orbit-mini--static::before,
