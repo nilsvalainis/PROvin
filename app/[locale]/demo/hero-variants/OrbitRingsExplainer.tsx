@@ -10,8 +10,8 @@ export function OrbitRingsExplainer() {
         <code className="rounded bg-white/[0.06] px-1 font-mono text-[11px] text-white/60">span</code> ar klasēm{' '}
         <code className="font-mono text-[11px] text-white/60">marketing-hero-orbit-ring-outer</code> /{' '}
         <code className="font-mono text-[11px] text-white/60">inner</code>, centrēti ar{' '}
-        <code className="font-mono text-[11px] text-white/60">left</code> / <code className="font-mono text-[11px] text-white/60">top</code> un{' '}
-        <code className="font-mono text-[11px] text-white/60">var(--orbit-y)</code>.{' '}
+        <code className="font-mono text-[11px] text-white/60">left: 50%</code> / <code className="font-mono text-[11px] text-white/60">top: 50%</code> un{' '}
+        <code className="font-mono text-[11px] text-white/60">translate(-50%, -50%)</code> (abi vienā ģeometriskā centrā).{' '}
         <strong className="font-medium text-white/60">Animācija pagaidām izslēgta</strong> — vēlāk var atgriezt rotāciju. Šeit — tā pati ģeometrija
         kā mazajā paraugā (<code className="font-mono text-[11px] text-white/60">::before</code> /{' '}
         <code className="font-mono text-[11px] text-white/60">::after</code>).

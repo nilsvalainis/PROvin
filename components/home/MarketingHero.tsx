@@ -49,6 +49,9 @@ export type MarketingHeroProps = {
   demoOrbitRings?: "spin" | "static";
 };
 
+const sectionBasePad =
+  "px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1rem,env(safe-area-inset-top,0px)+0.75rem)] sm:px-8 sm:pb-9 sm:pt-[max(1.25rem,env(safe-area-inset-top,0px)+1rem)]";
+
 /**
  * Pilnekrāna tumšais Hero: „APPROVED…” + H1 ekrāna centrā; četras ikonas apakšā; „Turpināt”.
  * `demoVariant` ieslēdz tikai vizuālos variantus demo lapā.
@@ -80,7 +83,13 @@ export function MarketingHero({
   const dataHeroVariantForCss = demoVariant ?? (!demoVariant && homeOrbitPreset === "s19" ? "s19" : undefined);
   const orbitRingsMode = isOrbitVisual ? (demoVariant ? demoOrbitRings : "spin") : "spin";
 
-  const scanBlock = (
+  const scanBlockOrbit = (
+    <div className="marketing-hero-scan-wrap marketing-hero-scan-wrap--orbit mx-auto flex w-full max-w-[min(100%,17rem)] justify-center sm:max-w-[min(100%,18.5rem)]">
+      <DiagnosticScanLine variant="rail" className="w-full max-w-full" />
+    </div>
+  );
+
+  const scanBlockDefault = (
     <div className="marketing-hero-scan-wrap mx-auto w-full max-w-[min(100%,22rem)] pt-0.5 sm:max-w-[min(100%,26rem)]">
       <DiagnosticScanLine variant="rail" className="w-full" />
     </div>
@@ -89,7 +98,11 @@ export function MarketingHero({
   const h1Block = (
     <h1
       id={titleId}
-      className="marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]"
+      className={
+        isOrbitVisual
+          ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold text-white/95 max-[380px]:tracking-[-0.025em]`
+          : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]`
+      }
     >
       <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
         <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Vin")}</span>
@@ -100,77 +113,117 @@ export function MarketingHero({
     </h1>
   );
 
-  const headerCore = (
-    <>
-      <ApprovedByIrissReveal text={t("approved")} className={approvedByIrissSignatureHeroClass} />
-      {scanBlock}
+  const approvedBlock = <ApprovedByIrissReveal text={t("approved")} className={approvedByIrissSignatureHeroClass} />;
+
+  /** Orbit: 1fr / auto / 1fr pār `min-h-[100dvh]` — skenēšanas līnijas vertikālais centrs sakrīt ar riņķu centru. */
+  const orbitHeroHeader = isB ? (
+    <header className="pointer-events-none absolute inset-0 z-[1] flex min-h-[min(100dvh,100svh)] w-full items-center justify-center px-4 sm:px-8">
+      <div className="marketing-hero-b-glass marketing-hero-orbit-b-glass-shell pointer-events-auto grid h-[min(100dvh,100svh)] w-full max-w-[min(100%,48rem)] min-h-0 grid-rows-[1fr_auto_1fr] px-5 py-5 sm:px-8 sm:py-6">
+        <div className="flex min-h-0 flex-col items-center justify-end pb-2 text-center">{approvedBlock}</div>
+        <div className="flex w-full flex-col items-center text-center">{scanBlockOrbit}</div>
+        <div className="flex min-h-0 flex-col items-center justify-start pt-1.5 text-center">{h1Block}</div>
+      </div>
+    </header>
+  ) : (
+    <header className="pointer-events-none absolute inset-0 z-[1] grid min-h-[min(100dvh,100svh)] w-full grid-rows-[1fr_auto_1fr]">
+      <div className="pointer-events-auto flex min-h-0 w-full flex-col items-center justify-end px-4 pb-2 text-center sm:px-8">
+        {approvedBlock}
+      </div>
+      <div className="pointer-events-auto mx-auto w-full max-w-[min(100%,53.76rem)] px-4 text-center sm:px-8">{scanBlockOrbit}</div>
+      <div className="pointer-events-auto flex min-h-0 w-full flex-col items-center justify-start px-4 pt-1.5 text-center sm:px-8">
+        {h1Block}
+      </div>
+    </header>
+  );
+
+  const headerWrappedDefault = isB ? (
+    <header className="mx-auto flex w-full max-w-[min(100%,53.76rem)] min-h-0 flex-col items-center justify-center gap-4 self-center text-center sm:gap-5 md:gap-6">
+      <div className="marketing-hero-b-glass w-full max-w-[min(100%,48rem)] px-5 py-6 sm:px-8 sm:py-7">
+        {approvedBlock}
+        {scanBlockDefault}
+        {h1Block}
+      </div>
+    </header>
+  ) : (
+    <header className="mx-auto flex w-full max-w-[min(100%,53.76rem)] min-h-0 flex-col items-center justify-center gap-4 self-center text-center sm:gap-5 md:gap-6">
+      {approvedBlock}
+      {scanBlockDefault}
       {h1Block}
+    </header>
+  );
+
+  const pillarGridClass = `${homeMarketingPillarGridShellClass} w-full pb-5 pt-4 sm:pb-6 sm:pt-6${isB ? " marketing-hero-b-pillars" : ""}`;
+
+  const pillarsAndCta = (
+    <>
+      <div className={pillarGridClass}>
+        <div
+          className={`flex w-full flex-row flex-nowrap justify-between gap-2 sm:gap-4 md:gap-5 ${homeMarketingPillarGridWidthClass}`}
+        >
+          {pillars.map((p, i) => {
+            const Icon = PILLAR_ICONS[i] ?? FileText;
+            const articleClass = isC
+              ? "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-row items-start gap-2.5 px-1 text-left sm:gap-3 sm:px-1"
+              : "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2 px-0.5 text-center sm:gap-2.5 sm:px-0.5";
+            const iconClass = isC
+              ? "marketing-hero-pillar-icon mt-0.5 h-5 w-5 shrink-0 text-[#0066ff] sm:h-5 sm:w-5"
+              : "marketing-hero-pillar-icon h-7 w-7 shrink-0 text-[#0066ff] sm:h-7 sm:w-7 md:h-8 md:w-8";
+            return (
+              <article key={`${p.title}-${i}`} className={articleClass}>
+                <Icon className={iconClass} strokeWidth={1.5} aria-hidden />
+                <h3 className={`marketing-hero-pillar-title ${isC ? pillarTitleClassC : pillarTitleClass}`}>{p.title}</h3>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+
+      <a
+        href={demoVariant ? "#" : "#site-content"}
+        onClick={demoVariant ? (e) => e.preventDefault() : undefined}
+        aria-label={t("scrollToPricingAria")}
+        className="mx-auto mt-1 flex min-h-[44px] w-full max-w-[22rem] touch-manipulation flex-col items-center justify-center gap-1 rounded-full px-4 py-2.5 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-[#a0a0a0]/80 transition-colors hover:text-[#a0a0a0] active:bg-white/[0.06] sm:mt-1.5 sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
+      >
+        <span className="w-full text-balance text-center">{t("scrollToPricingAria")}</span>
+        <ChevronDown className="mx-auto h-4 w-4 shrink-0 opacity-80" strokeWidth={2} aria-hidden />
+      </a>
     </>
   );
 
-  const headerWrapped =
-    isB ? (
-      <header className="mx-auto flex w-full max-w-[min(100%,53.76rem)] min-h-0 flex-col items-center justify-center gap-4 self-center text-center sm:gap-5 md:gap-6">
-        <div className="marketing-hero-b-glass w-full max-w-[min(100%,48rem)] px-5 py-6 sm:px-8 sm:py-7">{headerCore}</div>
-      </header>
-    ) : (
-      <header className="mx-auto flex w-full max-w-[min(100%,53.76rem)] min-h-0 flex-col items-center justify-center gap-4 self-center text-center sm:gap-5 md:gap-6">
-        {headerCore}
-      </header>
-    );
+  const sectionClassOrbit = `marketing-hero-section home-content-atmosphere relative flex min-h-[min(100dvh,100svh)] w-full flex-col overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}`.trim();
 
-  const pillarGridClass = `${homeMarketingPillarGridShellClass} w-full pb-5 pt-4 sm:pb-6 sm:pt-6${isB ? " marketing-hero-b-pillars" : ""}`;
+  const sectionClassGrid = `marketing-hero-section home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}`.trim();
 
   return (
     <section
       id={sectionId}
       data-hero-variant={dataHeroVariantForCss}
       data-orbit-rings={isOrbitVisual ? orbitRingsMode : undefined}
-      className={`marketing-hero-section home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1rem,env(safe-area-inset-top,0px)+0.75rem)] text-white sm:px-8 sm:pb-9 sm:pt-[max(1.25rem,env(safe-area-inset-top,0px)+1rem)] ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}`.trim()}
+      className={isOrbitVisual ? sectionClassOrbit : sectionClassGrid}
       aria-labelledby={titleId}
     >
-      {isOrbitVisual ? <span className="marketing-hero-orbit-ring-outer" aria-hidden /> : null}
+      {isOrbitVisual ? (
+        <>
+          <span className="marketing-hero-orbit-ring-outer" aria-hidden />
+          <span className="marketing-hero-orbit-ring-inner" aria-hidden />
+        </>
+      ) : null}
       {demoSpeedometer ? <MarketingHeroSpeedometer tone={demoVariant?.startsWith("s") ? "mono" : "default"} /> : null}
-      <div className="min-h-0" aria-hidden />
 
-      <div className="marketing-hero-orbit-header-cluster relative z-[1] mx-auto flex min-h-0 w-full max-w-[min(100%,53.76rem)] flex-col items-center justify-center">
-        {isOrbitVisual ? <span className="marketing-hero-orbit-ring-inner" aria-hidden /> : null}
-        {headerWrapped}
-      </div>
-
-      <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,53.76rem)] flex-col justify-end">
-        <div className={pillarGridClass}>
-          <div
-            className={`flex w-full flex-row flex-nowrap justify-between gap-2 sm:gap-4 md:gap-5 ${homeMarketingPillarGridWidthClass}`}
-          >
-            {pillars.map((p, i) => {
-              const Icon = PILLAR_ICONS[i] ?? FileText;
-              const articleClass = isC
-                ? "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-row items-start gap-2.5 px-1 text-left sm:gap-3 sm:px-1"
-                : "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2 px-0.5 text-center sm:gap-2.5 sm:px-0.5";
-              const iconClass = isC
-                ? "marketing-hero-pillar-icon mt-0.5 h-5 w-5 shrink-0 text-[#0066ff] sm:h-5 sm:w-5"
-                : "marketing-hero-pillar-icon h-7 w-7 shrink-0 text-[#0066ff] sm:h-7 sm:w-7 md:h-8 md:w-8";
-              return (
-                <article key={`${p.title}-${i}`} className={articleClass}>
-                  <Icon className={iconClass} strokeWidth={1.5} aria-hidden />
-                  <h3 className={`marketing-hero-pillar-title ${isC ? pillarTitleClassC : pillarTitleClass}`}>{p.title}</h3>
-                </article>
-              );
-            })}
+      {isOrbitVisual ? (
+        <>
+          {orbitHeroHeader}
+          <div className="relative z-[2] mx-auto mt-auto flex min-h-0 w-full max-w-[min(100%,53.76rem)] flex-1 flex-col justify-end pt-3 sm:pt-5">
+            {pillarsAndCta}
           </div>
-        </div>
-
-        <a
-          href={demoVariant ? "#" : "#site-content"}
-          onClick={demoVariant ? (e) => e.preventDefault() : undefined}
-          aria-label={t("scrollToPricingAria")}
-          className="mx-auto mt-1 flex min-h-[44px] w-full max-w-[22rem] touch-manipulation flex-col items-center justify-center gap-1 rounded-full px-4 py-2.5 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-[#a0a0a0]/80 transition-colors hover:text-[#a0a0a0] active:bg-white/[0.06] sm:mt-1.5 sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
-        >
-          <span className="w-full text-balance text-center">{t("scrollToPricingAria")}</span>
-          <ChevronDown className="mx-auto h-4 w-4 shrink-0 opacity-80" strokeWidth={2} aria-hidden />
-        </a>
-      </div>
+        </>
+      ) : (
+        <>
+          <div className="min-h-0" aria-hidden />
+          {headerWrappedDefault}
+          <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,53.76rem)] flex-col justify-end">{pillarsAndCta}</div>
+        </>
+      )}
     </section>
   );
 }

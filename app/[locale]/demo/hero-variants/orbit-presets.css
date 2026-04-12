@@ -2,15 +2,16 @@
  * Orbital halos — `marketing-hero-orbit-base` + `marketing-hero-orbit--{i|j10|s1…s20}`.
  * Melns + sudrabs: tikai `s1`–`s20` (un pārkrāsots `j10` fons / gredzeni).
  *
- * Gredzeni: divi statiski `span` — ārējais sekcijas centrā; iekšējais ap `header` (Iriss + līnija + H1).
+ * Gredzeni: divi statiski `span` — abi sekcijas ģeometriskajā centrā (`50%` + `translate(-50%,-50%)`).
  */
 
 .marketing-hero-orbit-base.marketing-hero-section {
   --orbit-y: 42%;
-  --orbit-w-outer: min(82vw, 36rem, 76dvh);
-  --orbit-h-outer: min(82vw, 36rem, 76dvh);
-  --orbit-w-inner: min(72vw, 26rem, 62dvh);
-  --orbit-h-inner: min(72vw, 26rem, 62dvh);
+  /* Bāze +20 % salīdzinājumā ar iepriekšējo */
+  --orbit-w-outer: min(90vw, 43.2rem, 91.2dvh);
+  --orbit-h-outer: min(90vw, 43.2rem, 91.2dvh);
+  --orbit-w-inner: min(78vw, 31.2rem, 74.4dvh);
+  --orbit-h-inner: min(78vw, 31.2rem, 74.4dvh);
   --orbit-border-outer: rgb(0 120 255 / 0.096);
   --orbit-border-inner: rgb(255 255 255 / 0.072);
   --orbit-opacity-outer: 0.84;
@@ -27,7 +28,7 @@
 }
 
 .marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-outer,
-.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-header-cluster > .marketing-hero-orbit-ring-inner {
+.marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-inner {
   display: block;
   box-sizing: border-box;
   position: absolute;
@@ -50,7 +51,7 @@
   box-shadow: var(--orbit-ring-glow);
 }
 
-.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-header-cluster > .marketing-hero-orbit-ring-inner {
+.marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-inner {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
@@ -61,19 +62,56 @@
   box-shadow: var(--orbit-ring-glow);
 }
 
-.marketing-hero-orbit-base.marketing-hero-section > div,
-.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-header-cluster {
-  position: relative;
-  z-index: 1;
-}
-
-.marketing-hero-orbit-base.marketing-hero-section .marketing-hero-orbit-header-cluster > header {
+.marketing-hero-orbit-base.marketing-hero-section > div {
   position: relative;
   z-index: 1;
 }
 
 .marketing-hero-orbit-base .marketing-hero-title {
   text-shadow: 0 0 48px rgb(0 100 255 / 0.15);
+}
+
+/* Orbit: kompaktāks H1, lai ietilpst iekšējā riņķī zem skenēšanas līnijas */
+.marketing-hero-orbit-base .marketing-hero-title.marketing-hero-title--orbit {
+  max-width: min(100%, 17.5rem);
+  font-size: clamp(0.8125rem, 2.4vw + 0.2rem, 1.0625rem);
+  line-height: 1.12;
+  letter-spacing: -0.018em;
+}
+
+@media (min-width: 640px) {
+  .marketing-hero-orbit-base .marketing-hero-title.marketing-hero-title--orbit {
+    max-width: min(100%, 22rem);
+    font-size: clamp(1rem, 1.6vw + 0.35rem, 1.25rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+}
+
+@media (min-width: 1024px) {
+  .marketing-hero-orbit-base .marketing-hero-title.marketing-hero-title--orbit {
+    max-width: min(100%, 26rem);
+    font-size: clamp(1.125rem, 1.1vw + 0.65rem, 1.375rem);
+  }
+}
+
+.marketing-hero-orbit-base .marketing-hero-title--orbit .marketing-hero-title-line2 {
+  margin-top: 0.2rem;
+  font-size: 0.78em;
+  letter-spacing: 0.06em;
+}
+
+@media (min-width: 640px) {
+  .marketing-hero-orbit-base .marketing-hero-title--orbit .marketing-hero-title-line2 {
+    margin-top: 0.3rem;
+    font-size: 0.82em;
+    letter-spacing: 0.08em;
+  }
+}
+
+.marketing-hero-orbit-base .marketing-hero-scan-wrap--orbit {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 /* —— Atsauce I —— */
@@ -120,8 +158,8 @@
   --orbit-bg: linear-gradient(195deg, #000 0%, #0a0a0c 45%, #030303 100%);
   --orbit-border-outer: rgb(220 225 235 / 0.1);
   --orbit-border-inner: rgb(90 95 105 / 0.12);
-  --orbit-w-inner: min(70vw, 32rem);
-  --orbit-h-inner: min(70vw, 32rem);
+  --orbit-w-inner: min(80vw, 38.4rem, 86dvh);
+  --orbit-h-inner: min(80vw, 38.4rem, 86dvh);
   --orbit-dur-a: 32s;
   --orbit-dur-b: 44s;
 }
@@ -149,10 +187,10 @@
 }
 .marketing-hero-orbit-base.marketing-hero-orbit--s7.marketing-hero-section {
   --orbit-bg: radial-gradient(ellipse 130% 100% at 50% 110%, rgb(100 105 115 / 0.25), #020203 50%), #020203;
-  --orbit-w-outer: min(115vw, 52rem);
-  --orbit-h-outer: min(115vw, 52rem);
-  --orbit-w-inner: min(55vw, 26rem);
-  --orbit-h-inner: min(55vw, 26rem);
+  --orbit-w-outer: min(96vw, 62.4rem, 96dvh);
+  --orbit-h-outer: min(96vw, 62.4rem, 96dvh);
+  --orbit-w-inner: min(62vw, 31.2rem, 72dvh);
+  --orbit-h-inner: min(62vw, 31.2rem, 72dvh);
   --orbit-dur-a: 28s;
   --orbit-dur-b: 36s;
 }
@@ -195,8 +233,8 @@
 }
 .marketing-hero-orbit-base.marketing-hero-orbit--s13.marketing-hero-section {
   --orbit-bg: radial-gradient(ellipse 85% 60% at 50% 0%, rgb(210 215 225 / 0.12), #050506 65%), #050506;
-  --orbit-w-outer: min(88vw, 42rem);
-  --orbit-h-outer: min(88vw, 42rem);
+  --orbit-w-outer: min(90vw, 50.4rem, 92dvh);
+  --orbit-h-outer: min(90vw, 50.4rem, 92dvh);
   --orbit-dur-a: 14s;
   --orbit-dur-b: 19s;
 }
@@ -204,8 +242,8 @@
   --orbit-bg: #000;
   --orbit-border-outer: rgb(150 155 165 / 0.2);
   --orbit-border-inner: rgb(255 255 255 / 0.04);
-  --orbit-w-inner: min(92vw, 44rem);
-  --orbit-h-inner: min(92vw, 44rem);
+  --orbit-w-inner: min(92vw, 52.8rem, 94dvh);
+  --orbit-h-inner: min(92vw, 52.8rem, 94dvh);
   --orbit-dur-a: 42s;
   --orbit-dur-b: 58s;
 }
