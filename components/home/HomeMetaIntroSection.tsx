@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 /**
@@ -5,6 +6,7 @@ import { getTranslations } from "next-intl/server";
  */
 export async function HomeMetaIntroSection() {
   const tMeta = await getTranslations("Meta");
+  const tOrder = await getTranslations("Order");
 
   return (
     <section
@@ -20,6 +22,15 @@ export async function HomeMetaIntroSection() {
           {tMeta("homeIntroBody")}
         </p>
         <div className="demo-design-dir__hero-scan relative z-[1]" aria-hidden />
+        <div className="relative z-[1] mt-6 flex justify-center sm:mt-7">
+          <a
+            href="#order-form"
+            className="provin-home-pill-cta provin-home-pill-cta--stack inline-flex touch-manipulation"
+          >
+            <span className="text-balance text-center">{tOrder("scrollToFormAria")}</span>
+            <ChevronDown className="h-5 w-5 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
+          </a>
+        </div>
       </div>
     </section>
   );
