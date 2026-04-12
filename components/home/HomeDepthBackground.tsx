@@ -1,114 +1,121 @@
 "use client";
 
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+
 /**
- * Deep Focus — eliptisks spīdums ar maksimāli plūdeniem pārejām (anti-banding).
- * Lielāks blur, blīvi starapunkti, ļoti viegla krāsu modulācija + trokšņa slāņi (overlay).
+ * Mājas „Deep Focus” fons caur Canvas (nevis CSS blur + gradient slāņi).
+ * Augstāks DPR + gluds alpha(t) + trokšņa pattern — parasti ievērojami mazāk joslu nekā CSS.
  */
 
 const BASE = "#050505";
 
-/**
- * Daudzi īsi soļi + mikro „silti / auksti” baltais — sadala 8 bitu kvantēšanas gredzenus.
- * Beidzas ~72%, lai maska + blur pilnībā „izdūmo” pirms malas.
- */
-const GLOW_GRADIENT = `radial-gradient(ellipse 94% 80% at 50% 50%,
-  rgba(255,255,255,0.07) 0%,
-  rgba(252,253,255,0.064) 2.5%,
-  rgba(255,255,255,0.058) 5%,
-  rgba(253,254,255,0.051) 8%,
-  rgba(255,255,255,0.045) 11%,
-  rgba(252,252,254,0.039) 14%,
-  rgba(255,255,255,0.033) 17%,
-  rgba(252,253,255,0.028) 20%,
-  rgba(255,255,255,0.023) 24%,
-  rgba(253,254,255,0.019) 28%,
-  rgba(255,255,255,0.0155) 32%,
-  rgba(252,252,255,0.0125) 36%,
-  rgba(255,255,255,0.01) 40%,
-  rgba(253,253,255,0.008) 44%,
-  rgba(255,255,255,0.0062) 48%,
-  rgba(252,254,255,0.0048) 52%,
-  rgba(255,255,255,0.0035) 56%,
-  rgba(252,252,255,0.0024) 60%,
-  rgba(255,255,255,0.0015) 64%,
-  rgba(252,253,255,0.0008) 68%,
-  rgba(255,255,255,0.0003) 71%,
-  transparent 72%)`;
+let noiseTile: HTMLCanvasElement | null = null;
 
-const FEATHER_MASK =
-  "radial-gradient(ellipse 76% 62% at 50% 48%, black 16%, rgba(0,0,0,0.45) 52%, transparent 100%)";
+function getNoiseTile(): HTMLCanvasElement {
+  if (noiseTile) return noiseTile;
+  const s = 128;
+  const c = document.createElement("canvas");
+  c.width = s;
+  c.height = s;
+  const n = c.getContext("2d");
+  if (!n) return c;
+  const img = n.createImageData(s, s);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = (Math.random() * 255) | 0;
+    img.data[i] = v;
+    img.data[i + 1] = v;
+    img.data[i + 2] = v;
+    img.data[i + 3] = 38;
+  }
+  n.putImageData(img, 0, 0);
+  noiseTile = c;
+  return c;
+}
 
-const NOISE_COARSE =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
+function paintAtmosphere(canvas: HTMLCanvasElement) {
+  const ctx = canvas.getContext("2d", { alpha: false });
+  if (!ctx || typeof window === "undefined") return;
 
-const NOISE_FINE =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.08' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E\")";
+  const cssW = Math.max(1, Math.floor(window.innerWidth));
+  const cssH = Math.max(1, Math.floor(window.innerHeight));
+  const dpr = Math.min(window.devicePixelRatio ?? 1, 2);
 
-const NOISE_MICRO =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.65' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E\")";
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  canvas.style.width = `${cssW}px`;
+  canvas.style.height = `${cssH}px`;
 
-const maskStyles = {
-  WebkitMaskImage: FEATHER_MASK,
-  maskImage: FEATHER_MASK,
-  WebkitMaskRepeat: "no-repeat",
-  maskRepeat: "no-repeat",
-  WebkitMaskSize: "100% 100%",
-  maskSize: "100% 100%",
-} as const;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = BASE;
+  ctx.fillRect(0, 0, cssW, cssH);
+
+  const cx = cssW * 0.5;
+  const cy = cssH * 0.43;
+  const r = Math.max(cssW, cssH) * 0.92;
+  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+
+  const stops = 36;
+  for (let i = 0; i <= stops; i++) {
+    const t = i / stops;
+    const a = 0.079 * Math.pow(1 - t, 2.35);
+    g.addColorStop(t, `rgba(255,255,255,${a.toFixed(5)})`);
+  }
+
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, cssW, cssH);
+
+  const pat = ctx.createPattern(getNoiseTile(), "repeat");
+  if (pat) {
+    ctx.save();
+    ctx.globalCompositeOperation = "soft-light";
+    ctx.globalAlpha = 0.32;
+    ctx.fillStyle = pat;
+    ctx.fillRect(0, 0, cssW, cssH);
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalCompositeOperation = "overlay";
+    ctx.globalAlpha = 0.05;
+    ctx.fillStyle = pat;
+    ctx.fillRect(0, 0, cssW, cssH);
+    ctx.restore();
+  }
+}
 
 export function HomeDepthBackground() {
+  const ref = useRef<HTMLCanvasElement>(null);
+
+  const paint = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    paintAtmosphere(el);
+  }, []);
+
+  useLayoutEffect(() => {
+    paint();
+  }, [paint]);
+
+  useEffect(() => {
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(paint);
+    });
+    ro.observe(document.documentElement);
+    window.addEventListener("resize", paint, { passive: true });
+    const vv = window.visualViewport;
+    const onVv = () => requestAnimationFrame(paint);
+    vv?.addEventListener("resize", onVv);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", paint);
+      vv?.removeEventListener("resize", onVv);
+    };
+  }, [paint]);
+
   return (
-    <div
+    <canvas
+      ref={ref}
       className="pointer-events-none fixed inset-0 z-[1]"
-      style={{ transform: "translateZ(0)", backfaceVisibility: "hidden" }}
       aria-hidden
-    >
-      <div className="absolute inset-0" style={{ backgroundColor: BASE }} />
-
-      <div className="absolute inset-0" style={maskStyles}>
-        <div
-          className="absolute left-1/2 top-[43%] will-change-transform"
-          style={{
-            width: "min(300vmin, 4200px)",
-            height: "min(100vmin, 1320px)",
-            transform: "translate(-50%, -50%) translateZ(0)",
-            borderRadius: "50%",
-            filter: "blur(158px)",
-          }}
-        >
-          <div
-            className="size-full"
-            style={{
-              borderRadius: "50%",
-              background: GLOW_GRADIENT,
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Dither: overlay + parasts, lai sadala joslas gan tumšajā, gan gaišākajā zonā */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.045] mix-blend-overlay"
-        style={{
-          backgroundImage: NOISE_COARSE,
-          backgroundSize: "256px 256px",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.028]"
-        style={{
-          backgroundImage: NOISE_FINE,
-          backgroundSize: "180px 180px",
-          mixBlendMode: "soft-light",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.02] mix-blend-overlay"
-        style={{
-          backgroundImage: NOISE_MICRO,
-          backgroundSize: "128px 128px",
-        }}
-      />
-    </div>
+    />
   );
 }

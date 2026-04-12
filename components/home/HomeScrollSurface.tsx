@@ -9,7 +9,7 @@ type HomeScrollSurfaceProps = {
 };
 
 /**
- * Mājas čaula: pamattonis (#050505) → Deep Focus spīdums (z-1) → wireframe → saturs (z-10). Bez stūru zīmēm.
+ * Mājas čaula: #050505 + Canvas Deep Focus (`HomeDepthBackground`) → wireframe → saturs (z-10).
  */
 export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProps) {
   return (
