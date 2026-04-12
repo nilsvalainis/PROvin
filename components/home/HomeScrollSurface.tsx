@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react";
 import { HomeDepthBackground } from "@/components/home/HomeDepthBackground";
+import { HomeTechBgParallax } from "@/components/home/HomeTechBgParallax";
 import { ViewportCornerMarks } from "@/components/home/ViewportCornerMarks";
 
 type HomeScrollSurfaceProps = {
@@ -10,7 +11,7 @@ type HomeScrollSurfaceProps = {
 };
 
 /**
- * Pilna lapa — ciets #050505 + `HomeDepthBackground` (radial spīdums, blur, maska, grauds).
+ * Pilna lapa — ciets #050505 + `HomeDepthBackground` + scroll-parallax `.home-tech-bg-parallax`.
  * Spidometra fona animācija īslaicīgi izņemta — tā bija saistīta ar klienta avārijām; failu `HomeSpeedometerBackground` var atkal pieslēgt pēc stabilizācijas.
  */
 export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProps) {
@@ -19,6 +20,8 @@ export function HomeScrollSurface({ wireframe, children }: HomeScrollSurfaceProp
       <div className="pointer-events-none fixed inset-0 z-0 bg-[#050505]" aria-hidden />
 
       <HomeDepthBackground />
+
+      <HomeTechBgParallax />
 
       {wireframe}
 
