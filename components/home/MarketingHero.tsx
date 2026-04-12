@@ -11,6 +11,7 @@ import { isOrbitFamilyVariant } from "@/lib/hero-orbit-j-presets";
 import {
   approvedByIrissSignatureHeroClass,
   heroH1BlueKeywordClass,
+  homeHeroSubtitleClass,
   homeMarketingPillarGridShellClass,
   homeMarketingPillarGridWidthClass,
 } from "@/lib/home-layout";
@@ -97,22 +98,29 @@ export function MarketingHero({
     </div>
   );
 
-  const h1Block = (
-    <h1
-      id={titleId}
-      className={
-        isOrbitVisual
-          ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold text-white/95 max-[380px]:tracking-[-0.025em]`
-          : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]`
-      }
-    >
-      <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
-        <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Vin")}</span>
-        <span className="text-white/95">{t("h1Un")}</span>
-        <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Sludinajuma")}</span>
-      </span>
-      <span className="marketing-hero-title-line2 mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
-    </h1>
+  const heroTitleStack = (
+    <div className="flex w-full flex-col items-center text-center">
+      <h1
+        id={titleId}
+        className={
+          isOrbitVisual
+            ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold text-white/95 max-[380px]:tracking-[-0.025em]`
+            : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]`
+        }
+      >
+        <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
+          <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Vin")}</span>
+          <span className="text-white/95">{t("h1Un")}</span>
+          <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Sludinajuma")}</span>
+        </span>
+        <span className="marketing-hero-title-line2 mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
+      </h1>
+      <p
+        className={`${homeHeroSubtitleClass} mx-auto mt-2.5 max-w-[min(100%,36rem)] text-balance text-[11px] font-medium uppercase leading-snug tracking-[0.14em] text-white/48 sm:mt-3 sm:text-[12px] sm:tracking-[0.16em]`}
+      >
+        {t("h2")}
+      </p>
+    </div>
   );
 
   const approvedBlock = <ApprovedByIrissReveal text={t("approved")} className={approvedByIrissSignatureHeroClass} />;
@@ -123,7 +131,7 @@ export function MarketingHero({
       <div className="marketing-hero-b-glass marketing-hero-orbit-b-glass-shell pointer-events-auto grid h-[min(100dvh,100svh)] w-full max-w-[min(100%,48rem)] min-h-0 grid-rows-[1fr_auto_1fr] px-5 py-5 sm:px-8 sm:py-6">
         <div className="flex min-h-0 flex-col items-center justify-end pb-2 text-center">{approvedBlock}</div>
         <div className="flex w-full flex-col items-center text-center">{scanBlockOrbit}</div>
-        <div className="flex min-h-0 flex-col items-center justify-start pt-1.5 text-center">{h1Block}</div>
+        <div className="flex min-h-0 flex-col items-center justify-start pt-1.5 text-center">{heroTitleStack}</div>
       </div>
     </header>
   ) : (
@@ -133,7 +141,7 @@ export function MarketingHero({
       </div>
       <div className="pointer-events-auto mx-auto w-full max-w-[min(100%,53.76rem)] px-4 text-center sm:px-8">{scanBlockOrbit}</div>
       <div className="pointer-events-auto flex min-h-0 w-full flex-col items-center justify-start px-4 pt-1.5 text-center sm:px-8">
-        {h1Block}
+        {heroTitleStack}
       </div>
     </header>
   );
@@ -143,14 +151,14 @@ export function MarketingHero({
       <div className="marketing-hero-b-glass w-full max-w-[min(100%,48rem)] px-5 py-6 sm:px-8 sm:py-7">
         {approvedBlock}
         {scanBlockDefault}
-        {h1Block}
+        {heroTitleStack}
       </div>
     </header>
   ) : (
     <header className="mx-auto flex w-full max-w-[min(100%,53.76rem)] min-h-0 flex-col items-center justify-center gap-4 self-center text-center sm:gap-5 md:gap-6">
       {approvedBlock}
       {scanBlockDefault}
-      {h1Block}
+      {heroTitleStack}
     </header>
   );
 
@@ -159,9 +167,10 @@ export function MarketingHero({
   const pillarsAndCta = (
     <>
       <div className={pillarGridClass}>
-        <div
-          className={`flex w-full flex-row flex-nowrap justify-between gap-2 sm:gap-4 md:gap-5 ${homeMarketingPillarGridWidthClass}`}
-        >
+        <div className="marketing-hero-pillar-dock w-full rounded-2xl border border-white/[0.08] bg-[rgb(3_4_6/0.55)] px-2 py-3 shadow-[0_20px_52px_rgb(0_0_0/0.42)] backdrop-blur-md sm:px-3 sm:py-4 md:px-4">
+          <div
+            className={`flex w-full flex-row flex-nowrap justify-between gap-2 sm:gap-4 md:gap-5 ${homeMarketingPillarGridWidthClass}`}
+          >
           {pillars.map((p, i) => {
             const Icon = PILLAR_ICONS[i] ?? FileText;
             const articleClass = isC
@@ -177,6 +186,7 @@ export function MarketingHero({
               </article>
             );
           })}
+          </div>
         </div>
       </div>
 
@@ -184,10 +194,14 @@ export function MarketingHero({
         href={demoVariant ? "#" : "#site-content"}
         onClick={demoVariant ? (e) => e.preventDefault() : undefined}
         aria-label={t("scrollToPricingAria")}
-        className="mx-auto mt-1 flex min-h-[44px] w-full max-w-[22rem] touch-manipulation flex-col items-center justify-center gap-1 rounded-full px-4 py-2.5 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-[#a0a0a0]/80 transition-colors hover:text-[#a0a0a0] active:bg-white/[0.06] sm:mt-1.5 sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
+        className="group mx-auto mt-2 flex min-h-[44px] w-full max-w-[22rem] touch-manipulation flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-white/55 shadow-[0_16px_40px_rgb(0_0_0/0.35)] transition-[border-color,background-color,color,box-shadow] duration-200 hover:border-[#0066ff]/28 hover:bg-[#0066ff]/[0.09] hover:text-white/85 active:bg-white/[0.07] sm:mt-2.5 sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
       >
         <span className="w-full text-balance text-center">{t("scrollToPricingAria")}</span>
-        <ChevronDown className="mx-auto h-4 w-4 shrink-0 opacity-80" strokeWidth={2} aria-hidden />
+        <ChevronDown
+          className="mx-auto h-4 w-4 shrink-0 text-[#0066ff] opacity-95 transition-transform duration-200 group-hover:translate-y-0.5"
+          strokeWidth={2}
+          aria-hidden
+        />
       </a>
     </>
   );

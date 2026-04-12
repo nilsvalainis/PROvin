@@ -31,7 +31,7 @@ export async function HowItWorksSignalGrid() {
 
           return (
             <div
-              key={s.n}
+              key={`${s.title}-${s.n}`}
               className="group demo-design-dir__card relative flex min-h-[11.5rem] flex-col items-center gap-3 overflow-hidden p-6 text-center sm:min-h-[12rem] sm:gap-4 sm:p-7"
             >
               <div
@@ -42,9 +42,6 @@ export async function HowItWorksSignalGrid() {
                     "radial-gradient(ellipse 90% 55% at 50% 0%, rgb(0 102 255 / 0.14), transparent 62%)",
                 }}
               />
-              <span className="relative z-[1] inline-flex rounded-full border border-white/[0.1] bg-white/[0.05] px-2.5 py-0.5 text-[10px] font-semibold tabular-nums tracking-wide text-white/55">
-                {s.n}
-              </span>
               <div className="demo-design-dir__flow-node relative z-[1] mx-auto">
                 <Icon {...iconProps} aria-hidden />
               </div>

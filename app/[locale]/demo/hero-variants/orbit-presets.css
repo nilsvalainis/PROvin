@@ -287,8 +287,8 @@
   --orbit-dur-b: 35s;
 }
 .marketing-hero-orbit-base.marketing-hero-orbit--s20.marketing-hero-section {
-  --orbit-bg: radial-gradient(ellipse 90% 70% at 50% 100%, rgb(160 165 175 / 0.14), transparent 55%),
-    linear-gradient(165deg, #000 0%, #0e0e12 38%, #030303 100%);
+  --orbit-bg: radial-gradient(ellipse 90% 70% at 50% 100%, rgb(160 165 175 / 0.12), transparent 55%),
+    linear-gradient(165deg, #000 0%, #0c0c10 40%, #030304 100%);
   --orbit-border-outer: rgb(220 225 235 / 0.12);
   --orbit-border-inner: rgb(130 135 145 / 0.12);
   --orbit-opacity-outer: 0.8;

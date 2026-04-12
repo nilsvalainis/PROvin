@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Footer } from "@/components/Footer";
 import { FinalCta } from "@/components/FinalCta";
@@ -18,7 +19,7 @@ export default async function HomePage({
 }) {
   const sp = await searchParams;
   const cancelled = sp.atcelts === "1";
-  const [tHero, tOrder] = await Promise.all([getTranslations("Hero"), getTranslations("Order")]);
+  const tOrder = await getTranslations("Order");
 
   return (
     <HomeScrollSurface wireframe={<AutoWireframeBackground />}>
@@ -31,11 +32,10 @@ export default async function HomePage({
           <div id="site-content" className="home-body-ink scroll-mt-14">
             <section className="demo-design-dir__section demo-design-dir__section--band-b py-16 sm:py-20">
               <div className="demo-design-dir__shell">
-                <p className="demo-design-dir__body max-w-[40rem]">{tHero("trustHeadline")}</p>
-                <div className="relative mt-10 rounded-2xl border border-white/[0.07] bg-black/25 py-12">
-                  <div className="demo-design-dir__axis-line opacity-100" aria-hidden />
-                  <p className="relative z-[1] px-4 text-center text-[13px] text-white/50">{tOrder("scrollToFormAria")}</p>
-                </div>
+                <a href="#order-form" className="demo-design-dir__order-jump">
+                  <span className="relative z-[1] max-w-[28rem] text-balance">{tOrder("scrollToFormAria")}</span>
+                  <ChevronDown className="demo-design-dir__order-jump-chevron relative z-[1] h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
+                </a>
                 <div className="mt-10">
                   <FinalCta cancelled={cancelled} orderEmbedded />
                 </div>

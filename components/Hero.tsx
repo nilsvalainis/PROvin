@@ -44,10 +44,6 @@ export async function Hero() {
           </div>
 
           <div className="shrink-0 space-y-4 md:space-y-5">
-            <p className="mx-auto max-w-[52ch] text-balance text-center text-[12px] font-medium leading-snug text-[#5c5d62] sm:text-[13px] sm:leading-relaxed">
-              {t("trustHeadline")}
-            </p>
-
             <div className="flex flex-col items-center">
               <Link
                 href={orderSectionHref(locale)}
