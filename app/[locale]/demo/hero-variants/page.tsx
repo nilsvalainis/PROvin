@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fragment } from "react";
 import { setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { MarketingHero } from "@/components/home/MarketingHero";
 import {
   HERO_DEMO_SPEEDOMETER_VARIANTS,
@@ -118,6 +119,15 @@ export default async function HeroVariantsDemoPage({ params }: PageProps) {
         </p>
         <p className="mt-2 text-[11px] text-white/40">
           Ceļš: <span className="font-mono text-white/55">/demo/hero-variants</span>
+          <span className="mx-2 text-white/25" aria-hidden>
+            ·
+          </span>
+          <Link
+            href="/demo/design-direction"
+            className="text-sky-400/90 underline decoration-sky-500/30 underline-offset-2 hover:text-sky-300"
+          >
+            Layout / stila virziens (demo)
+          </Link>
         </p>
         <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white/35">Tiešā saite uz rotējošajiem gredzeniem ·</p>
         <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1">

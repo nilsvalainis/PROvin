@@ -74,7 +74,12 @@ export function SiteSectionRail() {
   const [dot, setDot] = useState({ top: 0, height: 16 });
 
   const normalizedPath = useMemo(() => normalizePath(pathname), [pathname]);
-  const showRail = normalizedPath === "/" || normalizedPath === "" || normalizedPath === "/pasutit" || normalizedPath === "/biezi-jautajumi";
+  const showRail =
+    normalizedPath === "/" ||
+    normalizedPath === "" ||
+    normalizedPath === "/pasutit" ||
+    normalizedPath === "/biezi-jautajumi" ||
+    normalizedPath === "/demo/design-direction";
 
   const sections = useMemo(() => {
     const base = homePath(locale);

@@ -37,12 +37,14 @@ export function HeaderClient({
   const pathname = usePathname() ?? "";
   const normalizedPath =
     pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
+  const isDesignDirectionDemo = normalizedPath === "/demo/design-direction";
   /** Lapas ar `SiteSectionRail` (lg+): logo kreisā mala līdz ar „Sākums” uzraksta sākumu (sk. sliedes HTML). */
   const logoAlignWithRailSakums =
     normalizedPath === "/" ||
     normalizedPath === "" ||
     normalizedPath === "/pasutit" ||
-    normalizedPath === "/biezi-jautajumi";
+    normalizedPath === "/biezi-jautajumi" ||
+    isDesignDirectionDemo;
   const hash = useHash();
   const [open, setOpen] = useState(false);
 
@@ -64,13 +66,14 @@ export function HeaderClient({
   const isHome = pathname === "/" || pathname === "";
   const isFaq = pathname.includes("biezi-jautajumi");
   const isOrderSection = isHome && hash.includes("pasutit");
+  const isDarkHeaderSurface = isHome || isDesignDirectionDemo;
 
-  const headerSurface = isHome
+  const headerSurface = isDarkHeaderSurface
     ? "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)]"
     : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
   const logoClass = [
-    isHome
+    isDarkHeaderSurface
       ? "flex min-h-11 min-w-11 shrink-0 items-center text-[21px] font-semibold tracking-tight text-white transition-colors hover:text-white/90 sm:min-h-0 sm:min-w-0"
       : "flex min-h-11 min-w-11 shrink-0 items-center text-[21px] font-semibold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent sm:min-h-0 sm:min-w-0",
     logoAlignWithRailSakums
@@ -80,7 +83,7 @@ export function HeaderClient({
     .filter(Boolean)
     .join(" ");
 
-  const navMuted = isHome ? "text-white/72" : "text-[#1d1d1f]";
+  const navMuted = isDarkHeaderSurface ? "text-white/72" : "text-[#1d1d1f]";
 
   const orderBtnClass =
     "provin-btn provin-btn--compact inline-flex min-h-10 shrink-0 items-center justify-center rounded-full px-[1.125rem] text-[12px] font-bold text-white shadow-[0_0_18px_rgba(0,102,255,0.14)] ring-1 ring-white/10 sm:min-h-9 sm:px-[1.35rem] sm:text-[12px]";
@@ -123,7 +126,7 @@ export function HeaderClient({
               type="button"
               onClick={() => setOpen(true)}
               className={
-                isHome
+                isDarkHeaderSurface
                   ? "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/15 bg-transparent text-white shadow-none transition hover:border-white/30"
                   : "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#1d1d1f] shadow-sm transition hover:bg-slate-50"
               }
@@ -172,7 +175,7 @@ export function HeaderClient({
                   href={orderHref}
                   onClick={close}
                   className={
-                    isHome
+                    isDarkHeaderSurface
                       ? `${orderBtnClass} mt-2 w-full justify-center text-[11px] font-bold uppercase tracking-[0.06em]`
                       : navLinkClass(isOrderSection)
                   }
