@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { homeSectionTitleClass, homeSectionTitleSilverClass } from "@/lib/home-layout";
+import { homeFaqMaxClass, homeSectionTitleClass, homeSectionTitleSilverClass } from "@/lib/home-layout";
 
 export type FaqItem = { id: string; q: string; a: string };
 
@@ -19,7 +19,7 @@ export function FaqClient({ title, items = [], tone = "dark" }: FaqClientProps) 
         className="scroll-mt-16 bg-transparent px-4 py-10 sm:px-6 sm:py-14"
         aria-labelledby="faq-heading"
       >
-        <div className="mx-auto min-w-0 max-w-[680px]">
+        <div className={homeFaqMaxClass}>
           <div className="text-center">
             <h2 id="faq-heading" className={homeSectionTitleSilverClass}>
               {title}
@@ -60,7 +60,7 @@ export function FaqClient({ title, items = [], tone = "dark" }: FaqClientProps) 
         className="scroll-mt-16 bg-white px-4 py-10 sm:px-6 sm:py-14"
         aria-labelledby="faq-heading"
       >
-        <div className="mx-auto min-w-0 max-w-[680px]">
+        <div className={homeFaqMaxClass}>
           <div className="text-center">
             <h2 id="faq-heading" className={homeSectionTitleClass}>
               {title}
@@ -100,7 +100,7 @@ export function FaqClient({ title, items = [], tone = "dark" }: FaqClientProps) 
       className="home-body-ink scroll-mt-16 bg-transparent px-4 py-10 sm:px-6 sm:py-14"
       aria-labelledby="faq-heading"
     >
-      <div className="mx-auto min-w-0 max-w-[680px]">
+      <div className={homeFaqMaxClass}>
         <div className="text-center">
           <h2 id="faq-heading" className={homeSectionTitleClass}>
             {title}

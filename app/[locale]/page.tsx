@@ -7,6 +7,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
 import { Footer } from "@/components/Footer";
+import { homeContentMaxClass } from "@/lib/home-layout";
 
 export default async function HomePage({
   searchParams,
@@ -24,6 +25,11 @@ export default async function HomePage({
 
         <div className="home-below-hero home-below-hero-cloud-layer home-body-ink">
           <HowItWorks tone="dark" />
+
+          <div
+            className={`home-body-ink ${homeContentMaxClass} h-px bg-white/[0.07]`}
+            aria-hidden
+          />
 
           <div
             id="site-content"

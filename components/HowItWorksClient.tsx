@@ -58,7 +58,7 @@ export function HowItWorksClient({
       className="home-body-ink relative z-10 overflow-x-hidden bg-transparent"
       data-how-it-works-impulse={impulseOn ? "on" : "off"}
     >
-      <div className="relative px-3 pb-5 pt-3 sm:px-6 sm:pb-4 sm:pt-3">
+      <div className="relative px-4 pb-5 pt-3 sm:px-6 sm:pb-4 sm:pt-3">
         <div className={homeMarketingPillarGridShellClass}>
           <div className={`relative ${homeMarketingPillarGridWidthClass}`}>
             <div className={`flex ${ICON_ROW_H} items-center justify-center`} aria-hidden>

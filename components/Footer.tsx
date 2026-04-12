@@ -5,6 +5,7 @@ import { HeroVisual } from "@/components/HeroVisual";
 import { contactMailtoHref, whatsappChatUrl } from "@/lib/contact";
 import { homePath } from "@/lib/paths";
 import { CompanyLegalOneLine } from "@/components/CompanyLegalOneLine";
+import { homeContentMaxClass } from "@/lib/home-layout";
 
 function MailIcon({ className }: { className?: string }) {
   return (
@@ -44,7 +45,7 @@ export async function Footer() {
       />
       <div className="home-footer-scrim pointer-events-none absolute inset-0 z-[1] provin-noise opacity-[0.14]" aria-hidden />
 
-      <div className="relative z-10 mx-auto min-w-0 max-w-[1200px] px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
+      <div className={`relative z-10 ${homeContentMaxClass} px-4 py-8 sm:px-6 sm:py-10 lg:py-12`}>
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-14 lg:gap-20">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-provin-accent sm:text-[12px]">
@@ -94,7 +95,7 @@ export async function Footer() {
         </div>
 
         <div
-          className="home-footer-rule mx-auto mt-10 max-w-[1200px] space-y-4 border-t border-transparent pt-8 text-center sm:mt-12 sm:space-y-3 sm:pt-10"
+          className={`home-footer-rule mx-auto mt-10 ${homeContentMaxClass} space-y-4 border-t border-transparent pt-8 text-center sm:mt-12 sm:space-y-3 sm:pt-10`}
           role="region"
           aria-label={t("legalRegionLabel")}
         >

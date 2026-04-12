@@ -1,5 +1,11 @@
-/** Vienots maks. platums lapas vidus slejai (tabula, kartītes, Why, IRISS). */
-export const homeContentMaxClass = "mx-auto min-w-0 w-full max-w-[1200px]";
+/**
+ * Vienots maks. platums lapas vidus slejai — tā pati „viena ass” kā demo (`min(75rem, …)` = 1200px @16px).
+ * Mazos ekrānos respekte `calc(100vw - 2rem)`, lai sakrist ar `px-4` malām.
+ */
+export const homeContentMaxClass = "mx-auto min-w-0 w-full max-w-[min(75rem,calc(100vw-2rem))]";
+
+/** BUJ / šaura sleja — iepriekšējais ~680px ar to pašu responsīvo formulu. */
+export const homeFaqMaxClass = "mx-auto min-w-0 w-full max-w-[min(42.5rem,calc(100vw-2rem))]";
 
 /** Centrēšanas čaula — MarketingHero 2×2 režģis un How it works soļu rinda (1:1 platums). */
 export const homeMarketingPillarGridShellClass = "flex w-full justify-center";
