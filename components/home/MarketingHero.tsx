@@ -4,7 +4,6 @@ import { useId } from "react";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { ApprovedByIrissReveal } from "@/components/home/ApprovedByIrissReveal";
 import { MarketingHeroSpeedometer } from "@/components/home/MarketingHeroSpeedometer";
 import type { HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
@@ -97,18 +96,6 @@ export function MarketingHero({
   const orbitRingsMode = isOrbitVisual ? (demoVariant ? demoOrbitRings : "spin") : "spin";
   const orbitGlassSilhouette = Boolean(isOrbitVisual && !demoVariant);
 
-  const scanBlockOrbit = (
-    <div className="marketing-hero-scan-wrap marketing-hero-scan-wrap--orbit mx-auto flex w-full max-w-[min(100%,17rem)] justify-center sm:max-w-[min(100%,18.5rem)]">
-      <DiagnosticScanLine variant="rail" className="w-full max-w-full" />
-    </div>
-  );
-
-  const scanBlockDefault = (
-    <div className="marketing-hero-scan-wrap mx-auto w-full max-w-[min(100%,22rem)] pt-0.5 sm:max-w-[min(100%,26rem)]">
-      <DiagnosticScanLine variant="rail" className="w-full" />
-    </div>
-  );
-
   const heroTitleStack = (
     <div className="flex w-full flex-col items-center text-center">
       <h1
@@ -149,12 +136,14 @@ export function MarketingHero({
     />
   );
 
-  /** Orbit: 1fr / auto / 1fr pār `min-h-[100dvh]` — skenēšanas līnijas vertikālais centrs sakrīt ar riņķu centru. */
+  /** Orbit: 1fr / auto / 1fr pār `min-h-[100dvh]` — vidējā rinda atstāta kā `min-h-0` enkurs, bez horizontālās skenēšanas. */
+  const orbitHeroHeaderSpacer = <div className="min-h-0 shrink-0" aria-hidden />;
+
   const orbitHeroHeader = isB ? (
     <header className="pointer-events-none absolute inset-0 z-[1] flex min-h-[min(100dvh,100svh)] w-full items-center justify-center px-4 sm:px-8">
       <div className="marketing-hero-b-glass marketing-hero-orbit-b-glass-shell pointer-events-auto grid h-[min(100dvh,100svh)] w-full max-w-[min(100%,48rem)] min-h-0 grid-rows-[1fr_auto_1fr] px-5 py-5 sm:px-8 sm:py-6">
         <div className="flex min-h-0 flex-col items-center justify-end pb-2 text-center">{approvedBlock}</div>
-        <div className="flex w-full flex-col items-center text-center">{scanBlockOrbit}</div>
+        <div className="flex w-full flex-col items-center text-center">{orbitHeroHeaderSpacer}</div>
         <div className="flex min-h-0 flex-col items-center justify-start pt-1.5 text-center">{heroTitleStack}</div>
       </div>
     </header>
@@ -163,7 +152,7 @@ export function MarketingHero({
       <div className="pointer-events-auto flex min-h-0 w-full flex-col items-center justify-end px-4 pb-2 text-center sm:px-8">
         {approvedBlock}
       </div>
-      <div className="pointer-events-auto mx-auto w-full max-w-[min(100%,53.76rem)] px-4 text-center sm:px-8">{scanBlockOrbit}</div>
+      <div className="pointer-events-auto mx-auto w-full max-w-[min(100%,53.76rem)] px-4 text-center sm:px-8">{orbitHeroHeaderSpacer}</div>
       <div className="pointer-events-auto flex min-h-0 w-full flex-col items-center justify-start px-4 pt-1.5 text-center sm:px-8">
         {heroTitleStack}
       </div>
@@ -174,14 +163,12 @@ export function MarketingHero({
     <header className="mx-auto flex w-full max-w-[min(100%,53.76rem)] min-h-0 flex-col items-center justify-center gap-4 self-center text-center sm:gap-5 md:gap-6">
       <div className="marketing-hero-b-glass w-full max-w-[min(100%,48rem)] px-5 py-6 sm:px-8 sm:py-7">
         {approvedBlock}
-        {scanBlockDefault}
         {heroTitleStack}
       </div>
     </header>
   ) : (
     <header className="mx-auto flex w-full max-w-[min(100%,53.76rem)] min-h-0 flex-col items-center justify-center gap-4 self-center text-center sm:gap-5 md:gap-6">
       {approvedBlock}
-      {scanBlockDefault}
       {heroTitleStack}
     </header>
   );
