@@ -18,7 +18,7 @@ export default async function HomePage({
 }) {
   const sp = await searchParams;
   const cancelled = sp.atcelts === "1";
-  const tHero = await getTranslations("Hero");
+  const [tHero, tOrder] = await Promise.all([getTranslations("Hero"), getTranslations("Order")]);
 
   return (
     <HomeScrollSurface wireframe={<AutoWireframeBackground />}>
@@ -34,6 +34,7 @@ export default async function HomePage({
                 <p className="demo-design-dir__body max-w-[40rem]">{tHero("trustHeadline")}</p>
                 <div className="relative mt-10 rounded-2xl border border-white/[0.07] bg-black/25 py-12">
                   <div className="demo-design-dir__axis-line opacity-100" aria-hidden />
+                  <p className="relative z-[1] px-4 text-center text-[13px] text-white/50">{tOrder("scrollToFormAria")}</p>
                 </div>
                 <div className="mt-10">
                   <FinalCta cancelled={cancelled} orderEmbedded />
