@@ -88,37 +88,27 @@
   filter: drop-shadow(0 0 28px rgb(200 210 230 / 0.063));
 }
 
-/* Kontūra: tas pats zils impulss kā `.provin-diagnostic-scan-line--rail` (4.25 s). */
+/* Kontūra: nepārtraukti zils „kometas” segments ar vieglu ēnu (pathLength=100). */
 .marketing-hero-orbit-silhouette__scan-path {
   fill: none;
-  stroke: rgb(230 236 248);
-  stroke-width: 0.9;
+  stroke: rgb(100 175 255 / 0.92);
+  stroke-width: 0.95;
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
-  stroke-dasharray: 5.5 94.5;
+  opacity: 1;
+  stroke-dasharray: 6 94;
   stroke-dashoffset: 0;
-  filter: drop-shadow(0 0 3px rgb(0 102 255 / 0.32)) drop-shadow(0 0 8px rgb(0 102 255 / 0.08));
-  animation: marketing-hero-orbit-silhouette-scan 4.25s ease-in-out infinite;
+  filter:
+    drop-shadow(0 0 2px rgb(0 102 255 / 0.55))
+    drop-shadow(0 1px 3px rgb(0 0 0 / 0.45))
+    drop-shadow(0 0 10px rgb(0 102 255 / 0.22));
+  animation: marketing-hero-orbit-silhouette-scan 7s linear infinite;
 }
 
 @keyframes marketing-hero-orbit-silhouette-scan {
-  0%,
-  44% {
-    stroke-dashoffset: 0;
-    opacity: 0;
-  }
-  47% {
-    opacity: 1;
-  }
-  60% {
+  to {
     stroke-dashoffset: -100;
-    opacity: 1;
-  }
-  63%,
-  100% {
-    stroke-dashoffset: -100;
-    opacity: 0;
   }
 }
 
