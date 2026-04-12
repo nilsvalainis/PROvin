@@ -10,7 +10,7 @@ import {
 } from "@/lib/hero-orbit-j-presets";
 import { routing } from "@/i18n/routing";
 import { OrbitRingsExplainer } from "./OrbitRingsExplainer";
-import "./orbit-presets.css";
+import "@/components/home/hero-orbit-styles";
 
 const REFERENCE_VARIANTS = ["i", "j10"] as const satisfies readonly HeroVisualDemoVariant[];
 

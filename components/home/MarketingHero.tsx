@@ -1,6 +1,6 @@
 "use client";
 
-import "@/app/[locale]/demo/hero-variants/orbit-presets.css";
+import "@/components/home/hero-orbit-styles";
 import { ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
