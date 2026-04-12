@@ -68,7 +68,10 @@ export function MarketingHero({
   demoOrbitRings = "spin",
   designDirection = false,
 }: MarketingHeroProps = {}) {
-  const silhouetteGradId = useId().replace(/:/g, "");
+  const silhouetteIdBase = useId().replace(/:/g, "");
+  const silhouetteGradId = `${silhouetteIdBase}-edge`;
+  const silhouetteLensCenterGradId = `${silhouetteIdBase}-lens-center`;
+  const silhouetteLensClipId = `${silhouetteIdBase}-lens-clip`;
   const t = useTranslations("Hero");
   const rawPillars = t.raw("pillars");
   const pillars: HeroPillar[] = Array.isArray(rawPillars) ? (rawPillars as HeroPillar[]) : [];
@@ -263,12 +266,33 @@ export function MarketingHero({
           <span className="marketing-hero-orbit-silhouette" aria-hidden>
             <svg className="marketing-hero-orbit-silhouette__svg" viewBox="0 0 112 112" xmlns="http://www.w3.org/2000/svg" fill="none">
               <defs>
+                <clipPath id={silhouetteLensClipId}>
+                  <circle cx="44" cy="44" r="25.4" />
+                </clipPath>
+                <radialGradient
+                  id={silhouetteLensCenterGradId}
+                  cx="44"
+                  cy="44"
+                  r="20"
+                  gradientUnits="userSpaceOnUse"
+                >
+                  <stop offset="0%" stopColor="rgb(0 102 255)" stopOpacity="0.065" />
+                  <stop offset="40%" stopColor="rgb(0 102 255)" stopOpacity="0.022" />
+                  <stop offset="100%" stopColor="rgb(0 102 255)" stopOpacity="0" />
+                </radialGradient>
                 <linearGradient id={silhouetteGradId} x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="rgb(230 235 245)" stopOpacity="0.2" />
-                  <stop offset="52%" stopColor="rgb(150 160 180)" stopOpacity="0.09" />
-                  <stop offset="100%" stopColor="rgb(210 218 232)" stopOpacity="0.16" />
+                  <stop offset="0%" stopColor="rgb(230 235 245)" stopOpacity="0.23" />
+                  <stop offset="52%" stopColor="rgb(150 160 180)" stopOpacity="0.104" />
+                  <stop offset="100%" stopColor="rgb(210 218 232)" stopOpacity="0.184" />
                 </linearGradient>
               </defs>
+              <circle
+                cx="44"
+                cy="44"
+                r="26"
+                fill={`url(#${silhouetteLensCenterGradId})`}
+                clipPath={`url(#${silhouetteLensClipId})`}
+              />
               <circle
                 cx="44"
                 cy="44"
@@ -277,10 +301,10 @@ export function MarketingHero({
                 strokeWidth="0.55"
                 vectorEffect="non-scaling-stroke"
               />
-              <circle cx="44" cy="44" r="20.5" stroke="rgb(255 255 255 / 0.055)" strokeWidth="0.42" vectorEffect="non-scaling-stroke" />
+              <circle cx="44" cy="44" r="20.5" stroke="rgb(255 255 255 / 0.063)" strokeWidth="0.42" vectorEffect="non-scaling-stroke" />
               <path
                 d="M 29 37 Q 44 31 59 37"
-                stroke="rgb(255 255 255 / 0.065)"
+                stroke="rgb(255 255 255 / 0.075)"
                 strokeWidth="0.4"
                 strokeLinecap="round"
                 vectorEffect="non-scaling-stroke"
@@ -291,6 +315,11 @@ export function MarketingHero({
                 strokeWidth="0.55"
                 strokeLinecap="round"
                 vectorEffect="non-scaling-stroke"
+              />
+              <path
+                className="marketing-hero-orbit-silhouette__scan-path"
+                d="M 70 44 A 26 26 0 1 1 18 44 A 26 26 0 1 1 70 44 M 64 64 L 102 102"
+                pathLength="100"
               />
             </svg>
           </span>

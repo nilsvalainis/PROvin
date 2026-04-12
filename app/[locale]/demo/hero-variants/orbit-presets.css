@@ -76,7 +76,8 @@
   transform: translate(-50%, -50%);
   transform-origin: 50% 50%;
   pointer-events: none;
-  opacity: 0.48;
+  /* +15 % pret iepriekšējo 0.48 */
+  opacity: 0.552;
   animation: marketing-hero-orbit-silhouette-drift 52s ease-in-out infinite;
 }
 
@@ -84,7 +85,41 @@
   display: block;
   width: 100%;
   height: auto;
-  filter: drop-shadow(0 0 28px rgb(200 210 230 / 0.055));
+  filter: drop-shadow(0 0 28px rgb(200 210 230 / 0.063));
+}
+
+/* Kontūra: tas pats zils impulss kā `.provin-diagnostic-scan-line--rail` (4.25 s). */
+.marketing-hero-orbit-silhouette__scan-path {
+  fill: none;
+  stroke: rgb(230 236 248);
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 5.5 94.5;
+  stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 3px rgb(0 102 255 / 0.32)) drop-shadow(0 0 8px rgb(0 102 255 / 0.08));
+  animation: marketing-hero-orbit-silhouette-scan 4.25s ease-in-out infinite;
+}
+
+@keyframes marketing-hero-orbit-silhouette-scan {
+  0%,
+  44% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  47% {
+    opacity: 1;
+  }
+  60% {
+    stroke-dashoffset: -100;
+    opacity: 1;
+  }
+  63%,
+  100% {
+    stroke-dashoffset: -100;
+    opacity: 0;
+  }
 }
 
 @keyframes marketing-hero-orbit-silhouette-drift {
@@ -103,6 +138,11 @@
 @media (prefers-reduced-motion: reduce) {
   .marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-silhouette {
     animation: none;
+  }
+
+  .marketing-hero-orbit-silhouette__scan-path {
+    animation: none !important;
+    opacity: 0;
   }
 }
 
