@@ -108,7 +108,7 @@
     drop-shadow(0 1px 3px rgb(0 0 0 / 0.45))
     drop-shadow(0 0 10px rgb(0 102 255 / 0.28));
   /* 3× ātrāk nekā iepriekšējie 7 s */
-  animation: marketing-hero-orbit-silhouette-scan calc(7s / 3) linear infinite;
+  animation: marketing-hero-orbit-silhouette-scan var(--provin-scan-loop-dur, calc(7s / 3)) linear infinite;
 }
 
 @keyframes marketing-hero-orbit-silhouette-scan {

@@ -221,7 +221,7 @@ export function MarketingHero({
         aria-label={t("scrollToPricingAria")}
         className={
           designDirection
-            ? "group mt-3 inline-flex min-h-[44px] max-w-[min(100%,22rem)] shrink-0 touch-manipulation items-center justify-center gap-2 self-center rounded-full border border-[#0066ff]/35 bg-[#0066ff]/12 px-5 py-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7eb6ff] transition hover:bg-[#0066ff]/20 hover:text-white active:bg-[#0066ff]/25 sm:mt-4"
+            ? "provin-home-pill-cta provin-home-pill-cta--stack group mt-3 shrink-0 touch-manipulation self-center sm:mt-4"
             : "group mx-auto mt-2 flex min-h-[44px] w-full max-w-[22rem] touch-manipulation flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-white/55 shadow-[0_16px_40px_rgb(0_0_0/0.35)] transition-[border-color,background-color,color,box-shadow] duration-200 hover:border-[#0066ff]/28 hover:bg-[#0066ff]/[0.09] hover:text-white/85 active:bg-white/[0.07] sm:mt-2.5 sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
         }
       >

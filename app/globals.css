@@ -27,6 +27,8 @@
 :root {
   /* Home: ink ramp 0…1 from scroll (full #050505 ink at 50% silver; HomeScrollSurface drives) */
   --home-surface-t: 0;
+  /* Zilā skrejošā impulsa periods — saskaņots ar hero palielināmo stiklu (nepārtraukta līnija) */
+  --provin-scan-loop-dur: calc(7s / 3);
 }
 
 html {
@@ -131,13 +133,13 @@ body {
 .provin-diagnostic-scan-line__pulse {
   position: absolute;
   top: 50%;
-  left: 0%;
+  left: 50%;
   width: clamp(2.25rem, 14vw, 3.25rem);
   height: 1px;
   margin-top: -0.5px;
   border-radius: 9999px;
   pointer-events: none;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -149,26 +151,16 @@ body {
   box-shadow:
     0 0 5px 0 rgba(0, 102, 255, 0.22),
     0 0 12px 1px rgba(0, 102, 255, 0.08);
-  animation: provin-diagnostic-scan-sweep 3.4s ease-in-out infinite;
+  opacity: 1;
+  animation: provin-diagnostic-scan-loop-linear var(--provin-scan-loop-dur) linear infinite;
 }
 
-@keyframes provin-diagnostic-scan-sweep {
-  0%,
-  44% {
-    left: 0%;
-    opacity: 0;
+@keyframes provin-diagnostic-scan-loop-linear {
+  0% {
+    transform: translate(-50%, -50%) translateX(-120%);
   }
-  47% {
-    opacity: 1;
-  }
-  60% {
-    left: 100%;
-    opacity: 1;
-  }
-  63%,
   100% {
-    left: 100%;
-    opacity: 0;
+    transform: translate(-50%, -50%) translateX(120%);
   }
 }
 
@@ -204,7 +196,76 @@ body {
   box-shadow:
     0 0 4px 0 rgb(0 102 255 / 0.16),
     0 0 10px 0 rgb(0 102 255 / 0.05);
-  animation-duration: 4.25s;
+}
+
+/* Sākumlapas / tumšā UI — viena pogu estētika (kā hero „Turpināt”) */
+.provin-home-pill-cta {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  max-width: min(100%, 22rem);
+  padding: 0.625rem 1.25rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(0 102 255 / 0.35);
+  background-color: rgb(0 102 255 / 0.12);
+  color: rgb(126 182 255);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.provin-home-pill-cta:hover:not(:disabled) {
+  background-color: rgb(0 102 255 / 0.2);
+  color: rgb(255 255 255 / 0.98);
+}
+
+.provin-home-pill-cta:active:not(:disabled) {
+  background-color: rgb(0 102 255 / 0.25);
+}
+
+.provin-home-pill-cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.provin-home-pill-cta:focus-visible {
+  outline: 2px solid rgb(0 102 255 / 0.55);
+  outline-offset: 2px;
+}
+
+.provin-home-pill-cta--wide {
+  width: 100%;
+}
+
+.provin-home-pill-cta--fab {
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  min-height: 50px;
+  max-width: none;
+  padding: 0;
+}
+
+.provin-home-pill-cta--stack {
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.provin-home-pill-cta--fit {
+  max-width: none;
 }
 
 /* Hero — „APPROVED BY IRISS” burtu ierašanās (2× lēnāks nekā sākotnējais temps) */

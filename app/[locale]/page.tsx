@@ -31,10 +31,12 @@ export default async function HomePage({
           <div id="site-content" className="home-body-ink scroll-mt-14">
             <section className="demo-design-dir__section demo-design-dir__section--band-b py-16 sm:py-20">
               <div className="demo-design-dir__shell">
-                <a href="#order-form" className="demo-design-dir__order-jump">
-                  <div className="demo-design-dir__axis-line" aria-hidden />
-                  <span className="relative z-[1] max-w-[min(100%,28rem)] text-balance">{tOrder("scrollToFormAria")}</span>
-                  <ChevronDown className="demo-design-dir__order-jump-chevron relative z-[1] h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
+                <a
+                  href="#order-form"
+                  className="provin-home-pill-cta provin-home-pill-cta--wide provin-home-pill-cta--stack mx-auto flex max-w-[min(100%,22rem)] touch-manipulation"
+                >
+                  <span className="max-w-[min(100%,28rem)] text-balance">{tOrder("scrollToFormAria")}</span>
+                  <ChevronDown className="h-5 w-5 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
                 </a>
                 <div className="mt-10">
                   <FinalCta cancelled={cancelled} orderEmbedded />

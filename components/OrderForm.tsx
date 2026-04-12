@@ -369,14 +369,14 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
             <button
               type="submit"
               disabled={loading || !withdrawalConsent}
-              className="provin-btn provin-btn--compact home-cta-blueprint mx-auto mt-1 flex min-h-12 w-full max-w-[min(100%,20rem)] items-center justify-center gap-2.5 rounded-none px-7 py-3.5 text-center text-[15px] font-bold text-[#f3f4f6] hover:!translate-y-0 disabled:opacity-60 sm:min-h-[50px]"
+              className="provin-home-pill-cta provin-home-pill-cta--wide mx-auto mt-1 flex min-h-12 max-w-[min(100%,20rem)] touch-manipulation items-center justify-center gap-2 disabled:opacity-60 sm:min-h-[50px]"
             >
               {loading ? (
                 t("payLoading")
               ) : (
                 <>
                   {t("payButton")}
-                  <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                  <ArrowRight className="h-4 w-4 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
                 </>
               )}
             </button>
