@@ -22,20 +22,20 @@
   background: var(--orbit-bg);
 }
 
-.marketing-hero-orbit-base.marketing-hero-section::before,
-.marketing-hero-orbit-base.marketing-hero-section::after {
-  content: "";
+/* DOM spani (MarketingHero), nevis ::before/::after — uzticamāka animācija uz grid sekcijas. */
+.marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-outer,
+.marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-inner {
+  box-sizing: border-box;
   position: absolute;
   z-index: 0;
-  border-radius: 50%;
+  border-radius: 9999px;
   pointer-events: none;
   transform: rotate(0deg);
   transform-origin: center center;
   will-change: transform;
 }
 
-/* Centrs (50%, var(--orbit-y))) — tikai rotate keyframes, maksimāla pārlūku saderība. */
-.marketing-hero-orbit-base.marketing-hero-section::before {
+.marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-outer {
   left: calc(50% - var(--orbit-w-outer) / 2);
   top: calc(var(--orbit-y) - var(--orbit-h-outer) / 2);
   width: var(--orbit-w-outer);
@@ -45,7 +45,7 @@
   animation: hero-orbit-spin-b var(--orbit-dur-b) linear infinite;
 }
 
-.marketing-hero-orbit-base.marketing-hero-section::after {
+.marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-ring-inner {
   left: calc(50% - var(--orbit-w-inner) / 2);
   top: calc(var(--orbit-y) - var(--orbit-h-inner) / 2);
   width: var(--orbit-w-inner);
@@ -83,8 +83,8 @@
   }
 }
 
-.marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"]::before,
-.marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"]::after {
+.marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"] > .marketing-hero-orbit-ring-outer,
+.marketing-hero-orbit-base.marketing-hero-section[data-orbit-rings="static"] > .marketing-hero-orbit-ring-inner {
   animation: none !important;
 }
 

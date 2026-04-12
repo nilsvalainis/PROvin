@@ -6,9 +6,8 @@ export function OrbitRingsExplainer() {
     <div className="demo-orbit-mini-lab border-t border-white/10 px-4 py-6 sm:px-6">
       <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">Gredzenu animācija</h2>
       <p className="mt-2 max-w-[42rem] text-[12px] leading-relaxed text-white/45">
-        <strong className="font-medium text-white/60">Centrālie riņķi</strong> — divi pilni apļi sekcijas{' '}
-        <code className="rounded bg-white/[0.06] px-1 font-mono text-[11px] text-white/60">::before</code> un{' '}
-        <code className="rounded bg-white/[0.06] px-1 font-mono text-[11px] text-white/60">::after</code>; abi centrēti vienā punktā (
+        <strong className="font-medium text-white/60">Centrālie riņķi</strong> — divi{' '}
+        <code className="rounded bg-white/[0.06] px-1 font-mono text-[11px] text-white/60">span</code> elementi hero sekcijā (ārējais / iekšējais); abi centrēti vienā punktā (
         <code className="font-mono text-[11px] text-white/60">left: 50%</code>, <code className="font-mono text-[11px] text-white/60">top: var(--orbit-y)</code>
         ), tad <code className="font-mono text-[11px] text-white/60">transform: rotate(…)</code> ap fiksētu centru (
         <code className="font-mono text-[11px] text-white/60">calc(50% - platumu/2)</code>) — tātad{' '}

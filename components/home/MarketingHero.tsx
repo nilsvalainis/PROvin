@@ -1,5 +1,6 @@
 "use client";
 
+import "@/app/[locale]/demo/hero-variants/orbit-presets.css";
 import { ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
@@ -128,6 +129,12 @@ export function MarketingHero({
       className={`marketing-hero-section home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1rem,env(safe-area-inset-top,0px)+0.75rem)] text-white sm:px-8 sm:pb-9 sm:pt-[max(1.25rem,env(safe-area-inset-top,0px)+1rem)] ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}`.trim()}
       aria-labelledby={titleId}
     >
+      {isOrbitVisual ? (
+        <>
+          <span className="marketing-hero-orbit-ring-outer" aria-hidden />
+          <span className="marketing-hero-orbit-ring-inner" aria-hidden />
+        </>
+      ) : null}
       {demoSpeedometer ? <MarketingHeroSpeedometer tone={demoVariant?.startsWith("s") ? "mono" : "default"} /> : null}
       <div className="min-h-0" aria-hidden />
 
