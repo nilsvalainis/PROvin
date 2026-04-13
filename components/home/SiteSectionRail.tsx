@@ -141,17 +141,6 @@ export function SiteSectionRail() {
       />
 
       <div className="relative z-10 flex h-full min-h-0 w-max flex-1 flex-col">
-        <div className="flex shrink-0 flex-row gap-3.5 pl-0.5" aria-hidden>
-          <div className="w-0.5 shrink-0" />
-          <div className="flex flex-row items-center gap-2.5 pb-3 pt-0.5">
-            <span className="h-1 w-1 shrink-0 opacity-0" />
-            <span className="select-none text-[18.48px] font-bold uppercase tracking-[0.2em] lg:text-[20.16px]">
-              <span className="text-white">PRO</span>
-              <span className="text-[#0066ff]">VIN</span>
-            </span>
-          </div>
-        </div>
-
         <div className="flex min-h-0 flex-1 flex-row items-stretch gap-3.5 pl-0.5">
           <div ref={trackRef} className="relative h-full min-h-0 w-0.5 shrink-0">
             <div

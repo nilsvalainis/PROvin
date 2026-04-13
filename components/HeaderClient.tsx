@@ -53,7 +53,7 @@ export function HeaderClient({
 
   const isHome = normalizedPath === "/" || normalizedPath === "";
 
-  /** Lapas ar `SiteSectionRail` (lg+): logo kreisā mala līdz ar „Sākums” uzraksta sākumu (sk. sliedes HTML). */
+  /** Lapas ar `SiteSectionRail` (lg+): `lg` nobīde, lai PROVIN sakristu ar sliedes pirmo kolonnu. */
   const logoAlignWithRailSakums =
     isHome || normalizedPath === "/pasutit" || normalizedPath === "/biezi-jautajumi";
 
@@ -107,11 +107,10 @@ export function HeaderClient({
     ? "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)] md:border-b md:border-white/[0.06]"
     : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
-  /** Mājaslapā logo kreisajā malā bez nobīdes pret sliedi; citās „sliežu” lapās — salīdzinājums ar „Sākums”. */
-  const logoRailMarginClass =
-    logoAlignWithRailSakums && !isHome
-      ? "lg:ml-[calc(max(0.5rem,env(safe-area-inset-left,0px))+2.25rem-max(1rem,env(safe-area-inset-left,0px)))]"
-      : null;
+  /** `lg+` sliežu lapās: PROVIN tajā pašā horizontālā līnijā, kur iepriekš bija sliedes zīmols (kolonna ar „Sākums”). */
+  const logoRailMarginClass = logoAlignWithRailSakums
+    ? "lg:ml-[calc(max(0.5rem,env(safe-area-inset-left,0px))+2.25rem-max(1rem,env(safe-area-inset-left,0px)))]"
+    : null;
 
   const logoClass = [
     isDarkHeaderSurface
@@ -132,9 +131,6 @@ export function HeaderClient({
       "flex min-h-11 items-center rounded-xl px-4 text-lg font-medium tracking-tight transition-colors",
       active ? "text-[#3b82f6]" : `${navMuted} hover:text-provin-accent`,
     ].join(" ");
-
-  const desktopNavClass = (active: boolean) =>
-    `text-sm font-medium transition-colors ${active ? "text-provin-accent" : `${navMuted} hover:text-provin-accent`}`;
 
   const railMenuActive = siteRailMenuActiveIndex(pathname, hash);
 
@@ -222,12 +218,6 @@ export function HeaderClient({
           </Link>
 
           <nav className="hidden min-w-0 items-center gap-6 md:flex md:flex-1 md:justify-end">
-            <Link href="/" className={desktopNavClass(isHome && !isFaq && !isOrderSection)}>
-              {navHome}
-            </Link>
-            <Link href={faqHref} className={desktopNavClass(isFaq)}>
-              {faqLabel}
-            </Link>
             <Link href={orderHref} className={orderBtnClass}>
               {orderLabel}
             </Link>
