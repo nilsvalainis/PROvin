@@ -116,7 +116,6 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
     ? "mt-1.5 text-[11px] font-normal leading-snug text-[#e5e7eb]/55"
     : "mt-1 text-[11px] font-normal leading-snug text-[#86868b]";
 
-  const optionalMutedClass = hero ? "text-[#e5e7eb]/45" : "text-[#aeaeb2]";
   const reqStarClass = hero ? "text-red-400" : "text-red-600";
 
   return (
@@ -124,10 +123,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
       <div className={`grid sm:grid-cols-2 ${gridGap}`}>
         <div className="sm:col-span-2">
           <label htmlFor="order-name" className={labelClass}>
-            {t("nameLabel")}{" "}
-            <span className={`font-normal normal-case tracking-normal ${optionalMutedClass}`}>
-              {t("optional")}
-            </span>
+            {t("nameLabel")}
           </label>
           {hero ? (
             <HeroFieldScanLine>
@@ -283,10 +279,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         </div>
         <div className="sm:col-span-2">
           <label htmlFor="order-notes" className={labelClass}>
-            {t("notesLabel")}{" "}
-            <span className={`font-normal normal-case tracking-normal ${optionalMutedClass}`}>
-              {t("optional")}
-            </span>
+            {t("notesLabel")}
           </label>
           {hero ? (
             <HeroFieldScanLine>
