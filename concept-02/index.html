@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Concept 02 — AI Assistant Landing</title>
+  <link rel="stylesheet" href="styles.css" />
+  
+</head>
+<body class="concept-02">
+  <a class="skip" href="#main">Skip to content</a>
+  <main id="main">
+
+    <div class="shell">
+      <aside class="rail"><div class="logo">PROVIN</div><p class="tiny">Concept demo — not a live model.</p></aside>
+      <section class="chat">
+        <header><h1>Auto analyst</h1><p class="sub">Ask about a VIN.</p></header>
+        <div id="thread" class="thread" aria-live="polite"></div>
+        <form id="f" class="composer">
+          <label class="sr-only" for="q">Message</label>
+          <input id="q" autocomplete="off" placeholder="Decode WVWZZZ…" />
+          <button type="submit">Send</button>
+        </form>
+      </section>
+    </div>
+  </main>
+  <script src="script.js" defer></script>
+</body>
+</html>
