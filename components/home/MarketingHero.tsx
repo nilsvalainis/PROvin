@@ -281,7 +281,9 @@ export function MarketingHero({
     >
       {isOrbitVisual ? (
         orbitGlassSilhouette ? (
-          <span className="marketing-hero-orbit-silhouette">
+          <span
+            className={`marketing-hero-orbit-silhouette${homeGlassLensCopy ? " marketing-hero-orbit-silhouette--lens-glass" : ""}`}
+          >
             <svg className="marketing-hero-orbit-silhouette__svg" viewBox="0 0 112 112" xmlns="http://www.w3.org/2000/svg" fill="none" aria-hidden>
               <defs>
                 <clipPath id={silhouetteLensClipId}>
@@ -291,7 +293,7 @@ export function MarketingHero({
                   id={silhouetteLensCenterGradId}
                   cx="44"
                   cy="44"
-                  r="20"
+                  r="23"
                   gradientUnits="userSpaceOnUse"
                 >
                   <stop offset="0%" stopColor="rgb(0 102 255)" stopOpacity="0.11" />
@@ -329,7 +331,7 @@ export function MarketingHero({
               <circle
                 cx="44"
                 cy="44"
-                r="20.5"
+                r="23.5"
                 stroke="rgb(255 255 255 / 0.2)"
                 strokeWidth="0.58"
                 vectorEffect="non-scaling-stroke"
