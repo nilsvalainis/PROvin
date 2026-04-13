@@ -51,12 +51,11 @@ export function HeaderClient({
   const normalizedPath = normalizeSitePath(pathname);
   const tr = useTranslations("SiteRail");
 
+  const isHome = normalizedPath === "/" || normalizedPath === "";
+
   /** Lapas ar `SiteSectionRail` (lg+): logo kreisā mala līdz ar „Sākums” uzraksta sākumu (sk. sliedes HTML). */
   const logoAlignWithRailSakums =
-    normalizedPath === "/" ||
-    normalizedPath === "" ||
-    normalizedPath === "/pasutit" ||
-    normalizedPath === "/biezi-jautajumi";
+    isHome || normalizedPath === "/pasutit" || normalizedPath === "/biezi-jautajumi";
 
   const railSections = useMemo(() => buildSiteRailSections(locale, normalizedPath), [locale, normalizedPath]);
 
@@ -78,7 +77,6 @@ export function HeaderClient({
     if (open) close();
   }, [pathname, hash, open, close]);
 
-  const isHome = pathname === "/" || pathname === "";
   const isFaq = pathname.includes("biezi-jautajumi");
   const isOrderSection = isHome && hash.includes("pasutit");
   const isDarkHeaderSurface = isHome;

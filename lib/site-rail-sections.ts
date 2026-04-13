@@ -27,7 +27,10 @@ export type SiteRailSection = {
 
 export function normalizeSitePath(pathname: string | null | undefined): string {
   if (pathname == null) return "";
-  return pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
+  let p = pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
+  /* next-intl `localePrefix: as-needed` — dažkārt `/lv` vietā `/` */
+  if (p === "/lv") p = "/";
+  return p;
 }
 
 export function buildSiteRailSections(

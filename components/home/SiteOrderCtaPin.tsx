@@ -1,15 +1,23 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { orderSectionHref } from "@/lib/paths";
+import { normalizeSitePath } from "@/lib/site-rail-sections";
 
 /**
  * Globāla „Pasūtīt” — labais augšējais stūris, tā pati pill estētika kā `WhatsAppFab`.
+ * Slēpts demo lapās un tur, kur jau ir sliede / headera izvēlne (sākums, pasūtīt, BUJ).
  */
 export function SiteOrderCtaPin() {
+  const pathname = usePathname() ?? "";
   const locale = useLocale();
   const t = useTranslations("Hero");
+  const p = normalizeSitePath(pathname);
+  const hidePin =
+    p === "/demo" || p.startsWith("/demo/") || p === "/" || p === "" || p === "/pasutit" || p === "/biezi-jautajumi";
+
+  if (hidePin) return null;
 
   return (
     <Link

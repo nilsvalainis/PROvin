@@ -64,9 +64,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       <LenisProvider>
         <LocaleHtmlLang />
         <SiteSectionRail />
-        <HideOnDemoPaths>
-          <SiteOrderCtaPin />
-        </HideOnDemoPaths>
+        <SiteOrderCtaPin />
         <HideOnDemoPaths>
           <Header />
         </HideOnDemoPaths>
