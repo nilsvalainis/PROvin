@@ -72,6 +72,7 @@ export function MarketingHero({
   const silhouetteGradId = `${silhouetteIdBase}-edge`;
   const silhouetteLensCenterGradId = `${silhouetteIdBase}-lens-center`;
   const silhouetteLensClipId = `${silhouetteIdBase}-lens-clip`;
+  const silhouetteDotGradId = `${silhouetteIdBase}-dot-sheen`;
   const t = useTranslations("Hero");
   const rawPillars = t.raw("pillars");
   const pillars: HeroPillar[] = Array.isArray(rawPillars) ? (rawPillars as HeroPillar[]) : [];
@@ -301,6 +302,12 @@ export function MarketingHero({
                   <stop offset="52%" stopColor="rgb(150 160 180)" stopOpacity="0.114" />
                   <stop offset="100%" stopColor="rgb(210 218 232)" stopOpacity="0.202" />
                 </linearGradient>
+                <radialGradient id={silhouetteDotGradId} cx="32%" cy="26%" r="68%" gradientUnits="objectBoundingBox">
+                  <stop offset="0%" stopColor="rgb(255 255 255)" stopOpacity="0.95" />
+                  <stop offset="28%" stopColor="rgb(200 225 255)" stopOpacity="1" />
+                  <stop offset="55%" stopColor="rgb(0 102 255)" stopOpacity="1" />
+                  <stop offset="100%" stopColor="rgb(0 48 115)" stopOpacity="1" />
+                </radialGradient>
               </defs>
               <circle
                 cx="44"
@@ -313,11 +320,12 @@ export function MarketingHero({
                 cx="44"
                 cy="44"
                 r="26"
-                stroke={`url(#${silhouetteGradId})`}
-                strokeWidth="0.55"
+                stroke="rgb(255 255 255 / 0.2)"
+                strokeWidth="0.58"
                 vectorEffect="non-scaling-stroke"
               />
               <circle
+                className="marketing-hero-orbit-silhouette__ring-inner"
                 cx="44"
                 cy="44"
                 r="23.5"
@@ -325,15 +333,18 @@ export function MarketingHero({
                 strokeWidth="0.58"
                 vectorEffect="non-scaling-stroke"
               />
-              {/* Zils punkts starp r=23.5 un r=26 (vidus r=24.75); rotācija ap lēcas centru — pulksteņa virziens */}
+              {/* Orbita r≈24.58, punkts ~10 % mazāks — sprauga līdz abām līnijām */}
               <g transform="translate(44 44)">
                 <g className="marketing-hero-orbit-silhouette__dot-orbit">
                   <circle
                     className="marketing-hero-orbit-silhouette__dot"
-                    cx="24.75"
+                    cx="24.58"
                     cy="0"
-                    r="1.42"
-                    fill="rgb(0 102 255)"
+                    r="1.28"
+                    fill={`url(#${silhouetteDotGradId})`}
+                    stroke="rgb(255 255 255 / 0.42)"
+                    strokeWidth="0.22"
+                    vectorEffect="non-scaling-stroke"
                   />
                 </g>
               </g>
