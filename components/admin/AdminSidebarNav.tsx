@@ -19,6 +19,7 @@ export function AdminSidebarNav({ baseUrl }: { baseUrl?: string }) {
     pathname === "/admin" || pathname === "/admin/" || Boolean(pathname?.startsWith("/admin/orders/"));
   const demoHubActive = Boolean(pathname && /\/demo\/?$/.test(pathname));
   const staticDemoActive = Boolean(pathname?.includes("static-concepts"));
+  const marketingHeroDemoActive = Boolean(pathname?.includes("marketing-hero-concepts"));
 
   return (
     <nav className="flex flex-wrap items-center gap-1 md:flex-col md:items-stretch md:gap-1">
@@ -36,6 +37,9 @@ export function AdminSidebarNav({ baseUrl }: { baseUrl?: string }) {
       </Link>
       <Link href="/demo/static-concepts" className={navItemClass(staticDemoActive)}>
         Statiskie HTML (30)
+      </Link>
+      <Link href="/demo/marketing-hero-concepts" className={navItemClass(marketingHeroDemoActive)}>
+        5 mārketinga hero
       </Link>
       <div className="md:pt-1">
         <LogoutButton />
