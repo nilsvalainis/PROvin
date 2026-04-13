@@ -4,6 +4,7 @@ import { useId } from "react";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { NavChevronDown } from "@/components/NavChevron";
 import { ApprovedByIrissReveal } from "@/components/home/ApprovedByIrissReveal";
 import { MarketingHeroSpeedometer } from "@/components/home/MarketingHeroSpeedometer";
@@ -158,20 +159,38 @@ export function MarketingHero({
     />
   );
 
+  /** Kreisā josla ar PRO/VIN ir tikai `lg+`; produkcijas hero — zīmols arī zem `lg` virs „APPROVED…”. */
+  const showMobileHeroWordmark = Boolean(designDirection && !demoVariant);
+  const mobileHeroWordmark = showMobileHeroWordmark ? (
+    <Link
+      href="/"
+      className="mb-1.5 select-none text-[20px] font-semibold uppercase tracking-[0.2em] text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent lg:hidden"
+      aria-label="PROVIN.LV"
+    >
+      <span className="text-white">PRO</span>
+      <span className="text-provin-accent">VIN</span>
+      <span className="text-white/95">.LV</span>
+    </Link>
+  ) : null;
+
   /** Orbit: 1fr / auto / 1fr pār `min-h-[100dvh]` — vidējā rinda atstāta kā `min-h-0` enkurs, bez horizontālās skenēšanas. */
   const orbitHeroHeaderSpacer = <div className="min-h-0 shrink-0" aria-hidden />;
 
   const orbitHeroHeader = isB ? (
     <header className="pointer-events-none absolute inset-0 z-[1] flex min-h-[min(100dvh,100svh)] w-full items-center justify-center px-4 sm:px-8">
       <div className="marketing-hero-b-glass marketing-hero-orbit-b-glass-shell pointer-events-auto grid h-[min(100dvh,100svh)] w-full max-w-[min(100%,48rem)] min-h-0 grid-rows-[1fr_auto_1fr] px-5 py-5 sm:px-8 sm:py-6">
-        <div className="flex min-h-0 flex-col items-center justify-end pb-2 text-center">{approvedBlock}</div>
+        <div className="flex min-h-0 flex-col items-center justify-end gap-2 pb-2 text-center">
+          {mobileHeroWordmark}
+          {approvedBlock}
+        </div>
         <div className="flex w-full flex-col items-center text-center">{orbitHeroHeaderSpacer}</div>
         <div className="flex min-h-0 flex-col items-center justify-start pt-1.5 text-center">{heroTitleStack}</div>
       </div>
     </header>
   ) : (
     <header className="pointer-events-none absolute inset-0 z-[1] grid min-h-[min(100dvh,100svh)] w-full grid-rows-[1fr_auto_1fr]">
-      <div className="pointer-events-auto flex min-h-0 w-full flex-col items-center justify-end px-4 pb-2 text-center sm:px-8">
+      <div className="pointer-events-auto flex min-h-0 w-full flex-col items-center justify-end gap-2 px-4 pb-2 text-center sm:px-8">
+        {mobileHeroWordmark}
         {approvedBlock}
       </div>
       <div className="pointer-events-auto mx-auto w-full max-w-[min(100%,53.76rem)] px-4 text-center sm:px-8">{orbitHeroHeaderSpacer}</div>
@@ -184,12 +203,14 @@ export function MarketingHero({
   const headerWrappedDefault = isB ? (
     <header className="mx-auto flex w-full max-w-[min(100%,53.76rem)] min-h-0 flex-col items-center justify-center gap-4 self-center text-center sm:gap-5 md:gap-6">
       <div className="marketing-hero-b-glass w-full max-w-[min(100%,48rem)] px-5 py-6 sm:px-8 sm:py-7">
+        {mobileHeroWordmark}
         {approvedBlock}
         {heroTitleStack}
       </div>
     </header>
   ) : (
     <header className="mx-auto flex w-full max-w-[min(100%,53.76rem)] min-h-0 flex-col items-center justify-center gap-4 self-center text-center sm:gap-5 md:gap-6">
+      {mobileHeroWordmark}
       {approvedBlock}
       {heroTitleStack}
     </header>
@@ -381,7 +402,8 @@ export function MarketingHero({
           <div className="relative z-[1] flex min-h-0 w-full flex-1 flex-col">
             <div className="grid min-h-0 w-full flex-1 grid-rows-[1fr_auto]">
               <div className="relative min-h-0">
-                <div className="pointer-events-auto absolute inset-x-0 top-0 z-[1] flex justify-center px-4 sm:px-8">
+                <div className="pointer-events-auto absolute inset-x-0 top-0 z-[1] flex flex-col items-center justify-start px-4 pt-0.5 text-center sm:px-8 sm:pt-1">
+                  {mobileHeroWordmark}
                   {approvedBlock}
                 </div>
                 <div className="pointer-events-auto absolute inset-x-0 top-1/2 z-[1] flex -translate-y-1/2 flex-col items-center justify-center px-4 sm:px-8">
