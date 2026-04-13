@@ -70,13 +70,17 @@ export function HeaderClient({
     ? "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)]"
     : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
+  /** Mājaslapā logo kreisajā malā bez nobīdes pret sliedi; citās „sliežu” lapās — salīdzinājums ar „Sākums”. */
+  const logoRailMarginClass =
+    logoAlignWithRailSakums && !isHome
+      ? "lg:ml-[calc(max(0.5rem,env(safe-area-inset-left,0px))+2.25rem-max(1rem,env(safe-area-inset-left,0px)))]"
+      : null;
+
   const logoClass = [
     isDarkHeaderSurface
       ? "flex min-h-11 min-w-11 shrink-0 items-center text-[28.98px] font-bold tracking-tight text-white transition-colors hover:text-white/90 sm:min-h-0 sm:min-w-0"
       : "flex min-h-11 min-w-11 shrink-0 items-center text-[28.98px] font-bold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent sm:min-h-0 sm:min-w-0",
-    logoAlignWithRailSakums
-      ? "lg:ml-[calc(max(0.5rem,env(safe-area-inset-left,0px))+2.25rem-max(1rem,env(safe-area-inset-left,0px)))]"
-      : null,
+    logoRailMarginClass,
   ]
     .filter(Boolean)
     .join(" ");
@@ -99,10 +103,10 @@ export function HeaderClient({
     <>
       <header className={`sticky top-0 z-[32] isolate ${headerSurface}`}>
         <div className="mx-auto flex min-h-12 max-w-[980px] items-center justify-between gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:min-h-11 sm:gap-3 sm:px-6 lg:max-w-[1024px]">
-          <Link href="/" className={logoClass} aria-label="PROVIN.LV">
+          <Link href="/" className={logoClass} aria-label={isHome ? "PROVIN" : "PROVIN.LV"}>
             <span className={isDarkHeaderSurface ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
             <span className="text-provin-accent">VIN</span>
-            <span className={isDarkHeaderSurface ? "text-white" : "text-[#1d1d1f]"}>.LV</span>
+            {isHome ? null : <span className={isDarkHeaderSurface ? "text-white" : "text-[#1d1d1f]"}>.LV</span>}
           </Link>
 
           <nav className="hidden min-w-0 items-center gap-6 md:flex md:flex-1 md:justify-end">
