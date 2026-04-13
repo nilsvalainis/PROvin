@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -129,6 +129,10 @@ export function HeaderClient({
   const orderBtnClass =
     "provin-btn provin-btn--compact inline-flex min-h-10 shrink-0 items-center justify-center rounded-full px-[1.125rem] text-[12px] font-bold text-white shadow-[0_0_18px_rgba(0,102,255,0.14)] ring-1 ring-white/10 sm:min-h-9 sm:px-[1.35rem] sm:text-[12px]";
 
+  /** Sākumlapas tumšais hero — tā pati „pill” estētika kā `OrderForm` hero „Turpināt uz apmaksu”. */
+  const orderHeaderHeroClass =
+    "provin-home-pill-cta provin-home-pill-cta--fit inline-flex shrink-0 touch-manipulation whitespace-nowrap";
+
   const navLinkClass = (active: boolean) =>
     [
       "flex min-h-11 items-center rounded-xl px-4 text-lg font-medium tracking-tight transition-colors",
@@ -212,7 +216,7 @@ export function HeaderClient({
         ) : null}
 
         <div
-          className={`mx-auto flex min-h-12 max-w-[980px] items-center justify-between gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:min-h-11 sm:gap-3 sm:px-6 lg:max-w-[1024px] ${logoAlignWithRailSakums ? "hidden md:flex" : ""}`}
+          className={`mx-auto flex min-h-12 max-w-[980px] items-center justify-between gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:min-h-11 sm:gap-3 sm:px-6 lg:max-w-[1024px] ${isDarkHeaderSurface ? "lg:pr-[max(0.5rem,env(safe-area-inset-right,0px))]" : ""} ${logoAlignWithRailSakums ? "hidden md:flex" : ""}`}
         >
           <Link href="/" className={logoClass} aria-label={isHome ? "PROVIN" : "PROVIN.LV"}>
             <span className={isDarkHeaderSurface ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
@@ -221,8 +225,18 @@ export function HeaderClient({
           </Link>
 
           <nav className="hidden min-w-0 items-center gap-6 md:flex md:flex-1 md:justify-end">
-            <Link href={orderHref} className={orderBtnClass}>
-              {orderLabel}
+            <Link
+              href={orderHref}
+              className={isDarkHeaderSurface ? orderHeaderHeroClass : orderBtnClass}
+            >
+              {isDarkHeaderSurface ? (
+                <>
+                  {orderLabel}
+                  <ArrowRight className="h-4 w-4 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
+                </>
+              ) : (
+                orderLabel
+              )}
             </Link>
           </nav>
 
