@@ -23,93 +23,100 @@
   top: 50%;
   z-index: 2;
   display: flex;
-  max-width: min(92vw, 28rem);
-  flex-direction: column;
   align-items: center;
-  gap: 0.65rem;
+  justify-content: center;
   transform: translate(-50%, -50%);
-  text-align: center;
+  pointer-events: none;
 }
 
-.hero-rad-hub__kicker {
-  font-size: clamp(0.55rem, 1.4vw, 0.68rem);
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+.hero-rad-hub__seal-wrap {
+  width: clamp(4.5rem, 14vw, 6.5rem);
+  height: clamp(4.5rem, 14vw, 6.5rem);
+  color: rgb(255 255 255 / 0.55);
 }
 
-.hero-rad-hub__h1 {
-  font-size: clamp(1.05rem, 3.8vw, 1.85rem);
-  font-weight: 700;
-  line-height: 1.12;
-  letter-spacing: 0.02em;
-  text-wrap: balance;
+.hero-rad-hub__seal {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-.hero-rad-hub__h1-sub {
-  margin-top: 0.2rem;
-  font-size: clamp(1.2rem, 4.2vw, 2.05rem);
-  font-weight: 800;
-  letter-spacing: 0.06em;
+.hero-rad-hub__seal-ring {
+  fill: none;
+  stroke: currentColor;
+  vector-effect: non-scaling-stroke;
 }
 
-.hero-rad-hub__tag {
-  margin-top: 0.15rem;
-  max-width: 20rem;
-  font-size: clamp(0.58rem, 1.35vw, 0.72rem);
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  opacity: 0.72;
+.hero-rad-hub__seal-ring--outer {
+  stroke-width: 0.55;
+  opacity: 0.45;
 }
 
-.hero-rad-hub__node {
-  position: absolute;
-  z-index: 2;
-  max-width: min(42vw, 9.5rem);
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.hero-rad-hub__node--t {
-  left: 50%;
-  top: 7%;
-  transform: translateX(-50%);
-}
-
-.hero-rad-hub__node--r {
-  right: 4%;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.hero-rad-hub__node--b {
-  bottom: 6%;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.hero-rad-hub__node--l {
-  left: 4%;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.hero-rad-hub__node-k {
-  font-size: clamp(0.5rem, 1.15vw, 0.62rem);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  line-height: 1.25;
-}
-
-.hero-rad-hub__node-s {
-  margin-top: 0.2rem;
-  font-size: clamp(0.45rem, 1vw, 0.55rem);
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  line-height: 1.3;
+.hero-rad-hub__seal-ring--mid {
+  stroke-width: 0.65;
   opacity: 0.65;
-  white-space: pre-line;
+}
+
+.hero-rad-hub__seal-core {
+  fill: currentColor;
+  opacity: 0.85;
+}
+
+.hero-rad-hub__seal-cross {
+  opacity: 0.55;
+}
+
+.hero-rad-hub__corners {
+  color: rgb(255 255 255 / 0.5);
+}
+
+.hero-rad-hub__glyph-ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.45;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.55;
+}
+
+@keyframes hero-rad-hub-thermal-glyph {
+  0%,
+  100% {
+    opacity: 0.22;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.06);
+  }
+}
+
+.hero-rad-hub__glyph-thermal {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hero-rad-hub-thermal-glyph 2.2s ease-in-out infinite;
+}
+
+@keyframes hero-rad-hub-flux-ring {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.08);
+  }
+}
+
+.hero-rad-hub__glyph-flux circle:first-of-type {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hero-rad-hub-flux-ring 1.8s ease-in-out infinite;
+}
+
+.hero-rad-hub__anim-odometer {
+  animation-duration: 1.05s;
+  animation-timing-function: linear;
 }
 
 /* Kopīgās līniju animācijas */
@@ -146,12 +153,19 @@
   .hero-rad-hub__anim-thermal,
   .hero-rad-hub__anim-minimal,
   .hero-rad-hub__anim-hex,
-  .hero-rad-hub__particle {
+  .hero-rad-hub__particle,
+  .hero-rad-hub__glyph-thermal,
+  .hero-rad-hub__glyph-flux circle:first-of-type {
     animation: none !important;
   }
 
   .hero-rad-hub__anim-dash {
     stroke-dashoffset: 0 !important;
+  }
+
+  .hero-rad-hub__glyph-thermal {
+    opacity: 0.35;
+    transform: none;
   }
 
   /* SMIL `animateMotion` neievēro CSS animāciju izslēgšanu */
@@ -175,12 +189,9 @@
   mask-image: radial-gradient(ellipse 55% 50% at 50% 50%, black 0%, transparent 75%);
 }
 
-.hero-rad-hub--v1 .hero-rad-hub__kicker,
-.hero-rad-hub--v1 .hero-rad-hub__h1,
-.hero-rad-hub--v1 .hero-rad-hub__h1-sub,
-.hero-rad-hub--v1 .hero-rad-hub__node {
-  color: rgb(245 245 248);
-  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+.hero-rad-hub--v1 .hero-rad-hub__seal-wrap,
+.hero-rad-hub--v1 .hero-rad-hub__corners {
+  color: rgb(245 245 248 / 0.72);
 }
 
 .hero-rad-hub--v1 .hero-rad-hub__line {
@@ -211,12 +222,9 @@
   background: linear-gradient(165deg, #030806 0%, #050a08 50%, #020302 100%);
 }
 
-.hero-rad-hub--v2 .hero-rad-hub__kicker,
-.hero-rad-hub--v2 .hero-rad-hub__h1,
-.hero-rad-hub--v2 .hero-rad-hub__h1-sub,
-.hero-rad-hub--v2 .hero-rad-hub__node {
-  color: rgb(160 255 190 / 0.92);
-  font-family: ui-monospace, monospace;
+.hero-rad-hub--v2 .hero-rad-hub__seal-wrap,
+.hero-rad-hub--v2 .hero-rad-hub__corners {
+  color: rgb(120 255 170 / 0.85);
 }
 
 .hero-rad-hub--v2 .hero-rad-hub__line {
@@ -241,12 +249,9 @@
   background: #030303;
 }
 
-.hero-rad-hub--v3 .hero-rad-hub__kicker,
-.hero-rad-hub--v3 .hero-rad-hub__h1,
-.hero-rad-hub--v3 .hero-rad-hub__h1-sub,
-.hero-rad-hub--v3 .hero-rad-hub__node {
-  color: #f5f5f5;
-  font-family: ui-serif, Georgia, serif;
+.hero-rad-hub--v3 .hero-rad-hub__seal-wrap,
+.hero-rad-hub--v3 .hero-rad-hub__corners {
+  color: rgb(255 220 220 / 0.9);
 }
 
 .hero-rad-hub--v3 .hero-rad-hub__line {
@@ -264,12 +269,9 @@
   background: radial-gradient(circle at 50% 40%, rgb(8 16 40) 0%, #020308 65%);
 }
 
-.hero-rad-hub--v4 .hero-rad-hub__kicker,
-.hero-rad-hub--v4 .hero-rad-hub__h1,
-.hero-rad-hub--v4 .hero-rad-hub__h1-sub,
-.hero-rad-hub--v4 .hero-rad-hub__node {
-  color: rgb(220 235 255);
-  font-family: system-ui, sans-serif;
+.hero-rad-hub--v4 .hero-rad-hub__seal-wrap,
+.hero-rad-hub--v4 .hero-rad-hub__corners {
+  color: rgb(140 210 255 / 0.88);
 }
 
 .hero-rad-hub--v4 .hero-rad-hub__line {
@@ -284,11 +286,9 @@
   background: linear-gradient(180deg, #04060c 0%, #070a14 100%);
 }
 
-.hero-rad-hub--v5 .hero-rad-hub__kicker,
-.hero-rad-hub--v5 .hero-rad-hub__h1,
-.hero-rad-hub--v5 .hero-rad-hub__h1-sub,
-.hero-rad-hub--v5 .hero-rad-hub__node {
-  color: rgb(200 220 255);
+.hero-rad-hub--v5 .hero-rad-hub__seal-wrap,
+.hero-rad-hub--v5 .hero-rad-hub__corners {
+  color: rgb(160 200 255 / 0.88);
 }
 
 .hero-rad-hub--v5 .hero-rad-hub__line {
@@ -306,11 +306,9 @@
   background: radial-gradient(ellipse 80% 60% at 50% 55%, rgb(35 28 18) 0%, #0a0804 70%);
 }
 
-.hero-rad-hub--v6 .hero-rad-hub__kicker,
-.hero-rad-hub--v6 .hero-rad-hub__h1,
-.hero-rad-hub--v6 .hero-rad-hub__h1-sub,
-.hero-rad-hub--v6 .hero-rad-hub__node {
-  color: rgb(255 230 200);
+.hero-rad-hub--v6 .hero-rad-hub__seal-wrap,
+.hero-rad-hub--v6 .hero-rad-hub__corners {
+  color: rgb(255 200 120 / 0.88);
 }
 
 .hero-rad-hub--v6 .hero-rad-hub__line {
@@ -333,12 +331,9 @@
   background-size: 22px 22px;
 }
 
-.hero-rad-hub--v7 .hero-rad-hub__kicker,
-.hero-rad-hub--v7 .hero-rad-hub__h1,
-.hero-rad-hub--v7 .hero-rad-hub__h1-sub,
-.hero-rad-hub--v7 .hero-rad-hub__node {
-  color: rgb(140 220 255);
-  font-family: ui-monospace, monospace;
+.hero-rad-hub--v7 .hero-rad-hub__seal-wrap,
+.hero-rad-hub--v7 .hero-rad-hub__corners {
+  color: rgb(100 200 255 / 0.85);
 }
 
 .hero-rad-hub--v7 .hero-rad-hub__line {
@@ -352,13 +347,9 @@
   background: #000;
 }
 
-.hero-rad-hub--v8 .hero-rad-hub__kicker,
-.hero-rad-hub--v8 .hero-rad-hub__h1,
-.hero-rad-hub--v8 .hero-rad-hub__h1-sub,
-.hero-rad-hub--v8 .hero-rad-hub__node {
-  color: #fafafa;
-  font-family: ui-serif, "Iowan Old Style", Georgia, serif;
-  font-weight: 500;
+.hero-rad-hub--v8 .hero-rad-hub__seal-wrap,
+.hero-rad-hub--v8 .hero-rad-hub__corners {
+  color: rgb(250 250 250 / 0.55);
 }
 
 .hero-rad-hub--v8 .hero-rad-hub__line {
@@ -376,11 +367,9 @@
   background: radial-gradient(circle at 50% 50%, rgb(40 12 6) 0%, #050302 70%);
 }
 
-.hero-rad-hub--v9 .hero-rad-hub__kicker,
-.hero-rad-hub--v9 .hero-rad-hub__h1,
-.hero-rad-hub--v9 .hero-rad-hub__h1-sub,
-.hero-rad-hub--v9 .hero-rad-hub__node {
-  color: rgb(255 220 200);
+.hero-rad-hub--v9 .hero-rad-hub__seal-wrap,
+.hero-rad-hub--v9 .hero-rad-hub__corners {
+  color: rgb(255 180 120 / 0.85);
 }
 
 .hero-rad-hub--v9 .hero-rad-hub__anim-thermal {
@@ -392,11 +381,9 @@
   background: linear-gradient(145deg, #05060a 0%, #0a0c18 100%);
 }
 
-.hero-rad-hub--v10 .hero-rad-hub__kicker,
-.hero-rad-hub--v10 .hero-rad-hub__h1,
-.hero-rad-hub--v10 .hero-rad-hub__h1-sub,
-.hero-rad-hub--v10 .hero-rad-hub__node {
-  color: rgb(230 235 255);
+.hero-rad-hub--v10 .hero-rad-hub__seal-wrap,
+.hero-rad-hub--v10 .hero-rad-hub__corners {
+  color: rgb(120 180 255 / 0.88);
 }
 
 .hero-rad-hub--v10 .hero-rad-hub__line {

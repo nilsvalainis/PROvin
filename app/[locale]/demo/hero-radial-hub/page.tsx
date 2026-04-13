@@ -4,7 +4,7 @@ import { HeroRadialHubDemos } from "@/components/demo/HeroRadialHubDemos";
 import { routing } from "@/i18n/routing";
 
 export const metadata: Metadata = {
-  title: "Hero radialais tīkls — 10 demo (IRISS)",
+  title: "Hero radialais tīkls — 10 vizuāli demo (bez teksta)",
   robots: { index: false, follow: false },
 };
 
