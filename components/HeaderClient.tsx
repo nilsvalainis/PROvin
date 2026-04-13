@@ -131,7 +131,7 @@ export function HeaderClient({
 
   /** Sākumlapas tumšais hero — tā pati „pill” estētika kā `OrderForm` hero „Turpināt uz apmaksu”. */
   const orderHeaderHeroClass =
-    "provin-home-pill-cta provin-home-pill-cta--fit inline-flex shrink-0 touch-manipulation whitespace-nowrap";
+    "provin-home-pill-cta provin-home-pill-cta--fit provin-home-pill-cta--header-compact inline-flex shrink-0 touch-manipulation whitespace-nowrap";
 
   const navLinkClass = (active: boolean) =>
     [
@@ -232,7 +232,7 @@ export function HeaderClient({
               {isDarkHeaderSurface ? (
                 <>
                   {orderLabel}
-                  <ArrowRight className="h-4 w-4 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
                 </>
               ) : (
                 orderLabel
