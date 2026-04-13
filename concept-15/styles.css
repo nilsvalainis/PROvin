@@ -1,0 +1,11 @@
+body{margin:0;background:#030303;color:#f3efe8;font-family:"Georgia",ui-serif,serif}
+    .lux{position:relative;min-height:100vh;overflow:hidden;background:radial-gradient(1200px at 20% 0%,#1a1208,#030303)}
+    .veil{position:absolute;inset:-20%;background:conic-gradient(from 180deg at 50% 50%,rgba(212,175,55,.14),transparent 40%,rgba(212,175,55,.10),transparent 70%);animation:spin 28s linear infinite;opacity:.9}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .inner{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:clamp(3rem,8vw,6rem) 1.25rem}
+    .eyebrow{letter-spacing:.35em;text-transform:uppercase;font-size:.68rem;color:rgba(243,239,232,.55)}
+    h1{margin:.75rem 0 1.5rem;font-size:clamp(2.2rem,5vw,3.6rem);line-height:1.05;font-weight:500}
+    h1 span{color:rgba(243,239,232,.72);display:inline-block;margin-top:.35rem}
+    .row{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center}
+    input{flex:1;min-width:220px;padding:.95rem 1rem;border-radius:999px;border:1px solid rgba(212,175,55,.35);background:rgba(0,0,0,.35);color:#f3efe8;font:inherit;outline:none;box-shadow:0 0 0 1px rgba(212,175,55,.12) inset}
+    button{border:0;border-radius:999px;padding:.95rem 1.35rem;font:inherit;font-weight:600;cursor:pointer;color:#1a1208;background:linear-gradient(135deg,#f3e7c8,#d4af37);box-shadow:0 18px 60px rgba(212,175,55,.25)}
