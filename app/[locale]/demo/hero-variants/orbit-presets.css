@@ -145,7 +145,12 @@
   }
 }
 
-/* Zils punkts — kustība pa kātu + spraugu (`animateMotion` SVG, nevis CSS rotate) */
+/* Zils punkts starp lēcas abiem riņķiem — rotācija ap centru (pulksteņa virziens) */
+.marketing-hero-orbit-silhouette__dot-orbit {
+  transform-origin: 0 0;
+  animation: marketing-hero-orbit-silhouette-dot-spin var(--provin-scan-loop-dur, calc((7s / 3) * 2)) linear infinite;
+}
+
 .marketing-hero-orbit-silhouette__dot {
   filter:
     drop-shadow(0 0 2.5px rgb(0 102 255 / 0.98))
@@ -209,6 +214,15 @@
   filter: none;
 }
 
+@keyframes marketing-hero-orbit-silhouette-dot-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes marketing-hero-orbit-silhouette-drift {
   0%,
   100% {
@@ -227,6 +241,9 @@
     animation: none;
   }
 
+  .marketing-hero-orbit-silhouette__dot-orbit {
+    animation: none !important;
+  }
 }
 
 .marketing-hero-orbit-base.marketing-hero-section > div {
@@ -595,8 +612,7 @@
     stroke-width: 0.78 !important;
   }
 
-  .marketing-hero-orbit-silhouette__svg > path:nth-of-type(2),
-  .marketing-hero-orbit-silhouette__svg > path:nth-of-type(3) {
+  .marketing-hero-orbit-silhouette__svg > path:nth-of-type(2) {
     stroke: rgb(235 240 252 / 0.62) !important;
     stroke-width: 0.95 !important;
   }
