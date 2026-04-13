@@ -299,7 +299,8 @@
 .demo-design-dir__hero-scan {
   height: 1px;
   width: min(18rem, 70vw);
-  margin: 0 auto;
+  /* Tikai horizontālais centrs — vertikālās atstarpes dod `my-*` uz elementa */
+  margin-inline: auto;
   background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.14), transparent);
   position: relative;
 }
