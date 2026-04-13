@@ -1,0 +1,142 @@
+/* Hero „fresh concepts” — tikai demo; prefikss hfc- */
+
+.hfc-shell {
+  --hfc-accent: #0066ff;
+  --hfc-accent-soft: rgb(0 102 255 / 0.35);
+  --hfc-ink: #f4f6fa;
+}
+
+@keyframes hfc-veil-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes hfc-ribbon-shift {
+  to {
+    stroke-dashoffset: -240;
+  }
+}
+
+@keyframes hfc-bento-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes hfc-letter-wave {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-0.14em);
+  }
+  70% {
+    transform: translateY(0.04em);
+  }
+}
+
+@keyframes hfc-delta-tick {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes hfc-mist-a {
+  0%,
+  100% {
+    transform: translate(-8%, -4%) scale(1);
+  }
+  50% {
+    transform: translate(6%, 8%) scale(1.08);
+  }
+}
+
+@keyframes hfc-mist-b {
+  0%,
+  100% {
+    transform: translate(10%, 6%) scale(1.05);
+  }
+  50% {
+    transform: translate(-10%, -8%) scale(1);
+  }
+}
+
+@keyframes hfc-corner-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgb(0 102 255 / 0.8));
+  }
+}
+
+@keyframes hfc-lattice-dot {
+  0%,
+  85%,
+  100% {
+    opacity: 0.08;
+    transform: scale(1);
+  }
+  40% {
+    opacity: 0.85;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes hfc-chroma-shift {
+  0%,
+  100% {
+    text-shadow:
+      2px 0 0 rgb(255 59 92 / 0.42),
+      -2px 0 0 rgb(0 255 208 / 0.32);
+  }
+  50% {
+    text-shadow:
+      3px -0.5px 0 rgb(255 59 92 / 0.38),
+      -2.5px 0.5px 0 rgb(0 255 208 / 0.36);
+  }
+}
+
+@keyframes hfc-delta-scan-x {
+  0% {
+    left: 0%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.hfc-delta-scan-bar {
+  animation: hfc-delta-scan-x 3.2s linear infinite;
+}
+
+.hfc-chroma-wrap h1 {
+  animation: hfc-chroma-shift 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hfc-shell *,
+  .hfc-shell *::before,
+  .hfc-shell *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .hfc-chroma-wrap h1 {
+    text-shadow: none !important;
+  }
+}
