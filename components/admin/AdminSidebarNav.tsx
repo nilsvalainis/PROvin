@@ -17,6 +17,8 @@ export function AdminSidebarNav({ baseUrl }: { baseUrl?: string }) {
 
   const ordersSectionActive =
     pathname === "/admin" || pathname === "/admin/" || Boolean(pathname?.startsWith("/admin/orders/"));
+  const demoHubActive = Boolean(pathname && /\/demo\/?$/.test(pathname));
+  const staticDemoActive = Boolean(pathname?.includes("static-concepts"));
 
   return (
     <nav className="flex flex-wrap items-center gap-1 md:flex-col md:items-stretch md:gap-1">
@@ -25,6 +27,15 @@ export function AdminSidebarNav({ baseUrl }: { baseUrl?: string }) {
       </Link>
       <Link href="/" className={navItemClass(false)}>
         Uz lapu
+      </Link>
+      <p className="hidden pt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-provin-muted)] md:block">
+        Dizaina demo
+      </p>
+      <Link href="/demo" className={navItemClass(demoHubActive)}>
+        Demo studija
+      </Link>
+      <Link href="/demo/static-concepts" className={navItemClass(staticDemoActive)}>
+        Statiskie HTML (30)
       </Link>
       <div className="md:pt-1">
         <LogoutButton />

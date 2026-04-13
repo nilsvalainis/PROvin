@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import { DemoCrossDemoNav } from "@/components/demo/DemoStudioQuickLinks";
 import { HeroVariantsStudioSection } from "@/components/demo/HeroVariantsStudioSection";
 import { routing } from "@/i18n/routing";
 import "@/components/home/hero-orbit-styles";
@@ -21,6 +22,7 @@ export default async function HeroVariantsDemoPage({ params }: PageProps) {
 
   return (
     <div className="min-w-0 bg-black text-white">
+      <DemoCrossDemoNav />
       <HeroVariantsStudioSection layout="standalone" />
     </div>
   );

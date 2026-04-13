@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import { DemoStudioQuickLinksFollowUp } from "@/components/demo/DemoStudioQuickLinks";
 import { Link } from "@/i18n/navigation";
 import { ProductionLensVariants } from "@/components/demo/ProductionLensVariants";
 import { routing } from "@/i18n/routing";
@@ -48,6 +49,7 @@ export default async function LupaVariantsDemoPage({ params }: PageProps) {
           </Link>
         </div>
       </div>
+      <DemoStudioQuickLinksFollowUp />
       <ProductionLensVariants />
     </div>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import { DemoStudioQuickLinksFollowUp } from "@/components/demo/DemoStudioQuickLinks";
 import { Link } from "@/i18n/navigation";
 import { MotionConceptDemos } from "@/components/demo/MotionConceptDemos";
 import { routing } from "@/i18n/routing";
@@ -41,6 +42,7 @@ export default async function MotionConceptsDemoPage({ params }: PageProps) {
           </a>
         </div>
       </div>
+      <DemoStudioQuickLinksFollowUp />
       <MotionConceptDemos />
     </div>
   );

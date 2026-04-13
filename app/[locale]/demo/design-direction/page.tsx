@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import { DemoCrossDemoNav } from "@/components/demo/DemoStudioQuickLinks";
 import { DesignDirectionLayoutDemo } from "@/components/demo/DesignDirectionLayoutDemo";
 import { routing } from "@/i18n/routing";
 
@@ -19,7 +20,8 @@ export default async function DesignDirectionDemoPage({ params }: PageProps) {
   setRequestLocale(locale);
 
   return (
-    <div className="min-w-0 bg-[#030304]">
+    <div className="min-w-0 bg-[#030304] text-white">
+      <DemoCrossDemoNav />
       <DesignDirectionLayoutDemo />
     </div>
   );

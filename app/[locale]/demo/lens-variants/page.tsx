@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import { DemoStudioQuickLinksFollowUp } from "@/components/demo/DemoStudioQuickLinks";
 import { Link } from "@/i18n/navigation";
 import { LensVariantDemos } from "@/components/demo/LensVariantDemos";
 import "@/components/demo/lens-variant-demos.css";
@@ -53,6 +54,7 @@ export default async function LensVariantsDemoPage({ params }: PageProps) {
           </a>
         </div>
       </div>
+      <DemoStudioQuickLinksFollowUp />
       <LensVariantDemos />
     </div>
   );

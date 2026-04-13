@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import { DemoCrossDemoNav } from "@/components/demo/DemoStudioQuickLinks";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
@@ -37,6 +38,7 @@ export default async function StaticConceptsDemoPage({ params }: PageProps) {
 
   return (
     <div className="min-w-0 bg-[#030304] text-white">
+      <DemoCrossDemoNav />
       <div className="sticky top-0 z-[28] border-b border-white/[0.08] bg-[#030304]/92 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-[#030304]/78">
         <div className="mx-auto flex max-w-[min(72rem,calc(100vw-2rem))] flex-wrap items-center gap-3 px-4 sm:px-6">
           <Link

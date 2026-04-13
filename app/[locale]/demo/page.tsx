@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
 import { DemoStudioNav } from "@/components/demo/DemoStudioNav";
+import { DemoStudioQuickLinks } from "@/components/demo/DemoStudioQuickLinks";
 import { DesignDirectionLayoutDemo } from "@/components/demo/DesignDirectionLayoutDemo";
 import { HeroVariantsStudioSection } from "@/components/demo/HeroVariantsStudioSection";
 import "@/components/home/hero-orbit-styles";
@@ -37,73 +37,8 @@ export default async function DemoStudioPage({ params }: PageProps) {
             Šī lapa atdarina produkcijas karkasu: globālais headeris un kreisā sānu josla paliek kā uz sākumlapas. Zemāk secīgi — hero orbitu varianti
             (pilnekrāna bloki kā īstajā hero), layout paraugs un mazais orbit skaidrojums. Atsevišķas lapas saglabātas saitēm.
           </p>
-          <div className="mt-6 flex flex-wrap gap-3 text-[11px] font-medium uppercase tracking-[0.12em] text-white/45">
-            <Link
-              href="/demo/hero-variants"
-              className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
-            >
-              Tikai hero varianti
-            </Link>
-            <Link
-              href="/demo/hero-radial-hub"
-              className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
-            >
-              Hero radialais tīkls (10)
-            </Link>
-            <Link
-              href="/demo/orbital-hero-full"
-              className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
-            >
-              Orbital hero — pilns saturs (10)
-            </Link>
-            <Link
-              href="/demo/design-direction"
-              className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
-            >
-              Tikai layout demo
-            </Link>
-            <Link
-              href="/demo/lens-variants#lens-demo-2d"
-              className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
-            >
-              Palielināmā stikla · 2D silueti
-            </Link>
-            <Link
-              href="/demo/provin-engineering-heroes"
-              className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
-            >
-              Engineering hero — 30 (motion)
-            </Link>
-            <Link
-              href="/demo/static-concepts"
-              className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
-            >
-              Statiskie HTML koncepti (30)
-            </Link>
-            <Link
-              href="/demo/hero-fresh-concepts"
-              className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
-            >
-              Jauni hero koncepti (60)
-            </Link>
-            <Link
-              href="/demo/motion-concepts"
-              className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
-            >
-              Koncepti bez lēcas
-            </Link>
-            <Link
-              href="/demo/lupa-variants"
-              className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
-            >
-              10 lupas stili
-            </Link>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#0066ff]/35 bg-[#0066ff]/12 px-4 py-2 text-[#7eb6ff] transition hover:bg-[#0066ff]/20 hover:text-white"
-            >
-              Uz sākumlapu
-            </Link>
+          <div className="mt-6">
+            <DemoStudioQuickLinks />
           </div>
         </div>
       </section>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import { DemoCrossDemoNav } from "@/components/demo/DemoStudioQuickLinks";
 import { HeroFreshConceptsDemos } from "@/components/demo/HeroFreshConceptsDemos";
 import { routing } from "@/i18n/routing";
 
@@ -18,5 +19,10 @@ export default async function HeroFreshConceptsPage({ params }: PageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  return <HeroFreshConceptsDemos />;
+  return (
+    <div className="min-w-0">
+      <DemoCrossDemoNav />
+      <HeroFreshConceptsDemos />
+    </div>
+  );
 }

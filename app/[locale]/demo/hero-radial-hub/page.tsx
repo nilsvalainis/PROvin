@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import { DemoCrossDemoNav } from "@/components/demo/DemoStudioQuickLinks";
 import { HeroRadialHubDemos } from "@/components/demo/HeroRadialHubDemos";
 import { routing } from "@/i18n/routing";
 
@@ -20,6 +21,7 @@ export default async function HeroRadialHubDemoPage({ params }: PageProps) {
 
   return (
     <div className="min-w-0 bg-[#020203] text-white">
+      <DemoCrossDemoNav />
       <HeroRadialHubDemos />
     </div>
   );

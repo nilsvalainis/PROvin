@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import { DemoCrossDemoNav } from "@/components/demo/DemoStudioQuickLinks";
 import { OrbitalHeroFullDemos } from "@/components/demo/OrbitalHeroFullDemos";
 import { routing } from "@/i18n/routing";
 
@@ -22,6 +23,7 @@ export default async function OrbitalHeroFullDemoPage({ params }: PageProps) {
 
   return (
     <div className="min-w-0 bg-[#020203] text-white">
+      <DemoCrossDemoNav />
       <header className="mx-auto max-w-[min(52rem,calc(100vw-2rem))] border-b border-white/[0.08] px-4 py-8">
         <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/40">Demo · jauns hero ietvars</p>
         <h1 className="mt-2 text-xl font-semibold tracking-tight text-white/95 sm:text-2xl">
