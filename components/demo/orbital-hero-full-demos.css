@@ -1,0 +1,400 @@
+/**
+ * `/demo/orbital-hero-full` — pilns MarketingHero saturs, jauns orbitālais/tēmekļa ietvars.
+ */
+
+.orb-hero-demo {
+  position: relative;
+  isolation: isolate;
+  min-height: min(100dvh, 100svh);
+  overflow: hidden;
+  color: #f5f5f7;
+}
+
+.orb-hero-demo__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.orb-hero-demo__shell {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  min-height: min(100dvh, 100svh);
+  max-width: min(100%, 53.76rem);
+  flex-direction: column;
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+
+.orb-hero-demo__center {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem 1.25rem;
+  text-align: center;
+}
+
+.orb-hero-demo__h2 {
+  margin-top: 0.75rem;
+  max-width: min(100%, 36rem);
+  text-wrap: balance;
+  font-size: clamp(0.65rem, 1.6vw, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.orb-hero-demo__pillars-wrap {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 0.35rem;
+}
+
+.orb-hero-demo__pillars {
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  width: 100%;
+  max-width: min(100%, 44.55rem);
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 1rem;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: rgb(3 4 6 / 0.55);
+  padding: 0.5rem 0.35rem 0.65rem;
+  box-shadow: 0 20px 52px rgb(0 0 0 / 0.42);
+  backdrop-filter: blur(12px);
+}
+
+@media (min-width: 640px) {
+  .orb-hero-demo__pillars {
+    gap: 0.5rem;
+    padding: 0.65rem 0.5rem 0.85rem;
+  }
+}
+
+.orb-hero-demo__pillar {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.orb-hero-demo__pillar-icon {
+  height: 1.65rem;
+  width: 1.65rem;
+  flex-shrink: 0;
+  color: #0066ff;
+}
+
+@media (min-width: 640px) {
+  .orb-hero-demo__pillar-icon {
+    height: 1.85rem;
+    width: 1.85rem;
+  }
+}
+
+.orb-hero-demo__pillar-icon--risk {
+  color: rgb(251 191 36);
+}
+
+.orb-hero-demo__pillar-title {
+  line-clamp: 2;
+  max-height: 2.4em;
+  min-height: 2.4em;
+  width: 100%;
+  max-width: 11.5rem;
+  text-wrap: balance;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+@media (min-width: 640px) {
+  .orb-hero-demo__pillar-title {
+    font-size: 0.625rem;
+    max-width: 12.5rem;
+  }
+}
+
+.orb-hero-demo__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.5rem;
+}
+
+/* ——— Kopīgās līniju animācijas ——— */
+@keyframes orb-hero-dash {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes orb-hero-pulse-op {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  50% {
+    opacity: 0.92;
+  }
+}
+
+@keyframes orb-hero-orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb-hero-demo__anim-dash,
+  .orb-hero-demo__anim-pulse,
+  .orb-hero-demo__anim-orbit,
+  .orb-hero-demo__particle {
+    animation: none !important;
+  }
+
+  .orb-hero-demo__anim-dash {
+    stroke-dashoffset: 0 !important;
+  }
+
+  .orb-hero-demo--v10 .orb-hero-demo__particle {
+    display: none;
+  }
+}
+
+/* V1 · Globusa punkti + serifs */
+.orb-hero-demo--v1 {
+  background: radial-gradient(ellipse 72% 58% at 50% 46%, rgb(16 20 30) 0%, #020204 74%);
+}
+
+.orb-hero-demo--v1::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgb(255 255 255 / 0.045) 0.5px, transparent 0.55px);
+  background-size: 4px 4px;
+  opacity: 0.4;
+  mask-image: radial-gradient(ellipse 58% 52% at 50% 48%, black 0%, transparent 78%);
+  pointer-events: none;
+}
+
+.orb-hero-demo--v1 .orb-hero-demo__h1,
+.orb-hero-demo--v1 .orb-hero-demo__h2 {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.orb-hero-demo--v1 .orb-hero-demo__line {
+  stroke: rgb(255 255 255 / 0.2);
+  stroke-width: 0.55;
+  vector-effect: non-scaling-stroke;
+}
+
+.orb-hero-demo--v1 .orb-hero-demo__line-glow {
+  stroke: rgb(255 255 255 / 0.07);
+  stroke-width: 2.4;
+  vector-effect: non-scaling-stroke;
+}
+
+.orb-hero-demo--v1 .orb-hero-demo__anim-pulse {
+  animation: orb-hero-pulse-op 3.4s ease-in-out infinite;
+}
+
+.orb-hero-demo--v1 .orb-hero-demo__node-ring {
+  stroke: rgb(255 255 255 / 0.45);
+  stroke-width: 0.45;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+/* V2 · Melns luksuss + sarkanais tēmeklis */
+.orb-hero-demo--v2 {
+  background: #030303;
+}
+
+.orb-hero-demo--v2 .orb-hero-demo__h1,
+.orb-hero-demo--v2 .orb-hero-demo__h2 {
+  font-family: ui-serif, Georgia, serif;
+}
+
+.orb-hero-demo--v2 .orb-hero-demo__line {
+  stroke: rgb(255 255 255 / 0.32);
+  stroke-width: 0.45;
+  vector-effect: non-scaling-stroke;
+}
+
+.orb-hero-demo--v2 .orb-hero-demo__anim-reticle {
+  animation: orb-hero-pulse-op 1.85s ease-in-out infinite;
+}
+
+/* V3 · Telemetrija / dati */
+.orb-hero-demo--v3 {
+  background: linear-gradient(160deg, #030806 0%, #050a08 48%, #020302 100%);
+}
+
+.orb-hero-demo--v3 .orb-hero-demo__h1,
+.orb-hero-demo--v3 .orb-hero-demo__h2 {
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.02em;
+}
+
+.orb-hero-demo--v3 .orb-hero-demo__line {
+  stroke: rgb(55 220 130 / 0.52);
+  stroke-width: 0.65;
+  stroke-dasharray: 3 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.orb-hero-demo--v3 .orb-hero-demo__line-ghost {
+  stroke: rgb(40 180 90 / 0.18);
+  stroke-width: 1.85;
+  vector-effect: non-scaling-stroke;
+}
+
+.orb-hero-demo--v3 .orb-hero-demo__anim-dash {
+  animation: orb-hero-dash 2.75s linear infinite;
+}
+
+/* V4 · Sudraba gredzeni */
+.orb-hero-demo--v4 {
+  background: radial-gradient(circle at 50% 42%, rgb(22 24 32) 0%, #050508 68%);
+}
+
+.orb-hero-demo--v4 .orb-hero-demo__ring-outer,
+.orb-hero-demo--v4 .orb-hero-demo__ring-inner {
+  fill: none;
+  stroke: rgb(200 210 230 / 0.12);
+  vector-effect: non-scaling-stroke;
+}
+
+.orb-hero-demo--v4 .orb-hero-demo__ring-outer {
+  stroke-width: 0.55;
+}
+
+.orb-hero-demo--v4 .orb-hero-demo__ring-inner {
+  stroke-width: 0.4;
+}
+
+.orb-hero-demo--v4 .orb-hero-demo__line {
+  stroke: rgb(200 210 230 / 0.22);
+  stroke-width: 0.4;
+  vector-effect: non-scaling-stroke;
+}
+
+.orb-hero-demo--v4 .orb-hero-demo__anim-orbit {
+  transform-origin: 200px 200px;
+  animation: orb-hero-orbit-spin 48s linear infinite;
+}
+
+/* V5 · Blueprint */
+.orb-hero-demo--v5 {
+  background-color: #061018;
+  background-image: linear-gradient(rgb(0 140 200 / 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(0 140 200 / 0.07) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.orb-hero-demo--v5 .orb-hero-demo__h1,
+.orb-hero-demo--v5 .orb-hero-demo__h2 {
+  font-family: ui-monospace, monospace;
+}
+
+.orb-hero-demo--v5 .orb-hero-demo__line {
+  stroke: rgb(80 200 255 / 0.48);
+  stroke-width: 0.45;
+  vector-effect: non-scaling-stroke;
+}
+
+/* V6 · Odometrs / nobraukums */
+.orb-hero-demo--v6 {
+  background: radial-gradient(ellipse 82% 62% at 50% 54%, rgb(38 30 18) 0%, #0a0804 72%);
+}
+
+.orb-hero-demo--v6 .orb-hero-demo__line {
+  stroke: rgb(255 175 75 / 0.48);
+  stroke-width: 1.05;
+  stroke-dasharray: 1 4;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.orb-hero-demo--v6 .orb-hero-demo__anim-dash {
+  animation: orb-hero-dash 1.45s linear infinite;
+}
+
+/* V7 · Stikls / apkopojums */
+.orb-hero-demo--v7 {
+  background: linear-gradient(165deg, #070810 0%, #0c1020 45%, #05060c 100%);
+}
+
+.orb-hero-demo--v7 .orb-hero-demo__pillars {
+  border-color: rgb(255 255 255 / 0.12);
+  background: rgb(8 12 22 / 0.62);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 24px 56px rgb(0 0 0 / 0.5);
+}
+
+.orb-hero-demo--v7 .orb-hero-demo__line {
+  stroke: rgb(255 255 255 / 0.14);
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+
+/* V8 · Grafiks / nobraukuma līkne */
+.orb-hero-demo--v8 {
+  background: radial-gradient(circle at 50% 38%, rgb(8 14 36) 0%, #020308 64%);
+}
+
+.orb-hero-demo--v8 .orb-hero-demo__line {
+  stroke: rgb(0 175 255 / 0.38);
+  stroke-width: 0.5;
+  stroke-dasharray: 8 92;
+  vector-effect: non-scaling-stroke;
+}
+
+.orb-hero-demo--v8 .orb-hero-demo__anim-dash {
+  animation: orb-hero-dash 3.2s linear infinite;
+}
+
+/* V9 · Termiskā / avoti */
+.orb-hero-demo--v9 {
+  background: radial-gradient(circle at 50% 50%, rgb(42 14 8) 0%, #050302 72%);
+}
+
+.orb-hero-demo--v9 .orb-hero-demo__anim-thermal {
+  animation: orb-hero-pulse-op 2.1s ease-in-out infinite;
+}
+
+/* V10 · Savienojuma sinhrons */
+.orb-hero-demo--v10 {
+  background: linear-gradient(145deg, #05060a 0%, #0a0c18 100%);
+}
+
+.orb-hero-demo--v10 .orb-hero-demo__line {
+  stroke: rgb(0 130 255 / 0.28);
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
