@@ -16,10 +16,13 @@ export async function HomeMetaIntroSection() {
         <h1 className="demo-design-dir__title relative z-[1] mx-auto mt-4 max-w-[min(100%,40rem)] text-balance">
           {tMeta("homeIntroTitle")}
         </h1>
+        <div
+          className="demo-design-dir__hero-scan relative z-[1] mx-auto mt-4 sm:mt-5"
+          aria-hidden
+        />
         <p className="demo-design-dir__body relative z-[1] mx-auto mt-4 max-w-[min(100%,42rem)] text-balance sm:mt-5">
           {tMeta("homeIntroBody")}
         </p>
-        <div className="demo-design-dir__hero-scan relative z-[1]" aria-hidden />
       </div>
     </section>
   );

@@ -299,7 +299,7 @@
 .demo-design-dir__hero-scan {
   height: 1px;
   width: min(18rem, 70vw);
-  margin: 1.25rem auto 0;
+  margin: 0 auto;
   background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.14), transparent);
   position: relative;
 }

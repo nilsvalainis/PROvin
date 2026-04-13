@@ -26,12 +26,12 @@ function DesignDirectionHeroIntro({ sectionId }: { sectionId: string }) {
         <h1 className="demo-design-dir__title relative z-[1] mx-auto mt-4 max-w-[40rem]">
           Vienota ass, secīgs ritms, atšķirīgas zīmes katrā solī
         </h1>
-        <p className="demo-design-dir__body relative z-[1] mx-auto mt-4 max-w-[36rem]">
+        <div className="demo-design-dir__hero-scan relative z-[1] mx-auto mt-4 sm:mt-5" aria-hidden />
+        <p className="demo-design-dir__body relative z-[1] mx-auto mt-4 max-w-[36rem] sm:mt-5">
           Šī lapa parāda, kā viena horizontālā ass un vienādas kartiņu likmes samazina „smagumu”, bet dažādi motīvi
           (plūsma, slāņi, signāls) atkārto ideju: datu savienošana un pievienotā vērtība — bez īstā mājaslapas tekstu
           maiņas.
         </p>
-        <div className="demo-design-dir__hero-scan relative z-[1]" aria-hidden />
         <div className="relative z-[1] mt-10 flex flex-wrap items-center justify-center gap-3 text-[11px] font-medium uppercase tracking-[0.14em] text-white/45">
           <Link href="/demo/hero-variants" className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80">
             Hero orbit demo
