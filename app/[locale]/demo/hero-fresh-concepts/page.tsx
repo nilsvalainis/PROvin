@@ -4,7 +4,7 @@ import { HeroFreshConceptsDemos } from "@/components/demo/HeroFreshConceptsDemos
 import { routing } from "@/i18n/routing";
 
 export const metadata: Metadata = {
-  title: "Demo — jauni hero koncepti (10)",
+  title: "Demo — jauni hero koncepti (30)",
   robots: { index: false, follow: false },
 };
 

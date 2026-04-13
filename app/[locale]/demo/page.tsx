@@ -72,7 +72,7 @@ export default async function DemoStudioPage({ params }: PageProps) {
               href="/demo/hero-fresh-concepts"
               className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
             >
-              Jauni hero koncepti (10)
+              Jauni hero koncepti (30)
             </Link>
             <Link
               href="/demo/motion-concepts"
