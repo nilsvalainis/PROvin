@@ -1,16 +1,17 @@
 "use client";
 
 import "./lens-variant-demos.css";
+import { LensMotionAlternatesSection } from "@/components/demo/LensMotionAlternates";
+import {
+  HANDLE_RAIL_A,
+  HANDLE_RAIL_B,
+  HANDLE_SINGLE,
+  LensBody,
+  LensBodyDemo2D,
+  MOTION_PATH_D,
+  REFLECT_Q,
+} from "@/components/demo/lens-demo-shared";
 import { useEffect, useId, useRef, useState } from "react";
-
-/** Kopīgais ceļš: kāts → sprauga (pilns aplis) → atpakaļ; pauze 0,5 s @ 4,5 s ciklā — kā SMIL demo. */
-const MOTION_PATH_D =
-  "M 81.384 81.384 L 61.506 61.506 A 24.75 24.75 0 1 1 26.494 26.494 A 24.75 24.75 0 1 1 61.506 61.506 L 81.384 81.384";
-
-const HANDLE_RAIL_A = "M 61.5 62.268 L 80.5 81.268";
-const HANDLE_RAIL_B = "M 63.268 61.5 L 82.268 80.5";
-const HANDLE_SINGLE = "M 64 64 L 83 83";
-const REFLECT_Q = "M 29 37 Q 44 31 59 37";
 
 const DUR_MS = 4000;
 const PAUSE_MS = 500;
@@ -18,91 +19,6 @@ const CYCLE_MS = DUR_MS + PAUSE_MS;
 
 function cardClass() {
   return "rounded-2xl border border-white/[0.1] bg-[#0a0b0f] p-4 sm:p-5";
-}
-
-function LensDefs({
-  gid,
-  lid,
-  cid,
-}: {
-  gid: string;
-  lid: string;
-  cid: string;
-}) {
-  return (
-    <defs>
-      <clipPath id={cid}>
-        <circle cx="44" cy="44" r="25.4" />
-      </clipPath>
-      <radialGradient id={lid} cx="44" cy="44" r="23" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stopColor="rgb(0 102 255)" stopOpacity="0.11" />
-        <stop offset="40%" stopColor="rgb(0 102 255)" stopOpacity="0.042" />
-        <stop offset="100%" stopColor="rgb(0 102 255)" stopOpacity="0" />
-      </radialGradient>
-      <linearGradient id={gid} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="rgb(230 235 245)" stopOpacity="0.253" />
-        <stop offset="52%" stopColor="rgb(150 160 180)" stopOpacity="0.114" />
-        <stop offset="100%" stopColor="rgb(210 218 232)" stopOpacity="0.202" />
-      </linearGradient>
-    </defs>
-  );
-}
-
-function LensBody({ gid, lid, cid }: { gid: string; lid: string; cid: string }) {
-  return (
-    <>
-      <LensDefs gid={gid} lid={lid} cid={cid} />
-      <circle cx="44" cy="44" r="26" fill={`url(#${lid})`} clipPath={`url(#${cid})`} />
-      <circle cx="44" cy="44" r="26" stroke={`url(#${gid})`} strokeWidth="0.55" vectorEffect="non-scaling-stroke" />
-      <circle cx="44" cy="44" r="23.5" stroke="rgb(255 255 255 / 0.2)" strokeWidth="0.58" vectorEffect="non-scaling-stroke" />
-      <path
-        d={REFLECT_Q}
-        stroke="rgb(255 255 255 / 0.26)"
-        strokeWidth="0.52"
-        strokeLinecap="round"
-        vectorEffect="non-scaling-stroke"
-      />
-    </>
-  );
-}
-
-/** Tikai 2D demo: vājāks zils lēcas tonis; iekšējā mala — tikai zila aura (bez cietas baltās līnijas). */
-function LensDefsDemo2D({ gid, lid, cid }: { gid: string; lid: string; cid: string }) {
-  return (
-    <defs>
-      <clipPath id={cid}>
-        <circle cx="44" cy="44" r="25.4" />
-      </clipPath>
-      <radialGradient id={lid} cx="44" cy="44" r="23" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stopColor="rgb(0 102 255)" stopOpacity="0.05" />
-        <stop offset="40%" stopColor="rgb(0 102 255)" stopOpacity="0.018" />
-        <stop offset="100%" stopColor="rgb(0 102 255)" stopOpacity="0" />
-      </radialGradient>
-      <linearGradient id={gid} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="rgb(230 235 245)" stopOpacity="0.253" />
-        <stop offset="52%" stopColor="rgb(150 160 180)" stopOpacity="0.114" />
-        <stop offset="100%" stopColor="rgb(210 218 232)" stopOpacity="0.202" />
-      </linearGradient>
-    </defs>
-  );
-}
-
-function LensBodyDemo2D({ gid, lid, cid }: { gid: string; lid: string; cid: string }) {
-  return (
-    <>
-      <LensDefsDemo2D gid={gid} lid={lid} cid={cid} />
-      <circle cx="44" cy="44" r="26" fill={`url(#${lid})`} clipPath={`url(#${cid})`} />
-      <circle cx="44" cy="44" r="26" stroke={`url(#${gid})`} strokeWidth="0.55" vectorEffect="non-scaling-stroke" />
-      <circle cx="44" cy="44" r="23.5" fill="none" className="lens-variant-demos__2d-inner-ring" vectorEffect="non-scaling-stroke" />
-      <path
-        d={REFLECT_Q}
-        stroke="rgb(255 255 255 / 0.26)"
-        strokeWidth="0.52"
-        strokeLinecap="round"
-        vectorEffect="non-scaling-stroke"
-      />
-    </>
-  );
 }
 
 /** 2A — SVG animateMotion + keyTimes / keyPoints */
@@ -200,7 +116,7 @@ export function LensVariantDemos() {
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Demo · prototipi</p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white/95 sm:text-3xl">Palielināmā stikla varianti</h1>
         <p className="mt-3 max-w-[50rem] text-[14px] leading-relaxed text-white/58">
-          Salīdzināšanai — ģeometrija (§1), kustības pieeja (§2), vizuālais punkts (§3), pieejamība (§4). Produkcijas hero nav mainīts.
+          Salīdzināšanai — ģeometrija (§1), kustības pieeja (§2), desmit alternatīvi motīvi (§5), vizuālais punkts (§3), pieejamība (§4). Produkcijas hero nav mainīts.
         </p>
         <label className="mt-5 flex cursor-pointer items-center gap-3 text-[13px] text-white/70">
           <input
@@ -209,7 +125,7 @@ export function LensVariantDemos() {
             onChange={(e) => setForceReduceMotion(e.target.checked)}
             className="h-4 w-4 rounded border-white/25 bg-black/40"
           />
-          Simulēt <span className="font-mono text-[12px] text-white/55">prefers-reduced-motion</span> (2A, 2B, 2C, 2D)
+          Simulēt <span className="font-mono text-[12px] text-white/55">prefers-reduced-motion</span> (2A, 2B, 2C, 2D, §5 daļēji)
         </label>
       </header>
 
@@ -378,6 +294,8 @@ export function LensVariantDemos() {
         </div>
       </section>
 
+      <LensMotionAlternatesSection baseId={baseId} forceReduceMotion={forceReduceMotion} cardClass={cardClass()} />
+
       {/* §3 Vizuāls */}
       <section className="mb-14 scroll-mt-28" id="lens-demo-visual">
         <h2 className="text-lg font-semibold text-white/95">§3 Vizuāls punkts — metāls / stikls</h2>
@@ -467,8 +385,9 @@ export function LensVariantDemos() {
         <article className={`${cardClass()} mt-4 max-w-[40rem]`}>
           <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7eb6ff]">4 · prefers-reduced-motion</h3>
           <p className="mt-2 text-[13px] leading-relaxed text-white/55">
-            Izmanto ieķeksēšanu lapas augšā: 2A izslēdz <span className="font-mono">animateMotion</span>, 2B/2D — CSS animācijas, 2C — aptur{" "}
-            <span className="font-mono">rAF</span> un tur punktu kāta apakšā. Produkcijā —{" "}
+            Izmanto ieķeksēšanu lapas augšā: 2A izslēdz <span className="font-mono">animateMotion</span>, 2B/2D un §5 ar{" "}
+            <span className="font-mono">stroke-dashoffset</span> — CSS animācijas, 2C — aptur <span className="font-mono">rAF</span> un tur punktu kāta apakšā. §5
+            SMIL elementiem — statisks sākuma punkts. Produkcijā —{" "}
             <span className="font-mono">matchMedia(&quot;(prefers-reduced-motion: reduce)&quot;)</span> vai līdzīgi.
           </p>
         </article>

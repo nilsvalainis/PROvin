@@ -41,6 +41,10 @@ export default async function LensVariantsDemoPage({ params }: PageProps) {
           <a href="#lens-demo-2d" className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#7eb6ff]/80 hover:text-[#7eb6ff]">
             2D silueti
           </a>
+          <span className="text-[10px] text-white/25">|</span>
+          <a href="#lens-demo-alternates" className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/50 hover:text-white/80">
+            §5 Alt.
+          </a>
           <a href="#lens-demo-visual" className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/50 hover:text-white/80">
             §3 Vizuāls
           </a>
