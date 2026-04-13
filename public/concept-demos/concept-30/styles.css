@@ -1,5 +1,4 @@
 :root{--bg:#f6f7fb;--fg:#0b1020;--a:#0066ff;--pad:clamp(1.25rem,3vw,2.25rem)}
-    body{margin:0;background:var(--bg);color:var(--fg);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .root{max-width:980px;margin:0 auto;padding:var(--pad);display:grid;gap:var(--gap,1rem)}
     .block{border:1px solid rgba(0,0,0,.10);border-radius:18px;padding:var(--pad);background:rgba(255,255,255,.65)}
     h1{margin:0 0 .35rem;font-size:var(--h,clamp(2rem,4vw,3rem));line-height:1.02}

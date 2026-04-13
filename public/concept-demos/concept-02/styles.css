@@ -1,6 +1,4 @@
-* { box-sizing: border-box; }
-    body { margin: 0; background: #0b0d12; color: #e7e9ee; font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial; }
-    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
     .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
     .rail { border-right: 1px solid rgba(255,255,255,0.08); padding: 1.25rem; background: rgba(255,255,255,0.02); }
     .logo { font-weight: 800; letter-spacing: .08em; } .tiny { font-size: .75rem; opacity: .55; line-height: 1.4; }

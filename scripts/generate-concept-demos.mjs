@@ -42,6 +42,15 @@ function escapeHtmlAttr(value) {
   return String(value).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }
 
+/** Drop redundant universal box-sizing; Tailwind preflight already sets border-box. */
+function compactCss(css) {
+  let s = String(css).trim();
+  s = s.replace(/\*\s*\{\s*box-sizing:\s*border-box;\s*\}\s*/g, "");
+  s = s.replace(/\*\{\s*box-sizing:\s*border-box;\s*\}\s*/g, "");
+  s = s.replace(/\*\{\s*box-sizing:\s*border-box\s*\}\s*/g, "");
+  return s.replace(/\n{3,}/g, "\n\n").trim();
+}
+
 /**
  * Tailwind CDN + root-relative asset URLs so CSS/JS load even when the URL has no trailing slash.
  * Optional `shellTw` wraps body HTML (default: full-width shell). Set `shellTw: null` on a spec to omit.
@@ -97,7 +106,7 @@ function writeConcept(n, spec) {
       bodyClass: spec.bodyClass || "",
     }),
   );
-  fs.writeFileSync(path.join(dir, "styles.css"), spec.css.trim() + "\n");
+  fs.writeFileSync(path.join(dir, "styles.css"), compactCss(spec.css) + "\n");
   fs.writeFileSync(path.join(dir, "script.js"), spec.js.trim() + "\n");
 }
 

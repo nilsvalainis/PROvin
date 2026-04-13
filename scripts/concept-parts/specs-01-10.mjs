@@ -11,6 +11,7 @@ export const specs01_10 = [
       "Fake VIN decode result card",
       "Mouse-driven radial highlight (CSS variables)",
     ],
+    bodyClass: "font-sans",
     html: `
     <header class="hero mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-8 sm:px-6">
       <p class="eyebrow">PROVIN · concept demo</p>
@@ -41,7 +42,6 @@ export const specs01_10 = [
     </section>`,
     css: `
     :root { --mx: 50%; --my: 40%; --glass: rgba(255,255,255,0.08); --stroke: rgba(255,255,255,0.18); }
-    * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       color: #e8eefc; background: radial-gradient(900px circle at var(--mx) var(--my), rgba(0,102,255,0.35), transparent 55%),
       radial-gradient(1200px at 20% 0%, #0b1020, #020308); overflow-x: hidden; }
@@ -86,6 +86,7 @@ export const specs01_10 = [
     goal: "ChatGPT-style auto expert with typing animation and canned VIN insights.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Threaded chat UI", "Typing indicator", "Fake AI replies tied to VIN"],
+    bodyClass: "bg-[#0b0d12] text-[#e7e9ee]",
     html: `
     <div class="shell grid min-h-0 w-full max-w-6xl grid-cols-1 text-[#e7e9ee] md:min-h-screen md:grid-cols-[220px_1fr]">
       <aside class="rail"><div class="logo">PROVIN</div><p class="tiny">Concept demo — not a live model.</p></aside>
@@ -100,8 +101,6 @@ export const specs01_10 = [
       </section>
     </div>`,
     css: `
-    * { box-sizing: border-box; }
-    body { margin: 0; background: #0b0d12; color: #e7e9ee; font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
     .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
     .rail { border-right: 1px solid rgba(255,255,255,0.08); padding: 1.25rem; background: rgba(255,255,255,0.02); }
@@ -147,6 +146,7 @@ export const specs01_10 = [
     goal: "High-contrast black/white layout with raw typography and zero friendly rounding.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["No border-radius", "Strict grid", "Oversized type scale"],
+    bodyClass: "bg-white font-mono text-black",
     html: `
     <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <header><span class="tag">PROVIN / DEMO</span><h1>AUDIT<br/>THE<br/>VIN</h1></header>
@@ -157,8 +157,7 @@ export const specs01_10 = [
       <pre id="out" class="out" aria-live="polite"></pre>
     </div>`,
     css: `
-    *,*::before,*::after{box-sizing:border-box;border-radius:0!important}
-    body{margin:0;background:#fff;color:#000;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    *,*::before,*::after{border-radius:0!important}
     .wrap{max-width:980px;margin:0 auto;padding:2rem 1.25rem}
     header h1{margin:.5rem 0;font-size:clamp(3rem,12vw,7rem);line-height:.9;letter-spacing:-.04em;font-weight:900}
     .tag{display:inline-block;border:2px solid #000;padding:.25rem .5rem;font-size:.7rem;letter-spacing:.15em}
@@ -185,6 +184,7 @@ export const specs01_10 = [
     goal: "Generous whitespace, system typography, and soft section reveals.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["CSS smooth scroll", "IntersectionObserver fade-ins", "System / SF-like stack"],
+    bodyClass: "bg-[#fbfbfd] font-sans leading-normal text-[#0b0b0f]",
     html: `
     <div class="page mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
       <section class="band reveal"><p class="kicker">PROVIN</p><h1 class="hero">Understand the car<br/>before you buy.</h1>
@@ -194,7 +194,7 @@ export const specs01_10 = [
     </div>`,
     css: `
     html{scroll-behavior:smooth}
-    body{margin:0;background:#fbfbfd;color:#0b0b0f;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+    body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
     .page{max-width:980px;margin:0 auto;padding:clamp(3rem,8vw,6rem) 1.5rem 6rem}
     .kicker{letter-spacing:.24em;text-transform:uppercase;font-size:.72rem;color:#6e6e73;margin:0 0 .75rem}
     .hero{font-size:clamp(2.4rem,5vw,3.6rem);line-height:1.05;font-weight:650;margin:0 0 1rem;letter-spacing:-.02em}
@@ -217,6 +217,7 @@ export const specs01_10 = [
     goal: "Dark chassis, neon outlines, CRT scanline, and a glitching headline.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Glowing borders", "Animated scan line", "Glitch text"],
+    bodyClass: "min-h-screen bg-[#03040a] font-mono text-[#e6f7ff]",
     html: `
     <div class="crt relative min-h-screen w-full overflow-hidden font-mono text-[#e6f7ff]">
       <div class="scan" aria-hidden="true"></div>
@@ -229,7 +230,6 @@ export const specs01_10 = [
       </div>
     </div>`,
     css: `
-    body{margin:0;background:#03040a;color:#e6f7ff;font-family:ui-monospace,Menlo,Consolas,monospace;min-height:100vh}
     .crt{position:relative;min-height:100vh;overflow:hidden}
     .scan{pointer-events:none;position:absolute;inset:0;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.03),rgba(255,255,255,.03) 1px,transparent 1px,transparent 3px);mix-blend-mode:overlay;animation:drift 9s linear infinite}
     @keyframes drift{to{transform:translateY(12px)}}
@@ -258,6 +258,7 @@ export const specs01_10 = [
     tech: ["HTML", "CSS", "Vanilla JS", "Chart.js (CDN)"],
     features: ["Risk bar chart", "Mileage line chart", "Fake scores"],
     extraHead: `<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>`,
+    bodyClass: "bg-[#0a0c12] text-[#e8ecf1]",
     html: `
     <div class="dash mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
       <header><h1>Signal desk</h1><p class="muted">Demo charts — not real underwriting.</p></header>
@@ -268,7 +269,6 @@ export const specs01_10 = [
       <button id="btn" type="button" class="btn">Randomize demo data</button>
     </div>`,
     css: `
-    body{margin:0;background:#0a0c12;color:#e8ecf1;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .dash{max-width:1000px;margin:0 auto;padding:2rem 1.25rem 3rem}
     h1{margin:0 0 .25rem;font-size:1.6rem} .muted{margin:0;opacity:.65;font-size:.9rem}
     .charts{display:grid;gap:1.25rem;margin-top:1.5rem}
@@ -295,6 +295,7 @@ export const specs01_10 = [
     goal: "Sticky split layout: narrative on the left, vehicle canvas on the right.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Two-column split", "Sticky visual rail", "Scroll-tied caption swaps"],
+    bodyClass: "bg-[#05060a] text-[#eef1f6]",
     html: `
     <div class="split grid min-h-screen w-full grid-cols-1 text-[#eef1f6] md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
       <div class="story">
@@ -310,8 +311,6 @@ export const specs01_10 = [
       </aside>
     </div>`,
     css: `
-    *{box-sizing:border-box}
-    body{margin:0;background:#05060a;color:#eef1f6;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);min-height:100vh}
     .story{padding:clamp(1.5rem,4vw,3rem);max-width:640px}
     .eyebrow{letter-spacing:.22em;text-transform:uppercase;font-size:.68rem;opacity:.55}
@@ -335,6 +334,7 @@ export const specs01_10 = [
     goal: "Vertical history spine with hover-expanded inspection nodes.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Animated timeline rail", "Hover detail drawers", "Keyboard-focusable rows"],
+    bodyClass: "bg-[#0c0d12] text-[#e9edf5]",
     html: `
     <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <h1>Ownership spine</h1>
@@ -346,7 +346,6 @@ export const specs01_10 = [
       </ol>
     </div>`,
     css: `
-    body{margin:0;background:#0c0d12;color:#e9edf5;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .wrap{max-width:760px;margin:0 auto;padding:2.5rem 1.25rem}
     h1{margin:0 0 .35rem;font-size:1.75rem} .sub{margin:0 0 2rem;opacity:.65}
     .tl{list-style:none;margin:0;padding:0;border-left:2px solid rgba(255,255,255,.12);padding-left:1.25rem}
@@ -373,6 +372,7 @@ export const specs01_10 = [
     goal: "Theme toggle with smooth variable-driven transitions across surfaces.",
     tech: ["HTML", "CSS custom properties", "Vanilla JS"],
     features: ["Animated theme toggle", "CSS variables for surfaces", "Persisted preference (localStorage)"],
+    bodyClass: "bg-[var(--bg)] font-sans text-[var(--fg)] transition-colors duration-500 ease-in-out",
     html: `
     <div class="bar flex items-center justify-between border-b px-4 py-4 sm:px-5"><strong>PROVIN</strong><button id="t" type="button" aria-pressed="false">Theme</button></div>
     <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
@@ -383,7 +383,7 @@ export const specs01_10 = [
     css: `
     :root[data-theme="dark"]{--bg:#07080d;--fg:#eef1f6;--card:#12141c;--bd:rgba(255,255,255,.12)}
     :root[data-theme="light"]{--bg:#f6f7fb;--fg:#0b0d12;--card:#ffffff;--bd:rgba(0,0,0,.10)}
-    body{margin:0;background:var(--bg);color:var(--fg);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;transition:background .45s ease,color .45s ease}
+    body{transition:background .45s ease,color .45s ease}
     .bar{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid var(--bd)}
     button{border:1px solid var(--bd);background:transparent;color:inherit;padding:.55rem .9rem;border-radius:999px;cursor:pointer;transition:transform .2s ease}
     button:hover{transform:translateY(-1px)}
@@ -410,6 +410,7 @@ export const specs01_10 = [
     goal: "Composable tiles with hover expansion for dense feature discovery.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Reusable card module", "Hover height expansion", "Accent rail"],
+    bodyClass: "bg-[#05060a] text-[#e9edf5]",
     html: `
     <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <h1>Modular audit deck</h1>
@@ -420,7 +421,6 @@ export const specs01_10 = [
       </div>
     </div>`,
     css: `
-    body{margin:0;background:#05060a;color:#e9edf5;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .wrap{max-width:1100px;margin:0 auto;padding:2.5rem 1.25rem}
     h1{margin:0 0 1.5rem;font-size:clamp(1.8rem,3vw,2.4rem)}
     .deck{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;align-items:start}

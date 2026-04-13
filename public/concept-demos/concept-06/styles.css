@@ -1,5 +1,4 @@
-body{margin:0;background:#0a0c12;color:#e8ecf1;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
-    .dash{max-width:1000px;margin:0 auto;padding:2rem 1.25rem 3rem}
+.dash{max-width:1000px;margin:0 auto;padding:2rem 1.25rem 3rem}
     h1{margin:0 0 .25rem;font-size:1.6rem} .muted{margin:0;opacity:.65;font-size:.9rem}
     .charts{display:grid;gap:1.25rem;margin-top:1.5rem}
     @media(min-width:820px){.charts{grid-template-columns:1fr 1fr}}

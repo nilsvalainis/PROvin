@@ -1,5 +1,4 @@
-body{margin:0;background:#020308;color:#e9edf5;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
-    .story{overflow-x:hidden}
+.story{overflow-x:hidden}
     .panel{min-height:110vh;padding:clamp(3rem,10vw,7rem) clamp(1.25rem,4vw,3rem);position:relative}
     h1,h2{margin:0;line-height:1.05}
     h1{font-size:clamp(2.4rem,6vw,4rem);font-weight:750;position:sticky;top:18vh}

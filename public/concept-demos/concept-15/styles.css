@@ -1,5 +1,4 @@
-body{margin:0;background:#030303;color:#f3efe8;font-family:"Georgia",ui-serif,serif}
-    .lux{position:relative;min-height:100vh;overflow:hidden;background:radial-gradient(1200px at 20% 0%,#1a1208,#030303)}
+.lux{position:relative;min-height:100vh;overflow:hidden;background:radial-gradient(1200px at 20% 0%,#1a1208,#030303)}
     .veil{position:absolute;inset:-20%;background:conic-gradient(from 180deg at 50% 50%,rgba(212,175,55,.14),transparent 40%,rgba(212,175,55,.10),transparent 70%);animation:spin 28s linear infinite;opacity:.9}
     @keyframes spin{to{transform:rotate(360deg)}}
     .inner{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:clamp(3rem,8vw,6rem) 1.25rem}

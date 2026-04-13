@@ -6,6 +6,7 @@ export const specs11_20 = [
     goal: "Canvas-driven energy orb with pulsing gradients — no heavy WebGL stack.",
     tech: ["HTML", "CSS", "Canvas 2D", "Vanilla JS"],
     features: ["Animated gradient orb", "Pointer parallax nudge", "Lightweight loop"],
+    bodyClass: "bg-[radial-gradient(circle_at_50%_20%,#0b1530,#020308)] font-sans text-[#e8eefc]",
     html: `
     <div class="wrap mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-6 px-4 py-6 sm:px-6 sm:py-8">
       <canvas id="orb" width="900" height="520" aria-label="Animated orb"></canvas>
@@ -16,7 +17,6 @@ export const specs11_20 = [
       </div>
     </div>`,
     css: `
-    body{margin:0;background:radial-gradient(circle at 50% 20%,#0b1530,#020308);color:#e8eefc;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .wrap{max-width:980px;margin:0 auto;padding:2rem 1.25rem 3rem;display:grid;gap:1.25rem;justify-items:center}
     canvas{width:min(96vw,900px);height:auto;border-radius:22px;border:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.25)}
     .copy{width:min(96vw,720px);text-align:center}
@@ -52,6 +52,7 @@ export const specs11_20 = [
     goal: "Oversized headline hierarchy with subtle kinetic typography.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Clamp mega type", "Split-line motion", "Scroll-linked skew micro"],
+    bodyClass: "bg-[#f4f6fb] font-sans text-[#07080d]",
     html: `
     <section class="hero min-h-[160vh] w-full px-4 py-10 sm:px-6 sm:py-14">
       <p class="eyebrow">PROVIN</p>
@@ -60,7 +61,6 @@ export const specs11_20 = [
       <p class="sub">Kinetic demo — transform driven by scroll.</p>
     </section>`,
     css: `
-    body{margin:0;background:#f4f6fb;color:#07080d;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .hero{min-height:160vh;padding:clamp(2.5rem,8vw,6rem) 1.25rem}
     .eyebrow{letter-spacing:.35em;text-transform:uppercase;font-size:.72rem;opacity:.45;margin:0}
     .k1,.k2{margin:0;line-height:.9;font-weight:850;letter-spacing:-.04em;text-transform:uppercase}
@@ -84,6 +84,7 @@ export const specs11_20 = [
     goal: "Asymmetric tile grid with mixed card spans like Apple marketing grids.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["CSS grid spans", "Soft glass tiles", "Live clock micro-widget"],
+    bodyClass: "bg-[#0b0d12] text-[#e9edf5]",
     html: `
     <div class="page mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <header><h1>Bento audit</h1><p id="clk" class="clk"></p></header>
@@ -96,7 +97,6 @@ export const specs11_20 = [
       </div>
     </div>`,
     css: `
-    body{margin:0;background:#0b0d12;color:#e9edf5;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .page{max-width:1100px;margin:0 auto;padding:2rem 1.25rem 3rem}
     header{display:flex;justify-content:space-between;gap:1rem;align-items:baseline;flex-wrap:wrap}
     h1{margin:0;font-size:clamp(1.6rem,3vw,2.2rem)} .clk{margin:0;opacity:.55;font-size:.85rem;font-variant-numeric:tabular-nums}
@@ -116,6 +116,7 @@ export const specs11_20 = [
     goal: "Single VIN field with instant validation feedback — nothing else competes for attention.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["17-char VIN gate", "Live status chip", "No secondary chrome"],
+    bodyClass: "grid min-h-screen place-items-center bg-white font-sans text-[#0a0a0a]",
     html: `
     <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <label for="vin">Vehicle Identification Number</label>
@@ -123,7 +124,6 @@ export const specs11_20 = [
       <p id="msg" class="msg" role="status"></p>
     </div>`,
     css: `
-    body{margin:0;min-height:100vh;display:grid;place-items:center;background:#fff;color:#0a0a0a;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .wrap{width:min(92vw,560px);padding:1rem}
     label{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:#5c5f66;margin-bottom:.65rem}
     input{width:100%;font-size:clamp(1.4rem,4.5vw,2rem);padding:.85rem 0;border:0;border-bottom:2px solid #0a0a0a;background:transparent;letter-spacing:.14em;text-transform:uppercase;outline:none}
@@ -147,6 +147,7 @@ export const specs11_20 = [
     goal: "Dark metal canvas with champagne gold accents and slow cinematic motion.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Gold gradient accents", "Soft vignette", "Ambient drift animation"],
+    bodyClass: "bg-[#030303] font-serif text-[#f3efe8]",
     html: `
     <div class="lux relative min-h-screen w-full overflow-hidden font-serif text-[#f3efe8]">
       <div class="veil" aria-hidden="true"></div>
@@ -157,7 +158,6 @@ export const specs11_20 = [
       </div>
     </div>`,
     css: `
-    body{margin:0;background:#030303;color:#f3efe8;font-family:"Georgia",ui-serif,serif}
     .lux{position:relative;min-height:100vh;overflow:hidden;background:radial-gradient(1200px at 20% 0%,#1a1208,#030303)}
     .veil{position:absolute;inset:-20%;background:conic-gradient(from 180deg at 50% 50%,rgba(212,175,55,.14),transparent 40%,rgba(212,175,55,.10),transparent 70%);animation:spin 28s linear infinite;opacity:.9}
     @keyframes spin{to{transform:rotate(360deg)}}
@@ -177,13 +177,13 @@ export const specs11_20 = [
     goal: "CLI fantasy: VIN entry as a shell command with printed audit lines.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Fake shell prompt", "Command parsing", "Typed log lines"],
+    bodyClass: "bg-black font-mono text-[#33ff66]",
     html: `
     <div class="term min-h-screen w-full px-3 py-4 font-mono text-[#33ff66] sm:px-4">
       <div id="log" class="log" aria-live="polite"></div>
       <form id="f" class="row"><span class="prompt">provinc@audit:~$</span><input id="cmd" autocomplete="off" spellcheck="false" /></form>
     </div>`,
     css: `
-    body{margin:0;background:#000;color:#33ff66;font-family:ui-monospace,Menlo,Consolas,monospace}
     .term{min-height:100vh;padding:1rem 1rem 2rem;max-width:900px;margin:0 auto}
     .log{white-space:pre-wrap;line-height:1.45;font-size:.9rem;min-height:40vh;border:1px solid #113311;padding:.75rem;background:#020802}
     .row{display:flex;gap:.5rem;align-items:center;margin-top:.75rem}
@@ -213,6 +213,7 @@ export const specs11_20 = [
     goal: "Apple-like tall page: panels shift with scroll for a product-story rhythm.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Parallax layers", "Pinned headline", "Section opacity choreography"],
+    bodyClass: "bg-[#020308] font-sans text-[#e9edf5]",
     html: `
     <div class="story min-h-screen w-full overflow-x-hidden bg-[#020308] text-[#e9edf5]">
       <section class="panel p1"><div class="blob"></div><h1>Read the car<br/>like a brief.</h1></section>
@@ -221,7 +222,6 @@ export const specs11_20 = [
       <section class="panel p4"><h2>Listings</h2><p>Marketplaces echo mileage claims — demo copy.</p></section>
     </div>`,
     css: `
-    body{margin:0;background:#020308;color:#e9edf5;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .story{overflow-x:hidden}
     .panel{min-height:110vh;padding:clamp(3rem,10vw,7rem) clamp(1.25rem,4vw,3rem);position:relative}
     h1,h2{margin:0;line-height:1.05}
@@ -247,6 +247,7 @@ export const specs11_20 = [
     goal: "Cinematic background with readable overlay UI. Uses a lightweight sample clip via HTTPS.",
     tech: ["HTML", "CSS", "Vanilla JS", "HTML5 video"],
     features: ["Muted background video", "Gradient scrim", "Overlay CTA"],
+    bodyClass: "font-sans text-white",
     html: `
     <div class="stage relative min-h-screen w-full overflow-hidden text-white">
       <video class="bg" autoplay muted loop playsinline>
@@ -261,7 +262,6 @@ export const specs11_20 = [
       </div>
     </div>`,
     css: `
-    body{margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;color:#fff}
     .stage{position:relative;min-height:100vh;overflow:hidden;background:#000}
     .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(1.05) contrast(1.05)}
     .scrim{position:absolute;inset:0;background:linear-gradient(120deg,rgba(2,3,12,.82),rgba(2,3,12,.35),rgba(0,102,255,.18))}
@@ -282,6 +282,7 @@ export const specs11_20 = [
     goal: "Strict black/white system with contrast through scale and spacing alone.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["No chroma accents", "Bold type ramp", "Grid rhythm"],
+    bodyClass: "bg-[var(--w)] font-sans text-[var(--b)]",
     html: `
     <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <header><span>PROVIN</span><span>DEMO</span></header>
@@ -294,7 +295,6 @@ export const specs11_20 = [
     </div>`,
     css: `
     :root{--b:#050505;--w:#ffffff;--g:#6b6b6b}
-    body{margin:0;background:var(--w);color:var(--b);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .wrap{max-width:980px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1.25rem}
     header{display:flex;justify-content:space-between;font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--g);border-bottom:1px solid #000;padding-bottom:.75rem}
     h1{margin:1.25rem 0 1rem;font-size:clamp(2.4rem,7vw,4.6rem);line-height:.95;font-weight:850;letter-spacing:-.04em}
@@ -317,6 +317,7 @@ export const specs11_20 = [
     goal: "Classic SaaS marketing stack: hero, pricing cards, testimonials.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Three-tier pricing", "Fake testimonials", "Simple annual toggle demo"],
+    bodyClass: "bg-[#f6f7fb] font-sans text-[#0b1020]",
     html: `
     <div class="mx-auto flex w-full max-w-6xl flex-col px-4 sm:px-6">
     <header class="top flex w-full flex-wrap items-center justify-between gap-3 py-4">
@@ -342,7 +343,6 @@ export const specs11_20 = [
     </section>
     </div>`,
     css: `
-    body{margin:0;background:#f6f7fb;color:#0b1020;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     nav a{color:inherit;text-decoration:none;font-weight:600;opacity:.75}
     .hero{max-width:900px;margin:0 auto;padding:3rem 1.25rem 1rem;text-align:center}
     h1{margin:0 0 .75rem;font-size:clamp(2rem,4vw,3rem);line-height:1.05}

@@ -7,6 +7,7 @@ export const specs21_30 = [
     tech: ["HTML", "CSS", "Vanilla JS", "GSAP (CDN)"],
     features: ["Staggered chip press", "Elastic hero nudge", "Reduced-motion guard"],
     extraHead: `<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>`,
+    bodyClass: "bg-[#05060a] text-[#e9edf5]",
     html: `
     <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <h1 id="h">Motion stress test</h1>
@@ -19,7 +20,6 @@ export const specs21_30 = [
       </div>
     </div>`,
     css: `
-    body{margin:0;background:#05060a;color:#e9edf5;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .wrap{max-width:900px;margin:0 auto;padding:clamp(2.5rem,7vw,5rem) 1.25rem}
     h1{margin:0 0 .5rem;font-size:clamp(2rem,4vw,3rem);line-height:1.05}
     p{margin:0 0 1.5rem;opacity:.75;max-width:52ch;line-height:1.5}
@@ -47,6 +47,7 @@ export const specs21_30 = [
     goal: "Phone chrome with swipeable story cards (touch + mouse drag).",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Device frame", "Pointer swipe", "Snapping index"],
+    bodyClass: "bg-[radial-gradient(circle_at_50%_20%,#1a2444,#05060a)] font-sans text-[#e9edf5]",
     html: `
     <div class="stage grid min-h-screen w-full place-items-center px-4 py-8 text-white">
       <div class="phone" aria-label="Phone mockup">
@@ -63,7 +64,6 @@ export const specs21_30 = [
       </div>
     </div>`,
     css: `
-    body{margin:0;background:radial-gradient(circle at 50% 20%,#1a2444,#05060a);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;color:#e9edf5}
     .stage{min-height:100vh;display:grid;place-items:center;padding:2rem 1rem}
     .phone{width:min(360px,92vw);aspect-ratio:9/19;border-radius:34px;padding:12px;background:linear-gradient(145deg,#2a3142,#121722);box-shadow:0 40px 120px rgba(0,0,0,.55)}
     .notch{height:10px;margin:6px auto 10px;width:120px;border-radius:999px;background:rgba(0,0,0,.55)}
@@ -101,6 +101,7 @@ export const specs21_30 = [
     goal: "Circular progress dial animating a synthetic risk score.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["SVG ring", "Animated score", "Replay control"],
+    bodyClass: "bg-[#020308] text-[#e9edf5]",
     html: `
     <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <div class="dial" role="img" aria-label="Demo risk score dial">
@@ -115,7 +116,6 @@ export const specs21_30 = [
       <button id="replay" type="button" class="btn">Replay</button>
     </div>`,
     css: `
-    body{margin:0;background:#020308;color:#e9edf5;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .wrap{min-height:100vh;display:grid;place-items:center;padding:2rem 1rem;text-align:center;gap:.75rem}
     .dial{position:relative;display:grid;place-items:center}
     .score{position:absolute;font-weight:800;font-size:2.4rem;letter-spacing:-.03em}
@@ -149,6 +149,7 @@ export const specs21_30 = [
     goal: "Perspective card tilt following pointer for tactile depth.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["CSS perspective", "Pointer tilt mapping", "Specular sheen"],
+    bodyClass: "grid min-h-screen place-items-center bg-[radial-gradient(circle_at_30%_20%,#13204a,#020308)] font-sans text-[#e9edf5]",
     html: `
     <div class="stage grid min-h-screen w-full place-items-center px-4 py-8 text-white">
       <div id="card" class="card" tabindex="0">
@@ -159,7 +160,6 @@ export const specs21_30 = [
       </div>
     </div>`,
     css: `
-    body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,#13204a,#020308);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;color:#e9edf5}
     .stage{perspective:900px;padding:2rem 1rem}
     .card{position:relative;width:min(420px,92vw);padding:1.5rem;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);transform-style:preserve-3d;transition:box-shadow .2s ease;outline:none}
     .card:focus-visible{box-shadow:0 0 0 3px rgba(0,102,255,.45)}
@@ -186,6 +186,7 @@ export const specs21_30 = [
     goal: "Side-by-side comparison of two synthetic listings.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Two-column spec table", "Highlight deltas", "Swap button"],
+    bodyClass: "bg-[#f6f7fb] font-sans text-[#0b1020]",
     html: `
     <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <header><h1>Compare listings</h1><button id="swap" type="button">Swap highlights</button></header>
@@ -203,7 +204,6 @@ export const specs21_30 = [
       </div>
     </div>`,
     css: `
-    body{margin:0;background:#f6f7fb;color:#0b1020;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .wrap{max-width:1100px;margin:0 auto;padding:2rem 1.25rem 3rem}
     header{display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap}
     h1{margin:0;font-size:clamp(1.5rem,3vw,2rem)}
@@ -230,13 +230,13 @@ export const specs21_30 = [
     features: ["OSM tiles", "Marker popup", "Responsive map height"],
     extraHead: `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
 <script defer src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>`,
+    bodyClass: "bg-[#0b0d12] text-[#e9edf5]",
     html: `
     <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <header><h1>Origin map</h1><p>Demo geospatial shell — requires network for tiles.</p></header>
       <div id="map" class="map" role="presentation"></div>
     </div>`,
     css: `
-    body{margin:0;background:#0b0d12;color:#e9edf5;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .wrap{max-width:1100px;margin:0 auto;padding:1.25rem 1.25rem 2rem}
     h1{margin:0 0 .35rem;font-size:1.5rem} p{margin:0 0 1rem;opacity:.7;line-height:1.45}
     .map{height:min(70vh,560px);border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.10)}`,
@@ -254,6 +254,7 @@ export const specs21_30 = [
     goal: "Step-through VIN analysis with a playful progress bar.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["3-step wizard", "Progress fill", "Confetti-less completion state"],
+    bodyClass: "bg-[#05060a] text-[#e9edf5]",
     html: `
     <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <div class="bar"><div id="fill" class="fill"></div></div>
@@ -275,7 +276,6 @@ export const specs21_30 = [
       </section>
     </div>`,
     css: `
-    body{margin:0;background:#05060a;color:#e9edf5;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .wrap{max-width:640px;margin:0 auto;padding:2rem 1.25rem}
     .bar{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-bottom:1.25rem}
     .fill{height:100%;width:0%;background:linear-gradient(90deg,#0066ff,#7cf0ff);transition:width .45s ease}
@@ -317,6 +317,7 @@ export const specs21_30 = [
     goal: "Soft daylight palette, airy spacing, whisper shadows.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Muted sage accents", "Soft card elevation", "Quiet typography"],
+    bodyClass: "bg-[#f3f6f4] font-sans text-[#1e2a24]",
     html: `
     <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <header><h1>Quiet diligence</h1><p>Soft surfaces, clear hierarchy.</p></header>
@@ -326,7 +327,6 @@ export const specs21_30 = [
       </div>
     </div>`,
     css: `
-    body{margin:0;background:#f3f6f4;color:#1e2a24;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .wrap{max-width:980px;margin:0 auto;padding:clamp(2.5rem,6vw,4.5rem) 1.25rem}
     header{max-width:60ch;margin-bottom:1.75rem}
     h1{margin:0 0 .5rem;font-size:clamp(2rem,4vw,2.8rem);letter-spacing:-.02em;font-weight:650}
@@ -343,6 +343,7 @@ export const specs21_30 = [
     goal: "Each reload randomizes hero layout, palette, and density — generative UI sketch.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Random palette", "Shuffle section order", "Density mode"],
+    bodyClass: "bg-[var(--bg)] font-sans text-[var(--fg)]",
     html: `
     <div id="root" class="root mx-auto grid w-full max-w-4xl gap-4 px-4 py-8 sm:px-6 sm:py-10">
       <section data-block="hero" class="block"><h1>Generative shell</h1><p>Reload to re-roll.</p></section>
@@ -351,7 +352,6 @@ export const specs21_30 = [
     </div>`,
     css: `
     :root{--bg:#f6f7fb;--fg:#0b1020;--a:#0066ff;--pad:clamp(1.25rem,3vw,2.25rem)}
-    body{margin:0;background:var(--bg);color:var(--fg);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     .root{max-width:980px;margin:0 auto;padding:var(--pad);display:grid;gap:var(--gap,1rem)}
     .block{border:1px solid rgba(0,0,0,.10);border-radius:18px;padding:var(--pad);background:rgba(255,255,255,.65)}
     h1{margin:0 0 .35rem;font-size:var(--h,clamp(2rem,4vw,3rem));line-height:1.02}

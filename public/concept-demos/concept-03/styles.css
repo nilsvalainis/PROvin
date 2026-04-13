@@ -1,5 +1,4 @@
-*,*::before,*::after{box-sizing:border-box;border-radius:0!important}
-    body{margin:0;background:#fff;color:#000;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*,*::before,*::after{border-radius:0!important}
     .wrap{max-width:980px;margin:0 auto;padding:2rem 1.25rem}
     header h1{margin:.5rem 0;font-size:clamp(3rem,12vw,7rem);line-height:.9;letter-spacing:-.04em;font-weight:900}
     .tag{display:inline-block;border:2px solid #000;padding:.25rem .5rem;font-size:.7rem;letter-spacing:.15em}
