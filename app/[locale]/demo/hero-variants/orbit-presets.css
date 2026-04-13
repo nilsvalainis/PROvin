@@ -87,12 +87,11 @@
   width: 100%;
   height: auto;
   filter:
-    drop-shadow(0 0 0.75px rgb(0 0 0 / 0.5))
-    drop-shadow(0 1px 2px rgb(0 0 0 / 0.38))
-    drop-shadow(0 0 32px rgb(200 210 230 / 0.069));
+    drop-shadow(0 0 0.75px rgb(0 0 0 / 0.55))
+    drop-shadow(0 1px 2px rgb(0 0 0 / 0.42));
 }
 
-/* Lēcas iekšējais disks (viewBox 112, cx cy 44, r=23.5): stikls virs teksta — backdrop-filter + spīdums. */
+/* Lēcas iekšējais disks: tumšāks stikls, bez gaišām iekšējām ēnām — kontrasts caur blur + tumšu apmali. */
 .marketing-hero-orbit-silhouette--lens-glass::after {
   content: "";
   position: absolute;
@@ -106,31 +105,28 @@
   pointer-events: none;
   background:
     radial-gradient(
-      ellipse 100% 88% at 50% 26%,
-      rgb(255 255 255 / 0.16),
-      rgb(232 240 255 / 0.07) 42%,
-      rgb(190 210 245 / 0.045) 72%,
-      rgb(120 150 200 / 0.03) 100%
+      ellipse 100% 92% at 50% 32%,
+      rgb(4 12 28 / 0.42),
+      rgb(6 18 42 / 0.34) 38%,
+      rgb(8 22 48 / 0.52) 72%,
+      rgb(2 8 22 / 0.58) 100%
     );
-  box-shadow:
-    inset 0 1.5px 1px rgb(255 255 255 / 0.38),
-    inset 0 -1px 1px rgb(0 20 50 / 0.18),
-    0 0 0 0.5px rgb(255 255 255 / 0.1);
-  backdrop-filter: blur(9px) saturate(1.28);
-  -webkit-backdrop-filter: blur(9px) saturate(1.28);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.5);
+  backdrop-filter: blur(11px) saturate(1.15) brightness(0.92);
+  -webkit-backdrop-filter: blur(11px) saturate(1.15) brightness(0.92);
 }
 
 @media (min-width: 640px) {
   .marketing-hero-orbit-silhouette--lens-glass::after {
-    backdrop-filter: blur(12px) saturate(1.38);
-    -webkit-backdrop-filter: blur(12px) saturate(1.38);
+    backdrop-filter: blur(14px) saturate(1.12) brightness(0.88);
+    -webkit-backdrop-filter: blur(14px) saturate(1.12) brightness(0.88);
     background:
       radial-gradient(
-        ellipse 100% 88% at 50% 26%,
-        rgb(255 255 255 / 0.14),
-        rgb(232 240 255 / 0.065) 42%,
-        rgb(190 210 245 / 0.04) 72%,
-        rgb(120 150 200 / 0.028) 100%
+        ellipse 100% 92% at 50% 32%,
+        rgb(4 12 28 / 0.48),
+        rgb(6 18 42 / 0.4) 38%,
+        rgb(8 24 52 / 0.58) 72%,
+        rgb(2 8 22 / 0.64) 100%
       );
   }
 }
@@ -190,6 +186,13 @@
   pointer-events: none;
 }
 
+/* Web (lg+): lēcas virsraksts +15 % pret noklusējuma clamp. */
+@media (min-width: 1024px) {
+  .marketing-hero-orbit-silhouette__lens-stack {
+    font-size: clamp(0.621rem, min(2.139vw, 2.415dvh), 0.99475rem);
+  }
+}
+
 .marketing-hero-orbit-silhouette__lens-line1 {
   max-width: 100%;
   text-wrap: balance;
@@ -197,10 +200,8 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1.18;
-  color: rgb(255 255 255 / 0.9);
-  text-shadow:
-    0 0 10px rgb(0 102 255 / 0.22),
-    0 1px 2px rgb(0 0 0 / 0.55);
+  color: rgb(255 255 255 / 0.92);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.65);
 }
 
 .marketing-hero-orbit-silhouette__lens-line2 {
@@ -211,9 +212,7 @@
   letter-spacing: 0.08em;
   line-height: 1.05;
   color: rgb(255 255 255 / 0.96);
-  text-shadow:
-    0 0 12px rgb(0 102 255 / 0.2),
-    0 1px 2px rgb(0 0 0 / 0.55);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.65);
 }
 
 @keyframes marketing-hero-orbit-silhouette-scan {
@@ -592,9 +591,8 @@
 
   .marketing-hero-orbit-silhouette__svg {
     filter:
-      drop-shadow(0 0 1px rgb(255 255 255 / 0.18))
-      drop-shadow(0 1px 2px rgb(0 0 0 / 0.35))
-      drop-shadow(0 0 20px rgb(210 220 245 / 0.16));
+      drop-shadow(0 0 0.75px rgb(0 0 0 / 0.5))
+      drop-shadow(0 1px 2px rgb(0 0 0 / 0.38));
   }
 
   /* Lēcas sudraba gredzeni + loka / kāta kontūras — biezākas, gaišākas */
@@ -642,19 +640,13 @@
   .marketing-hero-orbit-silhouette__lens-line1 {
     color: rgb(255 255 255 / 0.995);
     font-weight: 700;
-    text-shadow:
-      0 0 16px rgb(0 130 255 / 0.42),
-      0 0 28px rgb(255 255 255 / 0.12),
-      0 1px 3px rgb(0 0 0 / 0.4);
+    text-shadow: 0 1px 3px rgb(0 0 0 / 0.55);
   }
 
   .marketing-hero-orbit-silhouette__lens-line2 {
     color: rgb(255 255 255 / 1);
     font-weight: 800;
-    text-shadow:
-      0 0 20px rgb(0 120 255 / 0.38),
-      0 0 32px rgb(255 255 255 / 0.14),
-      0 1px 3px rgb(0 0 0 / 0.38);
+    text-shadow: 0 1px 3px rgb(0 0 0 / 0.52);
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {

@@ -107,9 +107,12 @@ export function HeaderClient({
     ? "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)] md:border-b md:border-white/[0.06]"
     : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
-  /** `lg+` sliežu lapās: PROVIN tajā pašā horizontālā līnijā, kur iepriekš bija sliedes zīmols (kolonna ar „Sākums”). */
+  /**
+   * `lg+` sliežu lapās: PROVIN kreisā mala virs sliedes izvēlnes kreisās malas
+   * (`SiteSectionRail`: `left: max(0.5rem,safe)` + `pl-1`), ņemot vērā header `max-w` + `px-6` centrējumu.
+   */
   const logoRailMarginClass = logoAlignWithRailSakums
-    ? "lg:ml-[calc(max(0.5rem,env(safe-area-inset-left,0px))+2.25rem-max(1rem,env(safe-area-inset-left,0px)))]"
+    ? "lg:ml-[calc(max(0.5rem,env(safe-area-inset-left,0px))+0.25rem-(100vw-min(100vw,64rem))/2-1.5rem)]"
     : null;
 
   const logoClass = [
