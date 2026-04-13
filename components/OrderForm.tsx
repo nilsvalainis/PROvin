@@ -64,7 +64,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
 
     const fieldError = validateOrderFields({ vin, listingUrl, email, phone });
     if (fieldError) {
-      setError(te(`validation.${fieldError}`));
+      setError(t(`validation.${fieldError}`));
       return;
     }
 
@@ -252,7 +252,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         </div>
         <div className="sm:col-span-2">
           <label htmlFor="order-url" className={labelClass}>
-            {t("listingLabel")} <span className={reqStarClass}>*</span>
+            {t("listingLabel")}
           </label>
           {hero ? (
             <HeroFieldScanLine>
@@ -260,7 +260,6 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 id="order-url"
                 name="listingUrl"
                 type="url"
-                required
                 className={inputBase}
                 placeholder={t("urlPlaceholder")}
               />
@@ -270,7 +269,6 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               id="order-url"
               name="listingUrl"
               type="url"
-              required
               className={inputBase}
               placeholder={t("urlPlaceholder")}
             />
@@ -433,8 +431,8 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         <p
           className={
             hero
-              ? "mt-5 border-b border-red-500/40 bg-transparent px-1 py-3 text-center text-[13px] font-normal text-red-300"
-              : "mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-center text-[13px] font-normal text-red-800"
+              ? "mt-5 rounded-md border border-red-500/35 bg-red-950/30 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-200"
+              : "mt-4 rounded-lg border border-red-200/90 bg-red-50/95 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-900"
           }
           role="alert"
         >

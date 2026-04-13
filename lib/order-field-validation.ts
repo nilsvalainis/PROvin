@@ -69,7 +69,8 @@ export function validateOrderFields(input: {
 }): OrderFieldErrorKey | null {
   const vin = normalizeVin(input.vin);
   if (!vin || !isValidVin(vin)) return "vin";
-  if (!input.listingUrl.trim() || !isPlausibleListingUrl(input.listingUrl.trim())) return "listing";
+  const listingTrim = input.listingUrl.trim();
+  if (listingTrim && !isPlausibleListingUrl(listingTrim)) return "listing";
   if (!input.email.trim() || !isValidOrderEmail(input.email)) return "email";
   if (!input.phone.trim() || !isValidOrderPhone(input.phone)) return "phone";
   return null;

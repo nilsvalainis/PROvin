@@ -6,6 +6,8 @@ export type OrderCopy = {
     listing: string;
     email: string;
     phone: string;
+    required?: string;
+    url?: string;
   };
   errors: {
     withdrawalRequired: string;

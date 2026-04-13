@@ -9,7 +9,7 @@
     "emailLabel": "E-pasts",
     "phoneLabel": "Tālrunis",
     "vinLabel": "VIN",
-    "listingLabel": "Sludinājuma saite",
+    "listingLabel": "Sludinājuma saite (neobligāti)",
     "notesLabel": "Piezīmes (nav obligāti)",
     "emailHint": "Atskaiti nosūtīsim uz norādīto adresi.",
     "phoneHint": "Rezerves saziņai, piem. ja e-pasts ievadīts kļūdaini.",
@@ -41,10 +41,12 @@
       "rateLimited": "Pārāk daudz pieprasījumu no šīs adreses. Uzgaidi īsu brīdi un mēģini vēlreiz."
     },
     "validation": {
-      "vin": "Ievadi derīgu VIN (11–17 rakstzīmes, bez I, O, Q).",
-      "listing": "Ievadi pilnu saiti uz konkrētu sludinājumu (https://… ar ceļu vai parametriem — ne tikai vietnes sākumlapu).",
-      "email": "Ievadi derīgu e-pasta adresi (simbols @ un domēns ar punktu, piem. vārds@piemērs.lv).",
-      "phone": "Ievadi tālruņa numuru ar vismaz 8 cipariem (ar vai bez +371)."
+      "vin": "Lūdzu, ievadiet derīgu 17 zīmju VIN kodu.",
+      "required": "Šis lauks ir obligāts.",
+      "url": "Lūdzu, ievadiet derīgu saiti uz sludinājumu.",
+      "listing": "Lūdzu, ievadiet derīgu saiti uz sludinājumu.",
+      "email": "Lauks nav aizpildīts pareizi.",
+      "phone": "Lūdzu, ievadiet tālruņa numuru ar vismaz 8 cipariem (ar vai bez +371)."
     }
   }
 }
