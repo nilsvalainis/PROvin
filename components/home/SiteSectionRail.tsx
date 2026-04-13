@@ -40,8 +40,8 @@ function activeFromScroll(): number {
 }
 
 /**
- * Kreisā navigācija — mierīgā režīmā gandrīz „pazūd”, pie tuvināšanās / tastatūras
- * maigs gradients, lasāmāki teksti, slīde un zils indikators (lg+).
+ * Kreisā navigācija (lg+): noklusējumā tikai vertikālā līnija un zilie punkti; etiķetes
+ * plūdeni parādās, uzejot ar kursoru (vai fokusā / reduced-motion — vienmēr redzamas).
  */
 export function SiteSectionRail() {
   const t = useTranslations("SiteRail");
@@ -127,11 +127,14 @@ export function SiteSectionRail() {
   if (!showRail) return null;
 
   const linkBase =
-    "group/link flex max-w-[11rem] items-start gap-2.5 text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-[color,opacity] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none lg:max-w-[13rem] lg:text-[10px] lg:tracking-[0.19em]";
+    "group/link flex max-w-none items-center gap-2.5 text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-[color,opacity,gap] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none lg:text-[10px] lg:tracking-[0.19em]";
+
+  const railLabelClass =
+    "min-w-0 overflow-hidden whitespace-nowrap text-left opacity-0 max-w-0 -translate-x-2 transition-[opacity,max-width,transform] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none motion-reduce:max-w-[13rem] motion-reduce:translate-x-0 motion-reduce:opacity-100 group-hover/rail:max-w-[13rem] group-hover/rail:translate-x-0 group-hover/rail:opacity-100 group-focus-within/rail:max-w-[13rem] group-focus-within/rail:translate-x-0 group-focus-within/rail:opacity-100";
 
   return (
     <nav
-      className="group/rail pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] top-[max(1rem,env(safe-area-inset-top,0px))] z-40 hidden min-h-0 w-max flex-col pl-1 lg:flex"
+      className="group/rail pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] top-[max(1rem,env(safe-area-inset-top,0px))] z-40 hidden min-h-0 w-max cursor-pointer flex-col pl-1 lg:flex"
       aria-label={t("navAria")}
     >
       {/* Plašāks „tuvuma” lauks + diskrēts fons tikai pie hover / tastatūras */}
@@ -141,14 +144,14 @@ export function SiteSectionRail() {
       />
 
       <div className="relative z-10 flex h-full min-h-0 w-max flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 flex-row items-stretch gap-3.5 pl-0.5">
-          <div ref={trackRef} className="relative h-full min-h-0 w-0.5 shrink-0">
+        <div className="flex min-h-0 flex-1 flex-row items-stretch gap-2.5 pl-0.5 transition-[gap] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] group-hover/rail:gap-3.5 motion-reduce:transition-none">
+          <div ref={trackRef} className="relative h-full min-h-0 w-3 shrink-0">
             <div
-              className="absolute inset-y-1.5 left-1/2 z-0 w-px -translate-x-1/2 bg-white/[0.06] transition-[background-color] duration-700 ease-out group-hover/rail:bg-white/[0.11] group-focus-within/rail:bg-white/[0.11]"
+              className="absolute inset-y-1.5 left-1/2 z-0 w-px -translate-x-1/2 bg-white/[0.11] shadow-[0_0_14px_rgba(0,102,255,0.12)] transition-[background-color,box-shadow] duration-700 ease-out group-hover/rail:bg-white/[0.16] group-hover/rail:shadow-[0_0_18px_rgba(0,102,255,0.2)] group-focus-within/rail:bg-white/[0.16] group-focus-within/rail:shadow-[0_0_18px_rgba(0,102,255,0.2)]"
               aria-hidden
             />
             <div
-              className="absolute left-1/2 top-0 w-[2px] rounded-full bg-[#0066ff] opacity-90 shadow-[0_0_10px_rgba(0,102,255,0.28)] will-change-transform motion-reduce:!transition-none group-hover/rail:opacity-100 group-hover/rail:shadow-[0_0_14px_rgba(0,102,255,0.38)]"
+              className="absolute left-1/2 top-0 w-[2px] rounded-full bg-[#0066ff] opacity-95 shadow-[0_0_12px_rgba(0,102,255,0.45)] will-change-transform motion-reduce:!transition-none group-hover/rail:opacity-100 group-hover/rail:shadow-[0_0_16px_rgba(0,102,255,0.55)]"
               style={{
                 height: dot.height,
                 transform: `translate3d(-50%, ${dot.top}px, 0)`,
@@ -171,22 +174,22 @@ export function SiteSectionRail() {
                   >
                     <Link
                       href={s.href}
-                      className={`${linkBase} ${
+                      className={`${linkBase} w-full min-w-0 py-1 ${
                         isActive
                           ? "text-white"
-                          : "text-white/[0.22] group-hover/rail:text-white/[0.42] group-focus-within/rail:text-white/[0.42] hover:text-white/85"
+                          : "text-white/[0.22] group-hover/rail:text-white/[0.5] group-focus-within/rail:text-white/[0.5] hover:text-white/90"
                       } focus-visible:text-white focus-visible:ring-1 focus-visible:ring-[#0066ff]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`}
                       aria-current={isActive ? "location" : undefined}
                     >
                       <span
-                        className={`mt-[0.4em] h-1 w-1 shrink-0 rounded-full bg-[#0066ff] transition-[opacity,transform,box-shadow] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none ${
+                        className={`h-1 w-1 shrink-0 rounded-full bg-[#0066ff] transition-[opacity,transform,box-shadow] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none ${
                           isActive
-                            ? "scale-100 opacity-100 shadow-[0_0_7px_rgba(0,102,255,0.55)]"
-                            : "scale-[0.85] opacity-0 group-hover/link:scale-100 group-hover/link:opacity-70 group-focus-visible/link:scale-100 group-focus-visible/link:opacity-85"
+                            ? "scale-100 opacity-100 shadow-[0_0_8px_rgba(0,102,255,0.65)]"
+                            : "scale-100 opacity-[0.4] shadow-[0_0_5px_rgba(0,102,255,0.35)] group-hover/rail:opacity-[0.72] group-hover/rail:shadow-[0_0_8px_rgba(0,102,255,0.45)] group-hover/link:opacity-85 group-focus-visible/link:opacity-90"
                         }`}
                         aria-hidden
                       />
-                      <span className="min-w-0">{t(s.labelKey)}</span>
+                      <span className={railLabelClass}>{t(s.labelKey)}</span>
                     </Link>
                   </span>
                 </li>
