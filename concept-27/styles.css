@@ -1,0 +1,10 @@
+body{margin:0;background:#05060a;color:#e9edf5;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
+    .wrap{max-width:640px;margin:0 auto;padding:2rem 1.25rem}
+    .bar{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-bottom:1.25rem}
+    .fill{height:100%;width:0%;background:linear-gradient(90deg,#0066ff,#7cf0ff);transition:width .45s ease}
+    .step{display:grid;gap:.75rem}
+    .hidden{display:none}
+    h1,h2{margin:0}
+    p{margin:0;opacity:.75;line-height:1.45}
+    input{padding:.85rem 1rem;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.35);color:#fff;font:inherit;outline:none}
+    button{justify-self:start;border:0;border-radius:12px;padding:.75rem 1.1rem;font-weight:800;cursor:pointer;background:#e8f0ff;color:#05060a}
