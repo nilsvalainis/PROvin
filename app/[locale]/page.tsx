@@ -2,7 +2,6 @@ import { Footer } from "@/components/Footer";
 import { FinalCta } from "@/components/FinalCta";
 import { AutoWireframeBackground } from "@/components/home/AutoWireframeBackground";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
-import { HomeMetaIntroSection } from "@/components/home/HomeMetaIntroSection";
 import { HomeScrollSurface } from "@/components/home/HomeScrollSurface";
 import { MarketingHero } from "@/components/home/MarketingHero";
 import { IrissSection } from "@/components/IrissSection";
@@ -21,7 +20,6 @@ export default async function HomePage({
       <div className="relative z-10 min-w-0 bg-transparent">
         <div className="demo-design-dir min-w-0 pb-24 text-white">
           <MarketingHero homeOrbitPreset="s12" designDirection />
-          <HomeMetaIntroSection />
 
           <div id="site-content" className="home-body-ink scroll-mt-14">
             <section className="demo-design-dir__section demo-design-dir__section--band-b pt-4 pb-12 sm:pt-5 sm:pb-16">

@@ -29,11 +29,16 @@
   --home-surface-t: 0;
   /* Zilā skrejošā impulsa periods — 2× garāks nekā iepriekš (50 % lēnāks skrējiens) */
   --provin-scan-loop-dur: calc((7s / 3) * 2);
+  /* Tēmas pamats (tumšais); gaišais — `site-theme-light.css` uz `html[data-site-theme="light"]` */
+  --site-html-bg: #050505;
+  --site-body-bg: #050505;
+  --site-body-gradient: linear-gradient(180deg, #08080a 0%, #050505 55%, #050505 100%);
+  --site-body-fg: #ffffff;
 }
 
 html {
-  /* Horizontālas pārvilkšanas „tukšums” paliek tumšs, nevis gaišs ķermenis */
-  background-color: #050505;
+  /* Horizontālas pārvilkšanas „tukšums” — seko tēmai */
+  background-color: var(--site-html-bg);
   scroll-behavior: smooth;
   max-width: 100%;
   overflow-x: hidden;
@@ -45,10 +50,9 @@ html {
 
 /* === BASE BACKGROUND === */
 body {
-  /* Vienots tumšs pamats — bez spēcīgas zilās radālas (novērš „gaišās joslas” pie pārvilkšanas) */
-  background-color: #050505;
-  background-image: linear-gradient(180deg, #08080a 0%, #050505 55%, #050505 100%);
-  color: white;
+  background-color: var(--site-body-bg);
+  background-image: var(--site-body-gradient);
+  color: var(--site-body-fg);
   max-width: 100%;
   overflow-x: hidden;
   overflow-x: clip;

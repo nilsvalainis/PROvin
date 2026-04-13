@@ -11,6 +11,7 @@ import { HideOnDemoPaths } from "@/components/layout/HideOnDemoPaths";
 import { SiteOrderCtaPin } from "@/components/home/SiteOrderCtaPin";
 import { SiteSectionRail } from "@/components/home/SiteSectionRail";
 import { WhatsAppFab } from "@/components/WhatsAppFab";
+import { DemoPathThemeToggle } from "@/components/site-theme/DemoPathThemeToggle";
 import { routing } from "@/i18n/routing";
 import "./demo/design-direction/demo-design-direction.css";
 
@@ -72,6 +73,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           {children}
         </main>
         <WhatsAppFab />
+        <DemoPathThemeToggle />
         <CookieConsent />
       </LenisProvider>
     </NextIntlClientProvider>

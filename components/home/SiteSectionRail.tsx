@@ -134,7 +134,7 @@ export function SiteSectionRail() {
 
   return (
     <nav
-      className="group/rail pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] top-[max(1rem,env(safe-area-inset-top,0px))] z-40 hidden min-h-0 w-max cursor-pointer flex-col pl-1 lg:flex"
+      className="site-section-rail group/rail pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] top-[max(1rem,env(safe-area-inset-top,0px))] z-40 hidden min-h-0 w-max cursor-pointer flex-col pl-1 lg:flex"
       aria-label={t("navAria")}
     >
       {/* Plašāks „tuvuma” lauks + diskrēts fons tikai pie hover / tastatūras */}
@@ -147,11 +147,11 @@ export function SiteSectionRail() {
         <div className="flex min-h-0 flex-1 flex-row items-stretch gap-2.5 pl-0.5 transition-[gap] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] group-hover/rail:gap-3.5 motion-reduce:transition-none">
           <div ref={trackRef} className="relative h-full min-h-0 w-3 shrink-0">
             <div
-              className="absolute inset-y-1.5 left-1/2 z-0 w-px -translate-x-1/2 bg-white/[0.11] shadow-[0_0_14px_rgba(0,102,255,0.12)] transition-[background-color,box-shadow] duration-700 ease-out group-hover/rail:bg-white/[0.16] group-hover/rail:shadow-[0_0_18px_rgba(0,102,255,0.2)] group-focus-within/rail:bg-white/[0.16] group-focus-within/rail:shadow-[0_0_18px_rgba(0,102,255,0.2)]"
+              className="site-rail-axis absolute inset-y-1.5 left-1/2 z-0 w-px -translate-x-1/2 bg-white/[0.11] shadow-[0_0_14px_rgba(0,102,255,0.12)] transition-[background-color,box-shadow] duration-700 ease-out group-hover/rail:bg-white/[0.16] group-hover/rail:shadow-[0_0_18px_rgba(0,102,255,0.2)] group-focus-within/rail:bg-white/[0.16] group-focus-within/rail:shadow-[0_0_18px_rgba(0,102,255,0.2)]"
               aria-hidden
             />
             <div
-              className="absolute left-1/2 top-0 w-[2px] rounded-full bg-[#0066ff] opacity-95 shadow-[0_0_12px_rgba(0,102,255,0.45)] will-change-transform motion-reduce:!transition-none group-hover/rail:opacity-100 group-hover/rail:shadow-[0_0_16px_rgba(0,102,255,0.55)]"
+              className="site-rail-dot absolute left-1/2 top-0 w-[2px] rounded-full bg-[#0066ff] opacity-95 shadow-[0_0_12px_rgba(0,102,255,0.45)] will-change-transform motion-reduce:!transition-none group-hover/rail:opacity-100 group-hover/rail:shadow-[0_0_16px_rgba(0,102,255,0.55)]"
               style={{
                 height: dot.height,
                 transform: `translate3d(-50%, ${dot.top}px, 0)`,

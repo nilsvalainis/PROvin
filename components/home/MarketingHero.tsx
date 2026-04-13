@@ -73,6 +73,7 @@ export function MarketingHero({
   const silhouetteLensCenterGradId = `${silhouetteIdBase}-lens-center`;
   const silhouetteLensClipId = `${silhouetteIdBase}-lens-clip`;
   const t = useTranslations("Hero");
+  const tMeta = useTranslations("Meta");
   const rawPillars = t.raw("pillars");
   const pillars: HeroPillar[] = Array.isArray(rawPillars) ? (rawPillars as HeroPillar[]) : [];
 
@@ -98,8 +99,8 @@ export function MarketingHero({
   const orbitGlassSilhouette = Boolean(isOrbitVisual && !demoVariant);
   /** Sākumlapa: vertikālais centrs starp augšu un pīlāriem + tipogrāfijas skala (`data-hero-orbit-home`). */
   const orbitHomeCenterLayout = Boolean(designDirection && isOrbitVisual && !isB);
-  /** Sākumlapa ar palielināmo stiklu: apakšvirsrakstu nerāda; virsraksts lēcas tekstā (`lensLine1` + `lensLine2`). */
-  const homeGlassLensCopy = Boolean(designDirection && orbitGlassSilhouette && !demoVariant);
+  /** Sākumlapa: `Meta` ievads (detektīvs + teksts + ass + skenēšana) orbit centrā — nevis lupa. */
+  const homeOrbitMetaIntro = Boolean(designDirection && orbitGlassSilhouette && !demoVariant);
   const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
 
   const heroTitleStack = (
@@ -107,27 +108,19 @@ export function MarketingHero({
       <h1
         id={titleId}
         className={
-          homeGlassLensCopy && isOrbitVisual
-            ? "sr-only"
-            : isOrbitVisual
-              ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold tracking-[-0.02em] text-white/95 max-[380px]:tracking-[-0.025em]${designDirection ? " max-w-[min(100%,40rem)]" : ""}`
-              : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]`
+          isOrbitVisual
+            ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold tracking-[-0.02em] text-white/95 max-[380px]:tracking-[-0.025em]${designDirection ? " max-w-[min(100%,40rem)]" : ""}`
+            : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]`
         }
       >
-        {homeGlassLensCopy ? (
-          <>
-            {t("lensLine1")} {t("lensLine2")}
-          </>
-        ) : (
-          <>
-            <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
-              <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Vin")}</span>
-              <span className="text-white/95">{t("h1Un")}</span>
-              <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Sludinajuma")}</span>
-            </span>
-            <span className="marketing-hero-title-line2 mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
-          </>
-        )}
+        <>
+          <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
+            <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Vin")}</span>
+            <span className="text-white/95">{t("h1Un")}</span>
+            <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Sludinajuma")}</span>
+          </span>
+          <span className="marketing-hero-title-line2 mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
+        </>
       </h1>
       {!hideHeroSubtitle ? (
         <p
@@ -276,10 +269,8 @@ export function MarketingHero({
       aria-labelledby={titleId}
     >
       {isOrbitVisual ? (
-        orbitGlassSilhouette ? (
-          <span
-            className={`marketing-hero-orbit-silhouette${homeGlassLensCopy ? " marketing-hero-orbit-silhouette--lens-glass" : ""}`}
-          >
+        orbitGlassSilhouette && !homeOrbitMetaIntro ? (
+          <span className="marketing-hero-orbit-silhouette">
             <svg className="marketing-hero-orbit-silhouette__svg" viewBox="0 0 112 112" xmlns="http://www.w3.org/2000/svg" fill="none" aria-hidden>
               <defs>
                 <clipPath id={silhouetteLensClipId}>
@@ -325,7 +316,6 @@ export function MarketingHero({
                 strokeWidth="0.58"
                 vectorEffect="non-scaling-stroke"
               />
-              {/* Zils punkts starp r=23.5 un r=26 (vidus r=24.75); rotācija ap lēcas centru — pulksteņa virziens */}
               <g transform="translate(44 44)">
                 <g className="marketing-hero-orbit-silhouette__dot-orbit">
                   <circle
@@ -352,19 +342,13 @@ export function MarketingHero({
                 vectorEffect="non-scaling-stroke"
               />
             </svg>
-            {homeGlassLensCopy ? (
-              <span className="marketing-hero-orbit-silhouette__lens-stack">
-                <span className="marketing-hero-orbit-silhouette__lens-line1">{t("lensLine1")}</span>
-                <span className="marketing-hero-orbit-silhouette__lens-line2">{t("lensLine2")}</span>
-              </span>
-            ) : null}
           </span>
-        ) : (
+        ) : !orbitGlassSilhouette ? (
           <>
             <span className="marketing-hero-orbit-ring-outer" aria-hidden />
             <span className="marketing-hero-orbit-ring-inner" aria-hidden />
           </>
-        )
+        ) : null
       ) : null}
       {demoSpeedometer ? <MarketingHeroSpeedometer tone={demoVariant?.startsWith("s") ? "mono" : "default"} /> : null}
 
@@ -376,8 +360,26 @@ export function MarketingHero({
                 <div className="pointer-events-auto absolute inset-x-0 top-0 z-[1] flex justify-center px-4 pt-0.5 sm:px-8 sm:pt-1">
                   {approvedBlock}
                 </div>
-                <div className="pointer-events-auto absolute inset-x-0 top-1/2 z-[1] flex -translate-y-1/2 flex-col items-center justify-center px-4 sm:px-8">
+                <div className="pointer-events-auto absolute inset-x-0 top-1/2 z-[1] flex max-h-[min(68dvh,34rem)] min-h-0 -translate-y-1/2 flex-col items-center justify-center gap-4 overflow-y-auto px-4 py-2 sm:px-8 sm:gap-5">
                   {heroTitleStack}
+                  {homeOrbitMetaIntro ? (
+                    <div
+                      id="home-intro"
+                      className="marketing-hero-orbit-intro relative w-full max-w-[min(100%,42rem)] shrink-0 text-center"
+                    >
+                      <div className="demo-design-dir__axis-line opacity-80" aria-hidden />
+                      <h2 className="demo-design-dir__title relative z-[1] mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4">
+                        {tMeta("homeIntroTitle")}
+                      </h2>
+                      <div
+                        className="demo-design-dir__hero-scan relative z-[1] mx-auto my-[1rem] sm:my-5"
+                        aria-hidden
+                      />
+                      <p className="demo-design-dir__body relative z-[1] mx-auto mt-0 max-w-[min(100%,42rem)] text-balance text-[13px] leading-relaxed sm:text-[15px]">
+                        {tMeta("homeIntroBody")}
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
               </div>
               <div className="relative z-[2] mx-auto flex w-full max-w-[min(100%,53.76rem)] shrink-0 flex-col items-center pt-3 sm:pt-5">

@@ -44,9 +44,8 @@ export const approvedByIrissSignatureHeroClass = `${approvedByIrissSignatureBase
 export const homeHeroSubtitleClass =
   "text-[#c4ccd8] [text-shadow:0_1px_0_rgba(0,0,0,0.5),0_0_18px_rgba(5,5,5,0.55)]";
 
-/** Hero H1 pirmā rinda — zilie atslēgvārdi (VIN, SLUDINĀJUMA), tikai teksta krāsa #0066ff. */
-export const heroH1BlueKeywordClass =
-  "font-semibold whitespace-nowrap text-[#0066ff]";
+/** Hero H1 pirmā rinda — atslēgvārdi (VIN, SLUDINĀJUMA); krāsa no `--color-provin-accent` (tēma). */
+export const heroH1BlueKeywordClass = "font-semibold whitespace-nowrap text-provin-accent";
 
 /** Kas ir IRISS? — apakšvirsraksts: tā pati estētika, ~2× izmērs, nedaudz platāka līnija. */
 export const irissSectionSubtitleClass = `${approvedByIrissSignatureBaseClass} mx-auto max-w-[min(100%,52ch)] text-balance text-[1.125rem] sm:text-[1.25rem]`;

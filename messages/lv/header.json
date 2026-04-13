@@ -4,6 +4,8 @@
     "order": "Pasūtīt",
     "navHome": "Sākums",
     "menuOpen": "Atvērt izvēlni",
-    "menuClose": "Aizvērt izvēlni"
+    "menuClose": "Aizvērt izvēlni",
+    "themeSwitchToLight": "Pārslēgt uz gaišo režīmu",
+    "themeSwitchToDark": "Pārslēgt uz tumšo režīmu"
   }
 }

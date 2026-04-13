@@ -5,6 +5,8 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildSiteRailSections, normalizeSitePath, siteRailMenuActiveIndex } from "@/lib/site-rail-sections";
+import { useSiteTheme } from "@/components/providers/SiteThemeProvider";
+import { SiteThemeHeaderButton } from "@/components/site-theme/SiteThemeHeaderButton";
 
 export type HeaderClientProps = {
   orderLabel: string;
@@ -50,6 +52,7 @@ export function HeaderClient({
   const locale = useLocale();
   const normalizedPath = normalizeSitePath(pathname);
   const tr = useTranslations("SiteRail");
+  const { theme } = useSiteTheme();
 
   const isHome = normalizedPath === "/" || normalizedPath === "";
 
@@ -101,7 +104,13 @@ export function HeaderClient({
 
   const isFaq = pathname.includes("biezi-jautajumi");
   const isOrderSection = isHome && hash.includes("pasutit");
-  const isDarkHeaderSurface = isHome;
+  /** Sākumlapas „caurspīdīgais” hero headeris — tikai tumšajā tēmā; gaišajā — kā pārējās lapas. */
+  const isDarkHeaderSurface = isHome && theme === "dark";
+
+  const themeBtnOnDarkHeroClass =
+    "h-10 w-10 border-white/20 bg-white/[0.06] text-white hover:border-white/35 hover:bg-white/10 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#050505]";
+  const themeBtnLightChromeClass =
+    "h-10 w-10 border-black/[0.08] bg-white text-[#1d1d1f] shadow-sm hover:bg-slate-50 focus-visible:ring-[rgb(255_90_0/0.35)] focus-visible:ring-offset-white";
 
   const headerSurface = isDarkHeaderSurface
     ? "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)] md:border-b md:border-white/[0.06]"
@@ -199,6 +208,10 @@ export function HeaderClient({
                 <span className={mobileRailOnDark ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
                 <span className="text-provin-accent">VIN</span>
               </Link>
+              <div className="flex shrink-0 items-center gap-2">
+                <SiteThemeHeaderButton
+                  className={mobileRailOnDark ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
+                />
               <button
                 type="button"
                 onClick={toggleRailMenu}
@@ -209,6 +222,7 @@ export function HeaderClient({
               >
                 <MobileRailMenuIcon lineClass={mobileRailOnDark ? "bg-white" : "bg-[#1d1d1f]"} />
               </button>
+              </div>
             </div>
             <div
               id="mobile-rail-nav-panel"
@@ -248,7 +262,10 @@ export function HeaderClient({
             {isHome ? null : <span className={isDarkHeaderSurface ? "text-white" : "text-[#1d1d1f]"}>.LV</span>}
           </Link>
 
-          <nav className="hidden min-w-0 items-center gap-6 md:flex md:flex-1 md:justify-end">
+          <nav className="hidden min-w-0 items-center gap-3 md:flex md:flex-1 md:justify-end">
+            <SiteThemeHeaderButton
+              className={isDarkHeaderSurface ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
+            />
             <Link
               href={orderHref}
               className={isDarkHeaderSurface ? orderHeaderHeroClass : orderBtnClass}
@@ -266,6 +283,9 @@ export function HeaderClient({
 
           {!logoAlignWithRailSakums ? (
             <div className="flex items-center gap-2 md:hidden">
+              <SiteThemeHeaderButton
+                className={isDarkHeaderSurface ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
+              />
               <Link href={orderHref} className={`${orderBtnClass} text-[11px] sm:text-[12px]`}>
                 {orderLabel}
               </Link>
@@ -302,7 +322,8 @@ export function HeaderClient({
           />
           <div className="absolute inset-0 flex flex-col overflow-hidden border-y border-transparent bg-[linear-gradient(90deg,#c0c0c0,#ffffff,#c0c0c0)] p-px shadow-2xl">
             <div className="flex min-h-dvh flex-1 flex-col bg-[#050505] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))]">
-              <div className="flex items-center justify-end">
+              <div className="flex items-center justify-end gap-2">
+                <SiteThemeHeaderButton className={themeBtnOnDarkHeroClass} />
                 <button
                   type="button"
                   onClick={close}
