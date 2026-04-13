@@ -48,7 +48,19 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
 
   const inner = (
     <>
-      <h2 className={embedded ? "demo-design-dir__title mt-2 max-w-[48rem]" : homeSectionTitleClass}>{t("workTitle")}</h2>
+      <div className="mx-auto mt-2 flex w-full max-w-[min(100%,52rem)] items-center justify-center gap-3 sm:mt-3 sm:gap-4">
+        <span className="h-px min-w-0 flex-1 bg-white/[0.1]" aria-hidden />
+        <h2
+          className={
+            embedded
+              ? "demo-design-dir__title max-w-[min(100%,48rem)] shrink-0 text-balance text-center"
+              : `${homeSectionTitleClass} max-w-[min(100%,48rem)] shrink-0`
+          }
+        >
+          {t("workTitle")}
+        </h2>
+        <span className="h-px min-w-0 flex-1 bg-white/[0.1]" aria-hidden />
+      </div>
       <ul
         className={
           embedded
