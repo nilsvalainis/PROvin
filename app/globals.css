@@ -36,6 +36,7 @@ html {
   background-color: #050505;
   scroll-behavior: smooth;
   max-width: 100%;
+  overflow-x: hidden;
   overflow-x: clip;
   /* y: auto — mobilais pull-to-refresh; x: none — scroll chaining */
   overscroll-behavior-x: none;
@@ -49,6 +50,7 @@ body {
   background-image: linear-gradient(180deg, #08080a 0%, #050505 55%, #050505 100%);
   color: white;
   max-width: 100%;
+  overflow-x: hidden;
   overflow-x: clip;
   @apply antialiased;
   font-feature-settings: "kern" 1, "liga" 1;
@@ -62,6 +64,12 @@ body {
 * {
   backface-visibility: hidden;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Mājas čaula: min-height — 100vh fallback, tad dvh (Safari < 15.4 u.c.) */
+.home-scroll-surface {
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* === HERO SPEEDOMETER (dekoratīvs) === */
@@ -167,6 +175,13 @@ body {
     animation: none !important;
     opacity: 0;
   }
+}
+
+/* Hero pasūtījuma lauki — Safari / iOS: noņem noklusējuma spīdumu; fokusā gaiši zils fons */
+.order-form-hero-field input,
+.order-form-hero-field textarea {
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 /* Hero pasūtījuma lauki: fokusā gaiši zils fons; zilā „rāmja” nav — tikai apakšējā skenēšanas līnija */

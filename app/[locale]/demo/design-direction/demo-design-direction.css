@@ -42,6 +42,7 @@
 
 .demo-design-dir__section {
   position: relative;
+  overflow: hidden;
   overflow: clip;
 }
 
