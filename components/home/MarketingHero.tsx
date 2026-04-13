@@ -72,10 +72,10 @@ export function MarketingHero({
   const silhouetteGradId = `${silhouetteIdBase}-edge`;
   const silhouetteLensCenterGradId = `${silhouetteIdBase}-lens-center`;
   const silhouetteLensClipId = `${silhouetteIdBase}-lens-clip`;
-  const silhouetteScanGradId = `${silhouetteIdBase}-scan-grad`;
-  /* Kātiņš: iepriekš L 102 102 → par 50 % īsāks (galapunkts puses ceļā uz oriģinālo galu) */
-  const silhouetteScanPathD =
-    "M 70 44 A 26 26 0 1 1 18 44 A 26 26 0 1 1 70 44 M 64 64 L 83 83";
+  const silhouetteAnnulusMaskId = `${silhouetteIdBase}-annulus-mask`;
+  /** Sprauga starp lēcas ārējo malu (r=26) un lielo riņķi (r=34): viduslīnija skrējējam r=30 */
+  const silhouetteAnnulusRunnerPathD =
+    "M 74 44 A 30 30 0 1 1 14 44 A 30 30 0 1 1 74 44";
   const t = useTranslations("Hero");
   const rawPillars = t.raw("pillars");
   const pillars: HeroPillar[] = Array.isArray(rawPillars) ? (rawPillars as HeroPillar[]) : [];
@@ -305,14 +305,33 @@ export function MarketingHero({
                   <stop offset="52%" stopColor="rgb(150 160 180)" stopOpacity="0.114" />
                   <stop offset="100%" stopColor="rgb(210 218 232)" stopOpacity="0.202" />
                 </linearGradient>
-                <linearGradient id={silhouetteScanGradId} x1="0" y1="0" x2="112" y2="112" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="rgb(0 102 255)" stopOpacity="0" />
-                  <stop offset="30%" stopColor="rgb(0 102 255)" stopOpacity="0.22" />
-                  <stop offset="50%" stopColor="rgb(0 102 255)" stopOpacity="0.98" />
-                  <stop offset="70%" stopColor="rgb(0 102 255)" stopOpacity="0.22" />
-                  <stop offset="100%" stopColor="rgb(0 102 255)" stopOpacity="0" />
-                </linearGradient>
+                <mask id={silhouetteAnnulusMaskId} maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse">
+                  <rect x="0" y="0" width="112" height="112" fill="white" />
+                  <circle cx="44" cy="44" r="26" fill="black" />
+                </mask>
               </defs>
+              <circle
+                cx="44"
+                cy="44"
+                r="34"
+                fill="rgb(0 102 255)"
+                fillOpacity="0.72"
+                mask={`url(#${silhouetteAnnulusMaskId})`}
+              />
+              <path
+                className="marketing-hero-orbit-silhouette__annulus-runner"
+                d={silhouetteAnnulusRunnerPathD}
+                pathLength="100"
+              />
+              <circle
+                cx="44"
+                cy="44"
+                r="34"
+                stroke={`url(#${silhouetteGradId})`}
+                strokeWidth="0.55"
+                fill="none"
+                vectorEffect="non-scaling-stroke"
+              />
               <circle
                 cx="44"
                 cy="44"
@@ -349,17 +368,6 @@ export function MarketingHero({
                 strokeWidth="0.55"
                 strokeLinecap="round"
                 vectorEffect="non-scaling-stroke"
-              />
-              <path
-                className="marketing-hero-orbit-silhouette__scan-path marketing-hero-orbit-silhouette__scan-path--glow"
-                d={silhouetteScanPathD}
-                pathLength="100"
-              />
-              <path
-                className="marketing-hero-orbit-silhouette__scan-path"
-                d={silhouetteScanPathD}
-                pathLength="100"
-                stroke={`url(#${silhouetteScanGradId})`}
               />
             </svg>
             {homeGlassLensCopy ? (
