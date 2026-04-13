@@ -10,7 +10,7 @@ export async function HomeMetaIntroSection() {
 
   return (
     <section
-      className="demo-design-dir__section demo-design-dir__section--band-a pb-20 pt-4 sm:pb-28 sm:pt-8"
+      className="demo-design-dir__section demo-design-dir__section--band-a pb-6 pt-4 sm:pb-8 sm:pt-6"
       id="home-intro"
     >
       <div className="demo-design-dir__shell relative text-center">
@@ -22,7 +22,7 @@ export async function HomeMetaIntroSection() {
           {tMeta("homeIntroBody")}
         </p>
         <div className="demo-design-dir__hero-scan relative z-[1]" aria-hidden />
-        <div className="relative z-[1] mt-6 flex justify-center sm:mt-7">
+        <div className="relative z-[1] mt-5 flex justify-center sm:mt-6">
           <a
             href="#order-form"
             className="group inline-flex min-h-11 touch-manipulation flex-col items-center justify-center gap-1.5 border-0 bg-transparent p-0 text-center text-[11px] font-semibold uppercase leading-snug tracking-[0.14em] text-provin-accent no-underline shadow-none transition-colors hover:text-[var(--color-provin-accent-hover)] focus-visible:rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent/55"

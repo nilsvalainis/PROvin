@@ -24,7 +24,7 @@ export default async function HomePage({
           <HomeMetaIntroSection />
 
           <div id="site-content" className="home-body-ink scroll-mt-14">
-            <section className="demo-design-dir__section demo-design-dir__section--band-b py-16 sm:py-20">
+            <section className="demo-design-dir__section demo-design-dir__section--band-b pt-4 pb-12 sm:pt-5 sm:pb-16">
               <div className="demo-design-dir__shell">
                 <FinalCta cancelled={cancelled} orderEmbedded />
               </div>

@@ -34,19 +34,21 @@ export function OrderSection({
       <div
         className={
           embedded
-            ? "home-muted-foreground relative pb-4 pt-2 text-center sm:pb-5 sm:pt-2"
+            ? "home-muted-foreground relative pb-4 pt-0 text-center sm:pb-5 sm:pt-0"
             : "demo-design-dir__shell home-muted-foreground relative pb-4 pt-2 text-center sm:pb-5 sm:pt-2"
         }
       >
-        <div className="flex h-10 items-center justify-center sm:h-11">
-          <a
-            href="#order-form"
-            aria-label={t("scrollToFormAria")}
-            className="inline-flex text-provin-accent/80 transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
-          >
-            <NavChevronDown />
-          </a>
-        </div>
+        {!embedded ? (
+          <div className="flex h-10 items-center justify-center sm:h-11">
+            <a
+              href="#order-form"
+              aria-label={t("scrollToFormAria")}
+              className="inline-flex text-provin-accent/80 transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
+            >
+              <NavChevronDown />
+            </a>
+          </div>
+        ) : null}
         <div className="flex w-full flex-col items-center gap-4">
           {cancelled && (
             <p
