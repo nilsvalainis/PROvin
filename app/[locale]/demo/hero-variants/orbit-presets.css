@@ -444,6 +444,13 @@
 [data-hero-variant^="s"] .marketing-hero-pillar-icon {
   color: rgb(168 175 190);
 }
+/* Pārsūra pelēko „s” ikonu — tehnisko risku pīlārs (augstāka specifitāte nekā viena .marketing-hero-pillar-icon) */
+[data-hero-variant^="s"] .marketing-hero-pillar-icon.marketing-hero-pillar-icon--risk {
+  color: rgb(255 52 46);
+}
+.marketing-hero-pillar-icon.marketing-hero-pillar-icon--risk {
+  color: rgb(255 52 46);
+}
 [data-hero-variant^="s"] .marketing-hero-pillar-title {
   color: rgb(200 205 215 / 0.88);
 }
