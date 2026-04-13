@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId, useState } from "react";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -28,6 +28,14 @@ export {
 const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
 
 type HeroPillar = { title: string; body?: string };
+
+/** Kāts + loka ceļš skrienošajam punktam: kāta apakša → sprauga starp riņķiem (pilns aplis) → atpakaļ uz kāta apakšu; +0,5 s pauze ciklā. */
+const SILHOUETTE_DOT_MOTION_PATH_D =
+  "M 81.384 81.384 L 61.506 61.506 A 24.75 24.75 0 1 1 26.494 26.494 A 24.75 24.75 0 1 1 61.506 61.506 L 81.384 81.384";
+
+/** Dubultais kāts: tā pati atstarpe starp līnijām kā starp riņķiem (≈2,5 vienības, pusi katrā pusē no ass). */
+const SILHOUETTE_HANDLE_RAIL_A_D = "M 61.5 62.268 L 80.5 81.268";
+const SILHOUETTE_HANDLE_RAIL_B_D = "M 63.268 61.5 L 82.268 80.5";
 
 const pillarTitleClass =
   "line-clamp-2 max-h-[2.4em] min-h-[2.4em] w-full max-w-[11.5rem] whitespace-pre-line text-center text-[9px] font-semibold uppercase leading-[1.2] tracking-tight text-white/95 sm:max-w-[12.5rem] sm:text-[10px]";
@@ -68,6 +76,16 @@ export function MarketingHero({
   demoOrbitRings = "spin",
   designDirection = false,
 }: MarketingHeroProps = {}) {
+  const [reduceHeroLensMotion, setReduceHeroLensMotion] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setReduceHeroLensMotion(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
   const silhouetteIdBase = useId().replace(/:/g, "");
   const silhouetteGradId = `${silhouetteIdBase}-edge`;
   const silhouetteLensCenterGradId = `${silhouetteIdBase}-lens-center`;
@@ -325,18 +343,6 @@ export function MarketingHero({
                 strokeWidth="0.58"
                 vectorEffect="non-scaling-stroke"
               />
-              {/* Zils punkts starp r=23.5 un r=26 (vidus r=24.75); rotācija ap lēcas centru — pulksteņa virziens */}
-              <g transform="translate(44 44)">
-                <g className="marketing-hero-orbit-silhouette__dot-orbit">
-                  <circle
-                    className="marketing-hero-orbit-silhouette__dot"
-                    cx="24.75"
-                    cy="0"
-                    r="1.42"
-                    fill="rgb(0 102 255)"
-                  />
-                </g>
-              </g>
               <path
                 d="M 29 37 Q 44 31 59 37"
                 stroke="rgb(255 255 255 / 0.26)"
@@ -345,12 +351,38 @@ export function MarketingHero({
                 vectorEffect="non-scaling-stroke"
               />
               <path
-                d="M 64 64 L 83 83"
+                d={SILHOUETTE_HANDLE_RAIL_A_D}
                 stroke={`url(#${silhouetteGradId})`}
                 strokeWidth="0.55"
                 strokeLinecap="round"
                 vectorEffect="non-scaling-stroke"
               />
+              <path
+                d={SILHOUETTE_HANDLE_RAIL_B_D}
+                stroke={`url(#${silhouetteGradId})`}
+                strokeWidth="0.55"
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+              />
+              <circle
+                className="marketing-hero-orbit-silhouette__dot"
+                r="1.42"
+                fill="rgb(0 102 255)"
+                cx={reduceHeroLensMotion ? 81.384 : 0}
+                cy={reduceHeroLensMotion ? 81.384 : 0}
+              >
+                {reduceHeroLensMotion ? null : (
+                  <animateMotion
+                    dur="4.5s"
+                    repeatCount="indefinite"
+                    calcMode="linear"
+                    keyTimes="0;0.8888888889;1"
+                    keyPoints="0;1;1"
+                    path={SILHOUETTE_DOT_MOTION_PATH_D}
+                    rotate="0"
+                  />
+                )}
+              </circle>
             </svg>
             {homeGlassLensCopy ? (
               <span className="marketing-hero-orbit-silhouette__lens-stack">
