@@ -13,6 +13,9 @@ export function DemoStudioQuickLinks({ className = "" }: { className?: string })
       <Link href="/demo/hero-variants" className={pill}>
         Tikai hero varianti
       </Link>
+      <Link href="/demo/marketing-hero-concepts" className={pill}>
+        5 mārketinga hero (copy + layout)
+      </Link>
       <Link href="/demo/hero-radial-hub" className={pill}>
         Hero radialais tīkls (10)
       </Link>
