@@ -155,6 +155,17 @@ export function HeaderClient({
           : "text-[#424245] hover:text-[#1d1d1f]",
     ].join(" ");
 
+  /** Sākumlapas hero (md+): pilna rindas platums, „Pasūtīt” pie viewport labās malas (tikai safe-area). */
+  const desktopHeaderRowClass = [
+    "mx-auto flex min-h-12 items-center justify-between gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] sm:min-h-11 sm:gap-3",
+    isDarkHeaderSurface
+      ? "w-full max-w-none pr-[max(0.5rem,env(safe-area-inset-right,0px))]"
+      : "max-w-[980px] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:px-6 lg:max-w-[1024px]",
+    logoAlignWithRailSakums ? "hidden md:flex" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <>
       <header className={`sticky top-0 z-[42] isolate w-full ${headerSurface}`}>
@@ -215,9 +226,7 @@ export function HeaderClient({
           </div>
         ) : null}
 
-        <div
-          className={`mx-auto flex min-h-12 max-w-[980px] items-center justify-between gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:min-h-11 sm:gap-3 sm:px-6 lg:max-w-[1024px] ${isDarkHeaderSurface ? "lg:pr-[max(0.5rem,env(safe-area-inset-right,0px))]" : ""} ${logoAlignWithRailSakums ? "hidden md:flex" : ""}`}
-        >
+        <div className={desktopHeaderRowClass}>
           <Link href="/" className={logoClass} aria-label={isHome ? "PROVIN" : "PROVIN.LV"}>
             <span className={isDarkHeaderSurface ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
             <span className="text-provin-accent">VIN</span>
