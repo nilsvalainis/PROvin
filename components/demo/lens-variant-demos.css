@@ -1,0 +1,111 @@
+/**
+ * Tikai `/demo/lens-variants` — palielināmā stikla ģeometrijas un kustības prototipi.
+ */
+
+.lens-variant-demos {
+  --lens-demo-scale: 2.2;
+}
+
+.lens-variant-demos__stage {
+  width: calc(112px * var(--lens-demo-scale));
+  height: calc(112px * var(--lens-demo-scale));
+  margin-inline: auto;
+}
+
+.lens-variant-demos__stage svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* 2B — HTML punkts + offset-path (viewBox 112 → reizināts ar --lens-demo-scale) */
+.lens-variant-demos__offset-host {
+  position: relative;
+  width: calc(112px * var(--lens-demo-scale));
+  height: calc(112px * var(--lens-demo-scale));
+  margin-inline: auto;
+}
+
+.lens-variant-demos__offset-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, rgb(255 255 255 / 0.95), rgb(0 102 255) 55%, rgb(0 48 115));
+  box-shadow:
+    0 0 4px rgb(0 102 255 / 0.85),
+    0 0 12px rgb(0 102 255 / 0.45),
+    0 1px 2px rgb(0 0 0 / 0.5);
+  offset-rotate: 0deg;
+  offset-path: path(
+    "M 179.0448 179.0448 L 135.3132 135.3132 A 54.45 54.45 0 1 1 58.2868 58.2868 A 54.45 54.45 0 1 1 135.3132 135.3132 L 179.0448 179.0448"
+  );
+  animation: lens-variant-demos-offset 4.5s linear infinite;
+}
+
+.lens-variant-demos__offset-dot--paused {
+  animation: none;
+  offset-distance: 0%;
+}
+
+@keyframes lens-variant-demos-offset {
+  0% {
+    offset-distance: 0%;
+  }
+  88.8888888889% {
+    offset-distance: 100%;
+  }
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+/* 2D — „punkts” kā īss stroke segments uz ceļa */
+.lens-variant-demos__dash-track {
+  fill: none;
+  stroke: rgb(0 102 255 / 0.22);
+  stroke-width: 1.25;
+  vector-effect: non-scaling-stroke;
+}
+
+.lens-variant-demos__dash-pulse {
+  fill: none;
+  stroke: rgb(0 102 255);
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 6 94;
+  animation: lens-variant-demos-dash 4.5s linear infinite;
+}
+
+@keyframes lens-variant-demos-dash {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lens-variant-demos__offset-dot {
+    animation: none;
+    offset-distance: 0%;
+  }
+
+  .lens-variant-demos__dash-pulse {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Rokas pārslēgs — imitē reduced-motion arī 2A/2C */
+.lens-variant-demos[data-force-reduce-motion="true"] .lens-variant-demos__offset-dot,
+.lens-variant-demos[data-force-reduce-motion="true"] .lens-variant-demos__dash-pulse {
+  animation: none !important;
+}
+
+.lens-variant-demos[data-force-reduce-motion="true"] .lens-variant-demos__dash-pulse {
+  stroke-dashoffset: 0;
+}
+
