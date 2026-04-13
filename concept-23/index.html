@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Concept 23 — AI Risk Score Visualizer</title>
+  <link rel="stylesheet" href="styles.css" />
+  
+</head>
+<body class="concept-23">
+  <a class="skip" href="#main">Skip to content</a>
+  <main id="main">
+
+    <div class="wrap">
+      <div class="dial" role="img" aria-label="Demo risk score dial">
+        <svg viewBox="0 0 120 120" width="220" height="220" aria-hidden="true">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="10" />
+          <circle id="arc" cx="60" cy="60" r="52" fill="none" stroke="url(#g)" stroke-width="10" stroke-linecap="round" transform="rotate(-90 60 60)" stroke-dasharray="0 999" />
+          <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#00e5ff"/><stop offset="1" stop-color="#7c4dff"/></linearGradient></defs>
+        </svg>
+        <div class="score"><span id="n">0</span><small>/100</small></div>
+      </div>
+      <p class="cap">Synthetic “AI risk” — not a model.</p>
+      <button id="replay" type="button" class="btn">Replay</button>
+    </div>
+  </main>
+  <script src="script.js" defer></script>
+</body>
+</html>
