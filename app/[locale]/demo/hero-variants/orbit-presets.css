@@ -542,7 +542,7 @@
 }
 
 /* Sākumlapa (orbit + design-direction): H1 + apakšvirsraksts ~+30 %; vertikālais centrs starp augšu un pīlāriem — sk. MarketingHero grid */
-.marketing-hero-orbit-base[data-hero-orbit-home]:not([data-hero-lens-giant]) .marketing-hero-title.marketing-hero-title--orbit {
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
   max-width: min(100%, 22.75rem);
   font-size: clamp(1.05625rem, 3.12vw + 0.26rem, 1.38125rem);
   line-height: 1.12;
@@ -550,7 +550,7 @@
 }
 
 @media (min-width: 640px) {
-  .marketing-hero-orbit-base[data-hero-orbit-home]:not([data-hero-lens-giant]) .marketing-hero-title.marketing-hero-title--orbit {
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
     max-width: min(100%, 28.6rem);
     font-size: clamp(1.3rem, 2.08vw + 0.455rem, 1.625rem);
     line-height: 1.1;
@@ -559,20 +559,20 @@
 }
 
 @media (min-width: 1024px) {
-  .marketing-hero-orbit-base[data-hero-orbit-home]:not([data-hero-lens-giant]) .marketing-hero-title.marketing-hero-title--orbit {
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
     max-width: min(100%, 33.8rem);
     font-size: clamp(1.4625rem, 1.43vw + 0.845rem, 1.7875rem);
   }
 }
 
-.marketing-hero-orbit-base[data-hero-orbit-home]:not([data-hero-lens-giant]) .marketing-hero-title--orbit .marketing-hero-title-line2 {
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2 {
   margin-top: 0.2rem;
   font-size: 0.78em;
   letter-spacing: 0.06em;
 }
 
 @media (min-width: 640px) {
-  .marketing-hero-orbit-base[data-hero-orbit-home]:not([data-hero-lens-giant]) .marketing-hero-title--orbit .marketing-hero-title-line2 {
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2 {
     margin-top: 0.3rem;
     font-size: 0.82em;
     letter-spacing: 0.08em;
@@ -582,97 +582,6 @@
 .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero__tagline {
   font-size: 1.1375rem;
   line-height: 1.65;
-}
-
-/* Sākumlapa: lēca nedaudz pa kreisi; ~3× lielāks virsraksts ekrāna centrā; ass teksts tikai „lupas” aplī (clip-path) */
-.marketing-hero-orbit-base[data-hero-lens-giant].marketing-hero-section > .marketing-hero-orbit-silhouette {
-  left: calc(50% - min(6.25vw, 3.75rem));
-  animation: none;
-}
-
-.marketing-hero-lens-giant__stage {
-  min-height: min(38dvh, 19rem);
-}
-
-.marketing-hero-orbit-base[data-hero-lens-giant] .marketing-hero-title--lens-giant.marketing-hero-title--orbit {
-  position: relative;
-  max-width: none;
-  width: 100%;
-  min-height: min(34dvh, 17rem);
-  text-shadow: none;
-  font-size: unset;
-  line-height: unset;
-  letter-spacing: 0.045em;
-  text-transform: uppercase;
-}
-
-.marketing-hero-lens-giant__wash,
-.marketing-hero-lens-giant__glass {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: min(122vw, 72rem);
-  max-width: 100vw;
-  text-align: center;
-  pointer-events: none;
-}
-
-.marketing-hero-lens-giant__line1 {
-  font-size: clamp(1.6875rem, 5.85vw + 0.55rem, 4.35rem);
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: 0.05em;
-  text-wrap: balance;
-}
-
-.marketing-hero-lens-giant__line2 {
-  margin-top: 0.15rem;
-  font-size: clamp(2.2rem, 7.4vw + 0.7rem, 5.85rem);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.09em;
-  text-wrap: balance;
-}
-
-.marketing-hero-lens-giant__wash .marketing-hero-lens-giant__line1,
-.marketing-hero-lens-giant__wash .marketing-hero-lens-giant__line2 {
-  color: rgb(255 255 255 / 0.145);
-}
-
-.marketing-hero-lens-giant__glass .marketing-hero-lens-giant__line1,
-.marketing-hero-lens-giant__glass .marketing-hero-lens-giant__line2 {
-  color: #fff;
-}
-
-.marketing-hero-lens-giant__glass {
-  clip-path: circle(min(18vw, 7.5rem) at 41.5% 49%);
-}
-
-@media (min-width: 640px) {
-  .marketing-hero-lens-giant__glass {
-    clip-path: circle(min(17vw, 7.85rem) at 42% 48.5%);
-  }
-}
-
-@media (min-width: 1024px) {
-  .marketing-hero-lens-giant__glass {
-    clip-path: circle(min(15.5vw, 8.25rem) at 43% 48%);
-  }
-
-  .marketing-hero-orbit-base[data-hero-lens-giant].marketing-hero-section > .marketing-hero-orbit-silhouette {
-    left: calc(50% - min(7vw, 4.25rem));
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .marketing-hero-orbit-base[data-hero-lens-giant] .marketing-hero-lens-giant__glass {
-    clip-path: none;
-  }
-
-  .marketing-hero-orbit-base[data-hero-lens-giant] .marketing-hero-lens-giant__wash {
-    display: none;
-  }
 }
 
 /* Mobilais: spilgtāks palielināmais stikls + līnijas (APPROVED kicker — atsevišķi pēc saskaņošanas) */
@@ -734,20 +643,12 @@
     filter: none;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home]:not([data-hero-lens-giant]) .marketing-hero-title.marketing-hero-title--orbit {
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
     color: rgb(255 255 255 / 0.99);
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home]:not([data-hero-lens-giant]) .marketing-hero-title--orbit .marketing-hero-title-line2 {
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2 {
     color: rgb(255 255 255 / 0.98);
-  }
-
-  .marketing-hero-orbit-base[data-hero-lens-giant] .marketing-hero-lens-giant__glass {
-    clip-path: circle(min(22vw, 6.35rem) at 38.5% 50%);
-  }
-
-  .marketing-hero-orbit-base[data-hero-lens-giant].marketing-hero-section > .marketing-hero-orbit-silhouette {
-    left: calc(50% - min(8vw, 2.85rem));
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero__tagline {

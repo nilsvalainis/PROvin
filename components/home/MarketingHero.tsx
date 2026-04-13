@@ -101,37 +101,20 @@ export function MarketingHero({
   /** Sākumlapa ar palielināmo stiklu: apakšvirsrakstu nerāda; virsraksts lēcas tekstā (`lensLine1` + `lensLine2`). */
   const homeGlassLensCopy = Boolean(designDirection && orbitGlassSilhouette && !demoVariant);
   const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
-  /** Liels virsraksts ekrāna centrā + daļējs „lupas” aplis (sākumlapas orbit + design-direction). */
-  const lensGiantHeroHeadline = Boolean(homeGlassLensCopy && isOrbitVisual && orbitHomeCenterLayout);
-  const lensHeadlineAria = `${t("lensLine1")} ${t("lensLine2")}`;
 
   const heroTitleStack = (
     <div className="flex w-full flex-col items-center text-center">
       <h1
         id={titleId}
-        aria-label={lensGiantHeroHeadline ? lensHeadlineAria : undefined}
         className={
-          lensGiantHeroHeadline
-            ? "marketing-hero-title marketing-hero-title--orbit marketing-hero-title--lens-giant w-full max-w-none text-balance font-semibold tracking-[-0.02em] text-white/95 max-[380px]:tracking-[-0.025em]"
-            : homeGlassLensCopy && isOrbitVisual
-              ? "sr-only"
-              : isOrbitVisual
-                ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold tracking-[-0.02em] text-white/95 max-[380px]:tracking-[-0.025em]${designDirection ? " max-w-[min(100%,40rem)]" : ""}`
-                : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]`
+          homeGlassLensCopy && isOrbitVisual
+            ? "sr-only"
+            : isOrbitVisual
+              ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold tracking-[-0.02em] text-white/95 max-[380px]:tracking-[-0.025em]${designDirection ? " max-w-[min(100%,40rem)]" : ""}`
+              : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]`
         }
       >
-        {lensGiantHeroHeadline ? (
-          <>
-            <span className="marketing-hero-lens-giant__wash" aria-hidden>
-              <span className="marketing-hero-lens-giant__line1 block">{t("lensLine1")}</span>
-              <span className="marketing-hero-lens-giant__line2 block">{t("lensLine2")}</span>
-            </span>
-            <span className="marketing-hero-lens-giant__glass" aria-hidden>
-              <span className="marketing-hero-lens-giant__line1 block">{t("lensLine1")}</span>
-              <span className="marketing-hero-lens-giant__line2 block">{t("lensLine2")}</span>
-            </span>
-          </>
-        ) : homeGlassLensCopy ? (
+        {homeGlassLensCopy ? (
           <>
             {t("lensLine1")} {t("lensLine2")}
           </>
@@ -289,7 +272,6 @@ export function MarketingHero({
       data-hero-variant={dataHeroVariantForCss}
       data-orbit-rings={isOrbitVisual ? orbitRingsMode : undefined}
       data-hero-orbit-home={orbitHomeCenterLayout ? "" : undefined}
-      data-hero-lens-giant={lensGiantHeroHeadline ? "" : undefined}
       className={isOrbitVisual ? sectionClassOrbit : sectionClassGrid}
       aria-labelledby={titleId}
     >
@@ -370,7 +352,7 @@ export function MarketingHero({
                 vectorEffect="non-scaling-stroke"
               />
             </svg>
-            {homeGlassLensCopy && !lensGiantHeroHeadline ? (
+            {homeGlassLensCopy ? (
               <span className="marketing-hero-orbit-silhouette__lens-stack">
                 <span className="marketing-hero-orbit-silhouette__lens-line1">{t("lensLine1")}</span>
                 <span className="marketing-hero-orbit-silhouette__lens-line2">{t("lensLine2")}</span>
@@ -394,9 +376,7 @@ export function MarketingHero({
                 <div className="pointer-events-auto absolute inset-x-0 top-0 z-[1] flex justify-center px-4 pt-0.5 sm:px-8 sm:pt-1">
                   {approvedBlock}
                 </div>
-                <div
-                  className={`pointer-events-auto absolute inset-x-0 top-1/2 z-[1] flex -translate-y-1/2 flex-col items-center justify-center px-4 sm:px-8${lensGiantHeroHeadline ? " marketing-hero-lens-giant__stage" : ""}`}
-                >
+                <div className="pointer-events-auto absolute inset-x-0 top-1/2 z-[1] flex -translate-y-1/2 flex-col items-center justify-center px-4 sm:px-8">
                   {heroTitleStack}
                 </div>
               </div>
