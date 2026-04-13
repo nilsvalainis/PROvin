@@ -63,6 +63,12 @@ export default async function DemoStudioPage({ params }: PageProps) {
               Koncepti bez lēcas
             </Link>
             <Link
+              href="/demo/lupa-variants"
+              className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
+            >
+              10 lupas stili
+            </Link>
+            <Link
               href="/"
               className="inline-flex items-center gap-1.5 rounded-full border border-[#0066ff]/35 bg-[#0066ff]/12 px-4 py-2 text-[#7eb6ff] transition hover:bg-[#0066ff]/20 hover:text-white"
             >
