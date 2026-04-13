@@ -1,0 +1,8 @@
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,#13204a,#020308);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;color:#e9edf5}
+    .stage{perspective:900px;padding:2rem 1rem}
+    .card{position:relative;width:min(420px,92vw);padding:1.5rem;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);transform-style:preserve-3d;transition:box-shadow .2s ease;outline:none}
+    .card:focus-visible{box-shadow:0 0 0 3px rgba(0,102,255,.45)}
+    .eyebrow{letter-spacing:.22em;text-transform:uppercase;font-size:.68rem;opacity:.55;margin:0}
+    h2{margin:.35rem 0 .5rem;font-size:1.35rem}
+    p{margin:0;opacity:.75;line-height:1.45}
+    .shine{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(600px circle at var(--sx,30%) var(--sy,20%),rgba(255,255,255,.22),transparent 45%);mix-blend-mode:screen;opacity:.55}
