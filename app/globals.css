@@ -170,6 +170,71 @@ body {
   }
 }
 
+/* No centra uz kreiso malu (virsraksta blakus kreisā līnija) */
+@keyframes provin-diagnostic-scan-out-center-left {
+  0% {
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  100% {
+    left: 0%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* No centra uz labo malu */
+@keyframes provin-diagnostic-scan-out-center-right {
+  0% {
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  100% {
+    left: 100%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Īss „kopā” posms centrā, tad šķiršanās uz malām */
+@keyframes provin-diagnostic-scan-split-left {
+  0%,
+  12% {
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  100% {
+    left: 0%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes provin-diagnostic-scan-split-right {
+  0%,
+  12% {
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  100% {
+    left: 100%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.provin-diagnostic-scan-line__pulse--out-left {
+  animation: provin-diagnostic-scan-out-center-left var(--provin-scan-loop-dur) linear infinite;
+}
+
+.provin-diagnostic-scan-line__pulse--out-right {
+  animation: provin-diagnostic-scan-out-center-right var(--provin-scan-loop-dur) linear infinite;
+}
+
+.provin-diagnostic-scan-line__pulse--split-left {
+  animation: provin-diagnostic-scan-split-left var(--provin-scan-loop-dur) linear infinite;
+}
+
+.provin-diagnostic-scan-line__pulse--split-right {
+  animation: provin-diagnostic-scan-split-right var(--provin-scan-loop-dur) linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .provin-diagnostic-scan-line__pulse {
     animation: none !important;

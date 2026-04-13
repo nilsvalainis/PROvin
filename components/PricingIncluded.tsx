@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
+import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { irissAnchorHref } from "@/lib/paths";
 import { homeSectionTitleClass } from "@/lib/home-layout";
 
@@ -49,7 +50,11 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
   const inner = (
     <>
       <div className="mx-auto mt-2 flex w-full max-w-[min(100%,52rem)] items-center justify-center gap-3 sm:mt-3 sm:gap-4">
-        <span className="h-px min-w-0 flex-1 bg-white/[0.1]" aria-hidden />
+        <DiagnosticScanLine
+          motion="from-center-left"
+          variant="rail"
+          className="min-w-0 flex-1 self-center"
+        />
         <h2
           className={
             embedded
@@ -59,7 +64,11 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
         >
           {t("workTitle")}
         </h2>
-        <span className="h-px min-w-0 flex-1 bg-white/[0.1]" aria-hidden />
+        <DiagnosticScanLine
+          motion="from-center-right"
+          variant="rail"
+          className="min-w-0 flex-1 self-center"
+        />
       </div>
       <ul
         className={
