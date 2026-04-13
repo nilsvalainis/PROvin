@@ -541,44 +541,97 @@
   line-height: 1.65;
 }
 
-/* Mobilais: gaišāki uzraksti — labāka lasāmība spožā apgaismojumā */
+/* Mobilais: spilgtāks palielināmais stikls + līnijas (APPROVED kicker — atsevišķi pēc saskaņošanas) */
 @media (max-width: 1023px) {
   .marketing-hero-orbit-base.marketing-hero-section > .marketing-hero-orbit-silhouette {
-    opacity: 0.74;
+    opacity: 0.86;
+  }
+
+  .marketing-hero-orbit-silhouette__svg {
+    filter:
+      drop-shadow(0 0 1px rgb(255 255 255 / 0.18))
+      drop-shadow(0 1px 2px rgb(0 0 0 / 0.35))
+      drop-shadow(0 0 20px rgb(210 220 245 / 0.16));
+  }
+
+  /* Lēcas sudraba gredzeni + loka / kāta kontūras — biezākas, gaišākas */
+  .marketing-hero-orbit-silhouette__svg > circle:nth-of-type(2) {
+    stroke-width: 0.95 !important;
+    opacity: 1;
+  }
+
+  .marketing-hero-orbit-silhouette__svg > circle:nth-of-type(3) {
+    stroke: rgb(255 255 255 / 0.52) !important;
+    stroke-width: 1.02 !important;
+  }
+
+  .marketing-hero-orbit-silhouette__svg > path:nth-of-type(1) {
+    stroke: rgb(255 255 255 / 0.52) !important;
+    stroke-width: 0.78 !important;
+  }
+
+  .marketing-hero-orbit-silhouette__svg > path:nth-of-type(2) {
+    stroke: rgb(235 240 252 / 0.62) !important;
+    stroke-width: 0.95 !important;
+  }
+
+  .marketing-hero-orbit-silhouette__scan-path--glow {
+    stroke: rgb(90 170 255 / 0.72);
+    stroke-width: 2.85;
+    opacity: 1;
+    filter:
+      drop-shadow(0 0 6px rgb(0 140 255 / 0.58))
+      drop-shadow(0 0 20px rgb(0 120 255 / 0.42));
+  }
+
+  .marketing-hero-orbit-silhouette__scan-path:not(.marketing-hero-orbit-silhouette__scan-path--glow) {
+    stroke-width: 1.55;
+    filter:
+      drop-shadow(0 0 4px rgb(160 205 255 / 0.95))
+      drop-shadow(0 0 14px rgb(0 130 255 / 0.58))
+      drop-shadow(0 1px 3px rgb(0 0 0 / 0.38));
+  }
+
+  .marketing-hero-orbit-silhouette__lens-stack {
+    font-size: clamp(0.62rem, min(2.05vw, 2.4dvh), 0.95rem);
   }
 
   .marketing-hero-orbit-silhouette__lens-line1 {
-    color: rgb(255 255 255 / 0.98);
+    color: rgb(255 255 255 / 0.995);
+    font-weight: 700;
     text-shadow:
-      0 0 14px rgb(0 102 255 / 0.35),
-      0 1px 3px rgb(0 0 0 / 0.42);
+      0 0 16px rgb(0 130 255 / 0.42),
+      0 0 28px rgb(255 255 255 / 0.12),
+      0 1px 3px rgb(0 0 0 / 0.4);
   }
 
   .marketing-hero-orbit-silhouette__lens-line2 {
-    color: rgb(255 255 255 / 0.99);
+    color: rgb(255 255 255 / 1);
+    font-weight: 800;
     text-shadow:
-      0 0 18px rgb(0 102 255 / 0.32),
-      0 1px 3px rgb(0 0 0 / 0.42);
+      0 0 20px rgb(0 120 255 / 0.38),
+      0 0 32px rgb(255 255 255 / 0.14),
+      0 1px 3px rgb(0 0 0 / 0.38);
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
-    color: rgb(255 255 255 / 0.98);
+    color: rgb(255 255 255 / 0.99);
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2 {
-    color: rgb(255 255 255 / 0.97);
+    color: rgb(255 255 255 / 0.98);
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero__tagline {
-    color: rgb(218 226 238 / 0.92);
+    color: rgb(228 235 248 / 0.94);
   }
 
   .marketing-hero-orbit-base .demo-design-dir__card .marketing-hero-pillar-title {
-    color: rgb(255 255 255 / 0.98);
+    color: rgb(255 255 255 / 0.99);
   }
 
   .marketing-hero-orbit-base .marketing-hero-pillar-icon:not(.marketing-hero-pillar-icon--risk) {
     opacity: 1;
-    color: rgb(0 102 255);
+    color: rgb(51 140 255);
   }
 }
