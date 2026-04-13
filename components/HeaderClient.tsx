@@ -72,8 +72,8 @@ export function HeaderClient({
 
   const logoClass = [
     isDarkHeaderSurface
-      ? "flex min-h-11 min-w-11 shrink-0 items-center text-[24.15px] font-bold tracking-tight text-white transition-colors hover:text-white/90 sm:min-h-0 sm:min-w-0"
-      : "flex min-h-11 min-w-11 shrink-0 items-center text-[24.15px] font-bold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent sm:min-h-0 sm:min-w-0",
+      ? "flex min-h-11 min-w-11 shrink-0 items-center text-[28.98px] font-bold tracking-tight text-white transition-colors hover:text-white/90 sm:min-h-0 sm:min-w-0"
+      : "flex min-h-11 min-w-11 shrink-0 items-center text-[28.98px] font-bold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent sm:min-h-0 sm:min-w-0",
     logoAlignWithRailSakums
       ? "lg:ml-[calc(max(0.5rem,env(safe-area-inset-left,0px))+2.25rem-max(1rem,env(safe-area-inset-left,0px)))]"
       : null,
