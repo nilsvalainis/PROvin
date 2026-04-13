@@ -1,0 +1,11 @@
+body{margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;color:#fff}
+    .stage{position:relative;min-height:100vh;overflow:hidden;background:#000}
+    .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(1.05) contrast(1.05)}
+    .scrim{position:absolute;inset:0;background:linear-gradient(120deg,rgba(2,3,12,.82),rgba(2,3,12,.35),rgba(0,102,255,.18))}
+    .ui{position:relative;z-index:1;min-height:100vh;display:grid;align-content:end;padding:clamp(2rem,6vw,4rem) clamp(1.25rem,4vw,3rem);gap:.75rem;max-width:760px}
+    h1{margin:0;font-size:clamp(2rem,5vw,3.2rem);line-height:1.05;text-shadow:0 12px 40px rgba(0,0,0,.45)}
+    p{margin:0;opacity:.85;max-width:52ch;line-height:1.5}
+    code{font-size:.9em;background:rgba(255,255,255,.12);padding:.1rem .35rem;border-radius:6px}
+    .btn{display:inline-flex;width:max-content;padding:.75rem 1.1rem;border-radius:999px;background:#fff;color:#05060a;font-weight:700;text-decoration:none;margin-top:.25rem}
+    .vin{margin-top:1rem}
+    .vin input{width:min(520px,100%);padding:.85rem 1rem;border-radius:14px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff;font:inherit;outline:none}
