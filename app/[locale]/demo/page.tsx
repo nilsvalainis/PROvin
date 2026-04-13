@@ -69,6 +69,12 @@ export default async function DemoStudioPage({ params }: PageProps) {
               Palielināmā stikla · 2D silueti
             </Link>
             <Link
+              href="/demo/provin-engineering-heroes"
+              className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
+            >
+              Engineering hero — 30 (motion)
+            </Link>
+            <Link
               href="/demo/hero-fresh-concepts"
               className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
             >
