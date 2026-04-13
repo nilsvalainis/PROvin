@@ -25,11 +25,11 @@ export async function HomeMetaIntroSection() {
         <div className="relative z-[1] mt-6 flex justify-center sm:mt-7">
           <a
             href="#order-form"
-            className="group inline-flex min-h-11 touch-manipulation flex-col items-center justify-center gap-1.5 border-0 bg-transparent p-0 text-center text-[11px] font-semibold uppercase leading-snug tracking-[0.14em] text-[#7eb6ff] no-underline shadow-none transition-colors hover:text-white/95 focus-visible:rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066ff]/55"
+            className="group inline-flex min-h-11 touch-manipulation flex-col items-center justify-center gap-1.5 border-0 bg-transparent p-0 text-center text-[11px] font-semibold uppercase leading-snug tracking-[0.14em] text-provin-accent no-underline shadow-none transition-colors hover:text-[var(--color-provin-accent-hover)] focus-visible:rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent/55"
           >
             <span className="text-balance text-center">{tOrder("scrollToFormAria")}</span>
             <ChevronDown
-              className="h-5 w-5 shrink-0 text-[#7eb6ff] transition-colors group-hover:text-white/90"
+              className="h-5 w-5 shrink-0 text-provin-accent transition-colors group-hover:text-[var(--color-provin-accent-hover)]"
               strokeWidth={2}
               aria-hidden
             />

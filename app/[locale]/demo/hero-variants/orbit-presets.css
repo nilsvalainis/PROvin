@@ -83,6 +83,8 @@
 }
 
 .marketing-hero-orbit-silhouette__svg {
+  position: relative;
+  z-index: 0;
   display: block;
   width: 100%;
   height: auto;
@@ -112,6 +114,7 @@
   border-radius: 50%;
   z-index: 2;
   pointer-events: none;
+  /* Stikls zem HTML teksta; lēcas teksts z-3 — ass, gaišs, bez stikla izplūduma virs burtiem */
   background:
     radial-gradient(
       ellipse 100% 95% at 50% 28%,
@@ -181,7 +184,8 @@
   position: absolute;
   left: 39.29%;
   top: 39.29%;
-  z-index: 1;
+  /* Virs ::after stikla (z-2), lai teksts būtu ass un pilnā spilgtumā; stikls paliek redzams ap tekstu */
+  z-index: 3;
   display: flex;
   width: 36%;
   max-width: 12.5rem;
@@ -192,9 +196,10 @@
   transform: translate(-50%, -50%);
   text-align: center;
   text-transform: uppercase;
-  /* Bāzes izmērs pirmajai rindai; otrā rinda = 1.625em (≈ +25 % pret iepriekšējo 1.3em) */
+  /* Bāzes izmērs pirmajai rindai; AUDITS = 1.3em × 1.25 = 1.625em */
   font-size: clamp(0.54rem, min(1.86vw, 2.1dvh), 0.865rem);
   pointer-events: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Web (lg+): lēcas virsraksts +15 % pret noklusējuma clamp. */
@@ -208,10 +213,10 @@
   max-width: 100%;
   text-wrap: balance;
   font-size: 1em;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1.18;
-  color: rgb(255 255 255 / 1);
+  color: #fff;
   text-shadow: none;
   filter: none;
 }
@@ -219,11 +224,12 @@
 .marketing-hero-orbit-silhouette__lens-line2 {
   max-width: 100%;
   text-wrap: balance;
+  /* AUDITS: +25 % pret 1.3em → 1.625em */
   font-size: 1.625em;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.08em;
   line-height: 1.05;
-  color: rgb(255 255 255 / 1);
+  color: #fff;
   text-shadow: none;
   filter: none;
 }
