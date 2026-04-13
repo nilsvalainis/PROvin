@@ -18,6 +18,11 @@
   height: auto;
 }
 
+/* 2D — blur/drop-shadow: kastei jāļauj „izelpot” ārpus fiksētā laukuma */
+.lens-variant-demos__stage--2d-glow {
+  overflow: visible;
+}
+
 /* 2B — HTML punkts + offset-path (viewBox 112 → reizināts ar --lens-demo-scale) */
 .lens-variant-demos__offset-host {
   position: relative;
@@ -63,22 +68,46 @@
   }
 }
 
-/* 2D — „punkts” kā īss stroke segments uz ceļa */
+/* 2D — iekšējais „zilais riņķis” tikai kā izplūdusi aura (demo) */
+.lens-variant-demos__2d-inner-ring {
+  stroke: rgb(0 102 255 / 0.07);
+  stroke-width: 0.4;
+  filter:
+    blur(1.4px)
+    drop-shadow(0 0 4px rgb(0 102 255 / 0.42))
+    drop-shadow(0 0 11px rgb(0 102 255 / 0.26))
+    drop-shadow(0 0 20px rgb(0 70 190 / 0.12));
+}
+
+/* 2D — fona trase; virsū divi garāki balti silueti ar blur */
 .lens-variant-demos__dash-track {
   fill: none;
-  stroke: rgb(0 102 255 / 0.22);
-  stroke-width: 1.25;
+  stroke: rgb(0 102 255 / 0.14);
+  stroke-width: 1.15;
   vector-effect: non-scaling-stroke;
 }
 
 .lens-variant-demos__dash-pulse {
   fill: none;
-  stroke: rgb(0 102 255);
-  stroke-width: 2.8;
+  stroke: rgb(255 255 255 / 0.92);
+  stroke-width: 3.2;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
-  stroke-dasharray: 6 94;
+  stroke-dasharray: 22 78;
+  filter:
+    blur(0.9px)
+    drop-shadow(0 0 4px rgb(255 255 255 / 0.5))
+    drop-shadow(0 0 14px rgb(255 255 255 / 0.2));
   animation: lens-variant-demos-dash 4.5s linear infinite;
+}
+
+.lens-variant-demos__dash-pulse--ghost {
+  stroke: rgb(255 255 255 / 0.32);
+  stroke-width: 5.2;
+  stroke-dasharray: 32 68;
+  filter: blur(3px) drop-shadow(0 0 12px rgb(255 255 255 / 0.22));
+  animation-delay: -2.25s;
+  opacity: 0.95;
 }
 
 @keyframes lens-variant-demos-dash {
@@ -97,6 +126,11 @@
     animation: none;
     stroke-dashoffset: 0;
   }
+
+  .lens-variant-demos__dash-pulse--ghost {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
 }
 
 /* Rokas pārslēgs — imitē reduced-motion arī 2A/2C */
@@ -106,6 +140,11 @@
 }
 
 .lens-variant-demos[data-force-reduce-motion="true"] .lens-variant-demos__dash-pulse {
+  stroke-dashoffset: 0;
+}
+
+.lens-variant-demos[data-force-reduce-motion="true"] .lens-variant-demos__dash-pulse--ghost {
+  animation: none !important;
   stroke-dashoffset: 0;
 }
 

@@ -66,6 +66,45 @@ function LensBody({ gid, lid, cid }: { gid: string; lid: string; cid: string }) 
   );
 }
 
+/** Tikai 2D demo: vājāks zils lēcas tonis; iekšējā mala — tikai zila aura (bez cietas baltās līnijas). */
+function LensDefsDemo2D({ gid, lid, cid }: { gid: string; lid: string; cid: string }) {
+  return (
+    <defs>
+      <clipPath id={cid}>
+        <circle cx="44" cy="44" r="25.4" />
+      </clipPath>
+      <radialGradient id={lid} cx="44" cy="44" r="23" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="rgb(0 102 255)" stopOpacity="0.05" />
+        <stop offset="40%" stopColor="rgb(0 102 255)" stopOpacity="0.018" />
+        <stop offset="100%" stopColor="rgb(0 102 255)" stopOpacity="0" />
+      </radialGradient>
+      <linearGradient id={gid} x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="rgb(230 235 245)" stopOpacity="0.253" />
+        <stop offset="52%" stopColor="rgb(150 160 180)" stopOpacity="0.114" />
+        <stop offset="100%" stopColor="rgb(210 218 232)" stopOpacity="0.202" />
+      </linearGradient>
+    </defs>
+  );
+}
+
+function LensBodyDemo2D({ gid, lid, cid }: { gid: string; lid: string; cid: string }) {
+  return (
+    <>
+      <LensDefsDemo2D gid={gid} lid={lid} cid={cid} />
+      <circle cx="44" cy="44" r="26" fill={`url(#${lid})`} clipPath={`url(#${cid})`} />
+      <circle cx="44" cy="44" r="26" stroke={`url(#${gid})`} strokeWidth="0.55" vectorEffect="non-scaling-stroke" />
+      <circle cx="44" cy="44" r="23.5" fill="none" className="lens-variant-demos__2d-inner-ring" vectorEffect="non-scaling-stroke" />
+      <path
+        d={REFLECT_Q}
+        stroke="rgb(255 255 255 / 0.26)"
+        strokeWidth="0.52"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </>
+  );
+}
+
 /** 2A — SVG animateMotion + keyTimes / keyPoints */
 function DemoMotionSmil({ prefix, forceReduceMotion }: { prefix: string; forceReduceMotion: boolean }) {
   const gid = `${prefix}-g`;
@@ -311,17 +350,27 @@ export function LensVariantDemos() {
             </div>
           </article>
 
-          <article className={cardClass()}>
+          <article id="lens-demo-2d" className={`${cardClass()} scroll-mt-28`}>
             <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7eb6ff]">2D · stroke-dashoffset pa vienu path</h3>
             <p className="mt-2 text-[12px] text-white/50">
-              „Punkts” kā īss spilgts segments; fona ceļš viegli zils. Vienots temps pa visu garumu.
+              Iekšējais zilais riņķis tikai kā ēna; divi garāki, balti izplūduši „silueti” pa ceļu. Fona trase viegli zila. Vienots temps.
             </p>
-            <div className="lens-variant-demos__stage mt-4">
-              <svg viewBox="0 0 112 112" className="max-h-[min(40vh,320px)] w-full" fill="none" aria-hidden>
-                <LensBody gid={`${baseId}-2d-g`} lid={`${baseId}-2d-lc`} cid={`${baseId}-2d-cp`} />
+            <div className="lens-variant-demos__stage lens-variant-demos__stage--2d-glow mt-4">
+              <svg
+                viewBox="0 0 112 112"
+                className="max-h-[min(40vh,320px)] w-full overflow-visible"
+                fill="none"
+                aria-hidden
+              >
+                <LensBodyDemo2D gid={`${baseId}-2d-g`} lid={`${baseId}-2d-lc`} cid={`${baseId}-2d-cp`} />
                 <path d={HANDLE_RAIL_A} stroke={`url(#${baseId}-2d-g)`} strokeWidth="0.55" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
                 <path d={HANDLE_RAIL_B} stroke={`url(#${baseId}-2d-g)`} strokeWidth="0.55" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
                 <path d={MOTION_PATH_D} pathLength="100" className="lens-variant-demos__dash-track" />
+                <path
+                  d={MOTION_PATH_D}
+                  pathLength="100"
+                  className="lens-variant-demos__dash-pulse lens-variant-demos__dash-pulse--ghost lens-demo-animated"
+                />
                 <path d={MOTION_PATH_D} pathLength="100" className="lens-variant-demos__dash-pulse lens-demo-animated" />
               </svg>
             </div>

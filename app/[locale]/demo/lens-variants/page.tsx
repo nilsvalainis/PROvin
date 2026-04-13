@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { LensVariantDemos } from "@/components/demo/LensVariantDemos";
+import "@/components/demo/lens-variant-demos.css";
 import { routing } from "@/i18n/routing";
 
 export const metadata: Metadata = {
@@ -35,6 +36,10 @@ export default async function LensVariantsDemoPage({ params }: PageProps) {
           </a>
           <a href="#lens-demo-motion" className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/50 hover:text-white/80">
             §2 Kustība
+          </a>
+          <span className="text-[10px] text-white/25">|</span>
+          <a href="#lens-demo-2d" className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#7eb6ff]/80 hover:text-[#7eb6ff]">
+            2D silueti
           </a>
           <a href="#lens-demo-visual" className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/50 hover:text-white/80">
             §3 Vizuāls
