@@ -26,7 +26,7 @@ function DesignDirectionHeroIntro({ sectionId }: { sectionId: string }) {
         <h1 className="demo-design-dir__title relative z-[1] mx-auto mt-4 max-w-[40rem]">
           Vienota ass, secīgs ritms, atšķirīgas zīmes katrā solī
         </h1>
-        <div className="demo-design-dir__hero-scan relative z-[1] mx-auto my-5 sm:my-6" aria-hidden />
+        <div className="demo-design-dir__hero-scan relative z-[1] mx-auto my-8 sm:my-10" aria-hidden />
         <p className="demo-design-dir__body relative z-[1] mx-auto mt-0 max-w-[36rem]">
           Šī lapa parāda, kā viena horizontālā ass un vienādas kartiņu likmes samazina „smagumu”, bet dažādi motīvi
           (plūsma, slāņi, signāls) atkārto ideju: datu savienošana un pievienotā vērtība — bez īstā mājaslapas tekstu
