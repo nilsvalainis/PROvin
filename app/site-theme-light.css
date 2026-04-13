@@ -9,7 +9,7 @@ html[data-site-theme="light"] {
   --site-html-bg: #f4f5f7;
   --site-body-bg: #ffffff;
   --site-body-gradient: linear-gradient(180deg, #ffffff 0%, #f6f7f9 48%, #f0f2f5 100%);
-  --site-body-fg: #141416;
+  --site-body-fg: #0a0a0a;
   /* Tailwind @theme — lietots ar `text-provin-accent` u.c. */
   --color-provin-accent: #ff5a00;
   --color-provin-accent-hover: #e24f00;
@@ -79,11 +79,11 @@ html[data-site-theme="light"] .home-depth-bg {
 
 /* Zem Hero — gaišs teksts */
 html[data-site-theme="light"] .home-below-hero .home-body-ink {
-  color: #1f2937;
+  color: #0a0a0a;
 }
 
 html[data-site-theme="light"] .home-muted-foreground {
-  color: #4b5563;
+  color: #3f3f46;
 }
 
 html[data-site-theme="light"] .home-site-rule {
@@ -91,11 +91,11 @@ html[data-site-theme="light"] .home-site-rule {
 }
 
 html[data-site-theme="light"] .home-iriss-prose {
-  color: #374151;
+  color: #27272a;
 }
 
 html[data-site-theme="light"] .home-iriss-prose strong {
-  color: #111827;
+  color: #000000;
 }
 
 html[data-site-theme="light"] .home-footer-rule {
@@ -123,20 +123,71 @@ html[data-site-theme="light"] .home-rail-label {
   color: #4b5563;
 }
 
-/* Hero pill + pasūtīšanas lauki */
+/* Hero pill + pasūtīšanas lauki — augsts kontrasts */
 html[data-site-theme="light"] .provin-home-pill-cta {
-  border-color: rgb(255 90 0 / 0.45);
-  background-color: rgb(255 90 0 / 0.1);
-  color: #9a3400;
+  border-color: rgb(255 90 0 / 0.55);
+  background-color: rgb(255 90 0 / 0.16);
+  color: #000000;
 }
 
 html[data-site-theme="light"] .provin-home-pill-cta:hover:not(:disabled) {
-  background-color: rgb(255 90 0 / 0.18);
-  color: #5c2100;
+  background-color: rgb(255 90 0 / 0.24);
+  color: #000000;
 }
 
 html[data-site-theme="light"] .provin-home-pill-cta:focus-visible {
   outline-color: rgb(255 90 0 / 0.55);
+}
+
+/* Pasūtījuma forma (hero) — etiķetes, ievade, kopsavilkums */
+html[data-site-theme="light"] .order-form--hero .order-form-hero-label,
+html[data-site-theme="light"] .order-form--hero .order-form-hero-summary-label,
+html[data-site-theme="light"] .order-form--hero .order-form-hero-consent-text {
+  color: #000000 !important;
+}
+
+html[data-site-theme="light"] .order-form--hero .order-form-hero-input {
+  color: #000000 !important;
+}
+
+html[data-site-theme="light"] .order-form--hero .order-form-hero-input::placeholder {
+  color: #525252 !important;
+}
+
+html[data-site-theme="light"] .order-form--hero .order-form-hero-hint,
+html[data-site-theme="light"] .order-form--hero .order-form-hero-vin-hint {
+  color: #404040 !important;
+}
+
+html[data-site-theme="light"] .order-form--hero .order-form-hero-price {
+  color: #000000 !important;
+}
+
+html[data-site-theme="light"] .order-form--hero .order-form-hero-summary-note,
+html[data-site-theme="light"] .order-form--hero .order-form-hero-stripe-note {
+  color: #525252 !important;
+}
+
+html[data-site-theme="light"] .order-form--hero .order-form-hero-footer {
+  border-top-color: rgb(0 0 0 / 0.14) !important;
+}
+
+html[data-site-theme="light"] .order-form--hero .order-form-hero-rule {
+  border-color: rgb(0 0 0 / 0.12) !important;
+}
+
+html[data-site-theme="light"] .order-form--hero .order-form-hero-checkbox {
+  border-color: #404040 !important;
+}
+
+html[data-site-theme="light"] .order-form--hero .order-form-hero-pay-arrow {
+  color: var(--color-provin-accent) !important;
+}
+
+html[data-site-theme="light"] .order-form--hero .order-form-hero-alert {
+  border-color: rgb(220 38 38 / 0.45) !important;
+  background-color: rgb(254 242 242 / 0.98) !important;
+  color: #991b1b !important;
 }
 
 html[data-site-theme="light"] .order-form-hero-field:focus-within {
@@ -145,7 +196,12 @@ html[data-site-theme="light"] .order-form-hero-field:focus-within {
 
 html[data-site-theme="light"] .order-form-hero-field:focus-within input,
 html[data-site-theme="light"] .order-form-hero-field:focus-within textarea {
-  color: #111827;
+  color: #000000;
+}
+
+html[data-site-theme="light"] .order-form-hero-field:focus-within input::placeholder,
+html[data-site-theme="light"] .order-form-hero-field:focus-within textarea::placeholder {
+  color: #525252 !important;
 }
 
 /* Lab CTA — hover oranžs */
@@ -159,7 +215,7 @@ html[data-site-theme="light"] .lab-chrome-cta:hover {
 
 /* Design-direction virsma */
 html[data-site-theme="light"] .demo-design-dir {
-  color: rgb(20 22 26 / 0.92);
+  color: #171717;
   background: #f4f5f7;
   --dd-line: rgb(20 20 24 / 0.12);
   --dd-line-strong: rgb(255 90 0 / 0.45);
@@ -218,11 +274,11 @@ html[data-site-theme="light"] .demo-design-dir__title {
 }
 
 html[data-site-theme="light"] .demo-design-dir__body {
-  color: #374151;
+  color: #27272a;
 }
 
 html[data-site-theme="light"] .demo-design-dir__kicker {
-  color: #6b7280 !important;
+  color: #525252 !important;
 }
 
 html[data-site-theme="light"] .marketing-hero-pillar-title {
@@ -265,7 +321,7 @@ html[data-site-theme="light"] nav.site-section-rail a[aria-current="location"] {
 }
 
 html[data-site-theme="light"] nav.site-section-rail a:not([aria-current="location"]) {
-  color: rgb(17 24 39 / 0.38) !important;
+  color: rgb(17 24 39 / 0.55) !important;
 }
 
 html[data-site-theme="light"] nav.site-section-rail a:hover {
@@ -295,9 +351,35 @@ html[data-site-theme="light"] main .text-white {
   color: #141416 !important;
 }
 
+html[data-site-theme="light"] main .text-white\/35,
+html[data-site-theme="light"] main .text-white\/40 {
+  color: #525252 !important;
+}
+
+html[data-site-theme="light"] main .text-white\/45,
+html[data-site-theme="light"] main .text-white\/50 {
+  color: #474749 !important;
+}
+
+html[data-site-theme="light"] main .text-white\/55,
+html[data-site-theme="light"] main .text-white\/60 {
+  color: #3f3f46 !important;
+}
+
+html[data-site-theme="light"] main .text-white\/65,
+html[data-site-theme="light"] main .text-white\/70,
+html[data-site-theme="light"] main .text-white\/75 {
+  color: #27272a !important;
+}
+
+html[data-site-theme="light"] main .text-white\/80,
+html[data-site-theme="light"] main .text-white\/85 {
+  color: #18181b !important;
+}
+
 html[data-site-theme="light"] main .text-white\/90,
 html[data-site-theme="light"] main .text-white\/95 {
-  color: rgb(20 20 24 / 0.92) !important;
+  color: #000000 !important;
 }
 
 html[data-site-theme="light"] main .border-white\/10,
@@ -324,4 +406,65 @@ html[data-site-theme="light"] .via-\[\#050505\]\/85 {
 
 html[data-site-theme="light"] .to-\[\#050505\] {
   --tw-gradient-to: #f0f2f5 !important;
+}
+
+/* Sīkā kolonna „Kas ir IRISS” — virsraksti bija gandrīz balti */
+html[data-site-theme="light"] .iriss-editorial-heading {
+  color: #000000 !important;
+}
+
+html[data-site-theme="light"] .iriss-stagger-heading {
+  color: #000000 !important;
+}
+
+html[data-site-theme="light"] .iriss-social-btn {
+  border-color: rgb(0 0 0 / 0.14) !important;
+  background-color: rgb(255 255 255 / 0.92) !important;
+  color: #27272a !important;
+}
+
+html[data-site-theme="light"] .iriss-social-btn:hover {
+  border-color: rgb(255 90 0 / 0.45) !important;
+  color: #000000 !important;
+}
+
+/* Pasūtījuma sadaļa: atcelšanas ziņojums */
+html[data-site-theme="light"] .order-section-cancel-banner {
+  border-color: rgb(0 0 0 / 0.1) !important;
+  background-color: rgb(255 255 255 / 0.95) !important;
+  color: #3f3f46 !important;
+  box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.04) !important;
+}
+
+/* Sīkdatnes — fiksēts panelis ārpus `main` */
+html[data-site-theme="light"] .cookie-consent-panel {
+  border-color: rgb(0 0 0 / 0.12) !important;
+  background-color: rgb(255 255 255 / 0.96) !important;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.12) !important;
+}
+
+html[data-site-theme="light"] .cookie-consent-panel__title {
+  color: #000000 !important;
+}
+
+html[data-site-theme="light"] .cookie-consent-panel__body {
+  color: #404040 !important;
+}
+
+html[data-site-theme="light"] .cookie-consent-panel__link {
+  color: var(--color-provin-accent) !important;
+}
+
+html[data-site-theme="light"] .cookie-consent-panel__actions {
+  border-top-color: rgb(0 0 0 / 0.08) !important;
+}
+
+html[data-site-theme="light"] .cookie-consent-panel__btn-secondary {
+  border-color: rgb(0 0 0 / 0.12) !important;
+  background-color: rgb(248 250 252 / 0.98) !important;
+  color: #0a0a0a !important;
+}
+
+html[data-site-theme="light"] .cookie-consent-panel__btn-secondary:hover {
+  background-color: rgb(241 245 249 / 0.98) !important;
 }

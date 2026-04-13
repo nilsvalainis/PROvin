@@ -53,7 +53,7 @@ export function OrderSection({
         <div className="flex w-full flex-col items-center gap-4">
           {cancelled && (
             <p
-              className="mx-auto max-w-md rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-[13px] font-normal text-[#b8bcc4] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+              className="order-section-cancel-banner mx-auto max-w-md rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-[13px] font-normal text-[#b8bcc4] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
               role="status"
             >
               {t("cancelled")}

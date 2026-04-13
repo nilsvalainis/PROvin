@@ -8,14 +8,14 @@ import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { validateOrderFields } from "@/lib/order-field-validation";
 
 const labelHero =
-  "block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#e5e7eb]";
+  "order-form-hero-label block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#e5e7eb]";
 
 const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
 
 /** Dark cockpit: laukam bez apakšējās robežas — līniju un zilo impulsu dod `HeroFieldScanLine`. */
 const inputHeroNoBottom =
-  "relative z-10 box-border min-h-11 w-full appearance-none rounded-none border-0 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#e5e7eb] shadow-none outline-none ring-0 transition-[color,background-color] placeholder:text-[#e5e7eb]/38 focus:shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
+  "order-form-hero-input relative z-10 box-border min-h-11 w-full appearance-none rounded-none border-0 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#e5e7eb] shadow-none outline-none ring-0 transition-[color,background-color] placeholder:text-[#e5e7eb]/38 focus:shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
 
 const inputDefault =
   "mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505]/75 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition-[border-color] placeholder:text-[#86868b] focus:border-provin-accent focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
@@ -113,13 +113,17 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
   const notesRows = hero ? 3 : compact ? 3 : 4;
 
   const hintClass = hero
-    ? "mt-1.5 text-[11px] font-normal leading-snug text-[#e5e7eb]/55"
+    ? "order-form-hero-hint mt-1.5 text-[11px] font-normal leading-snug text-[#e5e7eb]/55"
     : "mt-1 text-[11px] font-normal leading-snug text-[#86868b]";
 
   const reqStarClass = hero ? "text-red-400" : "text-red-600";
 
   return (
-    <form onSubmit={onSubmit} className={formShell} noValidate>
+    <form
+      onSubmit={onSubmit}
+      className={`${formShell}${hero ? " order-form--hero" : ""}`}
+      noValidate
+    >
       <div className={`grid sm:grid-cols-2 ${gridGap}`}>
         <div className="sm:col-span-2">
           <label htmlFor="order-name" className={labelClass}>
@@ -246,7 +250,13 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               }}
             />
           )}
-          <p className={hero ? "mt-1.5 text-[11px] font-normal text-[#e5e7eb]/52" : "mt-1 text-[11px] font-normal text-[#aeaeb2]"}>
+          <p
+            className={
+              hero
+                ? "order-form-hero-vin-hint mt-1.5 text-[11px] font-normal text-[#e5e7eb]/52"
+                : "mt-1 text-[11px] font-normal text-[#aeaeb2]"
+            }
+          >
             {t("vinHint")}
           </p>
         </div>
@@ -306,7 +316,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
       <div
         className={
           hero
-            ? "mt-6 space-y-5 border-t border-[#c0c0c0]/25 pt-5"
+            ? "order-form-hero-footer mt-6 space-y-5 border-t border-[#c0c0c0]/25 pt-5"
             : compact
               ? "mt-4 flex flex-col gap-3"
               : "mt-8 flex flex-col gap-3 border-t border-black/[0.06] pt-8"
@@ -314,18 +324,20 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
       >
         {hero ? (
           <>
-            <div className="border-b border-[#c0c0c0]/35 pb-4" role="group" aria-label={t("ariaSummary")}>
+            <div className="order-form-hero-rule border-b border-[#c0c0c0]/35 pb-4" role="group" aria-label={t("ariaSummary")}>
               <div className="flex items-baseline justify-between gap-4">
-                <span className="text-[13px] font-medium text-[#e5e7eb]">{t("summaryLabel")}</span>
-                <span className="text-[1.85rem] font-bold tabular-nums tracking-tight text-[#c0c0c0] sm:text-[2rem]">
+                <span className="order-form-hero-summary-label text-[13px] font-medium text-[#e5e7eb]">{t("summaryLabel")}</span>
+                <span className="order-form-hero-price text-[1.85rem] font-bold tabular-nums tracking-tight text-[#c0c0c0] sm:text-[2rem]">
                   79,99&nbsp;€
                 </span>
               </div>
-              <p className="mt-2 text-[11px] font-normal leading-snug text-[#e5e7eb]/58 sm:text-[12px]">{t("summaryNote")}</p>
+              <p className="order-form-hero-summary-note mt-2 text-[11px] font-normal leading-snug text-[#e5e7eb]/58 sm:text-[12px]">
+                {t("summaryNote")}
+              </p>
             </div>
             <label
               htmlFor="order-checkout-consent"
-              className="flex min-h-11 cursor-pointer items-start gap-3 border-b border-[#c0c0c0]/35 pb-4 text-left sm:min-h-0"
+              className="order-form-hero-rule flex min-h-11 cursor-pointer items-start gap-3 border-b border-[#c0c0c0]/35 pb-4 text-left sm:min-h-0"
             >
               <input
                 id="order-checkout-consent"
@@ -333,10 +345,10 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 name="withdrawalConsent"
                 checked={withdrawalConsent}
                 onChange={(e) => setWithdrawalConsent(e.target.checked)}
-                className="mt-1 h-4 w-4 shrink-0 rounded border-[#c0c0c0] bg-transparent text-provin-accent focus:ring-1 focus:ring-[#0066ff]/40 sm:mt-0.5 sm:h-4 sm:w-4"
+                className="order-form-hero-checkbox mt-1 h-4 w-4 shrink-0 rounded border-[#c0c0c0] bg-transparent text-provin-accent focus:ring-1 focus:ring-[#0066ff]/40 sm:mt-0.5 sm:h-4 sm:w-4"
                 aria-label={t("checkoutConsentAria")}
               />
-              <span className="text-[12px] font-normal leading-snug text-[#e5e7eb] sm:text-[13px]">
+              <span className="order-form-hero-consent-text text-[12px] font-normal leading-snug text-[#e5e7eb] sm:text-[13px]">
                 {t.rich("checkoutConsent", {
                   terms: (chunks) => (
                     <Link
@@ -367,11 +379,17 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               ) : (
                 <>
                   {t("payButton")}
-                  <ArrowRight className="h-4 w-4 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
+                  <ArrowRight
+                    className="order-form-hero-pay-arrow h-4 w-4 shrink-0 text-[#7eb6ff]/90"
+                    strokeWidth={2}
+                    aria-hidden
+                  />
                 </>
               )}
             </button>
-            <p className="text-center text-[10px] font-normal leading-relaxed text-[#e5e7eb]/48 sm:text-[11px]">{t("stripeNote")}</p>
+            <p className="order-form-hero-stripe-note text-center text-[10px] font-normal leading-relaxed text-[#e5e7eb]/48 sm:text-[11px]">
+              {t("stripeNote")}
+            </p>
           </>
         ) : (
           <>
@@ -431,7 +449,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         <p
           className={
             hero
-              ? "mt-5 rounded-md border border-red-500/35 bg-red-950/30 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-200"
+              ? "order-form-hero-alert mt-5 rounded-md border border-red-500/35 bg-red-950/30 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-200"
               : "mt-4 rounded-lg border border-red-200/90 bg-red-50/95 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-900"
           }
           role="alert"

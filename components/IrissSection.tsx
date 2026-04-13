@@ -45,21 +45,27 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
 
         <div className="mx-auto mt-10 max-w-[36rem] space-y-10 text-left">
           <div>
-            <h3 className="text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">{t("block1Heading")}</h3>
+            <h3 className="iriss-editorial-heading text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">
+              {t("block1Heading")}
+            </h3>
             <div className="mt-3 w-full">
               <DiagnosticScanLine variant="rail" motion="split" className="w-full" />
             </div>
             <p className="demo-design-dir__body mt-3">{t("block1Body")}</p>
           </div>
           <div>
-            <h3 className="text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">{t("block2Heading")}</h3>
+            <h3 className="iriss-editorial-heading text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">
+              {t("block2Heading")}
+            </h3>
             <div className="mt-3 w-full">
               <DiagnosticScanLine variant="rail" motion="split" className="w-full" />
             </div>
             <p className="demo-design-dir__body mt-3 whitespace-pre-line">{t("block2Body")}</p>
           </div>
           <div>
-            <h3 className="text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">{t("block3Heading")}</h3>
+            <h3 className="iriss-editorial-heading text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">
+              {t("block3Heading")}
+            </h3>
             <div className="mt-3 w-full">
               <DiagnosticScanLine variant="rail" motion="split" className="w-full" />
             </div>
@@ -151,7 +157,7 @@ function IrissSocialIcons({
   socialSoon: string;
 }) {
   const btnClass =
-    "flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-[#b8bcc4] shadow-sm transition will-change-[box-shadow,border-color] hover:border-provin-accent/45 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent";
+    "iriss-social-btn flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-[#b8bcc4] shadow-sm transition will-change-[box-shadow,border-color] hover:border-provin-accent/45 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent";
 
   const disabledClass = `${btnClass} cursor-default opacity-55 hover:border-white/15 hover:bg-white/[0.06] hover:text-[#b8bcc4] hover:shadow-none`;
 
