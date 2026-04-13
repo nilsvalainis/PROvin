@@ -116,7 +116,7 @@ export function LensVariantDemos() {
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Demo · prototipi</p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white/95 sm:text-3xl">Palielināmā stikla varianti</h1>
         <p className="mt-3 max-w-[50rem] text-[14px] leading-relaxed text-white/58">
-          Salīdzināšanai — ģeometrija (§1), kustības pieeja (§2), desmit alternatīvi motīvi (§5), vizuālais punkts (§3), pieejamība (§4). Produkcijas hero nav mainīts.
+          Salīdzināšanai — ģeometrija (§1), kustības pieeja (§2), trīsdesmit alternatīvi motīvi (§5), vizuālais punkts (§3), pieejamība (§4). Produkcijas hero nav mainīts.
         </p>
         <label className="mt-5 flex cursor-pointer items-center gap-3 text-[13px] text-white/70">
           <input
@@ -386,8 +386,8 @@ export function LensVariantDemos() {
           <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7eb6ff]">4 · prefers-reduced-motion</h3>
           <p className="mt-2 text-[13px] leading-relaxed text-white/55">
             Izmanto ieķeksēšanu lapas augšā: 2A izslēdz <span className="font-mono">animateMotion</span>, 2B/2D un §5 ar{" "}
-            <span className="font-mono">stroke-dashoffset</span> — CSS animācijas, 2C — aptur <span className="font-mono">rAF</span> un tur punktu kāta apakšā. §5
-            SMIL elementiem — statisks sākuma punkts. Produkcijā —{" "}
+            <span className="font-mono">stroke-dashoffset</span> — CSS animācijas; §5 arī skenēšanas līnijas un paneļa indikatori (CSS). 2C — aptur{" "}
+            <span className="font-mono">rAF</span> un tur punktu kāta apakšā. §5 SMIL elementiem — statisks sākuma punkts; rotējošs stars (E23) — statisks leņķis. Produkcijā —{" "}
             <span className="font-mono">matchMedia(&quot;(prefers-reduced-motion: reduce)&quot;)</span> vai līdzīgi.
           </p>
         </article>

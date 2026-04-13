@@ -1,5 +1,6 @@
 "use client";
 
+import { LensMotionAlternatesMore } from "@/components/demo/LensMotionAlternatesMore";
 import {
   HANDLE_RAIL_A,
   HANDLE_RAIL_B,
@@ -65,32 +66,76 @@ function SmilDot({
   );
 }
 
-/** §5 — desmit stilistiski atšķirīgi „punkts pa ceļam” risinājumi (tikai demo). */
+/** §5 — trīsdesmit stilistiski atšķirīgi „punkts pa ceļam” risinājumi (tikai demo). */
 export function LensMotionAlternatesSection({ baseId, forceReduceMotion, cardClass }: Props) {
   return (
     <section className="mb-14 scroll-mt-28" id="lens-demo-alternates">
       <h2 className="text-lg font-semibold text-white/95">§5 Alternatīvie risinājumi — tā pati ideja, cits izpildījums</h2>
       <p className="mt-2 max-w-[52rem] text-[13px] leading-relaxed text-white/50">
-        Viens ceļš <span className="font-mono text-[11px] text-white/40">MOTION_PATH_D</span> un lēcas siluets; mainās tikai estētika un tehnika (OBD paneļa, shēmas, datu līnijas u.c.). Produkcijai — izvēlēties vienu virzienu.
+        Viens ceļš <span className="font-mono text-[11px] text-white/40">MOTION_PATH_D</span> un lēcas siluets; <strong className="font-normal text-white/65">E1–E10</strong> pamata virzieni,{" "}
+        <strong className="font-normal text-white/65">E11–E30</strong> paplašinājumi (nobraukuma līknes, tēmekļi, skenēšana, līniju variācijas). Produkcijai — izvēlēties vienu virzienu.
       </p>
       <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {/* E1 — Auto / OBD telemetrija */}
+        {/* E1 — Auto / OBD telemetrija (paplašināts track-day paneļa izpildījums) */}
         <article className={cardClass}>
           <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#ffb347]">E1 · OBD / telemetrijas panelis</h3>
           <p className="mt-2 text-[12px] text-white/50">
-            Dzeltens „dzīvais” impulss, maza LED josla un instrumenta zilā lēca — kā diagnostikas vai track-day displejs.
+            Dzeltens „dzīvais” impulss, piecu segmentu LED josla, <span className="text-white/40">REC</span> indikators, mini mērierīces loka atzīmes un horizontāla skenēšana lēcas
+            stiklā — kā diagnostikas vai track-day displejs.
           </p>
           <div className="lens-variant-demos__stage lens-variant-demos__stage--2d-glow mt-4">
             <svg viewBox="0 0 112 112" className="w-full overflow-visible" fill="none" aria-hidden>
-              <rect x="0" y="0" width="112" height="112" fill="rgb(8 10 12)" rx="4" />
+              <defs>
+                <clipPath id={`${baseId}-e1-scan-clip`}>
+                  <circle cx="44" cy="44" r="24.8" />
+                </clipPath>
+              </defs>
+              <rect x="0.5" y="0.5" width="111" height="111" className="lens-variant-demos__alt-e1-bezel" rx="5" />
+              <circle cx="6" cy="6" r="0.9" fill="rgb(60 65 72)" stroke="rgb(90 95 102)" strokeWidth="0.2" />
+              <circle cx="106" cy="6" r="0.9" fill="rgb(60 65 72)" stroke="rgb(90 95 102)" strokeWidth="0.2" />
+              <circle cx="6" cy="106" r="0.9" fill="rgb(60 65 72)" stroke="rgb(90 95 102)" strokeWidth="0.2" />
+              <circle cx="106" cy="106" r="0.9" fill="rgb(60 65 72)" stroke="rgb(90 95 102)" strokeWidth="0.2" />
+              <text x="7" y="11" fill="rgb(255 170 80 / 0.85)" fontSize="4.2" fontFamily="ui-monospace, monospace" letterSpacing="0.08em">
+                OBD · LIVE
+              </text>
+              <g transform="translate(78 10)">
+                <circle className="lens-variant-demos__alt-e1-rec" cx="3" cy="3" r="1.6" fill="rgb(255 60 60)" />
+                <text x="6.5" y="4.6" fill="rgb(255 200 180 / 0.75)" fontSize="3.4" fontFamily="ui-monospace, monospace">
+                  REC
+                </text>
+              </g>
               <LensBodyInstrument gid={`${baseId}-e1-g`} lid={`${baseId}-e1-lc`} cid={`${baseId}-e1-cp`} />
+              <g clipPath={`url(#${baseId}-e1-scan-clip)`}>
+                <line x1="19" y1="44" x2="69" y2="44" className="lens-variant-demos__alt-e1-scanline lens-demo-animated" vectorEffect="non-scaling-stroke" />
+              </g>
+              <path
+                d="M 33 50 A 11 11 0 0 1 55 50"
+                fill="none"
+                stroke="rgb(255 200 100 / 0.2)"
+                strokeWidth="0.35"
+                vectorEffect="non-scaling-stroke"
+              />
+              {[0, 1, 2, 3, 4, 5, 6].map((i) => {
+                const a = -150 + i * 25;
+                const rad = ((a - 90) * Math.PI) / 180;
+                const cx = 44 + 10.5 * Math.cos(rad);
+                const cy = 50 + 10.5 * Math.sin(rad);
+                return <circle key={i} cx={cx} cy={cy} r="0.35" fill="rgb(255 200 120 / 0.45)" />;
+              })}
               <Rails gid={`${baseId}-e1-g`} />
-              <g className="lens-variant-demos__alt-e1-leds" transform="translate(86 18)">
-                <rect x="0" y="8" width="3" height="10" rx="0.5" fill="rgb(255 200 80 / 0.35)" />
-                <rect x="5" y="4" width="3" height="14" rx="0.5" fill="rgb(255 200 80 / 0.5)" />
-                <rect x="10" y="6" width="3" height="12" rx="0.5" fill="rgb(255 200 80 / 0.4)" />
+              <g className="lens-variant-demos__alt-e1-leds" transform="translate(82 22)">
+                <rect x="0" y="10" width="2.6" height="9" rx="0.45" fill="rgb(255 200 80 / 0.3)" />
+                <rect x="4" y="6" width="2.6" height="13" rx="0.45" fill="rgb(255 200 80 / 0.45)" />
+                <rect x="8" y="8" width="2.6" height="11" rx="0.45" fill="rgb(255 200 80 / 0.38)" />
+                <rect x="12" y="5" width="2.6" height="14" rx="0.45" fill="rgb(255 200 80 / 0.52)" />
+                <rect x="16" y="7" width="2.6" height="12" rx="0.45" fill="rgb(255 200 80 / 0.4)" />
               </g>
               <path d={MOTION_PATH_D} pathLength="100" className="lens-variant-demos__alt-e1-track" />
+              <path
+                d={MOTION_PATH_D}
+                pathLength="100"
+                className="lens-variant-demos__alt-e1-pulse-ghost lens-variant-demos__alt-anim-dash lens-demo-animated"
+              />
               <path d={MOTION_PATH_D} pathLength="100" className="lens-variant-demos__alt-e1-pulse lens-variant-demos__alt-anim-dash lens-demo-animated" />
             </svg>
           </div>
@@ -348,6 +393,8 @@ export function LensMotionAlternatesSection({ baseId, forceReduceMotion, cardCla
           </div>
         </article>
       </div>
+
+      <LensMotionAlternatesMore baseId={baseId} forceReduceMotion={forceReduceMotion} cardClass={cardClass} />
     </section>
   );
 }
