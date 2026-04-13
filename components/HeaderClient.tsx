@@ -108,11 +108,11 @@ export function HeaderClient({
     : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
   /**
-   * `lg+` sliežu lapās: PROVIN kreisā mala virs sliedes izvēlnes kreisās malas
-   * (`SiteSectionRail`: `left: max(0.5rem,safe)` + `pl-1`), ņemot vērā header `max-w` + `px-6` centrējumu.
+   * `lg+` sliežu lapās: PROVIN kreisā mala tūlīt aiz vertikālās līnijas (pēc `pl-1` + `pl-0.5` + `w-3`),
+   * nevis virs tās; ņem vērā header `max-w` + `px-6` centrējumu.
    */
   const logoRailMarginClass = logoAlignWithRailSakums
-    ? "lg:ml-[calc(max(0.5rem,env(safe-area-inset-left,0px))+0.25rem-(100vw-min(100vw,64rem))/2-1.5rem)]"
+    ? "lg:ml-[calc(max(0.5rem,env(safe-area-inset-left,0px))+1.125rem-(100vw-min(100vw,64rem))/2-1.5rem)]"
     : null;
 
   const logoClass = [
