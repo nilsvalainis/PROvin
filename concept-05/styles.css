@@ -1,0 +1,14 @@
+body{margin:0;background:#03040a;color:#e6f7ff;font-family:ui-monospace,Menlo,Consolas,monospace;min-height:100vh}
+    .crt{position:relative;min-height:100vh;overflow:hidden}
+    .scan{pointer-events:none;position:absolute;inset:0;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.03),rgba(255,255,255,.03) 1px,transparent 1px,transparent 3px);mix-blend-mode:overlay;animation:drift 9s linear infinite}
+    @keyframes drift{to{transform:translateY(12px)}}
+    .wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:2.5rem 1.25rem}
+    .mono{opacity:.65;letter-spacing:.25em;font-size:.7rem}
+    .glitch{font-size:clamp(2.4rem,6vw,4rem);margin:.5rem 0;text-shadow:0 0 12px #00e5ff,0 0 28px #7c4dff;animation:gl 2.6s infinite alternate}
+    @keyframes gl{0%{transform:translate(0)}20%{transform:translate(-2px,1px)}40%{transform:translate(2px,-1px)}60%{transform:translate(-1px,-1px)}100%{transform:translate(0)}}
+    .sub{opacity:.75}
+    .panel{margin-top:1.5rem;display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;border:1px solid rgba(0,229,255,.45);box-shadow:0 0 18px rgba(0,229,255,.25);padding:1rem;background:rgba(0,20,40,.55)}
+    .pill{font-size:.65rem;padding:.2rem .45rem;border:1px solid #00e5ff;color:#00e5ff}
+    input{flex:1;min-width:200px;background:transparent;border:1px solid rgba(124,77,255,.55);color:#dff;padding:.65rem .75rem;outline:none;box-shadow:0 0 10px rgba(124,77,255,.25)}
+    button{border:0;background:linear-gradient(90deg,#00e5ff,#7c4dff);color:#020308;font-weight:800;padding:.65rem 1rem;cursor:pointer;box-shadow:0 0 20px rgba(0,229,255,.35)}
+    .log{margin-top:1rem;min-height:4rem;border:1px dashed rgba(0,229,255,.35);padding:.75rem;white-space:pre-wrap;color:#9adfff}
