@@ -45,6 +45,12 @@ export default async function DemoStudioPage({ params }: PageProps) {
               Tikai hero varianti
             </Link>
             <Link
+              href="/demo/hero-radial-hub"
+              className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
+            >
+              Hero radialais tīkls (10)
+            </Link>
+            <Link
               href="/demo/design-direction"
               className="rounded-full border border-white/12 px-4 py-2 transition hover:border-[#0066ff]/35 hover:text-white/80"
             >

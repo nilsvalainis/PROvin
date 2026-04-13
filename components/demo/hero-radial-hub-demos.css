@@ -1,0 +1,406 @@
+/**
+ * `/demo/hero-radial-hub` — 10 hero tīkla / radiaļu demo varianti.
+ */
+
+.hero-rad-hub {
+  position: relative;
+  isolation: isolate;
+  min-height: min(92dvh, 52rem);
+  overflow: hidden;
+}
+
+.hero-rad-hub__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.hero-rad-hub__center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  display: flex;
+  max-width: min(92vw, 28rem);
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.hero-rad-hub__kicker {
+  font-size: clamp(0.55rem, 1.4vw, 0.68rem);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.hero-rad-hub__h1 {
+  font-size: clamp(1.05rem, 3.8vw, 1.85rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: 0.02em;
+  text-wrap: balance;
+}
+
+.hero-rad-hub__h1-sub {
+  margin-top: 0.2rem;
+  font-size: clamp(1.2rem, 4.2vw, 2.05rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.hero-rad-hub__tag {
+  margin-top: 0.15rem;
+  max-width: 20rem;
+  font-size: clamp(0.58rem, 1.35vw, 0.72rem);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.hero-rad-hub__node {
+  position: absolute;
+  z-index: 2;
+  max-width: min(42vw, 9.5rem);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.hero-rad-hub__node--t {
+  left: 50%;
+  top: 7%;
+  transform: translateX(-50%);
+}
+
+.hero-rad-hub__node--r {
+  right: 4%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.hero-rad-hub__node--b {
+  bottom: 6%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.hero-rad-hub__node--l {
+  left: 4%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.hero-rad-hub__node-k {
+  font-size: clamp(0.5rem, 1.15vw, 0.62rem);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.25;
+}
+
+.hero-rad-hub__node-s {
+  margin-top: 0.2rem;
+  font-size: clamp(0.45rem, 1vw, 0.55rem);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+  opacity: 0.65;
+  white-space: pre-line;
+}
+
+/* Kopīgās līniju animācijas */
+@keyframes hero-rad-hub-dash {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes hero-rad-hub-pulse-op {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes hero-rad-hub-glow-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 2px rgb(0 200 100 / 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgb(0 255 140 / 0.65));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-rad-hub__anim-dash,
+  .hero-rad-hub__anim-pulse-line,
+  .hero-rad-hub__anim-reticle,
+  .hero-rad-hub__anim-thermal,
+  .hero-rad-hub__anim-minimal,
+  .hero-rad-hub__anim-hex,
+  .hero-rad-hub__particle {
+    animation: none !important;
+  }
+
+  .hero-rad-hub__anim-dash {
+    stroke-dashoffset: 0 !important;
+  }
+
+  /* SMIL `animateMotion` neievēro CSS animāciju izslēgšanu */
+  .hero-rad-hub--v10 circle.hero-rad-hub__particle {
+    display: none;
+  }
+}
+
+/* ——— V1 Punktu globuss ——— */
+.hero-rad-hub--v1 {
+  background: radial-gradient(ellipse 70% 55% at 50% 48%, rgb(18 22 32) 0%, #020204 72%);
+}
+
+.hero-rad-hub--v1::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgb(255 255 255 / 0.04) 0.5px, transparent 0.6px);
+  background-size: 5px 5px;
+  opacity: 0.35;
+  mask-image: radial-gradient(ellipse 55% 50% at 50% 50%, black 0%, transparent 75%);
+}
+
+.hero-rad-hub--v1 .hero-rad-hub__kicker,
+.hero-rad-hub--v1 .hero-rad-hub__h1,
+.hero-rad-hub--v1 .hero-rad-hub__h1-sub,
+.hero-rad-hub--v1 .hero-rad-hub__node {
+  color: rgb(245 245 248);
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+.hero-rad-hub--v1 .hero-rad-hub__line {
+  stroke: rgb(255 255 255 / 0.22);
+  stroke-width: 0.55;
+  vector-effect: non-scaling-stroke;
+}
+
+.hero-rad-hub--v1 .hero-rad-hub__line-glow {
+  stroke: rgb(255 255 255 / 0.08);
+  stroke-width: 2.2;
+  vector-effect: non-scaling-stroke;
+}
+
+.hero-rad-hub--v1 .hero-rad-hub__anim-pulse-line {
+  animation: hero-rad-hub-pulse-op 3.2s ease-in-out infinite;
+}
+
+.hero-rad-hub--v1 .hero-rad-hub__node-ring {
+  stroke: rgb(255 255 255 / 0.5);
+  stroke-width: 0.45;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ——— V2 OBD / termināļa pavedieni ——— */
+.hero-rad-hub--v2 {
+  background: linear-gradient(165deg, #030806 0%, #050a08 50%, #020302 100%);
+}
+
+.hero-rad-hub--v2 .hero-rad-hub__kicker,
+.hero-rad-hub--v2 .hero-rad-hub__h1,
+.hero-rad-hub--v2 .hero-rad-hub__h1-sub,
+.hero-rad-hub--v2 .hero-rad-hub__node {
+  color: rgb(160 255 190 / 0.92);
+  font-family: ui-monospace, monospace;
+}
+
+.hero-rad-hub--v2 .hero-rad-hub__line {
+  stroke: rgb(60 220 120 / 0.55);
+  stroke-width: 0.65;
+  stroke-dasharray: 3 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.hero-rad-hub--v2 .hero-rad-hub__anim-dash {
+  animation: hero-rad-hub-dash 2.8s linear infinite;
+}
+
+.hero-rad-hub--v2 .hero-rad-hub__line-ghost {
+  stroke: rgb(40 180 90 / 0.2);
+  stroke-width: 1.8;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ——— V3 Tēmeklis / diagnostika ——— */
+.hero-rad-hub--v3 {
+  background: #030303;
+}
+
+.hero-rad-hub--v3 .hero-rad-hub__kicker,
+.hero-rad-hub--v3 .hero-rad-hub__h1,
+.hero-rad-hub--v3 .hero-rad-hub__h1-sub,
+.hero-rad-hub--v3 .hero-rad-hub__node {
+  color: #f5f5f5;
+  font-family: ui-serif, Georgia, serif;
+}
+
+.hero-rad-hub--v3 .hero-rad-hub__line {
+  stroke: rgb(255 255 255 / 0.35);
+  stroke-width: 0.45;
+  vector-effect: non-scaling-stroke;
+}
+
+.hero-rad-hub--v3 .hero-rad-hub__anim-reticle {
+  animation: hero-rad-hub-pulse-op 1.8s ease-in-out infinite;
+}
+
+/* ——— V4 Sparkline / nobraukuma līknes ——— */
+.hero-rad-hub--v4 {
+  background: radial-gradient(circle at 50% 40%, rgb(8 16 40) 0%, #020308 65%);
+}
+
+.hero-rad-hub--v4 .hero-rad-hub__kicker,
+.hero-rad-hub--v4 .hero-rad-hub__h1,
+.hero-rad-hub--v4 .hero-rad-hub__h1-sub,
+.hero-rad-hub--v4 .hero-rad-hub__node {
+  color: rgb(220 235 255);
+  font-family: system-ui, sans-serif;
+}
+
+.hero-rad-hub--v4 .hero-rad-hub__line {
+  stroke: rgb(0 180 255 / 0.35);
+  stroke-width: 0.5;
+  stroke-dasharray: 10 90;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ——— V5 Hex tīkls ——— */
+.hero-rad-hub--v5 {
+  background: linear-gradient(180deg, #04060c 0%, #070a14 100%);
+}
+
+.hero-rad-hub--v5 .hero-rad-hub__kicker,
+.hero-rad-hub--v5 .hero-rad-hub__h1,
+.hero-rad-hub--v5 .hero-rad-hub__h1-sub,
+.hero-rad-hub--v5 .hero-rad-hub__node {
+  color: rgb(200 220 255);
+}
+
+.hero-rad-hub--v5 .hero-rad-hub__line {
+  stroke: rgb(100 160 255 / 0.4);
+  stroke-width: 0.55;
+  vector-effect: non-scaling-stroke;
+}
+
+.hero-rad-hub--v5 .hero-rad-hub__anim-hex {
+  animation: hero-rad-hub-pulse-op 2.4s ease-in-out infinite;
+}
+
+/* ——— V6 Odometrs / ceļš ——— */
+.hero-rad-hub--v6 {
+  background: radial-gradient(ellipse 80% 60% at 50% 55%, rgb(35 28 18) 0%, #0a0804 70%);
+}
+
+.hero-rad-hub--v6 .hero-rad-hub__kicker,
+.hero-rad-hub--v6 .hero-rad-hub__h1,
+.hero-rad-hub--v6 .hero-rad-hub__h1-sub,
+.hero-rad-hub--v6 .hero-rad-hub__node {
+  color: rgb(255 230 200);
+}
+
+.hero-rad-hub--v6 .hero-rad-hub__line {
+  stroke: rgb(255 180 80 / 0.45);
+  stroke-width: 1.1;
+  stroke-dasharray: 1 4;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.hero-rad-hub--v6 .hero-rad-hub__anim-dash {
+  animation: hero-rad-hub-dash 1.6s linear infinite;
+}
+
+/* ——— V7 Blueprint ——— */
+.hero-rad-hub--v7 {
+  background-color: #061018;
+  background-image: linear-gradient(rgb(0 140 200 / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(0 140 200 / 0.06) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.hero-rad-hub--v7 .hero-rad-hub__kicker,
+.hero-rad-hub--v7 .hero-rad-hub__h1,
+.hero-rad-hub--v7 .hero-rad-hub__h1-sub,
+.hero-rad-hub--v7 .hero-rad-hub__node {
+  color: rgb(140 220 255);
+  font-family: ui-monospace, monospace;
+}
+
+.hero-rad-hub--v7 .hero-rad-hub__line {
+  stroke: rgb(80 200 255 / 0.5);
+  stroke-width: 0.45;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ——— V8 Luksusa minimālisms ——— */
+.hero-rad-hub--v8 {
+  background: #000;
+}
+
+.hero-rad-hub--v8 .hero-rad-hub__kicker,
+.hero-rad-hub--v8 .hero-rad-hub__h1,
+.hero-rad-hub--v8 .hero-rad-hub__h1-sub,
+.hero-rad-hub--v8 .hero-rad-hub__node {
+  color: #fafafa;
+  font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+  font-weight: 500;
+}
+
+.hero-rad-hub--v8 .hero-rad-hub__line {
+  stroke: rgb(255 255 255 / 0.14);
+  stroke-width: 0.35;
+  vector-effect: non-scaling-stroke;
+}
+
+.hero-rad-hub--v8 .hero-rad-hub__anim-minimal {
+  animation: hero-rad-hub-pulse-op 5s ease-in-out infinite;
+}
+
+/* ——— V9 Termiskā / datu plūsma ——— */
+.hero-rad-hub--v9 {
+  background: radial-gradient(circle at 50% 50%, rgb(40 12 6) 0%, #050302 70%);
+}
+
+.hero-rad-hub--v9 .hero-rad-hub__kicker,
+.hero-rad-hub--v9 .hero-rad-hub__h1,
+.hero-rad-hub--v9 .hero-rad-hub__h1-sub,
+.hero-rad-hub--v9 .hero-rad-hub__node {
+  color: rgb(255 220 200);
+}
+
+.hero-rad-hub--v9 .hero-rad-hub__anim-thermal {
+  animation: hero-rad-hub-pulse-op 2s ease-in-out infinite;
+}
+
+/* ——— V10 Daļiņu sinhrons ——— */
+.hero-rad-hub--v10 {
+  background: linear-gradient(145deg, #05060a 0%, #0a0c18 100%);
+}
+
+.hero-rad-hub--v10 .hero-rad-hub__kicker,
+.hero-rad-hub--v10 .hero-rad-hub__h1,
+.hero-rad-hub--v10 .hero-rad-hub__h1-sub,
+.hero-rad-hub--v10 .hero-rad-hub__node {
+  color: rgb(230 235 255);
+}
+
+.hero-rad-hub--v10 .hero-rad-hub__line {
+  stroke: rgb(0 120 255 / 0.25);
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
