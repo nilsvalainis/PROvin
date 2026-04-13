@@ -1,0 +1,12 @@
+html{scroll-behavior:smooth}
+    body{margin:0;background:#fbfbfd;color:#0b0b0f;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+    .page{max-width:980px;margin:0 auto;padding:clamp(3rem,8vw,6rem) 1.5rem 6rem}
+    .kicker{letter-spacing:.24em;text-transform:uppercase;font-size:.72rem;color:#6e6e73;margin:0 0 .75rem}
+    .hero{font-size:clamp(2.4rem,5vw,3.6rem);line-height:1.05;font-weight:650;margin:0 0 1rem;letter-spacing:-.02em}
+    .sub{font-size:1.1rem;color:#3a3a3f;max-width:40ch;margin:0}
+    .band{padding:clamp(2.5rem,6vw,4rem) 0;border-top:1px solid rgba(0,0,0,.06)}
+    .narrow{max-width:560px}
+    h2{margin:0 0 .5rem;font-size:1.35rem;font-weight:600}
+    .field{width:100%;max-width:420px;border:1px solid #d2d2d7;border-radius:12px;padding:.85rem 1rem;font:inherit;background:#fff}
+    .reveal{opacity:0;transform:translateY(18px);transition:opacity .8s ease,transform .8s ease}
+    .reveal.on{opacity:1;transform:none}
