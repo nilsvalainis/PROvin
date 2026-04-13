@@ -1,0 +1,268 @@
+/**
+ * `/demo/motion-concepts` — alternatīvi vizuālie koncepti bez palielināmā stikla.
+ */
+
+.motion-concept-demos__stage {
+  min-height: 140px;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: rgb(8 9 12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-concept-demos__anim-pulse,
+  .motion-concept-demos__radar-sweep,
+  .motion-concept-demos__anim-dash,
+  .motion-concept-demos__anim-eq span,
+  .motion-concept-demos__anim-grid-cell,
+  .motion-concept-demos__anim-odometer-scan,
+  .motion-concept-demos__anim-terminal-inner,
+  .motion-concept-demos__anim-bar-fill,
+  .motion-concept-demos__card-mid {
+    animation: none !important;
+  }
+
+  .motion-concept-demos__anim-dash {
+    stroke-dashoffset: 0 !important;
+  }
+
+  .motion-concept-demos__gauge-needle {
+    animation: none !important;
+    transform: rotate(-35deg) !important;
+  }
+
+  .motion-concept-demos__cursor {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+
+  .motion-concept-demos__anim-eq span {
+    height: 48% !important;
+  }
+
+  .motion-concept-demos__anim-grid-cell {
+    opacity: 0.35 !important;
+  }
+
+  .motion-concept-demos__anim-bar-fill {
+    transform: translateX(85%) !important;
+  }
+}
+
+.motion-concept-demos__anim-pulse {
+  animation: motion-concept-blink 1.4s ease-in-out infinite;
+}
+
+@keyframes motion-concept-blink {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* C1 Terminālis */
+.motion-concept-demos__terminal {
+  overflow: hidden;
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  line-height: 1.45;
+  color: rgb(100 255 150 / 0.85);
+  padding: 0.65rem 0.75rem;
+}
+
+.motion-concept-demos__anim-terminal-inner {
+  animation: motion-concept-terminal-scroll 6s linear infinite;
+}
+
+@keyframes motion-concept-terminal-scroll {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-42%);
+  }
+}
+
+.motion-concept-demos__cursor {
+  display: inline-block;
+  width: 6px;
+  height: 10px;
+  margin-left: 2px;
+  background: rgb(100 255 150 / 0.9);
+  vertical-align: -1px;
+  animation: motion-concept-cursor-blink 0.85s step-end infinite;
+}
+
+@keyframes motion-concept-cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* C2 Fāžu josla */
+.motion-concept-demos__phase-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.06);
+  overflow: hidden;
+}
+
+.motion-concept-demos__anim-bar-fill {
+  height: 100%;
+  width: 28%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgb(0 120 255 / 0.2), rgb(0 180 255 / 0.85), rgb(0 120 255 / 0.2));
+  background-size: 200% 100%;
+  animation: motion-concept-phase-slide 2.8s ease-in-out infinite;
+}
+
+@keyframes motion-concept-phase-slide {
+  0%,
+  100% {
+    transform: translateX(-20%);
+    background-position: 0% 50%;
+  }
+  50% {
+    transform: translateX(220%);
+    background-position: 100% 50%;
+  }
+}
+
+/* C3 Radars */
+.motion-concept-demos__radar-sweep {
+  transform-origin: 50px 50px;
+  animation: motion-concept-radar-spin 3.2s linear infinite;
+}
+
+.motion-concept-demos__card-mid {
+  animation: motion-concept-card-mid 2.6s ease-in-out infinite;
+}
+
+@keyframes motion-concept-card-mid {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgb(0 102 255 / 0.28),
+      0 8px 24px rgb(0 0 0 / 0.35);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgb(0 150 255 / 0.55),
+      0 0 28px rgb(0 120 255 / 0.35),
+      0 8px 24px rgb(0 0 0 / 0.35);
+  }
+}
+
+@keyframes motion-concept-radar-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* C4 Mērierīce */
+.motion-concept-demos__gauge-needle {
+  transform-origin: 60px 58px;
+  animation: motion-concept-needle 4s ease-in-out infinite;
+}
+
+@keyframes motion-concept-needle {
+  0%,
+  100% {
+    transform: rotate(-55deg);
+  }
+  50% {
+    transform: rotate(35deg);
+  }
+}
+
+/* C5 Caurule */
+.motion-concept-demos__anim-dash {
+  animation: motion-concept-pipe-dash 2.4s linear infinite;
+}
+
+@keyframes motion-concept-pipe-dash {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+/* C7 EQ */
+.motion-concept-demos__anim-eq span {
+  display: block;
+  width: 100%;
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(180deg, rgb(0 200 255 / 0.85), rgb(0 100 200 / 0.35));
+  animation: motion-concept-eq 0.9s ease-in-out infinite alternate;
+}
+
+.motion-concept-demos__anim-eq span:nth-child(1) {
+  animation-delay: 0s;
+}
+.motion-concept-demos__anim-eq span:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.motion-concept-demos__anim-eq span:nth-child(3) {
+  animation-delay: 0.24s;
+}
+.motion-concept-demos__anim-eq span:nth-child(4) {
+  animation-delay: 0.08s;
+}
+.motion-concept-demos__anim-eq span:nth-child(5) {
+  animation-delay: 0.2s;
+}
+.motion-concept-demos__anim-eq span:nth-child(6) {
+  animation-delay: 0.16s;
+}
+.motion-concept-demos__anim-eq span:nth-child(7) {
+  animation-delay: 0.04s;
+}
+
+@keyframes motion-concept-eq {
+  0% {
+    height: 18%;
+  }
+  100% {
+    height: 92%;
+  }
+}
+
+/* C9 Režģa skenēšana */
+.motion-concept-demos__anim-grid-cell {
+  animation: motion-concept-grid-pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes motion-concept-grid-pulse {
+  0%,
+  100% {
+    opacity: 0.15;
+    box-shadow: inset 0 0 0 1px rgb(0 150 255 / 0);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: inset 0 0 0 1px rgb(0 180 255 / 0.45);
+  }
+}
+
+/* C10 Odometers */
+.motion-concept-demos__anim-odometer-scan {
+  animation: motion-concept-odo-scan 2.2s ease-in-out infinite;
+}
+
+@keyframes motion-concept-odo-scan {
+  0%,
+  100% {
+    transform: translateX(-30%);
+    opacity: 0;
+  }
+  15%,
+  85% {
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateX(130%);
+    opacity: 0.45;
+  }
+}
