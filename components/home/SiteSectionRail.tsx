@@ -3,18 +3,15 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
-import { faqHashHref, homeIntroHashHref, homePath, irissAnchorHref, orderSectionHref } from "@/lib/paths";
-import { ORDER_SECTION_ID } from "@/lib/order-section";
+import {
+  SITE_RAIL_HOME_SCROLL_IDS,
+  buildSiteRailSections,
+  normalizeSitePath,
+  siteRailActiveFromHash,
+  siteRailRouteActiveIndex,
+} from "@/lib/site-rail-sections";
 
-const HOME_SCROLL_IDS = [
-  "home-hero",
-  "home-intro",
-  ORDER_SECTION_ID,
-  "cena",
-  "kas-ir-iriss",
-  "biezi-jautajumi",
-  "kontakti",
-] as const;
+const HOME_SCROLL_IDS = SITE_RAIL_HOME_SCROLL_IDS;
 
 function useHash(): string {
   const [hash, setHash] = useState("");
@@ -25,19 +22,6 @@ function useHash(): string {
     return () => window.removeEventListener("hashchange", read);
   }, []);
   return hash;
-}
-
-function activeFromHash(raw: string): number | null {
-  const h = raw.replace(/^#/, "").toLowerCase();
-  if (!h) return null;
-  if (h === "home-hero") return 0;
-  if (h === "home-intro") return 1;
-  if (h === ORDER_SECTION_ID || h === "order-form" || h === "site-content") return 2;
-  if (h === "cena") return 3;
-  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) return 4;
-  if (h === "biezi-jautajumi") return 5;
-  if (h === "kontakti") return 6;
-  return null;
 }
 
 function activeFromScroll(): number {
@@ -55,19 +39,6 @@ function activeFromScroll(): number {
   return idx;
 }
 
-function routeActiveIndex(pathname: string | null | undefined): number | null {
-  if (pathname == null) return null;
-  const p = pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
-  if (p === "/pasutit") return 2;
-  if (p === "/biezi-jautajumi") return 5;
-  return null;
-}
-
-function normalizePath(pathname: string | null | undefined): string {
-  if (pathname == null) return "";
-  return pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
-}
-
 /**
  * Kreisā navigācija — mierīgā režīmā gandrīz „pazūd”, pie tuvināšanās / tastatūras
  * maigs gradients, lasāmāki teksti, slīde un zils indikators (lg+).
@@ -82,7 +53,7 @@ export function SiteSectionRail() {
   const linkRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const [dot, setDot] = useState({ top: 0, height: 16 });
 
-  const normalizedPath = useMemo(() => normalizePath(pathname), [pathname]);
+  const normalizedPath = useMemo(() => normalizeSitePath(pathname), [pathname]);
   const showRail =
     normalizedPath === "/" ||
     normalizedPath === "" ||
@@ -91,24 +62,10 @@ export function SiteSectionRail() {
     normalizedPath === "/demo" ||
     normalizedPath.startsWith("/demo/");
 
-  const sections = useMemo(() => {
-    const base = homePath(locale);
-    const cenaHref = base === "/" ? "/#cena" : `${base}#cena`;
-    const bujHref = normalizedPath === "/biezi-jautajumi" ? "/biezi-jautajumi" : faqHashHref(locale);
-    const kontaktiHref = base === "/" ? "/#kontakti" : `${base}#kontakti`;
-    return [
-      { href: base === "/" ? "/" : base, labelKey: "sakums" as const },
-      { href: homeIntroHashHref(locale), labelKey: "kasTasIr" as const },
-      { href: orderSectionHref(locale), labelKey: "pasutit" as const },
-      { href: cenaHref, labelKey: "kasIekljauts" as const },
-      { href: irissAnchorHref(locale), labelKey: "approvedIriss" as const },
-      { href: bujHref, labelKey: "buj" as const },
-      { href: kontaktiHref, labelKey: "kontakti" as const },
-    ] as const;
-  }, [locale, normalizedPath]);
+  const sections = useMemo(() => buildSiteRailSections(locale, normalizedPath), [locale, normalizedPath]);
 
   const recomputeActive = useCallback(() => {
-    const fromRoute = routeActiveIndex(pathname);
+    const fromRoute = siteRailRouteActiveIndex(pathname);
     if (fromRoute !== null) {
       setActive(fromRoute);
       return;
@@ -120,7 +77,7 @@ export function SiteSectionRail() {
   /** Hash tikai hashchange / sākumā; scroll vienmēr atjauno pēc pozīcijas (neiesalst uz #). */
   const applyHashIfPresent = useCallback(() => {
     if (normalizedPath !== "/" && normalizedPath !== "") return;
-    const fromHash = activeFromHash(typeof window !== "undefined" ? window.location.hash : hash);
+    const fromHash = siteRailActiveFromHash(typeof window !== "undefined" ? window.location.hash : hash);
     if (fromHash !== null) setActive(fromHash);
     else setActive(activeFromScroll());
   }, [hash, normalizedPath]);
