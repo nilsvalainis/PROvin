@@ -17,7 +17,7 @@ export async function HomeMetaIntroSection() {
           {tMeta("homeIntroTitle")}
         </h1>
         <div
-          className="demo-design-dir__hero-scan relative z-[1] mx-auto my-11 sm:my-12"
+          className="demo-design-dir__hero-scan relative z-[1] mx-auto my-[1.375rem] sm:my-6"
           aria-hidden
         />
         <p className="demo-design-dir__body relative z-[1] mx-auto mt-0 max-w-[min(100%,42rem)] text-balance">
