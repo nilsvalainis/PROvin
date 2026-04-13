@@ -27,7 +27,9 @@ ${tech.map((t) => `- ${t}`).join("\n")}
 ${features.map((f) => `- ${f}`).join("\n")}
 
 ## How to run
-In development/production, open \`/concept-demos/concept-${num}/\` from the PROVIN site, or open \`public/concept-demos/concept-${num}/index.html\` locally. For CDN-heavy concepts, prefer the deployed or \`next dev\` origin (not \`file://\`).
+Each page loads **Tailwind CSS** from the official CDN plus a small companion \`styles.css\` for bespoke visuals. Asset URLs are **root-relative** (\`/concept-demos/concept-${num}/…\`) so CSS/JS load even without a trailing slash on the folder URL.
+
+In development/production, open \`/concept-demos/concept-${num}/\` from the PROVIN site. For CDN-heavy concepts (maps, charts, video), prefer the deployed or \`next dev\` origin (not \`file://\`).
 
 \`\`\`bash
 npm run dev
@@ -36,24 +38,42 @@ npm run dev
 `;
 }
 
-function wrapHtmlFixed({ n, title, body, extraHead = "" }) {
+function escapeHtmlAttr(value) {
+  return String(value).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+/**
+ * Tailwind CDN + root-relative asset URLs so CSS/JS load even when the URL has no trailing slash.
+ * Optional `shellTw` wraps body HTML (default: full-width shell). Set `shellTw: null` on a spec to omit.
+ */
+function wrapHtmlFixed({ n, title, body, extraHead = "", shellTw, bodyClass = "" }) {
   const safeTitle = title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
   const num = pad(n);
+  const assetBase = `/concept-demos/concept-${num}`;
+  const useShell = shellTw !== null && shellTw !== false;
+  const shellClasses = escapeHtmlAttr(
+    shellTw === undefined || shellTw === "" ? "min-h-screen w-full" : String(shellTw),
+  );
+  const inner = useShell
+    ? `  <div id="demo-shell" class="${shellClasses}">\n${body}\n  </div>`
+    : body;
+  const bodyClasses = ["min-h-screen", "antialiased", `concept-${num}`, bodyClass].filter(Boolean).join(" ");
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Concept ${num} — ${safeTitle}</title>
-  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="${assetBase}/styles.css" />
   ${extraHead}
 </head>
-<body class="concept-${num}">
-  <a class="skip" href="#main">Skip to content</a>
-  <main id="main">
-${body}
+<body class="${escapeHtmlAttr(bodyClasses)}">
+  <a href="#main" class="absolute -left-[9999px] top-0 z-50 overflow-hidden whitespace-nowrap focus:left-4 focus:top-4 focus:h-auto focus:w-auto focus:overflow-visible focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-black">Skip to content</a>
+  <main id="main" class="relative isolate min-h-screen w-full">
+${inner}
   </main>
-  <script src="script.js" defer></script>
+  <script src="${assetBase}/script.js" defer></script>
 </body>
 </html>`;
 }
@@ -68,7 +88,14 @@ function writeConcept(n, spec) {
   fs.writeFileSync(path.join(dir, "README.md"), readme(spec));
   fs.writeFileSync(
     path.join(dir, "index.html"),
-    wrapHtmlFixed({ n, title: spec.title, body: spec.html, extraHead: spec.extraHead || "" }),
+    wrapHtmlFixed({
+      n,
+      title: spec.title,
+      body: spec.html,
+      extraHead: spec.extraHead || "",
+      shellTw: "shellTw" in spec ? spec.shellTw : "min-h-screen w-full",
+      bodyClass: spec.bodyClass || "",
+    }),
   );
   fs.writeFileSync(path.join(dir, "styles.css"), spec.css.trim() + "\n");
   fs.writeFileSync(path.join(dir, "script.js"), spec.js.trim() + "\n");

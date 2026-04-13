@@ -7,7 +7,7 @@ export const specs11_20 = [
     tech: ["HTML", "CSS", "Canvas 2D", "Vanilla JS"],
     features: ["Animated gradient orb", "Pointer parallax nudge", "Lightweight loop"],
     html: `
-    <div class="wrap">
+    <div class="wrap mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-6 px-4 py-6 sm:px-6 sm:py-8">
       <canvas id="orb" width="900" height="520" aria-label="Animated orb"></canvas>
       <div class="copy">
         <h1>Orbital VIN scan</h1>
@@ -53,7 +53,7 @@ export const specs11_20 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Clamp mega type", "Split-line motion", "Scroll-linked skew micro"],
     html: `
-    <section class="hero">
+    <section class="hero min-h-[160vh] w-full px-4 py-10 sm:px-6 sm:py-14">
       <p class="eyebrow">PROVIN</p>
       <h1 class="k1">Decode</h1>
       <h1 class="k2">the machine</h1>
@@ -85,7 +85,7 @@ export const specs11_20 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["CSS grid spans", "Soft glass tiles", "Live clock micro-widget"],
     html: `
-    <div class="page">
+    <div class="page mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <header><h1>Bento audit</h1><p id="clk" class="clk"></p></header>
       <div class="bento">
         <div class="tile a"><h2>VIN</h2><p>17 chars unlock the deck.</p><input maxlength="17" placeholder="·················" /></div>
@@ -117,7 +117,7 @@ export const specs11_20 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["17-char VIN gate", "Live status chip", "No secondary chrome"],
     html: `
-    <div class="wrap">
+    <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <label for="vin">Vehicle Identification Number</label>
       <input id="vin" inputmode="text" autocomplete="off" maxlength="17" spellcheck="false" />
       <p id="msg" class="msg" role="status"></p>
@@ -148,7 +148,7 @@ export const specs11_20 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Gold gradient accents", "Soft vignette", "Ambient drift animation"],
     html: `
-    <div class="lux">
+    <div class="lux relative min-h-screen w-full overflow-hidden font-serif text-[#f3efe8]">
       <div class="veil" aria-hidden="true"></div>
       <div class="inner">
         <p class="eyebrow">PROVIN · Atelier demo</p>
@@ -178,7 +178,7 @@ export const specs11_20 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Fake shell prompt", "Command parsing", "Typed log lines"],
     html: `
-    <div class="term">
+    <div class="term min-h-screen w-full px-3 py-4 font-mono text-[#33ff66] sm:px-4">
       <div id="log" class="log" aria-live="polite"></div>
       <form id="f" class="row"><span class="prompt">provinc@audit:~$</span><input id="cmd" autocomplete="off" spellcheck="false" /></form>
     </div>`,
@@ -214,7 +214,7 @@ export const specs11_20 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Parallax layers", "Pinned headline", "Section opacity choreography"],
     html: `
-    <div class="story">
+    <div class="story min-h-screen w-full overflow-x-hidden bg-[#020308] text-[#e9edf5]">
       <section class="panel p1"><div class="blob"></div><h1>Read the car<br/>like a brief.</h1></section>
       <section class="panel p2"><h2>Registries</h2><p>Cross-check stamps across EU clusters — demo copy.</p></section>
       <section class="panel p3"><h2>Dealers</h2><p>Independent chains leave fingerprints — demo copy.</p></section>
@@ -248,7 +248,7 @@ export const specs11_20 = [
     tech: ["HTML", "CSS", "Vanilla JS", "HTML5 video"],
     features: ["Muted background video", "Gradient scrim", "Overlay CTA"],
     html: `
-    <div class="stage">
+    <div class="stage relative min-h-screen w-full overflow-hidden text-white">
       <video class="bg" autoplay muted loop playsinline>
         <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm" type="video/webm" />
       </video>
@@ -283,7 +283,7 @@ export const specs11_20 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["No chroma accents", "Bold type ramp", "Grid rhythm"],
     html: `
-    <div class="wrap">
+    <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <header><span>PROVIN</span><span>DEMO</span></header>
       <h1>Monochrome<br/>audit lane</h1>
       <p>Only black, white, and greys appear in this concept.</p>
@@ -318,31 +318,32 @@ export const specs11_20 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Three-tier pricing", "Fake testimonials", "Simple annual toggle demo"],
     html: `
-    <header class="top">
+    <div class="mx-auto flex w-full max-w-6xl flex-col px-4 sm:px-6">
+    <header class="top flex w-full flex-wrap items-center justify-between gap-3 py-4">
       <strong>PROVIN</strong>
-      <nav><a href="#p">Pricing</a><a href="#t">Love</a></nav>
+      <nav class="flex gap-4"><a href="#p">Pricing</a><a href="#t">Love</a></nav>
     </header>
-    <section class="hero">
+    <section class="hero mx-auto max-w-4xl px-4 py-12 text-center sm:px-6">
       <h1>Vehicle intelligence for teams.</h1>
       <p>Demo pricing — numbers are fictional.</p>
       <label class="tog"><input id="annual" type="checkbox" checked /> Annual billing</label>
     </section>
-    <section id="p" class="pricing">
+    <section id="p" class="pricing mx-auto grid w-full max-w-6xl grid-cols-1 gap-4 py-8 sm:grid-cols-3">
       <article class="price"><h2>Starter</h2><p class="amt" data-a="49" data-m="59">€49</p><ul><li>10 reports</li><li>Email support</li></ul><button type="button">Choose</button></article>
       <article class="price featured"><h2>Pro</h2><p class="amt" data-a="129" data-m="159">€129</p><ul><li>100 reports</li><li>Priority queue</li></ul><button type="button">Choose</button></article>
       <article class="price"><h2>Scale</h2><p class="amt" data-a="399" data-m="499">€399</p><ul><li>API access (fake)</li><li>Account manager</li></ul><button type="button">Choose</button></article>
     </section>
-    <section id="t" class="love">
+    <section id="t" class="love mx-auto w-full max-w-5xl px-4 py-8 sm:px-0 sm:py-10">
       <h2>Loved by demo buyers</h2>
-      <div class="quotes">
+      <div class="quotes grid grid-cols-1 gap-4 md:grid-cols-2">
         <figure><blockquote>“We ship faster decisions now.”</blockquote><figcaption>— Alex, Fleet Ops (fake)</figcaption></figure>
         <figure><blockquote>“Feels like a serious diligence tool.”</blockquote><figcaption>— Dana, VC (fake)</figcaption></figure>
       </div>
-    </section>`,
+    </section>
+    </div>`,
     css: `
     body{margin:0;background:#f6f7fb;color:#0b1020;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
-    .top{max-width:1100px;margin:0 auto;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;gap:1rem}
-    nav{display:flex;gap:1rem} a{color:inherit;text-decoration:none;font-weight:600;opacity:.75}
+    nav a{color:inherit;text-decoration:none;font-weight:600;opacity:.75}
     .hero{max-width:900px;margin:0 auto;padding:3rem 1.25rem 1rem;text-align:center}
     h1{margin:0 0 .75rem;font-size:clamp(2rem,4vw,3rem);line-height:1.05}
     .tog{display:inline-flex;gap:.5rem;align-items:center;margin-top:1rem;font-size:.95rem}

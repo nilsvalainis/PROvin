@@ -4,21 +4,24 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Concept 29 — Scandinavian clean design</title>
-  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/concept-demos/concept-29/styles.css" />
   
 </head>
-<body class="concept-29">
-  <a class="skip" href="#main">Skip to content</a>
-  <main id="main">
+<body class="min-h-screen antialiased concept-29">
+  <a href="#main" class="absolute -left-[9999px] top-0 z-50 overflow-hidden whitespace-nowrap focus:left-4 focus:top-4 focus:h-auto focus:w-auto focus:overflow-visible focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-black">Skip to content</a>
+  <main id="main" class="relative isolate min-h-screen w-full">
+  <div id="demo-shell" class="min-h-screen w-full">
 
-    <div class="wrap">
+    <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <header><h1>Quiet diligence</h1><p>Soft surfaces, clear hierarchy.</p></header>
-      <div class="grid">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <article class="card"><h2>VIN</h2><input maxlength="17" placeholder="·················" /></article>
         <article class="card"><h2>Notes</h2><p>Demo copy: registry checks feel calmer when typography breathes.</p></article>
       </div>
     </div>
+  </div>
   </main>
-  <script src="script.js" defer></script>
+  <script src="/concept-demos/concept-29/script.js" defer></script>
 </body>
 </html>

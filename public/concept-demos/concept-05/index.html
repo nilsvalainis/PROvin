@@ -4,16 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Concept 05 — Cyberpunk Neon</title>
-  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/concept-demos/concept-05/styles.css" />
   
 </head>
-<body class="concept-05">
-  <a class="skip" href="#main">Skip to content</a>
-  <main id="main">
+<body class="min-h-screen antialiased concept-05">
+  <a href="#main" class="absolute -left-[9999px] top-0 z-50 overflow-hidden whitespace-nowrap focus:left-4 focus:top-4 focus:h-auto focus:w-auto focus:overflow-visible focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-black">Skip to content</a>
+  <main id="main" class="relative isolate min-h-screen w-full">
+  <div id="demo-shell" class="min-h-screen w-full">
 
-    <div class="crt">
+    <div class="crt relative min-h-screen w-full overflow-hidden font-mono text-[#e6f7ff]">
       <div class="scan" aria-hidden="true"></div>
-      <div class="wrap">
+      <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <p class="mono">// PROVIN_NET //</p>
         <h1 class="glitch" data-text="VIN_TRACE">VIN_TRACE</h1>
         <p class="sub">Neon audit lane — synthetic traffic only.</p>
@@ -21,7 +23,8 @@
         <pre id="log" class="log"></pre>
       </div>
     </div>
+  </div>
   </main>
-  <script src="script.js" defer></script>
+  <script src="/concept-demos/concept-05/script.js" defer></script>
 </body>
 </html>

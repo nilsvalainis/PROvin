@@ -4,14 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Concept 28 — Ultra-fast minimal (performance focus)</title>
-  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/concept-demos/concept-28/styles.css" />
   
 </head>
-<body class="concept-28">
-  <a class="skip" href="#main">Skip to content</a>
-  <main id="main">
-<div class="w"><h1>VIN</h1><input id="v" maxlength="17" /><p id="m"></p></div>
+<body class="min-h-screen antialiased concept-28 bg-white text-black">
+  <a href="#main" class="absolute -left-[9999px] top-0 z-50 overflow-hidden whitespace-nowrap focus:left-4 focus:top-4 focus:h-auto focus:w-auto focus:overflow-visible focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-black">Skip to content</a>
+  <main id="main" class="relative isolate min-h-screen w-full">
+  <div id="demo-shell" class="min-h-screen w-full">
+<div class="mx-auto mt-24 w-full max-w-lg px-4 font-sans"><h1 class="mb-2 text-4xl font-semibold tracking-tight">VIN</h1><input id="v" maxlength="17" class="w-full border border-black px-2 py-2 text-xl outline-none" /><p id="m" class="mt-2 min-h-[1.2em] text-sm text-neutral-600"></p></div>
+  </div>
   </main>
-  <script src="script.js" defer></script>
+  <script src="/concept-demos/concept-28/script.js" defer></script>
 </body>
 </html>

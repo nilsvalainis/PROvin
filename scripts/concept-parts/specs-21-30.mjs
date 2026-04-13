@@ -8,7 +8,7 @@ export const specs21_30 = [
     features: ["Staggered chip press", "Elastic hero nudge", "Reduced-motion guard"],
     extraHead: `<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>`,
     html: `
-    <div class="wrap">
+    <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <h1 id="h">Motion stress test</h1>
       <p id="p">Tap chips — demo only.</p>
       <div class="chips" id="chips">
@@ -48,7 +48,7 @@ export const specs21_30 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Device frame", "Pointer swipe", "Snapping index"],
     html: `
-    <div class="stage">
+    <div class="stage grid min-h-screen w-full place-items-center px-4 py-8 text-white">
       <div class="phone" aria-label="Phone mockup">
         <div class="notch"></div>
         <div class="screen">
@@ -102,7 +102,7 @@ export const specs21_30 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["SVG ring", "Animated score", "Replay control"],
     html: `
-    <div class="wrap">
+    <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <div class="dial" role="img" aria-label="Demo risk score dial">
         <svg viewBox="0 0 120 120" width="220" height="220" aria-hidden="true">
           <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="10" />
@@ -150,7 +150,7 @@ export const specs21_30 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["CSS perspective", "Pointer tilt mapping", "Specular sheen"],
     html: `
-    <div class="stage">
+    <div class="stage grid min-h-screen w-full place-items-center px-4 py-8 text-white">
       <div id="card" class="card" tabindex="0">
         <p class="eyebrow">PROVIN</p>
         <h2>VIN dossier</h2>
@@ -187,7 +187,7 @@ export const specs21_30 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Two-column spec table", "Highlight deltas", "Swap button"],
     html: `
-    <div class="wrap">
+    <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <header><h1>Compare listings</h1><button id="swap" type="button">Swap highlights</button></header>
       <div class="grid" id="g">
         <article class="car a"><h2>Listing A</h2><table><tbody>
@@ -231,7 +231,7 @@ export const specs21_30 = [
     extraHead: `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
 <script defer src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>`,
     html: `
-    <div class="wrap">
+    <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <header><h1>Origin map</h1><p>Demo geospatial shell — requires network for tiles.</p></header>
       <div id="map" class="map" role="presentation"></div>
     </div>`,
@@ -255,7 +255,7 @@ export const specs21_30 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["3-step wizard", "Progress fill", "Confetti-less completion state"],
     html: `
-    <div class="wrap">
+    <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <div class="bar"><div id="fill" class="fill"></div></div>
       <section id="s0" class="step">
         <h1>VIN quest</h1>
@@ -306,8 +306,9 @@ export const specs21_30 = [
     goal: "No frameworks, tiny assets, readable single-purpose landing.",
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Sub-100KB total (excluding browser)", "No CDN dependencies", "Instant paint"],
-    html: `<div class="w"><h1>VIN</h1><input id="v" maxlength="17" /><p id="m"></p></div>`,
-    css: `body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:#fff;color:#000} .w{max-width:520px;margin:10vh auto;padding:0 1rem} h1{margin:0 0 .5rem;font-size:2.25rem} input{width:100%;font-size:1.25rem;padding:.5rem .6rem;border:1px solid #000} p{margin:.5rem 0 0;min-height:1.2em;font-size:.95rem}`,
+    bodyClass: "bg-white text-black",
+    html: `<div class="mx-auto mt-24 w-full max-w-lg px-4 font-sans"><h1 class="mb-2 text-4xl font-semibold tracking-tight">VIN</h1><input id="v" maxlength="17" class="w-full border border-black px-2 py-2 text-xl outline-none" /><p id="m" class="mt-2 min-h-[1.2em] text-sm text-neutral-600"></p></div>`,
+    css: ``,
     js: `const v=document.getElementById("v"),m=document.getElementById("m");v.addEventListener("input",()=>{const x=v.value.toUpperCase().replace(/[^A-Z0-9]/g,"");v.value=x;m.textContent=x.length?x.length+"/17":""});`,
   },
   {
@@ -317,9 +318,9 @@ export const specs21_30 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Muted sage accents", "Soft card elevation", "Quiet typography"],
     html: `
-    <div class="wrap">
+    <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <header><h1>Quiet diligence</h1><p>Soft surfaces, clear hierarchy.</p></header>
-      <div class="grid">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <article class="card"><h2>VIN</h2><input maxlength="17" placeholder="·················" /></article>
         <article class="card"><h2>Notes</h2><p>Demo copy: registry checks feel calmer when typography breathes.</p></article>
       </div>
@@ -343,7 +344,7 @@ export const specs21_30 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Random palette", "Shuffle section order", "Density mode"],
     html: `
-    <div id="root" class="root">
+    <div id="root" class="root mx-auto grid w-full max-w-4xl gap-4 px-4 py-8 sm:px-6 sm:py-10">
       <section data-block="hero" class="block"><h1>Generative shell</h1><p>Reload to re-roll.</p></section>
       <section data-block="vin" class="block"><label>VIN</label><input maxlength="17" /></section>
       <section data-block="cta" class="block"><button type="button" id="roll">Re-roll without reload</button></section>

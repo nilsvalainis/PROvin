@@ -12,7 +12,7 @@ export const specs01_10 = [
       "Mouse-driven radial highlight (CSS variables)",
     ],
     html: `
-    <header class="hero">
+    <header class="hero mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-8 sm:px-6">
       <p class="eyebrow">PROVIN · concept demo</p>
       <h1>Vehicle intelligence</h1>
       <p class="lede">Paste a VIN — preview a premium glass dashboard.</p>
@@ -21,7 +21,7 @@ export const specs01_10 = [
         <button type="button" id="decode" class="btn">Analyze</button>
       </div>
     </header>
-    <section class="grid">
+    <section class="grid mx-auto mt-8 grid w-full max-w-6xl grid-cols-1 gap-4 px-4 sm:grid-cols-2 sm:px-6">
       <article class="glass card">
         <h2>Risk snapshot</h2>
         <p class="muted">Synthetic demo data.</p>
@@ -87,7 +87,7 @@ export const specs01_10 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Threaded chat UI", "Typing indicator", "Fake AI replies tied to VIN"],
     html: `
-    <div class="shell">
+    <div class="shell grid min-h-0 w-full max-w-6xl grid-cols-1 text-[#e7e9ee] md:min-h-screen md:grid-cols-[220px_1fr]">
       <aside class="rail"><div class="logo">PROVIN</div><p class="tiny">Concept demo — not a live model.</p></aside>
       <section class="chat">
         <header><h1>Auto analyst</h1><p class="sub">Ask about a VIN.</p></header>
@@ -148,9 +148,9 @@ export const specs01_10 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["No border-radius", "Strict grid", "Oversized type scale"],
     html: `
-    <div class="wrap">
+    <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <header><span class="tag">PROVIN / DEMO</span><h1>AUDIT<br/>THE<br/>VIN</h1></header>
-      <section class="grid">
+      <section class="grid grid-cols-1 border-2 border-black md:grid-cols-2">
         <div class="cell"><label>VIN</label><input id="vin" maxlength="17" /></div>
         <div class="cell"><p class="big">NO FLUFF.<br/>JUST DATA.</p><button id="go" type="button">RUN</button></div>
       </section>
@@ -186,7 +186,7 @@ export const specs01_10 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["CSS smooth scroll", "IntersectionObserver fade-ins", "System / SF-like stack"],
     html: `
-    <div class="page">
+    <div class="page mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
       <section class="band reveal"><p class="kicker">PROVIN</p><h1 class="hero">Understand the car<br/>before you buy.</h1>
       <p class="sub">A calm, product-grade layout — demo only.</p></section>
       <section class="band reveal narrow"><h2>Signals</h2><p>Registry deltas, dealer footprints, listing coherence.</p></section>
@@ -218,9 +218,9 @@ export const specs01_10 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Glowing borders", "Animated scan line", "Glitch text"],
     html: `
-    <div class="crt">
+    <div class="crt relative min-h-screen w-full overflow-hidden font-mono text-[#e6f7ff]">
       <div class="scan" aria-hidden="true"></div>
-      <div class="wrap">
+      <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <p class="mono">// PROVIN_NET //</p>
         <h1 class="glitch" data-text="VIN_TRACE">VIN_TRACE</h1>
         <p class="sub">Neon audit lane — synthetic traffic only.</p>
@@ -259,7 +259,7 @@ export const specs01_10 = [
     features: ["Risk bar chart", "Mileage line chart", "Fake scores"],
     extraHead: `<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>`,
     html: `
-    <div class="dash">
+    <div class="dash mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
       <header><h1>Signal desk</h1><p class="muted">Demo charts — not real underwriting.</p></header>
       <div class="charts">
         <canvas id="cRisk" height="180"></canvas>
@@ -296,7 +296,7 @@ export const specs01_10 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Two-column split", "Sticky visual rail", "Scroll-tied caption swaps"],
     html: `
-    <div class="split">
+    <div class="split grid min-h-screen w-full grid-cols-1 text-[#eef1f6] md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
       <div class="story">
         <p class="eyebrow">PROVIN / DEMO</p>
         <h1>Two lanes. One VIN.</h1>
@@ -336,7 +336,7 @@ export const specs01_10 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Animated timeline rail", "Hover detail drawers", "Keyboard-focusable rows"],
     html: `
-    <div class="wrap">
+    <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <h1>Ownership spine</h1>
       <p class="sub">Synthetic events for layout demo.</p>
       <ol class="tl">
@@ -374,8 +374,8 @@ export const specs01_10 = [
     tech: ["HTML", "CSS custom properties", "Vanilla JS"],
     features: ["Animated theme toggle", "CSS variables for surfaces", "Persisted preference (localStorage)"],
     html: `
-    <div class="bar"><strong>PROVIN</strong><button id="t" type="button" aria-pressed="false">Theme</button></div>
-    <div class="wrap">
+    <div class="bar flex items-center justify-between border-b px-4 py-4 sm:px-5"><strong>PROVIN</strong><button id="t" type="button" aria-pressed="false">Theme</button></div>
+    <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <h1>Readable in any cockpit lighting.</h1>
       <p>Toggle morphs palette via CSS variables — demo only.</p>
       <div class="card"><h2>VIN</h2><input maxlength="17" placeholder="17 chars" /></div>
@@ -411,7 +411,7 @@ export const specs01_10 = [
     tech: ["HTML", "CSS", "Vanilla JS"],
     features: ["Reusable card module", "Hover height expansion", "Accent rail"],
     html: `
-    <div class="wrap">
+    <div class="wrap mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
       <h1>Modular audit deck</h1>
       <div class="deck">
         <article class="card"><h2>Registries</h2><p>Cross-border stamps.</p><div class="more"><p>Demo detail: synthetic harmonization across EU clusters.</p></div></article>

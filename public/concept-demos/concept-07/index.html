@@ -4,14 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Concept 07 — Split Screen Story</title>
-  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/concept-demos/concept-07/styles.css" />
   
 </head>
-<body class="concept-07">
-  <a class="skip" href="#main">Skip to content</a>
-  <main id="main">
+<body class="min-h-screen antialiased concept-07">
+  <a href="#main" class="absolute -left-[9999px] top-0 z-50 overflow-hidden whitespace-nowrap focus:left-4 focus:top-4 focus:h-auto focus:w-auto focus:overflow-visible focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-black">Skip to content</a>
+  <main id="main" class="relative isolate min-h-screen w-full">
+  <div id="demo-shell" class="min-h-screen w-full">
 
-    <div class="split">
+    <div class="split grid min-h-screen w-full grid-cols-1 text-[#eef1f6] md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
       <div class="story">
         <p class="eyebrow">PROVIN / DEMO</p>
         <h1>Two lanes. One VIN.</h1>
@@ -24,7 +26,8 @@
         <div class="car"><div class="glow"></div><div class="vinbox">VIN</div></div>
       </aside>
     </div>
+  </div>
   </main>
-  <script src="script.js" defer></script>
+  <script src="/concept-demos/concept-07/script.js" defer></script>
 </body>
 </html>

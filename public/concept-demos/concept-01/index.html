@@ -4,14 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Concept 01 — Glassmorphism Premium Dashboard</title>
-  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/concept-demos/concept-01/styles.css" />
   
 </head>
-<body class="concept-01">
-  <a class="skip" href="#main">Skip to content</a>
-  <main id="main">
+<body class="min-h-screen antialiased concept-01">
+  <a href="#main" class="absolute -left-[9999px] top-0 z-50 overflow-hidden whitespace-nowrap focus:left-4 focus:top-4 focus:h-auto focus:w-auto focus:overflow-visible focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-black">Skip to content</a>
+  <main id="main" class="relative isolate min-h-screen w-full">
+  <div id="demo-shell" class="min-h-screen w-full">
 
-    <header class="hero">
+    <header class="hero mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-8 sm:px-6">
       <p class="eyebrow">PROVIN · concept demo</p>
       <h1>Vehicle intelligence</h1>
       <p class="lede">Paste a VIN — preview a premium glass dashboard.</p>
@@ -20,7 +22,7 @@
         <button type="button" id="decode" class="btn">Analyze</button>
       </div>
     </header>
-    <section class="grid">
+    <section class="grid mx-auto mt-8 grid w-full max-w-6xl grid-cols-1 gap-4 px-4 sm:grid-cols-2 sm:px-6">
       <article class="glass card">
         <h2>Risk snapshot</h2>
         <p class="muted">Synthetic demo data.</p>
@@ -38,7 +40,8 @@
         <p class="muted">Hover cards for micro-interactions.</p>
       </article>
     </section>
+  </div>
   </main>
-  <script src="script.js" defer></script>
+  <script src="/concept-demos/concept-01/script.js" defer></script>
 </body>
 </html>
