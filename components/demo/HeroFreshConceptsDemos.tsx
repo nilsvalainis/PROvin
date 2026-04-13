@@ -4,11 +4,12 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { HERO_CONCEPTS_WAVE3, renderHeroConceptWave3 } from "@/components/demo/HeroFreshConceptsWave3";
 import "./hero-fresh-concepts.css";
 
 type ConceptMeta = { id: string; label: string; blurb: string };
 
-const CONCEPTS: ConceptMeta[] = [
+const CONCEPTS_BASE: ConceptMeta[] = [
   { id: "veil", label: "1 · Gaismas plēve", blurb: "Lēna koniska aura aiz teksta — maigs, kinisks fons." },
   { id: "chroma", label: "2 · Hromatiskā nobīde", blurb: "RGB slāņi ar ļoti mazu nobīdi — digitāls „defekts”." },
   { id: "bento", label: "3 · Bento signāls", blurb: "Asimetrisks režģis; šūnu apmales un signāla punkts." },
@@ -40,6 +41,8 @@ const CONCEPTS: ConceptMeta[] = [
   { id: "overload", label: "29 · Pārslodze", blurb: "Spēcīgs zils/sarkans mirdzums un gredzena pulsācija." },
   { id: "abyss", label: "30 · Bezdibenis", blurb: "Krītoši punkti tumšā vertikālā gradientā." },
 ];
+
+const CONCEPTS: ConceptMeta[] = [...CONCEPTS_BASE, ...HERO_CONCEPTS_WAVE3];
 
 function PillarsRow({ titles }: { titles: string[] }) {
   return (
@@ -910,8 +913,10 @@ export function HeroFreshConceptsDemos() {
         return <ConceptOverload h1={h1} h2={h2} pillars={pillars} />;
       case "abyss":
         return <ConceptAbyss h1={h1} h2={h2} pillars={pillars} />;
-      default:
-        return null;
+      default: {
+        const wave3 = renderHeroConceptWave3(meta.id, { h1, h2, pillars });
+        return wave3 ?? null;
+      }
     }
   })();
 
@@ -927,7 +932,7 @@ export function HeroFreshConceptsDemos() {
               ← Demo studija
             </Link>
             <span className="text-[10px] text-white/25">|</span>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Hero koncepti — 30 demo</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Hero koncepti — 60 demo</p>
           </div>
           <div className="flex gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {CONCEPTS.map((c, i) => (
@@ -950,9 +955,9 @@ export function HeroFreshConceptsDemos() {
 
       <div className="mx-auto max-w-[min(90rem,calc(100vw-1rem))] px-3 pb-6 pt-4 sm:px-5 sm:pb-10 sm:pt-6">
         <header className="mb-6 max-w-[52rem] border-b border-white/[0.07] pb-6">
-          <h1 className="text-xl font-semibold tracking-tight text-white/95 sm:text-2xl">Trīsdesmit atšķirīgi hero virzieni</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-white/95 sm:text-2xl">Sešdesmit atšķirīgi hero virzieni</h1>
           <p className="mt-2 text-[13px] leading-relaxed text-white/55 sm:text-[14px]">
-            Eksperimentu skats: pirmie desmit ir maigāki / strukturētāki; 11–30 iekļauj agresīvākus, kontrastainākus un „trokšņainākus” variantus. Izvēlies konceptu augšā — zemāk pilna augstuma prototips ar īstu PROVIN hero tekstu.
+            1–30: iepriekšējie abstraktie / agresīvie virzieni. 31–60: sarežģītāki — acs un fokuss, datu plūsmas, mehānismi, lupa, spidometrs / odometrs, savienojumu grafiki, ECU un līdzīgas metaforas. Izvēlies konceptu augšā — zemāk pilna augstuma prototips.
           </p>
           <p className="mt-2 text-[12px] text-[#7eb6ff]/90">
             <span className="font-semibold">{meta.label}.</span> {meta.blurb}
