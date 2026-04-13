@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
@@ -59,7 +60,25 @@ export function OrderSection({
             </p>
           )}
 
-          <div id="order-form" className="mx-auto w-full max-w-[560px] scroll-mt-24 text-left sm:scroll-mt-28">
+          <div
+            id="order-form"
+            className="mx-auto w-full max-w-[560px] scroll-mt-24 text-left sm:scroll-mt-28"
+          >
+            {embedded ? (
+              <div className="mb-4 flex justify-center text-center sm:mb-5">
+                <a
+                  href="#order-form"
+                  className="group inline-flex min-h-11 touch-manipulation flex-col items-center justify-center gap-1.5 border-0 bg-transparent p-0 text-center text-[11px] font-semibold uppercase leading-snug tracking-[0.14em] text-provin-accent no-underline shadow-none transition-colors hover:text-[var(--color-provin-accent-hover)] focus-visible:rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent/55"
+                >
+                  <span className="text-balance text-center">{t("scrollToFormAria")}</span>
+                  <ChevronDown
+                    className="h-5 w-5 shrink-0 text-provin-accent transition-colors group-hover:text-[var(--color-provin-accent-hover)]"
+                    strokeWidth={2}
+                    aria-hidden
+                  />
+                </a>
+              </div>
+            ) : null}
             <OrderForm variant="hero" className="!mt-0" />
           </div>
         </div>
