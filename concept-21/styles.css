@@ -1,0 +1,6 @@
+body{margin:0;background:#05060a;color:#e9edf5;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
+    .wrap{max-width:900px;margin:0 auto;padding:clamp(2.5rem,7vw,5rem) 1.25rem}
+    h1{margin:0 0 .5rem;font-size:clamp(2rem,4vw,3rem);line-height:1.05}
+    p{margin:0 0 1.5rem;opacity:.75;max-width:52ch;line-height:1.5}
+    .chips{display:flex;flex-wrap:wrap;gap:.6rem}
+    .chip{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:inherit;padding:.55rem .85rem;border-radius:999px;cursor:pointer;font-weight:650}
