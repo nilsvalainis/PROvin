@@ -45,24 +45,18 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
   const inner = (
     <>
       <div className="mx-auto mt-2 w-full max-w-[min(100%,52rem)] sm:mt-3">
-        <div className="flex w-full flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-4">
-          <div className="hidden min-h-0 min-w-0 flex-1 sm:block">
-            <DiagnosticScanLine variant="rail" motion="along" className="w-full" />
-          </div>
+        <div className="text-center">
           <h2
             className={
               embedded
-                ? "demo-design-dir__title mb-0 max-w-[min(100%,48rem)] shrink-0 text-balance text-center"
-                : `${homeSectionEyebrowClass} mb-0 max-w-[min(100%,48rem)] shrink-0 text-balance text-center`
+                ? "demo-design-dir__title mx-auto mb-0 max-w-[min(100%,48rem)] text-balance"
+                : `${homeSectionEyebrowClass} mx-auto mb-0 max-w-[min(100%,48rem)] text-balance`
             }
           >
             {t("workTitle")}
           </h2>
-          <div className="hidden min-h-0 min-w-0 flex-1 sm:block">
+          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
             <DiagnosticScanLine variant="rail" motion="along" className="w-full" />
-          </div>
-          <div className="w-full px-1 sm:hidden">
-            <DiagnosticScanLine variant="rail" motion="split" className="w-full" />
           </div>
         </div>
       </div>

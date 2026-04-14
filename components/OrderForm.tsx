@@ -29,7 +29,7 @@ function HeroFieldScanLine({ children }: { children: ReactNode }) {
   return (
     <div className="order-form-hero-field relative z-0 mt-2 rounded-sm px-2 py-1 -mx-0.5">
       {children}
-      <DiagnosticScanLine variant="rail" className="order-form-hero-scan relative z-[1] w-full" />
+      <DiagnosticScanLine variant="rail" motion="sweepLtr" className="order-form-hero-scan relative z-[1] w-full" />
     </div>
   );
 }

@@ -183,6 +183,22 @@ body {
   }
 }
 
+/* Pasūtījuma lauki: viens pilns cikls kreisā → labā (teksta virziens), atkārtojas */
+@keyframes provin-diagnostic-scan-sweep-ltr {
+  0% {
+    left: 0%;
+    transform: translate(-50%, -50%);
+  }
+  100% {
+    left: 100%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.provin-diagnostic-scan-line__pulse--sweep-ltr {
+  animation: provin-diagnostic-scan-sweep-ltr calc(var(--provin-scan-loop-dur) * 2) linear infinite;
+}
+
 /* No centra uz kreiso malu un atpakaļ (ping-pong) */
 @keyframes provin-diagnostic-scan-out-center-left {
   0% {
@@ -264,6 +280,11 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .provin-diagnostic-scan-line__pulse {
+    animation: none !important;
+    opacity: 0;
+  }
+
+  .provin-diagnostic-scan-line__pulse--sweep-ltr {
     animation: none !important;
     opacity: 0;
   }

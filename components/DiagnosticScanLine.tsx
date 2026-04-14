@@ -7,9 +7,10 @@ type Props = {
    * `alongPingPong` — tā pati kustība kā `along` (saderība ar agrāko API).
    * `from-center-left` / `from-center-right` — no centra uz malu un atpakaļ (ping-pong).
    * `split` — divi impulsi: centrā → malas → centrā (ping-pong).
+   * `sweepLtr` — viens cikls kreisā→labā, atkārtojas (pasūtījuma laukiem).
    * `none` — tikai līnija (bez skrejošā impulsa).
    */
-  motion?: "along" | "alongPingPong" | "from-center-left" | "from-center-right" | "split" | "none";
+  motion?: "along" | "alongPingPong" | "from-center-left" | "from-center-right" | "split" | "sweepLtr" | "none";
 };
 
 /**
@@ -51,6 +52,8 @@ export function DiagnosticScanLine({
           <span className={pulseClass("provin-diagnostic-scan-line__pulse--split-left")} />
           <span className={pulseClass("provin-diagnostic-scan-line__pulse--split-right")} />
         </>
+      ) : motion === "sweepLtr" ? (
+        <span className={pulseClass("provin-diagnostic-scan-line__pulse--sweep-ltr")} />
       ) : (
         <span
           className={pulseClass(
