@@ -25,6 +25,34 @@ html[data-site-theme="light"] {
   --color-provin-muted: #5c5f66;
   --color-canvas: #ffffff;
   --color-canvas-warm: #f5f5f7;
+
+  /*
+   * Globālie „glass” tokeni (light) — saskan ar demo-design-dir tumšo __card loģiku;
+   * mantoti no `html`, lai strādātu visur, kur ir `.demo-design-dir__card` u.c.
+   */
+  --dd-glass-blur: 22px;
+  --dd-glass-sat: 1.22;
+  --dd-glass-fill: linear-gradient(
+    165deg,
+    rgb(255 255 255 / 0.58) 0%,
+    rgb(248 251 255 / 0.38) 45%,
+    rgb(255 255 255 / 0.26) 100%
+  );
+  --dd-glass-fill-hover: linear-gradient(
+    165deg,
+    rgb(255 255 255 / 0.72) 0%,
+    rgb(236 245 255 / 0.48) 48%,
+    rgb(255 255 255 / 0.4) 100%
+  );
+  --dd-glass-outer: rgb(12 18 30 / 0.09);
+  --dd-glass-inset: inset 0 1px 0 rgb(255 255 255 / 0.95);
+  --dd-glass-shadow-tight: 0 6px 18px rgb(15 23 42 / 0.06);
+  --dd-glass-shadow-deep: 0 20px 50px rgb(15 23 42 / 0.1);
+  --dd-glass-shadow-blue: 0 2px 16px rgb(0 102 255 / 0.07);
+  --dd-glass-hover:
+    0 0 0 1px rgb(0 102 255 / 0.14),
+    0 24px 58px rgb(15 23 42 / 0.14),
+    0 0 52px rgb(0 102 255 / 0.11);
 }
 
 /* Skenēšanas līnijas — zils impulss */
@@ -219,8 +247,9 @@ html[data-site-theme="light"] .demo-design-dir {
   background: #f4f5f7;
   --dd-line: rgb(20 20 24 / 0.12);
   --dd-line-strong: rgb(0 102 255 / 0.45);
-  --dd-surface: rgb(255 255 255 / 0.72);
-  --dd-surface-2: rgb(255 255 255 / 0.9);
+  /* Kā tumšajā: --dd-surface / --dd-surface-2 (puscaurspīdīgi) */
+  --dd-surface: rgb(255 255 255 / 0.38);
+  --dd-surface-2: rgb(255 255 255 / 0.55);
 }
 
 html[data-site-theme="light"] .demo-design-dir__section--band-a {
@@ -239,36 +268,112 @@ html[data-site-theme="light"] .demo-design-dir__section--band-c {
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9);
 }
 
-/* BUJ sadaļas čaula — vienots stikla panelis (zem virsraksta + BUJ rindām) */
+/* BUJ sadaļas čaula — „trauks” zem joslas fona (kā tumšajā viena lielā virsma + saturs virsū) */
 html[data-site-theme="light"] #biezi-jautajumi .demo-design-dir__shell {
   border-radius: 1.25rem;
-  border: 1px solid rgb(20 20 24 / 0.07);
-  background: linear-gradient(165deg, rgb(255 255 255 / 0.52), rgb(248 250 252 / 0.34));
-  backdrop-filter: blur(20px) saturate(1.1);
-  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  border: 1px solid var(--dd-glass-outer, rgb(12 18 30 / 0.09));
+  background: linear-gradient(
+    165deg,
+    rgb(255 255 255 / 0.42) 0%,
+    rgb(245 248 252 / 0.26) 100%
+  );
+  backdrop-filter: blur(calc(var(--dd-glass-blur, 22px) + 4px)) saturate(calc(var(--dd-glass-sat, 1.22) * 0.94));
+  -webkit-backdrop-filter: blur(calc(var(--dd-glass-blur, 22px) + 4px)) saturate(calc(var(--dd-glass-sat, 1.22) * 0.94));
   box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.72) inset,
-    0 6px 22px rgb(15 23 42 / 0.034);
+    var(--dd-glass-inset),
+    0 0 0 1px rgb(255 255 255 / 0.55),
+    var(--dd-glass-shadow-tight),
+    var(--dd-glass-shadow-deep);
 }
 
-/* BUJ un citas design-dir kartes — viegls stikls + mīkstākas ēnas */
-html[data-site-theme="light"] .demo-design-dir__faq-item {
-  background: linear-gradient(165deg, rgb(255 255 255 / 0.72), rgb(250 251 253 / 0.58)) !important;
-  border-color: rgb(20 20 24 / 0.08) !important;
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+/*
+ * Kartes + BUJ — tas pats glassmorphism kā demo tumšajā __card / __faq-item:
+ * ring + deep shadow + blur (4 hero pīlāri, 9 pricing šūnas, BUJ rindas).
+ */
+html[data-site-theme="light"] .demo-design-dir__card {
+  border-color: var(--dd-glass-outer);
+  background: var(--dd-glass-fill);
+  background-color: rgb(255 255 255 / 0.22);
+  backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat));
+  -webkit-backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat));
   box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.65) inset,
-    0 1px 2px rgb(15 23 42 / 0.024),
-    0 8px 22px rgb(15 23 42 / 0.036) !important;
+    var(--dd-glass-inset),
+    0 0 0 1px var(--dd-glass-outer),
+    var(--dd-glass-shadow-blue),
+    var(--dd-glass-shadow-tight),
+    var(--dd-glass-shadow-deep);
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.24s ease,
+    background 0.24s ease,
+    background-color 0.24s ease;
+}
+
+html[data-site-theme="light"] .demo-design-dir__card:hover {
+  border-color: rgb(0 102 255 / 0.32);
+  background: var(--dd-glass-fill-hover);
+  background-color: rgb(255 255 255 / 0.35);
+  box-shadow: var(--dd-glass-inset), var(--dd-glass-hover);
+}
+
+html[data-site-theme="light"] .demo-design-dir__faq-item {
+  background: var(--dd-glass-fill) !important;
+  background-color: rgb(255 255 255 / 0.2) !important;
+  border-color: var(--dd-glass-outer) !important;
+  backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat));
+  -webkit-backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat));
+  box-shadow:
+    var(--dd-glass-inset),
+    0 0 0 1px var(--dd-glass-outer),
+    var(--dd-glass-shadow-blue),
+    var(--dd-glass-shadow-tight),
+    var(--dd-glass-shadow-deep) !important;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.22s ease,
+    background 0.22s ease;
 }
 
 html[data-site-theme="light"] .demo-design-dir__faq-item:hover {
-  border-color: rgb(0 102 255 / 0.18) !important;
+  border-color: rgb(0 102 255 / 0.32) !important;
+  background: var(--dd-glass-fill-hover) !important;
+  box-shadow: var(--dd-glass-inset), var(--dd-glass-hover) !important;
+}
+
+html[data-site-theme="light"] .demo-design-dir__faq-row {
+  background: var(--dd-glass-fill);
+  background-color: rgb(255 255 255 / 0.18);
+  border-color: var(--dd-glass-outer) !important;
+  backdrop-filter: blur(calc(var(--dd-glass-blur) - 2px)) saturate(var(--dd-glass-sat));
+  -webkit-backdrop-filter: blur(calc(var(--dd-glass-blur) - 2px)) saturate(var(--dd-glass-sat));
   box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.75) inset,
-    0 0 0 1px rgb(0 102 255 / 0.05),
-    0 10px 26px rgb(15 23 42 / 0.048) !important;
+    var(--dd-glass-inset),
+    0 0 0 1px var(--dd-glass-outer),
+    var(--dd-glass-shadow-tight);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.22s ease,
+    background 0.22s ease;
+}
+
+html[data-site-theme="light"] .demo-design-dir__faq-row:hover {
+  border-color: rgb(0 102 255 / 0.28) !important;
+  box-shadow: var(--dd-glass-inset), var(--dd-glass-hover);
+}
+
+/* Hero: 4 pīlāru „doks” (tikai ja nav design-dir kartes — tā pati stikla loģika kā tumšajā dock) */
+html[data-site-theme="light"] .marketing-hero-pillar-dock {
+  border-color: var(--dd-glass-outer) !important;
+  background: var(--dd-glass-fill) !important;
+  background-color: rgb(255 255 255 / 0.2) !important;
+  backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat)) !important;
+  -webkit-backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat)) !important;
+  box-shadow:
+    var(--dd-glass-inset),
+    0 0 0 1px var(--dd-glass-outer),
+    var(--dd-glass-shadow-blue),
+    var(--dd-glass-shadow-tight),
+    var(--dd-glass-shadow-deep) !important;
 }
 
 /* BUJ iekšējā tipogrāfija — gaišajā režīmā uz stikla (nevis tumšā palette no markup) */
@@ -363,35 +468,40 @@ html[data-site-theme="light"] .marketing-hero-pillar-icon.marketing-hero-pillar-
   color: rgb(220 38 38) !important;
 }
 
-html[data-site-theme="light"] .demo-design-dir__card {
-  border-color: rgb(20 20 24 / 0.08);
-  background: linear-gradient(165deg, rgb(255 255 255 / 0.78), rgb(248 250 252 / 0.65));
-  backdrop-filter: blur(14px) saturate(1.15);
-  -webkit-backdrop-filter: blur(14px) saturate(1.15);
-  box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.7) inset,
-    0 1px 2px rgb(15 23 42 / 0.024),
-    0 10px 26px rgb(15 23 42 / 0.038);
-}
-
+/* Pasūtījuma „lec” — kā tumšais __order-jump (blur + ::before zila spīds uz hover) */
 html[data-site-theme="light"] .demo-design-dir__order-jump {
-  border-color: rgb(20 20 24 / 0.08);
-  background: linear-gradient(165deg, rgb(255 255 255 / 0.7), rgb(248 250 252 / 0.55));
+  border-color: var(--dd-glass-outer);
+  background: var(--dd-glass-fill);
+  background-color: rgb(255 255 255 / 0.2);
+  backdrop-filter: blur(calc(var(--dd-glass-blur) + 2px)) saturate(var(--dd-glass-sat));
+  -webkit-backdrop-filter: blur(calc(var(--dd-glass-blur) + 2px)) saturate(var(--dd-glass-sat));
   box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.65) inset,
-    0 1px 2px rgb(15 23 42 / 0.03),
-    0 12px 30px rgb(15 23 42 / 0.048);
-  backdrop-filter: blur(16px) saturate(1.15);
-  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+    var(--dd-glass-inset),
+    0 0 0 1px var(--dd-glass-outer),
+    var(--dd-glass-shadow-blue),
+    var(--dd-glass-shadow-tight),
+    var(--dd-glass-shadow-deep);
   color: #27272a !important;
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.24s ease,
+    background 0.24s ease,
+    color 0.22s ease;
 }
 
-html[data-site-theme="light"] .demo-design-dir__faq-row {
-  background: linear-gradient(165deg, rgb(255 255 255 / 0.68), rgb(250 251 253 / 0.52));
-  border-color: rgb(20 20 24 / 0.08) !important;
-  backdrop-filter: blur(12px) saturate(1.15);
-  -webkit-backdrop-filter: blur(12px) saturate(1.15);
-  box-shadow: 0 1px 2px rgb(15 23 42 / 0.024), 0 7px 18px rgb(15 23 42 / 0.032);
+html[data-site-theme="light"] .demo-design-dir__order-jump::before {
+  background: radial-gradient(ellipse 95% 70% at 50% 0%, rgb(0 102 255 / 0.18), transparent 58%);
+}
+
+html[data-site-theme="light"] .demo-design-dir__order-jump:hover {
+  border-color: rgb(0 102 255 / 0.34);
+  background: var(--dd-glass-fill-hover);
+  color: #111827 !important;
+  box-shadow: var(--dd-glass-inset), var(--dd-glass-hover);
+}
+
+html[data-site-theme="light"] .demo-design-dir__order-jump:hover::before {
+  opacity: 1;
 }
 
 /* Kreisā sliede */
