@@ -367,20 +367,17 @@ export function MarketingHero({
                   {approvedBlock}
                 </div>
                 <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden px-4 sm:px-8">
-                  <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-y-auto py-2 sm:py-3">
-                    <div className="marketing-hero-orbit-center-sheet mx-auto flex w-full max-w-[min(100%,min(92vw,42rem))] -translate-y-2 flex-col items-center justify-center gap-3 sm:-translate-y-4 sm:gap-4">
+                  <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,min(92vw,42rem))] flex-1 flex-col justify-evenly py-1 sm:py-2">
+                    <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
                       {heroTitleStack}
-                      {homeOrbitMetaIntro ? (
-                        <div
-                          id="home-intro"
-                          className="marketing-hero-orbit-intro relative w-full shrink-0 text-center pt-[calc(2*0.75rem*1.625)] sm:pt-[calc(2*0.9375rem*1.625)]"
-                        >
-                          <p className="demo-design-dir__body marketing-hero-home-intro-body relative z-[1] mx-auto w-full max-w-[min(100%,42rem)] text-balance text-[12px] leading-relaxed sm:text-[15px]">
-                            {tMeta("homeIntroBody")}
-                          </p>
-                        </div>
-                      ) : null}
                     </div>
+                    {homeOrbitMetaIntro ? (
+                      <div id="home-intro" className="marketing-hero-orbit-intro relative w-full shrink-0 text-center">
+                        <p className="demo-design-dir__body marketing-hero-home-intro-body relative z-[1] mx-auto w-full max-w-[min(100%,42rem)] text-balance text-[11px] leading-relaxed sm:text-[14px]">
+                          {tMeta("homeIntroBody")}
+                        </p>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </div>
