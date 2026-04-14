@@ -29,8 +29,8 @@
   --home-surface-t: 0;
   /* Zilā skrejošā impulsa periods — 2× garāks nekā iepriekš (50 % lēnāks skrējiens) */
   --provin-scan-loop-dur: calc((7s / 3) * 2);
-  /* `.hero-container`: hero + kartes — viens fons (saskaņots ar orbit S12 `--orbit-bg`). */
-  --hero-container-bg: radial-gradient(circle at 50% 100%, rgb(160 165 175 / 0.18), #030304 45%), #030304;
+  /* `.mega-hero-wrapper` (mobilais): viens fons hero + kartēm (orbit S12 `--orbit-bg`). */
+  --mega-hero-wrapper-bg: radial-gradient(circle at 50% 100%, rgb(160 165 175 / 0.18), #030304 45%), #030304;
   /* Tēmas pamats (tumšais); gaišais — `site-theme-light.css` uz `html[data-site-theme="light"]` */
   --site-html-bg: #050505;
   --site-body-bg: #050505;
@@ -79,26 +79,25 @@ body {
 }
 
 @media (max-width: 768px) {
-  .hero-container {
-    background: var(--hero-container-bg);
+  .mega-hero-wrapper {
+    width: 100%;
+    background: var(--mega-hero-wrapper-bg);
   }
 
-  /* Viens orbit gradients — tikai `.hero-container`; hero sekcija caurspīdīga, lai nebūtu dubultā slāņa šuves. */
-  .hero-container #home-hero.marketing-hero-orbit-base.marketing-hero-orbit--s12.marketing-hero-section {
+  /*
+   * Viens vecāka fons: sekcijas un apvalki caurspīdīgi (ne orbit, ne band-a).
+   * Izņēmumi: skenēšanas līnija, H1 vidus līnija (1px), kartes = <article> (nav šajā selektorā).
+   */
+  .mega-hero-wrapper section,
+  .mega-hero-wrapper div:not(.provin-diagnostic-scan-line):not(.marketing-hero-title-mid-rule__line) {
     background: transparent !important;
-  }
-
-  .home-mobile-hero-cards {
-    margin-top: -1px;
-    background: transparent !important;
-  }
-
-  /* No šuves: bez band-a / apmales / iekšējās ēnas. */
-  .home-mobile-hero-cards-section {
-    background: transparent !important;
-    border-top: 0 !important;
+    border: none !important;
     box-shadow: none !important;
-    outline: none !important;
+  }
+
+  .mega-hero-wrapper .home-mobile-hero-cards {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
   }
 }
 

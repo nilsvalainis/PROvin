@@ -55,8 +55,8 @@ html[data-site-theme="light"] {
     0 0 0 1px rgb(0 102 255 / 0.12),
     0 10px 36px rgb(15 23 42 / 0.1),
     0 0 40px rgb(0 102 255 / 0.08);
-  /* `.hero-container` gaišajā tēmā (saskaņots ar orbit S12). */
-  --hero-container-bg: radial-gradient(circle at 50% 100%, rgb(0 102 255 / 0.12), #f6f7f9 45%), #ffffff;
+  /* `.mega-hero-wrapper` gaišajā tēmā (orbit S12). */
+  --mega-hero-wrapper-bg: radial-gradient(circle at 50% 100%, rgb(0 102 255 / 0.12), #f6f7f9 45%), #ffffff;
 }
 
 /* Skenēšanas līnijas — `--provin-scan-loop-dur` no `:root` (tāds pats cikls kā tumšajā tēmā) */
