@@ -126,7 +126,7 @@ export function MarketingHero({
             <div className="marketing-hero-title-split flex w-full flex-col items-center gap-y-0.5 sm:gap-y-1">
               <span className="marketing-hero-title-line1 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
                 <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Vin")}</span>
-                <span className="marketing-hero-title-line1-main text-white/95">{t("h1Un")}</span>
+                <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Un")}</span>
                 <span className={`marketing-hero-title-line1-accent ${heroH1KeywordResolved}`}>{t("h1Sludinajuma")}</span>
               </span>
               <div
@@ -135,7 +135,7 @@ export function MarketingHero({
               >
                 <DiagnosticScanLine variant="rail" className="w-full" />
               </div>
-              <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent block text-white/95">
+              <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent block">
                 {t("h1Line2")}
               </span>
             </div>
@@ -143,10 +143,10 @@ export function MarketingHero({
             <>
               <span className="marketing-hero-title-line1 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
                 <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Vin")}</span>
-                <span className="marketing-hero-title-line1-main text-white/95">{t("h1Un")}</span>
+                <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Un")}</span>
                 <span className={`marketing-hero-title-line1-accent ${heroH1KeywordResolved}`}>{t("h1Sludinajuma")}</span>
               </span>
-              <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
+              <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent mt-0.5 block sm:mt-1">{t("h1Line2")}</span>
             </>
           )}
         </>
