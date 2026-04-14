@@ -25,7 +25,7 @@ export async function HomeFaqSection() {
             {tFaq("title")}
           </h2>
           <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
-            <DiagnosticScanLine variant="rail" motion="along" className="w-full" />
+            <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
           <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4">
             {tMeta("faqDescription")}

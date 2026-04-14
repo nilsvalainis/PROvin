@@ -28,7 +28,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         <div className="text-center">
           <h2 className="demo-design-dir__title mx-auto max-w-[40rem]">{t("title")}</h2>
           <div className="mx-auto mt-3 w-full max-w-[min(100%,36rem)]">
-            <DiagnosticScanLine variant="rail" motion="along" className="w-full" />
+            <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
           <p className="demo-design-dir__body mx-auto mt-3 max-w-[36rem]">{t("subtitle")}</p>
         </div>
@@ -87,7 +87,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         <div className="text-center">
           <h2 className={homeSectionTitleClass}>{t("title")}</h2>
           <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
-            <DiagnosticScanLine variant="rail" motion="along" className="w-full" />
+            <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
           <p className={`${irissSectionSubtitleClass} home-muted-foreground mt-3`}>{t("subtitle")}</p>
         </div>

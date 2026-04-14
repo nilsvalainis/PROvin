@@ -57,7 +57,9 @@ export function DiagnosticScanLine({
       ) : (
         <span
           className={pulseClass(
-            motion === "alongPingPong" ? "provin-diagnostic-scan-line__pulse--ping-pong" : outwardExtra,
+            motion === "along" || motion === "alongPingPong"
+              ? "provin-diagnostic-scan-line__pulse--ping-pong"
+              : outwardExtra,
           )}
         />
       )}

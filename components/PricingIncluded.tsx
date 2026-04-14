@@ -56,7 +56,7 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
             {t("workTitle")}
           </h2>
           <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
-            <DiagnosticScanLine variant="rail" motion="along" className="w-full" />
+            <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
         </div>
       </div>

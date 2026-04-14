@@ -55,11 +55,9 @@ html[data-site-theme="light"] {
     0 0 0 1px rgb(0 102 255 / 0.12),
     0 10px 36px rgb(15 23 42 / 0.1),
     0 0 40px rgb(0 102 255 / 0.08);
-  /* Skenēšanas līnija: gaišajā režīmā nedaudz biežāks cikls (~4.67s → ~3.9s) */
-  --provin-scan-loop-dur: calc((7s / 3) * 1.68);
 }
 
-/* Skenēšanas līnijas — gaišā tēmā: nedaudz biežāks cikls (--provin-scan-loop-dur) */
+/* Skenēšanas līnijas — `--provin-scan-loop-dur` no `:root` (tāds pats cikls kā tumšajā tēmā) */
 html[data-site-theme="light"] .provin-diagnostic-scan-line {
   height: 1px;
 }
@@ -92,6 +90,11 @@ html[data-site-theme="light"] .provin-diagnostic-scan-line__pulse {
     0 0 7px 0 rgb(0 160 255 / 1),
     0 0 18px 0 rgb(0 140 255 / 0.65),
     0 0 30px 0 rgb(0 120 255 / 0.48);
+  animation: provin-diagnostic-scan-ping-pong calc(var(--provin-scan-loop-dur) * 2) linear infinite;
+}
+
+html[data-site-theme="light"] .provin-diagnostic-scan-line__pulse--sweep-ltr {
+  animation: provin-diagnostic-scan-sweep-ltr calc(var(--provin-scan-loop-dur) * 2) linear infinite;
 }
 
 html[data-site-theme="light"] .demo-design-dir__hero-scan::after {

@@ -124,7 +124,7 @@ export function MarketingHero({
             >
               {showTitleMidScan ? (
                 <div className="marketing-hero-title-mid-scan pointer-events-none w-full max-w-[min(100%,min(90vw,56rem))]">
-                  <DiagnosticScanLine variant="rail" className="w-full" />
+                  <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
                 </div>
               ) : (
                 <div className="marketing-hero-title-mid-rule__line h-px w-full max-w-[min(100%,min(90vw,56rem))] bg-white/25" />
