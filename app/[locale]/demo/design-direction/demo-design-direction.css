@@ -298,11 +298,11 @@
 }
 
 .demo-design-dir__hero-scan {
-  height: 2px;
+  height: 1px;
   width: min(18rem, 70vw);
   /* Tikai horizontālais centrs — vertikālās atstarpes dod `my-*` uz elementa */
   margin-inline: auto;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.14), transparent);
   position: relative;
 }
 
@@ -312,8 +312,8 @@
   left: 0%;
   top: 50%;
   width: clamp(1.5rem, 9vw, 2.35rem);
-  height: 2px;
-  margin-top: -1px;
+  height: 1px;
+  margin-top: -0.5px;
   border-radius: 9999px;
   transform: translate(-50%, -50%);
   background: linear-gradient(

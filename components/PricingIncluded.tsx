@@ -13,7 +13,7 @@ import {
 import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { irissAnchorHref } from "@/lib/paths";
-import { homeSectionTitleClass } from "@/lib/home-layout";
+import { homeSectionEyebrowClass } from "@/lib/home-layout";
 
 type GridItem = {
   title: string;
@@ -46,18 +46,26 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
 
   const inner = (
     <>
-      <div className="mx-auto mt-2 w-full max-w-[min(100%,52rem)] text-center sm:mt-3">
-        <h2
-          className={
-            embedded
-              ? "demo-design-dir__title max-w-[min(100%,48rem)] shrink-0 text-balance text-center"
-              : `${homeSectionTitleClass} max-w-[min(100%,48rem)] shrink-0`
-          }
-        >
-          {t("workTitle")}
-        </h2>
-        <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
-          <DiagnosticScanLine variant="rail" motion="split" className="w-full" />
+      <div className="mx-auto mt-2 w-full max-w-[min(100%,52rem)] sm:mt-3">
+        <div className="flex w-full flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <div className="hidden min-h-0 min-w-0 flex-1 sm:block">
+            <DiagnosticScanLine variant="rail" motion="along" className="w-full" />
+          </div>
+          <h2
+            className={
+              embedded
+                ? "demo-design-dir__title mb-0 max-w-[min(100%,48rem)] shrink-0 text-balance text-center"
+                : `${homeSectionEyebrowClass} mb-0 max-w-[min(100%,48rem)] shrink-0 text-balance text-center`
+            }
+          >
+            {t("workTitle")}
+          </h2>
+          <div className="hidden min-h-0 min-w-0 flex-1 sm:block">
+            <DiagnosticScanLine variant="rail" motion="along" className="w-full" />
+          </div>
+          <div className="w-full px-1 sm:hidden">
+            <DiagnosticScanLine variant="rail" motion="split" className="w-full" />
+          </div>
         </div>
       </div>
       <ul
