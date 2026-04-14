@@ -24,7 +24,7 @@ export default async function HomePage({
             <MarketingHero homeOrbitPreset="s12" designDirection />
 
             <div className="home-mobile-hero-cards marketing-hero-orbit-base marketing-hero-orbit--s12 md:hidden" data-hero-orbit-home="">
-              <section className="home-mobile-hero-cards-section demo-design-dir__section demo-design-dir__section--band-a border-t border-white/[0.06] px-4 pb-6 pt-5 sm:px-6 sm:pb-8">
+              <section className="home-mobile-hero-cards-section demo-design-dir__section px-4 pb-6 pt-5 sm:px-6 sm:pb-8">
                 <div className="demo-design-dir__shell">
                   <MarketingHeroPillarsGrid
                     designDirection
