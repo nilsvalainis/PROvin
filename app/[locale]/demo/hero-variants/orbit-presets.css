@@ -768,11 +768,11 @@
     font-size: 1.2em;
   }
 
-  .marketing-hero-orbit-base .demo-design-dir__card .marketing-hero-pillar-title {
+  .marketing-hero-orbit-base.marketing-hero-section .demo-design-dir__card .marketing-hero-pillar-title {
     color: rgb(255 255 255 / 0.99);
   }
 
-  .marketing-hero-orbit-base .marketing-hero-pillar-icon.marketing-hero-pillar-icon--check {
+  .marketing-hero-orbit-base.marketing-hero-section .marketing-hero-pillar-icon.marketing-hero-pillar-icon--check {
     opacity: 1;
     color: rgb(46 255 155);
   }
@@ -852,19 +852,19 @@
     transition: transform 0.1s ease;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card {
+  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card {
     opacity: 0;
     transform: translateY(12px);
     animation: marketing-hero-mobile-card-in 0.45s ease-out forwards;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card:nth-child(1),
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card:nth-child(2) {
+  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card:nth-child(1),
+  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card:nth-child(2) {
     animation-delay: 0.08s;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card:nth-child(3),
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card:nth-child(4) {
+  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card:nth-child(3),
+  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card:nth-child(4) {
     animation-delay: 0.22s;
   }
 }

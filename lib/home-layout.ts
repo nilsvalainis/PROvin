@@ -15,6 +15,15 @@ export const homeMarketingPillarGridWidthClass =
   "w-full min-w-0 max-w-full sm:max-w-[min(100%,40.7rem)] md:max-w-[min(100%,44.55rem)]";
 
 /**
+ * „KAS IEKĻAUTS CENĀ” kartes virsraksts / ikona — saskaņots ar Hero pīlāru izmēriem (`data-hero-orbit-home`).
+ */
+export const heroPillarCardTitleClass =
+  "marketing-hero-pillar-title line-clamp-2 max-h-[2.4em] min-h-[2.4em] w-full max-w-[11.5rem] whitespace-pre-line text-center text-[9px] font-semibold uppercase leading-[1.2] tracking-tight sm:max-w-[12.5rem] sm:text-[10px] home-body-ink";
+
+export const heroPillarCardIconClass =
+  "marketing-hero-pillar-icon h-7 w-7 shrink-0 text-[#0066ff] [stroke-width:1.5] sm:h-7 sm:w-7 md:h-8 md:w-8";
+
+/**
  * Zem-Hero sadaļu virsraksts — maza trekna uppercase, provin zilā.
  * Nelietot Hero sadaļā.
  */

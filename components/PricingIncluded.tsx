@@ -13,7 +13,7 @@ import {
 import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { irissAnchorHref } from "@/lib/paths";
-import { homeSectionEyebrowClass } from "@/lib/home-layout";
+import { heroPillarCardIconClass, heroPillarCardTitleClass, homeSectionEyebrowClass } from "@/lib/home-layout";
 
 type GridItem = {
   title: string;
@@ -31,8 +31,6 @@ const GRID_LUCIDE_ICONS: LucideIcon[] = [
   Headphones,
   ShieldCheck,
 ];
-
-const iconClass = "marketing-hero-pillar-icon h-7 w-7 shrink-0 text-[#0066ff] [stroke-width:1.5] sm:h-7 sm:w-7 md:h-8 md:w-8";
 
 const pricingGridWidthClass = "w-full max-w-[min(100%,68rem)]";
 
@@ -68,23 +66,20 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
           </div>
         </div>
       </div>
-      <ul
-        className={
-          embedded
-            ? `mx-auto mt-8 grid ${pricingGridWidthClass} list-none grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 md:gap-5`
-            : `mx-auto mt-8 grid ${pricingGridWidthClass} list-none grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 md:gap-5`
-        }
-      >
+      <div className="marketing-hero-orbit-base marketing-hero-orbit--s12" data-hero-orbit-home="">
+        <ul
+          className={`mx-auto mt-8 grid ${pricingGridWidthClass} list-none grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 md:gap-5 marketing-hero-pillars-mobile-grid`}
+        >
         {grid.map((item, i) => {
           const Icon = GRID_LUCIDE_ICONS[i] ?? Globe2;
           const riskCard = i === 4;
           const iconTone = riskCard ? "marketing-hero-pillar-icon--risk text-[#ff342e]" : "";
           const cardClass =
-            "marketing-hero-pillar marketing-hero-pillar--soft demo-design-dir__card flex min-h-0 flex-col items-center justify-start gap-2.5 px-2 py-3 text-center sm:gap-3 sm:px-3 sm:py-4";
+            "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--mobile-card demo-design-dir__card flex min-h-0 flex-col items-center justify-start gap-2.5 px-2 py-3 text-center sm:gap-3 sm:px-3 sm:py-4";
           const cellContent = (
             <>
-              <Icon className={`${iconClass} ${iconTone}`.trim()} aria-hidden strokeWidth={1.5} />
-              <h3 className="marketing-hero-pillar-title home-body-ink text-[12px] font-semibold uppercase leading-tight tracking-tight sm:text-[13px]">
+              <Icon className={`${heroPillarCardIconClass} ${iconTone}`.trim()} aria-hidden strokeWidth={1.5} />
+              <h3 className={heroPillarCardTitleClass}>
                 {item.title}
               </h3>
               <p className="home-muted-foreground text-[11px] leading-relaxed sm:text-[12px]">{item.body}</p>
@@ -115,7 +110,8 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
             </li>
           );
         })}
-      </ul>
+        </ul>
+      </div>
       <div className={`mx-auto mt-4 ${pricingGridWidthClass}`}>
         <p
           className="pricing-auto-records-footnote w-full text-left text-[10px] font-normal leading-snug text-white/55 sm:text-[12px]"

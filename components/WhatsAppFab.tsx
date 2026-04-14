@@ -12,11 +12,11 @@ export function WhatsAppFab() {
   const p = normalizeSitePath(pathname);
   const isHome = p === "/" || p === "";
 
-  /** Mājas lapā mobilajā WhatsApp ir `HomeMobileOrderWhatsAppRow`; šeit tikai desktop. */
+  /** Mājas lapā mobilajā WhatsApp ir tikai `HomeMobileOrderWhatsAppRow` (viena poga ar PASŪTĪT). */
   const className = [
     "provin-home-pill-cta provin-home-pill-cta--fab fixed right-[max(1.25rem,env(safe-area-inset-right,0px))] z-50 touch-manipulation shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95",
     isHome
-      ? "max-md:hidden md:inline-flex bottom-[max(1.25rem,env(safe-area-inset-bottom,0px))]"
+      ? "hidden md:inline-flex bottom-[max(1.25rem,env(safe-area-inset-bottom,0px))]"
       : "bottom-[max(1.25rem,env(safe-area-inset-bottom,0px))]",
   ].join(" ");
 
