@@ -81,6 +81,17 @@ body {
   min-height: 100dvh;
 }
 
+/*
+ * Kreisā sekciju sliede (`SiteSectionRail`) — lg+ rezervē `main` kreisās atkāpes,
+ * lai paplašinātie uzraksti (hover, lielāks fonts/zoom) nepārklāj kartes / formu.
+ * Klasi uz `html` liek `SiteSectionRail` tikai tad, kad sliede ir redzama.
+ */
+@media (min-width: 1024px) {
+  html.site-rail-lg-gutter .site-main-with-rail {
+    padding-left: calc(env(safe-area-inset-left, 0px) + clamp(12.5rem, 6vw + 9.5rem, 20rem));
+  }
+}
+
 @media (max-width: 768px) {
   /* Viens pagarināts hero fons — hero + 4 kartes; nav otra slāņa zem kartēm. */
   .hero-bg-extended {
