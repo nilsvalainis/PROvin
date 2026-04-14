@@ -120,10 +120,10 @@ export function MarketingHero({
         }
       >
         <>
-          <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
-            <span className={heroH1KeywordResolved}>{t("h1Vin")}</span>
-            <span className="text-white/95">{t("h1Un")}</span>
-            <span className={heroH1KeywordResolved}>{t("h1Sludinajuma")}</span>
+          <span className="marketing-hero-title-line1 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
+            <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Vin")}</span>
+            <span className="marketing-hero-title-line1-main text-white/95">{t("h1Un")}</span>
+            <span className={`marketing-hero-title-line1-accent ${heroH1KeywordResolved}`}>{t("h1Sludinajuma")}</span>
           </span>
           <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
         </>
@@ -147,7 +147,7 @@ export function MarketingHero({
       text={t("approved")}
       className={
         designDirection
-          ? "demo-design-dir__kicker text-center !tracking-[0.24em] sm:!tracking-[0.28em]"
+          ? "demo-design-dir__kicker marketing-hero-approved--home text-center !tracking-[0.24em] sm:!tracking-[0.28em]"
           : approvedByIrissSignatureHeroClass
       }
     />
@@ -205,7 +205,7 @@ export function MarketingHero({
           <div
             className={
               designDirection
-                ? "flex w-full flex-row flex-nowrap justify-between gap-3 sm:gap-4 md:gap-5"
+                ? "marketing-hero-pillars-mobile-grid flex w-full flex-row flex-nowrap justify-between gap-3 sm:gap-4 md:gap-5"
                 : `flex w-full flex-row flex-nowrap justify-between gap-2 sm:gap-4 md:gap-5 ${homeMarketingPillarGridWidthClass}`
             }
           >
@@ -216,7 +216,7 @@ export function MarketingHero({
             const articleClass = isC
               ? "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-row items-start gap-2.5 px-1 text-left sm:gap-3 sm:px-1"
               : designDirection
-                ? "marketing-hero-pillar marketing-hero-pillar--soft demo-design-dir__card flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2.5 px-2 py-3 text-center sm:gap-3 sm:px-3 sm:py-4"
+                ? "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--mobile-card demo-design-dir__card flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2.5 px-2 py-3 text-center sm:gap-3 sm:px-3 sm:py-4"
                 : "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2 px-0.5 text-center sm:gap-2.5 sm:px-0.5";
             const iconClass = isC
               ? `marketing-hero-pillar-icon mt-0.5 h-5 w-5 shrink-0 sm:h-5 sm:w-5 ${iconTone}`
