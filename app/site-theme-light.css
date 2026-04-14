@@ -296,6 +296,25 @@ html[data-site-theme="light"] .demo-design-dir__kicker {
   color: #525252 !important;
 }
 
+/*
+ * Hero „APPROVED BY IRISS” (ApprovedByIrissReveal) — gaišā fona virsū:
+ * globālajā animācijā beigās ir tumšā loka ēna + melns 1px — to aizstājam ar maigu „letterpress” un bez krāsainas mākoņa ēnas.
+ */
+html[data-site-theme="light"] .marketing-hero-section .hero-approved-reveal .hero-approved-char {
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 0.95),
+    0 1px 2px rgb(15 23 42 / 0.06) !important;
+  filter: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-site-theme="light"] .marketing-hero-section .hero-approved-reveal .hero-approved-char {
+    text-shadow:
+      0 1px 0 rgb(255 255 255 / 0.95),
+      0 1px 2px rgb(15 23 42 / 0.06) !important;
+  }
+}
+
 html[data-site-theme="light"] .marketing-hero-pillar-title {
   color: rgb(31 41 55 / 0.92) !important;
 }
