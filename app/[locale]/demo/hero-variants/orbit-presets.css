@@ -487,16 +487,16 @@
 [data-hero-variant^="s"] .marketing-hero-pillar-icon {
   color: rgb(168 175 190);
 }
-/* Ķeksīši — spilgti zaļi (ne riska pīlārs) */
+/* Ķeksīši — spilgti zaļi, bez apļa (Check), ne riska pīlārs */
 [data-hero-variant^="s"] .marketing-hero-pillar-icon.marketing-hero-pillar-icon--check {
-  color: rgb(74 222 128);
+  color: rgb(52 255 150);
 }
 /* Pārsūra pelēko „s” ikonu — tehnisko risku pīlārs (augstāka specifitāte nekā viena .marketing-hero-pillar-icon) */
 [data-hero-variant^="s"] .marketing-hero-pillar-icon.marketing-hero-pillar-icon--risk {
   color: rgb(255 52 46);
 }
 .marketing-hero-pillar-icon.marketing-hero-pillar-icon--check {
-  color: rgb(74 222 128);
+  color: rgb(52 255 150);
 }
 .marketing-hero-pillar-icon.marketing-hero-pillar-icon--risk {
   color: rgb(255 52 46);
@@ -634,7 +634,7 @@
   }
 
   .marketing-hero-pillar--soft:hover .marketing-hero-pillar-icon.marketing-hero-pillar-icon--check {
-    filter: drop-shadow(0 0 5px rgb(74 222 128 / 0.55));
+    filter: drop-shadow(0 0 6px rgb(64 255 170 / 0.75));
   }
 }
 
@@ -748,7 +748,7 @@
 
   .marketing-hero-orbit-base .marketing-hero-pillar-icon.marketing-hero-pillar-icon--check {
     opacity: 1;
-    color: rgb(51 235 142);
+    color: rgb(46 255 155);
   }
 }
 

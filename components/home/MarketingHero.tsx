@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 import "@/components/home/hero-orbit-styles";
-import { ChevronDown, CircleCheck, TriangleAlert } from "lucide-react";
+import { Check, ChevronDown, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { NavChevronDown } from "@/components/NavChevron";
 import { ApprovedByIrissReveal } from "@/components/home/ApprovedByIrissReveal";
@@ -209,7 +209,7 @@ export function MarketingHero({
           >
           {pillars.map((p, i) => {
             const riskPillar = i === 2;
-            const Icon = riskPillar ? TriangleAlert : CircleCheck;
+            const Icon = riskPillar ? TriangleAlert : Check;
             const iconTone = riskPillar ? "marketing-hero-pillar-icon--risk" : "marketing-hero-pillar-icon--check";
             const articleClass = isC
               ? "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-row items-start gap-2.5 px-1 text-left sm:gap-3 sm:px-1"
@@ -217,11 +217,11 @@ export function MarketingHero({
                 ? "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--mobile-card demo-design-dir__card flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2.5 px-2 py-3 text-center sm:gap-3 sm:px-3 sm:py-4"
                 : "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2 px-0.5 text-center sm:gap-2.5 sm:px-0.5";
             const iconClass = isC
-              ? `marketing-hero-pillar-icon mt-0.5 h-5 w-5 shrink-0 sm:h-5 sm:w-5 ${iconTone}`
-              : `marketing-hero-pillar-icon h-7 w-7 shrink-0 sm:h-7 sm:w-7 md:h-8 md:w-8 ${iconTone}`;
+              ? `marketing-hero-pillar-icon mt-0.5 h-5 w-5 shrink-0 origin-center sm:h-5 sm:w-5 ${iconTone}${riskPillar ? "" : " scale-110"}`
+              : `marketing-hero-pillar-icon h-7 w-7 shrink-0 origin-center sm:h-7 sm:w-7 md:h-8 md:w-8 ${iconTone}${riskPillar ? "" : " scale-110"}`;
             return (
               <article key={`${p.title}-${i}`} className={articleClass}>
-                <Icon className={iconClass} strokeWidth={riskPillar ? 1.5 : 2} aria-hidden />
+                <Icon className={iconClass} strokeWidth={1.5} aria-hidden />
                 <h3 className={`marketing-hero-pillar-title ${isC ? pillarTitleClassC : pillarTitleClass}`}>{p.title}</h3>
               </article>
             );
