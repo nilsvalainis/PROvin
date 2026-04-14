@@ -43,7 +43,7 @@ export async function Footer() {
       />
       <div className="home-footer-scrim pointer-events-none absolute inset-0 z-[1] provin-noise opacity-[0.14]" aria-hidden />
 
-      <div className={`relative z-10 ${homeContentMaxClass} px-4 py-8 sm:px-6 sm:py-10 lg:py-12`}>
+      <div className={`relative z-10 ${homeContentMaxClass} px-4 pb-3 pt-8 sm:px-6 sm:pb-4 sm:pt-10 lg:pb-5 lg:pt-12`}>
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-14 lg:gap-20">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-provin-accent sm:text-[12px]">
@@ -108,11 +108,11 @@ export async function Footer() {
             </span>
             <span>{t("gdpr", { year: new Date().getFullYear() })}</span>
           </p>
-          <details className="group mx-auto pt-2 text-center">
+          <details className="group mx-auto pt-2 pb-0 text-center">
             <summary className="mx-auto inline-flex cursor-pointer list-none select-none items-center justify-center rounded-md px-2 py-1 text-[10px] font-normal uppercase tracking-[0.14em] text-[#3f4248] transition-colors hover:bg-white/[0.04] hover:text-[#55585f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/20 [&::-webkit-details-marker]:hidden">
               {t("serviceProviderDisclosureSummary")}
             </summary>
-            <div className="mt-2.5 border-t border-white/[0.06] pt-2.5">
+            <div className="mt-2 border-t border-white/[0.06] pt-2 pb-0">
               <CompanyLegalOneLine omitPrefix variant="pakalpojums" tone="dark" />
             </div>
           </details>

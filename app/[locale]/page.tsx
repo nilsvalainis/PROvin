@@ -19,7 +19,7 @@ export default async function HomePage({
   return (
     <HomeScrollSurface wireframe={<AutoWireframeBackground />}>
       <div className="relative z-10 min-w-0 bg-transparent">
-        <div className="demo-design-dir min-w-0 pb-24 text-white">
+        <div className="demo-design-dir min-w-0 pb-0 text-white">
           <MarketingHero homeOrbitPreset="s12" designDirection />
 
           <div className="marketing-hero-orbit-base marketing-hero-orbit--s12 md:hidden" data-hero-orbit-home="">
@@ -56,7 +56,7 @@ export default async function HomePage({
 
           <HomeFaqSection />
 
-          <section className="demo-design-dir__section border-t border-white/[0.06] py-14">
+          <section className="demo-design-dir__section border-t border-white/[0.06] pt-14 pb-0">
             <div className="demo-design-dir__shell">
               <Footer />
             </div>
