@@ -6,7 +6,7 @@ import { orderSectionHref } from "@/lib/paths";
 import { normalizeSitePath } from "@/lib/site-rail-sections";
 
 /**
- * Globāla „Pasūtīt” — labais augšējais stūris, tā pati pill estētika kā `WhatsAppFab`.
+ * Globāla „Pasūtīt” — labais augšējais stūris, pill estētika kā mobilā pasūtīšanas josla.
  * Slēpts demo lapās un tur, kur jau ir sliede / headera izvēlne (sākums, pasūtīt, BUJ).
  */
 export function SiteOrderCtaPin() {

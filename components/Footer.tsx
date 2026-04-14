@@ -1,8 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { MessageCircle } from "lucide-react";
 import { HeroVisual } from "@/components/HeroVisual";
-import { contactMailtoHref, whatsappChatUrl } from "@/lib/contact";
+import { contactMailtoHref } from "@/lib/contact";
 import { homePath } from "@/lib/paths";
 import { CompanyLegalOneLine } from "@/components/CompanyLegalOneLine";
 import { homeContentMaxClass } from "@/lib/home-layout";
@@ -29,7 +28,6 @@ export async function Footer() {
   const t = await getTranslations("Footer");
   const locale = await getLocale();
   const mailHref = contactMailtoHref();
-  const waHref = whatsappChatUrl();
   const homeHref = homePath(locale);
   return (
     <footer
@@ -61,19 +59,6 @@ export async function Footer() {
                 </span>
                 <span className="border-b border-dashed border-white/20 pb-px transition-colors duration-300 group-hover:border-provin-accent/50">
                   {t("emailCta")}
-                </span>
-              </a>
-              <a
-                href={waHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={contactLinkClass}
-              >
-                <span className={contactIconShellClass}>
-                  <MessageCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden />
-                </span>
-                <span className="border-b border-dashed border-white/20 pb-px transition-colors duration-300 group-hover:border-provin-accent/50">
-                  {t("whatsapp")}
                 </span>
               </a>
             </div>
