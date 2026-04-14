@@ -746,48 +746,32 @@
     margin-top: max(0.75rem, env(safe-area-inset-top, 0px));
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section {
-    padding-bottom: max(2.5rem, calc(env(safe-area-inset-bottom, 0px) + 2.5rem));
-  }
-
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
-    font-size: clamp(1.2325rem, 4.42vmin + 0.357rem, 1.82775rem);
     line-height: 1.1;
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-orbit-center-sheet {
-    margin-bottom: 20px;
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1 {
     flex-direction: column;
-    gap: 0.14rem;
+    gap: 0.18rem;
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main {
-    font-size: 0.85em;
     font-weight: 700;
     color: rgb(255 255 255 / 0.96);
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
-    font-size: 0.9em;
     font-weight: 800;
-    white-space: nowrap;
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2--accent {
-    font-size: 1.14em;
+    font-size: 1.34em;
     text-align: center;
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-home-intro-body {
     max-width: 90vw;
-    padding-left: 24px;
-    padding-right: 24px;
-    font-size: 15px !important;
-    line-height: 1.6;
-    text-align: center;
+    line-height: 1.7;
     margin-bottom: 40px;
   }
 
@@ -799,23 +783,19 @@
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card {
     border: none !important;
-    padding: 16px 8px !important;
-    aspect-ratio: 1 / 1;
-    justify-content: center;
     box-shadow: 0 4px 20px rgb(0 0 0 / 0.06) !important;
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card .marketing-hero-pillar-icon {
-    height: 1.4rem;
-    width: 1.4rem;
+    height: 1.75rem;
+    width: 1.75rem;
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card .marketing-hero-pillar-title {
     max-width: none;
-    min-height: auto;
-    font-size: 12px;
-    line-height: 1.22;
-    text-align: center;
+    min-height: 2.5em;
+    font-size: 0.85rem;
+    line-height: 1.24;
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card:active {
