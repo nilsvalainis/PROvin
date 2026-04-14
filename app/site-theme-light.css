@@ -478,6 +478,11 @@ html[data-site-theme="light"] .demo-design-dir__body {
   color: #27272a;
 }
 
+html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-home-intro-body {
+  font-weight: 500;
+  letter-spacing: 0.021em;
+}
+
 html[data-site-theme="light"] .demo-design-dir__kicker {
   color: #525252 !important;
 }

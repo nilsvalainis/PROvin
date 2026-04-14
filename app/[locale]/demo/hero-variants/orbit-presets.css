@@ -601,10 +601,12 @@
 }
 
 .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-home-intro-body {
-  max-width: min(100%, 70ch);
+  max-width: min(100%, 78ch);
   margin-left: auto;
   margin-right: auto;
-  line-height: 1.6;
+  line-height: 1.65;
+  font-weight: 500;
+  letter-spacing: 0.021em;
 }
 
 /* Hero title hierarchy: AUDITS larger + blue, VIN/SLUDINĀJUMA stays accent bold in markup */
@@ -783,11 +785,13 @@
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-home-intro-body {
-    max-width: 90vw;
+    max-width: min(92vw, 78ch);
     padding-left: 24px;
     padding-right: 24px;
     font-size: 15px !important;
-    line-height: 1.6;
+    line-height: 1.65;
+    font-weight: 500;
+    letter-spacing: 0.022em;
     text-align: center;
   }
 
