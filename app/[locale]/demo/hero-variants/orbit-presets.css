@@ -544,7 +544,7 @@
 /* Sākumlapa (orbit + design-direction): H1 ×3 bāze −15 %; vidus starp kicker un ievadu — MarketingHero; šaurā ekrānā papildu clamp */
 .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
   max-width: min(100%, 58rem);
-  font-size: clamp(2.42409375rem, 7.1604vw + 0.5967rem, 3.16996875rem);
+  font-size: clamp(2.6934375rem, 7.956vw + 0.663rem, 3.5221875rem);
   line-height: 1.12;
   letter-spacing: -0.018em;
 }
@@ -552,7 +552,7 @@
 @media (min-width: 640px) {
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
     max-width: min(100%, 72.93rem);
-    font-size: clamp(2.9835rem, 4.7736vw + 1.044225rem, 3.729375rem);
+    font-size: clamp(3.315rem, 5.304vw + 1.16025rem, 4.14375rem);
     line-height: 1.1;
     letter-spacing: -0.02em;
   }
@@ -561,14 +561,14 @@
 @media (min-width: 1024px) {
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
     max-width: min(100%, 86.19rem);
-    font-size: clamp(3.3564375rem, 3.28185vw + 1.939275rem, 4.1023125rem);
+    font-size: clamp(3.729375rem, 3.6465vw + 2.15475rem, 4.558125rem);
   }
 }
 
 @media (max-width: 639px) {
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
     max-width: min(100%, calc(100vw - 1.25rem));
-    font-size: clamp(1.305rem, 4.68vmin + 0.378rem, 1.935rem);
+    font-size: clamp(1.45rem, 5.2vmin + 0.42rem, 2.15rem);
     line-height: 1.08;
     letter-spacing: -0.022em;
   }

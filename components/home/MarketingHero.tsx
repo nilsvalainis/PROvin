@@ -106,7 +106,7 @@ export function MarketingHero({
   /** Sākumlapas orbit: viens H1 tonis (bez zilajiem atslēgvārdiem), izmērs ×3 — sk. orbit-presets `[data-hero-orbit-home]`. */
   const heroH1KeywordResolved =
     orbitHomeCenterLayout && isOrbitVisual
-      ? "marketing-hero-h1-blue font-bold whitespace-nowrap text-provin-accent"
+      ? "marketing-hero-h1-unified font-semibold text-white/95"
       : `marketing-hero-h1-blue ${heroH1BlueKeywordClass}`;
 
   const heroTitleStack = (
