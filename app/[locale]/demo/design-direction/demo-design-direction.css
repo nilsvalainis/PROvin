@@ -318,14 +318,15 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(0 102 255 / 0.2) 32%,
-    rgb(0 102 255 / 0.95) 50%,
-    rgb(0 102 255 / 0.2) 68%,
+    rgb(51 153 255 / 0.62) 28%,
+    rgb(120 200 255 / 1) 50%,
+    rgb(51 153 255 / 0.62) 72%,
     transparent 100%
   );
   box-shadow:
-    0 0 5px 0 rgb(0 102 255 / 0.45),
-    0 0 14px 0 rgb(0 102 255 / 0.28);
+    0 0 6px 0 rgb(0 153 255 / 0.85),
+    0 0 16px 0 rgb(0 140 255 / 0.55),
+    0 0 28px 0 rgb(0 102 255 / 0.35);
   opacity: 1;
   animation: provin-diagnostic-scan-along-track var(--provin-scan-loop-dur, calc((7s / 3) * 2)) linear infinite;
 }

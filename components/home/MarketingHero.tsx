@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 import "@/components/home/hero-orbit-styles";
-import { ChevronDown, FileText, Globe2, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
+import { ChevronDown, CircleCheck, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { NavChevronDown } from "@/components/NavChevron";
 import { ApprovedByIrissReveal } from "@/components/home/ApprovedByIrissReveal";
@@ -24,8 +24,6 @@ export {
   HERO_SILVER_BLACK_SUBVARIANTS,
   isOrbitFamilyVariant,
 } from "@/lib/hero-orbit-j-presets";
-
-const PILLAR_ICONS: LucideIcon[] = [FileText, Globe2, TriangleAlert, MessageCircle];
 
 type HeroPillar = { title: string; body?: string };
 
@@ -210,9 +208,9 @@ export function MarketingHero({
             }
           >
           {pillars.map((p, i) => {
-            const Icon = PILLAR_ICONS[i] ?? FileText;
             const riskPillar = i === 2;
-            const iconTone = riskPillar ? "marketing-hero-pillar-icon--risk" : "text-[#0066ff]";
+            const Icon = riskPillar ? TriangleAlert : CircleCheck;
+            const iconTone = riskPillar ? "marketing-hero-pillar-icon--risk" : "marketing-hero-pillar-icon--check";
             const articleClass = isC
               ? "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-row items-start gap-2.5 px-1 text-left sm:gap-3 sm:px-1"
               : designDirection
@@ -223,7 +221,7 @@ export function MarketingHero({
               : `marketing-hero-pillar-icon h-7 w-7 shrink-0 sm:h-7 sm:w-7 md:h-8 md:w-8 ${iconTone}`;
             return (
               <article key={`${p.title}-${i}`} className={articleClass}>
-                <Icon className={iconClass} strokeWidth={1.5} aria-hidden />
+                <Icon className={iconClass} strokeWidth={riskPillar ? 1.5 : 2} aria-hidden />
                 <h3 className={`marketing-hero-pillar-title ${isC ? pillarTitleClassC : pillarTitleClass}`}>{p.title}</h3>
               </article>
             );

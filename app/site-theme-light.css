@@ -82,14 +82,15 @@ html[data-site-theme="light"] .provin-diagnostic-scan-line__pulse {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(0 102 255 / 0.38) 36%,
-    rgb(0 102 255 / 1) 50%,
-    rgb(0 102 255 / 0.38) 64%,
+    rgb(0 140 255 / 0.72) 32%,
+    rgb(120 200 255 / 1) 50%,
+    rgb(0 140 255 / 0.72) 68%,
     transparent 100%
   );
   box-shadow:
-    0 0 3px 0 rgb(0 102 255 / 0.55),
-    0 0 8px 0 rgb(0 102 255 / 0.28);
+    0 0 5px 0 rgb(0 153 255 / 0.9),
+    0 0 14px 0 rgb(0 140 255 / 0.55),
+    0 0 24px 0 rgb(0 102 255 / 0.38);
 }
 
 html[data-site-theme="light"] .demo-design-dir__hero-scan::after {
@@ -97,14 +98,15 @@ html[data-site-theme="light"] .demo-design-dir__hero-scan::after {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(0 102 255 / 0.38) 36%,
-    rgb(0 102 255 / 1) 50%,
-    rgb(0 102 255 / 0.38) 64%,
+    rgb(0 140 255 / 0.72) 32%,
+    rgb(120 200 255 / 1) 50%,
+    rgb(0 140 255 / 0.72) 68%,
     transparent 100%
   );
   box-shadow:
-    0 0 3px 0 rgb(0 102 255 / 0.55),
-    0 0 8px 0 rgb(0 102 255 / 0.28);
+    0 0 5px 0 rgb(0 153 255 / 0.9),
+    0 0 14px 0 rgb(0 140 255 / 0.55),
+    0 0 24px 0 rgb(0 102 255 / 0.38);
 }
 
 /* Mājas čaula + fona dziļums */
@@ -490,6 +492,10 @@ html[data-site-theme="light"] .marketing-hero-pillar-title {
 
 html[data-site-theme="light"] .marketing-hero-pillar-icon {
   color: var(--color-provin-accent) !important;
+}
+
+html[data-site-theme="light"] .marketing-hero-pillar-icon.marketing-hero-pillar-icon--check {
+  color: rgb(22 163 74) !important;
 }
 
 html[data-site-theme="light"] .marketing-hero-pillar-icon.marketing-hero-pillar-icon--risk {
