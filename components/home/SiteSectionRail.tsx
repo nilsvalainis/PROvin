@@ -107,25 +107,6 @@ export function SiteSectionRail() {
     applyHashIfPresent();
   }, [applyHashIfPresent, hash, showRail]);
 
-  /** lg+: rezervē vietu saturam, lai sliedes etiķetes (hover / zoom) nepārklāj bloku. */
-  useLayoutEffect(() => {
-    if (!showRail || typeof document === "undefined") {
-      document.documentElement.classList.remove("site-rail-lg-gutter");
-      return;
-    }
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const sync = () => {
-      if (mq.matches) document.documentElement.classList.add("site-rail-lg-gutter");
-      else document.documentElement.classList.remove("site-rail-lg-gutter");
-    };
-    sync();
-    mq.addEventListener("change", sync);
-    return () => {
-      mq.removeEventListener("change", sync);
-      document.documentElement.classList.remove("site-rail-lg-gutter");
-    };
-  }, [showRail]);
-
   useLayoutEffect(() => {
     if (!showRail) return;
     const updateDot = () => {
