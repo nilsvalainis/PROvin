@@ -8,6 +8,7 @@ import { CookieConsent } from "@/components/CookieConsent";
 import { LenisProvider } from "@/components/providers/LenisProvider";
 import { Header } from "@/components/Header";
 import { HideOnDemoPaths } from "@/components/layout/HideOnDemoPaths";
+import { HomeMobileOrderWhatsAppRow } from "@/components/home/HomeMobileOrderWhatsAppRow";
 import { SiteOrderCtaPin } from "@/components/home/SiteOrderCtaPin";
 import { SiteSectionRail } from "@/components/home/SiteSectionRail";
 import { WhatsAppFab } from "@/components/WhatsAppFab";
@@ -72,6 +73,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         <main className="relative z-10 min-w-0 max-w-full overflow-x-clip pt-0 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
           {children}
         </main>
+        <HomeMobileOrderWhatsAppRow />
         <WhatsAppFab />
         <DemoPathThemeToggle />
         <CookieConsent />

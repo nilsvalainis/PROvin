@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -153,19 +153,6 @@ export function HeaderClient({
   const orderBtnClass =
     "provin-btn provin-btn--compact inline-flex min-h-9 shrink-0 items-center justify-center rounded-full px-4 text-[11px] font-bold text-white shadow-[0_0_16px_rgba(0,102,255,0.12)] ring-1 ring-white/10 sm:min-h-9 sm:px-[1.2rem] sm:text-[11px]";
 
-  /** Sākumlapas tumšais hero — tā pati „pill” estētika kā `OrderForm` hero „Turpināt uz apmaksu”. */
-  const orderHeaderHeroClass =
-    "provin-home-pill-cta provin-home-pill-cta--fit provin-home-pill-cta--header-compact inline-flex shrink-0 touch-manipulation whitespace-nowrap";
-
-  /** Sākumlapa: zilā pill + bultiņa kā tumšajā hero; light — klase `site-theme-light` tumšās pill krāsām. */
-  const homeHeroOrderChrome =
-    theme === "light"
-      ? `${orderHeaderHeroClass} provin-home-pill-cta--header-dark-chrome`
-      : orderHeaderHeroClass;
-
-  /** Sākumlapa (dark vai light): tā pati augšējās malas izkārtojums un Pasūtīt kā hero pill. */
-  const useHomeHeroHeaderActions = isHome;
-
   const navLinkClass = (active: boolean) =>
     [
       "flex min-h-11 items-center rounded-xl px-4 text-lg font-medium tracking-tight transition-colors",
@@ -219,19 +206,6 @@ export function HeaderClient({
                 <SiteThemeHeaderButton
                   className={mobileRailOnDark ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
                 />
-                <Link
-                  href={orderHref}
-                  className={useHomeHeroHeaderActions ? homeHeroOrderChrome : orderBtnClass}
-                >
-                  {useHomeHeroHeaderActions ? (
-                    <>
-                      {orderLabel}
-                      <ArrowRight className="h-3 w-3 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
-                    </>
-                  ) : (
-                    orderLabel
-                  )}
-                </Link>
               <button
                 type="button"
                 onClick={toggleRailMenu}
@@ -286,19 +260,6 @@ export function HeaderClient({
             <SiteThemeHeaderButton
               className={isDarkHeaderSurface ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
             />
-            <Link
-              href={orderHref}
-              className={useHomeHeroHeaderActions ? homeHeroOrderChrome : orderBtnClass}
-            >
-              {useHomeHeroHeaderActions ? (
-                <>
-                  {orderLabel}
-                  <ArrowRight className="h-3 w-3 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
-                </>
-              ) : (
-                orderLabel
-              )}
-            </Link>
           </nav>
 
           {!logoAlignWithRailSakums ? (
@@ -306,16 +267,6 @@ export function HeaderClient({
               <SiteThemeHeaderButton
                 className={isDarkHeaderSurface ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
               />
-              <Link href={orderHref} className={useHomeHeroHeaderActions ? homeHeroOrderChrome : orderBtnClass}>
-                {useHomeHeroHeaderActions ? (
-                  <>
-                    {orderLabel}
-                    <ArrowRight className="h-3 w-3 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
-                  </>
-                ) : (
-                  orderLabel
-                )}
-              </Link>
               <button
                 type="button"
                 onClick={() => setOpen(true)}

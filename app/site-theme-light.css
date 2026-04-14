@@ -11,10 +11,10 @@ html[data-site-theme="light"] {
   --site-body-gradient: linear-gradient(180deg, #ffffff 0%, #f6f7f9 48%, #f0f2f5 100%);
   --site-body-fg: #0a0a0a;
   /* Tailwind @theme — lietots ar `text-provin-accent` u.c. */
-  --color-provin-accent: #0066ff;
-  --color-provin-accent-hover: #0052cc;
-  --color-provin-accent-soft: #e8f2fc;
-  --color-provin-accent-muted: #3d7fd0;
+  --color-provin-accent: #0078ff;
+  --color-provin-accent-hover: #0066e6;
+  --color-provin-accent-soft: #e0f0ff;
+  --color-provin-accent-muted: #2b6fd0;
   --color-apple-blue: var(--color-provin-accent);
   --color-apple-blue-hover: var(--color-provin-accent-hover);
   --color-provin-green: var(--color-provin-accent);
@@ -49,7 +49,7 @@ html[data-site-theme="light"] {
   --dd-glass-inset: inset 0 1px 0 rgb(255 255 255 / 0.82);
   --dd-glass-shadow-tight: 0 2px 8px rgb(15 23 42 / 0.045);
   --dd-glass-shadow-deep: 0 14px 40px rgb(15 23 42 / 0.075);
-  --dd-glass-shadow-blue: 0 1px 0 rgb(0 102 255 / 0.05);
+  --dd-glass-shadow-blue: 0 1px 0 rgb(0 120 255 / 0.12);
   --dd-glass-hover:
     inset 0 1px 0 rgb(255 255 255 / 0.88),
     0 0 0 1px rgb(0 102 255 / 0.12),
@@ -82,15 +82,15 @@ html[data-site-theme="light"] .provin-diagnostic-scan-line__pulse {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(0 140 255 / 0.72) 32%,
-    rgb(120 200 255 / 1) 50%,
-    rgb(0 140 255 / 0.72) 68%,
+    rgb(0 130 255 / 0.88) 30%,
+    rgb(90 210 255 / 1) 50%,
+    rgb(0 130 255 / 0.88) 70%,
     transparent 100%
   );
   box-shadow:
-    0 0 5px 0 rgb(0 153 255 / 0.9),
-    0 0 14px 0 rgb(0 140 255 / 0.55),
-    0 0 24px 0 rgb(0 102 255 / 0.38);
+    0 0 7px 0 rgb(0 160 255 / 1),
+    0 0 18px 0 rgb(0 140 255 / 0.65),
+    0 0 30px 0 rgb(0 120 255 / 0.48);
 }
 
 html[data-site-theme="light"] .demo-design-dir__hero-scan::after {
@@ -100,15 +100,15 @@ html[data-site-theme="light"] .demo-design-dir__hero-scan::after {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(0 140 255 / 0.72) 32%,
-    rgb(120 200 255 / 1) 50%,
-    rgb(0 140 255 / 0.72) 68%,
+    rgb(0 130 255 / 0.88) 30%,
+    rgb(90 210 255 / 1) 50%,
+    rgb(0 130 255 / 0.88) 70%,
     transparent 100%
   );
   box-shadow:
-    0 0 5px 0 rgb(0 153 255 / 0.9),
-    0 0 14px 0 rgb(0 140 255 / 0.55),
-    0 0 24px 0 rgb(0 102 255 / 0.38);
+    0 0 7px 0 rgb(0 160 255 / 1),
+    0 0 18px 0 rgb(0 140 255 / 0.65),
+    0 0 30px 0 rgb(0 120 255 / 0.48);
   animation: provin-diagnostic-scan-ping-pong calc(var(--provin-scan-loop-dur, calc((7s / 3) * 2)) * 2) linear infinite;
 }
 
@@ -172,52 +172,20 @@ html[data-site-theme="light"] .home-rail-label {
   color: #4b5563;
 }
 
-/* Hero pill + pasūtīšanas lauki — augsts kontrasts */
+/* Hero pill + pasūtīšanas lauki — spilgtāks zils gaišajā režīmā */
 html[data-site-theme="light"] .provin-home-pill-cta {
-  border-color: rgb(0 102 255 / 0.55);
-  background-color: rgb(0 102 255 / 0.16);
+  border-color: rgb(0 120 255 / 0.62);
+  background-color: rgb(0 120 255 / 0.22);
   color: #000000;
 }
 
 html[data-site-theme="light"] .provin-home-pill-cta:hover:not(:disabled) {
-  background-color: rgb(0 102 255 / 0.24);
+  background-color: rgb(0 120 255 / 0.34);
   color: #000000;
 }
 
 html[data-site-theme="light"] .provin-home-pill-cta:focus-visible {
-  outline-color: rgb(0 102 255 / 0.55);
-}
-
-/* Augšējā izvēlne, sākumlapa: „Pasūtīt” kā tumšajā hero (zila stikla pill, gaiši zils teksts) — nevis melnais order forma variantā */
-html[data-site-theme="light"] header .provin-home-pill-cta--header-dark-chrome {
-  border-color: rgb(0 102 255 / 0.35) !important;
-  background-color: rgb(0 102 255 / 0.12) !important;
-  color: #000000 !important;
-}
-
-html[data-site-theme="light"] header .provin-home-pill-cta--header-dark-chrome:hover:not(:disabled) {
-  background-color: rgb(0 102 255 / 0.2) !important;
-  color: #000000 !important;
-}
-
-html[data-site-theme="light"] header .provin-home-pill-cta--header-dark-chrome:focus-visible {
-  outline-color: rgb(0 102 255 / 0.55) !important;
-}
-
-/* Sākumlapas hero CTA — tā pati „header” zilā stikla pill kā augšējā „Pasūtīt” */
-html[data-site-theme="light"] .marketing-hero-section .provin-home-pill-cta--header-dark-chrome {
-  border-color: rgb(0 102 255 / 0.35) !important;
-  background-color: rgb(0 102 255 / 0.12) !important;
-  color: #000000 !important;
-}
-
-html[data-site-theme="light"] .marketing-hero-section .provin-home-pill-cta--header-dark-chrome:hover:not(:disabled) {
-  background-color: rgb(0 102 255 / 0.2) !important;
-  color: #000000 !important;
-}
-
-html[data-site-theme="light"] .marketing-hero-section .provin-home-pill-cta--header-dark-chrome:focus-visible {
-  outline-color: rgb(0 102 255 / 0.55) !important;
+  outline-color: rgb(0 120 255 / 0.65);
 }
 
 /* Pasūtījuma forma (hero) — etiķetes, ievade, kopsavilkums */

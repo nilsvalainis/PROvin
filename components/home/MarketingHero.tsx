@@ -2,15 +2,13 @@
 
 import { useId } from "react";
 import "@/components/home/hero-orbit-styles";
-import { ArrowRight, ChevronDown } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { ChevronDown } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { NavChevronDown } from "@/components/NavChevron";
 import { ApprovedByIrissReveal } from "@/components/home/ApprovedByIrissReveal";
 import { MarketingHeroPillarsGrid } from "@/components/home/MarketingHeroPillarsGrid";
 import { MarketingHeroSpeedometer } from "@/components/home/MarketingHeroSpeedometer";
-import { useSiteTheme } from "@/components/providers/SiteThemeProvider";
 import type { HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
 import { isOrbitFamilyVariant } from "@/lib/hero-orbit-j-presets";
 import {
@@ -18,8 +16,6 @@ import {
   heroH1BlueKeywordClass,
   homeHeroSubtitleClass,
 } from "@/lib/home-layout";
-import { orderSectionHref } from "@/lib/paths";
-
 export type { HeroOrbitSubvariant, HeroSilverBlackSubvariant, HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
 export {
   HERO_DEMO_SPEEDOMETER_VARIANTS,
@@ -67,15 +63,6 @@ export function MarketingHero({
   const silhouetteLensClipId = `${silhouetteIdBase}-lens-clip`;
   const t = useTranslations("Hero");
   const tMeta = useTranslations("Meta");
-  const locale = useLocale();
-  const { theme } = useSiteTheme();
-  const orderHref = orderSectionHref(locale);
-  const orderHeaderHeroClass =
-    "provin-home-pill-cta provin-home-pill-cta--fit provin-home-pill-cta--header-compact inline-flex shrink-0 touch-manipulation whitespace-nowrap";
-  const homeHeroOrderChrome =
-    theme === "light"
-      ? `${orderHeaderHeroClass} provin-home-pill-cta--header-dark-chrome`
-      : orderHeaderHeroClass;
 
   const sectionId = sectionDomId ?? (demoVariant ? `demo-hero-${demoVariant}` : "home-hero");
   const titleId = demoVariant ? `marketing-hero-title-${demoVariant}` : "marketing-hero-title";
@@ -258,13 +245,7 @@ export function MarketingHero({
         <MarketingHeroPillarsGrid designDirection={designDirection} isC={isC} isB={isB} />
         {scrollToContentLinkDesign("mt-3 sm:mt-4")}
       </div>
-      <div className="flex w-full flex-col items-center gap-3.5 md:hidden">
-        <Link href={orderHref} className={homeHeroOrderChrome}>
-          {t("heroMobileOrderCta")}
-          <ArrowRight className="h-3 w-3 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
-        </Link>
-        {scrollToContentLinkDesign("mt-0")}
-      </div>
+      <div className="flex w-full flex-col items-center gap-3.5 md:hidden">{scrollToContentLinkDesign("mt-0")}</div>
     </>
   );
 
