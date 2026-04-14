@@ -127,14 +127,15 @@ export function SiteSectionRail() {
   if (!showRail) return null;
 
   const linkBase =
-    "group/link flex max-w-none items-center gap-2.5 text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-[color,opacity,gap] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none lg:text-[10px] lg:tracking-[0.19em]";
+    "group/link flex max-w-none items-start gap-2.5 text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-[color,opacity,gap] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none lg:text-[10px] lg:tracking-[0.19em]";
 
+  /** Šaurāks max platums + pārlikšana rindiņās — sliede pati ierobežota; `main` netiek nobīdīts. */
   const railLabelClass =
-    "min-w-0 overflow-hidden whitespace-nowrap text-left opacity-0 max-w-0 -translate-x-2 transition-[opacity,max-width,transform] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none motion-reduce:max-w-[13rem] motion-reduce:translate-x-0 motion-reduce:opacity-100 group-hover/rail:max-w-[13rem] group-hover/rail:translate-x-0 group-hover/rail:opacity-100 group-focus-within/rail:max-w-[13rem] group-focus-within/rail:translate-x-0 group-focus-within/rail:opacity-100";
+    "min-w-0 overflow-hidden whitespace-normal break-words text-pretty text-left opacity-0 max-w-0 -translate-x-2 transition-[opacity,max-width,transform] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none motion-reduce:translate-x-0 motion-reduce:opacity-100 motion-reduce:max-w-[min(10.25rem,min(28vw,26vmin))] group-hover/rail:max-w-[min(10.25rem,min(28vw,26vmin))] group-hover/rail:translate-x-0 group-hover/rail:opacity-100 group-focus-within/rail:max-w-[min(10.25rem,min(28vw,26vmin))] group-focus-within/rail:translate-x-0 group-focus-within/rail:opacity-100";
 
   return (
     <nav
-      className="site-section-rail group/rail pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] top-[max(1rem,env(safe-area-inset-top,0px))] z-40 hidden min-h-0 w-max cursor-pointer flex-col pl-1 lg:flex"
+      className="site-section-rail group/rail pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] top-[max(1rem,env(safe-area-inset-top,0px))] z-40 hidden min-h-0 min-w-0 w-max max-w-[min(15.75rem,min(34vw,30vmin))] cursor-pointer flex-col overflow-x-clip overflow-y-visible pl-1 lg:flex"
       aria-label={t("navAria")}
     >
       {/* Plašāks „tuvuma” lauks + diskrēts fons tikai pie hover / tastatūras */}
@@ -143,8 +144,8 @@ export function SiteSectionRail() {
         aria-hidden
       />
 
-      <div className="relative z-10 flex h-full min-h-0 w-max flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 flex-row items-stretch gap-2.5 pl-0.5 transition-[gap] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] group-hover/rail:gap-3.5 motion-reduce:transition-none">
+      <div className="relative z-10 flex h-full min-h-0 min-w-0 w-max max-w-full flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-row items-stretch gap-2.5 pl-0.5 transition-[gap] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] group-hover/rail:gap-3.5 motion-reduce:transition-none">
           <div ref={trackRef} className="relative h-full min-h-0 w-3 shrink-0">
             <div
               className="site-rail-axis absolute inset-y-1.5 left-1/2 z-0 w-px -translate-x-1/2 bg-white/[0.11] shadow-[0_0_14px_rgba(0,102,255,0.12)] transition-[background-color,box-shadow] duration-700 ease-out group-hover/rail:bg-white/[0.16] group-hover/rail:shadow-[0_0_18px_rgba(0,102,255,0.2)] group-focus-within/rail:bg-white/[0.16] group-focus-within/rail:shadow-[0_0_18px_rgba(0,102,255,0.2)]"
@@ -182,7 +183,7 @@ export function SiteSectionRail() {
                       aria-current={isActive ? "location" : undefined}
                     >
                       <span
-                        className={`h-1 w-1 shrink-0 rounded-full bg-[#0066ff] transition-[opacity,transform,box-shadow] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none ${
+                        className={`mt-0.5 h-1 w-1 shrink-0 rounded-full bg-[#0066ff] transition-[opacity,transform,box-shadow] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none ${
                           isActive
                             ? "scale-100 opacity-100 shadow-[0_0_8px_rgba(0,102,255,0.65)]"
                             : "scale-100 opacity-[0.4] shadow-[0_0_5px_rgba(0,102,255,0.35)] group-hover/rail:opacity-[0.72] group-hover/rail:shadow-[0_0_8px_rgba(0,102,255,0.45)] group-hover/link:opacity-85 group-focus-visible/link:opacity-90"
