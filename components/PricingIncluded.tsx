@@ -118,9 +118,13 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
             );
           })}
       </ul>
-      <p className="mt-4 max-w-[65ch] text-left text-[10px] font-normal leading-snug text-white/[0.22] sm:text-[12px]">
-        {t("autoRecordsFootnote")}
-      </p>
+      <div className={`mx-auto mt-4 w-full ${homeMarketingPillarGridWidthClass}`}>
+        <p
+          className="pricing-auto-records-footnote w-full text-left text-[10px] font-normal leading-snug text-white/55 sm:w-[calc(50%-0.375rem)] sm:text-[12px] md:w-[calc(50%-0.5rem)]"
+        >
+          {t("autoRecordsFootnote")}
+        </p>
+      </div>
     </>
   );
 

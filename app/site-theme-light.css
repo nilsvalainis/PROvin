@@ -116,6 +116,10 @@ html[data-site-theme="light"] .home-muted-foreground {
   color: #3f3f46;
 }
 
+html[data-site-theme="light"] .pricing-auto-records-footnote {
+  color: #0a0a0a;
+}
+
 html[data-site-theme="light"] .home-site-rule {
   border-top-color: rgb(20 20 22 / 0.1);
 }
