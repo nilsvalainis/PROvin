@@ -461,13 +461,6 @@ html[data-site-theme="light"] .marketing-hero-orbit-base.marketing-hero-orbit--s
   --orbit-border-inner: rgb(0 102 255 / 0.22);
 }
 
-/* Mobilais pīlāru tilts — tas pats S12 gaišais fons kā hero */
-@media (max-width: 767px) {
-  html[data-site-theme="light"] .home-mobile-hero-pillars-bridge {
-    background: radial-gradient(circle at 50% 100%, rgb(0 102 255 / 0.12), #f6f7f9 45%), #ffffff;
-  }
-}
-
 html[data-site-theme="light"] .marketing-hero-title--orbit {
   color: #111827 !important;
   text-shadow: 0 1px 0 rgb(255 255 255 / 0.45), 0 10px 28px rgb(0 102 255 / 0.04);
