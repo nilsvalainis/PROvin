@@ -4,6 +4,7 @@ import { AutoWireframeBackground } from "@/components/home/AutoWireframeBackgrou
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { HomeScrollSurface } from "@/components/home/HomeScrollSurface";
 import { MarketingHero } from "@/components/home/MarketingHero";
+import { MarketingHeroPillarsGrid } from "@/components/home/MarketingHeroPillarsGrid";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
 
@@ -20,6 +21,21 @@ export default async function HomePage({
       <div className="relative z-10 min-w-0 bg-transparent">
         <div className="demo-design-dir min-w-0 pb-0 text-white">
           <MarketingHero homeOrbitPreset="s12" designDirection />
+
+          <div
+            className="marketing-hero-orbit-base marketing-hero-orbit--s12 home-mobile-hero-pillars-bridge md:hidden"
+            data-hero-orbit-home=""
+          >
+            <section className="demo-design-dir__section px-4 pb-6 sm:px-6 sm:pb-8 max-md:pt-3 md:border-t md:border-white/[0.06] md:pt-5 md:demo-design-dir__section--band-a">
+              <div className="demo-design-dir__shell">
+                <MarketingHeroPillarsGrid
+                  designDirection
+                  isC={false}
+                  shellClassName="flex w-full justify-center pb-0 pt-0"
+                />
+              </div>
+            </section>
+          </div>
 
           <div id="site-content" className="home-body-ink scroll-mt-14">
             <section className="demo-design-dir__section demo-design-dir__section--band-b pt-4 pb-12 sm:pt-5 sm:pb-16">

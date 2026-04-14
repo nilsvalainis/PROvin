@@ -714,3 +714,16 @@ body {
   --admin-border-subtle: rgba(63, 63, 70, 0.95);
 }
 
+/*
+ * Mājas mobilais: pīlāru josla (`page.tsx`) plūdeni turpina hero S12 orbit fona valodu;
+ * nedaudz augšup, bez šuves pret band-a; bultiņa paliek hero iekšpusē (`MarketingHero` pb).
+ */
+@media (max-width: 767px) {
+  .home-mobile-hero-pillars-bridge {
+    margin-top: -1.75rem;
+    position: relative;
+    z-index: 0;
+    isolation: isolate;
+    background: radial-gradient(circle at 50% 100%, rgb(160 165 175 / 0.18), #030304 45%), #030304;
+  }
+}
