@@ -233,8 +233,23 @@ html[data-site-theme="light"] .demo-design-dir__section--band-b {
   box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.12);
 }
 
+/* BUJ sadaļa — viena balta virsma (kā pirmā BUJ rinda gaišajā lapā) */
 html[data-site-theme="light"] .demo-design-dir__section--band-c {
-  background: linear-gradient(180deg, #f6f7f9 0%, #f0f2f5 42%, #eceff3 100%);
+  background: #ffffff;
+}
+
+/* BUJ kartes — vienāds balts fons (bez otrās rindas akcenta) */
+html[data-site-theme="light"] .demo-design-dir__faq-item {
+  background: #ffffff !important;
+  border-color: rgb(20 20 24 / 0.1) !important;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04) !important;
+}
+
+html[data-site-theme="light"] .demo-design-dir__faq-item:hover {
+  border-color: rgb(0 102 255 / 0.22) !important;
+  box-shadow:
+    0 0 0 1px rgb(0 102 255 / 0.08),
+    0 10px 28px rgb(15 23 42 / 0.08) !important;
 }
 
 html[data-site-theme="light"] .demo-design-dir__axis-line {

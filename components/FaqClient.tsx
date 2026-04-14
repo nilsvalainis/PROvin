@@ -99,11 +99,8 @@ export function FaqClient({ title, items = [], tone = "dark", embedded = false }
     );
   }
 
-  const faqItems = items.map((item, index) => (
-    <div
-      key={item.id}
-      className={`demo-design-dir__faq-item${index % 2 === 1 ? " demo-design-dir__faq-item--accent" : ""}`}
-    >
+  const faqItems = items.map((item) => (
+    <div key={item.id} className="demo-design-dir__faq-item">
       <details className="group border-0 bg-transparent shadow-none open:bg-transparent">
         <summary className="flex min-h-11 cursor-pointer list-none items-start justify-between gap-3 px-4 py-4 text-left sm:min-h-0 sm:gap-4 sm:px-5 sm:py-[1.125rem] [&::-webkit-details-marker]:hidden">
           <span className="min-w-0 flex-1 text-[15px] font-medium leading-snug tracking-tight text-white sm:text-[16px] sm:leading-snug">

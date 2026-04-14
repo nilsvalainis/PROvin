@@ -19,7 +19,7 @@ export default async function FaqPage() {
 
   return (
     <>
-      <div className="border-b border-black/[0.06] bg-gradient-to-r from-[#f5f5f7] to-provin-surface-2 px-4 py-4 sm:px-6">
+      <div className="border-b border-black/[0.06] bg-white px-4 py-4 sm:px-6">
         <div className="mx-auto max-w-[720px]">
           <Link
             href="/"
