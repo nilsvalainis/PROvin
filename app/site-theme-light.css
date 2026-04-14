@@ -284,6 +284,10 @@ html[data-site-theme="light"] .marketing-hero-h1-blue {
   color: var(--color-provin-accent) !important;
 }
 
+html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-h1-unified {
+  color: #111827 !important;
+}
+
 html[data-site-theme="light"] .demo-design-dir__title {
   color: #111827;
 }

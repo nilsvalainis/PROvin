@@ -541,18 +541,18 @@
   border-color: rgb(160 165 175 / 0.18);
 }
 
-/* Sākumlapa (orbit + design-direction): H1 + apakšvirsraksts ~+30 %; vertikālais centrs starp augšu un pīlāriem — sk. MarketingHero grid */
+/* Sākumlapa (orbit + design-direction): H1 ×3 pret iepriekšējo bāzi; viens tonis (`.marketing-hero-h1-unified`); otrā rinda tā patā izmērā kā pirmajā */
 .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
-  max-width: min(100%, 22.75rem);
-  font-size: clamp(1.05625rem, 3.12vw + 0.26rem, 1.38125rem);
+  max-width: min(100%, 68.25rem);
+  font-size: clamp(3.16875rem, 9.36vw + 0.78rem, 4.14375rem);
   line-height: 1.12;
   letter-spacing: -0.018em;
 }
 
 @media (min-width: 640px) {
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
-    max-width: min(100%, 28.6rem);
-    font-size: clamp(1.3rem, 2.08vw + 0.455rem, 1.625rem);
+    max-width: min(100%, 85.8rem);
+    font-size: clamp(3.9rem, 6.24vw + 1.365rem, 4.875rem);
     line-height: 1.1;
     letter-spacing: -0.02em;
   }
@@ -560,22 +560,22 @@
 
 @media (min-width: 1024px) {
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
-    max-width: min(100%, 33.8rem);
-    font-size: clamp(1.4625rem, 1.43vw + 0.845rem, 1.7875rem);
+    max-width: min(100%, 101.4rem);
+    font-size: clamp(4.3875rem, 4.29vw + 2.535rem, 5.3625rem);
   }
 }
 
 .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2 {
-  margin-top: 0.2rem;
-  font-size: 0.78em;
-  letter-spacing: 0.06em;
+  margin-top: 0.2em;
+  font-size: 1em;
+  letter-spacing: inherit;
 }
 
 @media (min-width: 640px) {
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2 {
-    margin-top: 0.3rem;
-    font-size: 0.82em;
-    letter-spacing: 0.08em;
+    margin-top: 0.22em;
+    font-size: 1em;
+    letter-spacing: inherit;
   }
 }
 

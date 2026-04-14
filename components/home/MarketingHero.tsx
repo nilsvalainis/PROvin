@@ -103,21 +103,27 @@ export function MarketingHero({
   const homeOrbitMetaIntro = Boolean(designDirection && orbitGlassSilhouette && !demoVariant);
   const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
 
+  /** Sākumlapas orbit: viens H1 tonis (bez zilajiem atslēgvārdiem), izmērs ×3 — sk. orbit-presets `[data-hero-orbit-home]`. */
+  const heroH1KeywordResolved =
+    orbitHomeCenterLayout && isOrbitVisual
+      ? "marketing-hero-h1-unified font-semibold text-white/95"
+      : `marketing-hero-h1-blue ${heroH1BlueKeywordClass}`;
+
   const heroTitleStack = (
     <div className="flex w-full flex-col items-center text-center">
       <h1
         id={titleId}
         className={
           isOrbitVisual
-            ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold tracking-[-0.02em] text-white/95 max-[380px]:tracking-[-0.025em]${designDirection ? " max-w-[min(100%,40rem)]" : ""}`
+            ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold tracking-[-0.02em] text-white/95 max-[380px]:tracking-[-0.025em]${designDirection ? " max-w-[min(100%,min(90vw,56rem))]" : ""}`
             : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]`
         }
       >
         <>
           <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
-            <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Vin")}</span>
+            <span className={heroH1KeywordResolved}>{t("h1Vin")}</span>
             <span className="text-white/95">{t("h1Un")}</span>
-            <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Sludinajuma")}</span>
+            <span className={heroH1KeywordResolved}>{t("h1Sludinajuma")}</span>
           </span>
           <span className="marketing-hero-title-line2 mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
         </>
@@ -367,15 +373,7 @@ export function MarketingHero({
                       id="home-intro"
                       className="marketing-hero-orbit-intro relative w-full max-w-[min(100%,42rem)] shrink-0 text-center"
                     >
-                      <div className="demo-design-dir__axis-line opacity-80" aria-hidden />
-                      <h2 className="demo-design-dir__title relative z-[1] mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4">
-                        {tMeta("homeIntroTitle")}
-                      </h2>
-                      <div
-                        className="demo-design-dir__hero-scan relative z-[1] mx-auto my-[1rem] sm:my-5"
-                        aria-hidden
-                      />
-                      <p className="demo-design-dir__body relative z-[1] mx-auto mt-0 max-w-[min(100%,42rem)] text-balance text-[13px] leading-relaxed sm:text-[15px]">
+                      <p className="demo-design-dir__body marketing-hero-home-intro-body relative z-[1] mx-auto max-w-[min(100%,42rem)] text-balance pt-10 text-[13px] leading-relaxed sm:pt-14 sm:text-[15px]">
                         {tMeta("homeIntroBody")}
                       </p>
                     </div>
