@@ -505,6 +505,8 @@ html[data-site-theme="light"] .demo-design-dir__body {
 html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-home-intro-body {
   font-weight: 500;
   letter-spacing: 0.021em;
+  /* Tumši pelēks, ~2 toņus gaišāks par H1 (#111827 / #1f2937), nekā iepriekšējā #27272a */
+  color: #4b5563 !important;
 }
 
 html[data-site-theme="light"] .demo-design-dir__kicker {
