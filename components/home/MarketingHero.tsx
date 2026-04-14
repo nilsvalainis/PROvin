@@ -373,7 +373,7 @@ export function MarketingHero({
                       {homeOrbitMetaIntro ? (
                         <div
                           id="home-intro"
-                          className="marketing-hero-orbit-intro relative w-full shrink-0 text-center"
+                          className="marketing-hero-orbit-intro relative w-full shrink-0 text-center pt-[calc(2*0.75rem*1.625)] sm:pt-[calc(2*0.9375rem*1.625)]"
                         >
                           <p className="demo-design-dir__body marketing-hero-home-intro-body relative z-[1] mx-auto w-full max-w-[min(100%,42rem)] text-balance text-[12px] leading-relaxed sm:text-[15px]">
                             {tMeta("homeIntroBody")}
