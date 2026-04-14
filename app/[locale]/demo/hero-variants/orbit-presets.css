@@ -269,6 +269,11 @@
   margin-top: 0;
 }
 
+/* Nedaudz zemāk par ģeometrisko centru — līdzsvarot optisko atstarpi līdz tekstu augšā un apakšā */
+.marketing-hero-title-mid-rule {
+  padding-top: 3px;
+}
+
 /* Orbit: kompaktāks H1, lai ietilpst iekšējā riņķī zem skenēšanas līnijas */
 .marketing-hero-orbit-base .marketing-hero-title.marketing-hero-title--orbit {
   max-width: min(100%, 17.5rem);

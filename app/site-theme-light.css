@@ -491,8 +491,7 @@ html[data-site-theme="light"] .marketing-hero-orbit-base.marketing-hero-orbit--s
   --orbit-border-inner: rgb(0 102 255 / 0.22);
 }
 
-html[data-site-theme="light"] .marketing-hero-title--orbit,
-html[data-site-theme="light"] .marketing-hero-title--orbit .marketing-hero-title-line2 {
+html[data-site-theme="light"] .marketing-hero-title--orbit {
   color: #111827 !important;
   text-shadow: 0 1px 0 rgb(255 255 255 / 0.45), 0 10px 28px rgb(0 102 255 / 0.04);
 }
@@ -508,8 +507,12 @@ html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .
   color: #1f2937 !important;
 }
 
-html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line2--accent {
-  color: #1f2937 !important;
+/* AUDITS — zils; pārējā pirmā rinda paliek #1f2937 no line1 selektoriem */
+html[data-site-theme="light"] .marketing-hero-title--orbit .marketing-hero-title-line2--accent {
+  color: var(--color-provin-accent) !important;
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 0.35),
+    0 0 20px rgb(0 102 255 / 0.14) !important;
 }
 
 /* Hero H1: vienkāršā līnija starp rindām (bez orbit skenēšanas) — gaišā tēmā */
