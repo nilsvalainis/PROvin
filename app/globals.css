@@ -29,6 +29,8 @@
   --home-surface-t: 0;
   /* Zilā skrejošā impulsa periods — 2× garāks nekā iepriekš (50 % lēnāks skrējiens) */
   --provin-scan-loop-dur: calc((7s / 3) * 2);
+  /* Mobilais: hero un 4 pīlāru kopīgais „monolith” fons (dark). */
+  --home-mobile-hero-extended-bg: radial-gradient(circle at 50% 100%, rgb(160 165 175 / 0.18), #030304 45%), #030304;
   /* Tēmas pamats (tumšais); gaišais — `site-theme-light.css` uz `html[data-site-theme="light"]` */
   --site-html-bg: #050505;
   --site-body-bg: #050505;
@@ -74,6 +76,29 @@ body {
 .home-scroll-surface {
   min-height: 100vh;
   min-height: 100dvh;
+}
+
+@media (max-width: 768px) {
+  .home-mobile-hero-monolith {
+    background: var(--home-mobile-hero-extended-bg);
+  }
+
+  /* Hero apakša var nedaudz pārklāties ar kartēm bez apgriešanas. */
+  .home-mobile-hero-monolith #home-hero.marketing-hero-section {
+    overflow: visible;
+  }
+
+  .home-mobile-hero-cards {
+    margin-top: -1rem;
+    background: transparent !important;
+  }
+
+  /* Noņemam šuvi starp hero un 4-kartīšu zonu. */
+  .home-mobile-hero-cards-section {
+    background: transparent !important;
+    border-top: 0 !important;
+    box-shadow: none !important;
+  }
 }
 
 /* === HERO SPEEDOMETER (dekoratīvs) === */

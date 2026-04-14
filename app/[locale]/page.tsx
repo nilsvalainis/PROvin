@@ -20,18 +20,20 @@ export default async function HomePage({
     <HomeScrollSurface wireframe={<AutoWireframeBackground />}>
       <div className="relative z-10 min-w-0 bg-transparent">
         <div className="demo-design-dir min-w-0 pb-0 text-white">
-          <MarketingHero homeOrbitPreset="s12" designDirection />
+          <div className="home-mobile-hero-monolith">
+            <MarketingHero homeOrbitPreset="s12" designDirection />
 
-          <div className="marketing-hero-orbit-base marketing-hero-orbit--s12 md:hidden" data-hero-orbit-home="">
-            <section className="demo-design-dir__section demo-design-dir__section--band-a border-t border-white/[0.06] px-4 pb-6 pt-5 sm:px-6 sm:pb-8">
-              <div className="demo-design-dir__shell">
-                <MarketingHeroPillarsGrid
-                  designDirection
-                  isC={false}
-                  shellClassName="flex w-full justify-center pb-0 pt-0"
-                />
-              </div>
-            </section>
+            <div className="home-mobile-hero-cards marketing-hero-orbit-base marketing-hero-orbit--s12 md:hidden" data-hero-orbit-home="">
+              <section className="home-mobile-hero-cards-section demo-design-dir__section demo-design-dir__section--band-a border-t border-white/[0.06] px-4 pb-6 pt-5 sm:px-6 sm:pb-8">
+                <div className="demo-design-dir__shell">
+                  <MarketingHeroPillarsGrid
+                    designDirection
+                    isC={false}
+                    shellClassName="flex w-full justify-center pb-0 pt-0"
+                  />
+                </div>
+              </section>
+            </div>
           </div>
 
           <div id="site-content" className="home-body-ink scroll-mt-14">
