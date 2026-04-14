@@ -27,9 +27,9 @@ export function SiteThemeHeaderButton({ className }: Props) {
       aria-label={isDark ? t("themeSwitchToLight") : t("themeSwitchToDark")}
     >
       {isDark ? (
-        <Sun className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />
+        <Sun className="h-[16px] w-[16px]" strokeWidth={1.75} aria-hidden />
       ) : (
-        <Moon className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />
+        <Moon className="h-[16px] w-[16px]" strokeWidth={1.75} aria-hidden />
       )}
     </button>
   );

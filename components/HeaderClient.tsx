@@ -108,9 +108,9 @@ export function HeaderClient({
   const isDarkHeaderSurface = isHome && theme === "dark";
 
   const themeBtnOnDarkHeroClass =
-    "min-h-9 min-w-9 h-9 w-9 border-white/20 bg-white/[0.06] text-white hover:border-white/35 hover:bg-white/10 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#050505]";
+    "min-h-8 min-w-8 h-8 w-8 border-white/20 bg-white/[0.06] text-white hover:border-white/35 hover:bg-white/10 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#050505]";
   const themeBtnLightChromeClass =
-    "min-h-9 min-w-9 h-9 w-9 border-black/[0.08] bg-white text-[#1d1d1f] shadow-sm hover:bg-slate-50 focus-visible:ring-[rgb(0_102_255/0.35)] focus-visible:ring-offset-white";
+    "min-h-8 min-w-8 h-8 w-8 border border-slate-300/85 bg-white/92 text-[#1d1d1f] shadow-[inset_0_1px_0_rgb(255_255_255/0.92),0_1px_3px_rgb(15_23_42/0.07)] backdrop-blur-md hover:border-slate-400/90 hover:bg-white focus-visible:ring-[rgb(0_102_255/0.35)] focus-visible:ring-offset-white";
 
   const headerSurface = isDarkHeaderSurface
     ? "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)] md:border-b md:border-white/[0.06]"
@@ -151,7 +151,7 @@ export function HeaderClient({
   const navMuted = isDarkHeaderSurface ? "text-white/72" : "text-[#1d1d1f]";
 
   const orderBtnClass =
-    "provin-btn provin-btn--compact inline-flex min-h-9 shrink-0 items-center justify-center rounded-full px-4 text-[11px] font-bold text-white shadow-[0_0_16px_rgba(0,102,255,0.12)] ring-1 ring-white/10 sm:min-h-9 sm:px-[1.2rem] sm:text-[11px]";
+    "provin-btn provin-btn--compact inline-flex min-h-8 shrink-0 items-center justify-center rounded-full px-[0.85rem] text-[10px] font-bold text-white shadow-[0_2px_14px_rgba(0,102,255,0.32),inset_0_1px_0_rgba(255,255,255,0.2)] ring-1 ring-[#0066ff]/28 sm:min-h-8 sm:px-[1.05rem] sm:text-[10px]";
 
   /** Sākumlapas tumšais hero — tā pati „pill” estētika kā `OrderForm` hero „Turpināt uz apmaksu”. */
   const orderHeaderHeroClass =
@@ -299,7 +299,7 @@ export function HeaderClient({
               <SiteThemeHeaderButton
                 className={isDarkHeaderSurface ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
               />
-              <Link href={orderHref} className={orderBtnClass}>
+              <Link href={orderHref} className={isDarkHeaderSurface ? orderHeaderHeroClass : orderBtnClass}>
                 {orderLabel}
               </Link>
               <button
