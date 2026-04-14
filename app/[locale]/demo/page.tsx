@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { DemoStudioNav } from "@/components/demo/DemoStudioNav";
+import { DemoStaticLandingExamples } from "@/components/demo/DemoStaticLandingExamples";
 import { DemoStudioQuickLinks } from "@/components/demo/DemoStudioQuickLinks";
 import { DesignDirectionLayoutDemo } from "@/components/demo/DesignDirectionLayoutDemo";
 import { HeroVariantsStudioSection } from "@/components/demo/HeroVariantsStudioSection";
@@ -40,6 +41,7 @@ export default async function DemoStudioPage({ params }: PageProps) {
           <div className="mt-6">
             <DemoStudioQuickLinks />
           </div>
+          <DemoStaticLandingExamples />
         </div>
       </section>
 
