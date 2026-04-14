@@ -133,7 +133,7 @@ export function MarketingHero({
                 className="marketing-hero-title-mid-scan pointer-events-none w-full max-w-[min(100%,min(90vw,56rem))] shrink-0 px-1 sm:px-2"
                 aria-hidden
               >
-                <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
+                <DiagnosticScanLine variant="rail" className="w-full" />
               </div>
               <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent block text-white/95">
                 {t("h1Line2")}

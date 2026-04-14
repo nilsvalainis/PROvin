@@ -298,11 +298,11 @@
 }
 
 .demo-design-dir__hero-scan {
-  height: 1px;
+  height: 2px;
   width: min(18rem, 70vw);
   /* Tikai horizontālais centrs — vertikālās atstarpes dod `my-*` uz elementa */
   margin-inline: auto;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.14), transparent);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.2), transparent);
   position: relative;
 }
 
@@ -312,7 +312,8 @@
   left: 0%;
   top: 50%;
   width: clamp(1.5rem, 9vw, 2.35rem);
-  height: 1px;
+  height: 2px;
+  margin-top: -1px;
   border-radius: 9999px;
   transform: translate(-50%, -50%);
   background: linear-gradient(
@@ -328,7 +329,7 @@
     0 0 16px 0 rgb(0 140 255 / 0.55),
     0 0 28px 0 rgb(0 102 255 / 0.35);
   opacity: 1;
-  animation: provin-diagnostic-scan-along-track var(--provin-scan-loop-dur, calc((7s / 3) * 2)) linear infinite;
+  animation: provin-diagnostic-scan-ping-pong calc(var(--provin-scan-loop-dur, calc((7s / 3) * 2)) * 2) linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

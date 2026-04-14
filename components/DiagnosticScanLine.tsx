@@ -3,13 +3,11 @@ type Props = {
   /** Diskrētāks tracks + pulse — saskaņots ar kreisās malas navigācijas līniju. */
   variant?: "default" | "rail";
   /**
-   * `along` — impulss pa visu līniju (kreisā mala → labā).
-   * `from-center-left` / `from-center-right` — no līnijas centra (pie virsraksta) uz attiecīgo malu.
-   * `split` — divi impulsi sākumā kopā centrā, tad šķiras uz malām.
+   * `along` — ping-pong (kreisā→labā→kreisā) — skat. `globals.css` bāzes impulsam.
+   * `alongPingPong` — tā pati kustība kā `along` (saderība ar agrāko API).
+   * `from-center-left` / `from-center-right` — no centra uz malu un atpakaļ (ping-pong).
+   * `split` — divi impulsi: centrā → malas → centrā (ping-pong).
    * `none` — tikai līnija (bez skrejošā impulsa).
-   */
-  /**
-   * `alongPingPong` — viens impulss: kreisā mala → labā, tad nepārtraukti atpakaļ uz kreiso (lineāri, cikls atkārtojas).
    */
   motion?: "along" | "alongPingPong" | "from-center-left" | "from-center-right" | "split" | "none";
 };
