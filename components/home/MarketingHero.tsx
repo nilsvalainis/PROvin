@@ -103,6 +103,12 @@ export function MarketingHero({
   const homeOrbitMetaIntro = Boolean(designDirection && orbitGlassSilhouette && !demoVariant);
   const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
 
+  /** Sākumlapas orbit: viens H1 tonis (bez zilajiem atslēgvārdiem), izmērs ×3 — sk. orbit-presets `[data-hero-orbit-home]`. */
+  const heroH1KeywordResolved =
+    orbitHomeCenterLayout && isOrbitVisual
+      ? "marketing-hero-h1-unified font-semibold text-white/95"
+      : `marketing-hero-h1-blue ${heroH1BlueKeywordClass}`;
+
   const heroTitleStack = (
     <div className="flex w-full flex-col items-center text-center">
       <h1
@@ -115,9 +121,9 @@ export function MarketingHero({
       >
         <>
           <span className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
-            <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Vin")}</span>
+            <span className={heroH1KeywordResolved}>{t("h1Vin")}</span>
             <span className="text-white/95">{t("h1Un")}</span>
-            <span className={`marketing-hero-h1-blue ${heroH1BlueKeywordClass}`}>{t("h1Sludinajuma")}</span>
+            <span className={heroH1KeywordResolved}>{t("h1Sludinajuma")}</span>
           </span>
           <span className="marketing-hero-title-line2 mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
         </>
@@ -356,20 +362,18 @@ export function MarketingHero({
         orbitHomeCenterLayout ? (
           <div className="relative z-[1] flex min-h-0 w-full flex-1 flex-col">
             <div className="grid min-h-0 w-full flex-1 grid-rows-[1fr_auto]">
-              <div className="relative flex min-h-0 w-full flex-1 flex-col">
-                <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pt-0.5 sm:px-8 sm:pt-1">
+              <div className="relative min-h-0">
+                <div className="pointer-events-auto absolute inset-x-0 top-0 z-[1] flex justify-center px-4 pt-0.5 sm:px-8 sm:pt-1">
                   {approvedBlock}
                 </div>
-                <div className="pointer-events-auto flex min-h-0 flex-1 flex-col px-4 sm:px-8">
-                  <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto py-2 sm:py-3">
-                    {heroTitleStack}
-                  </div>
+                <div className="pointer-events-auto absolute inset-x-0 top-1/2 z-[1] flex max-h-[min(68dvh,34rem)] min-h-0 -translate-y-1/2 flex-col items-center justify-center gap-4 overflow-y-auto px-4 py-2 sm:px-8 sm:gap-5">
+                  {heroTitleStack}
                   {homeOrbitMetaIntro ? (
                     <div
                       id="home-intro"
                       className="marketing-hero-orbit-intro relative w-full max-w-[min(100%,42rem)] shrink-0 text-center"
                     >
-                      <p className="demo-design-dir__body marketing-hero-home-intro-body relative z-[1] mx-auto max-w-[min(100%,42rem)] text-balance pt-3 text-[13px] leading-relaxed sm:pt-4 sm:text-[15px]">
+                      <p className="demo-design-dir__body marketing-hero-home-intro-body relative z-[1] mx-auto max-w-[min(100%,42rem)] text-balance pt-10 text-[13px] leading-relaxed sm:pt-14 sm:text-[15px]">
                         {tMeta("homeIntroBody")}
                       </p>
                     </div>
