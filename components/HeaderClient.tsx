@@ -125,11 +125,11 @@ export function HeaderClient({
     : null;
 
   /**
-   * Sākumlapas tumšais hero (pilns platums): sliedes zilā punkta centrs ≈ `railLeft + pl-1 + pl-0.5 + w-3 + gap-2.5 + puse no w-1`.
-   * Logo kreisā mala = `max(1rem,safe)` — nobīda „P” uz punkta asi.
+   * Sākumlapas pilna platuma headeris (dark + light): logo ass salāgota ar sliedes marķieri.
+   * Novērš situāciju, kad light režīmā logo aizslīd ārpus kreisās malas.
    */
-  const logoDarkHeroRailAlignClass =
-    isDarkHeaderSurface && logoAlignWithRailSakums
+  const logoHomeRailAlignClass =
+    isHome && logoAlignWithRailSakums
       ? "lg:ml-[calc(max(0.5rem,env(safe-area-inset-left,0px))+1.875rem-max(1rem,env(safe-area-inset-left,0px)))]"
       : null;
 
@@ -142,8 +142,8 @@ export function HeaderClient({
     isDarkHeaderSurface
       ? "flex min-h-11 min-w-11 shrink-0 items-center text-[28.98px] font-bold tracking-tight text-white transition-colors hover:text-white/90 sm:min-h-0 sm:min-w-0"
       : "flex min-h-11 min-w-11 shrink-0 items-center text-[28.98px] font-bold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent sm:min-h-0 sm:min-w-0",
-    !isDarkHeaderSurface ? logoRailMarginClass : null,
-    logoDarkHeroRailAlignClass,
+    !isDarkHeaderSurface && !isHome ? logoRailMarginClass : null,
+    logoHomeRailAlignClass,
   ]
     .filter(Boolean)
     .join(" ");
