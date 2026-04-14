@@ -14,7 +14,7 @@ const DEFAULT_SERVICE =
 export function PkdCommissionInvoiceTool() {
   const [invoiceNumber, setInvoiceNumber] = useState("PKD-2026-003");
   const [invoiceDate, setInvoiceDate] = useState("28.02.2026.");
-  const [paymentDue, setPaymentDue] = useState("14.03.2026.");
+  const [paymentDue, setPaymentDue] = useState("14 dienas no rēķina datuma");
   const [serviceDescription, setServiceDescription] = useState(DEFAULT_SERVICE);
   const [amountEur, setAmountEur] = useState("96.09");
   const [recipientCompany, setRecipientCompany] = useState(DEFAULT_RECIPIENT.company);
