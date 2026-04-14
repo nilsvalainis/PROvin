@@ -98,7 +98,7 @@ export function MarketingHero({
       ? "marketing-hero-h1-blue font-bold whitespace-nowrap text-provin-accent"
       : `marketing-hero-h1-blue ${heroH1BlueKeywordClass}`;
 
-  /** Skenēšanas līnija starp 1. un 2. H1 rindu — tikai orbit + designDirection; flex + vienāds gap augšā/apakšā. */
+  /** Starp H1 rindām: 20px josla, līnija vertikāli centrēta; skenēšana tikai orbit + designDirection. */
   const showTitleMidScan = Boolean(designDirection && isOrbitVisual);
 
   const heroTitleStack = (
@@ -107,38 +107,33 @@ export function MarketingHero({
         id={titleId}
         className={
           isOrbitVisual
-            ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold tracking-[-0.02em] text-white/95 max-[380px]:tracking-[-0.025em]${designDirection ? " max-w-[min(100%,min(90vw,56rem))]" : ""}`
-            : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-[1.08] tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] sm:leading-[1.05] lg:text-[48px]`
+            ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold leading-none tracking-[-0.02em] text-white/95 max-[380px]:tracking-[-0.025em]${designDirection ? " max-w-[min(100%,min(90vw,56rem))]" : ""}`
+            : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-none tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] lg:text-[48px]`
         }
       >
         <>
-          {showTitleMidScan ? (
-            <div className="marketing-hero-title-split flex w-full flex-col items-center gap-y-0.5 sm:gap-y-1">
-              <span className="marketing-hero-title-line1 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
-                <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Vin")}</span>
-                <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Un")}</span>
-                <span className={`marketing-hero-title-line1-accent ${heroH1KeywordResolved}`}>{t("h1Sludinajuma")}</span>
-              </span>
-              <div
-                className="marketing-hero-title-mid-scan pointer-events-none w-full max-w-[min(100%,min(90vw,56rem))] shrink-0 px-1 sm:px-2"
-                aria-hidden
-              >
-                <DiagnosticScanLine variant="rail" className="w-full" />
-              </div>
-              <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent block">
-                {t("h1Line2")}
-              </span>
+          <div className="marketing-hero-title-split flex w-full flex-col items-center gap-0">
+            <span className="marketing-hero-title-line1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0 sm:gap-x-2.5">
+              <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Vin")}</span>
+              <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Un")}</span>
+              <span className={`marketing-hero-title-line1-accent ${heroH1KeywordResolved}`}>{t("h1Sludinajuma")}</span>
+            </span>
+            <div
+              className={`marketing-hero-title-mid-rule box-border flex h-5 w-full shrink-0 items-center justify-center px-1 sm:px-2${showTitleMidScan ? "" : " marketing-hero-title-mid-rule--simple"}`}
+              aria-hidden
+            >
+              {showTitleMidScan ? (
+                <div className="marketing-hero-title-mid-scan pointer-events-none w-full max-w-[min(100%,min(90vw,56rem))]">
+                  <DiagnosticScanLine variant="rail" className="w-full" />
+                </div>
+              ) : (
+                <div className="marketing-hero-title-mid-rule__line h-px w-full max-w-[min(100%,min(90vw,56rem))] bg-white/25" />
+              )}
             </div>
-          ) : (
-            <>
-              <span className="marketing-hero-title-line1 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
-                <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Vin")}</span>
-                <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Un")}</span>
-                <span className={`marketing-hero-title-line1-accent ${heroH1KeywordResolved}`}>{t("h1Sludinajuma")}</span>
-              </span>
-              <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent mt-0.5 block sm:mt-1">{t("h1Line2")}</span>
-            </>
-          )}
+            <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent block leading-none">
+              {t("h1Line2")}
+            </span>
+          </div>
         </>
       </h1>
       {!hideHeroSubtitle ? (

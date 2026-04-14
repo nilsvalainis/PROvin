@@ -478,6 +478,11 @@ html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .
   color: #1f2937 !important;
 }
 
+/* Hero H1: vienkāršā līnija starp rindām (bez orbit skenēšanas) — gaišā tēmā */
+html[data-site-theme="light"] .marketing-hero-title-mid-rule__line {
+  background-color: rgb(15 23 42 / 0.22) !important;
+}
+
 html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-h1-unified {
   color: #111827 !important;
 }

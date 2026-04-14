@@ -108,6 +108,10 @@
   color: rgb(255 255 255 / 0.52) !important;
 }
 
+[data-hero-variant="c"] .marketing-hero-title-split .marketing-hero-title-line2 {
+  margin-top: 0 !important;
+}
+
 [data-hero-variant="c"] .marketing-hero-pillar-title {
   max-width: 13.5rem !important;
   text-align: left !important;
