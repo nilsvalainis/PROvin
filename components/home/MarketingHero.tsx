@@ -368,18 +368,20 @@ export function MarketingHero({
                 </div>
                 <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden px-4 sm:px-8">
                   <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-y-auto py-2 sm:py-3">
-                    {heroTitleStack}
-                  </div>
-                  {homeOrbitMetaIntro ? (
-                    <div
-                      id="home-intro"
-                      className="marketing-hero-orbit-intro relative w-full max-w-[min(100%,42rem)] shrink-0 text-center"
-                    >
-                      <p className="demo-design-dir__body marketing-hero-home-intro-body relative z-[1] mx-auto max-w-[min(100%,42rem)] text-balance pt-4 text-[12px] leading-relaxed sm:pt-6 sm:text-[15px]">
-                        {tMeta("homeIntroBody")}
-                      </p>
+                    <div className="marketing-hero-orbit-center-sheet mx-auto flex w-full max-w-[min(100%,min(92vw,42rem))] -translate-y-2 flex-col items-center justify-center gap-3 sm:-translate-y-4 sm:gap-4">
+                      {heroTitleStack}
+                      {homeOrbitMetaIntro ? (
+                        <div
+                          id="home-intro"
+                          className="marketing-hero-orbit-intro relative w-full shrink-0 text-center"
+                        >
+                          <p className="demo-design-dir__body marketing-hero-home-intro-body relative z-[1] mx-auto w-full max-w-[min(100%,42rem)] text-balance text-[12px] leading-relaxed sm:text-[15px]">
+                            {tMeta("homeIntroBody")}
+                          </p>
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
+                  </div>
                 </div>
               </div>
               <div className="relative z-[2] mx-auto flex w-full max-w-[min(100%,53.76rem)] shrink-0 flex-col items-center pt-3 sm:pt-5">
