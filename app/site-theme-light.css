@@ -61,11 +61,11 @@ html[data-site-theme="light"] {
 
 /* Skenēšanas līnijas — tumšāks pamats, šaurāks/asāks impulss, biežāks cikls (--provin-scan-loop-dur); ping-pong globāli */
 html[data-site-theme="light"] .provin-diagnostic-scan-line {
-  height: 1px;
+  height: 2px;
 }
 
 html[data-site-theme="light"] .provin-diagnostic-scan-line__track {
-  height: 1px;
+  height: 2px;
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -77,38 +77,47 @@ html[data-site-theme="light"] .provin-diagnostic-scan-line__track {
 }
 
 html[data-site-theme="light"] .provin-diagnostic-scan-line__pulse {
-  width: clamp(1.05rem, 6.5vw, 1.65rem);
-  height: 1px;
+  width: clamp(1.75rem, 9vw, 2.85rem);
+  height: 2px;
+  margin-top: -1px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(0 130 255 / 0.88) 30%,
-    rgb(90 210 255 / 1) 50%,
-    rgb(0 130 255 / 0.88) 70%,
+    rgb(0 72 198 / 0.96) 22%,
+    rgb(0 95 230 / 1) 38%,
+    rgb(165 238 255 / 1) 50%,
+    rgb(0 95 230 / 1) 62%,
+    rgb(0 72 198 / 0.96) 78%,
     transparent 100%
   );
   box-shadow:
-    0 0 7px 0 rgb(0 160 255 / 1),
-    0 0 18px 0 rgb(0 140 255 / 0.65),
-    0 0 30px 0 rgb(0 120 255 / 0.48);
+    0 1px 4px rgb(0 38 105 / 0.42),
+    0 0 12px rgb(0 115 255 / 0.98),
+    0 0 24px rgb(0 100 245 / 0.72),
+    0 0 36px rgb(0 85 215 / 0.48);
+  filter: drop-shadow(0 1px 2px rgb(0 45 120 / 0.35));
 }
 
 html[data-site-theme="light"] .demo-design-dir__hero-scan::after {
-  width: clamp(1.05rem, 6.5vw, 1.65rem);
-  height: 1px;
-  margin-top: -0.5px;
+  width: clamp(1.75rem, 9vw, 2.85rem);
+  height: 2px;
+  margin-top: -1px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(0 130 255 / 0.88) 30%,
-    rgb(90 210 255 / 1) 50%,
-    rgb(0 130 255 / 0.88) 70%,
+    rgb(0 72 198 / 0.96) 22%,
+    rgb(0 95 230 / 1) 38%,
+    rgb(165 238 255 / 1) 50%,
+    rgb(0 95 230 / 1) 62%,
+    rgb(0 72 198 / 0.96) 78%,
     transparent 100%
   );
   box-shadow:
-    0 0 7px 0 rgb(0 160 255 / 1),
-    0 0 18px 0 rgb(0 140 255 / 0.65),
-    0 0 30px 0 rgb(0 120 255 / 0.48);
+    0 1px 4px rgb(0 38 105 / 0.42),
+    0 0 12px rgb(0 115 255 / 0.98),
+    0 0 24px rgb(0 100 245 / 0.72),
+    0 0 36px rgb(0 85 215 / 0.48);
+  filter: drop-shadow(0 1px 2px rgb(0 45 120 / 0.35));
   animation: provin-diagnostic-scan-ping-pong calc(var(--provin-scan-loop-dur, calc((7s / 3) * 2)) * 2) linear infinite;
 }
 
@@ -447,7 +456,32 @@ html[data-site-theme="light"] .demo-design-dir__axis-line {
 
 html[data-site-theme="light"] .demo-design-dir__hero-scan {
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgb(15 23 42 / 0.26), transparent);
+  background: linear-gradient(90deg, transparent, rgb(15 23 42 / 0.28), transparent);
+}
+
+/* Design-direction plūsmas josla — spilgtāks, platāks zils „vilnis” */
+html[data-site-theme="light"] .demo-design-dir__flow-pulse {
+  width: 44%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(0 78 210 / 0.55),
+    rgb(0 105 255 / 0.95),
+    rgb(120 215 255 / 0.98),
+    rgb(0 105 255 / 0.95),
+    rgb(0 78 210 / 0.55),
+    transparent
+  );
+  filter: drop-shadow(0 1px 3px rgb(0 50 130 / 0.38));
+}
+
+/* Orbit lēcas rotējošais punkts — lielāks spīdums, tumšāks zils, ēna */
+html[data-site-theme="light"] .marketing-hero-orbit-silhouette__dot {
+  filter:
+    drop-shadow(0 0 3px rgb(0 85 220 / 1))
+    drop-shadow(0 0 12px rgb(0 115 255 / 0.75))
+    drop-shadow(0 0 22px rgb(0 95 235 / 0.5))
+    drop-shadow(0 2px 5px rgb(0 35 95 / 0.48));
 }
 
 /* Orbit hero (S12 — produkcijas mājas) */
