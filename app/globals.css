@@ -163,24 +163,9 @@ body {
   animation: provin-diagnostic-scan-along-track var(--provin-scan-loop-dur) linear infinite;
 }
 
-/* Otrais impulss — fāze 50 %, lai vienmēr būtu redzams zils (bez „tukša” brīža pie cikla atkārtošanas) */
-.provin-diagnostic-scan-line__pulse--phase-b {
-  animation-delay: calc(var(--provin-scan-loop-dur) * -0.5);
-}
-
-/* Nepārtraukta skenēšana: blīvāks, gandrīz nepazūdošs zils kodols */
-.provin-diagnostic-scan-line--continuous .provin-diagnostic-scan-line__pulse {
-  width: clamp(1.35rem, 8vw, 2.1rem);
-  background: linear-gradient(
-    90deg,
-    rgb(51 153 255 / 0.55) 0%,
-    rgb(120 200 255 / 1) 50%,
-    rgb(51 153 255 / 0.55) 100%
-  );
-  box-shadow:
-    0 0 5px 0 rgb(0 153 255 / 0.95),
-    0 0 16px 0 rgb(0 140 255 / 0.65),
-    0 0 24px 0 rgb(0 102 255 / 0.45);
+/* Viens impulss: kreisā mala → labā → kreisā (pilns cikls, lineāri, bez pauzes) */
+.provin-diagnostic-scan-line__pulse--ping-pong {
+  animation: provin-diagnostic-scan-ping-pong calc(var(--provin-scan-loop-dur) * 2) linear infinite;
 }
 
 /* Impulsa centrs no līnijas sākuma līdz beigām; linear infinite — bez aiztures starp cikliem */
@@ -191,6 +176,21 @@ body {
   }
   100% {
     left: 100%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes provin-diagnostic-scan-ping-pong {
+  0% {
+    left: 0%;
+    transform: translate(-50%, -50%);
+  }
+  50% {
+    left: 100%;
+    transform: translate(-50%, -50%);
+  }
+  100% {
+    left: 0%;
     transform: translate(-50%, -50%);
   }
 }
@@ -264,10 +264,6 @@ body {
   .provin-diagnostic-scan-line__pulse {
     animation: none !important;
     opacity: 0;
-  }
-
-  .provin-diagnostic-scan-line--continuous .provin-diagnostic-scan-line__track {
-    opacity: 0.85;
   }
 }
 
