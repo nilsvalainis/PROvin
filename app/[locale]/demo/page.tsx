@@ -5,6 +5,7 @@ import { DemoStaticLandingExamples } from "@/components/demo/DemoStaticLandingEx
 import { DemoStudioQuickLinks } from "@/components/demo/DemoStudioQuickLinks";
 import { DesignDirectionLayoutDemo } from "@/components/demo/DesignDirectionLayoutDemo";
 import { HeroVariantsStudioSection } from "@/components/demo/HeroVariantsStudioSection";
+import { Link } from "@/i18n/navigation";
 import "@/components/home/hero-orbit-styles";
 import { routing } from "@/i18n/routing";
 
@@ -40,6 +41,29 @@ export default async function DemoStudioPage({ params }: PageProps) {
           </p>
           <div className="mt-6">
             <DemoStudioQuickLinks />
+          </div>
+          <div className="mt-6 rounded-2xl border border-[#0066ff]/35 bg-[#0066ff]/10 p-4 sm:p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9cc7ff]">Jauns pilnais demo</p>
+            <h2 className="mt-1 text-lg font-semibold tracking-tight text-white/95 sm:text-xl">Scandinavian clean · Full landing</h2>
+            <p className="mt-2 max-w-[46rem] text-[13px] leading-relaxed text-white/70">
+              Gatavs A-Z piemērs ar esošo PROVIN saturu, noformēts `concept-29` stilā.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-3">
+              <Link
+                href="/demo/scandinavian-full"
+                className="rounded-full border border-[#0066ff]/45 bg-[#0066ff]/20 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-[#0066ff]/30"
+              >
+                Atvērt demo panelī
+              </Link>
+              <a
+                href="/concept-demos/concept-29/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-white/20 bg-white/[0.04] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/80 transition hover:bg-white/[0.08] hover:text-white"
+              >
+                Atvērt originālo concept-29
+              </a>
+            </div>
           </div>
           <DemoStaticLandingExamples />
         </div>
