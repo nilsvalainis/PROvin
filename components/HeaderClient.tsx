@@ -157,6 +157,15 @@ export function HeaderClient({
   const orderHeaderHeroClass =
     "provin-home-pill-cta provin-home-pill-cta--fit provin-home-pill-cta--header-compact inline-flex shrink-0 touch-manipulation whitespace-nowrap";
 
+  /** Sākumlapa: zilā pill + bultiņa kā tumšajā hero; light — klase `site-theme-light` tumšās pill krāsām. */
+  const homeHeroOrderChrome =
+    theme === "light"
+      ? `${orderHeaderHeroClass} provin-home-pill-cta--header-dark-chrome`
+      : orderHeaderHeroClass;
+
+  /** Sākumlapa (dark vai light): tā pati augšējās malas izkārtojums un Pasūtīt kā hero pill. */
+  const useHomeHeroHeaderActions = isHome;
+
   const navLinkClass = (active: boolean) =>
     [
       "flex min-h-11 items-center rounded-xl px-4 text-lg font-medium tracking-tight transition-colors",
@@ -182,7 +191,7 @@ export function HeaderClient({
   /** Labās malas atkāpe = kreisās (kas logo): `max(1rem, safe-area)` — dark un light. */
   const desktopHeaderRowClass = [
     "mx-auto flex min-h-12 w-full items-center gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:min-h-11 sm:gap-3",
-    isDarkHeaderSurface ? "max-w-none" : "max-w-[980px] lg:max-w-[1024px]",
+    isHome ? "max-w-none" : "max-w-[980px] lg:max-w-[1024px]",
     logoAlignWithRailSakums ? "hidden md:flex" : "",
   ]
     .filter(Boolean)
@@ -212,9 +221,9 @@ export function HeaderClient({
                 />
                 <Link
                   href={orderHref}
-                  className={mobileRailOnDark ? orderHeaderHeroClass : orderBtnClass}
+                  className={useHomeHeroHeaderActions ? homeHeroOrderChrome : orderBtnClass}
                 >
-                  {mobileRailOnDark ? (
+                  {useHomeHeroHeaderActions ? (
                     <>
                       {orderLabel}
                       <ArrowRight className="h-3 w-3 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
@@ -279,9 +288,9 @@ export function HeaderClient({
             />
             <Link
               href={orderHref}
-              className={isDarkHeaderSurface ? orderHeaderHeroClass : orderBtnClass}
+              className={useHomeHeroHeaderActions ? homeHeroOrderChrome : orderBtnClass}
             >
-              {isDarkHeaderSurface ? (
+              {useHomeHeroHeaderActions ? (
                 <>
                   {orderLabel}
                   <ArrowRight className="h-3 w-3 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
@@ -297,8 +306,15 @@ export function HeaderClient({
               <SiteThemeHeaderButton
                 className={isDarkHeaderSurface ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
               />
-              <Link href={orderHref} className={isDarkHeaderSurface ? orderHeaderHeroClass : orderBtnClass}>
-                {orderLabel}
+              <Link href={orderHref} className={useHomeHeroHeaderActions ? homeHeroOrderChrome : orderBtnClass}>
+                {useHomeHeroHeaderActions ? (
+                  <>
+                    {orderLabel}
+                    <ArrowRight className="h-3 w-3 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
+                  </>
+                ) : (
+                  orderLabel
+                )}
               </Link>
               <button
                 type="button"
