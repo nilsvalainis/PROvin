@@ -4,7 +4,6 @@ import {
   Building2,
   Globe2,
   Headphones,
-  Scale,
   ScanSearch,
   Shield,
   ShieldCheck,
@@ -14,7 +13,7 @@ import {
 import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { irissAnchorHref } from "@/lib/paths";
-import { homeSectionTitleClass } from "@/lib/home-layout";
+import { homeMarketingPillarGridWidthClass, homeSectionTitleClass } from "@/lib/home-layout";
 
 type GridItem = {
   title: string;
@@ -29,7 +28,6 @@ const GRID_LUCIDE_ICONS: LucideIcon[] = [
   ScanSearch,
   AlertTriangle,
   Sparkles,
-  Scale,
   Headphones,
   ShieldCheck,
 ];
@@ -73,8 +71,8 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
       <ul
         className={
           embedded
-            ? "mt-10 grid list-none grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4"
-            : "grid list-none grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4"
+            ? `mx-auto mt-10 grid w-full ${homeMarketingPillarGridWidthClass} list-none grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 md:gap-4`
+            : `mx-auto grid w-full ${homeMarketingPillarGridWidthClass} list-none grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 md:gap-4`
         }
       >
         {grid.map((item, i) => {

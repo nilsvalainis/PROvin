@@ -173,12 +173,12 @@ html[data-site-theme="light"] .provin-home-pill-cta:focus-visible {
 html[data-site-theme="light"] header .provin-home-pill-cta--header-dark-chrome {
   border-color: rgb(0 102 255 / 0.35) !important;
   background-color: rgb(0 102 255 / 0.12) !important;
-  color: rgb(126 182 255) !important;
+  color: #000000 !important;
 }
 
 html[data-site-theme="light"] header .provin-home-pill-cta--header-dark-chrome:hover:not(:disabled) {
   background-color: rgb(0 102 255 / 0.2) !important;
-  color: rgb(255 255 255 / 0.98) !important;
+  color: #000000 !important;
 }
 
 html[data-site-theme="light"] header .provin-home-pill-cta--header-dark-chrome:focus-visible {
