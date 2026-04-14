@@ -362,6 +362,31 @@ html[data-site-theme="light"] .demo-design-dir__card:active {
   }
 }
 
+/* Mājas hero: 4 mobilās kartes — balts fons, tās pašas stikla ēnas kā `.demo-design-dir__card`. */
+@media (max-width: 767px) {
+  html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card {
+    background: #ffffff !important;
+    background-image: none !important;
+    border: 1px solid rgb(20 20 24 / 0.1) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow:
+      var(--dd-glass-inset),
+      0 0 0 1px rgb(255 255 255 / 0.04) inset,
+      var(--dd-glass-shadow-blue),
+      var(--dd-glass-shadow-tight),
+      var(--dd-glass-shadow-deep) !important;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card:hover {
+      background: #ffffff !important;
+      border-color: rgb(0 102 255 / 0.22) !important;
+      box-shadow: var(--dd-glass-hover) !important;
+    }
+  }
+}
+
 html[data-site-theme="light"] .demo-design-dir__faq-item {
   border: 1px solid rgb(255 255 255 / 0.58) !important;
   background: var(--dd-glass-fill) !important;
