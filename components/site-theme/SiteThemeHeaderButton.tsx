@@ -18,7 +18,7 @@ export function SiteThemeHeaderButton({ className }: Props) {
       type="button"
       onClick={toggleTheme}
       className={[
-        "inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-full border transition-colors",
+        "inline-flex shrink-0 items-center justify-center rounded-full border transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
         className ?? "",
       ]
@@ -27,9 +27,9 @@ export function SiteThemeHeaderButton({ className }: Props) {
       aria-label={isDark ? t("themeSwitchToLight") : t("themeSwitchToDark")}
     >
       {isDark ? (
-        <Sun className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+        <Sun className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />
       ) : (
-        <Moon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+        <Moon className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />
       )}
     </button>
   );

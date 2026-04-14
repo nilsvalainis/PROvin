@@ -108,9 +108,9 @@ export function HeaderClient({
   const isDarkHeaderSurface = isHome && theme === "dark";
 
   const themeBtnOnDarkHeroClass =
-    "h-10 w-10 border-white/20 bg-white/[0.06] text-white hover:border-white/35 hover:bg-white/10 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#050505]";
+    "min-h-9 min-w-9 h-9 w-9 border-white/20 bg-white/[0.06] text-white hover:border-white/35 hover:bg-white/10 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#050505]";
   const themeBtnLightChromeClass =
-    "h-10 w-10 border-black/[0.08] bg-white text-[#1d1d1f] shadow-sm hover:bg-slate-50 focus-visible:ring-[rgb(0_102_255/0.35)] focus-visible:ring-offset-white";
+    "min-h-9 min-w-9 h-9 w-9 border-black/[0.08] bg-white text-[#1d1d1f] shadow-sm hover:bg-slate-50 focus-visible:ring-[rgb(0_102_255/0.35)] focus-visible:ring-offset-white";
 
   const headerSurface = isDarkHeaderSurface
     ? "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)] md:border-b md:border-white/[0.06]"
@@ -151,7 +151,7 @@ export function HeaderClient({
   const navMuted = isDarkHeaderSurface ? "text-white/72" : "text-[#1d1d1f]";
 
   const orderBtnClass =
-    "provin-btn provin-btn--compact inline-flex min-h-10 shrink-0 items-center justify-center rounded-full px-[1.125rem] text-[12px] font-bold text-white shadow-[0_0_18px_rgba(0,102,255,0.14)] ring-1 ring-white/10 sm:min-h-9 sm:px-[1.35rem] sm:text-[12px]";
+    "provin-btn provin-btn--compact inline-flex min-h-9 shrink-0 items-center justify-center rounded-full px-4 text-[11px] font-bold text-white shadow-[0_0_16px_rgba(0,102,255,0.12)] ring-1 ring-white/10 sm:min-h-9 sm:px-[1.2rem] sm:text-[11px]";
 
   /** Sākumlapas tumšais hero — tā pati „pill” estētika kā `OrderForm` hero „Turpināt uz apmaksu”. */
   const orderHeaderHeroClass =
@@ -179,11 +179,11 @@ export function HeaderClient({
           : "text-[#424245] hover:text-[#1d1d1f]",
     ].join(" ");
 
-  /** Sākumlapas hero (md+): pilna rindas platums, „Pasūtīt” pie viewport labās malas (tikai safe-area). */
+  /** Sākumlapas hero (md+): PROVIN kreisajā pusē; tēma + „Pasūtīt” — labajā stūrī (`nav` ar `ml-auto`). */
   const desktopHeaderRowClass = [
-    "mx-auto flex min-h-12 items-center justify-between gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] sm:min-h-11 sm:gap-3",
+    "mx-auto flex min-h-12 w-full items-center gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] sm:min-h-11 sm:gap-3",
     isDarkHeaderSurface
-      ? "w-full max-w-none pr-[max(0.5rem,env(safe-area-inset-right,0px))]"
+      ? "max-w-none pr-[max(0.5rem,env(safe-area-inset-right,0px))]"
       : "max-w-[980px] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:px-6 lg:max-w-[1024px]",
     logoAlignWithRailSakums ? "hidden md:flex" : "",
   ]
@@ -199,7 +199,7 @@ export function HeaderClient({
             ref={railMenuWrapRef}
             className="relative z-[50] w-full md:hidden"
           >
-            <div className="flex w-full items-center justify-between gap-3 pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] pt-[max(0.25rem,env(safe-area-inset-top,0px))] pb-2">
+            <div className="flex w-full items-center justify-between gap-2 pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] pt-[max(0.25rem,env(safe-area-inset-top,0px))] pb-2">
               <Link
                 href="/"
                 className={`flex shrink-0 items-center text-[26px] font-bold tracking-tight ${mobileRailOnDark ? "text-white" : "text-[#1d1d1f]"}`}
@@ -208,14 +208,27 @@ export function HeaderClient({
                 <span className={mobileRailOnDark ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
                 <span className="text-provin-accent">VIN</span>
               </Link>
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex min-w-0 shrink-0 items-center justify-end gap-1.5">
                 <SiteThemeHeaderButton
                   className={mobileRailOnDark ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
                 />
+                <Link
+                  href={orderHref}
+                  className={mobileRailOnDark ? orderHeaderHeroClass : orderBtnClass}
+                >
+                  {mobileRailOnDark ? (
+                    <>
+                      {orderLabel}
+                      <ArrowRight className="h-3 w-3 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
+                    </>
+                  ) : (
+                    orderLabel
+                  )}
+                </Link>
               <button
                 type="button"
                 onClick={toggleRailMenu}
-                className={`inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center border-0 bg-transparent p-2 shadow-none outline-none transition-opacity hover:opacity-85 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-2 ${mobileRailOnDark ? "text-white focus-visible:ring-offset-[#050505]" : "text-[#1d1d1f] focus-visible:ring-offset-white"}`}
+                className={`inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center border-0 bg-transparent p-1.5 shadow-none outline-none transition-opacity hover:opacity-85 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-2 ${mobileRailOnDark ? "text-white focus-visible:ring-offset-[#050505]" : "text-[#1d1d1f] focus-visible:ring-offset-white"}`}
                 aria-expanded={open}
                 aria-controls="mobile-rail-nav-panel"
                 aria-label={open ? menuCloseLabel : menuOpenLabel}
@@ -262,7 +275,7 @@ export function HeaderClient({
             {isHome ? null : <span className={isDarkHeaderSurface ? "text-white" : "text-[#1d1d1f]"}>.LV</span>}
           </Link>
 
-          <nav className="hidden min-w-0 items-center gap-3 md:flex md:flex-1 md:justify-end">
+          <nav className="ml-auto hidden min-w-0 shrink-0 items-center gap-2 md:flex">
             <SiteThemeHeaderButton
               className={isDarkHeaderSurface ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
             />
@@ -273,7 +286,7 @@ export function HeaderClient({
               {isDarkHeaderSurface ? (
                 <>
                   {orderLabel}
-                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
+                  <ArrowRight className="h-3 w-3 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
                 </>
               ) : (
                 orderLabel
@@ -286,7 +299,7 @@ export function HeaderClient({
               <SiteThemeHeaderButton
                 className={isDarkHeaderSurface ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
               />
-              <Link href={orderHref} className={`${orderBtnClass} text-[11px] sm:text-[12px]`}>
+              <Link href={orderHref} className={orderBtnClass}>
                 {orderLabel}
               </Link>
               <button

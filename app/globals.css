@@ -338,12 +338,12 @@ body {
   max-width: none;
 }
 
-/* Augšējā izvēlne (tumšais hero): ~15 % mazāks par bāzes pill */
+/* Augšējā izvēlne (tumšais hero): ~15 % mazāks par bāzes pill; vēl −10 % no iepriekšējās kompaktās */
 .provin-home-pill-cta--header-compact {
-  min-height: 37px;
-  padding: 0.53rem 1.05rem;
-  gap: 0.4rem;
-  font-size: 9.35px;
+  min-height: 33px;
+  padding: 0.48rem 0.95rem;
+  gap: 0.36rem;
+  font-size: 8.4px;
 }
 
 /* Hero — „APPROVED BY IRISS” burtu ierašanās (2× lēnāks nekā sākotnējais temps) */
