@@ -451,6 +451,13 @@ html[data-site-theme="light"] .marketing-hero-h1-blue {
   color: var(--color-provin-accent) !important;
 }
 
+/* Orbit mājas H1 pirmā rinda (VIN / UN / SLUDINĀJUMA) — melna, ne zila */
+html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1 .marketing-hero-h1-blue,
+html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1 .marketing-hero-title-line1-main,
+html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1 .marketing-hero-title-line1-accent {
+  color: #0a0a0a !important;
+}
+
 html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-h1-unified {
   color: #111827 !important;
 }
