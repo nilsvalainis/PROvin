@@ -507,8 +507,11 @@ html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .
   color: #1f2937 !important;
 }
 
-/* AUDITS — zils; pārējā pirmā rinda paliek #1f2937 no line1 selektoriem */
-html[data-site-theme="light"] .marketing-hero-title--orbit .marketing-hero-title-line2--accent {
+/* AUDITS gaišajā: augstāka specifika nekā orbit-presets (ielādējas vēlāk) */
+html[data-site-theme="light"]
+  .marketing-hero-orbit-base[data-hero-orbit-home]
+  .marketing-hero-title--orbit
+  .marketing-hero-title-line2--accent {
   color: var(--color-provin-accent) !important;
   text-shadow:
     0 1px 0 rgb(255 255 255 / 0.35),
