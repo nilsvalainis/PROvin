@@ -240,14 +240,23 @@ export function MarketingHero({
         <MarketingHeroPillarsGrid designDirection={designDirection} isC={isC} isB={isB} />
         {scrollToContentLinkDesign("mt-3 sm:mt-4")}
       </div>
-      <div className="flex w-full flex-col items-center gap-3.5 md:hidden">{scrollToContentLinkDesign("mt-0")}</div>
+      {/* Mobilais: tie paši 4 bloki hero orbit fona iekšpusē (nav atsevišķas joslas zem #home-hero) */}
+      <div className="flex w-full flex-col items-center gap-2 pb-5 pt-0 md:hidden">
+        {scrollToContentLinkDesign("mt-0")}
+        <MarketingHeroPillarsGrid
+          designDirection={designDirection}
+          isC={isC}
+          isB={isB}
+          shellClassName="flex w-full justify-center pb-0 pt-0"
+        />
+      </div>
     </>
   );
 
   const designDirHeroChrome =
     designDirection && isOrbitVisual ? " demo-design-dir__section demo-design-dir__section--band-a" : "";
 
-  const sectionClassOrbit = `marketing-hero-section home-content-atmosphere relative flex min-h-[min(100dvh,100svh)] w-full flex-col overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${mobilePillarsBelowFold ? "max-md:z-[1] " : ""}${orbitUiClass}${designDirHeroChrome}`.trim();
+  const sectionClassOrbit = `marketing-hero-section home-content-atmosphere relative flex min-h-[min(100dvh,100svh)] w-full flex-col overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}${designDirHeroChrome}`.trim();
 
   const sectionClassGrid = `marketing-hero-section home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}${designDirHeroChrome}`.trim();
 
@@ -368,7 +377,7 @@ export function MarketingHero({
                 </div>
               </div>
               <div
-                className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-3 sm:pt-5 max-md:pb-4${
+                className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-3 sm:pt-5${
                   orbitHomeCenterLayout ? " max-w-[min(100%,70rem)] marketing-hero-fade-in-up marketing-hero-fade-in-up--3" : " max-w-[min(100%,53.76rem)]"
                 }`}
               >
