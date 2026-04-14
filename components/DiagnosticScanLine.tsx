@@ -6,8 +6,9 @@ type Props = {
    * `along` — impulss pa visu līniju (kreisā mala → labā).
    * `from-center-left` / `from-center-right` — no līnijas centra (pie virsraksta) uz attiecīgo malu.
    * `split` — divi impulsi sākumā kopā centrā, tad šķiras uz malām.
+   * `none` — tikai līnija (bez skrejošā impulsa).
    */
-  motion?: "along" | "from-center-left" | "from-center-right" | "split";
+  motion?: "along" | "from-center-left" | "from-center-right" | "split" | "none";
 };
 
 /**
@@ -32,6 +33,14 @@ export function DiagnosticScanLine({
       : motion === "from-center-right"
         ? "provin-diagnostic-scan-line__pulse--out-right"
         : "";
+
+  if (motion === "none") {
+    return (
+      <div className={rootClass} role="presentation" aria-hidden>
+        <span className="provin-diagnostic-scan-line__track" />
+      </div>
+    );
+  }
 
   return (
     <div className={rootClass} role="presentation" aria-hidden>

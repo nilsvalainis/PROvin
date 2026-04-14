@@ -49,7 +49,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
               {t("block1Heading")}
             </h3>
             <div className="mt-3 w-full">
-              <DiagnosticScanLine variant="rail" motion="split" className="w-full" />
+              <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
             </div>
             <p className="demo-design-dir__body mt-3">{t("block1Body")}</p>
           </div>
@@ -58,7 +58,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
               {t("block2Heading")}
             </h3>
             <div className="mt-3 w-full">
-              <DiagnosticScanLine variant="rail" motion="split" className="w-full" />
+              <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
             </div>
             <p className="demo-design-dir__body mt-3 whitespace-pre-line">{t("block2Body")}</p>
           </div>
@@ -67,7 +67,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
               {t("block3Heading")}
             </h3>
             <div className="mt-3 w-full">
-              <DiagnosticScanLine variant="rail" motion="split" className="w-full" />
+              <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
             </div>
             <p className="demo-design-dir__body mt-3">{t("block3Body")}</p>
           </div>
@@ -112,7 +112,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
               <div className="min-w-0 max-w-[min(100%,38rem)] lg:justify-self-end lg:text-right">
                 <h3 className={irissStaggerHeadingClass}>{t("block1Heading")}</h3>
                 <div className="mt-3 w-full lg:ml-auto lg:max-w-[min(100%,38rem)]">
-                  <DiagnosticScanLine variant="rail" motion="split" className="w-full" />
+                  <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
                 </div>
                 <p className={`${irissBodyProseClass} mt-3 text-balance`}>{t("block1Body")}</p>
               </div>
@@ -121,7 +121,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
             <div className="mx-auto min-w-0 max-w-[min(100%,42rem)] px-1 text-center sm:px-2">
               <h3 className={`${irissStaggerHeadingClass} mx-auto max-w-[min(100%,52ch)]`}>{t("block2Heading")}</h3>
               <div className="mx-auto mt-3 w-full max-w-[min(100%,52ch)]">
-                <DiagnosticScanLine variant="rail" motion="split" className="w-full" />
+                <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
               </div>
               <p className={`${irissBodyProseClass} mt-3 whitespace-pre-line text-balance`}>{t("block2Body")}</p>
             </div>
@@ -130,7 +130,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
               <div className="min-w-0 max-w-[min(100%,38rem)] text-left">
                 <h3 className={irissStaggerHeadingClass}>{t("block3Heading")}</h3>
                 <div className="mt-3 w-full">
-                  <DiagnosticScanLine variant="rail" motion="split" className="w-full" />
+                  <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
                 </div>
                 <p className={`${irissBodyProseClass} mt-3 text-balance`}>{t("block3Body")}</p>
               </div>
