@@ -13,7 +13,7 @@ import {
 import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { irissAnchorHref } from "@/lib/paths";
-import { homeMarketingPillarGridWidthClass, homeSectionTitleClass } from "@/lib/home-layout";
+import { homeSectionTitleClass } from "@/lib/home-layout";
 
 type GridItem = {
   title: string;
@@ -32,10 +32,9 @@ const GRID_LUCIDE_ICONS: LucideIcon[] = [
   ShieldCheck,
 ];
 
-const iconClass = "h-8 w-8 shrink-0 text-[#0066ff] [stroke-width:1.5] sm:h-[32px] sm:w-[32px]";
+const iconClass = "marketing-hero-pillar-icon h-7 w-7 shrink-0 text-[#0066ff] [stroke-width:1.5] sm:h-7 sm:w-7 md:h-8 md:w-8";
 
-const PRICING_CARD =
-  "demo-design-dir__card flex min-h-0 gap-3 p-3.5 transition-colors sm:gap-3.5 sm:p-4";
+const pricingGridWidthClass = "w-full max-w-[min(100%,68rem)]";
 
 export async function PricingIncluded({ embedded = false }: { embedded?: boolean } = {}) {
   const t = await getTranslations("Pricing");
@@ -47,12 +46,7 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
 
   const inner = (
     <>
-      <div className="mx-auto mt-2 flex w-full max-w-[min(100%,52rem)] items-center justify-center gap-3 sm:mt-3 sm:gap-4">
-        <DiagnosticScanLine
-          motion="from-center-left"
-          variant="rail"
-          className="min-w-0 flex-1 self-center"
-        />
+      <div className="mx-auto mt-2 w-full max-w-[min(100%,52rem)] text-center sm:mt-3">
         <h2
           className={
             embedded
@@ -62,65 +56,61 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
         >
           {t("workTitle")}
         </h2>
-        <DiagnosticScanLine
-          motion="from-center-right"
-          variant="rail"
-          className="min-w-0 flex-1 self-center"
-        />
+        <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
+          <DiagnosticScanLine variant="rail" motion="split" className="w-full" />
+        </div>
       </div>
       <ul
         className={
           embedded
-            ? `mx-auto mt-10 grid w-full ${homeMarketingPillarGridWidthClass} list-none grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 md:gap-4`
-            : `mx-auto grid w-full ${homeMarketingPillarGridWidthClass} list-none grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 md:gap-4`
+            ? `mx-auto mt-8 grid ${pricingGridWidthClass} list-none grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 md:gap-5`
+            : `mx-auto mt-8 grid ${pricingGridWidthClass} list-none grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 md:gap-5`
         }
       >
         {grid.map((item, i) => {
-            const Icon = GRID_LUCIDE_ICONS[i] ?? Globe2;
-            const cellContent = (
-              <div className="flex gap-3 sm:gap-3.5">
-                <div className="flex shrink-0 items-start pt-0.5">
-                  <Icon className={iconClass} aria-hidden strokeWidth={1.5} />
-                </div>
-                <div className="min-w-0 flex-1 pt-0.5">
-                  <h3 className="home-body-ink text-[15px] font-medium leading-snug tracking-tight sm:text-[16px]">
-                    {item.title}
-                  </h3>
-                  <p className="home-muted-foreground mt-1 text-[12px] font-normal leading-relaxed sm:text-[13px] sm:leading-relaxed">
-                    {item.body}
-                  </p>
-                  {item.href ? (
-                    <p className="mt-2 text-[11px] font-medium text-[#0066ff] sm:text-[12px]">
-                      {t("irissLink")} <span aria-hidden>↓</span>
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-            );
+          const Icon = GRID_LUCIDE_ICONS[i] ?? Globe2;
+          const riskCard = i === 4;
+          const iconTone = riskCard ? "marketing-hero-pillar-icon--risk text-[#ff342e]" : "";
+          const cardClass =
+            "marketing-hero-pillar marketing-hero-pillar--soft demo-design-dir__card flex min-h-0 flex-col items-center justify-start gap-2.5 px-2 py-3 text-center transition-all duration-300 ease-out sm:gap-3 sm:px-3 sm:py-4";
+          const cellContent = (
+            <>
+              <Icon className={`${iconClass} ${iconTone}`.trim()} aria-hidden strokeWidth={1.5} />
+              <h3 className="marketing-hero-pillar-title home-body-ink text-[12px] font-semibold uppercase leading-tight tracking-tight sm:text-[13px]">
+                {item.title}
+              </h3>
+              <p className="home-muted-foreground text-[11px] leading-relaxed sm:text-[12px]">{item.body}</p>
+              {item.href ? (
+                <p className="mt-1 text-[10px] font-medium text-[#0066ff] sm:text-[11px]">
+                  {t("irissLink")} <span aria-hidden>↓</span>
+                </p>
+              ) : null}
+            </>
+          );
 
-            if (item.href) {
-              return (
-                <li key={item.title} className="min-w-0">
-                  <Link
-                    href={irissHref}
-                    className={`${PRICING_CARD} min-h-[100%] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066ff]/50`}
-                  >
-                    {cellContent}
-                  </Link>
-                </li>
-              );
-            }
-
+          if (item.href) {
             return (
-              <li key={item.title} className={`${PRICING_CARD}`}>
-                {cellContent}
+              <li key={item.title} className="min-w-0">
+                <Link
+                  href={irissHref}
+                  className={`${cardClass} min-h-[100%] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066ff]/50`}
+                >
+                  {cellContent}
+                </Link>
               </li>
             );
-          })}
+          }
+
+          return (
+            <li key={item.title} className={cardClass}>
+              {cellContent}
+            </li>
+          );
+        })}
       </ul>
-      <div className={`mx-auto mt-4 w-full ${homeMarketingPillarGridWidthClass}`}>
+      <div className={`mx-auto mt-4 ${pricingGridWidthClass}`}>
         <p
-          className="pricing-auto-records-footnote w-full text-left text-[10px] font-normal leading-snug text-white/55 sm:w-[calc(50%-0.375rem)] sm:text-[12px] md:w-[calc(50%-0.5rem)]"
+          className="pricing-auto-records-footnote w-full text-left text-[10px] font-normal leading-snug text-white/55 sm:text-[12px]"
         >
           {t("autoRecordsFootnote")}
         </p>
