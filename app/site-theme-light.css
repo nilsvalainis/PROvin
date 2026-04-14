@@ -330,18 +330,46 @@ html[data-site-theme="light"] .demo-design-dir__card {
     var(--dd-glass-shadow-blue),
     var(--dd-glass-shadow-tight),
     var(--dd-glass-shadow-deep) !important;
+  will-change: transform;
   transition:
-    border-color 0.22s ease,
-    box-shadow 0.24s ease,
-    background 0.24s ease,
-    background-color 0.24s ease;
+    transform 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+    box-shadow 0.4s ease,
+    border-color 0.4s ease,
+    background 0.4s ease,
+    background-color 0.4s ease;
 }
 
-html[data-site-theme="light"] .demo-design-dir__card:hover {
-  border-color: rgb(0 102 255 / 0.22) !important;
-  background: var(--dd-glass-fill-hover) !important;
-  background-color: rgb(255 255 255 / 0.1) !important;
-  box-shadow: var(--dd-glass-hover) !important;
+html[data-site-theme="light"] .demo-design-dir__card:active {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-site-theme="light"] .demo-design-dir__card:hover {
+    border-color: rgb(0 102 255 / 0.22) !important;
+    background: var(--dd-glass-fill-hover) !important;
+    background-color: rgb(255 255 255 / 0.1) !important;
+    box-shadow: var(--dd-glass-hover) !important;
+    transform: translateY(-8px) scale(1.02);
+  }
+
+  html[data-site-theme="light"] .demo-design-dir__card:hover:active {
+    transform: translateY(-8px) scale(0.96);
+    transition: transform 0.1s ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-site-theme="light"] .demo-design-dir__card {
+    transition: none !important;
+    will-change: auto !important;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    html[data-site-theme="light"] .demo-design-dir__card:hover {
+      transform: none !important;
+    }
+  }
 }
 
 html[data-site-theme="light"] .demo-design-dir__faq-item {

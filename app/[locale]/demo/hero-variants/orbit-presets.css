@@ -622,17 +622,35 @@
   border-radius: 12px !important;
   background: linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.03)) !important;
   box-shadow: 0 10px 30px rgb(0 0 0 / 0.05) !important;
-  transition: all 0.3s ease-out;
+  will-change: transform;
+  transition:
+    transform 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+    box-shadow 0.4s ease;
+}
+
+.marketing-hero-pillar--soft .marketing-hero-pillar-icon--risk,
+.marketing-hero-pillar--soft .marketing-hero-pillar-icon--check {
+  transition: filter 0.4s ease;
+}
+
+.marketing-hero-pillar--soft:active {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .marketing-hero-pillar--soft:hover {
-    transform: translateY(-8px);
+    transform: translateY(-8px) scale(1.02);
     box-shadow: 0 18px 44px rgb(0 0 0 / 0.12) !important;
   }
 
+  .marketing-hero-pillar--soft:hover:active {
+    transform: translateY(-8px) scale(0.96);
+    transition: transform 0.1s ease;
+  }
+
   .marketing-hero-pillar--soft:hover .marketing-hero-pillar-icon.marketing-hero-pillar-icon--risk {
-    filter: drop-shadow(0 0 5px rgb(255 0 0 / 0.4));
+    filter: drop-shadow(0 0 8px rgb(255 0 0 / 0.2));
   }
 
   .marketing-hero-pillar--soft:hover .marketing-hero-pillar-icon.marketing-hero-pillar-icon--check {
@@ -827,7 +845,8 @@
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card:active {
-    transform: scale(0.98);
+    transform: scale(0.96);
+    transition: transform 0.1s ease;
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card {
@@ -869,5 +888,21 @@
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+
+  .marketing-hero-pillar--soft {
+    transition: none !important;
+    will-change: auto !important;
+  }
+
+  .marketing-hero-pillar--soft .marketing-hero-pillar-icon--risk,
+  .marketing-hero-pillar--soft .marketing-hero-pillar-icon--check {
+    transition: none !important;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .marketing-hero-pillar--soft:hover {
+      transform: none !important;
+    }
   }
 }

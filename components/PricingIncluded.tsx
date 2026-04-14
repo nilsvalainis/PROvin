@@ -80,7 +80,7 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
           const riskCard = i === 4;
           const iconTone = riskCard ? "marketing-hero-pillar-icon--risk text-[#ff342e]" : "";
           const cardClass =
-            "marketing-hero-pillar marketing-hero-pillar--soft demo-design-dir__card flex min-h-0 flex-col items-center justify-start gap-2.5 px-2 py-3 text-center transition-all duration-300 ease-out sm:gap-3 sm:px-3 sm:py-4";
+            "marketing-hero-pillar marketing-hero-pillar--soft demo-design-dir__card flex min-h-0 flex-col items-center justify-start gap-2.5 px-2 py-3 text-center sm:gap-3 sm:px-3 sm:py-4";
           const cellContent = (
             <>
               <Icon className={`${iconClass} ${iconTone}`.trim()} aria-hidden strokeWidth={1.5} />

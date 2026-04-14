@@ -66,13 +66,31 @@
   border-radius: 1rem;
   background: linear-gradient(165deg, var(--dd-surface-2), var(--dd-surface));
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35), 0 18px 48px rgb(0 0 0 / 0.35);
+  will-change: transform;
+  transition:
+    transform 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+    box-shadow 0.4s ease,
+    border-color 0.4s ease;
 }
 
-.demo-design-dir__card:hover {
-  border-color: rgb(0 102 255 / 0.22);
-  box-shadow:
-    0 0 0 1px rgb(0 102 255 / 0.08),
-    0 22px 56px rgb(0 0 0 / 0.45);
+.demo-design-dir__card:active {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .demo-design-dir__card:hover {
+    border-color: rgb(0 102 255 / 0.22);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow:
+      0 0 0 1px rgb(0 102 255 / 0.08),
+      0 22px 56px rgb(0 0 0 / 0.45);
+  }
+
+  .demo-design-dir__card:hover:active {
+    transform: translateY(-8px) scale(0.96);
+    transition: transform 0.1s ease;
+  }
 }
 
 .demo-design-dir__flow {
@@ -337,6 +355,17 @@
     animation: none;
     opacity: 0.85;
     left: 50%;
+  }
+
+  .demo-design-dir__card {
+    transition: none !important;
+    will-change: auto !important;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .demo-design-dir__card:hover {
+      transform: none !important;
+    }
   }
 }
 
