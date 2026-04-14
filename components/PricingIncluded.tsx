@@ -83,11 +83,6 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
                 {item.title}
               </h3>
               <p className="home-muted-foreground text-[11px] leading-relaxed sm:text-[12px]">{item.body}</p>
-              {item.href ? (
-                <p className="mt-1 text-[10px] font-medium text-[#0066ff] sm:text-[11px]">
-                  {t("irissLink")} <span aria-hidden>↓</span>
-                </p>
-              ) : null}
             </>
           );
 
@@ -112,10 +107,16 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
         })}
         </ul>
       </div>
-      <div className={`mx-auto mt-4 ${pricingGridWidthClass}`}>
-        <p
-          className="pricing-auto-records-footnote w-full text-left text-[10px] font-normal leading-snug text-white/55 sm:text-[12px]"
+      <div
+        className={`mx-auto mt-4 flex w-full min-w-0 flex-row flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:mt-5 ${pricingGridWidthClass}`}
+      >
+        <Link
+          href={irissHref}
+          className="shrink-0 text-left text-[10px] font-medium text-[#0066ff] transition-colors hover:text-[#3388ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066ff]/50 sm:text-[11px]"
         >
+          {t("irissLink")} <span aria-hidden>↓</span>
+        </Link>
+        <p className="pricing-auto-records-footnote min-w-0 flex-1 text-right text-[10px] font-normal leading-snug text-white/55 sm:text-[12px]">
           {t("autoRecordsFootnote")}
         </p>
       </div>
