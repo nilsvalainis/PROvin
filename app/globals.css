@@ -29,8 +29,8 @@
   --home-surface-t: 0;
   /* Zilā skrejošā impulsa periods — 2× garāks nekā iepriekš (50 % lēnāks skrējiens) */
   --provin-scan-loop-dur: calc((7s / 3) * 2);
-  /* Mobilais: hero + kartes — viens slānis uz `.home-mobile-hero-monolith` (saskaņots ar orbit S12 `--orbit-bg`). */
-  --home-mobile-hero-monolith-bg: radial-gradient(circle at 50% 100%, rgb(160 165 175 / 0.18), #030304 45%), #030304;
+  /* `.hero-container`: hero + kartes — viens fons (saskaņots ar orbit S12 `--orbit-bg`). */
+  --hero-container-bg: radial-gradient(circle at 50% 100%, rgb(160 165 175 / 0.18), #030304 45%), #030304;
   /* Tēmas pamats (tumšais); gaišais — `site-theme-light.css` uz `html[data-site-theme="light"]` */
   --site-html-bg: #050505;
   --site-body-bg: #050505;
@@ -79,12 +79,12 @@ body {
 }
 
 @media (max-width: 768px) {
-  .home-mobile-hero-monolith {
-    background: var(--home-mobile-hero-monolith-bg);
+  .hero-container {
+    background: var(--hero-container-bg);
   }
 
-  /* Viens orbit gradients — tikai monolith; hero sekcija caurspīdīga, lai nebūtu dubultā slāņa šuves. */
-  .home-mobile-hero-monolith #home-hero.marketing-hero-orbit-base.marketing-hero-orbit--s12.marketing-hero-section {
+  /* Viens orbit gradients — tikai `.hero-container`; hero sekcija caurspīdīga, lai nebūtu dubultā slāņa šuves. */
+  .hero-container #home-hero.marketing-hero-orbit-base.marketing-hero-orbit--s12.marketing-hero-section {
     background: transparent !important;
   }
 

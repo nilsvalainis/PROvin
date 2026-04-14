@@ -20,7 +20,7 @@ export default async function HomePage({
     <HomeScrollSurface wireframe={<AutoWireframeBackground />}>
       <div className="relative z-10 min-w-0 bg-transparent">
         <div className="demo-design-dir min-w-0 pb-0 text-white">
-          <div className="home-mobile-hero-monolith">
+          <div className="hero-container">
             <MarketingHero homeOrbitPreset="s12" designDirection />
 
             <div className="home-mobile-hero-cards marketing-hero-orbit-base marketing-hero-orbit--s12 md:hidden" data-hero-orbit-home="">
