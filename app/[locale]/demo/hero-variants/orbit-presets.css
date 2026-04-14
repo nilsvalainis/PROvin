@@ -741,100 +741,10 @@
   }
 }
 
-@media (max-width: 767px) {
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-approved--home {
-    margin-top: max(0.75rem, env(safe-area-inset-top, 0px));
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
-    line-height: 1.1;
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1 {
-    flex-direction: column;
-    gap: 0.18rem;
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main {
-    font-weight: 700;
-    color: rgb(255 255 255 / 0.96);
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
-    font-weight: 800;
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2--accent {
-    font-size: 1.34em;
-    text-align: center;
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-home-intro-body {
-    max-width: 90vw;
-    line-height: 1.7;
-    margin-bottom: 40px;
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card {
-    border: none !important;
-    box-shadow: 0 4px 20px rgb(0 0 0 / 0.06) !important;
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card .marketing-hero-pillar-icon {
-    height: 1.75rem;
-    width: 1.75rem;
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card .marketing-hero-pillar-title {
-    max-width: none;
-    min-height: 2.5em;
-    font-size: 0.85rem;
-    line-height: 1.24;
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card:active {
-    transform: scale(0.98);
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-cards-stagger .marketing-hero-pillar--mobile-card {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-cards-stagger.is-in-view .marketing-hero-pillar--mobile-card {
-    opacity: 1;
-    transform: translateY(0);
-    transition: all 0.3s ease-out;
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-cards-stagger.is-in-view .marketing-hero-pillar--mobile-card:nth-child(1),
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-cards-stagger.is-in-view .marketing-hero-pillar--mobile-card:nth-child(2) {
-    transition-delay: 0.06s;
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-cards-stagger.is-in-view .marketing-hero-pillar--mobile-card:nth-child(3),
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-cards-stagger.is-in-view .marketing-hero-pillar--mobile-card:nth-child(4) {
-    transition-delay: 0.22s;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .marketing-hero-fade-in-up {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
-  }
-
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-cards-stagger .marketing-hero-pillar--mobile-card,
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-cards-stagger.is-in-view .marketing-hero-pillar--mobile-card {
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none !important;
   }
 }
