@@ -106,11 +106,11 @@ export function MarketingHero({
   /** Sākumlapas orbit: viens H1 tonis (bez zilajiem atslēgvārdiem), izmērs ×3 — sk. orbit-presets `[data-hero-orbit-home]`. */
   const heroH1KeywordResolved =
     orbitHomeCenterLayout && isOrbitVisual
-      ? "marketing-hero-h1-unified font-semibold text-white/95"
+      ? "marketing-hero-h1-blue font-bold whitespace-nowrap text-provin-accent"
       : `marketing-hero-h1-blue ${heroH1BlueKeywordClass}`;
 
   const heroTitleStack = (
-    <div className="flex w-full flex-col items-center text-center">
+    <div className={`flex w-full flex-col items-center text-center${orbitHomeCenterLayout ? " marketing-hero-fade-in-up marketing-hero-fade-in-up--1" : ""}`}>
       <h1
         id={titleId}
         className={
@@ -125,7 +125,7 @@ export function MarketingHero({
             <span className="text-white/95">{t("h1Un")}</span>
             <span className={heroH1KeywordResolved}>{t("h1Sludinajuma")}</span>
           </span>
-          <span className="marketing-hero-title-line2 mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
+          <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
         </>
       </h1>
       {!hideHeroSubtitle ? (
@@ -198,14 +198,14 @@ export function MarketingHero({
         <div
           className={
             designDirection
-              ? `mx-auto min-w-0 ${homeMarketingPillarGridWidthClass}`
+              ? "mx-auto min-w-0 w-full max-w-[min(100%,68rem)]"
               : "marketing-hero-pillar-dock w-full rounded-2xl border border-white/[0.08] bg-[rgb(3_4_6/0.55)] px-2 py-3 shadow-[0_20px_52px_rgb(0_0_0/0.42)] backdrop-blur-md sm:px-3 sm:py-4 md:px-4"
           }
         >
           <div
             className={
               designDirection
-                ? "flex w-full flex-row flex-nowrap justify-center gap-2 sm:gap-4 md:gap-5"
+                ? "flex w-full flex-row flex-nowrap justify-between gap-3 sm:gap-4 md:gap-5"
                 : `flex w-full flex-row flex-nowrap justify-between gap-2 sm:gap-4 md:gap-5 ${homeMarketingPillarGridWidthClass}`
             }
           >
@@ -216,7 +216,7 @@ export function MarketingHero({
             const articleClass = isC
               ? "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-row items-start gap-2.5 px-1 text-left sm:gap-3 sm:px-1"
               : designDirection
-                ? "marketing-hero-pillar demo-design-dir__card flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2.5 px-2 py-3 text-center sm:gap-3 sm:px-3 sm:py-4"
+                ? "marketing-hero-pillar marketing-hero-pillar--soft demo-design-dir__card flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2.5 px-2 py-3 text-center sm:gap-3 sm:px-3 sm:py-4"
                 : "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2 px-0.5 text-center sm:gap-2.5 sm:px-0.5";
             const iconClass = isC
               ? `marketing-hero-pillar-icon mt-0.5 h-5 w-5 shrink-0 sm:h-5 sm:w-5 ${iconTone}`
@@ -372,7 +372,7 @@ export function MarketingHero({
                       {heroTitleStack}
                     </div>
                     {homeOrbitMetaIntro ? (
-                      <div id="home-intro" className="marketing-hero-orbit-intro relative w-full shrink-0 text-center">
+                      <div id="home-intro" className="marketing-hero-orbit-intro marketing-hero-fade-in-up marketing-hero-fade-in-up--2 relative w-full shrink-0 text-center">
                         <p className="demo-design-dir__body marketing-hero-home-intro-body relative z-[1] mx-auto w-full max-w-[min(100%,42rem)] text-balance text-[11px] leading-relaxed sm:text-[14px]">
                           {tMeta("homeIntroBody")}
                         </p>
@@ -381,7 +381,11 @@ export function MarketingHero({
                   </div>
                 </div>
               </div>
-              <div className="relative z-[2] mx-auto flex w-full max-w-[min(100%,53.76rem)] shrink-0 flex-col items-center pt-3 sm:pt-5">
+              <div
+                className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-3 sm:pt-5${
+                  orbitHomeCenterLayout ? " max-w-[min(100%,70rem)] marketing-hero-fade-in-up marketing-hero-fade-in-up--3" : " max-w-[min(100%,53.76rem)]"
+                }`}
+              >
                 {pillarsAndCta}
               </div>
             </div>
