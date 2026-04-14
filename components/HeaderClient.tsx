@@ -108,9 +108,9 @@ export function HeaderClient({
   const isDarkHeaderSurface = isHome && theme === "dark";
 
   const themeBtnOnDarkHeroClass =
-    "min-h-8 min-w-8 h-8 w-8 border-white/20 bg-white/[0.06] text-white hover:border-white/35 hover:bg-white/10 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#050505]";
+    "min-h-9 min-w-9 h-9 w-9 border-white/20 bg-white/[0.06] text-white hover:border-white/35 hover:bg-white/10 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#050505]";
   const themeBtnLightChromeClass =
-    "min-h-8 min-w-8 h-8 w-8 border border-slate-300/85 bg-white/92 text-[#1d1d1f] shadow-[inset_0_1px_0_rgb(255_255_255/0.92),0_1px_3px_rgb(15_23_42/0.07)] backdrop-blur-md hover:border-slate-400/90 hover:bg-white focus-visible:ring-[rgb(0_102_255/0.35)] focus-visible:ring-offset-white";
+    "min-h-9 min-w-9 h-9 w-9 border-black/[0.08] bg-white text-[#1d1d1f] shadow-sm hover:bg-slate-50 focus-visible:ring-[rgb(0_102_255/0.35)] focus-visible:ring-offset-white";
 
   const headerSurface = isDarkHeaderSurface
     ? "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)] md:border-b md:border-white/[0.06]"
@@ -151,7 +151,7 @@ export function HeaderClient({
   const navMuted = isDarkHeaderSurface ? "text-white/72" : "text-[#1d1d1f]";
 
   const orderBtnClass =
-    "provin-btn provin-btn--compact inline-flex min-h-8 shrink-0 items-center justify-center rounded-full px-[0.85rem] text-[10px] font-bold text-white shadow-[0_2px_14px_rgba(0,102,255,0.32),inset_0_1px_0_rgba(255,255,255,0.2)] ring-1 ring-[#0066ff]/28 sm:min-h-8 sm:px-[1.05rem] sm:text-[10px]";
+    "provin-btn provin-btn--compact inline-flex min-h-9 shrink-0 items-center justify-center rounded-full px-4 text-[11px] font-bold text-white shadow-[0_0_16px_rgba(0,102,255,0.12)] ring-1 ring-white/10 sm:min-h-9 sm:px-[1.2rem] sm:text-[11px]";
 
   /** Sākumlapas tumšais hero — tā pati „pill” estētika kā `OrderForm` hero „Turpināt uz apmaksu”. */
   const orderHeaderHeroClass =
@@ -179,12 +179,10 @@ export function HeaderClient({
           : "text-[#424245] hover:text-[#1d1d1f]",
     ].join(" ");
 
-  /** Sākumlapas hero (md+): PROVIN kreisajā pusē; tēma + „Pasūtīt” — labajā stūrī (`nav` ar `ml-auto`). */
+  /** Labās malas atkāpe = kreisās (kas logo): `max(1rem, safe-area)` — dark un light. */
   const desktopHeaderRowClass = [
-    "mx-auto flex min-h-12 w-full items-center gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] sm:min-h-11 sm:gap-3",
-    isDarkHeaderSurface
-      ? "max-w-none pr-[max(0.5rem,env(safe-area-inset-right,0px))]"
-      : "max-w-[980px] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:px-6 lg:max-w-[1024px]",
+    "mx-auto flex min-h-12 w-full items-center gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:min-h-11 sm:gap-3",
+    isDarkHeaderSurface ? "max-w-none" : "max-w-[980px] lg:max-w-[1024px]",
     logoAlignWithRailSakums ? "hidden md:flex" : "",
   ]
     .filter(Boolean)
@@ -199,7 +197,7 @@ export function HeaderClient({
             ref={railMenuWrapRef}
             className="relative z-[50] w-full md:hidden"
           >
-            <div className="flex w-full items-center justify-between gap-2 pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] pt-[max(0.25rem,env(safe-area-inset-top,0px))] pb-2">
+            <div className="flex w-full items-center justify-between gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(0.25rem,env(safe-area-inset-top,0px))] pb-2">
               <Link
                 href="/"
                 className={`flex shrink-0 items-center text-[26px] font-bold tracking-tight ${mobileRailOnDark ? "text-white" : "text-[#1d1d1f]"}`}
@@ -275,7 +273,7 @@ export function HeaderClient({
             {isHome ? null : <span className={isDarkHeaderSurface ? "text-white" : "text-[#1d1d1f]"}>.LV</span>}
           </Link>
 
-          <nav className="ml-auto hidden min-w-0 shrink-0 items-center gap-2 md:flex">
+          <nav className="ml-auto hidden min-w-0 shrink-0 items-center justify-end gap-2 md:flex">
             <SiteThemeHeaderButton
               className={isDarkHeaderSurface ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
             />
@@ -295,7 +293,7 @@ export function HeaderClient({
           </nav>
 
           {!logoAlignWithRailSakums ? (
-            <div className="flex items-center gap-2 md:hidden">
+            <div className="ml-auto flex items-center justify-end gap-2 md:hidden">
               <SiteThemeHeaderButton
                 className={isDarkHeaderSurface ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
               />
