@@ -1,4 +1,5 @@
 import { getMessages, getTranslations } from "next-intl/server";
+import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { FaqClient, type FaqItem } from "@/components/FaqClient";
 
 /** BUJ — kā demo `band-c` sadaļa ar `Meta` ievadu + `Faq` tulkojumiem. */
@@ -16,15 +17,20 @@ export async function HomeFaqSection() {
       aria-labelledby="home-faq-heading"
     >
       <div className="demo-design-dir__shell">
-        <h2
-          id="home-faq-heading"
-          className="demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance text-center"
-        >
-          {tFaq("title")}
-        </h2>
-        <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance text-center sm:mt-4">
-          {tMeta("faqDescription")}
-        </p>
+        <div className="text-center">
+          <h2
+            id="home-faq-heading"
+            className="demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance"
+          >
+            {tFaq("title")}
+          </h2>
+          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
+            <DiagnosticScanLine variant="rail" motion="split" className="w-full" />
+          </div>
+          <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4">
+            {tMeta("faqDescription")}
+          </p>
+        </div>
         <div className="mt-10">
           <FaqClient title={tFaq("title")} items={items} tone="dark" embedded />
         </div>

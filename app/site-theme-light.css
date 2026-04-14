@@ -55,46 +55,56 @@ html[data-site-theme="light"] {
     0 0 0 1px rgb(0 102 255 / 0.12),
     0 10px 36px rgb(15 23 42 / 0.1),
     0 0 40px rgb(0 102 255 / 0.08);
+  /* Skenēšanas līnija: gaišajā režīmā nedaudz biežāks cikls (~4.67s → ~3.15s) */
+  --provin-scan-loop-dur: calc((7s / 3) * 1.35);
 }
 
-/* Skenēšanas līnijas — zils impulss */
+/* Skenēšanas līnijas — tumšāks pamats, šaurāks/asāks impulss, biežāks cikls (--provin-scan-loop-dur) */
+html[data-site-theme="light"] .provin-diagnostic-scan-line {
+  height: 1px;
+}
+
 html[data-site-theme="light"] .provin-diagnostic-scan-line__track {
+  height: 1px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(20 20 22 / 0.06) 10%,
-    rgb(20 20 22 / 0.1) 50%,
-    rgb(20 20 22 / 0.06) 90%,
+    rgb(15 23 42 / 0.14) 10%,
+    rgb(15 23 42 / 0.22) 50%,
+    rgb(15 23 42 / 0.14) 90%,
     transparent 100%
   );
 }
 
 html[data-site-theme="light"] .provin-diagnostic-scan-line__pulse {
+  width: clamp(1.05rem, 6.5vw, 1.65rem);
+  height: 1px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(0 102 255 / 0.22) 32%,
-    rgb(0 102 255 / 0.95) 50%,
-    rgb(0 102 255 / 0.22) 68%,
+    rgb(0 102 255 / 0.38) 36%,
+    rgb(0 102 255 / 1) 50%,
+    rgb(0 102 255 / 0.38) 64%,
     transparent 100%
   );
   box-shadow:
-    0 0 5px 0 rgb(0 102 255 / 0.35),
-    0 0 14px 0 rgb(0 102 255 / 0.22);
+    0 0 3px 0 rgb(0 102 255 / 0.55),
+    0 0 8px 0 rgb(0 102 255 / 0.28);
 }
 
 html[data-site-theme="light"] .demo-design-dir__hero-scan::after {
+  width: clamp(1.05rem, 6.5vw, 1.65rem);
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(0 102 255 / 0.22) 32%,
-    rgb(0 102 255 / 0.95) 50%,
-    rgb(0 102 255 / 0.22) 68%,
+    rgb(0 102 255 / 0.38) 36%,
+    rgb(0 102 255 / 1) 50%,
+    rgb(0 102 255 / 0.38) 64%,
     transparent 100%
   );
   box-shadow:
-    0 0 5px 0 rgb(0 102 255 / 0.35),
-    0 0 14px 0 rgb(0 102 255 / 0.22);
+    0 0 3px 0 rgb(0 102 255 / 0.55),
+    0 0 8px 0 rgb(0 102 255 / 0.28);
 }
 
 /* Mājas čaula + fona dziļums */
@@ -201,7 +211,7 @@ html[data-site-theme="light"] .order-form--hero .order-form-hero-input {
 }
 
 html[data-site-theme="light"] .order-form--hero .order-form-hero-input::placeholder {
-  color: #525252 !important;
+  color: #8a8a8e !important;
 }
 
 html[data-site-theme="light"] .order-form--hero .order-form-hero-hint,
@@ -241,7 +251,7 @@ html[data-site-theme="light"] .order-form--hero .order-form-hero-alert {
 }
 
 html[data-site-theme="light"] .order-form-hero-field:focus-within {
-  background-color: rgb(186 210 255 / 0.78);
+  background-color: transparent !important;
 }
 
 html[data-site-theme="light"] .order-form-hero-field:focus-within input,
@@ -251,7 +261,7 @@ html[data-site-theme="light"] .order-form-hero-field:focus-within textarea {
 
 html[data-site-theme="light"] .order-form-hero-field:focus-within input::placeholder,
 html[data-site-theme="light"] .order-form-hero-field:focus-within textarea::placeholder {
-  color: #525252 !important;
+  color: #8a8a8e !important;
 }
 
 /* Lab CTA — hover zils */
@@ -419,7 +429,7 @@ html[data-site-theme="light"] .demo-design-dir__axis-line {
 }
 
 html[data-site-theme="light"] .demo-design-dir__hero-scan {
-  background: linear-gradient(90deg, transparent, rgb(20 20 24 / 0.12), transparent);
+  background: linear-gradient(90deg, transparent, rgb(15 23 42 / 0.2), transparent);
 }
 
 /* Orbit hero (S12 — produkcijas mājas) */
