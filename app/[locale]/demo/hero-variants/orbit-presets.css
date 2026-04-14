@@ -541,7 +541,7 @@
   border-color: rgb(160 165 175 / 0.18);
 }
 
-/* Sākumlapa (orbit + design-direction): H1 ×3 pret iepriekšējo bāzi; viens tonis (`.marketing-hero-h1-unified`); otrā rinda tā patā izmērā kā pirmajā */
+/* Sākumlapa (orbit + design-direction): H1 ×3 pret iepriekšējo bāzi; otrā rinda tā patā izmērā kā pirmajā; zilie atslēgvārdi — `.marketing-hero-h1-blue` */
 .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
   max-width: min(100%, 68.25rem);
   font-size: clamp(3.16875rem, 9.36vw + 0.78rem, 4.14375rem);
