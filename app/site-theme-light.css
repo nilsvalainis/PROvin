@@ -93,6 +93,21 @@ html[data-site-theme="light"] .provin-diagnostic-scan-line__pulse {
     0 0 24px 0 rgb(0 102 255 / 0.38);
 }
 
+/* Nepārtraukta fāze — gaišajā tēmā blīvāks impulss (saskan ar --continuous) */
+html[data-site-theme="light"] .provin-diagnostic-scan-line--continuous .provin-diagnostic-scan-line__pulse {
+  width: clamp(1.2rem, 7vw, 1.9rem);
+  background: linear-gradient(
+    90deg,
+    rgb(0 140 255 / 0.65) 0%,
+    rgb(120 210 255 / 1) 50%,
+    rgb(0 140 255 / 0.65) 100%
+  );
+  box-shadow:
+    0 0 5px 0 rgb(0 153 255 / 0.95),
+    0 0 14px 0 rgb(0 140 255 / 0.65),
+    0 0 24px 0 rgb(0 102 255 / 0.48);
+}
+
 html[data-site-theme="light"] .demo-design-dir__hero-scan::after {
   width: clamp(1.05rem, 6.5vw, 1.65rem);
   background: linear-gradient(

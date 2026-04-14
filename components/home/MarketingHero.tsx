@@ -4,6 +4,7 @@ import { useId } from "react";
 import "@/components/home/hero-orbit-styles";
 import { Check, ChevronDown, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { NavChevronDown } from "@/components/NavChevron";
 import { ApprovedByIrissReveal } from "@/components/home/ApprovedByIrissReveal";
 import { MarketingHeroSpeedometer } from "@/components/home/MarketingHeroSpeedometer";
@@ -107,6 +108,9 @@ export function MarketingHero({
       ? "marketing-hero-h1-blue font-bold whitespace-nowrap text-provin-accent"
       : `marketing-hero-h1-blue ${heroH1BlueKeywordClass}`;
 
+  /** Skenēšanas līnija starp 1. un 2. H1 rindu — tikai orbit + designDirection; absolūta, lai nemainītu esošās atstarpes. */
+  const showTitleMidScan = Boolean(designDirection && isOrbitVisual);
+
   const heroTitleStack = (
     <div className={`flex w-full flex-col items-center text-center${orbitHomeCenterLayout ? " marketing-hero-fade-in-up marketing-hero-fade-in-up--1" : ""}`}>
       <h1
@@ -118,12 +122,35 @@ export function MarketingHero({
         }
       >
         <>
-          <span className="marketing-hero-title-line1 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
-            <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Vin")}</span>
-            <span className="marketing-hero-title-line1-main text-white/95">{t("h1Un")}</span>
-            <span className={`marketing-hero-title-line1-accent ${heroH1KeywordResolved}`}>{t("h1Sludinajuma")}</span>
-          </span>
-          <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
+          {showTitleMidScan ? (
+            <>
+              <div className="relative z-[1] w-full">
+                <span className="marketing-hero-title-line1 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
+                  <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Vin")}</span>
+                  <span className="marketing-hero-title-line1-main text-white/95">{t("h1Un")}</span>
+                  <span className={`marketing-hero-title-line1-accent ${heroH1KeywordResolved}`}>{t("h1Sludinajuma")}</span>
+                </span>
+                <div
+                  className="marketing-hero-title-mid-scan pointer-events-none absolute left-1/2 top-[calc(100%+1px)] z-[1] w-full max-w-[min(100%,min(90vw,56rem))] -translate-x-1/2 -translate-y-1/2 sm:top-[calc(100%+0.125rem)] px-1 sm:px-2"
+                  aria-hidden
+                >
+                  <DiagnosticScanLine variant="rail" motion="alongContinuous" className="w-full" />
+                </div>
+              </div>
+              <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent relative z-[2] mt-0.5 block text-white/95 sm:mt-1">
+                {t("h1Line2")}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="marketing-hero-title-line1 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-2.5 sm:gap-y-2">
+                <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Vin")}</span>
+                <span className="marketing-hero-title-line1-main text-white/95">{t("h1Un")}</span>
+                <span className={`marketing-hero-title-line1-accent ${heroH1KeywordResolved}`}>{t("h1Sludinajuma")}</span>
+              </span>
+              <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent mt-0.5 block text-white/95 sm:mt-1">{t("h1Line2")}</span>
+            </>
+          )}
         </>
       </h1>
       {!hideHeroSubtitle ? (

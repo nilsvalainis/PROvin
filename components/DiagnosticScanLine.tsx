@@ -8,7 +8,10 @@ type Props = {
    * `split` — divi impulsi sākumā kopā centrā, tad šķiras uz malām.
    * `none` — tikai līnija (bez skrejošā impulsa).
    */
-  motion?: "along" | "from-center-left" | "from-center-right" | "split" | "none";
+  /**
+   * `alongContinuous` — divi nobīdīti impulsi (fāze 50 %), lai zilais vienmēr būtu redzams un cikls bez „lēciena”.
+   */
+  motion?: "along" | "alongContinuous" | "from-center-left" | "from-center-right" | "split" | "none";
 };
 
 /**
@@ -20,7 +23,13 @@ export function DiagnosticScanLine({
   motion = "along",
 }: Props) {
   const rail = variant === "rail";
-  const rootClass = ["provin-diagnostic-scan-line", rail && "provin-diagnostic-scan-line--rail", className]
+  const continuous = motion === "alongContinuous";
+  const rootClass = [
+    "provin-diagnostic-scan-line",
+    rail && "provin-diagnostic-scan-line--rail",
+    continuous && "provin-diagnostic-scan-line--continuous",
+    className,
+  ]
     .filter(Boolean)
     .join(" ");
 
@@ -49,6 +58,11 @@ export function DiagnosticScanLine({
         <>
           <span className={pulseClass("provin-diagnostic-scan-line__pulse--split-left")} />
           <span className={pulseClass("provin-diagnostic-scan-line__pulse--split-right")} />
+        </>
+      ) : motion === "alongContinuous" ? (
+        <>
+          <span className={pulseClass()} />
+          <span className={pulseClass("provin-diagnostic-scan-line__pulse--phase-b")} />
         </>
       ) : (
         <span className={pulseClass(outwardExtra)} />
