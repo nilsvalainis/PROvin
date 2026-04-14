@@ -43,6 +43,9 @@ export function DemoStudioQuickLinks({ className = "" }: { className?: string })
       <Link href="/demo/static-concepts" className={pill}>
         Statiskie HTML koncepti (30)
       </Link>
+      <Link href="/demo/scandinavian-full" className={pill}>
+        Scandinavian full demo
+      </Link>
       <Link href="/" className={pillHome}>
         Uz sākumlapu
       </Link>

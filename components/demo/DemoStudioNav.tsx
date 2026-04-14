@@ -37,6 +37,9 @@ export function DemoStudioNav() {
         <Link href="/demo/static-concepts" className={pill}>
           HTML (30)
         </Link>
+        <Link href="/demo/scandinavian-full" className={pill}>
+          SC full
+        </Link>
       </div>
     </nav>
   );
