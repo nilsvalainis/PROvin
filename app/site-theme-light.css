@@ -204,6 +204,22 @@ html[data-site-theme="light"] header .provin-home-pill-cta--header-dark-chrome:f
   outline-color: rgb(0 102 255 / 0.55) !important;
 }
 
+/* Sākumlapas hero CTA — tā pati „header” zilā stikla pill kā augšējā „Pasūtīt” */
+html[data-site-theme="light"] .marketing-hero-section .provin-home-pill-cta--header-dark-chrome {
+  border-color: rgb(0 102 255 / 0.35) !important;
+  background-color: rgb(0 102 255 / 0.12) !important;
+  color: #000000 !important;
+}
+
+html[data-site-theme="light"] .marketing-hero-section .provin-home-pill-cta--header-dark-chrome:hover:not(:disabled) {
+  background-color: rgb(0 102 255 / 0.2) !important;
+  color: #000000 !important;
+}
+
+html[data-site-theme="light"] .marketing-hero-section .provin-home-pill-cta--header-dark-chrome:focus-visible {
+  outline-color: rgb(0 102 255 / 0.55) !important;
+}
+
 /* Pasūtījuma forma (hero) — etiķetes, ievade, kopsavilkums */
 html[data-site-theme="light"] .order-form--hero .order-form-hero-label,
 html[data-site-theme="light"] .order-form--hero .order-form-hero-summary-label,

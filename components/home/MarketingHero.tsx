@@ -2,21 +2,23 @@
 
 import { useId } from "react";
 import "@/components/home/hero-orbit-styles";
-import { Check, ChevronDown, TriangleAlert } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { ArrowRight, ChevronDown } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { NavChevronDown } from "@/components/NavChevron";
 import { ApprovedByIrissReveal } from "@/components/home/ApprovedByIrissReveal";
+import { MarketingHeroPillarsGrid } from "@/components/home/MarketingHeroPillarsGrid";
 import { MarketingHeroSpeedometer } from "@/components/home/MarketingHeroSpeedometer";
+import { useSiteTheme } from "@/components/providers/SiteThemeProvider";
 import type { HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
 import { isOrbitFamilyVariant } from "@/lib/hero-orbit-j-presets";
 import {
   approvedByIrissSignatureHeroClass,
   heroH1BlueKeywordClass,
   homeHeroSubtitleClass,
-  homeMarketingPillarGridShellClass,
-  homeMarketingPillarGridWidthClass,
 } from "@/lib/home-layout";
+import { orderSectionHref } from "@/lib/paths";
 
 export type { HeroOrbitSubvariant, HeroSilverBlackSubvariant, HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
 export {
@@ -25,14 +27,6 @@ export {
   HERO_SILVER_BLACK_SUBVARIANTS,
   isOrbitFamilyVariant,
 } from "@/lib/hero-orbit-j-presets";
-
-type HeroPillar = { title: string; body?: string };
-
-const pillarTitleClass =
-  "line-clamp-2 max-h-[2.4em] min-h-[2.4em] w-full max-w-[11.5rem] whitespace-pre-line text-center text-[9px] font-semibold uppercase leading-[1.2] tracking-tight text-white/95 sm:max-w-[12.5rem] sm:text-[10px]";
-
-const pillarTitleClassC =
-  "line-clamp-2 max-h-[2.4em] min-h-[2.4em] w-full max-w-[13.5rem] whitespace-pre-line text-[9px] font-semibold uppercase leading-[1.25] tracking-tight text-white/95 sm:text-[10px]";
 
 /** Produkcijas hero orbitālais izskats — neietekmē `id` (paliek `home-hero` sānu joslai). */
 export type MarketingHeroHomeOrbitPreset = "s12" | "s19" | "s20";
@@ -73,8 +67,15 @@ export function MarketingHero({
   const silhouetteLensClipId = `${silhouetteIdBase}-lens-clip`;
   const t = useTranslations("Hero");
   const tMeta = useTranslations("Meta");
-  const rawPillars = t.raw("pillars");
-  const pillars: HeroPillar[] = Array.isArray(rawPillars) ? (rawPillars as HeroPillar[]) : [];
+  const locale = useLocale();
+  const { theme } = useSiteTheme();
+  const orderHref = orderSectionHref(locale);
+  const orderHeaderHeroClass =
+    "provin-home-pill-cta provin-home-pill-cta--fit provin-home-pill-cta--header-compact inline-flex shrink-0 touch-manipulation whitespace-nowrap";
+  const homeHeroOrderChrome =
+    theme === "light"
+      ? `${orderHeaderHeroClass} provin-home-pill-cta--header-dark-chrome`
+      : orderHeaderHeroClass;
 
   const sectionId = sectionDomId ?? (demoVariant ? `demo-hero-${demoVariant}` : "home-hero");
   const titleId = demoVariant ? `marketing-hero-title-${demoVariant}` : "marketing-hero-title";
@@ -98,6 +99,8 @@ export function MarketingHero({
   const orbitGlassSilhouette = Boolean(isOrbitVisual && !demoVariant);
   /** Sākumlapa: vertikālais centrs starp augšu un pīlāriem + tipogrāfijas skala (`data-hero-orbit-home`). */
   const orbitHomeCenterLayout = Boolean(designDirection && isOrbitVisual && !isB);
+  /** Mājas orbit: mobilajā pīlāri zem hero; hero vietā CTA. */
+  const mobilePillarsBelowFold = Boolean(orbitHomeCenterLayout && designDirection && !demoVariant);
   /** Sākumlapa: `Meta` ievads (detektīvs + teksts + ass + skenēšana) orbit centrā — nevis lupa. */
   const homeOrbitMetaIntro = Boolean(designDirection && orbitGlassSilhouette && !demoVariant);
   const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
@@ -213,71 +216,55 @@ export function MarketingHero({
     </header>
   );
 
-  const pillarGridClass = `${homeMarketingPillarGridShellClass} w-full pb-5 pt-4 sm:pb-6 sm:pt-6${isB ? " marketing-hero-b-pillars" : ""}`;
+  const scrollToContentLinkDesign = (marginClass: string) => (
+    <a
+      href={demoVariant ? "#" : "#site-content"}
+      onClick={demoVariant ? (e) => e.preventDefault() : undefined}
+      aria-label={t("scrollToPricingAria")}
+      className={`group ${marginClass} inline-flex shrink-0 touch-manipulation items-center justify-center self-center text-provin-accent/80 transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent`}
+    >
+      <NavChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:translate-y-0.5" />
+    </a>
+  );
+
+  const scrollToContentLink = designDirection ? (
+    scrollToContentLinkDesign("mt-3 sm:mt-4")
+  ) : (
+    <a
+      href={demoVariant ? "#" : "#site-content"}
+      onClick={demoVariant ? (e) => e.preventDefault() : undefined}
+      aria-label={t("scrollToPricingAria")}
+      className="group mx-auto mt-2 flex min-h-[44px] w-full max-w-[22rem] touch-manipulation flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-white/55 shadow-[0_16px_40px_rgb(0_0_0/0.35)] transition-[border-color,background-color,color,box-shadow] duration-200 hover:border-[#0066ff]/28 hover:bg-[#0066ff]/[0.09] hover:text-white/85 active:bg-white/[0.07] sm:mt-2.5 sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
+    >
+      <span className="w-full text-balance text-center">{t("scrollToPricingAria")}</span>
+      <ChevronDown
+        className="mx-auto h-4 w-4 shrink-0 text-[#0066ff] opacity-95 transition-transform duration-200 group-hover:translate-y-0.5"
+        strokeWidth={2}
+        aria-hidden
+      />
+    </a>
+  );
 
   const pillarsAndCta = (
     <>
-      <div className={pillarGridClass}>
-        <div
-          className={
-            designDirection
-              ? "mx-auto min-w-0 w-full max-w-[min(100%,68rem)]"
-              : "marketing-hero-pillar-dock w-full rounded-2xl border border-white/[0.08] bg-[rgb(3_4_6/0.55)] px-2 py-3 shadow-[0_20px_52px_rgb(0_0_0/0.42)] backdrop-blur-md sm:px-3 sm:py-4 md:px-4"
-          }
-        >
-          <div
-            className={
-              designDirection
-                ? "marketing-hero-pillars-mobile-grid flex w-full flex-row flex-nowrap justify-between gap-3 sm:gap-4 md:gap-5"
-                : `flex w-full flex-row flex-nowrap justify-between gap-2 sm:gap-4 md:gap-5 ${homeMarketingPillarGridWidthClass}`
-            }
-          >
-          {pillars.map((p, i) => {
-            const riskPillar = i === 2;
-            const Icon = riskPillar ? TriangleAlert : Check;
-            const iconTone = riskPillar ? "marketing-hero-pillar-icon--risk" : "marketing-hero-pillar-icon--check";
-            const articleClass = isC
-              ? "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-row items-start gap-2.5 px-1 text-left sm:gap-3 sm:px-1"
-              : designDirection
-                ? "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--mobile-card demo-design-dir__card flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2.5 px-2 py-3 text-center sm:gap-3 sm:px-3 sm:py-4"
-                : "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2 px-0.5 text-center sm:gap-2.5 sm:px-0.5";
-            const iconClass = isC
-              ? `marketing-hero-pillar-icon mt-0.5 h-5 w-5 shrink-0 origin-center sm:h-5 sm:w-5 ${iconTone}${riskPillar ? "" : " scale-110"}`
-              : `marketing-hero-pillar-icon h-7 w-7 shrink-0 origin-center sm:h-7 sm:w-7 md:h-8 md:w-8 ${iconTone}${riskPillar ? "" : " scale-110"}`;
-            return (
-              <article key={`${p.title}-${i}`} className={articleClass}>
-                <Icon className={iconClass} strokeWidth={1.5} aria-hidden />
-                <h3 className={`marketing-hero-pillar-title ${isC ? pillarTitleClassC : pillarTitleClass}`}>{p.title}</h3>
-              </article>
-            );
-          })}
-          </div>
-        </div>
-      </div>
+      <MarketingHeroPillarsGrid designDirection={designDirection} isC={isC} isB={isB} />
+      {scrollToContentLink}
+    </>
+  );
 
-      <a
-        href={demoVariant ? "#" : "#site-content"}
-        onClick={demoVariant ? (e) => e.preventDefault() : undefined}
-        aria-label={t("scrollToPricingAria")}
-        className={
-          designDirection
-            ? "group mt-3 inline-flex shrink-0 touch-manipulation items-center justify-center self-center text-provin-accent/80 transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:mt-4"
-            : "group mx-auto mt-2 flex min-h-[44px] w-full max-w-[22rem] touch-manipulation flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-white/55 shadow-[0_16px_40px_rgb(0_0_0/0.35)] transition-[border-color,background-color,color,box-shadow] duration-200 hover:border-[#0066ff]/28 hover:bg-[#0066ff]/[0.09] hover:text-white/85 active:bg-white/[0.07] sm:mt-2.5 sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
-        }
-      >
-        {designDirection ? (
-          <NavChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:translate-y-0.5" />
-        ) : (
-          <>
-            <span className="w-full text-balance text-center">{t("scrollToPricingAria")}</span>
-            <ChevronDown
-              className="mx-auto h-4 w-4 shrink-0 text-[#0066ff] opacity-95 transition-transform duration-200 group-hover:translate-y-0.5"
-              strokeWidth={2}
-              aria-hidden
-            />
-          </>
-        )}
-      </a>
+  const pillarsAndCtaOrbitMobile = (
+    <>
+      <div className="hidden w-full flex-col items-center md:flex">
+        <MarketingHeroPillarsGrid designDirection={designDirection} isC={isC} isB={isB} />
+        {scrollToContentLinkDesign("mt-3 sm:mt-4")}
+      </div>
+      <div className="flex w-full flex-col items-center gap-3.5 md:hidden">
+        <Link href={orderHref} className={homeHeroOrderChrome}>
+          {t("heroMobileOrderCta")}
+          <ArrowRight className="h-3 w-3 shrink-0 text-[#7eb6ff]/90" strokeWidth={2} aria-hidden />
+        </Link>
+        {scrollToContentLinkDesign("mt-0")}
+      </div>
     </>
   );
 
@@ -386,11 +373,11 @@ export function MarketingHero({
           <div className="relative z-[1] flex min-h-0 w-full flex-1 flex-col">
             <div className="grid min-h-0 w-full flex-1 grid-rows-[1fr_auto]">
               <div className="relative flex min-h-0 w-full flex-1 flex-col">
-                <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pt-0.5 sm:px-8 sm:pt-1">
+                <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5 sm:px-8 sm:pb-0 sm:pt-1">
                   {approvedBlock}
                 </div>
                 <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden px-4 sm:px-8">
-                  <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,min(92vw,46rem))] flex-1 flex-col justify-evenly py-1 sm:py-2">
+                  <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,min(92vw,46rem))] flex-1 flex-col gap-5 py-3 sm:justify-evenly sm:gap-0 sm:py-2">
                     <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
                       {heroTitleStack}
                     </div>
@@ -409,7 +396,7 @@ export function MarketingHero({
                   orbitHomeCenterLayout ? " max-w-[min(100%,70rem)] marketing-hero-fade-in-up marketing-hero-fade-in-up--3" : " max-w-[min(100%,53.76rem)]"
                 }`}
               >
-                {pillarsAndCta}
+                {orbitHomeCenterLayout && mobilePillarsBelowFold ? pillarsAndCtaOrbitMobile : pillarsAndCta}
               </div>
             </div>
           </div>
