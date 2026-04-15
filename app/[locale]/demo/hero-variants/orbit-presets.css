@@ -630,14 +630,21 @@
   letter-spacing: 0.021em;
 }
 
-/* Hero title: pirmā rinda (VIN / UN / SLUDINĀJUMA) — tāds pats izmērs un zilā krāsa kā otrās rindas akcentam (AUDITS) */
-.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2--accent,
-.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main,
-.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
+/* AUDITS — zils, lielais akcents */
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2--accent {
   color: rgb(0 102 255 / 0.98) !important;
   font-size: 1.28em;
   font-weight: 800;
   letter-spacing: 0.03em;
+}
+
+/* VIN / UN / SLUDINĀJUMA — par 25 % mazāks nekā iepriekšējā kopējā līnija (0.75×1.28em); gaiši pelēks kā agrāk */
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main,
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
+  color: rgb(228 235 248 / 0.94) !important;
+  font-size: 0.96em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .marketing-hero-pillar--soft {
@@ -800,7 +807,8 @@
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main,
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
-    font-size: 1.2em;
+    font-size: 0.9em;
+    color: rgb(228 235 248 / 0.94) !important;
   }
 
   .marketing-hero-orbit-base.marketing-hero-section .demo-design-dir__card .marketing-hero-pillar-title,
@@ -832,9 +840,10 @@
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main,
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
-    font-size: 1.275em;
+    font-size: 0.956em;
     font-weight: 800;
     white-space: nowrap;
+    color: rgb(228 235 248 / 0.94) !important;
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2--accent {
