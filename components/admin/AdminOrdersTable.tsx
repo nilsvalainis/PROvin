@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Check, FileText, Loader2, Send } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
@@ -129,6 +129,33 @@ function NotifyReportReadyCell({
 
 export function AdminOrdersTable({ orders }: { orders: AdminOrdersTableRow[] }) {
   const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short" });
+  const [clientOverrides, setClientOverrides] = useState<
+    Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string }>
+  >({});
+
+  useEffect(() => {
+    const next: Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string }> = {};
+    for (const o of orders) {
+      try {
+        const raw = localStorage.getItem(`provin-admin-order-edits-v1-${o.id}`);
+        if (!raw) continue;
+        const p = JSON.parse(raw) as Record<string, unknown>;
+        const customerName = typeof p.customerName === "string" ? p.customerName.trim() : "";
+        const customerEmail = typeof p.customerEmail === "string" ? p.customerEmail.trim() : "";
+        const customerPhone = typeof p.customerPhone === "string" ? p.customerPhone.trim() : "";
+        if (!customerName && !customerEmail && !customerPhone) continue;
+        next[o.id] = {
+          ...(customerName ? { customerName } : {}),
+          ...(customerEmail ? { customerEmail } : {}),
+          ...(customerPhone ? { customerPhone } : {}),
+        };
+      } catch {
+        /* ignore localStorage parsing issues */
+      }
+    }
+    setClientOverrides(next);
+  }, [orders]);
+
   return (
     <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
       <div className="overflow-x-auto">
@@ -148,9 +175,10 @@ export function AdminOrdersTable({ orders }: { orders: AdminOrdersTableRow[] }) 
           <tbody className="divide-y divide-slate-100">
             {orders.map((o) => {
               const pdfHref = invoicePdfHref(o);
-              const name = o.customerName?.trim() ?? "";
-              const email = o.customerEmail?.trim() ?? "";
-              const phone = o.customerPhone?.trim() ?? "";
+              const ov = clientOverrides[o.id];
+              const name = ov?.customerName ?? (o.customerName?.trim() ?? "");
+              const email = ov?.customerEmail ?? (o.customerEmail?.trim() ?? "");
+              const phone = ov?.customerPhone ?? (o.customerPhone?.trim() ?? "");
               const primaryClient = name || email || phone || "—";
               const secondaryClient = [name ? email : "", phone].filter(Boolean).join(" · ");
               return (
