@@ -663,34 +663,6 @@
     box-shadow 0.4s ease;
 }
 
-/* Sākumlapas hero: četri pīlāri — bez kartiņas fona/rāmja; saglabā hover kustību un ikonu „spīdumu”. */
-.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--soft.marketing-hero-pillar--plain {
-  background: transparent !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-}
-
-/* Mobilajā — kartītes ar --mobile-card; desktop rindā tā pati „plain” estētika */
-@media (min-width: 768px) {
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--soft.marketing-hero-pillar--mobile-card {
-    background: transparent !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-  }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--soft.marketing-hero-pillar--plain:hover {
-    box-shadow: none !important;
-  }
-
-  @media (min-width: 768px) {
-    .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--soft.marketing-hero-pillar--mobile-card:hover {
-      box-shadow: none !important;
-    }
-  }
-}
-
 .marketing-hero-pillar--soft .marketing-hero-pillar-icon--risk,
 .marketing-hero-pillar--soft .marketing-hero-pillar-icon--check {
   transition: filter 0.4s ease;
