@@ -2,7 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { isPlausibleListingUrl, isValidVin, normalizeVin, validateOrderFields } from "@/lib/order-field-validation";
@@ -62,10 +62,16 @@ export function OrderForm({
   const [notes, setNotes] = useState("");
   const hero = variant === "hero";
   const compact = variant === "compact";
+  const errorRef = useRef<HTMLParagraphElement | null>(null);
 
   useEffect(() => {
     onStepChange?.(step);
   }, [onStepChange, step]);
+
+  useEffect(() => {
+    if (!error || !hero) return;
+    errorRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [error, hero]);
 
   const labelClass = hero ? labelHero : labelDefault;
   const inputBase = hero ? inputHeroNoBottom : inputDefault;
@@ -594,6 +600,7 @@ export function OrderForm({
 
       {error && (
         <p
+          ref={errorRef}
           className={
             hero
               ? "order-form-hero-alert mt-5 rounded-md border border-red-500/35 bg-red-950/30 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-200"
