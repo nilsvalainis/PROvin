@@ -18,6 +18,10 @@ function parseOrderEditsObject(v: unknown): OrderDraftOrderEdits | null {
   const out: OrderDraftOrderEdits = {};
   if (typeof o.vin === "string") out.vin = o.vin;
   if (typeof o.listingUrl === "string") out.listingUrl = o.listingUrl;
+  if (typeof o.customerName === "string") out.customerName = o.customerName;
+  if (typeof o.customerEmail === "string") out.customerEmail = o.customerEmail;
+  if (typeof o.customerPhone === "string") out.customerPhone = o.customerPhone;
+  if (typeof o.contactMethod === "string") out.contactMethod = o.contactMethod;
   if (typeof o.notes === "string") out.notes = o.notes;
   if (typeof o.internalComment === "string") out.internalComment = o.internalComment;
   return out;

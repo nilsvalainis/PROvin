@@ -6,6 +6,10 @@
 export type OrderDraftOrderEdits = {
   vin?: string;
   listingUrl?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  contactMethod?: string;
   notes?: string;
   /** Admin piezīmes — melnrakstā; nav klienta PDF. */
   internalComment?: string;

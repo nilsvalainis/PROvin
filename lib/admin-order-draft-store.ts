@@ -45,6 +45,10 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
     const e = o.orderEdits as Record<string, unknown>;
     if (typeof e.vin === "string") orderEdits.vin = e.vin;
     if (typeof e.listingUrl === "string") orderEdits.listingUrl = e.listingUrl;
+    if (typeof e.customerName === "string") orderEdits.customerName = e.customerName;
+    if (typeof e.customerEmail === "string") orderEdits.customerEmail = e.customerEmail;
+    if (typeof e.customerPhone === "string") orderEdits.customerPhone = e.customerPhone;
+    if (typeof e.contactMethod === "string") orderEdits.contactMethod = e.contactMethod;
     if (typeof e.notes === "string") orderEdits.notes = e.notes;
     if (typeof e.internalComment === "string") orderEdits.internalComment = e.internalComment;
   }
@@ -136,6 +140,18 @@ export async function patchOrderDraft(
             : {}),
           ...(typeof patch.orderEdits.listingUrl === "string"
             ? { listingUrl: sanitizeDraftTextForStorage(patch.orderEdits.listingUrl, 8000) }
+            : {}),
+          ...(typeof patch.orderEdits.customerName === "string"
+            ? { customerName: sanitizeDraftTextForStorage(patch.orderEdits.customerName, 200) }
+            : {}),
+          ...(typeof patch.orderEdits.customerEmail === "string"
+            ? { customerEmail: sanitizeDraftTextForStorage(patch.orderEdits.customerEmail, 320) }
+            : {}),
+          ...(typeof patch.orderEdits.customerPhone === "string"
+            ? { customerPhone: sanitizeDraftTextForStorage(patch.orderEdits.customerPhone, 64) }
+            : {}),
+          ...(typeof patch.orderEdits.contactMethod === "string"
+            ? { contactMethod: sanitizeDraftTextForStorage(patch.orderEdits.contactMethod, 120) }
             : {}),
           ...(typeof patch.orderEdits.notes === "string"
             ? { notes: sanitizeDraftTextForStorage(patch.orderEdits.notes) }

@@ -41,6 +41,10 @@ export type AdminOrderDetailClientModel = {
 type OrderEdits = {
   vin?: string;
   listingUrl?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  contactMethod?: string;
   notes?: string;
   internalComment?: string;
 };
@@ -51,6 +55,10 @@ function initialEditsFromServerDraft(serverOrderDraft: OrderDraftState | null): 
   return {
     ...(typeof fromServer!.vin === "string" ? { vin: fromServer!.vin } : {}),
     ...(typeof fromServer!.listingUrl === "string" ? { listingUrl: fromServer!.listingUrl } : {}),
+    ...(typeof fromServer!.customerName === "string" ? { customerName: fromServer!.customerName } : {}),
+    ...(typeof fromServer!.customerEmail === "string" ? { customerEmail: fromServer!.customerEmail } : {}),
+    ...(typeof fromServer!.customerPhone === "string" ? { customerPhone: fromServer!.customerPhone } : {}),
+    ...(typeof fromServer!.contactMethod === "string" ? { contactMethod: fromServer!.contactMethod } : {}),
     ...(typeof fromServer!.notes === "string" ? { notes: fromServer!.notes } : {}),
     ...(typeof fromServer!.internalComment === "string" ? { internalComment: fromServer!.internalComment } : {}),
   };
@@ -96,6 +104,10 @@ export function AdminOrderDetailView({
       setEdits({
         ...(typeof fromServer!.vin === "string" ? { vin: fromServer!.vin } : {}),
         ...(typeof fromServer!.listingUrl === "string" ? { listingUrl: fromServer!.listingUrl } : {}),
+        ...(typeof fromServer!.customerName === "string" ? { customerName: fromServer!.customerName } : {}),
+        ...(typeof fromServer!.customerEmail === "string" ? { customerEmail: fromServer!.customerEmail } : {}),
+        ...(typeof fromServer!.customerPhone === "string" ? { customerPhone: fromServer!.customerPhone } : {}),
+        ...(typeof fromServer!.contactMethod === "string" ? { contactMethod: fromServer!.contactMethod } : {}),
         ...(typeof fromServer!.notes === "string" ? { notes: fromServer!.notes } : {}),
         ...(typeof fromServer!.internalComment === "string"
           ? { internalComment: fromServer!.internalComment }
@@ -117,6 +129,10 @@ export function AdminOrderDetailView({
           setEdits({
             ...(typeof p.vin === "string" ? { vin: p.vin } : {}),
             ...(typeof p.listingUrl === "string" ? { listingUrl: p.listingUrl } : {}),
+            ...(typeof p.customerName === "string" ? { customerName: p.customerName } : {}),
+            ...(typeof p.customerEmail === "string" ? { customerEmail: p.customerEmail } : {}),
+            ...(typeof p.customerPhone === "string" ? { customerPhone: p.customerPhone } : {}),
+            ...(typeof p.contactMethod === "string" ? { contactMethod: p.contactMethod } : {}),
             ...(typeof p.notes === "string" ? { notes: p.notes } : {}),
             ...(typeof p.internalComment === "string" ? { internalComment: p.internalComment } : {}),
           });
@@ -203,6 +219,16 @@ export function AdminOrderDetailView({
 
   const mergedVin = edits.vin !== undefined ? edits.vin : (order.vin ?? "");
   const mergedListing = edits.listingUrl !== undefined ? edits.listingUrl : (order.listingUrl ?? "");
+  const mergedCustomerName = edits.customerName !== undefined ? edits.customerName : (order.customerName ?? "");
+  const mergedCustomerEmail =
+    edits.customerEmail !== undefined
+      ? edits.customerEmail
+      : (order.customerEmail ?? order.customerDetailsEmail ?? "");
+  const mergedCustomerPhone =
+    edits.customerPhone !== undefined
+      ? edits.customerPhone
+      : (order.phone ?? order.customerDetailsPhone ?? "");
+  const mergedContactMethod = edits.contactMethod !== undefined ? edits.contactMethod : (order.contactMethod ?? "");
   const mergedNotes = edits.notes !== undefined ? edits.notes : (order.notes ?? "");
   const mergedInternalComment =
     edits.internalComment !== undefined ? edits.internalComment : (order.internalComment ?? "");
@@ -387,22 +413,48 @@ export function AdminOrderDetailView({
               }
             >
               <div className="space-y-1 px-2 pb-2">
-                <dl className={metaStack}>
-                  <div className="min-w-0">
-                    <dt className={metaLabel}>E-pasts</dt>
-                    <dd className={`${metaValue} break-all`}>
-                      {order.customerEmail ?? order.customerDetailsEmail ?? "—"}
-                    </dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className={metaLabel}>Tālrunis</dt>
-                    <dd className={metaValue}>{order.phone ?? order.customerDetailsPhone ?? "—"}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className={metaLabel}>Vārds, uzvārds</dt>
-                    <dd className={metaValue}>{order.customerName ?? "—"}</dd>
-                  </div>
-                </dl>
+                <div className="mt-0 flex min-h-0 min-w-0 max-w-full flex-col gap-2">
+                  <AdminSavableTextField
+                    id="edit-customer-name"
+                    label="Vārds, uzvārds"
+                    value={mergedCustomerName}
+                    onChange={(v) => persistEdits({ ...edits, customerName: v })}
+                    placeholder="Klienta vārds"
+                    compact
+                    hideToolbar
+                    resetVersion={orderFieldResetKey}
+                  />
+                  <AdminSavableTextField
+                    id="edit-customer-email"
+                    label="E-pasts"
+                    value={mergedCustomerEmail}
+                    onChange={(v) => persistEdits({ ...edits, customerEmail: v })}
+                    placeholder="epasts@piemers.lv"
+                    compact
+                    hideToolbar
+                    resetVersion={orderFieldResetKey}
+                  />
+                  <AdminSavableTextField
+                    id="edit-customer-phone"
+                    label="Tālrunis"
+                    value={mergedCustomerPhone}
+                    onChange={(v) => persistEdits({ ...edits, customerPhone: v })}
+                    placeholder="+371..."
+                    compact
+                    hideToolbar
+                    resetVersion={orderFieldResetKey}
+                  />
+                  <AdminSavableTextField
+                    id="edit-customer-contact-method"
+                    label="Saziņas veids"
+                    value={mergedContactMethod}
+                    onChange={(v) => persistEdits({ ...edits, contactMethod: v })}
+                    placeholder="email / phone / whatsapp"
+                    compact
+                    hideToolbar
+                    resetVersion={orderFieldResetKey}
+                  />
+                </div>
               </div>
             </AdminCollapsibleShell>
           </section>
@@ -546,10 +598,10 @@ export function AdminOrderDetailView({
           currency: order.currency,
           paymentStatus: order.paymentStatus,
           listingUrl: mergedListing.trim() || null,
-          customerEmail: order.customerEmail ?? order.customerDetailsEmail,
-          customerPhone: order.phone ?? order.customerDetailsPhone,
-          customerName: order.customerName,
-          contactMethod: order.contactMethod,
+          customerEmail: mergedCustomerEmail.trim() || null,
+          customerPhone: mergedCustomerPhone.trim() || null,
+          customerName: mergedCustomerName.trim() || null,
+          contactMethod: mergedContactMethod.trim() || null,
           notes: mergedNotes.trim() ? mergedNotes : null,
           serverInternalComment: order.internalComment ?? null,
           serverAttachments: order.attachments ?? [],
