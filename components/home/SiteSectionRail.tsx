@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import {
@@ -24,14 +24,10 @@ function useHash(): string {
   return hash;
 }
 
-function activeFromScroll(): number {
+/** Fallback, ja IO vēl nav datu (tukši elementi / īpaši īss skats). */
+function activeFromScrollLine(): number {
   if (typeof window === "undefined" || typeof document === "undefined") return 0;
-  /* Lapas augšā bez ritināšanas — vienmēr „Sākums”, lai nesāktu uz „Pasūtīt” no mērķa līnijas noapaļošanas. */
   if (window.scrollY < 8) return 0;
-  /**
-   * Mērķa līnija ≈ zem sticky galvenes (`railTopClass` / `HeaderClient` ~3.25rem + atstarpe) —
-   * ne tikai % no viewport, lai aktīvā sadaļa labāk sakrīt ar redzamo saturu.
-   */
   const line = window.scrollY + Math.min(88, window.innerHeight * 0.26);
   let idx = 0;
   for (let i = 0; i < HOME_SCROLL_IDS.length; i++) {
@@ -44,14 +40,14 @@ function activeFromScroll(): number {
   const scrollBottomGap = doc.scrollHeight - window.scrollY - window.innerHeight;
   const lastId = HOME_SCROLL_IDS[HOME_SCROLL_IDS.length - 1];
   if (scrollBottomGap <= 6 && lastId && document.getElementById(lastId)) {
-    idx = HOME_SCROLL_IDS.length - 1;
+    return HOME_SCROLL_IDS.length - 1;
   }
   return idx;
 }
 
 /**
- * Kreisā navigācija (lg+): vertikālā ass, zilie punkti un etiķetes — teksts vienmēr redzams;
- * uz sliedes hover — nedaudz spilgtāka krāsa un vieglšķībe.
+ * Kreisā navigācija (lg+): ass + zilie punkti katrā rindā (fiksēti pret rindu, bez slīdoša transform).
+ * Aktīvā sadaļa: IntersectionObserver + apakšas snap; hash maršrutiem — prioritāte.
  */
 export function SiteSectionRail() {
   const t = useTranslations("SiteRail");
@@ -59,11 +55,7 @@ export function SiteSectionRail() {
   const pathname = usePathname() ?? "";
   const hash = useHash();
   const [active, setActive] = useState(0);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const railListRef = useRef<HTMLUListElement>(null);
-  /** Šūna ar punktu (w-3) — vertikālais centrs sakrīt ar sliedes assi; nav atkarīgs no etiķetes plūsmas. */
-  const dotCellRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [dot, setDot] = useState({ top: 0, height: 16 });
+  const ratioRef = useRef<number[]>(new Array(HOME_SCROLL_IDS.length).fill(0));
 
   const normalizedPath = useMemo(() => normalizeSitePath(pathname), [pathname]);
   const showRail =
@@ -76,95 +68,109 @@ export function SiteSectionRail() {
 
   const sections = useMemo(() => buildSiteRailSections(locale, normalizedPath), [locale, normalizedPath]);
 
-  const recomputeActive = useCallback(() => {
+  const pickActiveIndex = useCallback((): number | null => {
+    if (typeof window === "undefined") return null;
+    const fromRoute = siteRailRouteActiveIndex(pathname);
+    if (fromRoute !== null) return fromRoute;
+    if (normalizedPath !== "/" && normalizedPath !== "") return null;
+
+    const h = window.location.hash;
+    if (h) {
+      const fromHash = siteRailActiveFromHash(h);
+      if (fromHash !== null) return fromHash;
+    }
+
+    const doc = document.documentElement;
+    if (window.scrollY + window.innerHeight >= doc.scrollHeight - 10) {
+      return HOME_SCROLL_IDS.length - 1;
+    }
+    if (window.scrollY < 6) return 0;
+
+    const ratios = ratioRef.current;
+    let best = 0;
+    let bestR = -1;
+    for (let i = 0; i < ratios.length; i++) {
+      if (ratios[i] > bestR) {
+        bestR = ratios[i];
+        best = i;
+      }
+    }
+    if (bestR > 0.02) return best;
+    return activeFromScrollLine();
+  }, [normalizedPath, pathname]);
+
+  const flush = useCallback(() => {
+    const idx = pickActiveIndex();
+    if (idx !== null) setActive(idx);
+  }, [pickActiveIndex]);
+
+  useEffect(() => {
+    if (!showRail) return;
+    flush();
+  }, [flush, hash, showRail]);
+
+  useEffect(() => {
+    if (!showRail) return;
     const fromRoute = siteRailRouteActiveIndex(pathname);
     if (fromRoute !== null) {
       setActive(fromRoute);
       return;
     }
     if (normalizedPath !== "/" && normalizedPath !== "") return;
-    setActive(activeFromScroll());
-  }, [normalizedPath, pathname]);
 
-  /** Hash tikai hashchange / sākumā; scroll vienmēr atjauno pēc pozīcijas (neiesalst uz #). */
-  const applyHashIfPresent = useCallback(() => {
-    if (normalizedPath !== "/" && normalizedPath !== "") return;
-    const fromHash = siteRailActiveFromHash(typeof window !== "undefined" ? window.location.hash : hash);
-    if (fromHash !== null) setActive(fromHash);
-    else setActive(activeFromScroll());
-  }, [hash, normalizedPath]);
+    const ratios = ratioRef.current;
+    ratios.fill(0);
 
-  useEffect(() => {
-    if (!showRail) return;
-    recomputeActive();
-    let raf = 0;
-    const onScroll = () => {
-      if (normalizedPath !== "/" && normalizedPath !== "") return;
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => setActive(activeFromScroll()));
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    document.addEventListener("scroll", onScroll, { passive: true, capture: true });
-    window.addEventListener("resize", recomputeActive);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", onScroll);
-      document.removeEventListener("scroll", onScroll, true);
-      window.removeEventListener("resize", recomputeActive);
-    };
-  }, [normalizedPath, pathname, recomputeActive, showRail]);
-
-  useEffect(() => {
-    if (!showRail) return;
-    applyHashIfPresent();
-  }, [applyHashIfPresent, hash, showRail]);
-
-  useLayoutEffect(() => {
-    if (!showRail) return;
-    const updateDot = () => {
-      const track = trackRef.current;
-      const cell = dotCellRefs.current[active];
-      if (!track || !cell) return;
-      const tr = track.getBoundingClientRect();
-      const cr = cell.getBoundingClientRect();
-      const center = cr.top + cr.height / 2 - tr.top;
-      const h = 16;
-      setDot({ top: Math.max(0, Math.min(center - h / 2, tr.height - h)), height: h });
-    };
-    updateDot();
-    window.addEventListener("resize", updateDot);
-    const track = trackRef.current;
-    const list = railListRef.current;
-    let ro: ResizeObserver | undefined;
-    if (typeof ResizeObserver !== "undefined") {
-      ro = new ResizeObserver(() => updateDot());
-      if (track) ro.observe(track);
-      if (list) ro.observe(list);
+    const elements = HOME_SCROLL_IDS.map((id) => document.getElementById(id)).filter((el): el is HTMLElement => Boolean(el));
+    if (elements.length === 0) {
+      flush();
+      return;
     }
-    return () => {
-      window.removeEventListener("resize", updateDot);
-      ro?.disconnect();
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const id = entry.target.id;
+          const i = HOME_SCROLL_IDS.indexOf(id as (typeof HOME_SCROLL_IDS)[number]);
+          if (i >= 0) ratios[i] = entry.intersectionRatio;
+        }
+        flush();
+      },
+      {
+        root: null,
+        rootMargin: "-22% 0px -42% 0px",
+        threshold: [0, 0.02, 0.04, 0.06, 0.08, 0.1, 0.15, 0.2, 0.25, 0.35, 0.5, 0.65, 0.8, 1],
+      },
+    );
+
+    for (const el of elements) {
+      io.observe(el);
+    }
+
+    const onScrollOrResize = () => {
+      requestAnimationFrame(flush);
     };
-  }, [active, showRail, sections.length]);
+    window.addEventListener("scroll", onScrollOrResize, { passive: true });
+    document.addEventListener("scroll", onScrollOrResize, { passive: true, capture: true });
+    window.addEventListener("resize", onScrollOrResize);
+    requestAnimationFrame(flush);
+
+    return () => {
+      io.disconnect();
+      window.removeEventListener("scroll", onScrollOrResize);
+      document.removeEventListener("scroll", onScrollOrResize, true);
+      window.removeEventListener("resize", onScrollOrResize);
+    };
+  }, [flush, normalizedPath, pathname, showRail]);
 
   if (!showRail) return null;
 
   const linkBase =
-    "group/link relative flex max-w-none min-h-0 flex-1 flex-row items-stretch text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-[color] duration-200 ease-out motion-reduce:transition-none lg:text-[10px] lg:tracking-[0.19em]";
+    "group/link relative flex max-w-none min-h-0 flex-1 flex-row items-stretch text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-all duration-300 ease-in-out motion-reduce:transition-none lg:text-[10px] lg:tracking-[0.19em]";
 
-  /**
-   * Etiķete `absolute` — neanimējam `max-width` (izraisa reflow un „lēcienus” ar punktiem).
-   * Tikai `opacity` + `transform` uz GPU.
-   * Vertikālā ass (`site-rail-axis`) nav `<Link>` iekšā — tāpēc `group-hover/rail`, lai uzkļūšana uz sliedi rāda uzrakstus;
-   * `group-focus-visible/link` — fokusā tikai attiecīgās rindas etiķete (tastatūra).
-   */
   const railLabelClass =
-    "home-rail-label pointer-events-none absolute left-0 top-1/2 z-[2] max-w-[min(10.25rem,min(28vw,26vmin))] -translate-y-1/2 translate-x-0 whitespace-normal break-words text-pretty text-left opacity-100 transition-[color,transform] duration-200 ease-out motion-reduce:transition-none group-hover/rail:translate-x-0.5 group-focus-visible/link:translate-x-0.5";
+    "home-rail-label pointer-events-none absolute left-0 top-1/2 z-[2] max-w-[min(10.25rem,min(28vw,26vmin))] -translate-y-1/2 whitespace-normal break-words text-pretty text-left transition-all duration-300 ease-in-out motion-reduce:transition-none";
 
-  /**
-   * `top` zem sticky header (z-42): citādi zilais sliežu punkts redzams caur caurspīdīgo hero headeri.
-   * ≈ safe-area + header rinda (`min-h-12` / `sm:min-h-11`) + neliela atstarpe.
-   */
   const railTopClass =
     "top-[max(1rem,calc(env(safe-area-inset-top,0px)+3.25rem))]";
 
@@ -173,38 +179,24 @@ export function SiteSectionRail() {
       className={`site-section-rail group/rail pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] ${railTopClass} z-40 hidden min-h-0 min-w-0 w-max max-w-[min(15.75rem,min(34vw,30vmin))] cursor-pointer flex-col overflow-x-clip overflow-y-auto overscroll-contain pl-1 lg:flex`}
       aria-label={t("navAria")}
     >
-      {/* Plašāks „tuvuma” lauks + diskrēts fons tikai pie hover / tastatūras */}
       <div
-        className="pointer-events-none absolute -inset-x-2 -inset-y-6 left-0 z-0 rounded-r-[1.85rem] bg-gradient-to-r from-black/50 via-black/14 to-transparent opacity-0 transition-opacity duration-700 ease-[cubic-bezier(0.33,0.86,0.2,1)] group-hover/rail:opacity-100 group-focus-within/rail:opacity-100 motion-reduce:transition-none"
+        className="pointer-events-none absolute -inset-x-2 -inset-y-6 left-0 z-0 rounded-r-[1.85rem] bg-gradient-to-r from-black/50 via-black/14 to-transparent opacity-0 transition-opacity duration-300 ease-in-out group-hover/rail:opacity-100 group-focus-within/rail:opacity-100 motion-reduce:transition-none"
         aria-hidden
       />
 
       <div className="relative z-10 flex h-full min-h-0 min-w-0 w-max max-w-full flex-1 flex-col">
         <div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-row items-stretch gap-2.5 pl-0.5">
-          <div ref={trackRef} className="relative h-full min-h-0 w-3 shrink-0">
+          <div className="relative h-full min-h-0 w-3 shrink-0">
             <div
-              className="site-rail-axis absolute inset-y-1.5 left-1/2 z-0 w-px -translate-x-1/2 bg-white/[0.11] shadow-[0_0_14px_rgba(0,102,255,0.12)] transition-[background-color,box-shadow] duration-700 ease-out group-hover/rail:bg-white/[0.16] group-hover/rail:shadow-[0_0_18px_rgba(0,102,255,0.2)] group-focus-within/rail:bg-white/[0.16] group-focus-within/rail:shadow-[0_0_18px_rgba(0,102,255,0.2)]"
-              aria-hidden
-            />
-            <div
-              className="site-rail-dot absolute left-1/2 top-0 w-[2px] rounded-full bg-[#0066ff] opacity-95 shadow-[0_0_12px_rgba(0,102,255,0.45)] will-change-transform motion-reduce:!transition-none group-hover/rail:opacity-100 group-hover/rail:shadow-[0_0_16px_rgba(0,102,255,0.55)]"
-              style={{
-                height: dot.height,
-                transform: `translate3d(-50%, ${dot.top}px, 0)`,
-                transition:
-                  "transform 0.78s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s ease-out, opacity 0.4s ease-out",
-              }}
+              className="site-rail-axis absolute inset-y-1.5 left-1/2 z-0 w-px -translate-x-1/2 bg-white/[0.11] shadow-[0_0_14px_rgba(0,102,255,0.12)] transition-all duration-300 ease-out group-hover/rail:bg-white/[0.16] group-hover/rail:shadow-[0_0_18px_rgba(0,102,255,0.2)] group-focus-within/rail:bg-white/[0.16] group-focus-within/rail:shadow-[0_0_18px_rgba(0,102,255,0.2)]"
               aria-hidden
             />
           </div>
-          <ul
-            ref={railListRef}
-            className="flex h-full min-h-0 min-w-[min(10.25rem,min(28vw,26vmin))] flex-1 flex-col"
-          >
+          <ul className="flex min-h-0 min-w-[min(10.25rem,min(28vw,26vmin))] flex-1 flex-col">
             {sections.map((s, i) => {
               const isActive = i === active;
               return (
-                <li key={s.labelKey} className="flex min-h-0 min-w-0 flex-1 flex-col">
+                <li key={s.labelKey} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
                   <Link
                     href={s.href}
                     className={`${linkBase} w-full min-w-0 pr-1 ${
@@ -215,14 +207,11 @@ export function SiteSectionRail() {
                     aria-current={isActive ? "location" : undefined}
                   >
                     <div
-                      ref={(el) => {
-                        dotCellRefs.current[i] = el;
-                      }}
-                      className="flex w-3 shrink-0 flex-col items-center justify-center"
+                      className="relative flex w-3 shrink-0 flex-col items-center justify-center self-stretch"
                       aria-hidden
                     >
                       <span
-                        className={`h-1 w-1 shrink-0 rounded-full bg-[#0066ff] transition-[opacity,box-shadow] duration-200 ease-out motion-reduce:transition-none ${
+                        className={`absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#0066ff] transition-all duration-300 ease-in-out motion-reduce:transition-none ${
                           isActive
                             ? "opacity-100 shadow-[0_0_8px_rgba(0,102,255,0.65)]"
                             : "opacity-[0.4] shadow-[0_0_5px_rgba(0,102,255,0.35)] group-hover/rail:opacity-[0.85] group-hover/rail:shadow-[0_0_8px_rgba(0,102,255,0.45)] group-focus-visible/link:opacity-90"

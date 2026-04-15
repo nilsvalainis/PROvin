@@ -53,7 +53,7 @@ export type MarketingHeroProps = {
 };
 
 const sectionBasePad =
-  "px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1rem,env(safe-area-inset-top,0px)+0.75rem)] sm:px-8 sm:pb-9 sm:pt-[max(1.25rem,env(safe-area-inset-top,0px)+1rem)]";
+  "px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1.5rem,calc(env(safe-area-inset-top,0px)+1.25rem))] sm:px-8 sm:pb-9 sm:pt-[max(1.75rem,calc(env(safe-area-inset-top,0px)+1.35rem))]";
 
 /**
  * Pilnekrāna tumšais Hero: „APPROVED…” + H1 ekrāna centrā; četras ikonas apakšā; scroll uz saturu (design: tikai zila bultiņa).

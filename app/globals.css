@@ -33,7 +33,16 @@
    * Hero orbit S12 fona pagarinājums (mājas mobilais): tas pats gradients kā
    * `orbit-presets.css` `.marketing-hero-orbit--s12` → `--orbit-bg`.
    */
-  --hero-orbit-bg-extended: radial-gradient(circle at 50% 100%, rgb(160 165 175 / 0.18), #030304 45%), #030304;
+  --hero-orbit-bg-extended: radial-gradient(
+      circle at 50% 100%,
+      rgb(188 192 200 / 0.22) 0%,
+      rgb(165 170 180 / 0.16) 14%,
+      rgb(140 145 155 / 0.1) 28%,
+      rgb(95 98 105 / 0.05) 42%,
+      rgb(45 46 50 / 0.02) 52%,
+      transparent 58%
+    ),
+    #030304;
   /* Tēmas pamats (tumšais); gaišais — `site-theme-light.css` uz `html[data-site-theme="light"]` */
   --site-html-bg: #050505;
   --site-body-bg: #050505;
@@ -351,10 +360,10 @@ body {
 /* Hero: validācijas kļūda — sarkana apmale + viegls fons (ne window.alert) */
 .order-form-hero-field--invalid {
   border-radius: 0.125rem;
-  border: 1px solid rgb(239 68 68 / 0.75);
+  border: 1px solid rgb(239 68 68); /* red-500 */
   background-color: rgb(69 10 10 / 0.28);
   box-shadow:
-    inset 0 0 0 1px rgb(239 68 68 / 0.35),
+    inset 0 0 0 1px rgb(239 68 68 / 0.45),
     0 0 0 1px rgb(0 0 0 / 0.2);
 }
 
@@ -615,14 +624,10 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
     box-shadow 0.22s ease;
 }
 
-/* Ļoti viegls „noise” slānis sekciju dziļumam */
-.provin-noise {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-}
-
-/* Tumšā Hero — smalks grauds (CSS/SVG, bez attēla failiem) */
+/* Agrāk: SVG feTurbulence — noņemts (vizuāli kā defekts). Atstāj tukšu slāni saderībai ar vecām klasēm. */
+.provin-noise,
 .provin-noise-dark {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='nd'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23nd)' opacity='0.055'/%3E%3C/svg%3E");
+  background-image: none;
 }
 
 /** Atpakaļsaderība: vecā klase vairs nav obligāta, bet saglabā tīru #050505, ja kaut kur lietota. */
@@ -669,10 +674,10 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   }
 }
 
-/* Sudraba sekcijas — #e5e7eb + smalks grauds */
+/* Sudraba sekcijas — plakans tonis (bez SVG trokšņa). */
 .provin-silver-grain {
   background-color: #e5e7eb;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='sg'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23sg)' opacity='0.07'/%3E%3C/svg%3E");
+  background-image: none;
 }
 
 /* Zem Hero — tumšais režīms: „silver-ink”, bez scroll → tumša tinte uz melnu */

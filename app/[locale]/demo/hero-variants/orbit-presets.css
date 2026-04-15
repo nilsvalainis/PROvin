@@ -446,7 +446,15 @@
   --orbit-dur-b: 22s;
 }
 .marketing-hero-orbit-base.marketing-hero-orbit--s12.marketing-hero-section {
-  --orbit-bg: radial-gradient(circle at 50% 100%, rgb(160 165 175 / 0.18), #030304 45%), #030304;
+  --orbit-bg: radial-gradient(
+      circle at 50% 100%,
+      rgb(188 192 200 / 0.22) 0%,
+      rgb(165 170 180 / 0.15) 16%,
+      rgb(130 135 145 / 0.08) 32%,
+      rgb(70 72 78 / 0.03) 48%,
+      transparent 56%
+    ),
+    #030304;
   --orbit-border-outer: rgb(230 232 240 / 0.08);
   --orbit-border-inner: rgb(255 255 255 / 0.07);
   --orbit-dur-a: 35s;

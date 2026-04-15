@@ -39,10 +39,9 @@ export async function Footer() {
         <HeroVisual />
       </div>
       <div
-        className="home-footer-scrim pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-[#050505]/95 via-[#050505]/85 to-[#050505]"
+        className="home-footer-scrim pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-[#050505]/95 via-[#050505]/88 via-[#050505]/82 via-[#050505]/78 to-[#050505]"
         aria-hidden
       />
-      <div className="home-footer-scrim pointer-events-none absolute inset-0 z-[1] provin-noise opacity-[0.14]" aria-hidden />
 
       <div className={`relative z-10 ${homeContentMaxClass} px-4 pb-3 pt-8 sm:px-6 sm:pb-4 sm:pt-10 lg:pb-5 lg:pt-12`}>
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-14 lg:gap-20">

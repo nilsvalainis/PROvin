@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Mājas fons — tā pati bāze kā demo virziens (`#030304`), ļoti viegls zils spīdums augšā.
+ * Mājas fons — tumšs radial gradients ar vairākiem pieturpunktiem (bez SVG trokšņa).
  */
 
 export function HomeDepthBackground() {
@@ -9,8 +9,14 @@ export function HomeDepthBackground() {
     <div
       className="home-depth-bg pointer-events-none fixed inset-0 z-[1] bg-[#030304]"
       style={{
-        backgroundImage:
-          "radial-gradient(ellipse 120% 80% at 50% 0%, rgb(0 60 140 / 0.14), transparent 55%)",
+        backgroundImage: `radial-gradient(
+          ellipse 125% 90% at 50% -8%,
+          rgb(0 75 155 / 0.2) 0%,
+          rgb(0 58 120 / 0.12) 18%,
+          rgb(0 42 88 / 0.06) 36%,
+          rgb(0 28 55 / 0.025) 52%,
+          transparent 62%
+        )`,
       }}
       aria-hidden
     />
