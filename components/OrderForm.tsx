@@ -2,9 +2,8 @@
 
 import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
-import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { isPlausibleListingUrl, isValidVin, normalizeVin, validateOrderFields } from "@/lib/order-field-validation";
 
 const labelHero =
@@ -31,11 +30,58 @@ type OrderFormProps = {
   onStepChange?: (step: 1 | 2) => void;
 };
 
+/** Hero lauks: 1px „diagnostikas” rāmis + zils impuls gar visu perimetru (saskaņots ar provin-diagnostic līniju). */
 function HeroFieldScanLine({ children }: { children: ReactNode }) {
+  const uid = useId().replace(/:/g, "");
+  const gradId = `ohf-pulse-grad-${uid}`;
   return (
-    <div className="order-form-hero-field relative z-0 mt-2 w-full min-w-0 max-w-full overflow-x-clip rounded-sm px-2 py-1 -mx-0.5">
-      {children}
-      <DiagnosticScanLine variant="rail" motion="sweepLtr" className="order-form-hero-scan relative z-[1] w-full max-w-full min-w-0" />
+    <div className="order-form-hero-field relative z-0 mt-2 w-full min-w-0 max-w-full px-2 py-1 -mx-0.5">
+      <svg
+        className="order-form-hero-field-frame pointer-events-none absolute inset-0 block h-full w-full overflow-visible"
+        aria-hidden
+      >
+        <defs>
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgb(51 153 255 / 0)" />
+            <stop offset="28%" stopColor="rgb(51 153 255 / 0.62)" />
+            <stop offset="50%" stopColor="rgb(120 200 255 / 1)" />
+            <stop offset="72%" stopColor="rgb(51 153 255 / 0.62)" />
+            <stop offset="100%" stopColor="rgb(51 153 255 / 0)" />
+          </linearGradient>
+        </defs>
+        <rect
+          className="order-form-hero-field-frame__track"
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+          rx="2"
+          ry="2"
+          fill="none"
+          strokeWidth="1"
+          vectorEffect="nonScalingStroke"
+        />
+        <rect
+          className="order-form-hero-field-frame__pulse"
+          pathLength="100"
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+          rx="2"
+          ry="2"
+          fill="none"
+          stroke={`url(#${gradId})`}
+          strokeWidth="1"
+          strokeLinecap="round"
+          vectorEffect="nonScalingStroke"
+        />
+      </svg>
+      <div className="relative z-[1] flex min-w-0 flex-col">
+        {children}
+        {/* Saglabā iepriekšējās apakšējās horizontālās līnijas augstumu plūsmā — pozīcijas nemainās */}
+        <span className="h-px w-full shrink-0 opacity-0" aria-hidden />
+      </div>
     </div>
   );
 }

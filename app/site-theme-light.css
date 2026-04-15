@@ -265,6 +265,14 @@ html[data-site-theme="light"] .order-form-hero-field:focus-within textarea::plac
   color: #8a8a8e !important;
 }
 
+html[data-site-theme="light"] .order-form--hero .order-form-hero-field-frame__track {
+  stroke: rgb(0 0 0 / 0.11);
+}
+
+html[data-site-theme="light"] .order-form--hero .order-form-hero-field:focus-within .order-form-hero-field-frame__track {
+  stroke: rgb(0 0 0 / 0.16);
+}
+
 /* Lab CTA — hover zils */
 html[data-site-theme="light"] .lab-chrome-cta:hover {
   background: linear-gradient(165deg, #0078ff 0%, #0066ff 45%, #0052cc 100%);
