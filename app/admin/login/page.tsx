@@ -12,10 +12,21 @@ import { getRequestOrigin } from "@/lib/request-origin";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminLoginPage() {
+type LoginPageProps = { searchParams: Promise<{ next?: string }> };
+
+function resolvePostLoginPath(nextParam: string | undefined): string {
+  const raw = typeof nextParam === "string" ? nextParam.trim() : "";
+  if (raw.startsWith("/admin") && !raw.startsWith("/admin/login")) return raw;
+  return "/admin";
+}
+
+export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
+  const sp = await searchParams;
+  const postLoginPath = resolvePostLoginPath(sp.next);
+
   const session = await getAdminSession();
   if (session) {
-    redirect("/admin");
+    redirect(postLoginPath);
   }
 
   const configured = adminAuthConfigured();
@@ -124,7 +135,7 @@ export default async function AdminLoginPage() {
                 </p>
               </div>
             ) : null}
-            <LoginForm devPrefill={devPrefill} />
+            <LoginForm devPrefill={devPrefill} postLoginPath={postLoginPath} />
           </div>
         )}
 

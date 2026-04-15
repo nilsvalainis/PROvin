@@ -26,6 +26,9 @@ if (process.env.NODE_ENV === "production") {
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  async redirects() {
+    return [{ source: "/admin/pkd-rekins", destination: "/admin/commission-invoice", permanent: false }];
+  },
   async headers() {
     return [
       {

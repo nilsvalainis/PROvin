@@ -5,9 +5,11 @@ import { useState } from "react";
 type Props = {
   /** Lokālai izstrādei: aizpilda laukus, ja nav .env */
   devPrefill?: { username: string; password: string } | null;
+  /** Pēc veiksmīgas pierakstīšanās (validē serverī). */
+  postLoginPath?: string;
 };
 
-export function LoginForm({ devPrefill = null }: Props) {
+export function LoginForm({ devPrefill = null, postLoginPath = "/admin" }: Props) {
   const [username, setUsername] = useState(devPrefill?.username ?? "");
   const [password, setPassword] = useState(devPrefill?.password ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +30,10 @@ export function LoginForm({ devPrefill = null }: Props) {
         setError(data.error ?? "Neizdevās pieteikties");
         return;
       }
-      window.location.href = "/admin";
+      window.location.href =
+        postLoginPath.startsWith("/admin") && !postLoginPath.startsWith("/admin/login")
+          ? postLoginPath
+          : "/admin";
     } catch {
       setError("Tīkla kļūda");
     } finally {

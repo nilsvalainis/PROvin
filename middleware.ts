@@ -8,6 +8,11 @@ const intlMiddleware = createMiddleware(routing);
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (pathname.startsWith("/admin")) {
+    if (!pathname.startsWith("/admin/login")) {
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set("x-admin-intended-path", pathname);
+      return NextResponse.next({ request: { headers: requestHeaders } });
+    }
     return NextResponse.next();
   }
   /* Static HTML packs under /public/concept-demos — bypass locale prefix */

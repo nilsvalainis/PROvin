@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
@@ -11,7 +12,13 @@ export const dynamic = "force-dynamic";
 export default async function AdminDashboardLayout({ children }: { children: ReactNode }) {
   const session = await getAdminSession();
   if (!session) {
-    redirect("/admin/login");
+    const h = await headers();
+    const intended = h.get("x-admin-intended-path")?.trim() || "/admin";
+    const safe =
+      intended.startsWith("/admin") && !intended.startsWith("/admin/login")
+        ? intended
+        : "/admin";
+    redirect(`/admin/login?next=${encodeURIComponent(safe)}`);
   }
 
   const origin = await getRequestOrigin();

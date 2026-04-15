@@ -148,6 +148,11 @@ export function AdminOrdersTable({ orders }: { orders: AdminOrdersTableRow[] }) 
           <tbody className="divide-y divide-slate-100">
             {orders.map((o) => {
               const pdfHref = invoicePdfHref(o);
+              const name = o.customerName?.trim() ?? "";
+              const email = o.customerEmail?.trim() ?? "";
+              const phone = o.customerPhone?.trim() ?? "";
+              const primaryClient = name || email || phone || "—";
+              const secondaryClient = [name ? email : "", phone].filter(Boolean).join(" · ");
               return (
                 <tr
                   key={o.id}
@@ -170,8 +175,13 @@ export function AdminOrdersTable({ orders }: { orders: AdminOrdersTableRow[] }) 
                   <td className="max-w-[140px] truncate px-4 py-3.5 font-mono text-xs text-[var(--color-apple-text)]">
                     {o.vin ?? "—"}
                   </td>
-                  <td className="max-w-[200px] truncate px-4 py-3.5 text-[var(--color-apple-text)]">
-                    {o.customerEmail ?? "—"}
+                  <td className="max-w-[260px] px-4 py-3.5 text-[var(--color-apple-text)]">
+                    <div className="min-w-0">
+                      <p className="truncate">{primaryClient}</p>
+                      {secondaryClient ? (
+                        <p className="mt-0.5 truncate text-[11px] text-[var(--color-provin-muted)]">{secondaryClient}</p>
+                      ) : null}
+                    </div>
                   </td>
                   <td className="px-4 py-3.5">
                     <PaymentStatusPill status={o.paymentStatus} />

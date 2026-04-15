@@ -8,7 +8,9 @@ export type SerializedAdminOrderTableRow = {
   amountTotal: number | null;
   currency: string | null;
   paymentStatus: string;
+  customerName: string | null;
   customerEmail: string | null;
+  customerPhone: string | null;
   vin: string | null;
   isDemo?: boolean;
   invoicePdfUrl: string | null;
@@ -20,7 +22,9 @@ type RowInput = {
   amountTotal: unknown;
   currency: unknown;
   paymentStatus: unknown;
+  customerName?: unknown;
   customerEmail: unknown;
+  customerPhone?: unknown;
   vin: unknown;
   isDemo?: unknown;
   invoicePdfUrl?: unknown;
@@ -45,8 +49,12 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
       amountTotal: amountOk,
       currency: o.currency == null || o.currency === undefined ? null : String(o.currency),
       paymentStatus: String(o.paymentStatus ?? "unknown"),
+      customerName:
+        o.customerName == null || o.customerName === undefined ? null : String(o.customerName),
       customerEmail:
         o.customerEmail == null || o.customerEmail === undefined ? null : String(o.customerEmail),
+      customerPhone:
+        o.customerPhone == null || o.customerPhone === undefined ? null : String(o.customerPhone),
       vin: o.vin == null || o.vin === undefined ? null : String(o.vin),
       ...(Boolean(o.isDemo) ? { isDemo: true as const } : {}),
       invoicePdfUrl:

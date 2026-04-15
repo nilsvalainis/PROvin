@@ -12,9 +12,13 @@ export default async function AdminOrdersPage() {
     orders.map(async (o) => {
       const draft = await readOrderDraft(o.id);
       const draftEmail = draft?.orderEdits?.customerEmail?.trim();
+      const draftName = draft?.orderEdits?.customerName?.trim();
+      const draftPhone = draft?.orderEdits?.customerPhone?.trim();
       return {
         ...o,
         customerEmail: draftEmail ? draftEmail : o.customerEmail,
+        customerName: draftName || null,
+        customerPhone: draftPhone || null,
         invoicePdfUrl: draft?.invoicePdfUrl ?? null,
       };
     }),
