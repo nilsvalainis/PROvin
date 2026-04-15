@@ -98,6 +98,7 @@ export function MarketingHero({
   const prevHeroOrderStepRef = useRef(heroOrderStep);
   const mobileHeroScrollRef = useRef<HTMLDivElement>(null);
   const mobileHomeClusterRef = useRef<HTMLDivElement>(null);
+  const mobileHeroIntersectingRef = useRef(true);
   const mobileCenterResizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialMobileClusterRevealDoneRef = useRef(false);
   /** Mājas mobilais klasteris: līdz pirmajam centrējumam pēc fontiem — paslēpts, lai nav „nokrišanas” no Y=0 + vēlā fontu slāņa. */
@@ -107,7 +108,7 @@ export function MarketingHero({
 
   /**
    * Mobilais mājas hero: `translate3d(0,Y,0)` uz klasteri — `.marketing-hero-title-line2` (AUDITS) centrs → `visualViewport` centrs.
-   * Nav `rootRect` „redzamības” filtra; `ResizeObserver` + resize/visualViewport ar debounci; window scroll `recenter` tikai pie atgriešanās augšā (ne katrā notikumā).
+   * Nav `rootRect` „redzamības” filtra; `ResizeObserver` + resize/visualViewport ar debounci; nobīdes atiestate — sk. `IntersectionObserver` blakus efektā.
    */
   const recenterMobileAuditsLine = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -225,48 +226,58 @@ export function MarketingHero({
     };
   }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine, heroOrderStep]);
 
-  /** iOS / mobilais: ritinot prom — atiestata nobīdi; atpakaļ uz hero tikai vienreiz pie pārejas (bez kratīšanas katrā scroll notikumā). */
-  const lastWindowScrollYRef = useRef(0);
+  /**
+   * Nobīdes atiestate tikai tad, kad hero nav redzams (IntersectionObserver) — ne pēc scrollY sliekšņa,
+   * lai ritinot prom/pa nepārtrauktu document scroll nebūtu pēkšņs translateY=0 „lēciens”.
+   */
   useEffect(() => {
     if (!orbitHomeCenterLayout || !designDirection || demoVariant) return;
 
-    lastWindowScrollYRef.current = window.scrollY || document.documentElement.scrollTop;
+    mobileHeroIntersectingRef.current = true;
 
     const resetInnerScroll = () => {
       const el = mobileHeroScrollRef.current;
       if (el) el.scrollTop = 0;
     };
 
-    const onScroll = () => {
-      const y = window.scrollY || document.documentElement.scrollTop;
-      const prev = lastWindowScrollYRef.current;
-      lastWindowScrollYRef.current = y;
-      if (y > 160) {
+    const heroEl = document.getElementById(sectionId);
+    if (!heroEl) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const e = entries[0];
+        if (!e) return;
+        if (e.isIntersecting) {
+          if (!mobileHeroIntersectingRef.current) {
+            resetInnerScroll();
+            recenterMobileAuditsLine();
+          }
+          mobileHeroIntersectingRef.current = true;
+          return;
+        }
+        mobileHeroIntersectingRef.current = false;
         setMobileAuditsTranslateY(0);
         resetInnerScroll();
-        return;
-      }
-      if (y <= 72 && prev > 72) {
+      },
+      { threshold: 0, root: null, rootMargin: "0px" },
+    );
+
+    io.observe(heroEl);
+
+    const onPageShow = (ev: PageTransitionEvent) => {
+      if (ev.persisted) {
+        setMobileAuditsTranslateY(0);
         resetInnerScroll();
         recenterMobileAuditsLine();
       }
     };
 
-    const onPageShow = (e: PageTransitionEvent) => {
-      if (e.persisted) {
-        setMobileAuditsTranslateY(0);
-        resetInnerScroll();
-        recenterMobileAuditsLine();
-      }
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("pageshow", onPageShow);
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      io.disconnect();
       window.removeEventListener("pageshow", onPageShow);
     };
-  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine]);
+  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine, sectionId]);
 
   /** Sākumlapas orbit: viens H1 tonis (bez zilajiem atslēgvārdiem), izmērs ×3 — sk. orbit-presets `[data-hero-orbit-home]`. */
   const heroH1KeywordResolved =
@@ -583,7 +594,7 @@ export function MarketingHero({
                 {/* Mobilais: virsraksts → forma → Pasūtīt (četri pīlāri tikai desktop); desktop — kā iepriekšējais režģis */}
                 <div
                   ref={mobileHeroScrollRef}
-                  className="flex min-h-0 w-full flex-1 flex-col items-center overflow-x-hidden overflow-y-visible touch-pan-y md:hidden"
+                  className="mx-auto flex w-full min-w-0 max-w-full shrink-0 flex-col items-center md:hidden"
                 >
                   <div
                     ref={mobileHomeClusterRef}

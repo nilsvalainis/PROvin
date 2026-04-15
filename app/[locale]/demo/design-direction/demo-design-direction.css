@@ -15,7 +15,8 @@
 
 .demo-design-dir__shell {
   width: 100%;
-  max-width: min(var(--dd-max), calc(100vw - var(--dd-pad) * 2));
+  /* 100% nevis 100vw — izvairās no horizontālā scrollbar + platumu „lēcieniem” ar vertikālo scrollbar. */
+  max-width: min(var(--dd-max), 100%);
   margin-left: auto;
   margin-right: auto;
   padding-left: var(--dd-pad);
@@ -54,8 +55,8 @@
 /* Sākumlapa: hero + „KAS IR PROVIN?” — viena nepārtraukta virsma ar paša hero fonu. */
 .home-hero-intro-surface {
   position: relative;
-  overflow: hidden;
-  overflow: clip;
+  /* hidden/clip šeit veidoja atsevišķu scrollportu pret document — viens vienīgs lapas scroll. */
+  overflow: visible;
   background: var(--hero-orbit-bg-extended);
 }
 
