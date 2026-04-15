@@ -51,6 +51,15 @@
   box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.06);
 }
 
+/* Sākumlapa: hero + „KAS IR PROVIN?” — viena nepārtraukta band-a virsma (saturs ārpus `MarketingHero`). */
+.home-hero-intro-surface {
+  position: relative;
+  overflow: hidden;
+  overflow: clip;
+  background: radial-gradient(ellipse 120% 80% at 50% 0%, rgb(0 60 140 / 0.26), transparent 58%), #030304;
+  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.06);
+}
+
 .demo-design-dir__section--band-b {
   background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(255 255 255 / 0.08), transparent 48%), #040406;
   box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.08);

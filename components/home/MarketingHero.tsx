@@ -272,8 +272,11 @@ export function MarketingHero({
     </>
   );
 
+  /** Mājas lapa: vienota virsma ar `home-intro` ir `page.tsx` wrapperī — šeit bez atsevišķa band-a. */
   const designDirHeroChrome =
-    designDirection && isOrbitVisual ? " demo-design-dir__section demo-design-dir__section--band-a" : "";
+    designDirection && isOrbitVisual && Boolean(demoVariant)
+      ? " demo-design-dir__section demo-design-dir__section--band-a"
+      : "";
 
   const sectionClassOrbit = `marketing-hero-section home-content-atmosphere relative flex min-h-[min(100dvh,100svh)] w-full flex-col overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitSectionStyleClass}${designDirHeroChrome}`.trim();
 
