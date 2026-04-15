@@ -1,10 +1,12 @@
 import "server-only";
 
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import type { PkdCommissionInvoiceInput } from "@/lib/pkd-commission-invoice-pdf";
 
 const STORE_RELATIVE_DIR = ".data/admin-pkd-commission-invoices";
+const STORE_TMP_DIR = path.join(os.tmpdir(), "provin-admin-pkd-commission-invoices");
 const SAFE_ID_RE = /^[A-Za-z0-9_-]{1,120}$/;
 const OFF_VALUES = ["0", "false", "no", "off", "disabled"];
 
@@ -27,12 +29,14 @@ function resolveStoreDir(): string {
   return path.join(process.cwd(), STORE_RELATIVE_DIR);
 }
 
-function storeDir(): string {
-  return resolveStoreDir();
+function storeDirs(): string[] {
+  const preferred = resolveStoreDir();
+  if (preferred === STORE_TMP_DIR) return [STORE_TMP_DIR];
+  return [preferred, STORE_TMP_DIR];
 }
 
-function draftPath(id: string): string {
-  return path.join(storeDir(), `${id}.json`);
+function draftPath(dir: string, id: string): string {
+  return path.join(dir, `${id}.json`);
 }
 
 export function isSafePkdInvoiceId(id: string): boolean {
@@ -56,76 +60,97 @@ function parseInvoiceNumberMeta(invoiceNumber: string): { year: number; seq: num
 }
 
 async function readDraftFile(id: string): Promise<PkdCommissionInvoiceDraft | null> {
-  try {
-    const raw = await fs.readFile(draftPath(id), "utf8");
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== "object") return null;
-    const o = parsed as Record<string, unknown>;
-    if (o.id !== id) return null;
-    const must = [
-      "invoiceNumber",
-      "invoiceDate",
-      "paymentDue",
-      "serviceDescription",
-      "amountEur",
-      "supplierName",
-      "supplierReg",
-      "supplierAddress",
-      "supplierBank",
-      "supplierSwift",
-      "supplierBankAccount",
-      "supplierEmail",
-      "supplierPhone",
-      "recipientCompany",
-      "recipientReg",
-      "recipientAddress",
-      "createdAt",
-      "updatedAt",
-    ] as const;
-    for (const key of must) {
-      if (typeof o[key] !== "string") return null;
+  for (const dir of storeDirs()) {
+    try {
+      const raw = await fs.readFile(draftPath(dir, id), "utf8");
+      const parsed = JSON.parse(raw) as unknown;
+      if (!parsed || typeof parsed !== "object") return null;
+      const o = parsed as Record<string, unknown>;
+      if (o.id !== id) return null;
+      const must = [
+        "invoiceNumber",
+        "invoiceDate",
+        "paymentDue",
+        "serviceDescription",
+        "amountEur",
+        "supplierName",
+        "supplierReg",
+        "supplierAddress",
+        "supplierBank",
+        "supplierSwift",
+        "supplierBankAccount",
+        "supplierEmail",
+        "supplierPhone",
+        "recipientCompany",
+        "recipientReg",
+        "recipientAddress",
+        "createdAt",
+        "updatedAt",
+      ] as const;
+      for (const key of must) {
+        if (typeof o[key] !== "string") return null;
+      }
+      return {
+        id,
+        invoiceNumber: o.invoiceNumber as string,
+        invoiceDate: o.invoiceDate as string,
+        paymentDue: o.paymentDue as string,
+        serviceDescription: o.serviceDescription as string,
+        amountEur: o.amountEur as string,
+        supplierName: o.supplierName as string,
+        supplierReg: o.supplierReg as string,
+        supplierAddress: o.supplierAddress as string,
+        supplierBank: o.supplierBank as string,
+        supplierSwift: o.supplierSwift as string,
+        supplierBankAccount: o.supplierBankAccount as string,
+        supplierEmail: o.supplierEmail as string,
+        supplierPhone: o.supplierPhone as string,
+        recipientCompany: o.recipientCompany as string,
+        recipientReg: o.recipientReg as string,
+        recipientAddress: o.recipientAddress as string,
+        createdAt: o.createdAt as string,
+        updatedAt: o.updatedAt as string,
+      };
+    } catch {
+      /* try next storage dir */
     }
-    return {
-      id,
-      invoiceNumber: o.invoiceNumber as string,
-      invoiceDate: o.invoiceDate as string,
-      paymentDue: o.paymentDue as string,
-      serviceDescription: o.serviceDescription as string,
-      amountEur: o.amountEur as string,
-      supplierName: o.supplierName as string,
-      supplierReg: o.supplierReg as string,
-      supplierAddress: o.supplierAddress as string,
-      supplierBank: o.supplierBank as string,
-      supplierSwift: o.supplierSwift as string,
-      supplierBankAccount: o.supplierBankAccount as string,
-      supplierEmail: o.supplierEmail as string,
-      supplierPhone: o.supplierPhone as string,
-      recipientCompany: o.recipientCompany as string,
-      recipientReg: o.recipientReg as string,
-      recipientAddress: o.recipientAddress as string,
-      createdAt: o.createdAt as string,
-      updatedAt: o.updatedAt as string,
-    };
-  } catch {
-    return null;
   }
+  return null;
 }
 
 async function writeDraftFile(draft: PkdCommissionInvoiceDraft): Promise<void> {
-  await fs.mkdir(storeDir(), { recursive: true });
-  const fp = draftPath(draft.id);
-  const tmp = `${fp}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(draft), "utf8");
-  await fs.rename(tmp, fp);
+  let lastError: unknown = null;
+  for (const dir of storeDirs()) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+      const fp = draftPath(dir, draft.id);
+      const tmp = `${fp}.tmp`;
+      await fs.writeFile(tmp, JSON.stringify(draft), "utf8");
+      await fs.rename(tmp, fp);
+      return;
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("write_failed");
 }
 
 export async function listPkdCommissionInvoiceDrafts(): Promise<PkdCommissionInvoiceDraft[]> {
   try {
-    const entries = await fs.readdir(storeDir(), { withFileTypes: true });
-    const ids = entries
-      .filter((e) => e.isFile() && e.name.endsWith(".json"))
-      .map((e) => e.name.slice(0, -5))
-      .filter(isSafePkdInvoiceId);
+    const idSet = new Set<string>();
+    for (const dir of storeDirs()) {
+      try {
+        const entries = await fs.readdir(dir, { withFileTypes: true });
+        for (const e of entries) {
+          if (!e.isFile() || !e.name.endsWith(".json")) continue;
+          const id = e.name.slice(0, -5);
+          if (isSafePkdInvoiceId(id)) idSet.add(id);
+        }
+      } catch {
+        /* this dir might not exist yet */
+      }
+    }
+    const ids = [...idSet];
     const drafts = await Promise.all(ids.map((id) => readDraftFile(id)));
     return drafts
       .filter((d): d is PkdCommissionInvoiceDraft => d != null)

@@ -15,7 +15,9 @@ export function CreatePkdInvoiceButton() {
       const r = await fetch("/api/admin/pkd-commission-invoice/create", { method: "POST" });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || typeof j.id !== "string") {
-        setErr(typeof j.error === "string" ? j.error : `Kļūda ${r.status}`);
+        const base = typeof j.error === "string" ? j.error : `Kļūda ${r.status}`;
+        const detail = typeof j.detail === "string" ? j.detail : "";
+        setErr(detail ? `${base}: ${detail}` : base);
         return;
       }
       router.push(`/admin/commission-invoice/${encodeURIComponent(j.id)}`);
