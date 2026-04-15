@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import { flushSync } from "react-dom";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -118,27 +117,17 @@ export function MarketingHero({
   const mobileHeroScrollRef = useRef<HTMLDivElement>(null);
   const mobileHomeClusterRef = useRef<HTMLDivElement>(null);
   const mobileCenterResizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const heroMountTsRef = useRef(0);
   const scrollWasDeepRef = useRef(false);
-  const initialMobileClusterRevealDoneRef = useRef(false);
-  /** Mājas mobilais klasteris: līdz pirmajam centrējumam pēc fontiem — paslēpts, lai nav „nokrišanas” no Y=0 + vēlā fontu slāņa. */
-  const mobileClusterRevealGateActive = Boolean(orbitHomeCenterLayout && designDirection && !demoVariant);
-  const [mobileClusterRevealReady, setMobileClusterRevealReady] = useState(() => !mobileClusterRevealGateActive);
-  /** Safari: neparādīt klasteri, kamēr nav pirmā `translateY` (citādi opacity+transform uz vienu elementu dod „dubultu” virsrakstu). */
-  const [mobileClusterPaintVisible, setMobileClusterPaintVisible] = useState(() => !mobileClusterRevealGateActive);
   const [mobileAuditsTranslateY, setMobileAuditsTranslateY] = useState(0);
 
   /**
-   * Mobilais mājas hero: `translate3d(0,Y,0)` uz klasteri — `.marketing-hero-title-line2` (AUDITS) centrs → `visualViewport` centrs.
-   * Nav `rootRect` „redzamības” filtra; RO + window resize (debounce) + visualViewport (garāks debounce); nobīdei mirkļa slieksnis un Y ierobežojums pret „hunting”.
+   * Mobilais mājas hero: `translate3d(0,Y,0)` uz iekšējo slāni — `.marketing-hero-title-line2` (AUDITS) centrs → `visualViewport` centrs.
+   * Bez soļveida nobīdēm (mazāk raustīšanās), bez opacity slēpšanas (nav melnā kadra).
    */
   const recenterMobileAuditsLine = useCallback(() => {
     if (typeof window === "undefined") return;
     if (!window.matchMedia("(max-width: 767px)").matches) {
       setMobileAuditsTranslateY(0);
-      return;
-    }
-    if (mobileClusterRevealGateActive && !mobileClusterRevealReady) {
       return;
     }
 
@@ -161,39 +150,29 @@ export function MarketingHero({
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const snapToTopBand = scrollTop < 72;
 
-    if (snapToTopBand) {
-      flushSync(() => {
-        setMobileAuditsTranslateY(0);
-      });
+    if (!snapToTopBand) {
+      return;
     }
-
-    const rect = audits.getBoundingClientRect();
-    if (rect.width === 0 && rect.height === 0) return;
-    const auditsCenterY = rect.top + rect.height / 2;
-    const vv = window.visualViewport;
-    const viewportCenterY = vv ? vv.offsetTop + vv.height / 2 : window.innerHeight / 2;
-    const delta = Math.round(viewportCenterY - auditsCenterY);
-    if (Math.abs(delta) < 4) return;
 
     const vh = window.innerHeight;
     const yCap = Math.max(120, Math.round(vh * 0.52));
 
-    if (snapToTopBand) {
-      setMobileAuditsTranslateY(Math.min(yCap, Math.max(-yCap, delta)));
-      return;
-    }
-
-    const step = Math.sign(delta) * Math.min(Math.abs(delta), 48);
     setMobileAuditsTranslateY((prev) => {
-      const next = Math.round(prev + step);
+      const rect = audits.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) return prev;
+      const auditsCenterY = rect.top + rect.height / 2;
+      const vv = window.visualViewport;
+      const viewportCenterY = vv ? vv.offsetTop + vv.height / 2 : window.innerHeight / 2;
+      const screenDelta = Math.round(viewportCenterY - auditsCenterY);
+      if (Math.abs(screenDelta) < 6) return prev;
+      const next = prev + screenDelta;
       return Math.min(yCap, Math.max(-yCap, next));
     });
-  }, [sectionId, mobileClusterRevealGateActive, mobileClusterRevealReady]);
+  }, [sectionId]);
 
   useLayoutEffect(() => {
     if (!orbitHomeCenterLayout || !designDirection || demoVariant) {
       setMobileAuditsTranslateY(0);
-      setMobileClusterRevealReady(true);
       return;
     }
     if (prevHeroOrderStepRef.current !== heroOrderStep) {
@@ -201,17 +180,11 @@ export function MarketingHero({
       prevHeroOrderStepRef.current = heroOrderStep;
     }
 
-    if (typeof window !== "undefined" && heroMountTsRef.current === 0) {
-      heroMountTsRef.current = Date.now();
-    }
-
     const run = () => {
       recenterMobileAuditsLine();
     };
 
-    const debounceWindowMs = 520;
-    const debounceVvMs = 780;
-    let vvDebounceTimer: number | null = null;
+    const debounceWindowMs = 720;
 
     const scheduleResize = () => {
       if (mobileCenterResizeDebounceRef.current) clearTimeout(mobileCenterResizeDebounceRef.current);
@@ -221,103 +194,25 @@ export function MarketingHero({
       }, debounceWindowMs);
     };
 
-    const scheduleVvResize = () => {
-      if (heroMountTsRef.current && Date.now() - heroMountTsRef.current < 1400) return;
-      if (vvDebounceTimer) window.clearTimeout(vvDebounceTimer);
-      vvDebounceTimer = window.setTimeout(() => {
-        vvDebounceTimer = null;
-        requestAnimationFrame(() => run());
-      }, debounceVvMs);
-    };
-
-    const firstReveal = !initialMobileClusterRevealDoneRef.current;
     let cancelled = false;
-    let safetyTimer: number | null = null;
 
-    const commitReveal = () => {
-      if (cancelled || initialMobileClusterRevealDoneRef.current) return;
-      initialMobileClusterRevealDoneRef.current = true;
-      setMobileClusterRevealReady(true);
-    };
-
-    const runRevealFrame = () => {
-      requestAnimationFrame(() => {
-        if (cancelled) return;
-        commitReveal();
-        requestAnimationFrame(() => {
-          if (cancelled) return;
-          run();
-          requestAnimationFrame(() => {
-            if (cancelled) return;
-            requestAnimationFrame(() => {
-              if (cancelled) return;
-              if (mobileClusterRevealGateActive) setMobileClusterPaintVisible(true);
-            });
-          });
-        });
-      });
-    };
-
-    if (firstReveal) {
-      setMobileClusterRevealReady(false);
-      if (mobileClusterRevealGateActive) setMobileClusterPaintVisible(false);
-      safetyTimer = window.setTimeout(() => {
-        if (cancelled) return;
-        runRevealFrame();
-      }, 1400);
-
-      void document.fonts.ready.then(() => {
-        if (cancelled) return;
-        if (safetyTimer) {
-          clearTimeout(safetyTimer);
-          safetyTimer = null;
-        }
-        requestAnimationFrame(() => {
-          if (cancelled) return;
-          if (initialMobileClusterRevealDoneRef.current) {
-            requestAnimationFrame(() => run());
-            return;
-          }
-          runRevealFrame();
-        });
-      });
-    } else {
-      requestAnimationFrame(() => run());
-    }
+    requestAnimationFrame(() => {
+      if (!cancelled) run();
+    });
+    void document.fonts.ready.then(() => {
+      if (!cancelled) requestAnimationFrame(() => run());
+    });
 
     window.addEventListener("resize", scheduleResize);
-    const vv = window.visualViewport;
-    if (vv) vv.addEventListener("resize", scheduleVvResize);
-
-    const cluster = mobileHomeClusterRef.current;
-    let ro: ResizeObserver | undefined;
-    if (cluster && typeof ResizeObserver !== "undefined") {
-      ro = new ResizeObserver(() => {
-        if (heroMountTsRef.current && Date.now() - heroMountTsRef.current < 1400) return;
-        scheduleResize();
-      });
-      ro.observe(cluster);
-    }
 
     return () => {
       cancelled = true;
-      if (safetyTimer) clearTimeout(safetyTimer);
-      if (vvDebounceTimer) window.clearTimeout(vvDebounceTimer);
       if (mobileCenterResizeDebounceRef.current) clearTimeout(mobileCenterResizeDebounceRef.current);
       window.removeEventListener("resize", scheduleResize);
-      if (vv) vv.removeEventListener("resize", scheduleVvResize);
-      ro?.disconnect();
     };
-  }, [orbitHomeCenterLayout, designDirection, demoVariant, mobileClusterRevealGateActive, recenterMobileAuditsLine, heroOrderStep]);
+  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine, heroOrderStep]);
 
-  /** Ja centrēšanas ķēde nekad neuzstāda redzamību (reti), neļaut hero palikt tukšam. */
-  useEffect(() => {
-    if (!mobileClusterRevealGateActive || mobileClusterPaintVisible) return;
-    const t = window.setTimeout(() => setMobileClusterPaintVisible(true), 2600);
-    return () => window.clearTimeout(t);
-  }, [mobileClusterRevealGateActive, mobileClusterPaintVisible]);
-
-  /** bfcache: atiestāt nobīdi un pārmērīt; hero prom ritinot translateY netiek notīrīts — nav lēciena atpakaļ augšā. */
+  /** bfcache: atiestāt nobīdi un vienu centrējumu. */
   useEffect(() => {
     if (!orbitHomeCenterLayout || !designDirection || demoVariant) return;
 
@@ -329,9 +224,8 @@ export function MarketingHero({
     const onPageShow = (ev: PageTransitionEvent) => {
       if (ev.persisted) {
         setMobileAuditsTranslateY(0);
-        if (mobileClusterRevealGateActive) setMobileClusterPaintVisible(true);
         resetInnerScroll();
-        recenterMobileAuditsLine();
+        requestAnimationFrame(() => recenterMobileAuditsLine());
       }
     };
 
@@ -339,23 +233,32 @@ export function MarketingHero({
     return () => {
       window.removeEventListener("pageshow", onPageShow);
     };
-  }, [orbitHomeCenterLayout, designDirection, demoVariant, mobileClusterRevealGateActive, recenterMobileAuditsLine]);
+  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine]);
 
-  /** Atgriežoties no apakšas pie hero augšas — viena pārmērīšana ar snap (flushSync ceļā `recenter`). */
+  /** Atgriežoties no apakšas pie hero augšas — viena aizkavēta centrēšana (bez pārmērīgas raustīšanās). */
   useEffect(() => {
     if (!orbitHomeCenterLayout || !designDirection || demoVariant) return;
+
+    let scrollTimer: number | null = null;
 
     const onScroll = () => {
       const y = window.scrollY || document.documentElement.scrollTop;
       if (y > 200) scrollWasDeepRef.current = true;
       if (scrollWasDeepRef.current && y < 80) {
         scrollWasDeepRef.current = false;
-        recenterMobileAuditsLine();
+        if (scrollTimer) window.clearTimeout(scrollTimer);
+        scrollTimer = window.setTimeout(() => {
+          scrollTimer = null;
+          recenterMobileAuditsLine();
+        }, 280);
       }
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      if (scrollTimer) window.clearTimeout(scrollTimer);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine]);
 
   /** Sākumlapas orbit: viens H1 tonis (bez zilajiem atslēgvārdiem), izmērs ×3 — sk. orbit-presets `[data-hero-orbit-home]`. */
@@ -682,10 +585,7 @@ export function MarketingHero({
                 >
                   <div
                     ref={mobileHomeClusterRef}
-                    className={`pointer-events-auto mx-auto flex w-full min-w-0 max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))]${
-                      mobileClusterRevealGateActive && !mobileClusterPaintVisible ? " pointer-events-none opacity-0" : ""
-                    }`}
-                    aria-busy={mobileClusterRevealGateActive && !mobileClusterPaintVisible ? true : undefined}
+                    className="pointer-events-auto mx-auto flex w-full min-w-0 max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))]"
                   >
                     <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">
                       {approvedBlock}
