@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -95,40 +95,9 @@ export function MarketingHero({
   const homeOrbitMetaIntro = false;
   const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
-  const prevHeroOrderStepRef = useRef(heroOrderStep);
-  const mobileHomeClusterRef = useRef<HTMLDivElement>(null);
   const mobileHeroScrollRef = useRef<HTMLDivElement>(null);
-  const mobileAuditsResizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [mobileAuditsTranslateY, setMobileAuditsTranslateY] = useState(0);
 
-  /** Mobilais: nobīda visu hero kopu (`translateY`), lai „AUDITS” rindas centrs būtu viewport centrā; iekšējās atstarpes nemainās. */
-  const recenterMobileAuditsLine = useCallback(() => {
-    if (typeof window === "undefined") return;
-    if (!window.matchMedia("(max-width: 767px)").matches) {
-      setMobileAuditsTranslateY(0);
-      return;
-    }
-    const scrollY = window.scrollY || document.documentElement.scrollTop;
-    if (scrollY > 140) return;
-
-    const root = mobileHomeClusterRef.current;
-    if (!root) return;
-    const rootRect = root.getBoundingClientRect();
-    if (rootRect.bottom < 48 || rootRect.top > window.innerHeight - 32) return;
-
-    const audits = root.querySelector(".marketing-hero-title-line2");
-    if (!audits || !(audits instanceof HTMLElement)) return;
-    const rect = audits.getBoundingClientRect();
-    if (rect.width === 0 && rect.height === 0) return;
-    const auditsCenterY = rect.top + rect.height / 2;
-    const vv = window.visualViewport;
-    const viewportCenterY = vv ? vv.offsetTop + vv.height / 2 : window.innerHeight / 2;
-    const delta = Math.round(viewportCenterY - auditsCenterY);
-    if (Math.abs(delta) < 2) return;
-    setMobileAuditsTranslateY((prev) => prev + delta);
-  }, []);
-
-  /** iOS / mobilais: ritinot prom un atgriežoties augšā (status bar tap), atiestata iekšējo scroll un nobīdi — citādi melns/tukšs hero. */
+  /** iOS / mobilais: ritinot prom un atgriežoties augšā, atiestata iekšējo scroll — citādi melns/tukšs hero. */
   useEffect(() => {
     if (!orbitHomeCenterLayout || !designDirection || demoVariant) return;
 
@@ -140,21 +109,17 @@ export function MarketingHero({
     const onScroll = () => {
       const y = window.scrollY || document.documentElement.scrollTop;
       if (y > 160) {
-        setMobileAuditsTranslateY(0);
         resetInnerScroll();
         return;
       }
       if (y < 16) {
         resetInnerScroll();
-        recenterMobileAuditsLine();
       }
     };
 
     const onPageShow = (e: PageTransitionEvent) => {
       if (e.persisted) {
-        setMobileAuditsTranslateY(0);
         resetInnerScroll();
-        recenterMobileAuditsLine();
       }
     };
 
@@ -164,50 +129,7 @@ export function MarketingHero({
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("pageshow", onPageShow);
     };
-  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine]);
-
-  useLayoutEffect(() => {
-    if (!orbitHomeCenterLayout || !designDirection || demoVariant) {
-      setMobileAuditsTranslateY(0);
-      return;
-    }
-    if (prevHeroOrderStepRef.current !== heroOrderStep) {
-      setMobileAuditsTranslateY(0);
-      prevHeroOrderStepRef.current = heroOrderStep;
-    }
-    const debounceMs = 220;
-    /** Bez rAF — lai pirmā zīmēšana nesaņem translateY=0 un nākamajā kadra pārlēcienu. */
-    const tickSync = () => {
-      recenterMobileAuditsLine();
-    };
-    const tickDebounced = () => {
-      if (mobileAuditsResizeDebounceRef.current) clearTimeout(mobileAuditsResizeDebounceRef.current);
-      mobileAuditsResizeDebounceRef.current = setTimeout(() => {
-        mobileAuditsResizeDebounceRef.current = null;
-        tickSync();
-      }, debounceMs);
-    };
-    tickSync();
-    if (typeof document !== "undefined" && document.fonts?.ready) {
-      void document.fonts.ready.then(tickSync);
-    }
-    const onResize = () => tickDebounced();
-    window.addEventListener("resize", onResize);
-    const vv = window.visualViewport;
-    if (vv) vv.addEventListener("resize", onResize);
-    const root = mobileHomeClusterRef.current;
-    let ro: ResizeObserver | undefined;
-    if (root && typeof ResizeObserver !== "undefined") {
-      ro = new ResizeObserver(() => tickDebounced());
-      ro.observe(root);
-    }
-    return () => {
-      if (mobileAuditsResizeDebounceRef.current) clearTimeout(mobileAuditsResizeDebounceRef.current);
-      window.removeEventListener("resize", onResize);
-      if (vv) vv.removeEventListener("resize", onResize);
-      if (ro) ro.disconnect();
-    };
-  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine, heroOrderStep]);
+  }, [orbitHomeCenterLayout, designDirection, demoVariant]);
 
   /** Sākumlapas orbit: viens H1 tonis (bez zilajiem atslēgvārdiem), izmērs ×3 — sk. orbit-presets `[data-hero-orbit-home]`. */
   const heroH1KeywordResolved =
@@ -526,21 +448,19 @@ export function MarketingHero({
                   ref={mobileHeroScrollRef}
                   className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden md:hidden"
                 >
-                  <div
-                    ref={mobileHomeClusterRef}
-                    className="pointer-events-auto mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] transform-gpu"
-                    style={{ transform: `translateY(${mobileAuditsTranslateY}px)` }}
-                  >
-                    <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">
-                      {approvedBlock}
-                    </div>
-                    <div className="flex flex-col gap-3 py-0">
-                      <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
-                        {heroTitleStack}
+                  <div className="flex min-h-full w-full flex-col justify-center">
+                    <div className="pointer-events-auto mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))]">
+                      <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">
+                        {approvedBlock}
                       </div>
-                      {heroOrderEntry}
-                      <div className="flex w-full flex-col items-center gap-1 pb-0.5 pt-0.5">
-                        {heroStepOneCta}
+                      <div className="flex flex-col gap-3 py-0">
+                        <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
+                          {heroTitleStack}
+                        </div>
+                        {heroOrderEntry}
+                        <div className="flex w-full flex-col items-center gap-1 pb-0.5 pt-0.5">
+                          {heroStepOneCta}
+                        </div>
                       </div>
                     </div>
                   </div>
