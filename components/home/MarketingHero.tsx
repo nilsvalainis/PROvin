@@ -124,6 +124,8 @@ export function MarketingHero({
   /** Mājas mobilais klasteris: līdz pirmajam centrējumam pēc fontiem — paslēpts, lai nav „nokrišanas” no Y=0 + vēlā fontu slāņa. */
   const mobileClusterRevealGateActive = Boolean(orbitHomeCenterLayout && designDirection && !demoVariant);
   const [mobileClusterRevealReady, setMobileClusterRevealReady] = useState(() => !mobileClusterRevealGateActive);
+  /** Safari: neparādīt klasteri, kamēr nav pirmā `translateY` (citādi opacity+transform uz vienu elementu dod „dubultu” virsrakstu). */
+  const [mobileClusterPaintVisible, setMobileClusterPaintVisible] = useState(() => !mobileClusterRevealGateActive);
   const [mobileAuditsTranslateY, setMobileAuditsTranslateY] = useState(0);
 
   /**
@@ -245,12 +247,20 @@ export function MarketingHero({
         requestAnimationFrame(() => {
           if (cancelled) return;
           run();
+          requestAnimationFrame(() => {
+            if (cancelled) return;
+            requestAnimationFrame(() => {
+              if (cancelled) return;
+              if (mobileClusterRevealGateActive) setMobileClusterPaintVisible(true);
+            });
+          });
         });
       });
     };
 
     if (firstReveal) {
       setMobileClusterRevealReady(false);
+      if (mobileClusterRevealGateActive) setMobileClusterPaintVisible(false);
       safetyTimer = window.setTimeout(() => {
         if (cancelled) return;
         runRevealFrame();
@@ -298,7 +308,14 @@ export function MarketingHero({
       if (vv) vv.removeEventListener("resize", scheduleVvResize);
       ro?.disconnect();
     };
-  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine, heroOrderStep]);
+  }, [orbitHomeCenterLayout, designDirection, demoVariant, mobileClusterRevealGateActive, recenterMobileAuditsLine, heroOrderStep]);
+
+  /** Ja centrēšanas ķēde nekad neuzstāda redzamību (reti), neļaut hero palikt tukšam. */
+  useEffect(() => {
+    if (!mobileClusterRevealGateActive || mobileClusterPaintVisible) return;
+    const t = window.setTimeout(() => setMobileClusterPaintVisible(true), 2600);
+    return () => window.clearTimeout(t);
+  }, [mobileClusterRevealGateActive, mobileClusterPaintVisible]);
 
   /** bfcache: atiestāt nobīdi un pārmērīt; hero prom ritinot translateY netiek notīrīts — nav lēciena atpakaļ augšā. */
   useEffect(() => {
@@ -312,6 +329,7 @@ export function MarketingHero({
     const onPageShow = (ev: PageTransitionEvent) => {
       if (ev.persisted) {
         setMobileAuditsTranslateY(0);
+        if (mobileClusterRevealGateActive) setMobileClusterPaintVisible(true);
         resetInnerScroll();
         recenterMobileAuditsLine();
       }
@@ -321,7 +339,7 @@ export function MarketingHero({
     return () => {
       window.removeEventListener("pageshow", onPageShow);
     };
-  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine]);
+  }, [orbitHomeCenterLayout, designDirection, demoVariant, mobileClusterRevealGateActive, recenterMobileAuditsLine]);
 
   /** Atgriežoties no apakšas pie hero augšas — viena pārmērīšana ar snap (flushSync ceļā `recenter`). */
   useEffect(() => {
@@ -664,16 +682,18 @@ export function MarketingHero({
                 >
                   <div
                     ref={mobileHomeClusterRef}
-                    className={`pointer-events-auto mx-auto flex w-full min-w-0 max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] transform-gpu${
-                      mobileClusterRevealGateActive && !mobileClusterRevealReady ? " pointer-events-none opacity-0" : ""
+                    className={`pointer-events-auto mx-auto flex w-full min-w-0 max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))]${
+                      mobileClusterRevealGateActive && !mobileClusterPaintVisible ? " pointer-events-none opacity-0" : ""
                     }`}
-                    style={{ transform: `translate3d(0, ${mobileAuditsTranslateY}px, 0)` }}
-                    aria-busy={mobileClusterRevealGateActive && !mobileClusterRevealReady ? true : undefined}
+                    aria-busy={mobileClusterRevealGateActive && !mobileClusterPaintVisible ? true : undefined}
                   >
                     <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">
                       {approvedBlock}
                     </div>
-                    <div className="flex flex-col gap-3 py-0">
+                    <div
+                      className="flex flex-col gap-3 py-0 transform-gpu [backface-visibility:hidden]"
+                      style={{ transform: `translate3d(0, ${mobileAuditsTranslateY}px, 0)` }}
+                    >
                       <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
                         {heroTitleStack}
                       </div>
