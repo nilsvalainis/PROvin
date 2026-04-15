@@ -6,9 +6,9 @@ import {
   irissStaggerHeadingClass,
 } from "@/lib/home-layout";
 
-/** Mazs ekrāns: kā BUJ; ≥md: kā #home-intro (1.365rem), virsraksti `irissStaggerHeadingClass`. */
+/** Mazs ekrāns: kā BUJ; ≥md: kā #home-intro pēc web −25 % (`calc(1.365rem * 0.75)`). */
 const irissBodyProseClass =
-  "home-iriss-prose text-[14px] font-normal leading-[1.75] sm:text-[15px] md:text-[1.365rem] md:leading-[1.65] md:tracking-[0.045em]";
+  "home-iriss-prose text-[14px] font-normal leading-[1.75] sm:text-[15px] md:text-[calc(1.365rem*0.75)] md:leading-[1.65] md:tracking-[0.045em]";
 
 /** Vertikālā atstarpe starp stagger blokiem — tikai `gap`, lai nav dubultas padding joslas. */
 const irissStaggerBlockGapClass = "gap-y-[clamp(2.75rem,6.5vw,4.75rem)] sm:gap-y-[clamp(3rem,7vw,5.25rem)]";

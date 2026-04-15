@@ -70,7 +70,7 @@ export const irissSectionSubtitleClass = `${approvedByIrissSignatureBaseClass} m
  * (light, uppercase, plašs tracking); nedaudz šaurāks tracking garām rindiņām.
  */
 export const irissStaggerHeadingClass =
-  "iriss-stagger-heading font-light uppercase tracking-[0.2em] text-balance text-[#e5e7eb] leading-snug sm:tracking-[0.24em] md:tracking-[0.28em] text-[0.9375rem] sm:text-[1.0625rem] md:text-[1.3125rem] lg:text-[1.375rem]";
+  "iriss-stagger-heading font-light uppercase tracking-[0.2em] text-balance text-[#e5e7eb] leading-snug sm:tracking-[0.24em] md:tracking-[0.28em] text-[0.9375rem] sm:text-[1.0625rem] md:text-[0.984375rem] lg:text-[1.03125rem]";
 
 /** Salīdzinājuma tabulas galvenes bāze — trekns, uppercase, plašāka tracking. */
 export const comparisonTableHeaderBaseClass =
