@@ -143,6 +143,8 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
     : "mt-1 text-[11px] font-normal leading-snug text-[#86868b]";
 
   const reqStarClass = hero ? "text-red-400" : "text-red-600";
+  const firstStepVinPlaceholder = "IEVADI VIN";
+  const firstStepListingPlaceholder = "SAITE UZ SLUDINĀJUMU";
 
   return (
     <form
@@ -152,9 +154,11 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
     >
       <div className={`grid sm:grid-cols-2 ${gridGap}`}>
         <div className="sm:col-span-2">
-          <label htmlFor="order-vin" className={labelClass}>
-            {t("vinLabel")}
-          </label>
+          {step === 2 ? (
+            <label htmlFor="order-vin" className={labelClass}>
+              {t("vinLabel")}
+            </label>
+          ) : null}
           {hero ? (
             <HeroFieldScanLine>
               <input
@@ -166,7 +170,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 spellCheck={false}
                 value={vin}
                 className={`${inputBase} w-full font-mono uppercase tracking-wide`}
-                placeholder={t("vinPlaceholderHero")}
+                placeholder={step === 1 ? firstStepVinPlaceholder : t("vinPlaceholderHero")}
                 onChange={(e) => {
                   const el = e.target;
                   const value = el.value.toUpperCase().slice(0, 17);
@@ -184,7 +188,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               spellCheck={false}
               value={vin}
               className={`${inputBase} font-mono uppercase tracking-wide`}
-              placeholder={t("vinPlaceholder")}
+              placeholder={step === 1 ? firstStepVinPlaceholder : t("vinPlaceholder")}
               onChange={(e) => {
                 const el = e.target;
                 const value = el.value.toUpperCase().slice(0, 17);
@@ -192,20 +196,24 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               }}
             />
           )}
-          <p
-            className={
-              hero
-                ? "order-form-hero-vin-hint mt-1.5 text-[11px] font-normal text-[#e5e7eb]/52"
-                : "mt-1 text-[11px] font-normal text-[#aeaeb2]"
-            }
-          >
-            {t("vinHint")}
-          </p>
+          {step === 2 ? (
+            <p
+              className={
+                hero
+                  ? "order-form-hero-vin-hint mt-1.5 text-[11px] font-normal text-[#e5e7eb]/52"
+                  : "mt-1 text-[11px] font-normal text-[#aeaeb2]"
+              }
+            >
+              {t("vinHint")}
+            </p>
+          ) : null}
         </div>
         <div className="sm:col-span-2">
-          <label htmlFor="order-url" className={labelClass}>
-            {t("listingLabel")}
-          </label>
+          {step === 2 ? (
+            <label htmlFor="order-url" className={labelClass}>
+              {t("listingLabel")}
+            </label>
+          ) : null}
           {hero ? (
             <HeroFieldScanLine>
               <input
@@ -215,7 +223,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 required
                 value={listingUrl}
                 className={inputBase}
-                placeholder={t("urlPlaceholder")}
+                placeholder={step === 1 ? firstStepListingPlaceholder : t("urlPlaceholder")}
                 onChange={(e) => setListingUrl(e.target.value)}
               />
             </HeroFieldScanLine>
@@ -227,11 +235,11 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               required
               value={listingUrl}
               className={inputBase}
-              placeholder={t("urlPlaceholder")}
+              placeholder={step === 1 ? firstStepListingPlaceholder : t("urlPlaceholder")}
               onChange={(e) => setListingUrl(e.target.value)}
             />
           )}
-          <p className={hintClass}>{t("listingHint")}</p>
+          {step === 2 ? <p className={hintClass}>{t("listingHint")}</p> : null}
         </div>
         {step === 2 ? (
           <>
@@ -380,29 +388,26 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
       >
         {hero ? (
           <>
-            <div className="order-form-hero-rule border-b border-[#c0c0c0]/35 pb-4" role="group" aria-label={t("ariaSummary")}>
-              <div className="flex items-baseline justify-between gap-4">
-                <span className="order-form-hero-summary-label text-[13px] font-medium text-[#e5e7eb]">{t("summaryLabel")}</span>
-                <span className="order-form-hero-price text-[1.85rem] font-bold tabular-nums tracking-tight text-[#c0c0c0] sm:text-[2rem]">
-                  79,99&nbsp;€
-                </span>
+            {step === 2 ? (
+              <div className="order-form-hero-rule border-b border-[#c0c0c0]/35 pb-4" role="group" aria-label={t("ariaSummary")}>
+                <div className="flex items-baseline justify-between gap-4">
+                  <span className="order-form-hero-summary-label text-[13px] font-medium text-[#e5e7eb]">{t("summaryLabel")}</span>
+                  <span className="order-form-hero-price text-[1.85rem] font-bold tabular-nums tracking-tight text-[#c0c0c0] sm:text-[2rem]">
+                    79,99&nbsp;€
+                  </span>
+                </div>
+                <p className="order-form-hero-summary-note mt-2 text-[11px] font-normal leading-snug text-[#e5e7eb]/58 sm:text-[12px]">
+                  {t("summaryNote")}
+                </p>
               </div>
-              <p className="order-form-hero-summary-note mt-2 text-[11px] font-normal leading-snug text-[#e5e7eb]/58 sm:text-[12px]">
-                {t("summaryNote")}
-              </p>
-            </div>
+            ) : null}
             {step === 1 ? (
               <button
                 type="button"
                 onClick={goToStepTwo}
-                className="provin-home-pill-cta provin-home-pill-cta--wide mx-auto mt-1 flex min-h-12 max-w-[min(100%,20rem)] touch-manipulation items-center justify-center gap-2 sm:min-h-[50px]"
+                className="provin-home-pill-cta provin-home-pill-cta--fit z-10 mx-auto mt-1 min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
               >
-                {t("continueButton")}
-                <ArrowRight
-                  className="order-form-hero-pay-arrow h-4 w-4 shrink-0 text-[#7eb6ff]/90"
-                  strokeWidth={2}
-                  aria-hidden
-                />
+                PASŪTĪT AUDITU - 79,99 €
               </button>
             ) : null}
             {step === 2 ? (
@@ -470,9 +475,11 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 {t("backToFirstStep")}
               </button>
             ) : null}
-            <p className="order-form-hero-stripe-note text-center text-[10px] font-normal leading-relaxed text-[#e5e7eb]/48 sm:text-[11px]">
-              {t("stripeNote")}
-            </p>
+            {step === 2 ? (
+              <p className="order-form-hero-stripe-note text-center text-[10px] font-normal leading-relaxed text-[#e5e7eb]/48 sm:text-[11px]">
+                {t("stripeNote")}
+              </p>
+            ) : null}
           </>
         ) : (
           <>
@@ -519,9 +526,9 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 <button
                   type="button"
                   onClick={goToStepTwo}
-                  className="provin-btn provin-btn--compact inline-flex min-h-11 w-full min-w-[180px] items-center justify-center rounded-full px-7 py-[10px] text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] sm:w-auto sm:min-h-10"
+                  className="provin-home-pill-cta provin-home-pill-cta--fit z-10 min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
                 >
-                  {t("continueButton")}
+                  PASŪTĪT AUDITU - 79,99 €
                 </button>
               ) : (
                 <button
@@ -541,9 +548,11 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                   {t("backToFirstStep")}
                 </button>
               ) : null}
-              <p className="text-center text-[10px] font-normal leading-snug text-[#aeaeb2] sm:max-w-[14rem] sm:text-right">
-                {t("stripeNote")}
-              </p>
+              {step === 2 ? (
+                <p className="text-center text-[10px] font-normal leading-snug text-[#aeaeb2] sm:max-w-[14rem] sm:text-right">
+                  {t("stripeNote")}
+                </p>
+              ) : null}
             </div>
           </>
         )}

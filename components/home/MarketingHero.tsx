@@ -6,11 +6,13 @@ import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { NavChevronDown } from "@/components/NavChevron";
+import { OrderForm } from "@/components/OrderForm";
 import { ApprovedByIrissReveal } from "@/components/home/ApprovedByIrissReveal";
 import { MarketingHeroPillarsGrid } from "@/components/home/MarketingHeroPillarsGrid";
 import { MarketingHeroSpeedometer } from "@/components/home/MarketingHeroSpeedometer";
 import type { HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
 import { isOrbitFamilyVariant } from "@/lib/hero-orbit-j-presets";
+import { ORDER_SECTION_ID } from "@/lib/order-section";
 import {
   approvedByIrissSignatureHeroClass,
   heroH1BlueKeywordClass,
@@ -229,6 +231,14 @@ export function MarketingHero({
 
   const pillarsAndCta = (
     <>
+      {designDirection && !demoVariant ? (
+        <div
+          id={ORDER_SECTION_ID}
+          className="mx-auto w-full max-w-[560px] scroll-mt-[calc(2.75rem+1px)] px-2 pb-3 sm:scroll-mt-12 sm:pb-4"
+        >
+          <OrderForm variant="hero" className="!mt-0 !space-y-0 !px-0 !py-0" />
+        </div>
+      ) : null}
       <MarketingHeroPillarsGrid designDirection={designDirection} isC={isC} isB={isB} />
       {scrollToContentLink}
     </>
@@ -236,6 +246,14 @@ export function MarketingHero({
 
   const pillarsAndCtaOrbitMobile = (
     <>
+      {designDirection && !demoVariant ? (
+        <div
+          id={ORDER_SECTION_ID}
+          className="mx-auto w-full max-w-[560px] scroll-mt-[calc(2.75rem+1px)] px-2 pb-3 sm:scroll-mt-12 sm:pb-4"
+        >
+          <OrderForm variant="hero" className="!mt-0 !space-y-0 !px-0 !py-0" />
+        </div>
+      ) : null}
       <div className="hidden w-full flex-col items-center md:flex">
         <MarketingHeroPillarsGrid designDirection={designDirection} isC={isC} isB={isB} />
         {scrollToContentLinkDesign("mt-3 sm:mt-4")}
