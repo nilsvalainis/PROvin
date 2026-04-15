@@ -30,14 +30,26 @@
   /* Zilā skrejošā impulsa periods — 2× garāks nekā iepriekš (50 % lēnāks skrējiens) */
   --provin-scan-loop-dur: calc((7s / 3) * 2);
   /*
-   * Hero orbit S12 fona pagarinājums (mājas mobilais): tas pats gradients kā
-   * `orbit-presets.css` `.marketing-hero-orbit--s12` → `--orbit-bg`.
+   * Ļoti viegls film grain — maskē 8 bitu gradientu „pakāpes” (īpaši tumšos radials).
+   * Slānis virs gradienta ar mazu α + soft-light.
    */
-  --hero-orbit-bg-extended: radial-gradient(circle at 50% 100%, rgb(160 165 175 / 0.18), #030304 45%), #030304;
+  --provin-film-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.62' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.52'/%3E%3C/svg%3E");
+  /*
+   * Hero orbit S12 fona pagarinājums — tikai radials; pamatkrāsu dod `background-color: #030304`.
+   * Plašāki stopi, zemāks maks. α — mazāk slāņainas pārejas nekā „0.18 → 45%\".
+   */
+  --hero-orbit-bg-extended: radial-gradient(
+    circle at 50% 100%,
+    rgb(178 182 190 / 0.09) 0%,
+    rgb(152 158 168 / 0.048) 28%,
+    rgb(58 60 66 / 0.32) 56%,
+    rgb(14 14 16 / 0.88) 72%,
+    #030304 86%
+  );
   /* Tēmas pamats (tumšais); gaišais — `site-theme-light.css` uz `html[data-site-theme="light"]` */
   --site-html-bg: #050505;
   --site-body-bg: #050505;
-  --site-body-gradient: linear-gradient(180deg, #08080a 0%, #050505 55%, #050505 100%);
+  --site-body-gradient: linear-gradient(180deg, #0b0b0e 0%, #09090c 24%, #070708 48%, #050505 72%, #050505 100%);
   --site-body-fg: #ffffff;
 }
 
@@ -64,7 +76,10 @@ html {
 /* === BASE BACKGROUND === */
 body {
   background-color: var(--site-body-bg);
-  background-image: var(--site-body-gradient);
+  background-image: var(--provin-film-noise), var(--site-body-gradient);
+  background-repeat: repeat, no-repeat;
+  background-size: 256px 256px, auto;
+  background-blend-mode: soft-light, normal;
   color: var(--site-body-fg);
   max-width: 100%;
   overflow-x: hidden;
@@ -87,11 +102,25 @@ body {
   min-height: 100dvh;
 }
 
+/* Mājas fona „dziļums\" (zem satura): mīksts zils augšā + grain pret banding. */
+.home-depth-bg {
+  background-color: #030304;
+  background-image: var(--provin-film-noise),
+    radial-gradient(ellipse 140% 100% at 50% -8%, rgb(0 72 138 / 0.1) 0%, rgb(0 48 95 / 0.042) 40%, transparent 76%);
+  background-repeat: repeat, no-repeat;
+  background-size: 220px 220px, auto;
+  background-blend-mode: soft-light, normal;
+}
+
 @media (max-width: 768px) {
   /* Viens pagarināts hero fons — hero + 4 kartes; nav otra slāņa zem kartēm. */
   .hero-bg-extended {
     width: 100%;
-    background: var(--hero-orbit-bg-extended);
+    background-color: #030304;
+    background-image: var(--provin-film-noise), var(--hero-orbit-bg-extended);
+    background-repeat: repeat, no-repeat;
+    background-size: 220px 220px, auto;
+    background-blend-mode: soft-light, normal;
   }
 
   /* Orbit/band-a fons tikai vecākā; sekcija caurspīdīga, lai nav dubultā gradients. */
