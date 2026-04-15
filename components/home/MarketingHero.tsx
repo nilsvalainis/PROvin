@@ -98,7 +98,6 @@ export function MarketingHero({
   const prevHeroOrderStepRef = useRef(heroOrderStep);
   const mobileHeroScrollRef = useRef<HTMLDivElement>(null);
   const mobileHomeClusterRef = useRef<HTMLDivElement>(null);
-  const mobileHeroIntersectingRef = useRef(true);
   const mobileCenterResizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialMobileClusterRevealDoneRef = useRef(false);
   /** Mājas mobilais klasteris: līdz pirmajam centrējumam pēc fontiem — paslēpts, lai nav „nokrišanas” no Y=0 + vēlā fontu slāņa. */
@@ -108,7 +107,7 @@ export function MarketingHero({
 
   /**
    * Mobilais mājas hero: `translate3d(0,Y,0)` uz klasteri — `.marketing-hero-title-line2` (AUDITS) centrs → `visualViewport` centrs.
-   * Nav `rootRect` „redzamības” filtra; `ResizeObserver` + resize/visualViewport ar debounci; nobīdes atiestate — sk. `IntersectionObserver` blakus efektā.
+   * Nav `rootRect` „redzamības” filtra; `ResizeObserver` + resize/visualViewport ar debounci; `recenter` tikai, kad hero ir tuvu viewport (ne zem lapas), lai nobīde netiek „notīrīta” prom ritinot.
    */
   const recenterMobileAuditsLine = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -116,8 +115,16 @@ export function MarketingHero({
       setMobileAuditsTranslateY(0);
       return;
     }
-    const scrollY = window.scrollY || document.documentElement.scrollTop;
-    if (scrollY > 140) return;
+
+    const heroEl = document.getElementById(sectionId);
+    if (heroEl) {
+      const r = heroEl.getBoundingClientRect();
+      const margin = 160;
+      const vh = window.innerHeight;
+      if (r.bottom < -margin || r.top > vh + margin) {
+        return;
+      }
+    }
 
     const root = mobileHomeClusterRef.current;
     if (!root) return;
@@ -132,7 +139,7 @@ export function MarketingHero({
     const delta = Math.round(viewportCenterY - auditsCenterY);
     if (Math.abs(delta) < 1) return;
     setMobileAuditsTranslateY((prev) => prev + delta);
-  }, []);
+  }, [sectionId]);
 
   useLayoutEffect(() => {
     if (!orbitHomeCenterLayout || !designDirection || demoVariant) {
@@ -226,43 +233,14 @@ export function MarketingHero({
     };
   }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine, heroOrderStep]);
 
-  /**
-   * Nobīdes atiestate tikai tad, kad hero nav redzams (IntersectionObserver) — ne pēc scrollY sliekšņa,
-   * lai ritinot prom/pa nepārtrauktu document scroll nebūtu pēkšņs translateY=0 „lēciens”.
-   */
+  /** bfcache: atiestāt nobīdi un pārmērīt; hero prom ritinot translateY netiek notīrīts — nav lēciena atpakaļ augšā. */
   useEffect(() => {
     if (!orbitHomeCenterLayout || !designDirection || demoVariant) return;
-
-    mobileHeroIntersectingRef.current = true;
 
     const resetInnerScroll = () => {
       const el = mobileHeroScrollRef.current;
       if (el) el.scrollTop = 0;
     };
-
-    const heroEl = document.getElementById(sectionId);
-    if (!heroEl) return;
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        const e = entries[0];
-        if (!e) return;
-        if (e.isIntersecting) {
-          if (!mobileHeroIntersectingRef.current) {
-            resetInnerScroll();
-            recenterMobileAuditsLine();
-          }
-          mobileHeroIntersectingRef.current = true;
-          return;
-        }
-        mobileHeroIntersectingRef.current = false;
-        setMobileAuditsTranslateY(0);
-        resetInnerScroll();
-      },
-      { threshold: 0, root: null, rootMargin: "0px" },
-    );
-
-    io.observe(heroEl);
 
     const onPageShow = (ev: PageTransitionEvent) => {
       if (ev.persisted) {
@@ -274,10 +252,9 @@ export function MarketingHero({
 
     window.addEventListener("pageshow", onPageShow);
     return () => {
-      io.disconnect();
       window.removeEventListener("pageshow", onPageShow);
     };
-  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine, sectionId]);
+  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine]);
 
   /** Sākumlapas orbit: viens H1 tonis (bez zilajiem atslēgvārdiem), izmērs ×3 — sk. orbit-presets `[data-hero-orbit-home]`. */
   const heroH1KeywordResolved =
