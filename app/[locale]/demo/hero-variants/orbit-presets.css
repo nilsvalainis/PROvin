@@ -731,6 +731,15 @@
   animation-delay: 0.36s;
 }
 
+/* Mobilais: virsraksta fade bez translate — kopā ar klastera `translateY` (AUDITS centrēšana) nav dubultas kustības. */
+@media (max-width: 767px) {
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-fade-in-up {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
 @keyframes marketing-hero-fade-in-up {
   from {
     opacity: 0;
