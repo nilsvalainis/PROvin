@@ -8,7 +8,7 @@ html[data-site-theme="light"] {
   /* Pamatfons / teksts */
   --site-html-bg: #f4f5f7;
   --site-body-bg: #ffffff;
-  --site-body-gradient: linear-gradient(180deg, #ffffff 0%, #fafbfc 32%, #f6f7f9 55%, #f0f2f5 100%);
+  --site-body-gradient: linear-gradient(180deg, #ffffff 0%, #f6f7f9 48%, #f0f2f5 100%);
   --site-body-fg: #0a0a0a;
   /* Tailwind @theme — lietots ar `text-provin-accent` u.c. */
   --color-provin-accent: #0078ff;
@@ -56,14 +56,7 @@ html[data-site-theme="light"] {
     0 10px 36px rgb(15 23 42 / 0.1),
     0 0 40px rgb(0 102 255 / 0.08);
   /* Hero orbit S12 fona pagarinājums — kā `site-theme-light` S12 `--orbit-bg`. */
-  --hero-orbit-bg-extended: radial-gradient(
-    circle at 50% 100%,
-    rgb(0 120 255 / 0.07) 0%,
-    rgb(0 102 255 / 0.04) 30%,
-    rgb(230 238 250 / 0.65) 58%,
-    #f6f7f9 78%,
-    #ffffff 92%
-  );
+  --hero-orbit-bg-extended: radial-gradient(circle at 50% 100%, rgb(0 102 255 / 0.12), #f6f7f9 45%), #ffffff;
 }
 
 /* Skenēšanas līnijas — `--provin-scan-loop-dur` no `:root` (tāds pats cikls kā tumšajā tēmā) */
@@ -130,29 +123,14 @@ html[data-site-theme="light"] .home-scroll-surface {
   background-color: #f4f5f7 !important;
 }
 
-html[data-site-theme="light"] body {
-  background-image: var(--provin-film-noise), var(--site-body-gradient);
-  background-repeat: repeat, no-repeat;
-  background-size: 280px 280px, auto;
-  background-blend-mode: overlay, normal;
-}
-
 html[data-site-theme="light"] .home-depth-bg {
   background-color: #f6f7f9 !important;
-  background-image: var(--provin-film-noise),
-    radial-gradient(ellipse 140% 100% at 50% -6%, rgb(0 102 255 / 0.06) 0%, rgb(0 102 255 / 0.025) 44%, transparent 78%) !important;
-  background-repeat: repeat, no-repeat !important;
-  background-size: 240px 240px, auto !important;
-  background-blend-mode: overlay, normal !important;
+  background-image: radial-gradient(ellipse 120% 80% at 50% 0%, rgb(0 102 255 / 0.07), transparent 55%) !important;
 }
 
 /* Hero + "KAS IR PROVIN?" kopējā virsma: gaišajā režīmā saglabā sākotnējo hero fonu. */
 html[data-site-theme="light"] .home-hero-intro-surface {
-  background-color: #ffffff !important;
-  background-image: var(--provin-film-noise), var(--hero-orbit-bg-extended) !important;
-  background-repeat: repeat, no-repeat !important;
-  background-size: 240px 240px, auto !important;
-  background-blend-mode: overlay, normal !important;
+  background: var(--hero-orbit-bg-extended) !important;
 }
 
 /* Zem Hero — gaišs teksts */
@@ -486,15 +464,7 @@ html[data-site-theme="light"] .demo-design-dir__hero-scan {
 
 /* Orbit hero (S12 — produkcijas mājas) */
 html[data-site-theme="light"] .marketing-hero-orbit-base.marketing-hero-orbit--s12.marketing-hero-section {
-  --orbit-bg: radial-gradient(
-      circle at 50% 100%,
-      rgb(0 120 255 / 0.07) 0%,
-      rgb(0 102 255 / 0.04) 30%,
-      rgb(230 238 250 / 0.65) 58%,
-      #f6f7f9 78%,
-      #ffffff 92%
-    ),
-    #ffffff;
+  --orbit-bg: radial-gradient(circle at 50% 100%, rgb(0 102 255 / 0.12), #f6f7f9 45%), #ffffff;
   --orbit-border-outer: rgb(20 24 30 / 0.14);
   --orbit-border-inner: rgb(0 102 255 / 0.22);
 }
