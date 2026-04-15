@@ -332,36 +332,9 @@ body {
   appearance: none;
 }
 
-/* Hero pasūtījuma lauki — plāns rāmis + zils impuls gar perimetru (`OrderForm` SVG) */
-.order-form-hero-field-frame__track {
-  stroke: rgb(255 255 255 / 0.08);
-}
-
-.order-form-hero-field-frame__pulse {
-  stroke-dasharray: 14 86;
-  animation: order-form-hero-frame-dash calc(var(--provin-scan-loop-dur, 7s) * 2) linear infinite;
-  filter: drop-shadow(0 0 5px rgb(0 153 255 / 0.45));
-}
-
-@keyframes order-form-hero-frame-dash {
-  to {
-    stroke-dashoffset: -100;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .order-form-hero-field-frame__pulse {
-    animation: none;
-    opacity: 0.45;
-  }
-}
-
+/* Hero pasūtījuma lauki: fons paliek caurspīdīgs; zilā „rāmja” nav — tikai apakšējā skenēšanas līnija */
 .order-form-hero-field:focus-within {
   background-color: transparent;
-}
-
-.order-form-hero-field:focus-within .order-form-hero-field-frame__track {
-  stroke: rgb(255 255 255 / 0.12);
 }
 
 .order-form-hero-field:focus-within input,
