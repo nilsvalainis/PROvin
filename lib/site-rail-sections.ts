@@ -1,10 +1,10 @@
-import { faqHashHref, homeIntroHashHref, homePath, irissAnchorHref, orderSectionHref } from "@/lib/paths";
+import { faqHashHref, homeIntroHashHref, homePath, irissAnchorHref } from "@/lib/paths";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
 
+/** Viens enkurs uz lapu — bez atsevišķa „pasūtīt”; forma ir hero plūsmā (`#pasutit` joprojām ritina uz formu). */
 export const SITE_RAIL_HOME_SCROLL_IDS = [
   "home-hero",
   "home-intro",
-  ORDER_SECTION_ID,
   "cena",
   "kas-ir-iriss",
   "biezi-jautajumi",
@@ -14,7 +14,6 @@ export const SITE_RAIL_HOME_SCROLL_IDS = [
 export type SiteRailLabelKey =
   | "sakums"
   | "kasTasIr"
-  | "pasutit"
   | "kasIekljauts"
   | "approvedIriss"
   | "buj"
@@ -44,7 +43,6 @@ export function buildSiteRailSections(
   return [
     { href: base === "/" ? "/" : base, labelKey: "sakums" },
     { href: homeIntroHashHref(locale), labelKey: "kasTasIr" },
-    { href: orderSectionHref(locale), labelKey: "pasutit" },
     { href: cenaHref, labelKey: "kasIekljauts" },
     { href: irissAnchorHref(locale), labelKey: "approvedIriss" },
     { href: bujHref, labelKey: "buj" },
@@ -57,19 +55,20 @@ export function siteRailActiveFromHash(raw: string): number | null {
   if (!h) return null;
   if (h === "home-hero") return 0;
   if (h === "home-intro") return 1;
-  if (h === ORDER_SECTION_ID || h === "order-form" || h === "site-content") return 2;
-  if (h === "cena") return 3;
-  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) return 4;
-  if (h === "biezi-jautajumi") return 5;
-  if (h === "kontakti") return 6;
+  if (h === ORDER_SECTION_ID || h === "order-form") return 0;
+  if (h === "site-content") return 2;
+  if (h === "cena") return 2;
+  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) return 3;
+  if (h === "biezi-jautajumi") return 4;
+  if (h === "kontakti") return 5;
   return null;
 }
 
 export function siteRailRouteActiveIndex(pathname: string | null | undefined): number | null {
   if (pathname == null) return null;
   const p = normalizeSitePath(pathname);
-  if (p === "/pasutit") return 2;
-  if (p === "/biezi-jautajumi") return 5;
+  if (p === "/pasutit") return 0;
+  if (p === "/biezi-jautajumi") return 4;
   return null;
 }
 
