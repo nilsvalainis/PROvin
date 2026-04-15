@@ -22,51 +22,128 @@ const DEFAULT_RECIPIENT = {
 const DEFAULT_SERVICE =
   "Komisijas pakalpojumi par februārī sniegtajiem pakalpojumiem.\nAfilio numurs: 0220725002.\nKonts: nils.valainis@gmail.com";
 
-export function PkdCommissionInvoiceTool() {
-  const [invoiceNumber, setInvoiceNumber] = useState("PKD-2026-003");
-  const [invoiceDate, setInvoiceDate] = useState("15.04.2026.");
-  const [paymentDue, setPaymentDue] = useState("14 dienas no rēķina datuma");
-  const [serviceDescription, setServiceDescription] = useState(DEFAULT_SERVICE);
-  const [amountEur, setAmountEur] = useState("96.09");
-  const [supplierName, setSupplierName] = useState(DEFAULT_SUPPLIER.name);
-  const [supplierReg, setSupplierReg] = useState(DEFAULT_SUPPLIER.reg);
-  const [supplierAddress, setSupplierAddress] = useState(DEFAULT_SUPPLIER.address);
-  const [supplierBank, setSupplierBank] = useState(DEFAULT_SUPPLIER.bank);
-  const [supplierSwift, setSupplierSwift] = useState(DEFAULT_SUPPLIER.swift);
-  const [supplierBankAccount, setSupplierBankAccount] = useState(DEFAULT_SUPPLIER.bankAccount);
-  const [supplierEmail, setSupplierEmail] = useState(DEFAULT_SUPPLIER.email);
-  const [supplierPhone, setSupplierPhone] = useState(DEFAULT_SUPPLIER.phone);
-  const [recipientCompany, setRecipientCompany] = useState(DEFAULT_RECIPIENT.company);
-  const [recipientReg, setRecipientReg] = useState(DEFAULT_RECIPIENT.reg);
-  const [recipientAddress, setRecipientAddress] = useState(DEFAULT_RECIPIENT.address);
+export type PkdCommissionInvoiceFormData = {
+  invoiceNumber: string;
+  invoiceDate: string;
+  paymentDue: string;
+  serviceDescription: string;
+  amountEur: string;
+  supplierName: string;
+  supplierReg: string;
+  supplierAddress: string;
+  supplierBank: string;
+  supplierSwift: string;
+  supplierBankAccount: string;
+  supplierEmail: string;
+  supplierPhone: string;
+  recipientCompany: string;
+  recipientReg: string;
+  recipientAddress: string;
+};
+
+const DEFAULT_FORM: PkdCommissionInvoiceFormData = {
+  invoiceNumber: "PKD-2026-003",
+  invoiceDate: "15.04.2026.",
+  paymentDue: "14 dienas no rēķina datuma",
+  serviceDescription: DEFAULT_SERVICE,
+  amountEur: "96.09",
+  supplierName: DEFAULT_SUPPLIER.name,
+  supplierReg: DEFAULT_SUPPLIER.reg,
+  supplierAddress: DEFAULT_SUPPLIER.address,
+  supplierBank: DEFAULT_SUPPLIER.bank,
+  supplierSwift: DEFAULT_SUPPLIER.swift,
+  supplierBankAccount: DEFAULT_SUPPLIER.bankAccount,
+  supplierEmail: DEFAULT_SUPPLIER.email,
+  supplierPhone: DEFAULT_SUPPLIER.phone,
+  recipientCompany: DEFAULT_RECIPIENT.company,
+  recipientReg: DEFAULT_RECIPIENT.reg,
+  recipientAddress: DEFAULT_RECIPIENT.address,
+};
+
+type Props = {
+  invoiceId?: string;
+  initialData?: PkdCommissionInvoiceFormData;
+};
+
+export function PkdCommissionInvoiceTool({ invoiceId, initialData }: Props) {
+  const initial = initialData ?? DEFAULT_FORM;
+  const [invoiceNumber, setInvoiceNumber] = useState(initial.invoiceNumber);
+  const [invoiceDate, setInvoiceDate] = useState(initial.invoiceDate);
+  const [paymentDue, setPaymentDue] = useState(initial.paymentDue);
+  const [serviceDescription, setServiceDescription] = useState(initial.serviceDescription);
+  const [amountEur, setAmountEur] = useState(initial.amountEur);
+  const [supplierName, setSupplierName] = useState(initial.supplierName);
+  const [supplierReg, setSupplierReg] = useState(initial.supplierReg);
+  const [supplierAddress, setSupplierAddress] = useState(initial.supplierAddress);
+  const [supplierBank, setSupplierBank] = useState(initial.supplierBank);
+  const [supplierSwift, setSupplierSwift] = useState(initial.supplierSwift);
+  const [supplierBankAccount, setSupplierBankAccount] = useState(initial.supplierBankAccount);
+  const [supplierEmail, setSupplierEmail] = useState(initial.supplierEmail);
+  const [supplierPhone, setSupplierPhone] = useState(initial.supplierPhone);
+  const [recipientCompany, setRecipientCompany] = useState(initial.recipientCompany);
+  const [recipientReg, setRecipientReg] = useState(initial.recipientReg);
+  const [recipientAddress, setRecipientAddress] = useState(initial.recipientAddress);
   const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [okMsg, setOkMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  const payload = {
+    invoiceNumber,
+    invoiceDate,
+    paymentDue,
+    serviceDescription,
+    amountEur,
+    supplierName,
+    supplierReg,
+    supplierAddress,
+    supplierBank,
+    supplierSwift,
+    supplierBankAccount,
+    supplierEmail,
+    supplierPhone,
+    recipientCompany,
+    recipientReg,
+    recipientAddress,
+  } satisfies PkdCommissionInvoiceFormData;
+
+  const saveDraft = useCallback(async (): Promise<boolean> => {
+    if (!invoiceId) return true;
+    setErr(null);
+    setOkMsg(null);
+    setSaving(true);
+    try {
+      const r = await fetch(`/api/admin/pkd-commission-invoice/${encodeURIComponent(invoiceId)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        setErr(typeof j.error === "string" ? j.error : `Kļūda ${r.status}`);
+        return false;
+      }
+      setOkMsg("Rēķins saglabāts.");
+      return true;
+    } catch {
+      setErr("Neizdevās saglabāt rēķinu.");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [invoiceId, payload]);
 
   const openPdf = useCallback(async () => {
     setErr(null);
+    setOkMsg(null);
     setBusy(true);
     try {
+      const saved = await saveDraft();
+      if (!saved) return;
       const r = await fetch("/api/admin/pkd-commission-invoice/pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          invoiceNumber,
-          invoiceDate,
-          paymentDue,
-          serviceDescription,
-          amountEur,
-          supplierName,
-          supplierReg,
-          supplierAddress,
-          supplierBank,
-          supplierSwift,
-          supplierBankAccount,
-          supplierEmail,
-          supplierPhone,
-          recipientCompany,
-          recipientReg,
-          recipientAddress,
-        }),
+        body: JSON.stringify(payload),
       });
       if (!r.ok) {
         const j = await r.json().catch(() => ({}));
@@ -83,28 +160,14 @@ export function PkdCommissionInvoiceTool() {
       setBusy(false);
     }
   }, [
-    amountEur,
-    invoiceDate,
-    invoiceNumber,
-    paymentDue,
-    supplierAddress,
-    supplierBank,
-    supplierBankAccount,
-    supplierEmail,
-    supplierName,
-    supplierPhone,
-    supplierReg,
-    supplierSwift,
-    recipientAddress,
-    recipientCompany,
-    recipientReg,
-    serviceDescription,
+    payload,
+    saveDraft,
   ]);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
       <h1 className="text-xl font-semibold tracking-tight text-[var(--color-apple-text)]">
-        PKD komisijas rēķins (PDF)
+        PKD komisijas rēķins
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-[var(--color-provin-muted)]">
         Rēķins bez PROVIN zīmola — visi lauki ir brīvi labojami, ieskaitot piegādātāja un saņēmēja rekvizītus.
@@ -275,16 +338,29 @@ export function PkdCommissionInvoiceTool() {
           </div>
         </div>
 
+        {okMsg ? <p className="text-sm text-emerald-700">{okMsg}</p> : null}
         {err ? <p className="text-sm text-red-600">{err}</p> : null}
 
-        <button
-          type="button"
-          onClick={openPdf}
-          disabled={busy}
-          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-provin-accent)] px-5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:opacity-50"
-        >
-          {busy ? "Ģenerē…" : "Atvērt PDF pārlūkā"}
-        </button>
+        <div className="flex flex-wrap gap-3">
+          {invoiceId ? (
+            <button
+              type="button"
+              onClick={saveDraft}
+              disabled={saving || busy}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-[var(--color-apple-text)] shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50"
+            >
+              {saving ? "Saglabā…" : "Saglabāt izmaiņas"}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={openPdf}
+            disabled={busy || saving}
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-provin-accent)] px-5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:opacity-50"
+          >
+            {busy ? "Ģenerē…" : "Atvērt PDF pārlūkā"}
+          </button>
+        </div>
       </div>
     </div>
   );
