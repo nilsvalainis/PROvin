@@ -99,6 +99,10 @@ export function MarketingHero({
   const mobileHeroScrollRef = useRef<HTMLDivElement>(null);
   const mobileHomeClusterRef = useRef<HTMLDivElement>(null);
   const mobileCenterResizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialMobileClusterRevealDoneRef = useRef(false);
+  /** Mājas mobilais klasteris: līdz pirmajam centrējumam pēc fontiem — paslēpts, lai nav „nokrišanas” no Y=0 + vēlā fontu slāņa. */
+  const mobileClusterRevealGateActive = Boolean(orbitHomeCenterLayout && designDirection && !demoVariant);
+  const [mobileClusterRevealReady, setMobileClusterRevealReady] = useState(() => !mobileClusterRevealGateActive);
   const [mobileAuditsTranslateY, setMobileAuditsTranslateY] = useState(0);
 
   /**
@@ -132,6 +136,7 @@ export function MarketingHero({
   useLayoutEffect(() => {
     if (!orbitHomeCenterLayout || !designDirection || demoVariant) {
       setMobileAuditsTranslateY(0);
+      setMobileClusterRevealReady(true);
       return;
     }
     if (prevHeroOrderStepRef.current !== heroOrderStep) {
@@ -143,13 +148,6 @@ export function MarketingHero({
       recenterMobileAuditsLine();
     };
 
-    run();
-    const raf1 = requestAnimationFrame(() => run());
-    void document.fonts.ready.then(() => {
-      run();
-      requestAnimationFrame(() => run());
-    });
-
     const debounceMs = 280;
     const scheduleResize = () => {
       if (mobileCenterResizeDebounceRef.current) clearTimeout(mobileCenterResizeDebounceRef.current);
@@ -159,6 +157,54 @@ export function MarketingHero({
         requestAnimationFrame(() => run());
       }, debounceMs);
     };
+
+    const firstReveal = !initialMobileClusterRevealDoneRef.current;
+    let cancelled = false;
+    let safetyTimer: number | null = null;
+
+    const commitReveal = () => {
+      if (cancelled || initialMobileClusterRevealDoneRef.current) return;
+      initialMobileClusterRevealDoneRef.current = true;
+      setMobileClusterRevealReady(true);
+    };
+
+    const runRevealFrame = () => {
+      run();
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        run();
+        commitReveal();
+      });
+    };
+
+    if (firstReveal) {
+      setMobileClusterRevealReady(false);
+      safetyTimer = window.setTimeout(() => {
+        if (cancelled) return;
+        runRevealFrame();
+      }, 1400);
+
+      void document.fonts.ready.then(() => {
+        if (cancelled) return;
+        if (safetyTimer) {
+          clearTimeout(safetyTimer);
+          safetyTimer = null;
+        }
+        requestAnimationFrame(() => {
+          if (cancelled) return;
+          if (initialMobileClusterRevealDoneRef.current) {
+            run();
+            requestAnimationFrame(() => run());
+            return;
+          }
+          runRevealFrame();
+        });
+      });
+    } else {
+      run();
+      requestAnimationFrame(() => run());
+    }
+
     window.addEventListener("resize", scheduleResize);
     const vv = window.visualViewport;
     if (vv) vv.addEventListener("resize", scheduleResize);
@@ -171,7 +217,8 @@ export function MarketingHero({
     }
 
     return () => {
-      cancelAnimationFrame(raf1);
+      cancelled = true;
+      if (safetyTimer) clearTimeout(safetyTimer);
       if (mobileCenterResizeDebounceRef.current) clearTimeout(mobileCenterResizeDebounceRef.current);
       window.removeEventListener("resize", scheduleResize);
       if (vv) vv.removeEventListener("resize", scheduleResize);
@@ -536,8 +583,11 @@ export function MarketingHero({
                 >
                   <div
                     ref={mobileHomeClusterRef}
-                    className="pointer-events-auto mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] transform-gpu will-change-transform"
+                    className={`pointer-events-auto mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] transform-gpu will-change-transform${
+                      mobileClusterRevealGateActive && !mobileClusterRevealReady ? " pointer-events-none opacity-0" : ""
+                    }`}
                     style={{ transform: `translate3d(0, ${mobileAuditsTranslateY}px, 0)` }}
+                    aria-busy={mobileClusterRevealGateActive && !mobileClusterRevealReady ? true : undefined}
                   >
                     <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">
                       {approvedBlock}
