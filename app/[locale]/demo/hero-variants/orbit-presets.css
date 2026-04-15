@@ -608,22 +608,6 @@
   letter-spacing: inherit;
 }
 
-.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main {
-  font-size: 1em;
-  font-weight: 800;
-}
-
-/* SLUDINĀJUMA: −25 % pret VIN/UN (bāze 1em) */
-.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
-  font-size: 0.75em;
-  font-weight: 800;
-}
-
-/* UN: par ~20 % tumšāks par pārējo zilo */
-.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-un {
-  color: color-mix(in srgb, var(--color-provin-accent) 80%, black) !important;
-}
-
 @media (min-width: 640px) {
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2 {
     margin-top: 0;
@@ -646,8 +630,10 @@
   letter-spacing: 0.021em;
 }
 
-/* Hero title hierarchy: AUDITS larger + blue, VIN/SLUDINĀJUMA stays accent bold in markup */
-.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2--accent {
+/* Hero title: pirmā rinda (VIN / UN / SLUDINĀJUMA) — tāds pats izmērs un zilā krāsa kā otrās rindas akcentam (AUDITS) */
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2--accent,
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main,
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
   color: rgb(0 102 255 / 0.98) !important;
   font-size: 1.28em;
   font-weight: 800;
@@ -812,6 +798,11 @@
     font-size: 1.2em;
   }
 
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main,
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
+    font-size: 1.2em;
+  }
+
   .marketing-hero-orbit-base.marketing-hero-section .demo-design-dir__card .marketing-hero-pillar-title,
   .marketing-hero-orbit-base.marketing-hero-section .marketing-hero-pillar--plain .marketing-hero-pillar-title {
     color: rgb(255 255 255 / 0.99);
@@ -839,14 +830,9 @@
     margin-bottom: 0;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main {
-    font-size: 0.9em;
-    font-weight: 800;
-    white-space: nowrap;
-  }
-
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main,
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
-    font-size: 0.675em;
+    font-size: 1.275em;
     font-weight: 800;
     white-space: nowrap;
   }

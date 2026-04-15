@@ -477,21 +477,10 @@ html[data-site-theme="light"] .marketing-hero-h1-blue {
   color: var(--color-provin-accent) !important;
 }
 
-/* Orbit mājas H1 pirmā rinda (VIN / UN / SLUDINĀJUMA) — melna, ne zila */
+/* Orbit mājas H1: pirmā rinda (VIN / UN / SLUDINĀJUMA) — tā pati zilā kā AUDITS */
 html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1 .marketing-hero-h1-blue,
 html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1 .marketing-hero-title-line1-main,
-html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1 .marketing-hero-title-line1-accent {
-  color: #1f2937 !important;
-}
-
-html[data-site-theme="light"]
-  .marketing-hero-orbit-base[data-hero-orbit-home]
-  .marketing-hero-title-line1
-  .marketing-hero-title-line1-un {
-  color: color-mix(in srgb, #1f2937 80%, black) !important;
-}
-
-/* AUDITS gaišajā: augstāka specifika nekā orbit-presets (ielādējas vēlāk) */
+html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1 .marketing-hero-title-line1-accent,
 html[data-site-theme="light"]
   .marketing-hero-orbit-base[data-hero-orbit-home]
   .marketing-hero-title--orbit
