@@ -75,12 +75,14 @@ export function MarketingHero({
     !demoVariant && (homeOrbitPreset === "s12" || homeOrbitPreset === "s19" || homeOrbitPreset === "s20")
       ? homeOrbitPreset
       : undefined;
+  const disableHomeBackgroundVisuals = Boolean(designDirection && !demoVariant);
   const orbitUiClass =
     isOrbitDemo
       ? `marketing-hero-orbit-base marketing-hero-orbit--${demoVariant}`
       : homeOrbitKey
         ? `marketing-hero-orbit-base marketing-hero-orbit--${homeOrbitKey}`
         : "";
+  const orbitSectionStyleClass = disableHomeBackgroundVisuals ? "" : orbitUiClass;
   const isOrbitVisual = Boolean(orbitUiClass);
   const dataHeroVariantForCss = demoVariant ?? homeOrbitKey;
   const orbitRingsMode = isOrbitVisual ? (demoVariant ? demoOrbitRings : "spin") : "spin";
@@ -273,7 +275,7 @@ export function MarketingHero({
   const designDirHeroChrome =
     designDirection && isOrbitVisual ? " demo-design-dir__section demo-design-dir__section--band-a" : "";
 
-  const sectionClassOrbit = `marketing-hero-section home-content-atmosphere relative flex min-h-[min(100dvh,100svh)] w-full flex-col overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}${designDirHeroChrome}`.trim();
+  const sectionClassOrbit = `marketing-hero-section home-content-atmosphere relative flex min-h-[min(100dvh,100svh)] w-full flex-col overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitSectionStyleClass}${designDirHeroChrome}`.trim();
 
   const sectionClassGrid = `marketing-hero-section home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}${designDirHeroChrome}`.trim();
 
@@ -286,7 +288,7 @@ export function MarketingHero({
       className={isOrbitVisual ? sectionClassOrbit : sectionClassGrid}
       aria-labelledby={titleId}
     >
-      {isOrbitVisual ? (
+      {isOrbitVisual && !disableHomeBackgroundVisuals ? (
         orbitGlassSilhouette && !homeOrbitMetaIntro ? (
           <span className="marketing-hero-orbit-silhouette">
             <svg className="marketing-hero-orbit-silhouette__svg" viewBox="0 0 112 112" xmlns="http://www.w3.org/2000/svg" fill="none" aria-hidden>
