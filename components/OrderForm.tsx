@@ -70,10 +70,8 @@ export function OrderForm({
     onStepChange?.(step);
   }, [onStepChange, step]);
 
-  /** Desktop: ritina pie kļūdas; mobilajā — neritina (lapa paliek nekustīga, brīdinājums jau zem laukiem). */
   useEffect(() => {
     if (!error || !hero) return;
-    if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches) return;
     const el = errorRef.current;
     if (!el) return;
     const show = () => {
@@ -93,14 +91,19 @@ export function OrderForm({
   const inputBase = hero ? inputHeroNoBottom : inputDefault;
 
   function goToStepTwo() {
-    setError(null);
     const vinNormalized = normalizeVin(vin);
-    if (!vinNormalized || !isValidVin(vinNormalized)) {
+    const vinOk = Boolean(vinNormalized && isValidVin(vinNormalized));
+    const listingTrim = listingUrl.trim();
+    const listingOk = Boolean(listingTrim && isPlausibleListingUrl(listingTrim));
+    if (!vinOk && !listingOk) {
+      setError(t("validation.step1Both"));
+      return;
+    }
+    if (!vinOk) {
       setError(t("validation.vin"));
       return;
     }
-    const listingTrim = listingUrl.trim();
-    if (!listingTrim || !isPlausibleListingUrl(listingTrim)) {
+    if (!listingOk) {
       setError(t("validation.listing"));
       return;
     }

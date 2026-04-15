@@ -12,7 +12,7 @@ import { MarketingHeroPillarsGrid } from "@/components/home/MarketingHeroPillars
 import { MarketingHeroSpeedometer } from "@/components/home/MarketingHeroSpeedometer";
 import type { HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
 import { isOrbitFamilyVariant } from "@/lib/hero-orbit-j-presets";
-import { ORDER_SECTION_ID } from "@/lib/order-section";
+import { HOME_HERO_ORDER_FORM_ID, ORDER_SECTION_ID } from "@/lib/order-section";
 import {
   approvedByIrissSignatureHeroClass,
   heroH1BlueKeywordClass,
@@ -252,7 +252,7 @@ export function MarketingHero({
         <div className={homeHeroOrderFormTwoCardsWidthClass}>
           <OrderForm
             variant="hero"
-            formId="home-hero-order-form"
+            formId={HOME_HERO_ORDER_FORM_ID}
             hideStepOneCta
             onStepChange={setHeroOrderStep}
             className="!mt-0 !space-y-0 !px-0 !py-0"
@@ -267,9 +267,14 @@ export function MarketingHero({
         className={`flex w-full justify-center px-1 pt-1 sm:pt-2 max-md:mt-2 max-md:pt-1 ${homeHeroOrderFormTwoCardsWidthClass}`}
       >
         <button
-          type="submit"
-          form="home-hero-order-form"
+          type="button"
           className="provin-home-pill-cta provin-home-pill-cta--fit z-10 flex w-fit min-h-[50px] max-w-[min(100%,calc(100%-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
+          onClick={() => {
+            const el = document.getElementById(HOME_HERO_ORDER_FORM_ID);
+            if (el instanceof HTMLFormElement) {
+              el.requestSubmit();
+            }
+          }}
         >
           PASŪTĪT AUDITU - 79,99 €
         </button>
