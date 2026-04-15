@@ -70,7 +70,7 @@ export function OrderForm({
 
   useEffect(() => {
     if (!error || !hero) return;
-    errorRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    errorRef.current?.scrollIntoView({ block: "start", inline: "nearest", behavior: "smooth" });
   }, [error, hero]);
 
   const labelClass = hero ? labelHero : labelDefault;
@@ -417,6 +417,20 @@ export function OrderForm({
         ) : null}
       </div>
 
+      {error && (
+        <p
+          ref={errorRef}
+          className={
+            hero
+              ? "order-form-hero-alert mt-3 rounded-md border border-red-500/35 bg-red-950/30 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-200"
+              : "mt-4 rounded-lg border border-red-200/90 bg-red-50/95 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-900"
+          }
+          role="alert"
+        >
+          {error}
+        </p>
+      )}
+
       <div
         className={footerClass}
       >
@@ -597,20 +611,6 @@ export function OrderForm({
           </>
         )}
       </div>
-
-      {error && (
-        <p
-          ref={errorRef}
-          className={
-            hero
-              ? "order-form-hero-alert mt-5 rounded-md border border-red-500/35 bg-red-950/30 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-200"
-              : "mt-4 rounded-lg border border-red-200/90 bg-red-50/95 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-900"
-          }
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
     </form>
   );
 }

@@ -445,7 +445,7 @@ export function MarketingHero({
                     <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5 sm:px-8 sm:pb-0 sm:pt-1">
                       {approvedBlock}
                     </div>
-                    <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-x-hidden px-4 sm:px-8">
+                    <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-visible px-4 sm:px-8">
                       <div
                         className={`flex min-h-0 w-full flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2 ${homeHeroOrderColumnMaxClass}`}
                       >
@@ -469,7 +469,7 @@ export function MarketingHero({
                   <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5 sm:px-8 sm:pb-0 sm:pt-1">
                     {approvedBlock}
                   </div>
-                  <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-x-hidden px-4 sm:px-8">
+                  <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-visible px-4 sm:px-8">
                     <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,46rem)] flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2">
                       <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
                         {heroTitleStack}
