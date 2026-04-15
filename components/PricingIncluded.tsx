@@ -102,20 +102,20 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
         </ul>
       </div>
       <div
-        className={`mx-auto mt-4 grid w-full grid-cols-2 gap-x-3 gap-y-2 sm:gap-4 md:grid-cols-4 md:gap-5 sm:mt-5 ${pricingGridWidthClass}`}
+        className={`mx-auto mt-2 grid w-full grid-cols-2 gap-x-3 gap-y-1 sm:mt-3 sm:gap-4 md:grid-cols-4 md:gap-5 ${pricingGridWidthClass}`}
       >
-        <div className="min-w-0 text-left md:col-span-2">
+        <div className="min-w-0 text-left md:col-span-1 md:col-start-1">
+          <p className="pricing-auto-records-footnote text-[10px] font-normal leading-snug text-white/55 sm:text-[12px]">
+            {t("autoRecordsFootnote")}
+          </p>
+        </div>
+        <div className="min-w-0 text-right md:col-span-1 md:col-start-4">
           <Link
             href={irissHref}
             className="inline-block text-[10px] font-medium text-[#0066ff] transition-colors hover:text-[#3388ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066ff]/50 sm:text-[11px]"
           >
             {t("irissLink")} <span aria-hidden>↓</span>
           </Link>
-        </div>
-        <div className="min-w-0 text-right md:col-span-2">
-          <p className="pricing-auto-records-footnote text-[10px] font-normal leading-snug text-white/55 sm:text-[12px]">
-            {t("autoRecordsFootnote")}
-          </p>
         </div>
       </div>
     </>
