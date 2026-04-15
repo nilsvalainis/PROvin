@@ -248,6 +248,40 @@
   line-height: 1.65;
 }
 
+@media (max-width: 767px) {
+  .demo-design-dir__body--home-intro {
+    font-size: calc(1.365rem * 0.75);
+  }
+}
+
+/* IRISS redakcijas bloku rindkopas — kā home-intro (≥768px); atsevišķa klase, lai mobilajā −25 % attiecas tikai uz #home-intro */
+.demo-design-dir__body--iriss-editorial {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  letter-spacing: 0.015em;
+  line-height: 1.65;
+}
+
+@media (min-width: 768px) {
+  .demo-design-dir__body--iriss-editorial {
+    font-size: 1.365rem;
+    letter-spacing: 0.045em;
+  }
+}
+
+/* IRISS redakcijas bloku virsraksti — virs 1.365rem rindkopas (tā pati hierarhija kā KAS IR PROVIN? : ievads) */
+.iriss-editorial-heading {
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+
+@media (min-width: 768px) {
+  .iriss-editorial-heading {
+    font-size: clamp(1.4rem, 1.1vw + 0.85rem, 1.55rem);
+    line-height: 1.22;
+  }
+}
+
 /* Saites uz pasūtījuma formu — stikla virsma, centrālā ass, zils akcents uz hover */
 .demo-design-dir__order-jump {
   position: relative;

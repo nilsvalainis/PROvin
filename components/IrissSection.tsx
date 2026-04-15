@@ -6,9 +6,9 @@ import {
   irissStaggerHeadingClass,
 } from "@/lib/home-layout";
 
-/** Saskaņots ar <Faq> atbilžu rindkopu: text-[14px] sm:text-[15px], leading 1.75. */
+/** Mazs ekrāns: kā BUJ; ≥md: kā #home-intro (1.365rem), virsraksti `irissStaggerHeadingClass`. */
 const irissBodyProseClass =
-  "home-iriss-prose text-[14px] font-normal leading-[1.75] sm:text-[15px]";
+  "home-iriss-prose text-[14px] font-normal leading-[1.75] sm:text-[15px] md:text-[1.365rem] md:leading-[1.65] md:tracking-[0.045em]";
 
 /** Vertikālā atstarpe starp stagger blokiem — tikai `gap`, lai nav dubultas padding joslas. */
 const irissStaggerBlockGapClass = "gap-y-[clamp(2.75rem,6.5vw,4.75rem)] sm:gap-y-[clamp(3rem,7vw,5.25rem)]";
@@ -45,31 +45,33 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
 
         <div className="mx-auto mt-10 max-w-[36rem] space-y-10 text-left">
           <div>
-            <h3 className="iriss-editorial-heading text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">
+            <h3 className="iriss-editorial-heading font-semibold uppercase tracking-[0.08em] text-white/90">
               {t("block1Heading")}
             </h3>
             <div className="mt-3 w-full">
               <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
             </div>
-            <p className="demo-design-dir__body mt-3">{t("block1Body")}</p>
+            <p className="demo-design-dir__body demo-design-dir__body--iriss-editorial mt-3">{t("block1Body")}</p>
           </div>
           <div>
-            <h3 className="iriss-editorial-heading text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">
+            <h3 className="iriss-editorial-heading font-semibold uppercase tracking-[0.08em] text-white/90">
               {t("block2Heading")}
             </h3>
             <div className="mt-3 w-full">
               <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
             </div>
-            <p className="demo-design-dir__body mt-3 whitespace-pre-line">{t("block2Body")}</p>
+            <p className="demo-design-dir__body demo-design-dir__body--iriss-editorial mt-3 whitespace-pre-line">
+              {t("block2Body")}
+            </p>
           </div>
           <div>
-            <h3 className="iriss-editorial-heading text-[15px] font-semibold uppercase tracking-[0.08em] text-white/90">
+            <h3 className="iriss-editorial-heading font-semibold uppercase tracking-[0.08em] text-white/90">
               {t("block3Heading")}
             </h3>
             <div className="mt-3 w-full">
               <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
             </div>
-            <p className="demo-design-dir__body mt-3">{t("block3Body")}</p>
+            <p className="demo-design-dir__body demo-design-dir__body--iriss-editorial mt-3">{t("block3Body")}</p>
           </div>
         </div>
       </div>
