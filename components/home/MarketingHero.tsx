@@ -17,6 +17,7 @@ import {
   approvedByIrissSignatureHeroClass,
   heroH1BlueKeywordClass,
   homeHeroOrderColumnMaxClass,
+  homeHeroOrderFormTwoCardsWidthClass,
   homeHeroSubtitleClass,
   homeMarketingPillarGridShellClass,
 } from "@/lib/home-layout";
@@ -248,19 +249,23 @@ export function MarketingHero({
         id={ORDER_SECTION_ID}
         className={`${homeHeroOrderColumnMaxClass} scroll-mt-[calc(2.75rem+1px)] px-2 sm:px-1 max-md:mt-3 mt-2 sm:mt-3`}
       >
-        <OrderForm
-          variant="hero"
-          formId="home-hero-order-form"
-          hideStepOneCta
-          onStepChange={setHeroOrderStep}
-          className="!mt-0 !space-y-0 !px-0 !py-0"
-        />
+        <div className={homeHeroOrderFormTwoCardsWidthClass}>
+          <OrderForm
+            variant="hero"
+            formId="home-hero-order-form"
+            hideStepOneCta
+            onStepChange={setHeroOrderStep}
+            className="!mt-0 !space-y-0 !px-0 !py-0"
+          />
+        </div>
       </div>
     ) : null;
 
   const heroStepOneCta =
     designDirection && !demoVariant && heroOrderStep === 1 ? (
-      <div className="flex w-full justify-center px-1 pt-1 sm:pt-2 max-md:mt-2 max-md:pt-1">
+      <div
+        className={`flex w-full justify-center px-1 pt-1 sm:pt-2 max-md:mt-2 max-md:pt-1 ${homeHeroOrderFormTwoCardsWidthClass}`}
+      >
         <button
           type="submit"
           form="home-hero-order-form"
@@ -296,7 +301,7 @@ export function MarketingHero({
   const pillarsAndCta = (
     <>
       {designDirection && !demoVariant ? (
-        <div className="max-md:contents md:block md:w-full md:-translate-y-[0.6875rem]">
+        <div className="max-md:contents md:block md:w-full">
           {heroPillars}
         </div>
       ) : (

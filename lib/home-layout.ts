@@ -14,6 +14,13 @@ export const homeFaqMaxClass = "mx-auto min-w-0 w-full max-w-[min(42.5rem,calc(1
 export const homeHeroOrderColumnMaxClass =
   "mx-auto min-w-0 w-full max-w-[min(100%,68rem)]";
 
+/**
+ * Web (md+): pasūtījuma forma — divu „KAS IEKĻAUTS” kartīšu platums (4 kolonnas, `gap-5` = 1.25rem):
+ * `2 × ((100% − 3×gap) / 4) + gap` = `calc(50% − gap/2)` = `calc(50% − 0.625rem)`.
+ */
+export const homeHeroOrderFormTwoCardsWidthClass =
+  "w-full min-w-0 max-md:max-w-full md:mx-auto md:max-w-[min(100%,calc(50%-0.625rem))]";
+
 /** Centrēšanas čaula — MarketingHero 2×2 režģis un How it works soļu rinda (1:1 platums). */
 export const homeMarketingPillarGridShellClass = "flex w-full justify-center";
 
