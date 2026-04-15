@@ -145,6 +145,21 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
   const reqStarClass = hero ? "text-red-400" : "text-red-600";
   const firstStepVinPlaceholder = "IEVADI VIN";
   const firstStepListingPlaceholder = "SAITE UZ SLUDINĀJUMU";
+  const firstStepVinInputClassHero = `${inputBase} w-full tracking-normal`;
+  const secondStepVinInputClassHero = `${inputBase} w-full font-mono uppercase tracking-wide`;
+  const firstStepVinInputClassDefault = `${inputBase} tracking-normal`;
+  const secondStepVinInputClassDefault = `${inputBase} font-mono uppercase tracking-wide`;
+  const footerClass = hero
+    ? step === 1
+      ? "order-form-hero-footer mt-3 space-y-3 border-0 pt-0"
+      : "order-form-hero-footer mt-6 space-y-5 border-t border-[#c0c0c0]/25 pt-5"
+    : compact
+      ? step === 1
+        ? "mt-4 flex flex-col gap-3 border-0 pt-0"
+        : "mt-6 flex flex-col gap-3 border-t border-black/[0.06] pt-6"
+      : step === 1
+        ? "mt-4 flex flex-col gap-3 border-0 pt-0"
+        : "mt-8 flex flex-col gap-3 border-t border-black/[0.06] pt-8";
 
   return (
     <form
@@ -169,7 +184,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 maxLength={17}
                 spellCheck={false}
                 value={vin}
-                className={`${inputBase} w-full font-mono uppercase tracking-wide`}
+                className={step === 1 ? firstStepVinInputClassHero : secondStepVinInputClassHero}
                 placeholder={step === 1 ? firstStepVinPlaceholder : t("vinPlaceholderHero")}
                 onChange={(e) => {
                   const el = e.target;
@@ -187,7 +202,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               maxLength={17}
               spellCheck={false}
               value={vin}
-              className={`${inputBase} font-mono uppercase tracking-wide`}
+              className={step === 1 ? firstStepVinInputClassDefault : secondStepVinInputClassDefault}
               placeholder={step === 1 ? firstStepVinPlaceholder : t("vinPlaceholder")}
               onChange={(e) => {
                 const el = e.target;
@@ -378,13 +393,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
       </div>
 
       <div
-        className={
-          hero
-            ? "order-form-hero-footer mt-6 space-y-5 border-t border-[#c0c0c0]/25 pt-5"
-            : compact
-              ? "mt-4 flex flex-col gap-3"
-              : "mt-8 flex flex-col gap-3 border-t border-black/[0.06] pt-8"
-        }
+        className={footerClass}
       >
         {hero ? (
           <>
@@ -405,7 +414,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               <button
                 type="button"
                 onClick={goToStepTwo}
-                className="provin-home-pill-cta provin-home-pill-cta--fit z-10 mx-auto mt-1 min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
+                className="provin-home-pill-cta provin-home-pill-cta--fit z-10 mx-auto mt-1 flex min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
               >
                 PASŪTĪT AUDITU - 79,99 €
               </button>
@@ -526,7 +535,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 <button
                   type="button"
                   onClick={goToStepTwo}
-                  className="provin-home-pill-cta provin-home-pill-cta--fit z-10 min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
+                  className="provin-home-pill-cta provin-home-pill-cta--fit z-10 mx-auto flex min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
                 >
                   PASŪTĪT AUDITU - 79,99 €
                 </button>
