@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -99,6 +100,8 @@ export function MarketingHero({
   const mobileHeroScrollRef = useRef<HTMLDivElement>(null);
   const mobileHomeClusterRef = useRef<HTMLDivElement>(null);
   const mobileCenterResizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heroMountTsRef = useRef(0);
+  const scrollWasDeepRef = useRef(false);
   const initialMobileClusterRevealDoneRef = useRef(false);
   /** Mājas mobilais klasteris: līdz pirmajam centrējumam pēc fontiem — paslēpts, lai nav „nokrišanas” no Y=0 + vēlā fontu slāņa. */
   const mobileClusterRevealGateActive = Boolean(orbitHomeCenterLayout && designDirection && !demoVariant);
@@ -113,6 +116,9 @@ export function MarketingHero({
     if (typeof window === "undefined") return;
     if (!window.matchMedia("(max-width: 767px)").matches) {
       setMobileAuditsTranslateY(0);
+      return;
+    }
+    if (mobileClusterRevealGateActive && !mobileClusterRevealReady) {
       return;
     }
 
@@ -131,23 +137,38 @@ export function MarketingHero({
 
     const audits = root.querySelector(".marketing-hero-title-line2");
     if (!audits || !(audits instanceof HTMLElement)) return;
+
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const snapToTopBand = scrollTop < 72;
+
+    if (snapToTopBand) {
+      flushSync(() => {
+        setMobileAuditsTranslateY(0);
+      });
+    }
+
     const rect = audits.getBoundingClientRect();
     if (rect.width === 0 && rect.height === 0) return;
     const auditsCenterY = rect.top + rect.height / 2;
     const vv = window.visualViewport;
     const viewportCenterY = vv ? vv.offsetTop + vv.height / 2 : window.innerHeight / 2;
     const delta = Math.round(viewportCenterY - auditsCenterY);
-    /* Mazāks „hunting” starp kadriem (subpikseļi / adreses josla) — nemaina vizuālo centru būtiski. */
     if (Math.abs(delta) < 4) return;
 
     const vh = window.innerHeight;
     const yCap = Math.max(120, Math.round(vh * 0.52));
+
+    if (snapToTopBand) {
+      setMobileAuditsTranslateY(Math.min(yCap, Math.max(-yCap, delta)));
+      return;
+    }
+
+    const step = Math.sign(delta) * Math.min(Math.abs(delta), 48);
     setMobileAuditsTranslateY((prev) => {
-      const next = Math.round(prev + delta);
-      if (Math.abs(next - prev) < 1) return prev;
+      const next = Math.round(prev + step);
       return Math.min(yCap, Math.max(-yCap, next));
     });
-  }, [sectionId]);
+  }, [sectionId, mobileClusterRevealGateActive, mobileClusterRevealReady]);
 
   useLayoutEffect(() => {
     if (!orbitHomeCenterLayout || !designDirection || demoVariant) {
@@ -158,6 +179,10 @@ export function MarketingHero({
     if (prevHeroOrderStepRef.current !== heroOrderStep) {
       setMobileAuditsTranslateY(0);
       prevHeroOrderStepRef.current = heroOrderStep;
+    }
+
+    if (typeof window !== "undefined" && heroMountTsRef.current === 0) {
+      heroMountTsRef.current = Date.now();
     }
 
     const run = () => {
@@ -177,6 +202,7 @@ export function MarketingHero({
     };
 
     const scheduleVvResize = () => {
+      if (heroMountTsRef.current && Date.now() - heroMountTsRef.current < 1400) return;
       if (vvDebounceTimer) window.clearTimeout(vvDebounceTimer);
       vvDebounceTimer = window.setTimeout(() => {
         vvDebounceTimer = null;
@@ -195,11 +221,13 @@ export function MarketingHero({
     };
 
     const runRevealFrame = () => {
-      run();
       requestAnimationFrame(() => {
         if (cancelled) return;
-        run();
         commitReveal();
+        requestAnimationFrame(() => {
+          if (cancelled) return;
+          run();
+        });
       });
     };
 
@@ -219,7 +247,6 @@ export function MarketingHero({
         requestAnimationFrame(() => {
           if (cancelled) return;
           if (initialMobileClusterRevealDoneRef.current) {
-            run();
             requestAnimationFrame(() => run());
             return;
           }
@@ -237,7 +264,10 @@ export function MarketingHero({
     const cluster = mobileHomeClusterRef.current;
     let ro: ResizeObserver | undefined;
     if (cluster && typeof ResizeObserver !== "undefined") {
-      ro = new ResizeObserver(() => scheduleResize());
+      ro = new ResizeObserver(() => {
+        if (heroMountTsRef.current && Date.now() - heroMountTsRef.current < 1400) return;
+        scheduleResize();
+      });
       ro.observe(cluster);
     }
 
@@ -273,6 +303,23 @@ export function MarketingHero({
     return () => {
       window.removeEventListener("pageshow", onPageShow);
     };
+  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine]);
+
+  /** Atgriežoties no apakšas pie hero augšas — viena pārmērīšana ar snap (flushSync ceļā `recenter`). */
+  useEffect(() => {
+    if (!orbitHomeCenterLayout || !designDirection || demoVariant) return;
+
+    const onScroll = () => {
+      const y = window.scrollY || document.documentElement.scrollTop;
+      if (y > 200) scrollWasDeepRef.current = true;
+      if (scrollWasDeepRef.current && y < 80) {
+        scrollWasDeepRef.current = false;
+        recenterMobileAuditsLine();
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine]);
 
   /** Sākumlapas orbit: viens H1 tonis (bez zilajiem atslēgvārdiem), izmērs ×3 — sk. orbit-presets `[data-hero-orbit-home]`. */
