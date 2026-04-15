@@ -52,13 +52,12 @@
   box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.06);
 }
 
-/* Sākumlapa: hero + „KAS IR PROVIN?” — viena plakana tumša virsma (bez gradientiem → mazāk moiré / „static”). */
+/* Sākumlapa: hero + „KAS IR PROVIN?” — viena nepārtraukta virsma ar paša hero fonu. */
 .home-hero-intro-surface {
   position: relative;
   /* hidden/clip šeit veidoja atsevišķu scrollportu pret document — viens vienīgs lapas scroll. */
   overflow: visible;
-  background-color: #030304;
-  background-image: none;
+  background: var(--hero-orbit-bg-extended);
 }
 
 /* Saglabā hero tipogrāfijas skalu no orbit presetiem, bet bez atsevišķa hero fona slāņa. */
