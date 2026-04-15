@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown } from "lucide-react";
@@ -50,6 +50,23 @@ export type MarketingHeroProps = {
 const sectionBasePad =
   "px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1rem,env(safe-area-inset-top,0px)+0.75rem)] sm:px-8 sm:pb-9 sm:pt-[max(1.25rem,env(safe-area-inset-top,0px)+1rem)]";
 
+function subscribeMaxWidth767(cb: () => void) {
+  if (typeof window === "undefined") return () => {};
+  const mq = window.matchMedia("(max-width: 767px)");
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+}
+
+function getMaxWidth767Snapshot() {
+  if (typeof window === "undefined") return true;
+  return window.matchMedia("(max-width: 767px)").matches;
+}
+
+/** SSR: šaurā kolonna — vienīgais H1 kokā līdz hidratācijai (bez dubultā virsraksta mirkļa). */
+function getMaxWidth767ServerSnapshot() {
+  return true;
+}
+
 /**
  * Pilnekrāna tumšais Hero: „APPROVED…” + H1 ekrāna centrā; četras ikonas apakšā; scroll uz saturu (design: tikai zila bultiņa).
  * `demoVariant` ieslēdz tikai vizuālos variantus demo lapā.
@@ -92,6 +109,7 @@ export function MarketingHero({
   const orbitGlassSilhouette = Boolean(isOrbitVisual && !demoVariant && !designDirection);
   /** Sākumlapa: vertikālais centrs starp augšu un pīlāriem + tipogrāfijas skala (`data-hero-orbit-home`). */
   const orbitHomeCenterLayout = Boolean(designDirection && isOrbitVisual && !isB);
+  const isMaxWidth767 = useSyncExternalStore(subscribeMaxWidth767, getMaxWidth767Snapshot, getMaxWidth767ServerSnapshot);
   /** Intro teksts pārvietots zem pīlāriem (atsevišķa sekcija mājas lapā). */
   const homeOrbitMetaIntro = false;
   const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
@@ -330,9 +348,14 @@ export function MarketingHero({
 
   /** Starp H1 rindām: skenēšana tikai demo (`demoVariant`); produkcijā — statiska līnija. */
   const showTitleMidScan = Boolean(designDirection && isOrbitVisual && demoVariant);
+  const homeTitleMotionOff = Boolean(orbitHomeCenterLayout && !demoVariant);
 
   const heroTitleStack = (
-    <div className={`flex w-full flex-col items-center text-center${orbitHomeCenterLayout ? " marketing-hero-fade-in-up marketing-hero-fade-in-up--1" : ""}`}>
+    <div
+      className={`flex w-full flex-col items-center text-center${
+        homeTitleMotionOff ? "" : orbitHomeCenterLayout ? " marketing-hero-fade-in-up marketing-hero-fade-in-up--1" : ""
+      }`}
+    >
       <h1
         id={titleId}
         className={
@@ -633,11 +656,11 @@ export function MarketingHero({
         orbitHomeCenterLayout ? (
           <div className="relative z-[1] flex min-h-0 w-full flex-1 flex-col">
             {designDirection && !demoVariant ? (
-              <>
-                {/* Mobilais: virsraksts → forma → Pasūtīt (četri pīlāri tikai desktop); desktop — kā iepriekšējais režģis */}
+              isMaxWidth767 ? (
                 <div
                   ref={mobileHeroScrollRef}
-                  className="mx-auto flex w-full min-w-0 max-w-full shrink-0 flex-col items-center md:hidden"
+                  className="mx-auto flex w-full min-w-0 max-w-full shrink-0 flex-col items-center"
+                  suppressHydrationWarning
                 >
                   <div
                     ref={mobileHomeClusterRef}
@@ -661,7 +684,8 @@ export function MarketingHero({
                     </div>
                   </div>
                 </div>
-                <div className="hidden min-h-0 w-full flex-1 grid-rows-[1fr_auto] md:grid">
+              ) : (
+                <div className="min-h-0 w-full flex-1 grid grid-rows-[1fr_auto]" suppressHydrationWarning>
                   <div className="relative flex min-h-0 w-full flex-1 flex-col">
                     <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5 sm:px-8 sm:pb-0 sm:pt-1">
                       {approvedBlock}
@@ -681,7 +705,7 @@ export function MarketingHero({
                     {pillarsAndCta}
                   </div>
                 </div>
-              </>
+              )
             ) : (
               <div className="grid min-h-0 w-full flex-1 grid-rows-[1fr_auto]">
                 <div className="relative flex min-h-0 w-full flex-1 flex-col">
