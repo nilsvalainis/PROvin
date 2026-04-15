@@ -68,7 +68,7 @@ export function MarketingHeroPillarsGrid({
               : designDirection
                 ? homeMobileListLayout
                   ? "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--plain flex min-h-0 min-w-0 flex-row items-center justify-center gap-3 px-0 py-1.5 text-center md:min-w-0 md:flex-col md:items-center md:justify-center md:gap-2.5 md:px-1 md:py-0 md:flex-1 md:basis-0"
-                  : "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--plain flex min-h-0 min-w-0 flex-col items-center justify-center gap-1 px-0.5 py-1 text-center md:flex-1 md:basis-0 md:gap-2.5 md:px-1 md:py-0"
+                  : "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--mobile-card flex min-h-0 min-w-0 flex-col items-center justify-center gap-1 px-0.5 py-1 text-center md:flex-1 md:basis-0 md:gap-2.5 md:px-1 md:py-0"
                 : "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2 px-0.5 text-center sm:gap-2.5 sm:px-0.5";
             const iconClass = isC
               ? `marketing-hero-pillar-icon mt-0.5 h-5 w-5 shrink-0 origin-center sm:h-5 sm:w-5 ${iconTone}${riskPillar ? "" : " scale-110"}`

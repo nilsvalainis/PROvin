@@ -60,10 +60,9 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
           </div>
         </div>
       </div>
-      <div className="marketing-hero-orbit-base marketing-hero-orbit--s12" data-hero-orbit-home="">
-        <ul
-          className={`mx-auto mt-8 grid ${pricingGridWidthClass} list-none grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 md:gap-5 marketing-hero-pillars-mobile-grid`}
-        >
+      <ul
+        className={`mx-auto mt-8 grid ${pricingGridWidthClass} list-none grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 md:gap-5`}
+      >
         {grid.map((item, i) => {
           const Icon = GRID_LUCIDE_ICONS[i] ?? Globe2;
           const riskCard = i === 4;
@@ -99,8 +98,7 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
             </li>
           );
         })}
-        </ul>
-      </div>
+      </ul>
       <div
         className={`mx-auto mt-2 grid w-full grid-cols-2 gap-x-3 gap-y-1 sm:mt-3 sm:gap-4 md:grid-cols-4 md:gap-5 ${pricingGridWidthClass}`}
       >

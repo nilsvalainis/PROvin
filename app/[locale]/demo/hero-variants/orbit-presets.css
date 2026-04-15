@@ -670,9 +670,24 @@
   border-radius: 0 !important;
 }
 
+/* Mobilajā — kartītes ar --mobile-card; desktop rindā tā pati „plain” estētika */
+@media (min-width: 768px) {
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--soft.marketing-hero-pillar--mobile-card {
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--soft.marketing-hero-pillar--plain:hover {
     box-shadow: none !important;
+  }
+
+  @media (min-width: 768px) {
+    .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--soft.marketing-hero-pillar--mobile-card:hover {
+      box-shadow: none !important;
+    }
   }
 }
 
@@ -922,7 +937,8 @@
     width: 1.35rem;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card {
+  /* Tikai īstais hero <section> — ne „Kas iekļauts cenā?” (tur nav šī section+orbit apvienojuma) */
+  .marketing-hero-section.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card {
     border: none !important;
     padding: 16px 8px !important;
     aspect-ratio: 1 / 1;
@@ -930,12 +946,12 @@
     box-shadow: 0 4px 20px rgb(0 0 0 / 0.06) !important;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card .marketing-hero-pillar-icon {
+  .marketing-hero-section.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card .marketing-hero-pillar-icon {
     height: 1.4rem;
     width: 1.4rem;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card .marketing-hero-pillar-title {
+  .marketing-hero-section.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card .marketing-hero-pillar-title {
     max-width: none;
     min-height: auto;
     font-size: 12px;
@@ -943,25 +959,25 @@
     text-align: center;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card:active {
+  .marketing-hero-section.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card:active {
     transform: scale(0.96);
     transition: transform 0.1s ease;
   }
 
   /* Hero „plain” — 2×2, bez kartiņas; kompakti iekš hero */
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--plain {
+  .marketing-hero-section.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--plain {
     aspect-ratio: auto !important;
     padding: 0.2rem 0.1rem !important;
     box-shadow: none !important;
     justify-content: flex-start;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--plain .marketing-hero-pillar-icon {
+  .marketing-hero-section.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--plain .marketing-hero-pillar-icon {
     height: 1.25rem;
     width: 1.25rem;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--plain .marketing-hero-pillar-title {
+  .marketing-hero-section.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--plain .marketing-hero-pillar-title {
     max-width: 100%;
     min-height: 0;
     font-size: 9px;
@@ -969,7 +985,7 @@
     text-align: center;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--plain:active {
+  .marketing-hero-section.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--plain:active {
     transform: scale(0.96);
     transition: transform 0.1s ease;
   }
@@ -1019,8 +1035,8 @@
     transform: none !important;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card,
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--plain {
+  .marketing-hero-section.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card,
+  .marketing-hero-section.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--plain {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
