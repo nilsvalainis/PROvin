@@ -11,8 +11,10 @@ export default async function AdminOrdersPage() {
   const ordersWithInvoice = await Promise.all(
     orders.map(async (o) => {
       const draft = await readOrderDraft(o.id);
+      const draftEmail = draft?.orderEdits?.customerEmail?.trim();
       return {
         ...o,
+        customerEmail: draftEmail ? draftEmail : o.customerEmail,
         invoicePdfUrl: draft?.invoicePdfUrl ?? null,
       };
     }),
