@@ -9,7 +9,7 @@ import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { isPlausibleListingUrl, isValidVin, normalizeVin, validateOrderFields } from "@/lib/order-field-validation";
 
 const labelHero =
-  "order-form-hero-label block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#e5e7eb]";
+  "order-form-hero-label block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#e5e7eb] max-md:text-[calc(12px*1.2)]";
 
 const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
@@ -70,9 +70,10 @@ export function OrderForm({
     onStepChange?.(step);
   }, [onStepChange, step]);
 
-  /** Mobilajā (bez Lenis) — `scrollIntoView`; desktop ar Lenis — tas pats vizuālais rezultāts caur `lenis.scrollTo`, jo natīvais scrollIntoView ar Lenis bieži neatnes brīdinājumu redzamībā. */
+  /** Desktop: ritina pie kļūdas; mobilajā — neritina (lapa paliek nekustīga, brīdinājums jau zem laukiem). */
   useEffect(() => {
     if (!error || !hero) return;
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches) return;
     const el = errorRef.current;
     if (!el) return;
     const show = () => {
@@ -182,10 +183,10 @@ export function OrderForm({
   const reqStarClass = hero ? "text-red-400" : "text-red-600";
   const firstStepVinPlaceholder = "IEVADI VIN";
   const firstStepListingPlaceholder = "IEVADI SLUDINĀJUMA SAITI";
-  const firstStepVinInputClassHero = `${inputBase} w-full tracking-normal`;
+  const firstStepVinInputClassHero = `${inputBase} w-full tracking-normal max-md:!text-[calc(1rem*1.2)]`;
+  const firstStepListingInputClassHero = `${inputBase} max-md:!text-[calc(1rem*1.2)]`;
   const secondStepVinInputClassHero = `${inputBase} w-full font-mono uppercase tracking-wide`;
   const firstStepVinInputClassDefault = `${inputBase} tracking-normal ${firstStepInfoTextSizeClass}`;
-  const firstStepListingInputClassHero = `${inputBase}`;
   const firstStepListingInputClassDefault = `${inputBase} ${firstStepInfoTextSizeClass}`;
   const secondStepVinInputClassDefault = `${inputBase} font-mono uppercase tracking-wide`;
   const footerClass = hero
@@ -437,7 +438,7 @@ export function OrderForm({
           ref={errorRef}
           className={
             hero
-              ? "order-form-hero-alert mt-3 rounded-md border border-red-500/35 bg-red-950/30 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-200"
+              ? "order-form-hero-alert mt-3 rounded-md border border-red-500/35 bg-red-950/30 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-200 max-md:text-[calc(13px*1.2)]"
               : "mt-4 rounded-lg border border-red-200/90 bg-red-50/95 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-900"
           }
           role="alert"

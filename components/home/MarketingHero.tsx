@@ -423,7 +423,7 @@ export function MarketingHero({
                 {/* Mobilais: md:hidden — tikai CSS, bez JS viewport zara */}
                 <div className="mx-auto flex w-full min-w-0 max-w-full shrink-0 flex-col items-center md:hidden">
                   <div
-                    className={`pointer-events-auto flex w-full min-w-0 shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] max-md:min-h-[100dvh] max-md:flex max-md:flex-col max-md:justify-center ${homeHeroOrderColumnMaxClass}`}
+                    className={`pointer-events-auto flex w-full min-w-0 shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] max-md:min-h-[100dvh] max-md:flex max-md:flex-col max-md:justify-start max-md:pt-[max(0.35rem,env(safe-area-inset-top,0px))] ${homeHeroOrderColumnMaxClass}`}
                   >
                     <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">
                       {approvedBlock}

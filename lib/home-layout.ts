@@ -61,7 +61,8 @@ export const approvedByIrissSignatureBaseClass =
 /**
  * Hero — mazais paraksta izmērs + lasāmība pret Deep Focus (neliels „halo” pret joslām).
  */
-export const approvedByIrissSignatureHeroClass = `${approvedByIrissSignatureBaseClass} text-[0.5625rem] sm:text-[0.625rem] text-[#bcc6d4] [text-shadow:0_1px_0_rgba(0,0,0,0.55),0_0_22px_rgba(5,5,5,0.65)]`;
+/** ~−20 % pret iepriekšējo hero parakstu (saskaņā ar dizaina atsauci). */
+export const approvedByIrissSignatureHeroClass = `${approvedByIrissSignatureBaseClass} text-[0.45rem] sm:text-[0.5rem] text-[#bcc6d4] [text-shadow:0_1px_0_rgba(0,0,0,0.55),0_0_22px_rgba(5,5,5,0.65)]`;
 
 /** Hero apakšvirsraksts — tā pati pelēcība kā „IRISS” rindiņai, nedaudz lielāks tonis. */
 export const homeHeroSubtitleClass =
