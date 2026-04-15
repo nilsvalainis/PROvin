@@ -60,6 +60,12 @@
   box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.06);
 }
 
+/* Saglabā hero tipogrāfijas skalu no orbit presetiem, bet bez atsevišķa hero fona slāņa. */
+.home-hero-intro-surface #home-hero.marketing-hero-section {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 .demo-design-dir__section--band-b {
   background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(255 255 255 / 0.08), transparent 48%), #040406;
   box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.08);

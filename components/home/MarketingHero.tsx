@@ -82,7 +82,7 @@ export function MarketingHero({
       : homeOrbitKey
         ? `marketing-hero-orbit-base marketing-hero-orbit--${homeOrbitKey}`
         : "";
-  const orbitSectionStyleClass = disableHomeBackgroundVisuals ? "" : orbitUiClass;
+  const orbitSectionStyleClass = orbitUiClass;
   const isOrbitVisual = Boolean(orbitUiClass);
   const dataHeroVariantForCss = demoVariant ?? homeOrbitKey;
   const orbitRingsMode = isOrbitVisual ? (demoVariant ? demoOrbitRings : "spin") : "spin";
