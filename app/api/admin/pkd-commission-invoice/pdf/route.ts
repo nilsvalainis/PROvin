@@ -82,7 +82,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "pdf_generation_failed" }, { status: 500 });
   }
 
-  const safeName = `PKD-${input.invoiceNumber.replace(/[^\w.-]+/g, "_")}.pdf`;
+  const invoiceFileBase = input.invoiceNumber.replace(/[^\w.-]+/g, "_");
+  const safeName = `${invoiceFileBase || "PKD-invoice"}.pdf`;
   return new NextResponse(Buffer.from(bytes), {
     status: 200,
     headers: {

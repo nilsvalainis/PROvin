@@ -6,6 +6,7 @@ import type { PkdCommissionInvoiceInput } from "@/lib/pkd-commission-invoice-pdf
 
 const STORE_RELATIVE_DIR = ".data/admin-pkd-commission-invoices";
 const SAFE_ID_RE = /^[A-Za-z0-9_-]{1,120}$/;
+const OFF_VALUES = ["0", "false", "no", "off", "disabled"];
 
 export type PkdCommissionInvoiceDraft = PkdCommissionInvoiceInput & {
   id: string;
@@ -13,8 +14,21 @@ export type PkdCommissionInvoiceDraft = PkdCommissionInvoiceInput & {
   updatedAt: string;
 };
 
-function storeDir(): string {
+function resolveStoreDir(): string {
+  const explicit = process.env.ADMIN_PKD_INVOICE_DIR?.trim() ?? "";
+  if (explicit) return path.resolve(explicit);
+
+  const orderDraftDirRaw = process.env.ADMIN_ORDER_DRAFT_DIR?.trim() ?? "";
+  if (orderDraftDirRaw && !OFF_VALUES.includes(orderDraftDirRaw.toLowerCase())) {
+    const base = path.resolve(orderDraftDirRaw);
+    return path.join(base, "..", "admin-pkd-commission-invoices");
+  }
+
   return path.join(process.cwd(), STORE_RELATIVE_DIR);
+}
+
+function storeDir(): string {
+  return resolveStoreDir();
 }
 
 function draftPath(id: string): string {
@@ -150,12 +164,12 @@ function defaultDraft(now: Date, invoiceNumber: string): PkdCommissionInvoiceInp
 
 export async function createNextPkdCommissionInvoiceDraft(): Promise<PkdCommissionInvoiceDraft> {
   const now = new Date();
-  const year = now.getFullYear();
   const existing = await listPkdCommissionInvoiceDrafts();
-  const seqs = existing
+  const metas = existing
     .map((d) => parseInvoiceNumberMeta(d.invoiceNumber))
-    .filter((m): m is { year: number; seq: number } => m != null && m.year === year)
-    .map((m) => m.seq);
+    .filter((m): m is { year: number; seq: number } => m != null);
+  const year = metas.length > 0 ? Math.max(...metas.map((m) => m.year)) : 2026;
+  const seqs = metas.filter((m) => m.year === year).map((m) => m.seq);
   const seededLastSeq = year === 2026 ? 4 : 0;
   const maxSeq = Math.max(seededLastSeq, ...seqs, 0);
   const nextSeq = maxSeq + 1;

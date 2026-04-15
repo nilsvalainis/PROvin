@@ -16,6 +16,7 @@ export async function POST() {
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (e) {
     console.error("[api/admin/pkd-commission-invoice/create]", e);
-    return NextResponse.json({ error: "create_failed" }, { status: 500 });
+    const detail = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: "create_failed", detail }, { status: 500 });
   }
 }
