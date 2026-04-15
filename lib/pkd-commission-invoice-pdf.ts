@@ -21,24 +21,20 @@ async function loadInterFontBytes(): Promise<{ reg: Uint8Array; bold: Uint8Array
   return interFontBytesCache;
 }
 
-/** Piegādātājs — fiksēti lauki no PKD rēķina parauģa (nav PROVIN / env). */
-export const PKD_SUPPLIER_ROWS: { label: string; value: string }[] = [
-  { label: "Vārds, uzvārds", value: "Nils Valainis" },
-  { label: "Reģ. Nr.", value: "09118711109" },
-  { label: "Adrese", value: "Jāņa iela 3-4, Tukums, LV3101" },
-  { label: "Banka", value: "A/S Industra Bank" },
-  { label: "SWIFT", value: "MULTLV2X" },
-  { label: "Bankas konts", value: "LV87MULT1010B96770010" },
-  { label: "E-pasts", value: "perekupadienasgramata@gmail.com" },
-  { label: "Tālrunis", value: "+37126123193" },
-];
-
 export type PkdCommissionInvoiceInput = {
   invoiceNumber: string;
   invoiceDate: string;
   paymentDue: string;
   serviceDescription: string;
   amountEur: string;
+  supplierName: string;
+  supplierReg: string;
+  supplierAddress: string;
+  supplierBank: string;
+  supplierSwift: string;
+  supplierBankAccount: string;
+  supplierEmail: string;
+  supplierPhone: string;
   recipientCompany: string;
   recipientReg: string;
   recipientAddress: string;
@@ -145,7 +141,16 @@ export async function buildPkdCommissionInvoicePdfBytes(input: PkdCommissionInvo
   };
 
   bullet("Piegādātājs:");
-  drawTwoColTable(PKD_SUPPLIER_ROWS);
+  drawTwoColTable([
+    { label: "Vārds, uzvārds", value: input.supplierName.trim() },
+    { label: "Reģ. Nr.", value: input.supplierReg.trim() },
+    { label: "Adrese", value: input.supplierAddress.trim() },
+    { label: "Banka", value: input.supplierBank.trim() },
+    { label: "SWIFT", value: input.supplierSwift.trim() },
+    { label: "Bankas konts", value: input.supplierBankAccount.trim() },
+    { label: "E-pasts", value: input.supplierEmail.trim() },
+    { label: "Tālrunis", value: input.supplierPhone.trim() },
+  ]);
 
   bullet("Saņēmējs:");
   drawTwoColTable([

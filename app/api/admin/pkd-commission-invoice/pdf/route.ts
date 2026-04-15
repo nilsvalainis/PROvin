@@ -21,10 +21,20 @@ function parseBody(raw: unknown): PkdCommissionInvoiceInput | null {
   const paymentDue = clip(o.paymentDue, MAX_SHORT);
   const serviceDescription = clip(o.serviceDescription, MAX);
   const amountEur = clip(o.amountEur, 32);
+  const supplierName = clip(o.supplierName, MAX_SHORT);
+  const supplierReg = clip(o.supplierReg, MAX_SHORT);
+  const supplierAddress = clip(o.supplierAddress, 400);
+  const supplierBank = clip(o.supplierBank, MAX_SHORT);
+  const supplierSwift = clip(o.supplierSwift, MAX_SHORT);
+  const supplierBankAccount = clip(o.supplierBankAccount, MAX_SHORT);
+  const supplierEmail = clip(o.supplierEmail, MAX_SHORT);
+  const supplierPhone = clip(o.supplierPhone, MAX_SHORT);
   const recipientCompany = clip(o.recipientCompany, MAX_SHORT);
   const recipientReg = clip(o.recipientReg, MAX_SHORT);
   const recipientAddress = clip(o.recipientAddress, 400);
   if (!invoiceNumber || !serviceDescription || !amountEur) return null;
+  if (!supplierName || !supplierReg || !supplierAddress || !supplierBank || !supplierSwift) return null;
+  if (!supplierBankAccount || !supplierEmail || !supplierPhone) return null;
   if (!recipientCompany || !recipientReg || !recipientAddress) return null;
   return {
     invoiceNumber,
@@ -32,6 +42,14 @@ function parseBody(raw: unknown): PkdCommissionInvoiceInput | null {
     paymentDue: paymentDue || "—",
     serviceDescription,
     amountEur,
+    supplierName,
+    supplierReg,
+    supplierAddress,
+    supplierBank,
+    supplierSwift,
+    supplierBankAccount,
+    supplierEmail,
+    supplierPhone,
     recipientCompany,
     recipientReg,
     recipientAddress,
