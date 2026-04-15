@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -97,6 +97,7 @@ export function MarketingHero({
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
   const prevHeroOrderStepRef = useRef(heroOrderStep);
   const mobileHomeClusterRef = useRef<HTMLDivElement>(null);
+  const mobileHeroScrollRef = useRef<HTMLDivElement>(null);
   const mobileAuditsResizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [mobileAuditsTranslateY, setMobileAuditsTranslateY] = useState(0);
 
@@ -107,18 +108,65 @@ export function MarketingHero({
       setMobileAuditsTranslateY(0);
       return;
     }
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    if (scrollY > 140) return;
+
     const root = mobileHomeClusterRef.current;
     if (!root) return;
+    const rootRect = root.getBoundingClientRect();
+    if (rootRect.bottom < 48 || rootRect.top > window.innerHeight - 32) return;
+
     const audits = root.querySelector(".marketing-hero-title-line2");
     if (!audits || !(audits instanceof HTMLElement)) return;
     const rect = audits.getBoundingClientRect();
     if (rect.width === 0 && rect.height === 0) return;
     const auditsCenterY = rect.top + rect.height / 2;
-    const viewportCenterY = window.innerHeight / 2;
+    const vv = window.visualViewport;
+    const viewportCenterY = vv ? vv.offsetTop + vv.height / 2 : window.innerHeight / 2;
     const delta = Math.round(viewportCenterY - auditsCenterY);
-    if (delta === 0) return;
+    if (Math.abs(delta) < 2) return;
     setMobileAuditsTranslateY((prev) => prev + delta);
   }, []);
+
+  /** iOS / mobilais: ritinot prom un atgriežoties augšā (status bar tap), atiestata iekšējo scroll un nobīdi — citādi melns/tukšs hero. */
+  useEffect(() => {
+    if (!orbitHomeCenterLayout || !designDirection || demoVariant) return;
+
+    const resetInnerScroll = () => {
+      const el = mobileHeroScrollRef.current;
+      if (el) el.scrollTop = 0;
+    };
+
+    const onScroll = () => {
+      const y = window.scrollY || document.documentElement.scrollTop;
+      if (y > 160) {
+        setMobileAuditsTranslateY(0);
+        resetInnerScroll();
+        return;
+      }
+      if (y < 16) {
+        resetInnerScroll();
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => recenterMobileAuditsLine());
+        });
+      }
+    };
+
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        setMobileAuditsTranslateY(0);
+        resetInnerScroll();
+        requestAnimationFrame(() => recenterMobileAuditsLine());
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine]);
 
   useLayoutEffect(() => {
     if (!orbitHomeCenterLayout || !designDirection || demoVariant) {
@@ -475,7 +523,10 @@ export function MarketingHero({
             {designDirection && !demoVariant ? (
               <>
                 {/* Mobilais: virsraksts → forma → Pasūtīt (četri pīlāri tikai desktop); desktop — kā iepriekšējais režģis */}
-                <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden md:hidden">
+                <div
+                  ref={mobileHeroScrollRef}
+                  className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden md:hidden"
+                >
                   <div
                     ref={mobileHomeClusterRef}
                     className="pointer-events-auto mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] transform-gpu"
