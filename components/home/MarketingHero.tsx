@@ -102,9 +102,8 @@ export function MarketingHero({
   const [mobileAuditsTranslateY, setMobileAuditsTranslateY] = useState(0);
 
   /**
-   * Mobilais mājas hero: nobīda visu klasteri (`translateY`), lai „AUDITS” rindas (`.marketing-hero-title-line2`)
-   * centrs sakristu ar `visualViewport` centru — relatīvās atstarpes starp bloku elementiem nemainās.
-   * Bez ResizeObserver; viens sinhrons mēģinājums + `fonts.ready`; resize ar debounci.
+   * Mobilais mājas hero: `translate3d(0,Y,0)` uz klasteri — `.marketing-hero-title-line2` (AUDITS) centrs → `visualViewport` centrs.
+   * Nav `rootRect` „redzamības” filtra (tas bloķēja centrēšanu); `ResizeObserver` uz klasteri + resize/visualViewport debouncis + rAF.
    */
   const recenterMobileAuditsLine = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -117,8 +116,6 @@ export function MarketingHero({
 
     const root = mobileHomeClusterRef.current;
     if (!root) return;
-    const rootRect = root.getBoundingClientRect();
-    if (rootRect.bottom < 48 || rootRect.top > window.innerHeight - 32) return;
 
     const audits = root.querySelector(".marketing-hero-title-line2");
     if (!audits || !(audits instanceof HTMLElement)) return;
@@ -128,7 +125,7 @@ export function MarketingHero({
     const vv = window.visualViewport;
     const viewportCenterY = vv ? vv.offsetTop + vv.height / 2 : window.innerHeight / 2;
     const delta = Math.round(viewportCenterY - auditsCenterY);
-    if (Math.abs(delta) < 2) return;
+    if (Math.abs(delta) < 1) return;
     setMobileAuditsTranslateY((prev) => prev + delta);
   }, []);
 
@@ -145,21 +142,40 @@ export function MarketingHero({
     const run = () => {
       recenterMobileAuditsLine();
     };
-    run();
-    void document.fonts?.ready.then(run);
 
-    const debounceMs = 320;
-    const onResize = () => {
+    run();
+    const raf1 = requestAnimationFrame(() => run());
+    void document.fonts.ready.then(() => {
+      run();
+      requestAnimationFrame(() => run());
+    });
+
+    const debounceMs = 280;
+    const scheduleResize = () => {
       if (mobileCenterResizeDebounceRef.current) clearTimeout(mobileCenterResizeDebounceRef.current);
       mobileCenterResizeDebounceRef.current = setTimeout(() => {
         mobileCenterResizeDebounceRef.current = null;
         run();
+        requestAnimationFrame(() => run());
       }, debounceMs);
     };
-    window.addEventListener("resize", onResize);
+    window.addEventListener("resize", scheduleResize);
+    const vv = window.visualViewport;
+    if (vv) vv.addEventListener("resize", scheduleResize);
+
+    const cluster = mobileHomeClusterRef.current;
+    let ro: ResizeObserver | undefined;
+    if (cluster && typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => scheduleResize());
+      ro.observe(cluster);
+    }
+
     return () => {
+      cancelAnimationFrame(raf1);
       if (mobileCenterResizeDebounceRef.current) clearTimeout(mobileCenterResizeDebounceRef.current);
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", scheduleResize);
+      if (vv) vv.removeEventListener("resize", scheduleResize);
+      ro?.disconnect();
     };
   }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine, heroOrderStep]);
 
