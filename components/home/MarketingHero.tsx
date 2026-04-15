@@ -146,9 +146,7 @@ export function MarketingHero({
       }
       if (y < 16) {
         resetInnerScroll();
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => recenterMobileAuditsLine());
-        });
+        recenterMobileAuditsLine();
       }
     };
 
@@ -156,7 +154,7 @@ export function MarketingHero({
       if (e.persisted) {
         setMobileAuditsTranslateY(0);
         resetInnerScroll();
-        requestAnimationFrame(() => recenterMobileAuditsLine());
+        recenterMobileAuditsLine();
       }
     };
 
@@ -178,19 +176,20 @@ export function MarketingHero({
       prevHeroOrderStepRef.current = heroOrderStep;
     }
     const debounceMs = 220;
-    const tick = () => {
-      requestAnimationFrame(() => recenterMobileAuditsLine());
+    /** Bez rAF — lai pirmā zīmēšana nesaņem translateY=0 un nākamajā kadra pārlēcienu. */
+    const tickSync = () => {
+      recenterMobileAuditsLine();
     };
     const tickDebounced = () => {
       if (mobileAuditsResizeDebounceRef.current) clearTimeout(mobileAuditsResizeDebounceRef.current);
       mobileAuditsResizeDebounceRef.current = setTimeout(() => {
         mobileAuditsResizeDebounceRef.current = null;
-        tick();
+        tickSync();
       }, debounceMs);
     };
-    tick();
+    tickSync();
     if (typeof document !== "undefined" && document.fonts?.ready) {
-      void document.fonts.ready.then(tick);
+      void document.fonts.ready.then(tickSync);
     }
     const onResize = () => tickDebounced();
     window.addEventListener("resize", onResize);
