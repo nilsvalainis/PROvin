@@ -28,7 +28,11 @@ function activeFromScroll(): number {
   if (typeof window === "undefined" || typeof document === "undefined") return 0;
   /* Lapas augšā bez ritināšanas — vienmēr „Sākums”, lai nesāktu uz „Pasūtīt” no mērķa līnijas noapaļošanas. */
   if (window.scrollY < 8) return 0;
-  const line = window.scrollY + window.innerHeight * 0.22;
+  /**
+   * Mērķa līnija ≈ zem sticky galvenes (`railTopClass` / `HeaderClient` ~3.25rem + atstarpe) —
+   * ne tikai % no viewport, lai aktīvā sadaļa labāk sakrīt ar redzamo saturu.
+   */
+  const line = window.scrollY + Math.min(88, window.innerHeight * 0.26);
   let idx = 0;
   for (let i = 0; i < HOME_SCROLL_IDS.length; i++) {
     const el = document.getElementById(HOME_SCROLL_IDS[i]);
