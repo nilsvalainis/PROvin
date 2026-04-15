@@ -485,6 +485,13 @@ html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .
   text-shadow: none !important;
 }
 
+html[data-site-theme="light"]
+  .marketing-hero-orbit-base[data-hero-orbit-home]
+  .marketing-hero-title-line1
+  .marketing-hero-title-line1-main.marketing-hero-title-line1-un {
+  color: var(--color-provin-accent) !important;
+}
+
 /* AUDITS — zils */
 html[data-site-theme="light"]
   .marketing-hero-orbit-base[data-hero-orbit-home]

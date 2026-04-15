@@ -647,6 +647,11 @@
   letter-spacing: -0.02em;
 }
 
+/* Tikai „UN” — provin zils; pārējā rinda nemainās */
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main.marketing-hero-title-line1-un {
+  color: rgb(0 102 255 / 0.98) !important;
+}
+
 .marketing-hero-pillar--soft {
   border: none !important;
   border-radius: 12px !important;

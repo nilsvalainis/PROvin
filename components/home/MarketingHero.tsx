@@ -119,7 +119,9 @@ export function MarketingHero({
             <span className="marketing-hero-title-line1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0 sm:gap-x-2.5">
               <span className="flex items-center gap-x-3 sm:gap-x-3.5">
                 <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Vin")}</span>
-                <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Un")}</span>
+                <span className={`marketing-hero-title-line1-main marketing-hero-title-line1-un ${heroH1KeywordResolved}`}>
+                  {t("h1Un")}
+                </span>
               </span>
               <span className={`marketing-hero-title-line1-accent ${heroH1KeywordResolved}`}>{t("h1Sludinajuma")}</span>
             </span>
