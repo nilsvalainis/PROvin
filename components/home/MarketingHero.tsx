@@ -18,6 +18,7 @@ import {
   heroH1BlueKeywordClass,
   homeHeroOrderColumnMaxClass,
   homeHeroSubtitleClass,
+  homeMarketingPillarGridShellClass,
 } from "@/lib/home-layout";
 export type { HeroOrbitSubvariant, HeroSilverBlackSubvariant, HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
 export {
@@ -268,8 +269,13 @@ export function MarketingHero({
       designDirection={designDirection}
       isC={isC}
       isB={isB}
-      homeMobileListLayout={Boolean(designDirection && !demoVariant)}
-      shellClassName={designDirection && !demoVariant ? "w-full pb-2 pt-1.5 max-md:pb-0 max-md:pt-2 sm:pb-5 sm:pt-4" : undefined}
+      /** Mājas mobilais: 2×2 režģis (ne vertikāls saraksts), centrēts ar `homeMarketingPillarGridShellClass`. */
+      homeMobileListLayout={false}
+      shellClassName={
+        designDirection && !demoVariant
+          ? `${homeMarketingPillarGridShellClass} w-full pb-2 pt-1.5 max-md:pb-0 max-md:pt-2 sm:pb-5 sm:pt-4`
+          : undefined
+      }
     />
   );
 

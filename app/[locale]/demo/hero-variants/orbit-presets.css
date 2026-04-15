@@ -883,6 +883,9 @@
   /* Tikai hero — sakrist ar pasūtījuma formas sleju (560px); lielākas atstarpes 2×2 (tikai uz leju / starp šūnām) */
   .marketing-hero-section[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid {
     max-width: min(35rem, calc(100vw - 2rem));
+    margin-left: auto;
+    margin-right: auto;
+    justify-items: center;
     column-gap: 0.65rem;
     row-gap: 0.52rem;
   }
