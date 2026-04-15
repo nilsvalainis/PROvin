@@ -107,7 +107,7 @@ export function MarketingHero({
 
   /**
    * Mobilais mājas hero: `translate3d(0,Y,0)` uz klasteri — `.marketing-hero-title-line2` (AUDITS) centrs → `visualViewport` centrs.
-   * Nav `rootRect` „redzamības” filtra; `ResizeObserver` + resize/visualViewport ar debounci; `recenter` tikai, kad hero ir tuvu viewport (ne zem lapas), lai nobīde netiek „notīrīta” prom ritinot.
+   * Nav `rootRect` „redzamības” filtra; RO + window resize (debounce) + visualViewport (garāks debounce); nobīdei mirkļa slieksnis un Y ierobežojums pret „hunting”.
    */
   const recenterMobileAuditsLine = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -137,8 +137,16 @@ export function MarketingHero({
     const vv = window.visualViewport;
     const viewportCenterY = vv ? vv.offsetTop + vv.height / 2 : window.innerHeight / 2;
     const delta = Math.round(viewportCenterY - auditsCenterY);
-    if (Math.abs(delta) < 1) return;
-    setMobileAuditsTranslateY((prev) => prev + delta);
+    /* Mazāks „hunting” starp kadriem (subpikseļi / adreses josla) — nemaina vizuālo centru būtiski. */
+    if (Math.abs(delta) < 4) return;
+
+    const vh = window.innerHeight;
+    const yCap = Math.max(120, Math.round(vh * 0.52));
+    setMobileAuditsTranslateY((prev) => {
+      const next = Math.round(prev + delta);
+      if (Math.abs(next - prev) < 1) return prev;
+      return Math.min(yCap, Math.max(-yCap, next));
+    });
   }, [sectionId]);
 
   useLayoutEffect(() => {
@@ -156,13 +164,24 @@ export function MarketingHero({
       recenterMobileAuditsLine();
     };
 
-    const debounceMs = 420;
+    const debounceWindowMs = 520;
+    const debounceVvMs = 780;
+    let vvDebounceTimer: number | null = null;
+
     const scheduleResize = () => {
       if (mobileCenterResizeDebounceRef.current) clearTimeout(mobileCenterResizeDebounceRef.current);
       mobileCenterResizeDebounceRef.current = setTimeout(() => {
         mobileCenterResizeDebounceRef.current = null;
-        run();
-      }, debounceMs);
+        requestAnimationFrame(() => run());
+      }, debounceWindowMs);
+    };
+
+    const scheduleVvResize = () => {
+      if (vvDebounceTimer) window.clearTimeout(vvDebounceTimer);
+      vvDebounceTimer = window.setTimeout(() => {
+        vvDebounceTimer = null;
+        requestAnimationFrame(() => run());
+      }, debounceVvMs);
     };
 
     const firstReveal = !initialMobileClusterRevealDoneRef.current;
@@ -208,13 +227,12 @@ export function MarketingHero({
         });
       });
     } else {
-      run();
       requestAnimationFrame(() => run());
     }
 
     window.addEventListener("resize", scheduleResize);
     const vv = window.visualViewport;
-    if (vv) vv.addEventListener("resize", scheduleResize);
+    if (vv) vv.addEventListener("resize", scheduleVvResize);
 
     const cluster = mobileHomeClusterRef.current;
     let ro: ResizeObserver | undefined;
@@ -226,9 +244,10 @@ export function MarketingHero({
     return () => {
       cancelled = true;
       if (safetyTimer) clearTimeout(safetyTimer);
+      if (vvDebounceTimer) window.clearTimeout(vvDebounceTimer);
       if (mobileCenterResizeDebounceRef.current) clearTimeout(mobileCenterResizeDebounceRef.current);
       window.removeEventListener("resize", scheduleResize);
-      if (vv) vv.removeEventListener("resize", scheduleResize);
+      if (vv) vv.removeEventListener("resize", scheduleVvResize);
       ro?.disconnect();
     };
   }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine, heroOrderStep]);
