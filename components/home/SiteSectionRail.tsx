@@ -40,6 +40,12 @@ function activeFromScroll(): number {
     const top = el.getBoundingClientRect().top + window.scrollY;
     if (top <= line + 1) idx = i;
   }
+  const doc = document.documentElement;
+  const scrollBottomGap = doc.scrollHeight - window.scrollY - window.innerHeight;
+  const lastId = HOME_SCROLL_IDS[HOME_SCROLL_IDS.length - 1];
+  if (scrollBottomGap <= 6 && lastId && document.getElementById(lastId)) {
+    idx = HOME_SCROLL_IDS.length - 1;
+  }
   return idx;
 }
 
@@ -54,7 +60,9 @@ export function SiteSectionRail() {
   const hash = useHash();
   const [active, setActive] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
-  const linkRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const railListRef = useRef<HTMLUListElement>(null);
+  /** Šūna ar punktu (w-3) — vertikālais centrs sakrīt ar sliedes assi; nav atkarīgs no etiķetes plūsmas. */
+  const dotCellRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [dot, setDot] = useState({ top: 0, height: 16 });
 
   const normalizedPath = useMemo(() => normalizeSitePath(pathname), [pathname]);
@@ -115,36 +123,41 @@ export function SiteSectionRail() {
     if (!showRail) return;
     const updateDot = () => {
       const track = trackRef.current;
-      const link = linkRefs.current[active];
-      if (!track || !link) return;
+      const cell = dotCellRefs.current[active];
+      if (!track || !cell) return;
       const tr = track.getBoundingClientRect();
-      const lr = link.getBoundingClientRect();
-      const center = lr.top + lr.height / 2 - tr.top;
+      const cr = cell.getBoundingClientRect();
+      const center = cr.top + cr.height / 2 - tr.top;
       const h = 16;
       setDot({ top: Math.max(0, Math.min(center - h / 2, tr.height - h)), height: h });
     };
     updateDot();
     window.addEventListener("resize", updateDot);
     const track = trackRef.current;
+    const list = railListRef.current;
     let ro: ResizeObserver | undefined;
-    if (track && typeof ResizeObserver !== "undefined") {
+    if (typeof ResizeObserver !== "undefined") {
       ro = new ResizeObserver(() => updateDot());
-      ro.observe(track);
+      if (track) ro.observe(track);
+      if (list) ro.observe(list);
     }
     return () => {
       window.removeEventListener("resize", updateDot);
       ro?.disconnect();
     };
-  }, [active, showRail]);
+  }, [active, showRail, sections.length]);
 
   if (!showRail) return null;
 
   const linkBase =
-    "group/link flex max-w-none items-start gap-2.5 text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-[color,opacity] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none lg:text-[10px] lg:tracking-[0.19em]";
+    "group/link relative flex max-w-none min-h-0 flex-1 flex-row items-stretch text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-[color] duration-200 ease-out motion-reduce:transition-none lg:text-[10px] lg:tracking-[0.19em]";
 
-  /** Šaurāks max platums + pārlikšana rindiņās — sliede pati ierobežota; `main` netiek nobīdīts. */
+  /**
+   * Etiķete `absolute` — neanimējam `max-width` (izraisa reflow un „lēcienus” ar punktiem).
+   * Tikai `opacity` + `transform` uz GPU; `group-hover/link` — tikai attiecīgā rinda, ne visa josla.
+   */
   const railLabelClass =
-    "min-w-0 overflow-hidden whitespace-normal break-words text-pretty text-left opacity-0 max-w-0 -translate-x-2 transition-[opacity,max-width,transform] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none motion-reduce:translate-x-0 motion-reduce:opacity-100 motion-reduce:max-w-[min(10.25rem,min(28vw,26vmin))] group-hover/rail:max-w-[min(10.25rem,min(28vw,26vmin))] group-hover/rail:translate-x-0 group-hover/rail:opacity-100 group-focus-within/rail:max-w-[min(10.25rem,min(28vw,26vmin))] group-focus-within/rail:translate-x-0 group-focus-within/rail:opacity-100";
+    "pointer-events-none absolute left-0 top-1/2 z-[2] max-w-[min(10.25rem,min(28vw,26vmin))] -translate-y-1/2 translate-x-0 whitespace-normal break-words text-pretty text-left opacity-0 transition-[opacity,transform] duration-300 ease-out will-change-[opacity,transform] motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-x-0 group-hover/link:translate-x-0.5 group-hover/link:opacity-100 group-focus-visible/link:translate-x-0.5 group-focus-visible/link:opacity-100";
 
   /**
    * `top` zem sticky header (z-42): citādi zilais sliežu punkts redzams caur caurspīdīgo hero headeri.
@@ -182,37 +195,39 @@ export function SiteSectionRail() {
               aria-hidden
             />
           </div>
-          <ul className="flex h-full min-h-0 flex-1 flex-col">
+          <ul ref={railListRef} className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
             {sections.map((s, i) => {
               const isActive = i === active;
               return (
-                <li key={s.labelKey} className="flex min-h-0 flex-1 flex-col justify-center">
-                  <span
-                    ref={(el) => {
-                      linkRefs.current[i] = el;
-                    }}
-                    className="block min-w-0"
+                <li key={s.labelKey} className="flex min-h-0 min-w-0 flex-1 flex-col">
+                  <Link
+                    href={s.href}
+                    className={`${linkBase} w-full min-w-0 pr-1 ${
+                      isActive
+                        ? "text-white"
+                        : "text-white/[0.22] group-hover/rail:text-white/[0.5] group-focus-within/rail:text-white/[0.5] hover:text-white/90"
+                    } focus-visible:text-white focus-visible:ring-1 focus-visible:ring-[#0066ff]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`}
+                    aria-current={isActive ? "location" : undefined}
                   >
-                    <Link
-                      href={s.href}
-                      className={`${linkBase} w-full min-w-0 py-1 ${
-                        isActive
-                          ? "text-white"
-                          : "text-white/[0.22] group-hover/rail:text-white/[0.5] group-focus-within/rail:text-white/[0.5] hover:text-white/90"
-                      } focus-visible:text-white focus-visible:ring-1 focus-visible:ring-[#0066ff]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`}
-                      aria-current={isActive ? "location" : undefined}
+                    <div
+                      ref={(el) => {
+                        dotCellRefs.current[i] = el;
+                      }}
+                      className="flex w-3 shrink-0 flex-col items-center justify-center"
+                      aria-hidden
                     >
                       <span
-                        className={`mt-0.5 h-1 w-1 shrink-0 rounded-full bg-[#0066ff] transition-[opacity,transform,box-shadow] duration-500 ease-[cubic-bezier(0.33,0.86,0.2,1)] motion-reduce:transition-none ${
+                        className={`h-1 w-1 shrink-0 rounded-full bg-[#0066ff] transition-[opacity,box-shadow] duration-200 ease-out motion-reduce:transition-none ${
                           isActive
-                            ? "scale-100 opacity-100 shadow-[0_0_8px_rgba(0,102,255,0.65)]"
-                            : "scale-100 opacity-[0.4] shadow-[0_0_5px_rgba(0,102,255,0.35)] group-hover/rail:opacity-[0.72] group-hover/rail:shadow-[0_0_8px_rgba(0,102,255,0.45)] group-hover/link:opacity-85 group-focus-visible/link:opacity-90"
+                            ? "opacity-100 shadow-[0_0_8px_rgba(0,102,255,0.65)]"
+                            : "opacity-[0.4] shadow-[0_0_5px_rgba(0,102,255,0.35)] group-hover/link:opacity-[0.85] group-hover/link:shadow-[0_0_8px_rgba(0,102,255,0.45)] group-focus-visible/link:opacity-90"
                         }`}
-                        aria-hidden
                       />
+                    </div>
+                    <div className="relative min-w-0 flex-1 self-stretch">
                       <span className={railLabelClass}>{t(s.labelKey)}</span>
-                    </Link>
-                  </span>
+                    </div>
+                  </Link>
                 </li>
               );
             })}
