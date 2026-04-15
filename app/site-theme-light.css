@@ -688,6 +688,10 @@ html[data-site-theme="light"] nav.site-section-rail a:hover {
   color: #111827 !important;
 }
 
+html[data-site-theme="light"] nav.site-section-rail:is(:hover, :focus-within) a:not([aria-current="location"]) {
+  color: #111827 !important;
+}
+
 html[data-site-theme="light"] nav.site-section-rail a span.rounded-full {
   background-color: var(--color-provin-accent) !important;
   box-shadow: 0 0 8px rgb(0 102 255 / 0.45) !important;

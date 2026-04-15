@@ -169,40 +169,38 @@ export function SiteSectionRail() {
     "group/link relative flex max-w-none min-h-0 flex-1 flex-row items-stretch text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-all duration-300 ease-in-out motion-reduce:transition-none lg:text-[10px] lg:tracking-[0.19em]";
 
   const railLabelClass =
-    "home-rail-label pointer-events-none absolute left-0 top-1/2 z-[2] max-w-[min(10.25rem,min(28vw,26vmin))] -translate-y-1/2 whitespace-normal break-words text-pretty text-left opacity-0 transition-all duration-300 ease-in-out motion-reduce:transition-none group-hover/rail:opacity-100 group-focus-within/rail:opacity-100";
+    "home-rail-label absolute left-0 top-1/2 z-[2] max-w-[min(10.25rem,min(28vw,26vmin))] -translate-y-1/2 whitespace-normal break-words text-pretty text-left";
 
   const railTopClass =
     "top-[max(1rem,calc(env(safe-area-inset-top,0px)+3.25rem))]";
 
   return (
     <nav
-      className={`site-section-rail group/rail pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] ${railTopClass} z-40 hidden min-h-0 min-w-0 w-max max-w-[calc(0.75rem+0.625rem+1.125rem)] cursor-pointer flex-col overflow-x-clip overflow-y-auto overscroll-contain pl-1 transition-[max-width] duration-300 ease-in-out group-hover/rail:max-w-[min(15.75rem,min(34vw,30vmin))] group-focus-within/rail:max-w-[min(15.75rem,min(34vw,30vmin))] motion-reduce:transition-none lg:flex`}
+      className={`site-section-rail pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] ${railTopClass} z-40 hidden min-h-0 min-w-0 w-max cursor-pointer flex-col overflow-x-clip overflow-y-auto overscroll-contain pl-1 lg:flex`}
       aria-label={t("navAria")}
     >
       <div
-        className="pointer-events-none absolute -inset-x-2 -inset-y-6 left-0 z-0 rounded-r-[1.85rem] bg-gradient-to-r from-black/50 via-black/14 to-transparent opacity-0 transition-opacity duration-300 ease-in-out group-hover/rail:opacity-100 group-focus-within/rail:opacity-100 motion-reduce:transition-none"
+        className="site-section-rail__scrim pointer-events-none absolute -inset-x-2 -inset-y-6 left-0 z-0 rounded-r-[1.85rem] bg-gradient-to-r from-black/50 via-black/14 to-transparent"
         aria-hidden
       />
 
-      <div className="relative z-10 flex h-full min-h-0 min-w-0 w-max max-w-full flex-1 flex-col">
+      <div className="relative z-10 flex h-full min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
         <div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-row items-stretch gap-2.5 pl-0.5">
           <div className="relative h-full min-h-0 w-3 shrink-0">
             <div
-              className="site-rail-axis absolute inset-y-1.5 left-1/2 z-0 w-px -translate-x-1/2 bg-white/[0.11] shadow-[0_0_14px_rgba(0,102,255,0.12)] transition-all duration-300 ease-out group-hover/rail:bg-white/[0.16] group-hover/rail:shadow-[0_0_18px_rgba(0,102,255,0.2)] group-focus-within/rail:bg-white/[0.16] group-focus-within/rail:shadow-[0_0_18px_rgba(0,102,255,0.2)]"
+              className="site-rail-axis absolute inset-y-1.5 left-1/2 z-0 w-px -translate-x-1/2"
               aria-hidden
             />
           </div>
-          <ul className="flex min-h-0 max-w-[1.125rem] flex-1 flex-col overflow-hidden transition-[max-width] duration-300 ease-in-out group-hover/rail:max-w-[min(10.25rem,min(28vw,26vmin))] group-focus-within/rail:max-w-[min(10.25rem,min(28vw,26vmin))] motion-reduce:transition-none">
+          <ul className="site-section-rail__links flex min-h-0 min-w-0 flex-1 flex-col">
             {sections.map((s, i) => {
               const isActive = i === active;
               return (
                 <li key={s.labelKey} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
                   <Link
                     href={s.href}
-                    className={`${linkBase} w-full min-w-0 pr-1 ${
-                      isActive
-                        ? "text-white"
-                        : "text-[#c9ced9] group-hover/rail:text-white group-focus-within/rail:text-white hover:text-white"
+                    className={`${linkBase} site-section-rail__link w-full min-w-0 pr-1 ${
+                      isActive ? "text-white" : "text-[#c9ced9]"
                     } focus-visible:text-white focus-visible:ring-1 focus-visible:ring-[#0066ff]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`}
                     aria-current={isActive ? "location" : undefined}
                   >
@@ -211,10 +209,10 @@ export function SiteSectionRail() {
                       aria-hidden
                     >
                       <span
-                        className={`absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#0066ff] transition-all duration-300 ease-in-out motion-reduce:transition-none ${
+                        className={`absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#0066ff] transition-[opacity,box-shadow] duration-300 ease-in-out motion-reduce:transition-none ${
                           isActive
                             ? "opacity-100 shadow-[0_0_8px_rgba(0,102,255,0.65)]"
-                            : "opacity-[0.4] shadow-[0_0_5px_rgba(0,102,255,0.35)] group-hover/rail:opacity-[0.85] group-hover/rail:shadow-[0_0_8px_rgba(0,102,255,0.45)] group-focus-visible/link:opacity-90"
+                            : "opacity-[0.4] shadow-[0_0_5px_rgba(0,102,255,0.35)] group-focus-visible/link:opacity-90"
                         }`}
                       />
                     </div>

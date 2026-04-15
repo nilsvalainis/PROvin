@@ -662,7 +662,7 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   }
 }
 
-/* Kreisā procesa sliede — teksts redzams tikai sliedes :hover / :focus-within */
+/* Kreisā procesa sliede — etiķetes tikai virs sliedes (:hover / :focus-within), plūdeni */
 .home-rail-label {
   color: #e8edf7;
   transition: color 0.2s ease;
@@ -672,9 +672,90 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   color: #f8fafc;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .home-rail-label {
-    transition: none;
+/* lg+: sakļauta sliede pēc noklusējuma (neatkarīgi no Tailwind named group ģenerācijas) */
+@media (min-width: 1024px) {
+  nav.site-section-rail {
+    max-width: calc(0.75rem + 0.625rem + 1.125rem);
+    transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  nav.site-section-rail:is(:hover, :focus-within) {
+    max-width: min(15.75rem, min(34vw, 30vmin));
+  }
+
+  nav.site-section-rail .site-section-rail__links {
+    max-width: 1.125rem;
+    min-width: 0;
+    overflow: hidden;
+    transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  nav.site-section-rail:is(:hover, :focus-within) .site-section-rail__links {
+    max-width: min(10.25rem, min(28vw, 26vmin));
+  }
+
+  nav.site-section-rail .home-rail-label {
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+      color 0.2s ease;
+  }
+
+  nav.site-section-rail:is(:hover, :focus-within) .home-rail-label {
+    opacity: 1;
+  }
+
+  nav.site-section-rail .site-section-rail__scrim {
+    opacity: 0;
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  nav.site-section-rail:is(:hover, :focus-within) .site-section-rail__scrim {
+    opacity: 1;
+  }
+
+  nav.site-section-rail .site-rail-axis {
+    transition: background-color 0.35s ease, box-shadow 0.35s ease;
+  }
+
+  nav.site-section-rail:not(:hover):not(:focus-within) .site-rail-axis {
+    background-color: rgb(255 255 255 / 0.11);
+    box-shadow: 0 0 14px rgba(0, 102, 255, 0.12);
+  }
+
+  nav.site-section-rail:is(:hover, :focus-within) .site-rail-axis {
+    background-color: rgb(255 255 255 / 0.16);
+    box-shadow: 0 0 18px rgba(0, 102, 255, 0.2);
+  }
+
+  nav.site-section-rail:not(:hover):not(:focus-within) a:not([aria-current="location"]) span.rounded-full {
+    opacity: 0.4;
+    box-shadow: 0 0 5px rgba(0, 102, 255, 0.35);
+  }
+
+  nav.site-section-rail:is(:hover, :focus-within) a:not([aria-current="location"]) span.rounded-full {
+    opacity: 0.85;
+    box-shadow: 0 0 8px rgba(0, 102, 255, 0.45);
+  }
+
+  nav.site-section-rail:not(:hover):not(:focus-within) .site-section-rail__link:not([aria-current="location"]) {
+    color: rgb(201, 206, 217);
+  }
+
+  nav.site-section-rail:is(:hover, :focus-within) .site-section-rail__link:not([aria-current="location"]) {
+    color: #ffffff;
+  }
+}
+
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+  nav.site-section-rail,
+  nav.site-section-rail .site-section-rail__links,
+  nav.site-section-rail .home-rail-label,
+  nav.site-section-rail .site-section-rail__scrim,
+  nav.site-section-rail .site-rail-axis,
+  nav.site-section-rail a span.rounded-full {
+    transition-duration: 0.01ms !important;
   }
 }
 
