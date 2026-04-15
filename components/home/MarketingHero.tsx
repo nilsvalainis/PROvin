@@ -106,62 +106,68 @@ export function MarketingHero({
   const showTitleMidScan = Boolean(designDirection && isOrbitVisual && demoVariant);
   const homeTitleMotionOff = Boolean(orbitHomeCenterLayout && !demoVariant);
 
-  const heroTitleStack = (
-    <div
-      className={`flex w-full flex-col items-center text-center${
-        homeTitleMotionOff ? "" : orbitHomeCenterLayout ? " marketing-hero-fade-in-up marketing-hero-fade-in-up--1" : ""
-      }`}
+  const heroTitleMotionWrapperClass = `flex w-full flex-col items-center text-center${
+    homeTitleMotionOff ? "" : orbitHomeCenterLayout ? " marketing-hero-fade-in-up marketing-hero-fade-in-up--1" : ""
+  }`;
+
+  const heroH1El = (
+    <h1
+      id={titleId}
+      className={
+        isOrbitVisual
+          ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold leading-none tracking-[-0.02em] text-white/95 max-[380px]:tracking-[-0.025em]${designDirection ? " max-w-[min(100%,min(90vw,56rem))]" : ""}`
+          : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-none tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] lg:text-[48px]`
+      }
     >
-      <h1
-        id={titleId}
-        className={
-          isOrbitVisual
-            ? `marketing-hero-title marketing-hero-title--orbit w-full text-balance font-semibold leading-none tracking-[-0.02em] text-white/95 max-[380px]:tracking-[-0.025em]${designDirection ? " max-w-[min(100%,min(90vw,56rem))]" : ""}`
-            : `marketing-hero-title w-full max-w-[min(100%,52rem)] text-balance font-semibold leading-none tracking-[-0.02em] text-[clamp(1.3125rem,5.5vw+0.35rem,1.75rem)] text-white/95 max-[380px]:tracking-[-0.025em] sm:text-[40px] lg:text-[48px]`
-        }
-      >
-        <>
-          <div className="marketing-hero-title-split flex w-full flex-col items-center gap-0">
-            <div className="marketing-hero-title-line1 flex w-full flex-col items-center justify-center gap-0">
-              <span className="marketing-hero-title-line1-vin-un flex flex-wrap items-center justify-center gap-x-2 sm:gap-x-3">
-                <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Vin")}</span>
-                <span className={`marketing-hero-title-line1-main marketing-hero-title-line1-un ${heroH1KeywordResolved}`}>
-                  {t("h1Un")}
-                </span>
+      <>
+        <div className="marketing-hero-title-split flex w-full flex-col items-center gap-0">
+          <div className="marketing-hero-title-line1 flex w-full flex-col items-center justify-center gap-0">
+            <span className="marketing-hero-title-line1-vin-un flex flex-wrap items-center justify-center gap-x-2 sm:gap-x-3">
+              <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Vin")}</span>
+              <span className={`marketing-hero-title-line1-main marketing-hero-title-line1-un ${heroH1KeywordResolved}`}>
+                {t("h1Un")}
               </span>
-              <span className={`marketing-hero-title-line1-accent block w-full text-center ${heroH1KeywordResolved}`}>
-                {t("h1Sludinajuma")}
-              </span>
-            </div>
-            <div
-              className={`marketing-hero-title-mid-rule box-border flex h-5 w-full shrink-0 items-center justify-center px-1 sm:px-2${showTitleMidScan ? "" : " marketing-hero-title-mid-rule--simple"}`}
-              aria-hidden
-            >
-              {showTitleMidScan ? (
-                <div className="marketing-hero-title-mid-scan pointer-events-none w-full max-w-[min(100%,min(90vw,56rem))]">
-                  <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
-                </div>
-              ) : (
-                <div className="marketing-hero-title-mid-rule__line h-px w-full max-w-[min(100%,min(90vw,56rem))] bg-transparent" />
-              )}
-            </div>
-            <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent block leading-none">
-              {t("h1Line2")}
+            </span>
+            <span className={`marketing-hero-title-line1-accent block w-full text-center ${heroH1KeywordResolved}`}>
+              {t("h1Sludinajuma")}
             </span>
           </div>
-        </>
-      </h1>
-      {!hideHeroSubtitle ? (
-        <p
-          className={
-            designDirection
-              ? `demo-design-dir__body mx-auto mt-3 max-w-[min(100%,36rem)] text-balance text-center${orbitHomeCenterLayout ? " marketing-hero__tagline" : ""}`
-              : `${homeHeroSubtitleClass} mx-auto mt-2.5 max-w-[min(100%,36rem)] text-balance text-[11px] font-medium uppercase leading-snug tracking-[0.14em] text-white/48 sm:mt-3 sm:text-[12px] sm:tracking-[0.16em]`
-          }
-        >
-          {t("h2")}
-        </p>
-      ) : null}
+          <div
+            className={`marketing-hero-title-mid-rule box-border flex h-5 w-full shrink-0 items-center justify-center px-1 sm:px-2${showTitleMidScan ? "" : " marketing-hero-title-mid-rule--simple"}`}
+            aria-hidden
+          >
+            {showTitleMidScan ? (
+              <div className="marketing-hero-title-mid-scan pointer-events-none w-full max-w-[min(100%,min(90vw,56rem))]">
+                <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
+              </div>
+            ) : (
+              <div className="marketing-hero-title-mid-rule__line h-px w-full max-w-[min(100%,min(90vw,56rem))] bg-transparent" />
+            )}
+          </div>
+          <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent block leading-none">
+            {t("h1Line2")}
+          </span>
+        </div>
+      </>
+    </h1>
+  );
+
+  const heroSubtitleEl = !hideHeroSubtitle ? (
+    <p
+      className={
+        designDirection
+          ? `demo-design-dir__body mx-auto mt-3 max-w-[min(100%,36rem)] text-balance text-center${orbitHomeCenterLayout ? " marketing-hero__tagline" : ""}`
+          : `${homeHeroSubtitleClass} mx-auto mt-2.5 max-w-[min(100%,36rem)] text-balance text-[11px] font-medium uppercase leading-snug tracking-[0.14em] text-white/48 sm:mt-3 sm:text-[12px] sm:tracking-[0.16em]`
+      }
+    >
+      {t("h2")}
+    </p>
+  ) : null;
+
+  const heroTitleStack = (
+    <div className={heroTitleMotionWrapperClass}>
+      {heroH1El}
+      {heroSubtitleEl}
     </div>
   );
 
@@ -416,15 +422,20 @@ export function MarketingHero({
             {designDirection && !demoVariant ? (
               <>
                 {/* Mobilais: md:hidden — tikai CSS, bez JS viewport zara */}
-                <div className="mx-auto flex w-full min-w-0 max-w-full shrink-0 flex-col items-center md:hidden">
-                  <div className="pointer-events-auto mx-auto flex w-full min-w-0 max-w-[min(100%,46rem)] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] max-md:min-h-[100dvh] max-md:flex max-md:flex-col max-md:justify-center">
-                    <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">
-                      {approvedBlock}
+                <div className="mx-auto flex min-h-0 w-full max-w-full flex-1 flex-col md:hidden">
+                  <div
+                    className={`pointer-events-auto flex min-h-0 w-full flex-1 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] ${homeHeroOrderColumnMaxClass}`}
+                  >
+                    <div className="flex min-h-0 flex-1 flex-col">
+                      <div className="min-h-0 flex-1" aria-hidden />
+                      <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">{approvedBlock}</div>
+                      <div className="min-h-0 flex-1" aria-hidden />
                     </div>
-                    <div className="flex flex-col gap-3 py-0">
+                    <div className="flex shrink-0 flex-col gap-3 py-0">
                       <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
-                        {heroTitleStack}
+                        <div className={heroTitleMotionWrapperClass}>{heroH1El}</div>
                       </div>
+                      {heroSubtitleEl}
                       {heroOrderEntry}
                       <div className="flex w-full flex-col items-center gap-1 pb-0.5 pt-0.5">
                         {heroStepOneCta}
@@ -439,7 +450,9 @@ export function MarketingHero({
                       {approvedBlock}
                     </div>
                     <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-x-hidden px-4 sm:px-8">
-                      <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,46rem)] flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2">
+                      <div
+                        className={`flex min-h-0 w-full flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2 ${homeHeroOrderColumnMaxClass}`}
+                      >
                         <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
                           {heroTitleStack}
                         </div>
