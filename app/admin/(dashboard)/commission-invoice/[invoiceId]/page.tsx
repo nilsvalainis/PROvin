@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { PkdCommissionInvoiceTool } from "@/components/admin/PkdCommissionInvoiceTool";
-import { getPkdCommissionInvoiceDraft } from "@/lib/pkd-commission-invoice-store";
+import { fallbackPkdCommissionInvoiceDraft, getPkdCommissionInvoiceDraft } from "@/lib/pkd-commission-invoice-store";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +9,7 @@ type Props = { params: Promise<{ invoiceId: string }> };
 
 export default async function CommissionInvoiceDetailPage({ params }: Props) {
   const { invoiceId } = await params;
-  const draft = await getPkdCommissionInvoiceDraft(invoiceId);
+  const draft = (await getPkdCommissionInvoiceDraft(invoiceId)) ?? fallbackPkdCommissionInvoiceDraft(invoiceId);
   if (!draft) notFound();
 
   return (

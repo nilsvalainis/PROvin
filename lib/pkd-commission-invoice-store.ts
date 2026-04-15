@@ -43,6 +43,10 @@ export function isSafePkdInvoiceId(id: string): boolean {
   return SAFE_ID_RE.test(id);
 }
 
+function isPkdInvoiceNumber(value: string): boolean {
+  return /^PKD-\d{4}-\d{3,}$/.test(value.trim());
+}
+
 function formatInvoiceDate(date: Date): string {
   const day = String(date.getDate()).padStart(2, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -187,6 +191,19 @@ function defaultDraft(now: Date, invoiceNumber: string): PkdCommissionInvoiceInp
   };
 }
 
+export function fallbackPkdCommissionInvoiceDraft(id: string): PkdCommissionInvoiceDraft | null {
+  if (!isSafePkdInvoiceId(id)) return null;
+  if (!isPkdInvoiceNumber(id)) return null;
+  const now = new Date();
+  const nowIso = now.toISOString();
+  return {
+    id,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    ...defaultDraft(now, id),
+  };
+}
+
 export async function createNextPkdCommissionInvoiceDraft(): Promise<PkdCommissionInvoiceDraft> {
   const now = new Date();
   const existing = await listPkdCommissionInvoiceDrafts();
@@ -217,9 +234,11 @@ export async function updatePkdCommissionInvoiceDraft(
 ): Promise<PkdCommissionInvoiceDraft | null> {
   if (!isSafePkdInvoiceId(id)) return null;
   const prev = await readDraftFile(id);
-  if (!prev) return null;
+  const fallback = fallbackPkdCommissionInvoiceDraft(id);
+  if (!prev && !fallback) return null;
+  const base = prev ?? fallback!;
   const draft: PkdCommissionInvoiceDraft = {
-    ...prev,
+    ...base,
     ...input,
     updatedAt: new Date().toISOString(),
   };

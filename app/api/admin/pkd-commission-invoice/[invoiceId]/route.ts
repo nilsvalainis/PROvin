@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import {
+  fallbackPkdCommissionInvoiceDraft,
   getPkdCommissionInvoiceDraft,
   isSafePkdInvoiceId,
   updatePkdCommissionInvoiceDraft,
@@ -73,10 +74,11 @@ export async function GET(_req: Request, { params }: Ctx) {
     return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   }
   const draft = await getPkdCommissionInvoiceDraft(invoiceId);
-  if (!draft) {
+  const fallback = fallbackPkdCommissionInvoiceDraft(invoiceId);
+  if (!draft && !fallback) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
-  return NextResponse.json(draft, { status: 200 });
+  return NextResponse.json(draft ?? fallback, { status: 200 });
 }
 
 export async function PUT(req: Request, { params }: Ctx) {
