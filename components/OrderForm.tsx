@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
-import { validateOrderFields } from "@/lib/order-field-validation";
+import { isPlausibleListingUrl, isValidVin, normalizeVin, validateOrderFields } from "@/lib/order-field-validation";
 
 const labelHero =
   "order-form-hero-label block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#e5e7eb]";
@@ -38,31 +38,57 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
   const t = useTranslations("Order");
   const te = useTranslations("Order.errors");
   const locale = useLocale();
+  const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [withdrawalConsent, setWithdrawalConsent] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [vin, setVin] = useState("");
+  const [listingUrl, setListingUrl] = useState("");
+  const [notes, setNotes] = useState("");
   const hero = variant === "hero";
   const compact = variant === "compact";
 
   const labelClass = hero ? labelHero : labelDefault;
   const inputBase = hero ? inputHeroNoBottom : inputDefault;
 
+  function goToStepTwo() {
+    setError(null);
+    const vinNormalized = normalizeVin(vin);
+    if (!vinNormalized || !isValidVin(vinNormalized)) {
+      setError(t("validation.vin"));
+      return;
+    }
+    const listingTrim = listingUrl.trim();
+    if (!listingTrim || !isPlausibleListingUrl(listingTrim)) {
+      setError(t("validation.listing"));
+      return;
+    }
+    setVin(vinNormalized);
+    setStep(2);
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    if (step === 1) {
+      goToStepTwo();
+      return;
+    }
     if (!withdrawalConsent) {
       setError(te("withdrawalRequired"));
       return;
     }
-    const fd = new FormData(e.currentTarget);
-    const name = String(fd.get("name") ?? "").trim();
-    const email = String(fd.get("email") ?? "").trim();
-    const phone = String(fd.get("phone") ?? "").trim();
-    const vin = String(fd.get("vin") ?? "").trim();
-    const listingUrl = String(fd.get("listingUrl") ?? "").trim();
-    const notes = String(fd.get("notes") ?? "").trim();
+    const nameTrim = name.trim();
+    const emailTrim = email.trim();
+    const phoneTrim = phone.trim();
+    const vinTrim = vin.trim();
+    const listingTrim = listingUrl.trim();
+    const notesTrim = notes.trim();
 
-    const fieldError = validateOrderFields({ vin, listingUrl, email, phone });
+    const fieldError = validateOrderFields({ vin: vinTrim, listingUrl: listingTrim, email: emailTrim, phone: phoneTrim });
     if (fieldError) {
       setError(t(`validation.${fieldError}`));
       return;
@@ -74,12 +100,12 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: name || undefined,
-          email,
-          phone,
-          vin,
-          listingUrl,
-          notes: notes || undefined,
+          name: nameTrim || undefined,
+          email: emailTrim,
+          phone: phoneTrim,
+          vin: vinTrim,
+          listingUrl: listingTrim,
+          notes: notesTrim || undefined,
           locale,
           withdrawalConsent: true,
         }),
@@ -126,96 +152,8 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
     >
       <div className={`grid sm:grid-cols-2 ${gridGap}`}>
         <div className="sm:col-span-2">
-          <label htmlFor="order-name" className={labelClass}>
-            {t("nameLabel")}
-          </label>
-          {hero ? (
-            <HeroFieldScanLine>
-              <input
-                id="order-name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                maxLength={120}
-                className={inputBase}
-                placeholder={t("namePlaceholder")}
-              />
-            </HeroFieldScanLine>
-          ) : (
-            <input
-              id="order-name"
-              name="name"
-              type="text"
-              autoComplete="name"
-              maxLength={120}
-              className={inputBase}
-              placeholder={t("namePlaceholder")}
-            />
-          )}
-        </div>
-        <div className="sm:col-span-2 sm:grid sm:grid-cols-2 sm:gap-4">
-          <div>
-            <label htmlFor="order-email" className={labelClass}>
-              {t("emailLabel")} <span className={reqStarClass}>*</span>
-            </label>
-            {hero ? (
-              <HeroFieldScanLine>
-                <input
-                  id="order-email"
-                  name="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  className={inputBase}
-                  placeholder={t("emailPlaceholder")}
-                />
-              </HeroFieldScanLine>
-            ) : (
-              <input
-                id="order-email"
-                name="email"
-                type="email"
-                required
-                autoComplete="email"
-                className={inputBase}
-                placeholder={t("emailPlaceholder")}
-              />
-            )}
-            <p className={hintClass}>{t("emailHint")}</p>
-          </div>
-          <div>
-            <label htmlFor="order-phone" className={labelClass}>
-              {t("phoneLabel")} <span className={reqStarClass}>*</span>
-            </label>
-            {hero ? (
-              <HeroFieldScanLine>
-                <input
-                  id="order-phone"
-                  name="phone"
-                  type="tel"
-                  required
-                  autoComplete="tel"
-                  className={inputBase}
-                  placeholder={t("phonePlaceholder")}
-                />
-              </HeroFieldScanLine>
-            ) : (
-              <input
-                id="order-phone"
-                name="phone"
-                type="tel"
-                required
-                autoComplete="tel"
-                className={inputBase}
-                placeholder={t("phonePlaceholder")}
-              />
-            )}
-            <p className={hintClass}>{t("phoneHint")}</p>
-          </div>
-        </div>
-        <div className="sm:col-span-2">
           <label htmlFor="order-vin" className={labelClass}>
-            {t("vinLabel")} <span className={reqStarClass}>*</span>
+            {t("vinLabel")}
           </label>
           {hero ? (
             <HeroFieldScanLine>
@@ -226,11 +164,13 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 required
                 maxLength={17}
                 spellCheck={false}
+                value={vin}
                 className={`${inputBase} w-full font-mono uppercase tracking-wide`}
                 placeholder={t("vinPlaceholderHero")}
                 onChange={(e) => {
                   const el = e.target;
-                  el.value = el.value.toUpperCase().slice(0, 17);
+                  const value = el.value.toUpperCase().slice(0, 17);
+                  setVin(value);
                 }}
               />
             </HeroFieldScanLine>
@@ -242,11 +182,13 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               required
               maxLength={17}
               spellCheck={false}
+              value={vin}
               className={`${inputBase} font-mono uppercase tracking-wide`}
               placeholder={t("vinPlaceholder")}
               onChange={(e) => {
                 const el = e.target;
-                el.value = el.value.toUpperCase().slice(0, 17);
+                const value = el.value.toUpperCase().slice(0, 17);
+                setVin(value);
               }}
             />
           )}
@@ -270,8 +212,11 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 id="order-url"
                 name="listingUrl"
                 type="url"
+                required
+                value={listingUrl}
                 className={inputBase}
                 placeholder={t("urlPlaceholder")}
+                onChange={(e) => setListingUrl(e.target.value)}
               />
             </HeroFieldScanLine>
           ) : (
@@ -279,38 +224,149 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               id="order-url"
               name="listingUrl"
               type="url"
+              required
+              value={listingUrl}
               className={inputBase}
               placeholder={t("urlPlaceholder")}
+              onChange={(e) => setListingUrl(e.target.value)}
             />
           )}
           <p className={hintClass}>{t("listingHint")}</p>
         </div>
-        <div className="sm:col-span-2">
-          <label htmlFor="order-notes" className={labelClass}>
-            {t("notesLabel")}
-          </label>
-          {hero ? (
-            <HeroFieldScanLine>
-              <textarea
-                id="order-notes"
-                name="notes"
-                rows={notesRows}
-                maxLength={500}
-                className={`${inputBase} min-h-[88px] resize-y sm:min-h-[72px]`}
-                placeholder={t("notesPlaceholder")}
-              />
-            </HeroFieldScanLine>
-          ) : (
-            <textarea
-              id="order-notes"
-              name="notes"
-              rows={notesRows}
-              maxLength={500}
-              className={`${inputBase} min-h-[88px] resize-y sm:min-h-[72px]`}
-              placeholder={t("notesPlaceholder")}
-            />
-          )}
-        </div>
+        {step === 2 ? (
+          <>
+            <div className="sm:col-span-2">
+              <label htmlFor="order-name" className={labelClass}>
+                {t("nameLabel")}
+              </label>
+              {hero ? (
+                <HeroFieldScanLine>
+                  <input
+                    id="order-name"
+                    name="name"
+                    type="text"
+                    autoComplete="name"
+                    maxLength={120}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={inputBase}
+                    placeholder={t("namePlaceholder")}
+                  />
+                </HeroFieldScanLine>
+              ) : (
+                <input
+                  id="order-name"
+                  name="name"
+                  type="text"
+                  autoComplete="name"
+                  maxLength={120}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={inputBase}
+                  placeholder={t("namePlaceholder")}
+                />
+              )}
+            </div>
+            <div className="sm:col-span-2 sm:grid sm:grid-cols-2 sm:gap-4">
+              <div>
+                <label htmlFor="order-email" className={labelClass}>
+                  {t("emailLabel")} <span className={reqStarClass}>*</span>
+                </label>
+                {hero ? (
+                  <HeroFieldScanLine>
+                    <input
+                      id="order-email"
+                      name="email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={inputBase}
+                      placeholder={t("emailPlaceholder")}
+                    />
+                  </HeroFieldScanLine>
+                ) : (
+                  <input
+                    id="order-email"
+                    name="email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={inputBase}
+                    placeholder={t("emailPlaceholder")}
+                  />
+                )}
+                <p className={hintClass}>{t("emailHint")}</p>
+              </div>
+              <div>
+                <label htmlFor="order-phone" className={labelClass}>
+                  {t("phoneLabel")} <span className={reqStarClass}>*</span>
+                </label>
+                {hero ? (
+                  <HeroFieldScanLine>
+                    <input
+                      id="order-phone"
+                      name="phone"
+                      type="tel"
+                      required
+                      autoComplete="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className={inputBase}
+                      placeholder={t("phonePlaceholder")}
+                    />
+                  </HeroFieldScanLine>
+                ) : (
+                  <input
+                    id="order-phone"
+                    name="phone"
+                    type="tel"
+                    required
+                    autoComplete="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className={inputBase}
+                    placeholder={t("phonePlaceholder")}
+                  />
+                )}
+                <p className={hintClass}>{t("phoneHint")}</p>
+              </div>
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="order-notes" className={labelClass}>
+                {t("notesLabel")}
+              </label>
+              {hero ? (
+                <HeroFieldScanLine>
+                  <textarea
+                    id="order-notes"
+                    name="notes"
+                    rows={notesRows}
+                    maxLength={500}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className={`${inputBase} min-h-[88px] resize-y sm:min-h-[72px]`}
+                    placeholder={t("notesPlaceholder")}
+                  />
+                </HeroFieldScanLine>
+              ) : (
+                <textarea
+                  id="order-notes"
+                  name="notes"
+                  rows={notesRows}
+                  maxLength={500}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className={`${inputBase} min-h-[88px] resize-y sm:min-h-[72px]`}
+                  placeholder={t("notesPlaceholder")}
+                />
+              )}
+            </div>
+          </>
+        ) : null}
       </div>
 
       <div
@@ -335,7 +391,22 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 {t("summaryNote")}
               </p>
             </div>
-            <label
+            {step === 1 ? (
+              <button
+                type="button"
+                onClick={goToStepTwo}
+                className="provin-home-pill-cta provin-home-pill-cta--wide mx-auto mt-1 flex min-h-12 max-w-[min(100%,20rem)] touch-manipulation items-center justify-center gap-2 sm:min-h-[50px]"
+              >
+                {t("continueButton")}
+                <ArrowRight
+                  className="order-form-hero-pay-arrow h-4 w-4 shrink-0 text-[#7eb6ff]/90"
+                  strokeWidth={2}
+                  aria-hidden
+                />
+              </button>
+            ) : null}
+            {step === 2 ? (
+              <label
               htmlFor="order-checkout-consent"
               className="order-form-hero-rule flex min-h-11 cursor-pointer items-start gap-3 border-b border-[#c0c0c0]/35 pb-4 text-left sm:min-h-0"
             >
@@ -369,6 +440,8 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 })}
               </span>
             </label>
+            ) : null}
+            {step === 2 ? (
             <button
               type="submit"
               disabled={loading || !withdrawalConsent}
@@ -387,13 +460,24 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 </>
               )}
             </button>
+            ) : null}
+            {step === 2 ? (
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="mx-auto text-center text-[12px] font-medium text-[#e5e7eb]/70 underline decoration-[#e5e7eb]/30 underline-offset-2 hover:text-[#e5e7eb]"
+              >
+                {t("backToFirstStep")}
+              </button>
+            ) : null}
             <p className="order-form-hero-stripe-note text-center text-[10px] font-normal leading-relaxed text-[#e5e7eb]/48 sm:text-[11px]">
               {t("stripeNote")}
             </p>
           </>
         ) : (
           <>
-            <label
+            {step === 2 ? (
+              <label
               htmlFor="order-checkout-consent"
               className="flex min-h-11 cursor-pointer items-start gap-3 border-b border-[#050505]/12 pb-4 text-left sm:min-h-0"
             >
@@ -427,16 +511,36 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 })}
               </span>
             </label>
+            ) : null}
             <div
               className={`flex flex-col gap-2 ${compact ? "sm:flex-row sm:items-center sm:justify-between sm:gap-4" : "sm:flex-row sm:items-center sm:justify-between"}`}
             >
-              <button
-                type="submit"
-                disabled={loading || !withdrawalConsent}
-                className="provin-btn provin-btn--compact inline-flex min-h-11 w-full min-w-[180px] items-center justify-center rounded-full px-7 py-[10px] text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60 sm:w-auto sm:min-h-10"
-              >
-                {loading ? t("payLoading") : t("payButton")}
-              </button>
+              {step === 1 ? (
+                <button
+                  type="button"
+                  onClick={goToStepTwo}
+                  className="provin-btn provin-btn--compact inline-flex min-h-11 w-full min-w-[180px] items-center justify-center rounded-full px-7 py-[10px] text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] sm:w-auto sm:min-h-10"
+                >
+                  {t("continueButton")}
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={loading || !withdrawalConsent}
+                  className="provin-btn provin-btn--compact inline-flex min-h-11 w-full min-w-[180px] items-center justify-center rounded-full px-7 py-[10px] text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60 sm:w-auto sm:min-h-10"
+                >
+                  {loading ? t("payLoading") : t("payButton")}
+                </button>
+              )}
+              {step === 2 ? (
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="text-[12px] font-medium text-[#6e6e73] underline decoration-[#6e6e73]/35 underline-offset-2 hover:text-[#1d1d1f]"
+                >
+                  {t("backToFirstStep")}
+                </button>
+              ) : null}
               <p className="text-center text-[10px] font-normal leading-snug text-[#aeaeb2] sm:max-w-[14rem] sm:text-right">
                 {t("stripeNote")}
               </p>

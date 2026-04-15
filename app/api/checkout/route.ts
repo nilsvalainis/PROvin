@@ -97,7 +97,7 @@ export async function POST(req: Request) {
   if (!vin || !isValidVin(vin)) {
     errors.push(copy.validation.vin);
   }
-  if (listingUrl && !isPlausibleListingUrl(listingUrl)) {
+  if (!listingUrl || !isPlausibleListingUrl(listingUrl)) {
     errors.push(copy.validation.listing);
   }
   if (!email || !isValidOrderEmail(email)) {
