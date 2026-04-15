@@ -9,6 +9,7 @@ import { LenisProvider } from "@/components/providers/LenisProvider";
 import { Header } from "@/components/Header";
 import { HideOnDemoPaths } from "@/components/layout/HideOnDemoPaths";
 import { SiteOrderCtaPin } from "@/components/home/SiteOrderCtaPin";
+import { HomeReloadScrollToTop } from "@/components/home/HomeReloadScrollToTop";
 import { SiteSectionRail } from "@/components/home/SiteSectionRail";
 import { DemoPathThemeToggle } from "@/components/site-theme/DemoPathThemeToggle";
 import { routing } from "@/i18n/routing";
@@ -64,6 +65,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <LenisProvider>
+        <HomeReloadScrollToTop />
         <LocaleHtmlLang />
         <SiteSectionRail />
         <SiteOrderCtaPin />
