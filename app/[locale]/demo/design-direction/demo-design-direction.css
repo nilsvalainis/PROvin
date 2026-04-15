@@ -240,23 +240,17 @@
   color: rgb(200 205 215 / 0.78);
 }
 
-/* Sākumlapa #home-intro — web (≥768px) −25 % pret iepriekšējo 1.365rem; mobilajā 75 % no web izmēra */
+/* Sākumlapa #home-intro — web −25 % pret 1.365rem; mobilajā tas pats absolūtais izmērs kā iepriekš (0.75 × 1.365rem) */
 .demo-design-dir__body--home-intro {
-  font-size: calc(1.365rem * 0.75 * 0.75);
+  font-size: calc(1.365rem * 0.75);
   font-weight: 400;
   letter-spacing: 0.045em;
   line-height: 1.65;
 }
 
-@media (min-width: 768px) {
-  .demo-design-dir__body--home-intro {
-    font-size: calc(1.365rem * 0.75);
-  }
-}
-
-/* IRISS redakcijas bloku rindkopas — web −25 %; mobilajā proporcionāli */
+/* IRISS redakcijas bloku rindkopas — web −25 % pret 1.365rem; mobilajā kā iepriekš */
 .demo-design-dir__body--iriss-editorial {
-  font-size: calc(0.9375rem * 0.75);
+  font-size: 0.9375rem;
   font-weight: 400;
   letter-spacing: 0.015em;
   line-height: 1.65;
@@ -269,9 +263,9 @@
   }
 }
 
-/* IRISS redakcijas bloku virsraksti — −25 % pret iepriekšējo clamp (saglabā hierarhiju virs rindkopas) */
+/* IRISS redakcijas bloku virsraksti — web −25 % pret iepriekšējo clamp */
 .iriss-editorial-heading {
-  font-size: calc(0.9375rem * 0.75);
+  font-size: 0.9375rem;
   line-height: 1.35;
 }
 
