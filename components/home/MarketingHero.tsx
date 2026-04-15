@@ -448,19 +448,17 @@ export function MarketingHero({
                   ref={mobileHeroScrollRef}
                   className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden md:hidden"
                 >
-                  <div className="flex min-h-full w-full flex-col justify-center">
-                    <div className="pointer-events-auto mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))]">
-                      <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">
-                        {approvedBlock}
+                  <div className="pointer-events-auto mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))]">
+                    <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">
+                      {approvedBlock}
+                    </div>
+                    <div className="flex flex-col gap-3 py-0">
+                      <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
+                        {heroTitleStack}
                       </div>
-                      <div className="flex flex-col gap-3 py-0">
-                        <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
-                          {heroTitleStack}
-                        </div>
-                        {heroOrderEntry}
-                        <div className="flex w-full flex-col items-center gap-1 pb-0.5 pt-0.5">
-                          {heroStepOneCta}
-                        </div>
+                      {heroOrderEntry}
+                      <div className="flex w-full flex-col items-center gap-1 pb-0.5 pt-0.5">
+                        {heroStepOneCta}
                       </div>
                     </div>
                   </div>
