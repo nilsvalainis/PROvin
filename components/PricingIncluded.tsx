@@ -104,7 +104,7 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
         className={`mx-auto mt-2 grid w-full grid-cols-2 gap-x-3 gap-y-1 sm:mt-3 sm:gap-4 md:grid-cols-4 md:gap-5 ${pricingGridWidthClass}`}
       >
         <div className="min-w-0 text-left md:col-span-1 md:col-start-1">
-          <p className="pricing-auto-records-footnote w-full min-w-0 max-w-full text-balance break-words text-[10px] font-normal leading-snug tracking-tight text-white/55 sm:text-[12px] md:text-[9px] md:leading-[1.35]">
+          <p className="pricing-auto-records-footnote text-[10px] font-normal leading-snug text-white/55 sm:text-[12px]">
             {t("autoRecordsFootnote")}
           </p>
         </div>

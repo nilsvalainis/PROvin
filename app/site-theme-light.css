@@ -207,11 +207,11 @@ html[data-site-theme="light"] .order-form--hero .order-form-hero-consent-text {
 }
 
 html[data-site-theme="light"] .order-form--hero .order-form-hero-input {
-  color: #000000 !important;
+  color: rgb(0 0 0 / 0.7) !important;
 }
 
 html[data-site-theme="light"] .order-form--hero .order-form-hero-input::placeholder {
-  color: #8a8a8e !important;
+  color: rgb(138 138 142 / 0.72) !important;
 }
 
 html[data-site-theme="light"] .order-form--hero .order-form-hero-hint,
@@ -256,13 +256,13 @@ html[data-site-theme="light"] .order-form-hero-field:focus-within {
 
 html[data-site-theme="light"] .order-form-hero-field:focus-within input,
 html[data-site-theme="light"] .order-form-hero-field:focus-within textarea {
-  color: #000000;
-  caret-color: #000000;
+  color: rgb(0 0 0 / 0.7);
+  caret-color: rgb(0 0 0 / 0.7);
 }
 
 html[data-site-theme="light"] .order-form-hero-field:focus-within input::placeholder,
 html[data-site-theme="light"] .order-form-hero-field:focus-within textarea::placeholder {
-  color: #8a8a8e !important;
+  color: rgb(138 138 142 / 0.72) !important;
 }
 
 /* Lab CTA — hover zils */

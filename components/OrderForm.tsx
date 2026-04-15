@@ -16,7 +16,7 @@ const labelDefault =
 /** Dark cockpit: laukam bez apakšējās robežas — līniju un zilo impulsu dod `HeroFieldScanLine`. */
 /** Hero: ≥16px līdz `sm`, lai iOS/Android nezoomē uz fokusu; sm+ atkal kompaktāks līnijas izskats. */
 const inputHeroNoBottom =
-  "order-form-hero-input relative z-10 box-border min-h-11 w-full min-w-0 max-w-full appearance-none rounded-none border-0 bg-transparent px-0 py-2.5 text-base font-normal leading-snug text-[#e5e7eb] shadow-none outline-none ring-0 transition-[color] placeholder:text-[#e5e7eb]/52 focus:shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 sm:min-h-0 sm:text-[10px] sm:leading-[1.2] md:text-[16px] md:leading-normal";
+  "order-form-hero-input relative z-10 box-border min-h-11 w-full min-w-0 max-w-full appearance-none rounded-none border-0 bg-transparent px-0 py-2.5 text-base font-normal leading-snug text-[#e5e7eb]/70 shadow-none outline-none ring-0 transition-[color] placeholder:text-[#e5e7eb]/36 focus:shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 sm:min-h-0 sm:text-[10px] sm:leading-[1.2] md:text-[16px] md:leading-normal";
 
 const inputDefault =
   "mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505]/75 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition-[border-color] placeholder:text-[#86868b] focus:border-provin-accent focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
@@ -166,7 +166,7 @@ export function OrderForm({
 
   const reqStarClass = hero ? "text-red-400" : "text-red-600";
   const firstStepVinPlaceholder = "IEVADI VIN";
-  const firstStepListingPlaceholder = "SAITE UZ SLUDINĀJUMU";
+  const firstStepListingPlaceholder = "IEVADI SLUDINĀJUMA SAITI";
   const firstStepVinInputClassHero = `${inputBase} w-full tracking-normal`;
   const secondStepVinInputClassHero = `${inputBase} w-full font-mono uppercase tracking-wide`;
   const firstStepVinInputClassDefault = `${inputBase} tracking-normal ${firstStepInfoTextSizeClass}`;
