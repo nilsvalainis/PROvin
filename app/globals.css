@@ -348,6 +348,27 @@ body {
   color: rgb(226 232 240 / 0.36);
 }
 
+/* 1. solis: validācijas kļūda — sarkanā „kasete” ap lauku (ne modālais logs) */
+.order-form-hero-field--invalid {
+  background-color: rgb(69 10 10 / 0.28);
+  box-shadow: inset 0 0 0 1px rgb(239 68 68 / 0.55);
+}
+
+.order-form-hero-field--invalid:focus-within {
+  box-shadow: inset 0 0 0 1px rgb(248 113 113 / 0.72);
+}
+
+.order-form-hero-field--invalid:focus-within input,
+.order-form-hero-field--invalid:focus-within textarea {
+  color: rgb(254 202 202 / 0.92);
+  caret-color: rgb(254 202 202 / 0.92);
+}
+
+.order-form-hero-field--invalid:focus-within input::placeholder,
+.order-form-hero-field--invalid:focus-within textarea::placeholder {
+  color: rgb(252 165 165 / 0.42);
+}
+
 /* Hero lauki: WebKit autofill — fons paliek caurspīdīgs, teksts kā parastajā ievadē */
 .order-form-hero-field input:-webkit-autofill,
 .order-form-hero-field input:-webkit-autofill:hover,

@@ -32,9 +32,13 @@ type OrderFormProps = {
   onStepChange?: (step: 1 | 2) => void;
 };
 
-function HeroFieldScanLine({ children }: { children: ReactNode }) {
+function HeroFieldScanLine({ children, invalid }: { children: ReactNode; invalid?: boolean }) {
   return (
-    <div className="order-form-hero-field relative z-0 mt-2 w-full min-w-0 max-w-full overflow-x-clip rounded-sm px-2 py-1 -mx-0.5">
+    <div
+      className={`order-form-hero-field relative z-0 mt-2 w-full min-w-0 max-w-full overflow-x-clip rounded-sm px-2 py-1 -mx-0.5${
+        invalid ? " order-form-hero-field--invalid" : ""
+      }`}
+    >
       {children}
       <DiagnosticScanLine variant="rail" motion="sweepLtr" className="order-form-hero-scan relative z-[1] w-full max-w-full min-w-0" />
     </div>
@@ -61,6 +65,10 @@ export function OrderForm({
   const [vin, setVin] = useState("");
   const [listingUrl, setListingUrl] = useState("");
   const [notes, setNotes] = useState("");
+  const [heroStep1Errors, setHeroStep1Errors] = useState<{ vin: string | null; listing: string | null }>({
+    vin: null,
+    listing: null,
+  });
   const hero = variant === "hero";
   const compact = variant === "compact";
   const errorRef = useRef<HTMLParagraphElement | null>(null);
@@ -95,6 +103,22 @@ export function OrderForm({
     const vinOk = Boolean(vinNormalized && isValidVin(vinNormalized));
     const listingTrim = listingUrl.trim();
     const listingOk = Boolean(listingTrim && isPlausibleListingUrl(listingTrim));
+
+    if (vinOk && listingOk) {
+      setHeroStep1Errors({ vin: null, listing: null });
+      setVin(vinNormalized);
+      setStep(2);
+      return;
+    }
+
+    const vinMsg = vinOk ? null : !vinNormalized ? t("validation.required") : t("validation.vin");
+    const listingMsg = listingOk ? null : !listingTrim ? t("validation.required") : t("validation.listing");
+
+    if (hero) {
+      setHeroStep1Errors({ vin: vinMsg, listing: listingMsg });
+      return;
+    }
+
     if (!vinOk && !listingOk) {
       setError(t("validation.step1Both"));
       return;
@@ -103,18 +127,14 @@ export function OrderForm({
       setError(t("validation.vin"));
       return;
     }
-    if (!listingOk) {
-      setError(t("validation.listing"));
-      return;
-    }
-    setVin(vinNormalized);
-    setStep(2);
+    setError(t("validation.listing"));
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     if (step === 1) {
+      setHeroStep1Errors({ vin: null, listing: null });
       goToStepTwo();
       return;
     }
@@ -192,6 +212,12 @@ export function OrderForm({
   const firstStepVinInputClassDefault = `${inputBase} tracking-normal ${firstStepInfoTextSizeClass}`;
   const firstStepListingInputClassDefault = `${inputBase} ${firstStepInfoTextSizeClass}`;
   const secondStepVinInputClassDefault = `${inputBase} font-mono uppercase tracking-wide`;
+  function goBackToStepOne() {
+    setStep(1);
+    setError(null);
+    setHeroStep1Errors({ vin: null, listing: null });
+  }
+
   const footerClass = hero
     ? step === 1
       ? "order-form-hero-footer mt-3 space-y-3 border-0 pt-0"
@@ -219,24 +245,38 @@ export function OrderForm({
             </label>
           ) : null}
           {hero ? (
-            <HeroFieldScanLine>
-              <input
-                id="order-vin"
-                name="vin"
-                type="text"
-                required
-                maxLength={17}
-                spellCheck={false}
-                value={vin}
-                className={step === 1 ? firstStepVinInputClassHero : secondStepVinInputClassHero}
-                placeholder={step === 1 ? firstStepVinPlaceholder : t("vinPlaceholderHero")}
-                onChange={(e) => {
-                  const el = e.target;
-                  const value = el.value.toUpperCase().slice(0, 17);
-                  setVin(value);
-                }}
-              />
-            </HeroFieldScanLine>
+            <>
+              <HeroFieldScanLine invalid={step === 1 && Boolean(heroStep1Errors.vin)}>
+                <input
+                  id="order-vin"
+                  name="vin"
+                  type="text"
+                  required
+                  maxLength={17}
+                  spellCheck={false}
+                  value={vin}
+                  className={step === 1 ? firstStepVinInputClassHero : secondStepVinInputClassHero}
+                  placeholder={step === 1 ? firstStepVinPlaceholder : t("vinPlaceholderHero")}
+                  aria-invalid={step === 1 && Boolean(heroStep1Errors.vin)}
+                  aria-describedby={step === 1 && heroStep1Errors.vin ? "order-hero-vin-error" : undefined}
+                  onChange={(e) => {
+                    const el = e.target;
+                    const value = el.value.toUpperCase().slice(0, 17);
+                    setVin(value);
+                    if (step === 1) setHeroStep1Errors((p) => ({ ...p, vin: null }));
+                  }}
+                />
+              </HeroFieldScanLine>
+              {step === 1 && heroStep1Errors.vin ? (
+                <p
+                  id="order-hero-vin-error"
+                  className="order-form-hero-field-error mt-1.5 px-0.5 text-left text-[12px] font-normal leading-snug text-red-300 sm:text-[11px]"
+                  role="alert"
+                >
+                  {heroStep1Errors.vin}
+                </p>
+              ) : null}
+            </>
           ) : (
             <input
               id="order-vin"
@@ -274,18 +314,34 @@ export function OrderForm({
             </label>
           ) : null}
           {hero ? (
-            <HeroFieldScanLine>
-              <input
-                id="order-url"
-                name="listingUrl"
-                type="url"
-                required
-                value={listingUrl}
-                className={step === 1 ? firstStepListingInputClassHero : inputBase}
-                placeholder={step === 1 ? firstStepListingPlaceholder : t("urlPlaceholder")}
-                onChange={(e) => setListingUrl(e.target.value)}
-              />
-            </HeroFieldScanLine>
+            <>
+              <HeroFieldScanLine invalid={step === 1 && Boolean(heroStep1Errors.listing)}>
+                <input
+                  id="order-url"
+                  name="listingUrl"
+                  type="url"
+                  required
+                  value={listingUrl}
+                  className={step === 1 ? firstStepListingInputClassHero : inputBase}
+                  placeholder={step === 1 ? firstStepListingPlaceholder : t("urlPlaceholder")}
+                  aria-invalid={step === 1 && Boolean(heroStep1Errors.listing)}
+                  aria-describedby={step === 1 && heroStep1Errors.listing ? "order-hero-listing-error" : undefined}
+                  onChange={(e) => {
+                    setListingUrl(e.target.value);
+                    if (step === 1) setHeroStep1Errors((p) => ({ ...p, listing: null }));
+                  }}
+                />
+              </HeroFieldScanLine>
+              {step === 1 && heroStep1Errors.listing ? (
+                <p
+                  id="order-hero-listing-error"
+                  className="order-form-hero-field-error mt-1.5 px-0.5 text-left text-[12px] font-normal leading-snug text-red-300 sm:text-[11px]"
+                  role="alert"
+                >
+                  {heroStep1Errors.listing}
+                </p>
+              ) : null}
+            </>
           ) : (
             <input
               id="order-url"
@@ -538,7 +594,7 @@ export function OrderForm({
             {step === 2 ? (
               <button
                 type="button"
-                onClick={() => setStep(1)}
+                onClick={goBackToStepOne}
                 className="mx-auto text-center text-[12px] font-medium text-[#e5e7eb]/70 underline decoration-[#e5e7eb]/30 underline-offset-2 hover:text-[#e5e7eb]"
               >
                 {t("backToFirstStep")}
@@ -615,7 +671,7 @@ export function OrderForm({
               {step === 2 ? (
                 <button
                   type="button"
-                  onClick={() => setStep(1)}
+                  onClick={goBackToStepOne}
                   className="text-[12px] font-medium text-[#6e6e73] underline decoration-[#6e6e73]/35 underline-offset-2 hover:text-[#1d1d1f]"
                 >
                   {t("backToFirstStep")}
