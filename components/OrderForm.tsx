@@ -204,6 +204,8 @@ export function OrderForm({
         : `mt-10 space-y-6 rounded-none border-0 border-y border-black/[0.08] bg-white/[0.55] px-5 py-8 sm:px-10 sm:py-10 ${className ?? ""}`;
 
   const gridGap = hero ? "gap-4" : compact ? "gap-4" : "gap-6";
+  /** Web (md+): visi hero ievades lauki kā VIN sleja — ~17 rakstzīmes + 2ch rezerve (`ch` = pašreizējā fonta „0” platums). */
+  const heroWebInputsTrackClass = "max-w-full md:mx-auto md:max-w-[19ch]";
   const notesRows = hero ? 3 : compact ? 3 : 4;
 
   const hintClass = hero
@@ -238,7 +240,7 @@ export function OrderForm({
       className={`${formShell}${hero ? " order-form--hero" : ""}`}
       noValidate
     >
-      <div className={`grid min-w-0 w-full max-w-full sm:grid-cols-2 ${gridGap}`}>
+      <div className={`grid min-w-0 w-full max-w-full sm:grid-cols-2 ${gridGap}${hero ? ` ${heroWebInputsTrackClass}` : ""}`}>
         <div className="sm:col-span-2">
           {step === 2 ? (
             <label htmlFor="order-vin" className={labelClass}>
@@ -361,7 +363,13 @@ export function OrderForm({
                 />
               )}
             </div>
-            <div className="min-w-0 sm:col-span-2 sm:grid sm:grid-cols-2 sm:gap-4">
+            <div
+              className={
+                hero
+                  ? "min-w-0 sm:col-span-2 grid grid-cols-1 gap-4"
+                  : "min-w-0 sm:col-span-2 sm:grid sm:grid-cols-2 sm:gap-4"
+              }
+            >
               <div>
                 <label htmlFor="order-email" className={labelClass}>
                   {t("emailLabel")} <span className={reqStarClass}>*</span>
