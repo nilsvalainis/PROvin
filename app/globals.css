@@ -662,10 +662,14 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   }
 }
 
-/* Kreisā procesa sliede — lasāms sudrabs pret tumšu fonu */
+/* Kreisā procesa sliede — teksts redzams tikai sliedes :hover / :focus-within */
 .home-rail-label {
-  color: #d7dbe6;
+  color: #e8edf7;
   transition: color 0.2s ease;
+}
+
+.site-section-rail:is(:hover, :focus-within) .home-rail-label {
+  color: #f8fafc;
 }
 
 @media (prefers-reduced-motion: reduce) {

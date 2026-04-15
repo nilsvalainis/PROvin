@@ -189,6 +189,10 @@ html[data-site-theme="light"] .home-rail-label {
   color: #1f2937;
 }
 
+html[data-site-theme="light"] .site-section-rail:is(:hover, :focus-within) .home-rail-label {
+  color: #0a0a0a;
+}
+
 /* Hero pill — pilns PROVIN zils (tāds pats kā tumšajā; tokens no html light) */
 html[data-site-theme="light"] .provin-home-pill-cta {
   border-color: var(--color-provin-accent-hover);

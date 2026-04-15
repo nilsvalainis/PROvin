@@ -169,14 +169,14 @@ export function SiteSectionRail() {
     "group/link relative flex max-w-none min-h-0 flex-1 flex-row items-stretch text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-all duration-300 ease-in-out motion-reduce:transition-none lg:text-[10px] lg:tracking-[0.19em]";
 
   const railLabelClass =
-    "home-rail-label pointer-events-none absolute left-0 top-1/2 z-[2] max-w-[min(10.25rem,min(28vw,26vmin))] -translate-y-1/2 whitespace-normal break-words text-pretty text-left transition-all duration-300 ease-in-out motion-reduce:transition-none";
+    "home-rail-label pointer-events-none absolute left-0 top-1/2 z-[2] max-w-[min(10.25rem,min(28vw,26vmin))] -translate-y-1/2 whitespace-normal break-words text-pretty text-left opacity-0 transition-all duration-300 ease-in-out motion-reduce:transition-none group-hover/rail:opacity-100 group-focus-within/rail:opacity-100";
 
   const railTopClass =
     "top-[max(1rem,calc(env(safe-area-inset-top,0px)+3.25rem))]";
 
   return (
     <nav
-      className={`site-section-rail group/rail pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] ${railTopClass} z-40 hidden min-h-0 min-w-0 w-max max-w-[min(15.75rem,min(34vw,30vmin))] cursor-pointer flex-col overflow-x-clip overflow-y-auto overscroll-contain pl-1 lg:flex`}
+      className={`site-section-rail group/rail pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] ${railTopClass} z-40 hidden min-h-0 min-w-0 w-max max-w-[calc(0.75rem+0.625rem+1.125rem)] cursor-pointer flex-col overflow-x-clip overflow-y-auto overscroll-contain pl-1 transition-[max-width] duration-300 ease-in-out group-hover/rail:max-w-[min(15.75rem,min(34vw,30vmin))] group-focus-within/rail:max-w-[min(15.75rem,min(34vw,30vmin))] motion-reduce:transition-none lg:flex`}
       aria-label={t("navAria")}
     >
       <div
@@ -192,7 +192,7 @@ export function SiteSectionRail() {
               aria-hidden
             />
           </div>
-          <ul className="flex min-h-0 min-w-[min(10.25rem,min(28vw,26vmin))] flex-1 flex-col">
+          <ul className="flex min-h-0 max-w-[1.125rem] flex-1 flex-col overflow-hidden transition-[max-width] duration-300 ease-in-out group-hover/rail:max-w-[min(10.25rem,min(28vw,26vmin))] group-focus-within/rail:max-w-[min(10.25rem,min(28vw,26vmin))] motion-reduce:transition-none">
             {sections.map((s, i) => {
               const isActive = i === active;
               return (
