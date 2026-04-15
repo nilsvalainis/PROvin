@@ -43,6 +43,8 @@
       "rateLimited": "Pārāk daudz pieprasījumu no šīs adreses. Uzgaidi īsu brīdi un mēģini vēlreiz."
     },
     "validation": {
+      "fieldEmpty": "Lauks nav aizpildīts.",
+      "invalidFormat": "Nepareizs formāts.",
       "step1Both": "Lūdzu, aizpildiet derīgu VIN kodu un precīzu saiti uz konkrētu sludinājumu (ne tikai vietnes sākumu).",
       "vin": "Lūdzu, ievadiet derīgu 17 zīmju VIN kodu.",
       "required": "Šis lauks ir obligāts.",

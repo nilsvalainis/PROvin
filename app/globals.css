@@ -348,10 +348,14 @@ body {
   color: rgb(226 232 240 / 0.36);
 }
 
-/* 1. solis: validācijas kļūda — sarkanā „kasete” ap lauku (ne modālais logs) */
+/* Hero: validācijas kļūda — sarkana apmale + viegls fons (ne window.alert) */
 .order-form-hero-field--invalid {
+  border-radius: 0.125rem;
+  border: 1px solid rgb(239 68 68 / 0.75);
   background-color: rgb(69 10 10 / 0.28);
-  box-shadow: inset 0 0 0 1px rgb(239 68 68 / 0.55);
+  box-shadow:
+    inset 0 0 0 1px rgb(239 68 68 / 0.35),
+    0 0 0 1px rgb(0 0 0 / 0.2);
 }
 
 .order-form-hero-field--invalid:focus-within {

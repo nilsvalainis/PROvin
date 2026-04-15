@@ -6,7 +6,14 @@ import { useLenis } from "lenis/react";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
-import { isPlausibleListingUrl, isValidVin, normalizeVin, validateOrderFields } from "@/lib/order-field-validation";
+import {
+  isPlausibleListingUrl,
+  isValidOrderEmail,
+  isValidOrderPhone,
+  isValidVin,
+  normalizeVin,
+  validateOrderFields,
+} from "@/lib/order-field-validation";
 
 const labelHero =
   "order-form-hero-label block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#e5e7eb] max-md:text-[calc(12px*1.2)]";
@@ -23,6 +30,29 @@ const inputDefault =
   "mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505]/75 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition-[border-color] placeholder:text-[#86868b] focus:border-provin-accent focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
 
 const firstStepInfoTextSizeClass = "text-[10.5px] sm:text-[11px]";
+
+type HeroStep2FieldKey = "vin" | "listing" | "email" | "phone";
+
+function buildHeroStep2FieldMessages(
+  vinTrim: string,
+  listingTrim: string,
+  emailTrim: string,
+  phoneTrim: string,
+  t: (key: string) => string,
+): Record<HeroStep2FieldKey, string | null> {
+  const vn = normalizeVin(vinTrim);
+  const vinMsg = !vn || !isValidVin(vn) ? (!vn ? t("validation.fieldEmpty") : t("validation.vin")) : null;
+  const listingMsg = !listingTrim
+    ? t("validation.fieldEmpty")
+    : !isPlausibleListingUrl(listingTrim)
+      ? t("validation.listing")
+      : null;
+  const et = emailTrim.trim();
+  const emailMsg = !et ? t("validation.fieldEmpty") : !isValidOrderEmail(emailTrim) ? t("validation.invalidFormat") : null;
+  const pt = phoneTrim.trim();
+  const phoneMsg = !pt ? t("validation.fieldEmpty") : !isValidOrderPhone(phoneTrim) ? t("validation.invalidFormat") : null;
+  return { vin: vinMsg, listing: listingMsg, email: emailMsg, phone: phoneMsg };
+}
 
 type OrderFormProps = {
   className?: string;
@@ -69,6 +99,13 @@ export function OrderForm({
     vin: null,
     listing: null,
   });
+  const [heroStep2FieldErrors, setHeroStep2FieldErrors] = useState<Record<HeroStep2FieldKey, string | null>>({
+    vin: null,
+    listing: null,
+    email: null,
+    phone: null,
+  });
+  const [consentError, setConsentError] = useState<string | null>(null);
   const hero = variant === "hero";
   const compact = variant === "compact";
   const errorRef = useRef<HTMLParagraphElement | null>(null);
@@ -77,6 +114,13 @@ export function OrderForm({
   useEffect(() => {
     onStepChange?.(step);
   }, [onStepChange, step]);
+
+  useEffect(() => {
+    if (!hero || step !== 1) return;
+    if (!heroStep1Errors.vin && !heroStep1Errors.listing) return;
+    const id = heroStep1Errors.vin ? "order-vin" : "order-url";
+    requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById(id)?.focus()));
+  }, [hero, step, heroStep1Errors.vin, heroStep1Errors.listing]);
 
   useEffect(() => {
     if (!error || !hero) return;
@@ -111,8 +155,8 @@ export function OrderForm({
       return;
     }
 
-    const vinMsg = vinOk ? null : !vinNormalized ? t("validation.required") : t("validation.vin");
-    const listingMsg = listingOk ? null : !listingTrim ? t("validation.required") : t("validation.listing");
+    const vinMsg = vinOk ? null : !vinNormalized ? t("validation.fieldEmpty") : t("validation.vin");
+    const listingMsg = listingOk ? null : !listingTrim ? t("validation.fieldEmpty") : t("validation.listing");
 
     if (hero) {
       setHeroStep1Errors({ vin: vinMsg, listing: listingMsg });
@@ -133,13 +177,17 @@ export function OrderForm({
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setConsentError(null);
+    if (hero) {
+      setHeroStep2FieldErrors({ vin: null, listing: null, email: null, phone: null });
+    }
     if (step === 1) {
-      setHeroStep1Errors({ vin: null, listing: null });
       goToStepTwo();
       return;
     }
     if (!withdrawalConsent) {
-      setError(te("withdrawalRequired"));
+      setConsentError(te("withdrawalRequired"));
+      requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById("order-checkout-consent")?.focus()));
       return;
     }
     const nameTrim = name.trim();
@@ -149,10 +197,20 @@ export function OrderForm({
     const listingTrim = listingUrl.trim();
     const notesTrim = notes.trim();
 
-    const fieldError = validateOrderFields({ vin: vinTrim, listingUrl: listingTrim, email: emailTrim, phone: phoneTrim });
-    if (fieldError) {
-      setError(t(`validation.${fieldError}`));
-      return;
+    if (hero) {
+      const msgs = buildHeroStep2FieldMessages(vinTrim, listingTrim, emailTrim, phoneTrim, t);
+      if (msgs.vin || msgs.listing || msgs.email || msgs.phone) {
+        setHeroStep2FieldErrors(msgs);
+        const firstId = msgs.vin ? "order-vin" : msgs.listing ? "order-url" : msgs.email ? "order-email" : "order-phone";
+        requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById(firstId)?.focus()));
+        return;
+      }
+    } else {
+      const fieldError = validateOrderFields({ vin: vinTrim, listingUrl: listingTrim, email: emailTrim, phone: phoneTrim });
+      if (fieldError) {
+        setError(t(`validation.${fieldError}`));
+        return;
+      }
     }
 
     setLoading(true);
@@ -215,7 +273,9 @@ export function OrderForm({
   function goBackToStepOne() {
     setStep(1);
     setError(null);
+    setConsentError(null);
     setHeroStep1Errors({ vin: null, listing: null });
+    setHeroStep2FieldErrors({ vin: null, listing: null, email: null, phone: null });
   }
 
   const footerClass = hero
@@ -246,7 +306,11 @@ export function OrderForm({
           ) : null}
           {hero ? (
             <>
-              <HeroFieldScanLine invalid={step === 1 && Boolean(heroStep1Errors.vin)}>
+              <HeroFieldScanLine
+                invalid={
+                  (step === 1 && Boolean(heroStep1Errors.vin)) || (step === 2 && Boolean(heroStep2FieldErrors.vin))
+                }
+              >
                 <input
                   id="order-vin"
                   name="vin"
@@ -257,23 +321,30 @@ export function OrderForm({
                   value={vin}
                   className={step === 1 ? firstStepVinInputClassHero : secondStepVinInputClassHero}
                   placeholder={step === 1 ? firstStepVinPlaceholder : t("vinPlaceholderHero")}
-                  aria-invalid={step === 1 && Boolean(heroStep1Errors.vin)}
-                  aria-describedby={step === 1 && heroStep1Errors.vin ? "order-hero-vin-error" : undefined}
+                  aria-invalid={
+                    (step === 1 && Boolean(heroStep1Errors.vin)) || (step === 2 && Boolean(heroStep2FieldErrors.vin))
+                  }
+                  aria-describedby={
+                    (step === 1 && heroStep1Errors.vin) || (step === 2 && heroStep2FieldErrors.vin)
+                      ? "order-hero-vin-error"
+                      : undefined
+                  }
                   onChange={(e) => {
                     const el = e.target;
                     const value = el.value.toUpperCase().slice(0, 17);
                     setVin(value);
                     if (step === 1) setHeroStep1Errors((p) => ({ ...p, vin: null }));
+                    if (step === 2) setHeroStep2FieldErrors((p) => ({ ...p, vin: null }));
                   }}
                 />
               </HeroFieldScanLine>
-              {step === 1 && heroStep1Errors.vin ? (
+              {(step === 1 && heroStep1Errors.vin) || (step === 2 && heroStep2FieldErrors.vin) ? (
                 <p
                   id="order-hero-vin-error"
                   className="order-form-hero-field-error mt-1.5 px-0.5 text-left text-[12px] font-normal leading-snug text-red-300 sm:text-[11px]"
-                  role="alert"
+                  aria-live="polite"
                 >
-                  {heroStep1Errors.vin}
+                  {step === 1 ? heroStep1Errors.vin : heroStep2FieldErrors.vin}
                 </p>
               ) : null}
             </>
@@ -315,7 +386,12 @@ export function OrderForm({
           ) : null}
           {hero ? (
             <>
-              <HeroFieldScanLine invalid={step === 1 && Boolean(heroStep1Errors.listing)}>
+              <HeroFieldScanLine
+                invalid={
+                  (step === 1 && Boolean(heroStep1Errors.listing)) ||
+                  (step === 2 && Boolean(heroStep2FieldErrors.listing))
+                }
+              >
                 <input
                   id="order-url"
                   name="listingUrl"
@@ -324,21 +400,29 @@ export function OrderForm({
                   value={listingUrl}
                   className={step === 1 ? firstStepListingInputClassHero : inputBase}
                   placeholder={step === 1 ? firstStepListingPlaceholder : t("urlPlaceholder")}
-                  aria-invalid={step === 1 && Boolean(heroStep1Errors.listing)}
-                  aria-describedby={step === 1 && heroStep1Errors.listing ? "order-hero-listing-error" : undefined}
+                  aria-invalid={
+                    (step === 1 && Boolean(heroStep1Errors.listing)) ||
+                    (step === 2 && Boolean(heroStep2FieldErrors.listing))
+                  }
+                  aria-describedby={
+                    (step === 1 && heroStep1Errors.listing) || (step === 2 && heroStep2FieldErrors.listing)
+                      ? "order-hero-listing-error"
+                      : undefined
+                  }
                   onChange={(e) => {
                     setListingUrl(e.target.value);
                     if (step === 1) setHeroStep1Errors((p) => ({ ...p, listing: null }));
+                    if (step === 2) setHeroStep2FieldErrors((p) => ({ ...p, listing: null }));
                   }}
                 />
               </HeroFieldScanLine>
-              {step === 1 && heroStep1Errors.listing ? (
+              {(step === 1 && heroStep1Errors.listing) || (step === 2 && heroStep2FieldErrors.listing) ? (
                 <p
                   id="order-hero-listing-error"
                   className="order-form-hero-field-error mt-1.5 px-0.5 text-left text-[12px] font-normal leading-snug text-red-300 sm:text-[11px]"
-                  role="alert"
+                  aria-live="polite"
                 >
-                  {heroStep1Errors.listing}
+                  {step === 1 ? heroStep1Errors.listing : heroStep2FieldErrors.listing}
                 </p>
               ) : null}
             </>
@@ -396,19 +480,35 @@ export function OrderForm({
                   {t("emailLabel")} <span className={reqStarClass}>*</span>
                 </label>
                 {hero ? (
-                  <HeroFieldScanLine>
-                    <input
-                      id="order-email"
-                      name="email"
-                      type="email"
-                      required
-                      autoComplete="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className={inputBase}
-                      placeholder={t("emailPlaceholder")}
-                    />
-                  </HeroFieldScanLine>
+                  <>
+                    <HeroFieldScanLine invalid={Boolean(heroStep2FieldErrors.email)}>
+                      <input
+                        id="order-email"
+                        name="email"
+                        type="email"
+                        required
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          setHeroStep2FieldErrors((p) => ({ ...p, email: null }));
+                        }}
+                        className={inputBase}
+                        placeholder={t("emailPlaceholder")}
+                        aria-invalid={Boolean(heroStep2FieldErrors.email)}
+                        aria-describedby={heroStep2FieldErrors.email ? "order-hero-email-error" : undefined}
+                      />
+                    </HeroFieldScanLine>
+                    {heroStep2FieldErrors.email ? (
+                      <p
+                        id="order-hero-email-error"
+                        className="order-form-hero-field-error mt-1.5 px-0.5 text-left text-[12px] font-normal leading-snug text-red-300 sm:text-[11px]"
+                        aria-live="polite"
+                      >
+                        {heroStep2FieldErrors.email}
+                      </p>
+                    ) : null}
+                  </>
                 ) : (
                   <input
                     id="order-email"
@@ -429,19 +529,35 @@ export function OrderForm({
                   {t("phoneLabel")} <span className={reqStarClass}>*</span>
                 </label>
                 {hero ? (
-                  <HeroFieldScanLine>
-                    <input
-                      id="order-phone"
-                      name="phone"
-                      type="tel"
-                      required
-                      autoComplete="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className={inputBase}
-                      placeholder={t("phonePlaceholder")}
-                    />
-                  </HeroFieldScanLine>
+                  <>
+                    <HeroFieldScanLine invalid={Boolean(heroStep2FieldErrors.phone)}>
+                      <input
+                        id="order-phone"
+                        name="phone"
+                        type="tel"
+                        required
+                        autoComplete="tel"
+                        value={phone}
+                        onChange={(e) => {
+                          setPhone(e.target.value);
+                          setHeroStep2FieldErrors((p) => ({ ...p, phone: null }));
+                        }}
+                        className={inputBase}
+                        placeholder={t("phonePlaceholder")}
+                        aria-invalid={Boolean(heroStep2FieldErrors.phone)}
+                        aria-describedby={heroStep2FieldErrors.phone ? "order-hero-phone-error" : undefined}
+                      />
+                    </HeroFieldScanLine>
+                    {heroStep2FieldErrors.phone ? (
+                      <p
+                        id="order-hero-phone-error"
+                        className="order-form-hero-field-error mt-1.5 px-0.5 text-left text-[12px] font-normal leading-snug text-red-300 sm:text-[11px]"
+                        aria-live="polite"
+                      >
+                        {heroStep2FieldErrors.phone}
+                      </p>
+                    ) : null}
+                  </>
                 ) : (
                   <input
                     id="order-phone"
@@ -536,45 +652,61 @@ export function OrderForm({
               </div>
             ) : null}
             {step === 2 ? (
-              <label
-              htmlFor="order-checkout-consent"
-              className="order-form-hero-rule flex min-h-11 cursor-pointer items-start gap-3 border-b border-[#c0c0c0]/35 pb-4 text-left sm:min-h-0"
-            >
-              <input
-                id="order-checkout-consent"
-                type="checkbox"
-                name="withdrawalConsent"
-                checked={withdrawalConsent}
-                onChange={(e) => setWithdrawalConsent(e.target.checked)}
-                className="order-form-hero-checkbox mt-1 h-4 w-4 shrink-0 rounded border-[#c0c0c0] bg-transparent text-provin-accent focus:ring-1 focus:ring-[#0066ff]/40 sm:mt-0.5 sm:h-4 sm:w-4"
-                aria-label={t("checkoutConsentAria")}
-              />
-              <span className="order-form-hero-consent-text text-[12px] font-normal leading-snug text-[#e5e7eb] sm:text-[13px]">
-                {t.rich("checkoutConsent", {
-                  terms: (chunks) => (
-                    <Link
-                      href="/lietosanas-noteikumi"
-                      className="font-medium text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
-                    >
-                      {chunks}
-                    </Link>
-                  ),
-                  privacy: (chunks) => (
-                    <Link
-                      href="/privatuma-politika"
-                      className="font-medium text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
-                    >
-                      {chunks}
-                    </Link>
-                  ),
-                })}
-              </span>
-            </label>
+              <div className="order-form-hero-rule border-b border-[#c0c0c0]/35 pb-4">
+                <label
+                  htmlFor="order-checkout-consent"
+                  className="flex min-h-11 cursor-pointer items-start gap-3 text-left sm:min-h-0"
+                >
+                  <input
+                    id="order-checkout-consent"
+                    type="checkbox"
+                    name="withdrawalConsent"
+                    checked={withdrawalConsent}
+                    onChange={(e) => {
+                      setWithdrawalConsent(e.target.checked);
+                      setConsentError(null);
+                    }}
+                    className="order-form-hero-checkbox mt-1 h-4 w-4 shrink-0 rounded border-[#c0c0c0] bg-transparent text-provin-accent focus:ring-1 focus:ring-[#0066ff]/40 sm:mt-0.5 sm:h-4 sm:w-4"
+                    aria-invalid={Boolean(consentError)}
+                    aria-describedby={consentError ? "order-hero-consent-error" : undefined}
+                    aria-label={t("checkoutConsentAria")}
+                  />
+                  <span className="order-form-hero-consent-text text-[12px] font-normal leading-snug text-[#e5e7eb] sm:text-[13px]">
+                    {t.rich("checkoutConsent", {
+                      terms: (chunks) => (
+                        <Link
+                          href="/lietosanas-noteikumi"
+                          className="font-medium text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
+                        >
+                          {chunks}
+                        </Link>
+                      ),
+                      privacy: (chunks) => (
+                        <Link
+                          href="/privatuma-politika"
+                          className="font-medium text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
+                        >
+                          {chunks}
+                        </Link>
+                      ),
+                    })}
+                  </span>
+                </label>
+                {consentError ? (
+                  <p
+                    id="order-hero-consent-error"
+                    className="order-form-hero-field-error mt-2 px-0.5 text-left text-[12px] font-normal leading-snug text-red-300 sm:text-[11px]"
+                    aria-live="polite"
+                  >
+                    {consentError}
+                  </p>
+                ) : null}
+              </div>
             ) : null}
             {step === 2 ? (
             <button
               type="submit"
-              disabled={loading || !withdrawalConsent}
+              disabled={loading}
               className="provin-home-pill-cta provin-home-pill-cta--wide mx-auto mt-1 flex min-h-12 max-w-[min(100%,20rem)] touch-manipulation items-center justify-center gap-2 disabled:opacity-60 sm:min-h-[50px]"
             >
               {loading ? (
@@ -609,40 +741,56 @@ export function OrderForm({
         ) : (
           <>
             {step === 2 ? (
-              <label
-              htmlFor="order-checkout-consent"
-              className="flex min-h-11 cursor-pointer items-start gap-3 border-b border-[#050505]/12 pb-4 text-left sm:min-h-0"
-            >
-              <input
-                id="order-checkout-consent"
-                type="checkbox"
-                name="withdrawalConsent"
-                checked={withdrawalConsent}
-                onChange={(e) => setWithdrawalConsent(e.target.checked)}
-                className="mt-1 h-4 w-4 shrink-0 rounded border-[#050505]/35 text-provin-accent focus:ring-1 focus:ring-provin-accent/25 sm:mt-0.5 sm:h-4 sm:w-4"
-                aria-label={t("checkoutConsentAria")}
-              />
-              <span className="text-[12px] font-normal leading-snug text-[#424245] sm:text-[13px]">
-                {t.rich("checkoutConsent", {
-                  terms: (chunks) => (
-                    <Link
-                      href="/lietosanas-noteikumi"
-                      className="font-medium text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
-                    >
-                      {chunks}
-                    </Link>
-                  ),
-                  privacy: (chunks) => (
-                    <Link
-                      href="/privatuma-politika"
-                      className="font-medium text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
-                    >
-                      {chunks}
-                    </Link>
-                  ),
-                })}
-              </span>
-            </label>
+              <div className="border-b border-[#050505]/12 pb-4">
+                <label
+                  htmlFor="order-checkout-consent"
+                  className="flex min-h-11 cursor-pointer items-start gap-3 text-left sm:min-h-0"
+                >
+                  <input
+                    id="order-checkout-consent"
+                    type="checkbox"
+                    name="withdrawalConsent"
+                    checked={withdrawalConsent}
+                    onChange={(e) => {
+                      setWithdrawalConsent(e.target.checked);
+                      setConsentError(null);
+                    }}
+                    className="mt-1 h-4 w-4 shrink-0 rounded border-[#050505]/35 text-provin-accent focus:ring-1 focus:ring-provin-accent/25 sm:mt-0.5 sm:h-4 sm:w-4"
+                    aria-invalid={Boolean(consentError)}
+                    aria-describedby={consentError ? "order-consent-error" : undefined}
+                    aria-label={t("checkoutConsentAria")}
+                  />
+                  <span className="text-[12px] font-normal leading-snug text-[#424245] sm:text-[13px]">
+                    {t.rich("checkoutConsent", {
+                      terms: (chunks) => (
+                        <Link
+                          href="/lietosanas-noteikumi"
+                          className="font-medium text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
+                        >
+                          {chunks}
+                        </Link>
+                      ),
+                      privacy: (chunks) => (
+                        <Link
+                          href="/privatuma-politika"
+                          className="font-medium text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
+                        >
+                          {chunks}
+                        </Link>
+                      ),
+                    })}
+                  </span>
+                </label>
+                {consentError ? (
+                  <p
+                    id="order-consent-error"
+                    className="mt-2 text-left text-[12px] font-normal leading-snug text-red-700 sm:text-[13px]"
+                    aria-live="polite"
+                  >
+                    {consentError}
+                  </p>
+                ) : null}
+              </div>
             ) : null}
             <div
               className={`flex flex-col gap-2 ${compact ? "sm:flex-row sm:items-center sm:justify-between sm:gap-4" : "sm:flex-row sm:items-center sm:justify-between"}`}
@@ -662,7 +810,7 @@ export function OrderForm({
               ) : (
                 <button
                   type="submit"
-                  disabled={loading || !withdrawalConsent}
+                  disabled={loading}
                   className="provin-btn provin-btn--compact inline-flex min-h-11 w-full min-w-[180px] items-center justify-center rounded-full px-7 py-[10px] text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60 sm:w-auto sm:min-h-10"
                 >
                   {loading ? t("payLoading") : t("payButton")}
