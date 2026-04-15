@@ -865,9 +865,9 @@
     margin-right: auto;
   }
 
-  /* Tikai hero — sakrist ar BUJ platumu; ne „KAS IEKĻAUTS CENĀ?” režģi */
+  /* Tikai hero — sakrist ar pasūtījuma formas sleju (560px); ne „KAS IEKĻAUTS CENĀ?” režģi */
   .marketing-hero-section[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid {
-    max-width: min(42.5rem, calc(100vw - 2rem));
+    max-width: min(35rem, calc(100vw - 2rem));
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card {

@@ -3,7 +3,7 @@
 import { Check, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
-  homeFaqMaxClass,
+  homeHeroOrderColumnMaxClass,
   homeMarketingPillarGridShellClass,
   homeMarketingPillarGridWidthClass,
 } from "@/lib/home-layout";
@@ -43,7 +43,7 @@ export function MarketingHeroPillarsGrid({
       <div
         className={
           designDirection
-            ? homeFaqMaxClass
+            ? homeHeroOrderColumnMaxClass
             : "marketing-hero-pillar-dock w-full rounded-2xl border border-white/[0.08] bg-[rgb(3_4_6/0.55)] px-2 py-3 shadow-[0_20px_52px_rgb(0_0_0/0.42)] backdrop-blur-md sm:px-3 sm:py-4 md:px-4"
         }
       >

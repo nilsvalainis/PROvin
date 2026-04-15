@@ -16,7 +16,7 @@ import { ORDER_SECTION_ID } from "@/lib/order-section";
 import {
   approvedByIrissSignatureHeroClass,
   heroH1BlueKeywordClass,
-  homeFaqMaxClass,
+  homeHeroOrderColumnMaxClass,
   homeHeroSubtitleClass,
 } from "@/lib/home-layout";
 export type { HeroOrbitSubvariant, HeroSilverBlackSubvariant, HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
@@ -232,7 +232,10 @@ export function MarketingHero({
 
   const heroOrderEntry =
     designDirection && !demoVariant ? (
-      <div id={ORDER_SECTION_ID} className="mx-auto mt-2 w-full max-w-[560px] scroll-mt-[calc(2.75rem+1px)] px-2 sm:mt-3 sm:px-1">
+      <div
+        id={ORDER_SECTION_ID}
+        className={`${homeHeroOrderColumnMaxClass} mt-2 scroll-mt-[calc(2.75rem+1px)] px-2 sm:mt-3 sm:px-1`}
+      >
         <OrderForm
           variant="hero"
           formId="home-hero-order-form"
@@ -396,7 +399,7 @@ export function MarketingHero({
               <div
                 className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-5${
                   orbitHomeCenterLayout
-                    ? ` ${homeFaqMaxClass} marketing-hero-fade-in-up marketing-hero-fade-in-up--3`
+                    ? ` ${homeHeroOrderColumnMaxClass} marketing-hero-fade-in-up marketing-hero-fade-in-up--3`
                     : " max-w-[min(100%,53.76rem)]"
                 }`}
               >

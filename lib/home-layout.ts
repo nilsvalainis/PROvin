@@ -7,6 +7,12 @@ export const homeContentMaxClass = "mx-auto min-w-0 w-full max-w-[min(75rem,calc
 /** BUJ / šaura sleja — iepriekšējais ~680px ar to pašu responsīvo formulu. */
 export const homeFaqMaxClass = "mx-auto min-w-0 w-full max-w-[min(42.5rem,calc(100vw-2rem))]";
 
+/**
+ * Hero — pasūtījuma forma un 4 pīlāri (design-direction orbit); tā pati maks. sleja kā `OrderForm` (`max-w-[560px]`).
+ */
+export const homeHeroOrderColumnMaxClass =
+  "mx-auto min-w-0 w-full max-w-[min(35rem,calc(100vw-2rem))]";
+
 /** Centrēšanas čaula — MarketingHero 2×2 režģis un How it works soļu rinda (1:1 platums). */
 export const homeMarketingPillarGridShellClass = "flex w-full justify-center";
 
