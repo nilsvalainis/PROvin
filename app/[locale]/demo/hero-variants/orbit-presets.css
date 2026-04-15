@@ -655,6 +655,19 @@
     box-shadow 0.4s ease;
 }
 
+/* Sākumlapas hero: četri pīlāri — bez kartiņas fona/rāmja; saglabā hover kustību un ikonu „spīdumu”. */
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--soft.marketing-hero-pillar--plain {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--soft.marketing-hero-pillar--plain:hover {
+    box-shadow: none !important;
+  }
+}
+
 .marketing-hero-pillar--soft .marketing-hero-pillar-icon--risk,
 .marketing-hero-pillar--soft .marketing-hero-pillar-icon--check {
   transition: filter 0.4s ease;
@@ -789,7 +802,8 @@
     font-size: 1.2em;
   }
 
-  .marketing-hero-orbit-base.marketing-hero-section .demo-design-dir__card .marketing-hero-pillar-title {
+  .marketing-hero-orbit-base.marketing-hero-section .demo-design-dir__card .marketing-hero-pillar-title,
+  .marketing-hero-orbit-base.marketing-hero-section .marketing-hero-pillar--plain .marketing-hero-pillar-title {
     color: rgb(255 255 255 / 0.99);
   }
 
@@ -844,7 +858,16 @@
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    column-gap: 0.5rem;
+    row-gap: 0.35rem;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Tikai hero — sakrist ar BUJ platumu; ne „KAS IEKĻAUTS CENĀ?” režģi */
+  .marketing-hero-section[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid {
+    max-width: min(42.5rem, calc(100vw - 2rem));
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card {
@@ -873,19 +896,55 @@
     transition: transform 0.1s ease;
   }
 
+  /* Hero „plain” — 2×2, bez kartiņas; kompakti iekš hero */
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--plain {
+    aspect-ratio: auto !important;
+    padding: 0.2rem 0.1rem !important;
+    box-shadow: none !important;
+    justify-content: flex-start;
+  }
+
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--plain .marketing-hero-pillar-icon {
+    height: 1.25rem;
+    width: 1.25rem;
+  }
+
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--plain .marketing-hero-pillar-title {
+    max-width: 100%;
+    min-height: 0;
+    font-size: 9px;
+    line-height: 1.15;
+    text-align: center;
+  }
+
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--plain:active {
+    transform: scale(0.96);
+    transition: transform 0.1s ease;
+  }
+
   .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card {
     opacity: 0;
     transform: translateY(12px);
     animation: marketing-hero-mobile-card-in 0.45s ease-out forwards;
   }
 
+  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--plain {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: marketing-hero-mobile-card-in 0.45s ease-out forwards;
+  }
+
   .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card:nth-child(1),
-  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card:nth-child(2) {
+  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card:nth-child(2),
+  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--plain:nth-child(1),
+  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--plain:nth-child(2) {
     animation-delay: 0.08s;
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card:nth-child(3),
-  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card:nth-child(4) {
+  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card:nth-child(4),
+  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--plain:nth-child(3),
+  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--plain:nth-child(4) {
     animation-delay: 0.22s;
   }
 }
@@ -908,7 +967,8 @@
     transform: none !important;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card {
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--mobile-card,
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid .marketing-hero-pillar--plain {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

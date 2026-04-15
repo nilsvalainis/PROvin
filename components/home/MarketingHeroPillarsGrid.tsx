@@ -2,7 +2,11 @@
 
 import { Check, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { homeMarketingPillarGridShellClass, homeMarketingPillarGridWidthClass } from "@/lib/home-layout";
+import {
+  homeFaqMaxClass,
+  homeMarketingPillarGridShellClass,
+  homeMarketingPillarGridWidthClass,
+} from "@/lib/home-layout";
 
 type HeroPillar = { title: string; body?: string };
 
@@ -39,14 +43,14 @@ export function MarketingHeroPillarsGrid({
       <div
         className={
           designDirection
-            ? "mx-auto min-w-0 w-full max-w-[min(100%,68rem)]"
+            ? homeFaqMaxClass
             : "marketing-hero-pillar-dock w-full rounded-2xl border border-white/[0.08] bg-[rgb(3_4_6/0.55)] px-2 py-3 shadow-[0_20px_52px_rgb(0_0_0/0.42)] backdrop-blur-md sm:px-3 sm:py-4 md:px-4"
         }
       >
         <div
           className={
             designDirection
-              ? "marketing-hero-pillars-mobile-grid flex w-full flex-row flex-nowrap justify-between gap-3 sm:gap-4 md:gap-5"
+              ? "marketing-hero-pillars-mobile-grid grid w-full grid-cols-2 gap-x-2 gap-y-2 md:flex md:flex-row md:flex-nowrap md:justify-between md:gap-4 lg:gap-5"
               : `flex w-full flex-row flex-nowrap justify-between gap-2 sm:gap-4 md:gap-5 ${homeMarketingPillarGridWidthClass}`
           }
         >
@@ -57,7 +61,7 @@ export function MarketingHeroPillarsGrid({
             const articleClass = isC
               ? "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-row items-start gap-2.5 px-1 text-left sm:gap-3 sm:px-1"
               : designDirection
-                ? "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--mobile-card demo-design-dir__card flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2.5 px-2 py-3 text-center sm:gap-3 sm:px-3 sm:py-4"
+                ? "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--plain flex min-h-0 min-w-0 flex-col items-center justify-center gap-1 px-0.5 py-1 text-center md:flex-1 md:basis-0 md:gap-2.5 md:px-1 md:py-0"
                 : "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2 px-0.5 text-center sm:gap-2.5 sm:px-0.5";
             const iconClass = isC
               ? `marketing-hero-pillar-icon mt-0.5 h-5 w-5 shrink-0 origin-center sm:h-5 sm:w-5 ${iconTone}${riskPillar ? "" : " scale-110"}`
