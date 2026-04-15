@@ -59,39 +59,36 @@ html[data-site-theme="light"] {
   --hero-orbit-bg-extended: radial-gradient(circle at 50% 100%, rgb(0 102 255 / 0.12), #f6f7f9 45%), #ffffff;
 }
 
-/* Skenēšanas līnijas — `--provin-scan-loop-dur` no `:root` (tāds pats cikls kā tumšajā tēmā) */
+/* Skenēšanas līnijas — gaišā tēmā: #000, 2px (par 1px biezāk nekā tumšajā 1px) */
 html[data-site-theme="light"] .provin-diagnostic-scan-line {
-  height: 1px;
+  height: 2px;
 }
 
 html[data-site-theme="light"] .provin-diagnostic-scan-line__track {
-  height: 1px;
+  height: 2px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(15 23 42 / 0.14) 10%,
-    rgb(15 23 42 / 0.22) 50%,
-    rgb(15 23 42 / 0.14) 90%,
+    #000000 12%,
+    #000000 50%,
+    #000000 88%,
     transparent 100%
   );
 }
 
 html[data-site-theme="light"] .provin-diagnostic-scan-line__pulse {
   width: clamp(1.05rem, 6.5vw, 1.65rem);
-  height: 1px;
-  margin-top: -0.5px;
+  height: 2px;
+  margin-top: -1px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(0 130 255 / 0.88) 30%,
-    rgb(90 210 255 / 1) 50%,
-    rgb(0 130 255 / 0.88) 70%,
+    #000000 18%,
+    #000000 50%,
+    #000000 82%,
     transparent 100%
   );
-  box-shadow:
-    0 0 7px 0 rgb(0 160 255 / 1),
-    0 0 18px 0 rgb(0 140 255 / 0.65),
-    0 0 30px 0 rgb(0 120 255 / 0.48);
+  box-shadow: none;
   animation: provin-diagnostic-scan-ping-pong calc(var(--provin-scan-loop-dur) * 2) linear infinite;
 }
 
@@ -101,20 +98,17 @@ html[data-site-theme="light"] .provin-diagnostic-scan-line__pulse--sweep-ltr {
 
 html[data-site-theme="light"] .demo-design-dir__hero-scan::after {
   width: clamp(1.05rem, 6.5vw, 1.65rem);
-  height: 1px;
-  margin-top: -0.5px;
+  height: 2px;
+  margin-top: -1px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(0 130 255 / 0.88) 30%,
-    rgb(90 210 255 / 1) 50%,
-    rgb(0 130 255 / 0.88) 70%,
+    #000000 18%,
+    #000000 50%,
+    #000000 82%,
     transparent 100%
   );
-  box-shadow:
-    0 0 7px 0 rgb(0 160 255 / 1),
-    0 0 18px 0 rgb(0 140 255 / 0.65),
-    0 0 30px 0 rgb(0 120 255 / 0.48);
+  box-shadow: none;
   animation: provin-diagnostic-scan-ping-pong calc(var(--provin-scan-loop-dur, calc((7s / 3) * 2)) * 2) linear infinite;
 }
 
@@ -447,19 +441,20 @@ html[data-site-theme="light"] .demo-design-dir__faq-item details svg {
 }
 
 html[data-site-theme="light"] .demo-design-dir__axis-line {
+  width: 2px !important;
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgb(0 102 255 / 0.14) 12%,
-    rgb(20 20 24 / 0.08) 50%,
-    rgb(0 102 255 / 0.12) 88%,
+    #000000 10%,
+    #000000 50%,
+    #000000 90%,
     transparent 100%
   );
 }
 
 html[data-site-theme="light"] .demo-design-dir__hero-scan {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgb(15 23 42 / 0.26), transparent);
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #000000, transparent);
 }
 
 /* Orbit hero (S12 — produkcijas mājas) */
@@ -506,7 +501,9 @@ html[data-site-theme="light"]
 
 /* Hero H1: vienkāršā līnija starp rindām (bez orbit skenēšanas) — gaišā tēmā */
 html[data-site-theme="light"] .marketing-hero-title-mid-rule__line {
-  background-color: rgb(15 23 42 / 0.22) !important;
+  height: 2px !important;
+  min-height: 2px;
+  background-color: #000000 !important;
 }
 
 html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-h1-unified {
@@ -610,13 +607,15 @@ html[data-site-theme="light"] nav.site-section-rail .bg-gradient-to-r {
 }
 
 html[data-site-theme="light"] .site-rail-axis {
-  background-color: rgb(20 20 24 / 0.12) !important;
-  box-shadow: 0 0 14px rgb(0 102 255 / 0.16) !important;
+  width: 2px !important;
+  background-color: #000000 !important;
+  box-shadow: none !important;
 }
 
 html[data-site-theme="light"] .site-rail-dot {
-  background-color: var(--color-provin-accent) !important;
-  box-shadow: 0 0 14px rgb(0 102 255 / 0.45) !important;
+  width: 3px !important;
+  background-color: #000000 !important;
+  box-shadow: none !important;
 }
 
 html[data-site-theme="light"] nav.site-section-rail a[aria-current="location"] {
@@ -632,8 +631,8 @@ html[data-site-theme="light"] nav.site-section-rail a:hover {
 }
 
 html[data-site-theme="light"] nav.site-section-rail a span.rounded-full {
-  background-color: var(--color-provin-accent) !important;
-  box-shadow: 0 0 8px rgb(0 102 255 / 0.45) !important;
+  background-color: #000000 !important;
+  box-shadow: none !important;
 }
 
 /* Demo / lapu „melnie apvalki” — galvenā satura kolonna */
