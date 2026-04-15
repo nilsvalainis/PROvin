@@ -484,6 +484,13 @@ html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .
   color: #1f2937 !important;
 }
 
+html[data-site-theme="light"]
+  .marketing-hero-orbit-base[data-hero-orbit-home]
+  .marketing-hero-title-line1
+  .marketing-hero-title-line1-un {
+  color: color-mix(in srgb, #1f2937 80%, black) !important;
+}
+
 /* AUDITS gaišajā: augstāka specifika nekā orbit-presets (ielādējas vēlāk) */
 html[data-site-theme="light"]
   .marketing-hero-orbit-base[data-hero-orbit-home]

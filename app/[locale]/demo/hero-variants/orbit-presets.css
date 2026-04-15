@@ -608,10 +608,20 @@
   letter-spacing: inherit;
 }
 
-.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main,
-.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main {
   font-size: 1em;
   font-weight: 800;
+}
+
+/* SLUDINĀJUMA: −25 % pret VIN/UN (bāze 1em) */
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
+  font-size: 0.75em;
+  font-weight: 800;
+}
+
+/* UN: par ~20 % tumšāks par pārējo zilo */
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-un {
+  color: color-mix(in srgb, var(--color-provin-accent) 80%, black) !important;
 }
 
 @media (min-width: 640px) {
@@ -829,9 +839,14 @@
     margin-bottom: 0;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main,
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main {
     font-size: 0.9em;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
+    font-size: 0.675em;
     font-weight: 800;
     white-space: nowrap;
   }
