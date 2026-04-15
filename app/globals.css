@@ -33,7 +33,8 @@
    * Hero orbit S12 fona pagarinājums (mājas mobilais): tas pats gradients kā
    * `orbit-presets.css` `.marketing-hero-orbit--s12` → `--orbit-bg`.
    */
-  --hero-orbit-bg-extended: radial-gradient(circle at 50% 100%, rgb(160 165 175 / 0.18), #030304 45%), #030304;
+  /* Mājas hero pagarinājums: plakans tonis (gradienti dažos ekrānos rada grauda/moiré sajūtu). */
+  --hero-orbit-bg-extended: #030304;
   /* Tēmas pamats (tumšais); gaišais — `site-theme-light.css` uz `html[data-site-theme="light"]` */
   --site-html-bg: #050505;
   --site-body-bg: #050505;
