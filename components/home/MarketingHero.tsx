@@ -107,7 +107,7 @@ export function MarketingHero({
 
   /**
    * Mobilais mājas hero: `translate3d(0,Y,0)` uz klasteri — `.marketing-hero-title-line2` (AUDITS) centrs → `visualViewport` centrs.
-   * Nav `rootRect` „redzamības” filtra (tas bloķēja centrēšanu); `ResizeObserver` uz klasteri + resize/visualViewport debouncis + rAF.
+   * Nav `rootRect` „redzamības” filtra; `ResizeObserver` + resize/visualViewport ar debounci; window scroll `recenter` tikai pie atgriešanās augšā (ne katrā notikumā).
    */
   const recenterMobileAuditsLine = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -148,13 +148,12 @@ export function MarketingHero({
       recenterMobileAuditsLine();
     };
 
-    const debounceMs = 280;
+    const debounceMs = 420;
     const scheduleResize = () => {
       if (mobileCenterResizeDebounceRef.current) clearTimeout(mobileCenterResizeDebounceRef.current);
       mobileCenterResizeDebounceRef.current = setTimeout(() => {
         mobileCenterResizeDebounceRef.current = null;
         run();
-        requestAnimationFrame(() => run());
       }, debounceMs);
     };
 
@@ -226,9 +225,12 @@ export function MarketingHero({
     };
   }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine, heroOrderStep]);
 
-  /** iOS / mobilais: ritinot prom un atgriežoties augšā, atiestata iekšējo scroll un nobīdi. */
+  /** iOS / mobilais: ritinot prom — atiestata nobīdi; atpakaļ uz hero tikai vienreiz pie pārejas (bez kratīšanas katrā scroll notikumā). */
+  const lastWindowScrollYRef = useRef(0);
   useEffect(() => {
     if (!orbitHomeCenterLayout || !designDirection || demoVariant) return;
+
+    lastWindowScrollYRef.current = window.scrollY || document.documentElement.scrollTop;
 
     const resetInnerScroll = () => {
       const el = mobileHeroScrollRef.current;
@@ -237,12 +239,14 @@ export function MarketingHero({
 
     const onScroll = () => {
       const y = window.scrollY || document.documentElement.scrollTop;
+      const prev = lastWindowScrollYRef.current;
+      lastWindowScrollYRef.current = y;
       if (y > 160) {
         setMobileAuditsTranslateY(0);
         resetInnerScroll();
         return;
       }
-      if (y < 16) {
+      if (y <= 72 && prev > 72) {
         resetInnerScroll();
         recenterMobileAuditsLine();
       }
@@ -579,11 +583,11 @@ export function MarketingHero({
                 {/* Mobilais: virsraksts → forma → Pasūtīt (četri pīlāri tikai desktop); desktop — kā iepriekšējais režģis */}
                 <div
                   ref={mobileHeroScrollRef}
-                  className="flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto overflow-x-hidden md:hidden"
+                  className="flex min-h-0 w-full flex-1 flex-col items-center overflow-x-hidden overflow-y-visible touch-pan-y md:hidden"
                 >
                   <div
                     ref={mobileHomeClusterRef}
-                    className={`pointer-events-auto mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] transform-gpu will-change-transform${
+                    className={`pointer-events-auto mx-auto flex w-full min-w-0 max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] transform-gpu${
                       mobileClusterRevealGateActive && !mobileClusterRevealReady ? " pointer-events-none opacity-0" : ""
                     }`}
                     style={{ transform: `translate3d(0, ${mobileAuditsTranslateY}px, 0)` }}

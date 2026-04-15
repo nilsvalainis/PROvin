@@ -22,6 +22,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   /** iPhone / Android ar izcirtumu — lai `env(safe-area-inset-*)` strādā */
   viewportFit: "cover",
+  /** Kopā ar hero laukiem ≥16px — mazāk nejaušs pinch-zoom pie fokusa; pilnvarotā pinch joprojām iespējams dažās ierīcēs. */
+  maximumScale: 1,
 };
 
 export function generateStaticParams() {

@@ -14,9 +14,9 @@ const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
 
 /** Dark cockpit: laukam bez apakšējās robežas — līniju un zilo impulsu dod `HeroFieldScanLine`. */
-/** Hero: mobilajā tas pats kā `marketing-hero-pillar-title` (9px → 10px), desktop 16px. */
+/** Hero: ≥16px līdz `sm`, lai iOS/Android nezoomē uz fokusu; sm+ atkal kompaktāks līnijas izskats. */
 const inputHeroNoBottom =
-  "order-form-hero-input relative z-10 box-border min-h-11 w-full appearance-none rounded-none border-0 bg-transparent px-0 py-2.5 text-[9px] font-normal leading-[1.2] text-[#e5e7eb] shadow-none outline-none ring-0 transition-[color] placeholder:text-[#e5e7eb]/52 focus:shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 sm:min-h-0 sm:text-[10px] md:text-[16px] md:leading-normal";
+  "order-form-hero-input relative z-10 box-border min-h-11 w-full min-w-0 max-w-full appearance-none rounded-none border-0 bg-transparent px-0 py-2.5 text-base font-normal leading-snug text-[#e5e7eb] shadow-none outline-none ring-0 transition-[color] placeholder:text-[#e5e7eb]/52 focus:shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 sm:min-h-0 sm:text-[10px] sm:leading-[1.2] md:text-[16px] md:leading-normal";
 
 const inputDefault =
   "mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505]/75 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition-[border-color] placeholder:text-[#86868b] focus:border-provin-accent focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
@@ -33,9 +33,9 @@ type OrderFormProps = {
 
 function HeroFieldScanLine({ children }: { children: ReactNode }) {
   return (
-    <div className="order-form-hero-field relative z-0 mt-2 rounded-sm px-2 py-1 -mx-0.5">
+    <div className="order-form-hero-field relative z-0 mt-2 w-full min-w-0 max-w-full overflow-x-clip rounded-sm px-2 py-1 -mx-0.5">
       {children}
-      <DiagnosticScanLine variant="rail" motion="sweepLtr" className="order-form-hero-scan relative z-[1] w-full" />
+      <DiagnosticScanLine variant="rail" motion="sweepLtr" className="order-form-hero-scan relative z-[1] w-full max-w-full min-w-0" />
     </div>
   );
 }
@@ -186,7 +186,7 @@ export function OrderForm({
       className={`${formShell}${hero ? " order-form--hero" : ""}`}
       noValidate
     >
-      <div className={`grid sm:grid-cols-2 ${gridGap}`}>
+      <div className={`grid min-w-0 w-full max-w-full sm:grid-cols-2 ${gridGap}`}>
         <div className="sm:col-span-2">
           {step === 2 ? (
             <label htmlFor="order-vin" className={labelClass}>
@@ -309,7 +309,7 @@ export function OrderForm({
                 />
               )}
             </div>
-            <div className="sm:col-span-2 sm:grid sm:grid-cols-2 sm:gap-4">
+            <div className="min-w-0 sm:col-span-2 sm:grid sm:grid-cols-2 sm:gap-4">
               <div>
                 <label htmlFor="order-email" className={labelClass}>
                   {t("emailLabel")} <span className={reqStarClass}>*</span>
@@ -390,7 +390,7 @@ export function OrderForm({
                     maxLength={500}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className={`${inputBase} min-h-[88px] resize-y sm:min-h-[72px]`}
+                    className={`${inputBase} min-h-[88px] resize-none sm:min-h-[72px] md:resize-y`}
                     placeholder={t("notesPlaceholder")}
                   />
                 </HeroFieldScanLine>
@@ -418,9 +418,9 @@ export function OrderForm({
           <>
             {step === 2 ? (
               <div className="order-form-hero-rule border-b border-[#c0c0c0]/35 pb-4" role="group" aria-label={t("ariaSummary")}>
-                <div className="flex items-baseline justify-between gap-4">
-                  <span className="order-form-hero-summary-label text-[13px] font-medium text-[#e5e7eb]">{t("summaryLabel")}</span>
-                  <span className="order-form-hero-price text-[1.85rem] font-bold tabular-nums tracking-tight text-[#c0c0c0] sm:text-[2rem]">
+                <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                  <span className="order-form-hero-summary-label min-w-0 shrink text-[13px] font-medium text-[#e5e7eb]">{t("summaryLabel")}</span>
+                  <span className="order-form-hero-price shrink-0 text-[1.85rem] font-bold tabular-nums tracking-tight text-[#c0c0c0] sm:text-[2rem]">
                     79,99&nbsp;€
                   </span>
                 </div>
@@ -434,7 +434,7 @@ export function OrderForm({
                 <button
                   type="button"
                   onClick={goToStepTwo}
-                  className="provin-home-pill-cta provin-home-pill-cta--fit z-10 mt-1 flex w-fit min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
+                  className="provin-home-pill-cta provin-home-pill-cta--fit z-10 mt-1 flex w-fit min-h-[50px] max-w-full touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
                 >
                   PASŪTĪT AUDITU - 79,99 €
                 </button>
@@ -558,7 +558,7 @@ export function OrderForm({
                     <button
                       type="button"
                       onClick={goToStepTwo}
-                      className="provin-home-pill-cta provin-home-pill-cta--fit z-10 flex w-fit min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
+                      className="provin-home-pill-cta provin-home-pill-cta--fit z-10 flex w-fit min-h-[50px] max-w-full touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
                     >
                       PASŪTĪT AUDITU - 79,99 €
                     </button>
