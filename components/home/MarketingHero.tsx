@@ -409,12 +409,12 @@ export function MarketingHero({
             {designDirection && !demoVariant ? (
               <>
                 {/* Mobilais: virsraksts → forma → Pasūtīt (četri pīlāri tikai desktop); desktop — kā iepriekšējais režģis */}
-                <div className="flex min-h-0 w-full flex-1 flex-col md:hidden">
-                  <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5">
-                    {approvedBlock}
-                  </div>
-                  <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))]">
-                    <div className="mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] flex-col gap-3 py-0">
+                <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden md:hidden">
+                  <div className="pointer-events-auto mx-auto my-auto flex w-full max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))]">
+                    <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">
+                      {approvedBlock}
+                    </div>
+                    <div className="flex flex-col gap-3 py-0">
                       <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
                         {heroTitleStack}
                       </div>
