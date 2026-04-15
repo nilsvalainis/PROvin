@@ -5,6 +5,7 @@ import { contactMailtoHref } from "@/lib/contact";
 import { homePath } from "@/lib/paths";
 import { CompanyLegalOneLine } from "@/components/CompanyLegalOneLine";
 import { homeContentMaxClass } from "@/lib/home-layout";
+import { renderProvinText } from "@/lib/provin-wordmark";
 
 function MailIcon({ className }: { className?: string }) {
   return (
@@ -106,7 +107,7 @@ export async function Footer() {
             <span aria-hidden className="opacity-35">
               ·
             </span>
-            <span>{t("gdpr", { year: new Date().getFullYear() })}</span>
+            <span>{renderProvinText(t("gdpr", { year: new Date().getFullYear() }))}</span>
           </p>
           <details className="group mx-auto pt-2 pb-0 text-center">
             <summary className="mx-auto inline-flex cursor-pointer list-none select-none items-center justify-center rounded-md px-2 py-1 text-[10px] font-normal uppercase tracking-[0.14em] text-[#3f4248] transition-colors hover:bg-white/[0.04] hover:text-[#55585f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/20 [&::-webkit-details-marker]:hidden">

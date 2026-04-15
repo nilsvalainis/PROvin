@@ -216,8 +216,8 @@ export function MarketingHero({
       ? "marketing-hero-h1-blue font-bold whitespace-nowrap text-provin-accent"
       : `marketing-hero-h1-blue ${heroH1BlueKeywordClass}`;
 
-  /** Starp H1 rindām: 20px josla, līnija vertikāli centrēta; skenēšana tikai orbit + designDirection. */
-  const showTitleMidScan = Boolean(designDirection && isOrbitVisual);
+  /** Starp H1 rindām: skenēšana tikai demo (`demoVariant`); produkcijā — statiska līnija. */
+  const showTitleMidScan = Boolean(designDirection && isOrbitVisual && demoVariant);
 
   const heroTitleStack = (
     <div className={`flex w-full flex-col items-center text-center${orbitHomeCenterLayout ? " marketing-hero-fade-in-up marketing-hero-fade-in-up--1" : ""}`}>

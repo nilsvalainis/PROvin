@@ -5,6 +5,7 @@ import {
   irissSectionSubtitleClass,
   irissStaggerHeadingClass,
 } from "@/lib/home-layout";
+import { renderProvinText } from "@/lib/provin-wordmark";
 
 /** Mazs ekrāns: kā BUJ; ≥md: kā #home-intro pēc web −25 % (`calc(1.365rem * 0.75)`). */
 const irissBodyProseClass =
@@ -26,7 +27,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
 
         <div className="text-center">
-          <h2 className="demo-design-dir__title mx-auto max-w-[40rem]">{t("title")}</h2>
+          <h2 className="demo-design-dir__title mx-auto max-w-[40rem]">{renderProvinText(t("title"))}</h2>
           <div className="mx-auto mt-3 w-full max-w-[min(100%,36rem)]">
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>

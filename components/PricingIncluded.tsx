@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
+import { renderProvinText } from "@/lib/provin-wordmark";
 import { irissAnchorHref } from "@/lib/paths";
 import { heroPillarCardIconClass, heroPillarCardTitleClass, homeSectionEyebrowClass } from "@/lib/home-layout";
 
@@ -112,7 +113,7 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
             href={irissHref}
             className="inline-block text-[10px] font-medium text-[#0066ff] transition-colors hover:text-[#3388ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066ff]/50 sm:text-[11px]"
           >
-            {t("irissLink")} <span aria-hidden>↓</span>
+            {renderProvinText(t("irissLink"))} <span aria-hidden>↓</span>
           </Link>
         </div>
       </div>

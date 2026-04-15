@@ -2,6 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import { homeFaqMaxClass, homeSectionTitleClass, homeSectionTitleSilverClass } from "@/lib/home-layout";
+import { renderProvinText } from "@/lib/provin-wordmark";
 
 export type FaqItem = { id: string; q: string; a: string };
 
@@ -104,7 +105,7 @@ export function FaqClient({ title, items = [], tone = "dark", embedded = false }
       <details className="group border-0 bg-transparent shadow-none open:bg-transparent">
         <summary className="flex min-h-11 cursor-pointer list-none items-start justify-between gap-3 px-4 py-4 text-left sm:min-h-0 sm:gap-4 sm:px-5 sm:py-[1.125rem] [&::-webkit-details-marker]:hidden">
           <span className="min-w-0 flex-1 text-[15px] font-medium leading-snug tracking-tight text-white sm:text-[16px] sm:leading-snug">
-            {item.q}
+            {renderProvinText(item.q)}
           </span>
           <ChevronDown
             className="mt-0.5 h-4 w-4 shrink-0 text-[#b8bcc4] transition-transform duration-200 ease-out group-open:rotate-180"
@@ -113,7 +114,7 @@ export function FaqClient({ title, items = [], tone = "dark", embedded = false }
           />
         </summary>
         <p className="max-w-[65ch] px-4 pb-4 pr-2 text-[14px] font-normal leading-[1.75] text-[#b8bcc4] sm:px-5 sm:pb-5 sm:pr-6 sm:text-[15px] sm:leading-[1.75]">
-          {item.a}
+          {renderProvinText(item.a)}
         </p>
       </details>
     </div>

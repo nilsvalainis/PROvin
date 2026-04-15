@@ -1,6 +1,7 @@
 import { getMessages, getTranslations } from "next-intl/server";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { FaqClient, type FaqItem } from "@/components/FaqClient";
+import { renderProvinText } from "@/lib/provin-wordmark";
 
 /** BUJ — kā demo `band-c` sadaļa ar `Meta` ievadu + `Faq` tulkojumiem. */
 export async function HomeFaqSection() {
@@ -28,7 +29,7 @@ export async function HomeFaqSection() {
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
           <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4">
-            {tMeta("faqDescription")}
+            {renderProvinText(tMeta("faqDescription"))}
           </p>
         </div>
         <div className="mt-10">

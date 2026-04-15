@@ -699,6 +699,20 @@
   }
 }
 
+/* Mājas hero (web, md+): lielākas kartiņas; virsraksta izmērs — kā Tailwind klasēs. */
+@media (min-width: 768px) {
+  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillar--mobile-card {
+    min-height: 7.75rem;
+    padding: 1.35rem 0.85rem !important;
+    justify-content: center;
+  }
+
+  .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section .marketing-hero-pillar--mobile-card .marketing-hero-pillar-icon {
+    height: 2.35rem;
+    width: 2.35rem;
+  }
+}
+
 .marketing-hero-fade-in-up {
   opacity: 0;
   transform: translateY(14px);
