@@ -51,7 +51,7 @@ export default async function HomePage() {
 
           <HomeFaqSection />
 
-          <section className="demo-design-dir__section border-t border-white/[0.06] pt-14 pb-0">
+          <section className="demo-design-dir__section border-t border-white/[0.06] pb-0">
             <Footer />
           </section>
         </div>
