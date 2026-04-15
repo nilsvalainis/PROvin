@@ -236,7 +236,7 @@ export function MarketingHero({
     designDirection && !demoVariant ? (
       <div
         id={ORDER_SECTION_ID}
-        className={`${homeHeroOrderColumnMaxClass} mt-2 scroll-mt-[calc(2.75rem+1px)] px-2 sm:mt-3 sm:px-1`}
+        className={`${homeHeroOrderColumnMaxClass} mt-2 scroll-mt-[calc(2.75rem+1px)] px-2 sm:mt-3 sm:px-1 max-md:mt-5`}
       >
         <OrderForm
           variant="hero"
@@ -250,7 +250,7 @@ export function MarketingHero({
 
   const heroStepOneCta =
     designDirection && !demoVariant && heroOrderStep === 1 ? (
-      <div className="flex w-full justify-center px-1 pt-1 sm:pt-2">
+      <div className="flex w-full justify-center px-1 pt-1 sm:pt-2 max-md:pt-0">
         <button
           type="submit"
           form="home-hero-order-form"
@@ -266,17 +266,32 @@ export function MarketingHero({
       designDirection={designDirection}
       isC={isC}
       isB={isB}
-      shellClassName={designDirection && !demoVariant ? "w-full pb-2 pt-1.5 sm:pb-5 sm:pt-4" : undefined}
+      shellClassName={designDirection && !demoVariant ? "w-full pb-2 pt-1.5 max-md:pb-1 max-md:pt-0 sm:pb-5 sm:pt-4" : undefined}
     />
   );
+
+  const scrollLinkDesktopOnly =
+    designDirection && !demoVariant ? <div className="hidden md:flex">{scrollToContentLink}</div> : scrollToContentLink;
 
   const pillarsAndCta = (
     <>
       {heroPillars}
       {heroStepOneCta}
-      {designDirection && !demoVariant ? <div className="hidden md:flex">{scrollToContentLink}</div> : scrollToContentLink}
+      {scrollLinkDesktopOnly}
     </>
   );
+
+  /** Mājas mobilais orbit: pīlāri augšā, CTA pie viewport apakšas (apakšējā rinda `1fr`). */
+  const pillarsAndCtaHomeMobile =
+    orbitHomeCenterLayout && !demoVariant ? (
+      <div className="flex min-h-0 w-full flex-1 flex-col max-md:justify-between md:contents">
+        {heroPillars}
+        <div className="flex w-full flex-col items-center gap-2 max-md:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] md:contents">
+          {heroStepOneCta}
+          {scrollLinkDesktopOnly}
+        </div>
+      </div>
+    ) : null;
 
   /** Mājas lapa: vienota virsma ar `home-intro` ir `page.tsx` wrapperī — šeit bez atsevišķa band-a. */
   const designDirHeroChrome =
@@ -384,7 +399,11 @@ export function MarketingHero({
       {isOrbitVisual ? (
         orbitHomeCenterLayout ? (
           <div className="relative z-[1] flex min-h-0 w-full flex-1 flex-col">
-            <div className="grid min-h-0 w-full flex-1 grid-rows-[1fr_auto]">
+            <div
+              className={`grid min-h-0 w-full flex-1 grid-rows-[1fr_auto] ${
+                designDirection && !demoVariant ? "max-md:grid-rows-[auto_minmax(0,1fr)]" : ""
+              }`.trim()}
+            >
               <div className="relative flex min-h-0 w-full flex-1 flex-col">
                 <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5 sm:px-8 sm:pb-0 sm:pt-1">
                   {approvedBlock}
@@ -403,9 +422,9 @@ export function MarketingHero({
                   orbitHomeCenterLayout
                     ? ` ${homeHeroOrderColumnMaxClass} marketing-hero-fade-in-up marketing-hero-fade-in-up--3`
                     : " max-w-[min(100%,53.76rem)]"
-                }`}
+                }${designDirection && !demoVariant ? " max-md:min-h-0 max-md:flex-1" : ""}`}
               >
-                {pillarsAndCta}
+                {orbitHomeCenterLayout && !demoVariant ? pillarsAndCtaHomeMobile : pillarsAndCta}
               </div>
             </div>
           </div>
