@@ -18,18 +18,31 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
+/**
+ * Touch-first ierīces — dabīgais ritinājums (pull-to-refresh, OS inerciālais scroll).
+ * Lenis šeit bieži salauž „velc, lai atsvaidzinātu” un justies „sausāk” nekā sistēmas scroll.
+ */
+function useCoarsePointer(): boolean {
+  const [coarse, setCoarse] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(pointer: coarse)");
+    const sync = () => setCoarse(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return coarse;
+}
+
 export function LenisProvider({ children }: { children: ReactNode }) {
   const reducedMotion = usePrefersReducedMotion();
+  const coarsePointer = useCoarsePointer();
   const options = useMemo<LenisOptions>(
     () => ({
-      /** Lenis — „premium” inerciālais ritinājums (wheel + touch). */
-      lerp: 0.08,
+      /** Tikai desktop (fine pointer): gluds ritenis; touch paliek native. */
+      lerp: 0.058,
       smoothWheel: true,
-      syncTouch: true,
-      syncTouchLerp: 0.075,
-      touchInertiaExponent: 1.55,
-      wheelMultiplier: 0.88,
-      touchMultiplier: 1,
+      wheelMultiplier: 1,
       anchors: true,
       autoRaf: true,
       orientation: "vertical",
@@ -37,7 +50,7 @@ export function LenisProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  if (reducedMotion) {
+  if (reducedMotion || coarsePointer) {
     return <>{children}</>;
   }
 

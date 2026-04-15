@@ -44,7 +44,7 @@
 html {
   /* Horizontālas pārvilkšanas „tukšums” — seko tēmai */
   background-color: var(--site-html-bg);
-  /* Ritinājumu gludina Lenis (`LenisProvider`); `scroll-behavior: smooth` + Lenis konfliktē */
+  /* Lenis (`LenisProvider` tikai fine pointer): `scroll-behavior: smooth` + Lenis konfliktē */
   scroll-behavior: auto;
   max-width: 100%;
   overflow-x: hidden;
@@ -52,6 +52,13 @@ html {
   /* y: auto — mobilais pull-to-refresh; x: none — scroll chaining */
   overscroll-behavior-x: none;
   overscroll-behavior-y: auto;
+}
+
+/* Touch ierīcēs Lenis izslēgts — vieglas enkura saites; galvenā „plūdenība” = OS scroll */
+@media (pointer: coarse) and (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 /* === BASE BACKGROUND === */
