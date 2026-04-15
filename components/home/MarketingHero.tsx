@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useCallback, useId, useLayoutEffect, useRef, useState } from "react";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -95,6 +95,62 @@ export function MarketingHero({
   const homeOrbitMetaIntro = false;
   const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
+  const prevHeroOrderStepRef = useRef(heroOrderStep);
+  const mobileHomeClusterRef = useRef<HTMLDivElement>(null);
+  const [mobileAuditsTranslateY, setMobileAuditsTranslateY] = useState(0);
+
+  /** Mobilais: nobīda visu hero kopu (`translateY`), lai „AUDITS” rindas centrs būtu viewport centrā; iekšējās atstarpes nemainās. */
+  const recenterMobileAuditsLine = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia("(max-width: 767px)").matches) {
+      setMobileAuditsTranslateY(0);
+      return;
+    }
+    const root = mobileHomeClusterRef.current;
+    if (!root) return;
+    const audits = root.querySelector(".marketing-hero-title-line2");
+    if (!audits || !(audits instanceof HTMLElement)) return;
+    const rect = audits.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) return;
+    const auditsCenterY = rect.top + rect.height / 2;
+    const viewportCenterY = window.innerHeight / 2;
+    const delta = Math.round(viewportCenterY - auditsCenterY);
+    if (delta === 0) return;
+    setMobileAuditsTranslateY((prev) => prev + delta);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!orbitHomeCenterLayout || !designDirection || demoVariant) {
+      setMobileAuditsTranslateY(0);
+      return;
+    }
+    if (prevHeroOrderStepRef.current !== heroOrderStep) {
+      setMobileAuditsTranslateY(0);
+      prevHeroOrderStepRef.current = heroOrderStep;
+    }
+    const tick = () => {
+      requestAnimationFrame(() => recenterMobileAuditsLine());
+    };
+    tick();
+    if (typeof document !== "undefined" && document.fonts?.ready) {
+      void document.fonts.ready.then(tick);
+    }
+    const onResize = () => tick();
+    window.addEventListener("resize", onResize);
+    const vv = window.visualViewport;
+    if (vv) vv.addEventListener("resize", onResize);
+    const root = mobileHomeClusterRef.current;
+    let ro: ResizeObserver | undefined;
+    if (root && typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(onResize);
+      ro.observe(root);
+    }
+    return () => {
+      window.removeEventListener("resize", onResize);
+      if (vv) vv.removeEventListener("resize", onResize);
+      if (ro) ro.disconnect();
+    };
+  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine, heroOrderStep]);
 
   /** Sākumlapas orbit: viens H1 tonis (bez zilajiem atslēgvārdiem), izmērs ×3 — sk. orbit-presets `[data-hero-orbit-home]`. */
   const heroH1KeywordResolved =
@@ -410,7 +466,11 @@ export function MarketingHero({
               <>
                 {/* Mobilais: virsraksts → forma → Pasūtīt (četri pīlāri tikai desktop); desktop — kā iepriekšējais režģis */}
                 <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden md:hidden">
-                  <div className="pointer-events-auto mx-auto my-auto flex w-full max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))]">
+                  <div
+                    ref={mobileHomeClusterRef}
+                    className="pointer-events-auto mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] will-change-[transform] transform-gpu"
+                    style={{ transform: `translateY(${mobileAuditsTranslateY}px)` }}
+                  >
                     <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">
                       {approvedBlock}
                     </div>
