@@ -282,9 +282,19 @@ export function MarketingHero({
   const scrollLinkDesktopOnly =
     designDirection && !demoVariant ? <div className="hidden md:flex">{scrollToContentLink}</div> : scrollToContentLink;
 
+  /**
+   * Web (md+): pīlārus vizuāli paceļ ar transform, lai vertikālais attālums līdz formai ≈ līdz pogai;
+   * layout plūsma nemainās — poga un lauki paliek tajās pašās pikseļu pozīcijās.
+   */
   const pillarsAndCta = (
     <>
-      {heroPillars}
+      {designDirection && !demoVariant ? (
+        <div className="max-md:contents md:block md:w-full md:-translate-y-[0.6875rem] md:transform-gpu">
+          {heroPillars}
+        </div>
+      ) : (
+        heroPillars
+      )}
       {heroStepOneCta}
       {scrollLinkDesktopOnly}
     </>
