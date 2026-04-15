@@ -88,7 +88,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
 
       <div className="demo-design-dir__shell relative">
         <div className="text-center">
-          <h2 className={homeSectionTitleClass}>{t("title")}</h2>
+          <h2 className={homeSectionTitleClass}>{renderProvinText(t("title"))}</h2>
           <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
