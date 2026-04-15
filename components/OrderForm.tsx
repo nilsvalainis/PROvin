@@ -185,11 +185,7 @@ export function OrderForm({
       goToStepTwo();
       return;
     }
-    if (!withdrawalConsent) {
-      setConsentError(te("withdrawalRequired"));
-      requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById("order-checkout-consent")?.focus()));
-      return;
-    }
+
     const nameTrim = name.trim();
     const emailTrim = email.trim();
     const phoneTrim = phone.trim();
@@ -211,6 +207,12 @@ export function OrderForm({
         setError(t(`validation.${fieldError}`));
         return;
       }
+    }
+
+    if (!withdrawalConsent) {
+      setConsentError(te("withdrawalRequired"));
+      requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById("order-checkout-consent")?.focus()));
+      return;
     }
 
     setLoading(true);
@@ -616,7 +618,7 @@ export function OrderForm({
               ? "order-form-hero-alert mt-3 rounded-md border border-red-500/35 bg-red-950/30 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-200 max-md:text-[calc(13px*1.2)]"
               : "mt-4 rounded-lg border border-red-200/90 bg-red-50/95 px-3 py-2.5 text-left text-[13px] font-normal leading-snug text-red-900"
           }
-          role="alert"
+          aria-live="polite"
         >
           {error}
         </p>
