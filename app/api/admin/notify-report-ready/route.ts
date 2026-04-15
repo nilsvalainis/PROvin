@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { sendReportReadyEmail } from "@/lib/email/send-transactional";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
+import { readOrderDraft } from "@/lib/admin-order-draft-store";
+import { isValidOrderEmail } from "@/lib/order-field-validation";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -29,6 +31,13 @@ export async function POST(req: Request) {
     typeof (body as { sessionId: unknown }).sessionId === "string"
       ? (body as { sessionId: string }).sessionId.trim()
       : "";
+  const bodyCustomerEmail =
+    typeof body === "object" &&
+    body !== null &&
+    "customerEmail" in body &&
+    typeof (body as { customerEmail: unknown }).customerEmail === "string"
+      ? (body as { customerEmail: string }).customerEmail.trim()
+      : "";
 
   if (!sessionId) {
     return NextResponse.json({ error: "missing_session_id" }, { status: 400 });
@@ -39,7 +48,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  const to = order.customerEmail ?? order.customerDetailsEmail;
+  const draft = await readOrderDraft(sessionId);
+  const draftCustomerEmail = draft?.orderEdits?.customerEmail?.trim() ?? "";
+  const fromOrder = (order.customerEmail ?? order.customerDetailsEmail ?? "").trim();
+  const to = [bodyCustomerEmail, draftCustomerEmail, fromOrder].find((v) => v && isValidOrderEmail(v)) ?? "";
   if (!to?.trim()) {
     return NextResponse.json({ error: "no_customer_email" }, { status: 400 });
   }

@@ -57,7 +57,7 @@ function NotifyReportReadyCell({
       const res = await fetch("/api/admin/notify-report-ready", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ sessionId, customerEmail: email || undefined }),
       });
       const data: unknown = await res.json().catch(() => ({}));
       const message =
@@ -87,7 +87,7 @@ function NotifyReportReadyCell({
       setPhase("error");
       console.error("[admin] notify-report-ready fetch", e);
     }
-  }, [sessionId]);
+  }, [email, sessionId]);
 
   if (!paid) {
     return <span className="text-[11px] text-[var(--color-provin-muted)]">—</span>;
@@ -237,7 +237,7 @@ export function AdminOrdersTable({ orders }: { orders: AdminOrdersTableRow[] }) 
                     <NotifyReportReadyCell
                       sessionId={o.id}
                       paymentStatus={o.paymentStatus}
-                      customerEmail={o.customerEmail}
+                      customerEmail={email || null}
                     />
                   </td>
                   <td className="px-4 py-3.5 text-right">
