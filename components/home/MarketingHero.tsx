@@ -250,7 +250,7 @@ export function MarketingHero({
 
   const heroStepOneCta =
     designDirection && !demoVariant && heroOrderStep === 1 ? (
-      <div className="flex w-full justify-center px-1 pt-1 sm:pt-2 max-md:pt-0">
+      <div className="flex w-full justify-center px-1 pt-1 sm:pt-2 max-md:-mt-1.5 max-md:pt-0">
         <button
           type="submit"
           form="home-hero-order-form"

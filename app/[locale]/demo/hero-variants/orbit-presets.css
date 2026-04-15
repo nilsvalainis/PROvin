@@ -875,9 +875,11 @@
     margin-right: auto;
   }
 
-  /* Tikai hero — sakrist ar pasūtījuma formas sleju (560px); ne „KAS IEKĻAUTS CENĀ?” režģi */
+  /* Tikai hero — sakrist ar pasūtījuma formas sleju (560px); lielākas atstarpes 2×2 (tikai uz leju / starp šūnām) */
   .marketing-hero-section[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid {
     max-width: min(35rem, calc(100vw - 2rem));
+    column-gap: 0.65rem;
+    row-gap: 0.52rem;
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card {
