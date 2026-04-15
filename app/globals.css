@@ -25,11 +25,6 @@
 }
 
 :root {
-  /**
-   * SVG feTurbulence grauds — dithering tumšiem gradientiem (banding mazināšana).
-   * `baseFrequency` 0.65 / 3 octaves; `opacity` SVG — slāņa intensitāti vada `.home-depth-bg-grain`.
-   */
-  --provin-bg-grain-tile: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27200%27%20height%3D%27200%27%20viewBox%3D%270%200%20200%20200%27%3E%3Cfilter%20id%3D%27pbg%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.65%27%20numOctaves%3D%273%27%20stitchTiles%3D%27stitch%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url(%23pbg)%27%2F%3E%3C%2Fsvg%3E");
   /* Home: ink ramp 0…1 from scroll (full #050505 ink at 50% silver; HomeScrollSurface drives) */
   --home-surface-t: 0;
   /* Zilā skrejošā impulsa periods — 2× garāks nekā iepriekš (50 % lēnāks skrējiens) */
@@ -38,7 +33,6 @@
    * Hero orbit S12 fona pagarinājums (mājas mobilais): tas pats gradients kā
    * `orbit-presets.css` `.marketing-hero-orbit--s12` → `--orbit-bg`.
    */
-  --hero-orbit-radial-only: radial-gradient(circle at 50% 100%, rgb(160 165 175 / 0.18), #030304 45%);
   --hero-orbit-bg-extended: radial-gradient(circle at 50% 100%, rgb(160 165 175 / 0.18), #030304 45%), #030304;
   /* Tēmas pamats (tumšais); gaišais — `site-theme-light.css` uz `html[data-site-theme="light"]` */
   --site-html-bg: #050505;
@@ -629,17 +623,6 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
 /* Tumšā Hero — smalks grauds (CSS/SVG, bez attēla failiem) */
 .provin-noise-dark {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='nd'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23nd)' opacity='0.055'/%3E%3C/svg%3E");
-}
-
-/* Mājas dziļuma fons — trokšņa slānis virs gradienta (bez mix-blend); GPU slānis */
-.home-depth-bg-grain {
-  background-image: var(--provin-bg-grain-tile);
-  background-repeat: repeat;
-  background-size: 200px 200px;
-  opacity: 0.036;
-  will-change: transform;
-  mix-blend-mode: normal;
-  transform: translateZ(0);
 }
 
 /** Atpakaļsaderība: vecā klase vairs nav obligāta, bet saglabā tīru #050505, ja kaut kur lietota. */
