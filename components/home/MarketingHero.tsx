@@ -122,15 +122,17 @@ export function MarketingHero({
       >
         <>
           <div className="marketing-hero-title-split flex w-full flex-col items-center gap-0">
-            <span className="marketing-hero-title-line1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0 sm:gap-x-2.5">
-              <span className="flex items-center gap-x-2 sm:gap-x-3">
+            <div className="marketing-hero-title-line1 flex w-full flex-col items-center justify-center gap-0">
+              <span className="marketing-hero-title-line1-vin-un flex flex-wrap items-center justify-center gap-x-2 sm:gap-x-3">
                 <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Vin")}</span>
                 <span className={`marketing-hero-title-line1-main marketing-hero-title-line1-un ${heroH1KeywordResolved}`}>
                   {t("h1Un")}
                 </span>
               </span>
-              <span className={`marketing-hero-title-line1-accent ${heroH1KeywordResolved}`}>{t("h1Sludinajuma")}</span>
-            </span>
+              <span className={`marketing-hero-title-line1-accent block w-full text-center ${heroH1KeywordResolved}`}>
+                {t("h1Sludinajuma")}
+              </span>
+            </div>
             <div
               className={`marketing-hero-title-mid-rule box-border flex h-5 w-full shrink-0 items-center justify-center px-1 sm:px-2${showTitleMidScan ? "" : " marketing-hero-title-mid-rule--simple"}`}
               aria-hidden
