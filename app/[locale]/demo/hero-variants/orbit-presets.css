@@ -615,10 +615,10 @@
   }
 }
 
-@media (max-width: 639px) {
+@media (max-width: 767px) {
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
     max-width: 100%;
-    font-size: clamp(1.45rem, 5.2vmin + 0.42rem, 2.15rem);
+    font-size: clamp(1.6675rem, calc(5.98vmin + 0.483rem), 2.4725rem);
     line-height: 1;
     letter-spacing: -0.022em;
   }
