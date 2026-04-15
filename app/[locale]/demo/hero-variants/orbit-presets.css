@@ -668,6 +668,12 @@
   transition: filter 0.4s ease;
 }
 
+@media (max-width: 767px) {
+  .marketing-hero-pillar--soft {
+    will-change: auto;
+  }
+}
+
 .marketing-hero-pillar--soft:active {
   transform: scale(0.96);
   transition: transform 0.1s ease;

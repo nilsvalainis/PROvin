@@ -44,7 +44,8 @@
 html {
   /* Horizontālas pārvilkšanas „tukšums” — seko tēmai */
   background-color: var(--site-html-bg);
-  scroll-behavior: smooth;
+  /* Ritinājumu gludina Lenis (`LenisProvider`); `scroll-behavior: smooth` + Lenis konfliktē */
+  scroll-behavior: auto;
   max-width: 100%;
   overflow-x: hidden;
   overflow-x: clip;
@@ -70,10 +71,8 @@ body {
   padding-right: env(safe-area-inset-right, 0px);
 }
 
-* {
-  backface-visibility: hidden;
-  -webkit-font-smoothing: antialiased;
-}
+/* Nevis `* { backface-visibility: hidden }` — tas veido pārāk daudz kompozīcijas slāņu un mobilajā
+   rada raustīšanos; antialiased gludinājums paliek `body` zemāk. */
 
 /* Mājas čaula: min-height — 100vh fallback, tad dvh (Safari < 15.4 u.c.) */
 .home-scroll-surface {

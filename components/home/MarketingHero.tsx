@@ -97,6 +97,7 @@ export function MarketingHero({
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
   const prevHeroOrderStepRef = useRef(heroOrderStep);
   const mobileHomeClusterRef = useRef<HTMLDivElement>(null);
+  const mobileAuditsResizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [mobileAuditsTranslateY, setMobileAuditsTranslateY] = useState(0);
 
   /** Mobilais: nobīda visu hero kopu (`translateY`), lai „AUDITS” rindas centrs būtu viewport centrā; iekšējās atstarpes nemainās. */
@@ -128,24 +129,33 @@ export function MarketingHero({
       setMobileAuditsTranslateY(0);
       prevHeroOrderStepRef.current = heroOrderStep;
     }
+    const debounceMs = 220;
     const tick = () => {
       requestAnimationFrame(() => recenterMobileAuditsLine());
+    };
+    const tickDebounced = () => {
+      if (mobileAuditsResizeDebounceRef.current) clearTimeout(mobileAuditsResizeDebounceRef.current);
+      mobileAuditsResizeDebounceRef.current = setTimeout(() => {
+        mobileAuditsResizeDebounceRef.current = null;
+        tick();
+      }, debounceMs);
     };
     tick();
     if (typeof document !== "undefined" && document.fonts?.ready) {
       void document.fonts.ready.then(tick);
     }
-    const onResize = () => tick();
+    const onResize = () => tickDebounced();
     window.addEventListener("resize", onResize);
     const vv = window.visualViewport;
     if (vv) vv.addEventListener("resize", onResize);
     const root = mobileHomeClusterRef.current;
     let ro: ResizeObserver | undefined;
     if (root && typeof ResizeObserver !== "undefined") {
-      ro = new ResizeObserver(onResize);
+      ro = new ResizeObserver(() => tickDebounced());
       ro.observe(root);
     }
     return () => {
+      if (mobileAuditsResizeDebounceRef.current) clearTimeout(mobileAuditsResizeDebounceRef.current);
       window.removeEventListener("resize", onResize);
       if (vv) vv.removeEventListener("resize", onResize);
       if (ro) ro.disconnect();
@@ -174,7 +184,7 @@ export function MarketingHero({
         <>
           <div className="marketing-hero-title-split flex w-full flex-col items-center gap-0">
             <span className="marketing-hero-title-line1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0 sm:gap-x-2.5">
-              <span className="flex items-center gap-x-3 sm:gap-x-3.5">
+              <span className="flex items-center gap-x-2 sm:gap-x-3">
                 <span className={`marketing-hero-title-line1-main ${heroH1KeywordResolved}`}>{t("h1Vin")}</span>
                 <span className={`marketing-hero-title-line1-main marketing-hero-title-line1-un ${heroH1KeywordResolved}`}>
                   {t("h1Un")}
@@ -468,7 +478,7 @@ export function MarketingHero({
                 <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden md:hidden">
                   <div
                     ref={mobileHomeClusterRef}
-                    className="pointer-events-auto mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] will-change-[transform] transform-gpu"
+                    className="pointer-events-auto mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] transform-gpu"
                     style={{ transform: `translateY(${mobileAuditsTranslateY}px)` }}
                   >
                     <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">

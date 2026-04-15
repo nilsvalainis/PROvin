@@ -18,24 +18,18 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-/** iPhone / iPod / iPad (WebKit) — Lenis + inerciālais ritinājums bieži konfliktē; atstājam native scroll. */
-function useIOSNativeScroll(): boolean {
-  const [ios, setIos] = useState(false);
-  useEffect(() => {
-    const ua = navigator.userAgent;
-    const iPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
-    setIos(/iPhone|iPod|iPad/.test(ua) || iPadOS);
-  }, []);
-  return ios;
-}
-
 export function LenisProvider({ children }: { children: ReactNode }) {
   const reducedMotion = usePrefersReducedMotion();
-  const iosNativeScroll = useIOSNativeScroll();
   const options = useMemo<LenisOptions>(
     () => ({
-      lerp: 0.11,
+      /** Lenis — „premium” inerciālais ritinājums (wheel + touch). */
+      lerp: 0.08,
       smoothWheel: true,
+      syncTouch: true,
+      syncTouchLerp: 0.075,
+      touchInertiaExponent: 1.55,
+      wheelMultiplier: 0.88,
+      touchMultiplier: 1,
       anchors: true,
       autoRaf: true,
       orientation: "vertical",
@@ -43,7 +37,7 @@ export function LenisProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  if (reducedMotion || iosNativeScroll) {
+  if (reducedMotion) {
     return <>{children}</>;
   }
 
