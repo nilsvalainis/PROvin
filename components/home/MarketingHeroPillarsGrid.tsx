@@ -55,7 +55,7 @@ export function MarketingHeroPillarsGrid({
             designDirection
               ? homeMobileListLayout
                 ? "marketing-hero-pillars-mobile-grid marketing-hero-pillars-mobile-list flex w-full flex-col gap-3 md:flex md:flex-row md:flex-nowrap md:justify-between md:gap-4 lg:gap-5"
-                : "marketing-hero-pillars-mobile-grid grid w-full grid-cols-2 gap-x-2 gap-y-2 md:flex md:flex-row md:flex-nowrap md:justify-between md:gap-4 lg:gap-5"
+                : "marketing-hero-pillars-mobile-grid grid w-full grid-cols-2 max-md:gap-[0.65rem] md:flex md:flex-row md:flex-nowrap md:justify-between md:gap-4 lg:gap-5"
               : `flex w-full flex-row flex-nowrap justify-between gap-2 sm:gap-4 md:gap-5 ${homeMarketingPillarGridWidthClass}`
           }
         >

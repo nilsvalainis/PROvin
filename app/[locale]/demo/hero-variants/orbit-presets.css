@@ -834,11 +834,13 @@
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section {
-    padding-bottom: max(2.5rem, calc(env(safe-area-inset-bottom, 0px) + 2.5rem));
+    /* Nedaudz mazāks apakšas padding, lai kompensētu lielāku virsrakstu / atstarpi; poga paliek hero skatā */
+    padding-bottom: max(2rem, calc(env(safe-area-inset-bottom, 0px) + 2rem));
   }
 
+  /* Mobilais H1: +15 % pret iepriekšējo clamp; em attiecības (line1 / line2) nemainās */
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
-    font-size: clamp(1.2325rem, 4.42vmin + 0.357rem, 1.82775rem);
+    font-size: clamp(1.417375rem, 5.083vmin + 0.41055rem, 2.1019125rem);
     line-height: 1;
     margin-bottom: 0;
   }
@@ -873,21 +875,21 @@
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    column-gap: 0.5rem;
-    row-gap: 0.35rem;
+    column-gap: 0.65rem;
+    row-gap: 0.65rem;
     width: 100%;
     margin-left: auto;
     margin-right: auto;
   }
 
-  /* Tikai hero — sakrist ar pasūtījuma formas sleju (560px); lielākas atstarpes 2×2 (tikai uz leju / starp šūnām) */
+  /* Tikai hero — sakrist ar pasūtījuma formas sleju (560px); 2×2 kvadrāts: rinda = kolonna */
   .marketing-hero-section[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid {
     max-width: min(35rem, calc(100vw - 2rem));
     margin-left: auto;
     margin-right: auto;
     justify-items: center;
     column-gap: 0.65rem;
-    row-gap: 0.52rem;
+    row-gap: 0.65rem;
   }
 
   /* Mājas mobilais: saraksts (ikona pa kreisi, teksts pa labi) — ne 2×2 režģis */

@@ -403,14 +403,14 @@ export function MarketingHero({
                   <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5">
                     {approvedBlock}
                   </div>
-                  <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))]">
-                    <div className="mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] flex-col gap-2 py-1">
-                      <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
+                  <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))]">
+                    <div className="mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] flex-col gap-3 py-0">
+                      <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
                         {heroTitleStack}
                       </div>
                       {heroPillars}
                       {heroOrderEntry}
-                      <div className="flex w-full flex-col items-center gap-1 pb-1">
+                      <div className="flex w-full flex-col items-center gap-1 pb-0.5 pt-0.5">
                         {heroStepOneCta}
                       </div>
                     </div>
