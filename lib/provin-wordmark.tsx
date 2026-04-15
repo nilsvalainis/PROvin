@@ -2,10 +2,17 @@ import type { ReactNode } from "react";
 
 const PROVIN_IN_TEXT = /(PROVIN(?:\.LV)?)/g;
 
+export type RenderProvinTextOptions = {
+  /** PRO un „.LV” krāsa (VIN paliek `text-provin-accent`). Noklusējums: tumšam fonam. */
+  proAndSuffixClassName?: string;
+};
+
 /**
- * Atrod „PROVIN” / „PROVIN.LV” tekstā un noformē kā logotipu: PRO balts, VIN zils; „.LV” — balts.
+ * Atrod „PROVIN” / „PROVIN.LV” tekstā un noformē kā logotipu: PRO + .LV pēc `proAndSuffixClassName`, VIN — `text-provin-accent`.
  */
-export function renderProvinText(text: string): ReactNode {
+export function renderProvinText(text: string, options?: RenderProvinTextOptions): ReactNode {
+  const proLv = options?.proAndSuffixClassName ?? "text-white";
+
   if (!text.includes("PROVI")) {
     return text;
   }
@@ -23,9 +30,9 @@ export function renderProvinText(text: string): ReactNode {
     const full = m[1];
     parts.push(
       <span key={`provin-${mi++}`} className="inline">
-        <span className="text-white">PRO</span>
+        <span className={proLv}>PRO</span>
         <span className="text-provin-accent">VIN</span>
-        {full.endsWith(".LV") ? <span className="text-white">.LV</span> : null}
+        {full.endsWith(".LV") ? <span className={proLv}>.LV</span> : null}
       </span>,
     );
     last = m.index + full.length;
