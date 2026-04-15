@@ -5,7 +5,6 @@ import { AutoWireframeBackground } from "@/components/home/AutoWireframeBackgrou
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { HomeScrollSurface } from "@/components/home/HomeScrollSurface";
 import { MarketingHero } from "@/components/home/MarketingHero";
-import { MarketingHeroPillarsGrid } from "@/components/home/MarketingHeroPillarsGrid";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
 
@@ -18,18 +17,6 @@ export default async function HomePage() {
         <div className="demo-design-dir min-w-0 pb-0 text-white">
           <div className="hero-bg-extended">
             <MarketingHero homeOrbitPreset="s12" designDirection />
-
-            <div className="home-mobile-hero-cards marketing-hero-orbit-base marketing-hero-orbit--s12 md:hidden" data-hero-orbit-home="">
-              <section className="home-mobile-hero-cards-section demo-design-dir__section px-4 pb-6 pt-5 sm:px-6 sm:pb-8">
-                <div className="demo-design-dir__shell">
-                  <MarketingHeroPillarsGrid
-                    designDirection
-                    isC={false}
-                    shellClassName="flex w-full justify-center pb-0 pt-0"
-                  />
-                </div>
-              </section>
-            </div>
           </div>
 
           <section id="home-intro" className="demo-design-dir__section demo-design-dir__section--band-a py-10 sm:py-14">

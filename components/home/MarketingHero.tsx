@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -84,14 +84,13 @@ export function MarketingHero({
   const isOrbitVisual = Boolean(orbitUiClass);
   const dataHeroVariantForCss = demoVariant ?? homeOrbitKey;
   const orbitRingsMode = isOrbitVisual ? (demoVariant ? demoOrbitRings : "spin") : "spin";
-  const orbitGlassSilhouette = Boolean(isOrbitVisual && !demoVariant);
+  const orbitGlassSilhouette = Boolean(isOrbitVisual && !demoVariant && !designDirection);
   /** Sākumlapa: vertikālais centrs starp augšu un pīlāriem + tipogrāfijas skala (`data-hero-orbit-home`). */
   const orbitHomeCenterLayout = Boolean(designDirection && isOrbitVisual && !isB);
-  /** Mājas orbit: mobilajā pīlāri zem hero; hero vietā CTA. */
-  const mobilePillarsBelowFold = Boolean(orbitHomeCenterLayout && designDirection && !demoVariant);
   /** Intro teksts pārvietots zem pīlāriem (atsevišķa sekcija mājas lapā). */
   const homeOrbitMetaIntro = false;
   const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
+  const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
 
   /** Sākumlapas orbit: viens H1 tonis (bez zilajiem atslēgvārdiem), izmērs ×3 — sk. orbit-presets `[data-hero-orbit-home]`. */
   const heroH1KeywordResolved =
@@ -231,24 +230,43 @@ export function MarketingHero({
   const heroOrderEntry =
     designDirection && !demoVariant ? (
       <div id={ORDER_SECTION_ID} className="mx-auto mt-2 w-full max-w-[560px] scroll-mt-[calc(2.75rem+1px)] px-2 sm:mt-3 sm:px-1">
-        <OrderForm variant="hero" className="!mt-0 !space-y-0 !px-0 !py-0" />
+        <OrderForm
+          variant="hero"
+          formId="home-hero-order-form"
+          hideStepOneCta
+          onStepChange={setHeroOrderStep}
+          className="!mt-0 !space-y-0 !px-0 !py-0"
+        />
       </div>
     ) : null;
 
-  const pillarsAndCta = (
-    <>
-      <MarketingHeroPillarsGrid designDirection={designDirection} isC={isC} isB={isB} />
-      {scrollToContentLink}
-    </>
+  const heroStepOneCta =
+    designDirection && !demoVariant && heroOrderStep === 1 ? (
+      <div className="flex w-full justify-center px-1 pt-1 sm:pt-2">
+        <button
+          type="submit"
+          form="home-hero-order-form"
+          className="provin-home-pill-cta provin-home-pill-cta--fit z-10 flex w-fit min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
+        >
+          PASŪTĪT AUDITU - 79,99 €
+        </button>
+      </div>
+    ) : null;
+
+  const heroPillars = (
+    <MarketingHeroPillarsGrid
+      designDirection={designDirection}
+      isC={isC}
+      isB={isB}
+      shellClassName={designDirection && !demoVariant ? "w-full pb-2 pt-1.5 sm:pb-5 sm:pt-4" : undefined}
+    />
   );
 
-  const pillarsAndCtaOrbitMobile = (
+  const pillarsAndCta = (
     <>
-      <div className="hidden w-full flex-col items-center md:flex">
-        <MarketingHeroPillarsGrid designDirection={designDirection} isC={isC} isB={isB} />
-        {scrollToContentLinkDesign("mt-3 sm:mt-4")}
-      </div>
-      <div className="flex w-full flex-col items-center gap-3.5 md:hidden">{scrollToContentLinkDesign("mt-0")}</div>
+      {heroPillars}
+      {heroStepOneCta}
+      {designDirection && !demoVariant ? <div className="hidden md:flex">{scrollToContentLink}</div> : scrollToContentLink}
     </>
   );
 
@@ -361,7 +379,7 @@ export function MarketingHero({
                   {approvedBlock}
                 </div>
                 <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden px-4 sm:px-8">
-                  <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,min(92vw,46rem))] flex-1 flex-col gap-5 py-3 sm:justify-evenly sm:gap-0 sm:py-2">
+                  <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,min(92vw,46rem))] flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2">
                     <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
                       {heroTitleStack}
                     </div>
@@ -370,11 +388,11 @@ export function MarketingHero({
                 </div>
               </div>
               <div
-                className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-3 sm:pt-5${
+                className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-5${
                   orbitHomeCenterLayout ? " max-w-[min(100%,70rem)] marketing-hero-fade-in-up marketing-hero-fade-in-up--3" : " max-w-[min(100%,53.76rem)]"
                 }`}
               >
-                {orbitHomeCenterLayout && mobilePillarsBelowFold ? pillarsAndCtaOrbitMobile : pillarsAndCta}
+                {pillarsAndCta}
               </div>
             </div>
           </div>

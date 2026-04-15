@@ -2,7 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { isPlausibleListingUrl, isValidVin, normalizeVin, validateOrderFields } from "@/lib/order-field-validation";
@@ -25,6 +25,9 @@ const firstStepInfoTextSizeClass = "text-[10.5px] sm:text-[11px]";
 type OrderFormProps = {
   className?: string;
   variant?: "default" | "compact" | "hero";
+  formId?: string;
+  hideStepOneCta?: boolean;
+  onStepChange?: (step: 1 | 2) => void;
 };
 
 function HeroFieldScanLine({ children }: { children: ReactNode }) {
@@ -36,7 +39,13 @@ function HeroFieldScanLine({ children }: { children: ReactNode }) {
   );
 }
 
-export function OrderForm({ className, variant = "default" }: OrderFormProps) {
+export function OrderForm({
+  className,
+  variant = "default",
+  formId,
+  hideStepOneCta = false,
+  onStepChange,
+}: OrderFormProps) {
   const t = useTranslations("Order");
   const te = useTranslations("Order.errors");
   const locale = useLocale();
@@ -52,6 +61,10 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
   const [notes, setNotes] = useState("");
   const hero = variant === "hero";
   const compact = variant === "compact";
+
+  useEffect(() => {
+    onStepChange?.(step);
+  }, [onStepChange, step]);
 
   const labelClass = hero ? labelHero : labelDefault;
   const inputBase = hero ? inputHeroNoBottom : inputDefault;
@@ -167,6 +180,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
 
   return (
     <form
+      id={formId}
       onSubmit={onSubmit}
       className={`${formShell}${hero ? " order-form--hero" : ""}`}
       noValidate
@@ -414,7 +428,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 </p>
               </div>
             ) : null}
-            {step === 1 ? (
+            {step === 1 && !hideStepOneCta ? (
               <div className="flex w-full justify-center">
                 <button
                   type="button"
@@ -538,15 +552,17 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               className={`flex flex-col gap-2 ${compact ? "sm:flex-row sm:items-center sm:justify-between sm:gap-4" : "sm:flex-row sm:items-center sm:justify-between"}`}
             >
               {step === 1 ? (
-                <div className="flex w-full justify-center">
-                  <button
-                    type="button"
-                    onClick={goToStepTwo}
-                    className="provin-home-pill-cta provin-home-pill-cta--fit z-10 flex w-fit min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
-                  >
-                    PASŪTĪT AUDITU - 79,99 €
-                  </button>
-                </div>
+                !hideStepOneCta ? (
+                  <div className="flex w-full justify-center">
+                    <button
+                      type="button"
+                      onClick={goToStepTwo}
+                      className="provin-home-pill-cta provin-home-pill-cta--fit z-10 flex w-fit min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
+                    >
+                      PASŪTĪT AUDITU - 79,99 €
+                    </button>
+                  </div>
+                ) : null
               ) : (
                 <button
                   type="submit"
