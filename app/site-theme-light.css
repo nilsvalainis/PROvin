@@ -8,7 +8,7 @@ html[data-site-theme="light"] {
   /* Pamatfons / teksts */
   --site-html-bg: #f4f5f7;
   --site-body-bg: #ffffff;
-  --site-body-gradient: linear-gradient(180deg, #ffffff 0%, #fafbfc 22%, #f7f8fa 36%, #f6f7f9 48%, #f3f4f6 62%, #f0f2f5 100%);
+  --site-body-gradient: linear-gradient(180deg, #ffffff 0%, #f6f7f9 48%, #f0f2f5 100%);
   --site-body-fg: #0a0a0a;
   /* Tailwind @theme — lietots ar `text-provin-accent` u.c. */
   --color-provin-accent: #0078ff;
@@ -56,6 +56,7 @@ html[data-site-theme="light"] {
     0 10px 36px rgb(15 23 42 / 0.1),
     0 0 40px rgb(0 102 255 / 0.08);
   /* Hero orbit S12 fona pagarinājums — kā `site-theme-light` S12 `--orbit-bg`. */
+  --hero-orbit-radial-only: radial-gradient(circle at 50% 100%, rgb(0 102 255 / 0.12), #f6f7f9 45%);
   --hero-orbit-bg-extended: radial-gradient(circle at 50% 100%, rgb(0 102 255 / 0.12), #f6f7f9 45%), #ffffff;
 }
 
@@ -121,27 +122,29 @@ html[data-site-theme="light"] .demo-design-dir__hero-scan::after {
 /* Mājas čaula + fona dziļums */
 html[data-site-theme="light"] .home-scroll-surface {
   background-color: #f4f5f7 !important;
+  background-image: var(--provin-bg-grain-tile) !important;
+  background-size: 200px 200px !important;
+  background-repeat: repeat !important;
 }
 
-html[data-site-theme="light"] .home-depth-bg {
+html[data-site-theme="light"] .home-depth-bg-solid {
   background-color: #f6f7f9 !important;
-  background-image: radial-gradient(
-    ellipse 120% 80% at 50% 0%,
-    rgb(0 102 255 / 0.07) 0%,
-    rgb(0 102 255 / 0.05) 16%,
-    rgb(0 102 255 / 0.032) 30%,
-    rgb(0 102 255 / 0.016) 44%,
-    transparent 58%
-  ) !important;
 }
 
-html[data-site-theme="light"] .home-bg-grain {
-  opacity: 0.022;
+html[data-site-theme="light"] .home-depth-bg-glow {
+  background-image: radial-gradient(ellipse 120% 80% at 50% 0%, rgb(0 102 255 / 0.07), transparent 55%) !important;
+}
+
+html[data-site-theme="light"] .home-depth-bg-grain {
+  opacity: 0.028;
 }
 
 /* Hero + "KAS IR PROVIN?" kopējā virsma: gaišajā režīmā saglabā sākotnējo hero fonu. */
 html[data-site-theme="light"] .home-hero-intro-surface {
-  background: var(--hero-orbit-bg-extended) !important;
+  background-color: #ffffff !important;
+  background-image: var(--provin-bg-grain-tile), var(--hero-orbit-radial-only) !important;
+  background-size: 200px 200px, auto !important;
+  background-repeat: repeat, no-repeat !important;
 }
 
 /* Zem Hero — gaišs teksts */
@@ -312,7 +315,10 @@ html[data-site-theme="light"] .lab-chrome-cta:hover {
 /* Design-direction virsma */
 html[data-site-theme="light"] .demo-design-dir {
   color: #171717;
-  background: #f4f5f7;
+  background-color: #f4f5f7;
+  background-image: var(--provin-bg-grain-tile);
+  background-size: 200px 200px;
+  background-repeat: repeat;
   --dd-line: rgb(20 20 24 / 0.12);
   --dd-line-strong: rgb(0 102 255 / 0.45);
   /* Kā tumšajā: --dd-surface / --dd-surface-2 (puscaurspīdīgi) */
@@ -321,18 +327,27 @@ html[data-site-theme="light"] .demo-design-dir {
 }
 
 html[data-site-theme="light"] .demo-design-dir__section--band-a {
-  background: radial-gradient(ellipse 120% 80% at 50% 0%, rgb(0 102 255 / 0.08), transparent 58%), #ffffff;
+  background-color: #ffffff;
+  background-image: var(--provin-bg-grain-tile), radial-gradient(ellipse 120% 80% at 50% 0%, rgb(0 102 255 / 0.08), transparent 58%);
+  background-size: 200px 200px, auto;
+  background-repeat: repeat, no-repeat;
   box-shadow: inset 0 -1px 0 rgb(20 20 24 / 0.045);
 }
 
 html[data-site-theme="light"] .demo-design-dir__section--band-b {
-  background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(0 102 255 / 0.06), transparent 48%), #f6f7f9;
+  background-color: #f6f7f9;
+  background-image: var(--provin-bg-grain-tile), radial-gradient(ellipse 90% 60% at 80% 20%, rgb(0 102 255 / 0.06), transparent 48%);
+  background-size: 200px 200px, auto;
+  background-repeat: repeat, no-repeat;
   box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.09);
 }
 
 /* BUJ sadaļa — viena balta virsma (kā pirmā BUJ rinda gaišajā lapā) */
 html[data-site-theme="light"] .demo-design-dir__section--band-c {
-  background: linear-gradient(180deg, #f3f4f6 0%, #fafbfc 48%, #ffffff 100%);
+  background-color: #ffffff;
+  background-image: var(--provin-bg-grain-tile), linear-gradient(180deg, #f3f4f6 0%, #fafbfc 48%, #ffffff 100%);
+  background-size: 200px 200px, auto;
+  background-repeat: repeat, no-repeat;
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9);
 }
 
