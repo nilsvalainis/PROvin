@@ -257,6 +257,7 @@ html[data-site-theme="light"] .order-form-hero-field:focus-within {
 html[data-site-theme="light"] .order-form-hero-field:focus-within input,
 html[data-site-theme="light"] .order-form-hero-field:focus-within textarea {
   color: #000000;
+  caret-color: #000000;
 }
 
 html[data-site-theme="light"] .order-form-hero-field:focus-within input::placeholder,

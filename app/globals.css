@@ -339,12 +339,36 @@ body {
 
 .order-form-hero-field:focus-within input,
 .order-form-hero-field:focus-within textarea {
-  color: rgb(15 23 42);
+  color: rgb(229 231 235);
+  caret-color: rgb(229 231 235);
 }
 
 .order-form-hero-field:focus-within input::placeholder,
 .order-form-hero-field:focus-within textarea::placeholder {
   color: rgb(226 232 240 / 0.52);
+}
+
+/* Hero lauki: WebKit autofill — fons paliek caurspīdīgs, teksts kā parastajā ievadē */
+.order-form-hero-field input:-webkit-autofill,
+.order-form-hero-field input:-webkit-autofill:hover,
+.order-form-hero-field input:-webkit-autofill:focus,
+.order-form-hero-field textarea:-webkit-autofill,
+.order-form-hero-field textarea:-webkit-autofill:hover,
+.order-form-hero-field textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: rgb(229 231 235);
+  caret-color: rgb(229 231 235);
+  transition: background-color 50000s ease-in-out;
+  box-shadow: 0 0 0 1000px transparent inset;
+}
+
+html[data-site-theme="light"] .order-form-hero-field input:-webkit-autofill,
+html[data-site-theme="light"] .order-form-hero-field input:-webkit-autofill:hover,
+html[data-site-theme="light"] .order-form-hero-field input:-webkit-autofill:focus,
+html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill,
+html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:hover,
+html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: #000000;
+  caret-color: #000000;
 }
 
 /* Sākumlapas / tumšā UI — viena pogu estētika (kā hero „Turpināt”) */
