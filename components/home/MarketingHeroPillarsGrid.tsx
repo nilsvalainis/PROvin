@@ -67,7 +67,7 @@ export function MarketingHeroPillarsGrid({
               ? "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-row items-start gap-2.5 px-1 text-left sm:gap-3 sm:px-1"
               : designDirection
                 ? homeMobileListLayout
-                  ? "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--plain flex min-h-0 min-w-0 flex-row items-center justify-start gap-3 px-0 py-1.5 text-left md:min-w-0 md:flex-col md:items-center md:justify-center md:gap-2.5 md:px-1 md:py-0 md:text-center md:flex-1 md:basis-0"
+                  ? "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--plain flex min-h-0 min-w-0 flex-row items-center justify-center gap-3 px-0 py-1.5 text-center md:min-w-0 md:flex-col md:items-center md:justify-center md:gap-2.5 md:px-1 md:py-0 md:flex-1 md:basis-0"
                   : "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--plain flex min-h-0 min-w-0 flex-col items-center justify-center gap-1 px-0.5 py-1 text-center md:flex-1 md:basis-0 md:gap-2.5 md:px-1 md:py-0"
                 : "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2 px-0.5 text-center sm:gap-2.5 sm:px-0.5";
             const iconClass = isC
@@ -80,10 +80,12 @@ export function MarketingHeroPillarsGrid({
                 <Icon className={iconClass} strokeWidth={1.5} aria-hidden />
                 <h3
                   className={`marketing-hero-pillar-title ${isC ? pillarTitleClassC : pillarTitleClass}${
-                    homeMobileListLayout && !isC ? " max-md:min-h-0 max-md:max-w-none max-md:text-left md:text-center" : ""
+                    homeMobileListLayout && !isC
+                      ? " max-md:min-h-0 max-md:max-h-none max-md:max-w-[min(100%,calc(100vw-4rem))] max-md:!whitespace-nowrap max-md:line-clamp-none max-md:text-center md:text-center"
+                      : ""
                   }`}
                 >
-                  {p.title}
+                  {homeMobileListLayout && !isC ? p.title.replace(/\n/g, " ") : p.title}
                 </h3>
               </article>
             );

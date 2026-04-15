@@ -901,13 +901,14 @@
 
   .marketing-hero-section[data-hero-orbit-home] .marketing-hero-pillars-mobile-list .marketing-hero-pillar--plain {
     padding: 0.35rem 0 !important;
-    justify-content: flex-start !important;
+    justify-content: center !important;
     align-items: center !important;
   }
 
   .marketing-hero-section[data-hero-orbit-home] .marketing-hero-pillars-mobile-list .marketing-hero-pillar--plain .marketing-hero-pillar-title {
-    text-align: left !important;
-    font-size: 10px;
+    text-align: center !important;
+    white-space: nowrap !important;
+    font-size: 9px;
     line-height: 1.2;
   }
 
