@@ -274,13 +274,7 @@ export function MarketingHero({
   /** Orbit `md:grid` zars — `#pasutit` paliek SM wrapperī (pirmais DOM). */
   const heroOrderEntryMd = renderHeroOrderEntry(HOME_HERO_ORDER_FORM_ID_MD, false);
 
-  function submitHeroOrderFormById(formDomId: string) {
-    const el = document.getElementById(formDomId);
-    if (el instanceof HTMLFormElement) {
-      el.requestSubmit();
-    }
-  }
-
+  /** `form` atribūts — pārlūks piesaista pogu pie `<form id>` pat ārpus DOM zara (uzticamāk par `requestSubmit` + `getElementById`). */
   function heroStepOneCtaForFormId(formDomId: string) {
     if (!designDirection || demoVariant || heroOrderStep !== 1) return null;
     return (
@@ -288,9 +282,9 @@ export function MarketingHero({
         className={`flex w-full justify-center px-1 pt-1 sm:pt-2 max-md:mt-2 max-md:pt-1 ${homeHeroOrderFormTwoCardsWidthClass}`}
       >
         <button
-          type="button"
-          className="provin-home-pill-cta provin-home-pill-cta--fit z-10 flex w-fit min-h-[50px] max-w-[min(100%,calc(100%-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
-          onClick={() => submitHeroOrderFormById(formDomId)}
+          type="submit"
+          form={formDomId}
+          className="provin-home-pill-cta provin-home-pill-cta--fit relative z-20 flex w-fit min-h-[50px] max-w-[min(100%,calc(100%-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
         >
           PASŪTĪT AUDITU - 79,99 €
         </button>

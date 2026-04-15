@@ -154,10 +154,12 @@ export function SiteSectionRail() {
 
   /**
    * Etiķete `absolute` — neanimējam `max-width` (izraisa reflow un „lēcienus” ar punktiem).
-   * Tikai `opacity` + `transform` uz GPU; `group-hover/link` — tikai attiecīgā rinda, ne visa josla.
+   * Tikai `opacity` + `transform` uz GPU.
+   * Vertikālā ass (`site-rail-axis`) nav `<Link>` iekšā — tāpēc `group-hover/rail`, lai uzkļūšana uz sliedi rāda uzrakstus;
+   * `group-focus-visible/link` — fokusā tikai attiecīgās rindas etiķete (tastatūra).
    */
   const railLabelClass =
-    "pointer-events-none absolute left-0 top-1/2 z-[2] max-w-[min(10.25rem,min(28vw,26vmin))] -translate-y-1/2 translate-x-0 whitespace-normal break-words text-pretty text-left opacity-0 transition-[opacity,transform] duration-300 ease-out will-change-[opacity,transform] motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-x-0 group-hover/link:translate-x-0.5 group-hover/link:opacity-100 group-focus-visible/link:translate-x-0.5 group-focus-visible/link:opacity-100";
+    "home-rail-label pointer-events-none absolute left-0 top-1/2 z-[2] max-w-[min(10.25rem,min(28vw,26vmin))] -translate-y-1/2 translate-x-0 whitespace-normal break-words text-pretty text-left opacity-0 transition-[opacity,transform] duration-300 ease-out will-change-[opacity,transform] motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-x-0 group-hover/rail:translate-x-0.5 group-hover/rail:opacity-100 group-focus-visible/link:translate-x-0.5 group-focus-visible/link:opacity-100";
 
   /**
    * `top` zem sticky header (z-42): citādi zilais sliežu punkts redzams caur caurspīdīgo hero headeri.
@@ -195,7 +197,10 @@ export function SiteSectionRail() {
               aria-hidden
             />
           </div>
-          <ul ref={railListRef} className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+          <ul
+            ref={railListRef}
+            className="flex h-full min-h-0 min-w-[min(10.25rem,min(28vw,26vmin))] flex-1 flex-col"
+          >
             {sections.map((s, i) => {
               const isActive = i === active;
               return (
@@ -220,7 +225,7 @@ export function SiteSectionRail() {
                         className={`h-1 w-1 shrink-0 rounded-full bg-[#0066ff] transition-[opacity,box-shadow] duration-200 ease-out motion-reduce:transition-none ${
                           isActive
                             ? "opacity-100 shadow-[0_0_8px_rgba(0,102,255,0.65)]"
-                            : "opacity-[0.4] shadow-[0_0_5px_rgba(0,102,255,0.35)] group-hover/link:opacity-[0.85] group-hover/link:shadow-[0_0_8px_rgba(0,102,255,0.45)] group-focus-visible/link:opacity-90"
+                            : "opacity-[0.4] shadow-[0_0_5px_rgba(0,102,255,0.35)] group-hover/rail:opacity-[0.85] group-hover/rail:shadow-[0_0_8px_rgba(0,102,255,0.45)] group-focus-visible/link:opacity-90"
                         }`}
                       />
                     </div>
