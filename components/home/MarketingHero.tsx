@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -12,7 +12,12 @@ import { MarketingHeroPillarsGrid } from "@/components/home/MarketingHeroPillars
 import { MarketingHeroSpeedometer } from "@/components/home/MarketingHeroSpeedometer";
 import type { HeroVisualDemoVariant } from "@/lib/hero-orbit-j-presets";
 import { isOrbitFamilyVariant } from "@/lib/hero-orbit-j-presets";
-import { HOME_HERO_ORDER_FORM_ID, ORDER_SECTION_ID } from "@/lib/order-section";
+import {
+  HOME_HERO_ORDER_FORM_ID,
+  HOME_HERO_ORDER_FORM_ID_MD,
+  HOME_HERO_ORDER_FORM_ID_SM,
+  ORDER_SECTION_ID,
+} from "@/lib/order-section";
 import {
   approvedByIrissSignatureHeroClass,
   heroH1BlueKeywordClass,
@@ -243,43 +248,59 @@ export function MarketingHero({
     </a>
   );
 
-  const heroOrderEntry =
-    designDirection && !demoVariant ? (
-      <div
-        id={ORDER_SECTION_ID}
-        className={`${homeHeroOrderColumnMaxClass} scroll-mt-[calc(2.75rem+1px)] px-2 sm:px-1 max-md:mt-3 mt-2 sm:mt-3`}
-      >
+  const heroOrderEntryShellClass = `${homeHeroOrderColumnMaxClass} scroll-mt-[calc(2.75rem+1px)] px-2 sm:px-1 max-md:mt-3 mt-2 sm:mt-3`;
+
+  function renderHeroOrderEntry(formId: string, pasutitSectionId: boolean) {
+    if (!designDirection || demoVariant) return null;
+    return (
+      <div id={pasutitSectionId ? ORDER_SECTION_ID : undefined} className={heroOrderEntryShellClass}>
         <div className={homeHeroOrderFormTwoCardsWidthClass}>
           <OrderForm
             variant="hero"
-            formId={HOME_HERO_ORDER_FORM_ID}
+            formId={formId}
             hideStepOneCta
             onStepChange={setHeroOrderStep}
             className="!mt-0 !space-y-0 !px-0 !py-0"
           />
         </div>
       </div>
-    ) : null;
+    );
+  }
 
-  const heroStepOneCta =
-    designDirection && !demoVariant && heroOrderStep === 1 ? (
+  /** Viens `OrderForm` (orbit bez mobilā/desktop zara dublikāta). */
+  const heroOrderEntry = renderHeroOrderEntry(HOME_HERO_ORDER_FORM_ID, true);
+  /** Orbit `md:hidden` zars — savs `formId`, lai desktop poga netrāpītu šeit. */
+  const heroOrderEntrySm = renderHeroOrderEntry(HOME_HERO_ORDER_FORM_ID_SM, true);
+  /** Orbit `md:grid` zars — `#pasutit` paliek SM wrapperī (pirmais DOM). */
+  const heroOrderEntryMd = renderHeroOrderEntry(HOME_HERO_ORDER_FORM_ID_MD, false);
+
+  function submitHeroOrderFormById(formDomId: string) {
+    const el = document.getElementById(formDomId);
+    if (el instanceof HTMLFormElement) {
+      el.requestSubmit();
+    }
+  }
+
+  function heroStepOneCtaForFormId(formDomId: string) {
+    if (!designDirection || demoVariant || heroOrderStep !== 1) return null;
+    return (
       <div
         className={`flex w-full justify-center px-1 pt-1 sm:pt-2 max-md:mt-2 max-md:pt-1 ${homeHeroOrderFormTwoCardsWidthClass}`}
       >
         <button
           type="button"
           className="provin-home-pill-cta provin-home-pill-cta--fit z-10 flex w-fit min-h-[50px] max-w-[min(100%,calc(100%-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
-          onClick={() => {
-            const el = document.getElementById(HOME_HERO_ORDER_FORM_ID);
-            if (el instanceof HTMLFormElement) {
-              el.requestSubmit();
-            }
-          }}
+          onClick={() => submitHeroOrderFormById(formDomId)}
         >
           PASŪTĪT AUDITU - 79,99 €
         </button>
       </div>
-    ) : null;
+    );
+  }
+
+  const heroStepOneCta = heroStepOneCtaForFormId(HOME_HERO_ORDER_FORM_ID);
+  const heroStepOneCtaSm = heroStepOneCtaForFormId(HOME_HERO_ORDER_FORM_ID_SM);
+  const heroStepOneCtaMd = heroStepOneCtaForFormId(HOME_HERO_ORDER_FORM_ID_MD);
 
   const heroPillars = (
     <MarketingHeroPillarsGrid
@@ -303,19 +324,25 @@ export function MarketingHero({
    * Web (md+): pīlārus vizuāli paceļ ar transform, lai vertikālais attālums līdz formai ≈ līdz pogai;
    * layout plūsma nemainās — poga un lauki paliek tajās pašās pikseļu pozīcijās.
    */
-  const pillarsAndCta = (
-    <>
-      {designDirection && !demoVariant ? (
-        <div className="max-md:contents md:block md:w-full">
-          {heroPillars}
-        </div>
-      ) : (
-        heroPillars
-      )}
-      {heroStepOneCta}
-      {scrollLinkDesktopOnly}
-    </>
-  );
+  function pillarsAndCtaWithStepOneCta(stepOneCtaSlot: ReactNode) {
+    return (
+      <>
+        {designDirection && !demoVariant ? (
+          <div className="max-md:contents md:block md:w-full">
+            {heroPillars}
+          </div>
+        ) : (
+          heroPillars
+        )}
+        {stepOneCtaSlot}
+        {scrollLinkDesktopOnly}
+      </>
+    );
+  }
+
+  const pillarsAndCta = pillarsAndCtaWithStepOneCta(heroStepOneCta);
+  /** Desktop orbit ar atsevišķu `OrderForm` id — poga iesniedz redzamo formu. */
+  const pillarsAndCtaMdHeroSubmit = pillarsAndCtaWithStepOneCta(heroStepOneCtaMd);
 
   /** Mājas lapa: vienota virsma ar `home-intro` ir `page.tsx` wrapperī — šeit bez atsevišķa band-a. */
   const designDirHeroChrome =
@@ -437,9 +464,9 @@ export function MarketingHero({
                       <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
                         {heroTitleStack}
                       </div>
-                      {heroOrderEntry}
+                      {heroOrderEntrySm}
                       <div className="flex w-full flex-col items-center gap-1 pb-0.5 pt-0.5">
-                        {heroStepOneCta}
+                        {heroStepOneCtaSm}
                       </div>
                     </div>
                   </div>
@@ -457,14 +484,14 @@ export function MarketingHero({
                         <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
                           {heroTitleStack}
                         </div>
-                        {heroOrderEntry}
+                        {heroOrderEntryMd}
                       </div>
                     </div>
                   </div>
                   <div
                     className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-5 ${homeHeroOrderColumnMaxClass} marketing-hero-fade-in-up marketing-hero-fade-in-up--3`}
                   >
-                    {pillarsAndCta}
+                    {pillarsAndCtaMdHeroSubmit}
                   </div>
                 </div>
               </>
