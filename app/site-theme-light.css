@@ -8,7 +8,7 @@ html[data-site-theme="light"] {
   /* Pamatfons / teksts */
   --site-html-bg: #f4f5f7;
   --site-body-bg: #ffffff;
-  --site-body-gradient: linear-gradient(180deg, #ffffff 0%, #f6f7f9 48%, #f0f2f5 100%);
+  --site-body-gradient: linear-gradient(180deg, #ffffff 0%, #fafbfc 22%, #f7f8fa 36%, #f6f7f9 48%, #f3f4f6 62%, #f0f2f5 100%);
   --site-body-fg: #0a0a0a;
   /* Tailwind @theme — lietots ar `text-provin-accent` u.c. */
   --color-provin-accent: #0078ff;
@@ -125,7 +125,18 @@ html[data-site-theme="light"] .home-scroll-surface {
 
 html[data-site-theme="light"] .home-depth-bg {
   background-color: #f6f7f9 !important;
-  background-image: radial-gradient(ellipse 120% 80% at 50% 0%, rgb(0 102 255 / 0.07), transparent 55%) !important;
+  background-image: radial-gradient(
+    ellipse 120% 80% at 50% 0%,
+    rgb(0 102 255 / 0.07) 0%,
+    rgb(0 102 255 / 0.05) 16%,
+    rgb(0 102 255 / 0.032) 30%,
+    rgb(0 102 255 / 0.016) 44%,
+    transparent 58%
+  ) !important;
+}
+
+html[data-site-theme="light"] .home-bg-grain {
+  opacity: 0.022;
 }
 
 /* Hero + "KAS IR PROVIN?" kopējā virsma: gaišajā režīmā saglabā sākotnējo hero fonu. */

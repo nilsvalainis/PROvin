@@ -37,7 +37,17 @@
   /* Tēmas pamats (tumšais); gaišais — `site-theme-light.css` uz `html[data-site-theme="light"]` */
   --site-html-bg: #050505;
   --site-body-bg: #050505;
-  --site-body-gradient: linear-gradient(180deg, #08080a 0%, #050505 55%, #050505 100%);
+  /* Vairāk pieturas — mazāks sRGB banding uz lieliem / tumšiem ekrāniem (krāsas ~tas pats tonis) */
+  --site-body-gradient: linear-gradient(
+    180deg,
+    #08080a 0%,
+    #070708 14%,
+    #060607 28%,
+    #050506 42%,
+    #050505 55%,
+    #050505 72%,
+    #050505 100%
+  );
   --site-body-fg: #ffffff;
 }
 
@@ -85,6 +95,37 @@ body {
 .home-scroll-surface {
   min-height: 100vh;
   min-height: 100dvh;
+}
+
+/**
+ * Pilnekrāna SVG trokšņa dithering — novērš gradient banding (tumšie monitori).
+ * Bez mix-blend-mode; fiksēts slānis starp `home-depth-bg` un saturu.
+ */
+.home-bg-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  isolation: isolate;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20200%22%20width%3D%22200%22%20height%3D%22200%22%3E%3Cfilter%20id%3D%22homeGrain%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.65%22%20numOctaves%3D%223%22%20stitchTiles%3D%22stitch%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url(%23homeGrain)%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-bg-grain {
+    will-change: auto;
+  }
+}
+
+/* Augšējā zilā spīduma slānis — GPU kompozīcija (bez blend-mode) */
+.home-depth-bg {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 @media (max-width: 768px) {

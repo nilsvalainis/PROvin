@@ -10,7 +10,7 @@ export function HomeDepthBackground() {
       className="home-depth-bg pointer-events-none fixed inset-0 z-[1] bg-[#030304]"
       style={{
         backgroundImage:
-          "radial-gradient(ellipse 120% 80% at 50% 0%, rgb(0 60 140 / 0.14), transparent 55%)",
+          "radial-gradient(ellipse 120% 80% at 50% 0%, rgb(0 60 140 / 0.14) 0%, rgb(0 52 118 / 0.1) 14%, rgb(0 42 96 / 0.065) 26%, rgb(0 32 74 / 0.038) 38%, rgb(0 22 52 / 0.018) 50%, transparent 58%)",
       }}
       aria-hidden
     />
