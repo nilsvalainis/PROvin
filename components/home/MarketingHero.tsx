@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useId, useState } from "react";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -49,23 +49,6 @@ export type MarketingHeroProps = {
 const sectionBasePad =
   "px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1rem,env(safe-area-inset-top,0px)+0.75rem)] sm:px-8 sm:pb-9 sm:pt-[max(1.25rem,env(safe-area-inset-top,0px)+1rem)]";
 
-function subscribeMaxWidth767(cb: () => void) {
-  if (typeof window === "undefined") return () => {};
-  const mq = window.matchMedia("(max-width: 767px)");
-  mq.addEventListener("change", cb);
-  return () => mq.removeEventListener("change", cb);
-}
-
-function getMaxWidth767Snapshot() {
-  if (typeof window === "undefined") return true;
-  return window.matchMedia("(max-width: 767px)").matches;
-}
-
-/** SSR: šaurā kolonna — vienīgais H1 kokā līdz hidratācijai (bez dubultā virsraksta mirkļa). */
-function getMaxWidth767ServerSnapshot() {
-  return true;
-}
-
 /**
  * Pilnekrāna tumšais Hero: „APPROVED…” + H1 ekrāna centrā; četras ikonas apakšā; scroll uz saturu (design: tikai zila bultiņa).
  * `demoVariant` ieslēdz tikai vizuālos variantus demo lapā.
@@ -108,158 +91,10 @@ export function MarketingHero({
   const orbitGlassSilhouette = Boolean(isOrbitVisual && !demoVariant && !designDirection);
   /** Sākumlapa: vertikālais centrs starp augšu un pīlāriem + tipogrāfijas skala (`data-hero-orbit-home`). */
   const orbitHomeCenterLayout = Boolean(designDirection && isOrbitVisual && !isB);
-  const isMaxWidth767 = useSyncExternalStore(subscribeMaxWidth767, getMaxWidth767Snapshot, getMaxWidth767ServerSnapshot);
   /** Intro teksts pārvietots zem pīlāriem (atsevišķa sekcija mājas lapā). */
   const homeOrbitMetaIntro = false;
   const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
-  const prevHeroOrderStepRef = useRef(heroOrderStep);
-  const mobileHeroScrollRef = useRef<HTMLDivElement>(null);
-  const mobileHomeClusterRef = useRef<HTMLDivElement>(null);
-  const mobileCenterResizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const scrollWasDeepRef = useRef(false);
-  const [mobileAuditsTranslateY, setMobileAuditsTranslateY] = useState(0);
-
-  /**
-   * Mobilais mājas hero: `translate3d(0,Y,0)` uz iekšējo slāni — `.marketing-hero-title-line2` (AUDITS) centrs → `visualViewport` centrs.
-   * Bez soļveida nobīdēm (mazāk raustīšanās), bez opacity slēpšanas (nav melnā kadra).
-   */
-  const recenterMobileAuditsLine = useCallback(() => {
-    if (typeof window === "undefined") return;
-    if (!window.matchMedia("(max-width: 767px)").matches) {
-      setMobileAuditsTranslateY(0);
-      return;
-    }
-
-    const heroEl = document.getElementById(sectionId);
-    if (heroEl) {
-      const r = heroEl.getBoundingClientRect();
-      const margin = 160;
-      const vh = window.innerHeight;
-      if (r.bottom < -margin || r.top > vh + margin) {
-        return;
-      }
-    }
-
-    const root = mobileHomeClusterRef.current;
-    if (!root) return;
-
-    const audits = root.querySelector(".marketing-hero-title-line2");
-    if (!audits || !(audits instanceof HTMLElement)) return;
-
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const snapToTopBand = scrollTop < 72;
-
-    if (!snapToTopBand) {
-      return;
-    }
-
-    const vh = window.innerHeight;
-    const yCap = Math.max(120, Math.round(vh * 0.52));
-
-    setMobileAuditsTranslateY((prev) => {
-      const rect = audits.getBoundingClientRect();
-      if (rect.width === 0 && rect.height === 0) return prev;
-      const auditsCenterY = rect.top + rect.height / 2;
-      const vv = window.visualViewport;
-      const viewportCenterY = vv ? vv.offsetTop + vv.height / 2 : window.innerHeight / 2;
-      const screenDelta = Math.round(viewportCenterY - auditsCenterY);
-      if (Math.abs(screenDelta) < 6) return prev;
-      const next = prev + screenDelta;
-      return Math.min(yCap, Math.max(-yCap, next));
-    });
-  }, [sectionId]);
-
-  useLayoutEffect(() => {
-    if (!orbitHomeCenterLayout || !designDirection || demoVariant) {
-      setMobileAuditsTranslateY(0);
-      return;
-    }
-    if (prevHeroOrderStepRef.current !== heroOrderStep) {
-      setMobileAuditsTranslateY(0);
-      prevHeroOrderStepRef.current = heroOrderStep;
-    }
-
-    const run = () => {
-      recenterMobileAuditsLine();
-    };
-
-    const debounceWindowMs = 720;
-
-    const scheduleResize = () => {
-      if (mobileCenterResizeDebounceRef.current) clearTimeout(mobileCenterResizeDebounceRef.current);
-      mobileCenterResizeDebounceRef.current = setTimeout(() => {
-        mobileCenterResizeDebounceRef.current = null;
-        requestAnimationFrame(() => run());
-      }, debounceWindowMs);
-    };
-
-    let cancelled = false;
-
-    requestAnimationFrame(() => {
-      if (!cancelled) run();
-    });
-    void document.fonts.ready.then(() => {
-      if (!cancelled) requestAnimationFrame(() => run());
-    });
-
-    window.addEventListener("resize", scheduleResize);
-
-    return () => {
-      cancelled = true;
-      if (mobileCenterResizeDebounceRef.current) clearTimeout(mobileCenterResizeDebounceRef.current);
-      window.removeEventListener("resize", scheduleResize);
-    };
-  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine, heroOrderStep]);
-
-  /** bfcache: atiestāt nobīdi un vienu centrējumu. */
-  useEffect(() => {
-    if (!orbitHomeCenterLayout || !designDirection || demoVariant) return;
-
-    const resetInnerScroll = () => {
-      const el = mobileHeroScrollRef.current;
-      if (el) el.scrollTop = 0;
-    };
-
-    const onPageShow = (ev: PageTransitionEvent) => {
-      if (ev.persisted) {
-        setMobileAuditsTranslateY(0);
-        resetInnerScroll();
-        requestAnimationFrame(() => recenterMobileAuditsLine());
-      }
-    };
-
-    window.addEventListener("pageshow", onPageShow);
-    return () => {
-      window.removeEventListener("pageshow", onPageShow);
-    };
-  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine]);
-
-  /** Atgriežoties no apakšas pie hero augšas — viena aizkavēta centrēšana (bez pārmērīgas raustīšanās). */
-  useEffect(() => {
-    if (!orbitHomeCenterLayout || !designDirection || demoVariant) return;
-
-    let scrollTimer: number | null = null;
-
-    const onScroll = () => {
-      const y = window.scrollY || document.documentElement.scrollTop;
-      if (y > 200) scrollWasDeepRef.current = true;
-      if (scrollWasDeepRef.current && y < 80) {
-        scrollWasDeepRef.current = false;
-        if (scrollTimer) window.clearTimeout(scrollTimer);
-        scrollTimer = window.setTimeout(() => {
-          scrollTimer = null;
-          recenterMobileAuditsLine();
-        }, 280);
-      }
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      if (scrollTimer) window.clearTimeout(scrollTimer);
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, [orbitHomeCenterLayout, designDirection, demoVariant, recenterMobileAuditsLine]);
 
   /** Sākumlapas orbit: viens H1 tonis (bez zilajiem atslēgvārdiem), izmērs ×3 — sk. orbit-presets `[data-hero-orbit-home]`. */
   const heroH1KeywordResolved =
@@ -427,7 +262,7 @@ export function MarketingHero({
         <button
           type="submit"
           form="home-hero-order-form"
-          className="provin-home-pill-cta provin-home-pill-cta--fit z-10 flex w-fit min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
+          className="provin-home-pill-cta provin-home-pill-cta--fit z-10 flex w-fit min-h-[50px] max-w-[min(100%,calc(100%-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
         >
           PASŪTĪT AUDITU - 79,99 €
         </button>
@@ -459,7 +294,7 @@ export function MarketingHero({
   const pillarsAndCta = (
     <>
       {designDirection && !demoVariant ? (
-        <div className="max-md:contents md:block md:w-full md:-translate-y-[0.6875rem] md:transform-gpu">
+        <div className="max-md:contents md:block md:w-full md:-translate-y-[0.6875rem]">
           {heroPillars}
         </div>
       ) : (
@@ -476,7 +311,7 @@ export function MarketingHero({
       ? " demo-design-dir__section demo-design-dir__section--band-a"
       : "";
 
-  const sectionClassOrbit = `marketing-hero-section home-content-atmosphere relative flex min-h-[min(100dvh,100svh)] w-full flex-col overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitSectionStyleClass}${designDirHeroChrome}`.trim();
+  const sectionClassOrbit = `marketing-hero-section home-content-atmosphere relative flex min-h-[min(100dvh,100svh)] w-full max-w-full flex-col overflow-x-hidden bg-transparent text-white max-md:min-h-[100dvh] ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitSectionStyleClass}${designDirHeroChrome}`.trim();
 
   const sectionClassGrid = `marketing-hero-section home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}${designDirHeroChrome}`.trim();
 
@@ -577,23 +412,14 @@ export function MarketingHero({
         orbitHomeCenterLayout ? (
           <div className="relative z-[1] flex min-h-0 w-full flex-1 flex-col">
             {designDirection && !demoVariant ? (
-              isMaxWidth767 ? (
-                <div
-                  ref={mobileHeroScrollRef}
-                  className="mx-auto flex w-full min-w-0 max-w-full shrink-0 flex-col items-center"
-                  suppressHydrationWarning
-                >
-                  <div
-                    ref={mobileHomeClusterRef}
-                    className="pointer-events-auto mx-auto flex w-full min-w-0 max-w-[min(100%,min(92vw,46rem))] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))]"
-                  >
+              <>
+                {/* Mobilais: md:hidden — tikai CSS, bez JS viewport zara */}
+                <div className="mx-auto flex w-full min-w-0 max-w-full shrink-0 flex-col items-center md:hidden">
+                  <div className="pointer-events-auto mx-auto flex w-full min-w-0 max-w-[min(100%,46rem)] shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] max-md:min-h-[100dvh] max-md:flex max-md:flex-col max-md:justify-center">
                     <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">
                       {approvedBlock}
                     </div>
-                    <div
-                      className="flex flex-col gap-3 py-0 transform-gpu [backface-visibility:hidden]"
-                      style={{ transform: `translate3d(0, ${mobileAuditsTranslateY}px, 0)` }}
-                    >
+                    <div className="flex flex-col gap-3 py-0">
                       <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
                         {heroTitleStack}
                       </div>
@@ -604,14 +430,14 @@ export function MarketingHero({
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="min-h-0 w-full flex-1 grid grid-rows-[1fr_auto]" suppressHydrationWarning>
+                {/* Desktop: hidden md:grid — tā pati loģika, otrs H1 tikai šajā zarā (redzams tikai md+) */}
+                <div className="hidden min-h-0 w-full flex-1 grid grid-rows-[1fr_auto] md:grid">
                   <div className="relative flex min-h-0 w-full flex-1 flex-col">
                     <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5 sm:px-8 sm:pb-0 sm:pt-1">
                       {approvedBlock}
                     </div>
-                    <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden px-4 sm:px-8">
-                      <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,min(92vw,46rem))] flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2">
+                    <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden px-4 sm:px-8">
+                      <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,46rem)] flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2">
                         <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
                           {heroTitleStack}
                         </div>
@@ -625,7 +451,7 @@ export function MarketingHero({
                     {pillarsAndCta}
                   </div>
                 </div>
-              )
+              </>
             ) : (
               <div className="grid min-h-0 w-full flex-1 grid-rows-[1fr_auto]">
                 <div className="relative flex min-h-0 w-full flex-1 flex-col">
@@ -633,7 +459,7 @@ export function MarketingHero({
                     {approvedBlock}
                   </div>
                   <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden px-4 sm:px-8">
-                    <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,min(92vw,46rem))] flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2">
+                    <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,46rem)] flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2">
                       <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
                         {heroTitleStack}
                       </div>
