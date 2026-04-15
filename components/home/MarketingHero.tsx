@@ -236,7 +236,7 @@ export function MarketingHero({
     designDirection && !demoVariant ? (
       <div
         id={ORDER_SECTION_ID}
-        className={`${homeHeroOrderColumnMaxClass} mt-2 scroll-mt-[calc(2.75rem+1px)] px-2 sm:mt-3 sm:px-1 max-md:mt-5`}
+        className={`${homeHeroOrderColumnMaxClass} scroll-mt-[calc(2.75rem+1px)] px-2 sm:px-1 max-md:mt-3 mt-2 sm:mt-3`}
       >
         <OrderForm
           variant="hero"
@@ -250,7 +250,7 @@ export function MarketingHero({
 
   const heroStepOneCta =
     designDirection && !demoVariant && heroOrderStep === 1 ? (
-      <div className="flex w-full justify-center px-1 pt-1 sm:pt-2 max-md:-mt-1.5 max-md:pt-0">
+      <div className="flex w-full justify-center px-1 pt-1 sm:pt-2 max-md:-translate-y-1.5 max-md:pt-0">
         <button
           type="submit"
           form="home-hero-order-form"
@@ -266,7 +266,8 @@ export function MarketingHero({
       designDirection={designDirection}
       isC={isC}
       isB={isB}
-      shellClassName={designDirection && !demoVariant ? "w-full pb-2 pt-1.5 max-md:pb-1 max-md:pt-0 sm:pb-5 sm:pt-4" : undefined}
+      homeMobileListLayout={Boolean(designDirection && !demoVariant)}
+      shellClassName={designDirection && !demoVariant ? "w-full pb-2 pt-1.5 max-md:pb-0 max-md:pt-2 sm:pb-5 sm:pt-4" : undefined}
     />
   );
 
@@ -280,18 +281,6 @@ export function MarketingHero({
       {scrollLinkDesktopOnly}
     </>
   );
-
-  /** Mājas mobilais orbit: pīlāri augšā, CTA pie viewport apakšas (apakšējā rinda `1fr`). */
-  const pillarsAndCtaHomeMobile =
-    orbitHomeCenterLayout && !demoVariant ? (
-      <div className="flex min-h-0 w-full flex-1 flex-col max-md:justify-between md:contents">
-        {heroPillars}
-        <div className="flex w-full flex-col items-center gap-2 max-md:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] md:contents">
-          {heroStepOneCta}
-          {scrollLinkDesktopOnly}
-        </div>
-      </div>
-    ) : null;
 
   /** Mājas lapa: vienota virsma ar `home-intro` ir `page.tsx` wrapperī — šeit bez atsevišķa band-a. */
   const designDirHeroChrome =
@@ -399,34 +388,73 @@ export function MarketingHero({
       {isOrbitVisual ? (
         orbitHomeCenterLayout ? (
           <div className="relative z-[1] flex min-h-0 w-full flex-1 flex-col">
-            <div
-              className={`grid min-h-0 w-full flex-1 grid-rows-[1fr_auto] ${
-                designDirection && !demoVariant ? "max-md:grid-rows-[auto_minmax(0,1fr)]" : ""
-              }`.trim()}
-            >
-              <div className="relative flex min-h-0 w-full flex-1 flex-col">
-                <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5 sm:px-8 sm:pb-0 sm:pt-1">
-                  {approvedBlock}
-                </div>
-                <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden px-4 sm:px-8">
-                  <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,min(92vw,46rem))] flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2">
-                    <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
-                      {heroTitleStack}
+            {designDirection && !demoVariant ? (
+              <>
+                {/* Mobilais: virsraksts → 4 pīlāri (saraksts) → forma → Pasūtīt; desktop — kā iepriekšējais režģis */}
+                <div className="flex min-h-0 w-full flex-1 flex-col md:hidden">
+                  <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5">
+                    {approvedBlock}
+                  </div>
+                  <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))]">
+                    <div className="mx-auto flex w-full max-w-[min(100%,min(92vw,46rem))] flex-col gap-2 py-1">
+                      <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
+                        {heroTitleStack}
+                      </div>
+                      {heroPillars}
+                      {heroOrderEntry}
+                      <div className="flex w-full flex-col items-center gap-1 pb-1">
+                        {heroStepOneCta}
+                      </div>
                     </div>
-                    {heroOrderEntry}
                   </div>
                 </div>
+                <div className="hidden min-h-0 w-full flex-1 grid-rows-[1fr_auto] md:grid">
+                  <div className="relative flex min-h-0 w-full flex-1 flex-col">
+                    <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5 sm:px-8 sm:pb-0 sm:pt-1">
+                      {approvedBlock}
+                    </div>
+                    <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden px-4 sm:px-8">
+                      <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,min(92vw,46rem))] flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2">
+                        <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
+                          {heroTitleStack}
+                        </div>
+                        {heroOrderEntry}
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-5 ${homeHeroOrderColumnMaxClass} marketing-hero-fade-in-up marketing-hero-fade-in-up--3`}
+                  >
+                    {pillarsAndCta}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="grid min-h-0 w-full flex-1 grid-rows-[1fr_auto]">
+                <div className="relative flex min-h-0 w-full flex-1 flex-col">
+                  <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5 sm:px-8 sm:pb-0 sm:pt-1">
+                    {approvedBlock}
+                  </div>
+                  <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden px-4 sm:px-8">
+                    <div className="mx-auto flex min-h-0 w-full max-w-[min(100%,min(92vw,46rem))] flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2">
+                      <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
+                        {heroTitleStack}
+                      </div>
+                      {heroOrderEntry}
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-5${
+                    orbitHomeCenterLayout
+                      ? ` ${homeHeroOrderColumnMaxClass} marketing-hero-fade-in-up marketing-hero-fade-in-up--3`
+                      : " max-w-[min(100%,53.76rem)]"
+                  }`}
+                >
+                  {pillarsAndCta}
+                </div>
               </div>
-              <div
-                className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-5${
-                  orbitHomeCenterLayout
-                    ? ` ${homeHeroOrderColumnMaxClass} marketing-hero-fade-in-up marketing-hero-fade-in-up--3`
-                    : " max-w-[min(100%,53.76rem)]"
-                }${designDirection && !demoVariant ? " max-md:min-h-0 max-md:flex-1" : ""}`}
-              >
-                {orbitHomeCenterLayout && !demoVariant ? pillarsAndCtaHomeMobile : pillarsAndCta}
-              </div>
-            </div>
+            )}
           </div>
         ) : (
           <>

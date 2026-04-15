@@ -22,6 +22,8 @@ export type MarketingHeroPillarsGridProps = {
   isB?: boolean;
   /** Ja nav — noklusējuma apmale kā hero apakšā (desktop). */
   shellClassName?: string;
+  /** Mājas mobilais: viena kolonna, ikona kreisajā pusē, teksts labajā (desktop — 2×2 kā līdz šim). */
+  homeMobileListLayout?: boolean;
 };
 
 export function MarketingHeroPillarsGrid({
@@ -29,6 +31,7 @@ export function MarketingHeroPillarsGrid({
   isC,
   isB = false,
   shellClassName,
+  homeMobileListLayout = false,
 }: MarketingHeroPillarsGridProps) {
   const t = useTranslations("Hero");
   const raw = t.raw("pillars");
@@ -50,7 +53,9 @@ export function MarketingHeroPillarsGrid({
         <div
           className={
             designDirection
-              ? "marketing-hero-pillars-mobile-grid grid w-full grid-cols-2 gap-x-2 gap-y-2 md:flex md:flex-row md:flex-nowrap md:justify-between md:gap-4 lg:gap-5"
+              ? homeMobileListLayout
+                ? "marketing-hero-pillars-mobile-grid marketing-hero-pillars-mobile-list flex w-full flex-col gap-3 md:flex md:flex-row md:flex-nowrap md:justify-between md:gap-4 lg:gap-5"
+                : "marketing-hero-pillars-mobile-grid grid w-full grid-cols-2 gap-x-2 gap-y-2 md:flex md:flex-row md:flex-nowrap md:justify-between md:gap-4 lg:gap-5"
               : `flex w-full flex-row flex-nowrap justify-between gap-2 sm:gap-4 md:gap-5 ${homeMarketingPillarGridWidthClass}`
           }
         >
@@ -61,15 +66,25 @@ export function MarketingHeroPillarsGrid({
             const articleClass = isC
               ? "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-row items-start gap-2.5 px-1 text-left sm:gap-3 sm:px-1"
               : designDirection
-                ? "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--plain flex min-h-0 min-w-0 flex-col items-center justify-center gap-1 px-0.5 py-1 text-center md:flex-1 md:basis-0 md:gap-2.5 md:px-1 md:py-0"
+                ? homeMobileListLayout
+                  ? "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--plain flex min-h-0 min-w-0 flex-row items-center justify-start gap-3 px-0 py-1.5 text-left md:min-w-0 md:flex-col md:items-center md:justify-center md:gap-2.5 md:px-1 md:py-0 md:text-center md:flex-1 md:basis-0"
+                  : "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--plain flex min-h-0 min-w-0 flex-col items-center justify-center gap-1 px-0.5 py-1 text-center md:flex-1 md:basis-0 md:gap-2.5 md:px-1 md:py-0"
                 : "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2 px-0.5 text-center sm:gap-2.5 sm:px-0.5";
             const iconClass = isC
               ? `marketing-hero-pillar-icon mt-0.5 h-5 w-5 shrink-0 origin-center sm:h-5 sm:w-5 ${iconTone}${riskPillar ? "" : " scale-110"}`
-              : `marketing-hero-pillar-icon h-7 w-7 shrink-0 origin-center sm:h-7 sm:w-7 md:h-8 md:w-8 ${iconTone}${riskPillar ? "" : " scale-110"}`;
+              : homeMobileListLayout
+                ? `marketing-hero-pillar-icon h-6 w-6 shrink-0 origin-center md:h-8 md:w-8 ${iconTone}${riskPillar ? "" : " scale-110"}`
+                : `marketing-hero-pillar-icon h-7 w-7 shrink-0 origin-center sm:h-7 sm:w-7 md:h-8 md:w-8 ${iconTone}${riskPillar ? "" : " scale-110"}`;
             return (
               <article key={`${p.title}-${i}`} className={articleClass}>
                 <Icon className={iconClass} strokeWidth={1.5} aria-hidden />
-                <h3 className={`marketing-hero-pillar-title ${isC ? pillarTitleClassC : pillarTitleClass}`}>{p.title}</h3>
+                <h3
+                  className={`marketing-hero-pillar-title ${isC ? pillarTitleClassC : pillarTitleClass}${
+                    homeMobileListLayout && !isC ? " max-md:min-h-0 max-md:max-w-none max-md:text-left md:text-center" : ""
+                  }`}
+                >
+                  {p.title}
+                </h3>
               </article>
             );
           })}

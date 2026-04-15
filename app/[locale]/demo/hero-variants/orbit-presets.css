@@ -882,6 +882,35 @@
     row-gap: 0.52rem;
   }
 
+  /* Mājas mobilais: saraksts (ikona pa kreisi, teksts pa labi) — ne 2×2 režģis */
+  .marketing-hero-section[data-hero-orbit-home] .marketing-hero-pillars-mobile-grid.marketing-hero-pillars-mobile-list {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    grid-template-columns: unset;
+    column-gap: unset;
+    row-gap: unset;
+    gap: 0.75rem;
+    max-width: min(35rem, calc(100vw - 2rem));
+  }
+
+  .marketing-hero-section[data-hero-orbit-home] .marketing-hero-pillars-mobile-list .marketing-hero-pillar--plain {
+    padding: 0.35rem 0 !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+  }
+
+  .marketing-hero-section[data-hero-orbit-home] .marketing-hero-pillars-mobile-list .marketing-hero-pillar--plain .marketing-hero-pillar-title {
+    text-align: left !important;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .marketing-hero-section[data-hero-orbit-home] .marketing-hero-pillars-mobile-list .marketing-hero-pillar--plain .marketing-hero-pillar-icon {
+    height: 1.35rem;
+    width: 1.35rem;
+  }
+
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-pillar--mobile-card {
     border: none !important;
     padding: 16px 8px !important;
