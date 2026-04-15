@@ -408,7 +408,7 @@ export function MarketingHero({
           <div className="relative z-[1] flex min-h-0 w-full flex-1 flex-col">
             {designDirection && !demoVariant ? (
               <>
-                {/* Mobilais: virsraksts → 4 pīlāri (saraksts) → forma → Pasūtīt; desktop — kā iepriekšējais režģis */}
+                {/* Mobilais: virsraksts → forma → Pasūtīt (četri pīlāri tikai desktop); desktop — kā iepriekšējais režģis */}
                 <div className="flex min-h-0 w-full flex-1 flex-col md:hidden">
                   <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5">
                     {approvedBlock}
@@ -418,7 +418,6 @@ export function MarketingHero({
                       <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
                         {heroTitleStack}
                       </div>
-                      {heroPillars}
                       {heroOrderEntry}
                       <div className="flex w-full flex-col items-center gap-1 pb-0.5 pt-0.5">
                         {heroStepOneCta}
