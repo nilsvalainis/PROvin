@@ -140,7 +140,7 @@ export function MarketingHero({
                   <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
                 </div>
               ) : (
-                <div className="marketing-hero-title-mid-rule__line h-px w-full max-w-[min(100%,min(90vw,56rem))] bg-white/25" />
+                <div className="marketing-hero-title-mid-rule__line h-px w-full max-w-[min(100%,min(90vw,56rem))] bg-transparent" />
               )}
             </div>
             <span className="marketing-hero-title-line2 marketing-hero-title-line2--accent block leading-none">

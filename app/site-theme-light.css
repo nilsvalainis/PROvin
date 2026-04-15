@@ -499,11 +499,26 @@ html[data-site-theme="light"]
     0 0 20px rgb(0 102 255 / 0.14) !important;
 }
 
-/* Hero H1: vienkāršā līnija starp rindām (bez orbit skenēšanas) — gaišā tēmā */
+/* Hero H1: statiskā līnija — melna, šauri smaili gali kā sliedei; −15 % biezumā (scaleY) */
 html[data-site-theme="light"] .marketing-hero-title-mid-rule__line {
+  width: 85% !important;
+  max-width: min(76.5vw, 47.6rem) !important;
   height: 2px !important;
   min-height: 2px;
-  background-color: #000000 !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  transform: scaleY(0.85) !important;
+  transform-origin: center;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(0 0 0 / 0.15) 42%,
+    #000000 49.4%,
+    #000000 50.6%,
+    rgb(0 0 0 / 0.15) 58%,
+    transparent 100%
+  ) !important;
+  background-color: transparent !important;
 }
 
 html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-h1-unified {

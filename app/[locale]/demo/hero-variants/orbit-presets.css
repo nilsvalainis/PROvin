@@ -274,6 +274,28 @@
   padding-top: 3px;
 }
 
+/* Statiskā līnija starp H1 rindām: −15 % biezumā; šaurāks spilgts centrs kā diagnostikas sliedei */
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-mid-rule--simple .marketing-hero-title-mid-rule__line {
+  width: 85%;
+  max-width: min(76.5vw, 47.6rem);
+  height: 1px;
+  margin-left: auto;
+  margin-right: auto;
+  transform: scaleY(0.85);
+  transform-origin: center;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.06) 42%,
+    rgb(255 255 255 / 0.32) 49.4%,
+    rgb(255 255 255 / 0.44) 50%,
+    rgb(255 255 255 / 0.32) 50.6%,
+    rgb(255 255 255 / 0.06) 58%,
+    transparent 100%
+  );
+  background-color: transparent !important;
+}
+
 /* Orbit: kompaktāks H1, lai ietilpst iekšējā riņķī zem skenēšanas līnijas */
 .marketing-hero-orbit-base .marketing-hero-title.marketing-hero-title--orbit {
   max-width: min(100%, 17.5rem);
@@ -630,19 +652,26 @@
   letter-spacing: 0.021em;
 }
 
-/* AUDITS — zils, lielais akcents */
+/* AUDITS — zils, lielais akcents (−10 % pret iepriekšējo 1.28em) */
 .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2--accent {
   color: rgb(0 102 255 / 0.98) !important;
-  font-size: 1.28em;
+  font-size: 1.152em;
   font-weight: 800;
   letter-spacing: 0.03em;
 }
 
-/* VIN / UN / SLUDINĀJUMA — par 25 % mazāks nekā iepriekšējā kopējā līnija (0.75×1.28em); gaiši pelēks kā agrāk */
-.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main,
+/* VIN / UN — −10 % pret 0.96em → 0.864em */
+.marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main {
+  color: rgb(228 235 248 / 0.94) !important;
+  font-size: 0.864em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* SLUDINĀJUMA — −25 % pret 0.96em → 0.72em */
 .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
   color: rgb(228 235 248 / 0.94) !important;
-  font-size: 0.96em;
+  font-size: 0.72em;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
@@ -823,12 +852,16 @@
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2--accent {
-    font-size: 1.2em;
+    font-size: 1.08em;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main,
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main {
+    font-size: 0.81em;
+    color: rgb(228 235 248 / 0.94) !important;
+  }
+
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
-    font-size: 0.9em;
+    font-size: 0.675em;
     color: rgb(228 235 248 / 0.94) !important;
   }
 
@@ -861,16 +894,22 @@
     margin-bottom: 0;
   }
 
-  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main,
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-main {
+    font-size: 0.8604em;
+    font-weight: 800;
+    white-space: nowrap;
+    color: rgb(228 235 248 / 0.94) !important;
+  }
+
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title-line1-accent {
-    font-size: 0.956em;
+    font-size: 0.717em;
     font-weight: 800;
     white-space: nowrap;
     color: rgb(228 235 248 / 0.94) !important;
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title--orbit .marketing-hero-title-line2--accent {
-    font-size: 1.275em;
+    font-size: 1.1475em;
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-home-intro-body {
