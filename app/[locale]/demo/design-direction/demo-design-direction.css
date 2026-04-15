@@ -51,13 +51,12 @@
   box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.06);
 }
 
-/* Sākumlapa: hero + „KAS IR PROVIN?” — viena nepārtraukta band-a virsma (saturs ārpus `MarketingHero`). */
+/* Sākumlapa: hero + „KAS IR PROVIN?” — viena nepārtraukta virsma ar paša hero fonu. */
 .home-hero-intro-surface {
   position: relative;
   overflow: hidden;
   overflow: clip;
-  background: radial-gradient(ellipse 120% 80% at 50% 0%, rgb(0 60 140 / 0.26), transparent 58%), #030304;
-  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.06);
+  background: var(--hero-orbit-bg-extended);
 }
 
 /* Saglabā hero tipogrāfijas skalu no orbit presetiem, bet bez atsevišķa hero fona slāņa. */
