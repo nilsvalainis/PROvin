@@ -439,8 +439,8 @@ export function MarketingHero({
       designDirection={designDirection}
       isC={isC}
       isB={isB}
-      /** Mājas mobilais: 2×2 režģis (ne vertikāls saraksts), centrēts ar `homeMarketingPillarGridShellClass`. */
-      homeMobileListLayout={false}
+      /** Mājas mobilais: viena kolonna (saraksts), nevis 2×2 — `marketing-hero-pillars-mobile-list`. */
+      homeMobileListLayout={designDirection}
       shellClassName={
         designDirection && !demoVariant
           ? `${homeMarketingPillarGridShellClass} w-full pb-2 pt-1.5 max-md:pb-0 max-md:pt-2 sm:pb-5 sm:pt-4`
