@@ -20,6 +20,8 @@ const inputHeroNoBottom =
 const inputDefault =
   "mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505]/75 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition-[border-color] placeholder:text-[#86868b] focus:border-provin-accent focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
 
+const firstStepInfoTextSizeClass = "text-[10.5px] sm:text-[11px]";
+
 type OrderFormProps = {
   className?: string;
   variant?: "default" | "compact" | "hero";
@@ -145,9 +147,11 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
   const reqStarClass = hero ? "text-red-400" : "text-red-600";
   const firstStepVinPlaceholder = "IEVADI VIN";
   const firstStepListingPlaceholder = "SAITE UZ SLUDINĀJUMU";
-  const firstStepVinInputClassHero = `${inputBase} w-full tracking-normal`;
+  const firstStepVinInputClassHero = `${inputBase} w-full tracking-normal ${firstStepInfoTextSizeClass}`;
   const secondStepVinInputClassHero = `${inputBase} w-full font-mono uppercase tracking-wide`;
-  const firstStepVinInputClassDefault = `${inputBase} tracking-normal`;
+  const firstStepVinInputClassDefault = `${inputBase} tracking-normal ${firstStepInfoTextSizeClass}`;
+  const firstStepListingInputClassHero = `${inputBase} ${firstStepInfoTextSizeClass}`;
+  const firstStepListingInputClassDefault = `${inputBase} ${firstStepInfoTextSizeClass}`;
   const secondStepVinInputClassDefault = `${inputBase} font-mono uppercase tracking-wide`;
   const footerClass = hero
     ? step === 1
@@ -237,7 +241,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
                 type="url"
                 required
                 value={listingUrl}
-                className={inputBase}
+                className={step === 1 ? firstStepListingInputClassHero : inputBase}
                 placeholder={step === 1 ? firstStepListingPlaceholder : t("urlPlaceholder")}
                 onChange={(e) => setListingUrl(e.target.value)}
               />
@@ -249,7 +253,7 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               type="url"
               required
               value={listingUrl}
-              className={inputBase}
+              className={step === 1 ? firstStepListingInputClassDefault : inputBase}
               placeholder={step === 1 ? firstStepListingPlaceholder : t("urlPlaceholder")}
               onChange={(e) => setListingUrl(e.target.value)}
             />
@@ -411,13 +415,15 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               </div>
             ) : null}
             {step === 1 ? (
-              <button
-                type="button"
-                onClick={goToStepTwo}
-                className="provin-home-pill-cta provin-home-pill-cta--fit z-10 mx-auto mt-1 flex min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
-              >
-                PASŪTĪT AUDITU - 79,99 €
-              </button>
+              <div className="flex w-full justify-center">
+                <button
+                  type="button"
+                  onClick={goToStepTwo}
+                  className="provin-home-pill-cta provin-home-pill-cta--fit z-10 mt-1 flex w-fit min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
+                >
+                  PASŪTĪT AUDITU - 79,99 €
+                </button>
+              </div>
             ) : null}
             {step === 2 ? (
               <label
@@ -532,13 +538,15 @@ export function OrderForm({ className, variant = "default" }: OrderFormProps) {
               className={`flex flex-col gap-2 ${compact ? "sm:flex-row sm:items-center sm:justify-between sm:gap-4" : "sm:flex-row sm:items-center sm:justify-between"}`}
             >
               {step === 1 ? (
-                <button
-                  type="button"
-                  onClick={goToStepTwo}
-                  className="provin-home-pill-cta provin-home-pill-cta--fit z-10 mx-auto flex min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
-                >
-                  PASŪTĪT AUDITU - 79,99 €
-                </button>
+                <div className="flex w-full justify-center">
+                  <button
+                    type="button"
+                    onClick={goToStepTwo}
+                    className="provin-home-pill-cta provin-home-pill-cta--fit z-10 flex w-fit min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
+                  >
+                    PASŪTĪT AUDITU - 79,99 €
+                  </button>
+                </div>
               ) : (
                 <button
                   type="submit"

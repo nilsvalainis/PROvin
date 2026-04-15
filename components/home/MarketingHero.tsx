@@ -64,7 +64,6 @@ export function MarketingHero({
   const silhouetteLensCenterGradId = `${silhouetteIdBase}-lens-center`;
   const silhouetteLensClipId = `${silhouetteIdBase}-lens-clip`;
   const t = useTranslations("Hero");
-  const tMeta = useTranslations("Meta");
 
   const sectionId = sectionDomId ?? (demoVariant ? `demo-hero-${demoVariant}` : "home-hero");
   const titleId = demoVariant ? `marketing-hero-title-${demoVariant}` : "marketing-hero-title";
@@ -90,8 +89,8 @@ export function MarketingHero({
   const orbitHomeCenterLayout = Boolean(designDirection && isOrbitVisual && !isB);
   /** Mājas orbit: mobilajā pīlāri zem hero; hero vietā CTA. */
   const mobilePillarsBelowFold = Boolean(orbitHomeCenterLayout && designDirection && !demoVariant);
-  /** Sākumlapa: `Meta` ievads (detektīvs + teksts + ass + skenēšana) orbit centrā — nevis lupa. */
-  const homeOrbitMetaIntro = Boolean(designDirection && orbitGlassSilhouette && !demoVariant);
+  /** Intro teksts pārvietots zem pīlāriem (atsevišķa sekcija mājas lapā). */
+  const homeOrbitMetaIntro = false;
   const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
 
   /** Sākumlapas orbit: viens H1 tonis (bez zilajiem atslēgvārdiem), izmērs ×3 — sk. orbit-presets `[data-hero-orbit-home]`. */
@@ -229,16 +228,15 @@ export function MarketingHero({
     </a>
   );
 
+  const heroOrderEntry =
+    designDirection && !demoVariant ? (
+      <div id={ORDER_SECTION_ID} className="mx-auto mt-2 w-full max-w-[560px] scroll-mt-[calc(2.75rem+1px)] px-2 sm:mt-3 sm:px-1">
+        <OrderForm variant="hero" className="!mt-0 !space-y-0 !px-0 !py-0" />
+      </div>
+    ) : null;
+
   const pillarsAndCta = (
     <>
-      {designDirection && !demoVariant ? (
-        <div
-          id={ORDER_SECTION_ID}
-          className="mx-auto w-full max-w-[560px] scroll-mt-[calc(2.75rem+1px)] px-2 pb-3 sm:scroll-mt-12 sm:pb-4"
-        >
-          <OrderForm variant="hero" className="!mt-0 !space-y-0 !px-0 !py-0" />
-        </div>
-      ) : null}
       <MarketingHeroPillarsGrid designDirection={designDirection} isC={isC} isB={isB} />
       {scrollToContentLink}
     </>
@@ -246,14 +244,6 @@ export function MarketingHero({
 
   const pillarsAndCtaOrbitMobile = (
     <>
-      {designDirection && !demoVariant ? (
-        <div
-          id={ORDER_SECTION_ID}
-          className="mx-auto w-full max-w-[560px] scroll-mt-[calc(2.75rem+1px)] px-2 pb-3 sm:scroll-mt-12 sm:pb-4"
-        >
-          <OrderForm variant="hero" className="!mt-0 !space-y-0 !px-0 !py-0" />
-        </div>
-      ) : null}
       <div className="hidden w-full flex-col items-center md:flex">
         <MarketingHeroPillarsGrid designDirection={designDirection} isC={isC} isB={isB} />
         {scrollToContentLinkDesign("mt-3 sm:mt-4")}
@@ -375,13 +365,7 @@ export function MarketingHero({
                     <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
                       {heroTitleStack}
                     </div>
-                    {homeOrbitMetaIntro ? (
-                      <div id="home-intro" className="marketing-hero-orbit-intro marketing-hero-fade-in-up marketing-hero-fade-in-up--2 relative w-full shrink-0 text-center">
-                        <p className="demo-design-dir__body marketing-hero-home-intro-body relative z-[1] mx-auto w-full max-w-[min(100%,46rem)] text-balance text-[12px] leading-relaxed sm:text-[15px]">
-                          {tMeta("homeIntroBody")}
-                        </p>
-                      </div>
-                    ) : null}
+                    {heroOrderEntry}
                   </div>
                 </div>
               </div>

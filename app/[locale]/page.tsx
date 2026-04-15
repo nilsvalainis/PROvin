@@ -1,4 +1,6 @@
+import { getTranslations } from "next-intl/server";
 import { Footer } from "@/components/Footer";
+import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { AutoWireframeBackground } from "@/components/home/AutoWireframeBackground";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { HomeScrollSurface } from "@/components/home/HomeScrollSurface";
@@ -8,6 +10,8 @@ import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
 
 export default async function HomePage() {
+  const tMeta = await getTranslations("Meta");
+
   return (
     <HomeScrollSurface wireframe={<AutoWireframeBackground />}>
       <div className="relative z-10 min-w-0 bg-transparent">
@@ -27,6 +31,22 @@ export default async function HomePage() {
               </section>
             </div>
           </div>
+
+          <section id="home-intro" className="demo-design-dir__section demo-design-dir__section--band-a py-10 sm:py-14">
+            <div className="demo-design-dir__shell">
+              <div className="mx-auto mt-2 w-full max-w-[min(100%,52rem)] sm:mt-3">
+                <div className="text-center">
+                  <h2 className="demo-design-dir__title mx-auto mb-0 max-w-[min(100%,48rem)] text-balance">KAS IR PROVIN?</h2>
+                  <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
+                    <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
+                  </div>
+                </div>
+              </div>
+              <p className="demo-design-dir__body mx-auto mt-6 max-w-[min(100%,46rem)] text-balance text-center">
+                {tMeta("homeIntroBody")}
+              </p>
+            </div>
+          </section>
 
           <div id="site-content" className="home-body-ink scroll-mt-14">
             <section className="demo-design-dir__section demo-design-dir__section--band-a py-16 sm:py-20">
