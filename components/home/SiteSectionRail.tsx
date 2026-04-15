@@ -50,8 +50,8 @@ function activeFromScroll(): number {
 }
 
 /**
- * Kreisā navigācija (lg+): noklusējumā tikai vertikālā līnija un zilie punkti; etiķetes
- * plūdeni parādās, uzejot ar kursoru (vai fokusā / reduced-motion — vienmēr redzamas).
+ * Kreisā navigācija (lg+): vertikālā ass, zilie punkti un etiķetes — teksts vienmēr redzams;
+ * uz sliedes hover — nedaudz spilgtāka krāsa un vieglšķībe.
  */
 export function SiteSectionRail() {
   const t = useTranslations("SiteRail");
@@ -159,7 +159,7 @@ export function SiteSectionRail() {
    * `group-focus-visible/link` — fokusā tikai attiecīgās rindas etiķete (tastatūra).
    */
   const railLabelClass =
-    "home-rail-label pointer-events-none absolute left-0 top-1/2 z-[2] max-w-[min(10.25rem,min(28vw,26vmin))] -translate-y-1/2 translate-x-0 whitespace-normal break-words text-pretty text-left opacity-0 transition-[opacity,transform] duration-300 ease-out will-change-[opacity,transform] motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-x-0 group-hover/rail:translate-x-0.5 group-hover/rail:opacity-100 group-focus-visible/link:translate-x-0.5 group-focus-visible/link:opacity-100";
+    "home-rail-label pointer-events-none absolute left-0 top-1/2 z-[2] max-w-[min(10.25rem,min(28vw,26vmin))] -translate-y-1/2 translate-x-0 whitespace-normal break-words text-pretty text-left opacity-100 transition-[color,transform] duration-200 ease-out motion-reduce:transition-none group-hover/rail:translate-x-0.5 group-focus-visible/link:translate-x-0.5";
 
   /**
    * `top` zem sticky header (z-42): citādi zilais sliežu punkts redzams caur caurspīdīgo hero headeri.
@@ -210,7 +210,7 @@ export function SiteSectionRail() {
                     className={`${linkBase} w-full min-w-0 pr-1 ${
                       isActive
                         ? "text-white"
-                        : "text-white/[0.22] group-hover/rail:text-white/[0.5] group-focus-within/rail:text-white/[0.5] hover:text-white/90"
+                        : "text-[#c9ced9] group-hover/rail:text-white group-focus-within/rail:text-white hover:text-white"
                     } focus-visible:text-white focus-visible:ring-1 focus-visible:ring-[#0066ff]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`}
                     aria-current={isActive ? "location" : undefined}
                   >

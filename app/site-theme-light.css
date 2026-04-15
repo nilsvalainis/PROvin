@@ -194,7 +194,7 @@ html[data-site-theme="light"] .home-below-hero-cloud-layer {
 }
 
 html[data-site-theme="light"] .home-rail-label {
-  color: #4b5563;
+  color: #1f2937;
 }
 
 /* Hero pill — pilns PROVIN zils (tāds pats kā tumšajā; tokens no html light) */
@@ -202,6 +202,11 @@ html[data-site-theme="light"] .provin-home-pill-cta {
   border-color: var(--color-provin-accent-hover);
   background-color: var(--color-provin-accent);
   color: #ffffff;
+  opacity: 1;
+  isolation: isolate;
+  mix-blend-mode: normal;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 html[data-site-theme="light"] .provin-home-pill-cta:hover:not(:disabled) {

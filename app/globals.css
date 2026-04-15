@@ -402,7 +402,7 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   caret-color: rgb(0 0 0 / 0.7);
 }
 
-/* Sākumlapas / tumšā UI — primārā CTA (PROVIN zils, bez caurspīdīga fona) */
+/* Sākumlapas / tumšā UI — primārā CTA (PROVIN zils, pilnīgi necaurredzams; bez backdrop blend) */
 .provin-home-pill-cta {
   box-sizing: border-box;
   display: inline-flex;
@@ -416,6 +416,11 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   border: 1px solid var(--color-provin-accent-hover);
   background-color: var(--color-provin-accent);
   color: #ffffff;
+  opacity: 1;
+  isolation: isolate;
+  mix-blend-mode: normal;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
@@ -669,9 +674,9 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   }
 }
 
-/* Kreisā procesa sliede — tumšais cockpit (sudraba etiķetes) */
+/* Kreisā procesa sliede — lasāms sudrabs pret tumšu fonu */
 .home-rail-label {
-  color: #b8bcc8;
+  color: #d7dbe6;
   transition: color 0.2s ease;
 }
 

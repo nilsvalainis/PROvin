@@ -323,17 +323,28 @@ export function MarketingHero({
   /**
    * Web (md+): pīlārus vizuāli paceļ ar transform, lai vertikālais attālums līdz formai ≈ līdz pogai;
    * layout plūsma nemainās — poga un lauki paliek tajās pašās pikseļu pozīcijās.
+   * `fadePillars`: animāciju tikai uz pīlāriem — ārpus tās paliek CTA, lai poga nebūtu „puscaurspīdīga”.
    */
-  function pillarsAndCtaWithStepOneCta(stepOneCtaSlot: ReactNode) {
+  function pillarsAndCtaWithStepOneCta(stepOneCtaSlot: ReactNode, options?: { fadePillars?: boolean }) {
+    const fadePillars = options?.fadePillars ?? false;
+    const pillarsEl =
+      designDirection && !demoVariant ? (
+        <div className="max-md:contents md:block md:w-full">
+          {heroPillars}
+        </div>
+      ) : (
+        heroPillars
+      );
+    const pillarsBlock = fadePillars ? (
+      <div className="flex w-full flex-col items-center marketing-hero-fade-in-up marketing-hero-fade-in-up--3">
+        {pillarsEl}
+      </div>
+    ) : (
+      pillarsEl
+    );
     return (
       <>
-        {designDirection && !demoVariant ? (
-          <div className="max-md:contents md:block md:w-full">
-            {heroPillars}
-          </div>
-        ) : (
-          heroPillars
-        )}
+        {pillarsBlock}
         {stepOneCtaSlot}
         {scrollLinkDesktopOnly}
       </>
@@ -342,7 +353,7 @@ export function MarketingHero({
 
   const pillarsAndCta = pillarsAndCtaWithStepOneCta(heroStepOneCta);
   /** Desktop orbit ar atsevišķu `OrderForm` id — poga iesniedz redzamo formu. */
-  const pillarsAndCtaMdHeroSubmit = pillarsAndCtaWithStepOneCta(heroStepOneCtaMd);
+  const pillarsAndCtaMdHeroSubmit = pillarsAndCtaWithStepOneCta(heroStepOneCtaMd, { fadePillars: true });
 
   /** Mājas lapa: vienota virsma ar `home-intro` ir `page.tsx` wrapperī — šeit bez atsevišķa band-a. */
   const designDirHeroChrome =
@@ -489,7 +500,7 @@ export function MarketingHero({
                     </div>
                   </div>
                   <div
-                    className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-5 ${homeHeroOrderColumnMaxClass} marketing-hero-fade-in-up marketing-hero-fade-in-up--3`}
+                    className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-5 ${homeHeroOrderColumnMaxClass}`}
                   >
                     {pillarsAndCtaMdHeroSubmit}
                   </div>
