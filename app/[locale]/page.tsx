@@ -36,7 +36,7 @@ export default async function HomePage() {
                     </div>
                   </div>
                 </div>
-                <p className="demo-design-dir__body demo-design-dir__body--home-intro mt-6 w-full max-w-[min(100%,46rem)] text-balance text-left">
+                <p className="demo-design-dir__body demo-design-dir__body--home-intro mx-auto mt-6 max-w-[min(100%,46rem)] text-balance text-center">
                   {renderProvinText(tMeta("homeIntroBody"))}
                 </p>
               </div>
