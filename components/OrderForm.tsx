@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { useLenis } from "lenis/react";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
@@ -63,15 +64,29 @@ export function OrderForm({
   const hero = variant === "hero";
   const compact = variant === "compact";
   const errorRef = useRef<HTMLParagraphElement | null>(null);
+  const lenis = useLenis();
 
   useEffect(() => {
     onStepChange?.(step);
   }, [onStepChange, step]);
 
+  /** Mobilajā (bez Lenis) — `scrollIntoView`; desktop ar Lenis — tas pats vizuālais rezultāts caur `lenis.scrollTo`, jo natīvais scrollIntoView ar Lenis bieži neatnes brīdinājumu redzamībā. */
   useEffect(() => {
     if (!error || !hero) return;
-    errorRef.current?.scrollIntoView({ block: "start", inline: "nearest", behavior: "smooth" });
-  }, [error, hero]);
+    const el = errorRef.current;
+    if (!el) return;
+    const show = () => {
+      if (lenis) {
+        lenis.scrollTo(el, {
+          offset: -16,
+          duration: 0.55,
+        });
+      } else {
+        el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+      }
+    };
+    requestAnimationFrame(() => requestAnimationFrame(show));
+  }, [error, hero, lenis]);
 
   const labelClass = hero ? labelHero : labelDefault;
   const inputBase = hero ? inputHeroNoBottom : inputDefault;
