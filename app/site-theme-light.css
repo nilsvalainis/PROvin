@@ -197,20 +197,21 @@ html[data-site-theme="light"] .home-rail-label {
   color: #4b5563;
 }
 
-/* Hero pill + pasūtīšanas lauki — spilgtāks zils gaišajā režīmā */
+/* Hero pill — pilns PROVIN zils (tāds pats kā tumšajā; tokens no html light) */
 html[data-site-theme="light"] .provin-home-pill-cta {
-  border-color: rgb(0 120 255 / 0.62);
-  background-color: rgb(0 120 255 / 0.22);
-  color: #000000;
+  border-color: var(--color-provin-accent-hover);
+  background-color: var(--color-provin-accent);
+  color: #ffffff;
 }
 
 html[data-site-theme="light"] .provin-home-pill-cta:hover:not(:disabled) {
-  background-color: rgb(0 120 255 / 0.34);
-  color: #000000;
+  background-color: var(--color-provin-accent-hover);
+  border-color: var(--color-provin-accent-hover);
+  color: #ffffff;
 }
 
 html[data-site-theme="light"] .provin-home-pill-cta:focus-visible {
-  outline-color: rgb(0 120 255 / 0.65);
+  outline-color: var(--color-provin-accent-hover);
 }
 
 /* Pasūtījuma forma (hero) — etiķetes, ievade, kopsavilkums */
@@ -255,7 +256,7 @@ html[data-site-theme="light"] .order-form--hero .order-form-hero-checkbox {
 }
 
 html[data-site-theme="light"] .order-form--hero .order-form-hero-pay-arrow {
-  color: var(--color-provin-accent) !important;
+  color: rgb(255 255 255 / 0.92) !important;
 }
 
 html[data-site-theme="light"] .order-form--hero .order-form-hero-alert {

@@ -402,7 +402,7 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   caret-color: rgb(0 0 0 / 0.7);
 }
 
-/* Sākumlapas / tumšā UI — viena pogu estētika (kā hero „Turpināt”) */
+/* Sākumlapas / tumšā UI — primārā CTA (PROVIN zils, bez caurspīdīga fona) */
 .provin-home-pill-cta {
   box-sizing: border-box;
   display: inline-flex;
@@ -413,9 +413,9 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   max-width: min(100%, 22rem);
   padding: 0.625rem 1.25rem;
   border-radius: 9999px;
-  border: 1px solid rgb(0 102 255 / 0.35);
-  background-color: rgb(0 102 255 / 0.12);
-  color: rgb(126 182 255);
+  border: 1px solid var(--color-provin-accent-hover);
+  background-color: var(--color-provin-accent);
+  color: #ffffff;
   font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
@@ -432,12 +432,14 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
 }
 
 .provin-home-pill-cta:hover:not(:disabled) {
-  background-color: rgb(0 102 255 / 0.2);
-  color: rgb(255 255 255 / 0.98);
+  background-color: var(--color-provin-accent-hover);
+  border-color: var(--color-provin-accent-hover);
+  color: #ffffff;
 }
 
 .provin-home-pill-cta:active:not(:disabled) {
-  background-color: rgb(0 102 255 / 0.25);
+  background-color: var(--color-provin-accent-hover);
+  border-color: var(--color-provin-accent-hover);
 }
 
 .provin-home-pill-cta:disabled {
@@ -446,7 +448,7 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
 }
 
 .provin-home-pill-cta:focus-visible {
-  outline: 2px solid rgb(0 102 255 / 0.55);
+  outline: 2px solid #ffffff;
   outline-offset: 2px;
 }
 

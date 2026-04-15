@@ -717,7 +717,7 @@ export function OrderForm({
                 <>
                   {t("payButton")}
                   <ArrowRight
-                    className="order-form-hero-pay-arrow h-4 w-4 shrink-0 text-[#7eb6ff]/90"
+                    className="order-form-hero-pay-arrow h-4 w-4 shrink-0 text-white/90"
                     strokeWidth={2}
                     aria-hidden
                   />
