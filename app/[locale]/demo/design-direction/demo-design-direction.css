@@ -234,6 +234,14 @@
   color: rgb(255 255 255 / 0.95);
 }
 
+/* Sākumlapa #home-intro — tikai „KAS IR PROVIN?”: +30 %, bold, nedaudz platāka tracking */
+.demo-design-dir__title--home-intro {
+  font-size: clamp(1.495rem, 2.86vw + 0.65rem, 2.145rem);
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  line-height: 1.12;
+}
+
 .demo-design-dir__body {
   font-size: 0.875rem;
   line-height: 1.65;

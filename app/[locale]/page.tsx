@@ -22,7 +22,9 @@ export default async function HomePage() {
               <div className="demo-design-dir__shell">
                 <div className="mx-auto mt-2 w-full max-w-[min(100%,52rem)] sm:mt-3">
                   <div className="text-center">
-                    <h2 className="demo-design-dir__title mx-auto mb-0 max-w-[min(100%,48rem)] text-balance">KAS IR PROVIN?</h2>
+                    <h2 className="demo-design-dir__title demo-design-dir__title--home-intro mx-auto mb-0 max-w-[min(100%,48rem)] text-balance">
+                      KAS IR PROVIN?
+                    </h2>
                     <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
                       <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
                     </div>
