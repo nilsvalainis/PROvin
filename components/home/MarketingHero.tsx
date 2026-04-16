@@ -159,7 +159,14 @@ export function MarketingHero({
           </div>
         </>
       </h1>
-      {!hideHeroSubtitle ? (
+      {hideHeroSubtitle ? (
+        <p
+          lang="lv"
+          className="mx-auto mt-1.5 max-w-[min(100%,36rem)] text-balance text-center font-serif text-[13px] font-normal italic leading-snug tracking-[0.02em] text-white/72 [text-shadow:0_1px_0_rgba(0,0,0,0.45)] sm:mt-2 sm:text-[14px]"
+        >
+          {t("orderTeaser")}
+        </p>
+      ) : (
         <p
           className={
             designDirection
@@ -169,7 +176,7 @@ export function MarketingHero({
         >
           {t("h2")}
         </p>
-      ) : null}
+      )}
     </div>
   );
 
@@ -287,7 +294,7 @@ export function MarketingHero({
     if (!designDirection || demoVariant || heroOrderStep !== 1) return null;
     return (
       <div
-        className={`pointer-events-auto relative z-[80] flex w-full justify-center px-1 pt-1 max-md:mt-2 max-md:pt-1 sm:pt-2 md:mt-0 md:pt-1.5 ${homeHeroOrderFormTwoCardsWidthClass}`}
+        className={`pointer-events-auto relative z-[80] flex w-full justify-center px-1 pt-1 max-md:mt-2 max-md:pt-1 sm:pt-2 md:mt-0 md:pt-2.5 ${homeHeroOrderFormTwoCardsWidthClass}`}
       >
         <button
           type="button"
