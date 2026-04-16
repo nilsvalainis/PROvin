@@ -504,7 +504,7 @@ export function MarketingHero({
                     </div>
                   </div>
                   <div
-                    className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-3 ${homeHeroOrderColumnMaxClass}`}
+                    className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-1 ${homeHeroOrderColumnMaxClass}`}
                   >
                     {pillarsAndCtaMdHeroSubmit}
                   </div>
@@ -526,7 +526,7 @@ export function MarketingHero({
                   </div>
                 </div>
                 <div
-                  className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-3${
+                  className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-1${
                     orbitHomeCenterLayout
                       ? ` ${homeHeroOrderColumnMaxClass} marketing-hero-fade-in-up marketing-hero-fade-in-up--3`
                       : " max-w-[min(100%,53.76rem)]"
