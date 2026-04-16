@@ -283,18 +283,11 @@ export function MarketingHero({
    * Ārpus `<form>`: `type="submit"` + `form=` dažos pārlūkos / ar `md:hidden` formu zaru mēdz nestrādāt.
    * `requestSubmit()` uz konkrēto `id` vienmēr izsauc tās pašas formas `onSubmit` (kā „īstā” iesniegšana).
    */
-  function heroStepOneCtaForFormId(
-    formDomId: string,
-    options?: {
-      /** Tikai `md+` zaram: nedaudz pacelt CTA pret formu, nemainot virsraksta / IRISS bloku. */
-      mdNudgeCtaTowardForm?: boolean;
-    },
-  ) {
+  function heroStepOneCtaForFormId(formDomId: string) {
     if (!designDirection || demoVariant || heroOrderStep !== 1) return null;
-    const mdCtaTowardFormClass = options?.mdNudgeCtaTowardForm ? "md:-mt-2.5 md:pt-0" : "";
     return (
       <div
-        className={`pointer-events-auto relative z-[80] flex w-full justify-center px-1 pt-1 sm:pt-2 max-md:mt-2 max-md:pt-1 ${mdCtaTowardFormClass} ${homeHeroOrderFormTwoCardsWidthClass}`}
+        className={`pointer-events-auto relative z-[80] flex w-full justify-center px-1 pt-1 max-md:mt-2 max-md:pt-1 sm:pt-2 md:mt-0 md:pt-1.5 ${homeHeroOrderFormTwoCardsWidthClass}`}
       >
         <button
           type="button"
@@ -312,7 +305,7 @@ export function MarketingHero({
 
   const heroStepOneCta = heroStepOneCtaForFormId(HOME_HERO_ORDER_FORM_ID);
   const heroStepOneCtaSm = heroStepOneCtaForFormId(HOME_HERO_ORDER_FORM_ID_SM);
-  const heroStepOneCtaMd = heroStepOneCtaForFormId(HOME_HERO_ORDER_FORM_ID_MD, { mdNudgeCtaTowardForm: true });
+  const heroStepOneCtaMd = heroStepOneCtaForFormId(HOME_HERO_ORDER_FORM_ID_MD);
 
   const heroPillars = (
     <MarketingHeroPillarsGrid
@@ -363,8 +356,8 @@ export function MarketingHero({
   }
 
   const pillarsAndCta = pillarsAndCtaWithStepOneCta(heroStepOneCta);
-  /** Desktop orbit ar atsevišķu `OrderForm` id — poga iesniedz redzamo formu. */
-  const pillarsAndCtaMdHeroSubmit = pillarsAndCtaWithStepOneCta(heroStepOneCtaMd, { fadePillars: true });
+  /** Desktop: CTA zem formas tajā pašā slejā; apakšējā rindā tikai pīlāri + scroll (bez duplikāta pogas). */
+  const pillarsAndCtaMdHeroSubmit = pillarsAndCtaWithStepOneCta(null, { fadePillars: true });
 
   /** Mājas lapa: vienota virsma ar `home-intro` ir `page.tsx` wrapperī — šeit bez atsevišķa band-a. */
   const designDirHeroChrome =
@@ -516,7 +509,10 @@ export function MarketingHero({
                         <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
                           {heroTitleStack}
                         </div>
-                        {heroOrderEntryMd}
+                        <div className="flex w-full min-w-0 flex-col items-center">
+                          {heroOrderEntryMd}
+                          {heroStepOneCtaMd}
+                        </div>
                       </div>
                     </div>
                   </div>
