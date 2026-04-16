@@ -291,7 +291,7 @@ export function MarketingHero({
     },
   ) {
     if (!designDirection || demoVariant || heroOrderStep !== 1) return null;
-    const mdCtaTowardFormClass = options?.mdNudgeCtaTowardForm ? "md:-mt-2.5 md:pt-0" : "";
+    const mdCtaTowardFormClass = options?.mdNudgeCtaTowardForm ? "md:-mt-6 md:pt-0" : "";
     return (
       <div
         className={`pointer-events-auto relative z-[80] flex w-full justify-center px-1 pt-1 sm:pt-2 max-md:mt-2 max-md:pt-1 ${mdCtaTowardFormClass} ${homeHeroOrderFormTwoCardsWidthClass}`}
@@ -511,7 +511,7 @@ export function MarketingHero({
                     </div>
                     <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-visible px-4 sm:px-8">
                       <div
-                        className={`flex min-h-0 w-full flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2 ${homeHeroOrderColumnMaxClass}`}
+                        className={`flex min-h-0 w-full flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2 md:pb-0 ${homeHeroOrderColumnMaxClass}`}
                       >
                         <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
                           {heroTitleStack}
