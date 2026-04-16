@@ -77,7 +77,7 @@ Ja lietotājs jautā par **Stripe integrāciju tehniski**, atbildēt kodu un Str
 ## 8b. MK Nr. 255 un pasūtījuma lauku validācija
 
 - **11.2. punkts** Lietošanas noteikumos satur precīzu atsauci uz **Ministru kabineta 2014. gada 20. maija noteikumu Nr. 255 „Noteikumi par distances līgumu” 22.13. apakšpunktu** (PTAC / uzraudzības kontekstā).
-- Pasūtījuma forma: validācija **`lib/order-field-validation.ts`** + `/api/checkout` — VIN (11–17, alfabēts), e-pasts (@ un domēns ar TLD), tālrunis (≥8 cipari), sludinājuma **pilna saite** uz konkrētu sludinājumu (ne tikai vietnes sakne). Manuāli pirms izpildes jāpārbauda, vai saite atver pareizo sludinājumu.
+- Pasūtījuma forma: validācija **`lib/order-field-validation.ts`** + `/api/checkout` — VIN (11–17, alfabēts), e-pasts (@ un domēns ar TLD), tālrunis (≥8 cipari); sludinājuma saite **nav obligāta**, bet ja ievadīta — **pilna saite** uz konkrētu sludinājumu (ne tikai vietnes sakne). Manuāli pirms izpildes jāpārbauda, vai saite (ja ir) atver pareizo sludinājumu.
 
 ## 9. Stripe Test Mode, Go-Live un mobilā kājene
 

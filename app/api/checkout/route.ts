@@ -97,7 +97,7 @@ export async function POST(req: Request) {
   if (!vin || !isValidVin(vin)) {
     errors.push(copy.validation.vin);
   }
-  if (!listingUrl || !isPlausibleListingUrl(listingUrl)) {
+  if (listingUrl && !isPlausibleListingUrl(listingUrl)) {
     errors.push(copy.validation.listing);
   }
   if (!email || !isValidOrderEmail(email)) {
@@ -144,7 +144,7 @@ export async function POST(req: Request) {
     phone_number_collection: { enabled: false },
     metadata: {
       vin,
-      listing_url: listingUrl,
+      listing_url: listingUrl || "",
       report_delivery: "email",
       phone,
       /** Klienta apzināta atteikšanās no PTN atteikuma tiesībām (digitāls saturs, tūlītēja izpilde). */

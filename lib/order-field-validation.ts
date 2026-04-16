@@ -70,7 +70,7 @@ export function validateOrderFields(input: {
   const vin = normalizeVin(input.vin);
   if (!vin || !isValidVin(vin)) return "vin";
   const listingTrim = input.listingUrl.trim();
-  if (!listingTrim || !isPlausibleListingUrl(listingTrim)) return "listing";
+  if (listingTrim && !isPlausibleListingUrl(listingTrim)) return "listing";
   if (!input.email.trim() || !isValidOrderEmail(input.email)) return "email";
   if (!input.phone.trim() || !isValidOrderPhone(input.phone)) return "phone";
   return null;

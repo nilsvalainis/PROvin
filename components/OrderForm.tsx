@@ -42,11 +42,8 @@ function buildHeroStep2FieldMessages(
 ): Record<HeroStep2FieldKey, string | null> {
   const vn = normalizeVin(vinTrim);
   const vinMsg = !vn || !isValidVin(vn) ? (!vn ? t("validation.fieldEmpty") : t("validation.vin")) : null;
-  const listingMsg = !listingTrim
-    ? t("validation.fieldEmpty")
-    : !isPlausibleListingUrl(listingTrim)
-      ? t("validation.listing")
-      : null;
+  const listingMsg =
+    listingTrim && !isPlausibleListingUrl(listingTrim) ? t("validation.listing") : null;
   const et = emailTrim.trim();
   const emailMsg = !et ? t("validation.fieldEmpty") : !isValidOrderEmail(emailTrim) ? t("validation.invalidFormat") : null;
   const pt = phoneTrim.trim();
@@ -146,9 +143,9 @@ export function OrderForm({
     const vinNormalized = normalizeVin(vin);
     const vinOk = Boolean(vinNormalized && isValidVin(vinNormalized));
     const listingTrim = listingUrl.trim();
-    const listingOk = Boolean(listingTrim && isPlausibleListingUrl(listingTrim));
+    const listingValidIfPresent = !listingTrim || isPlausibleListingUrl(listingTrim);
 
-    if (vinOk && listingOk) {
+    if (vinOk && listingValidIfPresent) {
       setHeroStep1Errors({ vin: null, listing: null });
       setVin(vinNormalized);
       setStep(2);
@@ -156,22 +153,22 @@ export function OrderForm({
     }
 
     const vinMsg = vinOk ? null : !vinNormalized ? t("validation.fieldEmpty") : t("validation.vin");
-    const listingMsg = listingOk ? null : !listingTrim ? t("validation.fieldEmpty") : t("validation.listing");
+    const listingMsg =
+      listingTrim && !isPlausibleListingUrl(listingTrim) ? t("validation.listing") : null;
 
     if (hero) {
       setHeroStep1Errors({ vin: vinMsg, listing: listingMsg });
       return;
     }
 
-    if (!vinOk && !listingOk) {
-      setError(t("validation.step1Both"));
-      return;
-    }
     if (!vinOk) {
-      setError(t("validation.vin"));
+      setError(!vinNormalized ? t("validation.fieldEmpty") : t("validation.vin"));
       return;
     }
-    setError(t("validation.listing"));
+    if (listingTrim && !isPlausibleListingUrl(listingTrim)) {
+      setError(t("validation.listing"));
+      return;
+    }
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -398,7 +395,6 @@ export function OrderForm({
                   id="order-url"
                   name="listingUrl"
                   type="url"
-                  required
                   value={listingUrl}
                   className={step === 1 ? firstStepListingInputClassHero : inputBase}
                   placeholder={step === 1 ? firstStepListingPlaceholder : t("urlPlaceholder")}
@@ -433,7 +429,6 @@ export function OrderForm({
               id="order-url"
               name="listingUrl"
               type="url"
-              required
               value={listingUrl}
               className={step === 1 ? firstStepListingInputClassDefault : inputBase}
               placeholder={step === 1 ? firstStepListingPlaceholder : t("urlPlaceholder")}

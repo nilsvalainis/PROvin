@@ -9,7 +9,7 @@
     "emailLabel": "E-pasts",
     "phoneLabel": "Tālrunis",
     "vinLabel": "VIN",
-    "listingLabel": "Sludinājuma saite",
+    "listingLabel": "Sludinājuma saite (nav obligāti)",
     "notesLabel": "Piezīmes (nav obligāti)",
     "emailHint": "Atskaiti nosūtīsim uz norādīto adresi.",
     "phoneHint": "Rezerves saziņai, piem. ja e-pasts ievadīts kļūdaini.",
@@ -45,7 +45,7 @@
     "validation": {
       "fieldEmpty": "Lauks nav aizpildīts.",
       "invalidFormat": "Nepareizs formāts.",
-      "step1Both": "Lūdzu, aizpildiet derīgu VIN kodu un precīzu saiti uz konkrētu sludinājumu (ne tikai vietnes sākumu).",
+      "step1Both": "Lūdzu, aizpildiet derīgu VIN kodu.",
       "vin": "Lūdzu, ievadiet derīgu 17 zīmju VIN kodu.",
       "required": "Šis lauks ir obligāts.",
       "url": "Lūdzu, ievadiet derīgu saiti uz sludinājumu.",
