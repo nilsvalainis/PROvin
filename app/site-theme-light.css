@@ -189,7 +189,8 @@ html[data-site-theme="light"] .home-rail-label {
   color: #1f2937;
 }
 
-html[data-site-theme="light"] .site-section-rail:is(:hover, :focus-within) .home-rail-label {
+html[data-site-theme="light"] .site-section-rail:is(:hover, :focus-within) .home-rail-label,
+html[data-site-theme="light"] .site-section-rail[data-rail-open="true"] .home-rail-label {
   color: #0a0a0a;
 }
 
@@ -688,7 +689,8 @@ html[data-site-theme="light"] nav.site-section-rail a:hover {
   color: #111827 !important;
 }
 
-html[data-site-theme="light"] nav.site-section-rail:is(:hover, :focus-within) a:not([aria-current="location"]) {
+html[data-site-theme="light"] nav.site-section-rail:is(:hover, :focus-within) a:not([aria-current="location"]),
+html[data-site-theme="light"] nav.site-section-rail[data-rail-open="true"] a:not([aria-current="location"]) {
   color: #111827 !important;
 }
 

@@ -55,6 +55,7 @@ export function SiteSectionRail() {
   const pathname = usePathname() ?? "";
   const hash = useHash();
   const [active, setActive] = useState(0);
+  const [isRailOpen, setIsRailOpen] = useState(false);
   const ratioRef = useRef<number[]>(new Array(HOME_SCROLL_IDS.length).fill(0));
 
   const normalizedPath = useMemo(() => normalizeSitePath(pathname), [pathname]);
@@ -178,6 +179,16 @@ export function SiteSectionRail() {
     <nav
       className={`site-section-rail pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] ${railTopClass} z-40 hidden min-h-0 min-w-0 w-max cursor-pointer flex-col overflow-y-auto overscroll-contain pl-1 lg:flex`}
       aria-label={t("navAria")}
+      data-rail-open={isRailOpen ? "true" : "false"}
+      onMouseEnter={() => setIsRailOpen(true)}
+      onMouseLeave={() => setIsRailOpen(false)}
+      onFocusCapture={() => setIsRailOpen(true)}
+      onBlurCapture={(event) => {
+        const next = event.relatedTarget;
+        if (!next || !event.currentTarget.contains(next as Node)) {
+          setIsRailOpen(false);
+        }
+      }}
     >
       <div
         className="site-section-rail__scrim pointer-events-none absolute -inset-x-2 -inset-y-6 left-0 z-0 rounded-r-[1.85rem] bg-gradient-to-r from-black/50 via-black/14 to-transparent"
