@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
+import { Cormorant_Garamond } from "next/font/google";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -54,6 +55,14 @@ export type MarketingHeroProps = {
 
 const sectionBasePad =
   "px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1.5rem,calc(env(safe-area-inset-top,0px)+1.25rem))] sm:px-8 sm:pb-9 sm:pt-[max(1.75rem,calc(env(safe-area-inset-top,0px)+1.35rem))]";
+
+/** Neliels hero kickeris starp „AUDITS” un formu — `absolute`, lai neietekmētu flex izkārtojumu. */
+const heroOrbitItalyKickerFont = Cormorant_Garamond({
+  subsets: ["latin", "latin-ext"],
+  style: ["italic"],
+  weight: ["500"],
+  display: "swap",
+});
 
 /**
  * Pilnekrāna tumšais Hero: „APPROVED…” + H1 ekrāna centrā; četras ikonas apakšā; scroll uz saturu (design: tikai zila bultiņa).
@@ -159,14 +168,7 @@ export function MarketingHero({
           </div>
         </>
       </h1>
-      {hideHeroSubtitle ? (
-        <p
-          lang="lv"
-          className="mx-auto mt-1.5 max-w-[min(100%,36rem)] text-balance text-center font-serif text-[13px] font-normal italic leading-snug tracking-[0.02em] text-white/72 [text-shadow:0_1px_0_rgba(0,0,0,0.45)] sm:mt-2 sm:text-[14px]"
-        >
-          {t("orderTeaser")}
-        </p>
-      ) : (
+      {!hideHeroSubtitle ? (
         <p
           className={
             designDirection
@@ -176,9 +178,18 @@ export function MarketingHero({
         >
           {t("h2")}
         </p>
-      )}
+      ) : null}
     </div>
   );
+
+  const heroOrbitItalyKickerNode =
+    orbitHomeCenterLayout && !demoVariant ? (
+      <p
+        className={`${heroOrbitItalyKickerFont.className} pointer-events-none absolute left-1/2 top-full z-[6] w-full max-w-[min(100%,30rem)] -translate-x-1/2 translate-y-2 text-center text-[clamp(0.78rem,2.4vw,1.02rem)] leading-snug tracking-[0.03em] text-white/[0.78] [text-shadow:0_1px_14px_rgba(0,0,0,0.5)]`}
+      >
+        {t("italyKicker")}
+      </p>
+    ) : null;
 
   const approvedBlock = (
     <ApprovedByIrissReveal
@@ -484,8 +495,9 @@ export function MarketingHero({
                     <div className="marketing-hero-mobile-header-slot flex w-full shrink-0 items-start justify-center">
                       <div className="marketing-hero-mobile-header-lock z-[1] flex w-full shrink-0 flex-col items-center">
                         <div className="flex w-full shrink-0 justify-center pb-1 pt-2.5">{approvedBlock}</div>
-                        <div className="marketing-hero-orbit-center-sheet marketing-hero-mobile-title-scale flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
+                        <div className="marketing-hero-orbit-center-sheet marketing-hero-mobile-title-scale relative flex w-full shrink-0 flex-col items-center justify-center overflow-visible [contain:layout]">
                           {heroTitleStack}
+                          {heroOrbitItalyKickerNode}
                         </div>
                       </div>
                     </div>
@@ -507,8 +519,9 @@ export function MarketingHero({
                       <div
                         className={`flex min-h-0 w-full flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2 ${homeHeroOrderColumnMaxClass}`}
                       >
-                        <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
+                        <div className="marketing-hero-orbit-center-sheet relative flex w-full shrink-0 flex-col items-center justify-center overflow-visible">
                           {heroTitleStack}
+                          {heroOrbitItalyKickerNode}
                         </div>
                         <div className="flex w-full min-w-0 flex-col items-center">
                           {heroOrderEntryMd}
