@@ -169,8 +169,7 @@ export function SiteSectionRail() {
   const linkBase =
     "group/link relative flex max-w-none min-h-0 flex-1 flex-row items-stretch text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-all duration-300 ease-in-out motion-reduce:transition-none lg:text-[10px] lg:tracking-[0.19em]";
 
-  const railLabelClass =
-    "home-rail-label absolute left-0 top-1/2 z-[2] -translate-y-1/2 text-left";
+  const railLabelClass = "home-rail-label z-[2] inline-block text-left leading-none";
 
   const railTopClass =
     "top-[max(1rem,calc(env(safe-area-inset-top,0px)+3.25rem))]";
@@ -227,7 +226,7 @@ export function SiteSectionRail() {
                         }`}
                       />
                     </div>
-                    <div className="relative min-w-0 flex-1 self-stretch">
+                    <div className="relative flex min-w-0 flex-1 items-center self-stretch">
                       <span className={railLabelClass}>{t(s.labelKey)}</span>
                     </div>
                   </Link>

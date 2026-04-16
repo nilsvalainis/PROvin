@@ -732,10 +732,8 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transform: translateY(-50%) translateX(-0.16rem);
     transition:
       opacity 0.22s ease,
-      transform 0.28s ease,
       visibility 0s linear 0.22s,
       color 0.2s ease;
   }
@@ -746,10 +744,8 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
     text-overflow: unset;
     opacity: 1;
     visibility: visible;
-    transform: translateY(-50%) translateX(0);
     transition:
       opacity 0.28s ease 0.1s,
-      transform 0.28s ease 0.08s,
       visibility 0s linear 0s,
       color 0.2s ease;
   }
