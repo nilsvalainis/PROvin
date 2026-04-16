@@ -185,7 +185,7 @@ export function MarketingHero({
   const heroOrbitItalyKickerNode =
     orbitHomeCenterLayout && !demoVariant ? (
       <p
-        className={`${heroOrbitItalyKickerFont.className} pointer-events-none absolute left-1/2 top-full z-[6] w-full max-w-[min(100%,30rem)] -translate-x-1/2 translate-y-2 text-center text-[clamp(0.78rem,2.4vw,1.02rem)] leading-snug tracking-[0.03em] text-white/[0.78] [text-shadow:0_1px_14px_rgba(0,0,0,0.5)]`}
+        className={`marketing-hero-italy-kicker ${heroOrbitItalyKickerFont.className} pointer-events-none absolute left-1/2 top-full z-[6] w-full max-w-[min(100%,30rem)] -translate-x-1/2 translate-y-2 text-center text-[clamp(0.78rem,2.4vw,1.02rem)] leading-snug tracking-[0.03em] text-white/[0.78] [text-shadow:0_1px_14px_rgba(0,0,0,0.5)]`}
       >
         {t("italyKicker")}
       </p>
