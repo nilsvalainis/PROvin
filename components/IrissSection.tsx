@@ -5,6 +5,7 @@ import {
   irissSectionSubtitleClass,
   irissStaggerHeadingClass,
 } from "@/lib/home-layout";
+import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
 /** Mazs ekrāns: kā BUJ; ≥md: kā #home-intro pēc web −25 % (`calc(1.365rem * 0.75)`). */
@@ -17,9 +18,9 @@ const irissStaggerBlockGapClass = "gap-y-[clamp(2.75rem,6.5vw,4.75rem)] sm:gap-y
 export async function IrissSection({ editorialColumn = false }: { editorialColumn?: boolean } = {}) {
   const t = await getTranslations("Iriss");
 
-  const socialTiktok = process.env.NEXT_PUBLIC_IRISS_TIKTOK_URL?.trim();
-  const socialYoutube = process.env.NEXT_PUBLIC_IRISS_YOUTUBE_URL?.trim();
-  const socialInstagram = process.env.NEXT_PUBLIC_IRISS_INSTAGRAM_URL?.trim();
+  const socialTiktok = process.env.NEXT_PUBLIC_IRISS_TIKTOK_URL?.trim() || IRISS_SOCIAL_DEFAULTS.tiktok;
+  const socialYoutube = process.env.NEXT_PUBLIC_IRISS_YOUTUBE_URL?.trim() || IRISS_SOCIAL_DEFAULTS.youtube;
+  const socialInstagram = process.env.NEXT_PUBLIC_IRISS_INSTAGRAM_URL?.trim() || IRISS_SOCIAL_DEFAULTS.instagram;
 
   if (editorialColumn) {
     return (
