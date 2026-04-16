@@ -523,6 +523,42 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   max-width: none;
 }
 
+/* Zilais akcents: ļoti viegls "glass/metal" spīdums (globāli, neuzkrītošs). */
+:where(.text-provin-accent, [class*="text-provin-accent"], .marketing-hero-h1-blue) {
+  text-shadow:
+    0 0 0.45px rgb(255 255 255 / 0.22),
+    0 0 7px rgb(0 102 255 / 0.16);
+  filter: saturate(1.03);
+}
+
+:where(.text-provin-accent, [class*="text-provin-accent"]) :is(svg, path, circle, line, polyline) {
+  filter: drop-shadow(0 0 5px rgb(0 102 255 / 0.2));
+}
+
+:where(.provin-home-pill-cta, .provin-btn, [class*="bg-provin-accent"]) {
+  position: relative;
+  isolation: isolate;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    inset 0 -1px 0 rgb(0 0 0 / 0.18),
+    0 0 14px rgb(0 102 255 / 0.16);
+}
+
+:where(.provin-home-pill-cta, .provin-btn, [class*="bg-provin-accent"])::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(165deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0) 52%);
+  opacity: 0.36;
+}
+
+.site-section-rail span.rounded-full,
+.site-rail-axis {
+  filter: drop-shadow(0 0 5px rgb(0 102 255 / 0.2));
+}
+
 /* Augšējā izvēlne (tumšais hero): ~15 % mazāks par bāzes pill; vēl −10 % no iepriekšējās kompaktās */
 .provin-home-pill-cta--header-compact {
   min-height: 33px;
