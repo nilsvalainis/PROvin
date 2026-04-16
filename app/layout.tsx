@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Script from "next/script";
 import { Inter } from "next/font/google";
+import { GoogleAnalyticsScripts } from "@/components/GoogleAnalyticsScripts";
 import { SiteVercelAnalytics } from "@/components/SiteVercelAnalytics";
 import { SiteThemeProvider } from "@/components/providers/SiteThemeProvider";
 import { SITE_THEME_STORAGE_KEY } from "@/lib/site-theme";
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
         <SiteThemeProvider>
           {children}
+          <GoogleAnalyticsScripts />
           <SiteVercelAnalytics />
         </SiteThemeProvider>
       </body>

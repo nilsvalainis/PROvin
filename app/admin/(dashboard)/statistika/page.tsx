@@ -3,6 +3,7 @@ import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardH
 import {
   getAnalyticsDashboardUrl,
   getAnalyticsEmbedUrl,
+  getGaMeasurementId,
   isVercelDeployment,
 } from "@/lib/analytics-public";
 
@@ -15,6 +16,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminStatistikaPage() {
   const embedUrl = getAnalyticsEmbedUrl();
   const dashboardUrl = getAnalyticsDashboardUrl();
+  const gaId = getGaMeasurementId();
   const onVercel = isVercelDeployment();
 
   return (
@@ -32,7 +34,7 @@ export default async function AdminStatistikaPage() {
         </p>
       </AdminDashboardHeaderWithMenu>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+      <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
           <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Vercel Web Analytics</h2>
           <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
@@ -77,6 +79,38 @@ export default async function AdminStatistikaPage() {
         </div>
 
         <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
+          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Google Analytics 4</h2>
+          {gaId ? (
+            <>
+              <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
+                Vietnē ir ieslēgts <code className="rounded bg-slate-100 px-1 py-0.5 text-[12px]">gtag.js</code> ar
+                mērījuma ID{" "}
+                <span className="font-mono text-[12px] font-medium text-[var(--color-apple-text)]">{gaId}</span>. Apmeklējumi,
+                lapas, avoti un kampaņas skatāmas GA4 panelī.
+              </p>
+              <div className="mt-4">
+                <a
+                  href="https://analytics.google.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)]"
+                >
+                  Atvērt Google Analytics
+                </a>
+              </div>
+            </>
+          ) : (
+            <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
+              Iestatiet{" "}
+              <code className="rounded bg-slate-100 px-1 py-0.5 text-[12px]">NEXT_PUBLIC_GA_MEASUREMENT_ID=G-…</code>{" "}
+              (tāds pats ID kā Google taga iestatīšanā). EEZ lietotājiem Google iesaka{" "}
+              <span className="font-medium text-[var(--color-apple-text)]">Consent Mode</span> — saskaņot ar sīkdatņu
+              banneri un privātuma politiku.
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_24px_rgba(15,23,42,0.05)] md:col-span-2 xl:col-span-1">
           <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Ārējais panelis (Plausible, GA…)</h2>
           <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
             Iestatiet vides mainīgos{" "}

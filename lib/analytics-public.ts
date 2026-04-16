@@ -29,3 +29,11 @@ export function getAnalyticsEmbedUrl(): string | null {
 export function isVercelDeployment(): boolean {
   return process.env.VERCEL === "1";
 }
+
+/** GA4 mērījuma ID (`G-…`) — publisks; validēts, lai neinjicētu svešu tekstu Script tagā. */
+export function getGaMeasurementId(): string | null {
+  const raw = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
+  if (!raw) return null;
+  if (!/^G-[A-Z0-9]{6,20}$/i.test(raw)) return null;
+  return raw.toUpperCase();
+}
