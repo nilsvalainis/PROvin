@@ -134,10 +134,9 @@ html[data-site-theme="light"] .home-depth-bg {
   ) !important;
 }
 
-/* Hero + "KAS IR PROVIN?" kopējā virsma: kā IRISS (`--band-b`). */
+/* Hero + "KAS IR PROVIN?" kopējā virsma: gaišajā režīmā saglabā sākotnējo hero fonu. */
 html[data-site-theme="light"] .home-hero-intro-surface {
-  background: var(--dd-home-hero-intro-bg) !important;
-  box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.09);
+  background: var(--hero-orbit-bg-extended) !important;
 }
 
 /* Zem Hero — gaišs teksts */
@@ -368,8 +367,6 @@ html[data-site-theme="light"] .demo-design-dir {
   /* Kā tumšajā: --dd-surface / --dd-surface-2 (puscaurspīdīgi) */
   --dd-surface: rgb(255 255 255 / 0.38);
   --dd-surface-2: rgb(255 255 255 / 0.55);
-  /* Kā „KAS SLĒPJAS AIZ PROVIN?” (`--band-b`) — hero + intro virsma */
-  --dd-home-hero-intro-bg: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(0 102 255 / 0.06), transparent 48%), #f6f7f9;
 }
 
 html[data-site-theme="light"] .demo-design-dir__section--band-a {
@@ -378,7 +375,7 @@ html[data-site-theme="light"] .demo-design-dir__section--band-a {
 }
 
 html[data-site-theme="light"] .demo-design-dir__section--band-b {
-  background: var(--dd-home-hero-intro-bg);
+  background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(0 102 255 / 0.06), transparent 48%), #f6f7f9;
   box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.09);
 }
 

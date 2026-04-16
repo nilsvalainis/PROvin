@@ -9,8 +9,6 @@
   --dd-line-strong: rgb(0 102 255 / 0.35);
   --dd-surface: rgb(255 255 255 / 0.035);
   --dd-surface-2: rgb(255 255 255 / 0.055);
-  /* Kā „KAS SLĒPJAS AIZ PROVIN?” (`--band-b`) — hero + intro virsma */
-  --dd-home-hero-intro-bg: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(255 255 255 / 0.08), transparent 48%), #040406;
   color: rgb(245 248 252 / 0.92);
   background: #030304;
 }
@@ -54,13 +52,12 @@
   box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.06);
 }
 
-/* Sākumlapa: hero + „KAS IR PROVIN?” — viena virsma ar IRISS (`--band-b`) pašu fona toni. */
+/* Sākumlapa: hero + „KAS IR PROVIN?” — viena nepārtraukta virsma ar paša hero fonu. */
 .home-hero-intro-surface {
   position: relative;
   /* hidden/clip šeit veidoja atsevišķu scrollportu pret document — viens vienīgs lapas scroll. */
   overflow: visible;
-  background: var(--dd-home-hero-intro-bg);
-  box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.08);
+  background: var(--hero-orbit-bg-extended);
 }
 
 /* Saglabā hero tipogrāfijas skalu no orbit presetiem, bet bez atsevišķa hero fona slāņa. */
@@ -70,7 +67,7 @@
 }
 
 .demo-design-dir__section--band-b {
-  background: var(--dd-home-hero-intro-bg);
+  background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(255 255 255 / 0.08), transparent 48%), #040406;
   box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.08);
 }
 
