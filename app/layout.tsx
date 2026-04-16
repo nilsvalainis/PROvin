@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Script from "next/script";
 import { Inter } from "next/font/google";
+import { SiteVercelAnalytics } from "@/components/SiteVercelAnalytics";
 import { SiteThemeProvider } from "@/components/providers/SiteThemeProvider";
 import { SITE_THEME_STORAGE_KEY } from "@/lib/site-theme";
 import "./globals.css";
@@ -23,7 +24,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             __html: `(function(){try{var k=${JSON.stringify(SITE_THEME_STORAGE_KEY)};var v=localStorage.getItem(k);if(v==="light"||v==="dark")document.documentElement.setAttribute("data-site-theme",v);}catch(e){}})();`,
           }}
         />
-        <SiteThemeProvider>{children}</SiteThemeProvider>
+        <SiteThemeProvider>
+          {children}
+          <SiteVercelAnalytics />
+        </SiteThemeProvider>
       </body>
     </html>
   );

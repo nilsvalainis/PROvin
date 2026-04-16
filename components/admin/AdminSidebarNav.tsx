@@ -21,6 +21,7 @@ export function AdminSidebarNav({ baseUrl }: { baseUrl?: string }) {
   const staticDemoActive = Boolean(pathname?.includes("static-concepts"));
   const marketingHeroDemoActive = Boolean(pathname?.includes("marketing-hero-concepts"));
   const pkdInvoiceActive = Boolean(pathname?.startsWith("/admin/commission-invoice"));
+  const statistikaActive = Boolean(pathname?.startsWith("/admin/statistika"));
 
   return (
     <nav className="flex flex-wrap items-center gap-1 md:flex-col md:items-stretch md:gap-1">
@@ -29,6 +30,9 @@ export function AdminSidebarNav({ baseUrl }: { baseUrl?: string }) {
       </Link>
       <Link href="/" className={navItemClass(false)}>
         Uz lapu
+      </Link>
+      <Link href="/admin/statistika" className={navItemClass(statistikaActive)}>
+        Statistika
       </Link>
       <p className="hidden pt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-provin-muted)] md:block">
         PKD / AutoDNA
