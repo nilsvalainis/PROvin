@@ -897,17 +897,10 @@
    */
   .marketing-hero-mobile-layout-lock {
     --hero-mobile-title-base: clamp(1.9135rem, calc(6.862vmin + 0.554rem), 2.8375rem);
-    --hero-mobile-sludinajuma-line-h: calc(var(--hero-mobile-title-base) * 0.717);
-    --hero-mobile-header-drop: calc(var(--hero-mobile-sludinajuma-line-h) * 0.14);
-  }
-
-  .marketing-hero-mobile-header-slot {
-    height: clamp(15.75rem, 44svh, 19.5rem);
   }
 
   .marketing-hero-mobile-header-lock {
     width: 100%;
-    transform: translateY(calc((-1 * var(--hero-mobile-sludinajuma-line-h)) + var(--hero-mobile-header-drop)));
   }
 
   .marketing-hero-mobile-title-scale {
@@ -923,11 +916,18 @@
 
   .marketing-hero-mobile-form-anchor {
     width: 100%;
+    flex-shrink: 0;
     margin-top: 0;
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-approved--home {
     margin-top: max(0.75rem, env(safe-area-inset-top, 0px));
+    margin-bottom: 0.4rem;
+  }
+
+  /* `pt` layout-lock kompensē sticky header — approved margin-top šeit nenāk dubultā. */
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-mobile-layout-lock .marketing-hero-approved--home {
+    margin-top: 0;
     margin-bottom: 0.4rem;
   }
 
