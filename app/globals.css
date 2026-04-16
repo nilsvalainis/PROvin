@@ -700,7 +700,7 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
 
   nav.site-section-rail:is(:hover, :focus-within),
   nav.site-section-rail[data-rail-open="true"] {
-    max-width: min(15.75rem, min(34vw, 30vmin));
+    max-width: min(18rem, min(38vw, 34vmin));
     overflow-x: visible;
   }
 
@@ -717,15 +717,15 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
 
   nav.site-section-rail:is(:hover, :focus-within) .site-section-rail__links,
   nav.site-section-rail[data-rail-open="true"] .site-section-rail__links {
-    width: min(10.25rem, min(28vw, 26vmin));
-    max-width: min(10.25rem, min(28vw, 26vmin));
+    width: min(13rem, min(33vw, 30vmin));
+    max-width: min(13rem, min(33vw, 30vmin));
     overflow: visible;
   }
 
   nav.site-section-rail .home-rail-label {
     box-sizing: border-box;
     width: max-content;
-    max-width: min(10.25rem, min(28vw, 26vmin));
+    max-width: min(13rem, min(33vw, 30vmin));
     white-space: nowrap;
     overflow: hidden;
     text-overflow: clip;
