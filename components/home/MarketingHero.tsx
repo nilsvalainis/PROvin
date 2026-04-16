@@ -285,7 +285,7 @@ export function MarketingHero({
     if (!designDirection || demoVariant || heroOrderStep !== 1) return null;
     return (
       <div
-        className={`pointer-events-auto relative z-[80] flex w-full justify-center px-1 pt-1 sm:pt-2 max-md:mt-2 max-md:pt-1 ${homeHeroOrderFormTwoCardsWidthClass}`}
+        className={`pointer-events-auto relative z-[80] flex w-full justify-center px-1 pt-1 sm:pt-2 md:-mt-5 md:pt-0 max-md:mt-2 max-md:pt-1 ${homeHeroOrderFormTwoCardsWidthClass}`}
       >
         <button
           type="button"
@@ -504,7 +504,7 @@ export function MarketingHero({
                     </div>
                   </div>
                   <div
-                    className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-1 ${homeHeroOrderColumnMaxClass}`}
+                    className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-1 md:-mt-1 md:pt-0 ${homeHeroOrderColumnMaxClass}`}
                   >
                     {pillarsAndCtaMdHeroSubmit}
                   </div>
