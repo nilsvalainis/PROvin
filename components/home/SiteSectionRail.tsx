@@ -203,7 +203,7 @@ export function SiteSectionRail() {
               aria-hidden
             />
           </div>
-          <ul className="site-section-rail__links flex min-h-0 min-w-0 flex-1 flex-col">
+          <ul className="site-section-rail__links flex min-h-0 min-w-0 shrink-0 grow-0 flex-col">
             {sections.map((s, i) => {
               const isActive = i === active;
               return (

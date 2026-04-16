@@ -705,14 +705,19 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   }
 
   nav.site-section-rail .site-section-rail__links {
+    width: 1.125rem;
     max-width: 1.125rem;
+    flex: 0 0 auto;
     min-width: 0;
     overflow: hidden;
-    transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+      max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   nav.site-section-rail:is(:hover, :focus-within) .site-section-rail__links,
   nav.site-section-rail[data-rail-open="true"] .site-section-rail__links {
+    width: min(10.25rem, min(28vw, 26vmin));
     max-width: min(10.25rem, min(28vw, 26vmin));
     overflow: visible;
   }
@@ -727,8 +732,10 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+    transform: translateY(-50%) translateX(-0.16rem);
     transition:
       opacity 0.22s ease,
+      transform 0.28s ease,
       visibility 0s linear 0.22s,
       color 0.2s ease;
   }
@@ -739,8 +746,10 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
     text-overflow: unset;
     opacity: 1;
     visibility: visible;
+    transform: translateY(-50%) translateX(0);
     transition:
       opacity 0.28s ease 0.1s,
+      transform 0.28s ease 0.08s,
       visibility 0s linear 0s,
       color 0.2s ease;
   }
