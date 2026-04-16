@@ -695,7 +695,16 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   nav.site-section-rail {
     max-width: calc(0.75rem + 0.625rem + 1.125rem);
     overflow-x: clip;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  nav.site-section-rail::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+    background: transparent;
   }
 
   nav.site-section-rail:is(:hover, :focus-within),

@@ -190,7 +190,7 @@ export function SiteSectionRail() {
       }}
     >
       <div
-        className="site-section-rail__scrim pointer-events-none absolute -inset-x-2 -inset-y-6 left-0 z-0 rounded-r-[1.85rem] bg-gradient-to-r from-black/50 via-black/14 to-transparent"
+        className="site-section-rail__scrim pointer-events-none absolute -inset-x-2 -inset-y-6 left-0 z-0 rounded-r-[1.85rem] bg-transparent"
         aria-hidden
       />
 
