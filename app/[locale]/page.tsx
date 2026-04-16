@@ -18,8 +18,8 @@ export default async function HomePage() {
       <div className="relative z-10 min-w-0 bg-transparent">
         <div className="demo-design-dir min-w-0 pb-0 text-white">
           <div className="home-hero-intro-surface">
-            {/* Kā `#kontakti`: HeroVisual + gradients; hero ir ~2× tumšāks (sk. .home-hero-intro-scrim-gradient). */}
-            <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.06]">
+            {/* Kā kontakti: HeroVisual + scrim; tumšāks par kājeni, ar sudrabziliem plūdumiem (sk. .home-hero-intro-scrim-gradient). */}
+            <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.1]">
               <HeroVisual />
             </div>
             <div className="home-hero-intro-scrim-gradient pointer-events-none absolute inset-0 z-[1]" aria-hidden />

@@ -971,18 +971,20 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
 }
 
 /*
- * Mājas hero + „KAS IR PROVIN?” — ~2× tumšāks par kājenes stack; tā patā rampa:
- * tumšs augšā → vieglāks vidū (HeroVisual caur slāni) → tumšs apakšā.
+ * Mājas hero + „KAS IR PROVIN?” — gandrīz melns, sudraboti tumšs: HeroVisual + vieglāks vidus
+ * + diskrēti radāli plūdumi (līdzīgi kājenes loģikai, bet kopumā tumšāks).
  */
 .home-hero-intro-scrim-gradient {
-  background-image: linear-gradient(
-    to bottom,
-    rgb(2 2 2 / 0.99) 0%,
-    rgb(2 2 2 / 0.94) 22%,
-    rgb(2 2 2 / 0.76) 50%,
-    rgb(2 2 2 / 0.94) 78%,
-    rgb(2 2 2) 100%
-  );
+  background-image:
+    radial-gradient(ellipse 115% 58% at 50% 10%, rgb(228 234 244 / 0.075), transparent 58%),
+    radial-gradient(ellipse 95% 55% at 8% 88%, rgb(0 102 214 / 0.06), transparent 54%),
+    radial-gradient(ellipse 90% 60% at 92% 78%, rgb(255 255 255 / 0.05), transparent 52%),
+    linear-gradient(
+      180deg,
+      rgb(7 8 10 / 0.92) 0%,
+      rgb(7 8 10 / 0.52) 46%,
+      rgb(6 7 9 / 0.9) 100%
+    );
 }
 
 /* Investigation Lab — „chrome” CTA (sudrabs → zils hover) */
