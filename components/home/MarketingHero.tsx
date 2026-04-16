@@ -97,6 +97,8 @@ export function MarketingHero({
   const orbitGlassSilhouette = Boolean(isOrbitVisual && !demoVariant && !designDirection);
   /** Sākumlapa: vertikālais centrs starp augšu un pīlāriem + tipogrāfijas skala (`data-hero-orbit-home`). */
   const orbitHomeCenterLayout = Boolean(designDirection && isOrbitVisual && !isB);
+  /** Mājas lapa mobilajā: hero augstums pēc satura, lai zem CTA nepaliek tukša „melnā josla” līdz #home-intro. */
+  const homeHeroMobileContentHeight = Boolean(orbitHomeCenterLayout && !demoVariant);
   /** Intro teksts pārvietots zem pīlāriem (atsevišķa sekcija mājas lapā). */
   const homeOrbitMetaIntro = false;
   const hideHeroSubtitle = Boolean(designDirection && !demoVariant);
@@ -370,7 +372,11 @@ export function MarketingHero({
       ? " demo-design-dir__section demo-design-dir__section--band-a"
       : "";
 
-  const sectionClassOrbit = `marketing-hero-section home-content-atmosphere relative flex min-h-[min(100dvh,100svh)] w-full max-w-full flex-col overflow-x-hidden bg-transparent text-white max-md:min-h-[100dvh] ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitSectionStyleClass}${designDirHeroChrome}`.trim();
+  const orbitSectionMinH =
+    homeHeroMobileContentHeight
+      ? "min-h-[min(100dvh,100svh)] max-md:min-h-0"
+      : "min-h-[min(100dvh,100svh)] max-md:min-h-[100dvh]";
+  const sectionClassOrbit = `marketing-hero-section home-content-atmosphere relative flex ${orbitSectionMinH} w-full max-w-full flex-col overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitSectionStyleClass}${designDirHeroChrome}`.trim();
 
   const sectionClassGrid = `marketing-hero-section home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}${designDirHeroChrome}`.trim();
 
@@ -469,13 +475,17 @@ export function MarketingHero({
 
       {isOrbitVisual ? (
         orbitHomeCenterLayout ? (
-          <div className="relative z-[1] flex min-h-0 w-full flex-1 flex-col">
+          <div
+            className={`relative z-[1] flex min-h-0 w-full flex-1 flex-col${homeHeroMobileContentHeight ? " max-md:flex-none" : ""}`}
+          >
             {designDirection && !demoVariant ? (
               <>
                 {/* Mobilais: md:hidden — tikai CSS, bez JS viewport zara */}
-                <div className="mx-auto flex w-full min-w-0 max-w-full shrink-0 flex-col items-center md:hidden">
+                <div
+                  className={`mx-auto flex w-full min-w-0 max-w-full shrink-0 flex-col items-center md:hidden${homeHeroMobileContentHeight ? " max-md:self-start" : ""}`}
+                >
                   <div
-                    className={`marketing-hero-mobile-layout-lock pointer-events-auto flex w-full min-w-0 shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] max-md:min-h-[100dvh] max-md:flex max-md:flex-col max-md:justify-start ${homeHeroOrderColumnMaxClass}`}
+                    className={`marketing-hero-mobile-layout-lock pointer-events-auto flex w-full min-w-0 shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] max-md:flex max-md:flex-col max-md:justify-start ${homeHeroMobileContentHeight ? "max-md:min-h-0 " : "max-md:min-h-[100dvh] "}${homeHeroOrderColumnMaxClass}`}
                   >
                     <div className="marketing-hero-mobile-header-slot flex w-full shrink-0 items-start justify-center">
                       <div className="marketing-hero-mobile-header-lock z-[1] flex w-full shrink-0 flex-col items-center">

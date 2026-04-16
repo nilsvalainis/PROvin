@@ -932,8 +932,8 @@
   }
 
   .marketing-hero-orbit-base[data-hero-orbit-home].marketing-hero-section {
-    /* Nedaudz mazāks apakšas padding, lai kompensētu lielāku virsrakstu / atstarpi; poga paliek hero skatā */
-    padding-bottom: max(2rem, calc(env(safe-area-inset-bottom, 0px) + 2rem));
+    /* Nedaudz mazāks apakšas padding; poga paliek hero skatā, mazāk tukšuma pirms #home-intro */
+    padding-bottom: max(1.125rem, calc(env(safe-area-inset-bottom, 0px) + 1.125rem));
   }
 
   /* Mobilais H1 bāze; reālo +25 % mērogo `marketing-hero-mobile-title-scale`. */
