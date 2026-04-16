@@ -169,14 +169,14 @@ export function SiteSectionRail() {
     "group/link relative flex max-w-none min-h-0 flex-1 flex-row items-stretch text-left text-[9px] font-medium uppercase leading-snug tracking-[0.17em] outline-none transition-all duration-300 ease-in-out motion-reduce:transition-none lg:text-[10px] lg:tracking-[0.19em]";
 
   const railLabelClass =
-    "home-rail-label absolute left-0 top-1/2 z-[2] max-w-[min(10.25rem,min(28vw,26vmin))] -translate-y-1/2 whitespace-normal break-words text-pretty text-left";
+    "home-rail-label absolute left-0 top-1/2 z-[2] -translate-y-1/2 text-left";
 
   const railTopClass =
     "top-[max(1rem,calc(env(safe-area-inset-top,0px)+3.25rem))]";
 
   return (
     <nav
-      className={`site-section-rail pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] ${railTopClass} z-40 hidden min-h-0 min-w-0 w-max cursor-pointer flex-col overflow-x-clip overflow-y-auto overscroll-contain pl-1 lg:flex`}
+      className={`site-section-rail pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] ${railTopClass} z-40 hidden min-h-0 min-w-0 w-max cursor-pointer flex-col overflow-y-auto overscroll-contain pl-1 lg:flex`}
       aria-label={t("navAria")}
     >
       <div
