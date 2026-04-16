@@ -19,7 +19,7 @@ export default async function HomePage() {
         <div className="demo-design-dir min-w-0 pb-0 text-white">
           <div className="home-hero-intro-surface">
             {/* Kā kontakti: HeroVisual + scrim; tumšāks par kājeni, ar sudrabziliem plūdumiem (sk. .home-hero-intro-scrim-gradient). */}
-            <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.11]">
+            <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.077]">
               <HeroVisual />
             </div>
             <div className="home-hero-intro-scrim-gradient pointer-events-none absolute inset-0 z-[1]" aria-hidden />

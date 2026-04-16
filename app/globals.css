@@ -975,17 +975,17 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
  */
 .home-hero-intro-scrim-gradient {
   background-image:
-    radial-gradient(ellipse 125% 75% at 50% 50%, rgb(188 198 212 / 0.11), transparent 62%),
-    radial-gradient(ellipse 115% 58% at 50% 10%, rgb(228 234 244 / 0.065), transparent 58%),
-    radial-gradient(ellipse 95% 55% at 8% 88%, rgb(0 102 214 / 0.055), transparent 54%),
-    radial-gradient(ellipse 90% 60% at 92% 78%, rgb(255 255 255 / 0.042), transparent 52%),
+    radial-gradient(ellipse 125% 75% at 50% 50%, rgb(188 198 212 / 0.075), transparent 62%),
+    radial-gradient(ellipse 115% 58% at 50% 10%, rgb(228 234 244 / 0.045), transparent 58%),
+    radial-gradient(ellipse 95% 55% at 8% 88%, rgb(0 102 214 / 0.038), transparent 54%),
+    radial-gradient(ellipse 90% 60% at 92% 78%, rgb(255 255 255 / 0.029), transparent 52%),
     linear-gradient(
       180deg,
-      rgb(1 1 2 / 0.99) 0%,
-      rgb(3 4 5 / 0.975) 13%,
-      rgb(8 9 11 / 0.34) 50%,
-      rgb(3 4 5 / 0.975) 87%,
-      rgb(1 1 2 / 0.99) 100%
+      rgb(1 1 2 / 0.995) 0%,
+      rgb(3 4 5 / 0.988) 13%,
+      rgb(8 9 11 / 0.46) 50%,
+      rgb(3 4 5 / 0.988) 87%,
+      rgb(1 1 2 / 0.995) 100%
     );
 }
 
