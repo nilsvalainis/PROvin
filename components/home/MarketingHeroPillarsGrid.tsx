@@ -24,6 +24,8 @@ export type MarketingHeroPillarsGridProps = {
   shellClassName?: string;
   /** Mājas mobilais: viena kolonna, ikona kreisajā pusē, teksts labajā (desktop — 2×2 kā līdz šim). */
   homeMobileListLayout?: boolean;
+  /** Desktop: pīlārus saliek vertikālā kolonnā (viens zem otra). */
+  desktopStacked?: boolean;
 };
 
 export function MarketingHeroPillarsGrid({
@@ -32,6 +34,7 @@ export function MarketingHeroPillarsGrid({
   isB = false,
   shellClassName,
   homeMobileListLayout = false,
+  desktopStacked = false,
 }: MarketingHeroPillarsGridProps) {
   const t = useTranslations("Hero");
   const raw = t.raw("pillars");
@@ -40,6 +43,7 @@ export function MarketingHeroPillarsGrid({
   const outerClass =
     shellClassName ??
     `${homeMarketingPillarGridShellClass} w-full pb-5 pt-4 sm:pb-6 sm:pt-6${isB ? " marketing-hero-b-pillars" : ""}`;
+  const forceDesktopStack = Boolean(designDirection && homeMobileListLayout && desktopStacked);
 
   return (
     <div className={outerClass}>
@@ -54,7 +58,9 @@ export function MarketingHeroPillarsGrid({
           className={
             designDirection
               ? homeMobileListLayout
-                ? "marketing-hero-pillars-mobile-grid marketing-hero-pillars-mobile-list flex w-full flex-col gap-3 md:flex md:flex-row md:flex-nowrap md:justify-between md:gap-4 lg:gap-5"
+                ? forceDesktopStack
+                  ? "marketing-hero-pillars-mobile-grid marketing-hero-pillars-mobile-list flex w-full flex-col gap-3 md:flex md:w-full md:max-w-[18.5rem] md:flex-col md:gap-3"
+                  : "marketing-hero-pillars-mobile-grid marketing-hero-pillars-mobile-list flex w-full flex-col gap-3 md:flex md:flex-row md:flex-nowrap md:justify-between md:gap-4 lg:gap-5"
                 : "marketing-hero-pillars-mobile-grid grid w-full grid-cols-2 max-md:gap-[0.65rem] md:flex md:flex-row md:flex-nowrap md:justify-between md:gap-4 lg:gap-5"
               : `flex w-full flex-row flex-nowrap justify-between gap-2 sm:gap-4 md:gap-5 ${homeMarketingPillarGridWidthClass}`
           }
@@ -67,7 +73,9 @@ export function MarketingHeroPillarsGrid({
               ? "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-row items-start gap-2.5 px-1 text-left sm:gap-3 sm:px-1"
               : designDirection
                 ? homeMobileListLayout
-                  ? "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--plain flex min-h-0 min-w-0 flex-row items-center justify-center gap-3 px-0 py-1.5 text-center md:min-w-0 md:flex-col md:items-center md:justify-center md:gap-2.5 md:px-1 md:py-0 md:flex-1 md:basis-0"
+                  ? forceDesktopStack
+                    ? "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--plain flex min-h-0 min-w-0 flex-row items-center justify-center gap-3 px-0 py-1.5 text-center md:w-full md:min-w-0 md:justify-start md:gap-2.5 md:px-1 md:py-1.5 md:text-left"
+                    : "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--plain flex min-h-0 min-w-0 flex-row items-center justify-center gap-3 px-0 py-1.5 text-center md:min-w-0 md:flex-col md:items-center md:justify-center md:gap-2.5 md:px-1 md:py-0 md:flex-1 md:basis-0"
                   : "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--mobile-card flex min-h-0 min-w-0 flex-col items-center justify-center gap-1 px-0.5 py-1 text-center md:flex-1 md:basis-0 md:gap-2.5 md:px-1 md:py-0"
                 : "marketing-hero-pillar flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center gap-2 px-0.5 text-center sm:gap-2.5 sm:px-0.5";
             const iconClass = isC
@@ -83,6 +91,8 @@ export function MarketingHeroPillarsGrid({
                     homeMobileListLayout && !isC
                       ? " max-md:min-h-0 max-md:max-h-none max-md:max-w-[min(100%,calc(100vw-4rem))] max-md:!whitespace-nowrap max-md:line-clamp-none max-md:text-center md:text-center"
                       : ""
+                  }${forceDesktopStack && !isC ? " md:max-w-none md:min-h-0 md:max-h-none md:line-clamp-none md:text-left" : ""}${
+                    forceDesktopStack && !isC && homeMobileListLayout ? " md:!whitespace-normal" : ""
                   }`}
                 >
                   {homeMobileListLayout && !isC ? p.title.replace(/\n/g, " ") : p.title}

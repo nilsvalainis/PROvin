@@ -316,6 +316,16 @@ export function MarketingHero({
       }
     />
   );
+  const heroPillarsRightStack = (
+    <MarketingHeroPillarsGrid
+      designDirection={designDirection}
+      isC={isC}
+      isB={isB}
+      homeMobileListLayout={designDirection}
+      desktopStacked
+      shellClassName={designDirection && !demoVariant ? "flex w-full justify-end pb-1 pt-0 md:pt-1" : undefined}
+    />
+  );
 
   const scrollLinkDesktopOnly =
     designDirection && !demoVariant ? <div className="hidden md:flex">{scrollToContentLink}</div> : scrollToContentLink;
@@ -352,8 +362,6 @@ export function MarketingHero({
   }
 
   const pillarsAndCta = pillarsAndCtaWithStepOneCta(heroStepOneCta);
-  /** Desktop orbit ar atsevišķu `OrderForm` id — poga iesniedz redzamo formu. */
-  const pillarsAndCtaMdHeroSubmit = pillarsAndCtaWithStepOneCta(heroStepOneCtaMd, { fadePillars: true });
 
   /** Mājas lapa: vienota virsma ar `home-intro` ir `page.tsx` wrapperī — šeit bez atsevišķa band-a. */
   const designDirHeroChrome =
@@ -483,26 +491,28 @@ export function MarketingHero({
                   </div>
                 </div>
                 {/* Desktop: hidden md:grid — tā pati loģika, otrs H1 tikai šajā zarā (redzams tikai md+) */}
-                <div className="hidden min-h-0 w-full flex-1 grid grid-rows-[1fr_auto] md:grid">
-                  <div className="relative flex min-h-0 w-full flex-1 flex-col">
-                    <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5 sm:px-8 sm:pb-0 sm:pt-1">
-                      {approvedBlock}
-                    </div>
-                    <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-visible px-4 sm:px-8">
-                      <div
-                        className={`flex min-h-0 w-full flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2 ${homeHeroOrderColumnMaxClass}`}
-                      >
-                        <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center">
-                          {heroTitleStack}
+                <div className="hidden min-h-0 w-full flex-1 md:block">
+                  <div
+                    className={`pointer-events-auto mx-auto grid min-h-0 w-full grid-cols-[minmax(0,1fr)_minmax(14.5rem,19.5rem)] items-start gap-8 px-4 lg:gap-10 lg:px-8 ${homeHeroOrderColumnMaxClass}`}
+                  >
+                    <div className="flex min-h-0 w-full flex-col lg:-translate-x-4">
+                      <div className="z-[1] flex shrink-0 justify-start pb-1 pt-2.5 sm:pb-0 sm:pt-1 md:[&_p]:text-left">
+                        {approvedBlock}
+                      </div>
+                      <div className="flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-visible">
+                        <div className="flex min-h-0 w-full flex-1 flex-col gap-2 py-1 sm:justify-evenly sm:gap-0 sm:py-2">
+                          <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-start justify-center md:[&_.marketing-hero-title-split]:items-start md:[&_.marketing-hero-title-line1]:items-start md:[&_.marketing-hero-title-line1-vin-un]:justify-start md:[&_.marketing-hero-title-line1-accent]:text-left md:[&_.marketing-hero-title-line2]:text-left md:[&_.marketing-hero-title-mid-rule]:justify-start md:[&_.marketing-hero-title-mid-rule__line]:mx-0 md:[&_.marketing-hero-title]:text-left">
+                            {heroTitleStack}
+                          </div>
+                          {heroOrderEntryMd}
+                          <div className="flex w-full flex-col items-start gap-1 pb-0.5 pt-0.5">{heroStepOneCtaMd}</div>
                         </div>
-                        {heroOrderEntryMd}
                       </div>
                     </div>
-                  </div>
-                  <div
-                    className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-5 ${homeHeroOrderColumnMaxClass}`}
-                  >
-                    {pillarsAndCtaMdHeroSubmit}
+                    <div className="relative z-[2] flex w-full min-h-0 flex-col items-stretch pt-4">
+                      <div className="w-full marketing-hero-fade-in-up marketing-hero-fade-in-up--3">{heroPillarsRightStack}</div>
+                      <div className="hidden md:flex w-full justify-start pt-1">{scrollToContentLink}</div>
+                    </div>
                   </div>
                 </div>
               </>
