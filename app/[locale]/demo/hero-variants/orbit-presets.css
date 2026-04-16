@@ -890,6 +890,35 @@
 }
 
 @media (max-width: 767px) {
+  /*
+   * Mobilais lock:
+   * - forms sākums paliek fiksētā Y zonā neatkarīgi no hero virsraksta izmaiņām,
+   * - Approved + Title kustas kā viens klasteris.
+   */
+  .marketing-hero-mobile-layout-lock {
+    --hero-mobile-title-base: clamp(1.9135rem, calc(6.862vmin + 0.554rem), 2.8375rem);
+    --hero-mobile-sludinajuma-line-h: calc(var(--hero-mobile-title-base) * 0.717);
+  }
+
+  .marketing-hero-mobile-header-slot {
+    height: clamp(15.75rem, 44svh, 19.5rem);
+  }
+
+  .marketing-hero-mobile-header-lock {
+    width: 100%;
+    transform: translateY(calc(-1 * var(--hero-mobile-sludinajuma-line-h)));
+  }
+
+  .marketing-hero-mobile-title-scale {
+    transform: scale(1.25);
+    transform-origin: top center;
+  }
+
+  .marketing-hero-mobile-form-anchor {
+    width: 100%;
+    margin-top: 0;
+  }
+
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-approved--home {
     margin-top: max(0.75rem, env(safe-area-inset-top, 0px));
     margin-bottom: 0.75rem;
@@ -900,9 +929,9 @@
     padding-bottom: max(2rem, calc(env(safe-area-inset-bottom, 0px) + 2rem));
   }
 
-  /* Mobilais H1: +35 % pret sākotnējo šī bloka bāzi; em attiecības (line1 / line2) nemainās */
+  /* Mobilais H1 bāze; reālo +25 % mērogo `marketing-hero-mobile-title-scale`. */
   .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-title.marketing-hero-title--orbit {
-    font-size: clamp(1.9135rem, calc(6.862vmin + 0.554rem), 2.8375rem);
+    font-size: var(--hero-mobile-title-base, clamp(1.9135rem, calc(6.862vmin + 0.554rem), 2.8375rem));
     line-height: 1;
     margin-bottom: 0;
   }
