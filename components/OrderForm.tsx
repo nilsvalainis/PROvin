@@ -16,7 +16,7 @@ import {
 } from "@/lib/order-field-validation";
 
 const labelHero =
-  "order-form-hero-label block text-left text-[12px] font-semibold uppercase tracking-[0.08em] text-[#e5e7eb] max-md:text-[calc(12px*1.2)]";
+  "order-form-hero-label block text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-[#e5e7eb]";
 
 const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
@@ -24,7 +24,7 @@ const labelDefault =
 /** Dark cockpit: laukam bez apakšējās robežas — līniju un zilo impulsu dod `HeroFieldScanLine`. */
 /** Hero: ≥16px līdz `sm`, lai iOS/Android nezoomē uz fokusu; sm+ atkal kompaktāks līnijas izskats. */
 const inputHeroNoBottom =
-  "order-form-hero-input relative z-10 box-border min-h-11 w-full min-w-0 max-w-full appearance-none rounded-none border-0 bg-transparent px-0 py-2.5 text-base font-normal leading-snug text-[#e5e7eb]/70 shadow-none outline-none ring-0 transition-[color] placeholder:text-[#e5e7eb]/36 focus:shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 sm:min-h-0 sm:text-[10px] sm:leading-[1.2] md:text-[16px] md:leading-normal";
+  "order-form-hero-input relative z-10 box-border min-h-9 w-full min-w-0 max-w-full appearance-none rounded-none border-0 bg-transparent px-0 py-2 text-[13px] font-normal leading-snug text-[#e5e7eb]/70 shadow-none outline-none ring-0 transition-[color] placeholder:text-[#e5e7eb]/36 focus:shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 sm:min-h-0 sm:text-[8px] sm:leading-[1.2] md:text-[13px] md:leading-snug";
 
 const inputDefault =
   "mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505]/75 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition-[border-color] placeholder:text-[#86868b] focus:border-provin-accent focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
@@ -65,7 +65,7 @@ type OrderFormProps = {
 function HeroFieldScanLine({ children, invalid }: { children: ReactNode; invalid?: boolean }) {
   return (
     <div
-      className={`order-form-hero-field relative z-0 mt-2 w-full min-w-0 max-w-full overflow-x-clip rounded-sm px-2 py-1 -mx-0.5${
+      className={`order-form-hero-field order-form-hero-field--card relative z-0 mt-1.5 w-full min-w-0 max-w-full overflow-x-clip rounded-2xl px-2.5 py-1.5${
         invalid ? " order-form-hero-field--invalid" : ""
       }`}
     >
@@ -251,12 +251,12 @@ export function OrderForm({
 
   const formShell =
     hero
-      ? `space-y-5 rounded-none border-0 bg-transparent px-1 py-5 sm:px-2 sm:py-6 ${className ?? ""}`
+      ? `space-y-4 rounded-none border-0 bg-transparent px-1 py-4 sm:px-2 sm:py-5 ${className ?? ""}`
       : compact
         ? `mt-6 space-y-4 border-t border-black/[0.06] pt-6 ${className ?? ""}`
         : `mt-10 space-y-6 rounded-none border-0 border-y border-black/[0.08] bg-white/[0.55] px-5 py-8 sm:px-10 sm:py-10 ${className ?? ""}`;
 
-  const gridGap = hero ? "gap-4" : compact ? "gap-4" : "gap-6";
+  const gridGap = hero ? "gap-3" : compact ? "gap-4" : "gap-6";
   const notesRows = hero ? 3 : compact ? 3 : 4;
 
   const hintClass = hero
@@ -266,8 +266,8 @@ export function OrderForm({
   const reqStarClass = hero ? "text-red-400" : "text-red-600";
   const firstStepVinPlaceholder = "IEVADI VIN";
   const firstStepListingPlaceholder = "IEVADI SLUDINĀJUMA SAITI";
-  const firstStepVinInputClassHero = `${inputBase} w-full tracking-normal max-md:!text-[calc(1rem*1.2)]`;
-  const firstStepListingInputClassHero = `${inputBase} max-md:!text-[calc(1rem*1.2)]`;
+  const firstStepVinInputClassHero = `${inputBase} w-full tracking-normal`;
+  const firstStepListingInputClassHero = `${inputBase}`;
   const secondStepVinInputClassHero = `${inputBase} w-full font-mono uppercase tracking-wide`;
   const firstStepVinInputClassDefault = `${inputBase} tracking-normal ${firstStepInfoTextSizeClass}`;
   const firstStepListingInputClassDefault = `${inputBase} ${firstStepInfoTextSizeClass}`;
@@ -589,7 +589,7 @@ export function OrderForm({
                     maxLength={500}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className={`${inputBase} min-h-[88px] resize-none sm:min-h-[72px] md:resize-y`}
+                    className={`${inputBase} min-h-[70px] resize-none sm:min-h-[58px] md:resize-y`}
                     placeholder={t("notesPlaceholder")}
                   />
                 </HeroFieldScanLine>

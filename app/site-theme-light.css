@@ -271,6 +271,30 @@ html[data-site-theme="light"] .order-form-hero-field:focus-within {
   background-color: transparent !important;
 }
 
+html[data-site-theme="light"] .order-form-hero-field--card {
+  border: 1px solid rgb(255 255 255 / 0.58) !important;
+  background: var(--dd-glass-fill) !important;
+  background-color: rgb(255 255 255 / 0.06) !important;
+  backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat)) !important;
+  -webkit-backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat)) !important;
+  box-shadow:
+    var(--dd-glass-inset),
+    0 0 0 1px rgb(255 255 255 / 0.04) inset,
+    var(--dd-glass-shadow-blue),
+    var(--dd-glass-shadow-tight),
+    var(--dd-glass-shadow-deep) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-site-theme="light"] .order-form-hero-field--card:hover {
+    border-color: rgb(0 102 255 / 0.22) !important;
+    background: var(--dd-glass-fill-hover) !important;
+    background-color: rgb(255 255 255 / 0.1) !important;
+    box-shadow: var(--dd-glass-hover) !important;
+    transform: translateY(-4px) scale(1.01);
+  }
+}
+
 html[data-site-theme="light"] .order-form-hero-field:focus-within input,
 html[data-site-theme="light"] .order-form-hero-field:focus-within textarea {
   color: rgb(0 0 0 / 0.7);
@@ -283,7 +307,7 @@ html[data-site-theme="light"] .order-form-hero-field:focus-within textarea::plac
 }
 
 html[data-site-theme="light"] .order-form-hero-field--invalid {
-  border-radius: 0.125rem;
+  border-radius: 1rem;
   border: 1px solid rgb(239 68 68) !important;
   background-color: rgb(254 242 242 / 0.95) !important;
   box-shadow:

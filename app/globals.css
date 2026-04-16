@@ -363,6 +363,30 @@ html:not([data-site-theme="light"]) main .bg-black {
   background-color: transparent;
 }
 
+/* Hero ievades lauki: tā pati kartīšu valoda kā 8 kartīšu sekcijā (dark glass). */
+.order-form-hero-field--card {
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 1rem;
+  background: linear-gradient(165deg, rgb(255 255 255 / 0.055), rgb(255 255 255 / 0.035));
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.35),
+    0 18px 48px rgb(0 0 0 / 0.35);
+  transition:
+    transform 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+    box-shadow 0.4s ease,
+    border-color 0.4s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .order-form-hero-field--card:hover {
+    border-color: rgb(0 102 255 / 0.22);
+    transform: translateY(-4px) scale(1.01);
+    box-shadow:
+      0 0 0 1px rgb(0 102 255 / 0.08),
+      0 22px 56px rgb(0 0 0 / 0.45);
+  }
+}
+
 .order-form-hero-field:focus-within input,
 .order-form-hero-field:focus-within textarea {
   color: rgb(229 231 235 / 0.7);
@@ -376,7 +400,7 @@ html:not([data-site-theme="light"]) main .bg-black {
 
 /* Hero: validācijas kļūda — sarkana apmale + viegls fons (ne window.alert) */
 .order-form-hero-field--invalid {
-  border-radius: 0.125rem;
+  border-radius: 1rem;
   border: 1px solid rgb(239 68 68); /* red-500 */
   background-color: rgb(69 10 10 / 0.28);
   box-shadow:
