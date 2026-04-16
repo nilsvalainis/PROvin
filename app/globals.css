@@ -44,10 +44,18 @@
     ),
     #030304;
   /* Tēmas pamats (tumšais); gaišais — `site-theme-light.css` uz `html[data-site-theme="light"]` */
-  --site-html-bg: #050505;
-  --site-body-bg: #050505;
-  --site-body-gradient: linear-gradient(180deg, #08080a 0%, #050505 55%, #050505 100%);
+  --site-html-bg: #121418;
+  --site-body-bg: #121418;
+  --site-body-gradient: linear-gradient(180deg, #161920 0%, #13161c 56%, #121418 100%);
   --site-body-fg: #ffffff;
+  /* Tumšais režīms: melnie bloki -> tumši pelēki ar knapi pamanāmu gradientu */
+  --site-dark-block-bg: #13161c;
+  --site-dark-block-gradient: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.02) 0%,
+    rgb(255 255 255 / 0.008) 38%,
+    rgb(255 255 255 / 0) 100%
+  );
 }
 
 html {
@@ -85,6 +93,19 @@ body {
   /* Papildu horizontālā telpa pie “Dynamic Island” / malām */
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Tumšais režīms: vienota melno bloku tonēšana uz tumši pelēku + minimāls gradients */
+html:not([data-site-theme="light"]) .bg-\[\#030304\],
+html:not([data-site-theme="light"]) .bg-\[\#040406\],
+html:not([data-site-theme="light"]) .bg-\[\#050505\],
+html:not([data-site-theme="light"]) .bg-black,
+html:not([data-site-theme="light"]) [class*="bg-[#030304"],
+html:not([data-site-theme="light"]) [class*="bg-[#040406"],
+html:not([data-site-theme="light"]) [class*="bg-[#050505"],
+html:not([data-site-theme="light"]) [class*="bg-black"] {
+  background-color: var(--site-dark-block-bg) !important;
+  background-image: var(--site-dark-block-gradient) !important;
 }
 
 /* Nevis `* { backface-visibility: hidden }` — tas veido pārāk daudz kompozīcijas slāņu un mobilajā
