@@ -321,15 +321,14 @@ export function MarketingHero({
     designDirection && !demoVariant ? <div className="hidden md:flex">{scrollToContentLink}</div> : scrollToContentLink;
 
   /**
-   * Web (md+): pīlārus vizuāli paceļ ar transform, lai vertikālais attālums līdz formai ≈ līdz pogai;
-   * layout plūsma nemainās — poga un lauki paliek tajās pašās pikseļu pozīcijās.
+   * Web (md+): hero 4 kartītes pagaidām paslēptas; mobilajā (max-md) tās paliek.
    * `fadePillars`: animāciju tikai uz pīlāriem — ārpus tās paliek CTA, lai poga nebūtu „puscaurspīdīga”.
    */
   function pillarsAndCtaWithStepOneCta(stepOneCtaSlot: ReactNode, options?: { fadePillars?: boolean }) {
     const fadePillars = options?.fadePillars ?? false;
     const pillarsEl =
       designDirection && !demoVariant ? (
-        <div className="max-md:contents md:block md:w-full">
+        <div className="max-md:contents md:hidden">
           {heroPillars}
         </div>
       ) : (
