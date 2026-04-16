@@ -19,9 +19,9 @@ export default async function HomePage() {
           <div className="home-hero-intro-surface">
             <MarketingHero homeOrbitPreset="s12" designDirection />
 
-            <section id="home-intro" className="relative z-[1] min-w-0 pb-10 pt-3 sm:pb-14 sm:pt-8">
+            <section id="home-intro" className="relative z-[1] min-w-0 pb-10 pt-5 sm:pb-14 sm:pt-8">
               <div className="demo-design-dir__shell">
-                <div className="mx-auto mt-1 w-full max-w-[min(100%,52rem)] sm:mt-3">
+                <div className="mx-auto mt-2 w-full max-w-[min(100%,52rem)] sm:mt-3">
                   <div className="text-center">
                     <h2 className="demo-design-dir__title mx-auto mb-0 max-w-[min(100%,48rem)] text-balance">
                       KAS IR{" "}
