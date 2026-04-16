@@ -970,6 +970,21 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   border-top-color: rgba(255, 255, 255, 0.1);
 }
 
+/*
+ * Mājas hero + „KAS IR PROVIN?” — ~2× tumšāks par kājenes stack; tā patā rampa:
+ * tumšs augšā → vieglāks vidū (HeroVisual caur slāni) → tumšs apakšā.
+ */
+.home-hero-intro-scrim-gradient {
+  background-image: linear-gradient(
+    to bottom,
+    rgb(2 2 2 / 0.99) 0%,
+    rgb(2 2 2 / 0.94) 22%,
+    rgb(2 2 2 / 0.76) 50%,
+    rgb(2 2 2 / 0.94) 78%,
+    rgb(2 2 2) 100%
+  );
+}
+
 /* Investigation Lab — „chrome” CTA (sudrabs → zils hover) */
 .lab-chrome-cta {
   background: linear-gradient(165deg, #f0f0f0 0%, #ffffff 38%, #d4d4d8 62%, #b8b8bc 100%);

@@ -817,6 +817,11 @@ html[data-site-theme="light"] .to-\[\#050505\] {
   --tw-gradient-to: #f0f2f5 !important;
 }
 
+/* Hero+intro scrim — gaišs; pelēcīgāks augšā/apakšā, gaišāks vidū (tas pats princips kā tumšajā). */
+html[data-site-theme="light"] .home-hero-intro-scrim-gradient {
+  background-image: linear-gradient(to bottom, #e7eaef 0%, #fafbfd 50%, #dce1e9 100%) !important;
+}
+
 /* Sīkā kolonna „Kas ir IRISS” — virsraksti bija gandrīz balti */
 html[data-site-theme="light"] .iriss-editorial-heading {
   color: #000000 !important;

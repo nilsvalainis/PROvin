@@ -18,14 +18,11 @@ export default async function HomePage() {
       <div className="relative z-10 min-w-0 bg-transparent">
         <div className="demo-design-dir min-w-0 pb-0 text-white">
           <div className="home-hero-intro-surface">
-            {/* Tas pats fona slāņu stack kā `#kontakti` (Footer) */}
-            <div className="home-footer-scrim pointer-events-none absolute inset-0 z-0 opacity-[0.12]">
+            {/* Kā `#kontakti`: HeroVisual + gradients; hero ir ~2× tumšāks (sk. .home-hero-intro-scrim-gradient). */}
+            <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.06]">
               <HeroVisual />
             </div>
-            <div
-              className="home-footer-scrim pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-[#050505]/95 via-[#050505]/88 via-[#050505]/82 via-[#050505]/78 to-[#050505]"
-              aria-hidden
-            />
+            <div className="home-hero-intro-scrim-gradient pointer-events-none absolute inset-0 z-[1]" aria-hidden />
             <div className="relative z-10 min-w-0">
               <MarketingHero homeOrbitPreset="s12" designDirection />
 
