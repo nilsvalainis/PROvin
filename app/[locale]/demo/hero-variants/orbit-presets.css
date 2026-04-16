@@ -874,6 +874,10 @@
     color: rgb(228 235 248 / 0.94) !important;
   }
 
+  .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-approved--home {
+    margin-top: max(0.5rem, calc(env(safe-area-inset-top, 0px) + 0.25rem));
+  }
+
   .marketing-hero-orbit-base.marketing-hero-section .demo-design-dir__card .marketing-hero-pillar-title,
   .marketing-hero-orbit-base.marketing-hero-section .marketing-hero-pillar--plain .marketing-hero-pillar-title {
     color: rgb(255 255 255 / 0.99);

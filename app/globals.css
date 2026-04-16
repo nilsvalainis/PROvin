@@ -95,15 +95,11 @@ body {
   padding-right: env(safe-area-inset-right, 0px);
 }
 
-/* Tumšais režīms: vienota melno bloku tonēšana uz tumši pelēku + minimāls gradients */
-html:not([data-site-theme="light"]) .bg-\[\#030304\],
-html:not([data-site-theme="light"]) .bg-\[\#040406\],
-html:not([data-site-theme="light"]) .bg-\[\#050505\],
-html:not([data-site-theme="light"]) .bg-black,
-html:not([data-site-theme="light"]) [class*="bg-[#030304"],
-html:not([data-site-theme="light"]) [class*="bg-[#040406"],
-html:not([data-site-theme="light"]) [class*="bg-[#050505"],
-html:not([data-site-theme="light"]) [class*="bg-black"] {
+/* Tumšais režīms: melnie satura bloki -> tumši pelēki (neietekmē header/menu shell) */
+html:not([data-site-theme="light"]) main .bg-\[\#030304\],
+html:not([data-site-theme="light"]) main .bg-\[\#040406\],
+html:not([data-site-theme="light"]) main .bg-\[\#050505\],
+html:not([data-site-theme="light"]) main .bg-black {
   background-color: var(--site-dark-block-bg) !important;
   background-image: var(--site-dark-block-gradient) !important;
 }

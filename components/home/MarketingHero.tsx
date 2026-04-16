@@ -485,7 +485,7 @@ export function MarketingHero({
                 {/* Desktop: hidden md:grid — tā pati loģika, otrs H1 tikai šajā zarā (redzams tikai md+) */}
                 <div className="hidden min-h-0 w-full flex-1 grid grid-rows-[1fr_auto] md:grid">
                   <div className="relative flex min-h-0 w-full flex-1 flex-col">
-                    <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5 sm:px-8 sm:pb-0 sm:pt-1">
+                    <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-4 sm:px-8 sm:pb-0 sm:pt-4">
                       {approvedBlock}
                     </div>
                     <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-visible px-4 sm:px-8">
@@ -509,7 +509,7 @@ export function MarketingHero({
             ) : (
               <div className="grid min-h-0 w-full flex-1 grid-rows-[1fr_auto]">
                 <div className="relative flex min-h-0 w-full flex-1 flex-col">
-                  <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-2.5 sm:px-8 sm:pb-0 sm:pt-1">
+                  <div className="pointer-events-auto z-[1] flex shrink-0 justify-center px-4 pb-1 pt-4 sm:px-8 sm:pb-0 sm:pt-4">
                     {approvedBlock}
                   </div>
                   <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-visible px-4 sm:px-8">
