@@ -230,23 +230,26 @@ export function MarketingHero({
     </a>
   );
 
-  const scrollToContentLink = designDirection ? (
-    scrollToContentLinkDesign("mt-3 sm:mt-4")
-  ) : (
-    <a
-      href={demoVariant ? "#" : "#site-content"}
-      onClick={demoVariant ? (e) => e.preventDefault() : undefined}
-      aria-label={t("scrollToPricingAria")}
-      className="group mx-auto mt-2 flex min-h-[44px] w-full max-w-[22rem] touch-manipulation flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-white/55 shadow-[0_16px_40px_rgb(0_0_0/0.35)] transition-[border-color,background-color,color,box-shadow] duration-200 hover:border-[#0066ff]/28 hover:bg-[#0066ff]/[0.09] hover:text-white/85 active:bg-white/[0.07] sm:mt-2.5 sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
-    >
-      <span className="w-full text-balance text-center">{t("scrollToPricingAria")}</span>
-      <ChevronDown
-        className="mx-auto h-4 w-4 shrink-0 text-[#0066ff] opacity-95 transition-transform duration-200 group-hover:translate-y-0.5"
-        strokeWidth={2}
-        aria-hidden
-      />
-    </a>
-  );
+  const showHeroScrollChevron = !(designDirection && !demoVariant);
+  const scrollToContentLink = !showHeroScrollChevron
+    ? null
+    : designDirection
+      ? scrollToContentLinkDesign("mt-3 sm:mt-4")
+      : (
+          <a
+            href={demoVariant ? "#" : "#site-content"}
+            onClick={demoVariant ? (e) => e.preventDefault() : undefined}
+            aria-label={t("scrollToPricingAria")}
+            className="group mx-auto mt-2 flex min-h-[44px] w-full max-w-[22rem] touch-manipulation flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-center text-[9px] font-semibold uppercase leading-snug tracking-[0.16em] text-white/55 shadow-[0_16px_40px_rgb(0_0_0/0.35)] transition-[border-color,background-color,color,box-shadow] duration-200 hover:border-[#0066ff]/28 hover:bg-[#0066ff]/[0.09] hover:text-white/85 active:bg-white/[0.07] sm:mt-2.5 sm:min-h-[2.75rem] sm:gap-2 sm:px-5 sm:text-[11px] sm:tracking-[0.2em]"
+          >
+            <span className="w-full text-balance text-center">{t("scrollToPricingAria")}</span>
+            <ChevronDown
+              className="mx-auto h-4 w-4 shrink-0 text-[#0066ff] opacity-95 transition-transform duration-200 group-hover:translate-y-0.5"
+              strokeWidth={2}
+              aria-hidden
+            />
+          </a>
+        );
 
   const heroOrderEntryShellClass = `${homeHeroOrderColumnMaxClass} scroll-mt-[calc(2.75rem+1px)] px-2 sm:px-1 max-md:mt-3 mt-2 sm:mt-3`;
 
