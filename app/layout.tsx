@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import Script from "next/script";
 import { Inter } from "next/font/google";
-import { GoogleAnalyticsScripts } from "@/components/GoogleAnalyticsScripts";
-import { SiteVercelAnalytics } from "@/components/SiteVercelAnalytics";
+import { ConsentAwareAnalytics } from "@/components/ConsentAwareAnalytics";
+import { getGaMeasurementId } from "@/lib/analytics-public";
 import { SiteThemeProvider } from "@/components/providers/SiteThemeProvider";
 import { SITE_THEME_STORAGE_KEY } from "@/lib/site-theme";
 import "./globals.css";
@@ -15,6 +15,7 @@ const inter = Inter({
 });
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  const gaMeasurementId = getGaMeasurementId();
   return (
     <html className={`${inter.variable} min-w-0 max-w-full overflow-x-clip`} suppressHydrationWarning>
       <body className="min-h-dvh min-w-0 max-w-full overflow-x-clip font-sans">
@@ -27,8 +28,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
         <SiteThemeProvider>
           {children}
-          <GoogleAnalyticsScripts />
-          <SiteVercelAnalytics />
+          <ConsentAwareAnalytics gaMeasurementId={gaMeasurementId} />
         </SiteThemeProvider>
       </body>
     </html>

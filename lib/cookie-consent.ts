@@ -1,3 +1,6 @@
+/** Notikums pēc `CookieConsent` saglabāšanas — lai analītika ielādējas bez lapas pārlādes. */
+export const PROVIN_CONSENT_UPDATED_EVENT = "provin-consent-updated";
+
 /** Lokālā glabātuve piekrišanas stāvoklim (nav HTTP-only; lasāms JS). */
 export const CONSENT_STORAGE_KEY = "provin_cookie_consent";
 

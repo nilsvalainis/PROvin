@@ -26,7 +26,7 @@
       },
       {
         "title": "6. Trešās puses",
-        "body": "Maksājumi: Stripe. Vietnes mitināšana: jūsu izvēlētais pakalpojumu sniedzējs (piemēram, Vercel). Nākotnē var tikt pieslēgta trešās puses analītika (piemēram, Google Analytics) — tikai pēc atsevišķas piekrišanas un atbilstošas informācijas šajā politikā."
+        "body": "Maksājumi: Stripe. Vietnes mitināšana: jūsu izvēlētais pakalpojumu sniedzējs (piemēram, Vercel). Google Analytics 4 un Vercel Web Analytics tiek iedarbināti tikai tad, ja sīkdatņu joslā piekrītat „analītikai”. Ja GA nav konfigurēts, Google skripti netiek ielādēti."
       },
       {
         "title": "7. Glabāšanas termiņš",

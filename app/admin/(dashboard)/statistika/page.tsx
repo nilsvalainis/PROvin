@@ -40,8 +40,9 @@ export default async function AdminStatistikaPage() {
           <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
             {onVercel ? (
               <>
-                Šī izvietošana darbojas uz Vercel. Vietnē ir ieslēgts <span className="font-medium text-[var(--color-apple-text)]">@vercel/analytics</span>{" "}
-                — apmeklējumu dati un lapu skatījumi parādās Vercel projekta sadaļā{" "}
+                Šī izvietošana darbojas uz Vercel. <span className="font-medium text-[var(--color-apple-text)]">@vercel/analytics</span>{" "}
+                ielādējas tikai pēc apmeklētāja piekrišanas „analītikai” sīkdatņu joslā; tad apmeklējumu dati un lapu
+                skatījumi parādās Vercel projekta sadaļā{" "}
                 <span className="font-medium text-[var(--color-apple-text)]">Analytics</span> (pēc pierakstīšanās).
               </>
             ) : (
@@ -49,8 +50,7 @@ export default async function AdminStatistikaPage() {
                 Lokālā izstrādē vai uz citas platformas detalizēti skaitļi šeit nav. Uz{" "}
                 <span className="font-medium text-[var(--color-apple-text)]">Vercel</span> ieslēdziet Web Analytics
                 projektā un pievienojiet pakotni <code className="rounded bg-slate-100 px-1 py-0.5 text-[12px]">@vercel/analytics</code>{" "}
-                (jau ir <code className="rounded bg-slate-100 px-1 py-0.5 text-[12px]">SiteVercelAnalytics</code>{" "}
-                saknes layoutā).
+                (saknes layoutā — <code className="rounded bg-slate-100 px-1 py-0.5 text-[12px]">ConsentAwareAnalytics</code>).
               </>
             )}
           </p>

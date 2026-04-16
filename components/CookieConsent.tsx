@@ -8,6 +8,7 @@ import {
   CONSENT_STORAGE_KEY,
   PENDING_ATTR_KEY,
   parseConsent,
+  PROVIN_CONSENT_UPDATED_EVENT,
   type ConsentState,
 } from "@/lib/cookie-consent";
 
@@ -102,6 +103,9 @@ export function CookieConsent() {
       clearAttrCookie();
     }
     setVisible(false);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent(PROVIN_CONSENT_UPDATED_EVENT));
+    }
   }
 
   function onNecessary() {
