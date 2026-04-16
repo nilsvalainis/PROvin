@@ -281,11 +281,18 @@ export function MarketingHero({
    * Ārpus `<form>`: `type="submit"` + `form=` dažos pārlūkos / ar `md:hidden` formu zaru mēdz nestrādāt.
    * `requestSubmit()` uz konkrēto `id` vienmēr izsauc tās pašas formas `onSubmit` (kā „īstā” iesniegšana).
    */
-  function heroStepOneCtaForFormId(formDomId: string) {
+  function heroStepOneCtaForFormId(
+    formDomId: string,
+    options?: {
+      /** Tikai `md+` zaram: nedaudz pacelt CTA pret formu, nemainot virsraksta / IRISS bloku. */
+      mdNudgeCtaTowardForm?: boolean;
+    },
+  ) {
     if (!designDirection || demoVariant || heroOrderStep !== 1) return null;
+    const mdCtaTowardFormClass = options?.mdNudgeCtaTowardForm ? "md:-mt-2.5 md:pt-0" : "";
     return (
       <div
-        className={`pointer-events-auto relative z-[80] flex w-full justify-center px-1 pt-1 sm:pt-2 md:-mt-5 md:pt-0 max-md:mt-2 max-md:pt-1 ${homeHeroOrderFormTwoCardsWidthClass}`}
+        className={`pointer-events-auto relative z-[80] flex w-full justify-center px-1 pt-1 sm:pt-2 max-md:mt-2 max-md:pt-1 ${mdCtaTowardFormClass} ${homeHeroOrderFormTwoCardsWidthClass}`}
       >
         <button
           type="button"
@@ -303,7 +310,7 @@ export function MarketingHero({
 
   const heroStepOneCta = heroStepOneCtaForFormId(HOME_HERO_ORDER_FORM_ID);
   const heroStepOneCtaSm = heroStepOneCtaForFormId(HOME_HERO_ORDER_FORM_ID_SM);
-  const heroStepOneCtaMd = heroStepOneCtaForFormId(HOME_HERO_ORDER_FORM_ID_MD);
+  const heroStepOneCtaMd = heroStepOneCtaForFormId(HOME_HERO_ORDER_FORM_ID_MD, { mdNudgeCtaTowardForm: true });
 
   const heroPillars = (
     <MarketingHeroPillarsGrid
@@ -470,7 +477,7 @@ export function MarketingHero({
                   <div
                     className={`marketing-hero-mobile-layout-lock pointer-events-auto flex w-full min-w-0 shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] max-md:min-h-[100dvh] max-md:flex max-md:flex-col max-md:justify-start ${homeHeroOrderColumnMaxClass}`}
                   >
-                    <div className="marketing-hero-mobile-header-slot flex w-full shrink-0 items-start justify-center pt-5">
+                    <div className="marketing-hero-mobile-header-slot flex w-full shrink-0 items-start justify-center">
                       <div className="marketing-hero-mobile-header-lock z-[1] flex w-full shrink-0 flex-col items-center">
                         <div className="flex w-full shrink-0 justify-center pb-1 pt-2.5">{approvedBlock}</div>
                         <div className="marketing-hero-orbit-center-sheet marketing-hero-mobile-title-scale flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
@@ -504,7 +511,7 @@ export function MarketingHero({
                     </div>
                   </div>
                   <div
-                    className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-1 md:-mt-1 md:pt-0 ${homeHeroOrderColumnMaxClass}`}
+                    className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-1 md:pt-0 ${homeHeroOrderColumnMaxClass}`}
                   >
                     {pillarsAndCtaMdHeroSubmit}
                   </div>
