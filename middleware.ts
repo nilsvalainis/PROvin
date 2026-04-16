@@ -15,10 +15,6 @@ export default function middleware(request: NextRequest) {
     }
     return NextResponse.next();
   }
-  /* Static HTML packs under /public/concept-demos — bypass locale prefix */
-  if (pathname.startsWith("/concept-demos")) {
-    return NextResponse.next();
-  }
   return intlMiddleware(request);
 }
 

@@ -1,1 +1,0 @@
-const v=document.getElementById("v"),m=document.getElementById("m");v.addEventListener("input",()=>{const x=v.value.toUpperCase().replace(/[^A-Z0-9]/g,"");v.value=x;m.textContent=x.length?x.length+"/17":""});

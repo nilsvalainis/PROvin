@@ -1,5 +1,5 @@
 /**
- * Hero demo orbitālās saimes identifikatori — `/demo/hero-variants`.
+ * Hero orbitālo „melns + sudrabs” apakšvariantu identifikatori (S12/S19/S20 mājas lapā).
  * Atsauces: `i` (Orbital halos), `j10` (Pelēks · augšas gaisma), `s1`–`s20` (melns + sudrabs).
  */
 

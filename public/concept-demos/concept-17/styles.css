@@ -1,7 +1,0 @@
-.story{overflow-x:hidden}
-    .panel{min-height:110vh;padding:clamp(3rem,10vw,7rem) clamp(1.25rem,4vw,3rem);position:relative}
-    h1,h2{margin:0;line-height:1.05}
-    h1{font-size:clamp(2.4rem,6vw,4rem);font-weight:750;position:sticky;top:18vh}
-    h2{font-size:clamp(1.6rem,3vw,2.2rem);margin-bottom:.75rem}
-    p{max-width:52ch;opacity:.78;line-height:1.55}
-    .blob{position:absolute;inset:-20% 10% auto; height:70vh;border-radius:40%;filter:blur(60px);opacity:.55;background:radial-gradient(circle at 30% 30%,rgba(0,102,255,.55),transparent 60%);transform:translateY(var(--ty,0))}

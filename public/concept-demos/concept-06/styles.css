@@ -1,6 +1,0 @@
-.dash{max-width:1000px;margin:0 auto;padding:2rem 1.25rem 3rem}
-    h1{margin:0 0 .25rem;font-size:1.6rem} .muted{margin:0;opacity:.65;font-size:.9rem}
-    .charts{display:grid;gap:1.25rem;margin-top:1.5rem}
-    @media(min-width:820px){.charts{grid-template-columns:1fr 1fr}}
-    canvas{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:.75rem}
-    .btn{margin-top:1rem;border:0;border-radius:12px;padding:.75rem 1.1rem;font-weight:600;cursor:pointer;background:#e8f0ff;color:#0a1020}

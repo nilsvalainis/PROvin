@@ -17,9 +17,6 @@ export function AdminSidebarNav({ baseUrl }: { baseUrl?: string }) {
 
   const ordersSectionActive =
     pathname === "/admin" || pathname === "/admin/" || Boolean(pathname?.startsWith("/admin/orders/"));
-  const demoHubActive = Boolean(pathname && /\/demo\/?$/.test(pathname));
-  const staticDemoActive = Boolean(pathname?.includes("static-concepts"));
-  const marketingHeroDemoActive = Boolean(pathname?.includes("marketing-hero-concepts"));
   const pkdInvoiceActive = Boolean(pathname?.startsWith("/admin/commission-invoice"));
   const statistikaActive = Boolean(pathname?.startsWith("/admin/statistika"));
 
@@ -39,18 +36,6 @@ export function AdminSidebarNav({ baseUrl }: { baseUrl?: string }) {
       </p>
       <Link href="/admin/commission-invoice" className={navItemClass(pkdInvoiceActive)}>
         Komisijas rēķins PDF
-      </Link>
-      <p className="hidden pt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-provin-muted)] md:block">
-        Dizaina demo
-      </p>
-      <Link href="/demo" className={navItemClass(demoHubActive)}>
-        Demo studija
-      </Link>
-      <Link href="/demo/static-concepts" className={navItemClass(staticDemoActive)}>
-        Statiskie HTML (30)
-      </Link>
-      <Link href="/demo/marketing-hero-concepts" className={navItemClass(marketingHeroDemoActive)}>
-        5 mārketinga hero
       </Link>
       <div className="md:pt-1">
         <LogoutButton />

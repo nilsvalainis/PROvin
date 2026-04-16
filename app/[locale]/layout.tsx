@@ -7,13 +7,11 @@ import { LocaleHtmlLang } from "@/components/LocaleHtmlLang";
 import { CookieConsent } from "@/components/CookieConsent";
 import { LenisProvider } from "@/components/providers/LenisProvider";
 import { Header } from "@/components/Header";
-import { HideOnDemoPaths } from "@/components/layout/HideOnDemoPaths";
 import { SiteOrderCtaPin } from "@/components/home/SiteOrderCtaPin";
 import { HomeReloadScrollToTop } from "@/components/home/HomeReloadScrollToTop";
 import { SiteSectionRail } from "@/components/home/SiteSectionRail";
-import { DemoPathThemeToggle } from "@/components/site-theme/DemoPathThemeToggle";
 import { routing } from "@/i18n/routing";
-import "./demo/design-direction/demo-design-direction.css";
+import "./design-direction-theme.css";
 
 type Props = { children: ReactNode; params: Promise<{ locale: string }> };
 
@@ -69,13 +67,10 @@ export default async function LocaleLayout({ children, params }: Props) {
         <LocaleHtmlLang />
         <SiteSectionRail />
         <SiteOrderCtaPin />
-        <HideOnDemoPaths>
-          <Header />
-        </HideOnDemoPaths>
+        <Header />
         <main className="relative z-10 min-w-0 max-w-full overflow-x-clip pt-0 pb-0">
           {children}
         </main>
-        <DemoPathThemeToggle />
         <CookieConsent />
       </LenisProvider>
     </NextIntlClientProvider>

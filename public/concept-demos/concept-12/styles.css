@@ -1,6 +1,0 @@
-.hero{min-height:160vh;padding:clamp(2.5rem,8vw,6rem) 1.25rem}
-    .eyebrow{letter-spacing:.35em;text-transform:uppercase;font-size:.72rem;opacity:.45;margin:0}
-    .k1,.k2{margin:0;line-height:.9;font-weight:850;letter-spacing:-.04em;text-transform:uppercase}
-    .k1{font-size:clamp(3.2rem,14vw,9rem);transform-origin:left center;transition:transform .15s ease-out}
-    .k2{font-size:clamp(2.2rem,9vw,5.5rem);opacity:.85;transform-origin:left center;transition:transform .15s ease-out}
-    .sub{max-width:46ch;margin-top:1.25rem;font-size:1.05rem;color:#2b3140}

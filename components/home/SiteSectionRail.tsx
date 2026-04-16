@@ -63,9 +63,7 @@ export function SiteSectionRail() {
     normalizedPath === "/" ||
     normalizedPath === "" ||
     normalizedPath === "/pasutit" ||
-    normalizedPath === "/biezi-jautajumi" ||
-    normalizedPath === "/demo" ||
-    normalizedPath.startsWith("/demo/");
+    normalizedPath === "/biezi-jautajumi";
 
   const sections = useMemo(() => buildSiteRailSections(locale, normalizedPath), [locale, normalizedPath]);
 

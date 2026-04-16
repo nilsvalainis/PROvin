@@ -7,15 +7,14 @@ import { normalizeSitePath } from "@/lib/site-rail-sections";
 
 /**
  * Globāla „Pasūtīt” — labais augšējais stūris, pill estētika kā mobilā pasūtīšanas josla.
- * Slēpts demo lapās un tur, kur jau ir sliede / headera izvēlne (sākums, pasūtīt, BUJ).
+ * Slēpts tur, kur jau ir sliede / headera izvēlne (sākums, pasūtīt, BUJ).
  */
 export function SiteOrderCtaPin() {
   const pathname = usePathname() ?? "";
   const locale = useLocale();
   const t = useTranslations("Hero");
   const p = normalizeSitePath(pathname);
-  const hidePin =
-    p === "/demo" || p.startsWith("/demo/") || p === "/" || p === "" || p === "/pasutit" || p === "/biezi-jautajumi";
+  const hidePin = p === "/" || p === "" || p === "/pasutit" || p === "/biezi-jautajumi";
 
   if (hidePin) return null;
 

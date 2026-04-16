@@ -1,6 +1,6 @@
 /**
- * Layout / stila virziens — `.demo-design-dir` sakne.
- * Importēts `app/[locale]/layout.tsx` (kopīgs ar `/demo/design-direction` un sākumlapu).
+ * Layout / stila virziens — `.demo-design-dir` sakne (klases nosaukums vēsturisks).
+ * Importēts `app/[locale]/layout.tsx` (sākumlapa un pārējās sadaļas).
  */
 .demo-design-dir {
   --dd-max: 72rem;

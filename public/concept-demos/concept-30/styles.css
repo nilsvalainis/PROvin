@@ -1,8 +1,0 @@
-:root{--bg:#f6f7fb;--fg:#0b1020;--a:#0066ff;--pad:clamp(1.25rem,3vw,2.25rem)}
-    .root{max-width:980px;margin:0 auto;padding:var(--pad);display:grid;gap:var(--gap,1rem)}
-    .block{border:1px solid rgba(0,0,0,.10);border-radius:18px;padding:var(--pad);background:rgba(255,255,255,.65)}
-    h1{margin:0 0 .35rem;font-size:var(--h,clamp(2rem,4vw,3rem));line-height:1.02}
-    p{margin:0;opacity:.75;line-height:1.45}
-    label{display:block;font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;opacity:.55;margin-bottom:.35rem}
-    input{width:100%;padding:.85rem 1rem;border-radius:14px;border:1px solid rgba(0,0,0,.12);font:inherit;outline:none}
-    button{border:0;border-radius:14px;padding:.75rem 1rem;font-weight:800;cursor:pointer;background:var(--a);color:#fff}

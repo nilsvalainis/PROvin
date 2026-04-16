@@ -39,17 +39,17 @@ export {
 export type MarketingHeroHomeOrbitPreset = "s12" | "s19" | "s20";
 
 export type MarketingHeroProps = {
-  /** Salīdzināšanas demo — `/demo/hero-variants`; noklusējumā nav. */
+  /** Iekšējie hero vizuālie varianti (noklusējumā nav — tikai ja nepieciešams). */
   demoVariant?: HeroVisualDemoVariant;
   /** Produkcija: S12 / S19 / S20 (melns+sudrabs); nedrīkst lietot kopā ar `demoVariant`. */
   homeOrbitPreset?: MarketingHeroHomeOrbitPreset;
   /** Sākumlapa: tipogrāfija / CTA saskaņā ar `demo-design-dir` virzienu. */
   designDirection?: boolean;
-  /** Sekcijas `id` (demo: `demo-hero-a` utt.). */
+  /** Sekcijas `id` (pēc vajadzības). */
   sectionDomId?: string;
-  /** Dekoratīvs spidometrs zem virsraksta (demo). */
+  /** Dekoratīvs spidometrs zem virsraksta. */
   demoSpeedometer?: boolean;
-  /** Orbitālo gredzenu pseudo-elementu animācija: `static` = apstādināts (demo). */
+  /** Orbitālo gredzenu pseudo-elementu animācija: `static` = apstādināts. */
   demoOrbitRings?: "spin" | "static";
 };
 
