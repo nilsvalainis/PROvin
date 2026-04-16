@@ -468,15 +468,17 @@ export function MarketingHero({
                 {/* Mobilais: md:hidden — tikai CSS, bez JS viewport zara */}
                 <div className="mx-auto flex w-full min-w-0 max-w-full shrink-0 flex-col items-center md:hidden">
                   <div
-                    className={`pointer-events-auto flex w-full min-w-0 shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] max-md:min-h-[100dvh] max-md:flex max-md:flex-col max-md:justify-center ${homeHeroOrderColumnMaxClass}`}
+                    className={`marketing-hero-mobile-layout-lock pointer-events-auto flex w-full min-w-0 shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] max-md:min-h-[100dvh] max-md:flex max-md:flex-col max-md:justify-start ${homeHeroOrderColumnMaxClass}`}
                   >
-                    <div className="z-[1] flex shrink-0 justify-center pb-1 pt-2.5">
-                      {approvedBlock}
-                    </div>
-                    <div className="flex flex-col gap-3 py-0">
-                      <div className="marketing-hero-orbit-center-sheet flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
-                        {heroTitleStack}
+                    <div className="marketing-hero-mobile-header-slot flex w-full shrink-0 items-start justify-center">
+                      <div className="marketing-hero-mobile-header-lock z-[1] flex w-full shrink-0 flex-col items-center">
+                        <div className="flex w-full shrink-0 justify-center pb-1 pt-2.5">{approvedBlock}</div>
+                        <div className="marketing-hero-orbit-center-sheet marketing-hero-mobile-title-scale flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
+                          {heroTitleStack}
+                        </div>
                       </div>
+                    </div>
+                    <div className="marketing-hero-mobile-form-anchor flex w-full flex-col gap-3 py-0">
                       {heroOrderEntrySm}
                       <div className="flex w-full flex-col items-center gap-1 pb-0.5 pt-0.5">
                         {heroStepOneCtaSm}
@@ -502,7 +504,7 @@ export function MarketingHero({
                     </div>
                   </div>
                   <div
-                    className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-5 ${homeHeroOrderColumnMaxClass}`}
+                    className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-3 ${homeHeroOrderColumnMaxClass}`}
                   >
                     {pillarsAndCtaMdHeroSubmit}
                   </div>
@@ -524,7 +526,7 @@ export function MarketingHero({
                   </div>
                 </div>
                 <div
-                  className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-5${
+                  className={`relative z-[2] mx-auto flex w-full shrink-0 flex-col items-center pt-1 sm:pt-3${
                     orbitHomeCenterLayout
                       ? ` ${homeHeroOrderColumnMaxClass} marketing-hero-fade-in-up marketing-hero-fade-in-up--3`
                       : " max-w-[min(100%,53.76rem)]"
