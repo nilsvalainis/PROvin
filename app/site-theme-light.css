@@ -215,19 +215,20 @@ html[data-site-theme="light"] .provin-home-pill-cta:hover:not(:disabled) {
 /* Gaišajā tēmā tas pats akcents, tikai vēl maigāks. */
 html[data-site-theme="light"] :where(.text-provin-accent, [class*="text-provin-accent"], .marketing-hero-h1-blue) {
   text-shadow:
-    0 0 0.35px rgb(255 255 255 / 0.25),
-    0 0 6px rgb(0 102 255 / 0.1);
+    0 0 0.55px rgb(255 255 255 / 0.34),
+    0 0 8px rgb(0 102 255 / 0.16);
+  filter: saturate(1.06) brightness(1.02);
 }
 
 html[data-site-theme="light"] :where(.provin-home-pill-cta, .provin-btn, [class*="bg-provin-accent"]) {
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.28),
+    inset 0 1px 0 rgb(255 255 255 / 0.36),
     inset 0 -1px 0 rgb(0 0 0 / 0.08),
-    0 0 10px rgb(0 102 255 / 0.1);
+    0 0 12px rgb(0 102 255 / 0.14);
 }
 
 html[data-site-theme="light"] :where(.provin-home-pill-cta, .provin-btn, [class*="bg-provin-accent"])::before {
-  opacity: 0.28;
+  opacity: 0.38;
 }
 
 html[data-site-theme="light"] .provin-home-pill-cta:focus-visible {
