@@ -817,13 +817,14 @@ html[data-site-theme="light"] .to-\[\#050505\] {
   --tw-gradient-to: #f0f2f5 !important;
 }
 
-/* Hero+intro scrim — gaišs; pelēcīgāks augšā/apakšā, gaišāks vidū + vieglas „plūsmas”. */
+/* Hero+intro scrim — tumšāki gali, gaišāks sudrabains vidus + vieglas plūsmas. */
 html[data-site-theme="light"] .home-hero-intro-scrim-gradient {
   background-image:
-    radial-gradient(ellipse 100% 55% at 50% 8%, rgb(255 255 255 / 0.72), transparent 56%),
-    radial-gradient(ellipse 85% 50% at 6% 90%, rgb(0 102 255 / 0.07), transparent 52%),
-    radial-gradient(ellipse 80% 48% at 94% 85%, rgb(200 210 225 / 0.35), transparent 50%),
-    linear-gradient(to bottom, #e1e5ed 0%, #fafbfd 48%, #d5dbe5 100%) !important;
+    radial-gradient(ellipse 120% 72% at 50% 50%, rgb(255 255 255 / 0.88), transparent 60%),
+    radial-gradient(ellipse 100% 55% at 50% 8%, rgb(255 255 255 / 0.65), transparent 56%),
+    radial-gradient(ellipse 85% 50% at 6% 90%, rgb(0 102 255 / 0.065), transparent 52%),
+    radial-gradient(ellipse 80% 48% at 94% 85%, rgb(190 200 215 / 0.38), transparent 50%),
+    linear-gradient(to bottom, #c4cad4 0%, #cdd3dd 12%, #fafcfd 50%, #cdd3dd 88%, #c4cad4 100%) !important;
 }
 
 /* Sīkā kolonna „Kas ir IRISS” — virsraksti bija gandrīz balti */
