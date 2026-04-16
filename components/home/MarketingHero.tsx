@@ -470,7 +470,7 @@ export function MarketingHero({
                   <div
                     className={`marketing-hero-mobile-layout-lock pointer-events-auto flex w-full min-w-0 shrink-0 flex-col px-4 pb-[max(0.875rem,env(safe-area-inset-bottom,0px))] max-md:min-h-[100dvh] max-md:flex max-md:flex-col max-md:justify-start ${homeHeroOrderColumnMaxClass}`}
                   >
-                    <div className="marketing-hero-mobile-header-slot flex w-full shrink-0 items-start justify-center">
+                    <div className="marketing-hero-mobile-header-slot flex w-full shrink-0 items-start justify-center pt-5">
                       <div className="marketing-hero-mobile-header-lock z-[1] flex w-full shrink-0 flex-col items-center">
                         <div className="flex w-full shrink-0 justify-center pb-1 pt-2.5">{approvedBlock}</div>
                         <div className="marketing-hero-orbit-center-sheet marketing-hero-mobile-title-scale flex w-full shrink-0 flex-col items-center justify-center [contain:layout]">
