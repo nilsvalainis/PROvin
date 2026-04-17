@@ -11,7 +11,9 @@ import {
   PROVIN_MILEAGE_TABLE_DOM_KIND,
   PROVIN_MILEAGE_TABLE_FIELD,
   emptyAutoRecordsServiceRow,
+  sourcePdfChecklistHasAny,
 } from "@/lib/admin-source-blocks";
+import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
 import {
   autoRecordsRowHasData,
   formatAutoRecordsDateForOutput,
@@ -244,6 +246,18 @@ export function AdminAutoRecordsSourceBlock({
           </div>
 
           <div className={`mt-auto w-full min-w-0 shrink-0 pt-2 ${trafficFillLevel ? "px-2 pb-2" : ""}`}>
+        <AdminSourcePdfChecklist
+          idPrefix="auto-records"
+          value={value.pdfChecklist}
+          readOnly={readOnly}
+          disabled={disabled}
+          onChange={(next) =>
+            onChange({
+              ...value,
+              pdfChecklist: sourcePdfChecklistHasAny(next) ? next : undefined,
+            })
+          }
+        />
         <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">Komentāri</label>
         {readOnly ? (
           <div className="min-h-[36px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">

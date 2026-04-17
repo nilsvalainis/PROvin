@@ -15,7 +15,9 @@ import {
   PROVIN_VENDOR_FIELD,
   emptyAutoRecordsServiceRow,
   emptyLtabRow,
+  sourcePdfChecklistHasAny,
 } from "@/lib/admin-source-blocks";
+import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import {
   autoRecordsRowHasData,
@@ -408,6 +410,20 @@ export function AdminVendorAvotuSourceBlock({
       </div>
 
       <div className={`mt-auto w-full min-w-0 shrink-0 pt-2 ${trafficFillLevel ? "px-2 pb-2" : ""}`}>
+        {blockKey === "autodna" || blockKey === "carvertical" ? (
+          <AdminSourcePdfChecklist
+            idPrefix={idBase}
+            value={value.pdfChecklist}
+            readOnly={readOnly}
+            disabled={disabled}
+            onChange={(next) =>
+              onChange({
+                ...value,
+                pdfChecklist: sourcePdfChecklistHasAny(next) ? next : undefined,
+              })
+            }
+          />
+        ) : null}
         <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">Komentāri</label>
         {readOnly ? (
           <div className="min-h-[40px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">

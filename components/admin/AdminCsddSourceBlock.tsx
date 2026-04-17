@@ -13,7 +13,9 @@ import {
   LISTING_ANALYSIS_COMMENT_LABEL,
   PROVIN_MILEAGE_TABLE_DOM_KIND,
   PROVIN_MILEAGE_TABLE_FIELD,
+  sourcePdfChecklistHasAny,
 } from "@/lib/admin-source-blocks";
+import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
 import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
@@ -384,6 +386,18 @@ export function AdminCsddSourceBlock({
       </div>
 
       <div className={`mt-2 w-full min-w-0 shrink-0 border-t border-slate-200/80 pt-2`}>
+        <AdminSourcePdfChecklist
+          idPrefix="csdd"
+          value={value.pdfChecklist}
+          readOnly={readOnly}
+          disabled={disabled}
+          onChange={(next) =>
+            onChange({
+              ...value,
+              pdfChecklist: sourcePdfChecklistHasAny(next) ? next : undefined,
+            })
+          }
+        />
         <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
           {LISTING_ANALYSIS_COMMENT_LABEL}
         </label>

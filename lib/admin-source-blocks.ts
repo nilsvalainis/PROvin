@@ -75,6 +75,67 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
 /** Avotu virsraksta teksta izmērs admin UI (11px, saskaņots ar laukiem). */
 export const SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS = "text-[11px]";
 
+/** PDF „Komentāri” — strukturēti apstiprinājumi (CSDD, AutoDNA, CarVertical, AUTO RECORDS). */
+export type SourcePdfChecklist = {
+  incidents: boolean;
+  mileageHistory: boolean;
+  mileageLine: boolean;
+};
+
+export const SOURCE_PDF_CHECKLIST_KEYS = ["incidents", "mileageHistory", "mileageLine"] as const;
+export type SourcePdfChecklistKey = (typeof SOURCE_PDF_CHECKLIST_KEYS)[number];
+
+export const SOURCE_PDF_CHECKLIST_META: Record<
+  SourcePdfChecklistKey,
+  { label: string; pdfSuffix: string }
+> = {
+  incidents: { label: "Ieraksti par negadījumiem", pdfSuffix: "nav" },
+  mileageHistory: { label: "Informācija par nobraukuma vēsturi", pdfSuffix: "nav" },
+  mileageLine: { label: "Nobraukuma līkne", pdfSuffix: "korekta" },
+};
+
+export function emptySourcePdfChecklist(): SourcePdfChecklist {
+  return { incidents: false, mileageHistory: false, mileageLine: false };
+}
+
+export function normalizeSourcePdfChecklist(raw: unknown): SourcePdfChecklist {
+  if (!raw || typeof raw !== "object") return emptySourcePdfChecklist();
+  const o = raw as Record<string, unknown>;
+  return {
+    incidents: o.incidents === true,
+    mileageHistory: o.mileageHistory === true,
+    mileageLine: o.mileageLine === true,
+  };
+}
+
+export function sourcePdfChecklistHasAny(c: SourcePdfChecklist | undefined): boolean {
+  if (!c) return false;
+  return c.incidents || c.mileageHistory || c.mileageLine;
+}
+
+/** Rindas PDF „Komentāri” tekstam (ar atstarpi ap defisu, kā klienta piemērā). */
+export function formatSourcePdfChecklistForPdf(c: SourcePdfChecklist | undefined): string {
+  if (!sourcePdfChecklistHasAny(c) || !c) return "";
+  const lines: string[] = [];
+  for (const key of SOURCE_PDF_CHECKLIST_KEYS) {
+    if (!c[key]) continue;
+    const m = SOURCE_PDF_CHECKLIST_META[key];
+    lines.push(`${m.label} - ${m.pdfSuffix}`);
+  }
+  return lines.join("\n");
+}
+
+export function mergePdfChecklistAndComments(
+  checklist: SourcePdfChecklist | undefined,
+  comments: string,
+): string {
+  const c = formatSourcePdfChecklistForPdf(checklist);
+  const t = comments.trim();
+  if (!c) return t;
+  if (!t) return c;
+  return `${c}\n\n${t}`;
+}
+
 /** Vienota nobraukuma rinda: LV ierakstiem valsts = „Latvija”. */
 export type CsddMileageRow = {
   date: string;
@@ -121,6 +182,8 @@ export type CsddFormFields = {
   mileageHistory: CsddMileageRow[];
   /** Eksperta piezīmes — PDF CSDD apakšsadaļā (kā citiem avotiem). */
   comments: string;
+  /** PDF apstiprinājumi — drukājas kopā ar komentāriem. */
+  pdfChecklist?: SourcePdfChecklist;
 };
 
 /** Tehniskie + apskates lauki (secība = Admin / PDF). */
@@ -207,6 +270,7 @@ export function emptyCsddFields(): CsddFormFields {
     particulateMatter: "",
     mileageHistory: [],
     comments: "",
+    pdfChecklist: undefined,
   };
 }
 
@@ -360,7 +424,8 @@ export function csddFormHasContent(f: CsddFormFields): boolean {
   return (
     CSDD_FORM_STRUCTURED_FIELDS.some(({ key }) => (f[key] as string).trim().length > 0) ||
     f.mileageHistory.some(csddMileageRowHasData) ||
-    f.comments.trim().length > 0
+    f.comments.trim().length > 0 ||
+    sourcePdfChecklistHasAny(f.pdfChecklist)
   );
 }
 
@@ -382,6 +447,8 @@ export function csddFormToPlainText(f: CsddFormFields): string {
       );
     }
   }
+  const checklistTxt = formatSourcePdfChecklistForPdf(f.pdfChecklist);
+  if (checklistTxt) lines.push(checklistTxt);
   if (f.comments.trim()) {
     lines.push(`${LISTING_ANALYSIS_COMMENT_LABEL}\n${f.comments.trim()}`);
   }
@@ -406,6 +473,7 @@ export type AutoRecordsBlockState = {
   serviceHistory: AutoRecordsServiceRow[];
   /** Kā citiem avotiem — piezīmes zem tabulas. */
   comments: string;
+  pdfChecklist?: SourcePdfChecklist;
 };
 
 /** LTAB / OCTA — viena negadījuma rinda (horizontāli). */
@@ -427,6 +495,7 @@ export type VendorAvotuBlockState = {
   comments: string;
   /** CarVertical odometra žurnāla RAW (tikai admin; nav obligāti PDF). */
   mileagePasteRaw?: string;
+  pdfChecklist?: SourcePdfChecklist;
 };
 
 /** Citi avoti — tā pati struktūra kā AutoDNA / CarVertical (nobraukums + negadījumi + komentāri). */
@@ -466,7 +535,11 @@ export function emptyAutoRecordsServiceRow(): AutoRecordsServiceRow {
 }
 
 export function emptyAutoRecordsBlock(): AutoRecordsBlockState {
-  return { rawUnprocessedData: "", serviceHistory: [emptyAutoRecordsServiceRow()], comments: "" };
+  return {
+    rawUnprocessedData: "",
+    serviceHistory: [emptyAutoRecordsServiceRow()],
+    comments: "",
+  };
 }
 
 export function emptyLtabRow(): LtabIncidentRow {
@@ -596,6 +669,8 @@ export function autoRecordsBlockToPlainText(b: AutoRecordsBlockState): string {
       ].join("\t"),
     );
   }
+  const checklistTxt = formatSourcePdfChecklistForPdf(b.pdfChecklist);
+  if (checklistTxt) lines.push(checklistTxt);
   if (b.comments.trim()) lines.push(`Komentāri\n${b.comments.trim()}`);
   if (b.rawUnprocessedData.trim()) lines.push(b.rawUnprocessedData.trim());
   return lines.join("\n\n");
@@ -630,7 +705,8 @@ export function vendorAvotuBlockHasContent(b: VendorAvotuBlockState): boolean {
   return (
     b.serviceHistory.some(autoRecordsRowHasData) ||
     b.incidents.some(ltabRowHasData) ||
-    b.comments.trim().length > 0
+    b.comments.trim().length > 0 ||
+    sourcePdfChecklistHasAny(b.pdfChecklist)
   );
 }
 
@@ -656,6 +732,8 @@ export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState): string {
       lines.push([r.incidentNo.trim(), r.csngDate.trim(), r.lossAmount.trim()].join("\t"));
     }
   }
+  const checklistTxt = formatSourcePdfChecklistForPdf(b.pdfChecklist);
+  if (checklistTxt) lines.push(checklistTxt);
   if (b.comments.trim()) lines.push(`Komentāri\n${b.comments.trim()}`);
   return lines.join("\n");
 }
@@ -707,6 +785,7 @@ export type ClientManualVendorBlockPdf = {
   mileageRows: AutoRecordsServiceRow[];
   incidentRows: LtabIncidentRow[];
   comments: string;
+  pdfChecklist?: SourcePdfChecklist;
 };
 
 /** Strukturēts LTAB bloks PDF — atsevišķi panelī pēc AutoDNA / CV / Auto-Records (kā admin režģī). */
@@ -725,6 +804,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       mileageRows: b.serviceHistory.filter(autoRecordsRowHasData),
       incidentRows: b.incidents.filter(ltabRowHasData),
       comments: b.comments.trim(),
+      ...(sourcePdfChecklistHasAny(b.pdfChecklist) ? { pdfChecklist: b.pdfChecklist } : {}),
     });
   }
   const citi = blocks.citi_avoti;
@@ -734,6 +814,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       mileageRows: citi.serviceHistory.filter(autoRecordsRowHasData),
       incidentRows: citi.incidents.filter(ltabRowHasData),
       comments: citi.comments.trim(),
+      ...(sourcePdfChecklistHasAny(citi.pdfChecklist) ? { pdfChecklist: citi.pdfChecklist } : {}),
     });
   }
   return out;
@@ -783,6 +864,7 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
       rawUnprocessedData: String(raw.rawUnprocessedData ?? "").slice(0, 500_000),
       serviceHistory: normalized,
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
+      ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
     };
   }
   const legacy = parseStandardBlockRaw(raw);
@@ -874,6 +956,7 @@ function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBloc
       ...(typeof raw.mileagePasteRaw === "string"
         ? { mileagePasteRaw: raw.mileagePasteRaw.slice(0, 24_000) }
         : {}),
+      ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
     };
   }
   return migrateLegacyVendorBlock(parseStandardBlockRaw(raw));
@@ -995,6 +1078,7 @@ function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFi
     opacityCoefficient: clipCsddField(raw.opacityCoefficient, 40),
     particulateMatter: clipCsddField(raw.particulateMatter, 80),
     comments: clipCsddField(raw.comments, 12000),
+    ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
   };
 }
 

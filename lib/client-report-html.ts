@@ -15,7 +15,9 @@ import {
   LISTING_ANALYSIS_COMMENT_LABEL,
   LISTING_HISTORY_SUBSECTION_TITLE,
   ltabRowHasData,
+  mergePdfChecklistAndComments,
   NEGADIJUMU_VESTURE_TITLE,
+  sourcePdfChecklistHasAny,
   TIRGUS_LABEL_CREATED,
   TIRGUS_LABEL_LISTED,
   TIRGUS_LABEL_PRICE_DROP,
@@ -160,7 +162,8 @@ function vendorPdfBlockHasData(b: ClientManualVendorBlockPdf | undefined): boole
   return (
     b.mileageRows.length > 0 ||
     b.incidentRows.length > 0 ||
-    b.comments.trim().length > 0
+    b.comments.trim().length > 0 ||
+    sourcePdfChecklistHasAny(b.pdfChecklist)
   );
 }
 
@@ -456,7 +459,7 @@ function buildCsddAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilitySett
 
   if (hasStruct && form) {
     const f = form;
-    const commentTrim = (f.comments ?? "").trim();
+    const commentTrim = mergePdfChecklistAndComments(f.pdfChecklist, f.comments ?? "").trim();
     const hasComments = commentTrim.length > 0;
     const regRows: string[] = [];
     for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
@@ -539,10 +542,11 @@ function buildAutoRecordsAvotuSubsection(
 ): string {
   if (!vis.auto_records) return "";
   if (!b || !autoRecordsBlockHasContent(b)) return "";
-  const hasComments = b.comments.trim().length > 0;
+  const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
+  const hasComments = commentBlock.trim().length > 0;
   if (!hasComments) return "";
   const head = sectionHeadBrand(sectionIconPdfHtml("shieldCheck"), SOURCE_BLOCK_LABELS.auto_records);
-  const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(b.comments)}</div>`;
+  const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(commentBlock)}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
 
@@ -551,10 +555,11 @@ function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf, vis: PdfVisib
   const L = SOURCE_BLOCK_LABELS;
   if (b.title === L.autodna && !vis.autodna) return "";
   if (b.title === L.carvertical && !vis.carvertical) return "";
-  const hasComments = b.comments.trim().length > 0;
+  const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
+  const hasComments = commentBlock.trim().length > 0;
   if (!hasComments) return "";
   const head = sectionHeadBrand(sectionIconPdfHtml(vendorPdfTitleToIconId(b.title)), b.title);
-  const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(b.comments)}</div>`;
+  const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(commentBlock)}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
 
