@@ -25,6 +25,7 @@ yarn-error.log*
 # env
 .env
 .env*.local
+.env.local.save
 
 # Admin pasūtījumu melnraksti (JSON) — lokāli / VPS
 .data/

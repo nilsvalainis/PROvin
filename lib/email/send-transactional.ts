@@ -6,10 +6,17 @@ import { getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/m
 import { adminNewOrderHtml, paymentConfirmationHtml, reportReadyHtml } from "@/lib/email/html-templates";
 import type { OrderEmailPayload } from "@/lib/email/types";
 
-function getSmtpTransport(): nodemailer.Transporter | null {
+/** true, ja servera vidē ir gan SMTP_USER, gan SMTP_PASS (Workspace / Gmail app password). */
+export function isSmtpConfigured(): boolean {
   const user = process.env.SMTP_USER?.trim();
   const pass = process.env.SMTP_PASS?.trim();
-  if (!user || !pass) return null;
+  return Boolean(user && pass);
+}
+
+function getSmtpTransport(): nodemailer.Transporter | null {
+  if (!isSmtpConfigured()) return null;
+  const user = process.env.SMTP_USER!.trim();
+  const pass = process.env.SMTP_PASS!.trim();
 
   const host = process.env.SMTP_HOST?.trim() || "smtp.gmail.com";
   const portRaw = process.env.SMTP_PORT?.trim();

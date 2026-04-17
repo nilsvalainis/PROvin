@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { sendReportReadyEmail } from "@/lib/email/send-transactional";
+import { isSmtpConfigured, sendReportReadyEmail } from "@/lib/email/send-transactional";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
@@ -54,6 +54,17 @@ export async function POST(req: Request) {
   const to = [bodyCustomerEmail, draftCustomerEmail, fromOrder].find((v) => v && isValidOrderEmail(v)) ?? "";
   if (!to?.trim()) {
     return NextResponse.json({ error: "no_customer_email" }, { status: 400 });
+  }
+
+  if (!isSmtpConfigured()) {
+    return NextResponse.json(
+      {
+        error: "smtp_not_configured",
+        message:
+          "SMTP_USER un SMTP_PASS nav iestatīti servera vidē (Vercel → Environment Variables vai lokālais .env.local). Skatīt .env.example — Google Workspace app password.",
+      },
+      { status: 503 },
+    );
   }
 
   try {
