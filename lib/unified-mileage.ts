@@ -75,16 +75,64 @@ export function sortMileageChronological(rows: UnifiedMileageRow[]): UnifiedMile
   });
 }
 
-const MS_PER_DAY = 86_400_000;
+/**
+ * Nobraukuma atpakaļgājiens mazāks par šo netiek uzskatīts par anomāliju;
+ * attiecīgie ieraksti tiek izņemti kā troksnis (PDF tabula + līkne).
+ */
+export const UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM = 1000;
+
+function yearMonthUtcFromMs(ms: number): string {
+  const d = new Date(ms);
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth() + 1;
+  return `${y}-${String(m).padStart(2, "0")}`;
+}
 
 /**
- * PDF / grafiks: atkārtoti rādījumi ar to pašu km — viena kalendāra diena vai secīgi pēc hronoloģijas.
- * Atstāj agrāko ierakstu katram (diena, km) pārī; rindām bez derīga datuma — tikai secīgi dublētu km apkopošana.
+ * Noņem mazus odometra „dipus” hronoloģiskā secībā: ja km < iepriekš pieņemtais maksimums,
+ * bet starpība < {@link UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM}, rinda netiek ņemta vērā.
  */
-export function filterDuplicateOdometerKmReadings(rows: UnifiedMileageRow[]): UnifiedMileageRow[] {
+export function collapseSmallOdometerDipsChronological(rows: UnifiedMileageRow[]): UnifiedMileageRow[] {
   const sorted = sortMileageChronological(rows);
   const out: UnifiedMileageRow[] = [];
-  const seenDayKm = new Set<string>();
+  let maxKm: number | null = null;
+
+  for (const r of sorted) {
+    const km = parseOdometerKm(r.odometer);
+    if (km === null) {
+      out.push(r);
+      continue;
+    }
+    if (maxKm === null) {
+      out.push(r);
+      maxKm = km;
+      continue;
+    }
+    if (km >= maxKm) {
+      out.push(r);
+      maxKm = km;
+      continue;
+    }
+    const drop = maxKm - km;
+    if (drop > 0 && drop < UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM) {
+      continue;
+    }
+    out.push(r);
+    maxKm = km;
+  }
+
+  return out;
+}
+
+/**
+ * PDF / grafiks: (1) mazi atpakaļgājieni, (2) vienā mēnesī tas pats km — viens ieraksts;
+ * (3) rindām bez derīga datuma — secīgi dublētu km apkopošana.
+ */
+export function filterDuplicateOdometerKmReadings(rows: UnifiedMileageRow[]): UnifiedMileageRow[] {
+  const collapsed = collapseSmallOdometerDipsChronological(rows);
+  const sorted = sortMileageChronological(collapsed);
+  const out: UnifiedMileageRow[] = [];
+  const seenMonthKm = new Set<string>();
   let lastKmNoDay: number | null = null;
 
   for (const r of sorted) {
@@ -101,10 +149,10 @@ export function filterDuplicateOdometerKmReadings(rows: UnifiedMileageRow[]): Un
 
     if (hasCalDay) {
       lastKmNoDay = null;
-      const dayKey = Math.floor(t / MS_PER_DAY);
-      const dedupeKey = `${dayKey}|${km}`;
-      if (seenDayKm.has(dedupeKey)) continue;
-      seenDayKm.add(dedupeKey);
+      const ym = yearMonthUtcFromMs(t);
+      const monthKmKey = `${ym}|${km}`;
+      if (seenMonthKm.has(monthKmKey)) continue;
+      seenMonthKm.add(monthKmKey);
       out.push(r);
       continue;
     }
@@ -118,7 +166,7 @@ export function filterDuplicateOdometerKmReadings(rows: UnifiedMileageRow[]): Un
 }
 
 /**
- * Back-roll: ja V_current < V_previous (hronoloģiski iepriekšējais derīgais odometrs), isAnomaly = true.
+ * Back-roll: anomālija tikai ja V_current < V_previous un starpība ≥ {@link UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM} km.
  */
 export function computeOdometerAnomalyBySourceOrder(rows: UnifiedMileageRow[]): Map<number, boolean> {
   const sorted = sortMileageChronological(rows);
@@ -130,7 +178,10 @@ export function computeOdometerAnomalyBySourceOrder(rows: UnifiedMileageRow[]): 
       map.set(r.sourceOrder, false);
       continue;
     }
-    const anom = prevKm !== null && km < prevKm;
+    const anom =
+      prevKm !== null &&
+      km < prevKm &&
+      prevKm - km >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM;
     map.set(r.sourceOrder, anom);
     prevKm = km;
   }
