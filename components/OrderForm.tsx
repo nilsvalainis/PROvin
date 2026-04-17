@@ -3,9 +3,9 @@
 import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useLenis } from "lenis/react";
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
-import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
+import demoHeroFields from "@/app/[locale]/demo/page.module.css";
 import {
   isPlausibleListingUrl,
   isValidOrderEmail,
@@ -15,16 +15,8 @@ import {
   validateOrderFields,
 } from "@/lib/order-field-validation";
 
-const labelHero =
-  "order-form-hero-label block text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-[#e5e7eb]";
-
 const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
-
-/** Dark cockpit: laukam bez apakšējās robežas — līniju un zilo impulsu dod `HeroFieldScanLine`. */
-/** Hero: ≥16px līdz `sm`, lai iOS/Android nezoomē uz fokusu; sm+ atkal kompaktāks līnijas izskats. */
-const inputHeroNoBottom =
-  "order-form-hero-input relative z-10 box-border min-h-9 w-full min-w-0 max-w-full appearance-none rounded-none border-0 bg-transparent px-0 py-2 text-[13px] font-normal leading-snug text-[#e5e7eb]/70 shadow-none outline-none ring-0 transition-[color] placeholder:text-[#e5e7eb]/36 focus:shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 sm:min-h-0 sm:text-[8px] sm:leading-[1.2] md:text-[13px] md:leading-snug";
 
 const inputDefault =
   "mt-2 box-border min-h-11 w-full rounded-none border-0 border-b border-[#050505]/75 bg-transparent px-0 py-2.5 text-[15px] font-normal text-[#1d1d1f] outline-none transition-[border-color] placeholder:text-[#86868b] focus:border-provin-accent focus:ring-0 focus-visible:ring-0 sm:min-h-0 sm:text-[16px]";
@@ -58,19 +50,6 @@ type OrderFormProps = {
   hideStepOneCta?: boolean;
   onStepChange?: (step: 1 | 2) => void;
 };
-
-function HeroFieldScanLine({ children, invalid }: { children: ReactNode; invalid?: boolean }) {
-  return (
-    <div
-      className={`order-form-hero-field order-form-hero-field--card relative z-0 mt-1.5 w-full min-w-0 max-w-full overflow-x-clip rounded-2xl px-2.5 py-1.5${
-        invalid ? " order-form-hero-field--invalid" : ""
-      }`}
-    >
-      {children}
-      <DiagnosticScanLine variant="rail" motion="sweepLtr" className="order-form-hero-scan relative z-[1] w-full max-w-full min-w-0" />
-    </div>
-  );
-}
 
 export function OrderForm({
   className,
@@ -136,8 +115,8 @@ export function OrderForm({
     requestAnimationFrame(() => requestAnimationFrame(show));
   }, [error, hero, lenis]);
 
-  const labelClass = hero ? labelHero : labelDefault;
-  const inputBase = hero ? inputHeroNoBottom : inputDefault;
+  const labelClass = labelDefault;
+  const inputBase = inputDefault;
 
   function goToStepTwo() {
     const vinNormalized = normalizeVin(vin);
@@ -248,7 +227,7 @@ export function OrderForm({
 
   const formShell =
     hero
-      ? `space-y-4 rounded-none border-0 bg-transparent px-1 py-4 sm:px-2 sm:py-5 ${className ?? ""}`
+      ? `space-y-4 rounded-none border-0 bg-transparent px-0 py-0 ${className ?? ""}`
       : compact
         ? `mt-6 space-y-4 border-t border-black/[0.06] pt-6 ${className ?? ""}`
         : `mt-10 space-y-6 rounded-none border-0 border-y border-black/[0.08] bg-white/[0.55] px-5 py-8 sm:px-10 sm:py-10 ${className ?? ""}`;
@@ -261,11 +240,6 @@ export function OrderForm({
     : "mt-1 text-[11px] font-normal leading-snug text-[#86868b]";
 
   const reqStarClass = hero ? "text-red-400" : "text-red-600";
-  const firstStepVinPlaceholder = "IEVADI VIN";
-  const firstStepListingPlaceholder = "IEVADI SLUDINĀJUMA SAITI";
-  const firstStepVinInputClassHero = `${inputBase} w-full tracking-normal`;
-  const firstStepListingInputClassHero = `${inputBase}`;
-  const secondStepVinInputClassHero = `${inputBase} w-full font-mono uppercase tracking-wide`;
   const firstStepVinInputClassDefault = `${inputBase} tracking-normal ${firstStepInfoTextSizeClass}`;
   const firstStepListingInputClassDefault = `${inputBase} ${firstStepInfoTextSizeClass}`;
   const secondStepVinInputClassDefault = `${inputBase} font-mono uppercase tracking-wide`;
@@ -298,18 +272,16 @@ export function OrderForm({
     >
       <div className={`grid min-w-0 w-full max-w-full sm:grid-cols-2 ${gridGap}`}>
         <div className="sm:col-span-2">
-          {step === 2 ? (
-            <label htmlFor="order-vin" className={labelClass}>
-              {t("vinLabel")}
-            </label>
-          ) : null}
           {hero ? (
             <>
-              <HeroFieldScanLine
-                invalid={
-                  (step === 1 && Boolean(heroStep1Errors.vin)) || (step === 2 && Boolean(heroStep2FieldErrors.vin))
-                }
+              <label
+                className={`${demoHeroFields.field} ${
+                  (step === 1 && heroStep1Errors.vin) || (step === 2 && heroStep2FieldErrors.vin)
+                    ? demoHeroFields.fieldInvalid
+                    : ""
+                }`}
               >
+                <span className={demoHeroFields.fieldLabel}>{t("vinLabel")}</span>
                 <input
                   id="order-vin"
                   name="vin"
@@ -318,8 +290,8 @@ export function OrderForm({
                   maxLength={17}
                   spellCheck={false}
                   value={vin}
-                  className={step === 1 ? firstStepVinInputClassHero : secondStepVinInputClassHero}
-                  placeholder={step === 1 ? firstStepVinPlaceholder : t("vinPlaceholderHero")}
+                  className={step === 2 ? "w-full font-mono uppercase tracking-wide" : "w-full tracking-normal"}
+                  placeholder={step === 1 ? t("vinPlaceholderStep1") : t("vinPlaceholderHero")}
                   aria-invalid={
                     (step === 1 && Boolean(heroStep1Errors.vin)) || (step === 2 && Boolean(heroStep2FieldErrors.vin))
                   }
@@ -336,7 +308,7 @@ export function OrderForm({
                     if (step === 2) setHeroStep2FieldErrors((p) => ({ ...p, vin: null }));
                   }}
                 />
-              </HeroFieldScanLine>
+              </label>
               {(step === 1 && heroStep1Errors.vin) || (step === 2 && heroStep2FieldErrors.vin) ? (
                 <p
                   id="order-hero-vin-error"
@@ -348,56 +320,54 @@ export function OrderForm({
               ) : null}
             </>
           ) : (
-            <input
-              id="order-vin"
-              name="vin"
-              type="text"
-              required
-              maxLength={17}
-              spellCheck={false}
-              value={vin}
-              className={step === 1 ? firstStepVinInputClassDefault : secondStepVinInputClassDefault}
-              placeholder={step === 1 ? firstStepVinPlaceholder : t("vinPlaceholder")}
-              onChange={(e) => {
-                const el = e.target;
-                const value = el.value.toUpperCase().slice(0, 17);
-                setVin(value);
-              }}
-            />
+            <>
+              {step === 2 ? (
+                <label htmlFor="order-vin" className={labelClass}>
+                  {t("vinLabel")}
+                </label>
+              ) : null}
+              <input
+                id="order-vin"
+                name="vin"
+                type="text"
+                required
+                maxLength={17}
+                spellCheck={false}
+                value={vin}
+                className={step === 1 ? firstStepVinInputClassDefault : secondStepVinInputClassDefault}
+                placeholder={step === 1 ? t("vinPlaceholderStep1") : t("vinPlaceholder")}
+                onChange={(e) => {
+                  const el = e.target;
+                  const value = el.value.toUpperCase().slice(0, 17);
+                  setVin(value);
+                }}
+              />
+            </>
           )}
           {step === 2 ? (
-            <p
-              className={
-                hero
-                  ? "order-form-hero-vin-hint mt-1.5 text-[11px] font-normal text-[#e5e7eb]/52"
-                  : "mt-1 text-[11px] font-normal text-[#aeaeb2]"
-              }
-            >
+            <p className={hero ? hintClass : "mt-1 text-[11px] font-normal leading-snug text-[#aeaeb2]"}>
               {t("vinHint")}
             </p>
           ) : null}
         </div>
         <div className="sm:col-span-2">
-          {step === 2 ? (
-            <label htmlFor="order-url" className={labelClass}>
-              {t("listingLabel")}
-            </label>
-          ) : null}
           {hero ? (
             <>
-              <HeroFieldScanLine
-                invalid={
-                  (step === 1 && Boolean(heroStep1Errors.listing)) ||
-                  (step === 2 && Boolean(heroStep2FieldErrors.listing))
-                }
+              <label
+                className={`${demoHeroFields.field} ${
+                  (step === 1 && heroStep1Errors.listing) || (step === 2 && heroStep2FieldErrors.listing)
+                    ? demoHeroFields.fieldInvalid
+                    : ""
+                }`}
               >
+                <span className={demoHeroFields.fieldLabel}>{t("listingLabel")}</span>
                 <input
                   id="order-url"
                   name="listingUrl"
                   type="url"
                   value={listingUrl}
-                  className={step === 1 ? firstStepListingInputClassHero : inputBase}
-                  placeholder={step === 1 ? firstStepListingPlaceholder : t("urlPlaceholder")}
+                  className="w-full"
+                  placeholder={step === 1 ? t("listingPlaceholderStep1") : t("urlPlaceholder")}
                   aria-invalid={
                     (step === 1 && Boolean(heroStep1Errors.listing)) ||
                     (step === 2 && Boolean(heroStep2FieldErrors.listing))
@@ -413,7 +383,7 @@ export function OrderForm({
                     if (step === 2) setHeroStep2FieldErrors((p) => ({ ...p, listing: null }));
                   }}
                 />
-              </HeroFieldScanLine>
+              </label>
               {(step === 1 && heroStep1Errors.listing) || (step === 2 && heroStep2FieldErrors.listing) ? (
                 <p
                   id="order-hero-listing-error"
@@ -425,26 +395,48 @@ export function OrderForm({
               ) : null}
             </>
           ) : (
-            <input
-              id="order-url"
-              name="listingUrl"
-              type="url"
-              value={listingUrl}
-              className={step === 1 ? firstStepListingInputClassDefault : inputBase}
-              placeholder={step === 1 ? firstStepListingPlaceholder : t("urlPlaceholder")}
-              onChange={(e) => setListingUrl(e.target.value)}
-            />
+            <>
+              {step === 2 ? (
+                <label htmlFor="order-url" className={labelClass}>
+                  {t("listingLabel")}
+                </label>
+              ) : null}
+              <input
+                id="order-url"
+                name="listingUrl"
+                type="url"
+                value={listingUrl}
+                className={step === 1 ? firstStepListingInputClassDefault : inputBase}
+                placeholder={step === 1 ? t("listingPlaceholderStep1") : t("urlPlaceholder")}
+                onChange={(e) => setListingUrl(e.target.value)}
+              />
+            </>
           )}
           {step === 2 ? <p className={hintClass}>{t("listingHint")}</p> : null}
         </div>
         {step === 2 ? (
           <>
             <div className="sm:col-span-2">
-              <label htmlFor="order-name" className={labelClass}>
-                {t("nameLabel")}
-              </label>
               {hero ? (
-                <HeroFieldScanLine>
+                <label className={demoHeroFields.field}>
+                  <span className={demoHeroFields.fieldLabel}>{t("nameLabel")}</span>
+                  <input
+                    id="order-name"
+                    name="name"
+                    type="text"
+                    autoComplete="name"
+                    maxLength={120}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full"
+                    placeholder={t("namePlaceholder")}
+                  />
+                </label>
+              ) : (
+                <>
+                  <label htmlFor="order-name" className={labelClass}>
+                    {t("nameLabel")}
+                  </label>
                   <input
                     id="order-name"
                     name="name"
@@ -456,29 +448,19 @@ export function OrderForm({
                     className={inputBase}
                     placeholder={t("namePlaceholder")}
                   />
-                </HeroFieldScanLine>
-              ) : (
-                <input
-                  id="order-name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  maxLength={120}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className={inputBase}
-                  placeholder={t("namePlaceholder")}
-                />
+                </>
               )}
             </div>
             <div className="min-w-0 sm:col-span-2 sm:grid sm:grid-cols-2 sm:gap-4">
               <div>
-                <label htmlFor="order-email" className={labelClass}>
-                  {t("emailLabel")} <span className={reqStarClass}>*</span>
-                </label>
                 {hero ? (
                   <>
-                    <HeroFieldScanLine invalid={Boolean(heroStep2FieldErrors.email)}>
+                    <label
+                      className={`${demoHeroFields.field} ${heroStep2FieldErrors.email ? demoHeroFields.fieldInvalid : ""}`}
+                    >
+                      <span className={demoHeroFields.fieldLabel}>
+                        {t("emailLabel")} <span className={reqStarClass}>*</span>
+                      </span>
                       <input
                         id="order-email"
                         name="email"
@@ -490,12 +472,12 @@ export function OrderForm({
                           setEmail(e.target.value);
                           setHeroStep2FieldErrors((p) => ({ ...p, email: null }));
                         }}
-                        className={inputBase}
+                        className="w-full"
                         placeholder={t("emailPlaceholder")}
                         aria-invalid={Boolean(heroStep2FieldErrors.email)}
                         aria-describedby={heroStep2FieldErrors.email ? "order-hero-email-error" : undefined}
                       />
-                    </HeroFieldScanLine>
+                    </label>
                     {heroStep2FieldErrors.email ? (
                       <p
                         id="order-hero-email-error"
@@ -507,27 +489,34 @@ export function OrderForm({
                     ) : null}
                   </>
                 ) : (
-                  <input
-                    id="order-email"
-                    name="email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={inputBase}
-                    placeholder={t("emailPlaceholder")}
-                  />
+                  <>
+                    <label htmlFor="order-email" className={labelClass}>
+                      {t("emailLabel")} <span className={reqStarClass}>*</span>
+                    </label>
+                    <input
+                      id="order-email"
+                      name="email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={inputBase}
+                      placeholder={t("emailPlaceholder")}
+                    />
+                  </>
                 )}
                 <p className={hintClass}>{t("emailHint")}</p>
               </div>
               <div>
-                <label htmlFor="order-phone" className={labelClass}>
-                  {t("phoneLabel")} <span className={reqStarClass}>*</span>
-                </label>
                 {hero ? (
                   <>
-                    <HeroFieldScanLine invalid={Boolean(heroStep2FieldErrors.phone)}>
+                    <label
+                      className={`${demoHeroFields.field} ${heroStep2FieldErrors.phone ? demoHeroFields.fieldInvalid : ""}`}
+                    >
+                      <span className={demoHeroFields.fieldLabel}>
+                        {t("phoneLabel")} <span className={reqStarClass}>*</span>
+                      </span>
                       <input
                         id="order-phone"
                         name="phone"
@@ -539,12 +528,12 @@ export function OrderForm({
                           setPhone(e.target.value);
                           setHeroStep2FieldErrors((p) => ({ ...p, phone: null }));
                         }}
-                        className={inputBase}
+                        className="w-full"
                         placeholder={t("phonePlaceholder")}
                         aria-invalid={Boolean(heroStep2FieldErrors.phone)}
                         aria-describedby={heroStep2FieldErrors.phone ? "order-hero-phone-error" : undefined}
                       />
-                    </HeroFieldScanLine>
+                    </label>
                     {heroStep2FieldErrors.phone ? (
                       <p
                         id="order-hero-phone-error"
@@ -556,27 +545,30 @@ export function OrderForm({
                     ) : null}
                   </>
                 ) : (
-                  <input
-                    id="order-phone"
-                    name="phone"
-                    type="tel"
-                    required
-                    autoComplete="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className={inputBase}
-                    placeholder={t("phonePlaceholder")}
-                  />
+                  <>
+                    <label htmlFor="order-phone" className={labelClass}>
+                      {t("phoneLabel")} <span className={reqStarClass}>*</span>
+                    </label>
+                    <input
+                      id="order-phone"
+                      name="phone"
+                      type="tel"
+                      required
+                      autoComplete="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className={inputBase}
+                      placeholder={t("phonePlaceholder")}
+                    />
+                  </>
                 )}
                 <p className={hintClass}>{t("phoneHint")}</p>
               </div>
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="order-notes" className={labelClass}>
-                {t("notesLabel")}
-              </label>
               {hero ? (
-                <HeroFieldScanLine>
+                <label className={demoHeroFields.field}>
+                  <span className={demoHeroFields.fieldLabel}>{t("notesLabel")}</span>
                   <textarea
                     id="order-notes"
                     name="notes"
@@ -584,21 +576,26 @@ export function OrderForm({
                     maxLength={500}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className={`${inputBase} min-h-[70px] resize-none sm:min-h-[58px] md:resize-y`}
+                    className="min-h-[5.75rem] w-full resize-y md:resize-y"
                     placeholder={t("notesPlaceholder")}
                   />
-                </HeroFieldScanLine>
+                </label>
               ) : (
-                <textarea
-                  id="order-notes"
-                  name="notes"
-                  rows={notesRows}
-                  maxLength={500}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className={`${inputBase} min-h-[88px] resize-y sm:min-h-[72px]`}
-                  placeholder={t("notesPlaceholder")}
-                />
+                <>
+                  <label htmlFor="order-notes" className={labelClass}>
+                    {t("notesLabel")}
+                  </label>
+                  <textarea
+                    id="order-notes"
+                    name="notes"
+                    rows={notesRows}
+                    maxLength={500}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className={`${inputBase} min-h-[88px] resize-y sm:min-h-[72px]`}
+                    placeholder={t("notesPlaceholder")}
+                  />
+                </>
               )}
             </div>
           </>
@@ -644,7 +641,7 @@ export function OrderForm({
                   onClick={goToStepTwo}
                   className="provin-home-pill-cta provin-home-pill-cta--fit z-10 mt-1 flex w-fit min-h-[50px] max-w-full touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
                 >
-                  PASŪTĪT AUDITU - 79,99 €
+                  {t("heroOrderCta")}
                 </button>
               </div>
             ) : null}
@@ -800,7 +797,7 @@ export function OrderForm({
                       onClick={goToStepTwo}
                       className="provin-home-pill-cta provin-home-pill-cta--fit z-10 flex w-fit min-h-[50px] max-w-full touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
                     >
-                      PASŪTĪT AUDITU - 79,99 €
+                      {t("heroOrderCta")}
                     </button>
                   </div>
                 ) : null

@@ -78,6 +78,11 @@ html[data-site-theme="light"] .demoViewportChipActive {
   overflow: visible;
 }
 
+/* Tumšajā tēmā vienots pamattonis zem scrim slāņiem (bez „caurumiem” līdz body). */
+html[data-site-theme="dark"] .heroIntroSurface {
+  background-color: rgb(5 6 8);
+}
+
 /* Gaišais: viens gradients visai virsmai (hero + intro), kā dark ar vienu scrim slāni */
 html[data-site-theme="light"] .heroIntroSurface {
   background: linear-gradient(180deg, #ffffff 0%, #f4f5f7 52%, #eceef1 100%);
@@ -317,6 +322,45 @@ html[data-site-theme="dark"] .heroSection {
   color: #8a93a2;
 }
 
+.field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgb(248 249 251 / 0.95);
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  font-size: 1rem;
+  line-height: 1.45;
+  font-family: inherit;
+  color: #2f3a49;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.99) 0%, rgb(244 246 249 / 0.96) 100%);
+  box-shadow: 0 12px 24px rgb(24 31 42 / 0.09), 0 1px 0 rgb(255 255 255 / 0.72) inset;
+  resize: vertical;
+  min-height: 5.5rem;
+}
+
+.field textarea::placeholder {
+  color: #8a93a2;
+}
+
+.fieldInvalid input,
+.fieldInvalid textarea {
+  border-color: rgb(220 38 38) !important;
+  box-shadow:
+    0 0 0 1px rgb(220 38 38 / 0.35),
+    0 12px 24px rgb(24 31 42 / 0.09),
+    0 1px 0 rgb(255 255 255 / 0.72) inset;
+}
+
+html[data-site-theme="dark"] .fieldInvalid input,
+html[data-site-theme="dark"] .fieldInvalid textarea {
+  border-color: rgb(248 113 113 / 0.85) !important;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.35),
+    0 18px 48px rgb(0 0 0 / 0.35),
+    0 1px 0 rgb(255 255 255 / 0.06) inset,
+    0 0 0 2px rgb(248 113 113 / 0.35);
+}
+
 .ctaButton {
   margin-top: 1rem;
   width: min(100%, 520px);
@@ -396,11 +440,15 @@ html[data-site-theme="dark"] .heroIntroSurface .title {
   color: rgb(245 248 252 / 0.94);
 }
 
-html[data-site-theme="dark"] .heroIntroSurface .fieldLabel {
+html[data-site-theme="dark"] .heroIntroSurface .fieldLabel,
+html[data-site-theme="dark"] :global(.order-form--hero) .fieldLabel {
   color: rgb(200 208 220 / 0.72);
 }
 
-html[data-site-theme="dark"] .heroIntroSurface .field input {
+html[data-site-theme="dark"] .heroIntroSurface .field input,
+html[data-site-theme="dark"] .heroIntroSurface .field textarea,
+html[data-site-theme="dark"] :global(.order-form--hero) .field input,
+html[data-site-theme="dark"] :global(.order-form--hero) .field textarea {
   color: rgb(245 248 252 / 0.95);
   border: 1px solid var(--dd-line);
   border-radius: 14px;
@@ -411,7 +459,10 @@ html[data-site-theme="dark"] .heroIntroSurface .field input {
     0 1px 0 rgb(255 255 255 / 0.06) inset;
 }
 
-html[data-site-theme="dark"] .heroIntroSurface .field input::placeholder {
+html[data-site-theme="dark"] .heroIntroSurface .field input::placeholder,
+html[data-site-theme="dark"] .heroIntroSurface .field textarea::placeholder,
+html[data-site-theme="dark"] :global(.order-form--hero) .field input::placeholder,
+html[data-site-theme="dark"] :global(.order-form--hero) .field textarea::placeholder {
   color: rgb(160 170 188 / 0.55);
 }
 
@@ -464,6 +515,50 @@ html[data-site-theme="dark"] .heroIntroSurface .heroGlassPro {
   color: rgb(255 255 255 / 0.95);
 }
 
+/* Gaišajā tēmā 2. solis / kopsavilkums hero formā — lasāmi uz demo hero fona */
+html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .order-form-hero-summary-label {
+  color: #2d3744;
+}
+
+html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .order-form-hero-price {
+  color: #1d2430;
+}
+
+html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .order-form-hero-summary-note {
+  color: rgba(45, 52, 62, 0.82);
+}
+
+html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .order-form-hero-rule {
+  border-color: rgb(24 31 42 / 0.12) !important;
+}
+
+html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .order-form-hero-footer {
+  border-top-color: transparent !important;
+}
+
+html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .order-form-hero-hint,
+html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .order-form-hero-vin-hint {
+  color: #5a6577 !important;
+}
+
+html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .order-form-hero-consent-text {
+  color: #2c3440 !important;
+}
+
+html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .order-form-hero-checkbox {
+  border-color: rgb(24 31 42 / 0.25) !important;
+}
+
+html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .order-form-hero-field-error {
+  color: #b91c1c !important;
+}
+
+html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .order-form-hero-alert {
+  border-color: rgb(220 38 38 / 0.35) !important;
+  background-color: rgb(254 242 242 / 0.98) !important;
+  color: #991b1b !important;
+}
+
 /* Šaurāks mobilais (≈ SE / mini) */
 :global(.demo-mobile-narrow) .heroSection {
   min-height: calc(100svh - 64px);
@@ -480,11 +575,13 @@ html[data-site-theme="dark"] .heroIntroSurface .heroGlassPro {
   --demo-title-audits: clamp(1.45rem, 9.2vw, 1.85rem);
 }
 
-:global(.demo-mobile-narrow) .form {
+:global(.demo-mobile-narrow) .form,
+:global(.demo-mobile-narrow) .productHeroOrderSlot {
   gap: 0.65rem;
 }
 
-:global(.demo-mobile-narrow) .field input {
+:global(.demo-mobile-narrow) .field input,
+:global(.demo-mobile-narrow) .field textarea {
   padding: 0.78rem 0.85rem;
   font-size: 0.94rem;
 }

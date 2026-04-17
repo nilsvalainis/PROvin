@@ -81,6 +81,7 @@ export function MarketingHero({
   const silhouetteLensCenterGradId = `${silhouetteIdBase}-lens-center`;
   const silhouetteLensClipId = `${silhouetteIdBase}-lens-clip`;
   const t = useTranslations("Hero");
+  const tOrder = useTranslations("Order");
 
   const sectionId = sectionDomId ?? (demoVariant ? `demo-hero-${demoVariant}` : "home-hero");
   const titleId = demoVariant ? `marketing-hero-title-${demoVariant}` : "marketing-hero-title";
@@ -315,7 +316,7 @@ export function MarketingHero({
           }}
           className="provin-home-pill-cta provin-home-pill-cta--fit relative z-[1] flex w-fit min-h-[50px] max-w-[min(100%,calc(100%-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
         >
-          PASŪTĪT AUDITU - 79,99 €
+          {tOrder("heroOrderCta")}
         </button>
       </div>
     );

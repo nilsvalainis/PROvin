@@ -1,13 +1,24 @@
 "use client";
 
+type HomeDepthBackgroundProps = {
+  /**
+   * `fixed` — visa viewport (noklusējums).
+   * `absolute` — aizpilda `position: relative` vecāku (piem. tikai zem heroja, lai hero fons sakristu ar demo).
+   */
+  position?: "fixed" | "absolute";
+};
+
 /**
  * Mājas fons — tumšs radial gradients ar vairākiem pieturpunktiem (bez SVG trokšņa).
  */
-
-export function HomeDepthBackground() {
+export function HomeDepthBackground({ position = "fixed" }: HomeDepthBackgroundProps) {
+  const posClass =
+    position === "absolute"
+      ? "pointer-events-none absolute inset-0 z-0 bg-[#030304]"
+      : "home-depth-bg pointer-events-none fixed inset-0 z-[1] bg-[#030304]";
   return (
     <div
-      className="home-depth-bg pointer-events-none fixed inset-0 z-[1] bg-[#030304]"
+      className={posClass}
       style={{
         backgroundImage: `radial-gradient(
           ellipse 125% 90% at 50% -8%,
