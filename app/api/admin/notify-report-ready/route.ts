@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { getInvoiceEmailAttachment } from "@/lib/email/invoice-email-attachment";
 import {
   collectAttachmentsFromFormData,
@@ -7,7 +8,6 @@ import {
   MAX_NOTIFY_ATTACHMENTS_BYTES,
 } from "@/lib/email/notify-attachments-parse";
 import { isSmtpConfigured, sendReportReadyEmail, type ReportReadyMailAttachment } from "@/lib/email/send-transactional";
-import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 
@@ -44,7 +44,7 @@ function mapParseError(e: unknown): NextResponse | null {
 /**
  * Nosūta klientam „audits gatavs” ar pielikumiem (nodemailer + SMTP).
  * – JSON: { sessionId, customerEmail?, attachmentsBase64?: { filename, data, mimeType? }[] }
- * – multipart/form-data: sessionId, customerEmail?, reportPdf (optional), attachment (repeat)
+ * – multipart/form-data: sessionId, customerEmail?, reportPdf (optional → PROVIN_AUDITS_<VIN>.pdf), attachment (repeat)
  * Rēķina PDF tiek pievienots automātiski apmaksātiem pasūtījumiem.
  */
 export async function POST(req: Request) {
@@ -55,19 +55,14 @@ export async function POST(req: Request) {
   const contentType = req.headers.get("content-type") || "";
   let sessionId = "";
   let bodyCustomerEmail = "";
-  let manualAttachments: ReportReadyMailAttachment[] = [];
+  let multipartForm: FormData | null = null;
+  let jsonAttachmentsBase64: unknown = undefined;
 
   try {
     if (contentType.includes("multipart/form-data")) {
-      const form = await req.formData();
-      sessionId = String(form.get("sessionId") ?? "").trim();
-      bodyCustomerEmail = String(form.get("customerEmail") ?? "").trim();
-      const { attachments } = await collectAttachmentsFromFormData(form);
-      manualAttachments = attachments.map((a) => ({
-        filename: a.filename,
-        content: a.content,
-        contentType: a.contentType,
-      }));
+      multipartForm = await req.formData();
+      sessionId = String(multipartForm.get("sessionId") ?? "").trim();
+      bodyCustomerEmail = String(multipartForm.get("customerEmail") ?? "").trim();
     } else {
       let body: unknown;
       try {
@@ -89,23 +84,16 @@ export async function POST(req: Request) {
         typeof (body as { customerEmail: unknown }).customerEmail === "string"
           ? (body as { customerEmail: string }).customerEmail.trim()
           : "";
-
-      const rawB64 =
+      jsonAttachmentsBase64 =
         typeof body === "object" &&
         body !== null &&
         "attachmentsBase64" in body &&
         (body as { attachmentsBase64: unknown }).attachmentsBase64;
-      const { attachments } = collectAttachmentsFromJsonBase64(rawB64);
-      manualAttachments = attachments.map((a) => ({
-        filename: a.filename,
-        content: a.content,
-        contentType: a.contentType,
-      }));
     }
   } catch (e) {
     const mapped = mapParseError(e);
     if (mapped) return mapped;
-    console.error("[api/admin/notify-report-ready] parse", e);
+    console.error("[api/admin/notify-report-ready] parse phase1", e);
     return NextResponse.json({ error: "invalid_body", message: "Neizdevās apstrādāt pieprasījumu." }, { status: 400 });
   }
 
@@ -116,6 +104,33 @@ export async function POST(req: Request) {
   const order = await getCheckoutSessionDetail(sessionId);
   if (!order || order.paymentStatus !== "paid") {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  let manualAttachments: ReportReadyMailAttachment[] = [];
+
+  try {
+    if (multipartForm) {
+      const { attachments } = await collectAttachmentsFromFormData(multipartForm, {
+        auditReportVin: order.vin,
+      });
+      manualAttachments = attachments.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+        contentType: a.contentType,
+      }));
+    } else {
+      const { attachments } = collectAttachmentsFromJsonBase64(jsonAttachmentsBase64);
+      manualAttachments = attachments.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+        contentType: a.contentType,
+      }));
+    }
+  } catch (e) {
+    const mapped = mapParseError(e);
+    if (mapped) return mapped;
+    console.error("[api/admin/notify-report-ready] parse phase2", e);
+    return NextResponse.json({ error: "invalid_body", message: "Neizdevās apstrādāt pielikumus." }, { status: 400 });
   }
 
   const draft = await readOrderDraft(sessionId);

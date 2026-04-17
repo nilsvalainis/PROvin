@@ -1,5 +1,6 @@
 import "server-only";
 
+import { buildProvinAuditPdfFilename } from "@/lib/audit-report-pdf-filename";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 
 export const MAX_NOTIFY_ATTACHMENTS_BYTES = NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES;
@@ -45,7 +46,10 @@ function normalizeMime(filename: string, declared: string | null): string {
   return extMime(filename.toLowerCase());
 }
 
-export async function collectAttachmentsFromFormData(form: FormData): Promise<{
+export async function collectAttachmentsFromFormData(
+  form: FormData,
+  options?: { auditReportVin?: string | null },
+): Promise<{
   attachments: ParsedMailAttachment[];
   totalBytes: number;
 }> {
@@ -74,7 +78,25 @@ export async function collectAttachmentsFromFormData(form: FormData): Promise<{
   };
 
   const report = form.get("reportPdf");
-  if (report instanceof File) await pushFile(report, "PROVIN_atskaite.pdf");
+  if (report instanceof File && report.size > 0) {
+    if (out.length >= MAX_NOTIFY_FILES) {
+      throw new Error("too_many_attachments");
+    }
+    totalBytes += report.size;
+    if (totalBytes > MAX_NOTIFY_ATTACHMENTS_BYTES) {
+      throw new Error("attachments_too_large");
+    }
+    const buf = Buffer.from(await report.arrayBuffer());
+    const detected = normalizeMime("audit.pdf", report.type);
+    if (detected !== "application/pdf") {
+      throw new Error("unsupported_file_type");
+    }
+    out.push({
+      filename: buildProvinAuditPdfFilename(options?.auditReportVin),
+      content: buf,
+      contentType: "application/pdf",
+    });
+  }
 
   for (const v of form.getAll("attachment")) {
     if (v instanceof File) await pushFile(v, "pielikums.pdf");

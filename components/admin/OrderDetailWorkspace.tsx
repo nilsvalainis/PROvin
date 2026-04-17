@@ -95,6 +95,7 @@ import {
   AdminCommonPhrasesDrawerTrigger,
 } from "@/components/admin/AdminCommonPhrasesDrawer";
 import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
+import { buildProvinAuditPdfFilename } from "@/lib/audit-report-pdf-filename";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 
@@ -804,7 +805,16 @@ export function OrderDetailWorkspace({
       fd.append("sessionId", payload.sessionId);
       fd.append("customerEmail", email);
       const extraReport = notifyReportPdfExtraRef.current?.files?.[0];
-      if (extraReport) fd.append("reportPdf", extraReport);
+      if (extraReport) {
+        const auditName = buildProvinAuditPdfFilename(payload.vin);
+        fd.append(
+          "reportPdf",
+          new File([extraReport], auditName, {
+            type: extraReport.type || "application/pdf",
+            lastModified: extraReport.lastModified,
+          }),
+        );
+      }
       for (const p of portfolio) {
         const blob = await fetch(p.blobUrl).then((r) => r.blob());
         const mime = fileMimeForPortfolio(p, blob);
@@ -1549,7 +1559,8 @@ export function OrderDetailWorkspace({
                 </p>
                 <div className="mt-3 border-t border-[var(--admin-border-subtle)] pt-3">
                   <label className="mb-1 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                    Papildu audita PDF (ja nav portfelī)
+                    Papildu audita PDF (ja nav portfelī) — nosūtīts kā{" "}
+                    <span className="font-mono">{buildProvinAuditPdfFilename(payload.vin)}</span>
                   </label>
                   <input
                     ref={notifyReportPdfExtraRef}

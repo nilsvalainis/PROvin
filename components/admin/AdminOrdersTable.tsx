@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, FileText, Loader2, Send } from "lucide-react";
+import { buildProvinAuditPdfFilename } from "@/lib/audit-report-pdf-filename";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
 
@@ -40,10 +41,12 @@ function NotifyReportReadyCell({
   sessionId,
   paymentStatus,
   customerEmail,
+  vin,
 }: {
   sessionId: string;
   paymentStatus: string;
   customerEmail: string | null;
+  vin: string | null;
 }) {
   const paid = paymentStatus.toLowerCase() === "paid";
   const email = customerEmail?.trim() ?? "";
@@ -61,7 +64,16 @@ function NotifyReportReadyCell({
       fd.append("sessionId", sessionId);
       if (email) fd.append("customerEmail", email);
       const reportFile = reportInputRef.current?.files?.[0];
-      if (reportFile) fd.append("reportPdf", reportFile);
+      if (reportFile) {
+        const auditName = buildProvinAuditPdfFilename(vin);
+        fd.append(
+          "reportPdf",
+          new File([reportFile], auditName, {
+            type: reportFile.type || "application/pdf",
+            lastModified: reportFile.lastModified,
+          }),
+        );
+      }
       const extras = extraInputRef.current?.files;
       if (extras) {
         for (let i = 0; i < extras.length; i++) {
@@ -104,7 +116,7 @@ function NotifyReportReadyCell({
       setPhase("error");
       console.error("[admin] notify-report-ready fetch", e);
     }
-  }, [email, sessionId]);
+  }, [email, sessionId, vin]);
 
   if (!paid) {
     return <span className="text-[11px] text-[var(--color-provin-muted)]">—</span>;
@@ -325,6 +337,7 @@ export function AdminOrdersTable({ orders }: { orders: AdminOrdersTableRow[] }) 
                       sessionId={o.id}
                       paymentStatus={o.paymentStatus}
                       customerEmail={email || null}
+                      vin={o.vin}
                     />
                   </td>
                   <td className="px-4 py-3.5 text-right">
