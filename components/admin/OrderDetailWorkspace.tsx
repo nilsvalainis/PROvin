@@ -76,14 +76,17 @@ import {
 import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
 import {
   CarFront,
+  Check,
   ClipboardList,
   LayoutDashboard,
   Layers,
   Link2,
   ListChecks,
+  Loader2,
   MessageSquare,
   Newspaper,
   Scale,
+  Send,
 } from "lucide-react";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
@@ -92,6 +95,8 @@ import {
   AdminCommonPhrasesDrawerTrigger,
 } from "@/components/admin/AdminCommonPhrasesDrawer";
 import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
+import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
+import { isValidOrderEmail } from "@/lib/order-field-validation";
 
 export type OrderWorkspacePayload = {
   sessionId: string;
@@ -199,6 +204,27 @@ function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+const NOTIFY_ALLOWED_MIME = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
+
+function fileMimeForPortfolio(p: PortfolioEntry, blob: Blob): string {
+  const fromEntry = (p.mime ?? "").trim().toLowerCase();
+  if (NOTIFY_ALLOWED_MIME.has(fromEntry)) return fromEntry;
+  const n = p.name.toLowerCase();
+  if (n.endsWith(".pdf")) return "application/pdf";
+  if (n.endsWith(".png")) return "image/png";
+  if (n.endsWith(".jpg") || n.endsWith(".jpeg")) return "image/jpeg";
+  if (n.endsWith(".webp")) return "image/webp";
+  if (n.endsWith(".gif")) return "image/gif";
+  const bt = (blob.type || "").trim().toLowerCase();
+  return NOTIFY_ALLOWED_MIME.has(bt) ? bt : "application/octet-stream";
 }
 
 function PreviewSegmentView({
@@ -392,6 +418,10 @@ export function OrderDetailWorkspace({
   const [portfolioAllFilesModalOpen, setPortfolioAllFilesModalOpen] = useState(false);
   const [portfolioPersistFlash, setPortfolioPersistFlash] = useState(false);
   const [portfolioUploadNotice, setPortfolioUploadNotice] = useState<string | null>(null);
+  const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
+  const [notifyPhase, setNotifyPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
+  const [notifyErr, setNotifyErr] = useState<string | null>(null);
+  const notifyReportPdfExtraRef = useRef<HTMLInputElement>(null);
   const [portfolioDropActive, setPortfolioDropActive] = useState(false);
   const portfolioDragDepth = useRef(0);
   const wsPersistRef = useRef(ws);
@@ -740,6 +770,86 @@ export function OrderDetailWorkspace({
     },
     [payload.sessionId],
   );
+
+  const openNotifyClientDialog = useCallback(() => {
+    setNotifyErr(null);
+    setNotifyPhase("idle");
+    setNotifyDialogOpen(true);
+  }, []);
+
+  const sendNotifyWithWorkspaceAttachments = useCallback(async () => {
+    setNotifyErr(null);
+    if (payload.paymentStatus?.toLowerCase() !== "paid") {
+      setNotifyErr("Nosūtīt var tikai apmaksātam pasūtījumam.");
+      setNotifyPhase("error");
+      return;
+    }
+    const email = (payload.customerEmail ?? "").trim();
+    if (!email || !isValidOrderEmail(email)) {
+      setNotifyErr("Nepieciešams derīgs klienta e-pasts (sadaļā „Klienta dati”).");
+      setNotifyPhase("error");
+      return;
+    }
+    const ESTIMATE_INVOICE = 450 * 1024;
+    if (portfolioBytes + ESTIMATE_INVOICE > NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES) {
+      setNotifyErr(
+        `Portfeļa apjoms (~${formatBytes(Math.round(portfolioBytes))}) kopā ar rēķinu var pārsniegt e-pasta limitu (~${formatBytes(NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES)}). Noņem failus no portfeļa vai samazini to izmēru.`,
+      );
+      setNotifyPhase("error");
+      return;
+    }
+    setNotifyPhase("loading");
+    try {
+      const fd = new FormData();
+      fd.append("sessionId", payload.sessionId);
+      fd.append("customerEmail", email);
+      const extraReport = notifyReportPdfExtraRef.current?.files?.[0];
+      if (extraReport) fd.append("reportPdf", extraReport);
+      for (const p of portfolio) {
+        const blob = await fetch(p.blobUrl).then((r) => r.blob());
+        const mime = fileMimeForPortfolio(p, blob);
+        if (!NOTIFY_ALLOWED_MIME.has(mime)) {
+          setNotifyErr(`Neatbalsts faila veids: „${p.name}”. Atļauti tikai PDF un JPEG/PNG/WEBP/GIF.`);
+          setNotifyPhase("error");
+          return;
+        }
+        const file = new File([blob], p.name, { type: mime });
+        fd.append("attachment", file);
+      }
+      const res = await fetch("/api/admin/notify-report-ready", {
+        method: "POST",
+        body: fd,
+        credentials: "include",
+      });
+      const data: unknown = await res.json().catch(() => ({}));
+      const message =
+        typeof data === "object" &&
+        data !== null &&
+        "message" in data &&
+        typeof (data as { message: unknown }).message === "string"
+          ? (data as { message: string }).message
+          : null;
+      if (!res.ok) {
+        const fallback =
+          typeof data === "object" &&
+          data !== null &&
+          "error" in data &&
+          typeof (data as { error: unknown }).error === "string"
+            ? (data as { error: string }).error
+            : "Neizdevās nosūtīt";
+        setNotifyErr(message ?? fallback);
+        setNotifyPhase("error");
+        return;
+      }
+      if (notifyReportPdfExtraRef.current) notifyReportPdfExtraRef.current.value = "";
+      setNotifyDialogOpen(false);
+      setNotifyPhase("sent");
+      window.setTimeout(() => setNotifyPhase("idle"), 6000);
+    } catch (e) {
+      setNotifyErr(e instanceof Error ? e.message : "Tīkla kļūda");
+      setNotifyPhase("error");
+    }
+  }, [payload.sessionId, payload.paymentStatus, payload.customerEmail, portfolio, portfolioBytes]);
 
   const onPickFiles = async (files: FileList | null) => {
     setFileError(null);
@@ -1149,11 +1259,33 @@ export function OrderDetailWorkspace({
                 Saglabāts
               </span>
             ) : null}
+            {notifyPhase === "sent" ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold normal-case tracking-normal text-emerald-700" role="status">
+                <Check className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />
+                E-pasts nosūtīts
+              </span>
+            ) : null}
           </h2>
-          <AdminPdfIncludeToggle
-            checked={pdfVisibility.portfolio}
-            onChange={(next) => onPdfVisibilityChange({ portfolio: next })}
-          />
+          <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+            {payload.paymentStatus?.toLowerCase() === "paid" &&
+            payload.customerEmail?.trim() &&
+            isValidOrderEmail(payload.customerEmail.trim()) ? (
+              <button
+                type="button"
+                onClick={openNotifyClientDialog}
+                disabled={notifyPhase === "loading"}
+                className="inline-flex items-center gap-1 rounded-md border border-emerald-700/25 bg-emerald-50/90 px-2 py-1 text-[10px] font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100/95 disabled:opacity-50 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-900/50"
+                title="Nosūtīt klientam e-pastu ar portfeļa failiem un rēķinu"
+              >
+                <Send className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
+                Nosūtīt klientam
+              </button>
+            ) : null}
+            <AdminPdfIncludeToggle
+              checked={pdfVisibility.portfolio}
+              onChange={(next) => onPdfVisibilityChange({ portfolio: next })}
+            />
+          </div>
         </div>
       </div>
       <div
@@ -1385,6 +1517,77 @@ export function OrderDetailWorkspace({
 
       {portfolioAllFilesModal != null && typeof document !== "undefined"
         ? createPortal(portfolioAllFilesModal, document.body)
+        : null}
+
+      {notifyDialogOpen && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className={`admin-order-page fixed inset-0 z-[95] flex items-center justify-center bg-black/45 p-3 ${adminDark ? "dark" : ""}`}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="workspace-notify-email-title"
+              onClick={() => {
+                if (notifyPhase !== "loading") setNotifyDialogOpen(false);
+              }}
+            >
+              <div
+                className="max-h-[min(90vh,520px)] w-full max-w-md overflow-y-auto rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] p-4 shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 id="workspace-notify-email-title" className="text-sm font-semibold text-[var(--color-apple-text)]">
+                  Nosūtīt klientam e-pastu
+                </h3>
+                <p className="mt-2 text-[11px] leading-snug text-[var(--color-provin-muted)]">
+                  Tiks pievienoti <strong>visi portfeļa faili</strong> ({portfolio.length}). Rēķina PDF serveris pievieno{" "}
+                  <strong>automātiski</strong>. Kopējais pielikumu apjoms — līdz ~{formatBytes(NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES)}.
+                </p>
+                <p className="mt-2 text-[10px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
+                  Saņēmējs
+                </p>
+                <p className="mt-0.5 break-all font-mono text-[11px] text-[var(--color-apple-text)]">
+                  {payload.customerEmail?.trim()}
+                </p>
+                <div className="mt-3 border-t border-[var(--admin-border-subtle)] pt-3">
+                  <label className="mb-1 block text-[10px] font-medium text-[var(--color-provin-muted)]">
+                    Papildu audita PDF (ja nav portfelī)
+                  </label>
+                  <input
+                    ref={notifyReportPdfExtraRef}
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="block w-full text-[11px] text-[var(--color-apple-text)] file:mr-2 file:rounded-md file:border file:border-slate-200 file:bg-slate-50 file:px-2 file:py-1 file:text-[11px] dark:file:border-zinc-600 dark:file:bg-zinc-800"
+                  />
+                </div>
+                {notifyErr ? (
+                  <p className="mt-2 text-[11px] leading-snug text-red-600">{notifyErr}</p>
+                ) : null}
+                <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    disabled={notifyPhase === "loading"}
+                    className="rounded-lg border border-[var(--admin-border-subtle)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] disabled:opacity-50"
+                    onClick={() => setNotifyDialogOpen(false)}
+                  >
+                    Atcelt
+                  </button>
+                  <button
+                    type="button"
+                    disabled={notifyPhase === "loading"}
+                    onClick={() => void sendNotifyWithWorkspaceAttachments()}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-provin-accent)] px-3 py-1.5 text-[11px] font-semibold text-white hover:opacity-95 disabled:opacity-50"
+                  >
+                    {notifyPhase === "loading" ? (
+                      <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                    ) : (
+                      <Send className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    )}
+                    Sūtīt
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
         : null}
 
       {alertsPortalDomId && showAlertsPortal && alertsSection

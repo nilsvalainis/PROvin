@@ -1,7 +1,8 @@
 import "server-only";
 
-/** Vercel Hobby ~4.5 MB; rezerve — saglabājam zem šī sliekšņa. */
-export const MAX_NOTIFY_ATTACHMENTS_BYTES = 4 * 1024 * 1024;
+import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
+
+export const MAX_NOTIFY_ATTACHMENTS_BYTES = NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES;
 export const MAX_NOTIFY_FILES = 20;
 
 const ALLOWED_MIME = new Set([
