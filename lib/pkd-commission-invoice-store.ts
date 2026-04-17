@@ -175,7 +175,7 @@ function defaultDraft(now: Date, invoiceNumber: string): PkdCommissionInvoiceInp
     invoiceDate: formatInvoiceDate(now),
     paymentDue: "14 dienas no rēķina datuma",
     serviceDescription:
-      "Komisijas pakalpojumi par februārī sniegtajiem pakalpojumiem.\nAfilio numurs: 0220725002.\nKonts: nils.valainis@gmail.com",
+      "Komisijas pakalpojumi par februārī sniegtajiem pakalpojumiem.\nAfilio numurs: 0220725002.\nKonts: info@provin.lv",
     amountEur: "96.09",
     supplierName: "Nils Valainis",
     supplierReg: "09118711109",
@@ -183,7 +183,7 @@ function defaultDraft(now: Date, invoiceNumber: string): PkdCommissionInvoiceInp
     supplierBank: "A/S Industra Bank",
     supplierSwift: "MULTLV2X",
     supplierBankAccount: "LV87MULT1010B96770010",
-    supplierEmail: "nils.valainis@gmail.com",
+    supplierEmail: "info@provin.lv",
     supplierPhone: "+37126123193",
     recipientCompany: "AUTODNA Sp. z o.o.",
     recipientReg: "5492391545",

@@ -31,7 +31,7 @@ export function getDemoOrderRows() {
       amountTotal: null,
       currency: "EUR",
       paymentStatus: "unpaid" as const,
-      customerEmail: "kristaps.ozols@gmail.com",
+      customerEmail: "info+demo@provin.lv",
       vin: "VF7SA9HZ8KW123456",
       isDemo: true,
     },
@@ -87,7 +87,7 @@ export function getDemoOrderDetail(sessionId: string) {
       amountTotal: null,
       currency: "EUR",
       paymentStatus: "unpaid" as const,
-      customerEmail: "kristaps.ozols@gmail.com",
+      customerEmail: "info+demo@provin.lv",
       vin: "VF7SA9HZ8KW123456",
       listingUrl: "https://www.ss.lv/msg/lv/transport/cars/mid-size/abcd123.html",
       customerName: "Kristaps Ozols",
@@ -95,7 +95,7 @@ export function getDemoOrderDetail(sessionId: string) {
       phone: "+371 22334455",
       notes:
         "Sveiki! Gribu pirms došanās pie pārdevēja saprast, vai VIN sakrīt ar sludinājumu un vai nav „sarkanās karogus”. Maksājumu pabeigšu, tiklīdz būšu drošs par sludinājuma īstumu — šobrīd tikai gribu sagatavoties.",
-      customerDetailsEmail: "kristaps.ozols@gmail.com",
+      customerDetailsEmail: "info+demo@provin.lv",
       customerDetailsPhone: "+371 22334455",
       isDemo: true,
       internalComment:

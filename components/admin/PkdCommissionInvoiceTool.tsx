@@ -9,7 +9,7 @@ const DEFAULT_SUPPLIER = {
   bank: "A/S Industra Bank",
   swift: "MULTLV2X",
   bankAccount: "LV87MULT1010B96770010",
-  email: "nils.valainis@gmail.com",
+  email: "info@provin.lv",
   phone: "+37126123193",
 };
 
@@ -20,7 +20,7 @@ const DEFAULT_RECIPIENT = {
 };
 
 const DEFAULT_SERVICE =
-  "Komisijas pakalpojumi par februārī sniegtajiem pakalpojumiem.\nAfilio numurs: 0220725002.\nKonts: nils.valainis@gmail.com";
+  "Komisijas pakalpojumi par februārī sniegtajiem pakalpojumiem.\nAfilio numurs: 0220725002.\nKonts: info@provin.lv";
 
 export type PkdCommissionInvoiceFormData = {
   invoiceNumber: string;
