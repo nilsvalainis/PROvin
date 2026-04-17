@@ -1,0 +1,532 @@
+/* Demo: light — viena virsma hero + „KAS IR PROVIN?”; dark — produkta scrim, sapludināts + ~20% tumšāks. */
+
+.demoRoot {
+  min-width: 0;
+}
+
+/* Demo: pārslēdzējs starp mobilajiem maršrutiem */
+.demoViewportChips {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 clamp(0.75rem, 3vw, 1rem) 0.65rem;
+}
+
+.demoViewportChipsInner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.demoViewportChip,
+.demoViewportChipActive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.38rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  color: rgb(210 214 222 / 0.75);
+  background: rgb(0 0 0 / 0.28);
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.demoViewportChip:hover {
+  color: rgb(245 248 252 / 0.92);
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(0 0 0 / 0.38);
+}
+
+.demoViewportChipActive {
+  color: rgb(245 248 252 / 0.96);
+  border-color: rgb(0 120 255 / 0.55);
+  background: linear-gradient(180deg, rgb(0 90 210 / 0.45) 0%, rgb(0 60 160 / 0.35) 100%);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.2);
+}
+
+html[data-site-theme="light"] .demoViewportChip,
+html[data-site-theme="light"] .demoViewportChipActive {
+  border-color: rgb(24 31 42 / 0.12);
+  color: rgb(70 78 90 / 0.88);
+  background: rgb(255 255 255 / 0.72);
+}
+
+html[data-site-theme="light"] .demoViewportChip:hover {
+  color: #1d2430;
+  border-color: rgb(24 31 42 / 0.2);
+  background: rgb(255 255 255 / 0.92);
+}
+
+html[data-site-theme="light"] .demoViewportChipActive {
+  color: #0d2744;
+  border-color: rgb(0 120 255 / 0.45);
+  background: linear-gradient(180deg, rgb(224 240 255 / 0.95) 0%, rgb(200 228 255 / 0.75) 100%);
+}
+
+.heroIntroSurface {
+  position: relative;
+  overflow: visible;
+}
+
+/* Gaišais: viens gradients visai virsmai (hero + intro), kā dark ar vienu scrim slāni */
+html[data-site-theme="light"] .heroIntroSurface {
+  background: linear-gradient(180deg, #ffffff 0%, #f4f5f7 52%, #eceef1 100%);
+}
+
+.heroDarkBackdrop {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+html[data-site-theme="dark"] .heroDarkBackdrop {
+  display: block;
+}
+
+/* Vieglāks HeroVisual — mazāk „gaišās joslas” vidū */
+.heroVisualWrap {
+  display: none;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.045;
+}
+
+html[data-site-theme="dark"] .heroVisualWrap {
+  display: block;
+}
+
+/* Sapludina scrim vidus spožumu */
+.demoScrimTune {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+html[data-site-theme="dark"] .demoScrimTune {
+  display: block;
+  filter: brightness(0.78) saturate(0.92);
+}
+
+/* Vēl ~20% tumšāks + vidus zonas sapludināšana */
+.heroDarkVeil {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 95% 72% at 50% 45%, rgb(0 0 0 / 0.42) 0%, transparent 62%),
+    linear-gradient(180deg, rgb(0 0 0 / 0.2) 0%, transparent 35%, transparent 65%, rgb(0 0 0 / 0.22) 100%);
+}
+
+html[data-site-theme="dark"] .heroDarkVeil {
+  display: block;
+}
+
+.heroSection {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f5f7 56%, #eceef1 100%);
+  min-height: calc(100svh - 72px);
+  padding: clamp(1.75rem, 2.8vw, 2.75rem) clamp(1.25rem, 3vw, 3rem) clamp(1.75rem, 3vw, 2.75rem);
+  overflow-x: clip;
+}
+
+html[data-site-theme="light"] .heroSection {
+  background: transparent;
+}
+
+html[data-site-theme="dark"] .heroSection {
+  background: transparent;
+}
+
+.shell {
+  margin: 0 auto;
+  max-width: 980px;
+}
+
+.heroColumns {
+  display: grid;
+  gap: clamp(1.25rem, 3vw, 2rem);
+  align-items: start;
+}
+
+@media (min-width: 981px) {
+  .heroColumns {
+    /* Labā stikla kolonna: iepriekšējais max ≈380px — par 20% šaurāka (~304px). */
+    grid-template-columns: minmax(0, 1fr) minmax(208px, min(304px, 27.2vw));
+    gap: clamp(1.5rem, 3vw, 2.75rem);
+    align-items: start;
+  }
+
+  .heroColumns .left {
+    transform: none;
+    max-width: 560px;
+  }
+
+  .heroIntroPanel {
+    margin-top: clamp(0.65rem, 1.6vw, 1.2rem);
+  }
+}
+
+.left {
+  max-width: calc(560px / 1.1);
+  transform: scale(1.1);
+  transform-origin: top left;
+  min-width: 0;
+}
+
+.heroIntroPanel {
+  min-width: 0;
+}
+
+.heroGlassCard {
+  border: 1px solid rgb(248 249 251 / 0.95);
+  border-radius: 14px;
+  padding: clamp(1.05rem, 2.2vw, 1.35rem);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.99) 0%, rgb(244 246 249 / 0.96) 100%);
+  box-shadow:
+    0 12px 24px rgb(24 31 42 / 0.09),
+    0 1px 0 rgb(255 255 255 / 0.72) inset;
+}
+
+.heroGlassTitle {
+  margin: 0;
+  font-size: clamp(1.12rem, 2.1vw, 1.42rem);
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: #1d2430;
+  text-wrap: balance;
+}
+
+.heroGlassTitleNowrap {
+  display: inline;
+  white-space: nowrap;
+}
+
+.heroGlassTitlePro {
+  color: #1d2430;
+}
+
+.heroGlassScan {
+  margin-top: 0.75rem;
+  width: 100%;
+}
+
+.heroGlassBody {
+  margin: 0.85rem 0 0;
+  font-size: clamp(0.9rem, 1.35vw, 0.98rem);
+  line-height: 1.55;
+  color: rgba(45, 52, 62, 0.9);
+  text-wrap: pretty;
+}
+
+.heroGlassPro {
+  color: #1d2430;
+}
+
+.title {
+  margin: 0;
+  display: grid;
+  gap: 0.09em;
+  --demo-title-audits: clamp(2rem, 4.2vw, 3.35rem);
+  line-height: 0.94;
+  letter-spacing: -0.024em;
+  color: #2d3744;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.titleRow {
+  display: block;
+  white-space: nowrap;
+}
+
+.titleSubLine {
+  font-size: calc(var(--demo-title-audits) * 0.85);
+  line-height: 0.94;
+  letter-spacing: -0.024em;
+}
+
+.titleAuditsLine {
+  font-size: var(--demo-title-audits);
+  line-height: 0.94;
+  letter-spacing: -0.024em;
+}
+
+.titleAccent {
+  color: var(--color-provin-accent, #0078ff);
+}
+
+.titleInk {
+  color: inherit;
+}
+
+.form {
+  margin-top: 1.05rem;
+  display: grid;
+  gap: 0.85rem;
+  max-width: 520px;
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.fieldLabel {
+  font-size: 0.78rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5a6577;
+  font-weight: 700;
+}
+
+.field input {
+  width: 100%;
+  border: 1px solid rgb(248 249 251 / 0.95);
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  font-size: 1rem;
+  color: #2f3a49;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.99) 0%, rgb(244 246 249 / 0.96) 100%);
+  box-shadow: 0 12px 24px rgb(24 31 42 / 0.09), 0 1px 0 rgb(255 255 255 / 0.72) inset;
+}
+
+.field input::placeholder {
+  color: #8a93a2;
+}
+
+.ctaButton {
+  margin-top: 1rem;
+  width: min(100%, 520px);
+  min-height: 56px;
+  border: 1px solid #0d63d9;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #1f84ff 0%, #0d6eea 100%);
+  color: #fff;
+  font-size: clamp(1.02rem, 1.45vw, 1.16rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 16px 30px rgb(13 110 234 / 0.28), 0 2px 0 rgb(255 255 255 / 0.22) inset;
+  cursor: pointer;
+}
+
+.ctaButton:hover {
+  background: linear-gradient(180deg, #2588ff 0%, #1174f0 100%);
+}
+
+.features {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.36rem 1.1rem;
+  max-width: 530px;
+}
+
+.features li {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.46rem;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: #586477;
+}
+
+.featureIcon {
+  margin-top: 0.03rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 0.95rem;
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.featureIconCheck {
+  color: #1dd75f;
+  font-size: 0.98rem;
+  font-weight: 900;
+  text-shadow: 0 0 8px rgb(29 215 95 / 0.28);
+}
+
+.featureIconShield {
+  color: #1872ea;
+}
+
+.featureIconShield svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: currentColor;
+}
+
+html[data-site-theme="dark"] .heroIntroSurface {
+  --dd-line: rgb(255 255 255 / 0.08);
+  --dd-line-strong: rgb(0 102 255 / 0.35);
+  --dd-surface: rgb(255 255 255 / 0.035);
+  --dd-surface-2: rgb(255 255 255 / 0.055);
+  color: rgb(245 248 252 / 0.92);
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .title {
+  color: rgb(245 248 252 / 0.94);
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .fieldLabel {
+  color: rgb(200 208 220 / 0.72);
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .field input {
+  color: rgb(245 248 252 / 0.95);
+  border: 1px solid var(--dd-line);
+  border-radius: 14px;
+  background: linear-gradient(165deg, var(--dd-surface-2), var(--dd-surface));
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.35),
+    0 18px 48px rgb(0 0 0 / 0.35),
+    0 1px 0 rgb(255 255 255 / 0.06) inset;
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .field input::placeholder {
+  color: rgb(160 170 188 / 0.55);
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .features li {
+  color: rgb(210 216 228 / 0.82);
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .featureIconCheck {
+  color: #34e287;
+  text-shadow: 0 0 10px rgb(52 226 135 / 0.22);
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .featureIconShield {
+  color: #5c9dff;
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .ctaButton {
+  border-color: rgb(0 102 255 / 0.45);
+  background: linear-gradient(180deg, #1a6fe8 0%, #0d52c4 100%);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.35),
+    0 14px 32px rgb(0 40 120 / 0.45),
+    0 1px 0 rgb(255 255 255 / 0.12) inset;
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .ctaButton:hover {
+  background: linear-gradient(180deg, #2478f0 0%, #115dcc 100%);
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .heroGlassCard {
+  color: rgb(245 248 252 / 0.94);
+  border: 1px solid var(--dd-line);
+  background: linear-gradient(165deg, var(--dd-surface-2), var(--dd-surface));
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.35),
+    0 18px 48px rgb(0 0 0 / 0.35),
+    0 1px 0 rgb(255 255 255 / 0.06) inset;
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .heroGlassTitle,
+html[data-site-theme="dark"] .heroIntroSurface .heroGlassTitlePro {
+  color: rgb(255 255 255 / 0.95);
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .heroGlassBody {
+  color: rgb(200 205 215 / 0.82);
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .heroGlassPro {
+  color: rgb(255 255 255 / 0.95);
+}
+
+/* Šaurāks mobilais (≈ SE / mini) */
+:global(.demo-mobile-narrow) .heroSection {
+  min-height: calc(100svh - 64px);
+  padding: clamp(1.1rem, 4vw, 1.5rem) clamp(0.85rem, 4vw, 1.1rem) clamp(1.1rem, 3vw, 1.35rem);
+}
+
+:global(.demo-mobile-narrow) .left {
+  transform: scale(1.05);
+  transform-origin: top left;
+  max-width: calc(100% / 1.05);
+}
+
+:global(.demo-mobile-narrow) .title {
+  --demo-title-audits: clamp(1.45rem, 9.2vw, 1.85rem);
+}
+
+:global(.demo-mobile-narrow) .form {
+  gap: 0.65rem;
+}
+
+:global(.demo-mobile-narrow) .field input {
+  padding: 0.78rem 0.85rem;
+  font-size: 0.94rem;
+}
+
+:global(.demo-mobile-narrow) .ctaButton {
+  min-height: 50px;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+}
+
+:global(.demo-mobile-narrow) .features {
+  gap: 0.28rem 0.65rem;
+}
+
+:global(.demo-mobile-narrow) .features li {
+  font-size: 0.74rem;
+}
+
+/* Platāks mobilais (lielāki telefoni) */
+:global(.demo-mobile-wide) .heroSection {
+  padding: clamp(1.5rem, 3.2vw, 2.1rem) clamp(1.15rem, 3.5vw, 1.65rem) clamp(1.5rem, 2.8vw, 2rem);
+}
+
+:global(.demo-mobile-wide) .shell {
+  max-width: min(980px, 100%);
+}
+
+:global(.demo-mobile-wide) .title {
+  --demo-title-audits: clamp(1.85rem, 4.8vw, 2.45rem);
+}
+
+@media (max-width: 980px) {
+  .left {
+    max-width: none;
+    transform: scale(1.1);
+    transform-origin: top left;
+  }
+}
+
+@media (max-width: 680px) {
+  .features {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    --demo-title-audits: clamp(1.7rem, 11.5vw, 2.35rem);
+  }
+}

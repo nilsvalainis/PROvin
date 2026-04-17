@@ -31,29 +31,39 @@ export function useSiteTheme(): SiteThemeContextValue {
   return v;
 }
 
-export function SiteThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<SiteThemeMode>(() =>
-    typeof window === "undefined" ? "dark" : readSiteTheme(),
-  );
+export function SiteThemeProvider({
+  children,
+  initialTheme = "dark",
+}: {
+  children: ReactNode;
+  initialTheme?: SiteThemeMode;
+}) {
+  /**
+   * Svarīgi hydration stabilitātei:
+   * serveris vienmēr renderē ar "dark", tāpēc klienta pirmajai renderēšanai
+   * jābūt identiskai. Reālo izvēli no localStorage ielasām useEffect.
+   */
+  const [theme, setThemeState] = useState<SiteThemeMode>(initialTheme);
+
+  /** Vienota sinkronizācija: state -> `<html data-site-theme>` + localStorage. */
+  useEffect(() => {
+    applySiteThemeToDocument(theme);
+    writeSiteTheme(theme);
+  }, [theme]);
 
   useEffect(() => {
-    const t = readSiteTheme();
+    const attr = typeof document !== "undefined" ? document.documentElement.getAttribute("data-site-theme") : null;
+    const t = attr === "light" || attr === "dark" ? attr : readSiteTheme();
     setThemeState(t);
-    applySiteThemeToDocument(t);
-  }, []);
+  }, [initialTheme]);
 
   const setTheme = useCallback((mode: SiteThemeMode) => {
     setThemeState(mode);
-    applySiteThemeToDocument(mode);
-    writeSiteTheme(mode);
   }, []);
 
   const toggleTheme = useCallback(() => {
     setThemeState((prev) => {
-      const next = prev === "dark" ? "light" : "dark";
-      applySiteThemeToDocument(next);
-      writeSiteTheme(next);
-      return next;
+      return prev === "dark" ? "light" : "dark";
     });
   }, []);
 
@@ -62,7 +72,6 @@ export function SiteThemeProvider({ children }: { children: ReactNode }) {
       if (e.key !== SITE_THEME_STORAGE_KEY || !e.newValue) return;
       if (e.newValue === "light" || e.newValue === "dark") {
         setThemeState(e.newValue);
-        applySiteThemeToDocument(e.newValue);
       }
     };
     window.addEventListener("storage", onStorage);

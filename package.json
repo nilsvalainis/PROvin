@@ -4,10 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:stable": "CHOKIDAR_USEPOLLING=1 WATCHPACK_POLLING=true next dev --hostname localhost --port 3001",
     "build": "next build",
     "start": "next start",
+    "preview": "next start --hostname localhost --port 3020",
+    "preview:restart": "sh -c 'lsof -ti tcp:3020 | xargs kill -9 2>/dev/null || true; rm -rf .next && npm run build && npm run preview'",
     "lint": "next lint",
     "screenshot:mobile": "node scripts/mobile-screenshot.mjs",
+    "screenshot:demo-mobile": "node scripts/demo-mobile-preview.mjs",
     "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe"
   },
   "dependencies": {

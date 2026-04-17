@@ -1,0 +1,46 @@
+/**
+ * Plats ekrāns: „telefona” rāmis mobilajiem demo maršrutiem (narrow / wide).
+ * Importē tikai `mobile-narrow` un `mobile-wide` layoutos.
+ */
+.canvas {
+  width: 100%;
+  min-width: 0;
+}
+
+.phone {
+  min-width: 0;
+}
+
+@media (min-width: 641px) {
+  .canvas {
+    padding: clamp(0.75rem, 2vw, 1.25rem) clamp(0.75rem, 2vw, 1.5rem) clamp(1rem, 2.5vw, 1.5rem);
+    background: linear-gradient(165deg, #14161c 0%, #0a0b0e 55%, #07080a 100%);
+  }
+
+  :global(html[data-site-theme="light"]) .canvas {
+    background: linear-gradient(180deg, #e4e6ea 0%, #d5d8df 100%);
+  }
+
+  .phone {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 375px;
+    border-radius: 28px;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.35),
+      0 28px 90px rgb(0 0 0 / 0.45);
+    overflow: clip;
+  }
+
+  .phoneWide {
+    max-width: 428px;
+  }
+
+  :global(html[data-site-theme="light"]) .phone {
+    border-color: rgb(24 31 42 / 0.14);
+    box-shadow:
+      0 0 0 1px rgb(255 255 255 / 0.5),
+      0 22px 60px rgb(24 31 42 / 0.12);
+  }
+}

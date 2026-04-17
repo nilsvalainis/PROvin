@@ -6,9 +6,9 @@
 html[data-site-theme="light"] {
   color-scheme: light;
   /* Pamatfons / teksts */
-  --site-html-bg: #f4f5f7;
+  --site-html-bg: #f6f7fa;
   --site-body-bg: #ffffff;
-  --site-body-gradient: linear-gradient(180deg, #ffffff 0%, #f6f7f9 48%, #f0f2f5 100%);
+  --site-body-gradient: linear-gradient(180deg, #ffffff 0%, #fafbfd 52%, #f4f6f9 100%);
   --site-body-fg: #0a0a0a;
   /* Tailwind @theme — lietots ar `text-provin-accent` u.c. */
   --color-provin-accent: #0078ff;
@@ -20,7 +20,7 @@ html[data-site-theme="light"] {
   --color-provin-green: var(--color-provin-accent);
   --color-provin-green-dark: var(--color-provin-accent-hover);
   --color-provin-surface: #ffffff;
-  --color-provin-surface-2: #f0f2f5;
+  --color-provin-surface-2: #f5f7fb;
   --color-provin-ink: #141416;
   --color-provin-muted: #5c5f66;
   --color-canvas: #ffffff;
@@ -30,33 +30,33 @@ html[data-site-theme="light"] {
    * Glass (light): 1) backdrop-blur — galvenā „bieza stikla” sajūta, 2) zema α uz balta,
    * 3) plāna gaiša mala (sudrab/balts spīdums), 4) maiga ēna dziļumam.
    */
-  --dd-glass-blur: 28px;
-  --dd-glass-sat: 1.14;
+  --dd-glass-blur: 26px;
+  --dd-glass-sat: 1.05;
   --dd-glass-fill: linear-gradient(
     165deg,
-    rgb(255 255 255 / 0.14) 0%,
-    rgb(255 255 255 / 0.06) 50%,
-    rgb(248 251 255 / 0.08) 100%
+    rgb(255 255 255 / 0.9) 0%,
+    rgb(255 255 255 / 0.78) 52%,
+    rgb(251 253 255 / 0.84) 100%
   );
   --dd-glass-fill-hover: linear-gradient(
     165deg,
-    rgb(255 255 255 / 0.22) 0%,
-    rgb(255 255 255 / 0.1) 50%,
-    rgb(236 245 255 / 0.14) 100%
+    rgb(255 255 255 / 0.97) 0%,
+    rgb(255 255 255 / 0.9) 52%,
+    rgb(246 251 255 / 0.9) 100%
   );
-  --dd-glass-border-shine: rgb(255 255 255 / 0.62);
-  --dd-glass-outer: rgb(15 23 42 / 0.05);
-  --dd-glass-inset: inset 0 1px 0 rgb(255 255 255 / 0.82);
-  --dd-glass-shadow-tight: 0 2px 8px rgb(15 23 42 / 0.045);
-  --dd-glass-shadow-deep: 0 14px 40px rgb(15 23 42 / 0.075);
-  --dd-glass-shadow-blue: 0 1px 0 rgb(0 120 255 / 0.12);
+  --dd-glass-border-shine: rgb(255 255 255 / 0.92);
+  --dd-glass-outer: rgb(15 23 42 / 0.045);
+  --dd-glass-inset: inset 0 1px 0 rgb(255 255 255 / 0.92);
+  --dd-glass-shadow-tight: 0 2px 6px rgb(15 23 42 / 0.03), 0 10px 22px rgb(15 23 42 / 0.055);
+  --dd-glass-shadow-deep: 0 18px 40px rgb(15 23 42 / 0.075);
+  --dd-glass-shadow-blue: 0 1px 0 rgb(255 255 255 / 0.8);
   --dd-glass-hover:
-    inset 0 1px 0 rgb(255 255 255 / 0.88),
+    inset 0 1px 0 rgb(255 255 255 / 0.96),
     0 0 0 1px rgb(0 102 255 / 0.12),
-    0 10px 36px rgb(15 23 42 / 0.1),
-    0 0 40px rgb(0 102 255 / 0.08);
+    0 14px 34px rgb(15 23 42 / 0.09),
+    0 26px 60px rgb(15 23 42 / 0.06);
   /* Hero orbit S12 fona pagarinājums — kā `site-theme-light` S12 `--orbit-bg`. */
-  --hero-orbit-bg-extended: radial-gradient(circle at 50% 100%, rgb(0 102 255 / 0.12), #f6f7f9 45%), #ffffff;
+  --hero-orbit-bg-extended: radial-gradient(circle at 50% 100%, rgb(0 102 255 / 0.075), #fcfdff 45%), #ffffff;
 }
 
 /* Skenēšanas līnijas — `--provin-scan-loop-dur` no `:root` (tāds pats cikls kā tumšajā tēmā) */
@@ -77,21 +77,23 @@ html[data-site-theme="light"] .provin-diagnostic-scan-line__track {
 }
 
 html[data-site-theme="light"] .provin-diagnostic-scan-line__pulse {
-  width: clamp(1.05rem, 6.5vw, 1.65rem);
+  width: clamp(1.2rem, 7.4vw, 1.95rem);
   height: 1px;
   margin-top: -0.5px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(0 130 255 / 0.88) 30%,
-    rgb(90 210 255 / 1) 50%,
-    rgb(0 130 255 / 0.88) 70%,
+    rgb(0 120 255 / 0.78) 24%,
+    rgb(0 150 255 / 0.98) 42%,
+    rgb(10 88 220 / 1) 50%,
+    rgb(0 150 255 / 0.98) 58%,
+    rgb(0 120 255 / 0.78) 76%,
     transparent 100%
   );
   box-shadow:
-    0 0 7px 0 rgb(0 160 255 / 1),
-    0 0 18px 0 rgb(0 140 255 / 0.65),
-    0 0 30px 0 rgb(0 120 255 / 0.48);
+    0 0 8px 0 rgb(0 152 255 / 0.96),
+    0 0 20px 0 rgb(0 132 255 / 0.6),
+    0 0 30px 0 rgb(0 118 255 / 0.42);
   animation: provin-diagnostic-scan-ping-pong calc(var(--provin-scan-loop-dur) * 2) linear infinite;
 }
 
@@ -100,36 +102,38 @@ html[data-site-theme="light"] .provin-diagnostic-scan-line__pulse--sweep-ltr {
 }
 
 html[data-site-theme="light"] .demo-design-dir__hero-scan::after {
-  width: clamp(1.05rem, 6.5vw, 1.65rem);
+  width: clamp(1.2rem, 7.4vw, 1.95rem);
   height: 1px;
   margin-top: -0.5px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(0 130 255 / 0.88) 30%,
-    rgb(90 210 255 / 1) 50%,
-    rgb(0 130 255 / 0.88) 70%,
+    rgb(0 120 255 / 0.78) 24%,
+    rgb(0 150 255 / 0.98) 42%,
+    rgb(10 88 220 / 1) 50%,
+    rgb(0 150 255 / 0.98) 58%,
+    rgb(0 120 255 / 0.78) 76%,
     transparent 100%
   );
   box-shadow:
-    0 0 7px 0 rgb(0 160 255 / 1),
-    0 0 18px 0 rgb(0 140 255 / 0.65),
-    0 0 30px 0 rgb(0 120 255 / 0.48);
+    0 0 8px 0 rgb(0 152 255 / 0.96),
+    0 0 20px 0 rgb(0 132 255 / 0.6),
+    0 0 30px 0 rgb(0 118 255 / 0.42);
   animation: provin-diagnostic-scan-ping-pong calc(var(--provin-scan-loop-dur, calc((7s / 3) * 2)) * 2) linear infinite;
 }
 
 /* Mājas čaula + fona dziļums */
 html[data-site-theme="light"] .home-scroll-surface {
-  background-color: #f4f5f7 !important;
+  background-color: #f6f7fa !important;
 }
 
 html[data-site-theme="light"] .home-depth-bg {
-  background-color: #f6f7f9 !important;
+  background-color: #fafbfd !important;
   background-image: radial-gradient(
     ellipse 125% 95% at 50% -10%,
-    rgb(0 120 255 / 0.09) 0%,
-    rgb(0 102 255 / 0.055) 22%,
-    rgb(0 90 220 / 0.03) 40%,
+    rgb(0 120 255 / 0.055) 0%,
+    rgb(0 102 255 / 0.03) 24%,
+    rgb(0 90 220 / 0.016) 42%,
     transparent 58%
   ) !important;
 }
@@ -291,14 +295,15 @@ html[data-site-theme="light"] .order-form-hero-field:focus-within {
 }
 
 html[data-site-theme="light"] .order-form-hero-field--card {
-  border: 1px solid rgb(255 255 255 / 0.58) !important;
+  border: 1px solid rgb(255 255 255 / 0.84) !important;
   background: var(--dd-glass-fill) !important;
   background-color: rgb(255 255 255 / 0.06) !important;
   backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat)) !important;
   -webkit-backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat)) !important;
   box-shadow:
     var(--dd-glass-inset),
-    0 0 0 1px rgb(255 255 255 / 0.04) inset,
+    0 0 0 1px rgb(15 23 42 / 0.08) inset,
+    0 0 0 1px rgb(15 23 42 / 0.06),
     var(--dd-glass-shadow-blue),
     var(--dd-glass-shadow-tight),
     var(--dd-glass-shadow-deep) !important;
@@ -361,35 +366,35 @@ html[data-site-theme="light"] .lab-chrome-cta:hover {
 /* Design-direction virsma */
 html[data-site-theme="light"] .demo-design-dir {
   color: #171717;
-  background: #f4f5f7;
-  --dd-line: rgb(20 20 24 / 0.12);
+  background: #f6f7fa;
+  --dd-line: rgb(20 20 24 / 0.06);
   --dd-line-strong: rgb(0 102 255 / 0.45);
   /* Kā tumšajā: --dd-surface / --dd-surface-2 (puscaurspīdīgi) */
-  --dd-surface: rgb(255 255 255 / 0.38);
-  --dd-surface-2: rgb(255 255 255 / 0.55);
+  --dd-surface: rgb(255 255 255 / 0.8);
+  --dd-surface-2: rgb(255 255 255 / 0.9);
   /* Hero + „KAS IEKĻAUTS CENĀ?” (band-a) — viens sudrabains fona stack */
   --home-hero-light-silk-bg:
     radial-gradient(ellipse 120% 72% at 50% 50%, rgb(255 255 255 / 0.62), transparent 60%),
     radial-gradient(ellipse 100% 55% at 50% 8%, rgb(255 255 255 / 0.46), transparent 56%),
     radial-gradient(ellipse 85% 50% at 6% 90%, rgb(0 102 255 / 0.045), transparent 52%),
     radial-gradient(ellipse 80% 48% at 94% 85%, rgb(190 200 215 / 0.27), transparent 50%),
-    linear-gradient(to bottom, #a3aab6 0%, #adb5c2 12%, #e4e6eb 50%, #adb5c2 88%, #a3aab6 100%);
+    linear-gradient(to bottom, #e6e9ef 0%, #edf0f5 14%, #fbfcff 50%, #edf0f5 86%, #e6e9ef 100%);
 }
 
 html[data-site-theme="light"] .demo-design-dir__section--band-a {
   background-color: transparent;
   background-image: var(--home-hero-light-silk-bg);
-  box-shadow: inset 0 -1px 0 rgb(20 20 24 / 0.045);
+  box-shadow: inset 0 -1px 0 rgb(20 20 24 / 0.03);
 }
 
 html[data-site-theme="light"] .demo-design-dir__section--band-b {
-  background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(0 102 255 / 0.06), transparent 48%), #f6f7f9;
-  box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.09);
+  background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(0 102 255 / 0.03), transparent 48%), #fafbfd;
+  box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.035);
 }
 
 /* BUJ sadaļa — viena balta virsma (kā pirmā BUJ rinda gaišajā lapā) */
 html[data-site-theme="light"] .demo-design-dir__section--band-c {
-  background: linear-gradient(180deg, #f3f4f6 0%, #fafbfc 48%, #ffffff 100%);
+  background: linear-gradient(180deg, #f8f9fb 0%, #fcfdff 48%, #ffffff 100%);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9);
 }
 
@@ -407,14 +412,15 @@ html[data-site-theme="light"] #biezi-jautajumi .demo-design-dir__shell {
  * Kartes + BUJ: blur-dominant glass, zema α, plāna gaiša mala, dziļuma ēna.
  */
 html[data-site-theme="light"] .demo-design-dir__card {
-  border: 1px solid rgb(255 255 255 / 0.58) !important;
+  border: 1px solid rgb(255 255 255 / 0.94) !important;
   background: var(--dd-glass-fill) !important;
   background-color: rgb(255 255 255 / 0.06) !important;
   backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat)) !important;
   -webkit-backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat)) !important;
   box-shadow:
     var(--dd-glass-inset),
-    0 0 0 1px rgb(255 255 255 / 0.04) inset,
+    0 0 0 1px rgb(15 23 42 / 0.05) inset,
+    0 0 0 1px rgb(15 23 42 / 0.04),
     var(--dd-glass-shadow-blue),
     var(--dd-glass-shadow-tight),
     var(--dd-glass-shadow-deep) !important;
@@ -461,14 +467,15 @@ html[data-site-theme="light"] .demo-design-dir__card:active {
 }
 
 html[data-site-theme="light"] .demo-design-dir__faq-item {
-  border: 1px solid rgb(255 255 255 / 0.58) !important;
+  border: 1px solid rgb(255 255 255 / 0.94) !important;
   background: var(--dd-glass-fill) !important;
   background-color: rgb(255 255 255 / 0.06) !important;
   backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat)) !important;
   -webkit-backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat)) !important;
   box-shadow:
     var(--dd-glass-inset),
-    0 0 0 1px rgb(255 255 255 / 0.35) inset,
+    0 0 0 1px rgb(15 23 42 / 0.05) inset,
+    0 0 0 1px rgb(15 23 42 / 0.04),
     var(--dd-glass-shadow-tight),
     var(--dd-glass-shadow-deep) !important;
   transition:
@@ -489,13 +496,14 @@ html[data-site-theme="light"] .demo-design-dir__faq-item:hover {
 }
 
 html[data-site-theme="light"] .demo-design-dir__faq-row {
-  border: 1px solid rgb(255 255 255 / 0.52) !important;
+  border: 1px solid rgb(255 255 255 / 0.9) !important;
   background: var(--dd-glass-fill) !important;
   background-color: rgb(255 255 255 / 0.05) !important;
   backdrop-filter: blur(calc(var(--dd-glass-blur) - 4px)) saturate(var(--dd-glass-sat)) !important;
   -webkit-backdrop-filter: blur(calc(var(--dd-glass-blur) - 4px)) saturate(var(--dd-glass-sat)) !important;
   box-shadow:
     var(--dd-glass-inset),
+    0 0 0 1px rgb(15 23 42 / 0.035),
     var(--dd-glass-shadow-tight),
     var(--dd-glass-shadow-deep) !important;
   transition:
@@ -508,7 +516,7 @@ html[data-site-theme="light"] .demo-design-dir__faq-row:hover {
   border-color: rgb(0 102 255 / 0.2) !important;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.85),
-    0 8px 28px rgb(15 23 42 / 0.08),
+    0 8px 24px rgb(15 23 42 / 0.06),
     0 0 32px rgb(0 102 255 / 0.06) !important;
 }
 
@@ -521,6 +529,7 @@ html[data-site-theme="light"] .marketing-hero-pillar-dock {
   -webkit-backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat)) !important;
   box-shadow:
     var(--dd-glass-inset),
+    0 0 0 1px rgb(15 23 42 / 0.04),
     var(--dd-glass-shadow-tight),
     var(--dd-glass-shadow-deep) !important;
 }
@@ -556,7 +565,7 @@ html[data-site-theme="light"] .demo-design-dir__hero-scan {
 
 /* Orbit hero (S12 — produkcijas mājas) */
 html[data-site-theme="light"] .marketing-hero-orbit-base.marketing-hero-orbit--s12.marketing-hero-section {
-  --orbit-bg: radial-gradient(circle at 50% 100%, rgb(0 102 255 / 0.12), #f6f7f9 45%), #ffffff;
+  --orbit-bg: radial-gradient(circle at 50% 100%, rgb(0 102 255 / 0.16), #fafbfd 45%), #ffffff;
   --orbit-border-outer: rgb(20 24 30 / 0.14);
   --orbit-border-inner: rgb(0 102 255 / 0.22);
 }
@@ -646,18 +655,25 @@ html[data-site-theme="light"] .demo-design-dir__kicker {
  * globālajā animācijā beigās ir tumšā loka ēna + melns 1px — to aizstājam ar maigu „letterpress” un bez krāsainas mākoņa ēnas.
  */
 html[data-site-theme="light"] .marketing-hero-section .hero-approved-reveal .hero-approved-char {
+  color: #4b5563 !important;
   text-shadow:
-    0 1px 0 rgb(255 255 255 / 0.95),
-    0 1px 2px rgb(15 23 42 / 0.06) !important;
+    0 1px 0 rgb(255 255 255 / 0.92),
+    0 1px 3px rgb(15 23 42 / 0.08) !important;
   filter: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
   html[data-site-theme="light"] .marketing-hero-section .hero-approved-reveal .hero-approved-char {
+    color: #4b5563 !important;
     text-shadow:
-      0 1px 0 rgb(255 255 255 / 0.95),
-      0 1px 2px rgb(15 23 42 / 0.06) !important;
+      0 1px 0 rgb(255 255 255 / 0.92),
+      0 1px 3px rgb(15 23 42 / 0.08) !important;
   }
+}
+
+/* Hero ievades laukiem noņemam statisko līniju; paliek tikai kustīgais indikators. */
+.order-form-hero-scan .provin-diagnostic-scan-line__track {
+  background: transparent !important;
 }
 
 html[data-site-theme="light"] .marketing-hero-pillar-title {
@@ -678,13 +694,14 @@ html[data-site-theme="light"] .marketing-hero-pillar-icon.marketing-hero-pillar-
 
 /* Pasūtījuma „lec” — kā tumšais __order-jump (blur + ::before zila spīds uz hover) */
 html[data-site-theme="light"] .demo-design-dir__order-jump {
-  border: 1px solid rgb(255 255 255 / 0.55) !important;
+  border: 1px solid rgb(255 255 255 / 0.92) !important;
   background: var(--dd-glass-fill);
   background-color: rgb(255 255 255 / 0.06);
   backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat));
   -webkit-backdrop-filter: blur(var(--dd-glass-blur)) saturate(var(--dd-glass-sat));
   box-shadow:
     var(--dd-glass-inset),
+    0 0 0 1px rgb(15 23 42 / 0.04),
     var(--dd-glass-shadow-blue),
     var(--dd-glass-shadow-tight),
     var(--dd-glass-shadow-deep);
@@ -701,7 +718,7 @@ html[data-site-theme="light"] .demo-design-dir__order-jump::before {
 }
 
 html[data-site-theme="light"] .demo-design-dir__order-jump:hover {
-  border-color: rgb(0 102 255 / 0.34);
+  border-color: rgb(0 102 255 / 0.24);
   background: var(--dd-glass-fill-hover);
   color: #111827 !important;
   box-shadow: var(--dd-glass-inset), var(--dd-glass-hover);

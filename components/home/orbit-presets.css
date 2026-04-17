@@ -448,13 +448,13 @@
 .marketing-hero-orbit-base.marketing-hero-orbit--s12.marketing-hero-section {
   --orbit-bg: radial-gradient(
       circle at 50% 100%,
-      rgb(188 192 200 / 0.22) 0%,
-      rgb(165 170 180 / 0.15) 16%,
-      rgb(130 135 145 / 0.08) 32%,
-      rgb(70 72 78 / 0.03) 48%,
+      rgb(150 156 168 / 0.18) 0%,
+      rgb(122 128 140 / 0.12) 16%,
+      rgb(92 98 110 / 0.06) 32%,
+      rgb(44 48 56 / 0.02) 48%,
       transparent 56%
     ),
-    #030304;
+    #010102;
   --orbit-border-outer: rgb(230 232 240 / 0.08);
   --orbit-border-inner: rgb(255 255 255 / 0.07);
   --orbit-dur-a: 35s;

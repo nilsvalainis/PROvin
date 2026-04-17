@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
-import { Cormorant_Garamond } from "next/font/google";
+import { Playfair_Display } from "next/font/google";
 import "@/components/home/hero-orbit-styles";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -54,13 +54,13 @@ export type MarketingHeroProps = {
 };
 
 const sectionBasePad =
-  "px-4 pb-[max(1.375rem,calc(env(safe-area-inset-bottom,0px)+0.625rem))] pt-[max(1.5rem,calc(env(safe-area-inset-top,0px)+1.25rem))] sm:px-8 sm:pb-9 sm:pt-[max(1.75rem,calc(env(safe-area-inset-top,0px)+1.35rem))]";
+  "px-4 pb-5 pt-[max(1.5rem,calc(env(safe-area-inset-top,0px)+1.25rem))] sm:px-8 sm:pb-9 sm:pt-[max(1.75rem,calc(env(safe-area-inset-top,0px)+1.35rem))]";
 
 /** Neliels hero kickeris starp „AUDITS” un formu — `absolute`, lai neietekmētu flex izkārtojumu. */
-const heroOrbitItalyKickerFont = Cormorant_Garamond({
+const heroOrbitItalyKickerFont = Playfair_Display({
   subsets: ["latin", "latin-ext"],
   style: ["italic"],
-  weight: ["500"],
+  weight: ["500", "600"],
   display: "swap",
 });
 
@@ -185,7 +185,7 @@ export function MarketingHero({
   const heroOrbitItalyKickerNode =
     orbitHomeCenterLayout && !demoVariant ? (
       <p
-        className={`marketing-hero-italy-kicker ${heroOrbitItalyKickerFont.className} pointer-events-none absolute left-1/2 top-full z-[6] w-full max-w-[min(100%,30rem)] -translate-x-1/2 translate-y-2 text-center text-[clamp(0.78rem,2.4vw,1.02rem)] leading-snug tracking-[0.03em] text-white/[0.78] [text-shadow:0_1px_14px_rgba(0,0,0,0.5)]`}
+        className={`marketing-hero-italy-kicker ${heroOrbitItalyKickerFont.className} pointer-events-none absolute left-1/2 top-full z-[6] w-full max-w-[min(100%,30rem)] -translate-x-1/2 translate-y-4 sm:translate-y-5 text-center text-[clamp(0.8rem,2.45vw,1.05rem)] leading-snug tracking-[0.028em] text-white/[0.8] [text-shadow:0_1px_14px_rgba(0,0,0,0.5)]`}
       >
         {t("italyKicker")}
       </p>
@@ -383,7 +383,7 @@ export function MarketingHero({
       ? " demo-design-dir__section demo-design-dir__section--band-a"
       : "";
 
-  const sectionClassOrbit = `marketing-hero-section home-content-atmosphere relative flex min-h-[min(100dvh,100svh)] w-full max-w-full flex-col overflow-x-hidden bg-transparent text-white max-md:min-h-[100dvh] ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitSectionStyleClass}${designDirHeroChrome}`.trim();
+  const sectionClassOrbit = `marketing-hero-section home-content-atmosphere relative flex min-h-[100svh] w-full max-w-full flex-col overflow-x-hidden bg-transparent text-white md:min-h-[min(100dvh,100svh)] ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitSectionStyleClass}${designDirHeroChrome}`.trim();
 
   const sectionClassGrid = `marketing-hero-section home-content-atmosphere grid min-h-[100dvh] min-h-[100svh] w-full grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-x-hidden bg-transparent text-white ${sectionBasePad} ${demoVariant ? "scroll-mt-28 " : ""}${orbitUiClass}${designDirHeroChrome}`.trim();
 
