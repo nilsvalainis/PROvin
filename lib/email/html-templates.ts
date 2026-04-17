@@ -1,3 +1,5 @@
+import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+
 /** Minimālistisks HTML — balts, daudz tukšuma, PROVIN zils CTA (kā vietne). */
 const BRAND = "#0061D2";
 const INK = "#1d1d1f";
@@ -12,7 +14,10 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function shell(inner: string): string {
+function shell(inner: string, opts?: { omitBrandRibbon?: boolean }): string {
+  const brandRibbon = opts?.omitBrandRibbon
+    ? ""
+    : `<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:600;">PROVIN.LV</p>`;
   return `<!DOCTYPE html>
 <html lang="lv">
 <head>
@@ -25,8 +30,7 @@ function shell(inner: string): string {
 <tr><td align="center" style="padding:48px 20px;">
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
-<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:600;">PROVIN.LV</p>
-${inner}
+${brandRibbon}${inner}
 </td></tr></table>
 <p style="margin:28px 0 0;font-size:12px;color:${MUTED};text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
 </td></tr></table>
@@ -77,8 +81,8 @@ export function adminNewOrderHtml(lines: { label: string; value: string }[]): st
 /** E-pasts: „audits pabeigts” ar pielikumu sarakstu (faktiskie faili — nodemailer). */
 export function auditCompletedEmailHtml(opts: { carVin: string; attachmentLines: string[] }): string {
   const vinRaw = opts.carVin.trim();
-  const hasVin = Boolean(vinRaw && vinRaw !== "—");
-  const vinEsc = hasVin ? esc(vinRaw) : "";
+  const hasVin = isValidVin(vinRaw);
+  const vinEsc = hasVin ? esc(normalizeVin(vinRaw)) : "";
   const hasList = opts.attachmentLines.length > 0;
   const listHtml = hasList
     ? `<ul style="margin:10px 0 18px;padding-left:22px;color:${INK};font-size:15px;line-height:1.45;">${opts.attachmentLines
@@ -90,20 +94,19 @@ export function auditCompletedEmailHtml(opts: { carVin: string; attachmentLines:
     ? `<p style="margin:0 0 8px;font-size:15px;color:${INK};line-height:1.55;"><strong>Kā saņemt rezultātus:</strong></p>
 <p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.55;">PDF atskaite un papildu materiāli ir pievienoti šī e-pasta pielikumā.</p>
 ${listHtml}`
-    : `<p style="margin:0 0 16px;font-size:15px;color:${MUTED};line-height:1.55;">Pielikumi nav pievienoti — sazinieties ar PROVIN, ja nepieciešams.</p>`;
+    : `<p style="margin:0 0 16px;font-size:15px;color:${MUTED};line-height:1.55;">Pielikumi nav pievienoti — sazinieties ar mums, ja nepieciešams.</p>`;
 
   const inner = `
-<p style="margin:0 0 10px;font-size:22px;font-weight:700;letter-spacing:-0.02em;color:${BRAND};">PROVIN</p>
 <p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
 <p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${
     hasVin
-      ? `Jūsu pasūtītais <strong>PROVIN</strong> audits ir pabeigts!<br/>Atskaite transportlīdzeklim ar VIN <strong>${vinEsc}</strong> ir sagatavota.`
-      : `Jūsu pasūtītais <strong>PROVIN</strong> audits ir pabeigts!<br/>Atskaite ir sagatavota un pievienota šī e-pasta <strong>pielikumā</strong> (PDF).`
+      ? `Jūsu pasūtītais audits ir pabeigts!<br/>Atskaite transportlīdzeklim ar VIN <strong>${vinEsc}</strong> ir sagatavota.`
+      : `Jūsu pasūtītais audits ir pabeigts!<br/>Atskaite ir sagatavota un pievienota šī e-pasta <strong>pielikumā</strong> (PDF).`
   }</p>
 ${resultsBlock}
 <p style="margin:0 0 6px;font-size:15px;color:${INK};line-height:1.55;"><strong>Saziņa un jautājumi:</strong></p>
 <p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja rodas kādi papildu jautājumi, droši sazinieties ar mums, atbildot uz šo e-pastu (<a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>).</p>
-<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/><strong>PROVIN komanda</strong></p>
+<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/><span style="color:${MUTED};font-weight:600;">PROVIN.LV</span></p>
 `;
-  return shell(inner);
+  return shell(inner, { omitBrandRibbon: true });
 }

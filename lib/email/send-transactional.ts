@@ -5,6 +5,7 @@ import type { Attachment } from "nodemailer/lib/mailer";
 import { getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/mail-config";
 import { adminNewOrderHtml, auditCompletedEmailHtml, paymentConfirmationHtml } from "@/lib/email/html-templates";
 import type { OrderEmailPayload } from "@/lib/email/types";
+import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 /** true, ja servera vidē ir gan SMTP_USER, gan SMTP_PASS (Workspace / Gmail app password). */
 export function isSmtpConfigured(): boolean {
@@ -215,32 +216,33 @@ export async function sendReportReadyEmail(opts: {
   }
 
   const rawVin = opts.carVin.trim();
-  const hasRealVin = Boolean(rawVin && rawVin !== "—");
-  const carVin = hasRealVin ? rawVin : "—";
+  const hasRealVin = isValidVin(rawVin);
+  const carVin = hasRealVin ? normalizeVin(rawVin) : "";
   const html = auditCompletedEmailHtml({
-    carVin,
+    carVin: hasRealVin ? carVin : "—",
     attachmentLines: deduped.map((a) => a.filename),
   });
 
   const text = [
     "Labdien!",
     "",
-    "Jūsu pasūtītais PROVIN audits ir pabeigts!",
+    "Jūsu pasūtītais audits ir pabeigts!",
     "",
     hasRealVin ? `VIN: ${carVin}` : "VIN: skatiet pielikumā pievienoto PDF.",
     "",
     "Pielikumi šajā vēstulē:",
-    ...deduped.map((a) => `– ${a.filename}`),
+    ...deduped.map((a) => `- ${a.filename}`),
     "",
     "Saziņa: info@provin.lv (atbildot uz šo e-pastu).",
     "",
     "Ar cieņu,",
-    "PROVIN komanda",
+    "PROVIN.LV",
   ].join("\n");
 
+  /** Viens atdalītājs starp frāzi un VIN (izvairās no „– –”, ja „VIN” lauks ir svītra / mēstule). */
   const subject = hasRealVin
     ? `PROVIN audits ir pabeigts – ${carVin}`
-    : "PROVIN audits ir pabeigts (PDF pielikumā)";
+    : "PROVIN audits ir pabeigts, PDF pielikumā";
 
   try {
     await sendSmtpMail({
