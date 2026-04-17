@@ -1002,8 +1002,8 @@ function clientReportPrintCss(): string {
         border-radius:10px;
         background:#f1f5f9;
         font-size:calc(0.72rem + 1px)!important;
-        font-weight:700!important;
-        font-style:italic!important;
+        font-weight:595!important;
+        font-style:normal!important;
         line-height:1.45;
         color:#1d1d1f;
         white-space:pre-wrap;
