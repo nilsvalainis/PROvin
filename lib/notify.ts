@@ -63,8 +63,22 @@ export async function notifyAdminTelegram(payload: OrderPayload): Promise<void> 
   }
 }
 
+/** Admin pasūtījuma e-pasts: eksplīcita adrese vai, ja tukša, `SMTP_USER` (parasti tas pats Workspace konts). */
+export function getAdminOrderNotifyEmail(): string | null {
+  const explicit = process.env.ADMIN_NOTIFY_EMAIL?.trim();
+  if (explicit) return explicit;
+  const smtpUser = process.env.SMTP_USER?.trim();
+  if (smtpUser?.includes("@")) return smtpUser;
+  return null;
+}
+
 export async function notifyAdminEmail(payload: OrderPayload): Promise<void> {
-  const to = process.env.ADMIN_NOTIFY_EMAIL?.trim();
-  if (!to) return;
+  const to = getAdminOrderNotifyEmail();
+  if (!to) {
+    console.warn(
+      "[notify] Nav ADMIN_NOTIFY_EMAIL un SMTP_USER nav derīgas e-pasta adreses — admin paziņojums par pasūtījumu netika nosūtīts.",
+    );
+    return;
+  }
   await sendAdminNewOrderNotificationEmail(payload, to);
 }
