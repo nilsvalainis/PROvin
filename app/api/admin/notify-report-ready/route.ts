@@ -9,7 +9,16 @@ import {
 } from "@/lib/email/notify-attachments-parse";
 import { isSmtpConfigured, sendReportReadyEmail, type ReportReadyMailAttachment } from "@/lib/email/send-transactional";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
-import { isValidOrderEmail } from "@/lib/order-field-validation";
+import { isValidOrderEmail, isValidVin, normalizeVin } from "@/lib/order-field-validation";
+
+/** Stripe metadata var būt tukšs; VIN bieži ir tikai admina melnrakstā (`orderEdits.vin`). */
+function resolveVinForNotify(sessionVin: string | null | undefined, draftVin: string | undefined): string {
+  const s = (sessionVin ?? "").trim();
+  if (s && isValidVin(s)) return normalizeVin(s);
+  const d = (draftVin ?? "").trim();
+  if (d && isValidVin(d)) return normalizeVin(d);
+  return "";
+}
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -106,12 +115,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
+  const draft = await readOrderDraft(sessionId);
+  const notifyVin = resolveVinForNotify(order.vin, draft?.orderEdits?.vin);
+
   let manualAttachments: ReportReadyMailAttachment[] = [];
 
   try {
     if (multipartForm) {
       const { attachments } = await collectAttachmentsFromFormData(multipartForm, {
-        auditReportVin: order.vin,
+        auditReportVin: notifyVin || null,
       });
       manualAttachments = attachments.map((a) => ({
         filename: a.filename,
@@ -133,7 +145,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_body", message: "Neizdevās apstrādāt pielikumus." }, { status: 400 });
   }
 
-  const draft = await readOrderDraft(sessionId);
   const draftCustomerEmail = draft?.orderEdits?.customerEmail?.trim() ?? "";
   const fromOrder = (order.customerEmail ?? order.customerDetailsEmail ?? "").trim();
   /** 1) multipart/JSON `customerEmail` (admin izvēle šajā sūtījumā) 2) melnraksts 3) Stripe. */
@@ -198,7 +209,7 @@ export async function POST(req: Request) {
   try {
     await sendReportReadyEmail({
       to,
-      carVin: order.vin?.trim() || "—",
+      carVin: notifyVin || "—",
       attachments: merged,
     });
   } catch (e) {

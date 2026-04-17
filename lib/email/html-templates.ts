@@ -76,7 +76,9 @@ export function adminNewOrderHtml(lines: { label: string; value: string }[]): st
 
 /** E-pasts: „audits pabeigts” ar pielikumu sarakstu (faktiskie faili — nodemailer). */
 export function auditCompletedEmailHtml(opts: { carVin: string; attachmentLines: string[] }): string {
-  const vin = esc(opts.carVin.trim() || "—");
+  const vinRaw = opts.carVin.trim();
+  const hasVin = Boolean(vinRaw && vinRaw !== "—");
+  const vinEsc = hasVin ? esc(vinRaw) : "";
   const hasList = opts.attachmentLines.length > 0;
   const listHtml = hasList
     ? `<ul style="margin:10px 0 18px;padding-left:22px;color:${INK};font-size:15px;line-height:1.45;">${opts.attachmentLines
@@ -93,7 +95,11 @@ ${listHtml}`
   const inner = `
 <p style="margin:0 0 10px;font-size:22px;font-weight:700;letter-spacing:-0.02em;color:${BRAND};">PROVIN</p>
 <p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pasūtītais <strong>PROVIN</strong> audits ir pabeigts!<br/>Atskaite transportlīdzeklim ar VIN <strong>${vin}</strong> ir sagatavota.</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${
+    hasVin
+      ? `Jūsu pasūtītais <strong>PROVIN</strong> audits ir pabeigts!<br/>Atskaite transportlīdzeklim ar VIN <strong>${vinEsc}</strong> ir sagatavota.`
+      : `Jūsu pasūtītais <strong>PROVIN</strong> audits ir pabeigts!<br/>Atskaite ir sagatavota un pievienota šī e-pasta <strong>pielikumā</strong> (PDF).`
+  }</p>
 ${resultsBlock}
 <p style="margin:0 0 6px;font-size:15px;color:${INK};line-height:1.55;"><strong>Saziņa un jautājumi:</strong></p>
 <p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja rodas kādi papildu jautājumi, droši sazinieties ar mums, atbildot uz šo e-pastu (<a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>).</p>

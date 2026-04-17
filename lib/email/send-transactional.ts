@@ -54,12 +54,18 @@ function adminOrderPlainText(p: OrderEmailPayload): string {
   return lines.join("\n");
 }
 
+/** RFC 3834 — palīdz filtriem atpazīt automātiski ģenerētu transakciju pastu (ne „mārketings”). */
+const AUTO_GENERATED_HEADERS: Record<string, string> = {
+  "Auto-Submitted": "auto-generated",
+};
+
 async function sendSmtpMail(opts: {
   to: string | string[];
   subject: string;
   text: string;
   html: string;
   attachments?: Attachment[];
+  headers?: Record<string, string>;
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
@@ -73,6 +79,7 @@ async function sendSmtpMail(opts: {
     text: opts.text,
     html: opts.html,
     attachments: opts.attachments,
+    headers: { ...AUTO_GENERATED_HEADERS, ...opts.headers },
   });
 }
 
@@ -207,7 +214,9 @@ export async function sendReportReadyEmail(opts: {
     );
   }
 
-  const carVin = opts.carVin.trim() || "—";
+  const rawVin = opts.carVin.trim();
+  const hasRealVin = Boolean(rawVin && rawVin !== "—");
+  const carVin = hasRealVin ? rawVin : "—";
   const html = auditCompletedEmailHtml({
     carVin,
     attachmentLines: deduped.map((a) => a.filename),
@@ -218,7 +227,7 @@ export async function sendReportReadyEmail(opts: {
     "",
     "Jūsu pasūtītais PROVIN audits ir pabeigts!",
     "",
-    `VIN: ${carVin}`,
+    hasRealVin ? `VIN: ${carVin}` : "VIN: skatiet pielikumā pievienoto PDF.",
     "",
     "Pielikumi šajā vēstulē:",
     ...deduped.map((a) => `– ${a.filename}`),
@@ -229,7 +238,9 @@ export async function sendReportReadyEmail(opts: {
     "PROVIN komanda",
   ].join("\n");
 
-  const subject = `PROVIN audits ir pabeigts – ${carVin}`;
+  const subject = hasRealVin
+    ? `PROVIN audits ir pabeigts – ${carVin}`
+    : "PROVIN audits ir pabeigts (PDF pielikumā)";
 
   try {
     await sendSmtpMail({
