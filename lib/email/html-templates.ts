@@ -74,18 +74,30 @@ export function adminNewOrderHtml(lines: { label: string; value: string }[]): st
   return shell(inner);
 }
 
-export function reportReadyHtml(opts: {
-  siteUrl: string;
-  vin: string;
-  contactMailto: string;
-  replyEmail: string;
-}): string {
+/** E-pasts: „audits pabeigts” ar pielikumu sarakstu (faktiskie faili — nodemailer). */
+export function auditCompletedEmailHtml(opts: { carVin: string; attachmentLines: string[] }): string {
+  const vin = esc(opts.carVin.trim() || "—");
+  const hasList = opts.attachmentLines.length > 0;
+  const listHtml = hasList
+    ? `<ul style="margin:10px 0 18px;padding-left:22px;color:${INK};font-size:15px;line-height:1.45;">${opts.attachmentLines
+        .map((l) => `<li style="margin:4px 0;">${esc(l)}</li>`)
+        .join("")}</ul>`
+    : "";
+
+  const resultsBlock = hasList
+    ? `<p style="margin:0 0 8px;font-size:15px;color:${INK};line-height:1.55;"><strong>Kā saņemt rezultātus:</strong></p>
+<p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.55;">PDF atskaite un papildu materiāli ir pievienoti šī e-pasta pielikumā.</p>
+${listHtml}`
+    : `<p style="margin:0 0 16px;font-size:15px;color:${MUTED};line-height:1.55;">Pielikumi nav pievienoti — sazinieties ar PROVIN, ja nepieciešams.</p>`;
+
   const inner = `
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Jūsu pasūtītais PROVIN audits ir pabeigts!</p>
-<p style="margin:0 0 16px;color:${MUTED};font-size:15px;">Eksperta atskaite transportlīdzeklim ar VIN <strong>${esc(opts.vin)}</strong> ir sagatavota.</p>
-<p style="margin:0 0 20px;color:${INK};font-size:15px;"><strong>Kā saņemt rezultātus:</strong> PDF un papildu materiālus nosūtām uz jūsu pasūtījumā norādīto e-pastu vai pēc iepriekš saskaņotā kanāla. Atbildot uz šo vēstuli, ziņa nonāks pie mums — <span style="color:${INK};">${esc(opts.replyEmail)}</span> (Reply-To).</p>
-${ctaButton(opts.contactMailto, "Sazināties ar PROVIN")}
-<p style="margin:16px 0 0;font-size:13px;color:${MUTED};">Vai atveriet <a href="${esc(opts.siteUrl)}" style="color:${BRAND};text-decoration:none;font-weight:500;">provin.lv</a>.</p>
+<p style="margin:0 0 10px;font-size:22px;font-weight:700;letter-spacing:-0.02em;color:${BRAND};">PROVIN</p>
+<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pasūtītais <strong>PROVIN</strong> audits ir pabeigts!<br/>Atskaite transportlīdzeklim ar VIN <strong>${vin}</strong> ir sagatavota.</p>
+${resultsBlock}
+<p style="margin:0 0 6px;font-size:15px;color:${INK};line-height:1.55;"><strong>Saziņa un jautājumi:</strong></p>
+<p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja rodas kādi papildu jautājumi, droši sazinieties ar mums, atbildot uz šo e-pastu (<a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>).</p>
+<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/><strong>PROVIN komanda</strong></p>
 `;
   return shell(inner);
 }

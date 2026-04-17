@@ -1,9 +1,9 @@
 import "server-only";
 
 import nodemailer from "nodemailer";
-import { contactMailtoHref } from "@/lib/contact";
+import type { Attachment } from "nodemailer/lib/mailer";
 import { getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/mail-config";
-import { adminNewOrderHtml, paymentConfirmationHtml, reportReadyHtml } from "@/lib/email/html-templates";
+import { adminNewOrderHtml, auditCompletedEmailHtml, paymentConfirmationHtml } from "@/lib/email/html-templates";
 import type { OrderEmailPayload } from "@/lib/email/types";
 
 /** true, ja servera vidē ir gan SMTP_USER, gan SMTP_PASS (Workspace / Gmail app password). */
@@ -59,6 +59,7 @@ async function sendSmtpMail(opts: {
   subject: string;
   text: string;
   html: string;
+  attachments?: Attachment[];
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
@@ -71,6 +72,7 @@ async function sendSmtpMail(opts: {
     subject: opts.subject,
     text: opts.text,
     html: opts.html,
+    attachments: opts.attachments,
   });
 }
 
@@ -165,8 +167,32 @@ export async function sendPaymentConfirmationEmail(opts: {
   }
 }
 
-/** Klients: eksperts apstiprinājis — paziņojums, ka audits gatavs (saziņas CTA). */
-export async function sendReportReadyEmail(opts: { to: string; vin: string }): Promise<void> {
+export type ReportReadyMailAttachment = {
+  filename: string;
+  content: Buffer;
+  contentType: string;
+};
+
+function dedupeAttachmentFilenames(items: ReportReadyMailAttachment[]): ReportReadyMailAttachment[] {
+  const counts = new Map<string, number>();
+  return items.map((a) => {
+    const key = a.filename.toLowerCase();
+    const n = (counts.get(key) ?? 0) + 1;
+    counts.set(key, n);
+    if (n === 1) return a;
+    const dot = a.filename.lastIndexOf(".");
+    const base = dot === -1 ? a.filename : a.filename.slice(0, dot);
+    const ext = dot === -1 ? "" : a.filename.slice(dot);
+    return { ...a, filename: `${base}_${n}${ext}` };
+  });
+}
+
+/** Klients: audits pabeigts — HTML + pielikumi (PDF/attēli), rēķins servera pusē. */
+export async function sendReportReadyEmail(opts: {
+  to: string;
+  carVin: string;
+  attachments: ReportReadyMailAttachment[];
+}): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
     const msg = "SMTP_USER / SMTP_PASS nav iestatīti — e-pasts netika nosūtīts.";
@@ -174,13 +200,17 @@ export async function sendReportReadyEmail(opts: { to: string; vin: string }): P
     throw new Error(msg);
   }
 
-  const siteUrl = getSiteOrigin();
-  const replyTo = getMailReplyTo();
-  const html = reportReadyHtml({
-    siteUrl,
-    vin: opts.vin.trim() || "—",
-    contactMailto: contactMailtoHref(),
-    replyEmail: replyTo,
+  const deduped = dedupeAttachmentFilenames(opts.attachments);
+  if (deduped.length === 0) {
+    throw new Error(
+      "Nav pielikumu — pievienojiet audita PDF (admin forma) vai pārliecinieties, ka apmaksātajam pasūtījumam var ģenerēt rēķinu.",
+    );
+  }
+
+  const carVin = opts.carVin.trim() || "—";
+  const html = auditCompletedEmailHtml({
+    carVin,
+    attachmentLines: deduped.map((a) => a.filename),
   });
 
   const text = [
@@ -188,21 +218,30 @@ export async function sendReportReadyEmail(opts: { to: string; vin: string }): P
     "",
     "Jūsu pasūtītais PROVIN audits ir pabeigts!",
     "",
-    `Transportlīdzeklis (VIN): ${opts.vin.trim() || "—"}`,
+    `VIN: ${carVin}`,
     "",
-    "Atskaites PDF un detaļas nosūtām uz šo e-pasta adresi vai pēc iepriekš norunātā saziņas veida.",
-    `Atbilžu adrese (Reply-To): ${replyTo}`,
+    "Pielikumi šajā vēstulē:",
+    ...deduped.map((a) => `– ${a.filename}`),
     "",
-    `Vietne: ${siteUrl}`,
-    `Saziņa (e-pasts): ${contactMailtoHref()}`,
+    "Saziņa: info@provin.lv (atbildot uz šo e-pastu).",
+    "",
+    "Ar cieņu,",
+    "PROVIN komanda",
   ].join("\n");
+
+  const subject = `PROVIN audits ir pabeigts – ${carVin}`;
 
   try {
     await sendSmtpMail({
       to: opts.to,
-      subject: `PROVIN — Jūsu pasūtītais audits ir pabeigts (${opts.vin?.trim() || "VIN"})`,
+      subject,
       text,
       html,
+      attachments: deduped.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+        contentType: a.contentType,
+      })),
     });
   } catch (e) {
     console.error("[email] sendReportReadyEmail SMTP:", e);

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, FileText, Loader2, Send } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
@@ -47,17 +47,31 @@ function NotifyReportReadyCell({
 }) {
   const paid = paymentStatus.toLowerCase() === "paid";
   const email = customerEmail?.trim() ?? "";
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [phase, setPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [errMsg, setErrMsg] = useState<string | null>(null);
+  const reportInputRef = useRef<HTMLInputElement>(null);
+  const extraInputRef = useRef<HTMLInputElement>(null);
 
-  const send = useCallback(async () => {
+  const sendWithAttachments = useCallback(async () => {
     setErrMsg(null);
     setPhase("loading");
     try {
+      const fd = new FormData();
+      fd.append("sessionId", sessionId);
+      if (email) fd.append("customerEmail", email);
+      const reportFile = reportInputRef.current?.files?.[0];
+      if (reportFile) fd.append("reportPdf", reportFile);
+      const extras = extraInputRef.current?.files;
+      if (extras) {
+        for (let i = 0; i < extras.length; i++) {
+          const f = extras.item(i);
+          if (f) fd.append("attachment", f);
+        }
+      }
       const res = await fetch("/api/admin/notify-report-ready", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, customerEmail: email || undefined }),
+        body: fd,
       });
       const data: unknown = await res.json().catch(() => ({}));
       const message =
@@ -80,6 +94,9 @@ function NotifyReportReadyCell({
         console.error("[admin] notify-report-ready", res.status, data);
         return;
       }
+      if (reportInputRef.current) reportInputRef.current.value = "";
+      if (extraInputRef.current) extraInputRef.current.value = "";
+      setDialogOpen(false);
       setPhase("sent");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Tīkla kļūda";
@@ -108,20 +125,90 @@ function NotifyReportReadyCell({
     <div className="flex flex-col items-end gap-1">
       <button
         type="button"
-        onClick={send}
+        onClick={() => {
+          setErrMsg(null);
+          setPhase("idle");
+          setDialogOpen(true);
+        }}
         disabled={phase === "loading"}
         className="inline-flex max-w-[200px] items-center justify-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-[var(--color-provin-accent-soft)]/40 disabled:cursor-not-allowed disabled:opacity-60"
-        title="Nosūtīt klientam e-pastu: audits gatavs"
+        title="Nosūtīt klientam e-pastu ar pielikumiem"
       >
-        {phase === "loading" ? (
-          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
-        ) : (
-          <Send className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-        )}
+        <Send className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
         Nosūtīt atskaiti
       </button>
-      {phase === "error" && errMsg ? (
+      {phase === "error" && errMsg && !dialogOpen ? (
         <p className="max-w-[220px] text-right text-[10px] leading-snug text-red-600">{errMsg}</p>
+      ) : null}
+
+      {dialogOpen ? (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-3"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="notify-report-ready-title"
+          onClick={() => (phase !== "loading" ? setDialogOpen(false) : null)}
+        >
+          <div
+            className="max-h-[min(90vh,480px)] w-full max-w-md overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 text-left shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="notify-report-ready-title" className="text-sm font-semibold text-slate-900">
+              Nosūtīt klientam
+            </h3>
+            <p className="mt-2 text-[11px] leading-snug text-slate-600">
+              Rēķina PDF tiek pievienots <strong>automātiski</strong> (apmaksātam pasūtījumam). Ieteicams pievienot arī
+              sagatavoto <strong>audita PDF</strong> un citus materiālus. Kopā līdz ~4 MB (Vercel ierobežojums).
+            </p>
+            <div className="mt-3 space-y-3">
+              <div>
+                <label className="mb-1 block text-[10px] font-medium text-slate-500">Audita PDF</label>
+                <input
+                  ref={reportInputRef}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  className="block w-full text-[11px] text-slate-700 file:mr-2 file:rounded-md file:border file:border-slate-200 file:bg-slate-50 file:px-2 file:py-1 file:text-[11px]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[10px] font-medium text-slate-500">Papildu PDF / attēli</label>
+                <input
+                  ref={extraInputRef}
+                  type="file"
+                  multiple
+                  accept="application/pdf,.pdf,image/jpeg,image/png,image/webp,image/gif"
+                  className="block w-full text-[11px] text-slate-700 file:mr-2 file:rounded-md file:border file:border-slate-200 file:bg-slate-50 file:px-2 file:py-1 file:text-[11px]"
+                />
+              </div>
+            </div>
+            {phase === "error" && errMsg ? (
+              <p className="mt-2 text-[11px] leading-snug text-red-600">{errMsg}</p>
+            ) : null}
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                disabled={phase === "loading"}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                onClick={() => setDialogOpen(false)}
+              >
+                Atcelt
+              </button>
+              <button
+                type="button"
+                disabled={phase === "loading"}
+                onClick={sendWithAttachments}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-provin-accent)] px-3 py-1.5 text-[11px] font-semibold text-white hover:opacity-95 disabled:opacity-50"
+              >
+                {phase === "loading" ? (
+                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                ) : (
+                  <Send className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                )}
+                Sūtīt e-pastu
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );
