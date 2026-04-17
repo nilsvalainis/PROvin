@@ -320,14 +320,15 @@ html[data-site-theme="dark"] .heroSection {
 .ctaButton {
   margin-top: 1rem;
   width: min(100%, 520px);
-  min-height: 56px;
+  min-height: 52px;
+  padding-inline: 1.1rem;
   border: 1px solid #0d63d9;
   border-radius: 999px;
   background: linear-gradient(180deg, #1f84ff 0%, #0d6eea 100%);
   color: #fff;
-  font-size: clamp(1.02rem, 1.45vw, 1.16rem);
+  font-size: clamp(0.96rem, 1.2vw, 1.06rem);
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.035em;
   text-transform: uppercase;
   box-shadow: 0 16px 30px rgb(13 110 234 / 0.28), 0 2px 0 rgb(255 255 255 / 0.22) inset;
   cursor: pointer;
@@ -490,9 +491,10 @@ html[data-site-theme="dark"] .heroIntroSurface .heroGlassPro {
 }
 
 :global(.demo-mobile-narrow) .ctaButton {
-  min-height: 50px;
-  font-size: 0.82rem;
-  letter-spacing: 0.06em;
+  min-height: 48px;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  padding-inline: 0.85rem;
 }
 
 :global(.demo-mobile-narrow) .features {
