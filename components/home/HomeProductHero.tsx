@@ -21,7 +21,7 @@ export function HomeProductHero({ introBody }: Props) {
   const t = useTranslations("Hero");
 
   return (
-    <div className={`home-hero-intro-surface ${styles.heroIntroSurface} relative z-[5]`}>
+    <div className={`home-hero-intro-surface ${styles.heroIntroSurface}`}>
       <div className={styles.heroDarkBackdrop} aria-hidden>
         <div className={styles.heroVisualWrap}>
           <HeroVisual />

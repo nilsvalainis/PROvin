@@ -52,12 +52,11 @@
   box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.06);
 }
 
-/* Sākumlapa: hero + „KAS IR PROVIN?” — fons kā `#kontakti` (HeroVisual + #050505 gradients, sk. page.tsx). */
+/* Sākumlapa: hero + „KAS IR PROVIN?” — fona stack definēts `demo/page.module.css` (`.heroIntroSurface` + dark backdrop). */
 .home-hero-intro-surface {
   position: relative;
   /* hidden/clip šeit veidoja atsevišķu scrollportu pret document — viens vienīgs lapas scroll. */
   overflow: visible;
-  background: transparent;
 }
 
 /* Saglabā hero tipogrāfijas skalu no orbit presetiem, bet bez atsevišķa hero fona slāņa. */
