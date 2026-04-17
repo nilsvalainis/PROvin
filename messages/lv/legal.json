@@ -26,7 +26,7 @@
       },
       {
         "title": "6. Trešās puses",
-        "body": "Maksājumi: Stripe. Vietnes mitināšana: jūsu izvēlētais pakalpojumu sniedzējs (piemēram, Vercel). Google Analytics 4 un Vercel Web Analytics tiek iedarbināti tikai tad, ja sīkdatņu joslā piekrītat „analītikai”. Ja GA nav konfigurēts, Google skripti netiek ielādēti."
+        "body": "Maksājumi: Stripe. Vietnes mitināšana: jūsu izvēlētais pakalpojumu sniedzējs (piemēram, Vercel). Vercel Web Analytics apkopo agregētus apmeklējumu un lapu skatījumu datus visiem apmeklējumiem (pirmās puses statistika mitināšanas ietvaros). Google Analytics 4 ielādējas tikai tad, ja sīkdatņu joslā piekrītat „analītikai”; ja GA nav konfigurēts, Google skripti netiek ielādēti."
       },
       {
         "title": "7. Glabāšanas termiņš",

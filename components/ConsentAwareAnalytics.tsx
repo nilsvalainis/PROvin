@@ -25,14 +25,14 @@ type Props = {
 };
 
 /**
- * GA4 un Vercel Web Analytics — tikai pēc sīkdatņu joslas piekrišanas „analītikai”.
- * Atjaunojas pēc `PROVIN_CONSENT_UPDATED_EVENT` un `storage` (citas cilnes).
+ * Vercel Web Analytics — visiem apmeklējumiem (agregēti, pirmās puses mitināšanas statistika).
+ * Google Analytics 4 — tikai pēc sīkdatņu joslas piekrišanas „analītikai”.
  */
 export function ConsentAwareAnalytics({ gaMeasurementId }: Props) {
-  const [allow, setAllow] = useState(false);
+  const [gaAllowed, setGaAllowed] = useState(false);
 
   const sync = useCallback(() => {
-    setAllow(readAnalyticsAllowed());
+    setGaAllowed(readAnalyticsAllowed());
   }, []);
 
   useEffect(() => {
@@ -49,13 +49,12 @@ export function ConsentAwareAnalytics({ gaMeasurementId }: Props) {
     };
   }, [sync]);
 
-  if (!allow) return null;
-
   const id = gaMeasurementId;
 
   return (
     <>
-      {id ? (
+      <Analytics />
+      {gaAllowed && id ? (
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`}
@@ -69,7 +68,6 @@ gtag('config','${id}');`}
           </Script>
         </>
       ) : null}
-      <Analytics />
     </>
   );
 }

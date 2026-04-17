@@ -41,8 +41,9 @@ export default async function AdminStatistikaPage() {
             {onVercel ? (
               <>
                 Šī izvietošana darbojas uz Vercel. <span className="font-medium text-[var(--color-apple-text)]">@vercel/analytics</span>{" "}
-                ielādējas tikai pēc apmeklētāja piekrišanas „analītikai” sīkdatņu joslā; tad apmeklējumu dati un lapu
-                skatījumi parādās Vercel projekta sadaļā{" "}
+                rāda <span className="font-medium text-[var(--color-apple-text)]">visus</span> apmeklējumus (agregēti).
+                Google Analytics (ja iestatīts) — tikai lietotājiem, kas sīkdatņu joslā piekrīt „analītikai”.
+                Vercel skaitļi un lapu skatījumi ir projekta sadaļā{" "}
                 <span className="font-medium text-[var(--color-apple-text)]">Analytics</span> (pēc pierakstīšanās).
               </>
             ) : (
