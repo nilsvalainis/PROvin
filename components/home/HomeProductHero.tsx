@@ -10,17 +10,11 @@ import {
   HOME_HERO_ORDER_FORM_ID,
   ORDER_SECTION_ID,
 } from "@/lib/order-section";
-import {
-  homeHeroOrderColumnMaxClass,
-  homeHeroOrderFormTwoCardsWidthClass,
-} from "@/lib/home-layout";
 import styles from "@/app/[locale]/demo/page.module.css";
 
 type Props = {
   introBody: ReactNode;
 };
-
-const heroOrderEntryShellClass = `${homeHeroOrderColumnMaxClass} scroll-mt-[calc(2.75rem+1px)] w-full max-w-full px-0 sm:px-0 max-md:mt-3 mt-2 sm:mt-3`;
 
 export function HomeProductHero({ introBody }: Props) {
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
@@ -52,22 +46,21 @@ export function HomeProductHero({ introBody }: Props) {
                   <span className={`${styles.titleRow} ${styles.titleAuditsLine}`}>{t("h1Line2")}</span>
                 </h1>
 
-                <div id={ORDER_SECTION_ID} className={heroOrderEntryShellClass}>
-                  <div className={homeHeroOrderFormTwoCardsWidthClass}>
-                    <OrderForm
-                      variant="hero"
-                      formId={HOME_HERO_ORDER_FORM_ID}
-                      hideStepOneCta
-                      onStepChange={setHeroOrderStep}
-                      className="!mt-0 !space-y-0 !px-0 !py-0"
-                    />
-                  </div>
+                <div
+                  id={ORDER_SECTION_ID}
+                  className={`${styles.productHeroOrderSlot} scroll-mt-[calc(2.75rem+1px)]`}
+                >
+                  <OrderForm
+                    variant="hero"
+                    formId={HOME_HERO_ORDER_FORM_ID}
+                    hideStepOneCta
+                    onStepChange={setHeroOrderStep}
+                    className="!mt-0 !space-y-0 !px-0 !py-0 sm:!px-0 sm:!py-0"
+                  />
                 </div>
 
                 {heroOrderStep === 1 ? (
-                  <div
-                    className={`pointer-events-auto relative z-[80] flex w-full justify-center px-1 pt-1 max-md:mt-2 max-md:pt-1 sm:pt-2 md:mt-0 md:pt-2.5 ${homeHeroOrderFormTwoCardsWidthClass}`}
-                  >
+                  <div className="pointer-events-auto relative z-[80] w-full max-w-[520px] min-w-0">
                     <button
                       type="button"
                       onClick={() => {

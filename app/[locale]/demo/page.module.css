@@ -278,11 +278,14 @@ html[data-site-theme="dark"] .heroSection {
   color: inherit;
 }
 
-.form {
+.form,
+.productHeroOrderSlot {
   margin-top: 1.05rem;
   display: grid;
   gap: 0.85rem;
   max-width: 520px;
+  width: 100%;
+  min-width: 0;
 }
 
 .field {
