@@ -447,14 +447,17 @@ function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfVisibili
 /** CSDD — apskates datumi + strukturētie lauki (viena galvenā līmeņa zona, kā NOBRAUKUMA VĒSTURE). */
 function buildCsddAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   if (!vis.csdd) return "";
-  const hasStruct = Boolean(p.csddForm && csddFormHasContent(p.csddForm));
+  const form = p.csddForm;
+  const hasStruct = Boolean(form && csddFormHasContent(form));
   const hasRaw = p.csdd.trim().length > 0;
   if (!hasStruct && !hasRaw) return "";
 
   const head = sectionHeadBrand(sectionIconPdfHtml("scrollText"), PDF_SUB_CSDD);
 
-  if (hasStruct && p.csddForm) {
-    const f = p.csddForm;
+  if (hasStruct && form) {
+    const f = form;
+    const commentTrim = (f.comments ?? "").trim();
+    const hasComments = commentTrim.length > 0;
     const regRows: string[] = [];
     for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
       const v = (f[key] as string).trim();
@@ -469,9 +472,19 @@ function buildCsddAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilitySett
         regRows.push(`<tr><td>${escapeHtml(label)}</td><td>${valueHtml}</td></tr>`);
       }
     }
-    if (regRows.length === 0) return "";
-    const bodyHtml = `<table class="mirror-table mirror-table--csdd"><tbody>${regRows.join("\n")}</tbody></table>`;
-    return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-source-section-body">${bodyHtml}</div></div>`;
+    const tableHtml =
+      regRows.length > 0
+        ? `<table class="mirror-table mirror-table--csdd"><tbody>${regRows.join("\n")}</tbody></table>`
+        : "";
+    const commentHtml = hasComments ? pdfAvotuCommentIsland(commentTrim) : "";
+    if (!tableHtml && !commentHtml) {
+      if (hasRaw) {
+        return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-source-section-body"><pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre></div></div>`;
+      }
+      return "";
+    }
+    const bodyInner = `${tableHtml}${commentHtml}`;
+    return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-source-section-body">${bodyInner}</div></div>`;
   }
 
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-source-section-body"><pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre></div></div>`;

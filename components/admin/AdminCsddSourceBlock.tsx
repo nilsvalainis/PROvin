@@ -10,6 +10,7 @@ import {
   CSDD_MILEAGE_UNIFIED_TITLE,
   emptyCsddMileageRow,
   finalizeMileageHistory,
+  LISTING_ANALYSIS_COMMENT_LABEL,
   PROVIN_MILEAGE_TABLE_DOM_KIND,
   PROVIN_MILEAGE_TABLE_FIELD,
 } from "@/lib/admin-source-blocks";
@@ -379,6 +380,33 @@ export function AdminCsddSourceBlock({
           >
             + Rinda
           </button>
+        )}
+      </div>
+
+      <div className={`mt-2 w-full min-w-0 shrink-0 border-t border-slate-200/80 pt-2`}>
+        <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
+          {LISTING_ANALYSIS_COMMENT_LABEL}
+        </label>
+        {readOnly ? (
+          <div className="min-h-[40px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
+            {value.comments.trim() ? value.comments : <span className="text-slate-400">—</span>}
+          </div>
+        ) : (
+          <AdminAiPolishTextareaShell
+            value={value.comments}
+            onPolished={(next) => onChange({ ...value, comments: next })}
+            disabled={disabled}
+          >
+            <textarea
+              className="w-full resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
+              rows={2}
+              placeholder="Papildu komentāri par CSDD avotu…"
+              value={value.comments}
+              disabled={disabled}
+              onChange={(e) => onChange({ ...value, comments: e.target.value })}
+              aria-label={`CSDD — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+            />
+          </AdminAiPolishTextareaShell>
         )}
       </div>
       </div>

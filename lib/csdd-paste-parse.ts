@@ -175,6 +175,7 @@ export function parseCsddTechnicalFields(
     registrationStatus,
     opacityCoefficient,
     particulateMatter,
+    comments: "",
   };
 }
 
@@ -439,5 +440,6 @@ export function applyCsddPasteToForm(
     nextInspectionDate,
     prevInspectionDate,
     mileageHistory: parsed.mileageHistory,
+    comments: current.comments,
   };
 }

@@ -119,6 +119,8 @@ export type CsddFormFields = {
   particulateMatter: string;
   /** Hronoloģiski sakārtots (jaunākais augšā): Datums | Odometrs | Valsts. */
   mileageHistory: CsddMileageRow[];
+  /** Eksperta piezīmes — PDF CSDD apakšsadaļā (kā citiem avotiem). */
+  comments: string;
 };
 
 /** Tehniskie + apskates lauki (secība = Admin / PDF). */
@@ -204,6 +206,7 @@ export function emptyCsddFields(): CsddFormFields {
     opacityCoefficient: "",
     particulateMatter: "",
     mileageHistory: [],
+    comments: "",
   };
 }
 
@@ -356,7 +359,8 @@ function mileageDateSortKey(s: string): number {
 export function csddFormHasContent(f: CsddFormFields): boolean {
   return (
     CSDD_FORM_STRUCTURED_FIELDS.some(({ key }) => (f[key] as string).trim().length > 0) ||
-    f.mileageHistory.some(csddMileageRowHasData)
+    f.mileageHistory.some(csddMileageRowHasData) ||
+    f.comments.trim().length > 0
   );
 }
 
@@ -377,6 +381,9 @@ export function csddFormToPlainText(f: CsddFormFields): string {
           .join("\t"),
       );
     }
+  }
+  if (f.comments.trim()) {
+    lines.push(`${LISTING_ANALYSIS_COMMENT_LABEL}\n${f.comments.trim()}`);
   }
   if (f.rawUnprocessedData.trim()) lines.push(f.rawUnprocessedData.trim());
   return lines.join("\n");
@@ -982,6 +989,7 @@ function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFi
     registrationStatus: clipCsddField(raw.registrationStatus, 120),
     opacityCoefficient: clipCsddField(raw.opacityCoefficient, 40),
     particulateMatter: clipCsddField(raw.particulateMatter, 80),
+    comments: clipCsddField(raw.comments, 12000),
   };
 }
 
@@ -1021,11 +1029,15 @@ function parseTirgusBlockRaw(raw: Record<string, unknown>): TirgusFormFields {
   return emptyTirgusFields();
 }
 
-/** Vecais CSDD { rows, comments } → raw laukā (migrācijas teksts). */
+/** Vecais CSDD { rows, comments } → rindas raw, komentārs atsevišķi. */
 export function migrateLegacyCsddBlock(old: StandardSourceBlockState): CsddFormFields {
-  const t = standardBlockToPlainText(old).trim();
-  if (!t) return emptyCsddFields();
-  return { ...emptyCsddFields(), rawUnprocessedData: t };
+  const rowLines = old.rows
+    .filter(rowHasData)
+    .map((r) => `${r.date.trim()}\t${r.km.trim()}\t${r.amount.trim()}`);
+  const rowText = rowLines.join("\n").trim();
+  const c = old.comments.trim();
+  if (!rowText && !c) return emptyCsddFields();
+  return { ...emptyCsddFields(), rawUnprocessedData: rowText, comments: c };
 }
 
 export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSourceBlocks {
@@ -1047,7 +1059,8 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
       "registrationNumber" in c ||
       "firstRegistration" in c ||
       "detailedRatingRows" in c ||
-      "prevInspectionDefectRows" in c;
+      "prevInspectionDefectRows" in c ||
+      "comments" in c;
     if (hasStructuredCsdd) {
       const fields = c.fields && typeof c.fields === "object" ? (c.fields as Record<string, unknown>) : c;
       base.csdd = { ...emptyCsddFields(), ...parseCsddFieldsRaw(fields) };
