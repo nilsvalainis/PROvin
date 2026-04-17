@@ -350,7 +350,7 @@ function pdfAvotuCommentIsland(text: string): string {
   if (!t) return "";
   return `<div class="pdf-avotu-comment-island" role="note">
     <p class="pdf-avotu-comment-island-label">${escapeHtml(PDF_SUB_BLOCK_COMMENTS)}</p>
-    <pre class="mirror-pre pdf-avotu-comment-island-body">${escapeHtml(t)}</pre>
+    <pre class="mirror-pre pdf-avotu-comment-island-body pdf-manual-comment-body">${escapeHtml(t)}</pre>
   </div>`;
 }
 
@@ -526,11 +526,11 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
     if (f.comments.trim()) {
       parts.push(`<p class="pdf-field-label">${escapeHtml(LISTING_ANALYSIS_COMMENT_LABEL)}</p>`);
       parts.push(
-        `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(f.comments.trim())}</pre></div>`,
+        `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(f.comments.trim())}</pre></div>`,
       );
     }
   } else {
-    parts.push(`<pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(p.tirgus.trim())}</pre>`);
+    parts.push(`<pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(p.tirgus.trim())}</pre>`);
   }
   return parts.join("\n");
 }
@@ -597,7 +597,7 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload, vis: PdfVisibi
       if (!t) return;
       inner.push(pdfFieldLabelWithIcon(pdfListingAnalysisFieldIconHtml(title), title));
       inner.push(
-        `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(t)}</pre></div>`,
+        `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(t)}</pre></div>`,
       );
     };
     cat(L.sellerPortrait, b.sellerPortrait);
@@ -660,16 +660,16 @@ function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySett
   const inner: string[] = [];
   if (iriss) {
     inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("fileSearch"), PDF_IRISS_SECTION_1));
-    inner.push(`<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(iriss)}</pre></div>`);
+    inner.push(`<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(iriss)}</pre></div>`);
   }
   if (plan) {
     inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("car"), PDF_IRISS_SECTION_2));
-    inner.push(`<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(plan)}</pre></div>`);
+    inner.push(`<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(plan)}</pre></div>`);
   }
   if (priceFitBlock) {
     inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("priceTag"), PDF_IRISS_SECTION_3));
     inner.push(
-      `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre">${escapeHtml(priceFitBlock)}</pre></div>`,
+      `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(priceFitBlock)}</pre></div>`,
     );
   }
   if (inner.length === 0) return "";
@@ -802,18 +802,17 @@ function clientReportPrintCss(): string {
         padding:10px 10px;
       }
       .pdf-listing-analysis-chunk:last-child{margin-bottom:0;border-bottom:none;}
-      .pdf-listing-analysis-chunk-pre{font-style:normal;margin:0;}
+      .pdf-listing-analysis-chunk-pre{margin:0;}
       .pdf-avotu-comment-island{
-        margin:10px 0 0;padding:10px 0 0;border-top:1px solid #e2e8f0;background:#fff;
+        margin:10px 0 0;padding:0;background:transparent;border:none;
       }
       .pdf-source-section-body > .pdf-avotu-comment-island:first-child{
-        margin-top:0;padding-top:0;border-top:none;
+        margin-top:0;padding-top:0;
       }
       .pdf-avotu-comment-island-label{
-        font-size:0.65rem;font-weight:700;margin:0 0 5px;color:#000;letter-spacing:0.06em;text-transform:uppercase;
+        font-size:0.65rem;font-weight:700;margin:0 0 6px;color:#000;letter-spacing:0.06em;text-transform:uppercase;
       }
-      .pdf-avotu-comment-island-body{font-style:italic;margin:0;}
-      .pdf-citi-avoti-plain .pdf-avotu-comment-island-body{font-style:normal;}
+      .pdf-avotu-comment-island-body{margin:0;}
       .pdf-unified-mileage-zone{margin:0 0 14px;padding:12px 14px;background:#fff!important;border:1px solid #f1f5f9;border-radius:8px;box-shadow:0 1px 4px rgba(15,23,42,.05);}
       .pdf-unified-mileage-zone .pdf-sec-head{margin-top:0;}
       .pdf-provin-sources-wrap{margin:0 0 18px;}
@@ -992,6 +991,28 @@ function clientReportPrintCss(): string {
       .mirror-pre{
         white-space:pre-wrap;font-size:0.72rem;margin:0;padding:0;font-family:Inter,sans-serif!important;
         color:#1d1d1f;line-height:1.45;
+      }
+      .mirror-pre.pdf-manual-comment-body{
+        display:block;
+        box-sizing:border-box;
+        width:100%;
+        max-width:100%;
+        margin:4px 0 0;
+        padding:10px 12px;
+        border-radius:10px;
+        background:#f1f5f9;
+        font-size:calc(0.72rem + 1px)!important;
+        font-weight:700!important;
+        font-style:italic!important;
+        line-height:1.45;
+        color:#1d1d1f;
+        white-space:pre-wrap;
+        font-family:Inter,sans-serif!important;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-listing-analysis-chunk .mirror-pre.pdf-manual-comment-body{margin-top:6px;}
+      .pdf-iriss-approved .mirror-pre.pdf-manual-comment-body{
+        background:rgba(0,97,210,0.09)!important;
       }
       .mirror-line{font-size:0.72rem;margin:0.25rem 0;line-height:1.45;}
       .mirror-table{width:100%;border-collapse:collapse;font-size:0.72rem;margin:4px 0;}
