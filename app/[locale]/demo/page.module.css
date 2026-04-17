@@ -468,9 +468,9 @@ html[data-site-theme="dark"] .heroIntroSurface .heroGlassPro {
 }
 
 :global(.demo-mobile-narrow) .left {
-  transform: scale(1.05);
-  transform-origin: top left;
-  max-width: calc(100% / 1.05);
+  /* Bez scale — transform mobilajā grid rindā vizuāli pārklāj nākamo bloku. */
+  transform: none;
+  max-width: none;
 }
 
 :global(.demo-mobile-narrow) .title {
@@ -514,9 +514,13 @@ html[data-site-theme="dark"] .heroIntroSurface .heroGlassPro {
 }
 
 @media (max-width: 980px) {
+  .heroColumns {
+    gap: clamp(1.5rem, 5vw, 2.25rem);
+  }
+
   .left {
     max-width: none;
-    transform: scale(1.1);
+    transform: none;
     transform-origin: top left;
   }
 }
