@@ -131,36 +131,42 @@ export async function patchOrderDraft(
   }
 
   const prev = await readOrderDraft(sessionId);
-  /** Pilns `edits` objekts no klienta — aizstāj, nevis merge pa laukiem. */
+  const prevEdits = prev?.orderEdits ?? {};
+
+  /**
+   * Klienta `orderEdits` autosaglabāšanā bieži ir tikai daļa lauku (vai `{}` pirms hidratācijas).
+   * Agrāk serveris aizvietoja visu `orderEdits` ar tikai PATCH laukiem → pārējie lauki un darba zona
+   * pazuda no JSON. Tagad: merge uz iepriekšējo melnrakstu.
+   */
+  const sanitizedPatch: OrderDraftOrderEdits = {};
+  if (patch.orderEdits !== undefined) {
+    if (typeof patch.orderEdits.vin === "string") {
+      sanitizedPatch.vin = sanitizeDraftTextForStorage(patch.orderEdits.vin, 64);
+    }
+    if (typeof patch.orderEdits.listingUrl === "string") {
+      sanitizedPatch.listingUrl = sanitizeDraftTextForStorage(patch.orderEdits.listingUrl, 8000);
+    }
+    if (typeof patch.orderEdits.customerName === "string") {
+      sanitizedPatch.customerName = sanitizeDraftTextForStorage(patch.orderEdits.customerName, 200);
+    }
+    if (typeof patch.orderEdits.customerEmail === "string") {
+      sanitizedPatch.customerEmail = sanitizeDraftTextForStorage(patch.orderEdits.customerEmail, 320);
+    }
+    if (typeof patch.orderEdits.customerPhone === "string") {
+      sanitizedPatch.customerPhone = sanitizeDraftTextForStorage(patch.orderEdits.customerPhone, 64);
+    }
+    if (typeof patch.orderEdits.contactMethod === "string") {
+      sanitizedPatch.contactMethod = sanitizeDraftTextForStorage(patch.orderEdits.contactMethod, 120);
+    }
+    if (typeof patch.orderEdits.notes === "string") {
+      sanitizedPatch.notes = sanitizeDraftTextForStorage(patch.orderEdits.notes);
+    }
+    if (typeof patch.orderEdits.internalComment === "string") {
+      sanitizedPatch.internalComment = sanitizeDraftTextForStorage(patch.orderEdits.internalComment);
+    }
+  }
   const nextOrderEdits =
-    patch.orderEdits !== undefined
-      ? {
-          ...(typeof patch.orderEdits.vin === "string"
-            ? { vin: sanitizeDraftTextForStorage(patch.orderEdits.vin, 64) }
-            : {}),
-          ...(typeof patch.orderEdits.listingUrl === "string"
-            ? { listingUrl: sanitizeDraftTextForStorage(patch.orderEdits.listingUrl, 8000) }
-            : {}),
-          ...(typeof patch.orderEdits.customerName === "string"
-            ? { customerName: sanitizeDraftTextForStorage(patch.orderEdits.customerName, 200) }
-            : {}),
-          ...(typeof patch.orderEdits.customerEmail === "string"
-            ? { customerEmail: sanitizeDraftTextForStorage(patch.orderEdits.customerEmail, 320) }
-            : {}),
-          ...(typeof patch.orderEdits.customerPhone === "string"
-            ? { customerPhone: sanitizeDraftTextForStorage(patch.orderEdits.customerPhone, 64) }
-            : {}),
-          ...(typeof patch.orderEdits.contactMethod === "string"
-            ? { contactMethod: sanitizeDraftTextForStorage(patch.orderEdits.contactMethod, 120) }
-            : {}),
-          ...(typeof patch.orderEdits.notes === "string"
-            ? { notes: sanitizeDraftTextForStorage(patch.orderEdits.notes) }
-            : {}),
-          ...(typeof patch.orderEdits.internalComment === "string"
-            ? { internalComment: sanitizeDraftTextForStorage(patch.orderEdits.internalComment) }
-            : {}),
-        }
-      : prev?.orderEdits ?? {};
+    patch.orderEdits !== undefined ? { ...prevEdits, ...sanitizedPatch } : prevEdits;
   const nextWorkspace =
     workspacePatch !== undefined ? workspacePatch : prev?.workspace ?? null;
   const updatedAt = new Date().toISOString();

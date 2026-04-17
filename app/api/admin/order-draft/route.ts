@@ -1,7 +1,7 @@
 /**
  * Pasūtījuma draft saglabāšana (JSON uz disku). Nav AI, nav smagu cilpu —
- * tikai validācija + `patchOrderDraft`. 503 parasti nozīmē `store_disabled` vai
- * rakstīšanas kļūdu (skat. `ADMIN_ORDER_DRAFT_DIR`).
+ * tikai validācija + `patchOrderDraft` (`orderEdits` merge ar iepriekšējo JSON, ne pilna aizvietošana).
+ * 503 parasti nozīmē `store_disabled` vai rakstīšanas kļūdu (skat. `ADMIN_ORDER_DRAFT_DIR`).
  */
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
