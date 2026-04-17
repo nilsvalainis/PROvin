@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { DEFAULT_PDF_VISIBILITY, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
@@ -96,6 +97,78 @@ export function AdminOrderDetailView({
     setPdfVisibility((prev) => ({ ...prev, ...patch }));
   }, []);
   const [adminDark, setAdminDark] = useState(false);
+  const router = useRouter();
+  const [stripeSeedBusy, setStripeSeedBusy] = useState(false);
+  const [stripeSeedMsg, setStripeSeedMsg] = useState<string | null>(null);
+
+  const seedOrderEditsFromStripe = useCallback(async () => {
+    setStripeSeedMsg(null);
+    setStripeSeedBusy(true);
+    try {
+      const res = await fetch("/api/admin/order-draft/seed-from-stripe", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: order.id }),
+      });
+      const data: unknown = await res.json().catch(() => ({}));
+      const filled =
+        typeof data === "object" &&
+        data !== null &&
+        "filled" in data &&
+        Array.isArray((data as { filled: unknown }).filled)
+          ? ((data as { filled: string[] }).filled as string[])
+          : [];
+      const orderEditsPatch =
+        typeof data === "object" &&
+        data !== null &&
+        "orderEdits" in data &&
+        typeof (data as { orderEdits: unknown }).orderEdits === "object" &&
+        (data as { orderEdits: unknown }).orderEdits !== null
+          ? ((data as { orderEdits: OrderEdits }).orderEdits as OrderEdits)
+          : null;
+      const persisted =
+        typeof data === "object" &&
+        data !== null &&
+        "persistedServer" in data &&
+        Boolean((data as { persistedServer: unknown }).persistedServer);
+      const message =
+        typeof data === "object" &&
+        data !== null &&
+        "message" in data &&
+        typeof (data as { message: unknown }).message === "string"
+          ? (data as { message: string }).message
+          : null;
+
+      if (!res.ok) {
+        const err =
+          typeof data === "object" &&
+          data !== null &&
+          "error" in data &&
+          typeof (data as { error: unknown }).error === "string"
+            ? (data as { error: string }).error
+            : "Kļūda";
+        setStripeSeedMsg(err);
+        return;
+      }
+
+      if (orderEditsPatch && Object.keys(orderEditsPatch).length > 0) {
+        setEdits((e) => ({ ...e, ...orderEditsPatch }));
+      }
+      if (persisted) {
+        router.refresh();
+      }
+      setStripeSeedMsg(
+        filled.length > 0
+          ? `No Stripe aizpildīti: ${filled.join(", ")}${persisted ? " (saglabāts serverī)" : ""}.`
+          : (message ?? "Nav tukšu lauku, ko aizpildīt no Stripe."),
+      );
+    } catch {
+      setStripeSeedMsg("Tīkla kļūda");
+    } finally {
+      setStripeSeedBusy(false);
+    }
+  }, [order.id, router]);
 
   useEffect(() => {
     const key = storageKeyOrderEdits(order.id);
@@ -454,6 +527,22 @@ export function AdminOrderDetailView({
                     hideToolbar
                     resetVersion={orderFieldResetKey}
                   />
+                  <div className="mt-1 flex flex-col gap-1 border-t border-slate-200/80 pt-2">
+                    <button
+                      type="button"
+                      disabled={stripeSeedBusy}
+                      onClick={() => void seedOrderEditsFromStripe()}
+                      className="inline-flex max-w-full items-center justify-center rounded-md border border-slate-300/90 bg-white px-2 py-1.5 text-[10px] font-semibold text-slate-800 shadow-sm hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-100 dark:hover:bg-slate-800/50"
+                      title="Aizpilda tikai tukšos laukus no Stripe Checkout sesijas (metadata). Avotu bloki / portfelis — ne."
+                    >
+                      {stripeSeedBusy ? "Sinhronizē ar Stripe…" : "Aizpildīt tukšos laukus no Stripe"}
+                    </button>
+                    {stripeSeedMsg ? (
+                      <p className="text-[10px] text-slate-600 dark:text-slate-400" role="status">
+                        {stripeSeedMsg}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </AdminCollapsibleShell>
