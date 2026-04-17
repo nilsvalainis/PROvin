@@ -422,6 +422,7 @@ export function OrderDetailWorkspace({
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
   const [notifyPhase, setNotifyPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [notifyErr, setNotifyErr] = useState<string | null>(null);
+  const [notifyLastSentTo, setNotifyLastSentTo] = useState<string | null>(null);
   const notifyReportPdfExtraRef = useRef<HTMLInputElement>(null);
   const [portfolioDropActive, setPortfolioDropActive] = useState(false);
   const portfolioDragDepth = useRef(0);
@@ -775,6 +776,7 @@ export function OrderDetailWorkspace({
   const openNotifyClientDialog = useCallback(() => {
     setNotifyErr(null);
     setNotifyPhase("idle");
+    setNotifyLastSentTo(null);
     setNotifyDialogOpen(true);
   }, []);
 
@@ -853,8 +855,19 @@ export function OrderDetailWorkspace({
       }
       if (notifyReportPdfExtraRef.current) notifyReportPdfExtraRef.current.value = "";
       setNotifyDialogOpen(false);
+      const sentTo =
+        typeof data === "object" &&
+        data !== null &&
+        "sentTo" in data &&
+        typeof (data as { sentTo: unknown }).sentTo === "string"
+          ? (data as { sentTo: string }).sentTo.trim()
+          : null;
+      setNotifyLastSentTo(sentTo);
       setNotifyPhase("sent");
-      window.setTimeout(() => setNotifyPhase("idle"), 6000);
+      window.setTimeout(() => {
+        setNotifyPhase("idle");
+        setNotifyLastSentTo(null);
+      }, 6000);
     } catch (e) {
       setNotifyErr(e instanceof Error ? e.message : "Tīkla kļūda");
       setNotifyPhase("error");
@@ -1270,9 +1283,19 @@ export function OrderDetailWorkspace({
               </span>
             ) : null}
             {notifyPhase === "sent" ? (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold normal-case tracking-normal text-emerald-700" role="status">
-                <Check className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />
-                E-pasts nosūtīts
+              <span
+                className="inline-flex max-w-[min(100%,18rem)] flex-col gap-0.5 text-[10px] font-semibold normal-case tracking-normal text-emerald-700"
+                role="status"
+              >
+                <span className="inline-flex items-center gap-1">
+                  <Check className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />
+                  E-pasts nosūtīts
+                </span>
+                {notifyLastSentTo ? (
+                  <span className="break-all font-normal text-emerald-900/85" title="Faktiskais saņēmējs">
+                    → {notifyLastSentTo}
+                  </span>
+                ) : null}
               </span>
             ) : null}
           </h2>

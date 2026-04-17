@@ -136,10 +136,21 @@ export async function POST(req: Request) {
   const draft = await readOrderDraft(sessionId);
   const draftCustomerEmail = draft?.orderEdits?.customerEmail?.trim() ?? "";
   const fromOrder = (order.customerEmail ?? order.customerDetailsEmail ?? "").trim();
-  const to = [bodyCustomerEmail, draftCustomerEmail, fromOrder].find((v) => v && isValidOrderEmail(v)) ?? "";
-  if (!to?.trim()) {
+  /** 1) multipart/JSON `customerEmail` (admin izvēle šajā sūtījumā) 2) melnraksts 3) Stripe. */
+  const to =
+    [bodyCustomerEmail, draftCustomerEmail, fromOrder].find((v) => v && isValidOrderEmail(v))?.trim() ?? "";
+  if (!to) {
     return NextResponse.json({ error: "no_customer_email" }, { status: 400 });
   }
+
+  const norm = (s: string) => s.trim().toLowerCase();
+  const toN = norm(to);
+  const sentToSource: "request" | "draft" | "stripe" =
+    bodyCustomerEmail && isValidOrderEmail(bodyCustomerEmail) && norm(bodyCustomerEmail) === toN
+      ? "request"
+      : draftCustomerEmail && isValidOrderEmail(draftCustomerEmail) && norm(draftCustomerEmail) === toN
+        ? "draft"
+        : "stripe";
 
   if (!isSmtpConfigured()) {
     return NextResponse.json(
@@ -186,7 +197,7 @@ export async function POST(req: Request) {
 
   try {
     await sendReportReadyEmail({
-      to: to.trim(),
+      to,
       carVin: order.vin?.trim() || "—",
       attachments: merged,
     });
@@ -196,5 +207,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "send_failed", message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  console.info("[api/admin/notify-report-ready] sent", {
+    sessionId,
+    sentTo: to,
+    sentToSource,
+  });
+
+  return NextResponse.json({ ok: true, sentTo: to, sentToSource });
 }

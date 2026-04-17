@@ -53,6 +53,7 @@ function NotifyReportReadyCell({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [phase, setPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [errMsg, setErrMsg] = useState<string | null>(null);
+  const [lastSentTo, setLastSentTo] = useState<string | null>(null);
   const reportInputRef = useRef<HTMLInputElement>(null);
   const extraInputRef = useRef<HTMLInputElement>(null);
 
@@ -84,6 +85,7 @@ function NotifyReportReadyCell({
       const res = await fetch("/api/admin/notify-report-ready", {
         method: "POST",
         body: fd,
+        credentials: "include",
       });
       const data: unknown = await res.json().catch(() => ({}));
       const message =
@@ -109,6 +111,14 @@ function NotifyReportReadyCell({
       if (reportInputRef.current) reportInputRef.current.value = "";
       if (extraInputRef.current) extraInputRef.current.value = "";
       setDialogOpen(false);
+      const sentTo =
+        typeof data === "object" &&
+        data !== null &&
+        "sentTo" in data &&
+        typeof (data as { sentTo: unknown }).sentTo === "string"
+          ? (data as { sentTo: string }).sentTo.trim()
+          : null;
+      setLastSentTo(sentTo);
       setPhase("sent");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Tīkla kļūda";
@@ -126,9 +136,16 @@ function NotifyReportReadyCell({
   }
   if (phase === "sent") {
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800">
-        <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
-        Nosūtīts
+      <span className="inline-flex max-w-[220px] flex-col items-end gap-0.5 text-[11px] font-semibold text-emerald-800">
+        <span className="inline-flex items-center gap-1">
+          <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
+          Nosūtīts
+        </span>
+        {lastSentTo ? (
+          <span className="break-all text-right text-[10px] font-normal text-emerald-900/90" title="Faktiskais saņēmējs">
+            → {lastSentTo}
+          </span>
+        ) : null}
       </span>
     );
   }
@@ -140,6 +157,7 @@ function NotifyReportReadyCell({
         onClick={() => {
           setErrMsg(null);
           setPhase("idle");
+          setLastSentTo(null);
           setDialogOpen(true);
         }}
         disabled={phase === "loading"}
