@@ -23,6 +23,7 @@ import {
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
+import { parseCarverticalOdometerPaste } from "@/lib/carvertical-odometer-paste-parse";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
@@ -94,6 +95,16 @@ export function AdminVendorAvotuSourceBlock({
 
   const idBase = blockKey;
 
+  const applyCarverticalOdometerPaste = (raw: string) => {
+    const parsed = parseCarverticalOdometerPaste(raw);
+    if (parsed.length === 0) return;
+    onChange({
+      ...value,
+      mileagePasteRaw: raw.slice(0, 24_000),
+      serviceHistory: parsed,
+    });
+  };
+
   return (
     <AdminCollapsibleShell
       sessionId={sessionId}
@@ -113,6 +124,58 @@ export function AdminVendorAvotuSourceBlock({
           <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
+        {blockKey === "carvertical" ? (
+          <div className="mb-2">
+            <label
+              className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]"
+              htmlFor={`${idBase}-mileage-paste-raw`}
+            >
+              CarVertical — odometra žurnāls (iekopēšanai)
+            </label>
+            {readOnly ? (
+              <div
+                id={`${idBase}-mileage-paste-raw`}
+                className="min-h-[56px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
+              >
+                {(value.mileagePasteRaw ?? "").trim() ? (
+                  value.mileagePasteRaw
+                ) : (
+                  <span className="text-slate-400">—</span>
+                )}
+              </div>
+            ) : (
+              <>
+                <textarea
+                  id={`${idBase}-mileage-paste-raw`}
+                  className="mb-1 w-full min-h-[72px] resize-y rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
+                  rows={4}
+                  disabled={disabled}
+                  placeholder="Odometra rādījumu ieraksti + rindas (MM.YYYY. … km vai DD.MM.YYYY. … km)…"
+                  value={value.mileagePasteRaw ?? ""}
+                  onChange={(e) =>
+                    onChange({ ...value, mileagePasteRaw: e.target.value.slice(0, 24_000) })
+                  }
+                  onBlur={(e) => applyCarverticalOdometerPaste(e.currentTarget.value)}
+                  aria-label="CarVertical odometra žurnāla iekopēšana"
+                />
+                {!disabled ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
+                      onClick={() => applyCarverticalOdometerPaste(value.mileagePasteRaw ?? "")}
+                    >
+                      Ielasīt tabulā
+                    </button>
+                    <span className="text-[10px] text-slate-400">
+                      Kārtošana kā tabulā: jaunākais augšā (pēc datuma, tad km).
+                    </span>
+                  </div>
+                ) : null}
+              </>
+            )}
+          </div>
+        ) : null}
         <div
           className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90"
           data-provin-mileage-table={PROVIN_MILEAGE_TABLE_DOM_KIND}

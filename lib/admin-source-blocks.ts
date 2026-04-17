@@ -425,6 +425,8 @@ export type VendorAvotuBlockState = {
   serviceHistory: AutoRecordsServiceRow[];
   incidents: LtabIncidentRow[];
   comments: string;
+  /** CarVertical odometra žurnāla RAW (tikai admin; nav obligāti PDF). */
+  mileagePasteRaw?: string;
 };
 
 /** Citi avoti — tā pati struktūra kā AutoDNA / CarVertical (nobraukums + negadījumi + komentāri). */
@@ -869,6 +871,9 @@ function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBloc
       serviceHistory: normalizeVendorMileageRowsFromRaw(shIn as unknown[]),
       incidents: normalizeVendorIncidentsFromRaw(incIn as unknown[]),
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
+      ...(typeof raw.mileagePasteRaw === "string"
+        ? { mileagePasteRaw: raw.mileagePasteRaw.slice(0, 24_000) }
+        : {}),
     };
   }
   return migrateLegacyVendorBlock(parseStandardBlockRaw(raw));
