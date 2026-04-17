@@ -7,18 +7,8 @@ import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import { DemoViewportChips } from "@/components/demo/DemoViewportChips";
+import { demoHeroFeatureTitles } from "@/lib/demo-feature-titles";
 import styles from "@/app/[locale]/demo/page.module.css";
-
-const featureTitles = [
-  { label: "Vēstures pārbaude", icon: "check" as const },
-  { label: "Sludinājuma analīze", icon: "check" as const },
-  { label: "Tehnisko risku analīze", icon: "check" as const },
-  { label: "Starptautiskās datubāzes", icon: "check" as const },
-  { label: "Latvijas reģistru analīze", icon: "check" as const },
-  { label: "Datu interpretācija", icon: "check" as const },
-  { label: "Individuāla konsultācija", icon: "check" as const },
-  { label: "Approved by IRISS", icon: "shield" as const },
-];
 
 export async function DemoLanding() {
   const tMeta = await getTranslations("Meta");
@@ -67,7 +57,7 @@ export async function DemoLanding() {
                   </button>
 
                   <ul className={styles.features}>
-                    {featureTitles.map((item) => (
+                    {demoHeroFeatureTitles.map((item) => (
                       <li key={item.label}>
                         {item.icon === "check" ? (
                           <span className={`${styles.featureIcon} ${styles.featureIconCheck}`} aria-hidden>
