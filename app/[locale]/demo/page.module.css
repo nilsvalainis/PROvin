@@ -124,7 +124,8 @@ html[data-site-theme="dark"] .heroVisualWrap {
 
 html[data-site-theme="dark"] .demoScrimTune {
   display: block;
-  filter: brightness(0.78) saturate(0.92);
+  /* Pārāk spēcīgs brightness rada 8-bit „joslas” uz tumšiem gradientiem; nedaudz vieglāk. */
+  filter: brightness(0.9) saturate(0.96);
 }
 
 /* Vēl ~20% tumšāks + vidus zonas sapludināšana */
@@ -134,13 +135,31 @@ html[data-site-theme="dark"] .demoScrimTune {
   inset: 0;
   z-index: 2;
   pointer-events: none;
+  /* Nedaudz garāki „falloff” un vieglākas malas — mazāk horizontālu joslu salīdzinājumā ar ļoti tievu α. */
   background:
-    radial-gradient(ellipse 95% 72% at 50% 45%, rgb(0 0 0 / 0.42) 0%, transparent 62%),
-    linear-gradient(180deg, rgb(0 0 0 / 0.2) 0%, transparent 35%, transparent 65%, rgb(0 0 0 / 0.22) 100%);
+    radial-gradient(ellipse 98% 78% at 50% 44%, rgb(0 0 0 / 0.38) 0%, transparent 68%),
+    linear-gradient(180deg, rgb(0 0 0 / 0.14) 0%, transparent 38%, transparent 62%, rgb(0 0 0 / 0.16) 100%);
 }
 
 html[data-site-theme="dark"] .heroDarkVeil {
   display: block;
+}
+
+/*
+ * Ļoti viegls SVG trokšņa slānis virs tumšā stack — vizuāli „izlīdzina” gradientu joslas (banding).
+ * Slānis ir iekš `heroDarkBackdrop`, zem satura (`z-10`), lai netraucē klikšķus.
+ */
+html[data-site-theme="dark"] .heroDarkBackdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.42;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
 }
 
 .heroSection {
