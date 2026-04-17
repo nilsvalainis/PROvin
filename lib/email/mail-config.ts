@@ -8,16 +8,18 @@ export function getSiteOrigin(): string {
   return "http://localhost:3000";
 }
 
-/** Sūtītājs — provin.lv domēns pēc Resend DNS verifikācijas. */
-export function getResendFromAddress(): string {
-  const v = process.env.RESEND_FROM_EMAIL?.trim();
-  if (v) return v;
-  return "PROVIN <reports@provin.lv>";
+/** From — Google SMTP parasti prasa sakrist ar autentificēto SMTP_USER (vai Workspace alias). */
+export function getMailFromAddress(): string {
+  const f = process.env.SMTP_FROM?.trim();
+  if (f) return f;
+  const user = process.env.SMTP_USER?.trim();
+  if (user) return `PROVIN <${user}>`;
+  return "PROVIN <info@provin.lv>";
 }
 
-/** Atbildes adrese — klientu un admin vēstules. */
-export function getResendReplyTo(): string {
-  const r = process.env.RESEND_REPLY_TO?.trim();
+/** Reply-To klientu atbildēm. */
+export function getMailReplyTo(): string {
+  const r = process.env.SMTP_REPLY_TO?.trim();
   if (r) return r;
   const c = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim();
   if (c) return c;

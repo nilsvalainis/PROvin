@@ -1,18 +1,27 @@
 import "server-only";
 
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import { contactMailtoHref } from "@/lib/contact";
+import { getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/mail-config";
 import { adminNewOrderHtml, paymentConfirmationHtml, reportReadyHtml } from "@/lib/email/html-templates";
-import { getResendFromAddress, getResendReplyTo, getSiteOrigin } from "@/lib/email/resend-config";
 import type { OrderEmailPayload } from "@/lib/email/types";
 
-let resendSingleton: Resend | null = null;
+function getSmtpTransport(): nodemailer.Transporter | null {
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS?.trim();
+  if (!user || !pass) return null;
 
-function getResend(): Resend | null {
-  const key = process.env.RESEND_API_KEY?.trim();
-  if (!key) return null;
-  if (!resendSingleton) resendSingleton = new Resend(key);
-  return resendSingleton;
+  const host = process.env.SMTP_HOST?.trim() || "smtp.gmail.com";
+  const portRaw = process.env.SMTP_PORT?.trim();
+  const port = portRaw ? Number.parseInt(portRaw, 10) : 587;
+  const secure = Number.isFinite(port) && port === 465;
+
+  return nodemailer.createTransport({
+    host,
+    port: Number.isFinite(port) ? port : 587,
+    secure,
+    auth: { user, pass },
+  });
 }
 
 function contactLabel(v: string | null): string {
@@ -38,29 +47,27 @@ function adminOrderPlainText(p: OrderEmailPayload): string {
   return lines.join("\n");
 }
 
-async function sendMailgunFallback(to: string, subject: string, text: string): Promise<boolean> {
-  const mailgunDomain = process.env.MAILGUN_DOMAIN;
-  const mailgunKey = process.env.MAILGUN_API_KEY;
-  if (!mailgunDomain || !mailgunKey) return false;
-
-  const form = new URLSearchParams();
-  form.set("from", `PROVIN <noreply@${mailgunDomain}>`);
-  form.set("to", to);
-  form.set("subject", subject);
-  form.set("text", text);
-
-  const r = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
-    method: "POST",
-    headers: {
-      Authorization: "Basic " + Buffer.from(`api:${mailgunKey}`).toString("base64"),
-    },
-    body: form,
+async function sendSmtpMail(opts: {
+  to: string | string[];
+  subject: string;
+  text: string;
+  html: string;
+}): Promise<void> {
+  const transport = getSmtpTransport();
+  if (!transport) {
+    throw new Error("SMTP_USER / SMTP_PASS nav iestatīti");
+  }
+  await transport.sendMail({
+    from: getMailFromAddress(),
+    to: opts.to,
+    replyTo: getMailReplyTo(),
+    subject: opts.subject,
+    text: opts.text,
+    html: opts.html,
   });
-  if (!r.ok) throw new Error(`Mailgun failed: ${await r.text()}`);
-  return true;
 }
 
-/** Admin: jauns pasūtījums (HTML + Mailgun fallback). */
+/** Admin: jauns pasūtījums (HTML, Google Workspace SMTP). */
 export async function sendAdminNewOrderNotificationEmail(payload: OrderEmailPayload, adminTo: string): Promise<void> {
   const subject = `PROVIN: jauns maksājums — ${payload.vin ?? payload.sessionId}`;
   const text = adminOrderPlainText(payload);
@@ -82,23 +89,19 @@ export async function sendAdminNewOrderNotificationEmail(payload: OrderEmailPayl
     },
   ]);
 
-  const resend = getResend();
-  if (resend) {
-    const { error } = await resend.emails.send({
-      from: getResendFromAddress(),
-      to: [adminTo],
-      replyTo: getResendReplyTo(),
-      subject,
-      html,
-      text,
-    });
-    if (error) throw new Error(error.message);
+  const transport = getSmtpTransport();
+  if (!transport) {
+    console.warn(
+      "[email] ADMIN_NOTIFY_EMAIL set but SMTP_USER/SMTP_PASS missing — admin e-pasts netika nosūtīts.",
+    );
     return;
   }
 
-  const ok = await sendMailgunFallback(adminTo, subject, text);
-  if (!ok) {
-    console.warn("[email] ADMIN_NOTIFY_EMAIL set but RESEND_API_KEY and Mailgun missing — admin e-pasts netika nosūtīts.");
+  try {
+    await sendSmtpMail({ to: adminTo, subject, text, html });
+  } catch (e) {
+    console.error("[email] sendAdminNewOrderNotificationEmail SMTP:", e);
+    throw e instanceof Error ? e : new Error(String(e));
   }
 }
 
@@ -110,9 +113,9 @@ export async function sendPaymentConfirmationEmail(opts: {
   currency: string | null;
   vin: string | null;
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) {
-    console.error("[email] RESEND_API_KEY missing — payment confirmation e-pasts netika nosūtīts.");
+  const transport = getSmtpTransport();
+  if (!transport) {
+    console.error("[email] SMTP_USER/SMTP_PASS missing — payment confirmation e-pasts netika nosūtīts.");
     return;
   }
 
@@ -131,41 +134,41 @@ export async function sendPaymentConfirmationEmail(opts: {
     vin: opts.vin?.trim() || "—",
   });
 
-  const { error } = await resend.emails.send({
-    from: getResendFromAddress(),
-    to: [opts.to],
-    replyTo: getResendReplyTo(),
-    subject: "PROVIN — maksājums saņemts",
-    html,
-    text: [
-      "Paldies par pasūtījumu.",
-      "",
-      `Summa: ${amountLine}`,
-      `VIN: ${opts.vin ?? "—"}`,
-      "",
-      `Rēķins (PDF): ${invoiceUrl}`,
-      "",
-      `Pateicības lapa: ${thanksUrl}`,
-    ].join("\n"),
-  });
+  const text = [
+    "Paldies par pasūtījumu.",
+    "",
+    `Summa: ${amountLine}`,
+    `VIN: ${opts.vin ?? "—"}`,
+    "",
+    `Rēķins (PDF): ${invoiceUrl}`,
+    "",
+    `Pateicības lapa: ${thanksUrl}`,
+  ].join("\n");
 
-  if (error) {
-    console.error("[email] sendPaymentConfirmationEmail Resend:", error);
-    throw new Error(error.message);
+  try {
+    await sendSmtpMail({
+      to: opts.to,
+      subject: "PROVIN — maksājums saņemts",
+      text,
+      html,
+    });
+  } catch (e) {
+    console.error("[email] sendPaymentConfirmationEmail SMTP:", e);
+    throw e instanceof Error ? e : new Error(String(e));
   }
 }
 
 /** Klients: eksperts apstiprinājis — paziņojums, ka audits gatavs (saziņas CTA). */
 export async function sendReportReadyEmail(opts: { to: string; vin: string }): Promise<void> {
-  const resend = getResend();
-  if (!resend) {
-    const msg = "RESEND_API_KEY nav iestatīts — e-pasts netika nosūtīts.";
+  const transport = getSmtpTransport();
+  if (!transport) {
+    const msg = "SMTP_USER / SMTP_PASS nav iestatīti — e-pasts netika nosūtīts.";
     console.error("[email]", msg);
     throw new Error(msg);
   }
 
   const siteUrl = getSiteOrigin();
-  const replyTo = getResendReplyTo();
+  const replyTo = getMailReplyTo();
   const html = reportReadyHtml({
     siteUrl,
     vin: opts.vin.trim() || "—",
@@ -173,29 +176,29 @@ export async function sendReportReadyEmail(opts: { to: string; vin: string }): P
     replyEmail: replyTo,
   });
 
-  const { error } = await resend.emails.send({
-    from: getResendFromAddress(),
-    to: [opts.to],
-    replyTo,
-    subject: `PROVIN — Jūsu pasūtītais audits ir pabeigts (${opts.vin?.trim() || "VIN"})`,
-    html,
-    text: [
-      "Labdien!",
-      "",
-      "Jūsu pasūtītais PROVIN audits ir pabeigts!",
-      "",
-      `Transportlīdzeklis (VIN): ${opts.vin?.trim() || "—"}`,
-      "",
-      "Atskaites PDF un detaļas nosūtām uz šo e-pasta adresi vai pēc iepriekš norunātā saziņas veida.",
-      `Atbilžu adrese (Reply-To): ${replyTo}`,
-      "",
-      `Vietne: ${siteUrl}`,
-      `Saziņa (e-pasts): ${contactMailtoHref()}`,
-    ].join("\n"),
-  });
+  const text = [
+    "Labdien!",
+    "",
+    "Jūsu pasūtītais PROVIN audits ir pabeigts!",
+    "",
+    `Transportlīdzeklis (VIN): ${opts.vin.trim() || "—"}`,
+    "",
+    "Atskaites PDF un detaļas nosūtām uz šo e-pasta adresi vai pēc iepriekš norunātā saziņas veida.",
+    `Atbilžu adrese (Reply-To): ${replyTo}`,
+    "",
+    `Vietne: ${siteUrl}`,
+    `Saziņa (e-pasts): ${contactMailtoHref()}`,
+  ].join("\n");
 
-  if (error) {
-    console.error("[email] sendReportReadyEmail Resend:", error);
-    throw new Error(error.message);
+  try {
+    await sendSmtpMail({
+      to: opts.to,
+      subject: `PROVIN — Jūsu pasūtītais audits ir pabeigts (${opts.vin?.trim() || "VIN"})`,
+      text,
+      html,
+    });
+  } catch (e) {
+    console.error("[email] sendReportReadyEmail SMTP:", e);
+    throw e instanceof Error ? e : new Error(String(e));
   }
 }

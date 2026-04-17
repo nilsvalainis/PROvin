@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /**
- * Kad eksperts ir apstiprinājis atskaiti — nosūta klientam paziņojumu (Resend).
+ * Kad eksperts ir apstiprinājis atskaiti — nosūta klientam paziņojumu (Google Workspace SMTP).
  * POST JSON: { "sessionId": "cs_..." }
  */
 export async function POST(req: Request) {
