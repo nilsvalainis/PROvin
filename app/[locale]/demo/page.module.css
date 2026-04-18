@@ -438,8 +438,8 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   color: #fff;
   font-size: clamp(0.68rem, 1.15vw, 0.78rem);
   font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-transform: none;
   text-decoration: none;
   text-align: center;
   display: inline-flex;
