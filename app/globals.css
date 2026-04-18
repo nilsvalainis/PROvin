@@ -920,6 +920,31 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   color: #0066ff;
 }
 
+/* PROVIN SELECT — saraksta ✓, veiksmes / kļūdas ziņas (gaišs / tumšs band-c). */
+.provin-select-included-check {
+  color: rgb(0 150 70);
+}
+
+html[data-site-theme="dark"] .provin-select-included-check {
+  color: rgb(52 211 153);
+}
+
+.provin-select-success-msg {
+  color: #047857;
+}
+
+html[data-site-theme="dark"] .provin-select-success-msg {
+  color: rgb(167 243 208);
+}
+
+.provin-select-form-error {
+  color: #92400e;
+}
+
+html[data-site-theme="dark"] .provin-select-form-error {
+  color: rgb(253 230 138);
+}
+
 /* How it works — diskrēts „datu impulss” ap soļu ikonām (gredzens + elpošana uz hover) */
 @keyframes how-it-works-ring-draw {
   from {

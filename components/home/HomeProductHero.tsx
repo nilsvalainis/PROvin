@@ -10,12 +10,12 @@ import {
   HOME_HERO_ORDER_FORM_ID,
   ORDER_SECTION_ID,
 } from "@/lib/order-section";
-import { PROVIN_SELECT_FORM_HASH } from "@/lib/provin-select-section";
+import { PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
 import styles from "@/app/[locale]/demo/page.module.css";
 
 type Props = {
   introBody: ReactNode;
-  /** `false` — PROVIN SELECT pilnībā paslēpts (noklusējums līdz publicēšanai). */
+  /** `false` — PROVIN SELECT paslēpts (`isProvinSelectPublic()`). */
   showProvinSelect?: boolean;
 };
 
@@ -75,7 +75,7 @@ export function HomeProductHero({ introBody, showProvinSelect = false }: Props) 
                       {t("heroMobileOrderCta")}
                     </button>
                     {showProvinSelect ? (
-                      <a href={`#${PROVIN_SELECT_FORM_HASH}`} className={styles.ctaButtonSecondary}>
+                      <a href={`#${PROVIN_SELECT_SECTION_ID}`} className={styles.ctaButtonHeroConsult}>
                         {t("heroConsultCta")}
                       </a>
                     ) : null}

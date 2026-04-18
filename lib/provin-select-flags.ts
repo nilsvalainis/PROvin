@@ -1,9 +1,10 @@
 /**
  * PROVIN SELECT (konsultācijas sadaļa, hero otrā poga, API).
- * Publicēšana bez koda izmaiņām: Vercel / `.env.local` → `NEXT_PUBLIC_PROVIN_SELECT_PUBLIC=1`
- * Bez mainīgā vai ar `0` / `false` — pilnībā slēpts (lapā nav, API atgriež 404).
+ * Pēc noklusējuma redzams (produkcijā pēc deploy). Pilnībā slēpt: Vercel / `.env` →
+ * `NEXT_PUBLIC_PROVIN_SELECT_PUBLIC=0` (vai `false` / `no` / `off`) — lapā nav, API 404.
  */
 export function isProvinSelectPublic(): boolean {
   const v = (process.env.NEXT_PUBLIC_PROVIN_SELECT_PUBLIC ?? "").trim().toLowerCase();
-  return v === "1" || v === "true" || v === "yes" || v === "on";
+  if (v === "0" || v === "false" || v === "no" || v === "off") return false;
+  return true;
 }

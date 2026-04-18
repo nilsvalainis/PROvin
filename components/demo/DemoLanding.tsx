@@ -9,7 +9,7 @@ import { PricingIncluded } from "@/components/PricingIncluded";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import { DemoViewportChips } from "@/components/demo/DemoViewportChips";
 import { demoHeroFeatureTitles } from "@/lib/demo-feature-titles";
-import { PROVIN_SELECT_FORM_HASH } from "@/lib/provin-select-section";
+import { PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
 import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 import styles from "@/app/[locale]/demo/page.module.css";
 
@@ -61,7 +61,7 @@ export async function DemoLanding() {
                     PASŪTĪT AUDITU
                   </button>
                   {provinSelectOn ? (
-                    <a href={`#${PROVIN_SELECT_FORM_HASH}`} className={styles.ctaButtonSecondary}>
+                    <a href={`#${PROVIN_SELECT_SECTION_ID}`} className={styles.ctaButtonHeroConsult}>
                       {tHero("heroConsultCta")}
                     </a>
                   ) : null}

@@ -427,6 +427,39 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   border-color: rgb(90 98 112 / 0.45);
 }
 
+/* Hero — PROVIN SELECT saite uz sadaļu (zaļa, kā „check” akcents). */
+.ctaButtonHeroConsult {
+  margin-top: 0.55rem;
+  width: min(100%, 520px);
+  min-height: 56px;
+  border: 1px solid rgb(0 120 62 / 0.55);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #12c45a 0%, #0a9d47 100%);
+  color: #fff;
+  font-size: clamp(0.68rem, 1.15vw, 0.78rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.75rem;
+  line-height: 1.2;
+  box-shadow: 0 12px 26px rgb(10 157 71 / 0.32), 0 1px 0 rgb(255 255 255 / 0.22) inset;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.ctaButtonHeroConsult:hover {
+  background: linear-gradient(180deg, #16cf63 0%, #0cb04e 100%);
+  border-color: rgb(0 140 72 / 0.65);
+}
+
 .features {
   margin: 1rem 0 0;
   padding: 0;
@@ -563,6 +596,53 @@ html[data-site-theme="light"] .heroIntroSurface .ctaButtonSecondary {
 html[data-site-theme="light"] .heroIntroSurface .ctaButtonSecondary:hover {
   background: linear-gradient(180deg, #f4f6f9 0%, #e6eaf0 100%);
   border-color: rgb(24 31 42 / 0.22);
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .ctaButtonHeroConsult {
+  border-color: rgb(0 200 105 / 0.42);
+  background: linear-gradient(180deg, #10b854 0%, #089444 100%);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.35),
+    0 14px 32px rgb(0 80 44 / 0.42),
+    0 1px 0 rgb(255 255 255 / 0.16) inset;
+  color: #fff;
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .ctaButtonHeroConsult:hover {
+  background: linear-gradient(180deg, #14c95f 0%, #0aa14c 100%);
+  border-color: rgb(0 220 115 / 0.52);
+}
+
+/* PROVIN SELECT forma — tās pašas hero ievades kārtulas uz tumšā band-c (ārpus .heroIntroSurface). */
+html[data-site-theme="dark"] #provin-select .fieldLabel {
+  color: rgb(200 208 220 / 0.72);
+}
+
+html[data-site-theme="dark"] #provin-select .field input,
+html[data-site-theme="dark"] #provin-select .field textarea {
+  color: rgb(245 248 252 / 0.95);
+  border: 1px solid var(--dd-line);
+  border-radius: 14px;
+  background: linear-gradient(165deg, var(--dd-surface-2), var(--dd-surface));
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.35),
+    0 18px 48px rgb(0 0 0 / 0.35),
+    0 1px 0 rgb(255 255 255 / 0.06) inset;
+}
+
+html[data-site-theme="dark"] #provin-select .field input::placeholder,
+html[data-site-theme="dark"] #provin-select .field textarea::placeholder {
+  color: rgb(160 170 188 / 0.55);
+}
+
+html[data-site-theme="dark"] #provin-select .fieldInvalid input,
+html[data-site-theme="dark"] #provin-select .fieldInvalid textarea {
+  border-color: rgb(248 113 113 / 0.85) !important;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.35),
+    0 18px 48px rgb(0 0 0 / 0.35),
+    0 1px 0 rgb(255 255 255 / 0.06) inset,
+    0 0 0 2px rgb(248 113 113 / 0.35);
 }
 
 html[data-site-theme="dark"] .heroIntroSurface .heroGlassCard {
