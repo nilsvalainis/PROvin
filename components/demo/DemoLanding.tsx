@@ -7,6 +7,7 @@ import { ProvinSelectSection } from "@/components/home/ProvinSelectSection";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
 import { renderProvinText } from "@/lib/provin-wordmark";
+import { DemoTwinHeroConcept } from "@/components/demo/DemoTwinHeroConcept";
 import { DemoViewportChips } from "@/components/demo/DemoViewportChips";
 import { demoHeroFeatureTitles } from "@/lib/demo-feature-titles";
 import { PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
@@ -108,6 +109,10 @@ export async function DemoLanding() {
             </div>
           </section>
         </div>
+      </div>
+
+      <div id="demo-divas-kartites" className="scroll-mt-4">
+        <DemoTwinHeroConcept />
       </div>
 
       <div className="demo-design-dir min-w-0 pb-0 text-white">
