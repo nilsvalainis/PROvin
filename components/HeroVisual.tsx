@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Pilna Hero sekcijas fona „gaisma” — pilns platums/augstums, bez centrēta rāmja.
  * Beidzas pie sekcijas apakšas; tālāk — Pricing sadaļas savs fons.
