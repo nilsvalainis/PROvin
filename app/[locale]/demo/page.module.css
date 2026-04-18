@@ -253,6 +253,7 @@ html[data-site-theme="dark"] .heroSection {
   line-height: 1.55;
   color: rgba(45, 52, 62, 0.9);
   text-wrap: pretty;
+  white-space: pre-line;
 }
 
 .heroGlassPro {

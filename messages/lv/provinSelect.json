@@ -30,7 +30,7 @@
     "delivery2": "Formāts: Konsultācija, rakstisks izvērtējums + iespēja uzdot papildjautājumus;",
     "ctaPrimary": "PIETEIKT KONSULTĀCIJU",
     "formTitle": "Pieteikums konsultācijai",
-    "nameLabel": "Vārds, uzvārds",
+    "nameLabel": "Vārds",
     "phoneLabel": "Tālruņa numurs",
     "emailLabel": "E-pasts",
     "messageLabel": "Komentārs",
@@ -42,7 +42,7 @@
     "errorGeneric": "Neizdevās nosūtīt. Mēģini vēlreiz vai raksti uz info@provin.lv.",
     "errorSmtp": "E-pasta serveris nav konfigurēts — sazinies ar mums: info@provin.lv.",
     "validation": {
-      "name": "Lūdzu, ievadi vārdu un uzvārdu.",
+      "name": "Lūdzu, ievadi vārdu (vismaz 3 rakstzīmes).",
       "email": "Lūdzu, ievadi derīgu e-pasta adresi.",
       "phone": "Lūdzu, ievadi tālruni ar vismaz 8 cipariem.",
       "message": "Lūdzu, apraksti vēlmes vismaz dažos teikumos."
