@@ -7,5 +7,7 @@ export const demoHeroFeatureTitles = [
   { label: "Latvijas reģistru analīze", icon: "check" as const },
   { label: "Datu interpretācija", icon: "check" as const },
   { label: "Individuāla konsultācija", icon: "check" as const },
+  { label: "Manuāla datu apstrāde", icon: "check" as const },
+  { label: "Izpildes laiks: līdz 48h", icon: "check" as const },
   { label: "Approved by IRISS", icon: "shield" as const },
 ] as const;
