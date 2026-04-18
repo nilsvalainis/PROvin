@@ -12,6 +12,7 @@ import {
 } from "@/lib/order-field-validation";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { getPublicSiteOrigin } from "@/lib/site-url";
 
 export const runtime = "nodejs";
 
@@ -111,9 +112,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: errors[0], errors }, { status: 400 });
   }
 
-  const origin =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim()
+    ? getPublicSiteOrigin()
+    : process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000";
 
   const home = homePath(locale);
   const thanksPath = home === "/" ? "/paldies" : `${home}/paldies`;

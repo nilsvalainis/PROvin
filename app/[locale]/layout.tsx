@@ -11,6 +11,7 @@ import { SiteOrderCtaPin } from "@/components/home/SiteOrderCtaPin";
 import { HomeReloadScrollToTop } from "@/components/home/HomeReloadScrollToTop";
 import { SiteSectionRail } from "@/components/home/SiteSectionRail";
 import { routing } from "@/i18n/routing";
+import { getPublicSiteOrigin } from "@/lib/site-url";
 import "./design-direction-theme.css";
 
 type Props = { children: ReactNode; params: Promise<{ locale: string }> };
@@ -32,10 +33,9 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Meta" });
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
   return {
-    metadataBase: new URL(base),
+    metadataBase: new URL(getPublicSiteOrigin()),
     title: {
       default: t("title"),
       template: "%s | PROVIN",
