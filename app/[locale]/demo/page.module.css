@@ -394,6 +394,39 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   background: linear-gradient(180deg, #2588ff 0%, #1174f0 100%);
 }
 
+/* Otrā hero poga — pelēka, tā pati forma kā `.ctaButton` (dark / light). */
+.ctaButtonSecondary {
+  margin-top: 0.55rem;
+  width: min(100%, 520px);
+  min-height: 56px;
+  border: 1px solid rgb(120 128 140 / 0.42);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f0f2f5 0%, #dfe3ea 100%);
+  color: #252b36;
+  font-size: clamp(0.68rem, 1.15vw, 0.78rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.75rem;
+  line-height: 1.2;
+  box-shadow: 0 10px 22px rgb(24 31 42 / 0.08), 0 1px 0 rgb(255 255 255 / 0.85) inset;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.ctaButtonSecondary:hover {
+  background: linear-gradient(180deg, #f6f8fb 0%, #e8ecf2 100%);
+  border-color: rgb(90 98 112 / 0.45);
+}
+
 .features {
   margin: 1rem 0 0;
   padding: 0;
@@ -505,6 +538,33 @@ html[data-site-theme="dark"] .heroIntroSurface .ctaButton:hover {
   background: linear-gradient(180deg, #2478f0 0%, #115dcc 100%);
 }
 
+html[data-site-theme="dark"] .heroIntroSurface .ctaButtonSecondary {
+  border-color: rgb(255 255 255 / 0.14);
+  background: linear-gradient(180deg, rgb(58 64 76 / 0.92) 0%, rgb(40 46 58 / 0.98) 100%);
+  color: rgb(236 239 246 / 0.94);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.35),
+    0 12px 28px rgb(0 0 0 / 0.35),
+    0 1px 0 rgb(255 255 255 / 0.06) inset;
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .ctaButtonSecondary:hover {
+  background: linear-gradient(180deg, rgb(66 74 88 / 0.95) 0%, rgb(48 54 66 / 0.99) 100%);
+  border-color: rgb(255 255 255 / 0.2);
+}
+
+html[data-site-theme="light"] .heroIntroSurface .ctaButtonSecondary {
+  border-color: rgb(24 31 42 / 0.14);
+  color: #1a2028;
+  background: linear-gradient(180deg, #eef0f4 0%, #dfe4eb 100%);
+  box-shadow: 0 10px 22px rgb(24 31 42 / 0.06), 0 1px 0 rgb(255 255 255 / 0.9) inset;
+}
+
+html[data-site-theme="light"] .heroIntroSurface .ctaButtonSecondary:hover {
+  background: linear-gradient(180deg, #f4f6f9 0%, #e6eaf0 100%);
+  border-color: rgb(24 31 42 / 0.22);
+}
+
 html[data-site-theme="dark"] .heroIntroSurface .heroGlassCard {
   color: rgb(245 248 252 / 0.94);
   border: 1px solid var(--dd-line);
@@ -603,6 +663,12 @@ html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .orde
   min-height: 50px;
   font-size: 0.82rem;
   letter-spacing: 0.06em;
+}
+
+:global(.demo-mobile-narrow) .ctaButtonSecondary {
+  min-height: 50px;
+  font-size: 0.62rem;
+  letter-spacing: 0.055em;
 }
 
 :global(.demo-mobile-narrow) .features {

@@ -67,6 +67,8 @@ async function sendSmtpMail(opts: {
   html: string;
   attachments?: Attachment[];
   headers?: Record<string, string>;
+  /** Ja nav — `getMailReplyTo()`. Pieteikumu vēstulēm: klienta e-pasts, lai admin var atbildēt tieši. */
+  replyTo?: string;
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
@@ -75,7 +77,7 @@ async function sendSmtpMail(opts: {
   await transport.sendMail({
     from: getMailFromAddress(),
     to: opts.to,
-    replyTo: getMailReplyTo(),
+    replyTo: opts.replyTo?.trim() || getMailReplyTo(),
     subject: opts.subject,
     text: opts.text,
     html: opts.html,
@@ -260,4 +262,49 @@ export async function sendReportReadyEmail(opts: {
     console.error("[email] sendReportReadyEmail SMTP:", e);
     throw e instanceof Error ? e : new Error(String(e));
   }
+}
+
+function escHtmlMail(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** Admin: PROVIN SELECT konsultācijas pieteikums no mājas lapas formas. */
+export async function sendProvinSelectConsultationLeadEmail(opts: {
+  adminTo: string;
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+}): Promise<void> {
+  const subject = "PROVIN SELECT — jauns pieteikums";
+  const text = [
+    "Jauns stratēģiskās konsultācijas pieteikums (PROVIN SELECT).",
+    "",
+    `Vārds: ${opts.name}`,
+    `E-pasts: ${opts.email}`,
+    `Tālrunis: ${opts.phone}`,
+    "",
+    "Ziņa:",
+    opts.message,
+  ].join("\n");
+  const html = `<p>Jauns <strong>PROVIN SELECT</strong> pieteikums.</p>
+<table cellpadding="8" style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">
+<tr><td><strong>Vārds</strong></td><td>${escHtmlMail(opts.name)}</td></tr>
+<tr><td><strong>E-pasts</strong></td><td>${escHtmlMail(opts.email)}</td></tr>
+<tr><td><strong>Tālrunis</strong></td><td>${escHtmlMail(opts.phone)}</td></tr>
+</table>
+<p><strong>Ziņa</strong></p>
+<pre style="white-space:pre-wrap;font-family:sans-serif;">${escHtmlMail(opts.message)}</pre>`;
+
+  await sendSmtpMail({
+    to: opts.adminTo,
+    subject,
+    text,
+    html,
+    replyTo: opts.email,
+  });
 }

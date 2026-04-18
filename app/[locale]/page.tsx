@@ -3,6 +3,7 @@ import { Footer } from "@/components/Footer";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { HomeProductHero } from "@/components/home/HomeProductHero";
+import { ProvinSelectSection } from "@/components/home/ProvinSelectSection";
 import { IrissSection } from "@/components/IrissSection";
 import { PricingIncluded } from "@/components/PricingIncluded";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
@@ -30,6 +31,8 @@ export default async function HomePage() {
               <IrissSection editorialColumn />
             </div>
           </section>
+
+          <ProvinSelectSection />
         </div>
 
         <HomeFaqSection />

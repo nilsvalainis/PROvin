@@ -1,0 +1,51 @@
+{
+  "ProvinSelect": {
+    "eyebrow": "PROVIN SELECT | STRATĒĢISKĀ KONSULTĀCIJA",
+    "lead": "Tavs pirmais solis droša auto virzienā. No simtiem sludinājumu līdz labākajiem kandidātiem.",
+    "body1": "Bieži kļūdas tiek pieļautas jau modeļa izvēlē vai uzticoties vizuāli pievilcīgam, bet tehniski riskantam sludinājumam. PROVIN SELECT palīdz izvairīties no tukšiem tēriņiem par VIN atskaitēm automašīnām, kuras profesionālis noraidītu uzreiz.",
+    "priceLine": "Cena: 49,99 € | Vienreizēja konsultācija par modeļu izvēli un atlasi.",
+    "includedTitle": "KAS IEKĻAUTS KONSULTĀCIJĀ?",
+    "included": [
+      {
+        "title": "Tirgus analīze",
+        "body": "Izvērtējam Tavām vēlmēm un budžetam atbilstošos modeļus – kurus izvēlēties un no kuriem izvairīties."
+      },
+      {
+        "title": "Sludinājumu filtrs",
+        "body": "Atlasam un veicam sludinājumu vizuālo un loģikas ekspertīzi, atsijājot aizdomīgus piedāvājumus vēl pirms maksas datubāzu pārbaudes."
+      },
+      {
+        "title": "Tehnisko risku izvērtējums",
+        "body": "Analizējam konkrētā modeļa dzinēja, transmisijas un mezglu vājās vietas, lai Tu saprastu reālās ekspluatācijas izmaksas nākotnē."
+      },
+      {
+        "title": "Sarunu stratēģija",
+        "body": "Sagatavojam Tevi sarunai ar pārdevēju un norādām uz ko skatīties klātienes apskatē."
+      }
+    ],
+    "whyTitle": "KĀPĒC IZVĒLĒTIES PROVIN SELECT?",
+    "whyBody": "Lietotu auto piedāvājums ir milzīgs, taču kvalitatīvu eksemplāru meklēšana prasa pieredzi. Mēs palīdzam ietaupīt laiku, fokusējot uzmanību tikai uz 1–2 kandidātiem, uz tiem, kuri tiešām ir PROVIN audita vērti.",
+    "deliveryTitle": "IZSTRĀDES UN PIEGĀDES LAIKS",
+    "delivery1": "Izpilde: 48h laikā.",
+    "delivery2": "Formāts: Konsultācija, rakstisks izvērtējums + iespēja uzdot papildjautājumus;",
+    "ctaPrimary": "PIETEIKT KONSULTĀCIJU",
+    "formTitle": "Pieteikums konsultācijai",
+    "nameLabel": "Vārds, uzvārds",
+    "phoneLabel": "Tālruņa numurs",
+    "emailLabel": "E-pasts",
+    "messageLabel": "Komentārs",
+    "messagePlaceholder": "Detalizēti apraksti savas vēlmes…",
+    "followupNote": "Mēs ar jums sazināsimies 48h laikā, lai precizētu ērtāko konsultācijas formu.",
+    "submit": "Nosūtīt pieteikumu",
+    "submitting": "Sūta…",
+    "success": "Paldies — pieteikums nosūtīts. Sazināsimies 48h laikā.",
+    "errorGeneric": "Neizdevās nosūtīt. Mēģini vēlreiz vai raksti uz info@provin.lv.",
+    "errorSmtp": "E-pasta serveris nav konfigurēts — sazinies ar mums: info@provin.lv.",
+    "validation": {
+      "name": "Lūdzu, ievadi vārdu un uzvārdu.",
+      "email": "Lūdzu, ievadi derīgu e-pasta adresi.",
+      "phone": "Lūdzu, ievadi tālruni ar vismaz 8 cipariem.",
+      "message": "Lūdzu, apraksti vēlmes vismaz dažos teikumos."
+    }
+  }
+}

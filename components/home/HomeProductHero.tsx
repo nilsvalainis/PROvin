@@ -10,6 +10,7 @@ import {
   HOME_HERO_ORDER_FORM_ID,
   ORDER_SECTION_ID,
 } from "@/lib/order-section";
+import { PROVIN_SELECT_FORM_HASH } from "@/lib/provin-select-section";
 import styles from "@/app/[locale]/demo/page.module.css";
 
 type Props = {
@@ -60,7 +61,7 @@ export function HomeProductHero({ introBody }: Props) {
                 </div>
 
                 {heroOrderStep === 1 ? (
-                  <div className="pointer-events-auto relative z-[80] w-full max-w-[520px] min-w-0">
+                  <div className="pointer-events-auto relative z-[80] flex w-full max-w-[520px] min-w-0 flex-col items-stretch">
                     <button
                       type="button"
                       onClick={() => {
@@ -71,6 +72,9 @@ export function HomeProductHero({ introBody }: Props) {
                     >
                       {t("heroMobileOrderCta")}
                     </button>
+                    <a href={`#${PROVIN_SELECT_FORM_HASH}`} className={styles.ctaButtonSecondary}>
+                      {t("heroConsultCta")}
+                    </a>
                   </div>
                 ) : null}
 
