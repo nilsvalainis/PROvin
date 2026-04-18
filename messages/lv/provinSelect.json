@@ -1,9 +1,8 @@
 {
   "ProvinSelect": {
-    "eyebrow": "PROVIN SELECT | STRATĒĢISKĀ KONSULTĀCIJA",
-    "lead": "Tavs pirmais solis droša auto virzienā. No simtiem sludinājumu līdz labākajiem kandidātiem.",
+    "eyebrow": "PROVIN SELECT",
+    "lead": "Tavs pirmais solis droša auto virzienā.",
     "body1": "Bieži kļūdas tiek pieļautas jau modeļa izvēlē vai uzticoties vizuāli pievilcīgam, bet tehniski riskantam sludinājumam. PROVIN SELECT palīdz izvairīties no tukšiem tēriņiem par VIN atskaitēm automašīnām, kuras profesionālis noraidītu uzreiz.",
-    "priceLine": "Cena: 49,99 € | Vienreizēja konsultācija par modeļu izvēli un atlasi.",
     "includedTitle": "KAS IEKĻAUTS KONSULTĀCIJĀ?",
     "included": [
       {

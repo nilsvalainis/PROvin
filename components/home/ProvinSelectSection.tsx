@@ -110,9 +110,6 @@ export function ProvinSelectSection() {
             {t("lead")}
           </p>
           <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4">{t("body1")}</p>
-          <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance font-semibold sm:mt-4">
-            {t("priceLine")}
-          </p>
         </div>
 
         <div className="mx-auto mt-10 max-w-[min(100%,40rem)] space-y-10 text-left text-pretty">
