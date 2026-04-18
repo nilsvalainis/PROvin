@@ -8,6 +8,10 @@ import {
 import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
+/** Kā `ProvinSelectSection` apakšvirsraksti — `uppercase`, `tracking-[0.08em]`. */
+const editorialSubsectionHeadingClass =
+  "iriss-editorial-heading font-semibold uppercase tracking-[0.08em] text-white/90";
+
 /** Mazs ekrāns: kā BUJ; ≥md: kā #home-intro pēc web −25 % (`calc(1.365rem * 0.75)`). */
 const irissBodyProseClass =
   "home-iriss-prose text-[14px] font-normal leading-[1.75] sm:text-[15px] md:text-[calc(1.365rem*0.75)] md:leading-[1.65] md:tracking-[0.045em]";
@@ -28,11 +32,15 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
 
         <div className="text-center">
-          <h2 className="demo-design-dir__title mx-auto max-w-[40rem]">{renderProvinText(t("title"))}</h2>
-          <div className="mx-auto mt-3 w-full max-w-[min(100%,36rem)]">
+          <h2 className="demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance">
+            {renderProvinText(t("title"))}
+          </h2>
+          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
-          <p className="demo-design-dir__body mx-auto mt-3 max-w-[36rem]">{t("subtitle")}</p>
+          <p className="demo-design-dir__kicker mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4">
+            {t("subtitle")}
+          </p>
         </div>
 
         <div className="mt-5 flex justify-center">
@@ -45,35 +53,27 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
           />
         </div>
 
-        <div className="mx-auto mt-10 max-w-[36rem] space-y-10 text-left">
+        <div className="text-center">
+          <p className="demo-design-dir__body mx-auto mt-10 max-w-[min(100%,40rem)] text-balance font-medium sm:mt-12">
+            {t("block1Heading")}
+          </p>
+          <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4">{t("block1Body")}</p>
+        </div>
+
+        <div className="mx-auto mt-10 max-w-[min(100%,40rem)] space-y-10 text-left text-pretty">
           <div>
-            <h3 className="iriss-editorial-heading font-semibold uppercase tracking-[0.08em] text-white/90">
-              {t("block1Heading")}
-            </h3>
+            <h3 className={editorialSubsectionHeadingClass}>{t("block2Heading")}</h3>
             <div className="mt-3 w-full">
               <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
             </div>
-            <p className="demo-design-dir__body demo-design-dir__body--iriss-editorial mt-3">{t("block1Body")}</p>
+            <p className="demo-design-dir__body mt-3">{t("block2Body")}</p>
           </div>
           <div>
-            <h3 className="iriss-editorial-heading font-semibold uppercase tracking-[0.08em] text-white/90">
-              {t("block2Heading")}
-            </h3>
+            <h3 className={editorialSubsectionHeadingClass}>{t("block3Heading")}</h3>
             <div className="mt-3 w-full">
               <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
             </div>
-            <p className="demo-design-dir__body demo-design-dir__body--iriss-editorial mt-3 whitespace-pre-line">
-              {t("block2Body")}
-            </p>
-          </div>
-          <div>
-            <h3 className="iriss-editorial-heading font-semibold uppercase tracking-[0.08em] text-white/90">
-              {t("block3Heading")}
-            </h3>
-            <div className="mt-3 w-full">
-              <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
-            </div>
-            <p className="demo-design-dir__body demo-design-dir__body--iriss-editorial mt-3">{t("block3Body")}</p>
+            <p className="demo-design-dir__body mt-3">{t("block3Body")}</p>
           </div>
         </div>
       </div>
