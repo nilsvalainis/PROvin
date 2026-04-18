@@ -147,8 +147,7 @@ export function ProvinSelectSection() {
             <div className="mt-3 w-full">
               <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
             </div>
-            <p className="demo-design-dir__body mt-3">{t("delivery1")}</p>
-            <p className="demo-design-dir__body mt-1">{t("delivery2")}</p>
+            <p className="demo-design-dir__body mt-3 whitespace-pre-line">{t("deliveryBody")}</p>
           </div>
 
           <div id={PROVIN_SELECT_FORM_HASH} className="scroll-mt-[calc(3.5rem+8px)]">
