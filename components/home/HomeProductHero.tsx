@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { HeroVisual } from "@/components/HeroVisual";
@@ -11,15 +11,17 @@ import {
   ORDER_SECTION_ID,
 } from "@/lib/order-section";
 import { PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
+import { renderProvinText } from "@/lib/provin-wordmark";
 import styles from "@/app/[locale]/demo/page.module.css";
 
 type Props = {
-  introBody: ReactNode;
+  /** Tīrs teksts no `Meta.homeIntroBody` — PROVIN logotips tiek uzzīmēts klientā (RSC serializācija). */
+  introBodyText: string;
   /** `false` — PROVIN SELECT paslēpts (`isProvinSelectPublic()`). */
   showProvinSelect?: boolean;
 };
 
-export function HomeProductHero({ introBody, showProvinSelect = false }: Props) {
+export default function HomeProductHero({ introBodyText, showProvinSelect = false }: Props) {
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
   const t = useTranslations("Hero");
 
@@ -115,7 +117,9 @@ export function HomeProductHero({ introBody, showProvinSelect = false }: Props) 
                   <div className={styles.heroGlassScan}>
                     <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
                   </div>
-                  <p className={styles.heroGlassBody}>{introBody}</p>
+                  <p className={styles.heroGlassBody}>
+                    {renderProvinText(introBodyText, { proAndSuffixClassName: styles.heroGlassPro })}
+                  </p>
                 </div>
               </aside>
             </div>
