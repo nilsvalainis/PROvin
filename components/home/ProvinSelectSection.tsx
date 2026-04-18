@@ -222,7 +222,7 @@ export function ProvinSelectSection() {
                   <button
                     type="submit"
                     disabled={phase === "loading"}
-                    className={`${demoPageStyles.ctaButton} !mt-0 disabled:cursor-wait disabled:opacity-60`}
+                    className={`${demoPageStyles.ctaButtonHeroConsult} !mt-0 disabled:cursor-wait disabled:opacity-60`}
                   >
                     {phase === "loading" ? t("submitting") : t("submit")}
                   </button>

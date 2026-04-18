@@ -46,6 +46,7 @@ function FeatureList({ items }: { items: readonly { label: string; icon: "check"
 export async function DemoTwinHeroConcept() {
   const tHero = await getTranslations("Hero");
   const tOrder = await getTranslations("Order");
+  const tSelect = await getTranslations("ProvinSelect");
 
   return (
     <>
@@ -121,7 +122,7 @@ export async function DemoTwinHeroConcept() {
                   </form>
 
                   <button type="button" className={styles.ctaButton} tabIndex={-1}>
-                    {tHero("heroMobileOrderCta")}
+                    {tSelect("ctaPrimary")}
                   </button>
                   <div className={styles.ctaButtonHeroConsult} tabIndex={-1}>
                     {tHero("heroConsultCta")}
