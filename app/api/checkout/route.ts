@@ -37,6 +37,8 @@ type CheckoutBody = {
   name?: unknown;
   notes?: unknown;
   locale?: unknown;
+  /** `audit` (79,99 €) — noklusējums; `consultation` (49,99 €) — hero forma. */
+  checkoutLine?: unknown;
   /** Obligāta klienta piekrišana PTN atteikšanās tiesību zaudēšanai (digitāls saturs, tūlītēja izpilde). */
   withdrawalConsent?: unknown;
 };
@@ -81,6 +83,8 @@ export async function POST(req: Request) {
     : routing.defaultLocale;
   const copy = await getOrderCopy(locale);
 
+  const checkoutLine = raw.checkoutLine === "consultation" ? "consultation" : "audit";
+
   const vin = typeof raw.vin === "string" ? normalizeVin(raw.vin) : "";
   const listingUrl = typeof raw.listingUrl === "string" ? raw.listingUrl.trim() : "";
   const email = typeof raw.email === "string" ? raw.email.trim() : "";
@@ -123,8 +127,18 @@ export async function POST(req: Request) {
   const cancelPath = `${home === "/" ? "/" : home}?atcelts=1#pasutit`;
 
   const misc = (await import(`../../../messages/${locale}/misc.json`)).default as {
-    Misc: { checkoutProductName: string; checkoutProductDesc: string };
+    Misc: {
+      checkoutProductName: string;
+      checkoutProductDesc: string;
+      checkoutConsultationProductName: string;
+      checkoutConsultationProductDesc: string;
+    };
   };
+
+  const isConsultation = checkoutLine === "consultation";
+  const productName = isConsultation ? misc.Misc.checkoutConsultationProductName : misc.Misc.checkoutProductName;
+  const productDesc = isConsultation ? misc.Misc.checkoutConsultationProductDesc : misc.Misc.checkoutProductDesc;
+  const unitAmountCents = isConsultation ? 4999 : 7999;
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -134,10 +148,10 @@ export async function POST(req: Request) {
         price_data: {
           currency: "eur",
           product_data: {
-            name: misc.Misc.checkoutProductName,
-            description: misc.Misc.checkoutProductDesc,
+            name: productName,
+            description: productDesc,
           },
-          unit_amount: 7999,
+          unit_amount: unitAmountCents,
         },
         quantity: 1,
       },
@@ -146,6 +160,7 @@ export async function POST(req: Request) {
     cancel_url: `${origin}${cancelPath}`,
     phone_number_collection: { enabled: false },
     metadata: {
+      checkout_line: checkoutLine,
       vin,
       listing_url: listingUrl || "",
       report_delivery: "email",

@@ -4,7 +4,9 @@
     "faqBack": "← Atpakaļ uz sākumu",
     "pasutitRedirect": "Pāradresē uz pasūtījuma formu…",
     "checkoutProductName": "PROVIN — VIN un sludinājuma analīze",
-    "checkoutProductDesc": "Pilna datu analīze vairākās datubāzēs, sludinājuma analīze un eksperta slēdziens."
+    "checkoutProductDesc": "Pilna datu analīze vairākās datubāzēs, sludinājuma analīze un eksperta slēdziens.",
+    "checkoutConsultationProductName": "PROVIN — stratēģiskā konsultācija",
+    "checkoutConsultationProductDesc": "Individuāla konsultācija un tirgus orientācija: VIN/sludinājuma konteksts, risku skatījums un nākamie soļi."
   },
   "SiteRail": {
     "navAria": "Galvenās sadaļas",

@@ -49,6 +49,8 @@ type OrderFormProps = {
   formId?: string;
   hideStepOneCta?: boolean;
   onStepChange?: (step: 1 | 2) => void;
+  /** Noklusējums `audit` (79,99 €). `consultation` — 49,99 € (sākumlapas hero). */
+  checkoutLine?: "audit" | "consultation";
 };
 
 export function OrderForm({
@@ -57,6 +59,7 @@ export function OrderForm({
   formId,
   hideStepOneCta = false,
   onStepChange,
+  checkoutLine = "audit",
 }: OrderFormProps) {
   const t = useTranslations("Order");
   const te = useTranslations("Order.errors");
@@ -84,6 +87,7 @@ export function OrderForm({
   const [consentError, setConsentError] = useState<string | null>(null);
   const hero = variant === "hero";
   const compact = variant === "compact";
+  const summaryEurMajor = checkoutLine === "consultation" ? "49,99" : "79,99";
   const errorRef = useRef<HTMLParagraphElement | null>(null);
   const lenis = useLenis();
 
@@ -204,6 +208,7 @@ export function OrderForm({
           listingUrl: listingTrim,
           notes: notesTrim || undefined,
           locale,
+          checkoutLine,
           withdrawalConsent: true,
         }),
       });
@@ -626,11 +631,12 @@ export function OrderForm({
                 <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                   <span className="order-form-hero-summary-label min-w-0 shrink text-[13px] font-medium text-[#e5e7eb]">{t("summaryLabel")}</span>
                   <span className="order-form-hero-price shrink-0 text-[1.85rem] font-bold tabular-nums tracking-tight text-[#c0c0c0] sm:text-[2rem]">
-                    79,99&nbsp;€
+                    {summaryEurMajor}
+                    &nbsp;€
                   </span>
                 </div>
                 <p className="order-form-hero-summary-note mt-2 text-[11px] font-normal leading-snug text-[#e5e7eb]/58 sm:text-[12px]">
-                  {t("summaryNote")}
+                  {checkoutLine === "consultation" ? t("summaryNoteConsultation") : t("summaryNote")}
                 </p>
               </div>
             ) : null}

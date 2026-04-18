@@ -58,7 +58,7 @@ export async function DemoLanding() {
                   </form>
 
                   <button type="button" className={styles.ctaButton}>
-                    PASŪTĪT AUDITU
+                    {tHero("heroMobileOrderCta")}
                   </button>
                   {provinSelectOn ? (
                     <a href={`#${PROVIN_SELECT_SECTION_ID}`} className={styles.ctaButtonHeroConsult}>
