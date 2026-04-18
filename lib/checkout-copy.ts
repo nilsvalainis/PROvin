@@ -8,6 +8,9 @@ export type OrderCopy = {
     phone: string;
     required?: string;
     url?: string;
+    /** PROVIN SELECT → Stripe, bez VIN */
+    provinSelectName: string;
+    provinSelectMessage: string;
   };
   errors: {
     withdrawalRequired: string;

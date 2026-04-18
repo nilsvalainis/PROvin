@@ -13,6 +13,9 @@ import {
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { getPublicSiteOrigin } from "@/lib/site-url";
+import { ORDER_SECTION_ID } from "@/lib/order-section";
+import { PROVIN_SELECT_FORM_HASH } from "@/lib/provin-select-section";
+import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 
 export const runtime = "nodejs";
 
@@ -37,7 +40,7 @@ type CheckoutBody = {
   name?: unknown;
   notes?: unknown;
   locale?: unknown;
-  /** `audit` (79,99 €) — noklusējums; `consultation` (49,99 €) — hero forma. */
+  /** `audit` (79,99 €) — noklusējums; `consultation` (49,99 €) — hero forma; `provin_select` (49,99 €) — PROVIN SELECT, bez VIN. */
   checkoutLine?: unknown;
   /** Obligāta klienta piekrišana PTN atteikšanās tiesību zaudēšanai (digitāls saturs, tūlītēja izpilde). */
   withdrawalConsent?: unknown;
@@ -83,7 +86,17 @@ export async function POST(req: Request) {
     : routing.defaultLocale;
   const copy = await getOrderCopy(locale);
 
-  const checkoutLine = raw.checkoutLine === "consultation" ? "consultation" : "audit";
+  const rawCheckoutLine = typeof raw.checkoutLine === "string" ? raw.checkoutLine.trim() : "";
+  const checkoutLine =
+    rawCheckoutLine === "provin_select"
+      ? "provin_select"
+      : rawCheckoutLine === "consultation"
+        ? "consultation"
+        : "audit";
+
+  if (checkoutLine === "provin_select" && !isProvinSelectPublic()) {
+    return NextResponse.json({ error: copy.errors.badRequest }, { status: 404 });
+  }
 
   const vin = typeof raw.vin === "string" ? normalizeVin(raw.vin) : "";
   const listingUrl = typeof raw.listingUrl === "string" ? raw.listingUrl.trim() : "";
@@ -96,20 +109,39 @@ export async function POST(req: Request) {
   const withdrawalConsent = raw.withdrawalConsent === true;
 
   const errors: string[] = [];
-  if (!withdrawalConsent) {
-    errors.push(copy.errors.withdrawalRequired);
-  }
-  if (!vin || !isValidVin(vin)) {
-    errors.push(copy.validation.vin);
-  }
-  if (listingUrl && !isPlausibleListingUrl(listingUrl)) {
-    errors.push(copy.validation.listing);
-  }
-  if (!email || !isValidOrderEmail(email)) {
-    errors.push(copy.validation.email);
-  }
-  if (!phone || !isValidOrderPhone(phone)) {
-    errors.push(copy.validation.phone);
+
+  if (checkoutLine === "provin_select") {
+    if (!withdrawalConsent) {
+      errors.push(copy.errors.withdrawalRequired);
+    }
+    if (name.length < 3) {
+      errors.push(copy.validation.provinSelectName);
+    }
+    if (!email || !isValidOrderEmail(email)) {
+      errors.push(copy.validation.email);
+    }
+    if (!phone || !isValidOrderPhone(phone)) {
+      errors.push(copy.validation.phone);
+    }
+    if (!notes || notes.length < 20) {
+      errors.push(copy.validation.provinSelectMessage);
+    }
+  } else {
+    if (!withdrawalConsent) {
+      errors.push(copy.errors.withdrawalRequired);
+    }
+    if (!vin || !isValidVin(vin)) {
+      errors.push(copy.validation.vin);
+    }
+    if (listingUrl && !isPlausibleListingUrl(listingUrl)) {
+      errors.push(copy.validation.listing);
+    }
+    if (!email || !isValidOrderEmail(email)) {
+      errors.push(copy.validation.email);
+    }
+    if (!phone || !isValidOrderPhone(phone)) {
+      errors.push(copy.validation.phone);
+    }
   }
 
   if (errors.length > 0) {
@@ -124,7 +156,9 @@ export async function POST(req: Request) {
 
   const home = homePath(locale);
   const thanksPath = home === "/" ? "/paldies" : `${home}/paldies`;
-  const cancelPath = `${home === "/" ? "/" : home}?atcelts=1#pasutit`;
+  const cancelHash =
+    checkoutLine === "provin_select" ? PROVIN_SELECT_FORM_HASH : ORDER_SECTION_ID;
+  const cancelPath = `${home === "/" ? "/" : home}?atcelts=1#${cancelHash}`;
 
   const misc = (await import(`../../../messages/${locale}/misc.json`)).default as {
     Misc: {
@@ -135,10 +169,10 @@ export async function POST(req: Request) {
     };
   };
 
-  const isConsultation = checkoutLine === "consultation";
-  const productName = isConsultation ? misc.Misc.checkoutConsultationProductName : misc.Misc.checkoutProductName;
-  const productDesc = isConsultation ? misc.Misc.checkoutConsultationProductDesc : misc.Misc.checkoutProductDesc;
-  const unitAmountCents = isConsultation ? 4999 : 7999;
+  const isAudit = checkoutLine === "audit";
+  const productName = isAudit ? misc.Misc.checkoutProductName : misc.Misc.checkoutConsultationProductName;
+  const productDesc = isAudit ? misc.Misc.checkoutProductDesc : misc.Misc.checkoutConsultationProductDesc;
+  const unitAmountCents = isAudit ? 7999 : 4999;
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -161,8 +195,8 @@ export async function POST(req: Request) {
     phone_number_collection: { enabled: false },
     metadata: {
       checkout_line: checkoutLine,
-      vin,
-      listing_url: listingUrl || "",
+      ...(checkoutLine !== "provin_select" ? { vin } : {}),
+      listing_url: checkoutLine === "provin_select" ? "" : listingUrl || "",
       report_delivery: "email",
       phone,
       /** Klienta apzināta atteikšanās no PTN atteikuma tiesībām (digitāls saturs, tūlītēja izpilde). */

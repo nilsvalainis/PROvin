@@ -55,7 +55,9 @@
       "url": "Lūdzu, ievadiet derīgu saiti uz sludinājumu.",
       "listing": "Lūdzu, ievadiet derīgu saiti uz sludinājumu.",
       "email": "Lauks nav aizpildīts pareizi.",
-      "phone": "Lūdzu, ievadiet tālruņa numuru ar vismaz 8 cipariem (ar vai bez +371)."
+      "phone": "Lūdzu, ievadiet tālruņa numuru ar vismaz 8 cipariem (ar vai bez +371).",
+      "provinSelectName": "Lūdzu, ievadi vārdu (vismaz 3 rakstzīmes).",
+      "provinSelectMessage": "Lūdzu, apraksti vēlmes vismaz dažos teikumos (vismaz 20 rakstzīmes)."
     }
   }
 }
