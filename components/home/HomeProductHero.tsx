@@ -15,9 +15,11 @@ import styles from "@/app/[locale]/demo/page.module.css";
 
 type Props = {
   introBody: ReactNode;
+  /** `false` — PROVIN SELECT pilnībā paslēpts (noklusējums līdz publicēšanai). */
+  showProvinSelect?: boolean;
 };
 
-export function HomeProductHero({ introBody }: Props) {
+export function HomeProductHero({ introBody, showProvinSelect = false }: Props) {
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
   const t = useTranslations("Hero");
 
@@ -72,9 +74,11 @@ export function HomeProductHero({ introBody }: Props) {
                     >
                       {t("heroMobileOrderCta")}
                     </button>
-                    <a href={`#${PROVIN_SELECT_FORM_HASH}`} className={styles.ctaButtonSecondary}>
-                      {t("heroConsultCta")}
-                    </a>
+                    {showProvinSelect ? (
+                      <a href={`#${PROVIN_SELECT_FORM_HASH}`} className={styles.ctaButtonSecondary}>
+                        {t("heroConsultCta")}
+                      </a>
+                    ) : null}
                   </div>
                 ) : null}
 

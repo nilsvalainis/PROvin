@@ -5,6 +5,7 @@ import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { HomeProductHero } from "@/components/home/HomeProductHero";
 import { ProvinSelectSection } from "@/components/home/ProvinSelectSection";
 import { IrissSection } from "@/components/IrissSection";
+import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 import { PricingIncluded } from "@/components/PricingIncluded";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 
@@ -16,7 +17,7 @@ export default async function HomePage() {
 
   return (
     <div className={productHeroStyles.demoRoot}>
-      <HomeProductHero introBody={introBody} />
+      <HomeProductHero introBody={introBody} showProvinSelect={isProvinSelectPublic()} />
 
       <div className="demo-design-dir min-w-0 pb-0 text-white">
         <div id="site-content" className="home-body-ink scroll-mt-14">
@@ -32,7 +33,7 @@ export default async function HomePage() {
             </div>
           </section>
 
-          <ProvinSelectSection />
+          {isProvinSelectPublic() ? <ProvinSelectSection /> : null}
         </div>
 
         <HomeFaqSection />

@@ -3,6 +3,7 @@ import { getClientIpFromRequest } from "@/lib/client-ip";
 import { isSmtpConfigured, sendProvinSelectConsultationLeadEmail } from "@/lib/email/send-transactional";
 import { isValidOrderEmail, isValidOrderPhone } from "@/lib/order-field-validation";
 import { getAdminOrderNotifyEmail } from "@/lib/notify";
+import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 
 export const runtime = "nodejs";
@@ -15,6 +16,10 @@ function clip(s: string, max: number): string {
 }
 
 export async function POST(req: Request) {
+  if (!isProvinSelectPublic()) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
   const ip = getClientIpFromRequest(req);
   const rl = checkRateLimit(`provin_select:${ip}`, MAX_PER_WINDOW, WINDOW_MS);
   if (!rl.ok) {

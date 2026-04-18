@@ -10,11 +10,13 @@ import { renderProvinText } from "@/lib/provin-wordmark";
 import { DemoViewportChips } from "@/components/demo/DemoViewportChips";
 import { demoHeroFeatureTitles } from "@/lib/demo-feature-titles";
 import { PROVIN_SELECT_FORM_HASH } from "@/lib/provin-select-section";
+import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 import styles from "@/app/[locale]/demo/page.module.css";
 
 export async function DemoLanding() {
   const tMeta = await getTranslations("Meta");
   const tHero = await getTranslations("Hero");
+  const provinSelectOn = isProvinSelectPublic();
 
   return (
     <div className={styles.demoRoot}>
@@ -58,9 +60,11 @@ export async function DemoLanding() {
                   <button type="button" className={styles.ctaButton}>
                     PASŪTĪT AUDITU
                   </button>
-                  <a href={`#${PROVIN_SELECT_FORM_HASH}`} className={styles.ctaButtonSecondary}>
-                    {tHero("heroConsultCta")}
-                  </a>
+                  {provinSelectOn ? (
+                    <a href={`#${PROVIN_SELECT_FORM_HASH}`} className={styles.ctaButtonSecondary}>
+                      {tHero("heroConsultCta")}
+                    </a>
+                  ) : null}
 
                   <ul className={styles.features}>
                     {demoHeroFeatureTitles.map((item) => (
@@ -120,7 +124,7 @@ export async function DemoLanding() {
             </div>
           </section>
 
-          <ProvinSelectSection />
+          {provinSelectOn ? <ProvinSelectSection /> : null}
         </div>
 
         <HomeFaqSection />
