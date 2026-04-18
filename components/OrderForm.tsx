@@ -645,7 +645,7 @@ export function OrderForm({
                 <button
                   type="button"
                   onClick={goToStepTwo}
-                  className="provin-home-pill-cta provin-home-pill-cta--fit z-10 mt-1 flex w-fit min-h-[50px] max-w-full touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
+                  className="provin-home-pill-cta provin-home-pill-cta--fit z-10 mt-1 flex w-fit min-h-[50px] max-w-full touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_5px_17px_rgba(0,0,0,0.13)] active:scale-95"
                 >
                   {t("heroOrderCta")}
                 </button>
@@ -801,7 +801,7 @@ export function OrderForm({
                     <button
                       type="button"
                       onClick={goToStepTwo}
-                      className="provin-home-pill-cta provin-home-pill-cta--fit z-10 flex w-fit min-h-[50px] max-w-full touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_7px_24px_rgba(0,0,0,0.18)] active:scale-95"
+                      className="provin-home-pill-cta provin-home-pill-cta--fit z-10 flex w-fit min-h-[50px] max-w-full touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_5px_17px_rgba(0,0,0,0.13)] active:scale-95"
                     >
                       {t("heroOrderCta")}
                     </button>
@@ -811,7 +811,7 @@ export function OrderForm({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="provin-btn provin-btn--compact inline-flex min-h-11 w-full min-w-[180px] items-center justify-center rounded-full px-7 py-[10px] text-[14px] font-normal shadow-[0_4px_14px_rgba(0,0,0,0.12)] disabled:opacity-60 sm:w-auto sm:min-h-10"
+                  className="provin-btn provin-btn--compact inline-flex min-h-11 w-full min-w-[180px] items-center justify-center rounded-full px-7 py-[10px] text-[14px] font-normal shadow-[0_3px_10px_rgba(0,0,0,0.08)] disabled:opacity-60 sm:w-auto sm:min-h-10"
                 >
                   {loading ? t("payLoading") : t("payButton")}
                 </button>

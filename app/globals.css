@@ -539,9 +539,9 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   position: relative;
   isolation: isolate;
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.28),
-    inset 0 -1px 0 rgb(0 0 0 / 0.2),
-    0 0 16px rgb(0 102 255 / 0.22);
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    inset 0 -1px 0 rgb(0 0 0 / 0.14),
+    0 0 11px rgb(0 102 255 / 0.15);
 }
 
 :where(.provin-home-pill-cta, .provin-btn, [class*="bg-provin-accent"])::before {
@@ -644,7 +644,7 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   .provin-btn:hover {
     background-color: var(--color-provin-accent-hover);
     transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.1);
   }
 
   .provin-btn.home-cta-blueprint:hover {
