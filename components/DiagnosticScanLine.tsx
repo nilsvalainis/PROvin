@@ -1,3 +1,5 @@
+"use client";
+
 type Props = {
   className?: string;
   /** Diskrētāks tracks + pulse — saskaņots ar kreisās malas navigācijas līniju. */
