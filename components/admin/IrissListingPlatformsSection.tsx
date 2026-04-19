@@ -2,7 +2,11 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { useMemo } from "react";
-import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
+import {
+  buildListingPlatformChips,
+  LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
+  LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS,
+} from "@/lib/iriss-listing-links";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 const inp =
@@ -14,7 +18,7 @@ export function IrissListingPlatformChipsRow({ rec }: { rec: IrissPasutijumsReco
   const chips = useMemo(() => buildListingPlatformChips(rec, 5), [rec]);
   if (chips.length === 0) return null;
   return (
-    <div className="mb-2 flex min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch]">
+    <div className={`mb-2 ${LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}`}>
       {chips.map((c, i) => (
         <a
           key={`${c.href}-${i}`}
@@ -22,7 +26,7 @@ export function IrissListingPlatformChipsRow({ rec }: { rec: IrissPasutijumsReco
           target="_blank"
           rel="noopener noreferrer"
           title={c.title}
-          className={`inline-flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-full text-[11px] font-bold shadow-sm transition active:scale-95 sm:h-12 sm:min-w-[3rem] sm:text-[12px] ${c.chipClass}`}
+          className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${c.chipClass}`}
         >
           {c.letter}
         </a>
@@ -114,7 +118,7 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
             className="inline-flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
             title="Pievienot vēl vienu saites lauku"
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+            <Plus className="h-3 w-3" strokeWidth={2.5} aria-hidden />
             Rinda
           </button>
         </div>
@@ -138,7 +142,7 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
               title="Noņemt rindu"
               aria-label="Noņemt rindu"
             >
-              <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+              <Trash2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
             </button>
           </div>
         ))}

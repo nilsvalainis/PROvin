@@ -74,14 +74,14 @@ export function IrissPasutijumiNewFab() {
         type="button"
         disabled={busy}
         onClick={() => void create()}
-        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-provin-accent)] text-white shadow-[0_8px_24px_rgba(239,125,26,0.45)] transition hover:opacity-95 active:scale-95 disabled:opacity-60 sm:bottom-6 sm:right-5"
+        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-4 z-40 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-provin-accent)] text-white shadow-[0_6px_18px_rgba(239,125,26,0.42)] transition hover:opacity-95 active:scale-95 disabled:opacity-60 sm:bottom-6 sm:right-5"
         aria-label="Jauns pasūtījums"
         title="Jauns pasūtījums"
       >
         {busy ? (
-          <span className="h-6 w-6 animate-pulse rounded-full bg-white/40" aria-hidden />
+          <span className="h-5 w-5 animate-pulse rounded-md bg-white/40" aria-hidden />
         ) : (
-          <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
+          <Plus className="h-6 w-6" strokeWidth={2.5} aria-hidden />
         )}
       </button>
     </>

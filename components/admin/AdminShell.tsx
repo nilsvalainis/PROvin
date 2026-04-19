@@ -2,8 +2,10 @@
 
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { AdminMobilePullToRefresh } from "@/components/admin/AdminMobilePullToRefresh";
 import { AdminSidebarNav } from "./AdminSidebarNav";
 import { IrissAdminSidebarNav } from "./IrissAdminSidebarNav";
 import { AdminWorkspaceSwitcher } from "./AdminWorkspaceSwitcher";
@@ -14,10 +16,10 @@ const SIDEBAR_COLLAPSED_KEY = "provin-admin-sidebar-collapsed";
 /** Mobilajā admin augšējā joslā — tās pašas 3 strīpiņas kā publiskajā HeaderClient. */
 function AdminMobileMenuIcon({ lineClass }: { lineClass: string }) {
   return (
-    <span className="flex flex-col items-center justify-center gap-[5px]" aria-hidden>
-      <span className={`h-px w-[22px] ${lineClass}`} />
-      <span className={`h-px w-[22px] ${lineClass}`} />
-      <span className={`h-px w-[22px] ${lineClass}`} />
+    <span className="flex flex-col items-center justify-center gap-[4px]" aria-hidden>
+      <span className={`h-px w-[19px] ${lineClass}`} />
+      <span className={`h-px w-[19px] ${lineClass}`} />
+      <span className={`h-px w-[19px] ${lineClass}`} />
     </span>
   );
 }
@@ -47,6 +49,7 @@ const MOBILE_NAV_TOP_REM = 3.5;
 
 export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Props) {
   const pathname = usePathname() ?? "";
+  const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [storageReady, setStorageReady] = useState(false);
@@ -127,17 +130,30 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
         <div className={`min-w-0 flex-1 ${hideWorkspaceSwitcherOnMobile ? "max-md:hidden" : ""}`}>
           <AdminWorkspaceSwitcher />
         </div>
-        <button
-          type="button"
-          onClick={() => setMobileNavOpen((open) => !open)}
-          className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-[var(--color-apple-text)] outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white md:hidden"
-          aria-expanded={mobileNavOpen}
-          aria-controls="admin-mobile-nav-aside"
-          aria-label={mobileNavOpen ? "Aizvērt galveno izvēlni" : "Atvērt galveno izvēlni"}
-        >
-          <AdminMobileMenuIcon lineClass="bg-[var(--color-apple-text)]" />
-        </button>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => router.refresh()}
+            className="inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200/85 bg-white p-1.5 text-[var(--color-provin-accent)] shadow-sm outline-none transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white md:hidden"
+            aria-label="Atsvaidzināt lapu"
+            title="Atsvaidzināt lapu"
+          >
+            <RefreshCw className="h-[17px] w-[17px]" strokeWidth={2.25} aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen((open) => !open)}
+            className="inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-[var(--color-apple-text)] outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white md:hidden"
+            aria-expanded={mobileNavOpen}
+            aria-controls="admin-mobile-nav-aside"
+            aria-label={mobileNavOpen ? "Aizvērt galveno izvēlni" : "Atvērt galveno izvēlni"}
+          >
+            <AdminMobileMenuIcon lineClass="bg-[var(--color-apple-text)]" />
+          </button>
+        </div>
       </header>
+
+      <AdminMobilePullToRefresh />
 
       {mobileNavOpen ? (
         <button

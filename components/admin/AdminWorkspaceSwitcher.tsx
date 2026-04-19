@@ -32,7 +32,7 @@ export function AdminWorkspaceSwitcher() {
         PRO
       </Link>
       <ArrowLeftRight
-        className={`h-4 w-4 shrink-0 opacity-80 ${isIriss ? "text-[#EF7D1A]" : "text-[var(--color-provin-muted)]"}`}
+        className={`h-3.5 w-3.5 shrink-0 opacity-80 sm:h-4 sm:w-4 ${isIriss ? "text-[#EF7D1A]" : "text-[var(--color-provin-muted)]"}`}
         aria-hidden
       />
       <Link

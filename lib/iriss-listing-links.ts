@@ -75,3 +75,11 @@ export function buildListingPlatformChips(src: IrissListingLinksInput, max = 5):
   }
   return out;
 }
+
+/** Horizontālā ritināšana — `px`/`py`, lai `rounded-md` čipu stūri netiek sagriezti (īpaši iOS). */
+export const LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS =
+  "flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain px-1 py-1.5 [-webkit-overflow-scrolling:touch]";
+
+/** Kompakts noapaļots taisnstūris ar burtu; pielikt `LISTING_PLATFORM_CHIPS[*].chipClass`. */
+export const LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS =
+  "inline-flex h-9 min-w-[2rem] shrink-0 items-center justify-center rounded-md px-1.5 text-[10px] font-bold leading-none tracking-tight shadow-sm transition-transform active:scale-[0.96] sm:h-10 sm:min-w-[2.35rem] sm:px-2 sm:text-[11px]";

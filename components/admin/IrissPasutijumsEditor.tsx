@@ -8,11 +8,11 @@ import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardH
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
-/** Mobilajā — kompaktas FAB; no `sm:` — iepriekšējās pogas ar tekstu. */
+/** Mobilajā — kvadrātveida FAB (`rounded-xl`); no `sm:` — apaļas pogas ar tekstu. */
 const toolbarBtnBase =
-  "inline-flex shrink-0 items-center justify-center rounded-full transition active:scale-95 disabled:opacity-50 " +
-  "h-14 w-14 shadow-[0_8px_24px_rgba(239,125,26,0.25)] hover:opacity-95 " +
-  "sm:h-11 sm:min-h-[44px] sm:w-auto sm:gap-1.5 sm:px-4 sm:shadow-sm sm:hover:opacity-100 sm:active:scale-100";
+  "inline-flex shrink-0 items-center justify-center rounded-xl transition active:scale-95 disabled:opacity-50 " +
+  "h-12 w-12 shadow-md hover:opacity-95 " +
+  "sm:h-11 sm:min-h-[44px] sm:w-auto sm:rounded-full sm:gap-1.5 sm:px-4 sm:shadow-sm sm:hover:opacity-100 sm:active:scale-100";
 
 const fieldClass =
   "min-h-[44px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[16px] text-[var(--color-apple-text)] shadow-sm outline-none transition focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
@@ -185,7 +185,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               aria-label="Sākums"
               className={`${toolbarBtnBase} border border-slate-200/90 bg-white text-[var(--color-provin-accent)] hover:bg-slate-50 sm:hover:bg-slate-50`}
             >
-              <Home className="h-7 w-7 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
+              <Home className="h-6 w-6 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
               <span className="hidden text-[13px] font-medium sm:inline">Sākums</span>
             </Link>
             <button
@@ -196,7 +196,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               onClick={() => void save()}
               className={`${toolbarBtnBase} bg-[var(--color-provin-accent)] text-white hover:opacity-95 sm:hover:opacity-95`}
             >
-              <Save className="h-7 w-7 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
+              <Save className="h-6 w-6 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
               <span className="hidden text-[13px] font-semibold sm:inline">{busy ? "Saglabā…" : "Saglabāt"}</span>
             </button>
             <button
@@ -206,7 +206,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               onClick={() => void openPdf()}
               className={`${toolbarBtnBase} border border-[var(--color-provin-accent)]/35 bg-[var(--color-provin-accent-soft)]/60 text-[var(--color-provin-accent)] hover:bg-[var(--color-provin-accent-soft)] sm:hover:bg-[var(--color-provin-accent-soft)]`}
             >
-              <FileDown className="h-7 w-7 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
+              <FileDown className="h-6 w-6 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
               <span className="hidden text-[13px] font-semibold sm:inline">Ģenerēt PDF</span>
             </button>
           </div>

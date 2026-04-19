@@ -1,7 +1,9 @@
-import { buildListingPlatformChips, type IrissListingLinksInput } from "@/lib/iriss-listing-links";
-
-const chipBtnClass =
-  "inline-flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-full text-[11px] font-bold shadow-sm transition active:scale-95 sm:h-12 sm:min-w-[3rem] sm:text-[12px]";
+import {
+  buildListingPlatformChips,
+  LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
+  LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS,
+  type IrissListingLinksInput,
+} from "@/lib/iriss-listing-links";
 
 /**
  * Servera komponents — platformu saites kā pogas (bez „use client”).
@@ -12,11 +14,7 @@ export function IrissListingPlatformChipsInline({ links }: { links: IrissListing
   if (chips.length === 0) return null;
   return (
     <div className="border-t border-slate-100/90 bg-slate-50/40 px-3 py-2 sm:px-4 sm:py-2.5">
-      <div
-        role="group"
-        aria-label="Sludinājumu platformu saites"
-        className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto [-webkit-overflow-scrolling:touch]"
-      >
+      <div role="group" aria-label="Sludinājumu platformu saites" className={LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}>
         {chips.map((c, i) => (
           <a
             key={`${c.href}-${i}`}
@@ -24,7 +22,7 @@ export function IrissListingPlatformChipsInline({ links }: { links: IrissListing
             target="_blank"
             rel="noopener noreferrer"
             title={c.title}
-            className={`${chipBtnClass} ${c.chipClass}`}
+            className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${c.chipClass}`}
           >
             {c.letter}
           </a>
