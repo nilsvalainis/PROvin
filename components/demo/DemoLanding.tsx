@@ -123,13 +123,13 @@ export async function DemoLanding() {
             </div>
           </section>
 
+          {provinSelectOn ? <ProvinSelectSection /> : null}
+
           <section className="demo-design-dir__section demo-design-dir__section--band-b py-16 sm:py-20">
             <div className="demo-design-dir__shell">
               <IrissSection editorialColumn />
             </div>
           </section>
-
-          {provinSelectOn ? <ProvinSelectSection /> : null}
         </div>
 
         <HomeFaqSection />

@@ -33,13 +33,13 @@ export default async function HomePage() {
             </div>
           </section>
 
+          {isProvinSelectPublic() ? <ProvinSelectSection /> : null}
+
           <section className="demo-design-dir__section demo-design-dir__section--band-b py-16 sm:py-20">
             <div className="demo-design-dir__shell">
               <IrissSection editorialColumn />
             </div>
           </section>
-
-          {isProvinSelectPublic() ? <ProvinSelectSection /> : null}
         </div>
 
         <HomeFaqSection />
