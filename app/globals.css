@@ -466,7 +466,8 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   font-size: 11px;
-  font-weight: 600;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
   line-height: 1.2;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -681,6 +682,8 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
 .provin-btn {
   background-color: var(--color-provin-accent);
   color: white;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
   transition:
     background-color 0.2s ease,
     transform 0.22s ease,
@@ -694,6 +697,8 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
 }
 
 .provin-btn-ghost {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
   transition:
     border-color 0.2s ease,
     background-color 0.2s ease,
@@ -1081,4 +1086,32 @@ html[data-site-theme="light"] .provin-select-delivery-important {
   --admin-nav-bg: rgba(9, 9, 11, 0.92);
   --admin-footer-bg: rgba(9, 9, 11, 0.92);
   --admin-border-subtle: rgba(63, 63, 70, 0.95);
+}
+
+/*
+ * Pogas un CTA-saites: Inter, ~medium (500), nevis bold/semibold utility.
+ * Šī bloka vieta faila beigās — pārspēj Tailwind @layer utilities.
+ */
+button,
+[type="submit"],
+[type="button"],
+[type="reset"] {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+button.font-bold,
+button.font-semibold,
+[type="submit"].font-bold,
+[type="submit"].font-semibold,
+[type="button"].font-bold,
+[type="button"].font-semibold,
+[type="reset"].font-bold,
+[type="reset"].font-semibold,
+a.provin-btn.font-bold,
+a.provin-btn.font-semibold,
+a.provin-btn-ghost.font-bold,
+a.provin-btn-ghost.font-semibold,
+a.inline-flex.rounded-full.font-bold,
+a.inline-flex.rounded-full.font-semibold {
+  font-weight: 500;
 }

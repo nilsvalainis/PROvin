@@ -383,8 +383,9 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   border-radius: 999px;
   background: linear-gradient(180deg, #1f84ff 0%, #0d6eea 100%);
   color: #fff;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(1.02rem, 1.45vw, 1.16rem);
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   box-shadow: 0 11px 21px rgb(13 110 234 / 0.2), 0 2px 0 rgb(255 255 255 / 0.22) inset;
@@ -404,8 +405,9 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   border-radius: 999px;
   background: linear-gradient(180deg, #f0f2f5 0%, #dfe3ea 100%);
   color: #252b36;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(0.68rem, 1.15vw, 0.78rem);
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-decoration: none;
@@ -437,8 +439,9 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   border-radius: 999px;
   background: linear-gradient(180deg, #12c45a 0%, #0a9d47 100%);
   color: #fff;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(0.68rem, 1.15vw, 0.78rem);
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.02em;
   text-transform: none;
   text-decoration: none;
@@ -807,6 +810,11 @@ html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .orde
   color: rgba(255, 255, 255, 0.55);
 }
 
+/* Platāks konteiners par noklusējuma `.shell` (980px), lai 50:50 kolonnas nav pārāk šauras. */
+.demoTwinShell {
+  max-width: min(1120px, calc(100% - 2rem));
+}
+
 .demoTwinHeroSection {
   position: relative;
   overflow: hidden;
@@ -814,13 +822,13 @@ html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .orde
 }
 
 .demoTwinHeroGrid {
-  margin: 0 auto;
-  max-width: 1120px;
-  padding: 0 1rem;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
+  /* `minmax(0,1fr)` + `min-width:0` uz kartītēm — novērš kolonnas platumu no `nowrap` virsraksta. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(0.65rem, 1.6vw, 1rem);
   align-items: stretch;
+  width: 100%;
+  min-width: 0;
 }
 
 @media (max-width: 900px) {
@@ -833,18 +841,44 @@ html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .orde
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-width: 0;
   min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
   border-radius: 1.25rem;
   padding: 1.25rem 1.35rem 1.35rem;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow:
-    0 18px 50px rgba(15, 23, 42, 0.12),
-    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  /* Caurspīdīgs — tikai vieglas kontūras „kartīte” virs hero fona */
+  background: transparent;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  box-shadow: none;
 }
 
+/* Šaurākās kolonnās — mazāks virsraksts + laušanās, lai abas puses paliek patiesi 50:50. */
 .demoTwinCard .title {
   margin-bottom: 1rem;
+  --demo-title-audits: clamp(1.28rem, 2.5vw, 2rem);
+}
+
+.demoTwinCard .titleRow {
+  white-space: normal;
+  text-wrap: balance;
+}
+
+.demoTwinCard .form,
+.demoTwinCard .productHeroOrderSlot {
+  max-width: 100%;
+}
+
+.demoTwinCard .ctaButton,
+.demoTwinCard .ctaButtonHeroConsult {
+  width: 100%;
+  max-width: 100%;
+}
+
+.demoTwinCard .features {
+  max-width: 100%;
+  margin-top: auto;
+  padding-top: 1rem;
 }
 
 .demoTwinCard .field {
@@ -859,21 +893,14 @@ html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .orde
   cursor: default;
 }
 
-.demoTwinCard .features {
-  margin-top: auto;
-  padding-top: 1rem;
-}
-
 html[data-site-theme="dark"] .demoTwinHeroKicker {
   color: rgba(226, 232, 240, 0.55);
 }
 
 html[data-site-theme="dark"] .heroIntroSurface .demoTwinCard {
-  background: rgba(15, 23, 42, 0.92);
-  border-color: rgba(148, 163, 184, 0.18);
-  box-shadow:
-    0 18px 50px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: none;
 }
 
 html[data-site-theme="dark"] .heroIntroSurface .demoTwinCard .title {

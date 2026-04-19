@@ -163,7 +163,7 @@ export function HeaderClient({
   const navMuted = headerChromeDark ? "text-white/72" : "text-[#1d1d1f]";
 
   const orderBtnClass =
-    "provin-btn provin-btn--compact inline-flex min-h-9 shrink-0 items-center justify-center rounded-full px-4 text-[11px] font-bold text-white shadow-[0_0_16px_rgba(0,102,255,0.12)] ring-1 ring-white/10 sm:min-h-9 sm:px-[1.2rem] sm:text-[11px]";
+    "provin-btn provin-btn--compact inline-flex min-h-9 shrink-0 items-center justify-center rounded-full px-4 text-[11px] font-medium text-white shadow-[0_0_16px_rgba(0,102,255,0.12)] ring-1 ring-white/10 sm:min-h-9 sm:px-[1.2rem] sm:text-[11px]";
 
   const navLinkClass = (active: boolean) =>
     [
@@ -338,7 +338,7 @@ export function HeaderClient({
                   onClick={close}
                   className={
                     headerChromeDark
-                      ? `${orderBtnClass} mt-2 w-full justify-center text-[11px] font-bold uppercase tracking-[0.06em]`
+                      ? `${orderBtnClass} mt-2 w-full justify-center text-[11px] font-medium uppercase tracking-[0.06em]`
                       : navLinkClass(isOrderSection)
                   }
                 >

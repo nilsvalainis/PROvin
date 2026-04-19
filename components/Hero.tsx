@@ -47,7 +47,7 @@ export async function Hero() {
             <div className="flex flex-col items-center">
               <Link
                 href={orderSectionHref(locale)}
-                className="provin-btn provin-btn--compact inline-flex min-h-[43px] w-auto max-w-[min(100%,17.5rem)] items-center justify-center gap-2 rounded-full px-5 text-[12px] font-semibold uppercase tracking-[0.06em] shadow-[0_5px_17px_rgba(0,0,0,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:min-h-[46px] sm:px-6 sm:text-[13px]"
+                className="provin-btn provin-btn--compact inline-flex min-h-[43px] w-auto max-w-[min(100%,17.5rem)] items-center justify-center gap-2 rounded-full px-5 text-[12px] font-medium uppercase tracking-[0.06em] shadow-[0_5px_17px_rgba(0,0,0,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:min-h-[46px] sm:px-6 sm:text-[13px]"
               >
                 {t("cta")}
                 <ArrowRight className="h-4 w-4 shrink-0 opacity-95" strokeWidth={2} aria-hidden />
