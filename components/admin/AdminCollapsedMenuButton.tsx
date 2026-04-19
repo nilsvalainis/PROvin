@@ -10,7 +10,7 @@ export function AdminCollapsedMenuButton({ className = "" }: { className?: strin
     <button
       type="button"
       onClick={shell.expandSidebar}
-      className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200/90 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50 ${className}`}
+      className={`hidden shrink-0 items-center gap-1 rounded-full border border-slate-200/90 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50 md:inline-flex ${className}`}
       aria-label="Rādīt galveno izvēlni"
       title="Rādīt izvēlni"
     >

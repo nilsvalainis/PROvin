@@ -1,5 +1,6 @@
 "use client";
 
+import { FileDown, Home, Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
@@ -154,8 +155,8 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   return (
     <div className="w-full max-w-none pb-28 sm:pb-8">
       <AdminDashboardHeaderWithMenu>
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-2">
+          <div className="min-w-0">
             <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
               IRISS · PASŪTĪJUMI
             </p>
@@ -163,27 +164,36 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               Pasūtījums
             </h1>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex shrink-0 flex-nowrap items-center justify-end gap-1 sm:flex-wrap sm:gap-2">
             <Link
               href="/admin/iriss/pasutijumi"
-              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200/90 bg-white px-4 text-[13px] font-medium text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
+              title="Sākums"
+              aria-label="Sākums"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200/90 bg-white text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 sm:h-11 sm:min-h-[44px] sm:w-auto sm:gap-1.5 sm:px-4"
             >
-              ← Saraksts
+              <Home className="h-[15px] w-[15px] shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
+              <span className="hidden text-[13px] font-medium sm:inline">Sākums</span>
             </Link>
             <button
               type="button"
               disabled={busy}
+              title="Saglabāt"
+              aria-label={busy ? "Saglabā" : "Saglabāt"}
               onClick={() => void save()}
-              className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[var(--color-provin-accent)] px-4 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-provin-accent)] text-white shadow-sm transition hover:opacity-95 disabled:opacity-50 sm:h-11 sm:min-h-[44px] sm:w-auto sm:gap-1.5 sm:px-4"
             >
-              {busy ? "Saglabā…" : "Saglabāt"}
+              <Save className="h-[15px] w-[15px] shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
+              <span className="hidden text-[13px] font-semibold sm:inline">{busy ? "Saglabā…" : "Saglabāt"}</span>
             </button>
             <button
               type="button"
+              title="Ģenerēt PDF"
+              aria-label="Ģenerēt PDF"
               onClick={() => void openPdf()}
-              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--color-provin-accent)]/35 bg-[var(--color-provin-accent-soft)]/60 px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] transition hover:bg-[var(--color-provin-accent-soft)]"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-provin-accent)]/35 bg-[var(--color-provin-accent-soft)]/60 text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent-soft)] sm:h-11 sm:min-h-[44px] sm:w-auto sm:gap-1.5 sm:px-4"
             >
-              Ģenerēt PDF
+              <FileDown className="h-[15px] w-[15px] shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
+              <span className="hidden text-[13px] font-semibold sm:inline">Ģenerēt PDF</span>
             </button>
           </div>
         </div>
