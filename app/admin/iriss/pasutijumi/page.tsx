@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
+import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
 import { isIrissPasutijumiStoreEnabled, listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
 
 export const dynamic = "force-dynamic";
@@ -73,16 +73,7 @@ export default async function IrissPasutijumiListPage() {
         </ul>
       ) : null}
 
-      {storeEnabled ? (
-        <Link
-          href="/admin/iriss/pasutijumi/new"
-          className="fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-provin-accent)] text-white shadow-[0_8px_24px_rgba(239,125,26,0.45)] transition hover:opacity-95 active:scale-95 sm:bottom-6 sm:right-5"
-          aria-label="Jauns pasūtījums"
-          title="Jauns pasūtījums"
-        >
-          <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-        </Link>
-      ) : null}
+      {storeEnabled ? <IrissPasutijumiNewFab /> : null}
     </div>
   );
 }
