@@ -23,9 +23,27 @@
       }
     ],
     "whyTitle": "KĀPĒC IZVĒLĒTIES PROVIN SELECT?",
-    "whyBody": "Lietotu auto piedāvājums ir milzīgs, taču kvalitatīvu eksemplāru meklēšana prasa pieredzi. Mēs palīdzam ietaupīt laiku, fokusējot uzmanību tikai uz 1–2 kandidātiem, uz tiem, kuri tiešām ir PROVIN audita vērti.",
+    "whyBody": "Lietotu auto piedāvājums ir milzīgs, taču kvalitatīvu eksemplāru meklēšana prasa pieredzi. Mēs palīdzam ietaupīt laiku, fokusējot uzmanību tikai uz tiem kandidātiem, kuri tiešām ir PROVIN audita vērti.",
     "deliveryTitle": "KĀ NOTIEK PROCESA IZPILDE?",
-    "deliveryBody": "Pieteikums: Mēs sazināsimies ar Tevi 24h laikā pēc pieteikuma saņemšanas, lai precizētu Tavas vēlmes un budžetu.\n\nAnalīze: Veicam padziļinātu tirgus un tehnisko risku izpēti, atlasot 5 labākos un kritērijiem atbilstošākos auto sludinājumus.\n\nRezultāts: Nosūtām rakstisku kopsavilkumu ar katra kandidāta stipro un vājo pušu izvērtējumu.\n\nSaruna: Atbildam uz Taviem papildjautājumiem, lai Tu būtu gatavs nākamajam solim.\n\nSvarīgi: Konsultācijas cenā nav iekļauta automašīnu vēstures pārbaude maksas datubāzēs (tā tiek veikta nākamajā posmā – PROVIN auditā).",
+    "deliverySteps": [
+      {
+        "title": "Pieteikums",
+        "body": "Mēs sazināsimies ar Tevi 24h laikā pēc pieteikuma saņemšanas, lai precizētu Tavas vēlmes un budžetu."
+      },
+      {
+        "title": "Analīze",
+        "body": "Veicam padziļinātu tirgus un tehnisko risku izpēti, atlasot 5 labākos un kritērijiem atbilstošākos auto sludinājumus."
+      },
+      {
+        "title": "Rezultāts",
+        "body": "Nosūtām rakstisku kopsavilkumu ar katra kandidāta stipro un vājo pušu izvērtējumu."
+      },
+      {
+        "title": "Saruna",
+        "body": "Atbildam uz Taviem papildjautājumiem, lai Tu būtu gatavs nākamajam solim."
+      }
+    ],
+    "deliveryImportant": "Svarīgi: Konsultācijas cenā nav iekļauta automašīnu vēstures pārbaude maksas datubāzēs (tā tiek veikta nākamajā posmā – PROVIN auditā).",
     "ctaPrimary": "PIETEIKT KONSULTĀCIJU",
     "formTitle": "Pieteikums konsultācijai",
     "nameLabel": "Vārds",

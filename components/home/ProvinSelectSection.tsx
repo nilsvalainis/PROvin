@@ -11,6 +11,9 @@ import { renderProvinText } from "@/lib/provin-wordmark";
 const subsectionHeadingClass =
   "iriss-editorial-heading font-semibold uppercase tracking-[0.08em] text-white/90";
 
+const deliverySectionTitleClass =
+  "iriss-editorial-heading font-bold uppercase tracking-[0.08em] text-white/90";
+
 const NOTES_MAX = 500;
 
 type IncludedRow = { title: string; body: string };
@@ -22,6 +25,11 @@ export function ProvinSelectSection() {
   const rawIncluded = t.raw("included");
   const includedRows: IncludedRow[] = Array.isArray(rawIncluded)
     ? (rawIncluded as IncludedRow[]).filter((r) => r && typeof r.title === "string" && typeof r.body === "string")
+    : [];
+
+  const rawDeliverySteps = t.raw("deliverySteps");
+  const deliveryRows: IncludedRow[] = Array.isArray(rawDeliverySteps)
+    ? (rawDeliverySteps as IncludedRow[]).filter((r) => r && typeof r.title === "string" && typeof r.body === "string")
     : [];
 
   const [name, setName] = useState("");
@@ -144,11 +152,27 @@ export function ProvinSelectSection() {
           </div>
 
           <div>
-            <h3 className={subsectionHeadingClass}>{t("deliveryTitle")}</h3>
+            <h3 className={deliverySectionTitleClass}>{t("deliveryTitle")}</h3>
             <div className="mt-3 w-full">
               <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
             </div>
-            <p className="demo-design-dir__body mt-3 whitespace-pre-line">{t("deliveryBody")}</p>
+            <ul className="mb-0 mt-3 space-y-4">
+              {deliveryRows.map((row) => (
+                <li key={row.title} className="demo-design-dir__body flex gap-2.5 text-[0.92rem] leading-snug">
+                  <span className="provin-select-included-check mt-0.5 shrink-0 font-black" aria-hidden>
+                    ✓
+                  </span>
+                  <span>
+                    <strong className="font-bold">{row.title}</strong>
+                    {": "}
+                    {row.body}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-left text-[10.5px] font-normal italic leading-relaxed text-[rgb(200_205_215_/0.72)] sm:text-[11px]">
+              {t("deliveryImportant")}
+            </p>
           </div>
 
           <div id={PROVIN_SELECT_FORM_HASH} className="scroll-mt-[calc(3.5rem+8px)]">
