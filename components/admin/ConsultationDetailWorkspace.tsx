@@ -1,9 +1,10 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LayoutDashboard, ListChecks, ListOrdered } from "lucide-react";
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
-import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { DEFAULT_PDF_VISIBILITY, mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import {
@@ -16,14 +17,27 @@ import {
   SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
-import { csddTrafficLevel, ltabTrafficLevel } from "@/lib/admin-block-traffic-status";
+import { csddTrafficLevel, ltabTrafficLevel, type TrafficFillLevel } from "@/lib/admin-block-traffic-status";
+import {
+  consultationClientTabLevel,
+  consultationSlotTabLevel,
+  consultationSummaryTabLevel,
+} from "@/lib/consultation-tab-status";
 import { buildSelectConsultationDocumentHtml } from "@/lib/select-consultation-report-html";
+import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
+
+const ADMIN_CONTENT_MAX = "max-w-[min(76.8rem,calc(100vw-1.25rem))]";
+const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
+  empty: "bg-zinc-400",
+  partial: "bg-amber-400",
+  complete: "bg-emerald-500",
+};
 
 const sectionTitle = `font-medium uppercase tracking-wide text-[var(--color-provin-muted)] ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
-const metaAccordionShellClass =
-  "rounded-xl bg-[var(--admin-surface-elevated)] shadow-sm ring-1 ring-[var(--admin-border-subtle)]";
 const bulkTextareaClass =
   "w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
+
+const CONSULTATION_WIZARD_STEP_COUNT = 1 + CONSULTATION_SLOT_COUNT + 1;
 
 function parseWorkspaceFromServerJson(json: string | null): ConsultationDraftWorkspaceBody {
   if (!json) return defaultConsultationWorkspace();
@@ -75,16 +89,22 @@ export function ConsultationDetailWorkspace({
   payload,
   pdfVisibility: pdfVisibilityProp,
   onPdfVisibilityChange,
+  clientDashboardSlot,
+  clientTabLevelInputs,
 }: {
   orderDraftPersistenceEnabled: boolean;
   serverWorkspaceJson: string | null;
   payload: ConsultationWorkspaceOrderPayload;
   pdfVisibility: PdfVisibilitySettings;
   onPdfVisibilityChange: (patch: Partial<PdfVisibilitySettings>) => void;
+  /** Cilne „Klients” — maksājums, klienta dati, komentāri (no vecākā). */
+  clientDashboardSlot: ReactNode;
+  clientTabLevelInputs: { customerName: string; customerEmail: string; customerPhone: string };
 }) {
   const [ws, setWs] = useState<ConsultationDraftWorkspaceBody>(() =>
     parseWorkspaceFromServerJson(serverWorkspaceJson),
   );
+  const [consultationStep, setConsultationStep] = useState(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipFirstHydrate = useRef(true);
 
@@ -196,139 +216,217 @@ export function ConsultationDetailWorkspace({
 
   const pdfVisibility = pdfVisibilityProp ?? DEFAULT_PDF_VISIBILITY;
 
-  const slotSections = useMemo(() => {
-    return ws.slots.map((slot, idx) => {
-      const blocks = mergeSourceBlocksWithDefaults(slot.sourceBlocks as WorkspaceSourceBlocks);
-      const trafficCsdd = csddTrafficLevel(blocks.csdd);
-      const trafficLtab = ltabTrafficLevel(blocks.ltab);
-      const n = idx + 1;
-      return (
-        <section key={idx} id={`consultation-slot-${idx}`} className="min-w-0">
-          <AdminCollapsibleShell
-            sessionId={payload.sessionId}
-            blockId={`consultation-slot-${idx}`}
-            className={metaAccordionShellClass}
-            header={
-              <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0 px-2 py-2`}>
-                Nr. {n}
-              </h2>
-            }
-          >
-            <div className="space-y-3 px-2 pb-3">
-              <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                Sludinājuma links
-                <input
-                  type="url"
-                  className="mt-0.5 w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] text-[var(--admin-field-text)]"
-                  value={slot.listingUrl}
-                  onChange={(e) => updateSlotField(idx, "listingUrl", e.target.value)}
-                />
-              </label>
-              <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                Pārdošanas cena
-                <input
-                  type="text"
-                  className="mt-0.5 w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] text-[var(--admin-field-text)]"
-                  value={slot.salePrice}
-                  onChange={(e) => updateSlotField(idx, "salePrice", e.target.value)}
-                />
-              </label>
-              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/60 px-2 py-1.5">
-                <AdminPdfIncludeToggle
-                  checked={pdfVisibility.csdd}
-                  onChange={(next) => onPdfVisibilityChange({ csdd: next })}
-                />
-                <span className="text-[9px] font-medium text-[var(--color-provin-muted)]">CSDD PDF</span>
-                <AdminPdfIncludeToggle
-                  checked={pdfVisibility.ltab}
-                  onChange={(next) => onPdfVisibilityChange({ ltab: next })}
-                />
-                <span className="text-[9px] font-medium text-[var(--color-provin-muted)]">LTAB PDF</span>
-              </div>
-              <AdminCsddSourceBlock
-                value={blocks.csdd}
-                readOnly={false}
-                onChange={(next) => updateSourceBlock(idx, "csdd", next)}
-                trafficFillLevel={trafficCsdd}
-                pdfIncludeBlock={pdfVisibility.csdd}
-                onPdfIncludeBlockChange={(next) => onPdfVisibilityChange({ csdd: next })}
-                pdfIncludeMileageTable={pdfVisibility.csddMileageTable}
-                onPdfIncludeMileageTableChange={(next) => onPdfVisibilityChange({ csddMileageTable: next })}
-                sessionId={payload.sessionId}
-              />
-              <AdminLtabSourceBlock
-                value={blocks.ltab}
-                readOnly={false}
-                onChange={(next) => updateSourceBlock(idx, "ltab", next)}
-                trafficFillLevel={trafficLtab}
-                sessionId={payload.sessionId}
-                pdfInclude={pdfVisibility.ltab}
-                onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
-              />
-              <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                IETEIKUMI KLĀTIENES APSKATEI
-                <textarea
-                  className={`${bulkTextareaClass} mt-0.5 min-h-[72px]`}
-                  value={slot.ieteikumiApskatei}
-                  onChange={(e) => updateSlotField(idx, "ieteikumiApskatei", e.target.value)}
-                />
-              </label>
-              <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                CENAS ATBILSTĪBA
-                <textarea
-                  className={`${bulkTextareaClass} mt-0.5 min-h-[72px]`}
-                  value={slot.cenasAtbilstiba}
-                  onChange={(e) => updateSlotField(idx, "cenasAtbilstiba", e.target.value)}
-                />
-              </label>
-              <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                KOPSAVILKUMS
-                <textarea
-                  className={`${bulkTextareaClass} mt-0.5 min-h-[72px]`}
-                  value={slot.kopsavilkums}
-                  onChange={(e) => updateSlotField(idx, "kopsavilkums", e.target.value)}
-                />
-              </label>
-            </div>
-          </AdminCollapsibleShell>
-        </section>
-      );
-    });
-  }, [payload.sessionId, updateSlotField, updateSourceBlock, ws.slots, pdfVisibility, onPdfVisibilityChange]);
+  const consultationStepsUi = useMemo(
+    () => [
+      { label: "Klients", Icon: LayoutDashboard },
+      ...Array.from({ length: CONSULTATION_SLOT_COUNT }, (_, i) => ({
+        label: `Nr. ${i + 1}`,
+        Icon: ListOrdered,
+      })),
+      { label: "Kopsavilkums", Icon: ListChecks },
+    ],
+    [],
+  );
+
+  const consultationStepLevels = useMemo((): TrafficFillLevel[] => {
+    const clientLvl = consultationClientTabLevel(clientTabLevelInputs);
+    const slotLvls = ws.slots.map((s) => consultationSlotTabLevel(s));
+    const sumLvl = consultationSummaryTabLevel(ws.irissApproved);
+    return [clientLvl, ...slotLvls, sumLvl];
+  }, [clientTabLevelInputs, ws.slots, ws.irissApproved]);
+
+  const consultationProgressPct = useMemo(
+    () => workspaceWizardProgressPct(consultationStepLevels),
+    [consultationStepLevels],
+  );
+
+  const flushPersist = useCallback(() => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    void persistWorkspace(ws, pdfVisibilityProp);
+  }, [persistWorkspace, ws, pdfVisibilityProp]);
+
+  const goStep = useCallback(
+    (idx: number) => {
+      flushPersist();
+      setConsultationStep(idx);
+    },
+    [flushPersist],
+  );
+
+  const renderSlotPanel = (idx: number) => {
+    const slot = ws.slots[idx]!;
+    const blocks = mergeSourceBlocksWithDefaults(slot.sourceBlocks as WorkspaceSourceBlocks);
+    const trafficCsdd = csddTrafficLevel(blocks.csdd);
+    const trafficLtab = ltabTrafficLevel(blocks.ltab);
+    const n = idx + 1;
+    return (
+      <div className="min-w-0 space-y-3 rounded-xl bg-[var(--admin-surface-elevated)] p-3 shadow-sm ring-1 ring-[var(--admin-border-subtle)]">
+        <h2 className={`${sectionTitle} px-0.5`}>Nr. {n}</h2>
+        <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
+          Sludinājuma links
+          <input
+            type="url"
+            className="mt-0.5 w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] text-[var(--admin-field-text)]"
+            value={slot.listingUrl}
+            onChange={(e) => updateSlotField(idx, "listingUrl", e.target.value)}
+          />
+        </label>
+        <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
+          Pārdošanas cena
+          <input
+            type="text"
+            className="mt-0.5 w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] text-[var(--admin-field-text)]"
+            value={slot.salePrice}
+            onChange={(e) => updateSlotField(idx, "salePrice", e.target.value)}
+          />
+        </label>
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/60 px-2 py-1.5">
+          <AdminPdfIncludeToggle
+            checked={pdfVisibility.csdd}
+            onChange={(next) => onPdfVisibilityChange({ csdd: next })}
+          />
+          <span className="text-[9px] font-medium text-[var(--color-provin-muted)]">CSDD PDF</span>
+          <AdminPdfIncludeToggle
+            checked={pdfVisibility.ltab}
+            onChange={(next) => onPdfVisibilityChange({ ltab: next })}
+          />
+          <span className="text-[9px] font-medium text-[var(--color-provin-muted)]">LTAB PDF</span>
+        </div>
+        <AdminCsddSourceBlock
+          value={blocks.csdd}
+          readOnly={false}
+          onChange={(next) => updateSourceBlock(idx, "csdd", next)}
+          trafficFillLevel={trafficCsdd}
+          pdfIncludeBlock={pdfVisibility.csdd}
+          onPdfIncludeBlockChange={(next) => onPdfVisibilityChange({ csdd: next })}
+          pdfIncludeMileageTable={pdfVisibility.csddMileageTable}
+          onPdfIncludeMileageTableChange={(next) => onPdfVisibilityChange({ csddMileageTable: next })}
+          sessionId={payload.sessionId}
+        />
+        <AdminLtabSourceBlock
+          value={blocks.ltab}
+          readOnly={false}
+          onChange={(next) => updateSourceBlock(idx, "ltab", next)}
+          trafficFillLevel={trafficLtab}
+          sessionId={payload.sessionId}
+          pdfInclude={pdfVisibility.ltab}
+          onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
+        />
+        <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
+          IETEIKUMI KLĀTIENES APSKATEI
+          <textarea
+            className={`${bulkTextareaClass} mt-0.5 min-h-[72px]`}
+            value={slot.ieteikumiApskatei}
+            onChange={(e) => updateSlotField(idx, "ieteikumiApskatei", e.target.value)}
+          />
+        </label>
+        <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
+          CENAS ATBILSTĪBA
+          <textarea
+            className={`${bulkTextareaClass} mt-0.5 min-h-[72px]`}
+            value={slot.cenasAtbilstiba}
+            onChange={(e) => updateSlotField(idx, "cenasAtbilstiba", e.target.value)}
+          />
+        </label>
+        <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
+          KOPSAVILKUMS
+          <textarea
+            className={`${bulkTextareaClass} mt-0.5 min-h-[72px]`}
+            value={slot.kopsavilkums}
+            onChange={(e) => updateSlotField(idx, "kopsavilkums", e.target.value)}
+          />
+        </label>
+      </div>
+    );
+  };
+
+  const slotIndexForStep = consultationStep >= 1 && consultationStep <= CONSULTATION_SLOT_COUNT ? consultationStep - 1 : -1;
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-[min(76.8rem,calc(100vw-1.25rem))] space-y-3 pb-16">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
-          Darba zona — PROVIN SELECT
-        </p>
-        <button
-          type="button"
-          onClick={() => void openPdf()}
-          className="inline-flex min-h-9 items-center justify-center rounded-lg border border-emerald-800/40 bg-[#22C55E] px-3 py-2 text-[11px] font-semibold tracking-tight text-white shadow-sm transition hover:bg-[#16a34a]"
-        >
-          Ģenerēt PDF
-        </button>
-      </div>
-      {slotSections}
-      <section className="min-w-0">
-        <AdminCollapsibleShell
-          sessionId={payload.sessionId}
-          blockId="consultation-iriss"
-          className={metaAccordionShellClass}
-          header={
-            <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0 px-2 py-2`}>
-              Kopsavilkums — Approved by IRISS
-            </h2>
-          }
-          headerActions={
-            <AdminPdfIncludeToggle
-              checked={pdfVisibility.iriss}
-              onChange={(next) => onPdfVisibilityChange({ iriss: next })}
+    <div className="mx-auto w-full min-w-0 max-w-[min(76.8rem,calc(100vw-1.25rem))] space-y-0 pb-16">
+      <nav
+        className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm"
+        aria-label="Konsultācijas sadaļas"
+      >
+        <div className={`mx-auto flex w-full min-w-0 flex-wrap items-center gap-2 ${ADMIN_CONTENT_MAX}`}>
+          <div className="flex min-w-0 flex-1 flex-wrap items-stretch gap-1 sm:gap-1.5">
+            {consultationStepsUi.map(({ label, Icon }, idx) => {
+              const lvl = consultationStepLevels[idx] ?? "empty";
+              const active = consultationStep === idx;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => goStep(idx)}
+                  className={`flex min-w-0 max-w-[7.5rem] flex-1 flex-col items-center gap-0.5 rounded-lg border px-1 py-1 text-center transition sm:max-w-none sm:flex-row sm:justify-start sm:gap-1.5 sm:px-2 ${
+                    active
+                      ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
+                      : "border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                  }`}
+                >
+                  <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-black/[0.06] text-[var(--color-provin-muted)] dark:bg-white/10">
+                    <Icon className="h-3.5 w-3.5" aria-hidden />
+                    <span
+                      className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-2 ring-[var(--admin-surface-elevated)] ${WIZARD_STEP_DOT[lvl]}`}
+                      title={`Aizpildījums: ${lvl}`}
+                    />
+                  </span>
+                  <span
+                    className={`line-clamp-2 w-full text-[9px] font-semibold uppercase leading-tight tracking-tight sm:line-clamp-1 sm:text-left ${
+                      active ? "text-[var(--color-apple-text)]" : "text-[var(--color-provin-muted)]"
+                    }`}
+                  >
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={() => void openPdf()}
+            className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-emerald-800/40 bg-[#22C55E] px-3 py-2 text-[11px] font-semibold tracking-tight text-white shadow-sm transition hover:bg-[#16a34a]"
+          >
+            Ģenerēt PDF
+          </button>
+        </div>
+        <div className={`mx-auto mt-2 px-1 ${ADMIN_CONTENT_MAX}`}>
+          <div
+            className="h-1 w-full overflow-hidden rounded-full bg-black/[0.08] dark:bg-white/10"
+            role="progressbar"
+            aria-valuenow={consultationProgressPct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Aizpildījuma progress"
+          >
+            <div
+              className="h-full rounded-full bg-emerald-500 transition-[width] duration-300 ease-out dark:bg-emerald-400"
+              style={{ width: `${consultationProgressPct}%` }}
             />
-          }
-        >
-          <div className="px-2 pb-3">
+          </div>
+          <p className="mt-0.5 text-end text-[9px] font-medium tabular-nums text-[var(--color-provin-muted)]">
+            {consultationProgressPct}%
+          </p>
+        </div>
+      </nav>
+
+      <div className={`mx-auto w-full min-w-0 space-y-3 px-1 pt-3 ${ADMIN_CONTENT_MAX}`}>
+        {consultationStep === 0 ? <div className="space-y-3">{clientDashboardSlot}</div> : null}
+
+        {slotIndexForStep >= 0 ? renderSlotPanel(slotIndexForStep) : null}
+
+        {consultationStep === CONSULTATION_WIZARD_STEP_COUNT - 1 ? (
+          <div className="min-w-0 space-y-2 rounded-xl bg-[var(--admin-surface-elevated)] p-3 shadow-sm ring-1 ring-[var(--admin-border-subtle)]">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className={`${sectionTitle}`}>Approved by IRISS</h2>
+              <AdminPdfIncludeToggle
+                checked={pdfVisibility.iriss}
+                onChange={(next) => onPdfVisibilityChange({ iriss: next })}
+              />
+            </div>
             <textarea
               className={`${bulkTextareaClass} min-h-[140px]`}
               value={ws.irissApproved}
@@ -336,8 +434,8 @@ export function ConsultationDetailWorkspace({
               placeholder="Galīgais kopsavilkums / IRISS apstiprinājums…"
             />
           </div>
-        </AdminCollapsibleShell>
-      </section>
+        ) : null}
+      </div>
     </div>
   );
 }

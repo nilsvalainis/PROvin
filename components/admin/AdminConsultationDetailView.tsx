@@ -400,13 +400,17 @@ export function AdminConsultationDetailView({
           </h1>
         </header>
 
-        <div className="mb-4">{dashboardSlot}</div>
-
         <ConsultationDetailWorkspace
           orderDraftPersistenceEnabled={consultationDraftPersistenceEnabled}
           serverWorkspaceJson={serverWorkspaceJson}
           pdfVisibility={pdfVisibility}
           onPdfVisibilityChange={patchPdfVisibility}
+          clientDashboardSlot={dashboardSlot}
+          clientTabLevelInputs={{
+            customerName: mergedCustomerName,
+            customerEmail: mergedCustomerEmail,
+            customerPhone: mergedCustomerPhone,
+          }}
           payload={{
             sessionId: order.id,
             isDemo: Boolean(order.isDemo),
