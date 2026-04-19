@@ -6,6 +6,7 @@ import { getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/m
 import { adminNewOrderHtml, auditCompletedEmailHtml, paymentConfirmationHtml } from "@/lib/email/html-templates";
 import type { OrderEmailPayload } from "@/lib/email/types";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { routing } from "@/i18n/routing";
 
 /** true, ja servera vidē ir gan SMTP_USER, gan SMTP_PASS (Workspace / Gmail app password). */
 export function isSmtpConfigured(): boolean {
@@ -140,7 +141,7 @@ export async function sendPaymentConfirmationEmail(opts: {
 
   const origin = getSiteOrigin();
   const invoiceUrl = `${origin}/api/invoice/download?session_id=${encodeURIComponent(opts.sessionId)}`;
-  const thanksUrl = `${origin}/lv/paldies`;
+  const thanksUrl = `${origin}/${routing.defaultLocale}/paldies`;
   const amountLine =
     opts.amountTotal != null
       ? `${opts.amountTotal} ${(opts.currency ?? "EUR").toUpperCase()}`

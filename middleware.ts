@@ -4,8 +4,8 @@ import createMiddleware from "next-intl/middleware";
 import { routing } from "./i18n/routing";
 import { SITE_THEME_COOKIE_KEY } from "./lib/site-theme";
 
-/* Lokāli: `next dev` / `next start` ar `--hostname 127.0.0.1` kopā ar next-intl bieži dod 307 cilpu
-   (ERR_TOO_MANY_REDIRECTS) uz `/demo` — lietot to pašu hostu, ko rāda terminālis pēc `next dev` (parasti `localhost`). */
+/* Lokāli: `next dev` / `next start` ar `--hostname 127.0.0.1` un `localhost` hostu atšķirība var radīt
+   papildu redirectus; next-intl ar vienu lokalizāciju un `localePrefix: "as-needed"`/`never` deva 307 cilpu uz `/`. */
 
 const intlMiddleware = createMiddleware(routing);
 

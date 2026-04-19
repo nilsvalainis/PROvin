@@ -29,6 +29,10 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: "/admin/pkd-rekins", destination: "/admin/commission-invoice", permanent: false }];
   },
+  /** Stripe Dashboard bieža kļūda: `/api/webhook/stripe` — kods ir `/api/webhooks/stripe`. */
+  async rewrites() {
+    return [{ source: "/api/webhook/stripe", destination: "/api/webhooks/stripe" }];
+  },
   async headers() {
     return [
       {

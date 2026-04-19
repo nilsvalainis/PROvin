@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
-import { isIrissPasutijumiStoreEnabled, listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
+import { getIrissPasutijumiStorageState, listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
 
 export const dynamic = "force-dynamic";
 
 export default async function IrissPasutijumiListPage() {
-  const storeEnabled = isIrissPasutijumiStoreEnabled();
+  const storage = getIrissPasutijumiStorageState();
+  const storeEnabled = storage.enabled;
   const rows = storeEnabled ? await listIrissPasutijumi() : [];
 
   return (
@@ -23,20 +24,37 @@ export default async function IrissPasutijumiListPage() {
       {!storeEnabled ? (
         <div className="mt-6 rounded-2xl border border-amber-200/90 bg-amber-50/95 px-4 py-3.5 text-sm text-amber-950 shadow-sm">
           <p className="font-semibold">Melnraksts ir izslēgts</p>
-          <p className="mt-1.5 text-amber-900/90">
-            Iestatiet mapes ceļu vai noņemiet atspējošanu:{" "}
-            <code className="rounded bg-white/80 px-1.5 py-0.5 font-mono text-xs">ADMIN_IRISS_PASUTIJUMI_DIR</code>{" "}
-            (noklusējums: <span className="font-mono">.data/iriss-pasutijumi</span> projekta saknē).
-          </p>
+          {storage.reason === "vercel_blob_token_missing" ? (
+            <p className="mt-1.5 text-amber-900/90">
+              Vercel vidē JSON tiek glabāti <span className="font-semibold">Vercel Blob</span>. Pievienojiet projektam
+              mainīgo{" "}
+              <code className="rounded bg-white/80 px-1.5 py-0.5 font-mono text-xs">BLOB_READ_WRITE_TOKEN</code>{" "}
+              (Storage → Blob → savienot ar projektu) vai norādiet rakstāmu ceļu ar{" "}
+              <code className="rounded bg-white/80 px-1.5 py-0.5 font-mono text-xs">ADMIN_IRISS_PASUTIJUMI_DIR</code>.
+            </p>
+          ) : (
+            <p className="mt-1.5 text-amber-900/90">
+              Iestatiet mapes ceļu vai noņemiet atspējošanu:{" "}
+              <code className="rounded bg-white/80 px-1.5 py-0.5 font-mono text-xs">ADMIN_IRISS_PASUTIJUMI_DIR</code>{" "}
+              (lokāli noklusējums: <span className="font-mono">.data/iriss-pasutijumi</span> projekta saknē).
+            </p>
+          )}
         </div>
       ) : null}
 
-      {storeEnabled && process.env.VERCEL ? (
-        <div className="mt-4 rounded-xl border border-slate-200/90 bg-slate-50/90 px-3 py-2 text-[11px] leading-relaxed text-[var(--color-provin-muted)]">
-          <span className="font-semibold text-[var(--color-apple-text)]">Vercel:</span> bez{" "}
-          <code className="rounded bg-white px-1 font-mono text-[10px]">ADMIN_IRISS_PASUTIJUMI_DIR</code> dati tiek
-          glabāti servera <span className="font-mono">/tmp</span> (var pazust pēc aukstās palaišanas). Ilgtermiņam
-          ieteicams Blob/DB vai rakstāms disks.
+      {storeEnabled && storage.persistence === "vercel_blob" ? (
+        <div className="mt-4 rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-3 py-2 text-[11px] leading-relaxed text-emerald-950/90">
+          <span className="font-semibold text-[var(--color-apple-text)]">Vercel Blob:</span> pasūtījumu JSON ir
+          privāti Blob krātuvē; dati saglabājas arī pēc servera instance nomaiņas.
+        </div>
+      ) : null}
+
+      {storeEnabled && process.env.VERCEL && storage.persistence === "filesystem" ? (
+        <div className="mt-4 rounded-xl border border-amber-200/90 bg-amber-50/90 px-3 py-2 text-[11px] leading-relaxed text-amber-950/90">
+          <span className="font-semibold text-[var(--color-apple-text)]">Vercel + disks:</span> ceļš{" "}
+          <code className="rounded bg-white px-1 font-mono text-[10px]">ADMIN_IRISS_PASUTIJUMI_DIR</code> parasti ir
+          pagaidu servera failsistēma — pārliecinieties, ka tas ir montēts pastāvīgs disks, vai pārslēdzieties uz Blob (
+          <span className="font-mono">BLOB_READ_WRITE_TOKEN</span> bez šī mainīgā).
         </div>
       ) : null}
 

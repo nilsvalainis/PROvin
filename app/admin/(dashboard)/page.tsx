@@ -2,6 +2,7 @@ import { isDemoOrdersEnabled, listAdminOrders } from "@/lib/admin-orders";
 import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
+import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,10 @@ export default async function AdminOrdersPage() {
         ) : null}
       </AdminDashboardHeaderWithMenu>
 
+      <div className="mt-6 flex flex-wrap items-start justify-end gap-3 border-b border-slate-100/80 pb-4">
+        <AdminOrdersExportButton />
+      </div>
+
       {hasStripeIssue && orders.length > 0 ? (
         <div
           className={`mt-6 rounded-2xl border px-4 py-3.5 text-sm shadow-sm ${
@@ -92,9 +97,7 @@ export default async function AdminOrdersPage() {
         </div>
       ) : null}
 
-      {orders.length > 0 ? (
-        <AdminOrdersTable orders={tableOrders} />
-      ) : null}
+      {orders.length > 0 ? <AdminOrdersTable orders={tableOrders} /> : null}
     </div>
   );
 }

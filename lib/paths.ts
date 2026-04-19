@@ -1,23 +1,21 @@
-import { routing } from "@/i18n/routing";
-
-/** Home path for locale (`/` for default). */
+/**
+ * Publiskais ceļš uz sākumu ar lokalizācijas prefiksu (`localePrefix: "always"` → `/lv`).
+ * (Projektā tikai `lv`.)
+ */
 export function homePath(locale: string): string {
-  return locale === routing.defaultLocale ? "/" : `/${locale}`;
+  return `/${locale}`;
 }
 
-/** Link to order section on the home page, e.g. `/#pasutit` or `/en#pasutit`. */
+/** Link to order section on the home page, e.g. `/lv#pasutit`. */
 export function orderSectionHref(locale: string): string {
-  const base = homePath(locale);
-  return base === "/" ? "/#pasutit" : `${base}#pasutit`;
+  return `${homePath(locale)}#pasutit`;
 }
 
 /** Home page with FAQ section hash. */
 export function faqHashHref(locale: string): string {
-  const base = homePath(locale);
-  return base === "/" ? "/#biezi-jautajumi" : `${base}#biezi-jautajumi`;
+  return `${homePath(locale)}#biezi-jautajumi`;
 }
 
 export function irissAnchorHref(locale: string): string {
-  const base = homePath(locale);
-  return base === "/" ? "/#kas-ir-iriss" : `${base}#kas-ir-iriss`;
+  return `${homePath(locale)}#kas-ir-iriss`;
 }

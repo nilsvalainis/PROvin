@@ -155,10 +155,10 @@ export async function POST(req: Request) {
       : "http://localhost:3000";
 
   const home = homePath(locale);
-  const thanksPath = home === "/" ? "/paldies" : `${home}/paldies`;
+  const thanksPath = `${home}/paldies`;
   const cancelHash =
     checkoutLine === "provin_select" ? PROVIN_SELECT_FORM_HASH : ORDER_SECTION_ID;
-  const cancelPath = `${home === "/" ? "/" : home}?atcelts=1#${cancelHash}`;
+  const cancelPath = `${home}?atcelts=1#${cancelHash}`;
 
   const misc = (await import(`../../../messages/${locale}/misc.json`)).default as {
     Misc: {

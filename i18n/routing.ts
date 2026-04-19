@@ -4,5 +4,9 @@ export const routing = defineRouting({
   locales: ["lv"],
   defaultLocale: "lv",
   localeDetection: false,
-  localePrefix: "as-needed",
+  /**
+   * Viens `lv`: `as-needed` un `never` dev vidē deva 307 cilpu uz `/` (next-intl + viena lokalizācija).
+   * `always` — `/` → `/lv` vienu reizi, tad lapa ielādējas (URL ar `/lv` prefiksu).
+   */
+  localePrefix: "always",
 });

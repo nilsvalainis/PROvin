@@ -68,7 +68,7 @@ export async function DemoTwinHeroConcept() {
 
         <div className="relative z-10 min-w-0">
           <section className={`${styles.heroSection} ${styles.demoTwinHeroSection}`} aria-label="Demo divas hero kartītes">
-            <div className={styles.shell}>
+            <div className={`${styles.shell} ${styles.demoTwinShell}`}>
               <div className={styles.demoTwinHeroGrid}>
                 <div className={styles.demoTwinCard}>
                   <h1 className={styles.title}>

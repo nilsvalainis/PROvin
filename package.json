@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack --hostname localhost --port 3040",
     "dev:stable": "CHOKIDAR_USEPOLLING=1 WATCHPACK_POLLING=true next dev --hostname localhost --port 3001",
     "build": "next build",
     "start": "next start",
@@ -17,6 +17,8 @@
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/blob": "^2.3.3",
+    "archiver": "^7.0.1",
     "framer-motion": "^11.18.2",
     "lenis": "^1.3.21",
     "lucide-react": "^0.468.0",
@@ -33,6 +35,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/archiver": "^7.0.0",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.0",
     "@types/react": "^19",

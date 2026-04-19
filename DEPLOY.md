@@ -47,7 +47,7 @@ Kad lapa atveras kā **`https://provin.lv`**, env **`NEXT_PUBLIC_SITE_URL`** jā
 ### 5. Stripe webhook (kad jau darbojas `https://provin.lv`)
 
 1. [Stripe Dashboard](https://dashboard.stripe.com) → **Developers → Webhooks** → **Add endpoint**.
-2. URL: `https://provin.lv/api/webhooks/stripe`
+2. URL: `https://provin.lv/api/webhooks/stripe` (**webhooks** ar **s** — ne `/api/webhook/stripe`; pretējā gadījumā Stripe nevar piegādāt notikumus.)
 3. Notikumi (abi): **`checkout.session.completed`**, **`checkout.session.async_payment_succeeded`** (aizkavēti maksājuma veidi, kad nauda ienāk vēlāk).
 4. **Signing secret** → Vercel → `STRIPE_WEBHOOK_SECRET` → **Redeploy**.
 5. Admin e-pasts par katru apmaksātu pasūtījumu: `SMTP_USER`/`SMTP_PASS` + vai nu `ADMIN_NOTIFY_EMAIL`, vai tukšs `ADMIN_NOTIFY_EMAIL` (tad uz `SMTP_USER`).
