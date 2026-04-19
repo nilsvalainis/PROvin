@@ -8,8 +8,11 @@ import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardH
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
-const toolbarFabClass =
-  "inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-[0_8px_24px_rgba(239,125,26,0.25)] transition hover:opacity-95 active:scale-95 disabled:opacity-50";
+/** Mobilajā — kompaktas FAB; no `sm:` — iepriekšējās pogas ar tekstu. */
+const toolbarBtnBase =
+  "inline-flex shrink-0 items-center justify-center rounded-full transition active:scale-95 disabled:opacity-50 " +
+  "h-14 w-14 shadow-[0_8px_24px_rgba(239,125,26,0.25)] hover:opacity-95 " +
+  "sm:h-11 sm:min-h-[44px] sm:w-auto sm:gap-1.5 sm:px-4 sm:shadow-sm sm:hover:opacity-100 sm:active:scale-100";
 
 const fieldClass =
   "min-h-[44px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[16px] text-[var(--color-apple-text)] shadow-sm outline-none transition focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
@@ -175,14 +178,15 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               Pasūtījums
             </h1>
           </div>
-          <div className="flex shrink-0 flex-nowrap items-center justify-end gap-2">
+          <div className="flex shrink-0 flex-nowrap items-center justify-end gap-1 sm:flex-wrap sm:gap-2">
             <Link
               href="/admin/iriss/pasutijumi"
               title="Sākums"
               aria-label="Sākums"
-              className={`${toolbarFabClass} border border-slate-200/90 bg-white text-[var(--color-provin-accent)] hover:bg-slate-50`}
+              className={`${toolbarBtnBase} border border-slate-200/90 bg-white text-[var(--color-provin-accent)] hover:bg-slate-50 sm:hover:bg-slate-50`}
             >
-              <Home className="h-7 w-7 shrink-0" strokeWidth={2.25} aria-hidden />
+              <Home className="h-7 w-7 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
+              <span className="hidden text-[13px] font-medium sm:inline">Sākums</span>
             </Link>
             <button
               type="button"
@@ -190,18 +194,20 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               title="Saglabāt"
               aria-label={busy ? "Saglabā" : "Saglabāt"}
               onClick={() => void save()}
-              className={`${toolbarFabClass} bg-[var(--color-provin-accent)] text-white`}
+              className={`${toolbarBtnBase} bg-[var(--color-provin-accent)] text-white hover:opacity-95 sm:hover:opacity-95`}
             >
-              <Save className="h-7 w-7 shrink-0" strokeWidth={2.25} aria-hidden />
+              <Save className="h-7 w-7 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
+              <span className="hidden text-[13px] font-semibold sm:inline">{busy ? "Saglabā…" : "Saglabāt"}</span>
             </button>
             <button
               type="button"
               title="Ģenerēt PDF"
               aria-label="Ģenerēt PDF"
               onClick={() => void openPdf()}
-              className={`${toolbarFabClass} border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/70 text-[var(--color-provin-accent)] hover:bg-[var(--color-provin-accent-soft)]`}
+              className={`${toolbarBtnBase} border border-[var(--color-provin-accent)]/35 bg-[var(--color-provin-accent-soft)]/60 text-[var(--color-provin-accent)] hover:bg-[var(--color-provin-accent-soft)] sm:hover:bg-[var(--color-provin-accent-soft)]`}
             >
-              <FileDown className="h-7 w-7 shrink-0" strokeWidth={2.25} aria-hidden />
+              <FileDown className="h-7 w-7 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
+              <span className="hidden text-[13px] font-semibold sm:inline">Ģenerēt PDF</span>
             </button>
           </div>
         </div>
@@ -212,10 +218,9 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
         ) : null}
       </AdminDashboardHeaderWithMenu>
 
-      <IrissListingPlatformChipsRow rec={rec} />
-
       <div className="mt-4 space-y-5 sm:mt-6">
         <section className={shellCard}>
+          <IrissListingPlatformChipsRow rec={rec} />
           <BlockTitle>Klienta dati</BlockTitle>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <LabeledInput
@@ -251,7 +256,9 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               onChange={(e) => patch("orderDate", e.target.value)}
             />
           </div>
-          <IrissListingPlatformsFields rec={rec} onPatch={patchRecord} />
+          <div className="mt-4">
+            <IrissListingPlatformsFields rec={rec} onPatch={patchRecord} />
+          </div>
         </section>
 
         <section className={shellCard}>
