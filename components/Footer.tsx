@@ -69,7 +69,7 @@ export async function Footer() {
               href={homeHref}
               className="home-footer-ink inline-flex text-[18px] font-semibold tracking-tight transition-all duration-300 ease-in-out hover:text-provin-accent sm:text-[19px]"
             >
-              <span>PRO</span>
+              <span className="provin-wordmark-pro">PRO</span>
               <span className="text-provin-accent">VIN</span>
             </Link>
 

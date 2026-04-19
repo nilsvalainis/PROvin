@@ -920,6 +920,23 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
   color: #0066ff;
 }
 
+/**
+ * „PROVIN” tekstā: PRO — pēc vietnes tēmas; VIN — `.text-provin-accent`.
+ * Tumšā tēma: PRO balts; gaišā: PRO melns (#0a0a0a).
+ */
+.provin-wordmark-pro {
+  color: rgb(255 255 255 / 0.96);
+}
+
+html[data-site-theme="light"] .provin-wordmark-pro {
+  color: #0a0a0a;
+}
+
+/** PRO uz noteikti tumšu virsmu (FAQ „dark”, hero u.c.), neatkarīgi no vietnes tēmas. */
+.provin-wordmark-pro--surface-dark {
+  color: rgb(255 255 255 / 0.96);
+}
+
 /* PROVIN SELECT — saraksta ✓, veiksmes / kļūdas ziņas (gaišs / tumšs band-c). */
 .provin-select-included-check {
   color: rgb(0 150 70);

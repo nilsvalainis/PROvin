@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { HeroVisual } from "@/components/HeroVisual";
 import { demoHeroFeatureTitles } from "@/lib/demo-feature-titles";
+import { renderProvinText } from "@/lib/provin-wordmark";
 import styles from "@/app/[locale]/demo/page.module.css";
 
 const selectFeatureRows = [
@@ -32,7 +33,7 @@ function FeatureList({ items }: { items: readonly { label: string; icon: "check"
               </svg>
             </span>
           )}
-          <span>{item.label}</span>
+          <span>{renderProvinText(item.label, { proAndSuffixClassName: "provin-wordmark-pro" })}</span>
         </li>
       ))}
     </ul>
@@ -51,7 +52,10 @@ export async function DemoTwinHeroConcept() {
   return (
     <>
       <p className={styles.demoTwinHeroKicker}>
-        DEMO koncepts — netiek publicēts. Salīdzinājums: PROVIN AUDITS pret PROVIN SELECT (vienāds izkārtojums).
+        {renderProvinText(
+          "DEMO koncepts — netiek publicēts. Salīdzinājums: PROVIN AUDITS pret PROVIN SELECT (vienāds izkārtojums).",
+          { proAndSuffixClassName: "provin-wordmark-pro" },
+        )}
       </p>
       <div className={`home-hero-intro-surface ${styles.heroIntroSurface}`}>
         <div className={styles.heroDarkBackdrop} aria-hidden>
@@ -102,7 +106,8 @@ export async function DemoTwinHeroConcept() {
                 <div className={styles.demoTwinCard}>
                   <h1 className={styles.title}>
                     <span className={`${styles.titleRow} ${styles.titleSubLine}`}>
-                      <span className={styles.titleAccent}>PROVIN</span>
+                      <span className={styles.titleInk}>PRO</span>
+                      <span className={styles.titleAccent}>VIN</span>
                     </span>
                     <span className={`${styles.titleRow} ${styles.titleSubLine}`}>
                       <span className={styles.titleAccent}>SELECT</span>

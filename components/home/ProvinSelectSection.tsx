@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import demoPageStyles from "@/app/[locale]/demo/page.module.css";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { PROVIN_SELECT_FORM_HASH, PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
+import { renderProvinText } from "@/lib/provin-wordmark";
 
 const subsectionHeadingClass =
   "iriss-editorial-heading font-semibold uppercase tracking-[0.08em] text-white/90";
@@ -101,7 +102,7 @@ export function ProvinSelectSection() {
             id="provin-select-heading"
             className="demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance"
           >
-            {t("eyebrow")}
+            {renderProvinText(t("eyebrow"), { proAndSuffixClassName: "provin-wordmark-pro" })}
           </h2>
           <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
