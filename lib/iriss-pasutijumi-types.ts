@@ -38,6 +38,11 @@ export type IrissPasutijumsListRow = {
   brandModel: string;
   totalBudget: string;
   phone: string;
+  listingLinkMobile: string;
+  listingLinkAutobid: string;
+  listingLinkOpenline: string;
+  listingLinkAuto1: string;
+  listingLinksOther: string[];
 };
 
 export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijumsRecord {

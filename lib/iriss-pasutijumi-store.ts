@@ -187,6 +187,11 @@ export async function listIrissPasutijumi(): Promise<IrissPasutijumsListRow[]> {
         brandModel: rec.brandModel.trim() || "—",
         totalBudget: rec.totalBudget.trim() || "—",
         phone: rec.phone.trim() || "—",
+        listingLinkMobile: rec.listingLinkMobile,
+        listingLinkAutobid: rec.listingLinkAutobid,
+        listingLinkOpenline: rec.listingLinkOpenline,
+        listingLinkAuto1: rec.listingLinkAuto1,
+        listingLinksOther: rec.listingLinksOther,
       });
     }
     rows.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
@@ -213,6 +218,11 @@ export async function listIrissPasutijumi(): Promise<IrissPasutijumsListRow[]> {
       brandModel: rec.brandModel.trim() || "—",
       totalBudget: rec.totalBudget.trim() || "—",
       phone: rec.phone.trim() || "—",
+      listingLinkMobile: rec.listingLinkMobile,
+      listingLinkAutobid: rec.listingLinkAutobid,
+      listingLinkOpenline: rec.listingLinkOpenline,
+      listingLinkAuto1: rec.listingLinkAuto1,
+      listingLinksOther: rec.listingLinksOther,
     });
   }
   rows.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));

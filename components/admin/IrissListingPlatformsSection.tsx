@@ -2,7 +2,7 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { useMemo } from "react";
-import { isHttpUrlForOpen, LISTING_PLATFORM_CHIPS } from "@/lib/iriss-listing-links";
+import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 const inp =
@@ -10,33 +10,8 @@ const inp =
 
 const lbl = "mb-0.5 block text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]";
 
-type ChipItem = { href: string; letter: string; title: string; chipClass: string };
-
-function buildChips(rec: IrissPasutijumsRecord, max = 5): ChipItem[] {
-  const out: ChipItem[] = [];
-  const push = (href: string, key: keyof typeof LISTING_PLATFORM_CHIPS) => {
-    if (out.length >= max) return;
-    const t = href.trim();
-    if (!t || !isHttpUrlForOpen(t)) return;
-    const c = LISTING_PLATFORM_CHIPS[key];
-    out.push({ href: t, letter: c.letter, title: c.title, chipClass: c.chipClass });
-  };
-  push(rec.listingLinkMobile, "mobile");
-  push(rec.listingLinkAutobid, "autobid");
-  push(rec.listingLinkOpenline, "openline");
-  push(rec.listingLinkAuto1, "auto1");
-  for (const line of rec.listingLinksOther) {
-    if (out.length >= max) break;
-    const t = line.trim();
-    if (!t || !isHttpUrlForOpen(t)) continue;
-    const c = LISTING_PLATFORM_CHIPS.citi;
-    out.push({ href: t, letter: c.letter, title: c.title, chipClass: c.chipClass });
-  }
-  return out;
-}
-
 export function IrissListingPlatformChipsRow({ rec }: { rec: IrissPasutijumsRecord }) {
-  const chips = useMemo(() => buildChips(rec, 5), [rec]);
+  const chips = useMemo(() => buildListingPlatformChips(rec, 5), [rec]);
   if (chips.length === 0) return null;
   return (
     <div className="mb-2 flex min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch]">

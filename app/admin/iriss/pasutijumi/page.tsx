@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
+import { IrissListingPlatformChipsInline } from "@/components/admin/IrissListingPlatformChipsInline";
 import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
 import { getIrissPasutijumiStorageState, listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
 
@@ -57,28 +58,39 @@ export default async function IrissPasutijumiListPage() {
         <ul className="mt-5 space-y-2.5 sm:space-y-3">
           {rows.map((r) => (
             <li key={r.id}>
-              <Link
-                href={`/admin/iriss/pasutijumi/${encodeURIComponent(r.id)}`}
-                aria-label={`Atvērt pasūtījumu: ${r.brandModel}`}
-                className="flex flex-row items-center gap-2.5 rounded-2xl border border-slate-200/90 bg-white p-3 shadow-sm outline-none ring-[var(--color-provin-accent)]/30 transition hover:border-slate-300/90 hover:bg-slate-50/50 active:bg-slate-100/60 focus-visible:ring-2 sm:gap-3 sm:p-4"
-              >
-                <div className="min-w-0 flex-1 space-y-0.5">
-                  <p className="truncate text-[14px] font-semibold leading-snug text-[var(--color-apple-text)] sm:text-[15px]">
-                    {r.brandModel}
-                  </p>
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[12px] text-[var(--color-provin-muted)] sm:text-[13px]">
-                    <span>
-                      <span className="font-medium text-[var(--color-apple-text)]">Budžets:</span> {r.totalBudget}
-                    </span>
-                    <span>
-                      <span className="font-medium text-[var(--color-apple-text)]">Tālrunis:</span> {r.phone}
-                    </span>
+              <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm transition hover:border-slate-300/90">
+                <Link
+                  href={`/admin/iriss/pasutijumi/${encodeURIComponent(r.id)}`}
+                  aria-label={`Atvērt pasūtījumu: ${r.brandModel}`}
+                  className="flex flex-row items-center gap-2.5 p-3 outline-none ring-[var(--color-provin-accent)]/30 transition hover:bg-slate-50/50 active:bg-slate-100/60 focus-visible:ring-2 sm:gap-3 sm:p-4"
+                >
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <p className="truncate text-[14px] font-semibold leading-snug text-[var(--color-apple-text)] sm:text-[15px]">
+                      {r.brandModel}
+                    </p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[12px] text-[var(--color-provin-muted)] sm:text-[13px]">
+                      <span>
+                        <span className="font-medium text-[var(--color-apple-text)]">Budžets:</span> {r.totalBudget}
+                      </span>
+                      <span>
+                        <span className="font-medium text-[var(--color-apple-text)]">Tālrunis:</span> {r.phone}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <span className="shrink-0 self-center rounded-full bg-[var(--color-provin-accent)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm sm:px-3 sm:py-1.5 sm:text-[12px]">
-                  Atvērt
-                </span>
-              </Link>
+                  <span className="shrink-0 self-center rounded-full bg-[var(--color-provin-accent)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm sm:px-3 sm:py-1.5 sm:text-[12px]">
+                    Atvērt
+                  </span>
+                </Link>
+                <IrissListingPlatformChipsInline
+                  links={{
+                    listingLinkMobile: r.listingLinkMobile,
+                    listingLinkAutobid: r.listingLinkAutobid,
+                    listingLinkOpenline: r.listingLinkOpenline,
+                    listingLinkAuto1: r.listingLinkAuto1,
+                    listingLinksOther: r.listingLinksOther,
+                  }}
+                />
+              </div>
             </li>
           ))}
         </ul>
