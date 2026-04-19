@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AdminSidebarNav } from "./AdminSidebarNav";
+import { IrissAdminSidebarNav } from "./IrissAdminSidebarNav";
 import { AdminWorkspaceSwitcher } from "./AdminWorkspaceSwitcher";
 import { LogoutButton } from "./LogoutButton";
 
@@ -67,7 +68,7 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
       <header className="shrink-0 border-b border-slate-200/70 bg-white/90 px-3 py-2 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm sm:px-4">
         <AdminWorkspaceSwitcher />
       </header>
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+      <div className={`flex min-h-0 flex-1 flex-col md:flex-row ${!isProWorkspace ? "iriss-admin-scope" : ""}`}>
       <aside
         className={
           sidebarCollapsed
@@ -112,7 +113,7 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
               </span>
             </button>
           </div>
-          {isProWorkspace ? <AdminSidebarNav baseUrl={baseUrl} /> : null}
+          {isProWorkspace ? <AdminSidebarNav baseUrl={baseUrl} /> : <IrissAdminSidebarNav />}
           <div className="md:pt-1">
             <LogoutButton />
           </div>

@@ -1,0 +1,11 @@
+/* IRISS admin apgabals — Dzintarzeme Auto oranžā (#EF7D1A) vietā PROVIN zilā. */
+.iriss-admin-scope {
+  --color-provin-accent: #ef7d1a;
+  --color-provin-accent-hover: #cf6910;
+  --color-provin-accent-soft: rgba(239, 125, 26, 0.18);
+  --color-provin-accent-muted: #b8570c;
+  --color-apple-blue: var(--color-provin-accent);
+  --color-apple-blue-hover: var(--color-provin-accent-hover);
+  --color-provin-green: var(--color-provin-accent);
+  --color-provin-green-dark: var(--color-provin-accent-hover);
+}

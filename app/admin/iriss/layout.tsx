@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "./iriss-admin.css";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
@@ -17,9 +18,11 @@ export default async function AdminIrissLayout({ children }: { children: ReactNo
   const session = await getAdminSession();
   if (!session) {
     const h = await headers();
-    const intended = h.get("x-admin-intended-path")?.trim() || "/admin/iriss";
+    const intended = h.get("x-admin-intended-path")?.trim() || "/admin/iriss/pasutijumi";
     const safe =
-      intended.startsWith("/admin") && !intended.startsWith("/admin/login") ? intended : "/admin/iriss";
+      intended.startsWith("/admin") && !intended.startsWith("/admin/login")
+        ? intended
+        : "/admin/iriss/pasutijumi";
     redirect(`/admin/login?next=${encodeURIComponent(safe)}`);
   }
 

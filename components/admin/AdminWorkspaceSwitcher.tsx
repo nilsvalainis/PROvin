@@ -4,9 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowLeftRight } from "lucide-react";
 
-function pill(active: boolean) {
+function pillPro(active: boolean) {
   return active
     ? "rounded-lg border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/50 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-[var(--color-provin-accent)]"
+    : "rounded-lg border border-transparent px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-provin-muted)] transition hover:bg-slate-100/80 dark:hover:bg-white/[0.06]";
+}
+
+function pillIriss(active: boolean) {
+  return active
+    ? "rounded-lg border border-[#EF7D1A]/40 bg-[#EF7D1A]/12 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-[#EF7D1A]"
     : "rounded-lg border border-transparent px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-provin-muted)] transition hover:bg-slate-100/80 dark:hover:bg-white/[0.06]";
 }
 
@@ -22,11 +28,18 @@ export function AdminWorkspaceSwitcher() {
       role="navigation"
       aria-label="Projekta zona"
     >
-      <Link href="/admin" className={pill(proActive)} aria-current={proActive ? "page" : undefined}>
+      <Link href="/admin" className={pillPro(proActive)} aria-current={proActive ? "page" : undefined}>
         PRO
       </Link>
-      <ArrowLeftRight className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)] opacity-80" aria-hidden />
-      <Link href="/admin/iriss" className={pill(isIriss)} aria-current={isIriss ? "page" : undefined}>
+      <ArrowLeftRight
+        className={`h-4 w-4 shrink-0 opacity-80 ${isIriss ? "text-[#EF7D1A]" : "text-[var(--color-provin-muted)]"}`}
+        aria-hidden
+      />
+      <Link
+        href="/admin/iriss/pasutijumi"
+        className={pillIriss(isIriss)}
+        aria-current={isIriss ? "page" : undefined}
+      >
         IRISS
       </Link>
     </div>
