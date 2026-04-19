@@ -53,27 +53,35 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
           />
         </div>
 
-        <div className="text-center">
-          <p className="demo-design-dir__body mx-auto mt-10 max-w-[min(100%,40rem)] text-balance font-medium sm:mt-12">
-            {t("block1Heading")}
-          </p>
-          <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4">{t("block1Body")}</p>
-        </div>
-
-        <div className="mx-auto mt-10 max-w-[min(100%,40rem)] space-y-10 text-left text-pretty">
+        <div className="mx-auto mt-10 max-w-[min(100%,40rem)] space-y-10 px-1 text-center text-pretty sm:mt-12 sm:px-2">
           <div>
-            <h3 className={editorialSubsectionHeadingClass}>{t("block2Heading")}</h3>
-            <div className="mt-3 w-full">
+            <h3 className={`${editorialSubsectionHeadingClass} mx-auto max-w-[min(100%,52ch)] text-balance`}>
+              {t("block1Heading")}
+            </h3>
+            <div className="mx-auto mt-3 w-full max-w-[min(100%,52ch)]">
               <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
             </div>
-            <p className="demo-design-dir__body mt-3">{t("block2Body")}</p>
+            <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,52ch)] text-balance">{t("block1Body")}</p>
           </div>
           <div>
-            <h3 className={editorialSubsectionHeadingClass}>{t("block3Heading")}</h3>
-            <div className="mt-3 w-full">
+            <h3 className={`${editorialSubsectionHeadingClass} mx-auto max-w-[min(100%,52ch)] text-balance`}>
+              {t("block2Heading")}
+            </h3>
+            <div className="mx-auto mt-3 w-full max-w-[min(100%,52ch)]">
               <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
             </div>
-            <p className="demo-design-dir__body mt-3">{t("block3Body")}</p>
+            <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,52ch)] text-balance whitespace-pre-line">
+              {t("block2Body")}
+            </p>
+          </div>
+          <div>
+            <h3 className={`${editorialSubsectionHeadingClass} mx-auto max-w-[min(100%,52ch)] text-balance`}>
+              {t("block3Heading")}
+            </h3>
+            <div className="mx-auto mt-3 w-full max-w-[min(100%,52ch)]">
+              <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
+            </div>
+            <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,52ch)] text-balance">{t("block3Body")}</p>
           </div>
         </div>
       </div>
