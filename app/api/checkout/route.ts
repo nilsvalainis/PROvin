@@ -166,12 +166,23 @@ export async function POST(req: Request) {
       checkoutProductDesc: string;
       checkoutConsultationProductName: string;
       checkoutConsultationProductDesc: string;
+      checkoutProvinSelectProductName: string;
+      checkoutProvinSelectProductDesc: string;
     };
   };
 
   const isAudit = checkoutLine === "audit";
-  const productName = isAudit ? misc.Misc.checkoutProductName : misc.Misc.checkoutConsultationProductName;
-  const productDesc = isAudit ? misc.Misc.checkoutProductDesc : misc.Misc.checkoutConsultationProductDesc;
+  const isProvinSelect = checkoutLine === "provin_select";
+  const productName = isAudit
+    ? misc.Misc.checkoutProductName
+    : isProvinSelect
+      ? misc.Misc.checkoutProvinSelectProductName
+      : misc.Misc.checkoutConsultationProductName;
+  const productDesc = isAudit
+    ? misc.Misc.checkoutProductDesc
+    : isProvinSelect
+      ? misc.Misc.checkoutProvinSelectProductDesc
+      : misc.Misc.checkoutConsultationProductDesc;
   const unitAmountCents = isAudit ? 7999 : 4999;
 
   const session = await stripe.checkout.sessions.create({
