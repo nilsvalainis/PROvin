@@ -108,6 +108,8 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
   );
 
   const isProWorkspace = workspace === "pro";
+  /** Kamēr IRISS ir tikai „Pasūtījumi”, mobilajā paslēdzam PRO/IRISS joslu — navigācija caur izvēlni + saite uz PRO. */
+  const hideWorkspaceSwitcherOnMobile = !isProWorkspace;
 
   const asideMobileClasses = mobileNavOpen
     ? "max-md:fixed max-md:left-0 max-md:top-[3.5rem] max-md:z-[60] max-md:flex max-md:h-[calc(100dvh-3.5rem)] max-md:w-[min(20rem,88vw)] max-md:flex-col max-md:overflow-y-auto max-md:border-r max-md:border-slate-200/70 max-md:bg-white/98 max-md:shadow-2xl max-md:backdrop-blur-sm"
@@ -119,17 +121,19 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--color-provin-surface)]">
-      <header className="sticky top-0 z-[45] flex shrink-0 flex-row items-center justify-between gap-2 border-b border-slate-200/70 bg-white/90 px-3 py-2 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm sm:px-4">
-        <div className="min-w-0 flex-1">
+      <header
+        className={`sticky top-0 z-[45] flex shrink-0 flex-row items-center justify-between gap-2 border-b border-slate-200/70 bg-white/90 px-3 py-2 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm sm:px-4 ${hideWorkspaceSwitcherOnMobile ? "max-md:justify-end" : ""}`}
+      >
+        <div className={`min-w-0 flex-1 ${hideWorkspaceSwitcherOnMobile ? "max-md:hidden" : ""}`}>
           <AdminWorkspaceSwitcher />
         </div>
         <button
           type="button"
-          onClick={() => setMobileNavOpen(true)}
+          onClick={() => setMobileNavOpen((open) => !open)}
           className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-[var(--color-apple-text)] outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white md:hidden"
           aria-expanded={mobileNavOpen}
           aria-controls="admin-mobile-nav-aside"
-          aria-label="Atvērt galveno izvēlni"
+          aria-label={mobileNavOpen ? "Aizvērt galveno izvēlni" : "Atvērt galveno izvēlni"}
         >
           <AdminMobileMenuIcon lineClass="bg-[var(--color-apple-text)]" />
         </button>

@@ -12,16 +12,18 @@ export default async function IrissPasutijumiListPage() {
 
   return (
     <div className="relative w-full max-w-none pb-24 sm:pb-8">
-      <AdminDashboardHeaderWithMenu>
-        <div className="flex flex-row flex-wrap items-baseline gap-x-2 gap-y-0 sm:flex-col sm:gap-0">
-          <p className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
-            IRISS
-          </p>
-          <h1 className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-apple-text)] sm:mt-1 sm:text-[1.35rem] sm:leading-tight sm:tracking-tight md:text-[1.5rem]">
-            Pasūtījumi
-          </h1>
-        </div>
-      </AdminDashboardHeaderWithMenu>
+      <div className="hidden md:block">
+        <AdminDashboardHeaderWithMenu>
+          <div className="flex flex-col gap-0">
+            <p className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
+              IRISS
+            </p>
+            <h1 className="mt-1 text-[1.35rem] font-semibold uppercase leading-tight tracking-tight text-[var(--color-apple-text)] md:text-[1.5rem]">
+              Pasūtījumi
+            </h1>
+          </div>
+        </AdminDashboardHeaderWithMenu>
+      </div>
 
       {!storeEnabled ? (
         <div className="mt-6 rounded-2xl border border-amber-200/90 bg-amber-50/95 px-4 py-3.5 text-sm text-amber-950 shadow-sm">

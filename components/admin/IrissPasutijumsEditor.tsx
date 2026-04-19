@@ -159,7 +159,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     <div className="w-full max-w-none pb-28 sm:pb-8">
       <AdminDashboardHeaderWithMenu>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-2">
-          <div className="min-w-0">
+          <div className="hidden min-w-0 md:block">
             <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
               IRISS · PASŪTĪJUMI
             </p>

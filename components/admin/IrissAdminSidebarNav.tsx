@@ -20,6 +20,12 @@ export function IrissAdminSidebarNav() {
       <Link href="/admin/iriss/pasutijumi" className={navItemClass(pasutijumiActive)}>
         PASŪTĪJUMI
       </Link>
+      <Link
+        href="/admin"
+        className="mt-2 rounded-lg border border-slate-200/80 bg-slate-50/80 px-3 py-2 text-center text-[12px] font-medium text-[var(--color-provin-accent)] transition hover:bg-slate-100/90 md:hidden"
+      >
+        PRO administrēšana
+      </Link>
     </nav>
   );
 }
