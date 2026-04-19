@@ -31,6 +31,15 @@ export default async function IrissPasutijumiListPage() {
         </div>
       ) : null}
 
+      {storeEnabled && process.env.VERCEL ? (
+        <div className="mt-4 rounded-xl border border-slate-200/90 bg-slate-50/90 px-3 py-2 text-[11px] leading-relaxed text-[var(--color-provin-muted)]">
+          <span className="font-semibold text-[var(--color-apple-text)]">Vercel:</span> bez{" "}
+          <code className="rounded bg-white px-1 font-mono text-[10px]">ADMIN_IRISS_PASUTIJUMI_DIR</code> dati tiek
+          glabāti servera <span className="font-mono">/tmp</span> (var pazust pēc aukstās palaišanas). Ilgtermiņam
+          ieteicams Blob/DB vai rakstāms disks.
+        </div>
+      ) : null}
+
       {storeEnabled && rows.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-12 text-center shadow-sm">
           <p className="font-medium text-[var(--color-apple-text)]">Nav pasūtījumu</p>

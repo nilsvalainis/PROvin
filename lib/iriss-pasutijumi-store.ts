@@ -1,6 +1,7 @@
 import "server-only";
 
 import fs from "fs/promises";
+import os from "node:os";
 import path from "path";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import {
@@ -11,11 +12,19 @@ import {
 
 const DEFAULT_RELATIVE_DIR = ".data/iriss-pasutijumi";
 
+/** Vercel/AWS u.c. — `/var/task` parasti nav rakstāms; `/tmp` ir. */
+function isServerlessRuntime(): boolean {
+  return Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY);
+}
+
 function resolveDir(): string | null {
   const raw = process.env.ADMIN_IRISS_PASUTIJUMI_DIR?.trim() ?? "";
   const off = ["0", "false", "no", "off", "disabled"];
   if (off.includes(raw.toLowerCase())) return null;
   if (raw) return path.resolve(raw);
+  if (isServerlessRuntime()) {
+    return path.join(os.tmpdir(), "provin-iriss-pasutijumi");
+  }
   return path.join(process.cwd(), DEFAULT_RELATIVE_DIR);
 }
 
