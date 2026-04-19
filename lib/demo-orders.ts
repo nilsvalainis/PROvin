@@ -8,6 +8,8 @@ const DEMO_IDS = {
   simple: "demo_order_simple",
   /** Kā reāls klienta pieprasījums pirms maksājuma — nav Stripe apmaksas. */
   unpaid: "demo_order_unpaid",
+  /** PROVIN SELECT stratēģiskā konsultācija (apmaksāts paraugs). */
+  consultation: "demo_consultation_select",
 } as const;
 
 const created = (iso: string) => Math.floor(new Date(iso).getTime() / 1000);
@@ -58,6 +60,48 @@ export function getDemoOrderRows() {
   ].sort((a, b) => b.created - a.created);
 }
 
+/** Demo rindas sarakstam „Konsultācijas” (PROVIN SELECT). */
+export function getDemoConsultationRows() {
+  return [
+    {
+      id: DEMO_IDS.consultation,
+      created: created("2026-04-10T10:00:00+03:00"),
+      amountTotal: 4999,
+      currency: "EUR",
+      paymentStatus: "paid" as const,
+      customerEmail: "select.demo@example.com",
+      vin: null as string | null,
+      checkoutLine: "provin_select" as const,
+      isDemo: true,
+    },
+  ];
+}
+
+export function getDemoConsultationDetail(sessionId: string) {
+  if (sessionId !== DEMO_IDS.consultation) return null;
+  return {
+    id: DEMO_IDS.consultation,
+    created: created("2026-04-10T10:00:00+03:00"),
+    amountTotal: 4999,
+    currency: "EUR",
+    paymentStatus: "paid" as const,
+    customerEmail: "select.demo@example.com",
+    vin: null as string | null,
+    checkoutLine: "provin_select" as const,
+    listingUrl: null as string | null,
+    customerName: "Laura Demo",
+    contactMethod: "E-pasts" as string | null,
+    phone: "+371 21234567",
+    notes:
+      "Meklēju pirmo auto ģimenei līdz 18 000 €, vēlos saprast tirgu un riskus pirms sarunām ar pārdevējiem. Gaidu stratēģisko konsultāciju.",
+    customerDetailsEmail: "select.demo@example.com",
+    customerDetailsPhone: null as string | null,
+    isDemo: true,
+    internalComment: null as string | null,
+    attachments: [] as { label: string; fileName: string }[],
+  };
+}
+
 export function getDemoOrderDetail(sessionId: string) {
   if (sessionId === DEMO_IDS.blank) {
     return {
@@ -76,6 +120,7 @@ export function getDemoOrderDetail(sessionId: string) {
       customerDetailsEmail: null,
       customerDetailsPhone: null,
       isDemo: true,
+      checkoutLine: "audit" as const,
       internalComment: null,
       attachments: [],
     };
@@ -98,6 +143,7 @@ export function getDemoOrderDetail(sessionId: string) {
       customerDetailsEmail: "info+demo@provin.lv",
       customerDetailsPhone: "+371 22334455",
       isDemo: true,
+      checkoutLine: "audit" as const,
       internalComment:
         "Klients vēl nav apmaksājis — demo imitē reālu e-pastu / formu pirms Checkout. Kad būs Live, šādi „unfinished” session var parādīties Stripe kā unpaid. Pirms zvana: pārbaudīt VIN formātu (Citroën/Peugeot).",
       attachments: [
@@ -124,6 +170,7 @@ export function getDemoOrderDetail(sessionId: string) {
       customerDetailsEmail: "janis.berzins@inbox.lv",
       customerDetailsPhone: null,
       isDemo: true,
+      checkoutLine: "audit" as const,
       internalComment:
         "Salīdzināju VIN ar starptautisko vēstures avotu — noskrējiens atbilst pēdējam apkopei. Sludinājumā minētais „viena īpašnieka” neatbilst valsts reģistra datiem (2 īpašnieki). Pirms zvana klientam — pārbaudīt sludinājuma ekrānuzņēmumu.",
       attachments: [
@@ -150,6 +197,7 @@ export function getDemoOrderDetail(sessionId: string) {
       customerDetailsEmail: "anna.k@example.com",
       customerDetailsPhone: null,
       isDemo: true,
+      checkoutLine: "audit" as const,
       internalComment: null,
       attachments: [],
     };

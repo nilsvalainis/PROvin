@@ -8,3 +8,9 @@ export function buildProvinAuditPdfFilename(vin: string | null | undefined): str
   const slug = v.length > 0 ? v : "NAV_VIN";
   return `PROVIN_AUDITS_${slug}.pdf`;
 }
+
+/** PROVIN SELECT konsultācijas PDF nosaukums e-pasta pielikumam (bez VIN). */
+export function buildProvinSelectConsultationPdfFilename(sessionId: string): string {
+  const slug = sessionId.replace(/[^a-zA-Z0-9_-]/g, "_").slice(-40) || "session";
+  return `PROVIN_SELECT_${slug}.pdf`;
+}

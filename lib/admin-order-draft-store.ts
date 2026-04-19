@@ -107,6 +107,9 @@ export async function patchOrderDraft(
 
   const order = await getCheckoutSessionDetail(sessionId);
   if (!order) return { ok: false, error: "not_found" };
+  if (order.checkoutLine === "provin_select") {
+    return { ok: false, error: "consultation_session" };
+  }
 
   let workspacePatch: OrderDraftWorkspaceBody | null | undefined = patch.workspace;
   if (workspacePatch !== undefined && workspacePatch !== null) {

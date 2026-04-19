@@ -2,9 +2,9 @@ import "server-only";
 
 import type Stripe from "stripe";
 import { getCompanyLegal } from "@/lib/company";
-import { getDemoOrderDetail, getDemoOrderRows } from "@/lib/demo-orders";
+import { getDemoConsultationDetail, getDemoConsultationRows, getDemoOrderDetail, getDemoOrderRows } from "@/lib/demo-orders";
 import { getStripe } from "@/lib/stripe";
-import { getOrderFieldsFromSession } from "@/lib/stripe-session";
+import { getCheckoutLineFromSession, getOrderFieldsFromSession, type CheckoutLineKind } from "@/lib/stripe-session";
 
 /** Noklusējums: ieslēgts (lokāli un produkcijā). Izslēgt: `ADMIN_DEMO_ORDERS=0` (vai `false` / `no` / `off`). */
 export function isDemoOrdersEnabled(): boolean {
@@ -21,6 +21,8 @@ export type AdminOrderRow = {
   paymentStatus: Stripe.Checkout.Session["payment_status"];
   customerEmail: string | null;
   vin: string | null;
+  /** Stripe `metadata.checkout_line` (demo rindām var nebūt — tad uzskatām par auditu). */
+  checkoutLine?: CheckoutLineKind;
   /** Demonstrācijas pasūtījums (ADMIN_DEMO_ORDERS) */
   isDemo?: boolean;
 };
@@ -61,6 +63,7 @@ export async function listPaidCheckoutSessions(limit = 50): Promise<AdminOrderRo
       paymentStatus: s.payment_status,
       customerEmail: s.customer_email ?? s.customer_details?.email ?? null,
       vin: order.vin,
+      checkoutLine: getCheckoutLineFromSession(s),
     });
   }
   return rows.sort((a, b) => b.created - a.created);
@@ -96,7 +99,26 @@ export async function listAdminOrders(limit = 50): Promise<{
   /** Ja Stripe saraksts neizdodas, rādām demo pat tad, ja ADMIN_DEMO_ORDERS=0 — lai admin nav tukšs. */
   const includeDemo = isDemoOrdersEnabled() || stripeError !== null;
   const demo = includeDemo ? (getDemoOrderRows() as AdminOrderRow[]) : [];
-  const rows = [...demo, ...real];
+  const rows = [...demo, ...real].filter((r) => r.checkoutLine !== "provin_select");
+  return { rows, stripeError };
+}
+
+/** Apmaksātas PROVIN SELECT stratēģiskās konsultācijas (`checkout_line=provin_select`). */
+export async function listAdminConsultations(limit = 50): Promise<{
+  rows: AdminOrderRow[];
+  stripeError: string | null;
+}> {
+  let real: AdminOrderRow[] = [];
+  let stripeError: string | null = null;
+  try {
+    real = (await listPaidCheckoutSessions(limit)).filter((r) => r.checkoutLine === "provin_select");
+  } catch {
+    stripeError =
+      "Neizdevās ielādēt konsultācijas no Stripe. Pārbaudi, vai serverī ir iestatīts STRIPE_SECRET_KEY.";
+  }
+  const includeDemo = isDemoOrdersEnabled() || stripeError !== null;
+  const demo = includeDemo ? (getDemoConsultationRows() as AdminOrderRow[]) : [];
+  const rows = [...demo, ...real].sort((a, b) => b.created - a.created);
   return { rows, stripeError };
 }
 
@@ -104,6 +126,10 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
   const demo = getDemoOrderDetail(sessionId);
   if (demo && isDemoOrdersEnabled()) {
     return demo as AdminOrderDetail;
+  }
+  const demoConsult = isDemoOrdersEnabled() ? getDemoConsultationDetail(sessionId) : null;
+  if (demoConsult) {
+    return demoConsult;
   }
 
   let session: Stripe.Checkout.Session;
@@ -121,7 +147,9 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
       },
       error,
     );
-    if (demo) return demo as AdminOrderDetail;
+    const consultDemo = isDemoOrdersEnabled() ? getDemoConsultationDetail(sessionId) : null;
+    if (consultDemo) return consultDemo;
+    if (demo && isDemoOrdersEnabled()) return demo as AdminOrderDetail;
     return null;
   }
   if (session.payment_status !== "paid") {
@@ -129,6 +157,7 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
   }
   const order = getOrderFieldsFromSession(session);
   const phone = order.formPhone ?? session.customer_details?.phone ?? null;
+  const checkoutLine = getCheckoutLineFromSession(session);
   return {
     id: session.id,
     created: session.created,
@@ -137,6 +166,7 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
     paymentStatus: session.payment_status,
     customerEmail: session.customer_email ?? session.customer_details?.email ?? null,
     vin: order.vin,
+    checkoutLine,
     listingUrl: order.listingUrl,
     customerName: order.customerName,
     contactMethod: order.contactMethod,
@@ -145,4 +175,11 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
     customerDetailsEmail: session.customer_details?.email ?? null,
     customerDetailsPhone: session.customer_details?.phone ?? null,
   };
+}
+
+/** Tikai PROVIN SELECT konsultācijas (apmaksātas); citiem session ID — `null`. */
+export async function getConsultationSessionDetail(sessionId: string): Promise<AdminOrderDetail | null> {
+  const order = await getCheckoutSessionDetail(sessionId);
+  if (!order || order.checkoutLine !== "provin_select") return null;
+  return order;
 }

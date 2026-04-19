@@ -15,8 +15,10 @@ export function AdminSidebarNav({ baseUrl }: { baseUrl?: string }) {
   const pathname = usePathname();
   const adminRoot = baseUrl ? `${baseUrl}/admin` : "";
 
+  const consultationsActive = Boolean(pathname?.startsWith("/admin/konsultacijas"));
   const ordersSectionActive =
-    pathname === "/admin" || pathname === "/admin/" || Boolean(pathname?.startsWith("/admin/orders/"));
+    !consultationsActive &&
+    (pathname === "/admin" || pathname === "/admin/" || Boolean(pathname?.startsWith("/admin/orders/")));
   const pkdInvoiceActive = Boolean(pathname?.startsWith("/admin/commission-invoice"));
   const statistikaActive = Boolean(pathname?.startsWith("/admin/statistika"));
 
@@ -24,6 +26,9 @@ export function AdminSidebarNav({ baseUrl }: { baseUrl?: string }) {
     <nav className="flex flex-wrap items-center gap-1 md:flex-col md:items-stretch md:gap-1">
       <Link href="/admin" className={navItemClass(ordersSectionActive)}>
         Pasūtījumi
+      </Link>
+      <Link href="/admin/konsultacijas" className={navItemClass(consultationsActive)}>
+        Konsultācijas
       </Link>
       <Link href="/" className={navItemClass(false)}>
         Uz lapu

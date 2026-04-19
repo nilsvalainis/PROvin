@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, FileText, Loader2, Send } from "lucide-react";
-import { buildProvinAuditPdfFilename } from "@/lib/audit-report-pdf-filename";
+import { buildProvinAuditPdfFilename, buildProvinSelectConsultationPdfFilename } from "@/lib/audit-report-pdf-filename";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
 
@@ -42,11 +42,14 @@ function NotifyReportReadyCell({
   paymentStatus,
   customerEmail,
   vin,
+  reportPdfFilename,
 }: {
   sessionId: string;
   paymentStatus: string;
   customerEmail: string | null;
   vin: string | null;
+  /** Ja dots, izmanto šo PDF faila vārdu (piem. PROVIN SELECT konsultācijām). */
+  reportPdfFilename?: string;
 }) {
   const paid = paymentStatus.toLowerCase() === "paid";
   const email = customerEmail?.trim() ?? "";
@@ -66,7 +69,7 @@ function NotifyReportReadyCell({
       if (email) fd.append("customerEmail", email);
       const reportFile = reportInputRef.current?.files?.[0];
       if (reportFile) {
-        const auditName = buildProvinAuditPdfFilename(vin);
+        const auditName = reportPdfFilename ?? buildProvinAuditPdfFilename(vin);
         fd.append(
           "reportPdf",
           new File([reportFile], auditName, {
@@ -126,7 +129,7 @@ function NotifyReportReadyCell({
       setPhase("error");
       console.error("[admin] notify-report-ready fetch", e);
     }
-  }, [email, sessionId, vin]);
+  }, [email, sessionId, vin, reportPdfFilename]);
 
   if (!paid) {
     return <span className="text-[11px] text-[var(--color-provin-muted)]">—</span>;
@@ -244,7 +247,20 @@ function NotifyReportReadyCell({
   );
 }
 
-export function AdminOrdersTable({ orders }: { orders: AdminOrdersTableRow[] }) {
+export function AdminOrdersTable({
+  orders,
+  orderDetailHrefBase = "/admin/orders",
+  orderEditsLocalStorageKeyPrefix = "provin-admin-order-edits-v1-",
+  consultationList = false,
+}: {
+  orders: AdminOrdersTableRow[];
+  /** Piem. `/admin/konsultacijas` — saite „Atvērt”. */
+  orderDetailHrefBase?: string;
+  /** Lokālā pārdefinēšana klienta laukiem tabulā (atšķirīgs prefikss konsultācijām). */
+  orderEditsLocalStorageKeyPrefix?: string;
+  /** `true` — PROVIN SELECT saraksts (PDF nosaukums, saites). */
+  consultationList?: boolean;
+}) {
   const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short" });
   const [clientOverrides, setClientOverrides] = useState<
     Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string }>
@@ -254,7 +270,7 @@ export function AdminOrdersTable({ orders }: { orders: AdminOrdersTableRow[] }) 
     const next: Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string }> = {};
     for (const o of orders) {
       try {
-        const raw = localStorage.getItem(`provin-admin-order-edits-v1-${o.id}`);
+        const raw = localStorage.getItem(`${orderEditsLocalStorageKeyPrefix}${o.id}`);
         if (!raw) continue;
         const p = JSON.parse(raw) as Record<string, unknown>;
         const customerName = typeof p.customerName === "string" ? p.customerName.trim() : "";
@@ -271,7 +287,9 @@ export function AdminOrdersTable({ orders }: { orders: AdminOrdersTableRow[] }) 
       }
     }
     setClientOverrides(next);
-  }, [orders]);
+  }, [orders, orderEditsLocalStorageKeyPrefix]);
+
+  const detailBase = orderDetailHrefBase.replace(/\/$/, "");
 
   return (
     <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
@@ -356,11 +374,14 @@ export function AdminOrdersTable({ orders }: { orders: AdminOrdersTableRow[] }) 
                       paymentStatus={o.paymentStatus}
                       customerEmail={email || null}
                       vin={o.vin}
+                      reportPdfFilename={
+                        consultationList ? buildProvinSelectConsultationPdfFilename(o.id) : undefined
+                      }
                     />
                   </td>
                   <td className="px-4 py-3.5 text-right">
                     <Link
-                      href={`/admin/orders/${encodeURIComponent(o.id)}`}
+                      href={`${detailBase}/${encodeURIComponent(o.id)}`}
                       className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)] hover:shadow-md"
                     >
                       Atvērt

@@ -1,5 +1,15 @@
 import type Stripe from "stripe";
 
+export type CheckoutLineKind = "audit" | "consultation" | "provin_select";
+
+/** Stripe Checkout `metadata.checkout_line` — vecām sesijām bez lauka uzskatām par `audit`. */
+export function getCheckoutLineFromSession(session: Stripe.Checkout.Session): CheckoutLineKind {
+  const raw = session.metadata?.checkout_line?.trim().toLowerCase();
+  if (raw === "provin_select") return "provin_select";
+  if (raw === "consultation") return "consultation";
+  return "audit";
+}
+
 export function getCustomFieldValue(
   session: Stripe.Checkout.Session,
   key: string

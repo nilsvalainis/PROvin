@@ -5,7 +5,8 @@ import { sendPaymentConfirmationEmail } from "@/lib/email/send-transactional";
 import { notifyAdminEmail, notifyAdminTelegram } from "@/lib/notify";
 import { persistPaidOrderInvoice } from "@/lib/invoice-storage";
 import { releaseStripeEvent, tryBeginStripeEvent } from "@/lib/stripe-webhook-dedupe";
-import { getOrderFieldsFromSession } from "@/lib/stripe-session";
+import { ensureConsultationDraftSeed } from "@/lib/admin-consultation-draft-store";
+import { getCheckoutLineFromSession, getOrderFieldsFromSession } from "@/lib/stripe-session";
 import { getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -94,6 +95,12 @@ async function fulfillPaidCheckoutSession(
     void persistPaidOrderInvoice(session.id).catch((err) => {
       console.error("invoice persist:", err);
     });
+
+    if (getCheckoutLineFromSession(session) === "provin_select") {
+      void ensureConsultationDraftSeed(session.id).catch((err) => {
+        console.error("[stripe webhook] consultation draft seed:", err);
+      });
+    }
   } catch (e) {
     releaseStripeEvent(fulfillDedupeKey(thinSession.id));
     throw e;
