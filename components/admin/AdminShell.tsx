@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { X } from "lucide-react";
+import { AdminNavInteractionProvider } from "@/components/admin/AdminNavInteractionContext";
 import { AdminSidebarNav } from "./AdminSidebarNav";
 import { IrissAdminSidebarNav } from "./IrissAdminSidebarNav";
 import { AdminWorkspaceSwitcher } from "./AdminWorkspaceSwitcher";
@@ -43,7 +45,57 @@ type Props = {
   workspace?: AdminShellWorkspace;
 };
 
-const MOBILE_NAV_TOP_REM = 3.5;
+type NavPanelProps = {
+  isProWorkspace: boolean;
+  baseUrl?: string;
+  onClose: () => void;
+};
+
+function AdminShellNavPanel({ isProWorkspace, baseUrl, onClose }: NavPanelProps) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-3 md:flex-col md:items-stretch">
+      <div className="flex w-full min-w-0 items-start justify-between gap-2 md:flex-col md:items-stretch">
+        <div className="min-w-0">
+          {isProWorkspace ? (
+            <>
+              <Link
+                href="/admin"
+                className="block text-[15px] font-semibold leading-snug tracking-tight text-[var(--color-provin-accent)]"
+              >
+                PROVIN
+              </Link>
+              <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
+                Administrēšana
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-[15px] font-semibold tracking-tight text-[var(--color-apple-text)]">IRISS</p>
+              <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
+                Administrēšana
+              </p>
+            </>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="shrink-0 rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-xs font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+          aria-label="Aizvērt galveno izvēlni"
+          title="Aizvērt izvēlni"
+        >
+          <span aria-hidden className="tabular-nums">
+            «
+          </span>
+        </button>
+      </div>
+      {isProWorkspace ? <AdminSidebarNav baseUrl={baseUrl} /> : <IrissAdminSidebarNav />}
+      <div className="md:pt-1">
+        <LogoutButton />
+      </div>
+    </div>
+  );
+}
 
 export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Props) {
   const pathname = usePathname() ?? "";
@@ -111,100 +163,83 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
   /** Kamēr IRISS ir tikai „Pasūtījumi”, mobilajā paslēdzam PRO/IRISS joslu — navigācija caur izvēlni + saite uz PRO. */
   const hideWorkspaceSwitcherOnMobile = !isProWorkspace;
 
-  const asideMobileClasses = mobileNavOpen
-    ? "max-md:fixed max-md:left-0 max-md:top-[3.5rem] max-md:z-[60] max-md:flex max-md:h-[calc(100dvh-3.5rem)] max-md:w-[min(20rem,88vw)] max-md:flex-col max-md:overflow-y-auto max-md:border-r max-md:border-slate-200/70 max-md:bg-white/98 max-md:shadow-2xl max-md:backdrop-blur-sm"
-    : "max-md:hidden";
-
-  const asideDesktopClasses = sidebarCollapsed
-    ? "md:hidden"
-    : "md:relative md:z-auto md:flex md:h-auto md:w-56 md:flex-col md:border-r md:border-b-0 md:border-slate-200/70 md:bg-white/95 md:shadow-none md:overflow-y-auto";
+  const asideDesktopOpen =
+    "md:relative md:z-auto md:flex md:h-auto md:w-56 md:flex-col md:border-r md:border-b-0 md:border-slate-200/70 md:bg-white/95 md:shadow-none md:overflow-y-auto";
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[var(--color-provin-surface)]">
-      <header
-        className={`sticky top-0 z-[45] flex shrink-0 flex-row items-center justify-between gap-2 border-b border-slate-200/70 bg-white/90 px-3 py-2 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm sm:px-4 ${hideWorkspaceSwitcherOnMobile ? "max-md:justify-end" : ""}`}
-      >
-        <div className={`min-w-0 flex-1 ${hideWorkspaceSwitcherOnMobile ? "max-md:hidden" : ""}`}>
-          <AdminWorkspaceSwitcher />
-        </div>
-        <button
-          type="button"
-          onClick={() => setMobileNavOpen((open) => !open)}
-          className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-[var(--color-apple-text)] outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white md:hidden"
-          aria-expanded={mobileNavOpen}
-          aria-controls="admin-mobile-nav-aside"
-          aria-label={mobileNavOpen ? "Aizvērt galveno izvēlni" : "Atvērt galveno izvēlni"}
-        >
-          <AdminMobileMenuIcon lineClass="bg-[var(--color-apple-text)]" />
-        </button>
-      </header>
-
-      {mobileNavOpen ? (
-        <button
-          type="button"
-          aria-hidden
-          tabIndex={-1}
-          className="fixed inset-x-0 bottom-0 z-[55] border-0 bg-black/45 p-0 md:hidden"
-          style={{ top: `${MOBILE_NAV_TOP_REM}rem` }}
-          onClick={() => setMobileNavOpen(false)}
-        />
-      ) : null}
-
-      <div className={`flex min-h-0 flex-1 flex-col md:flex-row ${!isProWorkspace ? "iriss-admin-scope" : ""}`}>
-        <aside
-          id="admin-mobile-nav-aside"
-          className={`shrink-0 border-b border-slate-200/70 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm ${asideMobileClasses} ${asideDesktopClasses}`}
-          aria-hidden={sidebarCollapsed && !mobileNavOpen}
-        >
-          <div className="flex flex-wrap items-start justify-between gap-3 p-3 sm:p-4 md:flex-col md:items-stretch">
-            <div className="flex w-full min-w-0 items-start justify-between gap-2 md:flex-col md:items-stretch">
-              <div className="min-w-0">
-                {isProWorkspace ? (
-                  <>
-                    <Link
-                      href="/admin"
-                      className="block text-[15px] font-semibold leading-snug tracking-tight text-[var(--color-provin-accent)]"
-                    >
-                      PROVIN
-                    </Link>
-                    <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-                      Administrēšana
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-[15px] font-semibold tracking-tight text-[var(--color-apple-text)]">IRISS</p>
-                    <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-                      Administrēšana
-                    </p>
-                  </>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={onAsideCloseClick}
-                className="shrink-0 rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-xs font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
-                aria-label="Aizvērt galveno izvēlni"
-                title="Aizvērt izvēlni"
-              >
-                <span aria-hidden className="tabular-nums">
-                  «
-                </span>
-              </button>
+    <AdminNavInteractionProvider>
+      <div className="flex min-h-dvh flex-col bg-[var(--color-provin-surface)]">
+        <div className="sticky top-0 z-[60] flex shrink-0 flex-col border-b border-slate-200/70 bg-white/90 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm">
+          <header
+            className={`flex shrink-0 flex-row items-center justify-between gap-2 px-3 py-2 sm:px-4 ${hideWorkspaceSwitcherOnMobile ? "max-md:justify-end" : ""}`}
+          >
+            <div className={`min-w-0 flex-1 ${hideWorkspaceSwitcherOnMobile ? "max-md:hidden" : ""}`}>
+              <AdminWorkspaceSwitcher />
             </div>
-            {isProWorkspace ? <AdminSidebarNav baseUrl={baseUrl} /> : <IrissAdminSidebarNav />}
-            <div className="md:pt-1">
-              <LogoutButton />
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen((open) => !open)}
+              className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-[var(--color-apple-text)] outline-none transition-opacity hover:opacity-80 active:scale-95 focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white md:hidden"
+              aria-expanded={mobileNavOpen}
+              aria-controls="admin-mobile-nav-panel"
+              aria-label={mobileNavOpen ? "Aizvērt galveno izvēlni" : "Atvērt galveno izvēlni"}
+            >
+              {mobileNavOpen ? (
+                <X className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
+              ) : (
+                <AdminMobileMenuIcon lineClass="bg-[var(--color-apple-text)]" />
+              )}
+            </button>
+          </header>
+
+          <div
+            id="admin-mobile-nav-panel"
+            className={`grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none md:hidden ${
+              mobileNavOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+            }`}
+            aria-hidden={!mobileNavOpen}
+          >
+            <div className="min-h-0">
+              <div className="max-h-[min(72dvh,calc(100dvh-5rem))] overflow-y-auto overscroll-contain border-t border-slate-100/90 bg-white/98 px-3 py-3 shadow-[0_12px_28px_rgba(15,23,42,0.08)] sm:px-4">
+                <AdminShellNavPanel
+                  isProWorkspace={isProWorkspace}
+                  baseUrl={baseUrl}
+                  onClose={() => setMobileNavOpen(false)}
+                />
+              </div>
             </div>
           </div>
-        </aside>
-        <AdminShellLayoutContext.Provider value={shellLayoutValue}>
-          <main className="min-w-0 w-full max-w-none flex-1 space-y-3 p-2 sm:px-3 sm:pb-4 md:px-4 md:pb-5 lg:px-5 lg:pb-6 pt-1.5 sm:pt-2">
-            {notice}
-            <div className="w-full min-w-0 max-w-none">{children}</div>
-          </main>
-        </AdminShellLayoutContext.Provider>
+        </div>
+
+        <div className={`relative z-0 flex min-h-0 flex-1 flex-col md:flex-row ${!isProWorkspace ? "iriss-admin-scope" : ""}`}>
+          {mobileNavOpen ? (
+            <button
+              type="button"
+              aria-hidden
+              tabIndex={-1}
+              className="fixed inset-0 z-[40] border-0 bg-black/45 p-0 md:hidden"
+              onClick={() => setMobileNavOpen(false)}
+            />
+          ) : null}
+          <aside
+            id="admin-desktop-nav-aside"
+            className={`relative z-10 hidden shrink-0 border-b border-slate-200/70 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm ${
+              sidebarCollapsed ? "md:hidden" : asideDesktopOpen
+            }`}
+            aria-hidden={sidebarCollapsed}
+          >
+            <div className="p-3 sm:p-4">
+              <AdminShellNavPanel isProWorkspace={isProWorkspace} baseUrl={baseUrl} onClose={onAsideCloseClick} />
+            </div>
+          </aside>
+          <AdminShellLayoutContext.Provider value={shellLayoutValue}>
+            <main className="relative z-10 min-w-0 w-full max-w-none flex-1 space-y-3 p-2 sm:px-3 sm:pb-4 md:px-4 md:pb-5 lg:px-5 lg:pb-6 pt-1.5 sm:pt-2">
+              {notice}
+              <div className="w-full min-w-0 max-w-none">{children}</div>
+            </main>
+          </AdminShellLayoutContext.Provider>
+        </div>
       </div>
-    </div>
+    </AdminNavInteractionProvider>
   );
 }
