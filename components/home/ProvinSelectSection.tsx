@@ -170,8 +170,8 @@ export function ProvinSelectSection() {
                 </li>
               ))}
             </ul>
-            <p className="mt-4 text-left text-[10.5px] font-normal italic leading-relaxed text-[rgb(200_205_215_/0.72)] sm:text-[11px]">
-              {t("deliveryImportant")}
+            <p className="provin-select-delivery-important mt-4 text-left text-[10.5px] font-normal italic leading-relaxed sm:text-[11px]">
+              {renderProvinText(t("deliveryImportant"))}
             </p>
           </div>
 

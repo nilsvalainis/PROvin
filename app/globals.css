@@ -962,6 +962,15 @@ html[data-site-theme="dark"] .provin-select-form-error {
   color: rgb(253 230 138);
 }
 
+/* PROVIN SELECT — svarīgā piezīme zem piegādes soļiem: tumšā tēmā pelēks, gaišā — melns teksts */
+.provin-select-delivery-important {
+  color: rgb(200 205 215 / 0.72);
+}
+
+html[data-site-theme="light"] .provin-select-delivery-important {
+  color: #0a0a0a;
+}
+
 /* How it works — diskrēts „datu impulss” ap soļu ikonām (gredzens + elpošana uz hover) */
 @keyframes how-it-works-ring-draw {
   from {
