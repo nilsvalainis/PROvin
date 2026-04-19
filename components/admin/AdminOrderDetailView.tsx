@@ -12,6 +12,7 @@ import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField"
 import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
+import { AdminAuctionVendorLinksBlock } from "@/components/admin/AdminAuctionVendorLinksBlock";
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
 import { formatMoneyEur } from "@/lib/format-money";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
@@ -48,7 +49,18 @@ type OrderEdits = {
   contactMethod?: string;
   notes?: string;
   internalComment?: string;
+  auctionLinkMobile?: string;
+  auctionLinkAutobid?: string;
+  auctionLinkOpenline?: string;
+  auctionLinkAuto1?: string;
+  auctionLinkCiti?: string[];
 };
+
+function parseStoredAuctionCiti(v: unknown): string[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const rows = v.filter((x): x is string => typeof x === "string").slice(0, 12);
+  return rows.length > 0 ? rows : undefined;
+}
 
 function initialEditsFromServerDraft(serverOrderDraft: OrderDraftState | null): OrderEdits {
   const fromServer = serverOrderDraft?.orderEdits;
@@ -62,6 +74,21 @@ function initialEditsFromServerDraft(serverOrderDraft: OrderDraftState | null): 
     ...(typeof fromServer!.contactMethod === "string" ? { contactMethod: fromServer!.contactMethod } : {}),
     ...(typeof fromServer!.notes === "string" ? { notes: fromServer!.notes } : {}),
     ...(typeof fromServer!.internalComment === "string" ? { internalComment: fromServer!.internalComment } : {}),
+    ...(typeof fromServer!.auctionLinkMobile === "string" ? { auctionLinkMobile: fromServer!.auctionLinkMobile } : {}),
+    ...(typeof fromServer!.auctionLinkAutobid === "string"
+      ? { auctionLinkAutobid: fromServer!.auctionLinkAutobid }
+      : {}),
+    ...(typeof fromServer!.auctionLinkOpenline === "string"
+      ? { auctionLinkOpenline: fromServer!.auctionLinkOpenline }
+      : {}),
+    ...(typeof fromServer!.auctionLinkAuto1 === "string" ? { auctionLinkAuto1: fromServer!.auctionLinkAuto1 } : {}),
+    ...(Array.isArray(fromServer!.auctionLinkCiti) && fromServer!.auctionLinkCiti.length > 0
+      ? {
+          auctionLinkCiti: fromServer!.auctionLinkCiti
+            .filter((x): x is string => typeof x === "string")
+            .slice(0, 12),
+        }
+      : {}),
   };
 }
 
@@ -185,6 +212,25 @@ export function AdminOrderDetailView({
         ...(typeof fromServer!.internalComment === "string"
           ? { internalComment: fromServer!.internalComment }
           : {}),
+        ...(typeof fromServer!.auctionLinkMobile === "string"
+          ? { auctionLinkMobile: fromServer!.auctionLinkMobile }
+          : {}),
+        ...(typeof fromServer!.auctionLinkAutobid === "string"
+          ? { auctionLinkAutobid: fromServer!.auctionLinkAutobid }
+          : {}),
+        ...(typeof fromServer!.auctionLinkOpenline === "string"
+          ? { auctionLinkOpenline: fromServer!.auctionLinkOpenline }
+          : {}),
+        ...(typeof fromServer!.auctionLinkAuto1 === "string"
+          ? { auctionLinkAuto1: fromServer!.auctionLinkAuto1 }
+          : {}),
+        ...(Array.isArray(fromServer!.auctionLinkCiti) && fromServer!.auctionLinkCiti.length > 0
+          ? {
+              auctionLinkCiti: fromServer!.auctionLinkCiti
+                .filter((x): x is string => typeof x === "string")
+                .slice(0, 12),
+            }
+          : {}),
       });
       try {
         localStorage.setItem(key, JSON.stringify(fromServer));
@@ -208,6 +254,14 @@ export function AdminOrderDetailView({
             ...(typeof p.contactMethod === "string" ? { contactMethod: p.contactMethod } : {}),
             ...(typeof p.notes === "string" ? { notes: p.notes } : {}),
             ...(typeof p.internalComment === "string" ? { internalComment: p.internalComment } : {}),
+            ...(typeof p.auctionLinkMobile === "string" ? { auctionLinkMobile: p.auctionLinkMobile } : {}),
+            ...(typeof p.auctionLinkAutobid === "string" ? { auctionLinkAutobid: p.auctionLinkAutobid } : {}),
+            ...(typeof p.auctionLinkOpenline === "string" ? { auctionLinkOpenline: p.auctionLinkOpenline } : {}),
+            ...(typeof p.auctionLinkAuto1 === "string" ? { auctionLinkAuto1: p.auctionLinkAuto1 } : {}),
+            ...((): Partial<OrderEdits> => {
+              const citi = parseStoredAuctionCiti(p.auctionLinkCiti);
+              return citi ? { auctionLinkCiti: citi } : {};
+            })(),
           });
         }
       }
@@ -305,6 +359,42 @@ export function AdminOrderDetailView({
   const mergedNotes = edits.notes !== undefined ? edits.notes : (order.notes ?? "");
   const mergedInternalComment =
     edits.internalComment !== undefined ? edits.internalComment : (order.internalComment ?? "");
+
+  const mergedAuctionMobile =
+    edits.auctionLinkMobile !== undefined
+      ? edits.auctionLinkMobile
+      : (typeof serverOrderDraft?.orderEdits?.auctionLinkMobile === "string"
+          ? serverOrderDraft.orderEdits.auctionLinkMobile
+          : "");
+  const mergedAuctionAutobid =
+    edits.auctionLinkAutobid !== undefined
+      ? edits.auctionLinkAutobid
+      : (typeof serverOrderDraft?.orderEdits?.auctionLinkAutobid === "string"
+          ? serverOrderDraft.orderEdits.auctionLinkAutobid
+          : "");
+  const mergedAuctionOpenline =
+    edits.auctionLinkOpenline !== undefined
+      ? edits.auctionLinkOpenline
+      : (typeof serverOrderDraft?.orderEdits?.auctionLinkOpenline === "string"
+          ? serverOrderDraft.orderEdits.auctionLinkOpenline
+          : "");
+  const mergedAuctionAuto1 =
+    edits.auctionLinkAuto1 !== undefined
+      ? edits.auctionLinkAuto1
+      : (typeof serverOrderDraft?.orderEdits?.auctionLinkAuto1 === "string"
+          ? serverOrderDraft.orderEdits.auctionLinkAuto1
+          : "");
+  const mergedAuctionCiti = (() => {
+    if (edits.auctionLinkCiti !== undefined) {
+      const rows = edits.auctionLinkCiti.filter((x) => typeof x === "string").slice(0, 12);
+      return rows.length > 0 ? rows : [""];
+    }
+    const srv = serverOrderDraft?.orderEdits?.auctionLinkCiti;
+    if (Array.isArray(srv) && srv.length > 0) {
+      return srv.filter((x): x is string => typeof x === "string").slice(0, 12);
+    }
+    return [""];
+  })();
 
   const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}`;
 
@@ -527,6 +617,25 @@ export function AdminOrderDetailView({
                     hideToolbar
                     resetVersion={orderFieldResetKey}
                   />
+                  <AdminAuctionVendorLinksBlock
+                    values={{
+                      mobile: mergedAuctionMobile,
+                      autobid: mergedAuctionAutobid,
+                      openline: mergedAuctionOpenline,
+                      auto1: mergedAuctionAuto1,
+                      citi: mergedAuctionCiti,
+                    }}
+                    onChange={(v) =>
+                      persistEdits({
+                        ...edits,
+                        auctionLinkMobile: v.mobile,
+                        auctionLinkAutobid: v.autobid,
+                        auctionLinkOpenline: v.openline,
+                        auctionLinkAuto1: v.auto1,
+                        auctionLinkCiti: v.citi,
+                      })
+                    }
+                  />
                   <div className="mt-1 flex flex-col gap-1 border-t border-slate-200/80 pt-2">
                     <button
                       type="button"
@@ -694,6 +803,13 @@ export function AdminOrderDetailView({
           notes: mergedNotes.trim() ? mergedNotes : null,
           serverInternalComment: order.internalComment ?? null,
           serverAttachments: order.attachments ?? [],
+          auctionLinks: {
+            mobile: mergedAuctionMobile,
+            autobid: mergedAuctionAutobid,
+            openline: mergedAuctionOpenline,
+            auto1: mergedAuctionAuto1,
+            citi: mergedAuctionCiti,
+          },
         }}
       />
       </div>

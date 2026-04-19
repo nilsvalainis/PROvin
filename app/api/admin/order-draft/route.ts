@@ -24,6 +24,13 @@ function parseOrderEditsObject(v: unknown): OrderDraftOrderEdits | null {
   if (typeof o.contactMethod === "string") out.contactMethod = o.contactMethod;
   if (typeof o.notes === "string") out.notes = o.notes;
   if (typeof o.internalComment === "string") out.internalComment = o.internalComment;
+  if (typeof o.auctionLinkMobile === "string") out.auctionLinkMobile = o.auctionLinkMobile;
+  if (typeof o.auctionLinkAutobid === "string") out.auctionLinkAutobid = o.auctionLinkAutobid;
+  if (typeof o.auctionLinkOpenline === "string") out.auctionLinkOpenline = o.auctionLinkOpenline;
+  if (typeof o.auctionLinkAuto1 === "string") out.auctionLinkAuto1 = o.auctionLinkAuto1;
+  if (Array.isArray(o.auctionLinkCiti)) {
+    out.auctionLinkCiti = o.auctionLinkCiti.filter((x): x is string => typeof x === "string").slice(0, 12);
+  }
   return out;
 }
 

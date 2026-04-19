@@ -98,6 +98,7 @@ import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
 import { buildProvinAuditPdfFilename } from "@/lib/audit-report-pdf-filename";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
+import { buildAuctionLinkIconRow, type AuctionLinksPayload } from "@/lib/admin-auction-links";
 
 export type OrderWorkspacePayload = {
   sessionId: string;
@@ -115,6 +116,8 @@ export type OrderWorkspacePayload = {
   notes: string | null;
   serverInternalComment: string | null;
   serverAttachments: { label: string; fileName: string }[];
+  /** Sludinājumu platformu saites — kompaktas ikonas virs portfeļa. */
+  auctionLinks?: AuctionLinksPayload | null;
 };
 
 type PortfolioEntry = {
@@ -1269,8 +1272,27 @@ export function OrderDetailWorkspace({
       ? portfolio.length - PORTFOLIO_INLINE_VISIBLE_MAX
       : 0;
 
+  const auctionLinkIconRow =
+    payload.auctionLinks != null ? buildAuctionLinkIconRow(payload.auctionLinks) : [];
+
   const portfolioSection = (
     <section id="admin-order-section-pielikumi" className={portfolioShellClass}>
+      {auctionLinkIconRow.length > 0 ? (
+        <div className="mb-1.5 flex flex-wrap items-center gap-1" role="navigation" aria-label="Sludinājumu platformas">
+          {auctionLinkIconRow.map((item) => (
+            <a
+              key={item.key}
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={item.title}
+              className={`inline-flex h-7 min-w-[1.75rem] shrink-0 items-center justify-center rounded-md px-1 text-[9px] font-bold leading-none tracking-tight ${item.pillClass}`}
+            >
+              {item.abbr}
+            </a>
+          ))}
+        </div>
+      ) : null}
       <div
         className={`flex gap-1 ${narrowPortfolioLayout ? "flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between" : "flex-wrap items-center justify-between"}`}
       >
