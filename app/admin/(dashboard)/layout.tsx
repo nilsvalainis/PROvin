@@ -25,7 +25,11 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
   const urgentLegal = await needsUrgentCompanyLegalOnAdmin();
 
   return (
-    <AdminShell baseUrl={origin} notice={urgentLegal ? <PostPaymentLegalBanner /> : undefined}>
+    <AdminShell
+      baseUrl={origin}
+      workspace="pro"
+      notice={urgentLegal ? <PostPaymentLegalBanner /> : undefined}
+    >
       {children}
     </AdminShell>
   );

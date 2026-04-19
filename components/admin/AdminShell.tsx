@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AdminSidebarNav } from "./AdminSidebarNav";
+import { AdminWorkspaceSwitcher } from "./AdminWorkspaceSwitcher";
+import { LogoutButton } from "./LogoutButton";
 
 const SIDEBAR_COLLAPSED_KEY = "provin-admin-sidebar-collapsed";
 
@@ -18,9 +20,17 @@ export function useAdminShellLayout() {
   return useContext(AdminShellLayoutContext);
 }
 
-type Props = { children: ReactNode; baseUrl?: string; notice?: ReactNode };
+export type AdminShellWorkspace = "pro" | "iriss";
 
-export function AdminShell({ children, baseUrl, notice }: Props) {
+type Props = {
+  children: ReactNode;
+  baseUrl?: string;
+  notice?: ReactNode;
+  /** PRO — esošais admin; IRISS — atsevišķa zona (pagaidām tukša). */
+  workspace?: AdminShellWorkspace;
+};
+
+export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Props) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [storageReady, setStorageReady] = useState(false);
 
@@ -50,8 +60,14 @@ export function AdminShell({ children, baseUrl, notice }: Props) {
     [sidebarCollapsed, expandSidebar],
   );
 
+  const isProWorkspace = workspace === "pro";
+
   return (
-    <div className="flex min-h-dvh flex-col bg-[var(--color-provin-surface)] md:flex-row">
+    <div className="flex min-h-dvh flex-col bg-[var(--color-provin-surface)]">
+      <header className="shrink-0 border-b border-slate-200/70 bg-white/90 px-3 py-2 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm sm:px-4">
+        <AdminWorkspaceSwitcher />
+      </header>
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
       <aside
         className={
           sidebarCollapsed
@@ -63,15 +79,26 @@ export function AdminShell({ children, baseUrl, notice }: Props) {
         <div className="flex flex-wrap items-start justify-between gap-3 p-3 sm:p-4 md:flex-col md:items-stretch">
           <div className="flex w-full min-w-0 items-start justify-between gap-2 md:flex-col md:items-stretch">
             <div className="min-w-0">
-              <Link
-                href="/admin"
-                className="text-[15px] font-semibold tracking-tight text-[var(--color-provin-accent)]"
-              >
-                PROVIN
-              </Link>
-              <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-                Administrēšana
-              </p>
+              {isProWorkspace ? (
+                <>
+                  <Link
+                    href="/admin"
+                    className="block text-[15px] font-semibold leading-snug tracking-tight text-[var(--color-provin-accent)]"
+                  >
+                    PROVIN
+                  </Link>
+                  <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
+                    Administrēšana
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[15px] font-semibold tracking-tight text-[var(--color-apple-text)]">IRISS</p>
+                  <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
+                    Administrēšana
+                  </p>
+                </>
+              )}
             </div>
             <button
               type="button"
@@ -85,7 +112,10 @@ export function AdminShell({ children, baseUrl, notice }: Props) {
               </span>
             </button>
           </div>
-          <AdminSidebarNav baseUrl={baseUrl} />
+          {isProWorkspace ? <AdminSidebarNav baseUrl={baseUrl} /> : null}
+          <div className="md:pt-1">
+            <LogoutButton />
+          </div>
         </div>
       </aside>
       <AdminShellLayoutContext.Provider value={shellLayoutValue}>
@@ -94,6 +124,7 @@ export function AdminShell({ children, baseUrl, notice }: Props) {
           <div className="w-full min-w-0 max-w-none">{children}</div>
         </main>
       </AdminShellLayoutContext.Provider>
+      </div>
     </div>
   );
 }

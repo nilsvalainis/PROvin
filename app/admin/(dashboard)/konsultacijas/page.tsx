@@ -1,4 +1,4 @@
-import { isDemoOrdersEnabled, listAdminConsultations } from "@/lib/admin-orders";
+import { listAdminConsultations } from "@/lib/admin-orders";
 import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table";
 import { readConsultationDraft } from "@/lib/admin-consultation-draft-store";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
@@ -24,7 +24,6 @@ export default async function AdminConsultationsPage() {
     }),
   );
   const tableRows = serializeAdminOrderTableRows(rowsWithDraft);
-  const demoPrefOn = isDemoOrdersEnabled();
   const onlyDemoShown = consultations.length > 0 && consultations.every((o) => o.isDemo);
   const hasStripeIssue = Boolean(stripeError);
 
@@ -37,18 +36,6 @@ export default async function AdminConsultationsPage() {
         <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Konsultācijas
         </h1>
-        <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
-          PROVIN SELECT stratēģiskās konsultācijas (apmaksātas Stripe Checkout sesijas ar{" "}
-          <code className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-apple-text)]">
-            checkout_line=provin_select
-          </code>
-          ). Saraksts un atvēršana — tā pat kā pasūtījumu sarakstam.
-        </p>
-        {demoPrefOn ? (
-          <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-provin-muted)]">
-            Demo rinda: <span className="font-mono">demo_consultation_select</span>.
-          </p>
-        ) : null}
       </AdminDashboardHeaderWithMenu>
 
       {hasStripeIssue && consultations.length > 0 ? (

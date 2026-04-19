@@ -4,7 +4,7 @@ import { CreatePkdInvoiceButton } from "@/components/admin/CreatePkdInvoiceButto
 import { listPkdCommissionInvoiceDrafts } from "@/lib/pkd-commission-invoice-store";
 
 export const metadata = {
-  title: "PKD komisijas rēķini",
+  title: "Rēķini",
 };
 
 export const dynamic = "force-dynamic";
@@ -15,10 +15,10 @@ export default async function CommissionInvoicePage() {
     <div className="w-full max-w-none">
       <AdminDashboardHeaderWithMenu>
         <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
-          PKD / AutoDNA
+          Apstrādes telpa
         </p>
         <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
-          Komisijas rēķini
+          Rēķini
         </h1>
         <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
           Izveido jaunu rēķinu ar nākamo numuru un atver katru ierakstu atsevišķi rediģēšanai.

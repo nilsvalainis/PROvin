@@ -35,14 +35,8 @@ export default async function AdminOrdersPage() {
           Apstrādes telpa
         </p>
         <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
-          Pasūtījumi
+          Sākums
         </h1>
-        <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
-          Šeit apkopo ierakstus apstrādei: atver rindu, lai redzētu VIN, kontaktus, komentārus un darba zonu ar
-          priekšskatījumu. Zemāk ir{" "}
-          <span className="font-medium text-[var(--color-apple-text)]">parauga pasūtījumi</span> — vari tos brīvi
-          slīpēt, kamēr neesi gatavs pieslēgt īstu maksājumu plūsmu.
-        </p>
         {demoPrefOn ? (
           <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-provin-muted)]">
             Demo rindas pēc noklusējuma ir ieslēgtas. Paslēpt:{" "}
