@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -42,10 +43,15 @@ function LabeledTextarea({
   );
 }
 
+type DeleteDialog = "closed" | "step1" | "step2";
+
 export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissPasutijumsRecord }) {
+  const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(initialRecord);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState<DeleteDialog>("closed");
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const patch = useCallback(<K extends keyof IrissPasutijumsRecord>(key: K, value: IrissPasutijumsRecord[K]) => {
     setRec((r) => ({ ...r, [key]: value }));
@@ -117,6 +123,29 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     }
   }, [rec.id, save]);
 
+  const runDelete = useCallback(async () => {
+    setDeleteBusy(true);
+    try {
+      const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        setSaveMsg("Neizdevās dzēst.");
+        setDeleteDialog("closed");
+        return;
+      }
+      setDeleteDialog("closed");
+      router.push("/admin/iriss/pasutijumi");
+      router.refresh();
+    } catch {
+      setSaveMsg("Tīkla kļūda.");
+      setDeleteDialog("closed");
+    } finally {
+      setDeleteBusy(false);
+    }
+  }, [rec.id, router]);
+
   const shellCard = useMemo(
     () => "rounded-xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5",
     [],
@@ -133,7 +162,6 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
             <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
               Pasūtījums
             </h1>
-            <p className="mt-1 font-mono text-[10px] text-[var(--color-provin-muted)]">{rec.id}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Link
@@ -279,7 +307,92 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
           <BlockTitle>Piezīmes</BlockTitle>
           <LabeledTextarea label="Piezīmes" value={rec.notes} onChange={(e) => patch("notes", e.target.value)} />
         </section>
+
+        <section className={`${shellCard} border-red-200/50 bg-red-50/20`}>
+          <p className="mb-3 text-[12px] leading-relaxed text-red-950/85">
+            Neatgriezeniski dzēš pasūtījumu no melnraksta. Pirms dzēšanas tiks prasīts atkārtots apstiprinājums.
+          </p>
+          <button
+            type="button"
+            onClick={() => setDeleteDialog("step1")}
+            className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-red-300/90 bg-white px-4 text-[13px] font-semibold text-red-800 shadow-sm transition hover:bg-red-50"
+          >
+            Dzēst pasūtījumu
+          </button>
+        </section>
       </div>
+
+      {deleteDialog !== "closed" ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
+          role="presentation"
+          onClick={() => !deleteBusy && setDeleteDialog("closed")}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="iriss-delete-dialog-title"
+            className="w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xl sm:p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {deleteDialog === "step1" ? (
+              <>
+                <h2 id="iriss-delete-dialog-title" className="text-base font-semibold text-[var(--color-apple-text)]">
+                  Dzēst pasūtījumu?
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--color-provin-muted)]">
+                  Vai tiešām vēlaties dzēst šo pasūtījumu? Nākamajā solī būs jāapstiprina vēlreiz — dzēšanu nevar atsaukt.
+                </p>
+                <div className="mt-5 flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    disabled={deleteBusy}
+                    onClick={() => setDeleteDialog("closed")}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Atcelt
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deleteBusy}
+                    onClick={() => setDeleteDialog("step2")}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-slate-800 px-4 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
+                  >
+                    Jā, turpināt
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 id="iriss-delete-dialog-title" className="text-base font-semibold text-red-950">
+                  Pēdējais apstiprinājums
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-red-900/90">
+                  Vai tiešām dzēst? Ieraksts pazudīs no saraksta un glabātavas neatgriezeniski.
+                </p>
+                <div className="mt-5 flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    disabled={deleteBusy}
+                    onClick={() => setDeleteDialog("closed")}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Atcelt
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deleteBusy}
+                    onClick={() => void runDelete()}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-red-700 px-4 text-[13px] font-semibold text-white shadow-sm transition hover:bg-red-800 disabled:opacity-50"
+                  >
+                    {deleteBusy ? "Dzēš…" : "Dzēst neatgriezeniski"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

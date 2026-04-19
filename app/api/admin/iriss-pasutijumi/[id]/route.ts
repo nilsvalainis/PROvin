@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
-import { isSafeIrissPasutijumsId, readIrissPasutijums, writeIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
+import {
+  deleteIrissPasutijums,
+  isSafeIrissPasutijumsId,
+  readIrissPasutijums,
+  writeIrissPasutijums,
+} from "@/lib/iriss-pasutijumi-store";
 
 export const runtime = "nodejs";
 
@@ -60,4 +65,14 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (!w.ok) return NextResponse.json({ error: w.error }, { status: 500 });
   const saved = await readIrissPasutijums(id);
   return NextResponse.json({ ok: true, record: saved });
+}
+
+export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const ok = await getAdminSession();
+  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const { id } = await ctx.params;
+  if (!isSafeIrissPasutijumsId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
+  const d = await deleteIrissPasutijums(id);
+  if (!d.ok) return NextResponse.json({ error: d.error }, { status: 500 });
+  return NextResponse.json({ ok: true });
 }

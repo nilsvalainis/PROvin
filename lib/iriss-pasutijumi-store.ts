@@ -1,6 +1,6 @@
 import "server-only";
 
-import { get, list, put } from "@vercel/blob";
+import { BlobNotFoundError, del, get, list, put } from "@vercel/blob";
 import fs from "fs/promises";
 import os from "node:os";
 import path from "path";
@@ -275,4 +275,33 @@ export async function createIrissPasutijums(): Promise<
   const w = await writeIrissPasutijums(rec);
   if (!w.ok) return { ok: false, error: w.error };
   return { ok: true, id };
+}
+
+export async function deleteIrissPasutijums(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const r = resolveStorage();
+    if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+    if (!isSafeIrissPasutijumsId(id)) return { ok: false, error: "invalid_id" };
+
+    if (r.kind === "blob") {
+      try {
+        await del(blobPathname(r.prefix, id), { token: r.token });
+      } catch (e) {
+        if (e instanceof BlobNotFoundError) return { ok: true };
+        throw e;
+      }
+      return { ok: true };
+    }
+
+    try {
+      await fs.unlink(filePath(r.dir, id));
+    } catch (e) {
+      const code = e && typeof e === "object" && "code" in e ? (e as NodeJS.ErrnoException).code : undefined;
+      if (code !== "ENOENT") throw e;
+    }
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg };
+  }
 }

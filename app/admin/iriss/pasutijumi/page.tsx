@@ -42,22 +42,6 @@ export default async function IrissPasutijumiListPage() {
         </div>
       ) : null}
 
-      {storeEnabled && storage.persistence === "vercel_blob" ? (
-        <div className="mt-4 rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-3 py-2 text-[11px] leading-relaxed text-emerald-950/90">
-          <span className="font-semibold text-[var(--color-apple-text)]">Vercel Blob:</span> pasūtījumu JSON ir
-          privāti Blob krātuvē; dati saglabājas arī pēc servera instance nomaiņas.
-        </div>
-      ) : null}
-
-      {storeEnabled && process.env.VERCEL && storage.persistence === "filesystem" ? (
-        <div className="mt-4 rounded-xl border border-amber-200/90 bg-amber-50/90 px-3 py-2 text-[11px] leading-relaxed text-amber-950/90">
-          <span className="font-semibold text-[var(--color-apple-text)]">Vercel + disks:</span> ceļš{" "}
-          <code className="rounded bg-white px-1 font-mono text-[10px]">ADMIN_IRISS_PASUTIJUMI_DIR</code> parasti ir
-          pagaidu servera failsistēma — pārliecinieties, ka tas ir montēts pastāvīgs disks, vai pārslēdzieties uz Blob (
-          <span className="font-mono">BLOB_READ_WRITE_TOKEN</span> bez šī mainīgā).
-        </div>
-      ) : null}
-
       {storeEnabled && rows.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-12 text-center shadow-sm">
           <p className="font-medium text-[var(--color-apple-text)]">Nav pasūtījumu</p>
@@ -66,18 +50,19 @@ export default async function IrissPasutijumiListPage() {
       ) : null}
 
       {storeEnabled && rows.length > 0 ? (
-        <ul className="mt-5 space-y-3">
+        <ul className="mt-5 space-y-2.5 sm:space-y-3">
           {rows.map((r) => (
-            <li
-              key={r.id}
-              className="touch-manipulation rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm active:bg-slate-50/80 sm:p-4"
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0 flex-1 space-y-1">
-                  <p className="truncate text-[15px] font-semibold leading-snug text-[var(--color-apple-text)]">
+            <li key={r.id}>
+              <Link
+                href={`/admin/iriss/pasutijumi/${encodeURIComponent(r.id)}`}
+                aria-label={`Atvērt pasūtījumu: ${r.brandModel}`}
+                className="flex flex-row items-center gap-2.5 rounded-2xl border border-slate-200/90 bg-white p-3 shadow-sm outline-none ring-[var(--color-provin-accent)]/30 transition hover:border-slate-300/90 hover:bg-slate-50/50 active:bg-slate-100/60 focus-visible:ring-2 sm:gap-3 sm:p-4"
+              >
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <p className="truncate text-[14px] font-semibold leading-snug text-[var(--color-apple-text)] sm:text-[15px]">
                     {r.brandModel}
                   </p>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-[var(--color-provin-muted)]">
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[12px] text-[var(--color-provin-muted)] sm:text-[13px]">
                     <span>
                       <span className="font-medium text-[var(--color-apple-text)]">Budžets:</span> {r.totalBudget}
                     </span>
@@ -86,15 +71,10 @@ export default async function IrissPasutijumiListPage() {
                     </span>
                   </div>
                 </div>
-                <div className="shrink-0 sm:pl-3">
-                  <Link
-                    href={`/admin/iriss/pasutijumi/${encodeURIComponent(r.id)}`}
-                    className="inline-flex min-h-[44px] min-w-[7.5rem] items-center justify-center rounded-full bg-[var(--color-provin-accent)] px-5 text-[14px] font-semibold text-white shadow-sm transition hover:opacity-95"
-                  >
-                    Atvērt
-                  </Link>
-                </div>
-              </div>
+                <span className="shrink-0 self-center rounded-full bg-[var(--color-provin-accent)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm sm:px-3 sm:py-1.5 sm:text-[12px]">
+                  Atvērt
+                </span>
+              </Link>
             </li>
           ))}
         </ul>
