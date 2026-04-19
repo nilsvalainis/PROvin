@@ -40,7 +40,7 @@ type CheckoutBody = {
   name?: unknown;
   notes?: unknown;
   locale?: unknown;
-  /** `audit` (79,99 €) — noklusējums; `consultation` (49,99 €) — hero forma; `provin_select` (49,99 €) — PROVIN SELECT, bez VIN. */
+  /** `audit` (79,99 €) — noklusējums; `consultation` (49,99 €) — opcionāli; `provin_select` (49,99 €) — PROVIN SELECT, bez VIN. */
   checkoutLine?: unknown;
   /** Obligāta klienta piekrišana PTN atteikšanās tiesību zaudēšanai (digitāls saturs, tūlītēja izpilde). */
   withdrawalConsent?: unknown;

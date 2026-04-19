@@ -60,7 +60,6 @@ export default function HomeProductHero({ introBodyText, showProvinSelect = fals
                     formId={HOME_HERO_ORDER_FORM_ID}
                     hideStepOneCta
                     onStepChange={setHeroOrderStep}
-                    checkoutLine="consultation"
                     className="!mt-0 !space-y-0 !px-0 !py-0 sm:!px-0 sm:!py-0"
                   />
                 </div>
