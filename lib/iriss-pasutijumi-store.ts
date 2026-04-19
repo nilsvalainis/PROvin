@@ -110,6 +110,14 @@ async function readJsonFromBlob(pathname: string, token: string): Promise<unknow
   }
 }
 
+function normalizeOtherLinks(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [""];
+  const mapped = raw
+    .map((x) => sanitizeDraftTextForStorage(typeof x === "string" ? x : "", 2048))
+    .slice(0, 20);
+  return mapped.length > 0 ? mapped : [""];
+}
+
 function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null {
   if (!raw || typeof raw !== "object") return null;
   const o = deepSanitizeDraftStrings(raw) as Record<string, unknown>;
@@ -138,6 +146,11 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     equipmentRequired: sanitizeDraftTextForStorage(str("equipmentRequired")),
     equipmentDesired: sanitizeDraftTextForStorage(str("equipmentDesired")),
     notes: sanitizeDraftTextForStorage(str("notes")),
+    listingLinkMobile: sanitizeDraftTextForStorage(str("listingLinkMobile"), 2048),
+    listingLinkAutobid: sanitizeDraftTextForStorage(str("listingLinkAutobid"), 2048),
+    listingLinkOpenline: sanitizeDraftTextForStorage(str("listingLinkOpenline"), 2048),
+    listingLinkAuto1: sanitizeDraftTextForStorage(str("listingLinkAuto1"), 2048),
+    listingLinksOther: normalizeOtherLinks(o.listingLinksOther),
   };
 }
 

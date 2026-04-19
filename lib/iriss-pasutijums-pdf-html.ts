@@ -1,4 +1,5 @@
 import { IRISS_BRAND_ORANGE_HEX, IRISS_COMPANY_LINES } from "@/lib/iriss-brand";
+import { isHttpUrlForOpen } from "@/lib/iriss-listing-links";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 function esc(s: string): string {
@@ -32,6 +33,29 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
     "Pasūtījuma datums",
     record.orderDate,
   )}</table>`;
+
+  const linkRows: string[] = [];
+  const pushLink = (label: string, url: string) => {
+    const u = url.trim();
+    if (!u) return;
+    const safe = isHttpUrlForOpen(u) ? `<a href="${esc(u)}">${esc(u)}</a>` : esc(u);
+    linkRows.push(`<tr><th>${esc(label)}</th><td>${safe}</td></tr>`);
+  };
+  pushLink("Mobile", record.listingLinkMobile);
+  pushLink("Autobid", record.listingLinkAutobid);
+  pushLink("Openline", record.listingLinkOpenline);
+  pushLink("Auto1", record.listingLinkAuto1);
+  let ci = 0;
+  for (const line of record.listingLinksOther) {
+    const u = line.trim();
+    if (!u) continue;
+    ci += 1;
+    pushLink(ci === 1 ? "Citi" : `Citi (${ci})`, u);
+  }
+  const listingLinksBlock =
+    linkRows.length > 0
+      ? block("Sludinājumu platformas (saites)", `<table class="grid">${linkRows.join("")}</table>`)
+      : "";
 
   const vehicleTable = `<table class="grid">${row("Marka / modelis", record.brandModel)}${row(
     "Ražošanas gadi",
@@ -84,6 +108,7 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
       <p class="meta">Ģenerēts: ${esc(generatedAtFormatted)} · ID: ${esc(record.id)}</p>
     </header>
     ${block("Klienta dati", clientTable)}
+    ${listingLinksBlock}
     ${block("Transportlīdzekļa specifikācija", vehicleTable)}
     ${block("Aprīkojums", equip)}
     ${block("Piezīmes", notes)}

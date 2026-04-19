@@ -23,6 +23,13 @@ export type IrissPasutijumsRecord = {
   equipmentRequired: string;
   equipmentDesired: string;
   notes: string;
+  /** Sludinājumu platformu saites (kopētas no PRO audita portfeļa plūsmas). */
+  listingLinkMobile: string;
+  listingLinkAutobid: string;
+  listingLinkOpenline: string;
+  listingLinkAuto1: string;
+  /** „Citi” — vairākas rindas; tukšās pirms saglabāšanas var apvienot. */
+  listingLinksOther: string[];
 };
 
 export type IrissPasutijumsListRow = {
@@ -56,5 +63,10 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     equipmentRequired: "",
     equipmentDesired: "",
     notes: "",
+    listingLinkMobile: "",
+    listingLinkAutobid: "",
+    listingLinkOpenline: "",
+    listingLinkAuto1: "",
+    listingLinksOther: [""],
   };
 }

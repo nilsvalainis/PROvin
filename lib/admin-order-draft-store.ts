@@ -51,13 +51,6 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
     if (typeof e.contactMethod === "string") orderEdits.contactMethod = e.contactMethod;
     if (typeof e.notes === "string") orderEdits.notes = e.notes;
     if (typeof e.internalComment === "string") orderEdits.internalComment = e.internalComment;
-    if (typeof e.auctionLinkMobile === "string") orderEdits.auctionLinkMobile = e.auctionLinkMobile;
-    if (typeof e.auctionLinkAutobid === "string") orderEdits.auctionLinkAutobid = e.auctionLinkAutobid;
-    if (typeof e.auctionLinkOpenline === "string") orderEdits.auctionLinkOpenline = e.auctionLinkOpenline;
-    if (typeof e.auctionLinkAuto1 === "string") orderEdits.auctionLinkAuto1 = e.auctionLinkAuto1;
-    if (Array.isArray(e.auctionLinkCiti)) {
-      orderEdits.auctionLinkCiti = e.auctionLinkCiti.filter((x): x is string => typeof x === "string").slice(0, 12);
-    }
   }
   let workspace: OrderDraftWorkspaceBody | null = null;
   if (o.workspace && typeof o.workspace === "object") {
@@ -173,24 +166,6 @@ export async function patchOrderDraft(
     }
     if (typeof patch.orderEdits.internalComment === "string") {
       sanitizedPatch.internalComment = sanitizeDraftTextForStorage(patch.orderEdits.internalComment);
-    }
-    if (typeof patch.orderEdits.auctionLinkMobile === "string") {
-      sanitizedPatch.auctionLinkMobile = sanitizeDraftTextForStorage(patch.orderEdits.auctionLinkMobile, 8000);
-    }
-    if (typeof patch.orderEdits.auctionLinkAutobid === "string") {
-      sanitizedPatch.auctionLinkAutobid = sanitizeDraftTextForStorage(patch.orderEdits.auctionLinkAutobid, 8000);
-    }
-    if (typeof patch.orderEdits.auctionLinkOpenline === "string") {
-      sanitizedPatch.auctionLinkOpenline = sanitizeDraftTextForStorage(patch.orderEdits.auctionLinkOpenline, 8000);
-    }
-    if (typeof patch.orderEdits.auctionLinkAuto1 === "string") {
-      sanitizedPatch.auctionLinkAuto1 = sanitizeDraftTextForStorage(patch.orderEdits.auctionLinkAuto1, 8000);
-    }
-    if (Array.isArray(patch.orderEdits.auctionLinkCiti)) {
-      sanitizedPatch.auctionLinkCiti = patch.orderEdits.auctionLinkCiti
-        .filter((x): x is string => typeof x === "string")
-        .slice(0, 12)
-        .map((x) => sanitizeDraftTextForStorage(x, 8000));
     }
   }
   const nextOrderEdits =

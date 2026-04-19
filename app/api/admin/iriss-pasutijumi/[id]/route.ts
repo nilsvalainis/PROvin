@@ -10,6 +10,12 @@ import {
 
 export const runtime = "nodejs";
 
+function parseOtherFromBody(o: Record<string, unknown>): string[] {
+  const v = o.listingLinksOther;
+  if (!Array.isArray(v)) return [""];
+  return v.map((x) => (typeof x === "string" ? x : "")).slice(0, 20);
+}
+
 function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | null {
   if (!body || typeof body !== "object") return null;
   const o = body as Record<string, unknown>;
@@ -35,6 +41,11 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
     equipmentRequired: str("equipmentRequired"),
     equipmentDesired: str("equipmentDesired"),
     notes: str("notes"),
+    listingLinkMobile: str("listingLinkMobile"),
+    listingLinkAutobid: str("listingLinkAutobid"),
+    listingLinkOpenline: str("listingLinkOpenline"),
+    listingLinkAuto1: str("listingLinkAuto1"),
+    listingLinksOther: parseOtherFromBody(o),
   };
 }
 

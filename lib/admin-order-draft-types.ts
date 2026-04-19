@@ -13,13 +13,6 @@ export type OrderDraftOrderEdits = {
   notes?: string;
   /** Admin piezīmes — melnrakstā; nav klienta PDF. */
   internalComment?: string;
-  /** Ātri izpārdošanas / sludinājumu platformu saites (admin portfelis). */
-  auctionLinkMobile?: string;
-  auctionLinkAutobid?: string;
-  auctionLinkOpenline?: string;
-  auctionLinkAuto1?: string;
-  /** Vairākas „Citi” rindas — katra ar savu saiti. */
-  auctionLinkCiti?: string[];
 };
 
 /** Tīrs JSON — `sourceBlocks` validē serverī ar `hydrateWorkspaceFromStorage`. */
