@@ -90,21 +90,23 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   }, [rec]);
 
   const openPdf = useCallback(async () => {
-    await save();
+    /** Jāatver tūlīt pēc klikšķa (pirms `await`), citādi mobilie pārlūki bloķē `window.open` un prasa uznirstošo logu. */
+    const w = window.open("", "_blank");
+    if (!w) {
+      alert("Neizdevās atvērt drukas logu. Pārlūka iestatījumos atļauj uznirstošos logus šai vietnei.");
+      return;
+    }
     try {
+      await save();
       const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/print`, {
         credentials: "include",
       });
       if (!res.ok) {
+        w.close();
         alert("PDF sagataves ģenerēšana neizdevās.");
         return;
       }
       const html = await res.text();
-      const w = window.open("", "_blank");
-      if (!w) {
-        alert("Atļauj uznirstošo logu drukai.");
-        return;
-      }
       w.document.open();
       w.document.write(html);
       w.document.close();
@@ -120,6 +122,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       w.addEventListener("load", () => window.setTimeout(schedulePrint, 400), { once: true });
       window.setTimeout(schedulePrint, 800);
     } catch {
+      w.close();
       alert("Tīkla kļūda.");
     }
   }, [rec.id, save]);
