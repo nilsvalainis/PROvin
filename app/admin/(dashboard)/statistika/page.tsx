@@ -166,7 +166,7 @@ export default async function AdminStatistikaPage() {
       )}
 
       <p className="mt-8 text-[12px] leading-relaxed text-[var(--color-provin-muted)]">
-        <Link href="/admin" className="font-medium text-[var(--color-provin-accent)] hover:underline">
+        <Link href="/admin/dashboard" className="font-medium text-[var(--color-provin-accent)] hover:underline">
           ← Atpakaļ uz pasūtījumiem
         </Link>
       </p>

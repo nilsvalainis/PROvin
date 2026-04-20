@@ -23,12 +23,14 @@ export function AdminSidebarNav({ baseUrl, orientation = "vertical" }: Props) {
   const consultationsActive = Boolean(pathname?.startsWith("/admin/konsultacijas"));
   const sakumsActive =
     !consultationsActive &&
-    (pathname === "/admin" || pathname === "/admin/" || Boolean(pathname?.startsWith("/admin/orders/")));
+    (pathname === "/admin/dashboard" ||
+      pathname === "/admin/dashboard/" ||
+      Boolean(pathname?.startsWith("/admin/orders/")));
   const rekiniActive = Boolean(pathname?.startsWith("/admin/commission-invoice"));
 
   return (
     <nav className={horizontal ? "flex flex-wrap items-center gap-1" : "flex flex-col items-stretch gap-1"}>
-      <Link href="/admin" className={navItemClass(sakumsActive)}>
+      <Link href="/admin/dashboard" className={navItemClass(sakumsActive)}>
         Sākums
       </Link>
       <Link href="/admin/konsultacijas" className={navItemClass(consultationsActive)}>

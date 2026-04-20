@@ -8,7 +8,7 @@ export default function AdminOrderNotFound() {
         Iespējams, ID ir nepareizs vai maksājums nav pabeigts.
       </p>
       <Link
-        href="/admin"
+        href="/admin/dashboard"
         className="mt-6 inline-block text-sm font-medium text-[var(--color-provin-accent)] hover:underline"
       >
         Atpakaļ uz sarakstu

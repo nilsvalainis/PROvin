@@ -27,7 +27,7 @@ export function AdminWorkspaceSwitcher() {
       role="navigation"
       aria-label="Projekta zona"
     >
-      <Link href="/admin" className={pillPro(proActive)} aria-current={proActive ? "page" : undefined}>
+      <Link href="/admin/dashboard" className={pillPro(proActive)} aria-current={proActive ? "page" : undefined}>
         PRO
       </Link>
       <Link

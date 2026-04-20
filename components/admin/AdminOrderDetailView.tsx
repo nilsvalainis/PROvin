@@ -617,7 +617,7 @@ export function AdminOrderDetailView({
         <AdminCollapsedMenuButton />
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <Link
-            href="/admin"
+            href="/admin/dashboard"
             className="inline-flex items-center gap-1 rounded-full border border-slate-200/90 bg-white px-2.5 py-1.5 text-[11px] font-medium text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/30 hover:bg-[var(--color-provin-accent-soft)]/50"
           >
             <span aria-hidden>←</span> Sākums

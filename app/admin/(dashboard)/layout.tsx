@@ -13,7 +13,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
   const session = await getAdminSession();
   if (!session) {
     const h = await headers();
-    const intended = h.get("x-admin-intended-path")?.trim() || "/admin";
+    const intended = h.get("x-admin-intended-path")?.trim() || "/admin/dashboard";
     const safe =
       intended.startsWith("/admin") && !intended.startsWith("/admin/login")
         ? intended
