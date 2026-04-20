@@ -43,9 +43,11 @@ type SortMode =
 
 const ORDER_KEY = "iriss-order-manual-v1";
 const SORT_KEY = "iriss-order-sort-v1";
-const SWIPE_ACTION_WIDTH = 120;
-const SWIPE_OPEN_THRESHOLD = SWIPE_ACTION_WIDTH / 2;
-const SWIPE_SPRING = { type: "spring" as const, stiffness: 500, damping: 40, mass: 0.8 };
+const SWIPE_ACTION_BLOCK_WIDTH = 72;
+const SWIPE_ACTION_WIDTH = SWIPE_ACTION_BLOCK_WIDTH * 2;
+const SWIPE_CLOSE_THRESHOLD = SWIPE_ACTION_WIDTH * 0.4;
+const SWIPE_OPEN_THRESHOLD = SWIPE_ACTION_WIDTH * 0.5;
+const SWIPE_SPRING = { type: "spring" as const, stiffness: 600, damping: 50, mass: 0.5 };
 
 function getBrandToken(brandModel: string): string {
   return brandModel
@@ -211,6 +213,7 @@ function IrissRowCard({
     }
     if (pointerAxisRef.current !== "x" || swipeStartedRef.current) return;
 
+    e.preventDefault();
     swipeStartedRef.current = true;
     swipeDragControls.start(e, { snapToCursor: false });
   };
@@ -234,25 +237,22 @@ function IrissRowCard({
           isPinned ? "border-[#D1D5DB]" : "border-[#E5E7EB]"
         }`}
       >
-        <div
-          className={`absolute inset-y-0 right-0 z-0 flex items-center justify-end gap-3 pr-2.5 md:hidden ${swipeStripClass}`}
-          style={{ width: SWIPE_ACTION_WIDTH }}
-        >
+        <div className={`absolute inset-y-0 right-0 z-0 flex md:hidden ${swipeStripClass}`} style={{ width: SWIPE_ACTION_WIDTH }}>
           <button
             type="button"
             onClick={() => onPin(row.id)}
-            className="flex h-[50px] w-[50px] items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-black shadow-sm transition active:scale-[0.98]"
+            className="flex h-full w-[72px] items-center justify-center bg-[#8E8E93] text-white transition active:brightness-95"
             aria-label={isPinned ? "Noņemt piespraušanu" : "Piespraust augšā"}
           >
-            <Pin className="h-4 w-4" />
+            <Pin className="h-5 w-5" />
           </button>
           <button
             type="button"
             onClick={() => onAskDelete(row.id)}
-            className="flex h-[50px] w-[50px] items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-[#FF3B30] shadow-sm transition active:scale-[0.98]"
+            className="flex h-full w-[72px] items-center justify-center bg-[#FF3B30] text-white transition active:brightness-95"
             aria-label="Dzēst pasūtījumu"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-5 w-5" />
           </button>
         </div>
 
@@ -261,7 +261,7 @@ function IrissRowCard({
           dragControls={swipeDragControls}
           drag="x"
           dragConstraints={{ left: -SWIPE_ACTION_WIDTH, right: 0 }}
-          dragElastic={0}
+          dragElastic={0.1}
           dragMomentum={false}
           dragDirectionLock
           animate={{ x: isOpen ? -SWIPE_ACTION_WIDTH : 0 }}
@@ -273,8 +273,11 @@ function IrissRowCard({
           onDragEnd={(_, info) => {
             const dragBase = isOpen ? -SWIPE_ACTION_WIDTH : 0;
             const finalX = Math.max(-SWIPE_ACTION_WIDTH, Math.min(0, dragBase + info.offset.x));
-            const projectedX = finalX + info.velocity.x * 0.16;
-            const shouldOpen = finalX <= -SWIPE_OPEN_THRESHOLD || projectedX <= -SWIPE_OPEN_THRESHOLD;
+            const revealed = Math.abs(finalX);
+            let shouldOpen = false;
+            if (revealed >= SWIPE_OPEN_THRESHOLD) shouldOpen = true;
+            else if (revealed < SWIPE_CLOSE_THRESHOLD) shouldOpen = false;
+            else shouldOpen = info.velocity.x < -160;
             if (shouldOpen) setSwipeOpenId(row.id);
             else setSwipeOpenId(null);
           }}
