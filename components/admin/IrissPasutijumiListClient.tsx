@@ -135,8 +135,15 @@ function rowFromRecord(rec: IrissPasutijumsRecord): IrissPasutijumsListRow {
   };
 }
 
+/** 1-based odd rows: white; even rows: subtle gray (zebra). */
+const ZEBRA_EVEN_BG = "bg-[#F9FAFB]";
+const ZEBRA_ODD_BG = "bg-white";
+const SWIPE_STRIP_EVEN_BG = "bg-[#E5E7EB]";
+const SWIPE_STRIP_ODD_BG = "bg-[#F9FAFB]";
+
 function IrissRowCard({
   row,
+  rowIndex,
   canManualSort,
   swipeOpenId,
   setSwipeOpenId,
@@ -144,6 +151,8 @@ function IrissRowCard({
   onAskDelete,
 }: {
   row: IrissPasutijumsListRow;
+  /** Index in the current sorted list (0-based); drives zebra striping. */
+  rowIndex: number;
   canManualSort: boolean;
   swipeOpenId: string | null;
   setSwipeOpenId: (id: string | null) => void;
@@ -169,6 +178,9 @@ function IrissRowCard({
   const brandFallback = getBrandFallbackLabel(row.brandModel);
   const isPinned = Boolean(row.pinnedAt);
   const isOpen = swipeOpenId === row.id;
+  const isEvenRow = rowIndex % 2 === 1;
+  const cardSurfaceClass = isEvenRow ? ZEBRA_EVEN_BG : ZEBRA_ODD_BG;
+  const swipeStripClass = isEvenRow ? SWIPE_STRIP_EVEN_BG : SWIPE_STRIP_ODD_BG;
   const openAllListings = () => {
     for (const chip of chips) {
       window.open(chip.href, "_blank", "noopener,noreferrer");
@@ -217,11 +229,13 @@ function IrissRowCard({
       className="list-none"
       whileDrag={{ scale: 1.01 }}
     >
-      <div className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:border-slate-300 ${
-        isPinned ? "border-[#D1D5DB]" : "border-[#E5E7EB]"
-      }`}>
+      <div
+        className={`relative overflow-hidden rounded-2xl border shadow-sm transition hover:border-slate-300 ${cardSurfaceClass} ${
+          isPinned ? "border-[#D1D5DB]" : "border-[#E5E7EB]"
+        }`}
+      >
         <div
-          className="absolute inset-y-0 right-0 z-0 flex items-center justify-end gap-3 bg-[#F9FAFB] pr-2.5 md:hidden"
+          className={`absolute inset-y-0 right-0 z-0 flex items-center justify-end gap-3 pr-2.5 md:hidden ${swipeStripClass}`}
           style={{ width: SWIPE_ACTION_WIDTH }}
         >
           <button
@@ -264,7 +278,7 @@ function IrissRowCard({
             if (shouldOpen) setSwipeOpenId(row.id);
             else setSwipeOpenId(null);
           }}
-          className="relative z-10 bg-white md:translate-x-0"
+          className={`relative z-10 md:translate-x-0 ${cardSurfaceClass}`}
         >
           <div className="flex items-stretch">
             {canManualSort ? (
@@ -312,7 +326,9 @@ function IrissRowCard({
                   </span>
                 </div>
               </div>
-              <span className="hidden shrink-0 self-center rounded-full border border-[#E5E7EB] bg-white px-2.5 py-1 text-[11px] font-semibold text-black shadow-sm sm:inline-flex sm:px-3 sm:py-1.5 sm:text-[12px]">
+              <span
+                className={`hidden shrink-0 self-center rounded-full border border-[#E5E7EB] px-2.5 py-1 text-[11px] font-semibold text-black shadow-sm sm:inline-flex sm:px-3 sm:py-1.5 sm:text-[12px] ${cardSurfaceClass}`}
+              >
                 Atvērt
               </span>
             </Link>
@@ -346,7 +362,7 @@ function IrissRowCard({
           </div>
           {chips.length > 0 ? (
             <div className="md:hidden">
-              <div className="border-t border-[#E5E7EB] bg-white px-3 py-2.5 sm:px-4 sm:py-2.5">
+              <div className={`border-t border-[#E5E7EB] px-3 py-2.5 sm:px-4 sm:py-2.5 ${cardSurfaceClass}`}>
                 <div role="group" aria-label="Sludinājumu platformu saites" className={LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}>
                   {chips.map((c, i) => (
                     <a
@@ -502,10 +518,11 @@ export function IrissPasutijumiListClient({ rows }: { rows: IrissPasutijumsListR
         }}
         className="mt-3 space-y-2.5 sm:space-y-3"
       >
-        {sortedRows.map((row) => (
+        {sortedRows.map((row, index) => (
           <IrissRowCard
             key={row.id}
             row={rowMap.get(row.id) ?? row}
+            rowIndex={index}
             canManualSort={canManualSort}
             swipeOpenId={swipeOpenId}
             setSwipeOpenId={setSwipeOpenId}
