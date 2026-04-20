@@ -27,6 +27,7 @@ export type IrissPasutijumsRecord = {
   id: string;
   createdAt: string;
   updatedAt: string;
+  pinnedAt: string;
   clientFirstName: string;
   clientLastName: string;
   phone: string;
@@ -59,6 +60,7 @@ export type IrissPasutijumsListRow = {
   id: string;
   createdAt: string;
   updatedAt: string;
+  pinnedAt: string;
   brandModel: string;
   totalBudget: string;
   phone: string;
@@ -75,6 +77,7 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     id,
     createdAt: nowIso,
     updatedAt: nowIso,
+    pinnedAt: "",
     clientFirstName: "",
     clientLastName: "",
     phone: "",

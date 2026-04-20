@@ -1,10 +1,9 @@
 "use client";
 
-import { Menu } from "lucide-react";
-import { Reorder, useDragControls } from "framer-motion";
+import { Menu, Pin, Trash2 } from "lucide-react";
+import { motion, Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { IrissListingPlatformChipsInline } from "@/components/admin/IrissListingPlatformChipsInline";
 import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
 import {
@@ -12,7 +11,7 @@ import {
   LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
   LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS,
 } from "@/lib/iriss-listing-links";
-import type { IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
+import type { IrissPasutijumsListRow, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 const BRAND_ICON_SLUGS: Record<string, string> = {
   volkswagen: "volkswagen",
@@ -45,7 +44,6 @@ type SortMode =
 
 const ORDER_KEY = "iriss-order-manual-v1";
 const SORT_KEY = "iriss-order-sort-v1";
-const PIN_KEY = "iriss-order-pinned-v1";
 
 function getBrandToken(brandModel: string): string {
   return brandModel
@@ -72,75 +70,85 @@ function getBrandFallbackLabel(brandModel: string): string {
 function budgetToNumber(v: string): number {
   const m = v.replace(",", ".").match(/-?\d+(?:\.\d+)?/g);
   if (!m || m.length === 0) return Number.NaN;
-  const joined = m.join("");
-  const parsed = Number.parseFloat(joined);
+  const parsed = Number.parseFloat(m.join(""));
   return Number.isFinite(parsed) ? parsed : Number.NaN;
 }
 
-function sortRows(rows: IrissPasutijumsListRow[], mode: SortMode, manualOrder: string[], pinnedIds: string[]): IrissPasutijumsListRow[] {
-  const byDateDesc = [...rows].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
-  const pinnedSet = new Set(pinnedIds);
-  const splitPinned = (list: IrissPasutijumsListRow[]) => {
-    const pinned = list.filter((r) => pinnedSet.has(r.id));
-    const rest = list.filter((r) => !pinnedSet.has(r.id));
-    return [...pinned, ...rest];
-  };
+function sortCore(rows: IrissPasutijumsListRow[], mode: SortMode, manualOrder: string[]): IrissPasutijumsListRow[] {
   if (mode === "manual") {
     const rank = new Map<string, number>();
     manualOrder.forEach((id, idx) => rank.set(id, idx));
-    const manual = [...byDateDesc].sort((a, b) => {
+    return [...rows].sort((a, b) => {
       const ra = rank.has(a.id) ? rank.get(a.id)! : Number.MAX_SAFE_INTEGER;
       const rb = rank.has(b.id) ? rank.get(b.id)! : Number.MAX_SAFE_INTEGER;
       if (ra !== rb) return ra - rb;
       return a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0;
     });
-    return splitPinned(manual);
   }
-  if (mode === "created_desc") return splitPinned(byDateDesc);
-  if (mode === "created_asc") return splitPinned([...rows].sort((a, b) => (a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0)));
+  if (mode === "created_desc") return [...rows].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+  if (mode === "created_asc") return [...rows].sort((a, b) => (a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0));
   if (mode === "brand_asc")
-    return splitPinned([...rows].sort((a, b) => a.brandModel.localeCompare(b.brandModel, "lv", { sensitivity: "base" })));
+    return [...rows].sort((a, b) => a.brandModel.localeCompare(b.brandModel, "lv", { sensitivity: "base" }));
   if (mode === "brand_desc")
-    return splitPinned([...rows].sort((a, b) => b.brandModel.localeCompare(a.brandModel, "lv", { sensitivity: "base" })));
+    return [...rows].sort((a, b) => b.brandModel.localeCompare(a.brandModel, "lv", { sensitivity: "base" }));
   if (mode === "budget_asc")
-    return splitPinned([...rows].sort((a, b) => {
+    return [...rows].sort((a, b) => {
       const na = budgetToNumber(a.totalBudget);
       const nb = budgetToNumber(b.totalBudget);
       if (!Number.isFinite(na) && !Number.isFinite(nb)) return 0;
       if (!Number.isFinite(na)) return 1;
       if (!Number.isFinite(nb)) return -1;
       return na - nb;
-    }));
-  return splitPinned([...rows].sort((a, b) => {
+    });
+  return [...rows].sort((a, b) => {
     const na = budgetToNumber(a.totalBudget);
     const nb = budgetToNumber(b.totalBudget);
     if (!Number.isFinite(na) && !Number.isFinite(nb)) return 0;
     if (!Number.isFinite(na)) return 1;
     if (!Number.isFinite(nb)) return -1;
     return nb - na;
-  }));
+  });
+}
+
+function sortRows(rows: IrissPasutijumsListRow[], mode: SortMode, manualOrder: string[]): IrissPasutijumsListRow[] {
+  const pinned = rows.filter((r) => Boolean(r.pinnedAt)).sort((a, b) => (a.pinnedAt < b.pinnedAt ? 1 : a.pinnedAt > b.pinnedAt ? -1 : 0));
+  const normal = rows.filter((r) => !r.pinnedAt);
+  return [...pinned, ...sortCore(normal, mode, manualOrder)];
+}
+
+function rowFromRecord(rec: IrissPasutijumsRecord): IrissPasutijumsListRow {
+  return {
+    id: rec.id,
+    createdAt: rec.createdAt,
+    updatedAt: rec.updatedAt,
+    pinnedAt: rec.pinnedAt,
+    brandModel: rec.brandModel.trim() || "—",
+    totalBudget: rec.totalBudget.trim() || "—",
+    phone: rec.phone.trim() || "—",
+    listingLinkMobile: rec.listingLinkMobile,
+    listingLinkAutobid: rec.listingLinkAutobid,
+    listingLinkOpenline: rec.listingLinkOpenline,
+    listingLinkAuto1: rec.listingLinkAuto1,
+    listingLinksOther: rec.listingLinksOther,
+  };
 }
 
 function IrissRowCard({
   row,
   canManualSort,
-  pinned,
-  isSwipeOpen,
-  onToggleSwipe,
-  onPinToggle,
-  onDelete,
+  swipeOpenId,
+  setSwipeOpenId,
+  onPin,
+  onAskDelete,
 }: {
   row: IrissPasutijumsListRow;
   canManualSort: boolean;
-  pinned: boolean;
-  isSwipeOpen: boolean;
-  onToggleSwipe: (open: boolean) => void;
-  onPinToggle: () => void;
-  onDelete: () => void;
+  swipeOpenId: string | null;
+  setSwipeOpenId: (id: string | null) => void;
+  onPin: (id: string) => void;
+  onAskDelete: (id: string) => void;
 }) {
   const dragControls = useDragControls();
-  const touchStartX = useRef<number | null>(null);
-  const touchDx = useRef(0);
   const chips = buildListingPlatformChips(
     {
       listingLinkMobile: row.listingLinkMobile,
@@ -153,147 +161,144 @@ function IrissRowCard({
   );
   const brandLogoUrl = getBrandLogoUrl(row.brandModel);
   const brandFallback = getBrandFallbackLabel(row.brandModel);
-  const swipeX = isSwipeOpen ? 108 : 0;
+  const isPinned = Boolean(row.pinnedAt);
+  const isOpen = swipeOpenId === row.id;
 
   return (
-    <Reorder.Item
-      value={row.id}
-      dragListener={false}
-      dragControls={dragControls}
-      className="list-none"
-      whileDrag={{ scale: 1.01 }}
-    >
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm transition hover:border-slate-300/90">
-        <div className="absolute inset-y-0 left-0 flex items-center gap-1 pl-2 md:hidden">
+    <Reorder.Item value={row.id} dragListener={false} dragControls={dragControls} className="list-none" whileDrag={{ scale: 1.01 }}>
+      <div className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:border-slate-300/90 ${
+        isPinned ? "border-amber-300/70 bg-amber-50/30" : "border-slate-200/90"
+      }`}>
+        <div className="absolute inset-y-0 right-0 z-0 flex md:hidden">
           <button
             type="button"
-            onClick={onPinToggle}
-            className={`inline-flex h-9 items-center justify-center rounded-lg px-2 text-[11px] font-semibold text-white shadow-sm ${
-              pinned ? "bg-amber-600" : "bg-slate-700"
-            }`}
+            onClick={() => onPin(row.id)}
+            className="flex w-16 items-center justify-center bg-[var(--color-provin-accent)] text-white"
+            aria-label={isPinned ? "Noņemt piespraušanu" : "Piespraust augšā"}
           >
-            {pinned ? "Unpin" : "Pin"}
+            <Pin className="h-4 w-4" />
           </button>
           <button
             type="button"
-            onClick={onDelete}
-            className="inline-flex h-9 items-center justify-center rounded-lg bg-red-600 px-2 text-[11px] font-semibold text-white shadow-sm"
+            onClick={() => onAskDelete(row.id)}
+            className="flex w-16 items-center justify-center bg-red-600 text-white"
+            aria-label="Dzēst pasūtījumu"
           >
-            Delete
+            <Trash2 className="h-4 w-4" />
           </button>
         </div>
-        <div
-          className="relative z-[1] flex items-stretch bg-white transition-transform duration-200 md:translate-x-0"
-          style={{ transform: `translateX(${swipeX}px)` }}
-          onTouchStart={(e) => {
-            touchStartX.current = e.touches[0]?.clientX ?? null;
-            touchDx.current = 0;
+
+        <motion.div
+          drag="x"
+          dragConstraints={{ left: -128, right: 0 }}
+          dragElastic={0.08}
+          dragMomentum={false}
+          animate={{ x: isOpen ? -128 : 0 }}
+          onDragEnd={(_, info) => {
+            if (info.offset.x < -44) setSwipeOpenId(row.id);
+            else setSwipeOpenId(null);
           }}
-          onTouchMove={(e) => {
-            if (touchStartX.current == null) return;
-            touchDx.current = (e.touches[0]?.clientX ?? 0) - touchStartX.current;
-          }}
-          onTouchEnd={() => {
-            if (touchStartX.current == null) return;
-            if (touchDx.current > 48) onToggleSwipe(true);
-            else if (touchDx.current < -32) onToggleSwipe(false);
-            touchStartX.current = null;
-            touchDx.current = 0;
-          }}
+          className="relative z-10 bg-white md:translate-x-0"
         >
-          {canManualSort ? (
-            <button
-              type="button"
-              onPointerDown={(e) => dragControls.start(e)}
-              className="inline-flex shrink-0 items-center justify-center border-r border-slate-100/90 px-2 text-slate-500"
-              title="Pieturi un velc, lai pārkārtotu"
-              aria-label="Pārkārtot rindu"
+          <div className="flex items-stretch">
+            {canManualSort ? (
+              <button
+                type="button"
+                onPointerDown={(e) => dragControls.start(e)}
+                className="inline-flex shrink-0 items-center justify-center border-r border-slate-100/90 px-2 text-slate-500"
+                title="Pieturi un velc, lai pārkārtotu"
+                aria-label="Pārkārtot rindu"
+              >
+                <Menu className="h-4 w-4" aria-hidden />
+              </button>
+            ) : null}
+            <Link
+              href={`/admin/iriss/pasutijumi/${encodeURIComponent(row.id)}`}
+              aria-label={`Atvērt pasūtījumu: ${row.brandModel}`}
+              className="flex min-w-0 flex-1 flex-row items-center gap-2.5 p-3 outline-none ring-[var(--color-provin-accent)]/30 transition hover:bg-slate-50/50 active:bg-slate-100/60 focus-visible:ring-2 sm:gap-3 sm:p-4"
             >
-              <Menu className="h-4 w-4" aria-hidden />
-            </button>
-          ) : null}
-          <Link
-            href={`/admin/iriss/pasutijumi/${encodeURIComponent(row.id)}`}
-            aria-label={`Atvērt pasūtījumu: ${row.brandModel}`}
-            className="flex min-w-0 flex-1 flex-row items-center gap-2.5 p-3 outline-none ring-[var(--color-provin-accent)]/30 transition hover:bg-slate-50/50 active:bg-slate-100/60 focus-visible:ring-2 sm:gap-3 sm:p-4"
-            onClick={() => onToggleSwipe(false)}
-          >
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <div className="flex min-w-0 items-center gap-2">
-                {brandLogoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={brandLogoUrl}
-                    alt={`${brandFallback} logo`}
-                    loading="lazy"
-                    className="h-5 w-5 shrink-0 rounded-sm border border-slate-200/90 bg-white p-[2px] sm:h-6 sm:w-6"
-                  />
-                ) : (
-                  <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border border-slate-200/90 bg-slate-50 text-[9px] font-bold text-slate-600 sm:h-6 sm:w-6 sm:text-[10px]">
-                    {brandFallback}
+              <div className="min-w-0 flex-1 space-y-0.5">
+                <div className="flex min-w-0 items-center gap-2">
+                  {brandLogoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={brandLogoUrl}
+                      alt={`${brandFallback} logo`}
+                      loading="lazy"
+                      className="h-5 w-5 shrink-0 rounded-sm border border-slate-200/90 bg-white p-[2px] sm:h-6 sm:w-6"
+                    />
+                  ) : (
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border border-slate-200/90 bg-slate-50 text-[9px] font-bold text-slate-600 sm:h-6 sm:w-6 sm:text-[10px]">
+                      {brandFallback}
+                    </span>
+                  )}
+                  <p className="truncate text-[14px] font-semibold leading-snug text-[var(--color-apple-text)] sm:text-[15px]">
+                    {row.brandModel}
+                  </p>
+                  {isPinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-hidden /> : null}
+                </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px] text-[var(--color-provin-muted)] sm:text-[13px]">
+                  <span>
+                    <span className="font-medium text-[var(--color-apple-text)]">Budžets:</span> {row.totalBudget}
                   </span>
-                )}
-                <p className="truncate text-[14px] font-semibold leading-snug text-[var(--color-apple-text)] sm:text-[15px]">
-                  {row.brandModel}
-                </p>
+                  <span>
+                    <span className="font-medium text-[var(--color-apple-text)]">Tālrunis:</span> {row.phone}
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px] text-[var(--color-provin-muted)] sm:text-[13px]">
-                <span>
-                  <span className="font-medium text-[var(--color-apple-text)]">Budžets:</span> {row.totalBudget}
-                </span>
-                <span>
-                  <span className="font-medium text-[var(--color-apple-text)]">Tālrunis:</span> {row.phone}
-                </span>
-                {pinned ? <span className="font-semibold text-amber-700">Pinned</span> : null}
+              <span className="hidden shrink-0 self-center rounded-full bg-[var(--color-provin-accent)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm sm:inline-flex sm:px-3 sm:py-1.5 sm:text-[12px]">
+                Atvērt
+              </span>
+            </Link>
+            {chips.length > 0 ? (
+              <div className="hidden items-center border-l border-slate-100/90 px-2 md:flex lg:px-3">
+                <div role="group" aria-label="Sludinājumu platformu saites" className={LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}>
+                  {chips.map((c, i) => (
+                    <a
+                      key={`${c.href}-${i}`}
+                      href={c.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={c.title}
+                      className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${c.chipClass}`}
+                    >
+                      {c.letter}
+                    </a>
+                  ))}
+                </div>
               </div>
-            </div>
-            <span className="hidden shrink-0 self-center rounded-full bg-[var(--color-provin-accent)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm sm:inline-flex sm:px-3 sm:py-1.5 sm:text-[12px]">
-              Atvērt
-            </span>
-          </Link>
+            ) : null}
+          </div>
           {chips.length > 0 ? (
-            <div className="hidden items-center border-l border-slate-100/90 px-2 md:flex lg:px-3">
-              <div role="group" aria-label="Sludinājumu platformu saites" className={LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}>
-                {chips.map((c, i) => (
-                  <a
-                    key={`${c.href}-${i}`}
-                    href={c.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={c.title}
-                    className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${c.chipClass}`}
-                  >
-                    {c.letter}
-                  </a>
-                ))}
-              </div>
+            <div className="md:hidden">
+              <IrissListingPlatformChipsInline
+                links={{
+                  listingLinkMobile: row.listingLinkMobile,
+                  listingLinkAutobid: row.listingLinkAutobid,
+                  listingLinkOpenline: row.listingLinkOpenline,
+                  listingLinkAuto1: row.listingLinkAuto1,
+                  listingLinksOther: row.listingLinksOther,
+                }}
+              />
             </div>
           ) : null}
-        </div>
-        {chips.length > 0 ? (
-          <div className="md:hidden">
-            <IrissListingPlatformChipsInline
-              links={{
-                listingLinkMobile: row.listingLinkMobile,
-                listingLinkAutobid: row.listingLinkAutobid,
-                listingLinkOpenline: row.listingLinkOpenline,
-                listingLinkAuto1: row.listingLinkAuto1,
-                listingLinksOther: row.listingLinksOther,
-              }}
-            />
-          </div>
-        ) : null}
+        </motion.div>
       </div>
     </Reorder.Item>
   );
 }
 
 export function IrissPasutijumiListClient({ rows }: { rows: IrissPasutijumsListRow[] }) {
-  const router = useRouter();
+  const [localRows, setLocalRows] = useState<IrissPasutijumsListRow[]>(rows);
   const [sortMode, setSortMode] = useState<SortMode>("created_desc");
   const [manualOrder, setManualOrder] = useState<string[]>([]);
-  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
-  const [openSwipeRowId, setOpenSwipeRowId] = useState<string | null>(null);
+  const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLocalRows(rows);
+  }, [rows]);
 
   useEffect(() => {
     try {
@@ -303,11 +308,6 @@ export function IrissPasutijumiListClient({ rows }: { rows: IrissPasutijumsListR
       if (savedManual) {
         const parsed = JSON.parse(savedManual) as unknown;
         if (Array.isArray(parsed)) setManualOrder(parsed.filter((x): x is string => typeof x === "string"));
-      }
-      const savedPins = localStorage.getItem(PIN_KEY);
-      if (savedPins) {
-        const parsedPins = JSON.parse(savedPins) as unknown;
-        if (Array.isArray(parsedPins)) setPinnedIds(parsedPins.filter((x): x is string => typeof x === "string"));
       }
     } catch {
       /* ignore */
@@ -322,18 +322,59 @@ export function IrissPasutijumiListClient({ rows }: { rows: IrissPasutijumsListR
     }
   }, [sortMode]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(PIN_KEY, JSON.stringify(pinnedIds));
-    } catch {
-      /* ignore */
-    }
-  }, [pinnedIds]);
-
-  const sortedRows = useMemo(() => sortRows(rows, sortMode, manualOrder, pinnedIds), [rows, sortMode, manualOrder, pinnedIds]);
-  const rowMap = useMemo(() => new Map(rows.map((r) => [r.id, r])), [rows]);
-
+  const sortedRows = useMemo(() => sortRows(localRows, sortMode, manualOrder), [localRows, sortMode, manualOrder]);
+  const rowMap = useMemo(() => new Map(localRows.map((r) => [r.id, r])), [localRows]);
   const canManualSort = sortMode === "manual";
+
+  const patchRow = async (id: string, mutator: (record: IrissPasutijumsRecord) => IrissPasutijumsRecord) => {
+    setActionBusy(id);
+    try {
+      const getRes = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, { credentials: "include" });
+      if (!getRes.ok) return;
+      const getData = (await getRes.json()) as { record?: IrissPasutijumsRecord };
+      if (!getData?.record) return;
+      const nextRecord = mutator(getData.record);
+      const patchRes = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nextRecord),
+      });
+      if (!patchRes.ok) return;
+      const patchData = (await patchRes.json()) as { record?: IrissPasutijumsRecord };
+      if (!patchData?.record) return;
+      const nextRow = rowFromRecord(patchData.record);
+      setLocalRows((prev) => prev.map((r) => (r.id === id ? nextRow : r)));
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
+  const onPin = (id: string) => {
+    setSwipeOpenId(null);
+    void patchRow(id, (record) => ({
+      ...record,
+      pinnedAt: record.pinnedAt ? "" : new Date().toISOString(),
+    }));
+  };
+
+  const onConfirmDelete = async () => {
+    const id = deleteTargetId;
+    if (!id) return;
+    setActionBusy(id);
+    try {
+      const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) return;
+      setLocalRows((prev) => prev.filter((r) => r.id !== id));
+      setDeleteTargetId(null);
+      setSwipeOpenId(null);
+    } finally {
+      setActionBusy(null);
+    }
+  };
 
   return (
     <>
@@ -375,22 +416,50 @@ export function IrissPasutijumiListClient({ rows }: { rows: IrissPasutijumsListR
             key={row.id}
             row={rowMap.get(row.id) ?? row}
             canManualSort={canManualSort}
-            pinned={pinnedIds.includes(row.id)}
-            isSwipeOpen={openSwipeRowId === row.id}
-            onToggleSwipe={(open) => setOpenSwipeRowId(open ? row.id : null)}
-            onPinToggle={() =>
-              setPinnedIds((curr) => (curr.includes(row.id) ? curr.filter((id) => id !== row.id) : [row.id, ...curr]))
-            }
-            onDelete={() => {
-              if (!window.confirm("Vai tiešām dzēst šo pasūtījumu?")) return;
-              void fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(row.id)}`, {
-                method: "DELETE",
-                credentials: "include",
-              }).then(() => router.refresh());
-            }}
+            swipeOpenId={swipeOpenId}
+            setSwipeOpenId={setSwipeOpenId}
+            onPin={onPin}
+            onAskDelete={setDeleteTargetId}
           />
         ))}
       </Reorder.Group>
+
+      {deleteTargetId ? (
+        <div
+          className="fixed inset-0 z-[110] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
+          onClick={() => !actionBusy && setDeleteTargetId(null)}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xl sm:p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-semibold text-[var(--color-apple-text)]">
+              Vai tiešām vēlaties neatgriezeniski dzēst šo pasūtījumu?
+            </h2>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTargetId(null)}
+                disabled={Boolean(actionBusy)}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                Atcelt
+              </button>
+              <button
+                type="button"
+                onClick={() => void onConfirmDelete()}
+                disabled={Boolean(actionBusy)}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-red-700 px-4 text-[13px] font-semibold text-white shadow-sm transition hover:bg-red-800 disabled:opacity-50"
+              >
+                {actionBusy ? "Dzēš…" : "Dzēst"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <IrissPasutijumiNewFab />
     </>

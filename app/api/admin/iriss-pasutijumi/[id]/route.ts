@@ -69,6 +69,7 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
     id,
     createdAt: str("createdAt"),
     updatedAt: str("updatedAt"),
+    pinnedAt: str("pinnedAt"),
     clientFirstName: str("clientFirstName"),
     clientLastName: str("clientLastName"),
     phone: str("phone"),
