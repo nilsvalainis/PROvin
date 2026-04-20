@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { AdminMobilePullToRefresh } from "@/components/admin/AdminMobilePullToRefresh";
 import { AdminSidebarNav } from "./AdminSidebarNav";
 import { IrissAdminSidebarNav } from "./IrissAdminSidebarNav";
 import { AdminWorkspaceSwitcher } from "./AdminWorkspaceSwitcher";
@@ -123,8 +122,6 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
           </button>
         </div>
       </header>
-
-      <AdminMobilePullToRefresh />
 
       {mobileNavOpen ? (
         <button

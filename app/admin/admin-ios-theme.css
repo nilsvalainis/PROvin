@@ -1,3 +1,12 @@
+/*
+ * Native overscroll: do not block browser pull-to-refresh / rubber-banding.
+ * Custom PTR UI removed — rely on the browser (e.g. Chrome Android) where supported.
+ */
+html:has(.admin-ios-theme),
+body:has(.admin-ios-theme) {
+  overscroll-behavior-y: auto;
+}
+
 .admin-ios-theme {
   --admin-ios-bg: #ffffff;
   --admin-ios-surface: #ffffff;
