@@ -58,6 +58,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   const [busy, setBusy] = useState(false);
   const lastSavedSnapshot = useRef(JSON.stringify(initialRecord));
   const autosaveTimer = useRef<number | null>(null);
+  const autosaveInFlight = useRef(false);
 
   const patch = useCallback(<K extends keyof IrissPasutijumsRecord>(key: K, value: IrissPasutijumsRecord[K]) => {
     setRec((r) => ({ ...r, [key]: value }));
@@ -70,14 +71,17 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   const save = useCallback(async (opts?: { redirectToList?: boolean; silent?: boolean }) => {
     const redirectToList = opts?.redirectToList === true;
     const silent = opts?.silent === true;
-    setBusy(true);
+    const payload = rec;
+    if (!silent) setBusy(true);
     if (!silent) setSaveMsg(null);
+    if (silent && autosaveInFlight.current) return;
+    if (silent) autosaveInFlight.current = true;
     try {
-      const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}`, {
+      const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(payload.id)}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(rec),
+        body: JSON.stringify(payload),
       });
       const data: unknown = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -91,8 +95,8 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
         typeof (data as { record: unknown }).record === "object"
           ? ((data as { record: IrissPasutijumsRecord }).record as IrissPasutijumsRecord)
           : null;
-      if (record) setRec(record);
-      lastSavedSnapshot.current = JSON.stringify(record ?? rec);
+      if (!silent && record) setRec(record);
+      lastSavedSnapshot.current = JSON.stringify(record ?? payload);
       if (redirectToList) {
         router.push("/admin/iriss/pasutijumi");
         router.refresh();
@@ -102,7 +106,8 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     } catch {
       if (!silent) setSaveMsg("Tīkla kļūda.");
     } finally {
-      setBusy(false);
+      if (!silent) setBusy(false);
+      if (silent) autosaveInFlight.current = false;
     }
   }, [rec, router]);
 
