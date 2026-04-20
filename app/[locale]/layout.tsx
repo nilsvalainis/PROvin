@@ -9,7 +9,6 @@ import { LenisProvider } from "@/components/providers/LenisProvider";
 import { Header } from "@/components/Header";
 import { SiteOrderCtaPin } from "@/components/home/SiteOrderCtaPin";
 import { HomeReloadScrollToTop } from "@/components/home/HomeReloadScrollToTop";
-import { SiteSectionRail } from "@/components/home/SiteSectionRail";
 import { routing } from "@/i18n/routing";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import "./design-direction-theme.css";
@@ -65,7 +64,6 @@ export default async function LocaleLayout({ children, params }: Props) {
       <LenisProvider>
         <HomeReloadScrollToTop />
         <LocaleHtmlLang />
-        <SiteSectionRail />
         <SiteOrderCtaPin />
         <Header />
         <main className="relative z-10 min-w-0 max-w-full overflow-x-clip pt-0 pb-0">

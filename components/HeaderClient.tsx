@@ -56,9 +56,13 @@ export function HeaderClient({
 
   const isHome = normalizedPath === "/" || normalizedPath === "";
 
-  /** Lapas ar `SiteSectionRail` (lg+): `lg` nobīde, lai PROVIN sakristu ar sliedes pirmo kolonnu. */
+  /** Lapas, kurām mobilajā ir sliežu izvēlne; desktop fiksētā sliede pagaidām izslēgta. */
   const logoAlignWithRailSakums =
     isHome || normalizedPath === "/pasutit" || normalizedPath === "/biezi-jautajumi";
+
+  /** `false`, kamēr `SiteSectionRail` nav layout — citādi logo `lg` nobīde atsakās no neesošas sliedes. */
+  const desktopSiteSectionRailEnabled = false;
+  const alignLogoWithDesktopRail = logoAlignWithRailSakums && desktopSiteSectionRailEnabled;
 
   const railSections = useMemo(() => buildSiteRailSections(locale, normalizedPath), [locale, normalizedPath]);
 
@@ -129,10 +133,10 @@ export function HeaderClient({
       : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
   /**
-   * `lg+` sliežu lapās: PROVIN „P” apmēram virs zilā punkta — nobīde = `pl-1` + `pl-0.5` + `w-3` + `gap-2.5`
-   * (SiteSectionRail); ņem vērā header `max-w` + `px-6` centrējumu.
+   * `lg+` ar fiksēto sliedi: PROVIN „P” apmēram virs zilā punkta — nobīde = `pl-1` + `pl-0.5` + `w-3` + `gap-2.5`;
+   * ņem vērā header `max-w` + `px-6` centrējumu.
    */
-  const logoRailMarginClass = logoAlignWithRailSakums
+  const logoRailMarginClass = alignLogoWithDesktopRail
     ? "lg:ml-[calc(max(0.5rem,env(safe-area-inset-left,0px))+1.75rem-(100vw-min(100vw,64rem))/2-1.5rem)]"
     : null;
 
@@ -141,7 +145,7 @@ export function HeaderClient({
    * Novērš situāciju, kad light režīmā logo aizslīd ārpus kreisās malas.
    */
   const logoHomeRailAlignClass =
-    isHome && logoAlignWithRailSakums
+    isHome && alignLogoWithDesktopRail
       ? "lg:ml-[calc(max(0.5rem,env(safe-area-inset-left,0px))+1.875rem-max(1rem,env(safe-area-inset-left,0px)))]"
       : null;
 
