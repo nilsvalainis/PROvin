@@ -4,6 +4,7 @@
  */
 
 const MAX_DRAFT_STRING = 120_000;
+const MAX_DRAFT_DATA_URL_STRING = 15_000_000;
 
 /** Noņem BOM, NUL un vadības simbolus (izņemot \t \n \r). */
 export function sanitizeDraftTextForStorage(s: string, maxLen = MAX_DRAFT_STRING): string {
@@ -15,13 +16,20 @@ export function sanitizeDraftTextForStorage(s: string, maxLen = MAX_DRAFT_STRING
 }
 
 export function deepSanitizeDraftStrings(value: unknown): unknown {
-  if (typeof value === "string") return sanitizeDraftTextForStorage(value);
-  if (Array.isArray(value)) return value.map(deepSanitizeDraftStrings);
+  return deepSanitizeDraftStringsWithKey(value, "");
+}
+
+function deepSanitizeDraftStringsWithKey(value: unknown, key: string): unknown {
+  if (typeof value === "string") {
+    const maxLen = key === "dataUrl" ? MAX_DRAFT_DATA_URL_STRING : MAX_DRAFT_STRING;
+    return sanitizeDraftTextForStorage(value, maxLen);
+  }
+  if (Array.isArray(value)) return value.map((item) => deepSanitizeDraftStringsWithKey(item, key));
   if (value !== null && typeof value === "object") {
     const o = value as Record<string, unknown>;
     const out: Record<string, unknown> = {};
     for (const k of Object.keys(o)) {
-      out[k] = deepSanitizeDraftStrings(o[k]);
+      out[k] = deepSanitizeDraftStringsWithKey(o[k], k);
     }
     return out;
   }

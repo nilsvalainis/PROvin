@@ -169,7 +169,7 @@ function normalizeOfferAttachments(raw: unknown): IrissOfferAttachment[] {
       const id = sanitizeDraftTextForStorage(typeof o.id === "string" ? o.id : "", 64);
       const name = sanitizeDraftTextForStorage(typeof o.name === "string" ? o.name : "", 160);
       const mimeType = sanitizeDraftTextForStorage(typeof o.mimeType === "string" ? o.mimeType : "", 120);
-      const dataUrl = sanitizeDraftTextForStorage(typeof o.dataUrl === "string" ? o.dataUrl : "", 800_000);
+      const dataUrl = sanitizeDraftTextForStorage(typeof o.dataUrl === "string" ? o.dataUrl : "", 15_000_000);
       const sizeRaw = typeof o.size === "number" ? o.size : Number.parseInt(String(o.size ?? "0"), 10);
       const size = Number.isFinite(sizeRaw) ? Math.max(0, Math.min(sizeRaw, 10_000_000)) : 0;
       if (!id || !name || !dataUrl) return null;
