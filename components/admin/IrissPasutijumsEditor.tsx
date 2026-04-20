@@ -318,7 +318,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   );
 
   const shellCard = useMemo(
-    () => "rounded-xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5",
+    () => "border-b border-[#E5E7EB] bg-white py-4 sm:py-5",
     [],
   );
 
@@ -342,7 +342,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     "inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50";
 
   return (
-    <div className="w-full max-w-none pb-28 sm:pb-8">
+    <div className="w-full max-w-none bg-white pb-28 sm:pb-8">
       <AdminDashboardHeaderWithMenu>
         <div className="flex flex-col gap-2">
           <Link
@@ -423,7 +423,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
         ) : null}
       </AdminDashboardHeaderWithMenu>
 
-      <div className="mt-4 space-y-5 sm:mt-6">
+      <div className="mt-2 space-y-0 sm:mt-2">
         <section className={shellCard}>
           <IrissListingPlatformChipsRow rec={rec} />
           <BlockTitle>Klienta dati</BlockTitle>

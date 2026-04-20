@@ -82,4 +82,4 @@ export const LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS =
 
 /** Kompakts noapaļots taisnstūris ar burtu; pielikt `LISTING_PLATFORM_CHIPS[*].chipClass`. */
 export const LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS =
-  "inline-flex h-10 min-w-[2.5rem] shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/55 px-2.5 text-[11px] font-semibold leading-none tracking-tight shadow-sm backdrop-blur-xl transition-transform active:scale-[0.96] sm:h-10 sm:min-w-[2.6rem] sm:px-2.5";
+  "inline-flex h-10 min-w-[2.5rem] shrink-0 items-center justify-center rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-2.5 text-[11px] font-semibold leading-none tracking-tight text-black shadow-sm transition-transform active:scale-[0.96] sm:h-10 sm:min-w-[2.6rem] sm:px-2.5";

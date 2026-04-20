@@ -1,9 +1,9 @@
 .admin-ios-theme {
-  --admin-ios-bg: #1c1c1e;
-  --admin-ios-surface: #2c2c2e;
-  --admin-ios-surface-elevated: rgb(58 58 60 / 0.72);
-  --admin-ios-border: rgb(255 255 255 / 0.1);
-  --admin-ios-border-strong: rgb(255 255 255 / 0.16);
+  --admin-ios-bg: #ffffff;
+  --admin-ios-surface: #ffffff;
+  --admin-ios-surface-elevated: #ffffff;
+  --admin-ios-border: #e5e7eb;
+  --admin-ios-border-strong: #d1d5db;
   --admin-ios-danger: #ff3b30;
   --admin-ios-success: #34c759;
   --admin-ios-blue: #007aff;
@@ -13,15 +13,15 @@
   --color-provin-accent-hover: #0062d1;
   --color-provin-accent-soft: rgb(0 122 255 / 0.18);
   --color-provin-accent-muted: #4f8bcf;
-  --color-provin-muted: var(--admin-ios-gray);
-  --color-apple-text: #f2f2f7;
+  --color-provin-muted: #000000;
+  --color-apple-text: #000000;
   --color-provin-surface: var(--admin-ios-bg);
   --color-provin-surface-2: var(--admin-ios-surface);
   --color-canvas: var(--admin-ios-bg);
 
   color: var(--color-apple-text);
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-  background: linear-gradient(180deg, #1c1c1e 0%, #171719 100%);
+  background: #ffffff;
 }
 
 .admin-ios-theme :is(button, input, select, textarea) {
@@ -29,19 +29,30 @@
 }
 
 .admin-ios-theme a {
-  color: var(--admin-ios-blue);
+  color: #000000;
+}
+
+.admin-ios-theme :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd) {
+  color: #000000;
+}
+
+.admin-ios-theme [class*="text-slate-"],
+.admin-ios-theme [class*="text-zinc-"],
+.admin-ios-theme [class*="text-neutral-"],
+.admin-ios-theme [class*="text-gray-"] {
+  color: #000000 !important;
 }
 
 .admin-ios-theme :is(input, select, textarea) {
   border-radius: 14px !important;
   border: 1px solid var(--admin-ios-border) !important;
-  background: rgb(44 44 46 / 0.78) !important;
-  color: #f2f2f7 !important;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.03);
+  background: #ffffff !important;
+  color: #000000 !important;
+  box-shadow: none;
 }
 
 .admin-ios-theme :is(input, select, textarea)::placeholder {
-  color: var(--admin-ios-gray) !important;
+  color: #6b7280 !important;
 }
 
 .admin-ios-theme :is(input, select, textarea):focus-visible {
@@ -55,8 +66,8 @@
 .admin-ios-theme .provin-btn-ghost {
   border-radius: 12px;
   border: 1px solid var(--admin-ios-border);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .admin-ios-theme .lucide {
@@ -75,7 +86,7 @@
 .admin-ios-theme .shadow-sm,
 .admin-ios-theme .shadow-lg,
 .admin-ios-theme .shadow-xl {
-  box-shadow: 0 10px 26px rgb(0 0 0 / 0.22), 0 1px 0 rgb(255 255 255 / 0.04) !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.08) !important;
 }
 
 .admin-ios-theme .bg-red-700,
