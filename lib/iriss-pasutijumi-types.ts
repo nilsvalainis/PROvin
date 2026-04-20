@@ -34,6 +34,7 @@ export type IrissPasutijumsRecord = {
 
 export type IrissPasutijumsListRow = {
   id: string;
+  createdAt: string;
   updatedAt: string;
   brandModel: string;
   totalBudget: string;

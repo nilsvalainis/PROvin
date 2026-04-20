@@ -13,6 +13,9 @@ import {
 
 const DEFAULT_RELATIVE_DIR = ".data/iriss-pasutijumi";
 const BLOB_PREFIX = "iriss-pasutijumi/";
+const BACKUP_RELATIVE_DIR = ".data/iriss-pasutijumi-backups";
+const BACKUP_BLOB_PREFIX = "iriss-pasutijumi-backups/";
+const BACKUP_KEEP_COUNT = 10;
 
 /** AWS/Netlify u.c. — `/var/task` parasti nav rakstāms; `/tmp` ir (tikai ne-Vercel serverless). */
 function isNonVercelServerlessRuntime(): boolean {
@@ -96,6 +99,14 @@ function blobPathname(prefix: string, id: string): string {
   return `${prefix}${id}.json`;
 }
 
+function backupFsPath(dir: string, id: string, ts: string): string {
+  return path.join(dir, `${id}__${ts}.json`);
+}
+
+function backupBlobPathname(prefix: string, id: string, ts: string): string {
+  return `${prefix}${id}__${ts}.json`;
+}
+
 async function streamToUtf8(stream: ReadableStream<Uint8Array>): Promise<string> {
   return new Response(stream).text();
 }
@@ -107,6 +118,35 @@ async function readJsonFromBlob(pathname: string, token: string): Promise<unknow
     return JSON.parse(await streamToUtf8(res.stream)) as unknown;
   } catch {
     return null;
+  }
+}
+
+async function trimFsBackups(dir: string, id: string): Promise<void> {
+  try {
+    const names = await fs.readdir(dir);
+    const own = names
+      .filter((n) => n.startsWith(`${id}__`) && n.endsWith(".json"))
+      .sort()
+      .reverse();
+    const stale = own.slice(BACKUP_KEEP_COUNT);
+    await Promise.all(stale.map((name) => fs.unlink(path.join(dir, name)).catch(() => undefined)));
+  } catch {
+    /* ignore backup trimming errors */
+  }
+}
+
+async function trimBlobBackups(token: string, prefix: string, id: string): Promise<void> {
+  try {
+    const page = await list({ token, prefix: `${prefix}${id}__`, limit: 1000, mode: "expanded" });
+    const own = page.blobs
+      .filter((b) => b.pathname.endsWith(".json"))
+      .map((b) => b.pathname)
+      .sort()
+      .reverse();
+    const stale = own.slice(BACKUP_KEEP_COUNT);
+    await Promise.all(stale.map((pathname) => del(pathname, { token }).catch(() => undefined)));
+  } catch {
+    /* ignore backup trimming errors */
   }
 }
 
@@ -183,6 +223,7 @@ export async function listIrissPasutijumi(): Promise<IrissPasutijumsListRow[]> {
       if (!rec) continue;
       rows.push({
         id: rec.id,
+        createdAt: rec.createdAt,
         updatedAt: rec.updatedAt,
         brandModel: rec.brandModel.trim() || "—",
         totalBudget: rec.totalBudget.trim() || "—",
@@ -214,6 +255,7 @@ export async function listIrissPasutijumi(): Promise<IrissPasutijumsListRow[]> {
     if (!rec) continue;
     rows.push({
       id: rec.id,
+      createdAt: rec.createdAt,
       updatedAt: rec.updatedAt,
       brandModel: rec.brandModel.trim() || "—",
       totalBudget: rec.totalBudget.trim() || "—",
@@ -261,9 +303,21 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
       updatedAt,
       createdAt,
     };
+    const backupTs = updatedAt.replace(/[:.]/g, "-");
 
     if (r.kind === "blob") {
       const pathname = blobPathname(r.prefix, out.id);
+      if (existing) {
+        const backupPath = backupBlobPathname(BACKUP_BLOB_PREFIX, out.id, backupTs);
+        await put(backupPath, JSON.stringify(existing, null, 2), {
+          access: "private",
+          token: r.token,
+          contentType: "application/json; charset=utf-8",
+          addRandomSuffix: false,
+          allowOverwrite: true,
+        });
+        await trimBlobBackups(r.token, BACKUP_BLOB_PREFIX, out.id);
+      }
       const body = JSON.stringify(out, null, 2);
       await put(pathname, body, {
         access: "private",
@@ -276,6 +330,12 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
     }
 
     await fs.mkdir(r.dir, { recursive: true });
+    if (existing) {
+      const backupDir = path.join(process.cwd(), BACKUP_RELATIVE_DIR);
+      await fs.mkdir(backupDir, { recursive: true });
+      await fs.writeFile(backupFsPath(backupDir, out.id, backupTs), JSON.stringify(existing, null, 2), "utf8");
+      await trimFsBackups(backupDir, out.id);
+    }
     const fp = filePath(r.dir, out.id);
     const tmp = `${fp}.tmp`;
     await fs.writeFile(tmp, JSON.stringify(out, null, 2), "utf8");

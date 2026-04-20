@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeftRight } from "lucide-react";
 
 function pillPro(active: boolean) {
   return active
@@ -24,17 +23,13 @@ export function AdminWorkspaceSwitcher() {
 
   return (
     <div
-      className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 md:justify-start"
+      className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 md:justify-start"
       role="navigation"
       aria-label="Projekta zona"
     >
       <Link href="/admin" className={pillPro(proActive)} aria-current={proActive ? "page" : undefined}>
         PRO
       </Link>
-      <ArrowLeftRight
-        className={`h-3.5 w-3.5 shrink-0 opacity-80 sm:h-4 sm:w-4 ${isIriss ? "text-[#EF7D1A]" : "text-[var(--color-provin-muted)]"}`}
-        aria-hidden
-      />
       <Link
         href="/admin/iriss/pasutijumi"
         className={pillIriss(isIriss)}

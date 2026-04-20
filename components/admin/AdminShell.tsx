@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AdminMobilePullToRefresh } from "@/components/admin/AdminMobilePullToRefresh";
 import { AdminSidebarNav } from "./AdminSidebarNav";
@@ -80,27 +79,18 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
   );
 
   const isProWorkspace = workspace === "pro";
-  /** Kamēr IRISS ir tikai „Pasūtījumi”, mobilajā paslēdzam PRO/IRISS joslu — navigācija caur izvēlni + saite uz PRO. */
-  const hideWorkspaceSwitcherOnMobile = !isProWorkspace;
-
   const asideMobileClasses = mobileNavOpen
-    ? "max-md:fixed max-md:left-0 max-md:top-[3.5rem] max-md:z-[60] max-md:flex max-md:h-[calc(100dvh-3.5rem)] max-md:w-[min(20rem,88vw)] max-md:flex-col max-md:overflow-y-auto max-md:border-r max-md:border-slate-200/70 max-md:bg-white/98 max-md:shadow-2xl max-md:backdrop-blur-sm"
+    ? "max-md:fixed max-md:right-0 max-md:top-[3.5rem] max-md:z-[60] max-md:flex max-md:h-[calc(100dvh-3.5rem)] max-md:w-[min(14rem,74vw)] max-md:flex-col max-md:overflow-y-auto max-md:border-l max-md:border-slate-200/70 max-md:bg-white/98 max-md:shadow-2xl max-md:backdrop-blur-sm"
     : "max-md:hidden";
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--color-provin-surface)]">
-      <header
-        className={`sticky top-0 z-[45] flex shrink-0 items-center gap-2 border-b border-slate-200/70 bg-white/90 px-3 py-1.5 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm sm:px-4 ${hideWorkspaceSwitcherOnMobile ? "max-md:justify-end" : ""}`}
-      >
-        <div className={`min-w-0 flex-1 items-center gap-2 ${hideWorkspaceSwitcherOnMobile ? "max-md:hidden" : "flex"}`}>
+      <header className="sticky top-0 z-[45] flex shrink-0 items-center gap-2 border-b border-slate-200/70 bg-white/90 px-3 py-1.5 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm sm:px-4">
+        <div className="min-w-0 flex flex-1 items-center gap-2">
           <AdminWorkspaceSwitcher />
           <div className="hidden items-center gap-2 md:flex">
             <div className="h-5 w-px bg-slate-200/90" aria-hidden />
-            {isProWorkspace ? (
-              <AdminSidebarNav baseUrl={baseUrl} orientation="horizontal" />
-            ) : (
-              <IrissAdminSidebarNav orientation="horizontal" />
-            )}
+            {isProWorkspace ? <AdminSidebarNav baseUrl={baseUrl} orientation="horizontal" /> : null}
           </div>
         </div>
         <div className="hidden md:flex">
@@ -148,34 +138,13 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
           className={`shrink-0 border-b border-slate-200/70 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm ${asideMobileClasses}`}
           aria-hidden={!mobileNavOpen}
         >
-          <div className="flex flex-wrap items-start justify-between gap-3 p-3 sm:p-4">
+          <div className="flex flex-col gap-2 p-2.5">
             <div className="flex w-full min-w-0 items-start justify-between gap-2">
-              <div className="min-w-0">
-                {isProWorkspace ? (
-                  <>
-                    <Link
-                      href="/admin"
-                      className="block text-[15px] font-semibold leading-snug tracking-tight text-[var(--color-provin-accent)]"
-                    >
-                      PROVIN
-                    </Link>
-                    <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-                      Administrēšana
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-[15px] font-semibold tracking-tight text-[var(--color-apple-text)]">IRISS</p>
-                    <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-                      Administrēšana
-                    </p>
-                  </>
-                )}
-              </div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">Menu</p>
               <button
                 type="button"
                 onClick={onAsideCloseClick}
-                className="shrink-0 rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-xs font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50 md:hidden"
+                className="shrink-0 rounded-lg border border-slate-200/90 bg-white px-2 py-1 text-[11px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50 md:hidden"
                 aria-label="Aizvērt galveno izvēlni"
                 title="Aizvērt izvēlni"
               >
@@ -185,7 +154,7 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
               </button>
             </div>
             {isProWorkspace ? <AdminSidebarNav baseUrl={baseUrl} /> : <IrissAdminSidebarNav />}
-            <div>
+            <div className="pt-0.5">
               <LogoutButton />
             </div>
           </div>

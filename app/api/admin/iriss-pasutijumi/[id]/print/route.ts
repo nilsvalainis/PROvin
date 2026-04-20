@@ -12,7 +12,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!isSafeIrissPasutijumsId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   const rec = await readIrissPasutijums(id);
   if (!rec) return NextResponse.json({ error: "not_found" }, { status: 404 });
-  const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeStyle: "short" });
+  const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" });
   const html = buildIrissPasutijumsPrintHtml(rec, dateFmt.format(new Date()));
   return new NextResponse(html, {
     status: 200,
