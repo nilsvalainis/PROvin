@@ -139,7 +139,7 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
       <div className={`flex min-h-0 flex-1 flex-col ${!isProWorkspace ? "iriss-admin-scope" : ""}`}>
         <aside
           id="admin-mobile-nav-aside"
-          className={`shrink-0 border-b border-slate-200/70 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm ${asideMobileClasses}`}
+          className={`shrink-0 border-b border-slate-200/70 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm md:hidden ${asideMobileClasses}`}
           aria-hidden={!mobileNavOpen}
         >
           <div className="flex flex-col gap-2 p-2.5">
