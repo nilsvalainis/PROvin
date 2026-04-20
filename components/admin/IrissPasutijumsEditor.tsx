@@ -1,7 +1,6 @@
 "use client";
 
-import { ArrowLeft, FileDown, Menu, Paperclip, Phone, Plus, Save } from "lucide-react";
-import { Reorder } from "framer-motion";
+import { ArrowLeft, FileDown, Paperclip, Phone, Plus, Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -60,58 +59,6 @@ function newOfferDraft(nextNumber: number): OfferDraft {
     attachments: [],
     createdAt: now,
   };
-}
-
-function dataUrlApproxBytes(dataUrl: string): number {
-  const base64 = dataUrl.split(",")[1] ?? "";
-  return Math.floor((base64.length * 3) / 4);
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") resolve(reader.result);
-      else reject(new Error("invalid_file_data"));
-    };
-    reader.onerror = () => reject(reader.error ?? new Error("read_failed"));
-    reader.readAsDataURL(file);
-  });
-}
-
-function loadImageFromDataUrl(dataUrl: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error("image_load_failed"));
-    img.src = dataUrl;
-  });
-}
-
-async function compressImageToDataUrl(file: File, targetBytes = 2_000_000): Promise<string> {
-  const originalDataUrl = await readFileAsDataUrl(file);
-  if (dataUrlApproxBytes(originalDataUrl) <= targetBytes) return originalDataUrl;
-  const img = await loadImageFromDataUrl(originalDataUrl);
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return originalDataUrl;
-
-  const maxBaseDim = 2200;
-  let scale = Math.min(1, maxBaseDim / Math.max(img.width, img.height));
-
-  for (let attempt = 0; attempt < 7; attempt += 1) {
-    canvas.width = Math.max(1, Math.round(img.width * scale));
-    canvas.height = Math.max(1, Math.round(img.height * scale));
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    for (const quality of [0.86, 0.78, 0.7, 0.62, 0.54, 0.48]) {
-      const candidate = canvas.toDataURL("image/jpeg", quality);
-      if (dataUrlApproxBytes(candidate) <= targetBytes || quality === 0.48) return candidate;
-    }
-    scale *= 0.86;
-  }
-  return canvas.toDataURL("image/jpeg", 0.46);
 }
 
 function BlockTitle({ children }: { children: React.ReactNode }) {
@@ -293,23 +240,20 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       fileArr.map(
         (file) =>
           new Promise<IrissOfferAttachment | null>((resolve) => {
-            void (async () => {
-              try {
-                const dataUrl = file.type.startsWith("image/")
-                  ? await compressImageToDataUrl(file, 2_000_000)
-                  : await readFileAsDataUrl(file);
-                if (!dataUrl) return resolve(null);
-                resolve({
-                  id: crypto.randomUUID(),
-                  name: file.name,
-                  mimeType: file.type || "application/octet-stream",
-                  size: dataUrlApproxBytes(dataUrl),
-                  dataUrl,
-                });
-              } catch {
-                resolve(null);
-              }
-            })();
+            const fr = new FileReader();
+            fr.onload = () => {
+              const dataUrl = typeof fr.result === "string" ? fr.result : "";
+              if (!dataUrl) return resolve(null);
+              resolve({
+                id: crypto.randomUUID(),
+                name: file.name,
+                mimeType: file.type || "application/octet-stream",
+                size: file.size,
+                dataUrl,
+              });
+            };
+            fr.onerror = () => resolve(null);
+            fr.readAsDataURL(file);
           }),
       ),
     );
@@ -394,6 +338,9 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     window.open(`https://wa.me/${digits}`, "_blank", "noopener,noreferrer");
   }, [normalizedPhone, patch, rec.phone]);
 
+  const offerIconClass =
+    "inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50";
+
   return (
     <div className="w-full max-w-none pb-28 sm:pb-8">
       <AdminDashboardHeaderWithMenu>
@@ -421,7 +368,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                   key={offer.id}
                   type="button"
                   onClick={() => openEditOffer(offer)}
-                  className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
+                  className={offerIconClass}
                   title={offer.title}
                 >
                   P{idx + 1}
@@ -429,6 +376,21 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               ))}
             </div>
           </div>
+          {rec.offers.length > 0 ? (
+            <div className="flex items-center gap-1 md:hidden">
+              {rec.offers.map((offer, idx) => (
+                <button
+                  key={offer.id}
+                  type="button"
+                  onClick={() => openEditOffer(offer)}
+                  className={offerIconClass}
+                  title={offer.title}
+                >
+                  P{idx + 1}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <div className="flex shrink-0 flex-nowrap items-center justify-end gap-1 sm:flex-wrap sm:gap-2">
             <button
               type="button"
@@ -685,46 +647,22 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                 />
               </label>
               {offerDraft.attachments.length > 0 ? (
-                <Reorder.Group
-                  axis="y"
-                  values={offerDraft.attachments.map((a) => a.id)}
-                  onReorder={(ids) =>
-                    setOfferDraft((d) => {
-                      const m = new Map(d.attachments.map((a) => [a.id, a]));
-                      return { ...d, attachments: ids.map((id) => m.get(id)).filter((x): x is IrissOfferAttachment => Boolean(x)) };
-                    })
-                  }
-                  className="mt-2 space-y-1.5"
-                >
+                <ul className="mt-2 space-y-1">
                   {offerDraft.attachments.map((a) => (
-                    <Reorder.Item key={a.id} value={a.id} className="list-none">
-                      <div className="flex items-center gap-2 rounded-lg border border-slate-200/80 bg-white px-2 py-1.5 text-[12px] text-[var(--color-provin-muted)]">
-                        <Menu className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
-                        {a.mimeType.startsWith("image/") ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={a.dataUrl} alt={a.name} className="h-10 w-14 shrink-0 rounded object-cover" />
-                        ) : (
-                          <span className="inline-flex h-10 w-14 shrink-0 items-center justify-center rounded bg-slate-100 text-[10px] font-semibold text-slate-500">
-                            FILE
-                          </span>
-                        )}
-                        <span className="min-w-0 flex-1 truncate">{a.name}</span>
-                        <span className="shrink-0 text-[10px] tabular-nums text-slate-400">
-                          {(a.size / (1024 * 1024)).toFixed(2)} MB
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setOfferDraft((d) => ({ ...d, attachments: d.attachments.filter((x) => x.id !== a.id) }))
-                          }
-                          className="rounded-md px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50"
-                        >
-                          Noņemt
-                        </button>
-                      </div>
-                    </Reorder.Item>
+                    <li key={a.id} className="flex items-center justify-between gap-2 text-[12px] text-[var(--color-provin-muted)]">
+                      <span className="truncate">{a.name}</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOfferDraft((d) => ({ ...d, attachments: d.attachments.filter((x) => x.id !== a.id) }))
+                        }
+                        className="rounded-md px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50"
+                      >
+                        Noņemt
+                      </button>
+                    </li>
                   ))}
-                </Reorder.Group>
+                </ul>
               ) : null}
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
