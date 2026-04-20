@@ -1,8 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 type Props = {
@@ -22,14 +21,12 @@ function isCoarseMobileViewport() {
 }
 
 /**
- * Mobilajā admin saturam — skrollējams konteiners + „slide page to refresh”.
- * iOS Safari dokumenta pull-to-refresh šajā layout bieži nestrādā; šī ir uzticama alternatīva.
+ * Mobilajā admin saturam — skrollējams konteiners + kluss pull-to-refresh (router.refresh).
+ * iOS Safari dokumenta PTR šajā layout bieži nestrādā; šī ir uzticama alternatīva.
  */
 export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children }: Props) {
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [pullPx, setPullPx] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
 
   const startYRef = useRef(0);
   const startXRef = useRef(0);
@@ -37,25 +34,18 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
   const pullPxRef = useRef(0);
   const refreshingRef = useRef(false);
 
-  useEffect(() => {
-    refreshingRef.current = refreshing;
-  }, [refreshing]);
-
   const resetPull = useCallback(() => {
     pullActiveRef.current = false;
     pullPxRef.current = 0;
-    setPullPx(0);
   }, []);
 
   const doRefresh = useCallback(() => {
     if (refreshingRef.current) return;
     refreshingRef.current = true;
-    setRefreshing(true);
     resetPull();
     router.refresh();
     window.setTimeout(() => {
       refreshingRef.current = false;
-      setRefreshing(false);
     }, 900);
   }, [resetPull, router]);
 
@@ -89,18 +79,15 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
 
       if (rawDy <= 0) {
         pullPxRef.current = 0;
-        setPullPx(0);
         return;
       }
 
-      // Horizontāli dominējoša kustība pie saknes — nekonkurēt ar rindu swipe u.c.
       if (Math.abs(rawDx) > rawDy * 1.12 && rawDy < 28) {
         return;
       }
 
       const next = Math.min(rawDy * RUBBER, MAX_PULL_PX);
       pullPxRef.current = next;
-      setPullPx(next);
       if (next > 0) {
         e.preventDefault();
       }
@@ -112,7 +99,6 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
       pullActiveRef.current = false;
       const released = pullPxRef.current;
       pullPxRef.current = 0;
-      setPullPx(0);
       if (released >= PULL_THRESHOLD_PX && !refreshingRef.current) {
         doRefresh();
       }
@@ -147,34 +133,6 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
         ref={scrollRef}
         className="relative flex w-full min-w-0 min-h-0 flex-1 flex-col max-md:overflow-y-auto max-md:overscroll-y-contain max-md:[-webkit-overflow-scrolling:touch] max-md:touch-pan-y md:overflow-visible"
       >
-        <div
-          className="pointer-events-none sticky top-0 z-[2] flex justify-center py-1 md:hidden"
-          aria-hidden
-        >
-          <span className="rounded-full bg-slate-100/95 px-2.5 py-0.5 text-[10px] font-semibold tracking-tight text-slate-500 shadow-sm">
-            Slide page to refresh
-          </span>
-        </div>
-
-        {pullPx > 0 || refreshing ? (
-          <div
-            className="pointer-events-none absolute inset-x-0 top-0 z-[3] flex flex-col items-center gap-1 pt-2 md:hidden"
-            style={{ height: Math.max(pullPx, refreshing ? 48 : 0) }}
-            aria-hidden
-          >
-            <RefreshCw
-              className={`h-5 w-5 text-slate-500 ${refreshing ? "animate-spin" : ""}`}
-              strokeWidth={2.25}
-              style={{
-                transform: refreshing ? undefined : `rotate(${Math.min(pullPx / PULL_THRESHOLD_PX, 1) * 220}deg)`,
-              }}
-            />
-            {pullPx >= PULL_THRESHOLD_PX * 0.85 && !refreshing ? (
-              <span className="text-[10px] font-semibold text-slate-600">Release to refresh</span>
-            ) : null}
-          </div>
-        ) : null}
-
         <div
           className={`flex w-full min-w-0 max-w-none flex-col ${isDetailScreen ? "" : "gap-3"}`}
         >
