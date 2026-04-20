@@ -1,17 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import {
-  SITE_RAIL_HOME_SCROLL_IDS,
   buildSiteRailSections,
+  getSiteRailHomeScrollIds,
   normalizeSitePath,
   siteRailActiveFromHash,
   siteRailRouteActiveIndex,
 } from "@/lib/site-rail-sections";
-
-const HOME_SCROLL_IDS = SITE_RAIL_HOME_SCROLL_IDS;
 
 function useHash(): string {
   const [hash, setHash] = useState("");
@@ -25,22 +23,22 @@ function useHash(): string {
 }
 
 /** Fallback, ja IO vēl nav datu (tukši elementi / īpaši īss skats). */
-function activeFromScrollLine(): number {
+function activeFromScrollLine(scrollIds: readonly string[]): number {
   if (typeof window === "undefined" || typeof document === "undefined") return 0;
   if (window.scrollY < 8) return 0;
   const line = window.scrollY + Math.min(88, window.innerHeight * 0.26);
   let idx = 0;
-  for (let i = 0; i < HOME_SCROLL_IDS.length; i++) {
-    const el = document.getElementById(HOME_SCROLL_IDS[i]);
+  for (let i = 0; i < scrollIds.length; i++) {
+    const el = document.getElementById(scrollIds[i]);
     if (!el) continue;
     const top = el.getBoundingClientRect().top + window.scrollY;
     if (top <= line + 1) idx = i;
   }
   const doc = document.documentElement;
   const scrollBottomGap = doc.scrollHeight - window.scrollY - window.innerHeight;
-  const lastId = HOME_SCROLL_IDS[HOME_SCROLL_IDS.length - 1];
+  const lastId = scrollIds[scrollIds.length - 1];
   if (scrollBottomGap <= 6 && lastId && document.getElementById(lastId)) {
-    return HOME_SCROLL_IDS.length - 1;
+    return scrollIds.length - 1;
   }
   return idx;
 }
@@ -51,12 +49,12 @@ function activeFromScrollLine(): number {
  */
 export function SiteSectionRail() {
   const t = useTranslations("SiteRail");
-  const locale = useLocale();
   const pathname = usePathname() ?? "";
   const hash = useHash();
   const [active, setActive] = useState(0);
   const [isRailOpen, setIsRailOpen] = useState(false);
-  const ratioRef = useRef<number[]>(new Array(HOME_SCROLL_IDS.length).fill(0));
+  const scrollIds = useMemo(() => [...getSiteRailHomeScrollIds()], []);
+  const ratioRef = useRef<number[]>(new Array(scrollIds.length).fill(0));
 
   const normalizedPath = useMemo(() => normalizeSitePath(pathname), [pathname]);
   const showRail =
@@ -65,7 +63,7 @@ export function SiteSectionRail() {
     normalizedPath === "/pasutit" ||
     normalizedPath === "/biezi-jautajumi";
 
-  const sections = useMemo(() => buildSiteRailSections(locale, normalizedPath), [locale, normalizedPath]);
+  const sections = useMemo(() => buildSiteRailSections(normalizedPath), [normalizedPath]);
 
   const pickActiveIndex = useCallback((): number | null => {
     if (typeof window === "undefined") return null;
@@ -81,7 +79,7 @@ export function SiteSectionRail() {
 
     const doc = document.documentElement;
     if (window.scrollY + window.innerHeight >= doc.scrollHeight - 10) {
-      return HOME_SCROLL_IDS.length - 1;
+      return scrollIds.length - 1;
     }
     if (window.scrollY < 6) return 0;
 
@@ -95,8 +93,8 @@ export function SiteSectionRail() {
       }
     }
     if (bestR > 0.02) return best;
-    return activeFromScrollLine();
-  }, [normalizedPath, pathname]);
+    return activeFromScrollLine(scrollIds);
+  }, [normalizedPath, pathname, scrollIds]);
 
   const flush = useCallback(() => {
     const idx = pickActiveIndex();
@@ -120,7 +118,7 @@ export function SiteSectionRail() {
     const ratios = ratioRef.current;
     ratios.fill(0);
 
-    const elements = HOME_SCROLL_IDS.map((id) => document.getElementById(id)).filter((el): el is HTMLElement => Boolean(el));
+    const elements = scrollIds.map((id) => document.getElementById(id)).filter((el): el is HTMLElement => Boolean(el));
     if (elements.length === 0) {
       flush();
       return;
@@ -130,7 +128,7 @@ export function SiteSectionRail() {
       (entries) => {
         for (const entry of entries) {
           const id = entry.target.id;
-          const i = HOME_SCROLL_IDS.indexOf(id as (typeof HOME_SCROLL_IDS)[number]);
+          const i = scrollIds.indexOf(id);
           if (i >= 0) ratios[i] = entry.intersectionRatio;
         }
         flush();
@@ -160,7 +158,7 @@ export function SiteSectionRail() {
       document.removeEventListener("scroll", onScrollOrResize, true);
       window.removeEventListener("resize", onScrollOrResize);
     };
-  }, [flush, normalizedPath, pathname, showRail]);
+  }, [flush, normalizedPath, pathname, showRail, scrollIds]);
 
   if (!showRail) return null;
 
@@ -204,7 +202,7 @@ export function SiteSectionRail() {
             {sections.map((s, i) => {
               const isActive = i === active;
               return (
-                <li key={s.labelKey} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+                <li key={`${s.labelKey}:${s.href}`} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
                   <Link
                     href={s.href}
                     className={`${linkBase} site-section-rail__link w-full min-w-0 pr-1 ${

@@ -1,19 +1,20 @@
-import { faqHashHref, homePath, irissAnchorHref } from "@/lib/paths";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
+import { isProvinSelectPublic } from "@/lib/provin-select-flags";
+import { PROVIN_SELECT_FORM_HASH, PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
 
-/** Viens enkurs uz lapu — bez atsevišķa „pasūtīt”; forma ir hero plūsmā (`#pasutit` joprojām ritina uz formu). */
-export const SITE_RAIL_HOME_SCROLL_IDS = [
-  "home-hero",
-  "cena",
-  "kas-ir-iriss",
-  "biezi-jautajumi",
-  "kontakti",
-] as const;
+/** Sadaļu DOM `id` secība mājas lapā (scroll / rail). */
+export function getSiteRailHomeScrollIds(): readonly string[] {
+  if (isProvinSelectPublic()) {
+    return ["home-hero", "cena", PROVIN_SELECT_SECTION_ID, "kas-ir-iriss", "biezi-jautajumi", "kontakti"] as const;
+  }
+  return ["home-hero", "cena", "kas-ir-iriss", "biezi-jautajumi", "kontakti"] as const;
+}
 
 export type SiteRailLabelKey =
   | "sakums"
   | "kasIekljauts"
-  | "approvedIriss"
+  | "provinSelect"
+  | "kasSlapjasAizProvin"
   | "buj"
   | "kontakti";
 
@@ -31,42 +32,50 @@ export function normalizeSitePath(pathname: string | null | undefined): string {
   return p;
 }
 
-export function buildSiteRailSections(
-  locale: string,
-  normalizedPath: string,
-): readonly SiteRailSection[] {
-  const base = homePath(locale);
-  const cenaHref = base === "/" ? "/#cena" : `${base}#cena`;
-  const bujHref = normalizedPath === "/biezi-jautajumi" ? "/biezi-jautajumi" : faqHashHref(locale);
-  const kontaktiHref = base === "/" ? "/#kontakti" : `${base}#kontakti`;
-  return [
-    { href: base === "/" ? "/" : base, labelKey: "sakums" },
-    { href: cenaHref, labelKey: "kasIekljauts" },
-    { href: irissAnchorHref(locale), labelKey: "approvedIriss" },
+/**
+ * Mobilā / sliežu izvēlne: `href` bez `/lv` — `next-intl` `Link` pats prefiksē (`applyPathnamePrefix`).
+ */
+export function buildSiteRailSections(normalizedPath: string): readonly SiteRailSection[] {
+  const bujHref = normalizedPath === "/biezi-jautajumi" ? "/biezi-jautajumi" : "/#biezi-jautajumi";
+  const out: SiteRailSection[] = [
+    { href: "/", labelKey: "sakums" },
+    { href: "/#cena", labelKey: "kasIekljauts" },
+  ];
+  if (isProvinSelectPublic()) {
+    out.push({ href: `/#${PROVIN_SELECT_SECTION_ID}`, labelKey: "provinSelect" });
+  }
+  out.push(
+    { href: "/#kas-ir-iriss", labelKey: "kasSlapjasAizProvin" },
     { href: bujHref, labelKey: "buj" },
-    { href: kontaktiHref, labelKey: "kontakti" },
-  ] as const;
+    { href: "/#kontakti", labelKey: "kontakti" },
+  );
+  return out;
 }
 
 export function siteRailActiveFromHash(raw: string): number | null {
   const h = raw.replace(/^#/, "").toLowerCase();
   if (!h) return null;
-  if (h === "home-hero") return 0;
-  if (h === "home-intro") return 0;
+  const provin = isProvinSelectPublic();
+  const irissIdx = provin ? 3 : 2;
+  const bujIdx = provin ? 4 : 3;
+  const kontaktiIdx = provin ? 5 : 4;
+
+  if (h === "home-hero" || h === "home-intro") return 0;
   if (h === ORDER_SECTION_ID || h === "order-form") return 0;
-  if (h === "site-content") return 1;
-  if (h === "cena") return 1;
-  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) return 2;
-  if (h === "biezi-jautajumi") return 3;
-  if (h === "kontakti") return 4;
+  if (h === "site-content" || h === "cena") return 1;
+  if (provin && (h === PROVIN_SELECT_SECTION_ID || h === PROVIN_SELECT_FORM_HASH)) return 2;
+  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) return irissIdx;
+  if (h === "biezi-jautajumi") return bujIdx;
+  if (h === "kontakti") return kontaktiIdx;
   return null;
 }
 
 export function siteRailRouteActiveIndex(pathname: string | null | undefined): number | null {
   if (pathname == null) return null;
   const p = normalizeSitePath(pathname);
+  const provin = isProvinSelectPublic();
   if (p === "/pasutit") return 0;
-  if (p === "/biezi-jautajumi") return 3;
+  if (p === "/biezi-jautajumi") return provin ? 4 : 3;
   return null;
 }
 

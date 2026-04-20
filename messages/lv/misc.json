@@ -13,8 +13,9 @@
   "SiteRail": {
     "navAria": "Galvenās sadaļas",
     "sakums": "Sākums",
-    "kasIekljauts": "KAS IEKĻAUTS CENĀ?",
-    "approvedIriss": "KAS SLĒPJAS AIZ PROVIN?",
+    "kasIekljauts": "Kas iekļauts cenā?",
+    "provinSelect": "PROVIN SELECT",
+    "kasSlapjasAizProvin": "KAS SLĒPJAS AIZ PROVIN?",
     "buj": "BUJ",
     "kontakti": "Kontakti"
   }

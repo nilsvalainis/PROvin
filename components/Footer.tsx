@@ -1,8 +1,7 @@
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { HeroVisual } from "@/components/HeroVisual";
 import { contactMailtoHref } from "@/lib/contact";
-import { homePath } from "@/lib/paths";
 import { CompanyLegalOneLine } from "@/components/CompanyLegalOneLine";
 import { homeContentMaxClass } from "@/lib/home-layout";
 import { renderProvinText } from "@/lib/provin-wordmark";
@@ -27,9 +26,9 @@ const contactIconShellClass =
 
 export async function Footer() {
   const t = await getTranslations("Footer");
-  const locale = await getLocale();
   const mailHref = contactMailtoHref();
-  const homeHref = homePath(locale);
+  /** `next-intl` `Link` — prefiksu `/lv` pievieno bibliotēka. */
+  const homeHref = "/";
   return (
     <footer
       id="kontakti"

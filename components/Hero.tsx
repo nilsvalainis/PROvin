@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { getMessages, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { HeroServiceGrid } from "@/components/HeroServiceGrid";
 import { approvedByIrissSignatureHeroClass, heroH1BlueKeywordClass } from "@/lib/home-layout";
@@ -9,7 +9,6 @@ type Pillar = { title: string; body: string };
 
 export async function Hero() {
   const t = await getTranslations("Hero");
-  const locale = await getLocale();
   const messages = await getMessages();
   const pillars = (messages as { Hero: { pillars: Pillar[] } }).Hero.pillars;
 
@@ -46,7 +45,7 @@ export async function Hero() {
           <div className="shrink-0 space-y-4 md:space-y-5">
             <div className="flex flex-col items-center">
               <Link
-                href={orderSectionHref(locale)}
+                href={orderSectionHref()}
                 className="provin-btn provin-btn--compact inline-flex min-h-[43px] w-auto max-w-[min(100%,17.5rem)] items-center justify-center gap-2 rounded-full px-5 text-[12px] font-medium uppercase tracking-[0.06em] shadow-[0_5px_17px_rgba(0,0,0,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent sm:min-h-[46px] sm:px-6 sm:text-[13px]"
               >
                 {t("cta")}

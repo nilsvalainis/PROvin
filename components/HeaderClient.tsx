@@ -2,7 +2,7 @@
 
 import { Menu, X } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildSiteRailSections, normalizeSitePath, siteRailMenuActiveIndex } from "@/lib/site-rail-sections";
 import { useSiteTheme } from "@/components/providers/SiteThemeProvider";
@@ -49,7 +49,6 @@ export function HeaderClient({
   menuCloseLabel,
 }: HeaderClientProps) {
   const pathname = usePathname() ?? "";
-  const locale = useLocale();
   const normalizedPath = normalizeSitePath(pathname);
   const tr = useTranslations("SiteRail");
   const { theme } = useSiteTheme();
@@ -64,7 +63,7 @@ export function HeaderClient({
   const desktopSiteSectionRailEnabled = false;
   const alignLogoWithDesktopRail = logoAlignWithRailSakums && desktopSiteSectionRailEnabled;
 
-  const railSections = useMemo(() => buildSiteRailSections(locale, normalizedPath), [locale, normalizedPath]);
+  const railSections = useMemo(() => buildSiteRailSections(normalizedPath), [normalizedPath]);
 
   const hash = useHash();
   const [open, setOpen] = useState(false);
@@ -250,7 +249,7 @@ export function HeaderClient({
                 >
                   {railSections.map((s, i) => (
                     <Link
-                      key={s.labelKey}
+                      key={`${s.labelKey}:${s.href}`}
                       href={s.href}
                       onClick={close}
                       className={railDropLinkClass(i === railMenuActive)}

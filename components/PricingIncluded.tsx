@@ -1,4 +1,4 @@
-import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { getMessages, getTranslations } from "next-intl/server";
 import {
   AlertTriangle,
   Building2,
@@ -37,8 +37,7 @@ const pricingGridWidthClass = "w-full max-w-[min(100%,68rem)]";
 
 export async function PricingIncluded({ embedded = false }: { embedded?: boolean } = {}) {
   const t = await getTranslations("Pricing");
-  const locale = await getLocale();
-  const irissHref = irissAnchorHref(locale);
+  const irissHref = irissAnchorHref();
   const messages = await getMessages();
   const raw = (messages as { Pricing?: { grid?: GridItem[] } }).Pricing?.grid;
   const grid = Array.isArray(raw) ? raw : [];
