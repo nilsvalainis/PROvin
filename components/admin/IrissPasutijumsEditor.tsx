@@ -4,7 +4,7 @@ import { ArrowLeft, Eye, FileDown, Loader2, Mail, Paperclip, Phone, Plus, Save, 
 import { Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import type { IrissOfferAttachment, IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -25,13 +25,6 @@ const fieldClass =
   "min-h-[44px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[16px] text-[var(--color-apple-text)] shadow-sm outline-none transition focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
 
 const textareaClass = `${fieldClass} min-h-[100px] resize-y py-2.5 leading-snug`;
-
-/** Piedāvājumu P1, P2 — tāds pats izmērs kā platformu čipiem; iOS zaļš. */
-const OFFER_P_CHIP_STYLE: CSSProperties = {
-  backgroundColor: "#34C759",
-  color: "#000000",
-  border: "1px solid #2AB650",
-};
 
 const offerPChipButtonClass = `${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} cursor-pointer select-none`;
 
@@ -239,6 +232,7 @@ function LabeledTextarea({
 }
 
 const ADMIN_MAIN_SCROLL_ID = "admin-main-scroll";
+const ADMIN_SCROLL_LOCK_CLASS = "admin-scroll-locked";
 
 /** Ilgā piespiešana (~450 ms), tad vilkšana — lai vertikālais skrolls netraucē `Reorder`. */
 function IrissOfferAttachmentReorderItem({
@@ -740,21 +734,16 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       offerDeleteConfirmOpen ||
       Boolean(transferUi);
     if (!lock) return;
-    const scrollEl = document.getElementById(ADMIN_MAIN_SCROLL_ID) as HTMLElement | null;
+    const html = document.documentElement;
+    const scrollEl = document.getElementById(ADMIN_MAIN_SCROLL_ID);
     const prevBodyOverflow = document.body.style.overflow;
-    const prevScrollOverflow = scrollEl?.style.overflow ?? "";
-    const prevScrollTouchAction = scrollEl?.style.touchAction ?? "";
+    html.classList.add(ADMIN_SCROLL_LOCK_CLASS);
+    scrollEl?.classList.add(ADMIN_SCROLL_LOCK_CLASS);
     document.body.style.overflow = "hidden";
-    if (scrollEl) {
-      scrollEl.style.overflow = "hidden";
-      scrollEl.style.touchAction = "none";
-    }
     return () => {
+      html.classList.remove(ADMIN_SCROLL_LOCK_CLASS);
+      scrollEl?.classList.remove(ADMIN_SCROLL_LOCK_CLASS);
       document.body.style.overflow = prevBodyOverflow;
-      if (scrollEl) {
-        scrollEl.style.overflow = prevScrollOverflow;
-        scrollEl.style.touchAction = prevScrollTouchAction;
-      }
     };
   }, [offerOpen, offerPdfPreviewUrl, deleteConfirmOpen, offerDeleteConfirmOpen, transferUi]);
 
@@ -953,7 +942,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                     type="button"
                     onClick={() => openEditOffer(offer)}
                     className={offerPChipButtonClass}
-                    style={OFFER_P_CHIP_STYLE}
+                    style={{ backgroundColor: "#34C759", color: "black", border: "1px solid #2AB650" }}
                     title={offer.title}
                   >
                     P{idx + 1}
@@ -968,7 +957,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                   type="button"
                   onClick={() => openEditOffer(offer)}
                   className={offerPChipButtonClass}
-                  style={OFFER_P_CHIP_STYLE}
+                  style={{ backgroundColor: "#34C759", color: "black", border: "1px solid #2AB650" }}
                   title={offer.title}
                 >
                   P{idx + 1}
