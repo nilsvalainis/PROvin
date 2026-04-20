@@ -34,7 +34,7 @@ function normalizePhoneForLv(raw: string): string {
   return `+371${digits}`;
 }
 
-/** PDF no API (`application/pdf` + attachment) — darbojas labāk nekā `window.open` + `print()` iOS Safari. */
+/** PDF no API — iOS Safari: slēpts `<a download target="_self">`, nevis `window.open`. */
 async function downloadPdfBlobFromResponse(res: Response, fallbackName: string): Promise<void> {
   const cd = res.headers.get("Content-Disposition");
   let name = fallbackName;
@@ -49,15 +49,26 @@ async function downloadPdfBlobFromResponse(res: Response, fallbackName: string):
     }
   }
   const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
+  if (blob.size < 32) throw new Error("empty_pdf");
+  const objectUrl = URL.createObjectURL(blob);
+  const safeName = /\.pdf$/i.test(name) ? name : `${name}.pdf`;
   const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
+  a.href = objectUrl;
+  a.download = safeName;
+  a.target = "_self";
   a.rel = "noopener";
+  a.hidden = true;
+  a.style.cssText = "display:none;position:fixed;left:-9999px;top:0;";
   document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 2500);
+  try {
+    a.click();
+  } catch {
+    window.location.assign(objectUrl);
+  }
+  window.setTimeout(() => {
+    a.remove();
+    URL.revokeObjectURL(objectUrl);
+  }, 5000);
 }
 
 type OfferDraft = {
@@ -212,7 +223,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
         alert("PDF ģenerēšana neizdevās.");
         return;
       }
-      await downloadPdfBlobFromResponse(res, `iriss-pasutijums-${rec.id}.pdf`);
+      await downloadPdfBlobFromResponse(res, "pasutijums.pdf");
     } catch {
       alert("Tīkla kļūda.");
     }
@@ -292,15 +303,20 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
         setOfferOpen(false);
 
         if (withPdf) {
-          const res = await fetch(
-            `/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/offer/${encodeURIComponent(offerOut.id)}/print`,
-            { credentials: "include" },
-          );
-          if (!res.ok) {
-            alert("PDF ģenerēšana neizdevās.");
-            return;
+          try {
+            const base = `/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/offer/${encodeURIComponent(offerOut.id)}/print`;
+            let res = await fetch(base, { credentials: "include" });
+            if (!res.ok) {
+              res = await fetch(`${base}?images=0`, { credentials: "include" });
+            }
+            if (!res.ok) {
+              alert("PDF ģenerēšana neizdevās.");
+              return;
+            }
+            await downloadPdfBlobFromResponse(res, "piedavajums.pdf");
+          } catch {
+            alert("PDF lejupielāde neizdevās (pārlūks).");
           }
-          await downloadPdfBlobFromResponse(res, `iriss-piedavajums-${offerOut.id}.pdf`);
         }
       } finally {
         setOfferBusy(false);

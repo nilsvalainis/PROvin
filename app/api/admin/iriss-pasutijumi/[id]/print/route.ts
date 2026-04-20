@@ -27,12 +27,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     });
   }
   const bytes = await buildIrissPasutijumsPdfBytes(rec);
-  const filename = `iriss-pasutijums-${id}.pdf`;
   return new NextResponse(Buffer.from(bytes), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": `attachment; filename="pasutijums.pdf"`,
       "Cache-Control": "no-store",
     },
   });

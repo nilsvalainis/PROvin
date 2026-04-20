@@ -28,14 +28,13 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string; off
       },
     });
   }
-  const bytes = await buildIrissOfferPdfBytes(rec, offer);
-  const safeOffer = offerId.replace(/[^0-9a-f-]/gi, "");
-  const filename = `iriss-piedavajums-${safeOffer || "offer"}.pdf`;
+  const embedImages = url.searchParams.get("images") !== "0";
+  const bytes = await buildIrissOfferPdfBytes(rec, offer, { embedImages });
   return new NextResponse(Buffer.from(bytes), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": `attachment; filename="piedavajums.pdf"`,
       "Cache-Control": "no-store",
     },
   });

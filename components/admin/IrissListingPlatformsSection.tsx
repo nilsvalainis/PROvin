@@ -4,8 +4,8 @@ import { Plus, Trash2 } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import {
   buildListingPlatformChips,
+  IR_LISTING_ALL_CHIP_STYLE,
   LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
-  LISTING_PLATFORM_CHIP_ALL_BUTTON_CLASS,
   LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS,
 } from "@/lib/iriss-listing-links";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -32,7 +32,8 @@ export function IrissListingPlatformChipsRow({ rec }: { rec: IrissPasutijumsReco
           target="_blank"
           rel="noopener noreferrer"
           title={c.title}
-          className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${c.chipClass}`}
+          className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS}
+          style={c.chipStyle}
         >
           {c.letter}
         </a>
@@ -42,7 +43,8 @@ export function IrissListingPlatformChipsRow({ rec }: { rec: IrissPasutijumsReco
         onClick={openAll}
         title="Atvērt visas saites"
         aria-label="Atvērt visas saites"
-        className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${LISTING_PLATFORM_CHIP_ALL_BUTTON_CLASS}`}
+        className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS}
+        style={IR_LISTING_ALL_CHIP_STYLE}
       >
         ALL
       </button>

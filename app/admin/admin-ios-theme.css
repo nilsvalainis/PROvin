@@ -1,10 +1,23 @@
 /*
- * Native overscroll: do not block browser pull-to-refresh / rubber-banding.
- * Custom PTR UI removed — rely on the browser (e.g. Chrome Android) where supported.
+ * Admin / IRISS: atļaut dokumenta vertikālo ritināšanu un iOS Safari pull-to-refresh,
+ * pat ja globālajā `globals.css` ir `overflow-x: hidden` uz `html`/`body`.
  */
-html:has(.admin-ios-theme),
+html:has(.admin-ios-theme) {
+  overscroll-behavior-y: auto !important;
+  overscroll-behavior-x: none;
+  overflow-y: auto !important;
+  overflow-x: clip !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y pinch-zoom !important;
+}
+
 body:has(.admin-ios-theme) {
-  overscroll-behavior-y: auto;
+  overscroll-behavior-y: auto !important;
+  overscroll-behavior-x: none;
+  overflow-y: auto !important;
+  overflow-x: clip !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y pinch-zoom !important;
 }
 
 .admin-ios-theme {
@@ -37,7 +50,7 @@ body:has(.admin-ios-theme) {
   font-family: inherit;
 }
 
-.admin-ios-theme a {
+.admin-ios-theme a:not(.iriss-listing-platform-chip) {
   color: #000000;
 }
 
@@ -84,6 +97,8 @@ body:has(.admin-ios-theme) {
 }
 
 .admin-ios-theme main {
+  overflow-x: clip;
+  overflow-y: visible;
   color: var(--color-apple-text);
 }
 

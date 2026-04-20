@@ -22,7 +22,8 @@ export function IrissListingPlatformChipsInline({ links }: { links: IrissListing
             target="_blank"
             rel="noopener noreferrer"
             title={c.title}
-            className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${c.chipClass}`}
+            className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS}
+            style={c.chipStyle}
           >
             {c.letter}
           </a>

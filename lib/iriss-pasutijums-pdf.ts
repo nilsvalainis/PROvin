@@ -8,6 +8,7 @@ import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 
 import { IRISS_COMPANY_LINES } from "@/lib/iriss-brand";
 import type { IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import { shrinkImageBytesForIrissPdf } from "@/lib/shrink-image-for-iriss-pdf";
 
 const INTER_REG_PATH = path.join(process.cwd(), "public", "fonts", "invoice-inter", "Inter-Regular.ttf");
 const INTER_BOLD_PATH = path.join(process.cwd(), "public", "fonts", "invoice-inter", "Inter-Bold.ttf");
@@ -89,13 +90,17 @@ function drawSectionTitle(ctx: Ctx, title: string) {
   ctx.y -= 2;
 }
 
-function tryParseBase64Image(dataUrl: string): { kind: "png" | "jpeg"; data: Uint8Array } | null {
+/** Maks. base64 garums pirms `Buffer.from` — aizsardzība pret OOM serverī. */
+const MAX_IMAGE_DATAURL_BASE64_CHARS = 1_800_000;
+
+function tryParseImageDataUrlToBuffer(dataUrl: string): Buffer | null {
   const compact = dataUrl.replace(/\s/g, "");
-  const m = /^data:image\/(png|jpeg|jpg);base64,(.+)$/i.exec(compact);
+  const m = /^data:image\/[a-z0-9+.-]+;base64,([\s\S]+)$/i.exec(compact);
   if (!m) return null;
-  const kind = m[1].toLowerCase() === "png" ? "png" : "jpeg";
+  const b64 = m[1];
+  if (b64.length > MAX_IMAGE_DATAURL_BASE64_CHARS) return null;
   try {
-    return { kind, data: new Uint8Array(Buffer.from(m[2], "base64")) };
+    return Buffer.from(b64, "base64");
   } catch {
     return null;
   }
@@ -188,11 +193,22 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
   return bytes;
 }
 
-const MAX_OFFER_IMAGES = 4;
-const MAX_IMAGE_DRAW_W = 420;
-const MAX_IMAGE_DRAW_H = 220;
+const MAX_OFFER_IMAGES = 3;
+const MAX_RAW_IMAGE_BYTES = 1_200_000;
+const MAX_IMAGE_DRAW_W = 400;
+const MAX_IMAGE_DRAW_H = 200;
 
-export async function buildIrissOfferPdfBytes(record: IrissPasutijumsRecord, offer: IrissOfferRecord): Promise<Uint8Array> {
+export type BuildIrissOfferPdfOptions = {
+  /** `false` — tikai teksts (stabilitātei / diagnostikai). API: `?images=0`. */
+  embedImages?: boolean;
+};
+
+export async function buildIrissOfferPdfBytes(
+  record: IrissPasutijumsRecord,
+  offer: IrissOfferRecord,
+  opts?: BuildIrissOfferPdfOptions,
+): Promise<Uint8Array> {
+  const embedImages = opts?.embedImages !== false;
   const ctx = await createPdfCtx();
   const title = offer.title.trim() || "Piedāvājums";
 
@@ -220,22 +236,29 @@ export async function buildIrissOfferPdfBytes(record: IrissPasutijumsRecord, off
   );
   const other = offer.attachments.filter((a) => !imageAttachments.includes(a));
 
-  if (imageAttachments.length > 0) {
+  if (!embedImages && imageAttachments.length > 0) {
+    drawSectionTitle(ctx, "Pievienotie attēli");
+    drawParagraph(ctx, "Attēli šajā eksportā nav iekļauti (ātrs PDF bez attēliem).", 9, MUTED);
+  } else if (embedImages && imageAttachments.length > 0) {
     drawSectionTitle(ctx, "Pievienotie attēli");
     let count = 0;
     for (const att of imageAttachments) {
       if (count >= MAX_OFFER_IMAGES) {
-        drawParagraph(ctx, `… vēl ${imageAttachments.length - MAX_OFFER_IMAGES} attēli nav iekļauti PDF (liels apjoms).`, 9, MUTED);
+        drawParagraph(ctx, `… vēl ${imageAttachments.length - MAX_OFFER_IMAGES} attēli nav iekļauti (maks. ${MAX_OFFER_IMAGES} PDF saturā).`, 9, MUTED);
         break;
       }
-      const parsed = tryParseBase64Image(att.dataUrl);
-      if (!parsed || parsed.data.length > 6_000_000) {
-        drawParagraph(ctx, `Nevarēja iekļaut attēlu: ${att.name}`, 9, MUTED);
+      const raw = tryParseImageDataUrlToBuffer(att.dataUrl);
+      if (!raw || raw.byteLength > MAX_RAW_IMAGE_BYTES) {
+        drawParagraph(ctx, `Attēls pārāk liels vai nederīgs: ${att.name}`, 9, MUTED);
+        continue;
+      }
+      const shrunk = await shrinkImageBytesForIrissPdf(raw);
+      if (!shrunk) {
+        drawParagraph(ctx, `Neizdevās apstrādāt attēlu: ${att.name}`, 9, MUTED);
         continue;
       }
       try {
-        const embedded =
-          parsed.kind === "png" ? await ctx.pdfDoc.embedPng(parsed.data) : await ctx.pdfDoc.embedJpg(parsed.data);
+        const embedded = await ctx.pdfDoc.embedJpg(shrunk);
         const iw = embedded.width;
         const ih = embedded.height;
         const scale = Math.min(MAX_IMAGE_DRAW_W / iw, MAX_IMAGE_DRAW_H / ih, 1);

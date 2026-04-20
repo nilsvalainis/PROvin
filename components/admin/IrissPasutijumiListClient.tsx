@@ -3,12 +3,12 @@
 import { Pin, Trash2 } from "lucide-react";
 import { motion, Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
 import {
   buildListingPlatformChips,
+  IR_LISTING_ALL_CHIP_STYLE,
   LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
-  LISTING_PLATFORM_CHIP_ALL_BUTTON_CLASS,
   LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS,
 } from "@/lib/iriss-listing-links";
 import type { IrissPasutijumiListOrder, IrissPasutijumsListRow, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -64,6 +64,22 @@ const SWIPE_VELOCITY_CLOSE = 620;
 const SWIPE_SPRING = { type: "spring" as const, stiffness: 1000, damping: 60, mass: 0.45 };
 const LONG_PRESS_MS = 450;
 const MOVE_CANCEL_LONG_PRESS_PX = 10;
+/** Vertikālai ritināšanai / PTR — horizontālā svīpe sākas tikai pēc skaidras X ass dominance. */
+const SWIPE_AXIS_MIN = 14;
+const SWIPE_AXIS_BIAS = 8;
+
+function useNarrowIrissSwipeViewport(): boolean {
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      if (typeof window === "undefined") return () => undefined;
+      const mq = window.matchMedia("(max-width: 767.98px)");
+      mq.addEventListener("change", onStoreChange);
+      return () => mq.removeEventListener("change", onStoreChange);
+    },
+    () => (typeof window !== "undefined" ? window.matchMedia("(max-width: 767.98px)").matches : false),
+    () => false,
+  );
+}
 
 function getBrandToken(brandModel: string): string {
   return brandModel
@@ -212,6 +228,9 @@ const IrissRowCard = memo(function IrissRowCard({
   closeOtherSwipes: (exceptId: string) => void;
 }) {
   const reorderDragControls = useDragControls();
+  const swipeDragControls = useDragControls();
+  const narrowSwipeViewport = useNarrowIrissSwipeViewport();
+  const swipeAxisRef = useRef<"idle" | "vertical" | "horizontal">("idle");
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
   const longPressTimerRef = useRef<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -243,6 +262,7 @@ const IrissRowCard = memo(function IrissRowCard({
   }, []);
 
   const onFrontPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    swipeAxisRef.current = "idle";
     pointerStartRef.current = { x: e.clientX, y: e.clientY };
     clearLongPressTimer();
     closeOtherSwipes(row.id);
@@ -266,11 +286,21 @@ const IrissRowCard = memo(function IrissRowCard({
     if (absX > MOVE_CANCEL_LONG_PRESS_PX || absY > MOVE_CANCEL_LONG_PRESS_PX) {
       clearLongPressTimer();
     }
+
+    if (narrowSwipeViewport && swipeAxisRef.current === "idle") {
+      if (absY > SWIPE_AXIS_MIN && absY > absX + SWIPE_AXIS_BIAS) {
+        swipeAxisRef.current = "vertical";
+      } else if (absX > SWIPE_AXIS_MIN && absX > absY + SWIPE_AXIS_BIAS) {
+        swipeAxisRef.current = "horizontal";
+        swipeDragControls.start(e.nativeEvent);
+      }
+    }
   };
 
   const onFrontPointerEnd = () => {
     clearLongPressTimer();
     pointerStartRef.current = null;
+    swipeAxisRef.current = "idle";
   };
 
   const closeSwipe = useCallback(() => setIsOpen(false), []);
@@ -281,9 +311,9 @@ const IrissRowCard = memo(function IrissRowCard({
   }, [closeSwipe, registerSwipeCloser, row.id]);
 
   return (
-    <Reorder.Item value={row.id} dragListener={false} dragControls={reorderDragControls} className="list-none" whileDrag={{ scale: 1.01 }}>
+    <Reorder.Item value={row.id} dragListener={false} dragControls={reorderDragControls} className="list-none">
       <div
-        className={`relative overflow-hidden rounded-2xl border shadow-sm transition hover:border-slate-300 ${cardSurfaceClass} ${
+        className={`relative overflow-x-clip overflow-y-visible rounded-2xl border shadow-sm transition hover:border-slate-300 ${cardSurfaceClass} ${
           isPinned ? "border-emerald-200/80" : "border-[#E5E7EB]"
         }`}
       >
@@ -313,10 +343,11 @@ const IrissRowCard = memo(function IrissRowCard({
         </div>
 
         <motion.div
-          dragListener
-          drag="x"
+          drag={narrowSwipeViewport ? "x" : false}
+          dragControls={swipeDragControls}
+          dragListener={false}
           dragConstraints={{ left: -SWIPE_ACTION_WIDTH, right: 0 }}
-          dragElastic={0.1}
+          dragElastic={0.12}
           dragMomentum={false}
           dragDirectionLock
           onDirectionLock={(axis) => {
@@ -347,7 +378,7 @@ const IrissRowCard = memo(function IrissRowCard({
             if (shouldOpen) closeOtherSwipes(row.id);
           }}
           className={`relative z-10 touch-pan-y overscroll-x-contain will-change-transform md:translate-x-0 ${cardSurfaceClass}`}
-          style={{ transform: "translateZ(0)" }}
+          style={{ transform: "translateZ(0)", touchAction: "pan-y pinch-zoom" }}
         >
           <div className="flex items-stretch">
             <Link
@@ -400,7 +431,8 @@ const IrissRowCard = memo(function IrissRowCard({
                       target="_blank"
                       rel="noopener noreferrer"
                       title={c.title}
-                      className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${c.chipClass}`}
+                      className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS}
+                      style={c.chipStyle}
                     >
                       {c.letter}
                     </a>
@@ -410,7 +442,8 @@ const IrissRowCard = memo(function IrissRowCard({
                     onClick={openAllListings}
                     title="Atvērt visas saites"
                     aria-label="Atvērt visas saites"
-                    className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${LISTING_PLATFORM_CHIP_ALL_BUTTON_CLASS}`}
+                    className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS}
+                    style={IR_LISTING_ALL_CHIP_STYLE}
                   >
                     ALL
                   </button>
@@ -429,7 +462,8 @@ const IrissRowCard = memo(function IrissRowCard({
                       target="_blank"
                       rel="noopener noreferrer"
                       title={c.title}
-                      className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${c.chipClass}`}
+                      className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS}
+                      style={c.chipStyle}
                     >
                       {c.letter}
                     </a>
@@ -439,7 +473,8 @@ const IrissRowCard = memo(function IrissRowCard({
                     onClick={openAllListings}
                     title="Atvērt visas saites"
                     aria-label="Atvērt visas saites"
-                    className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${LISTING_PLATFORM_CHIP_ALL_BUTTON_CLASS}`}
+                    className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS}
+                    style={IR_LISTING_ALL_CHIP_STYLE}
                   >
                     ALL
                   </button>
