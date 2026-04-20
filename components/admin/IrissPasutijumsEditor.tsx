@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, FileDown, Paperclip, Phone, Plus, Save } from "lucide-react";
+import { ArrowLeft, FileDown, Paperclip, Phone, Plus, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -126,6 +126,8 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   const [busy, setBusy] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
   const [offerBusy, setOfferBusy] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [offerDraft, setOfferDraft] = useState<OfferDraft>(() => newOfferDraft(1));
   const lastSavedSnapshot = useRef(JSON.stringify(initialRecord));
   const autosaveTimer = useRef<number | null>(null);
@@ -306,6 +308,28 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     },
     [offerDraft, rec, save],
   );
+
+  const onConfirmDeleteOrder = useCallback(async () => {
+    setDeleteBusy(true);
+    setSaveMsg(null);
+    try {
+      const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        setSaveMsg("Dzēšana neizdevās.");
+        return;
+      }
+      setDeleteConfirmOpen(false);
+      router.push("/admin/iriss/pasutijumi");
+      router.refresh();
+    } catch {
+      setSaveMsg("Tīkla kļūda.");
+    } finally {
+      setDeleteBusy(false);
+    }
+  }, [rec.id, router]);
 
   const shellCard = useMemo(
     () => "rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5",
@@ -580,6 +604,49 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
             </button>
           </div>
         </section>
+
+        <section className={`${shellCard} hidden border-red-200/80 bg-red-50/30 md:block`}>
+          <p className="text-[12px] leading-snug text-red-950/90">
+            Neatgriezeniski dzēst šo pasūtījumu un visus piedāvājumus. Pirms dzēšanas tiek prasīts apstiprinājums.
+          </p>
+          <button
+            type="button"
+            disabled={busy || deleteBusy}
+            onClick={() => {
+              setOfferOpen(false);
+              setDeleteConfirmOpen(true);
+            }}
+            className="mt-3 inline-flex w-full min-h-[44px] items-center justify-center gap-2 rounded-full border border-red-300/90 bg-white px-4 text-[13px] font-semibold text-red-800 shadow-sm transition hover:bg-red-50 disabled:opacity-50"
+          >
+            <Trash2 className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
+            Dzēst pasūtījumu
+          </button>
+        </section>
+      </div>
+
+      <div
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] border-t border-red-200/70 bg-white/95 backdrop-blur-md md:hidden"
+        style={{
+          paddingBottom: "max(0.65rem, env(safe-area-inset-bottom, 0px))",
+          paddingLeft: "max(0.75rem, env(safe-area-inset-left, 0px))",
+          paddingRight: "max(0.75rem, env(safe-area-inset-right, 0px))",
+          paddingTop: "0.5rem",
+        }}
+      >
+        <div className="pointer-events-auto mx-auto w-full max-w-[1200px]">
+          <button
+            type="button"
+            disabled={busy || deleteBusy}
+            onClick={() => {
+              setOfferOpen(false);
+              setDeleteConfirmOpen(true);
+            }}
+            className="inline-flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl border border-red-300/90 bg-red-50 px-4 text-[13px] font-semibold text-red-800 shadow-sm transition active:scale-[0.99] disabled:opacity-50"
+          >
+            <Trash2 className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
+            Dzēst pasūtījumu
+          </button>
+        </div>
       </div>
 
       {offerOpen ? (
@@ -680,6 +747,43 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                 className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--color-provin-accent)]/35 bg-[var(--color-provin-accent-soft)]/60 px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent-soft)] disabled:opacity-50"
               >
                 Saglabāt + Ģenerēt PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deleteConfirmOpen ? (
+        <div
+          className="fixed inset-0 z-[130] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
+          onClick={() => !deleteBusy && setDeleteConfirmOpen(false)}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xl sm:p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-semibold text-[var(--color-apple-text)]">
+              Vai tiešām vēlaties neatgriezeniski dzēst šo pasūtījumu?
+            </h2>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmOpen(false)}
+                disabled={deleteBusy}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                Atcelt
+              </button>
+              <button
+                type="button"
+                onClick={() => void onConfirmDeleteOrder()}
+                disabled={deleteBusy}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-red-700 px-4 text-[13px] font-semibold text-white shadow-sm transition hover:bg-red-800 disabled:opacity-50"
+              >
+                {deleteBusy ? "Dzēš…" : "Dzēst"}
               </button>
             </div>
           </div>
