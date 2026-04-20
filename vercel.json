@@ -2,7 +2,7 @@
   "functions": {
     "app/api/admin/iriss-pasutijumi/**/*.ts": {
       "maxDuration": 120,
-      "memory": 3008
+      "memory": 2048
     }
   }
 }
