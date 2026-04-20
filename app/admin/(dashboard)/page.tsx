@@ -49,10 +49,6 @@ export default async function AdminOrdersPage() {
         ) : null}
       </AdminDashboardHeaderWithMenu>
 
-      <div className="mt-6 flex flex-wrap items-start justify-end gap-3 border-b border-slate-100/80 pb-4">
-        <AdminOrdersExportButton />
-      </div>
-
       {hasStripeIssue && orders.length > 0 ? (
         <div
           className={`mt-6 rounded-2xl border px-4 py-3.5 text-sm shadow-sm ${
@@ -98,6 +94,10 @@ export default async function AdminOrdersPage() {
       ) : null}
 
       {orders.length > 0 ? <AdminOrdersTable orders={tableOrders} /> : null}
+
+      <div className="mt-8 flex flex-wrap items-start justify-end gap-3 border-t border-slate-100/80 pt-4">
+        <AdminOrdersExportButton />
+      </div>
     </div>
   );
 }
