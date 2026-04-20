@@ -109,10 +109,14 @@ export function buildIrissOfferPrintHtml(
     offer.year,
   )}${row("Nobraukums", offer.mileage)}${row("Cena Vācijā", offer.priceGermany)}</table>`;
   const comments = `<pre class="notes">${esc(offer.comment.trim() || "—")}</pre>`;
-  const images = offer.attachments.filter((a) => a.mimeType.startsWith("image/") && a.dataUrl.startsWith("data:image/"));
-  const otherFiles = offer.attachments.filter((a) => !a.mimeType.startsWith("image/") || !a.dataUrl.startsWith("data:image/"));
-  const files = images.length
-    ? `<div class="gallery">${images
+  const imageAttachments = offer.attachments.filter(
+    (a) => a.mimeType.startsWith("image/") && a.dataUrl.startsWith("data:image/"),
+  );
+  const otherAttachments = offer.attachments.filter(
+    (a) => !a.mimeType.startsWith("image/") || !a.dataUrl.startsWith("data:image/"),
+  );
+  const files = imageAttachments.length
+    ? `<div class="gallery">${imageAttachments
         .map(
           (img, i) =>
             `<figure class="photo"><img src="${img.dataUrl}" alt="${esc(img.name)}"/><figcaption>Foto ${i + 1}: ${esc(
@@ -120,14 +124,14 @@ export function buildIrissOfferPrintHtml(
             )}</figcaption></figure>`,
         )
         .join("")}</div>${
-        otherFiles.length
-          ? `<table class="grid">${otherFiles
+        otherAttachments.length
+          ? `<table class="grid">${otherAttachments
               .map((a, i) => `<tr><th>Fails ${i + 1}</th><td>${esc(a.name)}</td></tr>`)
               .join("")}</table>`
           : ""
       }`
-    : otherFiles.length
-      ? `<table class="grid">${otherFiles
+    : otherAttachments.length
+      ? `<table class="grid">${otherAttachments
           .map((a, i) => `<tr><th>Fails ${i + 1}</th><td>${esc(a.name)}</td></tr>`)
           .join("")}</table>`
       : `<p class="meta">Faili nav pievienoti.</p>`;
