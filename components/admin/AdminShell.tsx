@@ -90,42 +90,42 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--color-provin-surface)]">
       <header
-        className={`sticky top-0 z-[45] flex shrink-0 flex-col gap-2 border-b border-slate-200/70 bg-white/90 px-3 py-2 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm sm:px-4 ${hideWorkspaceSwitcherOnMobile ? "max-md:items-end" : ""}`}
+        className={`sticky top-0 z-[45] flex shrink-0 items-center gap-2 border-b border-slate-200/70 bg-white/90 px-3 py-1.5 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-sm sm:px-4 ${hideWorkspaceSwitcherOnMobile ? "max-md:justify-end" : ""}`}
       >
-        <div className="flex w-full items-center justify-between gap-2">
-          <div className={`min-w-0 flex-1 ${hideWorkspaceSwitcherOnMobile ? "max-md:hidden" : ""}`}>
-            <AdminWorkspaceSwitcher />
-          </div>
-          <div className="flex shrink-0 items-center gap-0.5">
-            <button
-              type="button"
-              onClick={() => router.refresh()}
-              className="inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200/85 bg-white p-1.5 text-[var(--color-provin-accent)] shadow-sm outline-none transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white md:hidden"
-              aria-label="Atsvaidzināt lapu"
-              title="Atsvaidzināt lapu"
-            >
-              <RefreshCw className="h-[17px] w-[17px]" strokeWidth={2.25} aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileNavOpen((open) => !open)}
-              className="inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-[var(--color-apple-text)] outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white md:hidden"
-              aria-expanded={mobileNavOpen}
-              aria-controls="admin-mobile-nav-aside"
-              aria-label={mobileNavOpen ? "Aizvērt galveno izvēlni" : "Atvērt galveno izvēlni"}
-            >
-              <AdminMobileMenuIcon lineClass="bg-[var(--color-apple-text)]" />
-            </button>
+        <div className={`min-w-0 flex-1 items-center gap-2 ${hideWorkspaceSwitcherOnMobile ? "max-md:hidden" : "flex"}`}>
+          <AdminWorkspaceSwitcher />
+          <div className="hidden items-center gap-2 md:flex">
+            <div className="h-5 w-px bg-slate-200/90" aria-hidden />
+            {isProWorkspace ? (
+              <AdminSidebarNav baseUrl={baseUrl} orientation="horizontal" />
+            ) : (
+              <IrissAdminSidebarNav orientation="horizontal" />
+            )}
           </div>
         </div>
-
-        <div className="hidden w-full items-center justify-between gap-3 border-t border-slate-200/70 pt-2 md:flex">
-          {isProWorkspace ? (
-            <AdminSidebarNav baseUrl={baseUrl} orientation="horizontal" />
-          ) : (
-            <IrissAdminSidebarNav orientation="horizontal" />
-          )}
-          <LogoutButton className="md:w-auto md:px-3 md:py-2" />
+        <div className="hidden md:flex">
+          <LogoutButton className="border-0 bg-transparent px-1 py-0 text-xs font-semibold text-[var(--color-provin-muted)] shadow-none hover:bg-transparent hover:text-[var(--color-apple-text)] md:w-auto" />
+        </div>
+        <div className="flex shrink-0 items-center gap-0.5 md:hidden">
+          <button
+            type="button"
+            onClick={() => router.refresh()}
+            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200/85 bg-white p-1.5 text-[var(--color-provin-accent)] shadow-sm outline-none transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            aria-label="Atsvaidzināt lapu"
+            title="Atsvaidzināt lapu"
+          >
+            <RefreshCw className="h-[18px] w-[18px]" strokeWidth={2.25} aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen((open) => !open)}
+            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-[var(--color-apple-text)] outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            aria-expanded={mobileNavOpen}
+            aria-controls="admin-mobile-nav-aside"
+            aria-label={mobileNavOpen ? "Aizvērt galveno izvēlni" : "Atvērt galveno izvēlni"}
+          >
+            <AdminMobileMenuIcon lineClass="bg-[var(--color-apple-text)]" />
+          </button>
         </div>
       </header>
 

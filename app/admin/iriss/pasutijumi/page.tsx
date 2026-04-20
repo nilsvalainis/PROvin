@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { IrissListingPlatformChipsInline } from "@/components/admin/IrissListingPlatformChipsInline";
 import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
 import {
@@ -60,21 +59,8 @@ export default async function IrissPasutijumiListPage() {
 
   return (
     <div className="relative w-full max-w-none pb-24 sm:pb-8">
-      <div className="hidden md:block">
-        <AdminDashboardHeaderWithMenu>
-          <div className="flex flex-col gap-0">
-            <p className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
-              IRISS
-            </p>
-            <h1 className="mt-1 text-[1.35rem] font-semibold uppercase leading-tight tracking-tight text-[var(--color-apple-text)] md:text-[1.5rem]">
-              Pasūtījumi
-            </h1>
-          </div>
-        </AdminDashboardHeaderWithMenu>
-      </div>
-
       {!storeEnabled ? (
-        <div className="mt-6 rounded-2xl border border-amber-200/90 bg-amber-50/95 px-4 py-3.5 text-sm text-amber-950 shadow-sm">
+        <div className="mt-3 rounded-2xl border border-amber-200/90 bg-amber-50/95 px-4 py-3.5 text-sm text-amber-950 shadow-sm">
           <p className="font-semibold">Melnraksts ir izslēgts</p>
           {storage.reason === "vercel_blob_token_missing" ? (
             <p className="mt-1.5 text-amber-900/90">
@@ -95,14 +81,14 @@ export default async function IrissPasutijumiListPage() {
       ) : null}
 
       {storeEnabled && rows.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-12 text-center shadow-sm">
+        <div className="mt-4 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-12 text-center shadow-sm">
           <p className="font-medium text-[var(--color-apple-text)]">Nav pasūtījumu</p>
           <p className="mt-2 text-sm text-[var(--color-provin-muted)]">Spied „+”, lai izveidotu pirmo ierakstu.</p>
         </div>
       ) : null}
 
       {storeEnabled && rows.length > 0 ? (
-        <ul className="mt-5 space-y-2.5 sm:space-y-3">
+        <ul className="mt-3 space-y-2.5 sm:space-y-3">
           {rows.map((r) => {
             const chips = buildListingPlatformChips(
               {

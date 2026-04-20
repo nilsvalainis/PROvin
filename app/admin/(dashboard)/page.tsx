@@ -1,7 +1,6 @@
 import { isDemoOrdersEnabled, listAdminOrders } from "@/lib/admin-orders";
 import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
-import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
 
@@ -31,27 +30,9 @@ export default async function AdminOrdersPage() {
 
   return (
     <div className="w-full max-w-none">
-      <AdminDashboardHeaderWithMenu>
-        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
-          Apstrādes telpa
-        </p>
-        <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
-          Sākums
-        </h1>
-        {demoPrefOn ? (
-          <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-provin-muted)]">
-            Demo rindas pēc noklusējuma ir ieslēgtas. Paslēpt:{" "}
-            <code className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-apple-text)]">
-              ADMIN_DEMO_ORDERS=0
-            </code>
-            .
-          </p>
-        ) : null}
-      </AdminDashboardHeaderWithMenu>
-
       {hasStripeIssue && orders.length > 0 ? (
         <div
-          className={`mt-6 rounded-2xl border px-4 py-3.5 text-sm shadow-sm ${
+          className={`mt-3 rounded-2xl border px-4 py-3.5 text-sm shadow-sm ${
             onlyDemoShown
               ? "border-[var(--color-provin-accent)]/20 bg-[var(--color-provin-accent-soft)]/60 text-[var(--color-apple-text)]"
               : "border-amber-200/90 bg-amber-50/90 text-amber-950"
@@ -72,7 +53,7 @@ export default async function AdminOrdersPage() {
       ) : null}
 
       {hasStripeIssue && orders.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-red-200/90 bg-red-50/95 px-4 py-3.5 text-sm text-red-950 shadow-sm">
+        <div className="mt-3 rounded-2xl border border-red-200/90 bg-red-50/95 px-4 py-3.5 text-sm text-red-950 shadow-sm">
           {stripeError}
         </div>
       ) : null}
