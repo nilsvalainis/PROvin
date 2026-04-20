@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, Eye, FileDown, Loader2, Mail, Paperclip, Phone, Plus, Save, Trash2 } from "lucide-react";
-import { Reorder } from "framer-motion";
+import { Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
@@ -235,6 +235,86 @@ function LabeledTextarea({
       <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">{label}</span>
       <textarea className={textareaClass} {...rest} />
     </label>
+  );
+}
+
+const ADMIN_MAIN_SCROLL_ID = "admin-main-scroll";
+
+/** Ilgā piespiešana (~450 ms), tad vilkšana — lai vertikālais skrolls netraucē `Reorder`. */
+function IrissOfferAttachmentReorderItem({
+  attachment: a,
+  onRemove,
+}: {
+  attachment: IrissOfferAttachment;
+  onRemove: () => void;
+}) {
+  const dragControls = useDragControls();
+  const longPressTimer = useRef<number | null>(null);
+  const pressOrigin = useRef<{ x: number; y: number } | null>(null);
+
+  const clearLongPress = useCallback(() => {
+    if (longPressTimer.current != null) {
+      window.clearTimeout(longPressTimer.current);
+    }
+    longPressTimer.current = null;
+    pressOrigin.current = null;
+  }, []);
+
+  const onThumbPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (e.button !== 0) return;
+      pressOrigin.current = { x: e.clientX, y: e.clientY };
+      longPressTimer.current = window.setTimeout(() => {
+        longPressTimer.current = null;
+        dragControls.start(e.nativeEvent);
+      }, 450);
+    },
+    [dragControls],
+  );
+
+  const onThumbPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      const o = pressOrigin.current;
+      if (o == null || longPressTimer.current == null) return;
+      if (Math.hypot(e.clientX - o.x, e.clientY - o.y) > 12) clearLongPress();
+    },
+    [clearLongPress],
+  );
+
+  return (
+    <Reorder.Item
+      value={a}
+      dragListener={false}
+      dragControls={dragControls}
+      className="relative shrink-0 touch-none"
+      style={{ WebkitTouchCallout: "none" }}
+    >
+      <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div
+          className="absolute inset-0 z-0 cursor-grab touch-none active:cursor-grabbing"
+          aria-hidden
+          onPointerDown={onThumbPointerDown}
+          onPointerMove={onThumbPointerMove}
+          onPointerUp={clearLongPress}
+          onPointerCancel={clearLongPress}
+          onPointerLeave={(ev) => {
+            if (ev.buttons === 0) clearLongPress();
+          }}
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element -- data URL, nav next/image */}
+        <img src={a.dataUrl} alt="" className="pointer-events-none h-full w-full object-cover" draggable={false} />
+        <button
+          type="button"
+          title="Noņemt"
+          aria-label="Noņemt attēlu"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={onRemove}
+          className="pointer-events-auto absolute right-0.5 top-0.5 z-[1] inline-flex h-5 min-w-5 items-center justify-center rounded bg-black/55 px-1 text-[10px] font-bold text-white shadow-sm"
+        >
+          ×
+        </button>
+      </div>
+    </Reorder.Item>
   );
 }
 
@@ -654,14 +734,29 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
 
   useEffect(() => {
     const lock =
-      offerOpen || Boolean(offerPdfPreviewUrl) || deleteConfirmOpen || offerDeleteConfirmOpen;
+      offerOpen ||
+      Boolean(offerPdfPreviewUrl) ||
+      deleteConfirmOpen ||
+      offerDeleteConfirmOpen ||
+      Boolean(transferUi);
     if (!lock) return;
-    const prev = document.body.style.overflow;
+    const scrollEl = document.getElementById(ADMIN_MAIN_SCROLL_ID) as HTMLElement | null;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevScrollOverflow = scrollEl?.style.overflow ?? "";
+    const prevScrollTouchAction = scrollEl?.style.touchAction ?? "";
     document.body.style.overflow = "hidden";
+    if (scrollEl) {
+      scrollEl.style.overflow = "hidden";
+      scrollEl.style.touchAction = "none";
+    }
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prevBodyOverflow;
+      if (scrollEl) {
+        scrollEl.style.overflow = prevScrollOverflow;
+        scrollEl.style.touchAction = prevScrollTouchAction;
+      }
     };
-  }, [offerOpen, offerPdfPreviewUrl, deleteConfirmOpen, offerDeleteConfirmOpen]);
+  }, [offerOpen, offerPdfPreviewUrl, deleteConfirmOpen, offerDeleteConfirmOpen, transferUi]);
 
   const persistOffer = useCallback(
     async (withPdf: boolean) => {
@@ -843,7 +938,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
             <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2.3} aria-hidden />
             <span>Atpakaļ</span>
           </Link>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-2">
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between md:gap-2">
             <div className="hidden min-w-0 md:block">
               <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
                 IRISS · PASŪTĪJUMI
@@ -866,7 +961,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                 ))}
               </div>
             </div>
-            <div className={`md:hidden ${LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}`}>
+            <div className={`md:hidden min-w-0 w-full ${LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}`}>
               {rec.offers.map((offer, idx) => (
                 <button
                   key={offer.id}
@@ -1216,7 +1311,9 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                 ) : null}
                 {offerDraft.attachments.length > 0 ? (
                   <div className="mt-3">
-                    <p className="text-[10px] font-medium text-slate-500">Velc, lai mainītu foto secību.</p>
+                    <p className="text-[10px] font-medium text-slate-500">
+                      Turiet nospiestu uz attēla ~0,5 s, tad velciet, lai mainītu secību.
+                    </p>
                     <Reorder.Group
                       axis="x"
                       values={offerDraft.attachments}
@@ -1224,29 +1321,13 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                       className="mt-2 flex list-none flex-row flex-nowrap gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]"
                     >
                       {offerDraft.attachments.map((a) => (
-                        <Reorder.Item
+                        <IrissOfferAttachmentReorderItem
                           key={a.id}
-                          value={a}
-                          className="relative shrink-0 touch-none"
-                          style={{ WebkitTouchCallout: "none" }}
-                        >
-                          <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-                            {/* eslint-disable-next-line @next/next/no-img-element -- data URL, nav next/image */}
-                            <img src={a.dataUrl} alt="" className="h-full w-full object-cover" draggable={false} />
-                            <button
-                              type="button"
-                              title="Noņemt"
-                              aria-label="Noņemt attēlu"
-                              onPointerDown={(e) => e.stopPropagation()}
-                              onClick={() =>
-                                setOfferDraft((d) => ({ ...d, attachments: d.attachments.filter((x) => x.id !== a.id) }))
-                              }
-                              className="absolute right-0.5 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded bg-black/55 px-1 text-[10px] font-bold text-white shadow-sm"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        </Reorder.Item>
+                          attachment={a}
+                          onRemove={() =>
+                            setOfferDraft((d) => ({ ...d, attachments: d.attachments.filter((x) => x.id !== a.id) }))
+                          }
+                        />
                       ))}
                     </Reorder.Group>
                   </div>

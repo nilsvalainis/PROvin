@@ -130,6 +130,7 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
       className={`min-w-0 w-full max-w-none flex-1 max-md:flex max-md:min-h-0 max-md:flex-col max-md:overflow-hidden ${mainPad}`}
     >
       <div
+        id="admin-main-scroll"
         ref={scrollRef}
         className="relative flex w-full min-w-0 min-h-0 flex-1 flex-col max-md:overflow-y-auto max-md:overscroll-y-contain max-md:[-webkit-overflow-scrolling:touch] max-md:touch-pan-y md:overflow-visible"
       >
