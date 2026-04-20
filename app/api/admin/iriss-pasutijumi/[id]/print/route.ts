@@ -16,23 +16,33 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" });
   const generated = dateFmt.format(new Date());
   const url = new URL(req.url);
+  const pdfCache =
+    "no-store, no-cache, must-revalidate, max-age=0, private" satisfies string;
   if (url.searchParams.get("format") === "html") {
     const html = buildIrissPasutijumsPrintHtml(rec, generated);
     return new NextResponse(html, {
       status: 200,
       headers: {
         "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store",
+        "Cache-Control": pdfCache,
       },
     });
   }
   const bytes = await buildIrissPasutijumsPdfBytes(rec);
+  const inline =
+    url.searchParams.get("inline") === "1" ||
+    url.searchParams.get("disposition") === "inline" ||
+    url.searchParams.get("view") === "1";
+  const disposition = inline
+    ? `inline; filename="pasutijums.pdf"`
+    : `attachment; filename="pasutijums.pdf"`;
   return new NextResponse(Buffer.from(bytes), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="pasutijums.pdf"`,
-      "Cache-Control": "no-store",
+      "Content-Disposition": disposition,
+      "Cache-Control": pdfCache,
+      Pragma: "no-cache",
     },
   });
 }

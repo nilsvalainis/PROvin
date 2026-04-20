@@ -1,12 +1,14 @@
 "use client";
 
-import { ArrowLeft, Eye, FileDown, Paperclip, Phone, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, FileDown, Loader2, Paperclip, Phone, Plus, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import type { IrissOfferAttachment, IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import { fileToCompressedOfferAttachment } from "@/lib/iriss-offer-image-compress";
+import { patchJsonWithUploadProgress } from "@/lib/iriss-json-patch-upload";
 
 /** Mobilajā — kvadrātveida FAB (`rounded-xl`); no `sm:` — apaļas pogas ar tekstu. */
 const toolbarBtnBase =
@@ -34,8 +36,20 @@ function normalizePhoneForLv(raw: string): string {
   return `+371${digits}`;
 }
 
-/** PDF no API — iOS Safari: slēpts `<a download target="_self">`, nevis `window.open`. */
-async function downloadPdfBlobFromResponse(res: Response, fallbackName: string): Promise<void> {
+function parseRecordFromPatchResponse(data: unknown): IrissPasutijumsRecord | null {
+  if (typeof data !== "object" || data === null) return null;
+  if (!("record" in data)) return null;
+  const r = (data as { record: unknown }).record;
+  if (typeof r !== "object" || r === null) return null;
+  return r as IrissPasutijumsRecord;
+}
+
+/** PDF no API — slēpts `<a download target="_self">`; mobilajam — `onFallbackLink` atkārtotai lejupielādei. */
+async function downloadPdfBlobFromResponse(
+  res: Response,
+  fallbackName: string,
+  onFallbackLink?: (blobUrl: string, fileName: string) => void,
+): Promise<void> {
   const cd = res.headers.get("Content-Disposition");
   let name = fallbackName;
   if (cd) {
@@ -65,10 +79,17 @@ async function downloadPdfBlobFromResponse(res: Response, fallbackName: string):
   } catch {
     window.location.assign(objectUrl);
   }
+  const mobileCoarse =
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 767px) and (pointer: coarse)").matches;
+  if (mobileCoarse && onFallbackLink) {
+    window.setTimeout(() => onFallbackLink(objectUrl, safeName), 400);
+  }
+  const revokeMs = mobileCoarse && onFallbackLink ? 120_000 : 12_000;
   window.setTimeout(() => {
     a.remove();
     URL.revokeObjectURL(objectUrl);
-  }, 5000);
+  }, revokeMs);
 }
 
 type OfferDraft = {
@@ -151,6 +172,27 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   const autosaveTimer = useRef<number | null>(null);
   const autosaveInFlight = useRef(false);
 
+  type TransferUiState = { title: string; detail: string; pct: number; longWait: boolean };
+  const [transferUi, setTransferUi] = useState<TransferUiState | null>(null);
+  const transferLongWaitTimer = useRef<number | null>(null);
+  const [pdfRetryBar, setPdfRetryBar] = useState<{ href: string; name: string } | null>(null);
+  const [offerFilePrepare, setOfferFilePrepare] = useState<{ pct: number; label: string } | null>(null);
+
+  const beginTransfer = useCallback((title: string, detail: string) => {
+    if (transferLongWaitTimer.current) window.clearTimeout(transferLongWaitTimer.current);
+    setTransferUi({ title, detail, pct: 0, longWait: false });
+    transferLongWaitTimer.current = window.setTimeout(() => {
+      setTransferUi((u) => (u ? { ...u, longWait: true } : null));
+      transferLongWaitTimer.current = null;
+    }, 10_000);
+  }, []);
+
+  const endTransfer = useCallback(() => {
+    if (transferLongWaitTimer.current) window.clearTimeout(transferLongWaitTimer.current);
+    transferLongWaitTimer.current = null;
+    setTransferUi(null);
+  }, []);
+
   const patch = useCallback(<K extends keyof IrissPasutijumsRecord>(key: K, value: IrissPasutijumsRecord[K]) => {
     setRec((r) => ({ ...r, [key]: value }));
   }, []);
@@ -159,50 +201,76 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     setRec((r) => ({ ...r, ...p }));
   }, []);
 
-  const save = useCallback(async (opts?: { redirectToList?: boolean; silent?: boolean; payload?: IrissPasutijumsRecord }) => {
-    const redirectToList = opts?.redirectToList === true;
-    const silent = opts?.silent === true;
-    const payload = opts?.payload ?? rec;
-    if (!silent) setBusy(true);
-    if (!silent) setSaveMsg(null);
-    if (silent && autosaveInFlight.current) return false;
-    if (silent) autosaveInFlight.current = true;
-    try {
-      const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(payload.id)}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data: unknown = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        if (!silent) setSaveMsg("Neizdevās saglabāt.");
-        return false;
-      }
-      const record =
-        typeof data === "object" &&
-        data !== null &&
-        "record" in data &&
-        typeof (data as { record: unknown }).record === "object"
-          ? ((data as { record: IrissPasutijumsRecord }).record as IrissPasutijumsRecord)
-          : null;
-      if (!silent && record) setRec(record);
-      lastSavedSnapshot.current = JSON.stringify(record ?? payload);
-      if (redirectToList) {
-        router.push("/admin/iriss/pasutijumi");
-        router.refresh();
+  const save = useCallback(
+    async (opts?: {
+      redirectToList?: boolean;
+      silent?: boolean;
+      payload?: IrissPasutijumsRecord;
+      onUploadProgress?: (loaded: number, total: number) => void;
+    }) => {
+      const redirectToList = opts?.redirectToList === true;
+      const silent = opts?.silent === true;
+      const onUploadProgress = opts?.onUploadProgress;
+      const payload = opts?.payload ?? rec;
+      const useXhr = Boolean(onUploadProgress) || !silent;
+
+      if (!silent) setBusy(true);
+      if (!silent) setSaveMsg(null);
+      if (silent && autosaveInFlight.current) return false;
+      if (silent) autosaveInFlight.current = true;
+
+      const url = `/api/admin/iriss-pasutijumi/${encodeURIComponent(payload.id)}`;
+
+      const finishOk = (record: IrissPasutijumsRecord | null) => {
+        if (!silent && record) setRec(record);
+        lastSavedSnapshot.current = JSON.stringify(record ?? payload);
+        if (redirectToList) {
+          router.push("/admin/iriss/pasutijumi");
+          router.refresh();
+          return true;
+        }
+        if (!silent) setSaveMsg("Saglabāts.");
         return true;
+      };
+
+      try {
+        if (useXhr) {
+          const result = await patchJsonWithUploadProgress(url, payload, onUploadProgress);
+          if (!result.ok) {
+            if (result.networkError) {
+              if (!silent) setSaveMsg("Tīkla kļūda.");
+            } else if (!silent) {
+              setSaveMsg("Neizdevās saglabāt.");
+            }
+            return false;
+          }
+          const record = parseRecordFromPatchResponse(result.data);
+          return finishOk(record);
+        }
+
+        const res = await fetch(url, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data: unknown = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          if (!silent) setSaveMsg("Neizdevās saglabāt.");
+          return false;
+        }
+        const record = parseRecordFromPatchResponse(data);
+        return finishOk(record);
+      } catch {
+        if (!silent) setSaveMsg("Tīkla kļūda.");
+        return false;
+      } finally {
+        if (!silent) setBusy(false);
+        if (silent) autosaveInFlight.current = false;
       }
-      if (!silent) setSaveMsg("Saglabāts.");
-      return true;
-    } catch {
-      if (!silent) setSaveMsg("Tīkla kļūda.");
-      return false;
-    } finally {
-      if (!silent) setBusy(false);
-      if (silent) autosaveInFlight.current = false;
-    }
-  }, [rec, router]);
+    },
+    [rec, router],
+  );
 
   useEffect(() => {
     const snap = JSON.stringify(rec);
@@ -217,24 +285,46 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   }, [rec, save]);
 
   const openPdf = useCallback(async () => {
+    setPdfRetryBar(null);
+    beginTransfer("Augšupielādē foto un saglabā", "Nelietojiet pārlūka atsvaidzināšanu un neaizveriet cilni.");
     try {
-      const ok = await save({ silent: true });
+      const ok = await save({
+        silent: true,
+        onUploadProgress: (loaded, total) => {
+          const pct = Math.min(85, Math.round((100 * loaded) / Math.max(total, 1)));
+          setTransferUi((u) => (u ? { ...u, title: "Augšupielādē foto (saglabā)…", pct } : null));
+        },
+      });
       if (!ok) {
         alert("Saglabāšana neizdevās.");
         return;
       }
+      setTransferUi((u) =>
+        u
+          ? {
+              ...u,
+              title: "Ģenerē PDF serverī…",
+              pct: 88,
+              detail: "Ar lieliem attēliem tas var aizņemt līdz ~30 s.",
+            }
+          : null,
+      );
       const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/print`, {
         credentials: "include",
+        cache: "no-store",
       });
+      setTransferUi((u) => (u ? { ...u, pct: 96 } : null));
       if (!res.ok) {
         alert("PDF ģenerēšana neizdevās.");
         return;
       }
-      await downloadPdfBlobFromResponse(res, "pasutijums.pdf");
+      await downloadPdfBlobFromResponse(res, "pasutijums.pdf", (href, name) => setPdfRetryBar({ href, name }));
     } catch {
       alert("Tīkla kļūda.");
+    } finally {
+      endTransfer();
     }
-  }, [rec.id, save]);
+  }, [beginTransfer, endTransfer, rec.id, save]);
 
   const openCreateOffer = useCallback(() => {
     setOfferDraft(newOfferDraft(rec.offers.length + 1));
@@ -259,32 +349,30 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   const onOfferFilesPick = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const fileArr = Array.from(files).slice(0, 6);
-    const loaded = await Promise.all(
-      fileArr.map(
-        (file) =>
-          new Promise<IrissOfferAttachment | null>((resolve) => {
-            const fr = new FileReader();
-            fr.onload = () => {
-              const dataUrl = typeof fr.result === "string" ? fr.result : "";
-              if (!dataUrl) return resolve(null);
-              resolve({
-                id: crypto.randomUUID(),
-                name: file.name,
-                mimeType: file.type || "application/octet-stream",
-                size: file.size,
-                dataUrl,
-              });
-            };
-            fr.onerror = () => resolve(null);
-            fr.readAsDataURL(file);
-          }),
-      ),
-    );
-    setOfferDraft((d) => ({ ...d, attachments: [...d.attachments, ...loaded.filter((x): x is IrissOfferAttachment => x !== null)].slice(0, 12) }));
+    setOfferFilePrepare({ pct: 0, label: "Saspiež attēlus…" });
+    const loaded: IrissOfferAttachment[] = [];
+    for (let i = 0; i < fileArr.length; i++) {
+      const att = await fileToCompressedOfferAttachment(fileArr[i]);
+      if (att) loaded.push(att);
+      setOfferFilePrepare({
+        pct: Math.round(((i + 1) / fileArr.length) * 100),
+        label: "Saspiež attēlus…",
+      });
+    }
+    setOfferFilePrepare(null);
+    setOfferDraft((d) => ({
+      ...d,
+      attachments: [...d.attachments, ...loaded].slice(0, 12),
+    }));
   }, []);
 
   const closeOfferPdfPreview = useCallback(() => {
-    setOfferPdfPreviewUrl(null);
+    setOfferPdfPreviewUrl((prev) => {
+      if (prev?.startsWith("blob:")) {
+        URL.revokeObjectURL(prev);
+      }
+      return null;
+    });
     setOfferPdfSheetPull(0);
     const u = offerPdfObjectUrlRef.current;
     if (u) {
@@ -293,61 +381,60 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     }
   }, []);
 
-  const commitOfferDraftToRecord = useCallback(async (): Promise<IrissOfferRecord | null> => {
-    const now = new Date().toISOString();
-    const cleanedTitle = offerDraft.title.trim() || `Piedāvājums ${rec.offers.length + 1}`;
-    const offerOut: IrissOfferRecord = {
-      id: offerDraft.id,
-      title: cleanedTitle,
-      brandModel: offerDraft.brandModel,
-      year: offerDraft.year,
-      mileage: offerDraft.mileage,
-      priceGermany: offerDraft.priceGermany,
-      comment: offerDraft.comment,
-      attachments: offerDraft.attachments,
-      createdAt: offerDraft.createdAt || now,
-      updatedAt: now,
-    };
-    const exists = rec.offers.some((o) => o.id === offerOut.id);
-    const nextOffers = exists ? rec.offers.map((o) => (o.id === offerOut.id ? offerOut : o)) : [...rec.offers, offerOut];
-    const renumbered = nextOffers.map((o, idx) => ({ ...o, title: `Piedāvājums ${idx + 1}` }));
-    const nextRec: IrissPasutijumsRecord = { ...rec, offers: renumbered };
-    const ok = await save({ payload: nextRec, silent: true });
-    if (!ok) return null;
-    setRec(nextRec);
-    return offerOut;
-  }, [offerDraft, rec, save]);
+  const commitOfferDraftToRecord = useCallback(
+    async (onUploadProgress?: (loaded: number, total: number) => void): Promise<IrissOfferRecord | null> => {
+      const now = new Date().toISOString();
+      const cleanedTitle = offerDraft.title.trim() || `Piedāvājums ${rec.offers.length + 1}`;
+      const offerOut: IrissOfferRecord = {
+        id: offerDraft.id,
+        title: cleanedTitle,
+        brandModel: offerDraft.brandModel,
+        year: offerDraft.year,
+        mileage: offerDraft.mileage,
+        priceGermany: offerDraft.priceGermany,
+        comment: offerDraft.comment,
+        attachments: offerDraft.attachments,
+        createdAt: offerDraft.createdAt || now,
+        updatedAt: now,
+      };
+      const exists = rec.offers.some((o) => o.id === offerOut.id);
+      const nextOffers = exists ? rec.offers.map((o) => (o.id === offerOut.id ? offerOut : o)) : [...rec.offers, offerOut];
+      const renumbered = nextOffers.map((o, idx) => ({ ...o, title: `Piedāvājums ${idx + 1}` }));
+      const nextRec: IrissPasutijumsRecord = { ...rec, offers: renumbered };
+      const ok = await save({ payload: nextRec, silent: true, onUploadProgress });
+      if (!ok) return null;
+      setRec(nextRec);
+      return offerOut;
+    },
+    [offerDraft, rec, save],
+  );
 
   const openOfferPdfPreview = useCallback(async () => {
     setOfferPdfPreviewBusy(true);
+    setPdfRetryBar(null);
+    beginTransfer("Saglabā pirms PDF priekšskatījuma", "Augšupielādē foto — nelietojiet atsvaidzināšanu.");
     try {
-      const offerOut = await commitOfferDraftToRecord();
+      const offerOut = await commitOfferDraftToRecord((loaded, total) => {
+        const pct = Math.min(92, Math.round((100 * loaded) / Math.max(total, 1)));
+        setTransferUi((u) => (u ? { ...u, title: "Augšupielādē foto (saglabā)…", pct } : null));
+      });
       if (!offerOut) {
         alert("Saglabāšana neizdevās.");
         return;
       }
+      setTransferUi((u) => (u ? { ...u, title: "Ielādē PDF priekšskatījumu…", pct: 95 } : null));
       const base = `/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/offer/${encodeURIComponent(offerOut.id)}/print`;
-      let res = await fetch(base, { credentials: "include" });
-      if (!res.ok) {
-        res = await fetch(`${base}?images=0`, { credentials: "include" });
-      }
-      if (!res.ok) {
-        alert("PDF ģenerēšana neizdevās.");
-        return;
-      }
-      const blob = await res.blob();
-      const prev = offerPdfObjectUrlRef.current;
-      if (prev) URL.revokeObjectURL(prev);
-      const url = URL.createObjectURL(blob);
-      offerPdfObjectUrlRef.current = url;
-      setOfferPdfPreviewUrl(url);
+      const viewUrl = `${base}?inline=1&ts=${Date.now()}`;
+      setOfferPdfPreviewUrl(viewUrl);
+      offerPdfObjectUrlRef.current = null;
       setOfferPdfSheetPull(0);
     } catch {
       alert("Tīkla kļūda.");
     } finally {
+      endTransfer();
       setOfferPdfPreviewBusy(false);
     }
-  }, [commitOfferDraftToRecord, rec.id]);
+  }, [beginTransfer, commitOfferDraftToRecord, endTransfer, rec.id]);
 
   const onOfferPdfHandleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length !== 1) return;
@@ -406,32 +493,53 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   const persistOffer = useCallback(
     async (withPdf: boolean) => {
       setOfferBusy(true);
+      setPdfRetryBar(null);
+      beginTransfer(
+        withPdf ? "Saglabā un gatavo PDF" : "Saglabā piedāvājumu",
+        "Augšupielādē foto — nelietojiet atsvaidzināšanu.",
+      );
       try {
-        const offerOut = await commitOfferDraftToRecord();
+        const offerOut = await commitOfferDraftToRecord((loaded, total) => {
+          const cap = withPdf ? 82 : 98;
+          const pct = Math.min(cap, Math.round((100 * loaded) / Math.max(total, 1)));
+          setTransferUi((u) => (u ? { ...u, title: "Augšupielādē foto (saglabā)…", pct } : null));
+        });
         if (!offerOut) return;
         setOfferOpen(false);
 
         if (withPdf) {
           try {
+            setTransferUi((u) =>
+              u
+                ? {
+                    ...u,
+                    title: "Ģenerē PDF serverī…",
+                    pct: 88,
+                    detail: "Ar lieliem attēliem tas var aizņemt līdz ~30 s.",
+                  }
+                : null,
+            );
             const base = `/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/offer/${encodeURIComponent(offerOut.id)}/print`;
-            let res = await fetch(base, { credentials: "include" });
+            let res = await fetch(base, { credentials: "include", cache: "no-store" });
             if (!res.ok) {
-              res = await fetch(`${base}?images=0`, { credentials: "include" });
+              res = await fetch(`${base}?images=0`, { credentials: "include", cache: "no-store" });
             }
             if (!res.ok) {
               alert("PDF ģenerēšana neizdevās.");
               return;
             }
-            await downloadPdfBlobFromResponse(res, "piedavajums.pdf");
+            setTransferUi((u) => (u ? { ...u, pct: 96, title: "Lejupielādē PDF…" } : null));
+            await downloadPdfBlobFromResponse(res, "piedavajums.pdf", (href, name) => setPdfRetryBar({ href, name }));
           } catch {
             alert("PDF lejupielāde neizdevās (pārlūks).");
           }
         }
       } finally {
+        endTransfer();
         setOfferBusy(false);
       }
     },
-    [commitOfferDraftToRecord, rec.id],
+    [beginTransfer, commitOfferDraftToRecord, endTransfer, rec.id],
   );
 
   const onConfirmDeleteOrder = useCallback(async () => {
@@ -533,17 +641,38 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
           <div className="flex shrink-0 flex-nowrap items-center justify-end gap-1 sm:flex-wrap sm:gap-2">
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || !!transferUi}
               title="Saglabāt"
-              aria-label={busy ? "Saglabā" : "Saglabāt"}
-              onClick={() => void save({ redirectToList: true })}
+              aria-label={busy || !!transferUi ? "Saglabā" : "Saglabāt"}
+              onClick={() =>
+                void (async () => {
+                  setPdfRetryBar(null);
+                  beginTransfer(
+                    "Augšupielādē foto un saglabā",
+                    "Nelietojiet pārlūka atsvaidzināšanu — gaidiet, līdz pāriet uz sarakstu.",
+                  );
+                  try {
+                    const ok = await save({
+                      redirectToList: true,
+                      onUploadProgress: (loaded, total) => {
+                        const pct = Math.min(99, Math.round((100 * loaded) / Math.max(total, 1)));
+                        setTransferUi((u) => (u ? { ...u, pct } : null));
+                      },
+                    });
+                    if (!ok) setSaveMsg("Neizdevās saglabāt.");
+                  } finally {
+                    endTransfer();
+                  }
+                })()
+              }
               className={`${toolbarBtnBase} bg-[var(--color-provin-accent)] text-white hover:opacity-95 sm:hover:opacity-95`}
             >
               <Save className="h-6 w-6 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
-              <span className="hidden text-[13px] font-semibold sm:inline">{busy ? "Saglabā…" : "Saglabāt"}</span>
+              <span className="hidden text-[13px] font-semibold sm:inline">{busy || !!transferUi ? "Saglabā…" : "Saglabāt"}</span>
             </button>
             <button
               type="button"
+              disabled={!!transferUi}
               title="Ģenerēt PDF"
               aria-label="Ģenerēt PDF"
               onClick={() => void openPdf()}
@@ -724,11 +853,31 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
             </button>
             <button
               type="button"
-              disabled={busy}
-              onClick={() => void save({ redirectToList: true })}
+              disabled={busy || !!transferUi}
+              onClick={() =>
+                void (async () => {
+                  setPdfRetryBar(null);
+                  beginTransfer(
+                    "Augšupielādē foto un saglabā",
+                    "Nelietojiet pārlūka atsvaidzināšanu — gaidiet, līdz pāriet uz sarakstu.",
+                  );
+                  try {
+                    const ok = await save({
+                      redirectToList: true,
+                      onUploadProgress: (loaded, total) => {
+                        const pct = Math.min(99, Math.round((100 * loaded) / Math.max(total, 1)));
+                        setTransferUi((u) => (u ? { ...u, pct } : null));
+                      },
+                    });
+                    if (!ok) setSaveMsg("Neizdevās saglabāt.");
+                  } finally {
+                    endTransfer();
+                  }
+                })()
+              }
               className="inline-flex min-h-[44px] w-full shrink-0 items-center justify-center rounded-full bg-[var(--color-provin-accent)] px-4 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50 sm:w-auto"
             >
-              {busy ? "Saglabā…" : "Saglabāt"}
+              {busy || !!transferUi ? "Saglabā…" : "Saglabāt"}
             </button>
             <button
               type="button"
@@ -749,7 +898,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       {offerOpen ? (
         <div
           className="fixed inset-0 z-[120] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
-          onClick={() => !offerBusy && setOfferOpen(false)}
+          onClick={() => !offerBusy && !offerFilePrepare && setOfferOpen(false)}
           role="presentation"
         >
           <div
@@ -789,12 +938,15 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               />
             </div>
             <div className="mt-3 rounded-xl border border-slate-200/90 bg-slate-50/50 p-3">
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50">
+              <label
+                className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 ${offerFilePrepare ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
+              >
                 <Paperclip className="h-4 w-4" aria-hidden />
                 Pievienot failus
                 <input
                   type="file"
                   multiple
+                  disabled={!!offerFilePrepare}
                   className="hidden"
                   onChange={(e) => {
                     void onOfferFilesPick(e.target.files);
@@ -802,6 +954,21 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                   }}
                 />
               </label>
+              {offerFilePrepare ? (
+                <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3" role="status" aria-live="polite">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-5 w-5 shrink-0 animate-spin text-[var(--color-provin-accent)]" aria-hidden />
+                    <span className="text-[12px] font-medium text-[var(--color-apple-text)]">{offerFilePrepare.label}</span>
+                  </div>
+                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                    <div
+                      className="h-full rounded-full bg-[var(--color-provin-accent)] transition-[width] duration-150"
+                      style={{ width: `${offerFilePrepare.pct}%` }}
+                    />
+                  </div>
+                  <p className="mt-1 text-[11px] tabular-nums text-slate-500">{offerFilePrepare.pct}%</p>
+                </div>
+              ) : null}
               {offerDraft.attachments.length > 0 ? (
                 <ul className="mt-2 space-y-1">
                   {offerDraft.attachments.map((a) => (
@@ -824,14 +991,15 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
             <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
               <button
                 type="button"
+                disabled={offerBusy || !!offerFilePrepare}
                 onClick={() => setOfferOpen(false)}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
               >
                 Atcelt
               </button>
               <button
                 type="button"
-                disabled={offerBusy || offerPdfPreviewBusy}
+                disabled={offerBusy || offerPdfPreviewBusy || !!offerFilePrepare}
                 onClick={() => void openOfferPdfPreview()}
                 className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold uppercase tracking-[0.06em] text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
               >
@@ -840,7 +1008,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               </button>
               <button
                 type="button"
-                disabled={offerBusy}
+                disabled={offerBusy || !!offerFilePrepare}
                 onClick={() => void persistOffer(false)}
                 className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[var(--color-provin-accent)] px-4 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
               >
@@ -848,7 +1016,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               </button>
               <button
                 type="button"
-                disabled={offerBusy}
+                disabled={offerBusy || !!offerFilePrepare}
                 onClick={() => void persistOffer(true)}
                 className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--color-provin-accent)]/35 bg-[var(--color-provin-accent-soft)]/60 px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent-soft)] disabled:opacity-50"
               >
@@ -898,6 +1066,61 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
             </div>
             <iframe title="Piedāvājuma PDF" className="min-h-0 flex-1 w-full border-0 bg-slate-100" src={offerPdfPreviewUrl} />
           </div>
+        </div>
+      ) : null}
+
+      {transferUi ? (
+        <div
+          className="fixed inset-0 z-[190] flex items-center justify-center bg-black/55 p-6"
+          role="alertdialog"
+          aria-busy="true"
+          aria-live="polite"
+          aria-labelledby="iriss-transfer-title"
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <Loader2 className="h-8 w-8 shrink-0 animate-spin text-[var(--color-provin-accent)]" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p id="iriss-transfer-title" className="text-[14px] font-semibold text-[var(--color-apple-text)]">
+                  {transferUi.title}
+                </p>
+                <p className="mt-1 text-[12px] text-slate-600">{transferUi.detail}</p>
+                {transferUi.longWait ? (
+                  <p className="mt-2 text-[12px] font-medium text-amber-900">Vēl apstrādā… Lūdzu, gaidiet.</p>
+                ) : null}
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className="h-full rounded-full bg-[var(--color-provin-accent)] transition-[width] duration-200"
+                    style={{ width: `${transferUi.pct}%` }}
+                  />
+                </div>
+                <p className="mt-1 text-[11px] tabular-nums text-slate-500">{transferUi.pct}%</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {pdfRetryBar ? (
+        <div className="fixed inset-x-0 bottom-0 z-[195] border-t border-slate-200 bg-white/98 p-3 shadow-[0_-4px_20px_rgba(0,0,0,0.12)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <p className="text-center text-[12px] leading-snug text-slate-800">
+            Ja PDF neparādījās vai pārlūks bloķēja lejupielādi,{" "}
+            <a
+              href={pdfRetryBar.href}
+              download={pdfRetryBar.name}
+              className="font-semibold text-[var(--color-provin-accent)] underline"
+            >
+              spied šeit, lai mēģinātu vēlreiz
+            </a>
+            .
+          </p>
+          <button
+            type="button"
+            className="mx-auto mt-2 block text-[11px] font-medium text-slate-500 underline"
+            onClick={() => setPdfRetryBar(null)}
+          >
+            Aizvērt joslu
+          </button>
         </div>
       ) : null}
 
