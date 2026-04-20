@@ -306,7 +306,7 @@ export async function buildIrissOfferPdfBytes(
   const pr = val(offer.priceGermany);
   if (pr) offerLines.push(`Cena Vācijā: ${pr}`);
   if (offerLines.length) {
-    drawSectionTitle(ctx, "Piedāvājuma dati");
+    drawSectionTitle(ctx, "Pamatinformācija");
     for (const ln of offerLines) drawParagraph(ctx, ln, 10);
   }
 

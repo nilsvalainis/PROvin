@@ -220,7 +220,7 @@ export function buildIrissOfferPrintHtml(
       <p class="meta">${esc(generatedAtFormatted)}</p>
     </header>
     ${blockIf("Klienta dati", clientTable)}
-    ${blockIf("Piedāvājuma dati", offerTable)}
+    ${blockIf("Pamatinformācija", offerTable)}
     ${blockIf("Komentāri", comments)}
     ${blockIf("Pievienotie faili", filesInner)}
     <footer class="legal">${legal}</footer>

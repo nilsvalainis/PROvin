@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, FileDown, Paperclip, Phone, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, FileDown, Paperclip, Phone, Plus, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -137,6 +137,13 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   const [busy, setBusy] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
   const [offerBusy, setOfferBusy] = useState(false);
+  const [offerPdfPreviewUrl, setOfferPdfPreviewUrl] = useState<string | null>(null);
+  const [offerPdfPreviewBusy, setOfferPdfPreviewBusy] = useState(false);
+  const [offerPdfSheetPull, setOfferPdfSheetPull] = useState(0);
+  const [offerPdfDragging, setOfferPdfDragging] = useState(false);
+  const offerPdfDragRef = useRef<{ y0: number; t0: number; pulling: boolean } | null>(null);
+  const offerPdfPullPxRef = useRef(0);
+  const offerPdfObjectUrlRef = useRef<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [offerDraft, setOfferDraft] = useState<OfferDraft>(() => newOfferDraft(1));
@@ -276,30 +283,132 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     setOfferDraft((d) => ({ ...d, attachments: [...d.attachments, ...loaded.filter((x): x is IrissOfferAttachment => x !== null)].slice(0, 12) }));
   }, []);
 
+  const closeOfferPdfPreview = useCallback(() => {
+    setOfferPdfPreviewUrl(null);
+    setOfferPdfSheetPull(0);
+    const u = offerPdfObjectUrlRef.current;
+    if (u) {
+      URL.revokeObjectURL(u);
+      offerPdfObjectUrlRef.current = null;
+    }
+  }, []);
+
+  const commitOfferDraftToRecord = useCallback(async (): Promise<IrissOfferRecord | null> => {
+    const now = new Date().toISOString();
+    const cleanedTitle = offerDraft.title.trim() || `Piedāvājums ${rec.offers.length + 1}`;
+    const offerOut: IrissOfferRecord = {
+      id: offerDraft.id,
+      title: cleanedTitle,
+      brandModel: offerDraft.brandModel,
+      year: offerDraft.year,
+      mileage: offerDraft.mileage,
+      priceGermany: offerDraft.priceGermany,
+      comment: offerDraft.comment,
+      attachments: offerDraft.attachments,
+      createdAt: offerDraft.createdAt || now,
+      updatedAt: now,
+    };
+    const exists = rec.offers.some((o) => o.id === offerOut.id);
+    const nextOffers = exists ? rec.offers.map((o) => (o.id === offerOut.id ? offerOut : o)) : [...rec.offers, offerOut];
+    const renumbered = nextOffers.map((o, idx) => ({ ...o, title: `Piedāvājums ${idx + 1}` }));
+    const nextRec: IrissPasutijumsRecord = { ...rec, offers: renumbered };
+    const ok = await save({ payload: nextRec, silent: true });
+    if (!ok) return null;
+    setRec(nextRec);
+    return offerOut;
+  }, [offerDraft, rec, save]);
+
+  const openOfferPdfPreview = useCallback(async () => {
+    setOfferPdfPreviewBusy(true);
+    try {
+      const offerOut = await commitOfferDraftToRecord();
+      if (!offerOut) {
+        alert("Saglabāšana neizdevās.");
+        return;
+      }
+      const base = `/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/offer/${encodeURIComponent(offerOut.id)}/print`;
+      let res = await fetch(base, { credentials: "include" });
+      if (!res.ok) {
+        res = await fetch(`${base}?images=0`, { credentials: "include" });
+      }
+      if (!res.ok) {
+        alert("PDF ģenerēšana neizdevās.");
+        return;
+      }
+      const blob = await res.blob();
+      const prev = offerPdfObjectUrlRef.current;
+      if (prev) URL.revokeObjectURL(prev);
+      const url = URL.createObjectURL(blob);
+      offerPdfObjectUrlRef.current = url;
+      setOfferPdfPreviewUrl(url);
+      setOfferPdfSheetPull(0);
+    } catch {
+      alert("Tīkla kļūda.");
+    } finally {
+      setOfferPdfPreviewBusy(false);
+    }
+  }, [commitOfferDraftToRecord, rec.id]);
+
+  const onOfferPdfHandleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    offerPdfPullPxRef.current = 0;
+    offerPdfDragRef.current = { y0: e.touches[0].clientY, t0: Date.now(), pulling: true };
+    setOfferPdfDragging(true);
+    setOfferPdfSheetPull(0);
+  }, []);
+
+  const onOfferPdfHandleTouchMove = useCallback((e: React.TouchEvent) => {
+    const d = offerPdfDragRef.current;
+    if (!d?.pulling || e.touches.length !== 1) return;
+    const dy = e.touches[0].clientY - d.y0;
+    if (dy > 0) {
+      offerPdfPullPxRef.current = dy;
+      setOfferPdfSheetPull(dy);
+    }
+  }, []);
+
+  const onOfferPdfHandleTouchEnd = useCallback(() => {
+    const d = offerPdfDragRef.current;
+    offerPdfDragRef.current = null;
+    setOfferPdfDragging(false);
+    if (!d) return;
+    const pull = offerPdfPullPxRef.current;
+    offerPdfPullPxRef.current = 0;
+    const dt = Math.max(1, Date.now() - d.t0);
+    const velocity = pull / dt;
+    if (pull > 72 || velocity > 0.45) {
+      closeOfferPdfPreview();
+    } else {
+      setOfferPdfSheetPull(0);
+    }
+  }, [closeOfferPdfPreview]);
+
+  useEffect(() => {
+    if (!offerPdfPreviewUrl) return;
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") closeOfferPdfPreview();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [offerPdfPreviewUrl, closeOfferPdfPreview]);
+
+  useEffect(() => {
+    return () => {
+      const u = offerPdfObjectUrlRef.current;
+      if (u) URL.revokeObjectURL(u);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!offerOpen) closeOfferPdfPreview();
+  }, [offerOpen, closeOfferPdfPreview]);
+
   const persistOffer = useCallback(
     async (withPdf: boolean) => {
       setOfferBusy(true);
       try {
-        const now = new Date().toISOString();
-        const cleanedTitle = offerDraft.title.trim() || `Piedāvājums ${rec.offers.length + 1}`;
-        const offerOut: IrissOfferRecord = {
-          id: offerDraft.id,
-          title: cleanedTitle,
-          brandModel: offerDraft.brandModel,
-          year: offerDraft.year,
-          mileage: offerDraft.mileage,
-          priceGermany: offerDraft.priceGermany,
-          comment: offerDraft.comment,
-          attachments: offerDraft.attachments,
-          createdAt: offerDraft.createdAt || now,
-          updatedAt: now,
-        };
-        const exists = rec.offers.some((o) => o.id === offerOut.id);
-        const nextOffers = exists ? rec.offers.map((o) => (o.id === offerOut.id ? offerOut : o)) : [...rec.offers, offerOut];
-        const renumbered = nextOffers.map((o, idx) => ({ ...o, title: `Piedāvājums ${idx + 1}` }));
-        const nextRec: IrissPasutijumsRecord = { ...rec, offers: renumbered };
-        const ok = await save({ payload: nextRec });
-        if (!ok) return;
+        const offerOut = await commitOfferDraftToRecord();
+        if (!offerOut) return;
         setOfferOpen(false);
 
         if (withPdf) {
@@ -322,7 +431,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
         setOfferBusy(false);
       }
     },
-    [offerDraft, rec, save],
+    [commitOfferDraftToRecord, rec.id],
   );
 
   const onConfirmDeleteOrder = useCallback(async () => {
@@ -722,6 +831,15 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               </button>
               <button
                 type="button"
+                disabled={offerBusy || offerPdfPreviewBusy}
+                onClick={() => void openOfferPdfPreview()}
+                className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold uppercase tracking-[0.06em] text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                <Eye className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
+                {offerPdfPreviewBusy ? "Atver…" : "APSKATĪT"}
+              </button>
+              <button
+                type="button"
                 disabled={offerBusy}
                 onClick={() => void persistOffer(false)}
                 className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[var(--color-provin-accent)] px-4 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
@@ -737,6 +855,48 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                 Saglabāt + Ģenerēt PDF
               </button>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {offerPdfPreviewUrl ? (
+        <div
+          className="fixed inset-0 z-[140] flex flex-col justify-end bg-black/50 sm:items-center sm:justify-center sm:p-4"
+          onClick={() => closeOfferPdfPreview()}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Piedāvājuma PDF"
+            className="flex h-[min(92dvh,880px)] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-h-[min(88dvh,900px)] sm:rounded-2xl"
+            style={{
+              transform: `translateY(${offerPdfSheetPull}px)`,
+              transition: offerPdfDragging ? "none" : "transform 0.2s ease-out",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative flex h-12 shrink-0 items-center border-b border-slate-200/90 bg-slate-50">
+              <div
+                className="absolute inset-x-0 top-0 flex h-12 cursor-grab touch-pan-y items-center justify-center active:cursor-grabbing"
+                onTouchStart={onOfferPdfHandleTouchStart}
+                onTouchMove={onOfferPdfHandleTouchMove}
+                onTouchEnd={onOfferPdfHandleTouchEnd}
+              >
+                <span className="h-1.5 w-11 rounded-full bg-slate-300" aria-hidden />
+              </div>
+              <p className="pointer-events-none flex-1 text-center text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">
+                Velc uz leju, lai aizvērtu
+              </p>
+              <button
+                type="button"
+                onClick={() => closeOfferPdfPreview()}
+                className="relative z-[1] mr-2 inline-flex min-h-9 shrink-0 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50"
+              >
+                Aizvērt
+              </button>
+            </div>
+            <iframe title="Piedāvājuma PDF" className="min-h-0 flex-1 w-full border-0 bg-slate-100" src={offerPdfPreviewUrl} />
           </div>
         </div>
       ) : null}
