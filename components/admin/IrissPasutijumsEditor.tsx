@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Eye, FileDown, Loader2, Paperclip, Phone, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, FileDown, Loader2, Mail, Paperclip, Phone, Plus, Save, Trash2 } from "lucide-react";
 import { Reorder } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -171,6 +171,41 @@ function newOfferDraft(nextNumber: number): OfferDraft {
   };
 }
 
+function buildIrissOfferClientShareBody(
+  draft: OfferDraft,
+  clientFirstName: string,
+  clientLastName: string,
+): string {
+  const name = [clientFirstName, clientLastName].map((s) => s.trim()).filter(Boolean).join(" ");
+  const greeting = name ? `Sveiki, ${name}!` : "Sveiki!";
+  const vehicle = [draft.brandModel.trim(), draft.year.trim()].filter(Boolean).join(", ");
+  return [
+    greeting,
+    "",
+    "Pielikumā nosūtu PDF ar piedāvājumu no PROVIN.LV.",
+    ...(vehicle ? [`Objekts: ${vehicle}.`] : []),
+    "",
+    "Labu dienu,",
+    "PROVIN.LV",
+  ].join("\n");
+}
+
+function buildIrissOfferShareSubject(draft: OfferDraft): string {
+  const vehicle = [draft.brandModel.trim(), draft.year.trim()].filter(Boolean).join(", ");
+  return `PROVIN.LV — piedāvājums${vehicle ? `: ${vehicle}` : ""}`;
+}
+
+function WhatsAppGlyphIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <path
+        fill="currentColor"
+        d="M12.04 2C6.55 2 2.1 6.45 2.1 11.94c0 1.93.55 3.81 1.59 5.43L2 22l4.8-1.61a9.9 9.9 0 0 0 5.24 1.5h.01c5.49 0 9.95-4.45 9.95-9.95A9.96 9.96 0 0 0 12.04 2Zm0 18.1h-.01a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-2.85.95.95-2.78-.19-.29a8.1 8.1 0 0 1-1.25-4.33c0-4.49 3.65-8.14 8.14-8.14a8.1 8.1 0 0 1 5.76 2.38 8.08 8.08 0 0 1 2.38 5.76c0 4.48-3.65 8.13-8.14 8.13Zm4.46-6.06c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.95-1.22a7.34 7.34 0 0 1-1.35-1.67c-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.11.15 1.53.09.47-.07 1.43-.58 1.63-1.13.2-.56.2-1.04.14-1.13-.06-.1-.22-.16-.46-.28Z"
+      />
+    </svg>
+  );
+}
+
 function BlockTitle({ children }: { children: React.ReactNode }) {
   return (
     <h2 className="mb-3 border-l-4 border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)]/50 py-2 pl-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--color-provin-accent)]">
@@ -219,6 +254,8 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   const offerPdfObjectUrlRef = useRef<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [offerDeleteConfirmOpen, setOfferDeleteConfirmOpen] = useState(false);
+  const [offerDeleteBusy, setOfferDeleteBusy] = useState(false);
   const [offerDraft, setOfferDraft] = useState<OfferDraft>(() => newOfferDraft(1));
   const lastSavedSnapshot = useRef(JSON.stringify(initialRecord));
   const autosaveTimer = useRef<number | null>(null);
@@ -616,14 +653,15 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   }, [offerOpen, closeOfferPdfPreview]);
 
   useEffect(() => {
-    const lock = offerOpen || Boolean(offerPdfPreviewUrl) || deleteConfirmOpen;
+    const lock =
+      offerOpen || Boolean(offerPdfPreviewUrl) || deleteConfirmOpen || offerDeleteConfirmOpen;
     if (!lock) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [offerOpen, offerPdfPreviewUrl, deleteConfirmOpen]);
+  }, [offerOpen, offerPdfPreviewUrl, deleteConfirmOpen, offerDeleteConfirmOpen]);
 
   const persistOffer = useCallback(
     async (withPdf: boolean) => {
@@ -717,6 +755,37 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     }
   }, [rec.id, router]);
 
+  const onConfirmDeleteOffer = useCallback(async () => {
+    const id = offerDraft.id;
+    const exists = rec.offers.some((o) => o.id === id);
+    if (!exists) {
+      setOfferDeleteConfirmOpen(false);
+      setOfferOpen(false);
+      return;
+    }
+    setOfferDeleteBusy(true);
+    try {
+      const nextOffers = rec.offers
+        .filter((o) => o.id !== id)
+        .map((o, idx) => ({ ...o, title: `Piedāvājums ${idx + 1}` }));
+      const nextRec: IrissPasutijumsRecord = { ...rec, offers: nextOffers };
+      const r = await save({ payload: nextRec, silent: true });
+      if (!r.ok) {
+        alert(r.error ?? "Dzēšana neizdevās.");
+        return;
+      }
+      setRec(nextRec);
+      setOfferPdfDoneIds((prev) => prev.filter((x) => x !== id));
+      setOfferDeleteConfirmOpen(false);
+      setOfferOpen(false);
+      closeOfferPdfPreview();
+    } catch {
+      alert("Tīkla kļūda.");
+    } finally {
+      setOfferDeleteBusy(false);
+    }
+  }, [closeOfferPdfPreview, offerDraft.id, rec, save]);
+
   const shellCard = useMemo(
     () => "rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5",
     [],
@@ -737,6 +806,27 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     if (!digits) return;
     window.open(`https://wa.me/${digits}`, "_blank", "noopener,noreferrer");
   }, [normalizedPhone, patch, rec.phone]);
+
+  const openOfferShareWhatsApp = useCallback(() => {
+    if (!normalizedPhone) return;
+    if (normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
+    const digits = normalizedPhone.replace(/[^\d]/g, "");
+    if (!digits) return;
+    const text = buildIrissOfferClientShareBody(offerDraft, rec.clientFirstName, rec.clientLastName);
+    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+  }, [normalizedPhone, offerDraft, patch, rec.clientFirstName, rec.clientLastName, rec.phone]);
+
+  const openOfferShareEmail = useCallback(() => {
+    const to = rec.email.trim();
+    if (!to) return;
+    const subject = buildIrissOfferShareSubject(offerDraft);
+    const body = buildIrissOfferClientShareBody(offerDraft, rec.clientFirstName, rec.clientLastName);
+    window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }, [offerDraft, rec.clientFirstName, rec.clientLastName, rec.email]);
+
+  const offerPersistedInRecord = useMemo(() => rec.offers.some((o) => o.id === offerDraft.id), [rec.offers, offerDraft.id]);
+  const offerShareWhatsAppEnabled = Boolean(normalizedPhone);
+  const offerShareEmailEnabled = Boolean(rec.email.trim());
 
   const showOfferPdfView = offerPdfDoneIds.includes(offerDraft.id);
 
@@ -1164,42 +1254,78 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               </div>
             </div>
             <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3 sm:px-5">
-              <div className="flex flex-wrap items-center justify-end gap-2">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <button
                   type="button"
-                  disabled={offerBusy || !!offerFilePrepare}
-                  onClick={() => setOfferOpen(false)}
-                  className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                  disabled={offerBusy || !!offerFilePrepare || offerDeleteBusy}
+                  onClick={() => setOfferDeleteConfirmOpen(true)}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-red-300/90 bg-white px-4 text-[13px] font-semibold text-red-800 shadow-sm transition hover:bg-red-50 disabled:opacity-50 sm:self-start"
                 >
-                  Atcelt
+                  Dzēst
                 </button>
-                {showOfferPdfView ? (
+                <div className="flex flex-wrap items-center justify-end gap-2 sm:min-w-0 sm:flex-1">
                   <button
                     type="button"
-                    disabled={offerBusy || offerPdfPreviewBusy || !!offerFilePrepare}
-                    onClick={() => void openOfferPdfPreview()}
-                    className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                    disabled={offerBusy || !!offerFilePrepare}
+                    onClick={() => setOfferOpen(false)}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
                   >
-                    <Eye className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
-                    {offerPdfPreviewBusy ? "Atver…" : "Apskatīt"}
+                    Atcelt
                   </button>
-                ) : null}
-                <button
-                  type="button"
-                  disabled={offerBusy || !!offerFilePrepare}
-                  onClick={() => void persistOffer(false)}
-                  className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--color-provin-accent)] bg-transparent px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent)]/8 disabled:opacity-50"
-                >
-                  Saglabāt
-                </button>
-                <button
-                  type="button"
-                  disabled={offerBusy || !!offerFilePrepare}
-                  onClick={() => void persistOffer(true)}
-                  className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--color-provin-accent)]/35 bg-[var(--color-provin-accent-soft)]/60 px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent-soft)] disabled:opacity-50"
-                >
-                  PDF
-                </button>
+                  {showOfferPdfView ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={offerBusy || offerPdfPreviewBusy || !!offerFilePrepare}
+                        onClick={() => void openOfferPdfPreview()}
+                        className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                      >
+                        <Eye className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
+                        {offerPdfPreviewBusy ? "Atver…" : "Apskatīt"}
+                      </button>
+                      {offerShareWhatsAppEnabled ? (
+                        <button
+                          type="button"
+                          disabled={offerBusy || !!offerFilePrepare}
+                          onClick={openOfferShareWhatsApp}
+                          title="Sūtīt WhatsApp klientam"
+                          aria-label="Sūtīt WhatsApp klientam"
+                          className="inline-flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-full border border-emerald-500/35 bg-[#25D366] text-white shadow-sm transition hover:brightness-105 active:scale-[0.98] disabled:opacity-40"
+                        >
+                          <WhatsAppGlyphIcon className="h-5 w-5" />
+                        </button>
+                      ) : null}
+                      {offerShareEmailEnabled ? (
+                        <button
+                          type="button"
+                          disabled={offerBusy || !!offerFilePrepare}
+                          onClick={openOfferShareEmail}
+                          title="Sūtīt e-pastu klientam"
+                          aria-label="Sūtīt e-pastu klientam"
+                          className="inline-flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-full border border-sky-300/90 bg-sky-50 text-sky-600 shadow-sm transition hover:bg-sky-100/85 active:scale-[0.98] disabled:opacity-40"
+                        >
+                          <Mail className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  <button
+                    type="button"
+                    disabled={offerBusy || !!offerFilePrepare}
+                    onClick={() => void persistOffer(false)}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--color-provin-accent)] bg-transparent px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent)]/8 disabled:opacity-50"
+                  >
+                    Saglabāt
+                  </button>
+                  <button
+                    type="button"
+                    disabled={offerBusy || !!offerFilePrepare}
+                    onClick={() => void persistOffer(true)}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--color-provin-accent)]/35 bg-[var(--color-provin-accent-soft)]/60 px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent-soft)] disabled:opacity-50"
+                  >
+                    PDF
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1306,6 +1432,45 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
           >
             Aizvērt joslu
           </button>
+        </div>
+      ) : null}
+
+      {offerDeleteConfirmOpen ? (
+        <div
+          className="fixed inset-0 z-[138] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
+          onClick={() => !offerDeleteBusy && setOfferDeleteConfirmOpen(false)}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xl sm:p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-semibold text-[var(--color-apple-text)]">
+              {offerPersistedInRecord
+                ? "Vai tiešām vēlaties neatgriezeniski dzēst šo piedāvājumu?"
+                : "Vai atmest šo nepabeigto piedāvājumu? Tas vēl nav saglabāts pasūtījumā."}
+            </h2>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setOfferDeleteConfirmOpen(false)}
+                disabled={offerDeleteBusy}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                Atcelt
+              </button>
+              <button
+                type="button"
+                onClick={() => void onConfirmDeleteOffer()}
+                disabled={offerDeleteBusy}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-red-700 px-4 text-[13px] font-semibold text-white shadow-sm transition hover:bg-red-800 disabled:opacity-50"
+              >
+                {offerDeleteBusy ? "Dzēš…" : "Dzēst"}
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
 
