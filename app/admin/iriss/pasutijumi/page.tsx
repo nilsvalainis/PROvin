@@ -1,6 +1,10 @@
 import { IrissPasutijumiListClient } from "@/components/admin/IrissPasutijumiListClient";
 import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
-import { getIrissPasutijumiStorageState, listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
+import {
+  getIrissPasutijumiStorageState,
+  listIrissPasutijumi,
+  readIrissListOrder,
+} from "@/lib/iriss-pasutijumi-store";
 
 export const dynamic = "force-dynamic";
 
@@ -8,9 +12,10 @@ export default async function IrissPasutijumiListPage() {
   const storage = getIrissPasutijumiStorageState();
   const storeEnabled = storage.enabled;
   const rows = storeEnabled ? await listIrissPasutijumi() : [];
+  const initialListOrder = storeEnabled ? await readIrissListOrder() : null;
 
   return (
-    <div className="relative w-full max-w-none pb-24 sm:pb-8">
+    <div className="relative min-h-full w-full max-w-none bg-[#F8F8F9] pb-24 sm:pb-8">
       {!storeEnabled ? (
         <div className="mt-3 rounded-2xl border border-[#E5E7EB] bg-white px-4 py-3.5 text-sm text-black shadow-sm">
           <p className="font-semibold">Melnraksts ir izslēgts</p>
@@ -40,7 +45,7 @@ export default async function IrissPasutijumiListPage() {
       ) : null}
 
       {storeEnabled && rows.length > 0 ? (
-        <IrissPasutijumiListClient rows={rows} />
+        <IrissPasutijumiListClient rows={rows} initialListOrder={initialListOrder} />
       ) : null}
 
       {storeEnabled && rows.length === 0 ? <IrissPasutijumiNewFab /> : null}

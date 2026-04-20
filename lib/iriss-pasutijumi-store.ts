@@ -9,12 +9,15 @@ import {
   emptyIrissPasutijums,
   type IrissOfferAttachment,
   type IrissOfferRecord,
+  type IrissPasutijumiListOrder,
   type IrissPasutijumsListRow,
   type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
 
 const DEFAULT_RELATIVE_DIR = ".data/iriss-pasutijumi";
 const BLOB_PREFIX = "iriss-pasutijumi/";
+/** Globāls pasūtījumu saraksta kārtība (nav UUID — atsevišķs JSON). */
+const LIST_ORDER_FILENAME = "_list-order.json";
 const BACKUP_RELATIVE_DIR = ".data/iriss-pasutijumi-backups";
 const BACKUP_BLOB_PREFIX = "iriss-pasutijumi-backups/";
 const BACKUP_KEEP_COUNT = 10;
@@ -99,6 +102,14 @@ function filePath(dir: string, id: string): string {
 
 function blobPathname(prefix: string, id: string): string {
   return `${prefix}${id}.json`;
+}
+
+function listOrderBlobPathname(prefix: string): string {
+  return `${prefix}${LIST_ORDER_FILENAME}`;
+}
+
+function listOrderFsPath(dir: string): string {
+  return path.join(dir, LIST_ORDER_FILENAME);
 }
 
 function backupFsPath(dir: string, id: string, ts: string): string {
@@ -411,6 +422,75 @@ export async function createIrissPasutijums(): Promise<
   const w = await writeIrissPasutijums(rec);
   if (!w.ok) return { ok: false, error: w.error };
   return { ok: true, id };
+}
+
+function normalizeListOrderIdList(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const x of raw) {
+    if (typeof x !== "string") continue;
+    if (!isSafeIrissPasutijumsId(x)) continue;
+    if (seen.has(x)) continue;
+    seen.add(x);
+    out.push(x);
+  }
+  return out;
+}
+
+function parseListOrder(raw: unknown): IrissPasutijumiListOrder | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  return {
+    pinnedOrder: normalizeListOrderIdList(o.pinnedOrder),
+    unpinnedOrder: normalizeListOrderIdList(o.unpinnedOrder),
+  };
+}
+
+export async function readIrissListOrder(): Promise<IrissPasutijumiListOrder | null> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return null;
+  if (r.kind === "blob") {
+    const raw = await readJsonFromBlob(listOrderBlobPathname(r.prefix), r.token);
+    return parseListOrder(raw);
+  }
+  try {
+    const txt = await fs.readFile(listOrderFsPath(r.dir), "utf8");
+    return parseListOrder(JSON.parse(txt) as unknown);
+  } catch {
+    return null;
+  }
+}
+
+export async function writeIrissListOrder(
+  order: IrissPasutijumiListOrder,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const r = resolveStorage();
+    if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+    const pinnedOrder = normalizeListOrderIdList(order.pinnedOrder);
+    const unpinnedOrder = normalizeListOrderIdList(order.unpinnedOrder);
+    const body = JSON.stringify({ version: 1, pinnedOrder, unpinnedOrder }, null, 2);
+    if (r.kind === "blob") {
+      await put(listOrderBlobPathname(r.prefix), body, {
+        access: "private",
+        token: r.token,
+        contentType: "application/json; charset=utf-8",
+        addRandomSuffix: false,
+        allowOverwrite: true,
+      });
+      return { ok: true };
+    }
+    await fs.mkdir(r.dir, { recursive: true });
+    const fp = listOrderFsPath(r.dir);
+    const tmp = `${fp}.tmp`;
+    await fs.writeFile(tmp, body, "utf8");
+    await fs.rename(tmp, fp);
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg };
+  }
 }
 
 export async function deleteIrissPasutijums(id: string): Promise<{ ok: true } | { ok: false; error: string }> {

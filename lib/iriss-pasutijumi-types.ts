@@ -71,6 +71,9 @@ export type IrissPasutijumsListRow = {
   listingLinksOther: string[];
 };
 
+/** Saraksta kārtība (Blob/FS JSON) — piespraustie un pārējie atsevišķi. */
+export type IrissPasutijumiListOrder = { pinnedOrder: string[]; unpinnedOrder: string[] };
+
 export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijumsRecord {
   const d = nowIso.slice(0, 10);
   return {
