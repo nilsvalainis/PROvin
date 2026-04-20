@@ -170,6 +170,11 @@ export function AdminOrderDetailView({
     }
   }, [order.id, router]);
 
+  /**
+   * Hidrācija tikai jaunas sesijas ID gadījumā. `serverOrderDraft` apzināti nav atkarībās:
+   * `router.refresh()` atjauninātu props un pārrakstītu `edits` ar vecāku melnrakstu (race ar autosaglabāšanu),
+   * kas var „nozagt” pēdējo VIN rakstzīmi.
+   */
   useEffect(() => {
     const key = storageKeyOrderEdits(order.id);
     const fromServer = serverOrderDraft?.orderEdits;
@@ -215,7 +220,8 @@ export function AdminOrderDetailView({
       /* ignore */
     }
     setHydrated(true);
-  }, [order.id, serverOrderDraft]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- skat. komentāru augšā (`serverOrderDraft` + refresh)
+  }, [order.id]);
 
   useEffect(() => {
     skipOrderEditsAutosaveFlash.current = true;
@@ -272,8 +278,8 @@ export function AdminOrderDetailView({
     return () => window.clearTimeout(u);
   }, [orderEditsAutosaveFlash]);
 
-  const persistEdits = useCallback((next: OrderEdits) => {
-    setEdits(next);
+  const persistEdits = useCallback((patch: Partial<OrderEdits>) => {
+    setEdits((prev) => ({ ...prev, ...patch }));
   }, []);
 
   const flushOrderEditsToStorage = useCallback(() => {
@@ -406,7 +412,8 @@ export function AdminOrderDetailView({
                   id="edit-vin"
                   label="VIN"
                   value={mergedVin}
-                  onChange={(v) => persistEdits({ ...edits, vin: v })}
+                  onChange={(v) => persistEdits({ vin: v })}
+                  maxLength={17}
                   placeholder="17 zīmes…"
                   mono
                   compact
@@ -435,7 +442,7 @@ export function AdminOrderDetailView({
                   id="edit-listing"
                   label="Sludinājuma saite"
                   value={mergedListing}
-                  onChange={(v) => persistEdits({ ...edits, listingUrl: v })}
+                  onChange={(v) => persistEdits({ listingUrl: v })}
                   placeholder="https://…"
                   inputType="url"
                   compact
@@ -491,7 +498,7 @@ export function AdminOrderDetailView({
                     id="edit-customer-name"
                     label="Vārds, uzvārds"
                     value={mergedCustomerName}
-                    onChange={(v) => persistEdits({ ...edits, customerName: v })}
+                    onChange={(v) => persistEdits({ customerName: v })}
                     placeholder="Klienta vārds"
                     compact
                     hideToolbar
@@ -501,7 +508,7 @@ export function AdminOrderDetailView({
                     id="edit-customer-email"
                     label="E-pasts"
                     value={mergedCustomerEmail}
-                    onChange={(v) => persistEdits({ ...edits, customerEmail: v })}
+                    onChange={(v) => persistEdits({ customerEmail: v })}
                     placeholder="epasts@piemers.lv"
                     compact
                     hideToolbar
@@ -511,7 +518,7 @@ export function AdminOrderDetailView({
                     id="edit-customer-phone"
                     label="Tālrunis"
                     value={mergedCustomerPhone}
-                    onChange={(v) => persistEdits({ ...edits, customerPhone: v })}
+                    onChange={(v) => persistEdits({ customerPhone: v })}
                     placeholder="+371..."
                     compact
                     hideToolbar
@@ -521,7 +528,7 @@ export function AdminOrderDetailView({
                     id="edit-customer-contact-method"
                     label="Saziņas veids"
                     value={mergedContactMethod}
-                    onChange={(v) => persistEdits({ ...edits, contactMethod: v })}
+                    onChange={(v) => persistEdits({ contactMethod: v })}
                     placeholder="email / phone / whatsapp"
                     compact
                     hideToolbar
@@ -593,7 +600,7 @@ export function AdminOrderDetailView({
                 <AdminSavableTextField
                   id="edit-notes"
                   value={mergedNotes}
-                  onChange={(v) => persistEdits({ ...edits, notes: v })}
+                  onChange={(v) => persistEdits({ notes: v })}
                   placeholder="Klienta ziņojums…"
                   multiline
                   compact

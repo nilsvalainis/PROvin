@@ -67,6 +67,7 @@ export function AdminConsultationDetailView({
   }, []);
   const [adminDark, setAdminDark] = useState(false);
 
+  /** Tāpat kā audita pasūtījumā: neapķīlāt `edits` pie `router.refresh()` (vecāks melnraksts vs. autosaglabāšana). */
   useEffect(() => {
     const fromServer = serverConsultationDraft?.orderEdits;
     if (consultationDraftHasOrderEdits(fromServer)) {
@@ -95,7 +96,8 @@ export function AdminConsultationDetailView({
       /* ignore */
     }
     setHydrated(true);
-  }, [order.id, serverConsultationDraft]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order.id]);
 
   useEffect(() => {
     skipOrderEditsAutosaveFlash.current = true;
@@ -152,8 +154,8 @@ export function AdminConsultationDetailView({
     return () => window.clearTimeout(u);
   }, [orderEditsAutosaveFlash]);
 
-  const persistEdits = useCallback((next: ConsultationEdits) => {
-    setEdits(next);
+  const persistEdits = useCallback((patch: Partial<ConsultationEdits>) => {
+    setEdits((prev) => ({ ...prev, ...patch }));
   }, []);
 
   const mergedCustomerName =
@@ -261,7 +263,7 @@ export function AdminConsultationDetailView({
                 id="consultation-edit-name"
                 label="Vārds, uzvārds"
                 value={mergedCustomerName}
-                onChange={(v) => persistEdits({ ...edits, customerName: v })}
+                onChange={(v) => persistEdits({ customerName: v })}
                 placeholder="Klienta vārds"
                 compact
                 hideToolbar
@@ -271,7 +273,7 @@ export function AdminConsultationDetailView({
                 id="consultation-edit-email"
                 label="E-pasts"
                 value={mergedCustomerEmail}
-                onChange={(v) => persistEdits({ ...edits, customerEmail: v })}
+                onChange={(v) => persistEdits({ customerEmail: v })}
                 placeholder="epasts@piemers.lv"
                 compact
                 hideToolbar
@@ -281,7 +283,7 @@ export function AdminConsultationDetailView({
                 id="consultation-edit-phone"
                 label="Tālrunis"
                 value={mergedCustomerPhone}
-                onChange={(v) => persistEdits({ ...edits, customerPhone: v })}
+                onChange={(v) => persistEdits({ customerPhone: v })}
                 placeholder="+371…"
                 compact
                 hideToolbar
@@ -314,7 +316,7 @@ export function AdminConsultationDetailView({
             <AdminSavableTextField
               id="consultation-edit-notes"
               value={mergedNotes}
-              onChange={(v) => persistEdits({ ...edits, notes: v })}
+              onChange={(v) => persistEdits({ notes: v })}
               placeholder="Sākotnējais ziņojums no formas…"
               multiline
               compact
@@ -341,7 +343,7 @@ export function AdminConsultationDetailView({
             <AdminSavableTextField
               id="consultation-internal-comment"
               value={mergedInternalComment}
-              onChange={(v) => persistEdits({ ...edits, internalComment: v })}
+              onChange={(v) => persistEdits({ internalComment: v })}
               placeholder="Tikai adminam…"
               multiline
               compact

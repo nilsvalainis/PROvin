@@ -28,6 +28,7 @@ export default async function AdminConsultationDetailPage({ params }: Props) {
 
   return (
     <AdminConsultationDetailView
+      key={sessionId}
       order={{
         id: order.id,
         created: order.created,

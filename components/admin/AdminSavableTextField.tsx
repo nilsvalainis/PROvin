@@ -34,6 +34,7 @@ export type AdminSavableTextFieldProps = {
   compact?: boolean;
   /** Viendimensiju laukam: elements labajā pusē ievades rindā (piem., Copy). */
   endAdornment?: ReactNode;
+  maxLength?: number;
 };
 
 export function AdminSavableTextField({
@@ -53,6 +54,7 @@ export function AdminSavableTextField({
   hideToolbar = false,
   compact = false,
   endAdornment,
+  maxLength,
 }: AdminSavableTextFieldProps) {
   const [viewMode, setViewMode] = useState(false);
   const [flash, setFlash] = useState(false);
@@ -184,6 +186,7 @@ export function AdminSavableTextField({
             placeholder={placeholder}
             spellCheck
             disabled={disabled}
+            maxLength={maxLength}
           />
         </AdminAiPolishTextareaShell>
       ) : flexRowWithAdornment ? (
@@ -197,6 +200,7 @@ export function AdminSavableTextField({
             placeholder={placeholder}
             autoComplete="off"
             disabled={disabled}
+            maxLength={maxLength}
           />
           {endAdornment}
         </div>
@@ -210,6 +214,7 @@ export function AdminSavableTextField({
           placeholder={placeholder}
           autoComplete="off"
           disabled={disabled}
+          maxLength={maxLength}
         />
       )}
     </div>

@@ -204,7 +204,7 @@ export function OrderForm({
           name: nameTrim || undefined,
           email: emailTrim,
           phone: phoneTrim,
-          vin: vinTrim,
+          vin: normalizeVin(vinTrim),
           listingUrl: listingTrim,
           notes: notesTrim || undefined,
           locale,
