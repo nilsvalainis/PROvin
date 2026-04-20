@@ -71,6 +71,17 @@ html {
   overscroll-behavior-y: auto;
 }
 
+/* iOS Safari: `overflow-x: clip` uz dokumenta saknes reizēm atslēdz „pull to refresh”. */
+@media (pointer: coarse) {
+  html {
+    overflow-x: hidden;
+  }
+  body {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 /* Touch ierīcēs Lenis izslēgts — vieglas enkura saites; galvenā „plūdenība” = OS scroll */
 @media (pointer: coarse) and (prefers-reduced-motion: no-preference) {
   html {

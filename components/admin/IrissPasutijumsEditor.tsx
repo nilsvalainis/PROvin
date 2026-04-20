@@ -372,7 +372,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     "inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50";
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] bg-white px-3 pb-28 sm:px-6 sm:pb-8 lg:px-10">
+    <div className="mx-auto w-full max-w-[1200px] bg-white px-3 pb-8 sm:px-6 lg:px-10">
       <AdminDashboardHeaderWithMenu>
         <div className="flex flex-col gap-2">
           <Link
@@ -600,12 +600,15 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
           <IrissListingPlatformsFields rec={rec} onPatch={patchRecord} />
         </section>
 
-        <section className={shellCard}>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+        <section className={`${shellCard} border-red-100/80 bg-red-50/20`}>
+          <p className="text-[12px] leading-snug text-red-950/90">
+            Neatgriezeniski dzēst šo pasūtījumu un visus piedāvājumus. Pirms dzēšanas tiek prasīts apstiprinājums.
+          </p>
+          <div className="mt-3 flex flex-col gap-2 sm:mt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             <button
               type="button"
               onClick={openCreateOffer}
-              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
+              className="inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 sm:w-auto"
             >
               <Plus className="h-4 w-4" aria-hidden />
               Izveidot piedāvājumu
@@ -614,55 +617,24 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               type="button"
               disabled={busy}
               onClick={() => void save({ redirectToList: true })}
-              className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[var(--color-provin-accent)] px-4 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
+              className="inline-flex min-h-[44px] w-full shrink-0 items-center justify-center rounded-full bg-[var(--color-provin-accent)] px-4 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50 sm:w-auto"
             >
               {busy ? "Saglabā…" : "Saglabāt"}
             </button>
+            <button
+              type="button"
+              disabled={busy || deleteBusy}
+              onClick={() => {
+                setOfferOpen(false);
+                setDeleteConfirmOpen(true);
+              }}
+              className="inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-2 rounded-full border border-red-300/90 bg-white px-4 text-[13px] font-semibold text-red-800 shadow-sm transition hover:bg-red-50 disabled:opacity-50 sm:w-auto"
+            >
+              <Trash2 className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
+              Dzēst pasūtījumu
+            </button>
           </div>
         </section>
-
-        <section className={`${shellCard} hidden border-red-200/80 bg-red-50/30 md:block`}>
-          <p className="text-[12px] leading-snug text-red-950/90">
-            Neatgriezeniski dzēst šo pasūtījumu un visus piedāvājumus. Pirms dzēšanas tiek prasīts apstiprinājums.
-          </p>
-          <button
-            type="button"
-            disabled={busy || deleteBusy}
-            onClick={() => {
-              setOfferOpen(false);
-              setDeleteConfirmOpen(true);
-            }}
-            className="mt-3 inline-flex w-full min-h-[44px] items-center justify-center gap-2 rounded-full border border-red-300/90 bg-white px-4 text-[13px] font-semibold text-red-800 shadow-sm transition hover:bg-red-50 disabled:opacity-50"
-          >
-            <Trash2 className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
-            Dzēst pasūtījumu
-          </button>
-        </section>
-      </div>
-
-      <div
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] border-t border-red-200/70 bg-white/95 backdrop-blur-md md:hidden"
-        style={{
-          paddingBottom: "max(0.65rem, env(safe-area-inset-bottom, 0px))",
-          paddingLeft: "max(0.75rem, env(safe-area-inset-left, 0px))",
-          paddingRight: "max(0.75rem, env(safe-area-inset-right, 0px))",
-          paddingTop: "0.5rem",
-        }}
-      >
-        <div className="pointer-events-auto mx-auto w-full max-w-[1200px]">
-          <button
-            type="button"
-            disabled={busy || deleteBusy}
-            onClick={() => {
-              setOfferOpen(false);
-              setDeleteConfirmOpen(true);
-            }}
-            className="inline-flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl border border-red-300/90 bg-red-50 px-4 text-[13px] font-semibold text-red-800 shadow-sm transition active:scale-[0.99] disabled:opacity-50"
-          >
-            <Trash2 className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
-            Dzēst pasūtījumu
-          </button>
-        </div>
       </div>
 
       {offerOpen ? (

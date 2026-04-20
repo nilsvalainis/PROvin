@@ -1,7 +1,7 @@
 "use client";
 
 import { Menu, X } from "lucide-react";
-import { Link, usePathname } from "@/i18n/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildSiteRailSections, normalizeSitePath, siteRailMenuActiveIndex } from "@/lib/site-rail-sections";
@@ -49,6 +49,7 @@ export function HeaderClient({
   menuCloseLabel,
 }: HeaderClientProps) {
   const pathname = usePathname() ?? "";
+  const router = useRouter();
   const normalizedPath = normalizeSitePath(pathname);
   const tr = useTranslations("SiteRail");
   const { theme } = useSiteTheme();
@@ -71,6 +72,49 @@ export function HeaderClient({
 
   const close = useCallback(() => setOpen(false), []);
   const toggleRailMenu = useCallback(() => setOpen((v) => !v), []);
+
+  /**
+   * Sākumlapā `Link` uz `/#…` bieži neritina (tā pati route) — ritināšana + URL hash šeit.
+   * No citām lapām — klients navigācija + īss delay, kamēr DOM ir sadaļa.
+   */
+  const onRailSectionClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+
+      const hashIdx = href.indexOf("#");
+      const rawHash = hashIdx >= 0 ? href.slice(hashIdx + 1) : "";
+      const pathPart = hashIdx >= 0 ? href.slice(0, hashIdx) : href;
+      const targetsHome = pathPart === "" || pathPart === "/";
+
+      if (!targetsHome) return;
+
+      const onHome = normalizedPath === "/" || normalizedPath === "";
+      const scrollTo = (id: string | null) => {
+        if (id) {
+          document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+          window.history.replaceState(null, "", `#${id}`);
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+      };
+
+      if (onHome) {
+        e.preventDefault();
+        close();
+        requestAnimationFrame(() => scrollTo(rawHash || null));
+        return;
+      }
+
+      e.preventDefault();
+      close();
+      void router.push(href);
+      if (rawHash) {
+        window.setTimeout(() => scrollTo(rawHash), 120);
+      }
+    },
+    [close, normalizedPath, router],
+  );
 
   useEffect(() => {
     if (!open || logoAlignWithRailSakums) return;
@@ -240,7 +284,7 @@ export function HeaderClient({
             >
               <div className="min-h-0 overflow-hidden">
                 <nav
-                  className={`mx-[max(0.5rem,env(safe-area-inset-left,0px))] mb-2 max-h-[min(28rem,65dvh)] overflow-y-auto overscroll-contain rounded-xl border px-2 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-md ${
+                  className={`mx-[max(0.5rem,env(safe-area-inset-left,0px))] mb-2 max-h-[min(28rem,65dvh)] overflow-y-auto rounded-xl border px-2 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-md ${
                     mobileRailOnDark
                       ? "border-white/[0.12] bg-[#08090c]/[0.97]"
                       : "border-black/[0.08] bg-white/[0.97]"
@@ -251,7 +295,7 @@ export function HeaderClient({
                     <Link
                       key={`${s.labelKey}:${s.href}`}
                       href={s.href}
-                      onClick={close}
+                      onClick={(e) => onRailSectionClick(e, s.href)}
                       className={railDropLinkClass(i === railMenuActive)}
                       aria-current={i === railMenuActive ? "location" : undefined}
                     >
