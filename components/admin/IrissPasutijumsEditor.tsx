@@ -34,6 +34,32 @@ function normalizePhoneForLv(raw: string): string {
   return `+371${digits}`;
 }
 
+/** PDF no API (`application/pdf` + attachment) — darbojas labāk nekā `window.open` + `print()` iOS Safari. */
+async function downloadPdfBlobFromResponse(res: Response, fallbackName: string): Promise<void> {
+  const cd = res.headers.get("Content-Disposition");
+  let name = fallbackName;
+  if (cd) {
+    const star = /filename\*=UTF-8''([^;\s]+)/i.exec(cd);
+    const quoted = /filename="([^"]+)"/i.exec(cd);
+    try {
+      if (star?.[1]) name = decodeURIComponent(star[1]);
+      else if (quoted?.[1]) name = quoted[1];
+    } catch {
+      /* keep fallback */
+    }
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 2500);
+}
+
 type OfferDraft = {
   id: string;
   title: string;
@@ -171,16 +197,9 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   }, [rec, save]);
 
   const openPdf = useCallback(async () => {
-    /** Jāatver tūlīt pēc klikšķa (pirms `await`), citādi mobilie pārlūki bloķē `window.open` un prasa uznirstošo logu. */
-    const w = window.open("", "_blank");
-    if (!w) {
-      alert("Neizdevās atvērt drukas logu. Pārlūka iestatījumos atļauj uznirstošos logus šai vietnei.");
-      return;
-    }
     try {
       const ok = await save({ silent: true });
       if (!ok) {
-        w.close();
         alert("Saglabāšana neizdevās.");
         return;
       }
@@ -188,27 +207,11 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
         credentials: "include",
       });
       if (!res.ok) {
-        w.close();
-        alert("PDF sagataves ģenerēšana neizdevās.");
+        alert("PDF ģenerēšana neizdevās.");
         return;
       }
-      const html = await res.text();
-      w.document.open();
-      w.document.write(html);
-      w.document.close();
-      const schedulePrint = () => {
-        try {
-          w.document.title = "PASŪTĪJUMS.pdf";
-          w.focus();
-          w.print();
-        } catch {
-          /* ignore */
-        }
-      };
-      w.addEventListener("load", () => window.setTimeout(schedulePrint, 400), { once: true });
-      window.setTimeout(schedulePrint, 800);
+      await downloadPdfBlobFromResponse(res, `iriss-pasutijums-${rec.id}.pdf`);
     } catch {
-      w.close();
       alert("Tīkla kļūda.");
     }
   }, [rec.id, save]);
@@ -287,28 +290,15 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
         setOfferOpen(false);
 
         if (withPdf) {
-          const w = window.open("", "_blank");
-          if (!w) return;
           const res = await fetch(
             `/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/offer/${encodeURIComponent(offerOut.id)}/print`,
             { credentials: "include" },
           );
           if (!res.ok) {
-            w.close();
+            alert("PDF ģenerēšana neizdevās.");
             return;
           }
-          const html = await res.text();
-          w.document.open();
-          w.document.write(html);
-          w.document.close();
-          window.setTimeout(() => {
-            try {
-              w.focus();
-              w.print();
-            } catch {
-              /* ignore */
-            }
-          }, 600);
+          await downloadPdfBlobFromResponse(res, `iriss-piedavajums-${offerOut.id}.pdf`);
         }
       } finally {
         setOfferBusy(false);

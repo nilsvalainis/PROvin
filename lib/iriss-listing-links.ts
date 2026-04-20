@@ -13,31 +13,31 @@ export const LISTING_PLATFORM_CHIPS: Record<
   mobile: {
     letter: "M",
     title: "Mobile",
-    chipClass: "text-slate-700",
+    chipClass: "border-0 bg-[#FF3B30] !text-white shadow-sm",
   },
   autobid: {
     letter: "AB",
     title: "Autobid",
-    chipClass: "text-slate-700",
+    chipClass: "border-0 bg-[#5AC8FA] !text-[#0a1628] shadow-sm",
   },
   openline: {
-    letter: "OP",
+    letter: "OL",
     title: "Openline",
-    chipClass: "text-slate-700",
+    chipClass: "border-0 bg-[#007AFF] !text-white shadow-sm",
   },
   auto1: {
     letter: "A1",
     title: "Auto1",
-    chipClass: "text-slate-700",
+    chipClass: "border-0 bg-[#FF9500] !text-white shadow-sm",
   },
   citi: {
     letter: "C",
     title: "Citi",
-    chipClass: "text-slate-700",
+    chipClass: "border border-[#D1D1D6] bg-[#E5E5EA] !text-[#3a3a3c] shadow-sm",
   },
 };
 
-/** Lauki, pēc kuriem veidojas līdz `max` platformu čipu saitēm (kārtība: M, AB, OP, A1, tad Citi). */
+/** Lauki, pēc kuriem veidojas līdz `max` platformu čipu saitēm (kārtība: M, AB, OL, A1, tad Citi). */
 export type IrissListingLinksInput = {
   listingLinkMobile: string;
   listingLinkAutobid: string;
@@ -80,6 +80,10 @@ export function buildListingPlatformChips(src: IrissListingLinksInput, max = 5):
 export const LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS =
   "flex min-w-0 flex-nowrap items-center gap-2.5 overflow-x-auto overscroll-x-contain px-1 py-1.5 [-webkit-overflow-scrolling:touch]";
 
-/** Kompakts noapaļots taisnstūris ar burtu; pielikt `LISTING_PLATFORM_CHIPS[*].chipClass`. */
+/** Kompakts noapaļots taisnstūris ar burtu; pielikt `LISTING_PLATFORM_CHIPS[*].chipClass` (krāsas). */
 export const LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS =
-  "inline-flex h-10 min-w-[2.5rem] shrink-0 items-center justify-center rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-2.5 text-[11px] font-semibold leading-none tracking-tight text-black shadow-sm transition-transform active:scale-[0.96] sm:h-10 sm:min-w-[2.6rem] sm:px-2.5";
+  "iriss-listing-platform-chip inline-flex h-10 min-w-[2.5rem] shrink-0 items-center justify-center rounded-xl px-2.5 text-[11px] font-semibold leading-none tracking-tight transition-transform active:scale-[0.96] sm:h-10 sm:min-w-[2.6rem] sm:px-2.5";
+
+/** „Atvērt visas” — neitrāls iOS pelēks, lai nesaplūst ar platformu krāsām. */
+export const LISTING_PLATFORM_CHIP_ALL_BUTTON_CLASS =
+  "border border-[#D1D1D6] bg-[#F2F2F7] !text-[#3a3a3c] shadow-sm";

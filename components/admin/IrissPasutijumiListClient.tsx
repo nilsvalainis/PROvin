@@ -8,6 +8,7 @@ import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab"
 import {
   buildListingPlatformChips,
   LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
+  LISTING_PLATFORM_CHIP_ALL_BUTTON_CLASS,
   LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS,
 } from "@/lib/iriss-listing-links";
 import type { IrissPasutijumiListOrder, IrissPasutijumsListRow, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -203,14 +204,12 @@ const IrissRowCard = memo(function IrissRowCard({
   onAskDelete,
   registerSwipeCloser,
   closeOtherSwipes,
-  onSwipeScrollLockChange,
 }: {
   row: IrissPasutijumsListRow;
   onPin: (id: string) => void;
   onAskDelete: (id: string) => void;
   registerSwipeCloser: (id: string, closer: (() => void) | null) => void;
   closeOtherSwipes: (exceptId: string) => void;
-  onSwipeScrollLockChange: (locked: boolean) => void;
 }) {
   const reorderDragControls = useDragControls();
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -272,7 +271,6 @@ const IrissRowCard = memo(function IrissRowCard({
   const onFrontPointerEnd = () => {
     clearLongPressTimer();
     pointerStartRef.current = null;
-    onSwipeScrollLockChange(false);
   };
 
   const closeSwipe = useCallback(() => setIsOpen(false), []);
@@ -322,10 +320,7 @@ const IrissRowCard = memo(function IrissRowCard({
           dragMomentum={false}
           dragDirectionLock
           onDirectionLock={(axis) => {
-            if (axis === "x") {
-              closeOtherSwipes(row.id);
-              onSwipeScrollLockChange(true);
-            }
+            if (axis === "x") closeOtherSwipes(row.id);
           }}
           animate={{ x: isOpen ? -SWIPE_ACTION_WIDTH : 0 }}
           transition={SWIPE_SPRING}
@@ -350,9 +345,8 @@ const IrissRowCard = memo(function IrissRowCard({
             }
             setIsOpen(shouldOpen);
             if (shouldOpen) closeOtherSwipes(row.id);
-            onSwipeScrollLockChange(false);
           }}
-          className={`relative z-10 touch-pan-y will-change-transform md:translate-x-0 ${cardSurfaceClass}`}
+          className={`relative z-10 touch-pan-y overscroll-x-contain will-change-transform md:translate-x-0 ${cardSurfaceClass}`}
           style={{ transform: "translateZ(0)" }}
         >
           <div className="flex items-stretch">
@@ -416,7 +410,7 @@ const IrissRowCard = memo(function IrissRowCard({
                     onClick={openAllListings}
                     title="Atvērt visas saites"
                     aria-label="Atvērt visas saites"
-                    className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} text-slate-700`}
+                    className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${LISTING_PLATFORM_CHIP_ALL_BUTTON_CLASS}`}
                   >
                     ALL
                   </button>
@@ -445,7 +439,7 @@ const IrissRowCard = memo(function IrissRowCard({
                     onClick={openAllListings}
                     title="Atvērt visas saites"
                     aria-label="Atvērt visas saites"
-                    className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} text-slate-700`}
+                    className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${LISTING_PLATFORM_CHIP_ALL_BUTTON_CLASS}`}
                   >
                     ALL
                   </button>
@@ -480,27 +474,8 @@ export function IrissPasutijumiListClient({
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
   const swipeClosersRef = useRef<Map<string, () => void>>(new Map());
-  const swipeLockCountRef = useRef(0);
   const localRowsRef = useRef(localRows);
   localRowsRef.current = localRows;
-
-  const bumpSwipeScrollLock = useCallback((locked: boolean) => {
-    if (locked) {
-      swipeLockCountRef.current += 1;
-      if (swipeLockCountRef.current === 1) {
-        document.body.style.overflow = "hidden";
-        document.documentElement.style.overflow = "hidden";
-        document.body.style.touchAction = "none";
-      }
-    } else {
-      swipeLockCountRef.current = Math.max(0, swipeLockCountRef.current - 1);
-      if (swipeLockCountRef.current === 0) {
-        document.body.style.overflow = "";
-        document.documentElement.style.overflow = "";
-        document.body.style.touchAction = "";
-      }
-    }
-  }, []);
 
   const registerSwipeCloser = useCallback((id: string, closer: (() => void) | null) => {
     if (closer) swipeClosersRef.current.set(id, closer);
@@ -512,15 +487,6 @@ export function IrissPasutijumiListClient({
       if (id === exceptId) continue;
       close();
     }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      swipeLockCountRef.current = 0;
-      document.body.style.overflow = "";
-      document.documentElement.style.overflow = "";
-      document.body.style.touchAction = "";
-    };
   }, []);
 
   useEffect(() => {
@@ -704,7 +670,6 @@ export function IrissPasutijumiListClient({
                 onAskDelete={setDeleteTargetId}
                 registerSwipeCloser={registerSwipeCloser}
                 closeOtherSwipes={closeOtherSwipes}
-                onSwipeScrollLockChange={bumpSwipeScrollLock}
               />
             ))}
           </Reorder.Group>
@@ -720,7 +685,6 @@ export function IrissPasutijumiListClient({
                 onAskDelete={setDeleteTargetId}
                 registerSwipeCloser={registerSwipeCloser}
                 closeOtherSwipes={closeOtherSwipes}
-                onSwipeScrollLockChange={bumpSwipeScrollLock}
               />
             ))}
           </Reorder.Group>

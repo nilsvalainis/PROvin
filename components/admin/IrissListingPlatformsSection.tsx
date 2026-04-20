@@ -5,6 +5,7 @@ import { useCallback, useMemo } from "react";
 import {
   buildListingPlatformChips,
   LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
+  LISTING_PLATFORM_CHIP_ALL_BUTTON_CLASS,
   LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS,
 } from "@/lib/iriss-listing-links";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -41,7 +42,7 @@ export function IrissListingPlatformChipsRow({ rec }: { rec: IrissPasutijumsReco
         onClick={openAll}
         title="Atvērt visas saites"
         aria-label="Atvērt visas saites"
-        className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} text-slate-700`}
+        className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${LISTING_PLATFORM_CHIP_ALL_BUTTON_CLASS}`}
       >
         ALL
       </button>
