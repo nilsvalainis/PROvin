@@ -90,7 +90,11 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
           <AdminWorkspaceSwitcher />
           <div className="hidden items-center gap-2 md:flex">
             <div className="h-5 w-px bg-slate-200/90" aria-hidden />
-            {isProWorkspace ? <AdminSidebarNav baseUrl={baseUrl} orientation="horizontal" /> : null}
+            {isProWorkspace ? (
+              <AdminSidebarNav baseUrl={baseUrl} orientation="horizontal" />
+            ) : (
+              <IrissAdminSidebarNav orientation="horizontal" />
+            )}
           </div>
         </div>
         <div className="hidden md:flex">
@@ -140,7 +144,7 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
         >
           <div className="flex flex-col gap-2 p-2.5">
             <div className="flex w-full min-w-0 items-start justify-between gap-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">Menu</p>
+              <span aria-hidden />
               <button
                 type="button"
                 onClick={onAsideCloseClick}
@@ -153,7 +157,7 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
                 </span>
               </button>
             </div>
-            {isProWorkspace ? <AdminSidebarNav baseUrl={baseUrl} /> : <IrissAdminSidebarNav />}
+            {isProWorkspace ? <AdminSidebarNav baseUrl={baseUrl} /> : null}
             <div className="pt-0.5">
               <LogoutButton />
             </div>

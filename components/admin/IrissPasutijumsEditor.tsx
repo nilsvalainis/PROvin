@@ -51,15 +51,11 @@ function LabeledTextarea({
   );
 }
 
-type DeleteDialog = "closed" | "confirm";
-
 export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissPasutijumsRecord }) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(initialRecord);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [deleteDialog, setDeleteDialog] = useState<DeleteDialog>("closed");
-  const [deleteBusy, setDeleteBusy] = useState(false);
   const lastSavedSnapshot = useRef(JSON.stringify(initialRecord));
   const autosaveTimer = useRef<number | null>(null);
 
@@ -71,9 +67,11 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     setRec((r) => ({ ...r, ...p }));
   }, []);
 
-  const save = useCallback(async () => {
+  const save = useCallback(async (opts?: { redirectToList?: boolean; silent?: boolean }) => {
+    const redirectToList = opts?.redirectToList === true;
+    const silent = opts?.silent === true;
     setBusy(true);
-    setSaveMsg(null);
+    if (!silent) setSaveMsg(null);
     try {
       const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}`, {
         method: "PATCH",
@@ -83,7 +81,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       });
       const data: unknown = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setSaveMsg("Neizdevās saglabāt.");
+        if (!silent) setSaveMsg("Neizdevās saglabāt.");
         return;
       }
       const record =
@@ -95,20 +93,25 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
           : null;
       if (record) setRec(record);
       lastSavedSnapshot.current = JSON.stringify(record ?? rec);
-      setSaveMsg("Saglabāts.");
+      if (redirectToList) {
+        router.push("/admin/iriss/pasutijumi");
+        router.refresh();
+        return;
+      }
+      if (!silent) setSaveMsg("Saglabāts.");
     } catch {
-      setSaveMsg("Tīkla kļūda.");
+      if (!silent) setSaveMsg("Tīkla kļūda.");
     } finally {
       setBusy(false);
     }
-  }, [rec]);
+  }, [rec, router]);
 
   useEffect(() => {
     const snap = JSON.stringify(rec);
     if (snap === lastSavedSnapshot.current) return;
     if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     autosaveTimer.current = window.setTimeout(() => {
-      void save();
+      void save({ silent: true });
     }, 900);
     return () => {
       if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
@@ -123,7 +126,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       return;
     }
     try {
-      await save();
+      await save({ silent: true });
       const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/print`, {
         credentials: "include",
       });
@@ -152,29 +155,6 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       alert("Tīkla kļūda.");
     }
   }, [rec.id, save]);
-
-  const runDelete = useCallback(async () => {
-    setDeleteBusy(true);
-    try {
-      const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!res.ok) {
-        setSaveMsg("Neizdevās dzēst.");
-        setDeleteDialog("closed");
-        return;
-      }
-      setDeleteDialog("closed");
-      router.push("/admin/iriss/pasutijumi");
-      router.refresh();
-    } catch {
-      setSaveMsg("Tīkla kļūda.");
-      setDeleteDialog("closed");
-    } finally {
-      setDeleteBusy(false);
-    }
-  }, [rec.id, router]);
 
   const shellCard = useMemo(
     () => "rounded-xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5",
@@ -221,7 +201,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               disabled={busy}
               title="Saglabāt"
               aria-label={busy ? "Saglabā" : "Saglabāt"}
-              onClick={() => void save()}
+              onClick={() => void save({ redirectToList: true })}
               className={`${toolbarBtnBase} bg-[var(--color-provin-accent)] text-white hover:opacity-95 sm:hover:opacity-95`}
             >
               <Save className="h-6 w-6 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
@@ -392,74 +372,19 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
           <LabeledTextarea label="Piezīmes" value={rec.notes} onChange={(e) => patch("notes", e.target.value)} />
         </section>
 
-        <section className={`${shellCard} border-red-200/50 bg-red-50/20`}>
-          <p className="mb-3 text-[12px] leading-relaxed text-red-950/85">
-            Neatgriezeniski dzēš pasūtījumu no melnraksta. Pirms dzēšanas tiks prasīts apstiprinājums.
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
+        <section className={shellCard}>
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
               disabled={busy}
-              onClick={() => void save()}
+              onClick={() => void save({ redirectToList: true })}
               className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[var(--color-provin-accent)] px-4 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
             >
               {busy ? "Saglabā…" : "Saglabāt"}
             </button>
-            <button
-              type="button"
-              onClick={() => setDeleteDialog("confirm")}
-              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-red-300/90 bg-white px-4 text-[13px] font-semibold text-red-800 shadow-sm transition hover:bg-red-50"
-            >
-              Dzēst pasūtījumu
-            </button>
           </div>
         </section>
       </div>
-
-      {deleteDialog !== "closed" ? (
-        <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
-          role="presentation"
-          onClick={() => !deleteBusy && setDeleteDialog("closed")}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="iriss-delete-dialog-title"
-            className="w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xl sm:p-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {deleteDialog === "confirm" ? (
-              <>
-                <h2 id="iriss-delete-dialog-title" className="text-base font-semibold text-[var(--color-apple-text)]">
-                  Dzēst pasūtījumu?
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--color-provin-muted)]">
-                  Vai tiešām vēlaties dzēst šo pasūtījumu? Dzēšanu nevar atsaukt.
-                </p>
-                <div className="mt-5 flex flex-wrap justify-end gap-2">
-                  <button
-                    type="button"
-                    disabled={deleteBusy}
-                    onClick={() => setDeleteDialog("closed")}
-                    className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
-                  >
-                    Atcelt
-                  </button>
-                  <button
-                    type="button"
-                    disabled={deleteBusy}
-                    onClick={() => void runDelete()}
-                    className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-red-700 px-4 text-[13px] font-semibold text-white shadow-sm transition hover:bg-red-800 disabled:opacity-50"
-                  >
-                    {deleteBusy ? "Dzēš…" : "Dzēst neatgriezeniski"}
-                  </button>
-                </div>
-              </>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
