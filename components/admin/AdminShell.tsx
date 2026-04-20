@@ -8,6 +8,7 @@ import { AdminSidebarNav } from "./AdminSidebarNav";
 import { IrissAdminSidebarNav } from "./IrissAdminSidebarNav";
 import { AdminWorkspaceSwitcher } from "./AdminWorkspaceSwitcher";
 import { LogoutButton } from "./LogoutButton";
+import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 
 /** Mobilajā admin augšējā joslā — tās pašas 3 strīpiņas kā publiskajā HeaderClient. */
 function AdminMobileMenuIcon({ lineClass }: { lineClass: string }) {
@@ -162,16 +163,9 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
           </div>
         </aside>
         <AdminShellLayoutContext.Provider value={shellLayoutValue}>
-          <main
-            className={`min-w-0 w-full max-w-none flex-1 ${
-              isDetailScreen
-                ? "space-y-0 p-0"
-                : "space-y-3 p-2 pt-2 sm:px-3 sm:pb-4 md:px-4 md:pb-5 lg:px-5 lg:pb-6"
-            }`}
-          >
-            {notice}
-            <div className="w-full min-w-0 max-w-none">{children}</div>
-          </main>
+          <AdminShellMainWithMobilePull isDetailScreen={isDetailScreen} notice={notice}>
+            {children}
+          </AdminShellMainWithMobilePull>
         </AdminShellLayoutContext.Provider>
       </div>
     </div>
