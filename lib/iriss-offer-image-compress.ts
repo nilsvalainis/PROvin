@@ -1,8 +1,21 @@
 import type { IrissOfferAttachment } from "@/lib/iriss-pasutijumi-types";
 
-const MAX_EDGE = 1920;
-const JPEG_QUALITY = 0.82;
-const MAX_READ_BYTES = 14 * 1024 * 1024;
+/**
+ * PDF rāda attēlus relatīvi mazās šūnās; serveris (`shrink-image-for-iriss-pdf`) tāpat samazina.
+ * Šeit saspiežam pirms JSON, lai roaming/ārzemēs augšupielāde būtu pēc iespējas lēta (simti KB, ne MB).
+ */
+const MAX_LONG_EDGE = 900;
+const TARGET_DECODED_BYTES = 380 * 1024;
+const HARD_MAX_DECODED_BYTES = 980 * 1024;
+const MAX_READ_BYTES = 12 * 1024 * 1024;
+
+const JPEG_QUALITIES_DESC = [0.76, 0.68, 0.6, 0.54, 0.48, 0.44, 0.4, 0.36] as const;
+
+function decodedApproxFromDataUrl(dataUrl: string): number {
+  const i = dataUrl.indexOf(",");
+  if (i < 0) return 0;
+  return Math.floor(((dataUrl.length - i - 1) * 3) / 4);
+}
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -17,8 +30,43 @@ function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
+/** Augstākā kvalitāte, kas vēl ietilpst TARGET; citādi zemākā, kas ietilpst HARD. */
+function encodeCanvasToJpegDataUrl(canvas: HTMLCanvasElement): string {
+  for (const q of JPEG_QUALITIES_DESC) {
+    const url = canvas.toDataURL("image/jpeg", q);
+    if (decodedApproxFromDataUrl(url) <= TARGET_DECODED_BYTES) return url;
+  }
+  for (let i = JPEG_QUALITIES_DESC.length - 1; i >= 0; i--) {
+    const q = JPEG_QUALITIES_DESC[i]!;
+    const url = canvas.toDataURL("image/jpeg", q);
+    if (decodedApproxFromDataUrl(url) <= HARD_MAX_DECODED_BYTES) return url;
+  }
+  return canvas.toDataURL("image/jpeg", 0.32);
+}
+
+function shrinkAndEncodeUntilHardMax(initial: HTMLCanvasElement): string {
+  let canvas = initial;
+  for (let round = 0; round < 8; round++) {
+    const url = encodeCanvasToJpegDataUrl(canvas);
+    if (decodedApproxFromDataUrl(url) <= HARD_MAX_DECODED_BYTES) return url;
+    const w = canvas.width;
+    const h = canvas.height;
+    const nw = Math.max(400, Math.floor(w * 0.85));
+    const nh = Math.max(400, Math.floor(h * 0.85));
+    if (nw >= w && nh >= h) return url;
+    const next = document.createElement("canvas");
+    next.width = nw;
+    next.height = nh;
+    const nctx = next.getContext("2d");
+    if (!nctx) return url;
+    nctx.drawImage(canvas, 0, 0, nw, nh);
+    canvas = next;
+  }
+  return encodeCanvasToJpegDataUrl(canvas);
+}
+
 /**
- * Samazina lielus rasterattēlus pirms saglabāšanas (ātrāka augšupielāde, mazāks JSON).
+ * Samazina rasterattēlus līdz tipiski ~200–450 KB (JPEG), saglabājot pietiekamu kvalitāti PDF šūnai.
  */
 export async function fileToCompressedOfferAttachment(file: File): Promise<IrissOfferAttachment | null> {
   if (file.size > MAX_READ_BYTES) return null;
@@ -62,7 +110,7 @@ export async function fileToCompressedOfferAttachment(file: File): Promise<Iriss
 
     const w0 = bmp.width;
     const h0 = bmp.height;
-    const scale = Math.min(1, MAX_EDGE / Math.max(w0, h0));
+    const scale = Math.min(1, MAX_LONG_EDGE / Math.max(w0, h0));
     const w = Math.max(1, Math.round(w0 * scale));
     const h = Math.max(1, Math.round(h0 * scale));
 
@@ -84,8 +132,8 @@ export async function fileToCompressedOfferAttachment(file: File): Promise<Iriss
     ctx.drawImage(bmp, 0, 0, w, h);
     bmp.close();
 
-    const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
-    const approxSize = Math.round((dataUrl.length * 3) / 4);
+    const dataUrl = shrinkAndEncodeUntilHardMax(canvas);
+    const approxSize = decodedApproxFromDataUrl(dataUrl);
     const baseName = file.name.replace(/\.[^.]+$/, "") || "image";
     return {
       id: crypto.randomUUID(),
