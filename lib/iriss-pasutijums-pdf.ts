@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import fontkit from "@pdf-lib/fontkit";
-import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 
 import { IRISS_COMPANY_LINES } from "@/lib/iriss-brand";
 import type { IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -90,8 +90,14 @@ function drawSectionTitle(ctx: Ctx, title: string) {
   ctx.y -= 2;
 }
 
-/** Maks. base64 garums pirms `Buffer.from` — aizsardzība pret OOM serverī. */
+/** Tukši lauki PDF netiek iekļauti. */
+function val(s: string | undefined): string | null {
+  const t = (s ?? "").trim();
+  return t.length ? t : null;
+}
+
 const MAX_IMAGE_DATAURL_BASE64_CHARS = 1_800_000;
+const MAX_RAW_IMAGE_BYTES = 1_200_000;
 
 function tryParseImageDataUrlToBuffer(dataUrl: string): Buffer | null {
   const compact = dataUrl.replace(/\s/g, "");
@@ -104,6 +110,52 @@ function tryParseImageDataUrlToBuffer(dataUrl: string): Buffer | null {
   } catch {
     return null;
   }
+}
+
+type EmbeddedPic = { img: PDFImage; w: number; h: number };
+
+async function tryEmbedOfferImage(pdfDoc: PDFDocument, dataUrl: string): Promise<EmbeddedPic | null> {
+  const raw = tryParseImageDataUrlToBuffer(dataUrl);
+  if (!raw || raw.byteLength > MAX_RAW_IMAGE_BYTES) return null;
+  const shrunk = await shrinkImageBytesForIrissPdf(raw);
+  if (!shrunk) return null;
+  try {
+    const img = await pdfDoc.embedJpg(shrunk);
+    return { img, w: img.width, h: img.height };
+  } catch {
+    return null;
+  }
+}
+
+function drawImageRow2Col(ctx: Ctx, left: EmbeddedPic, right: EmbeddedPic | null, cellW: number, colGap: number, maxCellH: number) {
+  const sL = Math.min(cellW / left.w, maxCellH / left.h, 1);
+  const dwL = left.w * sL;
+  const dhL = left.h * sL;
+  let dwR = 0;
+  let dhR = 0;
+  if (right) {
+    const sR = Math.min(cellW / right.w, maxCellH / right.h, 1);
+    dwR = right.w * sR;
+    dhR = right.h * sR;
+  }
+  const rowH = Math.max(dhL, dhR);
+  ensureSpace(ctx, rowH + 14);
+  const topY = ctx.y;
+  ctx.page.drawImage(left.img, {
+    x: ctx.margin + (cellW - dwL) / 2,
+    y: topY - dhL,
+    width: dwL,
+    height: dhL,
+  });
+  if (right) {
+    ctx.page.drawImage(right.img, {
+      x: ctx.margin + cellW + colGap + (cellW - dwR) / 2,
+      y: topY - dhR,
+      width: dwR,
+      height: dhR,
+    });
+  }
+  ctx.y -= rowH + 14;
 }
 
 async function createPdfCtx(): Promise<Ctx> {
@@ -143,44 +195,69 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
   drawParagraph(ctx, new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date()), 9, MUTED);
   ctx.y -= 8;
 
-  drawSectionTitle(ctx, "Klienta dati");
-  drawParagraph(ctx, `Vārds: ${record.clientFirstName.trim() || "—"}`, 10);
-  drawParagraph(ctx, `Uzvārds: ${record.clientLastName.trim() || "—"}`, 10);
-  drawParagraph(ctx, `Tālrunis: ${record.phone.trim() || "—"}`, 10);
-  drawParagraph(ctx, `E-pasts: ${record.email.trim() || "—"}`, 10);
-  drawParagraph(ctx, `Pasūtījuma datums: ${record.orderDate.trim() || "—"}`, 10);
+  const clientLines: string[] = [];
+  const vFn = val(record.clientFirstName);
+  const vLn = val(record.clientLastName);
+  if (vFn) clientLines.push(`Vārds: ${vFn}`);
+  if (vLn) clientLines.push(`Uzvārds: ${vLn}`);
+  const vPh = val(record.phone);
+  if (vPh) clientLines.push(`Tālrunis: ${vPh}`);
+  const vEm = val(record.email);
+  if (vEm) clientLines.push(`E-pasts: ${vEm}`);
+  const vOd = val(record.orderDate);
+  if (vOd) clientLines.push(`Pasūtījuma datums: ${vOd}`);
+  if (clientLines.length) {
+    drawSectionTitle(ctx, "Klienta dati");
+    for (const ln of clientLines) drawParagraph(ctx, ln, 10);
+  }
 
-  drawSectionTitle(ctx, "Transportlīdzekļa specifikācija");
-  drawParagraph(ctx, `Marka / modelis: ${record.brandModel.trim() || "—"}`, 10);
-  drawParagraph(ctx, `Ražošanas gadi: ${record.productionYears.trim() || "—"}`, 10);
-  drawParagraph(ctx, `Kopējais budžets: ${record.totalBudget.trim() || "—"}`, 10);
-  drawParagraph(ctx, `Dzinēja tips: ${record.engineType.trim() || "—"}`, 10);
-  drawParagraph(ctx, `Ātrumkārba: ${record.transmission.trim() || "—"}`, 10);
-  drawParagraph(ctx, `Maks. nobraukums: ${record.maxMileage.trim() || "—"}`, 10);
-  drawParagraph(ctx, `Vēlamās krāsas: ${record.preferredColors.trim() || "—"}`, 10);
-  drawParagraph(ctx, `Nevēlamās krāsas: ${record.nonPreferredColors.trim() || "—"}`, 10);
-  drawParagraph(ctx, `Salona apdare: ${record.interiorFinish.trim() || "—"}`, 10);
+  const vehLines: string[] = [];
+  const pushV = (label: string, s: string | undefined) => {
+    const v = val(s);
+    if (v) vehLines.push(`${label}: ${v}`);
+  };
+  pushV("Marka / modelis", record.brandModel);
+  pushV("Ražošanas gadi", record.productionYears);
+  pushV("Kopējais budžets", record.totalBudget);
+  pushV("Dzinēja tips", record.engineType);
+  pushV("Ātrumkārba", record.transmission);
+  pushV("Maks. nobraukums", record.maxMileage);
+  pushV("Vēlamās krāsas", record.preferredColors);
+  pushV("Nevēlamās krāsas", record.nonPreferredColors);
+  pushV("Salona apdare", record.interiorFinish);
+  if (vehLines.length) {
+    drawSectionTitle(ctx, "Transportlīdzekļa specifikācija");
+    for (const ln of vehLines) drawParagraph(ctx, ln, 10);
+  }
 
-  drawSectionTitle(ctx, "Obligātās prasības (aprīkojums)");
-  drawParagraph(ctx, record.equipmentRequired.trim() || "—", 10);
+  const req = val(record.equipmentRequired);
+  if (req) {
+    drawSectionTitle(ctx, "Obligātās prasības (aprīkojums)");
+    drawParagraph(ctx, req, 10);
+  }
+  const des = val(record.equipmentDesired);
+  if (des) {
+    drawSectionTitle(ctx, "Vēlamās prasības (aprīkojums)");
+    drawParagraph(ctx, des, 10);
+  }
 
-  drawSectionTitle(ctx, "Vēlamās prasības (aprīkojums)");
-  drawParagraph(ctx, record.equipmentDesired.trim() || "—", 10);
-
-  drawSectionTitle(ctx, "Piezīmes");
-  drawParagraph(ctx, record.notes.trim() || "—", 10);
+  const n = val(record.notes);
+  if (n) {
+    drawSectionTitle(ctx, "Piezīmes");
+    drawParagraph(ctx, n, 10);
+  }
 
   const links: string[] = [];
-  const push = (label: string, v: string) => {
-    const t = v.trim();
+  const pushL = (label: string, s: string | undefined) => {
+    const t = val(s);
     if (t) links.push(`${label}: ${t}`);
   };
-  push("Mobile", record.listingLinkMobile);
-  push("Autobid", record.listingLinkAutobid);
-  push("Openline", record.listingLinkOpenline);
-  push("Auto1", record.listingLinkAuto1);
+  pushL("Mobile", record.listingLinkMobile);
+  pushL("Autobid", record.listingLinkAutobid);
+  pushL("Openline", record.listingLinkOpenline);
+  pushL("Auto1", record.listingLinkAuto1);
   for (let i = 0; i < record.listingLinksOther.length; i++) {
-    const t = record.listingLinksOther[i]?.trim();
+    const t = val(record.listingLinksOther[i]);
     if (t) links.push(`Cits ${i + 1}: ${t}`);
   }
   if (links.length) {
@@ -189,17 +266,10 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
   }
 
   drawFooter(ctx);
-  const bytes = await ctx.pdfDoc.save();
-  return bytes;
+  return ctx.pdfDoc.save();
 }
 
-const MAX_OFFER_IMAGES = 3;
-const MAX_RAW_IMAGE_BYTES = 1_200_000;
-const MAX_IMAGE_DRAW_W = 400;
-const MAX_IMAGE_DRAW_H = 200;
-
 export type BuildIrissOfferPdfOptions = {
-  /** `false` — tikai teksts (stabilitātei / diagnostikai). API: `?images=0`. */
   embedImages?: boolean;
 };
 
@@ -210,26 +280,41 @@ export async function buildIrissOfferPdfBytes(
 ): Promise<Uint8Array> {
   const embedImages = opts?.embedImages !== false;
   const ctx = await createPdfCtx();
-  const title = offer.title.trim() || "Piedāvājums";
+  const heroTitle = val(offer.brandModel) ?? val(offer.title) ?? "Piedāvājums";
 
-  drawTextLine(ctx, title, 16, { font: ctx.fontBold, color: ACCENT });
+  drawTextLine(ctx, heroTitle, 16, { font: ctx.fontBold, color: ACCENT });
   drawParagraph(ctx, new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date()), 9, MUTED);
   ctx.y -= 8;
 
-  drawSectionTitle(ctx, "Klienta dati");
-  const clientName = `${record.clientFirstName} ${record.clientLastName}`.trim() || "—";
-  drawParagraph(ctx, `Klients: ${clientName}`, 10);
-  drawParagraph(ctx, `Tālrunis: ${record.phone.trim() || "—"}`, 10);
-  drawParagraph(ctx, `E-pasts: ${record.email.trim() || "—"}`, 10);
+  const clientLines: string[] = [];
+  const name = `${record.clientFirstName} ${record.clientLastName}`.trim();
+  if (name) clientLines.push(`Klients: ${name}`);
+  const ph = val(record.phone);
+  if (ph) clientLines.push(`Tālrunis: ${ph}`);
+  const em = val(record.email);
+  if (em) clientLines.push(`E-pasts: ${em}`);
+  if (clientLines.length) {
+    drawSectionTitle(ctx, "Klienta dati");
+    for (const ln of clientLines) drawParagraph(ctx, ln, 10);
+  }
 
-  drawSectionTitle(ctx, "Piedāvājuma dati");
-  drawParagraph(ctx, `Marka/modelis: ${offer.brandModel.trim() || "—"}`, 10);
-  drawParagraph(ctx, `Gads: ${offer.year.trim() || "—"}`, 10);
-  drawParagraph(ctx, `Nobraukums: ${offer.mileage.trim() || "—"}`, 10);
-  drawParagraph(ctx, `Cena Vācijā: ${offer.priceGermany.trim() || "—"}`, 10);
+  const offerLines: string[] = [];
+  const yr = val(offer.year);
+  if (yr) offerLines.push(`Gads: ${yr}`);
+  const mi = val(offer.mileage);
+  if (mi) offerLines.push(`Nobraukums: ${mi}`);
+  const pr = val(offer.priceGermany);
+  if (pr) offerLines.push(`Cena Vācijā: ${pr}`);
+  if (offerLines.length) {
+    drawSectionTitle(ctx, "Piedāvājuma dati");
+    for (const ln of offerLines) drawParagraph(ctx, ln, 10);
+  }
 
-  drawSectionTitle(ctx, "Komentāri");
-  drawParagraph(ctx, offer.comment.trim() || "—", 10);
+  const com = val(offer.comment);
+  if (com) {
+    drawSectionTitle(ctx, "Komentāri");
+    drawParagraph(ctx, com, 10);
+  }
 
   const imageAttachments = offer.attachments.filter(
     (a) => a.mimeType.startsWith("image/") && a.dataUrl.startsWith("data:image/"),
@@ -240,42 +325,18 @@ export async function buildIrissOfferPdfBytes(
     drawSectionTitle(ctx, "Pievienotie attēli");
     drawParagraph(ctx, "Attēli šajā eksportā nav iekļauti (ātrs PDF bez attēliem).", 9, MUTED);
   } else if (embedImages && imageAttachments.length > 0) {
-    drawSectionTitle(ctx, "Pievienotie attēli");
-    let count = 0;
+    const pics: EmbeddedPic[] = [];
     for (const att of imageAttachments) {
-      if (count >= MAX_OFFER_IMAGES) {
-        drawParagraph(ctx, `… vēl ${imageAttachments.length - MAX_OFFER_IMAGES} attēli nav iekļauti (maks. ${MAX_OFFER_IMAGES} PDF saturā).`, 9, MUTED);
-        break;
-      }
-      const raw = tryParseImageDataUrlToBuffer(att.dataUrl);
-      if (!raw || raw.byteLength > MAX_RAW_IMAGE_BYTES) {
-        drawParagraph(ctx, `Attēls pārāk liels vai nederīgs: ${att.name}`, 9, MUTED);
-        continue;
-      }
-      const shrunk = await shrinkImageBytesForIrissPdf(raw);
-      if (!shrunk) {
-        drawParagraph(ctx, `Neizdevās apstrādāt attēlu: ${att.name}`, 9, MUTED);
-        continue;
-      }
-      try {
-        const embedded = await ctx.pdfDoc.embedJpg(shrunk);
-        const iw = embedded.width;
-        const ih = embedded.height;
-        const scale = Math.min(MAX_IMAGE_DRAW_W / iw, MAX_IMAGE_DRAW_H / ih, 1);
-        const dw = iw * scale;
-        const dh = ih * scale;
-        ensureSpace(ctx, dh + lineHeight(9) + 16);
-        ctx.page.drawImage(embedded, {
-          x: ctx.margin,
-          y: ctx.y - dh,
-          width: dw,
-          height: dh,
-        });
-        ctx.y -= dh + 4;
-        drawParagraph(ctx, att.name, 8, MUTED);
-        count += 1;
-      } catch {
-        drawParagraph(ctx, `Nevarēja iekļaut attēlu: ${att.name}`, 9, MUTED);
+      const emb = await tryEmbedOfferImage(ctx.pdfDoc, att.dataUrl);
+      if (emb) pics.push(emb);
+    }
+    if (pics.length > 0) {
+      drawSectionTitle(ctx, "Pievienotie attēli");
+      const COL_GAP = 12;
+      const cellW = (ctx.contentW - COL_GAP) / 2;
+      const MAX_CELL_H = 195;
+      for (let i = 0; i < pics.length; i += 2) {
+        drawImageRow2Col(ctx, pics[i]!, pics[i + 1] ?? null, cellW, COL_GAP, MAX_CELL_H);
       }
     }
   }
@@ -285,9 +346,6 @@ export async function buildIrissOfferPdfBytes(
     for (let i = 0; i < other.length; i++) {
       drawParagraph(ctx, `${i + 1}. ${other[i].name}`, 9);
     }
-  } else if (imageAttachments.length === 0) {
-    drawSectionTitle(ctx, "Pievienotie faili");
-    drawParagraph(ctx, "Faili nav pievienoti.", 9, MUTED);
   }
 
   drawFooter(ctx);

@@ -9,48 +9,84 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function row(label: string, value: string): string {
+function rowIf(label: string, value: string): string {
   const v = value.trim();
-  return `<tr><th>${esc(label)}</th><td>${esc(v || "—")}</td></tr>`;
+  if (!v) return "";
+  return `<tr><th>${esc(label)}</th><td>${esc(v)}</td></tr>`;
 }
 
-function block(title: string, inner: string): string {
+function wrapTable(rows: string): string {
+  const r = rows.trim();
+  if (!r) return "";
+  return `<table class="grid">${r}</table>`;
+}
+
+function blockIf(title: string, inner: string): string {
+  if (!inner.trim()) return "";
   return `<section class="blk"><h2 class="blk-title">${esc(title)}</h2>${inner}</section>`;
 }
 
 /**
  * Drukas / „Saglabāt kā PDF” HTML — PROVIN līdzīgs bloku sadalījums, akcents #EF7D1A, SIA IRISS rekvizīti.
+ * Tukši lauki netiek iekļauti.
  */
 export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, generatedAtFormatted: string): string {
   const accent = IRISS_BRAND_ORANGE_HEX;
   const legal = IRISS_COMPANY_LINES.map((l) => `<p>${esc(l)}</p>`).join("");
 
-  const clientTable = `<table class="grid">${row(
-    "Vārds",
-    record.clientFirstName,
-  )}${row("Uzvārds", record.clientLastName)}${row("Tālrunis", record.phone)}${row("E-pasts", record.email)}${row(
-    "Pasūtījuma datums",
-    record.orderDate,
-  )}</table>`;
+  const clientRows =
+    rowIf("Vārds", record.clientFirstName) +
+    rowIf("Uzvārds", record.clientLastName) +
+    rowIf("Tālrunis", record.phone) +
+    rowIf("E-pasts", record.email) +
+    rowIf("Pasūtījuma datums", record.orderDate);
+  const clientTable = wrapTable(clientRows);
 
-  const vehicleTable = `<table class="grid">${row("Marka / modelis", record.brandModel)}${row(
-    "Ražošanas gadi",
-    record.productionYears,
-  )}${row("Kopējais budžets", record.totalBudget)}${row("Dzinēja tips", record.engineType)}${row(
-    "Ātrumkārba",
-    record.transmission,
-  )}${row("Maks. nobraukums", record.maxMileage)}${row("Vēlamās krāsas", record.preferredColors)}${row(
-    "Nevēlamās krāsas",
-    record.nonPreferredColors,
-  )}${row("Salona apdare", record.interiorFinish)}</table>`;
+  const vehicleRows =
+    rowIf("Marka / modelis", record.brandModel) +
+    rowIf("Ražošanas gadi", record.productionYears) +
+    rowIf("Kopējais budžets", record.totalBudget) +
+    rowIf("Dzinēja tips", record.engineType) +
+    rowIf("Ātrumkārba", record.transmission) +
+    rowIf("Maks. nobraukums", record.maxMileage) +
+    rowIf("Vēlamās krāsas", record.preferredColors) +
+    rowIf("Nevēlamās krāsas", record.nonPreferredColors) +
+    rowIf("Salona apdare", record.interiorFinish);
+  const vehicleTable = wrapTable(vehicleRows);
 
-  const equip = `<div class="two"><div class="box"><h3>Obligātās prasības</h3><pre>${esc(
-    record.equipmentRequired.trim() || "—",
-  )}</pre></div><div class="box"><h3>Vēlamās prasības</h3><pre>${esc(
-    record.equipmentDesired.trim() || "—",
-  )}</pre></div></div>`;
+  const req = record.equipmentRequired.trim();
+  const des = record.equipmentDesired.trim();
+  const equipBoxes: string[] = [];
+  if (req) {
+    equipBoxes.push(
+      `<div class="box"><h3>Obligātās prasības</h3><pre>${esc(req)}</pre></div>`,
+    );
+  }
+  if (des) {
+    equipBoxes.push(
+      `<div class="box"><h3>Vēlamās prasības</h3><pre>${esc(des)}</pre></div>`,
+    );
+  }
+  const equip = equipBoxes.length ? `<div class="two">${equipBoxes.join("")}</div>` : "";
 
-  const notes = `<pre class="notes">${esc(record.notes.trim() || "—")}</pre>`;
+  const notes = record.notes.trim()
+    ? `<pre class="notes">${esc(record.notes.trim())}</pre>`
+    : "";
+
+  const linkRows: string[] = [];
+  const pushL = (label: string, v: string) => {
+    const t = v.trim();
+    if (t) linkRows.push(`${esc(label)}: ${esc(t)}`);
+  };
+  pushL("Mobile", record.listingLinkMobile);
+  pushL("Autobid", record.listingLinkAutobid);
+  pushL("Openline", record.listingLinkOpenline);
+  pushL("Auto1", record.listingLinkAuto1);
+  for (let i = 0; i < record.listingLinksOther.length; i++) {
+    const t = record.listingLinksOther[i]?.trim();
+    if (t) linkRows.push(`${esc(`Cits ${i + 1}`)}: ${esc(t)}`);
+  }
+  const linksInner = linkRows.length ? `<p class="meta">${linkRows.join("<br/>")}</p>` : "";
 
   const css = `
     @page { margin: 14mm; }
@@ -74,6 +110,10 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
     .box h3 { margin: 0 0 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: ${accent}; }
     pre { margin: 0; font-family: inherit; white-space: pre-wrap; word-break: break-word; }
     .notes { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; min-height: 60px; }
+    .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 560px) { .gallery { grid-template-columns: 1fr; } }
+    .photo { margin: 0; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: #fff; page-break-inside: avoid; }
+    .photo img { display: block; width: 100%; height: auto; max-height: 220px; object-fit: cover; }
     footer.legal { margin-top: 22px; padding-top: 12px; border-top: 2px solid ${accent}; font-size: 9px; color: #4b5563; line-height: 1.5; }
     footer.legal p { margin: 0 0 4px; }
   `;
@@ -83,10 +123,11 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
       <h1>PASŪTĪJUMS</h1>
       <p class="meta">${esc(generatedAtFormatted)}</p>
     </header>
-    ${block("Klienta dati", clientTable)}
-    ${block("Transportlīdzekļa specifikācija", vehicleTable)}
-    ${block("Aprīkojums", equip)}
-    ${block("Piezīmes", notes)}
+    ${blockIf("Klienta dati", clientTable)}
+    ${blockIf("Transportlīdzekļa specifikācija", vehicleTable)}
+    ${blockIf("Aprīkojums", equip)}
+    ${blockIf("Piezīmes", notes)}
+    ${blockIf("Sludinājumu saites", linksInner)}
     <footer class="legal">${legal}</footer>
   </div>`;
 
@@ -100,41 +141,52 @@ export function buildIrissOfferPrintHtml(
 ): string {
   const accent = IRISS_BRAND_ORANGE_HEX;
   const legal = IRISS_COMPANY_LINES.map((l) => `<p>${esc(l)}</p>`).join("");
-  const clientTable = `<table class="grid">${row(
-    "Klients",
-    `${record.clientFirstName} ${record.clientLastName}`.trim(),
-  )}${row("Tālrunis", record.phone)}${row("E-pasts", record.email)}</table>`;
-  const offerTable = `<table class="grid">${row("Marka/modelis", offer.brandModel)}${row(
-    "Gads",
-    offer.year,
-  )}${row("Nobraukums", offer.mileage)}${row("Cena Vācijā", offer.priceGermany)}</table>`;
-  const comments = `<pre class="notes">${esc(offer.comment.trim() || "—")}</pre>`;
+
+  const heroTitle =
+    offer.brandModel.trim() || offer.title.trim() || "Piedāvājums";
+
+  const clientName = `${record.clientFirstName} ${record.clientLastName}`.trim();
+  const clientRows =
+    (clientName ? rowIf("Klients", clientName) : "") +
+    rowIf("Tālrunis", record.phone) +
+    rowIf("E-pasts", record.email);
+  const clientTable = wrapTable(clientRows);
+
+  const offerRows =
+    rowIf("Gads", offer.year) +
+    rowIf("Nobraukums", offer.mileage) +
+    rowIf("Cena Vācijā", offer.priceGermany);
+  const offerTable = wrapTable(offerRows);
+
+  const comments = offer.comment.trim()
+    ? `<pre class="notes">${esc(offer.comment.trim())}</pre>`
+    : "";
+
   const imageAttachments = offer.attachments.filter(
     (a) => a.mimeType.startsWith("image/") && a.dataUrl.startsWith("data:image/"),
   );
   const otherAttachments = offer.attachments.filter(
     (a) => !a.mimeType.startsWith("image/") || !a.dataUrl.startsWith("data:image/"),
   );
-  const files = imageAttachments.length
-    ? `<div class="gallery">${imageAttachments
-        .map(
-          (img, i) =>
-            `<figure class="photo"><img src="${img.dataUrl}" alt="${esc(img.name)}"/><figcaption>Foto ${i + 1}: ${esc(
-              img.name,
-            )}</figcaption></figure>`,
-        )
-        .join("")}</div>${
-        otherAttachments.length
-          ? `<table class="grid">${otherAttachments
-              .map((a, i) => `<tr><th>Fails ${i + 1}</th><td>${esc(a.name)}</td></tr>`)
-              .join("")}</table>`
-          : ""
-      }`
-    : otherAttachments.length
+
+  const gallery =
+    imageAttachments.length > 0
+      ? `<div class="gallery">${imageAttachments
+          .map(
+            (img) =>
+              `<figure class="photo"><img src="${img.dataUrl}" alt=""/></figure>`,
+          )
+          .join("")}</div>`
+      : "";
+
+  const otherTable =
+    otherAttachments.length > 0
       ? `<table class="grid">${otherAttachments
           .map((a, i) => `<tr><th>Fails ${i + 1}</th><td>${esc(a.name)}</td></tr>`)
           .join("")}</table>`
-      : `<p class="meta">Faili nav pievienoti.</p>`;
+      : "";
+
+  const filesInner = [gallery, otherTable].filter(Boolean).join("");
 
   const css = `
     @page { margin: 14mm; }
@@ -158,24 +210,21 @@ export function buildIrissOfferPrintHtml(
     @media (max-width: 560px) { .gallery { grid-template-columns: 1fr; } }
     .photo { margin: 0; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: #fff; page-break-inside: avoid; }
     .photo img { display: block; width: 100%; height: auto; max-height: 220px; object-fit: cover; }
-    .photo figcaption { padding: 6px 8px; font-size: 9px; color: #4b5563; border-top: 1px solid #e5e7eb; }
     footer.legal { margin-top: 22px; padding-top: 12px; border-top: 2px solid ${accent}; font-size: 9px; color: #4b5563; line-height: 1.5; }
     footer.legal p { margin: 0 0 4px; }
   `;
 
   const body = `<div class="doc">
     <header class="hero">
-      <h1>${esc(offer.title || "Piedāvājums")}</h1>
+      <h1>${esc(heroTitle)}</h1>
       <p class="meta">${esc(generatedAtFormatted)}</p>
     </header>
-    ${block("Klienta dati", clientTable)}
-    ${block("Piedāvājuma dati", offerTable)}
-    ${block("Komentāri", comments)}
-    ${block("Pievienotie faili", files)}
+    ${blockIf("Klienta dati", clientTable)}
+    ${blockIf("Piedāvājuma dati", offerTable)}
+    ${blockIf("Komentāri", comments)}
+    ${blockIf("Pievienotie faili", filesInner)}
     <footer class="legal">${legal}</footer>
   </div>`;
 
-  return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><title>${esc(
-    offer.title || "Piedāvājums",
-  )}</title><style>${css}</style></head><body>${body}</body></html>`;
+  return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><title>${esc(heroTitle)}</title><style>${css}</style></head><body>${body}</body></html>`;
 }
