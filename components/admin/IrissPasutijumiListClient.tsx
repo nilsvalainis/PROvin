@@ -45,6 +45,7 @@ const ORDER_KEY = "iriss-order-manual-v1";
 const SORT_KEY = "iriss-order-sort-v1";
 const SWIPE_ACTION_WIDTH = 120;
 const SWIPE_OPEN_THRESHOLD = SWIPE_ACTION_WIDTH / 2;
+const SWIPE_SPRING = { type: "spring" as const, stiffness: 500, damping: 40, mass: 0.8 };
 
 function getBrandToken(brandModel: string): string {
   return brandModel
@@ -216,17 +217,17 @@ function IrissRowCard({
       className="list-none"
       whileDrag={{ scale: 1.01 }}
     >
-      <div className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:border-slate-300/90 ${
-        isPinned ? "border-amber-300/70 bg-amber-50/30" : "border-slate-200/90"
+      <div className={`relative overflow-hidden rounded-2xl border bg-white/90 shadow-sm transition hover:border-slate-300/90 ${
+        isPinned ? "border-amber-200/80 bg-amber-50/35" : "border-slate-200/80"
       }`}>
         <div
-          className="absolute inset-y-0 right-0 z-0 flex items-center justify-end gap-2 pr-2 md:hidden"
+          className="absolute inset-y-0 right-0 z-0 flex items-center justify-end gap-3 pr-2.5 md:hidden"
           style={{ width: SWIPE_ACTION_WIDTH }}
         >
           <button
             type="button"
             onClick={() => onPin(row.id)}
-            className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl border border-white/20 bg-sky-500/70 text-white shadow-[0_10px_24px_-12px_rgba(14,116,144,0.9)] backdrop-blur-md transition active:scale-[0.98]"
+            className="flex h-[50px] w-[50px] items-center justify-center rounded-xl border border-white/20 bg-white/55 text-slate-700 shadow-sm backdrop-blur-xl transition active:scale-[0.98]"
             aria-label={isPinned ? "Noņemt piespraušanu" : "Piespraust augšā"}
           >
             <Pin className="h-4 w-4" />
@@ -234,7 +235,7 @@ function IrissRowCard({
           <button
             type="button"
             onClick={() => onAskDelete(row.id)}
-            className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl border border-white/20 bg-red-500/75 text-white shadow-[0_10px_24px_-12px_rgba(185,28,28,0.95)] backdrop-blur-md transition active:scale-[0.98]"
+            className="flex h-[50px] w-[50px] items-center justify-center rounded-xl border border-white/20 bg-white/55 text-red-600 shadow-sm backdrop-blur-xl transition active:scale-[0.98]"
             aria-label="Dzēst pasūtījumu"
           >
             <Trash2 className="h-4 w-4" />
@@ -246,11 +247,11 @@ function IrissRowCard({
           dragControls={swipeDragControls}
           drag="x"
           dragConstraints={{ left: -SWIPE_ACTION_WIDTH, right: 0 }}
-          dragElastic={0.08}
-          dragMomentum={false}
+          dragElastic={0}
+          dragMomentum
           dragDirectionLock
           animate={{ x: isOpen ? -SWIPE_ACTION_WIDTH : 0 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          transition={SWIPE_SPRING}
           onPointerDown={onSwipePointerDown}
           onPointerMove={onSwipePointerMove}
           onPointerUp={onSwipePointerEnd}
@@ -258,10 +259,12 @@ function IrissRowCard({
           onDragEnd={(_, info) => {
             const dragBase = isOpen ? -SWIPE_ACTION_WIDTH : 0;
             const finalX = Math.max(-SWIPE_ACTION_WIDTH, Math.min(0, dragBase + info.offset.x));
-            if (finalX <= -SWIPE_OPEN_THRESHOLD) setSwipeOpenId(row.id);
+            const projectedX = finalX + info.velocity.x * 0.18;
+            const shouldOpen = projectedX <= -SWIPE_OPEN_THRESHOLD || finalX <= -SWIPE_OPEN_THRESHOLD;
+            if (shouldOpen) setSwipeOpenId(row.id);
             else setSwipeOpenId(null);
           }}
-          className="relative z-10 bg-white md:translate-x-0"
+          className="relative z-10 bg-white/95 md:translate-x-0"
         >
           <div className="flex items-stretch">
             {canManualSort ? (
@@ -298,7 +301,7 @@ function IrissRowCard({
                   <p className="truncate text-[14px] font-semibold leading-snug text-[var(--color-apple-text)] sm:text-[15px]">
                     {row.brandModel}
                   </p>
-                  {isPinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-hidden /> : null}
+                  {isPinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-amber-500" aria-hidden /> : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px] text-[var(--color-provin-muted)] sm:text-[13px]">
                   <span>
@@ -333,7 +336,7 @@ function IrissRowCard({
                     onClick={openAllListings}
                     title="Atvērt visas saites"
                     aria-label="Atvērt visas saites"
-                    className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} bg-slate-700 text-white ring-1 ring-slate-800/35`}
+                    className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} text-slate-700`}
                   >
                     ALL
                   </button>
@@ -343,7 +346,7 @@ function IrissRowCard({
           </div>
           {chips.length > 0 ? (
             <div className="md:hidden">
-              <div className="border-t border-slate-100/90 bg-slate-50/40 px-3 py-2 sm:px-4 sm:py-2.5">
+              <div className="border-t border-slate-200/55 bg-white/65 px-3 py-2.5 backdrop-blur-xl sm:px-4 sm:py-2.5">
                 <div role="group" aria-label="Sludinājumu platformu saites" className={LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}>
                   {chips.map((c, i) => (
                     <a
@@ -362,7 +365,7 @@ function IrissRowCard({
                     onClick={openAllListings}
                     title="Atvērt visas saites"
                     aria-label="Atvērt visas saites"
-                    className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} bg-slate-700 text-white ring-1 ring-slate-800/35`}
+                    className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} text-slate-700`}
                   >
                     ALL
                   </button>
@@ -470,7 +473,7 @@ export function IrissPasutijumiListClient({ rows }: { rows: IrissPasutijumsListR
         <label className="flex items-center gap-2 text-[12px] text-[var(--color-provin-muted)]">
           Kārtot:
           <select
-            className="min-h-10 rounded-lg border border-slate-200 bg-white px-2.5 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm outline-none focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25"
+            className="min-h-10 rounded-xl border border-slate-200/80 bg-white/85 px-3 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm backdrop-blur-xl outline-none focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value as SortMode)}
           >

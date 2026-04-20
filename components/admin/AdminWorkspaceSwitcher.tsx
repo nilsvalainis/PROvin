@@ -5,14 +5,14 @@ import { usePathname } from "next/navigation";
 
 function pillPro(active: boolean) {
   return active
-    ? "rounded-lg border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/50 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-[var(--color-provin-accent)]"
-    : "rounded-lg border border-transparent px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-provin-muted)] transition hover:bg-slate-100/80 dark:hover:bg-white/[0.06]";
+    ? "rounded-xl border border-white/20 bg-white/65 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-provin-accent)] shadow-sm backdrop-blur-xl"
+    : "rounded-xl border border-white/20 bg-white/45 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-provin-muted)] shadow-sm backdrop-blur-xl transition hover:bg-white/70";
 }
 
 function pillIriss(active: boolean) {
   return active
-    ? "rounded-lg border border-[#EF7D1A]/40 bg-[#EF7D1A]/12 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-[#EF7D1A]"
-    : "rounded-lg border border-transparent px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-provin-muted)] transition hover:bg-slate-100/80 dark:hover:bg-white/[0.06]";
+    ? "rounded-xl border border-white/20 bg-white/65 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-[#EF7D1A] shadow-sm backdrop-blur-xl"
+    : "rounded-xl border border-white/20 bg-white/45 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-provin-muted)] shadow-sm backdrop-blur-xl transition hover:bg-white/70";
 }
 
 /** Pārslēdzējs starp PRO (pasūtījumi u.tml.) un IRISS admin zonām. */

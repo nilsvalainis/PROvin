@@ -41,7 +41,7 @@ export function IrissListingPlatformChipsRow({ rec }: { rec: IrissPasutijumsReco
         onClick={openAll}
         title="Atvērt visas saites"
         aria-label="Atvērt visas saites"
-        className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} bg-slate-700 text-white ring-1 ring-slate-800/35`}
+        className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} text-slate-700`}
       >
         ALL
       </button>

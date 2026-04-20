@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 
 function navItemClass(active: boolean) {
   if (active) {
-    return "rounded-lg bg-[var(--color-provin-accent-soft)] px-2.5 py-2 text-[13px] font-semibold text-[var(--color-provin-accent)] ring-1 ring-[var(--color-provin-accent)]/20";
+    return "rounded-xl border border-white/20 bg-white/70 px-3 py-2.5 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm backdrop-blur-xl";
   }
-  return "rounded-lg px-2.5 py-2 text-[13px] font-medium text-[var(--color-apple-text)] transition-colors hover:bg-slate-100/90";
+  return "rounded-xl border border-white/20 bg-white/50 px-3 py-2.5 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm backdrop-blur-xl transition-colors hover:bg-white/80";
 }
 
 type Props = {
@@ -25,10 +25,7 @@ export function IrissAdminSidebarNav({ orientation = "vertical" }: Props) {
         PASŪTĪJUMI
       </Link>
       {!horizontal ? (
-        <Link
-          href="/admin"
-          className="rounded-lg border border-slate-200/80 bg-slate-50/80 px-2.5 py-2 text-center text-[12px] font-medium text-[var(--color-provin-accent)] transition hover:bg-slate-100/90 md:hidden"
-        >
+        <Link href="/admin" className="rounded-xl border border-white/20 bg-white/60 px-3 py-2.5 text-center text-[12px] font-medium text-[var(--color-provin-accent)] shadow-sm backdrop-blur-xl transition hover:bg-white/80 md:hidden">
           PRO administrēšana
         </Link>
       ) : null}

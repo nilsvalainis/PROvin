@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 
 function navItemClass(active: boolean) {
   if (active) {
-    return "rounded-xl bg-[var(--color-provin-accent-soft)] px-3 py-2.5 text-sm font-semibold text-[var(--color-provin-accent)] ring-1 ring-[var(--color-provin-accent)]/15";
+    return "rounded-xl border border-white/20 bg-white/70 px-3 py-2.5 text-sm font-semibold text-[var(--color-provin-accent)] shadow-sm backdrop-blur-xl";
   }
-  return "rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--color-apple-text)] transition-colors hover:bg-slate-100/90";
+  return "rounded-xl border border-white/20 bg-white/50 px-3 py-2.5 text-sm font-medium text-[var(--color-apple-text)] shadow-sm backdrop-blur-xl transition-colors hover:bg-white/80";
 }
 
 type Props = {

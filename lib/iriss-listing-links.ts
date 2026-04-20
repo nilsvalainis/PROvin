@@ -13,27 +13,27 @@ export const LISTING_PLATFORM_CHIPS: Record<
   mobile: {
     letter: "M",
     title: "Mobile",
-    chipClass: "bg-red-600 text-white ring-1 ring-red-700/30",
+    chipClass: "text-slate-700",
   },
   autobid: {
     letter: "AB",
     title: "Autobid",
-    chipClass: "bg-sky-200 text-slate-800 ring-1 ring-sky-400/40",
+    chipClass: "text-slate-700",
   },
   openline: {
     letter: "OP",
     title: "Openline",
-    chipClass: "bg-blue-900 text-white ring-1 ring-blue-950/40",
+    chipClass: "text-slate-700",
   },
   auto1: {
     letter: "A1",
     title: "Auto1",
-    chipClass: "bg-[#ff6600] text-white ring-1 ring-orange-700/35",
+    chipClass: "text-slate-700",
   },
   citi: {
     letter: "C",
     title: "Citi",
-    chipClass: "bg-emerald-500 text-white ring-1 ring-emerald-700/35",
+    chipClass: "text-slate-700",
   },
 };
 
@@ -78,8 +78,8 @@ export function buildListingPlatformChips(src: IrissListingLinksInput, max = 5):
 
 /** Horizontālā ritināšana — `px`/`py`, lai `rounded-md` čipu stūri netiek sagriezti (īpaši iOS). */
 export const LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS =
-  "flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain px-1 py-1.5 [-webkit-overflow-scrolling:touch]";
+  "flex min-w-0 flex-nowrap items-center gap-2.5 overflow-x-auto overscroll-x-contain px-1 py-1.5 [-webkit-overflow-scrolling:touch]";
 
 /** Kompakts noapaļots taisnstūris ar burtu; pielikt `LISTING_PLATFORM_CHIPS[*].chipClass`. */
 export const LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS =
-  "inline-flex h-9 min-w-[2rem] shrink-0 items-center justify-center rounded-md px-1.5 text-[10px] font-bold leading-none tracking-tight shadow-sm transition-transform active:scale-[0.96] sm:h-10 sm:min-w-[2.35rem] sm:px-2 sm:text-[11px]";
+  "inline-flex h-10 min-w-[2.5rem] shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/55 px-2.5 text-[11px] font-semibold leading-none tracking-tight shadow-sm backdrop-blur-xl transition-transform active:scale-[0.96] sm:h-10 sm:min-w-[2.6rem] sm:px-2.5";

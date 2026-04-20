@@ -1,11 +1,10 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const HEADER_TOP_REM = 3.5;
-const PULL_THRESHOLD = 46;
+const PULL_THRESHOLD = 42;
 
 function touchTargetIsInteractive(t: EventTarget | null): boolean {
   if (!(t instanceof Element)) return false;
@@ -90,27 +89,22 @@ export function AdminMobilePullToRefresh() {
   }, [finishGesture]);
 
   const show = pull > 6 || busy;
-  const ready = pull >= PULL_THRESHOLD;
 
   return (
     <div
       className={`pointer-events-none fixed left-0 right-0 z-[44] flex justify-center transition-opacity duration-150 md:hidden ${show ? "opacity-100" : "opacity-0"}`}
       style={{
         top: `${HEADER_TOP_REM}rem`,
-        transform: `translateY(${Math.min(pull * 0.32, 26)}px)`,
+        transform: `translateY(${Math.min(pull * 0.28, 20)}px)`,
       }}
       aria-live="polite"
     >
-      <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white/95 px-3 py-2 shadow-lg backdrop-blur-sm">
-        <RefreshCw
-          className={`h-4 w-4 shrink-0 text-[var(--color-provin-accent)] ${busy ? "animate-spin" : ""}`}
-          strokeWidth={2.25}
+      <div className="mt-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/70 shadow-sm backdrop-blur-xl">
+        <span
+          className={`inline-block h-4 w-4 rounded-full border-2 border-slate-300 border-t-slate-700 ${busy ? "animate-spin" : ""}`}
           aria-hidden
-          style={busy ? undefined : { transform: `rotate(${pull * 2.2}deg)` }}
+          style={busy ? undefined : { opacity: Math.min(1, Math.max(0.25, pull / PULL_THRESHOLD)) }}
         />
-        <span className="text-[11px] font-semibold text-[var(--color-apple-text)]">
-          {busy ? "Atjaunina…" : ready ? "Atlaidiet, lai atsvaidzinātu" : "Velciet lejup"}
-        </span>
       </div>
     </div>
   );

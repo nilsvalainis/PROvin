@@ -13,7 +13,7 @@ export function IrissListingPlatformChipsInline({ links }: { links: IrissListing
   const chips = buildListingPlatformChips(links, 5);
   if (chips.length === 0) return null;
   return (
-    <div className="border-t border-slate-100/90 bg-slate-50/40 px-3 py-2 sm:px-4 sm:py-2.5">
+    <div className="border-t border-slate-200/55 bg-white/65 px-3 py-2.5 backdrop-blur-xl sm:px-4 sm:py-2.5">
       <div role="group" aria-label="Sludinājumu platformu saites" className={LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}>
         {chips.map((c, i) => (
           <a
