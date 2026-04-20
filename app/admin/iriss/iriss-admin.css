@@ -1,11 +1,11 @@
-/* IRISS admin apgabals — Dzintarzeme Auto oranžā (#EF7D1A) vietā PROVIN zilā. */
+/* IRISS admin apgabals — iOS HIG krāsu sistēma (bez oranžiem akcentiem). */
 .iriss-admin-scope {
-  --color-provin-accent: #ef7d1a;
-  --color-provin-accent-hover: #cf6910;
-  --color-provin-accent-soft: rgba(239, 125, 26, 0.18);
-  --color-provin-accent-muted: #b8570c;
+  --color-provin-accent: #007aff;
+  --color-provin-accent-hover: #0062d1;
+  --color-provin-accent-soft: rgb(0 122 255 / 0.18);
+  --color-provin-accent-muted: #4f8bcf;
   --color-apple-blue: var(--color-provin-accent);
   --color-apple-blue-hover: var(--color-provin-accent-hover);
-  --color-provin-green: var(--color-provin-accent);
-  --color-provin-green-dark: var(--color-provin-accent-hover);
+  --color-provin-green: #34c759;
+  --color-provin-green-dark: #28a745;
 }

@@ -10,7 +10,7 @@ import {
 } from "@/lib/admin-vin-urls";
 
 const linkPill =
-  "inline-flex h-7 min-w-[2.75rem] items-center justify-center rounded-md px-2 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1";
+  "inline-flex h-8 min-w-[2.85rem] items-center justify-center rounded-xl border border-white/20 bg-white/55 px-2.5 text-[10px] font-semibold uppercase tracking-wide text-slate-700 shadow-sm backdrop-blur-xl transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/35 focus-visible:ring-offset-1";
 
 /** Blakus VIN ievades laukam — kopē VIN uz starpliktuvi. */
 export function AdminVinCopyButton({
@@ -32,7 +32,7 @@ export function AdminVinCopyButton({
   );
 }
 
-/** Zem VIN — AutoDNA (zils), CarVertical (dzeltens), Auto-Records (oranžs). Bez VIN — bāzes URL vai disabled. */
+/** Zem VIN — vienota iOS stila saites. Bez VIN — bāzes URL vai disabled. */
 export function AdminVinServiceLinkRow({ vin }: { vin: string }) {
   const dna = buildAutodnaVinCheckUrl(vin);
   const cv = buildCarverticalVinCheckUrl(vin);
@@ -46,14 +46,14 @@ export function AdminVinServiceLinkRow({ vin }: { vin: string }) {
           href={dna}
           target="_blank"
           rel="noopener noreferrer"
-          className={`${linkPill} bg-sky-600 focus-visible:ring-sky-500`}
+          className={linkPill}
           title="AutoDNA — VIN no URL"
         >
           DNA
         </a>
       ) : (
         <span
-          className={`${linkPill} cursor-not-allowed bg-sky-600/35 opacity-60`}
+          className={`${linkPill} cursor-not-allowed opacity-50`}
           title="Ievadi VIN"
         >
           DNA
@@ -64,7 +64,7 @@ export function AdminVinServiceLinkRow({ vin }: { vin: string }) {
           href={cv}
           target="_blank"
           rel="noopener noreferrer"
-          className={`${linkPill} bg-yellow-500 text-yellow-950 focus-visible:ring-yellow-600`}
+          className={linkPill}
           title="CarVertical — bāzes URL + Tampermonkey (GM_*) aizpilda VIN"
           data-provin-handoff-vin={cvHandoffVin}
         >
@@ -72,7 +72,7 @@ export function AdminVinServiceLinkRow({ vin }: { vin: string }) {
         </a>
       ) : (
         <span
-          className={`${linkPill} cursor-not-allowed bg-yellow-500/35 text-yellow-950/70 opacity-60`}
+          className={`${linkPill} cursor-not-allowed opacity-50`}
           title="Ievadi VIN"
         >
           CV
@@ -83,7 +83,7 @@ export function AdminVinServiceLinkRow({ vin }: { vin: string }) {
           href={ar}
           target="_blank"
           rel="noopener noreferrer"
-          className={`${linkPill} bg-orange-500 focus-visible:ring-orange-600`}
+          className={linkPill}
           title="Auto-Records — ?vin= + Tampermonkey; citādi Copy"
         >
           AR
@@ -93,7 +93,7 @@ export function AdminVinServiceLinkRow({ vin }: { vin: string }) {
           href={AUTORECORDS_BASE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className={`${linkPill} bg-orange-500/80 focus-visible:ring-orange-600`}
+          className={`${linkPill} opacity-90`}
           title="Auto-Records"
         >
           AR

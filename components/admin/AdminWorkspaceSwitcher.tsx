@@ -11,7 +11,7 @@ function pillPro(active: boolean) {
 
 function pillIriss(active: boolean) {
   return active
-    ? "rounded-xl border border-white/20 bg-white/65 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-[#EF7D1A] shadow-sm backdrop-blur-xl"
+    ? "rounded-xl border border-white/20 bg-white/65 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-provin-accent)] shadow-sm backdrop-blur-xl"
     : "rounded-xl border border-white/20 bg-white/45 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-provin-muted)] shadow-sm backdrop-blur-xl transition hover:bg-white/70";
 }
 

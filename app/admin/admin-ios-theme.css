@@ -1,0 +1,111 @@
+.admin-ios-theme {
+  --admin-ios-bg: #1c1c1e;
+  --admin-ios-surface: #2c2c2e;
+  --admin-ios-surface-elevated: rgb(58 58 60 / 0.72);
+  --admin-ios-border: rgb(255 255 255 / 0.1);
+  --admin-ios-border-strong: rgb(255 255 255 / 0.16);
+  --admin-ios-danger: #ff3b30;
+  --admin-ios-success: #34c759;
+  --admin-ios-blue: #007aff;
+  --admin-ios-gray: #8e8e93;
+
+  --color-provin-accent: var(--admin-ios-blue);
+  --color-provin-accent-hover: #0062d1;
+  --color-provin-accent-soft: rgb(0 122 255 / 0.18);
+  --color-provin-accent-muted: #4f8bcf;
+  --color-provin-muted: var(--admin-ios-gray);
+  --color-apple-text: #f2f2f7;
+  --color-provin-surface: var(--admin-ios-bg);
+  --color-provin-surface-2: var(--admin-ios-surface);
+  --color-canvas: var(--admin-ios-bg);
+
+  color: var(--color-apple-text);
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  background: linear-gradient(180deg, #1c1c1e 0%, #171719 100%);
+}
+
+.admin-ios-theme :is(button, input, select, textarea) {
+  font-family: inherit;
+}
+
+.admin-ios-theme a {
+  color: var(--admin-ios-blue);
+}
+
+.admin-ios-theme :is(input, select, textarea) {
+  border-radius: 14px !important;
+  border: 1px solid var(--admin-ios-border) !important;
+  background: rgb(44 44 46 / 0.78) !important;
+  color: #f2f2f7 !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.03);
+}
+
+.admin-ios-theme :is(input, select, textarea)::placeholder {
+  color: var(--admin-ios-gray) !important;
+}
+
+.admin-ios-theme :is(input, select, textarea):focus-visible {
+  outline: none;
+  border-color: rgb(0 122 255 / 0.72) !important;
+  box-shadow: 0 0 0 3px rgb(0 122 255 / 0.2) !important;
+}
+
+.admin-ios-theme button,
+.admin-ios-theme .provin-btn,
+.admin-ios-theme .provin-btn-ghost {
+  border-radius: 12px;
+  border: 1px solid var(--admin-ios-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.admin-ios-theme .lucide {
+  stroke-width: 1.9;
+}
+
+.admin-ios-theme main {
+  color: var(--color-apple-text);
+}
+
+.admin-ios-theme .rounded-2xl,
+.admin-ios-theme .rounded-xl {
+  border-color: var(--admin-ios-border);
+}
+
+.admin-ios-theme .shadow-sm,
+.admin-ios-theme .shadow-lg,
+.admin-ios-theme .shadow-xl {
+  box-shadow: 0 10px 26px rgb(0 0 0 / 0.22), 0 1px 0 rgb(255 255 255 / 0.04) !important;
+}
+
+.admin-ios-theme .bg-red-700,
+.admin-ios-theme .bg-red-600,
+.admin-ios-theme .bg-red-500,
+.admin-ios-theme .text-red-700,
+.admin-ios-theme .text-red-600 {
+  background-color: var(--admin-ios-danger) !important;
+  color: #fff !important;
+}
+
+.admin-ios-theme .bg-emerald-500,
+.admin-ios-theme .bg-green-600,
+.admin-ios-theme .text-emerald-700,
+.admin-ios-theme .text-green-700 {
+  background-color: var(--admin-ios-success) !important;
+  color: #fff !important;
+}
+
+/* Remove remaining orange accents inside admin scope. */
+.admin-ios-theme [class*="text-orange-"],
+.admin-ios-theme [class*="bg-orange-"],
+.admin-ios-theme [class*="ring-orange-"],
+.admin-ios-theme [class*="border-orange-"],
+.admin-ios-theme [style*="#EF7D1A"],
+.admin-ios-theme [style*="#ff6600"] {
+  color: var(--admin-ios-blue) !important;
+  border-color: rgb(0 122 255 / 0.35) !important;
+}
+
+.admin-ios-theme [class*="bg-orange-"] {
+  background-color: rgb(0 122 255 / 0.18) !important;
+}

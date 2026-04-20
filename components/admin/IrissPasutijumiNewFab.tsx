@@ -74,7 +74,7 @@ export function IrissPasutijumiNewFab() {
         type="button"
         disabled={busy}
         onClick={() => void create()}
-        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-4 z-40 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-provin-accent)] text-white shadow-[0_6px_18px_rgba(239,125,26,0.42)] transition hover:opacity-95 active:scale-95 disabled:opacity-60 sm:bottom-6 sm:right-5"
+        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-4 z-40 flex h-12 w-12 items-center justify-center rounded-xl border border-white/20 bg-[var(--color-provin-accent)]/88 text-white shadow-sm backdrop-blur-xl transition hover:opacity-95 active:scale-95 disabled:opacity-60 sm:bottom-6 sm:right-5"
         aria-label="Jauns pasūtījums"
         title="Jauns pasūtījums"
       >
