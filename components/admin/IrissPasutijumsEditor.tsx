@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Eye, FileDown, Loader2, Mail, Paperclip, Phone, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, FileDown, Loader2, Mail, Paperclip, Phone, Plus, Save, Trash2, X } from "lucide-react";
 import { Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -1232,12 +1232,30 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
           <div
             role="dialog"
             aria-modal="true"
+            aria-labelledby="iriss-offer-dialog-title"
             className="flex max-h-[min(92dvh,920px)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 [-webkit-overflow-scrolling:touch] pt-4 sm:px-5 sm:pt-5">
-              <h2 className="text-base font-semibold text-[var(--color-apple-text)]">{offerDraft.title}</h2>
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 px-4 py-3 sm:px-5">
+              <h2
+                id="iriss-offer-dialog-title"
+                className="min-w-0 flex-1 truncate pr-2 text-base font-semibold text-[var(--color-apple-text)]"
+              >
+                {offerDraft.title}
+              </h2>
+              <button
+                type="button"
+                disabled={offerBusy || !!offerFilePrepare}
+                aria-label="Aizvērt"
+                title="Aizvērt"
+                onClick={() => setOfferOpen(false)}
+                className="inline-flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                <X className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 [-webkit-overflow-scrolling:touch] pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <LabeledInput
                   label="Marka/modelis"
                   value={offerDraft.brandModel}
