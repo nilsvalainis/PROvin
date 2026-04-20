@@ -1,7 +1,7 @@
 import type { IrissOfferAttachment } from "@/lib/iriss-pasutijumi-types";
 
 /**
- * PDF rāda attēlus relatīvi mazās šūnās; serveris (`shrink-image-for-iriss-pdf`) tāpat samazina.
+ * PDF šūna ir maza; serveris (`shrink-image-for-iriss-pdf`) tāpat samazina līdz ~800 px.
  * Šeit saspiežam pirms JSON, lai roaming/ārzemēs augšupielāde būtu pēc iespējas lēta (simti KB, ne MB).
  */
 const MAX_LONG_EDGE = 800;

@@ -5,6 +5,7 @@ import { buildIrissOfferPdfBytes } from "@/lib/iriss-pasutijums-pdf";
 import { isSafeIrissPasutijumsId, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 
 export const runtime = "nodejs";
+export const maxDuration = 120;
 
 export async function GET(req: Request, ctx: { params: Promise<{ id: string; offerId: string }> }) {
   const ok = await getAdminSession();
