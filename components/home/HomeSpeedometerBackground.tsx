@@ -49,13 +49,20 @@ export function HomeSpeedometerBackground() {
     if (typeof window === "undefined") return;
 
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const coarsePointer = window.matchMedia("(pointer: coarse)");
     const applyFrame = () => {
       try {
         const p = scrollProgress01();
         const targetSpeed = p * GAUGE_SPEED_MAX;
         const targetOdo = p * 9_999_999;
 
-        if (mq.matches) {
+        /**
+         * Skārienierīcēs gludināšana + scroll notikumi rada bezgalīgu rAF ķēdi (mērķis vienmēr „pārbīdās”),
+         * kas bloķē galveno pavedienu un rada lēnu, „tukšu” ritināšanu.
+         */
+        const instant = mq.matches || coarsePointer.matches;
+
+        if (instant) {
           smoothSpeedRef.current = targetSpeed;
           smoothOdoRef.current = targetOdo;
         } else {
@@ -77,7 +84,7 @@ export function HomeSpeedometerBackground() {
         }
 
         const settle =
-          mq.matches ||
+          instant ||
           (Math.abs(targetSpeed - smoothSpeedRef.current) < 0.035 &&
             Math.abs(targetOdo - smoothOdoRef.current) < 1.5);
 
