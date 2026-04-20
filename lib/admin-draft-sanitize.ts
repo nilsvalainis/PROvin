@@ -19,10 +19,19 @@ export function deepSanitizeDraftStrings(value: unknown): unknown {
   return deepSanitizeDraftStringsWithKey(value, "");
 }
 
+/** `data:` virknes var būt MB — pilns vadības-rakstzīmju regex pa visu garumu bloķē Node pēc augšupielādes. */
+function sanitizeDataUrlField(s: string, maxLen: number): string {
+  if (typeof s !== "string" || !s) return "";
+  const t = s.replace(/\uFEFF/g, "").replace(/\u0000/g, "");
+  return t.length > maxLen ? t.slice(0, maxLen) : t;
+}
+
 function deepSanitizeDraftStringsWithKey(value: unknown, key: string): unknown {
   if (typeof value === "string") {
-    const maxLen = key === "dataUrl" ? MAX_DRAFT_DATA_URL_STRING : MAX_DRAFT_STRING;
-    return sanitizeDraftTextForStorage(value, maxLen);
+    if (key === "dataUrl") {
+      return sanitizeDataUrlField(value, MAX_DRAFT_DATA_URL_STRING);
+    }
+    return sanitizeDraftTextForStorage(value, MAX_DRAFT_STRING);
   }
   if (Array.isArray(value)) return value.map((item) => deepSanitizeDraftStringsWithKey(item, key));
   if (value !== null && typeof value === "object") {

@@ -371,6 +371,7 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
 
     if (r.kind === "blob") {
       const pathname = blobPathname(r.prefix, out.id);
+      const serialized = JSON.stringify(out, null, 2);
       if (existing) {
         const backupPath = backupBlobPathname(BACKUP_BLOB_PREFIX, out.id, backupTs);
         await put(backupPath, JSON.stringify(existing, null, 2), {
@@ -382,8 +383,7 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
         });
         await trimBlobBackups(r.token, BACKUP_BLOB_PREFIX, out.id);
       }
-      const body = JSON.stringify(out, null, 2);
-      await put(pathname, body, {
+      await put(pathname, serialized, {
         access: "private",
         token: r.token,
         contentType: "application/json; charset=utf-8",

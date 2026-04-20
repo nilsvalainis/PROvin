@@ -4,9 +4,9 @@ import type { IrissOfferAttachment } from "@/lib/iriss-pasutijumi-types";
  * PDF rāda attēlus relatīvi mazās šūnās; serveris (`shrink-image-for-iriss-pdf`) tāpat samazina.
  * Šeit saspiežam pirms JSON, lai roaming/ārzemēs augšupielāde būtu pēc iespējas lēta (simti KB, ne MB).
  */
-const MAX_LONG_EDGE = 900;
-const TARGET_DECODED_BYTES = 380 * 1024;
-const HARD_MAX_DECODED_BYTES = 980 * 1024;
+const MAX_LONG_EDGE = 800;
+const TARGET_DECODED_BYTES = 250 * 1024;
+const HARD_MAX_DECODED_BYTES = 720 * 1024;
 const MAX_READ_BYTES = 12 * 1024 * 1024;
 
 const JPEG_QUALITIES_DESC = [0.76, 0.68, 0.6, 0.54, 0.48, 0.44, 0.4, 0.36] as const;

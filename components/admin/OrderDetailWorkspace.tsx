@@ -872,7 +872,14 @@ export function OrderDetailWorkspace({
       setNotifyErr(e instanceof Error ? e.message : "Tīkla kļūda");
       setNotifyPhase("error");
     }
-  }, [payload.sessionId, payload.paymentStatus, payload.customerEmail, portfolio, portfolioBytes]);
+  }, [
+    payload.sessionId,
+    payload.paymentStatus,
+    payload.customerEmail,
+    payload.vin,
+    portfolio,
+    portfolioBytes,
+  ]);
 
   const onPickFiles = async (files: FileList | null) => {
     setFileError(null);

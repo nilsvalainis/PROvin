@@ -6,7 +6,14 @@ export type JsonPatchProgress = (loaded: number, total: number) => void;
 
 export type JsonPatchResult =
   | { ok: true; status: number; data: unknown }
-  | { ok: false; status: number; data: unknown; networkError?: boolean };
+  | {
+      ok: false;
+      status: number;
+      data: unknown;
+      networkError?: boolean;
+      /** Ne-JSON atbildes (piem. 413/502 HTML) — īss fragments diagnostikai. */
+      responseTextSnippet?: string;
+    };
 
 export function patchJsonWithUploadProgress(
   url: string,
@@ -34,18 +41,24 @@ export function patchJsonWithUploadProgress(
     };
 
     xhr.onload = () => {
+      const t = xhr.responseText ?? "";
       let data: unknown = {};
       try {
-        const t = xhr.responseText;
         if (t) data = JSON.parse(t) as unknown;
       } catch {
         data = {};
       }
       const status = xhr.status;
+      const snippet =
+        t.length > 0
+          ? t.length > 320
+            ? `${t.slice(0, 280).replace(/\s+/g, " ")}…`
+            : t.replace(/\s+/g, " ").slice(0, 320)
+          : undefined;
       if (status >= 200 && status < 300) {
         resolve({ ok: true, status, data });
       } else {
-        resolve({ ok: false, status, data });
+        resolve({ ok: false, status, data, responseTextSnippet: snippet });
       }
     };
 

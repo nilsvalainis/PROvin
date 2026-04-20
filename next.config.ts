@@ -26,6 +26,12 @@ if (process.env.NODE_ENV === "production") {
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  /** Server Actions (citi maršruti); IRISS PATCH ierobežojumus biežāk nosaka Vercel/hosting. */
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "12mb",
+    },
+  },
   async redirects() {
     return [{ source: "/admin/pkd-rekins", destination: "/admin/commission-invoice", permanent: false }];
   },
