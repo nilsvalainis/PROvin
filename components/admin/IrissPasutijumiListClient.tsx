@@ -3,7 +3,8 @@
 import { Menu } from "lucide-react";
 import { Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { IrissListingPlatformChipsInline } from "@/components/admin/IrissListingPlatformChipsInline";
 import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
 import {
@@ -44,6 +45,7 @@ type SortMode =
 
 const ORDER_KEY = "iriss-order-manual-v1";
 const SORT_KEY = "iriss-order-sort-v1";
+const PIN_KEY = "iriss-order-pinned-v1";
 
 function getBrandToken(brandModel: string): string {
   return brandModel
@@ -75,45 +77,70 @@ function budgetToNumber(v: string): number {
   return Number.isFinite(parsed) ? parsed : Number.NaN;
 }
 
-function sortRows(rows: IrissPasutijumsListRow[], mode: SortMode, manualOrder: string[]): IrissPasutijumsListRow[] {
+function sortRows(rows: IrissPasutijumsListRow[], mode: SortMode, manualOrder: string[], pinnedIds: string[]): IrissPasutijumsListRow[] {
   const byDateDesc = [...rows].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+  const pinnedSet = new Set(pinnedIds);
+  const splitPinned = (list: IrissPasutijumsListRow[]) => {
+    const pinned = list.filter((r) => pinnedSet.has(r.id));
+    const rest = list.filter((r) => !pinnedSet.has(r.id));
+    return [...pinned, ...rest];
+  };
   if (mode === "manual") {
     const rank = new Map<string, number>();
     manualOrder.forEach((id, idx) => rank.set(id, idx));
-    return [...byDateDesc].sort((a, b) => {
+    const manual = [...byDateDesc].sort((a, b) => {
       const ra = rank.has(a.id) ? rank.get(a.id)! : Number.MAX_SAFE_INTEGER;
       const rb = rank.has(b.id) ? rank.get(b.id)! : Number.MAX_SAFE_INTEGER;
       if (ra !== rb) return ra - rb;
       return a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0;
     });
+    return splitPinned(manual);
   }
-  if (mode === "created_desc") return byDateDesc;
-  if (mode === "created_asc") return [...rows].sort((a, b) => (a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0));
+  if (mode === "created_desc") return splitPinned(byDateDesc);
+  if (mode === "created_asc") return splitPinned([...rows].sort((a, b) => (a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0)));
   if (mode === "brand_asc")
-    return [...rows].sort((a, b) => a.brandModel.localeCompare(b.brandModel, "lv", { sensitivity: "base" }));
+    return splitPinned([...rows].sort((a, b) => a.brandModel.localeCompare(b.brandModel, "lv", { sensitivity: "base" })));
   if (mode === "brand_desc")
-    return [...rows].sort((a, b) => b.brandModel.localeCompare(a.brandModel, "lv", { sensitivity: "base" }));
+    return splitPinned([...rows].sort((a, b) => b.brandModel.localeCompare(a.brandModel, "lv", { sensitivity: "base" })));
   if (mode === "budget_asc")
-    return [...rows].sort((a, b) => {
+    return splitPinned([...rows].sort((a, b) => {
       const na = budgetToNumber(a.totalBudget);
       const nb = budgetToNumber(b.totalBudget);
       if (!Number.isFinite(na) && !Number.isFinite(nb)) return 0;
       if (!Number.isFinite(na)) return 1;
       if (!Number.isFinite(nb)) return -1;
       return na - nb;
-    });
-  return [...rows].sort((a, b) => {
+    }));
+  return splitPinned([...rows].sort((a, b) => {
     const na = budgetToNumber(a.totalBudget);
     const nb = budgetToNumber(b.totalBudget);
     if (!Number.isFinite(na) && !Number.isFinite(nb)) return 0;
     if (!Number.isFinite(na)) return 1;
     if (!Number.isFinite(nb)) return -1;
     return nb - na;
-  });
+  }));
 }
 
-function IrissRowCard({ row, canManualSort }: { row: IrissPasutijumsListRow; canManualSort: boolean }) {
+function IrissRowCard({
+  row,
+  canManualSort,
+  pinned,
+  isSwipeOpen,
+  onToggleSwipe,
+  onPinToggle,
+  onDelete,
+}: {
+  row: IrissPasutijumsListRow;
+  canManualSort: boolean;
+  pinned: boolean;
+  isSwipeOpen: boolean;
+  onToggleSwipe: (open: boolean) => void;
+  onPinToggle: () => void;
+  onDelete: () => void;
+}) {
   const dragControls = useDragControls();
+  const touchStartX = useRef<number | null>(null);
+  const touchDx = useRef(0);
   const chips = buildListingPlatformChips(
     {
       listingLinkMobile: row.listingLinkMobile,
@@ -126,6 +153,7 @@ function IrissRowCard({ row, canManualSort }: { row: IrissPasutijumsListRow; can
   );
   const brandLogoUrl = getBrandLogoUrl(row.brandModel);
   const brandFallback = getBrandFallbackLabel(row.brandModel);
+  const swipeX = isSwipeOpen ? 108 : 0;
 
   return (
     <Reorder.Item
@@ -135,8 +163,44 @@ function IrissRowCard({ row, canManualSort }: { row: IrissPasutijumsListRow; can
       className="list-none"
       whileDrag={{ scale: 1.01 }}
     >
-      <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm transition hover:border-slate-300/90">
-        <div className="flex items-stretch">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm transition hover:border-slate-300/90">
+        <div className="absolute inset-y-0 left-0 flex items-center gap-1 pl-2 md:hidden">
+          <button
+            type="button"
+            onClick={onPinToggle}
+            className={`inline-flex h-9 items-center justify-center rounded-lg px-2 text-[11px] font-semibold text-white shadow-sm ${
+              pinned ? "bg-amber-600" : "bg-slate-700"
+            }`}
+          >
+            {pinned ? "Unpin" : "Pin"}
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="inline-flex h-9 items-center justify-center rounded-lg bg-red-600 px-2 text-[11px] font-semibold text-white shadow-sm"
+          >
+            Delete
+          </button>
+        </div>
+        <div
+          className="relative z-[1] flex items-stretch bg-white transition-transform duration-200 md:translate-x-0"
+          style={{ transform: `translateX(${swipeX}px)` }}
+          onTouchStart={(e) => {
+            touchStartX.current = e.touches[0]?.clientX ?? null;
+            touchDx.current = 0;
+          }}
+          onTouchMove={(e) => {
+            if (touchStartX.current == null) return;
+            touchDx.current = (e.touches[0]?.clientX ?? 0) - touchStartX.current;
+          }}
+          onTouchEnd={() => {
+            if (touchStartX.current == null) return;
+            if (touchDx.current > 48) onToggleSwipe(true);
+            else if (touchDx.current < -32) onToggleSwipe(false);
+            touchStartX.current = null;
+            touchDx.current = 0;
+          }}
+        >
           {canManualSort ? (
             <button
               type="button"
@@ -152,6 +216,7 @@ function IrissRowCard({ row, canManualSort }: { row: IrissPasutijumsListRow; can
             href={`/admin/iriss/pasutijumi/${encodeURIComponent(row.id)}`}
             aria-label={`Atvērt pasūtījumu: ${row.brandModel}`}
             className="flex min-w-0 flex-1 flex-row items-center gap-2.5 p-3 outline-none ring-[var(--color-provin-accent)]/30 transition hover:bg-slate-50/50 active:bg-slate-100/60 focus-visible:ring-2 sm:gap-3 sm:p-4"
+            onClick={() => onToggleSwipe(false)}
           >
             <div className="min-w-0 flex-1 space-y-0.5">
               <div className="flex min-w-0 items-center gap-2">
@@ -179,6 +244,7 @@ function IrissRowCard({ row, canManualSort }: { row: IrissPasutijumsListRow; can
                 <span>
                   <span className="font-medium text-[var(--color-apple-text)]">Tālrunis:</span> {row.phone}
                 </span>
+                {pinned ? <span className="font-semibold text-amber-700">Pinned</span> : null}
               </div>
             </div>
             <span className="hidden shrink-0 self-center rounded-full bg-[var(--color-provin-accent)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm sm:inline-flex sm:px-3 sm:py-1.5 sm:text-[12px]">
@@ -223,8 +289,11 @@ function IrissRowCard({ row, canManualSort }: { row: IrissPasutijumsListRow; can
 }
 
 export function IrissPasutijumiListClient({ rows }: { rows: IrissPasutijumsListRow[] }) {
+  const router = useRouter();
   const [sortMode, setSortMode] = useState<SortMode>("created_desc");
   const [manualOrder, setManualOrder] = useState<string[]>([]);
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [openSwipeRowId, setOpenSwipeRowId] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -234,6 +303,11 @@ export function IrissPasutijumiListClient({ rows }: { rows: IrissPasutijumsListR
       if (savedManual) {
         const parsed = JSON.parse(savedManual) as unknown;
         if (Array.isArray(parsed)) setManualOrder(parsed.filter((x): x is string => typeof x === "string"));
+      }
+      const savedPins = localStorage.getItem(PIN_KEY);
+      if (savedPins) {
+        const parsedPins = JSON.parse(savedPins) as unknown;
+        if (Array.isArray(parsedPins)) setPinnedIds(parsedPins.filter((x): x is string => typeof x === "string"));
       }
     } catch {
       /* ignore */
@@ -248,7 +322,15 @@ export function IrissPasutijumiListClient({ rows }: { rows: IrissPasutijumsListR
     }
   }, [sortMode]);
 
-  const sortedRows = useMemo(() => sortRows(rows, sortMode, manualOrder), [rows, sortMode, manualOrder]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(PIN_KEY, JSON.stringify(pinnedIds));
+    } catch {
+      /* ignore */
+    }
+  }, [pinnedIds]);
+
+  const sortedRows = useMemo(() => sortRows(rows, sortMode, manualOrder, pinnedIds), [rows, sortMode, manualOrder, pinnedIds]);
   const rowMap = useMemo(() => new Map(rows.map((r) => [r.id, r])), [rows]);
 
   const canManualSort = sortMode === "manual";
@@ -289,7 +371,24 @@ export function IrissPasutijumiListClient({ rows }: { rows: IrissPasutijumsListR
         className="mt-3 space-y-2.5 sm:space-y-3"
       >
         {sortedRows.map((row) => (
-          <IrissRowCard key={row.id} row={rowMap.get(row.id) ?? row} canManualSort={canManualSort} />
+          <IrissRowCard
+            key={row.id}
+            row={rowMap.get(row.id) ?? row}
+            canManualSort={canManualSort}
+            pinned={pinnedIds.includes(row.id)}
+            isSwipeOpen={openSwipeRowId === row.id}
+            onToggleSwipe={(open) => setOpenSwipeRowId(open ? row.id : null)}
+            onPinToggle={() =>
+              setPinnedIds((curr) => (curr.includes(row.id) ? curr.filter((id) => id !== row.id) : [row.id, ...curr]))
+            }
+            onDelete={() => {
+              if (!window.confirm("Vai tiešām dzēst šo pasūtījumu?")) return;
+              void fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(row.id)}`, {
+                method: "DELETE",
+                credentials: "include",
+              }).then(() => router.refresh());
+            }}
+          />
         ))}
       </Reorder.Group>
 

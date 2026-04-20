@@ -109,9 +109,25 @@ export function buildIrissOfferPrintHtml(
     offer.year,
   )}${row("Nobraukums", offer.mileage)}${row("Cena Vācijā", offer.priceGermany)}</table>`;
   const comments = `<pre class="notes">${esc(offer.comment.trim() || "—")}</pre>`;
-  const files =
-    offer.attachments.length > 0
-      ? `<table class="grid">${offer.attachments
+  const images = offer.attachments.filter((a) => a.mimeType.startsWith("image/") && a.dataUrl.startsWith("data:image/"));
+  const otherFiles = offer.attachments.filter((a) => !a.mimeType.startsWith("image/") || !a.dataUrl.startsWith("data:image/"));
+  const files = images.length
+    ? `<div class="gallery">${images
+        .map(
+          (img, i) =>
+            `<figure class="photo"><img src="${img.dataUrl}" alt="${esc(img.name)}"/><figcaption>Foto ${i + 1}: ${esc(
+              img.name,
+            )}</figcaption></figure>`,
+        )
+        .join("")}</div>${
+        otherFiles.length
+          ? `<table class="grid">${otherFiles
+              .map((a, i) => `<tr><th>Fails ${i + 1}</th><td>${esc(a.name)}</td></tr>`)
+              .join("")}</table>`
+          : ""
+      }`
+    : otherFiles.length
+      ? `<table class="grid">${otherFiles
           .map((a, i) => `<tr><th>Fails ${i + 1}</th><td>${esc(a.name)}</td></tr>`)
           .join("")}</table>`
       : `<p class="meta">Faili nav pievienoti.</p>`;
@@ -134,6 +150,11 @@ export function buildIrissOfferPrintHtml(
     table.grid td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; white-space: pre-wrap; }
     pre { margin: 0; font-family: inherit; white-space: pre-wrap; word-break: break-word; }
     .notes { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; min-height: 60px; }
+    .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 560px) { .gallery { grid-template-columns: 1fr; } }
+    .photo { margin: 0; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: #fff; page-break-inside: avoid; }
+    .photo img { display: block; width: 100%; height: auto; max-height: 220px; object-fit: cover; }
+    .photo figcaption { padding: 6px 8px; font-size: 9px; color: #4b5563; border-top: 1px solid #e5e7eb; }
     footer.legal { margin-top: 22px; padding-top: 12px; border-top: 2px solid ${accent}; font-size: 9px; color: #4b5563; line-height: 1.5; }
     footer.legal p { margin: 0 0 4px; }
   `;
