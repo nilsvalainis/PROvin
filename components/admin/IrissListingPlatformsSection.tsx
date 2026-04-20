@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
   buildListingPlatformChips,
   LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
@@ -16,6 +16,11 @@ const lbl = "mb-0.5 block text-[9px] font-semibold uppercase tracking-[0.08em] t
 
 export function IrissListingPlatformChipsRow({ rec }: { rec: IrissPasutijumsRecord }) {
   const chips = useMemo(() => buildListingPlatformChips(rec, 5), [rec]);
+  const openAll = useCallback(() => {
+    for (const chip of chips) {
+      window.open(chip.href, "_blank", "noopener,noreferrer");
+    }
+  }, [chips]);
   if (chips.length === 0) return null;
   return (
     <div className={`mb-2 ${LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}`}>
@@ -31,6 +36,15 @@ export function IrissListingPlatformChipsRow({ rec }: { rec: IrissPasutijumsReco
           {c.letter}
         </a>
       ))}
+      <button
+        type="button"
+        onClick={openAll}
+        title="Atvērt visas saites"
+        aria-label="Atvērt visas saites"
+        className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} bg-slate-700 text-white ring-1 ring-slate-800/35`}
+      >
+        ALL
+      </button>
     </div>
   );
 }
