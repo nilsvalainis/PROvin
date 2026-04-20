@@ -3,7 +3,7 @@
 import { Pin, Trash2 } from "lucide-react";
 import { motion, Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
 import {
   buildListingPlatformChips,
@@ -58,9 +58,10 @@ const SWIPE_ACTION_BLOCK_WIDTH = 72;
 const SWIPE_ACTION_WIDTH = SWIPE_ACTION_BLOCK_WIDTH * 2;
 const SWIPE_CLOSE_THRESHOLD = SWIPE_ACTION_WIDTH * 0.4;
 const SWIPE_OPEN_THRESHOLD = SWIPE_ACTION_WIDTH * 0.5;
-const SWIPE_SPRING = { type: "spring" as const, stiffness: 820, damping: 58, mass: 0.45 };
+const SWIPE_VELOCITY_OPEN = -620;
+const SWIPE_VELOCITY_CLOSE = 620;
+const SWIPE_SPRING = { type: "spring" as const, stiffness: 1000, damping: 60, mass: 0.45 };
 const LONG_PRESS_MS = 450;
-const AXIS_LOCK_PX = 8;
 const MOVE_CANCEL_LONG_PRESS_PX = 10;
 
 function getBrandToken(brandModel: string): string {
@@ -196,27 +197,25 @@ async function persistListOrder(order: IrissPasutijumiListOrder): Promise<boolea
   }
 }
 
-function IrissRowCard({
+const IrissRowCard = memo(function IrissRowCard({
   row,
-  swipeOpenId,
-  setSwipeOpenId,
   onPin,
   onAskDelete,
+  registerSwipeCloser,
+  closeOtherSwipes,
   onSwipeScrollLockChange,
 }: {
   row: IrissPasutijumsListRow;
-  swipeOpenId: string | null;
-  setSwipeOpenId: (id: string | null) => void;
   onPin: (id: string) => void;
   onAskDelete: (id: string) => void;
+  registerSwipeCloser: (id: string, closer: (() => void) | null) => void;
+  closeOtherSwipes: (exceptId: string) => void;
   onSwipeScrollLockChange: (locked: boolean) => void;
 }) {
   const reorderDragControls = useDragControls();
-  const swipeDragControls = useDragControls();
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
-  const pointerAxisRef = useRef<"x" | "y" | null>(null);
-  const swipeStartedRef = useRef(false);
   const longPressTimerRef = useRef<number | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
   const chips = buildListingPlatformChips(
     {
       listingLinkMobile: row.listingLinkMobile,
@@ -230,7 +229,6 @@ function IrissRowCard({
   const brandLogoUrl = getBrandLogoUrl(row.brandModel);
   const brandFallback = getBrandFallbackLabel(row.brandModel);
   const isPinned = Boolean(row.pinnedAt);
-  const isOpen = swipeOpenId === row.id;
   const cardSurfaceClass = isPinned ? CARD_PINNED : CARD_WHITE;
   const openAllListings = () => {
     for (const chip of chips) {
@@ -247,14 +245,12 @@ function IrissRowCard({
 
   const onFrontPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     pointerStartRef.current = { x: e.clientX, y: e.clientY };
-    pointerAxisRef.current = null;
-    swipeStartedRef.current = false;
     clearLongPressTimer();
+    closeOtherSwipes(row.id);
 
     const startEv = e;
     longPressTimerRef.current = window.setTimeout(() => {
       longPressTimerRef.current = null;
-      if (pointerAxisRef.current !== null) return;
       reorderDragControls.start(startEv);
     }, LONG_PRESS_MS);
   };
@@ -271,31 +267,20 @@ function IrissRowCard({
     if (absX > MOVE_CANCEL_LONG_PRESS_PX || absY > MOVE_CANCEL_LONG_PRESS_PX) {
       clearLongPressTimer();
     }
-
-    if (!pointerAxisRef.current) {
-      if (absX < AXIS_LOCK_PX && absY < AXIS_LOCK_PX) return;
-      pointerAxisRef.current = absY > absX ? "y" : "x";
-    }
-
-    if (pointerAxisRef.current === "y") {
-      return;
-    }
-
-    if (pointerAxisRef.current === "x" && !swipeStartedRef.current) {
-      clearLongPressTimer();
-      swipeStartedRef.current = true;
-      onSwipeScrollLockChange(true);
-      swipeDragControls.start(e, { snapToCursor: false });
-    }
   };
 
   const onFrontPointerEnd = () => {
     clearLongPressTimer();
     pointerStartRef.current = null;
-    pointerAxisRef.current = null;
-    swipeStartedRef.current = false;
     onSwipeScrollLockChange(false);
   };
+
+  const closeSwipe = useCallback(() => setIsOpen(false), []);
+
+  useEffect(() => {
+    registerSwipeCloser(row.id, closeSwipe);
+    return () => registerSwipeCloser(row.id, null);
+  }, [closeSwipe, registerSwipeCloser, row.id]);
 
   return (
     <Reorder.Item value={row.id} dragListener={false} dragControls={reorderDragControls} className="list-none" whileDrag={{ scale: 1.01 }}>
@@ -307,7 +292,10 @@ function IrissRowCard({
         <div className={`absolute inset-y-0 right-0 z-0 flex md:hidden ${SWIPE_STRIP_BG}`} style={{ width: SWIPE_ACTION_WIDTH }}>
           <button
             type="button"
-            onClick={() => onPin(row.id)}
+            onClick={() => {
+              setIsOpen(false);
+              onPin(row.id);
+            }}
             className="flex h-full w-[72px] items-center justify-center bg-[#8E8E93] text-white transition active:brightness-95"
             aria-label={isPinned ? "Noņemt piespraušanu" : "Piespraust augšā"}
           >
@@ -315,7 +303,10 @@ function IrissRowCard({
           </button>
           <button
             type="button"
-            onClick={() => onAskDelete(row.id)}
+            onClick={() => {
+              setIsOpen(false);
+              onAskDelete(row.id);
+            }}
             className="flex h-full w-[72px] items-center justify-center bg-[#FF3B30] text-white transition active:brightness-95"
             aria-label="Dzēst pasūtījumu"
           >
@@ -324,31 +315,45 @@ function IrissRowCard({
         </div>
 
         <motion.div
-          dragListener={false}
-          dragControls={swipeDragControls}
+          dragListener
           drag="x"
           dragConstraints={{ left: -SWIPE_ACTION_WIDTH, right: 0 }}
           dragElastic={0.1}
           dragMomentum={false}
           dragDirectionLock
+          onDirectionLock={(axis) => {
+            if (axis === "x") {
+              closeOtherSwipes(row.id);
+              onSwipeScrollLockChange(true);
+            }
+          }}
           animate={{ x: isOpen ? -SWIPE_ACTION_WIDTH : 0 }}
           transition={SWIPE_SPRING}
           onPointerDown={onFrontPointerDown}
           onPointerMove={onFrontPointerMove}
           onPointerUp={onFrontPointerEnd}
           onPointerCancel={onFrontPointerEnd}
+          onPanStart={clearLongPressTimer}
           onDragEnd={(_, info) => {
             const dragBase = isOpen ? -SWIPE_ACTION_WIDTH : 0;
             const finalX = Math.max(-SWIPE_ACTION_WIDTH, Math.min(0, dragBase + info.offset.x));
+            const velocityX = info.velocity.x;
             const revealed = Math.abs(finalX);
             let shouldOpen = false;
-            if (revealed >= SWIPE_OPEN_THRESHOLD) shouldOpen = true;
+            if (velocityX <= SWIPE_VELOCITY_OPEN) shouldOpen = true;
+            else if (velocityX >= SWIPE_VELOCITY_CLOSE) shouldOpen = false;
+            else if (revealed >= SWIPE_OPEN_THRESHOLD) shouldOpen = true;
             else if (revealed < SWIPE_CLOSE_THRESHOLD) shouldOpen = false;
-            else shouldOpen = info.velocity.x < -160;
-            if (shouldOpen) setSwipeOpenId(row.id);
-            else setSwipeOpenId(null);
+            else {
+              const projected = finalX + velocityX * 0.18;
+              shouldOpen = Math.abs(projected) >= SWIPE_OPEN_THRESHOLD;
+            }
+            setIsOpen(shouldOpen);
+            if (shouldOpen) closeOtherSwipes(row.id);
+            onSwipeScrollLockChange(false);
           }}
-          className={`relative z-10 touch-pan-y md:translate-x-0 ${cardSurfaceClass}`}
+          className={`relative z-10 touch-pan-y will-change-transform md:translate-x-0 ${cardSurfaceClass}`}
+          style={{ transform: "translateZ(0)" }}
         >
           <div className="flex items-stretch">
             <Link
@@ -452,7 +457,7 @@ function IrissRowCard({
       </div>
     </Reorder.Item>
   );
-}
+});
 
 export function IrissPasutijumiListClient({
   rows,
@@ -472,9 +477,9 @@ export function IrissPasutijumiListClient({
     }
     return buildDefaultListOrder(rows, "created_desc");
   });
-  const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const swipeClosersRef = useRef<Map<string, () => void>>(new Map());
   const swipeLockCountRef = useRef(0);
   const localRowsRef = useRef(localRows);
   localRowsRef.current = localRows;
@@ -494,6 +499,18 @@ export function IrissPasutijumiListClient({
         document.documentElement.style.overflow = "";
         document.body.style.touchAction = "";
       }
+    }
+  }, []);
+
+  const registerSwipeCloser = useCallback((id: string, closer: (() => void) | null) => {
+    if (closer) swipeClosersRef.current.set(id, closer);
+    else swipeClosersRef.current.delete(id);
+  }, []);
+
+  const closeOtherSwipes = useCallback((exceptId: string) => {
+    for (const [id, close] of swipeClosersRef.current) {
+      if (id === exceptId) continue;
+      close();
     }
   }, []);
 
@@ -558,7 +575,7 @@ export function IrissPasutijumiListClient({
 
   const rowMap = useMemo(() => new Map(localRows.map((r) => [r.id, r])), [localRows]);
 
-  const patchRow = async (id: string, mutator: (record: IrissPasutijumsRecord) => IrissPasutijumsRecord) => {
+  const patchRow = useCallback(async (id: string, mutator: (record: IrissPasutijumsRecord) => IrissPasutijumsRecord) => {
     setActionBusy(id);
     try {
       const getRes = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, { credentials: "include" });
@@ -592,17 +609,16 @@ export function IrissPasutijumiListClient({
     } finally {
       setActionBusy(null);
     }
-  };
+  }, []);
 
-  const onPin = (id: string) => {
-    setSwipeOpenId(null);
+  const onPin = useCallback((id: string) => {
     void patchRow(id, (record) => ({
       ...record,
       pinnedAt: record.pinnedAt ? "" : new Date().toISOString(),
     }));
-  };
+  }, [patchRow]);
 
-  const onConfirmDelete = async () => {
+  const onConfirmDelete = useCallback(async () => {
     const id = deleteTargetId;
     if (!id) return;
     setActionBusy(id);
@@ -622,27 +638,27 @@ export function IrissPasutijumiListClient({
         return next;
       });
       setDeleteTargetId(null);
-      setSwipeOpenId(null);
+      closeOtherSwipes("");
     } finally {
       setActionBusy(null);
     }
-  };
+  }, [closeOtherSwipes, deleteTargetId]);
 
-  const onReorderPinned = (ids: string[]) => {
+  const onReorderPinned = useCallback((ids: string[]) => {
     setListOrder((prev) => {
       const next = { ...prev, pinnedOrder: ids };
       void persistListOrder(next);
       return next;
     });
-  };
+  }, []);
 
-  const onReorderUnpinned = (ids: string[]) => {
+  const onReorderUnpinned = useCallback((ids: string[]) => {
     setListOrder((prev) => {
       const next = { ...prev, unpinnedOrder: ids };
       void persistListOrder(next);
       return next;
     });
-  };
+  }, []);
 
   return (
     <>
@@ -684,10 +700,10 @@ export function IrissPasutijumiListClient({
               <IrissRowCard
                 key={row.id}
                 row={rowMap.get(row.id) ?? row}
-                swipeOpenId={swipeOpenId}
-                setSwipeOpenId={setSwipeOpenId}
                 onPin={onPin}
                 onAskDelete={setDeleteTargetId}
+                registerSwipeCloser={registerSwipeCloser}
+                closeOtherSwipes={closeOtherSwipes}
                 onSwipeScrollLockChange={bumpSwipeScrollLock}
               />
             ))}
@@ -700,10 +716,10 @@ export function IrissPasutijumiListClient({
               <IrissRowCard
                 key={row.id}
                 row={rowMap.get(row.id) ?? row}
-                swipeOpenId={swipeOpenId}
-                setSwipeOpenId={setSwipeOpenId}
                 onPin={onPin}
                 onAskDelete={setDeleteTargetId}
+                registerSwipeCloser={registerSwipeCloser}
+                closeOtherSwipes={closeOtherSwipes}
                 onSwipeScrollLockChange={bumpSwipeScrollLock}
               />
             ))}
