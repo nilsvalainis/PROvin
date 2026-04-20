@@ -1,12 +1,17 @@
 "use client";
 
 import { ArrowLeft, Eye, FileDown, Loader2, Paperclip, Phone, Plus, Save, Trash2 } from "lucide-react";
+import { Reorder } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import type { IrissOfferAttachment, IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import {
+  LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS,
+  LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
+} from "@/lib/iriss-listing-links";
 import { fileToCompressedOfferAttachment } from "@/lib/iriss-offer-image-compress";
 import { patchJsonWithUploadProgress, type JsonPatchResult } from "@/lib/iriss-json-patch-upload";
 
@@ -20,6 +25,24 @@ const fieldClass =
   "min-h-[44px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[16px] text-[var(--color-apple-text)] shadow-sm outline-none transition focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
 
 const textareaClass = `${fieldClass} min-h-[100px] resize-y py-2.5 leading-snug`;
+
+/** Piedāvājumu P1, P2 — tāds pats izmērs kā platformu čipiem; iOS zaļš. */
+const OFFER_P_CHIP_STYLE: CSSProperties = {
+  backgroundColor: "#34C759",
+  color: "#000000",
+  border: "1px solid #2AB650",
+};
+
+const offerPChipButtonClass = `${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} cursor-pointer select-none`;
+
+/** Mobilajā rindā ar P čipiem — tāds pats augstums kā platformu čipiem. */
+const headerMobileSaveChipBtnClass =
+  `${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} cursor-pointer border border-[var(--color-provin-accent)] ` +
+  "bg-transparent text-[var(--color-provin-accent)] hover:bg-[var(--color-provin-accent)]/8";
+
+const headerMobilePdfChipBtnClass =
+  `${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} cursor-pointer border border-[var(--color-provin-accent)]/35 ` +
+  "bg-[var(--color-provin-accent-soft)]/60 text-[var(--color-provin-accent)] hover:bg-[var(--color-provin-accent-soft)]";
 
 function normalizePhoneForLv(raw: string): string {
   const trimmed = raw.trim();
@@ -207,6 +230,11 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   const [pdfRetryBar, setPdfRetryBar] = useState<{ href: string; name: string } | null>(null);
   const [orderPdfRetryOpen, setOrderPdfRetryOpen] = useState(false);
   const [offerFilePrepare, setOfferFilePrepare] = useState<{ pct: number; label: string } | null>(null);
+  const [offerPdfDoneIds, setOfferPdfDoneIds] = useState<readonly string[]>([]);
+
+  const markOfferPdfDone = useCallback((id: string) => {
+    setOfferPdfDoneIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+  }, []);
 
   const beginTransfer = useCallback((title: string, detail: string) => {
     if (transferLongWaitTimer.current) window.clearTimeout(transferLongWaitTimer.current);
@@ -306,6 +334,27 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     },
     [rec, router],
   );
+
+  const saveRedirectToList = useCallback(() => {
+    void (async () => {
+      setPdfRetryBar(null);
+      beginTransfer(
+        "Augšupielādē foto un saglabā",
+        "Nelietojiet pārlūka atsvaidzināšanu — gaidiet, līdz pāriet uz sarakstu.",
+      );
+      try {
+        await save({
+          redirectToList: true,
+          onUploadProgress: (loaded, total) => {
+            const pct = Math.min(99, Math.round((100 * loaded) / Math.max(total, 1)));
+            setTransferUi((u) => (u ? { ...u, pct } : null));
+          },
+        });
+      } finally {
+        endTransfer();
+      }
+    })();
+  }, [beginTransfer, endTransfer, save]);
 
   useEffect(() => {
     const snap = JSON.stringify(rec);
@@ -503,13 +552,14 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       setOfferPdfPreviewUrl(viewUrl);
       offerPdfObjectUrlRef.current = null;
       setOfferPdfSheetPull(0);
+      markOfferPdfDone(offerOut.id);
     } catch {
       alert("Tīkla kļūda.");
     } finally {
       endTransfer();
       setOfferPdfPreviewBusy(false);
     }
-  }, [beginTransfer, commitOfferDraftToRecord, endTransfer, rec.id]);
+  }, [beginTransfer, commitOfferDraftToRecord, endTransfer, markOfferPdfDone, rec.id]);
 
   const onOfferPdfHandleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length !== 1) return;
@@ -564,6 +614,16 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   useEffect(() => {
     if (!offerOpen) closeOfferPdfPreview();
   }, [offerOpen, closeOfferPdfPreview]);
+
+  useEffect(() => {
+    const lock = offerOpen || Boolean(offerPdfPreviewUrl) || deleteConfirmOpen;
+    if (!lock) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [offerOpen, offerPdfPreviewUrl, deleteConfirmOpen]);
 
   const persistOffer = useCallback(
     async (withPdf: boolean) => {
@@ -620,6 +680,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
             }
             setTransferUi((u) => (u ? { ...u, pct: 96, title: "Lejupielādē PDF…" } : null));
             await downloadPdfBlobFromResponse(res, "piedavajums.pdf", (href, name) => setPdfRetryBar({ href, name }));
+            markOfferPdfDone(offerOut.id);
           } catch (e) {
             setSaveMsg(e instanceof Error ? e.message.slice(0, 220) : "PDF lejupielāde neizdevās.");
             const base = `/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/offer/${encodeURIComponent(offerOut.id)}/print`;
@@ -631,7 +692,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
         setOfferBusy(false);
       }
     },
-    [beginTransfer, commitOfferDraftToRecord, endTransfer, rec.id],
+    [beginTransfer, commitOfferDraftToRecord, endTransfer, markOfferPdfDone, rec.id],
   );
 
   const onConfirmDeleteOrder = useCallback(async () => {
@@ -677,8 +738,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     window.open(`https://wa.me/${digits}`, "_blank", "noopener,noreferrer");
   }, [normalizedPhone, patch, rec.phone]);
 
-  const offerIconClass =
-    "inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50";
+  const showOfferPdfView = offerPdfDoneIds.includes(offerDraft.id);
 
   return (
     <div className="mx-auto w-full max-w-[1200px] bg-white px-3 pb-8 sm:px-6 lg:px-10">
@@ -694,86 +754,87 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
             <span>Atpakaļ</span>
           </Link>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-2">
-          <div className="hidden min-w-0 md:block">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
-              IRISS · PASŪTĪJUMI
-            </p>
-            <div className="mt-1 flex items-center gap-2">
-              <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
-                Pasūtījums
-              </h1>
+            <div className="hidden min-w-0 md:block">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
+                IRISS · PASŪTĪJUMI
+              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
+                  Pasūtījums
+                </h1>
+                {rec.offers.map((offer, idx) => (
+                  <button
+                    key={offer.id}
+                    type="button"
+                    onClick={() => openEditOffer(offer)}
+                    className={offerPChipButtonClass}
+                    style={OFFER_P_CHIP_STYLE}
+                    title={offer.title}
+                  >
+                    P{idx + 1}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className={`md:hidden ${LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}`}>
               {rec.offers.map((offer, idx) => (
                 <button
                   key={offer.id}
                   type="button"
                   onClick={() => openEditOffer(offer)}
-                  className={offerIconClass}
+                  className={offerPChipButtonClass}
+                  style={OFFER_P_CHIP_STYLE}
                   title={offer.title}
                 >
                   P{idx + 1}
                 </button>
               ))}
+              <button
+                type="button"
+                disabled={busy || !!transferUi}
+                title="Saglabāt"
+                aria-label={busy || !!transferUi ? "Saglabā" : "Saglabāt"}
+                onClick={saveRedirectToList}
+                className={headerMobileSaveChipBtnClass}
+              >
+                <Save className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
+              </button>
+              <button
+                type="button"
+                disabled={!!transferUi}
+                title="PDF"
+                aria-label="PDF"
+                onClick={() => void openPdf()}
+                className={headerMobilePdfChipBtnClass}
+              >
+                <FileDown className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
+              </button>
+            </div>
+            <div className="hidden shrink-0 flex-nowrap items-center justify-end gap-1 sm:flex-wrap sm:gap-2 md:flex">
+              <button
+                type="button"
+                disabled={busy || !!transferUi}
+                title="Saglabāt"
+                aria-label={busy || !!transferUi ? "Saglabā" : "Saglabāt"}
+                onClick={saveRedirectToList}
+                className={`${toolbarBtnBase} border border-[var(--color-provin-accent)] bg-transparent text-[var(--color-provin-accent)] shadow-sm hover:bg-[var(--color-provin-accent)]/10 sm:hover:bg-[var(--color-provin-accent)]/10`}
+              >
+                <Save className="h-6 w-6 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
+                <span className="hidden text-[13px] font-semibold sm:inline">{busy || !!transferUi ? "Saglabā…" : "Saglabāt"}</span>
+              </button>
+              <button
+                type="button"
+                disabled={!!transferUi}
+                title="PDF"
+                aria-label="PDF"
+                onClick={() => void openPdf()}
+                className={`${toolbarBtnBase} border border-[var(--color-provin-accent)]/35 bg-[var(--color-provin-accent-soft)]/60 text-[var(--color-provin-accent)] hover:bg-[var(--color-provin-accent-soft)] sm:hover:bg-[var(--color-provin-accent-soft)]`}
+              >
+                <FileDown className="h-6 w-6 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
+                <span className="hidden text-[13px] font-semibold sm:inline">PDF</span>
+              </button>
             </div>
           </div>
-          {rec.offers.length > 0 ? (
-            <div className="flex items-center gap-1 md:hidden">
-              {rec.offers.map((offer, idx) => (
-                <button
-                  key={offer.id}
-                  type="button"
-                  onClick={() => openEditOffer(offer)}
-                  className={offerIconClass}
-                  title={offer.title}
-                >
-                  P{idx + 1}
-                </button>
-              ))}
-            </div>
-          ) : null}
-          <div className="flex shrink-0 flex-nowrap items-center justify-end gap-1 sm:flex-wrap sm:gap-2">
-            <button
-              type="button"
-              disabled={busy || !!transferUi}
-              title="Saglabāt"
-              aria-label={busy || !!transferUi ? "Saglabā" : "Saglabāt"}
-              onClick={() =>
-                void (async () => {
-                  setPdfRetryBar(null);
-                  beginTransfer(
-                    "Augšupielādē foto un saglabā",
-                    "Nelietojiet pārlūka atsvaidzināšanu — gaidiet, līdz pāriet uz sarakstu.",
-                  );
-                  try {
-                    await save({
-                      redirectToList: true,
-                      onUploadProgress: (loaded, total) => {
-                        const pct = Math.min(99, Math.round((100 * loaded) / Math.max(total, 1)));
-                        setTransferUi((u) => (u ? { ...u, pct } : null));
-                      },
-                    });
-                  } finally {
-                    endTransfer();
-                  }
-                })()
-              }
-              className={`${toolbarBtnBase} bg-[var(--color-provin-accent)] text-white hover:opacity-95 sm:hover:opacity-95`}
-            >
-              <Save className="h-6 w-6 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
-              <span className="hidden text-[13px] font-semibold sm:inline">{busy || !!transferUi ? "Saglabā…" : "Saglabāt"}</span>
-            </button>
-            <button
-              type="button"
-              disabled={!!transferUi}
-              title="Ģenerēt PDF"
-              aria-label="Ģenerēt PDF"
-              onClick={() => void openPdf()}
-              className={`${toolbarBtnBase} border border-[var(--color-provin-accent)]/35 bg-[var(--color-provin-accent-soft)]/60 text-[var(--color-provin-accent)] hover:bg-[var(--color-provin-accent-soft)] sm:hover:bg-[var(--color-provin-accent-soft)]`}
-            >
-              <FileDown className="h-6 w-6 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
-              <span className="hidden text-[13px] font-semibold sm:inline">Ģenerēt PDF</span>
-            </button>
-          </div>
-        </div>
         </div>
         {saveMsg ? (
           <p className="mt-2 text-[12px] font-medium text-[var(--color-provin-muted)]" role="status">
@@ -967,27 +1028,8 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
             <button
               type="button"
               disabled={busy || !!transferUi}
-              onClick={() =>
-                void (async () => {
-                  setPdfRetryBar(null);
-                  beginTransfer(
-                    "Augšupielādē foto un saglabā",
-                    "Nelietojiet pārlūka atsvaidzināšanu — gaidiet, līdz pāriet uz sarakstu.",
-                  );
-                  try {
-                    await save({
-                      redirectToList: true,
-                      onUploadProgress: (loaded, total) => {
-                        const pct = Math.min(99, Math.round((100 * loaded) / Math.max(total, 1)));
-                        setTransferUi((u) => (u ? { ...u, pct } : null));
-                      },
-                    });
-                  } finally {
-                    endTransfer();
-                  }
-                })()
-              }
-              className="inline-flex min-h-[44px] w-full shrink-0 items-center justify-center rounded-full bg-[var(--color-provin-accent)] px-4 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50 sm:w-auto"
+              onClick={saveRedirectToList}
+              className="inline-flex min-h-[44px] w-full shrink-0 items-center justify-center rounded-full border border-[var(--color-provin-accent)] bg-transparent px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent)]/8 disabled:opacity-50 sm:w-auto"
             >
               {busy || !!transferUi ? "Saglabā…" : "Saglabāt"}
             </button>
@@ -1009,131 +1051,156 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
 
       {offerOpen ? (
         <div
-          className="fixed inset-0 z-[120] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
+          className="fixed inset-0 z-[120] flex items-end justify-center overscroll-y-contain bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
           onClick={() => !offerBusy && !offerFilePrepare && setOfferOpen(false)}
           role="presentation"
         >
           <div
             role="dialog"
             aria-modal="true"
-            className="w-full max-w-2xl rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xl sm:p-5"
+            className="flex max-h-[min(92dvh,920px)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-base font-semibold text-[var(--color-apple-text)]">{offerDraft.title}</h2>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <LabeledInput
-                label="Marka/modelis"
-                value={offerDraft.brandModel}
-                onChange={(e) => setOfferDraft((d) => ({ ...d, brandModel: e.target.value }))}
-              />
-              <LabeledInput
-                label="Gads"
-                value={offerDraft.year}
-                onChange={(e) => setOfferDraft((d) => ({ ...d, year: e.target.value }))}
-              />
-              <LabeledInput
-                label="Nobraukums"
-                value={offerDraft.mileage}
-                onChange={(e) => setOfferDraft((d) => ({ ...d, mileage: e.target.value }))}
-              />
-              <LabeledInput
-                label="Cena Vācijā"
-                value={offerDraft.priceGermany}
-                onChange={(e) => setOfferDraft((d) => ({ ...d, priceGermany: e.target.value }))}
-              />
-            </div>
-            <div className="mt-3">
-              <LabeledTextarea
-                label="Komentāri"
-                value={offerDraft.comment}
-                onChange={(e) => setOfferDraft((d) => ({ ...d, comment: e.target.value }))}
-              />
-            </div>
-            <div className="mt-3 rounded-xl border border-slate-200/90 bg-slate-50/50 p-3">
-              <label
-                className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 ${offerFilePrepare ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
-              >
-                <Paperclip className="h-4 w-4" aria-hidden />
-                Pievienot failus
-                <input
-                  type="file"
-                  multiple
-                  disabled={!!offerFilePrepare}
-                  className="hidden"
-                  onChange={(e) => {
-                    void onOfferFilesPick(e.target.files);
-                    e.currentTarget.value = "";
-                  }}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 [-webkit-overflow-scrolling:touch] pt-4 sm:px-5 sm:pt-5">
+              <h2 className="text-base font-semibold text-[var(--color-apple-text)]">{offerDraft.title}</h2>
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <LabeledInput
+                  label="Marka/modelis"
+                  value={offerDraft.brandModel}
+                  onChange={(e) => setOfferDraft((d) => ({ ...d, brandModel: e.target.value }))}
                 />
-              </label>
-              {offerFilePrepare ? (
-                <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3" role="status" aria-live="polite">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-5 w-5 shrink-0 animate-spin text-[var(--color-provin-accent)]" aria-hidden />
-                    <span className="text-[12px] font-medium text-[var(--color-apple-text)]">{offerFilePrepare.label}</span>
+                <LabeledInput
+                  label="Gads"
+                  value={offerDraft.year}
+                  onChange={(e) => setOfferDraft((d) => ({ ...d, year: e.target.value }))}
+                />
+                <LabeledInput
+                  label="Nobraukums"
+                  value={offerDraft.mileage}
+                  onChange={(e) => setOfferDraft((d) => ({ ...d, mileage: e.target.value }))}
+                />
+                <LabeledInput
+                  label="Cena Vācijā"
+                  value={offerDraft.priceGermany}
+                  onChange={(e) => setOfferDraft((d) => ({ ...d, priceGermany: e.target.value }))}
+                />
+              </div>
+              <div className="mt-3">
+                <LabeledTextarea
+                  label="Komentāri"
+                  value={offerDraft.comment}
+                  onChange={(e) => setOfferDraft((d) => ({ ...d, comment: e.target.value }))}
+                />
+              </div>
+              <div className="mt-3 rounded-xl border border-slate-200/90 bg-slate-50/50 p-3">
+                <label
+                  className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 ${offerFilePrepare ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
+                >
+                  <Paperclip className="h-4 w-4" aria-hidden />
+                  Pievienot failus
+                  <input
+                    type="file"
+                    multiple
+                    disabled={!!offerFilePrepare}
+                    className="hidden"
+                    onChange={(e) => {
+                      void onOfferFilesPick(e.target.files);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+                {offerFilePrepare ? (
+                  <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3" role="status" aria-live="polite">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-5 w-5 shrink-0 animate-spin text-[var(--color-provin-accent)]" aria-hidden />
+                      <span className="text-[12px] font-medium text-[var(--color-apple-text)]">{offerFilePrepare.label}</span>
+                    </div>
+                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                      <div
+                        className="h-full rounded-full bg-[var(--color-provin-accent)] transition-[width] duration-150"
+                        style={{ width: `${offerFilePrepare.pct}%` }}
+                      />
+                    </div>
+                    <p className="mt-1 text-[11px] tabular-nums text-slate-500">{offerFilePrepare.pct}%</p>
                   </div>
-                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                    <div
-                      className="h-full rounded-full bg-[var(--color-provin-accent)] transition-[width] duration-150"
-                      style={{ width: `${offerFilePrepare.pct}%` }}
-                    />
+                ) : null}
+                {offerDraft.attachments.length > 0 ? (
+                  <div className="mt-3">
+                    <p className="text-[10px] font-medium text-slate-500">Velc, lai mainītu foto secību.</p>
+                    <Reorder.Group
+                      axis="x"
+                      values={offerDraft.attachments}
+                      onReorder={(next) => setOfferDraft((d) => ({ ...d, attachments: next }))}
+                      className="mt-2 flex list-none flex-row flex-nowrap gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]"
+                    >
+                      {offerDraft.attachments.map((a) => (
+                        <Reorder.Item
+                          key={a.id}
+                          value={a}
+                          className="relative shrink-0 touch-none"
+                          style={{ WebkitTouchCallout: "none" }}
+                        >
+                          <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                            {/* eslint-disable-next-line @next/next/no-img-element -- data URL, nav next/image */}
+                            <img src={a.dataUrl} alt="" className="h-full w-full object-cover" draggable={false} />
+                            <button
+                              type="button"
+                              title="Noņemt"
+                              aria-label="Noņemt attēlu"
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onClick={() =>
+                                setOfferDraft((d) => ({ ...d, attachments: d.attachments.filter((x) => x.id !== a.id) }))
+                              }
+                              className="absolute right-0.5 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded bg-black/55 px-1 text-[10px] font-bold text-white shadow-sm"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </Reorder.Item>
+                      ))}
+                    </Reorder.Group>
                   </div>
-                  <p className="mt-1 text-[11px] tabular-nums text-slate-500">{offerFilePrepare.pct}%</p>
-                </div>
-              ) : null}
-              {offerDraft.attachments.length > 0 ? (
-                <ul className="mt-2 space-y-1">
-                  {offerDraft.attachments.map((a) => (
-                    <li key={a.id} className="flex items-center justify-between gap-2 text-[12px] text-[var(--color-provin-muted)]">
-                      <span className="truncate">{a.name}</span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setOfferDraft((d) => ({ ...d, attachments: d.attachments.filter((x) => x.id !== a.id) }))
-                        }
-                        className="rounded-md px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50"
-                      >
-                        Noņemt
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
+                ) : null}
+              </div>
             </div>
-            <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-              <button
-                type="button"
-                disabled={offerBusy || !!offerFilePrepare}
-                onClick={() => setOfferOpen(false)}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
-              >
-                Atcelt
-              </button>
-              <button
-                type="button"
-                disabled={offerBusy || offerPdfPreviewBusy || !!offerFilePrepare}
-                onClick={() => void openOfferPdfPreview()}
-                className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold uppercase tracking-[0.06em] text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
-              >
-                <Eye className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
-                {offerPdfPreviewBusy ? "Atver…" : "APSKATĪT"}
-              </button>
-              <button
-                type="button"
-                disabled={offerBusy || !!offerFilePrepare}
-                onClick={() => void persistOffer(false)}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[var(--color-provin-accent)] px-4 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
-              >
-                Saglabāt
-              </button>
-              <button
-                type="button"
-                disabled={offerBusy || !!offerFilePrepare}
-                onClick={() => void persistOffer(true)}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--color-provin-accent)]/35 bg-[var(--color-provin-accent-soft)]/60 px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent-soft)] disabled:opacity-50"
-              >
-                Saglabāt + Ģenerēt PDF
-              </button>
+            <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3 sm:px-5">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={offerBusy || !!offerFilePrepare}
+                  onClick={() => setOfferOpen(false)}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Atcelt
+                </button>
+                {showOfferPdfView ? (
+                  <button
+                    type="button"
+                    disabled={offerBusy || offerPdfPreviewBusy || !!offerFilePrepare}
+                    onClick={() => void openOfferPdfPreview()}
+                    className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    <Eye className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
+                    {offerPdfPreviewBusy ? "Atver…" : "Apskatīt"}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={offerBusy || !!offerFilePrepare}
+                  onClick={() => void persistOffer(false)}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--color-provin-accent)] bg-transparent px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent)]/8 disabled:opacity-50"
+                >
+                  Saglabāt
+                </button>
+                <button
+                  type="button"
+                  disabled={offerBusy || !!offerFilePrepare}
+                  onClick={() => void persistOffer(true)}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--color-provin-accent)]/35 bg-[var(--color-provin-accent-soft)]/60 px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent-soft)] disabled:opacity-50"
+                >
+                  PDF
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1141,7 +1208,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
 
       {offerPdfPreviewUrl ? (
         <div
-          className="fixed inset-0 z-[140] flex flex-col justify-end bg-black/50 sm:items-center sm:justify-center sm:p-4"
+          className="fixed inset-0 z-[140] flex flex-col justify-end overscroll-y-contain bg-black/50 sm:items-center sm:justify-center sm:p-4"
           onClick={() => closeOfferPdfPreview()}
           role="presentation"
         >
@@ -1176,7 +1243,13 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                 Aizvērt
               </button>
             </div>
-            <iframe title="Piedāvājuma PDF" className="min-h-0 flex-1 w-full border-0 bg-slate-100" src={offerPdfPreviewUrl} />
+            <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] bg-slate-100">
+              <iframe
+                title="Piedāvājuma PDF"
+                className="block h-[min(78dvh,820px)] w-full border-0 sm:absolute sm:inset-0 sm:h-full sm:min-h-0"
+                src={offerPdfPreviewUrl}
+              />
+            </div>
           </div>
         </div>
       ) : null}
