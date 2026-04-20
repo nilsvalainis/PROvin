@@ -1,6 +1,6 @@
 "use client";
 
-import { FileDown, Home, Save } from "lucide-react";
+import { ArrowLeft, FileDown, Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
@@ -51,7 +51,7 @@ function LabeledTextarea({
   );
 }
 
-type DeleteDialog = "closed" | "step1" | "step2";
+type DeleteDialog = "closed" | "confirm";
 
 export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissPasutijumsRecord }) {
   const router = useRouter();
@@ -169,7 +169,17 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   return (
     <div className="w-full max-w-none pb-28 sm:pb-8">
       <AdminDashboardHeaderWithMenu>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-2">
+        <div className="flex flex-col gap-2">
+          <Link
+            href="/admin/iriss/pasutijumi"
+            title="Atpakaļ"
+            aria-label="Atpakaļ"
+            className="inline-flex min-h-10 items-center gap-1.5 self-start rounded-full border border-slate-200/90 bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
+          >
+            <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2.3} aria-hidden />
+            <span>Atpakaļ</span>
+          </Link>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-2">
           <div className="hidden min-w-0 md:block">
             <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
               IRISS · PASŪTĪJUMI
@@ -179,15 +189,6 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
             </h1>
           </div>
           <div className="flex shrink-0 flex-nowrap items-center justify-end gap-1 sm:flex-wrap sm:gap-2">
-            <Link
-              href="/admin/iriss/pasutijumi"
-              title="Sākums"
-              aria-label="Sākums"
-              className={`${toolbarBtnBase} border border-slate-200/90 bg-white text-[var(--color-provin-accent)] hover:bg-slate-50 sm:hover:bg-slate-50`}
-            >
-              <Home className="h-6 w-6 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
-              <span className="hidden text-[13px] font-medium sm:inline">Sākums</span>
-            </Link>
             <button
               type="button"
               disabled={busy}
@@ -210,6 +211,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               <span className="hidden text-[13px] font-semibold sm:inline">Ģenerēt PDF</span>
             </button>
           </div>
+        </div>
         </div>
         {saveMsg ? (
           <p className="mt-2 text-[12px] font-medium text-[var(--color-provin-muted)]" role="status">
@@ -338,15 +340,25 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
 
         <section className={`${shellCard} border-red-200/50 bg-red-50/20`}>
           <p className="mb-3 text-[12px] leading-relaxed text-red-950/85">
-            Neatgriezeniski dzēš pasūtījumu no melnraksta. Pirms dzēšanas tiks prasīts atkārtots apstiprinājums.
+            Neatgriezeniski dzēš pasūtījumu no melnraksta. Pirms dzēšanas tiks prasīts apstiprinājums.
           </p>
-          <button
-            type="button"
-            onClick={() => setDeleteDialog("step1")}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-red-300/90 bg-white px-4 text-[13px] font-semibold text-red-800 shadow-sm transition hover:bg-red-50"
-          >
-            Dzēst pasūtījumu
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void save()}
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[var(--color-provin-accent)] px-4 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
+            >
+              {busy ? "Saglabā…" : "Saglabāt"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeleteDialog("confirm")}
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-red-300/90 bg-white px-4 text-[13px] font-semibold text-red-800 shadow-sm transition hover:bg-red-50"
+            >
+              Dzēst pasūtījumu
+            </button>
+          </div>
         </section>
       </div>
 
@@ -363,40 +375,13 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
             className="w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xl sm:p-5"
             onClick={(e) => e.stopPropagation()}
           >
-            {deleteDialog === "step1" ? (
+            {deleteDialog === "confirm" ? (
               <>
                 <h2 id="iriss-delete-dialog-title" className="text-base font-semibold text-[var(--color-apple-text)]">
                   Dzēst pasūtījumu?
                 </h2>
                 <p className="mt-2 text-sm leading-relaxed text-[var(--color-provin-muted)]">
-                  Vai tiešām vēlaties dzēst šo pasūtījumu? Nākamajā solī būs jāapstiprina vēlreiz — dzēšanu nevar atsaukt.
-                </p>
-                <div className="mt-5 flex flex-wrap justify-end gap-2">
-                  <button
-                    type="button"
-                    disabled={deleteBusy}
-                    onClick={() => setDeleteDialog("closed")}
-                    className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
-                  >
-                    Atcelt
-                  </button>
-                  <button
-                    type="button"
-                    disabled={deleteBusy}
-                    onClick={() => setDeleteDialog("step2")}
-                    className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-slate-800 px-4 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
-                  >
-                    Jā, turpināt
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <h2 id="iriss-delete-dialog-title" className="text-base font-semibold text-red-950">
-                  Pēdējais apstiprinājums
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-red-900/90">
-                  Vai tiešām dzēst? Ieraksts pazudīs no saraksta un glabātavas neatgriezeniski.
+                  Vai tiešām vēlaties dzēst šo pasūtījumu? Dzēšanu nevar atsaukt.
                 </p>
                 <div className="mt-5 flex flex-wrap justify-end gap-2">
                   <button
@@ -417,7 +402,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                   </button>
                 </div>
               </>
-            )}
+            ) : null}
           </div>
         </div>
       ) : null}
