@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowLeft, FileDown, Phone, Save } from "lucide-react";
+import { ArrowLeft, FileDown, Paperclip, Phone, Plus, Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
-import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import type { IrissOfferAttachment, IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 /** Mobilajā — kvadrātveida FAB (`rounded-xl`); no `sm:` — apaļas pogas ar tekstu. */
 const toolbarBtnBase =
@@ -18,6 +18,48 @@ const fieldClass =
   "min-h-[44px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[16px] text-[var(--color-apple-text)] shadow-sm outline-none transition focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
 
 const textareaClass = `${fieldClass} min-h-[100px] resize-y py-2.5 leading-snug`;
+
+function normalizePhoneForLv(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("+")) {
+    const cleaned = `+${trimmed.slice(1).replace(/[^\d]/g, "")}`;
+    if (cleaned.startsWith("+371")) return cleaned;
+    return cleaned;
+  }
+  const digits = trimmed.replace(/[^\d]/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("00371")) return `+${digits.slice(2)}`;
+  if (digits.startsWith("371")) return `+${digits}`;
+  return `+371${digits}`;
+}
+
+type OfferDraft = {
+  id: string;
+  title: string;
+  brandModel: string;
+  year: string;
+  mileage: string;
+  priceGermany: string;
+  comment: string;
+  attachments: IrissOfferAttachment[];
+  createdAt: string;
+};
+
+function newOfferDraft(nextNumber: number): OfferDraft {
+  const now = new Date().toISOString();
+  return {
+    id: crypto.randomUUID(),
+    title: `Piedāvājums ${nextNumber}`,
+    brandModel: "",
+    year: "",
+    mileage: "",
+    priceGermany: "",
+    comment: "",
+    attachments: [],
+    createdAt: now,
+  };
+}
 
 function BlockTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -56,6 +98,9 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   const [rec, setRec] = useState<IrissPasutijumsRecord>(initialRecord);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [offerOpen, setOfferOpen] = useState(false);
+  const [offerBusy, setOfferBusy] = useState(false);
+  const [offerDraft, setOfferDraft] = useState<OfferDraft>(() => newOfferDraft(1));
   const lastSavedSnapshot = useRef(JSON.stringify(initialRecord));
   const autosaveTimer = useRef<number | null>(null);
   const autosaveInFlight = useRef(false);
@@ -68,13 +113,13 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     setRec((r) => ({ ...r, ...p }));
   }, []);
 
-  const save = useCallback(async (opts?: { redirectToList?: boolean; silent?: boolean }) => {
+  const save = useCallback(async (opts?: { redirectToList?: boolean; silent?: boolean; payload?: IrissPasutijumsRecord }) => {
     const redirectToList = opts?.redirectToList === true;
     const silent = opts?.silent === true;
-    const payload = rec;
+    const payload = opts?.payload ?? rec;
     if (!silent) setBusy(true);
     if (!silent) setSaveMsg(null);
-    if (silent && autosaveInFlight.current) return;
+    if (silent && autosaveInFlight.current) return false;
     if (silent) autosaveInFlight.current = true;
     try {
       const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(payload.id)}`, {
@@ -86,7 +131,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       const data: unknown = await res.json().catch(() => ({}));
       if (!res.ok) {
         if (!silent) setSaveMsg("Neizdevās saglabāt.");
-        return;
+        return false;
       }
       const record =
         typeof data === "object" &&
@@ -100,11 +145,13 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       if (redirectToList) {
         router.push("/admin/iriss/pasutijumi");
         router.refresh();
-        return;
+        return true;
       }
       if (!silent) setSaveMsg("Saglabāts.");
+      return true;
     } catch {
       if (!silent) setSaveMsg("Tīkla kļūda.");
+      return false;
     } finally {
       if (!silent) setBusy(false);
       if (silent) autosaveInFlight.current = false;
@@ -131,7 +178,12 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       return;
     }
     try {
-      await save({ silent: true });
+      const ok = await save({ silent: true });
+      if (!ok) {
+        w.close();
+        alert("Saglabāšana neizdevās.");
+        return;
+      }
       const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/print`, {
         credentials: "include",
       });
@@ -161,22 +213,130 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     }
   }, [rec.id, save]);
 
+  const openCreateOffer = useCallback(() => {
+    setOfferDraft(newOfferDraft(rec.offers.length + 1));
+    setOfferOpen(true);
+  }, [rec.offers.length]);
+
+  const openEditOffer = useCallback((offer: IrissOfferRecord) => {
+    setOfferDraft({
+      id: offer.id,
+      title: offer.title,
+      brandModel: offer.brandModel,
+      year: offer.year,
+      mileage: offer.mileage,
+      priceGermany: offer.priceGermany,
+      comment: offer.comment,
+      attachments: offer.attachments,
+      createdAt: offer.createdAt || new Date().toISOString(),
+    });
+    setOfferOpen(true);
+  }, []);
+
+  const onOfferFilesPick = useCallback(async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const fileArr = Array.from(files).slice(0, 6);
+    const loaded = await Promise.all(
+      fileArr.map(
+        (file) =>
+          new Promise<IrissOfferAttachment | null>((resolve) => {
+            const fr = new FileReader();
+            fr.onload = () => {
+              const dataUrl = typeof fr.result === "string" ? fr.result : "";
+              if (!dataUrl) return resolve(null);
+              resolve({
+                id: crypto.randomUUID(),
+                name: file.name,
+                mimeType: file.type || "application/octet-stream",
+                size: file.size,
+                dataUrl,
+              });
+            };
+            fr.onerror = () => resolve(null);
+            fr.readAsDataURL(file);
+          }),
+      ),
+    );
+    setOfferDraft((d) => ({ ...d, attachments: [...d.attachments, ...loaded.filter((x): x is IrissOfferAttachment => x !== null)].slice(0, 12) }));
+  }, []);
+
+  const persistOffer = useCallback(
+    async (withPdf: boolean) => {
+      setOfferBusy(true);
+      try {
+        const now = new Date().toISOString();
+        const cleanedTitle = offerDraft.title.trim() || `Piedāvājums ${rec.offers.length + 1}`;
+        const offerOut: IrissOfferRecord = {
+          id: offerDraft.id,
+          title: cleanedTitle,
+          brandModel: offerDraft.brandModel,
+          year: offerDraft.year,
+          mileage: offerDraft.mileage,
+          priceGermany: offerDraft.priceGermany,
+          comment: offerDraft.comment,
+          attachments: offerDraft.attachments,
+          createdAt: offerDraft.createdAt || now,
+          updatedAt: now,
+        };
+        const exists = rec.offers.some((o) => o.id === offerOut.id);
+        const nextOffers = exists ? rec.offers.map((o) => (o.id === offerOut.id ? offerOut : o)) : [...rec.offers, offerOut];
+        const renumbered = nextOffers.map((o, idx) => ({ ...o, title: `Piedāvājums ${idx + 1}` }));
+        const nextRec: IrissPasutijumsRecord = { ...rec, offers: renumbered };
+        const ok = await save({ payload: nextRec });
+        if (!ok) return;
+        setOfferOpen(false);
+
+        if (withPdf) {
+          const w = window.open("", "_blank");
+          if (!w) return;
+          const res = await fetch(
+            `/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/offer/${encodeURIComponent(offerOut.id)}/print`,
+            { credentials: "include" },
+          );
+          if (!res.ok) {
+            w.close();
+            return;
+          }
+          const html = await res.text();
+          w.document.open();
+          w.document.write(html);
+          w.document.close();
+          window.setTimeout(() => {
+            try {
+              w.focus();
+              w.print();
+            } catch {
+              /* ignore */
+            }
+          }, 600);
+        }
+      } finally {
+        setOfferBusy(false);
+      }
+    },
+    [offerDraft, rec, save],
+  );
+
   const shellCard = useMemo(
     () => "rounded-xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5",
     [],
   );
 
-  const telHref = useMemo(() => {
-    const trimmed = rec.phone.trim();
-    if (!trimmed) return null;
-    return `tel:${trimmed.replace(/[^+\d]/g, "")}`;
-  }, [rec.phone]);
+  const normalizedPhone = useMemo(() => normalizePhoneForLv(rec.phone), [rec.phone]);
 
-  const whatsappHref = useMemo(() => {
-    const digits = rec.phone.replace(/[^\d]/g, "");
-    if (!digits) return null;
-    return `https://wa.me/${digits}`;
-  }, [rec.phone]);
+  const triggerCall = useCallback(() => {
+    if (!normalizedPhone) return;
+    if (normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
+    window.location.href = `tel:${normalizedPhone}`;
+  }, [normalizedPhone, patch, rec.phone]);
+
+  const triggerWhatsapp = useCallback(() => {
+    if (!normalizedPhone) return;
+    if (normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
+    const digits = normalizedPhone.replace(/[^\d]/g, "");
+    if (!digits) return;
+    window.open(`https://wa.me/${digits}`, "_blank", "noopener,noreferrer");
+  }, [normalizedPhone, patch, rec.phone]);
 
   return (
     <div className="w-full max-w-none pb-28 sm:pb-8">
@@ -196,9 +356,22 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
             <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
               IRISS · PASŪTĪJUMI
             </p>
-            <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
-              Pasūtījums
-            </h1>
+            <div className="mt-1 flex items-center gap-2">
+              <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
+                Pasūtījums
+              </h1>
+              {rec.offers.map((offer, idx) => (
+                <button
+                  key={offer.id}
+                  type="button"
+                  onClick={() => openEditOffer(offer)}
+                  className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
+                  title={offer.title}
+                >
+                  P{idx + 1}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="flex shrink-0 flex-nowrap items-center justify-end gap-1 sm:flex-wrap sm:gap-2">
             <button
@@ -259,20 +432,20 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                   inputMode="tel"
                   autoComplete="tel"
                 />
-                <a
-                  href={telHref ?? undefined}
-                  aria-disabled={!telHref}
+                <button
+                  type="button"
+                  onClick={triggerCall}
+                  disabled={!normalizedPhone}
                   className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 aria-disabled:pointer-events-none aria-disabled:opacity-35"
                   title="Zvanīt"
                   aria-label="Zvanīt"
                 >
                   <Phone className="h-5 w-5" strokeWidth={2.2} aria-hidden />
-                </a>
-                <a
-                  href={whatsappHref ?? undefined}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-disabled={!whatsappHref}
+                </button>
+                <button
+                  type="button"
+                  onClick={triggerWhatsapp}
+                  disabled={!normalizedPhone}
                   className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-200/80 bg-emerald-50 text-emerald-700 shadow-sm transition hover:bg-emerald-100/70 aria-disabled:pointer-events-none aria-disabled:opacity-35"
                   title="Atvērt WhatsApp"
                   aria-label="Atvērt WhatsApp"
@@ -280,7 +453,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                   <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden>
                     <path d="M12.04 2C6.55 2 2.1 6.45 2.1 11.94c0 1.93.55 3.81 1.59 5.43L2 22l4.8-1.61a9.9 9.9 0 0 0 5.24 1.5h.01c5.49 0 9.95-4.45 9.95-9.95A9.96 9.96 0 0 0 12.04 2Zm0 18.1h-.01a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-2.85.95.95-2.78-.19-.29a8.1 8.1 0 0 1-1.25-4.33c0-4.49 3.65-8.14 8.14-8.14a8.1 8.1 0 0 1 5.76 2.38 8.08 8.08 0 0 1 2.38 5.76c0 4.48-3.65 8.13-8.14 8.13Zm4.46-6.06c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.95-1.22a7.34 7.34 0 0 1-1.35-1.67c-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.11.15 1.53.09.47-.07 1.43-.58 1.63-1.13.2-.56.2-1.04.14-1.13-.06-.1-.22-.16-.46-.28Z" />
                   </svg>
-                </a>
+                </button>
               </div>
             </label>
             <LabeledInput
@@ -381,6 +554,14 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
           <div className="flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
+              onClick={openCreateOffer}
+              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+              Izveidot piedāvājumu
+            </button>
+            <button
+              type="button"
               disabled={busy}
               onClick={() => void save({ redirectToList: true })}
               className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[var(--color-provin-accent)] px-4 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
@@ -390,6 +571,110 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
           </div>
         </section>
       </div>
+
+      {offerOpen ? (
+        <div
+          className="fixed inset-0 z-[120] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
+          onClick={() => !offerBusy && setOfferOpen(false)}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-2xl rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xl sm:p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-semibold text-[var(--color-apple-text)]">{offerDraft.title}</h2>
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <LabeledInput
+                label="Marka/modelis"
+                value={offerDraft.brandModel}
+                onChange={(e) => setOfferDraft((d) => ({ ...d, brandModel: e.target.value }))}
+              />
+              <LabeledInput
+                label="Gads"
+                value={offerDraft.year}
+                onChange={(e) => setOfferDraft((d) => ({ ...d, year: e.target.value }))}
+              />
+              <LabeledInput
+                label="Nobraukums"
+                value={offerDraft.mileage}
+                onChange={(e) => setOfferDraft((d) => ({ ...d, mileage: e.target.value }))}
+              />
+              <LabeledInput
+                label="Cena Vācijā"
+                value={offerDraft.priceGermany}
+                onChange={(e) => setOfferDraft((d) => ({ ...d, priceGermany: e.target.value }))}
+              />
+            </div>
+            <div className="mt-3">
+              <LabeledTextarea
+                label="Komentāri"
+                value={offerDraft.comment}
+                onChange={(e) => setOfferDraft((d) => ({ ...d, comment: e.target.value }))}
+              />
+            </div>
+            <div className="mt-3 rounded-xl border border-slate-200/90 bg-slate-50/50 p-3">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50">
+                <Paperclip className="h-4 w-4" aria-hidden />
+                Pievienot failus
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    void onOfferFilesPick(e.target.files);
+                    e.currentTarget.value = "";
+                  }}
+                />
+              </label>
+              {offerDraft.attachments.length > 0 ? (
+                <ul className="mt-2 space-y-1">
+                  {offerDraft.attachments.map((a) => (
+                    <li key={a.id} className="flex items-center justify-between gap-2 text-[12px] text-[var(--color-provin-muted)]">
+                      <span className="truncate">{a.name}</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOfferDraft((d) => ({ ...d, attachments: d.attachments.filter((x) => x.id !== a.id) }))
+                        }
+                        className="rounded-md px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50"
+                      >
+                        Noņemt
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setOfferOpen(false)}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50"
+              >
+                Atcelt
+              </button>
+              <button
+                type="button"
+                disabled={offerBusy}
+                onClick={() => void persistOffer(false)}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[var(--color-provin-accent)] px-4 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
+              >
+                Saglabāt
+              </button>
+              <button
+                type="button"
+                disabled={offerBusy}
+                onClick={() => void persistOffer(true)}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--color-provin-accent)]/35 bg-[var(--color-provin-accent-soft)]/60 px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent-soft)] disabled:opacity-50"
+              >
+                Saglabāt + Ģenerēt PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

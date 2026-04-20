@@ -7,6 +7,8 @@ import path from "path";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import {
   emptyIrissPasutijums,
+  type IrissOfferAttachment,
+  type IrissOfferRecord,
   type IrissPasutijumsListRow,
   type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
@@ -158,6 +160,53 @@ function normalizeOtherLinks(raw: unknown): string[] {
   return mapped.length > 0 ? mapped : [""];
 }
 
+function normalizeOfferAttachments(raw: unknown): IrissOfferAttachment[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const o = item as Record<string, unknown>;
+      const id = sanitizeDraftTextForStorage(typeof o.id === "string" ? o.id : "", 64);
+      const name = sanitizeDraftTextForStorage(typeof o.name === "string" ? o.name : "", 160);
+      const mimeType = sanitizeDraftTextForStorage(typeof o.mimeType === "string" ? o.mimeType : "", 120);
+      const dataUrl = sanitizeDraftTextForStorage(typeof o.dataUrl === "string" ? o.dataUrl : "", 800_000);
+      const sizeRaw = typeof o.size === "number" ? o.size : Number.parseInt(String(o.size ?? "0"), 10);
+      const size = Number.isFinite(sizeRaw) ? Math.max(0, Math.min(sizeRaw, 10_000_000)) : 0;
+      if (!id || !name || !dataUrl) return null;
+      return { id, name, mimeType, size, dataUrl };
+    })
+    .filter((x): x is IrissOfferAttachment => x !== null)
+    .slice(0, 12);
+}
+
+function normalizeOffers(raw: unknown): IrissOfferRecord[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item, idx) => {
+      if (!item || typeof item !== "object") return null;
+      const o = item as Record<string, unknown>;
+      const id = sanitizeDraftTextForStorage(typeof o.id === "string" ? o.id : "", 64);
+      if (!id) return null;
+      const title = sanitizeDraftTextForStorage(typeof o.title === "string" ? o.title : `Piedāvājums ${idx + 1}`, 80);
+      const createdAt = sanitizeDraftTextForStorage(typeof o.createdAt === "string" ? o.createdAt : "", 64);
+      const updatedAt = sanitizeDraftTextForStorage(typeof o.updatedAt === "string" ? o.updatedAt : "", 64);
+      return {
+        id,
+        title: title || `Piedāvājums ${idx + 1}`,
+        brandModel: sanitizeDraftTextForStorage(typeof o.brandModel === "string" ? o.brandModel : "", 320),
+        year: sanitizeDraftTextForStorage(typeof o.year === "string" ? o.year : "", 64),
+        mileage: sanitizeDraftTextForStorage(typeof o.mileage === "string" ? o.mileage : "", 120),
+        priceGermany: sanitizeDraftTextForStorage(typeof o.priceGermany === "string" ? o.priceGermany : "", 120),
+        comment: sanitizeDraftTextForStorage(typeof o.comment === "string" ? o.comment : ""),
+        attachments: normalizeOfferAttachments(o.attachments),
+        createdAt,
+        updatedAt,
+      };
+    })
+    .filter((x): x is IrissOfferRecord => x !== null)
+    .slice(0, 30);
+}
+
 function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null {
   if (!raw || typeof raw !== "object") return null;
   const o = deepSanitizeDraftStrings(raw) as Record<string, unknown>;
@@ -191,6 +240,7 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     listingLinkOpenline: sanitizeDraftTextForStorage(str("listingLinkOpenline"), 2048),
     listingLinkAuto1: sanitizeDraftTextForStorage(str("listingLinkAuto1"), 2048),
     listingLinksOther: normalizeOtherLinks(o.listingLinksOther),
+    offers: normalizeOffers(o.offers),
   };
 }
 

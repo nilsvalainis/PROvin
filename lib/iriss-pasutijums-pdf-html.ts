@@ -1,5 +1,5 @@
 import { IRISS_BRAND_ORANGE_HEX, IRISS_COMPANY_LINES } from "@/lib/iriss-brand";
-import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import type { IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 function esc(s: string): string {
   return s
@@ -91,4 +91,66 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
   </div>`;
 
   return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><title>PASŪTĪJUMS</title><style>${css}</style></head><body>${body}</body></html>`;
+}
+
+export function buildIrissOfferPrintHtml(
+  record: IrissPasutijumsRecord,
+  offer: IrissOfferRecord,
+  generatedAtFormatted: string,
+): string {
+  const accent = IRISS_BRAND_ORANGE_HEX;
+  const legal = IRISS_COMPANY_LINES.map((l) => `<p>${esc(l)}</p>`).join("");
+  const clientTable = `<table class="grid">${row(
+    "Klients",
+    `${record.clientFirstName} ${record.clientLastName}`.trim(),
+  )}${row("Tālrunis", record.phone)}${row("E-pasts", record.email)}</table>`;
+  const offerTable = `<table class="grid">${row("Marka/modelis", offer.brandModel)}${row(
+    "Gads",
+    offer.year,
+  )}${row("Nobraukums", offer.mileage)}${row("Cena Vācijā", offer.priceGermany)}</table>`;
+  const comments = `<pre class="notes">${esc(offer.comment.trim() || "—")}</pre>`;
+  const files =
+    offer.attachments.length > 0
+      ? `<table class="grid">${offer.attachments
+          .map((a, i) => `<tr><th>Fails ${i + 1}</th><td>${esc(a.name)}</td></tr>`)
+          .join("")}</table>`
+      : `<p class="meta">Faili nav pievienoti.</p>`;
+
+  const css = `
+    @page { margin: 14mm; }
+    * { box-sizing: border-box; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color: #1d1d1f; font-size: 11px; line-height: 1.45; margin: 0; padding: 12px 14px 24px; }
+    .doc { max-width: 720px; margin: 0 auto; }
+    .hero { border-bottom: 3px solid ${accent}; padding-bottom: 10px; margin-bottom: 14px; }
+    h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.06em; margin: 0 0 4px; color: ${accent}; text-transform: uppercase; }
+    .meta { color: #6b7280; font-size: 10px; margin: 0; }
+    .blk { margin-bottom: 16px; page-break-inside: avoid; }
+    .blk-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+      color: ${accent}; border-left: 4px solid ${accent}; padding: 4px 0 4px 10px; margin: 0 0 8px; background: rgba(239,125,26,0.06); }
+    table.grid { width: 100%; border-collapse: collapse; }
+    table.grid th { text-align: left; width: 32%; padding: 6px 8px; vertical-align: top; color: #4b5563;
+      font-weight: 600; font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #e5e7eb; }
+    table.grid td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; white-space: pre-wrap; }
+    pre { margin: 0; font-family: inherit; white-space: pre-wrap; word-break: break-word; }
+    .notes { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; min-height: 60px; }
+    footer.legal { margin-top: 22px; padding-top: 12px; border-top: 2px solid ${accent}; font-size: 9px; color: #4b5563; line-height: 1.5; }
+    footer.legal p { margin: 0 0 4px; }
+  `;
+
+  const body = `<div class="doc">
+    <header class="hero">
+      <h1>${esc(offer.title || "Piedāvājums")}</h1>
+      <p class="meta">${esc(generatedAtFormatted)}</p>
+    </header>
+    ${block("Klienta dati", clientTable)}
+    ${block("Piedāvājuma dati", offerTable)}
+    ${block("Komentāri", comments)}
+    ${block("Pievienotie faili", files)}
+    <footer class="legal">${legal}</footer>
+  </div>`;
+
+  return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><title>${esc(
+    offer.title || "Piedāvājums",
+  )}</title><style>${css}</style></head><body>${body}</body></html>`;
 }

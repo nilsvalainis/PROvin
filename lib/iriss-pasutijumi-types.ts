@@ -2,6 +2,27 @@
  * IRISS admin — pasūtījumu ieraksti (JSON uz disku, neatkarīgi no PROVIN Stripe pasūtījumiem).
  */
 
+export type IrissOfferAttachment = {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  dataUrl: string;
+};
+
+export type IrissOfferRecord = {
+  id: string;
+  title: string;
+  brandModel: string;
+  year: string;
+  mileage: string;
+  priceGermany: string;
+  comment: string;
+  attachments: IrissOfferAttachment[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type IrissPasutijumsRecord = {
   id: string;
   createdAt: string;
@@ -30,6 +51,8 @@ export type IrissPasutijumsRecord = {
   listingLinkAuto1: string;
   /** „Citi” — vairākas rindas; tukšās pirms saglabāšanas var apvienot. */
   listingLinksOther: string[];
+  /** Piedāvājumi klientam (var būt vairāki). */
+  offers: IrissOfferRecord[];
 };
 
 export type IrissPasutijumsListRow = {
@@ -74,5 +97,6 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     listingLinkOpenline: "",
     listingLinkAuto1: "",
     listingLinksOther: [""],
+    offers: [],
   };
 }
