@@ -4,7 +4,6 @@ import { Menu, Pin, Trash2 } from "lucide-react";
 import { motion, Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { IrissListingPlatformChipsInline } from "@/components/admin/IrissListingPlatformChipsInline";
 import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
 import {
   buildListingPlatformChips,
@@ -163,6 +162,11 @@ function IrissRowCard({
   const brandFallback = getBrandFallbackLabel(row.brandModel);
   const isPinned = Boolean(row.pinnedAt);
   const isOpen = swipeOpenId === row.id;
+  const openAllListings = () => {
+    for (const chip of chips) {
+      window.open(chip.href, "_blank", "noopener,noreferrer");
+    }
+  };
 
   return (
     <Reorder.Item value={row.id} dragListener={false} dragControls={dragControls} className="list-none" whileDrag={{ scale: 1.01 }}>
@@ -265,21 +269,46 @@ function IrissRowCard({
                       {c.letter}
                     </a>
                   ))}
+                  <button
+                    type="button"
+                    onClick={openAllListings}
+                    title="Atvērt visas saites"
+                    aria-label="Atvērt visas saites"
+                    className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} bg-slate-700 text-white ring-1 ring-slate-800/35`}
+                  >
+                    ALL
+                  </button>
                 </div>
               </div>
             ) : null}
           </div>
           {chips.length > 0 ? (
             <div className="md:hidden">
-              <IrissListingPlatformChipsInline
-                links={{
-                  listingLinkMobile: row.listingLinkMobile,
-                  listingLinkAutobid: row.listingLinkAutobid,
-                  listingLinkOpenline: row.listingLinkOpenline,
-                  listingLinkAuto1: row.listingLinkAuto1,
-                  listingLinksOther: row.listingLinksOther,
-                }}
-              />
+              <div className="border-t border-slate-100/90 bg-slate-50/40 px-3 py-2 sm:px-4 sm:py-2.5">
+                <div role="group" aria-label="Sludinājumu platformu saites" className={LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}>
+                  {chips.map((c, i) => (
+                    <a
+                      key={`${c.href}-${i}`}
+                      href={c.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={c.title}
+                      className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} ${c.chipClass}`}
+                    >
+                      {c.letter}
+                    </a>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={openAllListings}
+                    title="Atvērt visas saites"
+                    aria-label="Atvērt visas saites"
+                    className={`${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} bg-slate-700 text-white ring-1 ring-slate-800/35`}
+                  >
+                    ALL
+                  </button>
+                </div>
+              </div>
             </div>
           ) : null}
         </motion.div>
