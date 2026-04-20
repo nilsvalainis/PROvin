@@ -3,7 +3,7 @@
 import { Menu, Pin, Trash2 } from "lucide-react";
 import { motion, Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
 import {
   buildListingPlatformChips,
@@ -43,6 +43,8 @@ type SortMode =
 
 const ORDER_KEY = "iriss-order-manual-v1";
 const SORT_KEY = "iriss-order-sort-v1";
+const SWIPE_ACTION_WIDTH = 120;
+const SWIPE_OPEN_THRESHOLD = SWIPE_ACTION_WIDTH / 2;
 
 function getBrandToken(brandModel: string): string {
   return brandModel
@@ -147,7 +149,11 @@ function IrissRowCard({
   onPin: (id: string) => void;
   onAskDelete: (id: string) => void;
 }) {
-  const dragControls = useDragControls();
+  const reorderDragControls = useDragControls();
+  const swipeDragControls = useDragControls();
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+  const pointerAxisRef = useRef<"x" | "y" | null>(null);
+  const swipeStartedRef = useRef(false);
   const chips = buildListingPlatformChips(
     {
       listingLinkMobile: row.listingLinkMobile,
@@ -168,16 +174,59 @@ function IrissRowCard({
     }
   };
 
+  const onSwipePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "touch") return;
+    pointerStartRef.current = { x: e.clientX, y: e.clientY };
+    pointerAxisRef.current = null;
+    swipeStartedRef.current = false;
+  };
+
+  const onSwipePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "touch") return;
+    const start = pointerStartRef.current;
+    if (!start) return;
+    if (pointerAxisRef.current === "y") return;
+
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+
+    if (!pointerAxisRef.current) {
+      if (absX < 8 && absY < 8) return;
+      pointerAxisRef.current = absY > absX ? "y" : "x";
+    }
+    if (pointerAxisRef.current !== "x" || swipeStartedRef.current) return;
+
+    swipeStartedRef.current = true;
+    swipeDragControls.start(e, { snapToCursor: false });
+  };
+
+  const onSwipePointerEnd = () => {
+    pointerStartRef.current = null;
+    pointerAxisRef.current = null;
+    swipeStartedRef.current = false;
+  };
+
   return (
-    <Reorder.Item value={row.id} dragListener={false} dragControls={dragControls} className="list-none" whileDrag={{ scale: 1.01 }}>
+    <Reorder.Item
+      value={row.id}
+      dragListener={false}
+      dragControls={reorderDragControls}
+      className="list-none"
+      whileDrag={{ scale: 1.01 }}
+    >
       <div className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:border-slate-300/90 ${
         isPinned ? "border-amber-300/70 bg-amber-50/30" : "border-slate-200/90"
       }`}>
-        <div className="absolute inset-y-0 right-0 z-0 flex md:hidden">
+        <div
+          className="absolute inset-y-0 right-0 z-0 flex items-center justify-end gap-2 pr-2 md:hidden"
+          style={{ width: SWIPE_ACTION_WIDTH }}
+        >
           <button
             type="button"
             onClick={() => onPin(row.id)}
-            className="flex w-16 items-center justify-center bg-[var(--color-provin-accent)] text-white"
+            className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl border border-white/20 bg-sky-500/70 text-white shadow-[0_10px_24px_-12px_rgba(14,116,144,0.9)] backdrop-blur-md transition active:scale-[0.98]"
             aria-label={isPinned ? "Noņemt piespraušanu" : "Piespraust augšā"}
           >
             <Pin className="h-4 w-4" />
@@ -185,7 +234,7 @@ function IrissRowCard({
           <button
             type="button"
             onClick={() => onAskDelete(row.id)}
-            className="flex w-16 items-center justify-center bg-red-600 text-white"
+            className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl border border-white/20 bg-red-500/75 text-white shadow-[0_10px_24px_-12px_rgba(185,28,28,0.95)] backdrop-blur-md transition active:scale-[0.98]"
             aria-label="Dzēst pasūtījumu"
           >
             <Trash2 className="h-4 w-4" />
@@ -193,13 +242,23 @@ function IrissRowCard({
         </div>
 
         <motion.div
+          dragListener={false}
+          dragControls={swipeDragControls}
           drag="x"
-          dragConstraints={{ left: -128, right: 0 }}
+          dragConstraints={{ left: -SWIPE_ACTION_WIDTH, right: 0 }}
           dragElastic={0.08}
           dragMomentum={false}
-          animate={{ x: isOpen ? -128 : 0 }}
+          dragDirectionLock
+          animate={{ x: isOpen ? -SWIPE_ACTION_WIDTH : 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          onPointerDown={onSwipePointerDown}
+          onPointerMove={onSwipePointerMove}
+          onPointerUp={onSwipePointerEnd}
+          onPointerCancel={onSwipePointerEnd}
           onDragEnd={(_, info) => {
-            if (info.offset.x < -44) setSwipeOpenId(row.id);
+            const dragBase = isOpen ? -SWIPE_ACTION_WIDTH : 0;
+            const finalX = Math.max(-SWIPE_ACTION_WIDTH, Math.min(0, dragBase + info.offset.x));
+            if (finalX <= -SWIPE_OPEN_THRESHOLD) setSwipeOpenId(row.id);
             else setSwipeOpenId(null);
           }}
           className="relative z-10 bg-white md:translate-x-0"
@@ -208,7 +267,7 @@ function IrissRowCard({
             {canManualSort ? (
               <button
                 type="button"
-                onPointerDown={(e) => dragControls.start(e)}
+                onPointerDown={(e) => reorderDragControls.start(e)}
                 className="inline-flex shrink-0 items-center justify-center border-r border-slate-100/90 px-2 text-slate-500"
                 title="Pieturi un velc, lai pārkārtotu"
                 aria-label="Pārkārtot rindu"
