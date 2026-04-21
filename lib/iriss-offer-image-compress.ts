@@ -1,15 +1,15 @@
 import type { IrissOfferAttachment } from "@/lib/iriss-pasutijumi-types";
 
 /**
- * PDF šūna ir maza; serveris (`shrink-image-for-iriss-pdf`) tāpat samazina līdz ~800 px.
- * Šeit saspiežam pirms JSON, lai roaming/ārzemēs augšupielāde būtu pēc iespējas lēta (simti KB, ne MB).
+ * PDF šūna ir maza; serveris (`shrink-image-for-iriss-pdf`) tāpat samazina līdz ~640 px.
+ * Šeit saspiežam pirms JSON (līdz ~60 attēliem vienā PATCH), lai ietilptu Next body limit (~12 MB).
  */
-const MAX_LONG_EDGE = 800;
-const TARGET_DECODED_BYTES = 250 * 1024;
-const HARD_MAX_DECODED_BYTES = 720 * 1024;
+const MAX_LONG_EDGE = 640;
+const TARGET_DECODED_BYTES = 110 * 1024;
+const HARD_MAX_DECODED_BYTES = 165 * 1024;
 const MAX_READ_BYTES = 12 * 1024 * 1024;
 
-const JPEG_QUALITIES_DESC = [0.76, 0.68, 0.6, 0.54, 0.48, 0.44, 0.4, 0.36] as const;
+const JPEG_QUALITIES_DESC = [0.72, 0.64, 0.56, 0.5, 0.44, 0.4, 0.36, 0.32, 0.28] as const;
 
 function decodedApproxFromDataUrl(dataUrl: string): number {
   const i = dataUrl.indexOf(",");
@@ -41,7 +41,7 @@ function encodeCanvasToJpegDataUrl(canvas: HTMLCanvasElement): string {
     const url = canvas.toDataURL("image/jpeg", q);
     if (decodedApproxFromDataUrl(url) <= HARD_MAX_DECODED_BYTES) return url;
   }
-  return canvas.toDataURL("image/jpeg", 0.32);
+  return canvas.toDataURL("image/jpeg", 0.26);
 }
 
 function shrinkAndEncodeUntilHardMax(initial: HTMLCanvasElement): string {
@@ -51,8 +51,8 @@ function shrinkAndEncodeUntilHardMax(initial: HTMLCanvasElement): string {
     if (decodedApproxFromDataUrl(url) <= HARD_MAX_DECODED_BYTES) return url;
     const w = canvas.width;
     const h = canvas.height;
-    const nw = Math.max(400, Math.floor(w * 0.85));
-    const nh = Math.max(400, Math.floor(h * 0.85));
+    const nw = Math.max(320, Math.floor(w * 0.85));
+    const nh = Math.max(320, Math.floor(h * 0.85));
     if (nw >= w && nh >= h) return url;
     const next = document.createElement("canvas");
     next.width = nw;
@@ -66,7 +66,7 @@ function shrinkAndEncodeUntilHardMax(initial: HTMLCanvasElement): string {
 }
 
 /**
- * Samazina rasterattēlus līdz tipiski ~200–450 KB (JPEG), saglabājot pietiekamu kvalitāti PDF šūnai.
+ * Samazina rasterattēlus līdz tipiski ~120–200 KB (JPEG), saglabājot pietiekamu kvalitāti PDF šūnai.
  */
 export async function fileToCompressedOfferAttachment(file: File): Promise<IrissOfferAttachment | null> {
   if (file.size > MAX_READ_BYTES) return null;

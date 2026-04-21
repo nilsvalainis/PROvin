@@ -7,7 +7,12 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
-import type { IrissOfferAttachment, IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import {
+  IRISS_MAX_OFFER_ATTACHMENTS,
+  type IrissOfferAttachment,
+  type IrissOfferRecord,
+  type IrissPasutijumsRecord,
+} from "@/lib/iriss-pasutijumi-types";
 import {
   LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS,
   LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
@@ -647,25 +652,31 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     setOfferOpen(true);
   }, []);
 
-  const onOfferFilesPick = useCallback(async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const fileArr = Array.from(files).slice(0, 6);
-    setOfferFilePrepare({ pct: 0, label: "Saspiež attēlus…" });
-    const loaded: IrissOfferAttachment[] = [];
-    for (let i = 0; i < fileArr.length; i++) {
-      const att = await fileToCompressedOfferAttachment(fileArr[i]);
-      if (att) loaded.push(att);
-      setOfferFilePrepare({
-        pct: Math.round(((i + 1) / fileArr.length) * 100),
-        label: "Saspiež attēlus…",
-      });
-    }
-    setOfferFilePrepare(null);
-    setOfferDraft((d) => ({
-      ...d,
-      attachments: [...d.attachments, ...loaded].slice(0, 12),
-    }));
-  }, []);
+  const offerAttachmentCount = offerDraft.attachments.length;
+  const onOfferFilesPick = useCallback(
+    async (files: FileList | null) => {
+      if (!files || files.length === 0) return;
+      const remaining = IRISS_MAX_OFFER_ATTACHMENTS - offerAttachmentCount;
+      if (remaining <= 0) return;
+      const fileArr = Array.from(files).slice(0, Math.min(30, remaining));
+      setOfferFilePrepare({ pct: 0, label: "Saspiež attēlus…" });
+      const loaded: IrissOfferAttachment[] = [];
+      for (let i = 0; i < fileArr.length; i++) {
+        const att = await fileToCompressedOfferAttachment(fileArr[i]);
+        if (att) loaded.push(att);
+        setOfferFilePrepare({
+          pct: Math.round(((i + 1) / fileArr.length) * 100),
+          label: "Saspiež attēlus…",
+        });
+      }
+      setOfferFilePrepare(null);
+      setOfferDraft((d) => ({
+        ...d,
+        attachments: [...d.attachments, ...loaded].slice(0, IRISS_MAX_OFFER_ATTACHMENTS),
+      }));
+    },
+    [offerAttachmentCount],
+  );
 
   const commitOfferDraftToRecord = useCallback(
     async (
@@ -1426,14 +1437,14 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               </div>
               <div className="mt-3 rounded-xl border border-slate-200/90 bg-slate-50/50 p-3 select-none">
                 <label
-                  className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 ${offerFilePrepare ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
+                  className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 ${offerFilePrepare || offerDraft.attachments.length >= IRISS_MAX_OFFER_ATTACHMENTS ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
                 >
                   <Paperclip className="h-4 w-4" aria-hidden />
                   Pievienot failus
                   <input
                     type="file"
                     multiple
-                    disabled={!!offerFilePrepare}
+                    disabled={!!offerFilePrepare || offerDraft.attachments.length >= IRISS_MAX_OFFER_ATTACHMENTS}
                     className="hidden"
                     onChange={(e) => {
                       void onOfferFilesPick(e.target.files);
@@ -1456,6 +1467,9 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                     <p className="mt-1 text-[11px] tabular-nums text-slate-500">{offerFilePrepare.pct}%</p>
                   </div>
                 ) : null}
+                <p className="mt-2 text-[10px] font-medium text-slate-500">
+                  Līdz {IRISS_MAX_OFFER_ATTACHMENTS} attēliem ({offerDraft.attachments.length}/{IRISS_MAX_OFFER_ATTACHMENTS}).
+                </p>
                 {offerDraft.attachments.length > 0 ? (
                   <div className="mt-3">
                     <p className="text-[10px] font-medium text-slate-500">

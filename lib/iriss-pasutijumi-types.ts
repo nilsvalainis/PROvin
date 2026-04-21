@@ -10,6 +10,9 @@ export type IrissOfferAttachment = {
   dataUrl: string;
 };
 
+/** Maks. attēlu / pielikumu skaits vienā piedāvājumā (JSON PATCH ~12 MB ierobežojums). */
+export const IRISS_MAX_OFFER_ATTACHMENTS = 60;
+
 export type IrissOfferRecord = {
   id: string;
   title: string;

@@ -7,8 +7,8 @@ export async function shrinkImageBytesForIrissPdf(input: Buffer): Promise<Uint8A
   const pipeline = () =>
     sharp(input)
       .rotate()
-      .resize(800, 800, { fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: 66, mozjpeg: true });
+      .resize(640, 640, { fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 64, mozjpeg: true });
   try {
     const buf = await pipeline().flatten({ background: "#ffffff" }).toBuffer();
     return new Uint8Array(buf);

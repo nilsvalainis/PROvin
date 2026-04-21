@@ -7,6 +7,7 @@ import path from "path";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import {
   emptyIrissPasutijums,
+  IRISS_MAX_OFFER_ATTACHMENTS,
   type IrissOfferAttachment,
   type IrissOfferRecord,
   type IrissPasutijumiListOrder,
@@ -187,7 +188,7 @@ function normalizeOfferAttachments(raw: unknown): IrissOfferAttachment[] {
       return { id, name, mimeType, size, dataUrl };
     })
     .filter((x): x is IrissOfferAttachment => x !== null)
-    .slice(0, 12);
+    .slice(0, IRISS_MAX_OFFER_ATTACHMENTS);
 }
 
 function normalizeOffers(raw: unknown): IrissOfferRecord[] {

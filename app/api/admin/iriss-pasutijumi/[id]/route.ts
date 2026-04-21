@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import type { IrissOfferAttachment, IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import {
+  IRISS_MAX_OFFER_ATTACHMENTS,
+  type IrissOfferAttachment,
+  type IrissOfferRecord,
+  type IrissPasutijumsRecord,
+} from "@/lib/iriss-pasutijumi-types";
 import {
   deleteIrissPasutijums,
   isSafeIrissPasutijumsId,
@@ -34,7 +39,7 @@ function parseOfferAttachments(raw: unknown): IrissOfferAttachment[] {
       return { id, name, mimeType, dataUrl, size };
     })
     .filter((x): x is IrissOfferAttachment => x !== null)
-    .slice(0, 12);
+    .slice(0, IRISS_MAX_OFFER_ATTACHMENTS);
 }
 
 function parseOffersFromBody(o: Record<string, unknown>): IrissOfferRecord[] {
