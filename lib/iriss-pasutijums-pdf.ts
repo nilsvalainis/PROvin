@@ -31,16 +31,17 @@ async function loadInterFontBytes(): Promise<{ reg: Uint8Array; bold: Uint8Array
   return interFontBytesCache;
 }
 
-/** Admin iOS / IRISS — #007aff */
-const ACCENT = rgb(0, 122 / 255, 1);
+/** PROVIN orange */
+const ACCENT = rgb(239 / 255, 125 / 255, 26 / 255);
 const INK = rgb(29 / 255, 29 / 255, 31 / 255);
 const MUTED = rgb(110 / 255, 110 / 255, 115 / 255);
-const CARD_FILL = rgb(248 / 255, 250 / 255, 252 / 255);
-const CARD_BORDER = rgb(220 / 255, 224 / 255, 232 / 255);
-const PRICE_BAND_FILL = rgb(232 / 255, 242 / 255, 255 / 255);
-const PRICE_BAND_BORDER = rgb(72 / 255, 122 / 255, 198 / 255);
+const CARD_FILL = rgb(252 / 255, 250 / 255, 247 / 255);
+const CARD_BORDER = rgb(239 / 255, 213 / 255, 183 / 255);
+const PRICE_BAND_FILL = rgb(255 / 255, 244 / 255, 232 / 255);
+const PRICE_BAND_BORDER = rgb(217 / 255, 112 / 255, 29 / 255);
 const SECTION_BEFORE = 14;
 const SECTION_AFTER = 10;
+const LETTER_TRACKING = 0.22;
 
 function wrapText(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
   const words = text.split(/\s+/).filter(Boolean);
@@ -48,7 +49,7 @@ function wrapText(text: string, font: PDFFont, fontSize: number, maxWidth: numbe
   let line = "";
   for (const word of words) {
     const test = line ? `${line} ${word}` : word;
-    if (font.widthOfTextAtSize(test, fontSize) <= maxWidth) {
+    if (measureTrackedWidth(test, font, fontSize, LETTER_TRACKING) <= maxWidth) {
       line = test;
     } else {
       if (line) lines.push(line);
@@ -84,6 +85,35 @@ function ensureSpace(ctx: Ctx, need: number): void {
 
 type TextLayout = { x?: number; maxW?: number };
 
+function measureTrackedWidth(text: string, font: PDFFont, size: number, tracking = 0): number {
+  if (!text) return 0;
+  const chars = Array.from(text);
+  let width = 0;
+  for (const ch of chars) width += font.widthOfTextAtSize(ch, size);
+  if (chars.length > 1) width += tracking * (chars.length - 1);
+  return width;
+}
+
+function drawTrackedText(
+  page: PDFPage,
+  text: string,
+  opts: { x: number; y: number; size: number; font: PDFFont; color: ReturnType<typeof rgb>; tracking?: number },
+) {
+  const tracking = opts.tracking ?? LETTER_TRACKING;
+  if (!text) return;
+  let cursor = opts.x;
+  for (const ch of Array.from(text)) {
+    page.drawText(ch, {
+      x: cursor,
+      y: opts.y,
+      size: opts.size,
+      font: opts.font,
+      color: opts.color,
+    });
+    cursor += opts.font.widthOfTextAtSize(ch, opts.size) + tracking;
+  }
+}
+
 function drawTextLine(
   ctx: Ctx,
   text: string,
@@ -94,7 +124,7 @@ function drawTextLine(
   const c = opts?.color ?? INK;
   const x = opts?.x ?? ctx.margin;
   ensureSpace(ctx, lineHeight(size));
-  ctx.page.drawText(text, { x, y: ctx.y, size, font: f, color: c });
+  drawTrackedText(ctx.page, text, { x, y: ctx.y - size, size, font: f, color: c });
   ctx.y -= lineHeight(size);
 }
 
@@ -130,6 +160,7 @@ function drawIosCard(
   drawBody: (inner: { x: number; w: number }) => void,
 ): void {
   const pad = 10;
+  const radius = 10;
   const ix = ctx.margin + pad;
   const iw = ctx.contentW - pad * 2;
   const titleBlock = lineHeight(13) + 6;
@@ -139,11 +170,12 @@ function drawIosCard(
   ctx.y -= SECTION_BEFORE;
   const yTopCard = ctx.y;
   const yRectBottom = yTopCard - h;
-  ctx.page.drawRectangle({
+  drawRoundedRect(ctx.page, {
     x: ctx.margin,
     y: yRectBottom,
     width: ctx.contentW,
     height: h,
+    radius,
     color: CARD_FILL,
     borderColor: CARD_BORDER,
     borderWidth: 0.85,
@@ -153,6 +185,43 @@ function drawIosCard(
   ctx.y -= 6;
   drawBody({ x: ix, w: iw });
   ctx.y = yRectBottom - SECTION_AFTER;
+}
+
+function drawRoundedRect(
+  page: PDFPage,
+  opts: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    radius: number;
+    color: ReturnType<typeof rgb>;
+    borderColor?: ReturnType<typeof rgb>;
+    borderWidth?: number;
+  },
+) {
+  const r = Math.max(0, Math.min(opts.radius, Math.min(opts.width, opts.height) / 2));
+  const x0 = opts.x;
+  const y0 = opts.y;
+  const x1 = opts.x + opts.width;
+  const y1 = opts.y + opts.height;
+  const pathData = [
+    `M ${x0 + r} ${y1}`,
+    `L ${x1 - r} ${y1}`,
+    `A ${r} ${r} 0 0 1 ${x1} ${y1 - r}`,
+    `L ${x1} ${y0 + r}`,
+    `A ${r} ${r} 0 0 1 ${x1 - r} ${y0}`,
+    `L ${x0 + r} ${y0}`,
+    `A ${r} ${r} 0 0 1 ${x0} ${y0 + r}`,
+    `L ${x0} ${y1 - r}`,
+    `A ${r} ${r} 0 0 1 ${x0 + r} ${y1}`,
+    "Z",
+  ].join(" ");
+  page.drawSvgPath(pathData, {
+    color: opts.color,
+    borderColor: opts.borderColor,
+    borderWidth: opts.borderWidth ?? 0,
+  });
 }
 
 /** Tukši lauki PDF netiek iekļauti. */
@@ -283,31 +352,34 @@ function drawKopaHighlightBand(ctx: Ctx, boxX: number, boxW: number, totalPrice:
   ctx.y -= 8;
   const yTop = ctx.y;
   const yBottom = yTop - h;
-  ctx.page.drawRectangle({
+  drawRoundedRect(ctx.page, {
     x: boxX,
     y: yBottom,
     width: boxW,
     height: h,
+    radius: 8,
     color: PRICE_BAND_FILL,
     borderColor: PRICE_BAND_BORDER,
     borderWidth: 1.05,
   });
-  const baseline = yBottom + 18;
-  ctx.page.drawText(label, {
+  const baseline = yBottom + 16;
+  drawTrackedText(ctx.page, label, {
     x: boxX + 12,
     y: baseline,
     size: 12,
     font: ctx.fontBold,
     color: INK,
+    tracking: LETTER_TRACKING,
   });
   const fs = 17;
-  const amtW = ctx.fontBold.widthOfTextAtSize(amountStr, fs);
-  ctx.page.drawText(amountStr, {
+  const amtW = measureTrackedWidth(amountStr, ctx.fontBold, fs, LETTER_TRACKING);
+  drawTrackedText(ctx.page, amountStr, {
     x: boxX + boxW - 14 - amtW,
     y: baseline - 1,
     size: fs,
     font: ctx.fontBold,
     color: INK,
+    tracking: LETTER_TRACKING,
   });
   ctx.y = yBottom - 10;
 }
@@ -319,9 +391,13 @@ async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void
   let dh = 0;
   try {
     const buf = await fs.readFile(DZINTARZEME_OFFER_LOGO_PATH);
-    logo = await ctx.pdfDoc.embedPng(buf);
+    try {
+      logo = await ctx.pdfDoc.embedPng(buf);
+    } catch {
+      logo = await ctx.pdfDoc.embedJpg(buf);
+    }
     const maxW = 56;
-    const maxH = 28;
+    const maxH = 36;
     const s = Math.min(maxW / logo.width, maxH / logo.height, 1);
     dw = logo.width * s;
     dh = logo.height * s;
@@ -334,15 +410,29 @@ async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void
   const titleColW = ctx.contentW - (logo && dh > 0 ? dw + 14 : 0);
   const titleLines = wrapText(heroTitle, ctx.fontBold, 20, titleColW);
   const titleH = titleLines.length * lh20;
-  const rowH = Math.max(dh > 0 ? dh + 4 : 0, titleH);
+  const rowH = Math.max(dh > 0 ? dh + 10 : 0, titleH);
 
   ensureSpace(ctx, rowH + lineHeight(11) + 18);
   const rowTopY = ctx.y;
 
   if (logo && dh > 0) {
+    const logoFrameW = dw + 8;
+    const logoFrameH = dh + 8;
+    const logoX = ctx.margin;
+    const logoY = rowTopY - logoFrameH + 3;
+    drawRoundedRect(ctx.page, {
+      x: logoX,
+      y: logoY,
+      width: logoFrameW,
+      height: logoFrameH,
+      radius: 8,
+      color: rgb(1, 1, 1),
+      borderColor: CARD_BORDER,
+      borderWidth: 0.7,
+    });
     ctx.page.drawImage(logo, {
-      x: ctx.margin,
-      y: rowTopY - dh + 3,
+      x: logoX + 4,
+      y: logoY + 4,
       width: dw,
       height: dh,
     });
@@ -350,12 +440,13 @@ async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void
 
   let ty = rowTopY;
   for (const line of titleLines) {
-    ctx.page.drawText(line, {
+    drawTrackedText(ctx.page, line, {
       x: titleColX,
-      y: ty,
+      y: ty - 20,
       size: 20,
       font: ctx.fontBold,
       color: INK,
+      tracking: LETTER_TRACKING,
     });
     ty -= lh20;
   }
@@ -395,7 +486,7 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
       "Klienta dati",
       (iw) => measureLinesHeight(clientLines, ctx.font, 10, iw),
       ({ x, w }) => {
-        for (const ln of clientLines) drawParagraph(ctx, ln, 10, INK, undefined, { x, maxW: w });
+        for (const ln of clientLines) drawParagraph(ctx, ln, 10, INK, ctx.fontBold, { x, maxW: w });
       },
     );
   }
@@ -420,7 +511,7 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
       "Transportlīdzekļa specifikācija",
       (iw) => measureLinesHeight(vehLines, ctx.font, 10, iw),
       ({ x, w }) => {
-        for (const ln of vehLines) drawParagraph(ctx, ln, 10, INK, undefined, { x, maxW: w });
+        for (const ln of vehLines) drawParagraph(ctx, ln, 10, INK, ctx.fontBold, { x, maxW: w });
       },
     );
   }
@@ -431,7 +522,7 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
       ctx,
       "Obligātās prasības (aprīkojums)",
       (iw) => measureWrappedBlockHeight(req, ctx.font, 10, iw),
-      ({ x, w }) => drawParagraph(ctx, req, 10, INK, undefined, { x, maxW: w }),
+      ({ x, w }) => drawParagraph(ctx, req, 10, INK, ctx.fontBold, { x, maxW: w }),
     );
   }
   const des = val(record.equipmentDesired);
@@ -440,7 +531,7 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
       ctx,
       "Vēlamās prasības (aprīkojums)",
       (iw) => measureWrappedBlockHeight(des, ctx.font, 10, iw),
-      ({ x, w }) => drawParagraph(ctx, des, 10, INK, undefined, { x, maxW: w }),
+      ({ x, w }) => drawParagraph(ctx, des, 10, INK, ctx.fontBold, { x, maxW: w }),
     );
   }
 
@@ -450,7 +541,7 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
       ctx,
       "Piezīmes",
       (iw) => measureWrappedBlockHeight(n, ctx.font, 10, iw),
-      ({ x, w }) => drawParagraph(ctx, n, 10, INK, undefined, { x, maxW: w }),
+      ({ x, w }) => drawParagraph(ctx, n, 10, INK, ctx.fontBold, { x, maxW: w }),
     );
   }
 
@@ -473,7 +564,7 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
       "Sludinājumu saites",
       (iw) => measureLinesHeight(links, ctx.font, 9, iw),
       ({ x, w }) => {
-        for (const ln of links) drawParagraph(ctx, ln, 9, INK, undefined, { x, maxW: w });
+        for (const ln of links) drawParagraph(ctx, ln, 9, INK, ctx.fontBold, { x, maxW: w });
       },
     );
   }
@@ -509,7 +600,7 @@ export async function buildIrissOfferPdfBytes(
       "Klienta dati",
       (iw) => measureLinesHeight(clientLines, ctx.font, 10, iw),
       ({ x, w }) => {
-        for (const ln of clientLines) drawParagraph(ctx, ln, 10, INK, undefined, { x, maxW: w });
+        for (const ln of clientLines) drawParagraph(ctx, ln, 10, INK, ctx.fontBold, { x, maxW: w });
       },
     );
   }
@@ -528,7 +619,7 @@ export async function buildIrissOfferPdfBytes(
       "Pamatinformācija",
       (iw) => measureLinesHeight(offerLines, ctx.font, 10, iw),
       ({ x, w }) => {
-        for (const ln of offerLines) drawParagraph(ctx, ln, 10, INK, undefined, { x, maxW: w });
+        for (const ln of offerLines) drawParagraph(ctx, ln, 10, INK, ctx.fontBold, { x, maxW: w });
       },
     );
   }
@@ -574,31 +665,31 @@ export async function buildIrissOfferPdfBytes(
     }, ({ x, w }) => {
       let filled = false;
       for (const ln of assessmentChecks) {
-        drawParagraph(ctx, ln, 10, INK, undefined, { x, maxW: w });
+        drawParagraph(ctx, ln, 10, INK, ctx.fontBold, { x, maxW: w });
         filled = true;
       }
       if (specialNotes) {
         if (filled) ctx.y -= partGap;
         drawParagraph(ctx, "Īpašas atzīmes:", 10, MUTED, ctx.fontBold, { x, maxW: w });
-        drawParagraph(ctx, specialNotes, 10, INK, undefined, { x, maxW: w });
+        drawParagraph(ctx, specialNotes, 10, INK, ctx.fontBold, { x, maxW: w });
         filled = true;
       }
       if (visual) {
         if (filled) ctx.y -= partGap;
         drawParagraph(ctx, "Vizuālais novērtējums:", 10, MUTED, ctx.fontBold, { x, maxW: w });
-        drawParagraph(ctx, visual, 10, INK, undefined, { x, maxW: w });
+        drawParagraph(ctx, visual, 10, INK, ctx.fontBold, { x, maxW: w });
         filled = true;
       }
       if (technical) {
         if (filled) ctx.y -= partGap;
         drawParagraph(ctx, "Tehniskais novērtējums:", 10, MUTED, ctx.fontBold, { x, maxW: w });
-        drawParagraph(ctx, technical, 10, INK, undefined, { x, maxW: w });
+        drawParagraph(ctx, technical, 10, INK, ctx.fontBold, { x, maxW: w });
         filled = true;
       }
       if (summary) {
         if (filled) ctx.y -= partGap;
         drawParagraph(ctx, "Kopsavilkums:", 10, MUTED, ctx.fontBold, { x, maxW: w });
-        drawParagraph(ctx, summary, 10, INK, undefined, { x, maxW: w });
+        drawParagraph(ctx, summary, 10, INK, ctx.fontBold, { x, maxW: w });
       }
     });
   }
@@ -629,7 +720,7 @@ export async function buildIrissOfferPdfBytes(
       return h;
     }, ({ x, w }) => {
       for (const ln of pricingPlainLines) {
-        drawParagraph(ctx, ln, 10, INK, undefined, { x, maxW: w });
+        drawParagraph(ctx, ln, 10, INK, ctx.fontBold, { x, maxW: w });
       }
       if (totalPrice > 0) {
         if (pricingPlainLines.length > 0) ctx.y -= 6;
@@ -637,7 +728,7 @@ export async function buildIrissOfferPdfBytes(
       }
       if (offerValidDays) {
         ctx.y -= 4;
-        drawParagraph(ctx, `Piedāvājums spēkā (dienas): ${offerValidDays}`, 10, INK, undefined, { x, maxW: w });
+        drawParagraph(ctx, `Piedāvājums spēkā (dienas): ${offerValidDays}`, 10, INK, ctx.fontBold, { x, maxW: w });
       }
     });
   }
@@ -692,7 +783,7 @@ export async function buildIrissOfferPdfBytes(
       "Fotogrāfiju pielikumi",
       (iw) => measureLinesHeight(lines, ctx.font, 9, iw),
       ({ x, w }) => {
-        for (const ln of lines) drawParagraph(ctx, ln, 9, INK, undefined, { x, maxW: w });
+        for (const ln of lines) drawParagraph(ctx, ln, 9, INK, ctx.fontBold, { x, maxW: w });
       },
     );
   }
