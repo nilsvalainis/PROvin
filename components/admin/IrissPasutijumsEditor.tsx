@@ -258,7 +258,7 @@ function LabeledTextarea({
 const ADMIN_MAIN_SCROLL_ID = "admin-main-scroll";
 const ADMIN_SCROLL_LOCK_CLASS = "admin-scroll-locked";
 
-/** Ilgā piespiešana (~450 ms), tad vilkšana — lai vertikālais skrolls netraucē `Reorder`. */
+/** Mobilais pieskāriens: ātra ass noteikšana + īsāka ilgā piespiešana, lai vilkšana būtu atsaucīgāka. */
 function IrissOfferAttachmentReorderItem({
   attachment: a,
   onRemove,
@@ -269,6 +269,7 @@ function IrissOfferAttachmentReorderItem({
   const dragControls = useDragControls();
   const longPressTimer = useRef<number | null>(null);
   const pressOrigin = useRef<{ x: number; y: number } | null>(null);
+  const pointerAxis = useRef<"idle" | "vertical" | "horizontal">("idle");
 
   const clearLongPress = useCallback(() => {
     if (longPressTimer.current != null) {
@@ -276,16 +277,18 @@ function IrissOfferAttachmentReorderItem({
     }
     longPressTimer.current = null;
     pressOrigin.current = null;
+    pointerAxis.current = "idle";
   }, []);
 
   const onThumbPointerDown = useCallback(
     (e: React.PointerEvent) => {
       if (e.button !== 0) return;
+      pointerAxis.current = "idle";
       pressOrigin.current = { x: e.clientX, y: e.clientY };
       longPressTimer.current = window.setTimeout(() => {
         longPressTimer.current = null;
         dragControls.start(e.nativeEvent);
-      }, 450);
+      }, 220);
     },
     [dragControls],
   );
@@ -293,10 +296,31 @@ function IrissOfferAttachmentReorderItem({
   const onThumbPointerMove = useCallback(
     (e: React.PointerEvent) => {
       const o = pressOrigin.current;
-      if (o == null || longPressTimer.current == null) return;
-      if (Math.hypot(e.clientX - o.x, e.clientY - o.y) > 12) clearLongPress();
+      if (o == null) return;
+      const dx = e.clientX - o.x;
+      const dy = e.clientY - o.y;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      if (pointerAxis.current === "idle") {
+        if (absY > 8 && absY > absX + 4) {
+          pointerAxis.current = "vertical";
+        } else if (absX > 8 && absX > absY + 4) {
+          pointerAxis.current = "horizontal";
+        }
+      }
+      if (pointerAxis.current === "vertical") {
+        clearLongPress();
+        return;
+      }
+      if (pointerAxis.current === "horizontal" && longPressTimer.current != null && absX > 10) {
+        window.clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+        dragControls.start(e.nativeEvent);
+        return;
+      }
+      if (longPressTimer.current != null && Math.hypot(dx, dy) > 14) clearLongPress();
     },
-    [clearLongPress],
+    [clearLongPress, dragControls],
   );
 
   return (
@@ -304,8 +328,8 @@ function IrissOfferAttachmentReorderItem({
       value={a}
       dragListener={false}
       dragControls={dragControls}
-      className="relative shrink-0 touch-none"
-      style={{ WebkitTouchCallout: "none" }}
+      className="relative shrink-0 touch-pan-y"
+      style={{ WebkitTouchCallout: "none", touchAction: "pan-y pinch-zoom", transform: "translateZ(0)" }}
     >
       <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div
@@ -754,19 +778,32 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     [rec.id],
   );
 
-  const persistOffer = useCallback(async (): Promise<IrissOfferRecord | null> => {
+  const persistedOfferRecord = useMemo(() => rec.offers.find((o) => o.id === offerDraft.id) ?? null, [rec.offers, offerDraft.id]);
+  const offerPersistedInRecord = Boolean(persistedOfferRecord);
+  const offerShareWhatsAppEnabled = Boolean(normalizedPhone);
+  const offerReadyForPdfActions = useMemo(
+    () => isOfferDraftSyncedWithRecord(offerDraft, persistedOfferRecord),
+    [offerDraft, persistedOfferRecord],
+  );
+
+  const persistOffer = useCallback(async (reason: "save" | "pdf" | "whatsapp"): Promise<IrissOfferRecord | null> => {
+    if (offerReadyForPdfActions && persistedOfferRecord) {
+      if (reason === "save") setSaveMsg("Saglabāts.");
+      return persistedOfferRecord;
+    }
     setOfferBusy(true);
     setPdfRetryBar(null);
-    beginTransfer("Saglabā piedāvājumu", "Augšupielādē foto — nelietojiet atsvaidzināšanu.");
+    beginTransfer("Notiek fotogrāfiju augšupielāde", "Saglabājam piedāvājuma izmaiņas. Lūdzu, uzgaidiet.");
     try {
       const { offer: offerOut, error: commitErr } = await commitOfferDraftToRecord((loaded, total) => {
         const pct = Math.min(98, Math.round((100 * loaded) / Math.max(total, 1)));
-        setTransferUi((u) => (u ? { ...u, title: "Augšupielādē foto (saglabā)…", pct } : null));
+        setTransferUi((u) => (u ? { ...u, title: "Notiek fotogrāfiju augšupielāde…", pct } : null));
       });
       if (!offerOut) {
         alert(commitErr ?? "Saglabāšana neizdevās.");
         return null;
       }
+      if (reason === "save") setSaveMsg("Saglabāts.");
       setOfferDraft((d) => ({
         ...d,
         title: offerOut.title,
@@ -777,14 +814,14 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       endTransfer();
       setOfferBusy(false);
     }
-  }, [beginTransfer, commitOfferDraftToRecord, endTransfer]);
+  }, [beginTransfer, commitOfferDraftToRecord, endTransfer, offerReadyForPdfActions, persistedOfferRecord]);
 
   const openOfferPdfInNewTab = useCallback(async () => {
-    const offerOut = await persistOffer();
+    const offerOut = await persistOffer("pdf");
     if (!offerOut) return;
-    beginTransfer("Ģenerē piedāvājuma PDF", "Sagatavo failu atvēršanai jaunā logā.");
+    beginTransfer("Tiek ģenerēts PDF fails", "Sagatavojam gatavu PDF atvēršanai jaunā logā.");
     try {
-      setTransferUi((u) => (u ? { ...u, pct: 92, title: "Ģenerē piedāvājuma PDF…", detail: "Lūdzu, uzgaidiet." } : null));
+      setTransferUi((u) => (u ? { ...u, pct: 92, title: "Tiek ģenerēts PDF fails…", detail: "Lūdzu, uzgaidiet." } : null));
       const blob = await generateOfferPdfBlob(offerOut.id);
       const pdfUrl = URL.createObjectURL(blob);
       window.open(pdfUrl, "_blank", "noopener,noreferrer");
@@ -802,24 +839,27 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     if (normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
     const digits = normalizedPhone.replace(/[^\d]/g, "");
     if (!digits) return;
-    const offerOut = await persistOffer();
+    const offerOut = await persistOffer("whatsapp");
     if (!offerOut) return;
-    beginTransfer("Ģenerē PDF priekš WhatsApp", "Sagatavo failu un atver WhatsApp.");
+    beginTransfer("Tiek ģenerēts PDF fails", "Sagatavojam failu WhatsApp nosūtīšanai.");
     try {
       setTransferUi((u) =>
-        u ? { ...u, pct: 92, title: "Ģenerē PDF un gatavo eksportu…", detail: "Lūdzu, uzgaidiet." } : null,
+        u ? { ...u, pct: 92, title: "Tiek ģenerēts PDF fails…", detail: "Lūdzu, uzgaidiet." } : null,
       );
       const blob = await generateOfferPdfBlob(offerOut.id);
       const shareText = buildIrissOfferClientShareBody(offerDraft, rec.clientFirstName, rec.clientLastName);
       const filenameBase = buildIrissOfferShareSubject(offerDraft).replace(/[^\p{L}\p{N}\-_. ]/gu, "").trim() || "piedavajums";
       const safeFileName = filenameBase.endsWith(".pdf") ? filenameBase : `${filenameBase}.pdf`;
       const file = new File([blob], safeFileName, { type: "application/pdf" });
-      void file;
-      const pdfUrl = URL.createObjectURL(blob);
-      window.open(pdfUrl, "_blank", "noopener,noreferrer");
-      window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 120_000);
-      // Always bind WhatsApp action to the phone from "Klienta dati -> Tālrunis".
-      window.open(`https://wa.me/${digits}?text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        setTransferUi((u) =>
+          u ? { ...u, pct: 97, title: "Notiek WhatsApp eksports…", detail: "Apstiprini nosūtīšanu WhatsApp dialogā." } : null,
+        );
+        await navigator.share({ files: [file], text: shareText });
+      } else {
+        window.open(`https://wa.me/${digits}?text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");
+        alert("Šajā ierīcē failu automātiska pievienošana WhatsApp nav pieejama; atvērts WhatsApp ar gatavu ziņu.");
+      }
       setTransferUi((u) => (u ? { ...u, pct: 100 } : null));
     } catch (e) {
       alert(e instanceof Error ? e.message.slice(0, 220) : "WhatsApp eksports neizdevās.");
@@ -838,14 +878,6 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     rec.clientLastName,
     rec.phone,
   ]);
-
-  const persistedOfferRecord = useMemo(() => rec.offers.find((o) => o.id === offerDraft.id) ?? null, [rec.offers, offerDraft.id]);
-  const offerPersistedInRecord = Boolean(persistedOfferRecord);
-  const offerShareWhatsAppEnabled = Boolean(normalizedPhone);
-  const offerReadyForPdfActions = useMemo(
-    () => isOfferDraftSyncedWithRecord(offerDraft, persistedOfferRecord),
-    [offerDraft, persistedOfferRecord],
-  );
 
   return (
     <div className="mx-auto w-full max-w-[1200px] bg-white px-3 pb-8 sm:px-6 lg:px-10">
@@ -1321,7 +1353,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                   <button
                     type="button"
                     disabled={offerBusy || !!offerFilePrepare}
-                    onClick={() => void persistOffer()}
+                    onClick={() => void persistOffer("save")}
                     className={offerDialogMainBtnClass}
                   >
                     Saglabāt
