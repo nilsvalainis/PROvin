@@ -812,20 +812,36 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     }
     setOfferDeleteBusy(true);
     try {
+      if (autosaveTimer.current) {
+        window.clearTimeout(autosaveTimer.current);
+        autosaveTimer.current = null;
+      }
+      const waitAutosaveIdle = async (timeoutMs = 2400) => {
+        const started = Date.now();
+        while (autosaveInFlight.current && Date.now() - started < timeoutMs) {
+          await new Promise<void>((resolve) => window.setTimeout(resolve, 45));
+        }
+      };
+      await waitAutosaveIdle();
       const nextOffers = rec.offers
         .filter((o) => o.id !== id)
         .map((o, idx) => ({ ...o, title: `Piedāvājums ${idx + 1}` }));
       const nextRec: IrissPasutijumsRecord = { ...rec, offers: nextOffers };
-      const r = await save({ payload: nextRec, silent: true });
+      let r = await save({ payload: nextRec, silent: true });
+      if (!r.ok && r.error.includes("race")) {
+        await waitAutosaveIdle(1200);
+        r = await save({ payload: nextRec, silent: true });
+      }
       if (!r.ok) {
-        alert(r.error ?? "Dzēšana neizdevās.");
+        setSaveMsg("Dzēšana neizdevās.");
         return;
       }
       setRec(nextRec);
       setOfferDeleteConfirmOpen(false);
       setOfferOpen(false);
+      setSaveMsg("Piedāvājums dzēsts.");
     } catch {
-      alert("Tīkla kļūda.");
+      setSaveMsg("Dzēšana neizdevās.");
     } finally {
       setOfferDeleteBusy(false);
     }
