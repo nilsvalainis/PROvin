@@ -8,6 +8,7 @@
     "ogDescription": "Pilna auto vēstures analīze ar eksperta slēdzienu. Vairāki datu avoti, manuāla interpretācija un atbildes uz tipiskiem jautājumiem pirms auto pirkuma.",
     "faqTitle": "BUJ",
     "faqDescription": "Kā darbojas PROVIN — īsas atbildes pirms pasūtījuma.",
-    "thanksTitle": "Paldies par pasūtījumu"
+    "thanksTitle": "Paldies par pasūtījumu",
+    "thanksDescription": "Pasūtījums saņemts. Īss apstiprinājums pēc veiksmīgas apmaksas ar Stripe."
   }
 }

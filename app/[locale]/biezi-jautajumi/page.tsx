@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getMessages, getTranslations } from "next-intl/server";
 import { Faq } from "@/components/Faq";
 import { Link } from "@/i18n/navigation";
+import { getPublicSiteOrigin } from "@/lib/site-url";
 
 type Props = { params: Promise<{ locale: string }> };
+
+type FaqMsgItem = { q: string; a: string };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
@@ -14,8 +17,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function FaqPage() {
+export default async function FaqPage({ params }: Props) {
+  const { locale } = await params;
   const t = await getTranslations("Misc");
+  const messages = await getMessages();
+  const raw = (messages as { Faq?: { items?: FaqMsgItem[] } }).Faq?.items;
+  const items = Array.isArray(raw) ? raw : [];
+  const base = getPublicSiteOrigin().replace(/\/$/, "");
+  const pageUrl = `${base}/${locale}/biezi-jautajumi`;
+  const faqLd =
+    items.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: items.map((it) => ({
+            "@type": "Question",
+            name: it.q,
+            acceptedAnswer: { "@type": "Answer", text: it.a },
+          })),
+          url: pageUrl,
+        }
+      : null;
 
   return (
     <>
@@ -29,6 +51,9 @@ export default async function FaqPage() {
           </Link>
         </div>
       </div>
+      {faqLd ? (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
+      ) : null}
       <Faq tone="light" />
     </>
   );

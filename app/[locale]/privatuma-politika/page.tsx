@@ -13,6 +13,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: "Legal" });
   return {
     title: t("privacyMetaTitle"),
+    description: t("privacyMetaDescription"),
   };
 }
 

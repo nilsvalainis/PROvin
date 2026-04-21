@@ -9,6 +9,8 @@ import { LenisProvider } from "@/components/providers/LenisProvider";
 import { Header } from "@/components/Header";
 import { SiteOrderCtaPin } from "@/components/home/SiteOrderCtaPin";
 import { HomeReloadScrollToTop } from "@/components/home/HomeReloadScrollToTop";
+import { SiteJsonLd } from "@/components/seo/SiteJsonLd";
+import { getCompanyPublicBrand } from "@/lib/company";
 import { routing } from "@/i18n/routing";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import "./design-direction-theme.css";
@@ -32,6 +34,9 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Meta" });
+  const base = getPublicSiteOrigin().replace(/\/$/, "");
+  const canonical = `${base}/${locale}`;
+  const ogImage = `/${locale}/opengraph-image`;
 
   return {
     metadataBase: new URL(getPublicSiteOrigin()),
@@ -40,11 +45,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       template: "%s | PROVIN",
     },
     description: t("description"),
+    alternates: {
+      canonical,
+    },
     openGraph: {
       title: t("ogTitle"),
       description: t("ogDescription"),
+      url: canonical,
+      siteName: getCompanyPublicBrand(),
       locale: "lv_LV",
       type: "website",
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: getCompanyPublicBrand(),
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t("ogTitle"),
+      description: t("ogDescription"),
+      images: [ogImage],
     },
     robots: { index: true, follow: true },
   };
@@ -59,8 +83,11 @@ export default async function LocaleLayout({ children, params }: Props) {
   setRequestLocale(locale);
   const messages = await getMessages();
 
+  const tMetaDesc = await getTranslations({ locale, namespace: "Meta" });
+
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
+      <SiteJsonLd locale={locale} description={tMetaDesc("description")} />
       <LenisProvider>
         <HomeReloadScrollToTop />
         <LocaleHtmlLang />
