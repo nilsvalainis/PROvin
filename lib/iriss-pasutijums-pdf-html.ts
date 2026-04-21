@@ -78,21 +78,25 @@ function checklistRow(accent: string, ok: boolean, label: string): string {
   return `<div class="${cls}">${icon}<span class="ipdf-cl-txt">${esc(label)}</span></div>`;
 }
 
-function healthScaleHtml(accent: string, label: string, bodyText: string): string {
+/** Veselības josla tikai tad, ja tekstā ir „X/10” / „X no 10”. */
+function healthScaleHtml(
+  accent: string,
+  label: string,
+  bodyText: string,
+  opts?: { omitHeading?: boolean },
+): string {
   const score = parseScoreOutOf10(bodyText);
-  const pct = score === null ? 0 : Math.min(100, Math.max(0, (score / 10) * 100));
-  const badge = score === null ? "—" : `${score}/10`;
-  const hint =
-    score === null && bodyText.trim()
-      ? `<p class="ipdf-health-hint">Tekstā nav atrasts formāts „X/10” — josla nav aizpildīta.</p>`
-      : "";
-  return `<div class="ipdf-health">
-    <div class="ipdf-health-top">
-      <span class="ipdf-health-lbl">${esc(label)}</span>
-      <span class="ipdf-health-val">${esc(badge)}</span>
-    </div>
+  if (score === null) return "";
+  const pct = Math.min(100, Math.max(0, (score / 10) * 100));
+  const badge = `${score}/10`;
+  const heading =
+    opts?.omitHeading === true
+      ? ""
+      : `<span class="ipdf-health-lbl">${esc(label)}</span>`;
+  const barOnlyCls = opts?.omitHeading === true ? " ipdf-health--bar-only" : "";
+  return `<div class="ipdf-health${barOnlyCls}">
+    <div class="ipdf-health-top">${heading}<span class="ipdf-health-val">${esc(badge)}</span></div>
     <div class="ipdf-bar-track" role="img" aria-label="${esc(label)}: ${esc(badge)}"><div class="ipdf-bar-fill" style="width:${pct}%"></div></div>
-    ${hint}
   </div>`;
 }
 
@@ -253,6 +257,7 @@ function irissPrintShell(accent: string, title: string, body: string): string {
     .ipdf-cl-txt { font-size: 0.78rem; font-weight: 300; color: ${INK}; line-height: 1.35; }
     .ipdf-health { margin-bottom: 10px; }
     .ipdf-health-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .ipdf-health--bar-only .ipdf-health-top { justify-content: flex-end; }
     .ipdf-health-lbl { font-size: 0.58rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: ${INK}; margin: 0; }
     .ipdf-health-val { font-size: 0.72rem; font-weight: 600; color: ${accent}; margin: 0; }
     .ipdf-bar-track {
@@ -267,7 +272,6 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       background: ${accent};
       transition: width 0.2s ease;
     }
-    .ipdf-health-hint { margin: 4px 0 0; font-size: 0.62rem; font-weight: 300; color: ${SLATE_600}; }
     .ipdf-summary {
       border: 2px solid ${accent};
       border-radius: 12px;
@@ -435,27 +439,35 @@ export function buildIrissOfferPrintHtml(
   </div>`;
 
   const specialNotes = offer.specialNotes?.trim() || "";
-  const specialBlock = specialNotes
-    ? `<div class="ipdf-card" style="margin-bottom:12px"><h3>Īpašas atzīmes</h3><pre>${esc(specialNotes)}</pre></div>`
-    : "";
+  const specialInner = specialNotes ? `<div class="ipdf-card"><pre>${esc(specialNotes)}</pre></div>` : "";
 
   const visual = offer.visualAssessment?.trim() || "";
   const technical = offer.technicalAssessment?.trim() || "";
-  const detailParts: string[] = [];
-  if (visual) {
-    detailParts.push(`<div class="ipdf-card">${healthScaleHtml(accent, "Vizuālais novērtējums", visual)}<h3>Detalizēts apraksts</h3><pre>${esc(visual)}</pre></div>`);
-  }
-  if (technical) {
-    detailParts.push(`<div class="ipdf-card">${healthScaleHtml(accent, "Tehniskais novērtējums", technical)}<h3>Detalizēts apraksts</h3><pre>${esc(technical)}</pre></div>`);
-  }
-  const detailTwo = detailParts.length ? `<div class="ipdf-two">${detailParts.join("")}</div>` : "";
+  const visualHealthInner =
+    visual && parseScoreOutOf10(visual) !== null
+      ? `<div class="ipdf-card">${healthScaleHtml(accent, "Vizuālais novērtējums", visual, { omitHeading: true })}</div>`
+      : "";
+  const visualDetailInner = visual ? `<div class="ipdf-card"><pre>${esc(visual)}</pre></div>` : "";
+  const technicalHealthInner =
+    technical && parseScoreOutOf10(technical) !== null
+      ? `<div class="ipdf-card">${healthScaleHtml(accent, "Tehniskais novērtējums", technical, { omitHeading: true })}</div>`
+      : "";
+  const technicalDetailInner = technical ? `<div class="ipdf-card"><pre>${esc(technical)}</pre></div>` : "";
 
   const summary = offer.summary?.trim() || "";
-  const summaryBlock = summary
-    ? `<div class="ipdf-summary"><h3>Kopsavilkums</h3><pre>${esc(summary)}</pre></div>`
-    : "";
+  const summaryInner = summary ? `<div class="ipdf-summary"><pre>${esc(summary)}</pre></div>` : "";
 
-  const evalInner = [checklistHtml + specialBlock, detailTwo, summaryBlock].filter((x) => x.trim()).join("");
+  const evalSections = [
+    blockIf("Novērtējuma atzīmes", checklistHtml),
+    blockIf("Īpašas atzīmes", specialInner),
+    blockIf("Vizuālais novērtējums", visualHealthInner),
+    blockIf("Detalizēts apraksts (vizuālais)", visualDetailInner),
+    blockIf("Tehniskais novērtējums", technicalHealthInner),
+    blockIf("Detalizēts apraksts (tehniskais)", technicalDetailInner),
+    blockIf("Kopsavilkums", summaryInner),
+  ]
+    .filter(Boolean)
+    .join("");
 
   const carPrice = offer.carPrice?.trim() || offer.priceGermany?.trim() || "";
   const deliveryPrice = offer.deliveryPrice?.trim() || "";
@@ -495,7 +507,7 @@ export function buildIrissOfferPrintHtml(
   const body = `${header}
     ${blockIf("Klienta dati", clientTable)}
     ${pamatInner.trim() ? `<section class="ipdf-blk">${sectionHead("Pamatinformācija")}<div class="ipdf-blk-body">${pamatInner}</div></section>` : ""}
-    ${evalInner.trim() ? `<section class="ipdf-blk">${sectionHead("Vispārējais novērtējums")}<div class="ipdf-blk-body">${evalInner}</div></section>` : ""}
+    ${evalSections}
     ${blockIf("Cenas un piedāvājums", pricingTable)}
     ${blockIf("Fotogrāfijas", filesInner)}
     <footer class="ipdf-legal">${legal}</footer>`;
