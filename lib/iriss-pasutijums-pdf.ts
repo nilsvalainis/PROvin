@@ -46,7 +46,7 @@ const INK = rgb(30 / 255, 41 / 255, 59 / 255);
 /** Sekundārais teksts — slate-600 (#475569). */
 const MUTED = rgb(71 / 255, 85 / 255, 105 / 255);
 const CARD_FILL_SLATE = rgb(248 / 255, 250 / 255, 252 / 255);
-const CARD_BORDER_SLATE = rgb(226 / 255, 232 / 255, 240 / 255);
+const CARD_BORDER_SLATE = rgb(203 / 255, 213 / 255, 225 / 255);
 const BAR_TRACK = rgb(226 / 255, 232 / 255, 240 / 255);
 /** Papildu atstarpe starp etiķetes beigām un vērtību vienas rindas layoutā (PDF vienības). */
 const COLON_VALUE_GAP = 3;
@@ -97,7 +97,7 @@ type CardTheme = {
 const IRISS_PDF_CARD_THEME: CardTheme = {
   fill: CARD_FILL_SLATE,
   border: CARD_BORDER_SLATE,
-  borderWidth: 1,
+  borderWidth: 1.1,
   titleColor: INK,
   titleUppercase: true,
   titleSize: 10,
@@ -297,6 +297,7 @@ function drawIosCard(
   title: string,
   measureBody: (innerW: number) => number,
   drawBody: (inner: { x: number; w: number }) => void,
+  opts?: { omitFrame?: boolean },
 ): void {
   const t = ctx.cardTheme;
   const pad = 10;
@@ -309,19 +310,22 @@ function drawIosCard(
   const outerNeed = SECTION_BEFORE + h + SECTION_AFTER;
   ensureRoomForBlock(ctx, outerNeed);
 
+  const omitFrame = opts?.omitFrame === true;
   ctx.y -= SECTION_BEFORE;
   const yTopCard = ctx.y;
   const yRectBottom = yTopCard - h;
-  drawRoundedRect(ctx.page, {
-    x: ctx.margin,
-    y: yRectBottom,
-    width: ctx.contentW,
-    height: h,
-    radius,
-    color: t.fill,
-    borderColor: t.border,
-    borderWidth: t.borderWidth,
-  });
+  if (!omitFrame) {
+    drawRoundedRect(ctx.page, {
+      x: ctx.margin,
+      y: yRectBottom,
+      width: ctx.contentW,
+      height: h,
+      radius,
+      color: t.fill,
+      borderColor: t.border,
+      borderWidth: t.borderWidth,
+    });
+  }
   ctx.y = yRectBottom + h - pad;
   const prev = ctx.suppressPageBreak;
   ctx.suppressPageBreak = true;
@@ -557,19 +561,53 @@ function drawContentAccentRule(ctx: Ctx) {
 }
 
 function drawFooter(ctx: Ctx) {
+  const pad = 11;
+  const stripeH = 2.5;
+  const titleS = 9;
+  const rowS = 7.2;
+  const innerW = ctx.contentW - pad * 2 - 4;
+  const brand = IRISS_COMPANY_LINES[0] ?? "";
+  const rest = IRISS_COMPANY_LINES.slice(1);
+  let bodyH = lineHeight(titleS) + 10;
+  for (const line of rest) {
+    bodyH += measureWrappedBlockHeight(line, ctx.font, rowS, innerW) + 4;
+  }
+  const h = pad + stripeH + bodyH + pad;
+  ensureRoomForBlock(ctx, h + 14);
   ctx.y -= 10;
-  if (!ctx.suppressPageBreak) ensureSpace(ctx, 14);
+  const yTop = ctx.y;
+  const yBottom = yTop - h;
+  drawRoundedRect(ctx.page, {
+    x: ctx.margin,
+    y: yBottom,
+    width: ctx.contentW,
+    height: h,
+    radius: 10,
+    color: rgb(252 / 255, 252 / 255, 253 / 255),
+    borderColor: CARD_BORDER_SLATE,
+    borderWidth: 1,
+  });
   ctx.page.drawRectangle({
     x: ctx.margin,
-    y: ctx.y - 2,
+    y: yBottom + h - stripeH,
     width: ctx.contentW,
-    height: 2,
+    height: stripeH,
     color: IRISS_ACCENT,
   });
-  ctx.y -= 12;
-  for (const line of IRISS_COMPANY_LINES) {
-    drawParagraph(ctx, line, 8, MUTED);
+  ctx.y = yTop - stripeH - 4;
+  drawTrackedText(ctx.page, brand.toLocaleUpperCase("lv-LV"), {
+    x: ctx.margin + pad + 3,
+    y: ctx.y - titleS,
+    size: titleS,
+    font: ctx.fontBold,
+    color: INK,
+    tracking: 0.14,
+  });
+  ctx.y -= lineHeight(titleS) + 8;
+  for (const line of rest) {
+    drawParagraph(ctx, line, rowS, MUTED, ctx.font, { x: ctx.margin + pad + 3, maxW: innerW });
   }
+  ctx.y = yBottom - 8;
 }
 
 function fmtMoneyEurLv(total: number): string {
@@ -1121,6 +1159,7 @@ export async function buildIrissOfferPdfBytes(
               drawImageRow2Col(ctx, chunk[j]!, chunk[j + 1] ?? null, cw, COL_GAP, MAX_CELL_H, x);
             }
           },
+          { omitFrame: true },
         );
       }
     }

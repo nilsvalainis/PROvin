@@ -28,13 +28,36 @@ function wrapTable(rows: string): string {
   return `<table class="ipdf-kv">${r}</table>`;
 }
 
-function blockIf(title: string, inner: string): string {
+function blockIf(title: string, inner: string, sectionClass = ""): string {
   if (!inner.trim()) return "";
-  return `<section class="ipdf-blk">${sectionHead(title)}<div class="ipdf-blk-body">${inner}</div></section>`;
+  const cls = ["ipdf-blk", sectionClass].filter(Boolean).join(" ");
+  return `<section class="${cls}">${sectionHead(title)}<div class="ipdf-blk-body">${inner}</div></section>`;
 }
 
 function sectionHead(title: string): string {
   return `<div class="ipdf-sec-head" role="heading" aria-level="2"><span class="ipdf-sec-bar" aria-hidden="true"></span><h2 class="ipdf-sec-title">${esc(title)}</h2></div>`;
+}
+
+function buildIrissPrintFooterHtml(accent: string): string {
+  const lines = [...IRISS_COMPANY_LINES];
+  const brand = esc(lines[0] ?? "");
+  const rows = lines
+    .slice(1)
+    .map((line) => {
+      const idx = line.indexOf(":");
+      if (idx <= 0) return `<p class="ipdf-ft-plain">${esc(line)}</p>`;
+      const k = esc(line.slice(0, idx + 1).trim());
+      const v = esc(line.slice(idx + 1).trim());
+      return `<div class="ipdf-ft-row"><span class="ipdf-ft-k">${k}</span><span class="ipdf-ft-v">${v}</span></div>`;
+    })
+    .join("");
+  return `<footer class="ipdf-footer" role="contentinfo">
+    <div class="ipdf-footer-card">
+      <div class="ipdf-footer-accent" style="background:${accent}" aria-hidden="true"></div>
+      <p class="ipdf-footer-brand">${brand}</p>
+      <div class="ipdf-footer-body">${rows}</div>
+    </div>
+  </footer>`;
 }
 
 function parseMoney(value: string | undefined): number {
@@ -168,7 +191,25 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       text-transform: uppercase;
       color: ${INK};
     }
-    .ipdf-blk { margin-bottom: 18px; page-break-inside: avoid; }
+    .ipdf-blk {
+      margin-bottom: 18px;
+      page-break-inside: avoid;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 14px 14px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+    }
+    .ipdf-blk--media {
+      border: none;
+      box-shadow: none;
+      background: transparent;
+      padding: 0;
+    }
+    .ipdf-blk--media .ipdf-sec-head { margin-bottom: 10px; }
+    .ipdf-blk .ipdf-sec-head { margin-bottom: 8px; margin-top: 0; }
+    .ipdf-blk-body > table.ipdf-kv { border: none; box-shadow: none; background: transparent; }
+    .ipdf-blk-body > table.ipdf-kv th { background: #f8fafc; }
     .ipdf-grid4 {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -292,19 +333,40 @@ function irissPrintShell(accent: string, title: string, body: string): string {
     .ipdf-notes pre { margin: 0; font-weight: 300; }
     .ipdf-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     @media (max-width: 560px) { .ipdf-gallery { grid-template-columns: 1fr; } }
-    .ipdf-photo { margin: 0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #fff; page-break-inside: avoid; box-shadow: 0 1px 2px rgb(15 23 42 / 0.06); }
+    .ipdf-photo { margin: 0; border: none; border-radius: 10px; overflow: hidden; background: #f1f5f9; page-break-inside: avoid; box-shadow: none; }
     .ipdf-photo img { display: block; width: 100%; height: auto; max-height: 220px; object-fit: cover; }
     .ipdf-meta { margin: 0; font-size: 0.68rem; font-weight: 300; color: ${SLATE_600}; line-height: 1.45; }
-    footer.ipdf-legal {
-      margin-top: 22px;
-      padding-top: 14px;
-      border-top: 2px solid ${accent};
-      font-size: 0.62rem;
-      font-weight: 300;
-      color: ${SLATE_600};
-      line-height: 1.55;
+    .ipdf-footer { margin-top: 26px; }
+    .ipdf-footer-card {
+      position: relative;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px 16px 14px 17px;
+      background: linear-gradient(165deg, #f8fafc 0%, #ffffff 58%);
+      box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+      overflow: hidden;
     }
-    footer.ipdf-legal p { margin: 0 0 4px; }
+    .ipdf-footer-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+    .ipdf-footer-brand {
+      margin: 0 0 10px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: ${INK};
+    }
+    .ipdf-footer-body { display: flex; flex-direction: column; gap: 6px; }
+    .ipdf-ft-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      font-size: 0.62rem;
+      line-height: 1.45;
+      align-items: baseline;
+    }
+    .ipdf-ft-k { font-weight: 600; color: #64748b; flex: 0 0 auto; min-width: 5.5rem; }
+    .ipdf-ft-v { font-weight: 300; color: ${SLATE_600}; flex: 1 1 12rem; }
+    .ipdf-ft-plain { margin: 0; font-size: 0.62rem; font-weight: 300; color: ${SLATE_600}; line-height: 1.45; }
   `;
 
   const fontLink = `<link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -321,7 +383,6 @@ function irissPrintShell(accent: string, title: string, body: string): string {
  */
 export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, generatedAtFormatted: string): string {
   const accent = IRISS_BRAND_ORANGE_HEX;
-  const legal = IRISS_COMPANY_LINES.map((l) => `<p>${esc(l)}</p>`).join("");
 
   const heroModel = record.brandModel.trim() || "PASŪTĪJUMS";
 
@@ -394,7 +455,7 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
     ${blockIf("Aprīkojums", equip)}
     ${blockIf("Piezīmes", notes)}
     ${blockIf("Sludinājumu saites", linksInner)}
-    <footer class="ipdf-legal">${legal}</footer>`;
+    ${buildIrissPrintFooterHtml(accent)}`;
 
   return irissPrintShell(accent, "PASŪTĪJUMS", body);
 }
@@ -405,7 +466,6 @@ export function buildIrissOfferPrintHtml(
   generatedAtFormatted: string,
 ): string {
   const accent = IRISS_BRAND_ORANGE_HEX;
-  const legal = IRISS_COMPANY_LINES.map((l) => `<p>${esc(l)}</p>`).join("");
 
   const heroTitle = offer.brandModel.trim() || offer.title.trim() || "Piedāvājums";
 
@@ -509,8 +569,8 @@ export function buildIrissOfferPrintHtml(
     ${pamatInner.trim() ? `<section class="ipdf-blk">${sectionHead("Pamatinformācija")}<div class="ipdf-blk-body">${pamatInner}</div></section>` : ""}
     ${evalSections}
     ${blockIf("Cenas un piedāvājums", pricingTable)}
-    ${blockIf("Fotogrāfijas", filesInner)}
-    <footer class="ipdf-legal">${legal}</footer>`;
+    ${blockIf("Fotogrāfijas", filesInner, "ipdf-blk--media")}
+    ${buildIrissPrintFooterHtml(accent)}`;
 
   return irissPrintShell(accent, heroTitle, body);
 }
