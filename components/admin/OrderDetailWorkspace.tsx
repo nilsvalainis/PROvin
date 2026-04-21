@@ -210,7 +210,12 @@ function storageKeyWorkspace(sessionId: string) {
   return `provin-admin-workspace-v3-${sessionId}`;
 }
 
+function storageKeyWorkspaceBackup(sessionId: string) {
+  return `provin-admin-workspace-backup-v1-${sessionId}`;
+}
+
 const LEGACY_WORKSPACE_V2_PREFIX = "provin-admin-workspace-v2-";
+const WORKSPACE_BACKUP_LIMIT = 20;
 
 /** Vecais viena lauka komentārs */
 function storageKeyInternalLegacy(sessionId: string) {
@@ -221,6 +226,17 @@ function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function serializeWorkspaceState(ws: WorkspacePersist, pdf: PdfVisibilitySettings): string {
+  return JSON.stringify({
+    sourceBlocks: ws.sourceBlocks,
+    iriss: ws.iriss,
+    apskatesPlāns: ws.apskatesPlāns,
+    cenasAtbilstiba: ws.cenasAtbilstiba,
+    previewConfirmed: ws.previewConfirmed,
+    pdfVisibility: pdf,
+  });
 }
 
 const NOTIFY_ALLOWED_MIME = new Set([
@@ -442,6 +458,7 @@ export function OrderDetailWorkspace({
   const notifyReportPdfExtraRef = useRef<HTMLInputElement>(null);
   const [portfolioDropActive, setPortfolioDropActive] = useState(false);
   const portfolioDragDepth = useRef(0);
+  const hydrationSnapshotRef = useRef("");
   const wsPersistRef = useRef(ws);
   wsPersistRef.current = ws;
   const pdfVisibilityRef = useRef(pdfVisibility);
@@ -529,6 +546,25 @@ export function OrderDetailWorkspace({
     }));
   }, []);
 
+  const pushWorkspaceBackup = useCallback(
+    (snapshot: string) => {
+      try {
+        const key = storageKeyWorkspaceBackup(payload.sessionId);
+        const raw = localStorage.getItem(key);
+        const prev = raw ? (JSON.parse(raw) as { savedAt: string; data: string }[]) : [];
+        if (Array.isArray(prev) && prev[0]?.data === snapshot) return;
+        const next = [{ savedAt: new Date().toISOString(), data: snapshot }, ...(Array.isArray(prev) ? prev : [])].slice(
+          0,
+          WORKSPACE_BACKUP_LIMIT,
+        );
+        localStorage.setItem(key, JSON.stringify(next));
+      } catch {
+        /* quota */
+      }
+    },
+    [payload.sessionId],
+  );
+
   useEffect(() => {
     portfolioRef.current = portfolio;
   }, [portfolio]);
@@ -538,12 +574,33 @@ export function OrderDetailWorkspace({
     try {
       const keyV3 = storageKeyWorkspace(payload.sessionId);
       const keyV2 = `${LEGACY_WORKSPACE_V2_PREFIX}${payload.sessionId}`;
+      const keyBackup = storageKeyWorkspaceBackup(payload.sessionId);
       const rawV3 = localStorage.getItem(keyV3);
       const rawV2 = localStorage.getItem(keyV2);
+      const rawBackup = localStorage.getItem(keyBackup);
       const localRaw = rawV3 ?? rawV2;
       const localHydrated = localRaw ? hydrateWorkspaceFromStorage(localRaw) : null;
       const serverHydrated = serverWorkspaceJson ? hydrateWorkspaceFromStorage(serverWorkspaceJson) : null;
-      const scoreWorkspace = (h: NonNullable<typeof localHydrated> | NonNullable<typeof serverHydrated>) => {
+      const backupHydrated = (() => {
+        if (!rawBackup) return null;
+        try {
+          const arr = JSON.parse(rawBackup) as { savedAt: string; data: string }[];
+          if (!Array.isArray(arr)) return null;
+          for (const item of arr) {
+            if (!item || typeof item !== "object") continue;
+            if (typeof item.data !== "string") continue;
+            const h = hydrateWorkspaceFromStorage(item.data);
+            if (h) return h;
+          }
+          return null;
+        } catch {
+          return null;
+        }
+      })();
+
+      const scoreWorkspace = (
+        h: NonNullable<typeof localHydrated> | NonNullable<typeof serverHydrated> | NonNullable<typeof backupHydrated>,
+      ) => {
         let s = 0;
         if (h.iriss.trim()) s += 2;
         if (h.apskatesPlāns.trim()) s += 2;
@@ -558,10 +615,23 @@ export function OrderDetailWorkspace({
         s += listingSectionTrafficLevel(h.sourceBlocks.tirgus, h.sourceBlocks.listing_analysis) === "empty" ? 0 : 1;
         return s;
       };
-      const useLocal =
-        localHydrated != null && (serverHydrated == null || scoreWorkspace(localHydrated) >= scoreWorkspace(serverHydrated));
-      const chosen = useLocal ? localHydrated : serverHydrated;
-      if (chosen) {
+      const candidates: {
+        source: "local" | "backup" | "server";
+        data: NonNullable<typeof localHydrated> | NonNullable<typeof serverHydrated> | NonNullable<typeof backupHydrated>;
+      }[] = [];
+      if (localHydrated) candidates.push({ source: "local", data: localHydrated });
+      if (backupHydrated) candidates.push({ source: "backup", data: backupHydrated });
+      if (serverHydrated) candidates.push({ source: "server", data: serverHydrated });
+
+      if (candidates.length > 0) {
+        const rank: Record<"local" | "backup" | "server", number> = { local: 3, backup: 2, server: 1 };
+        candidates.sort((a, b) => {
+          const sd = scoreWorkspace(b.data) - scoreWorkspace(a.data);
+          if (sd !== 0) return sd;
+          return rank[b.source] - rank[a.source];
+        });
+        const picked = candidates[0]!;
+        const chosen = picked.data;
         setWs({
           sourceBlocks: chosen.sourceBlocks,
           iriss: chosen.iriss,
@@ -569,20 +639,19 @@ export function OrderDetailWorkspace({
           cenasAtbilstiba: chosen.cenasAtbilstiba,
           previewConfirmed: Boolean(chosen.previewConfirmed),
         });
-        onPdfVisibilityChange(mergePdfVisibility(chosen.pdfVisibility));
-        if (!rawV3 || !useLocal) {
+        const mergedVisibility = mergePdfVisibility(chosen.pdfVisibility);
+        onPdfVisibilityChange(mergedVisibility);
+        hydrationSnapshotRef.current = JSON.stringify({
+          sourceBlocks: chosen.sourceBlocks,
+          iriss: chosen.iriss,
+          apskatesPlāns: chosen.apskatesPlāns,
+          cenasAtbilstiba: chosen.cenasAtbilstiba,
+          previewConfirmed: Boolean(chosen.previewConfirmed),
+          pdfVisibility: mergedVisibility,
+        });
+        if (!rawV3 || picked.source !== "local") {
           try {
-            localStorage.setItem(
-              keyV3,
-              JSON.stringify({
-                sourceBlocks: chosen.sourceBlocks,
-                iriss: chosen.iriss,
-                apskatesPlāns: chosen.apskatesPlāns,
-                cenasAtbilstiba: chosen.cenasAtbilstiba,
-                previewConfirmed: chosen.previewConfirmed,
-                pdfVisibility: mergePdfVisibility(chosen.pdfVisibility),
-              }),
-            );
+            localStorage.setItem(keyV3, hydrationSnapshotRef.current);
           } catch {
             /* quota */
           }
@@ -604,15 +673,32 @@ export function OrderDetailWorkspace({
           if (legacy) parts.push(legacy);
           b.autodna = { ...emptyVendorAvotuBlock(), comments: parts.join("\n\n") };
           setWs({ ...EMPTY_WORKSPACE, sourceBlocks: b, previewConfirmed: false });
-          onPdfVisibilityChange(mergePdfVisibility(undefined));
+          const mergedVisibility = mergePdfVisibility(undefined);
+          onPdfVisibilityChange(mergedVisibility);
+          hydrationSnapshotRef.current = JSON.stringify({
+            ...EMPTY_WORKSPACE,
+            sourceBlocks: b,
+            previewConfirmed: false,
+            pdfVisibility: mergedVisibility,
+          });
         } else {
           setWs(EMPTY_WORKSPACE);
-          onPdfVisibilityChange(mergePdfVisibility(undefined));
+          const mergedVisibility = mergePdfVisibility(undefined);
+          onPdfVisibilityChange(mergedVisibility);
+          hydrationSnapshotRef.current = JSON.stringify({
+            ...EMPTY_WORKSPACE,
+            pdfVisibility: mergedVisibility,
+          });
         }
       }
     } catch {
       setWs(EMPTY_WORKSPACE);
-      onPdfVisibilityChange(mergePdfVisibility(undefined));
+      const mergedVisibility = mergePdfVisibility(undefined);
+      onPdfVisibilityChange(mergedVisibility);
+      hydrationSnapshotRef.current = JSON.stringify({
+        ...EMPTY_WORKSPACE,
+        pdfVisibility: mergedVisibility,
+      });
     }
     setWorkspaceHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `serverWorkspaceJson` refresh var pārrakstīt jaunāku lokālo darba zonu
@@ -622,10 +708,7 @@ export function OrderDetailWorkspace({
     if (!workspaceHydrated) return;
     try {
       const cur = wsPersistRef.current;
-      localStorage.setItem(
-        storageKeyWorkspace(payload.sessionId),
-        JSON.stringify({ ...cur, pdfVisibility: pdfVisibilityRef.current }),
-      );
+      localStorage.setItem(storageKeyWorkspace(payload.sessionId), serializeWorkspaceState(cur, pdfVisibilityRef.current));
       const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
       if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
     } catch {
@@ -643,9 +726,12 @@ export function OrderDetailWorkspace({
     if (!workspaceHydrated) return;
     const t = window.setTimeout(() => {
       void (async () => {
+        const cur = wsPersistRef.current;
+        const snapshot = serializeWorkspaceState(cur, pdfVisibilityRef.current);
+        if (snapshot === hydrationSnapshotRef.current) return;
         flushWorkspaceToLocalStorage();
+        pushWorkspaceBackup(snapshot);
         if (orderDraftPersistenceEnabled) {
-          const cur = wsPersistRef.current;
           try {
             await fetch("/api/admin/order-draft", {
               method: "PATCH",
@@ -663,9 +749,12 @@ export function OrderDetailWorkspace({
                 },
               }),
             });
+            hydrationSnapshotRef.current = snapshot;
           } catch {
             /* ignore */
           }
+        } else {
+          hydrationSnapshotRef.current = snapshot;
         }
       })();
     }, 750);
@@ -677,6 +766,7 @@ export function OrderDetailWorkspace({
     payload.sessionId,
     flushWorkspaceToLocalStorage,
     orderDraftPersistenceEnabled,
+    pushWorkspaceBackup,
   ]);
 
   useEffect(() => {
