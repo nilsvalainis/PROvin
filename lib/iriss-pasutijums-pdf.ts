@@ -5,6 +5,7 @@ import path from "node:path";
 
 import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
+import sharp from "sharp";
 
 import { IRISS_COMPANY_LINES } from "@/lib/iriss-brand";
 import type { IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -35,8 +36,8 @@ async function loadInterFontBytes(): Promise<{ reg: Uint8Array; bold: Uint8Array
 const ACCENT = rgb(239 / 255, 125 / 255, 26 / 255);
 const INK = rgb(29 / 255, 29 / 255, 31 / 255);
 const MUTED = rgb(110 / 255, 110 / 255, 115 / 255);
-const CARD_FILL = rgb(252 / 255, 250 / 255, 247 / 255);
-const CARD_BORDER = rgb(239 / 255, 213 / 255, 183 / 255);
+const CARD_FILL = rgb(1, 1, 1);
+const CARD_BORDER = rgb(223 / 255, 164 / 255, 104 / 255);
 const PRICE_BAND_FILL = rgb(255 / 255, 244 / 255, 232 / 255);
 const PRICE_BAND_BORDER = rgb(217 / 255, 112 / 255, 29 / 255);
 const SECTION_BEFORE = 14;
@@ -271,7 +272,7 @@ function drawIosCard(
     radius,
     color: CARD_FILL,
     borderColor: CARD_BORDER,
-    borderWidth: 1.15,
+    borderWidth: 1.6,
   });
   ctx.y = yRectBottom + h - pad;
   const prev = ctx.suppressPageBreak;
@@ -299,24 +300,11 @@ function drawRoundedRect(
     borderWidth?: number;
   },
 ) {
-  const r = Math.max(0, Math.min(opts.radius, Math.min(opts.width, opts.height) / 2));
-  const x0 = opts.x;
-  const y0 = opts.y;
-  const x1 = opts.x + opts.width;
-  const y1 = opts.y + opts.height;
-  const pathData = [
-    `M ${x0 + r} ${y1}`,
-    `L ${x1 - r} ${y1}`,
-    `A ${r} ${r} 0 0 1 ${x1} ${y1 - r}`,
-    `L ${x1} ${y0 + r}`,
-    `A ${r} ${r} 0 0 1 ${x1 - r} ${y0}`,
-    `L ${x0 + r} ${y0}`,
-    `A ${r} ${r} 0 0 1 ${x0} ${y0 + r}`,
-    `L ${x0} ${y1 - r}`,
-    `A ${r} ${r} 0 0 1 ${x0 + r} ${y1}`,
-    "Z",
-  ].join(" ");
-  page.drawSvgPath(pathData, {
+  page.drawRectangle({
+    x: opts.x,
+    y: opts.y,
+    width: opts.width,
+    height: opts.height,
     color: opts.color,
     borderColor: opts.borderColor,
     borderWidth: opts.borderWidth ?? 0,
@@ -488,7 +476,25 @@ function drawKopaHighlightBand(ctx: Ctx, boxX: number, boxW: number, totalPrice:
 
 async function loadOfferLogoPack(pdfDoc: PDFDocument): Promise<LogoPack | null> {
   try {
-    const buf = await fs.readFile(DZINTARZEME_OFFER_LOGO_PATH);
+    const sourceBuf = await fs.readFile(DZINTARZEME_OFFER_LOGO_PATH);
+    const { data, info } = await sharp(sourceBuf)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    // Padara gandrīz melnu fonu caurspīdīgu, lai PDF vienmēr izskatās uz balta fona.
+    for (let i = 0; i < data.length; i += info.channels) {
+      const r = data[i] ?? 0;
+      const g = data[i + 1] ?? 0;
+      const b = data[i + 2] ?? 0;
+      if (r < 38 && g < 38 && b < 38) {
+        data[i + 3] = 0;
+      }
+    }
+    const buf = await sharp(data, {
+      raw: { width: info.width, height: info.height, channels: info.channels },
+    })
+      .png()
+      .toBuffer();
     let img: PDFImage;
     try {
       img = await pdfDoc.embedPng(buf);
