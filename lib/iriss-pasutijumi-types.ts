@@ -32,8 +32,10 @@ export type IrissOfferRecord = {
   hasFactoryPaint: boolean;
   hasNoRustBody: boolean;
   hasSecondWheelSet: boolean;
+  specialNotes: string;
   visualAssessment: string;
   technicalAssessment: string;
+  summary: string;
   /** Cenu bloks. */
   carPrice: string;
   deliveryPrice: string;

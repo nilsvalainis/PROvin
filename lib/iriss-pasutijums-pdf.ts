@@ -330,11 +330,17 @@ export async function buildIrissOfferPdfBytes(
   if (offer.hasFactoryPaint) assessmentChecks.push("☑ Rūpnīcas krāsojums");
   if (offer.hasNoRustBody) assessmentChecks.push("☑ Virsbūve bez rūsas");
   if (offer.hasSecondWheelSet) assessmentChecks.push("☑ Otrs riteņu komplekts");
+  const specialNotes = val(offer.specialNotes);
   const visual = val(offer.visualAssessment);
   const technical = val(offer.technicalAssessment);
-  if (assessmentChecks.length > 0 || visual || technical) {
+  const summary = val(offer.summary);
+  if (assessmentChecks.length > 0 || specialNotes || visual || technical || summary) {
     drawSectionTitle(ctx, "Vispārējais novērtējums");
     for (const ln of assessmentChecks) drawParagraph(ctx, ln, 10);
+    if (specialNotes) {
+      drawParagraph(ctx, "Īpašas atzīmes:", 10, MUTED, ctx.fontBold);
+      drawParagraph(ctx, specialNotes, 10);
+    }
     if (visual) {
       drawParagraph(ctx, "Vizuālais novērtējums:", 10, MUTED, ctx.fontBold);
       drawParagraph(ctx, visual, 10);
@@ -342,6 +348,10 @@ export async function buildIrissOfferPdfBytes(
     if (technical) {
       drawParagraph(ctx, "Tehniskais novērtējums:", 10, MUTED, ctx.fontBold);
       drawParagraph(ctx, technical, 10);
+    }
+    if (summary) {
+      drawParagraph(ctx, "Kopsavilkums:", 10, MUTED, ctx.fontBold);
+      drawParagraph(ctx, summary, 10);
     }
   }
 

@@ -156,8 +156,10 @@ type OfferDraft = {
   hasFactoryPaint: boolean;
   hasNoRustBody: boolean;
   hasSecondWheelSet: boolean;
+  specialNotes: string;
   visualAssessment: string;
   technicalAssessment: string;
+  summary: string;
   carPrice: string;
   deliveryPrice: string;
   commissionFee: string;
@@ -184,8 +186,10 @@ function newOfferDraft(nextNumber: number): OfferDraft {
     hasFactoryPaint: false,
     hasNoRustBody: false,
     hasSecondWheelSet: false,
+    specialNotes: "",
     visualAssessment: "",
     technicalAssessment: "",
+    summary: "",
     carPrice: "",
     deliveryPrice: "",
     commissionFee: "",
@@ -250,8 +254,10 @@ function isOfferDraftSyncedWithRecord(draft: OfferDraft, offer: IrissOfferRecord
   if (draft.hasFactoryPaint !== Boolean(offer.hasFactoryPaint)) return false;
   if (draft.hasNoRustBody !== Boolean(offer.hasNoRustBody)) return false;
   if (draft.hasSecondWheelSet !== Boolean(offer.hasSecondWheelSet)) return false;
+  if (draft.specialNotes !== (offer.specialNotes ?? "")) return false;
   if (draft.visualAssessment !== (offer.visualAssessment ?? "")) return false;
   if (draft.technicalAssessment !== (offer.technicalAssessment ?? "")) return false;
+  if (draft.summary !== (offer.summary ?? "")) return false;
   if (draft.carPrice !== (offer.carPrice ?? "")) return false;
   if (draft.deliveryPrice !== (offer.deliveryPrice ?? "")) return false;
   if (draft.commissionFee !== (offer.commissionFee ?? "")) return false;
@@ -672,8 +678,10 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       hasFactoryPaint: Boolean(offer.hasFactoryPaint),
       hasNoRustBody: Boolean(offer.hasNoRustBody),
       hasSecondWheelSet: Boolean(offer.hasSecondWheelSet),
+      specialNotes: offer.specialNotes ?? "",
       visualAssessment: offer.visualAssessment ?? "",
       technicalAssessment: offer.technicalAssessment ?? "",
+      summary: offer.summary ?? "",
       carPrice: offer.carPrice ?? offer.priceGermany ?? "",
       deliveryPrice: offer.deliveryPrice ?? "",
       commissionFee: offer.commissionFee ?? "",
@@ -717,7 +725,12 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
         year: offerDraft.firstRegistration || offerDraft.year,
         mileage: offerDraft.odometerReading || offerDraft.mileage,
         priceGermany: offerDraft.carPrice || offerDraft.priceGermany,
-        comment: offerDraft.visualAssessment || offerDraft.technicalAssessment || offerDraft.comment,
+        comment:
+          offerDraft.summary ||
+          offerDraft.visualAssessment ||
+          offerDraft.technicalAssessment ||
+          offerDraft.specialNotes ||
+          offerDraft.comment,
         firstRegistration: offerDraft.firstRegistration,
         odometerReading: offerDraft.odometerReading,
         transmission: offerDraft.transmission,
@@ -726,8 +739,10 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
         hasFactoryPaint: offerDraft.hasFactoryPaint,
         hasNoRustBody: offerDraft.hasNoRustBody,
         hasSecondWheelSet: offerDraft.hasSecondWheelSet,
+        specialNotes: offerDraft.specialNotes,
         visualAssessment: offerDraft.visualAssessment,
         technicalAssessment: offerDraft.technicalAssessment,
+        summary: offerDraft.summary,
         carPrice: offerDraft.carPrice,
         deliveryPrice: offerDraft.deliveryPrice,
         commissionFee: offerDraft.commissionFee,
@@ -1386,11 +1401,19 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                     Otrs riteņu komplekts
                   </label>
                 </div>
+                <div className="mt-3">
+                  <LabeledTextarea
+                    label="Īpašas atzīmes"
+                    value={offerDraft.specialNotes}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, specialNotes: e.target.value }))}
+                    className={`${textareaClass} min-h-[100px]`}
+                  />
+                </div>
                 <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <LabeledTextarea
                     label="Vizuālais novērtējums"
                     value={offerDraft.visualAssessment}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, visualAssessment: e.target.value, comment: e.target.value }))}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, visualAssessment: e.target.value }))}
                     className={`${textareaClass} min-h-[132px]`}
                   />
                   <LabeledTextarea
@@ -1398,6 +1421,14 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
                     value={offerDraft.technicalAssessment}
                     onChange={(e) => setOfferDraft((d) => ({ ...d, technicalAssessment: e.target.value }))}
                     className={`${textareaClass} min-h-[132px]`}
+                  />
+                </div>
+                <div className="mt-3">
+                  <LabeledTextarea
+                    label="Kopsavilkums"
+                    value={offerDraft.summary}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, summary: e.target.value, comment: e.target.value }))}
+                    className={`${textareaClass} min-h-[120px]`}
                   />
                 </div>
               </div>

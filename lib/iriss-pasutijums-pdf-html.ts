@@ -184,14 +184,22 @@ export function buildIrissOfferPrintHtml(
   ].filter(Boolean);
   const visual = offer.visualAssessment?.trim() || "";
   const technical = offer.technicalAssessment?.trim() || "";
+  const specialNotes = offer.specialNotes?.trim() || "";
+  const summary = offer.summary?.trim() || "";
   const evalParts: string[] = [];
   if (checks.length > 0) {
     evalParts.push(`<p class="meta">${checks.map((x) => esc(x)).join("<br/>")}</p>`);
+  }
+  if (specialNotes) {
+    evalParts.push(`<div class="box"><h3>Īpašas atzīmes</h3><pre>${esc(specialNotes)}</pre></div>`);
   }
   const evalBoxes: string[] = [];
   if (visual) evalBoxes.push(`<div class="box"><h3>Vizuālais novērtējums</h3><pre>${esc(visual)}</pre></div>`);
   if (technical) evalBoxes.push(`<div class="box"><h3>Tehniskais novērtējums</h3><pre>${esc(technical)}</pre></div>`);
   if (evalBoxes.length > 0) evalParts.push(`<div class="two">${evalBoxes.join("")}</div>`);
+  if (summary) {
+    evalParts.push(`<div class="box"><h3>Kopsavilkums</h3><pre>${esc(summary)}</pre></div>`);
+  }
   const evalInner = evalParts.join("");
 
   const carPrice = offer.carPrice?.trim() || offer.priceGermany?.trim() || "";
