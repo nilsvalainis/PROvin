@@ -88,6 +88,7 @@ import {
   Scale,
   Send,
 } from "lucide-react";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import {
@@ -193,6 +194,24 @@ Ja rodas jautājumi par atskaites datiem, ir nepieciešams padoms pirms/pēc aut
 
 Ar cieņu,
 IRISS (Nils V.)`;
+
+function wrapPdfTextLine(text: string, maxWidth: number, widthOfText: (value: string) => number): string[] {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [""];
+  const out: string[] = [];
+  let line = words[0] ?? "";
+  for (let i = 1; i < words.length; i += 1) {
+    const candidate = `${line} ${words[i]}`;
+    if (widthOfText(candidate) <= maxWidth) {
+      line = candidate;
+    } else {
+      out.push(line);
+      line = words[i] ?? "";
+    }
+  }
+  out.push(line);
+  return out.map((x) => (x.length > 1200 ? `${x.slice(0, 1200)}…` : x));
+}
 
 function WhatsAppIconGlyph() {
   return (
@@ -1645,12 +1664,105 @@ export function OrderDetailWorkspace({
     ? `whatsapp://send?phone=${whatsappPhoneDigits}&text=${encodeURIComponent(WHATSAPP_PREFILL_MESSAGE)}`
     : null;
 
-  const handleWhatsAppSend = () => {
-    if (!whatsappShareHref) return;
-    // Start PDF flow first from this user click, then open WhatsApp with prepared message.
-    void openPrintReport();
-    window.location.href = whatsappShareHref;
-  };
+  const generateAuditPdfForWhatsApp = useCallback(async (): Promise<File | null> => {
+    if (!canGeneratePdf) {
+      alert(
+        "Vispirms: 1) aizpildi avotu laukus un pievieno failus, 2) atver Priekšskatu un apstiprini, 3) aizpildi kopsavilkumu un lauku \"Cenas atbilstība balstoties uz mūsu rīcībā esošajiem datiem\". Tad ģenerē PDF.",
+      );
+      return null;
+    }
+    const pdf = await PDFDocument.create();
+    const font = await pdf.embedFont(StandardFonts.Helvetica);
+    const titleFont = await pdf.embedFont(StandardFonts.HelveticaBold);
+    const marginX = 44;
+    const marginTop = 48;
+    const marginBottom = 44;
+    const baseSize = 10;
+    const lineHeight = 14;
+    const titleSize = 14;
+    const maxLineWidth = 595 - marginX * 2;
+    const widthOfText = (value: string) => font.widthOfTextAtSize(value, baseSize);
+    let page = pdf.addPage([595, 842]);
+    let y = page.getHeight() - marginTop;
+    const ensureSpace = (need: number) => {
+      if (y - need > marginBottom) return;
+      page = pdf.addPage([595, 842]);
+      y = page.getHeight() - marginTop;
+    };
+    const drawLine = (value: string) => {
+      ensureSpace(lineHeight);
+      page.drawText(value, { x: marginX, y, size: baseSize, font, color: rgb(0.11, 0.11, 0.11) });
+      y -= lineHeight;
+    };
+    const drawHeading = (value: string) => {
+      ensureSpace(22);
+      page.drawText(value, { x: marginX, y, size: titleSize, font: titleFont, color: rgb(0.05, 0.05, 0.05) });
+      y -= 20;
+    };
+    const drawParagraph = (value: string) => {
+      const normalized = value.trim();
+      if (!normalized) {
+        y -= 6;
+        return;
+      }
+      const lines = wrapPdfTextLine(normalized.replace(/\s+/g, " "), maxLineWidth, widthOfText);
+      for (const ln of lines) drawLine(ln);
+      y -= 4;
+    };
+
+    const sourceTexts: Array<{ title: string; text: string }> = [
+      { title: "CSDD", text: csddFormToPlainText(ws.sourceBlocks.csdd) },
+      { title: "Datu servisi", text: [vendorAvotuBlockToPlainText(ws.sourceBlocks.autodna), vendorAvotuBlockToPlainText(ws.sourceBlocks.carvertical)].filter(Boolean).join("\n\n") },
+      { title: "Auto Records", text: autoRecordsBlockToPlainText(ws.sourceBlocks.auto_records) },
+      { title: "LTAB", text: ltabBlockToPlainText(ws.sourceBlocks.ltab) },
+      { title: "Citi avoti", text: citiAvotiToPlainText(ws.sourceBlocks.citi_avoti) },
+      { title: "Sludinājuma analīze", text: listingAnalysisToPlainText(ws.sourceBlocks.listing_analysis) },
+      { title: "Kopsavilkums", text: ws.iriss },
+      { title: "Apskates plāns", text: ws.apskatesPlāns },
+      { title: "Cenas atbilstība", text: ws.cenasAtbilstiba },
+    ];
+
+    drawHeading("PROVIN AUDITS");
+    drawParagraph(`VIN: ${(payload.vin ?? "—").trim() || "—"}`);
+    drawParagraph(`Klients: ${(payload.customerName ?? "—").trim() || "—"}`);
+    drawParagraph(`Tālrunis: ${(payload.customerPhone ?? "—").trim() || "—"}`);
+    drawParagraph(`E-pasts: ${(payload.customerEmail ?? "—").trim() || "—"}`);
+    drawParagraph(`Izveidots: ${new Date().toLocaleString("lv-LV")}`);
+    drawParagraph("");
+
+    for (const section of sourceTexts) {
+      const body = section.text.trim();
+      if (!body) continue;
+      drawHeading(section.title);
+      const chunks = body.split(/\n+/).map((x) => x.trim()).filter(Boolean);
+      for (const chunk of chunks) drawParagraph(chunk);
+      y -= 2;
+    }
+
+    const pdfBytes = await pdf.save();
+    const pdfBlob = new Blob([Uint8Array.from(pdfBytes)], { type: "application/pdf" });
+    return new File([pdfBlob], buildProvinAuditPdfFilename(payload.vin), { type: "application/pdf" });
+  }, [canGeneratePdf, payload.customerEmail, payload.customerName, payload.customerPhone, payload.vin, ws]);
+
+  const handleWhatsAppSend = useCallback(async () => {
+    if (!whatsappShareHref || !whatsappPhoneDigits) return;
+    try {
+      const pdfFile = await generateAuditPdfForWhatsApp();
+      if (!pdfFile) return;
+      if (navigator.share && navigator.canShare?.({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          text: WHATSAPP_PREFILL_MESSAGE,
+          title: "PROVIN audits",
+        });
+        return;
+      }
+      window.location.href = whatsappShareHref;
+      alert("Šajā ierīcē WhatsApp faila pievienošanu nevar automatizēt. Atvērts WhatsApp ar sagatavotu ziņu.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message.slice(0, 220) : "Neizdevās sagatavot PDF WhatsApp nosūtīšanai.");
+    }
+  }, [generateAuditPdfForWhatsApp, whatsappPhoneDigits, whatsappShareHref]);
 
   return (
     <div className="relative min-w-0 pb-24">
