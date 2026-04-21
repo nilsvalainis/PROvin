@@ -42,6 +42,9 @@ const PRICE_BAND_BORDER = rgb(217 / 255, 112 / 255, 29 / 255);
 const SECTION_BEFORE = 14;
 const SECTION_AFTER = 10;
 const LETTER_TRACKING = 0.22;
+const FOOTER_SAFE = 52;
+/** Atkārtotai lapai — tikai logo josla no lapas augšas. */
+const LOGO_ONLY_BAND = 46;
 
 function wrapText(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
   const words = text.split(/\s+/).filter(Boolean);
@@ -64,6 +67,8 @@ function lineHeight(size: number): number {
   return Math.round(size * 1.38);
 }
 
+type LogoPack = { img: PDFImage; dw: number; dh: number };
+
 type Ctx = {
   pdfDoc: PDFDocument;
   page: PDFPage;
@@ -74,12 +79,34 @@ type Ctx = {
   font: PDFFont;
   fontBold: PDFFont;
   y: number;
+  /** Ja true, `ensureSpace` neveic lapu pārtraukumu (izmanto zīmēšanai iekš kartītes pēc augstuma pārbaudes). */
+  suppressPageBreak: boolean;
+  /** Piedāvājuma PDF — logo katrā lapā; null = nav. */
+  offerLogo: LogoPack | null;
+  /** Jauna lapa: atstarpe zem augšējā logo (saturs sākas zem šīs joslas). */
+  logoOnlyBand: number;
 };
 
+function stampOfferLogoTopLeft(page: PDFPage, pageH: number, margin: number, logo: LogoPack): void {
+  const pad = 3;
+  const w = logo.dw + pad * 2;
+  const h = logo.dh + pad * 2;
+  const yRect = pageH - margin - h;
+  page.drawRectangle({ x: margin, y: yRect, width: w, height: h, color: rgb(1, 1, 1) });
+  page.drawImage(logo.img, {
+    x: margin + pad,
+    y: yRect + pad,
+    width: logo.dw,
+    height: logo.dh,
+  });
+}
+
 function ensureSpace(ctx: Ctx, need: number): void {
-  if (ctx.y - need < ctx.margin + 36) {
+  if (ctx.suppressPageBreak) return;
+  if (ctx.y - need < ctx.margin + FOOTER_SAFE) {
     ctx.page = ctx.pdfDoc.addPage([ctx.pageW, ctx.pageH]);
-    ctx.y = ctx.pageH - ctx.margin;
+    if (ctx.offerLogo) stampOfferLogoTopLeft(ctx.page, ctx.pageH, ctx.margin, ctx.offerLogo);
+    ctx.y = ctx.pageH - ctx.margin - (ctx.offerLogo ? ctx.logoOnlyBand : 0);
   }
 }
 
@@ -150,8 +177,67 @@ function measureLinesHeight(lines: string[], font: PDFFont, size: number, maxW: 
   return h;
 }
 
+function splitColonLabelValue(line: string): { kind: "kv"; label: string; value: string } | { kind: "plain"; text: string } {
+  const idx = line.indexOf(":");
+  if (idx <= 0) return { kind: "plain", text: line };
+  return { kind: "kv", label: line.slice(0, idx + 1).trim(), value: line.slice(idx + 1).trim() };
+}
+
+function measureColonLabeledLineHeight(line: string, size: number, maxW: number, ctx: Ctx): number {
+  const p = splitColonLabelValue(line);
+  const lh = lineHeight(size);
+  if (p.kind === "plain") return measureWrappedBlockHeight(p.text, ctx.font, size, maxW);
+  const labWithSp = `${p.label} `;
+  const lw = measureTrackedWidth(labWithSp, ctx.fontBold, size);
+  if (!p.value) return lh;
+  const restFirst = maxW - lw;
+  if (restFirst < 36) return lh + measureWrappedBlockHeight(p.value, ctx.font, size, maxW);
+  if (measureTrackedWidth(p.value, ctx.font, size) <= restFirst && !p.value.includes("\n")) return lh;
+  return lh + measureWrappedBlockHeight(p.value, ctx.font, size, maxW);
+}
+
+function measureColonLabeledLinesHeight(lines: string[], size: number, maxW: number, ctx: Ctx): number {
+  let h = 0;
+  for (const ln of lines) h += measureColonLabeledLineHeight(ln, size, maxW, ctx);
+  return h;
+}
+
+function drawColonLabeledLine(ctx: Ctx, line: string, size: number, x: number, maxW: number, color = INK) {
+  const p = splitColonLabelValue(line);
+  const lh = lineHeight(size);
+  if (p.kind === "plain") {
+    for (const ln of wrapText(p.text, ctx.font, size, maxW)) {
+      drawTrackedText(ctx.page, ln, { x, y: ctx.y - size, size, font: ctx.font, color });
+      ctx.y -= lh;
+    }
+    return;
+  }
+  const labWithSp = `${p.label} `;
+  const lw = measureTrackedWidth(labWithSp, ctx.fontBold, size);
+  const restFirst = maxW - lw;
+  const yb = ctx.y - size;
+  if (!p.value) {
+    drawTrackedText(ctx.page, p.label, { x, y: yb, size, font: ctx.fontBold, color });
+    ctx.y -= lh;
+    return;
+  }
+  if (restFirst >= 36 && measureTrackedWidth(p.value, ctx.font, size) <= restFirst && !p.value.includes("\n")) {
+    drawTrackedText(ctx.page, labWithSp, { x, y: yb, size, font: ctx.fontBold, color });
+    drawTrackedText(ctx.page, p.value, { x: x + lw, y: yb, size, font: ctx.font, color });
+    ctx.y -= lh;
+    return;
+  }
+  drawTrackedText(ctx.page, p.label, { x, y: yb, size, font: ctx.fontBold, color });
+  ctx.y -= lh;
+  for (const ln of wrapText(p.value, ctx.font, size, maxW)) {
+    drawTrackedText(ctx.page, ln, { x, y: ctx.y - size, size, font: ctx.font, color });
+    ctx.y -= lh;
+  }
+}
+
 /**
  * Vieglas kartītes fons + apmale (zīmēts pirms teksta), admin iOS stilam līdzīgi.
+ * Kartīte nekad netiek pārrauta starp lapām — pirms zīmēšanas tiek rezervēta pilna augstuma vieta.
  */
 function drawIosCard(
   ctx: Ctx,
@@ -166,6 +252,13 @@ function drawIosCard(
   const titleBlock = lineHeight(13) + 6;
   const bodyH = measureBody(iw);
   const h = pad + titleBlock + bodyH + pad;
+  const outerNeed = SECTION_BEFORE + h + SECTION_AFTER;
+
+  if (!ctx.suppressPageBreak && ctx.y - outerNeed < ctx.margin + FOOTER_SAFE) {
+    ctx.page = ctx.pdfDoc.addPage([ctx.pageW, ctx.pageH]);
+    if (ctx.offerLogo) stampOfferLogoTopLeft(ctx.page, ctx.pageH, ctx.margin, ctx.offerLogo);
+    ctx.y = ctx.pageH - ctx.margin - (ctx.offerLogo ? ctx.logoOnlyBand : 0);
+  }
 
   ctx.y -= SECTION_BEFORE;
   const yTopCard = ctx.y;
@@ -178,12 +271,18 @@ function drawIosCard(
     radius,
     color: CARD_FILL,
     borderColor: CARD_BORDER,
-    borderWidth: 0.85,
+    borderWidth: 1.15,
   });
   ctx.y = yRectBottom + h - pad;
-  drawTextLine(ctx, title, 13, { font: ctx.fontBold, color: ACCENT, x: ix });
-  ctx.y -= 6;
-  drawBody({ x: ix, w: iw });
+  const prev = ctx.suppressPageBreak;
+  ctx.suppressPageBreak = true;
+  try {
+    drawTextLine(ctx, title, 13, { font: ctx.fontBold, color: ACCENT, x: ix });
+    ctx.y -= 6;
+    drawBody({ x: ix, w: iw });
+  } finally {
+    ctx.suppressPageBreak = prev;
+  }
   ctx.y = yRectBottom - SECTION_AFTER;
 }
 
@@ -287,7 +386,7 @@ function drawImageRow2Col(
     dhR = right.h * sR;
   }
   const rowH = Math.max(dhL, dhR);
-  ensureSpace(ctx, rowH + 14);
+  if (!ctx.suppressPageBreak) ensureSpace(ctx, rowH + 14);
   const topY = ctx.y;
   ctx.page.drawImage(left.img, {
     x: originX + (cellW - dwL) / 2,
@@ -326,6 +425,9 @@ async function createPdfCtx(): Promise<Ctx> {
     font,
     fontBold,
     y: pageH - margin,
+    suppressPageBreak: false,
+    offerLogo: null,
+    logoOnlyBand: LOGO_ONLY_BAND,
   };
 }
 
@@ -348,7 +450,7 @@ function fmtMoneyEurLv(total: number): string {
 function drawKopaHighlightBand(ctx: Ctx, boxX: number, boxW: number, totalPrice: number): void {
   const label = "Kopā";
   const amountStr = fmtMoneyEurLv(totalPrice);
-  const h = 46;
+  const h = 52;
   ctx.y -= 8;
   const yTop = ctx.y;
   const yBottom = yTop - h;
@@ -357,86 +459,66 @@ function drawKopaHighlightBand(ctx: Ctx, boxX: number, boxW: number, totalPrice:
     y: yBottom,
     width: boxW,
     height: h,
-    radius: 8,
+    radius: 10,
     color: PRICE_BAND_FILL,
     borderColor: PRICE_BAND_BORDER,
-    borderWidth: 1.05,
+    borderWidth: 1.25,
   });
-  const baseline = yBottom + 16;
+  const baseline = yBottom + 18;
   drawTrackedText(ctx.page, label, {
-    x: boxX + 12,
+    x: boxX + 14,
     y: baseline,
-    size: 12,
+    size: 13,
     font: ctx.fontBold,
     color: INK,
     tracking: LETTER_TRACKING,
   });
-  const fs = 17;
-  const amtW = measureTrackedWidth(amountStr, ctx.fontBold, fs, LETTER_TRACKING);
+  const fs = 19;
+  const amtW = measureTrackedWidth(amountStr, ctx.font, fs, LETTER_TRACKING);
   drawTrackedText(ctx.page, amountStr, {
     x: boxX + boxW - 14 - amtW,
     y: baseline - 1,
     size: fs,
-    font: ctx.fontBold,
+    font: ctx.font,
     color: INK,
     tracking: LETTER_TRACKING,
   });
   ctx.y = yBottom - 10;
 }
 
-async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void> {
-  const heroTitle = val(offer.brandModel) ?? val(offer.title) ?? "Piedāvājums";
-  let logo: PDFImage | null = null;
-  let dw = 0;
-  let dh = 0;
+async function loadOfferLogoPack(pdfDoc: PDFDocument): Promise<LogoPack | null> {
   try {
     const buf = await fs.readFile(DZINTARZEME_OFFER_LOGO_PATH);
+    let img: PDFImage;
     try {
-      logo = await ctx.pdfDoc.embedPng(buf);
+      img = await pdfDoc.embedPng(buf);
     } catch {
-      logo = await ctx.pdfDoc.embedJpg(buf);
+      img = await pdfDoc.embedJpg(buf);
     }
     const maxW = 56;
     const maxH = 36;
-    const s = Math.min(maxW / logo.width, maxH / logo.height, 1);
-    dw = logo.width * s;
-    dh = logo.height * s;
+    const s = Math.min(maxW / img.width, maxH / img.height, 1);
+    return { img, dw: img.width * s, dh: img.height * s };
   } catch {
-    logo = null;
+    return null;
   }
+}
 
+async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void> {
+  const heroTitle = val(offer.brandModel) ?? val(offer.title) ?? "Piedāvājums";
+  const logo = ctx.offerLogo;
   const lh20 = lineHeight(20);
-  const titleColX = ctx.margin + (logo && dh > 0 ? dw + 14 : 0);
-  const titleColW = ctx.contentW - (logo && dh > 0 ? dw + 14 : 0);
-  const titleLines = wrapText(heroTitle, ctx.fontBold, 20, titleColW);
+  const logoBoxW = logo ? logo.dw + 6 : 0;
+  const titleColX = ctx.margin + (logo ? logoBoxW + 14 : 0);
+  const titleColW = ctx.contentW - (logo ? logoBoxW + 14 : 0);
+  const titleLines = wrapText(heroTitle, ctx.font, 20, titleColW);
   const titleH = titleLines.length * lh20;
-  const rowH = Math.max(dh > 0 ? dh + 10 : 0, titleH);
+  const rowH = Math.max(logo ? logo.dh + 6 : 0, titleH);
 
-  ensureSpace(ctx, rowH + lineHeight(11) + 18);
+  ensureSpace(ctx, rowH + lineHeight(11) + 22);
   const rowTopY = ctx.y;
 
-  if (logo && dh > 0) {
-    const logoFrameW = dw + 8;
-    const logoFrameH = dh + 8;
-    const logoX = ctx.margin;
-    const logoY = rowTopY - logoFrameH + 3;
-    drawRoundedRect(ctx.page, {
-      x: logoX,
-      y: logoY,
-      width: logoFrameW,
-      height: logoFrameH,
-      radius: 8,
-      color: rgb(1, 1, 1),
-      borderColor: CARD_BORDER,
-      borderWidth: 0.7,
-    });
-    ctx.page.drawImage(logo, {
-      x: logoX + 4,
-      y: logoY + 4,
-      width: dw,
-      height: dh,
-    });
-  }
+  if (logo) stampOfferLogoTopLeft(ctx.page, ctx.pageH, ctx.margin, logo);
 
   let ty = rowTopY;
   for (const line of titleLines) {
@@ -444,14 +526,16 @@ async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void
       x: titleColX,
       y: ty - 20,
       size: 20,
-      font: ctx.fontBold,
+      font: ctx.font,
       color: INK,
       tracking: LETTER_TRACKING,
     });
     ty -= lh20;
   }
 
-  ctx.y = rowTopY - rowH - 8;
+  const logoBandBottom = logo ? ctx.pageH - ctx.margin - (logo.dh + 6) : rowTopY;
+  const titleBlockBottom = rowTopY - titleLines.length * lh20;
+  ctx.y = Math.min(logoBandBottom, titleBlockBottom) - 8;
   drawParagraph(ctx, new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date()), 10, MUTED, undefined, {
     x: ctx.margin,
     maxW: ctx.contentW,
@@ -484,9 +568,9 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
     drawIosCard(
       ctx,
       "Klienta dati",
-      (iw) => measureLinesHeight(clientLines, ctx.font, 10, iw),
+      (iw) => measureColonLabeledLinesHeight(clientLines, 10, iw, ctx),
       ({ x, w }) => {
-        for (const ln of clientLines) drawParagraph(ctx, ln, 10, INK, ctx.fontBold, { x, maxW: w });
+        for (const ln of clientLines) drawColonLabeledLine(ctx, ln, 10, x, w);
       },
     );
   }
@@ -509,9 +593,9 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
     drawIosCard(
       ctx,
       "Transportlīdzekļa specifikācija",
-      (iw) => measureLinesHeight(vehLines, ctx.font, 10, iw),
+      (iw) => measureColonLabeledLinesHeight(vehLines, 10, iw, ctx),
       ({ x, w }) => {
-        for (const ln of vehLines) drawParagraph(ctx, ln, 10, INK, ctx.fontBold, { x, maxW: w });
+        for (const ln of vehLines) drawColonLabeledLine(ctx, ln, 10, x, w);
       },
     );
   }
@@ -522,7 +606,7 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
       ctx,
       "Obligātās prasības (aprīkojums)",
       (iw) => measureWrappedBlockHeight(req, ctx.font, 10, iw),
-      ({ x, w }) => drawParagraph(ctx, req, 10, INK, ctx.fontBold, { x, maxW: w }),
+      ({ x, w }) => drawParagraph(ctx, req, 10, INK, ctx.font, { x, maxW: w }),
     );
   }
   const des = val(record.equipmentDesired);
@@ -531,7 +615,7 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
       ctx,
       "Vēlamās prasības (aprīkojums)",
       (iw) => measureWrappedBlockHeight(des, ctx.font, 10, iw),
-      ({ x, w }) => drawParagraph(ctx, des, 10, INK, ctx.fontBold, { x, maxW: w }),
+      ({ x, w }) => drawParagraph(ctx, des, 10, INK, ctx.font, { x, maxW: w }),
     );
   }
 
@@ -541,7 +625,7 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
       ctx,
       "Piezīmes",
       (iw) => measureWrappedBlockHeight(n, ctx.font, 10, iw),
-      ({ x, w }) => drawParagraph(ctx, n, 10, INK, ctx.fontBold, { x, maxW: w }),
+      ({ x, w }) => drawParagraph(ctx, n, 10, INK, ctx.font, { x, maxW: w }),
     );
   }
 
@@ -562,9 +646,9 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
     drawIosCard(
       ctx,
       "Sludinājumu saites",
-      (iw) => measureLinesHeight(links, ctx.font, 9, iw),
+      (iw) => measureColonLabeledLinesHeight(links, 9, iw, ctx),
       ({ x, w }) => {
-        for (const ln of links) drawParagraph(ctx, ln, 9, INK, ctx.fontBold, { x, maxW: w });
+        for (const ln of links) drawColonLabeledLine(ctx, ln, 9, x, w);
       },
     );
   }
@@ -586,6 +670,8 @@ export async function buildIrissOfferPdfBytes(
   const embedImages = opts?.embedImages !== false;
   const includeClientData = opts?.includeClientData !== false;
   const ctx = await createPdfCtx();
+  ctx.offerLogo = await loadOfferLogoPack(ctx.pdfDoc);
+  ctx.logoOnlyBand = ctx.offerLogo ? Math.max(LOGO_ONLY_BAND, Math.ceil(ctx.offerLogo.dh + 20)) : LOGO_ONLY_BAND;
 
   await drawOfferPdfHero(ctx, offer);
 
@@ -600,9 +686,9 @@ export async function buildIrissOfferPdfBytes(
     drawIosCard(
       ctx,
       "Klienta dati",
-      (iw) => measureLinesHeight(clientLines, ctx.font, 10, iw),
+      (iw) => measureColonLabeledLinesHeight(clientLines, 10, iw, ctx),
       ({ x, w }) => {
-        for (const ln of clientLines) drawParagraph(ctx, ln, 10, INK, ctx.fontBold, { x, maxW: w });
+        for (const ln of clientLines) drawColonLabeledLine(ctx, ln, 10, x, w);
       },
     );
   }
@@ -619,9 +705,9 @@ export async function buildIrissOfferPdfBytes(
     drawIosCard(
       ctx,
       "Pamatinformācija",
-      (iw) => measureLinesHeight(offerLines, ctx.font, 10, iw),
+      (iw) => measureColonLabeledLinesHeight(offerLines, 10, iw, ctx),
       ({ x, w }) => {
-        for (const ln of offerLines) drawParagraph(ctx, ln, 10, INK, ctx.fontBold, { x, maxW: w });
+        for (const ln of offerLines) drawColonLabeledLine(ctx, ln, 10, x, w);
       },
     );
   }
@@ -673,25 +759,25 @@ export async function buildIrissOfferPdfBytes(
       if (specialNotes) {
         if (filled) ctx.y -= partGap;
         drawParagraph(ctx, "Īpašas atzīmes:", 10, MUTED, ctx.fontBold, { x, maxW: w });
-        drawParagraph(ctx, specialNotes, 10, INK, ctx.fontBold, { x, maxW: w });
+        drawParagraph(ctx, specialNotes, 10, INK, ctx.font, { x, maxW: w });
         filled = true;
       }
       if (visual) {
         if (filled) ctx.y -= partGap;
         drawParagraph(ctx, "Vizuālais novērtējums:", 10, MUTED, ctx.fontBold, { x, maxW: w });
-        drawParagraph(ctx, visual, 10, INK, ctx.fontBold, { x, maxW: w });
+        drawParagraph(ctx, visual, 10, INK, ctx.font, { x, maxW: w });
         filled = true;
       }
       if (technical) {
         if (filled) ctx.y -= partGap;
         drawParagraph(ctx, "Tehniskais novērtējums:", 10, MUTED, ctx.fontBold, { x, maxW: w });
-        drawParagraph(ctx, technical, 10, INK, ctx.fontBold, { x, maxW: w });
+        drawParagraph(ctx, technical, 10, INK, ctx.font, { x, maxW: w });
         filled = true;
       }
       if (summary) {
         if (filled) ctx.y -= partGap;
         drawParagraph(ctx, "Kopsavilkums:", 10, MUTED, ctx.fontBold, { x, maxW: w });
-        drawParagraph(ctx, summary, 10, INK, ctx.fontBold, { x, maxW: w });
+        drawParagraph(ctx, summary, 10, INK, ctx.font, { x, maxW: w });
       }
     });
   }
@@ -705,32 +791,23 @@ export async function buildIrissOfferPdfBytes(
   if (carPrice) pricingPlainLines.push(`Automašīnas cena: ${carPrice}`);
   if (deliveryPrice) pricingPlainLines.push(`Piegādes cena: ${deliveryPrice}`);
   if (commissionFee) pricingPlainLines.push(`Komisijas maksa: ${commissionFee}`);
-  const hasPricing =
-    pricingPlainLines.length > 0 || totalPrice > 0 || !!offerValidDays;
+  const hasPricing = pricingPlainLines.length > 0 || totalPrice > 0;
 
   if (hasPricing) {
     drawIosCard(ctx, "Cenas un piedāvājums", (iw) => {
-      let h = measureLinesHeight(pricingPlainLines, ctx.font, 10, iw);
+      let h = measureColonLabeledLinesHeight(pricingPlainLines, 10, iw, ctx);
       if (totalPrice > 0) {
         if (h > 0) h += 8;
-        h += 46 + 10;
-      }
-      if (offerValidDays) {
-        if (h > 0) h += 6;
-        h += measureWrappedBlockHeight(`Piedāvājums spēkā (dienas): ${offerValidDays}`, ctx.font, 10, iw);
+        h += 52 + 10;
       }
       return h;
     }, ({ x, w }) => {
       for (const ln of pricingPlainLines) {
-        drawParagraph(ctx, ln, 10, INK, ctx.fontBold, { x, maxW: w });
+        drawColonLabeledLine(ctx, ln, 10, x, w);
       }
       if (totalPrice > 0) {
         if (pricingPlainLines.length > 0) ctx.y -= 6;
         drawKopaHighlightBand(ctx, x, w, totalPrice);
-      }
-      if (offerValidDays) {
-        ctx.y -= 4;
-        drawParagraph(ctx, `Piedāvājums spēkā (dienas): ${offerValidDays}`, 10, INK, ctx.fontBold, { x, maxW: w });
       }
     });
   }
@@ -762,19 +839,38 @@ export async function buildIrissOfferPdfBytes(
     if (pics.length > 0) {
       const COL_GAP = 12;
       const MAX_CELL_H = 178;
-      const rows = Math.ceil(pics.length / 2);
       const rowPixel = MAX_CELL_H + 14;
-      drawIosCard(
-        ctx,
-        "Fotogrāfijas",
-        () => rows * rowPixel,
-        ({ x, w }) => {
-          const cw = (w - COL_GAP) / 2;
-          for (let i = 0; i < pics.length; i += 2) {
-            drawImageRow2Col(ctx, pics[i]!, pics[i + 1] ?? null, cw, COL_GAP, MAX_CELL_H, x);
-          }
-        },
-      );
+      const titleBlock = lineHeight(13) + 6;
+      const cardVerticalChrome = 20 + titleBlock;
+      let picIdx = 0;
+      while (picIdx < pics.length) {
+        const maxBodyH =
+          ctx.y -
+          ctx.margin -
+          FOOTER_SAFE -
+          SECTION_BEFORE -
+          SECTION_AFTER -
+          cardVerticalChrome;
+        let maxRows = Math.floor(maxBodyH / rowPixel);
+        if (maxRows < 1) maxRows = 1;
+        const maxPhotosThisCard = maxRows * 2;
+        const remaining = pics.length - picIdx;
+        const countThisCard = Math.min(remaining, maxPhotosThisCard);
+        const chunk = pics.slice(picIdx, picIdx + countThisCard);
+        picIdx += countThisCard;
+        const rowsThis = Math.ceil(chunk.length / 2);
+        drawIosCard(
+          ctx,
+          "Fotogrāfijas",
+          () => rowsThis * rowPixel,
+          ({ x, w }) => {
+            const cw = (w - COL_GAP) / 2;
+            for (let j = 0; j < chunk.length; j += 2) {
+              drawImageRow2Col(ctx, chunk[j]!, chunk[j + 1] ?? null, cw, COL_GAP, MAX_CELL_H, x);
+            }
+          },
+        );
+      }
     }
   }
 
@@ -785,9 +881,18 @@ export async function buildIrissOfferPdfBytes(
       "Fotogrāfiju pielikumi",
       (iw) => measureLinesHeight(lines, ctx.font, 9, iw),
       ({ x, w }) => {
-        for (const ln of lines) drawParagraph(ctx, ln, 9, INK, ctx.fontBold, { x, maxW: w });
+        for (const ln of lines) drawParagraph(ctx, ln, 9, INK, ctx.font, { x, maxW: w });
       },
     );
+  }
+
+  if (offerValidDays) {
+    ensureSpace(ctx, lineHeight(11) + 20);
+    drawParagraph(ctx, `Piedāvājums spēkā (dienas): ${offerValidDays}`, 10, INK, ctx.fontBold, {
+      x: ctx.margin,
+      maxW: ctx.contentW,
+    });
+    ctx.y -= 8;
   }
 
   drawFooter(ctx);
