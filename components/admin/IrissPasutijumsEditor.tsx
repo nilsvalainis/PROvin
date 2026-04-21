@@ -814,14 +814,12 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       const filenameBase = buildIrissOfferShareSubject(offerDraft).replace(/[^\p{L}\p{N}\-_. ]/gu, "").trim() || "piedavajums";
       const safeFileName = filenameBase.endsWith(".pdf") ? filenameBase : `${filenameBase}.pdf`;
       const file = new File([blob], safeFileName, { type: "application/pdf" });
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], text: shareText });
-      } else {
-        const pdfUrl = URL.createObjectURL(blob);
-        window.open(pdfUrl, "_blank", "noopener,noreferrer");
-        window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 120_000);
-        window.open(`https://wa.me/${digits}?text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");
-      }
+      void file;
+      const pdfUrl = URL.createObjectURL(blob);
+      window.open(pdfUrl, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 120_000);
+      // Always bind WhatsApp action to the phone from "Klienta dati -> Tālrunis".
+      window.open(`https://wa.me/${digits}?text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");
       setTransferUi((u) => (u ? { ...u, pct: 100 } : null));
     } catch (e) {
       alert(e instanceof Error ? e.message.slice(0, 220) : "WhatsApp eksports neizdevās.");
