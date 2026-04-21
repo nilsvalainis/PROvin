@@ -156,7 +156,7 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
                 </span>
               </button>
             </div>
-            {isProWorkspace ? <AdminSidebarNav baseUrl={baseUrl} /> : null}
+            {isProWorkspace ? <AdminSidebarNav baseUrl={baseUrl} /> : <IrissAdminSidebarNav />}
             <div className="pt-0.5">
               <LogoutButton />
             </div>

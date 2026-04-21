@@ -575,6 +575,7 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
 
 export type BuildIrissOfferPdfOptions = {
   embedImages?: boolean;
+  includeClientData?: boolean;
 };
 
 export async function buildIrissOfferPdfBytes(
@@ -583,6 +584,7 @@ export async function buildIrissOfferPdfBytes(
   opts?: BuildIrissOfferPdfOptions,
 ): Promise<Uint8Array> {
   const embedImages = opts?.embedImages !== false;
+  const includeClientData = opts?.includeClientData !== false;
   const ctx = await createPdfCtx();
 
   await drawOfferPdfHero(ctx, offer);
@@ -594,7 +596,7 @@ export async function buildIrissOfferPdfBytes(
   if (ph) clientLines.push(`Tālrunis: ${ph}`);
   const em = val(record.email);
   if (em) clientLines.push(`E-pasts: ${em}`);
-  if (clientLines.length) {
+  if (includeClientData && clientLines.length) {
     drawIosCard(
       ctx,
       "Klienta dati",

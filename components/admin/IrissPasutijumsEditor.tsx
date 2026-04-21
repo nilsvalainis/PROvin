@@ -428,7 +428,15 @@ function IrissOfferAttachmentReorderItem({
   );
 }
 
-export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissPasutijumsRecord }) {
+export function IrissPasutijumsEditor({
+  initialRecord,
+  autoOpenNewOffer = false,
+  forceNoClientPdf = false,
+}: {
+  initialRecord: IrissPasutijumsRecord;
+  autoOpenNewOffer?: boolean;
+  forceNoClientPdf?: boolean;
+}) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(initialRecord);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
@@ -443,6 +451,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   const [offerPdfBusy, setOfferPdfBusy] = useState(false);
   const [offerWhatsappBusy, setOfferWhatsappBusy] = useState(false);
   const [offerDraft, setOfferDraft] = useState<OfferDraft>(() => newOfferDraft(1));
+  const autoOpenOfferDone = useRef(false);
   const lastSavedSnapshot = useRef(JSON.stringify(initialRecord));
   const autosaveTimer = useRef<number | null>(null);
   const autosaveInFlight = useRef(false);
@@ -621,6 +630,12 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     setOfferDraft(newOfferDraft(rec.offers.length + 1));
     setOfferOpen(true);
   }, [rec.offers.length]);
+
+  useEffect(() => {
+    if (!autoOpenNewOffer || autoOpenOfferDone.current) return;
+    autoOpenOfferDone.current = true;
+    openCreateOffer();
+  }, [autoOpenNewOffer, openCreateOffer]);
 
   const openEditOffer = useCallback((offer: IrissOfferRecord) => {
     setOfferDraft({
@@ -836,12 +851,15 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   }, [normalizedPhone, patch, rec.phone]);
 
   const generateOfferPdfBlob = useCallback(
-    async (offerId: string): Promise<Blob> => {
-      const base = `/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/offer/${encodeURIComponent(offerId)}/print`;
+    async (offerId: string, includeClientData = true): Promise<Blob> => {
+      const base = `/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/offer/${encodeURIComponent(offerId)}/print${
+        includeClientData ? "" : "?client=0"
+      }`;
       let res = await fetch(base, { credentials: "include", cache: "no-store" });
       if (!res.ok) {
         await res.text().catch(() => "");
-        res = await fetch(`${base}?images=0`, { credentials: "include", cache: "no-store" });
+        const sep = base.includes("?") ? "&" : "?";
+        res = await fetch(`${base}${sep}images=0`, { credentials: "include", cache: "no-store" });
       }
       if (!res.ok) {
         const errBody = await res.text();
@@ -910,7 +928,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       return;
     }
     try {
-      const blob = await generateOfferPdfBlob(offerOut.id);
+      const blob = await generateOfferPdfBlob(offerOut.id, !forceNoClientPdf);
       const pdfUrl = URL.createObjectURL(blob);
       window.open(pdfUrl, "_blank", "noopener,noreferrer");
       window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 120_000);
@@ -919,7 +937,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     } finally {
       setOfferPdfBusy(false);
     }
-  }, [generateOfferPdfBlob, persistOffer]);
+  }, [forceNoClientPdf, generateOfferPdfBlob, persistOffer]);
 
   const openOfferShareWhatsApp = useCallback(async () => {
     if (!normalizedPhone) return;
@@ -933,10 +951,15 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       return;
     }
     try {
-      const blob = await generateOfferPdfBlob(offerOut.id);
+      const blob = await generateOfferPdfBlob(offerOut.id, !forceNoClientPdf);
       const filenameBase = buildIrissOfferShareSubject(offerDraft).replace(/[^\p{L}\p{N}\-_. ]/gu, "").trim() || "piedavajums";
       const safeFileName = filenameBase.endsWith(".pdf") ? filenameBase : `${filenameBase}.pdf`;
-      const shareText = buildIrissOfferClientShareBody(offerDraft, rec.clientFirstName, rec.clientLastName, safeFileName);
+      const shareText = buildIrissOfferClientShareBody(
+        offerDraft,
+        forceNoClientPdf ? "" : rec.clientFirstName,
+        forceNoClientPdf ? "" : rec.clientLastName,
+        safeFileName,
+      );
 
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -959,6 +982,7 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       setOfferWhatsappBusy(false);
     }
   }, [
+    forceNoClientPdf,
     generateOfferPdfBlob,
     normalizedPhone,
     offerDraft,

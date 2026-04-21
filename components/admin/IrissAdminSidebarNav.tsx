@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { IrissNewOfferMenuButton } from "@/components/admin/IrissNewOfferMenuButton";
 
 function navItemClass(active: boolean) {
   if (active) {
@@ -24,6 +25,7 @@ export function IrissAdminSidebarNav({ orientation = "vertical" }: Props) {
       <Link href="/admin/iriss/pasutijumi" className={navItemClass(pasutijumiActive)}>
         PASŪTĪJUMI
       </Link>
+      <IrissNewOfferMenuButton compact={horizontal} />
       {!horizontal ? (
         <Link href="/admin" className="rounded-xl border border-white/20 bg-white/60 px-3 py-2.5 text-center text-[12px] font-medium text-[var(--color-provin-accent)] shadow-sm backdrop-blur-xl transition hover:bg-white/80 md:hidden">
           PRO administrēšana

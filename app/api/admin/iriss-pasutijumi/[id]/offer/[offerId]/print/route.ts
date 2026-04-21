@@ -32,7 +32,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string; off
     });
   }
   const embedImages = url.searchParams.get("images") !== "0";
-  const bytes = await buildIrissOfferPdfBytes(rec, offer, { embedImages });
+  const includeClientData = url.searchParams.get("client") !== "0";
+  const bytes = await buildIrissOfferPdfBytes(rec, offer, { embedImages, includeClientData });
   const inline =
     url.searchParams.get("inline") === "1" ||
     url.searchParams.get("disposition") === "inline" ||

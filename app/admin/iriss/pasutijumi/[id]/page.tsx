@@ -6,7 +6,10 @@ export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ id: string }> };
 
-export default async function IrissPasutijumsDetailPage({ params }: Props) {
+export default async function IrissPasutijumsDetailPage({
+  params,
+  searchParams,
+}: Props & { searchParams?: Promise<{ newOffer?: string; noClientPdf?: string }> }) {
   if (!isIrissPasutijumiStoreEnabled()) {
     redirect("/admin/iriss/pasutijumi");
   }
@@ -18,5 +21,8 @@ export default async function IrissPasutijumsDetailPage({ params }: Props) {
   if (!rec) {
     notFound();
   }
-  return <IrissPasutijumsEditor initialRecord={rec} />;
+  const sp = (await searchParams) ?? {};
+  const autoOpenNewOffer = sp.newOffer === "1";
+  const forceNoClientPdf = sp.noClientPdf === "1";
+  return <IrissPasutijumsEditor initialRecord={rec} autoOpenNewOffer={autoOpenNewOffer} forceNoClientPdf={forceNoClientPdf} />;
 }
