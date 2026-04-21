@@ -148,6 +148,20 @@ type OfferDraft = {
   mileage: string;
   priceGermany: string;
   comment: string;
+  firstRegistration: string;
+  odometerReading: string;
+  transmission: string;
+  location: string;
+  hasFullServiceHistory: boolean;
+  hasFactoryPaint: boolean;
+  hasNoRustBody: boolean;
+  hasSecondWheelSet: boolean;
+  visualAssessment: string;
+  technicalAssessment: string;
+  carPrice: string;
+  deliveryPrice: string;
+  commissionFee: string;
+  offerValidDays: string;
   attachments: IrissOfferAttachment[];
   createdAt: string;
 };
@@ -162,6 +176,20 @@ function newOfferDraft(nextNumber: number): OfferDraft {
     mileage: "",
     priceGermany: "",
     comment: "",
+    firstRegistration: "",
+    odometerReading: "",
+    transmission: "",
+    location: "",
+    hasFullServiceHistory: false,
+    hasFactoryPaint: false,
+    hasNoRustBody: false,
+    hasSecondWheelSet: false,
+    visualAssessment: "",
+    technicalAssessment: "",
+    carPrice: "",
+    deliveryPrice: "",
+    commissionFee: "",
+    offerValidDays: "",
     attachments: [],
     createdAt: now,
   };
@@ -174,7 +202,7 @@ function buildIrissOfferClientShareBody(
 ): string {
   const name = [clientFirstName, clientLastName].map((s) => s.trim()).filter(Boolean).join(" ");
   const greeting = name ? `Sveiki, ${name}!` : "Sveiki!";
-  const vehicle = [draft.brandModel.trim(), draft.year.trim()].filter(Boolean).join(", ");
+  const vehicle = [draft.brandModel.trim(), draft.firstRegistration.trim() || draft.year.trim()].filter(Boolean).join(", ");
   return [
     greeting,
     "",
@@ -187,8 +215,22 @@ function buildIrissOfferClientShareBody(
 }
 
 function buildIrissOfferShareSubject(draft: OfferDraft): string {
-  const vehicle = [draft.brandModel.trim(), draft.year.trim()].filter(Boolean).join(", ");
+  const vehicle = [draft.brandModel.trim(), draft.firstRegistration.trim() || draft.year.trim()].filter(Boolean).join(", ");
   return `PROVIN.LV — piedāvājums${vehicle ? `: ${vehicle}` : ""}`;
+}
+
+function parsePriceLike(input: string): number {
+  const compact = input.replace(/\s+/g, "").replace(",", ".");
+  const n = Number.parseFloat(compact);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function formatPriceLike(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return "";
+  return value
+    .toFixed(2)
+    .replace(/\.00$/, "")
+    .replace(".", ",");
 }
 
 function isOfferDraftSyncedWithRecord(draft: OfferDraft, offer: IrissOfferRecord | null): boolean {
@@ -200,6 +242,20 @@ function isOfferDraftSyncedWithRecord(draft: OfferDraft, offer: IrissOfferRecord
   if (draft.mileage !== offer.mileage) return false;
   if (draft.priceGermany !== offer.priceGermany) return false;
   if (draft.comment !== offer.comment) return false;
+  if (draft.firstRegistration !== (offer.firstRegistration ?? "")) return false;
+  if (draft.odometerReading !== (offer.odometerReading ?? "")) return false;
+  if (draft.transmission !== (offer.transmission ?? "")) return false;
+  if (draft.location !== (offer.location ?? "")) return false;
+  if (draft.hasFullServiceHistory !== Boolean(offer.hasFullServiceHistory)) return false;
+  if (draft.hasFactoryPaint !== Boolean(offer.hasFactoryPaint)) return false;
+  if (draft.hasNoRustBody !== Boolean(offer.hasNoRustBody)) return false;
+  if (draft.hasSecondWheelSet !== Boolean(offer.hasSecondWheelSet)) return false;
+  if (draft.visualAssessment !== (offer.visualAssessment ?? "")) return false;
+  if (draft.technicalAssessment !== (offer.technicalAssessment ?? "")) return false;
+  if (draft.carPrice !== (offer.carPrice ?? "")) return false;
+  if (draft.deliveryPrice !== (offer.deliveryPrice ?? "")) return false;
+  if (draft.commissionFee !== (offer.commissionFee ?? "")) return false;
+  if (draft.offerValidDays !== (offer.offerValidDays ?? "")) return false;
   if (draft.attachments.length !== offer.attachments.length) return false;
   for (let i = 0; i < draft.attachments.length; i += 1) {
     const a = draft.attachments[i];
@@ -608,6 +664,20 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
       mileage: offer.mileage,
       priceGermany: offer.priceGermany,
       comment: offer.comment,
+      firstRegistration: offer.firstRegistration ?? offer.year ?? "",
+      odometerReading: offer.odometerReading ?? offer.mileage ?? "",
+      transmission: offer.transmission ?? "",
+      location: offer.location ?? "",
+      hasFullServiceHistory: Boolean(offer.hasFullServiceHistory),
+      hasFactoryPaint: Boolean(offer.hasFactoryPaint),
+      hasNoRustBody: Boolean(offer.hasNoRustBody),
+      hasSecondWheelSet: Boolean(offer.hasSecondWheelSet),
+      visualAssessment: offer.visualAssessment ?? "",
+      technicalAssessment: offer.technicalAssessment ?? "",
+      carPrice: offer.carPrice ?? offer.priceGermany ?? "",
+      deliveryPrice: offer.deliveryPrice ?? "",
+      commissionFee: offer.commissionFee ?? "",
+      offerValidDays: offer.offerValidDays ?? "",
       attachments: offer.attachments,
       createdAt: offer.createdAt || new Date().toISOString(),
     });
@@ -644,10 +714,24 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
         id: offerDraft.id,
         title: cleanedTitle,
         brandModel: offerDraft.brandModel,
-        year: offerDraft.year,
-        mileage: offerDraft.mileage,
-        priceGermany: offerDraft.priceGermany,
-        comment: offerDraft.comment,
+        year: offerDraft.firstRegistration || offerDraft.year,
+        mileage: offerDraft.odometerReading || offerDraft.mileage,
+        priceGermany: offerDraft.carPrice || offerDraft.priceGermany,
+        comment: offerDraft.visualAssessment || offerDraft.technicalAssessment || offerDraft.comment,
+        firstRegistration: offerDraft.firstRegistration,
+        odometerReading: offerDraft.odometerReading,
+        transmission: offerDraft.transmission,
+        location: offerDraft.location,
+        hasFullServiceHistory: offerDraft.hasFullServiceHistory,
+        hasFactoryPaint: offerDraft.hasFactoryPaint,
+        hasNoRustBody: offerDraft.hasNoRustBody,
+        hasSecondWheelSet: offerDraft.hasSecondWheelSet,
+        visualAssessment: offerDraft.visualAssessment,
+        technicalAssessment: offerDraft.technicalAssessment,
+        carPrice: offerDraft.carPrice,
+        deliveryPrice: offerDraft.deliveryPrice,
+        commissionFee: offerDraft.commissionFee,
+        offerValidDays: offerDraft.offerValidDays,
         attachments: offerDraft.attachments,
         createdAt: offerDraft.createdAt || now,
         updatedAt: now,
@@ -784,6 +868,15 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
   const offerReadyForPdfActions = useMemo(
     () => isOfferDraftSyncedWithRecord(offerDraft, persistedOfferRecord),
     [offerDraft, persistedOfferRecord],
+  );
+  const offerTotalPrice = useMemo(
+    () =>
+      formatPriceLike(
+        parsePriceLike(offerDraft.carPrice) +
+          parsePriceLike(offerDraft.deliveryPrice) +
+          parsePriceLike(offerDraft.commissionFee),
+      ),
+    [offerDraft.carPrice, offerDraft.commissionFee, offerDraft.deliveryPrice],
   );
 
   const persistOffer = useCallback(async (reason: "save" | "pdf" | "whatsapp"): Promise<IrissOfferRecord | null> => {
@@ -1220,34 +1313,124 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 [-webkit-overflow-scrolling:touch] pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <LabeledInput
-                  label="Marka/modelis"
-                  value={offerDraft.brandModel}
-                  onChange={(e) => setOfferDraft((d) => ({ ...d, brandModel: e.target.value }))}
-                />
-                <LabeledInput
-                  label="Gads"
-                  value={offerDraft.year}
-                  onChange={(e) => setOfferDraft((d) => ({ ...d, year: e.target.value }))}
-                />
-                <LabeledInput
-                  label="Nobraukums"
-                  value={offerDraft.mileage}
-                  onChange={(e) => setOfferDraft((d) => ({ ...d, mileage: e.target.value }))}
-                />
-                <LabeledInput
-                  label="Cena Vācijā"
-                  value={offerDraft.priceGermany}
-                  onChange={(e) => setOfferDraft((d) => ({ ...d, priceGermany: e.target.value }))}
-                />
+              <div className="rounded-xl border border-slate-200/90 bg-white p-3">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
+                  Pamatinformācija
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <LabeledInput
+                    label="Marka, modelis"
+                    value={offerDraft.brandModel}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, brandModel: e.target.value }))}
+                  />
+                  <LabeledInput
+                    label="Pirmā reģistrācija"
+                    value={offerDraft.firstRegistration}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, firstRegistration: e.target.value, year: e.target.value }))}
+                  />
+                  <LabeledInput
+                    label="Odometra rādījums"
+                    value={offerDraft.odometerReading}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, odometerReading: e.target.value, mileage: e.target.value }))}
+                  />
+                  <LabeledInput
+                    label="Transmisija"
+                    value={offerDraft.transmission}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, transmission: e.target.value }))}
+                  />
+                  <div className="sm:col-span-2">
+                    <LabeledInput
+                      label="Atrašanās vieta"
+                      value={offerDraft.location}
+                      onChange={(e) => setOfferDraft((d) => ({ ...d, location: e.target.value }))}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="mt-3">
-                <LabeledTextarea
-                  label="Komentāri"
-                  value={offerDraft.comment}
-                  onChange={(e) => setOfferDraft((d) => ({ ...d, comment: e.target.value }))}
-                />
+
+              <div className="mt-3 rounded-xl border border-slate-200/90 bg-white p-3">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
+                  Vispārējais novērtējums
+                </p>
+                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                  <label className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
+                    <input
+                      type="checkbox"
+                      checked={offerDraft.hasFullServiceHistory}
+                      onChange={(e) => setOfferDraft((d) => ({ ...d, hasFullServiceHistory: e.target.checked }))}
+                    />
+                    Pilna servisa vēsture
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
+                    <input
+                      type="checkbox"
+                      checked={offerDraft.hasFactoryPaint}
+                      onChange={(e) => setOfferDraft((d) => ({ ...d, hasFactoryPaint: e.target.checked }))}
+                    />
+                    Rūpnīcas krāsojums
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
+                    <input
+                      type="checkbox"
+                      checked={offerDraft.hasNoRustBody}
+                      onChange={(e) => setOfferDraft((d) => ({ ...d, hasNoRustBody: e.target.checked }))}
+                    />
+                    Virsbūve bez rūsas
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
+                    <input
+                      type="checkbox"
+                      checked={offerDraft.hasSecondWheelSet}
+                      onChange={(e) => setOfferDraft((d) => ({ ...d, hasSecondWheelSet: e.target.checked }))}
+                    />
+                    Otrs riteņu komplekts
+                  </label>
+                </div>
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <LabeledTextarea
+                    label="Vizuālais novērtējums"
+                    value={offerDraft.visualAssessment}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, visualAssessment: e.target.value, comment: e.target.value }))}
+                    className={`${textareaClass} min-h-[132px]`}
+                  />
+                  <LabeledTextarea
+                    label="Tehniskais novērtējums"
+                    value={offerDraft.technicalAssessment}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, technicalAssessment: e.target.value }))}
+                    className={`${textareaClass} min-h-[132px]`}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-xl border border-slate-200/90 bg-white p-3">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
+                  Cenas
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <LabeledInput
+                    label="Automašīnas cena"
+                    value={offerDraft.carPrice}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, carPrice: e.target.value, priceGermany: e.target.value }))}
+                  />
+                  <LabeledInput
+                    label="Piegādes cena"
+                    value={offerDraft.deliveryPrice}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, deliveryPrice: e.target.value }))}
+                  />
+                  <LabeledInput
+                    label="Komisijas maksa"
+                    value={offerDraft.commissionFee}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, commissionFee: e.target.value }))}
+                  />
+                  <LabeledInput label="Kopā" value={offerTotalPrice} readOnly />
+                  <div className="sm:col-span-2">
+                    <LabeledInput
+                      label="Piedāvājums spēkā (dienas)"
+                      value={offerDraft.offerValidDays}
+                      onChange={(e) => setOfferDraft((d) => ({ ...d, offerValidDays: e.target.value }))}
+                    />
+                  </div>
+                </div>
               </div>
               <div className="mt-3 rounded-xl border border-slate-200/90 bg-slate-50/50 p-3 select-none">
                 <label

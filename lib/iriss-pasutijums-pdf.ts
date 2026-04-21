@@ -96,6 +96,20 @@ function val(s: string | undefined): string | null {
   return t.length ? t : null;
 }
 
+function parseMoney(value: string | undefined): number {
+  const compact = (value ?? "").trim().replace(/\s+/g, "").replace(",", ".");
+  const n = Number.parseFloat(compact);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function fmtMoney(value: number): string {
+  if (!Number.isFinite(value)) return "";
+  return value
+    .toFixed(2)
+    .replace(/\.00$/, "")
+    .replace(".", ",");
+}
+
 const MAX_IMAGE_DATAURL_BASE64_CHARS = 1_800_000;
 const MAX_RAW_IMAGE_BYTES = 1_200_000;
 
@@ -299,21 +313,51 @@ export async function buildIrissOfferPdfBytes(
   }
 
   const offerLines: string[] = [];
-  const yr = val(offer.year);
-  if (yr) offerLines.push(`Gads: ${yr}`);
-  const mi = val(offer.mileage);
-  if (mi) offerLines.push(`Nobraukums: ${mi}`);
-  const pr = val(offer.priceGermany);
-  if (pr) offerLines.push(`Cena Vācijā: ${pr}`);
+  const firstRegistration = val(offer.firstRegistration) ?? val(offer.year);
+  const odometer = val(offer.odometerReading) ?? val(offer.mileage);
+  if (val(offer.brandModel)) offerLines.push(`Marka, modelis: ${val(offer.brandModel)}`);
+  if (firstRegistration) offerLines.push(`Pirmā reģistrācija: ${firstRegistration}`);
+  if (odometer) offerLines.push(`Odometra rādījums: ${odometer}`);
+  if (val(offer.transmission)) offerLines.push(`Transmisija: ${val(offer.transmission)}`);
+  if (val(offer.location)) offerLines.push(`Atrašanās vieta: ${val(offer.location)}`);
   if (offerLines.length) {
     drawSectionTitle(ctx, "Pamatinformācija");
     for (const ln of offerLines) drawParagraph(ctx, ln, 10);
   }
 
-  const com = val(offer.comment);
-  if (com) {
-    drawSectionTitle(ctx, "Komentāri");
-    drawParagraph(ctx, com, 10);
+  const assessmentChecks: string[] = [];
+  if (offer.hasFullServiceHistory) assessmentChecks.push("☑ Pilna servisa vēsture");
+  if (offer.hasFactoryPaint) assessmentChecks.push("☑ Rūpnīcas krāsojums");
+  if (offer.hasNoRustBody) assessmentChecks.push("☑ Virsbūve bez rūsas");
+  if (offer.hasSecondWheelSet) assessmentChecks.push("☑ Otrs riteņu komplekts");
+  const visual = val(offer.visualAssessment);
+  const technical = val(offer.technicalAssessment);
+  if (assessmentChecks.length > 0 || visual || technical) {
+    drawSectionTitle(ctx, "Vispārējais novērtējums");
+    for (const ln of assessmentChecks) drawParagraph(ctx, ln, 10);
+    if (visual) {
+      drawParagraph(ctx, "Vizuālais novērtējums:", 10, MUTED, ctx.fontBold);
+      drawParagraph(ctx, visual, 10);
+    }
+    if (technical) {
+      drawParagraph(ctx, "Tehniskais novērtējums:", 10, MUTED, ctx.fontBold);
+      drawParagraph(ctx, technical, 10);
+    }
+  }
+
+  const carPrice = val(offer.carPrice) ?? val(offer.priceGermany);
+  const deliveryPrice = val(offer.deliveryPrice);
+  const commissionFee = val(offer.commissionFee);
+  const totalPrice = parseMoney(carPrice ?? "") + parseMoney(deliveryPrice ?? "") + parseMoney(commissionFee ?? "");
+  const pricingLines: string[] = [];
+  if (carPrice) pricingLines.push(`Automašīnas cena: ${carPrice}`);
+  if (deliveryPrice) pricingLines.push(`Piegādes cena: ${deliveryPrice}`);
+  if (commissionFee) pricingLines.push(`Komisijas maksa: ${commissionFee}`);
+  if (totalPrice > 0) pricingLines.push(`Kopā: ${fmtMoney(totalPrice)}`);
+  if (val(offer.offerValidDays)) pricingLines.push(`Piedāvājums spēkā (dienas): ${val(offer.offerValidDays)}`);
+  if (pricingLines.length > 0) {
+    drawSectionTitle(ctx, "Cenas un piedāvājums");
+    for (const ln of pricingLines) drawParagraph(ctx, ln, 10);
   }
 
   const imageAttachments = offer.attachments.filter(
@@ -331,7 +375,7 @@ export async function buildIrissOfferPdfBytes(
       if (emb) pics.push(emb);
     }
     if (pics.length > 0) {
-      drawSectionTitle(ctx, "Pievienotie attēli");
+      drawSectionTitle(ctx, "Fotogrāfijas");
       const COL_GAP = 12;
       const cellW = (ctx.contentW - COL_GAP) / 2;
       const MAX_CELL_H = 195;
@@ -342,7 +386,7 @@ export async function buildIrissOfferPdfBytes(
   }
 
   if (other.length > 0) {
-    drawSectionTitle(ctx, "Citi faili");
+    drawSectionTitle(ctx, "Fotogrāfiju pielikumi");
     for (let i = 0; i < other.length; i++) {
       drawParagraph(ctx, `${i + 1}. ${other[i].name}`, 9);
     }

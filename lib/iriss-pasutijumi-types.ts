@@ -14,10 +14,31 @@ export type IrissOfferRecord = {
   id: string;
   title: string;
   brandModel: string;
+  /** Legacy lauks (saglabājam atpakaļsaderībai). */
   year: string;
+  /** Legacy lauks (saglabājam atpakaļsaderībai). */
   mileage: string;
+  /** Legacy lauks (saglabājam atpakaļsaderībai). */
   priceGermany: string;
+  /** Legacy lauks (saglabājam atpakaļsaderībai). */
   comment: string;
+  /** Pamatinformācija (jaunā struktūra). */
+  firstRegistration: string;
+  odometerReading: string;
+  transmission: string;
+  location: string;
+  /** Vispārējais novērtējums — checkbox lauki. */
+  hasFullServiceHistory: boolean;
+  hasFactoryPaint: boolean;
+  hasNoRustBody: boolean;
+  hasSecondWheelSet: boolean;
+  visualAssessment: string;
+  technicalAssessment: string;
+  /** Cenu bloks. */
+  carPrice: string;
+  deliveryPrice: string;
+  commissionFee: string;
+  offerValidDays: string;
   attachments: IrissOfferAttachment[];
   createdAt: string;
   updatedAt: string;

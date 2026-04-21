@@ -26,6 +26,20 @@ function blockIf(title: string, inner: string): string {
   return `<section class="blk"><h2 class="blk-title">${esc(title)}</h2>${inner}</section>`;
 }
 
+function parseMoney(value: string | undefined): number {
+  const compact = (value ?? "").trim().replace(/\s+/g, "").replace(",", ".");
+  const n = Number.parseFloat(compact);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function fmtMoney(value: number): string {
+  if (!Number.isFinite(value)) return "";
+  return value
+    .toFixed(2)
+    .replace(/\.00$/, "")
+    .replace(".", ",");
+}
+
 /**
  * Drukas / „Saglabāt kā PDF” HTML — PROVIN līdzīgs bloku sadalījums, akcents #EF7D1A, SIA IRISS rekvizīti.
  * Tukši lauki netiek iekļauti.
@@ -152,15 +166,45 @@ export function buildIrissOfferPrintHtml(
     rowIf("E-pasts", record.email);
   const clientTable = wrapTable(clientRows);
 
+  const firstRegistration = offer.firstRegistration?.trim() || offer.year.trim();
+  const odometer = offer.odometerReading?.trim() || offer.mileage.trim();
   const offerRows =
-    rowIf("Gads", offer.year) +
-    rowIf("Nobraukums", offer.mileage) +
-    rowIf("Cena Vācijā", offer.priceGermany);
+    rowIf("Marka, modelis", offer.brandModel) +
+    rowIf("Pirmā reģistrācija", firstRegistration) +
+    rowIf("Odometra rādījums", odometer) +
+    rowIf("Transmisija", offer.transmission) +
+    rowIf("Atrašanās vieta", offer.location);
   const offerTable = wrapTable(offerRows);
 
-  const comments = offer.comment.trim()
-    ? `<pre class="notes">${esc(offer.comment.trim())}</pre>`
-    : "";
+  const checks = [
+    offer.hasFullServiceHistory ? "☑ Pilna servisa vēsture" : "",
+    offer.hasFactoryPaint ? "☑ Rūpnīcas krāsojums" : "",
+    offer.hasNoRustBody ? "☑ Virsbūve bez rūsas" : "",
+    offer.hasSecondWheelSet ? "☑ Otrs riteņu komplekts" : "",
+  ].filter(Boolean);
+  const visual = offer.visualAssessment?.trim() || "";
+  const technical = offer.technicalAssessment?.trim() || "";
+  const evalParts: string[] = [];
+  if (checks.length > 0) {
+    evalParts.push(`<p class="meta">${checks.map((x) => esc(x)).join("<br/>")}</p>`);
+  }
+  const evalBoxes: string[] = [];
+  if (visual) evalBoxes.push(`<div class="box"><h3>Vizuālais novērtējums</h3><pre>${esc(visual)}</pre></div>`);
+  if (technical) evalBoxes.push(`<div class="box"><h3>Tehniskais novērtējums</h3><pre>${esc(technical)}</pre></div>`);
+  if (evalBoxes.length > 0) evalParts.push(`<div class="two">${evalBoxes.join("")}</div>`);
+  const evalInner = evalParts.join("");
+
+  const carPrice = offer.carPrice?.trim() || offer.priceGermany?.trim() || "";
+  const deliveryPrice = offer.deliveryPrice?.trim() || "";
+  const commissionFee = offer.commissionFee?.trim() || "";
+  const totalValue = parseMoney(carPrice) + parseMoney(deliveryPrice) + parseMoney(commissionFee);
+  const pricingRows =
+    rowIf("Automašīnas cena", carPrice) +
+    rowIf("Piegādes cena", deliveryPrice) +
+    rowIf("Komisijas maksa", commissionFee) +
+    rowIf("Kopā", totalValue > 0 ? fmtMoney(totalValue) : "") +
+    rowIf("Piedāvājums spēkā (dienas)", offer.offerValidDays);
+  const pricingTable = wrapTable(pricingRows);
 
   const imageAttachments = offer.attachments.filter(
     (a) => a.mimeType.startsWith("image/") && a.dataUrl.startsWith("data:image/"),
@@ -221,8 +265,9 @@ export function buildIrissOfferPrintHtml(
     </header>
     ${blockIf("Klienta dati", clientTable)}
     ${blockIf("Pamatinformācija", offerTable)}
-    ${blockIf("Komentāri", comments)}
-    ${blockIf("Pievienotie faili", filesInner)}
+    ${blockIf("Vispārējais novērtējums", evalInner)}
+    ${blockIf("Cenas un piedāvājums", pricingTable)}
+    ${blockIf("Fotogrāfijas", filesInner)}
     <footer class="legal">${legal}</footer>
   </div>`;
 
