@@ -34,10 +34,14 @@ async function loadInterFontBytes(): Promise<{ reg: Uint8Array; bold: Uint8Array
 
 /** PROVIN orange */
 const ACCENT = rgb(239 / 255, 125 / 255, 26 / 255);
+/** PROVIN audit blue */
+const AUDIT_ACCENT = rgb(0 / 255, 97 / 255, 210 / 255);
 const INK = rgb(29 / 255, 29 / 255, 31 / 255);
 const MUTED = rgb(110 / 255, 110 / 255, 115 / 255);
 const CARD_FILL = rgb(1, 1, 1);
 const CARD_BORDER = rgb(223 / 255, 164 / 255, 104 / 255);
+const AUDIT_CARD_FILL = rgb(1, 1, 1);
+const AUDIT_CARD_BORDER = rgb(241 / 255, 245 / 255, 249 / 255);
 const PRICE_BAND_FILL = rgb(255 / 255, 244 / 255, 232 / 255);
 const PRICE_BAND_BORDER = rgb(217 / 255, 112 / 255, 29 / 255);
 const SECTION_BEFORE = 14;
@@ -69,6 +73,17 @@ function lineHeight(size: number): number {
 }
 
 type LogoPack = { img: PDFImage; dw: number; dh: number };
+type PdfColor = ReturnType<typeof rgb>;
+type CardTheme = {
+  fill: PdfColor;
+  border: PdfColor;
+  borderWidth: number;
+  titleColor: PdfColor;
+  titleUppercase: boolean;
+  titleSize: number;
+  titleGapAfter: number;
+  headBarColor: PdfColor | null;
+};
 
 type Ctx = {
   pdfDoc: PDFDocument;
@@ -86,6 +101,7 @@ type Ctx = {
   offerLogo: LogoPack | null;
   /** Jauna lapa: atstarpe zem augšējā logo (saturs sākas zem šīs joslas). */
   logoOnlyBand: number;
+  cardTheme: CardTheme;
 };
 
 function stampOfferLogoTopLeft(page: PDFPage, pageH: number, margin: number, logo: LogoPack): void {
@@ -246,11 +262,12 @@ function drawIosCard(
   measureBody: (innerW: number) => number,
   drawBody: (inner: { x: number; w: number }) => void,
 ): void {
+  const t = ctx.cardTheme;
   const pad = 10;
   const radius = 10;
   const ix = ctx.margin + pad;
   const iw = ctx.contentW - pad * 2;
-  const titleBlock = lineHeight(13) + 6;
+  const titleBlock = lineHeight(t.titleSize) + t.titleGapAfter;
   const bodyH = measureBody(iw);
   const h = pad + titleBlock + bodyH + pad;
   const outerNeed = SECTION_BEFORE + h + SECTION_AFTER;
@@ -270,16 +287,27 @@ function drawIosCard(
     width: ctx.contentW,
     height: h,
     radius,
-    color: CARD_FILL,
-    borderColor: CARD_BORDER,
-    borderWidth: 1.6,
+    color: t.fill,
+    borderColor: t.border,
+    borderWidth: t.borderWidth,
   });
   ctx.y = yRectBottom + h - pad;
   const prev = ctx.suppressPageBreak;
   ctx.suppressPageBreak = true;
   try {
-    drawTextLine(ctx, title, 13, { font: ctx.fontBold, color: ACCENT, x: ix });
-    ctx.y -= 6;
+    if (t.headBarColor) {
+      const barH = lineHeight(t.titleSize) + 2;
+      ctx.page.drawRectangle({
+        x: ix - 8,
+        y: ctx.y - barH + 2,
+        width: 2,
+        height: barH,
+        color: t.headBarColor,
+      });
+    }
+    const titleText = t.titleUppercase ? title.toLocaleUpperCase("lv-LV") : title;
+    drawTextLine(ctx, titleText, t.titleSize, { font: ctx.fontBold, color: t.titleColor, x: ix });
+    ctx.y -= t.titleGapAfter;
     drawBody({ x: ix, w: iw });
   } finally {
     ctx.suppressPageBreak = prev;
@@ -416,6 +444,16 @@ async function createPdfCtx(): Promise<Ctx> {
     suppressPageBreak: false,
     offerLogo: null,
     logoOnlyBand: LOGO_ONLY_BAND,
+    cardTheme: {
+      fill: CARD_FILL,
+      border: CARD_BORDER,
+      borderWidth: 1.6,
+      titleColor: ACCENT,
+      titleUppercase: false,
+      titleSize: 13,
+      titleGapAfter: 6,
+      headBarColor: null,
+    },
   };
 }
 
@@ -551,8 +589,19 @@ async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void
 
 export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord): Promise<Uint8Array> {
   const ctx = await createPdfCtx();
+  // Pasūtījuma PDF vizuālais noformējums saskaņots ar PROVIN audita kartīšu dizainu.
+  ctx.cardTheme = {
+    fill: AUDIT_CARD_FILL,
+    border: AUDIT_CARD_BORDER,
+    borderWidth: 1.05,
+    titleColor: INK,
+    titleUppercase: true,
+    titleSize: 11,
+    titleGapAfter: 5,
+    headBarColor: AUDIT_ACCENT,
+  };
 
-  drawTextLine(ctx, "PASŪTĪJUMS", 20, { font: ctx.fontBold, color: ACCENT });
+  drawTextLine(ctx, "PASŪTĪJUMS", 19, { font: ctx.fontBold, color: INK });
   drawParagraph(ctx, new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date()), 10, MUTED, undefined, {
     x: ctx.margin,
     maxW: ctx.contentW,
