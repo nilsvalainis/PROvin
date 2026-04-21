@@ -374,12 +374,6 @@ function buildMileageHistoryTableHtml(rows: UnifiedMileageRow[], anomalyBySource
   return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 
-/** Nobraukuma grafikiem: „bezmaksas / publiski” — pārējie avoti (maksas trešās puses atskaites) ir otrā kolonnā. */
-const MILEAGE_FREE_SOURCE_LABELS = new Set<string>([
-  SOURCE_BLOCK_LABELS.csdd,
-  SOURCE_BLOCK_LABELS.citi_avoti,
-]);
-
 export function buildUnifiedMileageTableHtml(
   p: UnifiedMileageSourcePayload,
   mileageOpts?: CollectUnifiedMileageOptions,
@@ -406,30 +400,7 @@ export function buildUnifiedMileageTableHtml(
   });
 
   const display = rows;
-  const L = SOURCE_BLOCK_LABELS;
-  const paidChartRows = mileageRows.filter((r) => !MILEAGE_FREE_SOURCE_LABELS.has(r.sourceLabel));
-  const freeChartRows = mileageRows.filter((r) => MILEAGE_FREE_SOURCE_LABELS.has(r.sourceLabel));
-  const anomalyPaid = computeOdometerAnomalyBySourceOrder(paidChartRows);
-  const anomalyFree = computeOdometerAnomalyBySourceOrder(freeChartRows);
-  const chartPaidHtml = buildUnifiedMileageChartWrapHtml(paidChartRows, anomalyPaid, { compact: true });
-  const chartFreeHtml = buildUnifiedMileageChartWrapHtml(freeChartRows, anomalyFree, { compact: true });
-
-  const hasCsddInMileage = mileageRows.some((r) => r.sourceLabel === L.csdd);
-  const maksasSourceLabels = new Set(paidChartRows.map((r) => r.sourceLabel));
-  if (hasCsddInMileage) maksasSourceLabels.add(L.csdd);
-  const bezmaksasSourceLabels = new Set(freeChartRows.map((r) => r.sourceLabel));
-
-  const chartPlaceholder = `<p class="pdf-mileage-chart-empty" role="presentation">Nav datu punktu ar derīgu gadu šai grupai.</p>`;
-  const col = (title: string, chart: string, count: number) =>
-    `<div class="pdf-mileage-chart-col">
-      <p class="pdf-mileage-chart-col-title">${escapeHtml(title)}</p>
-      ${chart || chartPlaceholder}
-      <p class="pdf-source-count-note pdf-source-count-note--mileage-col">Avotu skaits (šī grupa): ${count}</p>
-    </div>`;
-  const chartsDualHtml = `<div class="pdf-mileage-charts-dual" role="group" aria-label="Nobraukums pēc avotu grupas">
-    ${col("Maksas datu avoti", chartPaidHtml, maksasSourceLabels.size)}
-    ${col("Bezmaksas / publiski datu avoti", chartFreeHtml, bezmaksasSourceLabels.size)}
-  </div>`;
+  const chartHtml = buildUnifiedMileageChartWrapHtml(mileageRows, anomalyBySourceOrder, { compact: true });
 
   const mid = Math.ceil(display.length / 2) || 0;
   const leftRows = display.slice(0, mid);
@@ -441,7 +412,9 @@ export function buildUnifiedMileageTableHtml(
         ? buildMileageHistoryTableHtml(display, anomalyBySourceOrder)
         : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(leftRows, anomalyBySourceOrder)}</div><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(rightRows, anomalyBySourceOrder)}</div></div>`;
 
-  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE")}${chartsDualHtml}${dualTables}</div>`;
+  const sourceCount = new Set(mileageRows.map((r) => r.sourceLabel)).size;
+  const sourceCountHtml = `<p class="pdf-source-count-note">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</p>`;
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE")}${chartHtml}${dualTables}${sourceCountHtml}</div>`;
 }
 
 function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
@@ -961,24 +934,12 @@ function clientReportPrintCss(): string {
         flex-shrink:0;
       }
       .pdf-mileage-chart-legend-text{font-weight:500;color:#64748b;}
-      .pdf-mileage-charts-dual{
-        display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;align-items:start;margin:6px 0 10px;
-      }
-      .pdf-mileage-chart-col{min-width:0;}
-      .pdf-mileage-chart-col-title{
-        margin:0 0 6px;font-size:0.62rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#64748b;
-      }
-      .pdf-mileage-chart-empty{
-        margin:0 0 6px;padding:18px 8px;text-align:center;font-size:0.62rem;color:#94a3b8;
-        border:1px dashed #e2e8f0;border-radius:8px;line-height:1.35;
-      }
       .pdf-source-count-note{
         margin:8px 0 0;
         font-size:0.62rem;
         color:#64748b;
         line-height:1.4;
       }
-      .pdf-source-count-note--mileage-col{margin:6px 0 0;}
       .pdf-mileage-chart-dot--anomaly{
         fill:#ef4444!important;stroke:#b91c1c!important;stroke-width:1.75!important;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
@@ -1138,7 +1099,7 @@ function clientReportPrintCss(): string {
         .no-print{display:none!important;}
         thead{display:table-header-group;}
         tfoot{display:table-footer-group;}
-        .pdf-v1-panel--clean,.pdf-unified-mileage-zone,.pdf-unified-incidents-zone,.pdf-provin-sources-wrap,.pdf-alert-banners-stack,.pdf-mileage-chart-wrap,.pdf-mileage-charts-dual,.pdf-mileage-history-table-wrap,.pdf-listing-analysis-root,.pdf-iriss-approved,.pdf-site-footer,.mirror-block.pdf-surface-card{
+        .pdf-v1-panel--clean,.pdf-unified-mileage-zone,.pdf-unified-incidents-zone,.pdf-provin-sources-wrap,.pdf-alert-banners-stack,.pdf-mileage-chart-wrap,.pdf-mileage-history-table-wrap,.pdf-listing-analysis-root,.pdf-iriss-approved,.pdf-site-footer,.mirror-block.pdf-surface-card{
           break-inside:avoid-page!important;
           page-break-inside:avoid!important;
         }
