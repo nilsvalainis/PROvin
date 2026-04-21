@@ -208,6 +208,7 @@ function buildIrissOfferClientShareBody(
   draft: OfferDraft,
   clientFirstName: string,
   clientLastName: string,
+  pdfFileName: string,
 ): string {
   const name = [clientFirstName, clientLastName].map((s) => s.trim()).filter(Boolean).join(" ");
   const greeting = name ? `Sveiki, ${name}!` : "Sveiki!";
@@ -215,7 +216,7 @@ function buildIrissOfferClientShareBody(
   return [
     greeting,
     "",
-    "Pielikumā nosūtu PDF ar piedāvājumu no PROVIN.LV.",
+    `PDF ar piedāvājumu tikko saglabāts tālrunī kā „${pdfFileName}”. Pievieno to šai sarunā: + → Dokuments → atrodi failu (piem. Lejupielādes).`,
     ...(vehicle ? [`Objekts: ${vehicle}.`] : []),
     "",
     "Labu dienu,",
@@ -933,16 +934,25 @@ export function IrissPasutijumsEditor({ initialRecord }: { initialRecord: IrissP
     }
     try {
       const blob = await generateOfferPdfBlob(offerOut.id);
-      const shareText = buildIrissOfferClientShareBody(offerDraft, rec.clientFirstName, rec.clientLastName);
       const filenameBase = buildIrissOfferShareSubject(offerDraft).replace(/[^\p{L}\p{N}\-_. ]/gu, "").trim() || "piedavajums";
       const safeFileName = filenameBase.endsWith(".pdf") ? filenameBase : `${filenameBase}.pdf`;
-      const file = new File([blob], safeFileName, { type: "application/pdf" });
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], text: shareText });
-      } else {
-        window.open(`https://wa.me/${digits}?text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");
-        alert("Šajā ierīcē failu automātiska pievienošana WhatsApp nav pieejama; atvērts WhatsApp ar gatavu ziņu.");
-      }
+      const shareText = buildIrissOfferClientShareBody(offerDraft, rec.clientFirstName, rec.clientLastName, safeFileName);
+
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = safeFileName;
+      a.rel = "noopener";
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 120_000);
+
+      // Neizmantojam `navigator.share({ files })` — iOS atver visu sistēmas „Share” paneli, ne tikai WhatsApp.
+      // `wa.me` ar `text=` atver WhatsApp ar sarunu pasūtījuma tālruņa numuram; PDF jāpievieno manuāli pēc lejupielādes.
+      const waUrl = `https://wa.me/${digits}?text=${encodeURIComponent(shareText)}`;
+      window.location.assign(waUrl);
     } catch (e) {
       alert(e instanceof Error ? e.message.slice(0, 220) : "WhatsApp eksports neizdevās.");
     } finally {
