@@ -83,6 +83,7 @@ import {
   Link2,
   ListChecks,
   Loader2,
+  MessageCircle,
   MessageSquare,
   Newspaper,
   Scale,
@@ -167,6 +168,21 @@ const workspaceSectionShell =
 
 const bulkTextareaClass =
   "w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
+
+function normalizeWhatsAppPhoneDigits(raw: string | null | undefined): string | null {
+  const t = (raw ?? "").trim();
+  if (!t) return null;
+  const compact = t.replace(/[\s\-().]/g, "");
+  let prefixed = compact;
+  if (!(prefixed.startsWith("+371") || prefixed.startsWith("00371") || prefixed.startsWith("371"))) {
+    prefixed = `+371${prefixed.replace(/\D/g, "")}`;
+  }
+  let digits = prefixed.replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (!digits) return null;
+  if (!digits.startsWith("371")) digits = `371${digits}`;
+  return digits;
+}
 
 const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
   empty: "bg-zinc-400",
@@ -520,63 +536,63 @@ export function OrderDetailWorkspace({
   useEffect(() => {
     setWorkspaceHydrated(false);
     try {
-      if (serverWorkspaceJson) {
-        const fromServer = hydrateWorkspaceFromStorage(serverWorkspaceJson);
-        if (fromServer) {
-          setWs({
-            sourceBlocks: fromServer.sourceBlocks,
-            iriss: fromServer.iriss,
-            apskatesPlāns: fromServer.apskatesPlāns,
-            cenasAtbilstiba: fromServer.cenasAtbilstiba,
-            previewConfirmed: Boolean(fromServer.previewConfirmed),
-          });
-          onPdfVisibilityChange(mergePdfVisibility(fromServer.pdfVisibility));
-          const keyV3 = storageKeyWorkspace(payload.sessionId);
+      const keyV3 = storageKeyWorkspace(payload.sessionId);
+      const keyV2 = `${LEGACY_WORKSPACE_V2_PREFIX}${payload.sessionId}`;
+      const rawV3 = localStorage.getItem(keyV3);
+      const rawV2 = localStorage.getItem(keyV2);
+      const localRaw = rawV3 ?? rawV2;
+      const localHydrated = localRaw ? hydrateWorkspaceFromStorage(localRaw) : null;
+      const serverHydrated = serverWorkspaceJson ? hydrateWorkspaceFromStorage(serverWorkspaceJson) : null;
+      const scoreWorkspace = (h: NonNullable<typeof localHydrated> | NonNullable<typeof serverHydrated>) => {
+        let s = 0;
+        if (h.iriss.trim()) s += 2;
+        if (h.apskatesPlāns.trim()) s += 2;
+        if (h.cenasAtbilstiba.trim()) s += 2;
+        if (h.previewConfirmed) s += 1;
+        s += csddTrafficLevel(h.sourceBlocks.csdd) === "empty" ? 0 : 2;
+        s += vendorAvotuTrafficLevel(h.sourceBlocks.autodna) === "empty" ? 0 : 1;
+        s += vendorAvotuTrafficLevel(h.sourceBlocks.carvertical) === "empty" ? 0 : 1;
+        s += autoRecordsTrafficLevel(h.sourceBlocks.auto_records) === "empty" ? 0 : 1;
+        s += ltabTrafficLevel(h.sourceBlocks.ltab) === "empty" ? 0 : 1;
+        s += citiAvotiTrafficLevel(h.sourceBlocks.citi_avoti) === "empty" ? 0 : 1;
+        s += listingSectionTrafficLevel(h.sourceBlocks.tirgus, h.sourceBlocks.listing_analysis) === "empty" ? 0 : 1;
+        return s;
+      };
+      const useLocal =
+        localHydrated != null && (serverHydrated == null || scoreWorkspace(localHydrated) >= scoreWorkspace(serverHydrated));
+      const chosen = useLocal ? localHydrated : serverHydrated;
+      if (chosen) {
+        setWs({
+          sourceBlocks: chosen.sourceBlocks,
+          iriss: chosen.iriss,
+          apskatesPlāns: chosen.apskatesPlāns,
+          cenasAtbilstiba: chosen.cenasAtbilstiba,
+          previewConfirmed: Boolean(chosen.previewConfirmed),
+        });
+        onPdfVisibilityChange(mergePdfVisibility(chosen.pdfVisibility));
+        if (!rawV3 || !useLocal) {
           try {
-            localStorage.setItem(keyV3, serverWorkspaceJson);
-            const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
-            if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
+            localStorage.setItem(
+              keyV3,
+              JSON.stringify({
+                sourceBlocks: chosen.sourceBlocks,
+                iriss: chosen.iriss,
+                apskatesPlāns: chosen.apskatesPlāns,
+                cenasAtbilstiba: chosen.cenasAtbilstiba,
+                previewConfirmed: chosen.previewConfirmed,
+                pdfVisibility: mergePdfVisibility(chosen.pdfVisibility),
+              }),
+            );
           } catch {
             /* quota */
           }
-          setWorkspaceHydrated(true);
-          return;
         }
-      }
-      const keyV3 = storageKeyWorkspace(payload.sessionId);
-      const keyV2 = `${LEGACY_WORKSPACE_V2_PREFIX}${payload.sessionId}`;
-      const raw = localStorage.getItem(keyV3) ?? localStorage.getItem(keyV2);
-      if (raw) {
-        const h = hydrateWorkspaceFromStorage(raw);
-        if (h) {
-          setWs({
-            sourceBlocks: h.sourceBlocks,
-            iriss: h.iriss,
-            apskatesPlāns: h.apskatesPlāns,
-            cenasAtbilstiba: h.cenasAtbilstiba,
-            previewConfirmed: Boolean(h.previewConfirmed),
-          });
-          onPdfVisibilityChange(mergePdfVisibility(h.pdfVisibility));
-          if (!localStorage.getItem(keyV3) && localStorage.getItem(keyV2)) {
-            try {
-              localStorage.setItem(
-                keyV3,
-                JSON.stringify({
-                  sourceBlocks: h.sourceBlocks,
-                  iriss: h.iriss,
-                  apskatesPlāns: h.apskatesPlāns,
-                  cenasAtbilstiba: h.cenasAtbilstiba,
-                  previewConfirmed: h.previewConfirmed,
-                  pdfVisibility: mergePdfVisibility(h.pdfVisibility),
-                }),
-              );
-            } catch {
-              /* quota */
-            }
+        if (rawV2) {
+          try {
+            localStorage.removeItem(keyV2);
+          } catch {
+            /* quota */
           }
-        } else {
-          setWs(EMPTY_WORKSPACE);
-          onPdfVisibilityChange(mergePdfVisibility(undefined));
         }
       } else {
         const legacy = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
@@ -599,7 +615,8 @@ export function OrderDetailWorkspace({
       onPdfVisibilityChange(mergePdfVisibility(undefined));
     }
     setWorkspaceHydrated(true);
-  }, [payload.sessionId, payload.serverInternalComment, serverWorkspaceJson, onPdfVisibilityChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `serverWorkspaceJson` refresh var pārrakstīt jaunāku lokālo darba zonu
+  }, [payload.sessionId, payload.serverInternalComment, onPdfVisibilityChange]);
 
   const flushWorkspaceToLocalStorage = useCallback(() => {
     if (!workspaceHydrated) return;
@@ -1512,6 +1529,8 @@ export function OrderDetailWorkspace({
   const showAlertsPortal = Boolean(alertsPortalDomId && alertsPortalEl);
 
   const vinBar = (payload.vin ?? "").trim();
+  const whatsappPhoneDigits = normalizeWhatsAppPhoneDigits(payload.customerPhone);
+  const whatsappHref = whatsappPhoneDigits ? `whatsapp://send?phone=${whatsappPhoneDigits}` : null;
 
   return (
     <div className="relative min-w-0 pb-24">
@@ -1704,6 +1723,24 @@ export function OrderDetailWorkspace({
                 }}
               />
             ) : null}
+            {whatsappHref ? (
+              <a
+                href={whatsappHref}
+                className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-emerald-600 shadow-sm transition hover:bg-black/[0.04] dark:hover:bg-white/10"
+                title={`WhatsApp: ${payload.customerPhone ?? ""}`}
+                aria-label="Atvērt WhatsApp klienta numuram"
+              >
+                <MessageCircle className="h-3.5 w-3.5" aria-hidden />
+              </a>
+            ) : (
+              <span
+                className="inline-flex h-6 w-6 cursor-not-allowed items-center justify-center rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)] opacity-60"
+                title="Nav klienta tālruņa WhatsApp atvēršanai"
+                aria-hidden
+              >
+                <MessageCircle className="h-3.5 w-3.5" aria-hidden />
+              </span>
+            )}
             {vinBarCopyFlash ? (
               <span className="text-[8px] font-semibold text-emerald-600 dark:text-emerald-400" role="status">
                 OK
