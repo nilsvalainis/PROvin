@@ -9,6 +9,8 @@ import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 
 const DEFAULT_RELATIVE_DIR = ".data/admin-order-drafts";
+const DRAFT_REVISIONS_DIRNAME = "_revisions";
+const MAX_DRAFT_REVISIONS_PER_SESSION = 40;
 
 function resolveDraftDir(): string | null {
   const raw = process.env.ADMIN_ORDER_DRAFT_DIR?.trim() ?? "";
@@ -35,6 +37,16 @@ export function isSafeOrderDraftSessionId(id: string): boolean {
 
 function draftFilePath(dir: string, sessionId: string): string {
   return path.join(dir, `${sessionId}.json`);
+}
+
+function revisionSessionDirPath(dir: string, sessionId: string): string {
+  return path.join(dir, DRAFT_REVISIONS_DIRNAME, sessionId);
+}
+
+function makeRevisionId(now = new Date()): string {
+  const iso = now.toISOString().replace(/[:.]/g, "-");
+  const rnd = Math.random().toString(36).slice(2, 8);
+  return `${iso}_${rnd}`;
 }
 
 function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState | null {
@@ -93,6 +105,124 @@ export async function readOrderDraft(sessionId: string): Promise<OrderDraftState
     return normalizeLoadedDraft(p, sessionId);
   } catch {
     return null;
+  }
+}
+
+export type OrderDraftRevisionMeta = {
+  revisionId: string;
+  updatedAt: string;
+  savedAt: string;
+  reason: string;
+};
+
+function parseDraftRevisionMeta(raw: unknown): OrderDraftRevisionMeta | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const revisionId = typeof o.revisionId === "string" ? o.revisionId : "";
+  const updatedAt = typeof o.updatedAt === "string" ? o.updatedAt : "";
+  const savedAt = typeof o.savedAt === "string" ? o.savedAt : "";
+  const reason = typeof o.reason === "string" ? o.reason : "";
+  if (!revisionId || !updatedAt || !savedAt || !reason) return null;
+  return { revisionId, updatedAt, savedAt, reason };
+}
+
+async function writeOrderDraftRevision(
+  dir: string,
+  sessionId: string,
+  doc: unknown,
+  reason: string,
+): Promise<void> {
+  const revId = makeRevisionId();
+  const revDir = revisionSessionDirPath(dir, sessionId);
+  await fs.mkdir(revDir, { recursive: true });
+  const fp = path.join(revDir, `${revId}.json`);
+  await fs.writeFile(
+    fp,
+    JSON.stringify({
+      revisionId: revId,
+      savedAt: new Date().toISOString(),
+      reason,
+      doc,
+    }),
+    "utf8",
+  );
+
+  const files = await fs.readdir(revDir).catch(() => []);
+  const jsonFiles = files.filter((f) => f.endsWith(".json")).sort();
+  if (jsonFiles.length <= MAX_DRAFT_REVISIONS_PER_SESSION) return;
+  const toDelete = jsonFiles.slice(0, jsonFiles.length - MAX_DRAFT_REVISIONS_PER_SESSION);
+  await Promise.all(toDelete.map((f) => fs.rm(path.join(revDir, f), { force: true })));
+}
+
+export async function listOrderDraftRevisions(
+  sessionId: string,
+  limit = 20,
+): Promise<OrderDraftRevisionMeta[]> {
+  const dir = resolveDraftDir();
+  if (!dir || !isSafeOrderDraftSessionId(sessionId)) return [];
+  const revDir = revisionSessionDirPath(dir, sessionId);
+  const files = await fs.readdir(revDir).catch(() => []);
+  const jsonFiles = files.filter((f) => f.endsWith(".json")).sort().reverse().slice(0, Math.max(1, limit));
+  const out: OrderDraftRevisionMeta[] = [];
+  for (const f of jsonFiles) {
+    const full = path.join(revDir, f);
+    try {
+      const raw = await fs.readFile(full, "utf8");
+      const parsed = JSON.parse(raw) as unknown;
+      const meta = parseDraftRevisionMeta(parsed);
+      if (!meta) continue;
+      out.push(meta);
+    } catch {
+      /* ignore bad revision file */
+    }
+  }
+  return out;
+}
+
+export async function restoreOrderDraftRevision(
+  sessionId: string,
+  revisionId: string,
+): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
+  const dir = resolveDraftDir();
+  if (!dir) return { ok: false, error: "store_disabled" };
+  if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
+  if (!/^[a-zA-Z0-9_.-]+$/.test(revisionId) || revisionId.length > 120) {
+    return { ok: false, error: "invalid_revision" };
+  }
+  const revFp = path.join(revisionSessionDirPath(dir, sessionId), `${revisionId}.json`);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await fs.readFile(revFp, "utf8")) as unknown;
+  } catch {
+    return { ok: false, error: "revision_not_found" };
+  }
+  if (!parsed || typeof parsed !== "object") return { ok: false, error: "invalid_revision" };
+  const doc = (parsed as { doc?: unknown }).doc;
+  const normalized = normalizeLoadedDraft(doc, sessionId);
+  if (!normalized) return { ok: false, error: "invalid_revision" };
+  const updatedAt = new Date().toISOString();
+  const nextDoc = {
+    sessionId,
+    updatedAt,
+    orderEdits: normalized.orderEdits,
+    workspace: normalized.workspace,
+    ...(normalized.invoiceNumber != null ? { invoiceNumber: normalized.invoiceNumber } : {}),
+    ...(normalized.invoicePdfUrl != null ? { invoicePdfUrl: normalized.invoicePdfUrl } : {}),
+    ...(normalized.invoicePdfGeneratedAt != null
+      ? { invoicePdfGeneratedAt: normalized.invoicePdfGeneratedAt }
+      : {}),
+  };
+  try {
+    await fs.mkdir(dir, { recursive: true });
+    const fp = draftFilePath(dir, sessionId);
+    const tmp = `${fp}.tmp`;
+    await fs.writeFile(tmp, JSON.stringify(nextDoc), "utf8");
+    await fs.rename(tmp, fp);
+    await writeOrderDraftRevision(dir, sessionId, nextDoc, "restore");
+    return { ok: true, updatedAt };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: `write_failed:${msg}` };
   }
 }
 
@@ -190,6 +320,7 @@ export async function patchOrderDraft(
     const tmp = `${fp}.tmp`;
     await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
     await fs.rename(tmp, fp);
+    await writeOrderDraftRevision(dir, sessionId, doc, "patch");
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: `write_failed:${msg}` };
@@ -230,6 +361,7 @@ export async function upsertOrderDraftInvoiceFields(
     const tmp = `${fp}.tmp`;
     await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
     await fs.rename(tmp, fp);
+    await writeOrderDraftRevision(dir, sessionId, doc, "invoice");
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: `write_failed:${msg}` };
