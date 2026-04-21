@@ -1,6 +1,13 @@
 import { IRISS_BRAND_ORANGE_HEX, IRISS_COMPANY_LINES } from "@/lib/iriss-brand";
 import type { IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
+/** Sekundārā virsrakstu krāsa (Tailwind slate-900 tuvinājums). */
+const INK = "#1E293B";
+/** Pamatteksts — Tailwind `text-slate-600`. */
+const SLATE_600 = "#475569";
+/** Bloku fons — Tailwind `bg-slate-50` (#F8FAFC). */
+const PANEL = "#F8FAFC";
+
 function esc(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -18,12 +25,16 @@ function rowIf(label: string, value: string): string {
 function wrapTable(rows: string): string {
   const r = rows.trim();
   if (!r) return "";
-  return `<table class="grid">${r}</table>`;
+  return `<table class="ipdf-kv">${r}</table>`;
 }
 
 function blockIf(title: string, inner: string): string {
   if (!inner.trim()) return "";
-  return `<section class="blk"><h2 class="blk-title">${esc(title)}</h2>${inner}</section>`;
+  return `<section class="ipdf-blk">${sectionHead(title)}<div class="ipdf-blk-body">${inner}</div></section>`;
+}
+
+function sectionHead(title: string): string {
+  return `<div class="ipdf-sec-head" role="heading" aria-level="2"><span class="ipdf-sec-bar" aria-hidden="true"></span><h2 class="ipdf-sec-title">${esc(title)}</h2></div>`;
 }
 
 function parseMoney(value: string | undefined): number {
@@ -40,13 +51,283 @@ function fmtMoney(value: number): string {
     .replace(".", ",");
 }
 
+/** Meklē skaitlisku novērtējumu tekstā (piem. „8/10”, „8 no 10”). */
+function parseScoreOutOf10(text: string): number | null {
+  const t = text.trim();
+  if (!t) return null;
+  const m1 = t.match(/\b(\d{1,2})\s*\/\s*10\b/i);
+  if (m1) {
+    const n = Number.parseInt(m1[1], 10);
+    if (n >= 0 && n <= 10) return n;
+  }
+  const m2 = t.match(/\b(\d{1,2})\s+no\s+10\b/i);
+  if (m2) {
+    const n = Number.parseInt(m2[1], 10);
+    if (n >= 0 && n <= 10) return n;
+  }
+  return null;
+}
+
+function svgCheck(accent: string): string {
+  return `<svg class="ipdf-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="${accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+function checklistRow(accent: string, ok: boolean, label: string): string {
+  const icon = ok ? svgCheck(accent) : `<span class="ipdf-check ipdf-check--off" aria-hidden="true"></span>`;
+  const cls = ok ? "ipdf-cl-item ipdf-cl-item--on" : "ipdf-cl-item ipdf-cl-item--off";
+  return `<div class="${cls}">${icon}<span class="ipdf-cl-txt">${esc(label)}</span></div>`;
+}
+
+function healthScaleHtml(accent: string, label: string, bodyText: string): string {
+  const score = parseScoreOutOf10(bodyText);
+  const pct = score === null ? 0 : Math.min(100, Math.max(0, (score / 10) * 100));
+  const badge = score === null ? "—" : `${score}/10`;
+  const hint =
+    score === null && bodyText.trim()
+      ? `<p class="ipdf-health-hint">Tekstā nav atrasts formāts „X/10” — josla nav aizpildīta.</p>`
+      : "";
+  return `<div class="ipdf-health">
+    <div class="ipdf-health-top">
+      <span class="ipdf-health-lbl">${esc(label)}</span>
+      <span class="ipdf-health-val">${esc(badge)}</span>
+    </div>
+    <div class="ipdf-bar-track" role="img" aria-label="${esc(label)}: ${esc(badge)}"><div class="ipdf-bar-fill" style="width:${pct}%"></div></div>
+    ${hint}
+  </div>`;
+}
+
+function infoTile(label: string, value: string): string {
+  const v = value.trim();
+  if (!v) return "";
+  return `<div class="ipdf-tile"><p class="ipdf-tile-lbl">${esc(label)}</p><p class="ipdf-tile-val">${esc(v)}</p></div>`;
+}
+
+function infoGrid4(tiles: string): string {
+  const t = tiles.trim();
+  if (!t) return "";
+  return `<div class="ipdf-grid4">${t}</div>`;
+}
+
+function irissPrintShell(accent: string, title: string, body: string): string {
+  const css = `
+    @page { size: A4; margin: 11mm; }
+    * { box-sizing: border-box; }
+    html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      font-size: 10.5pt;
+      font-weight: 300;
+      line-height: 1.5;
+      color: ${SLATE_600};
+      background: #fff;
+    }
+    .ipdf-root {
+      max-width: 190mm;
+      margin: 0 auto;
+      padding: 4mm 2mm 8mm;
+    }
+    .ipdf-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: end;
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+      border-bottom: 2px solid ${accent};
+    }
+    .ipdf-hero-model {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: ${INK};
+    }
+    .ipdf-hero-sub { margin: 6px 0 0; font-size: 0.72rem; font-weight: 300; color: ${SLATE_600}; letter-spacing: 0.04em; }
+    .ipdf-logo {
+      display: block;
+      height: 38px;
+      width: auto;
+      max-width: 160px;
+      object-fit: contain;
+    }
+    .ipdf-sec-head { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
+    .ipdf-sec-bar { width: 3px; align-self: stretch; min-height: 22px; background: ${accent}; border-radius: 2px; flex-shrink: 0; }
+    .ipdf-sec-title {
+      margin: 0;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: ${INK};
+    }
+    .ipdf-blk { margin-bottom: 18px; page-break-inside: avoid; }
+    .ipdf-grid4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 640px) {
+      .ipdf-grid4 { grid-template-columns: repeat(2, 1fr); }
+    }
+    .ipdf-tile {
+      background: ${PANEL};
+      border-radius: 12px;
+      padding: 10px 12px;
+      border: 1px solid #e2e8f0;
+    }
+    .ipdf-tile-lbl {
+      margin: 0 0 4px;
+      font-size: 0.58rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: ${SLATE_600};
+    }
+    .ipdf-tile-val { margin: 0; font-size: 0.82rem; font-weight: 300; color: ${INK}; line-height: 1.35; }
+    table.ipdf-kv { width: 100%; border-collapse: collapse; background: ${PANEL}; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+    table.ipdf-kv th {
+      text-align: left;
+      width: 30%;
+      padding: 8px 12px;
+      vertical-align: top;
+      font-size: 0.58rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: ${SLATE_600};
+      border-bottom: 1px solid #e2e8f0;
+      background: #fff;
+    }
+    table.ipdf-kv td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      white-space: pre-wrap;
+      font-weight: 300;
+      color: ${INK};
+    }
+    table.ipdf-kv tr:last-child th, table.ipdf-kv tr:last-child td { border-bottom: none; }
+    .ipdf-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 560px) { .ipdf-two { grid-template-columns: 1fr; } }
+    .ipdf-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+    }
+    .ipdf-card h3 {
+      margin: 0 0 8px;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: ${INK};
+    }
+    .ipdf-card pre { margin: 0; font-family: inherit; font-weight: 300; white-space: pre-wrap; word-break: break-word; color: ${SLATE_600}; font-size: 0.78rem; }
+    .ipdf-eval-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    @media (max-width: 560px) { .ipdf-eval-grid { grid-template-columns: 1fr; } }
+    .ipdf-cl-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+    }
+    .ipdf-cl-item--off { opacity: 0.55; }
+    .ipdf-check { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+    .ipdf-check--off {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .ipdf-cl-txt { font-size: 0.78rem; font-weight: 300; color: ${INK}; line-height: 1.35; }
+    .ipdf-health { margin-bottom: 10px; }
+    .ipdf-health-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .ipdf-health-lbl { font-size: 0.58rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: ${INK}; margin: 0; }
+    .ipdf-health-val { font-size: 0.72rem; font-weight: 600; color: ${accent}; margin: 0; }
+    .ipdf-bar-track {
+      height: 8px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      overflow: hidden;
+    }
+    .ipdf-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: ${accent};
+      transition: width 0.2s ease;
+    }
+    .ipdf-health-hint { margin: 4px 0 0; font-size: 0.62rem; font-weight: 300; color: ${SLATE_600}; }
+    .ipdf-summary {
+      border: 2px solid ${accent};
+      border-radius: 12px;
+      padding: 14px 16px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgb(242 101 34 / 0.12);
+    }
+    .ipdf-summary h3 {
+      margin: 0 0 8px;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: ${INK};
+    }
+    .ipdf-summary pre { margin: 0; font-family: inherit; font-weight: 300; white-space: pre-wrap; color: ${SLATE_600}; font-size: 0.82rem; }
+    .ipdf-notes { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; min-height: 48px; background: ${PANEL}; }
+    .ipdf-notes pre { margin: 0; font-weight: 300; }
+    .ipdf-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 560px) { .ipdf-gallery { grid-template-columns: 1fr; } }
+    .ipdf-photo { margin: 0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #fff; page-break-inside: avoid; box-shadow: 0 1px 2px rgb(15 23 42 / 0.06); }
+    .ipdf-photo img { display: block; width: 100%; height: auto; max-height: 220px; object-fit: cover; }
+    .ipdf-meta { margin: 0; font-size: 0.68rem; font-weight: 300; color: ${SLATE_600}; line-height: 1.45; }
+    footer.ipdf-legal {
+      margin-top: 22px;
+      padding-top: 14px;
+      border-top: 2px solid ${accent};
+      font-size: 0.62rem;
+      font-weight: 300;
+      color: ${SLATE_600};
+      line-height: 1.55;
+    }
+    footer.ipdf-legal p { margin: 0 0 4px; }
+  `;
+
+  const fontLink = `<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&display=swap" rel="stylesheet"/>`;
+
+  return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>${fontLink}<title>${esc(title)}</title><style>${css}</style></head><body><div class="ipdf-root">${body}</div></body></html>`;
+}
+
 /**
- * Drukas / „Saglabāt kā PDF” HTML — PROVIN līdzīgs bloku sadalījums, akcents #EF7D1A, SIA IRISS rekvizīti.
+ * Drukas / „Saglabāt kā PDF” HTML — A4, Inter, akcents no `IRISS_BRAND_ORANGE_HEX`, SIA IRISS rekvizīti.
+ * Dizaina loģika atbilst Tailwind utility principiem (slate-600, slate-50, tracking-wider, shadow-sm, rounded-xl).
  * Tukši lauki netiek iekļauti.
  */
 export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, generatedAtFormatted: string): string {
   const accent = IRISS_BRAND_ORANGE_HEX;
   const legal = IRISS_COMPANY_LINES.map((l) => `<p>${esc(l)}</p>`).join("");
+
+  const heroModel = record.brandModel.trim() || "PASŪTĪJUMS";
+
+  const header = `<header class="ipdf-header">
+    <div>
+      <p class="ipdf-hero-model">${esc(heroModel)}</p>
+      <p class="ipdf-hero-sub">${esc(generatedAtFormatted)} · IRISS pasūtījums</p>
+    </div>
+    <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
+  </header>`;
 
   const clientRows =
     rowIf("Vārds", record.clientFirstName) +
@@ -56,13 +337,16 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
     rowIf("Pasūtījuma datums", record.orderDate);
   const clientTable = wrapTable(clientRows);
 
+  const pamat = infoGrid4(
+    infoTile("Gads / periods", record.productionYears) +
+      infoTile("Maks. nobraukums", record.maxMileage) +
+      infoTile("Transmisija", record.transmission) +
+      infoTile("Dzinēja tips", record.engineType),
+  );
+
   const vehicleRows =
     rowIf("Marka / modelis", record.brandModel) +
-    rowIf("Ražošanas gadi", record.productionYears) +
     rowIf("Kopējais budžets", record.totalBudget) +
-    rowIf("Dzinēja tips", record.engineType) +
-    rowIf("Ātrumkārba", record.transmission) +
-    rowIf("Maks. nobraukums", record.maxMileage) +
     rowIf("Vēlamās krāsas", record.preferredColors) +
     rowIf("Nevēlamās krāsas", record.nonPreferredColors) +
     rowIf("Salona apdare", record.interiorFinish);
@@ -72,20 +356,14 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
   const des = record.equipmentDesired.trim();
   const equipBoxes: string[] = [];
   if (req) {
-    equipBoxes.push(
-      `<div class="box"><h3>Obligātās prasības</h3><pre>${esc(req)}</pre></div>`,
-    );
+    equipBoxes.push(`<div class="ipdf-card"><h3>Obligātās prasības</h3><pre>${esc(req)}</pre></div>`);
   }
   if (des) {
-    equipBoxes.push(
-      `<div class="box"><h3>Vēlamās prasības</h3><pre>${esc(des)}</pre></div>`,
-    );
+    equipBoxes.push(`<div class="ipdf-card"><h3>Vēlamās prasības</h3><pre>${esc(des)}</pre></div>`);
   }
-  const equip = equipBoxes.length ? `<div class="two">${equipBoxes.join("")}</div>` : "";
+  const equip = equipBoxes.length ? `<div class="ipdf-two">${equipBoxes.join("")}</div>` : "";
 
-  const notes = record.notes.trim()
-    ? `<pre class="notes">${esc(record.notes.trim())}</pre>`
-    : "";
+  const notes = record.notes.trim() ? `<div class="ipdf-notes"><pre>${esc(record.notes.trim())}</pre></div>` : "";
 
   const linkRows: string[] = [];
   const pushL = (label: string, v: string) => {
@@ -100,52 +378,21 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
     const t = record.listingLinksOther[i]?.trim();
     if (t) linkRows.push(`${esc(`Cits ${i + 1}`)}: ${esc(t)}`);
   }
-  const linksInner = linkRows.length ? `<p class="meta">${linkRows.join("<br/>")}</p>` : "";
+  const linksInner = linkRows.length ? `<p class="ipdf-meta">${linkRows.join("<br/>")}</p>` : "";
 
-  const css = `
-    @page { margin: 14mm; }
-    * { box-sizing: border-box; }
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      color: #1d1d1f; font-size: 11px; line-height: 1.45; margin: 0; padding: 12px 14px 24px; }
-    .doc { max-width: 720px; margin: 0 auto; }
-    .hero { border-bottom: 3px solid ${accent}; padding-bottom: 10px; margin-bottom: 14px; }
-    h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.06em; margin: 0 0 4px; color: ${accent}; text-transform: uppercase; }
-    .meta { color: #6b7280; font-size: 10px; margin: 0; }
-    .blk { margin-bottom: 16px; page-break-inside: avoid; }
-    .blk-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-      color: ${accent}; border-left: 4px solid ${accent}; padding: 4px 0 4px 10px; margin: 0 0 8px; background: rgba(239,125,26,0.06); }
-    table.grid { width: 100%; border-collapse: collapse; }
-    table.grid th { text-align: left; width: 32%; padding: 6px 8px; vertical-align: top; color: #4b5563;
-      font-weight: 600; font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #e5e7eb; }
-    table.grid td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; white-space: pre-wrap; }
-    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    @media (max-width: 520px) { .two { grid-template-columns: 1fr; } }
-    .box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; }
-    .box h3 { margin: 0 0 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: ${accent}; }
-    pre { margin: 0; font-family: inherit; white-space: pre-wrap; word-break: break-word; }
-    .notes { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; min-height: 60px; }
-    .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    @media (max-width: 560px) { .gallery { grid-template-columns: 1fr; } }
-    .photo { margin: 0; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: #fff; page-break-inside: avoid; }
-    .photo img { display: block; width: 100%; height: auto; max-height: 220px; object-fit: cover; }
-    footer.legal { margin-top: 22px; padding-top: 12px; border-top: 2px solid ${accent}; font-size: 9px; color: #4b5563; line-height: 1.5; }
-    footer.legal p { margin: 0 0 4px; }
-  `;
-
-  const body = `<div class="doc">
-    <header class="hero">
-      <h1>PASŪTĪJUMS</h1>
-      <p class="meta">${esc(generatedAtFormatted)}</p>
-    </header>
+  const pamatBlock = pamat.trim()
+    ? `<section class="ipdf-blk">${sectionHead("Pamatinformācija")}<div class="ipdf-blk-body">${pamat}</div></section>`
+    : "";
+  const body = `${header}
     ${blockIf("Klienta dati", clientTable)}
-    ${blockIf("Transportlīdzekļa specifikācija", vehicleTable)}
+    ${pamatBlock}
+    ${vehicleTable.trim() ? `<section class="ipdf-blk">${sectionHead("Transportlīdzekļa specifikācija")}<div class="ipdf-blk-body">${vehicleTable}</div></section>` : ""}
     ${blockIf("Aprīkojums", equip)}
     ${blockIf("Piezīmes", notes)}
     ${blockIf("Sludinājumu saites", linksInner)}
-    <footer class="legal">${legal}</footer>
-  </div>`;
+    <footer class="ipdf-legal">${legal}</footer>`;
 
-  return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><title>PASŪTĪJUMS</title><style>${css}</style></head><body>${body}</body></html>`;
+  return irissPrintShell(accent, "PASŪTĪJUMS", body);
 }
 
 export function buildIrissOfferPrintHtml(
@@ -156,51 +403,59 @@ export function buildIrissOfferPrintHtml(
   const accent = IRISS_BRAND_ORANGE_HEX;
   const legal = IRISS_COMPANY_LINES.map((l) => `<p>${esc(l)}</p>`).join("");
 
-  const heroTitle =
-    offer.brandModel.trim() || offer.title.trim() || "Piedāvājums";
+  const heroTitle = offer.brandModel.trim() || offer.title.trim() || "Piedāvājums";
+
+  const header = `<header class="ipdf-header">
+    <div>
+      <p class="ipdf-hero-model">${esc(heroTitle)}</p>
+      <p class="ipdf-hero-sub">${esc(generatedAtFormatted)} · Auto pārbaude / piedāvājums</p>
+    </div>
+    <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
+  </header>`;
 
   const clientName = `${record.clientFirstName} ${record.clientLastName}`.trim();
   const clientRows =
-    (clientName ? rowIf("Klients", clientName) : "") +
-    rowIf("Tālrunis", record.phone) +
-    rowIf("E-pasts", record.email);
+    (clientName ? rowIf("Klients", clientName) : "") + rowIf("Tālrunis", record.phone) + rowIf("E-pasts", record.email);
   const clientTable = wrapTable(clientRows);
 
   const firstRegistration = offer.firstRegistration?.trim() || offer.year.trim();
   const odometer = offer.odometerReading?.trim() || offer.mileage.trim();
-  const offerRows =
-    rowIf("Marka, modelis", offer.brandModel) +
-    rowIf("Pirmā reģistrācija", firstRegistration) +
-    rowIf("Odometra rādījums", odometer) +
-    rowIf("Transmisija", offer.transmission) +
-    rowIf("Atrašanās vieta", offer.location);
-  const offerTable = wrapTable(offerRows);
+  const pamatInner = infoGrid4(
+    infoTile("Gads", firstRegistration) +
+      infoTile("Nobraukums", odometer) +
+      infoTile("Transmisija", offer.transmission) +
+      infoTile("Atrašanās vieta", offer.location),
+  );
 
-  const checks = [
-    offer.hasFullServiceHistory ? "☑ Pilna servisa vēsture" : "",
-    offer.hasFactoryPaint ? "☑ Rūpnīcas krāsojums" : "",
-    offer.hasNoRustBody ? "☑ Virsbūve bez rūsas" : "",
-    offer.hasSecondWheelSet ? "☑ Otrs riteņu komplekts" : "",
-  ].filter(Boolean);
+  const checklistHtml = `<div class="ipdf-eval-grid">
+    ${checklistRow(accent, offer.hasFullServiceHistory, "Vēsture (pilna servisa vēsture)")}
+    ${checklistRow(accent, offer.hasFactoryPaint, "Krāsojums (rūpnīcas krāsa)")}
+    ${checklistRow(accent, offer.hasNoRustBody, "Rūsa (virsbūve bez rūsas)")}
+    ${checklistRow(accent, offer.hasSecondWheelSet, "Otrs riteņu komplekts")}
+  </div>`;
+
+  const specialNotes = offer.specialNotes?.trim() || "";
+  const specialBlock = specialNotes
+    ? `<div class="ipdf-card" style="margin-bottom:12px"><h3>Īpašas atzīmes</h3><pre>${esc(specialNotes)}</pre></div>`
+    : "";
+
   const visual = offer.visualAssessment?.trim() || "";
   const technical = offer.technicalAssessment?.trim() || "";
-  const specialNotes = offer.specialNotes?.trim() || "";
+  const detailParts: string[] = [];
+  if (visual) {
+    detailParts.push(`<div class="ipdf-card">${healthScaleHtml(accent, "Vizuālais novērtējums", visual)}<h3>Detalizēts apraksts</h3><pre>${esc(visual)}</pre></div>`);
+  }
+  if (technical) {
+    detailParts.push(`<div class="ipdf-card">${healthScaleHtml(accent, "Tehniskais novērtējums", technical)}<h3>Detalizēts apraksts</h3><pre>${esc(technical)}</pre></div>`);
+  }
+  const detailTwo = detailParts.length ? `<div class="ipdf-two">${detailParts.join("")}</div>` : "";
+
   const summary = offer.summary?.trim() || "";
-  const evalParts: string[] = [];
-  if (checks.length > 0) {
-    evalParts.push(`<p class="meta">${checks.map((x) => esc(x)).join("<br/>")}</p>`);
-  }
-  if (specialNotes) {
-    evalParts.push(`<div class="box"><h3>Īpašas atzīmes</h3><pre>${esc(specialNotes)}</pre></div>`);
-  }
-  const evalBoxes: string[] = [];
-  if (visual) evalBoxes.push(`<div class="box"><h3>Vizuālais novērtējums</h3><pre>${esc(visual)}</pre></div>`);
-  if (technical) evalBoxes.push(`<div class="box"><h3>Tehniskais novērtējums</h3><pre>${esc(technical)}</pre></div>`);
-  if (evalBoxes.length > 0) evalParts.push(`<div class="two">${evalBoxes.join("")}</div>`);
-  if (summary) {
-    evalParts.push(`<div class="box"><h3>Kopsavilkums</h3><pre>${esc(summary)}</pre></div>`);
-  }
-  const evalInner = evalParts.join("");
+  const summaryBlock = summary
+    ? `<div class="ipdf-summary"><h3>Kopsavilkums</h3><pre>${esc(summary)}</pre></div>`
+    : "";
+
+  const evalInner = [checklistHtml + specialBlock, detailTwo, summaryBlock].filter((x) => x.trim()).join("");
 
   const carPrice = offer.carPrice?.trim() || offer.priceGermany?.trim() || "";
   const deliveryPrice = offer.deliveryPrice?.trim() || "";
@@ -223,61 +478,27 @@ export function buildIrissOfferPrintHtml(
 
   const gallery =
     imageAttachments.length > 0
-      ? `<div class="gallery">${imageAttachments
-          .map(
-            (img) =>
-              `<figure class="photo"><img src="${img.dataUrl}" alt=""/></figure>`,
-          )
+      ? `<div class="ipdf-gallery">${imageAttachments
+          .map((img) => `<figure class="ipdf-photo"><img src="${img.dataUrl}" alt=""/></figure>`)
           .join("")}</div>`
       : "";
 
   const otherTable =
     otherAttachments.length > 0
-      ? `<table class="grid">${otherAttachments
+      ? `<table class="ipdf-kv">${otherAttachments
           .map((a, i) => `<tr><th>Fails ${i + 1}</th><td>${esc(a.name)}</td></tr>`)
           .join("")}</table>`
       : "";
 
   const filesInner = [gallery, otherTable].filter(Boolean).join("");
 
-  const css = `
-    @page { margin: 14mm; }
-    * { box-sizing: border-box; }
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      color: #1d1d1f; font-size: 11px; line-height: 1.45; margin: 0; padding: 12px 14px 24px; }
-    .doc { max-width: 720px; margin: 0 auto; }
-    .hero { border-bottom: 3px solid ${accent}; padding-bottom: 10px; margin-bottom: 14px; }
-    h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.06em; margin: 0 0 4px; color: ${accent}; text-transform: uppercase; }
-    .meta { color: #6b7280; font-size: 10px; margin: 0; }
-    .blk { margin-bottom: 16px; page-break-inside: avoid; }
-    .blk-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-      color: ${accent}; border-left: 4px solid ${accent}; padding: 4px 0 4px 10px; margin: 0 0 8px; background: rgba(239,125,26,0.06); }
-    table.grid { width: 100%; border-collapse: collapse; }
-    table.grid th { text-align: left; width: 32%; padding: 6px 8px; vertical-align: top; color: #4b5563;
-      font-weight: 600; font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #e5e7eb; }
-    table.grid td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; white-space: pre-wrap; }
-    pre { margin: 0; font-family: inherit; white-space: pre-wrap; word-break: break-word; }
-    .notes { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; min-height: 60px; }
-    .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    @media (max-width: 560px) { .gallery { grid-template-columns: 1fr; } }
-    .photo { margin: 0; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: #fff; page-break-inside: avoid; }
-    .photo img { display: block; width: 100%; height: auto; max-height: 220px; object-fit: cover; }
-    footer.legal { margin-top: 22px; padding-top: 12px; border-top: 2px solid ${accent}; font-size: 9px; color: #4b5563; line-height: 1.5; }
-    footer.legal p { margin: 0 0 4px; }
-  `;
-
-  const body = `<div class="doc">
-    <header class="hero">
-      <h1>${esc(heroTitle)}</h1>
-      <p class="meta">${esc(generatedAtFormatted)}</p>
-    </header>
+  const body = `${header}
     ${blockIf("Klienta dati", clientTable)}
-    ${blockIf("Pamatinformācija", offerTable)}
-    ${blockIf("Vispārējais novērtējums", evalInner)}
+    ${pamatInner.trim() ? `<section class="ipdf-blk">${sectionHead("Pamatinformācija")}<div class="ipdf-blk-body">${pamatInner}</div></section>` : ""}
+    ${evalInner.trim() ? `<section class="ipdf-blk">${sectionHead("Vispārējais novērtējums")}<div class="ipdf-blk-body">${evalInner}</div></section>` : ""}
     ${blockIf("Cenas un piedāvājums", pricingTable)}
     ${blockIf("Fotogrāfijas", filesInner)}
-    <footer class="legal">${legal}</footer>
-  </div>`;
+    <footer class="ipdf-legal">${legal}</footer>`;
 
-  return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><title>${esc(heroTitle)}</title><style>${css}</style></head><body>${body}</body></html>`;
+  return irissPrintShell(accent, heroTitle, body);
 }

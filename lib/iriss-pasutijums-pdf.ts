@@ -40,8 +40,9 @@ const AUDIT_CARD_FILL = rgb(1, 1, 1);
 const AUDIT_CARD_BORDER = rgb(226 / 255, 232 / 255, 240 / 255);
 /** Papildu atstarpe starp etiķetes beigām un vērtību vienas rindas layoutā (PDF vienības). */
 const COLON_VALUE_GAP = 3;
-const PRICE_BAND_FILL = rgb(255 / 255, 244 / 255, 232 / 255);
-const PRICE_BAND_BORDER = rgb(217 / 255, 112 / 255, 29 / 255);
+/** Piedāvājuma kopsummas josla — saskaņā ar `IRISS_BRAND_ORANGE_HEX` (#F26522). */
+const PRICE_BAND_FILL = rgb(255 / 255, 248 / 255, 245 / 255);
+const PRICE_BAND_BORDER = rgb(242 / 255, 101 / 255, 34 / 255);
 const SECTION_BEFORE = 14;
 const SECTION_AFTER = 10;
 const LETTER_TRACKING = 0.22;

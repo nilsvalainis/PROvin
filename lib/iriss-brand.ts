@@ -1,5 +1,5 @@
 /** Dzintarzeme Auto / IRISS admin un PDF — oranžā akcenta krāsa (ne PROVIN zilā). */
-export const IRISS_BRAND_ORANGE_HEX = "#EF7D1A";
+export const IRISS_BRAND_ORANGE_HEX = "#F26522";
 
 export const IRISS_COMPANY_LINES = [
   "SIA IRISS",

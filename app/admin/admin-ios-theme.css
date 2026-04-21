@@ -136,6 +136,7 @@ body:has(.admin-ios-theme) {
 .admin-ios-theme [class*="ring-orange-"],
 .admin-ios-theme [class*="border-orange-"],
 .admin-ios-theme [style*="#EF7D1A"],
+.admin-ios-theme [style*="#F26522"],
 .admin-ios-theme [style*="#ff6600"] {
   color: var(--admin-ios-blue) !important;
   border-color: rgb(0 122 255 / 0.35) !important;
