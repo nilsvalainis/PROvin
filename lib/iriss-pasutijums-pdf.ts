@@ -7,7 +7,7 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import sharp from "sharp";
 
-import { IRISS_COMPANY_LINES } from "@/lib/iriss-brand";
+import { IRISS_BRAND_ORANGE_HEX, IRISS_COMPANY_LINES } from "@/lib/iriss-brand";
 import type { IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 import { shrinkImageBytesForIrissPdf } from "@/lib/shrink-image-for-iriss-pdf";
 
@@ -32,12 +32,22 @@ async function loadInterFontBytes(): Promise<{ reg: Uint8Array; bold: Uint8Array
   return interFontBytesCache;
 }
 
-/** PROVIN audit blue */
-const AUDIT_ACCENT = rgb(0 / 255, 97 / 255, 210 / 255);
-const INK = rgb(29 / 255, 29 / 255, 31 / 255);
-const MUTED = rgb(110 / 255, 110 / 255, 115 / 255);
-const AUDIT_CARD_FILL = rgb(1, 1, 1);
-const AUDIT_CARD_BORDER = rgb(226 / 255, 232 / 255, 240 / 255);
+function hexToRgb(hex: string): ReturnType<typeof rgb> {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return rgb(0, 0, 0);
+  const n = Number.parseInt(m[1], 16);
+  return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+}
+
+/** IRISS logo / HTML PDF akcents (#F26522). */
+const IRISS_ACCENT = hexToRgb(IRISS_BRAND_ORANGE_HEX);
+/** Virsraksti — slate-900 (#1E293B). */
+const INK = rgb(30 / 255, 41 / 255, 59 / 255);
+/** Sekundārais teksts — slate-600 (#475569). */
+const MUTED = rgb(71 / 255, 85 / 255, 105 / 255);
+const CARD_FILL_SLATE = rgb(248 / 255, 250 / 255, 252 / 255);
+const CARD_BORDER_SLATE = rgb(226 / 255, 232 / 255, 240 / 255);
+const BAR_TRACK = rgb(226 / 255, 232 / 255, 240 / 255);
 /** Papildu atstarpe starp etiķetes beigām un vērtību vienas rindas layoutā (PDF vienības). */
 const COLON_VALUE_GAP = 3;
 /** Piedāvājuma kopsummas josla — saskaņā ar `IRISS_BRAND_ORANGE_HEX` (#F26522). */
@@ -84,15 +94,15 @@ type CardTheme = {
   headBarColor: PdfColor | null;
 };
 
-const PROVIN_AUDIT_PDF_CARD_THEME: CardTheme = {
-  fill: AUDIT_CARD_FILL,
-  border: AUDIT_CARD_BORDER,
-  borderWidth: 1.25,
+const IRISS_PDF_CARD_THEME: CardTheme = {
+  fill: CARD_FILL_SLATE,
+  border: CARD_BORDER_SLATE,
+  borderWidth: 1,
   titleColor: INK,
   titleUppercase: true,
-  titleSize: 11,
-  titleGapAfter: 5,
-  headBarColor: AUDIT_ACCENT,
+  titleSize: 10,
+  titleGapAfter: 6,
+  headBarColor: IRISS_ACCENT,
 };
 
 type Ctx = {
@@ -280,7 +290,7 @@ function drawIosCard(
 ): void {
   const t = ctx.cardTheme;
   const pad = 10;
-  const radius = 8;
+  const radius = 10;
   const ix = ctx.margin + pad;
   const iw = ctx.contentW - pad * 2;
   const titleBlock = lineHeight(t.titleSize) + t.titleGapAfter;
@@ -366,6 +376,67 @@ function drawRoundedRect(
     borderColor: opts.borderColor,
     borderWidth: opts.borderWidth ?? 0,
   });
+}
+
+const BAR_H = 7;
+
+function parseScoreOutOf10(text: string): number | null {
+  const t = text.trim();
+  if (!t) return null;
+  const m1 = t.match(/\b(\d{1,2})\s*\/\s*10\b/i);
+  if (m1) {
+    const n = Number.parseInt(m1[1], 10);
+    if (n >= 0 && n <= 10) return n;
+  }
+  const m2 = t.match(/\b(\d{1,2})\s+no\s+10\b/i);
+  if (m2) {
+    const n = Number.parseInt(m2[1], 10);
+    if (n >= 0 && n <= 10) return n;
+  }
+  return null;
+}
+
+function measureHealthBarBlock(bodyText: string): number {
+  const sc = parseScoreOutOf10(bodyText);
+  let h = lineHeight(8);
+  h += BAR_H + 6;
+  if (sc === null && bodyText.trim()) h += lineHeight(7);
+  return h;
+}
+
+function drawHealthBarBlock(ctx: Ctx, label: string, bodyText: string, x: number, maxW: number) {
+  const sc = parseScoreOutOf10(bodyText);
+  const scoreStr = sc === null ? "—" : `${sc}/10`;
+  const lh8 = lineHeight(8);
+  const yLine = ctx.y - 8;
+  drawTrackedText(ctx.page, label.toLocaleUpperCase("lv-LV"), {
+    x,
+    y: yLine,
+    size: 8,
+    font: ctx.fontBold,
+    color: INK,
+    tracking: 0.12,
+  });
+  const sw = measureTrackedWidth(scoreStr, ctx.fontBold, 9, LETTER_TRACKING);
+  drawTrackedText(ctx.page, scoreStr, {
+    x: x + maxW - sw,
+    y: yLine,
+    size: 9,
+    font: ctx.fontBold,
+    color: IRISS_ACCENT,
+    tracking: LETTER_TRACKING,
+  });
+  ctx.y -= lh8;
+  const trackY = ctx.y - BAR_H;
+  ctx.page.drawRectangle({ x, y: trackY, width: maxW, height: BAR_H, color: BAR_TRACK });
+  const fillW = sc === null ? 0 : Math.min(maxW, maxW * (sc / 10));
+  if (fillW > 0.5) {
+    ctx.page.drawRectangle({ x, y: trackY, width: fillW, height: BAR_H, color: IRISS_ACCENT });
+  }
+  ctx.y = trackY - 4;
+  if (sc === null && bodyText.trim()) {
+    drawParagraph(ctx, "Tekstā nav „X/10” — josla nav aizpildīta.", 7, MUTED, ctx.font, { x, maxW });
+  }
 }
 
 /** Tukši lauki PDF netiek iekļauti. */
@@ -473,12 +544,36 @@ async function createPdfCtx(): Promise<Ctx> {
     suppressPageBreak: false,
     offerLogo: null,
     logoOnlyBand: LOGO_ONLY_BAND,
-    cardTheme: { ...PROVIN_AUDIT_PDF_CARD_THEME },
+    cardTheme: { ...IRISS_PDF_CARD_THEME },
   };
+}
+
+function drawContentAccentRule(ctx: Ctx) {
+  const ruleH = 2;
+  ctx.y -= 4;
+  if (!ctx.suppressPageBreak) ensureSpace(ctx, ruleH + 14);
+  const yb = ctx.y - ruleH;
+  ctx.page.drawRectangle({
+    x: ctx.margin,
+    y: yb,
+    width: ctx.contentW,
+    height: ruleH,
+    color: IRISS_ACCENT,
+  });
+  ctx.y = yb - 12;
 }
 
 function drawFooter(ctx: Ctx) {
   ctx.y -= 10;
+  if (!ctx.suppressPageBreak) ensureSpace(ctx, 14);
+  ctx.page.drawRectangle({
+    x: ctx.margin,
+    y: ctx.y - 2,
+    width: ctx.contentW,
+    height: 2,
+    color: IRISS_ACCENT,
+  });
+  ctx.y -= 12;
   for (const line of IRISS_COMPANY_LINES) {
     drawParagraph(ctx, line, 8, MUTED);
   }
@@ -491,6 +586,43 @@ function fmtMoneyEurLv(total: number): string {
     maximumFractionDigits: 0,
     minimumFractionDigits: 0,
   }).format(total);
+}
+
+function drawOrangeSummaryCard(ctx: Ctx, summary: string): void {
+  const pad = 12;
+  const title = "KOPSAVILKUMS";
+  const titleS = 9;
+  const bodyS = 10;
+  const iw = ctx.contentW;
+  const innerW = iw - pad * 2;
+  const bodyH = measureWrappedBlockHeight(summary, ctx.font, bodyS, innerW);
+  const h = pad + lineHeight(titleS) + 8 + bodyH + pad;
+  if (!ctx.suppressPageBreak) ensureSpace(ctx, SECTION_BEFORE + h + SECTION_AFTER + 8);
+  ctx.y -= SECTION_BEFORE;
+  const yTop = ctx.y;
+  const yBottom = yTop - h;
+  drawRoundedRect(ctx.page, {
+    x: ctx.margin,
+    y: yBottom,
+    width: iw,
+    height: h,
+    radius: 10,
+    color: rgb(1, 1, 1),
+    borderColor: IRISS_ACCENT,
+    borderWidth: 2,
+  });
+  const ty = yTop - pad;
+  drawTrackedText(ctx.page, title, {
+    x: ctx.margin + pad,
+    y: ty - titleS,
+    size: titleS,
+    font: ctx.fontBold,
+    color: INK,
+    tracking: 0.16,
+  });
+  ctx.y = ty - lineHeight(titleS) - 6;
+  drawParagraph(ctx, summary, bodyS, MUTED, ctx.font, { x: ctx.margin + pad, maxW: innerW });
+  ctx.y = yBottom - SECTION_AFTER;
 }
 
 function drawKopaHighlightBand(ctx: Ctx, boxX: number, boxW: number, totalPrice: number): void {
@@ -568,18 +700,19 @@ async function loadOfferLogoPack(pdfDoc: PDFDocument): Promise<LogoPack | null> 
   }
 }
 
-async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void> {
-  const heroTitle = val(offer.brandModel) ?? val(offer.title) ?? "Piedāvājums";
+async function drawPasutijumsPdfHero(ctx: Ctx, record: IrissPasutijumsRecord): Promise<void> {
+  const raw = val(record.brandModel) ?? "PASŪTĪJUMS";
+  const heroTitle = raw.toLocaleUpperCase("lv-LV");
   const logo = ctx.offerLogo;
-  const lh20 = lineHeight(20);
+  const lh18 = lineHeight(18);
   const logoBoxW = logo ? logo.dw + 6 : 0;
   const titleColX = ctx.margin + (logo ? logoBoxW + 14 : 0);
   const titleColW = ctx.contentW - (logo ? logoBoxW + 14 : 0);
-  const titleLines = wrapText(heroTitle, ctx.font, 20, titleColW);
-  const titleH = titleLines.length * lh20;
+  const titleLines = wrapText(heroTitle, ctx.fontBold, 18, titleColW);
+  const titleH = titleLines.length * lh18;
   const rowH = Math.max(logo ? logo.dh + 6 : 0, titleH);
 
-  ensureSpace(ctx, rowH + lineHeight(11) + 22);
+  ensureSpace(ctx, rowH + lineHeight(11) + 28);
   const rowTopY = ctx.y;
 
   if (logo) stampOfferLogoTopLeft(ctx.page, ctx.pageH, ctx.margin, logo);
@@ -588,34 +721,73 @@ async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void
   for (const line of titleLines) {
     drawTrackedText(ctx.page, line, {
       x: titleColX,
-      y: ty - 20,
-      size: 20,
-      font: ctx.font,
+      y: ty - 18,
+      size: 18,
+      font: ctx.fontBold,
       color: INK,
       tracking: LETTER_TRACKING,
     });
-    ty -= lh20;
+    ty -= lh18;
   }
 
   const logoBandBottom = logo ? ctx.pageH - ctx.margin - (logo.dh + 6) : rowTopY;
-  const titleBlockBottom = rowTopY - titleLines.length * lh20;
+  const titleBlockBottom = rowTopY - titleLines.length * lh18;
   ctx.y = Math.min(logoBandBottom, titleBlockBottom) - 8;
   drawParagraph(ctx, new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date()), 10, MUTED, undefined, {
     x: ctx.margin,
     maxW: ctx.contentW,
   });
-  ctx.y -= 10;
+  ctx.y -= 6;
+  drawContentAccentRule(ctx);
 }
 
-export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord): Promise<Uint8Array> {
-  const ctx = await createPdfCtx();
+async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void> {
+  const rawTitle = val(offer.brandModel) ?? val(offer.title) ?? "Piedāvājums";
+  const heroTitle = rawTitle.toLocaleUpperCase("lv-LV");
+  const logo = ctx.offerLogo;
+  const lh18 = lineHeight(18);
+  const logoBoxW = logo ? logo.dw + 6 : 0;
+  const titleColX = ctx.margin + (logo ? logoBoxW + 14 : 0);
+  const titleColW = ctx.contentW - (logo ? logoBoxW + 14 : 0);
+  const titleLines = wrapText(heroTitle, ctx.fontBold, 18, titleColW);
+  const titleH = titleLines.length * lh18;
+  const rowH = Math.max(logo ? logo.dh + 6 : 0, titleH);
 
-  drawTextLine(ctx, "PASŪTĪJUMS", 19, { font: ctx.fontBold, color: INK });
+  ensureSpace(ctx, rowH + lineHeight(11) + 28);
+  const rowTopY = ctx.y;
+
+  if (logo) stampOfferLogoTopLeft(ctx.page, ctx.pageH, ctx.margin, logo);
+
+  let ty = rowTopY;
+  for (const line of titleLines) {
+    drawTrackedText(ctx.page, line, {
+      x: titleColX,
+      y: ty - 18,
+      size: 18,
+      font: ctx.fontBold,
+      color: INK,
+      tracking: LETTER_TRACKING,
+    });
+    ty -= lh18;
+  }
+
+  const logoBandBottom = logo ? ctx.pageH - ctx.margin - (logo.dh + 6) : rowTopY;
+  const titleBlockBottom = rowTopY - titleLines.length * lh18;
+  ctx.y = Math.min(logoBandBottom, titleBlockBottom) - 8;
   drawParagraph(ctx, new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date()), 10, MUTED, undefined, {
     x: ctx.margin,
     maxW: ctx.contentW,
   });
-  ctx.y -= 10;
+  ctx.y -= 6;
+  drawContentAccentRule(ctx);
+}
+
+export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord): Promise<Uint8Array> {
+  const ctx = await createPdfCtx();
+  ctx.offerLogo = await loadOfferLogoPack(ctx.pdfDoc);
+  ctx.logoOnlyBand = ctx.offerLogo ? Math.max(LOGO_ONLY_BAND, Math.ceil(ctx.offerLogo.dh + 20)) : LOGO_ONLY_BAND;
+
+  await drawPasutijumsPdfHero(ctx, record);
 
   const clientLines: string[] = [];
   const vFn = val(record.clientFirstName);
@@ -639,17 +811,33 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
     );
   }
 
+  const pamatLines: string[] = [];
+  const pushP = (label: string, s: string | undefined) => {
+    const v = val(s);
+    if (v) pamatLines.push(`${label}: ${v}`);
+  };
+  pushP("Gads / periods", record.productionYears);
+  pushP("Maks. nobraukums", record.maxMileage);
+  pushP("Transmisija", record.transmission);
+  pushP("Dzinēja tips", record.engineType);
+  if (pamatLines.length) {
+    drawIosCard(
+      ctx,
+      "Pamatinformācija",
+      (iw) => measureColonLabeledLinesHeight(pamatLines, 10, iw, ctx),
+      ({ x, w }) => {
+        for (const ln of pamatLines) drawColonLabeledLine(ctx, ln, 10, x, w);
+      },
+    );
+  }
+
   const vehLines: string[] = [];
   const pushV = (label: string, s: string | undefined) => {
     const v = val(s);
     if (v) vehLines.push(`${label}: ${v}`);
   };
   pushV("Marka / modelis", record.brandModel);
-  pushV("Ražošanas gadi", record.productionYears);
   pushV("Kopējais budžets", record.totalBudget);
-  pushV("Dzinēja tips", record.engineType);
-  pushV("Ātrumkārba", record.transmission);
-  pushV("Maks. nobraukums", record.maxMileage);
   pushV("Vēlamās krāsas", record.preferredColors);
   pushV("Nevēlamās krāsas", record.nonPreferredColors);
   pushV("Salona apdare", record.interiorFinish);
@@ -787,11 +975,12 @@ export async function buildIrissOfferPdfBytes(
   const summary = val(offer.summary);
   const partGap = 6;
 
-  if (assessmentChecks.length > 0 || specialNotes || visual || technical || summary) {
+  const hasEvalBody = assessmentChecks.length > 0 || specialNotes || visual || technical;
+  if (hasEvalBody) {
     drawIosCard(ctx, "Vispārējais novērtējums", (iw) => {
       let h = 0;
       if (assessmentChecks.length) {
-        h += measureLinesHeight(assessmentChecks, ctx.font, 10, iw);
+        h += measureLinesHeight(assessmentChecks, ctx.fontBold, 10, iw);
       }
       if (specialNotes) {
         if (h > 0) h += partGap;
@@ -800,50 +989,45 @@ export async function buildIrissOfferPdfBytes(
       }
       if (visual) {
         if (h > 0) h += partGap;
-        h += measureWrappedBlockHeight("Vizuālais novērtējums:", ctx.fontBold, 10, iw);
-        h += measureWrappedBlockHeight(visual, ctx.font, 10, iw);
+        h += measureHealthBarBlock(visual);
+        h += lineHeight(9) + 4 + measureWrappedBlockHeight(visual, ctx.font, 10, iw);
       }
       if (technical) {
         if (h > 0) h += partGap;
-        h += measureWrappedBlockHeight("Tehniskais novērtējums:", ctx.fontBold, 10, iw);
-        h += measureWrappedBlockHeight(technical, ctx.font, 10, iw);
-      }
-      if (summary) {
-        if (h > 0) h += partGap;
-        h += measureWrappedBlockHeight("Kopsavilkums:", ctx.fontBold, 10, iw);
-        h += measureWrappedBlockHeight(summary, ctx.font, 10, iw);
+        h += measureHealthBarBlock(technical);
+        h += lineHeight(9) + 4 + measureWrappedBlockHeight(technical, ctx.font, 10, iw);
       }
       return h;
     }, ({ x, w }) => {
       let filled = false;
       for (const ln of assessmentChecks) {
-        drawParagraph(ctx, ln, 10, INK, ctx.fontBold, { x, maxW: w });
+        drawParagraph(ctx, ln, 10, IRISS_ACCENT, ctx.fontBold, { x, maxW: w });
         filled = true;
       }
       if (specialNotes) {
         if (filled) ctx.y -= partGap;
         drawParagraph(ctx, "Īpašas atzīmes:", 10, INK, ctx.fontBold, { x, maxW: w });
-        drawParagraph(ctx, specialNotes, 10, INK, ctx.font, { x, maxW: w });
+        drawParagraph(ctx, specialNotes, 10, MUTED, ctx.font, { x, maxW: w });
         filled = true;
       }
       if (visual) {
         if (filled) ctx.y -= partGap;
-        drawParagraph(ctx, "Vizuālais novērtējums:", 10, INK, ctx.fontBold, { x, maxW: w });
-        drawParagraph(ctx, visual, 10, INK, ctx.font, { x, maxW: w });
+        drawHealthBarBlock(ctx, "Vizuālais novērtējums", visual, x, w);
+        drawParagraph(ctx, "Detalizēts apraksts:", 9, INK, ctx.fontBold, { x, maxW: w });
+        drawParagraph(ctx, visual, 10, MUTED, ctx.font, { x, maxW: w });
         filled = true;
       }
       if (technical) {
         if (filled) ctx.y -= partGap;
-        drawParagraph(ctx, "Tehniskais novērtējums:", 10, INK, ctx.fontBold, { x, maxW: w });
-        drawParagraph(ctx, technical, 10, INK, ctx.font, { x, maxW: w });
+        drawHealthBarBlock(ctx, "Tehniskais novērtējums", technical, x, w);
+        drawParagraph(ctx, "Detalizēts apraksts:", 9, INK, ctx.fontBold, { x, maxW: w });
+        drawParagraph(ctx, technical, 10, MUTED, ctx.font, { x, maxW: w });
         filled = true;
       }
-      if (summary) {
-        if (filled) ctx.y -= partGap;
-        drawParagraph(ctx, "Kopsavilkums:", 10, INK, ctx.fontBold, { x, maxW: w });
-        drawParagraph(ctx, summary, 10, INK, ctx.font, { x, maxW: w });
-      }
     });
+  }
+  if (summary) {
+    drawOrangeSummaryCard(ctx, summary);
   }
 
   const carPrice = val(offer.carPrice) ?? val(offer.priceGermany);
