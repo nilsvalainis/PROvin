@@ -83,7 +83,6 @@ import {
   Link2,
   ListChecks,
   Loader2,
-  MessageCircle,
   MessageSquare,
   Newspaper,
   Scale,
@@ -182,6 +181,28 @@ function normalizeWhatsAppPhoneDigits(raw: string | null | undefined): string | 
   if (!digits) return null;
   if (!digits.startsWith("371")) digits = `371${digits}`;
   return digits;
+}
+
+const WHATSAPP_PREFILL_MESSAGE = `Sveiki!
+
+Nosūtu Jums iegādāto PROVIN auditu. Visus papildu materiālus nosūtīju uz Jūsu e-pastu.
+
+⚠️ Svarīgi: Sakarā ar tehniskiem uzlabojumiem, e-pasts dažkārt mēdz nonākt Spam mapē. Lūdzu, pārbaudiet!
+
+Ja rodas jautājumi par atskaites datiem, ir nepieciešams padoms pirms/pēc auto apskates vai palīdzība pie formalitāšu kārtošanas — droši rakstiet šeit vai zvaniet. Labprāt palīdzēšu!
+
+Ar cieņu,
+IRISS (Nils V.)`;
+
+function WhatsAppIconGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden>
+      <path
+        fill="currentColor"
+        d="M19.11 4.89A9.91 9.91 0 0 0 12.06 2a9.99 9.99 0 0 0-8.57 15.14L2 22l5-1.31A10 10 0 1 0 19.11 4.89ZM12.06 20a7.9 7.9 0 0 1-4.03-1.1l-.29-.17-2.96.78.8-2.88-.19-.3A8 8 0 1 1 12.06 20Zm4.4-5.97c-.24-.12-1.42-.7-1.64-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1-.37-1.9-1.18-.7-.62-1.17-1.39-1.3-1.63-.14-.24-.01-.37.1-.49.1-.1.24-.26.36-.39.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.41-.54-.42h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.33.98 2.49c.12.16 1.68 2.56 4.06 3.59.57.24 1.01.39 1.36.5.57.18 1.09.16 1.5.1.46-.07 1.42-.58 1.62-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28Z"
+      />
+    </svg>
+  );
 }
 
 const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
@@ -1620,7 +1641,16 @@ export function OrderDetailWorkspace({
 
   const vinBar = (payload.vin ?? "").trim();
   const whatsappPhoneDigits = normalizeWhatsAppPhoneDigits(payload.customerPhone);
-  const whatsappHref = whatsappPhoneDigits ? `whatsapp://send?phone=${whatsappPhoneDigits}` : null;
+  const whatsappShareHref = whatsappPhoneDigits
+    ? `whatsapp://send?phone=${whatsappPhoneDigits}&text=${encodeURIComponent(WHATSAPP_PREFILL_MESSAGE)}`
+    : null;
+
+  const handleWhatsAppSend = () => {
+    if (!whatsappShareHref) return;
+    // Start PDF flow first from this user click, then open WhatsApp with prepared message.
+    void openPrintReport();
+    window.location.href = whatsappShareHref;
+  };
 
   return (
     <div className="relative min-w-0 pb-24">
@@ -1813,22 +1843,23 @@ export function OrderDetailWorkspace({
                 }}
               />
             ) : null}
-            {whatsappHref ? (
-              <a
-                href={whatsappHref}
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-emerald-600 shadow-sm transition hover:bg-black/[0.04] dark:hover:bg-white/10"
+            {whatsappShareHref ? (
+              <button
+                type="button"
+                onClick={handleWhatsAppSend}
+                className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-emerald-400/80 bg-emerald-500 text-white shadow-sm transition hover:bg-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 focus-visible:ring-offset-1"
                 title={`WhatsApp: ${payload.customerPhone ?? ""}`}
-                aria-label="Atvērt WhatsApp klienta numuram"
+                aria-label="Ģenerēt PDF un atvērt WhatsApp ar ziņu klientam"
               >
-                <MessageCircle className="h-3.5 w-3.5" aria-hidden />
-              </a>
+                <WhatsAppIconGlyph />
+              </button>
             ) : (
               <span
                 className="inline-flex h-6 w-6 cursor-not-allowed items-center justify-center rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)] opacity-60"
                 title="Nav klienta tālruņa WhatsApp atvēršanai"
                 aria-hidden
               >
-                <MessageCircle className="h-3.5 w-3.5" aria-hidden />
+                <WhatsAppIconGlyph />
               </span>
             )}
             {vinBarCopyFlash ? (
