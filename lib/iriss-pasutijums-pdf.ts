@@ -32,16 +32,14 @@ async function loadInterFontBytes(): Promise<{ reg: Uint8Array; bold: Uint8Array
   return interFontBytesCache;
 }
 
-/** PROVIN orange */
-const ACCENT = rgb(239 / 255, 125 / 255, 26 / 255);
 /** PROVIN audit blue */
 const AUDIT_ACCENT = rgb(0 / 255, 97 / 255, 210 / 255);
 const INK = rgb(29 / 255, 29 / 255, 31 / 255);
 const MUTED = rgb(110 / 255, 110 / 255, 115 / 255);
-const CARD_FILL = rgb(1, 1, 1);
-const CARD_BORDER = rgb(223 / 255, 164 / 255, 104 / 255);
 const AUDIT_CARD_FILL = rgb(1, 1, 1);
-const AUDIT_CARD_BORDER = rgb(241 / 255, 245 / 255, 249 / 255);
+const AUDIT_CARD_BORDER = rgb(226 / 255, 232 / 255, 240 / 255);
+/** Papildu atstarpe starp etiķetes beigām un vērtību vienas rindas layoutā (PDF vienības). */
+const COLON_VALUE_GAP = 3;
 const PRICE_BAND_FILL = rgb(255 / 255, 244 / 255, 232 / 255);
 const PRICE_BAND_BORDER = rgb(217 / 255, 112 / 255, 29 / 255);
 const SECTION_BEFORE = 14;
@@ -69,7 +67,7 @@ function wrapText(text: string, font: PDFFont, fontSize: number, maxWidth: numbe
 }
 
 function lineHeight(size: number): number {
-  return Math.round(size * 1.38);
+  return Math.round(size * 1.5);
 }
 
 type LogoPack = { img: PDFImage; dw: number; dh: number };
@@ -83,6 +81,17 @@ type CardTheme = {
   titleSize: number;
   titleGapAfter: number;
   headBarColor: PdfColor | null;
+};
+
+const PROVIN_AUDIT_PDF_CARD_THEME: CardTheme = {
+  fill: AUDIT_CARD_FILL,
+  border: AUDIT_CARD_BORDER,
+  borderWidth: 1.25,
+  titleColor: INK,
+  titleUppercase: true,
+  titleSize: 11,
+  titleGapAfter: 5,
+  headBarColor: AUDIT_ACCENT,
 };
 
 type Ctx = {
@@ -194,10 +203,16 @@ function measureLinesHeight(lines: string[], font: PDFFont, size: number, maxW: 
   return h;
 }
 
+/** Pēc kolona liek vienu atstarpi pirms vērtības; neskar `https://` utml. */
+function normalizeInterLabelColonSpacing(line: string): string {
+  return line.replace(/:(?!\s|\/\/)([^\s])/g, ": $1");
+}
+
 function splitColonLabelValue(line: string): { kind: "kv"; label: string; value: string } | { kind: "plain"; text: string } {
-  const idx = line.indexOf(":");
-  if (idx <= 0) return { kind: "plain", text: line };
-  return { kind: "kv", label: line.slice(0, idx + 1).trim(), value: line.slice(idx + 1).trim() };
+  const normalized = normalizeInterLabelColonSpacing(line);
+  const idx = normalized.indexOf(":");
+  if (idx <= 0) return { kind: "plain", text: normalized };
+  return { kind: "kv", label: normalized.slice(0, idx + 1).trim(), value: normalized.slice(idx + 1).trim() };
 }
 
 function measureColonLabeledLineHeight(line: string, size: number, maxW: number, ctx: Ctx): number {
@@ -207,7 +222,7 @@ function measureColonLabeledLineHeight(line: string, size: number, maxW: number,
   const labWithSp = `${p.label} `;
   const lw = measureTrackedWidth(labWithSp, ctx.fontBold, size);
   if (!p.value) return lh;
-  const restFirst = maxW - lw;
+  const restFirst = maxW - lw - COLON_VALUE_GAP;
   if (restFirst < 36) return lh + measureWrappedBlockHeight(p.value, ctx.font, size, maxW);
   if (measureTrackedWidth(p.value, ctx.font, size) <= restFirst && !p.value.includes("\n")) return lh;
   return lh + measureWrappedBlockHeight(p.value, ctx.font, size, maxW);
@@ -231,7 +246,7 @@ function drawColonLabeledLine(ctx: Ctx, line: string, size: number, x: number, m
   }
   const labWithSp = `${p.label} `;
   const lw = measureTrackedWidth(labWithSp, ctx.fontBold, size);
-  const restFirst = maxW - lw;
+  const restFirst = maxW - lw - COLON_VALUE_GAP;
   const yb = ctx.y - size;
   if (!p.value) {
     drawTrackedText(ctx.page, p.label, { x, y: yb, size, font: ctx.fontBold, color });
@@ -240,7 +255,7 @@ function drawColonLabeledLine(ctx: Ctx, line: string, size: number, x: number, m
   }
   if (restFirst >= 36 && measureTrackedWidth(p.value, ctx.font, size) <= restFirst && !p.value.includes("\n")) {
     drawTrackedText(ctx.page, labWithSp, { x, y: yb, size, font: ctx.fontBold, color });
-    drawTrackedText(ctx.page, p.value, { x: x + lw, y: yb, size, font: ctx.font, color });
+    drawTrackedText(ctx.page, p.value, { x: x + lw + COLON_VALUE_GAP, y: yb, size, font: ctx.font, color });
     ctx.y -= lh;
     return;
   }
@@ -264,7 +279,7 @@ function drawIosCard(
 ): void {
   const t = ctx.cardTheme;
   const pad = 10;
-  const radius = 10;
+  const radius = 8;
   const ix = ctx.margin + pad;
   const iw = ctx.contentW - pad * 2;
   const titleBlock = lineHeight(t.titleSize) + t.titleGapAfter;
@@ -328,11 +343,24 @@ function drawRoundedRect(
     borderWidth?: number;
   },
 ) {
-  page.drawRectangle({
-    x: opts.x,
-    y: opts.y,
-    width: opts.width,
-    height: opts.height,
+  const r = Math.max(0, Math.min(opts.radius, Math.min(opts.width, opts.height) / 2));
+  const x0 = opts.x;
+  const y0 = opts.y;
+  const x1 = opts.x + opts.width;
+  const y1 = opts.y + opts.height;
+  const pathData = [
+    `M ${x0 + r} ${y1}`,
+    `L ${x1 - r} ${y1}`,
+    `A ${r} ${r} 0 0 1 ${x1} ${y1 - r}`,
+    `L ${x1} ${y0 + r}`,
+    `A ${r} ${r} 0 0 1 ${x1 - r} ${y0}`,
+    `L ${x0 + r} ${y0}`,
+    `A ${r} ${r} 0 0 1 ${x0} ${y0 + r}`,
+    `L ${x0} ${y1 - r}`,
+    `A ${r} ${r} 0 0 1 ${x0 + r} ${y1}`,
+    "Z",
+  ].join(" ");
+  page.drawSvgPath(pathData, {
     color: opts.color,
     borderColor: opts.borderColor,
     borderWidth: opts.borderWidth ?? 0,
@@ -444,16 +472,7 @@ async function createPdfCtx(): Promise<Ctx> {
     suppressPageBreak: false,
     offerLogo: null,
     logoOnlyBand: LOGO_ONLY_BAND,
-    cardTheme: {
-      fill: CARD_FILL,
-      border: CARD_BORDER,
-      borderWidth: 1.6,
-      titleColor: ACCENT,
-      titleUppercase: false,
-      titleSize: 13,
-      titleGapAfter: 6,
-      headBarColor: null,
-    },
+    cardTheme: { ...PROVIN_AUDIT_PDF_CARD_THEME },
   };
 }
 
@@ -589,17 +608,6 @@ async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void
 
 export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord): Promise<Uint8Array> {
   const ctx = await createPdfCtx();
-  // Pasūtījuma PDF vizuālais noformējums saskaņots ar PROVIN audita kartīšu dizainu.
-  ctx.cardTheme = {
-    fill: AUDIT_CARD_FILL,
-    border: AUDIT_CARD_BORDER,
-    borderWidth: 1.05,
-    titleColor: INK,
-    titleUppercase: true,
-    titleSize: 11,
-    titleGapAfter: 5,
-    headBarColor: AUDIT_ACCENT,
-  };
 
   drawTextLine(ctx, "PASŪTĪJUMS", 19, { font: ctx.fontBold, color: INK });
   drawParagraph(ctx, new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date()), 10, MUTED, undefined, {
@@ -813,25 +821,25 @@ export async function buildIrissOfferPdfBytes(
       }
       if (specialNotes) {
         if (filled) ctx.y -= partGap;
-        drawParagraph(ctx, "Īpašas atzīmes:", 10, MUTED, ctx.fontBold, { x, maxW: w });
+        drawParagraph(ctx, "Īpašas atzīmes:", 10, INK, ctx.fontBold, { x, maxW: w });
         drawParagraph(ctx, specialNotes, 10, INK, ctx.font, { x, maxW: w });
         filled = true;
       }
       if (visual) {
         if (filled) ctx.y -= partGap;
-        drawParagraph(ctx, "Vizuālais novērtējums:", 10, MUTED, ctx.fontBold, { x, maxW: w });
+        drawParagraph(ctx, "Vizuālais novērtējums:", 10, INK, ctx.fontBold, { x, maxW: w });
         drawParagraph(ctx, visual, 10, INK, ctx.font, { x, maxW: w });
         filled = true;
       }
       if (technical) {
         if (filled) ctx.y -= partGap;
-        drawParagraph(ctx, "Tehniskais novērtējums:", 10, MUTED, ctx.fontBold, { x, maxW: w });
+        drawParagraph(ctx, "Tehniskais novērtējums:", 10, INK, ctx.fontBold, { x, maxW: w });
         drawParagraph(ctx, technical, 10, INK, ctx.font, { x, maxW: w });
         filled = true;
       }
       if (summary) {
         if (filled) ctx.y -= partGap;
-        drawParagraph(ctx, "Kopsavilkums:", 10, MUTED, ctx.fontBold, { x, maxW: w });
+        drawParagraph(ctx, "Kopsavilkums:", 10, INK, ctx.fontBold, { x, maxW: w });
         drawParagraph(ctx, summary, 10, INK, ctx.font, { x, maxW: w });
       }
     });
@@ -895,7 +903,7 @@ export async function buildIrissOfferPdfBytes(
       const COL_GAP = 12;
       const MAX_CELL_H = 178;
       const rowPixel = MAX_CELL_H + 14;
-      const titleBlock = lineHeight(13) + 6;
+      const titleBlock = lineHeight(ctx.cardTheme.titleSize) + ctx.cardTheme.titleGapAfter;
       const cardVerticalChrome = 20 + titleBlock;
       let picIdx = 0;
       while (picIdx < pics.length) {
