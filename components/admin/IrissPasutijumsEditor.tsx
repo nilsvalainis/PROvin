@@ -1121,68 +1121,6 @@ export function IrissPasutijumsEditor({
       <div className="mt-3 space-y-4 sm:mt-4 sm:space-y-5">
         <section className={shellCard}>
           <IrissListingPlatformChipsRow rec={rec} />
-          <BlockTitle>Klienta dati</BlockTitle>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <LabeledInput
-              label="Vārds"
-              value={rec.clientFirstName}
-              onChange={(e) => patch("clientFirstName", e.target.value)}
-              autoComplete="given-name"
-            />
-            <LabeledInput
-              label="Uzvārds"
-              value={rec.clientLastName}
-              onChange={(e) => patch("clientLastName", e.target.value)}
-              autoComplete="family-name"
-            />
-            <label className="block min-w-0">
-              <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Tālrunis</span>
-              <div className="flex min-w-0 items-center gap-1.5">
-                <input
-                  className={`${fieldClass} min-w-0 flex-1`}
-                  value={rec.phone}
-                  onChange={(e) => patch("phone", e.target.value)}
-                  inputMode="tel"
-                  autoComplete="tel"
-                />
-                <button
-                  type="button"
-                  onClick={triggerCall}
-                  disabled={!normalizedPhone}
-                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 aria-disabled:pointer-events-none aria-disabled:opacity-35"
-                  title="Zvanīt"
-                  aria-label="Zvanīt"
-                >
-                  <Phone className="h-5 w-5" strokeWidth={2.2} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  onClick={triggerWhatsapp}
-                  disabled={!normalizedPhone}
-                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-200/80 bg-emerald-50 text-emerald-700 shadow-sm transition hover:bg-emerald-100/70 aria-disabled:pointer-events-none aria-disabled:opacity-35"
-                  title="Atvērt WhatsApp"
-                  aria-label="Atvērt WhatsApp"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden>
-                    <path d="M12.04 2C6.55 2 2.1 6.45 2.1 11.94c0 1.93.55 3.81 1.59 5.43L2 22l4.8-1.61a9.9 9.9 0 0 0 5.24 1.5h.01c5.49 0 9.95-4.45 9.95-9.95A9.96 9.96 0 0 0 12.04 2Zm0 18.1h-.01a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-2.85.95.95-2.78-.19-.29a8.1 8.1 0 0 1-1.25-4.33c0-4.49 3.65-8.14 8.14-8.14a8.1 8.1 0 0 1 5.76 2.38 8.08 8.08 0 0 1 2.38 5.76c0 4.48-3.65 8.13-8.14 8.13Zm4.46-6.06c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.95-1.22a7.34 7.34 0 0 1-1.35-1.67c-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.11.15 1.53.09.47-.07 1.43-.58 1.63-1.13.2-.56.2-1.04.14-1.13-.06-.1-.22-.16-.46-.28Z" />
-                  </svg>
-                </button>
-              </div>
-            </label>
-            <LabeledInput
-              label="E-pasts"
-              value={rec.email}
-              onChange={(e) => patch("email", e.target.value)}
-              inputMode="email"
-              autoComplete="email"
-            />
-            <LabeledInput
-              label="Pasūtījuma datums"
-              type="date"
-              value={rec.orderDate}
-              onChange={(e) => patch("orderDate", e.target.value)}
-            />
-          </div>
         </section>
 
         <section className={shellCard}>
@@ -1258,6 +1196,71 @@ export function IrissPasutijumsEditor({
         <section className={shellCard}>
           <BlockTitle>Piezīmes</BlockTitle>
           <LabeledTextarea label="Piezīmes" value={rec.notes} onChange={(e) => patch("notes", e.target.value)} />
+        </section>
+
+        <section className={shellCard}>
+          <BlockTitle>Klienta dati</BlockTitle>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <LabeledInput
+              label="Vārds"
+              value={rec.clientFirstName}
+              onChange={(e) => patch("clientFirstName", e.target.value)}
+              autoComplete="given-name"
+            />
+            <LabeledInput
+              label="Uzvārds"
+              value={rec.clientLastName}
+              onChange={(e) => patch("clientLastName", e.target.value)}
+              autoComplete="family-name"
+            />
+            <label className="block min-w-0">
+              <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Tālrunis</span>
+              <div className="flex min-w-0 items-center gap-1.5">
+                <input
+                  className={`${fieldClass} min-w-0 flex-1`}
+                  value={rec.phone}
+                  onChange={(e) => patch("phone", e.target.value)}
+                  inputMode="tel"
+                  autoComplete="tel"
+                />
+                <button
+                  type="button"
+                  onClick={triggerCall}
+                  disabled={!normalizedPhone}
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 aria-disabled:pointer-events-none aria-disabled:opacity-35"
+                  title="Zvanīt"
+                  aria-label="Zvanīt"
+                >
+                  <Phone className="h-5 w-5" strokeWidth={2.2} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={triggerWhatsapp}
+                  disabled={!normalizedPhone}
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-200/80 bg-emerald-50 text-emerald-700 shadow-sm transition hover:bg-emerald-100/70 aria-disabled:pointer-events-none aria-disabled:opacity-35"
+                  title="Atvērt WhatsApp"
+                  aria-label="Atvērt WhatsApp"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden>
+                    <path d="M12.04 2C6.55 2 2.1 6.45 2.1 11.94c0 1.93.55 3.81 1.59 5.43L2 22l4.8-1.61a9.9 9.9 0 0 0 5.24 1.5h.01c5.49 0 9.95-4.45 9.95-9.95A9.96 9.96 0 0 0 12.04 2Zm0 18.1h-.01a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-2.85.95.95-2.78-.19-.29a8.1 8.1 0 0 1-1.25-4.33c0-4.49 3.65-8.14 8.14-8.14a8.1 8.1 0 0 1 5.76 2.38 8.08 8.08 0 0 1 2.38 5.76c0 4.48-3.65 8.13-8.14 8.13Zm4.46-6.06c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.95-1.22a7.34 7.34 0 0 1-1.35-1.67c-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.11.15 1.53.09.47-.07 1.43-.58 1.63-1.13.2-.56.2-1.04.14-1.13-.06-.1-.22-.16-.46-.28Z" />
+                  </svg>
+                </button>
+              </div>
+            </label>
+            <LabeledInput
+              label="E-pasts"
+              value={rec.email}
+              onChange={(e) => patch("email", e.target.value)}
+              inputMode="email"
+              autoComplete="email"
+            />
+            <LabeledInput
+              label="Pasūtījuma datums"
+              type="date"
+              value={rec.orderDate}
+              onChange={(e) => patch("orderDate", e.target.value)}
+            />
+          </div>
         </section>
 
         <section className={shellCard}>
