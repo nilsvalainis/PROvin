@@ -46,7 +46,7 @@ const INK = rgb(30 / 255, 41 / 255, 59 / 255);
 /** Sekundārais teksts — slate-600 (#475569). */
 const MUTED = rgb(71 / 255, 85 / 255, 105 / 255);
 const CARD_FILL_SLATE = rgb(248 / 255, 250 / 255, 252 / 255);
-const CARD_BORDER_SLATE = rgb(203 / 255, 213 / 255, 225 / 255);
+const CARD_BORDER_SLATE = rgb(15 / 255, 23 / 255, 42 / 255);
 const BAR_TRACK = rgb(226 / 255, 232 / 255, 240 / 255);
 const RULE_DARK = rgb(15 / 255, 23 / 255, 42 / 255);
 /** Papildu atstarpe starp etiķetes beigām un vērtību vienas rindas layoutā (PDF vienības). */
@@ -98,7 +98,7 @@ type CardTheme = {
 const IRISS_PDF_CARD_THEME: CardTheme = {
   fill: CARD_FILL_SLATE,
   border: CARD_BORDER_SLATE,
-  borderWidth: 1.1,
+  borderWidth: 1.2,
   titleColor: INK,
   titleUppercase: true,
   titleSize: 11,
@@ -299,7 +299,7 @@ function drawIosCard(
   const t = ctx.cardTheme;
   const pad = 10;
   const radius = 10;
-  const titleBarH = lineHeight(t.titleSize) + 6;
+  const titleBarH = lineHeight(t.titleSize) + 8;
   const titleGapToFrame = 6;
   const ix = ctx.margin + pad;
   const iw = ctx.contentW - pad * 2;
@@ -319,7 +319,7 @@ function drawIosCard(
     y: yTitleBottom,
     width: ctx.contentW,
     height: titleBarH,
-    radius: 6,
+    radius: 7,
     color: IRISS_ACCENT,
   });
   if (!omitFrame) {
@@ -337,7 +337,7 @@ function drawIosCard(
   const titleText = t.titleUppercase ? title.toLocaleUpperCase("lv-LV") : title;
   drawTrackedText(ctx.page, titleText, {
     x: ix,
-    y: yTopCard - t.titleSize - 3,
+    y: yTopCard - t.titleSize - 4,
     size: t.titleSize,
     font: ctx.fontBold,
     color: rgb(1, 1, 1),
@@ -624,41 +624,12 @@ function fmtMoneyEurLv(total: number): string {
 }
 
 function drawOrangeSummaryCard(ctx: Ctx, summary: string): void {
-  const pad = 12;
-  const title = "KOPSAVILKUMS";
-  const titleS = 9;
-  const bodyS = 10;
-  const iw = ctx.contentW;
-  const innerW = iw - pad * 2;
-  const bodyH = measureWrappedBlockHeight(summary, ctx.font, bodyS, innerW);
-  const h = pad + lineHeight(titleS) + 8 + bodyH + pad;
-  const outerNeed = SECTION_BEFORE + h + SECTION_AFTER;
-  ensureRoomForBlock(ctx, outerNeed);
-  ctx.y -= SECTION_BEFORE;
-  const yTop = ctx.y;
-  const yBottom = yTop - h;
-  drawRoundedRect(ctx.page, {
-    x: ctx.margin,
-    y: yBottom,
-    width: iw,
-    height: h,
-    radius: 10,
-    color: rgb(1, 1, 1),
-    borderColor: IRISS_ACCENT,
-    borderWidth: 2,
-  });
-  const ty = yTop - pad;
-  drawTrackedText(ctx.page, title, {
-    x: ctx.margin + pad,
-    y: ty - titleS,
-    size: titleS,
-    font: ctx.fontBold,
-    color: INK,
-    tracking: 0.16,
-  });
-  ctx.y = ty - lineHeight(titleS) - 6;
-  drawParagraph(ctx, summary, bodyS, MUTED, ctx.font, { x: ctx.margin + pad, maxW: innerW });
-  ctx.y = yBottom - SECTION_AFTER;
+  drawIosCard(
+    ctx,
+    "Kopsavilkums",
+    (iw) => measureWrappedBlockHeight(summary, ctx.font, 10, iw),
+    ({ x, w }) => drawParagraph(ctx, summary, 10, MUTED, ctx.font, { x, maxW: w }),
+  );
 }
 
 function drawKopaHighlightBand(ctx: Ctx, boxX: number, boxW: number, totalPrice: number): void {

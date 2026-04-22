@@ -202,7 +202,7 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       page-break-inside: avoid;
     }
     .ipdf-blk-body {
-      border: 1px solid #e2e8f0;
+      border: 1px solid #0f172a;
       border-radius: 12px;
       padding: 12px 14px 14px;
       background: ${PANEL};
@@ -351,7 +351,7 @@ function irissPrintShell(accent: string, title: string, body: string): string {
     .ipdf-footer { margin-top: 26px; }
     .ipdf-footer-card {
       position: relative;
-      border: 1px solid #e2e8f0;
+      border: 1px solid #0f172a;
       border-radius: 12px;
       padding: 14px 16px 14px 17px;
       background: linear-gradient(165deg, #f8fafc 0%, #ffffff 58%);
