@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 const DEFAULT_SUPPLIER = {
   name: "Nils Valainis",
   reg: "09118711109",
-  address: "Jana 3-4, Tukums, LV3101, Latvija",
+  address: "Jana iela 3, Tukums, LV3101, Latvija",
   bank: "A/S Industra Bank",
   swift: "MULTLV2X",
   bankAccount: "LV87MULT1010B96770010",

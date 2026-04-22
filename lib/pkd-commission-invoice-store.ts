@@ -179,7 +179,7 @@ function defaultDraft(now: Date, invoiceNumber: string): PkdCommissionInvoiceInp
     amountEur: "96.09",
     supplierName: "Nils Valainis",
     supplierReg: "09118711109",
-    supplierAddress: "Jana 3-4, Tukums, LV3101, Latvija",
+    supplierAddress: "Jana iela 3, Tukums, LV3101, Latvija",
     supplierBank: "A/S Industra Bank",
     supplierSwift: "MULTLV2X",
     supplierBankAccount: "LV87MULT1010B96770010",
