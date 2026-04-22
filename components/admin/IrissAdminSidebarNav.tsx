@@ -18,12 +18,16 @@ type Props = {
 export function IrissAdminSidebarNav({ orientation = "vertical" }: Props) {
   const pathname = usePathname() || "";
   const pasutijumiActive = pathname.startsWith("/admin/iriss/pasutijumi");
+  const sludinajumiActive = pathname.startsWith("/admin/iriss/sludinajumi");
   const horizontal = orientation === "horizontal";
 
   return (
     <nav className={horizontal ? "flex flex-wrap items-center gap-1" : "flex flex-col gap-1.5"}>
       <Link href="/admin/iriss/pasutijumi" className={navItemClass(pasutijumiActive)}>
         PASŪTĪJUMI
+      </Link>
+      <Link href="/admin/iriss/sludinajumi" className={navItemClass(sludinajumiActive)}>
+        SLUDINĀJUMI
       </Link>
       <IrissNewOfferMenuButton compact={horizontal} />
       {!horizontal ? (

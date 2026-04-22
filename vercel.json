@@ -7,12 +7,20 @@
     "app/api/cron/admin-drafts-daily-backup/route.ts": {
       "maxDuration": 120,
       "memory": 1024
+    },
+    "app/api/cron/iriss-listings-daily-sync/route.ts": {
+      "maxDuration": 300,
+      "memory": 1024
     }
   },
   "crons": [
     {
       "path": "/api/cron/admin-drafts-daily-backup",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/iriss-listings-daily-sync",
+      "schedule": "0 3 * * *"
     }
   ]
 }
