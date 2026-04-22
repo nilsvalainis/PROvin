@@ -3,12 +3,91 @@
  */
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { patchConsultationDraft } from "@/lib/admin-consultation-draft-store";
+import {
+  listConsultationDraftRevisions,
+  patchConsultationDraft,
+  restoreConsultationDraftRevision,
+} from "@/lib/admin-consultation-draft-store";
 import type { ConsultationDraftOrderEdits, ConsultationDraftWorkspaceBody } from "@/lib/admin-consultation-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 
 export const maxDuration = 60;
 export const runtime = "nodejs";
+
+export async function GET(req: Request) {
+  try {
+    const ok = await getAdminSession();
+    if (!ok) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    const url = new URL(req.url);
+    const sessionId = (url.searchParams.get("sessionId") ?? "").trim();
+    if (!sessionId) {
+      return NextResponse.json({ error: "missing_sessionId" }, { status: 400 });
+    }
+    const limitRaw = Number(url.searchParams.get("limit") ?? "20");
+    const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(100, Math.floor(limitRaw))) : 20;
+    const revisions = await listConsultationDraftRevisions(sessionId, limit);
+    return NextResponse.json({ ok: true, revisions });
+  } catch (e) {
+    console.error("[consultation-draft] GET", e);
+    const msg = e instanceof Error ? e.message : "unknown";
+    return NextResponse.json({ error: "server_error", detail: msg }, { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const ok = await getAdminSession();
+    if (!ok) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+    }
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ error: "invalid_body" }, { status: 400 });
+    }
+    const b = body as Record<string, unknown>;
+    const action = typeof b.action === "string" ? b.action.trim() : "";
+    if (action !== "restore_revision") {
+      return NextResponse.json({ error: "invalid_action" }, { status: 400 });
+    }
+    const sessionId = typeof b.sessionId === "string" ? b.sessionId.trim() : "";
+    const revisionId = typeof b.revisionId === "string" ? b.revisionId.trim() : "";
+    if (!sessionId) {
+      return NextResponse.json({ error: "missing_sessionId" }, { status: 400 });
+    }
+    if (!revisionId) {
+      return NextResponse.json({ error: "missing_revisionId" }, { status: 400 });
+    }
+    const result = await restoreConsultationDraftRevision(sessionId, revisionId);
+    if (!result.ok) {
+      const err = result.error;
+      if (err === "store_disabled") {
+        return NextResponse.json({ error: err }, { status: 503 });
+      }
+      if (err === "invalid_session" || err === "invalid_revision") {
+        return NextResponse.json({ error: err }, { status: 400 });
+      }
+      if (err === "revision_not_found") {
+        return NextResponse.json({ error: err }, { status: 404 });
+      }
+      if (err.startsWith("write_failed")) {
+        return NextResponse.json({ error: "write_failed", detail: err }, { status: 503 });
+      }
+      return NextResponse.json({ error: err }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, updatedAt: result.updatedAt });
+  } catch (e) {
+    console.error("[consultation-draft] POST", e);
+    const msg = e instanceof Error ? e.message : "unknown";
+    return NextResponse.json({ error: "server_error", detail: msg }, { status: 500 });
+  }
+}
 
 function parseOrderEditsObject(v: unknown): ConsultationDraftOrderEdits | null {
   if (v === null || typeof v !== "object") return null;

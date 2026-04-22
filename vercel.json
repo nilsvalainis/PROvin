@@ -3,6 +3,16 @@
     "app/api/admin/iriss-pasutijumi/**/*.ts": {
       "maxDuration": 120,
       "memory": 2048
+    },
+    "app/api/cron/admin-drafts-daily-backup/route.ts": {
+      "maxDuration": 120,
+      "memory": 1024
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/admin-drafts-daily-backup",
+      "schedule": "0 2 * * *"
+    }
+  ]
 }
