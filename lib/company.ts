@@ -14,7 +14,7 @@ export type CompanyLegal = {
 
 const FALLBACK_COMPANY_LEGAL_NAME = "Nils Valainis";
 const FALLBACK_COMPANY_REG_NO = "09118711109";
-const FALLBACK_COMPANY_LEGAL_ADDRESS = "Jana 3, Tukums, LV3101";
+const FALLBACK_COMPANY_LEGAL_ADDRESS = "Jana 3-4, Tukums, LV3101, Latvija";
 
 export function getCompanyLegal(): CompanyLegal {
   const envName = process.env.NEXT_PUBLIC_COMPANY_LEGAL_NAME?.trim();
