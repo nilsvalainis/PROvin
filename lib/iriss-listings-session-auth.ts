@@ -4,6 +4,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 
+import { fetchUrlHtmlWithMobilePersistentProfile, hasUsableMobilePersistentProfile } from "@/lib/iriss-listings-mobile-persistent-fetch";
+
 export type IrissSessionPlatform = "mobile" | "autobid" | "openline" | "auto1";
 
 const SESSION_DIR = ".data/iriss-listings-sessions";
@@ -82,7 +84,8 @@ function cookieHeaderFromSession(url: URL, session: SessionFile | null): string 
   return pairs.join("; ");
 }
 
-function isLoginLike(statusCode: number, html: string): boolean {
+/** Kopīgs „login lapa?” tests — lieto arī Mobile persistent fetch. */
+export function irissListingsIsLoginWall(statusCode: number, html: string): boolean {
   if (statusCode === 401 || statusCode === 403) return true;
   const tiny = html.slice(0, 12000).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
   if (!LOGIN_HINT_RE.test(tiny)) return false;
@@ -102,7 +105,7 @@ async function probeWithHeaders(url: string, headers: Record<string, string>): P
       signal: ctrl.signal,
     });
     const html = await res.text();
-    if (isLoginLike(res.status, html)) return { ok: false, statusCode: res.status, note: "login_required" };
+    if (irissListingsIsLoginWall(res.status, html)) return { ok: false, statusCode: res.status, note: "login_required" };
     if (!res.ok) return { ok: false, statusCode: res.status, note: `http_${res.status}` };
     return { ok: true, statusCode: res.status, note: "" };
   } catch (e) {
@@ -151,6 +154,10 @@ export async function getPlatformAuthHeaders(platform: IrissSessionPlatform, url
     "Cache-Control": "no-cache",
   };
   if (authHeader) headers.Authorization = authHeader;
+  /** Mobile: ja ir Chromium persistent profils, nolasīšana notiek caur Playwright — `Cookie` no env nav vajadzīgs. */
+  if (platform === "mobile" && (await hasUsableMobilePersistentProfile())) {
+    return headers;
+  }
   let cookie = cookieFromEnv;
   if (!cookie) {
     try {
@@ -168,6 +175,14 @@ export async function ensurePlatformSession(platform: IrissSessionPlatform, prob
   ok: boolean;
   note: string;
 }> {
+  const timeoutMs = Math.max(8000, Number.parseInt(process.env.IRISS_LISTINGS_FETCH_TIMEOUT_MS ?? "18000", 10) || 18000);
+  if (platform === "mobile" && (await hasUsableMobilePersistentProfile())) {
+    const r = await fetchUrlHtmlWithMobilePersistentProfile(probeUrl, timeoutMs);
+    if (r.ok && !irissListingsIsLoginWall(r.statusCode, r.html)) return { ok: true, note: "mobile_persistent_profile_ok" };
+    if (r.ok) return { ok: false, note: "mobile_persistent_profile_login_wall" };
+    return { ok: false, note: r.note };
+  }
+
   const headers = await getPlatformAuthHeaders(platform, probeUrl);
   const initial = await probeWithHeaders(probeUrl, headers);
   if (initial.ok) return { ok: true, note: "session_ok" };

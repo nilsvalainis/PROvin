@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
+import { fetchUrlHtmlWithMobilePersistentProfile, hasUsableMobilePersistentProfile } from "@/lib/iriss-listings-mobile-persistent-fetch";
 import { getPlatformAuthHeaders } from "@/lib/iriss-listings-session-auth";
 import type { IrissListingPrice, IrissListingSourcePlatform, IrissListingSyncStatus } from "@/lib/iriss-listings-types";
 
@@ -133,6 +134,10 @@ function looksLikeLoginPage(statusCode: number, html: string): boolean {
 
 async function fetchHtml(url: URL, platform: IrissListingSourcePlatform): Promise<{ ok: true; statusCode: number; html: string } | { ok: false; statusCode: number; note: string }> {
   const timeoutMs = Math.max(8000, Number.parseInt(process.env.IRISS_LISTINGS_FETCH_TIMEOUT_MS ?? "18000", 10) || 18000);
+  if (platform === "mobile" && (await hasUsableMobilePersistentProfile())) {
+    return fetchUrlHtmlWithMobilePersistentProfile(url.toString(), timeoutMs);
+  }
+
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {

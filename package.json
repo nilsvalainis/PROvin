@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "iriss:restore-backup": "node scripts/iriss-restore-backup.mjs",
+    "auth:persistent-mobile": "node scripts/auth-mobile.mjs",
     "preview": "next start --hostname localhost --port 3020",
     "preview:restart": "sh -c 'lsof -ti tcp:3020 | xargs kill -9 2>/dev/null || true; rm -rf .next && npm run build && npm run preview'",
     "lint": "next lint",

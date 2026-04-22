@@ -1,6 +1,7 @@
 import "server-only";
 
 import { readIrissListingsLatestView } from "@/lib/iriss-listings-aggregate-store";
+import { hasUsableMobilePersistentProfile } from "@/lib/iriss-listings-mobile-persistent-fetch";
 import { getSessionFileMeta } from "@/lib/iriss-listings-session-auth";
 import type {
   IrissSessionHealthItem,
@@ -11,7 +12,8 @@ import type {
 const PLATFORMS = ["mobile", "autobid", "openline", "auto1"] as const;
 type Platform = (typeof PLATFORMS)[number];
 
-function hasAuthConfig(platform: Platform): boolean {
+async function hasAuthConfig(platform: Platform): Promise<boolean> {
+  if (platform === "mobile" && (await hasUsableMobilePersistentProfile())) return true;
   const pfx = `IRISS_LISTINGS_${platform.toUpperCase()}`;
   const auth = process.env[`${pfx}_AUTH_HEADER`]?.trim() ?? "";
   const cookie = process.env[`${pfx}_COOKIE`]?.trim() ?? "";
@@ -31,9 +33,9 @@ function statusForPlatform(
   latest: Awaited<ReturnType<typeof readIrissListingsLatestView>>,
   sessionMeta: Awaited<ReturnType<typeof getSessionFileMeta>>,
   checkedAt: string,
+  configured: boolean,
 ): IrissSessionHealthItem {
   const items = (latest?.items ?? []).filter((x) => x.sourcePlatform === platform);
-  const configured = hasAuthConfig(platform);
   const hasLoginRequired = items.some((x) => x.status === "login_required");
   const hasOk = items.some((x) => x.status === "ok");
 
@@ -42,7 +44,10 @@ function statusForPlatform(
 
   if (!configured) {
     status = "login_required";
-    note = "Nav iestatīts AUTH_HEADER/COOKIE vai LOGIN_* parametri šai platformai.";
+    note =
+      platform === "mobile"
+        ? "Nav Mobile.de sesijas: izveido `.data/browser-profiles/mobile` ar `npm run auth:mobile` vai iestatiet COOKIE / LOGIN_*."
+        : "Nav iestatīts AUTH_HEADER/COOKIE vai LOGIN_* parametri šai platformai.";
   } else if (hasLoginRequired) {
     status = "login_required";
     note = "Pēdējā nolasīšanā avots pieprasīja login.";
@@ -86,7 +91,10 @@ export async function getIrissSessionHealthReport(): Promise<IrissSessionHealthR
   const checkedAt = new Date().toISOString();
   const latest = await readIrissListingsLatestView();
   const items = await Promise.all(
-    PLATFORMS.map(async (platform) => statusForPlatform(platform, latest, await getSessionFileMeta(platform), checkedAt)),
+    PLATFORMS.map(async (platform) => {
+      const configured = await hasAuthConfig(platform);
+      return statusForPlatform(platform, latest, await getSessionFileMeta(platform), checkedAt, configured);
+    }),
   );
   return { checkedAt, items };
 }
