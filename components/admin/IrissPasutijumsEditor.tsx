@@ -244,6 +244,24 @@ function formatPriceLike(value: number): string {
     .replace(".", ",");
 }
 
+function attachmentNameSizeKey(name: string, size: number): string {
+  return `${name.trim().toLowerCase()}|${Math.max(0, Math.trunc(size))}`;
+}
+
+async function sha256Hex(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function buildAttachmentFingerprint(att: IrissOfferAttachment): Promise<string> {
+  const key = attachmentNameSizeKey(att.name, att.size);
+  const digest = await sha256Hex(att.dataUrl);
+  return `${key}|${digest}`;
+}
+
 function isOfferDraftSyncedWithRecord(draft: OfferDraft, offer: IrissOfferRecord | null): boolean {
   if (!offer) return false;
   if (draft.id !== offer.id) return false;
@@ -675,24 +693,64 @@ export function IrissPasutijumsEditor({
       if (!files || files.length === 0) return;
       const remaining = IRISS_MAX_OFFER_ATTACHMENTS - offerAttachmentCount;
       if (remaining <= 0) return;
-      const fileArr = Array.from(files).slice(0, Math.min(30, remaining));
+      const fileArr = Array.from(files).slice(0, 30);
+      const existingNameSize = new Set(offerDraft.attachments.map((a) => attachmentNameSizeKey(a.name, a.size)));
+      const seenNameSize = new Set<string>();
+      const toProcess: File[] = [];
+      let skippedByNameSize = 0;
+      for (const file of fileArr) {
+        const key = attachmentNameSizeKey(file.name, file.size);
+        if (existingNameSize.has(key) || seenNameSize.has(key)) {
+          skippedByNameSize += 1;
+          continue;
+        }
+        seenNameSize.add(key);
+        toProcess.push(file);
+      }
+      const candidates = toProcess.slice(0, remaining);
+      if (candidates.length === 0) {
+        if (skippedByNameSize > 0) {
+          setSaveMsg(`Izlaisti ${skippedByNameSize} dublikāti (vienāds nosaukums/izmērs).`);
+        }
+        return;
+      }
       setOfferFilePrepare({ pct: 0, label: "Saspiež attēlus…" });
+      const existingFingerprints = new Set<string>();
+      for (const att of offerDraft.attachments) {
+        existingFingerprints.add(await buildAttachmentFingerprint(att));
+      }
       const loaded: IrissOfferAttachment[] = [];
-      for (let i = 0; i < fileArr.length; i++) {
-        const att = await fileToCompressedOfferAttachment(fileArr[i]);
-        if (att) loaded.push(att);
+      const loadedFingerprints = new Set<string>();
+      let skippedByFingerprint = 0;
+      for (let i = 0; i < candidates.length; i++) {
+        const att = await fileToCompressedOfferAttachment(candidates[i]);
+        if (att) {
+          const fp = await buildAttachmentFingerprint(att);
+          if (existingFingerprints.has(fp) || loadedFingerprints.has(fp)) {
+            skippedByFingerprint += 1;
+          } else {
+            loaded.push(att);
+            loadedFingerprints.add(fp);
+          }
+        }
         setOfferFilePrepare({
-          pct: Math.round(((i + 1) / fileArr.length) * 100),
+          pct: Math.round(((i + 1) / candidates.length) * 100),
           label: "Saspiež attēlus…",
         });
       }
       setOfferFilePrepare(null);
-      setOfferDraft((d) => ({
-        ...d,
-        attachments: [...d.attachments, ...loaded].slice(0, IRISS_MAX_OFFER_ATTACHMENTS),
-      }));
+      if (loaded.length > 0) {
+        setOfferDraft((d) => ({
+          ...d,
+          attachments: [...d.attachments, ...loaded].slice(0, IRISS_MAX_OFFER_ATTACHMENTS),
+        }));
+      }
+      const skippedTotal = skippedByNameSize + skippedByFingerprint;
+      if (skippedTotal > 0) {
+        setSaveMsg(`Izlaisti ${skippedTotal} dublikāti (nosaukums/izmērs vai SHA-256 saturs).`);
+      }
     },
-    [offerAttachmentCount],
+    [offerAttachmentCount, offerDraft.attachments],
   );
 
   const commitOfferDraftToRecord = useCallback(

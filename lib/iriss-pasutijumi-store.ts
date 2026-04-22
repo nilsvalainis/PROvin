@@ -22,6 +22,18 @@ const LIST_ORDER_FILENAME = "_list-order.json";
 const BACKUP_RELATIVE_DIR = ".data/iriss-pasutijumi-backups";
 const BACKUP_BLOB_PREFIX = "iriss-pasutijumi-backups/";
 const BACKUP_KEEP_COUNT = 10;
+const BLOB_LIST_CACHE_TTL_MS = Math.max(
+  0,
+  Number.parseInt(process.env.IRISS_PASUTIJUMI_BLOB_LIST_CACHE_TTL_MS ?? "30000", 10) || 30_000,
+);
+const BLOB_RECORD_CACHE_TTL_MS = Math.max(
+  0,
+  Number.parseInt(process.env.IRISS_PASUTIJUMI_BLOB_RECORD_CACHE_TTL_MS ?? "30000", 10) || 30_000,
+);
+const BLOB_BACKUP_TRIM_MIN_INTERVAL_MS = Math.max(
+  0,
+  Number.parseInt(process.env.IRISS_PASUTIJUMI_BLOB_BACKUP_TRIM_MIN_INTERVAL_MS ?? "600000", 10) || 600_000,
+);
 
 /** AWS/Netlify u.c. — `/var/task` parasti nav rakstāms; `/tmp` ir (tikai ne-Vercel serverless). */
 function isNonVercelServerlessRuntime(): boolean {
@@ -34,6 +46,50 @@ type ResolvedStorage =
   | { kind: "blob"; token: string; prefix: string };
 
 let resolvedMemo: ResolvedStorage | null = null;
+let blobListRowsCache: { expiresAt: number; rows: IrissPasutijumsListRow[] } | null = null;
+const blobRecordCache = new Map<string, { expiresAt: number; record: IrissPasutijumsRecord | null }>();
+const blobBackupTrimAt = new Map<string, number>();
+
+function cloneRecord(record: IrissPasutijumsRecord): IrissPasutijumsRecord {
+  return JSON.parse(JSON.stringify(record)) as IrissPasutijumsRecord;
+}
+
+function cloneRows(rows: IrissPasutijumsListRow[]): IrissPasutijumsListRow[] {
+  return rows.map((row) => ({
+    ...row,
+    listingLinksOther: [...row.listingLinksOther],
+  }));
+}
+
+function cacheBlobRecord(id: string, record: IrissPasutijumsRecord | null): void {
+  const expiresAt = Date.now() + BLOB_RECORD_CACHE_TTL_MS;
+  blobRecordCache.set(id, {
+    expiresAt,
+    record: record ? cloneRecord(record) : null,
+  });
+}
+
+function invalidateBlobListCache(): void {
+  blobListRowsCache = null;
+}
+
+function invalidateBlobRecordCache(id: string): void {
+  blobRecordCache.delete(id);
+}
+
+function shouldTrimBlobBackups(id: string): boolean {
+  if (BLOB_BACKUP_TRIM_MIN_INTERVAL_MS <= 0) return true;
+  const now = Date.now();
+  const prev = blobBackupTrimAt.get(id) ?? 0;
+  if (now - prev < BLOB_BACKUP_TRIM_MIN_INTERVAL_MS) return false;
+  blobBackupTrimAt.set(id, now);
+  return true;
+}
+
+function isMeaningfullyChanged(existing: IrissPasutijumsRecord, next: IrissPasutijumsRecord): boolean {
+  const candidate = { ...next, updatedAt: existing.updatedAt, createdAt: existing.createdAt };
+  return JSON.stringify(existing) !== JSON.stringify(candidate);
+}
 
 function computeResolvedStorage(): ResolvedStorage {
   const raw = process.env.ADMIN_IRISS_PASUTIJUMI_DIR?.trim() ?? "";
@@ -302,6 +358,9 @@ export async function listIrissPasutijumi(): Promise<IrissPasutijumsListRow[]> {
   if (r.kind === "disabled") return [];
 
   if (r.kind === "blob") {
+    if (BLOB_LIST_CACHE_TTL_MS > 0 && blobListRowsCache && blobListRowsCache.expiresAt > Date.now()) {
+      return cloneRows(blobListRowsCache.rows);
+    }
     const ids = await listBlobIds(r.prefix, r.token);
     const rows: IrissPasutijumsListRow[] = [];
     for (const id of ids) {
@@ -323,6 +382,12 @@ export async function listIrissPasutijumi(): Promise<IrissPasutijumsListRow[]> {
       });
     }
     rows.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
+    if (BLOB_LIST_CACHE_TTL_MS > 0) {
+      blobListRowsCache = {
+        expiresAt: Date.now() + BLOB_LIST_CACHE_TTL_MS,
+        rows: cloneRows(rows),
+      };
+    }
     return rows;
   }
 
@@ -364,8 +429,18 @@ export async function readIrissPasutijums(id: string): Promise<IrissPasutijumsRe
   if (r.kind === "disabled" || !isSafeIrissPasutijumsId(id)) return null;
 
   if (r.kind === "blob") {
+    if (BLOB_RECORD_CACHE_TTL_MS > 0) {
+      const cached = blobRecordCache.get(id);
+      if (cached && cached.expiresAt > Date.now()) {
+        return cached.record ? cloneRecord(cached.record) : null;
+      }
+    }
     const raw = await readJsonFromBlob(blobPathname(r.prefix, id), r.token);
-    return normalizeRecord(raw, id);
+    const normalized = normalizeRecord(raw, id);
+    if (BLOB_RECORD_CACHE_TTL_MS > 0) {
+      cacheBlobRecord(id, normalized);
+    }
+    return normalized ? cloneRecord(normalized) : null;
   }
 
   try {
@@ -391,6 +466,12 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
       updatedAt,
       createdAt,
     };
+    if (existing && !isMeaningfullyChanged(existing, out)) {
+      if (r.kind === "blob" && BLOB_RECORD_CACHE_TTL_MS > 0) {
+        cacheBlobRecord(out.id, existing);
+      }
+      return { ok: true };
+    }
     const backupTs = updatedAt.replace(/[:.]/g, "-");
 
     if (r.kind === "blob") {
@@ -405,7 +486,9 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
           addRandomSuffix: false,
           allowOverwrite: true,
         });
-        await trimBlobBackups(r.token, BACKUP_BLOB_PREFIX, out.id);
+        if (shouldTrimBlobBackups(out.id)) {
+          await trimBlobBackups(r.token, BACKUP_BLOB_PREFIX, out.id);
+        }
       }
       await put(pathname, serialized, {
         access: "private",
@@ -414,6 +497,12 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
         addRandomSuffix: false,
         allowOverwrite: true,
       });
+      invalidateBlobListCache();
+      if (BLOB_RECORD_CACHE_TTL_MS > 0) {
+        cacheBlobRecord(out.id, out);
+      } else {
+        invalidateBlobRecordCache(out.id);
+      }
       return { ok: true };
     }
 
@@ -527,9 +616,15 @@ export async function deleteIrissPasutijums(id: string): Promise<{ ok: true } | 
       try {
         await del(blobPathname(r.prefix, id), { token: r.token });
       } catch (e) {
-        if (e instanceof BlobNotFoundError) return { ok: true };
+        if (e instanceof BlobNotFoundError) {
+          invalidateBlobListCache();
+          invalidateBlobRecordCache(id);
+          return { ok: true };
+        }
         throw e;
       }
+      invalidateBlobListCache();
+      invalidateBlobRecordCache(id);
       return { ok: true };
     }
 
