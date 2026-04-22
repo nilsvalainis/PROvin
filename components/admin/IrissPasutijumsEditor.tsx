@@ -545,10 +545,10 @@ export function IrissPasutijumsEditor({
     [rec, router],
   );
 
-  const saveRedirectToList = useCallback(() => {
+  const saveCurrentPage = useCallback(() => {
     void (async () => {
       setPdfRetryBar(null);
-      await save({ redirectToList: true });
+      await save();
     })();
   }, [save]);
 
@@ -1048,7 +1048,7 @@ export function IrissPasutijumsEditor({
                 disabled={busy || orderPdfBusy}
                 title="Saglabāt"
                 aria-label={busy || orderPdfBusy ? "Saglabā" : "Saglabāt"}
-                onClick={saveRedirectToList}
+                onClick={saveCurrentPage}
                 className={headerMobileSaveChipBtnClass}
               >
                 <Save className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
@@ -1070,7 +1070,7 @@ export function IrissPasutijumsEditor({
                 disabled={busy || orderPdfBusy}
                 title="Saglabāt"
                 aria-label={busy || orderPdfBusy ? "Saglabā" : "Saglabāt"}
-                onClick={saveRedirectToList}
+                onClick={saveCurrentPage}
                 className={`${toolbarBtnBase} border border-[var(--color-provin-accent)] bg-transparent text-[var(--color-provin-accent)] shadow-sm hover:bg-[var(--color-provin-accent)]/10 sm:hover:bg-[var(--color-provin-accent)]/10`}
               >
                 <Save className="h-6 w-6 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
@@ -1219,18 +1219,22 @@ export function IrissPasutijumsEditor({
         <section className={shellCard}>
           <BlockTitle>Klienta dati</BlockTitle>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <LabeledInput
-              label="Vārds"
-              value={rec.clientFirstName}
-              onChange={(e) => patch("clientFirstName", e.target.value)}
-              autoComplete="given-name"
-            />
-            <LabeledInput
-              label="Uzvārds"
-              value={rec.clientLastName}
-              onChange={(e) => patch("clientLastName", e.target.value)}
-              autoComplete="family-name"
-            />
+            <div className="sm:col-span-2">
+              <LabeledInput
+                label="Vārds + Uzvārds"
+                value={[rec.clientFirstName, rec.clientLastName].filter(Boolean).join(" ").trim()}
+                onChange={(e) => {
+                  const normalized = e.target.value.replace(/\s+/g, " ").trim();
+                  if (!normalized) {
+                    patchRecord({ clientFirstName: "", clientLastName: "" });
+                    return;
+                  }
+                  const [first, ...rest] = normalized.split(" ");
+                  patchRecord({ clientFirstName: first ?? "", clientLastName: rest.join(" ") });
+                }}
+                autoComplete="name"
+              />
+            </div>
             <label className="block min-w-0">
               <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Tālrunis</span>
               <div className="flex min-w-0 items-center gap-1.5">
@@ -1302,7 +1306,7 @@ export function IrissPasutijumsEditor({
             <button
               type="button"
               disabled={busy || orderPdfBusy}
-              onClick={saveRedirectToList}
+              onClick={saveCurrentPage}
               className="inline-flex min-h-[44px] w-full shrink-0 items-center justify-center rounded-full border border-[var(--color-provin-accent)] bg-transparent px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent)]/8 disabled:opacity-50 sm:w-auto"
             >
               {busy || orderPdfBusy ? "Saglabā…" : "Saglabāt"}
