@@ -25,6 +25,14 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const nextConfig: NextConfig = {
+  /** Neiekļaut Webpack: stealth spraudņiem ir dinamiski require (clone-deep u.c.). */
+  serverExternalPackages: [
+    "playwright",
+    "playwright-core",
+    "playwright-extra",
+    "puppeteer-extra-plugin-stealth",
+    "puppeteer-extra-plugin",
+  ],
   reactStrictMode: true,
   /** Server Actions (citi maršruti); IRISS PATCH ierobežojumus biežāk nosaka Vercel/hosting. */
   experimental: {

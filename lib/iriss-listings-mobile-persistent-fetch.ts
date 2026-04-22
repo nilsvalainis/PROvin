@@ -2,7 +2,12 @@ import "server-only";
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import { chromium } from "playwright";
+
+import {
+  getChromiumWithStealth,
+  MOBILE_DE_PLAYWRIGHT_EXTRA_ARGS,
+  MOBILE_DE_PLAYWRIGHT_USER_AGENT,
+} from "@/lib/iriss-mobile-playwright-stealth";
 
 /** Relatīvs pret process.cwd(); gitignored caur .data/ */
 export const MOBILE_PERSISTENT_PROFILE_REL = path.join(".data", "browser-profiles", "mobile");
@@ -38,6 +43,7 @@ export async function fetchUrlHtmlWithMobilePersistentProfile(
   timeoutMs: number,
 ): Promise<{ ok: true; statusCode: number; html: string } | { ok: false; statusCode: number; note: string }> {
   const dir = await mobilePersistentProfileAbsPath();
+  const chromium = getChromiumWithStealth();
   let context: Awaited<ReturnType<typeof chromium.launchPersistentContext>> | undefined;
   try {
     await fs.mkdir(dir, { recursive: true });
@@ -45,6 +51,8 @@ export async function fetchUrlHtmlWithMobilePersistentProfile(
       headless: true,
       viewport: { width: 1280, height: 720 },
       locale: "de-DE",
+      userAgent: MOBILE_DE_PLAYWRIGHT_USER_AGENT,
+      args: [...MOBILE_DE_PLAYWRIGHT_EXTRA_ARGS],
     });
     const page = context.pages()[0] ?? (await context.newPage());
     const resp = await page.goto(url, {

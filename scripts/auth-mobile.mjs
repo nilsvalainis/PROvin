@@ -6,7 +6,16 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import { chromium } from "playwright-extra";
+
+/** Jāsaskan ar `lib/iriss-mobile-playwright-stealth.ts` (vienots profils + sinhronizācija). */
+const MOBILE_DE_PLAYWRIGHT_USER_AGENT =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+
+const MOBILE_DE_PLAYWRIGHT_EXTRA_ARGS = ["--disable-blink-features=AutomationControlled"];
+
+chromium.use(StealthPlugin());
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -19,6 +28,8 @@ const context = await chromium.launchPersistentContext(userDataDir, {
   headless: false,
   viewport: { width: 1280, height: 900 },
   locale: "de-DE",
+  userAgent: MOBILE_DE_PLAYWRIGHT_USER_AGENT,
+  args: MOBILE_DE_PLAYWRIGHT_EXTRA_ARGS,
 });
 
 const page = context.pages()[0] ?? (await context.newPage());
