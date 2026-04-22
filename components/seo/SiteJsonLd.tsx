@@ -31,6 +31,8 @@ export function SiteJsonLd({ locale, description }: Props) {
         "@id": `${url}#organization`,
         name: brand,
         legalName: legal.legalName,
+        /** Saskan ar kājeni / Stripe — viena rindiņa kā `getCompanyLegal().legalAddress` */
+        address: legal.legalAddress,
         url,
         description,
         logo: { "@type": "ImageObject", url: `${url}/opengraph-image`, width: 1200, height: 630 },

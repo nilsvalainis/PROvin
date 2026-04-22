@@ -3,11 +3,15 @@ import { ImageResponse } from "next/og";
 /** Saskan ar `lib/client-report-pdf-layout-draft.ts` — `PDF_BRAND_BLUE_HEX` */
 const PROVIN_BLUE = "#0061D2";
 
-export const alt = "PROVIN.LV";
-export const size = { width: 1200, height: 630 };
-export const contentType = "image/png";
-
-export default function OpenGraphImage() {
+/**
+ * Route Handler formāts — Vercel build meklē `…/opengraph-image/route.*`;
+ * `opengraph-image.tsx` līmenī izraisīja brīdinājumu par trūkstošu `route` failu.
+ */
+export async function GET(
+  _request: Request,
+  context: { params: Promise<{ locale: string }> },
+) {
+  await context.params;
   return new ImageResponse(
     (
       <div
@@ -49,6 +53,6 @@ export default function OpenGraphImage() {
         </div>
       </div>
     ),
-    { ...size },
+    { width: 1200, height: 630 },
   );
 }

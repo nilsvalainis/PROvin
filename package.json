@@ -15,6 +15,9 @@
     "screenshot:demo-mobile": "node scripts/demo-mobile-preview.mjs",
     "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe"
   },
+  "overrides": {
+    "glob": "^13.0.6"
+  },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
     "@vercel/analytics": "^2.0.1",
