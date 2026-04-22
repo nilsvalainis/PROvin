@@ -35,7 +35,7 @@ function blockIf(title: string, inner: string, sectionClass = ""): string {
 }
 
 function sectionHead(title: string): string {
-  return `<div class="ipdf-sec-head" role="heading" aria-level="2"><span class="ipdf-sec-bar" aria-hidden="true"></span><h2 class="ipdf-sec-title">${esc(title)}</h2></div>`;
+  return `<div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">${esc(title)}</h2></div>`;
 }
 
 function buildIrissPrintFooterHtml(accent: string): string {
@@ -145,8 +145,9 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       padding: 0;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       font-size: 10.5pt;
-      font-weight: 300;
+      font-weight: 400;
       line-height: 1.5;
+      letter-spacing: 0.011em;
       color: ${SLATE_600};
       background: #fff;
     }
@@ -157,56 +158,66 @@ function irissPrintShell(accent: string, title: string, body: string): string {
     }
     .ipdf-header {
       display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 16px;
-      align-items: end;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: center;
       padding-bottom: 14px;
       margin-bottom: 18px;
-      border-bottom: 2px solid ${accent};
+      border-bottom: 1px solid #0f172a;
     }
     .ipdf-hero-model {
       margin: 0;
       font-size: 1.35rem;
-      font-weight: 800;
+      font-weight: 900;
       line-height: 1.15;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.088em;
       text-transform: uppercase;
       color: ${INK};
     }
-    .ipdf-hero-sub { margin: 6px 0 0; font-size: 0.72rem; font-weight: 300; color: ${SLATE_600}; letter-spacing: 0.04em; }
+    .ipdf-hero-sub { margin: 6px 0 0; font-size: 0.72rem; font-weight: 400; color: ${SLATE_600}; letter-spacing: 0.044em; }
     .ipdf-logo {
       display: block;
       height: 38px;
       width: auto;
       max-width: 160px;
       object-fit: contain;
+      mix-blend-mode: multiply;
     }
-    .ipdf-sec-head { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
-    .ipdf-sec-bar { width: 3px; align-self: stretch; min-height: 22px; background: ${accent}; border-radius: 2px; flex-shrink: 0; }
+    .ipdf-sec-head { display: block; margin: 0 0 8px; }
     .ipdf-sec-title {
       margin: 0;
+      display: block;
+      width: 100%;
       font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.14em;
+      font-weight: 900;
+      letter-spacing: 0.154em;
       text-transform: uppercase;
-      color: ${INK};
+      color: #ffffff;
+      background: ${accent};
+      border-radius: 8px;
+      padding: 7px 11px;
     }
     .ipdf-blk {
       margin-bottom: 18px;
       page-break-inside: avoid;
+    }
+    .ipdf-blk-body {
       border: 1px solid #e2e8f0;
       border-radius: 12px;
       padding: 12px 14px 14px;
-      background: #fff;
+      background: ${PANEL};
       box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
     }
     .ipdf-blk--media {
+      padding: 0;
+    }
+    .ipdf-blk--media .ipdf-blk-body {
       border: none;
       box-shadow: none;
       background: transparent;
       padding: 0;
     }
-    .ipdf-blk--media .ipdf-sec-head { margin-bottom: 10px; }
+    .ipdf-blk--media .ipdf-sec-head { margin-bottom: 9px; }
     .ipdf-blk .ipdf-sec-head { margin-bottom: 8px; margin-top: 0; }
     .ipdf-blk-body > table.ipdf-kv { border: none; box-shadow: none; background: transparent; }
     .ipdf-blk-body > table.ipdf-kv th { background: #f8fafc; }
@@ -227,12 +238,12 @@ function irissPrintShell(accent: string, title: string, body: string): string {
     .ipdf-tile-lbl {
       margin: 0 0 4px;
       font-size: 0.58rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
+      font-weight: 700;
+      letter-spacing: 0.11em;
       text-transform: uppercase;
       color: ${SLATE_600};
     }
-    .ipdf-tile-val { margin: 0; font-size: 0.82rem; font-weight: 300; color: ${INK}; line-height: 1.35; }
+    .ipdf-tile-val { margin: 0; font-size: 0.82rem; font-weight: 400; color: ${INK}; line-height: 1.35; letter-spacing: 0.011em; }
     table.ipdf-kv { width: 100%; border-collapse: collapse; background: ${PANEL}; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
     table.ipdf-kv th {
       text-align: left;
@@ -240,8 +251,8 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       padding: 8px 12px;
       vertical-align: top;
       font-size: 0.58rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
+      font-weight: 700;
+      letter-spacing: 0.11em;
       text-transform: uppercase;
       color: ${SLATE_600};
       border-bottom: 1px solid #e2e8f0;
@@ -251,8 +262,9 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       padding: 8px 12px;
       border-bottom: 1px solid #e2e8f0;
       white-space: pre-wrap;
-      font-weight: 300;
+      font-weight: 400;
       color: ${INK};
+      letter-spacing: 0.011em;
     }
     table.ipdf-kv tr:last-child th, table.ipdf-kv tr:last-child td { border-bottom: none; }
     .ipdf-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -267,12 +279,12 @@ function irissPrintShell(accent: string, title: string, body: string): string {
     .ipdf-card h3 {
       margin: 0 0 8px;
       font-size: 0.58rem;
-      font-weight: 800;
-      letter-spacing: 0.12em;
+      font-weight: 900;
+      letter-spacing: 0.132em;
       text-transform: uppercase;
       color: ${INK};
     }
-    .ipdf-card pre { margin: 0; font-family: inherit; font-weight: 300; white-space: pre-wrap; word-break: break-word; color: ${SLATE_600}; font-size: 0.78rem; }
+    .ipdf-card pre { margin: 0; font-family: inherit; font-weight: 400; white-space: pre-wrap; word-break: break-word; color: ${SLATE_600}; font-size: 0.78rem; letter-spacing: 0.011em; }
     .ipdf-eval-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
     @media (max-width: 560px) { .ipdf-eval-grid { grid-template-columns: 1fr; } }
     .ipdf-cl-item {
@@ -295,12 +307,12 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       border-radius: 4px;
       box-sizing: border-box;
     }
-    .ipdf-cl-txt { font-size: 0.78rem; font-weight: 300; color: ${INK}; line-height: 1.35; }
+    .ipdf-cl-txt { font-size: 0.78rem; font-weight: 400; color: ${INK}; line-height: 1.35; letter-spacing: 0.011em; }
     .ipdf-health { margin-bottom: 10px; }
     .ipdf-health-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
     .ipdf-health--bar-only .ipdf-health-top { justify-content: flex-end; }
-    .ipdf-health-lbl { font-size: 0.58rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: ${INK}; margin: 0; }
-    .ipdf-health-val { font-size: 0.72rem; font-weight: 600; color: ${accent}; margin: 0; }
+    .ipdf-health-lbl { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.11em; text-transform: uppercase; color: ${INK}; margin: 0; }
+    .ipdf-health-val { font-size: 0.72rem; font-weight: 700; color: ${accent}; margin: 0; letter-spacing: 0.011em; }
     .ipdf-bar-track {
       height: 8px;
       border-radius: 999px;
@@ -328,9 +340,9 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       text-transform: uppercase;
       color: ${INK};
     }
-    .ipdf-summary pre { margin: 0; font-family: inherit; font-weight: 300; white-space: pre-wrap; color: ${SLATE_600}; font-size: 0.82rem; }
+    .ipdf-summary pre { margin: 0; font-family: inherit; font-weight: 400; white-space: pre-wrap; color: ${SLATE_600}; font-size: 0.82rem; letter-spacing: 0.011em; }
     .ipdf-notes { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; min-height: 48px; background: ${PANEL}; }
-    .ipdf-notes pre { margin: 0; font-weight: 300; }
+    .ipdf-notes pre { margin: 0; font-weight: 400; letter-spacing: 0.011em; }
     .ipdf-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     @media (max-width: 560px) { .ipdf-gallery { grid-template-columns: 1fr; } }
     .ipdf-photo { margin: 0; border: none; border-radius: 10px; overflow: hidden; background: #f1f5f9; page-break-inside: avoid; box-shadow: none; }
@@ -346,12 +358,12 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
       overflow: hidden;
     }
-    .ipdf-footer-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+    .ipdf-footer-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: #0f172a !important; }
     .ipdf-footer-brand {
       margin: 0 0 10px;
       font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.12em;
+      font-weight: 900;
+      letter-spacing: 0.132em;
       text-transform: uppercase;
       color: ${INK};
     }
@@ -364,9 +376,9 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       line-height: 1.45;
       align-items: baseline;
     }
-    .ipdf-ft-k { font-weight: 600; color: #64748b; flex: 0 0 auto; min-width: 5.5rem; }
-    .ipdf-ft-v { font-weight: 300; color: ${SLATE_600}; flex: 1 1 12rem; }
-    .ipdf-ft-plain { margin: 0; font-size: 0.62rem; font-weight: 300; color: ${SLATE_600}; line-height: 1.45; }
+    .ipdf-ft-k { font-weight: 700; color: #64748b; flex: 0 0 auto; min-width: 5.5rem; letter-spacing: 0.011em; }
+    .ipdf-ft-v { font-weight: 400; color: ${SLATE_600}; flex: 1 1 12rem; letter-spacing: 0.011em; }
+    .ipdf-ft-plain { margin: 0; font-size: 0.62rem; font-weight: 400; color: ${SLATE_600}; line-height: 1.45; letter-spacing: 0.011em; }
   `;
 
   const fontLink = `<link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -387,11 +399,11 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
   const heroModel = record.brandModel.trim() || "PASŪTĪJUMS";
 
   const header = `<header class="ipdf-header">
+    <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
     <div>
       <p class="ipdf-hero-model">${esc(heroModel)}</p>
       <p class="ipdf-hero-sub">${esc(generatedAtFormatted)} · IRISS pasūtījums</p>
     </div>
-    <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
   </header>`;
 
   const clientRows =
@@ -445,13 +457,11 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
   }
   const linksInner = linkRows.length ? `<p class="ipdf-meta">${linkRows.join("<br/>")}</p>` : "";
 
-  const pamatBlock = pamat.trim()
-    ? `<section class="ipdf-blk">${sectionHead("Pamatinformācija")}<div class="ipdf-blk-body">${pamat}</div></section>`
-    : "";
+  const pamatBlock = pamat.trim() ? blockIf("Pamatinformācija", pamat) : "";
   const body = `${header}
     ${blockIf("Klienta dati", clientTable)}
     ${pamatBlock}
-    ${vehicleTable.trim() ? `<section class="ipdf-blk">${sectionHead("Transportlīdzekļa specifikācija")}<div class="ipdf-blk-body">${vehicleTable}</div></section>` : ""}
+    ${vehicleTable.trim() ? blockIf("Transportlīdzekļa specifikācija", vehicleTable) : ""}
     ${blockIf("Aprīkojums", equip)}
     ${blockIf("Piezīmes", notes)}
     ${blockIf("Sludinājumu saites", linksInner)}
@@ -470,11 +480,11 @@ export function buildIrissOfferPrintHtml(
   const heroTitle = offer.brandModel.trim() || offer.title.trim() || "Piedāvājums";
 
   const header = `<header class="ipdf-header">
+    <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
     <div>
       <p class="ipdf-hero-model">${esc(heroTitle)}</p>
       <p class="ipdf-hero-sub">${esc(generatedAtFormatted)} · Auto pārbaude / piedāvājums</p>
     </div>
-    <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
   </header>`;
 
   const clientName = `${record.clientFirstName} ${record.clientLastName}`.trim();
@@ -566,7 +576,7 @@ export function buildIrissOfferPrintHtml(
 
   const body = `${header}
     ${blockIf("Klienta dati", clientTable)}
-    ${pamatInner.trim() ? `<section class="ipdf-blk">${sectionHead("Pamatinformācija")}<div class="ipdf-blk-body">${pamatInner}</div></section>` : ""}
+    ${pamatInner.trim() ? blockIf("Pamatinformācija", pamatInner) : ""}
     ${evalSections}
     ${blockIf("Cenas un piedāvājums", pricingTable)}
     ${blockIf("Fotogrāfijas", filesInner, "ipdf-blk--media")}

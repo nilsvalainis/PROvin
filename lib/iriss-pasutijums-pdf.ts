@@ -48,6 +48,7 @@ const MUTED = rgb(71 / 255, 85 / 255, 105 / 255);
 const CARD_FILL_SLATE = rgb(248 / 255, 250 / 255, 252 / 255);
 const CARD_BORDER_SLATE = rgb(203 / 255, 213 / 255, 225 / 255);
 const BAR_TRACK = rgb(226 / 255, 232 / 255, 240 / 255);
+const RULE_DARK = rgb(15 / 255, 23 / 255, 42 / 255);
 /** Papildu atstarpe starp etiķetes beigām un vērtību vienas rindas layoutā (PDF vienības). */
 const COLON_VALUE_GAP = 3;
 /** Piedāvājuma kopsummas josla — saskaņā ar `IRISS_BRAND_ORANGE_HEX` (#F26522). */
@@ -55,7 +56,7 @@ const PRICE_BAND_FILL = rgb(255 / 255, 248 / 255, 245 / 255);
 const PRICE_BAND_BORDER = rgb(242 / 255, 101 / 255, 34 / 255);
 const SECTION_BEFORE = 14;
 const SECTION_AFTER = 10;
-const LETTER_TRACKING = 0.22;
+const LETTER_TRACKING = 0.242;
 const FOOTER_SAFE = 52;
 /** Atkārtotai lapai — tikai logo josla no lapas augšas. */
 const LOGO_ONLY_BAND = 46;
@@ -100,9 +101,9 @@ const IRISS_PDF_CARD_THEME: CardTheme = {
   borderWidth: 1.1,
   titleColor: INK,
   titleUppercase: true,
-  titleSize: 10,
-  titleGapAfter: 6,
-  headBarColor: IRISS_ACCENT,
+  titleSize: 11,
+  titleGapAfter: 8,
+  headBarColor: null,
 };
 
 type Ctx = {
@@ -125,14 +126,10 @@ type Ctx = {
 };
 
 function stampOfferLogoTopLeft(page: PDFPage, pageH: number, margin: number, logo: LogoPack): void {
-  const pad = 3;
-  const w = logo.dw + pad * 2;
-  const h = logo.dh + pad * 2;
-  const yRect = pageH - margin - h;
-  page.drawRectangle({ x: margin, y: yRect, width: w, height: h, color: rgb(1, 1, 1) });
+  const yRect = pageH - margin - logo.dh;
   page.drawImage(logo.img, {
-    x: margin + pad,
-    y: yRect + pad,
+    x: margin,
+    y: yRect,
     width: logo.dw,
     height: logo.dh,
   });
@@ -194,7 +191,7 @@ function drawTextLine(
   size: number,
   opts?: { font?: PDFFont; color?: ReturnType<typeof rgb>; x?: number },
 ) {
-  const f = opts?.font ?? ctx.font;
+  const f = opts?.font ?? ctx.fontBold;
   const c = opts?.color ?? INK;
   const x = opts?.x ?? ctx.margin;
   ensureSpace(ctx, lineHeight(size));
@@ -203,7 +200,7 @@ function drawTextLine(
 }
 
 function drawParagraph(ctx: Ctx, text: string, size: number, color = INK, f?: PDFFont, layout?: TextLayout) {
-  const font = f ?? ctx.font;
+  const font = f ?? ctx.fontBold;
   const x = layout?.x ?? ctx.margin;
   const maxW = layout?.maxW ?? ctx.contentW;
   for (const ln of wrapText(text, font, size, maxW)) {
@@ -302,18 +299,29 @@ function drawIosCard(
   const t = ctx.cardTheme;
   const pad = 10;
   const radius = 10;
+  const titleBarH = lineHeight(t.titleSize) + 6;
+  const titleGapToFrame = 6;
   const ix = ctx.margin + pad;
   const iw = ctx.contentW - pad * 2;
-  const titleBlock = lineHeight(t.titleSize) + t.titleGapAfter;
   const bodyH = measureBody(iw);
-  const h = pad + titleBlock + bodyH + pad;
+  const frameH = pad + bodyH + pad;
+  const h = titleBarH + titleGapToFrame + frameH;
   const outerNeed = SECTION_BEFORE + h + SECTION_AFTER;
   ensureRoomForBlock(ctx, outerNeed);
 
   const omitFrame = opts?.omitFrame === true;
   ctx.y -= SECTION_BEFORE;
   const yTopCard = ctx.y;
-  const yRectBottom = yTopCard - h;
+  const yTitleBottom = yTopCard - titleBarH;
+  const yRectBottom = yTitleBottom - titleGapToFrame - frameH;
+  drawRoundedRect(ctx.page, {
+    x: ctx.margin,
+    y: yTitleBottom,
+    width: ctx.contentW,
+    height: titleBarH,
+    radius: 6,
+    color: IRISS_ACCENT,
+  });
   if (!omitFrame) {
     drawRoundedRect(ctx.page, {
       x: ctx.margin,
@@ -326,23 +334,19 @@ function drawIosCard(
       borderWidth: t.borderWidth,
     });
   }
-  ctx.y = yRectBottom + h - pad;
+  const titleText = t.titleUppercase ? title.toLocaleUpperCase("lv-LV") : title;
+  drawTrackedText(ctx.page, titleText, {
+    x: ix,
+    y: yTopCard - t.titleSize - 3,
+    size: t.titleSize,
+    font: ctx.fontBold,
+    color: rgb(1, 1, 1),
+    tracking: LETTER_TRACKING,
+  });
+  ctx.y = yRectBottom + frameH - pad;
   const prev = ctx.suppressPageBreak;
   ctx.suppressPageBreak = true;
   try {
-    if (t.headBarColor) {
-      const barH = lineHeight(t.titleSize) + 2;
-      ctx.page.drawRectangle({
-        x: ix - 8,
-        y: ctx.y - barH + 2,
-        width: 2,
-        height: barH,
-        color: t.headBarColor,
-      });
-    }
-    const titleText = t.titleUppercase ? title.toLocaleUpperCase("lv-LV") : title;
-    drawTextLine(ctx, titleText, t.titleSize, { font: ctx.fontBold, color: t.titleColor, x: ix });
-    ctx.y -= t.titleGapAfter;
     drawBody({ x: ix, w: iw });
   } finally {
     ctx.suppressPageBreak = prev;
@@ -522,7 +526,7 @@ async function createPdfCtx(): Promise<Ctx> {
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
   const { reg, bold } = await loadInterFontBytes();
-  const font = await pdfDoc.embedFont(reg, { subset: false });
+  void reg;
   const fontBold = await pdfDoc.embedFont(bold, { subset: false });
   const pageW = 595;
   const pageH = 842;
@@ -535,7 +539,7 @@ async function createPdfCtx(): Promise<Ctx> {
     contentW,
     pageW,
     pageH,
-    font,
+    font: fontBold,
     fontBold,
     y: pageH - margin,
     suppressPageBreak: false,
@@ -546,7 +550,7 @@ async function createPdfCtx(): Promise<Ctx> {
 }
 
 function drawContentAccentRule(ctx: Ctx) {
-  const ruleH = 2;
+  const ruleH = 1;
   ctx.y -= 4;
   if (!ctx.suppressPageBreak) ensureSpace(ctx, ruleH + 14);
   const yb = ctx.y - ruleH;
@@ -555,14 +559,14 @@ function drawContentAccentRule(ctx: Ctx) {
     y: yb,
     width: ctx.contentW,
     height: ruleH,
-    color: IRISS_ACCENT,
+    color: RULE_DARK,
   });
   ctx.y = yb - 12;
 }
 
 function drawFooter(ctx: Ctx) {
   const pad = 11;
-  const stripeH = 2.5;
+  const stripeH = 1;
   const titleS = 9;
   const rowS = 7.2;
   const innerW = ctx.contentW - pad * 2 - 4;
@@ -592,7 +596,7 @@ function drawFooter(ctx: Ctx) {
     y: yBottom + h - stripeH,
     width: ctx.contentW,
     height: stripeH,
-    color: IRISS_ACCENT,
+    color: RULE_DARK,
   });
   ctx.y = yTop - stripeH - 4;
   drawTrackedText(ctx.page, brand.toLocaleUpperCase("lv-LV"), {
@@ -601,7 +605,7 @@ function drawFooter(ctx: Ctx) {
     size: titleS,
     font: ctx.fontBold,
     color: INK,
-    tracking: 0.14,
+    tracking: 0.154,
   });
   ctx.y -= lineHeight(titleS) + 8;
   for (const line of rest) {
@@ -708,7 +712,7 @@ async function loadOfferLogoPack(pdfDoc: PDFDocument): Promise<LogoPack | null> 
       const r = data[i] ?? 0;
       const g = data[i + 1] ?? 0;
       const b = data[i + 2] ?? 0;
-      if (r < 38 && g < 38 && b < 38) {
+      if (r < 72 && g < 72 && b < 72) {
         data[i + 3] = 0;
       }
     }
