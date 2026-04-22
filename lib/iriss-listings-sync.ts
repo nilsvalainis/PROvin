@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
+import { ensurePlatformSession } from "@/lib/iriss-listings-session-auth";
 import { readIrissListingsLatestView, writeIrissListingsRun } from "@/lib/iriss-listings-aggregate-store";
 import { detectPlatformFromUrl, scrapeIrissListing } from "@/lib/iriss-listings-adapters";
 import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
@@ -119,6 +120,17 @@ export async function runIrissListingsDailySync(): Promise<{
   summary: IrissListingSyncRunSummary;
   items: IrissListingAggregateItem[];
 }> {
+  return runIrissListingsDailySyncWithOptions({ ensureSessionsBeforeScrape: false });
+}
+
+export async function runIrissListingsDailySyncWithOptions(opts: {
+  ensureSessionsBeforeScrape: boolean;
+}): Promise<{
+  ok: boolean;
+  warnings: string[];
+  summary: IrissListingSyncRunSummary;
+  items: IrissListingAggregateItem[];
+}> {
   const startedAt = new Date().toISOString();
   const runId = `run-${startedAt.replace(/[:.]/g, "-")}`;
   const warnings: string[] = [];
@@ -130,6 +142,23 @@ export async function runIrissListingsDailySync(): Promise<{
   const sources = allSources.slice(0, maxSources);
   if (allSources.length > sources.length) {
     warnings.push(`Avotu skaits ierobežots: ${sources.length}/${allSources.length}.`);
+  }
+
+  if (opts.ensureSessionsBeforeScrape) {
+    const probeByPlatform = new Map<string, string>();
+    for (const src of sources) {
+      if (src.sourcePlatform === "other") continue;
+      if (!probeByPlatform.has(src.sourcePlatform)) {
+        probeByPlatform.set(src.sourcePlatform, src.sourceUrl);
+      }
+    }
+    for (const [platform, probeUrl] of probeByPlatform) {
+      const ensured = await ensurePlatformSession(
+        platform as "mobile" | "autobid" | "openline" | "auto1",
+        probeUrl,
+      );
+      if (!ensured.ok) warnings.push(`${platform}: ${ensured.note}`);
+    }
   }
 
   const items: IrissListingAggregateItem[] = [];

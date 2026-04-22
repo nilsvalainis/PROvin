@@ -1,6 +1,7 @@
 import "server-only";
 
 import { readIrissListingsLatestView } from "@/lib/iriss-listings-aggregate-store";
+import { getSessionFileMeta } from "@/lib/iriss-listings-session-auth";
 import type {
   IrissSessionHealthItem,
   IrissSessionHealthReport,
@@ -14,7 +15,10 @@ function hasAuthConfig(platform: Platform): boolean {
   const pfx = `IRISS_LISTINGS_${platform.toUpperCase()}`;
   const auth = process.env[`${pfx}_AUTH_HEADER`]?.trim() ?? "";
   const cookie = process.env[`${pfx}_COOKIE`]?.trim() ?? "";
-  return Boolean(auth || cookie);
+  const loginUrl = process.env[`${pfx}_LOGIN_URL`]?.trim() ?? "";
+  const username = process.env[`${pfx}_LOGIN_USERNAME`]?.trim() ?? "";
+  const password = process.env[`${pfx}_LOGIN_PASSWORD`] ?? "";
+  return Boolean(auth || cookie || (loginUrl && username && password));
 }
 
 function parseIsoSafe(v: string): number {
@@ -25,6 +29,7 @@ function parseIsoSafe(v: string): number {
 function statusForPlatform(
   platform: Platform,
   latest: Awaited<ReturnType<typeof readIrissListingsLatestView>>,
+  sessionMeta: Awaited<ReturnType<typeof getSessionFileMeta>>,
   checkedAt: string,
 ): IrissSessionHealthItem {
   const items = (latest?.items ?? []).filter((x) => x.sourcePlatform === platform);
@@ -37,7 +42,7 @@ function statusForPlatform(
 
   if (!configured) {
     status = "login_required";
-    note = "Nav iestatīts AUTH_HEADER/COOKIE šai platformai.";
+    note = "Nav iestatīts AUTH_HEADER/COOKIE vai LOGIN_* parametri šai platformai.";
   } else if (hasLoginRequired) {
     status = "login_required";
     note = "Pēdējā nolasīšanā avots pieprasīja login.";
@@ -55,6 +60,19 @@ function statusForPlatform(
       note = "Pēdējā veiksmīgā nolasīšana ir novecojusi (>18h).";
     }
   }
+  if (sessionMeta && status !== "login_required") {
+    const expiryMs = parseIsoSafe(sessionMeta.expiresAt);
+    if (expiryMs > 0) {
+      const remainingHours = (expiryMs - parseIsoSafe(checkedAt)) / 36e5;
+      if (remainingHours <= 0) {
+        status = "login_required";
+        note = "Saglabātā sesija ir beigusies.";
+      } else if (remainingHours < 12 && status === "ok") {
+        status = "expiring_soon";
+        note = `Sesija drīz beigsies (~${Math.max(1, Math.round(remainingHours))}h).`;
+      }
+    }
+  }
 
   return {
     platform,
@@ -67,6 +85,8 @@ function statusForPlatform(
 export async function getIrissSessionHealthReport(): Promise<IrissSessionHealthReport> {
   const checkedAt = new Date().toISOString();
   const latest = await readIrissListingsLatestView();
-  const items = PLATFORMS.map((platform) => statusForPlatform(platform, latest, checkedAt));
+  const items = await Promise.all(
+    PLATFORMS.map(async (platform) => statusForPlatform(platform, latest, await getSessionFileMeta(platform), checkedAt)),
+  );
   return { checkedAt, items };
 }

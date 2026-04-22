@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
+import { getPlatformAuthHeaders } from "@/lib/iriss-listings-session-auth";
 import type { IrissListingPrice, IrissListingSourcePlatform, IrissListingSyncStatus } from "@/lib/iriss-listings-types";
 
 export type IrissListingsScrapeInput = {
@@ -31,10 +32,6 @@ const LOGIN_HINT_RE =
 
 const YEAR_RE = /\b((?:19|20)\d{2})\b/g;
 const PRICE_RE = /(\d{1,3}(?:[.\s]\d{3})*(?:[.,]\d{2})?)\s*(€|eur|eur\.|usd|\$|gbp|£)\b/gi;
-
-function resolvePlatformAuthPrefix(platform: IrissListingSourcePlatform): string {
-  return `IRISS_LISTINGS_${platform.toUpperCase()}`;
-}
 
 function cleanText(v: string): string {
   return v.replace(/\s+/g, " ").trim();
@@ -135,25 +132,20 @@ function looksLikeLoginPage(statusCode: number, html: string): boolean {
 }
 
 async function fetchHtml(url: URL, platform: IrissListingSourcePlatform): Promise<{ ok: true; statusCode: number; html: string } | { ok: false; statusCode: number; note: string }> {
-  const pfx = resolvePlatformAuthPrefix(platform);
-  const userAgent =
-    process.env[`${pfx}_USER_AGENT`]?.trim() ||
-    "Mozilla/5.0 (compatible; PROVIN-IRISS-SLUDINAJUMI/1.0; +https://provin.lv)";
-  const authHeader = process.env[`${pfx}_AUTH_HEADER`]?.trim() ?? "";
-  const cookie = process.env[`${pfx}_COOKIE`]?.trim() ?? "";
   const timeoutMs = Math.max(8000, Number.parseInt(process.env.IRISS_LISTINGS_FETCH_TIMEOUT_MS ?? "18000", 10) || 18000);
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const headers: Record<string, string> = {
-      "User-Agent": userAgent,
-      "Accept-Language": "lv,en;q=0.9,de;q=0.8",
-      Accept: "text/html,application/xhtml+xml",
-      Pragma: "no-cache",
-      "Cache-Control": "no-cache",
-    };
-    if (authHeader) headers.Authorization = authHeader;
-    if (cookie) headers.Cookie = cookie;
+    const headers =
+      platform === "other"
+        ? {
+            "User-Agent": "Mozilla/5.0 (compatible; PROVIN-IRISS-SLUDINAJUMI/1.0; +https://provin.lv)",
+            "Accept-Language": "lv,en;q=0.9,de;q=0.8",
+            Accept: "text/html,application/xhtml+xml",
+            Pragma: "no-cache",
+            "Cache-Control": "no-cache",
+          }
+        : await getPlatformAuthHeaders(platform, url.toString());
     const res = await fetch(url.toString(), {
       method: "GET",
       headers,
