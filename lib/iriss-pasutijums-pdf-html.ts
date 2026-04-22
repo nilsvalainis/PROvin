@@ -1,4 +1,4 @@
-import { IRISS_BRAND_ORANGE_HEX, IRISS_COMPANY_LINES } from "@/lib/iriss-brand";
+import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 /** Sekundārā virsrakstu krāsa (Tailwind slate-900 tuvinājums). */
@@ -39,7 +39,7 @@ function sectionHead(title: string): string {
 }
 
 function buildIrissPrintFooterHtml(accent: string): string {
-  const lines = [...IRISS_COMPANY_LINES];
+  const lines = getIrissPdfSupplierFooterLines();
   const brand = esc(lines[0] ?? "");
   const rows = lines
     .slice(1)
@@ -390,7 +390,7 @@ function irissPrintShell(accent: string, title: string, body: string): string {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&display=swap" rel="stylesheet"/>`;
 
-  return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>${fontLink}<title>${esc(title)}</title><style>${css}</style></head><body><div class="ipdf-root">${body}</div></body></html>`;
+  return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/>${fontLink}<title>${esc(title)}</title><style>${css}</style></head><body><div class="ipdf-root">${body}</div></body></html>`;
 }
 
 /**

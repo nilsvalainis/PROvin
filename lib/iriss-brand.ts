@@ -1,21 +1,37 @@
 import "server-only";
 
 /**
- * Tikai **SIA IRISS / Dzintarzeme Auto** piedāvājuma PDF un drukas HTML (`iriss-pasutijums-pdf*`).
+ * **Tikai** SIA IRISS piedāvājuma PDF un drukas HTML (`iriss-pasutijums-pdf*`).
  *
- * **Nav** PROVIN publiskās vietnes, kājenes, JSON-LD vai Stripe saskares daļa — `Smilšu 19` un pārējās
- * IRISS rindiņas nedrīkst importēt no mārketinga lapām, layout vai `getCompanyLegal()` plūsmām.
- * PROVIN juridiskā adrese: `lib/company.ts` → `NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS` (noklusējums Jana iela 3…).
+ * Publiskajai PROVIN vietnei, kājenei un Stripe saskarei — `getCompanyLegal()` / `NEXT_PUBLIC_COMPANY_*`.
+ * IRISS piegādātāja kājenes teksts nedrīkst būt publiskos komponentos; pilnas rindiņas tikai no
+ * servera env `IRISS_PDF_SUPPLIER_LINES_JSON` (necommitēt .env.local / Vercel).
  */
 export const IRISS_BRAND_ORANGE_HEX = "#F26522";
 
-/** IRISS PDF kājenes rekvizīti — tikai servera PDF/HTML ģenerēšanai. */
-export const IRISS_COMPANY_LINES = [
-  "SIA IRISS",
-  "Reģ. nr.: LV59202001191",
-  "Juridiskā adrese: Smilšu 19, Tukums, Tukuma novads, LV-3101",
-  "Faktiskā adrese: Hermaņi 1, Smārdes pagasts, Tukuma novads, LV3129",
-  "Banka: AS SEB banka, SWIFT: UNLALV2X, IBAN: LV75UNLA0050005241769",
-  "Kontakti: info@dzintarzemeauto.lv, www.dzintarzemeauto.lv",
-  "Tālrunis: +371 204 205 39, +371 77 33 440",
-] as const;
+const FOOTER_BRAND_ONLY = ["SIA IRISS"] as const;
+
+/**
+ * IRISS PDF kājenes rindiņas — **tikai** no `IRISS_PDF_SUPPLIER_LINES_JSON` (JSON masīvs ar virknēm).
+ * Bez env: tikai zīmols, lai repozitorijā nebūtu iekšējās adreses; pilnai kājenei iestati env lokāli / Vercel.
+ */
+export function getIrissPdfSupplierFooterLines(): string[] {
+  const raw = process.env.IRISS_PDF_SUPPLIER_LINES_JSON?.trim();
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const lines = parsed.filter((x): x is string => typeof x === "string" && x.trim().length > 0);
+        if (lines.length > 0) return lines;
+      }
+    } catch {
+      /* ignore invalid JSON */
+    }
+  }
+  if (process.env.NODE_ENV === "development") {
+    console.warn(
+      "[iriss-brand] Trūkst IRISS_PDF_SUPPLIER_LINES_JSON — PDF kājene tikai ar zīmolu. Pilnai kājenei pievieno .env.local (sk. .env.example).",
+    );
+  }
+  return [...FOOTER_BRAND_ONLY];
+}

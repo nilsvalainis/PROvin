@@ -7,7 +7,7 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import sharp from "sharp";
 
-import { IRISS_BRAND_ORANGE_HEX, IRISS_COMPANY_LINES } from "@/lib/iriss-brand";
+import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 import { shrinkImageBytesForIrissPdf } from "@/lib/shrink-image-for-iriss-pdf";
 
@@ -583,8 +583,9 @@ function drawFooter(ctx: Ctx) {
   const titleS = 9;
   const rowS = 7.2;
   const innerW = ctx.contentW - pad * 2 - 4;
-  const brand = IRISS_COMPANY_LINES[0] ?? "";
-  const rest = IRISS_COMPANY_LINES.slice(1);
+  const footerLines = getIrissPdfSupplierFooterLines();
+  const brand = footerLines[0] ?? "";
+  const rest = footerLines.slice(1);
   let bodyH = lineHeight(titleS) + 10;
   for (const line of rest) {
     bodyH += measureWrappedBlockHeight(line, ctx.font, rowS, innerW) + 4;

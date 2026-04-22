@@ -28,6 +28,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string; off
       headers: {
         "Content-Type": "text/html; charset=utf-8",
         "Cache-Control": pdfCache,
+        "X-Robots-Tag": "noindex, nofollow",
       },
     });
   }
@@ -48,6 +49,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string; off
       "Content-Disposition": disposition,
       "Cache-Control": pdfCache,
       Pragma: "no-cache",
+      "X-Robots-Tag": "noindex, nofollow",
     },
   });
 }
