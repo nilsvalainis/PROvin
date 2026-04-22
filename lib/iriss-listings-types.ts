@@ -54,3 +54,17 @@ export type IrissListingsStorageState =
   | { enabled: false; reason: "explicit_off" | "vercel_blob_token_missing" }
   | { enabled: true; persistence: "filesystem"; path: string }
   | { enabled: true; persistence: "vercel_blob" };
+
+export type IrissSessionHealthStatus = "ok" | "expiring_soon" | "login_required";
+
+export type IrissSessionHealthItem = {
+  platform: Exclude<IrissListingSourcePlatform, "other">;
+  status: IrissSessionHealthStatus;
+  note: string;
+  checkedAt: string;
+};
+
+export type IrissSessionHealthReport = {
+  checkedAt: string;
+  items: IrissSessionHealthItem[];
+};

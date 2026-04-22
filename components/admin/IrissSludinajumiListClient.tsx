@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import type { IrissListingAggregateItem, IrissListingsLatestView } from "@/lib/iriss-listings-types";
+import { useEffect, useMemo, useState } from "react";
+import type {
+  IrissListingAggregateItem,
+  IrissListingsLatestView,
+  IrissSessionHealthItem,
+  IrissSessionHealthReport,
+} from "@/lib/iriss-listings-types";
 
 const SOURCE_LABELS: Record<IrissListingAggregateItem["sourcePlatform"], string> = {
   mobile: "MOBILE",
@@ -43,6 +48,25 @@ function priceText(item: IrissListingAggregateItem): string {
   return "—";
 }
 
+const PLATFORM_LABELS: Record<IrissSessionHealthItem["platform"], string> = {
+  mobile: "Mobile",
+  autobid: "AutoBid",
+  openline: "Openline",
+  auto1: "Auto1",
+};
+
+function sessionHealthLabel(status: IrissSessionHealthItem["status"]): string {
+  if (status === "ok") return "OK";
+  if (status === "expiring_soon") return "drīz expirēs";
+  return "login vajadzīgs";
+}
+
+function sessionHealthClass(status: IrissSessionHealthItem["status"]): string {
+  if (status === "ok") return "bg-emerald-50 text-emerald-800 border-emerald-200/80";
+  if (status === "expiring_soon") return "bg-amber-50 text-amber-900 border-amber-200/80";
+  return "bg-red-50 text-red-900 border-red-200/80";
+}
+
 type Props = {
   latest: IrissListingsLatestView | null;
 };
@@ -52,6 +76,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
   const [hiddenImages, setHiddenImages] = useState<Record<string, true>>({});
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const [health, setHealth] = useState<IrissSessionHealthReport | null>(null);
 
   const sorted = useMemo(
     () => [...(latest?.items ?? [])].sort((a, b) => (a.aggregatedAt < b.aggregatedAt ? 1 : a.aggregatedAt > b.aggregatedAt ? -1 : 0)),
@@ -76,6 +101,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
         return;
       }
       setSyncMsg(`Nolasīšana pabeigta. Avoti: ${body.summary?.totalSources ?? 0}, OK: ${body.summary?.okCount ?? 0}.`);
+      await loadSessionHealth();
       router.refresh();
     } catch (e) {
       setSyncMsg(e instanceof Error ? e.message.slice(0, 220) : "Tīkla kļūda.");
@@ -83,6 +109,25 @@ export function IrissSludinajumiListClient({ latest }: Props) {
       setSyncBusy(false);
     }
   }
+
+  async function loadSessionHealth() {
+    try {
+      const res = await fetch("/api/admin/iriss-listings/session-health", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const body = (await res.json()) as IrissSessionHealthReport;
+      setHealth(body);
+    } catch {
+      /* non-blocking */
+    }
+  }
+
+  useEffect(() => {
+    void loadSessionHealth();
+  }, []);
 
   return (
     <div className="mt-3 space-y-3">
@@ -110,6 +155,17 @@ export function IrissSludinajumiListClient({ latest }: Props) {
           </button>
         </div>
         {syncMsg ? <p className="mt-2 text-[12px] text-[var(--color-provin-muted)]">{syncMsg}</p> : null}
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          {(health?.items ?? []).map((item) => (
+            <span
+              key={item.platform}
+              title={item.note}
+              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${sessionHealthClass(item.status)}`}
+            >
+              {PLATFORM_LABELS[item.platform]}: {sessionHealthLabel(item.status)}
+            </span>
+          ))}
+        </div>
       </section>
 
       {sorted.length === 0 ? (

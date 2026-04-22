@@ -12,6 +12,10 @@
       "maxDuration": 300,
       "memory": 1024
     },
+    "app/api/admin/iriss-listings/session-health/route.ts": {
+      "maxDuration": 60,
+      "memory": 512
+    },
     "app/api/cron/iriss-listings-daily-sync/route.ts": {
       "maxDuration": 300,
       "memory": 1024
