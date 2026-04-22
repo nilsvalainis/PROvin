@@ -41,10 +41,10 @@ function hexToRgb(hex: string): ReturnType<typeof rgb> {
 
 /** IRISS logo / HTML PDF akcents (#F26522). */
 const IRISS_ACCENT = hexToRgb(IRISS_BRAND_ORANGE_HEX);
-/** Virsraksti — slate-900 (#1E293B). */
-const INK = rgb(30 / 255, 41 / 255, 59 / 255);
-/** Sekundārais teksts — slate-600 (#475569). */
-const MUTED = rgb(71 / 255, 85 / 255, 105 / 255);
+/** Virsraksti/pamatteksts — gandrīz melns. */
+const INK = rgb(17 / 255, 24 / 255, 39 / 255);
+/** Sekundārais teksts — joprojām ļoti tumšs. */
+const MUTED = rgb(31 / 255, 41 / 255, 55 / 255);
 const CARD_FILL_SLATE = rgb(248 / 255, 250 / 255, 252 / 255);
 const CARD_BORDER_SLATE = rgb(15 / 255, 23 / 255, 42 / 255);
 const BAR_TRACK = rgb(226 / 255, 232 / 255, 240 / 255);
@@ -320,6 +320,13 @@ function drawIosCard(
     width: ctx.contentW,
     height: titleBarH,
     radius: 7,
+    color: rgb(233 / 255, 237 / 255, 243 / 255),
+  });
+  ctx.page.drawRectangle({
+    x: ctx.margin + 2,
+    y: yTitleBottom + 2,
+    width: 2,
+    height: Math.max(2, titleBarH - 4),
     color: IRISS_ACCENT,
   });
   if (!omitFrame) {
@@ -327,7 +334,7 @@ function drawIosCard(
       x: ctx.margin,
       y: yRectBottom,
       width: ctx.contentW,
-      height: h,
+      height: frameH,
       radius,
       color: t.fill,
       borderColor: t.border,
@@ -340,7 +347,7 @@ function drawIosCard(
     y: yTopCard - t.titleSize - 4,
     size: t.titleSize,
     font: ctx.fontBold,
-    color: rgb(1, 1, 1),
+    color: INK,
     tracking: LETTER_TRACKING,
   });
   ctx.y = yRectBottom + frameH - pad;

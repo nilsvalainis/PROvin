@@ -2,9 +2,9 @@ import { IRISS_BRAND_ORANGE_HEX, IRISS_COMPANY_LINES } from "@/lib/iriss-brand";
 import type { IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 /** Sekundārā virsrakstu krāsa (Tailwind slate-900 tuvinājums). */
-const INK = "#1E293B";
-/** Pamatteksts — Tailwind `text-slate-600`. */
-const SLATE_600 = "#475569";
+const INK = "#111827";
+/** PDF pamatteksts — gandrīz melns. */
+const SLATE_600 = "#1F2937";
 /** Bloku fons — Tailwind `bg-slate-50` (#F8FAFC). */
 const PANEL = "#F8FAFC";
 
@@ -148,7 +148,7 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       font-weight: 400;
       line-height: 1.5;
       letter-spacing: 0.011em;
-      color: ${SLATE_600};
+      color: ${INK};
       background: #fff;
     }
     .ipdf-root {
@@ -192,10 +192,11 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       font-weight: 900;
       letter-spacing: 0.154em;
       text-transform: uppercase;
-      color: #ffffff;
-      background: ${accent};
+      color: ${INK};
+      background: #e9edf3;
       border-radius: 8px;
-      padding: 7px 11px;
+      border-left: 3px solid ${accent};
+      padding: 7px 11px 7px 10px;
     }
     .ipdf-blk {
       margin-bottom: 18px;
@@ -347,7 +348,7 @@ function irissPrintShell(accent: string, title: string, body: string): string {
     @media (max-width: 560px) { .ipdf-gallery { grid-template-columns: 1fr; } }
     .ipdf-photo { margin: 0; border: none; border-radius: 10px; overflow: hidden; background: #f1f5f9; page-break-inside: avoid; box-shadow: none; }
     .ipdf-photo img { display: block; width: 100%; height: auto; max-height: 220px; object-fit: cover; }
-    .ipdf-meta { margin: 0; font-size: 0.68rem; font-weight: 300; color: ${SLATE_600}; line-height: 1.45; }
+    .ipdf-meta { margin: 0; font-size: 0.68rem; font-weight: 500; color: ${INK}; line-height: 1.45; letter-spacing: 0.011em; }
     .ipdf-footer { margin-top: 26px; }
     .ipdf-footer-card {
       position: relative;
@@ -376,9 +377,9 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       line-height: 1.45;
       align-items: baseline;
     }
-    .ipdf-ft-k { font-weight: 700; color: #64748b; flex: 0 0 auto; min-width: 5.5rem; letter-spacing: 0.011em; }
-    .ipdf-ft-v { font-weight: 400; color: ${SLATE_600}; flex: 1 1 12rem; letter-spacing: 0.011em; }
-    .ipdf-ft-plain { margin: 0; font-size: 0.62rem; font-weight: 400; color: ${SLATE_600}; line-height: 1.45; letter-spacing: 0.011em; }
+    .ipdf-ft-k { font-weight: 700; color: ${INK}; flex: 0 0 auto; min-width: 5.5rem; letter-spacing: 0.011em; }
+    .ipdf-ft-v { font-weight: 500; color: ${INK}; flex: 1 1 12rem; letter-spacing: 0.011em; }
+    .ipdf-ft-plain { margin: 0; font-size: 0.62rem; font-weight: 500; color: ${INK}; line-height: 1.45; letter-spacing: 0.011em; }
   `;
 
   const fontLink = `<link rel="preconnect" href="https://fonts.googleapis.com"/>
