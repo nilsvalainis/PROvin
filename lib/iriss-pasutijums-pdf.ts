@@ -838,39 +838,31 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
   pushP("Maks. nobraukums", record.maxMileage);
   pushP("Transmisija", record.transmission);
   pushP("Dzinēja tips", record.engineType);
-  if (pamatLines.length) {
-    drawIosCard(
-      ctx,
-      "Pamatinformācija",
-      (iw) => measureColonLabeledLinesHeight(pamatLines, 10, iw, ctx),
-      ({ x, w }) => {
-        for (const ln of pamatLines) drawColonLabeledLine(ctx, ln, 10, x, w);
-      },
-    );
-  }
 
-  const vehLines: string[] = [];
-  const pushV = (label: string, s: string | undefined) => {
+  const specLines: string[] = [];
+  const bm = val(record.brandModel);
+  if (bm) specLines.push(`Marka / modelis: ${bm}`);
+  specLines.push(...pamatLines);
+  const pushSpec = (label: string, s: string | undefined) => {
     const v = val(s);
-    if (v) vehLines.push(`${label}: ${v}`);
+    if (v) specLines.push(`${label}: ${v}`);
   };
-  pushV("Marka / modelis", record.brandModel);
-  pushV("Kopējais budžets", record.totalBudget);
-  pushV("Vēlamās krāsas", record.preferredColors);
-  pushV("Nevēlamās krāsas", record.nonPreferredColors);
-  pushV("Salona apdare", record.interiorFinish);
+  pushSpec("Kopējais budžets", record.totalBudget);
+  pushSpec("Vēlamās krāsas", record.preferredColors);
+  pushSpec("Nevēlamās krāsas", record.nonPreferredColors);
+  pushSpec("Salona apdare", record.interiorFinish);
   const selectedDealDetails = selectedDealDetailLabels(record);
   if (selectedDealDetails.length) {
-    vehLines.push("Darījuma detaļas:");
-    for (const label of selectedDealDetails) vehLines.push(`${label}: Jā`);
+    specLines.push("Darījuma detaļas:");
+    for (const label of selectedDealDetails) specLines.push(`${label}: Jā`);
   }
-  if (vehLines.length) {
+  if (specLines.length) {
     drawIosCard(
       ctx,
       "Transportlīdzekļa specifikācija",
-      (iw) => measureColonLabeledLinesHeight(vehLines, 10, iw, ctx),
+      (iw) => measureColonLabeledLinesHeight(specLines, 10, iw, ctx),
       ({ x, w }) => {
-        for (const ln of vehLines) drawColonLabeledLine(ctx, ln, 10, x, w);
+        for (const ln of specLines) drawColonLabeledLine(ctx, ln, 10, x, w);
       },
     );
   }
@@ -901,30 +893,6 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
       "Piezīmes",
       (iw) => measureWrappedBlockHeight(n, ctx.font, 10, iw),
       ({ x, w }) => drawParagraph(ctx, n, 10, INK, ctx.font, { x, maxW: w }),
-    );
-  }
-
-  const links: string[] = [];
-  const pushL = (label: string, s: string | undefined) => {
-    const t = val(s);
-    if (t) links.push(`${label}: ${t}`);
-  };
-  pushL("Mobile", record.listingLinkMobile);
-  pushL("Autobid", record.listingLinkAutobid);
-  pushL("Openline", record.listingLinkOpenline);
-  pushL("Auto1", record.listingLinkAuto1);
-  for (let i = 0; i < record.listingLinksOther.length; i++) {
-    const t = val(record.listingLinksOther[i]);
-    if (t) links.push(`Cits ${i + 1}: ${t}`);
-  }
-  if (links.length) {
-    drawIosCard(
-      ctx,
-      "Sludinājumu saites",
-      (iw) => measureColonLabeledLinesHeight(links, 9, iw, ctx),
-      ({ x, w }) => {
-        for (const ln of links) drawColonLabeledLine(ctx, ln, 9, x, w);
-      },
     );
   }
 

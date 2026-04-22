@@ -426,13 +426,14 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
       infoTile("Dzinēja tips", record.engineType),
   );
 
-  const vehicleRows =
-    rowIf("Marka / modelis", record.brandModel) +
+  const markaRows = rowIf("Marka / modelis", record.brandModel);
+  const markaTable = wrapTable(markaRows);
+  const specRestRows =
     rowIf("Kopējais budžets", record.totalBudget) +
     rowIf("Vēlamās krāsas", record.preferredColors) +
     rowIf("Nevēlamās krāsas", record.nonPreferredColors) +
     rowIf("Salona apdare", record.interiorFinish);
-  const vehicleTable = wrapTable(vehicleRows);
+  const specRestTable = wrapTable(specRestRows);
   const selectedDealDetails = selectedDealDetailLabels(record);
   const dealDetailRows = selectedDealDetails
     .map((label) => `<tr><th>${esc(label)}</th><td>Jā</td></tr>`)
@@ -440,7 +441,17 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
   const dealDetailsInner = selectedDealDetails.length
     ? `<div class="ipdf-card" style="margin-top:10px"><h3>Darījuma detaļas</h3><table class="ipdf-kv">${dealDetailRows}</table></div>`
     : "";
-  const vehicleInner = [vehicleTable, dealDetailsInner].filter(Boolean).join("");
+  const pamatAfterMarka =
+    pamat.trim() === ""
+      ? ""
+      : `<div style="margin-top:${markaTable ? "10px" : "0"}">${pamat}</div>`;
+  const specRestHtml =
+    specRestTable === ""
+      ? ""
+      : `<div style="margin-top:${markaTable || pamat.trim() ? "10px" : "0"}">${specRestTable}</div>`;
+  const mergedVehicleSpecInner = [markaTable, pamatAfterMarka, specRestHtml, dealDetailsInner]
+    .filter((s) => s.trim())
+    .join("");
 
   const req = record.equipmentRequired.trim();
   const des = record.equipmentDesired.trim();
@@ -455,29 +466,11 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
 
   const notes = record.notes.trim() ? `<div class="ipdf-notes"><pre>${esc(record.notes.trim())}</pre></div>` : "";
 
-  const linkRows: string[] = [];
-  const pushL = (label: string, v: string) => {
-    const t = v.trim();
-    if (t) linkRows.push(`${esc(label)}: ${esc(t)}`);
-  };
-  pushL("Mobile", record.listingLinkMobile);
-  pushL("Autobid", record.listingLinkAutobid);
-  pushL("Openline", record.listingLinkOpenline);
-  pushL("Auto1", record.listingLinkAuto1);
-  for (let i = 0; i < record.listingLinksOther.length; i++) {
-    const t = record.listingLinksOther[i]?.trim();
-    if (t) linkRows.push(`${esc(`Cits ${i + 1}`)}: ${esc(t)}`);
-  }
-  const linksInner = linkRows.length ? `<p class="ipdf-meta">${linkRows.join("<br/>")}</p>` : "";
-
-  const pamatBlock = pamat.trim() ? blockIf("Pamatinformācija", pamat) : "";
   const body = `${header}
     ${blockIf("Klienta dati", clientTable)}
-    ${pamatBlock}
-    ${vehicleInner.trim() ? blockIf("Transportlīdzekļa specifikācija", vehicleInner) : ""}
+    ${mergedVehicleSpecInner.trim() ? blockIf("Transportlīdzekļa specifikācija", mergedVehicleSpecInner) : ""}
     ${blockIf("Aprīkojums", equip)}
     ${blockIf("Piezīmes", notes)}
-    ${blockIf("Sludinājumu saites", linksInner)}
     ${buildIrissPrintFooterHtml(accent)}`;
 
   return irissPrintShell(accent, "PASŪTĪJUMS", body);
