@@ -1219,22 +1219,20 @@ export function IrissPasutijumsEditor({
         <section className={shellCard}>
           <BlockTitle>Klienta dati</BlockTitle>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <LabeledInput
-                label="Vārds + Uzvārds"
-                value={[rec.clientFirstName, rec.clientLastName].filter(Boolean).join(" ").trim()}
-                onChange={(e) => {
-                  const normalized = e.target.value.replace(/\s+/g, " ").trim();
-                  if (!normalized) {
-                    patchRecord({ clientFirstName: "", clientLastName: "" });
-                    return;
-                  }
-                  const [first, ...rest] = normalized.split(" ");
-                  patchRecord({ clientFirstName: first ?? "", clientLastName: rest.join(" ") });
-                }}
-                autoComplete="name"
-              />
-            </div>
+            <LabeledInput
+              label="Vārds, uzvārds"
+              value={[rec.clientFirstName, rec.clientLastName].filter(Boolean).join(" ").trim()}
+              onChange={(e) => {
+                const normalized = e.target.value.replace(/\s+/g, " ").trim();
+                if (!normalized) {
+                  patchRecord({ clientFirstName: "", clientLastName: "" });
+                  return;
+                }
+                const [first, ...rest] = normalized.split(" ");
+                patchRecord({ clientFirstName: first ?? "", clientLastName: rest.join(" ") });
+              }}
+              autoComplete="name"
+            />
             <label className="block min-w-0">
               <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Tālrunis</span>
               <div className="flex min-w-0 items-center gap-1.5">
