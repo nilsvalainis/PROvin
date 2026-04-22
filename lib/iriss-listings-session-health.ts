@@ -46,7 +46,7 @@ function statusForPlatform(
     status = "login_required";
     note =
       platform === "mobile"
-        ? "Nav Mobile.de sesijas: izveido `.data/browser-profiles/mobile` ar `npm run auth:mobile` vai iestatiet COOKIE / LOGIN_*."
+        ? "Nav Mobile.de sesijas: izveido `.data/browser-profiles/mobile` ar `npm run auth:persistent-mobile` vai iestatiet COOKIE / LOGIN_*."
         : "Nav iestatīts AUTH_HEADER/COOKIE vai LOGIN_* parametri šai platformai.";
   } else if (hasLoginRequired) {
     status = "login_required";
