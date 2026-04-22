@@ -1,5 +1,5 @@
 /**
- * Palaiž Chromium ar Playwright persistent kontekstu Mobile.de pieslēgšanai.
+ * Palaiž **Google Chrome** (`/Applications/.../Google Chrome`) ar Playwright persistent kontekstu.
  * Pēc manuālās pierakstīšanās (piem. Google + 2FA) aizver pārlūka logu — sesija paliek
  * `.data/browser-profiles/mobile` (gitignored caur `.data/`).
  */
@@ -15,6 +15,10 @@ const MOBILE_DE_PLAYWRIGHT_USER_AGENT =
 
 const MOBILE_DE_PLAYWRIGHT_EXTRA_ARGS = ["--disable-blink-features=AutomationControlled"];
 
+/** macOS: sistēmas Google Chrome (Playwright pēc noklusējuma lieto savu Chromium). */
+const GOOGLE_CHROME_EXECUTABLE =
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+
 chromium.use(StealthPlugin());
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -26,6 +30,7 @@ await mkdir(userDataDir, { recursive: true });
 
 const context = await chromium.launchPersistentContext(userDataDir, {
   headless: false,
+  executablePath: GOOGLE_CHROME_EXECUTABLE,
   viewport: { width: 1280, height: 900 },
   locale: "de-DE",
   userAgent: MOBILE_DE_PLAYWRIGHT_USER_AGENT,
