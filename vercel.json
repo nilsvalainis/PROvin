@@ -8,6 +8,10 @@
       "maxDuration": 120,
       "memory": 1024
     },
+    "app/api/admin/iriss-listings/sync-now/route.ts": {
+      "maxDuration": 300,
+      "memory": 1024
+    },
     "app/api/cron/iriss-listings-daily-sync/route.ts": {
       "maxDuration": 300,
       "memory": 1024

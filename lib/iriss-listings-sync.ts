@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { writeIrissListingsRun } from "@/lib/iriss-listings-aggregate-store";
+import { readIrissListingsLatestView, writeIrissListingsRun } from "@/lib/iriss-listings-aggregate-store";
 import { detectPlatformFromUrl, scrapeIrissListing } from "@/lib/iriss-listings-adapters";
 import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
 import type {
@@ -89,6 +89,30 @@ function makeItemId(src: ListingSource): string {
   return createHash("sha1").update(src.orderId).update("|").update(src.sourceUrl).digest("hex").slice(0, 20);
 }
 
+function mergeWithPreviousSnapshot(
+  next: IrissListingAggregateItem,
+  prev: IrissListingAggregateItem | null,
+): IrissListingAggregateItem {
+  if (!prev) return next;
+  const usePrevText = next.status !== "ok" || (!next.title && !next.year);
+  const usePrevImage = !next.imageUrl;
+  const usePrevPrice = !next.pricePrimary && !next.priceSecondary;
+  const merged: IrissListingAggregateItem = {
+    ...next,
+    title: usePrevText ? next.title || prev.title : next.title,
+    year: usePrevText ? next.year || prev.year : next.year,
+    imageUrl: usePrevImage ? prev.imageUrl : next.imageUrl,
+    pricePrimary: usePrevPrice ? prev.pricePrimary : next.pricePrimary,
+    priceSecondary: usePrevPrice ? prev.priceSecondary : next.priceSecondary,
+  };
+  if (next.status !== "ok" && prev.status === "ok") {
+    merged.statusNote = merged.statusNote
+      ? `${merged.statusNote} Rādām pēdējo veiksmīgo snapshot.`
+      : "Rādām pēdējo veiksmīgo snapshot.";
+  }
+  return merged;
+}
+
 export async function runIrissListingsDailySync(): Promise<{
   ok: boolean;
   warnings: string[];
@@ -98,6 +122,8 @@ export async function runIrissListingsDailySync(): Promise<{
   const startedAt = new Date().toISOString();
   const runId = `run-${startedAt.replace(/[:.]/g, "-")}`;
   const warnings: string[] = [];
+  const previous = await readIrissListingsLatestView();
+  const previousById = new Map((previous?.items ?? []).map((item) => [item.id, item]));
   const rows = await listIrissPasutijumi();
   const allSources = dedupeSources(rows.flatMap(buildSourcesFromOrder));
   const maxSources = Math.max(1, Number.parseInt(process.env.IRISS_LISTINGS_MAX_SOURCES_PER_RUN ?? "800", 10) || 800);
@@ -113,8 +139,9 @@ export async function runIrissListingsDailySync(): Promise<{
       platformHint: src.sourcePlatform,
     });
     const aggregatedAt = new Date(Date.now() - idx).toISOString();
-    items.push({
-      id: makeItemId(src),
+    const itemId = makeItemId(src);
+    const nextItem: IrissListingAggregateItem = {
+      id: itemId,
       aggregatedAt,
       sourcePlatform: src.sourcePlatform,
       sourceUrl: src.sourceUrl,
@@ -129,7 +156,8 @@ export async function runIrissListingsDailySync(): Promise<{
       rawSnapshotRef: `${runId}:${scraped.rawSnapshotRef}`,
       status: scraped.status,
       statusNote: scraped.statusNote,
-    });
+    };
+    items.push(mergeWithPreviousSnapshot(nextItem, previousById.get(itemId) ?? null));
   }
 
   const finishedAt = new Date().toISOString();

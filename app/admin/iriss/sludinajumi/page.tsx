@@ -27,16 +27,7 @@ export default async function IrissSludinajumiPage() {
         </section>
       ) : null}
 
-      {storage.enabled && latest ? <IrissSludinajumiListClient latest={latest} /> : null}
-
-      {storage.enabled && !latest ? (
-        <section className="mt-4 rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-12 text-center shadow-sm">
-          <p className="font-medium text-black">Vēl nav nolasītu ierakstu</p>
-          <p className="mt-2 text-sm text-black">
-            Ieraksti šeit parādīsies pēc pirmās ikdienas sinhronizācijas (`/api/cron/iriss-listings-daily-sync`).
-          </p>
-        </section>
-      ) : null}
+      {storage.enabled ? <IrissSludinajumiListClient latest={latest} /> : null}
     </div>
   );
 }

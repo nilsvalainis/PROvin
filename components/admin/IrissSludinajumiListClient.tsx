@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { IrissListingAggregateItem, IrissListingsLatestView } from "@/lib/iriss-listings-types";
 
@@ -43,39 +44,79 @@ function priceText(item: IrissListingAggregateItem): string {
 }
 
 type Props = {
-  latest: IrissListingsLatestView;
+  latest: IrissListingsLatestView | null;
 };
 
 export function IrissSludinajumiListClient({ latest }: Props) {
+  const router = useRouter();
   const [hiddenImages, setHiddenImages] = useState<Record<string, true>>({});
+  const [syncBusy, setSyncBusy] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
 
   const sorted = useMemo(
-    () =>
-      [...latest.items].sort((a, b) => (a.aggregatedAt < b.aggregatedAt ? 1 : a.aggregatedAt > b.aggregatedAt ? -1 : 0)),
-    [latest.items],
+    () => [...(latest?.items ?? [])].sort((a, b) => (a.aggregatedAt < b.aggregatedAt ? 1 : a.aggregatedAt > b.aggregatedAt ? -1 : 0)),
+    [latest?.items],
   );
+
+  async function syncNow() {
+    if (syncBusy) return;
+    setSyncBusy(true);
+    setSyncMsg(null);
+    try {
+      const res = await fetch("/api/admin/iriss-listings/sync-now", {
+        method: "POST",
+        credentials: "include",
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        summary?: { totalSources?: number; okCount?: number };
+      };
+      if (!res.ok) {
+        setSyncMsg(body.error ? `Nolasīšana neizdevās: ${body.error}` : "Nolasīšana neizdevās.");
+        return;
+      }
+      setSyncMsg(`Nolasīšana pabeigta. Avoti: ${body.summary?.totalSources ?? 0}, OK: ${body.summary?.okCount ?? 0}.`);
+      router.refresh();
+    } catch (e) {
+      setSyncMsg(e instanceof Error ? e.message.slice(0, 220) : "Tīkla kļūda.");
+    } finally {
+      setSyncBusy(false);
+    }
+  }
 
   return (
     <div className="mt-3 space-y-3">
       <section className="rounded-2xl border border-[#E5E7EB] bg-white px-4 py-3 shadow-sm">
-        <div className="flex flex-wrap items-center gap-2 text-[12px] text-[var(--color-provin-muted)] sm:text-[13px]">
-          <span>
-            Pēdējā sinhronizācija: <span className="font-semibold text-[var(--color-apple-text)]">{latest.summary.finishedAt}</span>
-          </span>
-          <span className="text-slate-300">•</span>
-          <span>Kopā avoti: {latest.summary.totalSources}</span>
-          <span className="text-slate-300">•</span>
-          <span>OK: {latest.summary.okCount}</span>
-          <span className="text-slate-300">•</span>
-          <span>Login: {latest.summary.loginRequiredCount}</span>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2 text-[12px] text-[var(--color-provin-muted)] sm:text-[13px]">
+            <span>
+              Pēdējā sinhronizācija:{" "}
+              <span className="font-semibold text-[var(--color-apple-text)]">{latest?.summary.finishedAt ?? "nav veikta"}</span>
+            </span>
+            <span className="text-slate-300">•</span>
+            <span>Kopā avoti: {latest?.summary.totalSources ?? 0}</span>
+            <span className="text-slate-300">•</span>
+            <span>OK: {latest?.summary.okCount ?? 0}</span>
+            <span className="text-slate-300">•</span>
+            <span>Login: {latest?.summary.loginRequiredCount ?? 0}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => void syncNow()}
+            disabled={syncBusy}
+            className="inline-flex min-h-10 items-center rounded-full border border-[var(--color-provin-accent)] bg-white px-3.5 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent)]/8 disabled:opacity-55"
+          >
+            {syncBusy ? "Nolasa..." : "Nolasīt tagad"}
+          </button>
         </div>
+        {syncMsg ? <p className="mt-2 text-[12px] text-[var(--color-provin-muted)]">{syncMsg}</p> : null}
       </section>
 
       {sorted.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-10 text-center shadow-sm">
           <p className="text-sm font-medium text-black">Nav nolasītu sludinājumu ierakstu</p>
           <p className="mt-1.5 text-[12px] text-[var(--color-provin-muted)]">
-            Ieraksti parādīsies pēc ikdienas cron sinhronizācijas.
+            Spied “Nolasīt tagad”, lai ievāktu datus uzreiz, vai sagaidi ikdienas cron sinhronizāciju.
           </p>
         </section>
       ) : null}
