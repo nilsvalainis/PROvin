@@ -88,6 +88,7 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
   if (!body || typeof body !== "object") return null;
   const o = body as Record<string, unknown>;
   const str = (k: string) => (typeof o[k] === "string" ? o[k] : "");
+  const bool = (k: string) => Boolean(o[k]);
   return {
     id,
     createdAt: str("createdAt"),
@@ -107,6 +108,12 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
     preferredColors: str("preferredColors"),
     nonPreferredColors: str("nonPreferredColors"),
     interiorFinish: str("interiorFinish"),
+    dealLeasingOrCredit: bool("dealLeasingOrCredit"),
+    dealClientFinancing100: bool("dealClientFinancing100"),
+    dealClientFinancing20: bool("dealClientFinancing20"),
+    dealVat21Required: bool("dealVat21Required"),
+    dealServiceStartDeposit: bool("dealServiceStartDeposit"),
+    dealEkki: bool("dealEkki"),
     equipmentRequired: str("equipmentRequired"),
     equipmentDesired: str("equipmentDesired"),
     notes: str("notes"),

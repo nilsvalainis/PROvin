@@ -1,5 +1,5 @@
 import { IRISS_BRAND_ORANGE_HEX, IRISS_COMPANY_LINES } from "@/lib/iriss-brand";
-import type { IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 /** Sekundārā virsrakstu krāsa (Tailwind slate-900 tuvinājums). */
 const INK = "#111827";
@@ -133,6 +133,10 @@ function infoGrid4(tiles: string): string {
   const t = tiles.trim();
   if (!t) return "";
   return `<div class="ipdf-grid4">${t}</div>`;
+}
+
+function selectedDealDetailLabels(record: IrissPasutijumsRecord): string[] {
+  return IRISS_DEAL_DETAIL_OPTIONS.filter((opt) => Boolean(record[opt.key])).map((opt) => opt.label);
 }
 
 function irissPrintShell(accent: string, title: string, body: string): string {
@@ -429,6 +433,14 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
     rowIf("Nevēlamās krāsas", record.nonPreferredColors) +
     rowIf("Salona apdare", record.interiorFinish);
   const vehicleTable = wrapTable(vehicleRows);
+  const selectedDealDetails = selectedDealDetailLabels(record);
+  const dealDetailRows = selectedDealDetails
+    .map((label) => `<tr><th>${esc(label)}</th><td>Jā</td></tr>`)
+    .join("");
+  const dealDetailsInner = selectedDealDetails.length
+    ? `<div class="ipdf-card" style="margin-top:10px"><h3>Darījuma detaļas</h3><table class="ipdf-kv">${dealDetailRows}</table></div>`
+    : "";
+  const vehicleInner = [vehicleTable, dealDetailsInner].filter(Boolean).join("");
 
   const req = record.equipmentRequired.trim();
   const des = record.equipmentDesired.trim();
@@ -462,7 +474,7 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
   const body = `${header}
     ${blockIf("Klienta dati", clientTable)}
     ${pamatBlock}
-    ${vehicleTable.trim() ? blockIf("Transportlīdzekļa specifikācija", vehicleTable) : ""}
+    ${vehicleInner.trim() ? blockIf("Transportlīdzekļa specifikācija", vehicleInner) : ""}
     ${blockIf("Aprīkojums", equip)}
     ${blockIf("Piezīmes", notes)}
     ${blockIf("Sludinājumu saites", linksInner)}

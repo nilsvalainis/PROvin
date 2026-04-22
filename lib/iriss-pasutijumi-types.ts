@@ -68,6 +68,13 @@ export type IrissPasutijumsRecord = {
   preferredColors: string;
   nonPreferredColors: string;
   interiorFinish: string;
+  /** Darījuma detaļas — PDF attēlo tikai ieķeksētos (vērtība "Jā"). */
+  dealLeasingOrCredit: boolean;
+  dealClientFinancing100: boolean;
+  dealClientFinancing20: boolean;
+  dealVat21Required: boolean;
+  dealServiceStartDeposit: boolean;
+  dealEkki: boolean;
   equipmentRequired: string;
   equipmentDesired: string;
   notes: string;
@@ -100,6 +107,15 @@ export type IrissPasutijumsListRow = {
 /** Saraksta kārtība (Blob/FS JSON) — piespraustie un pārējie atsevišķi. */
 export type IrissPasutijumiListOrder = { pinnedOrder: string[]; unpinnedOrder: string[] };
 
+export const IRISS_DEAL_DETAIL_OPTIONS = [
+  { key: "dealLeasingOrCredit", label: "Līzings, kredīts" },
+  { key: "dealClientFinancing100", label: "Klienta finansējums 100%" },
+  { key: "dealClientFinancing20", label: "Klienta finansējums 20%" },
+  { key: "dealVat21Required", label: "Obligāta cena ar PVN 21%" },
+  { key: "dealServiceStartDeposit", label: "Depozīts (pakalpojuma uzsākšanai)" },
+  { key: "dealEkki", label: "EKKI" },
+] as const satisfies ReadonlyArray<{ key: keyof IrissPasutijumsRecord; label: string }>;
+
 export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijumsRecord {
   const d = nowIso.slice(0, 10);
   return {
@@ -121,6 +137,12 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     preferredColors: "",
     nonPreferredColors: "",
     interiorFinish: "",
+    dealLeasingOrCredit: false,
+    dealClientFinancing100: false,
+    dealClientFinancing20: false,
+    dealVat21Required: false,
+    dealServiceStartDeposit: false,
+    dealEkki: false,
     equipmentRequired: "",
     equipmentDesired: "",
     notes: "",

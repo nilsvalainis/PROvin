@@ -8,7 +8,7 @@ import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf
 import sharp from "sharp";
 
 import { IRISS_BRAND_ORANGE_HEX, IRISS_COMPANY_LINES } from "@/lib/iriss-brand";
-import type { IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 import { shrinkImageBytesForIrissPdf } from "@/lib/shrink-image-for-iriss-pdf";
 
 const INTER_REG_PATH = path.join(process.cwd(), "public", "fonts", "invoice-inter", "Inter-Regular.ttf");
@@ -459,6 +459,10 @@ function parseMoney(value: string | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+function selectedDealDetailLabels(record: IrissPasutijumsRecord): string[] {
+  return IRISS_DEAL_DETAIL_OPTIONS.filter((opt) => Boolean(record[opt.key])).map((opt) => opt.label);
+}
+
 const MAX_IMAGE_DATAURL_BASE64_CHARS = 1_800_000;
 const MAX_RAW_IMAGE_BYTES = 1_200_000;
 
@@ -855,6 +859,11 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
   pushV("Vēlamās krāsas", record.preferredColors);
   pushV("Nevēlamās krāsas", record.nonPreferredColors);
   pushV("Salona apdare", record.interiorFinish);
+  const selectedDealDetails = selectedDealDetailLabels(record);
+  if (selectedDealDetails.length) {
+    vehLines.push("Darījuma detaļas:");
+    for (const label of selectedDealDetails) vehLines.push(`${label}: Jā`);
+  }
   if (vehLines.length) {
     drawIosCard(
       ctx,

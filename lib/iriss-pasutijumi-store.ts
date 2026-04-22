@@ -239,6 +239,7 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
   if (!raw || typeof raw !== "object") return null;
   const o = deepSanitizeDraftStrings(raw) as Record<string, unknown>;
   const str = (k: string) => (typeof o[k] === "string" ? (o[k] as string) : "");
+  const bool = (k: string) => Boolean(o[k]);
   if (str("id") !== id) return null;
   const base = emptyIrissPasutijums(id, new Date().toISOString());
   return {
@@ -261,6 +262,12 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     preferredColors: sanitizeDraftTextForStorage(str("preferredColors"), 400),
     nonPreferredColors: sanitizeDraftTextForStorage(str("nonPreferredColors"), 400),
     interiorFinish: sanitizeDraftTextForStorage(str("interiorFinish"), 400),
+    dealLeasingOrCredit: bool("dealLeasingOrCredit"),
+    dealClientFinancing100: bool("dealClientFinancing100"),
+    dealClientFinancing20: bool("dealClientFinancing20"),
+    dealVat21Required: bool("dealVat21Required"),
+    dealServiceStartDeposit: bool("dealServiceStartDeposit"),
+    dealEkki: bool("dealEkki"),
     equipmentRequired: sanitizeDraftTextForStorage(str("equipmentRequired")),
     equipmentDesired: sanitizeDraftTextForStorage(str("equipmentDesired")),
     notes: sanitizeDraftTextForStorage(str("notes")),

@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import {
+  IRISS_DEAL_DETAIL_OPTIONS,
   IRISS_MAX_OFFER_ATTACHMENTS,
   type IrissOfferAttachment,
   type IrissOfferRecord,
@@ -1173,6 +1174,23 @@ export function IrissPasutijumsEditor({
                 value={rec.interiorFinish}
                 onChange={(e) => patch("interiorFinish", e.target.value)}
               />
+            </div>
+            <div className="sm:col-span-2">
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
+                Darījuma detaļas
+              </p>
+              <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                {IRISS_DEAL_DETAIL_OPTIONS.map((opt) => (
+                  <label key={opt.key} className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(rec[opt.key])}
+                      onChange={(e) => patch(opt.key, e.target.checked)}
+                    />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         </section>
