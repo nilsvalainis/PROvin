@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Mercedes-Benz">
+  <circle cx="128" cy="128" r="120" fill="#fff" stroke="#111827" stroke-width="12" />
+  <circle cx="128" cy="128" r="86" fill="none" stroke="#111827" stroke-width="8" />
+  <path d="M128 50l10 79h-20zM61 167l71-36-9 18zM195 167l-62-18 9-18z" fill="#111827" />
+</svg>

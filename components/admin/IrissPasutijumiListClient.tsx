@@ -18,8 +18,8 @@ const BRAND_ICON_SLUGS: Record<string, string> = {
   vw: "volkswagen",
   audi: "audi",
   bmw: "bmw",
-  mercedes: "mercedesbenz",
-  "mercedes-benz": "mercedesbenz",
+  mercedes: "/brand-logos/mercedes.svg",
+  "mercedes-benz": "/brand-logos/mercedes.svg",
   toyota: "toyota",
   skoda: "skoda",
   ford: "ford",
@@ -94,6 +94,7 @@ function getBrandLogoUrl(brandModel: string): string | null {
   if (!token) return null;
   const slug = BRAND_ICON_SLUGS[token];
   if (!slug) return null;
+  if (slug.startsWith("/")) return slug;
   return `https://cdn.simpleicons.org/${slug}/111827`;
 }
 
