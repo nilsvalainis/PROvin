@@ -223,7 +223,8 @@ function measureLinesHeight(lines: string[], font: PDFFont, size: number, maxW: 
 
 /** Pēc kolona liek vienu atstarpi pirms vērtības; neskar `https://` utml. */
 function normalizeInterLabelColonSpacing(line: string): string {
-  return line.replace(/:(?!\s|\/\/)([^\s])/g, ": $1");
+  const withGap = line.replace(/:(?!\s)(?!\/\/)([^\s])/g, ": $1");
+  return withGap.replace(/: +/g, ": ");
 }
 
 function splitColonLabelValue(line: string): { kind: "kv"; label: string; value: string } | { kind: "plain"; text: string } {
@@ -277,7 +278,8 @@ function drawColonLabeledLine(ctx: Ctx, line: string, size: number, x: number, m
     ctx.y -= lh;
     return;
   }
-  drawTrackedText(ctx.page, p.label, { x, y: yb, size, font: ctx.fontBold, color });
+  /* Garas etiķetes: vērtība nākamajā rindā — pirmā rinda beidzas ar „: ”, lai nav „:Jā”. */
+  drawTrackedText(ctx.page, labWithSp, { x, y: yb, size, font: ctx.fontBold, color });
   ctx.y -= lh;
   for (const ln of wrapText(p.value, ctx.font, size, maxW)) {
     drawTrackedText(ctx.page, ln, { x, y: ctx.y - size, size, font: ctx.font, color });
