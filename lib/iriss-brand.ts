@@ -1,6 +1,15 @@
-/** Dzintarzeme Auto / IRISS admin un PDF — oranžā akcenta krāsa (ne PROVIN zilā). */
+import "server-only";
+
+/**
+ * Tikai **SIA IRISS / Dzintarzeme Auto** piedāvājuma PDF un drukas HTML (`iriss-pasutijums-pdf*`).
+ *
+ * **Nav** PROVIN publiskās vietnes, kājenes, JSON-LD vai Stripe saskares daļa — `Smilšu 19` un pārējās
+ * IRISS rindiņas nedrīkst importēt no mārketinga lapām, layout vai `getCompanyLegal()` plūsmām.
+ * PROVIN juridiskā adrese: `lib/company.ts` → `NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS` (noklusējums Jana iela 3…).
+ */
 export const IRISS_BRAND_ORANGE_HEX = "#F26522";
 
+/** IRISS PDF kājenes rekvizīti — tikai servera PDF/HTML ģenerēšanai. */
 export const IRISS_COMPANY_LINES = [
   "SIA IRISS",
   "Reģ. nr.: LV59202001191",

@@ -14,6 +14,7 @@ export type CompanyLegal = {
 
 const FALLBACK_COMPANY_LEGAL_NAME = "Nils Valainis";
 const FALLBACK_COMPANY_REG_NO = "09118711109";
+/** PROVIN.LV juridiskā adrese (saskan ar Stripe / distances līgumu); nav saistīta ar IRISS PDF rekvizītiem `lib/iriss-brand.ts`. */
 const FALLBACK_COMPANY_LEGAL_ADDRESS = "Jana iela 3, Tukums, LV3101, Latvija";
 
 export function getCompanyLegal(): CompanyLegal {
