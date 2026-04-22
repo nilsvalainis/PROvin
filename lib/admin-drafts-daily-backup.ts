@@ -1,6 +1,7 @@
 import "server-only";
 
 import { get, list, put } from "@vercel/blob";
+import type { Dirent } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -40,7 +41,7 @@ function isTmpPath(p: string): boolean {
 async function readJsonFilesFromDir(dir: string): Promise<Map<string, string>> {
   const out = new Map<string, string>();
   async function walk(cur: string, relBase = ""): Promise<void> {
-    let entries: Awaited<ReturnType<typeof fs.readdir>>;
+    let entries: Dirent<string>[];
     try {
       entries = await fs.readdir(cur, { withFileTypes: true });
     } catch {
