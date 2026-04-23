@@ -7,6 +7,7 @@ import { chromium } from "playwright";
 import { fetchUrlHtmlWithMobilePersistentProfile, hasUsableMobilePersistentProfile } from "@/lib/iriss-listings-mobile-persistent-fetch";
 
 export type IrissSessionPlatform = "mobile" | "autobid" | "openline" | "auto1";
+const PUBLIC_NOLOGIN_PLATFORMS = new Set<IrissSessionPlatform>(["autobid", "openline"]);
 
 const SESSION_DIR = ".data/iriss-listings-sessions";
 const LOGIN_HINT_RE =
@@ -86,7 +87,7 @@ function cookieHeaderFromSession(url: URL, session: SessionFile | null): string 
 
 /** Kopīgs „login lapa?” tests — lieto arī Mobile persistent fetch. */
 export function irissListingsIsLoginWall(statusCode: number, html: string): boolean {
-  if (statusCode === 401 || statusCode === 403) return true;
+  if (statusCode === 401) return true;
   const tiny = html.slice(0, 12000).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
   if (!LOGIN_HINT_RE.test(tiny)) return false;
   return /password|passwort|parole/i.test(tiny);
@@ -188,6 +189,10 @@ export async function ensurePlatformSession(platform: IrissSessionPlatform, prob
   if (initial.ok) return { ok: true, note: "session_ok" };
 
   const cfg = requiredLoginConfig(platform);
+  if (PUBLIC_NOLOGIN_PLATFORMS.has(platform) && !cfg.loginUrl && !cfg.username && !cfg.password) {
+    if (initial.note === "login_required") return { ok: false, note: initial.note };
+    return { ok: true, note: `public_best_effort:${initial.note || "probe_not_ok"}` };
+  }
   if (!cfg.loginUrl || !cfg.username || !cfg.password) {
     return { ok: false, note: "login_required_missing_credentials" };
   }

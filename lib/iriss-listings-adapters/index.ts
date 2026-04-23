@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
+import { fetchUrlHtmlWithStealthBrowser } from "@/lib/iriss-listings-browser-fallback-fetch";
 import { fetchUrlHtmlWithMobilePersistentProfile, hasUsableMobilePersistentProfile } from "@/lib/iriss-listings-mobile-persistent-fetch";
 import { getPlatformAuthHeaders } from "@/lib/iriss-listings-session-auth";
 import type { IrissListingPrice, IrissListingSourcePlatform, IrissListingSyncStatus } from "@/lib/iriss-listings-types";
@@ -134,6 +135,7 @@ function looksLikeLoginPage(statusCode: number, html: string): boolean {
 
 async function fetchHtml(url: URL, platform: IrissListingSourcePlatform): Promise<{ ok: true; statusCode: number; html: string } | { ok: false; statusCode: number; note: string }> {
   const timeoutMs = Math.max(8000, Number.parseInt(process.env.IRISS_LISTINGS_FETCH_TIMEOUT_MS ?? "18000", 10) || 18000);
+  const allowBrowserFallback = platform === "autobid" || platform === "openline";
   if (platform === "mobile" && (await hasUsableMobilePersistentProfile())) {
     return fetchUrlHtmlWithMobilePersistentProfile(url.toString(), timeoutMs);
   }
@@ -159,8 +161,17 @@ async function fetchHtml(url: URL, platform: IrissListingSourcePlatform): Promis
       signal: ctrl.signal,
     });
     const html = await res.text();
+    if (allowBrowserFallback && (res.status === 401 || res.status === 403 || res.status === 429 || looksLikeLoginPage(res.status, html))) {
+      const fallback = await fetchUrlHtmlWithStealthBrowser(url.toString(), timeoutMs);
+      if (fallback.ok) return fallback;
+    }
     return { ok: true, statusCode: res.status, html };
   } catch (e) {
+    if (allowBrowserFallback) {
+      const fallback = await fetchUrlHtmlWithStealthBrowser(url.toString(), timeoutMs);
+      if (fallback.ok) return fallback;
+      return fallback;
+    }
     return { ok: false, statusCode: 0, note: e instanceof Error ? e.message : "fetch_failed" };
   } finally {
     clearTimeout(t);
@@ -213,6 +224,19 @@ function createGenericAdapter(platform: IrissListingSourcePlatform, hostMatchers
           pricePrimary: null,
           priceSecondary: null,
           rawSnapshotRef: "raw:fetch-error",
+        };
+      }
+      if (got.statusCode >= 400) {
+        return {
+          status: "fetch_failed",
+          statusNote: `HTTP ${got.statusCode}`,
+          sourceDomain: u.hostname.toLowerCase(),
+          title: "",
+          year: "",
+          imageUrl: "",
+          pricePrimary: null,
+          priceSecondary: null,
+          rawSnapshotRef: makeRawSnapshotRef(input.url, got.html),
         };
       }
       if (looksLikeLoginPage(got.statusCode, got.html)) {
