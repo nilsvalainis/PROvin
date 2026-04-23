@@ -32,6 +32,7 @@ const nextConfig: NextConfig = {
     "playwright-extra",
     "puppeteer-extra-plugin-stealth",
     "puppeteer-extra-plugin",
+    "puppeteer-extra-plugin-user-preferences",
   ],
   reactStrictMode: true,
   /** Server Actions (citi maršruti); IRISS PATCH ierobežojumus biežāk nosaka Vercel/hosting. */

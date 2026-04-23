@@ -133,6 +133,13 @@ function looksLikeLoginPage(_statusCode: number, html: string): boolean {
   return /password|passwort|parole/.test(tiny);
 }
 
+/** Auto1 bieži atgriež 200 ar viesu „Sign in“ / „Anmelden“ lapu bez reāla sludinājuma. */
+function looksLikeAuto1GuestSignInWall(html: string): boolean {
+  const sample = stripTags(html.slice(0, 120_000));
+  if (!sample.trim()) return false;
+  return /\bSign\s+in\b/i.test(sample) || /\bAnmelden\b/i.test(sample);
+}
+
 async function fetchHtml(url: URL, platform: IrissListingSourcePlatform): Promise<{ ok: true; statusCode: number; html: string } | { ok: false; statusCode: number; note: string }> {
   const timeoutMs = Math.max(8000, Number.parseInt(process.env.IRISS_LISTINGS_FETCH_TIMEOUT_MS ?? "18000", 10) || 18000);
   const allowBrowserFallback = platform === "autobid" || platform === "openline";
@@ -256,6 +263,19 @@ function createGenericAdapter(platform: IrissListingSourcePlatform, hostMatchers
         return {
           status: "fetch_failed",
           statusNote: `HTTP ${got.statusCode}`,
+          sourceDomain: u.hostname.toLowerCase(),
+          title: "",
+          year: "",
+          imageUrl: "",
+          pricePrimary: null,
+          priceSecondary: null,
+          rawSnapshotRef: makeRawSnapshotRef(input.url, got.html),
+        };
+      }
+      if (platform === "auto1" && looksLikeAuto1GuestSignInWall(got.html)) {
+        return {
+          status: "login_required",
+          statusNote: "Auto1: viesu „Sign in“ / „Anmelden“ lapa (HTTP 200).",
           sourceDomain: u.hostname.toLowerCase(),
           title: "",
           year: "",

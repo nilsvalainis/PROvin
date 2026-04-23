@@ -1,22 +1,11 @@
 import "server-only";
 
-import StealthPlugin from "puppeteer-extra-plugin-stealth";
-import { chromium } from "playwright-extra";
+import { getChromiumWithStealth } from "@/lib/iriss-playwright-extra-stealth";
 
 const FALLBACK_UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 const FALLBACK_ARGS = ["--disable-blink-features=AutomationControlled"];
-
-let stealthInstalled = false;
-
-function getChromiumWithStealth() {
-  if (!stealthInstalled) {
-    chromium.use(StealthPlugin());
-    stealthInstalled = true;
-  }
-  return chromium;
-}
 
 export async function fetchUrlHtmlWithStealthBrowser(
   url: string,
