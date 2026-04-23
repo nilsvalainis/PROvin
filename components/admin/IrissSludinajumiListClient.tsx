@@ -28,7 +28,8 @@ function sourceBadgeClass(platform: IrissListingAggregateItem["sourcePlatform"])
 
 function statusLabel(item: IrissListingAggregateItem): string {
   if (item.status === "ok") return "OK";
-  if (item.status === "login_required") return "Login vajadzīgs";
+  if (item.status === "login_required") return "Login";
+  if (item.status === "blocked_by_waf") return "WAF (403)";
   if (item.status === "parse_failed") return "Parse kļūda";
   return "Nolasīšana neizdevās";
 }
@@ -36,6 +37,7 @@ function statusLabel(item: IrissListingAggregateItem): string {
 function statusClass(item: IrissListingAggregateItem): string {
   if (item.status === "ok") return "bg-emerald-50 text-emerald-800 border-emerald-200/80";
   if (item.status === "login_required") return "bg-amber-50 text-amber-900 border-amber-200/80";
+  if (item.status === "blocked_by_waf") return "bg-orange-50 text-orange-950 border-orange-200/90";
   return "bg-red-50 text-red-900 border-red-200/80";
 }
 
@@ -58,12 +60,14 @@ const PLATFORM_LABELS: Record<IrissSessionHealthItem["platform"], string> = {
 function sessionHealthLabel(status: IrissSessionHealthItem["status"]): string {
   if (status === "ok") return "OK";
   if (status === "expiring_soon") return "drīz expirēs";
-  return "login vajadzīgs";
+  if (status === "blocked_by_waf") return "WAF (403)";
+  return "Login vajadzīgs";
 }
 
 function sessionHealthClass(status: IrissSessionHealthItem["status"]): string {
   if (status === "ok") return "bg-emerald-50 text-emerald-800 border-emerald-200/80";
   if (status === "expiring_soon") return "bg-amber-50 text-amber-900 border-amber-200/80";
+  if (status === "blocked_by_waf") return "bg-orange-50 text-orange-950 border-orange-200/90";
   return "bg-red-50 text-red-900 border-red-200/80";
 }
 
@@ -144,6 +148,8 @@ export function IrissSludinajumiListClient({ latest }: Props) {
             <span>OK: {latest?.summary.okCount ?? 0}</span>
             <span className="text-slate-300">•</span>
             <span>Login: {latest?.summary.loginRequiredCount ?? 0}</span>
+            <span className="text-slate-300">•</span>
+            <span>WAF (403): {latest?.summary.blockedByWafCount ?? 0}</span>
           </div>
           <button
             type="button"

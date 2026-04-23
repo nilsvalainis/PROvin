@@ -36,6 +36,7 @@ function statusForPlatform(
   configured: boolean,
 ): IrissSessionHealthItem {
   const items = (latest?.items ?? []).filter((x) => x.sourcePlatform === platform);
+  const hasBlockedByWaf = items.some((x) => x.status === "blocked_by_waf");
   const hasLoginRequired = items.some((x) => x.status === "login_required");
   const hasOk = items.some((x) => x.status === "ok");
 
@@ -48,9 +49,12 @@ function statusForPlatform(
       platform === "mobile"
         ? "Nav Mobile.de sesijas: izveido `.data/browser-profiles/mobile` ar `npm run auth:persistent-mobile` vai iestatiet COOKIE / LOGIN_*."
         : "Nav iestatīts AUTH_HEADER/COOKIE vai LOGIN_* parametri šai platformai.";
+  } else if (hasBlockedByWaf) {
+    status = "blocked_by_waf";
+    note = "Pēdējā nolasīšanā vismaz vienam avotam HTTP 403 (WAF / Akamai vai līdzīgs bloķētājs).";
   } else if (hasLoginRequired) {
     status = "login_required";
-    note = "Pēdējā nolasīšanā avots pieprasīja login.";
+    note = "Pēdējā nolasīšanā avots pieprasīja login (HTTP 401 vai login forma).";
   } else if (!hasOk && items.length > 0) {
     status = "expiring_soon";
     note = "Pēdējā nolasīšanā nebija veiksmīgu ierakstu.";
@@ -65,7 +69,7 @@ function statusForPlatform(
       note = "Pēdējā veiksmīgā nolasīšana ir novecojusi (>18h).";
     }
   }
-  if (sessionMeta && status !== "login_required") {
+  if (sessionMeta && status !== "login_required" && status !== "blocked_by_waf") {
     const expiryMs = parseIsoSafe(sessionMeta.expiresAt);
     if (expiryMs > 0) {
       const remainingHours = (expiryMs - parseIsoSafe(checkedAt)) / 36e5;

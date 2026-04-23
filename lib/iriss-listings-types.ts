@@ -1,6 +1,6 @@
 export type IrissListingSourcePlatform = "mobile" | "autobid" | "openline" | "auto1" | "other";
 
-export type IrissListingSyncStatus = "ok" | "login_required" | "parse_failed" | "fetch_failed";
+export type IrissListingSyncStatus = "ok" | "login_required" | "parse_failed" | "fetch_failed" | "blocked_by_waf";
 
 export type IrissListingPrice = {
   value: string;
@@ -32,6 +32,7 @@ export type IrissListingSyncRunSummary = {
   totalSources: number;
   okCount: number;
   loginRequiredCount: number;
+  blockedByWafCount: number;
   parseFailedCount: number;
   fetchFailedCount: number;
 };
@@ -55,7 +56,7 @@ export type IrissListingsStorageState =
   | { enabled: true; persistence: "filesystem"; path: string }
   | { enabled: true; persistence: "vercel_blob" };
 
-export type IrissSessionHealthStatus = "ok" | "expiring_soon" | "login_required";
+export type IrissSessionHealthStatus = "ok" | "expiring_soon" | "login_required" | "blocked_by_waf";
 
 export type IrissSessionHealthItem = {
   platform: Exclude<IrissListingSourcePlatform, "other">;

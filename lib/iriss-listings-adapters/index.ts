@@ -126,8 +126,8 @@ function pickPrices(html: string): { primary: IrissListingPrice | null; secondar
   return { primary: found[0] ?? null, secondary: found[1] ?? null };
 }
 
-function looksLikeLoginPage(statusCode: number, html: string): boolean {
-  if (statusCode === 401 || statusCode === 403) return true;
+/** Login forma pēc HTML (HTTP 401/403 tiek klasificēti atsevišķi pirms šīs funkcijas). */
+function looksLikeLoginPage(_statusCode: number, html: string): boolean {
   const tiny = stripTags(html.slice(0, 12000)).toLowerCase();
   if (!LOGIN_HINT_RE.test(tiny)) return false;
   return /password|passwort|parole/.test(tiny);
@@ -224,6 +224,32 @@ function createGenericAdapter(platform: IrissListingSourcePlatform, hostMatchers
           pricePrimary: null,
           priceSecondary: null,
           rawSnapshotRef: "raw:fetch-error",
+        };
+      }
+      if (got.statusCode === 401) {
+        return {
+          status: "login_required",
+          statusNote: "HTTP 401 (autentifikācija nepieciešama).",
+          sourceDomain: u.hostname.toLowerCase(),
+          title: "",
+          year: "",
+          imageUrl: "",
+          pricePrimary: null,
+          priceSecondary: null,
+          rawSnapshotRef: makeRawSnapshotRef(input.url, got.html),
+        };
+      }
+      if (got.statusCode === 403) {
+        return {
+          status: "blocked_by_waf",
+          statusNote: "HTTP 403 (WAF / Akamai vai līdzīgs bloķētājs).",
+          sourceDomain: u.hostname.toLowerCase(),
+          title: "",
+          year: "",
+          imageUrl: "",
+          pricePrimary: null,
+          priceSecondary: null,
+          rawSnapshotRef: makeRawSnapshotRef(input.url, got.html),
         };
       }
       if (got.statusCode >= 400) {

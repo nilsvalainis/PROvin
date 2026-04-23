@@ -81,6 +81,7 @@ function summarize(statuses: IrissListingSyncStatus[], startedAt: string, finish
     totalSources: statuses.length,
     okCount: n("ok"),
     loginRequiredCount: n("login_required"),
+    blockedByWafCount: n("blocked_by_waf"),
     parseFailedCount: n("parse_failed"),
     fetchFailedCount: n("fetch_failed"),
   };

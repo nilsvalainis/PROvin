@@ -114,7 +114,7 @@ function normalizeItem(v: unknown): IrissListingAggregateItem | null {
     !sourceDomain ||
     !rawSnapshotRef ||
     !["mobile", "autobid", "openline", "auto1", "other"].includes(sourcePlatform) ||
-    !["ok", "login_required", "parse_failed", "fetch_failed"].includes(status)
+    !["ok", "login_required", "parse_failed", "fetch_failed", "blocked_by_waf"].includes(status)
   ) {
     return null;
   }
@@ -152,6 +152,7 @@ function normalizeSummary(v: unknown): IrissListingSyncRunSummary | null {
     totalSources: n(v.totalSources),
     okCount: n(v.okCount),
     loginRequiredCount: n(v.loginRequiredCount),
+    blockedByWafCount: n(v.blockedByWafCount),
     parseFailedCount: n(v.parseFailedCount),
     fetchFailedCount: n(v.fetchFailedCount),
   };
