@@ -44,14 +44,14 @@ export function IrissNewOfferMenuButton({ compact = false }: Props) {
       disabled={busy}
       className={
         compact
-          ? "inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/50 px-3 py-2.5 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm backdrop-blur-xl transition-colors hover:bg-white/80 disabled:opacity-60"
-          : "inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/50 px-3 py-2.5 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm backdrop-blur-xl transition-colors hover:bg-white/80 disabled:opacity-60"
+          ? "inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-white/25 bg-transparent px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-white transition hover:bg-white/10 disabled:opacity-60"
+          : "inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-white/25 bg-transparent px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-white transition hover:bg-white/10 disabled:opacity-60"
       }
       title="Jauns piedāvājums bez klienta datiem"
       aria-label="Jauns piedāvājums bez klienta datiem"
     >
       <Plus className="h-4 w-4" aria-hidden />
-      {busy ? "Veido…" : "PIEDĀVĀJUMS"}
+      {busy ? "Veido…" : "+ ORDER"}
     </button>
   );
 }

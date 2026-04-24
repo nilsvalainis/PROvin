@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { AdminSidebarNav } from "./AdminSidebarNav";
 import { IrissAdminSidebarNav } from "./IrissAdminSidebarNav";
 import { AdminWorkspaceSwitcher } from "./AdminWorkspaceSwitcher";
+import { IrissOrderSortSelect } from "./IrissOrderSortSelect";
 import { LogoutButton } from "./LogoutButton";
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 
@@ -80,17 +81,18 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
 
   const isProWorkspace = workspace === "pro";
   const isDetailScreen = /^\/admin\/(?:iriss\/pasutijumi|orders|konsultacijas|commission-invoice)\/[^/]+$/.test(pathname);
+  const showIrissSortInHeader = pathname === "/admin/iriss/pasutijumi";
   const asideMobileClasses = mobileNavOpen
     ? "max-md:fixed max-md:right-0 max-md:top-[3.5rem] max-md:z-[60] max-md:flex max-md:h-[calc(100dvh-3.5rem)] max-md:w-[min(14rem,74vw)] max-md:flex-col max-md:overflow-y-auto max-md:border-l max-md:border-slate-200/70 max-md:bg-white/98 max-md:shadow-2xl max-md:backdrop-blur-sm"
     : "max-md:hidden";
 
   return (
     <div className="flex min-h-dvh flex-col bg-white">
-      <header className="sticky top-0 z-[45] flex shrink-0 items-center gap-2 border-b border-[#E5E7EB] bg-white px-3 py-2 shadow-sm sm:px-4">
+      <header className="sticky top-0 z-[45] flex shrink-0 items-center gap-2 border-b border-slate-700/80 bg-slate-800 px-3 py-2 shadow-sm sm:px-4">
         <div className="min-w-0 flex flex-1 items-center gap-2">
           <AdminWorkspaceSwitcher />
           <div className="hidden items-center gap-2 md:flex">
-            <div className="h-5 w-px bg-slate-200/90" aria-hidden />
+            <div className="h-5 w-px bg-white/30" aria-hidden />
             {isProWorkspace ? (
               <AdminSidebarNav baseUrl={baseUrl} orientation="horizontal" />
             ) : (
@@ -98,14 +100,15 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
             )}
           </div>
         </div>
-        <div className="hidden md:flex">
-          <LogoutButton className="border-0 bg-transparent px-1 py-0 text-xs font-semibold text-[var(--color-provin-muted)] shadow-none hover:bg-transparent hover:text-[var(--color-apple-text)] md:w-auto" />
+        <div className="hidden items-center gap-2 md:flex">
+          {showIrissSortInHeader ? <IrissOrderSortSelect /> : null}
+          <LogoutButton className="md:w-auto" />
         </div>
         <div className="flex shrink-0 items-center gap-1.5 md:hidden">
           <button
             type="button"
             onClick={() => router.refresh()}
-            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white p-1.5 text-black shadow-sm outline-none transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-transparent p-1.5 text-white shadow-sm outline-none transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
             aria-label="Atsvaidzināt lapu"
             title="Atsvaidzināt lapu"
           >
@@ -114,12 +117,12 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
           <button
             type="button"
             onClick={() => setMobileNavOpen((open) => !open)}
-            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white p-1.5 text-black shadow-sm outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-transparent p-1.5 text-white shadow-sm outline-none transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
             aria-expanded={mobileNavOpen}
             aria-controls="admin-mobile-nav-aside"
             aria-label={mobileNavOpen ? "Aizvērt galveno izvēlni" : "Atvērt galveno izvēlni"}
           >
-            <AdminMobileMenuIcon lineClass="bg-[var(--color-apple-text)]" />
+            <AdminMobileMenuIcon lineClass="bg-white" />
           </button>
         </div>
       </header>

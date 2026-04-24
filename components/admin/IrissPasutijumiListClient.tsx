@@ -5,6 +5,7 @@ import { motion, Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
+import { IRISS_ORDER_SORT_EVENT, IRISS_ORDER_SORT_KEY, type IrissOrderSortMode } from "@/components/admin/IrissOrderSortSelect";
 import {
   buildListingPlatformChips,
   IR_LISTING_ALL_CHIP_STYLE,
@@ -33,13 +34,7 @@ const BRAND_ICON_SLUGS: Record<string, string> = {
   tesla: "tesla",
 };
 
-type SortMode =
-  | "created_desc"
-  | "created_asc"
-  | "brand_asc"
-  | "brand_desc"
-  | "budget_asc"
-  | "budget_desc";
+type SortMode = IrissOrderSortMode;
 
 const SORT_MODES: readonly SortMode[] = [
   "created_desc",
@@ -54,7 +49,6 @@ function isSortMode(s: string): s is SortMode {
   return (SORT_MODES as readonly string[]).includes(s);
 }
 
-const SORT_KEY = "iriss-order-sort-v1";
 const SWIPE_ACTION_BLOCK_WIDTH = 72;
 const SWIPE_ACTION_WIDTH = SWIPE_ACTION_BLOCK_WIDTH * 2;
 const SWIPE_CLOSE_THRESHOLD = SWIPE_ACTION_WIDTH * 0.4;
@@ -556,7 +550,7 @@ export function IrissPasutijumiListClient({
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(SORT_KEY);
+      const raw = localStorage.getItem(IRISS_ORDER_SORT_KEY);
       const legacy = raw === "manual" ? "created_desc" : raw;
       if (legacy && isSortMode(legacy)) setSortMode(legacy);
     } catch {
@@ -566,11 +560,31 @@ export function IrissPasutijumiListClient({
 
   useEffect(() => {
     try {
-      localStorage.setItem(SORT_KEY, sortMode);
+      localStorage.setItem(IRISS_ORDER_SORT_KEY, sortMode);
     } catch {
       /* ignore */
     }
   }, [sortMode]);
+
+  useEffect(() => {
+    const onSortChange = (ev: Event) => {
+      const next = (ev as CustomEvent<SortMode>).detail;
+      if (!next || !isSortMode(next)) return;
+      setSortMode(next);
+      const lr = localRowsRef.current;
+      const sortedIds = sortCore(
+        lr.filter((r) => !r.pinnedAt),
+        next,
+      ).map((r) => r.id);
+      setListOrder((prev) => {
+        const merged = { ...prev, unpinnedOrder: sortedIds };
+        schedulePersistListOrder(merged);
+        return merged;
+      });
+    };
+    window.addEventListener(IRISS_ORDER_SORT_EVENT, onSortChange as EventListener);
+    return () => window.removeEventListener(IRISS_ORDER_SORT_EVENT, onSortChange as EventListener);
+  }, [schedulePersistListOrder]);
 
   const { pinnedRows, unpinnedRows } = useMemo(() => {
     const pinned = localRows.filter((r) => Boolean(r.pinnedAt));
@@ -691,37 +705,6 @@ export function IrissPasutijumiListClient({
 
   return (
     <>
-      <div className="mt-2 flex justify-end">
-        <label className="flex items-center gap-2 text-[12px] text-[var(--color-provin-muted)]">
-          Kārtot:
-          <select
-            className="min-h-10 rounded-xl border border-[#E5E7EB] bg-white px-3 text-[13px] font-medium text-black shadow-sm outline-none focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
-            value={sortMode}
-            onChange={(e) => {
-              const next = e.target.value as SortMode;
-              setSortMode(next);
-              const lr = localRowsRef.current;
-              const sortedIds = sortCore(
-                lr.filter((r) => !r.pinnedAt),
-                next,
-              ).map((r) => r.id);
-              setListOrder((prev) => {
-                const merged = { ...prev, unpinnedOrder: sortedIds };
-                schedulePersistListOrder(merged);
-                return merged;
-              });
-            }}
-          >
-            <option value="created_desc">Pievienošanas datums (jaunākie)</option>
-            <option value="created_asc">Pievienošanas datums (vecākie)</option>
-            <option value="brand_asc">Marka/modelis (A-Z)</option>
-            <option value="brand_desc">Marka/modelis (Z-A)</option>
-            <option value="budget_asc">Cena (zemākā)</option>
-            <option value="budget_desc">Cena (augstākā)</option>
-          </select>
-        </label>
-      </div>
-
       <div className="mt-3 flex flex-col gap-3 sm:gap-4">
         {pinnedRows.length > 0 ? (
           <Reorder.Group axis="y" values={pinnedRows.map((r) => r.id)} onReorder={onReorderPinned} className="flex flex-col gap-3 sm:gap-4">

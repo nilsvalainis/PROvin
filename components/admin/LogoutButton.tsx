@@ -14,7 +14,7 @@ export function LogoutButton({ className = "" }: Props) {
     <button
       type="button"
       onClick={() => void logout()}
-      className={`rounded-xl border border-slate-200/90 bg-white px-3 py-2.5 text-sm font-medium text-[var(--color-provin-muted)] transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-[var(--color-apple-text)] md:w-full md:text-center ${className}`}
+      className={`inline-flex min-h-[38px] items-center rounded-lg border border-white/25 bg-transparent px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-white transition hover:bg-white/10 md:w-auto md:text-center ${className}`}
     >
       Iziet
     </button>

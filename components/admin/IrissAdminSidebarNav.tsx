@@ -6,9 +6,9 @@ import { IrissNewOfferMenuButton } from "@/components/admin/IrissNewOfferMenuBut
 
 function navItemClass(active: boolean) {
   if (active) {
-    return "rounded-xl border border-white/20 bg-white/70 px-3 py-2.5 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm backdrop-blur-xl";
+    return "inline-flex min-h-[38px] items-center rounded-lg border border-white/35 bg-white/10 px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-white";
   }
-  return "rounded-xl border border-white/20 bg-white/50 px-3 py-2.5 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm backdrop-blur-xl transition-colors hover:bg-white/80";
+  return "inline-flex min-h-[38px] items-center rounded-lg border border-white/25 bg-transparent px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-white transition hover:bg-white/10";
 }
 
 type Props = {
@@ -25,13 +25,13 @@ export function IrissAdminSidebarNav({ orientation = "vertical" }: Props) {
   return (
     <nav className={horizontal ? "flex flex-wrap items-center gap-1" : "flex flex-col gap-1.5"}>
       <Link href="/admin/iriss/pasutijumi" className={navItemClass(pasutijumiActive)}>
-        PASŪTĪJUMI
+        HOME
       </Link>
       <Link href="/admin/iriss/scan" className={navItemClass(scanActive)}>
         SCAN
       </Link>
       <Link href="/admin/iriss/sludinajumi" className={navItemClass(sludinajumiActive)}>
-        SLUDINĀJUMI
+        LIST
       </Link>
       <IrissNewOfferMenuButton compact={horizontal} />
       {!horizontal ? (
