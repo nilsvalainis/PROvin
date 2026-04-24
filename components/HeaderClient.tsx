@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, RefreshCw, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -52,7 +52,6 @@ export function HeaderClient({
   const router = useRouter();
   const normalizedPath = normalizeSitePath(pathname);
   const tr = useTranslations("SiteRail");
-  const tHeader = useTranslations("Header");
   const { theme } = useSiteTheme();
 
   const isHome = normalizedPath === "/" || normalizedPath === "";
@@ -73,11 +72,6 @@ export function HeaderClient({
 
   const close = useCallback(() => setOpen(false), []);
   const toggleRailMenu = useCallback(() => setOpen((v) => !v), []);
-
-  const refreshPage = useCallback(() => {
-    close();
-    void router.refresh();
-  }, [close, router]);
 
   /**
    * Sākumlapā `Link` uz `/#…` bieži neritina (tā pati route) — ritināšana + URL hash šeit.
@@ -271,14 +265,6 @@ export function HeaderClient({
                 <SiteThemeHeaderButton
                   className={mobileRailOnDark ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
                 />
-                <button
-                  type="button"
-                  onClick={refreshPage}
-                  className={`inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-1.5 shadow-none outline-none transition-opacity hover:opacity-85 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-2 ${mobileRailOnDark ? "text-white focus-visible:ring-offset-[#050505]" : "text-[#1d1d1f] focus-visible:ring-offset-white"}`}
-                  aria-label={tHeader("refreshPage")}
-                >
-                  <RefreshCw className="h-[19px] w-[19px]" strokeWidth={2.1} aria-hidden />
-                </button>
                 <button
                   type="button"
                   onClick={toggleRailMenu}
