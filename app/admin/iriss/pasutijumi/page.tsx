@@ -12,8 +12,9 @@ export const dynamic = "force-dynamic";
 export default async function IrissPasutijumiListPage() {
   const storage = getIrissPasutijumiStorageState();
   const storeEnabled = storage.enabled;
-  const rows = storeEnabled ? await listIrissPasutijumi() : [];
-  const initialListOrder = storeEnabled ? await readIrissListOrder() : null;
+  const [rows, initialListOrder] = storeEnabled
+    ? await Promise.all([listIrissPasutijumi(), readIrissListOrder()])
+    : [[], null];
 
   return (
     <div className="relative min-h-full w-full max-w-none bg-[#F8F8F9] pb-24 sm:pb-8">

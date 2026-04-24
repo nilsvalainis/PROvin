@@ -19,6 +19,8 @@ const DEFAULT_RELATIVE_DIR = ".data/iriss-pasutijumi";
 const BLOB_PREFIX = "iriss-pasutijumi/";
 /** Globāls pasūtījumu saraksta kārtība (nav UUID — atsevišķs JSON). */
 const LIST_ORDER_FILENAME = "_list-order.json";
+/** Listes vieglais indekss (bez pilnā record/offer payload). */
+const LIST_ROWS_FILENAME = "_list-rows.json";
 const BACKUP_RELATIVE_DIR = ".data/iriss-pasutijumi-backups";
 const BACKUP_BLOB_PREFIX = "iriss-pasutijumi-backups/";
 const BACKUP_KEEP_COUNT = 10;
@@ -165,8 +167,16 @@ function listOrderBlobPathname(prefix: string): string {
   return `${prefix}${LIST_ORDER_FILENAME}`;
 }
 
+function listRowsBlobPathname(prefix: string): string {
+  return `${prefix}${LIST_ROWS_FILENAME}`;
+}
+
 function listOrderFsPath(dir: string): string {
   return path.join(dir, LIST_ORDER_FILENAME);
+}
+
+function listRowsFsPath(dir: string): string {
+  return path.join(dir, LIST_ROWS_FILENAME);
 }
 
 function backupFsPath(dir: string, id: string, ts: string): string {
@@ -336,6 +346,54 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
   };
 }
 
+function rowFromRecord(rec: IrissPasutijumsRecord): IrissPasutijumsListRow {
+  return {
+    id: rec.id,
+    createdAt: rec.createdAt,
+    updatedAt: rec.updatedAt,
+    pinnedAt: rec.pinnedAt,
+    brandModel: rec.brandModel.trim() || "—",
+    totalBudget: rec.totalBudget.trim() || "—",
+    phone: rec.phone.trim() || "—",
+    listingLinkMobile: rec.listingLinkMobile,
+    listingLinkAutobid: rec.listingLinkAutobid,
+    listingLinkOpenline: rec.listingLinkOpenline,
+    listingLinkAuto1: rec.listingLinkAuto1,
+    listingLinksOther: rec.listingLinksOther,
+  };
+}
+
+function sortRowsByUpdatedDesc(rows: IrissPasutijumsListRow[]): IrissPasutijumsListRow[] {
+  rows.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
+  return rows;
+}
+
+function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
+  if (!Array.isArray(raw)) return null;
+  const rows: IrissPasutijumsListRow[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const id = typeof o.id === "string" ? o.id : "";
+    if (!isSafeIrissPasutijumsId(id)) continue;
+    rows.push({
+      id,
+      createdAt: sanitizeDraftTextForStorage(typeof o.createdAt === "string" ? o.createdAt : "", 64),
+      updatedAt: sanitizeDraftTextForStorage(typeof o.updatedAt === "string" ? o.updatedAt : "", 64),
+      pinnedAt: sanitizeDraftTextForStorage(typeof o.pinnedAt === "string" ? o.pinnedAt : "", 64),
+      brandModel: sanitizeDraftTextForStorage(typeof o.brandModel === "string" ? o.brandModel : "—", 400) || "—",
+      totalBudget: sanitizeDraftTextForStorage(typeof o.totalBudget === "string" ? o.totalBudget : "—", 120) || "—",
+      phone: sanitizeDraftTextForStorage(typeof o.phone === "string" ? o.phone : "—", 64) || "—",
+      listingLinkMobile: sanitizeDraftTextForStorage(typeof o.listingLinkMobile === "string" ? o.listingLinkMobile : "", 2048),
+      listingLinkAutobid: sanitizeDraftTextForStorage(typeof o.listingLinkAutobid === "string" ? o.listingLinkAutobid : "", 2048),
+      listingLinkOpenline: sanitizeDraftTextForStorage(typeof o.listingLinkOpenline === "string" ? o.listingLinkOpenline : "", 2048),
+      listingLinkAuto1: sanitizeDraftTextForStorage(typeof o.listingLinkAuto1 === "string" ? o.listingLinkAuto1 : "", 2048),
+      listingLinksOther: normalizeOtherLinks(o.listingLinksOther),
+    });
+  }
+  return rows;
+}
+
 async function listBlobIds(prefix: string, token: string): Promise<string[]> {
   const ids: string[] = [];
   let cursor: string | undefined;
@@ -353,75 +411,115 @@ async function listBlobIds(prefix: string, token: string): Promise<string[]> {
   return ids;
 }
 
+async function rebuildListRowsFromRecords(r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>): Promise<IrissPasutijumsListRow[]> {
+  const rows: IrissPasutijumsListRow[] = [];
+  if (r.kind === "blob") {
+    const ids = await listBlobIds(r.prefix, r.token);
+    for (const id of ids) {
+      const rec = await readIrissPasutijums(id);
+      if (rec) rows.push(rowFromRecord(rec));
+    }
+  } else {
+    let names: string[] = [];
+    try {
+      names = await fs.readdir(r.dir);
+    } catch {
+      return [];
+    }
+    for (const name of names) {
+      if (!name.endsWith(".json")) continue;
+      const id = name.slice(0, -5);
+      if (!isSafeIrissPasutijumsId(id)) continue;
+      const rec = await readIrissPasutijums(id);
+      if (rec) rows.push(rowFromRecord(rec));
+    }
+  }
+  return sortRowsByUpdatedDesc(rows);
+}
+
+async function readListRowsIndex(r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>): Promise<IrissPasutijumsListRow[] | null> {
+  if (r.kind === "blob") {
+    const raw = await readJsonFromBlob(listRowsBlobPathname(r.prefix), r.token);
+    const parsed = parseListRows(raw);
+    if (!parsed) return null;
+    return sortRowsByUpdatedDesc(parsed);
+  }
+  try {
+    const txt = await fs.readFile(listRowsFsPath(r.dir), "utf8");
+    const parsed = parseListRows(JSON.parse(txt) as unknown);
+    if (!parsed) return null;
+    return sortRowsByUpdatedDesc(parsed);
+  } catch {
+    return null;
+  }
+}
+
+async function writeListRowsIndex(
+  r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
+  rows: IrissPasutijumsListRow[],
+): Promise<void> {
+  const body = JSON.stringify(sortRowsByUpdatedDesc(cloneRows(rows)), null, 2);
+  if (r.kind === "blob") {
+    await put(listRowsBlobPathname(r.prefix), body, {
+      access: "private",
+      token: r.token,
+      contentType: "application/json; charset=utf-8",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+    });
+    return;
+  }
+  await fs.mkdir(r.dir, { recursive: true });
+  const fp = listRowsFsPath(r.dir);
+  const tmp = `${fp}.tmp`;
+  await fs.writeFile(tmp, body, "utf8");
+  await fs.rename(tmp, fp);
+}
+
+async function upsertListRowsIndex(
+  r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
+  row: IrissPasutijumsListRow,
+): Promise<void> {
+  const existing = (await readListRowsIndex(r)) ?? [];
+  const next = existing.filter((x) => x.id !== row.id);
+  next.push(row);
+  await writeListRowsIndex(r, next);
+}
+
+async function removeFromListRowsIndex(
+  r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
+  id: string,
+): Promise<void> {
+  const existing = (await readListRowsIndex(r)) ?? [];
+  const next = existing.filter((x) => x.id !== id);
+  await writeListRowsIndex(r, next);
+}
+
 export async function listIrissPasutijumi(): Promise<IrissPasutijumsListRow[]> {
   const r = resolveStorage();
   if (r.kind === "disabled") return [];
 
-  if (r.kind === "blob") {
-    if (BLOB_LIST_CACHE_TTL_MS > 0 && blobListRowsCache && blobListRowsCache.expiresAt > Date.now()) {
-      return cloneRows(blobListRowsCache.rows);
-    }
-    const ids = await listBlobIds(r.prefix, r.token);
-    const rows: IrissPasutijumsListRow[] = [];
-    for (const id of ids) {
-      const rec = await readIrissPasutijums(id);
-      if (!rec) continue;
-      rows.push({
-        id: rec.id,
-        createdAt: rec.createdAt,
-        updatedAt: rec.updatedAt,
-        pinnedAt: rec.pinnedAt,
-        brandModel: rec.brandModel.trim() || "—",
-        totalBudget: rec.totalBudget.trim() || "—",
-        phone: rec.phone.trim() || "—",
-        listingLinkMobile: rec.listingLinkMobile,
-        listingLinkAutobid: rec.listingLinkAutobid,
-        listingLinkOpenline: rec.listingLinkOpenline,
-        listingLinkAuto1: rec.listingLinkAuto1,
-        listingLinksOther: rec.listingLinksOther,
-      });
-    }
-    rows.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
-    if (BLOB_LIST_CACHE_TTL_MS > 0) {
-      blobListRowsCache = {
-        expiresAt: Date.now() + BLOB_LIST_CACHE_TTL_MS,
-        rows: cloneRows(rows),
-      };
-    }
-    return rows;
+  if (BLOB_LIST_CACHE_TTL_MS > 0 && blobListRowsCache && blobListRowsCache.expiresAt > Date.now()) {
+    return cloneRows(blobListRowsCache.rows);
   }
 
-  const dir = r.dir;
-  let names: string[] = [];
-  try {
-    names = await fs.readdir(dir);
-  } catch {
-    return [];
+  let rows = await readListRowsIndex(r);
+  if (!rows) {
+    rows = await rebuildListRowsFromRecords(r);
+    try {
+      await writeListRowsIndex(r, rows);
+    } catch {
+      /* index write is best-effort; list can still be served */
+    }
   }
-  const rows: IrissPasutijumsListRow[] = [];
-  for (const name of names) {
-    if (!name.endsWith(".json")) continue;
-    const id = name.slice(0, -5);
-    if (!isSafeIrissPasutijumsId(id)) continue;
-    const rec = await readIrissPasutijums(id);
-    if (!rec) continue;
-    rows.push({
-      id: rec.id,
-      createdAt: rec.createdAt,
-      updatedAt: rec.updatedAt,
-      pinnedAt: rec.pinnedAt,
-      brandModel: rec.brandModel.trim() || "—",
-      totalBudget: rec.totalBudget.trim() || "—",
-      phone: rec.phone.trim() || "—",
-      listingLinkMobile: rec.listingLinkMobile,
-      listingLinkAutobid: rec.listingLinkAutobid,
-      listingLinkOpenline: rec.listingLinkOpenline,
-      listingLinkAuto1: rec.listingLinkAuto1,
-      listingLinksOther: rec.listingLinksOther,
-    });
+
+  if (BLOB_LIST_CACHE_TTL_MS > 0) {
+    blobListRowsCache = {
+      expiresAt: Date.now() + BLOB_LIST_CACHE_TTL_MS,
+      rows: cloneRows(rows),
+    };
   }
-  rows.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
-  return rows;
+  return cloneRows(rows);
 }
 
 export async function readIrissPasutijums(id: string): Promise<IrissPasutijumsRecord | null> {
@@ -497,6 +595,11 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
         addRandomSuffix: false,
         allowOverwrite: true,
       });
+      try {
+        await upsertListRowsIndex(r, rowFromRecord(out));
+      } catch {
+        /* ignore index sync errors; fallback rebuild will recover */
+      }
       invalidateBlobListCache();
       if (BLOB_RECORD_CACHE_TTL_MS > 0) {
         cacheBlobRecord(out.id, out);
@@ -517,6 +620,12 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
     const tmp = `${fp}.tmp`;
     await fs.writeFile(tmp, JSON.stringify(out, null, 2), "utf8");
     await fs.rename(tmp, fp);
+    try {
+      await upsertListRowsIndex(r, rowFromRecord(out));
+    } catch {
+      /* ignore index sync errors; fallback rebuild will recover */
+    }
+    invalidateBlobListCache();
     return { ok: true };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -617,11 +726,21 @@ export async function deleteIrissPasutijums(id: string): Promise<{ ok: true } | 
         await del(blobPathname(r.prefix, id), { token: r.token });
       } catch (e) {
         if (e instanceof BlobNotFoundError) {
+          try {
+            await removeFromListRowsIndex(r, id);
+          } catch {
+            /* ignore index sync errors */
+          }
           invalidateBlobListCache();
           invalidateBlobRecordCache(id);
           return { ok: true };
         }
         throw e;
+      }
+      try {
+        await removeFromListRowsIndex(r, id);
+      } catch {
+        /* ignore index sync errors */
       }
       invalidateBlobListCache();
       invalidateBlobRecordCache(id);
@@ -634,6 +753,12 @@ export async function deleteIrissPasutijums(id: string): Promise<{ ok: true } | 
       const code = e && typeof e === "object" && "code" in e ? (e as NodeJS.ErrnoException).code : undefined;
       if (code !== "ENOENT") throw e;
     }
+    try {
+      await removeFromListRowsIndex(r, id);
+    } catch {
+      /* ignore index sync errors */
+    }
+    invalidateBlobListCache();
     return { ok: true };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

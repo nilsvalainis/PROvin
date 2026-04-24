@@ -67,6 +67,7 @@ const MOVE_CANCEL_LONG_PRESS_PX = 10;
 /** Vertikālai ritināšanai / PTR — horizontālā svīpe sākas tikai pēc skaidras X ass dominance. */
 const SWIPE_AXIS_MIN = 14;
 const SWIPE_AXIS_BIAS = 8;
+const LIST_ORDER_PERSIST_DEBOUNCE_MS = 380;
 
 function useNarrowIrissSwipeViewport(): boolean {
   return useSyncExternalStore(
@@ -221,16 +222,17 @@ const IrissRowCard = memo(function IrissRowCard({
   onAskDelete,
   registerSwipeCloser,
   closeOtherSwipes,
+  narrowSwipeViewport,
 }: {
   row: IrissPasutijumsListRow;
   onPin: (id: string) => void;
   onAskDelete: (id: string) => void;
   registerSwipeCloser: (id: string, closer: (() => void) | null) => void;
   closeOtherSwipes: (exceptId: string) => void;
+  narrowSwipeViewport: boolean;
 }) {
   const reorderDragControls = useDragControls();
   const swipeDragControls = useDragControls();
-  const narrowSwipeViewport = useNarrowIrissSwipeViewport();
   const swipeAxisRef = useRef<"idle" | "vertical" | "horizontal">("idle");
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
   const longPressTimerRef = useRef<number | null>(null);
@@ -509,9 +511,24 @@ export function IrissPasutijumiListClient({
   });
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const narrowSwipeViewport = useNarrowIrissSwipeViewport();
   const swipeClosersRef = useRef<Map<string, () => void>>(new Map());
+  const persistTimerRef = useRef<number | null>(null);
+  const latestOrderRef = useRef<IrissPasutijumiListOrder | null>(null);
   const localRowsRef = useRef(localRows);
   localRowsRef.current = localRows;
+
+  const schedulePersistListOrder = useCallback((order: IrissPasutijumiListOrder) => {
+    latestOrderRef.current = order;
+    if (persistTimerRef.current !== null) {
+      clearTimeout(persistTimerRef.current);
+    }
+    persistTimerRef.current = window.setTimeout(() => {
+      persistTimerRef.current = null;
+      const next = latestOrderRef.current;
+      if (next) void persistListOrder(next);
+    }, LIST_ORDER_PERSIST_DEBOUNCE_MS);
+  }, []);
 
   const registerSwipeCloser = useCallback((id: string, closer: (() => void) | null) => {
     if (closer) swipeClosersRef.current.set(id, closer);
@@ -528,6 +545,14 @@ export function IrissPasutijumiListClient({
   useEffect(() => {
     setLocalRows(rows);
   }, [rows]);
+
+  useEffect(() => {
+    return () => {
+      if (persistTimerRef.current !== null) {
+        clearTimeout(persistTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -561,19 +586,21 @@ export function IrissPasutijumiListClient({
       const ids = new Set(localRows.map((r) => r.id));
       const p = prev.pinnedOrder.filter((id) => ids.has(id));
       const u = prev.unpinnedOrder.filter((id) => ids.has(id));
+      const known = new Set<string>([...p, ...u]);
       for (const r of localRows) {
-        if (p.includes(r.id) || u.includes(r.id)) continue;
+        if (known.has(r.id)) continue;
         if (r.pinnedAt) p.push(r.id);
         else u.push(r.id);
+        known.add(r.id);
       }
       if (p.length === prev.pinnedOrder.length && u.length === prev.unpinnedOrder.length && p.every((id, i) => id === prev.pinnedOrder[i]) && u.every((id, i) => id === prev.unpinnedOrder[i])) {
         return prev;
       }
       const next = { pinnedOrder: p, unpinnedOrder: u };
-      void persistListOrder(next);
+      schedulePersistListOrder(next);
       return next;
     });
-  }, [localRows]);
+  }, [localRows, schedulePersistListOrder]);
 
   const rowMap = useMemo(() => new Map(localRows.map((r) => [r.id, r])), [localRows]);
 
@@ -605,13 +632,13 @@ export function IrissPasutijumiListClient({
         if (nowPinned) p = [...p, id];
         else u = [...u, id];
         const next = { pinnedOrder: p, unpinnedOrder: u };
-        void persistListOrder(next);
+        schedulePersistListOrder(next);
         return next;
       });
     } finally {
       setActionBusy(null);
     }
-  }, []);
+  }, [schedulePersistListOrder]);
 
   const onPin = useCallback((id: string) => {
     void patchRow(id, (record) => ({
@@ -636,7 +663,7 @@ export function IrissPasutijumiListClient({
           pinnedOrder: prev.pinnedOrder.filter((x) => x !== id),
           unpinnedOrder: prev.unpinnedOrder.filter((x) => x !== id),
         };
-        void persistListOrder(next);
+        schedulePersistListOrder(next);
         return next;
       });
       setDeleteTargetId(null);
@@ -644,23 +671,23 @@ export function IrissPasutijumiListClient({
     } finally {
       setActionBusy(null);
     }
-  }, [closeOtherSwipes, deleteTargetId]);
+  }, [closeOtherSwipes, deleteTargetId, schedulePersistListOrder]);
 
   const onReorderPinned = useCallback((ids: string[]) => {
     setListOrder((prev) => {
       const next = { ...prev, pinnedOrder: ids };
-      void persistListOrder(next);
+      schedulePersistListOrder(next);
       return next;
     });
-  }, []);
+  }, [schedulePersistListOrder]);
 
   const onReorderUnpinned = useCallback((ids: string[]) => {
     setListOrder((prev) => {
       const next = { ...prev, unpinnedOrder: ids };
-      void persistListOrder(next);
+      schedulePersistListOrder(next);
       return next;
     });
-  }, []);
+  }, [schedulePersistListOrder]);
 
   return (
     <>
@@ -680,7 +707,7 @@ export function IrissPasutijumiListClient({
               ).map((r) => r.id);
               setListOrder((prev) => {
                 const merged = { ...prev, unpinnedOrder: sortedIds };
-                void persistListOrder(merged);
+                schedulePersistListOrder(merged);
                 return merged;
               });
             }}
@@ -706,6 +733,7 @@ export function IrissPasutijumiListClient({
                 onAskDelete={setDeleteTargetId}
                 registerSwipeCloser={registerSwipeCloser}
                 closeOtherSwipes={closeOtherSwipes}
+                narrowSwipeViewport={narrowSwipeViewport}
               />
             ))}
           </Reorder.Group>
@@ -721,6 +749,7 @@ export function IrissPasutijumiListClient({
                 onAskDelete={setDeleteTargetId}
                 registerSwipeCloser={registerSwipeCloser}
                 closeOtherSwipes={closeOtherSwipes}
+                narrowSwipeViewport={narrowSwipeViewport}
               />
             ))}
           </Reorder.Group>
