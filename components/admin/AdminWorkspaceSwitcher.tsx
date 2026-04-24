@@ -5,14 +5,14 @@ import { usePathname } from "next/navigation";
 
 function pillPro(active: boolean) {
   return active
-    ? "inline-flex min-h-[38px] items-center rounded-lg border border-black bg-[var(--color-provin-accent)] px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black"
-    : "inline-flex min-h-[38px] items-center rounded-lg border border-black bg-[var(--color-provin-accent)] px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black opacity-95";
+    ? "inline-flex min-h-[38px] items-center rounded-lg border border-black/35 bg-[var(--color-provin-accent)] px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black"
+    : "inline-flex min-h-[38px] items-center rounded-lg border border-black/35 bg-[var(--color-provin-accent)] px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black opacity-95";
 }
 
 function pillIriss(active: boolean) {
   return active
-    ? "inline-flex min-h-[38px] items-center rounded-lg border border-black bg-black/5 px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black"
-    : "inline-flex min-h-[38px] items-center rounded-lg border border-black bg-transparent px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black transition hover:bg-black/5";
+    ? "inline-flex min-h-[38px] items-center rounded-lg border border-black/35 bg-black/5 px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black"
+    : "inline-flex min-h-[38px] items-center rounded-lg border border-black/35 bg-transparent px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black transition hover:bg-black/5";
 }
 
 /** Pārslēdzējs starp PRO (pasūtījumi u.tml.) un IRISS admin zonām. */
