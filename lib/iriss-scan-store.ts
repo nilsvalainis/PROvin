@@ -1,6 +1,7 @@
 import "server-only";
 
 import fs from "fs/promises";
+import os from "node:os";
 import path from "path";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { emptyIrissScanRecord, type IrissScanListOrder, type IrissScanListRow, type IrissScanRecord } from "@/lib/iriss-scan-types";
@@ -9,10 +10,18 @@ const DEFAULT_RELATIVE_DIR = ".data/iriss-scan";
 const LIST_ORDER_FILENAME = "_list-order.json";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+/** AWS/Netlify u.c. — `/var/task` parasti nav rakstāms; `/tmp` ir. */
+function isNonVercelServerlessRuntime(): boolean {
+  return Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY);
+}
+
 function resolveDir(): string | null {
   const raw = process.env.ADMIN_IRISS_SCAN_DIR?.trim() ?? "";
   if (["0", "false", "no", "off", "disabled"].includes(raw.toLowerCase())) return null;
   if (raw) return path.resolve(raw);
+  if (isNonVercelServerlessRuntime()) {
+    return path.join(os.tmpdir(), "provin-iriss-scan");
+  }
   return path.join(process.cwd(), DEFAULT_RELATIVE_DIR);
 }
 
