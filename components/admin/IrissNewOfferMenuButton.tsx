@@ -44,8 +44,8 @@ export function IrissNewOfferMenuButton({ compact = false }: Props) {
       disabled={busy}
       className={
         compact
-          ? "inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-black/35 bg-transparent px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black transition hover:bg-black/5 disabled:opacity-60"
-          : "inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-black/35 bg-transparent px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black transition hover:bg-black/5 disabled:opacity-60"
+          ? "inline-flex min-h-[38px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black transition disabled:opacity-60"
+          : "inline-flex min-h-[38px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black transition disabled:opacity-60"
       }
       title="Jauns piedāvājums bez klienta datiem"
       aria-label="Jauns piedāvājums bez klienta datiem"
