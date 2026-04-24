@@ -1,5 +1,6 @@
 import { IrissPasutijumiListClient } from "@/components/admin/IrissPasutijumiListClient";
 import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
+import { AdminIrissOrdersExportButton } from "@/components/admin/AdminIrissOrdersExportButton";
 import {
   getIrissPasutijumiStorageState,
   listIrissPasutijumi,
@@ -16,6 +17,8 @@ export default async function IrissPasutijumiListPage() {
 
   return (
     <div className="relative min-h-full w-full max-w-none bg-[#F8F8F9] pb-24 sm:pb-8">
+      {storeEnabled ? <AdminIrissOrdersExportButton /> : null}
+
       {!storeEnabled ? (
         <div className="mt-3 rounded-2xl border border-[#E5E7EB] bg-white px-4 py-3.5 text-sm text-black shadow-sm">
           <p className="font-semibold">Melnraksts ir izslēgts</p>
