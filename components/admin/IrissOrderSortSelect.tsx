@@ -41,10 +41,10 @@ export function IrissOrderSortSelect({ className = "" }: { className?: string })
   }, []);
 
   return (
-    <label className={`inline-flex items-center gap-2 text-xs text-white ${className}`}>
+    <label className={`inline-flex items-center gap-2 text-xs text-black ${className}`}>
       <span className="hidden lg:inline">Kārtot:</span>
       <select
-        className="min-h-[38px] rounded-lg border border-white/25 bg-transparent px-2.5 text-[12px] font-semibold text-white outline-none transition hover:bg-white/10 focus:border-white/45 focus:ring-2 focus:ring-white/25"
+        className="min-h-[38px] rounded-lg border border-black bg-transparent px-2.5 text-[12px] font-semibold text-black outline-none transition hover:bg-black/5 focus:border-black/60 focus:ring-2 focus:ring-black/20"
         value={value}
         onChange={(e) => {
           const next = e.target.value as IrissOrderSortMode;

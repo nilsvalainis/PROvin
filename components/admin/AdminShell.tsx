@@ -88,11 +88,11 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
 
   return (
     <div className="flex min-h-dvh flex-col bg-white">
-      <header className="sticky top-0 z-[45] flex shrink-0 items-center gap-2 border-b border-slate-700/80 bg-slate-800 px-3 py-2 shadow-sm sm:px-4">
+      <header className="sticky top-0 z-[45] flex shrink-0 items-center gap-2 border-b border-black/35 bg-[var(--color-provin-accent-soft)]/50 px-3 py-2 shadow-sm sm:px-4">
         <div className="min-w-0 flex flex-1 items-center gap-2">
           <AdminWorkspaceSwitcher />
           <div className="hidden items-center gap-2 md:flex">
-            <div className="h-5 w-px bg-white/30" aria-hidden />
+            <div className="h-5 w-px bg-black/35" aria-hidden />
             {isProWorkspace ? (
               <AdminSidebarNav baseUrl={baseUrl} orientation="horizontal" />
             ) : (
@@ -108,7 +108,7 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
           <button
             type="button"
             onClick={() => router.refresh()}
-            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-transparent p-1.5 text-white shadow-sm outline-none transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
+            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-xl border border-black/35 bg-transparent p-1.5 text-black shadow-sm outline-none transition hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-black/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-provin-accent-soft)]"
             aria-label="Atsvaidzināt lapu"
             title="Atsvaidzināt lapu"
           >
@@ -117,12 +117,12 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
           <button
             type="button"
             onClick={() => setMobileNavOpen((open) => !open)}
-            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-transparent p-1.5 text-white shadow-sm outline-none transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
+            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-xl border border-black/35 bg-transparent p-1.5 text-black shadow-sm outline-none transition hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-black/35 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-provin-accent-soft)]"
             aria-expanded={mobileNavOpen}
             aria-controls="admin-mobile-nav-aside"
             aria-label={mobileNavOpen ? "Aizvērt galveno izvēlni" : "Atvērt galveno izvēlni"}
           >
-            <AdminMobileMenuIcon lineClass="bg-white" />
+            <AdminMobileMenuIcon lineClass="bg-black" />
           </button>
         </div>
       </header>

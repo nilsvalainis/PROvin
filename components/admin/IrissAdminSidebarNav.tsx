@@ -6,9 +6,9 @@ import { IrissNewOfferMenuButton } from "@/components/admin/IrissNewOfferMenuBut
 
 function navItemClass(active: boolean) {
   if (active) {
-    return "inline-flex min-h-[38px] items-center rounded-lg border border-white/35 bg-white/10 px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-white";
+    return "inline-flex min-h-[38px] items-center rounded-lg border border-black bg-black/5 px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black";
   }
-  return "inline-flex min-h-[38px] items-center rounded-lg border border-white/25 bg-transparent px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-white transition hover:bg-white/10";
+  return "inline-flex min-h-[38px] items-center rounded-lg border border-black bg-transparent px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black transition hover:bg-black/5";
 }
 
 type Props = {
