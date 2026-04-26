@@ -22,6 +22,7 @@ const LIST_ORDER_FILENAME = "_list-order.json";
 /** Listes vieglais indekss (bez pilnā record/offer payload). */
 const LIST_ROWS_FILENAME = "_list-rows.json";
 const BACKUP_RELATIVE_DIR = ".data/iriss-pasutijumi-backups";
+const LOCAL_MIRROR_RELATIVE_DIR = ".data/iriss-pasutijumi-local-mirror";
 const BACKUP_BLOB_PREFIX = "iriss-pasutijumi-backups/";
 const BACKUP_KEEP_COUNT = 10;
 const BLOB_LIST_CACHE_TTL_MS = Math.max(
@@ -186,8 +187,29 @@ function backupFsPath(dir: string, id: string, ts: string): string {
   return path.join(dir, `${id}__${ts}.json`);
 }
 
+function localMirrorFsPath(dir: string, id: string): string {
+  return path.join(dir, `${id}.json`);
+}
+
 function backupBlobPathname(prefix: string, id: string, ts: string): string {
   return `${prefix}${id}__${ts}.json`;
+}
+
+/**
+ * Lokāla drošības kopija projekta mapē (piem. Dropbox), neatkarīgi no primārās glabātuves.
+ * Nestrādā serverless runtime vidēs bez rakstāmas FS.
+ */
+async function writeLocalMirrorSnapshot(record: IrissPasutijumsRecord): Promise<void> {
+  if (process.env.VERCEL || isNonVercelServerlessRuntime()) return;
+  const raw = process.env.IRISS_PASUTIJUMI_LOCAL_MIRROR_DIR?.trim();
+  const off = ["0", "false", "no", "off", "disabled"];
+  if (raw && off.includes(raw.toLowerCase())) return;
+  const dir = raw ? path.resolve(raw) : path.join(process.cwd(), LOCAL_MIRROR_RELATIVE_DIR);
+  await fs.mkdir(dir, { recursive: true });
+  const fp = localMirrorFsPath(dir, record.id);
+  const tmp = `${fp}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(record, null, 2), "utf8");
+  await fs.rename(tmp, fp);
 }
 
 async function streamToUtf8(stream: ReadableStream<Uint8Array>): Promise<string> {
@@ -609,6 +631,7 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
       } else {
         invalidateBlobRecordCache(out.id);
       }
+      await writeLocalMirrorSnapshot(out).catch(() => undefined);
       return { ok: true };
     }
 
@@ -629,6 +652,7 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
       /* ignore index sync errors; fallback rebuild will recover */
     }
     invalidateBlobListCache();
+    await writeLocalMirrorSnapshot(out).catch(() => undefined);
     return { ok: true };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
