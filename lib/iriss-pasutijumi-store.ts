@@ -192,9 +192,9 @@ async function streamToUtf8(stream: ReadableStream<Uint8Array>): Promise<string>
 }
 
 async function readJsonFromBlob(pathname: string, token: string): Promise<unknown | null> {
+  const res = await get(pathname, { access: "private", token, useCache: false });
+  if (!res || res.statusCode !== 200 || !res.stream) return null;
   try {
-    const res = await get(pathname, { access: "private", token, useCache: false });
-    if (!res || res.statusCode !== 200 || !res.stream) return null;
     return JSON.parse(await streamToUtf8(res.stream)) as unknown;
   } catch {
     return null;
@@ -396,22 +396,18 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
 
 async function listBlobIds(prefix: string, token: string): Promise<string[]> {
   const ids: string[] = [];
-  try {
-    let cursor: string | undefined;
-    do {
-      const page = await list({ prefix, token, cursor, limit: 1000, mode: "expanded" });
-      for (const b of page.blobs) {
-        if (!b.pathname.endsWith(".json")) continue;
-        if (!b.pathname.startsWith(prefix)) continue;
-        const id = b.pathname.slice(prefix.length, -".json".length);
-        if (isSafeIrissPasutijumsId(id)) ids.push(id);
-      }
-      if (page.hasMore && !page.cursor) break;
-      cursor = page.hasMore && page.cursor ? page.cursor : undefined;
-    } while (cursor);
-  } catch {
-    return [];
-  }
+  let cursor: string | undefined;
+  do {
+    const page = await list({ prefix, token, cursor, limit: 1000, mode: "expanded" });
+    for (const b of page.blobs) {
+      if (!b.pathname.endsWith(".json")) continue;
+      if (!b.pathname.startsWith(prefix)) continue;
+      const id = b.pathname.slice(prefix.length, -".json".length);
+      if (isSafeIrissPasutijumsId(id)) ids.push(id);
+    }
+    if (page.hasMore && !page.cursor) break;
+    cursor = page.hasMore && page.cursor ? page.cursor : undefined;
+  } while (cursor);
   return ids;
 }
 
