@@ -98,6 +98,24 @@ function isMeaningfullyChanged(existing: IrissPasutijumsRecord, next: IrissPasut
   return JSON.stringify(existing) !== JSON.stringify(candidate);
 }
 
+const VERCEL_FS_FORCE = ["1", "true", "yes", "on"].includes(
+  (process.env.ADMIN_IRISS_PASUTIJUMI_VERCEL_FS ?? "").trim().toLowerCase(),
+);
+
+/**
+ * Vercel serverless: rakstāms ir tikai `/tmp` (vai līdzīgs `os.tmpdir()`).
+ * Lokālais Mac/Dropbox ceļš `.env.local` vidē nedarbojas deploy — pretējā gadījumā
+ * `ADMIN_IRISS_PASUTIJUMI_DIR` bloķē Blob izvēli un saraksts „neiet”.
+ * Opt-in: `ADMIN_IRISS_PASUTIJUMI_VERCEL_FS=1`, ja tiešām montēts disks (reti).
+ */
+function isFsPathAllowedOnVercel(resolvedDir: string): boolean {
+  if (!process.env.VERCEL) return true;
+  if (VERCEL_FS_FORCE) return true;
+  const tmpRoot = path.resolve(os.tmpdir());
+  const dir = path.resolve(resolvedDir);
+  return dir === tmpRoot || dir.startsWith(`${tmpRoot}${path.sep}`);
+}
+
 function computeResolvedStorage(): ResolvedStorage {
   const raw = process.env.ADMIN_IRISS_PASUTIJUMI_DIR?.trim() ?? "";
   const off = ["0", "false", "no", "off", "disabled"];
@@ -105,7 +123,11 @@ function computeResolvedStorage(): ResolvedStorage {
     return { kind: "disabled", reason: "explicit_off" };
   }
   if (raw) {
-    return { kind: "fs", dir: path.resolve(raw) };
+    const abs = path.resolve(raw);
+    if (isFsPathAllowedOnVercel(abs)) {
+      return { kind: "fs", dir: abs };
+    }
+    /* Vercel: ignorē lokālo / projekta FS ceļu → turpinām ar Blob vai disabled. */
   }
   if (process.env.VERCEL) {
     const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
