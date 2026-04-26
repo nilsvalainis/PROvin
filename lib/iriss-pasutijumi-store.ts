@@ -26,15 +26,18 @@ const BACKUP_BLOB_PREFIX = "iriss-pasutijumi-backups/";
 const BACKUP_KEEP_COUNT = 10;
 const BLOB_LIST_CACHE_TTL_MS = Math.max(
   0,
-  Number.parseInt(process.env.IRISS_PASUTIJUMI_BLOB_LIST_CACHE_TTL_MS ?? "30000", 10) || 30_000,
+  Number.parseInt(process.env.IRISS_PASUTIJUMI_BLOB_LIST_CACHE_TTL_MS ?? "300000", 10) || 300_000,
 );
 const BLOB_RECORD_CACHE_TTL_MS = Math.max(
   0,
-  Number.parseInt(process.env.IRISS_PASUTIJUMI_BLOB_RECORD_CACHE_TTL_MS ?? "30000", 10) || 30_000,
+  Number.parseInt(process.env.IRISS_PASUTIJUMI_BLOB_RECORD_CACHE_TTL_MS ?? "180000", 10) || 180_000,
 );
 const BLOB_BACKUP_TRIM_MIN_INTERVAL_MS = Math.max(
   0,
   Number.parseInt(process.env.IRISS_PASUTIJUMI_BLOB_BACKUP_TRIM_MIN_INTERVAL_MS ?? "600000", 10) || 600_000,
+);
+const BLOB_WRITE_BACKUPS_ENABLED = ["1", "true", "yes", "on"].includes(
+  (process.env.IRISS_PASUTIJUMI_BLOB_WRITE_BACKUPS ?? "0").trim().toLowerCase(),
 );
 
 /** AWS/Netlify u.c. — `/var/task` parasti nav rakstāms; `/tmp` ir (tikai ne-Vercel serverless). */
@@ -575,7 +578,7 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
     if (r.kind === "blob") {
       const pathname = blobPathname(r.prefix, out.id);
       const serialized = JSON.stringify(out, null, 2);
-      if (existing) {
+      if (existing && BLOB_WRITE_BACKUPS_ENABLED) {
         const backupPath = backupBlobPathname(BACKUP_BLOB_PREFIX, out.id, backupTs);
         await put(backupPath, JSON.stringify(existing, null, 2), {
           access: "private",
