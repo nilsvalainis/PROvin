@@ -10,8 +10,15 @@ export async function GET() {
   if (!isIrissPasutijumiStoreEnabled()) {
     return NextResponse.json({ error: "store_disabled", rows: [] }, { status: 503 });
   }
-  const rows = await listIrissPasutijumi();
-  return NextResponse.json({ rows });
+  try {
+    const rows = await listIrissPasutijumi();
+    return NextResponse.json({ rows });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "list_failed", rows: [] },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST() {

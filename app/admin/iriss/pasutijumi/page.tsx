@@ -12,9 +12,18 @@ export const dynamic = "force-dynamic";
 export default async function IrissPasutijumiListPage() {
   const storage = getIrissPasutijumiStorageState();
   const storeEnabled = storage.enabled;
-  const [rows, initialListOrder] = storeEnabled
-    ? await Promise.all([listIrissPasutijumi(), readIrissListOrder()])
-    : [[], null];
+  let rows = [] as Awaited<ReturnType<typeof listIrissPasutijumi>>;
+  let initialListOrder = null as Awaited<ReturnType<typeof readIrissListOrder>>;
+  let loadError: string | null = null;
+  if (storeEnabled) {
+    try {
+      [rows, initialListOrder] = await Promise.all([listIrissPasutijumi(), readIrissListOrder()]);
+    } catch (e) {
+      loadError = e instanceof Error ? e.message : "Neizdevās ielādēt pasūtījumus.";
+      rows = [];
+      initialListOrder = null;
+    }
+  }
 
   return (
     <div className="relative min-h-full w-full max-w-none bg-[#F8F8F9] pb-24 sm:pb-8">
@@ -36,6 +45,13 @@ export default async function IrissPasutijumiListPage() {
               (lokāli noklusējums: <span className="font-mono">.data/iriss-pasutijumi</span> projekta saknē).
             </p>
           )}
+        </div>
+      ) : null}
+
+      {storeEnabled && loadError ? (
+        <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3.5 text-sm text-red-900 shadow-sm">
+          <p className="font-semibold">Neizdevās ielādēt IRISS pasūtījumus</p>
+          <p className="mt-1.5 break-words text-red-900/90">{loadError}</p>
         </div>
       ) : null}
 
