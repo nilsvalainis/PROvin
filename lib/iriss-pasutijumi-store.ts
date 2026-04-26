@@ -23,6 +23,7 @@ const LIST_ORDER_FILENAME = "_list-order.json";
 const LIST_ROWS_FILENAME = "_list-rows.json";
 const BACKUP_RELATIVE_DIR = ".data/iriss-pasutijumi-backups";
 const LOCAL_MIRROR_RELATIVE_DIR = ".data/iriss-pasutijumi-local-mirror";
+const LOCAL_MIRROR_BUNDLE_FILENAME = "_all-orders.json";
 const BACKUP_BLOB_PREFIX = "iriss-pasutijumi-backups/";
 const BACKUP_KEEP_COUNT = 10;
 const BLOB_LIST_CACHE_TTL_MS = Math.max(
@@ -209,6 +210,53 @@ async function writeLocalMirrorSnapshot(record: IrissPasutijumsRecord): Promise<
   const fp = localMirrorFsPath(dir, record.id);
   const tmp = `${fp}.tmp`;
   await fs.writeFile(tmp, JSON.stringify(record, null, 2), "utf8");
+  await fs.rename(tmp, fp);
+}
+
+async function writeLocalMirrorFullBundle(): Promise<void> {
+  if (process.env.VERCEL || isNonVercelServerlessRuntime()) return;
+  const bundleEnabled = !["0", "false", "no", "off", "disabled"].includes(
+    (process.env.IRISS_PASUTIJUMI_LOCAL_FULL_BUNDLE ?? "1").trim().toLowerCase(),
+  );
+  if (!bundleEnabled) return;
+
+  const raw = process.env.IRISS_PASUTIJUMI_LOCAL_MIRROR_DIR?.trim();
+  const off = ["0", "false", "no", "off", "disabled"];
+  if (raw && off.includes(raw.toLowerCase())) return;
+  const dir = raw ? path.resolve(raw) : path.join(process.cwd(), LOCAL_MIRROR_RELATIVE_DIR);
+  await fs.mkdir(dir, { recursive: true });
+
+  let names: string[] = [];
+  try {
+    names = await fs.readdir(dir);
+  } catch {
+    return;
+  }
+
+  const records: IrissPasutijumsRecord[] = [];
+  for (const name of names) {
+    if (!name.endsWith(".json")) continue;
+    if (name.startsWith("_")) continue;
+    const id = name.slice(0, -".json".length);
+    if (!isSafeIrissPasutijumsId(id)) continue;
+    try {
+      const rawJson = JSON.parse(await fs.readFile(path.join(dir, name), "utf8")) as unknown;
+      const rec = normalizeRecord(rawJson, id);
+      if (rec) records.push(rec);
+    } catch {
+      /* ignore broken single files in bundle generation */
+    }
+  }
+  records.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
+
+  const bundle = {
+    generatedAt: new Date().toISOString(),
+    count: records.length,
+    records,
+  };
+  const fp = path.join(dir, LOCAL_MIRROR_BUNDLE_FILENAME);
+  const tmp = `${fp}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(bundle, null, 2), "utf8");
   await fs.rename(tmp, fp);
 }
 
@@ -632,6 +680,7 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
         invalidateBlobRecordCache(out.id);
       }
       await writeLocalMirrorSnapshot(out).catch(() => undefined);
+      await writeLocalMirrorFullBundle().catch(() => undefined);
       return { ok: true };
     }
 
@@ -653,6 +702,7 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
     }
     invalidateBlobListCache();
     await writeLocalMirrorSnapshot(out).catch(() => undefined);
+    await writeLocalMirrorFullBundle().catch(() => undefined);
     return { ok: true };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
