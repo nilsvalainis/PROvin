@@ -53,6 +53,7 @@ export const IRISS_CHROME_LUCIDE = {
   summary: FileSearch,
   inspection: CarFront,
   priceFit: Tag,
+  internalNote: MessageSquare,
 } as const;
 
 export const LISTING_ANALYSIS_FIELD_LUCIDE: Record<

@@ -90,6 +90,7 @@ import {
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
+import { AdminInternalRichCommentEditor } from "@/components/admin/AdminInternalRichCommentEditor";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import {
   AdminCommonPhrasesDrawer,
@@ -483,7 +484,6 @@ export function OrderDetailWorkspace({
   const [pdfScanning, setPdfScanning] = useState(false);
   const [pdfScanError, setPdfScanError] = useState<string | null>(null);
   const [wizardStep, setWizardStep] = useState(0);
-  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
   const [phrasesOpen, setPhrasesOpen] = useState(false);
   const [vinBarCopyFlash, setVinBarCopyFlash] = useState(false);
   const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
@@ -1206,6 +1206,7 @@ export function OrderDetailWorkspace({
         cenasAtbilstiba: ws.cenasAtbilstiba,
         listingMarket,
         pdfVisibility,
+        internalComment: internalCommentDraft,
       },
       portfolio: portfolio.map((p) => ({ name: p.name, size: p.size })),
       pdfInsights,
@@ -1768,44 +1769,6 @@ export function OrderDetailWorkspace({
     <div className="relative min-w-0 pb-24">
       {previewOpen ? previewBody : null}
 
-      {commentDialogOpen ? (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="admin-internal-comment-title"
-          onClick={() => setCommentDialogOpen(false)}
-        >
-          <div
-            className="max-h-[min(80vh,520px)] w-full max-w-lg overflow-y-auto rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] p-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <h3 id="admin-internal-comment-title" className="text-sm font-semibold text-[var(--color-apple-text)]">
-                Iekšējais komentārs
-              </h3>
-              <button
-                type="button"
-                className="rounded-md border border-[var(--admin-border-subtle)] px-2 py-1 text-[11px] font-semibold text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:hover:bg-white/10"
-                onClick={() => setCommentDialogOpen(false)}
-              >
-                Aizvērt
-              </button>
-            </div>
-            <p className="mt-2 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-              Glabājas pasūtījuma melnrakstā; netiek iekļauts klienta PDF. Saglabājas automātiski.
-            </p>
-            <textarea
-              className={`${bulkTextareaClass} mt-2 min-h-[min(40vh,280px)] resize-y`}
-              value={internalCommentDraft}
-              onChange={(e) => onInternalCommentChange(e.target.value)}
-              placeholder="Piezīmes par šo auto…"
-              aria-label="Iekšējais komentārs"
-            />
-          </div>
-        </div>
-      ) : null}
-
       {portfolioAllFilesModal != null && typeof document !== "undefined"
         ? createPortal(portfolioAllFilesModal, document.body)
         : null}
@@ -1899,9 +1862,9 @@ export function OrderDetailWorkspace({
           <button
             type="button"
             className="inline-flex h-7 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-1.5 text-[var(--color-apple-text)] shadow-sm transition hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
-            title="Iekšējais komentārs"
-            aria-label="Atvērt iekšējā komentāra logu"
-            onClick={() => setCommentDialogOpen(true)}
+            title="Iekšējais komentārs — solis „Kopsavilkums”"
+            aria-label="Pāriet uz iekšējo komentāru (kopsavilkuma solis)"
+            onClick={() => setWizardStep(7)}
           >
             <MessageSquare className="h-3.5 w-3.5" aria-hidden />
           </button>
@@ -2224,6 +2187,20 @@ export function OrderDetailWorkspace({
                       spellCheck
                     />
                   </AdminAiPolishTextareaShell>
+                </ListingAnalysisSubsectionHeading>
+                <ListingAnalysisSubsectionHeading
+                  icon={IRISS_CHROME_LUCIDE.internalNote}
+                  title="Iekšējais komentārs (logs)"
+                >
+                  <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
+                    Glabājas pasūtījuma melnrakstā; PDF drukā zem „Negadījumu vēstures” kā teksts (bez formatējuma).
+                    Saglabājas automātiski.
+                  </p>
+                  <AdminInternalRichCommentEditor
+                    className="mt-2"
+                    value={internalCommentDraft}
+                    onChange={onInternalCommentChange}
+                  />
                 </ListingAnalysisSubsectionHeading>
               </div>
             </div>

@@ -79,6 +79,7 @@ import {
 import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
+import { internalCommentHtmlToPdfPlain } from "@/lib/admin-internal-comment-pdf";
 
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
@@ -86,6 +87,7 @@ const PDF_APPROVED_BY_IRISS = "APPROVED BY IRISS";
 const PDF_IRISS_SECTION_1 = "1. Kopsavilkums";
 const PDF_IRISS_SECTION_2 = "2. Ieteikumi klātienes apskatei";
 const PDF_IRISS_SECTION_3 = "3. Cenas atbilstība";
+const PDF_INCIDENT_INTERNAL_COMMENT_LABEL = "Komentārs";
 const PDF_SUB_CSDD = "CSDD";
 const PDF_SUB_BLOCK_COMMENTS = "Komentāri";
 const PDF_SECTION_LISTING_ANALYSIS = "SLUDINĀJUMA ANALĪZE";
@@ -136,6 +138,8 @@ export type ClientReportPayload = {
   listingAnalysis?: ListingAnalysisBlockState | null;
   /** Ja nav — PDF iekļauj visu (admin noklusējums). */
   pdfVisibility?: PdfVisibilitySettings | null;
+  /** Iekšējās piezīmes (var saturēt vienkāršu HTML no admin redaktora) — PDF zem apvienotās negadījumu tabulas. */
+  internalComment?: string | null;
 };
 
 export type ClientReportPortfolioRow = { name: string; size: number };
@@ -434,17 +438,24 @@ function buildIncidentHistoryTableHtml(rows: UnifiedIncidentRow[]): string {
 /** Apvienota negadījumu tabula (AutoDNA, CarVertical, LTAB, Citi avoti) — tikai rindas ar aizpildītu zaudējumu summu. */
 function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   if (!vis.unifiedIncidents) return "";
-  // Per-source „Rādīt laukus” nefiltrē datus no šīs apvienotās sadaļas — tikai atsevišķos avotu blokus.
+  // Per-source „Rādīt laukus” nefiltrē datus no šīs apvienotās sadaļas — tikai atsevišķos avotu blokos.
   const collected = collectUnifiedIncidentRows({
     manualVendorBlocks: p.manualVendorBlocks ?? null,
     manualLtabBlock: p.manualLtabBlock ?? null,
   });
-  if (collected.length === 0) return "";
+  const adminNotePlain = internalCommentHtmlToPdfPlain(p.internalComment ?? "");
+  const hasTable = collected.length > 0;
+  if (!hasTable && !adminNotePlain) return "";
   const rows = sortUnifiedIncidentsNewestFirst(collected);
-  const tablesHtml = buildIncidentHistoryTableHtml(rows);
-  const sourceCount = new Set(collected.map((r) => r.sourceLabel)).size;
-  const sourceCountHtml = `<p class="pdf-source-count-note">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</p>`;
-  return `<div class="pdf-unified-incidents-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE)}${tablesHtml}${sourceCountHtml}</div>`;
+  const tablesHtml = hasTable ? buildIncidentHistoryTableHtml(rows) : "";
+  const sourceCountHtml = hasTable
+    ? `<p class="pdf-source-count-note">Grafika ģenerēšanā izmantotais avotu skaits: ${new Set(collected.map((r) => r.sourceLabel)).size}</p>`
+    : "";
+  const adminNoteHtml =
+    adminNotePlain.length > 0
+      ? `<div class="pdf-incident-internal-note"><p class="pdf-field-label">${escapeHtml(PDF_INCIDENT_INTERNAL_COMMENT_LABEL)}</p><div class="pdf-incident-internal-note-body">${escapeHtml(adminNotePlain).replace(/\r?\n/g, "<br />")}</div></div>`
+      : "";
+  return `<div class="pdf-unified-incidents-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE)}${tablesHtml}${adminNoteHtml}${sourceCountHtml}</div>`;
 }
 
 /** CSDD — apskates datumi + strukturētie lauki (viena galvenā līmeņa zona, kā NOBRAUKUMA VĒSTURE). */
@@ -830,6 +841,9 @@ function clientReportPrintCss(): string {
       }
       .pdf-unified-incidents-zone{margin:0 0 14px;padding:12px 14px;background:#fff!important;border:1px solid #f1f5f9;border-radius:8px;box-shadow:0 1px 4px rgba(15,23,42,.05);}
       .pdf-unified-incidents-zone .pdf-sec-head{margin-top:0;}
+      .pdf-incident-internal-note{margin:10px 0 0;padding:10px 12px;border:1px solid #e2e8f0;border-radius:6px;background:#fafafa;}
+      .pdf-incident-internal-note .pdf-field-label{margin:0 0 6px;}
+      .pdf-incident-internal-note-body{margin:0;font-size:11px;line-height:1.45;color:#0f172a;}
       .pdf-mileage-dual{
         display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;align-items:start;margin:8px 0 0;
       }

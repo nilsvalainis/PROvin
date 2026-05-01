@@ -75,94 +75,15 @@ export function sortMileageChronological(rows: UnifiedMileageRow[]): UnifiedMile
   });
 }
 
-/**
- * Nobraukuma atpakaļgājiens mazāks par šo netiek uzskatīts par anomāliju;
- * attiecīgie ieraksti tiek izņemti kā troksnis (PDF tabula + līkne).
- */
+/** Back-roll anomālijai: starpībai starp secīgiem rādījumiem jābūt vismaz šādai (km). */
 export const UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM = 1000;
 
-function yearMonthUtcFromMs(ms: number): string {
-  const d = new Date(ms);
-  const y = d.getUTCFullYear();
-  const m = d.getUTCMonth() + 1;
-  return `${y}-${String(m).padStart(2, "0")}`;
-}
-
 /**
- * Noņem mazus odometra „dipus” hronoloģiskā secībā: ja km < iepriekš pieņemtais maksimums,
- * bet starpība < {@link UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM}, rinda netiek ņemta vērā.
- */
-export function collapseSmallOdometerDipsChronological(rows: UnifiedMileageRow[]): UnifiedMileageRow[] {
-  const sorted = sortMileageChronological(rows);
-  const out: UnifiedMileageRow[] = [];
-  let maxKm: number | null = null;
-
-  for (const r of sorted) {
-    const km = parseOdometerKm(r.odometer);
-    if (km === null) {
-      out.push(r);
-      continue;
-    }
-    if (maxKm === null) {
-      out.push(r);
-      maxKm = km;
-      continue;
-    }
-    if (km >= maxKm) {
-      out.push(r);
-      maxKm = km;
-      continue;
-    }
-    const drop = maxKm - km;
-    if (drop > 0 && drop < UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM) {
-      continue;
-    }
-    out.push(r);
-    maxKm = km;
-  }
-
-  return out;
-}
-
-/**
- * PDF / grafiks: (1) mazi atpakaļgājieni, (2) vienā mēnesī tas pats km — viens ieraksts;
- * (3) rindām bez derīga datuma — secīgi dublētu km apkopošana.
+ * Nobraukuma tabula + līknei: hronoloģiska secība bez km apkopošanas / dublējumu izmešanas
+ * (visi avoti un līdzīgi km paliek redzami).
  */
 export function filterDuplicateOdometerKmReadings(rows: UnifiedMileageRow[]): UnifiedMileageRow[] {
-  const collapsed = collapseSmallOdometerDipsChronological(rows);
-  const sorted = sortMileageChronological(collapsed);
-  const out: UnifiedMileageRow[] = [];
-  const seenMonthKm = new Set<string>();
-  let lastKmNoDay: number | null = null;
-
-  for (const r of sorted) {
-    const km = parseOdometerKm(r.odometer);
-    const t = r.sortableTime;
-    const hasCalDay =
-      Number.isFinite(t) && t !== Number.NEGATIVE_INFINITY && t !== Number.POSITIVE_INFINITY;
-
-    if (km === null) {
-      out.push(r);
-      lastKmNoDay = null;
-      continue;
-    }
-
-    if (hasCalDay) {
-      lastKmNoDay = null;
-      const ym = yearMonthUtcFromMs(t);
-      const monthKmKey = `${ym}|${km}`;
-      if (seenMonthKm.has(monthKmKey)) continue;
-      seenMonthKm.add(monthKmKey);
-      out.push(r);
-      continue;
-    }
-
-    if (lastKmNoDay !== null && km === lastKmNoDay) continue;
-    lastKmNoDay = km;
-    out.push(r);
-  }
-
-  return out;
+  return sortMileageChronological([...rows]);
 }
 
 /**

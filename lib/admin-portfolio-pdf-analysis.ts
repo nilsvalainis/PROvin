@@ -102,9 +102,8 @@ const ODOMETER_LV = /odometra\s+r[aā]d[īi]jums[:\s]+(\d{5,7})/gi;
 const MILEAGE_EN = /(?:recorded\s+)?mileage[:\s]+(\d{5,7})\b/gi;
 const ODO_READING_EN = /odometer\s+reading[:\s]+(\d{5,7})\b/gi;
 
-function pushKmUnique(arr: KmSample[], km: number, context?: string) {
+function pushKmSample(arr: KmSample[], km: number, context?: string) {
   if (km < 1000 || km > 2_000_000) return;
-  if (arr.some((x) => Math.abs(x.km - km) < 2)) return;
   arr.push({ km, context });
 }
 
@@ -115,32 +114,32 @@ function extractKmSamples(text: string): KmSample[] {
 
   while ((m = KM_WITH_DATE_RE.exec(t)) !== null) {
     const km = parseInt(m[2].replace(/\s/g, ""), 10);
-    pushKmUnique(out, km, m[1]);
+    pushKmSample(out, km, m[1]);
   }
   KM_WITH_DATE_RE.lastIndex = 0;
 
   while ((m = KM_THEN_DATE_RE.exec(t)) !== null) {
     const km = parseInt(m[1].replace(/\s/g, ""), 10);
-    pushKmUnique(out, km, m[2]);
+    pushKmSample(out, km, m[2]);
   }
   KM_THEN_DATE_RE.lastIndex = 0;
 
   while ((m = KM_PLAIN_RE.exec(t)) !== null) {
     const km = parseInt(m[1].replace(/\s/g, ""), 10);
-    pushKmUnique(out, km);
+    pushKmSample(out, km);
   }
 
   while ((m = ODOMETER_EN.exec(t)) !== null) {
-    pushKmUnique(out, parseInt(m[1], 10), "odometer");
+    pushKmSample(out, parseInt(m[1], 10), "odometer");
   }
   while ((m = ODOMETER_LV.exec(t)) !== null) {
-    pushKmUnique(out, parseInt(m[1], 10), "odometra rādījums");
+    pushKmSample(out, parseInt(m[1], 10), "odometra rādījums");
   }
   while ((m = MILEAGE_EN.exec(t)) !== null) {
-    pushKmUnique(out, parseInt(m[1], 10), "mileage");
+    pushKmSample(out, parseInt(m[1], 10), "mileage");
   }
   while ((m = ODO_READING_EN.exec(t)) !== null) {
-    pushKmUnique(out, parseInt(m[1], 10), "odometer reading");
+    pushKmSample(out, parseInt(m[1], 10), "odometer reading");
   }
 
   return out.sort((a, b) => a.km - b.km);
@@ -277,14 +276,13 @@ export async function analyzePdfBuffer(
   };
 }
 
-/** Admin priekšskatam / grafikiem — etiķetes bez failu nosaukumiem. */
+/** Admin priekšskatam / grafikiem — visi nobraukuma paraugi, arī ļoti līdzīgi (bez apkopošanas). */
 export function mergeKmForChart(insights: PdfPortfolioFileInsight[]): { km: number; label: string }[] {
   const merged: { km: number; label: string }[] = [];
   for (const ins of insights) {
     const base = `Pārskats ${ins.sourceOrdinal}`;
     for (const s of ins.kmSamples) {
       const label = s.context ? `${base} · ${s.context}` : base;
-      if (merged.some((m) => Math.abs(m.km - s.km) < 50 && m.label.startsWith(base))) continue;
       merged.push({ km: s.km, label });
     }
   }
