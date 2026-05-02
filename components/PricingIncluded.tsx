@@ -22,7 +22,7 @@ const pricingCardShellClass =
   "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--mobile-card demo-design-dir__card flex h-full min-h-0 flex-col items-center justify-center gap-2.5 px-3 py-4 text-center sm:gap-3 sm:px-4 sm:py-5";
 
 const pricingCardTitleClass =
-  "marketing-hero-pillar-title w-full max-w-[16.5rem] text-balance text-center text-[9px] font-semibold uppercase leading-snug tracking-tight text-[var(--color-apple-text,#1d1d1f)] line-clamp-4 sm:max-w-[18rem] sm:text-[10px]";
+  "marketing-hero-pillar-title w-full max-w-[16.5rem] text-balance text-center text-[9px] font-semibold uppercase leading-snug tracking-tight line-clamp-4 sm:max-w-[18rem] sm:text-[10px]";
 
 const pricingCardBodyClass =
   "home-muted-foreground max-w-[17.5rem] text-balance text-center text-[11px] leading-relaxed sm:max-w-[19rem] sm:text-[12px]";

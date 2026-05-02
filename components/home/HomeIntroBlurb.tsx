@@ -7,21 +7,24 @@ import styles from "@/app/[locale]/demo/page.module.css";
 
 type Props = {
   introBodyText: string;
+  /** `hero` — labā kolonna pie produkta hero; `page` — atsevišķa josla zem hero. */
+  variant?: "hero" | "page";
 };
 
-/**
- * Bijušais „Kas ir PROVIN?” hero labās puses saturs — pārvietots zem hero,
- * lai hero fokuss paliktu uz vienu CTA.
- */
-export function HomeIntroBlurb({ introBodyText }: Props) {
+export function HomeIntroBlurb({ introBodyText, variant = "page" }: Props) {
   const t = useTranslations("Hero");
+  const isHero = variant === "hero";
 
   return (
     <div
       id="home-intro"
       role="region"
       aria-labelledby="home-intro-heading"
-      className="scroll-mt-16 border-b border-white/[0.06] pb-10 pt-2 sm:pb-12 sm:pt-0"
+      className={
+        isHero
+          ? `scroll-mt-20 ${styles.heroIntroBlurbInHero}`
+          : "scroll-mt-16 border-b border-white/[0.06] pb-10 pt-2 sm:pb-12 sm:pt-0"
+      }
     >
       <div className={styles.heroIntroBlurbShell}>
         <div className={styles.heroGlassCard}>

@@ -10,14 +10,16 @@ import {
   ORDER_SECTION_ID,
 } from "@/lib/order-section";
 import { PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
+import { HomeIntroBlurb } from "@/components/home/HomeIntroBlurb";
 import styles from "@/app/[locale]/demo/page.module.css";
 
 type Props = {
   /** `false` — PROVIN SELECT saite hero nav rādāma. */
   showProvinSelect?: boolean;
+  introBodyText: string;
 };
 
-export default function HomeProductHero({ showProvinSelect = false }: Props) {
+export default function HomeProductHero({ showProvinSelect = false, introBodyText }: Props) {
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
   const t = useTranslations("Hero");
 
@@ -98,11 +100,14 @@ export default function HomeProductHero({ showProvinSelect = false }: Props) {
                 </ul>
               </div>
 
-              <div className={styles.heroVisualSlot}>
-                <div className={styles.heroVisualInner}>
-                  <HeroVisual />
+              <div className={styles.heroRightColumn}>
+                <HomeIntroBlurb variant="hero" introBodyText={introBodyText} />
+                <div className={styles.heroVisualSlot}>
+                  <div className={styles.heroVisualInner}>
+                    <HeroVisual />
+                  </div>
+                  <div className={styles.heroVisualOverlay} aria-hidden />
                 </div>
-                <div className={styles.heroVisualOverlay} aria-hidden />
               </div>
             </div>
           </div>

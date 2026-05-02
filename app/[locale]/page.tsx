@@ -2,7 +2,6 @@ import dynamic from "next/dynamic";
 import { getTranslations } from "next-intl/server";
 import { Footer } from "@/components/Footer";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
-import { HomeIntroBlurb } from "@/components/home/HomeIntroBlurb";
 import { ProvinSelectSection } from "@/components/home/ProvinSelectSection";
 import { IrissSection } from "@/components/IrissSection";
 import { isProvinSelectPublic } from "@/lib/provin-select-flags";
@@ -24,16 +23,10 @@ export default async function HomePage() {
 
   return (
     <div className={productHeroStyles.demoRoot}>
-      <HomeProductHero showProvinSelect={isProvinSelectPublic()} />
+      <HomeProductHero showProvinSelect={isProvinSelectPublic()} introBodyText={tMeta("homeIntroBody")} />
 
       <div className="demo-design-dir min-w-0 pb-0 text-white">
         <div id="site-content" className="home-body-ink scroll-mt-14">
-          <section className="demo-design-dir__section demo-design-dir__section--band-a py-10 sm:py-12">
-            <div className="demo-design-dir__shell">
-              <HomeIntroBlurb introBodyText={tMeta("homeIntroBody")} />
-            </div>
-          </section>
-
           <section className="demo-design-dir__section demo-design-dir__section--band-a py-16 sm:py-20">
             <div className="demo-design-dir__shell">
               <PricingIncluded embedded />

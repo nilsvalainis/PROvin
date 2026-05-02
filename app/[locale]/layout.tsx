@@ -18,7 +18,7 @@ import "./design-direction-theme.css";
 type Props = { children: ReactNode; params: Promise<{ locale: string }> };
 
 export const viewport: Viewport = {
-  themeColor: "#040406",
+  themeColor: "#030304",
   width: "device-width",
   initialScale: 1,
   /** iPhone / Android ar izcirtumu — lai `env(safe-area-inset-*)` strādā */
