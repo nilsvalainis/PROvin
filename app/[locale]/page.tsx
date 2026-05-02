@@ -33,7 +33,7 @@ export default async function HomePage() {
         </section>
       </div>
 
-      <div className="demo-design-dir min-w-0 pb-0 text-white">
+      <div className="demo-design-dir home-rest-bg min-w-0 pb-0 text-white">
         <div id="site-content" className="home-body-ink scroll-mt-14">
           {isProvinSelectPublic() ? (
             <div className="demo-design-dir home-below-hero-continuum min-w-0 text-white">
