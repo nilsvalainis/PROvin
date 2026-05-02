@@ -350,7 +350,7 @@ function extractVehicleMakeModel(csdd: string): string | null {
 
 /** Komentāru bloks zem avota (PDF — balts, minimāls). */
 function pdfAvotuCommentIsland(text: string): string {
-  const t = text.trim();
+  const t = internalCommentHtmlToPdfPlain(text).trim();
   if (!t) return "";
   return `<div class="pdf-avotu-comment-island" role="note">
     <p class="pdf-avotu-comment-island-label">${escapeHtml(PDF_SUB_BLOCK_COMMENTS)}</p>
@@ -534,10 +534,11 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
         ? `<table class="mirror-table"><tbody>${rows.join("\n")}</tbody></table>`
         : "";
     if (table) parts.push(table);
-    if (f.comments.trim()) {
+    const tirgusCommentsPlain = internalCommentHtmlToPdfPlain(f.comments ?? "").trim();
+    if (tirgusCommentsPlain) {
       parts.push(`<p class="pdf-field-label">${escapeHtml(LISTING_ANALYSIS_COMMENT_LABEL)}</p>`);
       parts.push(
-        `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(f.comments.trim())}</pre></div>`,
+        `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(tirgusCommentsPlain)}</pre></div>`,
       );
     }
   } else {
@@ -604,7 +605,7 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload, vis: PdfVisibi
   if (b && hasListingFields) {
     const L = LISTING_ANALYSIS_SUBSECTIONS;
     const cat = (title: string, text: string) => {
-      const t = text.trim();
+      const t = internalCommentHtmlToPdfPlain(text).trim();
       if (!t) return;
       inner.push(pdfFieldLabelWithIcon(pdfListingAnalysisFieldIconHtml(title), title));
       inner.push(
@@ -661,9 +662,9 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload, vis: PdfVisibilitySet
 /** Galvenais eksperta kopsavilkums — pilnā platumā, pēdējais lielais bloks pirms juridiskās piezīmes. */
 function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   if (!vis.iriss) return "";
-  const iriss = p.iriss.trim();
-  const plan = p.apskatesPlāns.trim();
-  const priceFit = p.cenasAtbilstiba.trim();
+  const iriss = internalCommentHtmlToPdfPlain(p.iriss ?? "").trim();
+  const plan = internalCommentHtmlToPdfPlain(p.apskatesPlāns ?? "").trim();
+  const priceFit = internalCommentHtmlToPdfPlain(p.cenasAtbilstiba ?? "").trim();
   if (!iriss && !plan && !priceFit) return "";
   const priceFitBlock = priceFit
     ? `Cenas atbilstība balstoties uz mūsu rīcībā esošajiem datiem:\n${priceFit}`

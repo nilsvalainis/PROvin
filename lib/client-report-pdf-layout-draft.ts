@@ -2,6 +2,8 @@
  * PDF — PROVIN „clean & compact” paneļu izkārtojums (Inter, gaišas līnijas, zīmola akcenti).
  */
 
+import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+
 function esc(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -168,6 +170,12 @@ export function buildPdfAdminMirrorClientBlock(
 export function buildPdfAdminMirrorNotesBlock(notes: string | null | undefined, titleIconHtml = ""): string {
   const t = notes?.trim();
   if (!t) return "";
+  const plain = adminRichHtmlToPlainText(t).replace(/\u00a0/g, " ");
+  if (!plain.trim()) return "";
   const head = pdfV1PanelHead("klienta komentārs", titleIconHtml);
-  return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}<div class="pdf-v1-notes-client-wrap"><p class="client-msg pdf-v1-notes-body" style="margin:0">${esc(t)}</p></div></div>`;
+  const bodyEscaped = plain
+    .split(/\r?\n/)
+    .map((ln) => esc(ln))
+    .join("<br />");
+  return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}<div class="pdf-v1-notes-client-wrap"><p class="client-msg pdf-v1-notes-body" style="margin:0">${bodyEscaped}</p></div></div>`;
 }

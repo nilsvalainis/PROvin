@@ -5,6 +5,7 @@ import { Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import {
@@ -339,6 +340,28 @@ function LabeledTextarea({
       <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">{label}</span>
       <textarea className={textareaClass} {...rest} />
     </label>
+  );
+}
+
+function LabeledOfferRichCommentField({
+  label,
+  value,
+  onHtmlChange,
+}: {
+  label: string;
+  value: string;
+  onHtmlChange: (html: string) => void;
+}) {
+  return (
+    <div className="block min-w-0">
+      <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">{label}</span>
+      <AdminAiPolishRichCommentShell
+        compact
+        value={value}
+        onChange={onHtmlChange}
+        aria-label={label}
+      />
+    </div>
   );
 }
 
@@ -1489,33 +1512,29 @@ export function IrissPasutijumsEditor({
                   </label>
                 </div>
                 <div className="mt-3">
-                  <LabeledTextarea
+                  <LabeledOfferRichCommentField
                     label="Īpašas atzīmes"
                     value={offerDraft.specialNotes}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, specialNotes: e.target.value }))}
-                    className={`${textareaClass} min-h-[100px]`}
+                    onHtmlChange={(next) => setOfferDraft((d) => ({ ...d, specialNotes: next }))}
                   />
                 </div>
                 <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <LabeledTextarea
+                  <LabeledOfferRichCommentField
                     label="Vizuālais novērtējums"
                     value={offerDraft.visualAssessment}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, visualAssessment: e.target.value }))}
-                    className={`${textareaClass} min-h-[132px]`}
+                    onHtmlChange={(next) => setOfferDraft((d) => ({ ...d, visualAssessment: next }))}
                   />
-                  <LabeledTextarea
+                  <LabeledOfferRichCommentField
                     label="Tehniskais novērtējums"
                     value={offerDraft.technicalAssessment}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, technicalAssessment: e.target.value }))}
-                    className={`${textareaClass} min-h-[132px]`}
+                    onHtmlChange={(next) => setOfferDraft((d) => ({ ...d, technicalAssessment: next }))}
                   />
                 </div>
                 <div className="mt-3">
-                  <LabeledTextarea
+                  <LabeledOfferRichCommentField
                     label="Kopsavilkums"
                     value={offerDraft.summary}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, summary: e.target.value, comment: e.target.value }))}
-                    className={`${textareaClass} min-h-[120px]`}
+                    onHtmlChange={(next) => setOfferDraft((d) => ({ ...d, summary: next, comment: next }))}
                   />
                 </div>
               </div>

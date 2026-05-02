@@ -6,7 +6,8 @@
 
 import { Loader2 } from "lucide-react";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
+import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
+import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { ListingAnalysisSubsectionHeading } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import {
@@ -17,6 +18,7 @@ import {
   type ListingAnalysisBlockState,
 } from "@/lib/admin-source-blocks";
 import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
+import { plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
 
 const ta =
   "min-h-[72px] w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20";
@@ -52,10 +54,7 @@ export function AdminListingAnalysisSourceBlock({
 
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeErr, setAnalyzeErr] = useState<string | null>(null);
-  const refSeller = useRef<HTMLTextAreaElement>(null);
-  const refPhoto = useRef<HTMLTextAreaElement>(null);
   const refPaste = useRef<HTMLTextAreaElement>(null);
-  const refSales = useRef<HTMLTextAreaElement>(null);
 
   const bumpTa = useCallback((el: HTMLTextAreaElement | null) => {
     if (!autoGrow || !el) return;
@@ -66,19 +65,8 @@ export function AdminListingAnalysisSourceBlock({
 
   useLayoutEffect(() => {
     if (!autoGrow || readOnly) return;
-    bumpTa(refSeller.current);
-    bumpTa(refPhoto.current);
     bumpTa(refPaste.current);
-    bumpTa(refSales.current);
-  }, [
-    autoGrow,
-    readOnly,
-    bumpTa,
-    v.sellerPortrait,
-    v.photoAnalysis,
-    v.listingPasteRaw,
-    v.listingSalesContext,
-  ]);
+  }, [autoGrow, readOnly, bumpTa, v.listingPasteRaw]);
 
   const runListingAnalyze = useCallback(async () => {
     const t = v.listingPasteRaw.trim();
@@ -106,7 +94,7 @@ export function AdminListingAnalysisSourceBlock({
         return;
       }
       if (typeof data.text === "string") {
-        onChange({ ...v, listingSalesContext: data.text });
+        onChange({ ...v, listingSalesContext: plainTextToMinimalRichHtml(data.text) });
       }
     } catch {
       setAnalyzeErr("Groq: neizdevās savienoties");
@@ -129,6 +117,13 @@ export function AdminListingAnalysisSourceBlock({
   const dense = compact && pri;
 
   const pasteTaClass = pri ? (dense ? taPriorityCompact : taPriority) : ta;
+
+  const roBox = (denseInner: boolean) =>
+    denseInner
+      ? "min-h-[32px] rounded border border-emerald-100/50 bg-transparent px-1.5 py-1 text-[10px] text-slate-500"
+      : "min-h-[48px] rounded-md border border-emerald-100/50 bg-transparent px-2 py-1.5 text-[11px] text-slate-500";
+
+  const roDefault = "min-h-[48px] rounded-md border border-slate-200/40 bg-transparent px-2 py-1.5 text-[11px] text-slate-500";
 
   return (
     <div className={shell}>
@@ -153,34 +148,15 @@ export function AdminListingAnalysisSourceBlock({
               {LISTING_ANALYSIS_COMMENT_LABEL}
             </p>
             {readOnly ? (
-              <div
-                className={
-                  pri
-                    ? dense
-                      ? "min-h-[32px] whitespace-pre-wrap rounded border border-emerald-100/50 bg-transparent px-1.5 py-1 text-[10px] text-slate-500"
-                      : "min-h-[48px] whitespace-pre-wrap rounded-md border border-emerald-100/50 bg-transparent px-2 py-1.5 text-[11px] text-slate-500"
-                    : "min-h-[48px] whitespace-pre-wrap rounded-md border border-slate-200/40 bg-transparent px-2 py-1.5 text-[11px] text-slate-500"
-                }
-              >
-                {v[key].trim() || "—"}
-              </div>
+              <AdminRichCommentReadonly html={v[key]} className={pri ? roBox(!!dense) : roDefault} />
             ) : (
-              <AdminAiPolishTextareaShell
+              <AdminAiPolishRichCommentShell
                 value={v[key]}
-                onPolished={(next) => onChange({ ...v, [key]: next })}
+                onChange={(next) => onChange({ ...v, [key]: next })}
                 disabled={disabled}
-              >
-                <textarea
-                  ref={key === "sellerPortrait" ? refSeller : refPhoto}
-                  className={`${pri ? (dense ? taPriorityCompact : taPriority) : ta} ${autoGrow && !readOnly ? "resize-none overflow-hidden" : ""}`}
-                  disabled={disabled}
-                  rows={dense ? 2 : 4}
-                  value={v[key]}
-                  onChange={(e) => onChange({ ...v, [key]: e.target.value })}
-                  placeholder=""
-                  aria-label={`${title} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-                />
-              </AdminAiPolishTextareaShell>
+                compact={pri && dense}
+                aria-label={`${title} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+              />
             )}
           </ListingAnalysisSubsectionHeading>
         ))}
@@ -251,34 +227,15 @@ export function AdminListingAnalysisSourceBlock({
             {LISTING_ANALYSIS_COMMENT_LABEL}
           </p>
           {readOnly ? (
-            <div
-              className={
-                pri
-                  ? dense
-                    ? "min-h-[32px] whitespace-pre-wrap rounded border border-emerald-100/50 bg-transparent px-1.5 py-1 text-[10px] text-slate-500"
-                    : "min-h-[48px] whitespace-pre-wrap rounded-md border border-emerald-100/50 bg-transparent px-2 py-1.5 text-[11px] text-slate-500"
-                  : "min-h-[48px] whitespace-pre-wrap rounded-md border border-slate-200/40 bg-transparent px-2 py-1.5 text-[11px] text-slate-500"
-              }
-            >
-              {v.listingSalesContext.trim() || "—"}
-            </div>
+            <AdminRichCommentReadonly html={v.listingSalesContext} className={pri ? roBox(!!dense) : roDefault} />
           ) : (
-            <AdminAiPolishTextareaShell
+            <AdminAiPolishRichCommentShell
               value={v.listingSalesContext}
-              onPolished={(next) => onChange({ ...v, listingSalesContext: next })}
+              onChange={(next) => onChange({ ...v, listingSalesContext: next })}
               disabled={disabled}
-            >
-              <textarea
-                ref={refSales}
-                className={`${pri ? (dense ? taPriorityCompact : taPriority) : ta} ${autoGrow && !readOnly ? "resize-none overflow-hidden" : ""}`}
-                disabled={disabled}
-                rows={dense ? 2 : 4}
-                value={v.listingSalesContext}
-                onChange={(e) => onChange({ ...v, listingSalesContext: e.target.value })}
-                placeholder=""
-                aria-label={`${L.listingSalesContext} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-              />
-            </AdminAiPolishTextareaShell>
+              compact={pri && dense}
+              aria-label={`${L.listingSalesContext} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+            />
           )}
         </ListingAnalysisSubsectionHeading>
       </div>

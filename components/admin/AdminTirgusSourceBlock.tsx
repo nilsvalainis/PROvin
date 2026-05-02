@@ -1,6 +1,7 @@
 "use client";
 
-import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
+import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
+import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { ListedForSaleFieldChrome } from "@/components/admin/ListedForSaleFieldChrome";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { PriceDropArrowIcon } from "@/components/icons/PriceDropArrowIcon";
@@ -17,15 +18,6 @@ import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
-
-const taDefault =
-  "min-h-[72px] w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
-
-const taEmbedded =
-  "min-h-[72px] w-full rounded-md border border-emerald-200/90 bg-white/95 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/25";
-
-const taEmbeddedCompact =
-  "min-h-[48px] w-full rounded-md border border-emerald-200/90 bg-white/95 px-1.5 py-1 text-[10px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/25";
 
 type Props = {
   value?: TirgusFormFields | null;
@@ -154,50 +146,29 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, va
           {LISTING_ANALYSIS_COMMENT_LABEL}
         </p>
         {readOnly ? (
-          <div className={commentsReadonlyClassEmbedded}>
-            {val.comments.trim() ? val.comments : <span className="text-slate-400">—</span>}
-          </div>
+          <AdminRichCommentReadonly html={val.comments} className={commentsReadonlyClassEmbedded} />
         ) : (
-          <AdminAiPolishTextareaShell
+          <AdminAiPolishRichCommentShell
             value={val.comments}
-            onPolished={(next) => setField("comments", next)}
+            onChange={(next) => setField("comments", next)}
             disabled={disabled}
-          >
-            <textarea
-              className={embDense ? taEmbeddedCompact : taEmbedded}
-              rows={embDense ? 2 : 4}
-              placeholder=""
-              value={val.comments}
-              disabled={disabled}
-              onChange={(e) => setField("comments", e.target.value)}
-              aria-label={`${LISTING_HISTORY_SUBSECTION_TITLE} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-            />
-          </AdminAiPolishTextareaShell>
+            compact={embDense}
+            aria-label={`${LISTING_HISTORY_SUBSECTION_TITLE} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+          />
         )}
       </div>
     ) : (
       <div className="mt-auto w-full min-w-0 shrink-0 pt-2">
         <p className="mb-0.5 text-[10px] font-medium text-[var(--color-provin-muted)]">{LISTING_ANALYSIS_COMMENT_LABEL}</p>
         {readOnly ? (
-          <div className={commentsReadonlyClassDefault}>
-            {val.comments.trim() ? val.comments : <span className="text-slate-400">—</span>}
-          </div>
+          <AdminRichCommentReadonly html={val.comments} className={commentsReadonlyClassDefault} />
         ) : (
-          <AdminAiPolishTextareaShell
+          <AdminAiPolishRichCommentShell
             value={val.comments}
-            onPolished={(next) => setField("comments", next)}
+            onChange={(next) => setField("comments", next)}
             disabled={disabled}
-          >
-            <textarea
-              className={taDefault}
-              rows={4}
-              placeholder="Papildu komentāri par sludinājuma vēsturi…"
-              value={val.comments}
-              disabled={disabled}
-              onChange={(e) => setField("comments", e.target.value)}
-              aria-label={`Tirgus — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-            />
-          </AdminAiPolishTextareaShell>
+            aria-label={`Tirgus — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+          />
         )}
       </div>
     );

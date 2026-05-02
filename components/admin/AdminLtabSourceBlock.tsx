@@ -1,6 +1,7 @@
 "use client";
 
-import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
+import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
+import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
@@ -167,24 +168,18 @@ export function AdminLtabSourceBlock({
           <div className={`mt-auto w-full min-w-0 shrink-0 pt-2 ${trafficFillLevel ? "px-2 pb-2" : ""}`}>
             <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">Komentāri:</label>
             {readOnly ? (
-              <div className="min-h-[48px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
-                {value.comments.trim() ? value.comments : <span className="text-slate-400">—</span>}
-              </div>
+              <AdminRichCommentReadonly
+                html={value.comments}
+                className="min-h-[48px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
+              />
             ) : (
-              <AdminAiPolishTextareaShell
+              <AdminAiPolishRichCommentShell
                 value={value.comments}
-                onPolished={(next) => onChange({ ...value, comments: next })}
+                onChange={(next) => onChange({ ...value, comments: next })}
                 disabled={disabled}
-              >
-                <textarea
-                  className="w-full min-h-[72px] resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
-                  rows={3}
-                  placeholder="Papildu komentāri par LTAB / OCTA…"
-                  value={value.comments}
-                  disabled={disabled}
-                  onChange={(e) => onChange({ ...value, comments: e.target.value })}
-                />
-              </AdminAiPolishTextareaShell>
+                compact
+                aria-label="LTAB — komentāri"
+              />
             )}
           </div>
       </div>

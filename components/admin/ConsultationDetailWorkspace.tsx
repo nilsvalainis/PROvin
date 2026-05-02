@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LayoutDashboard, ListChecks, ListOrdered } from "lucide-react";
+import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
@@ -34,8 +35,6 @@ const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
 };
 
 const sectionTitle = `font-medium uppercase tracking-wide text-[var(--color-provin-muted)] ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
-const bulkTextareaClass =
-  "w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
 const CONSULTATION_WIZARD_STEP_COUNT = 1 + CONSULTATION_SLOT_COUNT + 1;
 
@@ -315,30 +314,34 @@ export function ConsultationDetailWorkspace({
           pdfInclude={pdfVisibility.ltab}
           onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
         />
-        <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
-          IETEIKUMI KLĀTIENES APSKATEI
-          <textarea
-            className={`${bulkTextareaClass} mt-0.5 min-h-[72px]`}
+        <div className="block min-w-0">
+          <span className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
+            IETEIKUMI KLĀTIENES APSKATEI
+          </span>
+          <AdminAiPolishRichCommentShell
+            compact
             value={slot.ieteikumiApskatei}
-            onChange={(e) => updateSlotField(idx, "ieteikumiApskatei", e.target.value)}
+            onChange={(next) => updateSlotField(idx, "ieteikumiApskatei", next)}
           />
-        </label>
-        <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
-          CENAS ATBILSTĪBA
-          <textarea
-            className={`${bulkTextareaClass} mt-0.5 min-h-[72px]`}
+        </div>
+        <div className="block min-w-0">
+          <span className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
+            CENAS ATBILSTĪBA
+          </span>
+          <AdminAiPolishRichCommentShell
+            compact
             value={slot.cenasAtbilstiba}
-            onChange={(e) => updateSlotField(idx, "cenasAtbilstiba", e.target.value)}
+            onChange={(next) => updateSlotField(idx, "cenasAtbilstiba", next)}
           />
-        </label>
-        <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
-          KOPSAVILKUMS
-          <textarea
-            className={`${bulkTextareaClass} mt-0.5 min-h-[72px]`}
+        </div>
+        <div className="block min-w-0">
+          <span className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">KOPSAVILKUMS</span>
+          <AdminAiPolishRichCommentShell
+            compact
             value={slot.kopsavilkums}
-            onChange={(e) => updateSlotField(idx, "kopsavilkums", e.target.value)}
+            onChange={(next) => updateSlotField(idx, "kopsavilkums", next)}
           />
-        </label>
+        </div>
       </div>
     );
   };
@@ -427,11 +430,10 @@ export function ConsultationDetailWorkspace({
                 onChange={(next) => onPdfVisibilityChange({ iriss: next })}
               />
             </div>
-            <textarea
-              className={`${bulkTextareaClass} min-h-[140px]`}
+            <AdminAiPolishRichCommentShell
               value={ws.irissApproved}
-              onChange={(e) => setWs((p) => ({ ...p, irissApproved: e.target.value }))}
-              placeholder="Galīgais kopsavilkums / IRISS apstiprinājums…"
+              onChange={(next) => setWs((p) => ({ ...p, irissApproved: next }))}
+              aria-label="APPROVED BY IRISS — galīgais kopsavilkums"
             />
           </div>
         ) : null}

@@ -1,3 +1,4 @@
+import { internalCommentHtmlToPdfPlain } from "@/lib/admin-internal-comment-pdf";
 import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
@@ -514,11 +515,11 @@ export function buildIrissOfferPrintHtml(
     ${checklistRow(accent, offer.hasSecondWheelSet, "Otrs riteņu komplekts")}
   </div>`;
 
-  const specialNotes = offer.specialNotes?.trim() || "";
+  const specialNotes = internalCommentHtmlToPdfPlain(offer.specialNotes ?? "").trim();
   const specialInner = specialNotes ? `<div class="ipdf-card"><pre>${esc(specialNotes)}</pre></div>` : "";
 
-  const visual = offer.visualAssessment?.trim() || "";
-  const technical = offer.technicalAssessment?.trim() || "";
+  const visual = internalCommentHtmlToPdfPlain(offer.visualAssessment ?? "").trim();
+  const technical = internalCommentHtmlToPdfPlain(offer.technicalAssessment ?? "").trim();
   const visualHealthInner =
     visual && parseScoreOutOf10(visual) !== null
       ? `<div class="ipdf-card">${healthScaleHtml(accent, "Vizuālais novērtējums", visual, { omitHeading: true })}</div>`
@@ -530,7 +531,7 @@ export function buildIrissOfferPrintHtml(
       : "";
   const technicalDetailInner = technical ? `<div class="ipdf-card"><pre>${esc(technical)}</pre></div>` : "";
 
-  const summary = offer.summary?.trim() || "";
+  const summary = internalCommentHtmlToPdfPlain(offer.summary ?? "").trim();
   const summaryInner = summary ? `<div class="ipdf-summary"><pre>${esc(summary)}</pre></div>` : "";
 
   const evalSections = [

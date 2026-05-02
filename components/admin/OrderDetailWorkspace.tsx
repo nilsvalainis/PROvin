@@ -89,8 +89,7 @@ import {
   Send,
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
-import { AdminInternalRichCommentEditor } from "@/components/admin/AdminInternalRichCommentEditor";
+import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import {
   AdminCommonPhrasesDrawer,
@@ -166,9 +165,6 @@ const workspaceSectionTitle = `font-medium uppercase tracking-wide text-[var(--c
 
 const workspaceSectionShell =
   "rounded-xl bg-[var(--admin-surface-elevated)] p-2 shadow-sm ring-1 ring-[var(--admin-border-subtle)]";
-
-const bulkTextareaClass =
-  "w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
 function normalizeWhatsAppPhoneDigits(raw: string | null | undefined): string | null {
   const t = (raw ?? "").trim();
@@ -1144,23 +1140,6 @@ export function OrderDetailWorkspace({
     () => workspaceWizardProgressPct(wizardStepLevels),
     [wizardStepLevels],
   );
-
-  const irissAutosizeRef = useRef<HTMLTextAreaElement>(null);
-  const apskatesAutosizeRef = useRef<HTMLTextAreaElement>(null);
-  const cenasAutosizeRef = useRef<HTMLTextAreaElement>(null);
-  useLayoutEffect(() => {
-    const bump = (el: HTMLTextAreaElement | null) => {
-      if (!el) return;
-      const lh = parseFloat(getComputedStyle(el).lineHeight) || 16;
-      el.style.height = "auto";
-      el.style.height = `${el.scrollHeight + lh}px`;
-    };
-    if (wizardStep === 7) {
-      bump(irissAutosizeRef.current);
-      bump(apskatesAutosizeRef.current);
-      bump(cenasAutosizeRef.current);
-    }
-  }, [wizardStep, ws.iriss, ws.apskatesPlāns, ws.cenasAtbilstiba]);
 
   const openPrintReport = async () => {
     if (!canGeneratePdf) {
@@ -2141,66 +2120,46 @@ export function OrderDetailWorkspace({
               />
               <div className="space-y-3 bg-transparent px-2 pb-2 pt-2">
                 <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.summary} title="1. Kopsavilkums">
-                  <AdminAiPolishTextareaShell value={ws.iriss} onPolished={setIrissSummary}>
-                    <textarea
-                      ref={irissAutosizeRef}
-                      id={`${fileInputId}-iriss`}
-                      className={`${bulkTextareaClass} min-h-[120px] resize-none overflow-hidden`}
-                      value={ws.iriss}
-                      onChange={(e) => setIrissSummary(e.target.value)}
-                      placeholder="Galvenais kopsavilkums klientam…"
-                      spellCheck
-                    />
-                  </AdminAiPolishTextareaShell>
+                  <AdminAiPolishRichCommentShell
+                    value={ws.iriss}
+                    onChange={setIrissSummary}
+                    aria-label="Galvenais kopsavilkums klientam"
+                  />
                 </ListingAnalysisSubsectionHeading>
                 <ListingAnalysisSubsectionHeading
                   icon={IRISS_CHROME_LUCIDE.inspection}
                   title="2. Ieteikumi klātienes apskatei"
                 >
-                  <AdminAiPolishTextareaShell
+                  <AdminAiPolishRichCommentShell
                     value={ws.apskatesPlāns}
-                    onPolished={(next) => updateWs({ apskatesPlāns: next })}
-                  >
-                    <textarea
-                      ref={apskatesAutosizeRef}
-                      id={`${fileInputId}-apskates`}
-                      className={`${bulkTextareaClass} min-h-[72px] resize-none overflow-hidden`}
-                      value={ws.apskatesPlāns}
-                      onChange={(e) => updateWs({ apskatesPlāns: e.target.value })}
-                      placeholder="piem. [ ] Aizmugure — krāsas biezums… · [ ] Stūre — vibrācijas…"
-                      spellCheck
-                    />
-                  </AdminAiPolishTextareaShell>
+                    onChange={(next) => updateWs({ apskatesPlāns: next })}
+                    aria-label="Ieteikumi klātienes apskatei"
+                  />
                 </ListingAnalysisSubsectionHeading>
                 <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.priceFit} title="3. Cenas atbilstība">
-                  <AdminAiPolishTextareaShell
+                  <AdminAiPolishRichCommentShell
                     value={ws.cenasAtbilstiba}
-                    onPolished={(next) => updateWs({ cenasAtbilstiba: next })}
-                  >
-                    <textarea
-                      ref={cenasAutosizeRef}
-                      id={`${fileInputId}-cenas-atbilstiba`}
-                      className={`${bulkTextareaClass} min-h-[56px] resize-none overflow-hidden`}
-                      value={ws.cenasAtbilstiba}
-                      onChange={(e) => updateWs({ cenasAtbilstiba: e.target.value })}
-                      placeholder="Balstoties uz mūsu rīcībā esošajiem datiem…"
-                      spellCheck
-                    />
-                  </AdminAiPolishTextareaShell>
+                    onChange={(next) => updateWs({ cenasAtbilstiba: next })}
+                    aria-label="Cenas atbilstība"
+                  />
                 </ListingAnalysisSubsectionHeading>
                 <ListingAnalysisSubsectionHeading
                   icon={IRISS_CHROME_LUCIDE.internalNote}
                   title="Iekšējais komentārs (logs)"
                 >
                   <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
-                    Glabājas pasūtījuma melnrakstā; PDF drukā zem „Negadījumu vēstures” kā teksts (bez formatējuma).
+                    Glabājas pasūtījuma melnrakstā; PDF drukā zem „Negadījumu vēstures” kā plakans teksts (bez vizuālā
+                    formatējuma).
                     Saglabājas automātiski.
                   </p>
-                  <AdminInternalRichCommentEditor
-                    className="mt-2"
-                    value={internalCommentDraft}
-                    onChange={onInternalCommentChange}
-                  />
+                  <div className="mt-2">
+                    <AdminAiPolishRichCommentShell
+                      compact
+                      value={internalCommentDraft}
+                      onChange={onInternalCommentChange}
+                      aria-label="Iekšējais komentārs"
+                    />
+                  </div>
                 </ListingAnalysisSubsectionHeading>
               </div>
             </div>

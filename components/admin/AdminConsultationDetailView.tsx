@@ -319,6 +319,7 @@ export function AdminConsultationDetailView({
               onChange={(v) => persistEdits({ notes: v })}
               placeholder="Sākotnējais ziņojums no formas…"
               multiline
+              multilineRich
               compact
               hideToolbar
               minHeightClass="min-h-[56px]"
@@ -346,6 +347,7 @@ export function AdminConsultationDetailView({
               onChange={(v) => persistEdits({ internalComment: v })}
               placeholder="Tikai adminam…"
               multiline
+              multilineRich
               compact
               hideToolbar
               minHeightClass="min-h-[48px]"

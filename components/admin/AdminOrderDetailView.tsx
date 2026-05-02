@@ -603,6 +603,7 @@ export function AdminOrderDetailView({
                   onChange={(v) => persistEdits({ notes: v })}
                   placeholder="Klienta ziņojums…"
                   multiline
+                  multilineRich
                   compact
                   hideToolbar
                   minHeightClass="min-h-[56px]"

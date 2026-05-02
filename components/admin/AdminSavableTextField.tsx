@@ -2,7 +2,9 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
+import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 
 const toolbarBtn =
   "rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] font-semibold tracking-tight text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-40";
@@ -19,6 +21,8 @@ export type AdminSavableTextFieldProps = {
   /** Pēc apstiprināta saglabājuma (piem., papildu flush) */
   onAfterSave?: () => void;
   multiline?: boolean;
+  /** contentEditable + ✨ polish — glabā kā HTML (PDF u.c. to pārveido par plakanu tekstu). */
+  multilineRich?: boolean;
   minHeightClass?: string;
   placeholder?: string;
   mono?: boolean;
@@ -44,6 +48,7 @@ export function AdminSavableTextField({
   onChange,
   onAfterSave,
   multiline,
+  multilineRich = false,
   minHeightClass = "min-h-[88px]",
   placeholder,
   mono,
@@ -158,24 +163,30 @@ export function AdminSavableTextField({
       {viewMode ? (
         flexRowWithAdornment ? (
           <div className="flex min-w-0 items-center gap-1">
-            <div
-              className={viewBoxClassSized}
-              id={`${id}-view`}
-              aria-readonly
-            >
+            <div className={viewBoxClassSized} id={`${id}-view`} aria-readonly>
               {value.trim() ? value : <span className="text-slate-400">—</span>}
             </div>
             {endAdornment}
           </div>
         ) : (
-          <div
-            className={viewBoxClass}
-            id={`${id}-view`}
-            aria-readonly
-          >
-            {value.trim() ? value : <span className="text-slate-400">—</span>}
+          <div className={viewBoxClass} id={`${id}-view`} aria-readonly>
+            {multilineRich ? (
+              <AdminRichCommentReadonly variant="inline" html={value} />
+            ) : value.trim() ? (
+              value
+            ) : (
+              <span className="text-slate-400">—</span>
+            )}
           </div>
         )
+      ) : multilineRich ? (
+        <AdminAiPolishRichCommentShell
+          compact={compact}
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+          aria-label={label ?? placeholder ?? id}
+        />
       ) : multiline ? (
         <AdminAiPolishTextareaShell value={value} onPolished={onChange} disabled={disabled}>
           <textarea

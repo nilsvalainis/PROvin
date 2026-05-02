@@ -30,6 +30,10 @@ yarn-error.log*
 # Admin pasūtījumu melnraksti (JSON) — lokāli / VPS
 .data/
 
+# Lokāli IRISS snapshot / manuālie restore (projekta `data/`, ne `.data/`)
+data/iriss-listings/
+data/iriss-pasutijumi-restore-*/
+
 # vercel
 .vercel
 

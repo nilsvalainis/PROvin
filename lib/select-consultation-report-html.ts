@@ -16,6 +16,7 @@ import {
   provincLogoSvg,
 } from "@/lib/client-report-pdf-layout-draft";
 import { getClientReportPrintCss } from "@/lib/client-report-html";
+import { internalCommentHtmlToPdfPlain } from "@/lib/admin-internal-comment-pdf";
 import { sectionIconPdfHtml } from "@/lib/section-icons";
 
 function esc(s: string): string {
@@ -29,7 +30,7 @@ function esc(s: string): string {
 const DOC_TITLE = "PROVIN SELECT, STRATĒĢISKĀ KONSULTĀCIJA";
 
 function plainBlockPanel(title: string, body: string): string {
-  const t = body.trim();
+  const t = internalCommentHtmlToPdfPlain(body).trim();
   if (!t) return "";
   return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">
     <div class="pdf-v1-panel-head"><p class="pdf-v1-panel-title">${esc(title)}</p></div>

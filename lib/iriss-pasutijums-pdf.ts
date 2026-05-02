@@ -9,6 +9,7 @@ import sharp from "sharp";
 
 import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import { internalCommentHtmlToPdfPlain } from "@/lib/admin-internal-comment-pdf";
 import { shrinkImageBytesForIrissPdf } from "@/lib/shrink-image-for-iriss-pdf";
 
 const INTER_REG_PATH = path.join(process.cwd(), "public", "fonts", "invoice-inter", "Inter-Regular.ttf");
@@ -963,10 +964,10 @@ export async function buildIrissOfferPdfBytes(
   if (offer.hasFactoryPaint) assessmentChecks.push("\u2713 Rūpnīcas krāsojums");
   if (offer.hasNoRustBody) assessmentChecks.push("\u2713 Virsbūve bez rūsas");
   if (offer.hasSecondWheelSet) assessmentChecks.push("\u2713 Otrs riteņu komplekts");
-  const specialNotes = val(offer.specialNotes);
-  const visual = val(offer.visualAssessment);
-  const technical = val(offer.technicalAssessment);
-  const summary = val(offer.summary);
+  const specialNotes = val(internalCommentHtmlToPdfPlain(offer.specialNotes ?? ""));
+  const visual = val(internalCommentHtmlToPdfPlain(offer.visualAssessment ?? ""));
+  const technical = val(internalCommentHtmlToPdfPlain(offer.technicalAssessment ?? ""));
+  const summary = val(internalCommentHtmlToPdfPlain(offer.summary ?? ""));
 
   if (assessmentChecks.length) {
     drawIosCard(

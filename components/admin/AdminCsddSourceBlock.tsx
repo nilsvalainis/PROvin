@@ -26,7 +26,9 @@ import {
 } from "@/lib/csdd-ui-flags";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
+import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AlertTriangle } from "lucide-react";
 
@@ -402,25 +404,18 @@ export function AdminCsddSourceBlock({
           {LISTING_ANALYSIS_COMMENT_LABEL}
         </label>
         {readOnly ? (
-          <div className="min-h-[40px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
-            {value.comments.trim() ? value.comments : <span className="text-slate-400">—</span>}
-          </div>
+          <AdminRichCommentReadonly
+            html={value.comments}
+            className="min-h-[40px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
+          />
         ) : (
-          <AdminAiPolishTextareaShell
+          <AdminAiPolishRichCommentShell
             value={value.comments}
-            onPolished={(next) => onChange({ ...value, comments: next })}
+            onChange={(next) => onChange({ ...value, comments: next })}
             disabled={disabled}
-          >
-            <textarea
-              className="w-full resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
-              rows={2}
-              placeholder="Papildu komentāri par CSDD avotu…"
-              value={value.comments}
-              disabled={disabled}
-              onChange={(e) => onChange({ ...value, comments: e.target.value })}
-              aria-label={`CSDD — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-            />
-          </AdminAiPolishTextareaShell>
+            compact
+            aria-label={`CSDD — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+          />
         )}
       </div>
       </div>
