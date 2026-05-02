@@ -9,7 +9,7 @@ export const homeFaqMaxClass = "mx-auto min-w-0 w-full max-w-[min(42.5rem,calc(1
 
 /**
  * Hero — pasūtījuma forma un 4 pīlāri (design-direction orbit); tā pati maks. sleja kā
- * „KAS IEKĻAUTS CENĀ” 8 kartīšu režģis (`PricingIncluded` → `max-w-[min(100%,68rem)]`).
+ * „KAS IEKĻAUTS CENĀ” 4 kartīšu režģis (`PricingIncluded` → `max-w-[min(100%,68rem)]`).
  */
 export const homeHeroOrderColumnMaxClass =
   "mx-auto min-w-0 w-full max-w-[min(100%,68rem)]";

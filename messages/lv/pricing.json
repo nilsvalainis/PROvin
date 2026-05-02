@@ -3,36 +3,20 @@
     "workTitle": "KAS IEKĻAUTS CENĀ?",
     "grid": [
       {
-        "title": "Starptautiskās datubāzes",
-        "body": "Eiropas un ASV reģistru analīze: nobraukums, zādzības un fiksēti negadījumi ārzemēs."
+        "title": "PILNA VĒSTURES ANALĪZE",
+        "body": "Eiropas, ASV un vietējo reģistru datu sintēze. Pārbaudām nobraukuma dinamiku, zādzības, negadījumus un oficiālo dīleru servisa datus*, meklējot slēptas manipulācijas un pretrunas starp avotiem."
       },
       {
-        "title": "Dīleru dati*",
-        "body": "Piekļuve autorizēto servisu datiem: nobraukuma dinamika un fiksētie vēstures ieraksti."
+        "title": "SLUDINĀJUMA AUDITS",
+        "body": "Detalizēta fotoattēlu un apraksta ekspertīze. Identificējam vizuālas novirzes no normas, informācijas noklusēšanas pazīmes un detaļas, kas norāda uz automašīnas faktiskā nolietojuma slēpšanu vai iepriekšējiem remontdarbiem."
       },
       {
-        "title": "Latvijas reģistru analīze",
-        "body": "Padziļināta tehniskās apskates, nobraukuma un negadījumu vēstures pārbaude vietējā tirgū."
+        "title": "TEHNISKO RISKU ANALĪZE",
+        "body": "Dzinēja, transmisijas un galveno agregātu izvērtējums. Sniedzam pamatotu uzticamības prognozi un identificējam iespējamos ekspluatācijas riskus nākotnē."
       },
       {
-        "title": "Sludinājuma audits",
-        "body": "Fotogrāfiju un apraksta analīze, lai identificētu slēptas neatbilstības un pārdevēja trikus."
-      },
-      {
-        "title": "Tehnisko risku analīze",
-        "body": "Dzinēja, transmisijas un agregātu izvērtējums: uzticamības prognoze un ekspluatācijas riski."
-      },
-      {
-        "title": "Datu interpretācija",
-        "body": "Meklējam pretrunas starp dažādiem avotiem, lai atmaskotu manipulācijas un noklusētus faktus."
-      },
-      {
-        "title": "Papildu konsultācija",
-        "body": "Iespēja pēc atskaites saņemšanas uzdot precizējošus jautājumus un kopīgi izrunāt iegūtos datus."
-      },
-      {
-        "title": "Approved by IRISS",
-        "body": "Argumentēts slēdziens un rekomendācija, kas balstīta datos un 10+ gadu reālā pieredzē.",
+        "title": "EKSPERTA REKOMENDĀCIJA",
+        "body": "Argumentēts slēdziens, balstīts datos un 10+ gadu pieredzē. Ietver individuālu konsultāciju pēc atskaites saņemšanas, lai kopīgi izrunātu iegūtos datus un pieņemtu drošu lēmumu.",
         "href": true
       }
     ],
