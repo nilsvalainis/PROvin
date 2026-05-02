@@ -5,6 +5,10 @@
     "h1Un": "UN",
     "h1Sludinajuma": "SLUDINĀJUMA",
     "h1Line2": "AUDITS",
+    "productTitlePart1": "VIN",
+    "productTitlePart2": " un sludinājuma ",
+    "productTitlePart3": "audits",
+    "productSubhead": "Atklāj slēptos riskus pirms pērc auto",
     "italyKicker": "Atskaite, kas pastāsta daudz vairāk...",
     "lensLine1": "VIN UN SLUDINĀJUMA",
     "lensLine2": "AUDITS",
@@ -28,10 +32,13 @@
       }
     ],
     "cta": "PASŪTĪT — 79,99 €",
-    "heroMobileOrderCta": "PASŪTĪT AUDITU — 79,99 €",
+    "heroMobileOrderCta": "Pasūtīt auditu — 79,99 €",
+    "heroConsultLink": "Nezini ko pirkt? → Piesakies konsultācijai",
     "heroConsultCta": "NEZINI, KO PIRKT? PIESAKIES KONSULTĀCIJAI!",
     "orderPin": "Pasūtīt",
     "trustBody": "",
-    "scrollToPricingAria": "Turpināt"
+    "scrollToPricingAria": "Turpināt",
+    "introBlurbTitle": "Kas ir",
+    "introBlurbTitleSuffix": "?"
   }
 }

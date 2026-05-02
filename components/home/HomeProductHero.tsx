@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { HeroVisual } from "@/components/HeroVisual";
 import { OrderForm } from "@/components/OrderForm";
 import { demoHeroFeatureTitles } from "@/lib/demo-feature-titles";
@@ -11,24 +10,21 @@ import {
   ORDER_SECTION_ID,
 } from "@/lib/order-section";
 import { PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
-import { renderProvinText } from "@/lib/provin-wordmark";
 import styles from "@/app/[locale]/demo/page.module.css";
 
 type Props = {
-  /** Tīrs teksts no `Meta.homeIntroBody` — PROVIN logotips tiek uzzīmēts klientā (RSC serializācija). */
-  introBodyText: string;
-  /** `false` — PROVIN SELECT paslēpts (`isProvinSelectPublic()`). */
+  /** `false` — PROVIN SELECT saite hero nav rādāma. */
   showProvinSelect?: boolean;
 };
 
-export default function HomeProductHero({ introBodyText, showProvinSelect = false }: Props) {
+export default function HomeProductHero({ showProvinSelect = false }: Props) {
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
   const t = useTranslations("Hero");
 
   return (
-    <div className={`home-hero-intro-surface ${styles.heroIntroSurface}`}>
+    <div className={`home-hero-intro-surface ${styles.heroIntroSurface} ${styles.heroIntroSurfaceDepth}`}>
       <div className={styles.heroDarkBackdrop} aria-hidden>
-        <div className={styles.heroVisualWrap}>
+        <div className={`${styles.heroVisualWrap} ${styles.heroVisualWrapAmbient}`} aria-hidden>
           <HeroVisual />
         </div>
         <div className={`home-hero-intro-scrim-gradient ${styles.demoScrimTune}`} aria-hidden />
@@ -37,24 +33,19 @@ export default function HomeProductHero({ introBodyText, showProvinSelect = fals
 
       <div className="relative z-10 min-w-0">
         <section id="home-hero" className={styles.heroSection} aria-labelledby="marketing-hero-product-title">
-          <div className={styles.shell}>
+          <div className={styles.heroShell}>
             <div className={styles.heroColumns}>
-              <div className={styles.left}>
-                <h1 id="marketing-hero-product-title" className={styles.title}>
-                  <span className={`${styles.titleRow} ${styles.titleSubLine}`}>
-                    <span className={styles.titleAccent}>{t("h1Vin")}</span>
-                    <span className={styles.titleInk}> {t("h1Un")}</span>
+              <div className={styles.heroLeftStack}>
+                <h1 id="marketing-hero-product-title" className={styles.productHeroTitle}>
+                  <span className={styles.productHeroTitleLine}>
+                    <span className={styles.productHeroTitleAccent}>{t("productTitlePart1")}</span>
+                    <span className={styles.productHeroTitleMid}>{t("productTitlePart2")}</span>
+                    <span className={styles.productHeroTitleAccent}>{t("productTitlePart3")}</span>
                   </span>
-                  <span className={`${styles.titleRow} ${styles.titleSubLine}`}>
-                    <span className={styles.titleAccent}>{t("h1Sludinajuma")}</span>
-                  </span>
-                  <span className={`${styles.titleRow} ${styles.titleAuditsLine}`}>{t("h1Line2")}</span>
                 </h1>
+                <p className={styles.productHeroSubhead}>{t("productSubhead")}</p>
 
-                <div
-                  id={ORDER_SECTION_ID}
-                  className={`${styles.productHeroOrderSlot} scroll-mt-[calc(2.75rem+1px)]`}
-                >
+                <div id={ORDER_SECTION_ID} className={`${styles.heroFormCard} scroll-mt-[calc(2.75rem+1px)]`}>
                   <OrderForm
                     variant="hero"
                     formId={HOME_HERO_ORDER_FORM_ID}
@@ -65,7 +56,7 @@ export default function HomeProductHero({ introBodyText, showProvinSelect = fals
                 </div>
 
                 {heroOrderStep === 1 ? (
-                  <div className="pointer-events-auto relative z-[80] flex w-full max-w-[520px] min-w-0 flex-col items-stretch">
+                  <div className="pointer-events-auto relative z-[80] mt-4 flex w-full max-w-[520px] min-w-0 flex-col items-stretch gap-2 sm:mt-5">
                     <button
                       type="button"
                       onClick={() => {
@@ -77,14 +68,17 @@ export default function HomeProductHero({ introBodyText, showProvinSelect = fals
                       {t("heroMobileOrderCta")}
                     </button>
                     {showProvinSelect ? (
-                      <a href={`#${PROVIN_SELECT_SECTION_ID}`} className={styles.ctaButtonHeroConsult}>
-                        {t("heroConsultCta")}
+                      <a
+                        href={`#${PROVIN_SELECT_SECTION_ID}`}
+                        className={styles.heroConsultTextLink}
+                      >
+                        {t("heroConsultLink")}
                       </a>
                     ) : null}
                   </div>
                 ) : null}
 
-                <ul className={styles.features}>
+                <ul className={`${styles.features} ${styles.heroTrust}`}>
                   {demoHeroFeatureTitles.map((item) => (
                     <li key={item.label}>
                       {item.icon === "check" ? (
@@ -104,24 +98,12 @@ export default function HomeProductHero({ introBodyText, showProvinSelect = fals
                 </ul>
               </div>
 
-              <aside id="home-intro" className={styles.heroIntroPanel}>
-                <div className={styles.heroGlassCard}>
-                  <h2 className={styles.heroGlassTitle}>
-                    KAS IR{" "}
-                    <span className={styles.heroGlassTitleNowrap}>
-                      <span className={styles.heroGlassTitlePro}>PRO</span>
-                      <span className="text-provin-accent">VIN</span>
-                    </span>
-                    ?
-                  </h2>
-                  <div className={styles.heroGlassScan}>
-                    <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
-                  </div>
-                  <p className={styles.heroGlassBody}>
-                    {renderProvinText(introBodyText, { proAndSuffixClassName: styles.heroGlassPro })}
-                  </p>
+              <div className={styles.heroVisualSlot}>
+                <div className={styles.heroVisualInner}>
+                  <HeroVisual />
                 </div>
-              </aside>
+                <div className={styles.heroVisualOverlay} aria-hidden />
+              </div>
             </div>
           </div>
         </section>
