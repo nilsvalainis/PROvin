@@ -102,12 +102,6 @@ export default function HomeProductHero({ showProvinSelect = false, introBodyTex
 
               <div className={styles.heroRightColumn}>
                 <HomeIntroBlurb variant="hero" introBodyText={introBodyText} />
-                <div className={styles.heroVisualSlot}>
-                  <div className={styles.heroVisualInner}>
-                    <HeroVisual />
-                  </div>
-                  <div className={styles.heroVisualOverlay} aria-hidden />
-                </div>
               </div>
             </div>
           </div>

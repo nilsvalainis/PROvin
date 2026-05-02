@@ -27,11 +27,20 @@ export function HomeIntroBlurb({ introBodyText, variant = "page" }: Props) {
       }
     >
       <div className={styles.heroIntroBlurbShell}>
-        <div className={styles.heroGlassCard}>
-          <h2 id="home-intro-heading" className={styles.heroGlassTitle}>
+        <div
+          className={
+            isHero ? `${styles.heroFormCard} ${styles.heroIntroBlurbFormCard}` : styles.heroGlassCard
+          }
+        >
+          <h2
+            id="home-intro-heading"
+            className={isHero ? styles.heroIntroBlurbFormTitle : styles.heroGlassTitle}
+          >
             {t("introBlurbTitle")}{" "}
             <span className={styles.heroGlassTitleNowrap}>
-              <span className={styles.heroGlassTitlePro}>PRO</span>
+              <span className={isHero ? styles.heroIntroBlurbFormTitlePro : styles.heroGlassTitlePro}>
+                PRO
+              </span>
               <span className="text-provin-accent">VIN</span>
             </span>
             {t("introBlurbTitleSuffix")}
@@ -39,8 +48,10 @@ export function HomeIntroBlurb({ introBodyText, variant = "page" }: Props) {
           <div className={styles.heroGlassScan}>
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
-          <p className={styles.heroGlassBody}>
-            {renderProvinText(introBodyText, { proAndSuffixClassName: styles.heroGlassPro })}
+          <p className={isHero ? styles.heroIntroBlurbFormBody : styles.heroGlassBody}>
+            {renderProvinText(introBodyText, {
+              proAndSuffixClassName: isHero ? styles.heroIntroBlurbFormPro : styles.heroGlassPro,
+            })}
           </p>
         </div>
       </div>
