@@ -57,6 +57,20 @@
   box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.08);
 }
 
+/*
+ * Sākumlapa: produkta hero + „KAS IEKĻAUTS CENĀ?” — viens fons kā „Kas slēpjās aiz PROVIN?” (`band-b`).
+ * Gaišo tēmu pārraksta `site-theme-light.css`.
+ */
+.home-hero-pricing-unified {
+  background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(255 255 255 / 0.08), transparent 48%), #040406;
+  box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.08);
+}
+
+.demo-design-dir__section--unified-pricing-tail {
+  background: transparent;
+  box-shadow: none;
+}
+
 /* BUJ / „band-c” — viena tumša virsma (kā pirmā BUJ rinda / karte) */
 .demo-design-dir__section--band-c {
   background: #030304;

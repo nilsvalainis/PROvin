@@ -390,6 +390,11 @@ html[data-site-theme="light"] .demo-design-dir__section--band-b {
   box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.035);
 }
 
+html[data-site-theme="light"] .home-hero-pricing-unified {
+  background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(0 102 255 / 0.03), transparent 48%), #fafbfd;
+  box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.035);
+}
+
 /* BUJ sadaļa — viena balta virsma (kā pirmā BUJ rinda gaišajā lapā) */
 html[data-site-theme="light"] .demo-design-dir__section--band-c {
   background: linear-gradient(180deg, #f8f9fb 0%, #fcfdff 48%, #ffffff 100%);

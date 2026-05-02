@@ -88,6 +88,41 @@ html[data-site-theme="light"] .heroIntroSurface {
   background: linear-gradient(180deg, #ffffff 0%, #f4f5f7 52%, #eceef1 100%);
 }
 
+/* Hero + cena: vienots `band-b` fons — lokālās hero virsmas slāņi izslēgti zem `.home-hero-pricing-unified` */
+html[data-site-theme="dark"] .home-hero-pricing-unified .heroIntroSurface {
+  background: transparent;
+}
+
+html[data-site-theme="dark"] .home-hero-pricing-unified .heroIntroSurface.heroIntroSurfaceDepth {
+  background: none;
+  background-color: transparent;
+}
+
+html[data-site-theme="dark"] .home-hero-pricing-unified .heroIntroSurfaceDepth::after {
+  display: none;
+}
+
+html[data-site-theme="dark"] .home-hero-pricing-unified .heroDarkBackdrop {
+  display: none;
+}
+
+html[data-site-theme="light"] .home-hero-pricing-unified .heroIntroSurface {
+  background: transparent;
+}
+
+html[data-site-theme="light"] .home-hero-pricing-unified .heroIntroSurface.heroIntroSurfaceDepth {
+  background: none;
+  background-color: transparent;
+}
+
+html[data-site-theme="light"] .home-hero-pricing-unified .heroIntroSurfaceDepth::after {
+  opacity: 0;
+}
+
+html[data-site-theme="light"] .home-hero-pricing-unified .heroDarkBackdrop {
+  display: none;
+}
+
 .heroDarkBackdrop {
   display: none;
   position: absolute;

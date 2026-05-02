@@ -11,7 +11,7 @@ import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 const HomeProductHero = dynamic(() => import("@/components/home/HomeProductHero"), {
   loading: () => (
     <div
-      className={`home-hero-intro-surface ${productHeroStyles.heroIntroSurface}`}
+      className={`home-hero-pricing-unified home-hero-intro-surface ${productHeroStyles.heroIntroSurface}`}
       aria-busy="true"
       aria-label="Ielādē…"
     />
@@ -23,16 +23,18 @@ export default async function HomePage() {
 
   return (
     <div className={productHeroStyles.demoRoot}>
-      <HomeProductHero showProvinSelect={isProvinSelectPublic()} introBodyText={tMeta("homeIntroBody")} />
+      <div className="home-hero-pricing-unified demo-design-dir min-w-0 text-white">
+        <HomeProductHero showProvinSelect={isProvinSelectPublic()} introBodyText={tMeta("homeIntroBody")} />
+
+        <section className="demo-design-dir__section demo-design-dir__section--unified-pricing-tail py-16 sm:py-20">
+          <div className="demo-design-dir__shell">
+            <PricingIncluded embedded />
+          </div>
+        </section>
+      </div>
 
       <div className="demo-design-dir min-w-0 pb-0 text-white">
         <div id="site-content" className="home-body-ink scroll-mt-14">
-          <section className="demo-design-dir__section demo-design-dir__section--band-a py-16 sm:py-20">
-            <div className="demo-design-dir__shell">
-              <PricingIncluded embedded />
-            </div>
-          </section>
-
           {isProvinSelectPublic() ? <ProvinSelectSection /> : null}
 
           <section className="demo-design-dir__section demo-design-dir__section--band-b py-16 sm:py-20">
