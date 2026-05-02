@@ -38,6 +38,28 @@ function plainBlockPanel(title: string, body: string): string {
   </div>`;
 }
 
+function buildConsultationSlotPhotosPdf(
+  slot: ConsultationDraftWorkspaceBody["slots"][number],
+  dataUrls: Map<string, string> | undefined,
+): string {
+  const photos = slot.photos ?? [];
+  const parts: string[] = [];
+  for (const ph of photos) {
+    const src = dataUrls?.get(ph.id);
+    if (!src) continue;
+    const cap = internalCommentHtmlToPdfPlain(ph.comment).trim();
+    parts.push(
+      `<figure class="pdf-slot-photo-card"><img class="pdf-slot-photo-img" src="${src}" alt=""/>
+${cap ? `<figcaption class="pdf-slot-photo-caption">${esc(cap)}</figcaption>` : ""}</figure>`,
+    );
+  }
+  if (parts.length === 0) return "";
+  return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">
+    <div class="pdf-v1-panel-head"><p class="pdf-v1-panel-title">${esc("Fotogrāfijas")}</p></div>
+    <div class="pdf-slot-photo-grid">${parts.join("")}</div>
+  </div>`;
+}
+
 export function buildSelectConsultationDocumentHtml(args: {
   order: {
     created: number;
@@ -52,8 +74,10 @@ export function buildSelectConsultationDocumentHtml(args: {
   };
   workspace: ConsultationDraftWorkspaceBody;
   dateFmt: Intl.DateTimeFormat;
+  /** JPEG kā data URL drukai (ielādē admin pārlūkā pirms `document.write`). */
+  photoDataUrlById?: Map<string, string>;
 }): string {
-  const { order: o, workspace: w, dateFmt } = args;
+  const { order: o, workspace: w, dateFmt, photoDataUrlById } = args;
   const money =
     o.amountTotal == null
       ? "—"
@@ -128,6 +152,7 @@ export function buildSelectConsultationDocumentHtml(args: {
     lines.push(plainBlockPanel(`Nr. ${n} — IETEIKUMI KLĀTIENES APSKATEI`, slot.ieteikumiApskatei));
     lines.push(plainBlockPanel(`Nr. ${n} — CENAS ATBILSTĪBA`, slot.cenasAtbilstiba));
     lines.push(plainBlockPanel(`Nr. ${n} — KOPSAVILKUMS`, slot.kopsavilkums));
+    lines.push(buildConsultationSlotPhotosPdf(slot, photoDataUrlById));
   });
 
   lines.push(
@@ -146,6 +171,10 @@ export function buildSelectConsultationDocumentHtml(args: {
       margin:0;padding:10px 12px;font-family:Inter,ui-sans-serif,sans-serif;font-size:0.72rem;line-height:1.45;
       white-space:pre-wrap;word-break:break-word;color:#1d1d1f;background:#fafafa;border-radius:8px;border:1px solid #f1f5f9;
     }
+    .pdf-slot-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:10px 12px 12px;}
+    .pdf-slot-photo-card{margin:0;break-inside:avoid;}
+    .pdf-slot-photo-img{width:100%;height:auto;max-height:280px;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;display:block;}
+    .pdf-slot-photo-caption{margin-top:6px;font-family:Inter,ui-sans-serif,sans-serif;font-size:0.68rem;line-height:1.35;color:#475569;white-space:pre-wrap;word-break:break-word;}
   `;
   const html = `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/>
 <title>${esc(printTitle)}</title>

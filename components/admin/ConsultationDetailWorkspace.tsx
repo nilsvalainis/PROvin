@@ -2,16 +2,21 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { LayoutDashboard, ListChecks, ListOrdered } from "lucide-react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
+import { AdminConsultationSlotPhotos } from "@/components/admin/AdminConsultationSlotPhotos";
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { DEFAULT_PDF_VISIBILITY, mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import {
+  CONSULTATION_MAX_PHOTOS_PER_SLOT,
   CONSULTATION_SLOT_COUNT,
   defaultConsultationWorkspace,
   type ConsultationDraftWorkspaceBody,
+  type ConsultationSlotPhotoMeta,
+  isConsultationSlotPhotoId,
 } from "@/lib/admin-consultation-draft-types";
 import {
   mergeSourceBlocksWithDefaults,
@@ -51,6 +56,20 @@ function parseWorkspaceFromServerJson(json: string | null): ConsultationDraftWor
       const s = slots[i];
       if (!s || typeof s !== "object") continue;
       const o = s as Record<string, unknown>;
+      const photos: ConsultationSlotPhotoMeta[] = [];
+      if (Array.isArray(o.photos)) {
+        for (const ph of o.photos) {
+          if (!ph || typeof ph !== "object") continue;
+          const po = ph as Record<string, unknown>;
+          const id = typeof po.id === "string" ? po.id.trim() : "";
+          if (!isConsultationSlotPhotoId(id)) continue;
+          photos.push({
+            id,
+            comment: typeof po.comment === "string" ? po.comment : "",
+          });
+          if (photos.length >= CONSULTATION_MAX_PHOTOS_PER_SLOT) break;
+        }
+      }
       base.slots[i] = {
         listingUrl: typeof o.listingUrl === "string" ? o.listingUrl : "",
         salePrice: typeof o.salePrice === "string" ? o.salePrice : "",
@@ -60,6 +79,7 @@ function parseWorkspaceFromServerJson(json: string | null): ConsultationDraftWor
         ieteikumiApskatei: typeof o.ieteikumiApskatei === "string" ? o.ieteikumiApskatei : "",
         cenasAtbilstiba: typeof o.cenasAtbilstiba === "string" ? o.cenasAtbilstiba : "",
         kopsavilkums: typeof o.kopsavilkums === "string" ? o.kopsavilkums : "",
+        photos,
       };
     }
     return base;
@@ -136,6 +156,30 @@ export function ConsultationDetailWorkspace({
     [orderDraftPersistenceEnabled, payload.sessionId],
   );
 
+  const replaceSlotPhotosStructural = useCallback(
+    (slotIndex: number, nextPhotos: ConsultationSlotPhotoMeta[]) => {
+      let committed: ConsultationDraftWorkspaceBody | null = null;
+      flushSync(() => {
+        setWs((prev) => {
+          const slots = prev.slots.map((s, j) => (j === slotIndex ? { ...s, photos: nextPhotos } : s));
+          committed = { ...prev, slots };
+          return committed;
+        });
+      });
+      if (committed && orderDraftPersistenceEnabled) {
+        void persistWorkspace(committed, pdfVisibilityProp);
+      }
+    },
+    [orderDraftPersistenceEnabled, persistWorkspace, pdfVisibilityProp],
+  );
+
+  const patchSlotPhotosOnly = useCallback((slotIndex: number, nextPhotos: ConsultationSlotPhotoMeta[]) => {
+    setWs((prev) => ({
+      ...prev,
+      slots: prev.slots.map((s, j) => (j === slotIndex ? { ...s, photos: nextPhotos } : s)),
+    }));
+  }, []);
+
   useEffect(() => {
     if (skipFirstHydrate.current) {
       skipFirstHydrate.current = false;
@@ -174,7 +218,26 @@ export function ConsultationDetailWorkspace({
     [],
   );
 
-  const openPdf = useCallback(() => {
+  const openPdf = useCallback(async () => {
+    const photoDataUrlById = new Map<string, string>();
+    for (const slot of ws.slots) {
+      for (const ph of slot.photos ?? []) {
+        try {
+          const res = await fetch(
+            `/api/admin/consultation-slot-photo?sessionId=${encodeURIComponent(payload.sessionId)}&photoId=${encodeURIComponent(ph.id)}`,
+            { credentials: "include" },
+          );
+          if (!res.ok) continue;
+          const buf = await res.arrayBuffer();
+          const bytes = new Uint8Array(buf);
+          let binary = "";
+          for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]!);
+          photoDataUrlById.set(ph.id, `data:image/jpeg;base64,${btoa(binary)}`);
+        } catch {
+          /* skip */
+        }
+      }
+    }
     const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeStyle: "short" });
     const html = buildSelectConsultationDocumentHtml({
       order: {
@@ -190,6 +253,7 @@ export function ConsultationDetailWorkspace({
       },
       workspace: ws,
       dateFmt,
+      photoDataUrlById,
     });
     const w = window.open("", "_blank");
     if (!w) {
@@ -342,6 +406,14 @@ export function ConsultationDetailWorkspace({
             onChange={(next) => updateSlotField(idx, "kopsavilkums", next)}
           />
         </div>
+        <AdminConsultationSlotPhotos
+          sessionId={payload.sessionId}
+          slotIndex={idx}
+          photos={slot.photos ?? []}
+          disabled={!orderDraftPersistenceEnabled}
+          onPhotosPatch={(next) => patchSlotPhotosOnly(idx, next)}
+          onPhotosStructuralCommit={(next) => replaceSlotPhotosStructural(idx, next)}
+        />
       </div>
     );
   };

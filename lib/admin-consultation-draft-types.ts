@@ -6,6 +6,20 @@ import type { PdfVisibilitySettings } from "@/lib/pdf-visibility";
 
 export const CONSULTATION_SLOT_COUNT = 6;
 
+/** Maks. fotogrāfiju skaits vienā „Nr. N” slotā (serveris un UI). */
+export const CONSULTATION_MAX_PHOTOS_PER_SLOT = 10;
+
+export type ConsultationSlotPhotoMeta = {
+  /** Servera ģenerēts id (`ph_` + hex); atbilst failam `{id}.jpg` attachments mapē. */
+  id: string;
+  comment: string;
+};
+
+/** Derīgs servera ģenerēts foto id (JSON + fs). */
+export function isConsultationSlotPhotoId(id: string): boolean {
+  return typeof id === "string" && /^ph_[a-f0-9]{24}$/.test(id);
+}
+
 export type ConsultationDraftOrderEdits = {
   customerName?: string;
   customerEmail?: string;
@@ -21,6 +35,7 @@ export type ConsultationSlotDraft = {
   ieteikumiApskatei: string;
   cenasAtbilstiba: string;
   kopsavilkums: string;
+  photos: ConsultationSlotPhotoMeta[];
 };
 
 export type ConsultationDraftWorkspaceBody = {
@@ -46,6 +61,7 @@ export function emptyConsultationSlot(): ConsultationSlotDraft {
     ieteikumiApskatei: "",
     cenasAtbilstiba: "",
     kopsavilkums: "",
+    photos: [],
   };
 }
 

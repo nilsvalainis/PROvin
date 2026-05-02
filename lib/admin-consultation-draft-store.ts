@@ -4,13 +4,17 @@ import fs from "fs/promises";
 import path from "path";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import {
+  CONSULTATION_MAX_PHOTOS_PER_SLOT,
   CONSULTATION_SLOT_COUNT,
   type ConsultationDraftOrderEdits,
   type ConsultationDraftState,
   type ConsultationDraftWorkspaceBody,
   type ConsultationSlotDraft,
+  type ConsultationSlotPhotoMeta,
   emptyConsultationSlot,
+  isConsultationSlotPhotoId,
 } from "@/lib/admin-consultation-draft-types";
+import { pruneOrphanConsultationSlotPhotos } from "@/lib/admin-consultation-photo-fs";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { createDefaultSourceBlocks, hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
@@ -66,6 +70,23 @@ function normalizeSlotSourceBlocks(raw: unknown) {
   return h?.sourceBlocks ?? createDefaultSourceBlocks();
 }
 
+function normalizeSlotPhotosMeta(raw: unknown): ConsultationSlotPhotoMeta[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ConsultationSlotPhotoMeta[] = [];
+  for (const x of raw) {
+    if (!x || typeof x !== "object") continue;
+    const o = x as Record<string, unknown>;
+    const id = typeof o.id === "string" ? o.id.trim() : "";
+    if (!isConsultationSlotPhotoId(id)) continue;
+    out.push({
+      id,
+      comment: typeof o.comment === "string" ? sanitizeDraftTextForStorage(o.comment, 4000) : "",
+    });
+    if (out.length >= CONSULTATION_MAX_PHOTOS_PER_SLOT) break;
+  }
+  return out;
+}
+
 function normalizeOneSlot(raw: unknown): ConsultationSlotDraft {
   if (!raw || typeof raw !== "object") return emptyConsultationSlot();
   const s = raw as Record<string, unknown>;
@@ -76,6 +97,7 @@ function normalizeOneSlot(raw: unknown): ConsultationSlotDraft {
     ieteikumiApskatei: typeof s.ieteikumiApskatei === "string" ? s.ieteikumiApskatei : "",
     cenasAtbilstiba: typeof s.cenasAtbilstiba === "string" ? s.cenasAtbilstiba : "",
     kopsavilkums: typeof s.kopsavilkums === "string" ? s.kopsavilkums : "",
+    photos: normalizeSlotPhotosMeta(s.photos),
   };
 }
 
@@ -295,16 +317,25 @@ export async function patchConsultationDraft(
     const gate = await assertProvinSelectPaidSession(sessionId);
     if (!gate.ok) return { ok: false, error: "not_found" };
 
+    const prev = await readConsultationDraft(sessionId);
+
     let workspacePatch: ConsultationDraftWorkspaceBody | null | undefined = patch.workspace;
     if (workspacePatch !== undefined && workspacePatch !== null) {
-      const slots = workspacePatch.slots.map((slot) => ({
-        listingUrl: sanitizeDraftTextForStorage(slot.listingUrl, 8000),
-        salePrice: sanitizeDraftTextForStorage(slot.salePrice, 120),
-        sourceBlocks: deepSanitizeDraftStrings(slot.sourceBlocks),
-        ieteikumiApskatei: sanitizeDraftTextForStorage(slot.ieteikumiApskatei),
-        cenasAtbilstiba: sanitizeDraftTextForStorage(slot.cenasAtbilstiba),
-        kopsavilkums: sanitizeDraftTextForStorage(slot.kopsavilkums),
-      }));
+      const prevWs = prev?.workspace ?? null;
+      const slots = workspacePatch.slots.map((slot, i) => {
+        const prevSlot = prevWs?.slots[i];
+        const rawPhotos = Array.isArray(slot.photos) ? slot.photos : prevSlot?.photos;
+        const mergedPhotos = normalizeSlotPhotosMeta(rawPhotos);
+        return {
+          listingUrl: sanitizeDraftTextForStorage(slot.listingUrl, 8000),
+          salePrice: sanitizeDraftTextForStorage(slot.salePrice, 120),
+          sourceBlocks: deepSanitizeDraftStrings(slot.sourceBlocks),
+          ieteikumiApskatei: sanitizeDraftTextForStorage(slot.ieteikumiApskatei),
+          cenasAtbilstiba: sanitizeDraftTextForStorage(slot.cenasAtbilstiba),
+          kopsavilkums: sanitizeDraftTextForStorage(slot.kopsavilkums),
+          photos: mergedPhotos,
+        };
+      });
       const normalized = normalizeConsultationWorkspace({
         slots,
         irissApproved: workspacePatch.irissApproved,
@@ -315,7 +346,6 @@ export async function patchConsultationDraft(
       workspacePatch = normalized;
     }
 
-    const prev = await readConsultationDraft(sessionId);
     const prevEdits = prev?.orderEdits ?? {};
 
     const sanitizedPatch: ConsultationDraftOrderEdits = {};
@@ -355,6 +385,18 @@ export async function patchConsultationDraft(
     await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
     await fs.rename(tmp, fp);
     await writeConsultationDraftRevision(dir, sessionId, doc, "patch");
+
+    const keepIds = new Set<string>();
+    if (nextWorkspace) {
+      for (const slot of nextWorkspace.slots) {
+        for (const ph of slot.photos ?? []) {
+          if (isConsultationSlotPhotoId(ph.id)) keepIds.add(ph.id);
+        }
+      }
+    }
+    void pruneOrphanConsultationSlotPhotos(dir, sessionId, keepIds).catch(() => {
+      /* ignore fs cleanup errors */
+    });
 
     return { ok: true, updatedAt };
   } catch (e) {
