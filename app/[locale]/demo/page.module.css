@@ -987,7 +987,8 @@ html[data-site-theme="light"] .heroIntroSurface.heroIntroSurfaceDepth::after {
 }
 
 .productHeroTitleAccent {
-  color: var(--color-provin-accent, #0066ff);
+  color: #1d2430;
+  font-weight: 760;
 }
 
 .productHeroTitleMid {
@@ -1004,12 +1005,20 @@ html[data-site-theme="light"] .heroIntroSurface.heroIntroSurfaceDepth::after {
   max-width: 36rem;
 }
 
+html[data-site-theme="dark"] .heroIntroSurface .productHeroTitleAccent {
+  color: rgb(235 240 248 / 0.96);
+}
+
 html[data-site-theme="dark"] .heroIntroSurface .productHeroTitleMid {
   color: rgb(210 218 232 / 0.9);
 }
 
 html[data-site-theme="dark"] .heroIntroSurface .productHeroSubhead {
   color: rgb(180 192 210 / 0.88);
+}
+
+html[data-site-theme="light"] .heroIntroSurface .productHeroTitleAccent {
+  color: #0f172a;
 }
 
 html[data-site-theme="light"] .heroIntroSurface .productHeroTitleMid {
