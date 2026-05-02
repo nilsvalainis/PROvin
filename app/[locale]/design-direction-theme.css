@@ -10,7 +10,8 @@
   --dd-surface: rgb(255 255 255 / 0.035);
   --dd-surface-2: rgb(255 255 255 / 0.055);
   color: rgb(245 248 252 / 0.92);
-  background: #030304;
+  /* Saskaņots ar sākumlapas sadaļu „Kas slēpjās aiz PROVIN?” (band-b) bāzes toni */
+  background: #040406;
 }
 
 .demo-design-dir__shell {
@@ -47,9 +48,15 @@
   overflow: clip;
 }
 
-.demo-design-dir__section--band-a {
-  background: radial-gradient(ellipse 120% 80% at 50% 0%, rgb(0 60 140 / 0.26), transparent 58%), #030304;
-  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.06);
+/*
+ * Tumšā tēma: visas šīs joslas — tāds pats fons kā „Kas slēpjās aiz PROVIN?” (IRISS / band-b).
+ * Gaišo tēmu pārraksta `site-theme-light.css`.
+ */
+.demo-design-dir__section--band-a,
+.demo-design-dir__section--band-b,
+.demo-design-dir__section--band-c {
+  background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(255 255 255 / 0.08), transparent 48%), #040406;
+  box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.08);
 }
 
 /* Sākumlapa: hero + „KAS IR PROVIN?” — fona stack definēts `demo/page.module.css` (`.heroIntroSurface` + dark backdrop). */
@@ -63,16 +70,6 @@
 .home-hero-intro-surface #home-hero.marketing-hero-section {
   background: transparent !important;
   box-shadow: none !important;
-}
-
-.demo-design-dir__section--band-b {
-  background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(255 255 255 / 0.08), transparent 48%), #040406;
-  box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.08);
-}
-
-/* BUJ / „band-c” — viena tumša virsma (kā pirmā BUJ rinda / karte) */
-.demo-design-dir__section--band-c {
-  background: #030304;
 }
 
 .demo-design-dir__card {
