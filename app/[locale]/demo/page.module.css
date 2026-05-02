@@ -1099,7 +1099,7 @@ html[data-site-theme="light"] .heroFormCard {
   box-shadow: 0 14px 32px rgb(24 31 42 / 0.08), 0 0 0 1px rgb(0 102 255 / 0.06);
 }
 
-/* „Kas ir PROVIN?” hero labajā pusē — tā pati karte un tipogrāfijas skala kā pasūtījuma formai */
+/* „Kas ir PROVIN?” hero labajā pusē — tā pati karte; virsraksts = `.fieldLabel`, pamateksts = `.field textarea` */
 .heroIntroBlurbFormCard {
   margin-top: 0;
   width: 100%;
@@ -1107,36 +1107,27 @@ html[data-site-theme="light"] .heroFormCard {
 
 .heroIntroBlurbFormTitle {
   margin: 0;
-  font-size: 0.78rem;
-  line-height: 1.35;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  font-weight: 700;
-  color: #5a6577;
   text-wrap: balance;
 }
 
-.heroIntroBlurbFormTitlePro {
-  color: #5a6577;
-}
-
-html[data-site-theme="dark"] .heroIntroSurface .heroIntroBlurbFormTitle,
-html[data-site-theme="dark"] .heroIntroSurface .heroIntroBlurbFormTitlePro {
-  color: rgb(200 208 220 / 0.78);
+.heroIntroBlurbFormScan {
+  margin-top: 0.35rem;
 }
 
 .heroIntroBlurbFormBody {
-  margin: 0.85rem 0 0;
+  margin: 0.35rem 0 0;
+  font-family: inherit;
   font-size: 1rem;
   line-height: 1.45;
-  font-weight: 500;
+  font-weight: 400;
+  letter-spacing: normal;
   color: #2f3a49;
   text-wrap: pretty;
   white-space: pre-line;
 }
 
 html[data-site-theme="dark"] .heroIntroSurface .heroIntroBlurbFormBody {
-  color: rgb(210 218 232 / 0.9);
+  color: rgb(245 248 252 / 0.95);
 }
 
 html[data-site-theme="dark"] .heroIntroSurface .heroIntroBlurbFormPro {

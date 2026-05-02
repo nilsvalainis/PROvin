@@ -34,18 +34,22 @@ export function HomeIntroBlurb({ introBodyText, variant = "page" }: Props) {
         >
           <h2
             id="home-intro-heading"
-            className={isHero ? styles.heroIntroBlurbFormTitle : styles.heroGlassTitle}
+            className={
+              isHero ? `${styles.fieldLabel} ${styles.heroIntroBlurbFormTitle}` : styles.heroGlassTitle
+            }
           >
             {t("introBlurbTitle")}{" "}
             <span className={styles.heroGlassTitleNowrap}>
-              <span className={isHero ? styles.heroIntroBlurbFormTitlePro : styles.heroGlassTitlePro}>
-                PRO
-              </span>
-              <span className="text-provin-accent">VIN</span>
+              {isHero ? (
+                <span>PRO</span>
+              ) : (
+                <span className={styles.heroGlassTitlePro}>PRO</span>
+              )}
+              <span className={isHero ? "text-provin-accent tracking-[0.12em]" : "text-provin-accent"}>VIN</span>
             </span>
             {t("introBlurbTitleSuffix")}
           </h2>
-          <div className={styles.heroGlassScan}>
+          <div className={isHero ? `${styles.heroGlassScan} ${styles.heroIntroBlurbFormScan}` : styles.heroGlassScan}>
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
           <p className={isHero ? styles.heroIntroBlurbFormBody : styles.heroGlassBody}>

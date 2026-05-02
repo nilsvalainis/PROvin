@@ -124,9 +124,6 @@ export function ProvinSelectSection() {
           <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance font-medium sm:mt-4">
             {t("lead")}
           </p>
-          <p className="demo-design-dir__body mx-auto mt-2 max-w-[min(100%,38rem)] text-balance text-[0.95rem] font-normal opacity-95 sm:mt-3">
-            {t("subheader")}
-          </p>
         </div>
 
         <ul
