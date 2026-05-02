@@ -61,8 +61,8 @@
  * Sākumlapa: produkta hero + „KAS IEKĻAUTS CENĀ?” — viens fons kā „Kas slēpjās aiz PROVIN?” (`band-b`).
  * Gaišo tēmu pārraksta `site-theme-light.css`.
  */
-/* Hero + „KAS IEKĻAUTS CENĀ?” — viens nepārtraukts fons (bez iekšējām līnijām) */
-.home-hero-pricing-unified {
+/* Hero + „KAS IEKĻAUTS CENĀ?” — viens nepārtraukts fons (tikai ar `.demo-design-dir` uz tā paša čaulas — pārspēj pamattoni) */
+.home-hero-pricing-unified.demo-design-dir {
   background:
     radial-gradient(ellipse 110% 85% at 50% 12%, rgb(0 95 210 / 0.085), transparent 58%),
     radial-gradient(ellipse 95% 70% at 82% 78%, rgb(255 255 255 / 0.065), transparent 50%),
@@ -79,28 +79,10 @@
   box-shadow: none;
 }
 
-/*
- * Sākumlapa: pārējā lapa zem hero+cenas — viegls gaiši zils wash;
- * band-b / band-c caurspīdīgi, lai redzams viens fons.
- */
-.demo-design-dir.home-rest-bg {
-  background:
-    radial-gradient(ellipse 105% 62% at 50% 0%, rgb(60 130 230 / 0.09), transparent 54%),
-    radial-gradient(ellipse 92% 55% at 12% 95%, rgb(40 110 210 / 0.06), transparent 50%),
-    linear-gradient(180deg, #05070d 0%, #060a12 42%, #05060c 100%);
-  box-shadow: none;
-}
-
-.demo-design-dir.home-rest-bg .demo-design-dir__section--band-b,
-.demo-design-dir.home-rest-bg .demo-design-dir__section--band-c {
-  background: transparent;
-  background-image: none;
-  box-shadow: none;
-}
-
 .demo-design-dir__section--unified-pricing-tail {
   background: transparent;
   box-shadow: none;
+  border-top: none;
 }
 
 /* BUJ / „band-c” — viena tumša virsma (kā pirmā BUJ rinda / karte) */
