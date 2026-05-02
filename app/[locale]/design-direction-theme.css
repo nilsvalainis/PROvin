@@ -63,7 +63,20 @@
  */
 .home-hero-pricing-unified {
   background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(255 255 255 / 0.08), transparent 48%), #040406;
-  box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.08);
+  box-shadow: none;
+}
+
+/*
+ * Sākumlapa: zem hero+cienas — viena virsma (hero #040406 tonis + ļoti viegls zils radial),
+ * iekšējās `band-*` sadaļas caurspīdīgas, bez inset līnijām.
+ */
+/* Tikai PROVIN SELECT čaula — nav jānoņem band-b / band-c foni citur */
+.demo-design-dir.home-below-hero-continuum {
+  background:
+    radial-gradient(ellipse 115% 78% at 50% 0%, rgb(0 88 190 / 0.11), transparent 58%),
+    radial-gradient(ellipse 100% 62% at 88% 32%, rgb(255 255 255 / 0.055), transparent 50%),
+    linear-gradient(180deg, #040406 0%, #050508 38%, #040406 72%, #030304 100%);
+  box-shadow: none;
 }
 
 .demo-design-dir__section--unified-pricing-tail {

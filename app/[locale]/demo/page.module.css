@@ -1301,3 +1301,9 @@ html[data-site-theme="light"] :global(.provin-select-section) .heroFormCard :glo
     0 12px 28px rgb(24 31 42 / 0.08);
 }
 
+/* PROVIN SELECT: zem `home-below-hero-continuum` — viens kopīgs fons, ne atsevišķs zaļš lauks */
+:global(.home-below-hero-continuum) :global(.provin-select-section).heroIntroSurface {
+  background: none !important;
+  background-color: transparent !important;
+}
+

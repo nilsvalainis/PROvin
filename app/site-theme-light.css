@@ -392,7 +392,17 @@ html[data-site-theme="light"] .demo-design-dir__section--band-b {
 
 html[data-site-theme="light"] .home-hero-pricing-unified {
   background: radial-gradient(ellipse 90% 60% at 80% 20%, rgb(0 102 255 / 0.03), transparent 48%), #fafbfd;
-  box-shadow: inset 0 -1px 0 rgb(0 102 255 / 0.035);
+  box-shadow: none;
+}
+
+/* Sākumlapa: zem hero — viens gaišs hero tonis + vieglas zilas „gaismas” (bez joslu līnijām) */
+html[data-site-theme="light"] .demo-design-dir.home-below-hero-continuum {
+  background:
+    radial-gradient(ellipse 110% 72% at 50% 0%, rgb(0 102 255 / 0.042), transparent 56%),
+    radial-gradient(ellipse 95% 58% at 92% 28%, rgb(0 102 255 / 0.028), transparent 50%),
+    radial-gradient(ellipse 88% 50% at 8% 92%, rgb(0 102 255 / 0.022), transparent 48%),
+    linear-gradient(to bottom, #fafbfd 0%, #f4f6fb 38%, #eef1f8 72%, #eceff5 100%);
+  color: #171717;
 }
 
 /* BUJ sadaļa — viena balta virsma (kā pirmā BUJ rinda gaišajā lapā) */
