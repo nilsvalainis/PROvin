@@ -454,6 +454,13 @@ html[data-site-theme="light"] .demo-design-dir__card:active {
     transform: translateY(-8px) scale(0.96);
     transition: transform 0.1s ease;
   }
+
+  html[data-site-theme="light"] .provin-select-section .demo-design-dir__card:hover {
+    border-color: rgb(0 140 72 / 0.32) !important;
+    box-shadow:
+      0 0 0 1px rgb(18 196 90 / 0.1),
+      0 22px 48px rgb(12 100 65 / 0.12) !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -464,6 +471,10 @@ html[data-site-theme="light"] .demo-design-dir__card:active {
 
   @media (hover: hover) and (pointer: fine) {
     html[data-site-theme="light"] .demo-design-dir__card:hover {
+      transform: none !important;
+    }
+
+    html[data-site-theme="light"] .provin-select-section .demo-design-dir__card:hover {
       transform: none !important;
     }
   }

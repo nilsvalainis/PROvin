@@ -119,6 +119,18 @@
     transform: translateY(-8px) scale(0.96);
     transition: transform 0.1s ease;
   }
+
+  .provin-select-section .demo-design-dir__card:hover {
+    border-color: rgb(0 200 105 / 0.32);
+    box-shadow:
+      0 0 0 1px rgb(18 196 90 / 0.1),
+      0 22px 56px rgb(0 0 0 / 0.45);
+  }
+
+  .provin-select-section .demo-design-dir__card:hover:active {
+    transform: translateY(-8px) scale(0.96);
+    transition: transform 0.1s ease;
+  }
 }
 
 .demo-design-dir__flow {

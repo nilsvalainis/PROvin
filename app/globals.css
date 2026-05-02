@@ -980,6 +980,127 @@ html[data-site-theme="light"] .provin-select-delivery-important {
   color: #0a0a0a;
 }
 
+/*
+ * PROVIN SELECT — zaļš akcents kā „Pieteikties konsultācijai” (`ctaButtonHeroConsult`: #12c45a / #0a9d47).
+ * Fons, ikonas, VIN / saites, skenēšanas līnija, piegādes kartes.
+ */
+.provin-select-section {
+  --color-provin-accent: #12c45a;
+  --color-provin-accent-hover: #16cf63;
+  --color-provin-accent-soft: rgb(18 196 90 / 0.2);
+  --color-provin-accent-muted: rgb(8 130 68);
+}
+
+html[data-site-theme="light"] .provin-select-section {
+  --color-provin-accent: #0a9d47;
+  --color-provin-accent-hover: #0cb04e;
+  --color-provin-accent-soft: rgb(18 196 90 / 0.16);
+  --color-provin-accent-muted: #0a7a3f;
+}
+
+.provin-select-section :where(.text-provin-accent, [class*="text-provin-accent"]) {
+  text-shadow:
+    0 0 0.6px rgb(255 255 255 / 0.22),
+    0 0 12px rgb(18 196 90 / 0.32);
+  filter: saturate(1.06) brightness(1.02);
+}
+
+html[data-site-theme="light"] .provin-select-section :where(.text-provin-accent, [class*="text-provin-accent"]) {
+  text-shadow: none;
+  filter: none;
+}
+
+.provin-select-section :where(.text-provin-accent, [class*="text-provin-accent"]) :is(svg, path, circle, line, polyline) {
+  filter: drop-shadow(0 0 5px rgb(18 196 90 / 0.28));
+}
+
+html[data-site-theme="light"] .provin-select-section :where(.text-provin-accent, [class*="text-provin-accent"]) :is(svg, path, circle, line, polyline) {
+  filter: drop-shadow(0 0 4px rgb(10 157 71 / 0.2));
+}
+
+.provin-select-section .provin-diagnostic-scan-line__pulse {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(34 197 94 / 0.55) 28%,
+    rgb(74 222 128 / 0.95) 50%,
+    rgb(34 197 94 / 0.55) 72%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 6px 0 rgb(18 196 90 / 0.75),
+    0 0 16px 0 rgb(10 157 71 / 0.45),
+    0 0 26px 0 rgb(5 120 60 / 0.3);
+}
+
+html[data-site-theme="light"] .provin-select-section .provin-diagnostic-scan-line__pulse {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(16 185 129 / 0.45) 28%,
+    rgb(52 211 153 / 0.92) 50%,
+    rgb(16 185 129 / 0.45) 72%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 5px 0 rgb(10 157 71 / 0.35),
+    0 0 14px 0 rgb(16 185 129 / 0.22);
+}
+
+.provin-select-section .marketing-hero-pillar-icon,
+.provin-select-section .provin-select-pillar-icon {
+  color: rgb(52 211 153) !important;
+}
+
+html[data-site-theme="light"] .provin-select-section .marketing-hero-pillar-icon,
+html[data-site-theme="light"] .provin-select-section .provin-select-pillar-icon {
+  color: #0a9d47 !important;
+}
+
+.provin-select-delivery-step {
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: rgb(255 255 255 / 0.03);
+  box-shadow: 0 0 0 1px rgb(0 140 72 / 0.14);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.provin-select-delivery-step:hover {
+  transform: translateY(-2px);
+  border-color: rgb(0 200 105 / 0.32);
+  background: rgb(255 255 255 / 0.05);
+  box-shadow: 0 10px 36px rgb(10 157 71 / 0.16);
+}
+
+html[data-site-theme="light"] .provin-select-delivery-step {
+  border: 1px solid rgb(20 60 42 / 0.1);
+  background: rgb(255 255 255 / 0.82);
+  box-shadow:
+    0 0 0 1px rgb(0 120 62 / 0.1),
+    0 8px 22px rgb(16 90 55 / 0.06);
+}
+
+html[data-site-theme="light"] .provin-select-delivery-step:hover {
+  border-color: rgb(0 140 72 / 0.32);
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: 0 12px 32px rgb(10 120 70 / 0.1);
+}
+
+.provin-select-delivery-step__badge {
+  border: 1px solid rgb(0 200 105 / 0.42);
+  color: rgb(110 240 170);
+  box-shadow: 0 0 20px rgb(18 196 90 / 0.22);
+}
+
+html[data-site-theme="light"] .provin-select-delivery-step__badge {
+  border-color: rgb(0 130 68 / 0.38);
+  color: #0a9d47;
+  box-shadow: 0 0 16px rgb(18 196 90 / 0.2);
+}
+
 /* How it works — diskrēts „datu impulss” ap soļu ikonām (gredzens + elpošana uz hover) */
 @keyframes how-it-works-ring-draw {
   from {

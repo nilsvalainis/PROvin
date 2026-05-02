@@ -108,7 +108,7 @@ export function ProvinSelectSection() {
     <section
       id={PROVIN_SELECT_SECTION_ID}
       aria-labelledby="provin-select-heading"
-      className={`home-hero-intro-surface ${demoPageStyles.heroIntroSurface} home-body-ink relative scroll-mt-16 overflow-x-clip py-16 sm:py-20`}
+      className={`provin-select-section home-hero-intro-surface ${demoPageStyles.heroIntroSurface} home-body-ink relative scroll-mt-16 overflow-x-clip py-16 sm:py-20`}
     >
       <div className="demo-design-dir__shell relative">
         <div className="mx-auto max-w-[min(100%,48rem)] text-center">
@@ -137,7 +137,7 @@ export function ProvinSelectSection() {
             return (
               <li key={row.title} className="min-w-0">
                 <div className={`${selectCardClass} h-full`}>
-                  <Icon className={heroPillarCardIconClass} aria-hidden strokeWidth={1.5} />
+                  <Icon className={`${heroPillarCardIconClass} provin-select-pillar-icon`} aria-hidden strokeWidth={1.5} />
                   <h3 className={heroPillarCardTitleClass}>{row.title}</h3>
                   <p className="home-muted-foreground line-clamp-2 max-w-[14rem] text-[11px] leading-relaxed sm:max-w-none sm:text-[12px]">
                     {row.body}
@@ -160,10 +160,10 @@ export function ProvinSelectSection() {
             {deliveryRows.map((row, idx) => (
               <li
                 key={row.title}
-                className="relative flex gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-3 shadow-[0_0_0_1px_rgba(0,102,255,0.08)] backdrop-blur-sm transition-[border-color,background-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-[#0066ff]/22 hover:bg-white/[0.05] hover:shadow-[0_10px_36px_rgba(0,102,255,0.1)] sm:px-3.5 sm:py-3.5 lg:flex-col lg:items-center lg:gap-2 lg:px-2 lg:py-4 lg:text-center"
+                className="provin-select-delivery-step relative flex gap-3 rounded-xl px-3 py-3 backdrop-blur-sm sm:px-3.5 sm:py-3.5 lg:flex-col lg:items-center lg:gap-2 lg:px-2 lg:py-4 lg:text-center"
               >
                 <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#0066ff]/45 text-[11px] font-bold tabular-nums text-[#0066ff] shadow-[0_0_20px_rgba(0,102,255,0.18)] sm:h-10 sm:w-10 sm:text-[12px]"
+                  className="provin-select-delivery-step__badge flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold tabular-nums sm:h-10 sm:w-10 sm:text-[12px]"
                   aria-hidden
                 >
                   {idx + 1}
@@ -267,7 +267,7 @@ export function ProvinSelectSection() {
                       setWithdrawalConsent(e.target.checked);
                       setConsentError(null);
                     }}
-                    className="order-form-hero-checkbox mt-1 h-4 w-4 shrink-0 rounded border-[#c0c0c0] bg-transparent text-provin-accent focus:ring-1 focus:ring-[#0066ff]/40 sm:mt-0.5 sm:h-4 sm:w-4"
+                    className="order-form-hero-checkbox mt-1 h-4 w-4 shrink-0 rounded border-[#c0c0c0] bg-transparent text-provin-accent focus:ring-1 focus:ring-emerald-400/45 sm:mt-0.5 sm:h-4 sm:w-4"
                     aria-invalid={Boolean(consentError)}
                     aria-describedby={consentError ? "provin-select-consent-error" : undefined}
                     aria-label={tOrder("checkoutConsentAria")}
