@@ -1,18 +1,24 @@
 "use client";
 
+import { AlertTriangle, Filter, Layers, MessageSquare, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import demoPageStyles from "@/app/[locale]/demo/page.module.css";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { PROVIN_SELECT_FORM_HASH, PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
+import { heroPillarCardIconClass, heroPillarCardTitleClass } from "@/lib/home-layout";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
 const subsectionHeadingClass =
   "iriss-editorial-heading font-semibold uppercase tracking-[0.08em] text-white/90";
 
-const deliverySectionTitleClass =
-  "iriss-editorial-heading font-bold uppercase tracking-[0.08em] text-white/90";
+const SELECT_CARD_ICONS: LucideIcon[] = [Layers, Filter, AlertTriangle, MessageSquare];
+
+const selectGridWidthClass = "w-full max-w-[min(100%,68rem)]";
+
+const selectCardClass =
+  "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--mobile-card demo-design-dir__card flex min-h-0 flex-col items-center justify-start gap-2.5 px-2 py-3 text-center sm:gap-3 sm:px-3 sm:py-4";
 
 const NOTES_MAX = 500;
 
@@ -105,7 +111,7 @@ export function ProvinSelectSection() {
       className={`home-hero-intro-surface ${demoPageStyles.heroIntroSurface} home-body-ink relative scroll-mt-16 overflow-x-clip py-16 sm:py-20`}
     >
       <div className="demo-design-dir__shell relative">
-        <div className="text-center">
+        <div className="mx-auto max-w-[min(100%,48rem)] text-center">
           <h2
             id="provin-select-heading"
             className="demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance"
@@ -118,63 +124,68 @@ export function ProvinSelectSection() {
           <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance font-medium sm:mt-4">
             {t("lead")}
           </p>
-          <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4">{t("body1")}</p>
+          <p className="demo-design-dir__body mx-auto mt-2 max-w-[min(100%,38rem)] text-balance text-[0.95rem] font-normal opacity-95 sm:mt-3">
+            {t("subheader")}
+          </p>
         </div>
 
-        <div className="mx-auto mt-10 max-w-[min(100%,40rem)] space-y-10 text-left text-pretty">
-          <div>
-            <h3 className={subsectionHeadingClass}>{t("includedTitle")}</h3>
-            <div className="mt-3 w-full">
-              <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
-            </div>
-            <ul className="mb-0 mt-3 space-y-4">
-              {includedRows.map((row) => (
-                <li key={row.title} className="demo-design-dir__body flex gap-2.5 text-[0.92rem] leading-snug">
-                  <span className="provin-select-included-check mt-0.5 shrink-0 font-black" aria-hidden>
-                    ✓
-                  </span>
-                  <span>
-                    <strong className="font-semibold">{row.title}</strong>
-                    {": "}
+        <ul
+          className={`mx-auto mt-10 grid list-none grid-cols-1 gap-3 sm:gap-4 md:mt-12 md:grid-cols-2 md:gap-5 lg:grid-cols-4 ${selectGridWidthClass}`}
+        >
+          {includedRows.map((row, i) => {
+            const Icon = SELECT_CARD_ICONS[i] ?? Layers;
+            return (
+              <li key={row.title} className="min-w-0">
+                <div className={`${selectCardClass} h-full`}>
+                  <Icon className={heroPillarCardIconClass} aria-hidden strokeWidth={1.5} />
+                  <h3 className={heroPillarCardTitleClass}>{row.title}</h3>
+                  <p className="home-muted-foreground line-clamp-2 max-w-[14rem] text-[11px] leading-relaxed sm:max-w-none sm:text-[12px]">
                     {row.body}
-                  </span>
-                </li>
-              ))}
-            </ul>
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className={`mx-auto mt-10 max-w-[min(100%,48rem)] md:mt-12`}>
+          <h3 className={`${subsectionHeadingClass} text-center`}>{t("deliveryTitle")}</h3>
+          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
+            <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
           </div>
 
-          <div>
-            <h3 className={subsectionHeadingClass}>{t("whyTitle")}</h3>
-            <div className="mt-3 w-full">
-              <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
-            </div>
-            <p className="demo-design-dir__body mt-3">{t("whyBody")}</p>
-          </div>
-
-          <div>
-            <h3 className={deliverySectionTitleClass}>{t("deliveryTitle")}</h3>
-            <div className="mt-3 w-full">
-              <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
-            </div>
-            <ul className="mb-0 mt-3 space-y-4">
-              {deliveryRows.map((row) => (
-                <li key={row.title} className="demo-design-dir__body flex gap-2.5 text-[0.92rem] leading-snug">
-                  <span className="provin-select-included-check mt-0.5 shrink-0 font-black" aria-hidden>
-                    ✓
-                  </span>
-                  <span>
-                    <strong className="font-bold">{row.title}</strong>
-                    {": "}
+          <ol
+            className={`mx-auto mt-6 grid list-none grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 md:gap-6 lg:mt-8 lg:grid-cols-4 lg:gap-4 ${selectGridWidthClass}`}
+          >
+            {deliveryRows.map((row, idx) => (
+              <li
+                key={row.title}
+                className="relative flex gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-3 shadow-[0_0_0_1px_rgba(0,102,255,0.08)] backdrop-blur-sm transition-[border-color,background-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-[#0066ff]/22 hover:bg-white/[0.05] hover:shadow-[0_10px_36px_rgba(0,102,255,0.1)] sm:px-3.5 sm:py-3.5 lg:flex-col lg:items-center lg:gap-2 lg:px-2 lg:py-4 lg:text-center"
+              >
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#0066ff]/45 text-[11px] font-bold tabular-nums text-[#0066ff] shadow-[0_0_20px_rgba(0,102,255,0.18)] sm:h-10 sm:w-10 sm:text-[12px]"
+                  aria-hidden
+                >
+                  {idx + 1}
+                </span>
+                <div className="min-w-0 flex-1 lg:flex-none">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-white/90 sm:text-[11px]">
+                    {row.title}
+                  </p>
+                  <p className="home-muted-foreground mt-1 line-clamp-2 text-[11px] leading-snug sm:text-[12px]">
                     {row.body}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <p className="provin-select-delivery-important mt-4 text-left text-[10.5px] font-normal italic leading-relaxed sm:text-[11px]">
-              {renderProvinText(t("deliveryImportant"))}
-            </p>
-          </div>
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
 
+          <p className="provin-select-delivery-important mx-auto mt-6 max-w-[min(100%,40rem)] text-center text-[10px] font-normal leading-snug text-white/55 sm:mt-7 sm:text-[11px]">
+            {renderProvinText(t("deliveryImportant"))}
+          </p>
+        </div>
+
+        <div className="mx-auto mt-12 max-w-[min(100%,40rem)] space-y-10 text-left text-pretty md:mt-14">
           <div id={PROVIN_SELECT_FORM_HASH} className="scroll-mt-[calc(3.5rem+8px)]">
             <h3 className={subsectionHeadingClass}>{t("formTitle")}</h3>
             <div className="mt-3 w-full">

@@ -1,49 +1,46 @@
 {
   "ProvinSelect": {
     "eyebrow": "PROVIN SELECT",
-    "lead": "Tavs pirmais solis droša auto virzienā.",
-    "body1": "Bieži kļūdas tiek pieļautas jau modeļa izvēlē vai uzticoties vizuāli pievilcīgam, bet tehniski riskantam sludinājumam. PROVIN SELECT palīdz izvairīties no tukšiem tēriņiem par VIN atskaitēm automašīnām, kuras profesionālis noraidītu uzreiz.",
-    "includedTitle": "KAS IEKĻAUTS KONSULTĀCIJĀ?",
+    "lead": "Tavs pirmais solis droša auto virzienā",
+    "subheader": "Mēs atsijājam sliktos auto, pirms Tu tiem tērē naudu.",
     "included": [
       {
-        "title": "Tirgus analīze",
-        "body": "Izvērtējam Tavām vēlmēm un budžetam atbilstošos modeļus – kurus izvēlēties un no kuriem izvairīties."
+        "title": "Modeļu atlase",
+        "body": "Ko izvēlēties un no kā izvairīties pēc budžeta un vajadzībām"
       },
       {
         "title": "Sludinājumu filtrs",
-        "body": "Atlasam un veicam sludinājumu vizuālo un loģikas ekspertīzi, atsijājot aizdomīgus piedāvājumus vēl pirms maksas datubāzu pārbaudes."
+        "body": "Atsijājam aizdomīgus piedāvājumus pirms maksas pārbaudēm"
       },
       {
-        "title": "Tehnisko risku izvērtējums",
-        "body": "Analizējam konkrētā modeļa dzinēja, transmisijas un mezglu vājās vietas, lai Tu saprastu reālās ekspluatācijas izmaksas nākotnē."
+        "title": "Tehniskie riski",
+        "body": "Modeļu vājās vietas un reālās uzturēšanas izmaksas"
       },
       {
         "title": "Sarunu stratēģija",
-        "body": "Sagatavojam Tevi sarunai ar pārdevēju un norādām uz ko skatīties klātienes apskatē."
+        "body": "Ko jautāt pārdevējam un ko pārbaudīt dzīvē"
       }
     ],
-    "whyTitle": "KĀPĒC IZVĒLĒTIES PROVIN SELECT?",
-    "whyBody": "Lietotu auto piedāvājums ir milzīgs, taču kvalitatīvu eksemplāru meklēšana prasa pieredzi. Mēs palīdzam ietaupīt laiku, fokusējot uzmanību tikai uz tiem kandidātiem, kuri tiešām ir PROVIN audita vērti.",
-    "deliveryTitle": "KĀ NOTIEK PROCESA IZPILDE?",
+    "deliveryTitle": "PROCESA SOĻI",
     "deliverySteps": [
       {
         "title": "Pieteikums",
-        "body": "Mēs sazināsimies ar Tevi 24h laikā pēc pieteikuma saņemšanas, lai precizētu Tavas vēlmes un budžetu."
+        "body": "Sazināmies 24h laikā"
       },
       {
         "title": "Analīze",
-        "body": "Veicam padziļinātu tirgus un tehnisko risku izpēti, atlasot 5 labākos un kritērijiem atbilstošākos auto sludinājumus."
+        "body": "Atlasām 5 labākos variantus"
       },
       {
         "title": "Rezultāts",
-        "body": "Nosūtām rakstisku kopsavilkumu ar katra kandidāta stipro un vājo pušu izvērtējumu."
+        "body": "Kopsavilkums ar plusiem/mīnusiem"
       },
       {
-        "title": "Saruna",
-        "body": "Atbildam uz Taviem papildjautājumiem, lai Tu būtu gatavs nākamajam solim."
+        "title": "Atbalsts",
+        "body": "Atbildes uz jautājumiem"
       }
     ],
-    "deliveryImportant": "Konsultācijas cenā nav iekļauta automašīnu vēstures pārbaude maksas datubāzēs (tā tiek veikta nākamajā posmā – PROVIN auditā).",
+    "deliveryImportant": "VIN pārbaudes nav iekļautas (tiek veiktas PROVIN auditā).",
     "ctaPrimary": "PIETEIKT KONSULTĀCIJU",
     "formTitle": "Pieteikums konsultācijai",
     "nameLabel": "Vārds",
