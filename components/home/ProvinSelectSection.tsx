@@ -191,7 +191,11 @@ export function ProvinSelectSection() {
             <div className="mt-3 w-full">
               <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
             </div>
-            <form onSubmit={(e) => void onSubmit(e)} className="order-form--hero mx-auto mt-4 max-w-[520px] space-y-3">
+            <div className={`${demoPageStyles.heroFormCard} mx-auto mt-4 w-full max-w-[520px]`}>
+              <form
+                onSubmit={(e) => void onSubmit(e)}
+                className="order-form--hero !mt-0 w-full space-y-3 !px-0 !py-0 sm:!px-0 sm:!py-0"
+              >
               <label className={demoPageStyles.field}>
                 <span className={demoPageStyles.fieldLabel}>{t("nameLabel")}</span>
                 <input
@@ -319,7 +323,8 @@ export function ProvinSelectSection() {
                   {tOrder("stripeNote")}
                 </p>
               </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       </div>

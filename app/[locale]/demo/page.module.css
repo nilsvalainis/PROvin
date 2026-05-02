@@ -641,38 +641,6 @@ html[data-site-theme="dark"] .heroIntroSurface .ctaButtonHeroConsult:hover {
   border-color: rgb(0 220 115 / 0.52);
 }
 
-/* PROVIN SELECT forma — tās pašas hero ievades kārtulas uz tumšā band-c (ārpus .heroIntroSurface). */
-html[data-site-theme="dark"] #provin-select .fieldLabel {
-  color: rgb(200 208 220 / 0.72);
-}
-
-html[data-site-theme="dark"] #provin-select .field input,
-html[data-site-theme="dark"] #provin-select .field textarea {
-  color: rgb(245 248 252 / 0.95);
-  border: 1px solid var(--dd-line);
-  border-radius: 14px;
-  background: linear-gradient(165deg, var(--dd-surface-2), var(--dd-surface));
-  box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.35),
-    0 18px 48px rgb(0 0 0 / 0.35),
-    0 1px 0 rgb(255 255 255 / 0.06) inset;
-}
-
-html[data-site-theme="dark"] #provin-select .field input::placeholder,
-html[data-site-theme="dark"] #provin-select .field textarea::placeholder {
-  color: rgb(160 170 188 / 0.55);
-}
-
-html[data-site-theme="dark"] #provin-select .fieldInvalid input,
-html[data-site-theme="dark"] #provin-select .fieldInvalid textarea {
-  border-color: rgb(248 113 113 / 0.85) !important;
-  box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.35),
-    0 18px 48px rgb(0 0 0 / 0.35),
-    0 1px 0 rgb(255 255 255 / 0.06) inset,
-    0 0 0 2px rgb(248 113 113 / 0.35);
-}
-
 html[data-site-theme="dark"] .heroIntroSurface .heroGlassCard {
   color: rgb(245 248 252 / 0.94);
   border: 1px solid var(--dd-line);
@@ -1069,13 +1037,20 @@ html[data-site-theme="light"] .heroFormCard {
 
 html[data-site-theme="dark"] .heroFormCard :global(.order-form--hero) .field input,
 html[data-site-theme="dark"] .heroFormCard :global(.order-form--hero) .field textarea {
-  min-height: 52px;
   border: none;
   border-radius: 14px;
   box-shadow:
     0 0 0 1px rgb(255 255 255 / 0.08),
     0 14px 32px rgb(0 0 0 / 0.35),
     0 1px 0 rgb(255 255 255 / 0.05) inset;
+}
+
+html[data-site-theme="dark"] .heroFormCard :global(.order-form--hero) .field input {
+  min-height: 52px;
+}
+
+html[data-site-theme="dark"] .heroFormCard :global(.order-form--hero) .field textarea {
+  min-height: 7.5rem;
 }
 
 html[data-site-theme="dark"] .heroFormCard :global(.order-form--hero) .field input:focus,
@@ -1088,9 +1063,12 @@ html[data-site-theme="dark"] .heroFormCard :global(.order-form--hero) .field tex
     0 1px 0 rgb(255 255 255 / 0.06) inset;
 }
 
-html[data-site-theme="light"] .heroFormCard :global(.order-form--hero) .field input,
-html[data-site-theme="light"] .heroFormCard :global(.order-form--hero) .field textarea {
+html[data-site-theme="light"] .heroFormCard :global(.order-form--hero) .field input {
   min-height: 52px;
+}
+
+html[data-site-theme="light"] .heroFormCard :global(.order-form--hero) .field textarea {
+  min-height: 5.5rem;
 }
 
 html[data-site-theme="light"] .heroFormCard :global(.order-form--hero) .field input:focus,
