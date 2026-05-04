@@ -5,41 +5,23 @@
     "included": [
       {
         "title": "Modeļu atlase",
-        "body": "Ko izvēlēties un no kā izvairīties pēc budžeta un vajadzībām"
+        "body": "Atlasām un salīdzinām līdz 5 labākajiem variantiem pēc Tava budžeta, vajadzībām un uzturēšanas izmaksām."
       },
       {
         "title": "Sludinājumu filtrs",
-        "body": "Atsijājam aizdomīgus piedāvājumus pirms maksas pārbaudēm"
+        "body": "Atsijājam riskantos un nereālos piedāvājumus, lai Tu fokusējies tikai uz pārbaudītiem variantiem."
       },
       {
         "title": "Tehniskie riski",
-        "body": "Modeļu vājās vietas un reālās uzturēšanas izmaksas"
+        "body": "Izskaidrojam katra modeļa vājās vietas, potenciālās izmaksas un kam pievērst uzmanību pirms pirkuma."
       },
       {
         "title": "Sarunu stratēģija",
-        "body": "Ko jautāt pārdevējam un ko pārbaudīt dzīvē"
+        "body": "Ko jautāt, kā pārbaudīt un kā pieņemt drošu lēmumu — ar atbalstu visā procesā."
       }
     ],
-    "deliveryTitle": "PROCESA SOĻI",
-    "deliverySteps": [
-      {
-        "title": "Pieteikums",
-        "body": "Sazināmies 24h laikā"
-      },
-      {
-        "title": "Analīze",
-        "body": "Atlasām 5 labākos variantus"
-      },
-      {
-        "title": "Rezultāts",
-        "body": "Kopsavilkums ar plusiem/mīnusiem"
-      },
-      {
-        "title": "Atbalsts",
-        "body": "Atbildes uz jautājumiem"
-      }
-    ],
-    "deliveryImportant": "VIN pārbaudes nav iekļautas (tiek veiktas PROVIN auditā).",
+    "cardsTrustLine": "Sazināmies 24h laikā · 5 pārbaudīti varianti · Atbalsts visā procesā",
+    "cardsVinNote": "VIN pārbaudes nav iekļautas (tiek veiktas PROVIN auditā).",
     "ctaPrimary": "PIETEIKT KONSULTĀCIJU",
     "formTitle": "Pieteikums konsultācijai",
     "nameLabel": "Vārds",

@@ -4,6 +4,12 @@ import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import { irissAnchorHref } from "@/lib/paths";
+import {
+  homePillarCardBodyClass,
+  homePillarCardShellClass,
+  homePillarCardTitleClass,
+  homePillarGridWidthClass,
+} from "@/lib/home-pricing-pillar-cards";
 import { heroPillarCardIconClass, homeSectionEyebrowClass } from "@/lib/home-layout";
 
 type GridItem = {
@@ -14,18 +20,6 @@ type GridItem = {
 
 /** Tā pati kā `ProvinSelectSection` iekļautā rinda — 4 kolonnas lg+, 2×2 mazāk. */
 const PRICING_GRID_ICONS: LucideIcon[] = [Globe2, ScanSearch, AlertTriangle, ShieldCheck];
-
-const pricingGridWidthClass = "w-full max-w-[min(100%,68rem)]";
-
-/** PROVIN SELECT kartes bāze: mīksts pīlārs, vienāds iekšējais padding, centrēts saturs. */
-const pricingCardShellClass =
-  "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--mobile-card demo-design-dir__card flex h-full min-h-0 flex-col items-center justify-center gap-2.5 px-3 py-4 text-center sm:gap-3 sm:px-4 sm:py-5";
-
-const pricingCardTitleClass =
-  "marketing-hero-pillar-title w-full max-w-[16.5rem] text-balance text-center text-[9px] font-semibold uppercase leading-snug tracking-tight line-clamp-4 sm:max-w-[18rem] sm:text-[10px]";
-
-const pricingCardBodyClass =
-  "home-muted-foreground max-w-[17.5rem] text-balance text-center text-[11px] leading-relaxed sm:max-w-[19rem] sm:text-[12px]";
 
 export async function PricingIncluded({ embedded = false }: { embedded?: boolean } = {}) {
   const t = await getTranslations("Pricing");
@@ -53,7 +47,7 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
         </div>
       </div>
       <ul
-        className={`mx-auto mt-8 grid list-none grid-cols-1 items-stretch gap-3 sm:mt-10 sm:grid-cols-2 sm:gap-4 md:gap-5 lg:mt-12 lg:grid-cols-4 ${pricingGridWidthClass}`}
+        className={`mx-auto mt-8 grid list-none grid-cols-1 items-stretch gap-3 sm:mt-10 sm:grid-cols-2 sm:gap-4 md:gap-5 lg:mt-12 lg:grid-cols-4 ${homePillarGridWidthClass}`}
       >
         {grid.map((item, i) => {
           const Icon = PRICING_GRID_ICONS[i] ?? Globe2;
@@ -62,8 +56,8 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
           const cellContent = (
             <>
               <Icon className={`${heroPillarCardIconClass} ${iconTone}`.trim()} aria-hidden strokeWidth={1.5} />
-              <h3 className={pricingCardTitleClass}>{item.title}</h3>
-              <p className={pricingCardBodyClass}>{item.body}</p>
+              <h3 className={homePillarCardTitleClass}>{item.title}</h3>
+              <p className={homePillarCardBodyClass}>{item.body}</p>
             </>
           );
 
@@ -72,7 +66,7 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
               <li key={item.title} className="flex min-h-0 min-w-0">
                 <Link
                   href={irissHref}
-                  className={`${pricingCardShellClass} h-full w-full min-w-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066ff]/50`}
+                  className={`${homePillarCardShellClass} h-full w-full min-w-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066ff]/50`}
                 >
                   {cellContent}
                 </Link>
@@ -82,13 +76,13 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
 
           return (
             <li key={item.title} className="flex min-h-0 min-w-0">
-              <div className={`${pricingCardShellClass} h-full w-full min-w-0`}>{cellContent}</div>
+              <div className={`${homePillarCardShellClass} h-full w-full min-w-0`}>{cellContent}</div>
             </li>
           );
         })}
       </ul>
       <div
-        className={`mx-auto mt-3 flex w-full flex-col gap-2 sm:mt-4 sm:flex-row sm:items-start sm:justify-between ${pricingGridWidthClass}`}
+        className={`mx-auto mt-3 flex w-full flex-col gap-2 sm:mt-4 sm:flex-row sm:items-start sm:justify-between ${homePillarGridWidthClass}`}
       >
         <div className="min-w-0 text-left">
           <p className="pricing-auto-records-footnote text-[10px] font-normal leading-snug text-white/55 sm:text-[12px]">

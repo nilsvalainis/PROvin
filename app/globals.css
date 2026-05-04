@@ -971,15 +971,6 @@ html[data-site-theme="dark"] .provin-select-form-error {
   color: rgb(253 230 138);
 }
 
-/* PROVIN SELECT — svarīgā piezīme zem piegādes soļiem: tumšā tēmā pelēks, gaišā — melns teksts */
-.provin-select-delivery-important {
-  color: rgb(200 205 215 / 0.72);
-}
-
-html[data-site-theme="light"] .provin-select-delivery-important {
-  color: #0a0a0a;
-}
-
 /*
  * PROVIN SELECT — zaļš akcents kā „Pieteikties konsultācijai” (`ctaButtonHeroConsult`: #12c45a / #0a9d47).
  * Fons, ikonas, VIN / saites, skenēšanas līnija, piegādes kartes.
@@ -1057,48 +1048,13 @@ html[data-site-theme="light"] .provin-select-section .provin-select-pillar-icon 
   color: #0a9d47 !important;
 }
 
-.provin-select-delivery-step {
-  border: 1px solid rgb(255 255 255 / 0.08);
-  background: rgb(255 255 255 / 0.03);
-  box-shadow: 0 0 0 1px rgb(0 140 72 / 0.14);
-  transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
+/* Risku ikonai — saglabāt sarkano toni kā „Kas iekļauts cenā?” */
+.provin-select-section .marketing-hero-pillar-icon--risk {
+  color: #ff342e !important;
 }
 
-.provin-select-delivery-step:hover {
-  transform: translateY(-2px);
-  border-color: rgb(0 200 105 / 0.32);
-  background: rgb(255 255 255 / 0.05);
-  box-shadow: 0 10px 36px rgb(10 157 71 / 0.16);
-}
-
-html[data-site-theme="light"] .provin-select-delivery-step {
-  border: 1px solid rgb(20 60 42 / 0.1);
-  background: rgb(255 255 255 / 0.82);
-  box-shadow:
-    0 0 0 1px rgb(0 120 62 / 0.1),
-    0 8px 22px rgb(16 90 55 / 0.06);
-}
-
-html[data-site-theme="light"] .provin-select-delivery-step:hover {
-  border-color: rgb(0 140 72 / 0.32);
-  background: rgb(255 255 255 / 0.94);
-  box-shadow: 0 12px 32px rgb(10 120 70 / 0.1);
-}
-
-.provin-select-delivery-step__badge {
-  border: 1px solid rgb(0 200 105 / 0.42);
-  color: rgb(110 240 170);
-  box-shadow: 0 0 20px rgb(18 196 90 / 0.22);
-}
-
-html[data-site-theme="light"] .provin-select-delivery-step__badge {
-  border-color: rgb(0 130 68 / 0.38);
-  color: #0a9d47;
-  box-shadow: 0 0 16px rgb(18 196 90 / 0.2);
+html[data-site-theme="light"] .provin-select-section .marketing-hero-pillar-icon--risk {
+  color: #ff342e !important;
 }
 
 /* How it works — diskrēts „datu impulss” ap soļu ikonām (gredzens + elpošana uz hover) */

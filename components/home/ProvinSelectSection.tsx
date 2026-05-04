@@ -7,18 +7,19 @@ import { Link } from "@/i18n/navigation";
 import demoPageStyles from "@/app/[locale]/demo/page.module.css";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { PROVIN_SELECT_FORM_HASH, PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
-import { heroPillarCardIconClass, heroPillarCardTitleClass } from "@/lib/home-layout";
+import {
+  homePillarCardBodyClass,
+  homePillarCardShellClass,
+  homePillarCardTitleClass,
+  homePillarGridWidthClass,
+} from "@/lib/home-pricing-pillar-cards";
+import { heroPillarCardIconClass } from "@/lib/home-layout";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
 const subsectionHeadingClass =
   "iriss-editorial-heading font-semibold uppercase tracking-[0.08em] text-white/90";
 
 const SELECT_CARD_ICONS: LucideIcon[] = [Layers, Filter, AlertTriangle, MessageSquare];
-
-const selectGridWidthClass = "w-full max-w-[min(100%,68rem)]";
-
-const selectCardClass =
-  "marketing-hero-pillar marketing-hero-pillar--soft marketing-hero-pillar--mobile-card demo-design-dir__card flex min-h-0 flex-col items-center justify-start gap-2.5 px-2 py-3 text-center sm:gap-3 sm:px-3 sm:py-4";
 
 const NOTES_MAX = 500;
 
@@ -31,11 +32,6 @@ export function ProvinSelectSection() {
   const rawIncluded = t.raw("included");
   const includedRows: IncludedRow[] = Array.isArray(rawIncluded)
     ? (rawIncluded as IncludedRow[]).filter((r) => r && typeof r.title === "string" && typeof r.body === "string")
-    : [];
-
-  const rawDeliverySteps = t.raw("deliverySteps");
-  const deliveryRows: IncludedRow[] = Array.isArray(rawDeliverySteps)
-    ? (rawDeliverySteps as IncludedRow[]).filter((r) => r && typeof r.title === "string" && typeof r.body === "string")
     : [];
 
   const [name, setName] = useState("");
@@ -114,7 +110,7 @@ export function ProvinSelectSection() {
         <div className="mx-auto max-w-[min(100%,48rem)] text-center">
           <h2
             id="provin-select-heading"
-            className="demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance"
+            className="demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance font-semibold"
           >
             {renderProvinText(t("eyebrow"), { proAndSuffixClassName: "provin-wordmark-pro" })}
           </h2>
@@ -127,58 +123,32 @@ export function ProvinSelectSection() {
         </div>
 
         <ul
-          className={`mx-auto mt-10 grid list-none grid-cols-1 gap-3 sm:gap-4 md:mt-12 md:grid-cols-2 md:gap-5 lg:grid-cols-4 ${selectGridWidthClass}`}
+          className={`mx-auto mt-12 grid list-none grid-cols-1 items-stretch gap-3 sm:mt-14 sm:grid-cols-2 sm:gap-4 md:gap-5 lg:mt-16 lg:grid-cols-4 ${homePillarGridWidthClass}`}
         >
           {includedRows.map((row, i) => {
             const Icon = SELECT_CARD_ICONS[i] ?? Layers;
+            const riskCard = i === 2;
+            const iconTone = riskCard ? "marketing-hero-pillar-icon--risk text-[#ff342e]" : "";
             return (
-              <li key={row.title} className="min-w-0">
-                <div className={`${selectCardClass} h-full`}>
-                  <Icon className={`${heroPillarCardIconClass} provin-select-pillar-icon`} aria-hidden strokeWidth={1.5} />
-                  <h3 className={heroPillarCardTitleClass}>{row.title}</h3>
-                  <p className="home-muted-foreground line-clamp-2 max-w-[14rem] text-[11px] leading-relaxed sm:max-w-none sm:text-[12px]">
-                    {row.body}
-                  </p>
+              <li key={row.title} className="flex min-h-0 min-w-0">
+                <div className={`${homePillarCardShellClass} h-full w-full min-w-0`}>
+                  <Icon className={`${heroPillarCardIconClass} ${iconTone}`.trim()} aria-hidden strokeWidth={1.5} />
+                  <h3 className={homePillarCardTitleClass}>{row.title}</h3>
+                  <p className={homePillarCardBodyClass}>{row.body}</p>
                 </div>
               </li>
             );
           })}
         </ul>
 
-        <div className={`mx-auto mt-10 max-w-[min(100%,48rem)] md:mt-12`}>
-          <h3 className={`${subsectionHeadingClass} text-center`}>{t("deliveryTitle")}</h3>
-          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
-            <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
-          </div>
-
-          <ol
-            className={`mx-auto mt-6 grid list-none grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 md:gap-6 lg:mt-8 lg:grid-cols-4 lg:gap-4 ${selectGridWidthClass}`}
-          >
-            {deliveryRows.map((row, idx) => (
-              <li
-                key={row.title}
-                className="provin-select-delivery-step relative flex gap-3 rounded-xl px-3 py-3 backdrop-blur-sm sm:px-3.5 sm:py-3.5 lg:flex-col lg:items-center lg:gap-2 lg:px-2 lg:py-4 lg:text-center"
-              >
-                <span
-                  className="provin-select-delivery-step__badge flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold tabular-nums sm:h-10 sm:w-10 sm:text-[12px]"
-                  aria-hidden
-                >
-                  {idx + 1}
-                </span>
-                <div className="min-w-0 flex-1 lg:flex-none">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-white/90 sm:text-[11px]">
-                    {row.title}
-                  </p>
-                  <p className="home-muted-foreground mt-1 line-clamp-2 text-[11px] leading-snug sm:text-[12px]">
-                    {row.body}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-
-          <p className="provin-select-delivery-important mx-auto mt-6 max-w-[min(100%,40rem)] text-center text-[10px] font-normal leading-snug text-white/55 sm:mt-7 sm:text-[11px]">
-            {renderProvinText(t("deliveryImportant"))}
+        <div
+          className={`mx-auto mt-3 flex w-full max-w-[min(100%,40rem)] flex-col items-center gap-2 px-1 text-center sm:mt-4 ${homePillarGridWidthClass}`}
+        >
+          <p className="pricing-auto-records-footnote text-[10px] font-normal leading-snug text-white/55 sm:text-[11px]">
+            {t("cardsTrustLine")}
+          </p>
+          <p className="pricing-auto-records-footnote text-[10px] font-normal leading-snug text-white/45 sm:text-[11px]">
+            {renderProvinText(t("cardsVinNote"), { proAndSuffixClassName: "provin-wordmark-pro" })}
           </p>
         </div>
 
