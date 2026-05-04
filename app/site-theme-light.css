@@ -399,6 +399,36 @@ html[data-site-theme="light"] .home-hero-pricing-unified.demo-design-dir {
   box-shadow: none;
 }
 
+html[data-site-theme="light"] .home-service-comparison-audit-col {
+  border-color: rgb(59 130 246 / 0.22);
+  background: linear-gradient(180deg, rgb(239 246 255 / 0.96) 0%, rgb(248 250 252 / 0.92) 100%);
+  color: #171717;
+}
+
+html[data-site-theme="light"] .home-service-comparison-select-col {
+  border-color: rgb(16 185 129 / 0.24);
+  background:
+    radial-gradient(ellipse 105% 72% at 50% 0%, rgb(16 185 129 / 0.07), transparent 56%),
+    linear-gradient(180deg, rgb(240 253 244 / 0.96) 0%, rgb(248 250 252 / 0.93) 100%);
+  color: #171717;
+}
+
+html[data-site-theme="light"] .home-service-comparison-audit-title {
+  color: rgb(29 78 216 / 0.96);
+}
+
+html[data-site-theme="light"] .home-service-comparison-select-title {
+  color: rgb(4 120 87 / 0.96);
+}
+
+html[data-site-theme="light"] .home-service-comparison-footnote {
+  color: rgb(63 63 70 / 0.82) !important;
+}
+
+html[data-site-theme="light"] .home-service-comparison-select-col .demo-design-dir__body {
+  color: rgb(39 39 42 / 0.88) !important;
+}
+
 /* PROVIN SELECT — maigs gaišs zaļš (ne agresīvs) */
 html[data-site-theme="light"] .demo-design-dir.home-below-hero-continuum {
   background:

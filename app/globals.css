@@ -1124,6 +1124,47 @@ html[data-site-theme="light"] .about-provin-punchline-accent {
   color: #2563eb;
 }
 
+/* Sākumlapa: VIN audits vs PROVIN SELECT — 2×2 vienādas kartītes */
+.home-service-comparison-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(12.75rem, 1fr));
+  flex: 1 1 auto;
+  gap: 0.65rem;
+  min-height: 0;
+}
+
+@media (min-width: 640px) {
+  .home-service-comparison-card-grid {
+    grid-template-rows: repeat(2, minmax(13.75rem, 1fr));
+    gap: 0.85rem;
+  }
+}
+
+.home-service-comparison-card {
+  min-height: 0;
+}
+
+[data-comparison-side="audit"] .home-service-comparison-icon--audit {
+  color: #3b82f6 !important;
+}
+
+[data-comparison-side="select"] .home-service-comparison-icon--select {
+  color: rgb(52 211 169) !important;
+}
+
+html:not([data-site-theme="light"]) .home-service-comparison-audit-col {
+  box-shadow: inset 0 1px 0 rgb(56 189 248 / 0.08);
+}
+
+html:not([data-site-theme="light"]) .home-service-comparison-select-col {
+  background:
+    radial-gradient(ellipse 108% 72% at 50% 0%, rgb(34 197 94 / 0.08), transparent 58%),
+    radial-gradient(ellipse 96% 58% at 92% 92%, rgb(16 120 72 / 0.05), transparent 52%),
+    linear-gradient(180deg, rgb(5 12 9 / 0.55) 0%, rgb(4 10 8 / 0.35) 100%);
+  box-shadow: inset 0 1px 0 rgb(52 211 153 / 0.1);
+}
+
 /* How it works — diskrēts „datu impulss” ap soļu ikonām (gredzens + elpošana uz hover) */
 @keyframes how-it-works-ring-draw {
   from {
