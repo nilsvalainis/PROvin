@@ -22,7 +22,9 @@ export default function HomeProductHero({ showProvinSelect = false }: Props) {
   const t = useTranslations("Hero");
 
   return (
-    <div className={`home-hero-intro-surface ${styles.heroIntroSurface} ${styles.heroIntroSurfaceDepth}`}>
+    <div
+      className={`home-hero-intro-surface flex min-h-0 min-w-0 flex-col ${styles.heroIntroSurface} ${styles.heroIntroSurfaceDepth}`}
+    >
       <div className={styles.heroDarkBackdrop} aria-hidden>
         <div className={`${styles.heroVisualWrap} ${styles.heroVisualWrapAmbient}`} aria-hidden>
           <HeroVisual />
@@ -31,7 +33,7 @@ export default function HomeProductHero({ showProvinSelect = false }: Props) {
         <div className={styles.heroDarkVeil} aria-hidden />
       </div>
 
-      <div className="relative z-10 min-w-0">
+      <div className="relative z-10 flex min-h-0 min-w-0 flex-col">
         <section id="home-hero" className={styles.heroSection} aria-labelledby="marketing-hero-product-title">
           <div className={styles.heroShell}>
             <div className={styles.heroColumnsProduct}>

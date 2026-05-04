@@ -193,13 +193,22 @@ html[data-site-theme="dark"] .heroDarkVeil {
   display: block;
 }
 
+/* Dinamiskā hero ielāde — tā pats min. augstums kā `.heroSection`, lai nav lēciena / plaisas. */
+.heroHomeLoadingShell {
+  min-height: calc(100svh - 72px);
+  min-height: calc(100dvh - 72px);
+}
+
 .heroSection {
   position: relative;
   z-index: 1;
   background: linear-gradient(180deg, #ffffff 0%, #f4f5f7 56%, #eceef1 100%);
-  /* `min-height` (nevis fiksēts 100vh) + mazākais no viewport vienībām — mazāk plaisu pie zoom / UI rīkjoslas. */
+  /*
+   * Min. augstums = viewport mīnus navigācija — tikai svh, tad dvh (bez `min(100vh,100dvh,100svh)`),
+   * lai mazāk subpikseļu / zoom plaisu starp hero un nākamo sekciju. Saturs var pārsniegt min.
+   */
   min-height: calc(100svh - 72px);
-  min-height: calc(min(100vh, 100dvh, 100svh) - 72px);
+  min-height: calc(100dvh - 72px);
   padding: clamp(1.75rem, 2.8vw, 2.75rem) clamp(1.25rem, 3vw, 3rem) clamp(1.75rem, 3vw, 2.75rem);
   overflow-x: clip;
 }
@@ -788,6 +797,7 @@ html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .orde
 /* Šaurāks mobilais (≈ SE / mini) */
 :global(.demo-mobile-narrow) .heroSection {
   min-height: calc(100svh - 64px);
+  min-height: calc(100dvh - 64px);
   padding: clamp(1.1rem, 4vw, 1.5rem) clamp(0.85rem, 4vw, 1.1rem) clamp(1.1rem, 3vw, 1.35rem);
 }
 

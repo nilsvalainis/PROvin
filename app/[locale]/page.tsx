@@ -10,7 +10,7 @@ import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 const HomeProductHero = dynamic(() => import("@/components/home/HomeProductHero"), {
   loading: () => (
     <div
-      className={`home-hero-pricing-unified demo-design-dir home-hero-intro-surface ${productHeroStyles.heroIntroSurface}`}
+      className={`home-hero-pricing-unified demo-design-dir home-hero-intro-surface ${productHeroStyles.heroIntroSurface} ${productHeroStyles.heroHomeLoadingShell}`}
       aria-busy="true"
       aria-label="Ielādē…"
     />
