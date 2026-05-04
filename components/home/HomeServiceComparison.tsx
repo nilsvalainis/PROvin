@@ -4,11 +4,10 @@ import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import {
   homePillarCardShellClass,
-  homePillarCardTitleClass,
 } from "@/lib/home-pricing-pillar-cards";
 import { heroPillarCardIconClass } from "@/lib/home-layout";
-import { PROVIN_SELECT_FORM_HASH } from "@/lib/provin-select-section";
-import { orderSectionHref } from "@/lib/paths";
+import { PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
+import { orderSectionHref, provinSelectConsultationHref } from "@/lib/paths";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import demoPageStyles from "@/app/[locale]/demo/page.module.css";
 
@@ -18,11 +17,13 @@ type IncludedRow = { title: string; body: string };
 const AUDIT_ICONS: LucideIcon[] = [Globe2, ScanSearch, AlertTriangle, ShieldCheck];
 const SELECT_ICONS: LucideIcon[] = [Layers, Filter, AlertTriangle, MessageSquare];
 
-const cardBodyClamp =
-  "home-muted-foreground max-w-[17.5rem] text-balance text-center text-[11px] leading-relaxed line-clamp-3 sm:max-w-[19rem] sm:text-[12px]";
+const comparisonCardTitleClass =
+  "home-service-comparison-card-title w-full max-w-[19rem] text-balance text-center text-lg font-semibold uppercase leading-snug tracking-wide";
 
-const cardInner =
-  `${homePillarCardShellClass} home-service-comparison-card flex h-full min-h-0 w-full min-w-0 flex-col items-center justify-start gap-2 overflow-hidden py-3 text-center sm:gap-2.5 sm:py-4`;
+const comparisonCardBodyClass =
+  "home-muted-foreground w-full max-w-[19rem] flex-1 text-balance text-center text-sm leading-snug";
+
+const cardInnerClass = `${homePillarCardShellClass} home-service-comparison-card flex h-full min-h-0 w-full min-w-0 flex-col items-center justify-start gap-2 overflow-hidden py-3 text-center sm:gap-2.5 sm:py-4`;
 
 function ComparisonCard({
   title,
@@ -43,23 +44,35 @@ function ComparisonCard({
       ? riskTone || "home-service-comparison-icon--audit"
       : riskTone || "home-service-comparison-icon--select";
 
+  const titleTone =
+    side === "audit" ? "home-service-comparison-card-title--audit" : "home-service-comparison-card-title--select";
+
   return (
     <li className="flex min-h-0 min-w-0">
-      <div className={cardInner}>
+      <div className={cardInnerClass}>
         <Icon
-          className={`${heroPillarCardIconClass} ${sideIcon}`.trim()}
+          className={`${heroPillarCardIconClass} shrink-0 ${sideIcon}`.trim()}
           aria-hidden
           strokeWidth={1.5}
         />
-        <h3 className={`${homePillarCardTitleClass} shrink-0`}>{title}</h3>
-        <p className={`${cardBodyClamp} min-h-0 flex-1`}>{body}</p>
+        <h3 className={`${comparisonCardTitleClass} shrink-0 ${titleTone}`}>{title}</h3>
+        <p className={`${comparisonCardBodyClass} min-h-0`}>{body}</p>
       </div>
     </li>
   );
 }
 
+const columnShellClass =
+  "flex min-h-0 min-w-0 flex-1 flex-col gap-4 rounded-2xl px-3 py-5 sm:gap-5 sm:px-5 sm:py-6";
+
+const ctaRowClass =
+  "mt-auto flex w-full flex-col items-center gap-2 border-t border-white/[0.06] pt-4 sm:pt-5";
+
+const ctaLinkClass =
+  "inline-flex min-h-[56px] w-full max-w-[min(100%,520px)] items-center justify-center px-3 text-center no-underline";
+
 /**
- * Sākumlapa: VIN audits vs PROVIN SELECT — divas slejas, katrā 2×2 vienādas kartītes.
+ * Sākumlapa: PROVIN AUDITS vs PROVIN SELECT — divas slejas, katrā 2×2 vienādas kartītes.
  */
 export async function HomeServiceComparison() {
   const tPricing = await getTranslations("Pricing");
@@ -74,22 +87,25 @@ export async function HomeServiceComparison() {
 
   return (
     <div id="cena" className="home-body-ink scroll-mt-16">
-      <div className="mx-auto grid w-full max-w-[min(100%,88rem)] grid-cols-1 items-stretch gap-8 lg:grid-cols-2 lg:gap-10">
-        {/* VIN audits — zilā tēma */}
+      <div className="mx-auto flex w-full max-w-[min(100%,88rem)] flex-col gap-8 lg:flex-row lg:items-stretch lg:gap-0">
+        {/* PROVIN AUDITS — zilā tēma */}
         <div
           data-comparison-side="audit"
-          className="home-service-comparison-audit-col flex h-full min-w-0 flex-col gap-4 rounded-2xl border border-sky-500/20 bg-gradient-to-b from-sky-950/35 via-[#050a14]/40 to-transparent px-3 py-5 sm:gap-5 sm:px-5 sm:py-6"
+          className={`home-service-comparison-audit-col ${columnShellClass} border border-sky-500/20 bg-gradient-to-b from-sky-950/35 via-[#050a14]/40 to-transparent`}
         >
-          <header className="text-center">
+          <header className="shrink-0 text-center">
             <h2 className="home-service-comparison-audit-title text-[clamp(1rem,2.4vw,1.35rem)] font-semibold uppercase tracking-[0.06em] text-sky-300 sm:tracking-[0.08em]">
               {tPricing("comparisonAuditTitle")}
             </h2>
             <div className="mx-auto mt-2 w-full max-w-[min(100%,22rem)] px-1 sm:mt-3">
               <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
             </div>
+            <p className="demo-design-dir__body mx-auto mt-2 max-w-[min(100%,28rem)] text-balance text-sm font-medium leading-snug text-white/80 sm:mt-3">
+              {tPricing("comparisonAuditSubtitle")}
+            </p>
           </header>
 
-          <ul className="home-service-comparison-card-grid list-none">
+          <ul className="home-service-comparison-card-grid min-h-0 flex-1 list-none">
             {auditRows.slice(0, 4).map((item, i) => {
               const Icon = AUDIT_ICONS[i] ?? Globe2;
               return (
@@ -105,11 +121,8 @@ export async function HomeServiceComparison() {
             })}
           </ul>
 
-          <div className="mt-1 flex flex-col items-center gap-2 px-1 sm:mt-2">
-            <Link
-              href={orderSectionHref()}
-              className={`${demoPageStyles.ctaButton} !mt-0 inline-flex max-w-[min(100%,520px)] justify-center text-center no-underline`}
-            >
+          <div className={ctaRowClass}>
+            <Link href={orderSectionHref()} className={`${demoPageStyles.ctaButton} ${ctaLinkClass} !mt-0`}>
               {tPricing("comparisonAuditCta")}
             </Link>
             <p className="home-service-comparison-footnote max-w-[min(100%,24rem)] text-center text-[10px] font-normal leading-snug text-white/55 sm:text-[11px]">
@@ -118,24 +131,30 @@ export async function HomeServiceComparison() {
           </div>
         </div>
 
+        <div
+          className="hidden w-px shrink-0 self-stretch bg-gradient-to-b from-transparent via-white/12 to-transparent lg:block"
+          aria-hidden
+        />
+
         {/* PROVIN SELECT — zaļā tēma */}
         <div
+          id={PROVIN_SELECT_SECTION_ID}
           data-comparison-side="select"
-          className="home-service-comparison-select-col provin-select-section flex h-full min-w-0 flex-col gap-4 rounded-2xl border border-emerald-500/20 px-3 py-5 sm:gap-5 sm:px-5 sm:py-6"
+          className={`home-service-comparison-select-col provin-select-section ${columnShellClass} border border-emerald-500/20`}
         >
-          <header className="text-center">
+          <header className="shrink-0 text-center">
             <h2 className="home-service-comparison-select-title text-[clamp(1rem,2.4vw,1.35rem)] font-semibold uppercase tracking-[0.06em] text-emerald-300/95 sm:tracking-[0.08em]">
               {renderProvinText(tSelect("eyebrow"), { proAndSuffixClassName: "provin-wordmark-pro" })}
             </h2>
             <div className="mx-auto mt-2 w-full max-w-[min(100%,22rem)] px-1 sm:mt-3">
               <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
             </div>
-            <p className="demo-design-dir__body mx-auto mt-2 max-w-[min(100%,28rem)] text-balance text-[13px] font-medium leading-snug text-white/80 sm:mt-3 sm:text-sm">
+            <p className="demo-design-dir__body mx-auto mt-2 max-w-[min(100%,28rem)] text-balance text-sm font-medium leading-snug text-white/80 sm:mt-3">
               {tSelect("lead")}
             </p>
           </header>
 
-          <ul className="home-service-comparison-card-grid list-none">
+          <ul className="home-service-comparison-card-grid min-h-0 flex-1 list-none">
             {selectRows.slice(0, 4).map((row, i) => {
               const Icon = SELECT_ICONS[i] ?? Layers;
               return (
@@ -151,10 +170,10 @@ export async function HomeServiceComparison() {
             })}
           </ul>
 
-          <div className="mt-1 flex flex-col items-center gap-1.5 px-1 sm:mt-2">
+          <div className={ctaRowClass}>
             <Link
-              href={`/#${PROVIN_SELECT_FORM_HASH}`}
-              className={`${demoPageStyles.ctaButtonHeroConsult} !mt-0 inline-flex max-w-[min(100%,520px)] justify-center text-center no-underline`}
+              href={provinSelectConsultationHref()}
+              className={`${demoPageStyles.ctaButtonHeroConsult} ${ctaLinkClass} !mt-0`}
             >
               {tSelect("comparisonScrollCta")}
             </Link>

@@ -1,24 +1,25 @@
 {
   "Pricing": {
     "workTitle": "KAS IEKĻAUTS CENĀ?",
-    "comparisonAuditTitle": "VIN un sludinājuma audits",
+    "comparisonAuditTitle": "PROVIN AUDITS",
+    "comparisonAuditSubtitle": "Atskaite, kura pasaka daudz vairāk",
     "comparisonAuditCta": "PASŪTĪT AUDITU — 79,99 €",
     "grid": [
       {
         "title": "PILNA VĒSTURES ANALĪZE",
-        "body": "Eiropas, ASV un vietējo reģistru datu sintēze. Pārbaudām nobraukuma dinamiku, zādzības, negadījumus un oficiālo dīleru servisa datus*, meklējot slēptas manipulācijas un pretrunas starp avotiem."
+        "body": "Eiropas, ASV un vietējo reģistru datu sintēze. Nobraukums, zādzības, negadījumi."
       },
       {
         "title": "SLUDINĀJUMA AUDITS",
-        "body": "Detalizēta fotoattēlu un apraksta ekspertīze. Identificējam vizuālas novirzes no normas, informācijas noklusēšanas pazīmes un detaļas, kas norāda uz automašīnas faktiskā nolietojuma slēpšanu vai iepriekšējiem remontdarbiem."
+        "body": "Foto un apraksta ekspertīze. Slēptu remontu un nolietojuma pazīmju identificēšana."
       },
       {
         "title": "TEHNISKO RISKU ANALĪZE",
-        "body": "Dzinēja, transmisijas un galveno agregātu izvērtējums. Sniedzam pamatotu uzticamības prognozi un identificējam iespējamos ekspluatācijas riskus nākotnē."
+        "body": "Dzinēja, transmisijas un agregātu izvērtējums. Uzticamības prognoze un ekspluatācijas riski."
       },
       {
         "title": "EKSPERTA REKOMENDĀCIJA",
-        "body": "Argumentēts slēdziens, balstīts datos un 10+ gadu pieredzē. Ietver individuālu konsultāciju pēc atskaites saņemšanas, lai kopīgi izrunātu iegūtos datus un pieņemtu drošu lēmumu.",
+        "body": "Datos un 10+ gadu pieredzē balstīts slēdziens. Individuāla konsultācija pēc atskaites.",
         "href": true
       }
     ],

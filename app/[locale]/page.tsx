@@ -2,7 +2,6 @@ import dynamic from "next/dynamic";
 import { Footer } from "@/components/Footer";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { HomeServiceComparison } from "@/components/home/HomeServiceComparison";
-import { ProvinSelectSection } from "@/components/home/ProvinSelectSection";
 import { IrissSection } from "@/components/IrissSection";
 import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 import { PricingIncluded } from "@/components/PricingIncluded";
@@ -21,7 +20,7 @@ const HomeProductHero = dynamic(() => import("@/components/home/HomeProductHero"
 export default async function HomePage() {
   return (
     <div className={productHeroStyles.demoRoot}>
-      <div className="home-hero-pricing-unified demo-design-dir min-w-0 text-white">
+      <div className="home-hero-pricing-unified demo-design-dir flex min-h-0 min-w-0 flex-col text-white">
         <HomeProductHero showProvinSelect={isProvinSelectPublic()} />
 
         <section className="demo-design-dir__section demo-design-dir__section--unified-pricing-tail py-16 sm:py-20 md:py-24">
@@ -34,12 +33,6 @@ export default async function HomePage() {
           </div>
         </section>
       </div>
-
-      {isProvinSelectPublic() ? (
-        <div className="demo-design-dir home-below-hero-continuum min-w-0 text-white">
-          <ProvinSelectSection formOnly />
-        </div>
-      ) : null}
 
       <div id="site-content" className="demo-design-dir min-w-0 text-white home-body-ink scroll-mt-14">
         <section className="demo-design-dir__section demo-design-dir__section--band-b py-16 sm:py-20 md:py-24">

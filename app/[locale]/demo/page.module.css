@@ -2,6 +2,8 @@
 
 .demoRoot {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Demo: pārslēdzējs starp mobilajiem maršrutiem */
@@ -195,7 +197,9 @@ html[data-site-theme="dark"] .heroDarkVeil {
   position: relative;
   z-index: 1;
   background: linear-gradient(180deg, #ffffff 0%, #f4f5f7 56%, #eceef1 100%);
+  /* `min-height` (nevis fiksēts 100vh) + mazākais no viewport vienībām — mazāk plaisu pie zoom / UI rīkjoslas. */
   min-height: calc(100svh - 72px);
+  min-height: calc(min(100vh, 100dvh, 100svh) - 72px);
   padding: clamp(1.75rem, 2.8vw, 2.75rem) clamp(1.25rem, 3vw, 3rem) clamp(1.75rem, 3vw, 2.75rem);
   overflow-x: clip;
 }
@@ -474,6 +478,10 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: 0 11px 21px rgb(13 110 234 / 0.2), 0 2px 0 rgb(255 255 255 / 0.22) inset;
   cursor: pointer;
 }

@@ -1128,21 +1128,36 @@ html[data-site-theme="light"] .about-provin-punchline-accent {
 .home-service-comparison-card-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(12.75rem, 1fr));
+  /* Vienāds rindas augstums katrā slejā; `1fr` sadala vertikāli starp divām rindām. */
+  grid-template-rows: repeat(2, minmax(0, 1fr));
   flex: 1 1 auto;
   gap: 0.65rem;
-  min-height: 0;
+  min-height: clamp(13.5rem, 30vh, 21rem);
 }
 
 @media (min-width: 640px) {
   .home-service-comparison-card-grid {
-    grid-template-rows: repeat(2, minmax(13.75rem, 1fr));
     gap: 0.85rem;
+    min-height: clamp(14.5rem, 28vh, 23rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-service-comparison-card-grid {
+    min-height: clamp(15rem, 26vh, 24rem);
   }
 }
 
 .home-service-comparison-card {
   min-height: 0;
+}
+
+html:not([data-site-theme="light"]) .home-service-comparison-card-title--audit {
+  color: rgb(186 230 253 / 0.96);
+}
+
+html:not([data-site-theme="light"]) .home-service-comparison-card-title--select {
+  color: rgb(167 243 208 / 0.96);
 }
 
 [data-comparison-side="audit"] .home-service-comparison-icon--audit {

@@ -429,6 +429,18 @@ html[data-site-theme="light"] .home-service-comparison-select-col .demo-design-d
   color: rgb(39 39 42 / 0.88) !important;
 }
 
+html[data-site-theme="light"] .home-service-comparison-audit-col .demo-design-dir__body {
+  color: rgb(39 39 42 / 0.88) !important;
+}
+
+html[data-site-theme="light"] [data-comparison-side="audit"] .home-service-comparison-card-title--audit {
+  color: rgb(29 78 216 / 0.95);
+}
+
+html[data-site-theme="light"] [data-comparison-side="select"] .home-service-comparison-card-title--select {
+  color: rgb(4 120 87 / 0.95);
+}
+
 /* PROVIN SELECT — maigs gaišs zaļš (ne agresīvs) */
 html[data-site-theme="light"] .demo-design-dir.home-below-hero-continuum {
   background:

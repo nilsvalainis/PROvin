@@ -24,3 +24,8 @@ export function faqHashHref(): string {
 export function irissAnchorHref(): string {
   return "/#kas-ir-iriss";
 }
+
+/** PROVIN SELECT konsultācijas pieteikums — atsevišķa lapa (bez formas sākumlapā). */
+export function provinSelectConsultationHref(): string {
+  return "/provin-select-pieteikums";
+}

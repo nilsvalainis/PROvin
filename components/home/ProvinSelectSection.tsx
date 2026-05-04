@@ -26,11 +26,11 @@ const NOTES_MAX = 500;
 type IncludedRow = { title: string; body: string };
 
 type ProvinSelectSectionProps = {
-  /** `true` — tikai pieteikuma forma (kartītes un virsraksts ir `HomeServiceComparison`). */
-  formOnly?: boolean;
+  /** `standalone` — tikai konsultācijas forma (lapa `/provin-select-pieteikums`). */
+  variant?: "full" | "standalone";
 };
 
-export function ProvinSelectSection({ formOnly = false }: ProvinSelectSectionProps) {
+export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionProps) {
   const t = useTranslations("ProvinSelect");
   const tOrder = useTranslations("Order");
   const locale = useLocale();
@@ -105,16 +105,18 @@ export function ProvinSelectSection({ formOnly = false }: ProvinSelectSectionPro
     }
   };
 
-  const headingId = formOnly ? "provin-select-form-only-heading" : "provin-select-heading";
+  const isStandalone = variant === "standalone";
+  const headingId = isStandalone ? "provin-select-standalone-heading" : "provin-select-heading";
+  const sectionId = isStandalone ? "provin-select-pieteikums" : PROVIN_SELECT_SECTION_ID;
 
   return (
     <section
-      id={PROVIN_SELECT_SECTION_ID}
+      id={sectionId}
       aria-labelledby={headingId}
-      className={`provin-select-section home-body-ink relative scroll-mt-16 overflow-x-clip ${formOnly ? "py-12 sm:py-16" : `home-hero-intro-surface ${demoPageStyles.heroIntroSurface} py-16 sm:py-20`}`}
+      className={`provin-select-section home-body-ink relative scroll-mt-16 overflow-x-clip home-hero-intro-surface ${demoPageStyles.heroIntroSurface} py-16 sm:py-20`}
     >
       <div className="demo-design-dir__shell relative">
-        {!formOnly ? (
+        {variant === "full" ? (
           <>
             <div className="mx-auto max-w-[min(100%,48rem)] text-center">
               <h2
@@ -161,21 +163,36 @@ export function ProvinSelectSection({ formOnly = false }: ProvinSelectSectionPro
               </p>
             </div>
           </>
-        ) : (
-          <h2 id={headingId} className="sr-only">
-            {t("formTitle")}
-          </h2>
-        )}
+        ) : isStandalone ? (
+          <div className="mx-auto max-w-[min(100%,48rem)] text-center">
+            <h2
+              id={headingId}
+              className="demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance font-semibold"
+            >
+              {t("formTitle")}
+            </h2>
+            <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
+              <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
+            </div>
+            <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance font-medium sm:mt-4">
+              {t("lead")}
+            </p>
+          </div>
+        ) : null}
 
         <div
-          className={`mx-auto max-w-[min(100%,40rem)] space-y-10 text-left text-pretty ${formOnly ? "mt-2 md:mt-4" : "mt-12 md:mt-14"}`}
+          className={`mx-auto max-w-[min(100%,40rem)] space-y-10 text-left text-pretty ${isStandalone ? "mt-10 md:mt-12" : "mt-12 md:mt-14"}`}
         >
           <div id={PROVIN_SELECT_FORM_HASH} className="scroll-mt-[calc(3.5rem+8px)]">
-            <h3 className={subsectionHeadingClass}>{t("formTitle")}</h3>
-            <div className="mt-3 w-full">
-              <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
-            </div>
-            <div className={`${demoPageStyles.heroFormCard} mx-auto mt-4 w-full max-w-[520px]`}>
+            {isStandalone ? null : (
+              <>
+                <h3 className={subsectionHeadingClass}>{t("formTitle")}</h3>
+                <div className="mt-3 w-full">
+                  <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
+                </div>
+              </>
+            )}
+            <div className={`${demoPageStyles.heroFormCard} mx-auto ${isStandalone ? "mt-2" : "mt-4"} w-full max-w-[520px]`}>
               <form
                 onSubmit={(e) => void onSubmit(e)}
                 className="order-form--hero !mt-0 w-full space-y-3 !px-0 !py-0 sm:!px-0 sm:!py-0"
