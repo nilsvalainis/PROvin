@@ -90,7 +90,7 @@
   background: #030304;
 }
 
-/* Sākumlapa: hero + „KAS IR PROVIN?” — fona stack definēts `demo/page.module.css` (`.heroIntroSurface` + dark backdrop). */
+/* Sākumlapa: hero — fona stack definēts `demo/page.module.css` (`.heroIntroSurface` + dark backdrop). */
 .home-hero-intro-surface {
   position: relative;
   /* hidden/clip šeit veidoja atsevišķu scrollportu pret document — viens vienīgs lapas scroll. */

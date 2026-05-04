@@ -1,4 +1,4 @@
-/* Demo: light — viena virsma hero + „KAS IR PROVIN?”; dark — produkta scrim, sapludināts + ~20% tumšāks. */
+/* Demo: light — viena virsma hero; dark — produkta scrim, sapludināts + ~20% tumšāks. */
 
 .demoRoot {
   min-width: 0;
@@ -225,6 +225,20 @@ html[data-site-theme="dark"] .heroSection {
   gap: clamp(1.25rem, 3vw, 2rem);
   align-items: stretch;
   grid-template-columns: 1fr;
+}
+
+/* Produkta hero — viena sleja (labā „KAS IR PROVIN?” kolonna noņemta). */
+.heroColumnsProduct {
+  display: grid;
+  gap: clamp(1.25rem, 3vw, 2rem);
+  align-items: start;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 981px) {
+  .heroColumnsProduct {
+    gap: clamp(1.5rem, 3vw, 2.75rem);
+  }
 }
 
 @media (min-width: 981px) {

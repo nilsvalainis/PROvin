@@ -10,16 +10,14 @@ import {
   ORDER_SECTION_ID,
 } from "@/lib/order-section";
 import { PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
-import { HomeIntroBlurb } from "@/components/home/HomeIntroBlurb";
 import styles from "@/app/[locale]/demo/page.module.css";
 
 type Props = {
   /** `false` — PROVIN SELECT saite hero nav rādāma. */
   showProvinSelect?: boolean;
-  introBodyText: string;
 };
 
-export default function HomeProductHero({ showProvinSelect = false, introBodyText }: Props) {
+export default function HomeProductHero({ showProvinSelect = false }: Props) {
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
   const t = useTranslations("Hero");
 
@@ -36,7 +34,7 @@ export default function HomeProductHero({ showProvinSelect = false, introBodyTex
       <div className="relative z-10 min-w-0">
         <section id="home-hero" className={styles.heroSection} aria-labelledby="marketing-hero-product-title">
           <div className={styles.heroShell}>
-            <div className={styles.heroColumns}>
+            <div className={styles.heroColumnsProduct}>
               <div className={styles.heroLeftStack}>
                 <h1 id="marketing-hero-product-title" className={styles.productHeroTitle}>
                   <span className={styles.productHeroTitleLine}>
@@ -98,10 +96,6 @@ export default function HomeProductHero({ showProvinSelect = false, introBodyTex
                     </li>
                   ))}
                 </ul>
-              </div>
-
-              <div className={styles.heroRightColumn}>
-                <HomeIntroBlurb variant="hero" introBodyText={introBodyText} />
               </div>
             </div>
           </div>

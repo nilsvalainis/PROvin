@@ -138,7 +138,7 @@ html[data-site-theme="light"] .home-depth-bg {
   ) !important;
 }
 
-/* Hero + „KAS IR PROVIN?” — fons no `demo/page.module.css` → `.heroIntroSurface` (gradient light / scrim+veil dark).
+/* Hero — fons no `demo/page.module.css` → `.heroIntroSurface` (gradient light / scrim+veil dark).
    Nelietot šeit `transparent !important` — tas izdzēsa demo/sākumlapas hero gaišo gradientu. */
 
 /* Zem Hero — gaišs teksts */

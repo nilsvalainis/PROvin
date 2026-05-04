@@ -1,23 +1,13 @@
 import { getTranslations } from "next-intl/server";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
-import {
-  homeSectionTitleClass,
-  irissSectionSubtitleClass,
-  irissStaggerHeadingClass,
-} from "@/lib/home-layout";
 import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
-/** Kā `ProvinSelectSection` apakšvirsraksti — `uppercase`, `tracking-[0.08em]`. */
-const editorialSubsectionHeadingClass =
-  "iriss-editorial-heading font-semibold uppercase tracking-[0.08em] text-white/90";
+const accentPhrase = "font-semibold text-[#3b82f6]";
 
-/** Mazs ekrāns: kā BUJ; ≥md: kā #home-intro pēc web −25 % (`calc(1.365rem * 0.75)`). */
-const irissBodyProseClass =
-  "home-iriss-prose text-[14px] font-normal leading-[1.75] sm:text-[15px] md:text-[calc(1.365rem*0.75)] md:leading-[1.65] md:tracking-[0.045em]";
+const bodyPrimary = "about-provin-body about-provin-body--primary text-[15px] sm:text-base";
 
-/** Vertikālā atstarpe starp stagger blokiem — tikai `gap`, lai nav dubultas padding joslas. */
-const irissStaggerBlockGapClass = "gap-y-[clamp(2.75rem,6.5vw,4.75rem)] sm:gap-y-[clamp(3rem,7vw,5.25rem)]";
+const bodyMuted = "about-provin-body about-provin-body--muted text-[15px] sm:text-base";
 
 export async function IrissSection({ editorialColumn = false }: { editorialColumn?: boolean } = {}) {
   const t = await getTranslations("Iriss");
@@ -26,131 +16,87 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
   const socialYoutube = process.env.NEXT_PUBLIC_IRISS_YOUTUBE_URL?.trim() || IRISS_SOCIAL_DEFAULTS.youtube;
   const socialInstagram = process.env.NEXT_PUBLIC_IRISS_INSTAGRAM_URL?.trim() || IRISS_SOCIAL_DEFAULTS.instagram;
 
-  if (editorialColumn) {
-    return (
-      <div id="kas-ir-iriss" className="home-body-ink scroll-mt-16 pb-0 pt-10 sm:pt-16">
-        <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
+  const core = (
+    <div className="about-provin-section mx-auto w-full max-w-[min(100%,80rem)] px-1 sm:px-2">
+      <header className="text-center">
+        <h2 className="demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance font-semibold">
+          {t("title")}
+        </h2>
+        <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
+          <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
+        </div>
+        <p className="demo-design-dir__kicker mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4">
+          {t("pageLead")}
+        </p>
+      </header>
 
-        <div className="text-center">
-          <h2 className="demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance">
-            {renderProvinText(t("title"))}
-          </h2>
-          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
-            <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
-          </div>
-          <p className="demo-design-dir__kicker mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4">
-            {t("subtitle")}
+      <div className="mt-6 flex justify-center sm:mt-7">
+        <IrissSocialIcons
+          tiktok={socialTiktok}
+          youtube={socialYoutube}
+          instagram={socialInstagram}
+          socialLabel={t("socialLabel")}
+          socialSoon={t("socialSoon")}
+        />
+      </div>
+
+      <div className="mx-auto mt-12 max-w-3xl space-y-10 text-pretty sm:mt-16 sm:space-y-12 md:space-y-14">
+        <p className={`${bodyPrimary} text-center`}>
+          {t("hookPart1")}
+          <span className={accentPhrase}>{renderProvinText(t("hookProvin"), { proAndSuffixClassName: "provin-wordmark-pro" })}</span>
+          {t("hookPart2")}
+        </p>
+
+        <div
+          className={`border-t-2 border-[#3b82f6]/75 pt-5 md:border-l-2 md:border-t-0 md:pl-6 md:pt-0 ${bodyMuted}`}
+        >
+          <p>
+            {t("methodologyPart1")}
+            <span className={accentPhrase}>{t("methodologyAccent1")}</span>
+            {t("methodologyPart2")}
+            <span className={accentPhrase}>{t("methodologyAccent2")}</span>
+            {t("methodologyPart3")}
+            <span className={accentPhrase}>{t("methodologyAccent3")}</span>
+            {t("methodologyPart4")}
           </p>
         </div>
 
-        <div className="mt-5 flex justify-center">
-          <IrissSocialIcons
-            tiktok={socialTiktok}
-            youtube={socialYoutube}
-            instagram={socialInstagram}
-            socialLabel={t("socialLabel")}
-            socialSoon={t("socialSoon")}
-          />
+        <div className="about-provin-authority-slab rounded-2xl border border-white/[0.08] bg-white/[0.04] px-5 py-6 sm:px-7 sm:py-7">
+          <h3 className="about-provin-authority-title text-lg font-bold leading-snug tracking-tight sm:text-xl">
+            {t("authorityTitle")}
+          </h3>
+          <p className={`${bodyMuted} mt-3`}>{t("authorityBody")}</p>
         </div>
 
-        <div className="mx-auto mt-10 max-w-[min(100%,40rem)] space-y-10 px-1 text-center text-pretty sm:mt-12 sm:px-2">
-          <div>
-            <h3 className={`${editorialSubsectionHeadingClass} mx-auto max-w-[min(100%,52ch)] text-balance`}>
-              {t("block1Heading")}
-            </h3>
-            <div className="mx-auto mt-3 w-full max-w-[min(100%,52ch)]">
-              <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
-            </div>
-            <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,52ch)] text-balance">{t("block1Body")}</p>
-          </div>
-          <div>
-            <h3 className={`${editorialSubsectionHeadingClass} mx-auto max-w-[min(100%,52ch)] text-balance`}>
-              {t("block2Heading")}
-            </h3>
-            <div className="mx-auto mt-3 w-full max-w-[min(100%,52ch)]">
-              <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
-            </div>
-            <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,52ch)] text-balance whitespace-pre-line">
-              {t("block2Body")}
-            </p>
-          </div>
-          <div>
-            <h3 className={`${editorialSubsectionHeadingClass} mx-auto max-w-[min(100%,52ch)] text-balance`}>
-              {t("block3Heading")}
-            </h3>
-            <div className="mx-auto mt-3 w-full max-w-[min(100%,52ch)]">
-              <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
-            </div>
-            <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,52ch)] text-balance">{t("block3Body")}</p>
-          </div>
-        </div>
+        <p className={bodyPrimary}>
+          {t("valuePart1")}
+          <span className={accentPhrase}>{t("valueAccent1")}</span>
+          {t("valuePart2")}
+          <span className={accentPhrase}>{t("valueAccent2")}</span>
+          {t("valuePart3")}
+        </p>
+
+        <p className="about-provin-punchline mt-2 text-center text-lg font-bold leading-snug tracking-tight sm:text-2xl md:text-3xl">
+          <span className="about-provin-punchline-lead">{t("punchlineLead")}</span>
+          <span className="about-provin-punchline-accent">{t("punchlineAccent")}</span>
+        </p>
+      </div>
+    </div>
+  );
+
+  if (editorialColumn) {
+    return (
+      <div id="kas-ir-iriss" className="home-body-ink scroll-mt-16 pb-0 pt-6 sm:pt-8">
+        <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
+        {core}
       </div>
     );
   }
 
   return (
-    <section
-      id="kas-ir-iriss"
-      className="home-body-ink relative scroll-mt-16 bg-transparent pb-0 pt-10 sm:pt-16"
-    >
+    <section id="kas-ir-iriss" className="home-body-ink relative scroll-mt-16 bg-transparent pb-0 pt-6 sm:pt-8">
       <span id="kas-stav-aiz-provin" className="sr-only" aria-hidden tabIndex={-1} />
-
-      <div className="demo-design-dir__shell relative">
-        <div className="text-center">
-          <h2 className={homeSectionTitleClass}>{renderProvinText(t("title"))}</h2>
-          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
-            <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
-          </div>
-          <p className={`${irissSectionSubtitleClass} home-muted-foreground mt-3`}>{t("subtitle")}</p>
-        </div>
-
-        <div className="mt-5 flex justify-center">
-          <IrissSocialIcons
-            tiktok={socialTiktok}
-            youtube={socialYoutube}
-            instagram={socialInstagram}
-            socialLabel={t("socialLabel")}
-            socialSoon={t("socialSoon")}
-          />
-        </div>
-
-        {/* Bez klienta „stagger” / SVG — tas bija saistīts ar Application error; saturs paliek tas pats. */}
-        <div className="relative mt-12 sm:mt-14 md:mt-16">
-          <div
-            className={`relative flex flex-col ${irissStaggerBlockGapClass} pt-[clamp(0.75rem,2vw,1.25rem)] pb-[clamp(2.5rem,6vw,4.5rem)]`}
-          >
-            <div className="grid grid-cols-1 gap-y-5 lg:grid-cols-2 lg:gap-x-10 xl:gap-x-16">
-              <div className="hidden min-h-[8rem] lg:block" aria-hidden />
-              <div className="min-w-0 max-w-[min(100%,38rem)] lg:justify-self-end lg:text-right">
-                <h3 className={irissStaggerHeadingClass}>{t("block1Heading")}</h3>
-                <div className="mt-3 w-full lg:ml-auto lg:max-w-[min(100%,38rem)]">
-                  <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
-                </div>
-                <p className={`${irissBodyProseClass} mt-3 text-balance`}>{t("block1Body")}</p>
-              </div>
-            </div>
-
-            <div className="mx-auto min-w-0 max-w-[min(100%,42rem)] px-1 text-center sm:px-2">
-              <h3 className={`${irissStaggerHeadingClass} mx-auto max-w-[min(100%,52ch)]`}>{t("block2Heading")}</h3>
-              <div className="mx-auto mt-3 w-full max-w-[min(100%,52ch)]">
-                <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
-              </div>
-              <p className={`${irissBodyProseClass} mt-3 whitespace-pre-line text-balance`}>{t("block2Body")}</p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-y-5 lg:grid-cols-2 lg:gap-x-10 xl:gap-x-16">
-              <div className="min-w-0 max-w-[min(100%,38rem)] text-left">
-                <h3 className={irissStaggerHeadingClass}>{t("block3Heading")}</h3>
-                <div className="mt-3 w-full">
-                  <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
-                </div>
-                <p className={`${irissBodyProseClass} mt-3 text-balance`}>{t("block3Body")}</p>
-              </div>
-              <div className="hidden min-h-[8rem] lg:block" aria-hidden />
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="demo-design-dir__shell relative">{core}</div>
     </section>
   );
 }

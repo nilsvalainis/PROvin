@@ -1057,6 +1057,73 @@ html[data-site-theme="light"] .provin-select-section .marketing-hero-pillar-icon
   color: #ff342e !important;
 }
 
+/* „PAR PROVIN?” / IRISS par — teksta līmenis tumšā + gaišā tēmā */
+.about-provin-body {
+  line-height: 1.6;
+}
+
+html:not([data-site-theme="light"]) .about-provin-body--primary {
+  color: rgb(245 248 252 / 0.9);
+}
+
+html[data-site-theme="light"] .about-provin-body--primary {
+  color: rgb(24 24 27 / 0.94);
+}
+
+html:not([data-site-theme="light"]) .about-provin-body--muted {
+  color: rgb(200 205 215 / 0.82);
+}
+
+html[data-site-theme="light"] .about-provin-body--muted {
+  color: rgb(63 63 70 / 0.92);
+}
+
+html:not([data-site-theme="light"]) .about-provin-authority-title {
+  color: rgb(250 250 250 / 0.96);
+}
+
+html[data-site-theme="light"] .about-provin-authority-title {
+  color: rgb(24 24 27 / 0.96);
+}
+
+html:not([data-site-theme="light"]) .about-provin-authority-slab {
+  border-color: rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.035);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+html[data-site-theme="light"] .about-provin-authority-slab {
+  border-color: rgb(24 24 27 / 0.08);
+  background: rgb(244 244 245 / 0.88);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.92),
+    0 1px 0 rgb(15 23 42 / 0.04);
+}
+
+.about-provin-punchline {
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+
+html:not([data-site-theme="light"]) .about-provin-punchline-lead {
+  color: rgb(255 255 255 / 0.96);
+}
+
+html[data-site-theme="light"] .about-provin-punchline-lead {
+  color: rgb(9 9 11 / 0.94);
+}
+
+html:not([data-site-theme="light"]) .about-provin-punchline-accent {
+  color: rgb(147 197 253 / 0.98);
+  text-shadow:
+    0 0 22px rgba(59, 130, 246, 0.55),
+    0 0 42px rgba(37, 99, 235, 0.32);
+}
+
+html[data-site-theme="light"] .about-provin-punchline-accent {
+  color: #2563eb;
+}
+
 /* How it works — diskrēts „datu impulss” ap soļu ikonām (gredzens + elpošana uz hover) */
 @keyframes how-it-works-ring-draw {
   from {
@@ -1108,7 +1175,7 @@ html[data-site-theme="light"] .provin-select-section .marketing-hero-pillar-icon
 }
 
 /*
- * Mājas hero + „KAS IR PROVIN?” — gandrīz melns augšā/apakšā; vidū tumšs sudrabs (vieglāks scrim + radāli).
+ * Mājas hero scrim — gandrīz melns augšā/apakšā; vidū tumšs sudrabs (vieglāks scrim + radāli).
  */
 .home-hero-intro-scrim-gradient {
   background-image:

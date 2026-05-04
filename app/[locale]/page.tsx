@@ -1,5 +1,4 @@
 import dynamic from "next/dynamic";
-import { getTranslations } from "next-intl/server";
 import { Footer } from "@/components/Footer";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { ProvinSelectSection } from "@/components/home/ProvinSelectSection";
@@ -19,12 +18,10 @@ const HomeProductHero = dynamic(() => import("@/components/home/HomeProductHero"
 });
 
 export default async function HomePage() {
-  const tMeta = await getTranslations("Meta");
-
   return (
     <div className={productHeroStyles.demoRoot}>
       <div className="home-hero-pricing-unified demo-design-dir min-w-0 text-white">
-        <HomeProductHero showProvinSelect={isProvinSelectPublic()} introBodyText={tMeta("homeIntroBody")} />
+        <HomeProductHero showProvinSelect={isProvinSelectPublic()} />
 
         <section className="demo-design-dir__section demo-design-dir__section--unified-pricing-tail py-16 sm:py-20">
           <div className="demo-design-dir__shell">
@@ -40,7 +37,7 @@ export default async function HomePage() {
       ) : null}
 
       <div id="site-content" className="demo-design-dir min-w-0 text-white home-body-ink scroll-mt-14">
-        <section className="demo-design-dir__section demo-design-dir__section--band-b py-16 sm:py-20">
+        <section className="demo-design-dir__section demo-design-dir__section--band-b py-16 sm:py-20 md:py-24">
           <div className="demo-design-dir__shell">
             <IrissSection editorialColumn />
           </div>
