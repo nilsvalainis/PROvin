@@ -6,8 +6,9 @@ import { renderProvinText } from "@/lib/provin-wordmark";
 
 const accentPhrase = "font-semibold about-provin-accent";
 
-/** Ciešāks ritējums līdzināšanai ar YouTube logu (aspect-video pusē). */
-const bodyMuted = "about-provin-body about-provin-body--muted text-[14px] leading-snug sm:text-[15px]";
+/** Lielāks ķermenis, lai teksta laukums vizuāli tuvinātos YouTube logam (max-w-xl). */
+const bodyMuted =
+  "about-provin-body about-provin-body--muted text-base leading-relaxed sm:text-lg sm:leading-relaxed";
 
 export async function IrissSection({ editorialColumn = false }: { editorialColumn?: boolean } = {}) {
   const t = await getTranslations("Iriss");
@@ -41,16 +42,18 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
       </div>
 
       <div className="mx-auto mt-10 w-full max-w-[min(100%,90rem)] px-1 sm:mt-12 sm:px-2">
-        <div className="flex flex-col gap-6 sm:gap-7 lg:gap-8">
+        <div className="flex flex-col gap-12 sm:gap-14 lg:gap-16 xl:gap-20">
           <IrissZigzagRow videoId="vlUsjQyEqME" startSeconds={90} playLabel={t("youtubePlayAria")}>
             <div className="w-full text-left">
-              <p className="about-provin-signature text-xs uppercase tracking-[0.28em] sm:text-sm">{t("authorityTitle")}</p>
-              <p className={`${bodyMuted} mt-2`}>{t("authorityBody")}</p>
+              <p className="about-provin-signature text-sm uppercase tracking-[0.24em] sm:text-[0.9375rem]">
+                {t("authorityTitle")}
+              </p>
+              <p className={`${bodyMuted} mt-3 sm:mt-4`}>{t("authorityBody")}</p>
             </div>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="I5Xc0uFmbdo" reverse playLabel={t("youtubePlayAria")}>
-            <div className="about-provin-methodology flex items-stretch justify-center gap-3 sm:gap-4">
+            <div className="about-provin-methodology flex items-stretch justify-center gap-4 sm:gap-5">
               <span className="about-provin-axis-line block w-px shrink-0" aria-hidden />
               <p className={`${bodyMuted} pt-0.5 text-left`}>
                 {t("methodologyPart1")}
@@ -65,7 +68,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="klwAEEdNXko" playLabel={t("youtubePlayAria")}>
-            <p className="about-provin-hook mx-auto text-balance text-center text-lg font-light leading-snug tracking-[0.01em] sm:text-xl">
+            <p className="about-provin-hook mx-auto max-w-xl text-balance text-center text-2xl font-light leading-snug tracking-[0.012em] sm:text-3xl">
               {t("hookPart1")}
               <span className="font-bold about-provin-accent">
                 {renderProvinText(t("hookProvin"), { proAndSuffixClassName: "text-inherit" })}
@@ -75,9 +78,9 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="7pBr-91QUjw" reverse playLabel={t("youtubePlayAria")}>
-            <p className="about-provin-punchline mx-auto text-balance text-center text-3xl font-semibold leading-[1.08] tracking-tight sm:text-4xl lg:text-[2.65rem]">
+            <p className="about-provin-punchline mx-auto max-w-xl text-balance text-center text-4xl font-semibold leading-[1.06] tracking-tight sm:text-5xl lg:text-6xl">
               <span className="about-provin-punchline-lead block">{t("punchlineLead")}</span>
-              <span className="about-provin-punchline-accent mt-1 block sm:mt-1.5">{t("punchlineAccent")}</span>
+              <span className="about-provin-punchline-accent mt-2 block sm:mt-2.5">{t("punchlineAccent")}</span>
             </p>
           </IrissZigzagRow>
         </div>

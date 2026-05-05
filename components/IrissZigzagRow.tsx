@@ -14,7 +14,7 @@ type Props = {
 export function IrissZigzagRow({ videoId, startSeconds, reverse, playLabel, children }: Props) {
   return (
     <div
-      className={`flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-stretch lg:gap-5 xl:gap-6 ${
+      className={`flex flex-col gap-8 sm:gap-9 lg:flex-row lg:items-stretch lg:gap-10 xl:gap-12 ${
         reverse ? "lg:flex-row-reverse" : ""
       }`}
     >

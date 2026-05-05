@@ -35,24 +35,25 @@ export function IrissYoutubePreview({ videoId, startSeconds, playLabel }: Props)
     <button
       type="button"
       aria-label={playLabel}
-      className="group relative aspect-video w-full max-w-xl cursor-pointer overflow-hidden rounded-xl border border-white/15 bg-black text-left shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition will-change-[border-color] hover:border-provin-accent/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
+      className="group relative aspect-video w-full max-w-xl cursor-pointer overflow-hidden rounded-xl border border-white/15 bg-zinc-800 text-left shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition will-change-[border-color] hover:border-provin-accent/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
       onClick={() => setPlaying(true)}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- external YouTube CDN; avoids next/image remotePatterns. */}
       <img
         src={thumbSrc}
         alt=""
-        className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+        className="h-full w-full object-cover brightness-[0.45] grayscale transition duration-300 group-hover:scale-[1.02] group-hover:brightness-100 group-hover:grayscale-0 group-focus-visible:brightness-100 group-focus-visible:grayscale-0"
         loading="lazy"
         decoding="async"
         width={480}
         height={360}
       />
       <span
-        className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25 transition group-hover:bg-black/[0.18]"
+        className="pointer-events-none absolute inset-0 bg-zinc-900/72 transition duration-300 group-hover:bg-zinc-900/15 group-focus-visible:bg-zinc-900/15"
         aria-hidden
-      >
-        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-red-600/95 text-white shadow-lg transition duration-300 group-hover:scale-105 group-hover:bg-red-600">
+      />
+      <span className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden>
+        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-red-600/95 text-white shadow-lg transition duration-300 group-hover:scale-105 group-hover:bg-red-600 group-focus-visible:scale-105 group-focus-visible:bg-red-600">
           <IconPlayTriangle className="ml-1 h-6 w-6" />
         </span>
       </span>
