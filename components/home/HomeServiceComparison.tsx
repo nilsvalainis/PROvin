@@ -3,8 +3,11 @@ import { AlertTriangle, Filter, Globe2, Layers, MessageSquare, ScanSearch, Shiel
 import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import {
+  homePillarCardBodyClass,
   homePillarCardShellClass,
+  homePillarCardTitleClass,
 } from "@/lib/home-pricing-pillar-cards";
+import { heroPillarCardIconClass } from "@/lib/home-layout";
 import { PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
 import { orderSectionHref, provinSelectConsultationHref } from "@/lib/paths";
 import { renderProvinText } from "@/lib/provin-wordmark";
@@ -16,16 +19,9 @@ type IncludedRow = { title: string; body: string };
 const AUDIT_ICONS: LucideIcon[] = [Globe2, ScanSearch, AlertTriangle, ShieldCheck];
 const SELECT_ICONS: LucideIcon[] = [Layers, Filter, AlertTriangle, MessageSquare];
 
-const comparisonCardTitleClass =
-  "home-service-comparison-card-title-ink home-service-comparison-card-title w-full max-w-[19rem] text-balance text-center text-[11px] font-semibold uppercase leading-tight tracking-wide sm:text-xs md:text-sm lg:text-base";
-
-const comparisonCardBodyClass =
-  "home-muted-foreground home-service-comparison-card-body w-full max-w-[20rem] flex-1 text-balance text-center text-[11px] leading-snug sm:text-xs md:text-sm";
-
-const comparisonCardIconClass =
-  "home-service-comparison-card-icon marketing-hero-pillar-icon shrink-0 [stroke-width:1.5] h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7";
-
-const cardInnerClass = `${homePillarCardShellClass} home-service-comparison-card flex h-full min-h-0 w-full min-w-0 flex-col items-center justify-start gap-1.5 overflow-hidden px-2 py-2 text-center sm:gap-2 sm:px-3 sm:py-3 md:gap-2.5 md:py-4`;
+/** Tā pati kā `PricingIncluded` 4 kartīšu apakšrežģis (`gap-3` → `md:gap-5`), 1 kol. xs, 2×2 no sm. */
+const comparisonFourCardGridClass =
+  "grid list-none grid-cols-1 items-stretch gap-3 sm:grid-cols-2 sm:gap-4 md:gap-5 min-h-0 flex-1 w-full";
 
 const columnTitleClass =
   "home-service-comparison-column-title text-[clamp(0.9rem,2.2vw,1.25rem)] font-semibold uppercase tracking-[0.06em] sm:tracking-[0.08em]";
@@ -35,26 +31,20 @@ function ComparisonCard({
   body,
   Icon,
   riskCard,
-  side,
 }: {
   title: string;
   body: string;
   Icon: LucideIcon;
   riskCard: boolean;
-  side: "audit" | "select";
 }) {
-  const riskTone = riskCard ? "marketing-hero-pillar-icon--risk text-[#ff342e]" : "";
-  const sideIcon =
-    side === "audit"
-      ? riskTone || "home-service-comparison-icon--audit"
-      : riskTone || "home-service-comparison-icon--select";
+  const iconTone = riskCard ? "marketing-hero-pillar-icon--risk text-[#ff342e]" : "";
 
   return (
     <li className="flex min-h-0 min-w-0">
-      <div className={cardInnerClass}>
-        <Icon className={`${comparisonCardIconClass} ${sideIcon}`.trim()} aria-hidden strokeWidth={1.5} />
-        <h3 className={`${comparisonCardTitleClass} shrink-0`}>{title}</h3>
-        <p className={`${comparisonCardBodyClass} min-h-0`}>{body}</p>
+      <div className={`${homePillarCardShellClass} h-full w-full min-w-0`}>
+        <Icon className={`${heroPillarCardIconClass} ${iconTone}`.trim()} aria-hidden strokeWidth={1.5} />
+        <h3 className={homePillarCardTitleClass}>{title}</h3>
+        <p className={homePillarCardBodyClass}>{body}</p>
       </div>
     </li>
   );
@@ -109,7 +99,7 @@ export async function HomeServiceComparison() {
             </p>
           </header>
 
-          <ul className="home-service-comparison-card-grid min-h-0 flex-1 list-none">
+          <ul className={comparisonFourCardGridClass}>
             {auditRows.slice(0, 4).map((item, i) => {
               const Icon = AUDIT_ICONS[i] ?? Globe2;
               return (
@@ -119,7 +109,6 @@ export async function HomeServiceComparison() {
                   body={item.body}
                   Icon={Icon}
                   riskCard={i === 2}
-                  side="audit"
                 />
               );
             })}
@@ -160,7 +149,7 @@ export async function HomeServiceComparison() {
             </p>
           </header>
 
-          <ul className="home-service-comparison-card-grid min-h-0 flex-1 list-none">
+          <ul className={comparisonFourCardGridClass}>
             {selectRows.slice(0, 4).map((row, i) => {
               const Icon = SELECT_ICONS[i] ?? Layers;
               return (
@@ -170,7 +159,6 @@ export async function HomeServiceComparison() {
                   body={row.body}
                   Icon={Icon}
                   riskCard={i === 2}
-                  side="select"
                 />
               );
             })}

@@ -1136,51 +1136,6 @@ html:not([data-site-theme="light"]) .home-service-comparison-column-title {
   color: rgb(255 255 255 / 0.96);
 }
 
-html[data-site-theme="light"] .home-service-comparison-card-title-ink {
-  color: rgb(9 9 11 / 0.92);
-}
-
-html:not([data-site-theme="light"]) .home-service-comparison-card-title-ink {
-  color: rgb(255 255 255 / 0.95);
-}
-
-.home-service-comparison-card-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  /* Vienāds rindas augstums katrā slejā; `1fr` sadala vertikāli starp divām rindām. */
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  flex: 1 1 auto;
-  gap: 0.55rem;
-  /* Mobilajā — zemāka min. augstums, mazāk „izstieptas” kartītes. */
-  min-height: clamp(9.25rem, 20vh, 15rem);
-}
-
-@media (min-width: 640px) {
-  .home-service-comparison-card-grid {
-    gap: 0.75rem;
-    min-height: clamp(11.5rem, 24vh, 19rem);
-  }
-}
-
-@media (min-width: 1024px) {
-  .home-service-comparison-card-grid {
-    gap: 0.85rem;
-    min-height: clamp(13rem, 24vh, 22rem);
-  }
-}
-
-.home-service-comparison-card {
-  min-height: 0;
-}
-
-[data-comparison-side="audit"] .home-service-comparison-icon--audit {
-  color: var(--color-provin-accent) !important;
-}
-
-[data-comparison-side="select"] .home-service-comparison-icon--select {
-  color: var(--color-provin-select-green) !important;
-}
-
 html:not([data-site-theme="light"]) .home-service-comparison-audit-col {
   box-shadow: inset 0 1px 0 rgb(56 189 248 / 0.08);
 }
