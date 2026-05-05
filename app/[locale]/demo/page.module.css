@@ -484,21 +484,29 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   margin-top: 1rem;
   width: min(100%, 520px);
   min-height: 56px;
+  padding: 0.875rem 1.25rem;
   border: 1px solid #0d63d9;
   border-radius: 999px;
   background: linear-gradient(180deg, #2290ff 0%, #1578eb 48%, #0d5fd4 100%);
   color: #fff;
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(1.02rem, 1.45vw, 1.16rem);
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: center;
+  line-height: 1.1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
   box-shadow: 0 11px 21px rgb(13 110 234 / 0.2), 0 2px 0 rgb(255 255 255 / 0.22) inset;
   cursor: pointer;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    filter 0.16s ease;
 }
 
 .ctaButton:hover {
@@ -546,22 +554,23 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   margin-top: 0.55rem;
   width: min(100%, 520px);
   min-height: 56px;
+  padding: 0.875rem 1.25rem;
   border: 1px solid rgb(0 120 62 / 0.55);
   border-radius: 999px;
   background: linear-gradient(180deg, #12c45a 0%, #0a9d47 100%);
   color: #fff;
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(0.68rem, 1.15vw, 0.78rem);
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  text-transform: none;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   text-decoration: none;
   text-align: center;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 0.75rem;
-  line-height: 1.2;
+  line-height: 1.1;
+  white-space: nowrap;
   box-shadow: 0 8px 18px rgb(10 157 71 / 0.22), 0 1px 0 rgb(255 255 255 / 0.22) inset;
   cursor: pointer;
   transition:
@@ -733,6 +742,34 @@ html[data-site-theme="dark"] .heroIntroSurface .ctaButtonHeroConsult:hover {
   border-color: rgb(0 220 115 / 0.52);
 }
 
+html[data-site-theme="light"] .heroIntroSurface .ctaButton {
+  box-shadow:
+    0 10px 24px rgb(13 110 234 / 0.2),
+    0 0 22px rgb(0 102 255 / 0.12),
+    0 2px 0 rgb(255 255 255 / 0.24) inset;
+}
+
+html[data-site-theme="light"] .heroIntroSurface .ctaButton:hover {
+  box-shadow:
+    0 14px 30px rgb(13 110 234 / 0.24),
+    0 0 28px rgb(0 102 255 / 0.16),
+    0 2px 0 rgb(255 255 255 / 0.24) inset;
+}
+
+html[data-site-theme="light"] .heroIntroSurface .ctaButtonHeroConsult {
+  box-shadow:
+    0 10px 24px rgb(10 157 71 / 0.2),
+    0 0 20px rgb(10 157 71 / 0.11),
+    0 2px 0 rgb(255 255 255 / 0.24) inset;
+}
+
+html[data-site-theme="light"] .heroIntroSurface .ctaButtonHeroConsult:hover {
+  box-shadow:
+    0 14px 30px rgb(10 157 71 / 0.24),
+    0 0 26px rgb(10 157 71 / 0.14),
+    0 2px 0 rgb(255 255 255 / 0.24) inset;
+}
+
 html[data-site-theme="dark"] .heroIntroSurface .heroGlassCard {
   color: rgb(245 248 252 / 0.94);
   border: 1px solid var(--dd-line);
@@ -830,8 +867,14 @@ html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .orde
 
 :global(.demo-mobile-narrow) .ctaButton {
   min-height: 50px;
-  font-size: 0.82rem;
-  letter-spacing: 0.06em;
+  font-size: 0.92rem;
+  letter-spacing: 0.055em;
+}
+
+:global(.demo-mobile-narrow) .ctaButtonHeroConsult {
+  min-height: 50px;
+  font-size: 0.92rem;
+  letter-spacing: 0.055em;
 }
 
 :global(.demo-mobile-narrow) .ctaButtonSecondary {
