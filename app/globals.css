@@ -1129,7 +1129,7 @@ html[data-site-theme="light"] .about-provin-punchline-accent {
   text-shadow: 0 0 14px rgb(37 99 235 / 0.16);
 }
 
-/* Sākumlapa: VIN audits vs PROVIN SELECT — 2×2 vienādas kartītes */
+/* Sākumlapa: PROVIN AUDITS / SELECT — brīvi uz fona (bez slejas rāmja / kartīšu paneļiem) */
 .home-service-comparison-title-pro {
   color: inherit;
 }
@@ -1142,16 +1142,10 @@ html:not([data-site-theme="light"]) .home-service-comparison-column-title {
   color: rgb(255 255 255 / 0.96);
 }
 
-html:not([data-site-theme="light"]) .home-service-comparison-audit-col {
-  box-shadow: inset 0 1px 0 rgb(56 189 248 / 0.08);
-}
-
+html:not([data-site-theme="light"]) .home-service-comparison-audit-col,
 html:not([data-site-theme="light"]) .home-service-comparison-select-col {
-  background:
-    radial-gradient(ellipse 108% 72% at 50% 0%, rgb(34 197 94 / 0.08), transparent 58%),
-    radial-gradient(ellipse 96% 58% at 92% 92%, rgb(16 120 72 / 0.05), transparent 52%),
-    linear-gradient(180deg, rgb(5 12 9 / 0.55) 0%, rgb(4 10 8 / 0.35) 100%);
-  box-shadow: inset 0 1px 0 rgb(52 211 153 / 0.1);
+  background: transparent;
+  box-shadow: none;
 }
 
 /* How it works — diskrēts „datu impulss” ap soļu ikonām (gredzens + elpošana uz hover) */

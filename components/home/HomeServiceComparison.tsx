@@ -4,7 +4,6 @@ import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import {
   homePillarCardBodyClass,
-  homePillarCardShellClass,
   homePillarCardTitleClass,
   homePillarGridWidthClass,
 } from "@/lib/home-pricing-pillar-cards";
@@ -28,10 +27,13 @@ const columnTitleClass =
   "home-service-comparison-column-title text-[clamp(0.9rem,2.2vw,1.25rem)] font-semibold uppercase tracking-[0.06em] sm:tracking-[0.08em]";
 
 const columnShellClass =
-  "flex min-h-0 min-w-0 flex-1 flex-col gap-4 rounded-2xl px-3 py-5 sm:gap-5 sm:px-4 sm:py-6 md:px-5";
+  "flex min-h-0 min-w-0 flex-1 flex-col gap-4 bg-transparent px-0 py-2 shadow-none sm:gap-5 sm:py-3";
 
-const ctaRowClass =
-  "mt-auto flex w-full flex-col items-center gap-2 border-t border-white/[0.06] pt-4 sm:pt-5";
+/** Kartītes bez `demo-design-dir__card` — tikai saturs uz lapas fona. */
+const comparisonPillarCellClass =
+  "flex h-full min-h-0 w-full min-w-0 flex-col items-center justify-center gap-2.5 border-0 bg-transparent px-2 py-3 text-center shadow-none sm:gap-3 sm:px-2 sm:py-4";
+
+const ctaRowClass = "mt-auto flex w-full flex-col items-center gap-2 pt-6 sm:pt-7";
 
 const ctaLinkClass =
   "inline-flex min-h-[56px] w-full max-w-[min(100%,520px)] items-center justify-center px-3 text-center no-underline";
@@ -51,7 +53,7 @@ function ComparisonCard({
 
   return (
     <li className="flex min-h-0 min-w-0">
-      <div className={`${homePillarCardShellClass} h-full w-full min-w-0`}>
+      <div className={`${comparisonPillarCellClass} h-full w-full min-w-0`}>
         <Icon className={`${heroPillarCardIconClass} ${iconTone}`.trim()} aria-hidden strokeWidth={1.5} />
         <h3 className={homePillarCardTitleClass}>{title}</h3>
         <p className={homePillarCardBodyClass}>{body}</p>
@@ -84,7 +86,7 @@ export async function HomeServiceComparisonAudit() {
     <div id="cena" className="home-body-ink scroll-mt-16 w-full">
       <div
         data-comparison-side="audit"
-        className={`home-service-comparison-audit-col ${columnShellClass} mx-auto w-full max-w-none border border-sky-500/20 bg-gradient-to-b from-sky-950/35 via-[#050a14]/40 to-transparent`}
+        className={`home-service-comparison-audit-col ${columnShellClass} mx-auto w-full max-w-none border-0 bg-transparent`}
       >
         <header className="shrink-0 text-center">
           <h2 className={columnTitleClass}>
@@ -139,7 +141,7 @@ export async function HomeServiceComparisonSelect() {
       <div
         id={PROVIN_SELECT_SECTION_ID}
         data-comparison-side="select"
-        className={`home-service-comparison-select-col provin-select-section ${columnShellClass} mx-auto w-full max-w-none border border-emerald-500/20`}
+        className={`home-service-comparison-select-col provin-select-section ${columnShellClass} mx-auto w-full max-w-none border-0 bg-transparent`}
       >
         <header className="shrink-0 text-center">
           <h2 className={columnTitleClass}>

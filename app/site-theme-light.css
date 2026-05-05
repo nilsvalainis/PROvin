@@ -427,18 +427,12 @@ html[data-site-theme="light"] .home-hero-pricing-unified.demo-design-dir {
   box-shadow: none;
 }
 
-html[data-site-theme="light"] .home-service-comparison-audit-col {
-  border-color: rgb(0 102 255 / 0.22);
-  background: linear-gradient(180deg, rgb(239 246 255 / 0.96) 0%, rgb(248 250 252 / 0.92) 100%);
-  color: #171717;
-}
-
+html[data-site-theme="light"] .home-service-comparison-audit-col,
 html[data-site-theme="light"] .home-service-comparison-select-col {
-  border-color: rgb(18 196 90 / 0.28);
-  background:
-    radial-gradient(ellipse 105% 72% at 50% 0%, rgb(18 196 90 / 0.08), transparent 56%),
-    linear-gradient(180deg, rgb(240 253 244 / 0.96) 0%, rgb(248 250 252 / 0.93) 100%);
-  color: #171717;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
 }
 
 html[data-site-theme="light"] .home-service-comparison-footnote {
