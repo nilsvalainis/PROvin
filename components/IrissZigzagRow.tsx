@@ -14,14 +14,14 @@ type Props = {
 export function IrissZigzagRow({ videoId, startSeconds, reverse, playLabel, children }: Props) {
   return (
     <div
-      className={`flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-12 xl:gap-16 ${
+      className={`flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-stretch lg:gap-5 xl:gap-6 ${
         reverse ? "lg:flex-row-reverse" : ""
       }`}
     >
-      <div className="flex w-full min-w-0 flex-1 justify-center lg:min-h-[min(28rem,calc((100vw-4rem)*0.42))] lg:items-center">
-        <div className="w-full max-w-lg px-2 text-center sm:px-0">{children}</div>
+      <div className="flex w-full min-w-0 flex-1 justify-center px-2 sm:px-0 lg:items-center">
+        <div className="flex w-full max-w-xl flex-col justify-center">{children}</div>
       </div>
-      <div className="flex w-full flex-1 justify-center px-2 sm:px-0 lg:justify-center">
+      <div className="flex w-full flex-1 items-center justify-center px-2 sm:px-0 lg:justify-center">
         <IrissYoutubePreview videoId={videoId} startSeconds={startSeconds} playLabel={playLabel} />
       </div>
     </div>
