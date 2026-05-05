@@ -226,11 +226,17 @@ html[data-site-theme="dark"] .heroSection {
   max-width: 980px;
 }
 
+/*
+ * Produkta Hero — tā pati vertikālā ass kā `.demo-design-dir__shell`:
+ * `--dd-max` (72rem) + `--dd-pad`; apakšējā „cena/salīdzinājums” bloks ir tai pašā čaulā.
+ */
 .heroShell {
-  margin: 0 auto;
+  margin-left: auto;
+  margin-right: auto;
   width: 100%;
-  max-width: min(1180px, calc(100vw - 2rem));
-  padding-inline: clamp(0.5rem, 2vw, 0.25rem);
+  max-width: min(var(--dd-max, 72rem), 100%);
+  padding-left: var(--dd-pad, clamp(1rem, 3vw, 1.75rem));
+  padding-right: var(--dd-pad, clamp(1rem, 3vw, 1.75rem));
 }
 
 .heroColumns {

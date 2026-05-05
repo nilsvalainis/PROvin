@@ -61,7 +61,7 @@ function ComparisonCard({
 }
 
 const columnShellClass =
-  "flex min-h-0 min-w-0 flex-1 flex-col gap-4 rounded-2xl px-3 py-5 sm:gap-5 sm:px-5 sm:py-6";
+  "flex min-h-0 min-w-0 flex-1 flex-col gap-4 rounded-2xl px-3 py-5 sm:gap-5 sm:px-4 sm:py-6 md:px-5";
 
 const ctaRowClass =
   "mt-auto flex w-full flex-col items-center gap-2 border-t border-white/[0.06] pt-4 sm:pt-5";
@@ -84,8 +84,12 @@ export async function HomeServiceComparison() {
     : [];
 
   return (
-    <div id="cena" className="home-body-ink scroll-mt-16">
-      <div className="mx-auto flex w-full max-w-[min(100%,88rem)] flex-col gap-8 lg:flex-row lg:items-stretch lg:gap-0">
+    <div id="cena" className="home-body-ink scroll-mt-16 w-full">
+      {/*
+       * Pilns platums iekš `.demo-design-dir__shell`; starp AUDITS un SELECT —
+       * `gap-12` / `gap-16` + 1 px līnija starp līdzīgiem „starpvērtumu” zonām.
+       */}
+      <div className="flex w-full min-w-0 flex-col gap-10 lg:flex-row lg:items-stretch lg:gap-12 xl:gap-16">
         {/* PROVIN AUDITS — zilā tēma */}
         <div
           data-comparison-side="audit"
@@ -132,7 +136,7 @@ export async function HomeServiceComparison() {
         </div>
 
         <div
-          className="hidden w-px shrink-0 self-stretch bg-gradient-to-b from-transparent via-white/12 to-transparent lg:block"
+          className="home-service-comparison-column-divider hidden w-px shrink-0 self-stretch bg-gradient-to-b from-transparent via-white/14 to-transparent lg:block"
           aria-hidden
         />
 

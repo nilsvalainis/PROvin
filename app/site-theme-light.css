@@ -425,6 +425,15 @@ html[data-site-theme="light"] .home-service-comparison-audit-col .demo-design-di
   color: rgb(39 39 42 / 0.88) !important;
 }
 
+html[data-site-theme="light"] .home-service-comparison-column-divider {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgb(39 39 42 / 0.14) 50%,
+    transparent 100%
+  ) !important;
+}
+
 /* PROVIN SELECT — maigs gaišs zaļš (ne agresīvs) */
 html[data-site-theme="light"] .demo-design-dir.home-below-hero-continuum {
   background:
