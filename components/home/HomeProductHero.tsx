@@ -42,9 +42,9 @@ export default function HomeProductHero({ showProvinSelect = false, comparisonCo
               <div className={styles.heroLeftStack}>
                 <h1 id="marketing-hero-product-title" className={styles.productHeroTitle}>
                   <span className={styles.productHeroTitleLine}>
-                    <span className={styles.productHeroTitleAccent}>{t("productTitlePart1")}</span>
+                    <span className={styles.productHeroTitleMid}>{t("productTitlePart1")}</span>
                     <span className={styles.productHeroTitleMid}>{t("productTitlePart2")}</span>
-                    <span className={styles.productHeroTitleAccent}>{t("productTitlePart3")}</span>
+                    <span className={styles.productHeroTitleMid}>{t("productTitlePart3")}</span>
                   </span>
                 </h1>
                 <p className={styles.productHeroSubhead}>{t("productSubhead")}</p>
