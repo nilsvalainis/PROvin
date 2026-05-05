@@ -21,17 +21,10 @@ export default async function HomePage() {
   return (
     <div className={productHeroStyles.demoRoot}>
       <div className="home-hero-pricing-unified demo-design-dir flex min-h-0 min-w-0 flex-col text-white">
-        <HomeProductHero showProvinSelect={isProvinSelectPublic()} />
-
-        <section className="demo-design-dir__section demo-design-dir__section--unified-pricing-tail py-16 sm:py-20 md:py-24">
-          <div className="demo-design-dir__shell">
-            {isProvinSelectPublic() ? (
-              <HomeServiceComparison />
-            ) : (
-              <PricingIncluded embedded />
-            )}
-          </div>
-        </section>
+        <HomeProductHero
+          showProvinSelect={isProvinSelectPublic()}
+          comparisonContent={isProvinSelectPublic() ? <HomeServiceComparison /> : <PricingIncluded embedded />}
+        />
       </div>
 
       <div id="site-content" className="demo-design-dir min-w-0 text-white home-body-ink scroll-mt-14">

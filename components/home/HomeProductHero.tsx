@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { HeroVisual } from "@/components/HeroVisual";
@@ -15,9 +16,10 @@ import styles from "@/app/[locale]/demo/page.module.css";
 type Props = {
   /** `false` — PROVIN SELECT saite hero nav rādāma. */
   showProvinSelect?: boolean;
+  comparisonContent?: ReactNode;
 };
 
-export default function HomeProductHero({ showProvinSelect = false }: Props) {
+export default function HomeProductHero({ showProvinSelect = false, comparisonContent }: Props) {
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
   const t = useTranslations("Hero");
 
@@ -102,6 +104,11 @@ export default function HomeProductHero({ showProvinSelect = false }: Props) {
             </div>
           </div>
         </section>
+        {comparisonContent ? (
+          <section className="demo-design-dir__section demo-design-dir__section--unified-pricing-tail py-16 sm:py-20 md:py-24">
+            <div className="demo-design-dir__shell">{comparisonContent}</div>
+          </section>
+        ) : null}
       </div>
     </div>
   );
