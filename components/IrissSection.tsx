@@ -5,8 +5,6 @@ import { renderProvinText } from "@/lib/provin-wordmark";
 
 const accentPhrase = "font-semibold about-provin-accent";
 
-const bodyPrimary = "about-provin-body about-provin-body--primary text-base leading-relaxed sm:text-lg";
-
 const bodyMuted = "about-provin-body about-provin-body--muted text-[15px] leading-relaxed sm:text-base";
 
 export async function IrissSection({ editorialColumn = false }: { editorialColumn?: boolean } = {}) {
@@ -67,14 +65,6 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
             <p className="about-provin-signature text-sm uppercase tracking-[0.28em]">{t("authorityTitle")}</p>
             <p className={`${bodyMuted} mt-4`}>{t("authorityBody")}</p>
           </div>
-
-          <p className={`${bodyPrimary} mt-12 sm:mt-14`}>
-            {t("valuePart1")}
-            <span className={accentPhrase}>{t("valueAccent1")}</span>
-            {t("valuePart2")}
-            <span className={accentPhrase}>{t("valueAccent2")}</span>
-            {t("valuePart3")}
-          </p>
 
           <p className="about-provin-punchline mt-14 text-5xl font-semibold leading-[1.08] tracking-tight sm:mt-16 sm:text-6xl">
             <span className="about-provin-punchline-lead block">{t("punchlineLead")}</span>
