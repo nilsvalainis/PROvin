@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
 import { Footer } from "@/components/Footer";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
-import { HomeServiceComparison } from "@/components/home/HomeServiceComparison";
+import { HomeServiceComparisonAudit, HomeServiceComparisonSelect } from "@/components/home/HomeServiceComparison";
 import { IrissSection } from "@/components/IrissSection";
 import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 import { PricingIncluded } from "@/components/PricingIncluded";
@@ -23,7 +23,9 @@ export default async function HomePage() {
       <div className="home-hero-pricing-unified demo-design-dir flex min-h-0 min-w-0 flex-col text-white">
         <HomeProductHero
           showProvinSelect={isProvinSelectPublic()}
-          comparisonContent={isProvinSelectPublic() ? <HomeServiceComparison /> : <PricingIncluded embedded />}
+          comparisonContent={
+            isProvinSelectPublic() ? <HomeServiceComparisonAudit /> : <PricingIncluded embedded />
+          }
         />
       </div>
 
@@ -36,6 +38,13 @@ export default async function HomePage() {
       </div>
 
       <div className="demo-design-dir min-w-0 pb-0 text-white">
+        {isProvinSelectPublic() ? (
+          <section className="demo-design-dir__section demo-design-dir__section--unified-pricing-tail py-12 sm:py-16 md:py-20">
+            <div className="demo-design-dir__shell">
+              <HomeServiceComparisonSelect />
+            </div>
+          </section>
+        ) : null}
         <HomeFaqSection />
 
         <section className="demo-design-dir__section border-t border-white/[0.06] pb-0">

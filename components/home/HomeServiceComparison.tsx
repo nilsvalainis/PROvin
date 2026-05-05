@@ -26,6 +26,15 @@ const comparisonFourCardGridClass =
 const columnTitleClass =
   "home-service-comparison-column-title text-[clamp(0.9rem,2.2vw,1.25rem)] font-semibold uppercase tracking-[0.06em] sm:tracking-[0.08em]";
 
+const columnShellClass =
+  "flex min-h-0 min-w-0 flex-1 flex-col gap-4 rounded-2xl px-3 py-5 sm:gap-5 sm:px-4 sm:py-6 md:px-5";
+
+const ctaRowClass =
+  "mt-auto flex w-full flex-col items-center gap-2 border-t border-white/[0.06] pt-4 sm:pt-5";
+
+const ctaLinkClass =
+  "inline-flex min-h-[56px] w-full max-w-[min(100%,520px)] items-center justify-center px-3 text-center no-underline";
+
 function ComparisonCard({
   title,
   body,
@@ -50,19 +59,7 @@ function ComparisonCard({
   );
 }
 
-const columnShellClass =
-  "flex min-h-0 min-w-0 flex-1 flex-col gap-4 rounded-2xl px-3 py-5 sm:gap-5 sm:px-4 sm:py-6 md:px-5";
-
-const ctaRowClass =
-  "mt-auto flex w-full flex-col items-center gap-2 border-t border-white/[0.06] pt-4 sm:pt-5";
-
-const ctaLinkClass =
-  "inline-flex min-h-[56px] w-full max-w-[min(100%,520px)] items-center justify-center px-3 text-center no-underline";
-
-/**
- * Sākumlapa: PROVIN AUDITS vs PROVIN SELECT — divas slejas, katrā 2×2 vienādas kartītes.
- */
-export async function HomeServiceComparison() {
+async function loadComparisonCopy() {
   const tPricing = await getTranslations("Pricing");
   const tSelect = await getTranslations("ProvinSelect");
   const messages = await getMessages();
@@ -73,110 +70,114 @@ export async function HomeServiceComparison() {
     ? rawIncluded.filter((r) => r && typeof r.title === "string" && typeof r.body === "string")
     : [];
 
+  return { tPricing, tSelect, auditRows, selectRows };
+}
+
+/**
+ * Zem hero: tikai PROVIN AUDITS, pilnā `.demo-design-dir__shell` platumā.
+ */
+export async function HomeServiceComparisonAudit() {
+  const { tPricing, auditRows } = await loadComparisonCopy();
+
   return (
     <div id="cena" className="home-body-ink scroll-mt-16 w-full">
-      {/*
-       * Pilns platums iekš `.demo-design-dir__shell`; starp AUDITS un SELECT —
-       * `gap-12` / `gap-16` + 1 px līnija starp līdzīgiem „starpvērtumu” zonām.
-       */}
-      <div className="flex w-full min-w-0 flex-col gap-10 lg:flex-row lg:items-stretch lg:gap-12 xl:gap-16">
-        {/* PROVIN AUDITS — zilā tēma */}
-        <div
-          data-comparison-side="audit"
-          className={`home-service-comparison-audit-col ${columnShellClass} border border-sky-500/20 bg-gradient-to-b from-sky-950/35 via-[#050a14]/40 to-transparent`}
-        >
-          <header className="shrink-0 text-center">
-            <h2 className={columnTitleClass}>
-              {renderProvinText(tPricing("comparisonAuditTitle"), {
-                proAndSuffixClassName: "home-service-comparison-title-pro",
-              })}
-            </h2>
-            <div className="mx-auto mt-2 w-full max-w-[min(100%,22rem)] px-1 sm:mt-3">
-              <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
-            </div>
-            <p className="demo-design-dir__body mx-auto mt-2 max-w-[min(100%,28rem)] text-balance text-sm font-medium leading-snug text-white/80 sm:mt-3">
-              {tPricing("comparisonAuditSubtitle")}
-            </p>
-          </header>
-
-          <ul className={comparisonFourCardGridClass}>
-            {auditRows.slice(0, 4).map((item, i) => {
-              const Icon = AUDIT_ICONS[i] ?? Globe2;
-              return (
-                <ComparisonCard
-                  key={item.title}
-                  title={item.title}
-                  body={item.body}
-                  Icon={Icon}
-                  riskCard={i === 2}
-                />
-              );
+      <div
+        data-comparison-side="audit"
+        className={`home-service-comparison-audit-col ${columnShellClass} mx-auto w-full max-w-none border border-sky-500/20 bg-gradient-to-b from-sky-950/35 via-[#050a14]/40 to-transparent`}
+      >
+        <header className="shrink-0 text-center">
+          <h2 className={columnTitleClass}>
+            {renderProvinText(tPricing("comparisonAuditTitle"), {
+              proAndSuffixClassName: "home-service-comparison-title-pro",
             })}
-          </ul>
-
-          <div className={ctaRowClass}>
-            <Link href={orderSectionHref()} className={`${demoPageStyles.ctaButton} ${ctaLinkClass} !mt-0`}>
-              {tPricing("comparisonAuditCta")}
-            </Link>
-            <p className="home-service-comparison-footnote max-w-[min(100%,24rem)] text-center text-[10px] font-normal leading-snug text-white/55 sm:text-[11px]">
-              {tPricing("autoRecordsFootnote")}
-            </p>
+          </h2>
+          <div className="mx-auto mt-2 w-full max-w-[min(100%,22rem)] px-1 sm:mt-3">
+            <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
+          <p className="demo-design-dir__body mx-auto mt-2 max-w-[min(100%,28rem)] text-balance text-sm font-medium leading-snug text-white/80 sm:mt-3">
+            {tPricing("comparisonAuditSubtitle")}
+          </p>
+        </header>
+
+        <ul className={comparisonFourCardGridClass}>
+          {auditRows.slice(0, 4).map((item, i) => {
+            const Icon = AUDIT_ICONS[i] ?? Globe2;
+            return (
+              <ComparisonCard
+                key={item.title}
+                title={item.title}
+                body={item.body}
+                Icon={Icon}
+                riskCard={i === 2}
+              />
+            );
+          })}
+        </ul>
+
+        <div className={ctaRowClass}>
+          <Link href={orderSectionHref()} className={`${demoPageStyles.ctaButton} ${ctaLinkClass} !mt-0`}>
+            {tPricing("comparisonAuditCta")}
+          </Link>
+          <p className="home-service-comparison-footnote max-w-[min(100%,24rem)] text-center text-[10px] font-normal leading-snug text-white/55 sm:text-[11px]">
+            {tPricing("autoRecordsFootnote")}
+          </p>
         </div>
+      </div>
+    </div>
+  );
+}
 
-        <div
-          className="home-service-comparison-column-divider hidden w-px shrink-0 self-stretch bg-gradient-to-b from-transparent via-white/14 to-transparent lg:block"
-          aria-hidden
-        />
+/**
+ * Virs BUJ: tikai PROVIN SELECT (`#${PROVIN_SELECT_SECTION_ID}` pilnā čaulas platumā).
+ */
+export async function HomeServiceComparisonSelect() {
+  const { tSelect, selectRows } = await loadComparisonCopy();
 
-        {/* PROVIN SELECT — zaļā tēma */}
-        <div
-          id={PROVIN_SELECT_SECTION_ID}
-          data-comparison-side="select"
-          className={`home-service-comparison-select-col provin-select-section ${columnShellClass} border border-emerald-500/20`}
-        >
-          <header className="shrink-0 text-center">
-            <h2 className={columnTitleClass}>
-              {renderProvinText(tSelect("eyebrow"), {
-                proAndSuffixClassName: "home-service-comparison-title-pro",
-              })}
-            </h2>
-            <div className="mx-auto mt-2 w-full max-w-[min(100%,22rem)] px-1 sm:mt-3">
-              <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
-            </div>
-            <p className="demo-design-dir__body mx-auto mt-2 max-w-[min(100%,28rem)] text-balance text-sm font-medium leading-snug text-white/80 sm:mt-3">
-              {tSelect("lead")}
-            </p>
-          </header>
-
-          <ul className={comparisonFourCardGridClass}>
-            {selectRows.slice(0, 4).map((row, i) => {
-              const Icon = SELECT_ICONS[i] ?? Layers;
-              return (
-                <ComparisonCard
-                  key={row.title}
-                  title={row.title}
-                  body={row.body}
-                  Icon={Icon}
-                  riskCard={i === 2}
-                />
-              );
+  return (
+    <div className="home-body-ink w-full scroll-mt-16">
+      <div
+        id={PROVIN_SELECT_SECTION_ID}
+        data-comparison-side="select"
+        className={`home-service-comparison-select-col provin-select-section ${columnShellClass} mx-auto w-full max-w-none border border-emerald-500/20`}
+      >
+        <header className="shrink-0 text-center">
+          <h2 className={columnTitleClass}>
+            {renderProvinText(tSelect("eyebrow"), {
+              proAndSuffixClassName: "home-service-comparison-title-pro",
             })}
-          </ul>
-
-          <div className={ctaRowClass}>
-            <Link
-              href={provinSelectConsultationHref()}
-              className={`${demoPageStyles.ctaButtonHeroConsult} ${ctaLinkClass} !mt-0`}
-            >
-              {tSelect("comparisonScrollCta")}
-            </Link>
-            <p className="home-service-comparison-footnote max-w-[min(100%,26rem)] text-center text-[10px] font-normal leading-snug text-white/50 sm:text-[11px]">
-              {renderProvinText(tSelect("cardsVinNote"), {
-                proAndSuffixClassName: "home-service-comparison-title-pro",
-              })}
-            </p>
+          </h2>
+          <div className="mx-auto mt-2 w-full max-w-[min(100%,22rem)] px-1 sm:mt-3">
+            <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
+          <p className="demo-design-dir__body mx-auto mt-2 max-w-[min(100%,28rem)] text-balance text-sm font-medium leading-snug text-white/80 sm:mt-3">
+            {tSelect("lead")}
+          </p>
+        </header>
+
+        <ul className={comparisonFourCardGridClass}>
+          {selectRows.slice(0, 4).map((row, i) => {
+            const Icon = SELECT_ICONS[i] ?? Layers;
+            return (
+              <ComparisonCard
+                key={row.title}
+                title={row.title}
+                body={row.body}
+                Icon={Icon}
+                riskCard={i === 2}
+              />
+            );
+          })}
+        </ul>
+
+        <div className={ctaRowClass}>
+          <Link href={provinSelectConsultationHref()} className={`${demoPageStyles.ctaButtonHeroConsult} ${ctaLinkClass} !mt-0`}>
+            {tSelect("comparisonScrollCta")}
+          </Link>
+          <p className="home-service-comparison-footnote max-w-[min(100%,26rem)] text-center text-[10px] font-normal leading-snug text-white/50 sm:text-[11px]">
+            {renderProvinText(tSelect("cardsVinNote"), {
+              proAndSuffixClassName: "home-service-comparison-title-pro",
+            })}
+          </p>
         </div>
       </div>
     </div>

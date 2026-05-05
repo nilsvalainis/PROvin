@@ -5,7 +5,7 @@ import { PROVIN_SELECT_FORM_HASH, PROVIN_SELECT_SECTION_ID } from "@/lib/provin-
 /** Sadaļu DOM `id` secība mājas lapā (scroll / rail). */
 export function getSiteRailHomeScrollIds(): readonly string[] {
   if (isProvinSelectPublic()) {
-    return ["home-hero", "cena", PROVIN_SELECT_SECTION_ID, "kas-ir-iriss", "biezi-jautajumi", "kontakti"] as const;
+    return ["home-hero", "cena", "kas-ir-iriss", PROVIN_SELECT_SECTION_ID, "biezi-jautajumi", "kontakti"] as const;
   }
   return ["home-hero", "cena", "kas-ir-iriss", "biezi-jautajumi", "kontakti"] as const;
 }
@@ -40,15 +40,10 @@ export function buildSiteRailSections(normalizedPath: string): readonly SiteRail
   const out: SiteRailSection[] = [
     { href: "/", labelKey: "sakums" },
     { href: "/#cena", labelKey: "kasIekljauts" },
-  ];
-  if (isProvinSelectPublic()) {
-    out.push({ href: `/#${PROVIN_SELECT_SECTION_ID}`, labelKey: "provinSelect" });
-  }
-  out.push(
     { href: "/#kas-ir-iriss", labelKey: "kasSlapjasAizProvin" },
-    { href: bujHref, labelKey: "buj" },
-    { href: "/#kontakti", labelKey: "kontakti" },
-  );
+  ];
+  if (isProvinSelectPublic()) out.push({ href: `/#${PROVIN_SELECT_SECTION_ID}`, labelKey: "provinSelect" });
+  out.push({ href: bujHref, labelKey: "buj" }, { href: "/#kontakti", labelKey: "kontakti" });
   return out;
 }
 
@@ -56,15 +51,14 @@ export function siteRailActiveFromHash(raw: string): number | null {
   const h = raw.replace(/^#/, "").toLowerCase();
   if (!h) return null;
   const provin = isProvinSelectPublic();
-  const irissIdx = provin ? 3 : 2;
   const bujIdx = provin ? 4 : 3;
   const kontaktiIdx = provin ? 5 : 4;
 
   if (h === "home-hero" || h === "home-intro") return 0;
   if (h === ORDER_SECTION_ID || h === "order-form") return 0;
   if (h === "site-content" || h === "cena") return 1;
-  if (provin && (h === PROVIN_SELECT_SECTION_ID || h === PROVIN_SELECT_FORM_HASH)) return 2;
-  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) return irissIdx;
+  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) return 2;
+  if (provin && (h === PROVIN_SELECT_SECTION_ID || h === PROVIN_SELECT_FORM_HASH)) return 3;
   if (h === "biezi-jautajumi") return bujIdx;
   if (h === "kontakti") return kontaktiIdx;
   return null;
