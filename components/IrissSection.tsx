@@ -78,9 +78,9 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="7pBr-91QUjw" reverse playLabel={t("youtubePlayAria")}>
-            <p className="about-provin-punchline mx-auto max-w-xl text-balance text-center text-4xl font-semibold leading-[1.06] tracking-tight sm:text-5xl lg:text-6xl">
+            <p className="about-provin-punchline mx-auto max-w-xl text-balance text-center text-[1.463rem] font-semibold leading-[1.06] tracking-tight sm:text-[1.95rem] lg:text-[2.438rem]">
               <span className="about-provin-punchline-lead block">{t("punchlineLead")}</span>
-              <span className="about-provin-punchline-accent mt-2 block sm:mt-2.5">{t("punchlineAccent")}</span>
+              <span className="about-provin-punchline-accent mt-1.5 block sm:mt-2">{t("punchlineAccent")}</span>
             </p>
           </IrissZigzagRow>
         </div>

@@ -9,6 +9,9 @@ type Props = {
   playLabel: string;
 };
 
+/** 80% no `max-w-xl` (36rem) — vizuāli par ~20% šaurāks video logs. */
+const videoMaxW = "max-w-[min(100%,28.8rem)]";
+
 export function IrissYoutubePreview({ videoId, startSeconds, playLabel }: Props) {
   const [playing, setPlaying] = useState(false);
   const thumbSrc = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
@@ -35,7 +38,7 @@ export function IrissYoutubePreview({ videoId, startSeconds, playLabel }: Props)
     <button
       type="button"
       aria-label={playLabel}
-      className="group relative aspect-video w-full max-w-xl cursor-pointer overflow-hidden rounded-xl border border-white/15 bg-zinc-800 text-left shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition will-change-[border-color] hover:border-provin-accent/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
+      className={`group relative aspect-video w-full ${videoMaxW} cursor-pointer overflow-hidden rounded-xl border border-white/15 bg-zinc-800 text-left shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition will-change-[border-color] hover:border-provin-accent/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent`}
       onClick={() => setPlaying(true)}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- external YouTube CDN; avoids next/image remotePatterns. */}
