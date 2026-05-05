@@ -1,10 +1,7 @@
 "use client";
 
-import { Menu, X } from "lucide-react";
-import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { buildSiteRailSections, normalizeSitePath, siteRailMenuActiveIndex } from "@/lib/site-rail-sections";
+import { Link, usePathname } from "@/i18n/navigation";
+import { normalizeSitePath } from "@/lib/site-rail-sections";
 import { useSiteTheme } from "@/components/providers/SiteThemeProvider";
 import { SiteThemeHeaderButton } from "@/components/site-theme/SiteThemeHeaderButton";
 
@@ -18,40 +15,9 @@ export type HeaderClientProps = {
   menuCloseLabel: string;
 };
 
-function useHash(): string {
-  const [hash, setHash] = useState("");
-  useEffect(() => {
-    const read = () => setHash(typeof window !== "undefined" ? window.location.hash : "");
-    read();
-    window.addEventListener("hashchange", read);
-    return () => window.removeEventListener("hashchange", read);
-  }, []);
-  return hash;
-}
-
-function MobileRailMenuIcon({ lineClass }: { lineClass: string }) {
-  return (
-    <span className="flex flex-col items-center justify-center gap-[5px]" aria-hidden>
-      <span className={`h-px w-[22px] ${lineClass}`} />
-      <span className={`h-px w-[22px] ${lineClass}`} />
-      <span className={`h-px w-[22px] ${lineClass}`} />
-    </span>
-  );
-}
-
-export function HeaderClient({
-  orderLabel,
-  orderHref,
-  faqHref,
-  navHome,
-  faqLabel,
-  menuOpenLabel,
-  menuCloseLabel,
-}: HeaderClientProps) {
+export function HeaderClient({}: HeaderClientProps) {
   const pathname = usePathname() ?? "";
-  const router = useRouter();
   const normalizedPath = normalizeSitePath(pathname);
-  const tr = useTranslations("SiteRail");
   const { theme } = useSiteTheme();
 
   const isHome = normalizedPath === "/" || normalizedPath === "";
@@ -64,93 +30,6 @@ export function HeaderClient({
   const desktopSiteSectionRailEnabled = false;
   const alignLogoWithDesktopRail = logoAlignWithRailSakums && desktopSiteSectionRailEnabled;
 
-  const railSections = useMemo(() => buildSiteRailSections(normalizedPath), [normalizedPath]);
-
-  const hash = useHash();
-  const [open, setOpen] = useState(false);
-  const railMenuWrapRef = useRef<HTMLDivElement>(null);
-
-  const close = useCallback(() => setOpen(false), []);
-  const toggleRailMenu = useCallback(() => setOpen((v) => !v), []);
-
-  /**
-   * Sākumlapā `Link` uz `/#…` bieži neritina (tā pati route) — ritināšana + URL hash šeit.
-   * No citām lapām — klients navigācija + īss delay, kamēr DOM ir sadaļa.
-   */
-  const onRailSectionClick = useCallback(
-    (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-
-      const hashIdx = href.indexOf("#");
-      const rawHash = hashIdx >= 0 ? href.slice(hashIdx + 1) : "";
-      const pathPart = hashIdx >= 0 ? href.slice(0, hashIdx) : href;
-      const targetsHome = pathPart === "" || pathPart === "/";
-
-      if (!targetsHome) return;
-
-      const onHome = normalizedPath === "/" || normalizedPath === "";
-      const scrollTo = (id: string | null) => {
-        if (id) {
-          document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-          window.history.replaceState(null, "", `#${id}`);
-        } else {
-          window.scrollTo({ top: 0, behavior: "smooth" });
-          window.history.replaceState(null, "", window.location.pathname);
-        }
-      };
-
-      if (onHome) {
-        e.preventDefault();
-        close();
-        requestAnimationFrame(() => scrollTo(rawHash || null));
-        return;
-      }
-
-      e.preventDefault();
-      close();
-      void router.push(href);
-      if (rawHash) {
-        window.setTimeout(() => scrollTo(rawHash), 120);
-      }
-    },
-    [close, normalizedPath, router],
-  );
-
-  useEffect(() => {
-    if (!open || logoAlignWithRailSakums) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open, logoAlignWithRailSakums]);
-
-  /** Aizvērt tikai kad mainās ceļš/hash — nekad uzreiz pēc `open === true` (citādi izvēlne neieslēdzas). */
-  useEffect(() => {
-    close();
-  }, [pathname, hash, close]);
-
-  useEffect(() => {
-    if (!open || !logoAlignWithRailSakums) return;
-    const onDown = (e: MouseEvent) => {
-      const el = railMenuWrapRef.current;
-      if (el && !el.contains(e.target as Node)) close();
-    };
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [open, logoAlignWithRailSakums, close]);
-
-  useEffect(() => {
-    if (!open || !logoAlignWithRailSakums) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, logoAlignWithRailSakums, close]);
-
-  const isFaq = pathname.includes("biezi-jautajumi");
-  const isOrderSection = isHome && hash.includes("pasutit");
   /** Sākumlapas „caurspīdīgais” hero headeris — tikai tumšajā tēmā; gaišajā — kā pārējās lapas. */
   const isDarkHeaderSurface = isHome && theme === "dark";
 
@@ -207,32 +86,7 @@ export function HeaderClient({
     .filter(Boolean)
     .join(" ");
 
-  const navMuted = headerChromeDark ? "text-white/72" : "text-[#1d1d1f]";
-
-  const orderBtnClass =
-    "provin-btn provin-btn--compact inline-flex min-h-9 shrink-0 items-center justify-center rounded-full px-4 text-[11px] font-medium text-white shadow-[0_0_16px_rgba(0,102,255,0.12)] ring-1 ring-white/10 sm:min-h-9 sm:px-[1.2rem] sm:text-[11px]";
-
-  const navLinkClass = (active: boolean) =>
-    [
-      "flex min-h-11 items-center rounded-xl px-4 text-lg font-medium tracking-tight transition-colors",
-      active ? "text-provin-accent" : `${navMuted} hover:text-provin-accent`,
-    ].join(" ");
-
-  const railMenuActive = siteRailMenuActiveIndex(pathname, hash);
-
   const mobileRailOnDark = isDarkHeaderSurface;
-
-  const railDropLinkClass = (active: boolean) =>
-    [
-      "flex min-h-11 items-center rounded-lg px-3 text-[14px] font-medium tracking-tight transition-colors motion-reduce:transition-none",
-      mobileRailOnDark
-        ? active
-          ? "text-[#0066ff]"
-          : "text-white/[0.88] hover:text-white"
-        : active
-          ? "text-provin-accent"
-          : "text-[#424245] hover:text-[#1d1d1f]",
-    ].join(" ");
 
   /** Labās malas atkāpe = kreisās (kas logo): `max(1rem, safe-area)` — dark un light. */
   const desktopHeaderRowClass = [
@@ -248,10 +102,7 @@ export function HeaderClient({
       <header className={`sticky top-0 z-[42] isolate w-full ${headerSurface}`}>
         {/* Mobilā „sliežu” lapa: PROVIN + izvēlne, kas izslīd uz leju (nav pilnekrāna) */}
         {logoAlignWithRailSakums ? (
-          <div
-            ref={railMenuWrapRef}
-            className="relative z-[50] w-full md:hidden"
-          >
+          <div className="relative z-[50] w-full md:hidden">
             <div className="flex w-full items-center justify-between gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(0.25rem,env(safe-area-inset-top,0px))] pb-2">
               <Link
                 href="/"
@@ -265,44 +116,6 @@ export function HeaderClient({
                 <SiteThemeHeaderButton
                   className={mobileRailOnDark ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass}
                 />
-                <button
-                  type="button"
-                  onClick={toggleRailMenu}
-                  className={`inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center border-0 bg-transparent p-1.5 shadow-none outline-none transition-opacity hover:opacity-85 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-2 ${mobileRailOnDark ? "text-white focus-visible:ring-offset-[#050505]" : "text-[#1d1d1f] focus-visible:ring-offset-white"}`}
-                  aria-expanded={open}
-                  aria-controls="mobile-rail-nav-panel"
-                  aria-label={open ? menuCloseLabel : menuOpenLabel}
-                >
-                  <MobileRailMenuIcon lineClass={mobileRailOnDark ? "bg-white" : "bg-[#1d1d1f]"} />
-                </button>
-              </div>
-            </div>
-            <div
-              id="mobile-rail-nav-panel"
-              className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
-              aria-hidden={!open}
-            >
-              <div className="min-h-0 overflow-hidden">
-                <nav
-                  className={`mx-[max(0.5rem,env(safe-area-inset-left,0px))] mb-2 max-h-[min(28rem,65dvh)] overflow-y-auto rounded-xl border px-2 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-md ${
-                    mobileRailOnDark
-                      ? "border-white/[0.12] bg-[#08090c]/[0.97]"
-                      : "border-black/[0.08] bg-white/[0.97]"
-                  }`}
-                  aria-label={tr("navAria")}
-                >
-                  {railSections.map((s, i) => (
-                    <Link
-                      key={`${s.labelKey}:${s.href}`}
-                      href={s.href}
-                      onClick={(e) => onRailSectionClick(e, s.href)}
-                      className={railDropLinkClass(i === railMenuActive)}
-                      aria-current={i === railMenuActive ? "location" : undefined}
-                    >
-                      {tr(s.labelKey)}
-                    </Link>
-                  ))}
-                </nav>
               </div>
             </div>
           </div>
@@ -327,75 +140,8 @@ export function HeaderClient({
             />
           </nav>
 
-          {!logoAlignWithRailSakums ? (
-            <div className="ml-auto flex items-center justify-end gap-2 md:hidden">
-              <button
-                type="button"
-                onClick={() => setOpen(true)}
-                className={
-                  headerChromeDark
-                    ? "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/15 bg-transparent text-white shadow-none transition hover:border-white/30"
-                    : "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#1d1d1f] shadow-sm transition hover:bg-slate-50"
-                }
-                aria-expanded={open}
-                aria-label={menuOpenLabel}
-              >
-                <Menu className="h-6 w-6" strokeWidth={1.75} aria-hidden />
-              </button>
-            </div>
-          ) : null}
         </div>
       </header>
-
-      {!logoAlignWithRailSakums && open ? (
-        <div
-          className="fixed inset-0 z-[60] md:hidden"
-          role="dialog"
-          aria-modal="true"
-          aria-label={menuOpenLabel}
-        >
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            aria-label={menuCloseLabel}
-            onClick={close}
-          />
-          <div className="absolute inset-0 flex flex-col overflow-hidden border-y border-transparent bg-[linear-gradient(90deg,#c0c0c0,#ffffff,#c0c0c0)] p-px shadow-2xl">
-            <div className="flex min-h-dvh flex-1 flex-col bg-[#050505] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))]">
-              <div className="flex items-center justify-end gap-2">
-                <SiteThemeHeaderButton className={themeBtnOnDarkHeroClass} />
-                <button
-                  type="button"
-                  onClick={close}
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/20 text-white transition hover:border-[#0066ff]/50 hover:text-[#0066ff]"
-                  aria-label={menuCloseLabel}
-                >
-                  <X className="h-6 w-6" strokeWidth={1.75} aria-hidden />
-                </button>
-              </div>
-              <nav className="mt-6 flex flex-1 flex-col gap-2">
-                <Link href="/" onClick={close} className={navLinkClass(isHome && !isFaq && !isOrderSection)}>
-                  {navHome}
-                </Link>
-                <Link href={faqHref} onClick={close} className={navLinkClass(isFaq)}>
-                  {faqLabel}
-                </Link>
-                <Link
-                  href={orderHref}
-                  onClick={close}
-                  className={
-                    headerChromeDark
-                      ? `${orderBtnClass} mt-2 w-full justify-center text-[11px] font-medium uppercase tracking-[0.06em]`
-                      : navLinkClass(isOrderSection)
-                  }
-                >
-                  {orderLabel}
-                </Link>
-              </nav>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 }
