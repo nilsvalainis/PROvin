@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { CheckCircle2 } from "lucide-react";
 import { HeroVisual } from "@/components/HeroVisual";
 import { OrderForm } from "@/components/OrderForm";
 import { demoHeroFeatureTitles } from "@/lib/demo-feature-titles";
@@ -48,6 +49,16 @@ export default function HomeProductHero({ showProvinSelect = false, comparisonCo
                   </span>
                 </h1>
                 <p className={styles.productHeroSubhead}>{t("productSubhead")}</p>
+                <div className={styles.productHeroDivider} aria-hidden />
+
+                <ul className={styles.productHeroValueStrip} aria-label={t("productValueStripAria")}>
+                  {[t("productValue1"), t("productValue2"), t("productValue3"), t("productValue4")].map((value) => (
+                    <li key={value} className={styles.productHeroValueItem}>
+                      <CheckCircle2 className={styles.productHeroValueIcon} aria-hidden />
+                      <span>{value}</span>
+                    </li>
+                  ))}
+                </ul>
 
                 <div id={ORDER_SECTION_ID} className={`${styles.heroFormCard} scroll-mt-[calc(2.75rem+1px)]`}>
                   <OrderForm
@@ -71,6 +82,7 @@ export default function HomeProductHero({ showProvinSelect = false, comparisonCo
                     >
                       {t("heroMobileOrderCta")}
                     </button>
+                    <p className={styles.heroCtaResultNote}>{t("heroResultTime")}</p>
                     {showProvinSelect ? (
                       <a
                         href={`#${PROVIN_SELECT_SECTION_ID}`}
