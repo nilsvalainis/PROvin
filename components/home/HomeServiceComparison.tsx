@@ -2,12 +2,7 @@ import { getMessages, getTranslations } from "next-intl/server";
 import { AlertTriangle, Filter, Globe2, Layers, MessageSquare, ScanSearch, ShieldCheck, type LucideIcon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
-import {
-  homePillarCardBodyClass,
-  homePillarCardTitleClass,
-  homePillarGridWidthClass,
-} from "@/lib/home-pricing-pillar-cards";
-import { heroPillarCardIconClass } from "@/lib/home-layout";
+import { homePillarGridWidthClass } from "@/lib/home-pricing-pillar-cards";
 import { PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
 import { orderSectionHref, provinSelectConsultationHref } from "@/lib/paths";
 import { renderProvinText } from "@/lib/provin-wordmark";
@@ -23,15 +18,22 @@ const SELECT_ICONS: LucideIcon[] = [Layers, Filter, AlertTriangle, MessageSquare
 const comparisonFourCardGridClass =
   `mx-auto grid list-none grid-cols-1 items-stretch gap-3 sm:grid-cols-2 sm:gap-4 md:gap-5 lg:grid-cols-4 min-h-0 flex-1 ${homePillarGridWidthClass}`;
 
-const columnTitleClass =
-  "home-service-comparison-column-title text-[clamp(0.9rem,2.2vw,1.25rem)] font-semibold uppercase tracking-[0.06em] sm:tracking-[0.08em]";
-
 const columnShellClass =
-  "flex min-h-0 min-w-0 flex-1 flex-col gap-4 bg-transparent px-0 py-2 shadow-none sm:gap-5 sm:py-3";
+  "flex min-h-0 min-w-0 flex-1 flex-col gap-5 bg-transparent px-0 py-2 shadow-none sm:gap-6 sm:py-3";
 
 /** Kartītes bez `demo-design-dir__card` — tikai saturs uz lapas fona. */
 const comparisonPillarCellClass =
-  "flex h-full min-h-0 w-full min-w-0 flex-col items-center justify-center gap-2.5 border-0 bg-transparent px-2 py-3 text-center shadow-none sm:gap-3 sm:px-2 sm:py-4";
+  "flex h-full min-h-0 w-full min-w-0 flex-col items-center justify-center gap-3 border-0 bg-transparent px-2 py-3 text-center shadow-none sm:gap-3.5 sm:px-2 sm:py-4";
+
+/** Līdzīgs PAR MUMS ķermenim / hero apakštekstam — ne mikroskopiskie pillar izmēri. */
+const comparisonCardTitleClass =
+  "w-full max-w-[min(100%,22rem)] text-balance text-center text-[12px] font-semibold uppercase leading-snug tracking-[0.06em] line-clamp-4 sm:text-[13px] sm:tracking-[0.07em] md:text-sm";
+
+const comparisonCardBodyClass =
+  "home-muted-foreground max-w-[min(100%,22rem)] text-balance text-center text-[13px] leading-relaxed sm:text-[14px] md:text-[15px] md:leading-relaxed";
+
+const comparisonIconClass =
+  "marketing-hero-pillar-icon h-8 w-8 shrink-0 text-[#0066ff] [stroke-width:1.5] sm:h-9 sm:w-9 md:h-10 md:w-10";
 
 const ctaRowClass = "mt-auto flex w-full flex-col items-center gap-2 pt-6 sm:pt-7";
 
@@ -54,9 +56,9 @@ function ComparisonCard({
   return (
     <li className="flex min-h-0 min-w-0">
       <div className={`${comparisonPillarCellClass} h-full w-full min-w-0`}>
-        <Icon className={`${heroPillarCardIconClass} ${iconTone}`.trim()} aria-hidden strokeWidth={1.5} />
-        <h3 className={homePillarCardTitleClass}>{title}</h3>
-        <p className={homePillarCardBodyClass}>{body}</p>
+        <Icon className={`${comparisonIconClass} ${iconTone}`.trim()} aria-hidden strokeWidth={1.5} />
+        <h3 className={comparisonCardTitleClass}>{title}</h3>
+        <p className={comparisonCardBodyClass}>{body}</p>
       </div>
     </li>
   );
@@ -89,15 +91,15 @@ export async function HomeServiceComparisonAudit() {
         className={`home-service-comparison-audit-col ${columnShellClass} mx-auto w-full max-w-none border-0 bg-transparent`}
       >
         <header className="shrink-0 text-center">
-          <h2 className={columnTitleClass}>
+          <h2 className="demo-design-dir__title home-service-comparison-column-title mx-auto max-w-[min(100%,48rem)] text-balance">
             {renderProvinText(tPricing("comparisonAuditTitle"), {
               proAndSuffixClassName: "home-service-comparison-title-pro",
             })}
           </h2>
-          <div className="mx-auto mt-2 w-full max-w-[min(100%,22rem)] px-1 sm:mt-3">
+          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:mt-4">
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
-          <p className="demo-design-dir__body mx-auto mt-2 max-w-[min(100%,28rem)] text-balance text-sm font-medium leading-snug text-white/80 sm:mt-3">
+          <p className="home-service-comparison-lead mx-auto mt-3 max-w-[min(100%,40rem)] text-balance text-base font-medium leading-relaxed text-white/85 sm:mt-4 sm:text-lg">
             {tPricing("comparisonAuditSubtitle")}
           </p>
         </header>
@@ -121,7 +123,7 @@ export async function HomeServiceComparisonAudit() {
           <Link href={orderSectionHref()} className={`${demoPageStyles.ctaButton} ${ctaLinkClass} !mt-0`}>
             {tPricing("comparisonAuditCta")}
           </Link>
-          <p className="home-service-comparison-footnote max-w-[min(100%,24rem)] text-center text-[10px] font-normal leading-snug text-white/55 sm:text-[11px]">
+          <p className="home-service-comparison-footnote max-w-[min(100%,26rem)] text-center text-[11px] font-normal leading-snug text-white/55 sm:text-xs">
             {tPricing("autoRecordsFootnote")}
           </p>
         </div>
@@ -144,15 +146,15 @@ export async function HomeServiceComparisonSelect() {
         className={`home-service-comparison-select-col provin-select-section ${columnShellClass} mx-auto w-full max-w-none border-0 bg-transparent`}
       >
         <header className="shrink-0 text-center">
-          <h2 className={columnTitleClass}>
+          <h2 className="demo-design-dir__title home-service-comparison-column-title mx-auto max-w-[min(100%,48rem)] text-balance">
             {renderProvinText(tSelect("eyebrow"), {
               proAndSuffixClassName: "home-service-comparison-title-pro",
             })}
           </h2>
-          <div className="mx-auto mt-2 w-full max-w-[min(100%,22rem)] px-1 sm:mt-3">
+          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:mt-4">
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
-          <p className="demo-design-dir__body mx-auto mt-2 max-w-[min(100%,28rem)] text-balance text-sm font-medium leading-snug text-white/80 sm:mt-3">
+          <p className="home-service-comparison-lead mx-auto mt-3 max-w-[min(100%,40rem)] text-balance text-base font-medium leading-relaxed text-white/85 sm:mt-4 sm:text-lg">
             {tSelect("lead")}
           </p>
         </header>
@@ -176,7 +178,7 @@ export async function HomeServiceComparisonSelect() {
           <Link href={provinSelectConsultationHref()} className={`${demoPageStyles.ctaButtonHeroConsult} ${ctaLinkClass} !mt-0`}>
             {tSelect("comparisonScrollCta")}
           </Link>
-          <p className="home-service-comparison-footnote max-w-[min(100%,26rem)] text-center text-[10px] font-normal leading-snug text-white/50 sm:text-[11px]">
+          <p className="home-service-comparison-footnote max-w-[min(100%,28rem)] text-center text-[11px] font-normal leading-snug text-white/50 sm:text-xs">
             {renderProvinText(tSelect("cardsVinNote"), {
               proAndSuffixClassName: "home-service-comparison-title-pro",
             })}
