@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
+import { IrissZigzagRow } from "@/components/IrissZigzagRow";
 import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
@@ -38,38 +39,46 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         />
       </div>
 
-      <div className="mx-auto mt-14 w-full max-w-[min(100%,68rem)] px-1 sm:mt-16 sm:px-2">
-        <div className="about-provin-axis-column w-full max-w-full md:max-w-[min(100%,calc(50%-0.625rem))] md:py-24">
-          <p className="about-provin-hook text-2xl font-light leading-relaxed tracking-[0.012em]">
-            {t("hookPart1")}
-            <span className="font-bold about-provin-accent">
-              {renderProvinText(t("hookProvin"), { proAndSuffixClassName: "text-inherit" })}
-            </span>
-            {t("hookPart2")}
-          </p>
-
-          <div className="about-provin-methodology mt-12 flex items-stretch gap-4 sm:mt-14 sm:gap-5">
-            <span className="about-provin-axis-line block w-px shrink-0" aria-hidden />
-            <p className={`${bodyMuted} pt-0.5`}>
-              {t("methodologyPart1")}
-              <span className={accentPhrase}>{t("methodologyAccent1")}</span>
-              {t("methodologyPart2")}
-              <span className={accentPhrase}>{t("methodologyAccent2")}</span>
-              {t("methodologyPart3")}
-              <span className={accentPhrase}>{t("methodologyAccent3")}</span>
-              {t("methodologyPart4")}
+      <div className="mx-auto mt-14 w-full max-w-[min(100%,90rem)] px-1 sm:mt-16 sm:px-2">
+        <div className="flex flex-col gap-16 lg:gap-24">
+          <IrissZigzagRow videoId="vlUsjQyEqME" startSeconds={90} playLabel={t("youtubePlayAria")}>
+            <p className="about-provin-hook text-2xl font-light leading-relaxed tracking-[0.012em]">
+              {t("hookPart1")}
+              <span className="font-bold about-provin-accent">
+                {renderProvinText(t("hookProvin"), { proAndSuffixClassName: "text-inherit" })}
+              </span>
+              {t("hookPart2")}
             </p>
-          </div>
+          </IrissZigzagRow>
 
-          <div className="mt-12 sm:mt-14">
-            <p className="about-provin-signature text-sm uppercase tracking-[0.28em]">{t("authorityTitle")}</p>
-            <p className={`${bodyMuted} mt-4`}>{t("authorityBody")}</p>
-          </div>
+          <IrissZigzagRow videoId="I5Xc0uFmbdo" reverse playLabel={t("youtubePlayAria")}>
+            <div className="about-provin-methodology flex items-stretch justify-center gap-4 sm:gap-5">
+              <span className="about-provin-axis-line block w-px shrink-0" aria-hidden />
+              <p className={`${bodyMuted} pt-0.5 text-left`}>
+                {t("methodologyPart1")}
+                <span className={accentPhrase}>{t("methodologyAccent1")}</span>
+                {t("methodologyPart2")}
+                <span className={accentPhrase}>{t("methodologyAccent2")}</span>
+                {t("methodologyPart3")}
+                <span className={accentPhrase}>{t("methodologyAccent3")}</span>
+                {t("methodologyPart4")}
+              </p>
+            </div>
+          </IrissZigzagRow>
 
-          <p className="about-provin-punchline mt-14 text-5xl font-semibold leading-[1.08] tracking-tight sm:mt-16 sm:text-6xl">
-            <span className="about-provin-punchline-lead block">{t("punchlineLead")}</span>
-            <span className="about-provin-punchline-accent block">{t("punchlineAccent")}</span>
-          </p>
+          <IrissZigzagRow videoId="klwAEEdNXko" playLabel={t("youtubePlayAria")}>
+            <div>
+              <p className="about-provin-signature text-sm uppercase tracking-[0.28em]">{t("authorityTitle")}</p>
+              <p className={`${bodyMuted} mt-4`}>{t("authorityBody")}</p>
+            </div>
+          </IrissZigzagRow>
+
+          <IrissZigzagRow videoId="7pBr-91QUjw" reverse playLabel={t("youtubePlayAria")}>
+            <p className="about-provin-punchline text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
+              <span className="about-provin-punchline-lead block">{t("punchlineLead")}</span>
+              <span className="about-provin-punchline-accent mt-2 block sm:mt-3">{t("punchlineAccent")}</span>
+            </p>
+          </IrissZigzagRow>
         </div>
       </div>
     </div>
