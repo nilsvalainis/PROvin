@@ -3,14 +3,11 @@ import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
-const accentPhrase = "font-semibold text-provin-accent";
+const accentPhrase = "font-semibold about-provin-accent";
 
-const bodyPrimary = "about-provin-body about-provin-body--primary text-[15px] sm:text-base";
+const bodyPrimary = "about-provin-body about-provin-body--primary text-base leading-relaxed sm:text-lg";
 
-const bodyMuted = "about-provin-body about-provin-body--muted text-[15px] sm:text-base";
-
-const methodologyRailClass =
-  "border-t-2 border-provin-accent/75 pt-5 md:border-l-2 md:border-t-0 md:border-provin-accent/75 md:pl-6 md:pt-0";
+const bodyMuted = "about-provin-body about-provin-body--muted text-[15px] leading-relaxed sm:text-base";
 
 export async function IrissSection({ editorialColumn = false }: { editorialColumn?: boolean } = {}) {
   const t = await getTranslations("Iriss");
@@ -43,46 +40,47 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         />
       </div>
 
-      <div className="mx-auto mt-12 max-w-3xl space-y-10 text-pretty sm:mt-16 sm:space-y-12 md:space-y-14">
-        <p className={`${bodyPrimary} text-center`}>
-          {t("hookPart1")}
-          <span className="font-semibold">
-            {renderProvinText(t("hookProvin"), { proAndSuffixClassName: "text-inherit" })}
-          </span>
-          {t("hookPart2")}
-        </p>
+      <div className="mx-auto mt-14 w-full max-w-[min(100%,68rem)] px-1 sm:mt-16 sm:px-2">
+        <div className="about-provin-axis-column w-full max-w-full md:max-w-[min(100%,calc(50%-0.625rem))] md:py-24">
+          <p className="about-provin-hook text-2xl font-light leading-relaxed tracking-[0.012em]">
+            {t("hookPart1")}
+            <span className="font-bold about-provin-accent">
+              {renderProvinText(t("hookProvin"), { proAndSuffixClassName: "text-inherit" })}
+            </span>
+            {t("hookPart2")}
+          </p>
 
-        <div className={`${methodologyRailClass} ${bodyMuted}`}>
-          <p>
-            {t("methodologyPart1")}
-            <span className={accentPhrase}>{t("methodologyAccent1")}</span>
-            {t("methodologyPart2")}
-            <span className={accentPhrase}>{t("methodologyAccent2")}</span>
-            {t("methodologyPart3")}
-            <span className={accentPhrase}>{t("methodologyAccent3")}</span>
-            {t("methodologyPart4")}
+          <div className="about-provin-methodology mt-12 flex items-stretch gap-4 sm:mt-14 sm:gap-5">
+            <span className="about-provin-axis-line block w-px shrink-0" aria-hidden />
+            <p className={`${bodyMuted} pt-0.5`}>
+              {t("methodologyPart1")}
+              <span className={accentPhrase}>{t("methodologyAccent1")}</span>
+              {t("methodologyPart2")}
+              <span className={accentPhrase}>{t("methodologyAccent2")}</span>
+              {t("methodologyPart3")}
+              <span className={accentPhrase}>{t("methodologyAccent3")}</span>
+              {t("methodologyPart4")}
+            </p>
+          </div>
+
+          <div className="mt-12 sm:mt-14">
+            <p className="about-provin-signature text-sm uppercase tracking-[0.28em]">{t("authorityTitle")}</p>
+            <p className={`${bodyMuted} mt-4`}>{t("authorityBody")}</p>
+          </div>
+
+          <p className={`${bodyPrimary} mt-12 sm:mt-14`}>
+            {t("valuePart1")}
+            <span className={accentPhrase}>{t("valueAccent1")}</span>
+            {t("valuePart2")}
+            <span className={accentPhrase}>{t("valueAccent2")}</span>
+            {t("valuePart3")}
+          </p>
+
+          <p className="about-provin-punchline mt-14 text-5xl font-semibold leading-[1.08] tracking-tight sm:mt-16 sm:text-6xl">
+            <span className="about-provin-punchline-lead block">{t("punchlineLead")}</span>
+            <span className="about-provin-punchline-accent block">{t("punchlineAccent")}</span>
           </p>
         </div>
-
-        <div className="about-provin-authority-slab rounded-2xl border border-white/[0.08] bg-white/[0.04] px-5 py-6 sm:px-7 sm:py-7">
-          <h3 className="about-provin-authority-title text-lg font-bold leading-snug tracking-tight sm:text-xl">
-            {t("authorityTitle")}
-          </h3>
-          <p className={`${bodyMuted} mt-3`}>{t("authorityBody")}</p>
-        </div>
-
-        <p className={bodyPrimary}>
-          {t("valuePart1")}
-          <span className={accentPhrase}>{t("valueAccent1")}</span>
-          {t("valuePart2")}
-          <span className={accentPhrase}>{t("valueAccent2")}</span>
-          {t("valuePart3")}
-        </p>
-
-        <p className="about-provin-punchline mt-2 text-center text-base font-bold leading-snug tracking-tight sm:text-xl md:text-2xl lg:text-3xl">
-          <span className="about-provin-punchline-lead">{t("punchlineLead")}</span>
-          <span className="about-provin-punchline-accent">{t("punchlineAccent")}</span>
-        </p>
       </div>
     </div>
   );
