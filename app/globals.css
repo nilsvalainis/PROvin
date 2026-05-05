@@ -1062,6 +1062,10 @@ html[data-site-theme="light"] .provin-select-section .marketing-hero-pillar-icon
   line-height: 1.6;
 }
 
+.about-provin-content-wrap {
+  isolation: isolate;
+}
+
 html:not([data-site-theme="light"]) .about-provin-body--primary {
   color: rgb(245 248 252 / 0.9);
 }
@@ -1076,6 +1080,44 @@ html:not([data-site-theme="light"]) .about-provin-body--muted {
 
 html[data-site-theme="light"] .about-provin-body--muted {
   color: rgb(63 63 70 / 0.92);
+}
+
+html:not([data-site-theme="light"]) .about-provin-panel {
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background:
+    radial-gradient(ellipse 125% 80% at 50% -20%, rgb(0 102 255 / 0.11), transparent 65%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.05) 0%, rgb(255 255 255 / 0.025) 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 16px 44px rgb(0 0 0 / 0.22);
+}
+
+html[data-site-theme="light"] .about-provin-panel {
+  border: 1px solid rgb(15 23 42 / 0.08);
+  background: #f8fafc;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.95),
+    0 14px 34px rgb(15 23 42 / 0.08);
+}
+
+html:not([data-site-theme="light"]) .about-provin-methodology-rail::before {
+  content: "";
+  position: absolute;
+  inset: 1.05rem auto 1.05rem 0.95rem;
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgb(96 165 250 / 0.95) 0%, rgb(0 102 255 / 0.95) 100%);
+  box-shadow: 0 0 18px rgb(0 102 255 / 0.35);
+}
+
+html[data-site-theme="light"] .about-provin-methodology-rail::before {
+  content: "";
+  position: absolute;
+  inset: 1.05rem auto 1.05rem 0.95rem;
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgb(59 130 246 / 0.96) 0%, rgb(0 102 255 / 0.96) 100%);
+  box-shadow: 0 0 10px rgb(0 102 255 / 0.15);
 }
 
 html:not([data-site-theme="light"]) .about-provin-authority-title {
@@ -1093,11 +1135,27 @@ html:not([data-site-theme="light"]) .about-provin-authority-slab {
 }
 
 html[data-site-theme="light"] .about-provin-authority-slab {
-  border-color: rgb(24 24 27 / 0.08);
-  background: rgb(244 244 245 / 0.88);
+  border-color: rgb(15 23 42 / 0.08);
+  background: rgb(248 250 252 / 0.98);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.92),
-    0 1px 0 rgb(15 23 42 / 0.04);
+    0 12px 32px rgb(15 23 42 / 0.09);
+}
+
+html:not([data-site-theme="light"]) .about-provin-tool-panel {
+  background:
+    linear-gradient(180deg, rgb(0 102 255 / 0.16) 0%, rgb(2 15 35 / 0.52) 100%),
+    rgb(255 255 255 / 0.02);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07);
+}
+
+html[data-site-theme="light"] .about-provin-tool-panel {
+  background:
+    linear-gradient(180deg, rgb(0 102 255 / 0.08) 0%, rgb(239 246 255 / 0.78) 100%),
+    #eff6ff;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.88),
+    0 10px 26px rgb(59 130 246 / 0.12);
 }
 
 .about-provin-punchline {
@@ -1115,12 +1173,12 @@ html[data-site-theme="light"] .about-provin-punchline-lead {
 
 html:not([data-site-theme="light"]) .about-provin-punchline-accent {
   color: var(--color-provin-accent);
-  text-shadow: 0 0 20px rgb(0 102 255 / 0.32);
+  text-shadow: 0 0 26px rgb(0 102 255 / 0.36), 0 0 10px rgb(56 189 248 / 0.2);
 }
 
 html[data-site-theme="light"] .about-provin-punchline-accent {
   color: var(--color-provin-accent);
-  text-shadow: none;
+  text-shadow: 0 0 14px rgb(0 102 255 / 0.18);
 }
 
 /* Sākumlapa: VIN audits vs PROVIN SELECT — 2×2 vienādas kartītes */
