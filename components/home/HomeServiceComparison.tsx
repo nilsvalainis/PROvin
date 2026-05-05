@@ -6,6 +6,7 @@ import {
   homePillarCardBodyClass,
   homePillarCardShellClass,
   homePillarCardTitleClass,
+  homePillarGridWidthClass,
 } from "@/lib/home-pricing-pillar-cards";
 import { heroPillarCardIconClass } from "@/lib/home-layout";
 import { PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
@@ -19,9 +20,9 @@ type IncludedRow = { title: string; body: string };
 const AUDIT_ICONS: LucideIcon[] = [Globe2, ScanSearch, AlertTriangle, ShieldCheck];
 const SELECT_ICONS: LucideIcon[] = [Layers, Filter, AlertTriangle, MessageSquare];
 
-/** Tā pati kā `PricingIncluded` 4 kartīšu apakšrežģis (`gap-3` → `md:gap-5`), 1 kol. xs, 2×2 no sm. */
+/** Kā `PricingIncluded`: mobilā 1 kol., tad 2×2, lg+ četras kartītes vienā rindā (`lg:grid-cols-4`). */
 const comparisonFourCardGridClass =
-  "grid list-none grid-cols-1 items-stretch gap-3 sm:grid-cols-2 sm:gap-4 md:gap-5 min-h-0 flex-1 w-full";
+  `mx-auto grid list-none grid-cols-1 items-stretch gap-3 sm:grid-cols-2 sm:gap-4 md:gap-5 lg:grid-cols-4 min-h-0 flex-1 ${homePillarGridWidthClass}`;
 
 const columnTitleClass =
   "home-service-comparison-column-title text-[clamp(0.9rem,2.2vw,1.25rem)] font-semibold uppercase tracking-[0.06em] sm:tracking-[0.08em]";

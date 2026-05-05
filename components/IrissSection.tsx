@@ -68,7 +68,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="klwAEEdNXko" playLabel={t("youtubePlayAria")}>
-            <p className="about-provin-hook mx-auto max-w-xl text-balance text-center text-2xl font-light leading-snug tracking-[0.012em] sm:text-3xl">
+            <p className="about-provin-hook mx-auto max-w-xl text-balance text-center text-[1.2rem] font-light leading-snug tracking-[0.012em] sm:text-[1.5rem]">
               {t("hookPart1")}
               <span className="font-bold about-provin-accent">
                 {renderProvinText(t("hookProvin"), { proAndSuffixClassName: "text-inherit" })}
