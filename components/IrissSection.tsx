@@ -3,11 +3,14 @@ import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
-const accentPhrase = "font-semibold text-[#3b82f6]";
+const accentPhrase = "font-semibold text-provin-accent";
 
 const bodyPrimary = "about-provin-body about-provin-body--primary text-[15px] sm:text-base";
 
 const bodyMuted = "about-provin-body about-provin-body--muted text-[15px] sm:text-base";
+
+const methodologyRailClass =
+  "border-t-2 border-provin-accent/75 pt-5 md:border-l-2 md:border-t-0 md:border-provin-accent/75 md:pl-6 md:pt-0";
 
 export async function IrissSection({ editorialColumn = false }: { editorialColumn?: boolean } = {}) {
   const t = await getTranslations("Iriss");
@@ -43,13 +46,13 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
       <div className="mx-auto mt-12 max-w-3xl space-y-10 text-pretty sm:mt-16 sm:space-y-12 md:space-y-14">
         <p className={`${bodyPrimary} text-center`}>
           {t("hookPart1")}
-          <span className={accentPhrase}>{renderProvinText(t("hookProvin"), { proAndSuffixClassName: "provin-wordmark-pro" })}</span>
+          <span className="font-semibold">
+            {renderProvinText(t("hookProvin"), { proAndSuffixClassName: "text-inherit" })}
+          </span>
           {t("hookPart2")}
         </p>
 
-        <div
-          className={`border-t-2 border-[#3b82f6]/75 pt-5 md:border-l-2 md:border-t-0 md:pl-6 md:pt-0 ${bodyMuted}`}
-        >
+        <div className={`${methodologyRailClass} ${bodyMuted}`}>
           <p>
             {t("methodologyPart1")}
             <span className={accentPhrase}>{t("methodologyAccent1")}</span>
@@ -76,7 +79,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
           {t("valuePart3")}
         </p>
 
-        <p className="about-provin-punchline mt-2 text-center text-lg font-bold leading-snug tracking-tight sm:text-2xl md:text-3xl">
+        <p className="about-provin-punchline mt-2 text-center text-base font-bold leading-snug tracking-tight sm:text-xl md:text-2xl lg:text-3xl">
           <span className="about-provin-punchline-lead">{t("punchlineLead")}</span>
           <span className="about-provin-punchline-accent">{t("punchlineAccent")}</span>
         </p>

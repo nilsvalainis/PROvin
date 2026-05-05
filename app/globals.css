@@ -20,6 +20,8 @@
   --color-provin-muted: #86868b;
   --color-provin-green: var(--color-provin-accent);
   --color-provin-green-dark: var(--color-provin-accent-hover);
+  /* PROVIN SELECT / zaļā CTA virspuse — viens tonis ar „Pieteikties konsultācijai” pogu */
+  --color-provin-select-green: #12c45a;
   --color-canvas: #ffffff;
   --color-canvas-warm: #f5f5f7;
 }
@@ -983,17 +985,15 @@ html[data-site-theme="dark"] .provin-select-form-error {
 }
 
 html[data-site-theme="light"] .provin-select-section {
-  --color-provin-accent: #0a9d47;
+  --color-provin-accent: #12c45a;
   --color-provin-accent-hover: #0cb04e;
   --color-provin-accent-soft: rgb(18 196 90 / 0.16);
   --color-provin-accent-muted: #0a7a3f;
 }
 
 .provin-select-section :where(.text-provin-accent, [class*="text-provin-accent"]) {
-  text-shadow:
-    0 0 0.6px rgb(255 255 255 / 0.22),
-    0 0 12px rgb(18 196 90 / 0.32);
-  filter: saturate(1.06) brightness(1.02);
+  text-shadow: none;
+  filter: none;
 }
 
 html[data-site-theme="light"] .provin-select-section :where(.text-provin-accent, [class*="text-provin-accent"]) {
@@ -1002,11 +1002,11 @@ html[data-site-theme="light"] .provin-select-section :where(.text-provin-accent,
 }
 
 .provin-select-section :where(.text-provin-accent, [class*="text-provin-accent"]) :is(svg, path, circle, line, polyline) {
-  filter: drop-shadow(0 0 5px rgb(18 196 90 / 0.28));
+  filter: none;
 }
 
 html[data-site-theme="light"] .provin-select-section :where(.text-provin-accent, [class*="text-provin-accent"]) :is(svg, path, circle, line, polyline) {
-  filter: drop-shadow(0 0 4px rgb(10 157 71 / 0.2));
+  filter: none;
 }
 
 .provin-select-section .provin-diagnostic-scan-line__pulse {
@@ -1114,37 +1114,58 @@ html[data-site-theme="light"] .about-provin-punchline-lead {
 }
 
 html:not([data-site-theme="light"]) .about-provin-punchline-accent {
-  color: rgb(147 197 253 / 0.98);
-  text-shadow:
-    0 0 22px rgba(59, 130, 246, 0.55),
-    0 0 42px rgba(37, 99, 235, 0.32);
+  color: var(--color-provin-accent);
+  text-shadow: 0 0 20px rgb(0 102 255 / 0.32);
 }
 
 html[data-site-theme="light"] .about-provin-punchline-accent {
-  color: #2563eb;
+  color: var(--color-provin-accent);
+  text-shadow: none;
 }
 
 /* Sākumlapa: VIN audits vs PROVIN SELECT — 2×2 vienādas kartītes */
+.home-service-comparison-title-pro {
+  color: inherit;
+}
+
+html[data-site-theme="light"] .home-service-comparison-column-title {
+  color: rgb(9 9 11 / 0.94);
+}
+
+html:not([data-site-theme="light"]) .home-service-comparison-column-title {
+  color: rgb(255 255 255 / 0.96);
+}
+
+html[data-site-theme="light"] .home-service-comparison-card-title-ink {
+  color: rgb(9 9 11 / 0.92);
+}
+
+html:not([data-site-theme="light"]) .home-service-comparison-card-title-ink {
+  color: rgb(255 255 255 / 0.95);
+}
+
 .home-service-comparison-card-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   /* Vienāds rindas augstums katrā slejā; `1fr` sadala vertikāli starp divām rindām. */
   grid-template-rows: repeat(2, minmax(0, 1fr));
   flex: 1 1 auto;
-  gap: 0.65rem;
-  min-height: clamp(13.5rem, 30vh, 21rem);
+  gap: 0.55rem;
+  /* Mobilajā — zemāka min. augstums, mazāk „izstieptas” kartītes. */
+  min-height: clamp(9.25rem, 20vh, 15rem);
 }
 
 @media (min-width: 640px) {
   .home-service-comparison-card-grid {
-    gap: 0.85rem;
-    min-height: clamp(14.5rem, 28vh, 23rem);
+    gap: 0.75rem;
+    min-height: clamp(11.5rem, 24vh, 19rem);
   }
 }
 
 @media (min-width: 1024px) {
   .home-service-comparison-card-grid {
-    min-height: clamp(15rem, 26vh, 24rem);
+    gap: 0.85rem;
+    min-height: clamp(13rem, 24vh, 22rem);
   }
 }
 
@@ -1152,20 +1173,12 @@ html[data-site-theme="light"] .about-provin-punchline-accent {
   min-height: 0;
 }
 
-html:not([data-site-theme="light"]) .home-service-comparison-card-title--audit {
-  color: rgb(186 230 253 / 0.96);
-}
-
-html:not([data-site-theme="light"]) .home-service-comparison-card-title--select {
-  color: rgb(167 243 208 / 0.96);
-}
-
 [data-comparison-side="audit"] .home-service-comparison-icon--audit {
-  color: #3b82f6 !important;
+  color: var(--color-provin-accent) !important;
 }
 
 [data-comparison-side="select"] .home-service-comparison-icon--select {
-  color: rgb(52 211 169) !important;
+  color: var(--color-provin-select-green) !important;
 }
 
 html:not([data-site-theme="light"]) .home-service-comparison-audit-col {

@@ -3,8 +3,10 @@ import type { ReactNode } from "react";
 const PROVIN_IN_TEXT = /(PROVIN(?:\.LV)?)/g;
 
 export type RenderProvinTextOptions = {
-  /** PRO un „.LV” krāsa (VIN paliek `text-provin-accent`). Noklusējums: `provin-wordmark-pro` (tēma). Tumšām virsmām: `provin-wordmark-pro--surface-dark` vai `heroGlassPro`. */
+  /** PRO un „.LV” krāsa (VIN — `vinClassName` vai `text-provin-accent`). */
   proAndSuffixClassName?: string;
+  /** „VIN” burti — noklusējums `text-provin-accent` (.provin-select-section = zaļš). */
+  vinClassName?: string;
 };
 
 /**
@@ -12,6 +14,7 @@ export type RenderProvinTextOptions = {
  */
 export function renderProvinText(text: string, options?: RenderProvinTextOptions): ReactNode {
   const proLv = options?.proAndSuffixClassName ?? "provin-wordmark-pro";
+  const vinClass = options?.vinClassName ?? "text-provin-accent";
 
   if (!text.includes("PROVI")) {
     return text;
@@ -31,7 +34,7 @@ export function renderProvinText(text: string, options?: RenderProvinTextOptions
     parts.push(
       <span key={`provin-${mi++}`} className="inline">
         <span className={proLv}>PRO</span>
-        <span className="text-provin-accent">VIN</span>
+        <span className={vinClass}>VIN</span>
         {full.endsWith(".LV") ? <span className={proLv}>.LV</span> : null}
       </span>,
     );

@@ -215,7 +215,7 @@ export function HeaderClient({
   const navLinkClass = (active: boolean) =>
     [
       "flex min-h-11 items-center rounded-xl px-4 text-lg font-medium tracking-tight transition-colors",
-      active ? "text-[#3b82f6]" : `${navMuted} hover:text-provin-accent`,
+      active ? "text-provin-accent" : `${navMuted} hover:text-provin-accent`,
     ].join(" ");
 
   const railMenuActive = siteRailMenuActiveIndex(pathname, hash);
@@ -227,7 +227,7 @@ export function HeaderClient({
       "flex min-h-11 items-center rounded-lg px-3 text-[14px] font-medium tracking-tight transition-colors motion-reduce:transition-none",
       mobileRailOnDark
         ? active
-          ? "text-[#5c9dff]"
+          ? "text-[#0066ff]"
           : "text-white/[0.88] hover:text-white"
         : active
           ? "text-provin-accent"
@@ -367,7 +367,7 @@ export function HeaderClient({
                 <button
                   type="button"
                   onClick={close}
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/20 text-white transition hover:border-[#3b82f6]/50 hover:text-[#3b82f6]"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/20 text-white transition hover:border-[#0066ff]/50 hover:text-[#0066ff]"
                   aria-label={menuCloseLabel}
                 >
                   <X className="h-6 w-6" strokeWidth={1.75} aria-hidden />

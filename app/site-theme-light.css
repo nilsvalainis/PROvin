@@ -10,11 +10,11 @@ html[data-site-theme="light"] {
   --site-body-bg: #ffffff;
   --site-body-gradient: linear-gradient(180deg, #ffffff 0%, #fafbfd 52%, #f4f6f9 100%);
   --site-body-fg: #0a0a0a;
-  /* Tailwind @theme — lietots ar `text-provin-accent` u.c. */
-  --color-provin-accent: #0078ff;
-  --color-provin-accent-hover: #0066e6;
-  --color-provin-accent-soft: #e0f0ff;
-  --color-provin-accent-muted: #2b6fd0;
+  /* Viens zils ar logo / @theme (`#0066ff`) */
+  --color-provin-accent: #0066ff;
+  --color-provin-accent-hover: #0052cc;
+  --color-provin-accent-soft: #e8f2fc;
+  --color-provin-accent-muted: #3d7fd0;
   --color-apple-blue: var(--color-provin-accent);
   --color-apple-blue-hover: var(--color-provin-accent-hover);
   --color-provin-green: var(--color-provin-accent);
@@ -354,7 +354,7 @@ html[data-site-theme="light"] .order-form--hero .order-form-hero-field-error {
 
 /* Lab CTA — hover zils */
 html[data-site-theme="light"] .lab-chrome-cta:hover {
-  background: linear-gradient(165deg, #0078ff 0%, #0066ff 45%, #0052cc 100%);
+  background: linear-gradient(165deg, #1a75ff 0%, #0066ff 45%, #0052cc 100%);
   color: #ffffff;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.22),
@@ -400,25 +400,17 @@ html[data-site-theme="light"] .home-hero-pricing-unified.demo-design-dir {
 }
 
 html[data-site-theme="light"] .home-service-comparison-audit-col {
-  border-color: rgb(59 130 246 / 0.22);
+  border-color: rgb(0 102 255 / 0.22);
   background: linear-gradient(180deg, rgb(239 246 255 / 0.96) 0%, rgb(248 250 252 / 0.92) 100%);
   color: #171717;
 }
 
 html[data-site-theme="light"] .home-service-comparison-select-col {
-  border-color: rgb(16 185 129 / 0.24);
+  border-color: rgb(18 196 90 / 0.28);
   background:
-    radial-gradient(ellipse 105% 72% at 50% 0%, rgb(16 185 129 / 0.07), transparent 56%),
+    radial-gradient(ellipse 105% 72% at 50% 0%, rgb(18 196 90 / 0.08), transparent 56%),
     linear-gradient(180deg, rgb(240 253 244 / 0.96) 0%, rgb(248 250 252 / 0.93) 100%);
   color: #171717;
-}
-
-html[data-site-theme="light"] .home-service-comparison-audit-title {
-  color: rgb(29 78 216 / 0.96);
-}
-
-html[data-site-theme="light"] .home-service-comparison-select-title {
-  color: rgb(4 120 87 / 0.96);
 }
 
 html[data-site-theme="light"] .home-service-comparison-footnote {
@@ -431,14 +423,6 @@ html[data-site-theme="light"] .home-service-comparison-select-col .demo-design-d
 
 html[data-site-theme="light"] .home-service-comparison-audit-col .demo-design-dir__body {
   color: rgb(39 39 42 / 0.88) !important;
-}
-
-html[data-site-theme="light"] [data-comparison-side="audit"] .home-service-comparison-card-title--audit {
-  color: rgb(29 78 216 / 0.95);
-}
-
-html[data-site-theme="light"] [data-comparison-side="select"] .home-service-comparison-card-title--select {
-  color: rgb(4 120 87 / 0.95);
 }
 
 /* PROVIN SELECT — maigs gaišs zaļš (ne agresīvs) */

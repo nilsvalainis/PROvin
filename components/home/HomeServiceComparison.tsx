@@ -5,7 +5,6 @@ import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import {
   homePillarCardShellClass,
 } from "@/lib/home-pricing-pillar-cards";
-import { heroPillarCardIconClass } from "@/lib/home-layout";
 import { PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
 import { orderSectionHref, provinSelectConsultationHref } from "@/lib/paths";
 import { renderProvinText } from "@/lib/provin-wordmark";
@@ -18,12 +17,18 @@ const AUDIT_ICONS: LucideIcon[] = [Globe2, ScanSearch, AlertTriangle, ShieldChec
 const SELECT_ICONS: LucideIcon[] = [Layers, Filter, AlertTriangle, MessageSquare];
 
 const comparisonCardTitleClass =
-  "home-service-comparison-card-title w-full max-w-[19rem] text-balance text-center text-lg font-semibold uppercase leading-snug tracking-wide";
+  "home-service-comparison-card-title-ink home-service-comparison-card-title w-full max-w-[19rem] text-balance text-center text-[11px] font-semibold uppercase leading-tight tracking-wide sm:text-xs md:text-sm lg:text-base";
 
 const comparisonCardBodyClass =
-  "home-muted-foreground w-full max-w-[19rem] flex-1 text-balance text-center text-sm leading-snug";
+  "home-muted-foreground home-service-comparison-card-body w-full max-w-[20rem] flex-1 text-balance text-center text-[11px] leading-snug sm:text-xs md:text-sm";
 
-const cardInnerClass = `${homePillarCardShellClass} home-service-comparison-card flex h-full min-h-0 w-full min-w-0 flex-col items-center justify-start gap-2 overflow-hidden py-3 text-center sm:gap-2.5 sm:py-4`;
+const comparisonCardIconClass =
+  "home-service-comparison-card-icon marketing-hero-pillar-icon shrink-0 [stroke-width:1.5] h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7";
+
+const cardInnerClass = `${homePillarCardShellClass} home-service-comparison-card flex h-full min-h-0 w-full min-w-0 flex-col items-center justify-start gap-1.5 overflow-hidden px-2 py-2 text-center sm:gap-2 sm:px-3 sm:py-3 md:gap-2.5 md:py-4`;
+
+const columnTitleClass =
+  "home-service-comparison-column-title text-[clamp(0.9rem,2.2vw,1.25rem)] font-semibold uppercase tracking-[0.06em] sm:tracking-[0.08em]";
 
 function ComparisonCard({
   title,
@@ -44,18 +49,11 @@ function ComparisonCard({
       ? riskTone || "home-service-comparison-icon--audit"
       : riskTone || "home-service-comparison-icon--select";
 
-  const titleTone =
-    side === "audit" ? "home-service-comparison-card-title--audit" : "home-service-comparison-card-title--select";
-
   return (
     <li className="flex min-h-0 min-w-0">
       <div className={cardInnerClass}>
-        <Icon
-          className={`${heroPillarCardIconClass} shrink-0 ${sideIcon}`.trim()}
-          aria-hidden
-          strokeWidth={1.5}
-        />
-        <h3 className={`${comparisonCardTitleClass} shrink-0 ${titleTone}`}>{title}</h3>
+        <Icon className={`${comparisonCardIconClass} ${sideIcon}`.trim()} aria-hidden strokeWidth={1.5} />
+        <h3 className={`${comparisonCardTitleClass} shrink-0`}>{title}</h3>
         <p className={`${comparisonCardBodyClass} min-h-0`}>{body}</p>
       </div>
     </li>
@@ -94,8 +92,10 @@ export async function HomeServiceComparison() {
           className={`home-service-comparison-audit-col ${columnShellClass} border border-sky-500/20 bg-gradient-to-b from-sky-950/35 via-[#050a14]/40 to-transparent`}
         >
           <header className="shrink-0 text-center">
-            <h2 className="home-service-comparison-audit-title text-[clamp(1rem,2.4vw,1.35rem)] font-semibold uppercase tracking-[0.06em] text-sky-300 sm:tracking-[0.08em]">
-              {tPricing("comparisonAuditTitle")}
+            <h2 className={columnTitleClass}>
+              {renderProvinText(tPricing("comparisonAuditTitle"), {
+                proAndSuffixClassName: "home-service-comparison-title-pro",
+              })}
             </h2>
             <div className="mx-auto mt-2 w-full max-w-[min(100%,22rem)] px-1 sm:mt-3">
               <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
@@ -143,8 +143,10 @@ export async function HomeServiceComparison() {
           className={`home-service-comparison-select-col provin-select-section ${columnShellClass} border border-emerald-500/20`}
         >
           <header className="shrink-0 text-center">
-            <h2 className="home-service-comparison-select-title text-[clamp(1rem,2.4vw,1.35rem)] font-semibold uppercase tracking-[0.06em] text-emerald-300/95 sm:tracking-[0.08em]">
-              {renderProvinText(tSelect("eyebrow"), { proAndSuffixClassName: "provin-wordmark-pro" })}
+            <h2 className={columnTitleClass}>
+              {renderProvinText(tSelect("eyebrow"), {
+                proAndSuffixClassName: "home-service-comparison-title-pro",
+              })}
             </h2>
             <div className="mx-auto mt-2 w-full max-w-[min(100%,22rem)] px-1 sm:mt-3">
               <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
@@ -178,7 +180,9 @@ export async function HomeServiceComparison() {
               {tSelect("comparisonScrollCta")}
             </Link>
             <p className="home-service-comparison-footnote max-w-[min(100%,26rem)] text-center text-[10px] font-normal leading-snug text-white/50 sm:text-[11px]">
-              {renderProvinText(tSelect("cardsVinNote"), { proAndSuffixClassName: "provin-wordmark-pro" })}
+              {renderProvinText(tSelect("cardsVinNote"), {
+                proAndSuffixClassName: "home-service-comparison-title-pro",
+              })}
             </p>
           </div>
         </div>
