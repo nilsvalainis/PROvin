@@ -10,7 +10,7 @@ const bodyPrimary = "about-provin-body about-provin-body--primary text-[15px] sm
 const bodyMuted = "about-provin-body about-provin-body--muted text-[15px] sm:text-base";
 
 const methodologyRailClass =
-  "about-provin-methodology-rail relative rounded-3xl border border-white/[0.1] px-5 py-5 pl-8 shadow-[0_14px_42px_rgb(0_0_0/0.18)] sm:px-7 sm:py-6 sm:pl-10";
+  "border-t-2 border-provin-accent/75 pt-5 md:border-l-2 md:border-t-0 md:border-provin-accent/75 md:pl-6 md:pt-0";
 
 export async function IrissSection({ editorialColumn = false }: { editorialColumn?: boolean } = {}) {
   const t = await getTranslations("Iriss");
@@ -43,18 +43,16 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         />
       </div>
 
-      <div className="about-provin-content-wrap mx-auto mt-12 max-w-[min(100%,71rem)] space-y-4 text-pretty sm:mt-16 sm:space-y-5 md:space-y-6">
-        <div className="about-provin-panel rounded-3xl px-5 py-7 sm:px-8 sm:py-8 md:px-10 md:py-10">
-          <p className={`${bodyPrimary} text-center text-[17px] tracking-[0.012em] sm:text-[19px] sm:tracking-[0.016em]`}>
-            {t("hookPart1")}
-            <span className="font-semibold">
-              {renderProvinText(t("hookProvin"), { proAndSuffixClassName: "text-inherit" })}
-            </span>
-            {t("hookPart2")}
-          </p>
-        </div>
+      <div className="mx-auto mt-12 max-w-3xl space-y-10 text-pretty sm:mt-16 sm:space-y-12 md:space-y-14">
+        <p className={`${bodyPrimary} text-center`}>
+          {t("hookPart1")}
+          <span className="font-semibold">
+            {renderProvinText(t("hookProvin"), { proAndSuffixClassName: "text-inherit" })}
+          </span>
+          {t("hookPart2")}
+        </p>
 
-        <div className={`${methodologyRailClass} about-provin-panel ${bodyMuted}`}>
+        <div className={`${methodologyRailClass} ${bodyMuted}`}>
           <p>
             {t("methodologyPart1")}
             <span className={accentPhrase}>{t("methodologyAccent1")}</span>
@@ -66,24 +64,22 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
           </p>
         </div>
 
-        <div className="about-provin-authority-slab group rounded-3xl border px-6 py-7 transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0/0.18)] sm:px-8 sm:py-8">
+        <div className="about-provin-authority-slab rounded-2xl border border-white/[0.08] bg-white/[0.04] px-5 py-6 sm:px-7 sm:py-7">
           <h3 className="about-provin-authority-title text-lg font-bold leading-snug tracking-tight sm:text-xl">
             {t("authorityTitle")}
           </h3>
           <p className={`${bodyMuted} mt-3`}>{t("authorityBody")}</p>
         </div>
 
-        <div className="about-provin-tool-panel rounded-3xl border border-provin-accent/20 px-5 py-6 sm:px-7 sm:py-7">
-          <p className={bodyPrimary}>
-            {t("valuePart1")}
-            <span className={accentPhrase}>{t("valueAccent1")}</span>
-            {t("valuePart2")}
-            <span className={accentPhrase}>{t("valueAccent2")}</span>
-            {t("valuePart3")}
-          </p>
-        </div>
+        <p className={bodyPrimary}>
+          {t("valuePart1")}
+          <span className={accentPhrase}>{t("valueAccent1")}</span>
+          {t("valuePart2")}
+          <span className={accentPhrase}>{t("valueAccent2")}</span>
+          {t("valuePart3")}
+        </p>
 
-        <p className="about-provin-punchline mt-3 rounded-3xl px-4 py-5 text-center text-3xl font-bold leading-snug tracking-tight sm:px-7 sm:py-7 sm:text-4xl">
+        <p className="about-provin-punchline mt-2 text-center text-base font-bold leading-snug tracking-tight sm:text-xl md:text-2xl lg:text-3xl">
           <span className="about-provin-punchline-lead">{t("punchlineLead")}</span>
           <span className="about-provin-punchline-accent">{t("punchlineAccent")}</span>
         </p>
