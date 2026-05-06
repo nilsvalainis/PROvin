@@ -557,9 +557,9 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   width: min(100%, 520px);
   min-height: 56px;
   padding: 0.875rem 1rem;
-  border: 1px solid rgb(0 120 62 / 0.55);
+  border: 1px solid rgb(5 150 105 / 0.62);
   border-radius: 999px;
-  background: linear-gradient(180deg, #12c45a 0%, #0a9d47 100%);
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
   color: #fff;
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   font-size: 0.875rem;
@@ -574,7 +574,7 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   line-height: 1.1;
   white-space: normal;
   text-wrap: balance;
-  box-shadow: 0 8px 18px rgb(10 157 71 / 0.22), 0 1px 0 rgb(255 255 255 / 0.22) inset;
+  box-shadow: 0 8px 18px rgb(16 185 129 / 0.24), 0 1px 0 rgb(255 255 255 / 0.22) inset;
   cursor: pointer;
   transition:
     background 0.15s ease,
@@ -583,8 +583,8 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
 }
 
 .ctaButtonHeroConsult:hover {
-  background: linear-gradient(180deg, #16cf63 0%, #0cb04e 100%);
-  border-color: rgb(0 140 72 / 0.65);
+  background: linear-gradient(180deg, #14c58a 0%, #0aa775 100%);
+  border-color: rgb(5 150 105 / 0.72);
   box-shadow: inherit;
 }
 
@@ -729,18 +729,18 @@ html[data-site-theme="light"] .heroIntroSurface .ctaButtonSecondary:hover {
 }
 
 html[data-site-theme="dark"] .heroIntroSurface .ctaButtonHeroConsult {
-  border-color: rgb(0 200 105 / 0.42);
-  background: linear-gradient(180deg, #10b854 0%, #089444 100%);
+  border-color: rgb(16 185 129 / 0.45);
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
   box-shadow:
     0 0 0 1px rgb(0 0 0 / 0.35),
-    0 10px 22px rgb(0 80 44 / 0.29),
+    0 10px 22px rgb(6 95 70 / 0.29),
     0 1px 0 rgb(255 255 255 / 0.16) inset;
   color: #fff;
 }
 
 html[data-site-theme="dark"] .heroIntroSurface .ctaButtonHeroConsult:hover {
-  background: linear-gradient(180deg, #14c95f 0%, #0aa14c 100%);
-  border-color: rgb(0 220 115 / 0.52);
+  background: linear-gradient(180deg, #14c58a 0%, #0aa775 100%);
+  border-color: rgb(16 185 129 / 0.55);
   box-shadow: inherit;
 }
 
@@ -757,8 +757,8 @@ html[data-site-theme="light"] .heroIntroSurface .ctaButton:hover {
 
 html[data-site-theme="light"] .heroIntroSurface .ctaButtonHeroConsult {
   box-shadow:
-    0 10px 24px rgb(10 157 71 / 0.2),
-    0 0 20px rgb(10 157 71 / 0.11),
+    0 10px 24px rgb(16 185 129 / 0.2),
+    0 0 20px rgb(16 185 129 / 0.11),
     0 2px 0 rgb(255 255 255 / 0.24) inset;
 }
 

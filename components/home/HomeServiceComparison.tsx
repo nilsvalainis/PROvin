@@ -80,12 +80,12 @@ function SelectJourneyCard({
       {!isLast ? (
         <span
           aria-hidden
-          className="absolute left-[1.72rem] top-[3.75rem] h-[calc(100%-3.5rem)] w-px bg-white/12 sm:left-[calc(50%+2.45rem)] sm:top-[2.9rem] sm:h-px sm:w-[calc(100%-1.85rem)] sm:bg-[linear-gradient(90deg,rgba(18,196,90,0.36),rgba(18,196,90,0.08))]"
+          className="absolute left-[1.72rem] top-[calc(3.5rem+12px)] h-[calc(100%-3.5rem-12px)] w-px bg-[#10B981]/30 sm:left-[2.5rem] sm:top-1/2 sm:h-px sm:w-[calc(100%-5rem)] sm:-translate-y-1/2 sm:bg-[#10B981]/30"
         />
       ) : null}
       <div className="relative flex h-full w-full min-w-0 max-w-[220px] flex-col items-center text-center">
-        <div className="relative mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-[#12c45a]/70 bg-[#12c45a]/[0.03] shadow-[0_0_0_1px_rgba(18,196,90,0.2),0_0_18px_rgba(18,196,90,0.24)] sm:mb-3.5">
-          <Icon className="h-7 w-7 shrink-0 text-[#12c45a] [stroke-width:1.6]" aria-hidden strokeWidth={1.6} />
+        <div className="relative mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-[#10B981]/70 bg-[#10B981]/[0.03] shadow-[0_0_0_1px_rgba(16,185,129,0.2),0_0_18px_rgba(16,185,129,0.2)] sm:mb-3.5">
+          <Icon className="h-7 w-7 shrink-0 text-[#10B981] [stroke-width:1.6]" aria-hidden strokeWidth={1.6} />
         </div>
         <h3 className={`${comparisonCardTitleClass} max-w-[220px] min-h-[2.95rem] whitespace-pre-line sm:min-h-[3.3rem]`}>
           {title}
