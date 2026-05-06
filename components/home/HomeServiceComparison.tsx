@@ -68,36 +68,29 @@ function SelectJourneyCard({
   title,
   body,
   Icon,
-  riskCard,
-  step,
   isLast,
 }: {
   title: string;
   body: string;
   Icon: LucideIcon;
-  riskCard: boolean;
-  step: number;
   isLast: boolean;
 }) {
-  const iconTone = riskCard ? "marketing-hero-pillar-icon--risk text-[#ff342e]" : "";
-
   return (
-    <li className="relative flex min-h-0 min-w-0 pl-6 sm:pl-0">
+    <li className="relative flex min-h-0 min-w-0 justify-center pl-7 sm:pl-0">
       {!isLast ? (
         <span
           aria-hidden
-          className="absolute left-[0.95rem] top-[3.1rem] h-[calc(100%-2.6rem)] w-px bg-white/12 sm:left-[calc(50%+2.25rem)] sm:top-[2.15rem] sm:h-px sm:w-[calc(100%-1.4rem)] sm:bg-[linear-gradient(90deg,rgba(255,255,255,0.18),rgba(255,255,255,0.05))]"
+          className="absolute left-[1.72rem] top-[3.75rem] h-[calc(100%-3.5rem)] w-px bg-white/12 sm:left-[calc(50%+2.45rem)] sm:top-[2.9rem] sm:h-px sm:w-[calc(100%-1.85rem)] sm:bg-[linear-gradient(90deg,rgba(18,196,90,0.36),rgba(18,196,90,0.08))]"
         />
       ) : null}
-      <div className="relative flex h-full w-full min-w-0 flex-col items-center">
-        <span className="mb-1 block font-mono text-[11px] font-semibold tracking-[0.08em] text-green-500 sm:mb-1.5">
-          {String(step).padStart(2, "0")}
-        </span>
-        <div className="relative mb-3 rounded-full bg-white/[0.03] p-2.5 shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_0_18px_rgba(40,210,120,0.14)] sm:mb-3.5">
-          <Icon className={`${comparisonIconClass} ${iconTone}`.trim()} aria-hidden strokeWidth={1.5} />
+      <div className="relative flex h-full w-full min-w-0 max-w-[220px] flex-col items-center text-center">
+        <div className="relative mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-[#12c45a]/70 bg-[#12c45a]/[0.03] shadow-[0_0_0_1px_rgba(18,196,90,0.2),0_0_18px_rgba(18,196,90,0.24)] sm:mb-3.5">
+          <Icon className="h-7 w-7 shrink-0 text-[#12c45a] [stroke-width:1.6]" aria-hidden strokeWidth={1.6} />
         </div>
-        <h3 className={`${comparisonCardTitleClass} max-w-[220px]`}>{title}</h3>
-        <p className={`${comparisonCardBodyClass} max-w-[220px]`}>{body}</p>
+        <h3 className={`${comparisonCardTitleClass} max-w-[220px] min-h-[2.95rem] whitespace-pre-line sm:min-h-[3.3rem]`}>
+          {title}
+        </h3>
+        <p className={`${comparisonCardBodyClass} mt-1 max-w-[220px]`}>{body}</p>
       </div>
     </li>
   );
@@ -198,7 +191,7 @@ export async function HomeServiceComparisonSelect() {
           </p>
         </header>
 
-        <ul className={`${comparisonFourCardGridClass} mt-1`}>
+        <ul className={`${comparisonFourCardGridClass} mt-1 sm:justify-items-center`}>
           {selectRows.slice(0, 4).map((row, i) => {
             const Icon = SELECT_ICONS[i] ?? Layers;
             return (
@@ -207,8 +200,6 @@ export async function HomeServiceComparisonSelect() {
                 title={row.title}
                 body={row.body}
                 Icon={Icon}
-                riskCard={i === 2}
-                step={i + 1}
                 isLast={i === Math.min(selectRows.length, 4) - 1}
               />
             );
@@ -223,7 +214,10 @@ export async function HomeServiceComparisonSelect() {
         </div>
 
         <div className={ctaRowClass}>
-          <Link href={provinSelectConsultationHref()} className={`${demoPageStyles.ctaButtonHeroConsult} ${ctaLinkClass} !mt-0`}>
+          <Link
+            href={provinSelectConsultationHref()}
+            className={`${demoPageStyles.ctaButtonHeroConsult} ${ctaLinkClass} !mt-0 font-semibold`}
+          >
             {tSelect("comparisonScrollCta")}
           </Link>
           <p className="home-service-comparison-footnote max-w-[min(100%,28rem)] text-center text-[11px] font-normal leading-snug text-white/50 sm:text-xs">
