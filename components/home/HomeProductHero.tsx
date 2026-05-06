@@ -3,9 +3,11 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { ApprovedByIrissReveal } from "@/components/home/ApprovedByIrissReveal";
 import { HeroVisual } from "@/components/HeroVisual";
 import { OrderForm } from "@/components/OrderForm";
 import { demoHeroFeatureTitles } from "@/lib/demo-feature-titles";
+import { approvedByIrissSignatureHeroClass } from "@/lib/home-layout";
 import {
   HOME_HERO_ORDER_FORM_ID,
   ORDER_SECTION_ID,
@@ -37,10 +39,22 @@ export default function HomeProductHero({ showProvinSelect = false, comparisonCo
       </div>
 
       <div className="relative z-10 flex min-h-0 min-w-0 flex-col">
-        <section id="home-hero" className={styles.heroSection} aria-labelledby="marketing-hero-product-title">
+        <section
+          id="home-hero"
+          className={`home-product-hero ${styles.heroSection}`}
+          aria-labelledby="marketing-hero-product-title"
+        >
+          <div className={styles.heroRightAmbientGlow} aria-hidden />
           <div className={styles.heroShell}>
             <div className={styles.heroColumnsProduct}>
               <div className={styles.heroLeftStack}>
+                <div className={styles.productHeroTrustRow}>
+                  <span className={styles.productHeroTrustDot} aria-hidden />
+                  <ApprovedByIrissReveal
+                    text={t("approved")}
+                    className={`${approvedByIrissSignatureHeroClass} ${styles.productHeroApprovedReveal}`.trim()}
+                  />
+                </div>
                 <h1 id="marketing-hero-product-title" className={styles.productHeroTitle}>
                   <span className={styles.productHeroTitleLine}>
                     <span className={styles.productHeroTitleMid}>{t("productTitlePart1")}</span>
