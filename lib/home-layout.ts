@@ -47,6 +47,30 @@ export const homeSectionEyebrowClass =
 /** Vienots H2 zem Hero (Cena, IRISS, BUJ): zils eyebrow + centrēts + vienāda atstarpe līdz saturam zemāk. */
 export const homeSectionTitleClass = `${homeSectionEyebrowClass} text-balance text-center mb-4 sm:mb-5`;
 
+/**
+ * Virsraksts kā IRISS „PAR MUMS” — `demo-design-dir__title` + `font-semibold` (ne Hero orbitā).
+ */
+export const homeEditorialSectionTitleClass =
+  "demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance font-semibold";
+
+/**
+ * Apakšvirsraksts kā IRISS `pageLead` — `demo-design-dir__kicker` (izmērs, svars, krāsa, tracking).
+ */
+export const homeEditorialSectionKickerClass =
+  "demo-design-dir__kicker mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4";
+
+/**
+ * Rindiņa zem virsraksta / līnijas — `demo-design-dir__body` (bez `__kicker` uppercase), tā patā platumā kā IRISS sleja.
+ */
+export const homeEditorialSectionBodyLeadClass =
+  "demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4";
+
+/**
+ * Otrā līmeņa virsraksts kā IRISS autoritātes rindiņa virs ķermeņa teksta.
+ */
+export const homeEditorialAuthorityHeadingClass =
+  "about-provin-signature text-sm uppercase tracking-[0.24em] sm:text-[0.9375rem]";
+
 /** Sudraba lapa — sadaļu virsraksti bez akcenta, tīrs #050505. */
 export const homeSectionTitleSilverClass =
   "text-[12px] font-semibold uppercase tracking-[0.1em] text-balance text-center text-[#050505] mb-4 sm:mb-5 sm:text-[13px]";

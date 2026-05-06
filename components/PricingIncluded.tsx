@@ -10,7 +10,7 @@ import {
   homePillarCardTitleClass,
   homePillarGridWidthClass,
 } from "@/lib/home-pricing-pillar-cards";
-import { heroPillarCardIconClass, homeSectionEyebrowClass } from "@/lib/home-layout";
+import { heroPillarCardIconClass, homeEditorialSectionTitleClass } from "@/lib/home-layout";
 
 type GridItem = {
   title: string;
@@ -32,15 +32,7 @@ export async function PricingIncluded({ embedded = false }: { embedded?: boolean
     <>
       <div className="mx-auto mt-2 w-full max-w-[min(100%,52rem)] sm:mt-3">
         <div className="text-center">
-          <h2
-            className={
-              embedded
-                ? "demo-design-dir__title mx-auto mb-0 max-w-[min(100%,48rem)] text-balance"
-                : `${homeSectionEyebrowClass} mx-auto mb-0 max-w-[min(100%,48rem)] text-balance`
-            }
-          >
-            {t("workTitle")}
-          </h2>
+          <h2 className={`${homeEditorialSectionTitleClass} mb-0`}>{t("workTitle")}</h2>
           <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>

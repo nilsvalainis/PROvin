@@ -2,6 +2,11 @@ import { getTranslations } from "next-intl/server";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { IrissZigzagRow } from "@/components/IrissZigzagRow";
 import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
+import {
+  homeEditorialAuthorityHeadingClass,
+  homeEditorialSectionKickerClass,
+  homeEditorialSectionTitleClass,
+} from "@/lib/home-layout";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
 /** Lielāks ķermenis, lai teksta laukums vizuāli tuvinātos YouTube logam (max-w-xl). */
@@ -18,15 +23,11 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
   const core = (
     <div className="about-provin-section mx-auto w-full max-w-[min(100%,80rem)] px-1 sm:px-2">
       <header className="text-center">
-        <h2 className="demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance font-semibold">
-          {t("title")}
-        </h2>
+        <h2 className={homeEditorialSectionTitleClass}>{t("title")}</h2>
         <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
           <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
         </div>
-        <p className="demo-design-dir__kicker mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4">
-          {t("pageLead")}
-        </p>
+        <p className={homeEditorialSectionKickerClass}>{t("pageLead")}</p>
       </header>
 
       <div className="mt-6 flex justify-center sm:mt-7">
@@ -43,9 +44,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         <div className="flex flex-col gap-12 sm:gap-14 lg:gap-16 xl:gap-20">
           <IrissZigzagRow videoId="vlUsjQyEqME" startSeconds={90} playLabel={t("youtubePlayAria")}>
             <div className="w-full text-left">
-              <p className="about-provin-signature text-sm uppercase tracking-[0.24em] sm:text-[0.9375rem]">
-                {t("authorityTitle")}
-              </p>
+              <p className={homeEditorialAuthorityHeadingClass}>{t("authorityTitle")}</p>
               <p className={`${bodyMuted} mt-3 sm:mt-4`}>{t("authorityBody")}</p>
             </div>
           </IrissZigzagRow>

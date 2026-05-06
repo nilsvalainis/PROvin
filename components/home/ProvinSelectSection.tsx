@@ -13,11 +13,13 @@ import {
   homePillarCardTitleClass,
   homePillarGridWidthClass,
 } from "@/lib/home-pricing-pillar-cards";
-import { heroPillarCardIconClass } from "@/lib/home-layout";
+import {
+  heroPillarCardIconClass,
+  homeEditorialAuthorityHeadingClass,
+  homeEditorialSectionBodyLeadClass,
+  homeEditorialSectionTitleClass,
+} from "@/lib/home-layout";
 import { renderProvinText } from "@/lib/provin-wordmark";
-
-const subsectionHeadingClass =
-  "iriss-editorial-heading font-semibold uppercase tracking-[0.08em] text-white/90";
 
 const SELECT_CARD_ICONS: LucideIcon[] = [Layers, Filter, AlertTriangle, MessageSquare];
 
@@ -119,18 +121,13 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
         {variant === "full" ? (
           <>
             <div className="mx-auto max-w-[min(100%,48rem)] text-center">
-              <h2
-                id={headingId}
-                className="demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance font-semibold"
-              >
+              <h2 id={headingId} className={homeEditorialSectionTitleClass}>
                 {renderProvinText(t("eyebrow"), { proAndSuffixClassName: "provin-wordmark-pro" })}
               </h2>
               <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
                 <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
               </div>
-              <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance font-medium sm:mt-4">
-                {t("lead")}
-              </p>
+              <p className={homeEditorialSectionBodyLeadClass}>{t("lead")}</p>
             </div>
 
             <ul
@@ -165,18 +162,13 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
           </>
         ) : isStandalone ? (
           <div className="mx-auto max-w-[min(100%,48rem)] text-center">
-            <h2
-              id={headingId}
-              className="demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance font-semibold"
-            >
+            <h2 id={headingId} className={homeEditorialSectionTitleClass}>
               {t("formTitle")}
             </h2>
             <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
               <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
             </div>
-            <p className="demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance font-medium sm:mt-4">
-              {t("lead")}
-            </p>
+            <p className={homeEditorialSectionBodyLeadClass}>{t("lead")}</p>
           </div>
         ) : null}
 
@@ -186,7 +178,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
           <div id={PROVIN_SELECT_FORM_HASH} className="scroll-mt-[calc(3.5rem+8px)]">
             {isStandalone ? null : (
               <>
-                <h3 className={subsectionHeadingClass}>{t("formTitle")}</h3>
+                <h3 className={`${homeEditorialAuthorityHeadingClass} text-center`}>{t("formTitle")}</h3>
                 <div className="mt-3 w-full">
                   <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
                 </div>

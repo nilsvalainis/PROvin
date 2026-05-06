@@ -5,6 +5,7 @@ import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { homePillarGridWidthClass } from "@/lib/home-pricing-pillar-cards";
 import { PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
 import { orderSectionHref, provinSelectConsultationHref } from "@/lib/paths";
+import { homeEditorialSectionBodyLeadClass, homeEditorialSectionTitleClass } from "@/lib/home-layout";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import demoPageStyles from "@/app/[locale]/demo/page.module.css";
 
@@ -123,15 +124,17 @@ export async function HomeServiceComparisonAudit() {
         className={`home-service-comparison-audit-col ${columnShellClass} mx-auto w-full max-w-none border-0 bg-transparent`}
       >
         <header className="shrink-0 text-center">
-          <h2 className="demo-design-dir__title home-service-comparison-column-title mx-auto max-w-[min(100%,48rem)] text-balance">
+          <h2
+            className={`${homeEditorialSectionTitleClass} home-service-comparison-column-title`}
+          >
             {renderProvinText(tPricing("comparisonAuditTitle"), {
               proAndSuffixClassName: "home-service-comparison-title-pro",
             })}
           </h2>
-          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:mt-4">
+          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
-          <p className="home-service-comparison-lead mx-auto mt-3 max-w-[min(100%,40rem)] text-balance text-base font-medium leading-relaxed text-white/85 sm:mt-4 sm:text-lg">
+          <p className={`${homeEditorialSectionBodyLeadClass} home-service-comparison-lead`}>
             {tPricing("comparisonAuditSubtitle")}
           </p>
         </header>
@@ -178,17 +181,15 @@ export async function HomeServiceComparisonSelect() {
         className={`home-service-comparison-select-col provin-select-section ${columnShellClass} mx-auto mt-2 w-full max-w-none border-0 bg-transparent sm:mt-4`}
       >
         <header className="shrink-0 text-center">
-          <h2 className="demo-design-dir__title home-service-comparison-column-title mx-auto max-w-[min(100%,48rem)] text-balance">
+          <h2 className={`${homeEditorialSectionTitleClass} home-service-comparison-column-title`}>
             {renderProvinText(tSelect("eyebrow"), {
               proAndSuffixClassName: "home-service-comparison-title-pro",
             })}
           </h2>
-          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:mt-4">
+          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
-          <p className="home-service-comparison-lead mx-auto mt-3 max-w-[min(100%,40rem)] text-balance text-base font-medium leading-relaxed text-white/85 sm:mt-4 sm:text-lg">
-            {tSelect("lead")}
-          </p>
+          <p className={`${homeEditorialSectionBodyLeadClass} home-service-comparison-lead`}>{tSelect("lead")}</p>
         </header>
 
         <ul className={`${comparisonFourCardGridClass} mt-1 sm:justify-items-center`}>
