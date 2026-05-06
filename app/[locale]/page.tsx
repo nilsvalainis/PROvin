@@ -39,7 +39,7 @@ export default async function HomePage() {
 
       <div className="demo-design-dir min-w-0 pb-0 text-white">
         {isProvinSelectPublic() ? (
-          <section className="demo-design-dir__section demo-design-dir__section--unified-pricing-tail py-12 sm:py-16 md:py-20">
+          <section className="demo-design-dir__section demo-design-dir__section--unified-pricing-tail pt-16 pb-12 sm:pt-20 sm:pb-16 md:pt-24 md:pb-20">
             <div className="demo-design-dir__shell">
               <HomeServiceComparisonSelect />
             </div>

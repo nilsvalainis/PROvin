@@ -553,7 +553,7 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
 
 /* Hero — PROVIN SELECT saite uz sadaļu (zaļa, kā „check” akcents). */
 .ctaButtonHeroConsult {
-  margin-top: 0.55rem;
+  margin-top: 1rem;
   width: min(100%, 520px);
   min-height: 56px;
   padding: 0.875rem 1rem;
@@ -562,7 +562,7 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   background: linear-gradient(180deg, #12c45a 0%, #0a9d47 100%);
   color: #fff;
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(0.875rem, 2vw, 1rem);
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.015em;
   text-transform: uppercase;

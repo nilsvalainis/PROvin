@@ -4,25 +4,25 @@
     "lead": "Stratēģiskā konsultācija",
     "included": [
       {
-        "title": "MODEĻU ATLASE",
-        "body": "Līdz 5 labākajiem variantiem pēc Tava budžeta, vajadzībām un uzturēšanas izmaksām."
+        "title": "INDIVIDUĀLA MODEĻU ATLASE",
+        "body": "Atlasīsim 3 auto markas un modeļus, kas visprecīzāk atbilst Tavām vajadzībām, budžetam un uzturēšanas izmaksām. Tev vairs nebūs jātērē laiks nepiemērotiem variantiem."
       },
       {
-        "title": "SLUDINĀJUMU FILTRS",
-        "body": "Atsijājam riskantus piedāvājumus, lai Tu fokusētos tikai uz pārbaudītiem variantiem."
+        "title": "SLUDINĀJUMU FILTRS UN ANALĪZE",
+        "body": "Manuāli izskatīsim atbilstošākos piedāvājumus un atsijāsim riskantos sludinājumus jau pašā sākumā. Tu saņemsi tikai tos variantus, kuri ir izskatīšanas vērti."
       },
       {
-        "title": "TEHNISKIE RISKI",
-        "body": "Izskaidrojam modeļa vājās vietas, potenciālās izmaksas un kam pievērst uzmanību."
+        "title": "TEHNISKO RISKU PROGNOZE",
+        "body": "Detalizēti izskaidrosim Tev konkrētā modeļa vājās vietas un potenciālos riskus. Tu uzzināsi, kam pievērst uzmanību apskates laikā un ar kādām izmaksām jārēķinās nākotnē."
       },
       {
-        "title": "SARUNU STRATĒĢIJA",
-        "body": "Kā pārbaudīt un ko jautāt pārdevējam. Atbalsts droša lēmuma pieņemšanai visā procesā."
+        "title": "SARUNU STRATĒĢIJA UN ATBALSTS",
+        "body": "Sagatavosim Tevi sarunai ar pārdevēju — kādus jautājumus uzdot, kā pamanīt manipulācijas un uz kā pamata apspriest cenu. Atbalstīsim Tevi visā auto iegādes procesā."
       }
     ],
     "cardsTrustLine": "5 pārbaudīti varianti · Atbalsts visā procesā",
     "cardsVinNote": "VIN pārbaudes nav iekļautas (tiek veiktas PROVIN auditā).",
-    "comparisonScrollCta": "PASŪTĪT KONSULTĀCIJU – 49,99 €",
+    "comparisonScrollCta": "PIETEIKTIES KONSULTĀCIJAI — 49,99 €",
     "ctaPrimary": "PIETEIKT KONSULTĀCIJU",
     "formTitle": "Pieteikums konsultācijai",
     "nameLabel": "Vārds",
@@ -31,7 +31,8 @@
     "messageLabel": "Komentārs",
     "messagePlaceholder": "Detalizēti apraksti savas vēlmes…",
     "followupNote": "Pēc pieteikuma nosūtīšanas sazināsimies ar jums 48h laikā.",
-    "submit": "PASŪTĪT KONSULTĀCIJU – 49,99 €",
+    "submit": "PIETEIKTIES KONSULTĀCIJAI — 49,99 €",
+    "financingNote": "Palīdzēsim izvērtēt arī piemērotāko finansējuma veidu — lai Tu pieņemtu gudru lēmumu ne tikai par auto, bet arī par tā iegādi.",
     "submitting": "Sūta…",
     "success": "Paldies — pieteikums nosūtīts. Sazināsimies 48h laikā.",
     "errorGeneric": "Neizdevās nosūtīt. Mēģini vēlreiz vai raksti uz info@provin.lv.",

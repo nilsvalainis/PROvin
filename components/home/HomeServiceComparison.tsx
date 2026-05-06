@@ -64,6 +64,45 @@ function ComparisonCard({
   );
 }
 
+function SelectJourneyCard({
+  title,
+  body,
+  Icon,
+  riskCard,
+  step,
+  isLast,
+}: {
+  title: string;
+  body: string;
+  Icon: LucideIcon;
+  riskCard: boolean;
+  step: number;
+  isLast: boolean;
+}) {
+  const iconTone = riskCard ? "marketing-hero-pillar-icon--risk text-[#ff342e]" : "";
+
+  return (
+    <li className="relative flex min-h-0 min-w-0 pl-6 sm:pl-0">
+      {!isLast ? (
+        <span
+          aria-hidden
+          className="absolute left-[0.95rem] top-[3.1rem] h-[calc(100%-2.6rem)] w-px bg-white/12 sm:left-[calc(50%+2.25rem)] sm:top-[2.15rem] sm:h-px sm:w-[calc(100%-1.4rem)] sm:bg-[linear-gradient(90deg,rgba(255,255,255,0.18),rgba(255,255,255,0.05))]"
+        />
+      ) : null}
+      <div className="relative flex h-full w-full min-w-0 flex-col items-center">
+        <span className="mb-1 block font-mono text-[11px] font-semibold tracking-[0.08em] text-green-500 sm:mb-1.5">
+          {String(step).padStart(2, "0")}
+        </span>
+        <div className="relative mb-3 rounded-full bg-white/[0.03] p-2.5 shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_0_18px_rgba(40,210,120,0.14)] sm:mb-3.5">
+          <Icon className={`${comparisonIconClass} ${iconTone}`.trim()} aria-hidden strokeWidth={1.5} />
+        </div>
+        <h3 className={`${comparisonCardTitleClass} max-w-[220px]`}>{title}</h3>
+        <p className={`${comparisonCardBodyClass} max-w-[220px]`}>{body}</p>
+      </div>
+    </li>
+  );
+}
+
 async function loadComparisonCopy() {
   const tPricing = await getTranslations("Pricing");
   const tSelect = await getTranslations("ProvinSelect");
@@ -143,7 +182,7 @@ export async function HomeServiceComparisonSelect() {
       <div
         id={PROVIN_SELECT_SECTION_ID}
         data-comparison-side="select"
-        className={`home-service-comparison-select-col provin-select-section ${columnShellClass} mx-auto w-full max-w-none border-0 bg-transparent`}
+        className={`home-service-comparison-select-col provin-select-section ${columnShellClass} mx-auto mt-2 w-full max-w-none border-0 bg-transparent sm:mt-4`}
       >
         <header className="shrink-0 text-center">
           <h2 className="demo-design-dir__title home-service-comparison-column-title mx-auto max-w-[min(100%,48rem)] text-balance">
@@ -159,20 +198,29 @@ export async function HomeServiceComparisonSelect() {
           </p>
         </header>
 
-        <ul className={comparisonFourCardGridClass}>
+        <ul className={`${comparisonFourCardGridClass} mt-1`}>
           {selectRows.slice(0, 4).map((row, i) => {
             const Icon = SELECT_ICONS[i] ?? Layers;
             return (
-              <ComparisonCard
+              <SelectJourneyCard
                 key={row.title}
                 title={row.title}
                 body={row.body}
                 Icon={Icon}
                 riskCard={i === 2}
+                step={i + 1}
+                isLast={i === Math.min(selectRows.length, 4) - 1}
               />
             );
           })}
         </ul>
+
+        <div className={`mx-auto mt-6 w-full max-w-[min(100%,48rem)] text-center sm:mt-8 ${homePillarGridWidthClass}`}>
+          <div className="mx-auto mb-4 h-px w-[120px] bg-white/[0.08]" />
+          <p className="mx-auto max-w-[48rem] text-center text-[13px] leading-[22px] text-white/60 sm:text-[14px]">
+            {tSelect("financingNote")}
+          </p>
+        </div>
 
         <div className={ctaRowClass}>
           <Link href={provinSelectConsultationHref()} className={`${demoPageStyles.ctaButtonHeroConsult} ${ctaLinkClass} !mt-0`}>
