@@ -557,9 +557,9 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   width: min(100%, 520px);
   min-height: 56px;
   padding: 0.875rem 1rem;
-  border: 1px solid rgb(5 150 105 / 0.62);
+  border: 1px solid rgb(217 119 6 / 0.68);
   border-radius: 999px;
-  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
   color: #fff;
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   font-size: 0.875rem;
@@ -574,7 +574,7 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   line-height: 1.1;
   white-space: normal;
   text-wrap: balance;
-  box-shadow: 0 8px 18px rgb(16 185 129 / 0.24), 0 1px 0 rgb(255 255 255 / 0.22) inset;
+  box-shadow: 0 8px 18px rgb(245 158 11 / 0.24), 0 1px 0 rgb(255 255 255 / 0.22) inset;
   cursor: pointer;
   transition:
     background 0.15s ease,
@@ -583,8 +583,8 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
 }
 
 .ctaButtonHeroConsult:hover {
-  background: linear-gradient(180deg, #14c58a 0%, #0aa775 100%);
-  border-color: rgb(5 150 105 / 0.72);
+  background: linear-gradient(180deg, #fbbf24 0%, #ea8a08 100%);
+  border-color: rgb(217 119 6 / 0.76);
   box-shadow: inherit;
 }
 
@@ -729,18 +729,18 @@ html[data-site-theme="light"] .heroIntroSurface .ctaButtonSecondary:hover {
 }
 
 html[data-site-theme="dark"] .heroIntroSurface .ctaButtonHeroConsult {
-  border-color: rgb(16 185 129 / 0.45);
-  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  border-color: rgb(245 158 11 / 0.5);
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
   box-shadow:
     0 0 0 1px rgb(0 0 0 / 0.35),
-    0 10px 22px rgb(6 95 70 / 0.29),
+    0 10px 22px rgb(120 53 15 / 0.29),
     0 1px 0 rgb(255 255 255 / 0.16) inset;
   color: #fff;
 }
 
 html[data-site-theme="dark"] .heroIntroSurface .ctaButtonHeroConsult:hover {
-  background: linear-gradient(180deg, #14c58a 0%, #0aa775 100%);
-  border-color: rgb(16 185 129 / 0.55);
+  background: linear-gradient(180deg, #fbbf24 0%, #ea8a08 100%);
+  border-color: rgb(245 158 11 / 0.58);
   box-shadow: inherit;
 }
 
@@ -757,8 +757,8 @@ html[data-site-theme="light"] .heroIntroSurface .ctaButton:hover {
 
 html[data-site-theme="light"] .heroIntroSurface .ctaButtonHeroConsult {
   box-shadow:
-    0 10px 24px rgb(16 185 129 / 0.2),
-    0 0 20px rgb(16 185 129 / 0.11),
+    0 10px 24px rgb(245 158 11 / 0.2),
+    0 0 20px rgb(245 158 11 / 0.11),
     0 2px 0 rgb(255 255 255 / 0.24) inset;
 }
 
@@ -1478,40 +1478,40 @@ html[data-site-theme="light"] .heroIntroSurface .heroTrust .featureIconCheck {
   text-shadow: none;
 }
 
-/* PROVIN SELECT — vieglš zaļš fons + forma ar zaļu akcentu (kā konsultācijas CTA) */
+/* PROVIN SELECT — premium amber fons + formas akcents */
 html[data-site-theme="dark"] :global(.provin-select-section).heroIntroSurface {
   background:
-    radial-gradient(ellipse 110% 75% at 50% 10%, rgb(18 196 90 / 0.13), transparent 56%),
-    radial-gradient(ellipse 95% 60% at 85% 95%, rgb(0 140 72 / 0.1), transparent 52%),
-    linear-gradient(180deg, rgb(6 20 12) 0%, rgb(5 11 8) 45%, rgb(4 9 6) 100%);
+    radial-gradient(ellipse 110% 75% at 50% 10%, rgb(245 158 11 / 0.14), transparent 56%),
+    radial-gradient(ellipse 95% 60% at 85% 95%, rgb(217 119 6 / 0.1), transparent 52%),
+    linear-gradient(180deg, rgb(25 14 6) 0%, rgb(16 10 5) 45%, rgb(10 7 4) 100%);
   background-color: transparent;
 }
 
 html[data-site-theme="light"] :global(.provin-select-section).heroIntroSurface {
   background:
-    radial-gradient(ellipse 105% 72% at 50% 0%, rgb(18 196 90 / 0.1), transparent 54%),
-    radial-gradient(ellipse 90% 55% at 92% 100%, rgb(16 185 129 / 0.07), transparent 50%),
-    linear-gradient(180deg, #f4fdf8 0%, #eaf6ef 42%, #f2faf6 100%);
+    radial-gradient(ellipse 105% 72% at 50% 0%, rgb(245 158 11 / 0.12), transparent 54%),
+    radial-gradient(ellipse 90% 55% at 92% 100%, rgb(217 119 6 / 0.08), transparent 50%),
+    linear-gradient(180deg, #fff9ef 0%, #fff4e6 42%, #fff9f2 100%);
   background-color: transparent;
 }
 
 html[data-site-theme="dark"] :global(.provin-select-section) .heroFormCard {
   box-shadow:
-    0 0 0 1px rgb(0 200 105 / 0.14),
+    0 0 0 1px rgb(245 158 11 / 0.2),
     0 22px 44px rgb(0 0 0 / 0.38);
 }
 
 html[data-site-theme="light"] :global(.provin-select-section) .heroFormCard {
   border-color: rgb(24 31 42 / 0.12);
-  box-shadow: 0 14px 32px rgb(24 31 42 / 0.08), 0 0 0 1px rgb(0 140 72 / 0.14);
+  box-shadow: 0 14px 32px rgb(24 31 42 / 0.08), 0 0 0 1px rgb(245 158 11 / 0.18);
 }
 
 html[data-site-theme="dark"] :global(.provin-select-section) .heroFormCard :global(.order-form--hero) .field input:focus,
 html[data-site-theme="dark"] :global(.provin-select-section) .heroFormCard :global(.order-form--hero) .field textarea:focus {
   outline: none;
   box-shadow:
-    0 0 0 2px rgb(0 200 105 / 0.5),
-    0 0 26px rgb(16 200 95 / 0.24),
+    0 0 0 2px rgb(245 158 11 / 0.55),
+    0 0 26px rgb(245 158 11 / 0.24),
     0 14px 32px rgb(0 0 0 / 0.35),
     0 1px 0 rgb(255 255 255 / 0.06) inset;
 }
@@ -1520,7 +1520,7 @@ html[data-site-theme="light"] :global(.provin-select-section) .heroFormCard :glo
 html[data-site-theme="light"] :global(.provin-select-section) .heroFormCard :global(.order-form--hero) .field textarea:focus {
   outline: none;
   box-shadow:
-    0 0 0 2px rgb(0 160 85 / 0.38),
+    0 0 0 2px rgb(245 158 11 / 0.42),
     0 12px 28px rgb(24 31 42 / 0.08);
 }
 

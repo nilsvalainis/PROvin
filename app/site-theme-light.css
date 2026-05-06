@@ -460,12 +460,12 @@ html[data-site-theme="light"] .home-service-comparison-column-divider {
   ) !important;
 }
 
-/* PROVIN SELECT — maigs gaišs zaļš (ne agresīvs) */
+/* PROVIN SELECT — maigs amber fons (premium, ne agresīvs) */
 html[data-site-theme="light"] .demo-design-dir.home-below-hero-continuum {
   background:
-    radial-gradient(ellipse 105% 72% at 50% 0%, rgb(16 185 129 / 0.055), transparent 56%),
-    radial-gradient(ellipse 94% 58% at 92% 92%, rgb(5 150 105 / 0.038), transparent 48%),
-    linear-gradient(to bottom, #f6fcf9 0%, #f1faf5 45%, #f4fbf7 100%);
+    radial-gradient(ellipse 105% 72% at 50% 0%, rgb(245 158 11 / 0.07), transparent 56%),
+    radial-gradient(ellipse 94% 58% at 92% 92%, rgb(217 119 6 / 0.05), transparent 48%),
+    linear-gradient(to bottom, #fffaf2 0%, #fff6ec 45%, #fffaf4 100%);
   color: #171717;
 }
 
@@ -530,10 +530,10 @@ html[data-site-theme="light"] .demo-design-dir__card:active {
   }
 
   html[data-site-theme="light"] .provin-select-section .demo-design-dir__card:hover {
-    border-color: rgb(0 140 72 / 0.32) !important;
+    border-color: rgb(217 119 6 / 0.34) !important;
     box-shadow:
-      0 0 0 1px rgb(18 196 90 / 0.1),
-      0 22px 48px rgb(12 100 65 / 0.12) !important;
+      0 0 0 1px rgb(245 158 11 / 0.14),
+      0 22px 48px rgb(120 53 15 / 0.14) !important;
   }
 }
 

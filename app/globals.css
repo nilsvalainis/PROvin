@@ -20,8 +20,8 @@
   --color-provin-muted: #86868b;
   --color-provin-green: var(--color-provin-accent);
   --color-provin-green-dark: var(--color-provin-accent-hover);
-  /* PROVIN SELECT / zaļā CTA virspuse — viens tonis ar „Pieteikties konsultācijai” pogu */
-  --color-provin-select-green: #12c45a;
+  /* PROVIN SELECT / amber CTA virspuse — viens tonis ar „Pieteikties konsultācijai” pogu */
+  --color-provin-select-green: #f59e0b;
   --color-canvas: #ffffff;
   --color-canvas-warm: #f5f5f7;
 }
@@ -974,21 +974,21 @@ html[data-site-theme="dark"] .provin-select-form-error {
 }
 
 /*
- * PROVIN SELECT — zaļš akcents kā „Pieteikties konsultācijai” (`ctaButtonHeroConsult`: #12c45a / #0a9d47).
+ * PROVIN SELECT — premium amber akcents kā „Pieteikties konsultācijai” (`ctaButtonHeroConsult`: #f59e0b / #d97706).
  * Fons, ikonas, VIN / saites, skenēšanas līnija, piegādes kartes.
  */
 .provin-select-section {
-  --color-provin-accent: #12c45a;
-  --color-provin-accent-hover: #16cf63;
-  --color-provin-accent-soft: rgb(18 196 90 / 0.2);
-  --color-provin-accent-muted: rgb(8 130 68);
+  --color-provin-accent: #f59e0b;
+  --color-provin-accent-hover: #fbbf24;
+  --color-provin-accent-soft: rgb(245 158 11 / 0.2);
+  --color-provin-accent-muted: rgb(180 83 9);
 }
 
 html[data-site-theme="light"] .provin-select-section {
-  --color-provin-accent: #12c45a;
-  --color-provin-accent-hover: #0cb04e;
-  --color-provin-accent-soft: rgb(18 196 90 / 0.16);
-  --color-provin-accent-muted: #0a7a3f;
+  --color-provin-accent: #f59e0b;
+  --color-provin-accent-hover: #ea8a08;
+  --color-provin-accent-soft: rgb(245 158 11 / 0.16);
+  --color-provin-accent-muted: #b45309;
 }
 
 .provin-select-section :where(.text-provin-accent, [class*="text-provin-accent"]) {
@@ -1013,39 +1013,39 @@ html[data-site-theme="light"] .provin-select-section :where(.text-provin-accent,
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(34 197 94 / 0.55) 28%,
-    rgb(74 222 128 / 0.95) 50%,
-    rgb(34 197 94 / 0.55) 72%,
+    rgb(245 158 11 / 0.55) 28%,
+    rgb(251 191 36 / 0.95) 50%,
+    rgb(245 158 11 / 0.55) 72%,
     transparent 100%
   );
   box-shadow:
-    0 0 6px 0 rgb(18 196 90 / 0.75),
-    0 0 16px 0 rgb(10 157 71 / 0.45),
-    0 0 26px 0 rgb(5 120 60 / 0.3);
+    0 0 6px 0 rgb(245 158 11 / 0.75),
+    0 0 16px 0 rgb(217 119 6 / 0.45),
+    0 0 26px 0 rgb(120 53 15 / 0.3);
 }
 
 html[data-site-theme="light"] .provin-select-section .provin-diagnostic-scan-line__pulse {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgb(16 185 129 / 0.45) 28%,
-    rgb(52 211 153 / 0.92) 50%,
-    rgb(16 185 129 / 0.45) 72%,
+    rgb(245 158 11 / 0.45) 28%,
+    rgb(251 191 36 / 0.92) 50%,
+    rgb(245 158 11 / 0.45) 72%,
     transparent 100%
   );
   box-shadow:
-    0 0 5px 0 rgb(10 157 71 / 0.35),
-    0 0 14px 0 rgb(16 185 129 / 0.22);
+    0 0 5px 0 rgb(217 119 6 / 0.35),
+    0 0 14px 0 rgb(245 158 11 / 0.22);
 }
 
 .provin-select-section .marketing-hero-pillar-icon,
 .provin-select-section .provin-select-pillar-icon {
-  color: rgb(52 211 153) !important;
+  color: #f59e0b !important;
 }
 
 html[data-site-theme="light"] .provin-select-section .marketing-hero-pillar-icon,
 html[data-site-theme="light"] .provin-select-section .provin-select-pillar-icon {
-  color: #0a9d47 !important;
+  color: #d97706 !important;
 }
 
 /* Risku ikonai — saglabāt sarkano toni kā „Kas iekļauts cenā?” */
