@@ -10,6 +10,7 @@ import {
   siteRailActiveFromHash,
   siteRailRouteActiveIndex,
 } from "@/lib/site-rail-sections";
+import { renderProvinText } from "@/lib/provin-wordmark";
 
 function useHash(): string {
   const [hash, setHash] = useState("");
@@ -223,7 +224,14 @@ export function SiteSectionRail() {
                       />
                     </div>
                     <div className="relative flex min-w-0 flex-1 items-center self-stretch">
-                      <span className={railLabelClass}>{t(s.labelKey)}</span>
+                      <span className={railLabelClass}>
+                        {t(s.labelKey).includes("PROVI")
+                          ? renderProvinText(t(s.labelKey), {
+                              proAndSuffixClassName: "provin-wordmark-pro--rail-inherit",
+                              vinAmberOnlyBeforeSelect: true,
+                            })
+                          : t(s.labelKey)}
+                      </span>
                     </div>
                   </Link>
                 </li>

@@ -15,6 +15,7 @@ import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import type { ConsultationDraftState } from "@/lib/admin-consultation-draft-types";
 import { consultationDraftHasOrderEdits } from "@/lib/admin-consultation-draft-types";
 import type { AdminOrderDetailClientModel } from "@/components/admin/AdminOrderDetailView";
+import { renderProvinText } from "@/lib/provin-wordmark";
 
 type ConsultationEdits = {
   customerName?: string;
@@ -390,14 +391,20 @@ export function AdminConsultationDetailView({
           <div className="mb-3 rounded-xl border border-amber-200/90 bg-gradient-to-br from-amber-50/95 to-white px-3 py-2.5 text-sm text-amber-950 shadow-sm ring-1 ring-amber-100/80">
             <p className="text-xs font-bold uppercase tracking-wide text-amber-800/90">Parauga konsultācija</p>
             <p className="mt-2 leading-relaxed text-amber-950/90">
-              Šī ir parauga PROVIN SELECT ieraksts — nav īsts Stripe maksājums.
+              {renderProvinText("Šī ir parauga PROVIN SELECT ieraksts — nav īsts Stripe maksājums.", {
+                proAndSuffixClassName: "provin-wordmark-pro--rail-inherit",
+                vinAmberOnlyBeforeSelect: true,
+              })}
             </p>
           </div>
         ) : null}
 
         <header className="mb-3 border-b border-[var(--admin-border-subtle)] pb-2">
           <p className="text-[8px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
-            PROVIN SELECT · stratēģiskā konsultācija
+            {renderProvinText("PROVIN SELECT · stratēģiskā konsultācija", {
+              proAndSuffixClassName: "provin-wordmark-pro--rail-inherit",
+              vinAmberOnlyBeforeSelect: true,
+            })}
           </p>
           <h1 className="mt-0.5 font-mono text-base font-medium tracking-tight text-[var(--color-apple-text)] sm:text-xl">
             {order.id}

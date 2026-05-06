@@ -943,9 +943,19 @@ html[data-site-theme="light"] .provin-wordmark-pro {
   color: #0a0a0a;
 }
 
-/** „PROVIN” vārda VIN daļa — vienmēr zīmola zilā (#0066ff), arī ja sadaļā ir cits akcents (piem. SELECT). */
+/** „PROVIN” vārda VIN daļa — zīmola zilā (#0066ff). Oranžais tikai „PROVIN SELECT” ar `.provin-wordmark-logo-vin--select`. */
 .provin-wordmark-logo-vin {
   color: #0066ff;
+}
+
+/** Tikai produkta nosaukumam „PROVIN SELECT” — VIN oranžā kā PROVIN SELECT sadaļas akcents. */
+.provin-wordmark-logo-vin--select {
+  color: var(--color-provin-select-green, #f59e0b);
+}
+
+/** Kreisā ass: PRO manto saites krāsu (aktīvs / neaktīvs). */
+.provin-wordmark-pro--rail-inherit {
+  color: inherit;
 }
 
 /** PRO uz noteikti tumšu virsmu (FAQ „dark”, hero u.c.), neatkarīgi no vietnes tēmas. */

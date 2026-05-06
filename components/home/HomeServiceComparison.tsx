@@ -184,6 +184,7 @@ export async function HomeServiceComparisonSelect() {
           <h2 className={`${homeEditorialSectionTitleClass} home-service-comparison-column-title`}>
             {renderProvinText(tSelect("eyebrow"), {
               proAndSuffixClassName: "home-service-comparison-title-pro",
+              vinAmberOnlyBeforeSelect: true,
             })}
           </h2>
           <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
@@ -224,6 +225,7 @@ export async function HomeServiceComparisonSelect() {
           <p className="home-service-comparison-footnote max-w-[min(100%,28rem)] text-center text-[11px] font-normal leading-snug text-white/50 sm:text-xs">
             {renderProvinText(tSelect("cardsVinNote"), {
               proAndSuffixClassName: "home-service-comparison-title-pro",
+              vinAmberOnlyBeforeSelect: true,
             })}
           </p>
         </div>

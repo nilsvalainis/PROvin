@@ -7,14 +7,25 @@ export type RenderProvinTextOptions = {
   proAndSuffixClassName?: string;
   /** „VIN” burti — noklusējums `.provin-wordmark-logo-vin` (zīmola #0066ff). */
   vinClassName?: string;
+  /**
+   * Ja `true`, tikai „PROVIN” tieši pirms vārda „SELECT” saņem `vinSelectClassName` (oranžs PROVIN SELECT akcents);
+   * pārējie „PROVIN” / „PROVIN.LV” — `vinClassName`.
+   */
+  vinAmberOnlyBeforeSelect?: boolean;
+  /** „VIN” klase, ja `vinAmberOnlyBeforeSelect` un teksts ir „PROVIN SELECT…”. Noklusējums: `.provin-wordmark-logo-vin--select`. */
+  vinSelectClassName?: string;
 };
 
 /**
- * Atrod „PROVIN” / „PROVIN.LV” tekstā un noformē kā logotipu: PRO + .LV pēc `proAndSuffixClassName`, VIN — `provin-wordmark-logo-vin`.
+ * Atrod „PROVIN” / „PROVIN.LV” tekstā un noformē kā logotipu: PRO + .LV pēc `proAndSuffixClassName`, VIN — pēc opcijām.
  */
+const SELECT_AFTER_PROVIN = /^\s+select\b/i;
+
 export function renderProvinText(text: string, options?: RenderProvinTextOptions): ReactNode {
   const proLv = options?.proAndSuffixClassName ?? "provin-wordmark-pro";
-  const vinClass = options?.vinClassName ?? "provin-wordmark-logo-vin";
+  const vinDefault = options?.vinClassName ?? "provin-wordmark-logo-vin";
+  const vinSelect = options?.vinSelectClassName ?? "provin-wordmark-logo-vin--select";
+  const selective = options?.vinAmberOnlyBeforeSelect === true;
 
   if (!text.includes("PROVI")) {
     return text;
@@ -31,6 +42,10 @@ export function renderProvinText(text: string, options?: RenderProvinTextOptions
       parts.push(text.slice(last, m.index));
     }
     const full = m[1];
+    const after = text.slice(m.index + full.length);
+    const isSelectBranding =
+      selective && full === "PROVIN" && SELECT_AFTER_PROVIN.test(after);
+    const vinClass = isSelectBranding ? vinSelect : vinDefault;
     parts.push(
       <span key={`provin-${mi++}`} className="inline">
         <span className={proLv}>PRO</span>

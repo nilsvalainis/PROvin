@@ -33,7 +33,12 @@ function FeatureList({ items }: { items: readonly { label: string; icon: "check"
               </svg>
             </span>
           )}
-          <span>{renderProvinText(item.label, { proAndSuffixClassName: "provin-wordmark-pro" })}</span>
+          <span>
+            {renderProvinText(item.label, {
+              proAndSuffixClassName: "provin-wordmark-pro",
+              vinAmberOnlyBeforeSelect: true,
+            })}
+          </span>
         </li>
       ))}
     </ul>
@@ -54,7 +59,7 @@ export async function DemoTwinHeroConcept() {
       <p className={styles.demoTwinHeroKicker}>
         {renderProvinText(
           "DEMO koncepts — netiek publicēts. Salīdzinājums: PROVIN AUDITS pret PROVIN SELECT (vienāds izkārtojums).",
-          { proAndSuffixClassName: "provin-wordmark-pro" },
+          { proAndSuffixClassName: "provin-wordmark-pro", vinAmberOnlyBeforeSelect: true },
         )}
       </p>
       <div className={`home-hero-intro-surface ${styles.heroIntroSurface}`}>

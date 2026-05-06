@@ -3,6 +3,7 @@ import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table"
 import { readConsultationDraft } from "@/lib/admin-consultation-draft-store";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
+import { renderProvinText } from "@/lib/provin-wordmark";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +62,10 @@ export default async function AdminConsultationsPage() {
         <div className="mt-8 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-12 text-center shadow-sm">
           <p className="font-medium text-[var(--color-apple-text)]">Nav konsultāciju</p>
           <p className="mt-2 text-sm text-[var(--color-provin-muted)]">
-            Kad klienti apmaksās PROVIN SELECT formu, ieraksti parādīsies šeit.
+            {renderProvinText("Kad klienti apmaksās PROVIN SELECT formu, ieraksti parādīsies šeit.", {
+              proAndSuffixClassName: "provin-wordmark-pro--rail-inherit",
+              vinAmberOnlyBeforeSelect: true,
+            })}
           </p>
         </div>
       ) : null}

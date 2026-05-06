@@ -122,7 +122,10 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
           <>
             <div className="mx-auto max-w-[min(100%,48rem)] text-center">
               <h2 id={headingId} className={homeEditorialSectionTitleClass}>
-                {renderProvinText(t("eyebrow"), { proAndSuffixClassName: "provin-wordmark-pro" })}
+                {renderProvinText(t("eyebrow"), {
+                  proAndSuffixClassName: "provin-wordmark-pro",
+                  vinAmberOnlyBeforeSelect: true,
+                })}
               </h2>
               <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
                 <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
@@ -156,7 +159,10 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                 {t("cardsTrustLine")}
               </p>
               <p className="pricing-auto-records-footnote text-[10px] font-normal leading-snug text-white/45 sm:text-[11px]">
-                {renderProvinText(t("cardsVinNote"), { proAndSuffixClassName: "provin-wordmark-pro" })}
+                {renderProvinText(t("cardsVinNote"), {
+                  proAndSuffixClassName: "provin-wordmark-pro",
+                  vinAmberOnlyBeforeSelect: true,
+                })}
               </p>
             </div>
           </>
