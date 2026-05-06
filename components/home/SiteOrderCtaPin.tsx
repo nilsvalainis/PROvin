@@ -13,7 +13,12 @@ export function SiteOrderCtaPin() {
   const pathname = usePathname() ?? "";
   const t = useTranslations("Hero");
   const p = normalizeSitePath(pathname);
-  const hidePin = p === "/" || p === "" || p === "/pasutit" || p === "/biezi-jautajumi";
+  const hidePin =
+    p === "/" ||
+    p === "" ||
+    p === "/pasutit" ||
+    p === "/biezi-jautajumi" ||
+    p === "/provin-select-pieteikums";
 
   if (hidePin) return null;
 
