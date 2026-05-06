@@ -78,9 +78,14 @@ function SelectJourneyCard({
   return (
     <li className="relative flex min-h-0 min-w-0 justify-center pl-7 sm:pl-0">
       {!isLast ? (
+        <div aria-hidden className="pointer-events-none absolute left-0 right-0 top-0 hidden h-14 sm:block">
+          <span className="absolute left-[calc(50%+40px)] top-1/2 h-px w-[calc(100%-80px)] -translate-y-1/2 bg-[#10B981]/30" />
+        </div>
+      ) : null}
+      {!isLast ? (
         <span
           aria-hidden
-          className="absolute left-[1.72rem] top-[calc(3.5rem+12px)] h-[calc(100%-3.5rem-12px)] w-px bg-[#10B981]/30 sm:left-[2.5rem] sm:top-1/2 sm:h-px sm:w-[calc(100%-5rem)] sm:-translate-y-1/2 sm:bg-[#10B981]/30"
+          className="absolute left-[1.72rem] top-[calc(1.75rem+12px)] h-[calc(100%-1.75rem-12px)] w-px bg-[#10B981]/30 sm:hidden"
         />
       ) : null}
       <div className="relative flex h-full w-full min-w-0 max-w-[220px] flex-col items-center text-center">
