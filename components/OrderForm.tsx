@@ -245,7 +245,7 @@ export function OrderForm({
     : "mt-1 text-[11px] font-normal leading-snug text-[#86868b]";
 
   const reqStarClass = hero ? "text-red-400" : "text-red-600";
-  const firstStepVinInputClassDefault = `${inputBase} tracking-normal ${firstStepInfoTextSizeClass}`;
+  const firstStepVinInputClassDefault = `${inputBase} font-mono uppercase tracking-wide ${firstStepInfoTextSizeClass}`;
   const firstStepListingInputClassDefault = `${inputBase} ${firstStepInfoTextSizeClass}`;
   const secondStepVinInputClassDefault = `${inputBase} font-mono uppercase tracking-wide`;
   function goBackToStepOne() {
@@ -295,7 +295,7 @@ export function OrderForm({
                   maxLength={17}
                   spellCheck={false}
                   value={vin}
-                  className={step === 2 ? "w-full font-mono uppercase tracking-wide" : "w-full tracking-normal"}
+                  className="w-full min-w-0 font-mono uppercase tracking-wide"
                   placeholder={step === 1 ? t("vinPlaceholderStep1") : t("vinPlaceholderHero")}
                   aria-invalid={
                     (step === 1 && Boolean(heroStep1Errors.vin)) || (step === 2 && Boolean(heroStep2FieldErrors.vin))
@@ -307,7 +307,7 @@ export function OrderForm({
                   }
                   onChange={(e) => {
                     const el = e.target;
-                    const value = el.value.toUpperCase().slice(0, 17);
+                    const value = normalizeVin(el.value).slice(0, 17);
                     setVin(value);
                     if (step === 1) setHeroStep1Errors((p) => ({ ...p, vin: null }));
                     if (step === 2) setHeroStep2FieldErrors((p) => ({ ...p, vin: null }));
@@ -343,7 +343,7 @@ export function OrderForm({
                 placeholder={step === 1 ? t("vinPlaceholderStep1") : t("vinPlaceholder")}
                 onChange={(e) => {
                   const el = e.target;
-                  const value = el.value.toUpperCase().slice(0, 17);
+                  const value = normalizeVin(el.value).slice(0, 17);
                   setVin(value);
                 }}
               />

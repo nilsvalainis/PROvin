@@ -4,8 +4,6 @@ import { IrissZigzagRow } from "@/components/IrissZigzagRow";
 import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
-const accentPhrase = "font-semibold about-provin-accent";
-
 /** Lielāks ķermenis, lai teksta laukums vizuāli tuvinātos YouTube logam (max-w-xl). */
 const bodyMuted =
   "about-provin-body about-provin-body--muted text-base leading-relaxed sm:text-lg sm:leading-relaxed";
@@ -55,24 +53,14 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
           <IrissZigzagRow videoId="I5Xc0uFmbdo" reverse playLabel={t("youtubePlayAria")}>
             <div className="about-provin-methodology flex items-stretch justify-center gap-4 sm:gap-5">
               <span className="about-provin-axis-line block w-px shrink-0" aria-hidden />
-              <p className={`${bodyMuted} pt-0.5 text-left`}>
-                {t("methodologyPart1")}
-                <span className={accentPhrase}>{t("methodologyAccent1")}</span>
-                {t("methodologyPart2")}
-                <span className={accentPhrase}>{t("methodologyAccent2")}</span>
-                {t("methodologyPart3")}
-                <span className={accentPhrase}>{t("methodologyAccent3")}</span>
-                {t("methodologyPart4")}
-              </p>
+              <p className={`${bodyMuted} pt-0.5 text-left`}>{t("methodologyBody")}</p>
             </div>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="klwAEEdNXko" playLabel={t("youtubePlayAria")}>
             <p className="about-provin-hook mx-auto max-w-xl text-balance text-center text-[1.2rem] font-light leading-snug tracking-[0.012em] sm:text-[1.5rem]">
               {t("hookPart1")}
-              <span className="font-bold about-provin-accent">
-                {renderProvinText(t("hookProvin"), { proAndSuffixClassName: "text-inherit" })}
-              </span>
+              <span className="inline font-bold">{renderProvinText(t("hookProvin"))}</span>
               {t("hookPart2")}
             </p>
           </IrissZigzagRow>

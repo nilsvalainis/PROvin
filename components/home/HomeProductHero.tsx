@@ -11,6 +11,7 @@ import {
   ORDER_SECTION_ID,
 } from "@/lib/order-section";
 import { PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
+import { renderProvinText } from "@/lib/provin-wordmark";
 import styles from "@/app/[locale]/demo/page.module.css";
 
 type Props = {
@@ -47,7 +48,7 @@ export default function HomeProductHero({ showProvinSelect = false, comparisonCo
                     <span className={styles.productHeroTitleMid}>{t("productTitlePart3")}</span>
                   </span>
                 </h1>
-                <p className={styles.productHeroSubhead}>{t("productSubhead")}</p>
+                <p className={styles.productHeroSubhead}>{renderProvinText(t("productSubhead"))}</p>
                 <div className={styles.productHeroDivider} aria-hidden />
 
                 <div id={ORDER_SECTION_ID} className={`${styles.heroFormCard} scroll-mt-[calc(2.75rem+1px)]`}>

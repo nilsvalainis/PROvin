@@ -40,7 +40,7 @@ export function FaqClient({ title, items = [], tone = "dark", embedded = false }
               >
                 <summary className="flex cursor-pointer list-none items-start justify-between gap-3 py-4 text-left sm:gap-4 sm:py-[1.125rem] [&::-webkit-details-marker]:hidden">
                   <span className="min-w-0 flex-1 text-[15px] font-medium leading-snug tracking-tight text-[#050505] sm:text-[16px] sm:leading-snug">
-                    {renderProvinText(item.q, { proAndSuffixClassName: "text-inherit" })}
+                    {renderProvinText(item.q)}
                   </span>
                   <ChevronDown
                     className="mt-0.5 h-4 w-4 shrink-0 text-[#050505] transition-transform duration-200 ease-out group-open:rotate-180"
@@ -49,7 +49,7 @@ export function FaqClient({ title, items = [], tone = "dark", embedded = false }
                   />
                 </summary>
                 <p className="max-w-[65ch] pb-4 pr-2 text-[14px] font-normal leading-[1.75] text-[#050505] sm:pb-5 sm:pr-6 sm:text-[15px] sm:leading-[1.75]">
-                  {renderProvinText(item.a, { proAndSuffixClassName: "text-inherit" })}
+                  {renderProvinText(item.a)}
                 </p>
               </details>
             ))}
@@ -81,7 +81,7 @@ export function FaqClient({ title, items = [], tone = "dark", embedded = false }
               >
                 <summary className="flex cursor-pointer list-none items-start justify-between gap-3 py-4 text-left sm:gap-4 sm:py-[1.125rem] [&::-webkit-details-marker]:hidden">
                   <span className="min-w-0 flex-1 text-[15px] font-medium leading-snug tracking-tight text-[#1a1a1a] sm:text-[16px] sm:leading-snug">
-                    {renderProvinText(item.q, { proAndSuffixClassName: "text-inherit" })}
+                    {renderProvinText(item.q)}
                   </span>
                   <ChevronDown
                     className="mt-0.5 h-4 w-4 shrink-0 text-[#a3a3a3] transition-transform duration-200 ease-out group-open:rotate-180"
@@ -90,7 +90,7 @@ export function FaqClient({ title, items = [], tone = "dark", embedded = false }
                   />
                 </summary>
                 <p className="max-w-[65ch] pb-4 pr-2 text-[14px] font-normal leading-[1.75] text-[#6b7280] sm:pb-5 sm:pr-6 sm:text-[15px] sm:leading-[1.75]">
-                  {renderProvinText(item.a, { proAndSuffixClassName: "text-inherit" })}
+                  {renderProvinText(item.a)}
                 </p>
               </details>
             ))}

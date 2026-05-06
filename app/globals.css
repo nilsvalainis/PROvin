@@ -943,6 +943,11 @@ html[data-site-theme="light"] .provin-wordmark-pro {
   color: #0a0a0a;
 }
 
+/** „PROVIN” vārda VIN daļa — vienmēr zīmola zilā (#0066ff), arī ja sadaļā ir cits akcents (piem. SELECT). */
+.provin-wordmark-logo-vin {
+  color: #0066ff;
+}
+
 /** PRO uz noteikti tumšu virsmu (FAQ „dark”, hero u.c.), neatkarīgi no vietnes tēmas. */
 .provin-wordmark-pro--surface-dark {
   color: rgb(255 255 255 / 0.96);
@@ -1063,11 +1068,11 @@ html[data-site-theme="light"] .provin-select-section .marketing-hero-pillar-icon
 }
 
 html:not([data-site-theme="light"]) .about-provin-accent {
-  color: rgb(59 130 246);
+  color: var(--color-provin-accent, #0066ff);
 }
 
 html[data-site-theme="light"] .about-provin-accent {
-  color: rgb(37 99 235);
+  color: var(--color-provin-accent, #0066ff);
 }
 
 html:not([data-site-theme="light"]) .about-provin-body--primary {
@@ -1120,13 +1125,13 @@ html[data-site-theme="light"] .about-provin-punchline-lead {
 }
 
 html:not([data-site-theme="light"]) .about-provin-punchline-accent {
-  color: rgb(59 130 246);
-  text-shadow: 0 0 22px rgb(59 130 246 / 0.28);
+  color: var(--color-provin-accent, #0066ff);
+  text-shadow: 0 0 22px rgb(0 102 255 / 0.28);
 }
 
 html[data-site-theme="light"] .about-provin-punchline-accent {
-  color: rgb(37 99 235);
-  text-shadow: 0 0 14px rgb(37 99 235 / 0.16);
+  color: var(--color-provin-accent, #0066ff);
+  text-shadow: 0 0 14px rgb(0 102 255 / 0.16);
 }
 
 /* Sākumlapa: PROVIN AUDITS / SELECT — brīvi uz fona (bez slejas rāmja / kartīšu paneļiem) */
