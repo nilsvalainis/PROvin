@@ -4,6 +4,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { normalizeSitePath } from "@/lib/site-rail-sections";
 import { useSiteTheme } from "@/components/providers/SiteThemeProvider";
 import { SiteThemeHeaderButton } from "@/components/site-theme/SiteThemeHeaderButton";
+import { approvedByIrissSignatureBaseClass } from "@/lib/home-layout";
 
 export type HeaderClientProps = {
   orderLabel: string;
@@ -13,9 +14,10 @@ export type HeaderClientProps = {
   faqLabel: string;
   menuOpenLabel: string;
   menuCloseLabel: string;
+  approvedLabel: string;
 };
 
-export function HeaderClient({}: HeaderClientProps) {
+export function HeaderClient({ approvedLabel }: HeaderClientProps) {
   const pathname = usePathname() ?? "";
   const normalizedPath = normalizeSitePath(pathname);
   const { theme } = useSiteTheme();
@@ -104,6 +106,14 @@ export function HeaderClient({}: HeaderClientProps) {
         {logoAlignWithRailSakums ? (
           <div className="relative z-[50] w-full md:hidden">
             <div className="flex w-full items-center justify-between gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(0.25rem,env(safe-area-inset-top,0px))] pb-2">
+              {isHome ? (
+                <p
+                  className={`${approvedByIrissSignatureBaseClass} pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[0.44rem] tracking-[0.24em] ${mobileRailOnDark ? "text-[#c4ccd8]" : "text-[#6b7280]"}`}
+                  aria-label={approvedLabel}
+                >
+                  {approvedLabel}
+                </p>
+              ) : null}
               <Link
                 href="/"
                 className={`flex shrink-0 items-center text-[26px] font-bold tracking-tight ${mobileRailOnDark ? "text-white" : "text-[#1d1d1f]"}`}
@@ -122,6 +132,14 @@ export function HeaderClient({}: HeaderClientProps) {
         ) : null}
 
         <div className={desktopHeaderRowClass}>
+          {isHome ? (
+            <p
+              className={`${approvedByIrissSignatureBaseClass} pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 text-[0.48rem] tracking-[0.3em] md:block ${headerChromeDark ? "text-[#bcc6d4]" : "text-[#6b7280]"}`}
+              aria-label={approvedLabel}
+            >
+              {approvedLabel}
+            </p>
+          ) : null}
           <Link href="/" className={logoClass} aria-label={isHome ? "PROVIN" : "PROVIN.LV"}>
             <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
             <span className="text-provin-accent">VIN</span>

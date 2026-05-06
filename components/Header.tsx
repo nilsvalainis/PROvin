@@ -4,6 +4,7 @@ import { orderSectionHref } from "@/lib/paths";
 
 export async function Header() {
   const t = await getTranslations("Header");
+  const tHero = await getTranslations("Hero");
   const orderHref = orderSectionHref();
   const faqHref = "/biezi-jautajumi";
 
@@ -16,6 +17,7 @@ export async function Header() {
       faqLabel={t("faq")}
       menuOpenLabel={t("menuOpen")}
       menuCloseLabel={t("menuClose")}
+      approvedLabel={tHero("approved")}
     />
   );
 }
