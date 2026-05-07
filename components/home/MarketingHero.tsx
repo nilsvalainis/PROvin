@@ -314,7 +314,7 @@ export function MarketingHero({
             const el = document.getElementById(formDomId);
             if (el instanceof HTMLFormElement) el.requestSubmit();
           }}
-          className="provin-home-pill-cta provin-home-pill-cta--fit relative z-[1] flex w-fit min-h-[50px] max-w-[min(100%,calc(100%-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_5px_17px_rgba(0,0,0,0.13)] active:scale-95"
+          className="provin-home-pill-cta provin-home-pill-cta--wide relative z-[1] flex min-h-[50px] w-full max-w-[min(100%,416px)] touch-manipulation items-center justify-center whitespace-normal text-balance text-center shadow-[0_5px_17px_rgba(0,0,0,0.13)] active:scale-95"
         >
           {tOrder("heroOrderCta")}
         </button>

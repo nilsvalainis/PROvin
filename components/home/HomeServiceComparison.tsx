@@ -37,9 +37,9 @@ const comparisonIconClass = "marketing-hero-pillar-icon shrink-0 [stroke-width:1
 
 const ctaRowClass = "mt-auto flex w-full flex-col items-center gap-2 pt-6 sm:pt-7";
 
-/** Platums kā hero CTA (`min(520px, calc(100vw - 2rem))` mobilajā); augstumu/tipogrāfiju dod `page.module.css` `.ctaButton*`. */
+/** Platums kā hero CTA (`min(416px, calc(100vw - 2rem))` mobilajā); augstumu/tipogrāfiju dod `page.module.css` `.ctaButton*`. */
 const ctaLinkClass =
-  "inline-flex box-border w-full max-w-[min(520px,calc(100vw-2rem))] items-center justify-center px-0 text-center no-underline";
+  "inline-flex box-border w-full max-w-[min(416px,calc(100vw-2rem))] items-center justify-center px-0 text-center no-underline";
 
 function asTwoLines(title: string): string {
   if (title.includes("\n")) return title;
