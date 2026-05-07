@@ -482,8 +482,10 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
 }
 
 .ctaButton {
+  box-sizing: border-box;
   margin-top: 1rem;
   width: min(100%, 520px);
+  align-self: center;
   min-height: 56px;
   padding: 0.875rem 1rem;
   border: 1px solid #0d63d9;
@@ -519,8 +521,10 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
 
 /* Otrā hero poga — pelēka, tā pati forma kā `.ctaButton` (dark / light). */
 .ctaButtonSecondary {
+  box-sizing: border-box;
   margin-top: 0.55rem;
   width: min(100%, 520px);
+  align-self: center;
   min-height: 56px;
   border: 1px solid rgb(120 128 140 / 0.42);
   border-radius: 999px;
@@ -553,8 +557,10 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
 
 /* Hero — PROVIN SELECT saite uz sadaļu (zaļa, kā „check” akcents). */
 .ctaButtonHeroConsult {
+  box-sizing: border-box;
   margin-top: 1rem;
   width: min(100%, 520px);
+  align-self: center;
   min-height: 56px;
   padding: 0.875rem 1rem;
   border: 1px solid rgb(217 119 6 / 0.68);
@@ -586,6 +592,18 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   background: linear-gradient(180deg, #fbbf24 0%, #ea8a08 100%);
   border-color: rgb(217 119 6 / 0.76);
   box-shadow: inherit;
+}
+
+/* Mobilā: viena CTA joslas platuma loģika kā hero (`min(100%,520px)`); nedaudz mazāks teksts garākajiem uzrakstiem. */
+@media (max-width: 639px) {
+  .ctaButton,
+  .ctaButtonHeroConsult {
+    font-size: clamp(0.6875rem, 2.95vw, 0.8125rem);
+    letter-spacing: 0.01em;
+    padding: 0.68rem clamp(0.5rem, 2.4vw, 0.85rem);
+    min-height: 52px;
+    line-height: 1.18;
+  }
 }
 
 .features {
@@ -863,18 +881,18 @@ html[data-site-theme="light"] .heroIntroSurface :global(.order-form--hero) .orde
 
 :global(.demo-mobile-narrow) .ctaButton {
   min-height: 50px;
-  font-size: 0.875rem;
-  letter-spacing: 0.012em;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  font-size: clamp(0.6875rem, 2.85vw, 0.8125rem);
+  letter-spacing: 0.01em;
+  padding-left: clamp(0.5rem, 2.4vw, 0.85rem);
+  padding-right: clamp(0.5rem, 2.4vw, 0.85rem);
 }
 
 :global(.demo-mobile-narrow) .ctaButtonHeroConsult {
   min-height: 50px;
-  font-size: 0.875rem;
-  letter-spacing: 0.012em;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  font-size: clamp(0.6875rem, 2.85vw, 0.8125rem);
+  letter-spacing: 0.01em;
+  padding-left: clamp(0.5rem, 2.4vw, 0.85rem);
+  padding-right: clamp(0.5rem, 2.4vw, 0.85rem);
 }
 
 @media (min-width: 640px) {

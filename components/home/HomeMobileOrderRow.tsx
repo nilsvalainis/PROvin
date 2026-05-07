@@ -16,13 +16,13 @@ export function HomeMobileOrderRow() {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 md:hidden -translate-y-1.5 pb-[max(0.45rem,env(safe-area-inset-bottom,0px))] pt-2"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 md:hidden -translate-y-1.5 px-[clamp(1rem,2.6vw,24px)] pb-[max(0.45rem,env(safe-area-inset-bottom,0px))] pt-2"
       aria-hidden={false}
     >
-      <div className="pointer-events-auto relative mx-auto flex min-h-[50px] w-full max-w-[100vw] justify-center px-3">
+      <div className="pointer-events-auto mx-auto w-full max-w-[min(100%,520px)]">
         <Link
           href={orderSectionHref()}
-          className="provin-home-pill-cta provin-home-pill-cta--fit z-10 min-h-[50px] max-w-[min(100%,calc(100vw-2rem))] touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_5px_17px_rgba(0,0,0,0.13)] active:scale-95"
+          className="provin-home-pill-cta provin-home-pill-cta--wide z-10 flex min-h-[52px] w-full touch-manipulation items-center justify-center whitespace-normal text-balance text-center text-[clamp(10px,2.95vw,11px)] font-medium leading-snug tracking-[0.12em] shadow-[0_5px_17px_rgba(0,0,0,0.13)] active:scale-95"
         >
           {tHero("heroMobileOrderCta")}
         </Link>

@@ -645,7 +645,7 @@ export function OrderForm({
                 <button
                   type="button"
                   onClick={goToStepTwo}
-                  className="provin-home-pill-cta provin-home-pill-cta--fit z-10 mt-1 flex w-fit min-h-[50px] max-w-full touch-manipulation items-center justify-center whitespace-nowrap text-center shadow-[0_5px_17px_rgba(0,0,0,0.13)] active:scale-95"
+                  className="provin-home-pill-cta provin-home-pill-cta--wide z-10 mt-1 flex min-h-[52px] w-full max-w-[min(100%,520px)] touch-manipulation items-center justify-center whitespace-normal text-balance text-center text-[clamp(10px,2.95vw,11px)] font-medium leading-snug tracking-[0.12em] shadow-[0_5px_17px_rgba(0,0,0,0.13)] active:scale-95"
                 >
                   {t("heroOrderCta")}
                 </button>
@@ -707,7 +707,7 @@ export function OrderForm({
             <button
               type="submit"
               disabled={loading}
-              className="provin-home-pill-cta provin-home-pill-cta--wide mx-auto mt-1 flex min-h-12 max-w-[min(100%,20rem)] touch-manipulation items-center justify-center gap-2 disabled:opacity-60 sm:min-h-[50px]"
+              className="provin-home-pill-cta provin-home-pill-cta--wide mx-auto mt-1 flex min-h-[52px] w-full max-w-[min(100%,520px)] touch-manipulation items-center justify-center gap-2 whitespace-normal text-balance text-center text-[clamp(10px,2.95vw,11px)] font-medium leading-snug tracking-[0.12em] disabled:opacity-60 sm:min-h-[50px]"
             >
               {loading ? (
                 t("payLoading")

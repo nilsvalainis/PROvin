@@ -510,6 +510,8 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
 
 .provin-home-pill-cta--wide {
   width: 100%;
+  /* Pārraksta bāzes `max-width: min(100%, 22rem)` — sakrit ar hero `.ctaButton` joslu (520px). */
+  max-width: min(100%, 520px);
 }
 
 .provin-home-pill-cta--fab {

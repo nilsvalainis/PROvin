@@ -38,8 +38,9 @@ const comparisonIconClass =
 
 const ctaRowClass = "mt-auto flex w-full flex-col items-center gap-2 pt-6 sm:pt-7";
 
+/** Platums kā hero CTA (`min(100%,520px)`); augstumu un tipogrāfiju dod `page.module.css` `.ctaButton*`. */
 const ctaLinkClass =
-  "inline-flex min-h-[56px] w-full max-w-[min(100%,520px)] items-center justify-center px-3 text-center no-underline";
+  "inline-flex box-border w-full max-w-[min(100%,520px)] items-center justify-center px-0 text-center no-underline";
 
 function ComparisonCard({
   title,
