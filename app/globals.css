@@ -1304,3 +1304,28 @@ a.inline-flex.rounded-full.font-bold,
 a.inline-flex.rounded-full.font-semibold {
   font-weight: 500;
 }
+
+/* ===== BACKGROUND PURGE (home flow): viens nepārtraukts fons līdz kājenei ===== */
+html,
+body,
+#__next,
+main {
+  background: linear-gradient(180deg, #040406 0%, #050508 48%, #040406 100%) !important;
+}
+
+section,
+div[class*="section"],
+div[class*="container"],
+div[class*="wrapper"] {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Kājene drīkst saglabāt savu vizuālo stilu */
+footer,
+footer * {
+  background: unset !important;
+  background-image: unset !important;
+}
