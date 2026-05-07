@@ -95,10 +95,7 @@
  */
 /* Hero + „KAS IEKĻAUTS CENĀ?” — viens nepārtraukts fons (tikai ar `.demo-design-dir` uz tā paša čaulas — pārspēj pamattoni) */
 .home-hero-pricing-unified.demo-design-dir {
-  background:
-    radial-gradient(ellipse 110% 85% at 50% 12%, rgb(0 95 210 / 0.085), transparent 58%),
-    radial-gradient(ellipse 95% 70% at 82% 78%, rgb(255 255 255 / 0.065), transparent 50%),
-    linear-gradient(180deg, #040406 0%, #050508 48%, #040406 100%);
+  background: #050508;
   box-shadow: none;
 }
 
