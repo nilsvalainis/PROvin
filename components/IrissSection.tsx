@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { Fragment, type ReactNode } from "react";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { IrissZigzagRow } from "@/components/IrissZigzagRow";
 import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
@@ -11,6 +12,27 @@ import { renderProvinText } from "@/lib/provin-wordmark";
 /** IRISS rindkopas ar tādu pašu vizuālo toni kā „hook” teikumam. */
 const irissFeatureParagraphClass =
   "about-provin-hook mx-auto max-w-xl text-balance text-center text-[1.2rem] font-light leading-snug tracking-[0.012em] sm:text-[1.5rem]";
+
+function renderQuotedBold(text: string) {
+  const matches = Array.from(text.matchAll(/"([^"]+)"/g));
+  if (matches.length === 0) return text;
+  const nodes: ReactNode[] = [];
+  let cursor = 0;
+  matches.forEach((match, index) => {
+    const full = match[0];
+    const phrase = match[1];
+    const start = match.index ?? 0;
+    if (start > cursor) nodes.push(text.slice(cursor, start));
+    nodes.push(
+      <strong key={`${phrase}-${index}`} className="font-semibold">
+        {full}
+      </strong>
+    );
+    cursor = start + full.length;
+  });
+  if (cursor < text.length) nodes.push(text.slice(cursor));
+  return nodes.map((node, index) => <Fragment key={index}>{node}</Fragment>);
+}
 
 export async function IrissSection({ editorialColumn = false }: { editorialColumn?: boolean } = {}) {
   const t = await getTranslations("Iriss");
@@ -43,19 +65,19 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         <div className="flex flex-col gap-12 sm:gap-14 lg:gap-16 xl:gap-20">
           <IrissZigzagRow videoId="vlUsjQyEqME" startSeconds={90} playLabel={t("youtubePlayAria")}>
             <div className="w-full">
-              <p className={irissFeatureParagraphClass}>{t("authorityBody")}</p>
+              <p className={irissFeatureParagraphClass}>{renderQuotedBold(t("authorityBody"))}</p>
             </div>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="I5Xc0uFmbdo" reverse playLabel={t("youtubePlayAria")}>
-            <p className={irissFeatureParagraphClass}>{t("methodologyBody")}</p>
+            <p className={irissFeatureParagraphClass}>{renderQuotedBold(t("methodologyBody"))}</p>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="klwAEEdNXko" playLabel={t("youtubePlayAria")}>
             <p className="about-provin-hook mx-auto max-w-xl text-balance text-center text-[1.2rem] font-light leading-snug tracking-[0.012em] sm:text-[1.5rem]">
-              {t("hookPart1")}
+              {renderQuotedBold(t("hookPart1"))}
               <span className="inline font-bold">{renderProvinText(t("hookProvin"))}</span>
-              {t("hookPart2")}
+              {renderQuotedBold(t("hookPart2"))}
             </p>
           </IrissZigzagRow>
 
