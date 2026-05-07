@@ -13,22 +13,28 @@ import { renderProvinText } from "@/lib/provin-wordmark";
 const irissFeatureParagraphClass =
   "about-provin-hook mx-auto max-w-xl text-balance text-center text-[1.2rem] font-light leading-snug tracking-[0.012em] sm:text-[1.5rem]";
 
-function renderQuotedBold(text: string) {
-  const matches = Array.from(text.matchAll(/"([^"]+)"/g));
+function escapeRegExp(input: string) {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function renderPhraseBold(text: string, phrases: string[]) {
+  if (phrases.length === 0) return text;
+  const sorted = [...phrases].sort((a, b) => b.length - a.length);
+  const pattern = new RegExp(`(${sorted.map(escapeRegExp).join("|")})`, "g");
+  const matches = Array.from(text.matchAll(pattern));
   if (matches.length === 0) return text;
   const nodes: ReactNode[] = [];
   let cursor = 0;
   matches.forEach((match, index) => {
-    const full = match[0];
-    const phrase = match[1];
+    const phrase = match[0];
     const start = match.index ?? 0;
     if (start > cursor) nodes.push(text.slice(cursor, start));
     nodes.push(
       <strong key={`${phrase}-${index}`} className="font-semibold">
-        {full}
+        {phrase}
       </strong>
     );
-    cursor = start + full.length;
+    cursor = start + phrase.length;
   });
   if (cursor < text.length) nodes.push(text.slice(cursor));
   return nodes.map((node, index) => <Fragment key={index}>{node}</Fragment>);
@@ -65,19 +71,36 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         <div className="flex flex-col gap-12 sm:gap-14 lg:gap-16 xl:gap-20">
           <IrissZigzagRow videoId="vlUsjQyEqME" startSeconds={90} playLabel={t("youtubePlayAria")}>
             <div className="w-full">
-              <p className={irissFeatureParagraphClass}>{renderQuotedBold(t("authorityBody"))}</p>
+              <p className={irissFeatureParagraphClass}>
+                {renderPhraseBold(t("authorityBody"), [
+                  "10 gadu pieredzi",
+                  "IRISS",
+                  "pārdevēju paņēmieniem.",
+                  "slēptos riskus",
+                ])}
+              </p>
             </div>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="I5Xc0uFmbdo" reverse playLabel={t("youtubePlayAria")}>
-            <p className={irissFeatureParagraphClass}>{renderQuotedBold(t("methodologyBody"))}</p>
+            <p className={irissFeatureParagraphClass}>
+              {renderPhraseBold(t("methodologyBody"), [
+                "apvienojam informāciju",
+                "vēstures datubāzēm",
+                "sludinājuma analīzi",
+                "risku izvērtēšanu",
+                "pamanīt",
+                "pārdevējs noklusē",
+                "ieraugot riskus",
+              ])}
+            </p>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="klwAEEdNXko" playLabel={t("youtubePlayAria")}>
             <p className="about-provin-hook mx-auto max-w-xl text-balance text-center text-[1.2rem] font-light leading-snug tracking-[0.012em] sm:text-[1.5rem]">
-              {renderQuotedBold(t("hookPart1"))}
+              {renderPhraseBold(t("hookPart1"), ["auto tirgū"])}
               <span className="inline font-bold">{renderProvinText(t("hookProvin"))}</span>
-              {renderQuotedBold(t("hookPart2"))}
+              {renderPhraseBold(t("hookPart2"), ["Tavs personīgais interešu aizstāvis"])}
             </p>
           </IrissZigzagRow>
 
