@@ -172,15 +172,39 @@ html[data-site-theme="light"] .home-footer-rule {
 
 html[data-site-theme="light"] .home-footer-ink,
 html[data-site-theme="light"] .home-footer-link {
-  color: #3d424a;
+  color: #e5e7eb;
 }
 
 html[data-site-theme="light"] .home-footer-link:hover {
-  color: var(--color-provin-accent);
+  color: #bfdbfe;
 }
 
 html[data-site-theme="light"] .home-footer-scrim {
-  opacity: 0.06;
+  opacity: 0;
+}
+
+html[data-site-theme="light"] footer#kontakti {
+  background: #2f343c;
+}
+
+html[data-site-theme="light"] footer#kontakti .home-footer-rule {
+  border-top-color: rgb(229 231 235 / 0.18);
+}
+
+html[data-site-theme="light"] footer#kontakti .home-footer-link {
+  text-decoration-color: rgb(229 231 235 / 0.35);
+}
+
+html[data-site-theme="light"] footer#kontakti summary {
+  color: #d1d5db !important;
+}
+
+html[data-site-theme="light"] footer#kontakti summary:hover {
+  color: #f3f4f6 !important;
+}
+
+html[data-site-theme="light"] footer#kontakti .border-white\/\[0\.06\] {
+  border-top-color: rgb(229 231 235 / 0.16) !important;
 }
 
 html[data-site-theme="light"] .home-below-hero-cloud-layer {
@@ -729,7 +753,7 @@ html[data-site-theme="light"] .demo-design-dir__title {
 }
 
 html[data-site-theme="light"] .demo-design-dir__body {
-  color: #27272a;
+  color: #1f2937;
 }
 
 html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .marketing-hero-home-intro-body {
@@ -740,7 +764,16 @@ html[data-site-theme="light"] .marketing-hero-orbit-base[data-hero-orbit-home] .
 }
 
 html[data-site-theme="light"] .demo-design-dir__kicker {
-  color: #525252 !important;
+  color: #374151 !important;
+}
+
+html[data-site-theme="light"] .about-provin-hook {
+  color: #1f2937;
+}
+
+/* "Viņu trumpis ir tas, ko viņi noklusē." vairs nav balts light režīmā. */
+html[data-site-theme="light"] .about-provin-punchline-lead {
+  color: #111827 !important;
 }
 
 /*
