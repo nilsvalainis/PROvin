@@ -314,7 +314,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                 <button
                   type="submit"
                   disabled={phase === "loading"}
-                  className={`${demoPageStyles.ctaButtonHeroConsult} !mt-0 w-full max-w-[min(100%,520px)] disabled:cursor-wait disabled:opacity-60`}
+                  className={`${demoPageStyles.ctaButtonHeroConsult} !mt-0 w-full max-w-[min(520px,calc(100vw-2rem))] disabled:cursor-wait disabled:opacity-60`}
                 >
                   {phase === "loading" ? tOrder("payLoading") : t("submit")}
                 </button>

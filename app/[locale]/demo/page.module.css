@@ -594,10 +594,14 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   box-shadow: inherit;
 }
 
-/* Mobilā: viena CTA joslas platuma loģika kā hero (`min(100%,520px)`); nedaudz mazāks teksts garākajiem uzrakstiem. */
+/* Mobilā: CTA platums tieši kā hero joslai (`calc(100vw - 2rem)`, ar 520px griestiem). */
 @media (max-width: 639px) {
   .ctaButton,
   .ctaButtonHeroConsult {
+    width: min(520px, calc(100vw - 2rem));
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
     font-size: clamp(0.6875rem, 2.95vw, 0.8125rem);
     letter-spacing: 0.01em;
     padding: 0.68rem clamp(0.5rem, 2.4vw, 0.85rem);
