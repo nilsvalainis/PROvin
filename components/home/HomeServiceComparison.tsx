@@ -1,5 +1,5 @@
 import { getMessages, getTranslations } from "next-intl/server";
-import { AlertTriangle, ArrowRight, Filter, Globe2, Layers, MessageSquare, ScanSearch, ShieldCheck, type LucideIcon } from "lucide-react";
+import { AlertTriangle, Filter, Globe2, Layers, MessageSquare, ScanSearch, ShieldCheck, type LucideIcon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { homePillarGridWidthClass } from "@/lib/home-pricing-pillar-cards";
@@ -54,13 +54,11 @@ function ComparisonCard({
   body,
   Icon,
   riskCard,
-  isLast,
 }: {
   title: string;
   body: string;
   Icon: LucideIcon;
   riskCard: boolean;
-  isLast: boolean;
 }) {
   const iconTone = riskCard ? "marketing-hero-pillar-icon--risk text-[#ff342e]" : "text-[#0066ff]";
   const circleTone = riskCard
@@ -69,14 +67,6 @@ function ComparisonCard({
 
   return (
     <li className="relative flex min-h-0 min-w-0 justify-center pl-0">
-      {!isLast ? (
-        <div aria-hidden className="pointer-events-none absolute left-0 right-0 top-0 hidden h-14 sm:block">
-          <span className="absolute left-[calc(50%+40px)] top-[2.12rem] z-[-1] inline-flex items-center gap-1 text-[#0066ff]/80">
-            <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.8} />
-            <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.8} />
-          </span>
-        </div>
-      ) : null}
       <div className={`${comparisonPillarCellClass} relative h-full w-full min-w-0 max-w-[220px]`}>
         <div className={`relative z-10 mb-3 flex h-14 w-14 items-center justify-center rounded-full border bg-black sm:mb-3.5 ${circleTone}`}>
           <Icon className={`${comparisonIconClass} h-7 w-7 ${iconTone}`.trim()} aria-hidden strokeWidth={1.6} />
@@ -95,12 +85,19 @@ function SelectJourneyCard({
   body,
   Icon,
   isLast,
+  riskCard,
 }: {
   title: string;
   body: string;
   Icon: LucideIcon;
   isLast: boolean;
+  riskCard: boolean;
 }) {
+  const iconTone = riskCard ? "text-[#ff342e]" : "text-[#F59E0B]";
+  const circleTone = riskCard
+    ? "border-[#ff342e]/70 shadow-[0_0_0_1px_rgba(255,52,46,0.2),0_0_18px_rgba(255,52,46,0.14)]"
+    : "border-[#F59E0B]/70 shadow-[0_0_0_1px_rgba(245,158,11,0.2),0_0_18px_rgba(245,158,11,0.15)]";
+
   return (
     <li className="relative flex min-h-0 min-w-0 justify-center pl-0">
       {!isLast ? (
@@ -110,8 +107,8 @@ function SelectJourneyCard({
       ) : null}
       {/* Mobilajā līnijas netiek zīmētas, lai bloks paliek perfekti centrēts. */}
       <div className="relative flex h-full w-full min-w-0 max-w-[220px] flex-col items-center text-center">
-        <div className="relative z-10 mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-[#F59E0B]/70 bg-black shadow-[0_0_0_1px_rgba(245,158,11,0.2),0_0_18px_rgba(245,158,11,0.15)] sm:mb-3.5">
-          <Icon className="h-7 w-7 shrink-0 text-[#F59E0B] [stroke-width:1.6]" aria-hidden strokeWidth={1.6} />
+        <div className={`relative z-10 mb-3 flex h-14 w-14 items-center justify-center rounded-full border bg-black sm:mb-3.5 ${circleTone}`}>
+          <Icon className={`h-7 w-7 shrink-0 [stroke-width:1.6] ${iconTone}`} aria-hidden strokeWidth={1.6} />
         </div>
         <h3 className={`${comparisonCardTitleClass} max-w-[220px] min-h-[2.95rem] whitespace-pre-line sm:min-h-[3.3rem]`}>
           {title}
@@ -174,7 +171,6 @@ export async function HomeServiceComparisonAudit() {
                 body={item.body}
                 Icon={Icon}
                 riskCard={i === 2}
-                isLast={i === Math.min(auditRows.length, 4) - 1}
               />
             );
           })}
@@ -229,6 +225,7 @@ export async function HomeServiceComparisonSelect() {
                 body={row.body}
                 Icon={Icon}
                 isLast={i === Math.min(selectRows.length, 4) - 1}
+                riskCard={i === 2}
               />
             );
           })}
