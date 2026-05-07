@@ -3,15 +3,14 @@ import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { IrissZigzagRow } from "@/components/IrissZigzagRow";
 import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
 import {
-  homeEditorialAuthorityHeadingClass,
-  homeEditorialSectionKickerClass,
+  homeEditorialSectionBodyLeadClass,
   homeEditorialSectionTitleClass,
 } from "@/lib/home-layout";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
-/** Lielāks ķermenis, lai teksta laukums vizuāli tuvinātos YouTube logam (max-w-xl). */
-const bodyMuted =
-  "about-provin-body about-provin-body--muted text-base leading-relaxed sm:text-lg sm:leading-relaxed";
+/** IRISS rindkopas ar tādu pašu vizuālo toni kā „hook” teikumam. */
+const irissFeatureParagraphClass =
+  "about-provin-hook mx-auto max-w-xl text-balance text-center text-[1.2rem] font-light leading-snug tracking-[0.012em] sm:text-[1.5rem]";
 
 export async function IrissSection({ editorialColumn = false }: { editorialColumn?: boolean } = {}) {
   const t = await getTranslations("Iriss");
@@ -27,7 +26,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
           <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
         </div>
-        <p className={homeEditorialSectionKickerClass}>{t("pageLead")}</p>
+        <p className={homeEditorialSectionBodyLeadClass}>{t("pageLead")}</p>
       </header>
 
       <div className="mt-6 flex justify-center sm:mt-7">
@@ -43,17 +42,13 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
       <div className="mx-auto mt-10 w-full max-w-[min(100%,90rem)] px-1 sm:mt-12 sm:px-2">
         <div className="flex flex-col gap-12 sm:gap-14 lg:gap-16 xl:gap-20">
           <IrissZigzagRow videoId="vlUsjQyEqME" startSeconds={90} playLabel={t("youtubePlayAria")}>
-            <div className="w-full text-left">
-              <p className={homeEditorialAuthorityHeadingClass}>{t("authorityTitle")}</p>
-              <p className={`${bodyMuted} mt-3 sm:mt-4`}>{t("authorityBody")}</p>
+            <div className="w-full">
+              <p className={irissFeatureParagraphClass}>{t("authorityBody")}</p>
             </div>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="I5Xc0uFmbdo" reverse playLabel={t("youtubePlayAria")}>
-            <div className="about-provin-methodology flex items-stretch justify-center gap-4 sm:gap-5">
-              <span className="about-provin-axis-line block w-px shrink-0" aria-hidden />
-              <p className={`${bodyMuted} pt-0.5 text-left`}>{t("methodologyBody")}</p>
-            </div>
+            <p className={irissFeatureParagraphClass}>{t("methodologyBody")}</p>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="klwAEEdNXko" playLabel={t("youtubePlayAria")}>

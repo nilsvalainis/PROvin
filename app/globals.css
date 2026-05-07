@@ -1129,11 +1129,11 @@ html[data-site-theme="light"] .about-provin-axis-line {
 }
 
 html:not([data-site-theme="light"]) .about-provin-punchline-lead {
-  color: rgb(148 163 184 / 0.9);
+  color: rgb(255 255 255 / 0.96);
 }
 
 html[data-site-theme="light"] .about-provin-punchline-lead {
-  color: rgb(148 163 184 / 0.92);
+  color: rgb(255 255 255 / 0.96);
 }
 
 html:not([data-site-theme="light"]) .about-provin-punchline-accent {
