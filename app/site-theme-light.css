@@ -785,31 +785,6 @@ html[data-site-theme="light"] .home-product-hero .hero-approved-reveal .hero-app
   }
 }
 
-/* ===== BACKGROUND PURGE (light): viens nepārtraukts fons līdz kājenei ===== */
-html[data-site-theme="light"],
-html[data-site-theme="light"] body,
-html[data-site-theme="light"] #__next,
-html[data-site-theme="light"] main {
-  background: linear-gradient(to bottom, #fafbfd 0%, #f5f7fc 50%, #f2f5fb 100%) !important;
-}
-
-html[data-site-theme="light"] section,
-html[data-site-theme="light"] div[class*="section"],
-html[data-site-theme="light"] div[class*="container"],
-html[data-site-theme="light"] div[class*="wrapper"] {
-  background: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  border: none !important;
-}
-
-/* Kājene drīkst saglabāt savu vizuālo stilu */
-html[data-site-theme="light"] footer,
-html[data-site-theme="light"] footer * {
-  background: unset !important;
-  background-image: unset !important;
-}
-
 /* Hero ievades laukiem noņemam statisko līniju; paliek tikai kustīgais indikators. */
 .order-form-hero-scan .provin-diagnostic-scan-line__track {
   background: transparent !important;
