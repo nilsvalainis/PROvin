@@ -135,6 +135,17 @@
   box-shadow: none !important;
 }
 
+/* Sākumlapa: zem hero audits līdz kājenei tikai viens nepārtraukts fons (bez sekciju overlay/slāņiem). */
+.home-hero-pricing-unified .demo-design-dir__section {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-top: none !important;
+}
+
+.home-hero-pricing-unified .demo-design-dir__section::after {
+  content: none !important;
+}
+
 .demo-design-dir__card {
   border: 1px solid var(--dd-line);
   border-radius: 1rem;

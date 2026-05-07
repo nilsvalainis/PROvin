@@ -427,6 +427,17 @@ html[data-site-theme="light"] .home-hero-pricing-unified.demo-design-dir {
   box-shadow: none;
 }
 
+/* Sākumlapa: force viens fons arī light režīmā (bez band-b/band-c lokālajiem foniem). */
+html[data-site-theme="light"] .home-hero-pricing-unified .demo-design-dir__section {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-top: none !important;
+}
+
+html[data-site-theme="light"] .home-hero-pricing-unified .demo-design-dir__section::after {
+  content: none !important;
+}
+
 html[data-site-theme="light"] .home-service-comparison-audit-col,
 html[data-site-theme="light"] .home-service-comparison-select-col {
   border: none;
