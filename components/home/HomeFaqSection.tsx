@@ -15,7 +15,7 @@ export async function HomeFaqSection() {
   return (
     <section
       id="biezi-jautajumi"
-      className="demo-design-dir__section demo-design-dir__section--band-c home-body-ink py-16 sm:py-20"
+      className="demo-design-dir__section home-body-ink py-16 sm:py-20"
       aria-labelledby="home-faq-heading"
     >
       <div className="demo-design-dir__shell">
