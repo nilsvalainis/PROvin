@@ -29,15 +29,13 @@ export default async function HomePage() {
         />
       </div>
 
-      <div id="site-content" className="demo-design-dir min-w-0 text-white home-body-ink scroll-mt-14">
+      <div id="site-content" className="demo-design-dir min-w-0 pb-0 text-white home-body-ink scroll-mt-14">
         <section className="demo-design-dir__section demo-design-dir__section--band-b py-16 sm:py-20 md:py-24">
           <div className="demo-design-dir__shell">
             <IrissSection editorialColumn />
           </div>
         </section>
-      </div>
 
-      <div className="demo-design-dir min-w-0 pb-0 text-white">
         {isProvinSelectPublic() ? (
           <section className="demo-design-dir__section demo-design-dir__section--unified-pricing-tail pt-16 pb-12 sm:pt-20 sm:pb-16 md:pt-24 md:pb-20">
             <div className="demo-design-dir__shell">
