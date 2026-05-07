@@ -220,6 +220,10 @@ html[data-site-theme="light"] .site-section-rail[data-rail-open="true"] .home-ra
   color: #0a0a0a;
 }
 
+html[data-site-theme="light"] .site-section-rail a:focus-visible {
+  color: #0a0a0a !important;
+}
+
 /* Hero pill — pilns PROVIN zils (tāds pats kā tumšajā; tokens no html light) */
 html[data-site-theme="light"] .provin-home-pill-cta {
   border-color: var(--color-provin-accent-hover);
@@ -473,6 +477,10 @@ html[data-site-theme="light"] .home-service-comparison-lead {
 
 html[data-site-theme="light"] .home-service-comparison-footnote {
   color: rgb(63 63 70 / 0.82) !important;
+}
+
+html[data-site-theme="light"] .home-service-comparison-select-col p.text-white\/60 {
+  color: rgb(55 65 81 / 0.9) !important;
 }
 
 html[data-site-theme="light"] .home-service-comparison-select-col .demo-design-dir__body,
@@ -769,6 +777,11 @@ html[data-site-theme="light"] .demo-design-dir__kicker {
 
 html[data-site-theme="light"] .about-provin-hook {
   color: #1f2937;
+}
+
+html[data-site-theme="light"] .marketing-hero-pillar-title,
+html[data-site-theme="light"] .marketing-hero-pillar-note {
+  color: #111827 !important;
 }
 
 /* "Viņu trumpis ir tas, ko viņi noklusē." vairs nav balts light režīmā. */
