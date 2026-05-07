@@ -106,7 +106,7 @@ export default function HomeProductHero({ showProvinSelect = false, comparisonCo
           </div>
         </section>
         {comparisonContent ? (
-          <section className="demo-design-dir__section demo-design-dir__section--unified-pricing-tail py-16 sm:py-20 md:py-24">
+          <section className="demo-design-dir__section py-16 sm:py-20 md:py-24">
             <div className="demo-design-dir__shell">{comparisonContent}</div>
           </section>
         ) : null}
