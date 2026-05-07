@@ -1,5 +1,4 @@
 import { getTranslations } from "next-intl/server";
-import { Fragment, type ReactNode } from "react";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { IrissZigzagRow } from "@/components/IrissZigzagRow";
 import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
@@ -9,36 +8,9 @@ import {
 } from "@/lib/home-layout";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
-/** IRISS rindkopas ar tādu pašu vizuālo toni kā „hook” teikumam. */
+/** IRISS / KAS IR PROVIN — rindkopas vienots tonis kā iepriekšējais „hook”. */
 const irissFeatureParagraphClass =
   "about-provin-hook mx-auto max-w-xl text-balance text-center text-[1.2rem] font-light leading-snug tracking-[0.012em] sm:text-[1.5rem]";
-
-function escapeRegExp(input: string) {
-  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function renderPhraseBold(text: string, phrases: string[]) {
-  if (phrases.length === 0) return text;
-  const sorted = [...phrases].sort((a, b) => b.length - a.length);
-  const pattern = new RegExp(`(${sorted.map(escapeRegExp).join("|")})`, "g");
-  const matches = Array.from(text.matchAll(pattern));
-  if (matches.length === 0) return text;
-  const nodes: ReactNode[] = [];
-  let cursor = 0;
-  matches.forEach((match, index) => {
-    const phrase = match[0];
-    const start = match.index ?? 0;
-    if (start > cursor) nodes.push(text.slice(cursor, start));
-    nodes.push(
-      <strong key={`${phrase}-${index}`} className="font-semibold">
-        {phrase}
-      </strong>
-    );
-    cursor = start + phrase.length;
-  });
-  if (cursor < text.length) nodes.push(text.slice(cursor));
-  return nodes.map((node, index) => <Fragment key={index}>{node}</Fragment>);
-}
 
 export async function IrissSection({ editorialColumn = false }: { editorialColumn?: boolean } = {}) {
   const t = await getTranslations("Iriss");
@@ -50,7 +22,7 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
   const core = (
     <div className="about-provin-section mx-auto w-full max-w-[min(100%,80rem)] px-1 sm:px-2">
       <header className="text-center">
-        <h2 className={homeEditorialSectionTitleClass}>{t("title")}</h2>
+        <h2 className={homeEditorialSectionTitleClass}>{renderProvinText(t("title"))}</h2>
         <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
           <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
         </div>
@@ -71,37 +43,16 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         <div className="flex flex-col gap-12 sm:gap-14 lg:gap-16 xl:gap-20">
           <IrissZigzagRow videoId="vlUsjQyEqME" startSeconds={90} playLabel={t("youtubePlayAria")}>
             <div className="w-full">
-              <p className={irissFeatureParagraphClass}>
-                {renderPhraseBold(t("authorityBody"), [
-                  "10 gadu pieredzi",
-                  "IRISS",
-                  "pārdevēju paņēmieniem.",
-                  "slēptos riskus",
-                ])}
-              </p>
+              <p className={irissFeatureParagraphClass}>{t("body1")}</p>
             </div>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="I5Xc0uFmbdo" reverse playLabel={t("youtubePlayAria")}>
-            <p className={irissFeatureParagraphClass}>
-              {renderPhraseBold(t("methodologyBody"), [
-                "apvienojam informāciju",
-                "vēstures datubāzēm",
-                "sludinājuma analīzi",
-                "risku izvērtēšanu",
-                "pamanīt",
-                "pārdevējs noklusē",
-                "ieraugot riskus",
-              ])}
-            </p>
+            <p className={irissFeatureParagraphClass}>{renderProvinText(t("body2"))}</p>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="klwAEEdNXko" playLabel={t("youtubePlayAria")}>
-            <p className="about-provin-hook mx-auto max-w-xl text-balance text-center text-[1.2rem] font-light leading-snug tracking-[0.012em] sm:text-[1.5rem]">
-              {renderPhraseBold(t("hookPart1"), ["auto tirgū"])}
-              <span className="inline font-bold">{renderProvinText(t("hookProvin"))}</span>
-              {renderPhraseBold(t("hookPart2"), ["Tavs personīgais interešu aizstāvis"])}
-            </p>
+            <p className={irissFeatureParagraphClass}>{renderProvinText(t("body3"))}</p>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="7pBr-91QUjw" reverse playLabel={t("youtubePlayAria")}>

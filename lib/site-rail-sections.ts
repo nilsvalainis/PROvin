@@ -2,10 +2,10 @@ import { ORDER_SECTION_ID } from "@/lib/order-section";
 import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 import { PROVIN_SELECT_FORM_HASH, PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
 
-/** Sadaļu DOM `id` secība mājas lapā (scroll / rail). */
+/** Sadaļu DOM `id` secība mājas lapā (scroll / rail — sakrīt ar dokumenta secību). */
 export function getSiteRailHomeScrollIds(): readonly string[] {
   if (isProvinSelectPublic()) {
-    return ["home-hero", "cena", "kas-ir-iriss", PROVIN_SELECT_SECTION_ID, "biezi-jautajumi", "kontakti"] as const;
+    return ["home-hero", "cena", PROVIN_SELECT_SECTION_ID, "kas-ir-iriss", "biezi-jautajumi", "kontakti"] as const;
   }
   return ["home-hero", "cena", "kas-ir-iriss", "biezi-jautajumi", "kontakti"] as const;
 }
@@ -37,13 +37,17 @@ export function normalizeSitePath(pathname: string | null | undefined): string {
  */
 export function buildSiteRailSections(normalizedPath: string): readonly SiteRailSection[] {
   const bujHref = normalizedPath === "/biezi-jautajumi" ? "/biezi-jautajumi" : "/#biezi-jautajumi";
+  /* Secība: Sākums → Audits → Konsultācija → Par mums → BUJ → Kontakti */
   const out: SiteRailSection[] = [
     { href: "/", labelKey: "sakums" },
     { href: "/#cena", labelKey: "kasIekljauts" },
-    { href: "/#kas-ir-iriss", labelKey: "kasSlapjasAizProvin" },
   ];
   if (isProvinSelectPublic()) out.push({ href: `/#${PROVIN_SELECT_SECTION_ID}`, labelKey: "provinSelect" });
-  out.push({ href: bujHref, labelKey: "buj" }, { href: "/#kontakti", labelKey: "kontakti" });
+  out.push(
+    { href: "/#kas-ir-iriss", labelKey: "kasSlapjasAizProvin" },
+    { href: bujHref, labelKey: "buj" },
+    { href: "/#kontakti", labelKey: "kontakti" },
+  );
   return out;
 }
 
@@ -57,8 +61,8 @@ export function siteRailActiveFromHash(raw: string): number | null {
   if (h === "home-hero" || h === "home-intro") return 0;
   if (h === ORDER_SECTION_ID || h === "order-form") return 0;
   if (h === "site-content" || h === "cena") return 1;
-  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) return 2;
-  if (provin && (h === PROVIN_SELECT_SECTION_ID || h === PROVIN_SELECT_FORM_HASH)) return 3;
+  if (provin && (h === PROVIN_SELECT_SECTION_ID || h === PROVIN_SELECT_FORM_HASH)) return 2;
+  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) return provin ? 3 : 2;
   if (h === "biezi-jautajumi") return bujIdx;
   if (h === "kontakti") return kontaktiIdx;
   return null;

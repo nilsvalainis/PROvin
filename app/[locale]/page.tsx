@@ -29,12 +29,6 @@ export default async function HomePage() {
         />
 
         <div id="site-content" className="min-w-0 pb-0 text-white home-body-ink scroll-mt-14">
-        <section className="demo-design-dir__section pt-16 pb-12 sm:pt-20 sm:pb-16 md:pt-24 md:pb-20">
-          <div className="demo-design-dir__shell">
-            <IrissSection editorialColumn />
-          </div>
-        </section>
-
         {isProvinSelectPublic() ? (
           <section className="demo-design-dir__section pt-16 pb-12 sm:pt-20 sm:pb-16 md:pt-24 md:pb-20">
             <div className="demo-design-dir__shell">
@@ -42,6 +36,12 @@ export default async function HomePage() {
             </div>
           </section>
         ) : null}
+
+        <section className="demo-design-dir__section pt-16 pb-12 sm:pt-20 sm:pb-16 md:pt-24 md:pb-20">
+          <div className="demo-design-dir__shell">
+            <IrissSection editorialColumn />
+          </div>
+        </section>
         <HomeFaqSection />
 
         <section className="demo-design-dir__section pb-0">
