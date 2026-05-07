@@ -33,8 +33,7 @@ const comparisonCardTitleClass =
 const comparisonCardBodyClass =
   "home-muted-foreground max-w-[min(100%,22rem)] text-balance text-center text-[13px] leading-relaxed sm:text-[14px] md:text-[15px] md:leading-relaxed";
 
-const comparisonIconClass =
-  "marketing-hero-pillar-icon h-8 w-8 shrink-0 text-[#0066ff] [stroke-width:1.5] sm:h-9 sm:w-9 md:h-10 md:w-10";
+const comparisonIconClass = "marketing-hero-pillar-icon shrink-0 [stroke-width:1.6]";
 
 const ctaRowClass = "mt-auto flex w-full flex-col items-center gap-2 pt-6 sm:pt-7";
 
@@ -47,20 +46,35 @@ function ComparisonCard({
   body,
   Icon,
   riskCard,
+  isLast,
 }: {
   title: string;
   body: string;
   Icon: LucideIcon;
   riskCard: boolean;
+  isLast: boolean;
 }) {
-  const iconTone = riskCard ? "marketing-hero-pillar-icon--risk text-[#ff342e]" : "";
+  const iconTone = riskCard ? "marketing-hero-pillar-icon--risk text-[#ff342e]" : "text-[#0066ff]";
+  const lineTone = riskCard ? "bg-[#ff342e]/30" : "bg-[#0066ff]/28";
+  const circleTone = riskCard
+    ? "border-[#ff342e]/70 shadow-[0_0_0_1px_rgba(255,52,46,0.2),0_0_18px_rgba(255,52,46,0.14)]"
+    : "border-[#0066ff]/70 shadow-[0_0_0_1px_rgba(0,102,255,0.2),0_0_18px_rgba(0,102,255,0.14)]";
 
   return (
-    <li className="flex min-h-0 min-w-0">
-      <div className={`${comparisonPillarCellClass} h-full w-full min-w-0`}>
-        <Icon className={`${comparisonIconClass} ${iconTone}`.trim()} aria-hidden strokeWidth={1.5} />
-        <h3 className={comparisonCardTitleClass}>{title}</h3>
-        <p className={comparisonCardBodyClass}>{body}</p>
+    <li className="relative flex min-h-0 min-w-0 justify-center pl-0">
+      {!isLast ? (
+        <div aria-hidden className="pointer-events-none absolute left-0 right-0 top-0 hidden h-14 sm:block">
+          <span className={`absolute left-[calc(50%+40px)] top-[2.5rem] z-[-1] h-px w-[calc(100%-80px)] ${lineTone}`} />
+        </div>
+      ) : null}
+      <div className={`${comparisonPillarCellClass} relative h-full w-full min-w-0 max-w-[220px]`}>
+        <div className={`relative z-10 mb-3 flex h-14 w-14 items-center justify-center rounded-full border bg-black sm:mb-3.5 ${circleTone}`}>
+          <Icon className={`${comparisonIconClass} h-7 w-7 ${iconTone}`.trim()} aria-hidden strokeWidth={1.6} />
+        </div>
+        <h3 className={`${comparisonCardTitleClass} max-w-[220px] min-h-[2.95rem] whitespace-pre-line sm:min-h-[3.3rem]`}>
+          {title}
+        </h3>
+        <p className={`${comparisonCardBodyClass} mt-1 max-w-[220px]`}>{body}</p>
       </div>
     </li>
   );
@@ -150,6 +164,7 @@ export async function HomeServiceComparisonAudit() {
                 body={item.body}
                 Icon={Icon}
                 riskCard={i === 2}
+                isLast={i === Math.min(auditRows.length, 4) - 1}
               />
             );
           })}
