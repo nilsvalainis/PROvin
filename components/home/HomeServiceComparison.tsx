@@ -1,5 +1,5 @@
 import { getMessages, getTranslations } from "next-intl/server";
-import { AlertTriangle, Filter, Globe2, Layers, MessageSquare, ScanSearch, ShieldCheck, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ArrowRight, Filter, Globe2, Layers, MessageSquare, ScanSearch, ShieldCheck, type LucideIcon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { homePillarGridWidthClass } from "@/lib/home-pricing-pillar-cards";
@@ -41,6 +41,14 @@ const ctaRowClass = "mt-auto flex w-full flex-col items-center gap-2 pt-6 sm:pt-
 const ctaLinkClass =
   "inline-flex box-border w-full max-w-[min(520px,calc(100vw-2rem))] items-center justify-center px-0 text-center no-underline";
 
+function asTwoLines(title: string): string {
+  if (title.includes("\n")) return title;
+  const words = title.trim().split(/\s+/);
+  if (words.length < 2) return title;
+  const cut = Math.ceil(words.length / 2);
+  return `${words.slice(0, cut).join(" ")}\n${words.slice(cut).join(" ")}`;
+}
+
 function ComparisonCard({
   title,
   body,
@@ -55,7 +63,6 @@ function ComparisonCard({
   isLast: boolean;
 }) {
   const iconTone = riskCard ? "marketing-hero-pillar-icon--risk text-[#ff342e]" : "text-[#0066ff]";
-  const lineTone = riskCard ? "bg-[#ff342e]/30" : "bg-[#0066ff]/28";
   const circleTone = riskCard
     ? "border-[#ff342e]/70 shadow-[0_0_0_1px_rgba(255,52,46,0.2),0_0_18px_rgba(255,52,46,0.14)]"
     : "border-[#0066ff]/70 shadow-[0_0_0_1px_rgba(0,102,255,0.2),0_0_18px_rgba(0,102,255,0.14)]";
@@ -64,7 +71,10 @@ function ComparisonCard({
     <li className="relative flex min-h-0 min-w-0 justify-center pl-0">
       {!isLast ? (
         <div aria-hidden className="pointer-events-none absolute left-0 right-0 top-0 hidden h-14 sm:block">
-          <span className={`absolute left-[calc(50%+40px)] top-[2.5rem] z-[-1] h-px w-[calc(100%-80px)] ${lineTone}`} />
+          <span className="absolute left-[calc(50%+40px)] top-[2.12rem] z-[-1] inline-flex items-center gap-1 text-[#0066ff]/80">
+            <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.8} />
+            <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.8} />
+          </span>
         </div>
       ) : null}
       <div className={`${comparisonPillarCellClass} relative h-full w-full min-w-0 max-w-[220px]`}>
@@ -72,7 +82,7 @@ function ComparisonCard({
           <Icon className={`${comparisonIconClass} h-7 w-7 ${iconTone}`.trim()} aria-hidden strokeWidth={1.6} />
         </div>
         <h3 className={`${comparisonCardTitleClass} max-w-[220px] min-h-[2.95rem] whitespace-pre-line sm:min-h-[3.3rem]`}>
-          {title}
+          {asTwoLines(title)}
         </h3>
         <p className={`${comparisonCardBodyClass} mt-1 max-w-[220px]`}>{body}</p>
       </div>
