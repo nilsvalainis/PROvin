@@ -41,6 +41,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             __html: `var _smartsupp = _smartsupp || {};_smartsupp.key = '99e120aeb67ba5039e3b55f62f41884ed3fe05f4';window.smartsupp||(function(d){var s,c,o=smartsupp=function(){o._.push(arguments)};o._=[];s=d.getElementsByTagName('script')[0];c=d.createElement('script');c.type='text/javascript';c.charset='utf-8';c.async=true;c.src='https://www.smartsuppchat.com/loader.js?';s.parentNode.insertBefore(c,s);})(document);`,
           }}
         />
+        <Script
+          id="smartsupp-widget-chime"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var played=false;function playChime(){if(played)return;played=true;try{if(sessionStorage.getItem("smartsupp_widget_chime_played")==="1")return;sessionStorage.setItem("smartsupp_widget_chime_played","1");var Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;var ctx=new Ctx();var osc=ctx.createOscillator();var gain=ctx.createGain();osc.type="triangle";osc.frequency.setValueAtTime(1046.5,ctx.currentTime);gain.gain.setValueAtTime(0.0001,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.08,ctx.currentTime+0.012);gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.09);osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+0.1);}catch(e){}}function hasWidget(){return !!(document.querySelector('[id*="smartsupp"][id*="button"], [class*="smartsupp"][class*="button"], iframe[src*="smartsuppchat.com"]'));}if(hasWidget()){playChime();return;}var obs=new MutationObserver(function(){if(hasWidget()){playChime();obs.disconnect();}});obs.observe(document.documentElement,{childList:true,subtree:true});setTimeout(function(){obs.disconnect();},20000);})();`,
+          }}
+        />
         <noscript>
           Powered by{" "}
           <a href="https://www.smartsupp.com" target="_blank" rel="noreferrer">
