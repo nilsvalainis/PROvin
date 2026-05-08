@@ -132,18 +132,6 @@ export function HeaderClient() {
         </Link>
 
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3">
-          <Link
-            href={pathname as never}
-            locale={targetLocale}
-            className={`relative z-[52] inline-flex min-h-9 min-w-9 items-center justify-center text-base leading-none no-underline transition ${
-              headerChromeDark ? "text-white hover:text-white/80" : "text-[#1d1d1f] hover:text-[#111827]"
-            }`}
-            aria-label={localeLabel}
-            title={localeLabel}
-          >
-            <span aria-hidden>{localeFlag}</span>
-          </Link>
-
           {showHomeNavRail ? (
             <nav
               className="relative z-[52] mr-1 ml-auto hidden min-w-0 flex-wrap items-center justify-end gap-x-4 lg:flex xl:gap-x-6"
@@ -182,6 +170,17 @@ export function HeaderClient() {
           <SiteThemeHeaderButton
             className={`${themeBtnClass} max-md:!border-transparent max-md:!bg-transparent max-md:!shadow-none max-md:hover:!border-transparent max-md:hover:!bg-transparent`}
           />
+          <Link
+            href={pathname as never}
+            locale={targetLocale}
+            className={`relative z-[52] inline-flex h-9 w-9 shrink-0 items-center justify-center text-[15px] leading-none no-underline transition ${
+              headerChromeDark ? "text-white hover:text-white/80" : "text-[#1d1d1f] hover:text-[#111827]"
+            }`}
+            aria-label={localeLabel}
+            title={localeLabel}
+          >
+            <span aria-hidden>{localeFlag}</span>
+          </Link>
         </div>
       </div>
 

@@ -16,6 +16,6 @@
     "companyRegNo": "Registration number",
     "companyLegalAddress": "Legal address",
     "companyIncompleteDev": "Developer note: set NEXT_PUBLIC_COMPANY_LEGAL_NAME, NEXT_PUBLIC_COMPANY_REG_NO and NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS (.env or hosting).",
-    "disclaimer": "Data-source information is informative; the summary is a professional opinion, not a legal judgment or official technical expertise."
+    "disclaimer": "Information from data sources is for reference only. The final summary represents a professional expert opinion, not a legal judgment or official technical expertise."
   }
 }
