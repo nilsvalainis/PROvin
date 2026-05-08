@@ -1665,6 +1665,9 @@ export function OrderDetailWorkspace({
   const whatsappShareHref = whatsappPhoneDigits
     ? `whatsapp://send?phone=${whatsappPhoneDigits}&text=${encodeURIComponent(WHATSAPP_PREFILL_MESSAGE)}`
     : null;
+  const whatsappWebHref = whatsappPhoneDigits
+    ? `https://wa.me/${whatsappPhoneDigits}?text=${encodeURIComponent(WHATSAPP_PREFILL_MESSAGE)}`
+    : null;
 
   const generateAuditPdfForWhatsApp = useCallback(async (): Promise<File | null> => {
     if (!canGeneratePdf) {
@@ -1763,20 +1766,31 @@ export function OrderDetailWorkspace({
     try {
       const pdfFile = await generateAuditPdfForWhatsApp();
       if (!pdfFile) return;
-      if (navigator.share && navigator.canShare?.({ files: [pdfFile] })) {
-        await navigator.share({
-          files: [pdfFile],
-          text: WHATSAPP_PREFILL_MESSAGE,
-          title: "PROVIN audits",
-        });
-        return;
-      }
+      const objectUrl = URL.createObjectURL(pdfFile);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = pdfFile.name;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
+
+      /**
+       * Prioritāte: desktop WhatsApp app (`whatsapp://`), fallback uz web (`wa.me`).
+       * Pārlūkprogrammu drošības dēļ failu pielikumu WhatsApp chat logam automātiski pievienot nevar.
+       */
       window.location.href = whatsappShareHref;
-      alert("Šajā ierīcē WhatsApp faila pievienošanu nevar automatizēt. Atvērts WhatsApp ar sagatavotu ziņu.");
+      if (whatsappWebHref) {
+        window.setTimeout(() => {
+          window.open(whatsappWebHref, "_blank", "noopener,noreferrer");
+        }, 900);
+      }
+      alert("Atvērts WhatsApp čats. PDF atskaite lejupielādēta automātiski — pievienojiet to kā pielikumu ziņai.");
     } catch (error) {
       alert(error instanceof Error ? error.message.slice(0, 220) : "Neizdevās sagatavot PDF WhatsApp nosūtīšanai.");
     }
-  }, [generateAuditPdfForWhatsApp, whatsappPhoneDigits, whatsappShareHref]);
+  }, [generateAuditPdfForWhatsApp, whatsappPhoneDigits, whatsappShareHref, whatsappWebHref]);
 
   return (
     <div className="relative min-w-0 pb-24">

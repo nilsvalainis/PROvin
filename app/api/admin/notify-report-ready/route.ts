@@ -111,8 +111,18 @@ export async function POST(req: Request) {
   }
 
   const order = await getCheckoutSessionDetail(sessionId);
-  if (!order || order.paymentStatus !== "paid") {
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  if (!order) {
+    return NextResponse.json({ error: "not_found", message: "Pasūtījums nav atrasts." }, { status: 404 });
+  }
+  const orderPaymentStatus = String(order.paymentStatus ?? "").trim().toLowerCase();
+  if (orderPaymentStatus !== "paid") {
+    return NextResponse.json(
+      {
+        error: "order_not_paid",
+        message: `E-pastu var sūtīt tikai apmaksātam pasūtījumam. Pašreizējais statuss: ${order.paymentStatus ?? "unknown"}.`,
+      },
+      { status: 400 },
+    );
   }
 
   const draft = await readOrderDraft(sessionId);
