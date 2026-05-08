@@ -64,7 +64,7 @@ export default function HomeProductHero({ showProvinSelect = false, comparisonCo
                 </div>
 
                 {heroOrderStep === 1 ? (
-                  <div className="pointer-events-auto relative z-[80] mt-4 mx-auto flex w-full max-w-[520px] min-w-0 flex-col items-center gap-2 sm:mt-5">
+                  <div className="pointer-events-auto relative z-[80] mt-4 flex w-full max-w-[520px] min-w-0 flex-col items-stretch gap-2 sm:mt-5">
                     <ul className={`${styles.features} ${styles.heroTrust}`}>
                       {heroFeatureTitles.map((label) => (
                         <li key={label}>
