@@ -10,23 +10,12 @@ const PDF_MILEAGE_CHART_LINE = PDF_BRAND_BLUE_HEX;
 const PDF_MILEAGE_CHART_GRID = "#e8eaed";
 const PDF_MILEAGE_CHART_AXIS = "#9ca3af";
 
-function catmullRomSvgPath(points: { x: number; y: number }[]): string {
+function linearSvgPath(points: { x: number; y: number }[]): string {
   if (points.length === 0) return "";
-  if (points.length === 1) {
-    const p = points[0]!;
-    return `M ${p.x} ${p.y}`;
-  }
-  let d = `M ${points[0]!.x} ${points[0]!.y}`;
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = i > 0 ? points[i - 1]! : points[0]!;
-    const p1 = points[i]!;
-    const p2 = points[i + 1]!;
-    const p3 = i + 2 < points.length ? points[i + 2]! : p2;
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
-    d += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
+  let d = `M ${points[0]!.x.toFixed(1)} ${points[0]!.y.toFixed(1)}`;
+  for (let i = 1; i < points.length; i++) {
+    const p = points[i]!;
+    d += ` L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
   }
   return d;
 }
@@ -45,12 +34,14 @@ export function buildUnifiedMileageChartWrapHtml(
     .map((r) => {
       const km = parseOdometerKm(r.odometer);
       if (km == null || r.sortableTime === Number.NEGATIVE_INFINITY) return null;
-      return { year: new Date(r.sortableTime).getUTCFullYear(), km, sourceOrder: r.sourceOrder };
+      return { year: new Date(r.sortableTime).getUTCFullYear(), time: r.sortableTime, km, sourceOrder: r.sourceOrder };
     })
-    .filter((x): x is { year: number; km: number; sourceOrder: number } => x != null);
+    .filter((x): x is { year: number; time: number; km: number; sourceOrder: number } => x != null);
 
   if (series.length === 0) return "";
 
+  const tMin = series[0]!.time;
+  const tMax = series[series.length - 1]!.time;
   const yMin = series[0]!.year;
   const yMax = series[series.length - 1]!.year;
   let kmMin = Math.min(...series.map((s) => s.km));
@@ -72,19 +63,20 @@ export function buildUnifiedMileageChartWrapHtml(
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
 
-  const xOf = (year: number) => {
-    if (yMax === yMin) return padL + plotW / 2;
-    return padL + ((year - yMin) / (yMax - yMin)) * plotW;
+  const xOf = (time: number) => {
+    if (tMax === tMin) return padL + plotW / 2;
+    return padL + ((time - tMin) / (tMax - tMin)) * plotW;
   };
   const yOf = (km: number) => padT + plotH - ((km - kmMin) / (kmMax - kmMin)) * plotH;
 
   const pts = series.map((s) => ({
-    x: xOf(s.year),
+    x: xOf(s.time),
     y: yOf(s.km),
     sourceOrder: s.sourceOrder,
   }));
   const pathPts = pts.map((p) => ({ x: p.x, y: p.y }));
-  const pathD = catmullRomSvgPath(pathPts);
+  const pathD = linearSvgPath(pathPts);
+  const hasAnomaly = series.some((s) => anomalyBySourceOrder.get(s.sourceOrder) === true);
 
   const yStart = yMin;
   const yEnd = yMax;
@@ -100,7 +92,10 @@ export function buildUnifiedMileageChartWrapHtml(
   const gridLines: string[] = [];
   const yearLabels: string[] = [];
   for (const y of tickYears) {
-    let gx = xOf(y);
+    const yStartTs = Date.UTC(yStart, 0, 1);
+    const yEndTs = Date.UTC(yEnd, 0, 1);
+    const yearTime = tMax === tMin ? tMin : Math.min(yEndTs, Math.max(yStartTs, Date.UTC(y, 0, 1)));
+    let gx = xOf(yearTime);
     gx = Math.min(padL + plotW, Math.max(padL, gx));
     gridLines.push(
       `<line class="pdf-mileage-chart-grid" x1="${gx.toFixed(1)}" y1="${padT}" x2="${gx.toFixed(1)}" y2="${padT + plotH}" />`,
@@ -111,7 +106,21 @@ export function buildUnifiedMileageChartWrapHtml(
   }
 
   const dotR = series.length === 1 ? 4 : 3;
+  const maxNormalDots = compact ? 6 : 7;
+  const visibleDotSourceOrders = new Set<number>();
+  if (hasAnomaly || pts.length <= maxNormalDots) {
+    for (const p of pts) visibleDotSourceOrders.add(p.sourceOrder);
+  } else {
+    visibleDotSourceOrders.add(pts[0]!.sourceOrder);
+    visibleDotSourceOrders.add(pts[pts.length - 1]!.sourceOrder);
+    const midSlots = Math.max(0, maxNormalDots - 2);
+    for (let i = 1; i <= midSlots; i++) {
+      const idx = Math.round((i * (pts.length - 1)) / (midSlots + 1));
+      visibleDotSourceOrders.add(pts[idx]!.sourceOrder);
+    }
+  }
   const dots = pts
+    .filter((p) => visibleDotSourceOrders.has(p.sourceOrder))
     .map((p) => {
       const anom = anomalyBySourceOrder.get(p.sourceOrder) === true;
       const cls = anom ? "pdf-mileage-chart-dot pdf-mileage-chart-dot--anomaly" : "pdf-mileage-chart-dot";

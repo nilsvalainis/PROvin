@@ -42,7 +42,7 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   tirgus: "Tirgus dati",
   autodna: "AutoDNA",
   carvertical: "CarVertical",
-  auto_records: "AUTO RECORDS",
+  auto_records: "OFICIĀLĀ DĪLERA DATI",
   ltab: "LTAB",
   citi_avoti: "CITI AVOTI",
   listing_analysis: "Sludinājuma analīze",
