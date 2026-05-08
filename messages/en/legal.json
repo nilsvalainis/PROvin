@@ -1,0 +1,111 @@
+{
+  "Legal": {
+    "privacyMetaTitle": "Privacy Policy",
+    "privacyMetaDescription": "How PROVIN.LV processes personal data, cookies, and analytics after consent under GDPR.",
+    "privacyTitle": "Privacy Policy",
+    "privacyLead": "This document describes how PROVIN.LV (\"we\", \"service\") processes personal data, what cookies are used, and how you can accept or reject non-essential analytics and first-touch (UTM) data storage.",
+    "sections": [
+      {
+        "title": "1. Controller",
+        "body": "The data controller is PROVIN.LV; full legal details are provided at the start of this document. Contact details are listed in the website footer."
+      },
+      {
+        "title": "2. What data we process",
+        "body": "Order data may include name, email, phone, VIN, listing URL, free-form message and payment metadata (processed by Stripe according to its policy). Technical server logs may be used for security and stability."
+      },
+      {
+        "title": "3. Purposes and legal basis",
+        "body": "Contract performance and order processing; legitimate interests such as security and error prevention; analytics and UTM storage only after explicit consent."
+      }
+    ],
+    "termsMetaTitle": "Terms of Service",
+    "termsMetaDescription": "PROVIN.LV terms: service scope, payment, refund policy, distance contract and digital content withdrawal terms.",
+    "termsTitle": "PROVIN.LV Terms of Service",
+    "termsUpdated": "Effective from: April 3, 2026",
+    "termsLead": "These terms govern the legal relationship between you and PROVIN.LV for use of provin.lv and ordering paid consultation services.",
+    "termsSections": [
+      {
+        "title": "1. Scope and acceptance",
+        "body": "By submitting an order and confirming these terms, the customer agrees to the full terms and immediate service execution."
+      },
+      {
+        "title": "2. Service nature",
+        "body": "PROVIN provides a consultative service and expert analysis; conclusions are advisory and do not replace technical inspection."
+      },
+      {
+        "title": "3. Data sources",
+        "body": "PROVIN uses multiple lawful data sources, including paid international databases and public registries, according to applicable terms and law."
+      },
+      {
+        "title": "4. Public registries",
+        "body": "Public registry data is used only in lawful ways and according to applicable regulations."
+      },
+      {
+        "title": "5. Orders, pricing, payment and refunds",
+        "body": "Pricing is shown at checkout; payment is processed by Stripe; refund rules for digital content are defined in section 11."
+      },
+      {
+        "title": "6. Delivery timelines",
+        "body": "The report is usually delivered within 48 hours after successful payment and complete order data."
+      },
+      {
+        "title": "7. Customer obligations",
+        "body": "Customers must provide accurate data and ensure they have rights to any provided third-party materials."
+      },
+      {
+        "title": "8. Intellectual property",
+        "body": "PROVIN report structure and content are protected; reuse is limited to personal use for purchase decision support."
+      },
+      {
+        "title": "9. Liability limitations",
+        "body": "PROVIN is not liable for incompleteness or errors in third-party data sources it does not control."
+      },
+      {
+        "title": "10. Personal data",
+        "body": "Personal data processing is governed by the Privacy Policy."
+      },
+      {
+        "title": "11. Digital content and withdrawal rights",
+        "withdrawalIntro": "**Withdrawal rights and refunds.** This section explains refund and withdrawal terms for digital content once service execution has started with user consent.",
+        "searchKeywordsLine": "Keywords for clarity: **refund**, **withdrawal**, **right of withdrawal**.",
+        "subsections": [
+          {
+            "heading": "11.1. General rule",
+            "body": "Withdrawal rights may apply under applicable law unless exceptions are triggered."
+          },
+          {
+            "heading": "11.2. Digital content exception",
+            "body": "By explicitly consenting to immediate execution and acknowledging withdrawal waiver, the customer loses withdrawal rights for digital content as allowed by law."
+          },
+          {
+            "heading": "11.3. Other consumer rights",
+            "body": "Other consumer rights remain applicable under law."
+          }
+        ]
+      },
+      {
+        "title": "12. Dispute resolution",
+        "body": "Disputes are first handled amicably; unresolved matters may be handled under Latvian jurisdiction rules."
+      },
+      {
+        "title": "13. Changes to terms",
+        "body": "PROVIN may update these terms; the version active at order time applies unless law requires otherwise."
+      },
+      {
+        "title": "14. Applicable law",
+        "body": "These terms are governed by Latvian and directly applicable EU law."
+      },
+      {
+        "title": "15. Contacts",
+        "body": "Questions about these terms: use the email or WhatsApp listed in the website footer."
+      }
+    ]
+  },
+  "Cookies": {
+    "bannerTitle": "Cookies and privacy",
+    "bannerText": "We use required cookies for website operation. If you consent, we also store anonymous first-touch and UTM data for traffic source analysis.",
+    "reject": "Required only",
+    "acceptAnalytics": "Accept analytics and storage",
+    "privacyLink": "Privacy Policy"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "ProvinSelect": {
+    "eyebrow": "PROVIN SELECT",
+    "lead": "Strategic consultation",
+    "included": [
+      {
+        "title": "PERSONAL MODEL\nSELECTION",
+        "body": "We will shortlist 3 car brands and models that best fit your needs, budget and maintenance costs. You no longer waste time on unsuitable options."
+      },
+      {
+        "title": "LISTING FILTER\nAND ANALYSIS",
+        "body": "We manually review suitable offers and filter risky listings from the start. You receive only options worth your time."
+      },
+      {
+        "title": "TECHNICAL RISK\nFORECAST",
+        "body": "We explain model-specific weak points and potential risks in detail. You will know what to focus on during inspection and what future costs to expect."
+      },
+      {
+        "title": "NEGOTIATION STRATEGY\nAND SUPPORT",
+        "body": "We prepare you for seller negotiations — what to ask, how to notice manipulation and how to discuss price with facts. We support you through the whole buying process."
+      }
+    ],
+    "cardsTrustLine": "5 validated options · Full process support",
+    "cardsVinNote": "VIN checks are not included (performed in PROVIN audit).",
+    "comparisonScrollCta": "APPLY FOR CONSULTATION — 49.99 €",
+    "ctaPrimary": "APPLY FOR CONSULTATION",
+    "formTitle": "Consultation request",
+    "nameLabel": "Name",
+    "phoneLabel": "Phone number",
+    "emailLabel": "Email",
+    "messageLabel": "Comment",
+    "messagePlaceholder": "Describe your goals in detail…",
+    "followupNote": "After submission we will contact you within 48h.",
+    "submit": "APPLY FOR CONSULTATION — 49.99 €",
+    "financingNote": "We can also help evaluate the most suitable financing type — so you make a smart decision not only about the car, but also the purchase approach.",
+    "submitting": "Sending…",
+    "success": "Thank you — request submitted. We will contact you within 48h.",
+    "errorGeneric": "Failed to submit. Please try again or write to info@provin.lv.",
+    "errorSmtp": "Email server is not configured — contact us at info@provin.lv.",
+    "validation": {
+      "name": "Please enter your name (at least 3 characters).",
+      "email": "Please enter a valid email address.",
+      "phone": "Please enter a phone number with at least 8 digits.",
+      "message": "Please describe your needs in at least a few sentences."
+    }
+  }
+}

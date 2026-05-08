@@ -1,0 +1,9 @@
+{
+  "Thanks": {
+    "title": "Thank you! Payment received",
+    "body": "Your order has been registered. You will receive a confirmation email shortly; our team will start data collection and analysis.",
+    "sessionLabel": "Session ID:",
+    "downloadInvoice": "Download invoice (PDF)",
+    "back": "Back to home"
+  }
+}

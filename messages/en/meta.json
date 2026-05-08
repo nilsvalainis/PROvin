@@ -1,0 +1,14 @@
+{
+  "Meta": {
+    "homeIntroTitle": "",
+    "homeIntroBody": "In the used car market, you are playing against people with decades of experience who know this game inside out. PROVIN is your personal interests defender, created to level the playing field.\n\nWe combine information from major vehicle history databases with careful listing analysis and model-specific risk assessment. This helps you notice what the seller leaves unsaid and what usually goes unnoticed. We are here so you can make a clear-headed decision and spot risks before they become a serious problem.",
+    "title": "PROVIN — VIN and listing analysis",
+    "description": "PROVIN combines data from multiple databases with expert manual analysis, listing evaluation, and model-specific risks. Understand history reports and why VIN decoding alone is often not enough — get a clear conclusion before purchase.",
+    "ogTitle": "PROVIN — VIN and listing analysis",
+    "ogDescription": "Complete vehicle history analysis with an expert conclusion. Multiple data sources, manual interpretation, and answers to key questions before buying a car.",
+    "faqTitle": "FAQ",
+    "faqDescription": "Questions and answers",
+    "thanksTitle": "Thank you for your order",
+    "thanksDescription": "Order received. A short confirmation after successful Stripe payment."
+  }
+}

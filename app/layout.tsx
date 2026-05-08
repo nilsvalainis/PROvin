@@ -38,7 +38,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           id="smartsupp-live-chat"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
-            __html: `var _smartsupp = _smartsupp || {};_smartsupp.key = '99e120aeb67ba5039e3b55f62f41884ed3fe05f4';window.smartsupp||(function(d){var s,c,o=smartsupp=function(){o._.push(arguments)};o._=[];s=d.getElementsByTagName('script')[0];c=d.createElement('script');c.type='text/javascript';c.charset='utf-8';c.async=true;c.src='https://www.smartsuppchat.com/loader.js?';s.parentNode.insertBefore(c,s);})(document);`,
+            __html: `var _smartsupp=_smartsupp||{};_smartsupp.key='99e120aeb67ba5039e3b55f62f41884ed3fe05f4';_smartsupp.color=(document.documentElement.getAttribute('data-site-theme')==='light'?'#0066ff':'#3b82f6');window.smartsupp||(function(d){var s,c,o=smartsupp=function(){o._.push(arguments)};o._=[];var lang=(location.pathname.startsWith('/en/')||location.pathname==='/en')?'en':'lv';o('language',lang);s=d.getElementsByTagName('script')[0];c=d.createElement('script');c.type='text/javascript';c.charset='utf-8';c.async=true;c.src='https://www.smartsuppchat.com/loader.js?';s.parentNode.insertBefore(c,s);})(document);`,
+          }}
+        />
+        <Script
+          id="smartsupp-theme-sync"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){function currentColor(){return document.documentElement.getAttribute('data-site-theme')==='light'?'#0066ff':'#3b82f6';}function currentLang(){return (location.pathname.startsWith('/en/')||location.pathname==='/en')?'en':'lv';}var last=currentColor();window._smartsupp=window._smartsupp||{};window._smartsupp.color=last;if(window.smartsupp){window.smartsupp('language',currentLang());}var obs=new MutationObserver(function(){var next=currentColor();if(next===last)return;last=next;window._smartsupp.color=next;});obs.observe(document.documentElement,{attributes:true,attributeFilter:['data-site-theme']});})();`,
           }}
         />
         <Script

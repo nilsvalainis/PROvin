@@ -1,0 +1,11 @@
+{
+  "Header": {
+    "faq": "Questions",
+    "order": "Order",
+    "navHome": "Home",
+    "menuOpen": "Open menu",
+    "menuClose": "Close menu",
+    "themeSwitchToLight": "Switch to light mode",
+    "themeSwitchToDark": "Switch to dark mode"
+  }
+}

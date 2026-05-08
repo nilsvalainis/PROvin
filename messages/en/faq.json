@@ -1,0 +1,32 @@
+{
+  "Faq": {
+    "title": "FAQ",
+    "items": [
+      {
+        "id": "provin-vs-standard",
+        "q": "How is PROVIN different from a standard VIN report?",
+        "a": "A standard report is usually just an algorithm-generated fact sheet. PROVIN goes further — we do not simply forward data, we interpret it. We analyze listing credibility, seller behavior patterns and model-specific risks that no automated tool can fully evaluate. You receive not just a PDF with tables, but a clear expert conclusion in human language: buy or do not buy."
+      },
+      {
+        "id": "vin-decoding-not-enough",
+        "q": "Why is VIN decoding alone not enough?",
+        "a": "Because no single database is perfect. Data coverage across Europe differs significantly — information present in one source may be missing in another, and vice versa. Relying on one automated report can make you miss critical accident or odometer manipulation data. A complete picture requires comparing and cross-checking multiple independent sources."
+      },
+      {
+        "id": "understand-reports",
+        "q": "How to understand vehicle history reports?",
+        "a": "Start by understanding what each line really means: mileage curves, accident categories and country registry specifics. The key is to compare sources and detect inconsistencies. PROVIN gathers data from multiple resources, analyzes it in detail and combines it into one structured report with a clear conclusion."
+      },
+      {
+        "id": "data-completeness",
+        "q": "Are the data always complete?",
+        "a": "No database is fully complete. We compare sources and clearly mark where information is inconsistent or missing. The conclusion helps decision-making but does not replace an in-person technical inspection. A service-center or expert inspection is recommended in all cases."
+      },
+      {
+        "id": "delivery-time",
+        "q": "How long does it take to receive results?",
+        "a": "Our goal is to deliver full analysis within 48 hours after successful payment. If additional time is needed (for example, rare models or delayed data sources), we will let you know."
+      }
+    ]
+  }
+}

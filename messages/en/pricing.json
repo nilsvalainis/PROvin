@@ -1,0 +1,29 @@
+{
+  "Pricing": {
+    "workTitle": "WHAT'S INCLUDED IN THE PRICE?",
+    "comparisonAuditTitle": "PROVIN AUDITS",
+    "comparisonAuditSubtitle": "A report that tells much more",
+    "comparisonAuditCta": "ORDER AUDIT — 79.99 €",
+    "grid": [
+      {
+        "title": "FULL HISTORY ANALYSIS",
+        "body": "Synthesis of official dealer*, international and local registry data. Mileage, accidents, and theft records."
+      },
+      {
+        "title": "LISTING AUDIT",
+        "body": "Expert review of photos and description. Identification of hidden repairs and wear indicators."
+      },
+      {
+        "title": "TECHNICAL RISK ANALYSIS",
+        "body": "Assessment of engine, transmission and key systems. Reliability outlook and operating risks."
+      },
+      {
+        "title": "EXPERT RECOMMENDATION",
+        "body": "Conclusion based on data and 10+ years of experience. Individual consultation after the report.",
+        "href": true
+      }
+    ],
+    "irissLink": "WHO IS BEHIND PROVIN?",
+    "autoRecordsFootnote": "* Available only for specific manufacturers"
+  }
+}

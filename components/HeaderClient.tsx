@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Menu, X } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import {
   buildSiteRailSections,
@@ -16,6 +16,10 @@ import { renderProvinText } from "@/lib/provin-wordmark";
 /** Mājas navigācijas rindkopas kā `/#…` vai `/biezi-jautajumi`. */
 export function HeaderClient() {
   const pathname = usePathname() ?? "";
+  const locale = useLocale();
+  const targetLocale = locale === "lv" ? "en" : "lv";
+  const localeFlag = locale === "lv" ? "🇬🇧" : "🇱🇻";
+  const localeLabel = locale === "lv" ? "Switch to English" : "Pārslēgt uz latviešu valodu";
   const normalizedPath = normalizeSitePath(pathname);
   const { theme } = useSiteTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -128,6 +132,18 @@ export function HeaderClient() {
         </Link>
 
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3">
+          <Link
+            href={pathname as never}
+            locale={targetLocale}
+            className={`relative z-[52] inline-flex min-h-9 min-w-9 items-center justify-center text-base leading-none no-underline transition ${
+              headerChromeDark ? "text-white hover:text-white/80" : "text-[#1d1d1f] hover:text-[#111827]"
+            }`}
+            aria-label={localeLabel}
+            title={localeLabel}
+          >
+            <span aria-hidden>{localeFlag}</span>
+          </Link>
+
           {showHomeNavRail ? (
             <nav
               className="relative z-[52] mr-1 ml-auto hidden min-w-0 flex-wrap items-center justify-end gap-x-4 lg:flex xl:gap-x-6"
@@ -156,14 +172,16 @@ export function HeaderClient() {
                 headerChromeDark
                   ? "border-white/20 bg-white/[0.06] text-white hover:border-white/32 hover:bg-white/10 focus-visible:ring-offset-[#050505]"
                   : "border-black/[0.1] bg-white text-[#1d1d1f] shadow-sm hover:bg-slate-50 focus-visible:ring-offset-white"
-              }`}
+              } border-transparent bg-transparent shadow-none hover:border-transparent hover:bg-transparent`}
               aria-label={mobileMenuOpen ? tHeader("menuClose") : tHeader("menuOpen")}
             >
               {mobileMenuOpen ? <X className="h-[22px] w-[22px]" strokeWidth={1.75} /> : <Menu className="h-[22px] w-[22px]" strokeWidth={1.75} />}
             </button>
           ) : null}
 
-          <SiteThemeHeaderButton className={themeBtnClass} />
+          <SiteThemeHeaderButton
+            className={`${themeBtnClass} max-md:!border-transparent max-md:!bg-transparent max-md:!shadow-none max-md:hover:!border-transparent max-md:hover:!bg-transparent`}
+          />
         </div>
       </div>
 

@@ -1,0 +1,21 @@
+{
+  "Footer": {
+    "body": "Standard history reports provide only raw facts. We perform deeper analysis — evaluating the listing, model weak points and market value to deliver a complete and thoughtful conclusion.",
+    "legalRegionLabel": "Legal information and links",
+    "contacts": "Contacts",
+    "contactsHint": "Questions? Get in touch.",
+    "emailCta": "Send email",
+    "whatsapp": "WhatsApp",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "gdpr": "© {year} PROVIN. Personal data processing is carried out in accordance with applicable law (GDPR).",
+    "legalInlinePrefixJuridiska": "Legal details:",
+    "legalInlinePrefixPakalpojums": "Service provider:",
+    "serviceProviderDisclosureSummary": "Service provider",
+    "companyLegalSubject": "Legal provider",
+    "companyRegNo": "Registration number",
+    "companyLegalAddress": "Legal address",
+    "companyIncompleteDev": "Developer note: set NEXT_PUBLIC_COMPANY_LEGAL_NAME, NEXT_PUBLIC_COMPANY_REG_NO and NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS (.env or hosting).",
+    "disclaimer": "Data-source information is informative; the summary is a professional opinion, not a legal judgment or official technical expertise."
+  }
+}
