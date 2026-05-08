@@ -40,11 +40,11 @@ export function HeaderClient() {
   const headerChromeDark = isDarkHeaderSurface || isDemoGraphiteHeader;
 
   const themeBtnOnDarkHeroClass =
-    "min-h-9 min-w-9 h-9 w-9 border-white/20 bg-white/[0.06] text-white hover:border-white/35 hover:bg-white/10 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#050505]";
+    "min-h-9 min-w-9 h-9 w-9 border-transparent bg-transparent text-white shadow-none hover:border-transparent hover:bg-transparent focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#050505]";
   const themeBtnGraphiteClass =
-    "min-h-9 min-w-9 h-9 w-9 border-white/12 bg-white/[0.07] text-white hover:border-white/28 hover:bg-white/11 focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#383a40]";
+    "min-h-9 min-w-9 h-9 w-9 border-transparent bg-transparent text-white shadow-none hover:border-transparent hover:bg-transparent focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#383a40]";
   const themeBtnLightChromeClass =
-    "min-h-9 min-w-9 h-9 w-9 border-black/[0.08] bg-white text-[#1d1d1f] shadow-sm hover:bg-slate-50 focus-visible:ring-[rgb(0_102_255/0.35)] focus-visible:ring-offset-white";
+    "min-h-9 min-w-9 h-9 w-9 border-transparent bg-transparent text-[#1d1d1f] shadow-none hover:border-transparent hover:bg-transparent focus-visible:ring-[rgb(0_102_255/0.35)] focus-visible:ring-offset-white";
 
   const graphiteHeaderSurface =
     "border-b border-black/30 bg-[#383a40] pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#383a40]/94";
@@ -167,13 +167,11 @@ export function HeaderClient() {
             </button>
           ) : null}
 
-          <SiteThemeHeaderButton
-            className={`${themeBtnClass} max-md:!border-transparent max-md:!bg-transparent max-md:!shadow-none max-md:hover:!border-transparent max-md:hover:!bg-transparent`}
-          />
+          <SiteThemeHeaderButton className={themeBtnClass} />
           <Link
             href={pathname as never}
             locale={targetLocale}
-            className={`relative z-[52] inline-flex h-9 w-9 shrink-0 items-center justify-center text-[15px] leading-none no-underline transition ${
+            className={`relative z-[52] inline-flex min-h-9 min-w-9 h-9 w-9 shrink-0 items-center justify-center text-[15px] leading-none no-underline transition ${
               headerChromeDark ? "text-white hover:text-white/80" : "text-[#1d1d1f] hover:text-[#111827]"
             }`}
             aria-label={localeLabel}
