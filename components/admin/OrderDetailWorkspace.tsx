@@ -210,6 +210,28 @@ function wrapPdfTextLine(text: string, maxWidth: number, widthOfText: (value: st
   return out.map((x) => (x.length > 1200 ? `${x.slice(0, 1200)}…` : x));
 }
 
+/**
+ * WhatsApp ātrajam PDF izmantojam WinAnsi drošu tekstu (pdf-lib StandardFonts).
+ * Tas novērš kļūdu: WinAnsi cannot encode "ā" u.c.
+ */
+function toWinAnsiSafeText(text: string): string {
+  return text
+    .replace(/[Āā]/g, "a")
+    .replace(/[Čč]/g, "c")
+    .replace(/[Ēē]/g, "e")
+    .replace(/[Ģģ]/g, "g")
+    .replace(/[Īī]/g, "i")
+    .replace(/[Ķķ]/g, "k")
+    .replace(/[Ļļ]/g, "l")
+    .replace(/[Ņņ]/g, "n")
+    .replace(/[Šš]/g, "s")
+    .replace(/[Ūū]/g, "u")
+    .replace(/[Žž]/g, "z")
+    .replace(/[“”„]/g, "\"")
+    .replace(/[’]/g, "'")
+    .replace(/[–—]/g, "-");
+}
+
 function WhatsAppIconGlyph() {
   return (
     <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden>
@@ -1661,7 +1683,7 @@ export function OrderDetailWorkspace({
     const lineHeight = 14;
     const titleSize = 14;
     const maxLineWidth = 595 - marginX * 2;
-    const widthOfText = (value: string) => font.widthOfTextAtSize(value, baseSize);
+    const widthOfText = (value: string) => font.widthOfTextAtSize(toWinAnsiSafeText(value), baseSize);
     let page = pdf.addPage([595, 842]);
     let y = page.getHeight() - marginTop;
     const ensureSpace = (need: number) => {
@@ -1671,12 +1693,24 @@ export function OrderDetailWorkspace({
     };
     const drawLine = (value: string) => {
       ensureSpace(lineHeight);
-      page.drawText(value, { x: marginX, y, size: baseSize, font, color: rgb(0.11, 0.11, 0.11) });
+      page.drawText(toWinAnsiSafeText(value), {
+        x: marginX,
+        y,
+        size: baseSize,
+        font,
+        color: rgb(0.11, 0.11, 0.11),
+      });
       y -= lineHeight;
     };
     const drawHeading = (value: string) => {
       ensureSpace(22);
-      page.drawText(value, { x: marginX, y, size: titleSize, font: titleFont, color: rgb(0.05, 0.05, 0.05) });
+      page.drawText(toWinAnsiSafeText(value), {
+        x: marginX,
+        y,
+        size: titleSize,
+        font: titleFont,
+        color: rgb(0.05, 0.05, 0.05),
+      });
       y -= 20;
     };
     const drawParagraph = (value: string) => {
