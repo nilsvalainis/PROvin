@@ -156,11 +156,9 @@ export function HeaderClient() {
               aria-expanded={mobileMenuOpen}
               aria-controls="header-mobile-nav-panel"
               onClick={() => setMobileMenuOpen((o) => !o)}
-              className={`lg:hidden relative z-[52] inline-flex shrink-0 items-center justify-center rounded-lg border px-2.5 py-2 outline-none transition focus-visible:ring-2 focus-visible:ring-[#0066ff]/45 focus-visible:ring-offset-2 ${
-                headerChromeDark
-                  ? "border-white/20 bg-white/[0.06] text-white hover:border-white/32 hover:bg-white/10 focus-visible:ring-offset-[#050505]"
-                  : "border-black/[0.1] bg-white text-[#1d1d1f] shadow-sm hover:bg-slate-50 focus-visible:ring-offset-white"
-              } border-transparent bg-transparent shadow-none hover:border-transparent hover:bg-transparent`}
+              className={`lg:hidden relative z-[52] inline-flex h-9 w-9 shrink-0 items-center justify-center border-0 bg-transparent p-0 outline-none shadow-none transition focus-visible:ring-2 focus-visible:ring-[#0066ff]/45 focus-visible:ring-offset-2 hover:bg-transparent ${
+                headerChromeDark ? "text-white focus-visible:ring-offset-[#050505]" : "text-[#1d1d1f] focus-visible:ring-offset-white"
+              }`}
               aria-label={mobileMenuOpen ? tHeader("menuClose") : tHeader("menuOpen")}
             >
               {mobileMenuOpen ? <X className="h-[22px] w-[22px]" strokeWidth={1.75} /> : <Menu className="h-[22px] w-[22px]" strokeWidth={1.75} />}
@@ -171,7 +169,7 @@ export function HeaderClient() {
           <Link
             href={pathname as never}
             locale={targetLocale}
-            className={`relative z-[52] inline-flex min-h-9 min-w-9 h-9 w-9 shrink-0 items-center justify-center text-[15px] leading-none no-underline transition ${
+            className={`relative z-[52] inline-flex min-h-9 min-w-9 h-9 w-9 shrink-0 items-center justify-center text-[15px] md:text-[17px] leading-none no-underline transition ${
               headerChromeDark ? "text-white hover:text-white/80" : "text-[#1d1d1f] hover:text-[#111827]"
             }`}
             aria-label={localeLabel}
