@@ -1403,6 +1403,7 @@ html[data-site-theme="light"] .heroConsultTextLink:hover {
 .features.heroTrust {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 12px 20px;
   margin-top: 20px;
   max-width: 100%;
