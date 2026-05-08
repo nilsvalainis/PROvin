@@ -4,17 +4,17 @@
     "items": [
       {
         "id": "provin-vs-standard",
-        "q": "Kā PROVIN atšķiras no parastās VIN atskaites?",
+        "q": "Kāpēc auto vēstures pārbaude ir svarīga?",
         "a": "Parasta atskaite ir tikai algoritma ģenerēta faktu lapa. PROVIN audits iet soli tālāk — mēs nevis vienkārši pārsūtām datus, bet tos interpretējam. Mēs analizējam sludinājuma patiesumu, pārdevēja psiholoģiju un modeļa specifiskos riskus, ko nespēj neviens automātisks rīks. Tu saņem nevis PDF failu ar tabulām, bet skaidru, cilvēka valodā izteiktu eksperta slēdzienu: pirkt vai nepirkt."
       },
       {
         "id": "vin-decoding-not-enough",
-        "q": "Kāpēc ar parastu VIN atšifrēšanu nepietiek?",
+        "q": "Kā pārbaudīt auto pēc VIN numura?",
         "a": "Jo neviena datubāze nav perfekta. Informācijas avoti visā Eiropā krasi atšķiras — dati, kas ir fiksēti vienā resursā, var pilnībā iztrūkt citā, un otrādi. Paļaujoties tikai uz vienu automātisku atskaiti, Tu riskē palaist garām kritisku informāciju par negadījumiem vai odometra manipulācijām. Pilnam skatam ir nepieciešama vairāku neatkarīgu avotu salīdzināšana un datu krustošana. Neriskē ar vienu avotu."
       },
       {
         "id": "understand-reports",
-        "q": "Kā saprast auto vēstures atskaites?",
+        "q": "Kādas auto atskaites ir visprecīzākās?",
         "a": "Sāc ar to, ko katra rindiņa patiesībā nozīmē: nobraukuma līknes, negadījumu kategorijas un valstu reģistru īpatnības. Svarīgākais ir salīdzināt avotus un meklēt pretrunas. PROVIN datus ievāc paši no dažādiem resursiem, tos detalizēti izanalizē un apvieno vienā pārskatāmā atskaitē. Tu saņem skaidru kopsavilkumu par konkrēto auto."
       },
       {

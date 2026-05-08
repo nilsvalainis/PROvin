@@ -11,6 +11,18 @@ export async function HomeFaqSection() {
   const messages = await getMessages();
   const raw = (messages as { Faq?: { items?: FaqItem[] } }).Faq?.items;
   const items = Array.isArray(raw) ? raw : [];
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a,
+      },
+    })),
+  };
 
   return (
     <section
@@ -31,6 +43,7 @@ export async function HomeFaqSection() {
         <div className="mt-10">
           <FaqClient title={tFaq("title")} items={items} tone="dark" embedded />
         </div>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       </div>
     </section>
   );

@@ -48,6 +48,8 @@ export default function HomeProductHero({ showProvinSelect = false, comparisonCo
                     <span className={styles.productHeroTitleMid}>{t("productTitlePart3")}</span>
                   </span>
                 </h1>
+                <h2 className="sr-only">Kāpēc ar parastu VIN koda pārbaudi nepietiek?</h2>
+                <p className="sr-only">Profesionāla auto pārbaude pirms pirkšanas.</p>
                 <p className={styles.productHeroSubhead}>{renderProvinText(t("productSubhead"))}</p>
                 <div className={styles.productHeroDivider} aria-hidden />
 

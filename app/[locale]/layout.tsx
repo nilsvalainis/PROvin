@@ -37,6 +37,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const base = getPublicSiteOrigin().replace(/\/$/, "");
   const canonical = `${base}/${locale}`;
   const ogImage = `/${locale}/opengraph-image`;
+  const keywords = [
+    "pārbaudīt vin kodu",
+    "auto vēstures pārbaude",
+    "vin koda pārbaude",
+    "pārbaudīt automašīnu",
+    "auto atskaites",
+    "auto pārbaude",
+  ];
 
   return {
     metadataBase: new URL(getPublicSiteOrigin()),
@@ -45,6 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       template: "%s | PROVIN",
     },
     description: t("description"),
+    keywords,
     alternates: {
       canonical,
     },
@@ -60,7 +69,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           url: ogImage,
           width: 1200,
           height: 630,
-          alt: getCompanyPublicBrand(),
+          alt: "vin-koda-parbaude-atskaite",
         },
       ],
     },
