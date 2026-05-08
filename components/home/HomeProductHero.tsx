@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { HeroVisual } from "@/components/HeroVisual";
 import { OrderForm } from "@/components/OrderForm";
-import { demoHeroFeatureTitles } from "@/lib/demo-feature-titles";
 import {
   HOME_HERO_ORDER_FORM_ID,
   ORDER_SECTION_ID,
@@ -23,6 +22,7 @@ type Props = {
 export default function HomeProductHero({ showProvinSelect = false, comparisonContent }: Props) {
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
   const t = useTranslations("Hero");
+  const heroFeatureTitles = [t("productValue1"), t("productValue3"), t("productValue2"), t("productValue4")];
 
   return (
     <div
@@ -66,20 +66,12 @@ export default function HomeProductHero({ showProvinSelect = false, comparisonCo
                 {heroOrderStep === 1 ? (
                   <div className="pointer-events-auto relative z-[80] mt-4 flex w-full max-w-[520px] min-w-0 flex-col items-stretch gap-2 sm:mt-5">
                     <ul className={`${styles.features} ${styles.heroTrust}`}>
-                      {demoHeroFeatureTitles.map((item) => (
-                        <li key={item.label}>
-                          {item.icon === "check" ? (
-                            <span className={`${styles.featureIcon} ${styles.featureIconCheck}`} aria-hidden>
-                              ✓
-                            </span>
-                          ) : (
-                            <span className={`${styles.featureIcon} ${styles.featureIconShield}`} aria-hidden>
-                              <svg viewBox="0 0 24 24" focusable="false">
-                                <path d="M12 2.5 4.5 5.7v6.1c0 5.2 3.2 9.4 7.5 10.9 4.3-1.5 7.5-5.7 7.5-10.9V5.7L12 2.5Zm0 2.2 5.3 2.2v4.9c0 4.2-2.4 7.5-5.3 8.8-2.9-1.3-5.3-4.6-5.3-8.8V6.9L12 4.7Zm-1.2 10.2 5.2-5.2 1.4 1.4-6.6 6.6-3.2-3.2 1.4-1.4 1.8 1.8Z" />
-                              </svg>
-                            </span>
-                          )}
-                          <span>{item.label}</span>
+                      {heroFeatureTitles.map((label) => (
+                        <li key={label}>
+                          <span className={`${styles.featureIcon} ${styles.featureIconCheck}`} aria-hidden>
+                            ✓
+                          </span>
+                          <span>{label}</span>
                         </li>
                       ))}
                     </ul>
