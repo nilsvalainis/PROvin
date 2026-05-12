@@ -1,3 +1,5 @@
+import type { CheckoutLineKind } from "@/lib/stripe-session";
+
 /**
  * RSC → client `AdminOrdersTable`: tikai string | number | null | boolean (bez Date, Decimal, Stripe instancēm).
  * Nav `server-only` — tipu var droši importēt klienta komponentā.
@@ -12,6 +14,8 @@ export type SerializedAdminOrderTableRow = {
   customerEmail: string | null;
   customerPhone: string | null;
   vin: string | null;
+  /** Ja ir, tabula var novirzīt „Atvērt” uz `/admin/konsultacijas` PROVIN SELECT sesijām. */
+  checkoutLine?: CheckoutLineKind;
   isDemo?: boolean;
   invoicePdfUrl: string | null;
 };
@@ -26,9 +30,16 @@ type RowInput = {
   customerEmail: unknown;
   customerPhone?: unknown;
   vin: unknown;
+  checkoutLine?: unknown;
   isDemo?: unknown;
   invoicePdfUrl?: unknown;
 };
+
+function optionalCheckoutLine(o: RowInput): CheckoutLineKind | undefined {
+  const c = o.checkoutLine;
+  if (c === "audit" || c === "consultation" || c === "provin_select") return c;
+  return undefined;
+}
 
 export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminOrderTableRow[] {
   return rows.map((o) => {
@@ -43,6 +54,7 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
     const amountTotal =
       amt == null || amt === undefined ? null : Number(amt);
     const amountOk = amountTotal != null && Number.isFinite(amountTotal) ? amountTotal : null;
+    const checkoutLine = optionalCheckoutLine(o);
     return {
       id: String(o.id ?? ""),
       created,
@@ -56,6 +68,7 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
       customerPhone:
         o.customerPhone == null || o.customerPhone === undefined ? null : String(o.customerPhone),
       vin: o.vin == null || o.vin === undefined ? null : String(o.vin),
+      ...(checkoutLine ? { checkoutLine } : {}),
       ...(Boolean(o.isDemo) ? { isDemo: true as const } : {}),
       invoicePdfUrl:
         o.invoicePdfUrl == null || o.invoicePdfUrl === undefined ? null : String(o.invoicePdfUrl),

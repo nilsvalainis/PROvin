@@ -57,6 +57,18 @@ function invoicePdfHref(row: AdminOrdersTableRow): string | null {
   return row.invoicePdfUrl ?? `/api/admin/invoice/${encodeURIComponent(row.id)}/pdf`;
 }
 
+const CONSULTATION_EDITS_PREFIX = "provin-admin-consultation-edits-v1-";
+
+function rowDetailHrefBase(row: AdminOrdersTableRow, defaultBase: string): string {
+  if (row.checkoutLine === "provin_select") return "/admin/konsultacijas";
+  return defaultBase;
+}
+
+function rowEditsLocalStoragePrefix(row: AdminOrdersTableRow, tableDefaultPrefix: string): string {
+  if (row.checkoutLine === "provin_select") return CONSULTATION_EDITS_PREFIX;
+  return tableDefaultPrefix;
+}
+
 function NotifyReportReadyCell({
   sessionId,
   paymentStatus,
@@ -222,7 +234,8 @@ export function AdminOrdersTable({
     const next: Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string }> = {};
     for (const o of orders) {
       try {
-        const raw = localStorage.getItem(`${orderEditsLocalStorageKeyPrefix}${o.id}`);
+        const prefix = rowEditsLocalStoragePrefix(o, orderEditsLocalStorageKeyPrefix);
+        const raw = localStorage.getItem(`${prefix}${o.id}`);
         if (!raw) continue;
         const p = JSON.parse(raw) as Record<string, unknown>;
         const customerName = typeof p.customerName === "string" ? p.customerName.trim() : "";
@@ -241,7 +254,7 @@ export function AdminOrdersTable({
     setClientOverrides(next);
   }, [orders, orderEditsLocalStorageKeyPrefix]);
 
-  const detailBase = orderDetailHrefBase.replace(/\/$/, "");
+  const detailBaseNormalized = orderDetailHrefBase.replace(/\/$/, "");
 
   return (
     <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
@@ -262,6 +275,7 @@ export function AdminOrdersTable({
           <tbody className="divide-y divide-slate-100">
             {orders.map((o) => {
               const pdfHref = invoicePdfHref(o);
+              const detailBase = rowDetailHrefBase(o, detailBaseNormalized);
               const ov = clientOverrides[o.id];
               const name = ov?.customerName ?? (o.customerName?.trim() ?? "");
               const email = ov?.customerEmail ?? (o.customerEmail?.trim() ?? "");

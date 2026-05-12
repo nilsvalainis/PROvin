@@ -99,7 +99,8 @@ export async function listAdminOrders(limit = 50): Promise<{
   /** Ja Stripe saraksts neizdodas, rādām demo pat tad, ja ADMIN_DEMO_ORDERS=0 — lai admin nav tukšs. */
   const includeDemo = isDemoOrdersEnabled() || stripeError !== null;
   const demo = includeDemo ? (getDemoOrderRows() as AdminOrderRow[]) : [];
-  const rows = [...demo, ...real].filter((r) => r.checkoutLine !== "provin_select");
+  /** Visi apmaksātie Checkout (`audit`, `consultation`, `provin_select`) — PROVIN SELECT arī `/admin/konsultacijas`, bet šeit kopējā plūsma. */
+  const rows = [...demo, ...real];
   return { rows, stripeError };
 }
 

@@ -4,6 +4,7 @@ import {
   IRISS_MAX_OFFER_ATTACHMENTS,
   type IrissOfferAttachment,
   type IrissOfferRecord,
+  type IrissPasutijumsListStatus,
   type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
 import {
@@ -84,6 +85,12 @@ function parseOffersFromBody(o: Record<string, unknown>): IrissOfferRecord[] {
     .slice(0, 30);
 }
 
+function parseListStatusBody(v: unknown): IrissPasutijumsListStatus {
+  const s = typeof v === "string" ? v.trim().toLowerCase() : "";
+  if (s === "active" || s === "completed" || s === "inactive") return s;
+  return "active";
+}
+
 function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | null {
   if (!body || typeof body !== "object") return null;
   const o = body as Record<string, unknown>;
@@ -94,6 +101,7 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
     createdAt: str("createdAt"),
     updatedAt: str("updatedAt"),
     pinnedAt: str("pinnedAt"),
+    listStatus: parseListStatusBody(o.listStatus),
     clientFirstName: str("clientFirstName"),
     clientLastName: str("clientLastName"),
     phone: str("phone"),
