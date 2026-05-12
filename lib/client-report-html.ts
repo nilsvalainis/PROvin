@@ -402,18 +402,19 @@ function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow, anomalyBySourceOr
   const anom = anomalyBySourceOrder.get(r.sourceOrder) === true;
   const rowClass = anom ? "pdf-mileage-history-row pdf-mileage-history-row--anomaly" : "pdf-mileage-history-row";
   const ico = pdfLossAmountAlertIconHtml("red");
-  const odoTd = anom
-    ? `<td class="tabular pdf-mileage-cell-odo"><div class="pdf-mileage-odo-gutter"><span class="pdf-mileage-odo-cluster"><span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--red"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="tabular pdf-num-warn-digits">${odoEscaped}</span></span>${stripeSpan}</span></div></td>`
-    : `<td class="tabular pdf-mileage-cell-odo"><div class="pdf-mileage-odo-gutter"><span class="pdf-mileage-odo-cluster"><span class="pdf-mileage-odo-value">${odoEscaped}</span>${stripeSpan}</span></div></td>`;
-  return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td>${odoTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
+  const odoCol = anom
+    ? `<div class="pdf-mileage-odo-side"><span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--red"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="tabular pdf-num-warn-digits">${odoEscaped}</span></span></div>`
+    : `<div class="pdf-mileage-odo-side"><span class="pdf-mileage-odo-value">${odoEscaped}</span></div>`;
+  const odoFlagTd = `<td class="tabular pdf-mileage-cell-odo-flag"><div class="pdf-mileage-odo-flag-grid">${odoCol}<div class="pdf-mileage-stripe-mid">${stripeSpan}</div><div class="pdf-mileage-flag-side">${flagCell}</div></div></td>`;
+  return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td>${odoFlagTd}</tr>`;
 }
 
 function buildMileageHistoryTableHtml(rows: UnifiedMileageRow[], anomalyBySourceOrder: Map<number, boolean>): string {
   if (rows.length === 0) return "";
-  const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-flag" /></colgroup>`;
-  const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Odometrs (km)</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
+  const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo-flag" /></colgroup>`;
+  const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo-flag" scope="col"><div class="pdf-mileage-head-odo-flag" role="presentation"><span class="pdf-mileage-th-odo-h">Odometrs (km)</span><span class="pdf-mileage-th-mid" aria-hidden="true"></span><span class="pdf-mileage-th-flag-h">Valsts</span></div></th></tr>`;
   const body = rows.map((r) => buildUnifiedMileageTableRowHtml(r, anomalyBySourceOrder)).join("\n");
-  return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--mileage-rows" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 
 export function buildUnifiedMileageTableHtml(
@@ -905,6 +906,8 @@ function clientReportPrintCss(): string {
       .pdf-mileage-history-table col.pdf-mileage-col-date{width:33.333%;}
       .pdf-mileage-history-table col.pdf-mileage-col-odo{width:33.334%;}
       .pdf-mileage-history-table col.pdf-mileage-col-flag{width:33.333%;}
+      .pdf-mileage-history-table--mileage-rows col.pdf-mileage-col-date{width:33.333%!important;}
+      .pdf-mileage-history-table--mileage-rows col.pdf-mileage-col-odo-flag{width:66.667%!important;}
       .pdf-mileage-history-table thead th{
         font-weight:700!important;color:#64748b!important;
         letter-spacing:0.04em!important;text-transform:none;
@@ -925,20 +928,43 @@ function clientReportPrintCss(): string {
       .pdf-mileage-history-table th.pdf-mileage-th-date{text-align:left!important;}
       .pdf-mileage-history-table th.pdf-mileage-th-odo{text-align:center!important;}
       .pdf-mileage-history-table th.pdf-mileage-th-flag{text-align:right!important;}
+      .pdf-mileage-history-table th.pdf-mileage-th-odo-flag{
+        text-align:left!important;padding-left:10px!important;padding-right:10px!important;
+      }
+      .pdf-mileage-head-odo-flag{
+        display:grid!important;grid-template-columns:auto 1fr auto!important;width:100%!important;
+        align-items:end!important;column-gap:0!important;
+      }
+      .pdf-mileage-th-odo-h{
+        text-align:left!important;font-weight:700!important;color:#64748b!important;
+      }
+      .pdf-mileage-th-mid{min-width:0!important;}
+      .pdf-mileage-th-flag-h{
+        text-align:right!important;justify-self:end!important;font-weight:700!important;color:#64748b!important;
+      }
       .pdf-mileage-history-table td.pdf-mileage-cell-date{
         color:#374151!important;font-weight:500!important;white-space:nowrap;text-align:left!important;
       }
       .pdf-mileage-history-table td.pdf-mileage-cell-odo{text-align:center!important;}
-      .pdf-mileage-odo-gutter{
-        display:flex!important;width:100%!important;align-items:center!important;justify-content:center!important;
+      .pdf-mileage-history-table td.pdf-mileage-cell-odo-flag{
+        text-align:left!important;vertical-align:middle!important;padding-left:10px!important;padding-right:10px!important;
       }
-      .pdf-mileage-odo-cluster{
-        display:inline-flex!important;align-items:center!important;justify-content:center!important;
-        gap:5px!important;max-width:100%!important;
+      .pdf-mileage-odo-flag-grid{
+        display:grid!important;grid-template-columns:auto 1fr auto!important;width:100%!important;
+        align-items:center!important;column-gap:0!important;
       }
-      .pdf-mileage-odo-cluster .pdf-data-alert-wrap{
-        flex-shrink:1!important;
-        min-width:0!important;
+      .pdf-mileage-odo-side{
+        text-align:right!important;justify-self:end!important;min-width:0!important;padding-right:4px!important;
+      }
+      .pdf-mileage-odo-side .pdf-data-alert-wrap{
+        flex-shrink:1!important;min-width:0!important;
+      }
+      .pdf-mileage-stripe-mid{
+        display:flex!important;justify-content:center!important;align-items:center!important;min-width:0!important;
+      }
+      .pdf-mileage-flag-side{
+        display:flex!important;justify-content:flex-end!important;align-items:center!important;min-width:0!important;
+        padding-left:4px!important;
       }
       .pdf-mileage-source-stripe{
         display:inline-block;flex-shrink:0;border-radius:2px;vertical-align:middle;
