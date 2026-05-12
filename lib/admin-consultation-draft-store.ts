@@ -292,15 +292,49 @@ export async function ensureConsultationDraftSeed(sessionId: string): Promise<vo
   if (!gate.ok) return;
   const { order } = gate;
   const updatedAt = new Date().toISOString();
+  const orderEdits: ConsultationDraftOrderEdits = {
+    customerName: sanitizeDraftTextForStorage(order.customerName ?? "", 200),
+    customerEmail: sanitizeDraftTextForStorage(
+      order.customerEmail ?? order.customerDetailsEmail ?? "",
+      320,
+    ),
+    customerPhone: sanitizeDraftTextForStorage(order.phone ?? "", 64),
+    notes: sanitizeDraftTextForStorage(order.notes ?? ""),
+  };
+  if (order.selectBrandModel) {
+    orderEdits.selectBrandModel = sanitizeDraftTextForStorage(order.selectBrandModel, 400);
+  }
+  if (order.selectProductionYearsDpf) {
+    orderEdits.selectProductionYearsDpf = sanitizeDraftTextForStorage(order.selectProductionYearsDpf, 120);
+  }
+  if (order.selectPlannedBudget) {
+    orderEdits.selectPlannedBudget = sanitizeDraftTextForStorage(order.selectPlannedBudget, 120);
+  }
+  if (order.selectEngineType) {
+    orderEdits.selectEngineType = sanitizeDraftTextForStorage(order.selectEngineType, 200);
+  }
+  if (order.selectTransmission) {
+    orderEdits.selectTransmission = sanitizeDraftTextForStorage(order.selectTransmission, 120);
+  }
+  if (order.selectMaxMileage) {
+    orderEdits.selectMaxMileage = sanitizeDraftTextForStorage(order.selectMaxMileage, 120);
+  }
+  if (order.selectExteriorColor) {
+    orderEdits.selectExteriorColor = sanitizeDraftTextForStorage(order.selectExteriorColor, 400);
+  }
+  if (order.selectInteriorMaterial) {
+    orderEdits.selectInteriorMaterial = sanitizeDraftTextForStorage(order.selectInteriorMaterial, 400);
+  }
+  if (order.selectRequiredEquipment) {
+    orderEdits.selectRequiredEquipment = sanitizeDraftTextForStorage(order.selectRequiredEquipment);
+  }
+  if (order.selectDesiredEquipment) {
+    orderEdits.selectDesiredEquipment = sanitizeDraftTextForStorage(order.selectDesiredEquipment);
+  }
   const doc = {
     sessionId,
     updatedAt,
-    orderEdits: {
-      customerName: order.customerName ?? "",
-      customerEmail: order.customerEmail ?? "",
-      customerPhone: order.phone ?? "",
-      notes: order.notes ?? "",
-    },
+    orderEdits,
     workspace: null,
   };
   try {

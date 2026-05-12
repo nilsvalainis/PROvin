@@ -212,25 +212,39 @@ export function AdminConsultationDetailView({
     edits.internalComment !== undefined ? edits.internalComment : (order.internalComment ?? "");
   const oe = serverConsultationDraft?.orderEdits;
   const mergedSelectBrandModel =
-    edits.selectBrandModel !== undefined ? edits.selectBrandModel : (oe?.selectBrandModel ?? "");
+    edits.selectBrandModel !== undefined ? edits.selectBrandModel : (oe?.selectBrandModel ?? order.selectBrandModel ?? "");
   const mergedSelectProductionYearsDpf =
-    edits.selectProductionYearsDpf !== undefined ? edits.selectProductionYearsDpf : (oe?.selectProductionYearsDpf ?? "");
+    edits.selectProductionYearsDpf !== undefined
+      ? edits.selectProductionYearsDpf
+      : (oe?.selectProductionYearsDpf ?? order.selectProductionYearsDpf ?? "");
   const mergedSelectPlannedBudget =
-    edits.selectPlannedBudget !== undefined ? edits.selectPlannedBudget : (oe?.selectPlannedBudget ?? "");
+    edits.selectPlannedBudget !== undefined
+      ? edits.selectPlannedBudget
+      : (oe?.selectPlannedBudget ?? order.selectPlannedBudget ?? "");
   const mergedSelectEngineType =
-    edits.selectEngineType !== undefined ? edits.selectEngineType : (oe?.selectEngineType ?? "");
+    edits.selectEngineType !== undefined ? edits.selectEngineType : (oe?.selectEngineType ?? order.selectEngineType ?? "");
   const mergedSelectTransmission =
-    edits.selectTransmission !== undefined ? edits.selectTransmission : (oe?.selectTransmission ?? "");
+    edits.selectTransmission !== undefined
+      ? edits.selectTransmission
+      : (oe?.selectTransmission ?? order.selectTransmission ?? "");
   const mergedSelectMaxMileage =
-    edits.selectMaxMileage !== undefined ? edits.selectMaxMileage : (oe?.selectMaxMileage ?? "");
+    edits.selectMaxMileage !== undefined ? edits.selectMaxMileage : (oe?.selectMaxMileage ?? order.selectMaxMileage ?? "");
   const mergedSelectExteriorColor =
-    edits.selectExteriorColor !== undefined ? edits.selectExteriorColor : (oe?.selectExteriorColor ?? "");
+    edits.selectExteriorColor !== undefined
+      ? edits.selectExteriorColor
+      : (oe?.selectExteriorColor ?? order.selectExteriorColor ?? "");
   const mergedSelectInteriorMaterial =
-    edits.selectInteriorMaterial !== undefined ? edits.selectInteriorMaterial : (oe?.selectInteriorMaterial ?? "");
+    edits.selectInteriorMaterial !== undefined
+      ? edits.selectInteriorMaterial
+      : (oe?.selectInteriorMaterial ?? order.selectInteriorMaterial ?? "");
   const mergedSelectRequiredEquipment =
-    edits.selectRequiredEquipment !== undefined ? edits.selectRequiredEquipment : (oe?.selectRequiredEquipment ?? "");
+    edits.selectRequiredEquipment !== undefined
+      ? edits.selectRequiredEquipment
+      : (oe?.selectRequiredEquipment ?? order.selectRequiredEquipment ?? "");
   const mergedSelectDesiredEquipment =
-    edits.selectDesiredEquipment !== undefined ? edits.selectDesiredEquipment : (oe?.selectDesiredEquipment ?? "");
+    edits.selectDesiredEquipment !== undefined
+      ? edits.selectDesiredEquipment
+      : (oe?.selectDesiredEquipment ?? order.selectDesiredEquipment ?? "");
 
   const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}`;
   const metaAccordionShellClass =

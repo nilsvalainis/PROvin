@@ -37,6 +37,16 @@ export type AdminOrderDetailClientModel = {
   internalComment?: string | null;
   attachments?: { label: string; fileName: string }[];
   isDemo?: boolean;
+  selectBrandModel?: string | null;
+  selectProductionYearsDpf?: string | null;
+  selectPlannedBudget?: string | null;
+  selectEngineType?: string | null;
+  selectTransmission?: string | null;
+  selectMaxMileage?: string | null;
+  selectExteriorColor?: string | null;
+  selectInteriorMaterial?: string | null;
+  selectRequiredEquipment?: string | null;
+  selectDesiredEquipment?: string | null;
 };
 
 type OrderEdits = {

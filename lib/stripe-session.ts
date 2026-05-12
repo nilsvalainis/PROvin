@@ -49,3 +49,38 @@ export function getOrderFieldsFromSession(session: Stripe.Checkout.Session): {
     formPhone: meta("phone"),
   };
 }
+
+/** Stripe Checkout `metadata` — PROVIN SELECT stratēģijas anketa (atbilst `ConsultationDraftOrderEdits`). */
+export type ProvinSelectSessionMetadata = {
+  selectBrandModel: string | null;
+  selectProductionYearsDpf: string | null;
+  selectPlannedBudget: string | null;
+  selectEngineType: string | null;
+  selectTransmission: string | null;
+  selectMaxMileage: string | null;
+  selectExteriorColor: string | null;
+  selectInteriorMaterial: string | null;
+  selectRequiredEquipment: string | null;
+  selectDesiredEquipment: string | null;
+};
+
+export function getProvinSelectFieldsFromSession(session: Stripe.Checkout.Session): ProvinSelectSessionMetadata {
+  const m = session.metadata ?? {};
+  const meta = (k: string) => {
+    const v = m[k];
+    if (typeof v !== "string" || !v.trim()) return null;
+    return v.trim();
+  };
+  return {
+    selectBrandModel: meta("select_brand_model"),
+    selectProductionYearsDpf: meta("select_production_years"),
+    selectPlannedBudget: meta("select_planned_budget"),
+    selectEngineType: meta("select_engine_type"),
+    selectTransmission: meta("select_transmission"),
+    selectMaxMileage: meta("select_max_mileage"),
+    selectExteriorColor: meta("select_exterior_color"),
+    selectInteriorMaterial: meta("select_interior_material"),
+    selectRequiredEquipment: meta("select_required_equipment"),
+    selectDesiredEquipment: meta("select_desired_equipment"),
+  };
+}

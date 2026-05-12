@@ -55,9 +55,7 @@
       "url": "Please enter a valid listing URL.",
       "listing": "Please enter a valid listing URL.",
       "email": "Field is not filled correctly.",
-      "phone": "Please enter a phone number with at least 8 digits (with or without +371).",
-      "provinSelectName": "Please enter your name (at least 3 characters).",
-      "provinSelectMessage": "Please describe your needs in a few sentences (at least 20 characters)."
+      "phone": "Please enter a phone number with at least 8 digits (with or without +371)."
     }
   }
 }

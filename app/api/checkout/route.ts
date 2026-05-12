@@ -31,6 +31,8 @@ const CHECKOUT_WINDOW_MS = 10 * 60 * 1000;
 
 const NOTES_MAX = 500;
 const NAME_MAX = 120;
+/** Stripe metadata vērtību maks.; sakrīt ar `sanitizeDraftTextForStorage` griestiem. */
+const STRIPE_META_MAX = 500;
 
 type CheckoutBody = {
   vin?: unknown;
@@ -44,7 +46,22 @@ type CheckoutBody = {
   checkoutLine?: unknown;
   /** Obligāta klienta piekrišana PTN atteikšanās tiesību zaudēšanai (digitāls saturs, tūlītēja izpilde). */
   withdrawalConsent?: unknown;
+  /** PROVIN SELECT stratēģijas anketa — atbilst admin `orderEdits` laukiem. */
+  selectBrandModel?: unknown;
+  selectProductionYearsDpf?: unknown;
+  selectPlannedBudget?: unknown;
+  selectEngineType?: unknown;
+  selectTransmission?: unknown;
+  selectMaxMileage?: unknown;
+  selectExteriorColor?: unknown;
+  selectInteriorMaterial?: unknown;
+  selectRequiredEquipment?: unknown;
+  selectDesiredEquipment?: unknown;
 };
+
+function clipProvinSelectMeta(s: string, maxLen: number): string {
+  return s.trim().slice(0, Math.min(maxLen, STRIPE_META_MAX));
+}
 
 const stripeLocales = new Set(["auto", "bg", "cs", "da", "de", "el", "en", "es", "et", "fi", "fil", "fr", "hr", "hu", "id", "it", "ja", "ko", "lt", "lv", "ms", "mt", "nb", "nl", "pl", "pt", "ro", "ru", "sk", "sl", "sv", "th", "tr", "vi", "zh", "zh-HK"]);
 
@@ -108,14 +125,53 @@ export async function POST(req: Request) {
   const notes = notesRaw.slice(0, NOTES_MAX);
   const withdrawalConsent = raw.withdrawalConsent === true;
 
+  const selectBrandModel = clipProvinSelectMeta(
+    typeof raw.selectBrandModel === "string" ? raw.selectBrandModel : "",
+    400,
+  );
+  const selectProductionYearsDpf = clipProvinSelectMeta(
+    typeof raw.selectProductionYearsDpf === "string" ? raw.selectProductionYearsDpf : "",
+    120,
+  );
+  const selectPlannedBudget = clipProvinSelectMeta(
+    typeof raw.selectPlannedBudget === "string" ? raw.selectPlannedBudget : "",
+    120,
+  );
+  const selectEngineType = clipProvinSelectMeta(
+    typeof raw.selectEngineType === "string" ? raw.selectEngineType : "",
+    200,
+  );
+  const selectTransmission = clipProvinSelectMeta(
+    typeof raw.selectTransmission === "string" ? raw.selectTransmission : "",
+    120,
+  );
+  const selectMaxMileage = clipProvinSelectMeta(
+    typeof raw.selectMaxMileage === "string" ? raw.selectMaxMileage : "",
+    120,
+  );
+  const selectExteriorColor = clipProvinSelectMeta(
+    typeof raw.selectExteriorColor === "string" ? raw.selectExteriorColor : "",
+    400,
+  );
+  const selectInteriorMaterial = clipProvinSelectMeta(
+    typeof raw.selectInteriorMaterial === "string" ? raw.selectInteriorMaterial : "",
+    400,
+  );
+  const selectRequiredEquipment = clipProvinSelectMeta(
+    typeof raw.selectRequiredEquipment === "string" ? raw.selectRequiredEquipment : "",
+    STRIPE_META_MAX,
+  );
+  const selectDesiredEquipment = clipProvinSelectMeta(
+    typeof raw.selectDesiredEquipment === "string" ? raw.selectDesiredEquipment : "",
+    STRIPE_META_MAX,
+  );
+
   const errors: string[] = [];
+  const requiredMsg = copy.validation.required ?? copy.validation.fieldEmpty;
 
   if (checkoutLine === "provin_select") {
     if (!withdrawalConsent) {
       errors.push(copy.errors.withdrawalRequired);
-    }
-    if (name.length < 3) {
-      errors.push(copy.validation.provinSelectName);
     }
     if (!email || !isValidOrderEmail(email)) {
       errors.push(copy.validation.email);
@@ -123,8 +179,14 @@ export async function POST(req: Request) {
     if (!phone || !isValidOrderPhone(phone)) {
       errors.push(copy.validation.phone);
     }
-    if (!notes || notes.length < 20) {
-      errors.push(copy.validation.provinSelectMessage);
+    if (!selectPlannedBudget) {
+      errors.push(requiredMsg);
+    }
+    if (!selectEngineType) {
+      errors.push(requiredMsg);
+    }
+    if (!selectTransmission) {
+      errors.push(requiredMsg);
     }
   } else {
     if (!withdrawalConsent) {
@@ -173,6 +235,21 @@ export async function POST(req: Request) {
 
   const isAudit = checkoutLine === "audit";
   const isProvinSelect = checkoutLine === "provin_select";
+
+  const provinSelectMetadata: Record<string, string> = {};
+  if (isProvinSelect) {
+    if (selectBrandModel) provinSelectMetadata.select_brand_model = selectBrandModel;
+    if (selectProductionYearsDpf) provinSelectMetadata.select_production_years = selectProductionYearsDpf;
+    provinSelectMetadata.select_planned_budget = selectPlannedBudget;
+    provinSelectMetadata.select_engine_type = selectEngineType;
+    provinSelectMetadata.select_transmission = selectTransmission;
+    if (selectMaxMileage) provinSelectMetadata.select_max_mileage = selectMaxMileage;
+    if (selectExteriorColor) provinSelectMetadata.select_exterior_color = selectExteriorColor;
+    if (selectInteriorMaterial) provinSelectMetadata.select_interior_material = selectInteriorMaterial;
+    if (selectRequiredEquipment) provinSelectMetadata.select_required_equipment = selectRequiredEquipment;
+    if (selectDesiredEquipment) provinSelectMetadata.select_desired_equipment = selectDesiredEquipment;
+  }
+
   const productName = isAudit
     ? misc.Misc.checkoutProductName
     : isProvinSelect
@@ -216,6 +293,7 @@ export async function POST(req: Request) {
       authorization_ack: "true",
       ...(name ? { customer_name: name } : {}),
       ...(notes ? { notes } : {}),
+      ...(isProvinSelect ? provinSelectMetadata : {}),
     },
     locale: stripeLocale(locale) as "lv",
   });

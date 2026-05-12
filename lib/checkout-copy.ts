@@ -6,11 +6,9 @@ export type OrderCopy = {
     listing: string;
     email: string;
     phone: string;
+    fieldEmpty: string;
     required?: string;
     url?: string;
-    /** PROVIN SELECT → Stripe, bez VIN */
-    provinSelectName: string;
-    provinSelectMessage: string;
   };
   errors: {
     withdrawalRequired: string;

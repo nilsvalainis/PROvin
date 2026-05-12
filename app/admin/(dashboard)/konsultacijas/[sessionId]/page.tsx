@@ -50,6 +50,16 @@ export default async function AdminConsultationDetailPage({ params }: Props) {
           internalComment: order.internalComment,
           attachments: order.attachments,
           isDemo: order.isDemo,
+          selectBrandModel: order.selectBrandModel,
+          selectProductionYearsDpf: order.selectProductionYearsDpf,
+          selectPlannedBudget: order.selectPlannedBudget,
+          selectEngineType: order.selectEngineType,
+          selectTransmission: order.selectTransmission,
+          selectMaxMileage: order.selectMaxMileage,
+          selectExteriorColor: order.selectExteriorColor,
+          selectInteriorMaterial: order.selectInteriorMaterial,
+          selectRequiredEquipment: order.selectRequiredEquipment,
+          selectDesiredEquipment: order.selectDesiredEquipment,
         }}
         serverConsultationDraft={serverConsultationDraft}
         serverWorkspaceJson={serverWorkspaceJson}

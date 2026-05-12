@@ -4,7 +4,12 @@ import type Stripe from "stripe";
 import { getCompanyLegal } from "@/lib/company";
 import { getDemoConsultationDetail, getDemoConsultationRows, getDemoOrderDetail, getDemoOrderRows } from "@/lib/demo-orders";
 import { getStripe } from "@/lib/stripe";
-import { getCheckoutLineFromSession, getOrderFieldsFromSession, type CheckoutLineKind } from "@/lib/stripe-session";
+import {
+  getCheckoutLineFromSession,
+  getOrderFieldsFromSession,
+  getProvinSelectFieldsFromSession,
+  type CheckoutLineKind,
+} from "@/lib/stripe-session";
 
 /** Noklusējums: ieslēgts (lokāli un produkcijā). Izslēgt: `ADMIN_DEMO_ORDERS=0` (vai `false` / `no` / `off`). */
 export function isDemoOrdersEnabled(): boolean {
@@ -40,6 +45,17 @@ export type AdminOrderDetail = AdminOrderRow & {
   internalComment?: string | null;
   /** Pievienotie avoti / atskaites (vēlāk — failu glabātuve) */
   attachments?: { label: string; fileName: string }[];
+  /** PROVIN SELECT — no Stripe `metadata` pēc apmaksas. */
+  selectBrandModel?: string | null;
+  selectProductionYearsDpf?: string | null;
+  selectPlannedBudget?: string | null;
+  selectEngineType?: string | null;
+  selectTransmission?: string | null;
+  selectMaxMileage?: string | null;
+  selectExteriorColor?: string | null;
+  selectInteriorMaterial?: string | null;
+  selectRequiredEquipment?: string | null;
+  selectDesiredEquipment?: string | null;
 };
 
 /** Neļauj admin panelim gaidīt Stripe atbildi bezgalīgi (noklusējuma SDK ~80s ir par garu). */
@@ -159,6 +175,8 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
   const order = getOrderFieldsFromSession(session);
   const phone = order.formPhone ?? session.customer_details?.phone ?? null;
   const checkoutLine = getCheckoutLineFromSession(session);
+  const select =
+    checkoutLine === "provin_select" ? getProvinSelectFieldsFromSession(session) : null;
   return {
     id: session.id,
     created: session.created,
@@ -175,6 +193,20 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
     notes: order.notes,
     customerDetailsEmail: session.customer_details?.email ?? null,
     customerDetailsPhone: session.customer_details?.phone ?? null,
+    ...(select
+      ? {
+          selectBrandModel: select.selectBrandModel,
+          selectProductionYearsDpf: select.selectProductionYearsDpf,
+          selectPlannedBudget: select.selectPlannedBudget,
+          selectEngineType: select.selectEngineType,
+          selectTransmission: select.selectTransmission,
+          selectMaxMileage: select.selectMaxMileage,
+          selectExteriorColor: select.selectExteriorColor,
+          selectInteriorMaterial: select.selectInteriorMaterial,
+          selectRequiredEquipment: select.selectRequiredEquipment,
+          selectDesiredEquipment: select.selectDesiredEquipment,
+        }
+      : {}),
   };
 }
 
