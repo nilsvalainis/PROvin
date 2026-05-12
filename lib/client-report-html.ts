@@ -376,23 +376,13 @@ function buildPdfMileageSourceStripeSpan(sourceLabel: string): string {
   return `<span class="${stripeCls}" role="img" aria-label="${escapeHtml(aria)}"></span>`;
 }
 
-function buildPdfMileageSourceLegendHtml(mileageRows: UnifiedMileageRow[]): string {
+function buildPdfMileageSourceLegendAbbrevsHtml(mileageRows: UnifiedMileageRow[]): string {
   const keySet = collectMileagePdfSourceKeysFromLabels(mileageRows.map((r) => r.sourceLabel));
   const ordered = mileagePdfLegendKeysInOrder(keySet);
-  const parts: string[] = [];
-  for (const k of ordered) {
-    const m = MILEAGE_PDF_SOURCE_LEGEND[k];
-    parts.push(
-      `<span class="pdf-mileage-source-legend-item"><span class="pdf-mileage-source-stripe pdf-mileage-source-stripe--${k} pdf-mileage-source-stripe--legend" aria-hidden="true"></span><span class="pdf-mileage-source-legend-text">${escapeHtml(m.full)}=${escapeHtml(m.abbrev)}</span></span>`,
-    );
-  }
-  if (keySet.has("unknown")) {
-    parts.push(
-      `<span class="pdf-mileage-source-legend-item"><span class="pdf-mileage-source-stripe pdf-mileage-source-stripe--unknown pdf-mileage-source-stripe--legend" aria-hidden="true"></span><span class="pdf-mileage-source-legend-text">Cits avots</span></span>`,
-    );
-  }
-  if (parts.length === 0) return "";
-  return `<span class="pdf-mileage-source-legend-wrap">${parts.join(`<span class="pdf-mileage-source-legend-sep" aria-hidden="true">, </span>`)}</span>`;
+  const labels: string[] = ordered.map((k) => MILEAGE_PDF_SOURCE_LEGEND[k].abbrev);
+  if (keySet.has("unknown")) labels.push("?");
+  if (labels.length === 0) return "";
+  return labels.map((a) => escapeHtml(a)).join(", ");
 }
 
 function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow, anomalyBySourceOrder: Map<number, boolean>): string {
@@ -456,10 +446,12 @@ export function buildUnifiedMileageTableHtml(
         : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(leftRows, anomalyBySourceOrder)}</div><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(rightRows, anomalyBySourceOrder)}</div></div>`;
 
   const sourceCount = new Set(mileageRows.map((r) => r.sourceLabel)).size;
-  const legendHtml = buildPdfMileageSourceLegendHtml(mileageRows);
-  const sourceCountHtml = `<p class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-line">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}${
-    legendHtml ? `<span class="pdf-source-count-sep" aria-hidden="true"> — </span>${legendHtml}` : ""
-  }</span></p>`;
+  const legendAbbrevs = buildPdfMileageSourceLegendAbbrevsHtml(mileageRows);
+  const sourceCountHtml = `<p class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-title">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</span>${
+    legendAbbrevs
+      ? `<span class="pdf-mileage-source-count-abbrevs">${legendAbbrevs}</span>`
+      : ""
+  }</p>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE")}${chartHtml}${dualTables}${sourceCountHtml}</div>`;
 }
 
@@ -932,13 +924,13 @@ function clientReportPrintCss(): string {
         text-align:left!important;padding-left:10px!important;padding-right:10px!important;
       }
       .pdf-mileage-head-odo-flag{
-        display:grid!important;grid-template-columns:auto 1fr auto!important;width:100%!important;
+        display:grid!important;grid-template-columns:1fr 14px 1fr!important;width:100%!important;
         align-items:end!important;column-gap:0!important;
       }
       .pdf-mileage-th-odo-h{
         text-align:left!important;font-weight:700!important;color:#64748b!important;
       }
-      .pdf-mileage-th-mid{min-width:0!important;}
+      .pdf-mileage-th-mid{width:14px!important;min-width:14px!important;max-width:14px!important;}
       .pdf-mileage-th-flag-h{
         text-align:right!important;justify-self:end!important;font-weight:700!important;color:#64748b!important;
       }
@@ -950,7 +942,7 @@ function clientReportPrintCss(): string {
         text-align:left!important;vertical-align:middle!important;padding-left:10px!important;padding-right:10px!important;
       }
       .pdf-mileage-odo-flag-grid{
-        display:grid!important;grid-template-columns:auto 1fr auto!important;width:100%!important;
+        display:grid!important;grid-template-columns:minmax(0,1fr) 14px minmax(0,1fr)!important;width:100%!important;
         align-items:center!important;column-gap:0!important;
       }
       .pdf-mileage-odo-side{
@@ -960,7 +952,9 @@ function clientReportPrintCss(): string {
         flex-shrink:1!important;min-width:0!important;
       }
       .pdf-mileage-stripe-mid{
-        display:flex!important;justify-content:center!important;align-items:center!important;min-width:0!important;
+        display:flex!important;justify-content:center!important;align-items:center!important;
+        width:14px!important;min-width:14px!important;max-width:14px!important;
+        justify-self:center!important;
       }
       .pdf-mileage-flag-side{
         display:flex!important;justify-content:flex-end!important;align-items:center!important;min-width:0!important;
@@ -971,20 +965,12 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-mileage-source-stripe--table{width:9px!important;height:4px!important;}
-      .pdf-mileage-source-stripe--legend{width:6px!important;height:3px!important;}
       .pdf-mileage-source-stripe--csdd{background:#16a34a!important;}
       .pdf-mileage-source-stripe--autodna{background:#1e3a8a!important;}
       .pdf-mileage-source-stripe--carvertical{background:#eab308!important;}
       .pdf-mileage-source-stripe--dealer{background:#dc2626!important;}
       .pdf-mileage-source-stripe--cits{background:#ea580c!important;}
       .pdf-mileage-source-stripe--unknown{background:#94a3b8!important;}
-      .pdf-mileage-source-legend-wrap{display:inline;vertical-align:baseline;}
-      .pdf-mileage-source-legend-item{
-        display:inline-flex;align-items:center;gap:2px;vertical-align:middle;
-      }
-      .pdf-mileage-source-legend-sep{color:#94a3b8;font-weight:400;}
-      .pdf-mileage-source-legend-text{font-size:inherit!important;color:#64748b!important;}
-      .pdf-source-count-sep{color:#94a3b8;font-weight:400;}
       .pdf-mileage-history-table td.pdf-mileage-cell-loss{
         text-align:center!important;
       }
@@ -1053,13 +1039,24 @@ function clientReportPrintCss(): string {
         line-height:1.4;
       }
       .pdf-source-count-note--mileage{
-        font-size:7.5px!important;
-        line-height:1.25!important;
-        letter-spacing:-0.01em!important;
+        font-size:9.5px!important;
+        line-height:1.35!important;
+        letter-spacing:0!important;
+        color:#64748b!important;
       }
-      .pdf-mileage-source-count-line{
-        display:block;
-        white-space:nowrap;
+      .pdf-mileage-source-count-title{
+        display:block!important;
+        margin:0!important;
+        font-weight:500!important;
+      }
+      .pdf-mileage-source-count-abbrevs{
+        display:block!important;
+        margin:10px 0 0!important;
+        padding:0!important;
+        white-space:nowrap!important;
+        font-weight:600!important;
+        letter-spacing:0.02em!important;
+        color:#475569!important;
       }
       .pdf-mileage-chart-dot--anomaly{
         fill:#ef4444!important;stroke:#b91c1c!important;stroke-width:1.75!important;
