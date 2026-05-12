@@ -1,6 +1,7 @@
 import "server-only";
 
 import fs from "fs/promises";
+import os from "os";
 import path from "path";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import {
@@ -28,6 +29,10 @@ function resolveDraftDir(): string | null {
   const off = ["0", "false", "no", "off", "disabled"];
   if (off.includes(raw.toLowerCase())) return null;
   if (raw) return path.resolve(raw);
+  /** Vercel serverless: `cwd` apakšmapes bieži ir tikai lasāmas → PATCH 503. `/tmp` ir rakstāms (dati var pazust aukstā startā). */
+  if (process.env.VERCEL === "1") {
+    return path.join(os.tmpdir(), "provin-admin-consultation-drafts");
+  }
   return path.join(process.cwd(), DEFAULT_RELATIVE_DIR);
 }
 
