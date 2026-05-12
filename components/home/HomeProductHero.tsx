@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { isValidElement, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { HeroVisual } from "@/components/HeroVisual";
 import { OrderForm } from "@/components/OrderForm";
@@ -19,10 +19,36 @@ type Props = {
   comparisonContent?: ReactNode;
 };
 
+function richChunksToPlain(chunks: ReactNode): string {
+  if (chunks == null || typeof chunks === "boolean") return "";
+  if (typeof chunks === "string" || typeof chunks === "number") return String(chunks);
+  if (Array.isArray(chunks)) return chunks.map(richChunksToPlain).join("");
+  if (isValidElement(chunks) && chunks.props && typeof chunks.props === "object" && chunks.props !== null && "children" in chunks.props) {
+    return richChunksToPlain((chunks.props as { children?: ReactNode }).children);
+  }
+  return "";
+}
+
 export default function HomeProductHero({ showProvinSelect = false, comparisonContent }: Props) {
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
   const t = useTranslations("Hero");
   const heroFeatureTitles = [t("productValue1"), t("productValue3"), t("productValue2"), t("productValue4")];
+
+  const productSubheadRich = useMemo(
+    () =>
+      t.rich("productSubheadRich", {
+        prov: (chunks) => (
+          <strong className={styles.productHeroSubheadProvinWrap}>
+            {renderProvinText(richChunksToPlain(chunks).trim() || "PROVIN")}
+          </strong>
+        ),
+        k1: (chunks) => <span className={styles.productHeroSubheadHighlight}>{chunks}</span>,
+        k2: (chunks) => <span className={styles.productHeroSubheadHighlight}>{chunks}</span>,
+        k3: (chunks) => <span className={styles.productHeroSubheadHighlight}>{chunks}</span>,
+        k4: (chunks) => <span className={styles.productHeroSubheadHighlight}>{chunks}</span>,
+      }),
+    [t],
+  );
 
   return (
     <div
@@ -50,7 +76,7 @@ export default function HomeProductHero({ showProvinSelect = false, comparisonCo
                 </h1>
                 <h2 className="sr-only">Kāpēc ar parastu VIN koda pārbaudi nepietiek?</h2>
                 <p className="sr-only">Profesionāla auto pārbaude pirms pirkšanas.</p>
-                <p className={styles.productHeroSubhead}>{renderProvinText(t("productSubhead"))}</p>
+                <p className={styles.productHeroSubhead}>{productSubheadRich}</p>
                 <div className={styles.productHeroDivider} aria-hidden />
 
                 <div id={ORDER_SECTION_ID} className={`${styles.heroFormCard} scroll-mt-[calc(2.75rem+1px)]`}>

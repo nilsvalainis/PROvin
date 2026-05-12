@@ -1167,10 +1167,27 @@ html[data-site-theme="light"] .heroIntroSurface.heroIntroSurfaceDepth::after {
 .productHeroSubhead {
   margin: 0 0 32px;
   font-size: clamp(1rem, 1.65vw, 1.125rem);
-  line-height: 1.56;
-  font-weight: 400;
-  color: rgb(51 65 85 / 0.86);
+  line-height: 1.62;
+  font-weight: 450;
+  color: rgb(51 65 85 / 0.9);
   max-width: 40rem;
+}
+
+.productHeroSubheadHighlight {
+  font-weight: 700;
+  color: var(--color-provin-accent, #0066ff);
+}
+
+.productHeroSubheadProvinWrap {
+  font-weight: 700;
+}
+
+.productHeroSubheadProvinWrap :global(span) {
+  font-weight: 700;
+}
+
+html[data-site-theme="light"] .heroIntroSurface .productHeroSubheadHighlight {
+  color: var(--color-provin-accent, #0066ff);
 }
 
 html[data-site-theme="dark"] .heroIntroSurface .productHeroTitleAccent {
@@ -1182,7 +1199,16 @@ html[data-site-theme="dark"] .heroIntroSurface .productHeroTitleMid {
 }
 
 html[data-site-theme="dark"] .heroIntroSurface .productHeroSubhead {
-  color: rgb(255 255 255 / 0.72);
+  color: rgb(255 255 255 / 0.92);
+  font-weight: 480;
+  letter-spacing: 0.012em;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.45);
+}
+
+html[data-site-theme="light"] .home-hero-pricing-unified .heroIntroSurface .productHeroSubhead {
+  color: rgb(15 23 42 / 0.92);
+  font-weight: 480;
+  letter-spacing: 0.01em;
 }
 
 html[data-site-theme="light"] .heroIntroSurface .productHeroTitleAccent {
