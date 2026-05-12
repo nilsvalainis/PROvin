@@ -18,9 +18,11 @@ export function HeaderClient() {
   const pathname = usePathname() ?? "";
   const locale = useLocale();
   const targetLocale = locale === "lv" ? "en" : "lv";
-  const localeFlag = locale === "lv" ? "🇬🇧" : "🇱🇻";
+  /** Rāda tekošās valodas karogu; klikšķis joprojām pārslēdz uz otru valodu. */
+  const localeFlag = locale === "lv" ? "🇱🇻" : "🇬🇧";
   const localeLabel = locale === "lv" ? "Switch to English" : "Pārslēgt uz latviešu valodu";
   const normalizedPath = normalizeSitePath(pathname);
+  const isProvinSelectPieteikums = normalizedPath === "/provin-select-pieteikums";
   const { theme } = useSiteTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const tHeader = useTranslations("Header");
@@ -34,8 +36,9 @@ export function HeaderClient() {
     normalizedPath === "/biezi-jautajumi";
 
   const isDemoPath = pathname.includes("/demo");
-  /** Sākumlapas „caurspīdīgais” hero headeris — tikai tumšajā tēmā; gaišajā — kā pārējās lapas. */
-  const isDarkHeaderSurface = isHome && theme === "dark";
+  /** Sākumlapas „caurspīdīgais” hero headeris — tikai tumšajā tēmā; gaišajā — kā pārējās lapas. PROVIN SELECT pieteikums tumšajā — tā pat kā hero. */
+  const isDarkHeaderSurface =
+    (isHome && theme === "dark") || (isProvinSelectPieteikums && theme === "dark");
   const isDemoGraphiteHeader = isDemoPath && theme === "dark";
   const headerChromeDark = isDarkHeaderSurface || isDemoGraphiteHeader;
 
@@ -49,11 +52,16 @@ export function HeaderClient() {
   const graphiteHeaderSurface =
     "border-b border-black/30 bg-[#383a40] pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#383a40]/94";
 
+  const provinSelectLightHeaderSurface =
+    "border-b border-amber-950/12 bg-[#fff9ef]/94 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#fff9ef]/90";
+
   const headerSurface = isDemoGraphiteHeader
     ? graphiteHeaderSurface
     : isDarkHeaderSurface
       ? "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)] md:border-b md:border-white/[0.06]"
-      : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
+      : isProvinSelectPieteikums && theme === "light"
+        ? provinSelectLightHeaderSurface
+        : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
   const logoAlignWithRailSakums = showHomeNavRail;
 
@@ -73,7 +81,7 @@ export function HeaderClient() {
     headerChromeDark
       ? "flex min-h-11 min-w-11 shrink-0 items-center text-[28.98px] font-bold tracking-tight text-white transition-colors hover:text-white/90 sm:min-h-0 sm:min-w-0"
       : "flex min-h-11 min-w-11 shrink-0 items-center text-[28.98px] font-bold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent sm:min-h-0 sm:min-w-0",
-    !isDarkHeaderSurface && !isHome && !isDemoPath ? logoRailMarginClass : null,
+    !isDarkHeaderSurface && !isHome && !isDemoPath && !isProvinSelectPieteikums ? logoRailMarginClass : null,
     logoHomeRailAlignClass,
   ]
     .filter(Boolean)
@@ -119,7 +127,7 @@ export function HeaderClient() {
 
   const headerInnerClass = [
     "mx-auto flex min-h-12 w-full min-w-0 items-center gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:min-h-11 sm:gap-3",
-    isHome ? "max-w-none" : "max-w-[980px] lg:max-w-[1024px]",
+    isHome || isProvinSelectPieteikums ? "max-w-none" : "max-w-[980px] lg:max-w-[1024px]",
   ].join(" ");
 
   return (
@@ -169,7 +177,7 @@ export function HeaderClient() {
           <Link
             href={pathname as never}
             locale={targetLocale}
-            className={`relative z-[52] inline-flex min-h-9 min-w-9 h-9 w-9 shrink-0 items-center justify-center text-[15px] md:text-[17px] leading-none no-underline transition ${
+            className={`relative z-[52] inline-flex min-h-[2.25rem] min-w-[2.25rem] shrink-0 items-center justify-center text-[calc(15px*1.15)] leading-none no-underline transition md:text-[calc(17px*1.15)] ${
               headerChromeDark ? "text-white hover:text-white/80" : "text-[#1d1d1f] hover:text-[#111827]"
             }`}
             aria-label={localeLabel}

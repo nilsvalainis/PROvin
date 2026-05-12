@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: "ProvinSelect" });
   return {
     title: t("formTitle"),
-    description: t("lead"),
+    description: t("formIntro"),
   };
 }
 

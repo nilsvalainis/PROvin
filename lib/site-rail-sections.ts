@@ -26,9 +26,10 @@ export type SiteRailSection = {
 export function normalizeSitePath(pathname: string | null | undefined): string {
   if (pathname == null) return "";
   let p = pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
-  /* `localePrefix: "always"` — pathname ir `/lv`, `/lv/pasutit`, … → `/`, `/pasutit`, … salīdzināšanai */
-  if (p === "/lv") p = "/";
+  /* `localePrefix: "always"` — pathname ir `/lv/…`, `/en/…` → salīdzināšanai bez prefiksa */
+  if (p === "/lv" || p === "/en") p = "/";
   else if (p.startsWith("/lv/")) p = p.slice(3);
+  else if (p.startsWith("/en/")) p = p.slice(3);
   return p;
 }
 

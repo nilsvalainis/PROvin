@@ -230,13 +230,12 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
           </>
         ) : isStandalone ? (
           <div className="mx-auto max-w-[min(100%,48rem)] text-center">
-            <h2 id={headingId} className={PROVIN_SELECT_SECTION_HEADING}>
+            <h2 id={headingId} className={`${PROVIN_SELECT_SECTION_HEADING} uppercase tracking-[0.12em]`}>
               {t("formTitle")}
             </h2>
             <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
               <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
             </div>
-            <p className={homeEditorialSectionBodyLeadClass}>{t("lead")}</p>
           </div>
         ) : null}
 
@@ -267,8 +266,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                   {t("formIntro")}
                 </p>
 
-                <fieldset className={demoPageStyles.provinSelectFieldset}>
-                  <legend className={demoPageStyles.provinSelectGroupLegend}>{t("groupTitleCar")}</legend>
+                <fieldset className={demoPageStyles.provinSelectFieldset} aria-label={t("groupTitleCarAria")}>
                   <div className={demoPageStyles.provinSelectFormGrid}>
                     <label className={demoPageStyles.field}>
                       <span className={demoPageStyles.provinSelectFormLabel}>{t("fieldBrandModel")}</span>
