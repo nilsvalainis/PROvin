@@ -57,7 +57,7 @@ export function IrissPasutijumiNewFab() {
     <>
       {err ? (
         <div
-          className="fixed bottom-[max(5.5rem,env(safe-area-inset-bottom,0px)+4.5rem)] left-3 right-3 z-50 rounded-xl border border-amber-200/90 bg-amber-50 px-3 py-2 text-center text-[12px] font-medium text-amber-950 shadow-lg sm:left-auto sm:right-5 sm:max-w-sm"
+          className="fixed bottom-[max(5.5rem,env(safe-area-inset-bottom,0px)+4.5rem)] left-3 right-3 z-[85] rounded-xl border border-amber-200/90 bg-amber-50 px-3 py-2 text-center text-[12px] font-medium text-amber-950 shadow-lg sm:left-auto sm:right-5 sm:max-w-sm"
           role="alert"
         >
           {err}
@@ -74,7 +74,7 @@ export function IrissPasutijumiNewFab() {
         type="button"
         disabled={busy}
         onClick={() => void create()}
-        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-4 z-40 flex h-12 w-12 items-center justify-center rounded-xl border border-white/20 bg-[var(--color-provin-accent)]/88 text-white shadow-sm backdrop-blur-xl transition hover:opacity-95 active:scale-95 disabled:opacity-60 sm:bottom-6 sm:right-5"
+        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-4 z-[65] flex h-12 w-12 items-center justify-center rounded-xl border border-white/20 bg-[var(--color-provin-accent)]/88 text-white shadow-sm backdrop-blur-xl transition hover:opacity-95 active:scale-95 disabled:opacity-60 sm:bottom-6 sm:right-5"
         aria-label="Jauns pasūtījums"
         title="Jauns pasūtījums"
       >

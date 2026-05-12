@@ -14,8 +14,8 @@ export default async function IrissScanListPage() {
       {storeEnabled && rows.length === 0 ? (
         <div className="mt-4 rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-12 text-center shadow-sm">
           <p className="font-medium text-black">Nav SCAN ierakstu</p>
-          <p className="mt-2 text-sm text-black">Spied „+”, lai izveidotu pirmo ierakstu.</p>
-          <IrissScanNewFab />
+          <p className="mt-2 text-sm text-black">Lai izveidotu pirmo ierakstu, spied pogu zemāk vai peldošo „+” apakšējā labajā stūrī.</p>
+          <IrissScanNewFab withEmptyCardProminence />
         </div>
       ) : null}
       {!storeEnabled ? (
