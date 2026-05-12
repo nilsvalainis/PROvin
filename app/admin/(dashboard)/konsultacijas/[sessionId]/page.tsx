@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { MarkAdminStripeSessionOpened } from "@/components/admin/MarkAdminStripeSessionOpened";
 import { AdminConsultationDetailView } from "@/components/admin/AdminConsultationDetailView";
 import { getConsultationSessionDetail } from "@/lib/admin-orders";
 import { isConsultationDraftStoreEnabled, readConsultationDraft } from "@/lib/admin-consultation-draft-store";
@@ -27,30 +28,33 @@ export default async function AdminConsultationDetailPage({ params }: Props) {
       : null;
 
   return (
-    <AdminConsultationDetailView
-      key={sessionId}
-      order={{
-        id: order.id,
-        created: order.created,
-        amountTotal: order.amountTotal,
-        currency: order.currency,
-        paymentStatus: order.paymentStatus,
-        customerEmail: order.customerEmail,
-        customerDetailsEmail: order.customerDetailsEmail,
-        phone: order.phone,
-        customerDetailsPhone: order.customerDetailsPhone,
-        customerName: order.customerName,
-        contactMethod: order.contactMethod,
-        vin: order.vin,
-        listingUrl: order.listingUrl,
-        notes: order.notes,
-        internalComment: order.internalComment,
-        attachments: order.attachments,
-        isDemo: order.isDemo,
-      }}
-      serverConsultationDraft={serverConsultationDraft}
-      serverWorkspaceJson={serverWorkspaceJson}
-      consultationDraftPersistenceEnabled={consultationDraftPersistenceEnabled}
-    />
+    <>
+      <MarkAdminStripeSessionOpened sessionId={sessionId} />
+      <AdminConsultationDetailView
+        key={sessionId}
+        order={{
+          id: order.id,
+          created: order.created,
+          amountTotal: order.amountTotal,
+          currency: order.currency,
+          paymentStatus: order.paymentStatus,
+          customerEmail: order.customerEmail,
+          customerDetailsEmail: order.customerDetailsEmail,
+          phone: order.phone,
+          customerDetailsPhone: order.customerDetailsPhone,
+          customerName: order.customerName,
+          contactMethod: order.contactMethod,
+          vin: order.vin,
+          listingUrl: order.listingUrl,
+          notes: order.notes,
+          internalComment: order.internalComment,
+          attachments: order.attachments,
+          isDemo: order.isDemo,
+        }}
+        serverConsultationDraft={serverConsultationDraft}
+        serverWorkspaceJson={serverWorkspaceJson}
+        consultationDraftPersistenceEnabled={consultationDraftPersistenceEnabled}
+      />
+    </>
   );
 }

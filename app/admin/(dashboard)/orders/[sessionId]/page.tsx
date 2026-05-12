@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { MarkAdminStripeSessionOpened } from "@/components/admin/MarkAdminStripeSessionOpened";
 import { AdminOrderDetailView } from "@/components/admin/AdminOrderDetailView";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { isOrderDraftStoreEnabled, readOrderDraft } from "@/lib/admin-order-draft-store";
@@ -28,30 +29,33 @@ export default async function AdminOrderDetailPage({ params }: Props) {
       : null;
 
   return (
-    <AdminOrderDetailView
-      key={sessionId}
-      order={{
-        id: order.id,
-        created: order.created,
-        amountTotal: order.amountTotal,
-        currency: order.currency,
-        paymentStatus: order.paymentStatus,
-        customerEmail: order.customerEmail,
-        customerDetailsEmail: order.customerDetailsEmail,
-        phone: order.phone,
-        customerDetailsPhone: order.customerDetailsPhone,
-        customerName: order.customerName,
-        contactMethod: order.contactMethod,
-        vin: order.vin,
-        listingUrl: order.listingUrl,
-        notes: order.notes,
-        internalComment: order.internalComment,
-        attachments: order.attachments,
-        isDemo: order.isDemo,
-      }}
-      serverOrderDraft={serverOrderDraft}
-      serverWorkspaceJson={serverWorkspaceJson}
-      orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
-    />
+    <>
+      <MarkAdminStripeSessionOpened sessionId={sessionId} />
+      <AdminOrderDetailView
+        key={sessionId}
+        order={{
+          id: order.id,
+          created: order.created,
+          amountTotal: order.amountTotal,
+          currency: order.currency,
+          paymentStatus: order.paymentStatus,
+          customerEmail: order.customerEmail,
+          customerDetailsEmail: order.customerDetailsEmail,
+          phone: order.phone,
+          customerDetailsPhone: order.customerDetailsPhone,
+          customerName: order.customerName,
+          contactMethod: order.contactMethod,
+          vin: order.vin,
+          listingUrl: order.listingUrl,
+          notes: order.notes,
+          internalComment: order.internalComment,
+          attachments: order.attachments,
+          isDemo: order.isDemo,
+        }}
+        serverOrderDraft={serverOrderDraft}
+        serverWorkspaceJson={serverWorkspaceJson}
+        orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
+      />
+    </>
   );
 }

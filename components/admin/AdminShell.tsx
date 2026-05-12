@@ -6,6 +6,7 @@ import { RefreshCw } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { AdminSidebarNav } from "./AdminSidebarNav";
 import { IrissAdminSidebarNav } from "./IrissAdminSidebarNav";
+import { AdminUnreadOrdersBadge } from "./AdminUnreadOrdersBadge";
 import { AdminWorkspaceSwitcher } from "./AdminWorkspaceSwitcher";
 import { IrissOrderSortSelect } from "./IrissOrderSortSelect";
 import { IrissPasutijumiStatusFilter } from "./IrissPasutijumiStatusFilter";
@@ -92,6 +93,7 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
       <header className="sticky top-0 z-[45] flex shrink-0 items-center gap-2 border-b border-black/35 bg-[var(--color-provin-accent-soft)]/50 px-3 py-2 shadow-sm sm:px-4">
         <div className="min-w-0 flex flex-1 items-center gap-2">
           <AdminWorkspaceSwitcher />
+          <AdminUnreadOrdersBadge />
           <div className="hidden items-center gap-2 md:flex">
             <div className="h-5 w-px bg-black/35" aria-hidden />
             {isProWorkspace ? (
