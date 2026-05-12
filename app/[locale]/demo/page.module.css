@@ -594,6 +594,13 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   box-shadow: inherit;
 }
 
+/** PROVIN SELECT anketa — CTA bez uppercase (kopā ar `.ctaButtonHeroConsult`). */
+.provinSelectConsultCta {
+  text-transform: none !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+}
+
 /* Mobilā: CTA platums tieši kā hero joslai (`calc(100vw - 2rem)`, ar 520px griestiem). */
 @media (max-width: 639px) {
   .ctaButton,

@@ -15,7 +15,6 @@ import {
 } from "@/lib/home-pricing-pillar-cards";
 import {
   heroPillarCardIconClass,
-  homeEditorialAuthorityHeadingClass,
   homeEditorialSectionBodyLeadClass,
   homeEditorialSectionTitleClass,
 } from "@/lib/home-layout";
@@ -30,6 +29,17 @@ const SEL_SHORT_MAX = 120;
 const SEL_ENGINE_MAX = 200;
 const SEL_TEX_MAX = 400;
 const SEL_EQ_MAX = 500;
+
+/** Anketas lauku etiķetes — bez uppercase/trekna (globālā `.fieldLabel` ir pretēji). */
+const PROVIN_SELECT_Q_LABEL =
+  "block text-[0.8125rem] font-normal normal-case leading-snug tracking-normal text-[#c8d2e2]/92";
+
+const PROVIN_SELECT_SECTION_HEADING =
+  "demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance text-center font-normal tracking-normal";
+
+const PROVIN_SELECT_FORM_TITLE = "text-center text-[0.8125rem] font-normal normal-case tracking-normal text-white/88";
+
+const PROVIN_SELECT_SUBMIT_EXTRA = demoPageStyles.provinSelectConsultCta;
 
 type IncludedRow = { title: string; body: string };
 
@@ -47,7 +57,6 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
     ? (rawIncluded as IncludedRow[]).filter((r) => r && typeof r.title === "string" && typeof r.body === "string")
     : [];
 
-  const [step, setStep] = useState<1 | 2>(1);
   const [brandModel, setBrandModel] = useState("");
   const [productionYears, setProductionYears] = useState("");
   const [plannedBudget, setPlannedBudget] = useState("");
@@ -218,7 +227,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
           </>
         ) : isStandalone ? (
           <div className="mx-auto max-w-[min(100%,48rem)] text-center">
-            <h2 id={headingId} className={homeEditorialSectionTitleClass}>
+            <h2 id={headingId} className={PROVIN_SELECT_SECTION_HEADING}>
               {t("formTitle")}
             </h2>
             <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
@@ -234,52 +243,21 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
           <div id={PROVIN_SELECT_FORM_HASH} className="scroll-mt-[calc(3.5rem+8px)]">
             {isStandalone ? null : (
               <>
-                <h3 className={`${homeEditorialAuthorityHeadingClass} text-center`}>{t("formTitle")}</h3>
+                <h3 className={`${PROVIN_SELECT_SECTION_HEADING} mt-1`}>{t("formTitle")}</h3>
                 <div className="mt-3 w-full">
                   <DiagnosticScanLine variant="rail" motion="none" className="w-full" />
                 </div>
               </>
             )}
             <div className={`${demoPageStyles.heroFormCard} mx-auto ${isStandalone ? "mt-2" : "mt-4"} w-full max-w-[520px]`}>
-              {step === 1 ? (
-                <div className="order-form--hero !mt-0 w-full space-y-4 !px-0 !py-0 sm:!px-0 sm:!py-0">
-                  <p className="demo-design-dir__body text-[13px] font-medium leading-snug text-white/90">{t("step1Title")}</p>
-                  <p className="demo-design-dir__body text-[12px] leading-relaxed text-white/78">{t("step1Intro")}</p>
-                  <p className="demo-design-dir__body text-[11px] leading-relaxed text-white/65">{tOrder("summaryNoteConsultation")}</p>
-                  <p className="demo-design-dir__body text-[11px] leading-relaxed text-white/60">{t("financingNote")}</p>
-                  <button
-                    type="button"
-                    className={`${demoPageStyles.ctaButtonHeroConsult} !mt-2 w-full max-w-[min(416px,calc(100vw-2rem))]`}
-                    onClick={() => {
-                      setErrMsg(null);
-                      setStep(2);
-                    }}
-                  >
-                    {tOrder("continueButton")}
-                  </button>
-                </div>
-              ) : (
                 <form
                   onSubmit={(e) => void onSubmit(e)}
                   className="order-form--hero !mt-0 w-full space-y-3 !px-0 !py-0 sm:!px-0 sm:!py-0"
                 >
-                  <button
-                    type="button"
-                    className="demo-design-dir__body mb-1 text-left text-[12px] font-medium text-provin-accent underline decoration-provin-accent/35 underline-offset-2 hover:decoration-provin-accent/70"
-                    onClick={() => {
-                      setErrMsg(null);
-                      setStep(1);
-                    }}
-                    disabled={fieldDisabled}
-                  >
-                    {tOrder("backToFirstStep")}
-                  </button>
-                  <h4 className="demo-design-dir__body text-center text-[13px] font-semibold uppercase tracking-wide text-white/88">
-                    {t("strategyFormTitle")}
-                  </h4>
+                  <h4 className={PROVIN_SELECT_FORM_TITLE}>{t("strategyFormTitle")}</h4>
 
                   <label className={demoPageStyles.field}>
-                    <span className={demoPageStyles.fieldLabel}>{t("fieldBrandModel")}</span>
+                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldBrandModel")}</span>
                     <input
                       type="text"
                       name="selectBrandModel"
@@ -291,7 +269,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                     />
                   </label>
                   <label className={demoPageStyles.field}>
-                    <span className={demoPageStyles.fieldLabel}>{t("fieldProductionYears")}</span>
+                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldProductionYears")}</span>
                     <input
                       type="text"
                       name="selectProductionYearsDpf"
@@ -303,7 +281,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                     />
                   </label>
                   <label className={demoPageStyles.field}>
-                    <span className={demoPageStyles.fieldLabel}>{t("fieldPlannedBudget")}</span>
+                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldPlannedBudget")}</span>
                     <input
                       type="text"
                       name="selectPlannedBudget"
@@ -316,7 +294,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                     />
                   </label>
                   <label className={demoPageStyles.field}>
-                    <span className={demoPageStyles.fieldLabel}>{t("fieldEngineType")}</span>
+                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldEngineType")}</span>
                     <input
                       type="text"
                       name="selectEngineType"
@@ -329,7 +307,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                     />
                   </label>
                   <label className={demoPageStyles.field}>
-                    <span className={demoPageStyles.fieldLabel}>{t("fieldTransmission")}</span>
+                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldTransmission")}</span>
                     <input
                       type="text"
                       name="selectTransmission"
@@ -342,7 +320,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                     />
                   </label>
                   <label className={demoPageStyles.field}>
-                    <span className={demoPageStyles.fieldLabel}>{t("fieldMaxMileage")}</span>
+                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldMaxMileage")}</span>
                     <input
                       type="text"
                       name="selectMaxMileage"
@@ -354,7 +332,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                     />
                   </label>
                   <label className={demoPageStyles.field}>
-                    <span className={demoPageStyles.fieldLabel}>{t("fieldExteriorColors")}</span>
+                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldExteriorColors")}</span>
                     <input
                       type="text"
                       name="selectExteriorColor"
@@ -366,7 +344,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                     />
                   </label>
                   <label className={demoPageStyles.field}>
-                    <span className={demoPageStyles.fieldLabel}>{t("fieldInteriorMaterial")}</span>
+                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldInteriorMaterial")}</span>
                     <input
                       type="text"
                       name="selectInteriorMaterial"
@@ -378,7 +356,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                     />
                   </label>
                   <label className={demoPageStyles.field}>
-                    <span className={demoPageStyles.fieldLabel}>{t("fieldRequiredEquipment")}</span>
+                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldRequiredEquipment")}</span>
                     <input
                       type="text"
                       name="selectRequiredEquipment"
@@ -390,7 +368,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                     />
                   </label>
                   <label className={demoPageStyles.field}>
-                    <span className={demoPageStyles.fieldLabel}>{t("fieldDesiredEquipment")}</span>
+                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldDesiredEquipment")}</span>
                     <input
                       type="text"
                       name="selectDesiredEquipment"
@@ -403,7 +381,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                   </label>
 
                   <label className={demoPageStyles.field}>
-                    <span className={demoPageStyles.fieldLabel}>{t("nameLabel")}</span>
+                    <span className={PROVIN_SELECT_Q_LABEL}>{t("nameLabel")}</span>
                     <input
                       type="text"
                       name="name"
@@ -416,7 +394,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                     />
                   </label>
                   <label className={demoPageStyles.field}>
-                    <span className={demoPageStyles.fieldLabel}>{t("phoneLabel")}</span>
+                    <span className={PROVIN_SELECT_Q_LABEL}>{t("phoneLabel")}</span>
                     <input
                       type="tel"
                       name="phone"
@@ -429,7 +407,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                     />
                   </label>
                   <label className={demoPageStyles.field}>
-                    <span className={demoPageStyles.fieldLabel}>{t("emailLabel")}</span>
+                    <span className={PROVIN_SELECT_Q_LABEL}>{t("emailLabel")}</span>
                     <input
                       type="email"
                       name="email"
@@ -442,7 +420,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                     />
                   </label>
                   <label className={demoPageStyles.field}>
-                    <span className={demoPageStyles.fieldLabel}>{t("commentLabel")}</span>
+                    <span className={PROVIN_SELECT_Q_LABEL}>{t("commentLabel")}</span>
                     <textarea
                       name="comment"
                       rows={4}
@@ -481,7 +459,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                           terms: (chunks) => (
                             <Link
                               href="/lietosanas-noteikumi"
-                              className="font-medium text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
+                              className="font-normal text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
                             >
                               {chunks}
                             </Link>
@@ -489,7 +467,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                           privacy: (chunks) => (
                             <Link
                               href="/privatuma-politika"
-                              className="font-medium text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
+                              className="font-normal text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
                             >
                               {chunks}
                             </Link>
@@ -518,7 +496,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                     <button
                       type="submit"
                       disabled={fieldDisabled}
-                      className={`${demoPageStyles.ctaButtonHeroConsult} !mt-0 w-full max-w-[min(416px,calc(100vw-2rem))] disabled:cursor-wait disabled:opacity-60`}
+                      className={`${demoPageStyles.ctaButtonHeroConsult} ${PROVIN_SELECT_SUBMIT_EXTRA} !mt-0 w-full max-w-[min(416px,calc(100vw-2rem))] disabled:cursor-wait disabled:opacity-60`}
                     >
                       {phase === "loading" ? tOrder("payLoading") : t("submit")}
                     </button>
@@ -527,7 +505,6 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                     </p>
                   </div>
                 </form>
-              )}
             </div>
           </div>
         </div>
