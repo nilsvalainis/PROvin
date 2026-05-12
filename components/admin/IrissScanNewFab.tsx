@@ -4,12 +4,7 @@ import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
-type Props = {
-  /** Tukšajā saraksta kartītē: redzama „+” poga teksta blakus (nav `fixed`). */
-  withEmptyCardProminence?: boolean;
-};
-
-export function IrissScanNewFab({ withEmptyCardProminence = false }: Props) {
+export function IrissScanNewFab() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -63,24 +58,6 @@ export function IrissScanNewFab({ withEmptyCardProminence = false }: Props) {
           {err}
           <button type="button" className="ml-2 underline" onClick={() => setErr(null)}>
             Aizvērt
-          </button>
-        </div>
-      ) : null}
-      {withEmptyCardProminence ? (
-        <div className="mt-6 flex justify-center">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void create()}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-white/20 bg-[var(--color-provin-accent)]/88 px-5 py-2.5 text-[14px] font-semibold text-white shadow-sm backdrop-blur-xl transition hover:opacity-95 active:scale-[0.98] disabled:opacity-60"
-            aria-label="Jauns SCAN ieraksts"
-          >
-            {busy ? (
-              <span className="h-5 w-5 animate-pulse rounded-md bg-white/40" aria-hidden />
-            ) : (
-              <Plus className="h-5 w-5 shrink-0" strokeWidth={2.5} aria-hidden />
-            )}
-            Jauns ieraksts
           </button>
         </div>
       ) : null}
