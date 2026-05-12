@@ -403,7 +403,7 @@ function buildPdfMileageSourceLegendAbbrevsHtml(mileageRows: UnifiedMileageRow[]
     );
   }
   if (parts.length === 0) return "";
-  return parts.join(`<span class="pdf-mileage-legend-comma" aria-hidden="true">, </span>`);
+  return `<span class="pdf-mileage-legend-terms-row">${parts.join("")}</span>`;
 }
 
 function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow, anomalyBySourceOrder: Map<number, boolean>): string {
@@ -1053,13 +1053,16 @@ function clientReportPrintCss(): string {
         letter-spacing:0.02em!important;
         color:#475569!important;
       }
+      .pdf-mileage-legend-terms-row{
+        display:inline-flex!important;align-items:center!important;flex-wrap:nowrap!important;
+        gap:18px!important;
+      }
       .pdf-mileage-legend-term{
         display:inline-flex!important;align-items:center!important;vertical-align:middle!important;
         gap:3px!important;
       }
       .pdf-mileage-legend-term-stripe{display:inline-flex!important;align-items:center!important;flex-shrink:0!important;}
       .pdf-mileage-legend-term-text{font-weight:600!important;color:#475569!important;}
-      .pdf-mileage-legend-comma{color:#94a3b8!important;font-weight:400!important;}
       .pdf-mileage-chart-dot--anomaly{
         fill:#ef4444!important;stroke:#b91c1c!important;stroke-width:1.75!important;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
