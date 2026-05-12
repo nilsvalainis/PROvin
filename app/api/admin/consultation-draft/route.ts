@@ -98,6 +98,16 @@ function parseOrderEditsObject(v: unknown): ConsultationDraftOrderEdits | null {
   if (typeof o.customerPhone === "string") out.customerPhone = o.customerPhone;
   if (typeof o.notes === "string") out.notes = o.notes;
   if (typeof o.internalComment === "string") out.internalComment = o.internalComment;
+  if (typeof o.selectBrandModel === "string") out.selectBrandModel = o.selectBrandModel;
+  if (typeof o.selectProductionYearsDpf === "string") out.selectProductionYearsDpf = o.selectProductionYearsDpf;
+  if (typeof o.selectPlannedBudget === "string") out.selectPlannedBudget = o.selectPlannedBudget;
+  if (typeof o.selectEngineType === "string") out.selectEngineType = o.selectEngineType;
+  if (typeof o.selectTransmission === "string") out.selectTransmission = o.selectTransmission;
+  if (typeof o.selectMaxMileage === "string") out.selectMaxMileage = o.selectMaxMileage;
+  if (typeof o.selectExteriorColor === "string") out.selectExteriorColor = o.selectExteriorColor;
+  if (typeof o.selectInteriorMaterial === "string") out.selectInteriorMaterial = o.selectInteriorMaterial;
+  if (typeof o.selectRequiredEquipment === "string") out.selectRequiredEquipment = o.selectRequiredEquipment;
+  if (typeof o.selectDesiredEquipment === "string") out.selectDesiredEquipment = o.selectDesiredEquipment;
   return out;
 }
 

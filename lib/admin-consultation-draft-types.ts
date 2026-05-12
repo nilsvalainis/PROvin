@@ -26,6 +26,17 @@ export type ConsultationDraftOrderEdits = {
   customerPhone?: string;
   notes?: string;
   internalComment?: string;
+  /** PROVIN SELECT — admin stratēģijas anketa (klienta portfelis). */
+  selectBrandModel?: string;
+  selectProductionYearsDpf?: string;
+  selectPlannedBudget?: string;
+  selectEngineType?: string;
+  selectTransmission?: string;
+  selectMaxMileage?: string;
+  selectExteriorColor?: string;
+  selectInteriorMaterial?: string;
+  selectRequiredEquipment?: string;
+  selectDesiredEquipment?: string;
 };
 
 export type ConsultationSlotDraft = {

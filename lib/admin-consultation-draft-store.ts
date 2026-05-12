@@ -129,6 +129,16 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): ConsultationDraf
     if (typeof e.customerPhone === "string") orderEdits.customerPhone = e.customerPhone;
     if (typeof e.notes === "string") orderEdits.notes = e.notes;
     if (typeof e.internalComment === "string") orderEdits.internalComment = e.internalComment;
+    if (typeof e.selectBrandModel === "string") orderEdits.selectBrandModel = e.selectBrandModel;
+    if (typeof e.selectProductionYearsDpf === "string") orderEdits.selectProductionYearsDpf = e.selectProductionYearsDpf;
+    if (typeof e.selectPlannedBudget === "string") orderEdits.selectPlannedBudget = e.selectPlannedBudget;
+    if (typeof e.selectEngineType === "string") orderEdits.selectEngineType = e.selectEngineType;
+    if (typeof e.selectTransmission === "string") orderEdits.selectTransmission = e.selectTransmission;
+    if (typeof e.selectMaxMileage === "string") orderEdits.selectMaxMileage = e.selectMaxMileage;
+    if (typeof e.selectExteriorColor === "string") orderEdits.selectExteriorColor = e.selectExteriorColor;
+    if (typeof e.selectInteriorMaterial === "string") orderEdits.selectInteriorMaterial = e.selectInteriorMaterial;
+    if (typeof e.selectRequiredEquipment === "string") orderEdits.selectRequiredEquipment = e.selectRequiredEquipment;
+    if (typeof e.selectDesiredEquipment === "string") orderEdits.selectDesiredEquipment = e.selectDesiredEquipment;
   }
   let workspace: ConsultationDraftWorkspaceBody | null = null;
   if (o.workspace && typeof o.workspace === "object") {
@@ -364,6 +374,36 @@ export async function patchConsultationDraft(
       }
       if (typeof patch.orderEdits.internalComment === "string") {
         sanitizedPatch.internalComment = sanitizeDraftTextForStorage(patch.orderEdits.internalComment);
+      }
+      if (typeof patch.orderEdits.selectBrandModel === "string") {
+        sanitizedPatch.selectBrandModel = sanitizeDraftTextForStorage(patch.orderEdits.selectBrandModel, 400);
+      }
+      if (typeof patch.orderEdits.selectProductionYearsDpf === "string") {
+        sanitizedPatch.selectProductionYearsDpf = sanitizeDraftTextForStorage(patch.orderEdits.selectProductionYearsDpf, 120);
+      }
+      if (typeof patch.orderEdits.selectPlannedBudget === "string") {
+        sanitizedPatch.selectPlannedBudget = sanitizeDraftTextForStorage(patch.orderEdits.selectPlannedBudget, 120);
+      }
+      if (typeof patch.orderEdits.selectEngineType === "string") {
+        sanitizedPatch.selectEngineType = sanitizeDraftTextForStorage(patch.orderEdits.selectEngineType, 200);
+      }
+      if (typeof patch.orderEdits.selectTransmission === "string") {
+        sanitizedPatch.selectTransmission = sanitizeDraftTextForStorage(patch.orderEdits.selectTransmission, 120);
+      }
+      if (typeof patch.orderEdits.selectMaxMileage === "string") {
+        sanitizedPatch.selectMaxMileage = sanitizeDraftTextForStorage(patch.orderEdits.selectMaxMileage, 120);
+      }
+      if (typeof patch.orderEdits.selectExteriorColor === "string") {
+        sanitizedPatch.selectExteriorColor = sanitizeDraftTextForStorage(patch.orderEdits.selectExteriorColor, 400);
+      }
+      if (typeof patch.orderEdits.selectInteriorMaterial === "string") {
+        sanitizedPatch.selectInteriorMaterial = sanitizeDraftTextForStorage(patch.orderEdits.selectInteriorMaterial, 400);
+      }
+      if (typeof patch.orderEdits.selectRequiredEquipment === "string") {
+        sanitizedPatch.selectRequiredEquipment = sanitizeDraftTextForStorage(patch.orderEdits.selectRequiredEquipment);
+      }
+      if (typeof patch.orderEdits.selectDesiredEquipment === "string") {
+        sanitizedPatch.selectDesiredEquipment = sanitizeDraftTextForStorage(patch.orderEdits.selectDesiredEquipment);
       }
     }
     const nextOrderEdits =

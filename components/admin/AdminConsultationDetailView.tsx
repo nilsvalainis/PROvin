@@ -23,6 +23,16 @@ type ConsultationEdits = {
   customerPhone?: string;
   notes?: string;
   internalComment?: string;
+  selectBrandModel?: string;
+  selectProductionYearsDpf?: string;
+  selectPlannedBudget?: string;
+  selectEngineType?: string;
+  selectTransmission?: string;
+  selectMaxMileage?: string;
+  selectExteriorColor?: string;
+  selectInteriorMaterial?: string;
+  selectRequiredEquipment?: string;
+  selectDesiredEquipment?: string;
 };
 
 function storageKeyConsultationEdits(sessionId: string) {
@@ -38,6 +48,24 @@ function initialEditsFromServerDraft(serverDraft: ConsultationDraftState | null)
     ...(typeof fromServer!.customerPhone === "string" ? { customerPhone: fromServer!.customerPhone } : {}),
     ...(typeof fromServer!.notes === "string" ? { notes: fromServer!.notes } : {}),
     ...(typeof fromServer!.internalComment === "string" ? { internalComment: fromServer!.internalComment } : {}),
+    ...(typeof fromServer!.selectBrandModel === "string" ? { selectBrandModel: fromServer!.selectBrandModel } : {}),
+    ...(typeof fromServer!.selectProductionYearsDpf === "string"
+      ? { selectProductionYearsDpf: fromServer!.selectProductionYearsDpf }
+      : {}),
+    ...(typeof fromServer!.selectPlannedBudget === "string" ? { selectPlannedBudget: fromServer!.selectPlannedBudget } : {}),
+    ...(typeof fromServer!.selectEngineType === "string" ? { selectEngineType: fromServer!.selectEngineType } : {}),
+    ...(typeof fromServer!.selectTransmission === "string" ? { selectTransmission: fromServer!.selectTransmission } : {}),
+    ...(typeof fromServer!.selectMaxMileage === "string" ? { selectMaxMileage: fromServer!.selectMaxMileage } : {}),
+    ...(typeof fromServer!.selectExteriorColor === "string" ? { selectExteriorColor: fromServer!.selectExteriorColor } : {}),
+    ...(typeof fromServer!.selectInteriorMaterial === "string"
+      ? { selectInteriorMaterial: fromServer!.selectInteriorMaterial }
+      : {}),
+    ...(typeof fromServer!.selectRequiredEquipment === "string"
+      ? { selectRequiredEquipment: fromServer!.selectRequiredEquipment }
+      : {}),
+    ...(typeof fromServer!.selectDesiredEquipment === "string"
+      ? { selectDesiredEquipment: fromServer!.selectDesiredEquipment }
+      : {}),
   };
 }
 
@@ -91,6 +119,16 @@ export function AdminConsultationDetailView({
           ...(typeof p.customerPhone === "string" ? { customerPhone: p.customerPhone } : {}),
           ...(typeof p.notes === "string" ? { notes: p.notes } : {}),
           ...(typeof p.internalComment === "string" ? { internalComment: p.internalComment } : {}),
+          ...(typeof p.selectBrandModel === "string" ? { selectBrandModel: p.selectBrandModel } : {}),
+          ...(typeof p.selectProductionYearsDpf === "string" ? { selectProductionYearsDpf: p.selectProductionYearsDpf } : {}),
+          ...(typeof p.selectPlannedBudget === "string" ? { selectPlannedBudget: p.selectPlannedBudget } : {}),
+          ...(typeof p.selectEngineType === "string" ? { selectEngineType: p.selectEngineType } : {}),
+          ...(typeof p.selectTransmission === "string" ? { selectTransmission: p.selectTransmission } : {}),
+          ...(typeof p.selectMaxMileage === "string" ? { selectMaxMileage: p.selectMaxMileage } : {}),
+          ...(typeof p.selectExteriorColor === "string" ? { selectExteriorColor: p.selectExteriorColor } : {}),
+          ...(typeof p.selectInteriorMaterial === "string" ? { selectInteriorMaterial: p.selectInteriorMaterial } : {}),
+          ...(typeof p.selectRequiredEquipment === "string" ? { selectRequiredEquipment: p.selectRequiredEquipment } : {}),
+          ...(typeof p.selectDesiredEquipment === "string" ? { selectDesiredEquipment: p.selectDesiredEquipment } : {}),
         });
       }
     } catch {
@@ -172,6 +210,27 @@ export function AdminConsultationDetailView({
   const mergedNotes = edits.notes !== undefined ? edits.notes : (order.notes ?? "");
   const mergedInternalComment =
     edits.internalComment !== undefined ? edits.internalComment : (order.internalComment ?? "");
+  const oe = serverConsultationDraft?.orderEdits;
+  const mergedSelectBrandModel =
+    edits.selectBrandModel !== undefined ? edits.selectBrandModel : (oe?.selectBrandModel ?? "");
+  const mergedSelectProductionYearsDpf =
+    edits.selectProductionYearsDpf !== undefined ? edits.selectProductionYearsDpf : (oe?.selectProductionYearsDpf ?? "");
+  const mergedSelectPlannedBudget =
+    edits.selectPlannedBudget !== undefined ? edits.selectPlannedBudget : (oe?.selectPlannedBudget ?? "");
+  const mergedSelectEngineType =
+    edits.selectEngineType !== undefined ? edits.selectEngineType : (oe?.selectEngineType ?? "");
+  const mergedSelectTransmission =
+    edits.selectTransmission !== undefined ? edits.selectTransmission : (oe?.selectTransmission ?? "");
+  const mergedSelectMaxMileage =
+    edits.selectMaxMileage !== undefined ? edits.selectMaxMileage : (oe?.selectMaxMileage ?? "");
+  const mergedSelectExteriorColor =
+    edits.selectExteriorColor !== undefined ? edits.selectExteriorColor : (oe?.selectExteriorColor ?? "");
+  const mergedSelectInteriorMaterial =
+    edits.selectInteriorMaterial !== undefined ? edits.selectInteriorMaterial : (oe?.selectInteriorMaterial ?? "");
+  const mergedSelectRequiredEquipment =
+    edits.selectRequiredEquipment !== undefined ? edits.selectRequiredEquipment : (oe?.selectRequiredEquipment ?? "");
+  const mergedSelectDesiredEquipment =
+    edits.selectDesiredEquipment !== undefined ? edits.selectDesiredEquipment : (oe?.selectDesiredEquipment ?? "");
 
   const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}`;
   const metaAccordionShellClass =
@@ -347,6 +406,129 @@ export function AdminConsultationDetailView({
               value={mergedInternalComment}
               onChange={(v) => persistEdits({ internalComment: v })}
               placeholder="Tikai adminam…"
+              multiline
+              multilineRich
+              compact
+              hideToolbar
+              minHeightClass="min-h-[48px]"
+              resetVersion={orderFieldResetKey}
+            />
+          </div>
+        </AdminCollapsibleShell>
+      </section>
+
+      <section className="min-w-0">
+        <AdminCollapsibleShell
+          sessionId={order.id}
+          blockId="consultation-select-intake"
+          className={metaAccordionShellClass}
+          header={
+            <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0 px-2 py-2`}>
+              <AdminProvinLucide icon={META_ORDER_LUCIDE.vehicle} />
+              Stratēģijas anketa (admin)
+            </h2>
+          }
+        >
+          <div className="space-y-2 px-2 pb-2">
+            <AdminSavableTextField
+              id="consultation-select-brand-model"
+              label="Marka/modelis:"
+              value={mergedSelectBrandModel}
+              onChange={(v) => persistEdits({ selectBrandModel: v })}
+              placeholder=""
+              compact
+              hideToolbar
+              resetVersion={orderFieldResetKey}
+            />
+            <AdminSavableTextField
+              id="consultation-select-production-years-dpf"
+              label="Ražošanas gadi (DPF):"
+              value={mergedSelectProductionYearsDpf}
+              onChange={(v) => persistEdits({ selectProductionYearsDpf: v })}
+              placeholder=""
+              compact
+              hideToolbar
+              resetVersion={orderFieldResetKey}
+            />
+            <AdminSavableTextField
+              id="consultation-select-planned-budget"
+              label="Plānotais budžets:"
+              value={mergedSelectPlannedBudget}
+              onChange={(v) => persistEdits({ selectPlannedBudget: v })}
+              placeholder=""
+              compact
+              hideToolbar
+              resetVersion={orderFieldResetKey}
+            />
+            <AdminSavableTextField
+              id="consultation-select-engine-type"
+              label="Dzinēja tips:"
+              value={mergedSelectEngineType}
+              onChange={(v) => persistEdits({ selectEngineType: v })}
+              placeholder=""
+              compact
+              hideToolbar
+              resetVersion={orderFieldResetKey}
+            />
+            <AdminSavableTextField
+              id="consultation-select-transmission"
+              label="Transmisija:"
+              value={mergedSelectTransmission}
+              onChange={(v) => persistEdits({ selectTransmission: v })}
+              placeholder=""
+              compact
+              hideToolbar
+              resetVersion={orderFieldResetKey}
+            />
+            <AdminSavableTextField
+              id="consultation-select-max-mileage"
+              label="Maksimālais nobraukums:"
+              value={mergedSelectMaxMileage}
+              onChange={(v) => persistEdits({ selectMaxMileage: v })}
+              placeholder=""
+              compact
+              hideToolbar
+              resetVersion={orderFieldResetKey}
+            />
+            <AdminSavableTextField
+              id="consultation-select-exterior-color"
+              label="Vēlamā virsbūves krāsa:"
+              value={mergedSelectExteriorColor}
+              onChange={(v) => persistEdits({ selectExteriorColor: v })}
+              placeholder=""
+              compact
+              hideToolbar
+              resetVersion={orderFieldResetKey}
+            />
+            <AdminSavableTextField
+              id="consultation-select-interior-material"
+              label="Salona krāsa / materiāls:"
+              value={mergedSelectInteriorMaterial}
+              onChange={(v) => persistEdits({ selectInteriorMaterial: v })}
+              placeholder=""
+              compact
+              hideToolbar
+              resetVersion={orderFieldResetKey}
+            />
+            <AdminSavableTextField
+              id="consultation-select-required-equipment"
+              label="Obligātais aprīkojums:"
+              value={mergedSelectRequiredEquipment}
+              onChange={(v) => persistEdits({ selectRequiredEquipment: v })}
+              placeholder=""
+              multiline
+              multilineRich
+              compact
+              hideToolbar
+              minHeightClass="min-h-[48px]"
+              resetVersion={orderFieldResetKey}
+            />
+            <AdminSavableTextField
+              id="consultation-select-desired-equipment"
+              label="Vēlamais aprīkojums:"
+              value={mergedSelectDesiredEquipment}
+              onChange={(v) => persistEdits({ selectDesiredEquipment: v })}
+              placeholder=""
               multiline
               multilineRich
               compact
