@@ -12,7 +12,19 @@ import {
   LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
   LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS,
 } from "@/lib/iriss-listing-links";
-import type { IrissPasutijumiListOrder, IrissPasutijumsListRow, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import type {
+  IrissPasutijumiListOrder,
+  IrissPasutijumsListRow,
+  IrissPasutijumsListStatus,
+  IrissPasutijumsRecord,
+} from "@/lib/iriss-pasutijumi-types";
+import {
+  IRISS_LIST_STATUS_FILTER_EVENT,
+  IrissPasutijumiStatusFilter,
+  readIrissListStatusFilter,
+  type IrissListStatusFilterState,
+} from "@/components/admin/IrissPasutijumiStatusFilter";
+import { IrissOrderSortSelect } from "@/components/admin/IrissOrderSortSelect";
 
 const BRAND_ICON_SLUGS: Record<string, string> = {
   volkswagen: "volkswagen",
@@ -181,6 +193,7 @@ function rowFromRecord(rec: IrissPasutijumsRecord): IrissPasutijumsListRow {
     createdAt: rec.createdAt,
     updatedAt: rec.updatedAt,
     pinnedAt: rec.pinnedAt,
+    listStatus: rec.listStatus ?? "active",
     brandModel: rec.brandModel.trim() || "—",
     totalBudget: rec.totalBudget.trim() || "—",
     phone: rec.phone.trim() || "—",
@@ -192,8 +205,51 @@ function rowFromRecord(rec: IrissPasutijumsRecord): IrissPasutijumsListRow {
   };
 }
 
-const CARD_WHITE = "bg-white";
-const CARD_PINNED = "bg-[#DCFCE7]";
+function rowStatusSurface(row: IrissPasutijumsListRow): {
+  shell: string;
+  inner: string;
+  chipStrip: string;
+  border: string;
+} {
+  const st = row.listStatus ?? "active";
+  if (st === "completed") {
+    return {
+      shell: "bg-emerald-50/95",
+      inner: "bg-emerald-50/95",
+      chipStrip: "bg-emerald-50/95",
+      border: "border-emerald-200/80",
+    };
+  }
+  if (st === "inactive") {
+    return {
+      shell: "bg-red-50/95",
+      inner: "bg-red-50/95",
+      chipStrip: "bg-red-50/95",
+      border: "border-red-200/75",
+    };
+  }
+  const pinned = Boolean(row.pinnedAt);
+  if (pinned) {
+    return {
+      shell: "bg-[#DCFCE7]",
+      inner: "bg-[#DCFCE7]",
+      chipStrip: "bg-[#DCFCE7]",
+      border: "border-emerald-200/80",
+    };
+  }
+  return {
+    shell: "bg-white",
+    inner: "bg-white",
+    chipStrip: "bg-white",
+    border: "border-[#E5E7EB]",
+  };
+}
+
+function rowMatchesStatusFilter(row: IrissPasutijumsListRow, f: IrissListStatusFilterState): boolean {
+  const st = row.listStatus ?? "active";
+  return Boolean(f[st]);
+}
+
 const SWIPE_STRIP_BG = "bg-[#E5E7EB]";
 
 async function persistListOrder(order: IrissPasutijumiListOrder): Promise<boolean> {
@@ -214,16 +270,22 @@ const IrissRowCard = memo(function IrissRowCard({
   row,
   onPin,
   onAskDelete,
+  onSetStatus,
+  actionBusy,
   registerSwipeCloser,
   closeOtherSwipes,
   narrowSwipeViewport,
+  dragReorderEnabled,
 }: {
   row: IrissPasutijumsListRow;
   onPin: (id: string) => void;
   onAskDelete: (id: string) => void;
+  onSetStatus: (id: string, status: IrissPasutijumsListStatus) => void;
+  actionBusy: string | null;
   registerSwipeCloser: (id: string, closer: (() => void) | null) => void;
   closeOtherSwipes: (exceptId: string) => void;
   narrowSwipeViewport: boolean;
+  dragReorderEnabled: boolean;
 }) {
   const reorderDragControls = useDragControls();
   const swipeDragControls = useDragControls();
@@ -244,7 +306,9 @@ const IrissRowCard = memo(function IrissRowCard({
   const brandLogoUrl = getBrandLogoUrl(row.brandModel);
   const brandFallback = getBrandFallbackLabel(row.brandModel);
   const isPinned = Boolean(row.pinnedAt);
-  const cardSurfaceClass = isPinned ? CARD_PINNED : CARD_WHITE;
+  const surface = rowStatusSurface(row);
+  const statusBusy = actionBusy === row.id;
+  const curStatus = row.listStatus ?? "active";
   const openAllListings = () => {
     for (const chip of chips) {
       window.open(chip.href, "_blank", "noopener,noreferrer");
@@ -265,6 +329,7 @@ const IrissRowCard = memo(function IrissRowCard({
     closeOtherSwipes(row.id);
 
     const startEv = e;
+    if (!dragReorderEnabled) return;
     longPressTimerRef.current = window.setTimeout(() => {
       longPressTimerRef.current = null;
       reorderDragControls.start(startEv);
@@ -307,12 +372,9 @@ const IrissRowCard = memo(function IrissRowCard({
     return () => registerSwipeCloser(row.id, null);
   }, [closeSwipe, registerSwipeCloser, row.id]);
 
-  return (
-    <Reorder.Item value={row.id} dragListener={false} dragControls={reorderDragControls} className="list-none">
-      <div
-        className={`relative overflow-x-clip overflow-y-visible rounded-2xl border shadow-sm transition hover:border-slate-300 ${cardSurfaceClass} ${
-          isPinned ? "border-emerald-200/80" : "border-[#E5E7EB]"
-        }`}
+  const cardInner = (
+    <div
+        className={`relative overflow-x-clip overflow-y-visible rounded-2xl border shadow-sm transition hover:border-slate-300 ${surface.shell} ${surface.border}`}
       >
         <div className={`absolute inset-y-0 right-0 z-0 flex md:hidden ${SWIPE_STRIP_BG}`} style={{ width: SWIPE_ACTION_WIDTH }}>
           <button
@@ -374,10 +436,35 @@ const IrissRowCard = memo(function IrissRowCard({
             setIsOpen(shouldOpen);
             if (shouldOpen) closeOtherSwipes(row.id);
           }}
-          className={`relative z-10 touch-pan-y overscroll-x-contain will-change-transform md:translate-x-0 ${cardSurfaceClass}`}
+          className={`relative z-10 touch-pan-y overscroll-x-contain will-change-transform md:translate-x-0 ${surface.inner}`}
           style={{ transform: "translateZ(0)", touchAction: "pan-y pinch-zoom" }}
         >
           <div className="flex items-stretch">
+            <div
+              className="flex shrink-0 flex-col justify-center gap-1 border-r border-black/10 px-1.5 py-2 sm:px-2"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {(["active", "completed", "inactive"] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  disabled={statusBusy}
+                  onClick={() => onSetStatus(row.id, s)}
+                  className={`min-h-[26px] max-w-[4.5rem] rounded-md px-1.5 text-center text-[9px] font-bold leading-tight transition sm:min-h-[28px] sm:max-w-none sm:text-[10px] ${
+                    curStatus === s
+                      ? s === "completed"
+                        ? "bg-emerald-200/80 text-emerald-950 ring-1 ring-emerald-700/40"
+                        : s === "inactive"
+                          ? "bg-red-200/80 text-red-950 ring-1 ring-red-700/40"
+                          : "bg-white/95 text-black ring-1 ring-slate-400/80"
+                      : "bg-black/[0.04] text-black/70 hover:bg-black/[0.08] hover:text-black"
+                  }`}
+                >
+                  {s === "active" ? "Aktīvs" : s === "completed" ? "Izpildīts" : "Neaktīvs"}
+                </button>
+              ))}
+            </div>
             <Link
               href={`/admin/iriss/pasutijumi/${encodeURIComponent(row.id)}`}
               aria-label={`Atvērt pasūtījumu: ${row.brandModel}`}
@@ -413,7 +500,7 @@ const IrissRowCard = memo(function IrissRowCard({
                 </div>
               </div>
               <span
-                className={`hidden shrink-0 self-center rounded-full border border-[#E5E7EB] px-2.5 py-1 text-[11px] font-semibold text-black shadow-sm sm:inline-flex sm:px-3 sm:py-1.5 sm:text-[12px] ${cardSurfaceClass}`}
+                className={`hidden shrink-0 self-center rounded-full border border-[#E5E7EB] px-2.5 py-1 text-[11px] font-semibold text-black shadow-sm sm:inline-flex sm:px-3 sm:py-1.5 sm:text-[12px] ${surface.inner}`}
               >
                 Atvērt
               </span>
@@ -450,7 +537,7 @@ const IrissRowCard = memo(function IrissRowCard({
           </div>
           {chips.length > 0 ? (
             <div className="md:hidden">
-              <div className={`border-t border-[#E5E7EB] px-3 py-2.5 sm:px-4 sm:py-2.5 ${cardSurfaceClass}`}>
+              <div className={`border-t border-[#E5E7EB] px-3 py-2.5 sm:px-4 sm:py-2.5 ${surface.chipStrip}`}>
                 <div role="group" aria-label="Sludinājumu platformu saites" className={LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}>
                   {chips.map((c, i) => (
                     <a
@@ -481,8 +568,16 @@ const IrissRowCard = memo(function IrissRowCard({
           ) : null}
         </motion.div>
       </div>
-    </Reorder.Item>
   );
+
+  if (dragReorderEnabled) {
+    return (
+      <Reorder.Item value={row.id} dragListener={false} dragControls={reorderDragControls} className="list-none">
+        {cardInner}
+      </Reorder.Item>
+    );
+  }
+  return <div className="list-none">{cardInner}</div>;
 });
 
 export function IrissPasutijumiListClient({
@@ -505,6 +600,7 @@ export function IrissPasutijumiListClient({
   });
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<IrissListStatusFilterState>(() => readIrissListStatusFilter());
   const narrowSwipeViewport = useNarrowIrissSwipeViewport();
   const swipeClosersRef = useRef<Map<string, () => void>>(new Map());
   const persistTimerRef = useRef<number | null>(null);
@@ -537,7 +633,12 @@ export function IrissPasutijumiListClient({
   }, []);
 
   useEffect(() => {
-    setLocalRows(rows);
+    setLocalRows(
+      rows.map((r) => ({
+        ...r,
+        listStatus: r.listStatus ?? "active",
+      })),
+    );
   }, [rows]);
 
   useEffect(() => {
@@ -567,6 +668,20 @@ export function IrissPasutijumiListClient({
   }, [sortMode]);
 
   useEffect(() => {
+    const handler = (e: Event) => {
+      const d = (e as CustomEvent<IrissListStatusFilterState>).detail;
+      if (!d || typeof d !== "object") return;
+      setStatusFilter({
+        active: d.active !== false,
+        completed: d.completed !== false,
+        inactive: d.inactive !== false,
+      });
+    };
+    window.addEventListener(IRISS_LIST_STATUS_FILTER_EVENT, handler as EventListener);
+    return () => window.removeEventListener(IRISS_LIST_STATUS_FILTER_EVENT, handler as EventListener);
+  }, []);
+
+  useEffect(() => {
     const onSortChange = (ev: Event) => {
       const next = (ev as CustomEvent<SortMode>).detail;
       if (!next || !isSortMode(next)) return;
@@ -586,14 +701,24 @@ export function IrissPasutijumiListClient({
     return () => window.removeEventListener(IRISS_ORDER_SORT_EVENT, onSortChange as EventListener);
   }, [schedulePersistListOrder]);
 
+  const allStatusesInFilter = useMemo(
+    () => statusFilter.active && statusFilter.completed && statusFilter.inactive,
+    [statusFilter],
+  );
+
+  const visibleRows = useMemo(
+    () => localRows.filter((r) => rowMatchesStatusFilter(r, statusFilter)),
+    [localRows, statusFilter],
+  );
+
   const { pinnedRows, unpinnedRows } = useMemo(() => {
-    const pinned = localRows.filter((r) => Boolean(r.pinnedAt));
-    const unpinned = localRows.filter((r) => !r.pinnedAt);
+    const pinned = visibleRows.filter((r) => Boolean(r.pinnedAt));
+    const unpinned = visibleRows.filter((r) => !r.pinnedAt);
     return {
       pinnedRows: orderPinnedByIds(pinned, listOrder.pinnedOrder),
       unpinnedRows: orderUnpinnedByIds(unpinned, listOrder.unpinnedOrder, sortMode),
     };
-  }, [localRows, listOrder, sortMode]);
+  }, [visibleRows, listOrder, sortMode]);
 
   useEffect(() => {
     setListOrder((prev) => {
@@ -661,6 +786,13 @@ export function IrissPasutijumiListClient({
     }));
   }, [patchRow]);
 
+  const onSetStatus = useCallback(
+    (id: string, status: IrissPasutijumsListStatus) => {
+      void patchRow(id, (record) => ({ ...record, listStatus: status }));
+    },
+    [patchRow],
+  );
+
   const onConfirmDelete = useCallback(async () => {
     const id = deleteTargetId;
     if (!id) return;
@@ -705,37 +837,109 @@ export function IrissPasutijumiListClient({
 
   return (
     <>
+      <div className="mb-3 flex flex-col gap-3 rounded-xl border border-slate-200/90 bg-white/95 p-3 shadow-sm md:hidden">
+        <IrissOrderSortSelect
+          className="flex w-full flex-col gap-1 sm:inline-flex sm:flex-row sm:items-center"
+          selectClassName="w-full min-w-0 max-w-full"
+        />
+        <IrissPasutijumiStatusFilter variant="stacked" />
+        {!allStatusesInFilter ? (
+          <p className="text-[11px] leading-snug text-black/55">
+            Ilgā piespiešana un kārtošana ar vilkšanu ir izslēgta, kamēr filtrs nerāda visus trīs statusus.
+          </p>
+        ) : null}
+      </div>
+
       <div className="mt-3 flex flex-col gap-3 sm:gap-4">
+        {!allStatusesInFilter ? (
+          <p className="hidden rounded-lg border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-center text-[12px] text-amber-950/90 md:block">
+            Ilgā piespiešana un kārtošana ar vilkšanu ir izslēgta filtra dēļ — ieslēdz visus trīs statusus augšējā joslā vai nospied „Visi“.
+          </p>
+        ) : null}
         {pinnedRows.length > 0 ? (
-          <Reorder.Group axis="y" values={pinnedRows.map((r) => r.id)} onReorder={onReorderPinned} className="flex flex-col gap-3 sm:gap-4">
-            {pinnedRows.map((row) => (
-              <IrissRowCard
-                key={row.id}
-                row={rowMap.get(row.id) ?? row}
-                onPin={onPin}
-                onAskDelete={setDeleteTargetId}
-                registerSwipeCloser={registerSwipeCloser}
-                closeOtherSwipes={closeOtherSwipes}
-                narrowSwipeViewport={narrowSwipeViewport}
-              />
-            ))}
-          </Reorder.Group>
+          allStatusesInFilter ? (
+            <Reorder.Group
+              axis="y"
+              values={pinnedRows.map((r) => r.id)}
+              onReorder={onReorderPinned}
+              className="flex flex-col gap-3 sm:gap-4"
+            >
+              {pinnedRows.map((row) => (
+                <IrissRowCard
+                  key={row.id}
+                  row={rowMap.get(row.id) ?? row}
+                  onPin={onPin}
+                  onAskDelete={setDeleteTargetId}
+                  onSetStatus={onSetStatus}
+                  actionBusy={actionBusy}
+                  registerSwipeCloser={registerSwipeCloser}
+                  closeOtherSwipes={closeOtherSwipes}
+                  narrowSwipeViewport={narrowSwipeViewport}
+                  dragReorderEnabled
+                />
+              ))}
+            </Reorder.Group>
+          ) : (
+            <div className="flex flex-col gap-3 sm:gap-4">
+              {pinnedRows.map((row) => (
+                <IrissRowCard
+                  key={row.id}
+                  row={rowMap.get(row.id) ?? row}
+                  onPin={onPin}
+                  onAskDelete={setDeleteTargetId}
+                  onSetStatus={onSetStatus}
+                  actionBusy={actionBusy}
+                  registerSwipeCloser={registerSwipeCloser}
+                  closeOtherSwipes={closeOtherSwipes}
+                  narrowSwipeViewport={narrowSwipeViewport}
+                  dragReorderEnabled={false}
+                />
+              ))}
+            </div>
+          )
         ) : null}
 
         {unpinnedRows.length > 0 ? (
-          <Reorder.Group axis="y" values={unpinnedRows.map((r) => r.id)} onReorder={onReorderUnpinned} className="flex flex-col gap-3 sm:gap-4">
-            {unpinnedRows.map((row) => (
-              <IrissRowCard
-                key={row.id}
-                row={rowMap.get(row.id) ?? row}
-                onPin={onPin}
-                onAskDelete={setDeleteTargetId}
-                registerSwipeCloser={registerSwipeCloser}
-                closeOtherSwipes={closeOtherSwipes}
-                narrowSwipeViewport={narrowSwipeViewport}
-              />
-            ))}
-          </Reorder.Group>
+          allStatusesInFilter ? (
+            <Reorder.Group
+              axis="y"
+              values={unpinnedRows.map((r) => r.id)}
+              onReorder={onReorderUnpinned}
+              className="flex flex-col gap-3 sm:gap-4"
+            >
+              {unpinnedRows.map((row) => (
+                <IrissRowCard
+                  key={row.id}
+                  row={rowMap.get(row.id) ?? row}
+                  onPin={onPin}
+                  onAskDelete={setDeleteTargetId}
+                  onSetStatus={onSetStatus}
+                  actionBusy={actionBusy}
+                  registerSwipeCloser={registerSwipeCloser}
+                  closeOtherSwipes={closeOtherSwipes}
+                  narrowSwipeViewport={narrowSwipeViewport}
+                  dragReorderEnabled
+                />
+              ))}
+            </Reorder.Group>
+          ) : (
+            <div className="flex flex-col gap-3 sm:gap-4">
+              {unpinnedRows.map((row) => (
+                <IrissRowCard
+                  key={row.id}
+                  row={rowMap.get(row.id) ?? row}
+                  onPin={onPin}
+                  onAskDelete={setDeleteTargetId}
+                  onSetStatus={onSetStatus}
+                  actionBusy={actionBusy}
+                  registerSwipeCloser={registerSwipeCloser}
+                  closeOtherSwipes={closeOtherSwipes}
+                  narrowSwipeViewport={narrowSwipeViewport}
+                  dragReorderEnabled={false}
+                />
+              ))}
+            </div>
+          )
         ) : null}
       </div>
 

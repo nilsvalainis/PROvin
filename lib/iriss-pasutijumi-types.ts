@@ -49,11 +49,16 @@ export type IrissOfferRecord = {
   updatedAt: string;
 };
 
+/** Saraksta statuss (vizuālais + filtrs) — saglabāts pasūtījuma JSON. */
+export type IrissPasutijumsListStatus = "active" | "completed" | "inactive";
+
 export type IrissPasutijumsRecord = {
   id: string;
   createdAt: string;
   updatedAt: string;
   pinnedAt: string;
+  /** Saraksta / darba plūsmas statuss. */
+  listStatus: IrissPasutijumsListStatus;
   clientFirstName: string;
   clientLastName: string;
   phone: string;
@@ -94,6 +99,7 @@ export type IrissPasutijumsListRow = {
   createdAt: string;
   updatedAt: string;
   pinnedAt: string;
+  listStatus: IrissPasutijumsListStatus;
   brandModel: string;
   totalBudget: string;
   phone: string;
@@ -123,6 +129,7 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     createdAt: nowIso,
     updatedAt: nowIso,
     pinnedAt: "",
+    listStatus: "active",
     clientFirstName: "",
     clientLastName: "",
     phone: "",

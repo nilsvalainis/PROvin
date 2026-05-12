@@ -33,7 +33,14 @@ export function readIrissOrderSort(): IrissOrderSortMode {
   return legacy && isSortMode(legacy) ? legacy : "created_desc";
 }
 
-export function IrissOrderSortSelect({ className = "" }: { className?: string }) {
+export function IrissOrderSortSelect({
+  className = "",
+  selectClassName = "",
+}: {
+  className?: string;
+  /** Papildu Tailwind klasei `<select>` (piem. `w-full` mobilajam). */
+  selectClassName?: string;
+}) {
   const [value, setValue] = useState<IrissOrderSortMode>("created_desc");
 
   useEffect(() => {
@@ -44,7 +51,7 @@ export function IrissOrderSortSelect({ className = "" }: { className?: string })
     <label className={`inline-flex items-center gap-2 text-xs text-black ${className}`}>
       <span className="hidden lg:inline">Kārtot:</span>
       <select
-        className="min-h-[38px] appearance-none rounded-lg border-0 bg-transparent px-3 py-1.5 text-[12px] font-semibold text-black shadow-none outline-none transition focus:ring-2 focus:ring-black/20"
+        className={`min-h-[38px] appearance-none rounded-lg border-0 bg-transparent px-3 py-1.5 text-[12px] font-semibold text-black shadow-none outline-none transition focus:ring-2 focus:ring-black/20 ${selectClassName}`}
         value={value}
         onChange={(e) => {
           const next = e.target.value as IrissOrderSortMode;

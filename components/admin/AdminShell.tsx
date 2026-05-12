@@ -8,6 +8,7 @@ import { AdminSidebarNav } from "./AdminSidebarNav";
 import { IrissAdminSidebarNav } from "./IrissAdminSidebarNav";
 import { AdminWorkspaceSwitcher } from "./AdminWorkspaceSwitcher";
 import { IrissOrderSortSelect } from "./IrissOrderSortSelect";
+import { IrissPasutijumiStatusFilter } from "./IrissPasutijumiStatusFilter";
 import { LogoutButton } from "./LogoutButton";
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 
@@ -100,8 +101,14 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
             )}
           </div>
         </div>
-        <div className="hidden items-center gap-2 md:flex">
-          {showIrissSortInHeader ? <IrissOrderSortSelect /> : null}
+        <div className="hidden items-center gap-3 md:flex">
+          {showIrissSortInHeader ? (
+            <>
+              <IrissOrderSortSelect />
+              <div className="hidden h-5 w-px shrink-0 bg-black/25 lg:block" aria-hidden />
+              <IrissPasutijumiStatusFilter />
+            </>
+          ) : null}
           <LogoutButton className="md:w-auto" />
         </div>
         <div className="flex shrink-0 items-center gap-1.5 md:hidden">

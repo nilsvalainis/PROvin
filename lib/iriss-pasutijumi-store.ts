@@ -12,6 +12,7 @@ import {
   type IrissOfferRecord,
   type IrissPasutijumiListOrder,
   type IrissPasutijumsListRow,
+  type IrissPasutijumsListStatus,
   type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
 
@@ -64,6 +65,7 @@ function cloneRecord(record: IrissPasutijumsRecord): IrissPasutijumsRecord {
 function cloneRows(rows: IrissPasutijumsListRow[]): IrissPasutijumsListRow[] {
   return rows.map((row) => ({
     ...row,
+    listStatus: row.listStatus ?? "active",
     listingLinksOther: [...row.listingLinksOther],
   }));
 }
@@ -396,6 +398,12 @@ function normalizeOffers(raw: unknown): IrissOfferRecord[] {
     .slice(0, 30);
 }
 
+function normalizeListStatus(raw: unknown): IrissPasutijumsListStatus {
+  const s = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  if (s === "completed" || s === "inactive" || s === "active") return s;
+  return "active";
+}
+
 function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null {
   if (!raw || typeof raw !== "object") return null;
   const o = deepSanitizeDraftStrings(raw) as Record<string, unknown>;
@@ -409,6 +417,7 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     createdAt: str("createdAt") || base.createdAt,
     updatedAt: str("updatedAt") || base.updatedAt,
     pinnedAt: sanitizeDraftTextForStorage(str("pinnedAt"), 64),
+    listStatus: normalizeListStatus(o.listStatus),
     clientFirstName: sanitizeDraftTextForStorage(str("clientFirstName"), 120),
     clientLastName: sanitizeDraftTextForStorage(str("clientLastName"), 120),
     phone: sanitizeDraftTextForStorage(str("phone"), 64),
@@ -447,6 +456,7 @@ function rowFromRecord(rec: IrissPasutijumsRecord): IrissPasutijumsListRow {
     createdAt: rec.createdAt,
     updatedAt: rec.updatedAt,
     pinnedAt: rec.pinnedAt,
+    listStatus: rec.listStatus ?? "active",
     brandModel: rec.brandModel.trim() || "—",
     totalBudget: rec.totalBudget.trim() || "—",
     phone: rec.phone.trim() || "—",
@@ -476,6 +486,7 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
       createdAt: sanitizeDraftTextForStorage(typeof o.createdAt === "string" ? o.createdAt : "", 64),
       updatedAt: sanitizeDraftTextForStorage(typeof o.updatedAt === "string" ? o.updatedAt : "", 64),
       pinnedAt: sanitizeDraftTextForStorage(typeof o.pinnedAt === "string" ? o.pinnedAt : "", 64),
+      listStatus: normalizeListStatus(o.listStatus),
       brandModel: sanitizeDraftTextForStorage(typeof o.brandModel === "string" ? o.brandModel : "—", 400) || "—",
       totalBudget: sanitizeDraftTextForStorage(typeof o.totalBudget === "string" ? o.totalBudget : "—", 120) || "—",
       phone: sanitizeDraftTextForStorage(typeof o.phone === "string" ? o.phone : "—", 64) || "—",
