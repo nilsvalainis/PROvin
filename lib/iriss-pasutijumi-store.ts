@@ -28,11 +28,11 @@ const BACKUP_BLOB_PREFIX = "iriss-pasutijumi-backups/";
 const BACKUP_KEEP_COUNT = 10;
 const BLOB_LIST_CACHE_TTL_MS = Math.max(
   0,
-  Number.parseInt(process.env.IRISS_PASUTIJUMI_BLOB_LIST_CACHE_TTL_MS ?? "300000", 10) || 300_000,
+  Number.parseInt(process.env.IRISS_PASUTIJUMI_BLOB_LIST_CACHE_TTL_MS ?? "600000", 10) || 600_000,
 );
 const BLOB_RECORD_CACHE_TTL_MS = Math.max(
   0,
-  Number.parseInt(process.env.IRISS_PASUTIJUMI_BLOB_RECORD_CACHE_TTL_MS ?? "180000", 10) || 180_000,
+  Number.parseInt(process.env.IRISS_PASUTIJUMI_BLOB_RECORD_CACHE_TTL_MS ?? "300000", 10) || 300_000,
 );
 const BLOB_BACKUP_TRIM_MIN_INTERVAL_MS = Math.max(
   0,

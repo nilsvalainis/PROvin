@@ -19,6 +19,8 @@ export type DailyDraftBackupResult = {
   startedAt: string;
   finishedAt: string;
   ok: boolean;
+  /** Vai snapshot saturēja vismaz vienu failu grupu (FS vai Blob). */
+  hadPayload: boolean;
   warnings: string[];
   backupRootFs: string;
   backupBlobPath?: string;
@@ -27,6 +29,41 @@ export type DailyDraftBackupResult = {
 
 const DEFAULT_BACKUP_ROOT = ".data/daily-admin-draft-backups";
 const DEFAULT_BLOB_BACKUP_PREFIX = "admin-daily-backups/";
+
+function envFlag(name: string, defaultValue: boolean): boolean {
+  const raw = process.env[name]?.trim().toLowerCase() ?? "";
+  if (!raw) return defaultValue;
+  if (["1", "true", "yes", "on"].includes(raw)) return true;
+  if (["0", "false", "no", "off"].includes(raw)) return false;
+  return defaultValue;
+}
+
+/** Noklusējums: false — mazāk Vercel Blob operāciju / krātuves (piemērots bezmaksas plānam). */
+function shouldUploadDailySnapshotToBlob(): boolean {
+  return envFlag("ADMIN_DRAFT_DAILY_BACKUP_TO_BLOB", false);
+}
+
+/** Noklusējums: false — izvairās no list+get pa visiem order draft Blob failiem. */
+function shouldIncludeOrderDraftsFromBlob(): boolean {
+  return envFlag("ADMIN_DRAFT_DAILY_BACKUP_INCLUDE_ORDER_BLOB", false);
+}
+
+/** Noklusējums: false — izvairās no list+get pa visiem IRISS pasūtījumiem Blob (ļoti dārgi). Pilnu IRISS eksportu: admin UI vai `npm run iriss:merge-to-blob`. */
+function shouldIncludeIrissFromBlob(): boolean {
+  return envFlag("ADMIN_DRAFT_DAILY_BACKUP_INCLUDE_IRISS_BLOB", false);
+}
+
+function fsRetentionFolderCount(): number {
+  const n = Number.parseInt(process.env.ADMIN_DRAFT_BACKUP_FS_RETENTION ?? "12", 10);
+  return Number.isFinite(n) && n >= 1 ? Math.min(n, 365) : 12;
+}
+
+/** Mapju sakne (datētas apakšmapes `YYYY-MM-DD/`). */
+function resolveBackupBaseDir(): string {
+  const custom = process.env.ADMIN_DRAFT_BACKUP_FS_ROOT?.trim();
+  if (custom) return path.resolve(custom);
+  return path.join(process.cwd(), DEFAULT_BACKUP_ROOT);
+}
 
 function dateSlug(d = new Date()): string {
   return d.toISOString().slice(0, 10);
@@ -99,8 +136,27 @@ export async function runDailyAdminDraftBackup(): Promise<DailyDraftBackupResult
   const warnings: string[] = [];
   const reports: BackupSourceReport[] = [];
 
-  const backupRoot = path.join(process.cwd(), DEFAULT_BACKUP_ROOT, dateSlug());
-  await fs.mkdir(backupRoot, { recursive: true });
+  const backupBase = resolveBackupBaseDir();
+  const backupRoot = path.join(backupBase, dateSlug());
+  try {
+    await fs.mkdir(backupRoot, { recursive: true });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (process.env.VERCEL) {
+      return {
+        startedAt,
+        finishedAt: new Date().toISOString(),
+        ok: true,
+        hadPayload: false,
+        warnings: [
+          `Filesystem backup unavailable on Vercel (${msg}). Set ADMIN_DRAFT_BACKUP_FS_ROOT to a writable path on a VPS, or rely on Admin → IRISS export / \`npm run iriss:merge-to-blob\` from your Mac (Dropbox).`,
+        ],
+        backupRootFs: backupRoot,
+        reports: [],
+      };
+    }
+    throw e;
+  }
 
   const orderEnabled = isOrderDraftStoreEnabled();
   if (!orderEnabled) warnings.push("Order draft storage is disabled (ADMIN_ORDER_DRAFT_DIR=off/disabled).");
@@ -139,7 +195,7 @@ export async function runDailyAdminDraftBackup(): Promise<DailyDraftBackupResult
   const irissBlobPrefix = "iriss-pasutijumi/";
   if (!token) warnings.push("BLOB_READ_WRITE_TOKEN is missing; no offsite Blob snapshot was created.");
 
-  if (token && orderBlobPrefix) {
+  if (token && orderBlobPrefix && shouldIncludeOrderDraftsFromBlob()) {
     const files = await readJsonFilesFromBlob(orderBlobPrefix, token);
     if (files.size > 0) {
       const relPayload: Record<string, string> = {};
@@ -148,7 +204,7 @@ export async function runDailyAdminDraftBackup(): Promise<DailyDraftBackupResult
       reports.push({ source: "order-drafts-blob", files: files.size, bytes: sizeOfMap(files) });
     }
   }
-  if (token && irissState.enabled && irissState.persistence === "vercel_blob") {
+  if (token && irissState.enabled && irissState.persistence === "vercel_blob" && shouldIncludeIrissFromBlob()) {
     const files = await readJsonFilesFromBlob(irissBlobPrefix, token);
     if (files.size > 0) {
       const relPayload: Record<string, string> = {};
@@ -169,7 +225,7 @@ export async function runDailyAdminDraftBackup(): Promise<DailyDraftBackupResult
   await fs.writeFile(path.join(backupRoot, "snapshot.json"), JSON.stringify(snapshotPayload), "utf8");
 
   let backupBlobPath: string | undefined;
-  if (token) {
+  if (token && shouldUploadDailySnapshotToBlob()) {
     const blobPrefix = process.env.ADMIN_DRAFT_DAILY_BACKUP_BLOB_PREFIX?.trim() || DEFAULT_BLOB_BACKUP_PREFIX;
     const safePrefix = blobPrefix.endsWith("/") ? blobPrefix : `${blobPrefix}/`;
     const blobPath = `${safePrefix}${dateSlug()}.json`;
@@ -190,13 +246,31 @@ export async function runDailyAdminDraftBackup(): Promise<DailyDraftBackupResult
     backupBlobPath = blobPath;
   }
 
+  await trimFsBackupDirs(backupBase, fsRetentionFolderCount());
+
   return {
     startedAt,
     finishedAt: new Date().toISOString(),
-    ok: reports.length > 0,
+    ok: true,
+    hadPayload: reports.length > 0,
     warnings,
     backupRootFs: backupRoot,
     backupBlobPath,
     reports,
   };
+}
+
+async function trimFsBackupDirs(backupBase: string, keep: number): Promise<void> {
+  const root = backupBase;
+  let names: string[] = [];
+  try {
+    names = await fs.readdir(root);
+  } catch {
+    return;
+  }
+  const dayDirs = names.filter((n) => /^\d{4}-\d{2}-\d{2}$/.test(n)).sort();
+  const stale = dayDirs.slice(0, Math.max(0, dayDirs.length - keep));
+  for (const d of stale) {
+    await fs.rm(path.join(root, d), { recursive: true, force: true }).catch(() => undefined);
+  }
 }
