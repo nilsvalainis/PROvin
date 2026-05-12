@@ -30,14 +30,8 @@ const SEL_ENGINE_MAX = 200;
 const SEL_TEX_MAX = 400;
 const SEL_EQ_MAX = 500;
 
-/** Anketas lauku etiķetes — bez uppercase/trekna (globālā `.fieldLabel` ir pretēji). */
-const PROVIN_SELECT_Q_LABEL =
-  "block text-[0.8125rem] font-normal normal-case leading-snug tracking-normal text-[#c8d2e2]/92";
-
 const PROVIN_SELECT_SECTION_HEADING =
   "demo-design-dir__title mx-auto max-w-[min(100%,48rem)] text-balance text-center font-normal tracking-normal";
-
-const PROVIN_SELECT_FORM_TITLE = "text-center text-[0.8125rem] font-normal normal-case tracking-normal text-white/88";
 
 const PROVIN_SELECT_SUBMIT_EXTRA = demoPageStyles.provinSelectConsultCta;
 
@@ -56,6 +50,15 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
   const includedRows: IncludedRow[] = Array.isArray(rawIncluded)
     ? (rawIncluded as IncludedRow[]).filter((r) => r && typeof r.title === "string" && typeof r.body === "string")
     : [];
+
+  const RequiredMark = () => (
+    <>
+      <span className={demoPageStyles.provinSelectRequiredMark} aria-hidden>
+        {" *"}
+      </span>
+      <span className="sr-only"> ({t("requiredSrOnly")})</span>
+    </>
+  );
 
   const [brandModel, setBrandModel] = useState("");
   const [productionYears, setProductionYears] = useState("");
@@ -250,261 +253,310 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
               </>
             )}
             <div className={`${demoPageStyles.heroFormCard} mx-auto ${isStandalone ? "mt-2" : "mt-4"} w-full max-w-[520px]`}>
-                <form
-                  onSubmit={(e) => void onSubmit(e)}
-                  className="order-form--hero !mt-0 w-full space-y-3 !px-0 !py-0 sm:!px-0 sm:!py-0"
-                >
-                  <h4 className={PROVIN_SELECT_FORM_TITLE}>{t("strategyFormTitle")}</h4>
+              <form
+                onSubmit={(e) => void onSubmit(e)}
+                className="order-form--hero !mt-0 w-full space-y-0 !px-0 !py-0 sm:!px-0 sm:!py-0"
+                aria-labelledby="provin-select-form-heading"
+                aria-describedby="provin-select-form-intro"
+              >
+                <h4 id="provin-select-form-heading" className={demoPageStyles.provinSelectFormTitle}>
+                  {t("strategyFormTitle")}
+                </h4>
+                <div className={demoPageStyles.provinSelectFormDivider} aria-hidden />
+                <p id="provin-select-form-intro" className={demoPageStyles.provinSelectFormIntro}>
+                  {t("formIntro")}
+                </p>
 
-                  <label className={demoPageStyles.field}>
-                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldBrandModel")}</span>
-                    <input
-                      type="text"
-                      name="selectBrandModel"
-                      value={brandModel}
-                      onChange={(e) => setBrandModel(e.target.value)}
-                      maxLength={SEL_BRAND_MAX}
-                      className="w-full"
-                      disabled={fieldDisabled}
-                    />
-                  </label>
-                  <label className={demoPageStyles.field}>
-                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldProductionYears")}</span>
-                    <input
-                      type="text"
-                      name="selectProductionYearsDpf"
-                      value={productionYears}
-                      onChange={(e) => setProductionYears(e.target.value)}
-                      maxLength={SEL_SHORT_MAX}
-                      className="w-full"
-                      disabled={fieldDisabled}
-                    />
-                  </label>
-                  <label className={demoPageStyles.field}>
-                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldPlannedBudget")}</span>
-                    <input
-                      type="text"
-                      name="selectPlannedBudget"
-                      value={plannedBudget}
-                      onChange={(e) => setPlannedBudget(e.target.value)}
-                      maxLength={SEL_SHORT_MAX}
-                      className="w-full"
-                      required
-                      disabled={fieldDisabled}
-                    />
-                  </label>
-                  <label className={demoPageStyles.field}>
-                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldEngineType")}</span>
-                    <input
-                      type="text"
-                      name="selectEngineType"
-                      value={engineType}
-                      onChange={(e) => setEngineType(e.target.value)}
-                      maxLength={SEL_ENGINE_MAX}
-                      className="w-full"
-                      required
-                      disabled={fieldDisabled}
-                    />
-                  </label>
-                  <label className={demoPageStyles.field}>
-                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldTransmission")}</span>
-                    <input
-                      type="text"
-                      name="selectTransmission"
-                      value={transmission}
-                      onChange={(e) => setTransmission(e.target.value)}
-                      maxLength={SEL_SHORT_MAX}
-                      className="w-full"
-                      required
-                      disabled={fieldDisabled}
-                    />
-                  </label>
-                  <label className={demoPageStyles.field}>
-                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldMaxMileage")}</span>
-                    <input
-                      type="text"
-                      name="selectMaxMileage"
-                      value={maxMileage}
-                      onChange={(e) => setMaxMileage(e.target.value)}
-                      maxLength={SEL_SHORT_MAX}
-                      className="w-full"
-                      disabled={fieldDisabled}
-                    />
-                  </label>
-                  <label className={demoPageStyles.field}>
-                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldExteriorColors")}</span>
-                    <input
-                      type="text"
-                      name="selectExteriorColor"
-                      value={exteriorColors}
-                      onChange={(e) => setExteriorColors(e.target.value)}
-                      maxLength={SEL_TEX_MAX}
-                      className="w-full"
-                      disabled={fieldDisabled}
-                    />
-                  </label>
-                  <label className={demoPageStyles.field}>
-                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldInteriorMaterial")}</span>
-                    <input
-                      type="text"
-                      name="selectInteriorMaterial"
-                      value={interiorMaterial}
-                      onChange={(e) => setInteriorMaterial(e.target.value)}
-                      maxLength={SEL_TEX_MAX}
-                      className="w-full"
-                      disabled={fieldDisabled}
-                    />
-                  </label>
-                  <label className={demoPageStyles.field}>
-                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldRequiredEquipment")}</span>
-                    <input
-                      type="text"
-                      name="selectRequiredEquipment"
-                      value={requiredEquipment}
-                      onChange={(e) => setRequiredEquipment(e.target.value)}
-                      maxLength={SEL_EQ_MAX}
-                      className="w-full"
-                      disabled={fieldDisabled}
-                    />
-                  </label>
-                  <label className={demoPageStyles.field}>
-                    <span className={PROVIN_SELECT_Q_LABEL}>{t("fieldDesiredEquipment")}</span>
-                    <input
-                      type="text"
-                      name="selectDesiredEquipment"
-                      value={desiredEquipment}
-                      onChange={(e) => setDesiredEquipment(e.target.value)}
-                      maxLength={SEL_EQ_MAX}
-                      className="w-full"
-                      disabled={fieldDisabled}
-                    />
-                  </label>
-
-                  <label className={demoPageStyles.field}>
-                    <span className={PROVIN_SELECT_Q_LABEL}>{t("nameLabel")}</span>
-                    <input
-                      type="text"
-                      name="name"
-                      autoComplete="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      maxLength={NAME_MAX}
-                      className="w-full"
-                      disabled={fieldDisabled}
-                    />
-                  </label>
-                  <label className={demoPageStyles.field}>
-                    <span className={PROVIN_SELECT_Q_LABEL}>{t("phoneLabel")}</span>
-                    <input
-                      type="tel"
-                      name="phone"
-                      autoComplete="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full"
-                      required
-                      disabled={fieldDisabled}
-                    />
-                  </label>
-                  <label className={demoPageStyles.field}>
-                    <span className={PROVIN_SELECT_Q_LABEL}>{t("emailLabel")}</span>
-                    <input
-                      type="email"
-                      name="email"
-                      autoComplete="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full"
-                      required
-                      disabled={fieldDisabled}
-                    />
-                  </label>
-                  <label className={demoPageStyles.field}>
-                    <span className={PROVIN_SELECT_Q_LABEL}>{t("commentLabel")}</span>
-                    <textarea
-                      name="comment"
-                      rows={4}
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      placeholder={t("commentPlaceholder")}
-                      className="w-full min-h-[6rem]"
-                      maxLength={NOTES_MAX}
-                      disabled={fieldDisabled}
-                    />
-                  </label>
-                  <p className="demo-design-dir__body text-[11px] leading-relaxed opacity-80">{t("followupNote")}</p>
-
-                  <div className="order-form-hero-rule border-b border-[#c0c0c0]/35 pb-4 pt-2">
-                    <label
-                      htmlFor="provin-select-checkout-consent"
-                      className="flex min-h-11 cursor-pointer items-start gap-3 text-left sm:min-h-0"
-                    >
+                <fieldset className={demoPageStyles.provinSelectFieldset}>
+                  <legend className={demoPageStyles.provinSelectGroupLegend}>{t("groupTitleCar")}</legend>
+                  <div className={demoPageStyles.provinSelectFormGrid}>
+                    <label className={demoPageStyles.field}>
+                      <span className={demoPageStyles.provinSelectFormLabel}>{t("fieldBrandModel")}</span>
                       <input
-                        id="provin-select-checkout-consent"
-                        type="checkbox"
-                        name="withdrawalConsent"
-                        checked={withdrawalConsent}
-                        onChange={(e) => {
-                          setWithdrawalConsent(e.target.checked);
-                          setConsentError(null);
-                        }}
-                        className="order-form-hero-checkbox mt-1 h-4 w-4 shrink-0 rounded border-[#c0c0c0] bg-transparent text-provin-accent focus:ring-1 focus:ring-emerald-400/45 sm:mt-0.5 sm:h-4 sm:w-4"
-                        aria-invalid={Boolean(consentError)}
-                        aria-describedby={consentError ? "provin-select-consent-error" : undefined}
-                        aria-label={tOrder("checkoutConsentAria")}
+                        type="text"
+                        name="selectBrandModel"
+                        value={brandModel}
+                        onChange={(e) => setBrandModel(e.target.value)}
+                        maxLength={SEL_BRAND_MAX}
+                        className="w-full"
+                        disabled={fieldDisabled}
+                        autoComplete="off"
+                      />
+                    </label>
+                    <label className={demoPageStyles.field}>
+                      <span className={demoPageStyles.provinSelectFormLabel}>{t("fieldProductionYears")}</span>
+                      <input
+                        type="text"
+                        name="selectProductionYearsDpf"
+                        value={productionYears}
+                        onChange={(e) => setProductionYears(e.target.value)}
+                        maxLength={SEL_SHORT_MAX}
+                        className="w-full"
+                        disabled={fieldDisabled}
+                        autoComplete="off"
+                      />
+                    </label>
+                    <label className={demoPageStyles.field}>
+                      <span className={demoPageStyles.provinSelectFormLabel}>
+                        {t("fieldPlannedBudget")}
+                        <RequiredMark />
+                      </span>
+                      <input
+                        type="text"
+                        name="selectPlannedBudget"
+                        value={plannedBudget}
+                        onChange={(e) => setPlannedBudget(e.target.value)}
+                        maxLength={SEL_SHORT_MAX}
+                        className="w-full"
+                        placeholder={t("budgetPlaceholder")}
+                        inputMode="decimal"
+                        required
+                        disabled={fieldDisabled}
+                        autoComplete="off"
+                      />
+                    </label>
+                    <label className={demoPageStyles.field}>
+                      <span className={demoPageStyles.provinSelectFormLabel}>{t("fieldMaxMileage")}</span>
+                      <input
+                        type="text"
+                        name="selectMaxMileage"
+                        value={maxMileage}
+                        onChange={(e) => setMaxMileage(e.target.value)}
+                        maxLength={SEL_SHORT_MAX}
+                        className="w-full"
+                        disabled={fieldDisabled}
+                        autoComplete="off"
+                      />
+                    </label>
+                    <label className={demoPageStyles.field}>
+                      <span className={demoPageStyles.provinSelectFormLabel}>
+                        {t("fieldEngineType")}
+                        <RequiredMark />
+                      </span>
+                      <input
+                        type="text"
+                        name="selectEngineType"
+                        value={engineType}
+                        onChange={(e) => setEngineType(e.target.value)}
+                        maxLength={SEL_ENGINE_MAX}
+                        className="w-full"
+                        placeholder={t("enginePlaceholder")}
+                        required
+                        disabled={fieldDisabled}
+                        autoComplete="off"
+                      />
+                    </label>
+                    <label className={demoPageStyles.field}>
+                      <span className={demoPageStyles.provinSelectFormLabel}>
+                        {t("fieldTransmission")}
+                        <RequiredMark />
+                      </span>
+                      <input
+                        type="text"
+                        name="selectTransmission"
+                        value={transmission}
+                        onChange={(e) => setTransmission(e.target.value)}
+                        maxLength={SEL_SHORT_MAX}
+                        className="w-full"
+                        placeholder={t("transmissionPlaceholder")}
+                        required
+                        disabled={fieldDisabled}
+                        autoComplete="off"
+                      />
+                    </label>
+                    <label className={demoPageStyles.field}>
+                      <span className={demoPageStyles.provinSelectFormLabel}>{t("fieldExteriorColors")}</span>
+                      <input
+                        type="text"
+                        name="selectExteriorColor"
+                        value={exteriorColors}
+                        onChange={(e) => setExteriorColors(e.target.value)}
+                        maxLength={SEL_TEX_MAX}
+                        className="w-full"
+                        disabled={fieldDisabled}
+                        autoComplete="off"
+                      />
+                    </label>
+                    <label className={demoPageStyles.field}>
+                      <span className={demoPageStyles.provinSelectFormLabel}>{t("fieldInteriorMaterial")}</span>
+                      <input
+                        type="text"
+                        name="selectInteriorMaterial"
+                        value={interiorMaterial}
+                        onChange={(e) => setInteriorMaterial(e.target.value)}
+                        maxLength={SEL_TEX_MAX}
+                        className="w-full"
+                        disabled={fieldDisabled}
+                        autoComplete="off"
+                      />
+                    </label>
+                    <label className={`${demoPageStyles.field} ${demoPageStyles.provinSelectFormGridFull}`}>
+                      <span className={demoPageStyles.provinSelectFormLabel}>{t("fieldRequiredEquipment")}</span>
+                      <input
+                        type="text"
+                        name="selectRequiredEquipment"
+                        value={requiredEquipment}
+                        onChange={(e) => setRequiredEquipment(e.target.value)}
+                        maxLength={SEL_EQ_MAX}
+                        className="w-full"
+                        disabled={fieldDisabled}
+                        autoComplete="off"
+                      />
+                    </label>
+                    <label className={`${demoPageStyles.field} ${demoPageStyles.provinSelectFormGridFull}`}>
+                      <span className={demoPageStyles.provinSelectFormLabel}>{t("fieldDesiredEquipment")}</span>
+                      <input
+                        type="text"
+                        name="selectDesiredEquipment"
+                        value={desiredEquipment}
+                        onChange={(e) => setDesiredEquipment(e.target.value)}
+                        maxLength={SEL_EQ_MAX}
+                        className="w-full"
+                        disabled={fieldDisabled}
+                        autoComplete="off"
+                      />
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset className={demoPageStyles.provinSelectFieldset}>
+                  <legend className={demoPageStyles.provinSelectGroupLegend}>{t("groupTitleContact")}</legend>
+                  <div className={demoPageStyles.provinSelectFormGrid}>
+                    <label className={`${demoPageStyles.field} ${demoPageStyles.provinSelectFormGridFull}`}>
+                      <span className={demoPageStyles.provinSelectFormLabel}>{t("nameLabel")}</span>
+                      <input
+                        type="text"
+                        name="name"
+                        autoComplete="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        maxLength={NAME_MAX}
+                        className="w-full"
                         disabled={fieldDisabled}
                       />
-                      <span className="order-form-hero-consent-text text-[12px] font-normal leading-snug text-[#e5e7eb] sm:text-[13px]">
-                        {tOrder.rich("checkoutConsent", {
-                          terms: (chunks) => (
-                            <Link
-                              href="/lietosanas-noteikumi"
-                              className="font-normal text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
-                            >
-                              {chunks}
-                            </Link>
-                          ),
-                          privacy: (chunks) => (
-                            <Link
-                              href="/privatuma-politika"
-                              className="font-normal text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
-                            >
-                              {chunks}
-                            </Link>
-                          ),
-                        })}
-                      </span>
                     </label>
-                    {consentError ? (
-                      <p
-                        id="provin-select-consent-error"
-                        className="order-form-hero-field-error mt-2 px-0.5 text-left text-[12px] font-normal leading-snug text-red-300 sm:text-[11px]"
-                        role="alert"
-                        aria-live="polite"
-                      >
-                        {consentError}
-                      </p>
-                    ) : null}
+                    <label className={demoPageStyles.field}>
+                      <span className={demoPageStyles.provinSelectFormLabel}>
+                        {t("phoneLabel")}
+                        <RequiredMark />
+                      </span>
+                      <input
+                        type="tel"
+                        name="phone"
+                        autoComplete="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full"
+                        inputMode="tel"
+                        required
+                        disabled={fieldDisabled}
+                      />
+                    </label>
+                    <label className={demoPageStyles.field}>
+                      <span className={demoPageStyles.provinSelectFormLabel}>
+                        {t("emailLabel")}
+                        <RequiredMark />
+                      </span>
+                      <input
+                        type="email"
+                        name="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full"
+                        required
+                        disabled={fieldDisabled}
+                      />
+                    </label>
+                    <label className={`${demoPageStyles.field} ${demoPageStyles.provinSelectFormGridFull}`}>
+                      <span className={demoPageStyles.provinSelectFormLabel}>{t("commentLabel")}</span>
+                      <textarea
+                        name="comment"
+                        rows={4}
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder={t("commentPlaceholder")}
+                        className="w-full min-h-[6rem]"
+                        maxLength={NOTES_MAX}
+                        disabled={fieldDisabled}
+                      />
+                    </label>
                   </div>
+                </fieldset>
 
-                  {errMsg ? (
-                    <p className="provin-select-form-error text-[12px]" role="alert">
-                      {errMsg}
+                <p className={demoPageStyles.provinSelectFollowup}>{t("followupNote")}</p>
+
+                <div className="order-form-hero-rule mt-4 border-b border-[#c0c0c0]/35 pb-4 pt-2">
+                  <label
+                    htmlFor="provin-select-checkout-consent"
+                    className="flex min-h-11 cursor-pointer items-start gap-3 text-left sm:min-h-0"
+                  >
+                    <input
+                      id="provin-select-checkout-consent"
+                      type="checkbox"
+                      name="withdrawalConsent"
+                      checked={withdrawalConsent}
+                      onChange={(e) => {
+                        setWithdrawalConsent(e.target.checked);
+                        setConsentError(null);
+                      }}
+                      className="order-form-hero-checkbox mt-1 h-4 w-4 shrink-0 rounded border-[#c0c0c0] bg-transparent text-provin-accent focus:ring-1 focus:ring-emerald-400/45 sm:mt-0.5 sm:h-4 sm:w-4"
+                      aria-invalid={Boolean(consentError)}
+                      aria-describedby={consentError ? "provin-select-consent-error" : undefined}
+                      aria-label={tOrder("checkoutConsentAria")}
+                      disabled={fieldDisabled}
+                    />
+                    <span className="order-form-hero-consent-text text-[12px] font-normal leading-snug text-[#e5e7eb] sm:text-[13px]">
+                      {tOrder.rich("checkoutConsent", {
+                        terms: (chunks) => (
+                          <Link
+                            href="/lietosanas-noteikumi"
+                            className="font-normal text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
+                          >
+                            {chunks}
+                          </Link>
+                        ),
+                        privacy: (chunks) => (
+                          <Link
+                            href="/privatuma-politika"
+                            className="font-normal text-provin-accent underline decoration-provin-accent/30 underline-offset-2 transition hover:decoration-provin-accent/60"
+                          >
+                            {chunks}
+                          </Link>
+                        ),
+                      })}
+                    </span>
+                  </label>
+                  {consentError ? (
+                    <p
+                      id="provin-select-consent-error"
+                      className="order-form-hero-field-error mt-2 px-0.5 text-left text-[12px] font-normal leading-snug text-red-300 sm:text-[11px]"
+                      role="alert"
+                      aria-live="polite"
+                    >
+                      {consentError}
                     </p>
                   ) : null}
-                  <div className="flex flex-col items-center gap-2 pt-1">
-                    <button
-                      type="submit"
-                      disabled={fieldDisabled}
-                      className={`${demoPageStyles.ctaButtonHeroConsult} ${PROVIN_SELECT_SUBMIT_EXTRA} !mt-0 w-full max-w-[min(416px,calc(100vw-2rem))] disabled:cursor-wait disabled:opacity-60`}
-                    >
-                      {phase === "loading" ? tOrder("payLoading") : t("submit")}
-                    </button>
-                    <p className="order-form-hero-stripe-note text-center text-[10px] font-normal leading-relaxed text-[#e5e7eb]/48 sm:text-[11px]">
-                      {tOrder("stripeNote")}
-                    </p>
-                  </div>
-                </form>
+                </div>
+
+                {errMsg ? (
+                  <p className="provin-select-form-error mt-3 text-[12px]" role="alert">
+                    {errMsg}
+                  </p>
+                ) : null}
+                <div className="flex flex-col items-center gap-2 pt-3">
+                  <button
+                    type="submit"
+                    disabled={fieldDisabled}
+                    className={`${demoPageStyles.ctaButtonHeroConsult} ${PROVIN_SELECT_SUBMIT_EXTRA} !mt-0 w-full max-w-[min(416px,calc(100vw-2rem))] disabled:cursor-wait disabled:opacity-60`}
+                  >
+                    {phase === "loading" ? tOrder("payLoading") : t("submit")}
+                  </button>
+                  <p className="order-form-hero-stripe-note text-center text-[10px] font-normal leading-relaxed text-[#e5e7eb]/48 sm:text-[11px]">
+                    {tOrder("stripeNote")}
+                  </p>
+                </div>
+              </form>
             </div>
           </div>
         </div>

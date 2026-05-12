@@ -601,6 +601,124 @@ html[data-site-theme="dark"] .fieldInvalid textarea {
   letter-spacing: 0.01em !important;
 }
 
+/* PROVIN SELECT — anketa: etiķetes, grupas, režģis (light/dark caur `data-site-theme`). */
+.provinSelectFormLabel {
+  display: block;
+  font-size: 0.8125rem;
+  line-height: 1.38;
+  letter-spacing: 0.01em;
+  font-weight: 400;
+  color: rgb(51 65 85 / 0.92);
+}
+
+html[data-site-theme="dark"] :global(.provin-select-section) .provinSelectFormLabel {
+  color: rgb(203 213 225 / 0.95);
+}
+
+.provinSelectRequiredMark {
+  color: rgb(245 158 11 / 0.95);
+  font-weight: 500;
+}
+
+.provinSelectGroupLegend {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.65rem;
+  padding: 0;
+  border: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  color: rgb(30 41 59 / 0.88);
+}
+
+html[data-site-theme="dark"] :global(.provin-select-section) .provinSelectGroupLegend {
+  color: rgb(254 243 199 / 0.9);
+}
+
+.provinSelectFormIntro {
+  margin: 0 0 1.1rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+  color: rgb(71 85 105 / 0.88);
+}
+
+html[data-site-theme="dark"] :global(.provin-select-section) .provinSelectFormIntro {
+  color: rgb(226 232 240 / 0.72);
+}
+
+.provinSelectFormTitle {
+  margin: 0 0 0.35rem;
+  text-align: center;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: rgb(15 23 42 / 0.94);
+}
+
+html[data-site-theme="dark"] :global(.provin-select-section) .provinSelectFormTitle {
+  color: rgb(248 250 252 / 0.94);
+}
+
+.provinSelectFormDivider {
+  height: 1px;
+  margin: 0 auto 1rem;
+  max-width: 12rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgb(245 158 11 / 0.45), transparent);
+}
+
+html[data-site-theme="light"] :global(.provin-select-section) .provinSelectFormDivider {
+  background: linear-gradient(90deg, transparent, rgb(217 119 6 / 0.35), transparent);
+}
+
+.provinSelectFieldset {
+  margin: 0;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+}
+
+.provinSelectFieldset:not(:first-of-type) {
+  margin-top: 1.35rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid rgb(15 23 42 / 0.08);
+}
+
+html[data-site-theme="dark"] :global(.provin-select-section) .provinSelectFieldset:not(:first-of-type) {
+  border-top-color: rgb(255 255 255 / 0.08);
+}
+
+.provinSelectFormGrid {
+  display: grid;
+  gap: 0.75rem 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .provinSelectFormGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.provinSelectFormGridFull {
+  grid-column: 1 / -1;
+}
+
+.provinSelectFollowup {
+  margin: 0.25rem 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: rgb(71 85 105 / 0.78);
+}
+
+html[data-site-theme="dark"] :global(.provin-select-section) .provinSelectFollowup {
+  color: rgb(226 232 240 / 0.65);
+}
+
 /* Mobilā: CTA platums tieši kā hero joslai (`calc(100vw - 2rem)`, ar 520px griestiem). */
 @media (max-width: 639px) {
   .ctaButton,
@@ -1577,6 +1695,14 @@ html[data-site-theme="light"] :global(.provin-select-section) .heroFormCard :glo
   box-shadow:
     0 0 0 2px rgb(245 158 11 / 0.42),
     0 12px 28px rgb(24 31 42 / 0.08);
+}
+
+html[data-site-theme="light"] :global(.provin-select-section) .heroFormCard :global(.order-form-hero-consent-text) {
+  color: rgb(51 65 85 / 0.9) !important;
+}
+
+html[data-site-theme="light"] :global(.provin-select-section) .heroFormCard :global(.order-form-hero-stripe-note) {
+  color: rgb(71 85 105 / 0.65) !important;
 }
 
 /* PROVIN SELECT: zem `home-below-hero-continuum` — viens kopīgs fons, ne atsevišķs zaļš lauks */
