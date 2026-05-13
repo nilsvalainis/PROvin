@@ -211,7 +211,9 @@ export function DzintarzemeTameSection({
           <input className={fieldClass} value={vin} onChange={(e) => setVin(e.target.value)} autoCapitalize="characters" />
         </label>
         <label className="block min-w-0 sm:col-span-2">
-          <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Auto cena (EUR)</span>
+          <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">
+            Automašīnas cena (EUR)
+          </span>
           <input
             className={fieldClass}
             inputMode="decimal"
@@ -222,10 +224,15 @@ export function DzintarzemeTameSection({
         </label>
       </div>
 
-      <label className="mt-4 flex cursor-pointer items-center gap-2 text-[13px] text-[var(--color-apple-text)]">
-        <input type="checkbox" checked={applyVatAuto} onChange={(e) => setApplyVatAuto(e.target.checked)} />
-        Piemērot PVN auto cenai (+21 % uz ievadīto neto summu)
+      <label className="mt-4 flex cursor-pointer items-start gap-2 text-[13px] text-[var(--color-apple-text)]">
+        <input type="checkbox" className="mt-1 shrink-0" checked={applyVatAuto} onChange={(e) => setApplyVatAuto(e.target.checked)} />
+        <span>Piemērot PVN auto cenai (+21 % uz neto cenu)</span>
       </label>
+      <p className="mt-1.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
+        {applyVatAuto
+          ? "PDF: zem „Automašīnas cena” būs mazi burti „neto cena”; PVN tikai kopsavilkumā."
+          : "PDF: „Automašīnas cena” bez papildu apzīmējuma (ievadītā summa šai pozīcijai bez atsevišķa PVN rindas)."}
+      </p>
 
       <div className="mt-5">
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
@@ -384,11 +391,11 @@ export function DzintarzemeTameSection({
         <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-apple-text)]">{fmt.format(computed.galaSumma)}</p>
         <dl className="mt-3 grid gap-1 text-[12px] text-[var(--color-provin-muted)]">
           <div className="flex justify-between gap-3">
-            <dt>Summa bez PVN</dt>
+            <dt>Kopā bez PVN (neto bāze)</dt>
             <dd className="font-medium text-[var(--color-apple-text)]">{fmt.format(computed.summaBezPVN)}</dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt>PVN 21%</dt>
+            <dt>PVN 21 %</dt>
             <dd className="font-medium text-[var(--color-apple-text)]">{fmt.format(computed.pvnKopa)}</dd>
           </div>
         </dl>

@@ -24,9 +24,12 @@ export type DzintarzemeTameInput = {
 };
 
 export type DzintarzemeTameLineRow = {
+  /** Galvenais nosaukums (PDF „Pozīcijas” kolonna). */
   label: string;
-  /** Klientam rādāmā rindas summa (EUR): auto — gala; pārējām — ar PVN 21 %. */
-  gross: number;
+  /** Piem., „neto cena” pie auto, ja piemēro PVN — tikai PDF, mazi burti. */
+  subtitle?: string;
+  /** Pozīcijas summa PDF tabulā — vienmēr neto (bez PVN). */
+  net: number;
 };
 
 export type DzintarzemeTameComputed = {
@@ -40,7 +43,7 @@ export type DzintarzemeTameComputed = {
   /** PVN 21 %: auto daļa (ja piemēro) + komisija un pakalpojumi */
   pvnKopa: number;
   galaSumma: number;
-  /** Rindas PDF / priekšskatam — tikai ar gross > 0 */
+  /** Rindas PDF „Pozīcijas” tabulā — neto summas. */
   tableRows: DzintarzemeTameLineRow[];
 };
 
@@ -87,21 +90,23 @@ export function computeDzintarzemeTame(raw: DzintarzemeTameInput): DzintarzemeTa
 
   const galaSumma = roundMoney(summaBezPVN + pvnKopa);
 
-  const grossCommissionServices = roundMoney((commissionNet + servicesNetTotal) * (1 + SERVICE_VAT));
-
   const tableRows: DzintarzemeTameLineRow[] = [];
   if (autoCena > 0) {
-    tableRows.push({ label: "Auto cena", gross: autoGala });
+    tableRows.push({
+      label: "Automašīnas cena",
+      subtitle: applyVat ? "neto cena" : undefined,
+      net: roundMoney(autoCena),
+    });
   }
   tableRows.push({
     label: "Komisijas maksa",
-    gross: roundMoney(commissionNet * (1 + SERVICE_VAT)),
+    net: roundMoney(commissionNet),
   });
 
   const pushIf = (label: string, net: number) => {
     const n = clampMoney(net);
     if (n <= 0) return;
-    tableRows.push({ label, gross: roundMoney(n * (1 + SERVICE_VAT)) });
+    tableRows.push({ label, net: roundMoney(n) });
   };
 
   pushIf("Transportēšana", transportNet);
@@ -113,7 +118,7 @@ export function computeDzintarzemeTame(raw: DzintarzemeTameInput): DzintarzemeTa
     const label = (ex.label ?? "").trim();
     const n = clampMoney(ex.net);
     if (n <= 0 || !label) continue;
-    tableRows.push({ label, gross: roundMoney(n * (1 + SERVICE_VAT)) });
+    tableRows.push({ label, net: roundMoney(n) });
   }
 
   return {

@@ -33,6 +33,15 @@ async function loadInterFontBytes(): Promise<{ reg: Uint8Array; bold: Uint8Array
 const INK = rgb(17 / 255, 24 / 255, 39 / 255);
 const MUTED = rgb(71 / 255, 85 / 255, 105 / 255);
 const RULE = rgb(15 / 255, 23 / 255, 42 / 255);
+const TABLE_HEAD_BG = rgb(248 / 255, 250 / 255, 252 / 255);
+
+/**
+ * Tulkots no vācu rēķinu formulējumiem (UStG § 25a — lietotas preces / īpašais režīms).
+ * Informatīvs; nav pilna juridiskā pamatojuma aizstājējs.
+ */
+const USTG_25A_AND_VAT_NOTE_LV =
+  "Piegāde saskaņā ar Vācijas pievienotās vērtības nodokļa likumu (UStG) 25a pantu: lietotas preces, īpašais apgrozījuma režīms. " +
+  "Komisijas maksa un papildu pakalpojumi: standarta PVN 21 % — nodokļa summa norādīta tikai dokumenta beigu kopsavilkumā.";
 const LETTER_TRACKING = 0.242;
 const FOOTER_SAFE = 52;
 const LOGO_ONLY_BAND = 46;
@@ -281,41 +290,108 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
   });
   ctx.y -= lineHeight(11) + 6;
 
-  const colLabelW = ctx.contentW * 0.62;
-  const colAmountX = ctx.margin + colLabelW + 8;
+  const colLabelW = ctx.contentW * 0.58;
+  const colAmountRight = ctx.margin + ctx.contentW - 4;
+
+  const headerH = lineHeight(9) + 8;
+  ensureSpace(ctx, headerH + 6);
+  const yHeadTop = ctx.y;
+  const yHeadBottom = yHeadTop - headerH;
+  ctx.page.drawRectangle({
+    x: ctx.margin,
+    y: yHeadBottom,
+    width: ctx.contentW,
+    height: headerH,
+    color: TABLE_HEAD_BG,
+  });
+  ctx.page.drawRectangle({
+    x: ctx.margin,
+    y: yHeadBottom,
+    width: ctx.contentW,
+    height: 0.55,
+    color: RULE,
+  });
+  drawTrackedText(ctx.page, "Apraksts", {
+    x: ctx.margin + 6,
+    y: yHeadTop - 9,
+    size: 9,
+    font: ctx.fontBold,
+    color: INK,
+    tracking: 0.12,
+  });
+  const netHdr = "EUR (neto)";
+  const netHdrW = measureTrackedWidth(netHdr, ctx.fontBold, 9, 0.12);
+  drawTrackedText(ctx.page, netHdr, {
+    x: colAmountRight - netHdrW,
+    y: yHeadTop - 9,
+    size: 9,
+    font: ctx.fontBold,
+    color: INK,
+    tracking: 0.12,
+  });
+  ctx.y = yHeadBottom - 6;
+
+  const lh10 = lineHeight(10);
+  const lh72 = lineHeight(7.2);
 
   for (const row of c.tableRows) {
-    if (row.gross <= 0) continue;
-    const lh = lineHeight(10);
-    const labelLines = wrapText(row.label, ctx.font, 10, colLabelW - 4);
-    const rowH = Math.max(labelLines.length * lh, lh);
-    ensureSpace(ctx, rowH + 4);
+    if (row.net <= 0) continue;
+    const labelLines = wrapText(row.label, ctx.font, 10, colLabelW - 6);
+    const subH = row.subtitle ? lh72 : 0;
+    const rowH = Math.max(labelLines.length * lh10, lh10) + subH + 4;
+    ensureSpace(ctx, rowH);
     const rowTopY = ctx.y;
     let ly = rowTopY;
     for (const ll of labelLines) {
       drawTrackedText(ctx.page, ll, {
-        x: ctx.margin,
+        x: ctx.margin + 4,
         y: ly - 10,
         size: 10,
         font: ctx.font,
         color: INK,
         tracking: LETTER_TRACKING,
       });
-      ly -= lh;
+      ly -= lh10;
     }
-    drawTrackedText(ctx.page, fmtMoneyEurLv(row.gross), {
-      x: colAmountX,
+    if (row.subtitle) {
+      drawTrackedText(ctx.page, row.subtitle, {
+        x: ctx.margin + 4,
+        y: ly - 7.2,
+        size: 7.2,
+        font: ctx.font,
+        color: MUTED,
+        tracking: 0.08,
+      });
+    }
+    const amt = fmtMoneyEurLv(row.net);
+    const amtW = measureTrackedWidth(amt, ctx.fontBold, 10, LETTER_TRACKING);
+    drawTrackedText(ctx.page, amt, {
+      x: colAmountRight - amtW,
       y: rowTopY - 10,
       size: 10,
       font: ctx.fontBold,
       color: INK,
       tracking: LETTER_TRACKING,
     });
-    ctx.y -= rowH + 2;
+    ctx.y = rowTopY - rowH;
   }
 
-  ctx.y -= 8;
+  ctx.y -= 6;
   drawRule(ctx);
+
+  for (const ln of wrapText(USTG_25A_AND_VAT_NOTE_LV, ctx.font, 7.8, ctx.contentW - 4)) {
+    ensureSpace(ctx, lineHeight(7.8));
+    drawTrackedText(ctx.page, ln, {
+      x: ctx.margin + 2,
+      y: ctx.y - 7.8,
+      size: 7.8,
+      font: ctx.font,
+      color: MUTED,
+      tracking: 0.06,
+    });
+    ctx.y -= lineHeight(7.8);
+  }
+  ctx.y -= 10;
 
   const drawSummaryLine = (label: string, value: string, bold = false) => {
     const f = bold ? ctx.fontBold : ctx.font;
@@ -341,9 +417,9 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
     ctx.y -= lh + 2;
   };
 
-  drawSummaryLine("Summa bez PVN", fmtMoneyEurLv(c.summaBezPVN));
-  drawSummaryLine("PVN 21%", fmtMoneyEurLv(c.pvnKopa));
-  ctx.y -= 4;
+  drawSummaryLine("Kopā bez PVN (neto bāze)", fmtMoneyEurLv(c.summaBezPVN));
+  drawSummaryLine("PVN 21 %", fmtMoneyEurLv(c.pvnKopa));
+  ctx.y -= 8;
   drawSummaryLine("GALA SUMMA APMAKSAI", fmtMoneyEurLv(c.galaSumma), true);
 
   const disclaimer =
