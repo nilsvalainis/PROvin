@@ -10,6 +10,7 @@ import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardH
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import {
+  defaultIrissDzintarzemeTameDraft,
   IRISS_DEAL_DETAIL_OPTIONS,
   IRISS_MAX_OFFER_ATTACHMENTS,
   type IrissOfferAttachment,
@@ -1370,7 +1371,13 @@ export function IrissPasutijumsEditor({
           <IrissListingPlatformsFields rec={rec} onPatch={patchRecord} />
         </section>
 
-        <DzintarzemeTameSection key={`dz-tame-${rec.id}`} orderId={rec.id} shellCard={shellCard} initialBrandModel={rec.brandModel} />
+        <DzintarzemeTameSection
+          orderId={rec.id}
+          shellCard={shellCard}
+          draft={rec.dzintarzemeTameDraft ?? defaultIrissDzintarzemeTameDraft()}
+          orderBrandModel={rec.brandModel}
+          onDraftChange={(next) => patchRecord({ dzintarzemeTameDraft: next })}
+        />
 
         <section className={`${shellCard} border-red-100/80 bg-red-50/20`}>
           <p className="text-[12px] leading-snug text-red-950/90">

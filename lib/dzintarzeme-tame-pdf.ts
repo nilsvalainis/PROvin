@@ -36,13 +36,10 @@ const RULE = rgb(15 / 255, 23 / 255, 42 / 255);
 const TABLE_HEAD_BG = rgb(248 / 255, 250 / 255, 252 / 255);
 
 /**
- * Informatīvs atgādinājums pēc PVN likuma konteksta (lietotas mantas — 138.pants).
- * Konkrētais režīms un rēķina forma jāapstiprina grāmatvedībai / VID.
+ * Informatīvs atgādinājums (PVN likums, 138.pants — peļņas daļas režīms).
  */
 const LV_PVN_TAME_LEGAL_NOTE =
-  "Attiecībā uz lietotas transportlīdzekļa piegādi, ciktāl tas ir piemērojams, var attiekties Pievienotās vērtības nodokļa likuma 138.pants " +
-  "(īpašs nodokļa piemērošanas režīms darījumos ar lietotām mantām, mākslas darbiem, kolekciju priekšmetiem un senlietām). " +
-  "Komisijas maksa un papildu pakalpojumi tiek aplikti ar pievienotās vērtības nodokli 21 %; nodokļa summa šajā dokumentā ir norādīta tikai beigu kopsavilkumā.";
+  "Lietotam transportlīdzeklim piemērots PVN likuma 138. panta režīms (peļņas daļas nodoklis). Komisijas maksai un papildu pakalpojumiem piemērota PVN standartlikme 21%. PVN kopsumma norādīta kopsavilkumā.";
 const LETTER_TRACKING = 0.242;
 const FOOTER_SAFE = 52;
 const LOGO_ONLY_BAND = 46;

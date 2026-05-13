@@ -68,10 +68,12 @@ export function computeDzintarzemeTame(raw: DzintarzemeTameInput): DzintarzemeTa
   const atlikums = roundMoney(autoCena * (1 - depositFactor));
 
   let commissionNet = 0;
+  let loanCommissionNetB = 0;
   if (raw.commissionVariant === "A") {
     commissionNet = 1190;
   } else {
-    commissionNet = roundMoney(990 + atlikums * 0.035);
+    loanCommissionNetB = roundMoney(atlikums * 0.035);
+    commissionNet = roundMoney(990 + loanCommissionNetB);
   }
 
   const transportNet = clampMoney(raw.transportNet);
@@ -98,10 +100,21 @@ export function computeDzintarzemeTame(raw: DzintarzemeTameInput): DzintarzemeTa
       net: roundMoney(autoCena),
     });
   }
-  tableRows.push({
-    label: "Komisijas maksa",
-    net: roundMoney(commissionNet),
-  });
+  if (raw.commissionVariant === "A") {
+    tableRows.push({ label: "Komisijas maksa", net: roundMoney(commissionNet) });
+  } else {
+    const partialPrepay = raw.depositPercent < 100;
+    if (partialPrepay && loanCommissionNetB > 0) {
+      tableRows.push({ label: "Komisijas maksa", net: 990 });
+      tableRows.push({
+        label: "Aizdevuma komisija",
+        subtitle: "3,5 % no summas pēc priekšapmaksas",
+        net: loanCommissionNetB,
+      });
+    } else {
+      tableRows.push({ label: "Komisijas maksa", net: roundMoney(commissionNet) });
+    }
+  }
 
   const pushIf = (label: string, net: number) => {
     const n = clampMoney(net);

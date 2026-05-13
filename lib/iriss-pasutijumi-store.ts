@@ -8,6 +8,7 @@ import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/adm
 import {
   emptyIrissPasutijums,
   IRISS_MAX_OFFER_ATTACHMENTS,
+  normalizeIrissDzintarzemeTameDraft,
   type IrissOfferAttachment,
   type IrissOfferRecord,
   type IrissPasutijumiListOrder,
@@ -446,6 +447,7 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     listingLinkOpenline: sanitizeDraftTextForStorage(str("listingLinkOpenline"), 2048),
     listingLinkAuto1: sanitizeDraftTextForStorage(str("listingLinkAuto1"), 2048),
     listingLinksOther: normalizeOtherLinks(o.listingLinksOther),
+    dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
     offers: normalizeOffers(o.offers),
   };
 }

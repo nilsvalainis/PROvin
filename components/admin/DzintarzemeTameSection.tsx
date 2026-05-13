@@ -9,6 +9,10 @@ import {
   type DzintarzemeTameCommissionVariant,
   type DzintarzemeTameExtraLine,
 } from "@/lib/dzintarzeme-tame-calculator";
+import {
+  defaultIrissDzintarzemeTameDraft,
+  type IrissDzintarzemeTameDraft,
+} from "@/lib/iriss-pasutijumi-types";
 
 const fieldClass =
   "min-h-[44px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[16px] text-[var(--color-apple-text)] shadow-sm outline-none transition focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
@@ -19,6 +23,10 @@ function BlockTitle({ children }: { children: ReactNode }) {
       {children}
     </h2>
   );
+}
+
+function mergeDraft(d: IrissDzintarzemeTameDraft): IrissDzintarzemeTameDraft {
+  return { ...defaultIrissDzintarzemeTameDraft(), ...d };
 }
 
 function parseEuroInput(s: string): number {
@@ -67,31 +75,25 @@ async function downloadPdfBlobFromResponse(res: Response, fallbackName: string):
   }, revokeMs);
 }
 
-type ExtraRow = { id: string; label: string; netStr: string };
-
 export function DzintarzemeTameSection({
   orderId,
   shellCard,
-  initialBrandModel,
+  draft,
+  orderBrandModel,
+  onDraftChange,
 }: {
   orderId: string;
   shellCard: string;
-  initialBrandModel: string;
+  draft: IrissDzintarzemeTameDraft;
+  orderBrandModel: string;
+  onDraftChange: (next: IrissDzintarzemeTameDraft) => void;
 }) {
-  const [brandModel, setBrandModel] = useState(initialBrandModel);
-  const [vin, setVin] = useState("");
-  const [autoPriceStr, setAutoPriceStr] = useState("");
-  const [applyVatAuto, setApplyVatAuto] = useState(false);
-  const [variant, setVariant] = useState<DzintarzemeTameCommissionVariant>("A");
-  const [depositPercent, setDepositPercent] = useState(20);
-  const [transportStr, setTransportStr] = useState("");
-  const [chemicalStr, setChemicalStr] = useState("");
-  const [polishingStr, setPolishingStr] = useState("");
-  const [paintingStr, setPaintingStr] = useState("");
-  const [extras, setExtras] = useState<ExtraRow[]>([]);
-  const [pdfBusy, setPdfBusy] = useState(false);
-  const [pdfErr, setPdfErr] = useState<string | null>(null);
+  const d = mergeDraft(draft);
+  const set = useCallback((p: Partial<IrissDzintarzemeTameDraft>) => onDraftChange({ ...d, ...p }), [d, onDraftChange]);
 
+  const displayBrand = d.tameBrandModel.trim() !== "" ? d.tameBrandModel : orderBrandModel;
+
+  const extras = d.tameExtras;
   const extraLinesParsed: DzintarzemeTameExtraLine[] = useMemo(
     () =>
       extras
@@ -100,32 +102,34 @@ export function DzintarzemeTameSection({
     [extras],
   );
 
+  const variant = d.tameCommissionVariant as DzintarzemeTameCommissionVariant;
+
   const computed = useMemo(() => {
     return computeDzintarzemeTame({
-      brandModel,
-      vin,
-      autoPrice: parseEuroInput(autoPriceStr),
-      applyVatToAutoPrice: applyVatAuto,
+      brandModel: displayBrand.trim(),
+      vin: d.tameVin.trim(),
+      autoPrice: parseEuroInput(d.tameAutoPriceStr),
+      applyVatToAutoPrice: d.tameApplyVatAuto,
       commissionVariant: variant,
-      depositPercent,
-      transportNet: parseEuroInput(transportStr),
-      chemicalCleaningNet: parseEuroInput(chemicalStr),
-      polishingNet: parseEuroInput(polishingStr),
-      paintingNet: parseEuroInput(paintingStr),
+      depositPercent: d.tameDepositPercent,
+      transportNet: parseEuroInput(d.tameTransportStr),
+      chemicalCleaningNet: parseEuroInput(d.tameChemicalStr),
+      polishingNet: parseEuroInput(d.tamePolishingStr),
+      paintingNet: parseEuroInput(d.tamePaintingStr),
       extraServices: extraLinesParsed,
     });
   }, [
-    applyVatAuto,
-    autoPriceStr,
-    brandModel,
-    chemicalStr,
-    depositPercent,
+    displayBrand,
+    d.tameApplyVatAuto,
+    d.tameAutoPriceStr,
+    d.tameChemicalStr,
+    d.tameDepositPercent,
+    d.tamePaintingStr,
+    d.tamePolishingStr,
+    d.tameTransportStr,
+    d.tameVin,
     extraLinesParsed,
-    paintingStr,
-    polishingStr,
-    transportStr,
     variant,
-    vin,
   ]);
 
   const fmt = useMemo(
@@ -141,31 +145,34 @@ export function DzintarzemeTameSection({
 
   const buildPayload = useCallback(() => {
     return {
-      brandModel: brandModel.trim(),
-      vin: vin.trim(),
-      autoPrice: parseEuroInput(autoPriceStr),
-      applyVatToAutoPrice: applyVatAuto,
+      brandModel: displayBrand.trim(),
+      vin: d.tameVin.trim(),
+      autoPrice: parseEuroInput(d.tameAutoPriceStr),
+      applyVatToAutoPrice: d.tameApplyVatAuto,
       commissionVariant: variant,
-      depositPercent: variant === "B" ? depositPercent : 20,
-      transportNet: parseEuroInput(transportStr),
-      chemicalCleaningNet: parseEuroInput(chemicalStr),
-      polishingNet: parseEuroInput(polishingStr),
-      paintingNet: parseEuroInput(paintingStr),
+      depositPercent: variant === "B" ? d.tameDepositPercent : 20,
+      transportNet: parseEuroInput(d.tameTransportStr),
+      chemicalCleaningNet: parseEuroInput(d.tameChemicalStr),
+      polishingNet: parseEuroInput(d.tamePolishingStr),
+      paintingNet: parseEuroInput(d.tamePaintingStr),
       extraServices: extraLinesParsed,
     };
   }, [
-    applyVatAuto,
-    autoPriceStr,
-    brandModel,
-    chemicalStr,
-    depositPercent,
+    displayBrand,
+    d.tameApplyVatAuto,
+    d.tameAutoPriceStr,
+    d.tameChemicalStr,
+    d.tameDepositPercent,
+    d.tamePaintingStr,
+    d.tamePolishingStr,
+    d.tameTransportStr,
+    d.tameVin,
     extraLinesParsed,
-    paintingStr,
-    polishingStr,
-    transportStr,
     variant,
-    vin,
   ]);
+
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfErr, setPdfErr] = useState<string | null>(null);
 
   const onGeneratePdf = useCallback(async () => {
     setPdfErr(null);
@@ -198,17 +205,29 @@ export function DzintarzemeTameSection({
     <section className={shellCard}>
       <BlockTitle>Izmaksu tāme (Dzintarzeme Auto)</BlockTitle>
       <p className="mb-4 text-[12px] leading-snug text-[var(--color-provin-muted)]">
-        Šis bloks ģenerē atsevišķu Dzintarzeme Auto PDF tāmi — citas sistēmas rēķinu dati netiek izmantoti.
+        Šis bloks ģenerē atsevišķu Dzintarzeme Auto PDF tāmi — citas sistēmas rēķinu dati netiek izmantoti. Lauki saglabājas
+        automātiski ar pārējo pasūtījumu.
       </p>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="block min-w-0">
           <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Marka / modelis</span>
-          <input className={fieldClass} value={brandModel} onChange={(e) => setBrandModel(e.target.value)} />
+          <input
+            className={fieldClass}
+            value={displayBrand}
+            onChange={(e) => set({ tameBrandModel: e.target.value })}
+            autoComplete="off"
+          />
         </label>
         <label className="block min-w-0">
           <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">VIN</span>
-          <input className={fieldClass} value={vin} onChange={(e) => setVin(e.target.value)} autoCapitalize="characters" />
+          <input
+            className={fieldClass}
+            value={d.tameVin}
+            onChange={(e) => set({ tameVin: e.target.value })}
+            autoCapitalize="characters"
+            autoComplete="off"
+          />
         </label>
         <label className="block min-w-0 sm:col-span-2">
           <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">
@@ -217,19 +236,25 @@ export function DzintarzemeTameSection({
           <input
             className={fieldClass}
             inputMode="decimal"
-            value={autoPriceStr}
-            onChange={(e) => setAutoPriceStr(e.target.value)}
+            value={d.tameAutoPriceStr}
+            onChange={(e) => set({ tameAutoPriceStr: e.target.value })}
             placeholder="piem. 18500"
+            autoComplete="off"
           />
         </label>
       </div>
 
       <label className="mt-4 flex cursor-pointer items-start gap-2 text-[13px] text-[var(--color-apple-text)]">
-        <input type="checkbox" className="mt-1 shrink-0" checked={applyVatAuto} onChange={(e) => setApplyVatAuto(e.target.checked)} />
+        <input
+          type="checkbox"
+          className="mt-1 shrink-0"
+          checked={d.tameApplyVatAuto}
+          onChange={(e) => set({ tameApplyVatAuto: e.target.checked })}
+        />
         <span>Piemērot PVN auto cenai (+21 % uz neto cenu)</span>
       </label>
       <p className="mt-1.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-        {applyVatAuto
+        {d.tameApplyVatAuto
           ? "PDF: zem „Automašīnas cena” būs mazi burti „neto cena”; PVN tikai kopsavilkumā."
           : "PDF: „Automašīnas cena” bez papildu apzīmējuma (ievadītā summa šai pozīcijai bez atsevišķa PVN rindas)."}
       </p>
@@ -240,17 +265,27 @@ export function DzintarzemeTameSection({
         </p>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] shadow-sm">
-            <input type="radio" name="dz-tame-comm" checked={variant === "A"} onChange={() => setVariant("A")} />
+            <input
+              type="radio"
+              name="dz-tame-comm"
+              checked={d.tameCommissionVariant === "A"}
+              onChange={() => set({ tameCommissionVariant: "A" })}
+            />
             A — 1&nbsp;190,00 EUR (neto)
           </label>
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] shadow-sm">
-            <input type="radio" name="dz-tame-comm" checked={variant === "B"} onChange={() => setVariant("B")} />
+            <input
+              type="radio"
+              name="dz-tame-comm"
+              checked={d.tameCommissionVariant === "B"}
+              onChange={() => set({ tameCommissionVariant: "B" })}
+            />
             B — 990,00 EUR (neto) + 3,5 % no atlikuma
           </label>
         </div>
       </div>
 
-      {variant === "B" ? (
+      {d.tameCommissionVariant === "B" ? (
         <div className="mt-4">
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
             Iemaksas procents (B variants)
@@ -260,9 +295,9 @@ export function DzintarzemeTameSection({
               <button
                 key={p}
                 type="button"
-                onClick={() => setDepositPercent(p)}
+                onClick={() => set({ tameDepositPercent: p })}
                 className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold shadow-sm transition ${
-                  depositPercent === p
+                  d.tameDepositPercent === p
                     ? "border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)] text-[var(--color-provin-accent)]"
                     : "border-slate-200 bg-white text-[var(--color-apple-text)] hover:bg-slate-50"
                 }`}
@@ -279,16 +314,16 @@ export function DzintarzemeTameSection({
               min={0}
               max={100}
               step={1}
-              value={depositPercent}
+              value={d.tameDepositPercent}
               onChange={(e) => {
                 const raw = e.target.value;
                 if (raw === "") {
-                  setDepositPercent(0);
+                  set({ tameDepositPercent: 0 });
                   return;
                 }
                 const v = Number.parseInt(raw, 10);
                 if (!Number.isFinite(v)) return;
-                setDepositPercent(Math.min(100, Math.max(0, v)));
+                set({ tameDepositPercent: Math.min(100, Math.max(0, v)) });
               }}
             />
           </label>
@@ -305,8 +340,9 @@ export function DzintarzemeTameSection({
             <input
               className={fieldClass}
               inputMode="decimal"
-              value={transportStr}
-              onChange={(e) => setTransportStr(e.target.value)}
+              value={d.tameTransportStr}
+              onChange={(e) => set({ tameTransportStr: e.target.value })}
+              autoComplete="off"
             />
           </label>
           <label className="block min-w-0">
@@ -314,8 +350,9 @@ export function DzintarzemeTameSection({
             <input
               className={fieldClass}
               inputMode="decimal"
-              value={chemicalStr}
-              onChange={(e) => setChemicalStr(e.target.value)}
+              value={d.tameChemicalStr}
+              onChange={(e) => set({ tameChemicalStr: e.target.value })}
+              autoComplete="off"
             />
           </label>
           <label className="block min-w-0">
@@ -323,8 +360,9 @@ export function DzintarzemeTameSection({
             <input
               className={fieldClass}
               inputMode="decimal"
-              value={polishingStr}
-              onChange={(e) => setPolishingStr(e.target.value)}
+              value={d.tamePolishingStr}
+              onChange={(e) => set({ tamePolishingStr: e.target.value })}
+              autoComplete="off"
             />
           </label>
           <label className="block min-w-0">
@@ -332,8 +370,9 @@ export function DzintarzemeTameSection({
             <input
               className={fieldClass}
               inputMode="decimal"
-              value={paintingStr}
-              onChange={(e) => setPaintingStr(e.target.value)}
+              value={d.tamePaintingStr}
+              onChange={(e) => set({ tamePaintingStr: e.target.value })}
+              autoComplete="off"
             />
           </label>
         </div>
@@ -348,8 +387,11 @@ export function DzintarzemeTameSection({
                 className={fieldClass}
                 value={row.label}
                 onChange={(e) =>
-                  setExtras((xs) => xs.map((x) => (x.id === row.id ? { ...x, label: e.target.value } : x)))
+                  set({
+                    tameExtras: extras.map((x) => (x.id === row.id ? { ...x, label: e.target.value } : x)),
+                  })
                 }
+                autoComplete="off"
               />
             </label>
             <label className="block w-full min-w-0 sm:w-36">
@@ -359,8 +401,11 @@ export function DzintarzemeTameSection({
                 inputMode="decimal"
                 value={row.netStr}
                 onChange={(e) =>
-                  setExtras((xs) => xs.map((x) => (x.id === row.id ? { ...x, netStr: e.target.value } : x)))
+                  set({
+                    tameExtras: extras.map((x) => (x.id === row.id ? { ...x, netStr: e.target.value } : x)),
+                  })
                 }
+                autoComplete="off"
               />
             </label>
             <button
@@ -368,7 +413,7 @@ export function DzintarzemeTameSection({
               title="Noņemt"
               aria-label="Noņemt rindu"
               className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
-              onClick={() => setExtras((xs) => xs.filter((x) => x.id !== row.id))}
+              onClick={() => set({ tameExtras: extras.filter((x) => x.id !== row.id) })}
             >
               <Trash2 className="h-4 w-4" aria-hidden />
             </button>
@@ -376,7 +421,11 @@ export function DzintarzemeTameSection({
         ))}
         <button
           type="button"
-          onClick={() => setExtras((xs) => [...xs, { id: crypto.randomUUID(), label: "", netStr: "" }])}
+          onClick={() =>
+            set({
+              tameExtras: [...extras, { id: crypto.randomUUID(), label: "", netStr: "" }],
+            })
+          }
           className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-dashed border-slate-300 bg-slate-50/80 px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-100"
         >
           <Plus className="h-4 w-4" aria-hidden />

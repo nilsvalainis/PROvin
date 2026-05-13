@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import {
   IRISS_MAX_OFFER_ATTACHMENTS,
+  normalizeIrissDzintarzemeTameDraft,
   type IrissOfferAttachment,
   type IrissOfferRecord,
   type IrissPasutijumsListStatus,
@@ -130,6 +131,7 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
     listingLinkOpenline: str("listingLinkOpenline"),
     listingLinkAuto1: str("listingLinkAuto1"),
     listingLinksOther: parseOtherFromBody(o),
+    dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
     offers: parseOffersFromBody(o),
   };
 }

@@ -52,6 +52,88 @@ export type IrissOfferRecord = {
 /** Saraksta statuss (vizuālais + filtrs) — saglabāts pasūtījuma JSON. */
 export type IrissPasutijumsListStatus = "active" | "completed" | "inactive";
 
+export type IrissDzintarzemeTameCommissionVariant = "A" | "B";
+
+export type IrissDzintarzemeTameExtraDraft = {
+  id: string;
+  label: string;
+  netStr: string;
+};
+
+/** Dzintarzeme Auto tāmes forma — autosaglabājas ar pasūtījumu (`PATCH`). */
+export type IrissDzintarzemeTameDraft = {
+  /** Ja tukšs, tāmes PDF / lauki izmanto pasūtījuma `brandModel`. */
+  tameBrandModel: string;
+  tameVin: string;
+  tameAutoPriceStr: string;
+  tameApplyVatAuto: boolean;
+  tameCommissionVariant: IrissDzintarzemeTameCommissionVariant;
+  tameDepositPercent: number;
+  tameTransportStr: string;
+  tameChemicalStr: string;
+  tamePolishingStr: string;
+  tamePaintingStr: string;
+  tameExtras: IrissDzintarzemeTameExtraDraft[];
+};
+
+export function defaultIrissDzintarzemeTameDraft(): IrissDzintarzemeTameDraft {
+  return {
+    tameBrandModel: "",
+    tameVin: "",
+    tameAutoPriceStr: "",
+    tameApplyVatAuto: false,
+    tameCommissionVariant: "A",
+    tameDepositPercent: 20,
+    tameTransportStr: "",
+    tameChemicalStr: "",
+    tamePolishingStr: "",
+    tamePaintingStr: "",
+    tameExtras: [],
+  };
+}
+
+function clipStr(v: unknown, max: number): string {
+  const t = typeof v === "string" ? v : "";
+  return t.length > max ? t.slice(0, max) : t;
+}
+
+export function normalizeIrissDzintarzemeTameDraft(raw: unknown): IrissDzintarzemeTameDraft {
+  const d = defaultIrissDzintarzemeTameDraft();
+  if (!raw || typeof raw !== "object") return d;
+  const o = raw as Record<string, unknown>;
+  const depRaw = typeof o.tameDepositPercent === "number" ? o.tameDepositPercent : Number.parseInt(String(o.tameDepositPercent ?? ""), 10);
+  const dep = Number.isFinite(depRaw) ? Math.min(100, Math.max(0, Math.round(depRaw))) : d.tameDepositPercent;
+  const variant = o.tameCommissionVariant === "B" ? "B" : "A";
+  const extrasRaw = o.tameExtras;
+  const extras: IrissDzintarzemeTameExtraDraft[] = [];
+  if (Array.isArray(extrasRaw)) {
+    for (const row of extrasRaw.slice(0, 24)) {
+      if (!row || typeof row !== "object") continue;
+      const r = row as Record<string, unknown>;
+      const idRaw = typeof r.id === "string" ? r.id.trim() : "";
+      const id = idRaw.length > 0 ? idRaw.slice(0, 48) : `gen-${extras.length}`;
+      extras.push({
+        id,
+        label: clipStr(r.label, 200),
+        netStr: clipStr(r.netStr, 32),
+      });
+    }
+  }
+  return {
+    tameBrandModel: clipStr(o.tameBrandModel, 400),
+    tameVin: clipStr(o.tameVin, 32),
+    tameAutoPriceStr: clipStr(o.tameAutoPriceStr, 32),
+    tameApplyVatAuto: Boolean(o.tameApplyVatAuto),
+    tameCommissionVariant: variant,
+    tameDepositPercent: dep,
+    tameTransportStr: clipStr(o.tameTransportStr, 32),
+    tameChemicalStr: clipStr(o.tameChemicalStr, 32),
+    tamePolishingStr: clipStr(o.tamePolishingStr, 32),
+    tamePaintingStr: clipStr(o.tamePaintingStr, 32),
+    tameExtras: extras,
+  };
+}
+
 export type IrissPasutijumsRecord = {
   id: string;
   createdAt: string;
@@ -90,6 +172,8 @@ export type IrissPasutijumsRecord = {
   listingLinkAuto1: string;
   /** „Citi” — vairākas rindas; tukšās pirms saglabāšanas var apvienot. */
   listingLinksOther: string[];
+  /** Dzintarzeme Auto izmaksu tāmes lauki (admin autosaglabāšana). */
+  dzintarzemeTameDraft: IrissDzintarzemeTameDraft;
   /** Piedāvājumi klientam (var būt vairāki). */
   offers: IrissOfferRecord[];
 };
@@ -158,6 +242,7 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     listingLinkOpenline: "",
     listingLinkAuto1: "",
     listingLinksOther: [""],
+    dzintarzemeTameDraft: defaultIrissDzintarzemeTameDraft(),
     offers: [],
   };
 }
