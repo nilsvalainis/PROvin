@@ -36,12 +36,13 @@ const RULE = rgb(15 / 255, 23 / 255, 42 / 255);
 const TABLE_HEAD_BG = rgb(248 / 255, 250 / 255, 252 / 255);
 
 /**
- * Tulkots no vācu rēķinu formulējumiem (UStG § 25a — lietotas preces / īpašais režīms).
- * Informatīvs; nav pilna juridiskā pamatojuma aizstājējs.
+ * Informatīvs atgādinājums pēc PVN likuma konteksta (lietotas mantas — 138.pants).
+ * Konkrētais režīms un rēķina forma jāapstiprina grāmatvedībai / VID.
  */
-const USTG_25A_AND_VAT_NOTE_LV =
-  "Piegāde saskaņā ar Vācijas pievienotās vērtības nodokļa likumu (UStG) 25a pantu: lietotas preces, īpašais apgrozījuma režīms. " +
-  "Komisijas maksa un papildu pakalpojumi: standarta PVN 21 % — nodokļa summa norādīta tikai dokumenta beigu kopsavilkumā.";
+const LV_PVN_TAME_LEGAL_NOTE =
+  "Attiecībā uz lietotas transportlīdzekļa piegādi, ciktāl tas ir piemērojams, var attiekties Pievienotās vērtības nodokļa likuma 138.pants " +
+  "(īpašs nodokļa piemērošanas režīms darījumos ar lietotām mantām, mākslas darbiem, kolekciju priekšmetiem un senlietām). " +
+  "Komisijas maksa un papildu pakalpojumi tiek aplikti ar pievienotās vērtības nodokli 21 %; nodokļa summa šajā dokumentā ir norādīta tikai beigu kopsavilkumā.";
 const LETTER_TRACKING = 0.242;
 const FOOTER_SAFE = 52;
 const LOGO_ONLY_BAND = 46;
@@ -379,7 +380,7 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
   ctx.y -= 6;
   drawRule(ctx);
 
-  for (const ln of wrapText(USTG_25A_AND_VAT_NOTE_LV, ctx.font, 7.8, ctx.contentW - 4)) {
+  for (const ln of wrapText(LV_PVN_TAME_LEGAL_NOTE, ctx.font, 7.8, ctx.contentW - 4)) {
     ensureSpace(ctx, lineHeight(7.8));
     drawTrackedText(ctx.page, ln, {
       x: ctx.margin + 2,
@@ -422,8 +423,7 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
   ctx.y -= 8;
   drawSummaryLine("GALA SUMMA APMAKSAI", fmtMoneyEurLv(c.galaSumma), true);
 
-  const disclaimer =
-    "Šis aprēķins ir informatīvs un nav uzskatāms par oficiālu rēķinu. Oficiālo rēķinu sagatavos grāmatvedība.";
+  const disclaimer = "Šis aprēķins ir informatīvs un nav uzskatāms par oficiālu rēķinu.";
   ctx.y -= 16;
   for (const ln of wrapText(disclaimer, ctx.font, 8.5, ctx.contentW)) {
     ensureSpace(ctx, lineHeight(8.5));
