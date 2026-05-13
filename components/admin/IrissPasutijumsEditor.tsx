@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
+import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import {
   IRISS_DEAL_DETAIL_OPTIONS,
@@ -1368,6 +1369,8 @@ export function IrissPasutijumsEditor({
           <BlockTitle>Sludinājumu platformas (saites)</BlockTitle>
           <IrissListingPlatformsFields rec={rec} onPatch={patchRecord} />
         </section>
+
+        <DzintarzemeTameSection key={`dz-tame-${rec.id}`} orderId={rec.id} shellCard={shellCard} initialBrandModel={rec.brandModel} />
 
         <section className={`${shellCard} border-red-100/80 bg-red-50/20`}>
           <p className="text-[12px] leading-snug text-red-950/90">
