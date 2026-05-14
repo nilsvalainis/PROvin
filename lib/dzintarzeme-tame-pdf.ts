@@ -4,19 +4,30 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import fontkit from "@pdf-lib/fontkit";
-import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
-import sharp from "sharp";
+import { PDFDocument, type PDFFont, type PDFPage } from "pdf-lib";
 
 import { computeDzintarzemeTame, type DzintarzemeTameInput } from "@/lib/dzintarzeme-tame-calculator";
+import {
+  drawDzintarzemePdfFooter,
+  drawFittedOneLine,
+  drawSectionCardWithShadow,
+  drawSectionHeadInCard,
+  drawTrackedText,
+  FOOTER_BLOCK_H,
+  INK,
+  lineHeight,
+  loadOfferLogoPack,
+  MUTED,
+  SEC_CARD_FILL,
+  SEC_HEAD,
+  SECTION_GAP,
+  measureTrackedWidth,
+  wrapText,
+  type LogoPack,
+} from "@/lib/dzintarzeme-pdf-layout";
 
 const INTER_REG_PATH = path.join(process.cwd(), "public", "fonts", "invoice-inter", "Inter-Regular.ttf");
 const INTER_BOLD_PATH = path.join(process.cwd(), "public", "fonts", "invoice-inter", "Inter-Bold.ttf");
-const DZINTARZEME_OFFER_LOGO_PATH = path.join(
-  process.cwd(),
-  "public",
-  "brands",
-  "dzintarzeme-iriss-offer-pdf-logo.png",
-);
 
 let interFontBytesCache: Promise<{ reg: Uint8Array; bold: Uint8Array }> | null = null;
 
@@ -30,141 +41,11 @@ async function loadInterFontBytes(): Promise<{ reg: Uint8Array; bold: Uint8Array
   return interFontBytesCache;
 }
 
-const INK = rgb(17 / 255, 24 / 255, 39 / 255);
-const MUTED = rgb(82 / 255, 82 / 255, 91 / 255);
-const SEC_HEAD = rgb(63 / 255, 63 / 255, 70 / 255);
-const ACCENT_BAR = rgb(55 / 255, 65 / 255, 75 / 255);
-const SEC_CARD_FILL = rgb(244 / 255, 244 / 255, 245 / 255);
-const SEC_CARD_BORDER = rgb(212 / 255, 212 / 255, 216 / 255);
-const SEC_SHADOW = rgb(228 / 255, 228 / 255, 231 / 255);
-
 /**
  * Informatīvs atgādinājums (PVN likums, 138.pants — peļņas daļas režīms).
  */
 const LV_PVN_TAME_LEGAL_NOTE =
   "Lietotam transportlīdzeklim piemērots PVN likuma 138. panta režīms (peļņas daļas nodoklis). Komisijas maksai un papildu pakalpojumiem piemērota PVN standartlikme 21%. PVN kopsumma norādīta kopsavilkumā.";
-const LETTER_TRACKING = 0.18;
-/** Kājene + drošā zona — viena A4 lapa, bez otras lapas. */
-const FOOTER_BLOCK_H = 96;
-const SECTION_GAP = 10;
-const CARD_RADIUS = 6;
-const SHADOW_OFFSET = 1.25;
-
-function wrapText(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
-  const words = text.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let line = "";
-  for (const word of words) {
-    const test = line ? `${line} ${word}` : word;
-    if (measureTrackedWidth(test, font, fontSize, LETTER_TRACKING) <= maxWidth) {
-      line = test;
-    } else {
-      if (line) lines.push(line);
-      line = word;
-    }
-  }
-  if (line) lines.push(line);
-  return lines.length ? lines : [""];
-}
-
-function lineHeight(size: number): number {
-  return Math.round(size * 1.35);
-}
-
-function measureTrackedWidth(text: string, font: PDFFont, size: number, tracking = 0): number {
-  if (!text) return 0;
-  const chars = Array.from(text);
-  let width = 0;
-  for (const ch of chars) width += font.widthOfTextAtSize(ch, size);
-  if (chars.length > 1) width += tracking * (chars.length - 1);
-  return width;
-}
-
-function drawTrackedText(
-  page: PDFPage,
-  text: string,
-  opts: { x: number; y: number; size: number; font: PDFFont; color: ReturnType<typeof rgb>; tracking?: number },
-) {
-  const tracking = opts.tracking ?? LETTER_TRACKING;
-  if (!text) return;
-  let cursor = opts.x;
-  for (const ch of Array.from(text)) {
-    page.drawText(ch, {
-      x: cursor,
-      y: opts.y,
-      size: opts.size,
-      font: opts.font,
-      color: opts.color,
-    });
-    cursor += opts.font.widthOfTextAtSize(ch, opts.size) + tracking;
-  }
-}
-
-function drawRoundedRect(
-  page: PDFPage,
-  opts: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    radius: number;
-    color: ReturnType<typeof rgb>;
-    borderColor?: ReturnType<typeof rgb>;
-    borderWidth?: number;
-  },
-) {
-  const r = Math.max(0, Math.min(opts.radius, Math.min(opts.width, opts.height) / 2));
-  const x0 = opts.x;
-  const y0 = opts.y;
-  const x1 = opts.x + opts.width;
-  const y1 = opts.y + opts.height;
-  const pathData = [
-    `M ${x0 + r} ${y1}`,
-    `L ${x1 - r} ${y1}`,
-    `A ${r} ${r} 0 0 1 ${x1} ${y1 - r}`,
-    `L ${x1} ${y0 + r}`,
-    `A ${r} ${r} 0 0 1 ${x1 - r} ${y0}`,
-    `L ${x0 + r} ${y0}`,
-    `A ${r} ${r} 0 0 1 ${x0} ${y0 + r}`,
-    `L ${x0} ${y1 - r}`,
-    `A ${r} ${r} 0 0 1 ${x0 + r} ${y1}`,
-    "Z",
-  ].join(" ");
-  page.drawSvgPath(pathData, {
-    color: opts.color,
-    borderColor: opts.borderColor,
-    borderWidth: opts.borderWidth ?? 0,
-  });
-}
-
-/** Ēnas imitācija: nedaudz nobīdīts gaišāks pelēks slānis zem kartītes. */
-function drawSectionCardWithShadow(
-  page: PDFPage,
-  opts: { x: number; yBottom: number; w: number; h: number; fill: ReturnType<typeof rgb> },
-): void {
-  const { x, yBottom, w, h, fill } = opts;
-  const r = CARD_RADIUS;
-  drawRoundedRect(page, {
-    x: x + SHADOW_OFFSET,
-    y: yBottom - SHADOW_OFFSET,
-    width: w,
-    height: h,
-    radius: r,
-    color: SEC_SHADOW,
-  });
-  drawRoundedRect(page, {
-    x,
-    y: yBottom,
-    width: w,
-    height: h,
-    radius: r,
-    color: fill,
-    borderColor: SEC_CARD_BORDER,
-    borderWidth: 0.75,
-  });
-}
-
-type LogoPack = { img: PDFImage; dw: number; dh: number };
 
 type PdfCtx = {
   pdfDoc: PDFDocument;
@@ -178,45 +59,9 @@ type PdfCtx = {
   y: number;
 };
 
-/** Viena lapa — neatveram otro lapu. */
 function reserveVertical(ctx: PdfCtx, need: number, floorY: number): void {
   if (ctx.y - need < floorY) {
     ctx.y = floorY + need;
-  }
-}
-
-async function loadOfferLogoPack(pdfDoc: PDFDocument): Promise<LogoPack | null> {
-  try {
-    const sourceBuf = await fs.readFile(DZINTARZEME_OFFER_LOGO_PATH);
-    const { data, info } = await sharp(sourceBuf)
-      .ensureAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-    for (let i = 0; i < data.length; i += info.channels) {
-      const r = data[i] ?? 0;
-      const g = data[i + 1] ?? 0;
-      const b = data[i + 2] ?? 0;
-      if (r < 72 && g < 72 && b < 72) {
-        data[i + 3] = 0;
-      }
-    }
-    const buf = await sharp(data, {
-      raw: { width: info.width, height: info.height, channels: info.channels },
-    })
-      .png()
-      .toBuffer();
-    let img: PDFImage;
-    try {
-      img = await pdfDoc.embedPng(buf);
-    } catch {
-      img = await pdfDoc.embedJpg(buf);
-    }
-    const maxW = 160;
-    const maxH = 40;
-    const s = Math.min(maxW / img.width, maxH / img.height, 1);
-    return { img, dw: img.width * s, dh: img.height * s };
-  } catch {
-    return null;
   }
 }
 
@@ -252,124 +97,6 @@ async function createCtx(): Promise<PdfCtx> {
   };
 }
 
-function drawSectionHeadInCard(
-  page: PDFPage,
-  ix: number,
-  yTop: number,
-  titleDisplay: string,
-  fontBold: PDFFont,
-): number {
-  const fs = 8.5;
-  const barW = 2;
-  const barH = lineHeight(fs) + 1;
-  page.drawRectangle({
-    x: ix,
-    y: yTop - barH + 1,
-    width: barW,
-    height: barH,
-    color: ACCENT_BAR,
-  });
-  drawTrackedText(page, titleDisplay, {
-    x: ix + barW + 6,
-    y: yTop - fs,
-    size: fs,
-    font: fontBold,
-    color: SEC_HEAD,
-    tracking: 0.08,
-  });
-  return lineHeight(fs) + 8;
-}
-
-/** Viena rinda: samazina fontu, līdz ietilpst; citādi saīsina ar …. */
-function drawFittedOneLine(
-  page: PDFPage,
-  text: string,
-  font: PDFFont,
-  x: number,
-  yBaseline: number,
-  maxW: number,
-  maxSize: number,
-  minSize: number,
-  color: ReturnType<typeof rgb>,
-  tracking: number,
-): number {
-  let s = maxSize;
-  while (s >= minSize) {
-    if (measureTrackedWidth(text, font, s, tracking) <= maxW) {
-      drawTrackedText(page, text, { x, y: yBaseline - s, size: s, font, color, tracking });
-      return lineHeight(s);
-    }
-    s -= 0.35;
-  }
-  let t = text;
-  const ell = "…";
-  while (t.length > 1) {
-    t = t.slice(0, -1);
-    const tryText = t + ell;
-    if (measureTrackedWidth(tryText, font, minSize, tracking) <= maxW) {
-      drawTrackedText(page, tryText, {
-        x,
-        y: yBaseline - minSize,
-        size: minSize,
-        font,
-        color,
-        tracking,
-      });
-      return lineHeight(minSize);
-    }
-  }
-  drawTrackedText(page, ell, {
-    x,
-    y: yBaseline - minSize,
-    size: minSize,
-    font,
-    color,
-    tracking,
-  });
-  return lineHeight(minSize);
-}
-
-function drawFooter(ctx: PdfCtx, logo: LogoPack | null): void {
-  const page = ctx.page;
-  const m = ctx.margin;
-  const footerLines = [
-    "Dzintarzeme Auto",
-    "00 371 204 205 39",
-    "00 371 277 334 40",
-    "info@dzintarzemeauto.lv",
-    "www.dzintarzemeauto.lv",
-  ];
-  const fs = 7.5;
-  const lh = lineHeight(fs);
-  const textBlockH = footerLines.length * lh;
-  let logoW = 0;
-  let logoH = 0;
-  if (logo) {
-    const s = Math.min(88 / logo.dw, 24 / logo.dh, 1);
-    logoW = logo.dw * s;
-    logoH = logo.dh * s;
-  }
-  const blockH = Math.max(textBlockH, logoH);
-  let tx = m;
-  if (logo) {
-    const logoY = m + 8 + (blockH - logoH) / 2;
-    page.drawImage(logo.img, { x: m, y: logoY, width: logoW, height: logoH });
-    tx = m + logoW + 10;
-  }
-  let ty = m + 8 + blockH;
-  for (const ln of footerLines) {
-    drawTrackedText(page, ln, {
-      x: tx,
-      y: ty - fs,
-      size: fs,
-      font: ln.includes("@") || ln.startsWith("www") ? ctx.font : ctx.fontBold,
-      color: ln === "Dzintarzeme Auto" ? INK : MUTED,
-      tracking: 0.04,
-    });
-    ty -= lh;
-  }
-}
-
 /** Dzintarzeme Auto tāmes PDF — viena A4 lapa, kājene ar logo un kontaktiem. */
 export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInput): Promise<Uint8Array> {
   const c = computeDzintarzemeTame(input);
@@ -377,20 +104,19 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
   const floorY = ctx.margin + FOOTER_BLOCK_H;
   const page = ctx.page;
 
-  const footerLogo = await loadOfferLogoPack(ctx.pdfDoc);
+  const footerLogo: LogoPack | null = await loadOfferLogoPack(ctx.pdfDoc);
 
   const docTitle = "AUTOMAŠĪNAS PASŪTĪJUMA IZMAKASU TĀME";
   const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date());
 
   reserveVertical(ctx, lineHeight(11) + lineHeight(8) + 14, floorY);
-  const titleMaxW = ctx.contentW;
   const titleUsedH = drawFittedOneLine(
     page,
     docTitle,
     ctx.fontBold,
     ctx.margin,
     ctx.y,
-    titleMaxW,
+    ctx.contentW,
     11,
     8.2,
     INK,
@@ -594,7 +320,10 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
     ctx.y -= lineHeight(7);
   }
 
-  drawFooter(ctx, footerLogo);
+  drawDzintarzemePdfFooter(
+    { page: ctx.page, margin: ctx.margin, font: ctx.font, fontBold: ctx.fontBold },
+    footerLogo,
+  );
 
   return ctx.pdfDoc.save();
 }

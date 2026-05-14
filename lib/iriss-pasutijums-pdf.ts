@@ -7,6 +7,23 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import sharp from "sharp";
 
+import { DZ_PASUTIJUMS_TERMS_BLOCKS } from "@/lib/dzintarzeme-pasutijums-terms-content";
+import {
+  drawDzintarzemePdfFooter,
+  drawFittedOneLine,
+  drawSectionCardWithShadow,
+  drawSectionHeadInCard,
+  drawTrackedText as dzDrawTrackedText,
+  FOOTER_BLOCK_H as DZ_FOOTER_BLOCK_H,
+  INK as DZ_INK,
+  lineHeight as dzLineHeight,
+  loadOfferLogoPack as dzLoadOfferLogoPack,
+  MUTED as DZ_MUTED,
+  SEC_CARD_FILL as DZ_SEC_CARD_FILL,
+  SEC_HEAD as DZ_SEC_HEAD,
+  SECTION_GAP as DZ_SECTION_GAP,
+  wrapText as dzWrapText,
+} from "@/lib/dzintarzeme-pdf-layout";
 import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 import { internalCommentHtmlToPdfPlain } from "@/lib/admin-internal-comment-pdf";
@@ -119,6 +136,8 @@ type Ctx = {
   y: number;
   /** Ja true, `ensureSpace` neveic lapu pārtraukumu (izmanto zīmēšanai iekš kartītes pēc augstuma pārbaudes). */
   suppressPageBreak: boolean;
+  /** Pasūtījuma PDF 1. lapa: neveidot jaunu lapu (viss uz vienas A4). */
+  pasutijumsDzLockPage1?: boolean;
   /** Piedāvājuma PDF — logo katrā lapā; null = nav. */
   offerLogo: LogoPack | null;
   /** Jauna lapa: atstarpe zem augšējā logo (saturs sākas zem šīs joslas). */
@@ -138,6 +157,7 @@ function stampOfferLogoTopLeft(page: PDFPage, pageH: number, margin: number, log
 
 function ensureSpace(ctx: Ctx, need: number): void {
   if (ctx.suppressPageBreak) return;
+  if (ctx.pasutijumsDzLockPage1) return;
   if (ctx.y - need < ctx.margin + FOOTER_SAFE) {
     ctx.page = ctx.pdfDoc.addPage([ctx.pageW, ctx.pageH]);
     if (ctx.offerLogo) stampOfferLogoTopLeft(ctx.page, ctx.pageH, ctx.margin, ctx.offerLogo);
@@ -148,6 +168,7 @@ function ensureSpace(ctx: Ctx, need: number): void {
 /** Ja pašreizējā lapā nepietiek vietas veselam blokam, sāk jaunu lapu (kartītes netiek grieztas). */
 function ensureRoomForBlock(ctx: Ctx, outerNeed: number): void {
   if (ctx.suppressPageBreak) return;
+  if (ctx.pasutijumsDzLockPage1) return;
   if (ctx.y - outerNeed < ctx.margin + FOOTER_SAFE) {
     ctx.page = ctx.pdfDoc.addPage([ctx.pageW, ctx.pageH]);
     if (ctx.offerLogo) stampOfferLogoTopLeft(ctx.page, ctx.pageH, ctx.margin, ctx.offerLogo);
@@ -540,7 +561,7 @@ async function createPdfCtx(): Promise<Ctx> {
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
   const { reg, bold } = await loadInterFontBytes();
-  void reg;
+  const font = await pdfDoc.embedFont(reg, { subset: false });
   const fontBold = await pdfDoc.embedFont(bold, { subset: false });
   const pageW = 595;
   const pageH = 842;
@@ -553,10 +574,11 @@ async function createPdfCtx(): Promise<Ctx> {
     contentW,
     pageW,
     pageH,
-    font: fontBold,
+    font,
     fontBold,
     y: pageH - margin,
     suppressPageBreak: false,
+    pasutijumsDzLockPage1: false,
     offerLogo: null,
     logoOnlyBand: LOGO_ONLY_BAND,
     cardTheme: { ...IRISS_PDF_CARD_THEME },
@@ -576,6 +598,147 @@ function drawContentAccentRule(ctx: Ctx) {
     color: RULE_DARK,
   });
   ctx.y = yb - 12;
+}
+
+const DZ_PAS_BODY_FS = 8.75;
+const DZ_PAS_HEAD_FS = 8.5;
+
+function drawDzGraySection(
+  ctx: Ctx,
+  titleDisplay: string,
+  measureBody: (iw: number) => number,
+  drawBody: (inner: { x: number; w: number }) => void,
+): void {
+  const pad = 10;
+  const ix = ctx.margin + pad;
+  const iw = ctx.contentW - pad * 2;
+  const headH = dzLineHeight(DZ_PAS_HEAD_FS) + 8;
+  const bodyH = measureBody(iw);
+  const cardH = pad + headH + bodyH + pad;
+  ensureRoomForBlock(ctx, DZ_SECTION_GAP + cardH + DZ_SECTION_GAP);
+  ctx.y -= DZ_SECTION_GAP;
+  const cTop = ctx.y;
+  const cBot = cTop - cardH;
+  drawSectionCardWithShadow(ctx.page, {
+    x: ctx.margin,
+    yBottom: cBot,
+    w: ctx.contentW,
+    h: cardH,
+    fill: DZ_SEC_CARD_FILL,
+  });
+  let cy = cTop - pad;
+  cy -= drawSectionHeadInCard(ctx.page, ix, cy, titleDisplay, ctx.fontBold);
+  ctx.y = cy;
+  const prev = ctx.suppressPageBreak;
+  ctx.suppressPageBreak = true;
+  try {
+    drawBody({ x: ix, w: iw });
+  } finally {
+    ctx.suppressPageBreak = prev;
+  }
+  ctx.y = cBot - DZ_SECTION_GAP;
+}
+
+async function drawPasutijumsDzTameHero(ctx: Ctx, record: IrissPasutijumsRecord): Promise<void> {
+  const raw = val(record.brandModel) ?? "PASŪTĪJUMS";
+  const heroTitle = raw.toLocaleUpperCase("lv-LV");
+  const titleUsedH = drawFittedOneLine(
+    ctx.page,
+    heroTitle,
+    ctx.fontBold,
+    ctx.margin,
+    ctx.y,
+    ctx.contentW,
+    11,
+    8.2,
+    DZ_INK,
+    0.06,
+  );
+  ctx.y -= titleUsedH + 4;
+  const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date());
+  dzDrawTrackedText(ctx.page, dateStr, {
+    x: ctx.margin,
+    y: ctx.y - 8,
+    size: 8,
+    font: ctx.font,
+    color: DZ_MUTED,
+    tracking: 0.05,
+  });
+  ctx.y -= dzLineHeight(8) + DZ_SECTION_GAP;
+}
+
+function measureDzTermsHeight(contentW: number, font: PDFFont, fontBold: PDFFont, fsP: number, fsH: number, gap: number): number {
+  let h = 0;
+  for (const block of DZ_PASUTIJUMS_TERMS_BLOCKS) {
+    if (block.kind === "h") {
+      h += dzWrapText(block.text, fontBold, fsH, contentW).length * dzLineHeight(fsH) + gap;
+    } else if (block.kind === "p") {
+      h += dzWrapText(block.text, font, fsP, contentW).length * dzLineHeight(fsP) + gap * 0.45;
+    } else {
+      for (const it of block.items) {
+        h += dzWrapText(`• ${it}`, font, fsP, contentW - 10).length * dzLineHeight(fsP);
+      }
+      h += gap * 0.55;
+    }
+  }
+  return h;
+}
+
+function drawDzPasutijumsTermsPage(ctx: Ctx): void {
+  const ix = ctx.margin;
+  const iw = ctx.contentW;
+  const avail = ctx.y - ctx.margin - DZ_FOOTER_BLOCK_H - 12;
+  let fsP = 6.55;
+  let fsH = 7.35;
+  while (fsP >= 5.35 && measureDzTermsHeight(iw, ctx.font, ctx.fontBold, fsP, fsH, 2.5) > avail) {
+    fsP -= 0.1;
+    fsH -= 0.1;
+  }
+  for (const block of DZ_PASUTIJUMS_TERMS_BLOCKS) {
+    if (block.kind === "h") {
+      for (const ln of dzWrapText(block.text, ctx.fontBold, fsH, iw)) {
+        dzDrawTrackedText(ctx.page, ln, {
+          x: ix,
+          y: ctx.y - fsH,
+          size: fsH,
+          font: ctx.fontBold,
+          color: DZ_SEC_HEAD,
+          tracking: 0.06,
+        });
+        ctx.y -= dzLineHeight(fsH);
+      }
+      ctx.y -= 2;
+    } else if (block.kind === "p") {
+      for (const ln of dzWrapText(block.text, ctx.font, fsP, iw)) {
+        dzDrawTrackedText(ctx.page, ln, {
+          x: ix,
+          y: ctx.y - fsP,
+          size: fsP,
+          font: ctx.font,
+          color: DZ_INK,
+          tracking: 0.04,
+        });
+        ctx.y -= dzLineHeight(fsP);
+      }
+      ctx.y -= 1.5;
+    } else {
+      for (const it of block.items) {
+        const line = `• ${it}`;
+        for (const ln of dzWrapText(line, ctx.font, fsP, iw - 8)) {
+          dzDrawTrackedText(ctx.page, ln, {
+            x: ix + 4,
+            y: ctx.y - fsP,
+            size: fsP,
+            font: ctx.font,
+            color: DZ_INK,
+            tracking: 0.04,
+          });
+          ctx.y -= dzLineHeight(fsP);
+        }
+      }
+      ctx.y -= 2;
+    }
+  }
 }
 
 function drawFooter(ctx: Ctx) {
@@ -722,47 +885,6 @@ async function loadOfferLogoPack(pdfDoc: PDFDocument): Promise<LogoPack | null> 
   }
 }
 
-async function drawPasutijumsPdfHero(ctx: Ctx, record: IrissPasutijumsRecord): Promise<void> {
-  const raw = val(record.brandModel) ?? "PASŪTĪJUMS";
-  const heroTitle = raw.toLocaleUpperCase("lv-LV");
-  const logo = ctx.offerLogo;
-  const lh18 = lineHeight(18);
-  const logoBoxW = logo ? logo.dw + 6 : 0;
-  const titleColX = ctx.margin + (logo ? logoBoxW + 14 : 0);
-  const titleColW = ctx.contentW - (logo ? logoBoxW + 14 : 0);
-  const titleLines = wrapText(heroTitle, ctx.fontBold, 18, titleColW);
-  const titleH = titleLines.length * lh18;
-  const rowH = Math.max(logo ? logo.dh + 6 : 0, titleH);
-
-  ensureSpace(ctx, rowH + lineHeight(11) + 28);
-  const rowTopY = ctx.y;
-
-  if (logo) stampOfferLogoTopLeft(ctx.page, ctx.pageH, ctx.margin, logo);
-
-  let ty = rowTopY;
-  for (const line of titleLines) {
-    drawTrackedText(ctx.page, line, {
-      x: titleColX,
-      y: ty - 18,
-      size: 18,
-      font: ctx.fontBold,
-      color: INK,
-      tracking: LETTER_TRACKING,
-    });
-    ty -= lh18;
-  }
-
-  const logoBandBottom = logo ? ctx.pageH - ctx.margin - (logo.dh + 6) : rowTopY;
-  const titleBlockBottom = rowTopY - titleLines.length * lh18;
-  ctx.y = Math.min(logoBandBottom, titleBlockBottom) - 8;
-  drawParagraph(ctx, new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date()), 10, MUTED, undefined, {
-    x: ctx.margin,
-    maxW: ctx.contentW,
-  });
-  ctx.y -= 6;
-  drawContentAccentRule(ctx);
-}
-
 async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void> {
   const rawTitle = val(offer.brandModel) ?? val(offer.title) ?? "Piedāvājums";
   const heroTitle = rawTitle.toLocaleUpperCase("lv-LV");
@@ -806,10 +928,10 @@ async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void
 
 export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord): Promise<Uint8Array> {
   const ctx = await createPdfCtx();
-  ctx.offerLogo = await loadOfferLogoPack(ctx.pdfDoc);
-  ctx.logoOnlyBand = ctx.offerLogo ? Math.max(LOGO_ONLY_BAND, Math.ceil(ctx.offerLogo.dh + 20)) : LOGO_ONLY_BAND;
+  ctx.pasutijumsDzLockPage1 = true;
+  ctx.offerLogo = await dzLoadOfferLogoPack(ctx.pdfDoc);
 
-  await drawPasutijumsPdfHero(ctx, record);
+  await drawPasutijumsDzTameHero(ctx, record);
 
   const clientLines: string[] = [];
   const vFn = val(record.clientFirstName);
@@ -823,12 +945,12 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
   const vOd = val(record.orderDate);
   if (vOd) clientLines.push(`Pasūtījuma datums: ${vOd}`);
   if (clientLines.length) {
-    drawIosCard(
+    drawDzGraySection(
       ctx,
-      "Klienta dati",
-      (iw) => measureColonLabeledLinesHeight(clientLines, 10, iw, ctx),
+      "KLIENTA DATI",
+      (iw) => measureColonLabeledLinesHeight(clientLines, DZ_PAS_BODY_FS, iw, ctx),
       ({ x, w }) => {
-        for (const ln of clientLines) drawColonLabeledLine(ctx, ln, 10, x, w);
+        for (const ln of clientLines) drawColonLabeledLine(ctx, ln, DZ_PAS_BODY_FS, x, w);
       },
     );
   }
@@ -861,46 +983,61 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
     for (const label of selectedDealDetails) specLines.push(`${label}: Jā`);
   }
   if (specLines.length) {
-    drawIosCard(
+    drawDzGraySection(
       ctx,
-      "Transportlīdzekļa specifikācija",
-      (iw) => measureColonLabeledLinesHeight(specLines, 10, iw, ctx),
+      "TRANSPORTLĪDZEKĻA SPECIFIKĀCIJA",
+      (iw) => measureColonLabeledLinesHeight(specLines, DZ_PAS_BODY_FS, iw, ctx),
       ({ x, w }) => {
-        for (const ln of specLines) drawColonLabeledLine(ctx, ln, 10, x, w);
+        for (const ln of specLines) drawColonLabeledLine(ctx, ln, DZ_PAS_BODY_FS, x, w);
       },
     );
   }
 
   const req = val(record.equipmentRequired);
   if (req) {
-    drawIosCard(
+    drawDzGraySection(
       ctx,
-      "Obligātās prasības (aprīkojums)",
-      (iw) => measureWrappedBlockHeight(req, ctx.font, 10, iw),
-      ({ x, w }) => drawParagraph(ctx, req, 10, INK, ctx.font, { x, maxW: w }),
+      "OBLIGĀTĀS PRASĪBAS (APRĪKOJUMS)",
+      (iw) => measureWrappedBlockHeight(req, ctx.font, DZ_PAS_BODY_FS, iw),
+      ({ x, w }) => drawParagraph(ctx, req, DZ_PAS_BODY_FS, INK, ctx.font, { x, maxW: w }),
     );
   }
   const des = val(record.equipmentDesired);
   if (des) {
-    drawIosCard(
+    drawDzGraySection(
       ctx,
-      "Vēlamās prasības (aprīkojums)",
-      (iw) => measureWrappedBlockHeight(des, ctx.font, 10, iw),
-      ({ x, w }) => drawParagraph(ctx, des, 10, INK, ctx.font, { x, maxW: w }),
+      "VĒLAMĀS PRASĪBAS (APRĪKOJUMS)",
+      (iw) => measureWrappedBlockHeight(des, ctx.font, DZ_PAS_BODY_FS, iw),
+      ({ x, w }) => drawParagraph(ctx, des, DZ_PAS_BODY_FS, INK, ctx.font, { x, maxW: w }),
     );
   }
 
   const n = val(record.notes);
   if (n) {
-    drawIosCard(
+    drawDzGraySection(
       ctx,
-      "Piezīmes",
-      (iw) => measureWrappedBlockHeight(n, ctx.font, 10, iw),
-      ({ x, w }) => drawParagraph(ctx, n, 10, INK, ctx.font, { x, maxW: w }),
+      "PIEZĪMES",
+      (iw) => measureWrappedBlockHeight(n, ctx.font, DZ_PAS_BODY_FS, iw),
+      ({ x, w }) => drawParagraph(ctx, n, DZ_PAS_BODY_FS, INK, ctx.font, { x, maxW: w }),
     );
   }
 
-  drawFooter(ctx);
+  drawDzintarzemePdfFooter(
+    { page: ctx.page, margin: ctx.margin, font: ctx.font, fontBold: ctx.fontBold },
+    ctx.offerLogo,
+  );
+
+  ctx.pasutijumsDzLockPage1 = false;
+  ctx.page = ctx.pdfDoc.addPage([ctx.pageW, ctx.pageH]);
+  ctx.y = ctx.pageH - ctx.margin;
+
+  drawDzPasutijumsTermsPage(ctx);
+
+  drawDzintarzemePdfFooter(
+    { page: ctx.page, margin: ctx.margin, font: ctx.font, fontBold: ctx.fontBold },
+    ctx.offerLogo,
+  );
+
   return ctx.pdfDoc.save();
 }
 
