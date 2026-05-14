@@ -1298,28 +1298,6 @@ html[data-site-theme="light"] .heroIntroSurface.heroIntroSurfaceDepth::after {
   max-width: 40rem;
 }
 
-.productHeroSubheadHighlight {
-  font-weight: 600;
-  color: rgb(46 74 110);
-}
-
-.productHeroSubheadProvinWrap {
-  font-weight: 700;
-}
-
-.productHeroSubheadProvinWrap :global(span) {
-  font-weight: 700;
-}
-
-html[data-site-theme="light"] .heroIntroSurface .productHeroSubheadHighlight {
-  color: rgb(46 74 110);
-}
-
-html[data-site-theme="dark"] .heroIntroSurface .productHeroSubheadHighlight {
-  color: rgb(196 214 242 / 0.92);
-  font-weight: 600;
-}
-
 html[data-site-theme="dark"] .heroIntroSurface .productHeroTitleAccent {
   color: rgb(235 240 248 / 0.96);
 }
