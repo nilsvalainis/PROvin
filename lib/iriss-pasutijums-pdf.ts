@@ -9,8 +9,6 @@ import sharp from "sharp";
 
 import { DZ_PASUTIJUMS_TERMS_BLOCKS } from "@/lib/dzintarzeme-pasutijums-terms-content";
 import {
-  drawDzintarzemePdfFooter,
-  drawFittedOneLine,
   drawSectionCardWithShadow,
   drawSectionHeadInCard,
   drawTrackedText as dzDrawTrackedText,
@@ -18,13 +16,23 @@ import {
   INK as DZ_INK,
   lineHeight as dzLineHeight,
   loadOfferLogoPack as dzLoadOfferLogoPack,
-  MUTED as DZ_MUTED,
   SEC_CARD_FILL as DZ_SEC_CARD_FILL,
   SEC_HEAD as DZ_SEC_HEAD,
   SECTION_GAP as DZ_SECTION_GAP,
   wrapText as dzWrapText,
 } from "@/lib/dzintarzeme-pdf-layout";
 import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
+import {
+  drawImageInPremiumFrame,
+  drawOfferMiniIcon,
+  drawPremiumFooter3ColDz,
+  drawPremiumFooter3ColIriss,
+  drawPremiumInvoiceHeader,
+  matchOfferLineIcon,
+  PREMIUM_FOOTER_BLOCK_H,
+  PREMIUM_ORANGE,
+  stampOfferLogoTopRight,
+} from "@/lib/iriss-premium-pdf-ui";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 import { internalCommentHtmlToPdfPlain } from "@/lib/admin-internal-comment-pdf";
 import { shrinkImageBytesForIrissPdf } from "@/lib/shrink-image-for-iriss-pdf";
@@ -66,7 +74,6 @@ const MUTED = rgb(31 / 255, 41 / 255, 55 / 255);
 const CARD_FILL_SLATE = rgb(248 / 255, 250 / 255, 252 / 255);
 const CARD_BORDER_SLATE = rgb(15 / 255, 23 / 255, 42 / 255);
 const BAR_TRACK = rgb(226 / 255, 232 / 255, 240 / 255);
-const RULE_DARK = rgb(15 / 255, 23 / 255, 42 / 255);
 /** Papildu atstarpe starp etiķetes beigām un vērtību vienas rindas layoutā (PDF vienības). */
 const COLON_VALUE_GAP = 3;
 /** Piedāvājuma kopsummas josla — saskaņā ar `IRISS_BRAND_ORANGE_HEX` (#F26522). */
@@ -75,7 +82,7 @@ const PRICE_BAND_BORDER = rgb(242 / 255, 101 / 255, 34 / 255);
 const SECTION_BEFORE = 14;
 const SECTION_AFTER = 10;
 const LETTER_TRACKING = 0.242;
-const FOOTER_SAFE = 52;
+const FOOTER_SAFE = Math.max(52, PREMIUM_FOOTER_BLOCK_H);
 /** Atkārtotai lapai — tikai logo josla no lapas augšas. */
 const LOGO_ONLY_BAND = 46;
 
@@ -145,14 +152,8 @@ type Ctx = {
   cardTheme: CardTheme;
 };
 
-function stampOfferLogoTopLeft(page: PDFPage, pageH: number, margin: number, logo: LogoPack): void {
-  const yRect = pageH - margin - logo.dh;
-  page.drawImage(logo.img, {
-    x: margin,
-    y: yRect,
-    width: logo.dw,
-    height: logo.dh,
-  });
+function stampOfferLogoOnNewPage(page: PDFPage, logo: LogoPack, margin: number, pageW: number, pageH: number): void {
+  stampOfferLogoTopRight(page, pageW, pageH, margin, logo);
 }
 
 function ensureSpace(ctx: Ctx, need: number): void {
@@ -160,7 +161,7 @@ function ensureSpace(ctx: Ctx, need: number): void {
   if (ctx.pasutijumsDzLockPage1) return;
   if (ctx.y - need < ctx.margin + FOOTER_SAFE) {
     ctx.page = ctx.pdfDoc.addPage([ctx.pageW, ctx.pageH]);
-    if (ctx.offerLogo) stampOfferLogoTopLeft(ctx.page, ctx.pageH, ctx.margin, ctx.offerLogo);
+    if (ctx.offerLogo) stampOfferLogoOnNewPage(ctx.page, ctx.offerLogo, ctx.margin, ctx.pageW, ctx.pageH);
     ctx.y = ctx.pageH - ctx.margin - (ctx.offerLogo ? ctx.logoOnlyBand : 0);
   }
 }
@@ -171,7 +172,7 @@ function ensureRoomForBlock(ctx: Ctx, outerNeed: number): void {
   if (ctx.pasutijumsDzLockPage1) return;
   if (ctx.y - outerNeed < ctx.margin + FOOTER_SAFE) {
     ctx.page = ctx.pdfDoc.addPage([ctx.pageW, ctx.pageH]);
-    if (ctx.offerLogo) stampOfferLogoTopLeft(ctx.page, ctx.pageH, ctx.margin, ctx.offerLogo);
+    if (ctx.offerLogo) stampOfferLogoOnNewPage(ctx.page, ctx.offerLogo, ctx.margin, ctx.pageW, ctx.pageH);
     ctx.y = ctx.pageH - ctx.margin - (ctx.offerLogo ? ctx.logoOnlyBand : 0);
   }
 }
@@ -307,6 +308,65 @@ function drawColonLabeledLine(ctx: Ctx, line: string, size: number, x: number, m
     drawTrackedText(ctx.page, ln, { x, y: ctx.y - size, size, font: ctx.font, color });
     ctx.y -= lh;
   }
+}
+
+function drawColonLabeledBlockFromY(
+  ctx: Ctx,
+  line: string,
+  size: number,
+  x: number,
+  maxW: number,
+  startY: number,
+  color = INK,
+): number {
+  const prevY = ctx.y;
+  ctx.y = startY;
+  drawColonLabeledLine(ctx, line, size, x, maxW, color);
+  const endY = ctx.y;
+  ctx.y = prevY;
+  return endY;
+}
+
+function measureTwoColSpecLinesHeight(lines: string[], size: number, innerW: number, ctx: Ctx): number {
+  const gap = 14;
+  const colW = (innerW - gap) / 2;
+  let h = 0;
+  for (let i = 0; i < lines.length; i += 2) {
+    const left = lines[i]!;
+    const right = lines[i + 1];
+    const hl = measureColonLabeledLineHeight(left, size, colW, ctx);
+    const hr = right ? measureColonLabeledLineHeight(right, size, colW, ctx) : 0;
+    h += Math.max(hl, hr);
+  }
+  return h;
+}
+
+function drawTwoColSpecLines(ctx: Ctx, lines: string[], size: number, x: number, innerW: number): void {
+  const gap = 14;
+  const colW = (innerW - gap) / 2;
+  for (let i = 0; i < lines.length; i += 2) {
+    const left = lines[i]!;
+    const right = lines[i + 1];
+    const rowTop = ctx.y;
+    const endL = drawColonLabeledBlockFromY(ctx, left, size, x, colW, rowTop);
+    const endR = right ? drawColonLabeledBlockFromY(ctx, right, size, x + colW + gap, colW, rowTop) : rowTop;
+    ctx.y = Math.min(endL, endR);
+  }
+}
+
+function drawOfferColonLineWithIcon(ctx: Ctx, line: string, size: number, x: number, maxW: number): void {
+  const p = splitColonLabelValue(line);
+  let dx = 0;
+  let mw = maxW;
+  if (p.kind === "kv") {
+    const kind = matchOfferLineIcon(p.label);
+    if (kind) {
+      dx = 18;
+      mw = maxW - dx;
+      drawOfferMiniIcon(ctx.page, kind, x + 1, ctx.y - size * 0.32, 14, PREMIUM_ORANGE);
+    }
+  }
+  drawColonLabeledLine(ctx, line, size, x + dx, mw);
 }
 
 /**
@@ -527,34 +587,29 @@ function drawImageRow2Col(
   maxCellH: number,
   originX = ctx.margin,
 ) {
-  const sL = Math.min(cellW / left.w, maxCellH / left.h, 1);
-  const dwL = left.w * sL;
-  const dhL = left.h * sL;
-  let dwR = 0;
-  let dhR = 0;
-  if (right) {
-    const sR = Math.min(cellW / right.w, maxCellH / right.h, 1);
-    dwR = right.w * sR;
-    dhR = right.h * sR;
-  }
-  const rowH = Math.max(dhL, dhR);
-  if (!ctx.suppressPageBreak) ensureSpace(ctx, rowH + 14);
+  if (!ctx.suppressPageBreak) ensureSpace(ctx, maxCellH + 14);
   const topY = ctx.y;
-  ctx.page.drawImage(left.img, {
-    x: originX + (cellW - dwL) / 2,
-    y: topY - dhL,
-    width: dwL,
-    height: dhL,
-  });
+  drawImageInPremiumFrame(
+    ctx.page,
+    { width: left.w, height: left.h },
+    (dx, dy, dw, dh) => ctx.page.drawImage(left.img, { x: dx, y: dy, width: dw, height: dh }),
+    originX,
+    topY,
+    cellW,
+    maxCellH,
+  );
   if (right) {
-    ctx.page.drawImage(right.img, {
-      x: originX + cellW + colGap + (cellW - dwR) / 2,
-      y: topY - dhR,
-      width: dwR,
-      height: dhR,
-    });
+    drawImageInPremiumFrame(
+      ctx.page,
+      { width: right.w, height: right.h },
+      (dx, dy, dw, dh) => ctx.page.drawImage(right.img, { x: dx, y: dy, width: dw, height: dh }),
+      originX + cellW + colGap,
+      topY,
+      cellW,
+      maxCellH,
+    );
   }
-  ctx.y -= rowH + 14;
+  ctx.y -= maxCellH + 14;
 }
 
 async function createPdfCtx(): Promise<Ctx> {
@@ -585,21 +640,6 @@ async function createPdfCtx(): Promise<Ctx> {
   };
 }
 
-function drawContentAccentRule(ctx: Ctx) {
-  const ruleH = 1;
-  ctx.y -= 4;
-  if (!ctx.suppressPageBreak) ensureSpace(ctx, ruleH + 14);
-  const yb = ctx.y - ruleH;
-  ctx.page.drawRectangle({
-    x: ctx.margin,
-    y: yb,
-    width: ctx.contentW,
-    height: ruleH,
-    color: RULE_DARK,
-  });
-  ctx.y = yb - 12;
-}
-
 const DZ_PAS_BODY_FS = 8.75;
 const DZ_PAS_HEAD_FS = 8.5;
 
@@ -608,6 +648,7 @@ function drawDzGraySection(
   titleDisplay: string,
   measureBody: (iw: number) => number,
   drawBody: (inner: { x: number; w: number }) => void,
+  opts?: { bodyLeftAccent?: boolean },
 ): void {
   const pad = 10;
   const ix = ctx.margin + pad;
@@ -627,8 +668,18 @@ function drawDzGraySection(
     fill: DZ_SEC_CARD_FILL,
   });
   let cy = cTop - pad;
-  cy -= drawSectionHeadInCard(ctx.page, ix, cy, titleDisplay, ctx.fontBold);
-  ctx.y = cy;
+  cy -= drawSectionHeadInCard(ctx.page, ix, cy, titleDisplay, ctx.fontBold, PREMIUM_ORANGE);
+  const bodyTopY = cy;
+  if (opts?.bodyLeftAccent) {
+    ctx.page.drawRectangle({
+      x: ix - 3,
+      y: bodyTopY - bodyH,
+      width: 2.5,
+      height: bodyH,
+      color: IRISS_ACCENT,
+    });
+  }
+  ctx.y = bodyTopY;
   const prev = ctx.suppressPageBreak;
   ctx.suppressPageBreak = true;
   try {
@@ -640,31 +691,22 @@ function drawDzGraySection(
 }
 
 async function drawPasutijumsDzTameHero(ctx: Ctx, record: IrissPasutijumsRecord): Promise<void> {
-  const raw = val(record.brandModel) ?? "PASŪTĪJUMS";
-  const heroTitle = raw.toLocaleUpperCase("lv-LV");
-  const titleUsedH = drawFittedOneLine(
-    ctx.page,
-    heroTitle,
-    ctx.fontBold,
-    ctx.margin,
-    ctx.y,
-    ctx.contentW,
-    11,
-    8.2,
-    DZ_INK,
-    0.06,
-  );
-  ctx.y -= titleUsedH + 4;
+  const docTitle = "AUTOMOBIĻA PASŪTĪJUMS";
+  const nameParts = [val(record.clientFirstName), val(record.clientLastName)].filter(Boolean).join(" ");
   const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date());
-  dzDrawTrackedText(ctx.page, dateStr, {
-    x: ctx.margin,
-    y: ctx.y - 8,
-    size: 8,
+  const sublines = [nameParts || undefined, dateStr].filter(Boolean) as string[];
+  const hctx = {
+    page: ctx.page,
+    pageW: ctx.pageW,
+    pageH: ctx.pageH,
+    margin: ctx.margin,
+    contentW: ctx.contentW,
     font: ctx.font,
-    color: DZ_MUTED,
-    tracking: 0.05,
-  });
-  ctx.y -= dzLineHeight(8) + DZ_SECTION_GAP;
+    fontBold: ctx.fontBold,
+    y: ctx.y,
+  };
+  drawPremiumInvoiceHeader(hctx, ctx.offerLogo, docTitle, sublines, { titleMax: 11, titleMin: 8 });
+  ctx.y = hctx.y;
 }
 
 function measureDzTermsHeight(contentW: number, font: PDFFont, fontBold: PDFFont, fsP: number, fsH: number, gap: number): number {
@@ -687,7 +729,7 @@ function measureDzTermsHeight(contentW: number, font: PDFFont, fontBold: PDFFont
 function drawDzPasutijumsTermsPage(ctx: Ctx): void {
   const ix = ctx.margin;
   const iw = ctx.contentW;
-  const avail = ctx.y - ctx.margin - DZ_FOOTER_BLOCK_H - 12;
+  const avail = ctx.y - ctx.margin - Math.max(DZ_FOOTER_BLOCK_H, PREMIUM_FOOTER_BLOCK_H) - 12;
   let fsP = 6.55;
   let fsH = 7.35;
   while (fsP >= 5.35 && measureDzTermsHeight(iw, ctx.font, ctx.fontBold, fsP, fsH, 2.5) > avail) {
@@ -742,54 +784,10 @@ function drawDzPasutijumsTermsPage(ctx: Ctx): void {
 }
 
 function drawFooter(ctx: Ctx) {
-  const pad = 11;
-  const stripeH = 1;
-  const titleS = 9;
-  const rowS = 7.2;
-  const innerW = ctx.contentW - pad * 2 - 4;
-  const footerLines = getIrissPdfSupplierFooterLines();
-  const brand = footerLines[0] ?? "";
-  const rest = footerLines.slice(1);
-  let bodyH = lineHeight(titleS) + 10;
-  for (const line of rest) {
-    bodyH += measureWrappedBlockHeight(line, ctx.font, rowS, innerW) + 4;
-  }
-  const h = pad + stripeH + bodyH + pad;
-  ensureRoomForBlock(ctx, h + 14);
+  ensureRoomForBlock(ctx, PREMIUM_FOOTER_BLOCK_H + 20);
   ctx.y -= 10;
-  const yTop = ctx.y;
-  const yBottom = yTop - h;
-  drawRoundedRect(ctx.page, {
-    x: ctx.margin,
-    y: yBottom,
-    width: ctx.contentW,
-    height: h,
-    radius: 10,
-    color: rgb(252 / 255, 252 / 255, 253 / 255),
-    borderColor: CARD_BORDER_SLATE,
-    borderWidth: 1,
-  });
-  ctx.page.drawRectangle({
-    x: ctx.margin,
-    y: yBottom + h - stripeH,
-    width: ctx.contentW,
-    height: stripeH,
-    color: RULE_DARK,
-  });
-  ctx.y = yTop - stripeH - 4;
-  drawTrackedText(ctx.page, brand.toLocaleUpperCase("lv-LV"), {
-    x: ctx.margin + pad + 3,
-    y: ctx.y - titleS,
-    size: titleS,
-    font: ctx.fontBold,
-    color: INK,
-    tracking: 0.154,
-  });
-  ctx.y -= lineHeight(titleS) + 8;
-  for (const line of rest) {
-    drawParagraph(ctx, line, rowS, MUTED, ctx.font, { x: ctx.margin + pad + 3, maxW: innerW });
-  }
-  ctx.y = yBottom - 8;
+  drawPremiumFooter3ColIriss(ctx.page, ctx.margin, ctx.contentW, ctx.font, ctx.fontBold, getIrissPdfSupplierFooterLines());
+  ctx.y = ctx.margin + PREMIUM_FOOTER_BLOCK_H;
 }
 
 function fmtMoneyEurLv(total: number): string {
@@ -888,42 +886,21 @@ async function loadOfferLogoPack(pdfDoc: PDFDocument): Promise<LogoPack | null> 
 async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void> {
   const rawTitle = val(offer.brandModel) ?? val(offer.title) ?? "Piedāvājums";
   const heroTitle = rawTitle.toLocaleUpperCase("lv-LV");
-  const logo = ctx.offerLogo;
-  const lh18 = lineHeight(18);
-  const logoBoxW = logo ? logo.dw + 6 : 0;
-  const titleColX = ctx.margin + (logo ? logoBoxW + 14 : 0);
-  const titleColW = ctx.contentW - (logo ? logoBoxW + 14 : 0);
-  const titleLines = wrapText(heroTitle, ctx.fontBold, 18, titleColW);
-  const titleH = titleLines.length * lh18;
-  const rowH = Math.max(logo ? logo.dh + 6 : 0, titleH);
-
-  ensureSpace(ctx, rowH + lineHeight(11) + 28);
-  const rowTopY = ctx.y;
-
-  if (logo) stampOfferLogoTopLeft(ctx.page, ctx.pageH, ctx.margin, logo);
-
-  let ty = rowTopY;
-  for (const line of titleLines) {
-    drawTrackedText(ctx.page, line, {
-      x: titleColX,
-      y: ty - 18,
-      size: 18,
-      font: ctx.fontBold,
-      color: INK,
-      tracking: LETTER_TRACKING,
-    });
-    ty -= lh18;
-  }
-
-  const logoBandBottom = logo ? ctx.pageH - ctx.margin - (logo.dh + 6) : rowTopY;
-  const titleBlockBottom = rowTopY - titleLines.length * lh18;
-  ctx.y = Math.min(logoBandBottom, titleBlockBottom) - 8;
-  drawParagraph(ctx, new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date()), 10, MUTED, undefined, {
-    x: ctx.margin,
-    maxW: ctx.contentW,
-  });
-  ctx.y -= 6;
-  drawContentAccentRule(ctx);
+  const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date());
+  const sublines = ["Piedāvājums", dateStr];
+  ensureSpace(ctx, 120);
+  const hctx = {
+    page: ctx.page,
+    pageW: ctx.pageW,
+    pageH: ctx.pageH,
+    margin: ctx.margin,
+    contentW: ctx.contentW,
+    font: ctx.font,
+    fontBold: ctx.fontBold,
+    y: ctx.y,
+  };
+  drawPremiumInvoiceHeader(hctx, ctx.offerLogo, heroTitle, sublines, { titleMax: 14, titleMin: 9 });
+  ctx.y = hctx.y;
 }
 
 export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord): Promise<Uint8Array> {
@@ -986,9 +963,9 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
     drawDzGraySection(
       ctx,
       "TRANSPORTLĪDZEKĻA SPECIFIKĀCIJA",
-      (iw) => measureColonLabeledLinesHeight(specLines, DZ_PAS_BODY_FS, iw, ctx),
+      (iw) => measureTwoColSpecLinesHeight(specLines, DZ_PAS_BODY_FS, iw, ctx),
       ({ x, w }) => {
-        for (const ln of specLines) drawColonLabeledLine(ctx, ln, DZ_PAS_BODY_FS, x, w);
+        drawTwoColSpecLines(ctx, specLines, DZ_PAS_BODY_FS, x, w);
       },
     );
   }
@@ -1000,6 +977,7 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
       "OBLIGĀTĀS PRASĪBAS (APRĪKOJUMS)",
       (iw) => measureWrappedBlockHeight(req, ctx.font, DZ_PAS_BODY_FS, iw),
       ({ x, w }) => drawParagraph(ctx, req, DZ_PAS_BODY_FS, INK, ctx.font, { x, maxW: w }),
+      { bodyLeftAccent: true },
     );
   }
   const des = val(record.equipmentDesired);
@@ -1022,8 +1000,12 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
     );
   }
 
-  drawDzintarzemePdfFooter(
-    { page: ctx.page, margin: ctx.margin, font: ctx.font, fontBold: ctx.fontBold },
+  drawPremiumFooter3ColDz(
+    ctx.page,
+    ctx.margin,
+    ctx.contentW,
+    ctx.font,
+    ctx.fontBold,
     ctx.offerLogo,
   );
 
@@ -1033,10 +1015,7 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
 
   drawDzPasutijumsTermsPage(ctx);
 
-  drawDzintarzemePdfFooter(
-    { page: ctx.page, margin: ctx.margin, font: ctx.font, fontBold: ctx.fontBold },
-    ctx.offerLogo,
-  );
+  drawPremiumFooter3ColDz(ctx.page, ctx.margin, ctx.contentW, ctx.font, ctx.fontBold, ctx.offerLogo);
 
   return ctx.pdfDoc.save();
 }
@@ -1091,7 +1070,7 @@ export async function buildIrissOfferPdfBytes(
       "Pamatinformācija",
       (iw) => measureColonLabeledLinesHeight(offerLines, 10, iw, ctx),
       ({ x, w }) => {
-        for (const ln of offerLines) drawColonLabeledLine(ctx, ln, 10, x, w);
+        for (const ln of offerLines) drawOfferColonLineWithIcon(ctx, ln, 10, x, w);
       },
     );
   }
@@ -1237,7 +1216,7 @@ export async function buildIrissOfferPdfBytes(
         while (maxRows < 1 && guard < 8) {
           guard += 1;
           ctx.page = ctx.pdfDoc.addPage([ctx.pageW, ctx.pageH]);
-          if (ctx.offerLogo) stampOfferLogoTopLeft(ctx.page, ctx.pageH, ctx.margin, ctx.offerLogo);
+          if (ctx.offerLogo) stampOfferLogoOnNewPage(ctx.page, ctx.offerLogo, ctx.margin, ctx.pageW, ctx.pageH);
           ctx.y = ctx.pageH - ctx.margin - (ctx.offerLogo ? ctx.logoOnlyBand : 0);
           innerAvailable = ctx.y - ctx.margin - FOOTER_SAFE - outerChrome;
           maxRows = Math.floor(innerAvailable / rowPixel);

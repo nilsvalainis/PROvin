@@ -149,6 +149,7 @@ export function drawSectionHeadInCard(
   yTop: number,
   titleDisplay: string,
   fontBold: PDFFont,
+  accentBarColor: ReturnType<typeof rgb> = ACCENT_BAR,
 ): number {
   const fs = 8.5;
   const barW = 2;
@@ -158,7 +159,7 @@ export function drawSectionHeadInCard(
     y: yTop - barH + 1,
     width: barW,
     height: barH,
-    color: ACCENT_BAR,
+    color: accentBarColor,
   });
   drawTrackedText(page, titleDisplay, {
     x: ix + barW + 6,
