@@ -9,9 +9,6 @@ import sharp from "sharp";
 
 import { computeDzintarzemeTame, type DzintarzemeTameInput } from "@/lib/dzintarzeme-tame-calculator";
 
-/** PROVIN audita PDF / drukas — primārais zils (`client-report-pdf-layout-draft`). */
-const PDF_BRAND_BLUE_HEX = "#0061D2";
-
 const INTER_REG_PATH = path.join(process.cwd(), "public", "fonts", "invoice-inter", "Inter-Regular.ttf");
 const INTER_BOLD_PATH = path.join(process.cwd(), "public", "fonts", "invoice-inter", "Inter-Bold.ttf");
 const DZINTARZEME_OFFER_LOGO_PATH = path.join(
@@ -33,37 +30,25 @@ async function loadInterFontBytes(): Promise<{ reg: Uint8Array; bold: Uint8Array
   return interFontBytesCache;
 }
 
-function hexToRgb(hex: string): ReturnType<typeof rgb> {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return rgb(0, 0, 0);
-  const n = Number.parseInt(m[1], 16);
-  return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
-}
-
 const INK = rgb(17 / 255, 24 / 255, 39 / 255);
-const MUTED = rgb(71 / 255, 85 / 255, 105 / 255);
-const SEC_HEAD = rgb(71 / 255, 85 / 255, 105 / 255);
-const RULE = rgb(15 / 255, 23 / 255, 42 / 255);
-const TABLE_HEAD_BG = rgb(248 / 255, 250 / 255, 252 / 255);
-const ZEBRA_ROW = rgb(249 / 255, 250 / 255, 251 / 255);
-const ROW_LINE = rgb(224 / 255, 224 / 255, 224 / 255);
-const PANEL_BORDER = rgb(241 / 255, 245 / 255, 249 / 255);
-const PANEL_FILL = rgb(1, 1, 1);
-const NOTE_FILL = rgb(250 / 255, 250 / 255, 250 / 255);
-const NOTE_BORDER = rgb(226 / 255, 232 / 255, 240 / 255);
-const BRAND_BLUE = hexToRgb(PDF_BRAND_BLUE_HEX);
-const GALA_BAND = rgb(248 / 255, 250 / 255, 252 / 255);
-const GALA_BORDER = rgb(226 / 255, 232 / 255, 240 / 255);
+const MUTED = rgb(82 / 255, 82 / 255, 91 / 255);
+const SEC_HEAD = rgb(63 / 255, 63 / 255, 70 / 255);
+const ACCENT_BAR = rgb(55 / 255, 65 / 255, 75 / 255);
+const SEC_CARD_FILL = rgb(244 / 255, 244 / 255, 245 / 255);
+const SEC_CARD_BORDER = rgb(212 / 255, 212 / 255, 216 / 255);
+const SEC_SHADOW = rgb(228 / 255, 228 / 255, 231 / 255);
 
 /**
  * Informatīvs atgādinājums (PVN likums, 138.pants — peļņas daļas režīms).
  */
 const LV_PVN_TAME_LEGAL_NOTE =
   "Lietotam transportlīdzeklim piemērots PVN likuma 138. panta režīms (peļņas daļas nodoklis). Komisijas maksai un papildu pakalpojumiem piemērota PVN standartlikme 21%. PVN kopsumma norādīta kopsavilkumā.";
-const LETTER_TRACKING = 0.242;
-const FOOTER_SAFE = 56;
-const LOGO_ONLY_BAND = 46;
-const SECTION_GAP = 22;
+const LETTER_TRACKING = 0.18;
+/** Kājene + drošā zona — viena A4 lapa, bez otras lapas. */
+const FOOTER_BLOCK_H = 96;
+const SECTION_GAP = 10;
+const CARD_RADIUS = 6;
+const SHADOW_OFFSET = 1.25;
 
 function wrapText(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
   const words = text.split(/\s+/).filter(Boolean);
@@ -83,7 +68,7 @@ function wrapText(text: string, font: PDFFont, fontSize: number, maxWidth: numbe
 }
 
 function lineHeight(size: number): number {
-  return Math.round(size * 1.5);
+  return Math.round(size * 1.35);
 }
 
 function measureTrackedWidth(text: string, font: PDFFont, size: number, tracking = 0): number {
@@ -152,6 +137,33 @@ function drawRoundedRect(
   });
 }
 
+/** Ēnas imitācija: nedaudz nobīdīts gaišāks pelēks slānis zem kartītes. */
+function drawSectionCardWithShadow(
+  page: PDFPage,
+  opts: { x: number; yBottom: number; w: number; h: number; fill: ReturnType<typeof rgb> },
+): void {
+  const { x, yBottom, w, h, fill } = opts;
+  const r = CARD_RADIUS;
+  drawRoundedRect(page, {
+    x: x + SHADOW_OFFSET,
+    y: yBottom - SHADOW_OFFSET,
+    width: w,
+    height: h,
+    radius: r,
+    color: SEC_SHADOW,
+  });
+  drawRoundedRect(page, {
+    x,
+    y: yBottom,
+    width: w,
+    height: h,
+    radius: r,
+    color: fill,
+    borderColor: SEC_CARD_BORDER,
+    borderWidth: 0.75,
+  });
+}
+
 type LogoPack = { img: PDFImage; dw: number; dh: number };
 
 type PdfCtx = {
@@ -164,25 +176,12 @@ type PdfCtx = {
   font: PDFFont;
   fontBold: PDFFont;
   y: number;
-  offerLogo: LogoPack | null;
-  logoOnlyBand: number;
 };
 
-function stampOfferLogoTopLeft(page: PDFPage, pageH: number, margin: number, logo: LogoPack): void {
-  const yRect = pageH - margin - logo.dh;
-  page.drawImage(logo.img, {
-    x: margin,
-    y: yRect,
-    width: logo.dw,
-    height: logo.dh,
-  });
-}
-
-function ensureSpace(ctx: PdfCtx, need: number): void {
-  if (ctx.y - need < ctx.margin + FOOTER_SAFE) {
-    ctx.page = ctx.pdfDoc.addPage([ctx.pageW, ctx.pageH]);
-    if (ctx.offerLogo) stampOfferLogoTopLeft(ctx.page, ctx.pageH, ctx.margin, ctx.offerLogo);
-    ctx.y = ctx.pageH - ctx.margin - (ctx.offerLogo ? ctx.logoOnlyBand : 0);
+/** Viena lapa — neatveram otro lapu. */
+function reserveVertical(ctx: PdfCtx, need: number, floorY: number): void {
+  if (ctx.y - need < floorY) {
+    ctx.y = floorY + need;
   }
 }
 
@@ -238,7 +237,7 @@ async function createCtx(): Promise<PdfCtx> {
   const fontBold = await pdfDoc.embedFont(bold, { subset: false });
   const pageW = 595;
   const pageH = 842;
-  const margin = 48;
+  const margin = 44;
   const contentW = pageW - margin * 2;
   return {
     pdfDoc,
@@ -250,477 +249,352 @@ async function createCtx(): Promise<PdfCtx> {
     font,
     fontBold,
     y: pageH - margin,
-    offerLogo: null,
-    logoOnlyBand: LOGO_ONLY_BAND,
   };
 }
 
-function drawRule(ctx: PdfCtx): void {
-  const h = 1;
-  ensureSpace(ctx, h + 16);
-  const yb = ctx.y - h;
-  ctx.page.drawRectangle({
-    x: ctx.margin,
-    y: yb,
-    width: ctx.contentW,
-    height: h,
-    color: RULE,
-  });
-  ctx.y = yb - 18;
-}
-
-/** PROVIN audita sekciju virsrakstu stils: kreisā zilā maliņa + uppercase. */
-function drawAuditSectionHead(ctx: PdfCtx, titleUpper: string): void {
-  const fs = 10;
+function drawSectionHeadInCard(
+  page: PDFPage,
+  ix: number,
+  yTop: number,
+  titleDisplay: string,
+  fontBold: PDFFont,
+): number {
+  const fs = 8.5;
   const barW = 2;
-  const barH = lineHeight(fs) + 2;
-  const lh = lineHeight(fs) + 10;
-  ensureSpace(ctx, lh + 8);
-  const yTop = ctx.y;
-  ctx.page.drawRectangle({
-    x: ctx.margin,
-    y: yTop - barH + 1,
-    width: barW,
-    height: barH,
-    color: BRAND_BLUE,
-  });
-  drawTrackedText(ctx.page, titleUpper.toLocaleUpperCase("lv-LV"), {
-    x: ctx.margin + barW + 8,
-    y: yTop - fs,
-    size: fs,
-    font: ctx.fontBold,
-    color: SEC_HEAD,
-    tracking: 0.1,
-  });
-  ctx.y = yTop - lh;
-}
-
-function measureVehicleCardHeight(ctx: PdfCtx, bm: string, vin: string): number {
-  const b = bm.trim();
-  const v = vin.trim();
-  const iw = ctx.contentW - 28;
-  let h = 16 + lineHeight(10) + 12;
-  if (b) {
-    const lines = wrapText(b, ctx.fontBold, 14, iw).length;
-    h += lineHeight(12) + 5 + lines * lineHeight(14) + 18;
-  }
-  if (v) {
-    const lines = wrapText(v.toUpperCase(), ctx.fontBold, 13, iw).length;
-    h += lineHeight(12) + 5 + lines * lineHeight(13) + 18;
-  }
-  h += 16;
-  return h;
-}
-
-/** Izcelts identifikācijas bloks — lielāki BOLD, PROVIN audita paneļa līdzīgs rāmis. */
-function drawVehicleInfoCard(ctx: PdfCtx, bm: string, vin: string): void {
-  const b = bm.trim();
-  const v = vin.trim();
-  if (!b && !v) return;
-
-  const innerPad = 14;
-  const cardW = ctx.contentW;
-  const h = measureVehicleCardHeight(ctx, bm, vin);
-  ensureSpace(ctx, h + SECTION_GAP);
-  const yTop = ctx.y;
-  const yBottom = yTop - h;
-  drawRoundedRect(ctx.page, {
-    x: ctx.margin,
-    y: yBottom,
-    width: cardW,
-    height: h,
-    radius: 8,
-    color: PANEL_FILL,
-    borderColor: PANEL_BORDER,
-    borderWidth: 1,
-  });
-
-  let cy = yTop - innerPad;
-  const ix = ctx.margin + innerPad;
-  const iw = cardW - innerPad * 2;
-
-  drawAuditSectionHeadWithin(ctx, ix, cy, iw, "Identifikācija");
-  cy -= lineHeight(10) + 14;
-
-  if (b) {
-    drawTrackedText(ctx.page, "Marka / modelis:", {
-      x: ix,
-      y: cy - 12,
-      size: 12,
-      font: ctx.fontBold,
-      color: INK,
-      tracking: 0.08,
-    });
-    cy -= lineHeight(12) + 5;
-    for (const ln of wrapText(b, ctx.fontBold, 14, iw)) {
-      drawTrackedText(ctx.page, ln, {
-        x: ix,
-        y: cy - 14,
-        size: 14,
-        font: ctx.fontBold,
-        color: INK,
-        tracking: LETTER_TRACKING,
-      });
-      cy -= lineHeight(14);
-    }
-    cy -= 14;
-  }
-
-  if (v) {
-    drawTrackedText(ctx.page, "VIN:", {
-      x: ix,
-      y: cy - 12,
-      size: 12,
-      font: ctx.fontBold,
-      color: INK,
-      tracking: 0.08,
-    });
-    cy -= lineHeight(12) + 5;
-    for (const ln of wrapText(v.toUpperCase(), ctx.fontBold, 13, iw)) {
-      drawTrackedText(ctx.page, ln, {
-        x: ix,
-        y: cy - 13,
-        size: 13,
-        font: ctx.fontBold,
-        color: INK,
-        tracking: 0.14,
-      });
-      cy -= lineHeight(13);
-    }
-  }
-
-  ctx.y = yBottom - SECTION_GAP;
-}
-
-/** Kompakts sekcijas virsraksts iekš kartītes (bez papildu `ctx.y` globāla soļa). */
-function drawAuditSectionHeadWithin(ctx: PdfCtx, ix: number, yTop: number, iw: number, title: string): void {
-  const fs = 10;
-  const barW = 2;
-  const barH = lineHeight(fs) + 2;
-  ctx.page.drawRectangle({
+  const barH = lineHeight(fs) + 1;
+  page.drawRectangle({
     x: ix,
     y: yTop - barH + 1,
     width: barW,
     height: barH,
-    color: BRAND_BLUE,
+    color: ACCENT_BAR,
   });
-  drawTrackedText(ctx.page, title.toLocaleUpperCase("lv-LV"), {
-    x: ix + barW + 8,
+  drawTrackedText(page, titleDisplay, {
+    x: ix + barW + 6,
     y: yTop - fs,
     size: fs,
-    font: ctx.fontBold,
+    font: fontBold,
     color: SEC_HEAD,
-    tracking: 0.1,
+    tracking: 0.08,
   });
+  return lineHeight(fs) + 8;
 }
 
-/** Dzintarzeme Auto tāmes PDF — tikai logo, saturs un disclaimer (bez ģenerētās kājenes ar piegādātāju). */
+/** Viena rinda: samazina fontu, līdz ietilpst; citādi saīsina ar …. */
+function drawFittedOneLine(
+  page: PDFPage,
+  text: string,
+  font: PDFFont,
+  x: number,
+  yBaseline: number,
+  maxW: number,
+  maxSize: number,
+  minSize: number,
+  color: ReturnType<typeof rgb>,
+  tracking: number,
+): number {
+  let s = maxSize;
+  while (s >= minSize) {
+    if (measureTrackedWidth(text, font, s, tracking) <= maxW) {
+      drawTrackedText(page, text, { x, y: yBaseline - s, size: s, font, color, tracking });
+      return lineHeight(s);
+    }
+    s -= 0.35;
+  }
+  let t = text;
+  const ell = "…";
+  while (t.length > 1) {
+    t = t.slice(0, -1);
+    const tryText = t + ell;
+    if (measureTrackedWidth(tryText, font, minSize, tracking) <= maxW) {
+      drawTrackedText(page, tryText, {
+        x,
+        y: yBaseline - minSize,
+        size: minSize,
+        font,
+        color,
+        tracking,
+      });
+      return lineHeight(minSize);
+    }
+  }
+  drawTrackedText(page, ell, {
+    x,
+    y: yBaseline - minSize,
+    size: minSize,
+    font,
+    color,
+    tracking,
+  });
+  return lineHeight(minSize);
+}
+
+function drawFooter(ctx: PdfCtx, logo: LogoPack | null): void {
+  const page = ctx.page;
+  const m = ctx.margin;
+  const footerLines = [
+    "Dzintarzeme Auto",
+    "00 371 204 205 39",
+    "00 371 277 334 40",
+    "info@dzintarzemeauto.lv",
+    "www.dzintarzemeauto.lv",
+  ];
+  const fs = 7.5;
+  const lh = lineHeight(fs);
+  const textBlockH = footerLines.length * lh;
+  let logoW = 0;
+  let logoH = 0;
+  if (logo) {
+    const s = Math.min(88 / logo.dw, 24 / logo.dh, 1);
+    logoW = logo.dw * s;
+    logoH = logo.dh * s;
+  }
+  const blockH = Math.max(textBlockH, logoH);
+  let tx = m;
+  if (logo) {
+    const logoY = m + 8 + (blockH - logoH) / 2;
+    page.drawImage(logo.img, { x: m, y: logoY, width: logoW, height: logoH });
+    tx = m + logoW + 10;
+  }
+  let ty = m + 8 + blockH;
+  for (const ln of footerLines) {
+    drawTrackedText(page, ln, {
+      x: tx,
+      y: ty - fs,
+      size: fs,
+      font: ln.includes("@") || ln.startsWith("www") ? ctx.font : ctx.fontBold,
+      color: ln === "Dzintarzeme Auto" ? INK : MUTED,
+      tracking: 0.04,
+    });
+    ty -= lh;
+  }
+}
+
+/** Dzintarzeme Auto tāmes PDF — viena A4 lapa, kājene ar logo un kontaktiem. */
 export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInput): Promise<Uint8Array> {
   const c = computeDzintarzemeTame(input);
   const ctx = await createCtx();
-  ctx.offerLogo = await loadOfferLogoPack(ctx.pdfDoc);
-  ctx.logoOnlyBand = ctx.offerLogo ? Math.max(LOGO_ONLY_BAND, Math.ceil(ctx.offerLogo.dh + 20)) : LOGO_ONLY_BAND;
+  const floorY = ctx.margin + FOOTER_BLOCK_H;
+  const page = ctx.page;
 
-  const logo = ctx.offerLogo;
-  const heroNeed = Math.max(logo ? logo.dh + 24 : 0, lineHeight(16) + lineHeight(11) + 28);
-  ensureSpace(ctx, heroNeed);
+  const footerLogo = await loadOfferLogoPack(ctx.pdfDoc);
 
-  if (logo) stampOfferLogoTopLeft(ctx.page, ctx.pageH, ctx.margin, logo);
-
-  const title = "Automašīnas pasūtījuma izmaksu tāme";
-  const titleX = ctx.margin + (logo ? logo.dw + 14 : 0);
-  const titleW = ctx.contentW - (logo ? logo.dw + 14 : 0);
-  const titleLines = wrapText(title, ctx.fontBold, 16, titleW);
-  let ty = ctx.y;
-  for (const ln of titleLines) {
-    drawTrackedText(ctx.page, ln, {
-      x: titleX,
-      y: ty - 16,
-      size: 16,
-      font: ctx.fontBold,
-      color: INK,
-      tracking: LETTER_TRACKING,
-    });
-    ty -= lineHeight(16);
-  }
-  const logoBottom = logo ? ctx.pageH - ctx.margin - logo.dh - 6 : ctx.y;
-  const titleBottom = ctx.y - titleLines.length * lineHeight(16);
-  ctx.y = Math.min(logoBottom, titleBottom) - 10;
-
+  const docTitle = "AUTOMAŠĪNAS PASŪTĪJUMA IZMAKASU TĀME";
   const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date());
-  drawTrackedText(ctx.page, dateStr, {
+
+  reserveVertical(ctx, lineHeight(11) + lineHeight(8) + 14, floorY);
+  const titleMaxW = ctx.contentW;
+  const titleUsedH = drawFittedOneLine(
+    page,
+    docTitle,
+    ctx.fontBold,
+    ctx.margin,
+    ctx.y,
+    titleMaxW,
+    11,
+    8.2,
+    INK,
+    0.06,
+  );
+  ctx.y -= titleUsedH + 4;
+  drawTrackedText(page, dateStr, {
     x: ctx.margin,
-    y: ctx.y - 10,
-    size: 10,
+    y: ctx.y - 8,
+    size: 8,
     font: ctx.font,
     color: MUTED,
-    tracking: LETTER_TRACKING,
+    tracking: 0.05,
   });
-  ctx.y -= lineHeight(10) + 8;
-  drawRule(ctx);
-  ctx.y -= 6;
-
-  drawVehicleInfoCard(ctx, c.input.brandModel, c.input.vin);
-
-  drawAuditSectionHead(ctx, "Pozīcijas");
-  ctx.y -= 6;
+  ctx.y -= lineHeight(8) + SECTION_GAP;
 
   const innerPad = 10;
-  const tableInnerW = ctx.contentW - innerPad * 2;
-  const colAmountRight = ctx.margin + ctx.contentW - innerPad - 2;
-  const labelWrapW = Math.max(160, ctx.contentW - innerPad * 2 - 108);
+  const ix0 = ctx.margin + innerPad;
+  const iw = ctx.contentW - innerPad * 2;
+
+  const b = c.input.brandModel.trim();
+  const v = c.input.vin.trim();
+  const headPas = lineHeight(8.5) + 8;
+  const lineBm = b ? lineHeight(9) + 6 : 0;
+  const lineVin = v ? lineHeight(8.5) + 6 : 0;
+  const card1H = innerPad + headPas + lineBm + lineVin + innerPad + 2;
+  reserveVertical(ctx, card1H + SECTION_GAP, floorY);
+  const c1Top = ctx.y;
+  const c1Bot = c1Top - card1H;
+  drawSectionCardWithShadow(page, { x: ctx.margin, yBottom: c1Bot, w: ctx.contentW, h: card1H, fill: SEC_CARD_FILL });
+
+  let cy = c1Top - innerPad;
+  cy -= drawSectionHeadInCard(page, ix0, cy, "PASŪTĪJUMS", ctx.fontBold);
+
+  if (b) {
+    const line = `Marka / modelis: ${b}`;
+    cy -= drawFittedOneLine(page, line, ctx.fontBold, ix0, cy, iw, 9, 7, INK, 0.05) + 2;
+  }
+  if (v) {
+    const line = `VIN: ${v.toUpperCase()}`;
+    cy -= drawFittedOneLine(page, line, ctx.fontBold, ix0, cy, iw, 8.5, 7, INK, 0.06) + 2;
+  }
+  ctx.y = c1Bot - SECTION_GAP;
 
   const visibleRows = c.tableRows.filter((r) => r.net > 0);
-  const lh10 = lineHeight(10);
-  const lh72 = lineHeight(7.2);
-  const headerH = lineHeight(10) + 10;
+  const labelWrapW = Math.max(120, ctx.contentW - innerPad * 2 - 100);
+  const colRight = ctx.margin + ctx.contentW - innerPad - 2;
+  const fsRow = 8.5;
+  const fsSub = 6.8;
+  const lhRow = lineHeight(fsRow);
+  const lhSub = lineHeight(fsSub);
 
-  let bodyH = 0;
-  let ri = 0;
+  let bodyH = innerPad;
+  const headIzm = lineHeight(8.5) + 8;
+  bodyH += headIzm;
+  const hdrRowH = lineHeight(8) + 6;
+  bodyH += hdrRowH;
   for (const row of visibleRows) {
-    const labelLines = wrapText(row.label, ctx.font, 10, labelWrapW);
-    const subH = row.subtitle ? lh72 : 0;
-    bodyH += Math.max(labelLines.length * lh10, lh10) + subH + 10;
-    if (ri < visibleRows.length - 1) bodyH += 1;
-    ri++;
+    const labelLines = wrapText(row.label, ctx.font, fsRow, labelWrapW);
+    const subH = row.subtitle ? lhSub : 0;
+    bodyH += Math.max(labelLines.length * lhRow, lhRow) + subH + 5;
   }
+  bodyH += 6;
+  const noteLines = wrapText(LV_PVN_TAME_LEGAL_NOTE, ctx.font, 6.5, iw);
+  bodyH += noteLines.length * lineHeight(6.5) + innerPad;
 
-  const tableFrameH = innerPad + headerH + bodyH + innerPad + 2;
-  ensureSpace(ctx, tableFrameH + SECTION_GAP);
-  const tableTop = ctx.y;
-  const tableBottom = tableTop - tableFrameH;
+  const card2H = bodyH;
+  reserveVertical(ctx, card2H + SECTION_GAP, floorY);
+  const c2Top = ctx.y;
+  const c2Bot = c2Top - card2H;
+  drawSectionCardWithShadow(page, { x: ctx.margin, yBottom: c2Bot, w: ctx.contentW, h: card2H, fill: SEC_CARD_FILL });
 
-  drawRoundedRect(ctx.page, {
-    x: ctx.margin,
-    y: tableBottom,
-    width: ctx.contentW,
-    height: tableFrameH,
-    radius: 8,
-    color: PANEL_FILL,
-    borderColor: PANEL_BORDER,
-    borderWidth: 1,
-  });
+  cy = c2Top - innerPad;
+  cy -= drawSectionHeadInCard(page, ix0, cy, "IZMAKSU APRĒĶINS", ctx.fontBold);
 
-  let cy = tableTop - innerPad;
-  const headBottom = cy - headerH;
-  ctx.page.drawRectangle({
-    x: ctx.margin + 1,
-    y: headBottom,
-    width: ctx.contentW - 2,
-    height: headerH,
-    color: TABLE_HEAD_BG,
-  });
-  ctx.page.drawRectangle({
-    x: ctx.margin + innerPad,
-    y: headBottom,
-    width: tableInnerW,
-    height: 0.55,
-    color: ROW_LINE,
-  });
-
-  drawTrackedText(ctx.page, "Apraksts", {
-    x: ctx.margin + innerPad + 2,
-    y: cy - 10,
-    size: 10,
+  drawTrackedText(page, "Apraksts", {
+    x: ix0,
+    y: cy - 8,
+    size: 8,
     font: ctx.fontBold,
-    color: MUTED,
-    tracking: 0.12,
+    color: SEC_HEAD,
+    tracking: 0.06,
   });
-  const netHdr = "EUR (neto)";
-  const netHdrW = measureTrackedWidth(netHdr, ctx.fontBold, 10, 0.12);
-  drawTrackedText(ctx.page, netHdr, {
-    x: colAmountRight - netHdrW,
-    y: cy - 10,
-    size: 10,
+  const netH = "EUR (neto)";
+  const nw = measureTrackedWidth(netH, ctx.fontBold, 8, 0.08);
+  drawTrackedText(page, netH, {
+    x: colRight - nw,
+    y: cy - 8,
+    size: 8,
     font: ctx.fontBold,
-    color: MUTED,
-    tracking: 0.12,
+    color: SEC_HEAD,
+    tracking: 0.08,
   });
-  cy = headBottom - 2;
+  cy -= hdrRowH;
 
-  for (let i = 0; i < visibleRows.length; i++) {
-    const row = visibleRows[i]!;
-    const labelLines = wrapText(row.label, ctx.font, 10, labelWrapW);
-    const subH = row.subtitle ? lh72 : 0;
-    const rowH = Math.max(labelLines.length * lh10, lh10) + subH + 10;
+  for (const row of visibleRows) {
+    const labelLines = wrapText(row.label, ctx.font, fsRow, labelWrapW);
+    const subH = row.subtitle ? lhSub : 0;
+    const rowH = Math.max(labelLines.length * lhRow, lhRow) + subH + 5;
     const rowTop = cy;
-    const rowBottom = rowTop - rowH;
-
-    if (i % 2 === 1) {
-      ctx.page.drawRectangle({
-        x: ctx.margin + 2,
-        y: rowBottom,
-        width: ctx.contentW - 4,
-        height: rowH,
-        color: ZEBRA_ROW,
-      });
-    }
-
     let ly = rowTop;
     for (const ll of labelLines) {
-      drawTrackedText(ctx.page, ll, {
-        x: ctx.margin + innerPad + 4,
-        y: ly - 10,
-        size: 10,
+      drawTrackedText(page, ll, {
+        x: ix0,
+        y: ly - fsRow,
+        size: fsRow,
         font: ctx.fontBold,
         color: INK,
-        tracking: 0.1,
+        tracking: 0.05,
       });
-      ly -= lh10;
+      ly -= lhRow;
     }
     if (row.subtitle) {
-      drawTrackedText(ctx.page, row.subtitle, {
-        x: ctx.margin + innerPad + 4,
-        y: ly - 7.2,
-        size: 7.2,
+      drawTrackedText(page, row.subtitle, {
+        x: ix0,
+        y: ly - fsSub,
+        size: fsSub,
         font: ctx.font,
         color: MUTED,
-        tracking: 0.06,
+        tracking: 0.04,
       });
     }
-
     const amt = fmtMoneyEurLv(row.net);
-    const amtW = measureTrackedWidth(amt, ctx.fontBold, 11, 0.12);
-    drawTrackedText(ctx.page, amt, {
-      x: colAmountRight - amtW,
-      y: rowTop - 10,
-      size: 11,
+    const aw = measureTrackedWidth(amt, ctx.fontBold, 9, 0.08);
+    drawTrackedText(page, amt, {
+      x: colRight - aw,
+      y: rowTop - fsRow,
+      size: 9,
       font: ctx.fontBold,
       color: INK,
-      tracking: 0.12,
+      tracking: 0.08,
     });
-
-    ctx.page.drawRectangle({
-      x: ctx.margin + innerPad,
-      y: rowBottom,
-      width: tableInnerW,
-      height: 0.45,
-      color: ROW_LINE,
-    });
-
-    cy = rowBottom;
+    cy = rowTop - rowH;
   }
 
-  ctx.y = tableBottom - SECTION_GAP;
-
-  const noteLines = wrapText(LV_PVN_TAME_LEGAL_NOTE, ctx.font, 8, ctx.contentW - 24);
-  const noteH = noteLines.length * lineHeight(8) + 22;
-  ensureSpace(ctx, noteH + SECTION_GAP);
-  const noteTop = ctx.y;
-  const noteBottom = noteTop - noteH;
-  drawRoundedRect(ctx.page, {
-    x: ctx.margin,
-    y: noteBottom,
-    width: ctx.contentW,
-    height: noteH,
-    radius: 6,
-    color: NOTE_FILL,
-    borderColor: NOTE_BORDER,
-    borderWidth: 1,
-  });
-  let ny = noteTop - 12;
-  for (const ln of noteLines) {
-    drawTrackedText(ctx.page, ln, {
-      x: ctx.margin + 12,
-      y: ny - 8,
-      size: 8,
+  cy -= 4;
+  for (const nl of noteLines) {
+    drawTrackedText(page, nl, {
+      x: ix0,
+      y: cy - 6.5,
+      size: 6.5,
       font: ctx.font,
       color: MUTED,
+      tracking: 0.03,
+    });
+    cy -= lineHeight(6.5);
+  }
+  ctx.y = c2Bot - SECTION_GAP;
+
+  const sumHead = lineHeight(8.5) + 8;
+  const sumRowN = lineHeight(9.5) + 6;
+  const sumRowG = lineHeight(10.5) + 8;
+  const card3H = innerPad + sumHead + sumRowN * 2 + sumRowG + innerPad;
+  reserveVertical(ctx, card3H + SECTION_GAP + lineHeight(7) * 2 + 8, floorY);
+  const c3Top = ctx.y;
+  const c3Bot = c3Top - card3H;
+  drawSectionCardWithShadow(page, { x: ctx.margin, yBottom: c3Bot, w: ctx.contentW, h: card3H, fill: SEC_CARD_FILL });
+
+  cy = c3Top - innerPad;
+  cy -= drawSectionHeadInCard(page, ix0, cy, "KOPĒJĀS IZMAKAS", ctx.fontBold);
+
+  const drawSum = (lab: string, val: string, strong: boolean) => {
+    const lf = strong ? 10.5 : 9.5;
+    const vf = strong ? 10.5 : 9.5;
+    drawTrackedText(page, lab, {
+      x: ix0,
+      y: cy - lf,
+      size: lf,
+      font: strong ? ctx.fontBold : ctx.font,
+      color: INK,
       tracking: 0.05,
     });
-    ny -= lineHeight(8);
-  }
-  ctx.y = noteBottom - SECTION_GAP;
-
-  const sumTopPad = 12;
-  const sumHeadH = lineHeight(10) + 12;
-  const sumRowGap = 10;
-  const sumRowHNormal = lineHeight(11) + sumRowGap;
-  const sumRowHGala = lineHeight(12) + 18;
-  const sumBottomPad = 14;
-  const sumFrameH =
-    sumTopPad + sumHeadH + sumRowHNormal * 2 + 8 + sumRowHGala + sumBottomPad;
-  ensureSpace(ctx, sumFrameH + SECTION_GAP);
-  const sumTop = ctx.y;
-  const sumBottom = sumTop - sumFrameH;
-  drawRoundedRect(ctx.page, {
-    x: ctx.margin,
-    y: sumBottom,
-    width: ctx.contentW,
-    height: sumFrameH,
-    radius: 8,
-    color: PANEL_FILL,
-    borderColor: PANEL_BORDER,
-    borderWidth: 1,
-  });
-
-  let sy = sumTop - sumTopPad;
-  drawAuditSectionHeadWithin(ctx, ctx.margin + 12, sy, ctx.contentW - 24, "Kopsavilkums");
-  sy -= sumHeadH;
-
-  const drawSumRow = (label: string, value: string, opts?: { strong?: boolean; band?: boolean }) => {
-    const labFs = opts?.strong ? 12 : 11;
-    const valFs = opts?.strong ? 13 : 11;
-    const rowH = Math.max(lineHeight(labFs), lineHeight(valFs)) + (opts?.strong ? 12 : sumRowGap);
-    if (opts?.band) {
-      const bandTop = sy;
-      const bandBottom = sy - rowH;
-      ctx.page.drawRectangle({
-        x: ctx.margin + 2,
-        y: bandBottom,
-        width: ctx.contentW - 4,
-        height: rowH,
-        color: GALA_BAND,
-      });
-      ctx.page.drawRectangle({
-        x: ctx.margin + 2,
-        y: bandTop - 0.5,
-        width: ctx.contentW - 4,
-        height: 0.55,
-        color: GALA_BORDER,
-      });
-    }
-    const f = opts?.strong ? ctx.fontBold : ctx.font;
-    drawTrackedText(ctx.page, label, {
-      x: ctx.margin + 14,
-      y: sy - labFs,
-      size: labFs,
-      font: f,
-      color: INK,
-      tracking: LETTER_TRACKING,
-    });
-    const vw = measureTrackedWidth(value, ctx.fontBold, valFs, opts?.strong ? 0.12 : LETTER_TRACKING);
-    drawTrackedText(ctx.page, value, {
-      x: ctx.margin + ctx.contentW - 14 - vw,
-      y: sy - valFs,
-      size: valFs,
+    const vw = measureTrackedWidth(val, ctx.fontBold, vf, 0.08);
+    drawTrackedText(page, val, {
+      x: colRight - vw,
+      y: cy - vf,
+      size: vf,
       font: ctx.fontBold,
       color: INK,
-      tracking: opts?.strong ? 0.12 : LETTER_TRACKING,
+      tracking: 0.08,
     });
-    sy -= rowH;
+    cy -= strong ? sumRowG : sumRowN;
   };
 
-  drawSumRow("Kopā bez PVN (neto bāze)", fmtMoneyEurLv(c.summaBezPVN));
-  drawSumRow("PVN 21 %", fmtMoneyEurLv(c.pvnKopa));
-  sy -= 6;
-  drawSumRow("GALA SUMMA APMAKSAI", fmtMoneyEurLv(c.galaSumma), { strong: true, band: true });
-
-  ctx.y = sumBottom - SECTION_GAP;
+  drawSum("Kopā bez PVN (neto bāze)", fmtMoneyEurLv(c.summaBezPVN), false);
+  drawSum("PVN 21 %", fmtMoneyEurLv(c.pvnKopa), false);
+  drawSum("GALA SUMMA APMAKSAI", fmtMoneyEurLv(c.galaSumma), true);
+  ctx.y = c3Bot - SECTION_GAP;
 
   const disclaimer = "Šis aprēķins ir informatīvs un nav uzskatāms par oficiālu rēķinu.";
-  for (const ln of wrapText(disclaimer, ctx.font, 8.5, ctx.contentW - 28)) {
-    ensureSpace(ctx, lineHeight(8.5));
-    drawTrackedText(ctx.page, ln, {
-      x: ctx.margin + 14,
-      y: ctx.y - 8.5,
-      size: 8.5,
+  for (const ln of wrapText(disclaimer, ctx.font, 7, ctx.contentW - 8)) {
+    reserveVertical(ctx, lineHeight(7), floorY);
+    drawTrackedText(page, ln, {
+      x: ctx.margin,
+      y: ctx.y - 7,
+      size: 7,
       font: ctx.font,
       color: MUTED,
-      tracking: 0.1,
+      tracking: 0.04,
     });
-    ctx.y -= lineHeight(8.5);
+    ctx.y -= lineHeight(7);
   }
+
+  drawFooter(ctx, footerLogo);
 
   return ctx.pdfDoc.save();
 }
