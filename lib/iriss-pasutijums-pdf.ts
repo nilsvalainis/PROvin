@@ -31,6 +31,7 @@ import {
   matchOfferLineIcon,
   PREMIUM_FOOTER_BLOCK_H,
   PREMIUM_ORANGE,
+  PREMIUM_HEADER_LOGO_LIFT_Y,
   stampOfferLogoTopRight,
 } from "@/lib/iriss-premium-pdf-ui";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -153,7 +154,7 @@ type Ctx = {
 };
 
 function stampOfferLogoOnNewPage(page: PDFPage, logo: LogoPack, margin: number, pageW: number, pageH: number): void {
-  stampOfferLogoTopRight(page, pageW, pageH, margin, logo);
+  stampOfferLogoTopRight(page, pageW, pageH, margin, logo, PREMIUM_HEADER_LOGO_LIFT_Y);
 }
 
 function ensureSpace(ctx: Ctx, need: number): void {
@@ -691,7 +692,7 @@ function drawDzGraySection(
 }
 
 async function drawPasutijumsDzTameHero(ctx: Ctx, record: IrissPasutijumsRecord): Promise<void> {
-  const docTitle = "AUTOMOBIĻA PASŪTĪJUMS";
+  const docTitle = "AUTOMAŠĪNAS PASŪTĪJUMS";
   const nameParts = [val(record.clientFirstName), val(record.clientLastName)].filter(Boolean).join(" ");
   const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date());
   const sublines = [nameParts || undefined, dateStr].filter(Boolean) as string[];

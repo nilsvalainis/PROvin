@@ -27,15 +27,19 @@ export function premiumLineHeight(fs: number): number {
   return Math.round(fs * 1.52);
 }
 
+/** Logo augšējā labajā stūrī — nobīde uz augšu (PDF y+), lai pilnas platuma līnija zem virsraksta nekrustotu ar logo. */
+export const PREMIUM_HEADER_LOGO_LIFT_Y = 30;
+
 export function stampOfferLogoTopRight(
   page: PDFPage,
   pageW: number,
   pageH: number,
   margin: number,
   logo: LogoPack,
+  liftY = 0,
 ): void {
   const x = pageW - margin - logo.dw;
-  const y = pageH - margin - logo.dh;
+  const y = pageH - margin - logo.dh + liftY;
   page.drawImage(logo.img, { x, y, width: logo.dw, height: logo.dh });
 }
 
@@ -67,14 +71,14 @@ export function drawPremiumInvoiceHeader(
   const rightPad = logo ? logo.dw + 18 : 0;
   const titleColW = Math.max(160, contentW - rightPad);
 
-  if (logo) stampOfferLogoTopRight(page, pageW, pageH, margin, logo);
+  if (logo) stampOfferLogoTopRight(page, pageW, pageH, margin, logo, PREMIUM_HEADER_LOGO_LIFT_Y);
 
   let cy = ctx.y;
   let titleSize = titleMax;
   while (titleSize >= titleMin) {
     const lines = wrapText(docTitle.toLocaleUpperCase("lv-LV"), fontBold, titleSize, titleColW);
     const blockH = lines.length * premiumLineHeight(titleSize);
-    const logoBottom = logo ? pageH - margin - logo.dh : cy;
+    const logoBottom = logo ? pageH - margin - logo.dh + PREMIUM_HEADER_LOGO_LIFT_Y : cy;
     if (!logo || cy - blockH >= logoBottom - 4 || titleSize <= titleMin + 0.01) {
       for (const ln of lines) {
         drawTrackedText(page, ln, {
