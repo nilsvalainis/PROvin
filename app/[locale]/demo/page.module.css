@@ -1299,8 +1299,8 @@ html[data-site-theme="light"] .heroIntroSurface.heroIntroSurfaceDepth::after {
 }
 
 .productHeroSubheadHighlight {
-  font-weight: 700;
-  color: var(--color-provin-accent, #0066ff);
+  font-weight: 600;
+  color: rgb(46 74 110);
 }
 
 .productHeroSubheadProvinWrap {
@@ -1312,7 +1312,12 @@ html[data-site-theme="light"] .heroIntroSurface.heroIntroSurfaceDepth::after {
 }
 
 html[data-site-theme="light"] .heroIntroSurface .productHeroSubheadHighlight {
-  color: var(--color-provin-accent, #0066ff);
+  color: rgb(46 74 110);
+}
+
+html[data-site-theme="dark"] .heroIntroSurface .productHeroSubheadHighlight {
+  color: rgb(196 214 242 / 0.92);
+  font-weight: 600;
 }
 
 html[data-site-theme="dark"] .heroIntroSurface .productHeroTitleAccent {
