@@ -122,7 +122,7 @@ export function computeDzintarzemeTame(raw: DzintarzemeTameInput): DzintarzemeTa
     tableRows.push({ label, net: roundMoney(n) });
   };
 
-  pushIf("Transportēšana", transportNet);
+  pushIf("Transporta pakalpojumi", transportNet);
   pushIf("Ķīmiskā tīrīšana", chemicalNet);
   pushIf("Pulēšana", polishingNet);
   pushIf("Krāsošana", paintingNet);

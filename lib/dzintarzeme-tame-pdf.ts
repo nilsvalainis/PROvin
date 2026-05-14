@@ -115,7 +115,7 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
 
   const footerLogo: LogoPack | null = await loadOfferLogoPack(ctx.pdfDoc);
 
-  const docTitle = "AUTOMAŠĪNAS PASŪTĪJUMA IZMAKASU TĀME";
+  const docTitle = "AUTOMAŠĪNAS PASŪTĪJUMA IZMAKSU TĀME";
   const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date());
   const bSub = c.input.brandModel.trim();
   const sublines = [bSub || undefined, dateStr].filter(Boolean) as string[];

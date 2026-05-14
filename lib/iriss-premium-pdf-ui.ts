@@ -52,7 +52,7 @@ export type PremiumHeaderMutableCtx = {
 
 /**
  * Rēķina „premium” galvene: virsraksts kreisajā, logo labajā augšējā stūrī,
- * zem tā pilna platuma dubultā līnija (2 px slate + 1 px oranža), tad ~40 px atstarpe.
+ * tieši zem virsraksta — pilna platuma melnā līnija (2 px slate), tad apakšvirsraksti un atstarpe.
  */
 export function drawPremiumInvoiceHeader(
   ctx: PremiumHeaderMutableCtx,
@@ -92,6 +92,18 @@ export function drawPremiumInvoiceHeader(
     titleSize -= 0.35;
   }
 
+  const RULE_THICK = 2;
+  const gapUnderTitle = 5;
+  const yRule = cy - gapUnderTitle - RULE_THICK;
+  page.drawRectangle({
+    x: margin,
+    y: yRule,
+    width: contentW,
+    height: RULE_THICK,
+    color: PREMIUM_SLATE,
+  });
+  cy = yRule - 8;
+
   for (const sl of sublines) {
     if (!sl.trim()) continue;
     for (const ln of wrapText(sl, font, 9, titleColW)) {
@@ -107,31 +119,7 @@ export function drawPremiumInvoiceHeader(
     }
   }
 
-  const textBlockBottom = cy;
-  const logoBottom = logo ? pageH - margin - logo.dh - 4 : ctx.y;
-  const headerBottom = Math.min(textBlockBottom, logoBottom) - 10;
-
-  const ruleGap = 8;
-  let yRule = headerBottom - ruleGap;
-  const thick = 2;
-  const thin = 1;
-  page.drawRectangle({
-    x: margin,
-    y: yRule - thick,
-    width: contentW,
-    height: thick,
-    color: PREMIUM_SLATE,
-  });
-  page.drawRectangle({
-    x: margin,
-    y: yRule - thick - thin,
-    width: contentW,
-    height: thin,
-    color: PREMIUM_ORANGE,
-  });
-  yRule -= thick + thin;
-
-  ctx.y = yRule - PREMIUM_HEADER_AFTER_RULE_GAP;
+  ctx.y = cy - PREMIUM_HEADER_AFTER_RULE_GAP;
 }
 
 /** Kājene: 3 kolonnas ar vertikālām atdalītājlīnijām (Dzintarzeme kontakti). */
@@ -184,8 +172,9 @@ export function drawPremiumFooter3ColDz(
     tracking: 0.06,
   });
   const colStartY = ty - lhBrand - 6;
-  const colContentTop = colStartY + 2;
-  const colContentBottom = colStartY - colRows * lh - 4;
+  /** Vertikālās līnijas tikai kolonnu teksta augstumā (bez liekas „kājas”). */
+  const divH = colRows * lh;
+  const divY = colStartY - divH;
 
   const drawCol = (text: string, x0: number) => {
     let tyy = colStartY;
@@ -204,17 +193,17 @@ export function drawPremiumFooter3ColDz(
   drawCol(col1, tx);
   page.drawRectangle({
     x: x1,
-    y: colContentBottom,
+    y: divY,
     width: 0.5,
-    height: colContentTop - colContentBottom,
+    height: divH,
     color: divColor,
   });
   drawCol(col2, x1);
   page.drawRectangle({
     x: x2,
-    y: colContentBottom,
+    y: divY,
     width: 0.5,
-    height: colContentTop - colContentBottom,
+    height: divH,
     color: divColor,
   });
   drawCol(col3, x2);
@@ -259,16 +248,23 @@ export function drawPremiumFooter3ColIriss(
   const x2 = m + cw * 2;
   const divColor = rgb(220 / 255, 226 / 255, 232 / 255);
 
-  const colLineCount = (t: string) => Math.max(1, t.split("\n").filter((x) => x.trim()).length);
-  const colRows = Math.max(colLineCount(c1), colLineCount(c2), colLineCount(c3));
-  const blockH = colRows * lh + 12;
-
-  const divTop = m + 8;
-  const divBot = divTop + blockH;
+  const colParts = (t: string) => t.split("\n").filter((x) => x.trim());
+  const colStackH = (text: string): number => {
+    const parts = colParts(text);
+    let h = 0;
+    for (let i = 0; i < parts.length; i++) {
+      const p = parts[i]!;
+      const isBrand = i === 0 && p === brandKey;
+      h += isBrand ? premiumLineHeight(8) : lh;
+    }
+    return h;
+  };
+  const bodyH = Math.max(lh, colStackH(c1), colStackH(c2), colStackH(c3));
+  const blockH = bodyH + 10;
 
   const drawCol = (text: string, x0: number) => {
     let ty = m + 8 + blockH;
-    const parts = text.split("\n").filter((p) => p.trim());
+    const parts = colParts(text);
     for (let i = 0; i < parts.length; i++) {
       const p = parts[i]!;
       const isBrand = i === 0 && p === brandKey;
@@ -285,10 +281,14 @@ export function drawPremiumFooter3ColIriss(
       ty -= isBrand ? premiumLineHeight(s) : lh;
     }
   };
+
+  const footerTop = m + 8 + blockH;
+  const divY = footerTop - bodyH;
+
   drawCol(c1, m);
-  page.drawRectangle({ x: x1, y: divTop, width: 0.5, height: divBot - divTop, color: divColor });
+  page.drawRectangle({ x: x1, y: divY, width: 0.5, height: bodyH, color: divColor });
   drawCol(c2, x1);
-  page.drawRectangle({ x: x2, y: divTop, width: 0.5, height: divBot - divTop, color: divColor });
+  page.drawRectangle({ x: x2, y: divY, width: 0.5, height: bodyH, color: divColor });
   drawCol(c3, x2);
 }
 

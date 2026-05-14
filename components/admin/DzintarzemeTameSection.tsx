@@ -336,7 +336,7 @@ export function DzintarzemeTameSection({
         </p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="block min-w-0">
-            <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Transportēšana</span>
+            <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Transporta pakalpojumi</span>
             <input
               className={fieldClass}
               inputMode="decimal"
