@@ -1,5 +1,8 @@
 {
   "functions": {
+    "app/api/admin/notify-report-ready/route.ts": {
+      "maxDuration": 60
+    },
     "app/api/admin/iriss-pasutijumi/**/*.ts": {
       "maxDuration": 120
     },

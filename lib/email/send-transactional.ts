@@ -25,11 +25,20 @@ function getSmtpTransport(): nodemailer.Transporter | null {
   const port = portRaw ? Number.parseInt(portRaw, 10) : 587;
   const secure = Number.isFinite(port) && port === 465;
 
+  const resolvedPort = Number.isFinite(port) ? port : 587;
+  const useTlsStart = !secure && resolvedPort === 587;
+
   return nodemailer.createTransport({
     host,
-    port: Number.isFinite(port) ? port : 587,
+    port: resolvedPort,
     secure,
     auth: { user, pass },
+    /** Gmail / Workspace 587 — STARTTLS; samazina „connection closed” uz dažiem hostiem. */
+    requireTLS: useTlsStart,
+    tls: { minVersion: "TLSv1.2" },
+    connectionTimeout: 25_000,
+    greetingTimeout: 15_000,
+    socketTimeout: 45_000,
   });
 }
 

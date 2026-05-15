@@ -16,7 +16,12 @@ export type InvoiceEmailAttachment = {
  */
 export async function getInvoiceEmailAttachment(sessionId: string): Promise<InvoiceEmailAttachment | null> {
   const order = await getCheckoutSessionDetail(sessionId);
-  if (!order || order.paymentStatus !== "paid" || order.amountTotal == null) return null;
+  if (!order || order.paymentStatus !== "paid") return null;
+  if (order.amountTotal == null) {
+    throw new Error(
+      "Nav izdevies noteikt pasūtījuma summu no Stripe (amount_total / line_items). Pārbaudi sesiju Stripe Dashboard.",
+    );
+  }
 
   const invoiceNumber = await getOrCreateInvoiceNumber(sessionId, order.created);
   const safe = invoiceNumber.replace(/[^\w.-]+/g, "_") || "PRV";

@@ -23,6 +23,8 @@ function resolveVinForNotify(sessionVin: string | null | undefined, draftVin: st
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+export const maxDuration = 60;
+
 function totalAttachmentBytes(list: ReportReadyMailAttachment[]): number {
   return list.reduce((s, a) => s + a.content.length, 0);
 }
@@ -185,22 +187,26 @@ export async function POST(req: Request) {
   }
 
   let invoice: ReportReadyMailAttachment | null = null;
+  let invoiceAttachError: string | null = null;
   try {
     invoice = await getInvoiceEmailAttachment(sessionId);
   } catch (e) {
+    invoiceAttachError = e instanceof Error ? e.message : String(e);
     console.error("[api/admin/notify-report-ready] invoice attachment", e);
-    invoice = null;
   }
 
   const merged: ReportReadyMailAttachment[] = [...manualAttachments];
   if (invoice) merged.push(invoice);
 
   if (merged.length === 0) {
+    const invoiceHint = invoiceAttachError
+      ? `Rēķina PDF kļūda: ${invoiceAttachError}`
+      : "Rēķina PDF nav izdevies sagatavot (pārbaudi Stripe sesijas summu un servera logus).";
     return NextResponse.json(
       {
         error: "no_attachments",
-        message:
-          "Nav pievienots neviens derīgs fails un rēķina PDF neizdevās sagatavot. Pievienojiet audita PDF (multipart forma) vai pārbaudiet pasūtījuma / rēķina datus.",
+        message: `Nav derīgu pielikumu — ${invoiceHint} Pievieno audita PDF (tabula: klienta portfelis; vai pasūtījuma forma „Nosūtīt klientam”).`,
+        detail: invoiceAttachError ?? undefined,
       },
       { status: 400 },
     );

@@ -84,3 +84,22 @@ export function getProvinSelectFieldsFromSession(session: Stripe.Checkout.Sessio
     selectDesiredEquipment: meta("select_desired_equipment"),
   };
 }
+
+/**
+ * Stripe Checkout sesijas kopējā summa centos.
+ * Dažos izlaidumos `amount_total` var būt `null` pat apmaksātai sesijai — tad ņemam summu no izvērstām `line_items`.
+ */
+export function resolveCheckoutSessionAmountTotalCents(session: Stripe.Checkout.Session): number | null {
+  if (typeof session.amount_total === "number" && session.amount_total > 0) {
+    return session.amount_total;
+  }
+  const raw = session.line_items;
+  if (!raw || typeof raw === "string") return null;
+  const data = raw.data;
+  if (!Array.isArray(data) || data.length === 0) return null;
+  let sum = 0;
+  for (const item of data) {
+    if (typeof item.amount_total === "number") sum += item.amount_total;
+  }
+  return sum > 0 ? sum : null;
+}

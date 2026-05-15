@@ -8,6 +8,7 @@ import {
   getCheckoutLineFromSession,
   getOrderFieldsFromSession,
   getProvinSelectFieldsFromSession,
+  resolveCheckoutSessionAmountTotalCents,
   type CheckoutLineKind,
 } from "@/lib/stripe-session";
 
@@ -152,9 +153,7 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
   let session: Stripe.Checkout.Session;
   try {
     const stripe = getStripe();
-    session = await stripe.checkout.sessions.retrieve(sessionId, {
-      timeout: 10_000,
-    });
+    session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["line_items"] }, { timeout: 10_000 });
   } catch (error) {
     console.error(
       "[admin-orders] checkout.sessions.retrieve failed",
@@ -180,7 +179,7 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
   return {
     id: session.id,
     created: session.created,
-    amountTotal: session.amount_total,
+    amountTotal: resolveCheckoutSessionAmountTotalCents(session) ?? session.amount_total,
     currency: session.currency?.toUpperCase() ?? null,
     paymentStatus: session.payment_status,
     customerEmail: session.customer_email ?? session.customer_details?.email ?? null,

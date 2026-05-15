@@ -998,35 +998,30 @@ export function OrderDetailWorkspace({
         body: fd,
         credentials: "include",
       });
-      const data: unknown = await res.json().catch(() => ({}));
-      const message =
-        typeof data === "object" &&
-        data !== null &&
-        "message" in data &&
-        typeof (data as { message: unknown }).message === "string"
-          ? (data as { message: string }).message
-          : null;
+      const rawText = await res.text();
+      let data: Record<string, unknown> = {};
+      try {
+        data = rawText ? (JSON.parse(rawText) as Record<string, unknown>) : {};
+      } catch {
+        data = {
+          message:
+            res.status === 413
+              ? "Pieprasījums pārāk liels — samazini portfeļa failu kopējo apjomu (≤ ~20 MB)."
+              : rawText.trim().slice(0, 400) || `HTTP ${res.status}`,
+        };
+      }
+      const message = typeof data.message === "string" ? data.message : null;
+      const detail = typeof data.detail === "string" ? data.detail : null;
+      const composed = [message, detail].filter(Boolean).join(" — ") || null;
       if (!res.ok) {
-        const fallback =
-          typeof data === "object" &&
-          data !== null &&
-          "error" in data &&
-          typeof (data as { error: unknown }).error === "string"
-            ? (data as { error: string }).error
-            : "Neizdevās nosūtīt";
-        setNotifyErr(message ?? fallback);
+        const fallback = typeof data.error === "string" ? data.error : "Neizdevās nosūtīt";
+        setNotifyErr(composed ?? fallback);
         setNotifyPhase("error");
         return;
       }
       if (notifyReportPdfExtraRef.current) notifyReportPdfExtraRef.current.value = "";
       setNotifyDialogOpen(false);
-      const sentTo =
-        typeof data === "object" &&
-        data !== null &&
-        "sentTo" in data &&
-        typeof (data as { sentTo: unknown }).sentTo === "string"
-          ? (data as { sentTo: string }).sentTo.trim()
-          : null;
+      const sentTo = typeof data.sentTo === "string" ? data.sentTo.trim() : null;
       setNotifyLastSentTo(sentTo);
       setNotifyPhase("sent");
       window.setTimeout(() => {
