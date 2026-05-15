@@ -1006,7 +1006,7 @@ export function OrderDetailWorkspace({
         data = {
           message:
             res.status === 413
-              ? "Pieprasījums pārāk liels — samazini portfeļa failu kopējo apjomu (≤ ~20 MB)."
+              ? "Pieprasījums pārāk liels hostingam (413). Pēc deploy līdz ~24 MB; ja joprojām kļūda, samazini PDF vai sadali portfeli."
               : rawText.trim().slice(0, 400) || `HTTP ${res.status}`,
         };
       }

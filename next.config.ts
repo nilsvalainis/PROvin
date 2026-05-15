@@ -35,11 +35,15 @@ const nextConfig: NextConfig = {
     "puppeteer-extra-plugin-user-preferences",
   ],
   reactStrictMode: true,
-  /** Server Actions (citi maršruti); IRISS PATCH ierobežojumus biežāk nosaka Vercel/hosting. */
+  /** Server Actions + App Router pieprasījumu ķermeņa limits (multipart uz API maršrutiem).
+   * Next.js noklusējums ~10 MB (`middlewareClientMaxBodySize`) — ar to par agru 413 „Nosūtīt atskaiti”.
+   * Salīdzini ar `NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES` (lib/notify-report-email-limits.ts).
+   */
   experimental: {
     serverActions: {
-      bodySizeLimit: "12mb",
+      bodySizeLimit: "24mb",
     },
+    middlewareClientMaxBodySize: "24mb",
   },
   async redirects() {
     return [{ source: "/admin/pkd-rekins", destination: "/admin/commission-invoice", permanent: false }];
