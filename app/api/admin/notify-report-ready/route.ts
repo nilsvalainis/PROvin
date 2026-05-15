@@ -6,7 +6,9 @@ import {
   collectAttachmentsFromFormData,
   collectAttachmentsFromJsonBase64,
   MAX_NOTIFY_ATTACHMENTS_BYTES,
+  MAX_NOTIFY_FILES,
 } from "@/lib/email/notify-attachments-parse";
+import { deleteNotifyBlobUrls, fetchNotifyBlobAttachmentsForEmail } from "@/lib/email/notify-blob-attachments-fetch";
 import { isSmtpConfigured, sendReportReadyEmail, type ReportReadyMailAttachment } from "@/lib/email/send-transactional";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
 import { isValidOrderEmail, isValidVin, normalizeVin } from "@/lib/order-field-validation";
@@ -49,6 +51,23 @@ function mapParseError(e: unknown): NextResponse | null {
       { status: 400 },
     );
   }
+  if (
+    code === "invalid_blob_url" ||
+    code === "invalid_blob_host" ||
+    code === "blob_path_session_mismatch" ||
+    code === "invalid_session_id"
+  ) {
+    return NextResponse.json(
+      { error: "invalid_blob_attachment", message: "Nederīga Blob atsauce portfeļa pielikumam." },
+      { status: 400 },
+    );
+  }
+  if (code === "blob_fetch_failed") {
+    return NextResponse.json(
+      { error: "blob_fetch_failed", message: "Neizdevās lejupielādēt portfeļa failu no Blob." },
+      { status: 502 },
+    );
+  }
   return null;
 }
 
@@ -68,6 +87,7 @@ export async function POST(req: Request) {
   let bodyCustomerEmail = "";
   let multipartForm: FormData | null = null;
   let jsonAttachmentsBase64: unknown = undefined;
+  let jsonBlobAttachments: { url: string; filename?: string }[] | undefined;
 
   try {
     if (contentType.includes("multipart/form-data")) {
@@ -81,25 +101,30 @@ export async function POST(req: Request) {
       } catch {
         return NextResponse.json({ error: "invalid_json" }, { status: 400 });
       }
-      sessionId =
-        typeof body === "object" &&
-        body !== null &&
-        "sessionId" in body &&
-        typeof (body as { sessionId: unknown }).sessionId === "string"
-          ? (body as { sessionId: string }).sessionId.trim()
-          : "";
-      bodyCustomerEmail =
-        typeof body === "object" &&
-        body !== null &&
-        "customerEmail" in body &&
-        typeof (body as { customerEmail: unknown }).customerEmail === "string"
-          ? (body as { customerEmail: string }).customerEmail.trim()
-          : "";
-      jsonAttachmentsBase64 =
-        typeof body === "object" &&
-        body !== null &&
-        "attachmentsBase64" in body &&
-        (body as { attachmentsBase64: unknown }).attachmentsBase64;
+      if (!body || typeof body !== "object") {
+        return NextResponse.json({ error: "invalid_body" }, { status: 400 });
+      }
+      const b = body as Record<string, unknown>;
+      sessionId = typeof b.sessionId === "string" ? b.sessionId.trim() : "";
+      bodyCustomerEmail = typeof b.customerEmail === "string" ? b.customerEmail.trim() : "";
+      jsonAttachmentsBase64 = b.attachmentsBase64;
+      if (Array.isArray(b.blobAttachments) && b.blobAttachments.length > 0) {
+        if (b.blobAttachments.length > MAX_NOTIFY_FILES) {
+          return NextResponse.json({ error: "too_many_attachments", message: "Pārāk daudz failu." }, { status: 400 });
+        }
+        const refs: { url: string; filename?: string }[] = [];
+        for (const item of b.blobAttachments) {
+          if (!item || typeof item !== "object") continue;
+          const o = item as Record<string, unknown>;
+          const url = typeof o.url === "string" ? o.url.trim() : "";
+          if (!url) continue;
+          refs.push({
+            url,
+            ...(typeof o.filename === "string" && o.filename.trim() ? { filename: o.filename.trim() } : {}),
+          });
+        }
+        if (refs.length > 0) jsonBlobAttachments = refs;
+      }
     }
   } catch (e) {
     const mapped = mapParseError(e);
@@ -131,6 +156,7 @@ export async function POST(req: Request) {
   const notifyVin = resolveVinForNotify(order.vin, draft?.orderEdits?.vin);
 
   let manualAttachments: ReportReadyMailAttachment[] = [];
+  const blobRw = process.env.BLOB_READ_WRITE_TOKEN?.trim() ?? "";
 
   try {
     if (multipartForm) {
@@ -142,6 +168,18 @@ export async function POST(req: Request) {
         content: a.content,
         contentType: a.contentType,
       }));
+    } else if (jsonBlobAttachments && jsonBlobAttachments.length > 0) {
+      if (!blobRw) {
+        return NextResponse.json(
+          {
+            error: "blob_token_missing",
+            message:
+              "Portfelis augšupielādēts uz Blob, bet serverī nav BLOB_READ_WRITE_TOKEN — nevar lejupielādēt pielikumus e-pastam.",
+          },
+          { status: 503 },
+        );
+      }
+      manualAttachments = await fetchNotifyBlobAttachmentsForEmail(sessionId, jsonBlobAttachments, blobRw);
     } else {
       const { attachments } = collectAttachmentsFromJsonBase64(jsonAttachmentsBase64);
       manualAttachments = attachments.map((a) => ({
@@ -222,6 +260,9 @@ export async function POST(req: Request) {
     );
   }
 
+  const blobUrlsForCleanup =
+    jsonBlobAttachments?.map((x) => x.url.trim()).filter(Boolean) ?? [];
+
   try {
     await sendReportReadyEmail({
       to,
@@ -232,6 +273,10 @@ export async function POST(req: Request) {
     const message = e instanceof Error ? e.message : "Nezināma kļūda";
     console.error("[api/admin/notify-report-ready]", e);
     return NextResponse.json({ error: "send_failed", message }, { status: 500 });
+  }
+
+  if (blobUrlsForCleanup.length > 0 && blobRw) {
+    void deleteNotifyBlobUrls(blobUrlsForCleanup, blobRw);
   }
 
   console.info("[api/admin/notify-report-ready] sent", {

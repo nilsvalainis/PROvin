@@ -99,6 +99,12 @@ import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
 import { buildProvinAuditPdfFilename } from "@/lib/audit-report-pdf-filename";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
+import {
+  isNotifyBlobUploadEnabled,
+  postNotifyReportReadyMultipart,
+  postNotifyReportReadyViaBlob,
+  type NotifyPortfolioUploadItem,
+} from "@/lib/admin-notify-report-ready-client";
 
 export type OrderWorkspacePayload = {
   sessionId: string;
@@ -968,20 +974,16 @@ export function OrderDetailWorkspace({
     }
     setNotifyPhase("loading");
     try {
-      const fd = new FormData();
-      fd.append("sessionId", payload.sessionId);
-      fd.append("customerEmail", email);
-      const extraReport = notifyReportPdfExtraRef.current?.files?.[0];
-      if (extraReport) {
-        const auditName = buildProvinAuditPdfFilename(payload.vin);
-        fd.append(
-          "reportPdf",
-          new File([extraReport], auditName, {
-            type: extraReport.type || "application/pdf",
-            lastModified: extraReport.lastModified,
-          }),
-        );
-      }
+      const extraRaw = notifyReportPdfExtraRef.current?.files?.[0] ?? null;
+      const auditName = buildProvinAuditPdfFilename(payload.vin);
+      const extraReport =
+        extraRaw && extraRaw.size > 0
+          ? new File([extraRaw], auditName, {
+              type: extraRaw.type || "application/pdf",
+              lastModified: extraRaw.lastModified,
+            })
+          : null;
+      const uploads: NotifyPortfolioUploadItem[] = [];
       for (const p of portfolio) {
         const blob = await fetch(p.blobUrl).then((r) => r.blob());
         const mime = fileMimeForPortfolio(p, blob);
@@ -990,26 +992,43 @@ export function OrderDetailWorkspace({
           setNotifyPhase("error");
           return;
         }
-        const file = new File([blob], p.name, { type: mime });
-        fd.append("attachment", file);
+        const buffer = await blob.arrayBuffer();
+        uploads.push({
+          buffer,
+          name: p.name,
+          mime,
+          lastModified: Number.isFinite(Date.parse(p.addedAt)) ? Date.parse(p.addedAt) : Date.now(),
+        });
       }
-      const res = await fetch("/api/admin/notify-report-ready", {
-        method: "POST",
-        body: fd,
-        credentials: "include",
-      });
-      const rawText = await res.text();
-      let data: Record<string, unknown> = {};
-      try {
-        data = rawText ? (JSON.parse(rawText) as Record<string, unknown>) : {};
-      } catch {
-        data = {
-          message:
-            res.status === 413
-              ? "Pieprasījums pārāk liels hostingam (413). Pēc deploy līdz ~24 MB; ja joprojām kļūda, samazini PDF vai sadali portfeli."
-              : rawText.trim().slice(0, 400) || `HTTP ${res.status}`,
-        };
-      }
+
+      const blobOn = await isNotifyBlobUploadEnabled();
+      const useBlob =
+        blobOn && (uploads.length > 0 || (extraReport && extraReport.size > 0));
+
+      const { res, data } = useBlob
+        ? await postNotifyReportReadyViaBlob({
+            sessionId: payload.sessionId,
+            customerEmail: email,
+            uploads,
+            extraAuditPdf: extraReport,
+          })
+        : await (async () => {
+            const fd = new FormData();
+            fd.append("sessionId", payload.sessionId);
+            fd.append("customerEmail", email);
+            if (extraReport) {
+              fd.append("reportPdf", extraReport);
+            }
+            for (const u of uploads) {
+              const b = new Blob([u.buffer], { type: u.mime });
+              const file = new File([b], u.name, {
+                type: u.mime,
+                lastModified: u.lastModified ?? Date.now(),
+              });
+              fd.append("attachment", file);
+            }
+            return postNotifyReportReadyMultipart(fd);
+          })();
       const message = typeof data.message === "string" ? data.message : null;
       const detail = typeof data.detail === "string" ? data.detail : null;
       const composed = [message, detail].filter(Boolean).join(" — ") || null;

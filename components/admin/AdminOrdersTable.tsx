@@ -6,6 +6,12 @@ import { Check, FileText, Loader2, Send } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
 import { idbGetPortfolio, type StoredPortfolioBlob } from "@/lib/admin-portfolio-idb";
+import {
+  isNotifyBlobUploadEnabled,
+  postNotifyReportReadyMultipart,
+  postNotifyReportReadyViaBlob,
+  type NotifyPortfolioUploadItem,
+} from "@/lib/admin-notify-report-ready-client";
 
 export type AdminOrdersTableRow = SerializedAdminOrderTableRow;
 
@@ -90,44 +96,46 @@ function NotifyReportReadyCell({
     setPhase("loading");
     setSkippedCount(0);
     try {
-      const fd = new FormData();
-      fd.append("sessionId", sessionId);
-      if (email) fd.append("customerEmail", email);
-
       const stored = (await idbGetPortfolio(sessionId)) ?? [];
       let skipped = 0;
+      const uploads: NotifyPortfolioUploadItem[] = [];
       for (const p of stored) {
         const mime = inferPortfolioMime(p);
         if (!mime) {
           skipped += 1;
           continue;
         }
-        const blob = new Blob([p.buffer], { type: mime });
-        const file = new File([blob], p.name || "pielikums", {
-          type: mime,
+        uploads.push({
+          buffer: p.buffer,
+          name: p.name || "pielikums",
+          mime,
           lastModified: Number.isFinite(Date.parse(p.addedAt)) ? Date.parse(p.addedAt) : Date.now(),
         });
-        fd.append("attachment", file);
       }
       setSkippedCount(skipped);
 
-      const res = await fetch("/api/admin/notify-report-ready", {
-        method: "POST",
-        body: fd,
-        credentials: "include",
-      });
-      const rawText = await res.text();
-      let data: Record<string, unknown> = {};
-      try {
-        data = rawText ? (JSON.parse(rawText) as Record<string, unknown>) : {};
-      } catch {
-        data = {
-          message:
-            res.status === 413
-              ? "Pieprasījums pārāk liels hostingam (413). Pēc deploy līdz ~24 MB; ja joprojām kļūda, samazini PDF vai sadali portfeli."
-              : rawText.trim().slice(0, 400) || `HTTP ${res.status}`,
-        };
-      }
+      const blobOn = await isNotifyBlobUploadEnabled();
+      const { res, data } =
+        blobOn && uploads.length > 0
+          ? await postNotifyReportReadyViaBlob({
+              sessionId,
+              customerEmail: email || undefined,
+              uploads,
+            })
+          : await (async () => {
+              const fd = new FormData();
+              fd.append("sessionId", sessionId);
+              if (email) fd.append("customerEmail", email);
+              for (const u of uploads) {
+                const blob = new Blob([u.buffer], { type: u.mime });
+                const file = new File([blob], u.name, {
+                  type: u.mime,
+                  lastModified: u.lastModified ?? Date.now(),
+                });
+                fd.append("attachment", file);
+              }
+              return postNotifyReportReadyMultipart(fd);
+            })();
       const message = typeof data.message === "string" ? data.message : null;
       const detail = typeof data.detail === "string" ? data.detail : null;
       const composed = [message, detail].filter(Boolean).join(" — ") || null;
