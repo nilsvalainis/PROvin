@@ -1414,69 +1414,27 @@ html[data-site-theme="light"] .heroIntroSurface .productHeroValueItem {
 }
 
 .heroProcessIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 2.35rem;
   height: 2.35rem;
-  border-radius: 999px;
 }
 
 .heroProcessIconSvg {
-  width: 1.05rem;
-  height: 1.05rem;
+  width: 1.15rem;
+  height: 1.15rem;
 }
 
-.heroProcessIconStart {
-  color: #fff;
-  background: linear-gradient(180deg, #2b8cff 0%, #0d5fd4 100%);
-  box-shadow:
-    0 0 0 1px rgb(0 102 255 / 0.35),
-    0 6px 16px rgb(0 102 255 / 0.28);
-}
-
-.heroProcessIconMid {
-  color: rgb(245 248 252 / 0.92);
-  background: rgb(255 255 255 / 0.07);
-  border: 1px solid rgb(255 255 255 / 0.12);
-  box-shadow: 0 8px 18px rgb(0 0 0 / 0.22);
-}
-
-.heroProcessIconEnd {
-  color: #fff;
-  background: linear-gradient(180deg, #3dd068 0%, #1f9e4a 100%);
-  box-shadow:
-    0 0 0 1px rgb(52 199 89 / 0.35),
-    0 6px 16px rgb(52 199 89 / 0.22);
-}
-
-.heroProcessLabels {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.12rem;
-  min-width: 0;
-  width: 100%;
-  padding: 0 0.1rem;
-}
-
-.heroProcessTitle {
+.heroProcessLabel {
   font-size: clamp(0.5rem, 1.55vw, 0.58rem);
-  line-height: 1.2;
+  line-height: 1.25;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: rgb(245 248 252 / 0.94);
   text-wrap: balance;
-}
-
-.heroProcessShort {
-  font-size: clamp(0.46rem, 1.35vw, 0.52rem);
-  line-height: 1.2;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: rgb(210 214 222 / 0.72);
-  text-wrap: balance;
+  min-width: 0;
+  width: 100%;
+  padding: 0 0.1rem;
+  text-align: center;
 }
 
 html[data-site-theme="light"] .heroFormCard .heroProcessStrip {
@@ -1487,19 +1445,8 @@ html[data-site-theme="light"] .heroFormCard .heroProcessArrow {
   color: rgb(70 78 90 / 0.55);
 }
 
-html[data-site-theme="light"] .heroFormCard .heroProcessIconMid {
-  color: rgb(47 58 73 / 0.92);
-  background: rgb(255 255 255 / 0.92);
-  border-color: rgb(24 31 42 / 0.12);
-  box-shadow: 0 10px 20px rgb(24 31 42 / 0.08);
-}
-
-html[data-site-theme="light"] .heroFormCard .heroProcessTitle {
+html[data-site-theme="light"] .heroFormCard .heroProcessLabel {
   color: rgb(29 36 48 / 0.92);
-}
-
-html[data-site-theme="light"] .heroFormCard .heroProcessShort {
-  color: rgb(90 101 119 / 0.88);
 }
 
 @media (max-width: 380px) {
