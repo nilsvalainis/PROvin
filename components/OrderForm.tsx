@@ -6,6 +6,7 @@ import { useLenis } from "lenis/react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
 import demoHeroFields from "@/app/[locale]/demo/page.module.css";
+import { HeroAuditProcessStrip } from "@/components/home/HeroAuditProcessStrip";
 import {
   isPlausibleListingUrl,
   isValidOrderEmail,
@@ -419,6 +420,11 @@ export function OrderForm({
           )}
           {step === 2 ? <p className={hintClass}>{t("listingHint")}</p> : null}
         </div>
+        {hero && step === 1 ? (
+          <div className="min-w-0 sm:col-span-2">
+            <HeroAuditProcessStrip />
+          </div>
+        ) : null}
         {step === 2 ? (
           <>
             <div className="sm:col-span-2">

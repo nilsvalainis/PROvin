@@ -14,6 +14,13 @@
     "productValue2": "Sludinājuma audits",
     "productValue3": "Tehnisko risku analīze",
     "productValue4": "Eksperta konsultācija",
+    "heroProcessAria": "Ko ietver audits — četri soļi",
+    "heroProcessSteps": [
+      { "title": "Vēstures pārbaude", "short": "Vēstures atskaites" },
+      { "title": "Tehnisko risku analīze", "short": "Risku analīze" },
+      { "title": "Sludinājuma audits", "short": "Sludinājuma analīze" },
+      { "title": "Eksperta konsultācija", "short": "Konsultācija" }
+    ],
     "italyKicker": "Atskaite, kas pastāsta daudz vairāk...",
     "lensLine1": "AUTO VĒSTURES UN SLUDINĀJUMA",
     "lensLine2": "AUDITS",
