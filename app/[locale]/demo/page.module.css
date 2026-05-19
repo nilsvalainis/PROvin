@@ -1426,43 +1426,77 @@ html[data-site-theme="light"] .heroIntroSurface .productHeroValueItem {
   color: rgb(255 255 255 / 0.62);
   stroke-width: 2;
   --arrow-i: 1;
-  animation: hero-process-arrow-nudge 2.2s ease-in-out infinite;
-  animation-delay: calc(0.35s + var(--arrow-i) * 0.18s);
+  animation: hero-process-arrow-flow 2.6s ease-in-out infinite;
+  animation-delay: calc(0.35s + var(--arrow-i) * 0.22s);
 }
 
 .heroProcessIcon {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 2.35rem;
   height: 2.35rem;
+  overflow: hidden;
   border-radius: 999px;
   background: #000;
+  isolation: isolate;
 }
 
 .heroProcessIconRingBlue {
-  border: 1px solid rgb(0 102 255 / 0.7);
-  box-shadow:
-    0 0 0 1px rgb(0 102 255 / 0.2),
-    0 0 14px rgb(0 102 255 / 0.18);
-  animation: hero-process-icon-glow-blue 2.8s ease-in-out infinite;
-  animation-delay: calc(var(--step-i) * 0.32s);
+  border: 1px solid rgb(0 102 255 / 0.55);
+}
+
+.heroProcessIconRingBlue::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 38%,
+    rgb(0 102 255 / 0.22) 50%,
+    transparent 62%,
+    transparent 100%
+  );
+  transform: translateX(-120%);
+  animation: hero-process-icon-scan 3.2s ease-in-out infinite;
+  animation-delay: calc(var(--step-i) * 0.4s);
+  pointer-events: none;
 }
 
 .heroProcessIconRingRisk {
-  border: 1px solid rgb(255 52 46 / 0.75);
-  box-shadow:
-    0 0 0 1px rgb(255 52 46 / 0.22),
-    0 0 14px rgb(255 52 46 / 0.16);
-  animation: hero-process-icon-glow-risk 2.4s ease-in-out infinite;
-  animation-delay: calc(var(--step-i) * 0.32s);
+  border: 1px solid rgb(255 52 46 / 0.58);
+}
+
+.heroProcessIconRingRisk::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 38%,
+    rgb(255 52 46 / 0.2) 50%,
+    transparent 62%,
+    transparent 100%
+  );
+  transform: translateX(-120%);
+  animation: hero-process-icon-scan 3.2s ease-in-out infinite;
+  animation-delay: calc(var(--step-i) * 0.4s);
+  pointer-events: none;
 }
 
 .heroProcessIconSvg {
+  position: relative;
+  z-index: 1;
   width: 1.15rem;
   height: 1.15rem;
-  animation: hero-process-icon-float 2.8s ease-in-out infinite;
-  animation-delay: calc(0.2s + var(--step-i) * 0.28s);
+  transform-origin: center;
+  animation: hero-process-icon-tilt 4.2s ease-in-out infinite;
+  animation-delay: calc(0.15s + var(--step-i) * 0.28s);
 }
 
 @keyframes hero-process-step-in {
@@ -1476,53 +1510,45 @@ html[data-site-theme="light"] .heroIntroSurface .productHeroValueItem {
   }
 }
 
-@keyframes hero-process-icon-glow-blue {
-  0%,
-  100% {
-    box-shadow:
-      0 0 0 1px rgb(0 102 255 / 0.18),
-      0 0 10px rgb(0 102 255 / 0.12);
+@keyframes hero-process-icon-scan {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
   }
-  50% {
-    box-shadow:
-      0 0 0 1px rgb(0 102 255 / 0.45),
-      0 0 22px rgb(0 102 255 / 0.38);
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(120%);
+    opacity: 0;
   }
 }
 
-@keyframes hero-process-icon-glow-risk {
+@keyframes hero-process-icon-tilt {
   0%,
   100% {
-    box-shadow:
-      0 0 0 1px rgb(255 52 46 / 0.2),
-      0 0 10px rgb(255 52 46 / 0.12);
+    transform: rotate(0deg) scale(1);
   }
-  50% {
-    box-shadow:
-      0 0 0 1px rgb(255 52 46 / 0.5),
-      0 0 22px rgb(255 52 46 / 0.32);
+  33% {
+    transform: rotate(-5deg) scale(1.05);
+  }
+  66% {
+    transform: rotate(5deg) scale(1.05);
   }
 }
 
-@keyframes hero-process-icon-float {
+@keyframes hero-process-arrow-flow {
   0%,
   100% {
-    transform: translateY(0);
+    opacity: 0.32;
+    transform: scaleX(0.92);
   }
   50% {
-    transform: translateY(-1.5px);
-  }
-}
-
-@keyframes hero-process-arrow-nudge {
-  0%,
-  100% {
-    opacity: 0.5;
-    transform: translateX(0);
-  }
-  50% {
-    opacity: 0.95;
-    transform: translateX(2px);
+    opacity: 0.88;
+    transform: scaleX(1);
   }
 }
 
@@ -1581,10 +1607,15 @@ html[data-site-theme="light"] .heroFormCard .heroProcessLabelLine {
   .heroProcessStrip,
   .heroProcessStep,
   .heroProcessArrow,
-  .heroProcessIconRingBlue,
-  .heroProcessIconRingRisk,
+  .heroProcessIconRingBlue::after,
+  .heroProcessIconRingRisk::after,
   .heroProcessIconSvg {
     animation: none !important;
+  }
+
+  .heroProcessIconRingBlue::after,
+  .heroProcessIconRingRisk::after {
+    opacity: 0;
   }
 }
 
