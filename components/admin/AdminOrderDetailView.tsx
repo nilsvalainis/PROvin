@@ -9,6 +9,7 @@ import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { META_ORDER_LUCIDE } from "@/lib/admin-lucide-registry";
 import { AdminListingUrlEndAdornment } from "@/components/admin/AdminListingUrlToolbar";
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
+import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
@@ -533,6 +534,7 @@ export function AdminOrderDetailView({
                     compact
                     hideToolbar
                     resetVersion={orderFieldResetKey}
+                    endAdornment={<AdminWhatsAppOpenButton phone={mergedCustomerPhone} />}
                   />
                   <AdminSavableTextField
                     id="edit-customer-contact-method"
