@@ -21,7 +21,6 @@ type Props = {
 export default function HomeProductHero({ showProvinSelect = false, comparisonContent }: Props) {
   const [heroOrderStep, setHeroOrderStep] = useState<1 | 2>(1);
   const t = useTranslations("Hero");
-  const heroFeatureTitles = [t("productValue1"), t("productValue3"), t("productValue2"), t("productValue4")];
   const productSubhead = t("productSubheadRich");
 
   return (
@@ -65,16 +64,6 @@ export default function HomeProductHero({ showProvinSelect = false, comparisonCo
 
                 {heroOrderStep === 1 ? (
                   <div className="pointer-events-auto relative z-[80] mt-4 flex w-full max-w-[520px] min-w-0 flex-col items-stretch gap-2 sm:mt-5">
-                    <ul className={`${styles.features} ${styles.heroTrust}`}>
-                      {heroFeatureTitles.map((label) => (
-                        <li key={label}>
-                          <span className={`${styles.featureIcon} ${styles.featureIconCheck}`} aria-hidden>
-                            ✓
-                          </span>
-                          <span>{label}</span>
-                        </li>
-                      ))}
-                    </ul>
                     <button
                       type="button"
                       onClick={() => {

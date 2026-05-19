@@ -1392,6 +1392,17 @@ html[data-site-theme="light"] .heroIntroSurface .productHeroValueItem {
   margin-top: 2rem;
   padding-top: 1.05rem;
   border-top: 1px solid rgb(255 255 255 / 0.1);
+  animation: hero-process-strip-in 0.5s ease-out backwards;
+  animation-delay: 0.05s;
+}
+
+@keyframes hero-process-strip-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .heroProcessStep {
@@ -1402,6 +1413,9 @@ html[data-site-theme="light"] .heroIntroSurface .productHeroValueItem {
   align-items: center;
   gap: 0.45rem;
   text-align: center;
+  --step-i: 0;
+  animation: hero-process-step-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(0.12s + var(--step-i) * 0.11s);
 }
 
 .heroProcessArrow {
@@ -1411,16 +1425,105 @@ html[data-site-theme="light"] .heroIntroSurface .productHeroValueItem {
   margin-top: 0.72rem;
   color: rgb(255 255 255 / 0.62);
   stroke-width: 2;
+  --arrow-i: 1;
+  animation: hero-process-arrow-nudge 2.2s ease-in-out infinite;
+  animation-delay: calc(0.35s + var(--arrow-i) * 0.18s);
 }
 
 .heroProcessIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 2.35rem;
   height: 2.35rem;
+  border-radius: 999px;
+  background: #000;
+}
+
+.heroProcessIconRingBlue {
+  border: 1px solid rgb(0 102 255 / 0.7);
+  box-shadow:
+    0 0 0 1px rgb(0 102 255 / 0.2),
+    0 0 14px rgb(0 102 255 / 0.18);
+  animation: hero-process-icon-glow-blue 2.8s ease-in-out infinite;
+  animation-delay: calc(var(--step-i) * 0.32s);
+}
+
+.heroProcessIconRingRisk {
+  border: 1px solid rgb(255 52 46 / 0.75);
+  box-shadow:
+    0 0 0 1px rgb(255 52 46 / 0.22),
+    0 0 14px rgb(255 52 46 / 0.16);
+  animation: hero-process-icon-glow-risk 2.4s ease-in-out infinite;
+  animation-delay: calc(var(--step-i) * 0.32s);
 }
 
 .heroProcessIconSvg {
   width: 1.15rem;
   height: 1.15rem;
+  animation: hero-process-icon-float 2.8s ease-in-out infinite;
+  animation-delay: calc(0.2s + var(--step-i) * 0.28s);
+}
+
+@keyframes hero-process-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-process-icon-glow-blue {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgb(0 102 255 / 0.18),
+      0 0 10px rgb(0 102 255 / 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgb(0 102 255 / 0.45),
+      0 0 22px rgb(0 102 255 / 0.38);
+  }
+}
+
+@keyframes hero-process-icon-glow-risk {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgb(255 52 46 / 0.2),
+      0 0 10px rgb(255 52 46 / 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgb(255 52 46 / 0.5),
+      0 0 22px rgb(255 52 46 / 0.32);
+  }
+}
+
+@keyframes hero-process-icon-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+
+@keyframes hero-process-arrow-nudge {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translateX(2px);
+  }
 }
 
 .heroProcessLabel {
@@ -1471,6 +1574,17 @@ html[data-site-theme="light"] .heroFormCard .heroProcessLabelLine {
   .heroProcessIconSvg {
     width: 0.9rem;
     height: 0.9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroProcessStrip,
+  .heroProcessStep,
+  .heroProcessArrow,
+  .heroProcessIconRingBlue,
+  .heroProcessIconRingRisk,
+  .heroProcessIconSvg {
+    animation: none !important;
   }
 }
 
