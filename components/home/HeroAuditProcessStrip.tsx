@@ -9,13 +9,15 @@ import styles from "@/app/[locale]/demo/page.module.css";
 const HERO_AUDIT_PROCESS_ICONS: LucideIcon[] = [Globe2, AlertTriangle, ScanSearch, ShieldCheck];
 const RISK_STEP_INDEX = 1;
 
+type HeroProcessStep = { line1: string; line2: string };
+
 export function HeroAuditProcessStrip() {
   const t = useTranslations("Hero");
-  const steps = t.raw("heroProcessSteps") as string[];
+  const steps = t.raw("heroProcessSteps") as HeroProcessStep[];
 
   return (
     <div className={styles.heroProcessStrip} role="list" aria-label={t("heroProcessAria")}>
-      {steps.map((label, index) => {
+      {steps.map((step, index) => {
         const Icon = HERO_AUDIT_PROCESS_ICONS[index] ?? Globe2;
         const risk = index === RISK_STEP_INDEX;
         const circleTone = risk
@@ -24,13 +26,14 @@ export function HeroAuditProcessStrip() {
         const iconTone = risk
           ? "marketing-hero-pillar-icon--risk text-[#ff342e]"
           : "text-[#0066ff]";
+        const label = `${step.line1} ${step.line2}`;
 
         return (
           <Fragment key={label}>
             {index > 0 ? (
               <ArrowRight className={styles.heroProcessArrow} strokeWidth={2} aria-hidden />
             ) : null}
-            <div className={styles.heroProcessStep} role="listitem">
+            <div className={styles.heroProcessStep} role="listitem" aria-label={label}>
               <div
                 className={`${styles.heroProcessIcon} flex items-center justify-center rounded-full border bg-black ${circleTone}`}
                 aria-hidden
@@ -40,7 +43,10 @@ export function HeroAuditProcessStrip() {
                   strokeWidth={1.6}
                 />
               </div>
-              <span className={styles.heroProcessLabel}>{label}</span>
+              <span className={styles.heroProcessLabel}>
+                <span className={styles.heroProcessLabelLine}>{step.line1}</span>
+                <span className={styles.heroProcessLabelLine}>{step.line2}</span>
+              </span>
             </div>
           </Fragment>
         );
