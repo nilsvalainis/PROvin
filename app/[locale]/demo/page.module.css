@@ -1438,8 +1438,15 @@ html[data-site-theme="light"] .heroIntroSurface .productHeroValueItem {
   line-height: 1.35;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: #fff;
   text-wrap: balance;
+}
+
+html[data-site-theme="dark"] .home-hero-pricing-unified .heroOrderBenefitLabel {
+  color: rgb(245 248 252 / 0.94);
+}
+
+html[data-site-theme="light"] .home-hero-pricing-unified .heroOrderBenefitLabel {
+  color: rgb(15 23 42 / 0.92);
 }
 
 @media (max-width: 420px) {
@@ -1447,10 +1454,6 @@ html[data-site-theme="light"] .heroIntroSurface .productHeroValueItem {
     grid-template-columns: 1fr;
     gap: 0.7rem;
   }
-}
-
-html[data-site-theme="light"] .heroOrderBenefitLabel {
-  color: #fff;
 }
 
 .heroFormCard :global(.order-form--hero) .field {
