@@ -30,12 +30,7 @@ export function HeroAuditProcessStrip() {
         return (
           <Fragment key={label}>
             {index > 0 ? (
-              <ArrowRight
-                className={styles.heroProcessArrow}
-                style={{ "--arrow-i": index } as CSSProperties}
-                strokeWidth={2}
-                aria-hidden
-              />
+              <ArrowRight className={styles.heroProcessArrow} strokeWidth={2} aria-hidden />
             ) : null}
             <div className={styles.heroProcessStep} style={stepStyle} role="listitem" aria-label={label}>
               <div className={`${styles.heroProcessIcon} ${iconRingClass}`} style={stepStyle} aria-hidden>

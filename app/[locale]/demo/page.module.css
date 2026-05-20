@@ -1392,17 +1392,6 @@ html[data-site-theme="light"] .heroIntroSurface .productHeroValueItem {
   margin-top: 2rem;
   padding-top: 1.05rem;
   border-top: 1px solid rgb(255 255 255 / 0.1);
-  animation: hero-process-strip-in 0.5s ease-out backwards;
-  animation-delay: 0.05s;
-}
-
-@keyframes hero-process-strip-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 .heroProcessStep {
@@ -1414,8 +1403,6 @@ html[data-site-theme="light"] .heroIntroSurface .productHeroValueItem {
   gap: 0.45rem;
   text-align: center;
   --step-i: 0;
-  animation: hero-process-step-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  animation-delay: calc(0.12s + var(--step-i) * 0.11s);
 }
 
 .heroProcessArrow {
@@ -1425,9 +1412,6 @@ html[data-site-theme="light"] .heroIntroSurface .productHeroValueItem {
   margin-top: 0.72rem;
   color: rgb(255 255 255 / 0.62);
   stroke-width: 2;
-  --arrow-i: 1;
-  animation: hero-process-arrow-flow 2.6s ease-in-out infinite;
-  animation-delay: calc(0.35s + var(--arrow-i) * 0.22s);
 }
 
 .heroProcessIcon {
@@ -1494,20 +1478,6 @@ html[data-site-theme="light"] .heroIntroSurface .productHeroValueItem {
   z-index: 1;
   width: 1.15rem;
   height: 1.15rem;
-  transform-origin: center;
-  animation: hero-process-icon-tilt 4.2s ease-in-out infinite;
-  animation-delay: calc(0.15s + var(--step-i) * 0.28s);
-}
-
-@keyframes hero-process-step-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @keyframes hero-process-icon-scan {
@@ -1524,31 +1494,6 @@ html[data-site-theme="light"] .heroIntroSurface .productHeroValueItem {
   100% {
     transform: translateX(120%);
     opacity: 0;
-  }
-}
-
-@keyframes hero-process-icon-tilt {
-  0%,
-  100% {
-    transform: rotate(0deg) scale(1);
-  }
-  33% {
-    transform: rotate(-5deg) scale(1.05);
-  }
-  66% {
-    transform: rotate(5deg) scale(1.05);
-  }
-}
-
-@keyframes hero-process-arrow-flow {
-  0%,
-  100% {
-    opacity: 0.32;
-    transform: scaleX(0.92);
-  }
-  50% {
-    opacity: 0.88;
-    transform: scaleX(1);
   }
 }
 
@@ -1604,17 +1549,9 @@ html[data-site-theme="light"] .heroFormCard .heroProcessLabelLine {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .heroProcessStrip,
-  .heroProcessStep,
-  .heroProcessArrow,
-  .heroProcessIconRingBlue::after,
-  .heroProcessIconRingRisk::after,
-  .heroProcessIconSvg {
-    animation: none !important;
-  }
-
   .heroProcessIconRingBlue::after,
   .heroProcessIconRingRisk::after {
+    animation: none !important;
     opacity: 0;
   }
 }
