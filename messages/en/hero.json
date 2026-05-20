@@ -14,12 +14,12 @@
     "productValue2": "Listing Audit",
     "productValue3": "Technical Risk Analysis",
     "productValue4": "Expert Consultation",
-    "heroProcessAria": "What the audit includes — four steps",
-    "heroProcessSteps": [
-      { "line1": "History", "line2": "reports" },
-      { "line1": "Risk", "line2": "analysis" },
-      { "line1": "Listing", "line2": "audit" },
-      { "line1": "IRISS", "line2": "Consultation" }
+    "heroOrderBenefitsAria": "What the audit includes",
+    "heroOrderBenefits": [
+      "History reports",
+      "Listing audit",
+      "Technical risk analysis",
+      "Expert consultation"
     ],
     "italyKicker": "A report that reveals much more...",
     "lensLine1": "CAR HISTORY AND LISTING",

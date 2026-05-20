@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { HeroVisual } from "@/components/HeroVisual";
+import { HeroOrderBenefitsGrid } from "@/components/home/HeroOrderBenefitsGrid";
 import { OrderForm } from "@/components/OrderForm";
 import {
   HOME_HERO_ORDER_FORM_ID,
@@ -63,7 +64,8 @@ export default function HomeProductHero({ showProvinSelect = false, comparisonCo
                 </div>
 
                 {heroOrderStep === 1 ? (
-                  <div className="pointer-events-auto relative z-[80] mt-4 flex w-full max-w-[520px] min-w-0 flex-col items-stretch gap-2 sm:mt-5">
+                  <div className="pointer-events-auto relative z-[80] mt-4 flex w-full max-w-[520px] min-w-0 flex-col items-stretch gap-3 sm:mt-5">
+                    <HeroOrderBenefitsGrid />
                     <button
                       type="button"
                       onClick={() => {
