@@ -245,8 +245,9 @@ export function OrderForm({
     : "mt-1 text-[11px] font-normal leading-snug text-[#86868b]";
 
   const reqStarClass = hero ? "text-red-400" : "text-red-600";
+  const heroStep1InputClass = "w-full min-w-0 font-mono uppercase tracking-wide";
   const firstStepVinInputClassDefault = `${inputBase} font-mono uppercase tracking-wide ${firstStepInfoTextSizeClass}`;
-  const firstStepListingInputClassDefault = `${inputBase} ${firstStepInfoTextSizeClass}`;
+  const firstStepListingInputClassDefault = `${inputBase} font-mono uppercase tracking-wide ${firstStepInfoTextSizeClass}`;
   const secondStepVinInputClassDefault = `${inputBase} font-mono uppercase tracking-wide`;
   function goBackToStepOne() {
     setStep(1);
@@ -295,7 +296,7 @@ export function OrderForm({
                   maxLength={17}
                   spellCheck={false}
                   value={vin}
-                  className="w-full min-w-0 font-mono uppercase tracking-wide"
+                  className={heroStep1InputClass}
                   placeholder={step === 1 ? t("vinPlaceholderStep1") : t("vinPlaceholderHero")}
                   aria-invalid={
                     (step === 1 && Boolean(heroStep1Errors.vin)) || (step === 2 && Boolean(heroStep2FieldErrors.vin))
@@ -371,7 +372,7 @@ export function OrderForm({
                   name="listingUrl"
                   type="url"
                   value={listingUrl}
-                  className="w-full"
+                  className={hero ? heroStep1InputClass : "w-full"}
                   placeholder={step === 1 ? t("listingPlaceholderStep1") : t("urlPlaceholder")}
                   aria-invalid={
                     (step === 1 && Boolean(heroStep1Errors.listing)) ||
