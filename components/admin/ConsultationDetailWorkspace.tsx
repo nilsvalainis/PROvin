@@ -42,6 +42,47 @@ const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
 const sectionTitle = `font-medium uppercase tracking-wide text-[var(--color-provin-muted)] ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
 
 const CONSULTATION_WIZARD_STEP_COUNT = 1 + CONSULTATION_SLOT_COUNT + 1;
+const CONSULTATION_WS_BACKUP_LIMIT = 20;
+
+function storageKeyConsultationWorkspace(sessionId: string) {
+  return `provin-admin-consultation-ws-v1-${sessionId}`;
+}
+
+function storageKeyConsultationWorkspaceBackup(sessionId: string) {
+  return `provin-admin-consultation-ws-backup-v1-${sessionId}`;
+}
+
+function serializeConsultationWorkspace(
+  ws: ConsultationDraftWorkspaceBody,
+  pdfVis: PdfVisibilitySettings,
+): string {
+  return JSON.stringify({
+    slots: ws.slots,
+    irissApproved: ws.irissApproved,
+    previewConfirmed: ws.previewConfirmed,
+    pdfVisibility: pdfVis,
+  });
+}
+
+function scoreConsultationWorkspace(ws: ConsultationDraftWorkspaceBody): number {
+  let s = 0;
+  if (ws.irissApproved.trim()) s += 2;
+  if (ws.previewConfirmed) s += 1;
+  for (const slot of ws.slots) {
+    if (slot.listingUrl.trim()) s += 1;
+    if (slot.salePrice.trim()) s += 1;
+    const blocks = mergeSourceBlocksWithDefaults(
+      slot.sourceBlocks && typeof slot.sourceBlocks === "object" ? slot.sourceBlocks : {},
+    );
+    if (csddTrafficLevel(blocks.csdd) !== "empty") s += 4;
+    if (ltabTrafficLevel(blocks.ltab) !== "empty") s += 2;
+    if (slot.ieteikumiApskatei.trim()) s += 2;
+    if (slot.cenasAtbilstiba.trim()) s += 2;
+    if (slot.kopsavilkums.trim()) s += 2;
+    s += slot.photos?.length ?? 0;
+  }
+  return s;
+}
 
 function parseWorkspaceFromServerJson(json: string | null): ConsultationDraftWorkspaceBody {
   if (!json) return defaultConsultationWorkspace();
@@ -120,22 +161,28 @@ export function ConsultationDetailWorkspace({
   clientDashboardSlot: ReactNode;
   clientTabLevelInputs: { customerName: string; customerEmail: string; customerPhone: string };
 }) {
-  const [ws, setWs] = useState<ConsultationDraftWorkspaceBody>(() =>
-    parseWorkspaceFromServerJson(serverWorkspaceJson),
-  );
+  const [ws, setWs] = useState<ConsultationDraftWorkspaceBody>(() => defaultConsultationWorkspace());
+  const [workspaceHydrated, setWorkspaceHydrated] = useState(false);
   const [consultationStep, setConsultationStep] = useState(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const skipFirstHydrate = useRef(true);
+  const wsPersistRef = useRef(ws);
+  const pdfVisibilityRef = useRef(pdfVisibilityProp);
+  const hydrationSnapshotRef = useRef("");
+  const skipFirstServerPersist = useRef(true);
 
   useEffect(() => {
-    setWs(parseWorkspaceFromServerJson(serverWorkspaceJson));
-  }, [serverWorkspaceJson]);
+    wsPersistRef.current = ws;
+  }, [ws]);
+
+  useEffect(() => {
+    pdfVisibilityRef.current = pdfVisibilityProp;
+  }, [pdfVisibilityProp]);
 
   const persistWorkspace = useCallback(
     async (body: ConsultationDraftWorkspaceBody, pdfVis: PdfVisibilitySettings) => {
-      if (!orderDraftPersistenceEnabled) return;
+      if (!orderDraftPersistenceEnabled) return false;
       try {
-        await fetch("/api/admin/consultation-draft", {
+        const res = await fetch("/api/admin/consultation-draft", {
           method: "PATCH",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -149,12 +196,113 @@ export function ConsultationDetailWorkspace({
             },
           }),
         });
+        return res.ok;
       } catch {
-        /* ignore */
+        return false;
       }
     },
     [orderDraftPersistenceEnabled, payload.sessionId],
   );
+
+  const flushWorkspaceToLocalStorage = useCallback(() => {
+    if (!workspaceHydrated) return;
+    try {
+      const snapshot = serializeConsultationWorkspace(wsPersistRef.current, pdfVisibilityRef.current);
+      localStorage.setItem(storageKeyConsultationWorkspace(payload.sessionId), snapshot);
+    } catch {
+      /* quota */
+    }
+  }, [workspaceHydrated, payload.sessionId]);
+
+  const pushWorkspaceBackup = useCallback(
+    (snapshot: string) => {
+      try {
+        const key = storageKeyConsultationWorkspaceBackup(payload.sessionId);
+        const prev = JSON.parse(localStorage.getItem(key) ?? "[]") as { savedAt: string; data: string }[];
+        const next = [{ savedAt: new Date().toISOString(), data: snapshot }, ...(Array.isArray(prev) ? prev : [])].slice(
+          0,
+          CONSULTATION_WS_BACKUP_LIMIT,
+        );
+        localStorage.setItem(key, JSON.stringify(next));
+      } catch {
+        /* quota */
+      }
+    },
+    [payload.sessionId],
+  );
+
+  useEffect(() => {
+    setWorkspaceHydrated(false);
+    try {
+      const keyWs = storageKeyConsultationWorkspace(payload.sessionId);
+      const keyBackup = storageKeyConsultationWorkspaceBackup(payload.sessionId);
+      const localRaw = localStorage.getItem(keyWs);
+      const localWs = localRaw ? parseWorkspaceFromServerJson(localRaw) : null;
+      const serverWs = parseWorkspaceFromServerJson(serverWorkspaceJson);
+      const backupWs = (() => {
+        const rawBackup = localStorage.getItem(keyBackup);
+        if (!rawBackup) return null;
+        try {
+          const arr = JSON.parse(rawBackup) as { savedAt: string; data: string }[];
+          if (!Array.isArray(arr)) return null;
+          for (const item of arr) {
+            if (!item || typeof item.data !== "string") continue;
+            const parsed = parseWorkspaceFromServerJson(item.data);
+            if (scoreConsultationWorkspace(parsed) > 0) return parsed;
+          }
+          return null;
+        } catch {
+          return null;
+        }
+      })();
+
+      const candidates: { source: "local" | "backup" | "server"; data: ConsultationDraftWorkspaceBody }[] = [];
+      if (localWs && scoreConsultationWorkspace(localWs) > 0) candidates.push({ source: "local", data: localWs });
+      if (backupWs) candidates.push({ source: "backup", data: backupWs });
+      if (serverWs && scoreConsultationWorkspace(serverWs) > 0) candidates.push({ source: "server", data: serverWs });
+
+      const rank: Record<"local" | "backup" | "server", number> = { local: 3, backup: 2, server: 1 };
+      if (candidates.length > 0) {
+        candidates.sort((a, b) => {
+          const sd = scoreConsultationWorkspace(b.data) - scoreConsultationWorkspace(a.data);
+          if (sd !== 0) return sd;
+          return rank[b.source] - rank[a.source];
+        });
+        const picked = candidates[0]!.data;
+        setWs(picked);
+        const mergedVis = mergePdfVisibility(picked.pdfVisibility ?? pdfVisibilityProp);
+        onPdfVisibilityChange(mergedVis);
+        hydrationSnapshotRef.current = serializeConsultationWorkspace(picked, mergedVis);
+        if (candidates[0]!.source !== "local" || !localRaw) {
+          try {
+            localStorage.setItem(keyWs, hydrationSnapshotRef.current);
+          } catch {
+            /* quota */
+          }
+        }
+      } else {
+        setWs(serverWs);
+        const mergedVis = mergePdfVisibility(serverWs.pdfVisibility ?? pdfVisibilityProp);
+        onPdfVisibilityChange(mergedVis);
+        hydrationSnapshotRef.current = serializeConsultationWorkspace(serverWs, mergedVis);
+      }
+    } catch {
+      const fallback = parseWorkspaceFromServerJson(serverWorkspaceJson);
+      setWs(fallback);
+      const mergedVis = mergePdfVisibility(fallback.pdfVisibility ?? pdfVisibilityProp);
+      onPdfVisibilityChange(mergedVis);
+      hydrationSnapshotRef.current = serializeConsultationWorkspace(fallback, mergedVis);
+    }
+    skipFirstServerPersist.current = true;
+    setWorkspaceHydrated(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- serverWorkspaceJson atvēršanā; nav pārrakstīt katrā refresh
+  }, [payload.sessionId, onPdfVisibilityChange]);
+
+  useEffect(() => {
+    const onUnload = () => flushWorkspaceToLocalStorage();
+    window.addEventListener("beforeunload", onUnload);
+    return () => window.removeEventListener("beforeunload", onUnload);
+  }, [flushWorkspaceToLocalStorage]);
 
   const replaceSlotPhotosStructural = useCallback(
     (slotIndex: number, nextPhotos: ConsultationSlotPhotoMeta[]) => {
@@ -181,18 +329,58 @@ export function ConsultationDetailWorkspace({
   }, []);
 
   useEffect(() => {
-    if (skipFirstHydrate.current) {
-      skipFirstHydrate.current = false;
+    if (!workspaceHydrated) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      void (async () => {
+        const cur = wsPersistRef.current;
+        const snapshot = serializeConsultationWorkspace(cur, pdfVisibilityRef.current);
+        if (snapshot === hydrationSnapshotRef.current) return;
+        flushWorkspaceToLocalStorage();
+        pushWorkspaceBackup(snapshot);
+        if (orderDraftPersistenceEnabled) {
+          const ok = await persistWorkspace(cur, pdfVisibilityRef.current);
+          if (ok) hydrationSnapshotRef.current = snapshot;
+        } else {
+          hydrationSnapshotRef.current = snapshot;
+        }
+      })();
+    }, 600);
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, [
+    ws,
+    pdfVisibilityProp,
+    persistWorkspace,
+    workspaceHydrated,
+    flushWorkspaceToLocalStorage,
+    pushWorkspaceBackup,
+    orderDraftPersistenceEnabled,
+  ]);
+
+  useEffect(() => {
+    if (!workspaceHydrated) return;
+    if (skipFirstServerPersist.current) {
+      skipFirstServerPersist.current = false;
       return;
     }
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      void persistWorkspace(ws, pdfVisibilityProp);
-    }, 800);
+      void (async () => {
+        const cur = wsPersistRef.current;
+        const snapshot = serializeConsultationWorkspace(cur, pdfVisibilityRef.current);
+        flushWorkspaceToLocalStorage();
+        if (orderDraftPersistenceEnabled) {
+          const ok = await persistWorkspace(cur, pdfVisibilityRef.current);
+          if (ok) hydrationSnapshotRef.current = snapshot;
+        }
+      })();
+    }, 400);
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
-  }, [ws, pdfVisibilityProp, persistWorkspace]);
+  }, [pdfVisibilityProp, persistWorkspace, workspaceHydrated, flushWorkspaceToLocalStorage, orderDraftPersistenceEnabled]);
 
   const updateSlotField = useCallback(
     (slotIdx: number, key: keyof ConsultationDraftWorkspaceBody["slots"][0], value: string) => {
@@ -308,8 +496,13 @@ export function ConsultationDetailWorkspace({
       clearTimeout(saveTimer.current);
       saveTimer.current = null;
     }
-    void persistWorkspace(ws, pdfVisibilityProp);
-  }, [persistWorkspace, ws, pdfVisibilityProp]);
+    const snapshot = serializeConsultationWorkspace(wsPersistRef.current, pdfVisibilityRef.current);
+    flushWorkspaceToLocalStorage();
+    pushWorkspaceBackup(snapshot);
+    void persistWorkspace(wsPersistRef.current, pdfVisibilityRef.current).then((ok) => {
+      if (ok) hydrationSnapshotRef.current = snapshot;
+    });
+  }, [persistWorkspace, flushWorkspaceToLocalStorage, pushWorkspaceBackup]);
 
   const goStep = useCallback(
     (idx: number) => {
@@ -318,6 +511,54 @@ export function ConsultationDetailWorkspace({
     },
     [flushPersist],
   );
+
+  const restoreLatestServerRevision = useCallback(async () => {
+    if (!orderDraftPersistenceEnabled) return;
+    try {
+      const listRes = await fetch(
+        `/api/admin/consultation-draft?sessionId=${encodeURIComponent(payload.sessionId)}&limit=8`,
+        { credentials: "include" },
+      );
+      if (!listRes.ok) {
+        alert("Neizdevās ielādēt saglabātās versijas.");
+        return;
+      }
+      const listData = (await listRes.json()) as { revisions?: { revisionId: string }[] };
+      const revisionId = listData.revisions?.[0]?.revisionId;
+      if (!revisionId) {
+        alert("Nav atrasta vecāka servera versija.");
+        return;
+      }
+      if (!window.confirm("Atjaunot pēdējo saglabāto servera versiju? Nesaglabātie šīs sesijas labojumi pārlūkā var tikt pārrakstīti.")) {
+        return;
+      }
+      const res = await fetch("/api/admin/consultation-draft", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "restore_revision",
+          sessionId: payload.sessionId,
+          revisionId,
+        }),
+      });
+      if (!res.ok) {
+        alert("Neizdevās atjaunot versiju.");
+        return;
+      }
+      window.location.reload();
+    } catch {
+      alert("Neizdevās savienoties ar serveri.");
+    }
+  }, [orderDraftPersistenceEnabled, payload.sessionId]);
+
+  if (!workspaceHydrated) {
+    return (
+      <div className={`mx-auto w-full min-w-0 ${ADMIN_CONTENT_MAX} py-8 text-center text-sm text-[var(--color-provin-muted)]`}>
+        Ielādē konsultācijas datus…
+      </div>
+    );
+  }
 
   const renderSlotPanel = (idx: number) => {
     const slot = ws.slots[idx]!;
@@ -460,6 +701,16 @@ export function ConsultationDetailWorkspace({
               );
             })}
           </div>
+          {orderDraftPersistenceEnabled ? (
+            <button
+              type="button"
+              onClick={() => void restoreLatestServerRevision()}
+              className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2.5 py-2 text-[10px] font-medium text-[var(--color-provin-muted)] shadow-sm transition hover:text-[var(--color-apple-text)]"
+              title="Atjaunot pēdējo JSON versiju no servera (_revisions)"
+            >
+              Atjaunot datus
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => void openPdf()}

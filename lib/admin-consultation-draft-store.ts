@@ -17,7 +17,7 @@ import {
 } from "@/lib/admin-consultation-draft-types";
 import { pruneOrphanConsultationSlotPhotos } from "@/lib/admin-consultation-photo-fs";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
-import { createDefaultSourceBlocks, hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
+import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 
 const DEFAULT_RELATIVE_DIR = ".data/admin-consultation-drafts";
@@ -63,16 +63,8 @@ function makeRevisionId(now = new Date()): string {
   return `${iso}_${rnd}`;
 }
 
-function normalizeSlotSourceBlocks(raw: unknown) {
-  const json = JSON.stringify({
-    sourceBlocks: raw && typeof raw === "object" ? raw : {},
-    iriss: "",
-    apskatesPlāns: "",
-    cenasAtbilstiba: "",
-    previewConfirmed: false,
-  });
-  const h = hydrateWorkspaceFromStorage(json);
-  return h?.sourceBlocks ?? createDefaultSourceBlocks();
+function normalizeSlotSourceBlocks(raw: unknown): WorkspaceSourceBlocks {
+  return mergeSourceBlocksWithDefaults(raw && typeof raw === "object" ? raw : {});
 }
 
 function normalizeSlotPhotosMeta(raw: unknown): ConsultationSlotPhotoMeta[] {
