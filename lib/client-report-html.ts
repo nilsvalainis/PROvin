@@ -513,6 +513,37 @@ function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfVisibili
   return `<div class="pdf-unified-incidents-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE)}${tablesHtml}${adminNoteHtml}${sourceCountHtml}</div>`;
 }
 
+/** CSDD — strukturētie lauki + komentāri (viena PDF zona, kā audita atskaitē). */
+export function buildCsddAvotuZoneHtml(form: CsddFormFields): string {
+  if (!csddFormHasContent(form)) return "";
+
+  const head = sectionHeadBrand(sectionIconPdfHtml("scrollText"), PDF_SUB_CSDD);
+  const commentTrim = mergePdfChecklistAndComments(form.pdfChecklist, form.comments ?? "").trim();
+  const hasComments = commentTrim.length > 0;
+  const regRows: string[] = [];
+  for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
+    const v = (form[key] as string).trim();
+    if (!v) continue;
+    let flag: CsddFieldUiFlag = "none";
+    if (key === "particulateMatter") flag = getParticulateMatterUiFlag(v);
+    else if (key === "nextInspectionDate") flag = getNextInspectionDateUiFlag(v);
+    const valueHtml = escapeCsddPdfFieldValue(key, v);
+    if (flag !== "none" && (key === "particulateMatter" || key === "nextInspectionDate")) {
+      regRows.push(buildCsddPdfAlertRowHtml(escapeHtml(label), valueHtml, flag));
+    } else {
+      regRows.push(`<tr><td>${escapeHtml(label)}</td><td>${valueHtml}</td></tr>`);
+    }
+  }
+  const tableHtml =
+    regRows.length > 0
+      ? `<table class="mirror-table mirror-table--csdd"><tbody>${regRows.join("\n")}</tbody></table>`
+      : "";
+  const commentHtml = hasComments ? pdfAvotuCommentIsland(commentTrim) : "";
+  if (!tableHtml && !commentHtml) return "";
+  const bodyInner = `${tableHtml}${commentHtml}`;
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-source-section-body">${bodyInner}</div></div>`;
+}
+
 /** CSDD — apskates datumi + strukturētie lauki (viena galvenā līmeņa zona, kā NOBRAUKUMA VĒSTURE). */
 function buildCsddAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   if (!vis.csdd) return "";
@@ -521,41 +552,17 @@ function buildCsddAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilitySett
   const hasRaw = p.csdd.trim().length > 0;
   if (!hasStruct && !hasRaw) return "";
 
-  const head = sectionHeadBrand(sectionIconPdfHtml("scrollText"), PDF_SUB_CSDD);
-
   if (hasStruct && form) {
-    const f = form;
-    const commentTrim = mergePdfChecklistAndComments(f.pdfChecklist, f.comments ?? "").trim();
-    const hasComments = commentTrim.length > 0;
-    const regRows: string[] = [];
-    for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
-      const v = (f[key] as string).trim();
-      if (!v) continue;
-      let flag: CsddFieldUiFlag = "none";
-      if (key === "particulateMatter") flag = getParticulateMatterUiFlag(v);
-      else if (key === "nextInspectionDate") flag = getNextInspectionDateUiFlag(v);
-      const valueHtml = escapeCsddPdfFieldValue(key, v);
-      if (flag !== "none" && (key === "particulateMatter" || key === "nextInspectionDate")) {
-        regRows.push(buildCsddPdfAlertRowHtml(escapeHtml(label), valueHtml, flag));
-      } else {
-        regRows.push(`<tr><td>${escapeHtml(label)}</td><td>${valueHtml}</td></tr>`);
-      }
+    const zone = buildCsddAvotuZoneHtml(form);
+    if (zone) return zone;
+    if (hasRaw) {
+      const head = sectionHeadBrand(sectionIconPdfHtml("scrollText"), PDF_SUB_CSDD);
+      return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-source-section-body"><pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre></div></div>`;
     }
-    const tableHtml =
-      regRows.length > 0
-        ? `<table class="mirror-table mirror-table--csdd"><tbody>${regRows.join("\n")}</tbody></table>`
-        : "";
-    const commentHtml = hasComments ? pdfAvotuCommentIsland(commentTrim) : "";
-    if (!tableHtml && !commentHtml) {
-      if (hasRaw) {
-        return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-source-section-body"><pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre></div></div>`;
-      }
-      return "";
-    }
-    const bodyInner = `${tableHtml}${commentHtml}`;
-    return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-source-section-body">${bodyInner}</div></div>`;
+    return "";
   }
 
+  const head = sectionHeadBrand(sectionIconPdfHtml("scrollText"), PDF_SUB_CSDD);
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-source-section-body"><pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre></div></div>`;
 }
 

@@ -7,9 +7,10 @@ import type {
   ConsultationSlotDraft,
 } from "@/lib/admin-consultation-draft-types";
 import {
-  csddFormToConsultationPdfStructuredText,
+  csddFormHasContent,
   ltabBlockToPlainText,
   mergeSourceBlocksWithDefaults,
+  SOURCE_BLOCK_LABELS,
   type CsddFormFields,
 } from "@/lib/admin-source-blocks";
 import {
@@ -19,7 +20,11 @@ import {
   pdfLayoutDraftExtraCss,
   provincLogoSvg,
 } from "@/lib/client-report-pdf-layout-draft";
-import { getClientReportPrintCss } from "@/lib/client-report-html";
+import {
+  buildCsddAvotuZoneHtml,
+  buildUnifiedMileageTableHtml,
+  getClientReportPrintCss,
+} from "@/lib/client-report-html";
 import { adminRichHtmlToPdfSafeHtml } from "@/lib/admin-rich-comment-html";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { sectionIconPdfHtml } from "@/lib/section-icons";
@@ -34,41 +39,45 @@ function esc(s: string): string {
 
 const DOC_TITLE = "PROVIN SELECT, STRATĒĢISKĀ KONSULTĀCIJA";
 
-/** Gads no CSDD „Pirmā reģistrācija” (bez pilna datuma virsrakstā). */
-function extractRegistrationYear(firstRegistration: string): string | null {
-  const t = firstRegistration.trim();
-  if (!t) return null;
-  const iso = t.match(/^(\d{4})-\d{2}-\d{2}$/);
-  if (iso?.[1]) return iso[1];
-  const dmy = t.match(/(\d{1,2})[./](\d{1,2})[./](\d{4})/);
-  if (dmy?.[3]) return dmy[3];
-  const yOnly = t.match(/\b(19|20)\d{2}\b/);
-  return yOnly?.[0] ?? null;
+/** Piem. „AUDI Q3” → „Audi Q3”. */
+function formatSlotPanelMakeModel(makeModel: string): string {
+  const t = makeModel.trim();
+  if (!t) return "";
+  return t
+    .split(/\s+/)
+    .map((w) => (w.length <= 3 && /^[A-Z0-9]+$/i.test(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()))
+    .join(" ");
 }
 
-/** Piem. „11 000 eiro”. */
-function formatConsultationPriceLabel(salePrice: string): string | null {
+function buildSlotPanelTitle(csdd: CsddFormFields, slotNumber: number): string {
+  const mm = formatSlotPanelMakeModel(csdd.makeModel);
+  return mm ? `NR.${slotNumber} / ${mm}` : `NR.${slotNumber}`;
+}
+
+/** Pārdošanas cena PDF šūnai — piem. „11 000 €”. */
+function formatSalePricePdfCell(salePrice: string): string {
   const t = salePrice.trim();
-  if (!t) return null;
-  if (/eiro/i.test(t)) return t.replace(/eur\b/gi, "eiro").replace(/€/g, "eiro");
+  if (!t) return "—";
+  if (/€/.test(t)) return t;
+  if (/eiro/i.test(t)) {
+    const digits = t.replace(/[^\d]/g, "");
+    if (digits) {
+      const n = parseInt(digits, 10);
+      if (Number.isFinite(n)) return `${n.toLocaleString("lv-LV")} €`;
+    }
+    return t.replace(/\beiro\b/gi, "€").trim();
+  }
   const digits = t.replace(/[^\d]/g, "");
   if (!digits) return t;
   const n = parseInt(digits, 10);
   if (!Number.isFinite(n)) return t;
-  return `${n.toLocaleString("lv-LV")} eiro`;
+  return `${n.toLocaleString("lv-LV")} €`;
 }
 
-function buildSlotPanelTitle(csdd: CsddFormFields, salePrice: string, slotNumber: number): string {
-  const parts: string[] = [];
-  const mm = csdd.makeModel.trim();
-  if (mm) parts.push(mm);
-  const year = extractRegistrationYear(csdd.firstRegistration);
-  if (year) parts.push(year);
-  const price = formatConsultationPriceLabel(salePrice);
-  if (price) parts.push(price);
-  if (parts.length > 0) return parts.join(", ");
-  return `Nr. ${slotNumber}`;
-}
+const CONSULTATION_MILEAGE_OMIT_VENDOR_TITLES = new Set([
+  SOURCE_BLOCK_LABELS.autodna,
+  SOURCE_BLOCK_LABELS.carvertical,
+]);
 
 function richBlockSubsection(title: string, bodyHtml: string): string {
   const inner = bodyHtml.trim();
@@ -94,21 +103,22 @@ function richCommentSubsection(title: string, html: string): string {
   return richBlockSubsection(title, safe);
 }
 
-function buildCsddConsultationSubsection(csdd: CsddFormFields): string {
-  const structured = csddFormToConsultationPdfStructuredText(csdd).trim();
-  const commentsHtml = adminRichHtmlToPdfSafeHtml(csdd.comments);
-  if (!structured && !commentsHtml) return "";
-  const body: string[] = [];
-  if (structured) {
-    body.push(`<pre class="pdf-select-plain">${esc(structured)}</pre>`);
+/** CSDD + nobraukuma grafiks/tabulas — tāpat kā PROVIN audita PDF, iekļauts NR.N panelī. */
+function buildConsultationSlotCsddPdfBlocks(csdd: CsddFormFields, vis: PdfVisibilitySettings): string {
+  const parts: string[] = [];
+  if (vis.unifiedMileage && vis.csddMileageTable) {
+    const mileage = buildUnifiedMileageTableHtml(
+      { csddForm: csdd },
+      { omitAutoRecords: true, omitVendorBlockTitles: CONSULTATION_MILEAGE_OMIT_VENDOR_TITLES },
+    );
+    if (mileage) parts.push(mileage);
   }
-  if (commentsHtml) {
-    body.push(`<div class="pdf-select-rich-body">${commentsHtml}</div>`);
+  if (vis.csdd) {
+    const zone = buildCsddAvotuZoneHtml(csdd);
+    if (zone) parts.push(zone);
   }
-  return `<div class="pdf-select-subsection" role="region">
-    <p class="pdf-select-subsection-title">${esc("CSDD")}</p>
-    ${body.join("")}
-  </div>`;
+  if (parts.length === 0) return "";
+  return `<div class="pdf-select-csdd-stack">${parts.join("")}</div>`;
 }
 
 function buildConsultationSlotPhotosInner(
@@ -138,7 +148,7 @@ function consultationSlotHasPdfContent(
   if (slot.listingUrl.trim() || slot.salePrice.trim()) return true;
   if (slot.ieteikumiApskatei.trim() || slot.cenasAtbilstiba.trim() || slot.kopsavilkums.trim()) return true;
   if ((slot.photos ?? []).length > 0) return true;
-  if (vis.csdd && (csddFormToConsultationPdfStructuredText(csdd).trim() || csdd.comments.trim())) return true;
+  if (vis.csdd && csddFormHasContent(csdd)) return true;
   if (vis.ltab && ltabBlockToPlainText(mergeSourceBlocksWithDefaults(slot.sourceBlocks).ltab).trim()) return true;
   return false;
 }
@@ -155,7 +165,7 @@ function buildConsultationSlotPanel(
   const csdd = safeBlocks.csdd;
   if (!consultationSlotHasPdfContent(slot, csdd, vis)) return "";
 
-  const panelTitle = buildSlotPanelTitle(csdd, slot.salePrice, slotNumber);
+  const panelTitle = buildSlotPanelTitle(csdd, slotNumber);
   const inner: string[] = [];
 
   const kv: string[] = [];
@@ -167,14 +177,10 @@ function buildConsultationSlotPanel(
   } else {
     kv.push(`<tr><td>Sludinājuma links</td><td>—</td></tr>`);
   }
-  kv.push(
-    `<tr><td>Pārdošanas cena</td><td>${slot.salePrice.trim() ? esc(slot.salePrice.trim()) : "—"}</td></tr>`,
-  );
+  kv.push(`<tr><td>Pārdošanas cena</td><td>${esc(formatSalePricePdfCell(slot.salePrice))}</td></tr>`);
   inner.push(`<table class="pdf-v1-kv pdf-select-slot-kv"><tbody>${kv.join("")}</tbody></table>`);
 
-  if (vis.csdd) {
-    inner.push(buildCsddConsultationSubsection(csdd));
-  }
+  inner.push(buildConsultationSlotCsddPdfBlocks(csdd, vis));
 
   if (vis.ltab) {
     inner.push(plainBlockSubsection("LTAB", ltabBlockToPlainText(safeBlocks.ltab)));
@@ -290,6 +296,8 @@ export function buildSelectConsultationDocumentHtml(args: {
     .pdf-select-slot-panel{break-inside:avoid-page;}
     .pdf-select-slot-body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:12px;}
     .pdf-select-slot-kv{margin:0;}
+    .pdf-select-csdd-stack{display:flex;flex-direction:column;gap:12px;}
+    .pdf-select-csdd-stack > .pdf-unified-mileage-zone{margin:0;}
     .pdf-select-subsection{margin:0;}
     .pdf-select-subsection-title{
       margin:0 0 6px;font-family:Inter,ui-sans-serif,sans-serif;font-size:0.7rem;font-weight:700;
