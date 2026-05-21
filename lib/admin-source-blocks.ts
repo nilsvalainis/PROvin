@@ -456,6 +456,29 @@ export function csddFormToPlainText(f: CsddFormFields): string {
   return lines.join("\n");
 }
 
+/** PROVIN SELECT PDF — strukturētie CSDD lauki bez `rawUnprocessedData`. */
+export function csddFormToConsultationPdfStructuredText(f: CsddFormFields): string {
+  const lines: string[] = [];
+  for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
+    const v = (f[key] as string).trim();
+    if (v) lines.push(`${label} ${v}`);
+  }
+  const mh = f.mileageHistory.filter(csddMileageRowHasData);
+  if (mh.length > 0) {
+    lines.push(CSDD_MILEAGE_UNIFIED_TITLE);
+    for (const row of mh) {
+      lines.push(
+        [row.date, row.odometer, row.country]
+          .map((c) => c.replace(/\s+/g, " ").trim())
+          .join("\t"),
+      );
+    }
+  }
+  const checklistTxt = formatSourcePdfChecklistForPdf(f.pdfChecklist);
+  if (checklistTxt) lines.push(checklistTxt);
+  return lines.join("\n");
+}
+
 export type SourceDataRow = {
   date: string;
   km: string;

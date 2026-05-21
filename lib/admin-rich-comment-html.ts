@@ -55,3 +55,28 @@ export function coerceAdminRichHtmlForDisplay(html: string): string {
   s = s.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)+/gi, "");
   return s;
 }
+
+const PDF_RICH_B_OPEN = "\uE000";
+const PDF_RICH_B_CLOSE = "\uE001";
+
+/**
+ * Admin bagātinātais HTML → drošs PDF HTML (`strong`, `br`; pārējie tagi noņemti, teksts esc).
+ */
+export function adminRichHtmlToPdfSafeHtml(html: string): string {
+  let s = coerceAdminRichHtmlForDisplay(html);
+  if (!s.trim()) return "";
+
+  s = s.replace(/<br\s*\/?>/gi, "\n");
+  s = s.replace(/<\/p>/gi, "\n\n").replace(/<p[^>]*>/gi, "");
+  s = s.replace(/<\/div>/gi, "\n").replace(/<div[^>]*>/gi, "");
+  s = s.replace(/<(strong|b)(\s[^>]*)?>/gi, PDF_RICH_B_OPEN);
+  s = s.replace(/<\/(strong|b)>/gi, PDF_RICH_B_CLOSE);
+  s = s.replace(/<[^>]+>/g, "");
+  s = decodeBasicHtmlEntities(s);
+  s = escapeHtmlPlain(s);
+  s = s
+    .replace(/\uE000/g, "<strong>")
+    .replace(/\uE001/g, "</strong>")
+    .replace(/\r?\n/g, "<br />");
+  return s.trim();
+}
