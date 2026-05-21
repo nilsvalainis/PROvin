@@ -360,7 +360,7 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
     ctx.y -= lineHeight(7);
   }
 
-  drawDzintarzemeTamePdfFooter(ctx.page, ctx.margin, ctx.pageW, ctx.font, ctx.fontBold, footerLogo);
+  drawDzintarzemeTamePdfFooter(ctx.page, ctx.margin, ctx.contentW, ctx.font, ctx.fontBold);
 
   return ctx.pdfDoc.save();
 }

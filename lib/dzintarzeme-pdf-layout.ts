@@ -15,7 +15,8 @@ export const SEC_CARD_FILL = rgb(244 / 255, 244 / 255, 245 / 255);
 export const SEC_CARD_BORDER = rgb(212 / 255, 212 / 255, 216 / 255);
 export const SEC_SHADOW = rgb(228 / 255, 228 / 255, 231 / 255);
 /** Tāmes PDF satura rāmis — tumši pelēks, ieapaļots. */
-export const CONTENT_FRAME_BORDER = rgb(55 / 255, 65 / 255, 75 / 255);
+export const CONTENT_FRAME_BORDER = rgb(38 / 255, 42 / 255, 48 / 255);
+const CONTENT_FRAME_BORDER_W = 1.75;
 export const SECTION_HEAD_GAP = 4;
 /** Kājene tāmes PDF (kontakti + centrēts zīmols). */
 export const TAME_FOOTER_BLOCK_H = 128;
@@ -122,20 +123,30 @@ export function drawRoundedRect(
   });
 }
 
-/** Saturs (bez virsraksta) — tumši pelēks rāmis, ieapaļoti stūri. */
+/** Saturs (bez virsraksta) — tumši pelēks rāmis, ieapaļoti stūri (ārpusē + balts iekšpus). */
 export function drawSectionContentFrame(
   page: PDFPage,
   opts: { x: number; yBottom: number; w: number; h: number },
 ): void {
+  const bw = CONTENT_FRAME_BORDER_W;
+  const r = CARD_RADIUS;
   drawRoundedRect(page, {
     x: opts.x,
     y: opts.yBottom,
     width: opts.w,
     height: opts.h,
-    radius: CARD_RADIUS,
+    radius: r,
+    color: CONTENT_FRAME_BORDER,
+  });
+  const inset = bw;
+  const innerR = Math.max(0, r - inset);
+  drawRoundedRect(page, {
+    x: opts.x + inset,
+    y: opts.yBottom + inset,
+    width: Math.max(0, opts.w - inset * 2),
+    height: Math.max(0, opts.h - inset * 2),
+    radius: innerR,
     color: rgb(1, 1, 1),
-    borderColor: CONTENT_FRAME_BORDER,
-    borderWidth: 1,
   });
 }
 
@@ -284,14 +295,13 @@ export type DzFooterCtx = {
   fontBold: PDFFont;
 };
 
-/** Tāmes PDF kājene: kontakti kreisajā pusē; logo + zīmols + adrese centrēti apakšā. */
+/** Tāmes PDF kājene: zīmols + adrese + kontakti — viss kreisajā pusē. */
 export function drawDzintarzemeTamePdfFooter(
   page: PDFPage,
   margin: number,
-  pageW: number,
+  contentW: number,
   font: PDFFont,
   fontBold: PDFFont,
-  logo: LogoPack | null,
 ): void {
   const contactsTitle = "Kontakti:";
   const contacts = [
@@ -309,53 +319,33 @@ export function drawDzintarzemeTamePdfFooter(
   const addrFs = 7.5;
   const titleLh = lineHeight(titleFs);
   const lineLh = lineHeight(lineFs);
+  const brandLh = lineHeight(brandFs);
   const addrLh = lineHeight(addrFs);
 
-  let logoW = 0;
-  let logoH = 0;
-  if (logo) {
-    const s = Math.min(100 / logo.dw, 28 / logo.dh, 1);
-    logoW = logo.dw * s;
-    logoH = logo.dh * s;
-  }
-
-  const brandW = measureTrackedWidth(brand, fontBold, brandFs, 0.06);
-  const addrW = measureTrackedWidth(address, font, addrFs, 0.04);
-  const brandRowW = logoW + (logo ? 8 : 0) + brandW;
-  const centerBlockW = Math.max(brandRowW, addrW);
-  const centerX0 = (pageW - centerBlockW) / 2;
-
-  const bottomPad = margin + 10;
-  drawTrackedText(page, address, {
-    x: (pageW - addrW) / 2,
-    y: bottomPad,
-    size: addrFs,
-    font,
-    color: MUTED,
-    tracking: 0.04,
-  });
-
-  const brandRowY = bottomPad + addrLh + 6;
-  let bx = centerX0 + (centerBlockW - brandRowW) / 2;
-  if (logo) {
-    page.drawImage(logo.img, {
-      x: bx,
-      y: brandRowY + (lineHeight(brandFs) - logoH) / 2,
-      width: logoW,
-      height: logoH,
-    });
-    bx += logoW + 8;
-  }
+  let ty = margin + TAME_FOOTER_BLOCK_H - 8;
   drawTrackedText(page, brand, {
-    x: bx,
-    y: brandRowY,
+    x: margin,
+    y: ty - brandFs,
     size: brandFs,
     font: fontBold,
     color: INK,
     tracking: 0.06,
   });
+  ty -= brandLh + 4;
 
-  let ty = margin + TAME_FOOTER_BLOCK_H - 6;
+  for (const ln of wrapText(address, font, addrFs, contentW)) {
+    drawTrackedText(page, ln, {
+      x: margin,
+      y: ty - addrFs,
+      size: addrFs,
+      font,
+      color: MUTED,
+      tracking: 0.04,
+    });
+    ty -= addrLh;
+  }
+  ty -= 10;
+
   drawTrackedText(page, contactsTitle, {
     x: margin,
     y: ty - titleFs,
