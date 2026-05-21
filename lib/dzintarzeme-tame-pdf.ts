@@ -183,7 +183,7 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
   const noteLines = wrapText(LV_PVN_TAME_LEGAL_NOTE, ctx.font, noteFs, iw);
   const noteH = noteLines.length * noteLh;
 
-  reserveVertical(ctx, headIzm + SECTION_HEAD_GAP + frame2BodyH + SECTION_GAP + noteH + 4, floorY);
+  reserveVertical(ctx, headIzm + SECTION_HEAD_GAP + frame2BodyH + SECTION_GAP + noteH + SECTION_GAP, floorY);
   cy = ctx.y;
   cy -= drawSectionHeadInCard(page, ix0, cy, "IZMAKSU APRĒĶINS", ctx.fontBold, PREMIUM_ORANGE);
   cy -= SECTION_HEAD_GAP;
@@ -265,7 +265,7 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
     });
     ctx.y -= noteLh;
   }
-  ctx.y -= 4;
+  ctx.y -= SECTION_GAP;
 
   const sumHead = lineHeight(8.5) + 8;
   const sumRowN = lineHeight(9.5) + 6;
