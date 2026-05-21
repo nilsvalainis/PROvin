@@ -7,6 +7,7 @@
 import { Loader2 } from "lucide-react";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
+import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { ListingAnalysisSubsectionHeading } from "@/components/admin/AdminListingAnalysisSectionChrome";
@@ -80,16 +81,21 @@ export function AdminListingAnalysisSourceBlock({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: t }),
       });
-      const data = (await res.json()) as { text?: string; error?: string };
+      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
       if (!res.ok) {
+        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
         if (data.error === "missing_groq_key") {
           setAnalyzeErr("Nav GROQ_API_KEY");
         } else if (res.status === 401 || data.error === "unauthorized") {
           setAnalyzeErr("Groq: nav admin piekļuves");
         } else if (data.error === "analysis_failed") {
-          setAnalyzeErr("Groq: neizdevās analizēt sludinājumu");
+          setAnalyzeErr(
+            detail
+              ? `Groq: neizdevās ģenerēt pārdošanas kontekstu — ${detail}`
+              : "Groq: neizdevās ģenerēt pārdošanas kontekstu",
+          );
         } else {
-          setAnalyzeErr("Groq: neizdevās");
+          setAnalyzeErr(detail ? `Groq: ${detail}` : "Groq: neizdevās");
         }
         return;
       }
@@ -172,17 +178,17 @@ export function AdminListingAnalysisSourceBlock({
               className="inline-flex items-center justify-center gap-1.5 rounded-md border border-blue-700 bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
               disabled={readOnly || disabled || analyzing || !v.listingPasteRaw.trim()}
               onClick={() => void runListingAnalyze()}
-              title="Labot gramatiku — Groq aizpilda lauku „Pārdošanas sludinājuma konteksts”"
+              title="No iekopētā apraksta ģenerē profesionālu tekstu laukā „Pārdošanas sludinājuma konteksts” (Groq)"
               aria-busy={analyzing}
             >
               {analyzing ? (
                 <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
               ) : null}
-              Labot gramatiku 🤖
+              Ģenerēt pārdošanas kontekstu
             </button>
           </div>
           {analyzeErr ? (
-            <p className="mb-1.5 truncate text-[9px] text-amber-800/90" title={analyzeErr}>
+            <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={analyzeErr}>
               {analyzeErr}
             </p>
           ) : null}
@@ -199,16 +205,22 @@ export function AdminListingAnalysisSourceBlock({
               {v.listingPasteRaw.trim() || "—"}
             </div>
           ) : (
-            <textarea
-              ref={refPaste}
-              className={`${pasteTaClass} ${autoGrow && !readOnly ? "resize-none overflow-hidden" : ""}`}
-              disabled={disabled}
-              rows={dense ? 2 : 4}
+            <AdminAiPolishTextareaShell
               value={v.listingPasteRaw}
-              onChange={(e) => onChange({ ...v, listingPasteRaw: e.target.value })}
-              placeholder=""
-              aria-label={`${LISTING_ANALYSIS_LISTING_PASTE_LABEL} — ievade analīzei (nav PDF)`}
-            />
+              disabled={disabled}
+              onPolished={(next) => onChange({ ...v, listingPasteRaw: next })}
+            >
+              <textarea
+                ref={refPaste}
+                className={`${pasteTaClass} ${autoGrow && !readOnly ? "resize-none overflow-hidden" : ""}`}
+                disabled={disabled}
+                rows={dense ? 2 : 4}
+                value={v.listingPasteRaw}
+                onChange={(e) => onChange({ ...v, listingPasteRaw: e.target.value })}
+                placeholder=""
+                aria-label={`${LISTING_ANALYSIS_LISTING_PASTE_LABEL} — ievade analīzei (nav PDF)`}
+              />
+            </AdminAiPolishTextareaShell>
           )}
         </ListingAnalysisSubsectionHeading>
 

@@ -50,16 +50,17 @@ export function AdminAiPolishTextareaShell({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: t }),
       });
-      const data = (await res.json()) as { text?: string; error?: string };
+      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
       if (!res.ok) {
+        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
         if (data.error === "missing_groq_key") {
           setError("Nav GROQ_API_KEY");
         } else if (res.status === 401 || data.error === "unauthorized") {
           setError("Groq: nav admin piekļuves");
         } else if (data.error === "polish_failed") {
-          setError("Groq: neizdevās apstrādāt tekstu");
+          setError(detail ? `Groq: neizdevās labot gramatiku — ${detail}` : "Groq: neizdevās labot gramatiku");
         } else {
-          setError("Groq: neizdevās");
+          setError(detail ? `Groq: ${detail}` : "Groq: neizdevās");
         }
         return;
       }

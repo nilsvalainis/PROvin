@@ -17,9 +17,24 @@ const MAX_INPUT_CHARS = 48_000;
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-/** Gramatikai — ātrs; analīzei — stabilāks Free Tier modelis. */
+/** Gramatikai — ātrs; analīzei — 70B (3.1-70b-versatile Groq ir dekomisionēts → 3.3). */
 const GROQ_MODEL_POLISH = "llama-3.1-8b-instant";
-const GROQ_MODEL_ANALYZE = "llama-3.1-70b-versatile";
+const GROQ_MODEL_ANALYZE = "llama-3.3-70b-versatile";
+
+/** Groq kļūdas JSON → īss lasāms teksts logiem un API `detail`. */
+export function groqHttpErrorMessage(errBody: string): string {
+  try {
+    const j = JSON.parse(errBody) as {
+      error?: { message?: string; code?: string; type?: string };
+    };
+    const msg = j?.error?.message?.trim();
+    if (msg) return msg;
+  } catch {
+    /* nav JSON */
+  }
+  const t = errBody.trim();
+  return t.length > 480 ? `${t.slice(0, 480)}…` : t || "Groq HTTP kļūda";
+}
 
 type GroqChatBody = {
   model: string;
@@ -83,7 +98,7 @@ async function groqChatComplete(
       statusText: response.statusText,
       body: payloadForLog,
     });
-    throw new Error(errBody);
+    throw new Error(groqHttpErrorMessage(errBody));
   }
 
   let json: unknown;
