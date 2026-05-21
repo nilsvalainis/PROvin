@@ -14,6 +14,11 @@ export const ACCENT_BAR = rgb(55 / 255, 65 / 255, 75 / 255);
 export const SEC_CARD_FILL = rgb(244 / 255, 244 / 255, 245 / 255);
 export const SEC_CARD_BORDER = rgb(212 / 255, 212 / 255, 216 / 255);
 export const SEC_SHADOW = rgb(228 / 255, 228 / 255, 231 / 255);
+/** Tāmes PDF satura rāmis — tumši pelēks, ieapaļots. */
+export const CONTENT_FRAME_BORDER = rgb(55 / 255, 65 / 255, 75 / 255);
+export const SECTION_HEAD_GAP = 4;
+/** Kājene tāmes PDF (kontakti + centrēts zīmols). */
+export const TAME_FOOTER_BLOCK_H = 128;
 
 export const LETTER_TRACKING = 0.18;
 export const FOOTER_BLOCK_H = 96;
@@ -114,6 +119,23 @@ export function drawRoundedRect(
     color: opts.color,
     borderColor: opts.borderColor,
     borderWidth: opts.borderWidth ?? 0,
+  });
+}
+
+/** Saturs (bez virsraksta) — tumši pelēks rāmis, ieapaļoti stūri. */
+export function drawSectionContentFrame(
+  page: PDFPage,
+  opts: { x: number; yBottom: number; w: number; h: number },
+): void {
+  drawRoundedRect(page, {
+    x: opts.x,
+    y: opts.yBottom,
+    width: opts.w,
+    height: opts.h,
+    radius: CARD_RADIUS,
+    color: rgb(1, 1, 1),
+    borderColor: CONTENT_FRAME_BORDER,
+    borderWidth: 1,
   });
 }
 
@@ -261,6 +283,100 @@ export type DzFooterCtx = {
   font: PDFFont;
   fontBold: PDFFont;
 };
+
+/** Tāmes PDF kājene: kontakti kreisajā pusē; logo + zīmols + adrese centrēti apakšā. */
+export function drawDzintarzemeTamePdfFooter(
+  page: PDFPage,
+  margin: number,
+  pageW: number,
+  font: PDFFont,
+  fontBold: PDFFont,
+  logo: LogoPack | null,
+): void {
+  const contactsTitle = "Kontakti:";
+  const contacts = [
+    "www.dzintarzemeauto.lv",
+    "Tel: +371 20420539",
+    "Tel: +371 27733440",
+    "E-mail: info@dzintarzemeauto.lv",
+  ];
+  const brand = "DZINTARZEME AUTO";
+  const address = "Hermaņi 1, Smārdes pag., Tukuma nov., LV-3129";
+
+  const titleFs = 8;
+  const lineFs = 7.5;
+  const brandFs = 9;
+  const addrFs = 7.5;
+  const titleLh = lineHeight(titleFs);
+  const lineLh = lineHeight(lineFs);
+  const addrLh = lineHeight(addrFs);
+
+  let logoW = 0;
+  let logoH = 0;
+  if (logo) {
+    const s = Math.min(100 / logo.dw, 28 / logo.dh, 1);
+    logoW = logo.dw * s;
+    logoH = logo.dh * s;
+  }
+
+  const brandW = measureTrackedWidth(brand, fontBold, brandFs, 0.06);
+  const addrW = measureTrackedWidth(address, font, addrFs, 0.04);
+  const brandRowW = logoW + (logo ? 8 : 0) + brandW;
+  const centerBlockW = Math.max(brandRowW, addrW);
+  const centerX0 = (pageW - centerBlockW) / 2;
+
+  const bottomPad = margin + 10;
+  drawTrackedText(page, address, {
+    x: (pageW - addrW) / 2,
+    y: bottomPad,
+    size: addrFs,
+    font,
+    color: MUTED,
+    tracking: 0.04,
+  });
+
+  const brandRowY = bottomPad + addrLh + 6;
+  let bx = centerX0 + (centerBlockW - brandRowW) / 2;
+  if (logo) {
+    page.drawImage(logo.img, {
+      x: bx,
+      y: brandRowY + (lineHeight(brandFs) - logoH) / 2,
+      width: logoW,
+      height: logoH,
+    });
+    bx += logoW + 8;
+  }
+  drawTrackedText(page, brand, {
+    x: bx,
+    y: brandRowY,
+    size: brandFs,
+    font: fontBold,
+    color: INK,
+    tracking: 0.06,
+  });
+
+  let ty = margin + TAME_FOOTER_BLOCK_H - 6;
+  drawTrackedText(page, contactsTitle, {
+    x: margin,
+    y: ty - titleFs,
+    size: titleFs,
+    font: fontBold,
+    color: INK,
+    tracking: 0.05,
+  });
+  ty -= titleLh + 3;
+  for (const ln of contacts) {
+    drawTrackedText(page, ln, {
+      x: margin,
+      y: ty - lineFs,
+      size: lineFs,
+      font,
+      color: MUTED,
+      tracking: 0.04,
+    });
+    ty -= lineLh;
+  }
+}
 
 export function drawDzintarzemePdfFooter(ctx: DzFooterCtx, logo: LogoPack | null): void {
   const page = ctx.page;

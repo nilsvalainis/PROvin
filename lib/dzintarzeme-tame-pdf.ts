@@ -9,26 +9,24 @@ import { PDFDocument, type PDFFont, type PDFPage } from "pdf-lib";
 import { computeDzintarzemeTame, type DzintarzemeTameInput } from "@/lib/dzintarzeme-tame-calculator";
 import {
   drawRoundedRect,
+  drawDzintarzemeTamePdfFooter,
   drawFittedOneLine,
-  drawSectionCardWithShadow,
+  drawSectionContentFrame,
   drawSectionHeadInCard,
   drawTrackedText,
-  FOOTER_BLOCK_H,
   INK,
   lineHeight,
   loadOfferLogoPack,
   MUTED,
-  SEC_CARD_FILL,
-  SEC_HEAD,
-  SECTION_GAP,
   measureTrackedWidth,
+  SECTION_GAP,
+  SECTION_HEAD_GAP,
+  TAME_FOOTER_BLOCK_H,
   wrapText,
   type LogoPack,
 } from "@/lib/dzintarzeme-pdf-layout";
 import {
-  drawPremiumFooter3ColDz,
   drawPremiumInvoiceHeader,
-  PREMIUM_FOOTER_BLOCK_H,
   PREMIUM_HIGHLIGHT_FILL,
   PREMIUM_MUTED as PREMIUM_MUTED_TEXT,
   PREMIUM_ORANGE,
@@ -110,12 +108,12 @@ async function createCtx(): Promise<PdfCtx> {
 export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInput): Promise<Uint8Array> {
   const c = computeDzintarzemeTame(input);
   const ctx = await createCtx();
-  const floorY = ctx.margin + Math.max(FOOTER_BLOCK_H, PREMIUM_FOOTER_BLOCK_H);
+  const floorY = ctx.margin + TAME_FOOTER_BLOCK_H;
   const page = ctx.page;
 
   const footerLogo: LogoPack | null = await loadOfferLogoPack(ctx.pdfDoc);
 
-  const docTitle = "AUTOMAŠĪNAS PASŪTĪJUMA IZMAKSU TĀME";
+  const docTitle = "PASŪTĪJUMA IZMAKSU APRĒĶINS";
   const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date());
   const bSub = c.input.brandModel.trim();
   const sublines = [bSub || undefined, dateStr].filter(Boolean) as string[];
@@ -137,21 +135,22 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
   const innerPad = 10;
   const ix0 = ctx.margin + innerPad;
   const iw = ctx.contentW - innerPad * 2;
+  const colRight = ctx.margin + ctx.contentW - innerPad - 2;
 
   const b = c.input.brandModel.trim();
   const v = c.input.vin.trim();
   const headPas = lineHeight(8.5) + 8;
   const lineBm = b ? lineHeight(9) + 6 : 0;
   const lineVin = v ? lineHeight(8.5) + 6 : 0;
-  const card1H = innerPad + headPas + lineBm + lineVin + innerPad + 2;
-  reserveVertical(ctx, card1H + SECTION_GAP, floorY);
-  const c1Top = ctx.y;
-  const c1Bot = c1Top - card1H;
-  drawSectionCardWithShadow(page, { x: ctx.margin, yBottom: c1Bot, w: ctx.contentW, h: card1H, fill: SEC_CARD_FILL });
-
-  let cy = c1Top - innerPad;
+  const frame1H = innerPad + lineBm + lineVin + innerPad;
+  reserveVertical(ctx, headPas + SECTION_HEAD_GAP + frame1H + SECTION_GAP, floorY);
+  let cy = ctx.y;
   cy -= drawSectionHeadInCard(page, ix0, cy, "PASŪTĪJUMS", ctx.fontBold, PREMIUM_ORANGE);
-
+  cy -= SECTION_HEAD_GAP;
+  const f1Top = cy;
+  const f1Bot = f1Top - frame1H;
+  drawSectionContentFrame(page, { x: ctx.margin, yBottom: f1Bot, w: ctx.contentW, h: frame1H });
+  cy = f1Top - innerPad;
   if (b) {
     const line = `Marka / modelis: ${b}`;
     cy -= drawFittedOneLine(page, line, ctx.fontBold, ix0, cy, iw, 9, 7, INK, 0.05) + 2;
@@ -160,57 +159,55 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
     const line = `VIN: ${v.toUpperCase()}`;
     cy -= drawFittedOneLine(page, line, ctx.fontBold, ix0, cy, iw, 8.5, 7, INK, 0.06) + 2;
   }
-  ctx.y = c1Bot - SECTION_GAP;
+  ctx.y = f1Bot - SECTION_GAP;
 
   const visibleRows = c.tableRows.filter((r) => r.net > 0);
   const labelWrapW = Math.max(120, ctx.contentW - innerPad * 2 - 100);
-  const colRight = ctx.margin + ctx.contentW - innerPad - 2;
   const fsRow = 8.5;
   const fsSub = 6.8;
   const lhRow = lineHeight(fsRow);
   const lhSub = lineHeight(fsSub);
 
-  let bodyH = innerPad;
   const headIzm = lineHeight(8.5) + 8;
-  bodyH += headIzm;
   const hdrRowH = lineHeight(8) + 6;
-  bodyH += hdrRowH;
+  let frame2BodyH = innerPad + hdrRowH;
   for (const row of visibleRows) {
     const labelLines = wrapText(row.label, ctx.font, fsRow, labelWrapW);
     const subH = row.subtitle ? lhSub : 0;
-    bodyH += Math.max(labelLines.length * lhRow, lhRow) + subH + 5;
+    frame2BodyH += Math.max(labelLines.length * lhRow, lhRow) + subH + 5;
   }
-  bodyH += 6;
+  frame2BodyH += innerPad;
+
   const noteFs = 6;
   const noteLh = premiumLineHeight(noteFs);
   const noteLines = wrapText(LV_PVN_TAME_LEGAL_NOTE, ctx.font, noteFs, iw);
-  bodyH += noteLines.length * noteLh + innerPad;
+  const noteH = noteLines.length * noteLh;
 
-  const card2H = bodyH;
-  reserveVertical(ctx, card2H + SECTION_GAP, floorY);
-  const c2Top = ctx.y;
-  const c2Bot = c2Top - card2H;
-  drawSectionCardWithShadow(page, { x: ctx.margin, yBottom: c2Bot, w: ctx.contentW, h: card2H, fill: SEC_CARD_FILL });
-
-  cy = c2Top - innerPad;
+  reserveVertical(ctx, headIzm + SECTION_HEAD_GAP + frame2BodyH + SECTION_GAP + noteH + 4, floorY);
+  cy = ctx.y;
   cy -= drawSectionHeadInCard(page, ix0, cy, "IZMAKSU APRĒĶINS", ctx.fontBold, PREMIUM_ORANGE);
+  cy -= SECTION_HEAD_GAP;
+  const f2Top = cy;
+  const f2Bot = f2Top - frame2BodyH;
+  drawSectionContentFrame(page, { x: ctx.margin, yBottom: f2Bot, w: ctx.contentW, h: frame2BodyH });
 
+  cy = f2Top - innerPad;
   drawTrackedText(page, "Apraksts", {
     x: ix0,
     y: cy - 8,
     size: 8,
     font: ctx.fontBold,
-    color: SEC_HEAD,
+    color: MUTED,
     tracking: 0.06,
   });
-  const netH = "EUR (neto)";
-  const nw = measureTrackedWidth(netH, ctx.fontBold, 8, 0.08);
-  drawTrackedText(page, netH, {
+  const sumH = "SUMMA";
+  const nw = measureTrackedWidth(sumH, ctx.fontBold, 8, 0.08);
+  drawTrackedText(page, sumH, {
     x: colRight - nw,
     y: cy - 8,
     size: 8,
     font: ctx.fontBold,
-    color: SEC_HEAD,
+    color: MUTED,
     tracking: 0.08,
   });
   cy -= hdrRowH;
@@ -254,20 +251,21 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
     });
     cy = rowTop - rowH;
   }
+  ctx.y = f2Bot - SECTION_GAP;
 
-  cy -= 4;
   for (const nl of noteLines) {
+    reserveVertical(ctx, noteLh, floorY);
     drawTrackedText(page, nl, {
       x: ix0,
-      y: cy - noteFs,
+      y: ctx.y - noteFs,
       size: noteFs,
       font: ctx.font,
       color: PREMIUM_MUTED_TEXT,
       tracking: 0.03,
     });
-    cy -= noteLh;
+    ctx.y -= noteLh;
   }
-  ctx.y = c2Bot - SECTION_GAP;
+  ctx.y -= 4;
 
   const sumHead = lineHeight(8.5) + 8;
   const sumRowN = lineHeight(9.5) + 6;
@@ -275,15 +273,21 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
   const galaLh = premiumLineHeight(galaFs);
   const galaPad = 10;
   const galaBandH = galaLh + galaPad * 2;
-  const card3H = innerPad + sumHead + sumRowN * 2 + galaBandH + innerPad;
-  reserveVertical(ctx, card3H + SECTION_GAP + lineHeight(7) * 2 + 8, floorY);
-  const c3Top = ctx.y;
-  const c3Bot = c3Top - card3H;
-  drawSectionCardWithShadow(page, { x: ctx.margin, yBottom: c3Bot, w: ctx.contentW, h: card3H, fill: SEC_CARD_FILL });
+  const frame3H = innerPad + sumRowN * 2 + galaBandH + innerPad;
 
-  cy = c3Top - innerPad;
+  const disclaimer = "Šis aprēķins ir informatīvs un nav uzskatāms par oficiālu rēķinu.";
+  const discLines = wrapText(disclaimer, ctx.font, 7, ctx.contentW - 8);
+  const discH = discLines.length * lineHeight(7);
+
+  reserveVertical(ctx, sumHead + SECTION_HEAD_GAP + frame3H + SECTION_GAP + discH + 8, floorY);
+  cy = ctx.y;
   cy -= drawSectionHeadInCard(page, ix0, cy, "KOPĒJĀS IZMAKAS", ctx.fontBold, PREMIUM_ORANGE);
+  cy -= SECTION_HEAD_GAP;
+  const f3Top = cy;
+  const f3Bot = f3Top - frame3H;
+  drawSectionContentFrame(page, { x: ctx.margin, yBottom: f3Bot, w: ctx.contentW, h: frame3H });
 
+  cy = f3Top - innerPad;
   const drawSum = (lab: string, val: string, strong: boolean) => {
     const lf = strong ? 10.5 : 9.5;
     const vf = strong ? 10.5 : 9.5;
@@ -313,9 +317,9 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
   const bandTop = cy;
   const bandBot = bandTop - galaBandH;
   drawRoundedRect(page, {
-    x: ctx.margin + innerPad - 4,
+    x: ix0,
     y: bandBot,
-    width: iw + 8,
+    width: iw,
     height: galaBandH,
     radius: 5,
     color: PREMIUM_HIGHLIGHT_FILL,
@@ -323,9 +327,9 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
     borderWidth: 1.1,
   });
   const galaVal = fmtMoneyEurLv(c.galaSumma);
-  const galaLab = "GALA SUMMA APMAKSAI";
+  const galaLab = "KOPĀ";
   drawTrackedText(page, galaLab, {
-    x: ix0 + 6,
+    x: ix0,
     y: bandTop - galaPad - galaFs,
     size: galaFs,
     font: ctx.fontBold,
@@ -334,17 +338,16 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
   });
   const gvw = measureTrackedWidth(galaVal, ctx.fontBold, galaFs, 0.08);
   drawTrackedText(page, galaVal, {
-    x: colRight - gvw - 6,
+    x: colRight - gvw,
     y: bandTop - galaPad - galaFs,
     size: galaFs,
     font: ctx.fontBold,
     color: INK,
     tracking: 0.08,
   });
-  ctx.y = c3Bot - SECTION_GAP;
+  ctx.y = f3Bot - SECTION_GAP;
 
-  const disclaimer = "Šis aprēķins ir informatīvs un nav uzskatāms par oficiālu rēķinu.";
-  for (const ln of wrapText(disclaimer, ctx.font, 7, ctx.contentW - 8)) {
+  for (const ln of discLines) {
     reserveVertical(ctx, lineHeight(7), floorY);
     drawTrackedText(page, ln, {
       x: ctx.margin,
@@ -357,7 +360,7 @@ export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInpu
     ctx.y -= lineHeight(7);
   }
 
-  drawPremiumFooter3ColDz(ctx.page, ctx.margin, ctx.contentW, ctx.font, ctx.fontBold, footerLogo);
+  drawDzintarzemeTamePdfFooter(ctx.page, ctx.margin, ctx.pageW, ctx.font, ctx.fontBold, footerLogo);
 
   return ctx.pdfDoc.save();
 }
