@@ -1,6 +1,6 @@
 /**
  * Atkopšanas momentuzņēmums — Artis Miļicins PROVIN SELECT (2026-05-21 PDF).
- * Lietot ar `scripts/restore-consultation-artis.mjs` vai admin API `apply-recovery`.
+ * Servera melnraksta atjaunošanai (Artis Miļicins) vai `scripts/restore-consultation-artis.mjs`.
  */
 import type {
   ConsultationDraftOrderEdits,
@@ -9,7 +9,7 @@ import type {
 } from "@/lib/admin-consultation-draft-types";
 import { CONSULTATION_SLOT_COUNT, defaultConsultationWorkspace } from "@/lib/admin-consultation-draft-types";
 import { createDefaultSourceBlocks, emptyCsddFields, emptyLtabBlock } from "@/lib/admin-source-blocks";
-import { plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
+import { adminRichHtmlToPlainText, plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
 import { DEFAULT_PDF_VISIBILITY } from "@/lib/pdf-visibility";
 
 export const RECOVERY_ARTIS_EMAIL = "milicins80@gmail.com";
@@ -196,6 +196,17 @@ export function buildArtisMilicinsRecoveryWorkspace(): ConsultationDraftWorkspac
   ws.previewConfirmed = true;
   ws.pdfVisibility = { ...DEFAULT_PDF_VISIBILITY };
   return ws;
+}
+
+/** Ja Nr.1 saturs pazudis — atkopšana no PDF momentuzņēmuma. */
+export function artisMilicinsRecoveryShouldApply(
+  workspace: ConsultationDraftWorkspaceBody | null | undefined,
+): boolean {
+  if (!workspace?.slots?.[0]) return true;
+  const s0 = workspace.slots[0];
+  const hasListing = s0.listingUrl.includes("cbcjp");
+  const hasSummary = adminRichHtmlToPlainText(s0.kopsavilkums).includes("Audi Q3");
+  return !(hasListing && hasSummary);
 }
 
 export function buildArtisMilicinsConsultationDraft(sessionId: string): ConsultationDraftState {

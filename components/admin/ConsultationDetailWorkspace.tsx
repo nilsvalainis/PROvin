@@ -30,7 +30,6 @@ import {
   consultationSummaryTabLevel,
 } from "@/lib/consultation-tab-status";
 import { buildSelectConsultationDocumentHtml } from "@/lib/select-consultation-report-html";
-import { RECOVERY_ARTIS_EMAIL } from "@/lib/consultation-recovery-artis-milicins";
 import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
 
 const ADMIN_CONTENT_MAX = "max-w-[min(76.8rem,calc(100vw-1.25rem))]";
@@ -513,79 +512,6 @@ export function ConsultationDetailWorkspace({
     [flushPersist],
   );
 
-  const applyArtisPdfRecovery = useCallback(async () => {
-    if (!orderDraftPersistenceEnabled) return;
-    if (
-      !window.confirm(
-        "Ievietot datus no PDF (21.05.2026) — Artis Miļicins / Nr.1 Audi Q3? Esošais melnraksts tiks pārrakstīts.",
-      )
-    ) {
-      return;
-    }
-    try {
-      const res = await fetch("/api/admin/consultation-draft/apply-recovery", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId: payload.sessionId,
-          template: "artis-milicins-2026-05-21",
-        }),
-      });
-      const data = (await res.json()) as { ok?: boolean; error?: string };
-      if (!res.ok) {
-        alert(data.error === "store_disabled" ? "Servera saglabāšana izslēgta." : "Neizdevās ielādēt datus.");
-        return;
-      }
-      window.location.reload();
-    } catch {
-      alert("Neizdevās savienoties ar serveri.");
-    }
-  }, [orderDraftPersistenceEnabled, payload.sessionId]);
-
-  const showArtisRecovery =
-    (payload.customerEmail ?? "").trim().toLowerCase() === RECOVERY_ARTIS_EMAIL.toLowerCase();
-
-  const restoreLatestServerRevision = useCallback(async () => {
-    if (!orderDraftPersistenceEnabled) return;
-    try {
-      const listRes = await fetch(
-        `/api/admin/consultation-draft?sessionId=${encodeURIComponent(payload.sessionId)}&limit=8`,
-        { credentials: "include" },
-      );
-      if (!listRes.ok) {
-        alert("Neizdevās ielādēt saglabātās versijas.");
-        return;
-      }
-      const listData = (await listRes.json()) as { revisions?: { revisionId: string }[] };
-      const revisionId = listData.revisions?.[0]?.revisionId;
-      if (!revisionId) {
-        alert("Nav atrasta vecāka servera versija.");
-        return;
-      }
-      if (!window.confirm("Atjaunot pēdējo saglabāto servera versiju? Nesaglabātie šīs sesijas labojumi pārlūkā var tikt pārrakstīti.")) {
-        return;
-      }
-      const res = await fetch("/api/admin/consultation-draft", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "restore_revision",
-          sessionId: payload.sessionId,
-          revisionId,
-        }),
-      });
-      if (!res.ok) {
-        alert("Neizdevās atjaunot versiju.");
-        return;
-      }
-      window.location.reload();
-    } catch {
-      alert("Neizdevās savienoties ar serveri.");
-    }
-  }, [orderDraftPersistenceEnabled, payload.sessionId]);
-
   if (!workspaceHydrated) {
     return (
       <div className={`mx-auto w-full min-w-0 ${ADMIN_CONTENT_MAX} py-8 text-center text-sm text-[var(--color-provin-muted)]`}>
@@ -735,26 +661,6 @@ export function ConsultationDetailWorkspace({
               );
             })}
           </div>
-          {showArtisRecovery && orderDraftPersistenceEnabled ? (
-            <button
-              type="button"
-              onClick={() => void applyArtisPdfRecovery()}
-              className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-amber-600/50 bg-amber-50 px-2.5 py-2 text-[10px] font-semibold text-amber-950 shadow-sm transition hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-100"
-              title="Atjauno Nr.1 un klienta laukus no saglabātā PDF 2026-05-21"
-            >
-              Atjaunot no PDF 21.05
-            </button>
-          ) : null}
-          {orderDraftPersistenceEnabled ? (
-            <button
-              type="button"
-              onClick={() => void restoreLatestServerRevision()}
-              className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2.5 py-2 text-[10px] font-medium text-[var(--color-provin-muted)] shadow-sm transition hover:text-[var(--color-apple-text)]"
-              title="Atjaunot pēdējo JSON versiju no servera (_revisions)"
-            >
-              Atjaunot datus
-            </button>
-          ) : null}
           <button
             type="button"
             onClick={() => void openPdf()}

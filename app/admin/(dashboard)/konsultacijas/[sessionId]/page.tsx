@@ -2,7 +2,17 @@ import { notFound } from "next/navigation";
 import { MarkAdminStripeSessionOpened } from "@/components/admin/MarkAdminStripeSessionOpened";
 import { AdminConsultationDetailView } from "@/components/admin/AdminConsultationDetailView";
 import { getConsultationSessionDetail } from "@/lib/admin-orders";
-import { isConsultationDraftStoreEnabled, readConsultationDraft } from "@/lib/admin-consultation-draft-store";
+import {
+  isConsultationDraftStoreEnabled,
+  patchConsultationDraft,
+  readConsultationDraft,
+} from "@/lib/admin-consultation-draft-store";
+import {
+  artisMilicinsRecoveryShouldApply,
+  buildArtisMilicinsRecoveryOrderEdits,
+  buildArtisMilicinsRecoveryWorkspace,
+  RECOVERY_ARTIS_EMAIL,
+} from "@/lib/consultation-recovery-artis-milicins";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +26,28 @@ export default async function AdminConsultationDetailPage({ params }: Props) {
   }
 
   const consultationDraftPersistenceEnabled = isConsultationDraftStoreEnabled();
-  const serverConsultationDraft = await readConsultationDraft(sessionId);
+  let serverConsultationDraft = await readConsultationDraft(sessionId);
+
+  const clientEmail = (
+    order.customerEmail ??
+    order.customerDetailsEmail ??
+    ""
+  )
+    .trim()
+    .toLowerCase();
+
+  if (
+    consultationDraftPersistenceEnabled &&
+    clientEmail === RECOVERY_ARTIS_EMAIL.toLowerCase() &&
+    artisMilicinsRecoveryShouldApply(serverConsultationDraft?.workspace ?? null)
+  ) {
+    await patchConsultationDraft(sessionId, {
+      orderEdits: buildArtisMilicinsRecoveryOrderEdits(),
+      workspace: buildArtisMilicinsRecoveryWorkspace(),
+    });
+    serverConsultationDraft = await readConsultationDraft(sessionId);
+  }
+
   const serverWorkspaceJson =
     serverConsultationDraft?.workspace != null
       ? JSON.stringify({
