@@ -11,6 +11,7 @@
     "build": "next build",
     "start": "next start",
     "iriss:restore-backup": "node scripts/iriss-restore-backup.mjs",
+    "consultation:restore-artis": "node scripts/restore-consultation-artis.mjs",
     "iriss:merge-to-blob": "node scripts/iriss-merge-local-to-blob.mjs --load-env-local",
     "auth:persistent-mobile": "node scripts/auth-mobile.mjs",
     "preview": "next start --hostname localhost --port 3020",
