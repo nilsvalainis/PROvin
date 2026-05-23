@@ -2,9 +2,8 @@ import "server-only";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-/** Dziļā analīze — pārdevējs (grounding), gala kopsavilkums. Gemini 1.5 ir izslēgts API. */
-export const GEMINI_MODEL_PRO = "gemini-2.5-pro";
-/** Ātrākas darbības — ieteikumi apskatei, cenas analīze. */
+/** Pagaidām abas konstantes — flash (AI Studio Free Tier: 2.5-pro limits = 0). */
+export const GEMINI_MODEL_PRO = "gemini-2.5-flash";
 export const GEMINI_MODEL_FLASH = "gemini-2.5-flash";
 
 export function getGeminiApiKeyFromEnv(): string | null {
