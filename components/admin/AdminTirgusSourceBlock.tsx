@@ -1,7 +1,6 @@
 "use client";
 
-import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
-import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
+import { AdminSourceCommentField, type AdminGeminiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import { ListedForSaleFieldChrome } from "@/components/admin/ListedForSaleFieldChrome";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { PriceDropArrowIcon } from "@/components/icons/PriceDropArrowIcon";
@@ -28,9 +27,18 @@ type Props = {
   variant?: "default" | "embedded";
   /** Zemāks augstums (admin kompaktais skats). */
   compact?: boolean;
+  geminiComment?: AdminGeminiSourceCommentSlot;
 };
 
-export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, variant = "default", compact = false }: Props) {
+export function AdminTirgusSourceBlock({
+  value,
+  readOnly,
+  disabled,
+  onChange,
+  variant = "default",
+  compact = false,
+  geminiComment,
+}: Props) {
   const val = value ?? emptyTirgusFields();
   const setField = (key: keyof TirgusFormFields, v: string) => {
     onChange({ ...val, [key]: v });
@@ -135,41 +143,27 @@ export function AdminTirgusSourceBlock({ value, readOnly, disabled, onChange, va
 
   const commentsBlock =
     variant === "embedded" ? (
-      <div>
-        <p
-          className={
-            embDense
-              ? "mb-0.5 text-[9px] font-medium text-[var(--color-provin-muted)]"
-              : "mb-0.5 text-[10px] font-medium text-[var(--color-provin-muted)]"
-          }
-        >
-          {LISTING_ANALYSIS_COMMENT_LABEL}
-        </p>
-        {readOnly ? (
-          <AdminRichCommentReadonly html={val.comments} className={commentsReadonlyClassEmbedded} />
-        ) : (
-          <AdminAiPolishRichCommentShell
-            value={val.comments}
-            onChange={(next) => setField("comments", next)}
-            disabled={disabled}
-            compact={embDense}
-            aria-label={`${LISTING_HISTORY_SUBSECTION_TITLE} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-          />
-        )}
-      </div>
+      <AdminSourceCommentField
+        value={val.comments}
+        onChange={(next) => setField("comments", next)}
+        readOnly={readOnly}
+        disabled={disabled}
+        compact={embDense}
+        gemini={geminiComment}
+        readonlyClassName={commentsReadonlyClassEmbedded}
+        aria-label={`${LISTING_HISTORY_SUBSECTION_TITLE} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+      />
     ) : (
       <div className="mt-auto w-full min-w-0 shrink-0 pt-2">
-        <p className="mb-0.5 text-[10px] font-medium text-[var(--color-provin-muted)]">{LISTING_ANALYSIS_COMMENT_LABEL}</p>
-        {readOnly ? (
-          <AdminRichCommentReadonly html={val.comments} className={commentsReadonlyClassDefault} />
-        ) : (
-          <AdminAiPolishRichCommentShell
-            value={val.comments}
-            onChange={(next) => setField("comments", next)}
-            disabled={disabled}
-            aria-label={`Tirgus — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-          />
-        )}
+        <AdminSourceCommentField
+          value={val.comments}
+          onChange={(next) => setField("comments", next)}
+          readOnly={readOnly}
+          disabled={disabled}
+          gemini={geminiComment}
+          readonlyClassName={commentsReadonlyClassDefault}
+          aria-label={`Tirgus — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+        />
       </div>
     );
 

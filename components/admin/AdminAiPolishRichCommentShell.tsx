@@ -1,23 +1,23 @@
 "use client";
 
 /**
- * ✨ gramatikas labošana + bagātinātais teksts (`AdminRichCommentField`).
- * AI saņem tīru tekstu; rezultāts ietīts minimālā HTML (dabūtais teksts bez iepriekšējā treknraksta).
+ * ✨ gramatikas labošana (Gemini) + bagātinātais teksts (`AdminRichCommentField`).
  */
 
 import { useCallback, useState } from "react";
 import { Loader2, RotateCcw } from "lucide-react";
 import { AdminRichCommentField } from "@/components/admin/AdminInternalRichCommentEditor";
+import {
+  ADMIN_AI_POLISH_BTN_CLASS,
+  ADMIN_AI_POLISH_SPARKLE_CLASS,
+  ADMIN_AI_POLISH_SPINNER_CLASS,
+} from "@/components/admin/admin-ai-polish-ui";
 import { adminRichHtmlToPlainText, plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
-
-const polishBtn =
-  "absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-none border-0 bg-transparent p-0 text-[15px] leading-none text-[#0061D2] shadow-none transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35";
 
 type Props = {
   value: string;
   onChange: (html: string) => void;
   disabled?: boolean;
-  /** mazāks polish / apmale ap contentEditable (bloku komentāri) */
   compact?: boolean;
   "aria-label"?: string;
 };
@@ -52,18 +52,18 @@ export function AdminAiPolishRichCommentShell({
       const data = (await res.json()) as { text?: string; error?: string; detail?: string };
       if (!res.ok) {
         const detail = typeof data.detail === "string" ? data.detail.trim() : "";
-        if (data.error === "missing_groq_key") setError("Nav GROQ_API_KEY");
-        else if (res.status === 401 || data.error === "unauthorized") setError("Groq: nav admin piekļuves");
+        if (data.error === "missing_gemini_key") setError("Nav GEMINI_API_KEY");
+        else if (res.status === 401 || data.error === "unauthorized") setError("Gemini: nav admin piekļuves");
         else if (data.error === "polish_failed") {
-          setError(detail ? `Groq: neizdevās labot gramatiku — ${detail}` : "Groq: neizdevās labot gramatiku");
-        } else setError(detail ? `Groq: ${detail}` : "Groq: neizdevās");
+          setError(detail ? `Gemini: neizdevās labot gramatiku — ${detail}` : "Gemini: neizdevās labot gramatiku");
+        } else setError(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
         return;
       }
       if (typeof data.text === "string") {
         onChange(plainTextToMinimalRichHtml(data.text));
       }
     } catch {
-      setError("Groq: neizdevās savienoties");
+      setError("Gemini: neizdevās savienoties");
     } finally {
       setLoading(false);
     }
@@ -88,19 +88,25 @@ export function AdminAiPolishRichCommentShell({
         />
         <button
           type="button"
-          className={polishBtn}
+          className={ADMIN_AI_POLISH_BTN_CLASS}
           onClick={() => void run()}
           disabled={disabled || loading || !plainForPolish.trim()}
-          title="Labot gramatiku"
+          title="Labot gramatiku (Gemini)"
           aria-busy={loading}
           aria-label="Labot gramatiku"
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin text-[#0061D2]" aria-hidden /> : <span aria-hidden>✨</span>}
+          {loading ? (
+            <Loader2 className={ADMIN_AI_POLISH_SPINNER_CLASS} aria-hidden />
+          ) : (
+            <span className={ADMIN_AI_POLISH_SPARKLE_CLASS} aria-hidden>
+              ✨
+            </span>
+          )}
         </button>
         {error ? (
           <p
             className="pointer-events-none absolute bottom-1 left-0 right-10 truncate text-[9px] text-amber-800/90"
-            title="Projektā nepieciešams GROQ_API_KEY."
+            title="Projektā nepieciešams GEMINI_API_KEY."
           >
             {error}
           </p>

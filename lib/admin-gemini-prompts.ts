@@ -1,5 +1,9 @@
 import "server-only";
 
+/** Admin ✨ gramatikas labošana (`/api/admin/ai-polish-lv`). */
+export const GEMINI_LV_POLISH_SYSTEM =
+  "Tavs uzdevums ir labot TIKAI gramatikas, interpunkcijas un pareizrakstības kļūdas latviešu valodā. NEMAINI teksta stilu, toni vai vārdu izvēli, ja vien tie nav gramatiski nepareizi. Saglabā autora oriģinālo izteiksmes veidu. Atgriez TIKAI laboto tekstu — bez ievada vai paskaidrojumiem.";
+
 /** Kopīgs tonis visām Gemini sadaļām — auto eksperts klientam. */
 export const GEMINI_EXPERT_VOICE_LV = `Raksti latviešu valodā — diskrēti, korekti, profesionāli, bez liekvārdības.
 Tonis: it kā auto eksperts personīgi skaidro klientam klātienē.
@@ -75,3 +79,19 @@ Atbildi tikai ar gala ziņojuma tekstu — bez meta-komentāriem par AI.`;
 
 /** @deprecated Izmanto GEMINI_SUMMARY_ANALYSIS_SYSTEM */
 export const GEMINI_CLIENT_SUMMARY_SYSTEM = GEMINI_SUMMARY_ANALYSIS_SYSTEM;
+
+/** Avota bloka „Komentāri” ģenerēšana no strukturētiem datiem. */
+export function geminiSourceCommentSystemPrompt(blockLabel: string): string {
+  return `${GEMINI_EXPERT_VOICE_LV}
+
+Uzdevums: sagatavot komentāru klienta auto vēstures atskaites sadaļai „${blockLabel}”.
+
+Ievadā saņemsi TIKAI šī avota strukturētos datus (tabulas, lauki, neapstrādāti ieraksti u.c.) — bez esošajiem komentāriem.
+
+Rezultāts:
+- Profesionāls eksperta komentārs latviešu valodā klienta atskaitei
+- Izceļ būtiskākos secinājumus, anomālijas un riskus, kas redzami datos
+- Ja dati ir ierobežoti — īsi norādi, ko vēl pārbaudīt; neizdomā faktus
+- 1–4 īsas rindkopas vai kompakts punktu saraksts — atbilstoši datu apjomam
+- Bez virsraksta „Komentāri” un bez meta-komentāriem par AI`;
+}

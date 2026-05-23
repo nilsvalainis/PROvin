@@ -91,6 +91,11 @@ import {
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminGeminiGenerateButton } from "@/components/admin/AdminGeminiGenerateButton";
+import type { AdminGeminiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
+import {
+  type GeminiSourceCommentBlockKey,
+  sourceBlockHasDataExcludingComments,
+} from "@/lib/admin-source-comment-blocks";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import {
   AdminCommonPhrasesDrawer,
@@ -527,6 +532,11 @@ export function OrderDetailWorkspace({
   const [geminiPriceErr, setGeminiPriceErr] = useState<string | null>(null);
   const [geminiSummaryBusy, setGeminiSummaryBusy] = useState(false);
   const [geminiSummaryErr, setGeminiSummaryErr] = useState<string | null>(null);
+  const [geminiSourceCommentBusy, setGeminiSourceCommentBusy] = useState<GeminiSourceCommentBlockKey | null>(null);
+  const [geminiSourceCommentErr, setGeminiSourceCommentErr] = useState<{
+    key: GeminiSourceCommentBlockKey;
+    msg: string;
+  } | null>(null);
   const notifyReportPdfExtraRef = useRef<HTMLInputElement>(null);
   const [portfolioDropActive, setPortfolioDropActive] = useState(false);
   const portfolioDragDepth = useRef(0);
@@ -788,6 +798,59 @@ export function OrderDetailWorkspace({
       sourceBlocks: { ...prev.sourceBlocks, [key]: block },
     }));
   }, []);
+
+  const runGeminiSourceComment = useCallback(
+    async (blockKey: GeminiSourceCommentBlockKey) => {
+      if (!payload.isDemo || geminiSourceCommentBusy) return;
+      setGeminiSourceCommentBusy(blockKey);
+      setGeminiSourceCommentErr(null);
+      try {
+        const cur = wsPersistRef.current;
+        const res = await fetch("/api/admin/gemini/source-comment", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: payload.sessionId,
+            blockKey,
+            vin: payload.vin,
+            sourceBlocks: cur.sourceBlocks,
+          }),
+        });
+        const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+        if (!res.ok) {
+          const detail = typeof data.detail === "string" ? data.detail.trim() : "";
+          if (data.error === "missing_gemini_key") {
+            setGeminiSourceCommentErr({ key: blockKey, msg: "Nav GEMINI_API_KEY (.env.local / Vercel)" });
+          } else if (data.error === "gemini_demo_only") {
+            setGeminiSourceCommentErr({ key: blockKey, msg: "Gemini pieejams tikai DEMO pasūtījumiem" });
+          } else if (data.error === "empty_source_data") {
+            setGeminiSourceCommentErr({ key: blockKey, msg: "Trūkst avota datu — aizpildi tabulas vai laukus" });
+          } else if (data.error === "generation_failed") {
+            setGeminiSourceCommentErr({
+              key: blockKey,
+              msg: detail ? `Gemini: ${detail}` : "Gemini: neizdevās ģenerēt komentāru",
+            });
+          } else {
+            setGeminiSourceCommentErr({ key: blockKey, msg: detail ? `Gemini: ${detail}` : "Gemini: neizdevās" });
+          }
+          return;
+        }
+        if (typeof data.text === "string" && data.text.trim()) {
+          const block = cur.sourceBlocks[blockKey];
+          updateSourceBlock(blockKey, {
+            ...block,
+            comments: plainTextToMinimalRichHtml(data.text),
+          } as WorkspaceSourceBlocks[typeof blockKey]);
+        }
+      } catch {
+        setGeminiSourceCommentErr({ key: blockKey, msg: "Gemini: neizdevās savienoties" });
+      } finally {
+        setGeminiSourceCommentBusy(null);
+      }
+    },
+    [geminiSourceCommentBusy, payload.isDemo, payload.sessionId, payload.vin, updateSourceBlock],
+  );
 
   const pushWorkspaceBackup = useCallback(
     (snapshot: string) => {
@@ -1294,6 +1357,23 @@ export function OrderDetailWorkspace({
   const blocksDisplaySafe = useMemo(
     () => mergeSourceBlocksWithDefaults(ws.sourceBlocks as unknown),
     [ws.sourceBlocks],
+  );
+
+  const geminiCommentSlot = useCallback(
+    (key: GeminiSourceCommentBlockKey): AdminGeminiSourceCommentSlot => ({
+      isDemo: payload.isDemo,
+      busy: geminiSourceCommentBusy === key,
+      error: geminiSourceCommentErr?.key === key ? geminiSourceCommentErr.msg : null,
+      hasSourceData: sourceBlockHasDataExcludingComments(key, blocksDisplaySafe),
+      onGenerate: () => void runGeminiSourceComment(key),
+    }),
+    [
+      blocksDisplaySafe,
+      geminiSourceCommentBusy,
+      geminiSourceCommentErr,
+      payload.isDemo,
+      runGeminiSourceComment,
+    ],
   );
 
   const provinAlertBanners = useMemo(
@@ -2221,6 +2301,7 @@ export function OrderDetailWorkspace({
                 pdfIncludeMileageTable={pdfVisibility.csddMileageTable}
                 onPdfIncludeMileageTableChange={(next) => onPdfVisibilityChange({ csddMileageTable: next })}
                 sessionId={payload.sessionId}
+                geminiComment={geminiCommentSlot("csdd")}
               />
             </div>
           </div>
@@ -2238,6 +2319,7 @@ export function OrderDetailWorkspace({
                 sessionId={payload.sessionId}
                 pdfInclude={pdfVisibility.autodna}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ autodna: next })}
+                geminiComment={geminiCommentSlot("autodna")}
               />
             </div>
             <div id="admin-order-block-carvertical" className="flex min-h-0 min-w-0 flex-col">
@@ -2250,6 +2332,7 @@ export function OrderDetailWorkspace({
                 sessionId={payload.sessionId}
                 pdfInclude={pdfVisibility.carvertical}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ carvertical: next })}
+                geminiComment={geminiCommentSlot("carvertical")}
               />
             </div>
           </div>
@@ -2265,6 +2348,7 @@ export function OrderDetailWorkspace({
               sessionId={payload.sessionId}
               pdfInclude={pdfVisibility.auto_records}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
+              geminiComment={geminiCommentSlot("auto_records")}
             />
           </div>
         ) : null}
@@ -2279,6 +2363,7 @@ export function OrderDetailWorkspace({
               sessionId={payload.sessionId}
               pdfInclude={pdfVisibility.ltab}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
+              geminiComment={geminiCommentSlot("ltab")}
             />
           </div>
         ) : null}
@@ -2293,6 +2378,7 @@ export function OrderDetailWorkspace({
               sessionId={payload.sessionId}
               pdfInclude={pdfVisibility.citi_avoti}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ citi_avoti: next })}
+              geminiComment={geminiCommentSlot("citi_avoti")}
             />
           </div>
         ) : null}
@@ -2323,6 +2409,7 @@ export function OrderDetailWorkspace({
                       readOnly={false}
                       onChange={(next) => updateSourceBlock("tirgus", next)}
                       variant="embedded"
+                      geminiComment={geminiCommentSlot("tirgus")}
                     />
                   </div>
                 </ListingAnalysisSubsectionHeading>

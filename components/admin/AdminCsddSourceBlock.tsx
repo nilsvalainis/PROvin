@@ -26,9 +26,11 @@ import {
 } from "@/lib/csdd-ui-flags";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
-import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
-import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
+import {
+  AdminSourceCommentField,
+  type AdminGeminiSourceCommentSlot,
+} from "@/components/admin/AdminSourceCommentField";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AlertTriangle } from "lucide-react";
 
@@ -74,6 +76,7 @@ type Props = {
   sessionId: string;
   /** localStorage atslēgai — noklusējums `csdd`. */
   collapseBlockId?: string;
+  geminiComment?: AdminGeminiSourceCommentSlot;
 };
 
 const mileCell = "px-1.5 py-0.5";
@@ -90,6 +93,7 @@ export function AdminCsddSourceBlock({
   onPdfIncludeMileageTableChange,
   sessionId,
   collapseBlockId = "csdd",
+  geminiComment,
 }: Props) {
   const setField = (key: keyof CsddFormFields, v: string) => {
     onChange({ ...value, [key]: v });
@@ -400,23 +404,15 @@ export function AdminCsddSourceBlock({
             })
           }
         />
-        <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-          {LISTING_ANALYSIS_COMMENT_LABEL}
-        </label>
-        {readOnly ? (
-          <AdminRichCommentReadonly
-            html={value.comments}
-            className="min-h-[40px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
-          />
-        ) : (
-          <AdminAiPolishRichCommentShell
-            value={value.comments}
-            onChange={(next) => onChange({ ...value, comments: next })}
-            disabled={disabled}
-            compact
-            aria-label={`CSDD — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-          />
-        )}
+        <AdminSourceCommentField
+          value={value.comments}
+          onChange={(next) => onChange({ ...value, comments: next })}
+          readOnly={readOnly}
+          disabled={disabled}
+          compact
+          gemini={geminiComment}
+          aria-label={`CSDD — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+        />
       </div>
       </div>
     </AdminCollapsibleShell>

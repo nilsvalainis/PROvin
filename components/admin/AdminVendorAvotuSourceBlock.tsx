@@ -2,8 +2,10 @@
 
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
-import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
-import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
+import {
+  AdminSourceCommentField,
+  type AdminGeminiSourceCommentSlot,
+} from "@/components/admin/AdminSourceCommentField";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
@@ -49,6 +51,7 @@ type Props = {
   sessionId: string;
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
+  geminiComment?: AdminGeminiSourceCommentSlot;
 };
 
 export function AdminVendorAvotuSourceBlock({
@@ -61,6 +64,7 @@ export function AdminVendorAvotuSourceBlock({
   sessionId,
   pdfInclude,
   onPdfIncludeChange,
+  geminiComment,
 }: Props) {
   const displayRows =
     value.serviceHistory.length > 0
@@ -425,21 +429,15 @@ export function AdminVendorAvotuSourceBlock({
             }
           />
         ) : null}
-        <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">Komentāri</label>
-        {readOnly ? (
-          <AdminRichCommentReadonly
-            html={value.comments}
-            className="min-h-[40px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
-          />
-        ) : (
-          <AdminAiPolishRichCommentShell
-            value={value.comments}
-            onChange={(next) => onChange({ ...value, comments: next })}
-            disabled={disabled}
-            compact
-            aria-label="Avota komentāri"
-          />
-        )}
+        <AdminSourceCommentField
+          value={value.comments}
+          onChange={(next) => onChange({ ...value, comments: next })}
+          readOnly={readOnly}
+          disabled={disabled}
+          compact
+          gemini={geminiComment}
+          aria-label="Avota komentāri"
+        />
       </div>
       </div>
     </AdminCollapsibleShell>

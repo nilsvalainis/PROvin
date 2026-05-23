@@ -1,7 +1,9 @@
 "use client";
 
-import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
-import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
+import {
+  AdminSourceCommentField,
+  type AdminGeminiSourceCommentSlot,
+} from "@/components/admin/AdminSourceCommentField";
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
@@ -26,6 +28,7 @@ type Props = {
   sessionId: string;
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
+  geminiComment?: AdminGeminiSourceCommentSlot;
 };
 
 export function AdminLtabSourceBlock({
@@ -37,6 +40,7 @@ export function AdminLtabSourceBlock({
   sessionId,
   pdfInclude,
   onPdfIncludeChange,
+  geminiComment,
 }: Props) {
   const setRow = (index: number, patch: Partial<LtabIncidentRow>) => {
     const rows = value.rows.map((r, i) => (i === index ? { ...r, ...patch } : r));
@@ -166,21 +170,16 @@ export function AdminLtabSourceBlock({
           </div>
 
           <div className={`mt-auto w-full min-w-0 shrink-0 pt-2 ${trafficFillLevel ? "px-2 pb-2" : ""}`}>
-            <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">Komentāri:</label>
-            {readOnly ? (
-              <AdminRichCommentReadonly
-                html={value.comments}
-                className="min-h-[48px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
-              />
-            ) : (
-              <AdminAiPolishRichCommentShell
-                value={value.comments}
-                onChange={(next) => onChange({ ...value, comments: next })}
-                disabled={disabled}
-                compact
-                aria-label="LTAB — komentāri"
-              />
-            )}
+            <AdminSourceCommentField
+              label="Komentāri:"
+              value={value.comments}
+              onChange={(next) => onChange({ ...value, comments: next })}
+              readOnly={readOnly}
+              disabled={disabled}
+              compact
+              gemini={geminiComment}
+              aria-label="LTAB — komentāri"
+            />
           </div>
       </div>
     </AdminCollapsibleShell>

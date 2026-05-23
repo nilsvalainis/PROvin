@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Gramatikas ✨ — tikai UI. Pieprasījumi iet uz `/api/admin/ai-polish-lv`; `GROQ_API_KEY` paliek serverī.
+ * Gramatikas ✨ (Gemini) — tikai UI. Pieprasījumi iet uz `/api/admin/ai-polish-lv`.
  */
 
 import { Loader2, RotateCcw } from "lucide-react";
@@ -13,13 +13,14 @@ import {
   type ReactElement,
   type TextareaHTMLAttributes,
 } from "react";
+import {
+  ADMIN_AI_POLISH_BTN_CLASS,
+  ADMIN_AI_POLISH_SPARKLE_CLASS,
+  ADMIN_AI_POLISH_SPINNER_CLASS,
+} from "@/components/admin/admin-ai-polish-ui";
 
 type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement>;
 
-/**
- * Augšējā labajā stūrī — ✨ AI gramatikas labošana (LV). Bērns: viens `<textarea>`.
- * Iekšējā atstarpe, lai teksts nepārklājas ar ikonu.
- */
 export function AdminAiPolishTextareaShell({
   value,
   onPolished,
@@ -33,7 +34,6 @@ export function AdminAiPolishTextareaShell({
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  /** Teksts pirms pēdējās veiksmīgās AI labošanas (pilna textarea vērtība). */
   const [originalText, setOriginalText] = useState("");
 
   const run = useCallback(async () => {
@@ -53,14 +53,14 @@ export function AdminAiPolishTextareaShell({
       const data = (await res.json()) as { text?: string; error?: string; detail?: string };
       if (!res.ok) {
         const detail = typeof data.detail === "string" ? data.detail.trim() : "";
-        if (data.error === "missing_groq_key") {
-          setError("Nav GROQ_API_KEY");
+        if (data.error === "missing_gemini_key") {
+          setError("Nav GEMINI_API_KEY");
         } else if (res.status === 401 || data.error === "unauthorized") {
-          setError("Groq: nav admin piekļuves");
+          setError("Gemini: nav admin piekļuves");
         } else if (data.error === "polish_failed") {
-          setError(detail ? `Groq: neizdevās labot gramatiku — ${detail}` : "Groq: neizdevās labot gramatiku");
+          setError(detail ? `Gemini: neizdevās labot gramatiku — ${detail}` : "Gemini: neizdevās labot gramatiku");
         } else {
-          setError(detail ? `Groq: ${detail}` : "Groq: neizdevās");
+          setError(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
         }
         return;
       }
@@ -68,7 +68,7 @@ export function AdminAiPolishTextareaShell({
         onPolished(data.text);
       }
     } catch {
-      setError("Groq: neizdevās savienoties");
+      setError("Gemini: neizdevās savienoties");
     } finally {
       setLoading(false);
     }
@@ -95,23 +95,25 @@ export function AdminAiPolishTextareaShell({
         {cloneElement(ta, { className: mergedClass })}
         <button
           type="button"
-          className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-none border-0 bg-transparent p-0 text-[15px] leading-none text-[#0061D2] shadow-none transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
+          className={ADMIN_AI_POLISH_BTN_CLASS}
           onClick={() => void run()}
           disabled={disabled || loading || !value.trim()}
-          title="Labot gramatiku"
+          title="Labot gramatiku (Gemini)"
           aria-busy={loading}
           aria-label="Labot gramatiku"
         >
           {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin text-[#0061D2]" aria-hidden />
+            <Loader2 className={ADMIN_AI_POLISH_SPINNER_CLASS} aria-hidden />
           ) : (
-            <span aria-hidden>✨</span>
+            <span className={ADMIN_AI_POLISH_SPARKLE_CLASS} aria-hidden>
+              ✨
+            </span>
           )}
         </button>
         {error ? (
           <p
             className="pointer-events-none absolute bottom-0 left-0 right-8 truncate text-[9px] text-amber-800/90"
-            title="Projekta saknē (mapē ar package.json) izveido vai papildini .env.local: GROQ_API_KEY=… (console.groq.com) — pēc tam restartē npm run dev. Produkcijā: Vercel → Environment Variables."
+            title="Projektā nepieciešams GEMINI_API_KEY (.env.local / Vercel)."
           >
             {error}
           </p>

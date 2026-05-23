@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminVendorAvotuSourceBlock } from "@/components/admin/AdminVendorAvotuSourceBlock";
+import type { AdminGeminiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import type { CitiAvotiBlockState } from "@/lib/admin-source-blocks";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 
@@ -13,6 +14,7 @@ type Props = {
   sessionId: string;
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
+  geminiComment?: AdminGeminiSourceCommentSlot;
 };
 
 /** Citi avoti — tā pati struktūra kā AutoDNA / CarVertical (nobraukums + negadījumi + komentāri). */
@@ -25,6 +27,7 @@ export function AdminCitiAvotiSourceBlock({
   sessionId,
   pdfInclude,
   onPdfIncludeChange,
+  geminiComment,
 }: Props) {
   return (
     <AdminVendorAvotuSourceBlock
@@ -37,6 +40,7 @@ export function AdminCitiAvotiSourceBlock({
       sessionId={sessionId}
       pdfInclude={pdfInclude}
       onPdfIncludeChange={onPdfIncludeChange}
+      geminiComment={geminiComment}
     />
   );
 }
