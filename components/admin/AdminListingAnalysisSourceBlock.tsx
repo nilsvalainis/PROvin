@@ -1,19 +1,21 @@
 "use client";
 
 /**
- * Sludinājuma analīze: AI poga izsauc `POST /api/ai/analyze`; `GROQ_API_KEY` tikai API route serverī.
+ * Sludinājuma analīze: Groq pārdošanas konteksts + Gemini pārdevēja analīze (DEMO).
  */
 
 import { Loader2 } from "lucide-react";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
+import { AdminGeminiGenerateButton } from "@/components/admin/AdminGeminiGenerateButton";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { ListingAnalysisSubsectionHeading } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import {
   emptyListingAnalysisBlock,
   LISTING_ANALYSIS_COMMENT_LABEL,
+  LISTING_ANALYSIS_EXTRA_SELLER_LABEL,
   LISTING_ANALYSIS_LISTING_PASTE_LABEL,
   LISTING_ANALYSIS_SUBSECTIONS,
   type ListingAnalysisBlockState,
@@ -23,6 +25,18 @@ import { plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
 
 const ta =
   "min-h-[72px] w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20";
+
+export type GeminiListingAnalysisPayload = {
+  sessionId: string;
+  vin: string | null;
+  listingUrl: string | null;
+  customerName: string | null;
+  notes: string | null;
+  sourceBlocks: unknown;
+  iriss: string;
+  apskatesPlāns: string;
+  cenasAtbilstiba: string;
+};
 
 type Props = {
   value?: ListingAnalysisBlockState | null;
@@ -35,6 +49,9 @@ type Props = {
   compact?: boolean;
   /** Teksta lauku augstums pēc scrollHeight (+ aptuveni viena rinda). */
   autoGrow?: boolean;
+  /** Gemini — tikai DEMO pasūtījumi. */
+  geminiIsDemo?: boolean;
+  buildGeminiPayload?: () => GeminiListingAnalysisPayload;
 };
 
 export function AdminListingAnalysisSourceBlock({
@@ -45,16 +62,16 @@ export function AdminListingAnalysisSourceBlock({
   variant = "default",
   compact = false,
   autoGrow = false,
+  geminiIsDemo = false,
+  buildGeminiPayload,
 }: Props) {
   const v = value ?? emptyListingAnalysisBlock();
   const L = LISTING_ANALYSIS_SUBSECTIONS;
-  const fields: { key: "sellerPortrait" | "photoAnalysis"; title: string }[] = [
-    { key: "sellerPortrait", title: L.sellerPortrait },
-    { key: "photoAnalysis", title: L.photoAnalysis },
-  ];
 
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeErr, setAnalyzeErr] = useState<string | null>(null);
+  const [sellerAnalyzing, setSellerAnalyzing] = useState(false);
+  const [sellerAnalyzeErr, setSellerAnalyzeErr] = useState<string | null>(null);
   const refPaste = useRef<HTMLTextAreaElement>(null);
 
   const bumpTa = useCallback((el: HTMLTextAreaElement | null) => {
@@ -68,6 +85,52 @@ export function AdminListingAnalysisSourceBlock({
     if (!autoGrow || readOnly) return;
     bumpTa(refPaste.current);
   }, [autoGrow, readOnly, bumpTa, v.listingPasteRaw]);
+
+  const canRunSellerGemini =
+    geminiIsDemo &&
+    Boolean(buildGeminiPayload) &&
+    (v.extraSellerName.trim().length > 0 || v.listingPasteRaw.trim().length > 0);
+
+  const runSellerGeminiAnalyze = useCallback(async () => {
+    if (!canRunSellerGemini || sellerAnalyzing || disabled || readOnly || !buildGeminiPayload) return;
+    setSellerAnalyzing(true);
+    setSellerAnalyzeErr(null);
+    try {
+      const base = buildGeminiPayload();
+      const res = await fetch("/api/admin/gemini/seller-analysis", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...base,
+          extraSellerName: v.extraSellerName,
+        }),
+      });
+      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+      if (!res.ok) {
+        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
+        if (data.error === "missing_gemini_key") {
+          setSellerAnalyzeErr("Nav GEMINI_API_KEY (.env.local / Vercel)");
+        } else if (data.error === "gemini_demo_only") {
+          setSellerAnalyzeErr("Gemini pieejams tikai DEMO pasūtījumiem");
+        } else if (data.error === "missing_seller_input") {
+          setSellerAnalyzeErr("Ievadi papildus nosaukumu vai sludinājuma aprakstu");
+        } else if (data.error === "generation_failed") {
+          setSellerAnalyzeErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās analizēt pārdevēju");
+        } else {
+          setSellerAnalyzeErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
+        }
+        return;
+      }
+      if (typeof data.text === "string" && data.text.trim()) {
+        onChange({ ...v, sellerPortrait: plainTextToMinimalRichHtml(data.text) });
+      }
+    } catch {
+      setSellerAnalyzeErr("Gemini: neizdevās savienoties");
+    } finally {
+      setSellerAnalyzing(false);
+    }
+  }, [buildGeminiPayload, canRunSellerGemini, disabled, onChange, readOnly, sellerAnalyzing, v]);
 
   const runListingAnalyze = useCallback(async () => {
     const t = v.listingPasteRaw.trim();
@@ -118,6 +181,8 @@ export function AdminListingAnalysisSourceBlock({
     "min-h-[72px] w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-emerald-500/70 focus:outline-none focus:ring-1 focus:ring-emerald-500/25 dark:focus:border-emerald-400/80";
   const taPriorityCompact =
     "min-h-[52px] w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-1.5 py-1 text-[10px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-emerald-500/70 focus:outline-none focus:ring-1 focus:ring-emerald-500/25 dark:focus:border-emerald-400/80";
+  const inputClass =
+    "w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20";
 
   const pri = variant === "priority";
   const dense = compact && pri;
@@ -137,35 +202,98 @@ export function AdminListingAnalysisSourceBlock({
         <AdminSourceBlockHeader blockKey="listing_analysis" className="mb-1.5" />
       ) : null}
       <div className={dense ? "space-y-3" : "space-y-4"}>
-        {fields.map(({ key, title }) => (
-          <ListingAnalysisSubsectionHeading
-            key={key}
-            icon={LISTING_ANALYSIS_FIELD_LUCIDE[key]}
-            title={title}
-            compact={dense}
-          >
-            <p
+        <ListingAnalysisSubsectionHeading
+          icon={LISTING_ANALYSIS_FIELD_LUCIDE.sellerPortrait}
+          title={L.sellerPortrait}
+          compact={dense}
+        >
+          <label className="mb-2 block min-w-0">
+            <span
               className={
                 dense
-                  ? "mb-0.5 text-[9px] font-medium text-slate-400"
-                  : "mb-0.5 text-[10px] font-medium text-slate-400"
+                  ? "mb-0.5 block text-[9px] font-medium text-slate-400"
+                  : "mb-0.5 block text-[10px] font-medium text-slate-400"
               }
             >
-              {LISTING_ANALYSIS_COMMENT_LABEL}
-            </p>
+              {LISTING_ANALYSIS_EXTRA_SELLER_LABEL}
+            </span>
             {readOnly ? (
-              <AdminRichCommentReadonly html={v[key]} className={pri ? roBox(!!dense) : roDefault} />
+              <div className={pri ? roBox(!!dense) : roDefault}>{v.extraSellerName.trim() || "—"}</div>
             ) : (
-              <AdminAiPolishRichCommentShell
-                value={v[key]}
-                onChange={(next) => onChange({ ...v, [key]: next })}
+              <input
+                type="text"
+                className={dense ? `${inputClass} py-1 text-[10px]` : inputClass}
                 disabled={disabled}
-                compact={pri && dense}
-                aria-label={`${title} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+                value={v.extraSellerName}
+                onChange={(e) => onChange({ ...v, extraSellerName: e.target.value })}
+                placeholder="piem., SIA Auto Centrs"
+                autoComplete="off"
+                aria-label={LISTING_ANALYSIS_EXTRA_SELLER_LABEL}
               />
             )}
-          </ListingAnalysisSubsectionHeading>
-        ))}
+          </label>
+          <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
+            <AdminGeminiGenerateButton
+              label="Analizēt Pārdevēju"
+              busy={sellerAnalyzing}
+              disabled={!canRunSellerGemini || readOnly || disabled}
+              demoOnly={!geminiIsDemo}
+              onClick={() => void runSellerGeminiAnalyze()}
+            />
+          </div>
+          {sellerAnalyzeErr ? (
+            <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={sellerAnalyzeErr}>
+              {sellerAnalyzeErr}
+            </p>
+          ) : null}
+          <p
+            className={
+              dense
+                ? "mb-0.5 text-[9px] font-medium text-slate-400"
+                : "mb-0.5 text-[10px] font-medium text-slate-400"
+            }
+          >
+            {LISTING_ANALYSIS_COMMENT_LABEL}
+          </p>
+          {readOnly ? (
+            <AdminRichCommentReadonly html={v.sellerPortrait} className={pri ? roBox(!!dense) : roDefault} />
+          ) : (
+            <AdminAiPolishRichCommentShell
+              value={v.sellerPortrait}
+              onChange={(next) => onChange({ ...v, sellerPortrait: next })}
+              disabled={disabled}
+              compact={pri && dense}
+              aria-label={`${L.sellerPortrait} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+            />
+          )}
+        </ListingAnalysisSubsectionHeading>
+
+        <ListingAnalysisSubsectionHeading
+          icon={LISTING_ANALYSIS_FIELD_LUCIDE.photoAnalysis}
+          title={L.photoAnalysis}
+          compact={dense}
+        >
+          <p
+            className={
+              dense
+                ? "mb-0.5 text-[9px] font-medium text-slate-400"
+                : "mb-0.5 text-[10px] font-medium text-slate-400"
+            }
+          >
+            {LISTING_ANALYSIS_COMMENT_LABEL}
+          </p>
+          {readOnly ? (
+            <AdminRichCommentReadonly html={v.photoAnalysis} className={pri ? roBox(!!dense) : roDefault} />
+          ) : (
+            <AdminAiPolishRichCommentShell
+              value={v.photoAnalysis}
+              onChange={(next) => onChange({ ...v, photoAnalysis: next })}
+              disabled={disabled}
+              compact={pri && dense}
+              aria-label={`${L.photoAnalysis} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+            />
+          )}
+        </ListingAnalysisSubsectionHeading>
 
         <ListingAnalysisSubsectionHeading
           icon={LISTING_ANALYSIS_FIELD_LUCIDE.listingPasteRaw}

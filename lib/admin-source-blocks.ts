@@ -528,6 +528,8 @@ export type CitiAvotiBlockState = VendorAvotuBlockState;
 export type ListingAnalysisBlockState = {
   sellerPortrait: string;
   photoAnalysis: string;
+  /** Papildus pārdevēja / uzņēmuma nosaukums — admin + Gemini meklēšanai; nav PDF. */
+  extraSellerName: string;
   /** Iekopēts neapstrādāts sludinājuma teksts — tikai adminā, nav PDF. */
   listingPasteRaw: string;
   /** Eksperta / AI sagatavots konteksts — PDF. */
@@ -586,13 +588,20 @@ export function emptyCitiAvotiBlock(): CitiAvotiBlockState {
 }
 
 export function emptyListingAnalysisBlock(): ListingAnalysisBlockState {
-  return { sellerPortrait: "", photoAnalysis: "", listingPasteRaw: "", listingSalesContext: "" };
+  return {
+    sellerPortrait: "",
+    photoAnalysis: "",
+    extraSellerName: "",
+    listingPasteRaw: "",
+    listingSalesContext: "",
+  };
 }
 
 export function listingAnalysisHasContent(b: ListingAnalysisBlockState): boolean {
   return (
     b.sellerPortrait.trim().length > 0 ||
     b.photoAnalysis.trim().length > 0 ||
+    b.extraSellerName.trim().length > 0 ||
     b.listingPasteRaw.trim().length > 0 ||
     b.listingSalesContext.trim().length > 0
   );
@@ -603,6 +612,9 @@ export const LISTING_ANALYSIS_SUBSECTIONS = {
   photoAnalysis: "Fotogrāfiju analīze",
   listingSalesContext: "Pārdošanas sludinājuma konteksts",
 } as const;
+
+/** Papildus pārdevēja nosaukums — admin Gemini analīzei; nav PDF. */
+export const LISTING_ANALYSIS_EXTRA_SELLER_LABEL = "Papildus Pārdevēja Nosaukums";
 
 /** Lauks A — ievade analīzei; nav PDF. */
 export const LISTING_ANALYSIS_LISTING_PASTE_LABEL = "Sludinājuma apraksts (iekopēšanai)";
@@ -616,6 +628,9 @@ export const LISTING_ANALYSIS_COMMENT_LABEL = "Komentāri";
 export function listingAnalysisToPlainText(b: ListingAnalysisBlockState): string {
   const L = LISTING_ANALYSIS_SUBSECTIONS;
   const parts: string[] = [];
+  if (b.extraSellerName.trim()) {
+    parts.push(`${LISTING_ANALYSIS_EXTRA_SELLER_LABEL}\n${b.extraSellerName.trim()}`);
+  }
   if (b.sellerPortrait.trim()) {
     parts.push(`${L.sellerPortrait}\nKomentāri\n${b.sellerPortrait.trim()}`);
   }
@@ -632,6 +647,7 @@ function parseListingAnalysisRaw(raw: Record<string, unknown>): ListingAnalysisB
   const clip = (v: unknown) => String(v ?? "").slice(0, 8000);
   const sellerPortrait = clip(raw.sellerPortrait);
   const photoAnalysis = clip(raw.photoAnalysis);
+  const extraSellerName = clip(raw.extraSellerName);
   const listingPasteRaw = clip(raw.listingPasteRaw);
   let listingSalesContext = clip(raw.listingSalesContext);
   const legacyListingDescription = clip(raw.listingDescription);
@@ -641,6 +657,7 @@ function parseListingAnalysisRaw(raw: Record<string, unknown>): ListingAnalysisB
   return {
     sellerPortrait,
     photoAnalysis,
+    extraSellerName,
     listingPasteRaw,
     listingSalesContext,
   };

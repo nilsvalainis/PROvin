@@ -90,12 +90,14 @@ import {
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
+import { AdminGeminiGenerateButton } from "@/components/admin/AdminGeminiGenerateButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import {
   AdminCommonPhrasesDrawer,
   AdminCommonPhrasesDrawerTrigger,
 } from "@/components/admin/AdminCommonPhrasesDrawer";
 import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
+import { plainTextToMinimalRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { buildProvinAuditPdfFilename } from "@/lib/audit-report-pdf-filename";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
@@ -519,6 +521,12 @@ export function OrderDetailWorkspace({
   const [notifyPhase, setNotifyPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [notifyErr, setNotifyErr] = useState<string | null>(null);
   const [notifyLastSentTo, setNotifyLastSentTo] = useState<string | null>(null);
+  const [geminiInspectionBusy, setGeminiInspectionBusy] = useState(false);
+  const [geminiInspectionErr, setGeminiInspectionErr] = useState<string | null>(null);
+  const [geminiPriceBusy, setGeminiPriceBusy] = useState(false);
+  const [geminiPriceErr, setGeminiPriceErr] = useState<string | null>(null);
+  const [geminiSummaryBusy, setGeminiSummaryBusy] = useState(false);
+  const [geminiSummaryErr, setGeminiSummaryErr] = useState<string | null>(null);
   const notifyReportPdfExtraRef = useRef<HTMLInputElement>(null);
   const [portfolioDropActive, setPortfolioDropActive] = useState(false);
   const portfolioDragDepth = useRef(0);
@@ -599,9 +607,180 @@ export function OrderDetailWorkspace({
     setWs((prev) => ({ ...prev, ...patch }));
   }, []);
 
+  const buildGeminiListingPayload = useCallback(() => {
+    const cur = wsPersistRef.current;
+    return {
+      sessionId: payload.sessionId,
+      vin: payload.vin,
+      listingUrl: payload.listingUrl,
+      customerName: payload.customerName,
+      notes: payload.notes,
+      sourceBlocks: cur.sourceBlocks,
+      iriss: cur.iriss,
+      apskatesPlāns: cur.apskatesPlāns,
+      cenasAtbilstiba: cur.cenasAtbilstiba,
+    };
+  }, [
+    payload.customerName,
+    payload.listingUrl,
+    payload.notes,
+    payload.sessionId,
+    payload.vin,
+  ]);
+
   const setIrissSummary = useCallback((next: string) => {
     setWs((prev) => ({ ...prev, iriss: next }));
   }, []);
+
+  const runGeminiInspectionRecommendations = useCallback(async () => {
+    if (!payload.isDemo || geminiInspectionBusy) return;
+    setGeminiInspectionBusy(true);
+    setGeminiInspectionErr(null);
+    try {
+      const cur = wsPersistRef.current;
+      const res = await fetch("/api/admin/gemini/inspection-recommendations", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: payload.sessionId,
+          vin: payload.vin,
+          listingUrl: payload.listingUrl,
+          customerName: payload.customerName,
+          notes: payload.notes,
+          sourceBlocks: cur.sourceBlocks,
+          iriss: cur.iriss,
+          apskatesPlāns: cur.apskatesPlāns,
+          cenasAtbilstiba: cur.cenasAtbilstiba,
+        }),
+      });
+      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+      if (!res.ok) {
+        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
+        if (data.error === "missing_gemini_key") {
+          setGeminiInspectionErr("Nav GEMINI_API_KEY (.env.local / Vercel)");
+        } else if (data.error === "gemini_demo_only") {
+          setGeminiInspectionErr("Gemini pieejams tikai DEMO pasūtījumiem");
+        } else if (data.error === "generation_failed") {
+          setGeminiInspectionErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās ģenerēt");
+        } else {
+          setGeminiInspectionErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
+        }
+        return;
+      }
+      if (typeof data.text === "string" && data.text.trim()) {
+        updateWs({ apskatesPlāns: plainTextToMinimalRichHtml(data.text) });
+      }
+    } catch {
+      setGeminiInspectionErr("Gemini: neizdevās savienoties");
+    } finally {
+      setGeminiInspectionBusy(false);
+    }
+  }, [geminiInspectionBusy, payload.customerName, payload.isDemo, payload.listingUrl, payload.notes, payload.sessionId, payload.vin, updateWs]);
+
+  const runGeminiPriceAnalysis = useCallback(async () => {
+    if (!payload.isDemo || geminiPriceBusy) return;
+    setGeminiPriceBusy(true);
+    setGeminiPriceErr(null);
+    try {
+      const cur = wsPersistRef.current;
+      const res = await fetch("/api/admin/gemini/price-analysis", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: payload.sessionId,
+          vin: payload.vin,
+          listingUrl: payload.listingUrl,
+          customerName: payload.customerName,
+          notes: payload.notes,
+          sourceBlocks: cur.sourceBlocks,
+          iriss: cur.iriss,
+          apskatesPlāns: cur.apskatesPlāns,
+          cenasAtbilstiba: cur.cenasAtbilstiba,
+        }),
+      });
+      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+      if (!res.ok) {
+        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
+        if (data.error === "missing_gemini_key") {
+          setGeminiPriceErr("Nav GEMINI_API_KEY (.env.local / Vercel)");
+        } else if (data.error === "gemini_demo_only") {
+          setGeminiPriceErr("Gemini pieejams tikai DEMO pasūtījumiem");
+        } else if (data.error === "empty_order_context") {
+          setGeminiPriceErr("Trūkst avotu datu — aizpildi vismaz CSDD vai sludinājumu");
+        } else if (data.error === "generation_failed") {
+          setGeminiPriceErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās analizēt cenu");
+        } else {
+          setGeminiPriceErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
+        }
+        return;
+      }
+      if (typeof data.text === "string" && data.text.trim()) {
+        updateWs({ cenasAtbilstiba: plainTextToMinimalRichHtml(data.text) });
+      }
+    } catch {
+      setGeminiPriceErr("Gemini: neizdevās savienoties");
+    } finally {
+      setGeminiPriceBusy(false);
+    }
+  }, [geminiPriceBusy, payload.customerName, payload.isDemo, payload.listingUrl, payload.notes, payload.sessionId, payload.vin, updateWs]);
+
+  const runGeminiSummaryAnalysis = useCallback(async () => {
+    if (!payload.isDemo || geminiSummaryBusy) return;
+    setGeminiSummaryBusy(true);
+    setGeminiSummaryErr(null);
+    try {
+      const cur = wsPersistRef.current;
+      const res = await fetch("/api/admin/gemini/summary-analysis", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: payload.sessionId,
+          vin: payload.vin,
+          listingUrl: payload.listingUrl,
+          customerName: payload.customerName,
+          notes: payload.notes,
+          sourceBlocks: cur.sourceBlocks,
+          apskatesPlāns: cur.apskatesPlāns,
+          cenasAtbilstiba: cur.cenasAtbilstiba,
+        }),
+      });
+      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+      if (!res.ok) {
+        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
+        if (data.error === "missing_gemini_key") {
+          setGeminiSummaryErr("Nav GEMINI_API_KEY (.env.local / Vercel)");
+        } else if (data.error === "gemini_demo_only") {
+          setGeminiSummaryErr("Gemini pieejams tikai DEMO pasūtījumiem");
+        } else if (data.error === "missing_expert_sections") {
+          setGeminiSummaryErr("Vispirms aizpildi pārdevēja, ieteikumu vai cenas sadaļu");
+        } else if (data.error === "generation_failed") {
+          setGeminiSummaryErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās sagatavot atbildi");
+        } else {
+          setGeminiSummaryErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
+        }
+        return;
+      }
+      if (typeof data.text === "string" && data.text.trim()) {
+        setIrissSummary(plainTextToMinimalRichHtml(data.text));
+      }
+    } catch {
+      setGeminiSummaryErr("Gemini: neizdevās savienoties");
+    } finally {
+      setGeminiSummaryBusy(false);
+    }
+  }, [
+    geminiSummaryBusy,
+    payload.customerName,
+    payload.isDemo,
+    payload.listingUrl,
+    payload.notes,
+    payload.sessionId,
+    payload.vin,
+    setIrissSummary,
+  ]);
 
   const updateSourceBlock = useCallback((key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]) => {
     setWs((prev) => ({
@@ -2154,6 +2333,8 @@ export function OrderDetailWorkspace({
                     onChange={(next) => updateSourceBlock("listing_analysis", next)}
                     variant="priority"
                     autoGrow
+                    geminiIsDemo={payload.isDemo}
+                    buildGeminiPayload={buildGeminiListingPayload}
                   />
                 </div>
               </div>
@@ -2182,6 +2363,38 @@ export function OrderDetailWorkspace({
               />
               <div className="space-y-3 bg-transparent px-2 pb-2 pt-2">
                 <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.summary} title="1. Kopsavilkums">
+                  <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
+                    <AdminGeminiGenerateButton
+                      label="Sagatavot atbildi"
+                      busy={geminiSummaryBusy}
+                      disabled={
+                        !payload.isDemo ||
+                        !(
+                          adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
+                          adminRichHtmlToPlainText(ws.apskatesPlāns).trim() ||
+                          adminRichHtmlToPlainText(ws.cenasAtbilstiba).trim()
+                        )
+                      }
+                      demoOnly={!payload.isDemo}
+                      title={
+                        !payload.isDemo
+                          ? undefined
+                          : !(
+                                adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
+                                adminRichHtmlToPlainText(ws.apskatesPlāns).trim() ||
+                                adminRichHtmlToPlainText(ws.cenasAtbilstiba).trim()
+                              )
+                            ? "Vispirms ģenerē vai aizpildi pārdevēja, ieteikumu vai cenas sadaļu"
+                            : undefined
+                      }
+                      onClick={() => void runGeminiSummaryAnalysis()}
+                    />
+                  </div>
+                  {geminiSummaryErr ? (
+                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiSummaryErr}>
+                      {geminiSummaryErr}
+                    </p>
+                  ) : null}
                   <AdminAiPolishRichCommentShell
                     value={ws.iriss}
                     onChange={setIrissSummary}
@@ -2192,6 +2405,20 @@ export function OrderDetailWorkspace({
                   icon={IRISS_CHROME_LUCIDE.inspection}
                   title="2. Ieteikumi klātienes apskatei"
                 >
+                  <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
+                    <AdminGeminiGenerateButton
+                      label="Ģenerēt ieteikumus"
+                      busy={geminiInspectionBusy}
+                      disabled={!payload.isDemo}
+                      demoOnly={!payload.isDemo}
+                      onClick={() => void runGeminiInspectionRecommendations()}
+                    />
+                  </div>
+                  {geminiInspectionErr ? (
+                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiInspectionErr}>
+                      {geminiInspectionErr}
+                    </p>
+                  ) : null}
                   <AdminAiPolishRichCommentShell
                     value={ws.apskatesPlāns}
                     onChange={(next) => updateWs({ apskatesPlāns: next })}
@@ -2199,6 +2426,20 @@ export function OrderDetailWorkspace({
                   />
                 </ListingAnalysisSubsectionHeading>
                 <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.priceFit} title="3. Cenas atbilstība">
+                  <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
+                    <AdminGeminiGenerateButton
+                      label="Analizēt cenu"
+                      busy={geminiPriceBusy}
+                      disabled={!payload.isDemo}
+                      demoOnly={!payload.isDemo}
+                      onClick={() => void runGeminiPriceAnalysis()}
+                    />
+                  </div>
+                  {geminiPriceErr ? (
+                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiPriceErr}>
+                      {geminiPriceErr}
+                    </p>
+                  ) : null}
                   <AdminAiPolishRichCommentShell
                     value={ws.cenasAtbilstiba}
                     onChange={(next) => updateWs({ cenasAtbilstiba: next })}
