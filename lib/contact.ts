@@ -3,8 +3,8 @@
  * Vērtības var pārsūtīt ar env izvietošanai.
  */
 
-const DEFAULT_WHATSAPP_CHAT_URL = "https://wa.me/37120420539" as const;
-const DEFAULT_WHATSAPP_PHONE_DIGITS = "37120420539" as const;
+const DEFAULT_WHATSAPP_CHAT_URL = "https://wa.me/37129502039" as const;
+const DEFAULT_WHATSAPP_PHONE_DIGITS = "37129502039" as const;
 
 const DEFAULT_CONTACT_EMAIL = "info@provin.lv" as const;
 
