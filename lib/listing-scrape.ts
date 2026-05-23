@@ -24,6 +24,15 @@ export type ListingMarketSnapshot = {
   note?: string;
 };
 
+/** Pilns ss.lv sludinājuma saturs Gemini / AI analīzei. */
+export type ListingAiSnapshot = ListingMarketSnapshot & {
+  url: string;
+  pageTitle: string | null;
+  description: string | null;
+  options: { label: string; value: string }[];
+  photoCount: number | null;
+};
+
 const ALLOWED_HOSTS = new Set(["ss.lv", "www.ss.lv", "m.ss.lv"]);
 
 export function isAllowedListingScrapeHost(hostname: string): boolean {
@@ -37,6 +46,8 @@ function stripTags(html: string): string {
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/(tr|div|p|h\d)>/gi, "\n")
     .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -61,7 +72,7 @@ function daysBetween(from: Date, to: Date): number {
 function extractSsLvOptions(html: string): Map<string, string> {
   const map = new Map<string, string>();
   const re =
-    /class="ads_opt_name"[^>]*>([^<]*)<\/td>[\s\S]*?class="ads_opt"[^>]*>([\s\S]*?)<\/td>/gi;
+    /class="ads_opt_name"[^>]*>([\s\S]*?)<\/td>[\s\S]*?class="ads_opt"[^>]*>([\s\S]*?)<\/td>/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null) {
     const key = stripTags(m[1]).replace(/:\s*$/, "").trim();
@@ -70,6 +81,95 @@ function extractSsLvOptions(html: string): Map<string, string> {
     if (key.length > 0 && val.length > 0) map.set(key, val);
   }
   return map;
+}
+
+function extractSsLvPageTitle(html: string): string | null {
+  const m = html.match(/<title>([\s\S]*?)<\/title>/i);
+  if (!m?.[1]) return null;
+  const title = stripTags(m[1]).replace(/\s*-\s*Sludinājumi\s*$/i, "").trim();
+  return title || null;
+}
+
+/** Sludinājuma brīvā teksta apraksts (pirms parametru tabulas). */
+function extractSsLvDescription(html: string): string | null {
+  const m = html.match(/id="msg_div_msg"[^>]*>([\s\S]*?)<table[\s\S]*?class="options_list"/i);
+  if (!m?.[1]) return null;
+  const inner = m[1].replace(/<div[^>]*id="content_sys_div_msg"[^>]*>[\s\S]*?<\/div>/gi, "");
+  const text = stripTags(inner);
+  return text.length >= 12 ? text : null;
+}
+
+function extractSsLvPhotoCount(html: string): number | null {
+  const m = html.match(/var\s+msg_img\s*=\s*(\[[\s\S]*?\]);/i);
+  if (!m?.[1]) return null;
+  try {
+    const arr = JSON.parse(m[1].replace(/'/g, '"')) as string[];
+    const n = arr.filter((x) => typeof x === "string" && x.trim().length > 0).length;
+    return n > 0 ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+function extractSsLvAdsPrice(html: string): string | null {
+  const m = html.match(/class="ads_price"[^>]*>([^<]+)/i);
+  if (!m?.[1]?.trim()) return null;
+  const price = m[1].trim().replace(/\s+/g, " ");
+  return /€/.test(price) || /\d/.test(price) ? price : null;
+}
+
+function listingOptionsFromMap(opts: Map<string, string>): { label: string; value: string }[] {
+  return [...opts.entries()].map(([label, value]) => ({ label, value }));
+}
+
+function resolveListingKm(opts: Map<string, string>): string | null {
+  const kmRaw =
+    opts.get("Nobraukums, km") ??
+    opts.get("Nobraukums") ??
+    opts.get("Nobraukums, tūkst. km") ??
+    opts.get("Odometrs") ??
+    null;
+  if (!kmRaw) return null;
+  return kmRaw
+    .replace(/\s+/g, " ")
+    .replace(/,\s*km$/i, " km")
+    .replace(/(\d)\s+km$/i, "$1 km");
+}
+
+function resolveListingPrice(opts: Map<string, string>, html: string): string | null {
+  let currentPriceEur =
+    opts.get("Cena") ??
+    opts.get("Cena, €") ??
+    opts.get("Cena, eur") ??
+    extractSsLvAdsPrice(html) ??
+    extractPriceFromScript(html);
+
+  if (currentPriceEur) {
+    currentPriceEur = currentPriceEur.replace(/\s+/g, " ").replace(/eur/gi, "€");
+    if (!/€/.test(currentPriceEur) && /\d/.test(currentPriceEur)) currentPriceEur = `${currentPriceEur} €`;
+  }
+  return currentPriceEur ?? null;
+}
+
+function failedListingSnapshot(
+  partial: Pick<ListingMarketSnapshot, "host" | "note"> & { url?: string },
+): ListingAiSnapshot {
+  return {
+    ok: false,
+    url: partial.url ?? "",
+    host: partial.host,
+    fetchedAt: new Date().toISOString(),
+    daysListed: null,
+    postedDateRaw: null,
+    currentKm: null,
+    currentPriceEur: null,
+    priceChanges: [],
+    pageTitle: null,
+    description: null,
+    options: [],
+    photoCount: null,
+    note: partial.note,
+  };
 }
 
 function extractPriceFromScript(html: string): string | null {
@@ -153,31 +253,11 @@ function extractPriceHistoryLoose(html: string, text: string, fallbackKm: string
 export function parseSsLvListingHtml(html: string, now: Date = new Date()): ListingMarketSnapshot {
   const text = stripTags(html);
   const opts = extractSsLvOptions(html);
-
-  const kmRaw =
-    opts.get("Nobraukums") ??
-    opts.get("Nobraukums, tūkst. km") ??
-    opts.get("Odometrs") ??
-    null;
-  const currentKm = kmRaw
-    ? kmRaw.replace(/\s+/g, " ").replace(/,\s*km$/i, " km").replace(/(\d)\s+km$/i, "$1 km")
-    : null;
-
-  let currentPriceEur =
-    opts.get("Cena") ??
-    opts.get("Cena, €") ??
-    opts.get("Cena, eur") ??
-    extractPriceFromScript(html);
-
-  if (currentPriceEur) {
-    currentPriceEur = currentPriceEur.replace(/\s+/g, " ").replace(/eur/gi, "€");
-    if (!/€/.test(currentPriceEur) && /\d/.test(currentPriceEur)) currentPriceEur = `${currentPriceEur} €`;
-  }
-
+  const currentKm = resolveListingKm(opts);
+  const currentPriceEur = resolveListingPrice(opts, html);
   const posted = extractPostedDate(html, text);
   const postedDt = posted ? parseLvDmy(posted) : null;
   const daysListed = postedDt ? daysBetween(postedDt, now) : null;
-
   const priceChanges = extractPriceHistoryLoose(html, text, currentKm);
 
   return {
@@ -196,57 +276,104 @@ export function parseSsLvListingHtml(html: string, now: Date = new Date()): List
   };
 }
 
-export async function fetchListingMarketSnapshot(listingUrl: string): Promise<ListingMarketSnapshot> {
+export function parseSsLvListingAiHtml(html: string, url: string, now: Date = new Date()): ListingAiSnapshot {
+  const market = parseSsLvListingHtml(html, now);
+  const opts = extractSsLvOptions(html);
+  return {
+    ...market,
+    url,
+    pageTitle: extractSsLvPageTitle(html),
+    description: extractSsLvDescription(html),
+    options: listingOptionsFromMap(opts),
+    photoCount: extractSsLvPhotoCount(html),
+  };
+}
+
+/** Teksts Gemini promptam no servera nolasīta ss.lv sludinājuma. */
+export function formatListingAiSnapshotForGemini(snapshot: ListingAiSnapshot): string {
+  if (!snapshot.ok) {
+    return [
+      "### Sludinājums (ss.lv — neizdevās nolasīt)",
+      snapshot.url ? `Saite: ${snapshot.url}` : "",
+      snapshot.note ? `Kļūda: ${snapshot.note}` : "Sludinājuma saturs nav pieejams.",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  const lines: string[] = ["### Sludinājums (ss.lv — nolasīts serverī)"];
+  if (snapshot.url) lines.push(`Saite: ${snapshot.url}`);
+  if (snapshot.pageTitle) lines.push(`Virsraksts: ${snapshot.pageTitle}`);
+  if (snapshot.currentPriceEur) lines.push(`Cena: ${snapshot.currentPriceEur}`);
+  if (snapshot.currentKm) lines.push(`Nobraukums: ${snapshot.currentKm}`);
+  if (snapshot.postedDateRaw) {
+    const days =
+      snapshot.daysListed != null ? ` (${snapshot.daysListed} d. platformā)` : "";
+    lines.push(`Izvietots: ${snapshot.postedDateRaw}${days}`);
+  }
+  if (snapshot.photoCount != null) lines.push(`Foto skaits: ${snapshot.photoCount}`);
+
+  if (snapshot.options.length > 0) {
+    lines.push("", "Parametri:");
+    for (const { label, value } of snapshot.options) {
+      lines.push(`- ${label}: ${value}`);
+    }
+  }
+
+  if (snapshot.description) {
+    lines.push("", "Apraksts:", snapshot.description);
+  }
+
+  if (snapshot.priceChanges.length > 0) {
+    lines.push("", "Cenu vēsture:");
+    for (const row of snapshot.priceChanges) {
+      const km = row.km ? `, ${row.km}` : "";
+      lines.push(`- ${row.date}: ${row.priceEur}${km}`);
+    }
+  }
+
+  if (snapshot.note) lines.push("", `Piezīme: ${snapshot.note}`);
+  return lines.join("\n");
+}
+
+async function fetchSsLvListingHtml(listingUrl: string): Promise<
+  | { ok: true; html: string; url: string; host: string }
+  | { ok: false; snapshot: ListingAiSnapshot }
+> {
   let u: URL;
   try {
     u = new URL(listingUrl.trim());
   } catch {
     return {
       ok: false,
-      host: "",
-      fetchedAt: new Date().toISOString(),
-      daysListed: null,
-      postedDateRaw: null,
-      currentKm: null,
-      currentPriceEur: null,
-      priceChanges: [],
-      note: "Nederīga saite.",
+      snapshot: failedListingSnapshot({ host: "", url: listingUrl.trim(), note: "Nederīga saite." }),
     };
   }
+
+  const url = u.toString();
 
   if (u.protocol !== "http:" && u.protocol !== "https:") {
     return {
       ok: false,
-      host: u.hostname,
-      fetchedAt: new Date().toISOString(),
-      daysListed: null,
-      postedDateRaw: null,
-      currentKm: null,
-      currentPriceEur: null,
-      priceChanges: [],
-      note: "Atļauts tikai HTTP(S).",
+      snapshot: failedListingSnapshot({ host: u.hostname, url, note: "Atļauts tikai HTTP(S)." }),
     };
   }
 
   if (!isAllowedListingScrapeHost(u.hostname)) {
     return {
       ok: false,
-      host: u.hostname,
-      fetchedAt: new Date().toISOString(),
-      daysListed: null,
-      postedDateRaw: null,
-      currentKm: null,
-      currentPriceEur: null,
-      priceChanges: [],
-      note: `Automātiska izguve šobrīd tikai ss.lv (saņemts: ${u.hostname}).`,
+      snapshot: failedListingSnapshot({
+        host: u.hostname,
+        url,
+        note: `Automātiska izguve šobrīd tikai ss.lv (saņemts: ${u.hostname}).`,
+      }),
     };
   }
 
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 14_000);
-  let html: string;
   try {
-    const res = await fetch(u.toString(), {
+    const res = await fetch(url, {
       redirect: "follow",
       signal: ctrl.signal,
       headers: {
@@ -260,45 +387,64 @@ export async function fetchListingMarketSnapshot(listingUrl: string): Promise<Li
     if (!res.ok) {
       return {
         ok: false,
-        host: "ss.lv",
-        fetchedAt: new Date().toISOString(),
-        daysListed: null,
-        postedDateRaw: null,
-        currentKm: null,
-        currentPriceEur: null,
-        priceChanges: [],
-        note: `HTTP ${res.status}`,
+        snapshot: failedListingSnapshot({ host: "ss.lv", url, note: `HTTP ${res.status}` }),
       };
     }
-    html = await res.text();
+    const html = await res.text();
     if (html.length > 2_500_000) {
       return {
         ok: false,
-        host: "ss.lv",
-        fetchedAt: new Date().toISOString(),
-        daysListed: null,
-        postedDateRaw: null,
-        currentKm: null,
-        currentPriceEur: null,
-        priceChanges: [],
-        note: "Lapa pārāk liela.",
+        snapshot: failedListingSnapshot({ host: "ss.lv", url, note: "Lapa pārāk liela." }),
       };
     }
+    return { ok: true, html, url, host: "ss.lv" };
   } catch {
     return {
       ok: false,
-      host: "ss.lv",
-      fetchedAt: new Date().toISOString(),
-      daysListed: null,
-      postedDateRaw: null,
-      currentKm: null,
-      currentPriceEur: null,
-      priceChanges: [],
-      note: "Neizdevās ielādēt sludinājumu (tīkls vai timeout).",
+      snapshot: failedListingSnapshot({
+        host: "ss.lv",
+        url,
+        note: "Neizdevās ielādēt sludinājumu (tīkls vai timeout).",
+      }),
     };
   } finally {
     clearTimeout(t);
   }
+}
 
-  return parseSsLvListingHtml(html);
+export async function fetchListingAiSnapshot(listingUrl: string): Promise<ListingAiSnapshot> {
+  const fetched = await fetchSsLvListingHtml(listingUrl);
+  if (!fetched.ok) return fetched.snapshot;
+  return parseSsLvListingAiHtml(fetched.html, fetched.url);
+}
+
+function toMarketSnapshot(snapshot: ListingAiSnapshot): ListingMarketSnapshot {
+  const {
+    ok,
+    host,
+    fetchedAt,
+    daysListed,
+    postedDateRaw,
+    currentKm,
+    currentPriceEur,
+    priceChanges,
+    note,
+  } = snapshot;
+  return {
+    ok,
+    host,
+    fetchedAt,
+    daysListed,
+    postedDateRaw,
+    currentKm,
+    currentPriceEur,
+    priceChanges,
+    note,
+  };
+}
+
+export async function fetchListingMarketSnapshot(listingUrl: string): Promise<ListingMarketSnapshot> {
+  const fetched = await fetchSsLvListingHtml(listingUrl);
+  if (!fetched.ok) return toMarketSnapshot(fetched.snapshot);
+  return parseSsLvListingHtml(fetched.html);
 }

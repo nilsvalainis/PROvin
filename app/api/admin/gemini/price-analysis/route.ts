@@ -78,6 +78,9 @@ export async function POST(req: Request) {
     if (msg === "empty_order_context") {
       return NextResponse.json({ error: "empty_order_context" }, { status: 400 });
     }
+    if (msg === "listing_scrape_failed") {
+      return NextResponse.json({ error: "listing_scrape_failed" }, { status: 502 });
+    }
     return NextResponse.json({ error: "generation_failed", detail: msg }, { status: 502 });
   }
 }

@@ -718,7 +718,9 @@ export function OrderDetailWorkspace({
         } else if (data.error === "gemini_demo_only") {
           setGeminiPriceErr("Gemini pieejams tikai DEMO pasūtījumiem");
         } else if (data.error === "empty_order_context") {
-          setGeminiPriceErr("Trūkst avotu datu — aizpildi vismaz CSDD vai sludinājumu");
+          setGeminiPriceErr("Trūkst avotu datu — ievadi sludinājuma saiti vai aizpildi avotu laukus");
+        } else if (data.error === "listing_scrape_failed") {
+          setGeminiPriceErr("Neizdevās nolasīt ss.lv sludinājumu — pārbaudi saiti");
         } else if (data.error === "generation_failed") {
           setGeminiPriceErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās analizēt cenu");
         } else {
