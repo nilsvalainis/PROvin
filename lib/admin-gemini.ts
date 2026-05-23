@@ -2,10 +2,10 @@ import "server-only";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-/** Dziļā analīze — pārdevējs, cena, gala kopsavilkums. */
-export const GEMINI_MODEL_PRO = "gemini-1.5-pro";
-/** Ātrākas darbības — ieteikumi klātienes apskatei. */
-export const GEMINI_MODEL_FLASH = "gemini-1.5-flash";
+/** Dziļā analīze — pārdevējs, gala kopsavilkums. */
+export const GEMINI_MODEL_PRO = "gemini-1.5-pro-latest";
+/** Ātrākas darbības — ieteikumi apskatei, cenas analīze. */
+export const GEMINI_MODEL_FLASH = "gemini-1.5-flash-latest";
 
 export function getGeminiApiKeyFromEnv(): string | null {
   const k = process.env.GEMINI_API_KEY?.trim();
@@ -40,7 +40,7 @@ type GenerateContentApiResponse = {
   error?: { message?: string };
 };
 
-/** Google Search Grounding — REST v1beta (gemini-1.5-pro u.c.). */
+/** Google Search Grounding — REST v1beta (gemini-1.5-pro-latest u.c.). */
 export async function geminiGenerateTextWithGoogleSearch(opts: {
   model: string;
   systemInstruction: string;
