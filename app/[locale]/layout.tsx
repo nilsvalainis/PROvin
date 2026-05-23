@@ -5,6 +5,7 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { notFound } from "next/navigation";
 import { LocaleHtmlLang } from "@/components/LocaleHtmlLang";
 import { CookieConsent } from "@/components/CookieConsent";
+import { WhatsAppFab } from "@/components/WhatsAppFab";
 import { LenisProvider } from "@/components/providers/LenisProvider";
 import { Header } from "@/components/Header";
 import { SiteOrderCtaPin } from "@/components/home/SiteOrderCtaPin";
@@ -106,6 +107,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           {children}
         </main>
         <CookieConsent />
+        <WhatsAppFab />
       </LenisProvider>
     </NextIntlClientProvider>
   );

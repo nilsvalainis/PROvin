@@ -26,7 +26,6 @@ export default function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/admin")) {
     const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-provin-no-smartsupp", "1");
     if (!pathname.startsWith("/admin/login")) {
       requestHeaders.set("x-admin-intended-path", pathname);
     }
