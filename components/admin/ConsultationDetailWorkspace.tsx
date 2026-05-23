@@ -31,6 +31,9 @@ import {
 } from "@/lib/consultation-tab-status";
 import { buildSelectConsultationDocumentHtml } from "@/lib/select-consultation-report-html";
 import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
+import { AdminWhatsAppPdfSendButton } from "@/components/admin/AdminWhatsAppPdfSendButton";
+import { WHATSAPP_PREFILL_SELECT_CONSULTATION } from "@/lib/admin-whatsapp-messages";
+import { buildConsultationQuickPdfForWhatsApp } from "@/lib/consultation-whatsapp-quick-pdf";
 
 const ADMIN_CONTENT_MAX = "max-w-[min(76.8rem,calc(100vw-1.25rem))]";
 const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
@@ -465,6 +468,20 @@ export function ConsultationDetailWorkspace({
     window.setTimeout(schedulePrint, 900);
   }, [payload, ws]);
 
+  const generateConsultationPdfForWhatsApp = useCallback(async (): Promise<File | null> => {
+    try {
+      return await buildConsultationQuickPdfForWhatsApp(ws, {
+        sessionId: payload.sessionId,
+        customerName: payload.customerName,
+        customerEmail: payload.customerEmail,
+        customerPhone: payload.customerPhone,
+      });
+    } catch (error) {
+      alert(error instanceof Error ? error.message.slice(0, 220) : "Neizdevās sagatavot PDF WhatsApp nosūtīšanai.");
+      return null;
+    }
+  }, [payload.customerEmail, payload.customerName, payload.customerPhone, payload.sessionId, ws]);
+
   const pdfVisibility = pdfVisibilityProp ?? DEFAULT_PDF_VISIBILITY;
 
   const consultationStepsUi = useMemo(
@@ -661,13 +678,20 @@ export function ConsultationDetailWorkspace({
               );
             })}
           </div>
-          <button
-            type="button"
-            onClick={() => void openPdf()}
-            className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-emerald-800/40 bg-[#22C55E] px-3 py-2 text-[11px] font-semibold tracking-tight text-white shadow-sm transition hover:bg-[#16a34a]"
-          >
-            Ģenerēt PDF
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <AdminWhatsAppPdfSendButton
+              phone={payload.customerPhone}
+              prefillMessage={WHATSAPP_PREFILL_SELECT_CONSULTATION}
+              generatePdf={generateConsultationPdfForWhatsApp}
+            />
+            <button
+              type="button"
+              onClick={() => void openPdf()}
+              className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-emerald-800/40 bg-[#22C55E] px-3 py-2 text-[11px] font-semibold tracking-tight text-white shadow-sm transition hover:bg-[#16a34a]"
+            >
+              Ģenerēt PDF
+            </button>
+          </div>
         </div>
         <div className={`mx-auto mt-2 px-1 ${ADMIN_CONTENT_MAX}`}>
           <div

@@ -10,6 +10,7 @@ import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField"
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import { ConsultationDetailWorkspace } from "@/components/admin/ConsultationDetailWorkspace";
+import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { formatMoneyEur } from "@/lib/format-money";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import type { ConsultationDraftState } from "@/lib/admin-consultation-draft-types";
@@ -362,6 +363,7 @@ export function AdminConsultationDetailView({
                 compact
                 hideToolbar
                 resetVersion={orderFieldResetKey}
+                endAdornment={<AdminWhatsAppOpenButton phone={mergedCustomerPhone} />}
               />
             </div>
           </AdminCollapsibleShell>
