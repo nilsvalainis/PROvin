@@ -2424,6 +2424,27 @@ export function OrderDetailWorkspace({
                     buildGeminiPayload={buildGeminiListingPayload}
                   />
                 </div>
+                <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.priceFit} title="3. Cenas atbilstība">
+                  <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
+                    <AdminGeminiGenerateButton
+                      label="Analizēt cenu"
+                      busy={geminiPriceBusy}
+                      disabled={!payload.isDemo}
+                      demoOnly={!payload.isDemo}
+                      onClick={() => void runGeminiPriceAnalysis()}
+                    />
+                  </div>
+                  {geminiPriceErr ? (
+                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiPriceErr}>
+                      {geminiPriceErr}
+                    </p>
+                  ) : null}
+                  <AdminAiPolishRichCommentShell
+                    value={ws.cenasAtbilstiba}
+                    onChange={(next) => updateWs({ cenasAtbilstiba: next })}
+                    aria-label="Cenas atbilstība"
+                  />
+                </ListingAnalysisSubsectionHeading>
               </div>
             </div>
           </section>
@@ -2434,7 +2455,7 @@ export function OrderDetailWorkspace({
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
                 <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
-                  <span>Kopsavilkums un cenas atbilstība</span>
+                  <span>Kopsavilkums</span>
                 </h2>
               </div>
               <AdminPdfIncludeToggle
@@ -2449,7 +2470,31 @@ export function OrderDetailWorkspace({
                 trafficStripClass=""
               />
               <div className="space-y-3 bg-transparent px-2 pb-2 pt-2">
-                <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.summary} title="1. Kopsavilkums">
+                <ListingAnalysisSubsectionHeading
+                  icon={IRISS_CHROME_LUCIDE.inspection}
+                  title="1. Ieteikumi klātienes apskatei"
+                >
+                  <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
+                    <AdminGeminiGenerateButton
+                      label="Ģenerēt ieteikumus"
+                      busy={geminiInspectionBusy}
+                      disabled={!payload.isDemo}
+                      demoOnly={!payload.isDemo}
+                      onClick={() => void runGeminiInspectionRecommendations()}
+                    />
+                  </div>
+                  {geminiInspectionErr ? (
+                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiInspectionErr}>
+                      {geminiInspectionErr}
+                    </p>
+                  ) : null}
+                  <AdminAiPolishRichCommentShell
+                    value={ws.apskatesPlāns}
+                    onChange={(next) => updateWs({ apskatesPlāns: next })}
+                    aria-label="Ieteikumi klātienes apskatei"
+                  />
+                </ListingAnalysisSubsectionHeading>
+                <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.summary} title="2. Kopsavilkums">
                   <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
                     <AdminGeminiGenerateButton
                       label="Sagatavot atbildi"
@@ -2486,51 +2531,6 @@ export function OrderDetailWorkspace({
                     value={ws.iriss}
                     onChange={setIrissSummary}
                     aria-label="Galvenais kopsavilkums klientam"
-                  />
-                </ListingAnalysisSubsectionHeading>
-                <ListingAnalysisSubsectionHeading
-                  icon={IRISS_CHROME_LUCIDE.inspection}
-                  title="2. Ieteikumi klātienes apskatei"
-                >
-                  <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminGeminiGenerateButton
-                      label="Ģenerēt ieteikumus"
-                      busy={geminiInspectionBusy}
-                      disabled={!payload.isDemo}
-                      demoOnly={!payload.isDemo}
-                      onClick={() => void runGeminiInspectionRecommendations()}
-                    />
-                  </div>
-                  {geminiInspectionErr ? (
-                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiInspectionErr}>
-                      {geminiInspectionErr}
-                    </p>
-                  ) : null}
-                  <AdminAiPolishRichCommentShell
-                    value={ws.apskatesPlāns}
-                    onChange={(next) => updateWs({ apskatesPlāns: next })}
-                    aria-label="Ieteikumi klātienes apskatei"
-                  />
-                </ListingAnalysisSubsectionHeading>
-                <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.priceFit} title="3. Cenas atbilstība">
-                  <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminGeminiGenerateButton
-                      label="Analizēt cenu"
-                      busy={geminiPriceBusy}
-                      disabled={!payload.isDemo}
-                      demoOnly={!payload.isDemo}
-                      onClick={() => void runGeminiPriceAnalysis()}
-                    />
-                  </div>
-                  {geminiPriceErr ? (
-                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiPriceErr}>
-                      {geminiPriceErr}
-                    </p>
-                  ) : null}
-                  <AdminAiPolishRichCommentShell
-                    value={ws.cenasAtbilstiba}
-                    onChange={(next) => updateWs({ cenasAtbilstiba: next })}
-                    aria-label="Cenas atbilstība"
                   />
                 </ListingAnalysisSubsectionHeading>
                 <ListingAnalysisSubsectionHeading

@@ -25,24 +25,27 @@ export async function generateSummaryAnalysisWithGemini(input: GeminiOrderContex
   const inspectionText = expertSection("Ieteikumi klātienes apskatei", inspectionPlan);
   const priceText = expertSection("Cenas atbilstība", priceFit);
 
-  if (!sellerText && !inspectionText && !priceText) {
-    throw new Error("missing_expert_sections");
-  }
-
   const orderContext = buildGeminiOrderContextText({
     ...input,
     irissSummary: undefined,
+    inspectionPlan: undefined,
+    priceFit: undefined,
   });
+
+  if (!sellerText && !inspectionText && !priceText && !orderContext.trim()) {
+    throw new Error("missing_expert_sections");
+  }
 
   const expertBundle = [sellerText, inspectionText, priceText].filter(Boolean).join("\n\n");
 
   const userPrompt = `Pasūtījuma ID: ${input.sessionId}
 
-${orderContext ? `${orderContext}\n\n---\n\n` : ""}Eksperta sagatavotās sadaļas (galvenais avots kopsavilkumam):
-
-${expertBundle}
-
-Sagatavo gala kopsavilkumu klientam laukam „1. Kopsavilkums”.`;
+${orderContext ? `${orderContext}\n\n---\n\n` : ""}${
+    expertBundle
+      ? `Eksperta jau sagatavotās sadaļas (papildus konteksts, nevis vienīgais avots):\n\n${expertBundle}\n\n---\n\n`
+      : ""
+  }Sagatavo gala kopsavilkumu klientam laukam „2. Kopsavilkums”.
+Sintezē VISU portfeļa kontekstu — avotu datus, tabulas, komentārus un eksperta sadaļas.`;
 
   return geminiGenerateText({
     model: GEMINI_MODEL_PRO,

@@ -10,7 +10,7 @@
  */
 
 export const REPORT_PDF_STANDARDS = {
-  firstPageExpertBlockTitle: "Kopsavilkums · Ieteikumi klātienes apskatei · Cenas atbilstība",
+  firstPageExpertBlockTitle: "Ieteikumi klātienes apskatei · Kopsavilkums",
   /** Paraugs teikumam, ja atspoguļo starptautisko DB saturu bez zīmola nosaukumiem */
   sampleInternationalDbWording: "Saskaņā ar starptautisko datubāzu ierakstiem…",
 } as const;

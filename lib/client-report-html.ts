@@ -91,9 +91,9 @@ import { internalCommentHtmlToPdfPlain } from "@/lib/admin-internal-comment-pdf"
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
 const PDF_APPROVED_BY_IRISS = "APPROVED BY IRISS";
-const PDF_IRISS_SECTION_1 = "1. Kopsavilkums";
-const PDF_IRISS_SECTION_2 = "2. Ieteikumi klātienes apskatei";
-const PDF_IRISS_SECTION_3 = "3. Cenas atbilstība";
+const PDF_IRISS_SECTION_1 = "1. Ieteikumi klātienes apskatei";
+const PDF_IRISS_SECTION_2 = "2. Kopsavilkums";
+const PDF_LISTING_SECTION_PRICE = "3. Cenas atbilstība";
 const PDF_INCIDENT_INTERNAL_COMMENT_LABEL = "Komentārs";
 const PDF_SUB_CSDD = "CSDD";
 const PDF_SUB_BLOCK_COMMENTS = "Komentāri";
@@ -678,6 +678,14 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload, vis: PdfVisibi
     cat(L.photoAnalysis, b.photoAnalysis);
     cat(L.listingSalesContext, b.listingSalesContext);
   }
+  const priceFit = internalCommentHtmlToPdfPlain(p.cenasAtbilstiba ?? "").trim();
+  if (priceFit) {
+    const priceFitBlock = `Cenas atbilstība balstoties uz mūsu rīcībā esošajiem datiem:\n${priceFit}`;
+    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("priceTag"), PDF_LISTING_SECTION_PRICE));
+    inner.push(
+      `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(priceFitBlock)}</pre></div>`,
+    );
+  }
   if (inner.length === 0) return "";
   const parts: string[] = [];
   parts.push(`<div class="pdf-unified-mileage-zone pdf-surface-card pdf-listing-analysis-root" role="region">`);
@@ -726,25 +734,15 @@ function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySett
   if (!vis.iriss) return "";
   const iriss = internalCommentHtmlToPdfPlain(p.iriss ?? "").trim();
   const plan = internalCommentHtmlToPdfPlain(p.apskatesPlāns ?? "").trim();
-  const priceFit = internalCommentHtmlToPdfPlain(p.cenasAtbilstiba ?? "").trim();
-  if (!iriss && !plan && !priceFit) return "";
-  const priceFitBlock = priceFit
-    ? `Cenas atbilstība balstoties uz mūsu rīcībā esošajiem datiem:\n${priceFit}`
-    : "";
+  if (!iriss && !plan) return "";
   const inner: string[] = [];
-  if (iriss) {
-    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("fileSearch"), PDF_IRISS_SECTION_1));
-    inner.push(`<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(iriss)}</pre></div>`);
-  }
   if (plan) {
-    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("car"), PDF_IRISS_SECTION_2));
+    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("car"), PDF_IRISS_SECTION_1));
     inner.push(`<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(plan)}</pre></div>`);
   }
-  if (priceFitBlock) {
-    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("priceTag"), PDF_IRISS_SECTION_3));
-    inner.push(
-      `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(priceFitBlock)}</pre></div>`,
-    );
+  if (iriss) {
+    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("fileSearch"), PDF_IRISS_SECTION_2));
+    inner.push(`<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(iriss)}</pre></div>`);
   }
   if (inner.length === 0) return "";
   const parts: string[] = [];
