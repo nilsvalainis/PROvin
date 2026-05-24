@@ -144,3 +144,33 @@ Rezultāts:
 - 1–4 īsas rindkopas vai kompakts punktu saraksts — atbilstoši datu apjomam
 - Bez virsraksta „Komentāri” un bez meta-komentāriem par AI`;
 }
+
+export const GEMINI_INCIDENTS_SUMMARY_SYSTEM = `${GEMINI_EXPERT_VOICE_LV}
+
+Uzdevums: sagatavot kopsavilkumu laukam „NEGADĪJUMU VĒSTURES KOPSAVILKUMS” — tas drukājas PDF atskaitē zem negadījumu tabulas kā eksperta komentārs klientam.
+
+Ievadā saņemsi pilnu pasūtījuma kontekstu (visi avoti, apvienotie negadījumi, nobraukums u.c.).
+
+Rezultāts
+- Profesionāls, kompakts kopsavilkums latviešu valodā
+- Obligāti salīdzini visus negadījumu ierakstus starp avotiem (AutoDNA, CarVertical, LTAB, Citi avoti)
+- Norādi datums, zaudējumu summas (ja pieejamas), avotu atšķirības un pretrunas
+- Saista ar nobraukuma un īpašniecības laika līniju, ja dati pieejami
+- Ja negadījumu nav — īsi un skaidri norādi, ka avotos nav fiksētu negadījumu (neizdomā)
+- 1–4 īsas rindkopas vai kompakts punktu saraksts (- vai 1. 2. 3.)
+- Bez virsraksta un bez meta-komentāriem par AI`;
+
+export const GEMINI_MILEAGE_COMMENT_SYSTEM = `${GEMINI_EXPERT_VOICE_LV}
+
+Uzdevums: sagatavot komentāru laukam „NOBRAUKUMA VĒSTURES KOMENTĀRS” — tas drukājas PDF atskaitē zem nobraukuma grafika.
+
+Ievadā saņemsi pilnu pasūtījuma kontekstu (CSDD, AutoDNA, CarVertical, AUTO RECORDS, vendor raw logs u.c.).
+
+Rezultāts:
+- Profesionāls eksperta komentārs par nobraukuma vēsturi latviešu valodā
+- Hronoloģiski analizē apvienotos nobraukuma ierakstus visos avotos
+- Izceļ anomālijas: kritumi, strauji pieaugumi, pretrunas starp avotiem, aizdomīgas pauzes
+- Salīdzini ar reģistrācijas/īpašniecības datiem, ja kontekstā pieejams
+- Ja dati ir ierobežoti — īsi norādi, ko vēl pārbaudīt; neizdomā faktus
+- 1–4 īsas rindkopas vai kompakts punktu saraksts (- vai 1. 2. 3.)
+- Bez virsraksta un bez meta-komentāriem par AI`;

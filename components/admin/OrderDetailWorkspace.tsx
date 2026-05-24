@@ -115,6 +115,10 @@ import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
 } from "@/lib/admin-workspace-field-labels";
+import {
+  orderHasIncidentDataForGemini,
+  orderHasMileageDataForGemini,
+} from "@/lib/admin-gemini-data-availability";
 import { buildProvinAuditPdfFilename } from "@/lib/audit-report-pdf-filename";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
@@ -555,6 +559,10 @@ export function OrderDetailWorkspace({
   const [geminiPriceErr, setGeminiPriceErr] = useState<string | null>(null);
   const [geminiSummaryBusy, setGeminiSummaryBusy] = useState(false);
   const [geminiSummaryErr, setGeminiSummaryErr] = useState<string | null>(null);
+  const [geminiIncidentsSummaryBusy, setGeminiIncidentsSummaryBusy] = useState(false);
+  const [geminiIncidentsSummaryErr, setGeminiIncidentsSummaryErr] = useState<string | null>(null);
+  const [geminiMileageCommentBusy, setGeminiMileageCommentBusy] = useState(false);
+  const [geminiMileageCommentErr, setGeminiMileageCommentErr] = useState<string | null>(null);
   const [geminiSourceCommentBusy, setGeminiSourceCommentBusy] = useState<GeminiSourceCommentBlockKey | null>(null);
   const [geminiSourceCommentErr, setGeminiSourceCommentErr] = useState<{
     key: GeminiSourceCommentBlockKey;
@@ -802,6 +810,102 @@ export function OrderDetailWorkspace({
       setGeminiSummaryBusy(false);
     }
   }, [buildGeminiOrderPayload, geminiSummaryBusy, payload.geminiAllowed, setIrissSummary]);
+
+  const runGeminiIncidentsSummary = useCallback(async (operatorNotes = "") => {
+    if (!payload.geminiAllowed || geminiIncidentsSummaryBusy) return;
+    setGeminiIncidentsSummaryBusy(true);
+    setGeminiIncidentsSummaryErr(null);
+    try {
+      const res = await fetch("/api/admin/gemini/incidents-summary", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...buildGeminiOrderPayload({
+            operatorNotes,
+            existingDraftPlain: adminRichHtmlToPlainText(internalCommentDraft).trim(),
+          }),
+        }),
+      });
+      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+      if (!res.ok) {
+        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
+        if (data.error === "missing_gemini_key") {
+          setGeminiIncidentsSummaryErr("Nav GEMINI_API_KEY (.env.local / Vercel)");
+        } else if (data.error === "gemini_demo_only") {
+          setGeminiIncidentsSummaryErr("Gemini pieejams tikai DEMO pasūtījumiem");
+        } else if (data.error === "empty_incident_data") {
+          setGeminiIncidentsSummaryErr("Trūkst negadījumu datu — aizpildi avotu tabulas");
+        } else if (data.error === "generation_failed") {
+          setGeminiIncidentsSummaryErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās sagatavot atbildi");
+        } else {
+          setGeminiIncidentsSummaryErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
+        }
+        return;
+      }
+      if (typeof data.text === "string" && data.text.trim()) {
+        onInternalCommentChange(plainTextToMinimalRichHtml(data.text));
+      }
+    } catch {
+      setGeminiIncidentsSummaryErr("Gemini: neizdevās savienoties");
+    } finally {
+      setGeminiIncidentsSummaryBusy(false);
+    }
+  }, [
+    buildGeminiOrderPayload,
+    geminiIncidentsSummaryBusy,
+    internalCommentDraft,
+    onInternalCommentChange,
+    payload.geminiAllowed,
+  ]);
+
+  const runGeminiMileageComment = useCallback(async (operatorNotes = "") => {
+    if (!payload.geminiAllowed || geminiMileageCommentBusy) return;
+    setGeminiMileageCommentBusy(true);
+    setGeminiMileageCommentErr(null);
+    try {
+      const res = await fetch("/api/admin/gemini/mileage-comment", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...buildGeminiOrderPayload({
+            operatorNotes,
+            existingDraftPlain: adminRichHtmlToPlainText(mileageCommentDraft).trim(),
+          }),
+        }),
+      });
+      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+      if (!res.ok) {
+        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
+        if (data.error === "missing_gemini_key") {
+          setGeminiMileageCommentErr("Nav GEMINI_API_KEY (.env.local / Vercel)");
+        } else if (data.error === "gemini_demo_only") {
+          setGeminiMileageCommentErr("Gemini pieejams tikai DEMO pasūtījumiem");
+        } else if (data.error === "empty_mileage_data") {
+          setGeminiMileageCommentErr("Trūkst nobraukuma datu — aizpildi CSDD vai avotu tabulas");
+        } else if (data.error === "generation_failed") {
+          setGeminiMileageCommentErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās sagatavot atbildi");
+        } else {
+          setGeminiMileageCommentErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
+        }
+        return;
+      }
+      if (typeof data.text === "string" && data.text.trim()) {
+        onMileageCommentChange(plainTextToMinimalRichHtml(data.text));
+      }
+    } catch {
+      setGeminiMileageCommentErr("Gemini: neizdevās savienoties");
+    } finally {
+      setGeminiMileageCommentBusy(false);
+    }
+  }, [
+    buildGeminiOrderPayload,
+    geminiMileageCommentBusy,
+    mileageCommentDraft,
+    onMileageCommentChange,
+    payload.geminiAllowed,
+  ]);
 
   const updateSourceBlock = useCallback((key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]) => {
     setWs((prev) => ({
@@ -1468,6 +1572,16 @@ export function OrderDetailWorkspace({
   const provinInfoBanners = useMemo(
     () => computeProvinInfoBannersFromWorkspace(ws.sourceBlocks),
     [ws.sourceBlocks],
+  );
+
+  const hasIncidentDataForGemini = useMemo(
+    () => orderHasIncidentDataForGemini(blocksDisplaySafe),
+    [blocksDisplaySafe],
+  );
+
+  const hasMileageDataForGemini = useMemo(
+    () => orderHasMileageDataForGemini(blocksDisplaySafe),
+    [blocksDisplaySafe],
   );
 
   const traffic = useMemo(() => {
@@ -2649,6 +2763,27 @@ export function OrderDetailWorkspace({
                     formatējuma).
                     Saglabājas automātiski.
                   </p>
+                  <div className="mb-2 mt-2 flex flex-wrap items-center justify-end gap-2">
+                    <AdminGeminiGenerateWithPrefill
+                      label="Sagatavot atbildi"
+                      busy={geminiIncidentsSummaryBusy}
+                      disabled={!payload.geminiAllowed || !hasIncidentDataForGemini}
+                      demoOnly={!payload.geminiAllowed}
+                      title={
+                        !payload.geminiAllowed
+                          ? undefined
+                          : !hasIncidentDataForGemini
+                            ? "Vispirms aizpildi negadījumu tabulas avotos"
+                            : undefined
+                      }
+                      onGenerate={(operatorNotes) => void runGeminiIncidentsSummary(operatorNotes)}
+                    />
+                  </div>
+                  {geminiIncidentsSummaryErr ? (
+                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiIncidentsSummaryErr}>
+                      {geminiIncidentsSummaryErr}
+                    </p>
+                  ) : null}
                   <div className="mt-2">
                     <AdminAiPolishRichCommentShell
                       compact
@@ -2665,6 +2800,27 @@ export function OrderDetailWorkspace({
                   <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
                     Glabājas pasūtījuma melnrakstā; PDF drukā zem nobraukuma grafika kā komentārs. Saglabājas automātiski.
                   </p>
+                  <div className="mb-2 mt-2 flex flex-wrap items-center justify-end gap-2">
+                    <AdminGeminiGenerateWithPrefill
+                      label="Sagatavot atbildi"
+                      busy={geminiMileageCommentBusy}
+                      disabled={!payload.geminiAllowed || !hasMileageDataForGemini}
+                      demoOnly={!payload.geminiAllowed}
+                      title={
+                        !payload.geminiAllowed
+                          ? undefined
+                          : !hasMileageDataForGemini
+                            ? "Vispirms aizpildi nobraukuma tabulas avotos"
+                            : undefined
+                      }
+                      onGenerate={(operatorNotes) => void runGeminiMileageComment(operatorNotes)}
+                    />
+                  </div>
+                  {geminiMileageCommentErr ? (
+                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiMileageCommentErr}>
+                      {geminiMileageCommentErr}
+                    </p>
+                  ) : null}
                   <div className="mt-2">
                     <AdminAiPolishRichCommentShell
                       compact

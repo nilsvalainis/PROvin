@@ -1,0 +1,46 @@
+import "server-only";
+
+import { GEMINI_MODEL_FLASH, geminiGenerateText } from "@/lib/admin-gemini";
+import { GEMINI_MILEAGE_COMMENT_SYSTEM } from "@/lib/admin-gemini-prompts";
+import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
+import {
+  buildGeminiOrderContextText,
+  type GeminiOrderContextInput,
+} from "@/lib/admin-gemini-order-context";
+import { orderHasMileageDataForGemini } from "@/lib/admin-gemini-data-availability";
+import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { ADMIN_MILEAGE_HISTORY_COMMENT_LABEL } from "@/lib/admin-workspace-field-labels";
+
+export async function generateMileageCommentWithGemini(input: GeminiOrderContextInput): Promise<string> {
+  if (!orderHasMileageDataForGemini(input.sourceBlocks)) {
+    throw new Error("empty_mileage_data");
+  }
+
+  const orderContext = buildGeminiOrderContextText({
+    ...input,
+    mileageComment: undefined,
+  });
+
+  const userPrompt = appendGeminiOperatorNotesSection(
+    `Pasūtījuma ID: ${input.sessionId}
+
+${orderContext}
+
+Sagatavo komentāru laukam „${ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}”.
+Analizē apvienoto nobraukuma vēsturi un visas odometra anomālijas visos avotos.`,
+    {
+      operatorNotes: input.operatorNotes,
+      existingDraftPlain:
+        input.existingDraftPlain?.trim() ||
+        adminRichHtmlToPlainText(input.mileageComment ?? "").trim() ||
+        undefined,
+    },
+  );
+
+  return geminiGenerateText({
+    model: GEMINI_MODEL_FLASH,
+    systemInstruction: GEMINI_MILEAGE_COMMENT_SYSTEM,
+    userPrompt,
+    temperature: 0.35,
+  });
+}
