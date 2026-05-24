@@ -60,12 +60,8 @@ function monthsBetweenUtc(fromMs: number, toMs: number): number {
   return Math.max(0, months);
 }
 
-function lvDienaForm(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return "diena";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "dienas";
-  return "dienu";
+function lvDienaLabel(days: number): string {
+  return days === 1 ? "diena" : "dienas";
 }
 
 function lvMenesisForm(n: number): string {
@@ -118,7 +114,7 @@ export function computeLatviaRegistrationTenure(
   const firstDateDisplay = formatDisplayDate(oldest.dateRaw);
   const usedSources = [...new Set(candidates.map((c) => c.source))];
 
-  const sentence = `Saskaņā ar mūsu rīcībā esošajiem datiem transportlīdzeklis Latvijā ir reģistrēts — kopā ${days} ${lvDienaForm(days)} (${months} ${lvMenesisForm(months)}).`;
+  const sentence = `Saskaņā ar mūsu rīcībā esošajiem datiem transportlīdzeklis Latvijā ir reģistrēts ${days} ${lvDienaLabel(days)} (${months} ${lvMenesisForm(months)}).`;
 
   return {
     firstDateDisplay,
