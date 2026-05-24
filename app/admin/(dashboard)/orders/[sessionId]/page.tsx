@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { MarkAdminStripeSessionOpened } from "@/components/admin/MarkAdminStripeSessionOpened";
 import { AdminOrderDetailView } from "@/components/admin/AdminOrderDetailView";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
+import { geminiAllowsOrder } from "@/lib/admin-gemini-access";
 import { isOrderDraftStoreEnabled, readOrderDraft } from "@/lib/admin-order-draft-store";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +56,7 @@ export default async function AdminOrderDetailPage({ params }: Props) {
         serverOrderDraft={serverOrderDraft}
         serverWorkspaceJson={serverWorkspaceJson}
         orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
+        geminiAllowed={geminiAllowsOrder(Boolean(order.isDemo))}
       />
     </>
   );

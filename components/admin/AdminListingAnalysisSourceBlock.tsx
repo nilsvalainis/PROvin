@@ -49,8 +49,8 @@ type Props = {
   compact?: boolean;
   /** Teksta lauku augstums pēc scrollHeight (+ aptuveni viena rinda). */
   autoGrow?: boolean;
-  /** Gemini — tikai DEMO pasūtījumi. */
-  geminiIsDemo?: boolean;
+  /** Gemini — ja atļauts šim pasūtījumam (skat. GEMINI_DEMO_ONLY). */
+  geminiAllowed?: boolean;
   buildGeminiPayload?: () => GeminiListingAnalysisPayload;
 };
 
@@ -62,7 +62,7 @@ export function AdminListingAnalysisSourceBlock({
   variant = "default",
   compact = false,
   autoGrow = false,
-  geminiIsDemo = false,
+  geminiAllowed = true,
   buildGeminiPayload,
 }: Props) {
   const v = value ?? emptyListingAnalysisBlock();
@@ -87,7 +87,7 @@ export function AdminListingAnalysisSourceBlock({
   }, [autoGrow, readOnly, bumpTa, v.listingPasteRaw]);
 
   const canRunSellerGemini =
-    geminiIsDemo &&
+    geminiAllowed &&
     Boolean(buildGeminiPayload) &&
     (v.extraSellerName.trim().length > 0 || v.listingPasteRaw.trim().length > 0);
 
@@ -237,7 +237,7 @@ export function AdminListingAnalysisSourceBlock({
               label="Analizēt Pārdevēju"
               busy={sellerAnalyzing}
               disabled={!canRunSellerGemini || readOnly || disabled}
-              demoOnly={!geminiIsDemo}
+              demoOnly={!geminiAllowed}
               onClick={() => void runSellerGeminiAnalyze()}
             />
           </div>

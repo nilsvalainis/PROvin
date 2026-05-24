@@ -85,11 +85,13 @@ export function AdminOrderDetailView({
   serverOrderDraft,
   serverWorkspaceJson,
   orderDraftPersistenceEnabled,
+  geminiAllowed,
 }: {
   order: AdminOrderDetailClientModel;
   serverOrderDraft: OrderDraftState | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
+  geminiAllowed: boolean;
 }) {
   const dateFmt = new Intl.DateTimeFormat("lv-LV", {
     dateStyle: "long",
@@ -701,6 +703,7 @@ export function AdminOrderDetailView({
         payload={{
           sessionId: order.id,
           isDemo: Boolean(order.isDemo),
+          geminiAllowed,
           vin: mergedVin.trim() || null,
           created: order.created,
           amountTotal: order.amountTotal,

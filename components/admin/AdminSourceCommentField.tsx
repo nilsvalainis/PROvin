@@ -6,7 +6,7 @@ import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCo
 import { LISTING_ANALYSIS_COMMENT_LABEL } from "@/lib/admin-source-blocks";
 
 export type AdminGeminiSourceCommentSlot = {
-  isDemo: boolean;
+  allowed: boolean;
   busy: boolean;
   error: string | null;
   hasSourceData: boolean;
@@ -44,10 +44,10 @@ export function AdminSourceCommentField({
           <AdminGeminiGenerateButton
             label="Ģenerēt komentāru"
             busy={gemini.busy}
-            disabled={!gemini.isDemo || !gemini.hasSourceData || disabled}
-            demoOnly={!gemini.isDemo}
+            disabled={!gemini.allowed || !gemini.hasSourceData || disabled}
+            demoOnly={!gemini.allowed}
             title={
-              !gemini.isDemo
+              !gemini.allowed
                 ? undefined
                 : !gemini.hasSourceData
                   ? "Vispirms aizpildi šī avota datus (tabulas, laukus u.c.)"

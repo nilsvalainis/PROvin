@@ -116,6 +116,8 @@ import {
 export type OrderWorkspacePayload = {
   sessionId: string;
   isDemo: boolean;
+  /** Vai Gemini pogas drīkst strādāt (pēc noklusējuma visiem pasūtījumiem). */
+  geminiAllowed: boolean;
   vin: string | null;
   created: number;
   amountTotal: number | null;
@@ -643,7 +645,7 @@ export function OrderDetailWorkspace({
   }, []);
 
   const runGeminiInspectionRecommendations = useCallback(async () => {
-    if (!payload.isDemo || geminiInspectionBusy) return;
+    if (!payload.geminiAllowed || geminiInspectionBusy) return;
     setGeminiInspectionBusy(true);
     setGeminiInspectionErr(null);
     try {
@@ -686,10 +688,10 @@ export function OrderDetailWorkspace({
     } finally {
       setGeminiInspectionBusy(false);
     }
-  }, [geminiInspectionBusy, payload.customerName, payload.isDemo, payload.listingUrl, payload.notes, payload.sessionId, payload.vin, updateWs]);
+  }, [geminiInspectionBusy, payload.customerName, payload.geminiAllowed, payload.listingUrl, payload.notes, payload.sessionId, payload.vin, updateWs]);
 
   const runGeminiPriceAnalysis = useCallback(async () => {
-    if (!payload.isDemo || geminiPriceBusy) return;
+    if (!payload.geminiAllowed || geminiPriceBusy) return;
     setGeminiPriceBusy(true);
     setGeminiPriceErr(null);
     try {
@@ -736,10 +738,10 @@ export function OrderDetailWorkspace({
     } finally {
       setGeminiPriceBusy(false);
     }
-  }, [geminiPriceBusy, payload.customerName, payload.isDemo, payload.listingUrl, payload.notes, payload.sessionId, payload.vin, updateWs]);
+  }, [geminiPriceBusy, payload.customerName, payload.geminiAllowed, payload.listingUrl, payload.notes, payload.sessionId, payload.vin, updateWs]);
 
   const runGeminiSummaryAnalysis = useCallback(async () => {
-    if (!payload.isDemo || geminiSummaryBusy) return;
+    if (!payload.geminiAllowed || geminiSummaryBusy) return;
     setGeminiSummaryBusy(true);
     setGeminiSummaryErr(null);
     try {
@@ -786,7 +788,7 @@ export function OrderDetailWorkspace({
   }, [
     geminiSummaryBusy,
     payload.customerName,
-    payload.isDemo,
+    payload.geminiAllowed,
     payload.listingUrl,
     payload.notes,
     payload.sessionId,
@@ -803,7 +805,7 @@ export function OrderDetailWorkspace({
 
   const runGeminiSourceComment = useCallback(
     async (blockKey: GeminiSourceCommentBlockKey) => {
-      if (!payload.isDemo || geminiSourceCommentBusy) return;
+      if (!payload.geminiAllowed || geminiSourceCommentBusy) return;
       setGeminiSourceCommentBusy(blockKey);
       setGeminiSourceCommentErr(null);
       try {
@@ -851,7 +853,7 @@ export function OrderDetailWorkspace({
         setGeminiSourceCommentBusy(null);
       }
     },
-    [geminiSourceCommentBusy, payload.isDemo, payload.sessionId, payload.vin, updateSourceBlock],
+    [geminiSourceCommentBusy, payload.geminiAllowed, payload.sessionId, payload.vin, updateSourceBlock],
   );
 
   const pushWorkspaceBackup = useCallback(
@@ -1363,7 +1365,7 @@ export function OrderDetailWorkspace({
 
   const geminiCommentSlot = useCallback(
     (key: GeminiSourceCommentBlockKey): AdminGeminiSourceCommentSlot => ({
-      isDemo: payload.isDemo,
+      allowed: payload.geminiAllowed,
       busy: geminiSourceCommentBusy === key,
       error: geminiSourceCommentErr?.key === key ? geminiSourceCommentErr.msg : null,
       hasSourceData: sourceBlockHasDataExcludingComments(key, blocksDisplaySafe),
@@ -1373,7 +1375,7 @@ export function OrderDetailWorkspace({
       blocksDisplaySafe,
       geminiSourceCommentBusy,
       geminiSourceCommentErr,
-      payload.isDemo,
+      payload.geminiAllowed,
       runGeminiSourceComment,
     ],
   );
@@ -2422,7 +2424,7 @@ export function OrderDetailWorkspace({
                     onChange={(next) => updateSourceBlock("listing_analysis", next)}
                     variant="priority"
                     autoGrow
-                    geminiIsDemo={payload.isDemo}
+                    geminiAllowed={payload.geminiAllowed}
                     buildGeminiPayload={buildGeminiListingPayload}
                   />
                 </div>
@@ -2431,8 +2433,8 @@ export function OrderDetailWorkspace({
                     <AdminGeminiGenerateButton
                       label="Analizēt cenu"
                       busy={geminiPriceBusy}
-                      disabled={!payload.isDemo}
-                      demoOnly={!payload.isDemo}
+                      disabled={!payload.geminiAllowed}
+                      demoOnly={!payload.geminiAllowed}
                       onClick={() => void runGeminiPriceAnalysis()}
                     />
                   </div>
@@ -2480,8 +2482,8 @@ export function OrderDetailWorkspace({
                     <AdminGeminiGenerateButton
                       label="Ģenerēt ieteikumus"
                       busy={geminiInspectionBusy}
-                      disabled={!payload.isDemo}
-                      demoOnly={!payload.isDemo}
+                      disabled={!payload.geminiAllowed}
+                      demoOnly={!payload.geminiAllowed}
                       onClick={() => void runGeminiInspectionRecommendations()}
                     />
                   </div>
@@ -2502,16 +2504,16 @@ export function OrderDetailWorkspace({
                       label="Sagatavot atbildi"
                       busy={geminiSummaryBusy}
                       disabled={
-                        !payload.isDemo ||
+                        !payload.geminiAllowed ||
                         !(
                           adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
                           adminRichHtmlToPlainText(ws.apskatesPlāns).trim() ||
                           adminRichHtmlToPlainText(ws.cenasAtbilstiba).trim()
                         )
                       }
-                      demoOnly={!payload.isDemo}
+                      demoOnly={!payload.geminiAllowed}
                       title={
-                        !payload.isDemo
+                        !payload.geminiAllowed
                           ? undefined
                           : !(
                                 adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
