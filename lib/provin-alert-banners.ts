@@ -33,17 +33,63 @@ import { computeLatviaRegistrationTenure } from "@/lib/latvia-registration-tenur
 
 export type ProvinInfoBannerKind = "lv_registration_tenure";
 
-export type ProvinInfoBanner = {
-  kind: ProvinInfoBannerKind;
-  text: string;
-};
-
 export type ProvinAlertBannerKind =
   | "odometer"
   | "tirgus_high_supply"
   | "incidents"
   | "particulate"
   | "inspection";
+
+export type ProvinBannerKind = ProvinAlertBannerKind | ProvinInfoBannerKind;
+
+/** `false` = neiekļaut PDF; trūkstošs vai `true` = rādīt (noklusējums). */
+export type ProvinBannerPdfInclude = Partial<Record<ProvinBannerKind, boolean>>;
+
+export const PROVIN_ALERT_BANNER_KINDS = [
+  "odometer",
+  "tirgus_high_supply",
+  "incidents",
+  "particulate",
+  "inspection",
+] as const satisfies readonly ProvinAlertBannerKind[];
+
+export const PROVIN_INFO_BANNER_KINDS = ["lv_registration_tenure"] as const satisfies readonly ProvinInfoBannerKind[];
+
+export function isProvinBannerIncludedInPdf(
+  kind: ProvinBannerKind,
+  settings?: ProvinBannerPdfInclude | null,
+): boolean {
+  return settings?.[kind] !== false;
+}
+
+export function mergeProvinBannerPdfInclude(raw: unknown): ProvinBannerPdfInclude {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  const out: ProvinBannerPdfInclude = {};
+  for (const kind of [...PROVIN_ALERT_BANNER_KINDS, ...PROVIN_INFO_BANNER_KINDS]) {
+    if (typeof o[kind] === "boolean") out[kind] = o[kind];
+  }
+  return out;
+}
+
+export function filterAlertBannersForPdf(
+  banners: ProvinAlertBanner[],
+  settings?: ProvinBannerPdfInclude | null,
+): ProvinAlertBanner[] {
+  return banners.filter((b) => isProvinBannerIncludedInPdf(b.kind, settings));
+}
+
+export function filterInfoBannersForPdf(
+  banners: ProvinInfoBanner[],
+  settings?: ProvinBannerPdfInclude | null,
+): ProvinInfoBanner[] {
+  return banners.filter((b) => isProvinBannerIncludedInPdf(b.kind, settings));
+}
+
+export type ProvinInfoBanner = {
+  kind: ProvinInfoBannerKind;
+  text: string;
+};
 
 /** Banera vizuālais līmenis — sakrīt ar avotu dzelteno/sarkano. */
 export type ProvinAlertSeverity = "red" | "yellow";

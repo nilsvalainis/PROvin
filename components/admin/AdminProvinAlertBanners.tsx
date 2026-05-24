@@ -1,16 +1,44 @@
 "use client";
 
-import type { ProvinAlertBanner, ProvinInfoBanner } from "@/lib/provin-alert-banners";
+import type {
+  ProvinAlertBanner,
+  ProvinBannerKind,
+  ProvinBannerPdfInclude,
+  ProvinInfoBanner,
+} from "@/lib/provin-alert-banners";
+import { isProvinBannerIncludedInPdf } from "@/lib/provin-alert-banners";
 import { AlertTriangle, Info } from "lucide-react";
 
 export function AdminProvinAlertBanners({
   banners,
   infoBanners = [],
+  pdfInclude = {},
+  onPdfIncludeChange,
 }: {
   banners: ProvinAlertBanner[];
   infoBanners?: ProvinInfoBanner[];
+  pdfInclude?: ProvinBannerPdfInclude;
+  onPdfIncludeChange?: (kind: ProvinBannerKind, included: boolean) => void;
 }) {
   if (banners.length === 0 && infoBanners.length === 0) return null;
+
+  const pdfToggle = (kind: ProvinBannerKind) => (
+    <label
+      className="inline-flex shrink-0 cursor-pointer select-none items-center gap-1.5 text-[10px] font-medium text-[var(--color-provin-muted)] opacity-70 transition-opacity hover:opacity-100"
+      title="Rādīt šo ierakstu PDF atskaitē"
+    >
+      <input
+        type="checkbox"
+        className="h-3.5 w-3.5 shrink-0 rounded border-slate-300/80 text-[var(--color-provin-accent)] focus:ring-[var(--color-provin-accent)]/25"
+        checked={isProvinBannerIncludedInPdf(kind, pdfInclude)}
+        disabled={!onPdfIncludeChange}
+        onChange={(e) => onPdfIncludeChange?.(kind, e.target.checked)}
+        aria-label={`Rādīt PDF: ${kind}`}
+      />
+      <span className="hidden sm:inline">Rādīt PDF</span>
+    </label>
+  );
+
   return (
     <div className="flex flex-col gap-2" role="region" aria-label="Brīdinājumi un informācija">
       {infoBanners.map((b, i) => (
@@ -22,6 +50,7 @@ export function AdminProvinAlertBanners({
         >
           <Info className="h-4 w-4 shrink-0 text-[#8e8e93]" aria-hidden strokeWidth={1.5} />
           <p className="min-w-0 flex-1 font-normal">{b.text}</p>
+          {pdfToggle(b.kind)}
         </div>
       ))}
       {banners.map((b, i) => {
@@ -38,6 +67,7 @@ export function AdminProvinAlertBanners({
           >
             <AlertTriangle className={`h-4 w-4 shrink-0 ${icoColor} [stroke-width:1.5]`} aria-hidden strokeWidth={1.5} />
             <p className="min-w-0 flex-1 font-normal">{b.text}</p>
+            {pdfToggle(b.kind)}
           </div>
         );
       })}

@@ -5,6 +5,7 @@ import path from "path";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import type { OrderDraftOrderEdits, OrderDraftState, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
+import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 
@@ -75,6 +76,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
       cenasAtbilstiba: typeof w.cenasAtbilstiba === "string" ? w.cenasAtbilstiba : "",
       previewConfirmed: Boolean(w.previewConfirmed),
       pdfVisibility: w.pdfVisibility ? mergePdfVisibility(w.pdfVisibility) : undefined,
+      pdfBannerInclude: w.pdfBannerInclude ? mergeProvinBannerPdfInclude(w.pdfBannerInclude) : undefined,
     });
     const h = hydrateWorkspaceFromStorage(json);
     if (h) {
@@ -85,6 +87,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         cenasAtbilstiba: h.cenasAtbilstiba,
         previewConfirmed: h.previewConfirmed,
         pdfVisibility: h.pdfVisibility,
+        pdfBannerInclude: h.pdfBannerInclude,
       };
     }
   }
@@ -251,6 +254,7 @@ export async function patchOrderDraft(
       cenasAtbilstiba: sanitizeDraftTextForStorage(workspacePatch.cenasAtbilstiba),
       previewConfirmed: workspacePatch.previewConfirmed,
       pdfVisibility: workspacePatch.pdfVisibility,
+      pdfBannerInclude: workspacePatch.pdfBannerInclude,
     });
     const h = hydrateWorkspaceFromStorage(json);
     if (!h) return { ok: false, error: "invalid_workspace" };
@@ -261,6 +265,7 @@ export async function patchOrderDraft(
       cenasAtbilstiba: h.cenasAtbilstiba,
       previewConfirmed: h.previewConfirmed,
       pdfVisibility: h.pdfVisibility,
+      pdfBannerInclude: h.pdfBannerInclude,
     };
   }
 

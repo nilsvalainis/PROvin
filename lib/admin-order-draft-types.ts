@@ -25,6 +25,7 @@ export type OrderDraftWorkspaceBody = {
   cenasAtbilstiba: string;
   previewConfirmed: boolean;
   pdfVisibility?: import("@/lib/pdf-visibility").PdfVisibilitySettings;
+  pdfBannerInclude?: import("@/lib/provin-alert-banners").ProvinBannerPdfInclude;
 };
 
 export type OrderDraftState = {

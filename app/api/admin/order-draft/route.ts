@@ -8,6 +8,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { listOrderDraftRevisions, patchOrderDraft, restoreOrderDraftRevision } from "@/lib/admin-order-draft-store";
 import type { OrderDraftOrderEdits, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
+import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
 
 export const maxDuration = 60;
 export const runtime = "nodejs";
@@ -114,6 +115,7 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
     cenasAtbilstiba: typeof o.cenasAtbilstiba === "string" ? o.cenasAtbilstiba : "",
     previewConfirmed: Boolean(o.previewConfirmed),
     pdfVisibility: mergePdfVisibility(o.pdfVisibility),
+    pdfBannerInclude: mergeProvinBannerPdfInclude(o.pdfBannerInclude),
   };
 }
 

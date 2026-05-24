@@ -61,7 +61,13 @@ import {
   ListingAnalysisSubsectionHeading,
 } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
-import { computeProvinAlertBannersFromWorkspace, computeProvinInfoBannersFromWorkspace } from "@/lib/provin-alert-banners";
+import {
+  computeProvinAlertBannersFromWorkspace,
+  computeProvinInfoBannersFromWorkspace,
+  mergeProvinBannerPdfInclude,
+  type ProvinBannerKind,
+  type ProvinBannerPdfInclude,
+} from "@/lib/provin-alert-banners";
 import { IRISS_CHROME_LUCIDE, LISTING_ANALYSIS_CHROME_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
   TRAFFIC_HEADER_STRIP_CLASS,
@@ -308,7 +314,11 @@ function formatBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function serializeWorkspaceState(ws: WorkspacePersist, pdf: PdfVisibilitySettings): string {
+function serializeWorkspaceState(
+  ws: WorkspacePersist,
+  pdf: PdfVisibilitySettings,
+  bannerInclude: ProvinBannerPdfInclude,
+): string {
   return JSON.stringify({
     sourceBlocks: ws.sourceBlocks,
     iriss: ws.iriss,
@@ -316,6 +326,7 @@ function serializeWorkspaceState(ws: WorkspacePersist, pdf: PdfVisibilitySetting
     cenasAtbilstiba: ws.cenasAtbilstiba,
     previewConfirmed: ws.previewConfirmed,
     pdfVisibility: pdf,
+    pdfBannerInclude: bannerInclude,
   });
 }
 
@@ -559,6 +570,9 @@ export function OrderDetailWorkspace({
   orderEditsRef.current = { internal: internalCommentDraft, mileage: mileageCommentDraft };
   const pdfVisibilityRef = useRef(pdfVisibility);
   pdfVisibilityRef.current = pdfVisibility;
+  const [pdfBannerInclude, setPdfBannerInclude] = useState<ProvinBannerPdfInclude>({});
+  const pdfBannerIncludeRef = useRef(pdfBannerInclude);
+  pdfBannerIncludeRef.current = pdfBannerInclude;
   const portfolioBytes = useMemo(() => portfolio.reduce((a, p) => a + p.size, 0), [portfolio]);
 
   const narrowPortfolioLayout = Boolean(portfolioPortalDomId);
@@ -949,15 +963,20 @@ export function OrderDetailWorkspace({
           previewConfirmed: Boolean(chosen.previewConfirmed),
         });
         const mergedVisibility = mergePdfVisibility(chosen.pdfVisibility);
+        const mergedBannerInclude = mergeProvinBannerPdfInclude(chosen.pdfBannerInclude);
         onPdfVisibilityChange(mergedVisibility);
-        hydrationSnapshotRef.current = JSON.stringify({
-          sourceBlocks: chosen.sourceBlocks,
-          iriss: chosen.iriss,
-          apskatesPlāns: chosen.apskatesPlāns,
-          cenasAtbilstiba: chosen.cenasAtbilstiba,
-          previewConfirmed: Boolean(chosen.previewConfirmed),
-          pdfVisibility: mergedVisibility,
-        });
+        setPdfBannerInclude(mergedBannerInclude);
+        hydrationSnapshotRef.current = serializeWorkspaceState(
+          {
+            sourceBlocks: chosen.sourceBlocks,
+            iriss: chosen.iriss,
+            apskatesPlāns: chosen.apskatesPlāns,
+            cenasAtbilstiba: chosen.cenasAtbilstiba,
+            previewConfirmed: Boolean(chosen.previewConfirmed),
+          },
+          mergedVisibility,
+          mergedBannerInclude,
+        );
         if (!rawV3 || picked.source !== "local") {
           try {
             localStorage.setItem(keyV3, hydrationSnapshotRef.current);
@@ -984,30 +1003,26 @@ export function OrderDetailWorkspace({
           setWs({ ...EMPTY_WORKSPACE, sourceBlocks: b, previewConfirmed: false });
           const mergedVisibility = mergePdfVisibility(undefined);
           onPdfVisibilityChange(mergedVisibility);
-          hydrationSnapshotRef.current = JSON.stringify({
-            ...EMPTY_WORKSPACE,
-            sourceBlocks: b,
-            previewConfirmed: false,
-            pdfVisibility: mergedVisibility,
-          });
+          setPdfBannerInclude({});
+          hydrationSnapshotRef.current = serializeWorkspaceState(
+            { ...EMPTY_WORKSPACE, sourceBlocks: b, previewConfirmed: false },
+            mergedVisibility,
+            {},
+          );
         } else {
           setWs(EMPTY_WORKSPACE);
           const mergedVisibility = mergePdfVisibility(undefined);
           onPdfVisibilityChange(mergedVisibility);
-          hydrationSnapshotRef.current = JSON.stringify({
-            ...EMPTY_WORKSPACE,
-            pdfVisibility: mergedVisibility,
-          });
+          setPdfBannerInclude({});
+          hydrationSnapshotRef.current = serializeWorkspaceState(EMPTY_WORKSPACE, mergedVisibility, {});
         }
       }
     } catch {
       setWs(EMPTY_WORKSPACE);
       const mergedVisibility = mergePdfVisibility(undefined);
       onPdfVisibilityChange(mergedVisibility);
-      hydrationSnapshotRef.current = JSON.stringify({
-        ...EMPTY_WORKSPACE,
-        pdfVisibility: mergedVisibility,
-      });
+      setPdfBannerInclude({});
+      hydrationSnapshotRef.current = serializeWorkspaceState(EMPTY_WORKSPACE, mergedVisibility, {});
     }
     setWorkspaceHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `serverWorkspaceJson` refresh var pārrakstīt jaunāku lokālo darba zonu
@@ -1017,7 +1032,7 @@ export function OrderDetailWorkspace({
     if (!workspaceHydrated) return;
     try {
       const cur = wsPersistRef.current;
-      localStorage.setItem(storageKeyWorkspace(payload.sessionId), serializeWorkspaceState(cur, pdfVisibilityRef.current));
+      localStorage.setItem(storageKeyWorkspace(payload.sessionId), serializeWorkspaceState(cur, pdfVisibilityRef.current, pdfBannerIncludeRef.current));
       const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
       if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
     } catch {
@@ -1038,6 +1053,7 @@ export function OrderDetailWorkspace({
     const mergedVisibility = mergePdfVisibility(undefined);
     setWs({ ...EMPTY_WORKSPACE, sourceBlocks: emptyBlocks });
     onPdfVisibilityChange(mergedVisibility);
+    setPdfBannerInclude({});
     onInternalCommentChange("");
     onMileageCommentChange("");
     setGeminiInspectionErr(null);
@@ -1051,7 +1067,7 @@ export function OrderDetailWorkspace({
     void idbDeletePortfolio(payload.sessionId);
     try {
       localStorage.removeItem(storageKeyWorkspace(payload.sessionId));
-      hydrationSnapshotRef.current = serializeWorkspaceState(EMPTY_WORKSPACE, mergedVisibility);
+      hydrationSnapshotRef.current = serializeWorkspaceState(EMPTY_WORKSPACE, mergedVisibility, {});
     } catch {
       /* quota */
     }
@@ -1070,6 +1086,7 @@ export function OrderDetailWorkspace({
             cenasAtbilstiba: "",
             previewConfirmed: false,
             pdfVisibility: mergedVisibility,
+            pdfBannerInclude: {},
           },
         }),
       });
@@ -1094,7 +1111,7 @@ export function OrderDetailWorkspace({
     const t = window.setTimeout(() => {
       void (async () => {
         const cur = wsPersistRef.current;
-        const snapshot = serializeWorkspaceState(cur, pdfVisibilityRef.current);
+        const snapshot = serializeWorkspaceState(cur, pdfVisibilityRef.current, pdfBannerIncludeRef.current);
         if (snapshot === hydrationSnapshotRef.current) return;
         flushWorkspaceToLocalStorage();
         pushWorkspaceBackup(snapshot);
@@ -1113,6 +1130,7 @@ export function OrderDetailWorkspace({
                   cenasAtbilstiba: cur.cenasAtbilstiba,
                   previewConfirmed: cur.previewConfirmed,
                   pdfVisibility: pdfVisibilityRef.current,
+                  pdfBannerInclude: pdfBannerIncludeRef.current,
                 },
               }),
             });
@@ -1129,6 +1147,7 @@ export function OrderDetailWorkspace({
   }, [
     ws,
     pdfVisibility,
+    pdfBannerInclude,
     workspaceHydrated,
     payload.sessionId,
     flushWorkspaceToLocalStorage,
@@ -1437,6 +1456,10 @@ export function OrderDetailWorkspace({
     ],
   );
 
+  const patchBannerPdfInclude = useCallback((kind: ProvinBannerKind, included: boolean) => {
+    setPdfBannerInclude((prev) => ({ ...prev, [kind]: included }));
+  }, []);
+
   const provinAlertBanners = useMemo(
     () => computeProvinAlertBannersFromWorkspace(ws.sourceBlocks),
     [ws.sourceBlocks],
@@ -1546,6 +1569,7 @@ export function OrderDetailWorkspace({
         cenasAtbilstiba: ws.cenasAtbilstiba,
         listingMarket,
         pdfVisibility,
+        pdfBannerInclude,
         internalComment: internalCommentDraft,
         mileageComment: mileageCommentDraft,
       },
@@ -1993,7 +2017,12 @@ export function OrderDetailWorkspace({
           />
         </div>
         <div className="space-y-2">
-          <AdminProvinAlertBanners banners={provinAlertBanners} infoBanners={provinInfoBanners} />
+          <AdminProvinAlertBanners
+            banners={provinAlertBanners}
+            infoBanners={provinInfoBanners}
+            pdfInclude={pdfBannerInclude}
+            onPdfIncludeChange={patchBannerPdfInclude}
+          />
         </div>
       </section>
     ) : null;

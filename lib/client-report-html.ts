@@ -47,6 +47,8 @@ import {
   buildPdfInfoBannersHtml,
   computeProvinAlertBannersFromPayloadSlice,
   computeProvinInfoBannersFromPayloadSlice,
+  filterAlertBannersForPdf,
+  filterInfoBannersForPdf,
 } from "@/lib/provin-alert-banners";
 import {
   sectionIconPdfHtml,
@@ -149,6 +151,8 @@ export type ClientReportPayload = {
   listingAnalysis?: ListingAnalysisBlockState | null;
   /** Ja nav — PDF iekļauj visu (admin noklusējums). */
   pdfVisibility?: PdfVisibilitySettings | null;
+  /** Atsevišķi brīdinājumu / info baneri PDF (noklusējums — visi ieslēgti). */
+  pdfBannerInclude?: import("@/lib/provin-alert-banners").ProvinBannerPdfInclude | null;
   /** Iekšējās piezīmes (var saturēt vienkāršu HTML no admin redaktora) — PDF zem apvienotās negadījumu tabulas. */
   internalComment?: string | null;
   /** NOBRAUKUMA VĒSTURES KOMENTĀRS — PDF zem nobraukuma grafika. */
@@ -1331,26 +1335,32 @@ export function buildClientReportDocumentHtml(args: {
 
   const infoBannersHtml = vis.alerts
     ? buildPdfInfoBannersHtml(
-        computeProvinInfoBannersFromPayloadSlice({
-          csddForm: p.csddForm,
-          autoRecordsBlock: p.autoRecordsBlock ?? null,
-          manualVendorBlocks: p.manualVendorBlocks ?? null,
-          manualLtabBlock: p.manualLtabBlock ?? null,
-        }),
+        filterInfoBannersForPdf(
+          computeProvinInfoBannersFromPayloadSlice({
+            csddForm: p.csddForm,
+            autoRecordsBlock: p.autoRecordsBlock ?? null,
+            manualVendorBlocks: p.manualVendorBlocks ?? null,
+            manualLtabBlock: p.manualLtabBlock ?? null,
+          }),
+          p.pdfBannerInclude,
+        ),
       )
     : "";
   if (infoBannersHtml) lines.push(infoBannersHtml);
 
   const alertBannersHtml = vis.alerts
     ? buildPdfAlertBannersHtml(
-        computeProvinAlertBannersFromPayloadSlice({
-          csddForm: p.csddForm,
-          autoRecordsBlock: p.autoRecordsBlock ?? null,
-          manualVendorBlocks: p.manualVendorBlocks ?? null,
-          citiAvotiBlock: p.citiAvoti ?? null,
-          manualLtabBlock: p.manualLtabBlock ?? null,
-          tirgusForm: p.tirgusForm ?? null,
-        }),
+        filterAlertBannersForPdf(
+          computeProvinAlertBannersFromPayloadSlice({
+            csddForm: p.csddForm,
+            autoRecordsBlock: p.autoRecordsBlock ?? null,
+            manualVendorBlocks: p.manualVendorBlocks ?? null,
+            citiAvotiBlock: p.citiAvoti ?? null,
+            manualLtabBlock: p.manualLtabBlock ?? null,
+            tirgusForm: p.tirgusForm ?? null,
+          }),
+          p.pdfBannerInclude,
+        ),
       )
     : "";
   if (alertBannersHtml) lines.push(alertBannersHtml);

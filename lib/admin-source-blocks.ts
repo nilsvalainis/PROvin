@@ -3,6 +3,7 @@
  */
 
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
+import { mergeProvinBannerPdfInclude, type ProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
 import type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
 import {
   autoRecordsRowHasData,
@@ -1267,6 +1268,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   cenasAtbilstiba: string;
   previewConfirmed: boolean;
   pdfVisibility: PdfVisibilitySettings;
+  pdfBannerInclude: ProvinBannerPdfInclude;
 } | null {
   if (!raw) return null;
   try {
@@ -1291,6 +1293,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
       cenasAtbilstiba: typeof p.cenasAtbilstiba === "string" ? p.cenasAtbilstiba : "",
       previewConfirmed: Boolean(p.previewConfirmed),
       pdfVisibility: mergePdfVisibility(p.pdfVisibility),
+      pdfBannerInclude: mergeProvinBannerPdfInclude(p.pdfBannerInclude),
     };
   } catch {
     return null;
