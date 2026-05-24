@@ -98,8 +98,9 @@ const PDF_IRISS_SECTION_1 = "1. Ieteikumi klātienes apskatei";
 const PDF_IRISS_SECTION_2 = "2. Kopsavilkums";
 const PDF_LISTING_SECTION_PRICE = "3. Cenas atbilstība";
 const PDF_INCIDENT_INTERNAL_COMMENT_LABEL = "Komentārs";
+/** Vienots komentāru bloka virsraksts visā PDF atskaitē (kā NEGADĪJUMU VĒSTURE). */
+const PDF_REPORT_COMMENT_LABEL = PDF_INCIDENT_INTERNAL_COMMENT_LABEL;
 const PDF_SUB_CSDD = "CSDD";
-const PDF_SUB_BLOCK_COMMENTS = "Komentāri";
 const PDF_SECTION_LISTING_ANALYSIS = "SLUDINĀJUMA ANALĪZE";
 
 function vendorTitlesOmittedForPdf(vis: PdfVisibilitySettings): Set<string> {
@@ -360,14 +361,17 @@ function extractVehicleMakeModel(csdd: string): string | null {
   return m ? m[0].trim().replace(/\s{2,}/g, " ") : null;
 }
 
-/** Komentāru bloks zem avota (PDF — balts, minimāls). */
+/** Komentāru bloks — vienots stils visā atskaitē (kā NEGADĪJUMU VĒSTURE). */
+function pdfReportCommentBox(text: string, label = PDF_REPORT_COMMENT_LABEL): string {
+  const plain = internalCommentHtmlToPdfPlain(text).trim();
+  if (!plain) return "";
+  const body = escapeHtml(plain).replace(/\r?\n/g, "<br />");
+  return `<div class="pdf-report-comment-note" role="note"><p class="pdf-field-label">${escapeHtml(label)}</p><div class="pdf-report-comment-note-body">${body}</div></div>`;
+}
+
+/** Komentāru bloks zem avota (PDF). */
 function pdfAvotuCommentIsland(text: string): string {
-  const t = internalCommentHtmlToPdfPlain(text).trim();
-  if (!t) return "";
-  return `<div class="pdf-avotu-comment-island" role="note">
-    <p class="pdf-avotu-comment-island-label">${escapeHtml(PDF_SUB_BLOCK_COMMENTS)}</p>
-    <pre class="mirror-pre pdf-avotu-comment-island-body pdf-manual-comment-body">${escapeHtml(t)}</pre>
-  </div>`;
+  return pdfReportCommentBox(text);
 }
 
 /** Svītriņa HTML — tabulas „Avots” kolonnā vai leģendā. */
@@ -447,10 +451,9 @@ export function buildUnifiedMileageTableHtml(
     mileageOpts,
   );
   if (collected.length === 0) {
-    const commentOnly = internalCommentHtmlToPdfPlain(p.mileageComment ?? "").trim();
-    if (!commentOnly) return "";
+    const commentBlock = pdfReportCommentBox(p.mileageComment ?? "", PDF_MILEAGE_HISTORY_COMMENT_LABEL);
+    if (!commentBlock) return "";
     const headOnly = sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE");
-    const commentBlock = `<div class="pdf-mileage-comment-note"><p class="pdf-field-label">${escapeHtml(PDF_MILEAGE_HISTORY_COMMENT_LABEL)}</p><div class="pdf-mileage-comment-note-body">${escapeHtml(commentOnly).replace(/\r?\n/g, "<br />")}</div></div>`;
     return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card" role="region">${headOnly}${commentBlock}</div>`;
   }
 
@@ -486,10 +489,7 @@ export function buildUnifiedMileageTableHtml(
   }</p>`;
 
   const head = sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE");
-  const commentPlain = internalCommentHtmlToPdfPlain(p.mileageComment ?? "").trim();
-  const commentHtml = commentPlain
-    ? `<div class="pdf-mileage-comment-note"><p class="pdf-field-label">${escapeHtml(PDF_MILEAGE_HISTORY_COMMENT_LABEL)}</p><div class="pdf-mileage-comment-note-body">${escapeHtml(commentPlain).replace(/\r?\n/g, "<br />")}</div></div>`
-    : "";
+  const commentHtml = pdfReportCommentBox(p.mileageComment ?? "", PDF_MILEAGE_HISTORY_COMMENT_LABEL);
 
   const chunks: string[] = [];
   chunks.push(`<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${chartHtml}</div>`);
@@ -524,18 +524,14 @@ function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfVisibili
     manualVendorBlocks: p.manualVendorBlocks ?? null,
     manualLtabBlock: p.manualLtabBlock ?? null,
   });
-  const adminNotePlain = internalCommentHtmlToPdfPlain(p.internalComment ?? "");
+  const adminNoteHtml = pdfReportCommentBox(p.internalComment ?? "");
   const hasTable = collected.length > 0;
-  if (!hasTable && !adminNotePlain) return "";
+  if (!hasTable && !adminNoteHtml) return "";
   const rows = sortUnifiedIncidentsNewestFirst(collected);
   const tablesHtml = hasTable ? buildIncidentHistoryTableHtml(rows) : "";
   const sourceCountHtml = hasTable
     ? `<p class="pdf-source-count-note">Grafika ģenerēšanā izmantotais avotu skaits: ${new Set(collected.map((r) => r.sourceLabel)).size}</p>`
     : "";
-  const adminNoteHtml =
-    adminNotePlain.length > 0
-      ? `<div class="pdf-incident-internal-note"><p class="pdf-field-label">${escapeHtml(PDF_INCIDENT_INTERNAL_COMMENT_LABEL)}</p><div class="pdf-incident-internal-note-body">${escapeHtml(adminNotePlain).replace(/\r?\n/g, "<br />")}</div></div>`
-      : "";
   const chunks: string[] = [];
   chunks.push(
     `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE)}${tablesHtml}${sourceCountHtml}</div>`,
@@ -631,15 +627,11 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
         ? `<table class="mirror-table"><tbody>${rows.join("\n")}</tbody></table>`
         : "";
     if (table) parts.push(table);
-    const tirgusCommentsPlain = internalCommentHtmlToPdfPlain(f.comments ?? "").trim();
-    if (tirgusCommentsPlain) {
-      parts.push(`<p class="pdf-field-label">${escapeHtml(LISTING_ANALYSIS_COMMENT_LABEL)}</p>`);
-      parts.push(
-        `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(tirgusCommentsPlain)}</pre></div>`,
-      );
-    }
+    const tirgusCommentBox = pdfReportCommentBox(f.comments ?? "");
+    if (tirgusCommentBox) parts.push(tirgusCommentBox);
   } else {
-    parts.push(`<pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(p.tirgus.trim())}</pre>`);
+    const legacyBox = pdfReportCommentBox(p.tirgus);
+    if (legacyBox) parts.push(legacyBox);
   }
   return parts.join("\n");
 }
@@ -702,24 +694,19 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload, vis: PdfVisibi
   if (b && hasListingFields) {
     const L = LISTING_ANALYSIS_SUBSECTIONS;
     const cat = (title: string, text: string) => {
-      const t = internalCommentHtmlToPdfPlain(text).trim();
-      if (!t) return;
+      const box = pdfReportCommentBox(text);
+      if (!box) return;
       inner.push(pdfFieldLabelWithIcon(pdfListingAnalysisFieldIconHtml(title), title));
-      inner.push(
-        `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(t)}</pre></div>`,
-      );
+      inner.push(box);
     };
     cat(L.sellerPortrait, b.sellerPortrait);
     cat(L.photoAnalysis, b.photoAnalysis);
     cat(L.listingSalesContext, b.listingSalesContext);
   }
-  const priceFit = internalCommentHtmlToPdfPlain(p.cenasAtbilstiba ?? "").trim();
-  if (priceFit) {
-    const priceFitBlock = `Cenas atbilstība balstoties uz mūsu rīcībā esošajiem datiem:\n${priceFit}`;
+  const priceFitBox = pdfReportCommentBox(p.cenasAtbilstiba ?? "");
+  if (priceFitBox) {
     inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("priceTag"), PDF_LISTING_SECTION_PRICE));
-    inner.push(
-      `<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(priceFitBlock)}</pre></div>`,
-    );
+    inner.push(priceFitBox);
   }
   if (inner.length === 0) return "";
   const parts: string[] = [];
@@ -773,11 +760,11 @@ function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySett
   const inner: string[] = [];
   if (plan) {
     inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("car"), PDF_IRISS_SECTION_1));
-    inner.push(`<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(plan)}</pre></div>`);
+    inner.push(pdfReportCommentBox(plan));
   }
   if (iriss) {
     inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("fileSearch"), PDF_IRISS_SECTION_2));
-    inner.push(`<div class="pdf-listing-analysis-chunk"><pre class="mirror-pre pdf-listing-analysis-chunk-pre pdf-manual-comment-body">${escapeHtml(iriss)}</pre></div>`);
+    inner.push(pdfReportCommentBox(iriss));
   }
   if (inner.length === 0) return "";
   const parts: string[] = [];
@@ -877,8 +864,7 @@ function clientReportPrintCss(): string {
         padding-top:8px;
         border-top:1px solid #f1f5f9;
       }
-      .provin-report-doc .pdf-mileage-comment-note{margin-top:8px;}
-      .provin-report-doc .pdf-mileage-comment-note-body{font-size:0.72rem;line-height:1.55;color:#334155;}
+      .provin-report-doc .pdf-report-comment-note{margin-top:10px;}
       .sheet{background:#fff;padding:0;}
       .pdf-sec-head{display:flex;align-items:center;gap:8px;margin:0.75rem 0 0.35rem;}
       .pdf-sec-head--nobar{margin-top:0;}
@@ -912,6 +898,8 @@ function clientReportPrintCss(): string {
       .pdf-listing-analysis-chunk{
         margin:0 0 8px;padding:8px 0;background:#fff;border-bottom:1px solid #f1f5f9;
       }
+      .pdf-listing-analysis-stack > .pdf-report-comment-note{margin:0 0 10px;}
+      .pdf-listing-analysis-stack > .pdf-field-label--row + .pdf-report-comment-note{margin-top:4px;}
       .pdf-listing-history-frame{
         border:1px solid #f1f5f9;
         border-radius:6px;
@@ -920,16 +908,6 @@ function clientReportPrintCss(): string {
       }
       .pdf-listing-analysis-chunk:last-child{margin-bottom:0;border-bottom:none;}
       .pdf-listing-analysis-chunk-pre{margin:0;}
-      .pdf-avotu-comment-island{
-        margin:10px 0 0;padding:0;background:transparent;border:none;
-      }
-      .pdf-source-section-body > .pdf-avotu-comment-island:first-child{
-        margin-top:0;padding-top:0;
-      }
-      .pdf-avotu-comment-island-label{
-        font-size:0.65rem;font-weight:700;margin:0 0 6px;color:#000;letter-spacing:0.06em;text-transform:uppercase;
-      }
-      .pdf-avotu-comment-island-body{margin:0;}
       .pdf-unified-mileage-zone{margin:0 0 14px;padding:12px 14px;background:#fff!important;border:1px solid #f1f5f9;border-radius:8px;box-shadow:0 1px 4px rgba(15,23,42,.05);}
       .pdf-unified-mileage-zone .pdf-sec-head{margin-top:0;}
       .pdf-provin-sources-wrap{margin:0 0 18px;}
@@ -947,9 +925,19 @@ function clientReportPrintCss(): string {
       }
       .pdf-unified-incidents-zone{margin:0 0 14px;padding:12px 14px;background:#fff!important;border:1px solid #f1f5f9;border-radius:8px;box-shadow:0 1px 4px rgba(15,23,42,.05);}
       .pdf-unified-incidents-zone .pdf-sec-head{margin-top:0;}
-      .pdf-incident-internal-note{margin:10px 0 0;padding:10px 12px;border:1px solid #e2e8f0;border-radius:6px;background:#fafafa;}
-      .pdf-incident-internal-note .pdf-field-label{margin:0 0 6px;}
-      .pdf-incident-internal-note-body{margin:0;font-size:11px;line-height:1.45;color:#0f172a;}
+      .pdf-source-section-body > .pdf-report-comment-note:first-child{margin-top:0;}
+      .pdf-report-comment-note,
+      .pdf-incident-internal-note,
+      .pdf-mileage-comment-note{
+        margin:10px 0 0;padding:10px 12px;border:1px solid #e2e8f0;border-radius:6px;background:#fafafa;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-report-comment-note .pdf-field-label,
+      .pdf-incident-internal-note .pdf-field-label,
+      .pdf-mileage-comment-note .pdf-field-label{margin:0 0 6px;font-size:11px;font-weight:700;color:#0f172a;}
+      .pdf-report-comment-note-body,
+      .pdf-incident-internal-note-body,
+      .pdf-mileage-comment-note-body{margin:0;font-size:11px;line-height:1.45;color:#0f172a;font-family:Inter,sans-serif!important;}
       .pdf-mileage-dual{
         display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;align-items:start;margin:8px 0 0;
       }
