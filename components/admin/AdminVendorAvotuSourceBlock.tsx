@@ -29,6 +29,7 @@ import {
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
 import { parseCarverticalOdometerPaste } from "@/lib/carvertical-odometer-paste-parse";
+import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
@@ -112,6 +113,16 @@ export function AdminVendorAvotuSourceBlock({
     });
   };
 
+  const applyAutodnaMileagePaste = (raw: string) => {
+    const parsed = parseAutodnaMileagePaste(raw);
+    if (parsed.length === 0) return;
+    onChange({
+      ...value,
+      mileagePasteRaw: raw.slice(0, 24_000),
+      serviceHistory: parsed,
+    });
+  };
+
   return (
     <AdminCollapsibleShell
       sessionId={sessionId}
@@ -131,13 +142,15 @@ export function AdminVendorAvotuSourceBlock({
           <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
-        {blockKey === "carvertical" ? (
+        {blockKey === "carvertical" || blockKey === "autodna" ? (
           <div className="mb-2">
             <label
               className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]"
               htmlFor={`${idBase}-mileage-paste-raw`}
             >
-              CarVertical — odometra žurnāls (iekopēšanai)
+              {blockKey === "carvertical"
+                ? "CarVertical — odometra žurnāls (iekopēšanai)"
+                : "AutoDNA — transportlīdzekļa vēsture (iekopēšanai)"}
             </label>
             {readOnly ? (
               <div
@@ -157,20 +170,36 @@ export function AdminVendorAvotuSourceBlock({
                   className="mb-1 w-full min-h-[72px] resize-y rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
                   rows={4}
                   disabled={disabled}
-                  placeholder="Odometra rādījumu ieraksti + rindas (MM.YYYY. … km vai DD.MM.YYYY. … km)…"
+                  placeholder={
+                    blockKey === "carvertical"
+                      ? "Odometra rādījumu ieraksti + rindas (MM.YYYY. … km vai DD.MM.YYYY. … km)…"
+                      : "TRANSPORTLĪDZEKĻA VĒSTURE + datumi, Odometra rādījums … km, Valsts …"
+                  }
                   value={value.mileagePasteRaw ?? ""}
                   onChange={(e) =>
                     onChange({ ...value, mileagePasteRaw: e.target.value.slice(0, 24_000) })
                   }
-                  onBlur={(e) => applyCarverticalOdometerPaste(e.currentTarget.value)}
-                  aria-label="CarVertical odometra žurnāla iekopēšana"
+                  onBlur={(e) =>
+                    blockKey === "carvertical"
+                      ? applyCarverticalOdometerPaste(e.currentTarget.value)
+                      : applyAutodnaMileagePaste(e.currentTarget.value)
+                  }
+                  aria-label={
+                    blockKey === "carvertical"
+                      ? "CarVertical odometra žurnāla iekopēšana"
+                      : "AutoDNA transportlīdzekļa vēstures iekopēšana"
+                  }
                 />
                 {!disabled ? (
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
-                      onClick={() => applyCarverticalOdometerPaste(value.mileagePasteRaw ?? "")}
+                      onClick={() =>
+                        blockKey === "carvertical"
+                          ? applyCarverticalOdometerPaste(value.mileagePasteRaw ?? "")
+                          : applyAutodnaMileagePaste(value.mileagePasteRaw ?? "")
+                      }
                     >
                       Ielasīt tabulā
                     </button>

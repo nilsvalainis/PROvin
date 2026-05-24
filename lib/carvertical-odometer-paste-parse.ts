@@ -51,7 +51,7 @@ function tryParseLine(line: string): AutoRecordsServiceRow | null {
     if (mo < 1 || mo > 12 || y < 1980 || y > 2100) return null;
     const km = parseKmToken(mmyyyy[3] ?? "");
     if (!km) return null;
-    const date = `01.${String(mo).padStart(2, "0")}.${y}`;
+    const date = `00.${String(mo).padStart(2, "0")}.${y}`;
     return { date, odometer: km, country: "" };
   }
 
