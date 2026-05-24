@@ -44,7 +44,9 @@ import {
 import { pdfCountryCodeLetters, pdfCountryFlagEmoji } from "@/lib/pdf-country-flags";
 import {
   buildPdfAlertBannersHtml,
+  buildPdfInfoBannersHtml,
   computeProvinAlertBannersFromPayloadSlice,
+  computeProvinInfoBannersFromPayloadSlice,
 } from "@/lib/provin-alert-banners";
 import {
   sectionIconPdfHtml,
@@ -1094,6 +1096,21 @@ function clientReportPrintCss(): string {
       .pdf-alert-banner--yellow .pdf-alert-banner-ico{color:#FFC107;}
       .pdf-alert-banner--red .pdf-alert-banner-text{color:#1d1d1f;}
       .pdf-alert-banner--yellow .pdf-alert-banner-text{color:#1d1d1f;}
+      .pdf-info-banners-stack{
+        display:flex;flex-direction:column;gap:8px;margin:0 0 10px;
+      }
+      .pdf-info-banner{
+        display:flex;align-items:flex-start;gap:12px;padding:6px 12px 6px 14px;border-radius:8px;
+        box-shadow:0 2px 16px rgba(15,23,42,0.04);
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-info-banner--grey{
+        background:rgba(142,142,147,0.08);border-left:2px solid #8e8e93;color:#636366;
+      }
+      .pdf-info-banner-text{
+        flex:1;margin:0;font-size:8pt;line-height:1.35;color:#3a3a3c;font-weight:400;font-family:Inter,sans-serif!important;
+      }
+      .pdf-info-banner-ico{flex-shrink:0;display:block;width:18px;height:18px;margin-top:1px;color:#8e8e93;}
       .pdf-data-alert-wrap{
         display:inline-flex;align-items:center;gap:8px;max-width:100%;vertical-align:middle;
       }
@@ -1280,6 +1297,18 @@ export function buildClientReportDocumentHtml(args: {
     lines.push(`<p class="pdf-v1-meta">Ģenerēts: ${escapeHtml(dateFmt.format(new Date()))}${vinHtml}</p>`);
   }
   lines.push("</div></div></header>");
+
+  const infoBannersHtml = vis.alerts
+    ? buildPdfInfoBannersHtml(
+        computeProvinInfoBannersFromPayloadSlice({
+          csddForm: p.csddForm,
+          autoRecordsBlock: p.autoRecordsBlock ?? null,
+          manualVendorBlocks: p.manualVendorBlocks ?? null,
+          manualLtabBlock: p.manualLtabBlock ?? null,
+        }),
+      )
+    : "";
+  if (infoBannersHtml) lines.push(infoBannersHtml);
 
   const alertBannersHtml = vis.alerts
     ? buildPdfAlertBannersHtml(

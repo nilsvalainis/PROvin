@@ -15,6 +15,7 @@ import {
   formatAutoRecordsDateForOutput,
   normalizeAutoRecordsOdometer,
 } from "@/lib/auto-records-paste-parse";
+import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 
 export type UnifiedMileageRow = {
   date: string;
@@ -128,10 +129,11 @@ export function collectUnifiedMileageRows(
     const date = dateRaw.trim();
     const odometer = odometerRaw.trim();
     if (!date || !odometer) return;
+    const countryNorm = normalizeCountryNameLv(countryRaw);
     rows.push({
       date,
       odometer,
-      country: countryRaw.trim() || CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
+      country: countryNorm || CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
       sortableTime: parseMileageDateForSort(date),
       sourceOrder,
       sourceLabel: sourceLabelRaw.trim() || "Nezināms avots",

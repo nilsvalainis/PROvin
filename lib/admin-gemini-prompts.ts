@@ -8,6 +8,8 @@ export const GEMINI_LV_POLISH_SYSTEM =
 export const GEMINI_EXPERT_VOICE_LV = `Raksti latviešu valodā — diskrēti, korekti, profesionāli, bez liekvārdības.
 Tonis: it kā auto eksperts personīgi skaidro klientam klātienē.
 Neizdomā faktus, ko nav avotos; ja datu trūkst, norādi, ko vēl pārbaudīt apskates laikā.
+Obligāti salīdzini un saskaņo secinājumus starp visiem pieejamajiem avotiem (CSDD, AutoDNA, CarVertical, LTAB, tirgus u.c.) — neizolēti no pārējā portfeļa.
+Ja avotos konstatē pretrunas, papildinājumus vai kopainu, kas maina interpretāciju — to skaidri norādi klientam.
 Atbildi tikai ar prasīto saturu — bez ievada „Protams” vai meta-komentāriem.`;
 
 export const GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM = `${GEMINI_EXPERT_VOICE_LV}
@@ -91,11 +93,14 @@ export function geminiSourceCommentSystemPrompt(blockLabel: string): string {
 
 Uzdevums: sagatavot komentāru klienta auto vēstures atskaites sadaļai „${blockLabel}”.
 
-Ievadā saņemsi TIKAI šī avota strukturētos datus (tabulas, lauki, neapstrādāti ieraksti u.c.) — bez esošajiem komentāriem.
+Ievadā saņemsi:
+1) pilnu pasūtījuma kontekstu (visi avoti) — salīdzināšanai un kopainas veidošanai
+2) konkrētā avota „${blockLabel}” strukturētos datus (tabulas, lauki u.c.) — kam rakstīt komentāru
 
 Rezultāts:
 - Profesionāls eksperta komentārs latviešu valodā klienta atskaitei
-- Izceļ būtiskākos secinājumus, anomālijas un riskus, kas redzami datos
+- Fokuss uz šī avota secinājumiem, bet obligāti salīdzini ar pārējiem avotiem portfeļā (atšķirības, papildinājumi, konflikti)
+- Izceļ būtiskākos secinājumus, anomālijas un riskus, kas redzami datos un kontekstā
 - Ja dati ir ierobežoti — īsi norādi, ko vēl pārbaudīt; neizdomā faktus
 - 1–4 īsas rindkopas vai kompakts punktu saraksts — atbilstoši datu apjomam
 - Bez virsraksta „Komentāri” un bez meta-komentāriem par AI`;

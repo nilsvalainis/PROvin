@@ -29,6 +29,14 @@ import {
   toPdfManualVendorBlocks,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import { computeLatviaRegistrationTenure } from "@/lib/latvia-registration-tenure";
+
+export type ProvinInfoBannerKind = "lv_registration_tenure";
+
+export type ProvinInfoBanner = {
+  kind: ProvinInfoBannerKind;
+  text: string;
+};
 
 export type ProvinAlertBannerKind =
   | "odometer"
@@ -188,6 +196,55 @@ export function buildPdfAlertBannersHtml(banners: ProvinAlertBanner[]): string {
       `<div class="pdf-alert-banner pdf-alert-banner--${b.severity}" role="alert" data-provin-alert="${b.kind}" data-provin-severity="${b.severity}">${pdfAlertBannerIconsHtml()}<p class="pdf-alert-banner-text">${escapeHtmlPdf(b.text)}</p></div>`,
   );
   return `<div class="pdf-alert-banners-stack">${blocks.join("\n")}</div>`;
+}
+
+function pdfInfoBannerIconHtml(): string {
+  return `<svg class="pdf-info-banner-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M12 10v6M12 7h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+}
+
+/** PDF HTML: pelēks informatīvs bloks (reģistrācijas ilgums u.c.). */
+export function buildPdfInfoBannersHtml(banners: ProvinInfoBanner[]): string {
+  if (banners.length === 0) return "";
+  const blocks = banners.map(
+    (b) =>
+      `<div class="pdf-info-banner pdf-info-banner--grey" role="note" data-provin-info="${b.kind}">${pdfInfoBannerIconHtml()}<p class="pdf-info-banner-text">${escapeHtmlPdf(b.text)}</p></div>`,
+  );
+  return `<div class="pdf-info-banners-stack">${blocks.join("\n")}</div>`;
+}
+
+export function computeProvinInfoBannersFromPayloadSlice(
+  p: UnifiedMileageSourcePayload & {
+    csddForm?: CsddFormFields | null;
+    manualLtabBlock?: ClientManualLtabBlockPdf | null;
+    manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
+    autoRecordsBlock?: import("@/lib/admin-source-blocks").AutoRecordsBlockState | null;
+  },
+  referenceDate?: Date,
+): ProvinInfoBanner[] {
+  const tenure = computeLatviaRegistrationTenure({
+    csddForm: p.csddForm,
+    autoRecordsBlock: p.autoRecordsBlock ?? null,
+    manualVendorBlocks: p.manualVendorBlocks ?? null,
+    manualLtabBlock: p.manualLtabBlock ?? null,
+    referenceDate,
+  });
+  if (!tenure) return [];
+  return [{ kind: "lv_registration_tenure", text: tenure.sentence }];
+}
+
+export function computeProvinInfoBannersFromWorkspace(
+  ws: WorkspaceSourceBlocks,
+  referenceDate?: Date,
+): ProvinInfoBanner[] {
+  return computeProvinInfoBannersFromPayloadSlice(
+    {
+      csddForm: ws.csdd,
+      autoRecordsBlock: ws.auto_records,
+      manualVendorBlocks: toPdfManualVendorBlocks(ws),
+      manualLtabBlock: toPdfLtabManualBlock(ws.ltab),
+    },
+    referenceDate,
+  );
 }
 
 function escapeHtmlPdf(s: string): string {

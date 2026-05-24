@@ -60,7 +60,7 @@ import {
   ListingAnalysisSubsectionHeading,
 } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
-import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
+import { computeProvinAlertBannersFromWorkspace, computeProvinInfoBannersFromWorkspace } from "@/lib/provin-alert-banners";
 import { IRISS_CHROME_LUCIDE, LISTING_ANALYSIS_CHROME_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
   TRAFFIC_HEADER_STRIP_CLASS,
@@ -818,6 +818,9 @@ export function OrderDetailWorkspace({
             sessionId: payload.sessionId,
             blockKey,
             vin: payload.vin,
+            listingUrl: payload.listingUrl,
+            customerName: payload.customerName,
+            notes: payload.notes,
             sourceBlocks: cur.sourceBlocks,
           }),
         });
@@ -853,7 +856,7 @@ export function OrderDetailWorkspace({
         setGeminiSourceCommentBusy(null);
       }
     },
-    [geminiSourceCommentBusy, payload.geminiAllowed, payload.sessionId, payload.vin, updateSourceBlock],
+    [geminiSourceCommentBusy, payload.customerName, payload.geminiAllowed, payload.listingUrl, payload.notes, payload.sessionId, payload.vin, updateSourceBlock],
   );
 
   const pushWorkspaceBackup = useCallback(
@@ -1382,6 +1385,11 @@ export function OrderDetailWorkspace({
 
   const provinAlertBanners = useMemo(
     () => computeProvinAlertBannersFromWorkspace(ws.sourceBlocks),
+    [ws.sourceBlocks],
+  );
+
+  const provinInfoBanners = useMemo(
+    () => computeProvinInfoBannersFromWorkspace(ws.sourceBlocks),
     [ws.sourceBlocks],
   );
 
@@ -1920,17 +1928,17 @@ export function OrderDetailWorkspace({
   const showPortfolioPortal = Boolean(portfolioPortalDomId && portfolioPortalEl);
 
   const alertsSection =
-    provinAlertBanners.length > 0 ? (
+    provinAlertBanners.length > 0 || provinInfoBanners.length > 0 ? (
       <section id="admin-order-section-bridinajumi" className={`${workspaceSectionShell} mb-1.5`}>
         <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-          <h2 className={workspaceSectionTitle}>Brīdinājumi (PDF)</h2>
+          <h2 className={workspaceSectionTitle}>Brīdinājumi un informācija (PDF)</h2>
           <AdminPdfIncludeToggle
             checked={pdfVisibility.alerts}
             onChange={(next) => onPdfVisibilityChange({ alerts: next })}
           />
         </div>
         <div className="space-y-2">
-          <AdminProvinAlertBanners banners={provinAlertBanners} />
+          <AdminProvinAlertBanners banners={provinAlertBanners} infoBanners={provinInfoBanners} />
         </div>
       </section>
     ) : null;

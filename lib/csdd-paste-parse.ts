@@ -2,6 +2,7 @@
  * CSDD „Smart Paste” — tehniskie pamatdati + apskates datumi (augša) + apvienota nobraukuma tabula.
  */
 
+import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import {
   CSDD_MILEAGE_COUNTRY_LV,
   emptyCsddFields,
@@ -297,10 +298,12 @@ function parseAbroadSpaceLine(sp: string[]): {
   const odometer = normalizeOdometerFromPaste(sp[1] ?? "");
   if (sp.length === 2) return { date, odometer, country: "" };
   if (sp[2]!.toLowerCase() === "km") {
-    if (sp.length >= 4) return { date, odometer, country: sp.slice(3).join(" ").trim() };
+    if (sp.length >= 4) {
+      return { date, odometer, country: normalizeCountryNameLv(sp.slice(3).join(" ").trim()) };
+    }
     return { date, odometer, country: "" };
   }
-  return { date, odometer, country: sp.slice(2).join(" ").trim() };
+  return { date, odometer, country: normalizeCountryNameLv(sp.slice(2).join(" ").trim()) };
 }
 
 /**
@@ -337,7 +340,7 @@ export function parseMileageAbroadBlock(text: string): CsddMileageRow[] {
           rows.push({
             date,
             odometer: normalizeOdometerFromPaste(odometerRaw),
-            country,
+            country: normalizeCountryNameLv(country),
           });
           i++;
           continue;

@@ -2,6 +2,8 @@
  * AUTO RECORDS — servisa vēstures parseris (ODOMETER CHECK + tabulas rindas).
  */
 
+import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+
 export type AutoRecordsServiceRow = {
   date: string;
   odometer: string;
@@ -15,7 +17,7 @@ export function extractCountryFromLocation(location: string): string {
   const lastComma = t.lastIndexOf(",");
   const segment = lastComma >= 0 ? t.slice(lastComma + 1).trim() : t;
   const words = segment.split(/\s+/).filter(Boolean);
-  return words.length ? words[words.length - 1]! : "";
+  return words.length ? normalizeCountryNameLv(words[words.length - 1]!) : "";
 }
 
 /** Noņem komatus un „km”, atstāj tikai ciparus. */
@@ -133,7 +135,7 @@ export function parseAutoRecordsPaste(raw: string): AutoRecordsServiceRow[] {
   return sorted.map((r) => ({
     date: formatAutoRecordsDateForOutput(r.date),
     odometer: normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
-    country: r.country.replace(/\s+/g, " ").trim(),
+    country: normalizeCountryNameLv(r.country.replace(/\s+/g, " ").trim()),
   }));
 }
 

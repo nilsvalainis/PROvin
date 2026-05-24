@@ -10,6 +10,7 @@ import {
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
 } from "./auto-records-paste-parse";
+import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 
 export type { AutoRecordsServiceRow };
 
@@ -887,7 +888,7 @@ function normalizeParsedAutoRecordsRows(rawRows: AutoRecordsServiceRow[]): AutoR
   const clip = (r: AutoRecordsServiceRow) => ({
     date: formatAutoRecordsDateForOutput(r.date),
     odometer: normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
-    country: r.country.replace(/\s+/g, " ").trim(),
+    country: normalizeCountryNameLv(r.country.replace(/\s+/g, " ").trim()),
   });
   const normalized = sorted.map(clip);
   const normalizedTrailing = trailing.map(clip);
@@ -1068,7 +1069,7 @@ function parseCsddMileageUnifiedRaw(raw: unknown): CsddMileageRow[] {
     if (!row || typeof row !== "object") continue;
     const x = row as Record<string, unknown>;
     /** Bez „country” JSON atslēgas nenoklusējam LV — citādi ārvalstu rindas kļūst par „Latvija”. */
-    const country = "country" in x ? String(x.country ?? "").slice(0, 120).trim() : "";
+    const country = "country" in x ? normalizeCountryNameLv(String(x.country ?? "").slice(0, 120).trim()) : "";
     rows.push({
       date: String(x.date ?? "").slice(0, 120),
       odometer: String(x.odometer ?? "").slice(0, 120),

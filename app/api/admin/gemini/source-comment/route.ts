@@ -19,6 +19,9 @@ type BodyShape = {
   sessionId?: unknown;
   blockKey?: unknown;
   vin?: unknown;
+  listingUrl?: unknown;
+  customerName?: unknown;
+  notes?: unknown;
   sourceBlocks?: unknown;
 };
 
@@ -65,6 +68,9 @@ export async function POST(req: Request) {
       sessionId,
       blockKey: blockKeyRaw,
       vin: str(b.vin).trim() || null,
+      listingUrl: str(b.listingUrl).trim() || null,
+      customerName: str(b.customerName).trim() || null,
+      notes: str(b.notes).trim() || null,
       sourceBlocks,
     });
     return NextResponse.json({ text });
