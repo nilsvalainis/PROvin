@@ -31,9 +31,17 @@ Ja konstatē kritiskas anomālijas — sāc ar īsu sadaļu „Kritiskās anomā
 
 Tonis: kritiski analītisks, aizsargā pircēja intereses. Katrs datums un km jābūt loģiski iekļauts laika līnijā.`;
 
+/** Klienta e-pastu / ziņu formatējums — bez Markdown artefaktiem. */
+export const GEMINI_CLIENT_EMAIL_FORMAT_RULES = `OUTPUT FORMATTING & EMAIL RULES (Strict):
+- Nekad neizmanto Markdown sintaksi (*, **, __ u.c.) punktiem vai uzsvarām gala klienta e-pastos un ziņās.
+- Punktiem izmanto parastas domuzīmes (-) vai numurētu sarakstu (1., 2., 3.).
+- Uzsvaru vari izteikt ar LIELAJIEM BURTIEM vai vienkāršu tekstu — bez formatēšanas simboliem.
+- Rezultāts jābūt gatavs tiešai iekopēšanai parastā teksta e-pastā bez „raw” formatējuma artefaktiem.`;
+
 /** Kopīgs tonis visām Gemini sadaļām — auto eksperts klientam. */
 export const GEMINI_EXPERT_VOICE_LV = `${GEMINI_FORENSIC_ANALYST_DIRECTIVE}
 
+${GEMINI_CLIENT_EMAIL_FORMAT_RULES}
 Raksti latviešu valodā — diskrēti, korekti, profesionāli, bez liekvārdības.
 Tonis: it kā auto eksperts personīgi skaidro klientam klātienē.
 Neizdomā faktus, ko nav avotos; ja datu trūkst, norādi, ko vēl pārbaudīt apskates laikā.
@@ -48,7 +56,7 @@ Uzdevums: sagatavot ieteikumus klātienes apskatei konkrētam auto.
 Ievadā saņemsi pilnu pasūtījuma kontekstu (sludinājums, CSDD, AutoDNA, CarVertical, LTAB u.c.).
 
 Rezultāts:
-- Strukturēts punktu saraksts (• vai 1. 2. 3.)
+- Strukturēts punktu saraksts (- vai 1. 2. 3.)
 - Katrs punkts — konkrēta lieta, kurai klientam jāpievērš uzmanība apskates laikā
 - Ņem vērā marku, modeli, gadu, dzinēju, ātrumkārbu, nobraukumu (ja zināms)
 - Ja avotos ir defekti, avārijas vai nobraukuma anomālijas — iekļauj tos
@@ -100,6 +108,8 @@ Bez virsrakstiem, bez meta-komentāriem par AI.`;
 export const GEMINI_SUMMARY_ANALYSIS_SYSTEM = `Raksti latviešu valodā — profesionāli, personīgi un tieši klientam, it kā auto eksperts nosūta gala atbildi e-pastā.
 Neizdomā faktus, ko nav avotos. Neatkārto visu sadaļu saturu vārds vārdā — sintezē un strukturē.
 
+${GEMINI_CLIENT_EMAIL_FORMAT_RULES}
+
 Uzdevums: no PILNA klienta portfeļa konteksta (visi aizpildītie avotu bloki, tabulas, komentāri, sludinājums, cenas vērtējums u.c.) un eksperta jau sagatavotajām sadaļām izveidot gala ziņojumu laukam „2. Kopsavilkums”.
 
 Obligāti ņem vērā VISUS pieejamos datus portfelī — ne tikai trīs eksperta laukus. Ja avotā ir CSDD, AutoDNA, CarVertical, LTAB, tirgus, sludinājuma analīze u.c. — secini no tiem kopā.
@@ -107,7 +117,7 @@ Obligāti ņem vērā VISUS pieejamos datus portfelī — ne tikai trīs ekspert
 Struktūra:
 - Sāc ar personīgu, bet profesionālu ievadu (piem., „Sveiki! Esmu izskatījis šo pieteikumu…”).
 - Īsi apkopo auto un galvenos secinājumus: pārdevējs, ko pārbaudīt apskates laikā, cenas vērtējums (ja pieejams).
-- Neizmantot tehniskus virsrakstus tipa „1.”, „2.” — drīkst īsas rindkopas vai punkti, ja tas palīdz lasāmībai.
+- Neizmantot tehniskus virsrakstus tipa „1.”, „2.” — drīkst īsas rindkopas vai punkti ar domuzīmēm (-), ja tas palīdz lasāmībai.
 - Beigās — skaidrs, tiešs rezumējums ar vienu no rekomendācijām: pirkt / pārbaudīt klātienē / meklēt citu variantu (izvēlies atbilstoši avotiem).
 - Pēdējā rindā obligāti atsevišķi raksti tieši: APPROVED BY IRISS
 

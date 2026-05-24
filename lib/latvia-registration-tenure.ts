@@ -17,6 +17,7 @@ import { parseMileageDateForSort } from "@/lib/unified-mileage";
 export type LatviaRegistrationTenure = {
   firstDateDisplay: string;
   daysRegistered: number;
+  monthsRegistered: number;
   sentence: string;
   sourceLabels: string[];
 };
@@ -51,6 +52,29 @@ function daysBetweenUtc(fromMs: number, toMs: number): number {
   return Math.max(0, Math.round((to - from) / 86_400_000));
 }
 
+function monthsBetweenUtc(fromMs: number, toMs: number): number {
+  const a = new Date(fromMs);
+  const b = new Date(toMs);
+  let months = (b.getUTCFullYear() - a.getUTCFullYear()) * 12 + (b.getUTCMonth() - a.getUTCMonth());
+  if (b.getUTCDate() < a.getUTCDate()) months -= 1;
+  return Math.max(0, months);
+}
+
+function lvDienaForm(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "diena";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "dienas";
+  return "dienu";
+}
+
+function lvMenesisForm(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "mēnesis";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "mēneši";
+  return "mēnešu";
+}
 
 function collectLatviaFixedDates(input: LatviaRegistrationTenureInput): DateCandidate[] {
   const out: DateCandidate[] = [];
@@ -90,14 +114,16 @@ export function computeLatviaRegistrationTenure(
   const oldest = candidates.reduce((a, b) => (a.sortable <= b.sortable ? a : b));
   const ref = input.referenceDate ?? new Date();
   const days = daysBetweenUtc(oldest.sortable, ref.getTime());
+  const months = monthsBetweenUtc(oldest.sortable, ref.getTime());
   const firstDateDisplay = formatDisplayDate(oldest.dateRaw);
   const usedSources = [...new Set(candidates.map((c) => c.source))];
 
-  const sentence = `Saskaņā ar mūsu rīcībā esošajiem datiem transportlīdzeklis Latvijā ir reģistrēts kopš ${firstDateDisplay} — kopā ${days} dienas.`;
+  const sentence = `Saskaņā ar mūsu rīcībā esošajiem datiem transportlīdzeklis Latvijā ir reģistrēts — kopā ${days} ${lvDienaForm(days)} (${months} ${lvMenesisForm(months)}).`;
 
   return {
     firstDateDisplay,
     daysRegistered: days,
+    monthsRegistered: months,
     sentence,
     sourceLabels: usedSources,
   };
