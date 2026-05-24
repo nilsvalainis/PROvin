@@ -11,8 +11,10 @@ export type OrderDraftOrderEdits = {
   customerPhone?: string;
   contactMethod?: string;
   notes?: string;
-  /** Admin piezīmes — melnrakstā; nav klienta PDF. */
+  /** Admin piezīmes — melnrakstā; PDF zem negadījumu tabulas. */
   internalComment?: string;
+  /** Nobraukuma vēstures komentārs — melnrakstā; PDF zem nobraukuma grafika. */
+  mileageComment?: string;
 };
 
 /** Tīrs JSON — `sourceBlocks` validē serverī ar `hydrateWorkspaceFromStorage`. */

@@ -3,17 +3,27 @@ import "server-only";
 import {
   autoRecordsBlockToPlainText,
   citiAvotiToPlainText,
+  CSDD_MILEAGE_UNIFIED_TITLE,
   csddFormToPlainText,
   listingAnalysisToPlainText,
   ltabBlockToPlainText,
+  ltabRowHasData,
   mergeSourceBlocksWithDefaults,
+  NEGADIJUMU_VESTURE_TITLE,
   SOURCE_BLOCK_LABELS,
-  standardBlockToPlainText,
   tirgusFormToPlainText,
+  toPdfLtabManualBlock,
+  toPdfManualVendorBlocks,
   vendorAvotuBlockToPlainText,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import {
+  ADMIN_INCIDENTS_SUMMARY_LABEL,
+  ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
+} from "@/lib/admin-workspace-field-labels";
+import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
+import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
 
 export type GeminiOrderContextInput = {
   sessionId: string;
@@ -27,12 +37,70 @@ export type GeminiOrderContextInput = {
   inspectionPlan?: string;
   priceFit?: string;
   extraSellerName?: string;
+  /** NEGADĪJUMU VĒSTURES KOPSAVILKUMS (iekšējais). */
+  internalComment?: string;
+  /** NOBRAUKUMA VĒSTURES KOMENTĀRS. */
+  mileageComment?: string;
+  operatorNotes?: string;
+  existingDraftPlain?: string;
 };
 
 function block(label: string, body: string): string {
   const t = body.trim();
   if (!t) return "";
   return `### ${label}\n${t}`;
+}
+
+function unifiedMileagePlainText(blocks: WorkspaceSourceBlocks): string {
+  const rows = collectUnifiedMileageRows({
+    csddForm: blocks.csdd,
+    autoRecordsBlock: blocks.auto_records,
+    manualVendorBlocks: toPdfManualVendorBlocks(blocks),
+    citiAvotiBlock: blocks.citi_avoti,
+  });
+  if (rows.length === 0) return "";
+  const lines = rows.map((r) => [r.date, r.odometer, r.country, r.sourceLabel].join("\t"));
+  return [CSDD_MILEAGE_UNIFIED_TITLE, ...lines].join("\n");
+}
+
+function unifiedIncidentsWithLossPlainText(blocks: WorkspaceSourceBlocks): string {
+  const rows = collectUnifiedIncidentRows({
+    manualVendorBlocks: toPdfManualVendorBlocks(blocks),
+    manualLtabBlock: toPdfLtabManualBlock(blocks.ltab),
+  });
+  if (rows.length === 0) return "";
+  const lines = rows.map((r) => [r.date, r.lossAmount, r.country, r.sourceLabel].join("\t"));
+  return [`Apvienotā ${NEGADIJUMU_VESTURE_TITLE} (ar zaudējumu summu)`, ...lines].join("\n");
+}
+
+function allIncidentRowsPlainText(blocks: WorkspaceSourceBlocks): string {
+  const parts: string[] = [];
+  for (const key of ["autodna", "carvertical", "citi_avoti"] as const) {
+    const inc = blocks[key].incidents.filter(ltabRowHasData);
+    if (inc.length === 0) continue;
+    parts.push(`【${SOURCE_BLOCK_LABELS[key]} — ${NEGADIJUMU_VESTURE_TITLE}】`);
+    for (const r of inc) {
+      parts.push([r.csngDate.trim(), r.lossAmount.trim(), r.incidentNo.trim()].filter(Boolean).join("\t"));
+    }
+  }
+  const ltabInc = blocks.ltab.rows.filter(ltabRowHasData);
+  if (ltabInc.length > 0) {
+    parts.push(`【${SOURCE_BLOCK_LABELS.ltab} — ${NEGADIJUMU_VESTURE_TITLE}】`);
+    for (const r of ltabInc) {
+      parts.push([r.csngDate.trim(), r.lossAmount.trim(), r.incidentNo.trim()].filter(Boolean).join("\t"));
+    }
+  }
+  return parts.join("\n");
+}
+
+function vendorRawLogsPlainText(blocks: WorkspaceSourceBlocks): string {
+  const parts: string[] = [];
+  for (const key of ["autodna", "carvertical"] as const) {
+    const raw = blocks[key].mileagePasteRaw?.trim();
+    if (!raw) continue;
+    parts.push(`【${SOURCE_BLOCK_LABELS[key]} raw logs】\n${raw.slice(0, 12_000)}`);
+  }
+  return parts.join("\n\n");
 }
 
 /** Visi pieejamie pasūtījuma dati vienā prompta kontekstā. */
@@ -83,20 +151,34 @@ export function buildGeminiOrderContextText(input: GeminiOrderContextInput): str
     if (section) parts.push(section);
   }
 
+  const crossSource = [
+    block("Apvienotais nobraukums (visi avoti)", unifiedMileagePlainText(blocks)),
+    block("Visi negadījumu ieraksti (visi avoti)", allIncidentRowsPlainText(blocks)),
+    block("Apvienotie negadījumi ar zaudējumu summu", unifiedIncidentsWithLossPlainText(blocks)),
+    block("Vendor raw logs", vendorRawLogsPlainText(blocks)),
+  ].filter(Boolean);
+  if (crossSource.length > 0) parts.push(crossSource.join("\n\n"));
+
   const expertParts = [
-    input.irissSummary?.trim()
-      ? block("Eksperta kopsavilkums (melnraksts)", adminRichHtmlToPlainText(input.irissSummary))
-      : "",
     input.inspectionPlan?.trim()
       ? block("Eksperta ieteikumi apskatei (melnraksts)", adminRichHtmlToPlainText(input.inspectionPlan))
       : "",
     input.priceFit?.trim()
       ? block("Cenas atbilstība (melnraksts)", adminRichHtmlToPlainText(input.priceFit))
       : "",
+    input.irissSummary?.trim()
+      ? block("Eksperta kopsavilkums (melnraksts)", adminRichHtmlToPlainText(input.irissSummary))
+      : "",
+    input.internalComment?.trim()
+      ? block(ADMIN_INCIDENTS_SUMMARY_LABEL, adminRichHtmlToPlainText(input.internalComment))
+      : "",
+    input.mileageComment?.trim()
+      ? block(ADMIN_MILEAGE_HISTORY_COMMENT_LABEL, adminRichHtmlToPlainText(input.mileageComment))
+      : "",
   ].filter(Boolean);
 
   if (expertParts.length > 0) {
-    parts.push(block("Eksperta bloks (konteksts)", expertParts.join("\n\n")));
+    parts.push(block("Eksperta piezīmes un melnraksti", expertParts.join("\n\n")));
   }
 
   return parts.filter(Boolean).join("\n\n");

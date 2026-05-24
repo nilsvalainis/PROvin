@@ -59,6 +59,7 @@ type OrderEdits = {
   contactMethod?: string;
   notes?: string;
   internalComment?: string;
+  mileageComment?: string;
 };
 
 function initialEditsFromServerDraft(serverOrderDraft: OrderDraftState | null): OrderEdits {
@@ -73,6 +74,7 @@ function initialEditsFromServerDraft(serverOrderDraft: OrderDraftState | null): 
     ...(typeof fromServer!.contactMethod === "string" ? { contactMethod: fromServer!.contactMethod } : {}),
     ...(typeof fromServer!.notes === "string" ? { notes: fromServer!.notes } : {}),
     ...(typeof fromServer!.internalComment === "string" ? { internalComment: fromServer!.internalComment } : {}),
+    ...(typeof fromServer!.mileageComment === "string" ? { mileageComment: fromServer!.mileageComment } : {}),
   };
 }
 
@@ -203,6 +205,7 @@ export function AdminOrderDetailView({
         ...(typeof fromServer!.internalComment === "string"
           ? { internalComment: fromServer!.internalComment }
           : {}),
+        ...(typeof fromServer!.mileageComment === "string" ? { mileageComment: fromServer!.mileageComment } : {}),
       });
       try {
         localStorage.setItem(key, JSON.stringify(fromServer));
@@ -226,6 +229,7 @@ export function AdminOrderDetailView({
             ...(typeof p.contactMethod === "string" ? { contactMethod: p.contactMethod } : {}),
             ...(typeof p.notes === "string" ? { notes: p.notes } : {}),
             ...(typeof p.internalComment === "string" ? { internalComment: p.internalComment } : {}),
+            ...(typeof p.mileageComment === "string" ? { mileageComment: p.mileageComment } : {}),
           });
         }
       }
@@ -324,6 +328,8 @@ export function AdminOrderDetailView({
   const mergedNotes = edits.notes !== undefined ? edits.notes : (order.notes ?? "");
   const mergedInternalComment =
     edits.internalComment !== undefined ? edits.internalComment : (order.internalComment ?? "");
+  const mergedMileageComment =
+    edits.mileageComment !== undefined ? edits.mileageComment : "";
 
   const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}`;
 
@@ -692,6 +698,8 @@ export function AdminOrderDetailView({
         adminDark={adminDark}
         internalCommentDraft={mergedInternalComment}
         onInternalCommentChange={(v) => setEdits((prev) => ({ ...prev, internalComment: v }))}
+        mileageCommentDraft={mergedMileageComment}
+        onMileageCommentChange={(v) => setEdits((prev) => ({ ...prev, mileageComment: v }))}
         dashboardSlot={dashboardSlot}
         portfolioPortalDomId={`admin-portfolio-slot-${order.id}`}
         portfolioPortalTargetInParent

@@ -10,7 +10,8 @@ import {
   generateSourceCommentWithGemini,
   isGeminiSourceCommentBlockKey,
 } from "@/lib/admin-gemini-source-comment";
-import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { mergeSourceBlocksFromBody } from "@/lib/admin-gemini-api-body";
+import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
 export const maxDuration = 90;
 export const runtime = "nodejs";
@@ -23,6 +24,10 @@ type BodyShape = {
   customerName?: unknown;
   notes?: unknown;
   sourceBlocks?: unknown;
+  internalComment?: unknown;
+  mileageComment?: unknown;
+  operatorNotes?: unknown;
+  existingDraftPlain?: unknown;
 };
 
 function str(v: unknown): string {
@@ -59,9 +64,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: guard.error }, { status: guard.status });
   }
 
-  const sourceBlocks = mergeSourceBlocksWithDefaults(
-    (b.sourceBlocks ?? {}) as Partial<WorkspaceSourceBlocks>,
-  );
+  const sourceBlocks = mergeSourceBlocksFromBody(b);
+  const existingDraftPlain =
+    str(b.existingDraftPlain).trim() ||
+    adminRichHtmlToPlainText(sourceBlocks[blockKeyRaw].comments ?? "").trim();
 
   try {
     const text = await generateSourceCommentWithGemini({
@@ -72,6 +78,10 @@ export async function POST(req: Request) {
       customerName: str(b.customerName).trim() || null,
       notes: str(b.notes).trim() || null,
       sourceBlocks,
+      internalComment: str(b.internalComment),
+      mileageComment: str(b.mileageComment),
+      operatorNotes: str(b.operatorNotes),
+      existingDraftPlain,
     });
     return NextResponse.json({ text });
   } catch (e) {

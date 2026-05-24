@@ -9,7 +9,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { assertGeminiAllowedForSession } from "@/lib/admin-gemini-demo-guard";
 import { getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
 import { generateSellerAnalysisWithGemini } from "@/lib/admin-gemini-seller";
-import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { mergeSourceBlocksFromBody, parseGeminiOrderContextFromBody } from "@/lib/admin-gemini-api-body";
 
 export const maxDuration = 120;
 export const runtime = "nodejs";
@@ -25,6 +25,10 @@ type BodyShape = {
   iriss?: unknown;
   apskatesPlāns?: unknown;
   cenasAtbilstiba?: unknown;
+  internalComment?: unknown;
+  mileageComment?: unknown;
+  operatorNotes?: unknown;
+  existingDraftPlain?: unknown;
 };
 
 function str(v: unknown): string {
@@ -56,24 +60,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: guard.error }, { status: guard.status });
   }
 
-  const sourceBlocks = mergeSourceBlocksWithDefaults(
-    (b.sourceBlocks ?? {}) as Partial<WorkspaceSourceBlocks>,
-  );
+  const sourceBlocks = mergeSourceBlocksFromBody(b);
+  const ctx = parseGeminiOrderContextFromBody(b, sourceBlocks);
   const extraSellerName =
     str(b.extraSellerName).trim() || sourceBlocks.listing_analysis.extraSellerName.trim();
 
   try {
     const text = await generateSellerAnalysisWithGemini({
-      sessionId,
-      vin: str(b.vin).trim() || null,
-      listingUrl: str(b.listingUrl).trim() || null,
-      customerName: str(b.customerName).trim() || null,
-      notes: str(b.notes).trim() || null,
-      sourceBlocks,
-      extraSellerName: extraSellerName || undefined,
-      irissSummary: str(b.iriss),
-      inspectionPlan: str(b.apskatesPlāns),
-      priceFit: str(b.cenasAtbilstiba),
+      ...ctx,
+      extraSellerName: extraSellerName || ctx.extraSellerName || undefined,
     });
     return NextResponse.json({ text });
   } catch (e) {

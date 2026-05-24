@@ -3,10 +3,12 @@ import "server-only";
 import { GEMINI_MODEL_FLASH } from "@/lib/admin-gemini";
 import { geminiGenerateText } from "@/lib/admin-gemini";
 import { GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM } from "@/lib/admin-gemini-prompts";
+import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
   buildGeminiOrderContextText,
   type GeminiOrderContextInput,
 } from "@/lib/admin-gemini-order-context";
+import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
 export async function generateInspectionRecommendationsWithGemini(
   input: GeminiOrderContextInput,
@@ -16,11 +18,20 @@ export async function generateInspectionRecommendationsWithGemini(
     throw new Error("empty_order_context");
   }
 
-  const userPrompt = `Pasūtījuma ID: ${input.sessionId}
+  const userPrompt = appendGeminiOperatorNotesSection(
+    `Pasūtījuma ID: ${input.sessionId}
 
 ${context}
 
-Sagatavo ieteikumus klātienes apskatei šim auto.`;
+Sagatavo ieteikumus klātienes apskatei šim auto.`,
+    {
+      operatorNotes: input.operatorNotes,
+      existingDraftPlain:
+        input.existingDraftPlain?.trim() ||
+        adminRichHtmlToPlainText(input.inspectionPlan ?? "").trim() ||
+        undefined,
+    },
+  );
 
   return geminiGenerateText({
     model: GEMINI_MODEL_FLASH,

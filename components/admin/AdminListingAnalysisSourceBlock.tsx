@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
-import { AdminGeminiGenerateButton } from "@/components/admin/AdminGeminiGenerateButton";
+import { AdminGeminiGenerateWithPrefill } from "@/components/admin/AdminGeminiGenerateWithPrefill";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { ListingAnalysisSubsectionHeading } from "@/components/admin/AdminListingAnalysisSectionChrome";
@@ -21,7 +21,7 @@ import {
   type ListingAnalysisBlockState,
 } from "@/lib/admin-source-blocks";
 import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
-import { plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
+import { plainTextToMinimalRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
 const ta =
   "min-h-[72px] w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20";
@@ -36,6 +36,8 @@ export type GeminiListingAnalysisPayload = {
   iriss: string;
   apskatesPlāns: string;
   cenasAtbilstiba: string;
+  internalComment?: string;
+  mileageComment?: string;
 };
 
 type Props = {
@@ -91,46 +93,51 @@ export function AdminListingAnalysisSourceBlock({
     Boolean(buildGeminiPayload) &&
     (v.extraSellerName.trim().length > 0 || v.listingPasteRaw.trim().length > 0);
 
-  const runSellerGeminiAnalyze = useCallback(async () => {
-    if (!canRunSellerGemini || sellerAnalyzing || disabled || readOnly || !buildGeminiPayload) return;
-    setSellerAnalyzing(true);
-    setSellerAnalyzeErr(null);
-    try {
-      const base = buildGeminiPayload();
-      const res = await fetch("/api/admin/gemini/seller-analysis", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...base,
-          extraSellerName: v.extraSellerName,
-        }),
-      });
-      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
-      if (!res.ok) {
-        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
-        if (data.error === "missing_gemini_key") {
-          setSellerAnalyzeErr("Nav GEMINI_API_KEY (.env.local / Vercel)");
-        } else if (data.error === "gemini_demo_only") {
-          setSellerAnalyzeErr("Gemini pieejams tikai DEMO pasūtījumiem");
-        } else if (data.error === "missing_seller_input") {
-          setSellerAnalyzeErr("Ievadi papildus nosaukumu vai sludinājuma aprakstu");
-        } else if (data.error === "generation_failed") {
-          setSellerAnalyzeErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās analizēt pārdevēju");
-        } else {
-          setSellerAnalyzeErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
+  const runSellerGeminiAnalyze = useCallback(
+    async (operatorNotes: string) => {
+      if (!canRunSellerGemini || sellerAnalyzing || disabled || readOnly || !buildGeminiPayload) return;
+      setSellerAnalyzing(true);
+      setSellerAnalyzeErr(null);
+      try {
+        const base = buildGeminiPayload();
+        const res = await fetch("/api/admin/gemini/seller-analysis", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...base,
+            extraSellerName: v.extraSellerName,
+            operatorNotes,
+            existingDraftPlain: adminRichHtmlToPlainText(v.sellerPortrait).trim(),
+          }),
+        });
+        const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+        if (!res.ok) {
+          const detail = typeof data.detail === "string" ? data.detail.trim() : "";
+          if (data.error === "missing_gemini_key") {
+            setSellerAnalyzeErr("Nav GEMINI_API_KEY (.env.local / Vercel)");
+          } else if (data.error === "gemini_demo_only") {
+            setSellerAnalyzeErr("Gemini pieejams tikai DEMO pasūtījumiem");
+          } else if (data.error === "missing_seller_input") {
+            setSellerAnalyzeErr("Ievadi papildus nosaukumu vai sludinājuma aprakstu");
+          } else if (data.error === "generation_failed") {
+            setSellerAnalyzeErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās analizēt pārdevēju");
+          } else {
+            setSellerAnalyzeErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
+          }
+          return;
         }
-        return;
+        if (typeof data.text === "string" && data.text.trim()) {
+          onChange({ ...v, sellerPortrait: plainTextToMinimalRichHtml(data.text) });
+        }
+      } catch {
+        setSellerAnalyzeErr("Gemini: neizdevās savienoties");
+      } finally {
+        setSellerAnalyzing(false);
       }
-      if (typeof data.text === "string" && data.text.trim()) {
-        onChange({ ...v, sellerPortrait: plainTextToMinimalRichHtml(data.text) });
-      }
-    } catch {
-      setSellerAnalyzeErr("Gemini: neizdevās savienoties");
-    } finally {
-      setSellerAnalyzing(false);
-    }
-  }, [buildGeminiPayload, canRunSellerGemini, disabled, onChange, readOnly, sellerAnalyzing, v]);
+    },
+    [buildGeminiPayload, canRunSellerGemini, disabled, onChange, readOnly, sellerAnalyzing, v],
+  );
 
   const runListingAnalyze = useCallback(async () => {
     const t = v.listingPasteRaw.trim();
@@ -233,12 +240,12 @@ export function AdminListingAnalysisSourceBlock({
             )}
           </label>
           <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-            <AdminGeminiGenerateButton
+            <AdminGeminiGenerateWithPrefill
               label="Analizēt Pārdevēju"
               busy={sellerAnalyzing}
               disabled={!canRunSellerGemini || readOnly || disabled}
               demoOnly={!geminiAllowed}
-              onClick={() => void runSellerGeminiAnalyze()}
+              onGenerate={(operatorNotes) => void runSellerGeminiAnalyze(operatorNotes)}
             />
           </div>
           {sellerAnalyzeErr ? (

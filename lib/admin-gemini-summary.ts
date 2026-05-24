@@ -2,6 +2,7 @@ import "server-only";
 
 import { GEMINI_MODEL_PRO, geminiGenerateText } from "@/lib/admin-gemini";
 import { GEMINI_SUMMARY_ANALYSIS_SYSTEM } from "@/lib/admin-gemini-prompts";
+import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
   buildGeminiOrderContextText,
   type GeminiOrderContextInput,
@@ -38,14 +39,23 @@ export async function generateSummaryAnalysisWithGemini(input: GeminiOrderContex
 
   const expertBundle = [sellerText, inspectionText, priceText].filter(Boolean).join("\n\n");
 
-  const userPrompt = `Pasūtījuma ID: ${input.sessionId}
+  const userPrompt = appendGeminiOperatorNotesSection(
+    `Pasūtījuma ID: ${input.sessionId}
 
 ${orderContext ? `${orderContext}\n\n---\n\n` : ""}${
-    expertBundle
-      ? `Eksperta jau sagatavotās sadaļas (papildus konteksts, nevis vienīgais avots):\n\n${expertBundle}\n\n---\n\n`
-      : ""
-  }Sagatavo gala kopsavilkumu klientam laukam „2. Kopsavilkums”.
-Sintezē VISU portfeļa kontekstu — avotu datus, tabulas, komentārus un eksperta sadaļas.`;
+      expertBundle
+        ? `Eksperta jau sagatavotās sadaļas (papildus konteksts, nevis vienīgais avots):\n\n${expertBundle}\n\n---\n\n`
+        : ""
+    }Sagatavo gala kopsavilkumu klientam laukam „2. Kopsavilkums”.
+Sintezē VISU portfeļa kontekstu — avotu datus, tabulas, komentārus un eksperta sadaļas.`,
+    {
+      operatorNotes: input.operatorNotes,
+      existingDraftPlain:
+        input.existingDraftPlain?.trim() ||
+        adminRichHtmlToPlainText(input.irissSummary ?? "").trim() ||
+        undefined,
+    },
+  );
 
   return geminiGenerateText({
     model: GEMINI_MODEL_PRO,

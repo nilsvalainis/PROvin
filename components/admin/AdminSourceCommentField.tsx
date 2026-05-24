@@ -1,7 +1,7 @@
 "use client";
 
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
-import { AdminGeminiGenerateButton } from "@/components/admin/AdminGeminiGenerateButton";
+import { AdminGeminiGenerateWithPrefill } from "@/components/admin/AdminGeminiGenerateWithPrefill";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { LISTING_ANALYSIS_COMMENT_LABEL } from "@/lib/admin-source-blocks";
 
@@ -10,7 +10,7 @@ export type AdminGeminiSourceCommentSlot = {
   busy: boolean;
   error: string | null;
   hasSourceData: boolean;
-  onGenerate: () => void;
+  onGenerate: (operatorNotes: string) => void;
 };
 
 type Props = {
@@ -41,7 +41,7 @@ export function AdminSourceCommentField({
       <div className="mb-0.5 flex flex-wrap items-center justify-between gap-2">
         <span className="block text-[10px] font-medium text-[var(--color-provin-muted)]">{label}</span>
         {gemini && !readOnly ? (
-          <AdminGeminiGenerateButton
+          <AdminGeminiGenerateWithPrefill
             label="Ģenerēt komentāru"
             busy={gemini.busy}
             disabled={!gemini.allowed || !gemini.hasSourceData || disabled}
@@ -53,7 +53,7 @@ export function AdminSourceCommentField({
                   ? "Vispirms aizpildi šī avota datus (tabulas, laukus u.c.)"
                   : "No šī avota datiem ģenerē komentāru ar Gemini"
             }
-            onClick={gemini.onGenerate}
+            onGenerate={gemini.onGenerate}
           />
         ) : null}
       </div>

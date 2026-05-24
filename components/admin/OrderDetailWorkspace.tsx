@@ -35,6 +35,7 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import {
+  idbDeletePortfolio,
   idbGetPortfolio,
   idbSetPortfolio,
   migrateLegacyPortfolioFromLocalStorage,
@@ -86,11 +87,12 @@ import {
   MessageSquare,
   Newspaper,
   Scale,
+  RotateCcw,
   Send,
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
-import { AdminGeminiGenerateButton } from "@/components/admin/AdminGeminiGenerateButton";
+import { AdminGeminiGenerateWithPrefill } from "@/components/admin/AdminGeminiGenerateWithPrefill";
 import type { AdminGeminiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import {
   type GeminiSourceCommentBlockKey,
@@ -103,6 +105,10 @@ import {
 } from "@/components/admin/AdminCommonPhrasesDrawer";
 import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
 import { plainTextToMinimalRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import {
+  ADMIN_INCIDENTS_SUMMARY_LABEL,
+  ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
+} from "@/lib/admin-workspace-field-labels";
 import { buildProvinAuditPdfFilename } from "@/lib/audit-report-pdf-filename";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
@@ -479,6 +485,8 @@ export function OrderDetailWorkspace({
   adminDark,
   internalCommentDraft,
   onInternalCommentChange,
+  mileageCommentDraft,
+  onMileageCommentChange,
   dashboardSlot,
   portfolioPortalDomId,
   portfolioPortalTargetInParent = false,
@@ -492,6 +500,8 @@ export function OrderDetailWorkspace({
   adminDark: boolean;
   internalCommentDraft: string;
   onInternalCommentChange: (value: string) => void;
+  mileageCommentDraft: string;
+  onMileageCommentChange: (value: string) => void;
   /** 0. solis — maksājums, transports, klients, pielikumi, komentārs (vecāka 2×2 režģis). */
   dashboardSlot?: ReactNode;
   /** Ja norādīts, „1. Pielikumi” tiek renderēts šajā DOM elementā (kreisās kolonnas augšā). */
@@ -545,6 +555,8 @@ export function OrderDetailWorkspace({
   const hydrationSnapshotRef = useRef("");
   const wsPersistRef = useRef(ws);
   wsPersistRef.current = ws;
+  const orderEditsRef = useRef({ internal: internalCommentDraft, mileage: mileageCommentDraft });
+  orderEditsRef.current = { internal: internalCommentDraft, mileage: mileageCommentDraft };
   const pdfVisibilityRef = useRef(pdfVisibility);
   pdfVisibilityRef.current = pdfVisibility;
   const portfolioBytes = useMemo(() => portfolio.reduce((a, p) => a + p.size, 0), [portfolio]);
@@ -619,32 +631,36 @@ export function OrderDetailWorkspace({
     setWs((prev) => ({ ...prev, ...patch }));
   }, []);
 
-  const buildGeminiListingPayload = useCallback(() => {
-    const cur = wsPersistRef.current;
-    return {
-      sessionId: payload.sessionId,
-      vin: payload.vin,
-      listingUrl: payload.listingUrl,
-      customerName: payload.customerName,
-      notes: payload.notes,
-      sourceBlocks: cur.sourceBlocks,
-      iriss: cur.iriss,
-      apskatesPlāns: cur.apskatesPlāns,
-      cenasAtbilstiba: cur.cenasAtbilstiba,
-    };
-  }, [
-    payload.customerName,
-    payload.listingUrl,
-    payload.notes,
-    payload.sessionId,
-    payload.vin,
-  ]);
+  const buildGeminiOrderPayload = useCallback(
+    (extra: { operatorNotes?: string; existingDraftPlain?: string } = {}) => {
+      const cur = wsPersistRef.current;
+      const edits = orderEditsRef.current;
+      return {
+        sessionId: payload.sessionId,
+        vin: payload.vin,
+        listingUrl: payload.listingUrl,
+        customerName: payload.customerName,
+        notes: payload.notes,
+        sourceBlocks: cur.sourceBlocks,
+        iriss: cur.iriss,
+        apskatesPlāns: cur.apskatesPlāns,
+        cenasAtbilstiba: cur.cenasAtbilstiba,
+        internalComment: edits.internal,
+        mileageComment: edits.mileage,
+        operatorNotes: extra.operatorNotes,
+        existingDraftPlain: extra.existingDraftPlain,
+      };
+    },
+    [payload.customerName, payload.listingUrl, payload.notes, payload.sessionId, payload.vin],
+  );
+
+  const buildGeminiListingPayload = useCallback(() => buildGeminiOrderPayload(), [buildGeminiOrderPayload]);
 
   const setIrissSummary = useCallback((next: string) => {
     setWs((prev) => ({ ...prev, iriss: next }));
   }, []);
 
-  const runGeminiInspectionRecommendations = useCallback(async () => {
+  const runGeminiInspectionRecommendations = useCallback(async (operatorNotes = "") => {
     if (!payload.geminiAllowed || geminiInspectionBusy) return;
     setGeminiInspectionBusy(true);
     setGeminiInspectionErr(null);
@@ -655,15 +671,10 @@ export function OrderDetailWorkspace({
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionId: payload.sessionId,
-          vin: payload.vin,
-          listingUrl: payload.listingUrl,
-          customerName: payload.customerName,
-          notes: payload.notes,
-          sourceBlocks: cur.sourceBlocks,
-          iriss: cur.iriss,
-          apskatesPlāns: cur.apskatesPlāns,
-          cenasAtbilstiba: cur.cenasAtbilstiba,
+          ...buildGeminiOrderPayload({
+            operatorNotes,
+            existingDraftPlain: adminRichHtmlToPlainText(cur.apskatesPlāns).trim(),
+          }),
         }),
       });
       const data = (await res.json()) as { text?: string; error?: string; detail?: string };
@@ -688,9 +699,9 @@ export function OrderDetailWorkspace({
     } finally {
       setGeminiInspectionBusy(false);
     }
-  }, [geminiInspectionBusy, payload.customerName, payload.geminiAllowed, payload.listingUrl, payload.notes, payload.sessionId, payload.vin, updateWs]);
+  }, [buildGeminiOrderPayload, geminiInspectionBusy, payload.geminiAllowed, updateWs]);
 
-  const runGeminiPriceAnalysis = useCallback(async () => {
+  const runGeminiPriceAnalysis = useCallback(async (operatorNotes = "") => {
     if (!payload.geminiAllowed || geminiPriceBusy) return;
     setGeminiPriceBusy(true);
     setGeminiPriceErr(null);
@@ -701,15 +712,10 @@ export function OrderDetailWorkspace({
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionId: payload.sessionId,
-          vin: payload.vin,
-          listingUrl: payload.listingUrl,
-          customerName: payload.customerName,
-          notes: payload.notes,
-          sourceBlocks: cur.sourceBlocks,
-          iriss: cur.iriss,
-          apskatesPlāns: cur.apskatesPlāns,
-          cenasAtbilstiba: cur.cenasAtbilstiba,
+          ...buildGeminiOrderPayload({
+            operatorNotes,
+            existingDraftPlain: adminRichHtmlToPlainText(cur.cenasAtbilstiba).trim(),
+          }),
         }),
       });
       const data = (await res.json()) as { text?: string; error?: string; detail?: string };
@@ -738,9 +744,9 @@ export function OrderDetailWorkspace({
     } finally {
       setGeminiPriceBusy(false);
     }
-  }, [geminiPriceBusy, payload.customerName, payload.geminiAllowed, payload.listingUrl, payload.notes, payload.sessionId, payload.vin, updateWs]);
+  }, [buildGeminiOrderPayload, geminiPriceBusy, payload.geminiAllowed, updateWs]);
 
-  const runGeminiSummaryAnalysis = useCallback(async () => {
+  const runGeminiSummaryAnalysis = useCallback(async (operatorNotes = "") => {
     if (!payload.geminiAllowed || geminiSummaryBusy) return;
     setGeminiSummaryBusy(true);
     setGeminiSummaryErr(null);
@@ -751,14 +757,10 @@ export function OrderDetailWorkspace({
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionId: payload.sessionId,
-          vin: payload.vin,
-          listingUrl: payload.listingUrl,
-          customerName: payload.customerName,
-          notes: payload.notes,
-          sourceBlocks: cur.sourceBlocks,
-          apskatesPlāns: cur.apskatesPlāns,
-          cenasAtbilstiba: cur.cenasAtbilstiba,
+          ...buildGeminiOrderPayload({
+            operatorNotes,
+            existingDraftPlain: adminRichHtmlToPlainText(cur.iriss).trim(),
+          }),
         }),
       });
       const data = (await res.json()) as { text?: string; error?: string; detail?: string };
@@ -785,16 +787,7 @@ export function OrderDetailWorkspace({
     } finally {
       setGeminiSummaryBusy(false);
     }
-  }, [
-    geminiSummaryBusy,
-    payload.customerName,
-    payload.geminiAllowed,
-    payload.listingUrl,
-    payload.notes,
-    payload.sessionId,
-    payload.vin,
-    setIrissSummary,
-  ]);
+  }, [buildGeminiOrderPayload, geminiSummaryBusy, payload.geminiAllowed, setIrissSummary]);
 
   const updateSourceBlock = useCallback((key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]) => {
     setWs((prev) => ({
@@ -804,24 +797,27 @@ export function OrderDetailWorkspace({
   }, []);
 
   const runGeminiSourceComment = useCallback(
-    async (blockKey: GeminiSourceCommentBlockKey) => {
+    async (blockKey: GeminiSourceCommentBlockKey, operatorNotes = "") => {
       if (!payload.geminiAllowed || geminiSourceCommentBusy) return;
       setGeminiSourceCommentBusy(blockKey);
       setGeminiSourceCommentErr(null);
       try {
         const cur = wsPersistRef.current;
+        const block = cur.sourceBlocks[blockKey];
+        const existingComments =
+          block && typeof block === "object" && "comments" in block && typeof block.comments === "string"
+            ? block.comments
+            : "";
         const res = await fetch("/api/admin/gemini/source-comment", {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            sessionId: payload.sessionId,
+            ...buildGeminiOrderPayload({
+              operatorNotes,
+              existingDraftPlain: adminRichHtmlToPlainText(existingComments).trim(),
+            }),
             blockKey,
-            vin: payload.vin,
-            listingUrl: payload.listingUrl,
-            customerName: payload.customerName,
-            notes: payload.notes,
-            sourceBlocks: cur.sourceBlocks,
           }),
         });
         const data = (await res.json()) as { text?: string; error?: string; detail?: string };
@@ -856,7 +852,7 @@ export function OrderDetailWorkspace({
         setGeminiSourceCommentBusy(null);
       }
     },
-    [geminiSourceCommentBusy, payload.customerName, payload.geminiAllowed, payload.listingUrl, payload.notes, payload.sessionId, payload.vin, updateSourceBlock],
+    [buildGeminiOrderPayload, geminiSourceCommentBusy, payload.geminiAllowed, updateSourceBlock],
   );
 
   const pushWorkspaceBackup = useCallback(
@@ -1028,6 +1024,64 @@ export function OrderDetailWorkspace({
       /* quota */
     }
   }, [workspaceHydrated, payload.sessionId]);
+
+  const resetDemoWorkspace = useCallback(() => {
+    if (!payload.isDemo) return;
+    if (
+      !window.confirm(
+        "Vai tiešām dzēst visus aizpildītos datus šajā demo pasūtījumā? (avoti, kopsavilkums, komentāri, portfelis)",
+      )
+    ) {
+      return;
+    }
+    const emptyBlocks = createDefaultSourceBlocks();
+    const mergedVisibility = mergePdfVisibility(undefined);
+    setWs({ ...EMPTY_WORKSPACE, sourceBlocks: emptyBlocks });
+    onPdfVisibilityChange(mergedVisibility);
+    onInternalCommentChange("");
+    onMileageCommentChange("");
+    setGeminiInspectionErr(null);
+    setGeminiPriceErr(null);
+    setGeminiSummaryErr(null);
+    setGeminiSourceCommentErr(null);
+    setPreviewOpen(false);
+    setWizardStep(0);
+    portfolioRef.current.forEach((p) => URL.revokeObjectURL(p.blobUrl));
+    setPortfolio([]);
+    void idbDeletePortfolio(payload.sessionId);
+    try {
+      localStorage.removeItem(storageKeyWorkspace(payload.sessionId));
+      hydrationSnapshotRef.current = serializeWorkspaceState(EMPTY_WORKSPACE, mergedVisibility);
+    } catch {
+      /* quota */
+    }
+    if (orderDraftPersistenceEnabled) {
+      void fetch("/api/admin/order-draft", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: payload.sessionId,
+          orderEdits: { internalComment: "", mileageComment: "" },
+          workspace: {
+            sourceBlocks: emptyBlocks,
+            iriss: "",
+            apskatesPlāns: "",
+            cenasAtbilstiba: "",
+            previewConfirmed: false,
+            pdfVisibility: mergedVisibility,
+          },
+        }),
+      });
+    }
+  }, [
+    onInternalCommentChange,
+    onMileageCommentChange,
+    onPdfVisibilityChange,
+    orderDraftPersistenceEnabled,
+    payload.isDemo,
+    payload.sessionId,
+  ]);
 
   useEffect(() => {
     const onUnload = () => flushWorkspaceToLocalStorage();
@@ -1372,7 +1426,7 @@ export function OrderDetailWorkspace({
       busy: geminiSourceCommentBusy === key,
       error: geminiSourceCommentErr?.key === key ? geminiSourceCommentErr.msg : null,
       hasSourceData: sourceBlockHasDataExcludingComments(key, blocksDisplaySafe),
-      onGenerate: () => void runGeminiSourceComment(key),
+      onGenerate: (operatorNotes) => void runGeminiSourceComment(key, operatorNotes),
     }),
     [
       blocksDisplaySafe,
@@ -1493,6 +1547,7 @@ export function OrderDetailWorkspace({
         listingMarket,
         pdfVisibility,
         internalComment: internalCommentDraft,
+        mileageComment: mileageCommentDraft,
       },
       portfolio: portfolio.map((p) => ({ name: p.name, size: p.size })),
       pdfInsights,
@@ -2174,12 +2229,23 @@ export function OrderDetailWorkspace({
           <button
             type="button"
             className="inline-flex h-7 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-1.5 text-[var(--color-apple-text)] shadow-sm transition hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
-            title="Iekšējais komentārs — solis „Kopsavilkums”"
-            aria-label="Pāriet uz iekšējo komentāru (kopsavilkuma solis)"
+            title={`${ADMIN_INCIDENTS_SUMMARY_LABEL} — solis „Kopsavilkums”`}
+            aria-label={`Pāriet uz ${ADMIN_INCIDENTS_SUMMARY_LABEL} (kopsavilkuma solis)`}
             onClick={() => setWizardStep(7)}
           >
             <MessageSquare className="h-3.5 w-3.5" aria-hidden />
           </button>
+          {payload.isDemo ? (
+            <button
+              type="button"
+              className="inline-flex h-7 shrink-0 items-center justify-center rounded-lg border border-amber-300/80 bg-amber-50 px-1.5 text-amber-900 shadow-sm transition hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100 dark:hover:bg-amber-950/60"
+              title="Dzēst visus demo datus un sākt no jauna"
+              aria-label="Dzēst visus demo datus"
+              onClick={() => resetDemoWorkspace()}
+            >
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          ) : null}
           <AdminCommonPhrasesDrawerTrigger open={phrasesOpen} onOpen={() => setPhrasesOpen(true)} />
           <div className="flex min-w-0 flex-1 flex-wrap items-stretch gap-1 sm:gap-1.5">
             {wizardStepsUi.map(({ label, Icon }, idx) => {
@@ -2438,12 +2504,12 @@ export function OrderDetailWorkspace({
                 </div>
                 <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.priceFit} title="3. Cenas atbilstība">
                   <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminGeminiGenerateButton
+                    <AdminGeminiGenerateWithPrefill
                       label="Analizēt cenu"
                       busy={geminiPriceBusy}
                       disabled={!payload.geminiAllowed}
                       demoOnly={!payload.geminiAllowed}
-                      onClick={() => void runGeminiPriceAnalysis()}
+                      onGenerate={(operatorNotes) => void runGeminiPriceAnalysis(operatorNotes)}
                     />
                   </div>
                   {geminiPriceErr ? (
@@ -2487,12 +2553,12 @@ export function OrderDetailWorkspace({
                   title="1. Ieteikumi klātienes apskatei"
                 >
                   <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminGeminiGenerateButton
+                    <AdminGeminiGenerateWithPrefill
                       label="Ģenerēt ieteikumus"
                       busy={geminiInspectionBusy}
                       disabled={!payload.geminiAllowed}
                       demoOnly={!payload.geminiAllowed}
-                      onClick={() => void runGeminiInspectionRecommendations()}
+                      onGenerate={(operatorNotes) => void runGeminiInspectionRecommendations(operatorNotes)}
                     />
                   </div>
                   {geminiInspectionErr ? (
@@ -2508,7 +2574,7 @@ export function OrderDetailWorkspace({
                 </ListingAnalysisSubsectionHeading>
                 <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.summary} title="2. Kopsavilkums">
                   <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminGeminiGenerateButton
+                    <AdminGeminiGenerateWithPrefill
                       label="Sagatavot atbildi"
                       busy={geminiSummaryBusy}
                       disabled={
@@ -2531,7 +2597,7 @@ export function OrderDetailWorkspace({
                             ? "Vispirms ģenerē vai aizpildi pārdevēja, ieteikumu vai cenas sadaļu"
                             : undefined
                       }
-                      onClick={() => void runGeminiSummaryAnalysis()}
+                      onGenerate={(operatorNotes) => void runGeminiSummaryAnalysis(operatorNotes)}
                     />
                   </div>
                   {geminiSummaryErr ? (
@@ -2547,7 +2613,7 @@ export function OrderDetailWorkspace({
                 </ListingAnalysisSubsectionHeading>
                 <ListingAnalysisSubsectionHeading
                   icon={IRISS_CHROME_LUCIDE.internalNote}
-                  title="Iekšējais komentārs (logs)"
+                  title={ADMIN_INCIDENTS_SUMMARY_LABEL}
                 >
                   <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
                     Glabājas pasūtījuma melnrakstā; PDF drukā zem „Negadījumu vēstures” kā plakans teksts (bez vizuālā
@@ -2559,7 +2625,23 @@ export function OrderDetailWorkspace({
                       compact
                       value={internalCommentDraft}
                       onChange={onInternalCommentChange}
-                      aria-label="Iekšējais komentārs"
+                      aria-label={ADMIN_INCIDENTS_SUMMARY_LABEL}
+                    />
+                  </div>
+                </ListingAnalysisSubsectionHeading>
+                <ListingAnalysisSubsectionHeading
+                  icon={IRISS_CHROME_LUCIDE.internalNote}
+                  title={ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}
+                >
+                  <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
+                    Glabājas pasūtījuma melnrakstā; PDF drukā zem nobraukuma grafika kā komentārs. Saglabājas automātiski.
+                  </p>
+                  <div className="mt-2">
+                    <AdminAiPolishRichCommentShell
+                      compact
+                      value={mileageCommentDraft}
+                      onChange={onMileageCommentChange}
+                      aria-label={ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}
                     />
                   </div>
                 </ListingAnalysisSubsectionHeading>

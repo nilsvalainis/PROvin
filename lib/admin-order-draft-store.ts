@@ -63,6 +63,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
     if (typeof e.contactMethod === "string") orderEdits.contactMethod = e.contactMethod;
     if (typeof e.notes === "string") orderEdits.notes = e.notes;
     if (typeof e.internalComment === "string") orderEdits.internalComment = e.internalComment;
+    if (typeof e.mileageComment === "string") orderEdits.mileageComment = e.mileageComment;
   }
   let workspace: OrderDraftWorkspaceBody | null = null;
   if (o.workspace && typeof o.workspace === "object") {
@@ -296,6 +297,9 @@ export async function patchOrderDraft(
     }
     if (typeof patch.orderEdits.internalComment === "string") {
       sanitizedPatch.internalComment = sanitizeDraftTextForStorage(patch.orderEdits.internalComment);
+    }
+    if (typeof patch.orderEdits.mileageComment === "string") {
+      sanitizedPatch.mileageComment = sanitizeDraftTextForStorage(patch.orderEdits.mileageComment);
     }
   }
   const nextOrderEdits =

@@ -2,10 +2,12 @@ import "server-only";
 
 import { GEMINI_MODEL_FLASH, geminiGenerateText } from "@/lib/admin-gemini";
 import { GEMINI_PRICE_ANALYSIS_SYSTEM } from "@/lib/admin-gemini-prompts";
+import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
   buildGeminiOrderContextText,
   type GeminiOrderContextInput,
 } from "@/lib/admin-gemini-order-context";
+import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import {
   fetchListingAiSnapshot,
   formatListingAiSnapshotForGemini,
@@ -27,11 +29,20 @@ export async function generatePriceAnalysisWithGemini(input: GeminiOrderContextI
     throw new Error("listing_scrape_failed");
   }
 
-  const userPrompt = `Pasūtījuma ID: ${input.sessionId}
+  const userPrompt = appendGeminiOperatorNotesSection(
+    `Pasūtījuma ID: ${input.sessionId}
 
 ${listingBlock ? `${listingBlock}\n\n---\n\n` : ""}${context}
 
-Novērtē, vai šī auto cena ir adekvāta Latvijas lietotu auto tirgum (ss.lv līmenī). Izmanto augstāk norādīto ss.lv sludinājuma saturu (cena, gads, marka, nobraukums, apraksts u.c.) un pārējo pasūtījuma kontekstu. Sagatavo tekstu laukam „Cenas atbilstība”.`;
+Novērtē, vai šī auto cena ir adekvāta Latvijas lietotu auto tirgum (ss.lv līmenī). Izmanto augstāk norādīto ss.lv sludinājuma saturu (cena, gads, marka, nobraukums, apraksts u.c.) un pārējo pasūtījuma kontekstu. Sagatavo tekstu laukam „Cenas atbilstība”.`,
+    {
+      operatorNotes: input.operatorNotes,
+      existingDraftPlain:
+        input.existingDraftPlain?.trim() ||
+        adminRichHtmlToPlainText(input.priceFit ?? "").trim() ||
+        undefined,
+    },
+  );
 
   return geminiGenerateText({
     model: GEMINI_MODEL_FLASH,

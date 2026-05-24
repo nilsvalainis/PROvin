@@ -2,11 +2,13 @@ import "server-only";
 
 import { GEMINI_MODEL_PRO, geminiGenerateTextWithGoogleSearch } from "@/lib/admin-gemini";
 import { GEMINI_SELLER_ANALYSIS_SYSTEM } from "@/lib/admin-gemini-prompts";
+import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
   buildGeminiOrderContextText,
   type GeminiOrderContextInput,
 } from "@/lib/admin-gemini-order-context";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
+import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
 export async function generateSellerAnalysisWithGemini(input: GeminiOrderContextInput): Promise<string> {
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
@@ -32,13 +34,21 @@ Papildus nosaukums nav norādīts — secini pārdevēja tipu no sludinājuma un
 Sludinājuma iekopētais teksts:
 ${listingPaste}`;
 
-  const userPrompt = `Pasūtījuma ID: ${input.sessionId}
+  const userPrompt = appendGeminiOperatorNotesSection(
+    `Pasūtījuma ID: ${input.sessionId}
 
 ${context}
 
 ---
 
-${taskBlock}`;
+${taskBlock}`,
+    {
+      operatorNotes: input.operatorNotes,
+      existingDraftPlain:
+        input.existingDraftPlain ??
+        adminRichHtmlToPlainText(blocks.listing_analysis.sellerPortrait).trim(),
+    },
+  );
 
   return geminiGenerateTextWithGoogleSearch({
     model: GEMINI_MODEL_PRO,

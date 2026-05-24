@@ -1,6 +1,12 @@
 import "server-only";
 
 const DEMO_IDS = {
+  /** Eksperimentu veidne 1 — tukša, ar reset. */
+  exp1: "demo_order_exp_1",
+  /** Eksperimentu veidne 2 — tukša, ar reset. */
+  exp2: "demo_order_exp_2",
+  /** Eksperimentu veidne 3 — tukša, ar reset. */
+  exp3: "demo_order_exp_3",
   /** Tukšs veidne — manuālai aizpildīšanai un testiem. */
   blank: "demo_order_blank",
   /** Pilns paraugs (kā pēc apmaksas). */
@@ -16,7 +22,20 @@ const created = (iso: string) => Math.floor(new Date(iso).getTime() / 1000);
 
 /** Demo rindas sarakstam (augšā — jaunākie). */
 export function getDemoOrderRows() {
+  const blankDemo = (id: string, iso: string) => ({
+    id,
+    created: created(iso),
+    amountTotal: 7999,
+    currency: "EUR",
+    paymentStatus: "paid" as const,
+    customerEmail: null,
+    vin: null,
+    isDemo: true,
+  });
   return [
+    blankDemo(DEMO_IDS.exp1, "2026-05-21T09:00:00+03:00"),
+    blankDemo(DEMO_IDS.exp2, "2026-05-21T08:30:00+03:00"),
+    blankDemo(DEMO_IDS.exp3, "2026-05-21T08:00:00+03:00"),
     {
       id: DEMO_IDS.blank,
       created: created("2026-04-08T12:00:00+03:00"),
@@ -113,6 +132,29 @@ export function getDemoConsultationDetail(sessionId: string) {
 }
 
 export function getDemoOrderDetail(sessionId: string) {
+  const blankDetail = (id: string, iso: string) => ({
+    id,
+    created: created(iso),
+    amountTotal: 7999,
+    currency: "EUR",
+    paymentStatus: "paid" as const,
+    customerEmail: null,
+    vin: null,
+    listingUrl: null,
+    customerName: null,
+    contactMethod: null,
+    phone: null,
+    notes: null,
+    customerDetailsEmail: null,
+    customerDetailsPhone: null,
+    isDemo: true,
+    checkoutLine: "audit" as const,
+    internalComment: null,
+    attachments: [] as { label: string; fileName: string }[],
+  });
+  if (sessionId === DEMO_IDS.exp1) return blankDetail(DEMO_IDS.exp1, "2026-05-21T09:00:00+03:00");
+  if (sessionId === DEMO_IDS.exp2) return blankDetail(DEMO_IDS.exp2, "2026-05-21T08:30:00+03:00");
+  if (sessionId === DEMO_IDS.exp3) return blankDetail(DEMO_IDS.exp3, "2026-05-21T08:00:00+03:00");
   if (sessionId === DEMO_IDS.blank) {
     return {
       id: DEMO_IDS.blank,

@@ -99,6 +99,7 @@ function parseOrderEditsObject(v: unknown): OrderDraftOrderEdits | null {
   if (typeof o.contactMethod === "string") out.contactMethod = o.contactMethod;
   if (typeof o.notes === "string") out.notes = o.notes;
   if (typeof o.internalComment === "string") out.internalComment = o.internalComment;
+  if (typeof o.mileageComment === "string") out.mileageComment = o.mileageComment;
   return out;
 }
 

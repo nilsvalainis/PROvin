@@ -51,13 +51,6 @@ function daysBetweenUtc(fromMs: number, toMs: number): number {
   return Math.max(0, Math.round((to - from) / 86_400_000));
 }
 
-function formatSourceList(labels: string[]): string {
-  const uniq = [...new Set(labels)];
-  if (uniq.length === 0) return "";
-  if (uniq.length === 1) return uniq[0]!;
-  if (uniq.length === 2) return `${uniq[0]} un ${uniq[1]}`;
-  return `${uniq.slice(0, -1).join(", ")} un ${uniq[uniq.length - 1]}`;
-}
 
 function collectLatviaFixedDates(input: LatviaRegistrationTenureInput): DateCandidate[] {
   const out: DateCandidate[] = [];
@@ -98,13 +91,9 @@ export function computeLatviaRegistrationTenure(
   const ref = input.referenceDate ?? new Date();
   const days = daysBetweenUtc(oldest.sortable, ref.getTime());
   const firstDateDisplay = formatDisplayDate(oldest.dateRaw);
-
   const usedSources = [...new Set(candidates.map((c) => c.source))];
-  const sourceText = formatSourceList(usedSources);
 
-  const sentence = sourceText
-    ? `Saskaņā ar ${sourceText} datos fiksētajiem ierakstiem transportlīdzeklis Latvijā ir uzskaitē vismaz kopš ${firstDateDisplay} — kopā ${days} dienas.`
-    : `Transportlīdzeklis Latvijā ir uzskaitē vismaz kopš ${firstDateDisplay} — kopā ${days} dienas.`;
+  const sentence = `Saskaņā ar mūsu rīcībā esošajiem datiem transportlīdzeklis Latvijā ir reģistrēts kopš ${firstDateDisplay} — kopā ${days} dienas.`;
 
   return {
     firstDateDisplay,
