@@ -4,7 +4,8 @@
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
-import { getOutvinConfig, purchaseOutvinHistoryTypes } from "@/lib/outvin-api";
+import { getOutvinConfig } from "@/lib/outvin-api";
+import { purchaseOutvinHistoryTypesSequential } from "@/lib/outvin-purchase-sequential";
 import { parseOutvinDataBundleRaw } from "@/lib/outvin-data-bundle";
 import { isOutvinApiVin, normalizeVin } from "@/lib/order-field-validation";
 
@@ -44,21 +45,47 @@ export async function POST(req: Request) {
   const existing = parseOutvinDataBundleRaw(o.existingBundle, vin);
 
   try {
-    const { bundle, results, paymentRequired, paymentWarning } = await purchaseOutvinHistoryTypes(
+    const { bundle, results, paymentRequired, purchaseMessage } = await purchaseOutvinHistoryTypesSequential(
       vin,
       types,
       existing ?? null,
     );
+
+    const failed = results.filter((r) => !r.ok);
+    if (failed.length > 0) {
+      console.error("[admin/outvin/purchase] purchase finished with failures", {
+        vin,
+        typesRequested: types,
+        paymentRequired,
+        results,
+        purchasesSaved: bundle.purchases.map((p) => p.historyType),
+      });
+    }
+
+    const anyOk = results.some((r) => r.ok);
+    if (!anyOk && failed.length > 0) {
+      return NextResponse.json(
+        {
+          error: "outvin_purchase_failed",
+          bundle,
+          results,
+          paymentRequired,
+          purchaseMessage: purchaseMessage ?? "Kļūda iegādē",
+        },
+        { status: 502 },
+      );
+    }
+
     return NextResponse.json({
       bundle,
       results,
       paymentRequired,
       vin,
-      ...(paymentWarning ? { paymentWarning } : {}),
+      ...(purchaseMessage ? { purchaseMessage } : {}),
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
-    console.error("[admin/outvin/purchase]", msg);
+    console.error("[admin/outvin/purchase] unhandled exception", { vin, types, message: msg, error: e });
     if (msg === "missing_outvin_credentials") {
       return NextResponse.json({ error: "missing_outvin_credentials" }, { status: 503 });
     }

@@ -135,19 +135,22 @@ export function AdminOutvinDataSourcesCard({
       });
       const data = (await res.json()) as {
         bundle?: OutvinDataBundle;
-        paymentWarning?: string;
+        purchaseMessage?: string;
+        paymentRequired?: boolean;
+        results?: Array<{ type: number; ok: boolean; error?: string; httpStatus?: number }>;
         error?: string;
         detail?: string;
       };
+      if (data.bundle) applyBundle(data.bundle);
       if (!res.ok) {
-        setErr(mapApiError(data));
+        setErr(formatPurchaseError(data));
         return;
       }
-      if (data.bundle) applyBundle(data.bundle);
       setSelected(new Set());
-      if (data.paymentWarning) setErr(data.paymentWarning);
+      const feedback = formatPurchaseFeedback(data);
+      if (feedback) setErr(feedback);
     } catch {
-      setErr("Pirkums neizdevās — pārbaudi tīklu un Outvin kredītus");
+      setErr("Kļūda iegādē: neizdevās savienoties ar serveri");
     } finally {
       setPurchaseBusy(false);
       setLoadingTypes(new Set());
@@ -263,5 +266,37 @@ function mapApiError(data: { error?: string; detail?: string }): string {
   if (data.error === "outvin_unauthorized") return "Outvin: nederīgs konts";
   if (data.error === "invalid_vin") return "Nederīgs VIN";
   if (data.error === "no_types_selected") return "Atlasiet vismaz vienu avotu";
-  return detail ? `Outvin: ${detail}` : "Outvin kļūda";
+  return detail ? `Kļūda iegādē: ${detail}` : "Kļūda iegādē";
+}
+
+function formatPurchaseFeedback(data: {
+  purchaseMessage?: string;
+  paymentRequired?: boolean;
+  results?: Array<{ type: number; ok: boolean; error?: string; httpStatus?: number }>;
+}): string | null {
+  if (typeof data.purchaseMessage === "string" && data.purchaseMessage.trim()) {
+    return data.purchaseMessage.trim();
+  }
+  const failed = (data.results ?? []).filter((r) => !r.ok);
+  if (failed.length === 0) return null;
+  if (data.paymentRequired && failed.some((r) => r.httpStatus === 402)) {
+    return "Outvin: kontā beidzās kredīti (HTTP 402). Daļa datu var būt jau saglabāta.";
+  }
+  return `Kļūda iegādē: ${failed
+    .map((r) => {
+      const status = r.httpStatus != null ? ` HTTP ${r.httpStatus}` : "";
+      return `Type ${r.type} — ${r.error ?? "nezināms"}${status}`;
+    })
+    .join("; ")}`;
+}
+
+function formatPurchaseError(data: {
+  purchaseMessage?: string;
+  error?: string;
+  detail?: string;
+  results?: Array<{ type: number; ok: boolean; error?: string; httpStatus?: number }>;
+}): string {
+  const partial = formatPurchaseFeedback(data);
+  if (partial) return partial;
+  return mapApiError(data);
 }

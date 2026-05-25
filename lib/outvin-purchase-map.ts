@@ -281,3 +281,61 @@ export function dealerLogToMergedServiceHistory(log: OutvinDealerServiceRow[]): 
   const batches = [log.map(({ date, odometer, country }) => ({ date, odometer, country }))];
   return mergeOutvinServiceRows(batches);
 }
+
+/** Pauze starp secīgiem Outvin history pieprasījumiem (rate limit / īslaicīgi bloki). */
+export const OUTVIN_SEQUENTIAL_PURCHASE_DELAY_MS = 1000;
+
+export function sleepMs(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export type OutvinPurchaseTypeResult = {
+  type: number;
+  ok: boolean;
+  error?: string;
+  httpStatus?: number;
+};
+
+export type OutvinPurchaseResult = {
+  bundle: OutvinDataBundle;
+  results: OutvinPurchaseTypeResult[];
+  paymentRequired: boolean;
+  purchaseMessage?: string;
+};
+
+export function logOutvinPurchaseHistoryFailure(
+  context: string,
+  vin: string,
+  historyType: number,
+  httpStatus: number,
+  skipReason: string | undefined,
+  rawBody: string | undefined,
+): void {
+  console.error(`[${context}] Outvin history request failed`, {
+    vin,
+    historyType,
+    httpStatus,
+    skipReason: skipReason ?? "(none)",
+    rawBody: rawBody ?? "(empty)",
+  });
+}
+
+/** UI ziņojums — kredītu teksts tikai pie īsta HTTP 402. */
+export function buildOutvinPurchaseUserMessage(
+  results: OutvinPurchaseTypeResult[],
+  paymentRequired: boolean,
+): string | undefined {
+  const failed = results.filter((r) => !r.ok);
+  if (failed.length === 0) return undefined;
+
+  const strict402 = failed.filter((r) => r.httpStatus === 402);
+  if (paymentRequired && strict402.length > 0) {
+    return "Outvin: kontā beidzās kredīti (HTTP 402). Daļa datu var būt jau saglabāta.";
+  }
+
+  const parts = failed.map((r) => {
+    const status = r.httpStatus != null ? ` HTTP ${r.httpStatus}` : "";
+    return `Type ${r.type} — ${r.error ?? "nezināms"}${status}`;
+  });
+  return `Kļūda iegādē: ${parts.join("; ")}`;
+}

@@ -7,7 +7,7 @@ import {
 } from "@/lib/outvin-history-map";
 import { buildOutvinDealerReport } from "@/lib/outvin-dealer-map";
 import type { OutvinDealerReport } from "@/lib/outvin-dealer-types";
-import { applyOutvinPurchaseToBundle, rebuildOutvinBundleFromPurchases } from "@/lib/outvin-purchase-map";
+import { rebuildOutvinBundleFromPurchases } from "@/lib/outvin-purchase-map";
 import { applyOutvinPrecheckMetadata } from "@/lib/outvin-precheck";
 import { buildOutvinCapabilitySlots } from "@/lib/outvin-precheck";
 import type { OutvinDataBundle } from "@/lib/outvin-data-bundle";
@@ -44,6 +44,8 @@ export type OutvinHistoryFetchResult = {
   body: unknown | null;
   /** Kļūda, ja ok === false (nav globāla auth/maksājuma kļūda). */
   skipReason?: string;
+  /** Īss atbildes fragments diagnostikai (logiem). */
+  rawBodyPreview?: string;
 };
 
 function parseHistoryResponse(
@@ -60,8 +62,10 @@ function parseHistoryResponse(
   }
 
   if (res.status === 401) return { body: null, fatalError: "outvin_unauthorized" };
+  /** Tikai īsts HTTP 402 — ne 429/503 utt. */
   if (res.status === 402) return { body: null, skipReason: "payment_required" };
   if (res.status === 404) return { body: null, skipReason: "not_found" };
+  if (res.status === 429) return { body: null, skipReason: "rate_limited" };
   if (res.status === 400 || res.status === 422) return { body: null, skipReason: "invalid_or_unsupported" };
   if (!res.ok) {
     const detail =
@@ -106,12 +110,15 @@ export async function fetchOutvinHistoryResult(
 
   if (parsed.fatalError) throw new Error(parsed.fatalError);
 
+  const rawBodyPreview = text.trim().slice(0, 1200) || "(empty body)";
+
   return {
     type,
     ok: parsed.skipReason == null,
     status: res.status,
     body: parsed.body,
     skipReason: parsed.skipReason,
+    rawBodyPreview,
   };
 }
 
@@ -342,67 +349,7 @@ export async function fetchOutvinDealerImport(vin: string): Promise<OutvinDealer
   };
 }
 
-export type OutvinPurchaseResult = {
-  bundle: OutvinDataBundle;
-  results: Array<{ type: number; ok: boolean; error?: string }>;
-  paymentRequired: boolean;
-  paymentWarning?: string;
-};
-
-/** Manuāla pirkšana — tikai norādītie history tipi (1 kredīts / veiksmīgs tips). */
-export async function purchaseOutvinHistoryTypes(
-  vin: string,
-  types: number[],
-  existingBundle?: OutvinDataBundle | null,
-): Promise<OutvinPurchaseResult> {
-  const normalized = normalizeVin(vin);
-  let bundle =
-    existingBundle && existingBundle.vin === normalized
-      ? { ...existingBundle, vin: normalized }
-      : applyOutvinPrecheckMetadata(normalized, existingBundle ?? null);
-
-  const unique = [...new Set(types.map((t) => Math.floor(t)).filter((t) => t > 0))];
-  const results: OutvinPurchaseResult["results"] = [];
-  let paymentRequired = false;
-
-  for (const type of unique) {
-    if (bundle.purchases.some((p) => p.historyType === type)) {
-      results.push({ type, ok: true });
-      continue;
-    }
-    if (paymentRequired) {
-      results.push({ type, ok: false, error: "payment_required_skipped" });
-      continue;
-    }
-
-    const r = await fetchOutvinHistoryResult(normalized, type);
-    if (r.skipReason === "payment_required") {
-      paymentRequired = true;
-      results.push({ type, ok: false, error: "payment_required" });
-      continue;
-    }
-    if (!r.ok || r.body == null) {
-      results.push({ type, ok: false, error: r.skipReason ?? `http_${r.status}` });
-      continue;
-    }
-
-    bundle = applyOutvinPurchaseToBundle(bundle, type, r.body);
-    results.push({ type, ok: true });
-  }
-
-  bundle.capabilitySlots = buildOutvinCapabilitySlots(normalized, bundle);
-
-  const paymentWarning = paymentRequired
-    ? "Outvin kontā beidzās kredīti — pārējie atlasītie avoti netika iegādāti. Papildini bilanci outvin.com."
-    : undefined;
-
-  return {
-    bundle,
-    results,
-    paymentRequired,
-    ...(paymentWarning ? { paymentWarning } : {}),
-  };
-}
+export type { OutvinPurchaseResult } from "@/lib/outvin-purchase-map";
 
 /** Atjauno capabilitySlots bez API izmaksas. */
 export function refreshOutvinBundleSlots(vin: string, bundle: OutvinDataBundle): OutvinDataBundle {
