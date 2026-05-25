@@ -11,7 +11,7 @@ import { rebuildOutvinBundleFromPurchases } from "@/lib/outvin-purchase-map";
 import { applyOutvinPrecheckMetadata } from "@/lib/outvin-precheck";
 import { buildOutvinCapabilitySlots } from "@/lib/outvin-precheck";
 import type { OutvinDataBundle } from "@/lib/outvin-data-bundle";
-import { getOutvinHistoryTypesToProbe } from "@/lib/outvin-history-probe";
+import { getOutvinHistoryTypesToProbe } from "@/lib/outvin-official-types";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import { isOutvinApiVin, normalizeVin } from "@/lib/order-field-validation";
 
@@ -195,7 +195,80 @@ export async function probeOutvinHistoryTypes(vin: string): Promise<OutvinHistor
   );
 }
 
-export async function fetchOutvinVehicleJson(vin: string): Promise<unknown> {
+export type OutvinVehicleOrderResult = {
+  ok: boolean;
+  status: number;
+  body: unknown | null;
+  skipReason?: string;
+  rawBodyPreview?: string;
+  uuid?: string;
+};
+
+export function logOutvinApiFailure(
+  context: string,
+  vin: string,
+  method: string,
+  path: string,
+  httpStatus: number,
+  skipReason: string | undefined,
+  rawBody: string | undefined,
+): void {
+  console.error(`[${context}] Outvin API failed`, {
+    vin,
+    method,
+    path,
+    httpStatus,
+    skipReason: skipReason ?? "(none)",
+    rawBody: rawBody ?? "(empty)",
+  });
+}
+
+function parseVehicleResponse(
+  res: Response,
+  text: string,
+): { body: unknown | null; fatalError?: string; skipReason?: string } {
+  let body: unknown = null;
+  if (text.trim()) {
+    try {
+      body = JSON.parse(text) as unknown;
+    } catch {
+      body = { raw: text.slice(0, 500) };
+    }
+  }
+
+  if (res.status === 401) return { body: null, fatalError: "outvin_unauthorized" };
+  if (res.status === 402) return { body: null, skipReason: "payment_required" };
+  if (res.status === 404) return { body: null, skipReason: "not_found" };
+  if (res.status === 429) return { body: null, skipReason: "rate_limited" };
+  if (res.status === 400 || res.status === 422) return { body: null, skipReason: "invalid_or_unsupported" };
+  if (!res.ok) {
+    const detail =
+      body && typeof body === "object" && "error" in body && typeof (body as { error: unknown }).error === "string"
+        ? (body as { error: string }).error
+        : `HTTP ${res.status}`;
+    if (res.status >= 500) return { body: null, skipReason: `server_${res.status}` };
+    return { body: null, skipReason: detail };
+  }
+
+  return { body: body ?? {} };
+}
+
+function extractOutvinUuid(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== "object") return undefined;
+  const o = payload as Record<string, unknown>;
+  if (typeof o.uuid === "string" && o.uuid.trim()) return o.uuid.trim();
+  const data = o.data;
+  if (data && typeof data === "object" && typeof (data as Record<string, unknown>).uuid === "string") {
+    return String((data as Record<string, unknown>).uuid).trim();
+  }
+  return undefined;
+}
+
+/**
+ * Swagger solis 1 — GET /vehicle/{VIN} (B2B transporta pasūtījums / atbloķēšana).
+ * Nav atsevišķa POST /order publiskajā spec.
+ */
+export async function fetchOutvinVehicleOrderResult(vin: string): Promise<OutvinVehicleOrderResult> {
   const cfg = getOutvinConfig();
   if (!cfg) throw new Error("missing_outvin_credentials");
 
@@ -214,28 +287,33 @@ export async function fetchOutvinVehicleJson(vin: string): Promise<unknown> {
   });
 
   const text = await res.text();
-  let body: unknown = null;
-  if (text.trim()) {
-    try {
-      body = JSON.parse(text) as unknown;
-    } catch {
-      body = { raw: text.slice(0, 500) };
-    }
-  }
+  const parsed = parseVehicleResponse(res, text);
+  if (parsed.fatalError) throw new Error(parsed.fatalError);
 
-  if (res.status === 401) throw new Error("outvin_unauthorized");
-  if (res.status === 402) throw new Error("outvin_payment_required");
-  if (res.status === 404) throw new Error("outvin_not_found");
-  if (res.status === 400 || res.status === 422) throw new Error("invalid_vin");
-  if (!res.ok) {
-    const detail =
-      body && typeof body === "object" && "error" in body && typeof (body as { error: unknown }).error === "string"
-        ? (body as { error: string }).error
-        : `HTTP ${res.status}`;
-    throw new Error(`outvin_fetch_failed:${detail}`);
-  }
+  const rawBodyPreview = text.trim().slice(0, 1200) || "(empty body)";
+  const body = parsed.body;
+  const uuid = body ? extractOutvinUuid(body) : undefined;
 
-  return body ?? {};
+  return {
+    ok: parsed.skipReason == null,
+    status: res.status,
+    body,
+    skipReason: parsed.skipReason,
+    rawBodyPreview,
+    ...(uuid ? { uuid } : {}),
+  };
+}
+
+/** @throws — vecais API; jaunajā plūsmā izmanto fetchOutvinVehicleOrderResult */
+export async function fetchOutvinVehicleJson(vin: string): Promise<unknown> {
+  const r = await fetchOutvinVehicleOrderResult(vin);
+  if (!r.ok) {
+    if (r.skipReason === "payment_required") throw new Error("outvin_payment_required");
+    if (r.skipReason === "not_found") throw new Error("outvin_not_found");
+    if (r.skipReason === "invalid_or_unsupported") throw new Error("invalid_vin");
+    throw new Error(`outvin_fetch_failed:${r.skipReason ?? r.status}`);
+  }
+  return r.body ?? {};
 }
 
 /** `/status` — zīmolu saraksts (Swagger: type 0=ident, 1=history); neatgriež history type ID. */
@@ -272,22 +350,29 @@ export type OutvinDealerImportResult = {
   paymentWarning?: string;
 };
 
-/** Pilns Outvin imports — probē history tipus secīgi (aptur, ja beidzās kredīti). */
+/** @deprecated Izmanto executeOutvinB2bPurchase. */
 export async function fetchOutvinDealerImport(vin: string): Promise<OutvinDealerImportResult> {
-  let vehiclePayload: unknown = {};
-  let vehiclePaymentRequired = false;
-  try {
-    vehiclePayload = await fetchOutvinVehicleJson(vin);
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "";
-    if (msg === "outvin_payment_required") {
-      vehiclePaymentRequired = true;
-    } else if (msg !== "outvin_not_found") {
-      throw e;
-    }
-  }
+  const { executeOutvinB2bPurchase } = await import("@/lib/outvin-history-probe");
+  const { bundle, results, paymentRequired } = await executeOutvinB2bPurchase(
+    vin,
+    getOutvinHistoryTypesToProbe(),
+    null,
+  );
 
-  const probe = await probeOutvinHistoryTypes(vin);
+  const vehiclePayload = bundle.vehicleOrder?.payload ?? {};
+  const vehiclePaymentRequired = !bundle.vehicleOrder?.ok && paymentRequired;
+
+  const probe = {
+    typesProbed: getOutvinHistoryTypesToProbe(),
+    typesFetched: bundle.purchases.map((p) => p.historyType),
+    typesWithMileage: bundle.purchases
+      .filter((p) => historyPayloadHasMileageEvents(p.payload))
+      .map((p) => p.historyType),
+    historyPayloads: bundle.purchases.map((p) => p.payload),
+    paymentRequired: paymentRequired || vehiclePaymentRequired,
+  };
+
+  void results;
 
   const batches: AutoRecordsServiceRow[][] = [];
   for (const payload of probe.historyPayloads) {

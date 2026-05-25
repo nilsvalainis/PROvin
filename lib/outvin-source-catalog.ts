@@ -1,7 +1,7 @@
 /**
  * Outvin history `type` — Swagger 1.0.3: tikai 1 (serviss) un 2 (carfax).
  */
-import { OUTVIN_OFFICIAL_HISTORY_TYPES } from "@/lib/outvin-history-probe";
+import { OUTVIN_OFFICIAL_HISTORY_TYPES } from "@/lib/outvin-official-types";
 
 export type OutvinSourceCategory = "service_history" | "us_carfax";
 

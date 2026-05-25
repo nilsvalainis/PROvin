@@ -51,14 +51,16 @@ export function AdminOutvinDataSourcesCard({
     [bundle.capabilitySlots],
   );
 
+  const needsVehicleOrder = !bundle.vehicleOrder?.ok;
+
   const creditTotal = useMemo(() => {
-    let n = 0;
+    let n = needsVehicleOrder ? 1 : 0;
     for (const t of selected) {
       const slot = slots.find((s) => s.historyType === t);
       if (slot && slot.status === "available") n += slot.creditCost;
     }
     return n;
-  }, [selected, slots]);
+  }, [selected, slots, needsVehicleOrder]);
 
   const applyBundle = useCallback(
     (nextBundle: OutvinDataBundle) => {
@@ -183,9 +185,16 @@ export function AdminOutvinDataSourcesCard({
         ) : null}
       </div>
       <p className="mb-2 text-[9px] leading-snug text-slate-600">
-        Outvin API (Swagger): tikai <strong>Type 1</strong> — servisa un nobraukuma vēsture (ielādējas nobraukuma
-        tabulā), <strong>Type 2</strong> — ASV Carfax. Katrs veiksmīgs pirkums = 1 kredīts.
+        B2B plūsma: vispirms <strong>GET /vehicle</strong> (1 kredīts, ja vēl nav pasūtīts), tad{" "}
+        <strong>Type 1</strong> serviss → nobraukuma tabula, <strong>Type 2</strong> Carfax. Swagger atbalsta tikai
+        tipus 1 un 2.
       </p>
+      {bundle.vehicleOrder?.ok ? (
+        <p className="mb-2 text-[9px] text-emerald-800/90">
+          Transporta pasūtījums aktīvs
+          {bundle.vehicleOrder.uuid ? ` (${bundle.vehicleOrder.uuid.slice(0, 8)}…)` : ""}.
+        </p>
+      ) : null}
       {err ? (
         <p className="mb-2 text-[9px] leading-snug text-amber-800/90" title={err}>
           {err}
@@ -246,7 +255,7 @@ export function AdminOutvinDataSourcesCard({
         >
           {purchaseBusy
             ? "Pērk…"
-            : `Pirkt atlasītos datus (patērēs ${creditTotal} kredītu${creditTotal === 1 ? "" : "s"})`}
+            : `Pirkt atlasītos datus (patērēs ${creditTotal} kredītu${creditTotal === 1 ? "" : "s"}${needsVehicleOrder ? ", iekļ. transportu" : ""})`}
         </button>
       ) : null}
 

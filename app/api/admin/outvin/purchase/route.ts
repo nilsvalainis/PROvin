@@ -1,16 +1,18 @@
 /**
- * Admin: manuāli iegādāties atlasītos Outvin history tipus (1 kredīts / veiksmīgs tips).
+ * Admin: Outvin B2B pirkšana (Swagger 1.0.3):
+ *   1. GET /vehicle/{VIN} — transporta pasūtījums
+ *   2. GET /history/{VIN}/{type} — type 1 (serviss) vai 2 (carfax)
  */
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { getOutvinConfig } from "@/lib/outvin-api";
-import { purchaseOutvinHistoryTypesSequential } from "@/lib/outvin-purchase-sequential";
+import { executeOutvinB2bPurchase } from "@/lib/outvin-history-probe";
 import { parseOutvinDataBundleRaw } from "@/lib/outvin-data-bundle";
-import { isOutvinOfficialHistoryType } from "@/lib/outvin-history-probe";
+import { isOutvinOfficialHistoryType } from "@/lib/outvin-official-types";
 import { isOutvinApiVin, normalizeVin } from "@/lib/order-field-validation";
 
-export const maxDuration = 60;
+export const maxDuration = 90;
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
@@ -41,51 +43,81 @@ export async function POST(req: Request) {
 
   if (types.length === 0) {
     return NextResponse.json(
-      { error: "invalid_history_types", message: "Outvin atbalsta tikai history type 1 (serviss) un 2 (carfax)." },
+      {
+        error: "invalid_history_types",
+        message: "Outvin atbalsta tikai history type 1 (serviss) un 2 (carfax).",
+      },
       { status: 400 },
     );
   }
 
   const existing = parseOutvinDataBundleRaw(o.existingBundle, vin);
+  const forceVehicleOrder = o.forceVehicleOrder === true;
 
   try {
-    const { bundle, results, paymentRequired, purchaseMessage } = await purchaseOutvinHistoryTypesSequential(
-      vin,
-      types,
-      existing ?? null,
-    );
+    let bundle =
+      existing && existing.vin === vin
+        ? { ...existing, vin }
+        : undefined;
 
-    const failed = results.filter((r) => !r.ok);
-    if (failed.length > 0) {
-      console.error("[admin/outvin/purchase] purchase finished with failures", {
+    if (forceVehicleOrder && bundle) {
+      bundle = { ...bundle, vehicleOrder: undefined };
+    }
+
+    const result = await executeOutvinB2bPurchase(vin, types, bundle ?? null);
+
+    const failed = result.results.filter((r) => !r.ok);
+    if (!result.vehicleOrderOk || failed.length > 0) {
+      console.error("[admin/outvin/purchase] B2B flow finished with issues", {
         vin,
         typesRequested: types,
-        paymentRequired,
-        results,
-        purchasesSaved: bundle.purchases.map((p) => p.historyType),
+        vehicleOrderOk: result.vehicleOrderOk,
+        vehicleOrderStatus: result.vehicleOrderStatus,
+        vehicleUuid: result.bundle.vehicleOrder?.uuid,
+        paymentRequired: result.paymentRequired,
+        results: result.results,
+        purchasesSaved: result.bundle.purchases.map((p) => p.historyType),
       });
     }
 
-    const anyOk = results.some((r) => r.ok);
-    if (!anyOk && failed.length > 0) {
+    const anyHistoryOk = result.results.some((r) => r.ok);
+    if (!result.vehicleOrderOk) {
+      return NextResponse.json(
+        {
+          error: "outvin_vehicle_order_failed",
+          bundle: result.bundle,
+          results: result.results,
+          vehicleOrderOk: false,
+          vehicleOrderStatus: result.vehicleOrderStatus,
+          paymentRequired: result.paymentRequired,
+          purchaseMessage: result.purchaseMessage ?? "Kļūda iegādē: transporta pasūtījums",
+        },
+        { status: result.paymentRequired ? 402 : 502 },
+      );
+    }
+
+    if (!anyHistoryOk && failed.length > 0) {
       return NextResponse.json(
         {
           error: "outvin_purchase_failed",
-          bundle,
-          results,
-          paymentRequired,
-          purchaseMessage: purchaseMessage ?? "Kļūda iegādē",
+          bundle: result.bundle,
+          results: result.results,
+          vehicleOrderOk: true,
+          paymentRequired: result.paymentRequired,
+          purchaseMessage: result.purchaseMessage ?? "Kļūda iegādē",
         },
-        { status: 502 },
+        { status: result.paymentRequired ? 402 : 502 },
       );
     }
 
     return NextResponse.json({
-      bundle,
-      results,
-      paymentRequired,
+      bundle: result.bundle,
+      results: result.results,
+      paymentRequired: result.paymentRequired,
+      vehicleOrderOk: result.vehicleOrderOk,
+      vehicleOrderStatus: result.vehicleOrderStatus,
       vin,
-      ...(purchaseMessage ? { purchaseMessage } : {}),
+      ...(result.purchaseMessage ? { purchaseMessage: result.purchaseMessage } : {}),
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";

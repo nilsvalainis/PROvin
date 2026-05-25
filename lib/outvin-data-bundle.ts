@@ -36,6 +36,17 @@ export type OutvinPurchaseRecord = {
   payload: unknown;
 };
 
+/** Swagger solis 1 — GET /vehicle/{VIN} (B2B „pasūtījums” pirms history). */
+export type OutvinVehicleOrderRecord = {
+  orderedAt: string;
+  httpStatus: number;
+  ok: boolean;
+  vin: string;
+  uuid?: string;
+  payload?: unknown;
+  error?: string;
+};
+
 export type OutvinCapabilitySlotUi = {
   id: string;
   historyType: number;
@@ -56,6 +67,8 @@ export type OutvinPdfSectionToggles = {
 export type OutvinDataBundle = {
   precheckAt: string | null;
   vin: string;
+  /** Veiksmīgs GET /vehicle — obligāts pirms history. */
+  vehicleOrder?: OutvinVehicleOrderRecord;
   capabilitySlots: OutvinCapabilitySlotUi[];
   purchases: OutvinPurchaseRecord[];
   vehicleInfo: OutvinVehicleInfo;
@@ -200,6 +213,21 @@ export function parseOutvinDataBundleRaw(raw: unknown, fallbackVin = ""): Outvin
   const base = emptyOutvinDataBundle(typeof o.vin === "string" ? o.vin : fallbackVin);
 
   if (typeof o.precheckAt === "string") base.precheckAt = o.precheckAt.slice(0, 40);
+
+  if (o.vehicleOrder && typeof o.vehicleOrder === "object") {
+    const v = o.vehicleOrder as Record<string, unknown>;
+    const httpStatus = Number(v.httpStatus);
+    base.vehicleOrder = {
+      orderedAt: String(v.orderedAt ?? "").slice(0, 40) || new Date().toISOString(),
+      httpStatus: Number.isFinite(httpStatus) ? httpStatus : 0,
+      ok: v.ok === true,
+      vin: String(v.vin ?? base.vin).slice(0, 20),
+      ...(typeof v.uuid === "string" ? { uuid: v.uuid.slice(0, 80) } : {}),
+      ...(v.payload != null ? { payload: v.payload } : {}),
+      ...(typeof v.error === "string" ? { error: v.error.slice(0, 200) } : {}),
+    };
+  }
+
   if (Array.isArray(o.capabilitySlots)) {
     base.capabilitySlots = o.capabilitySlots
       .map((s) => {
