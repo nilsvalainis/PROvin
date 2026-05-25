@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback, useState } from "react";
 import {
   AdminSourceCommentField,
   type AdminGeminiSourceCommentSlot,
@@ -26,16 +25,11 @@ import {
   parseAutoRecordsPaste,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
-import { normalizeVin, isOutvinApiVin } from "@/lib/order-field-validation";
+import { AdminOutvinDataSourcesCard } from "@/components/admin/AdminOutvinDataSourcesCard";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
-import {
-  AdminOutvinDealerReportFields,
-  ensureOutvinDealerReport,
-} from "@/components/admin/AdminOutvinDealerReportFields";
-import { outvinDealerReportHasContent } from "@/lib/outvin-dealer-types";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -68,9 +62,6 @@ export function AdminAutoRecordsSourceBlock({
   geminiComment,
   orderVin,
 }: Props) {
-  const [outvinBusy, setOutvinBusy] = useState(false);
-  const [outvinErr, setOutvinErr] = useState<string | null>(null);
-
   const handleRaw = (raw: string) => {
     if (/ODOMETER\s+CHECK/i.test(raw)) {
       const parsed = parseAutoRecordsPaste(raw);
@@ -104,70 +95,6 @@ export function AdminAutoRecordsSourceBlock({
     });
   };
 
-  const loadFromOutvin = useCallback(async () => {
-    const vin = normalizeVin(orderVin ?? "");
-    if (!isOutvinApiVin(vin)) {
-      setOutvinErr("Nepieciešams derīgs 17 simbolu VIN pasūtījuma galvenē");
-      return;
-    }
-    setOutvinBusy(true);
-    setOutvinErr(null);
-    try {
-      const res = await fetch("/api/admin/outvin/history", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vin }),
-      });
-      const data = (await res.json()) as {
-        rows?: AutoRecordsServiceRow[];
-        report?: import("@/lib/outvin-dealer-types").OutvinDealerReport;
-        paymentWarning?: string;
-        error?: string;
-        detail?: string;
-      };
-      if (!res.ok) {
-        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
-        if (data.error === "missing_outvin_credentials") {
-          setOutvinErr("Nav OUTVIN_EMAIL / OUTVIN_PASSWORD (.env.local / Vercel)");
-        } else if (data.error === "outvin_unauthorized") {
-          setOutvinErr("Outvin: nederīgs e-pasts vai parole");
-        } else if (data.error === "outvin_payment_required") {
-          setOutvinErr(
-            "Outvin: kontā nav kredītu. Papildini bilanci pie outvin.com (viena VIN vēsture = 1+ kredīti). Pārbaudi arī, vai .env ir produkcijas URL, ne mock.",
-          );
-        } else if (data.error === "outvin_not_found" || data.error === "empty_mileage_history" || data.error === "empty_outvin_data") {
-          setOutvinErr("Outvin: dati nav atrasti šim VIN");
-        } else if (data.error === "invalid_vin") {
-          setOutvinErr("Outvin: nederīgs VIN");
-        } else {
-          setOutvinErr(detail ? `Outvin: ${detail}` : "Outvin: neizdevās ielādēt");
-        }
-        return;
-      }
-      const hasRows = Array.isArray(data.rows) && data.rows.length > 0;
-      const hasReport = Boolean(data.report && outvinDealerReportHasContent(data.report));
-      if (hasRows || hasReport) {
-        onChange({
-          ...value,
-          ...(hasRows ? { serviceHistory: data.rows! } : {}),
-          ...(data.report ? { outvinReport: data.report } : {}),
-        });
-        if (typeof data.paymentWarning === "string" && data.paymentWarning.trim()) {
-          setOutvinErr(data.paymentWarning);
-        }
-      } else {
-        setOutvinErr("Outvin: atgrieza tukšu atbildi");
-      }
-    } catch {
-      setOutvinErr("Outvin: neizdevās savienoties");
-    } finally {
-      setOutvinBusy(false);
-    }
-  }, [onChange, orderVin, value]);
-
-  const outvinVinReady = isOutvinApiVin(normalizeVin(orderVin ?? ""));
-
   return (
     <AdminCollapsibleShell
       sessionId={sessionId}
@@ -183,31 +110,16 @@ export function AdminAutoRecordsSourceBlock({
     >
       <div className={`flex h-full min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}>
           <div className={`min-h-0 flex-1 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>
-        <div className="mb-0.5 flex flex-wrap items-center justify-between gap-2">
-          <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
-            Paste RAW data here
-          </label>
-          {!readOnly && !disabled ? (
-            <button
-              type="button"
-              className="rounded-md border border-[var(--color-provin-accent)]/35 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-accent)] hover:bg-[var(--color-provin-accent)]/5 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={outvinBusy || !outvinVinReady}
-              title={
-                !outvinVinReady
-                  ? "Ievadi 17 simbolu VIN pasūtījuma galvenē"
-                  : "Ielādēt Outvin dīlera datus un nobraukumu (km netiek dublēts PDF)"
-              }
-              onClick={() => void loadFromOutvin()}
-            >
-              {outvinBusy ? "Ielādē…" : "Ielādēt no Outvin"}
-            </button>
-          ) : null}
-        </div>
-        {outvinErr ? (
-          <p className="mb-1 text-[9px] leading-snug text-amber-800/90" title={outvinErr}>
-            {outvinErr}
-          </p>
-        ) : null}
+        <AdminOutvinDataSourcesCard
+          block={value}
+          orderVin={orderVin}
+          readOnly={readOnly}
+          disabled={disabled}
+          onBlockChange={onChange}
+        />
+        <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
+          Paste RAW data here
+        </label>
         {readOnly ? (
           <div className="mb-2 min-h-[72px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
             {value.rawUnprocessedData.trim() ? value.rawUnprocessedData : <span className="text-slate-400">—</span>}
@@ -349,12 +261,6 @@ export function AdminAutoRecordsSourceBlock({
           </button>
         ) : null}
 
-        <AdminOutvinDealerReportFields
-          report={ensureOutvinDealerReport(value.outvinReport)}
-          readOnly={readOnly}
-          disabled={disabled}
-          onChange={(next) => onChange({ ...value, outvinReport: next })}
-        />
           </div>
 
           <div className={`mt-auto w-full min-w-0 shrink-0 pt-2 ${trafficFillLevel ? "px-2 pb-2" : ""}`}>

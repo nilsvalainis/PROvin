@@ -93,6 +93,9 @@ import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibi
 import { internalCommentHtmlToPdfPlain } from "@/lib/admin-internal-comment-pdf";
 import { PDF_MILEAGE_HISTORY_COMMENT_LABEL } from "@/lib/admin-workspace-field-labels";
 import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-html";
+import { buildOutvinBundlePdfInnerHtml } from "@/lib/outvin-bundle-pdf-html";
+import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
+import { outvinBundleHasStructuredContent } from "@/lib/outvin-data-bundle";
 
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
@@ -649,10 +652,15 @@ function buildAutoRecordsAvotuSubsection(
   if (!vis.auto_records) return "";
   if (!b || !autoRecordsBlockHasContent(b)) return "";
 
-  const outvinInner = buildOutvinDealerReportPdfInnerHtml(b.outvinReport);
+  const bundle = getAutoRecordsOutvinBundle(b);
+  const bundleInner = outvinBundleHasStructuredContent(bundle)
+    ? buildOutvinBundlePdfInnerHtml(bundle)
+    : "";
+  const legacyInner = buildOutvinDealerReportPdfInnerHtml(b.outvinReport);
+  const outvinInner = bundleInner.trim() || legacyInner.trim();
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const hasComments = commentBlock.trim().length > 0;
-  const hasOutvin = outvinInner.trim().length > 0;
+  const hasOutvin = outvinInner.length > 0;
 
   if (!hasOutvin && !hasComments) return "";
 

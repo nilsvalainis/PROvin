@@ -7,6 +7,10 @@ import {
 } from "@/lib/outvin-history-map";
 import { buildOutvinDealerReport } from "@/lib/outvin-dealer-map";
 import type { OutvinDealerReport } from "@/lib/outvin-dealer-types";
+import { applyOutvinPurchaseToBundle, rebuildOutvinBundleFromPurchases } from "@/lib/outvin-purchase-map";
+import { applyOutvinPrecheckMetadata } from "@/lib/outvin-precheck";
+import { buildOutvinCapabilitySlots } from "@/lib/outvin-precheck";
+import type { OutvinDataBundle } from "@/lib/outvin-data-bundle";
 import { getOutvinHistoryTypesToProbe } from "@/lib/outvin-history-probe";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import { isOutvinApiVin, normalizeVin } from "@/lib/order-field-validation";
@@ -338,8 +342,96 @@ export async function fetchOutvinDealerImport(vin: string): Promise<OutvinDealer
   };
 }
 
+export type OutvinPurchaseResult = {
+  bundle: OutvinDataBundle;
+  results: Array<{ type: number; ok: boolean; error?: string }>;
+  paymentRequired: boolean;
+  paymentWarning?: string;
+};
+
+/** Manuāla pirkšana — tikai norādītie history tipi (1 kredīts / veiksmīgs tips). */
+export async function purchaseOutvinHistoryTypes(
+  vin: string,
+  types: number[],
+  existingBundle?: OutvinDataBundle | null,
+): Promise<OutvinPurchaseResult> {
+  const normalized = normalizeVin(vin);
+  let bundle =
+    existingBundle && existingBundle.vin === normalized
+      ? { ...existingBundle, vin: normalized }
+      : applyOutvinPrecheckMetadata(normalized, existingBundle ?? null);
+
+  const unique = [...new Set(types.map((t) => Math.floor(t)).filter((t) => t > 0))];
+  const results: OutvinPurchaseResult["results"] = [];
+  let paymentRequired = false;
+
+  for (const type of unique) {
+    if (bundle.purchases.some((p) => p.historyType === type)) {
+      results.push({ type, ok: true });
+      continue;
+    }
+    if (paymentRequired) {
+      results.push({ type, ok: false, error: "payment_required_skipped" });
+      continue;
+    }
+
+    const r = await fetchOutvinHistoryResult(normalized, type);
+    if (r.skipReason === "payment_required") {
+      paymentRequired = true;
+      results.push({ type, ok: false, error: "payment_required" });
+      continue;
+    }
+    if (!r.ok || r.body == null) {
+      results.push({ type, ok: false, error: r.skipReason ?? `http_${r.status}` });
+      continue;
+    }
+
+    bundle = applyOutvinPurchaseToBundle(bundle, type, r.body);
+    results.push({ type, ok: true });
+  }
+
+  bundle.capabilitySlots = buildOutvinCapabilitySlots(normalized, bundle);
+
+  const paymentWarning = paymentRequired
+    ? "Outvin kontā beidzās kredīti — pārējie atlasītie avoti netika iegādāti. Papildini bilanci outvin.com."
+    : undefined;
+
+  return {
+    bundle,
+    results,
+    paymentRequired,
+    ...(paymentWarning ? { paymentWarning } : {}),
+  };
+}
+
+/** Atjauno capabilitySlots bez API izmaksas. */
+export function refreshOutvinBundleSlots(vin: string, bundle: OutvinDataBundle): OutvinDataBundle {
+  const normalized = normalizeVin(vin);
+  return {
+    ...bundle,
+    vin: normalized,
+    capabilitySlots: buildOutvinCapabilitySlots(normalized, bundle),
+  };
+}
+
+export async function runOutvinCapabilitiesPrecheck(
+  vin: string,
+  existingBundle?: OutvinDataBundle | null,
+): Promise<OutvinDataBundle> {
+  const normalized = normalizeVin(vin);
+  try {
+    await fetchOutvinStatusJson(1);
+  } catch {
+    /* status nav obligāts */
+  }
+  const base = existingBundle?.purchases.length
+    ? rebuildOutvinBundleFromPurchases({ ...existingBundle, vin: normalized })
+    : (existingBundle ?? null);
+  return applyOutvinPrecheckMetadata(normalized, base);
+}
+
 /**
- * @deprecated Izmanto fetchOutvinDealerImport
+ * @deprecated Izmanto purchaseOutvinHistoryTypes — automātiska probe patērē kredītus.
  */
 export async function fetchOutvinMileageServiceRows(vin: string): Promise<{
   rows: AutoRecordsServiceRow[];

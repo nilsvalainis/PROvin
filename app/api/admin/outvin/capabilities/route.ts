@@ -1,0 +1,50 @@
+/**
+ * Admin: bezmaksas Outvin iespēju pārbaude (VIN heuristika + /status, bez history kredītiem).
+ */
+import { NextResponse } from "next/server";
+
+import { getAdminSession } from "@/lib/admin-auth";
+import { getOutvinConfig, runOutvinCapabilitiesPrecheck } from "@/lib/outvin-api";
+import { parseOutvinDataBundleRaw } from "@/lib/outvin-data-bundle";
+import { isOutvinApiVin, normalizeVin } from "@/lib/order-field-validation";
+
+export const runtime = "nodejs";
+
+export async function POST(req: Request) {
+  const ok = await getAdminSession();
+  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  if (!getOutvinConfig()) {
+    return NextResponse.json({ error: "missing_outvin_credentials" }, { status: 503 });
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+
+  const o = typeof body === "object" && body ? (body as Record<string, unknown>) : {};
+  const vin = normalizeVin(String(o.vin ?? "").trim());
+  if (!isOutvinApiVin(vin)) {
+    return NextResponse.json({ error: "invalid_vin" }, { status: 400 });
+  }
+
+  const existing = parseOutvinDataBundleRaw(o.existingBundle, vin);
+
+  try {
+    const bundle = await runOutvinCapabilitiesPrecheck(vin, existing ?? null);
+    return NextResponse.json({ bundle, vin });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "unknown";
+    console.error("[admin/outvin/capabilities]", msg);
+    if (msg === "missing_outvin_credentials") {
+      return NextResponse.json({ error: "missing_outvin_credentials" }, { status: 503 });
+    }
+    if (msg === "invalid_vin") {
+      return NextResponse.json({ error: "invalid_vin" }, { status: 400 });
+    }
+    return NextResponse.json({ error: "outvin_precheck_failed", detail: msg }, { status: 502 });
+  }
+}

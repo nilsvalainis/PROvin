@@ -17,6 +17,12 @@ import {
   outvinDealerReportHasContent,
   type OutvinDealerReport,
 } from "@/lib/outvin-dealer-types";
+import {
+  outvinBundleHasStructuredContent,
+  parseOutvinDataBundleRaw,
+  type OutvinDataBundle,
+} from "@/lib/outvin-data-bundle";
+import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
 
 export { type OutvinDealerReport } from "@/lib/outvin-dealer-types";
 export type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
@@ -502,12 +508,16 @@ export type StandardSourceBlockState = {
 export type AutoRecordsBlockState = {
   rawUnprocessedData: string;
   serviceHistory: AutoRecordsServiceRow[];
+  /** Outvin Check & Buy — strukturētie dati + raw cache. */
+  outvin?: OutvinDataBundle;
   /** Outvin dīlera atskaite — transporta info, negadījumi, nozagts, komplektācija (PDF bez km tabulas). */
   outvinReport?: OutvinDealerReport;
   /** Kā citiem avotiem — piezīmes zem tabulas. */
   comments: string;
   pdfChecklist?: SourcePdfChecklist;
 };
+
+export type { OutvinDataBundle } from "@/lib/outvin-data-bundle";
 
 /** LTAB / OCTA — viena negadījuma rinda (horizontāli). */
 export type LtabIncidentRow = {
@@ -705,7 +715,8 @@ export function autoRecordsBlockHasContent(b: AutoRecordsBlockState): boolean {
     b.serviceHistory.some(autoRecordsRowHasData) ||
     b.rawUnprocessedData.trim().length > 0 ||
     b.comments.trim().length > 0 ||
-    outvinDealerReportHasContent(b.outvinReport)
+    outvinDealerReportHasContent(b.outvinReport) ||
+    outvinBundleHasStructuredContent(b.outvin ?? getAutoRecordsOutvinBundle(b))
   );
 }
 
@@ -935,15 +946,17 @@ function parseOutvinDealerReportRaw(raw: unknown): OutvinDealerReport | undefine
 }
 
 function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBlockState {
-  if ("serviceHistory" in raw || "rawUnprocessedData" in raw || "outvinReport" in raw) {
+  if ("serviceHistory" in raw || "rawUnprocessedData" in raw || "outvinReport" in raw || "outvin" in raw) {
     const rowsIn = Array.isArray(raw.serviceHistory) ? raw.serviceHistory : [];
     const rawRows = mapUnknownArrayToAutoRecordsRows(rowsIn);
     const normalized = normalizeParsedAutoRecordsRows(rawRows);
     const outvinReport = parseOutvinDealerReportRaw(raw.outvinReport);
+    const outvin = parseOutvinDataBundleRaw(raw.outvin);
     return {
       rawUnprocessedData: String(raw.rawUnprocessedData ?? "").slice(0, 500_000),
       serviceHistory: normalized,
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
+      ...(outvin ? { outvin } : {}),
       ...(outvinReport ? { outvinReport } : {}),
       ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
     };
