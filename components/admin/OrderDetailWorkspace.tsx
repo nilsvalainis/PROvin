@@ -2570,6 +2570,7 @@ export function OrderDetailWorkspace({
               pdfInclude={pdfVisibility.auto_records}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
               geminiComment={geminiCommentSlot("auto_records")}
+              orderVin={payload.vin}
             />
           </div>
         ) : null}

@@ -13,6 +13,11 @@ export function isValidVin(v: string): boolean {
   return /^[A-HJ-NPR-Z0-9]+$/i.test(n);
 }
 
+/** Outvin API — tieši 17 rakstzīmes (Swagger pattern). */
+export function isOutvinApiVin(v: string): boolean {
+  return /^[A-HJ-NPR-Z0-9]{17}$/.test(normalizeVin(v));
+}
+
 export function isValidHttpUrl(s: string): boolean {
   try {
     const u = new URL(s);
