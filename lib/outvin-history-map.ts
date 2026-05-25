@@ -19,7 +19,8 @@ type OutvinLocation = {
 type OutvinHistoryEvent = {
   date?: string;
   mileage?: { unit?: string; value?: number };
-  location?: OutvinLocation | boolean;
+  location?: { countryName?: string; countryCode?: string; label?: string; city?: string; state?: string } | boolean;
+  type?: string;
 };
 
 function locationCountry(loc: OutvinHistoryEvent["location"]): string {
@@ -47,7 +48,7 @@ function rowKey(r: AutoRecordsServiceRow): string {
   return `${formatAutoRecordsDateForOutput(r.date)}|${r.odometer}|${r.country}`;
 }
 
-function extractEventsFromPayload(payload: unknown): OutvinHistoryEvent[] {
+export function extractEventsFromPayload(payload: unknown): OutvinHistoryEvent[] {
   if (!payload || typeof payload !== "object") return [];
   const data = (payload as { data?: unknown }).data;
   if (!data || typeof data !== "object") return [];

@@ -31,6 +31,11 @@ import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+import {
+  AdminOutvinDealerReportFields,
+  ensureOutvinDealerReport,
+} from "@/components/admin/AdminOutvinDealerReportFields";
+import { outvinDealerReportHasContent } from "@/lib/outvin-dealer-types";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -116,6 +121,7 @@ export function AdminAutoRecordsSourceBlock({
       });
       const data = (await res.json()) as {
         rows?: AutoRecordsServiceRow[];
+        report?: import("@/lib/outvin-dealer-types").OutvinDealerReport;
         error?: string;
         detail?: string;
       };
@@ -127,8 +133,8 @@ export function AdminAutoRecordsSourceBlock({
           setOutvinErr("Outvin: nederīgs e-pasts vai parole");
         } else if (data.error === "outvin_payment_required") {
           setOutvinErr("Outvin: nepieciešams kredīts / apmaksa");
-        } else if (data.error === "outvin_not_found" || data.error === "empty_mileage_history") {
-          setOutvinErr("Outvin: nobraukuma vēsture nav atrasta šim VIN");
+        } else if (data.error === "outvin_not_found" || data.error === "empty_mileage_history" || data.error === "empty_outvin_data") {
+          setOutvinErr("Outvin: dati nav atrasti šim VIN");
         } else if (data.error === "invalid_vin") {
           setOutvinErr("Outvin: nederīgs VIN");
         } else {
@@ -136,13 +142,16 @@ export function AdminAutoRecordsSourceBlock({
         }
         return;
       }
-      if (Array.isArray(data.rows) && data.rows.length > 0) {
+      const hasRows = Array.isArray(data.rows) && data.rows.length > 0;
+      const hasReport = Boolean(data.report && outvinDealerReportHasContent(data.report));
+      if (hasRows || hasReport) {
         onChange({
           ...value,
-          serviceHistory: data.rows,
+          ...(hasRows ? { serviceHistory: data.rows! } : {}),
+          ...(data.report ? { outvinReport: data.report } : {}),
         });
       } else {
-        setOutvinErr("Outvin: atgrieza tukšu nobraukuma sarakstu");
+        setOutvinErr("Outvin: atgrieza tukšu atbildi");
       }
     } catch {
       setOutvinErr("Outvin: neizdevās savienoties");
@@ -180,7 +189,7 @@ export function AdminAutoRecordsSourceBlock({
               title={
                 !outvinVinReady
                   ? "Ievadi 17 simbolu VIN pasūtījuma galvenē"
-                  : "Ielādēt nobraukuma vēsturi no Outvin API"
+                  : "Ielādēt Outvin dīlera datus un nobraukumu (km netiek dublēts PDF)"
               }
               onClick={() => void loadFromOutvin()}
             >
@@ -333,6 +342,13 @@ export function AdminAutoRecordsSourceBlock({
             + Rinda
           </button>
         ) : null}
+
+        <AdminOutvinDealerReportFields
+          report={ensureOutvinDealerReport(value.outvinReport)}
+          readOnly={readOnly}
+          disabled={disabled}
+          onChange={(next) => onChange({ ...value, outvinReport: next })}
+        />
           </div>
 
           <div className={`mt-auto w-full min-w-0 shrink-0 pt-2 ${trafficFillLevel ? "px-2 pb-2" : ""}`}>

@@ -12,8 +12,14 @@ import {
   sortAutoRecordsDescending,
 } from "./auto-records-paste-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import {
+  emptyOutvinDealerReport,
+  outvinDealerReportHasContent,
+  type OutvinDealerReport,
+} from "@/lib/outvin-dealer-types";
 
-export type { AutoRecordsServiceRow };
+export { type OutvinDealerReport } from "@/lib/outvin-dealer-types";
+export type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
 
 export const SOURCE_BLOCK_KEYS = [
   "csdd",
@@ -496,6 +502,8 @@ export type StandardSourceBlockState = {
 export type AutoRecordsBlockState = {
   rawUnprocessedData: string;
   serviceHistory: AutoRecordsServiceRow[];
+  /** Outvin dīlera atskaite — transporta info, negadījumi, nozagts, komplektācija (PDF bez km tabulas). */
+  outvinReport?: OutvinDealerReport;
   /** Kā citiem avotiem — piezīmes zem tabulas. */
   comments: string;
   pdfChecklist?: SourcePdfChecklist;
@@ -696,7 +704,8 @@ export function autoRecordsBlockHasContent(b: AutoRecordsBlockState): boolean {
   return (
     b.serviceHistory.some(autoRecordsRowHasData) ||
     b.rawUnprocessedData.trim().length > 0 ||
-    b.comments.trim().length > 0
+    b.comments.trim().length > 0 ||
+    outvinDealerReportHasContent(b.outvinReport)
   );
 }
 
@@ -897,15 +906,45 @@ function normalizeParsedAutoRecordsRows(rawRows: AutoRecordsServiceRow[]): AutoR
   return out.length > 0 ? out : [emptyAutoRecordsServiceRow()];
 }
 
+function parseOutvinDealerReportRaw(raw: unknown): OutvinDealerReport | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const base = emptyOutvinDealerReport();
+  const vi = o.vehicleInfo;
+  if (vi && typeof vi === "object") {
+    const v = vi as Record<string, unknown>;
+    for (const key of Object.keys(base.vehicleInfo) as (keyof typeof base.vehicleInfo)[]) {
+      if (typeof v[key] === "string") base.vehicleInfo[key] = v[key].slice(0, 500);
+    }
+  }
+  if (typeof o.accidentCheck === "string") base.accidentCheck = o.accidentCheck.slice(0, 8000);
+  if (typeof o.stolenCheck === "string") base.stolenCheck = o.stolenCheck.slice(0, 8000);
+  if (Array.isArray(o.equipment)) {
+    base.equipment = o.equipment
+      .map((line) => {
+        if (!line || typeof line !== "object") return { code: "", description: "" };
+        const x = line as Record<string, unknown>;
+        return {
+          code: String(x.code ?? "").slice(0, 32),
+          description: String(x.description ?? "").slice(0, 400),
+        };
+      })
+      .filter((l) => l.code.trim() || l.description.trim());
+  }
+  return outvinDealerReportHasContent(base) ? base : undefined;
+}
+
 function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBlockState {
-  if ("serviceHistory" in raw || "rawUnprocessedData" in raw) {
+  if ("serviceHistory" in raw || "rawUnprocessedData" in raw || "outvinReport" in raw) {
     const rowsIn = Array.isArray(raw.serviceHistory) ? raw.serviceHistory : [];
     const rawRows = mapUnknownArrayToAutoRecordsRows(rowsIn);
     const normalized = normalizeParsedAutoRecordsRows(rawRows);
+    const outvinReport = parseOutvinDealerReportRaw(raw.outvinReport);
     return {
       rawUnprocessedData: String(raw.rawUnprocessedData ?? "").slice(0, 500_000),
       serviceHistory: normalized,
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
+      ...(outvinReport ? { outvinReport } : {}),
       ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
     };
   }

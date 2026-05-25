@@ -5,7 +5,7 @@
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
-import { fetchOutvinMileageServiceRows, getOutvinConfig } from "@/lib/outvin-api";
+import { fetchOutvinDealerImport, getOutvinConfig } from "@/lib/outvin-api";
 import { isOutvinApiVin, normalizeVin } from "@/lib/order-field-validation";
 
 export const maxDuration = 60;
@@ -34,8 +34,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { rows, typesFetched } = await fetchOutvinMileageServiceRows(vin);
-    return NextResponse.json({ rows, typesFetched, vin });
+    const { rows, report, typesFetched } = await fetchOutvinDealerImport(vin);
+    return NextResponse.json({ rows, report, typesFetched, vin });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error("[admin/outvin/history]", msg);
@@ -54,8 +54,8 @@ export async function POST(req: Request) {
     if (msg === "outvin_not_found") {
       return NextResponse.json({ error: "outvin_not_found" }, { status: 404 });
     }
-    if (msg === "empty_mileage_history") {
-      return NextResponse.json({ error: "empty_mileage_history" }, { status: 404 });
+    if (msg === "empty_mileage_history" || msg === "empty_outvin_data") {
+      return NextResponse.json({ error: "empty_outvin_data" }, { status: 404 });
     }
     if (msg.startsWith("outvin_fetch_failed:")) {
       return NextResponse.json(

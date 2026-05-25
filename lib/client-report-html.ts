@@ -92,6 +92,7 @@ import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { internalCommentHtmlToPdfPlain } from "@/lib/admin-internal-comment-pdf";
 import { PDF_MILEAGE_HISTORY_COMMENT_LABEL } from "@/lib/admin-workspace-field-labels";
+import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-html";
 
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
@@ -640,18 +641,26 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
   return parts.join("\n");
 }
 
-/** AUTO RECORDS — PDF blokā rādam komentārus; nobraukums ir vienotajā tabulā augšā. */
+/** AUTO RECORDS — Outvin dīlera dati PDF; nobraukums tikai vienotajā tabulā; komentāri atsevišķi. */
 function buildAutoRecordsAvotuSubsection(
   b: AutoRecordsBlockState | null | undefined,
   vis: PdfVisibilitySettings,
 ): string {
   if (!vis.auto_records) return "";
   if (!b || !autoRecordsBlockHasContent(b)) return "";
+
+  const outvinInner = buildOutvinDealerReportPdfInnerHtml(b.outvinReport);
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const hasComments = commentBlock.trim().length > 0;
-  if (!hasComments) return "";
+  const hasOutvin = outvinInner.trim().length > 0;
+
+  if (!hasOutvin && !hasComments) return "";
+
   const head = sectionHeadBrand(sectionIconPdfHtml("shieldCheck"), SOURCE_BLOCK_LABELS.auto_records);
-  const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(commentBlock)}</div>`;
+  const bodyParts: string[] = [];
+  if (hasOutvin) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${outvinInner}</div>`);
+  if (hasComments) bodyParts.push(pdfAvotuCommentIsland(commentBlock));
+  const body = `<div class="pdf-source-section-body">${bodyParts.join("\n")}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
 
@@ -1236,6 +1245,21 @@ function clientReportPrintCss(): string {
       .mirror-table--csdd-mh{font-size:9pt!important;margin:2px 0 4px!important;}
       .mirror-table--csdd-mh td,.mirror-table--csdd-mh th{padding:3px 4px!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;}
       .mirror-table--csdd-mh thead th{font-size:9pt!important;}
+      .pdf-outvin-dealer-stack{margin:2px 0 4px;}
+      .pdf-outvin-subhead{margin:8px 0 3px!important;font-size:10px!important;font-weight:700!important;color:#0f172a!important;letter-spacing:0.04em;text-transform:uppercase;}
+      .pdf-outvin-dealer-stack > .pdf-outvin-subhead:first-child{margin-top:2px!important;}
+      .mirror-table--outvin-vehicle{font-size:8.5pt!important;margin:0 0 6px!important;}
+      .mirror-table--outvin-vehicle td,.mirror-table--outvin-vehicle th{
+        padding:2px 6px 2px 0!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;vertical-align:top;
+      }
+      .mirror-table--outvin-vehicle td:nth-child(odd){color:#64748b;width:18%;font-weight:600;white-space:nowrap;}
+      .mirror-table--outvin-vehicle td:nth-child(even){color:#0f172a;width:32%;}
+      .pdf-outvin-plain{font-size:8.5pt;line-height:1.35;color:#0f172a;margin:0 0 6px;}
+      .pdf-outvin-equipment-grid{
+        display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;
+        font-size:7.5pt;line-height:1.3;color:#0f172a;margin:0 0 6px;
+      }
+      .pdf-outvin-equip-item{display:block;break-inside:avoid;}
       .tabular{font-variant-numeric:tabular-nums;}
       .mirror-font-error{padding:16px;color:#991b1b;font-size:13px;}
       .pdf-site-footer{
