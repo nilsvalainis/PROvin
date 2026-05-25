@@ -56,7 +56,7 @@ function parseHistoryResponse(
   }
 
   if (res.status === 401) return { body: null, fatalError: "outvin_unauthorized" };
-  if (res.status === 402) return { body: null, fatalError: "outvin_payment_required" };
+  if (res.status === 402) return { body: null, skipReason: "payment_required" };
   if (res.status === 404) return { body: null, skipReason: "not_found" };
   if (res.status === 400 || res.status === 422) return { body: null, skipReason: "invalid_or_unsupported" };
   if (!res.ok) {
@@ -131,7 +131,26 @@ export type OutvinHistoryProbeSummary = {
   typesFetched: number[];
   typesWithMileage: number[];
   historyPayloads: unknown[];
+  /** True, ja kāds pieprasījums atgrieza HTTP 402 (kontā nav kredītu). */
+  paymentRequired: boolean;
 };
+
+async function fetchOutvinHistoryBatchSequential(
+  vin: string,
+  types: number[],
+): Promise<{ results: OutvinHistoryFetchResult[]; paymentRequired: boolean }> {
+  const results: OutvinHistoryFetchResult[] = [];
+  let paymentRequired = false;
+
+  for (const type of types) {
+    if (paymentRequired) break;
+    const r = await fetchOutvinHistoryResult(vin, type);
+    results.push(r);
+    if (r.skipReason === "payment_required") paymentRequired = true;
+  }
+
+  return { results, paymentRequired };
+}
 
 /**
  * Paralēli probē history tipus: vispirms 1–2, pēc tam pārējie (3…max),
@@ -163,19 +182,23 @@ export async function probeOutvinHistoryTypes(vin: string): Promise<OutvinHistor
     typesFetched: [],
     typesWithMileage: [],
     historyPayloads: [],
+    paymentRequired: false,
   };
 
   if (primaryTypes.length > 0) {
-    const primary = await Promise.all(primaryTypes.map((type) => fetchOutvinHistoryResult(vin, type)));
-    summary = absorb(summary, primary);
+    const primary = await fetchOutvinHistoryBatchSequential(vin, primaryTypes);
+    summary = absorb(summary, primary.results);
+    summary.paymentRequired = primary.paymentRequired;
   }
 
   const needExtended =
-    probeAll || (extendedTypes.length > 0 && summary.typesWithMileage.length === 0);
+    !summary.paymentRequired &&
+    (probeAll || (extendedTypes.length > 0 && summary.typesWithMileage.length === 0));
 
   if (needExtended) {
-    const extended = await Promise.all(extendedTypes.map((type) => fetchOutvinHistoryResult(vin, type)));
-    summary = absorb(summary, extended);
+    const extended = await fetchOutvinHistoryBatchSequential(vin, extendedTypes);
+    summary = absorb(summary, extended.results);
+    summary.paymentRequired = summary.paymentRequired || extended.paymentRequired;
   }
 
   return summary;
@@ -254,16 +277,23 @@ export type OutvinDealerImportResult = {
   typesProbed: number[];
   typesFetched: number[];
   typesWithMileage: number[];
+  /** Brīdinājums, ja daļa pieprasījumu apturēta 402 (kredīti beigušies). */
+  paymentWarning?: string;
 };
 
-/** Pilns Outvin imports — probē visus history tipus + vehicle; apvieno nobraukumu un dīlera atskaiti. */
+/** Pilns Outvin imports — probē history tipus secīgi (aptur, ja beidzās kredīti). */
 export async function fetchOutvinDealerImport(vin: string): Promise<OutvinDealerImportResult> {
   let vehiclePayload: unknown = {};
+  let vehiclePaymentRequired = false;
   try {
     vehiclePayload = await fetchOutvinVehicleJson(vin);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "";
-    if (msg !== "outvin_not_found") throw e;
+    if (msg === "outvin_payment_required") {
+      vehiclePaymentRequired = true;
+    } else if (msg !== "outvin_not_found") {
+      throw e;
+    }
   }
 
   const probe = await probeOutvinHistoryTypes(vin);
@@ -287,9 +317,16 @@ export async function fetchOutvinDealerImport(vin: string): Promise<OutvinDealer
     report.stolenCheck.trim().length > 0 ||
     Object.values(report.vehicleInfo).some((v) => v.trim().length > 0);
 
+  const paymentHit = vehiclePaymentRequired || probe.paymentRequired;
+
   if (rows.length === 0 && !hasReport) {
+    if (paymentHit) throw new Error("outvin_payment_required");
     throw new Error("empty_outvin_data");
   }
+
+  const paymentWarning = paymentHit
+    ? "Outvin kontā beidzās kredīti — daļa datu var būt ielādēta. Papildini bilanci Outvin kontā (outvin.com) un mēģini vēlreiz."
+    : undefined;
 
   return {
     rows,
@@ -297,6 +334,7 @@ export async function fetchOutvinDealerImport(vin: string): Promise<OutvinDealer
     typesProbed: probe.typesProbed,
     typesFetched: probe.typesFetched,
     typesWithMileage: probe.typesWithMileage,
+    ...(paymentWarning ? { paymentWarning } : {}),
   };
 }
 

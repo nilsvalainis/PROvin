@@ -122,6 +122,7 @@ export function AdminAutoRecordsSourceBlock({
       const data = (await res.json()) as {
         rows?: AutoRecordsServiceRow[];
         report?: import("@/lib/outvin-dealer-types").OutvinDealerReport;
+        paymentWarning?: string;
         error?: string;
         detail?: string;
       };
@@ -132,7 +133,9 @@ export function AdminAutoRecordsSourceBlock({
         } else if (data.error === "outvin_unauthorized") {
           setOutvinErr("Outvin: nederīgs e-pasts vai parole");
         } else if (data.error === "outvin_payment_required") {
-          setOutvinErr("Outvin: nepieciešams kredīts / apmaksa");
+          setOutvinErr(
+            "Outvin: kontā nav kredītu. Papildini bilanci pie outvin.com (viena VIN vēsture = 1+ kredīti). Pārbaudi arī, vai .env ir produkcijas URL, ne mock.",
+          );
         } else if (data.error === "outvin_not_found" || data.error === "empty_mileage_history" || data.error === "empty_outvin_data") {
           setOutvinErr("Outvin: dati nav atrasti šim VIN");
         } else if (data.error === "invalid_vin") {
@@ -150,6 +153,9 @@ export function AdminAutoRecordsSourceBlock({
           ...(hasRows ? { serviceHistory: data.rows! } : {}),
           ...(data.report ? { outvinReport: data.report } : {}),
         });
+        if (typeof data.paymentWarning === "string" && data.paymentWarning.trim()) {
+          setOutvinErr(data.paymentWarning);
+        }
       } else {
         setOutvinErr("Outvin: atgrieza tukšu atbildi");
       }

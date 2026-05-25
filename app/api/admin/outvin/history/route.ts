@@ -33,8 +33,17 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { rows, report, typesProbed, typesFetched, typesWithMileage } = await fetchOutvinDealerImport(vin);
-    return NextResponse.json({ rows, report, typesProbed, typesFetched, typesWithMileage, vin });
+    const { rows, report, typesProbed, typesFetched, typesWithMileage, paymentWarning } =
+      await fetchOutvinDealerImport(vin);
+    return NextResponse.json({
+      rows,
+      report,
+      typesProbed,
+      typesFetched,
+      typesWithMileage,
+      vin,
+      ...(paymentWarning ? { paymentWarning } : {}),
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error("[admin/outvin/history]", msg);
