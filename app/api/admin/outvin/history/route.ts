@@ -1,6 +1,5 @@
 /**
- * Admin: Outvin nobraukuma vēsture → AUTO RECORDS tabulas rindas.
- * GET /history/{VIN}/{type} (type 1 + 2), HTTP Basic (OUTVIN_EMAIL / OUTVIN_PASSWORD).
+ * Admin: Outvin imports — probē history tipus 1..N (divfāžu: 1–2, tad 3..max ja nav km).
  */
 import { NextResponse } from "next/server";
 
@@ -34,8 +33,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { rows, report, typesFetched } = await fetchOutvinDealerImport(vin);
-    return NextResponse.json({ rows, report, typesFetched, vin });
+    const { rows, report, typesProbed, typesFetched, typesWithMileage } = await fetchOutvinDealerImport(vin);
+    return NextResponse.json({ rows, report, typesProbed, typesFetched, typesWithMileage, vin });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error("[admin/outvin/history]", msg);
