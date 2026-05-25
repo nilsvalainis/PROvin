@@ -61,7 +61,10 @@ export async function POST(req: Request) {
 
   const guard = await assertGeminiAllowedForSession(sessionId);
   if (!guard.ok) {
-    return NextResponse.json({ error: guard.error }, { status: guard.status });
+    return NextResponse.json(
+      { error: guard.error, ...(guard.detail ? { detail: guard.detail } : {}) },
+      { status: guard.status },
+    );
   }
 
   const sourceBlocks = mergeSourceBlocksFromBody(b);

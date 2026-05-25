@@ -22,6 +22,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
 import { plainTextToMinimalRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
 
 const ta =
   "min-h-[72px] w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20";
@@ -111,20 +112,13 @@ export function AdminListingAnalysisSourceBlock({
             existingDraftPlain: adminRichHtmlToPlainText(v.sellerPortrait).trim(),
           }),
         });
-        const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+        const { data, parseFailed } = await parseAdminGeminiResponse(res);
         if (!res.ok) {
-          const detail = typeof data.detail === "string" ? data.detail.trim() : "";
-          if (data.error === "missing_gemini_key") {
-            setSellerAnalyzeErr("Nav GEMINI_API_KEY (.env.local / Vercel)");
-          } else if (data.error === "gemini_demo_only") {
-            setSellerAnalyzeErr("Gemini pieejams tikai DEMO pasūtījumiem");
-          } else if (data.error === "missing_seller_input") {
-            setSellerAnalyzeErr("Ievadi papildus nosaukumu vai sludinājuma aprakstu");
-          } else if (data.error === "generation_failed") {
-            setSellerAnalyzeErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās analizēt pārdevēju");
-          } else {
-            setSellerAnalyzeErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
-          }
+          setSellerAnalyzeErr(
+            parseFailed
+              ? `Gemini: servera atbilde nav lasāma (HTTP ${res.status})`
+              : formatAdminGeminiFetchError(data, res, "Gemini: neizdevās analizēt pārdevēju"),
+          );
           return;
         }
         if (typeof data.text === "string" && data.text.trim()) {

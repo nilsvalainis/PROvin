@@ -55,7 +55,10 @@ export async function POST(req: Request) {
   const sessionId = str(b.sessionId).trim();
   const guard = await assertGeminiAllowedForSession(sessionId);
   if (!guard.ok) {
-    return NextResponse.json({ error: guard.error }, { status: guard.status });
+    return NextResponse.json(
+      { error: guard.error, ...(guard.detail ? { detail: guard.detail } : {}) },
+      { status: guard.status },
+    );
   }
 
   const sourceBlocks = mergeSourceBlocksFromBody(b);
@@ -66,6 +69,9 @@ export async function POST(req: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error("[gemini/inspection-recommendations]", msg);
+    if (msg === "empty_order_context") {
+      return NextResponse.json({ error: "empty_order_context" }, { status: 400 });
+    }
     return NextResponse.json({ error: "generation_failed", detail: msg }, { status: 502 });
   }
 }

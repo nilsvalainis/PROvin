@@ -128,6 +128,17 @@ import {
   postNotifyReportReadyViaBlob,
   type NotifyPortfolioUploadItem,
 } from "@/lib/admin-notify-report-ready-client";
+import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
+
+function geminiFetchErrorMessage(
+  res: Response,
+  data: { error?: string; detail?: string },
+  parseFailed: boolean,
+  fallback: string,
+): string {
+  if (parseFailed) return `Gemini: servera atbilde nav lasāma (HTTP ${res.status})`;
+  return formatAdminGeminiFetchError(data, res, fallback);
+}
 
 export type OrderWorkspacePayload = {
   sessionId: string;
@@ -699,18 +710,9 @@ export function OrderDetailWorkspace({
           }),
         }),
       });
-      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+      const { data, parseFailed } = await parseAdminGeminiResponse(res);
       if (!res.ok) {
-        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
-        if (data.error === "missing_gemini_key") {
-          setGeminiInspectionErr("Nav GEMINI_API_KEY (.env.local / Vercel)");
-        } else if (data.error === "gemini_demo_only") {
-          setGeminiInspectionErr("Gemini pieejams tikai DEMO pasūtījumiem");
-        } else if (data.error === "generation_failed") {
-          setGeminiInspectionErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās ģenerēt");
-        } else {
-          setGeminiInspectionErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
-        }
+        setGeminiInspectionErr(geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās ģenerēt"));
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
@@ -740,22 +742,9 @@ export function OrderDetailWorkspace({
           }),
         }),
       });
-      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+      const { data, parseFailed } = await parseAdminGeminiResponse(res);
       if (!res.ok) {
-        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
-        if (data.error === "missing_gemini_key") {
-          setGeminiPriceErr("Nav GEMINI_API_KEY (.env.local / Vercel)");
-        } else if (data.error === "gemini_demo_only") {
-          setGeminiPriceErr("Gemini pieejams tikai DEMO pasūtījumiem");
-        } else if (data.error === "empty_order_context") {
-          setGeminiPriceErr("Trūkst avotu datu — ievadi sludinājuma saiti vai aizpildi avotu laukus");
-        } else if (data.error === "listing_scrape_failed") {
-          setGeminiPriceErr("Neizdevās nolasīt ss.lv sludinājumu — pārbaudi saiti");
-        } else if (data.error === "generation_failed") {
-          setGeminiPriceErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās analizēt cenu");
-        } else {
-          setGeminiPriceErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
-        }
+        setGeminiPriceErr(geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās analizēt cenu"));
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
@@ -785,20 +774,9 @@ export function OrderDetailWorkspace({
           }),
         }),
       });
-      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+      const { data, parseFailed } = await parseAdminGeminiResponse(res);
       if (!res.ok) {
-        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
-        if (data.error === "missing_gemini_key") {
-          setGeminiSummaryErr("Nav GEMINI_API_KEY (.env.local / Vercel)");
-        } else if (data.error === "gemini_demo_only") {
-          setGeminiSummaryErr("Gemini pieejams tikai DEMO pasūtījumiem");
-        } else if (data.error === "missing_expert_sections") {
-          setGeminiSummaryErr("Vispirms aizpildi pārdevēja, ieteikumu vai cenas sadaļu");
-        } else if (data.error === "generation_failed") {
-          setGeminiSummaryErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās sagatavot atbildi");
-        } else {
-          setGeminiSummaryErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
-        }
+        setGeminiSummaryErr(geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās sagatavot atbildi"));
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
@@ -827,20 +805,11 @@ export function OrderDetailWorkspace({
           }),
         }),
       });
-      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+      const { data, parseFailed } = await parseAdminGeminiResponse(res);
       if (!res.ok) {
-        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
-        if (data.error === "missing_gemini_key") {
-          setGeminiIncidentsSummaryErr("Nav GEMINI_API_KEY (.env.local / Vercel)");
-        } else if (data.error === "gemini_demo_only") {
-          setGeminiIncidentsSummaryErr("Gemini pieejams tikai DEMO pasūtījumiem");
-        } else if (data.error === "empty_incident_data") {
-          setGeminiIncidentsSummaryErr("Trūkst negadījumu datu — aizpildi avotu tabulas");
-        } else if (data.error === "generation_failed") {
-          setGeminiIncidentsSummaryErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās sagatavot atbildi");
-        } else {
-          setGeminiIncidentsSummaryErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
-        }
+        setGeminiIncidentsSummaryErr(
+          geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās sagatavot atbildi"),
+        );
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
@@ -875,20 +844,11 @@ export function OrderDetailWorkspace({
           }),
         }),
       });
-      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+      const { data, parseFailed } = await parseAdminGeminiResponse(res);
       if (!res.ok) {
-        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
-        if (data.error === "missing_gemini_key") {
-          setGeminiMileageCommentErr("Nav GEMINI_API_KEY (.env.local / Vercel)");
-        } else if (data.error === "gemini_demo_only") {
-          setGeminiMileageCommentErr("Gemini pieejams tikai DEMO pasūtījumiem");
-        } else if (data.error === "empty_mileage_data") {
-          setGeminiMileageCommentErr("Trūkst nobraukuma datu — aizpildi CSDD vai avotu tabulas");
-        } else if (data.error === "generation_failed") {
-          setGeminiMileageCommentErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās sagatavot atbildi");
-        } else {
-          setGeminiMileageCommentErr(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
-        }
+        setGeminiMileageCommentErr(
+          geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās sagatavot atbildi"),
+        );
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
@@ -938,23 +898,12 @@ export function OrderDetailWorkspace({
             blockKey,
           }),
         });
-        const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+        const { data, parseFailed } = await parseAdminGeminiResponse(res);
         if (!res.ok) {
-          const detail = typeof data.detail === "string" ? data.detail.trim() : "";
-          if (data.error === "missing_gemini_key") {
-            setGeminiSourceCommentErr({ key: blockKey, msg: "Nav GEMINI_API_KEY (.env.local / Vercel)" });
-          } else if (data.error === "gemini_demo_only") {
-            setGeminiSourceCommentErr({ key: blockKey, msg: "Gemini pieejams tikai DEMO pasūtījumiem" });
-          } else if (data.error === "empty_source_data") {
-            setGeminiSourceCommentErr({ key: blockKey, msg: "Trūkst avota datu — aizpildi tabulas vai laukus" });
-          } else if (data.error === "generation_failed") {
-            setGeminiSourceCommentErr({
-              key: blockKey,
-              msg: detail ? `Gemini: ${detail}` : "Gemini: neizdevās ģenerēt komentāru",
-            });
-          } else {
-            setGeminiSourceCommentErr({ key: blockKey, msg: detail ? `Gemini: ${detail}` : "Gemini: neizdevās" });
-          }
+          setGeminiSourceCommentErr({
+            key: blockKey,
+            msg: geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās ģenerēt komentāru"),
+          });
           return;
         }
         if (typeof data.text === "string" && data.text.trim()) {

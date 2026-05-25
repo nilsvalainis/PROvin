@@ -13,6 +13,7 @@ import {
   ADMIN_AI_POLISH_SPINNER_CLASS,
 } from "@/components/admin/admin-ai-polish-ui";
 import { adminRichHtmlToPlainText, plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
+import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
 
 type Props = {
   value: string;
@@ -49,14 +50,13 @@ export function AdminAiPolishRichCommentShell({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: t }),
       });
-      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
+      const { data, parseFailed } = await parseAdminGeminiResponse(res);
       if (!res.ok) {
-        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
-        if (data.error === "missing_gemini_key") setError("Nav GEMINI_API_KEY");
-        else if (res.status === 401 || data.error === "unauthorized") setError("Gemini: nav admin piekļuves");
-        else if (data.error === "polish_failed") {
-          setError(detail ? `Gemini: neizdevās labot gramatiku — ${detail}` : "Gemini: neizdevās labot gramatiku");
-        } else setError(detail ? `Gemini: ${detail}` : "Gemini: neizdevās");
+        setError(
+          parseFailed
+            ? `Gemini: servera atbilde nav lasāma (HTTP ${res.status})`
+            : formatAdminGeminiFetchError(data, res, "Gemini: neizdevās labot gramatiku"),
+        );
         return;
       }
       if (typeof data.text === "string") {

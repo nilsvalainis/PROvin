@@ -12,6 +12,24 @@ export function getGeminiApiKeyFromEnv(): string | null {
   return k || null;
 }
 
+/** Izvelk lasāmu kļūdu no Google Generative AI SDK / fetch atbildes. */
+export function formatGeminiSdkError(e: unknown): string {
+  if (e instanceof Error) {
+    const msg = e.message.trim();
+    if (/404.*models\/gemini|is not found for API version/i.test(msg)) {
+      return `Gemini modelis nav pieejams (${msg.match(/models\/[^\s:]+/)?.[0] ?? "model"}) — izmanto gemini-2.5-flash / gemini-2.5-pro`;
+    }
+    if (/429|quota|rate limit|RESOURCE_EXHAUSTED/i.test(msg)) {
+      return "Gemini API kvota pārsniegta — uzgaidi vai pārbaudi Google AI Studio billing";
+    }
+    if (/API key not valid|API_KEY_INVALID|invalid.*api.?key/i.test(msg)) {
+      return "Nederīga GEMINI_API_KEY";
+    }
+    return msg || "unknown";
+  }
+  return "unknown";
+}
+
 export async function geminiGenerateText(opts: {
   model: string;
   systemInstruction: string;
@@ -21,18 +39,22 @@ export async function geminiGenerateText(opts: {
   const key = getGeminiApiKeyFromEnv();
   if (!key) throw new Error("missing_gemini_key");
 
-  const genAI = new GoogleGenerativeAI(key);
-  const model = genAI.getGenerativeModel({
-    model: opts.model,
-    systemInstruction: opts.systemInstruction,
-  });
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
-    generationConfig: { temperature: opts.temperature ?? 0.35 },
-  });
-  const text = result.response.text()?.trim();
-  if (!text) throw new Error("gemini_empty_content");
-  return text;
+  try {
+    const genAI = new GoogleGenerativeAI(key);
+    const model = genAI.getGenerativeModel({
+      model: opts.model,
+      systemInstruction: opts.systemInstruction,
+    });
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
+      generationConfig: { temperature: opts.temperature ?? 0.35 },
+    });
+    const text = result.response.text()?.trim();
+    if (!text) throw new Error("gemini_empty_content");
+    return text;
+  } catch (e) {
+    throw new Error(formatGeminiSdkError(e));
+  }
 }
 
 type GenerateContentApiResponse = {
@@ -74,5 +96,5 @@ export async function geminiGenerateTextWithGoogleSearch(opts: {
     if (text) return text;
     lastErr = "gemini_empty_content";
   }
-  throw new Error(lastErr);
+  throw new Error(formatGeminiSdkError(new Error(lastErr)));
 }
