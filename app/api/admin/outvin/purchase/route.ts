@@ -7,6 +7,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { getOutvinConfig } from "@/lib/outvin-api";
 import { purchaseOutvinHistoryTypesSequential } from "@/lib/outvin-purchase-sequential";
 import { parseOutvinDataBundleRaw } from "@/lib/outvin-data-bundle";
+import { isOutvinOfficialHistoryType } from "@/lib/outvin-history-probe";
 import { isOutvinApiVin, normalizeVin } from "@/lib/order-field-validation";
 
 export const maxDuration = 60;
@@ -36,10 +37,13 @@ export async function POST(req: Request) {
   const typesRaw = Array.isArray(o.types) ? o.types : [];
   const types = typesRaw
     .map((t) => (typeof t === "number" ? t : Number(t)))
-    .filter((t) => Number.isFinite(t) && t > 0);
+    .filter((t) => Number.isFinite(t) && isOutvinOfficialHistoryType(t));
 
   if (types.length === 0) {
-    return NextResponse.json({ error: "no_types_selected" }, { status: 400 });
+    return NextResponse.json(
+      { error: "invalid_history_types", message: "Outvin atbalsta tikai history type 1 (serviss) un 2 (carfax)." },
+      { status: 400 },
+    );
   }
 
   const existing = parseOutvinDataBundleRaw(o.existingBundle, vin);

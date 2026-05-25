@@ -183,8 +183,8 @@ export function AdminOutvinDataSourcesCard({
         ) : null}
       </div>
       <p className="mb-2 text-[9px] leading-snug text-slate-600">
-        Bezmaksas pārbaude (VIN + status API). Katrs veiksmīgs vēstures tips = 1 kredīts — atlasiet un pērciet
-        manuāli.
+        Outvin API (Swagger): tikai <strong>Type 1</strong> — servisa un nobraukuma vēsture (ielādējas nobraukuma
+        tabulā), <strong>Type 2</strong> — ASV Carfax. Katrs veiksmīgs pirkums = 1 kredīts.
       </p>
       {err ? (
         <p className="mb-2 text-[9px] leading-snug text-amber-800/90" title={err}>

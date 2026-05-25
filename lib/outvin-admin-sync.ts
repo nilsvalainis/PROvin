@@ -7,7 +7,7 @@ import {
   parseOutvinDataBundleRaw,
   type OutvinDataBundle,
 } from "@/lib/outvin-data-bundle";
-import { dealerLogToMergedServiceHistory, outvinBundleToDealerReport } from "@/lib/outvin-purchase-map";
+import { mileageRowsFromOutvinBundle, outvinBundleToDealerReport } from "@/lib/outvin-purchase-map";
 import { outvinDealerReportHasContent } from "@/lib/outvin-dealer-types";
 
 export function getAutoRecordsOutvinBundle(block: AutoRecordsBlockState, vin = ""): OutvinDataBundle {
@@ -19,13 +19,11 @@ export function syncAutoRecordsWithOutvinBundle(
   block: AutoRecordsBlockState,
   bundle: OutvinDataBundle,
 ): AutoRecordsBlockState {
-  const mileageFromDealer = dealerLogToMergedServiceHistory(
-    bundle.dealerServiceLog.filter((r) => r.date.trim() || r.odometer.trim()),
-  );
+  const mileageFromOutvin = mileageRowsFromOutvinBundle(bundle);
   const existing = block.serviceHistory.filter((r) => r.date.trim() || r.odometer.trim());
   const mergedMileage: AutoRecordsServiceRow[] =
-    mileageFromDealer.length > 0
-      ? mergeOutvinServiceRows([existing, mileageFromDealer])
+    mileageFromOutvin.length > 0
+      ? mergeOutvinServiceRows([existing, mileageFromOutvin])
       : block.serviceHistory;
 
   const report = outvinBundleToDealerReport(bundle);

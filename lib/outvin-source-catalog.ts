@@ -1,31 +1,24 @@
 /**
- * Outvin history `type` → PROVIN datu kategorijas (manuāla pirkšana, bez auto-probes).
+ * Outvin history `type` — Swagger 1.0.3: tikai 1 (serviss) un 2 (carfax).
  */
+import { OUTVIN_OFFICIAL_HISTORY_TYPES } from "@/lib/outvin-history-probe";
 
-export type OutvinSourceCategory = "dealer_service" | "us_carfax" | "european_registers";
+export type OutvinSourceCategory = "service_history" | "us_carfax";
 
 export type OutvinCatalogSlot = {
   id: string;
-  historyType: number;
+  historyType: (typeof OUTVIN_OFFICIAL_HISTORY_TYPES)[number];
   category: OutvinSourceCategory;
   titleLv: string;
   creditCost: number;
 };
 
-/** Konfigurējamie avoti — paplašini pēc Outvin konta / zīmola pieredzes. */
 export const OUTVIN_CATALOG_SLOTS: OutvinCatalogSlot[] = [
   {
-    id: "dealer_3",
-    historyType: 3,
-    category: "dealer_service",
-    titleLv: "Oficiālā dīlera servisa vēsture (Type 3)",
-    creditCost: 1,
-  },
-  {
-    id: "dealer_5",
-    historyType: 5,
-    category: "dealer_service",
-    titleLv: "Oficiālā dīlera servisa vēsture (Type 5)",
+    id: "service_1",
+    historyType: 1,
+    category: "service_history",
+    titleLv: "Oficiālā servisa un nobraukuma vēsture (Type 1)",
     creditCost: 1,
   },
   {
@@ -33,13 +26,6 @@ export const OUTVIN_CATALOG_SLOTS: OutvinCatalogSlot[] = [
     historyType: 2,
     category: "us_carfax",
     titleLv: "ASV / Carfax vēsture (Type 2)",
-    creditCost: 1,
-  },
-  {
-    id: "eu_7",
-    historyType: 7,
-    category: "european_registers",
-    titleLv: "Eiropas nacionālie nobraukuma reģistri (Type 7)",
     creditCost: 1,
   },
 ];
@@ -72,34 +58,14 @@ export function inferSlotAvailability(
     return { status: "purchased", reason: "Dati jau iegādāti un saglabāti pasūtījumā" };
   }
 
-  const region = vinFactoryRegion(vin);
-
-  if (slot.category === "us_carfax") {
+  if (slot.historyType === 2) {
+    const region = vinFactoryRegion(vin);
     if (region === "europe") {
       return {
         status: "disabled",
-        reason: "Eiropas VIN — ASV Carfax parasti nav pieejams",
+        reason: "Eiropas VIN — ASV Carfax (Type 2) parasti nav pieejams",
       };
     }
-    return { status: "available" };
-  }
-
-  if (slot.category === "dealer_service") {
-    if (region === "north_america") {
-      return {
-        status: "disabled",
-        reason: "ASV rūpnīcas VIN — izvēlies Carfax vai pārbaudi manuāli",
-      };
-    }
-    return { status: "available" };
-  }
-
-  if (slot.category === "european_registers") {
-    if (region === "europe") return { status: "available" };
-    return {
-      status: "disabled",
-      reason: "Galvenokārt ES / LV tirgus auto",
-    };
   }
 
   return { status: "available" };

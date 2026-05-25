@@ -12,6 +12,7 @@ import {
   sleepMs,
   type OutvinPurchaseTypeResult,
 } from "@/lib/outvin-purchase-map";
+import { isOutvinOfficialHistoryType } from "@/lib/outvin-history-probe";
 import { normalizeVin } from "@/lib/order-field-validation";
 
 /**
@@ -28,7 +29,7 @@ export async function purchaseOutvinHistoryTypesSequential(
       ? { ...existingBundle, vin: normalized }
       : applyOutvinPrecheckMetadata(normalized, existingBundle ?? null);
 
-  const unique = [...new Set(types.map((t) => Math.floor(t)).filter((t) => t > 0))];
+  const unique = [...new Set(types.map((t) => Math.floor(t)).filter((t) => isOutvinOfficialHistoryType(t)))];
   const results: OutvinPurchaseTypeResult[] = [];
   let paymentRequired = false;
   let purchaseIndex = 0;

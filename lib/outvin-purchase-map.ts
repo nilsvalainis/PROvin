@@ -1,5 +1,5 @@
 import { formatAutoRecordsDateForOutput, type AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
-import { mergeOutvinServiceRows } from "@/lib/outvin-history-map";
+import { mapOutvinHistoryPayloadToServiceRows, mergeOutvinServiceRows } from "@/lib/outvin-history-map";
 import {
   buildOutvinDealerReport,
   mapOutvinVehicleJsonToInfo,
@@ -219,7 +219,7 @@ export function applyOutvinPurchaseToBundle(
   fetchedAt = new Date().toISOString(),
 ): OutvinDataBundle {
   const slot = getOutvinCatalogSlotByType(historyType);
-  const category = slot?.category ?? "dealer_service";
+  const category = slot?.category ?? (historyType === 2 ? "us_carfax" : "service_history");
 
   const purchases = bundle.purchases.filter((p) => p.historyType !== historyType);
   purchases.push({ historyType, fetchedAt, payload });
@@ -228,8 +228,17 @@ export function applyOutvinPurchaseToBundle(
   let usCarfax = { ...bundle.usCarfax };
   let europeanRegisters = bundle.europeanRegisters.filter(outvinEuropeanRowHasData);
 
-  if (category === "dealer_service") {
-    dealerServiceLog = mergeDealerLogs(dealerServiceLog, mapHistoryPayloadToDealerServiceLog(payload));
+  if (category === "service_history" || historyType === 1) {
+    const mileageRows = mapOutvinHistoryPayloadToServiceRows(payload);
+    dealerServiceLog = mergeDealerLogs(
+      dealerServiceLog,
+      mileageRows.map((r) => ({
+        date: r.date,
+        odometer: r.odometer,
+        country: r.country,
+        serviceNotes: "",
+      })),
+    );
   } else if (category === "us_carfax") {
     usCarfax = mapHistoryPayloadToUsCarfax(payload, usCarfax);
   } else if (category === "european_registers") {
@@ -280,6 +289,21 @@ export function rebuildOutvinBundleFromPurchases(bundle: OutvinDataBundle): Outv
 export function dealerLogToMergedServiceHistory(log: OutvinDealerServiceRow[]): AutoRecordsServiceRow[] {
   const batches = [log.map(({ date, odometer, country }) => ({ date, odometer, country }))];
   return mergeOutvinServiceRows(batches);
+}
+
+/** Swagger Type 1 — `events[]` ar date, mileage.value, location → nobraukuma tabula. */
+export function mileageRowsFromOutvinBundle(bundle: OutvinDataBundle): AutoRecordsServiceRow[] {
+  const batches: AutoRecordsServiceRow[][] = [];
+  for (const p of bundle.purchases) {
+    if (p.historyType !== 1) continue;
+    const rows = mapOutvinHistoryPayloadToServiceRows(p.payload);
+    if (rows.length > 0) batches.push(rows);
+  }
+  const fromLog = dealerLogToMergedServiceHistory(
+    bundle.dealerServiceLog.filter((r) => r.date.trim() || r.odometer.trim()),
+  );
+  if (fromLog.length > 0) batches.push(fromLog);
+  return batches.length > 0 ? mergeOutvinServiceRows(batches) : [];
 }
 
 /** Pauze starp secīgiem Outvin history pieprasījumiem (rate limit / īslaicīgi bloki). */

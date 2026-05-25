@@ -43,7 +43,7 @@ export type OutvinCapabilitySlotUi = {
   creditCost: number;
   status: OutvinSlotAvailability;
   statusReason?: string;
-  category: "dealer_service" | "us_carfax" | "european_registers";
+  category: "service_history" | "us_carfax";
 };
 
 export type OutvinPdfSectionToggles = {
@@ -215,7 +215,7 @@ export function parseOutvinDataBundleRaw(raw: unknown, fallbackVin = ""): Outvin
           creditCost: typeof x.creditCost === "number" ? x.creditCost : 1,
           status: (x.status as OutvinSlotAvailability) ?? "available",
           statusReason: typeof x.statusReason === "string" ? x.statusReason : undefined,
-          category: (x.category as OutvinCapabilitySlotUi["category"]) ?? slot?.category ?? "dealer_service",
+          category: (x.category as OutvinCapabilitySlotUi["category"]) ?? slot?.category ?? "service_history",
         };
       })
       .filter(Boolean) as OutvinCapabilitySlotUi[];

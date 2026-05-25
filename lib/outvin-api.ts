@@ -34,7 +34,7 @@ function basicAuthHeader(email: string, password: string): string {
   return `Basic ${Buffer.from(`${email}:${password}`, "utf8").toString("base64")}`;
 }
 
-/** Outvin history `type` — Swagger: 1, 2; produkcijā bieži arī 3, 5, 7 u.c. */
+/** Outvin history `type` — Swagger 1.0.3: tikai 1 (serviss), 2 (carfax). */
 export type OutvinHistoryType = number;
 
 export type OutvinHistoryFetchResult = {
@@ -163,15 +163,9 @@ async function fetchOutvinHistoryBatchSequential(
   return { results, paymentRequired };
 }
 
-/**
- * Paralēli probē history tipus: vispirms 1–2, pēc tam pārējie (3…max),
- * ja nevienā nav nobraukuma notikumu vai OUTVIN_HISTORY_PROBE_ALL=1.
- */
+/** @deprecated Automātiska probe patērē kredītus — izmanto Check & Buy (tikai type 1 un 2). */
 export async function probeOutvinHistoryTypes(vin: string): Promise<OutvinHistoryProbeSummary> {
   const allTypes = getOutvinHistoryTypesToProbe();
-  const primaryTypes = allTypes.filter((t) => t <= 2);
-  const extendedTypes = allTypes.filter((t) => t > 2);
-  const probeAll = process.env.OUTVIN_HISTORY_PROBE_ALL === "1";
 
   const absorb = (
     acc: OutvinHistoryProbeSummary,
@@ -188,31 +182,17 @@ export async function probeOutvinHistoryTypes(vin: string): Promise<OutvinHistor
     return acc;
   };
 
-  let summary: OutvinHistoryProbeSummary = {
-    typesProbed: allTypes,
-    typesFetched: [],
-    typesWithMileage: [],
-    historyPayloads: [],
-    paymentRequired: false,
-  };
-
-  if (primaryTypes.length > 0) {
-    const primary = await fetchOutvinHistoryBatchSequential(vin, primaryTypes);
-    summary = absorb(summary, primary.results);
-    summary.paymentRequired = primary.paymentRequired;
-  }
-
-  const needExtended =
-    !summary.paymentRequired &&
-    (probeAll || (extendedTypes.length > 0 && summary.typesWithMileage.length === 0));
-
-  if (needExtended) {
-    const extended = await fetchOutvinHistoryBatchSequential(vin, extendedTypes);
-    summary = absorb(summary, extended.results);
-    summary.paymentRequired = summary.paymentRequired || extended.paymentRequired;
-  }
-
-  return summary;
+  const batch = await fetchOutvinHistoryBatchSequential(vin, allTypes);
+  return absorb(
+    {
+      typesProbed: allTypes,
+      typesFetched: [],
+      typesWithMileage: [],
+      historyPayloads: [],
+      paymentRequired: batch.paymentRequired,
+    },
+    batch.results,
+  );
 }
 
 export async function fetchOutvinVehicleJson(vin: string): Promise<unknown> {
