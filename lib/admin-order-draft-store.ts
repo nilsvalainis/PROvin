@@ -3,7 +3,12 @@ import "server-only";
 import fs from "fs/promises";
 import path from "path";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
-import type { OrderDraftOrderEdits, OrderDraftState, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
+import type {
+  OrderDraftOrderEdits,
+  OrderDraftRevisionMeta,
+  OrderDraftState,
+  OrderDraftWorkspaceBody,
+} from "@/lib/admin-order-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
@@ -112,12 +117,7 @@ export async function readOrderDraft(sessionId: string): Promise<OrderDraftState
   }
 }
 
-export type OrderDraftRevisionMeta = {
-  revisionId: string;
-  updatedAt: string;
-  savedAt: string;
-  reason: string;
-};
+export type { OrderDraftRevisionMeta } from "@/lib/admin-order-draft-types";
 
 function parseDraftRevisionMeta(raw: unknown): OrderDraftRevisionMeta | null {
   if (!raw || typeof raw !== "object") return null;

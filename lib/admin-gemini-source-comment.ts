@@ -5,7 +5,7 @@ import { geminiSourceCommentSystemPrompt } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import { buildGeminiOrderContextText } from "@/lib/admin-gemini-order-context";
 import {
-  sourceBlockPlainTextExcludingComments,
+  sourceBlockPlainTextForGemini,
   type GeminiSourceCommentBlockKey,
 } from "@/lib/admin-source-comment-blocks";
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
@@ -22,12 +22,17 @@ export type GeminiSourceCommentInput = {
   mileageComment?: string | null;
   operatorNotes?: string | null;
   existingDraftPlain?: string | null;
+  citiAvotiSectionIndex?: number;
 };
 
 /** Avota komentāru ģenerēšana — gemini-2.5-flash (Free Tier). */
 export async function generateSourceCommentWithGemini(input: GeminiSourceCommentInput): Promise<string> {
   const blockLabel = SOURCE_BLOCK_LABELS[input.blockKey];
-  const focusDataText = sourceBlockPlainTextExcludingComments(input.blockKey, input.sourceBlocks);
+  const focusDataText = sourceBlockPlainTextForGemini(
+    input.blockKey,
+    input.sourceBlocks,
+    input.citiAvotiSectionIndex,
+  );
   if (!focusDataText) {
     throw new Error("empty_source_data");
   }

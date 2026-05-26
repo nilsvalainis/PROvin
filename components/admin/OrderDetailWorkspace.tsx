@@ -19,6 +19,7 @@ import {
   citiAvotiToPlainText,
   createDefaultSourceBlocks,
   csddFormToPlainText,
+  emptyCitiAvotiSection,
   emptyVendorAvotuBlock,
   hydrateWorkspaceFromStorage,
   listingAnalysisToPlainText,
@@ -106,9 +107,13 @@ import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishR
 import { AdminGeminiGenerateWithPrefill } from "@/components/admin/AdminGeminiGenerateWithPrefill";
 import type { AdminGeminiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import {
+  applySourceBlockGeneratedComment,
+  citiAvotiSectionPlainTextExcludingComments,
+  sourceBlockCommentsPlainForGemini,
   type GeminiSourceCommentBlockKey,
   sourceBlockHasDataExcludingComments,
 } from "@/lib/admin-source-comment-blocks";
+import { AdminWorkspaceRestoreMenu } from "@/components/admin/AdminWorkspaceRestoreMenu";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import {
   AdminCommonPhrasesDrawer,
@@ -886,17 +891,17 @@ export function OrderDetailWorkspace({
   }, []);
 
   const runGeminiSourceComment = useCallback(
-    async (blockKey: GeminiSourceCommentBlockKey, operatorNotes = "") => {
+    async (blockKey: GeminiSourceCommentBlockKey, operatorNotes = "", citiAvotiSectionIndex?: number) => {
       if (!payload.geminiAllowed || geminiSourceCommentBusy) return;
       setGeminiSourceCommentBusy(blockKey);
       setGeminiSourceCommentErr(null);
       try {
         const cur = wsPersistRef.current;
-        const block = cur.sourceBlocks[blockKey];
-        const existingComments =
-          block && typeof block === "object" && "comments" in block && typeof block.comments === "string"
-            ? block.comments
-            : "";
+        const existingComments = sourceBlockCommentsPlainForGemini(
+          blockKey,
+          cur.sourceBlocks,
+          citiAvotiSectionIndex,
+        );
         const res = await fetch("/api/admin/gemini/source-comment", {
           method: "POST",
           credentials: "include",
@@ -907,6 +912,7 @@ export function OrderDetailWorkspace({
               existingDraftPlain: adminRichHtmlToPlainText(existingComments).trim(),
             }),
             blockKey,
+            ...(citiAvotiSectionIndex != null ? { citiAvotiSectionIndex } : {}),
           }),
         });
         const { data, parseFailed } = await parseAdminGeminiResponse(res);
@@ -918,11 +924,12 @@ export function OrderDetailWorkspace({
           return;
         }
         if (typeof data.text === "string" && data.text.trim()) {
-          const block = cur.sourceBlocks[blockKey];
-          updateSourceBlock(blockKey, {
-            ...block,
-            comments: plainTextToMinimalRichHtml(data.text),
-          } as WorkspaceSourceBlocks[typeof blockKey]);
+          const html = plainTextToMinimalRichHtml(data.text);
+          const prevBlock = cur.sourceBlocks[blockKey];
+          const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
+            citiAvotiSectionIndex,
+          });
+          updateSourceBlock(blockKey, nextBlock);
         }
       } catch {
         setGeminiSourceCommentErr({ key: blockKey, msg: "Gemini: neizdevās savienoties" });
@@ -1127,6 +1134,36 @@ export function OrderDetailWorkspace({
       /* quota */
     }
   }, [workspaceHydrated, payload.sessionId]);
+
+  const restoreWorkspaceFromSnapshot = useCallback(
+    (snapshot: string): boolean => {
+      const chosen = hydrateWorkspaceFromStorage(snapshot);
+      if (!chosen) return false;
+      const hydratedWs: WorkspacePersist = {
+        sourceBlocks: chosen.sourceBlocks,
+        iriss: chosen.iriss,
+        apskatesPlāns: chosen.apskatesPlāns,
+        cenasAtbilstiba: chosen.cenasAtbilstiba,
+        previewConfirmed: Boolean(chosen.previewConfirmed),
+        vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
+        vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
+      };
+      setWs(hydratedWs);
+      const mergedVisibility = mergePdfVisibility(chosen.pdfVisibility);
+      const mergedBannerInclude = mergeProvinBannerPdfInclude(chosen.pdfBannerInclude);
+      onPdfVisibilityChange(mergedVisibility);
+      setPdfBannerInclude(mergedBannerInclude);
+      const ser = serializeWorkspaceState(hydratedWs, mergedVisibility, mergedBannerInclude, new Date().toISOString());
+      try {
+        localStorage.setItem(storageKeyWorkspace(payload.sessionId), ser);
+      } catch {
+        /* quota */
+      }
+      hydrationSnapshotRef.current = ser;
+      return true;
+    },
+    [onPdfVisibilityChange, payload.sessionId],
+  );
 
   const persistWorkspaceSnapshot = useCallback(
     async (opts?: { showFlash?: boolean }): Promise<boolean> => {
@@ -1608,13 +1645,21 @@ export function OrderDetailWorkspace({
   );
 
   const geminiCommentSlot = useCallback(
-    (key: GeminiSourceCommentBlockKey): AdminGeminiSourceCommentSlot => ({
-      allowed: payload.geminiAllowed,
-      busy: geminiSourceCommentBusy === key,
-      error: geminiSourceCommentErr?.key === key ? geminiSourceCommentErr.msg : null,
-      hasSourceData: sourceBlockHasDataExcludingComments(key, blocksDisplaySafe),
-      onGenerate: (operatorNotes) => void runGeminiSourceComment(key, operatorNotes),
-    }),
+    (key: GeminiSourceCommentBlockKey, citiAvotiSectionIndex?: number): AdminGeminiSourceCommentSlot => {
+      const hasSourceData =
+        key === "citi_avoti" && citiAvotiSectionIndex != null ?
+          citiAvotiSectionPlainTextExcludingComments(
+            blocksDisplaySafe.citi_avoti.sections[citiAvotiSectionIndex] ?? emptyCitiAvotiSection(),
+          ).length > 0
+        : sourceBlockHasDataExcludingComments(key, blocksDisplaySafe);
+      return {
+        allowed: payload.geminiAllowed,
+        busy: geminiSourceCommentBusy === key,
+        error: geminiSourceCommentErr?.key === key ? geminiSourceCommentErr.msg : null,
+        hasSourceData,
+        onGenerate: (operatorNotes) => void runGeminiSourceComment(key, operatorNotes, citiAvotiSectionIndex),
+      };
+    },
     [
       blocksDisplaySafe,
       geminiSourceCommentBusy,
@@ -2486,6 +2531,13 @@ export function OrderDetailWorkspace({
           >
             {workspaceSaveBusy ? "Saglabā…" : "Saglabāt"}
           </button>
+          <AdminWorkspaceRestoreMenu
+            sessionId={payload.sessionId}
+            backupStorageKey={storageKeyWorkspaceBackup(payload.sessionId)}
+            orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
+            disabled={!workspaceHydrated || workspaceSaveBusy}
+            onRestoreLocalSnapshot={restoreWorkspaceFromSnapshot}
+          />
           {workspaceSaveFlash ? (
             <span
               className={`max-w-[11rem] text-[10px] font-semibold leading-tight ${
@@ -2722,7 +2774,7 @@ export function OrderDetailWorkspace({
               sessionId={payload.sessionId}
               pdfInclude={pdfVisibility.citi_avoti}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ citi_avoti: next })}
-              geminiComment={geminiCommentSlot("citi_avoti")}
+              geminiComment={(i) => geminiCommentSlot("citi_avoti", i)}
             />
           </div>
         ) : null}

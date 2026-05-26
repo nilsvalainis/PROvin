@@ -11,7 +11,7 @@ import {
   isGeminiSourceCommentBlockKey,
 } from "@/lib/admin-gemini-source-comment";
 import { mergeSourceBlocksFromBody } from "@/lib/admin-gemini-api-body";
-import { sourceBlockCommentsPlain } from "@/lib/admin-source-comment-blocks";
+import { sourceBlockCommentsPlainForGemini } from "@/lib/admin-source-comment-blocks";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
 export const maxDuration = 90;
@@ -29,6 +29,7 @@ type BodyShape = {
   mileageComment?: unknown;
   operatorNotes?: unknown;
   existingDraftPlain?: unknown;
+  citiAvotiSectionIndex?: unknown;
 };
 
 function str(v: unknown): string {
@@ -69,14 +70,21 @@ export async function POST(req: Request) {
   }
 
   const sourceBlocks = mergeSourceBlocksFromBody(b);
+  const citiAvotiSectionIndex =
+    typeof b.citiAvotiSectionIndex === "number" && Number.isInteger(b.citiAvotiSectionIndex) ?
+      Math.max(0, b.citiAvotiSectionIndex)
+    : undefined;
   const existingDraftPlain =
     str(b.existingDraftPlain).trim() ||
-    adminRichHtmlToPlainText(sourceBlockCommentsPlain(blockKeyRaw, sourceBlocks)).trim();
+    adminRichHtmlToPlainText(
+      sourceBlockCommentsPlainForGemini(blockKeyRaw, sourceBlocks, citiAvotiSectionIndex),
+    ).trim();
 
   try {
     const text = await generateSourceCommentWithGemini({
       sessionId,
       blockKey: blockKeyRaw,
+      citiAvotiSectionIndex,
       vin: str(b.vin).trim() || null,
       listingUrl: str(b.listingUrl).trim() || null,
       customerName: str(b.customerName).trim() || null,

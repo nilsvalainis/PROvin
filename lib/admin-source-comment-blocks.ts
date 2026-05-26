@@ -4,6 +4,10 @@
 import {
   autoRecordsBlockToPlainText,
   citiAvotiToPlainText,
+  emptyCitiAvotiSection,
+  type CitiAvotiBlockState,
+  type CitiAvotiSectionState,
+  type VendorAvotuBlockState,
   csddFormToPlainText,
   ltabBlockToPlainText,
   mergeSourceBlocksWithDefaults,
@@ -88,4 +92,67 @@ export function sourceBlockHasDataExcludingComments(
   sourceBlocks: WorkspaceSourceBlocks,
 ): boolean {
   return sourceBlockPlainTextExcludingComments(blockKey, sourceBlocks).length > 0;
+}
+
+export function citiAvotiSectionPlainTextExcludingComments(section: CitiAvotiSectionState): string {
+  return citiAvotiToPlainText({
+    sections: [{ ...section, comments: "" }],
+  }).trim();
+}
+
+export function sourceBlockPlainTextForGemini(
+  blockKey: GeminiSourceCommentBlockKey,
+  sourceBlocks: WorkspaceSourceBlocks,
+  citiAvotiSectionIndex?: number,
+): string {
+  if (blockKey === "citi_avoti" && citiAvotiSectionIndex != null) {
+    const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
+    const section = blocks.citi_avoti.sections[citiAvotiSectionIndex];
+    if (!section) return "";
+    return citiAvotiSectionPlainTextExcludingComments(section);
+  }
+  return sourceBlockPlainTextExcludingComments(blockKey, sourceBlocks);
+}
+
+export function sourceBlockCommentsPlainForGemini(
+  blockKey: GeminiSourceCommentBlockKey,
+  sourceBlocks: WorkspaceSourceBlocks,
+  citiAvotiSectionIndex?: number,
+): string {
+  if (blockKey === "citi_avoti" && citiAvotiSectionIndex != null) {
+    const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
+    return blocks.citi_avoti.sections[citiAvotiSectionIndex]?.comments ?? "";
+  }
+  return sourceBlockCommentsPlain(blockKey, sourceBlocks);
+}
+
+/** Pēc Gemini ģenerēšanas — ieraksta HTML komentārā (Citi avoti: konkrētā sekcija). */
+export function applySourceBlockGeneratedComment(
+  blockKey: GeminiSourceCommentBlockKey,
+  block: WorkspaceSourceBlocks[GeminiSourceCommentBlockKey],
+  html: string,
+  opts?: { citiAvotiSectionIndex?: number },
+): WorkspaceSourceBlocks[GeminiSourceCommentBlockKey] {
+  switch (blockKey) {
+    case "csdd":
+      return { ...block, comments: html };
+    case "autodna":
+    case "carvertical":
+      return { ...(block as VendorAvotuBlockState), comments: html };
+    case "citi_avoti": {
+      const b = block as CitiAvotiBlockState;
+      const sections = b.sections.length > 0 ? [...b.sections] : [emptyCitiAvotiSection()];
+      const i = Math.min(Math.max(0, opts?.citiAvotiSectionIndex ?? 0), sections.length - 1);
+      sections[i] = { ...sections[i]!, comments: html };
+      return { sections };
+    }
+    case "auto_records":
+      return { ...block, comments: html };
+    case "ltab":
+      return { ...block, comments: html };
+    case "tirgus":
+      return { ...block, comments: html };
+    default:
+      return block;
+  }
 }

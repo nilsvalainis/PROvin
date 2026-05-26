@@ -26,7 +26,7 @@ type Props = {
   sessionId: string;
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
-  geminiComment?: AdminGeminiSourceCommentSlot;
+  geminiComment?: (sectionIndex: number) => AdminGeminiSourceCommentSlot;
 };
 
 function sectionFromVendor(
@@ -164,7 +164,7 @@ export function AdminCitiAvotiSourceBlock({
                   readOnly={readOnly}
                   disabled={disabled}
                   sessionId={sessionId}
-                  geminiComment={index === 0 ? geminiComment : undefined}
+                  geminiComment={geminiComment?.(index)}
                   onChange={(vendor) => updateSection(index, sectionFromVendor(section, vendor))}
                 />
               </div>

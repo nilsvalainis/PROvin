@@ -45,3 +45,10 @@ export function orderDraftHasOrderEdits(e: OrderDraftOrderEdits | undefined): bo
   if (!e || typeof e !== "object") return false;
   return Object.keys(e).length > 0;
 }
+
+export type OrderDraftRevisionMeta = {
+  revisionId: string;
+  updatedAt: string;
+  savedAt: string;
+  reason: string;
+};
