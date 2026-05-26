@@ -46,8 +46,10 @@ import {
   buildOrderDraftWorkspaceBody,
   pickNewestWorkspaceHydration,
   pickNewestBackupSnapshotRaw,
+  preferRicherLocalWorkspaceHydration,
   serializeOrderWorkspaceSnapshot,
   parseWorkspaceSnapshotSavedAtMs,
+  workspaceHydrationFillScore,
 } from "@/lib/admin-order-workspace-persist";
 import {
   analyzeVinAndKm,
@@ -601,6 +603,10 @@ export function OrderDetailWorkspace({
   const [portfolioDropActive, setPortfolioDropActive] = useState(false);
   const portfolioDragDepth = useRef(0);
   const hydrationSnapshotRef = useRef("");
+  const workspaceDirtyRef = useRef(false);
+  const workspaceHydratedOnceRef = useRef(false);
+  const workspaceServerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const workspaceServerSaveGenRef = useRef(0);
   const wsPersistRef = useRef(ws);
   wsPersistRef.current = ws;
   const orderEditsRef = useRef({ internal: internalCommentDraft, mileage: mileageCommentDraft });
@@ -719,12 +725,13 @@ export function OrderDetailWorkspace({
 
   const updateWs = useCallback(
     (patch: Partial<WorkspacePersist>) => {
+      workspaceDirtyRef.current = true;
       setWs((prev) => {
         const next = { ...prev, ...patch };
         wsPersistRef.current = next;
         return next;
       });
-      commitWorkspaceLocalNow();
+      commitWorkspaceLocalNow({ force: true });
     },
     [commitWorkspaceLocalNow],
   );
@@ -937,6 +944,7 @@ export function OrderDetailWorkspace({
 
   const updateSourceBlock = useCallback(
     (key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]) => {
+      workspaceDirtyRef.current = true;
       setWs((prev) => {
         const next: WorkspacePersist = {
           ...prev,
@@ -945,7 +953,26 @@ export function OrderDetailWorkspace({
         wsPersistRef.current = next;
         return next;
       });
-      commitWorkspaceLocalNow();
+      commitWorkspaceLocalNow({ force: true });
+    },
+    [commitWorkspaceLocalNow],
+  );
+
+  /** Funkcionāls atjauninājums — nepieciešams pēc async PDF importa (izvairās no novecojuša `value`). */
+  const patchSourceBlock = useCallback(
+    <K extends SourceBlockKey>(key: K, patch: (prev: WorkspaceSourceBlocks[K]) => WorkspaceSourceBlocks[K]) => {
+      workspaceDirtyRef.current = true;
+      setWs((prev) => {
+        const prevBlock = prev.sourceBlocks[key];
+        const block = patch(prevBlock);
+        const next: WorkspacePersist = {
+          ...prev,
+          sourceBlocks: { ...prev.sourceBlocks, [key]: block },
+        };
+        wsPersistRef.current = next;
+        return next;
+      });
+      commitWorkspaceLocalNow({ force: true });
     },
     [commitWorkspaceLocalNow],
   );
@@ -1004,8 +1031,9 @@ export function OrderDetailWorkspace({
     portfolioRef.current = portfolio;
   }, [portfolio]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setWorkspaceHydrated(false);
+    workspaceHydratedOnceRef.current = false;
     try {
       const keyV3 = storageKeyWorkspace(payload.sessionId);
       const keyV2 = `${LEGACY_WORKSPACE_V2_PREFIX}${payload.sessionId}`;
@@ -1019,43 +1047,41 @@ export function OrderDetailWorkspace({
       const backupPick = pickNewestBackupSnapshotRaw(rawBackup);
       const backupHydrated = backupPick ? hydrateWorkspaceFromStorage(backupPick.data) : null;
 
-      const scoreWorkspace = (
+      const fillScoreFromHydrated = (
         h: NonNullable<typeof localHydrated> | NonNullable<typeof serverHydrated> | NonNullable<typeof backupHydrated>,
-      ) => {
-        let s = 0;
-        if (h.iriss.trim()) s += 2;
-        if (h.apskatesPlāns.trim()) s += 2;
-        if (h.cenasAtbilstiba.trim()) s += 2;
-        if (h.previewConfirmed) s += 1;
-        s += csddTrafficLevel(h.sourceBlocks.csdd) === "empty" ? 0 : 2;
-        s += vendorAvotuTrafficLevel(h.sourceBlocks.autodna) === "empty" ? 0 : 1;
-        s += vendorAvotuTrafficLevel(h.sourceBlocks.carvertical) === "empty" ? 0 : 1;
-        s += autoRecordsTrafficLevel(h.sourceBlocks.auto_records) === "empty" ? 0 : 1;
-        s += ltabTrafficLevel(h.sourceBlocks.ltab) === "empty" ? 0 : 1;
-        s += citiAvotiTrafficLevel(h.sourceBlocks.citi_avoti) === "empty" ? 0 : 1;
-        s += listingSectionTrafficLevel(h.sourceBlocks.tirgus, h.sourceBlocks.listing_analysis) === "empty" ? 0 : 1;
-        return s;
-      };
+      ) =>
+        workspaceHydrationFillScore({
+          sourceBlocks: h.sourceBlocks,
+          iriss: h.iriss,
+          apskatesPlāns: h.apskatesPlāns,
+          cenasAtbilstiba: h.cenasAtbilstiba,
+          previewConfirmed: Boolean(h.previewConfirmed),
+          vehicleAiExtraction: h.vehicleAiExtraction ?? null,
+          vehicleAiExtractionMeta: h.vehicleAiExtractionMeta ?? null,
+        });
+
       const candidates: {
         source: "local" | "backup" | "server";
         data: NonNullable<typeof localHydrated> | NonNullable<typeof serverHydrated> | NonNullable<typeof backupHydrated>;
         savedAtMs: number;
         fillScore: number;
       }[] = [];
+      let localCandidate: (typeof candidates)[number] | null = null;
       if (localHydrated) {
-        candidates.push({
+        localCandidate = {
           source: "local",
           data: localHydrated,
           savedAtMs: parseWorkspaceSnapshotSavedAtMs(localRaw),
-          fillScore: scoreWorkspace(localHydrated),
-        });
+          fillScore: fillScoreFromHydrated(localHydrated),
+        };
+        candidates.push(localCandidate);
       }
       if (backupHydrated && backupPick) {
         candidates.push({
           source: "backup",
           data: backupHydrated,
           savedAtMs: backupPick.savedAtMs,
-          fillScore: scoreWorkspace(backupHydrated),
+          fillScore: fillScoreFromHydrated(backupHydrated),
         });
       }
       if (serverHydrated) {
@@ -1063,11 +1089,14 @@ export function OrderDetailWorkspace({
           source: "server",
           data: serverHydrated,
           savedAtMs: parseWorkspaceSnapshotSavedAtMs(serverWorkspaceJson),
-          fillScore: scoreWorkspace(serverHydrated),
+          fillScore: fillScoreFromHydrated(serverHydrated),
         });
       }
 
-      const picked = pickNewestWorkspaceHydration(candidates);
+      const picked = preferRicherLocalWorkspaceHydration(
+        pickNewestWorkspaceHydration(candidates),
+        localCandidate,
+      );
 
       if (picked) {
         const chosen = picked.data;
@@ -1139,6 +1168,8 @@ export function OrderDetailWorkspace({
       setPdfBannerInclude({});
       hydrationSnapshotRef.current = serializeWorkspaceState(EMPTY_WORKSPACE, mergedVisibility, {});
     }
+    workspaceHydratedOnceRef.current = true;
+    workspaceDirtyRef.current = false;
     setWorkspaceHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `serverWorkspaceJson` refresh var pārrakstīt jaunāku lokālo darba zonu
   }, [payload.sessionId, payload.serverInternalComment, onPdfVisibilityChange]);
@@ -1169,6 +1200,7 @@ export function OrderDetailWorkspace({
         /* quota */
       }
       hydrationSnapshotRef.current = ser;
+      workspaceDirtyRef.current = true;
       return true;
     },
     [onPdfVisibilityChange, payload.sessionId],
@@ -1197,7 +1229,8 @@ export function OrderDetailWorkspace({
       hydrationSnapshotRef.current = snapshot;
 
       let serverOk = !orderDraftPersistenceEnabled;
-      if (orderDraftPersistenceEnabled) {
+      if (orderDraftPersistenceEnabled && workspaceHydratedOnceRef.current) {
+        const myGen = ++workspaceServerSaveGenRef.current;
         try {
           const res = await fetch("/api/admin/order-draft", {
             method: "PATCH",
@@ -1212,7 +1245,7 @@ export function OrderDetailWorkspace({
               ),
             }),
           });
-          serverOk = res.ok;
+          serverOk = myGen === workspaceServerSaveGenRef.current ? res.ok : true;
         } catch {
           serverOk = false;
         }
@@ -1227,15 +1260,18 @@ export function OrderDetailWorkspace({
     [orderDraftPersistenceEnabled, payload.sessionId, pushWorkspaceBackup, workspaceHydrated],
   );
 
-  /** Pēc PDF importa — lokāli jau saglabāts ar `updateSourceBlock`; šeit arī servera melnraksts. */
+  /** Pēc PDF importa — `patchSourceBlock` + microtask, lai `wsPersistRef` būtu sinhronizēts. */
   const persistAfterPdfImport = useCallback(() => {
-    void persistWorkspaceSnapshot({ showFlash: false });
-  }, [persistWorkspaceSnapshot]);
+    queueMicrotask(() => {
+      commitWorkspaceLocalNow({ force: true });
+      void persistWorkspaceSnapshot({ showFlash: false });
+    });
+  }, [commitWorkspaceLocalNow, persistWorkspaceSnapshot]);
 
-  const patchWorkspaceDraftToServer = useCallback(
+  const flushWorkspaceServerPatch = useCallback(
     (opts?: { keepalive?: boolean; showFlash?: boolean }) => {
-      if (!orderDraftPersistenceEnabled) return;
-      if (!opts?.keepalive && !workspaceHydrated) return;
+      if (!orderDraftPersistenceEnabled || !workspaceHydratedOnceRef.current) return;
+      const myGen = ++workspaceServerSaveGenRef.current;
       const cur = wsPersistRef.current;
       void fetch("/api/admin/order-draft", {
         method: "PATCH",
@@ -1251,18 +1287,36 @@ export function OrderDetailWorkspace({
           ),
         }),
       }).then((res) => {
+        if (myGen !== workspaceServerSaveGenRef.current) return;
         if (opts?.showFlash === false) return;
         setWorkspaceSaveServerOk(res.ok);
         if (res.ok) setWorkspaceSaveFlash(true);
       });
     },
-    [orderDraftPersistenceEnabled, payload.sessionId, workspaceHydrated],
+    [orderDraftPersistenceEnabled, payload.sessionId],
+  );
+
+  const scheduleWorkspaceServerPatch = useCallback(
+    (opts?: { immediate?: boolean; keepalive?: boolean; showFlash?: boolean }) => {
+      if (!orderDraftPersistenceEnabled || !workspaceHydratedOnceRef.current) return;
+      if (workspaceServerSaveTimerRef.current) {
+        clearTimeout(workspaceServerSaveTimerRef.current);
+        workspaceServerSaveTimerRef.current = null;
+      }
+      const run = () => flushWorkspaceServerPatch(opts);
+      if (opts?.immediate || opts?.keepalive) {
+        run();
+        return;
+      }
+      workspaceServerSaveTimerRef.current = setTimeout(run, 350);
+    },
+    [flushWorkspaceServerPatch, orderDraftPersistenceEnabled],
   );
 
   const flushPersistWorkspace = useCallback(() => {
     commitWorkspaceLocalNow({ force: true });
-    patchWorkspaceDraftToServer({ showFlash: true });
-  }, [commitWorkspaceLocalNow, patchWorkspaceDraftToServer]);
+    scheduleWorkspaceServerPatch({ immediate: true, showFlash: true });
+  }, [commitWorkspaceLocalNow, scheduleWorkspaceServerPatch]);
 
   const goWizardStep = useCallback(
     (next: number | ((prev: number) => number)) => {
@@ -1351,10 +1405,15 @@ export function OrderDetailWorkspace({
   /** SPA navigācija (portfelis / cits pasūtījums) — `beforeunload` nestrādā. */
   useEffect(() => {
     return () => {
+      if (workspaceServerSaveTimerRef.current) {
+        clearTimeout(workspaceServerSaveTimerRef.current);
+        workspaceServerSaveTimerRef.current = null;
+      }
+      if (!workspaceHydratedOnceRef.current || !workspaceDirtyRef.current) return;
       commitWorkspaceLocalNow({ force: true });
-      patchWorkspaceDraftToServer({ keepalive: true, showFlash: false });
+      flushWorkspaceServerPatch({ keepalive: true, showFlash: false });
     };
-  }, [payload.sessionId, commitWorkspaceLocalNow, patchWorkspaceDraftToServer]);
+  }, [payload.sessionId, commitWorkspaceLocalNow, flushWorkspaceServerPatch]);
 
   useEffect(() => {
     if (!workspaceHydrated) return;
@@ -1367,18 +1426,23 @@ export function OrderDetailWorkspace({
           new Date().toISOString(),
         );
         if (snapshot === hydrationSnapshotRef.current) return;
-        await persistWorkspaceSnapshot({ showFlash: false });
+        workspaceDirtyRef.current = true;
+        commitWorkspaceLocalNow({ force: true });
+        scheduleWorkspaceServerPatch({ showFlash: false });
       })();
     }, 750);
     return () => {
       window.clearTimeout(t);
-      commitWorkspaceLocalNow({ force: true });
+      if (workspaceDirtyRef.current) {
+        commitWorkspaceLocalNow({ force: true });
+      }
     };
-  }, [ws, pdfVisibility, pdfBannerInclude, workspaceHydrated, persistWorkspaceSnapshot, commitWorkspaceLocalNow]);
+  }, [ws, pdfVisibility, pdfBannerInclude, workspaceHydrated, commitWorkspaceLocalNow, scheduleWorkspaceServerPatch]);
 
   useEffect(() => {
     if (!workspaceHydrated) return;
-    commitWorkspaceLocalNow();
+    workspaceDirtyRef.current = true;
+    commitWorkspaceLocalNow({ force: true });
   }, [pdfVisibility, pdfBannerInclude, workspaceHydrated, commitWorkspaceLocalNow]);
 
   useEffect(() => {
@@ -2736,6 +2800,7 @@ export function OrderDetailWorkspace({
                 pdfInclude={pdfVisibility.autodna}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ autodna: next })}
                 geminiComment={geminiCommentSlot("autodna")}
+                onPatch={(fn) => patchSourceBlock("autodna", fn)}
                 onAfterPdfImport={persistAfterPdfImport}
               />
             </div>
@@ -2750,6 +2815,7 @@ export function OrderDetailWorkspace({
                 pdfInclude={pdfVisibility.carvertical}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ carvertical: next })}
                 geminiComment={geminiCommentSlot("carvertical")}
+                onPatch={(fn) => patchSourceBlock("carvertical", fn)}
                 onAfterPdfImport={persistAfterPdfImport}
               />
             </div>
@@ -2768,6 +2834,7 @@ export function OrderDetailWorkspace({
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
               geminiComment={geminiCommentSlot("auto_records")}
               orderVin={payload.vin}
+              onPatch={(fn) => patchSourceBlock("auto_records", fn)}
               onAfterPdfImport={persistAfterPdfImport}
             />
           </div>
@@ -2784,6 +2851,7 @@ export function OrderDetailWorkspace({
               pdfInclude={pdfVisibility.ltab}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
               geminiComment={geminiCommentSlot("ltab")}
+              onPatch={(fn) => patchSourceBlock("ltab", fn)}
               onAfterPdfImport={persistAfterPdfImport}
             />
           </div>

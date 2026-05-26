@@ -6,6 +6,14 @@ import type { PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import {
+  autoRecordsTrafficLevel,
+  citiAvotiTrafficLevel,
+  csddTrafficLevel,
+  listingSectionTrafficLevel,
+  ltabTrafficLevel,
+  vendorAvotuTrafficLevel,
+} from "@/lib/admin-block-traffic-status";
 
 export type OrderWorkspacePersistBody = {
   sourceBlocks: WorkspaceSourceBlocks;
@@ -119,4 +127,39 @@ export function pickNewestWorkspaceHydration<T>(candidates: WorkspaceHydrationPi
     return rank[b.source] - rank[a.source];
   });
   return sorted[0] ?? null;
+}
+
+/** Aizpildījuma heuristika hidratācijai — jaunāks `savedAt` ar tukšu serveri nedrīkst pārrakstīt bagātīgu localStorage. */
+export function workspaceHydrationFillScore(body: OrderWorkspacePersistBody): number {
+  let s = 0;
+  if (body.iriss.trim()) s += 2;
+  if (body.apskatesPlāns.trim()) s += 2;
+  if (body.cenasAtbilstiba.trim()) s += 2;
+  if (body.previewConfirmed) s += 1;
+  s += csddTrafficLevel(body.sourceBlocks.csdd) === "empty" ? 0 : 2;
+  s += vendorAvotuTrafficLevel(body.sourceBlocks.autodna) === "empty" ? 0 : 1;
+  s += vendorAvotuTrafficLevel(body.sourceBlocks.carvertical) === "empty" ? 0 : 1;
+  s += autoRecordsTrafficLevel(body.sourceBlocks.auto_records) === "empty" ? 0 : 1;
+  s += ltabTrafficLevel(body.sourceBlocks.ltab) === "empty" ? 0 : 1;
+  s += citiAvotiTrafficLevel(body.sourceBlocks.citi_avoti) === "empty" ? 0 : 1;
+  s +=
+    listingSectionTrafficLevel(body.sourceBlocks.tirgus, body.sourceBlocks.listing_analysis) === "empty" ? 0 : 1;
+  return s;
+}
+
+/**
+ * Ja lokālajā ir vairāk datu nekā izvēlētajā avotā, saglabāt localStorage (admin labojumi pēc PDF / navigācijas).
+ */
+export function preferRicherLocalWorkspaceHydration<T>(
+  picked: WorkspaceHydrationPick<T> | null,
+  local: WorkspaceHydrationPick<T> | null,
+): WorkspaceHydrationPick<T> | null {
+  if (!picked || !local || picked.source === "local") return picked;
+  const localScore = local.fillScore ?? 0;
+  const pickedScore = picked.fillScore ?? 0;
+  if (localScore >= pickedScore + 2) return local;
+  if (local.savedAtMs > 0 && local.savedAtMs >= picked.savedAtMs - 3000 && localScore > pickedScore) {
+    return local;
+  }
+  return picked;
 }

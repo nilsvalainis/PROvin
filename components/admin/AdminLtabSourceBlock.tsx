@@ -31,6 +31,7 @@ type Props = {
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
   geminiComment?: AdminGeminiSourceCommentSlot;
+  onPatch?: (patch: (prev: LtabBlockState) => LtabBlockState) => void;
   onAfterPdfImport?: () => void;
 };
 
@@ -44,6 +45,7 @@ export function AdminLtabSourceBlock({
   pdfInclude,
   onPdfIncludeChange,
   geminiComment,
+  onPatch,
   onAfterPdfImport,
 }: Props) {
   const setRow = (index: number, patch: Partial<LtabIncidentRow>) => {
@@ -80,20 +82,24 @@ export function AdminLtabSourceBlock({
               disabled={disabled}
               readOnly={readOnly}
               onImported={(result) => {
-                const merged = mergeLtabIncidentRows(value.rows, result.incidents);
-                const dataRows = merged.filter(ltabRowHasData);
-                const commentsNext =
-                  result.suggestedComments?.trim() ?
-                    value.comments.trim() ?
-                      `${value.comments.trim()}\n\n${result.suggestedComments.trim()}`
-                    : result.suggestedComments.trim()
-                  : value.comments;
-                onChange({
-                  ...value,
-                  pdfImportRaw: result.rawText || value.pdfImportRaw,
-                  rows: dataRows.length > 0 ? [...dataRows, emptyLtabRow()] : value.rows,
-                  comments: commentsNext,
-                });
+                const applyImport = (prev: LtabBlockState): LtabBlockState => {
+                  const merged = mergeLtabIncidentRows(prev.rows, result.incidents);
+                  const dataRows = merged.filter(ltabRowHasData);
+                  const commentsNext =
+                    result.suggestedComments?.trim() ?
+                      prev.comments.trim() ?
+                        `${prev.comments.trim()}\n\n${result.suggestedComments.trim()}`
+                      : result.suggestedComments.trim()
+                    : prev.comments;
+                  return {
+                    ...prev,
+                    pdfImportRaw: result.rawText || prev.pdfImportRaw,
+                    rows: dataRows.length > 0 ? [...dataRows, emptyLtabRow()] : prev.rows,
+                    comments: commentsNext,
+                  };
+                };
+                if (onPatch) onPatch(applyImport);
+                else onChange(applyImport(value));
                 onAfterPdfImport?.();
               }}
             />

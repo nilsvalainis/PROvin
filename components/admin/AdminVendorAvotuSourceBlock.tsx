@@ -61,6 +61,8 @@ type Props = {
   embedded?: boolean;
   /** Unikāli ID iegultām sekcijām. */
   sectionIndex?: number;
+  /** Funkcionāls atjauninājums pēc async PDF (izvairās no novecojuša `value`). */
+  onPatch?: (patch: (prev: VendorAvotuBlockState) => VendorAvotuBlockState) => void;
   /** Pēc veiksmīga PDF importa — pilns saglabājums serverī. */
   onAfterPdfImport?: () => void;
 };
@@ -78,6 +80,7 @@ export function AdminVendorAvotuSourceBlock({
   geminiComment,
   embedded = false,
   sectionIndex,
+  onPatch,
   onAfterPdfImport,
 }: Props) {
   const displayRows =
@@ -145,28 +148,32 @@ export function AdminVendorAvotuSourceBlock({
             disabled={disabled}
             readOnly={readOnly}
             onImported={(result) => {
-              const mergedMileage = mergeVendorServiceHistory(value.serviceHistory, result.serviceHistory);
-              const mergedIncidents = mergeLtabIncidentRows(value.incidents, result.incidents);
-              const checklistBase = value.pdfChecklist ?? emptySourcePdfChecklist();
-              const checklistNext = normalizeSourcePdfChecklist({
-                ...checklistBase,
-                ...result.suggestedPdfChecklist,
-              });
-              const commentsNext =
-                result.suggestedComments?.trim() ?
-                  value.comments.trim() ?
-                    `${value.comments.trim()}\n\n${result.suggestedComments.trim()}`
-                  : result.suggestedComments.trim()
-                : value.comments;
-              onChange({
-                ...value,
-                mileagePasteRaw: result.rawText || value.mileagePasteRaw,
-                serviceHistory:
-                  mergedMileage.length > 0 ? mergedMileage : [emptyAutoRecordsServiceRow()],
-                incidents: mergedIncidents.length > 0 ? mergedIncidents : value.incidents,
-                pdfChecklist: sourcePdfChecklistHasAny(checklistNext) ? checklistNext : value.pdfChecklist,
-                comments: commentsNext,
-              });
+              const applyImport = (prev: VendorAvotuBlockState): VendorAvotuBlockState => {
+                const mergedMileage = mergeVendorServiceHistory(prev.serviceHistory, result.serviceHistory);
+                const mergedIncidents = mergeLtabIncidentRows(prev.incidents, result.incidents);
+                const checklistBase = prev.pdfChecklist ?? emptySourcePdfChecklist();
+                const checklistNext = normalizeSourcePdfChecklist({
+                  ...checklistBase,
+                  ...result.suggestedPdfChecklist,
+                });
+                const commentsNext =
+                  result.suggestedComments?.trim() ?
+                    prev.comments.trim() ?
+                      `${prev.comments.trim()}\n\n${result.suggestedComments.trim()}`
+                    : result.suggestedComments.trim()
+                  : prev.comments;
+                return {
+                  ...prev,
+                  mileagePasteRaw: result.rawText || prev.mileagePasteRaw,
+                  serviceHistory:
+                    mergedMileage.length > 0 ? mergedMileage : [emptyAutoRecordsServiceRow()],
+                  incidents: mergedIncidents.length > 0 ? mergedIncidents : prev.incidents,
+                  pdfChecklist: sourcePdfChecklistHasAny(checklistNext) ? checklistNext : prev.pdfChecklist,
+                  comments: commentsNext,
+                };
+              };
+              if (onPatch) onPatch(applyImport);
+              else onChange(applyImport(value));
               onAfterPdfImport?.();
             }}
           />

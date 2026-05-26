@@ -59,6 +59,7 @@ type Props = {
   geminiComment?: AdminGeminiSourceCommentSlot;
   /** Pasūtījuma VIN no galvenes — Outvin „Ielādēt”. */
   orderVin?: string | null;
+  onPatch?: (patch: (prev: AutoRecordsBlockState) => AutoRecordsBlockState) => void;
   onAfterPdfImport?: () => void;
 };
 
@@ -73,6 +74,7 @@ export function AdminAutoRecordsSourceBlock({
   onPdfIncludeChange,
   geminiComment,
   orderVin,
+  onPatch,
   onAfterPdfImport,
 }: Props) {
   const mergeVehicleInfoFromText = (raw: string, base: AutoRecordsBlockState): AutoRecordsBlockState => {
@@ -156,39 +158,43 @@ export function AdminAutoRecordsSourceBlock({
           disabled={disabled}
           readOnly={readOnly}
           onImported={(result) => {
-            const merged = mergeAutoRecordsServiceHistory(value.serviceHistory, result.serviceHistory);
-            const checklistBase = value.pdfChecklist ?? emptySourcePdfChecklist();
-            const checklistNext = normalizeSourcePdfChecklist({
-              ...checklistBase,
-              ...result.suggestedPdfChecklist,
-            });
+            const applyImport = (prev: AutoRecordsBlockState): AutoRecordsBlockState => {
+              const merged = mergeAutoRecordsServiceHistory(prev.serviceHistory, result.serviceHistory);
+              const checklistBase = prev.pdfChecklist ?? emptySourcePdfChecklist();
+              const checklistNext = normalizeSourcePdfChecklist({
+                ...checklistBase,
+                ...result.suggestedPdfChecklist,
+              });
 
-            const patchVehicleInfo = result.suggestedOutvinVehicleInfo;
-            const reportBase = value.outvinReport ?? emptyOutvinDealerReport();
-            let outvinReportNext = value.outvinReport;
-            if (patchVehicleInfo && Object.values(patchVehicleInfo).some((v) => typeof v === "string" && v.trim())) {
-              const nextVehicleInfo: OutvinVehicleInfo = { ...reportBase.vehicleInfo };
-              for (const [k, v] of Object.entries(patchVehicleInfo) as [keyof OutvinVehicleInfo, string][]) {
-                if (typeof v === "string" && v.trim()) nextVehicleInfo[k] = v.trim();
+              const patchVehicleInfo = result.suggestedOutvinVehicleInfo;
+              const reportBase = prev.outvinReport ?? emptyOutvinDealerReport();
+              let outvinReportNext = prev.outvinReport;
+              if (patchVehicleInfo && Object.values(patchVehicleInfo).some((v) => typeof v === "string" && v.trim())) {
+                const nextVehicleInfo: OutvinVehicleInfo = { ...reportBase.vehicleInfo };
+                for (const [k, v] of Object.entries(patchVehicleInfo) as [keyof OutvinVehicleInfo, string][]) {
+                  if (typeof v === "string" && v.trim()) nextVehicleInfo[k] = v.trim();
+                }
+                if (outvinVehicleInfoHasData(nextVehicleInfo)) {
+                  outvinReportNext = { ...reportBase, vehicleInfo: nextVehicleInfo };
+                }
               }
-              if (outvinVehicleInfoHasData(nextVehicleInfo)) {
-                outvinReportNext = { ...reportBase, vehicleInfo: nextVehicleInfo };
-              }
-            }
 
-            onChange({
-              ...value,
-              rawUnprocessedData: result.rawUnprocessedData || value.rawUnprocessedData,
-              serviceHistory: merged.length > 0 ? merged : [emptyAutoRecordsServiceRow()],
-              pdfChecklist: sourcePdfChecklistHasAny(checklistNext) ? checklistNext : value.pdfChecklist,
-              comments:
-                result.suggestedComments?.trim() ?
-                  value.comments.trim() ?
-                    `${value.comments.trim()}\n\n${result.suggestedComments.trim()}`
-                  : result.suggestedComments.trim()
-                : value.comments,
-              ...(outvinReportNext ? { outvinReport: outvinReportNext } : {}),
-            });
+              return {
+                ...prev,
+                rawUnprocessedData: result.rawUnprocessedData || prev.rawUnprocessedData,
+                serviceHistory: merged.length > 0 ? merged : [emptyAutoRecordsServiceRow()],
+                pdfChecklist: sourcePdfChecklistHasAny(checklistNext) ? checklistNext : prev.pdfChecklist,
+                comments:
+                  result.suggestedComments?.trim() ?
+                    prev.comments.trim() ?
+                      `${prev.comments.trim()}\n\n${result.suggestedComments.trim()}`
+                    : result.suggestedComments.trim()
+                  : prev.comments,
+                ...(outvinReportNext ? { outvinReport: outvinReportNext } : {}),
+              };
+            };
+            if (onPatch) onPatch(applyImport);
+            else onChange(applyImport(value));
             onAfterPdfImport?.();
           }}
         />
