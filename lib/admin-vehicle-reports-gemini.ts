@@ -1,6 +1,6 @@
 import "server-only";
 
-import { geminiGenerateJsonText, type GeminiUserPart } from "@/lib/admin-gemini";
+import { GEMINI_MODEL_PRO, geminiGenerateJsonText, type GeminiUserPart } from "@/lib/admin-gemini";
 import { parseVehicleAIExtraction } from "@/lib/vehicle-ai-extraction-parse";
 import type { VehicleAIExtraction } from "@/lib/vehicle-ai-extraction-types";
 
@@ -105,7 +105,7 @@ export async function extractVehicleDataWithGemini(input: {
   }
 
   const raw = await geminiGenerateJsonText({
-    model: "gemini-2.5-pro",
+    model: GEMINI_MODEL_PRO,
     systemInstruction: VEHICLE_AI_EXTRACTION_SYSTEM,
     extraParts,
     userPrompt: buildVehicleReportsUserPrompt(input.textBundles, pdfs.length),

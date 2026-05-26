@@ -1,6 +1,10 @@
 import "server-only";
 
-import { geminiGenerateJsonText, type GeminiUserPart } from "@/lib/admin-gemini";
+import {
+  GEMINI_MODEL_FLASH,
+  geminiGenerateJsonText,
+  type GeminiUserPart,
+} from "@/lib/admin-gemini";
 import type { SourcePdfChecklist } from "@/lib/admin-source-blocks";
 import {
   autoRecordsRowHasData,
@@ -250,7 +254,7 @@ export async function extractSourcePdfWithGemini(opts: {
 
   if (target === "auto_records") {
     const raw = await geminiGenerateJsonText({
-      model: "gemini-2.5-flash",
+      model: GEMINI_MODEL_FLASH,
       systemInstruction: AUTO_RECORDS_SYSTEM,
       extraParts,
       userPrompt: `Extract AUTO RECORDS fields from this PDF.${textSection}`,
@@ -269,7 +273,7 @@ export async function extractSourcePdfWithGemini(opts: {
 
   const vendorTarget = target as HistoryVendorPdfTarget;
   const raw = await geminiGenerateJsonText({
-    model: "gemini-2.5-flash",
+    model: GEMINI_MODEL_FLASH,
     systemInstruction: VENDOR_SYSTEM,
     extraParts,
     userPrompt: `${TARGET_USER[vendorTarget]}\n\nExtract all fields.${textSection}`,
