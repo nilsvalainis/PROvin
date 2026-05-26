@@ -44,6 +44,9 @@ function humanizeGeminiDetail(raw: string): string {
   if (/429|quota|rate limit|RESOURCE_EXHAUSTED/i.test(detail)) {
     return "Gemini API kvota pārsniegta — uzgaidi vai pārbaudi Google AI Studio billing";
   }
+  if (/503|high\s+demand|SERVICE_UNAVAILABLE|pārslogots/i.test(detail)) {
+    return "Gemini īslaicīgi pārslogots — mēģini vēlreiz pēc brīža";
+  }
   if (/API key not valid|API_KEY_INVALID|invalid.*api.?key/i.test(detail)) {
     return "Nederīga GEMINI_API_KEY — ģenerē jaunu atslēgu Google AI Studio";
   }
