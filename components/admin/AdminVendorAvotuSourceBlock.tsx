@@ -63,6 +63,7 @@ type Props = {
   sectionIndex?: number;
   /** Funkcionāls atjauninājums pēc async PDF (izvairās no novecojuša `value`). */
   onPatch?: (patch: (prev: VendorAvotuBlockState) => VendorAvotuBlockState) => void;
+  onParseActiveChange?: (active: boolean) => void;
   /** Pēc veiksmīga PDF importa — pilns saglabājums serverī. */
   onAfterPdfImport?: () => void;
 };
@@ -81,6 +82,7 @@ export function AdminVendorAvotuSourceBlock({
   embedded = false,
   sectionIndex,
   onPatch,
+  onParseActiveChange,
   onAfterPdfImport,
 }: Props) {
   const displayRows =
@@ -147,6 +149,7 @@ export function AdminVendorAvotuSourceBlock({
             target={blockKey}
             disabled={disabled}
             readOnly={readOnly}
+            onParseActiveChange={onParseActiveChange}
             onImported={(result) => {
               const applyImport = (prev: VendorAvotuBlockState): VendorAvotuBlockState => {
                 const mergedMileage = mergeVendorServiceHistory(prev.serviceHistory, result.serviceHistory);

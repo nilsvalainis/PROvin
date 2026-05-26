@@ -8,9 +8,10 @@ type Props = {
   disabled?: boolean;
   readOnly?: boolean;
   onImported: (result: AutoRecordsPdfParseResult & { fileName?: string }) => void;
+  onParseActiveChange?: (active: boolean) => void;
 };
 
-export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported }: Props) {
+export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported, onParseActiveChange }: Props) {
   const inputId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
@@ -24,6 +25,7 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported }: Pr
     async (file: File) => {
       if (disabled || readOnly || busy) return;
       setBusy(true);
+      onParseActiveChange?.(true);
       setError(null);
       setNotice(null);
       setStatusLine("Nolasām PDF teksta slāni…");
@@ -83,10 +85,11 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported }: Pr
         setError("Neizdevās savienoties ar serveri");
       } finally {
         setBusy(false);
+        onParseActiveChange?.(false);
         setStatusLine(null);
       }
     },
-    [busy, disabled, onImported, readOnly],
+    [busy, disabled, onImported, onParseActiveChange, readOnly],
   );
 
   const onFiles = useCallback(

@@ -32,6 +32,7 @@ type Props = {
   onPdfIncludeChange: (next: boolean) => void;
   geminiComment?: AdminGeminiSourceCommentSlot;
   onPatch?: (patch: (prev: LtabBlockState) => LtabBlockState) => void;
+  onParseActiveChange?: (active: boolean) => void;
   onAfterPdfImport?: () => void;
 };
 
@@ -46,6 +47,7 @@ export function AdminLtabSourceBlock({
   onPdfIncludeChange,
   geminiComment,
   onPatch,
+  onParseActiveChange,
   onAfterPdfImport,
 }: Props) {
   const setRow = (index: number, patch: Partial<LtabIncidentRow>) => {
@@ -81,6 +83,7 @@ export function AdminLtabSourceBlock({
               target="ltab"
               disabled={disabled}
               readOnly={readOnly}
+              onParseActiveChange={onParseActiveChange}
               onImported={(result) => {
                 const applyImport = (prev: LtabBlockState): LtabBlockState => {
                   const merged = mergeLtabIncidentRows(prev.rows, result.incidents);

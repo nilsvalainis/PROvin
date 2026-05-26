@@ -5,14 +5,22 @@ import type { ProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
 import type { PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
-import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import {
+  SOURCE_BLOCK_KEYS,
+  mergeSourceBlocksWithDefaults,
+  type SourceBlockKey,
+  type WorkspaceSourceBlocks,
+} from "@/lib/admin-source-blocks";
 import {
   autoRecordsTrafficLevel,
   citiAvotiTrafficLevel,
   csddTrafficLevel,
+  listingAnalysisTrafficLevel,
   listingSectionTrafficLevel,
   ltabTrafficLevel,
+  tirgusTrafficLevel,
   vendorAvotuTrafficLevel,
+  type TrafficFillLevel,
 } from "@/lib/admin-block-traffic-status";
 
 export type OrderWorkspacePersistBody = {
@@ -47,22 +55,129 @@ export function parseWorkspaceSnapshotSavedAtMs(raw: string | null | undefined):
   }
 }
 
+const TRAFFIC_RANK: Record<TrafficFillLevel, number> = { empty: 0, partial: 1, complete: 2 };
+
+function sourceBlockTrafficRank(key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]): number {
+  switch (key) {
+    case "csdd":
+      return TRAFFIC_RANK[csddTrafficLevel(block as WorkspaceSourceBlocks["csdd"])];
+    case "autodna":
+    case "carvertical":
+      return TRAFFIC_RANK[vendorAvotuTrafficLevel(block as WorkspaceSourceBlocks["autodna"])];
+    case "auto_records":
+      return TRAFFIC_RANK[autoRecordsTrafficLevel(block as WorkspaceSourceBlocks["auto_records"])];
+    case "ltab":
+      return TRAFFIC_RANK[ltabTrafficLevel(block as WorkspaceSourceBlocks["ltab"])];
+    case "citi_avoti":
+      return TRAFFIC_RANK[citiAvotiTrafficLevel(block as WorkspaceSourceBlocks["citi_avoti"])];
+    case "tirgus":
+      return TRAFFIC_RANK[tirgusTrafficLevel(block as WorkspaceSourceBlocks["tirgus"])];
+    case "listing_analysis":
+      return TRAFFIC_RANK[listingAnalysisTrafficLevel(block as WorkspaceSourceBlocks["listing_analysis"])];
+    default:
+      return 0;
+  }
+}
+
+/** Cik atslēgu ir `sourceBlocks` pirms merge (zemāks = nepilnīgs / bīstams melnraksts). */
+export function countRawSourceBlockKeys(partial: unknown): number {
+  if (!partial || typeof partial !== "object") return 0;
+  const o = partial as Record<string, unknown>;
+  let n = 0;
+  for (const key of SOURCE_BLOCK_KEYS) {
+    if (o[key] != null && typeof o[key] === "object") n += 1;
+  }
+  return n;
+}
+
+function pickRicherTextField(incoming: string, baseline: string): string {
+  const i = incoming.trim();
+  const b = baseline.trim();
+  if (!b) return incoming;
+  if (!i) return baseline;
+  return i.length >= b.length ? incoming : baseline;
+}
+
+function pickRicherSourceBlock<K extends SourceBlockKey>(
+  key: K,
+  incoming: WorkspaceSourceBlocks[K],
+  baseline: WorkspaceSourceBlocks[K],
+): WorkspaceSourceBlocks[K] {
+  const inRank = sourceBlockTrafficRank(key, incoming);
+  const baseRank = sourceBlockTrafficRank(key, baseline);
+  if (inRank > baseRank) return incoming;
+  if (baseRank > inRank) return baseline;
+  return incoming;
+}
+
+/**
+ * Apvieno ienākošo darba zonu ar pēdējo zināmo labo momentuzņēmumu — nekad neiztukšo bloku,
+ * kurā baseline jau bija dati (piem. saglabā AutoDNA, ja saglabā tikai Citi avoti).
+ */
+export function coalesceOrderWorkspacePersistBody(
+  incoming: OrderWorkspacePersistBody,
+  baseline: OrderWorkspacePersistBody | null | undefined,
+): OrderWorkspacePersistBody {
+  const incomingBlocks = mergeSourceBlocksWithDefaults(incoming.sourceBlocks);
+  if (!baseline) {
+    return { ...incoming, sourceBlocks: incomingBlocks };
+  }
+  const baselineBlocks = mergeSourceBlocksWithDefaults(baseline.sourceBlocks);
+  const mergedBlocks: WorkspaceSourceBlocks = {
+    csdd: pickRicherSourceBlock("csdd", incomingBlocks.csdd, baselineBlocks.csdd),
+    autodna: pickRicherSourceBlock("autodna", incomingBlocks.autodna, baselineBlocks.autodna),
+    carvertical: pickRicherSourceBlock("carvertical", incomingBlocks.carvertical, baselineBlocks.carvertical),
+    auto_records: pickRicherSourceBlock("auto_records", incomingBlocks.auto_records, baselineBlocks.auto_records),
+    ltab: pickRicherSourceBlock("ltab", incomingBlocks.ltab, baselineBlocks.ltab),
+    tirgus: pickRicherSourceBlock("tirgus", incomingBlocks.tirgus, baselineBlocks.tirgus),
+    citi_avoti: pickRicherSourceBlock("citi_avoti", incomingBlocks.citi_avoti, baselineBlocks.citi_avoti),
+    listing_analysis: pickRicherSourceBlock(
+      "listing_analysis",
+      incomingBlocks.listing_analysis,
+      baselineBlocks.listing_analysis,
+    ),
+  };
+  return {
+    sourceBlocks: mergeSourceBlocksWithDefaults(mergedBlocks),
+    iriss: pickRicherTextField(incoming.iriss, baseline.iriss),
+    apskatesPlāns: pickRicherTextField(incoming.apskatesPlāns, baseline.apskatesPlāns),
+    cenasAtbilstiba: pickRicherTextField(incoming.cenasAtbilstiba, baseline.cenasAtbilstiba),
+    previewConfirmed: incoming.previewConfirmed || baseline.previewConfirmed,
+    vehicleAiExtraction: incoming.vehicleAiExtraction ?? baseline.vehicleAiExtraction,
+    vehicleAiExtractionMeta: incoming.vehicleAiExtractionMeta ?? baseline.vehicleAiExtractionMeta,
+  };
+}
+
+/** Vai ienākošais melnraksts ir būtiski „tukšāks” par baseline (noraida regresīvu PATCH). */
+export function isRegressiveWorkspacePersist(
+  incoming: OrderWorkspacePersistBody,
+  baseline: OrderWorkspacePersistBody | null | undefined,
+): boolean {
+  if (!baseline) return false;
+  const coalesced = coalesceOrderWorkspacePersistBody(incoming, baseline);
+  const inScore = workspaceHydrationFillScore(coalesced);
+  const baseScore = workspaceHydrationFillScore(baseline);
+  return inScore + 2 < baseScore;
+}
+
 /** API / server melnraksts — pilns darba zonas JSON (iesk. AI ekstrakciju). */
 export function buildOrderDraftWorkspaceBody(
   body: OrderWorkspacePersistBody,
   pdf: PdfVisibilitySettings,
   bannerInclude: ProvinBannerPdfInclude,
+  baseline?: OrderWorkspacePersistBody | null,
 ): OrderDraftWorkspaceBody {
+  const safe = coalesceOrderWorkspacePersistBody(body, baseline ?? null);
   return {
-    sourceBlocks: body.sourceBlocks,
-    iriss: body.iriss,
-    apskatesPlāns: body.apskatesPlāns,
-    cenasAtbilstiba: body.cenasAtbilstiba,
-    previewConfirmed: body.previewConfirmed,
+    sourceBlocks: safe.sourceBlocks,
+    iriss: safe.iriss,
+    apskatesPlāns: safe.apskatesPlāns,
+    cenasAtbilstiba: safe.cenasAtbilstiba,
+    previewConfirmed: safe.previewConfirmed,
     pdfVisibility: pdf,
     pdfBannerInclude: bannerInclude,
-    vehicleAiExtraction: body.vehicleAiExtraction,
-    vehicleAiExtractionMeta: body.vehicleAiExtractionMeta,
+    vehicleAiExtraction: safe.vehicleAiExtraction,
+    vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
   };
 }
 
@@ -95,17 +210,19 @@ export function serializeOrderWorkspaceSnapshot(
   pdf: PdfVisibilitySettings,
   bannerInclude: ProvinBannerPdfInclude,
   savedAt = new Date().toISOString(),
+  baseline?: OrderWorkspacePersistBody | null,
 ): string {
+  const safe = coalesceOrderWorkspacePersistBody(body, baseline ?? null);
   return JSON.stringify({
-    sourceBlocks: body.sourceBlocks,
-    iriss: body.iriss,
-    apskatesPlāns: body.apskatesPlāns,
-    cenasAtbilstiba: body.cenasAtbilstiba,
-    previewConfirmed: body.previewConfirmed,
+    sourceBlocks: safe.sourceBlocks,
+    iriss: safe.iriss,
+    apskatesPlāns: safe.apskatesPlāns,
+    cenasAtbilstiba: safe.cenasAtbilstiba,
+    previewConfirmed: safe.previewConfirmed,
     pdfVisibility: pdf,
     pdfBannerInclude: bannerInclude,
-    vehicleAiExtraction: body.vehicleAiExtraction,
-    vehicleAiExtractionMeta: body.vehicleAiExtractionMeta,
+    vehicleAiExtraction: safe.vehicleAiExtraction,
+    vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
     savedAt,
   });
 }
@@ -127,6 +244,30 @@ export function pickNewestWorkspaceHydration<T>(candidates: WorkspaceHydrationPi
     return rank[b.source] - rank[a.source];
   });
   return sorted[0] ?? null;
+}
+
+/**
+ * Ja `localStorage` ir jaunāks par izvēlēto avotu, vienmēr uzvar pārlūks —
+ * servera vecāks / nepilnīgs JSON nedrīkst pārrakstīt lokālo.
+ */
+export function applyStrictLocalTimestampHydration<T>(
+  picked: WorkspaceHydrationPick<T> | null,
+  local: WorkspaceHydrationPick<T> | null,
+): WorkspaceHydrationPick<T> | null {
+  if (!picked || !local || picked.source === "local") return picked;
+  if (local.savedAtMs > 0 && picked.savedAtMs > 0 && local.savedAtMs > picked.savedAtMs) {
+    return local;
+  }
+  return picked;
+}
+
+/** Nepilnīgs `sourceBlocks` (< 4 atslēgas) ar augstu citu avotu score — aizdomīgs melnraksts. */
+export function isSuspiciouslyIncompleteWorkspaceSnapshot(
+  rawSourceBlocks: unknown,
+  fillScore: number,
+): boolean {
+  const keyCount = countRawSourceBlockKeys(rawSourceBlocks);
+  return keyCount > 0 && keyCount < 4 && fillScore <= 3;
 }
 
 /** Aizpildījuma heuristika hidratācijai — jaunāks `savedAt` ar tukšu serveri nedrīkst pārrakstīt bagātīgu localStorage. */
@@ -162,4 +303,30 @@ export function preferRicherLocalWorkspaceHydration<T>(
     return local;
   }
   return picked;
+}
+
+/** Hidratācijas izvēle: laiks + bagātāks local + nepilnīgu servera snapshot noraidīšana. */
+export function pickWorkspaceHydrationCandidate<T>(
+  candidates: WorkspaceHydrationPick<T>[],
+  local: WorkspaceHydrationPick<T> | null,
+  rawSourceBlocksBySource?: Partial<Record<WorkspaceHydrationSource, unknown>>,
+): WorkspaceHydrationPick<T> | null {
+  const filtered = candidates.filter((c) => {
+    const raw = rawSourceBlocksBySource?.[c.source];
+    if (raw == null) return true;
+    return !isSuspiciouslyIncompleteWorkspaceSnapshot(raw, c.fillScore ?? 0);
+  });
+  const pool = filtered.length > 0 ? filtered : candidates;
+  let picked = pickNewestWorkspaceHydration(pool);
+  picked = applyStrictLocalTimestampHydration(picked, local);
+  picked = preferRicherLocalWorkspaceHydration(picked, local);
+  return picked;
+}
+
+/** Apvieno divus hidratētos ierakstus bloku pa blokam (drošs reload). */
+export function mergeHydratedWorkspaceBodies(
+  primary: OrderWorkspacePersistBody,
+  secondary: OrderWorkspacePersistBody,
+): OrderWorkspacePersistBody {
+  return coalesceOrderWorkspacePersistBody(primary, secondary);
 }

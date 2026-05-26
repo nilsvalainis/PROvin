@@ -44,12 +44,13 @@ import {
 } from "@/lib/admin-portfolio-idb";
 import {
   buildOrderDraftWorkspaceBody,
-  pickNewestWorkspaceHydration,
+  coalesceOrderWorkspacePersistBody,
   pickNewestBackupSnapshotRaw,
-  preferRicherLocalWorkspaceHydration,
+  pickWorkspaceHydrationCandidate,
   serializeOrderWorkspaceSnapshot,
   parseWorkspaceSnapshotSavedAtMs,
   workspaceHydrationFillScore,
+  type OrderWorkspacePersistBody,
 } from "@/lib/admin-order-workspace-persist";
 import {
   analyzeVinAndKm,
@@ -350,13 +351,27 @@ function formatBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function workspaceToPersistBody(ws: WorkspacePersist): OrderWorkspacePersistBody {
+  return {
+    sourceBlocks: ws.sourceBlocks,
+    iriss: ws.iriss,
+    apskatesPlāns: ws.apskatesPlāns,
+    cenasAtbilstiba: ws.cenasAtbilstiba,
+    previewConfirmed: ws.previewConfirmed,
+    vehicleAiExtraction: ws.vehicleAiExtraction,
+    vehicleAiExtractionMeta: ws.vehicleAiExtractionMeta,
+  };
+}
+
 function serializeWorkspaceState(
   ws: WorkspacePersist,
   pdf: PdfVisibilitySettings,
   bannerInclude: ProvinBannerPdfInclude,
   savedAt?: string,
+  baseline?: OrderWorkspacePersistBody | null,
 ): string {
-  return serializeOrderWorkspaceSnapshot(ws, pdf, bannerInclude, savedAt);
+  const safe = coalesceOrderWorkspacePersistBody(workspaceToPersistBody(ws), baseline ?? null);
+  return serializeOrderWorkspaceSnapshot(safe, pdf, bannerInclude, savedAt, baseline);
 }
 
 const NOTIFY_ALLOWED_MIME = new Set([
@@ -607,8 +622,9 @@ export function OrderDetailWorkspace({
   const workspaceHydratedOnceRef = useRef(false);
   const workspaceServerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const workspaceServerSaveGenRef = useRef(0);
+  const workspaceParseActiveCountRef = useRef(0);
+  const lastGoodPersistBodyRef = useRef<OrderWorkspacePersistBody | null>(null);
   const wsPersistRef = useRef(ws);
-  wsPersistRef.current = ws;
   const orderEditsRef = useRef({ internal: internalCommentDraft, mileage: mileageCommentDraft });
   orderEditsRef.current = { internal: internalCommentDraft, mileage: mileageCommentDraft };
   const pdfVisibilityRef = useRef(pdfVisibility);
@@ -684,6 +700,33 @@ export function OrderDetailWorkspace({
     [payload.vin, ws.sourceBlocks, portfolio],
   );
 
+  const readPersistBaseline = useCallback((): OrderWorkspacePersistBody | null => {
+    if (lastGoodPersistBodyRef.current) return lastGoodPersistBodyRef.current;
+    const raw = hydrationSnapshotRef.current;
+    if (!raw) return null;
+    const h = hydrateWorkspaceFromStorage(raw);
+    if (!h) return null;
+    return {
+      sourceBlocks: h.sourceBlocks,
+      iriss: h.iriss,
+      apskatesPlāns: h.apskatesPlāns,
+      cenasAtbilstiba: h.cenasAtbilstiba,
+      previewConfirmed: Boolean(h.previewConfirmed),
+      vehicleAiExtraction: h.vehicleAiExtraction ?? null,
+      vehicleAiExtractionMeta: h.vehicleAiExtractionMeta ?? null,
+    };
+  }, []);
+
+  const onWorkspaceParseActiveChange = useCallback((active: boolean) => {
+    workspaceParseActiveCountRef.current += active ? 1 : -1;
+    if (workspaceParseActiveCountRef.current < 0) workspaceParseActiveCountRef.current = 0;
+  }, []);
+
+  const isWorkspaceAutosaveBlocked = useCallback(
+    () => workspaceParseActiveCountRef.current > 0,
+    [],
+  );
+
   const pushWorkspaceBackup = useCallback(
     (snapshot: string) => {
       try {
@@ -705,12 +748,25 @@ export function OrderDetailWorkspace({
 
   const commitWorkspaceLocalNow = useCallback((opts?: { force?: boolean }) => {
     if (!opts?.force && !workspaceHydrated) return;
-    const cur = wsPersistRef.current;
+    const baseline = readPersistBaseline();
+    const safe = coalesceOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current), baseline);
+    wsPersistRef.current = {
+      ...wsPersistRef.current,
+      sourceBlocks: safe.sourceBlocks,
+      iriss: safe.iriss,
+      apskatesPlāns: safe.apskatesPlāns,
+      cenasAtbilstiba: safe.cenasAtbilstiba,
+      previewConfirmed: safe.previewConfirmed,
+      vehicleAiExtraction: safe.vehicleAiExtraction,
+      vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
+    };
+    lastGoodPersistBodyRef.current = safe;
     const snapshot = serializeWorkspaceState(
-      cur,
+      wsPersistRef.current,
       pdfVisibilityRef.current,
       pdfBannerIncludeRef.current,
       new Date().toISOString(),
+      baseline,
     );
     try {
       localStorage.setItem(storageKeyWorkspace(payload.sessionId), snapshot);
@@ -721,7 +777,7 @@ export function OrderDetailWorkspace({
     }
     pushWorkspaceBackup(snapshot);
     hydrationSnapshotRef.current = snapshot;
-  }, [payload.sessionId, pushWorkspaceBackup, workspaceHydrated]);
+  }, [payload.sessionId, pushWorkspaceBackup, readPersistBaseline, workspaceHydrated]);
 
   const updateWs = useCallback(
     (patch: Partial<WorkspacePersist>) => {
@@ -1093,14 +1149,25 @@ export function OrderDetailWorkspace({
         });
       }
 
-      const picked = preferRicherLocalWorkspaceHydration(
-        pickNewestWorkspaceHydration(candidates),
-        localCandidate,
-      );
+      const parseRawSourceBlocks = (raw: string | null | undefined): unknown => {
+        if (!raw) return undefined;
+        try {
+          const p = JSON.parse(raw) as { sourceBlocks?: unknown };
+          return p.sourceBlocks;
+        } catch {
+          return undefined;
+        }
+      };
+
+      const picked = pickWorkspaceHydrationCandidate(candidates, localCandidate, {
+        local: parseRawSourceBlocks(localRaw),
+        backup: backupPick ? parseRawSourceBlocks(backupPick.data) : undefined,
+        server: parseRawSourceBlocks(serverWorkspaceJson),
+      });
 
       if (picked) {
         const chosen = picked.data;
-        const hydratedWs: WorkspacePersist = {
+        const pickedBody: OrderWorkspacePersistBody = {
           sourceBlocks: chosen.sourceBlocks,
           iriss: chosen.iriss,
           apskatesPlāns: chosen.apskatesPlāns,
@@ -1109,18 +1176,49 @@ export function OrderDetailWorkspace({
           vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
           vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
         };
+        const localBody =
+          localCandidate ?
+            ({
+              sourceBlocks: localCandidate.data.sourceBlocks,
+              iriss: localCandidate.data.iriss,
+              apskatesPlāns: localCandidate.data.apskatesPlāns,
+              cenasAtbilstiba: localCandidate.data.cenasAtbilstiba,
+              previewConfirmed: Boolean(localCandidate.data.previewConfirmed),
+              vehicleAiExtraction: localCandidate.data.vehicleAiExtraction ?? null,
+              vehicleAiExtractionMeta: localCandidate.data.vehicleAiExtractionMeta ?? null,
+            } satisfies OrderWorkspacePersistBody)
+          : null;
+        const mergedBody = coalesceOrderWorkspacePersistBody(pickedBody, localBody);
+        const hydratedWs: WorkspacePersist = {
+          sourceBlocks: mergedBody.sourceBlocks,
+          iriss: mergedBody.iriss,
+          apskatesPlāns: mergedBody.apskatesPlāns,
+          cenasAtbilstiba: mergedBody.cenasAtbilstiba,
+          previewConfirmed: mergedBody.previewConfirmed,
+          vehicleAiExtraction: mergedBody.vehicleAiExtraction,
+          vehicleAiExtractionMeta: mergedBody.vehicleAiExtractionMeta,
+        };
         wsPersistRef.current = hydratedWs;
         setWs(hydratedWs);
+        lastGoodPersistBodyRef.current = mergedBody;
         const mergedVisibility = mergePdfVisibility(chosen.pdfVisibility);
         const mergedBannerInclude = mergeProvinBannerPdfInclude(chosen.pdfBannerInclude);
         onPdfVisibilityChange(mergedVisibility);
         setPdfBannerInclude(mergedBannerInclude);
-        hydrationSnapshotRef.current = serializeWorkspaceState(hydratedWs, mergedVisibility, mergedBannerInclude);
+        hydrationSnapshotRef.current = serializeWorkspaceState(
+          hydratedWs,
+          mergedVisibility,
+          mergedBannerInclude,
+          undefined,
+          localBody,
+        );
         const localSavedAtMs = parseWorkspaceSnapshotSavedAtMs(localRaw);
         const shouldOverwriteLocal =
           !rawV3 ||
           (picked.source !== "local" &&
-            (localSavedAtMs <= 0 || picked.savedAtMs <= 0 || picked.savedAtMs >= localSavedAtMs));
+            localSavedAtMs > 0 &&
+            picked.savedAtMs > 0 &&
+            picked.savedAtMs >= localSavedAtMs);
         if (shouldOverwriteLocal) {
           try {
             localStorage.setItem(keyV3, hydrationSnapshotRef.current);
@@ -1200,6 +1298,15 @@ export function OrderDetailWorkspace({
         /* quota */
       }
       hydrationSnapshotRef.current = ser;
+      lastGoodPersistBodyRef.current = {
+        sourceBlocks: hydratedWs.sourceBlocks,
+        iriss: hydratedWs.iriss,
+        apskatesPlāns: hydratedWs.apskatesPlāns,
+        cenasAtbilstiba: hydratedWs.cenasAtbilstiba,
+        previewConfirmed: hydratedWs.previewConfirmed,
+        vehicleAiExtraction: hydratedWs.vehicleAiExtraction,
+        vehicleAiExtractionMeta: hydratedWs.vehicleAiExtractionMeta,
+      };
       workspaceDirtyRef.current = true;
       return true;
     },
@@ -1209,13 +1316,27 @@ export function OrderDetailWorkspace({
   const persistWorkspaceSnapshot = useCallback(
     async (opts?: { showFlash?: boolean }): Promise<boolean> => {
       if (!workspaceHydrated) return false;
-      const cur = wsPersistRef.current;
+      if (isWorkspaceAutosaveBlocked()) return true;
+      const baseline = readPersistBaseline();
+      const safe = coalesceOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current), baseline);
+      wsPersistRef.current = {
+        ...wsPersistRef.current,
+        sourceBlocks: safe.sourceBlocks,
+        iriss: safe.iriss,
+        apskatesPlāns: safe.apskatesPlāns,
+        cenasAtbilstiba: safe.cenasAtbilstiba,
+        previewConfirmed: safe.previewConfirmed,
+        vehicleAiExtraction: safe.vehicleAiExtraction,
+        vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
+      };
+      lastGoodPersistBodyRef.current = safe;
       const savedAt = new Date().toISOString();
       const snapshot = serializeWorkspaceState(
-        cur,
+        wsPersistRef.current,
         pdfVisibilityRef.current,
         pdfBannerIncludeRef.current,
         savedAt,
+        baseline,
       );
       let localOk = true;
       try {
@@ -1239,9 +1360,10 @@ export function OrderDetailWorkspace({
             body: JSON.stringify({
               sessionId: payload.sessionId,
               workspace: buildOrderDraftWorkspaceBody(
-                cur,
+                safe,
                 pdfVisibilityRef.current,
                 pdfBannerIncludeRef.current,
+                baseline,
               ),
             }),
           });
@@ -1257,7 +1379,14 @@ export function OrderDetailWorkspace({
       }
       return localOk && (serverOk || !orderDraftPersistenceEnabled);
     },
-    [orderDraftPersistenceEnabled, payload.sessionId, pushWorkspaceBackup, workspaceHydrated],
+    [
+      isWorkspaceAutosaveBlocked,
+      orderDraftPersistenceEnabled,
+      payload.sessionId,
+      pushWorkspaceBackup,
+      readPersistBaseline,
+      workspaceHydrated,
+    ],
   );
 
   /** Pēc PDF importa — `patchSourceBlock` + microtask, lai `wsPersistRef` būtu sinhronizēts. */
@@ -1271,8 +1400,21 @@ export function OrderDetailWorkspace({
   const flushWorkspaceServerPatch = useCallback(
     (opts?: { keepalive?: boolean; showFlash?: boolean }) => {
       if (!orderDraftPersistenceEnabled || !workspaceHydratedOnceRef.current) return;
+      if (isWorkspaceAutosaveBlocked() && !opts?.keepalive) return;
       const myGen = ++workspaceServerSaveGenRef.current;
-      const cur = wsPersistRef.current;
+      const baseline = readPersistBaseline();
+      const safe = coalesceOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current), baseline);
+      wsPersistRef.current = {
+        ...wsPersistRef.current,
+        sourceBlocks: safe.sourceBlocks,
+        iriss: safe.iriss,
+        apskatesPlāns: safe.apskatesPlāns,
+        cenasAtbilstiba: safe.cenasAtbilstiba,
+        previewConfirmed: safe.previewConfirmed,
+        vehicleAiExtraction: safe.vehicleAiExtraction,
+        vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
+      };
+      lastGoodPersistBodyRef.current = safe;
       void fetch("/api/admin/order-draft", {
         method: "PATCH",
         credentials: "include",
@@ -1281,9 +1423,10 @@ export function OrderDetailWorkspace({
         body: JSON.stringify({
           sessionId: payload.sessionId,
           workspace: buildOrderDraftWorkspaceBody(
-            cur,
+            safe,
             pdfVisibilityRef.current,
             pdfBannerIncludeRef.current,
+            baseline,
           ),
         }),
       }).then((res) => {
@@ -1293,7 +1436,7 @@ export function OrderDetailWorkspace({
         if (res.ok) setWorkspaceSaveFlash(true);
       });
     },
-    [orderDraftPersistenceEnabled, payload.sessionId],
+    [isWorkspaceAutosaveBlocked, orderDraftPersistenceEnabled, payload.sessionId, readPersistBaseline],
   );
 
   const scheduleWorkspaceServerPatch = useCallback(
@@ -1419,11 +1562,14 @@ export function OrderDetailWorkspace({
     if (!workspaceHydrated) return;
     const t = window.setTimeout(() => {
       void (async () => {
+        if (isWorkspaceAutosaveBlocked()) return;
+        const baseline = readPersistBaseline();
         const snapshot = serializeWorkspaceState(
           wsPersistRef.current,
           pdfVisibilityRef.current,
           pdfBannerIncludeRef.current,
           new Date().toISOString(),
+          baseline,
         );
         if (snapshot === hydrationSnapshotRef.current) return;
         workspaceDirtyRef.current = true;
@@ -1437,7 +1583,16 @@ export function OrderDetailWorkspace({
         commitWorkspaceLocalNow({ force: true });
       }
     };
-  }, [ws, pdfVisibility, pdfBannerInclude, workspaceHydrated, commitWorkspaceLocalNow, scheduleWorkspaceServerPatch]);
+  }, [
+    ws,
+    pdfVisibility,
+    pdfBannerInclude,
+    workspaceHydrated,
+    commitWorkspaceLocalNow,
+    scheduleWorkspaceServerPatch,
+    isWorkspaceAutosaveBlocked,
+    readPersistBaseline,
+  ]);
 
   useEffect(() => {
     if (!workspaceHydrated) return;
@@ -2801,6 +2956,7 @@ export function OrderDetailWorkspace({
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ autodna: next })}
                 geminiComment={geminiCommentSlot("autodna")}
                 onPatch={(fn) => patchSourceBlock("autodna", fn)}
+                onParseActiveChange={onWorkspaceParseActiveChange}
                 onAfterPdfImport={persistAfterPdfImport}
               />
             </div>
@@ -2816,6 +2972,7 @@ export function OrderDetailWorkspace({
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ carvertical: next })}
                 geminiComment={geminiCommentSlot("carvertical")}
                 onPatch={(fn) => patchSourceBlock("carvertical", fn)}
+                onParseActiveChange={onWorkspaceParseActiveChange}
                 onAfterPdfImport={persistAfterPdfImport}
               />
             </div>
@@ -2835,6 +2992,7 @@ export function OrderDetailWorkspace({
               geminiComment={geminiCommentSlot("auto_records")}
               orderVin={payload.vin}
               onPatch={(fn) => patchSourceBlock("auto_records", fn)}
+              onParseActiveChange={onWorkspaceParseActiveChange}
               onAfterPdfImport={persistAfterPdfImport}
             />
           </div>
@@ -2852,6 +3010,7 @@ export function OrderDetailWorkspace({
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
               geminiComment={geminiCommentSlot("ltab")}
               onPatch={(fn) => patchSourceBlock("ltab", fn)}
+              onParseActiveChange={onWorkspaceParseActiveChange}
               onAfterPdfImport={persistAfterPdfImport}
             />
           </div>

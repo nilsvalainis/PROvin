@@ -27,9 +27,17 @@ type Props = {
   disabled?: boolean;
   readOnly?: boolean;
   onImported: (result: HistoryVendorPdfParseResult & { fileName?: string }) => void;
+  /** `true` kamēr PDF/Gemini parsers darbojas — bloķē autosaglabāšanu. */
+  onParseActiveChange?: (active: boolean) => void;
 };
 
-export function AdminHistoryVendorPdfUpload({ target, disabled, readOnly, onImported }: Props) {
+export function AdminHistoryVendorPdfUpload({
+  target,
+  disabled,
+  readOnly,
+  onImported,
+  onParseActiveChange,
+}: Props) {
   const inputId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
@@ -44,6 +52,7 @@ export function AdminHistoryVendorPdfUpload({ target, disabled, readOnly, onImpo
     async (file: File) => {
       if (disabled || readOnly || busy) return;
       setBusy(true);
+      onParseActiveChange?.(true);
       setError(null);
       setNotice(null);
       setStatusLine("Nolasām PDF teksta slāni…");
@@ -107,10 +116,11 @@ export function AdminHistoryVendorPdfUpload({ target, disabled, readOnly, onImpo
         setError("Neizdevās savienoties ar serveri");
       } finally {
         setBusy(false);
+        onParseActiveChange?.(false);
         setStatusLine(null);
       }
     },
-    [busy, disabled, onImported, readOnly, target],
+    [busy, disabled, onImported, onParseActiveChange, readOnly, target],
   );
 
   const onFiles = useCallback(

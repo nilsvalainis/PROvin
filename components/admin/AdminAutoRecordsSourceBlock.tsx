@@ -60,6 +60,7 @@ type Props = {
   /** Pasūtījuma VIN no galvenes — Outvin „Ielādēt”. */
   orderVin?: string | null;
   onPatch?: (patch: (prev: AutoRecordsBlockState) => AutoRecordsBlockState) => void;
+  onParseActiveChange?: (active: boolean) => void;
   onAfterPdfImport?: () => void;
 };
 
@@ -75,6 +76,7 @@ export function AdminAutoRecordsSourceBlock({
   geminiComment,
   orderVin,
   onPatch,
+  onParseActiveChange,
   onAfterPdfImport,
 }: Props) {
   const mergeVehicleInfoFromText = (raw: string, base: AutoRecordsBlockState): AutoRecordsBlockState => {
@@ -157,6 +159,7 @@ export function AdminAutoRecordsSourceBlock({
         <AdminAutoRecordsPdfUpload
           disabled={disabled}
           readOnly={readOnly}
+          onParseActiveChange={onParseActiveChange}
           onImported={(result) => {
             const applyImport = (prev: AutoRecordsBlockState): AutoRecordsBlockState => {
               const merged = mergeAutoRecordsServiceHistory(prev.serviceHistory, result.serviceHistory);
