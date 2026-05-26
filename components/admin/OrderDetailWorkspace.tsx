@@ -635,7 +635,6 @@ export function OrderDetailWorkspace({
   const workspaceHydratedOnceRef = useRef(false);
   const workspaceServerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const workspaceServerSaveGenRef = useRef(0);
-  const workspaceParseActiveCountRef = useRef(0);
   const lastGoodPersistBodyRef = useRef<OrderWorkspacePersistBody | null>(null);
   const wsPersistRef = useRef(ws);
   const orderEditsRef = useRef({ internal: internalCommentDraft, mileage: mileageCommentDraft });
@@ -748,16 +747,6 @@ export function OrderDetailWorkspace({
       vehicleAiExtractionMeta: h.vehicleAiExtractionMeta ?? null,
     };
   }, [payload.sessionId]);
-
-  const onWorkspaceParseActiveChange = useCallback((active: boolean) => {
-    workspaceParseActiveCountRef.current += active ? 1 : -1;
-    if (workspaceParseActiveCountRef.current < 0) workspaceParseActiveCountRef.current = 0;
-  }, []);
-
-  const isWorkspaceAutosaveBlocked = useCallback(
-    () => workspaceParseActiveCountRef.current > 0,
-    [],
-  );
 
   const pushWorkspaceBackup = useCallback(
     (snapshot: string) => {
@@ -1038,28 +1027,6 @@ export function OrderDetailWorkspace({
     (key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]) => {
       workspaceDirtyRef.current = true;
       setWs((prev) => {
-        const next: WorkspacePersist = {
-          ...prev,
-          sourceBlocks: mergeSourceBlocksWithDefaults({
-            ...prev.sourceBlocks,
-            [key]: block,
-          }),
-        };
-        wsPersistRef.current = next;
-        return next;
-      });
-      commitWorkspaceLocalNow({ force: true });
-    },
-    [commitWorkspaceLocalNow],
-  );
-
-  /** Funkcionāls atjauninājums — nepieciešams pēc async PDF importa (izvairās no novecojuša `value`). */
-  const patchSourceBlock = useCallback(
-    <K extends SourceBlockKey>(key: K, patch: (prev: WorkspaceSourceBlocks[K]) => WorkspaceSourceBlocks[K]) => {
-      workspaceDirtyRef.current = true;
-      setWs((prev) => {
-        const prevBlock = prev.sourceBlocks[key];
-        const block = patch(prevBlock);
         const next: WorkspacePersist = {
           ...prev,
           sourceBlocks: mergeSourceBlocksWithDefaults({
@@ -1373,7 +1340,7 @@ export function OrderDetailWorkspace({
       }
 
       let serverOk = !orderDraftPersistenceEnabled;
-      if (orderDraftPersistenceEnabled && workspaceHydratedOnceRef.current && !isWorkspaceAutosaveBlocked()) {
+      if (orderDraftPersistenceEnabled && workspaceHydratedOnceRef.current) {
         const baseline = lastGoodPersistBodyRef.current ?? readPersistBaseline();
         const forServer = coalesceOrderWorkspacePersistBody(fromRef, baseline);
         const myGen = ++workspaceServerSaveGenRef.current;
@@ -1405,7 +1372,6 @@ export function OrderDetailWorkspace({
       return localOk && (serverOk || !orderDraftPersistenceEnabled);
     },
     [
-      isWorkspaceAutosaveBlocked,
       orderDraftPersistenceEnabled,
       payload.sessionId,
       pushWorkspaceBackup,
@@ -1414,18 +1380,9 @@ export function OrderDetailWorkspace({
     ],
   );
 
-  /** Pēc PDF importa — lokāli uzreiz; serveris kad parse lock atbrīvots. */
-  const persistAfterPdfImport = useCallback(() => {
-    commitWorkspaceLocalNow({ force: true });
-    queueMicrotask(() => {
-      void persistWorkspaceSnapshot({ showFlash: false });
-    });
-  }, [commitWorkspaceLocalNow, persistWorkspaceSnapshot]);
-
   const flushWorkspaceServerPatch = useCallback(
     (opts?: { keepalive?: boolean; showFlash?: boolean }) => {
       if (!orderDraftPersistenceEnabled || !workspaceHydratedOnceRef.current) return;
-      if (isWorkspaceAutosaveBlocked() && !opts?.keepalive) return;
       const myGen = ++workspaceServerSaveGenRef.current;
       const fromRef = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
       const baseline = lastGoodPersistBodyRef.current ?? readPersistBaseline();
@@ -1451,7 +1408,7 @@ export function OrderDetailWorkspace({
         if (res.ok) setWorkspaceSaveFlash(true);
       });
     },
-    [isWorkspaceAutosaveBlocked, orderDraftPersistenceEnabled, payload.sessionId, readPersistBaseline],
+    [orderDraftPersistenceEnabled, payload.sessionId, readPersistBaseline],
   );
 
   const forceNavigationFlush = useCallback(() => {
@@ -1615,14 +1572,12 @@ export function OrderDetailWorkspace({
     };
   }, [payload.sessionId, flushWorkspaceLocalStorageSync, flushWorkspaceServerPatch]);
 
-  /** Katra izmaiņa — tūlītējs lokālais saglabājums; serveris — debounce (PDF parse tikai aptur serveri). */
+  /** Katra izmaiņa — tūlītējs lokālais saglabājums; serveris — debounce. */
   useEffect(() => {
     if (!workspaceHydrated) return;
     workspaceDirtyRef.current = true;
     commitWorkspaceLocalNow({ force: true });
-    if (isWorkspaceAutosaveBlocked()) return;
     const t = window.setTimeout(() => {
-      if (isWorkspaceAutosaveBlocked()) return;
       scheduleWorkspaceServerPatch({ showFlash: false });
     }, 400);
     return () => window.clearTimeout(t);
@@ -1633,7 +1588,6 @@ export function OrderDetailWorkspace({
     workspaceHydrated,
     commitWorkspaceLocalNow,
     scheduleWorkspaceServerPatch,
-    isWorkspaceAutosaveBlocked,
   ]);
 
   useEffect(() => {
@@ -3023,9 +2977,6 @@ export function OrderDetailWorkspace({
                 pdfInclude={pdfVisibility.autodna}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ autodna: next })}
                 geminiComment={geminiCommentSlot("autodna")}
-                onPatch={(fn) => patchSourceBlock("autodna", fn)}
-                onParseActiveChange={onWorkspaceParseActiveChange}
-                onAfterPdfImport={persistAfterPdfImport}
               />
             </div>
             <div id="admin-order-block-carvertical" className="flex min-h-0 min-w-0 flex-col">
@@ -3039,9 +2990,6 @@ export function OrderDetailWorkspace({
                 pdfInclude={pdfVisibility.carvertical}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ carvertical: next })}
                 geminiComment={geminiCommentSlot("carvertical")}
-                onPatch={(fn) => patchSourceBlock("carvertical", fn)}
-                onParseActiveChange={onWorkspaceParseActiveChange}
-                onAfterPdfImport={persistAfterPdfImport}
               />
             </div>
           </div>
@@ -3059,9 +3007,6 @@ export function OrderDetailWorkspace({
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
               geminiComment={geminiCommentSlot("auto_records")}
               orderVin={payload.vin}
-              onPatch={(fn) => patchSourceBlock("auto_records", fn)}
-              onParseActiveChange={onWorkspaceParseActiveChange}
-              onAfterPdfImport={persistAfterPdfImport}
             />
           </div>
         ) : null}
@@ -3077,9 +3022,6 @@ export function OrderDetailWorkspace({
               pdfInclude={pdfVisibility.ltab}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
               geminiComment={geminiCommentSlot("ltab")}
-              onPatch={(fn) => patchSourceBlock("ltab", fn)}
-              onParseActiveChange={onWorkspaceParseActiveChange}
-              onAfterPdfImport={persistAfterPdfImport}
             />
           </div>
         ) : null}

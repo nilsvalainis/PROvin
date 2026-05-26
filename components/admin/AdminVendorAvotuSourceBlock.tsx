@@ -36,8 +36,6 @@ import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
-import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
-import { mergeLtabIncidentRows, mergeVendorServiceHistory } from "@/lib/history-vendor-pdf-import";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -61,11 +59,6 @@ type Props = {
   embedded?: boolean;
   /** Unikāli ID iegultām sekcijām. */
   sectionIndex?: number;
-  /** Funkcionāls atjauninājums pēc async PDF (izvairās no novecojuša `value`). */
-  onPatch?: (patch: (prev: VendorAvotuBlockState) => VendorAvotuBlockState) => void;
-  onParseActiveChange?: (active: boolean) => void;
-  /** Pēc veiksmīga PDF importa — pilns saglabājums serverī. */
-  onAfterPdfImport?: () => void;
 };
 
 export function AdminVendorAvotuSourceBlock({
@@ -81,9 +74,6 @@ export function AdminVendorAvotuSourceBlock({
   geminiComment,
   embedded = false,
   sectionIndex,
-  onPatch,
-  onParseActiveChange,
-  onAfterPdfImport,
 }: Props) {
   const displayRows =
     value.serviceHistory.length > 0
@@ -144,43 +134,6 @@ export function AdminVendorAvotuSourceBlock({
   const inner = (
     <div className={`flex min-h-0 flex-col overflow-hidden ${embedded ? "" : trafficFillLevel ? "p-0" : "p-2"}`}>
       <div className={`min-h-0 flex-1 overflow-y-auto ${embedded ? "" : trafficFillLevel ? "px-2 pt-2" : ""}`}>
-        {blockKey === "carvertical" || blockKey === "autodna" ? (
-          <AdminHistoryVendorPdfUpload
-            target={blockKey}
-            disabled={disabled}
-            readOnly={readOnly}
-            onParseActiveChange={onParseActiveChange}
-            onImported={(result) => {
-              const applyImport = (prev: VendorAvotuBlockState): VendorAvotuBlockState => {
-                const mergedMileage = mergeVendorServiceHistory(prev.serviceHistory, result.serviceHistory);
-                const mergedIncidents = mergeLtabIncidentRows(prev.incidents, result.incidents);
-                const checklistBase = prev.pdfChecklist ?? emptySourcePdfChecklist();
-                const checklistNext = normalizeSourcePdfChecklist({
-                  ...checklistBase,
-                  ...result.suggestedPdfChecklist,
-                });
-                const commentsNext =
-                  result.suggestedComments?.trim() ?
-                    prev.comments.trim() ?
-                      `${prev.comments.trim()}\n\n${result.suggestedComments.trim()}`
-                    : result.suggestedComments.trim()
-                  : prev.comments;
-                return {
-                  ...prev,
-                  mileagePasteRaw: result.rawText || prev.mileagePasteRaw,
-                  serviceHistory:
-                    mergedMileage.length > 0 ? mergedMileage : [emptyAutoRecordsServiceRow()],
-                  incidents: mergedIncidents.length > 0 ? mergedIncidents : prev.incidents,
-                  pdfChecklist: sourcePdfChecklistHasAny(checklistNext) ? checklistNext : prev.pdfChecklist,
-                  comments: commentsNext,
-                };
-              };
-              if (onPatch) onPatch(applyImport);
-              else onChange(applyImport(value));
-              onAfterPdfImport?.();
-            }}
-          />
-        ) : null}
         <p className="mb-1.5 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
           <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}

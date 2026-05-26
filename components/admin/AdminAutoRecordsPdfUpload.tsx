@@ -1,3 +1,4 @@
+/** Pagaidām nav montēts admin UI — PDF augšupielāde atslēgta līdz jaunai implementācijai. */
 "use client";
 
 import { FileUp, Loader2 } from "lucide-react";

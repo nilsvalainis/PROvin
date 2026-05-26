@@ -12,9 +12,7 @@ import type { LtabBlockState, LtabIncidentRow } from "@/lib/admin-source-blocks"
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
-import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
-import { emptyLtabRow, ltabRowHasData } from "@/lib/admin-source-blocks";
-import { mergeLtabIncidentRows } from "@/lib/history-vendor-pdf-import";
+import { emptyLtabRow } from "@/lib/admin-source-blocks";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -31,9 +29,6 @@ type Props = {
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
   geminiComment?: AdminGeminiSourceCommentSlot;
-  onPatch?: (patch: (prev: LtabBlockState) => LtabBlockState) => void;
-  onParseActiveChange?: (active: boolean) => void;
-  onAfterPdfImport?: () => void;
 };
 
 export function AdminLtabSourceBlock({
@@ -46,9 +41,6 @@ export function AdminLtabSourceBlock({
   pdfInclude,
   onPdfIncludeChange,
   geminiComment,
-  onPatch,
-  onParseActiveChange,
-  onAfterPdfImport,
 }: Props) {
   const setRow = (index: number, patch: Partial<LtabIncidentRow>) => {
     const rows = value.rows.map((r, i) => (i === index ? { ...r, ...patch } : r));
@@ -79,48 +71,6 @@ export function AdminLtabSourceBlock({
     >
       <div className={`flex h-full min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}>
           <div className={`min-h-0 flex-1 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>
-            <AdminHistoryVendorPdfUpload
-              target="ltab"
-              disabled={disabled}
-              readOnly={readOnly}
-              onParseActiveChange={onParseActiveChange}
-              onImported={(result) => {
-                const applyImport = (prev: LtabBlockState): LtabBlockState => {
-                  const merged = mergeLtabIncidentRows(prev.rows, result.incidents);
-                  const dataRows = merged.filter(ltabRowHasData);
-                  const commentsNext =
-                    result.suggestedComments?.trim() ?
-                      prev.comments.trim() ?
-                        `${prev.comments.trim()}\n\n${result.suggestedComments.trim()}`
-                      : result.suggestedComments.trim()
-                    : prev.comments;
-                  return {
-                    ...prev,
-                    pdfImportRaw: result.rawText || prev.pdfImportRaw,
-                    rows: dataRows.length > 0 ? [...dataRows, emptyLtabRow()] : prev.rows,
-                    comments: commentsNext,
-                  };
-                };
-                if (onPatch) onPatch(applyImport);
-                else onChange(applyImport(value));
-                onAfterPdfImport?.();
-              }}
-            />
-            {!readOnly && (value.pdfImportRaw ?? "").trim() ? (
-              <div className="mb-2">
-                <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                  PDF imports RAW
-                </label>
-                <textarea
-                  className="mb-1 w-full min-h-[56px] resize-y rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)]"
-                  rows={3}
-                  disabled={disabled}
-                  value={value.pdfImportRaw ?? ""}
-                  onChange={(e) => onChange({ ...value, pdfImportRaw: e.target.value.slice(0, 120_000) })}
-                  aria-label="LTAB PDF neapstrādātie dati"
-                />
-              </div>
-            ) : null}
             <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">
               <table className="w-full min-w-[280px] border-collapse text-[11px]">
                 <thead>

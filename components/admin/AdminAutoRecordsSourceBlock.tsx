@@ -19,8 +19,6 @@ import {
   normalizeSourcePdfChecklist,
   sourcePdfChecklistHasAny,
 } from "@/lib/admin-source-blocks";
-import { AdminAutoRecordsPdfUpload } from "@/components/admin/AdminAutoRecordsPdfUpload";
-import { mergeAutoRecordsServiceHistory } from "@/lib/auto-records-pdf-parse";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
 import {
   autoRecordsRowHasData,
@@ -59,9 +57,6 @@ type Props = {
   geminiComment?: AdminGeminiSourceCommentSlot;
   /** Pasūtījuma VIN no galvenes — Outvin „Ielādēt”. */
   orderVin?: string | null;
-  onPatch?: (patch: (prev: AutoRecordsBlockState) => AutoRecordsBlockState) => void;
-  onParseActiveChange?: (active: boolean) => void;
-  onAfterPdfImport?: () => void;
 };
 
 export function AdminAutoRecordsSourceBlock({
@@ -75,9 +70,6 @@ export function AdminAutoRecordsSourceBlock({
   onPdfIncludeChange,
   geminiComment,
   orderVin,
-  onPatch,
-  onParseActiveChange,
-  onAfterPdfImport,
 }: Props) {
   const mergeVehicleInfoFromText = (raw: string, base: AutoRecordsBlockState): AutoRecordsBlockState => {
     const patch = parseOutvinVehicleInfoFromAutoRecordsText(raw);
@@ -155,51 +147,6 @@ export function AdminAutoRecordsSourceBlock({
           readOnly={readOnly}
           disabled={disabled}
           onChange={(next) => onChange({ ...value, outvinReport: next })}
-        />
-        <AdminAutoRecordsPdfUpload
-          disabled={disabled}
-          readOnly={readOnly}
-          onParseActiveChange={onParseActiveChange}
-          onImported={(result) => {
-            const applyImport = (prev: AutoRecordsBlockState): AutoRecordsBlockState => {
-              const merged = mergeAutoRecordsServiceHistory(prev.serviceHistory, result.serviceHistory);
-              const checklistBase = prev.pdfChecklist ?? emptySourcePdfChecklist();
-              const checklistNext = normalizeSourcePdfChecklist({
-                ...checklistBase,
-                ...result.suggestedPdfChecklist,
-              });
-
-              const patchVehicleInfo = result.suggestedOutvinVehicleInfo;
-              const reportBase = prev.outvinReport ?? emptyOutvinDealerReport();
-              let outvinReportNext = prev.outvinReport;
-              if (patchVehicleInfo && Object.values(patchVehicleInfo).some((v) => typeof v === "string" && v.trim())) {
-                const nextVehicleInfo: OutvinVehicleInfo = { ...reportBase.vehicleInfo };
-                for (const [k, v] of Object.entries(patchVehicleInfo) as [keyof OutvinVehicleInfo, string][]) {
-                  if (typeof v === "string" && v.trim()) nextVehicleInfo[k] = v.trim();
-                }
-                if (outvinVehicleInfoHasData(nextVehicleInfo)) {
-                  outvinReportNext = { ...reportBase, vehicleInfo: nextVehicleInfo };
-                }
-              }
-
-              return {
-                ...prev,
-                rawUnprocessedData: result.rawUnprocessedData || prev.rawUnprocessedData,
-                serviceHistory: merged.length > 0 ? merged : [emptyAutoRecordsServiceRow()],
-                pdfChecklist: sourcePdfChecklistHasAny(checklistNext) ? checklistNext : prev.pdfChecklist,
-                comments:
-                  result.suggestedComments?.trim() ?
-                    prev.comments.trim() ?
-                      `${prev.comments.trim()}\n\n${result.suggestedComments.trim()}`
-                    : result.suggestedComments.trim()
-                  : prev.comments,
-                ...(outvinReportNext ? { outvinReport: outvinReportNext } : {}),
-              };
-            };
-            if (onPatch) onPatch(applyImport);
-            else onChange(applyImport(value));
-            onAfterPdfImport?.();
-          }}
         />
         <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
           Paste RAW data here
