@@ -31,6 +31,7 @@ type Props = {
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
   geminiComment?: AdminGeminiSourceCommentSlot;
+  onAfterPdfImport?: () => void;
 };
 
 export function AdminLtabSourceBlock({
@@ -43,6 +44,7 @@ export function AdminLtabSourceBlock({
   pdfInclude,
   onPdfIncludeChange,
   geminiComment,
+  onAfterPdfImport,
 }: Props) {
   const setRow = (index: number, patch: Partial<LtabIncidentRow>) => {
     const rows = value.rows.map((r, i) => (i === index ? { ...r, ...patch } : r));
@@ -92,6 +94,7 @@ export function AdminLtabSourceBlock({
                   rows: dataRows.length > 0 ? [...dataRows, emptyLtabRow()] : value.rows,
                   comments: commentsNext,
                 });
+                onAfterPdfImport?.();
               }}
             />
             {!readOnly && (value.pdfImportRaw ?? "").trim() ? (

@@ -59,6 +59,7 @@ type Props = {
   geminiComment?: AdminGeminiSourceCommentSlot;
   /** Pasūtījuma VIN no galvenes — Outvin „Ielādēt”. */
   orderVin?: string | null;
+  onAfterPdfImport?: () => void;
 };
 
 export function AdminAutoRecordsSourceBlock({
@@ -72,6 +73,7 @@ export function AdminAutoRecordsSourceBlock({
   onPdfIncludeChange,
   geminiComment,
   orderVin,
+  onAfterPdfImport,
 }: Props) {
   const mergeVehicleInfoFromText = (raw: string, base: AutoRecordsBlockState): AutoRecordsBlockState => {
     const patch = parseOutvinVehicleInfoFromAutoRecordsText(raw);
@@ -187,6 +189,7 @@ export function AdminAutoRecordsSourceBlock({
                 : value.comments,
               ...(outvinReportNext ? { outvinReport: outvinReportNext } : {}),
             });
+            onAfterPdfImport?.();
           }}
         />
         <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">

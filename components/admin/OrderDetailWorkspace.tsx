@@ -676,9 +676,56 @@ export function OrderDetailWorkspace({
     [payload.vin, ws.sourceBlocks, portfolio],
   );
 
-  const updateWs = useCallback((patch: Partial<WorkspacePersist>) => {
-    setWs((prev) => ({ ...prev, ...patch }));
-  }, []);
+  const pushWorkspaceBackup = useCallback(
+    (snapshot: string) => {
+      try {
+        const key = storageKeyWorkspaceBackup(payload.sessionId);
+        const raw = localStorage.getItem(key);
+        const prev = raw ? (JSON.parse(raw) as { savedAt: string; data: string }[]) : [];
+        if (Array.isArray(prev) && prev[0]?.data === snapshot) return;
+        const next = [{ savedAt: new Date().toISOString(), data: snapshot }, ...(Array.isArray(prev) ? prev : [])].slice(
+          0,
+          WORKSPACE_BACKUP_LIMIT,
+        );
+        localStorage.setItem(key, JSON.stringify(next));
+      } catch {
+        /* quota */
+      }
+    },
+    [payload.sessionId],
+  );
+
+  const commitWorkspaceLocalNow = useCallback(() => {
+    if (!workspaceHydrated) return;
+    const cur = wsPersistRef.current;
+    const snapshot = serializeWorkspaceState(
+      cur,
+      pdfVisibilityRef.current,
+      pdfBannerIncludeRef.current,
+      new Date().toISOString(),
+    );
+    try {
+      localStorage.setItem(storageKeyWorkspace(payload.sessionId), snapshot);
+      const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
+      if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
+    } catch {
+      /* quota */
+    }
+    pushWorkspaceBackup(snapshot);
+    hydrationSnapshotRef.current = snapshot;
+  }, [payload.sessionId, pushWorkspaceBackup, workspaceHydrated]);
+
+  const updateWs = useCallback(
+    (patch: Partial<WorkspacePersist>) => {
+      setWs((prev) => {
+        const next = { ...prev, ...patch };
+        wsPersistRef.current = next;
+        return next;
+      });
+      commitWorkspaceLocalNow();
+    },
+    [commitWorkspaceLocalNow],
+  );
 
   const buildGeminiOrderPayload = useCallback(
     (extra: { operatorNotes?: string; existingDraftPlain?: string } = {}) => {
@@ -705,9 +752,12 @@ export function OrderDetailWorkspace({
 
   const buildGeminiListingPayload = useCallback(() => buildGeminiOrderPayload(), [buildGeminiOrderPayload]);
 
-  const setIrissSummary = useCallback((next: string) => {
-    setWs((prev) => ({ ...prev, iriss: next }));
-  }, []);
+  const setIrissSummary = useCallback(
+    (next: string) => {
+      updateWs({ iriss: next });
+    },
+    [updateWs],
+  );
 
   const runGeminiInspectionRecommendations = useCallback(async (operatorNotes = "") => {
     if (!payload.geminiAllowed || geminiInspectionBusy) return;
@@ -883,12 +933,20 @@ export function OrderDetailWorkspace({
     payload.geminiAllowed,
   ]);
 
-  const updateSourceBlock = useCallback((key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]) => {
-    setWs((prev) => ({
-      ...prev,
-      sourceBlocks: { ...prev.sourceBlocks, [key]: block },
-    }));
-  }, []);
+  const updateSourceBlock = useCallback(
+    (key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]) => {
+      setWs((prev) => {
+        const next: WorkspacePersist = {
+          ...prev,
+          sourceBlocks: { ...prev.sourceBlocks, [key]: block },
+        };
+        wsPersistRef.current = next;
+        return next;
+      });
+      commitWorkspaceLocalNow();
+    },
+    [commitWorkspaceLocalNow],
+  );
 
   const runGeminiSourceComment = useCallback(
     async (blockKey: GeminiSourceCommentBlockKey, operatorNotes = "", citiAvotiSectionIndex?: number) => {
@@ -938,25 +996,6 @@ export function OrderDetailWorkspace({
       }
     },
     [buildGeminiOrderPayload, geminiSourceCommentBusy, payload.geminiAllowed, updateSourceBlock],
-  );
-
-  const pushWorkspaceBackup = useCallback(
-    (snapshot: string) => {
-      try {
-        const key = storageKeyWorkspaceBackup(payload.sessionId);
-        const raw = localStorage.getItem(key);
-        const prev = raw ? (JSON.parse(raw) as { savedAt: string; data: string }[]) : [];
-        if (Array.isArray(prev) && prev[0]?.data === snapshot) return;
-        const next = [{ savedAt: new Date().toISOString(), data: snapshot }, ...(Array.isArray(prev) ? prev : [])].slice(
-          0,
-          WORKSPACE_BACKUP_LIMIT,
-        );
-        localStorage.setItem(key, JSON.stringify(next));
-      } catch {
-        /* quota */
-      }
-    },
-    [payload.sessionId],
   );
 
   useEffect(() => {
@@ -1063,6 +1102,7 @@ export function OrderDetailWorkspace({
           vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
           vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
         };
+        wsPersistRef.current = hydratedWs;
         setWs(hydratedWs);
         const mergedVisibility = mergePdfVisibility(chosen.pdfVisibility);
         const mergedBannerInclude = mergeProvinBannerPdfInclude(chosen.pdfBannerInclude);
@@ -1120,21 +1160,6 @@ export function OrderDetailWorkspace({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `serverWorkspaceJson` refresh var pārrakstīt jaunāku lokālo darba zonu
   }, [payload.sessionId, payload.serverInternalComment, onPdfVisibilityChange]);
 
-  const flushWorkspaceToLocalStorage = useCallback(() => {
-    if (!workspaceHydrated) return;
-    try {
-      const cur = wsPersistRef.current;
-      localStorage.setItem(
-        storageKeyWorkspace(payload.sessionId),
-        serializeWorkspaceState(cur, pdfVisibilityRef.current, pdfBannerIncludeRef.current, new Date().toISOString()),
-      );
-      const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
-      if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
-    } catch {
-      /* quota */
-    }
-  }, [workspaceHydrated, payload.sessionId]);
-
   const restoreWorkspaceFromSnapshot = useCallback(
     (snapshot: string): boolean => {
       const chosen = hydrateWorkspaceFromStorage(snapshot);
@@ -1148,6 +1173,7 @@ export function OrderDetailWorkspace({
         vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
         vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
       };
+      wsPersistRef.current = hydratedWs;
       setWs(hydratedWs);
       const mergedVisibility = mergePdfVisibility(chosen.pdfVisibility);
       const mergedBannerInclude = mergeProvinBannerPdfInclude(chosen.pdfBannerInclude);
@@ -1222,17 +1248,14 @@ export function OrderDetailWorkspace({
     [orderDraftPersistenceEnabled, payload.sessionId, pushWorkspaceBackup, workspaceHydrated],
   );
 
+  /** Pēc PDF importa — lokāli jau saglabāts ar `updateSourceBlock`; šeit arī servera melnraksts. */
+  const persistAfterPdfImport = useCallback(() => {
+    void persistWorkspaceSnapshot({ showFlash: false });
+  }, [persistWorkspaceSnapshot]);
+
   const flushPersistWorkspace = useCallback(() => {
-    flushWorkspaceToLocalStorage();
+    commitWorkspaceLocalNow();
     const cur = wsPersistRef.current;
-    const snapshot = serializeWorkspaceState(
-      cur,
-      pdfVisibilityRef.current,
-      pdfBannerIncludeRef.current,
-      new Date().toISOString(),
-    );
-    pushWorkspaceBackup(snapshot);
-    hydrationSnapshotRef.current = snapshot;
     if (orderDraftPersistenceEnabled) {
       void fetch("/api/admin/order-draft", {
         method: "PATCH",
@@ -1255,12 +1278,7 @@ export function OrderDetailWorkspace({
         if (res.ok) setWorkspaceSaveFlash(true);
       });
     }
-  }, [
-    flushWorkspaceToLocalStorage,
-    orderDraftPersistenceEnabled,
-    payload.sessionId,
-    pushWorkspaceBackup,
-  ]);
+  }, [commitWorkspaceLocalNow, orderDraftPersistenceEnabled, payload.sessionId]);
 
   const goWizardStep = useCallback(
     (next: number | ((prev: number) => number)) => {
@@ -2523,7 +2541,7 @@ export function OrderDetailWorkspace({
             type="button"
             disabled={!workspaceHydrated || workspaceSaveBusy}
             className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-emerald-700/25 bg-emerald-50/90 px-2 text-[10px] font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100"
-            title="Saglabāt avotu datus lokāli un serverī (Dropbox mapē, ja projekts sinhronizēts)"
+            title="Saglabāt avotu datus (papildus automātiskajam saglabājumam) — lokāli un serverī"
             onClick={() => {
               setWorkspaceSaveBusy(true);
               void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
@@ -2715,6 +2733,7 @@ export function OrderDetailWorkspace({
                 pdfInclude={pdfVisibility.autodna}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ autodna: next })}
                 geminiComment={geminiCommentSlot("autodna")}
+                onAfterPdfImport={persistAfterPdfImport}
               />
             </div>
             <div id="admin-order-block-carvertical" className="flex min-h-0 min-w-0 flex-col">
@@ -2728,6 +2747,7 @@ export function OrderDetailWorkspace({
                 pdfInclude={pdfVisibility.carvertical}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ carvertical: next })}
                 geminiComment={geminiCommentSlot("carvertical")}
+                onAfterPdfImport={persistAfterPdfImport}
               />
             </div>
           </div>
@@ -2745,6 +2765,7 @@ export function OrderDetailWorkspace({
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
               geminiComment={geminiCommentSlot("auto_records")}
               orderVin={payload.vin}
+              onAfterPdfImport={persistAfterPdfImport}
             />
           </div>
         ) : null}
@@ -2760,6 +2781,7 @@ export function OrderDetailWorkspace({
               pdfInclude={pdfVisibility.ltab}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
               geminiComment={geminiCommentSlot("ltab")}
+              onAfterPdfImport={persistAfterPdfImport}
             />
           </div>
         ) : null}

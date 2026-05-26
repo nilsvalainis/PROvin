@@ -61,6 +61,8 @@ type Props = {
   embedded?: boolean;
   /** Unikāli ID iegultām sekcijām. */
   sectionIndex?: number;
+  /** Pēc veiksmīga PDF importa — pilns saglabājums serverī. */
+  onAfterPdfImport?: () => void;
 };
 
 export function AdminVendorAvotuSourceBlock({
@@ -76,6 +78,7 @@ export function AdminVendorAvotuSourceBlock({
   geminiComment,
   embedded = false,
   sectionIndex,
+  onAfterPdfImport,
 }: Props) {
   const displayRows =
     value.serviceHistory.length > 0
@@ -164,6 +167,7 @@ export function AdminVendorAvotuSourceBlock({
                 pdfChecklist: sourcePdfChecklistHasAny(checklistNext) ? checklistNext : value.pdfChecklist,
                 comments: commentsNext,
               });
+              onAfterPdfImport?.();
             }}
           />
         ) : null}
