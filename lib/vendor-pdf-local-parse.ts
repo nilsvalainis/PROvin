@@ -17,8 +17,10 @@ import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import {
-  formatSourcePdfComments,
-  SOURCE_COMMENT_NO_ISSUES_LV,
+  buildHybridSourcePdfComments,
+  extractBodyDamageSnippets,
+  formatIncidentFact,
+  mileageTimelineFacts,
 } from "@/lib/source-summary-comment-format";
 import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/history-vendor-pdf-import";
 
@@ -101,9 +103,7 @@ function extractCarverticalVin(text: string): string | undefined {
 function extractCarverticalDamageCount(text: string): string | undefined {
   const m = text.match(/Transportlīdzeklim\s+atrasto\s+bojājumu\s+skaits\s*:\s*(\d+)/i);
   if (m?.[1] == null) return undefined;
-  const n = Number.parseInt(m[1], 10);
-  if (Number.isNaN(n) || n === 0) return undefined;
-  return `Atrasto bojājumu skaits: ${n}`;
+  return `Atrasto bojājumu skaits: ${m[1]}`;
 }
 
 /** Papildu CarVertical odometra regex visā tekstā (MM.YYYY … km). */
@@ -126,18 +126,6 @@ function extractCarverticalOdometerRegex(text: string): AutoRecordsServiceRow[] 
   return sortAutoRecordsDescending(out);
 }
 
-function isIssueCommentLine(line: string, target: HistoryVendorPdfTarget): boolean {
-  const t = line.trim();
-  if (!t) return false;
-  if (/^VIN:/i.test(t)) return false;
-  if (/Pirmās reģistrācijas datums:/i.test(t)) return false;
-  if (/Negadījumu skaits:\s*0/i.test(t)) return false;
-  if (/Atrasto bojājumu skaits:\s*0/i.test(t)) return false;
-  if (target === "ltab" && /^Reģ\. nr\.:/i.test(t)) return false;
-  if (target === "ltab" && /^Polise:/i.test(t)) return false;
-  return true;
-}
-
 function extractLtabMetaComments(text: string): string[] {
   const parts: string[] = [];
   const count = text.match(/Negadījumu\s+skaits\s*:\s*(\d+)/i);
@@ -147,6 +135,12 @@ function extractLtabMetaComments(text: string): string[] {
   const pol = text.match(/Apdrošin[aā]šanas\s+polise\s*:\s*([^\n\r]+)/i);
   if (pol?.[1]) parts.push(`Polise: ${pol[1].trim()}`);
   return parts;
+}
+
+function extractAutodnaStatusCenterNote(text: string): string | undefined {
+  if (!/Status\s+Center|status\s*center|brīdinājum/i.test(text)) return undefined;
+  const alert = text.match(/(?:Status\s+Center[^\n]{0,160})/i);
+  return alert?.[0]?.replace(/\s+/g, " ").trim().slice(0, 200);
 }
 
 export function vendorLocalParseHasData(r: HistoryVendorPdfParseResult): boolean {
@@ -167,7 +161,7 @@ export function parseVendorPdfLocal(
   const charCount = trimmed.length;
   const rawText = trimmed.slice(0, MAX_RAW);
   const warnings: string[] = [];
-  const commentParts: string[] = [];
+  const factualMeta: string[] = [];
 
   let serviceHistory: AutoRecordsServiceRow[] = [];
 
@@ -178,16 +172,14 @@ export function parseVendorPdfLocal(
     }
     const vin = extractCarverticalVin(trimmed);
     const dmg = extractCarverticalDamageCount(trimmed);
-    if (vin) commentParts.push(vin);
-    if (dmg) commentParts.push(dmg);
+    if (vin) factualMeta.push(vin);
+    if (dmg) factualMeta.push(dmg);
   } else if (target === "autodna") {
     serviceHistory = parseAutodnaMileagePaste(trimmed);
     const reg = extractAutodnaFirstRegistration(trimmed);
-    if (reg) commentParts.push(reg);
-    if (/Status\s+Center|status\s*center|brīdinājum/i.test(trimmed)) {
-      const alert = trimmed.match(/(?:Status\s+Center[^\n]{0,120})/i);
-      if (alert?.[0]) commentParts.push(alert[0].trim().slice(0, 200));
-    }
+    if (reg) factualMeta.push(reg);
+    const statusNote = extractAutodnaStatusCenterNote(trimmed);
+    if (statusNote) factualMeta.push(statusNote);
   }
 
   serviceHistory = sortAutoRecordsDescending(serviceHistory.filter(autoRecordsRowHasData));
@@ -197,7 +189,7 @@ export function parseVendorPdfLocal(
 
   if (target === "ltab") {
     incidents = dedupeLtab(incidents);
-    commentParts.push(...extractLtabMetaComments(trimmed));
+    factualMeta.push(...extractLtabMetaComments(trimmed));
     if (incidents.length === 0) {
       warnings.push("LTAB: negadījumu rindas netika strukturētas — teksts saglabāts RAW.");
     }
@@ -205,20 +197,31 @@ export function parseVendorPdfLocal(
 
   const engine: PdfIngestEngine = "local_parser";
 
-  const hasIncidents = incidents.some(ltabRowHasData);
-  const issueBullets = commentParts.filter((p) => isIssueCommentLine(p, target));
-  let suggestedComments: string;
-  if (hasIncidents) {
-    const bullets = [...issueBullets];
-    if (target === "ltab") {
-      bullets.push(`Reģistrēti ${incidents.filter(ltabRowHasData).length} negadījumu ieraksti`);
-    }
-    suggestedComments = formatSourcePdfComments(bullets);
-  } else if (issueBullets.length > 0) {
-    suggestedComments = formatSourcePdfComments(issueBullets);
-  } else {
-    suggestedComments = SOURCE_COMMENT_NO_ISSUES_LV;
+  const facts: string[] = [
+    ...factualMeta,
+    ...extractBodyDamageSnippets(trimmed, 2),
+    ...mileageTimelineFacts(serviceHistory, 2),
+  ];
+
+  for (const row of incidents.filter(ltabRowHasData).slice(0, 2)) {
+    const line = formatIncidentFact(row);
+    if (line) facts.push(line);
   }
+
+  const anomalies: string[] = [];
+
+  if (target !== "ltab" && incidents.length === 0 && /boj[āa]j|damage|accident|atlīdz|negad/i.test(trimmed)) {
+    if (extractBodyDamageSnippets(trimmed, 1).length === 0) {
+      anomalies.push("Tekstā minēti bojājumi/negadījumi — strukturētās rindas trūkst");
+    }
+  }
+
+  const negCount = trimmed.match(/Negadījumu\s+skaits\s*:\s*(\d+)/i);
+  if (target === "ltab" && negCount?.[1] && Number.parseInt(negCount[1], 10) > 0 && incidents.length === 0) {
+    anomalies.push(`Negadījumu skaits ${negCount[1]}, bet rindas netika strukturētas`);
+  }
+
+  const suggestedComments = buildHybridSourcePdfComments({ facts, anomalies });
 
   return {
     rawText,

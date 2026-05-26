@@ -125,15 +125,18 @@ Rules:
 - serviceHistory: ALL chronological odometer readings (newest-first order in array is OK).
 - incidents: ALL damage/claim/accident rows with date + amount + country.
 - pdfChecklist.incidents true if any accident/claim/damage mentioned; mileageHistory true if odometer history exists; mileageLine true if chart/curve looks consistent.
+- comments: factual context (damage zone text, dealer milestones, registration) AND anomalies per COMMENTS rules — never output only "no issues" when descriptive history exists.
 - Never invent VIN or plate; use only PDF content.`;
 
 const TARGET_USER: Record<HistoryVendorPdfTarget, string> = {
   autodna: `TARGET: AutoDNA report.
-Extract: TRANSPORTLĪDZEKĻA VĒSTURE mileage rows (date, odometer km, country), registration/first-registration dates (note in comments), computed average mileage if shown, Status Center / alert banners (in comments), damage/claim rows into incidents.`,
+Extract: TRANSPORTLĪDZEKĻA VĒSTURE mileage rows (date, odometer km, country), registration/first-registration dates, computed average mileage, Status Center notes, damage/claim rows into incidents.
+In comments: list objective facts (e.g. first registration, dealer service at X km, body damage descriptions) and prefix true conflicts with ANOMĀLIJA:.`,
   carvertical: `TARGET: CarVertical report.
-Extract: full Odometer / mileage log chronology into serviceHistory, damage count and claim events into incidents, market value / price hints in comments, checklist flags for mileage curve and incidents.`,
+Extract: full Odometer / mileage log into serviceHistory, claim events into incidents, damage count.
+In comments: include body damage zone descriptions (Virsbūves bojājums, affected sides), key mileage milestones, market hints if shown — not only problems.`,
   ltab: `TARGET: LTAB / OCTA Latvia insurance report.
-Extract ONLY insurance accidents: each row needs csngDate, lossAmount (EUR), incidentNo as country. Put insurance period / policy days in comments if visible. serviceHistory may be empty array.`,
+Extract ONLY insurance accidents: each row needs csngDate, lossAmount (EUR), incidentNo as country. Put policy period / negadījumu skaits / reģ. nr. in comments as facts. serviceHistory may be empty array.`,
 };
 
 const AUTO_RECORDS_SYSTEM = `You are PROVIN.LV admin PDF extractor for auto-records.com dealer reports.
@@ -159,6 +162,7 @@ Return ONLY valid JSON:
 }
 ${SOURCE_PDF_COMMENT_GEMINI_RULES}
 Extract every service/odometer row from tables (dates YYYY-MM-DD or DD.MM.YYYY; odometer even if glued to "km" or "ServiceVisit"). checklist.incidents if damage/accident mentioned.
+In comments: factual service timeline (e.g. dealer visit at km) and damage notes from text; use ANOMĀLIJA: only for clear conflicts.
 
 Also extract VEHICLE INFORMATION fields into vehicleInfo (VIN Code, Model, Series, Generation, Type code, Engine code, Steering side, Color, Interior, Transmission). If value is missing or shown as "-" then use empty string for that field.`;
 

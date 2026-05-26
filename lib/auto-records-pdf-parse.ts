@@ -16,8 +16,9 @@ import {
 } from "@/lib/auto-records-paste-parse";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import {
-  formatSourcePdfComments,
-  SOURCE_COMMENT_NO_ISSUES_LV,
+  buildHybridSourcePdfComments,
+  extractBodyDamageSnippets,
+  mileageTimelineFacts,
 } from "@/lib/source-summary-comment-format";
 import { mergeOutvinServiceRows } from "@/lib/outvin-history-map";
 import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
@@ -173,12 +174,14 @@ export function parseAutoRecordsPdfText(text: string): AutoRecordsPdfParseResult
   const rawUnprocessedData = trimmed.slice(0, MAX_RAW_SNIPPET);
   const suggestedPdfChecklist = suggestPdfChecklist(trimmed, rows);
   const hasDamage = DAMAGE_HINTS.some((re) => re.test(trimmed));
+  const damageSnippets = extractBodyDamageSnippets(trimmed, 2);
+  const facts = [...mileageTimelineFacts(rows, 3), ...damageSnippets];
+  const anomalies: string[] = [];
+  if (hasDamage && damageSnippets.length === 0 && rows.length === 0) {
+    anomalies.push("Tekstā minēti bojājumi/negadījumi — pārbaudi tabulu");
+  }
   const suggestedComments =
-    rows.length > 0 && !hasDamage ?
-      SOURCE_COMMENT_NO_ISSUES_LV
-    : hasDamage ?
-      formatSourcePdfComments(["Iespējami bojājumi / negadījumi tekstā — pārbaudi tabulu"])
-    : undefined;
+    facts.length > 0 || anomalies.length > 0 ? buildHybridSourcePdfComments({ facts, anomalies }) : undefined;
 
   const suggestedOutvinVehicleInfo = parseOutvinVehicleInfoFromAutoRecordsText(trimmed);
 

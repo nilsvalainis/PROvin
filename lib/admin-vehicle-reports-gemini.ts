@@ -46,7 +46,7 @@ JSON schema:
       "description_lv": "string — one short factual sentence in Latvian, no fluff"
     }
   ],
-  "ai_generated_comments_lv": "string — if no anomalies across all sources: exactly \"Problēmas nav konstatētas.\"; else short bullet list (- prefix), max 4 facts, max ~350 chars, zero fluff"
+  "ai_generated_comments_lv": "string — hybrid factual context + anomalies: if no substantive history anywhere use exactly \"Problēmas nav konstatētas.\"; else short bullets (- prefix) with objective timeline/metadata; prefix clear conflicts with ANOMĀLIJA:, max 4 bullets, ~350 chars"
 }`;
 
 export type PdfTextBundle = { fileName: string; text: string; sourceHint: string };

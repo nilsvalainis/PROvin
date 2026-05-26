@@ -1,24 +1,128 @@
 /**
  * Īsi, faktiski avota komentāri (PDF imports, Gemini Plan B, ✨ avota komentāri).
+ * Hibrīds: objektīvs konteksts + skaidri atzīmētas anomālijas.
  */
+import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
+import {
+  autoRecordsRowHasData,
+  formatAutoRecordsDateForOutput,
+  sortAutoRecordsDescending,
+  type AutoRecordsServiceRow,
+} from "@/lib/auto-records-paste-parse";
 
 export const SOURCE_COMMENT_NO_ISSUES_LV = "Problēmas nav konstatētas.";
 
-/** Gemini sistēmas uzdevumam — obligāts komentāru formāts. */
-export const SOURCE_PDF_COMMENT_GEMINI_RULES = `COMMENTS field (mandatory):
-- If there are NO anomalies, damage, mileage conflicts, status alerts, or data issues for this source: set comments EXACTLY to "Problēmas nav konstatētas." (nothing else).
-- If issues exist: output ONLY a short Latvian bullet list (- prefix per line), raw objective facts, zero conversational fluff, max 4 bullets, max ~350 characters total. Example: "- 07.03.2021 nobraukuma nesakritība: dīlera vēsturē 46k km, sludinājumā 42k km; - Reģistrēts 1 negadījums Latvijā (tāme 500–1500 EUR)"`;
+export const SOURCE_COMMENT_ANOMALY_PREFIX = "ANOMĀLIJA: ";
 
-export const SOURCE_BLOCK_COMMENT_GEMINI_RULES = `OUTPUT FORMAT (mandatory):
-- If this source block shows NO problems, conflicts, or anomalies vs other portfolio data: output EXACTLY "Problēmas nav konstatētas."
-- If problems exist: output ONLY a short bullet list (- per line), objective facts in Latvian, max 4 bullets, max ~350 characters, no introductions or conclusions.`;
+const HYBRID_COMMENT_RULES = `COMMENTARY (mandatory) — hybrid "Factual Context + Anomalies":
+1. NEVER suppress normal context: damage zones, body sides, dealer/service milestones, registration facts, policy periods, Status Center notes, historical remarks — always extract as objective Latvian facts.
+2. Ultra-concise bullet list (- prefix per line), zero conversational fluff, max 4 bullets, max ~350 characters total.
+3. If the report is entirely clean (no substantive history/notes/descriptions — empty or only generic blank markers): set comments EXACTLY to "Problēmas nav konstatētas." (nothing else).
+4. If the source contains ANY history, metadata, or descriptive notes: summarize the factual timeline in short sentences (not only problems).
+5. For clear conflicts, major mileage issues, or text mentioning damage/claims without structured rows: add a bullet prefixed "ANOMĀLIJA: " (e.g. "- ANOMĀLIJA: nobraukuma nesakritība …").
+Example:
+- Reģistrēts neliels virsbūves bojājums Vācijā (summa <=100 EUR). Bojāta labā sāna priekšpuse un kreisais sāns.
+- 07.03.2021 Dīlera apkope pie 46,441 km.`;
+
+/** Gemini PDF extract JSON — obligāts komentāru formāts. */
+export const SOURCE_PDF_COMMENT_GEMINI_RULES = `COMMENTS field:\n${HYBRID_COMMENT_RULES}`;
+
+/** ✨ Avota bloka komentāru ģenerēšana (admin). */
+export const SOURCE_BLOCK_COMMENT_GEMINI_RULES = `OUTPUT FORMAT (mandatory):\n${HYBRID_COMMENT_RULES}`;
+
+export function formatAnomalyBullet(text: string): string {
+  const core = text.trim().replace(/^[-•]\s*/, "").replace(/^ANOMĀLIJA:\s*/i, "");
+  if (!core) return "";
+  return `${SOURCE_COMMENT_ANOMALY_PREFIX}${core}`;
+}
+
+/** Viena nobraukuma / apkopes rinda kā īss fakts. */
+export function formatMileageTimelineFact(row: AutoRecordsServiceRow): string {
+  const date = formatAutoRecordsDateForOutput(row.date).trim();
+  const kmDigits = row.odometer.replace(/\D/g, "");
+  const km =
+    kmDigits ?
+      `${Number.parseInt(kmDigits, 10).toLocaleString("lv-LV")} km`
+    : row.odometer.trim();
+  const place = row.country.trim();
+  const parts: string[] = [];
+  if (date) parts.push(date);
+  if (place && km) parts.push(`${place}, ${km}`);
+  else if (km) parts.push(km);
+  else if (place) parts.push(place);
+  return parts.join(" — ").trim();
+}
+
+/** Līdz `max` jaunākajām nobraukuma rindām kā fakti. */
+export function mileageTimelineFacts(rows: AutoRecordsServiceRow[], max = 2): string[] {
+  const data = sortAutoRecordsDescending(rows.filter(autoRecordsRowHasData));
+  return data.slice(0, max).map(formatMileageTimelineFact).filter(Boolean);
+}
+
+/** Negadījuma rinda kā īss fakts. */
+export function formatIncidentFact(row: LtabIncidentRow): string {
+  const parts: string[] = [];
+  const date = formatAutoRecordsDateForOutput(row.csngDate).trim();
+  if (date) parts.push(date);
+  if (row.lossAmount.trim()) parts.push(`zaudējums ${row.lossAmount.trim()}`);
+  if (row.incidentNo.trim()) parts.push(row.incidentNo.trim());
+  if (parts.length === 0) return "";
+  return `Negadījums: ${parts.join(", ")}`;
+}
+
+/** Bojājumu zonu / virsbūves apraksti no PDF teksta (CarVertical, AutoDNA u.c.). */
+export function extractBodyDamageSnippets(text: string, max = 2): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const patterns = [
+    /Virsbūves\s+bojājums[^\n]{0,240}/gi,
+    /(?:Neliels|Liels|mazs)\s+virsbūves\s+bojājums[^\n]{0,220}/gi,
+    /Bojāta\s+(?:labā|kreisā|priekšējā|aizmugurējā)[^\n]{0,180}/gi,
+    /Reģistrēts\s+[^\n]{0,40}bojājums[^\n]{0,180}/gi,
+  ];
+  for (const re of patterns) {
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) {
+      const s = m[0].replace(/\s+/g, " ").trim();
+      const key = s.toLowerCase();
+      if (s.length < 14 || seen.has(key)) continue;
+      seen.add(key);
+      out.push(s.slice(0, 220));
+      if (out.length >= max) return out;
+    }
+  }
+  return out;
+}
+
+/**
+ * Hibrīds komentārs: fakti + anomālijas.
+ * Ja nav nekā būtiska — "Problēmas nav konstatētas."
+ */
+export function buildHybridSourcePdfComments(opts: { facts?: string[]; anomalies?: string[] }): string {
+  const lines: string[] = [];
+  for (const f of opts.facts ?? []) {
+    const t = f.trim();
+    if (t) lines.push(t);
+  }
+  for (const a of opts.anomalies ?? []) {
+    const t = formatAnomalyBullet(a);
+    if (t) lines.push(t);
+  }
+  if (lines.length === 0) return SOURCE_COMMENT_NO_ISSUES_LV;
+  return formatSourcePdfComments(lines);
+}
 
 /** Lokālie / Gemini komentāri → vienots īss formāts. */
 export function formatSourcePdfComments(facts: string[]): string {
   const bullets = facts
     .map((f) => f.trim())
     .filter(Boolean)
-    .map((f) => (f.startsWith("-") ? f : `- ${f.replace(/^[-•]\s*/, "")}`))
+    .map((f) => {
+      const trimmed = f.trim().replace(/^[-•]\s*/, "");
+      if (/^ANOMĀLIJA:\s*/i.test(trimmed)) return `- ${trimmed}`;
+      return `- ${trimmed}`;
+    })
     .slice(0, 4);
   if (bullets.length === 0) return SOURCE_COMMENT_NO_ISSUES_LV;
   return bullets.join("\n");
@@ -28,19 +132,17 @@ export function formatSourcePdfComments(facts: string[]): string {
 export function normalizeSourcePdfComment(raw: string | undefined | null): string {
   const t = (raw ?? "").trim();
   if (!t) return SOURCE_COMMENT_NO_ISSUES_LV;
-  const lower = t.toLowerCase();
   if (
-    /problēmas\s+nav\s+konstatētas/i.test(t) ||
-    /^nav\s+konstatētas?\s+problēmas/i.test(t) ||
-    /^(nē|nav)\s*[-–—]?\s*(problēmu|anomāliju|konstatēts)/i.test(t) ||
-    (/^(ok|clean|none|no issues)/i.test(t) && t.length < 60)
+    /^problēmas\s+nav\s+konstatētas\.?$/i.test(t) ||
+    /^nav\s+konstatētas?\s+problēmas\.?$/i.test(t) ||
+    (/^problēmas\s+nav\s+konstatētas/i.test(t) && !t.includes("-") && t.length < 80)
   ) {
     return SOURCE_COMMENT_NO_ISSUES_LV;
   }
-  if (lower.includes("problēmas nav") && t.length < 120 && !t.includes("-")) {
+  if (/^(ok|clean|none|no issues)/i.test(t) && t.length < 60) {
     return SOURCE_COMMENT_NO_ISSUES_LV;
   }
-  if (t.includes("-")) {
+  if (t.includes("-") || t.includes("ANOMĀLIJA")) {
     const lines = t
       .split(/\n+/)
       .map((l) => l.trim())
