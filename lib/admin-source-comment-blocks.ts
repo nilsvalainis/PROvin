@@ -3,6 +3,7 @@
  */
 import {
   autoRecordsBlockToPlainText,
+  citiAvotiToPlainText,
   csddFormToPlainText,
   ltabBlockToPlainText,
   mergeSourceBlocksWithDefaults,
@@ -39,14 +40,44 @@ export function sourceBlockPlainTextExcludingComments(
       return csddFormToPlainText({ ...blocks.csdd, comments: "" }).trim();
     case "autodna":
     case "carvertical":
-    case "citi_avoti":
       return vendorAvotuBlockToPlainText({ ...blocks[blockKey], comments: "" }).trim();
+    case "citi_avoti":
+      return citiAvotiToPlainText({
+        sections: blocks.citi_avoti.sections.map((s) => ({ ...s, comments: "" })),
+      }).trim();
     case "auto_records":
       return autoRecordsBlockToPlainText({ ...blocks.auto_records, comments: "" }).trim();
     case "ltab":
       return ltabBlockToPlainText({ ...blocks.ltab, comments: "" }).trim();
     case "tirgus":
       return tirgusFormToPlainText({ ...blocks.tirgus, comments: "" }).trim();
+    default:
+      return "";
+  }
+}
+
+export function sourceBlockCommentsPlain(
+  blockKey: GeminiSourceCommentBlockKey,
+  sourceBlocks: WorkspaceSourceBlocks,
+): string {
+  const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
+  switch (blockKey) {
+    case "csdd":
+      return blocks.csdd.comments;
+    case "autodna":
+    case "carvertical":
+      return blocks[blockKey].comments;
+    case "citi_avoti":
+      return blocks.citi_avoti.sections
+        .map((s) => s.comments.trim())
+        .filter(Boolean)
+        .join("\n\n");
+    case "auto_records":
+      return blocks.auto_records.comments;
+    case "ltab":
+      return blocks.ltab.comments;
+    case "tirgus":
+      return blocks.tirgus.comments;
     default:
       return "";
   }

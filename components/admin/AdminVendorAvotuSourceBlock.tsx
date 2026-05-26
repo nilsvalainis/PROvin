@@ -54,9 +54,13 @@ type Props = {
   onChange: (next: VendorAvotuBlockState) => void;
   trafficFillLevel?: TrafficFillLevel;
   sessionId: string;
-  pdfInclude: boolean;
-  onPdfIncludeChange: (next: boolean) => void;
+  pdfInclude?: boolean;
+  onPdfIncludeChange?: (next: boolean) => void;
   geminiComment?: AdminGeminiSourceCommentSlot;
+  /** Iegults citā blokā (piem. Citi avoti papildu sekcija) — bez kolapsa un PDF toggle. */
+  embedded?: boolean;
+  /** Unikāli ID iegultām sekcijām. */
+  sectionIndex?: number;
 };
 
 export function AdminVendorAvotuSourceBlock({
@@ -67,9 +71,11 @@ export function AdminVendorAvotuSourceBlock({
   onChange,
   trafficFillLevel,
   sessionId,
-  pdfInclude,
+  pdfInclude = true,
   onPdfIncludeChange,
   geminiComment,
+  embedded = false,
+  sectionIndex,
 }: Props) {
   const displayRows =
     value.serviceHistory.length > 0
@@ -105,7 +111,7 @@ export function AdminVendorAvotuSourceBlock({
     onChange({ ...value, incidents: value.incidents.filter((_, i) => i !== index) });
   };
 
-  const idBase = blockKey;
+  const idBase = sectionIndex != null ? `${blockKey}-s${sectionIndex}` : blockKey;
 
   const applyCarverticalOdometerPaste = (raw: string) => {
     const parsed = parseCarverticalOdometerPaste(raw);
@@ -127,21 +133,9 @@ export function AdminVendorAvotuSourceBlock({
     });
   };
 
-  return (
-    <AdminCollapsibleShell
-      sessionId={sessionId}
-      blockId={`vendor-${blockKey}`}
-      header={
-        <AdminSourceBlockHeader
-          blockKey={blockKey}
-          trafficFillLevel={trafficFillLevel}
-          className={`shrink-0 ${trafficFillLevel ? "mb-0" : "mb-0"}`}
-        />
-      }
-      headerActions={<AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} />}
-    >
-      <div className={`flex min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}>
-      <div className={`min-h-0 flex-1 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>
+  const inner = (
+    <div className={`flex min-h-0 flex-col overflow-hidden ${embedded ? "" : trafficFillLevel ? "p-0" : "p-2"}`}>
+      <div className={`min-h-0 flex-1 overflow-y-auto ${embedded ? "" : trafficFillLevel ? "px-2 pt-2" : ""}`}>
         {blockKey === "carvertical" || blockKey === "autodna" ? (
           <AdminHistoryVendorPdfUpload
             target={blockKey}
@@ -478,7 +472,7 @@ export function AdminVendorAvotuSourceBlock({
         </div>
       </div>
 
-      <div className={`mt-auto w-full min-w-0 shrink-0 pt-2 ${trafficFillLevel ? "px-2 pb-2" : ""}`}>
+      <div className={`mt-auto w-full min-w-0 shrink-0 pt-2 ${embedded ? "" : trafficFillLevel ? "px-2 pb-2" : ""}`}>
         {blockKey === "autodna" || blockKey === "carvertical" ? (
           <AdminSourcePdfChecklist
             idPrefix={idBase}
@@ -503,7 +497,29 @@ export function AdminVendorAvotuSourceBlock({
           aria-label="Avota komentāri"
         />
       </div>
-      </div>
+    </div>
+  );
+
+  if (embedded) return inner;
+
+  return (
+    <AdminCollapsibleShell
+      sessionId={sessionId}
+      blockId={`vendor-${blockKey}`}
+      header={
+        <AdminSourceBlockHeader
+          blockKey={blockKey}
+          trafficFillLevel={trafficFillLevel}
+          className={`shrink-0 ${trafficFillLevel ? "mb-0" : "mb-0"}`}
+        />
+      }
+      headerActions={
+        onPdfIncludeChange ?
+          <AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} />
+        : null
+      }
+    >
+      {inner}
     </AdminCollapsibleShell>
   );
 }

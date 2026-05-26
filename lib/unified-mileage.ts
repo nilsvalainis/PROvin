@@ -7,6 +7,8 @@ import {
   csddMileageRowHasData,
   type AutoRecordsBlockState,
   type CitiAvotiBlockState,
+  citiAvotiSectionLabel,
+  citiAvotiSectionHasContent,
   type ClientManualVendorBlockPdf,
   type CsddFormFields,
 } from "@/lib/admin-source-blocks";
@@ -169,17 +171,26 @@ export function collectUnifiedMileageRows(
     }
   }
 
-  /**
-   * "Citi avoti" komentāri (legacy / manuāla ievade) — mēģina nolasīt
-   * Datums/Odometrs/Valsts ierakstus, ja tie nav ielikti strukturētajās rindās.
-   */
-  const citiComments = p.citiAvotiBlock?.comments?.trim() ?? "";
-  if (citiComments) {
-    const parsed = parseCitiAvotiMileageFromComments(citiComments);
-    for (const r of parsed) {
-      const dateOut = formatAutoRecordsDateForOutput(r.date);
-      const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
-      pushRow(dateOut, odoOut, r.country, "CITI AVOTI");
+  const citiBlock = p.citiAvotiBlock;
+  if (citiBlock?.sections) {
+    const total = citiBlock.sections.length;
+    for (const [i, section] of citiBlock.sections.entries()) {
+      if (!citiAvotiSectionHasContent(section)) continue;
+      const sourceLabel = citiAvotiSectionLabel(section, i, total).toUpperCase();
+      for (const r of section.serviceHistory.filter(autoRecordsRowHasData)) {
+        const dateOut = formatAutoRecordsDateForOutput(r.date);
+        const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
+        pushRow(dateOut, odoOut, r.country, sourceLabel);
+      }
+      const citiComments = section.comments.trim();
+      if (citiComments) {
+        const parsed = parseCitiAvotiMileageFromComments(citiComments);
+        for (const r of parsed) {
+          const dateOut = formatAutoRecordsDateForOutput(r.date);
+          const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
+          pushRow(dateOut, odoOut, r.country, sourceLabel);
+        }
+      }
     }
   }
 

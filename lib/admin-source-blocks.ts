@@ -545,8 +545,18 @@ export type VendorAvotuBlockState = {
   pdfChecklist?: SourcePdfChecklist;
 };
 
-/** Citi avoti — tā pati struktūra kā AutoDNA / CarVertical (nobraukums + negadījumi + komentāri). */
-export type CitiAvotiBlockState = VendorAvotuBlockState;
+/** Viens papildu avots „Citi avoti” — struktūra kā AutoDNA / CarVertical + RAW žurnāls. */
+export type CitiAvotiSectionState = VendorAvotuBlockState & {
+  /** Neapstrādātie / iekopētie dati no avota (admin žurnāls). */
+  rawUnprocessedData?: string;
+  /** Opc. nosaukums (PDF / tabulas avota kolonnā). */
+  label?: string;
+};
+
+/** Citi avoti — vairākas identiskas avotu sekcijas. */
+export type CitiAvotiBlockState = {
+  sections: CitiAvotiSectionState[];
+};
 
 /** Sludinājuma analīze — brīvā teksta lauki; iekopētais apraksts netiek drukāts PDF (tikai pārdošanas konteksts). */
 export type ListingAnalysisBlockState = {
@@ -607,8 +617,29 @@ export function emptyVendorAvotuBlock(): VendorAvotuBlockState {
   };
 }
 
+export function emptyCitiAvotiSection(): CitiAvotiSectionState {
+  return { ...emptyVendorAvotuBlock(), rawUnprocessedData: "", label: "" };
+}
+
 export function emptyCitiAvotiBlock(): CitiAvotiBlockState {
-  return emptyVendorAvotuBlock();
+  return { sections: [emptyCitiAvotiSection()] };
+}
+
+export function citiAvotiSectionLabel(section: CitiAvotiSectionState, index: number, total: number): string {
+  const custom = section.label?.trim();
+  if (custom) return custom;
+  if (total > 1) return `Avots ${index + 1}`;
+  return SOURCE_BLOCK_LABELS.citi_avoti;
+}
+
+export function citiAvotiSectionPdfTitle(section: CitiAvotiSectionState, index: number, total: number): string {
+  const label = citiAvotiSectionLabel(section, index, total);
+  if (label === SOURCE_BLOCK_LABELS.citi_avoti) return SOURCE_BLOCK_LABELS.citi_avoti;
+  return `${SOURCE_BLOCK_LABELS.citi_avoti} — ${label}`;
+}
+
+export function citiAvotiSectionHasContent(section: CitiAvotiSectionState): boolean {
+  return vendorAvotuBlockHasContent(section) || Boolean(section.rawUnprocessedData?.trim());
 }
 
 export function emptyListingAnalysisBlock(): ListingAnalysisBlockState {
@@ -805,11 +836,29 @@ export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState): string {
 }
 
 export function citiAvotiHasContent(b: CitiAvotiBlockState): boolean {
-  return vendorAvotuBlockHasContent(b);
+  return b.sections.some(citiAvotiSectionHasContent);
+}
+
+function citiAvotiSectionToPlainText(section: CitiAvotiSectionState): string {
+  const parts: string[] = [];
+  const raw = section.rawUnprocessedData?.trim();
+  if (raw) parts.push(`RAW datu žurnāls\n${raw}`);
+  const vendor = vendorAvotuBlockToPlainText(section);
+  if (vendor) parts.push(vendor);
+  return parts.join("\n\n");
 }
 
 export function citiAvotiToPlainText(b: CitiAvotiBlockState): string {
-  return vendorAvotuBlockToPlainText(b);
+  const total = b.sections.length;
+  const parts: string[] = [];
+  for (const [i, section] of b.sections.entries()) {
+    if (!citiAvotiSectionHasContent(section)) continue;
+    const body = citiAvotiSectionToPlainText(section);
+    if (!body) continue;
+    const head = citiAvotiSectionPdfTitle(section, i, total);
+    parts.push(total > 1 ? `【${head}】\n${body}` : body);
+  }
+  return parts.join("\n\n");
 }
 
 /** Zaudējumu summas avoti (AutoDNA, CarVertical) — ne AUTO RECORDS. */
@@ -834,7 +883,7 @@ export function blocksToLegacyFlatFields(blocks: WorkspaceSourceBlocks): {
   citi: string;
 } {
   const vendorPlain = mergeVendorBlocksPlain(blocks);
-  const citiPlain = vendorAvotuBlockToPlainText(blocks.citi_avoti).trim();
+  const citiPlain = citiAvotiToPlainText(blocks.citi_avoti).trim();
   const citiParts: string[] = [];
   if (vendorPlain) citiParts.push(vendorPlain);
   if (citiPlain) citiParts.push(`【${SOURCE_BLOCK_LABELS.citi_avoti}】\n${citiPlain}`);
@@ -873,10 +922,12 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       ...(sourcePdfChecklistHasAny(b.pdfChecklist) ? { pdfChecklist: b.pdfChecklist } : {}),
     });
   }
-  const citi = blocks.citi_avoti;
-  if (vendorAvotuBlockHasContent(citi)) {
+  const citiSections = blocks.citi_avoti.sections;
+  const citiTotal = citiSections.length;
+  for (const [i, citi] of citiSections.entries()) {
+    if (!citiAvotiSectionHasContent(citi)) continue;
     out.push({
-      title: SOURCE_BLOCK_LABELS.citi_avoti,
+      title: citiAvotiSectionPdfTitle(citi, i, citiTotal),
       mileageRows: citi.serviceHistory.filter(autoRecordsRowHasData),
       incidentRows: citi.incidents.filter(ltabRowHasData),
       comments: citi.comments.trim(),
@@ -1295,12 +1346,31 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
   return base;
 }
 
+function parseCitiAvotiSectionRaw(raw: unknown): CitiAvotiSectionState {
+  if (!raw || typeof raw !== "object") return emptyCitiAvotiSection();
+  const o = raw as Record<string, unknown>;
+  const vendor =
+    "serviceHistory" in o || "incidents" in o ?
+      parseVendorAvotuBlockRaw(o)
+    : { ...emptyVendorAvotuBlock(), comments: typeof o.comments === "string" ? o.comments.slice(0, 12000) : "" };
+  return {
+    ...vendor,
+    rawUnprocessedData:
+      typeof o.rawUnprocessedData === "string" ? o.rawUnprocessedData.slice(0, 500_000) : "",
+    label: typeof o.label === "string" ? o.label.slice(0, 120) : "",
+  };
+}
+
 function parseCitiAvotiRaw(raw: Record<string, unknown>): CitiAvotiBlockState {
-  if ("serviceHistory" in raw || "incidents" in raw) {
-    return parseVendorAvotuBlockRaw(raw);
+  if (Array.isArray(raw.sections)) {
+    const sections = raw.sections.map((s) => parseCitiAvotiSectionRaw(s));
+    return { sections: sections.length > 0 ? sections : [emptyCitiAvotiSection()] };
+  }
+  if ("serviceHistory" in raw || "incidents" in raw || "rawUnprocessedData" in raw || "label" in raw) {
+    return { sections: [parseCitiAvotiSectionRaw(raw)] };
   }
   const legacy = typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "";
-  return { ...emptyVendorAvotuBlock(), comments: legacy };
+  return { sections: [{ ...emptyVendorAvotuBlock(), comments: legacy, rawUnprocessedData: "", label: "" }] };
 }
 
 export function migrateFlatWorkspaceToBlocks(flat: {
@@ -1314,7 +1384,9 @@ export function migrateFlatWorkspaceToBlocks(flat: {
   if (flat.ltab?.trim()) b.ltab = { rows: [emptyLtabRow()], comments: flat.ltab.trim() };
   if (flat.tirgus?.trim()) b.tirgus = { ...emptyTirgusFields(), comments: flat.tirgus.trim() };
   if (flat.citi?.trim()) {
-    b.citi_avoti = { ...emptyVendorAvotuBlock(), comments: flat.citi.trim() };
+    b.citi_avoti = {
+      sections: [{ ...emptyVendorAvotuBlock(), comments: flat.citi.trim(), rawUnprocessedData: "", label: "" }],
+    };
   }
   return b;
 }

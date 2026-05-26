@@ -224,9 +224,12 @@ function payloadSludinajumsHasData(p: ClientReportPayload, vis: PdfVisibilitySet
 
 function countCitiAvotiFilledParts(b: CitiAvotiBlockState): number {
   let c = 0;
-  if (b.serviceHistory.some(autoRecordsRowHasData)) c++;
-  if (b.incidents.some(ltabRowHasData)) c++;
-  if (b.comments.trim()) c++;
+  for (const section of b.sections) {
+    if (section.serviceHistory.some(autoRecordsRowHasData)) c++;
+    if (section.incidents.some(ltabRowHasData)) c++;
+    if (section.comments.trim()) c++;
+    if (section.rawUnprocessedData?.trim()) c++;
+  }
   return capSourceCount(c);
 }
 
@@ -742,9 +745,27 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload, vis: PdfVisibi
 function buildCitiAvotiAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   if (!vis.citi_avoti) return "";
   const b = p.citiAvoti;
-  if (!b || !b.comments.trim()) return "";
+  if (!b?.sections?.length) return "";
+  const islands: string[] = [];
+  const total = b.sections.length;
+  for (const [i, section] of b.sections.entries()) {
+    const comments = section.comments.trim();
+    if (!comments) continue;
+    const label =
+      total > 1 && section.label?.trim() ?
+        `${SOURCE_BLOCK_LABELS.citi_avoti} — ${section.label.trim()}`
+      : total > 1 ?
+        `${SOURCE_BLOCK_LABELS.citi_avoti} — Avots ${i + 1}`
+      : SOURCE_BLOCK_LABELS.citi_avoti;
+    islands.push(
+      total > 1 ?
+        `<p class="pdf-citi-avoti-subhead">${escapeHtml(label)}</p>${pdfAvotuCommentIsland(comments)}`
+      : pdfAvotuCommentIsland(comments),
+    );
+  }
+  if (islands.length === 0) return "";
   const head = sectionHeadBrand(sectionIconPdfHtml("layers"), SOURCE_BLOCK_LABELS.citi_avoti);
-  const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(b.comments)}</div>`;
+  const body = `<div class="pdf-source-section-body">${islands.join("\n")}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card pdf-citi-avoti-plain" role="region">${head}${body}</div>`;
 }
 

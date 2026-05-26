@@ -11,6 +11,7 @@ import {
   isGeminiSourceCommentBlockKey,
 } from "@/lib/admin-gemini-source-comment";
 import { mergeSourceBlocksFromBody } from "@/lib/admin-gemini-api-body";
+import { sourceBlockCommentsPlain } from "@/lib/admin-source-comment-blocks";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
 export const maxDuration = 90;
@@ -70,7 +71,7 @@ export async function POST(req: Request) {
   const sourceBlocks = mergeSourceBlocksFromBody(b);
   const existingDraftPlain =
     str(b.existingDraftPlain).trim() ||
-    adminRichHtmlToPlainText(sourceBlocks[blockKeyRaw].comments ?? "").trim();
+    adminRichHtmlToPlainText(sourceBlockCommentsPlain(blockKeyRaw, sourceBlocks)).trim();
 
   try {
     const text = await generateSourceCommentWithGemini({

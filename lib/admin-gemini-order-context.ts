@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   autoRecordsBlockToPlainText,
+  citiAvotiSectionLabel,
   citiAvotiToPlainText,
   CSDD_MILEAGE_UNIFIED_TITLE,
   csddFormToPlainText,
@@ -75,10 +76,20 @@ function unifiedIncidentsWithLossPlainText(blocks: WorkspaceSourceBlocks): strin
 
 function allIncidentRowsPlainText(blocks: WorkspaceSourceBlocks): string {
   const parts: string[] = [];
-  for (const key of ["autodna", "carvertical", "citi_avoti"] as const) {
+  for (const key of ["autodna", "carvertical"] as const) {
     const inc = blocks[key].incidents.filter(ltabRowHasData);
     if (inc.length === 0) continue;
     parts.push(`【${SOURCE_BLOCK_LABELS[key]} — ${NEGADIJUMU_VESTURE_TITLE}】`);
+    for (const r of inc) {
+      parts.push([r.csngDate.trim(), r.lossAmount.trim(), r.incidentNo.trim()].filter(Boolean).join("\t"));
+    }
+  }
+  const citiTotal = blocks.citi_avoti.sections.length;
+  for (const [i, section] of blocks.citi_avoti.sections.entries()) {
+    const inc = section.incidents.filter(ltabRowHasData);
+    if (inc.length === 0) continue;
+    const head = citiAvotiSectionLabel(section, i, citiTotal);
+    parts.push(`【${head} — ${NEGADIJUMU_VESTURE_TITLE}】`);
     for (const r of inc) {
       parts.push([r.csngDate.trim(), r.lossAmount.trim(), r.incidentNo.trim()].filter(Boolean).join("\t"));
     }
@@ -99,6 +110,13 @@ function vendorRawLogsPlainText(blocks: WorkspaceSourceBlocks): string {
     const raw = blocks[key].mileagePasteRaw?.trim();
     if (!raw) continue;
     parts.push(`【${SOURCE_BLOCK_LABELS[key]} raw logs】\n${raw.slice(0, 12_000)}`);
+  }
+  const citiTotal = blocks.citi_avoti.sections.length;
+  for (const [i, section] of blocks.citi_avoti.sections.entries()) {
+    const raw = section.rawUnprocessedData?.trim();
+    if (!raw) continue;
+    const head = citiAvotiSectionLabel(section, i, citiTotal);
+    parts.push(`【${head} — RAW datu žurnāls】\n${raw.slice(0, 12_000)}`);
   }
   return parts.join("\n\n");
 }

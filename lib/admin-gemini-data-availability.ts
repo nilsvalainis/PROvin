@@ -12,9 +12,10 @@ import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
 
 function hasAnyIncidentTableRows(blocks: WorkspaceSourceBlocks): boolean {
-  for (const key of ["autodna", "carvertical", "citi_avoti"] as const) {
+  for (const key of ["autodna", "carvertical"] as const) {
     if (blocks[key].incidents.some(ltabRowHasData)) return true;
   }
+  if (blocks.citi_avoti.sections.some((s) => s.incidents.some(ltabRowHasData))) return true;
   return blocks.ltab.rows.some(ltabRowHasData);
 }
 

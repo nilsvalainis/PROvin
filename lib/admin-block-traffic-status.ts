@@ -5,6 +5,7 @@
 import type {
   AutoRecordsBlockState,
   CitiAvotiBlockState,
+  CitiAvotiSectionState,
   CsddFormFields,
   LtabBlockState,
   ListingAnalysisBlockState,
@@ -21,6 +22,7 @@ import {
   ltabRowHasData,
   tirgusFormHasContent,
   vendorAvotuBlockHasContent,
+  citiAvotiSectionHasContent,
 } from "@/lib/admin-source-blocks";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 
@@ -84,8 +86,19 @@ export function ltabTrafficLevel(b: LtabBlockState): TrafficFillLevel {
   return "partial";
 }
 
+function citiAvotiSectionTrafficLevel(s: CitiAvotiSectionState): TrafficFillLevel {
+  if (!citiAvotiSectionHasContent(s)) return "empty";
+  const vendorLevel = vendorAvotuTrafficLevel(s);
+  if (vendorLevel !== "empty") return vendorLevel;
+  if (s.rawUnprocessedData?.trim()) return "partial";
+  return "empty";
+}
+
 export function citiAvotiTrafficLevel(b: CitiAvotiBlockState): TrafficFillLevel {
-  return vendorAvotuTrafficLevel(b);
+  const active = b.sections.map(citiAvotiSectionTrafficLevel).filter((l) => l !== "empty");
+  if (active.length === 0) return "empty";
+  if (active.every((l) => l === "complete")) return "complete";
+  return "partial";
 }
 
 function tirgusComplete(f: TirgusFormFields): boolean {
