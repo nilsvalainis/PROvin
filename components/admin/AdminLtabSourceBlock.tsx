@@ -9,10 +9,12 @@ import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { LtabBlockState, LtabIncidentRow } from "@/lib/admin-source-blocks";
-import { emptyLtabRow } from "@/lib/admin-source-blocks";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
+import { emptyLtabRow, ltabRowHasData } from "@/lib/admin-source-blocks";
+import { mergeLtabIncidentRows } from "@/lib/history-vendor-pdf-import";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -71,6 +73,35 @@ export function AdminLtabSourceBlock({
     >
       <div className={`flex h-full min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}>
           <div className={`min-h-0 flex-1 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>
+            <AdminHistoryVendorPdfUpload
+              target="ltab"
+              disabled={disabled}
+              readOnly={readOnly}
+              onImported={(result) => {
+                const merged = mergeLtabIncidentRows(value.rows, result.incidents);
+                const dataRows = merged.filter(ltabRowHasData);
+                onChange({
+                  ...value,
+                  pdfImportRaw: result.rawText || value.pdfImportRaw,
+                  rows: dataRows.length > 0 ? [...dataRows, emptyLtabRow()] : value.rows,
+                });
+              }}
+            />
+            {!readOnly && (value.pdfImportRaw ?? "").trim() ? (
+              <div className="mb-2">
+                <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
+                  PDF imports RAW
+                </label>
+                <textarea
+                  className="mb-1 w-full min-h-[56px] resize-y rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)]"
+                  rows={3}
+                  disabled={disabled}
+                  value={value.pdfImportRaw ?? ""}
+                  onChange={(e) => onChange({ ...value, pdfImportRaw: e.target.value.slice(0, 120_000) })}
+                  aria-label="LTAB PDF neapstrādātie dati"
+                />
+              </div>
+            ) : null}
             <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">
               <table className="w-full min-w-[280px] border-collapse text-[11px]">
                 <thead>

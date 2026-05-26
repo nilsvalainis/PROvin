@@ -4,6 +4,8 @@
 
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude, type ProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
+import { parseVehicleAiFromWorkspaceRecord } from "@/lib/vehicle-ai-extraction-parse";
+import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 import type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
 import {
   autoRecordsRowHasData,
@@ -529,6 +531,8 @@ export type LtabIncidentRow = {
 export type LtabBlockState = {
   rows: LtabIncidentRow[];
   comments: string;
+  /** PDF importa RAW (tikai admin; nav obligāti klienta PDF). */
+  pdfImportRaw?: string;
 };
 
 /** AutoDNA / CarVertical — nobraukums (kā AUTO RECORDS) + negadījumi (kā LTAB). */
@@ -592,7 +596,7 @@ export function emptyLtabRow(): LtabIncidentRow {
 }
 
 export function emptyLtabBlock(): LtabBlockState {
-  return { rows: [emptyLtabRow()], comments: "" };
+  return { rows: [emptyLtabRow()], comments: "", pdfImportRaw: "" };
 }
 
 export function emptyVendorAvotuBlock(): VendorAvotuBlockState {
@@ -1059,6 +1063,7 @@ function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBloc
 function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
   const rowsIn = Array.isArray(raw.rows) ? raw.rows : [];
   const comments = typeof raw.comments === "string" ? raw.comments : "";
+  const pdfImportRaw = typeof raw.pdfImportRaw === "string" ? raw.pdfImportRaw.slice(0, 120_000) : "";
   const rows: LtabIncidentRow[] = rowsIn.map((row) => {
     if (!row || typeof row !== "object") return emptyLtabRow();
     const x = row as Record<string, unknown>;
@@ -1076,7 +1081,7 @@ function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
     };
   });
   if (rows.length === 0) {
-    return { rows: [emptyLtabRow()], comments };
+    return { rows: [emptyLtabRow()], comments, ...(pdfImportRaw ? { pdfImportRaw } : {}) };
   }
   const { head, trailing } = splitTrailingEmptyBy(rows, ltabRowHasData);
   const dataRows = head.filter(ltabRowHasData);
@@ -1084,6 +1089,7 @@ function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
   return {
     rows: combined.length > 0 ? combined : [emptyLtabRow()],
     comments,
+    ...(pdfImportRaw ? { pdfImportRaw } : {}),
   };
 }
 
@@ -1321,6 +1327,8 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   previewConfirmed: boolean;
   pdfVisibility: PdfVisibilitySettings;
   pdfBannerInclude: ProvinBannerPdfInclude;
+  vehicleAiExtraction: VehicleAIExtraction | null;
+  vehicleAiExtractionMeta: VehicleAiExtractionMeta | null;
 } | null {
   if (!raw) return null;
   try {
@@ -1338,6 +1346,8 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
     } else {
       return null;
     }
+    const { extraction: vehicleAiExtraction, meta: vehicleAiExtractionMeta } =
+      parseVehicleAiFromWorkspaceRecord(p);
     return {
       sourceBlocks,
       iriss: typeof p.iriss === "string" ? p.iriss : "",
@@ -1346,6 +1356,8 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
       previewConfirmed: Boolean(p.previewConfirmed),
       pdfVisibility: mergePdfVisibility(p.pdfVisibility),
       pdfBannerInclude: mergeProvinBannerPdfInclude(p.pdfBannerInclude),
+      vehicleAiExtraction,
+      vehicleAiExtractionMeta,
     };
   } catch {
     return null;

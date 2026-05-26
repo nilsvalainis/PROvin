@@ -18,6 +18,8 @@ import {
   PROVIN_VENDOR_FIELD,
   emptyAutoRecordsServiceRow,
   emptyLtabRow,
+  emptySourcePdfChecklist,
+  normalizeSourcePdfChecklist,
   sourcePdfChecklistHasAny,
 } from "@/lib/admin-source-blocks";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
@@ -34,6 +36,8 @@ import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
+import { mergeLtabIncidentRows, mergeVendorServiceHistory } from "@/lib/history-vendor-pdf-import";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -138,6 +142,30 @@ export function AdminVendorAvotuSourceBlock({
     >
       <div className={`flex min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}>
       <div className={`min-h-0 flex-1 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>
+        {blockKey === "carvertical" || blockKey === "autodna" ? (
+          <AdminHistoryVendorPdfUpload
+            target={blockKey}
+            disabled={disabled}
+            readOnly={readOnly}
+            onImported={(result) => {
+              const mergedMileage = mergeVendorServiceHistory(value.serviceHistory, result.serviceHistory);
+              const mergedIncidents = mergeLtabIncidentRows(value.incidents, result.incidents);
+              const checklistBase = value.pdfChecklist ?? emptySourcePdfChecklist();
+              const checklistNext = normalizeSourcePdfChecklist({
+                ...checklistBase,
+                ...result.suggestedPdfChecklist,
+              });
+              onChange({
+                ...value,
+                mileagePasteRaw: result.rawText || value.mileagePasteRaw,
+                serviceHistory:
+                  mergedMileage.length > 0 ? mergedMileage : [emptyAutoRecordsServiceRow()],
+                incidents: mergedIncidents.length > 0 ? mergedIncidents : value.incidents,
+                pdfChecklist: sourcePdfChecklistHasAny(checklistNext) ? checklistNext : value.pdfChecklist,
+              });
+            }}
+          />
+        ) : null}
         <p className="mb-1.5 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
           <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}

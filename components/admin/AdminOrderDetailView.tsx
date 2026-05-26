@@ -700,6 +700,7 @@ export function AdminOrderDetailView({
         onInternalCommentChange={(v) => setEdits((prev) => ({ ...prev, internalComment: v }))}
         mileageCommentDraft={mergedMileageComment}
         onMileageCommentChange={(v) => setEdits((prev) => ({ ...prev, mileageComment: v }))}
+        onOrderEditsPatch={(patch) => setEdits((prev) => ({ ...prev, ...patch }))}
         dashboardSlot={dashboardSlot}
         portfolioPortalDomId={`admin-portfolio-slot-${order.id}`}
         portfolioPortalTargetInParent

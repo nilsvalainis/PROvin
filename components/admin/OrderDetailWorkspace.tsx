@@ -129,6 +129,9 @@ import {
   type NotifyPortfolioUploadItem,
 } from "@/lib/admin-notify-report-ready-client";
 import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
+import { AdminVehicleReportsAiPanel } from "@/components/admin/AdminVehicleReportsAiPanel";
+import { applyVehicleAiExtraction } from "@/lib/apply-vehicle-ai-extraction";
+import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 
 function geminiFetchErrorMessage(
   res: Response,
@@ -176,6 +179,8 @@ type WorkspacePersist = {
   apskatesPlāns: string;
   cenasAtbilstiba: string;
   previewConfirmed: boolean;
+  vehicleAiExtraction: VehicleAIExtraction | null;
+  vehicleAiExtractionMeta: VehicleAiExtractionMeta | null;
 };
 
 const EMPTY_WORKSPACE: WorkspacePersist = {
@@ -184,6 +189,8 @@ const EMPTY_WORKSPACE: WorkspacePersist = {
   apskatesPlāns: "",
   cenasAtbilstiba: "",
   previewConfirmed: false,
+  vehicleAiExtraction: null,
+  vehicleAiExtractionMeta: null,
 };
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
@@ -342,6 +349,8 @@ function serializeWorkspaceState(
     previewConfirmed: ws.previewConfirmed,
     pdfVisibility: pdf,
     pdfBannerInclude: bannerInclude,
+    vehicleAiExtraction: ws.vehicleAiExtraction,
+    vehicleAiExtractionMeta: ws.vehicleAiExtractionMeta,
   });
 }
 
@@ -513,6 +522,7 @@ export function OrderDetailWorkspace({
   onInternalCommentChange,
   mileageCommentDraft,
   onMileageCommentChange,
+  onOrderEditsPatch,
   dashboardSlot,
   portfolioPortalDomId,
   portfolioPortalTargetInParent = false,
@@ -528,6 +538,8 @@ export function OrderDetailWorkspace({
   onInternalCommentChange: (value: string) => void;
   mileageCommentDraft: string;
   onMileageCommentChange: (value: string) => void;
+  /** VIN un citi meta lauki no AI importa. */
+  onOrderEditsPatch?: (patch: { vin?: string }) => void;
   /** 0. solis — maksājums, transports, klients, pielikumi, komentārs (vecāka 2×2 režģis). */
   dashboardSlot?: ReactNode;
   /** Ja norādīts, „1. Pielikumi” tiek renderēts šajā DOM elementā (kreisās kolonnas augšā). */
@@ -1008,28 +1020,21 @@ export function OrderDetailWorkspace({
         });
         const picked = candidates[0]!;
         const chosen = picked.data;
-        setWs({
+        const hydratedWs: WorkspacePersist = {
           sourceBlocks: chosen.sourceBlocks,
           iriss: chosen.iriss,
           apskatesPlāns: chosen.apskatesPlāns,
           cenasAtbilstiba: chosen.cenasAtbilstiba,
           previewConfirmed: Boolean(chosen.previewConfirmed),
-        });
+          vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
+          vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
+        };
+        setWs(hydratedWs);
         const mergedVisibility = mergePdfVisibility(chosen.pdfVisibility);
         const mergedBannerInclude = mergeProvinBannerPdfInclude(chosen.pdfBannerInclude);
         onPdfVisibilityChange(mergedVisibility);
         setPdfBannerInclude(mergedBannerInclude);
-        hydrationSnapshotRef.current = serializeWorkspaceState(
-          {
-            sourceBlocks: chosen.sourceBlocks,
-            iriss: chosen.iriss,
-            apskatesPlāns: chosen.apskatesPlāns,
-            cenasAtbilstiba: chosen.cenasAtbilstiba,
-            previewConfirmed: Boolean(chosen.previewConfirmed),
-          },
-          mergedVisibility,
-          mergedBannerInclude,
-        );
+        hydrationSnapshotRef.current = serializeWorkspaceState(hydratedWs, mergedVisibility, mergedBannerInclude);
         if (!rawV3 || picked.source !== "local") {
           try {
             localStorage.setItem(keyV3, hydrationSnapshotRef.current);
@@ -1483,8 +1488,8 @@ export function OrderDetailWorkspace({
     void persistPortfolio(portfolio.filter((p) => p.id !== id));
   };
 
-  const canGeneratePdf =
-    ws.previewConfirmed && ws.iriss.trim().length > 0 && ws.cenasAtbilstiba.trim().length > 0;
+  /** PDF drīkst ģenerēt arī ar tukšiem laukiem — redzamība kontrolēta ar `pdfVisibility`. */
+  const canGeneratePdf = true;
 
   /** Veci / bojāti lokālie JSON — vienmēr pilda trūkstošos laukus (piem. listing_analysis). */
   const blocksDisplaySafe = useMemo(
@@ -1589,13 +1594,6 @@ export function OrderDetailWorkspace({
   );
 
   const openPrintReport = async () => {
-    if (!canGeneratePdf) {
-      alert(
-        "Vispirms: 1) aizpildi avotu laukus un pievieno failus, 2) atver Priekšskatu un apstiprini, 3) aizpildi kopsavilkumu un lauku \"Cenas atbilstība balstoties uz mūsu rīcībā esošajiem datiem\". Tad ģenerē PDF.",
-      );
-      return;
-    }
-
     let listingMarket: ListingMarketSnapshot | null = null;
     const listingUrl = payload.listingUrl?.trim();
     if (listingUrl) {
@@ -2016,6 +2014,45 @@ export function OrderDetailWorkspace({
       ) : (
         <p className="mt-1 flex-1 text-[11px] leading-tight text-[var(--color-provin-muted)]">Vēl nav pievienotu failu.</p>
       )}
+      <AdminVehicleReportsAiPanel
+        sessionId={payload.sessionId}
+        geminiAllowed={payload.geminiAllowed}
+        extraction={ws.vehicleAiExtraction}
+        extractionMeta={ws.vehicleAiExtractionMeta}
+        commentsDraft={internalCommentDraft}
+        onCommentsDraftChange={onInternalCommentChange}
+        compact={narrowPortfolioLayout}
+        collectPortfolioPdfFiles={async () => {
+          const out: File[] = [];
+          for (const p of portfolio) {
+            if (!/\.pdf$/i.test(p.name) && p.mime !== "application/pdf") continue;
+            const blob = await fetch(p.blobUrl).then((r) => r.blob());
+            out.push(
+              new File([blob], p.name, {
+                type: blob.type || "application/pdf",
+                lastModified: Number.isFinite(Date.parse(p.addedAt)) ? Date.parse(p.addedAt) : Date.now(),
+              }),
+            );
+          }
+          return out;
+        }}
+        onExtractionChange={(extraction, meta) => {
+          updateWs({ vehicleAiExtraction: extraction, vehicleAiExtractionMeta: meta });
+        }}
+        onApplyExtraction={(extraction) => {
+          const applied = applyVehicleAiExtraction({
+            sourceBlocks: ws.sourceBlocks,
+            orderEdits: {},
+            currentVin: payload.vin,
+            extraction,
+          });
+          updateWs({ sourceBlocks: applied.sourceBlocks });
+          if (applied.orderEdits.vin?.trim()) {
+            onOrderEditsPatch?.({ vin: applied.orderEdits.vin });
+          }
+          return { filledFields: applied.filledFields };
+        }}
+      />
     </section>
   );
 
@@ -2102,12 +2139,6 @@ export function OrderDetailWorkspace({
     : null;
 
   const generateAuditPdfForWhatsApp = useCallback(async (): Promise<File | null> => {
-    if (!canGeneratePdf) {
-      alert(
-        "Vispirms: 1) aizpildi avotu laukus un pievieno failus, 2) atver Priekšskatu un apstiprini, 3) aizpildi kopsavilkumu un lauku \"Cenas atbilstība balstoties uz mūsu rīcībā esošajiem datiem\". Tad ģenerē PDF.",
-      );
-      return null;
-    }
     const pdf = await PDFDocument.create();
     const font = await pdf.embedFont(StandardFonts.Helvetica);
     const titleFont = await pdf.embedFont(StandardFonts.HelveticaBold);
@@ -2191,7 +2222,7 @@ export function OrderDetailWorkspace({
     const pdfBytes = await pdf.save();
     const pdfBlob = new Blob([Uint8Array.from(pdfBytes)], { type: "application/pdf" });
     return new File([pdfBlob], buildProvinAuditPdfFilename(payload.vin), { type: "application/pdf" });
-  }, [canGeneratePdf, payload.customerEmail, payload.customerName, payload.customerPhone, payload.vin, ws]);
+  }, [payload.customerEmail, payload.customerName, payload.customerPhone, payload.vin, ws]);
 
   const handleWhatsAppSend = useCallback(async () => {
     if (!whatsappShareHref || !whatsappPhoneDigits) return;
@@ -2807,12 +2838,7 @@ export function OrderDetailWorkspace({
           <button type="button" onClick={() => setPreviewOpen(true)} className={wizardFooterPreview}>
             PDF Priekšskats
           </button>
-          <button
-            type="button"
-            onClick={() => void openPrintReport()}
-            disabled={!canGeneratePdf}
-            className={wizardFooterPdf}
-          >
+          <button type="button" onClick={() => void openPrintReport()} className={wizardFooterPdf}>
             Ģenerēt PDF
           </button>
         </div>

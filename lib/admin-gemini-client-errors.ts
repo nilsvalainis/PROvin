@@ -24,6 +24,10 @@ const ERROR_MESSAGES_LV: Record<string, string> = {
   missing_seller_input: "Ievadi papildus nosaukumu vai sludinājuma aprakstu",
   listing_scrape_failed: "Neizdevās nolasīt ss.lv sludinājumu — pārbaudi saiti",
   gemini_empty_content: "Gemini atgrieza tukšu atbildi (iespējams satura filtrs)",
+  gemini_invalid_json: "Gemini atgrieza nevalīdu JSON — mēģini vēlreiz",
+  missing_files: "Pievieno vismaz vienu PDF",
+  extraction_failed: "Neizdevās izvilkt datus no PDF",
+  pdf_extract_failed: "Neizdevās nolasīt PDF tekstu",
 };
 
 function humanizeGeminiDetail(raw: string): string {

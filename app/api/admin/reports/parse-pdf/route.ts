@@ -1,12 +1,17 @@
 /**
- * Admin: auto-records.com PDF → AUTO RECORDS nobraukuma tabula.
- * POST multipart/form-data — lauks `file` (application/pdf).
+ * Admin: vēstures PDF → strukturēti dati.
+ * POST multipart/form-data — `file` (application/pdf), opc. `target`:
+ * auto_records (noklus.) | autodna | carvertical | ltab
  */
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { extractPdfText } from "@/lib/admin-portfolio-pdf-analysis";
 import { parseAutoRecordsPdfText } from "@/lib/auto-records-pdf-parse";
+import {
+  parseHistoryVendorPdfText,
+  type HistoryVendorPdfTarget,
+} from "@/lib/history-vendor-pdf-import";
 
 export const maxDuration = 90;
 export const runtime = "nodejs";
@@ -63,6 +68,30 @@ export async function POST(req: Request) {
         { error: "pdf_extract_failed", detail: "Neizdevās nolasīt PDF tekstu" },
         { status: 422 },
       );
+    }
+
+    const targetRaw = String(form.get("target") ?? "auto_records")
+      .trim()
+      .toLowerCase();
+    const vendorTargets: HistoryVendorPdfTarget[] = ["autodna", "carvertical", "ltab"];
+    const target = vendorTargets.includes(targetRaw as HistoryVendorPdfTarget)
+      ? (targetRaw as HistoryVendorPdfTarget)
+      : null;
+
+    if (target) {
+      const parsed = parseHistoryVendorPdfText(target, text);
+      if (
+        parsed.serviceHistory.length === 0 &&
+        parsed.incidents.length === 0 &&
+        parsed.warnings.length === 0
+      ) {
+        parsed.warnings.push("Datu nav — pārbaudi PDF avotu.");
+      }
+      return NextResponse.json({
+        ok: true,
+        fileName: file.name,
+        ...parsed,
+      });
     }
 
     const parsed = parseAutoRecordsPdfText(text);

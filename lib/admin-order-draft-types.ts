@@ -26,6 +26,8 @@ export type OrderDraftWorkspaceBody = {
   previewConfirmed: boolean;
   pdfVisibility?: import("@/lib/pdf-visibility").PdfVisibilitySettings;
   pdfBannerInclude?: import("@/lib/provin-alert-banners").ProvinBannerPdfInclude;
+  vehicleAiExtraction?: import("@/lib/vehicle-ai-extraction-types").VehicleAIExtraction | null;
+  vehicleAiExtractionMeta?: import("@/lib/vehicle-ai-extraction-types").VehicleAiExtractionMeta | null;
 };
 
 export type OrderDraftState = {

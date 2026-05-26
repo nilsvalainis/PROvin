@@ -30,6 +30,37 @@ export function formatGeminiSdkError(e: unknown): string {
   return "unknown";
 }
 
+/** Strukturēta JSON atbilde (responseMimeType application/json). */
+export async function geminiGenerateJsonText(opts: {
+  model: string;
+  systemInstruction: string;
+  userPrompt: string;
+  temperature?: number;
+}): Promise<string> {
+  const key = getGeminiApiKeyFromEnv();
+  if (!key) throw new Error("missing_gemini_key");
+
+  try {
+    const genAI = new GoogleGenerativeAI(key);
+    const model = genAI.getGenerativeModel({
+      model: opts.model,
+      systemInstruction: opts.systemInstruction,
+    });
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
+      generationConfig: {
+        temperature: opts.temperature ?? 0.2,
+        responseMimeType: "application/json",
+      },
+    });
+    const text = result.response.text()?.trim();
+    if (!text) throw new Error("gemini_empty_content");
+    return text;
+  } catch (e) {
+    throw new Error(formatGeminiSdkError(e));
+  }
+}
+
 export async function geminiGenerateText(opts: {
   model: string;
   systemInstruction: string;
