@@ -42,6 +42,11 @@ import {
   type StoredPortfolioBlob,
 } from "@/lib/admin-portfolio-idb";
 import {
+  pickNewestWorkspaceHydration,
+  serializeOrderWorkspaceSnapshot,
+  parseWorkspaceSnapshotSavedAtMs,
+} from "@/lib/admin-order-workspace-persist";
+import {
   analyzeVinAndKm,
   segmentTextForPreview,
   stripListingFluff,
@@ -340,18 +345,9 @@ function serializeWorkspaceState(
   ws: WorkspacePersist,
   pdf: PdfVisibilitySettings,
   bannerInclude: ProvinBannerPdfInclude,
+  savedAt?: string,
 ): string {
-  return JSON.stringify({
-    sourceBlocks: ws.sourceBlocks,
-    iriss: ws.iriss,
-    apskatesPlāns: ws.apskatesPlāns,
-    cenasAtbilstiba: ws.cenasAtbilstiba,
-    previewConfirmed: ws.previewConfirmed,
-    pdfVisibility: pdf,
-    pdfBannerInclude: bannerInclude,
-    vehicleAiExtraction: ws.vehicleAiExtraction,
-    vehicleAiExtractionMeta: ws.vehicleAiExtractionMeta,
-  });
+  return serializeOrderWorkspaceSnapshot(ws, pdf, bannerInclude, savedAt);
 }
 
 const NOTIFY_ALLOWED_MIME = new Set([
@@ -557,6 +553,9 @@ export function OrderDetailWorkspace({
   const fileInputId = useId();
   const [ws, setWs] = useState<WorkspacePersist>(EMPTY_WORKSPACE);
   const [workspaceHydrated, setWorkspaceHydrated] = useState(false);
+  const [workspaceSaveFlash, setWorkspaceSaveFlash] = useState(false);
+  const [workspaceSaveServerOk, setWorkspaceSaveServerOk] = useState(true);
+  const [workspaceSaveBusy, setWorkspaceSaveBusy] = useState(false);
   const [portfolio, setPortfolio] = useState<PortfolioEntry[]>([]);
   const portfolioRef = useRef<PortfolioEntry[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -1006,19 +1005,47 @@ export function OrderDetailWorkspace({
       const candidates: {
         source: "local" | "backup" | "server";
         data: NonNullable<typeof localHydrated> | NonNullable<typeof serverHydrated> | NonNullable<typeof backupHydrated>;
+        savedAtMs: number;
+        fillScore: number;
       }[] = [];
-      if (localHydrated) candidates.push({ source: "local", data: localHydrated });
-      if (backupHydrated) candidates.push({ source: "backup", data: backupHydrated });
-      if (serverHydrated) candidates.push({ source: "server", data: serverHydrated });
-
-      if (candidates.length > 0) {
-        const rank: Record<"local" | "backup" | "server", number> = { local: 3, backup: 2, server: 1 };
-        candidates.sort((a, b) => {
-          const sd = scoreWorkspace(b.data) - scoreWorkspace(a.data);
-          if (sd !== 0) return sd;
-          return rank[b.source] - rank[a.source];
+      if (localHydrated) {
+        candidates.push({
+          source: "local",
+          data: localHydrated,
+          savedAtMs: parseWorkspaceSnapshotSavedAtMs(localRaw),
+          fillScore: scoreWorkspace(localHydrated),
         });
-        const picked = candidates[0]!;
+      }
+      if (backupHydrated) {
+        let backupSavedAt = 0;
+        try {
+          const arr = JSON.parse(rawBackup!) as { savedAt: string; data: string }[];
+          if (Array.isArray(arr) && arr[0]?.savedAt) {
+            const t = Date.parse(arr[0].savedAt);
+            if (Number.isFinite(t)) backupSavedAt = t;
+          }
+        } catch {
+          /* ignore */
+        }
+        candidates.push({
+          source: "backup",
+          data: backupHydrated,
+          savedAtMs: backupSavedAt,
+          fillScore: scoreWorkspace(backupHydrated),
+        });
+      }
+      if (serverHydrated) {
+        candidates.push({
+          source: "server",
+          data: serverHydrated,
+          savedAtMs: parseWorkspaceSnapshotSavedAtMs(serverWorkspaceJson),
+          fillScore: scoreWorkspace(serverHydrated),
+        });
+      }
+
+      const picked = pickNewestWorkspaceHydration(candidates);
+
+      if (picked) {
         const chosen = picked.data;
         const hydratedWs: WorkspacePersist = {
           sourceBlocks: chosen.sourceBlocks,
@@ -1090,13 +1117,127 @@ export function OrderDetailWorkspace({
     if (!workspaceHydrated) return;
     try {
       const cur = wsPersistRef.current;
-      localStorage.setItem(storageKeyWorkspace(payload.sessionId), serializeWorkspaceState(cur, pdfVisibilityRef.current, pdfBannerIncludeRef.current));
+      localStorage.setItem(
+        storageKeyWorkspace(payload.sessionId),
+        serializeWorkspaceState(cur, pdfVisibilityRef.current, pdfBannerIncludeRef.current, new Date().toISOString()),
+      );
       const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
       if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
     } catch {
       /* quota */
     }
   }, [workspaceHydrated, payload.sessionId]);
+
+  const persistWorkspaceSnapshot = useCallback(
+    async (opts?: { showFlash?: boolean }): Promise<boolean> => {
+      if (!workspaceHydrated) return false;
+      const cur = wsPersistRef.current;
+      const savedAt = new Date().toISOString();
+      const snapshot = serializeWorkspaceState(
+        cur,
+        pdfVisibilityRef.current,
+        pdfBannerIncludeRef.current,
+        savedAt,
+      );
+      let localOk = true;
+      try {
+        localStorage.setItem(storageKeyWorkspace(payload.sessionId), snapshot);
+        const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
+        if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
+      } catch {
+        localOk = false;
+      }
+      pushWorkspaceBackup(snapshot);
+      hydrationSnapshotRef.current = snapshot;
+
+      let serverOk = !orderDraftPersistenceEnabled;
+      if (orderDraftPersistenceEnabled) {
+        try {
+          const res = await fetch("/api/admin/order-draft", {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: payload.sessionId,
+              workspace: {
+                sourceBlocks: cur.sourceBlocks,
+                iriss: cur.iriss,
+                apskatesPlāns: cur.apskatesPlāns,
+                cenasAtbilstiba: cur.cenasAtbilstiba,
+                previewConfirmed: cur.previewConfirmed,
+                pdfVisibility: pdfVisibilityRef.current,
+                pdfBannerInclude: pdfBannerIncludeRef.current,
+              },
+            }),
+          });
+          serverOk = res.ok;
+        } catch {
+          serverOk = false;
+        }
+      }
+
+      if (opts?.showFlash !== false) {
+        setWorkspaceSaveServerOk(serverOk);
+        setWorkspaceSaveFlash(true);
+      }
+      return localOk && (serverOk || !orderDraftPersistenceEnabled);
+    },
+    [orderDraftPersistenceEnabled, payload.sessionId, pushWorkspaceBackup, workspaceHydrated],
+  );
+
+  const flushPersistWorkspace = useCallback(() => {
+    flushWorkspaceToLocalStorage();
+    const cur = wsPersistRef.current;
+    const snapshot = serializeWorkspaceState(
+      cur,
+      pdfVisibilityRef.current,
+      pdfBannerIncludeRef.current,
+      new Date().toISOString(),
+    );
+    pushWorkspaceBackup(snapshot);
+    hydrationSnapshotRef.current = snapshot;
+    if (orderDraftPersistenceEnabled) {
+      void fetch("/api/admin/order-draft", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: payload.sessionId,
+          workspace: {
+            sourceBlocks: cur.sourceBlocks,
+            iriss: cur.iriss,
+            apskatesPlāns: cur.apskatesPlāns,
+            cenasAtbilstiba: cur.cenasAtbilstiba,
+            previewConfirmed: cur.previewConfirmed,
+            pdfVisibility: pdfVisibilityRef.current,
+            pdfBannerInclude: pdfBannerIncludeRef.current,
+          },
+        }),
+      }).then((res) => {
+        setWorkspaceSaveServerOk(res.ok);
+        if (res.ok) setWorkspaceSaveFlash(true);
+      });
+    }
+  }, [
+    flushWorkspaceToLocalStorage,
+    orderDraftPersistenceEnabled,
+    payload.sessionId,
+    pushWorkspaceBackup,
+  ]);
+
+  const goWizardStep = useCallback(
+    (next: number | ((prev: number) => number)) => {
+      flushPersistWorkspace();
+      setWizardStep(next);
+    },
+    [flushPersistWorkspace],
+  );
+
+  useEffect(() => {
+    if (!workspaceSaveFlash) return;
+    const u = window.setTimeout(() => setWorkspaceSaveFlash(false), 2200);
+    return () => window.clearTimeout(u);
+  }, [workspaceSaveFlash]);
 
   const resetDemoWorkspace = useCallback(() => {
     if (!payload.isDemo) return;
@@ -1159,59 +1300,28 @@ export function OrderDetailWorkspace({
   ]);
 
   useEffect(() => {
-    const onUnload = () => flushWorkspaceToLocalStorage();
+    const onUnload = () => flushPersistWorkspace();
     window.addEventListener("beforeunload", onUnload);
     return () => window.removeEventListener("beforeunload", onUnload);
-  }, [flushWorkspaceToLocalStorage]);
+  }, [flushPersistWorkspace]);
 
   useEffect(() => {
     if (!workspaceHydrated) return;
     const t = window.setTimeout(() => {
       void (async () => {
         const cur = wsPersistRef.current;
-        const snapshot = serializeWorkspaceState(cur, pdfVisibilityRef.current, pdfBannerIncludeRef.current);
+        const snapshot = serializeWorkspaceState(
+          cur,
+          pdfVisibilityRef.current,
+          pdfBannerIncludeRef.current,
+          new Date().toISOString(),
+        );
         if (snapshot === hydrationSnapshotRef.current) return;
-        flushWorkspaceToLocalStorage();
-        pushWorkspaceBackup(snapshot);
-        if (orderDraftPersistenceEnabled) {
-          try {
-            await fetch("/api/admin/order-draft", {
-              method: "PATCH",
-              credentials: "include",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                sessionId: payload.sessionId,
-                workspace: {
-                  sourceBlocks: cur.sourceBlocks,
-                  iriss: cur.iriss,
-                  apskatesPlāns: cur.apskatesPlāns,
-                  cenasAtbilstiba: cur.cenasAtbilstiba,
-                  previewConfirmed: cur.previewConfirmed,
-                  pdfVisibility: pdfVisibilityRef.current,
-                  pdfBannerInclude: pdfBannerIncludeRef.current,
-                },
-              }),
-            });
-            hydrationSnapshotRef.current = snapshot;
-          } catch {
-            /* ignore */
-          }
-        } else {
-          hydrationSnapshotRef.current = snapshot;
-        }
+        await persistWorkspaceSnapshot({ showFlash: false });
       })();
     }, 750);
     return () => window.clearTimeout(t);
-  }, [
-    ws,
-    pdfVisibility,
-    pdfBannerInclude,
-    workspaceHydrated,
-    payload.sessionId,
-    flushWorkspaceToLocalStorage,
-    orderDraftPersistenceEnabled,
-    pushWorkspaceBackup,
-  ]);
+  }, [ws, pdfVisibility, pdfBannerInclude, workspaceHydrated, persistWorkspaceSnapshot]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2344,6 +2454,12 @@ export function OrderDetailWorkspace({
 
       <AdminCommonPhrasesDrawer open={phrasesOpen} onClose={() => setPhrasesOpen(false)} />
 
+      {!workspaceHydrated ? (
+        <p className="mx-auto mb-3 max-w-lg px-2 text-center text-sm text-[var(--color-provin-muted)]" role="status">
+          Ielādē saglabātos avotu datus…
+        </p>
+      ) : null}
+
       <nav
         className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm"
         aria-label="Soli pa solim"
@@ -2354,10 +2470,36 @@ export function OrderDetailWorkspace({
             className="inline-flex h-7 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-1.5 text-[var(--color-apple-text)] shadow-sm transition hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
             title={`${ADMIN_INCIDENTS_SUMMARY_LABEL} — solis „Kopsavilkums”`}
             aria-label={`Pāriet uz ${ADMIN_INCIDENTS_SUMMARY_LABEL} (kopsavilkuma solis)`}
-            onClick={() => setWizardStep(7)}
+            onClick={() => goWizardStep(7)}
           >
             <MessageSquare className="h-3.5 w-3.5" aria-hidden />
           </button>
+          <button
+            type="button"
+            disabled={!workspaceHydrated || workspaceSaveBusy}
+            className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-emerald-700/25 bg-emerald-50/90 px-2 text-[10px] font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100"
+            title="Saglabāt avotu datus lokāli un serverī (Dropbox mapē, ja projekts sinhronizēts)"
+            onClick={() => {
+              setWorkspaceSaveBusy(true);
+              void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
+            }}
+          >
+            {workspaceSaveBusy ? "Saglabā…" : "Saglabāt"}
+          </button>
+          {workspaceSaveFlash ? (
+            <span
+              className={`max-w-[11rem] text-[10px] font-semibold leading-tight ${
+                orderDraftPersistenceEnabled && !workspaceSaveServerOk ? "text-amber-800" : "text-emerald-700"
+              }`}
+              role="status"
+            >
+              {!orderDraftPersistenceEnabled
+                ? "Saglabāts pārlūkā"
+                : workspaceSaveServerOk
+                  ? "Saglabāts serverī"
+                  : "Saglabāts pārlūkā (serveris nav pieejams)"}
+            </span>
+          ) : null}
           {payload.isDemo ? (
             <button
               type="button"
@@ -2378,7 +2520,7 @@ export function OrderDetailWorkspace({
                 <button
                   key={label}
                   type="button"
-                  onClick={() => setWizardStep(idx)}
+                  onClick={() => goWizardStep(idx)}
                   className={`flex min-w-0 max-w-[7.5rem] flex-1 flex-col items-center gap-0.5 rounded-lg border px-1 py-1 text-center transition sm:max-w-none sm:flex-row sm:justify-start sm:gap-1.5 sm:px-2 ${
                     active
                       ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
@@ -2823,7 +2965,7 @@ export function OrderDetailWorkspace({
             type="button"
             className={wizardFooterNav}
             disabled={wizardStep <= 0}
-            onClick={() => setWizardStep((s) => Math.max(0, s - 1))}
+            onClick={() => goWizardStep((s) => Math.max(0, s - 1))}
           >
             Atpakaļ
           </button>
@@ -2831,7 +2973,7 @@ export function OrderDetailWorkspace({
             type="button"
             className={wizardFooterNav}
             disabled={wizardStep >= WIZARD_STEP_COUNT - 1}
-            onClick={() => setWizardStep((s) => Math.min(WIZARD_STEP_COUNT - 1, s + 1))}
+            onClick={() => goWizardStep((s) => Math.min(WIZARD_STEP_COUNT - 1, s + 1))}
           >
             Turpināt
           </button>

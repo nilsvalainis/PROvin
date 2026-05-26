@@ -26,6 +26,9 @@ export default async function AdminOrderDetailPage({ params }: Props) {
           apskatesPlāns: serverOrderDraft.workspace.apskatesPlāns,
           cenasAtbilstiba: serverOrderDraft.workspace.cenasAtbilstiba,
           previewConfirmed: serverOrderDraft.workspace.previewConfirmed,
+          pdfVisibility: serverOrderDraft.workspace.pdfVisibility,
+          pdfBannerInclude: serverOrderDraft.workspace.pdfBannerInclude,
+          savedAt: serverOrderDraft.updatedAt,
         })
       : null;
 
