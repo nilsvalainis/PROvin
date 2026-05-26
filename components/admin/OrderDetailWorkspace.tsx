@@ -121,7 +121,6 @@ import {
   type GeminiSourceCommentBlockKey,
   sourceBlockHasDataExcludingComments,
 } from "@/lib/admin-source-comment-blocks";
-import { AdminWorkspaceRestoreMenu } from "@/components/admin/AdminWorkspaceRestoreMenu";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import {
   AdminCommonPhrasesDrawer,
@@ -586,11 +585,6 @@ export function OrderDetailWorkspace({
   const [workspaceSaveFlash, setWorkspaceSaveFlash] = useState(false);
   const [workspaceSaveServerOk, setWorkspaceSaveServerOk] = useState(true);
   const [workspaceSaveBusy, setWorkspaceSaveBusy] = useState(false);
-  const [localSaveUi, setLocalSaveUi] = useState<{ phase: "idle" | "saving" | "saved"; atMs: number | null }>({
-    phase: "idle",
-    atMs: null,
-  });
-  const [, localSaveTick] = useState(0);
   const pathname = usePathname();
   const pathnameRef = useRef(pathname);
   const [portfolio, setPortfolio] = useState<PortfolioEntry[]>([]);
@@ -768,11 +762,8 @@ export function OrderDetailWorkspace({
   );
 
   const commitWorkspaceLocalNow = useCallback(
-    (opts?: { force?: boolean; quiet?: boolean }) => {
+    (opts?: { force?: boolean }) => {
       if (!opts?.force && !workspaceHydrated) return;
-      if (!opts?.quiet) {
-        setLocalSaveUi((prev) => (prev.phase === "saving" ? prev : { phase: "saving", atMs: prev.atMs }));
-      }
       const normalized = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
       lastGoodPersistBodyRef.current = normalized;
       const snapshot = serializeOrderWorkspaceSnapshotFromRef(
@@ -786,22 +777,17 @@ export function OrderDetailWorkspace({
         const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
         if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
       } catch {
-        if (!opts?.quiet) setLocalSaveUi({ phase: "idle", atMs: null });
         return;
       }
       pushWorkspaceBackup(snapshot);
       hydrationSnapshotRef.current = snapshot;
-      if (!opts?.quiet) {
-        setLocalSaveUi({ phase: "saved", atMs: Date.now() });
-      }
     },
     [payload.sessionId, pushWorkspaceBackup, workspaceHydrated],
   );
 
   /** Sinhrons `localStorage` — navigācijas / link klikšķa brīdī (bez gaidīšanas uz React unmount). */
   const flushWorkspaceLocalStorageSync = useCallback(() => {
-    commitWorkspaceLocalNow({ force: true, quiet: true });
-    setLocalSaveUi({ phase: "saved", atMs: Date.now() });
+    commitWorkspaceLocalNow({ force: true });
   }, [commitWorkspaceLocalNow]);
 
   const updateWs = useCallback(
@@ -1274,47 +1260,6 @@ export function OrderDetailWorkspace({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `serverWorkspaceJson` refresh var pārrakstīt jaunāku lokālo darba zonu
   }, [payload.sessionId, payload.serverInternalComment, onPdfVisibilityChange]);
 
-  const restoreWorkspaceFromSnapshot = useCallback(
-    (snapshot: string): boolean => {
-      const chosen = hydrateWorkspaceFromStorage(snapshot);
-      if (!chosen) return false;
-      const hydratedWs: WorkspacePersist = {
-        sourceBlocks: chosen.sourceBlocks,
-        iriss: chosen.iriss,
-        apskatesPlāns: chosen.apskatesPlāns,
-        cenasAtbilstiba: chosen.cenasAtbilstiba,
-        previewConfirmed: Boolean(chosen.previewConfirmed),
-        vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
-        vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
-      };
-      wsPersistRef.current = hydratedWs;
-      setWs(hydratedWs);
-      const mergedVisibility = mergePdfVisibility(chosen.pdfVisibility);
-      const mergedBannerInclude = mergeProvinBannerPdfInclude(chosen.pdfBannerInclude);
-      onPdfVisibilityChange(mergedVisibility);
-      setPdfBannerInclude(mergedBannerInclude);
-      const ser = serializeWorkspaceState(hydratedWs, mergedVisibility, mergedBannerInclude, new Date().toISOString());
-      try {
-        localStorage.setItem(storageKeyWorkspace(payload.sessionId), ser);
-      } catch {
-        /* quota */
-      }
-      hydrationSnapshotRef.current = ser;
-      lastGoodPersistBodyRef.current = {
-        sourceBlocks: hydratedWs.sourceBlocks,
-        iriss: hydratedWs.iriss,
-        apskatesPlāns: hydratedWs.apskatesPlāns,
-        cenasAtbilstiba: hydratedWs.cenasAtbilstiba,
-        previewConfirmed: hydratedWs.previewConfirmed,
-        vehicleAiExtraction: hydratedWs.vehicleAiExtraction,
-        vehicleAiExtractionMeta: hydratedWs.vehicleAiExtractionMeta,
-      };
-      workspaceDirtyRef.current = true;
-      return true;
-    },
-    [onPdfVisibilityChange, payload.sessionId],
-  );
-
   const persistWorkspaceSnapshot = useCallback(
     async (opts?: { showFlash?: boolean; serverOnly?: boolean }): Promise<boolean> => {
       if (!workspaceHydrated) return false;
@@ -1589,12 +1534,6 @@ export function OrderDetailWorkspace({
     commitWorkspaceLocalNow,
     scheduleWorkspaceServerPatch,
   ]);
-
-  useEffect(() => {
-    if (localSaveUi.phase !== "saved" || localSaveUi.atMs == null) return;
-    const id = window.setInterval(() => localSaveTick((n) => n + 1), 1000);
-    return () => window.clearInterval(id);
-  }, [localSaveUi.phase, localSaveUi.atMs]);
 
   useEffect(() => {
     if (!workspaceHydrated) return;
@@ -2773,33 +2712,6 @@ export function OrderDetailWorkspace({
           >
             {workspaceSaveBusy ? "Saglabā…" : "Saglabāt"}
           </button>
-          <span
-            className="inline-flex max-w-[14rem] items-center gap-1 text-[10px] font-medium leading-tight text-[var(--color-provin-muted)]"
-            role="status"
-            aria-live="polite"
-          >
-            {localSaveUi.phase === "saving" ? (
-              <>
-                <Loader2 className="h-3 w-3 shrink-0 animate-spin text-emerald-700" aria-hidden />
-                Saglabā lokāli…
-              </>
-            ) : localSaveUi.phase === "saved" && localSaveUi.atMs != null ? (
-              <>
-                <Check className="h-3 w-3 shrink-0 text-emerald-600" aria-hidden />
-                Saglabāts pirms{" "}
-                {Math.max(0, Math.floor((Date.now() - localSaveUi.atMs) / 1000))} sek.
-              </>
-            ) : (
-              <span className="text-slate-400">Gaida izmaiņas…</span>
-            )}
-          </span>
-          <AdminWorkspaceRestoreMenu
-            sessionId={payload.sessionId}
-            backupStorageKey={storageKeyWorkspaceBackup(payload.sessionId)}
-            orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
-            disabled={!workspaceHydrated || workspaceSaveBusy}
-            onRestoreLocalSnapshot={restoreWorkspaceFromSnapshot}
-          />
           {workspaceSaveFlash ? (
             <span
               className={`max-w-[11rem] text-[10px] font-semibold leading-tight ${
