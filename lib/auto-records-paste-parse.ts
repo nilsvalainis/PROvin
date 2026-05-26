@@ -7,6 +7,7 @@ import {
   findDateInString,
   parseFlexibleDateToken,
 } from "@/lib/auto-records-date-odometer-parse";
+import { parseAutoRecordsOdometerTable } from "@/lib/auto-records-odometer-table-parse";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 
@@ -147,14 +148,19 @@ export function sortAutoRecordsDescending(rows: AutoRecordsServiceRow[]): AutoRe
  */
 export function parseAutoRecordsPaste(raw: string): AutoRecordsServiceRow[] {
   const cleaned = sanitizePdfTextForParsing(raw);
+  if (!/ODOMETER\s+CHECK/i.test(cleaned)) return [];
+
+  const tableRows = parseAutoRecordsOdometerTable(cleaned);
+  if (tableRows.length > 0) return tableRows;
+
   const lines = cleaned.split(/\r?\n/);
   let i = 0;
-  while (i < lines.length && !/ODOMETER\s+CHECK/i.test(lines[i])) i++;
+  while (i < lines.length && !/ODOMETER\s+CHECK/i.test(lines[i]!)) i++;
   if (i >= lines.length) return [];
   i++;
   const out: AutoRecordsServiceRow[] = [];
   for (; i < lines.length; i++) {
-    const line = lines[i].trim();
+    const line = lines[i]!.trim();
     if (!line) continue;
     if (isHeaderLine(line)) continue;
     const row = parseDataLine(line);

@@ -7,6 +7,7 @@ import {
   rowFromDateKmFragment,
   scanAutoRecordsDateOdometerPairs,
 } from "@/lib/auto-records-date-odometer-parse";
+import { parseAutoRecordsOdometerTable } from "@/lib/auto-records-odometer-table-parse";
 import {
   autoRecordsRowHasData,
   parseAutoRecordsPaste,
@@ -44,7 +45,7 @@ export type AutoRecordsPdfParseResult = {
 const MAX_RAW_SNIPPET = 120_000;
 
 const KM_AFTER_DATE =
-  /(\d{4}-\d{2}-\d{2}|\d{1,2}[./]\d{1,2}[./]\d{4})[^\d]{0,220}?(\d{1,3}(?:[,.]?\d{3})*)\s*(?:km)?(?:\s*ServiceVisit)?/gi;
+  /(\d{4}-\d{2}-\d{2})[^\d]{0,120}?(\d{1,3}(?:,\d{3})+)\s*km(?:\s*ServiceVisit)?/gi;
 
 const DAMAGE_HINTS: RegExp[] = [
   /\bstructural\s+damage\b/i,
@@ -150,7 +151,8 @@ export function parseAutoRecordsPdfText(text: string): AutoRecordsPdfParseResult
   let rows: AutoRecordsServiceRow[] = [];
 
   if (usedOdometerSection) {
-    rows = parseAutoRecordsPaste(trimmed);
+    rows = parseAutoRecordsOdometerTable(trimmed);
+    if (rows.length === 0) rows = parseAutoRecordsPaste(trimmed);
     if (rows.length === 0) {
       warnings.push("Atrasts ODOMETER CHECK, bet tabulas rindas netika atpazītas — mēģināju regex rezervi.");
       rows = parseAutoRecordsPdfRegexFallback(trimmed);

@@ -35,6 +35,8 @@ import {
   type OutvinVehicleInfo,
 } from "@/lib/outvin-dealer-types";
 import { AdminOutvinDataSourcesCard } from "@/components/admin/AdminOutvinDataSourcesCard";
+import { AdminOutvinDealerReportFields } from "@/components/admin/AdminOutvinDealerReportFields";
+import { parseOutvinVehicleInfoFromAutoRecordsText } from "@/lib/auto-records-vehicle-info-parse";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
@@ -71,18 +73,34 @@ export function AdminAutoRecordsSourceBlock({
   geminiComment,
   orderVin,
 }: Props) {
+  const mergeVehicleInfoFromText = (raw: string, base: AutoRecordsBlockState): AutoRecordsBlockState => {
+    const patch = parseOutvinVehicleInfoFromAutoRecordsText(raw);
+    if (!Object.values(patch).some((v) => typeof v === "string" && v.trim())) return base;
+    const reportBase = base.outvinReport ?? emptyOutvinDealerReport();
+    const nextVehicleInfo: OutvinVehicleInfo = { ...reportBase.vehicleInfo };
+    for (const [k, v] of Object.entries(patch) as [keyof OutvinVehicleInfo, string][]) {
+      if (typeof v === "string" && v.trim()) nextVehicleInfo[k] = v.trim();
+    }
+    if (!outvinVehicleInfoHasData(nextVehicleInfo)) return base;
+    return { ...base, outvinReport: { ...reportBase, vehicleInfo: nextVehicleInfo } };
+  };
+
   const handleRaw = (raw: string) => {
+    let next: AutoRecordsBlockState = { ...value, rawUnprocessedData: raw };
+    if (/VEHICLE\s+INFORMATION/i.test(raw)) {
+      next = mergeVehicleInfoFromText(raw, next);
+    }
     if (/ODOMETER\s+CHECK/i.test(raw)) {
       const parsed = parseAutoRecordsPaste(raw);
-      onChange({
-        ...value,
-        rawUnprocessedData: raw,
+      next = {
+        ...next,
         serviceHistory: parsed.length > 0 ? parsed : [emptyAutoRecordsServiceRow()],
-      });
-    } else {
-      onChange({ ...value, rawUnprocessedData: raw });
+      };
     }
+    onChange(next);
   };
+
+  const outvinReport = value.outvinReport ?? emptyOutvinDealerReport();
 
   const displayRows =
     value.serviceHistory.length > 0
@@ -125,6 +143,12 @@ export function AdminAutoRecordsSourceBlock({
           readOnly={readOnly}
           disabled={disabled}
           onBlockChange={onChange}
+        />
+        <AdminOutvinDealerReportFields
+          report={outvinReport}
+          readOnly={readOnly}
+          disabled={disabled}
+          onChange={(next) => onChange({ ...value, outvinReport: next })}
         />
         <AdminAutoRecordsPdfUpload
           disabled={disabled}
