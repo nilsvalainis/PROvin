@@ -27,6 +27,7 @@ if (process.env.NODE_ENV === "production") {
 const nextConfig: NextConfig = {
   /** Neiekļaut Webpack: stealth spraudņiem ir dinamiski require (clone-deep u.c.). */
   serverExternalPackages: [
+    "pdf-parse",
     "pdfjs-dist",
     "playwright",
     "playwright-core",

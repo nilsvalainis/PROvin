@@ -1,8 +1,5 @@
 /**
- * Admin: vairāki vēstures PDF → teksts un/vai inline PDF → Gemini JSON.
- * POST multipart/form-data: sessionId, files[] (application/pdf).
- *
- * App Router: ķermeņa limits — next.config.ts `experimental.middlewareClientMaxBodySize` (50mb).
+ * Admin: vairāki vēstures PDF → teksts (Plan A: pdf-parse) + Gemini tikai skenētiem PDF (Plan B).
  */
 import { NextResponse } from "next/server";
 
@@ -21,6 +18,7 @@ import {
   type PdfInlineAttachment,
   type PdfTextBundle,
 } from "@/lib/admin-vehicle-reports-gemini";
+import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import {
   extractPdfTextDetailed,
   logPdfExtractResult,
@@ -45,6 +43,14 @@ function isPdfFile(file: File): boolean {
   if (mime && mime !== "application/pdf" && !mime.includes("pdf")) return false;
   if (name && !name.endsWith(".pdf")) return false;
   return true;
+}
+
+/** Plan B — tikai ja teksta slānis tukšs vai īss (skenēts PDF). */
+function needsGeminiInlinePdf(extracted: Awaited<ReturnType<typeof extractPdfTextDetailed>>): boolean {
+  if (extracted.stage === "load_failed") return true;
+  if (extracted.textLayerCharCount === 0) return true;
+  if (!extracted.ok && extracted.textLayerCharCount < MIN_USABLE_TEXT_CHARS) return true;
+  return false;
 }
 
 export async function POST(req: Request) {
@@ -100,7 +106,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error: "payload_too_large",
-        detail: `Kopējais PDF apjoms ${Math.round(totalBytes / (1024 * 1024))} MB pārsniedz limitu (~${Math.round(PDF_MAX_TOTAL_BYTES / (1024 * 1024))} MB)`,
+        detail: `Kopējais PDF apjoms pārsniedz limitu (~${Math.round(PDF_MAX_TOTAL_BYTES / (1024 * 1024))} MB)`,
       },
       { status: 413 },
     );
@@ -110,6 +116,7 @@ export async function POST(req: Request) {
   const pdfAttachments: PdfInlineAttachment[] = [];
   const warnings: string[] = [];
   const extractLog: Array<Record<string, unknown>> = [];
+  const enginesPerFile: PdfIngestEngine[] = [];
 
   for (const file of files) {
     if (!isPdfFile(file)) {
@@ -142,74 +149,70 @@ export async function POST(req: Request) {
     const kind = detectHistoryPdfKind(file.name, "");
     const sourceHint = SOURCE_HINT[kind] ?? SOURCE_HINT.generic;
 
-    if (file.size <= PDF_GEMINI_INLINE_MAX_BYTES) {
-      pdfAttachments.push({
-        fileName: file.name,
-        sourceHint,
-        buffer,
-      });
-    } else {
-      warnings.push(
-        `${file.name}: pārāk liels Gemini inline (${Math.round(file.size / (1024 * 1024))} MB) — tikai teksta slānis, ja pieejams`,
-      );
-    }
-
     const extracted = await extractPdfTextDetailed(buffer, { fileName: file.name });
     logPdfExtractResult(LOG_PREFIX, extracted);
+
+    const useInline = needsGeminiInlinePdf(extracted);
+    const fileEngine: PdfIngestEngine = useInline ? "gemini_fallback" : "local_parser";
+    enginesPerFile.push(fileEngine);
+
+    if (useInline) {
+      if (file.size <= PDF_GEMINI_INLINE_MAX_BYTES) {
+        pdfAttachments.push({ fileName: file.name, sourceHint, buffer });
+        warnings.push(
+          `${file.name}: skenēts PDF — Plan B (Gemini lasa attēlu, ${extracted.textLayerCharCount} zīmes tekstā).`,
+        );
+      } else {
+        warnings.push(
+          `${file.name}: skenēts, bet fails pārāk liels inline Gemini (~18 MB) — tikai īss teksta fragments.`,
+        );
+      }
+    }
+
+    const textForBundle = extracted.text.trim();
+    if (textForBundle.length > 0) {
+      bundles.push({
+        fileName: file.name,
+        text: textForBundle,
+        sourceHint,
+      });
+      if (!useInline) {
+        warnings.push(`${file.name}: Plan A (lokāls teksts, ${extracted.backend}, ${extracted.textLayerCharCount} zīmes).`);
+      }
+    }
 
     extractLog.push({
       fileName: file.name,
       stage: extracted.stage,
+      backend: extracted.backend,
       pageCount: extracted.pageCount,
       textLayerCharCount: extracted.textLayerCharCount,
       fileBytes: file.size,
-      errorMessage: extracted.errorMessage,
+      engine: fileEngine,
       sentInlineToGemini: pdfAttachments.some((p) => p.fileName === file.name),
     });
-
-    if (extracted.ok && extracted.text.trim().length >= MIN_USABLE_TEXT_CHARS) {
-      bundles.push({
-        fileName: file.name,
-        text: extracted.text,
-        sourceHint,
-      });
-    } else if (extracted.text.trim().length > 0) {
-      bundles.push({
-        fileName: file.name,
-        text: extracted.text,
-        sourceHint,
-      });
-      warnings.push(`${file.name}: īss teksta slānis — papildus nosūtīts Gemini kā PDF`);
-    } else if (extracted.stage === "text_layer_empty") {
-      warnings.push(
-        `${file.name}: teksta slānis tukšs (${extracted.textLayerCharCount} zīmes, ${extracted.pageCount} lpp.) — Gemini lasa PDF`,
-      );
-    } else if (extracted.stage === "load_failed") {
-      warnings.push(
-        `${file.name}: pdf.js kļūda (${extracted.errorMessage ?? "unknown"}) — Gemini lasa PDF`,
-      );
-    }
   }
 
   if (pdfAttachments.length === 0 && bundles.length === 0) {
-    console.error(`${LOG_PREFIX} no_gemini_input`, { sessionId, extractLog, warnings });
+    console.error(`${LOG_PREFIX} no_input`, { sessionId, extractLog, warnings });
     return NextResponse.json(
       {
         error: "no_pdf_input",
-        detail:
-          warnings.join("; ") ||
-          "Neizdevās sagatavot nevienu PDF Gemini analīzei. Pārbaudi faila formātu un izmēru.",
+        detail: warnings.join("; ") || "Neizdevās sagatavot PDF analīzei.",
         extractLog,
       },
       { status: 422 },
     );
   }
 
+  const aggregateEngine: PdfIngestEngine =
+    pdfAttachments.length > 0 ? "gemini_fallback" : "local_parser";
+
   console.info(`${LOG_PREFIX} gemini_start`, {
     sessionId,
+    aggregateEngine,
     textBundles: bundles.length,
     inlinePdfs: pdfAttachments.length,
-    warnings: warnings.length,
   });
 
   try {
@@ -219,6 +222,8 @@ export async function POST(req: Request) {
       extraction,
       meta: {
         analyzedAt: new Date().toISOString(),
+        engine: aggregateEngine,
+        enginesPerFile,
         fileNames: files.map((f) => f.name),
         sources: [...bundles.map((b) => b.sourceHint), ...pdfAttachments.map((p) => p.sourceHint)],
         charCounts: bundles.map((b) => b.text.length),
@@ -229,12 +234,7 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
-    console.error(`${LOG_PREFIX} gemini_failed`, {
-      sessionId,
-      msg,
-      extractLog,
-      stack: e instanceof Error ? e.stack : undefined,
-    });
+    console.error(`${LOG_PREFIX} gemini_failed`, { sessionId, msg, extractLog });
     if (msg === "gemini_invalid_json") {
       return NextResponse.json({ error: "gemini_invalid_json", detail: "Nevalīds JSON no Gemini" }, { status: 502 });
     }
@@ -242,7 +242,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error: "extraction_failed",
-          detail: "Gemini nesaņēma izmantojamu ievadi — pārbaudi PDF un API kvotu",
+          detail: "Gemini nesaņēma izmantojamu ievdi.",
           extractLog,
         },
         { status: 502 },

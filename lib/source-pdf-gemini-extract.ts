@@ -179,6 +179,7 @@ function vendorResultFromGemini(
       charCount: (rawText || mileagePasteRaw).length,
       mileageRowCount: serviceHistory.length || base.meta.mileageRowCount,
       incidentRowCount: incidents.length || base.meta.incidentRowCount,
+      engine: "gemini_fallback",
       extractionMethod: "gemini",
     },
   };
@@ -213,6 +214,7 @@ function autoRecordsResultFromGemini(
       charCount: rawUnprocessedData.length,
       rowCount: serviceHistory.length,
       usedOdometerSection: serviceHistory.length > 0,
+      engine: "gemini_fallback",
       extractionMethod: "gemini",
     },
   };

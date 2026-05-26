@@ -2,6 +2,7 @@
  * auto-records.com PDF → AUTO RECORDS `serviceHistory` + PDF checklist heuristika.
  */
 import type { SourcePdfChecklist } from "@/lib/admin-source-blocks";
+import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import {
   autoRecordsRowHasData,
   extractCountryFromLocation,
@@ -23,6 +24,9 @@ export type AutoRecordsPdfParseResult = {
     charCount: number;
     rowCount: number;
     usedOdometerSection: boolean;
+    engine?: PdfIngestEngine;
+    textBackend?: "pdf-parse" | "pdfjs" | "none";
+    /** @deprecated use meta.engine */
     extractionMethod?: "text_layer" | "gemini";
   };
 };
@@ -178,6 +182,7 @@ export function parseAutoRecordsPdfText(text: string): AutoRecordsPdfParseResult
       charCount,
       rowCount: rows.length,
       usedOdometerSection,
+      engine: "local_parser",
     },
   };
 }

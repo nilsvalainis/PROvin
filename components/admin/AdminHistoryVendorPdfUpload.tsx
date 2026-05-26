@@ -74,19 +74,20 @@ export function AdminHistoryVendorPdfUpload({ target, disabled, readOnly, onImpo
           return;
         }
 
-        const viaGemini = data.meta?.extractionMethod === "gemini";
+        const viaGemini =
+          data.meta?.engine === "gemini_fallback" || data.meta?.extractionMethod === "gemini";
         const parts: string[] = [];
         if (data.meta?.mileageRowCount) parts.push(`${data.meta.mileageRowCount} nobraukuma`);
         if (data.meta?.incidentRowCount) parts.push(`${data.meta.incidentRowCount} negadījumu`);
         if (parts.length > 0) {
           setNotice(
-            `Importēts no „${file.name}”: ${parts.join(", ")} rinda(s)${viaGemini ? " (Gemini)" : ""}.`,
+            `Importēts no „${file.name}”: ${parts.join(", ")} rinda(s)${viaGemini ? " (Plan B: Gemini)" : " (Plan A: lokāli)"}.`,
           );
         } else {
           setNotice(
             viaGemini
-              ? `Gemini importēja tekstu no „${file.name}” — pārbaudi tabulas.`
-              : `Teksts importēts no „${file.name}” — pārbaudi RAW / tabulu.`,
+              ? `Plan B (Gemini) — „${file.name}”; pārbaudi tabulas.`
+              : `Plan A (lokāli) — „${file.name}”; pārbaudi RAW / tabulu.`,
           );
         }
         if (data.warnings?.length) {

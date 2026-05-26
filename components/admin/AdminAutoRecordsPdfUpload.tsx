@@ -57,12 +57,15 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported }: Pr
           }
           return;
         }
-        const viaGemini = data.meta?.extractionMethod === "gemini";
+        const viaGemini =
+          data.meta?.engine === "gemini_fallback" || data.meta?.extractionMethod === "gemini";
         const rowN = data.meta?.rowCount ?? data.serviceHistory?.length ?? 0;
         if (rowN > 0) {
-          setNotice(`Importētas ${rowN} nobraukuma rinda(s) no „${file.name}”${viaGemini ? " (Gemini)" : ""}.`);
+          setNotice(
+            `Importētas ${rowN} nobraukuma rinda(s) no „${file.name}”${viaGemini ? " (Plan B: Gemini)" : " (Plan A: lokāli)"}.`,
+          );
         } else if ((data.rawUnprocessedData ?? "").trim()) {
-          setNotice(`Gemini saglabāja RAW tekstu no „${file.name}” — pārbaudi tabulu.`);
+          setNotice(`Plan B — RAW teksts no „${file.name}”; pārbaudi tabulu.`);
         } else if (data.warnings?.[0]) {
           setNotice(data.warnings[0]);
         }

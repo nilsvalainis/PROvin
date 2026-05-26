@@ -13,6 +13,7 @@ import { parseCarverticalOdometerPaste } from "@/lib/carvertical-odometer-paste-
 import { extractClaimRowsForPdfInsight, type ClaimTableRow } from "@/lib/claim-rows-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { mergeAutoRecordsServiceHistory } from "@/lib/auto-records-pdf-parse";
+import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 
 export type HistoryVendorPdfTarget = "autodna" | "carvertical" | "ltab";
 
@@ -28,6 +29,9 @@ export type HistoryVendorPdfParseResult = {
     charCount: number;
     mileageRowCount: number;
     incidentRowCount: number;
+    engine?: PdfIngestEngine;
+    textBackend?: "pdf-parse" | "pdfjs" | "none";
+    /** @deprecated use meta.engine */
     extractionMethod?: "text_layer" | "gemini";
   };
   /** Gemini: status alerts / market notes → avota komentāri. */
