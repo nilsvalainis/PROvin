@@ -27,6 +27,7 @@ if (process.env.NODE_ENV === "production") {
 const nextConfig: NextConfig = {
   /** Neiekļaut Webpack: stealth spraudņiem ir dinamiski require (clone-deep u.c.). */
   serverExternalPackages: [
+    "pdfjs-dist",
     "playwright",
     "playwright-core",
     "playwright-extra",
@@ -41,9 +42,10 @@ const nextConfig: NextConfig = {
    */
   experimental: {
     serverActions: {
-      bodySizeLimit: "24mb",
+      bodySizeLimit: "50mb",
     },
-    middlewareClientMaxBodySize: "24mb",
+    /** Multipart uz App Router API (ai-extract, parse-pdf, notify-report-ready). */
+    middlewareClientMaxBodySize: "50mb",
   },
   async redirects() {
     return [{ source: "/admin/pkd-rekins", destination: "/admin/commission-invoice", permanent: false }];

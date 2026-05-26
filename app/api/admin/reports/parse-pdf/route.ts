@@ -2,22 +2,56 @@
  * Admin: vēstures PDF → strukturēti dati.
  * POST multipart/form-data — `file` (application/pdf), opc. `target`:
  * auto_records (noklus.) | autodna | carvertical | ltab
+ *
+ * Ja teksta slānis tukšs — atgriež `pdf_extract_empty` + `geminiFallback` (nevis apstājas).
  */
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { detectHistoryPdfKind } from "@/lib/admin-portfolio-pdf-analysis";
-import { extractPdfTextDetailed, logPdfExtractResult } from "@/lib/pdf-text-extract-server";
+import { PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 import { parseAutoRecordsPdfText } from "@/lib/auto-records-pdf-parse";
 import {
   parseHistoryVendorPdfText,
   type HistoryVendorPdfTarget,
 } from "@/lib/history-vendor-pdf-import";
+import { extractPdfTextDetailed, logPdfExtractResult } from "@/lib/pdf-text-extract-server";
 
 export const maxDuration = 90;
 export const runtime = "nodejs";
 
-const MAX_PDF_BYTES = 12 * 1024 * 1024;
+const LOG_PREFIX = "[admin/reports/parse-pdf]";
+
+function geminiFallbackResponse(
+  fileName: string,
+  extracted: Awaited<ReturnType<typeof extractPdfTextDetailed>>,
+) {
+  const detail =
+    extracted.stage === "load_failed"
+      ? `PDF teksta slāni neizdevās ielādēt (${extracted.errorMessage ?? "pdf.js"}). Izmanto portfeļa sadaļu „Sistēmas anomālijas un AI analīze” — PDF tiks nosūtīts Gemini tieši.`
+      : `PDF teksta slānis tukšs (${extracted.textLayerCharCount} zīmes, ${extracted.pageCount} lapas). Izmanto „Sistēmas anomālijas un AI analīze” — Gemini lasa PDF.`;
+
+  console.warn(`${LOG_PREFIX} gemini_fallback_recommended`, {
+    fileName,
+    stage: extracted.stage,
+    pageCount: extracted.pageCount,
+    textLayerCharCount: extracted.textLayerCharCount,
+    errorMessage: extracted.errorMessage,
+  });
+
+  return NextResponse.json(
+    {
+      error: "pdf_extract_empty",
+      geminiFallback: true,
+      detail,
+      stage: extracted.stage,
+      pageCount: extracted.pageCount,
+      textLayerCharCount: extracted.textLayerCharCount,
+      fileName,
+    },
+    { status: 422 },
+  );
+}
 
 export async function POST(req: Request) {
   const ok = await getAdminSession();
@@ -28,8 +62,16 @@ export async function POST(req: Request) {
   let form: FormData;
   try {
     form = await req.formData();
-  } catch {
-    return NextResponse.json({ error: "invalid_form_data" }, { status: 400 });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "unknown";
+    console.error(`${LOG_PREFIX} formData_failed`, msg);
+    return NextResponse.json(
+      {
+        error: "payload_too_large",
+        detail: "Augšupielāde pārāk liela. Samazini PDF izmēru vai izmanto AI analīzes bloku portfelī.",
+      },
+      { status: 413 },
+    );
   }
 
   const file = form.get("file");
@@ -41,9 +83,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "empty_file" }, { status: 400 });
   }
 
-  if (file.size > MAX_PDF_BYTES) {
+  if (file.size > PDF_MAX_FILE_BYTES) {
     return NextResponse.json(
-      { error: "file_too_large", detail: `Maks. ${Math.round(MAX_PDF_BYTES / (1024 * 1024))} MB` },
+      { error: "file_too_large", detail: `Maks. ${Math.round(PDF_MAX_FILE_BYTES / (1024 * 1024))} MB` },
       { status: 413 },
     );
   }
@@ -60,40 +102,13 @@ export async function POST(req: Request) {
   try {
     const buffer = await file.arrayBuffer();
     const extracted = await extractPdfTextDetailed(buffer, { fileName: file.name });
-    logPdfExtractResult("[admin/reports/parse-pdf]", extracted);
-
-    if (extracted.stage === "load_failed") {
-      return NextResponse.json(
-        {
-          error: "pdf_extract_failed",
-          detail: `Neizdevās ielādēt PDF: ${extracted.errorMessage ?? "unknown"}`,
-          stage: extracted.stage,
-          fileName: file.name,
-        },
-        { status: 422 },
-      );
-    }
+    logPdfExtractResult(LOG_PREFIX, extracted);
 
     const text = extracted.text;
-    if (!text.trim() || extracted.textLayerCharCount < 40) {
-      const kind = detectHistoryPdfKind(file.name, text);
-      console.warn("[admin/reports/parse-pdf] text_layer_empty", {
-        fileName: file.name,
-        pageCount: extracted.pageCount,
-        textLayerCharCount: extracted.textLayerCharCount,
-        kind,
-      });
-      return NextResponse.json(
-        {
-          error: "pdf_extract_empty",
-          detail:
-            "PDF teksta slānis ir tukšs vai pārāk īss (bieži skenēts dokuments). Izmanto „Sistēmas anomālijas un AI analīze” — tur PDF tiek nosūtīts Gemini tieši.",
-          stage: extracted.stage,
-          pageCount: extracted.pageCount,
-          textLayerCharCount: extracted.textLayerCharCount,
-        },
-        { status: 422 },
-      );
+    const hasUsableText = extracted.ok && text.trim().length >= 40;
+
+    if (!hasUsableText) {
+      return geminiFallbackResponse(file.name, extracted);
     }
 
     const targetRaw = String(form.get("target") ?? "auto_records")
@@ -111,7 +126,7 @@ export async function POST(req: Request) {
         parsed.incidents.length === 0 &&
         parsed.warnings.length === 0
       ) {
-        parsed.warnings.push("Datu nav — pārbaudi PDF avotu.");
+        parsed.warnings.push("Datu nav — pārbaudi PDF avotu vai izmanto AI analīzi.");
       }
       return NextResponse.json({
         ok: true,
@@ -132,7 +147,7 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
-    console.error("[admin/reports/parse-pdf]", msg, e);
+    console.error(`${LOG_PREFIX} unexpected`, msg, e);
     return NextResponse.json({ error: "parse_failed", detail: msg }, { status: 500 });
   }
 }

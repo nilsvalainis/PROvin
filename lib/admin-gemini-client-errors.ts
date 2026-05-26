@@ -30,6 +30,8 @@ const ERROR_MESSAGES_LV: Record<string, string> = {
   pdf_extract_failed: "Neizdevās nolasīt PDF tekstu",
   pdf_extract_empty:
     "PDF teksta slānis tukšs (skenēts dokuments) — izmanto „Analizēt ar Gemini” (PDF tiek nosūtīts tieši)",
+  payload_too_large: "Augšupielāde pārāk liela — samazini PDF izmēru vai skaitu",
+  no_pdf_input: "Neizdevās sagatavot PDF Gemini analīzei",
 };
 
 function humanizeGeminiDetail(raw: string): string {
@@ -61,8 +63,18 @@ export function formatAdminGeminiFetchError(
     (typeof data?.detail === "string" ? data.detail.trim() : "") ||
     (typeof data?.message === "string" ? data.message.trim() : "");
 
-  if (code && ERROR_MESSAGES_LV[code] && code !== "generation_failed" && code !== "polish_failed") {
+  if (
+    code &&
+    ERROR_MESSAGES_LV[code] &&
+    code !== "generation_failed" &&
+    code !== "polish_failed" &&
+    code !== "pdf_extract_failed"
+  ) {
     return ERROR_MESSAGES_LV[code];
+  }
+
+  if (code === "pdf_extract_failed" && detailRaw) {
+    return detailRaw;
   }
 
   if (code === "generation_failed" || code === "polish_failed") {

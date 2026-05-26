@@ -1,6 +1,6 @@
 import "server-only";
 
-import path from "node:path";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { normalizePdfExtractedText } from "@/lib/pdf-text-normalize";
 
@@ -24,18 +24,15 @@ const MIN_USABLE_TEXT_CHARS = 80;
 
 let workerConfigured = false;
 
+function resolvePdfWorkerUrl(): string {
+  const workerPath = join(process.cwd(), "node_modules", "pdfjs-dist", "legacy", "build", "pdf.worker.mjs");
+  return pathToFileURL(workerPath).href;
+}
+
 async function getPdfJs() {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   if (!workerConfigured) {
-    const workerPath = path.join(
-      process.cwd(),
-      "node_modules",
-      "pdfjs-dist",
-      "legacy",
-      "build",
-      "pdf.worker.mjs",
-    );
-    pdfjs.GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).href;
+    pdfjs.GlobalWorkerOptions.workerSrc = resolvePdfWorkerUrl();
     workerConfigured = true;
   }
   return pdfjs;
@@ -115,14 +112,14 @@ export function logPdfExtractResult(prefix: string, result: PdfExtractResult): v
     console.info(`${prefix} pdf_extract_ok`, base);
     return;
   }
-  console.warn(`${prefix} pdf_extract_failed`, {
+  console.warn(`${prefix} pdf_extract_soft_fail`, {
     ...base,
     errorName: result.errorName,
     errorMessage: result.errorMessage,
     hint:
       result.stage === "text_layer_empty"
-        ? "Tukšs teksta slānis — iespējams skenēts PDF; tiks izmantots Gemini inline PDF"
-        : "Neizdevās ielādēt PDF — pārbaudi faila integritāti",
+        ? "Tukšs teksta slānis — turpinām ar Gemini inline PDF"
+        : "PDF.js ielāde neizdevās — turpinām ar Gemini inline PDF, ja buffers ir",
   });
 }
 

@@ -45,6 +45,7 @@ export function AdminVehicleReportsAiPanel({
   const [dropActive, setDropActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [statusLine, setStatusLine] = useState<string | null>(null);
 
   const addFiles = useCallback((list: FileList | null) => {
     if (!list?.length) return;
@@ -78,6 +79,7 @@ export function AdminVehicleReportsAiPanel({
     setBusy(true);
     setError(null);
     setNotice(null);
+    setStatusLine("Augšupielādē PDF un nolasām teksta slāni…");
     try {
       const portfolioFiles = collectPortfolioPdfFiles ? await collectPortfolioPdfFiles() : [];
       const all = [...pending, ...portfolioFiles.filter((p) => !pending.some((x) => x.name === p.name))].slice(0, 8);
@@ -88,21 +90,32 @@ export function AdminVehicleReportsAiPanel({
       const fd = new FormData();
       fd.set("sessionId", sessionId);
       for (const f of all) fd.append("files", f);
+      setStatusLine(
+        all.length > 1
+          ? `Nolasām ${all.length} PDF — ja teksta slānis tukšs, turpinām ar Gemini (inline PDF)…`
+          : "Nolasām PDF — ja teksta slānis tukšs, turpinām ar Gemini…",
+      );
       const res = await fetch("/api/admin/reports/ai-extract", {
         method: "POST",
         body: fd,
         credentials: "include",
       });
+      setStatusLine("Gemini analīze (var ilgt līdz 1–2 min)…");
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         error?: string;
         detail?: string;
         extraction?: VehicleAIExtraction;
-        meta?: VehicleAiExtractionMeta & { charCounts?: number[] };
+        meta?: VehicleAiExtractionMeta & { charCounts?: number[]; usedGeminiInlinePdf?: string[] };
         warnings?: string[];
       };
       if (!res.ok) {
-        setError(formatAdminGeminiFetchError(data, res, "Neizdevās analizēt PDF"));
+        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
+        if (data.error === "pdf_extract_empty" || data.error === "no_pdf_input") {
+          setError(detail || formatAdminGeminiFetchError(data, res, "Neizdevās sagatavot PDF analīzei"));
+        } else {
+          setError(formatAdminGeminiFetchError(data, res, "Neizdevās analizēt PDF"));
+        }
         return;
       }
       if (!data.extraction || !data.meta) {
@@ -121,15 +134,22 @@ export function AdminVehicleReportsAiPanel({
         const next = data.extraction.ai_generated_comments_lv.trim();
         onCommentsDraftChange(cur ? `${cur}\n\n${next}` : next);
       }
-      const warn = data.warnings?.length ? ` (${data.warnings[0]})` : "";
+      const inline = data.meta?.usedGeminiInlinePdf?.length
+        ? ` Gemini lasīja ${data.meta.usedGeminiInlinePdf.length} PDF tieši.`
+        : "";
+      const warn =
+        data.warnings?.length ?
+          ` Brīdinājumi: ${data.warnings.slice(0, 2).join("; ")}${data.warnings.length > 2 ? "…" : ""}`
+        : "";
       setNotice(
-        `Analīze pabeigta — ${all.length} PDF. Aizpildīti: ${applied.filledFields.length ? applied.filledFields.join(", ") : "nav jaunu lauku"}.${warn}`,
+        `Analīze pabeigta — ${all.length} PDF. Aizpildīti: ${applied.filledFields.length ? applied.filledFields.join(", ") : "nav jaunu lauku"}.${inline}${warn}`,
       );
       setPending([]);
     } catch {
       setError("Neizdevās savienoties ar serveri");
     } finally {
       setBusy(false);
+      setStatusLine(null);
     }
   }, [
     collectPortfolioPdfFiles,
@@ -213,7 +233,9 @@ export function AdminVehicleReportsAiPanel({
           <FileUp className="h-4 w-4 text-[var(--color-provin-accent)]" aria-hidden />
         )}
         <span className="text-[10px] font-medium">Vairāki PDF (AutoDNA, CarVertical, LTAB, Vehicle Information…)</span>
-        <span className="text-[9px] text-[var(--color-provin-muted)]">Velc šeit vai izvēlies · līdz 8 failiem</span>
+        <span className="text-[9px] text-[var(--color-provin-muted)]">
+          Velc šeit vai izvēlies · līdz 8 failiem · ~48 MB kopā
+        </span>
       </div>
 
       {pending.length > 0 ? (
@@ -268,6 +290,11 @@ export function AdminVehicleReportsAiPanel({
         ) : null}
       </div>
 
+      {statusLine && busy ? (
+        <p className="mt-1.5 text-[9px] leading-snug text-[var(--color-provin-accent)]" role="status">
+          {statusLine}
+        </p>
+      ) : null}
       {notice ? (
         <p className="mt-1.5 text-[9px] leading-snug text-emerald-800" role="status">
           {notice}

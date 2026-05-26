@@ -38,17 +38,26 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported }: Pr
           error?: string;
           detail?: string;
           fileName?: string;
+          geminiFallback?: boolean;
         };
         if (!res.ok) {
           const detail = typeof data.detail === "string" ? data.detail.trim() : "";
           if (data.error === "unauthorized") {
             setError("Nav admin piekļuves");
-          } else if (data.error === "file_too_large") {
+          } else if (data.error === "file_too_large" || data.error === "payload_too_large") {
             setError(detail || "PDF fails pārāk liels");
           } else if (data.error === "invalid_file_type") {
             setError(detail || "Tikai PDF");
-          } else if (data.error === "pdf_extract_failed") {
-            setError(detail || "Neizdevās nolasīt PDF tekstu");
+          } else if (
+            data.error === "pdf_extract_empty" ||
+            data.error === "pdf_extract_failed" ||
+            data.geminiFallback
+          ) {
+            setNotice(
+              detail ||
+                "Teksta slānis nav pieejams. Portfelī izmanto „Sistēmas anomālijas un AI analīze” — PDF tiks nosūtīts Gemini.",
+            );
+            setError(null);
           } else {
             setError(detail || "Neizdevās apstrādāt PDF");
           }

@@ -208,16 +208,6 @@ async function extractPdfTextWithOptionalOcr(buffer: ArrayBuffer): Promise<{ tex
   return { text, ocrPages };
 }
 
-/** Teksta slānis caur pdf.js; pārlūkā — papildu OCR, ja teksts īss (bieži skenēti PDF). */
-export async function extractPdfText(buffer: ArrayBuffer, opts?: { fileName?: string }): Promise<string> {
-  if (typeof window === "undefined") {
-    const { extractPdfTextOnServer } = await import("@/lib/pdf-text-extract-server");
-    return extractPdfTextOnServer(buffer, opts);
-  }
-  const { text } = await extractPdfTextWithOptionalOcr(buffer);
-  return text;
-}
-
 export async function analyzePdfBuffer(
   fileName: string,
   buffer: ArrayBuffer,

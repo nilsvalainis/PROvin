@@ -10,15 +10,15 @@ const LABELS: Record<
 > = {
   autodna: {
     title: "Augšupielādēt AutoDNA PDF atskaiti",
-    hint: "Velc PDF šeit vai klikšķini · maks. 12 MB",
+    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB",
   },
   carvertical: {
     title: "Augšupielādēt CarVertical PDF atskaiti",
-    hint: "Velc PDF šeit vai klikšķini · maks. 12 MB",
+    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB",
   },
   ltab: {
     title: "Augšupielādēt LTAB / OCTA PDF atskaiti",
-    hint: "Velc PDF šeit vai klikšķini · maks. 12 MB",
+    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB",
   },
 };
 
@@ -59,16 +59,25 @@ export function AdminHistoryVendorPdfUpload({ target, disabled, readOnly, onImpo
           error?: string;
           detail?: string;
           fileName?: string;
+          geminiFallback?: boolean;
         };
         if (!res.ok) {
           const detail = typeof data.detail === "string" ? data.detail.trim() : "";
           if (data.error === "unauthorized") setError("Nav admin piekļuves");
-          else if (data.error === "file_too_large") setError(detail || "PDF fails pārāk liels");
-          else if (data.error === "invalid_file_type") setError(detail || "Tikai PDF");
-          else if (data.error === "pdf_extract_empty") {
-            setError(detail || "PDF ir skenēts — izmanto „Sistēmas anomālijas un AI analīze”");
-          } else if (data.error === "pdf_extract_failed") setError(detail || "Neizdevās nolasīt PDF tekstu");
-          else setError(detail || "Neizdevās apstrādāt PDF");
+          else if (data.error === "file_too_large" || data.error === "payload_too_large") {
+            setError(detail || "PDF fails pārāk liels");
+          } else if (data.error === "invalid_file_type") setError(detail || "Tikai PDF");
+          else if (
+            data.error === "pdf_extract_empty" ||
+            data.error === "pdf_extract_failed" ||
+            data.geminiFallback
+          ) {
+            setNotice(
+              detail ||
+                "Teksta slānis nav pieejams. Zemāk portfelī izmanto „Sistēmas anomālijas un AI analīze” — PDF tiks nosūtīts Gemini.",
+            );
+            setError(null);
+          } else setError(detail || "Neizdevās apstrādāt PDF");
           return;
         }
         const parts: string[] = [];
@@ -80,7 +89,7 @@ export function AdminHistoryVendorPdfUpload({ target, disabled, readOnly, onImpo
           setNotice(`Teksts importēts no „${file.name}” — pārbaudi RAW / tabulu.`);
         }
         if (data.warnings?.length) {
-          setError(data.warnings[0] ?? null);
+          setNotice((prev) => (prev ? `${prev} ${data.warnings![0]}` : (data.warnings![0] ?? null)));
         }
         onImported({
           rawText: data.rawText ?? "",

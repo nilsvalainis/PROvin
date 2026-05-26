@@ -1,5 +1,13 @@
 {
   "functions": {
+    "app/api/admin/reports/ai-extract/route.ts": {
+      "maxDuration": 120,
+      "memory": 3008
+    },
+    "app/api/admin/reports/parse-pdf/route.ts": {
+      "maxDuration": 90,
+      "memory": 1024
+    },
     "app/api/admin/notify-report-ready/route.ts": {
       "maxDuration": 60
     },
