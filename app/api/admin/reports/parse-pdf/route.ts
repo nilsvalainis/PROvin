@@ -3,54 +3,56 @@
  * POST multipart/form-data — `file` (application/pdf), opc. `target`:
  * auto_records (noklus.) | autodna | carvertical | ltab
  *
- * Ja teksta slānis tukšs — atgriež `pdf_extract_empty` + `geminiFallback` (nevis apstājas).
+ * Teksta slānis tukšs / pdf.js kļūda → automātisks Gemini inline PDF (ne 422).
  */
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
-import { detectHistoryPdfKind } from "@/lib/admin-portfolio-pdf-analysis";
-import { PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
-import { parseAutoRecordsPdfText } from "@/lib/auto-records-pdf-parse";
+import { getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
+import { parseAutoRecordsPdfText, type AutoRecordsPdfParseResult } from "@/lib/auto-records-pdf-parse";
+import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
+import { ltabRowHasData } from "@/lib/admin-source-blocks";
 import {
   parseHistoryVendorPdfText,
+  type HistoryVendorPdfParseResult,
   type HistoryVendorPdfTarget,
 } from "@/lib/history-vendor-pdf-import";
+import { PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 import { extractPdfTextDetailed, logPdfExtractResult } from "@/lib/pdf-text-extract-server";
+import {
+  autoRecordsParseHasData,
+  extractSourcePdfWithGemini,
+  vendorParseHasData,
+} from "@/lib/source-pdf-gemini-extract";
 
-export const maxDuration = 90;
+export const maxDuration = 120;
 export const runtime = "nodejs";
 
 const LOG_PREFIX = "[admin/reports/parse-pdf]";
 
-function geminiFallbackResponse(
+function markTextLayerMeta<T extends { meta: { extractionMethod?: "text_layer" | "gemini" } }>(r: T): T {
+  return { ...r, meta: { ...r.meta, extractionMethod: "text_layer" } };
+}
+
+function vendorHeuristicHasRows(r: HistoryVendorPdfParseResult): boolean {
+  return r.serviceHistory.some(autoRecordsRowHasData) || r.incidents.some(ltabRowHasData);
+}
+
+function autoRecordsHeuristicHasRows(r: AutoRecordsPdfParseResult): boolean {
+  return r.serviceHistory.some(autoRecordsRowHasData);
+}
+
+async function runGeminiFallback(
+  target: HistoryVendorPdfTarget | "auto_records",
+  buffer: ArrayBuffer,
   fileName: string,
-  extracted: Awaited<ReturnType<typeof extractPdfTextDetailed>>,
-) {
-  const detail =
-    extracted.stage === "load_failed"
-      ? `PDF teksta slāni neizdevās ielādēt (${extracted.errorMessage ?? "pdf.js"}). Izmanto portfeļa sadaļu „Sistēmas anomālijas un AI analīze” — PDF tiks nosūtīts Gemini tieši.`
-      : `PDF teksta slānis tukšs (${extracted.textLayerCharCount} zīmes, ${extracted.pageCount} lapas). Izmanto „Sistēmas anomālijas un AI analīze” — Gemini lasa PDF.`;
-
-  console.warn(`${LOG_PREFIX} gemini_fallback_recommended`, {
-    fileName,
-    stage: extracted.stage,
-    pageCount: extracted.pageCount,
-    textLayerCharCount: extracted.textLayerCharCount,
-    errorMessage: extracted.errorMessage,
-  });
-
-  return NextResponse.json(
-    {
-      error: "pdf_extract_empty",
-      geminiFallback: true,
-      detail,
-      stage: extracted.stage,
-      pageCount: extracted.pageCount,
-      textLayerCharCount: extracted.textLayerCharCount,
-      fileName,
-    },
-    { status: 422 },
-  );
+  textHint: string,
+): Promise<HistoryVendorPdfParseResult | AutoRecordsPdfParseResult> {
+  if (!getGeminiApiKeyFromEnv()) {
+    throw new Error("missing_gemini_key");
+  }
+  console.info(`${LOG_PREFIX} gemini_fallback_start`, { fileName, target });
+  return extractSourcePdfWithGemini({ target, buffer, fileName, textHint });
 }
 
 export async function POST(req: Request) {
@@ -99,6 +101,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_file_type", detail: "Faila paplašinājumam jābūt .pdf" }, { status: 400 });
   }
 
+  const targetRaw = String(form.get("target") ?? "auto_records").trim().toLowerCase();
+  const vendorTargets: HistoryVendorPdfTarget[] = ["autodna", "carvertical", "ltab"];
+  const vendorTarget = vendorTargets.includes(targetRaw as HistoryVendorPdfTarget)
+    ? (targetRaw as HistoryVendorPdfTarget)
+    : null;
+  const geminiTarget: HistoryVendorPdfTarget | "auto_records" = vendorTarget ?? "auto_records";
+
   try {
     const buffer = await file.arrayBuffer();
     const extracted = await extractPdfTextDetailed(buffer, { fileName: file.name });
@@ -106,45 +115,104 @@ export async function POST(req: Request) {
 
     const text = extracted.text;
     const hasUsableText = extracted.ok && text.trim().length >= 40;
+    const textHint = hasUsableText ? text : extracted.text;
 
-    if (!hasUsableText) {
-      return geminiFallbackResponse(file.name, extracted);
+    const needsGemini =
+      !hasUsableText ||
+      extracted.stage === "text_layer_empty" ||
+      extracted.stage === "load_failed";
+
+    if (!needsGemini) {
+      if (vendorTarget) {
+        const parsed = markTextLayerMeta(parseHistoryVendorPdfText(vendorTarget, text));
+        if (vendorHeuristicHasRows(parsed)) {
+          return NextResponse.json({ ok: true, fileName: file.name, ...parsed });
+        }
+      } else {
+        const parsed = markTextLayerMeta(parseAutoRecordsPdfText(text));
+        if (autoRecordsHeuristicHasRows(parsed)) {
+          return NextResponse.json({ ok: true, fileName: file.name, ...parsed });
+        }
+      }
     }
 
-    const targetRaw = String(form.get("target") ?? "auto_records")
-      .trim()
-      .toLowerCase();
-    const vendorTargets: HistoryVendorPdfTarget[] = ["autodna", "carvertical", "ltab"];
-    const target = vendorTargets.includes(targetRaw as HistoryVendorPdfTarget)
-      ? (targetRaw as HistoryVendorPdfTarget)
-      : null;
+    try {
+      const geminiResult = await runGeminiFallback(geminiTarget, buffer, file.name, textHint);
+      const warnings =
+        "warnings" in geminiResult && Array.isArray(geminiResult.warnings) ? [...geminiResult.warnings] : [];
+      if (!hasUsableText) {
+        warnings.unshift(
+          extracted.stage === "load_failed"
+            ? `Teksta slānis neielādējās (${extracted.errorMessage ?? "pdf.js"}) — aizpildīts ar Gemini.`
+            : `Teksta slānis tukšs (${extracted.textLayerCharCount} zīmes) — aizpildīts ar Gemini.`,
+        );
+      } else if (needsGemini) {
+        warnings.unshift("Heuristika neatrada rindas — aizpildīts ar Gemini.");
+      }
 
-    if (target) {
-      const parsed = parseHistoryVendorPdfText(target, text);
-      if (
-        parsed.serviceHistory.length === 0 &&
-        parsed.incidents.length === 0 &&
-        parsed.warnings.length === 0
-      ) {
-        parsed.warnings.push("Datu nav — pārbaudi PDF avotu vai izmanto AI analīzi.");
+      if (vendorTarget && "incidents" in geminiResult) {
+        const v = geminiResult as HistoryVendorPdfParseResult;
+        if (!vendorParseHasData(v)) {
+          return NextResponse.json(
+            {
+              error: "extraction_failed",
+              detail: "Gemini neatrada izmantojamus datus šajā PDF — pārbaudi avotu vai mēģini vēlreiz.",
+              stage: extracted.stage,
+            },
+            { status: 502 },
+          );
+        }
+        return NextResponse.json({
+          ok: true,
+          fileName: file.name,
+          ...v,
+          warnings,
+        });
+      }
+
+      const ar = geminiResult as AutoRecordsPdfParseResult;
+      if (!autoRecordsParseHasData(ar)) {
+        return NextResponse.json(
+          {
+            error: "extraction_failed",
+            detail: "Gemini neatrada nobraukuma datus — pārbaudi PDF vai ielīmē RAW tekstu.",
+            stage: extracted.stage,
+          },
+          { status: 502 },
+        );
       }
       return NextResponse.json({
         ok: true,
         fileName: file.name,
-        ...parsed,
+        ...ar,
+        warnings,
       });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      console.error(`${LOG_PREFIX} gemini_fallback_failed`, { fileName: file.name, target: geminiTarget, msg });
+      if (msg === "missing_gemini_key") {
+        return NextResponse.json({ error: "missing_gemini_key" }, { status: 503 });
+      }
+      if (msg === "pdf_too_large_for_gemini") {
+        return NextResponse.json(
+          {
+            error: "file_too_large",
+            detail: "PDF pārāk liels Gemini inline analīzei (maks. ~18 MB).",
+          },
+          { status: 413 },
+        );
+      }
+      if (msg === "gemini_invalid_json") {
+        return NextResponse.json(
+          { error: "extraction_failed", detail: "Gemini atgrieza nevalīdu JSON — mēģini vēlreiz." },
+          { status: 502 },
+        );
+      }
+      return NextResponse.json(
+        { error: "extraction_failed", detail: msg, stage: extracted.stage },
+        { status: 502 },
+      );
     }
-
-    const parsed = parseAutoRecordsPdfText(text);
-    if (parsed.serviceHistory.length === 0 && parsed.warnings.length === 0) {
-      parsed.warnings.push("Datu nav — pārbaudi PDF avotu.");
-    }
-
-    return NextResponse.json({
-      ok: true,
-      fileName: file.name,
-      ...parsed,
-    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error(`${LOG_PREFIX} unexpected`, msg, e);

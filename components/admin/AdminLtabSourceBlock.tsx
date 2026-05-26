@@ -80,10 +80,17 @@ export function AdminLtabSourceBlock({
               onImported={(result) => {
                 const merged = mergeLtabIncidentRows(value.rows, result.incidents);
                 const dataRows = merged.filter(ltabRowHasData);
+                const commentsNext =
+                  result.suggestedComments?.trim() ?
+                    value.comments.trim() ?
+                      `${value.comments.trim()}\n\n${result.suggestedComments.trim()}`
+                    : result.suggestedComments.trim()
+                  : value.comments;
                 onChange({
                   ...value,
                   pdfImportRaw: result.rawText || value.pdfImportRaw,
                   rows: dataRows.length > 0 ? [...dataRows, emptyLtabRow()] : value.rows,
+                  comments: commentsNext,
                 });
               }}
             />

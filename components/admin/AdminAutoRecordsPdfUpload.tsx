@@ -18,6 +18,7 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported }: Pr
   const [dropActive, setDropActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [statusLine, setStatusLine] = useState<string | null>(null);
 
   const uploadFile = useCallback(
     async (file: File) => {
@@ -25,9 +26,11 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported }: Pr
       setBusy(true);
       setError(null);
       setNotice(null);
+      setStatusLine("Nolasām PDF teksta slāni…");
       try {
         const fd = new FormData();
         fd.set("file", file);
+        setStatusLine("Apstrādājam PDF (ja vajag — Gemini, līdz ~1 min)…");
         const res = await fetch("/api/admin/reports/parse-pdf", {
           method: "POST",
           body: fd,
@@ -38,36 +41,30 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported }: Pr
           error?: string;
           detail?: string;
           fileName?: string;
-          geminiFallback?: boolean;
         };
         if (!res.ok) {
           const detail = typeof data.detail === "string" ? data.detail.trim() : "";
           if (data.error === "unauthorized") {
             setError("Nav admin piekļuves");
+          } else if (data.error === "missing_gemini_key") {
+            setError("Nav GEMINI_API_KEY serverī");
           } else if (data.error === "file_too_large" || data.error === "payload_too_large") {
             setError(detail || "PDF fails pārāk liels");
           } else if (data.error === "invalid_file_type") {
             setError(detail || "Tikai PDF");
-          } else if (
-            data.error === "pdf_extract_empty" ||
-            data.error === "pdf_extract_failed" ||
-            data.geminiFallback
-          ) {
-            setNotice(
-              detail ||
-                "Teksta slānis nav pieejams. Portfelī izmanto „Sistēmas anomālijas un AI analīze” — PDF tiks nosūtīts Gemini.",
-            );
-            setError(null);
           } else {
             setError(detail || "Neizdevās apstrādāt PDF");
           }
           return;
         }
-        if (!data.serviceHistory?.length) {
-          setError(data.warnings?.[0] ?? "Nobraukuma rindas netika atrastas PDF");
-        } else {
-          const rowN = data.meta?.rowCount ?? data.serviceHistory.length;
-          setNotice(`Importētas ${rowN} nobraukuma rinda(s) no „${file.name}”.`);
+        const viaGemini = data.meta?.extractionMethod === "gemini";
+        const rowN = data.meta?.rowCount ?? data.serviceHistory?.length ?? 0;
+        if (rowN > 0) {
+          setNotice(`Importētas ${rowN} nobraukuma rinda(s) no „${file.name}”${viaGemini ? " (Gemini)" : ""}.`);
+        } else if ((data.rawUnprocessedData ?? "").trim()) {
+          setNotice(`Gemini saglabāja RAW tekstu no „${file.name}” — pārbaudi tabulu.`);
+        } else if (data.warnings?.[0]) {
+          setNotice(data.warnings[0]);
         }
         onImported({
           serviceHistory: data.serviceHistory ?? [],
@@ -81,6 +78,7 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported }: Pr
         setError("Neizdevās savienoties ar serveri");
       } finally {
         setBusy(false);
+        setStatusLine(null);
       }
     },
     [busy, disabled, onImported, readOnly],
@@ -166,9 +164,14 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported }: Pr
           Augšupielādēt auto-records.com PDF atskaiti
         </span>
         <span className="text-[9px] leading-snug text-[var(--color-provin-muted)]">
-          Velc PDF šeit vai klikšķini · maks. 12 MB
+          Velc PDF šeit vai klikšķini · maks. 15 MB · skenētiem PDF — Gemini
         </span>
       </div>
+      {statusLine && busy ? (
+        <p className="mt-1 text-[9px] leading-snug text-[var(--color-provin-accent)]" role="status">
+          {statusLine}
+        </p>
+      ) : null}
       {notice ? (
         <p className="mt-1 text-[9px] leading-snug text-emerald-800/90" role="status">
           {notice}

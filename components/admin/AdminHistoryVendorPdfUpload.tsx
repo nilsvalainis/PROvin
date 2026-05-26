@@ -10,15 +10,15 @@ const LABELS: Record<
 > = {
   autodna: {
     title: "Augšupielādēt AutoDNA PDF atskaiti",
-    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB",
+    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB · skenētiem PDF — Gemini",
   },
   carvertical: {
     title: "Augšupielādēt CarVertical PDF atskaiti",
-    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB",
+    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB · skenētiem PDF — Gemini",
   },
   ltab: {
     title: "Augšupielādēt LTAB / OCTA PDF atskaiti",
-    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB",
+    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB · skenētiem PDF — Gemini",
   },
 };
 
@@ -37,6 +37,7 @@ export function AdminHistoryVendorPdfUpload({ target, disabled, readOnly, onImpo
   const [dropActive, setDropActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [statusLine, setStatusLine] = useState<string | null>(null);
   const labels = LABELS[target];
 
   const uploadFile = useCallback(
@@ -45,10 +46,12 @@ export function AdminHistoryVendorPdfUpload({ target, disabled, readOnly, onImpo
       setBusy(true);
       setError(null);
       setNotice(null);
+      setStatusLine("Nolasām PDF teksta slāni…");
       try {
         const fd = new FormData();
         fd.set("file", file);
         fd.set("target", target);
+        setStatusLine("Apstrādājam PDF (ja vajag — Gemini analīze, līdz ~1 min)…");
         const res = await fetch("/api/admin/reports/parse-pdf", {
           method: "POST",
           body: fd,
@@ -59,34 +62,32 @@ export function AdminHistoryVendorPdfUpload({ target, disabled, readOnly, onImpo
           error?: string;
           detail?: string;
           fileName?: string;
-          geminiFallback?: boolean;
         };
         if (!res.ok) {
           const detail = typeof data.detail === "string" ? data.detail.trim() : "";
           if (data.error === "unauthorized") setError("Nav admin piekļuves");
+          else if (data.error === "missing_gemini_key") setError("Nav GEMINI_API_KEY serverī");
           else if (data.error === "file_too_large" || data.error === "payload_too_large") {
             setError(detail || "PDF fails pārāk liels");
           } else if (data.error === "invalid_file_type") setError(detail || "Tikai PDF");
-          else if (
-            data.error === "pdf_extract_empty" ||
-            data.error === "pdf_extract_failed" ||
-            data.geminiFallback
-          ) {
-            setNotice(
-              detail ||
-                "Teksta slānis nav pieejams. Zemāk portfelī izmanto „Sistēmas anomālijas un AI analīze” — PDF tiks nosūtīts Gemini.",
-            );
-            setError(null);
-          } else setError(detail || "Neizdevās apstrādāt PDF");
+          else setError(detail || "Neizdevās apstrādāt PDF");
           return;
         }
+
+        const viaGemini = data.meta?.extractionMethod === "gemini";
         const parts: string[] = [];
         if (data.meta?.mileageRowCount) parts.push(`${data.meta.mileageRowCount} nobraukuma`);
         if (data.meta?.incidentRowCount) parts.push(`${data.meta.incidentRowCount} negadījumu`);
         if (parts.length > 0) {
-          setNotice(`Importēts no „${file.name}”: ${parts.join(", ")} rinda(s).`);
+          setNotice(
+            `Importēts no „${file.name}”: ${parts.join(", ")} rinda(s)${viaGemini ? " (Gemini)" : ""}.`,
+          );
         } else {
-          setNotice(`Teksts importēts no „${file.name}” — pārbaudi RAW / tabulu.`);
+          setNotice(
+            viaGemini
+              ? `Gemini importēja tekstu no „${file.name}” — pārbaudi tabulas.`
+              : `Teksts importēts no „${file.name}” — pārbaudi RAW / tabulu.`,
+          );
         }
         if (data.warnings?.length) {
           setNotice((prev) => (prev ? `${prev} ${data.warnings![0]}` : (data.warnings![0] ?? null)));
@@ -96,6 +97,7 @@ export function AdminHistoryVendorPdfUpload({ target, disabled, readOnly, onImpo
           serviceHistory: data.serviceHistory ?? [],
           incidents: data.incidents ?? [],
           suggestedPdfChecklist: data.suggestedPdfChecklist ?? {},
+          suggestedComments: data.suggestedComments,
           warnings: data.warnings ?? [],
           meta: data.meta ?? { charCount: 0, mileageRowCount: 0, incidentRowCount: 0 },
           fileName: data.fileName ?? file.name,
@@ -104,6 +106,7 @@ export function AdminHistoryVendorPdfUpload({ target, disabled, readOnly, onImpo
         setError("Neizdevās savienoties ar serveri");
       } finally {
         setBusy(false);
+        setStatusLine(null);
       }
     },
     [busy, disabled, onImported, readOnly, target],
@@ -188,6 +191,11 @@ export function AdminHistoryVendorPdfUpload({ target, disabled, readOnly, onImpo
         <span className="text-[11px] font-medium text-[var(--color-apple-text)]">{labels.title}</span>
         <span className="text-[9px] leading-snug text-[var(--color-provin-muted)]">{labels.hint}</span>
       </div>
+      {statusLine && busy ? (
+        <p className="mt-1 text-[9px] leading-snug text-[var(--color-provin-accent)]" role="status">
+          {statusLine}
+        </p>
+      ) : null}
       {notice ? (
         <p className="mt-1 text-[9px] leading-snug text-emerald-800/90" role="status">
           {notice}

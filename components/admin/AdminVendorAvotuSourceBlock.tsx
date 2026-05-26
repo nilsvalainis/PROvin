@@ -155,6 +155,12 @@ export function AdminVendorAvotuSourceBlock({
                 ...checklistBase,
                 ...result.suggestedPdfChecklist,
               });
+              const commentsNext =
+                result.suggestedComments?.trim() ?
+                  value.comments.trim() ?
+                    `${value.comments.trim()}\n\n${result.suggestedComments.trim()}`
+                  : result.suggestedComments.trim()
+                : value.comments;
               onChange({
                 ...value,
                 mileagePasteRaw: result.rawText || value.mileagePasteRaw,
@@ -162,6 +168,7 @@ export function AdminVendorAvotuSourceBlock({
                   mergedMileage.length > 0 ? mergedMileage : [emptyAutoRecordsServiceRow()],
                 incidents: mergedIncidents.length > 0 ? mergedIncidents : value.incidents,
                 pdfChecklist: sourcePdfChecklistHasAny(checklistNext) ? checklistNext : value.pdfChecklist,
+                comments: commentsNext,
               });
             }}
           />

@@ -23,6 +23,7 @@ export type AutoRecordsPdfParseResult = {
     charCount: number;
     rowCount: number;
     usedOdometerSection: boolean;
+    extractionMethod?: "text_layer" | "gemini";
   };
 };
 

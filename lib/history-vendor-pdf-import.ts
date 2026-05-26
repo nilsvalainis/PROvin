@@ -24,7 +24,14 @@ export type HistoryVendorPdfParseResult = {
   incidents: LtabIncidentRow[];
   suggestedPdfChecklist: Partial<SourcePdfChecklist>;
   warnings: string[];
-  meta: { charCount: number; mileageRowCount: number; incidentRowCount: number };
+  meta: {
+    charCount: number;
+    mileageRowCount: number;
+    incidentRowCount: number;
+    extractionMethod?: "text_layer" | "gemini";
+  };
+  /** Gemini: status alerts / market notes → avota komentāri. */
+  suggestedComments?: string;
 };
 
 function claimRowsToLtabRows(claims: ClaimTableRow[]): LtabIncidentRow[] {
