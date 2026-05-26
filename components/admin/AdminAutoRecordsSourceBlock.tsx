@@ -29,6 +29,11 @@ import {
   parseAutoRecordsPaste,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
+import {
+  emptyOutvinDealerReport,
+  outvinVehicleInfoHasData,
+  type OutvinVehicleInfo,
+} from "@/lib/outvin-dealer-types";
 import { AdminOutvinDataSourcesCard } from "@/components/admin/AdminOutvinDataSourcesCard";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
@@ -131,6 +136,20 @@ export function AdminAutoRecordsSourceBlock({
               ...checklistBase,
               ...result.suggestedPdfChecklist,
             });
+
+            const patchVehicleInfo = result.suggestedOutvinVehicleInfo;
+            const reportBase = value.outvinReport ?? emptyOutvinDealerReport();
+            let outvinReportNext = value.outvinReport;
+            if (patchVehicleInfo && Object.values(patchVehicleInfo).some((v) => typeof v === "string" && v.trim())) {
+              const nextVehicleInfo: OutvinVehicleInfo = { ...reportBase.vehicleInfo };
+              for (const [k, v] of Object.entries(patchVehicleInfo) as [keyof OutvinVehicleInfo, string][]) {
+                if (typeof v === "string" && v.trim()) nextVehicleInfo[k] = v.trim();
+              }
+              if (outvinVehicleInfoHasData(nextVehicleInfo)) {
+                outvinReportNext = { ...reportBase, vehicleInfo: nextVehicleInfo };
+              }
+            }
+
             onChange({
               ...value,
               rawUnprocessedData: result.rawUnprocessedData || value.rawUnprocessedData,
@@ -142,6 +161,7 @@ export function AdminAutoRecordsSourceBlock({
                     `${value.comments.trim()}\n\n${result.suggestedComments.trim()}`
                   : result.suggestedComments.trim()
                 : value.comments,
+              ...(outvinReportNext ? { outvinReport: outvinReportNext } : {}),
             });
           }}
         />

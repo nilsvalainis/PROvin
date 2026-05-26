@@ -19,12 +19,16 @@ import {
   SOURCE_COMMENT_NO_ISSUES_LV,
 } from "@/lib/source-summary-comment-format";
 import { mergeOutvinServiceRows } from "@/lib/outvin-history-map";
+import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
+import { parseOutvinVehicleInfoFromAutoRecordsText } from "@/lib/auto-records-vehicle-info-parse";
 
 export type AutoRecordsPdfParseResult = {
   serviceHistory: AutoRecordsServiceRow[];
   rawUnprocessedData: string;
   suggestedPdfChecklist: Partial<SourcePdfChecklist>;
   suggestedComments?: string;
+  /** AUTO RECORDS PDF: VEHICLE INFORMATION sadaļas dati Outvin laukiem. */
+  suggestedOutvinVehicleInfo?: Partial<OutvinVehicleInfo>;
   warnings: string[];
   meta: {
     charCount: number;
@@ -174,11 +178,14 @@ export function parseAutoRecordsPdfText(text: string): AutoRecordsPdfParseResult
       formatSourcePdfComments(["Iespējami bojājumi / negadījumi tekstā — pārbaudi tabulu"])
     : undefined;
 
+  const suggestedOutvinVehicleInfo = parseOutvinVehicleInfoFromAutoRecordsText(trimmed);
+
   return {
     serviceHistory: rows,
     rawUnprocessedData,
     suggestedPdfChecklist,
     suggestedComments,
+    suggestedOutvinVehicleInfo: Object.keys(suggestedOutvinVehicleInfo).length > 0 ? suggestedOutvinVehicleInfo : undefined,
     warnings,
     meta: {
       charCount,

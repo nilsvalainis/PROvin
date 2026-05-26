@@ -27,6 +27,7 @@ import {
   normalizeSourcePdfComment,
   SOURCE_PDF_COMMENT_GEMINI_RULES,
 } from "@/lib/source-summary-comment-format";
+import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 
 export type SourcePdfExtractTarget = HistoryVendorPdfTarget | "auto_records";
 
@@ -141,11 +142,25 @@ Return ONLY valid JSON:
   "rawUnprocessedData": "string — key sections: ODOMETER CHECK, service events (max 120000 chars)",
   "serviceHistory": [{"date":"DD.MM.YYYY","odometer":"digits","country":"string"}],
   "pdfChecklist": {"incidents": boolean, "mileageHistory": boolean, "mileageLine": boolean},
+  "vehicleInfo": {
+    "vinCode": "string",
+    "model": "string",
+    "series": "string",
+    "generation": "string",
+    "typeCode": "string",
+    "engineCode": "string",
+    "steeringSide": "string",
+    "color": "string",
+    "interior": "string",
+    "transmission": "string"
+  },
   "comments": "string — see COMMENTS rules",
   "warnings": ["string"]
 }
 ${SOURCE_PDF_COMMENT_GEMINI_RULES}
-Extract every service/odometer row from tables (dates YYYY-MM-DD or DD.MM.YYYY; odometer even if glued to "km" or "ServiceVisit"). checklist.incidents if damage/accident mentioned.`;
+Extract every service/odometer row from tables (dates YYYY-MM-DD or DD.MM.YYYY; odometer even if glued to "km" or "ServiceVisit"). checklist.incidents if damage/accident mentioned.
+
+Also extract VEHICLE INFORMATION fields into vehicleInfo (VIN Code, Model, Series, Generation, Type code, Engine code, Steering side, Color, Interior, Transmission). If value is missing or shown as "-" then use empty string for that field.`;
 
 function vendorResultFromGemini(
   target: HistoryVendorPdfTarget,
@@ -204,6 +219,35 @@ function autoRecordsResultFromGemini(
   const rawUnprocessedData = asString(payload.rawUnprocessedData, MAX_RAW);
   const suggestedPdfChecklist = normalizeChecklist(payload.pdfChecklist);
   const suggestedComments = normalizeSourcePdfComment(asString(payload.comments, 800));
+  const vehiclePayload = asRecord(payload.vehicleInfo);
+  const normalizeVehicleField = (v: unknown) => {
+    if (typeof v !== "string") return "";
+    const t = v.trim();
+    if (!t) return "";
+    if (/^(\-+|—|–)$/i.test(t)) return "";
+    return t;
+  };
+  const suggestedOutvinVehicleInfo: Partial<OutvinVehicleInfo> | undefined = (() => {
+    if (!vehiclePayload) return undefined;
+    const keys: (keyof OutvinVehicleInfo)[] = [
+      "vinCode",
+      "model",
+      "series",
+      "generation",
+      "typeCode",
+      "engineCode",
+      "steeringSide",
+      "color",
+      "interior",
+      "transmission",
+    ];
+    const out: Partial<OutvinVehicleInfo> = {};
+    for (const k of keys) {
+      const v = normalizeVehicleField(vehiclePayload[k]);
+      if (v) out[k] = v;
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+  })();
   const warnings = (Array.isArray(payload.warnings) ? payload.warnings : [])
     .filter((w): w is string => typeof w === "string")
     .slice(0, 8);
@@ -218,6 +262,7 @@ function autoRecordsResultFromGemini(
     rawUnprocessedData,
     suggestedPdfChecklist,
     suggestedComments,
+    suggestedOutvinVehicleInfo,
     warnings,
     meta: {
       charCount: rawUnprocessedData.length,

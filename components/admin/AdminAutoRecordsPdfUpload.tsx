@@ -73,6 +73,8 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported }: Pr
           serviceHistory: data.serviceHistory ?? [],
           rawUnprocessedData: data.rawUnprocessedData ?? "",
           suggestedPdfChecklist: data.suggestedPdfChecklist ?? {},
+          suggestedOutvinVehicleInfo: data.suggestedOutvinVehicleInfo,
+          suggestedComments: data.suggestedComments,
           warnings: data.warnings ?? [],
           meta: data.meta ?? { charCount: 0, rowCount: 0, usedOdometerSection: false },
           fileName: data.fileName ?? file.name,
