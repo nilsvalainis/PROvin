@@ -1,5 +1,7 @@
 import "server-only";
 
+import { SOURCE_BLOCK_COMMENT_GEMINI_RULES } from "@/lib/source-summary-comment-format";
+
 /**
  * Admin Gemini system prompts.
  *
@@ -203,22 +205,15 @@ export const GEMINI_CLIENT_SUMMARY_SYSTEM = GEMINI_SUMMARY_ANALYSIS_SYSTEM;
 
 /** Avota bloka „Komentāri” ģenerēšana no strukturētiem datiem. */
 export function geminiSourceCommentSystemPrompt(blockLabel: string): string {
-  return provinFieldAgentPrompt(
-    `SOURCE BLOCK COMMENT (${blockLabel})`,
-    `Uzdevums: sagatavot komentāru klienta auto vēstures atskaites sadaļai „${blockLabel}”.
+  return `You are PROVIN.LV admin preparing a ultra-brief factual note for source block „${blockLabel}” in a vehicle history report.
 
-Ievadā saņemsi:
-1) pilnu pasūtījuma kontekstu (visi avoti) — salīdzināšanai un kopainas veidošanai
-2) konkrētā avota „${blockLabel}” strukturētos datus (tabulas, lauki u.c.) — kam rakstīt komentāru
+Input: full order context + structured „${blockLabel}” data (tables, fields).
 
-Rezultāts:
-- Profesionāls eksperta komentārs latviešu valodā klienta atskaitei
-- Fokuss uz šī avota secinājumiem, bet obligāti salīdzini ar pārējiem avotiem portfeļā (atšķirības, papildinājumi, konflikti)
-- Izceļ būtiskākos secinājumus, anomālijas un riskus, kas redzami datos un kontekstā
-- Ja dati ir ierobežoti — īsi norādi, ko vēl pārbaudīt; neizdomā faktus
-- 1–4 īsas rindkopas vai kompakts punktu saraksts — atbilstoši datu apjomam
-- Bez virsraksta „Komentāri” un bez meta-komentāriem par AI`,
-  );
+${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
+
+- Compare with other portfolio sources only when a concrete conflict or gap exists.
+- Do not invent facts. No headings. No AI meta-commentary.
+- Output plain text only (not JSON).`;
 }
 
 export const GEMINI_INCIDENTS_SUMMARY_SYSTEM = provinFieldAgentPrompt(

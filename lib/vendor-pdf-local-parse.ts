@@ -15,6 +15,11 @@ import { parseCarverticalOdometerPaste } from "@/lib/carvertical-odometer-paste-
 import { extractClaimRowsForPdfInsight, type ClaimTableRow } from "@/lib/claim-rows-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
+import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
+import {
+  formatSourcePdfComments,
+  SOURCE_COMMENT_NO_ISSUES_LV,
+} from "@/lib/source-summary-comment-format";
 import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/history-vendor-pdf-import";
 
 const MAX_RAW = 120_000;
@@ -95,7 +100,10 @@ function extractCarverticalVin(text: string): string | undefined {
 
 function extractCarverticalDamageCount(text: string): string | undefined {
   const m = text.match(/Transportlīdzeklim\s+atrasto\s+bojājumu\s+skaits\s*:\s*(\d+)/i);
-  return m?.[1] != null ? `Atrasto bojājumu skaits: ${m[1]}` : undefined;
+  if (m?.[1] == null) return undefined;
+  const n = Number.parseInt(m[1], 10);
+  if (Number.isNaN(n) || n === 0) return undefined;
+  return `Atrasto bojājumu skaits: ${n}`;
 }
 
 /** Papildu CarVertical odometra regex visā tekstā (MM.YYYY … km). */
@@ -116,6 +124,18 @@ function extractCarverticalOdometerRegex(text: string): AutoRecordsServiceRow[] 
     out.push({ date: formatAutoRecordsDateForOutput(date), odometer: km, country: "" });
   }
   return sortAutoRecordsDescending(out);
+}
+
+function isIssueCommentLine(line: string, target: HistoryVendorPdfTarget): boolean {
+  const t = line.trim();
+  if (!t) return false;
+  if (/^VIN:/i.test(t)) return false;
+  if (/Pirmās reģistrācijas datums:/i.test(t)) return false;
+  if (/Negadījumu skaits:\s*0/i.test(t)) return false;
+  if (/Atrasto bojājumu skaits:\s*0/i.test(t)) return false;
+  if (target === "ltab" && /^Reģ\. nr\.:/i.test(t)) return false;
+  if (target === "ltab" && /^Polise:/i.test(t)) return false;
+  return true;
 }
 
 function extractLtabMetaComments(text: string): string[] {
@@ -143,7 +163,7 @@ export function parseVendorPdfLocal(
   text: string,
   opts?: { textBackend?: "pdf-parse" | "pdfjs" | "none" },
 ): HistoryVendorPdfParseResult {
-  const trimmed = text.trim();
+  const trimmed = sanitizePdfTextForParsing(text).trim();
   const charCount = trimmed.length;
   const rawText = trimmed.slice(0, MAX_RAW);
   const warnings: string[] = [];
@@ -185,12 +205,27 @@ export function parseVendorPdfLocal(
 
   const engine: PdfIngestEngine = "local_parser";
 
+  const hasIncidents = incidents.some(ltabRowHasData);
+  const issueBullets = commentParts.filter((p) => isIssueCommentLine(p, target));
+  let suggestedComments: string;
+  if (hasIncidents) {
+    const bullets = [...issueBullets];
+    if (target === "ltab") {
+      bullets.push(`Reģistrēti ${incidents.filter(ltabRowHasData).length} negadījumu ieraksti`);
+    }
+    suggestedComments = formatSourcePdfComments(bullets);
+  } else if (issueBullets.length > 0) {
+    suggestedComments = formatSourcePdfComments(issueBullets);
+  } else {
+    suggestedComments = SOURCE_COMMENT_NO_ISSUES_LV;
+  }
+
   return {
     rawText,
     serviceHistory,
     incidents,
     suggestedPdfChecklist: suggestChecklist(serviceHistory, incidents, trimmed),
-    suggestedComments: commentParts.length > 0 ? commentParts.join("\n") : undefined,
+    suggestedComments,
     warnings: warnings.length ? warnings : [],
     meta: {
       charCount,

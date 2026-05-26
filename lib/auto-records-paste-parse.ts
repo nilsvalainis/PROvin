@@ -2,6 +2,12 @@
  * AUTO RECORDS — servisa vēstures parseris (ODOMETER CHECK + tabulas rindas).
  */
 
+import {
+  extractOdometerFromFragment,
+  findDateInString,
+  parseFlexibleDateToken,
+} from "@/lib/auto-records-date-odometer-parse";
+import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 
 export type AutoRecordsServiceRow = {
@@ -64,32 +70,54 @@ function isHeaderLine(line: string): boolean {
   return false;
 }
 
+function lineHasDateToken(s: string): boolean {
+  return Boolean(findDateInString(s));
+}
+
 function parseDataLine(line: string): AutoRecordsServiceRow | null {
-  const parts = line.split(/\t/).map((p) => p.trim()).filter((p) => p.length > 0);
-  if (parts.length >= 3) {
-    const di = parts.findIndex((p) => /^\d{4}-\d{2}-\d{2}$/.test(p));
+  const normalized = line.replace(/\|/g, " ").replace(/\s{2,}/g, " ").trim();
+  if (!normalized) return null;
+
+  const parts = normalized
+    .split(/\t+|\s{2,}|\|/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+
+  if (parts.length >= 2) {
+    const di = parts.findIndex((p) => lineHasDateToken(p));
     if (di >= 0) {
-      const date = parts[di];
-      const loc = parts[di + 1] ?? "";
-      const odoRaw = parts[di + 2] ?? "";
-      if (/^\d{4}-\d{2}-\d{2}$/.test(loc)) return null;
-      return {
-        date,
-        odometer: normalizeAutoRecordsOdometer(odoRaw),
-        country: extractCountryFromLocation(loc).replace(/\s+/g, " ").trim(),
-      };
+      const dateRaw = findDateInString(parts[di]!) ?? parts[di]!;
+      const date = parseFlexibleDateToken(dateRaw);
+      const rest = parts.slice(di + 1).join(" ");
+      const odometer = extractOdometerFromFragment(rest) || extractOdometerFromFragment(normalized);
+      if (date && odometer) {
+        const loc = parts[di + 1] ?? "";
+        const country =
+          lineHasDateToken(loc) ? "" : extractCountryFromLocation(loc).replace(/\s+/g, " ").trim();
+        return { date, odometer, country };
+      }
     }
   }
-  const m = line.match(/^(\d{4}-\d{2}-\d{2})\s+(.+)$/);
-  if (!m) return null;
-  const date = m[1];
-  const rest = m[2];
-  const kmMatch = rest.match(/([\d,]+)\s*km\b/i);
-  const odometer = kmMatch ? normalizeAutoRecordsOdometer(kmMatch[1]) : "";
-  let locPart = rest;
-  if (kmMatch && kmMatch.index !== undefined) {
-    locPart = rest.slice(0, kmMatch.index).trim();
+
+  const dateInLine = findDateInString(normalized);
+  if (dateInLine) {
+    const odometer = extractOdometerFromFragment(normalized);
+    if (odometer) {
+      const date = parseFlexibleDateToken(dateInLine);
+      const beforeKm = normalized.slice(0, normalized.toLowerCase().indexOf("km"));
+      const country = extractCountryFromLocation(beforeKm).replace(/\s+/g, " ").trim();
+      return { date, odometer, country };
+    }
   }
+
+  const m = normalized.match(/^(\d{4}-\d{2}-\d{2}|\d{1,2}[./]\d{1,2}[./]\d{4})\s+(.+)$/);
+  if (!m) return null;
+  const date = parseFlexibleDateToken(m[1] ?? "");
+  const rest = m[2] ?? "";
+  const odometer = extractOdometerFromFragment(rest);
+  if (!date || !odometer) return null;
+  const kmIdx = rest.toLowerCase().indexOf("km");
+  const locPart = kmIdx >= 0 ? rest.slice(0, kmIdx) : rest;
   return {
     date,
     odometer,
@@ -118,7 +146,8 @@ export function sortAutoRecordsDescending(rows: AutoRecordsServiceRow[]): AutoRe
  * Atbalsta tab-atdalītas kolonnas (Status, Event Date, Location, Odometer, Detail) vai brīvu formātu.
  */
 export function parseAutoRecordsPaste(raw: string): AutoRecordsServiceRow[] {
-  const lines = raw.split(/\r?\n/);
+  const cleaned = sanitizePdfTextForParsing(raw);
+  const lines = cleaned.split(/\r?\n/);
   let i = 0;
   while (i < lines.length && !/ODOMETER\s+CHECK/i.test(lines[i])) i++;
   if (i >= lines.length) return [];

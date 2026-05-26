@@ -4,21 +4,27 @@
 import type { SourcePdfChecklist } from "@/lib/admin-source-blocks";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import {
+  rowFromDateKmFragment,
+  scanAutoRecordsDateOdometerPairs,
+} from "@/lib/auto-records-date-odometer-parse";
+import {
   autoRecordsRowHasData,
-  extractCountryFromLocation,
-  formatAutoRecordsDateForOutput,
-  normalizeAutoRecordsOdometer,
   parseAutoRecordsPaste,
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
+import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
+import {
+  formatSourcePdfComments,
+  SOURCE_COMMENT_NO_ISSUES_LV,
+} from "@/lib/source-summary-comment-format";
 import { mergeOutvinServiceRows } from "@/lib/outvin-history-map";
-import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 
 export type AutoRecordsPdfParseResult = {
   serviceHistory: AutoRecordsServiceRow[];
   rawUnprocessedData: string;
   suggestedPdfChecklist: Partial<SourcePdfChecklist>;
+  suggestedComments?: string;
   warnings: string[];
   meta: {
     charCount: number;
@@ -34,7 +40,7 @@ export type AutoRecordsPdfParseResult = {
 const MAX_RAW_SNIPPET = 120_000;
 
 const KM_AFTER_DATE =
-  /(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{4})[^\d]{0,220}?(\d{1,3}(?:[ \u00a0]?\d{3})*)\s*km\b/gi;
+  /(\d{4}-\d{2}-\d{2}|\d{1,2}[./]\d{1,2}[./]\d{4})[^\d]{0,220}?(\d{1,3}(?:[,.]?\d{3})*)\s*(?:km)?(?:\s*ServiceVisit)?/gi;
 
 const DAMAGE_HINTS: RegExp[] = [
   /\bstructural\s+damage\b/i,
@@ -48,27 +54,6 @@ const DAMAGE_HINTS: RegExp[] = [
   /\bsalvage\b/i,
   /\bflood\b/i,
 ];
-
-function normalizeDateToken(raw: string): string {
-  const t = raw.trim();
-  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (iso) return formatAutoRecordsDateForOutput(t);
-  const lv = t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
-  if (lv) return formatAutoRecordsDateForOutput(t);
-  return formatAutoRecordsDateForOutput(t);
-}
-
-function rowFromDateKmContext(dateRaw: string, kmRaw: string, context: string): AutoRecordsServiceRow | null {
-  const date = normalizeDateToken(dateRaw);
-  const odometer = normalizeAutoRecordsOdometer(kmRaw);
-  if (!date || !odometer) return null;
-  const country = extractCountryFromLocation(context).replace(/\s+/g, " ").trim();
-  return {
-    date,
-    odometer,
-    country: country ? normalizeCountryNameLv(country) : "",
-  };
-}
 
 /** Regex fallback, ja PDF tekstā nav tabulu / ODOMETER CHECK bloka. */
 function parseAutoRecordsPdfRegexFallback(text: string): AutoRecordsServiceRow[] {
@@ -90,7 +75,7 @@ function parseAutoRecordsPdfRegexFallback(text: string): AutoRecordsServiceRow[]
     const kmRaw = m[2];
     const start = Math.max(0, m.index - 20);
     const ctx = text.slice(start, m.index + m[0].length);
-    push(rowFromDateKmContext(dateRaw, kmRaw, ctx));
+    push(rowFromDateKmFragment(dateRaw, `${kmRaw} km ${ctx}`));
   }
 
   const lines = text.split(/\r?\n/);
@@ -99,23 +84,28 @@ function parseAutoRecordsPdfRegexFallback(text: string): AutoRecordsServiceRow[]
     if (!trimmed) continue;
     const tabParts = trimmed.split(/\t+/).map((p) => p.trim()).filter(Boolean);
     if (tabParts.length >= 3) {
-      const di = tabParts.findIndex((p) => /^\d{4}-\d{2}-\d{2}$/.test(p) || /^\d{1,2}\.\d{1,2}\.\d{4}$/.test(p));
+      const di = tabParts.findIndex(
+        (p) =>
+          /^\d{4}-\d{2}-\d{2}$/.test(p) ||
+          /^\d{1,2}\.\d{1,2}\.\d{4}$/.test(p) ||
+          /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(p),
+      );
       if (di >= 0) {
         const dateRaw = tabParts[di]!;
         const loc = tabParts[di + 1] ?? "";
         const odo = tabParts[di + 2] ?? "";
-        push(rowFromDateKmContext(dateRaw, odo, loc));
+        push(rowFromDateKmFragment(dateRaw, `${odo} km ${loc}`));
         continue;
       }
     }
-    const isoLine = trimmed.match(/^(\d{4}-\d{2}-\d{2})\s+(.+)$/);
+    const isoLine = trimmed.match(/^(\d{4}-\d{2}-\d{2}|\d{1,2}[./]\d{1,2}[./]\d{4})\s+(.+)$/);
     if (isoLine) {
-      const rest = isoLine[2];
-      const kmMatch = rest.match(/([\d, \u00a0]+)\s*km\b/i);
-      if (kmMatch) {
-        push(rowFromDateKmContext(isoLine[1], kmMatch[1], rest));
-      }
+      push(rowFromDateKmFragment(isoLine[1] ?? "", isoLine[2] ?? ""));
     }
+  }
+
+  for (const row of scanAutoRecordsDateOdometerPairs(text)) {
+    push(row);
   }
 
   return sortAutoRecordsDescending(out);
@@ -139,7 +129,7 @@ function suggestPdfChecklist(text: string, rows: AutoRecordsServiceRow[]): Parti
  */
 export function parseAutoRecordsPdfText(text: string): AutoRecordsPdfParseResult {
   const warnings: string[] = [];
-  const trimmed = text.trim();
+  const trimmed = sanitizePdfTextForParsing(text).trim();
   const charCount = trimmed.length;
 
   if (!charCount) {
@@ -167,16 +157,28 @@ export function parseAutoRecordsPdfText(text: string): AutoRecordsPdfParseResult
   }
 
   if (rows.length === 0) {
+    rows = scanAutoRecordsDateOdometerPairs(trimmed);
+  }
+
+  if (rows.length === 0) {
     warnings.push("Nobraukuma rindas netika atrastas — pārbaudi, vai PDF ir no auto-records.com un satur vēstures tabulu.");
   }
 
   const rawUnprocessedData = trimmed.slice(0, MAX_RAW_SNIPPET);
   const suggestedPdfChecklist = suggestPdfChecklist(trimmed, rows);
+  const hasDamage = DAMAGE_HINTS.some((re) => re.test(trimmed));
+  const suggestedComments =
+    rows.length > 0 && !hasDamage ?
+      SOURCE_COMMENT_NO_ISSUES_LV
+    : hasDamage ?
+      formatSourcePdfComments(["Iespējami bojājumi / negadījumi tekstā — pārbaudi tabulu"])
+    : undefined;
 
   return {
     serviceHistory: rows,
     rawUnprocessedData,
     suggestedPdfChecklist,
+    suggestedComments,
     warnings,
     meta: {
       charCount,

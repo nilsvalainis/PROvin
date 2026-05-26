@@ -13,6 +13,7 @@ import { parseCarverticalOdometerPaste } from "@/lib/carvertical-odometer-paste-
 import { extractClaimRowsForPdfInsight, type ClaimTableRow } from "@/lib/claim-rows-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { mergeAutoRecordsServiceHistory } from "@/lib/auto-records-pdf-parse";
+import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 
 export type HistoryVendorPdfTarget = "autodna" | "carvertical" | "ltab";
@@ -80,7 +81,7 @@ export function parseHistoryVendorPdfText(
   text: string,
 ): HistoryVendorPdfParseResult {
   const warnings: string[] = [];
-  const trimmed = text.trim();
+  const trimmed = sanitizePdfTextForParsing(text).trim();
   const charCount = trimmed.length;
 
   if (!charCount) {

@@ -43,10 +43,10 @@ JSON schema:
     {
       "severity": "CRITICAL|WARNING|INFO",
       "category": "MILEAGE_ROLLBACK|HIDDEN_DAMAGE|COMMERCIAL_USE|DATA_DISCREPANCY",
-      "description_lv": "string"
+      "description_lv": "string — one short factual sentence in Latvian, no fluff"
     }
   ],
-  "ai_generated_comments_lv": "string"
+  "ai_generated_comments_lv": "string — if no anomalies across all sources: exactly \"Problēmas nav konstatētas.\"; else short bullet list (- prefix), max 4 facts, max ~350 chars, zero fluff"
 }`;
 
 export type PdfTextBundle = { fileName: string; text: string; sourceHint: string };

@@ -136,6 +136,12 @@ export function AdminAutoRecordsSourceBlock({
               rawUnprocessedData: result.rawUnprocessedData || value.rawUnprocessedData,
               serviceHistory: merged.length > 0 ? merged : [emptyAutoRecordsServiceRow()],
               pdfChecklist: sourcePdfChecklistHasAny(checklistNext) ? checklistNext : value.pdfChecklist,
+              comments:
+                result.suggestedComments?.trim() ?
+                  value.comments.trim() ?
+                    `${value.comments.trim()}\n\n${result.suggestedComments.trim()}`
+                  : result.suggestedComments.trim()
+                : value.comments,
             });
           }}
         />

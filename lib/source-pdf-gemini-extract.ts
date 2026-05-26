@@ -23,6 +23,10 @@ import {
   type HistoryVendorPdfTarget,
 } from "@/lib/history-vendor-pdf-import";
 import { PDF_GEMINI_INLINE_MAX_BYTES } from "@/lib/pdf-api-limits";
+import {
+  normalizeSourcePdfComment,
+  SOURCE_PDF_COMMENT_GEMINI_RULES,
+} from "@/lib/source-summary-comment-format";
 
 export type SourcePdfExtractTarget = HistoryVendorPdfTarget | "auto_records";
 
@@ -111,8 +115,10 @@ JSON schema:
   "serviceHistory": [{"date":"DD.MM.YYYY","odometer":"digits","country":"string"}],
   "incidents": [{"csngDate":"DD.MM.YYYY","lossAmount":"e.g. 2930.00 €","incidentNo":"country name or ISO"}],
   "pdfChecklist": {"incidents": boolean, "mileageHistory": boolean, "mileageLine": boolean},
-  "comments": "string — status alerts, damage summary, market/value notes, registration facts NOT already in tables (Latvian, concise)"
+  "comments": "string — see COMMENTS rules below"
 }
+
+${SOURCE_PDF_COMMENT_GEMINI_RULES}
 
 Rules:
 - serviceHistory: ALL chronological odometer readings (newest-first order in array is OK).
@@ -135,9 +141,11 @@ Return ONLY valid JSON:
   "rawUnprocessedData": "string — key sections: ODOMETER CHECK, service events (max 120000 chars)",
   "serviceHistory": [{"date":"DD.MM.YYYY","odometer":"digits","country":"string"}],
   "pdfChecklist": {"incidents": boolean, "mileageHistory": boolean, "mileageLine": boolean},
+  "comments": "string — see COMMENTS rules",
   "warnings": ["string"]
 }
-Extract every service/odometer row from tables. checklist.incidents if damage/accident mentioned.`;
+${SOURCE_PDF_COMMENT_GEMINI_RULES}
+Extract every service/odometer row from tables (dates YYYY-MM-DD or DD.MM.YYYY; odometer even if glued to "km" or "ServiceVisit"). checklist.incidents if damage/accident mentioned.`;
 
 function vendorResultFromGemini(
   target: HistoryVendorPdfTarget,
@@ -156,7 +164,7 @@ function vendorResultFromGemini(
   );
   const mileagePasteRaw = asString(payload.mileagePasteRaw, 24_000);
   const rawText = asString(payload.rawTextSnippet ?? payload.rawText, MAX_RAW);
-  const comments = asString(payload.comments, 8_000);
+  const comments = normalizeSourcePdfComment(asString(payload.comments, 800));
   const suggestedPdfChecklist = normalizeChecklist(payload.pdfChecklist);
 
   const base = parseHistoryVendorPdfText(target, rawText || mileagePasteRaw);
@@ -166,14 +174,13 @@ function vendorResultFromGemini(
   } else {
     warnings.push(`Datu avots: Gemini PDF (${fileName}).`);
   }
-  if (comments) warnings.push(`Kopsavilkums: ${comments.slice(0, 200)}${comments.length > 200 ? "…" : ""}`);
 
   return {
     rawText: rawText || mileagePasteRaw || base.rawText,
     serviceHistory: serviceHistory.length > 0 ? serviceHistory : base.serviceHistory,
     incidents: incidents.length > 0 ? incidents : base.incidents,
     suggestedPdfChecklist: { ...base.suggestedPdfChecklist, ...suggestedPdfChecklist },
-    suggestedComments: comments || undefined,
+    suggestedComments: comments,
     warnings,
     meta: {
       charCount: (rawText || mileagePasteRaw).length,
@@ -196,6 +203,7 @@ function autoRecordsResultFromGemini(
   );
   const rawUnprocessedData = asString(payload.rawUnprocessedData, MAX_RAW);
   const suggestedPdfChecklist = normalizeChecklist(payload.pdfChecklist);
+  const suggestedComments = normalizeSourcePdfComment(asString(payload.comments, 800));
   const warnings = (Array.isArray(payload.warnings) ? payload.warnings : [])
     .filter((w): w is string => typeof w === "string")
     .slice(0, 8);
@@ -209,6 +217,7 @@ function autoRecordsResultFromGemini(
     serviceHistory,
     rawUnprocessedData,
     suggestedPdfChecklist,
+    suggestedComments,
     warnings,
     meta: {
       charCount: rawUnprocessedData.length,
