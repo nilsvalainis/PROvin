@@ -71,6 +71,7 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported, onPa
         } else if (data.warnings?.[0]) {
           setNotice(data.warnings[0]);
         }
+        onParseActiveChange?.(false);
         onImported({
           serviceHistory: data.serviceHistory ?? [],
           rawUnprocessedData: data.rawUnprocessedData ?? "",

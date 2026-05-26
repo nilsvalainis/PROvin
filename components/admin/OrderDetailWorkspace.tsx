@@ -45,10 +45,11 @@ import {
 import {
   buildOrderDraftWorkspaceBody,
   coalesceOrderWorkspacePersistBody,
-  localWorkspaceHasSubstantiveContent,
+  mergeWorkspaceHydrationBodies,
+  normalizeOrderWorkspacePersistBody,
   pickNewestBackupSnapshotRaw,
   pickWorkspaceHydrationCandidate,
-  serializeOrderWorkspaceSnapshot,
+  serializeOrderWorkspaceSnapshotFromRef,
   parseWorkspaceSnapshotSavedAtMs,
   workspaceHydrationFillScore,
   type OrderWorkspacePersistBody,
@@ -370,10 +371,13 @@ function serializeWorkspaceState(
   pdf: PdfVisibilitySettings,
   bannerInclude: ProvinBannerPdfInclude,
   savedAt?: string,
-  baseline?: OrderWorkspacePersistBody | null,
 ): string {
-  const safe = coalesceOrderWorkspacePersistBody(workspaceToPersistBody(ws), baseline ?? null);
-  return serializeOrderWorkspaceSnapshot(safe, pdf, bannerInclude, savedAt, baseline);
+  return serializeOrderWorkspaceSnapshotFromRef(
+    workspaceToPersistBody(ws),
+    pdf,
+    bannerInclude,
+    savedAt,
+  );
 }
 
 const NOTIFY_ALLOWED_MIME = new Set([
@@ -780,25 +784,13 @@ export function OrderDetailWorkspace({
       if (!opts?.quiet) {
         setLocalSaveUi((prev) => (prev.phase === "saving" ? prev : { phase: "saving", atMs: prev.atMs }));
       }
-      const baseline = readPersistBaseline();
-      const safe = coalesceOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current), baseline);
-      wsPersistRef.current = {
-        ...wsPersistRef.current,
-        sourceBlocks: safe.sourceBlocks,
-        iriss: safe.iriss,
-        apskatesPlāns: safe.apskatesPlāns,
-        cenasAtbilstiba: safe.cenasAtbilstiba,
-        previewConfirmed: safe.previewConfirmed,
-        vehicleAiExtraction: safe.vehicleAiExtraction,
-        vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
-      };
-      lastGoodPersistBodyRef.current = safe;
-      const snapshot = serializeWorkspaceState(
-        wsPersistRef.current,
+      const normalized = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
+      lastGoodPersistBodyRef.current = normalized;
+      const snapshot = serializeOrderWorkspaceSnapshotFromRef(
+        normalized,
         pdfVisibilityRef.current,
         pdfBannerIncludeRef.current,
         new Date().toISOString(),
-        baseline,
       );
       try {
         localStorage.setItem(storageKeyWorkspace(payload.sessionId), snapshot);
@@ -814,7 +806,7 @@ export function OrderDetailWorkspace({
         setLocalSaveUi({ phase: "saved", atMs: Date.now() });
       }
     },
-    [payload.sessionId, pushWorkspaceBackup, readPersistBaseline, workspaceHydrated],
+    [payload.sessionId, pushWorkspaceBackup, workspaceHydrated],
   );
 
   /** Sinhrons `localStorage` — navigācijas / link klikšķa brīdī (bez gaidīšanas uz React unmount). */
@@ -1048,7 +1040,10 @@ export function OrderDetailWorkspace({
       setWs((prev) => {
         const next: WorkspacePersist = {
           ...prev,
-          sourceBlocks: { ...prev.sourceBlocks, [key]: block },
+          sourceBlocks: mergeSourceBlocksWithDefaults({
+            ...prev.sourceBlocks,
+            [key]: block,
+          }),
         };
         wsPersistRef.current = next;
         return next;
@@ -1067,7 +1062,10 @@ export function OrderDetailWorkspace({
         const block = patch(prevBlock);
         const next: WorkspacePersist = {
           ...prev,
-          sourceBlocks: { ...prev.sourceBlocks, [key]: block },
+          sourceBlocks: mergeSourceBlocksWithDefaults({
+            ...prev.sourceBlocks,
+            [key]: block,
+          }),
         };
         wsPersistRef.current = next;
         return next;
@@ -1203,56 +1201,31 @@ export function OrderDetailWorkspace({
         }
       };
 
-      const localPersistBodyForPick: OrderWorkspacePersistBody | null =
-        localHydrated ?
-          {
-            sourceBlocks: localHydrated.sourceBlocks,
-            iriss: localHydrated.iriss,
-            apskatesPlāns: localHydrated.apskatesPlāns,
-            cenasAtbilstiba: localHydrated.cenasAtbilstiba,
-            previewConfirmed: Boolean(localHydrated.previewConfirmed),
-            vehicleAiExtraction: localHydrated.vehicleAiExtraction ?? null,
-            vehicleAiExtractionMeta: localHydrated.vehicleAiExtractionMeta ?? null,
-          }
-        : null;
-      const localSubstantive =
-        localPersistBodyForPick != null && localWorkspaceHasSubstantiveContent(localPersistBodyForPick);
+      const picked = pickWorkspaceHydrationCandidate(candidates, localCandidate, {
+        local: parseRawSourceBlocks(localRaw),
+        backup: backupPick ? parseRawSourceBlocks(backupPick.data) : undefined,
+        server: parseRawSourceBlocks(serverWorkspaceJson),
+      });
 
-      const picked = pickWorkspaceHydrationCandidate(
-        candidates,
-        localCandidate,
-        {
-          local: parseRawSourceBlocks(localRaw),
-          backup: backupPick ? parseRawSourceBlocks(backupPick.data) : undefined,
-          server: parseRawSourceBlocks(serverWorkspaceJson),
-        },
-        { localSubstantive },
-      );
+      const toPersistBody = (
+        h: NonNullable<typeof localHydrated> | NonNullable<typeof serverHydrated>,
+      ): OrderWorkspacePersistBody => ({
+        sourceBlocks: h.sourceBlocks,
+        iriss: h.iriss,
+        apskatesPlāns: h.apskatesPlāns,
+        cenasAtbilstiba: h.cenasAtbilstiba,
+        previewConfirmed: Boolean(h.previewConfirmed),
+        vehicleAiExtraction: h.vehicleAiExtraction ?? null,
+        vehicleAiExtractionMeta: h.vehicleAiExtractionMeta ?? null,
+      });
 
       if (picked) {
         const chosen = picked.data;
-        const pickedBody: OrderWorkspacePersistBody = {
-          sourceBlocks: chosen.sourceBlocks,
-          iriss: chosen.iriss,
-          apskatesPlāns: chosen.apskatesPlāns,
-          cenasAtbilstiba: chosen.cenasAtbilstiba,
-          previewConfirmed: Boolean(chosen.previewConfirmed),
-          vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
-          vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
-        };
-        const localBody =
-          localCandidate ?
-            ({
-              sourceBlocks: localCandidate.data.sourceBlocks,
-              iriss: localCandidate.data.iriss,
-              apskatesPlāns: localCandidate.data.apskatesPlāns,
-              cenasAtbilstiba: localCandidate.data.cenasAtbilstiba,
-              previewConfirmed: Boolean(localCandidate.data.previewConfirmed),
-              vehicleAiExtraction: localCandidate.data.vehicleAiExtraction ?? null,
-              vehicleAiExtractionMeta: localCandidate.data.vehicleAiExtractionMeta ?? null,
-            } satisfies OrderWorkspacePersistBody)
-          : null;
-        const mergedBody = coalesceOrderWorkspacePersistBody(pickedBody, localBody);
+        const mergedBody = mergeWorkspaceHydrationBodies([
+          serverHydrated ? toPersistBody(serverHydrated) : null,
+          backupHydrated ? toPersistBody(backupHydrated) : null,
+          localHydrated ? toPersistBody(localHydrated) : null,
+        ]);
         const hydratedWs: WorkspacePersist = {
           sourceBlocks: mergedBody.sourceBlocks,
           iriss: mergedBody.iriss,
@@ -1273,14 +1246,11 @@ export function OrderDetailWorkspace({
           hydratedWs,
           mergedVisibility,
           mergedBannerInclude,
-          undefined,
-          localBody,
         );
         const localSavedAtMs = parseWorkspaceSnapshotSavedAtMs(localRaw);
         const shouldOverwriteLocal =
           !rawV3 ||
-          (!localSubstantive &&
-            picked.source !== "local" &&
+          (picked.source !== "local" &&
             localSavedAtMs > 0 &&
             picked.savedAtMs > 0 &&
             picked.savedAtMs >= localSavedAtMs);
@@ -1379,43 +1349,33 @@ export function OrderDetailWorkspace({
   );
 
   const persistWorkspaceSnapshot = useCallback(
-    async (opts?: { showFlash?: boolean }): Promise<boolean> => {
+    async (opts?: { showFlash?: boolean; serverOnly?: boolean }): Promise<boolean> => {
       if (!workspaceHydrated) return false;
-      if (isWorkspaceAutosaveBlocked()) return true;
-      const baseline = readPersistBaseline();
-      const safe = coalesceOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current), baseline);
-      wsPersistRef.current = {
-        ...wsPersistRef.current,
-        sourceBlocks: safe.sourceBlocks,
-        iriss: safe.iriss,
-        apskatesPlāns: safe.apskatesPlāns,
-        cenasAtbilstiba: safe.cenasAtbilstiba,
-        previewConfirmed: safe.previewConfirmed,
-        vehicleAiExtraction: safe.vehicleAiExtraction,
-        vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
-      };
-      lastGoodPersistBodyRef.current = safe;
-      const savedAt = new Date().toISOString();
-      const snapshot = serializeWorkspaceState(
-        wsPersistRef.current,
-        pdfVisibilityRef.current,
-        pdfBannerIncludeRef.current,
-        savedAt,
-        baseline,
-      );
+      const fromRef = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
       let localOk = true;
-      try {
-        localStorage.setItem(storageKeyWorkspace(payload.sessionId), snapshot);
-        const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
-        if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
-      } catch {
-        localOk = false;
+      if (!opts?.serverOnly) {
+        lastGoodPersistBodyRef.current = fromRef;
+        const snapshot = serializeOrderWorkspaceSnapshotFromRef(
+          fromRef,
+          pdfVisibilityRef.current,
+          pdfBannerIncludeRef.current,
+          new Date().toISOString(),
+        );
+        try {
+          localStorage.setItem(storageKeyWorkspace(payload.sessionId), snapshot);
+          const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
+          if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
+        } catch {
+          localOk = false;
+        }
+        pushWorkspaceBackup(snapshot);
+        hydrationSnapshotRef.current = snapshot;
       }
-      pushWorkspaceBackup(snapshot);
-      hydrationSnapshotRef.current = snapshot;
 
       let serverOk = !orderDraftPersistenceEnabled;
-      if (orderDraftPersistenceEnabled && workspaceHydratedOnceRef.current) {
+      if (orderDraftPersistenceEnabled && workspaceHydratedOnceRef.current && !isWorkspaceAutosaveBlocked()) {
+        const baseline = lastGoodPersistBodyRef.current ?? readPersistBaseline();
+        const forServer = coalesceOrderWorkspacePersistBody(fromRef, baseline);
         const myGen = ++workspaceServerSaveGenRef.current;
         try {
           const res = await fetch("/api/admin/order-draft", {
@@ -1425,7 +1385,7 @@ export function OrderDetailWorkspace({
             body: JSON.stringify({
               sessionId: payload.sessionId,
               workspace: buildOrderDraftWorkspaceBody(
-                safe,
+                forServer,
                 pdfVisibilityRef.current,
                 pdfBannerIncludeRef.current,
                 baseline,
@@ -1454,10 +1414,10 @@ export function OrderDetailWorkspace({
     ],
   );
 
-  /** Pēc PDF importa — `patchSourceBlock` + microtask, lai `wsPersistRef` būtu sinhronizēts. */
+  /** Pēc PDF importa — lokāli uzreiz; serveris kad parse lock atbrīvots. */
   const persistAfterPdfImport = useCallback(() => {
+    commitWorkspaceLocalNow({ force: true });
     queueMicrotask(() => {
-      commitWorkspaceLocalNow({ force: true });
       void persistWorkspaceSnapshot({ showFlash: false });
     });
   }, [commitWorkspaceLocalNow, persistWorkspaceSnapshot]);
@@ -1467,19 +1427,9 @@ export function OrderDetailWorkspace({
       if (!orderDraftPersistenceEnabled || !workspaceHydratedOnceRef.current) return;
       if (isWorkspaceAutosaveBlocked() && !opts?.keepalive) return;
       const myGen = ++workspaceServerSaveGenRef.current;
-      const baseline = readPersistBaseline();
-      const safe = coalesceOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current), baseline);
-      wsPersistRef.current = {
-        ...wsPersistRef.current,
-        sourceBlocks: safe.sourceBlocks,
-        iriss: safe.iriss,
-        apskatesPlāns: safe.apskatesPlāns,
-        cenasAtbilstiba: safe.cenasAtbilstiba,
-        previewConfirmed: safe.previewConfirmed,
-        vehicleAiExtraction: safe.vehicleAiExtraction,
-        vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
-      };
-      lastGoodPersistBodyRef.current = safe;
+      const fromRef = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
+      const baseline = lastGoodPersistBodyRef.current ?? readPersistBaseline();
+      const forServer = coalesceOrderWorkspacePersistBody(fromRef, baseline);
       void fetch("/api/admin/order-draft", {
         method: "PATCH",
         credentials: "include",
@@ -1488,7 +1438,7 @@ export function OrderDetailWorkspace({
         body: JSON.stringify({
           sessionId: payload.sessionId,
           workspace: buildOrderDraftWorkspaceBody(
-            safe,
+            forServer,
             pdfVisibilityRef.current,
             pdfBannerIncludeRef.current,
             baseline,
@@ -1665,12 +1615,12 @@ export function OrderDetailWorkspace({
     };
   }, [payload.sessionId, flushWorkspaceLocalStorageSync, flushWorkspaceServerPatch]);
 
-  /** Katra izmaiņa — tūlītējs lokālais saglabājums; serveris — īss debounce (bez 750 ms). */
+  /** Katra izmaiņa — tūlītējs lokālais saglabājums; serveris — debounce (PDF parse tikai aptur serveri). */
   useEffect(() => {
     if (!workspaceHydrated) return;
-    if (isWorkspaceAutosaveBlocked()) return;
     workspaceDirtyRef.current = true;
     commitWorkspaceLocalNow({ force: true });
+    if (isWorkspaceAutosaveBlocked()) return;
     const t = window.setTimeout(() => {
       if (isWorkspaceAutosaveBlocked()) return;
       scheduleWorkspaceServerPatch({ showFlash: false });

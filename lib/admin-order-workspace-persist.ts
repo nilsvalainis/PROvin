@@ -7,6 +7,7 @@ import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import {
   SOURCE_BLOCK_KEYS,
+  createDefaultSourceBlocks,
   mergeSourceBlocksWithDefaults,
   type SourceBlockKey,
   type WorkspaceSourceBlocks,
@@ -205,6 +206,41 @@ export function pickNewestBackupSnapshotRaw(rawBackup: string | null): {
   }
 }
 
+/** Pilni bloki no atmiņas — bez baseline apvienošanas (localStorage uzticības avots). */
+export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBody): OrderWorkspacePersistBody {
+  return {
+    sourceBlocks: mergeSourceBlocksWithDefaults(body.sourceBlocks),
+    iriss: body.iriss,
+    apskatesPlāns: body.apskatesPlāns,
+    cenasAtbilstiba: body.cenasAtbilstiba,
+    previewConfirmed: body.previewConfirmed,
+    vehicleAiExtraction: body.vehicleAiExtraction,
+    vehicleAiExtractionMeta: body.vehicleAiExtractionMeta,
+  };
+}
+
+/** Tieša serializācija — katrs keystroke / PDF imports raksta tieši `wsPersistRef` saturu. */
+export function serializeOrderWorkspaceSnapshotFromRef(
+  body: OrderWorkspacePersistBody,
+  pdf: PdfVisibilitySettings,
+  bannerInclude: ProvinBannerPdfInclude,
+  savedAt = new Date().toISOString(),
+): string {
+  const normalized = normalizeOrderWorkspacePersistBody(body);
+  return JSON.stringify({
+    sourceBlocks: normalized.sourceBlocks,
+    iriss: normalized.iriss,
+    apskatesPlāns: normalized.apskatesPlāns,
+    cenasAtbilstiba: normalized.cenasAtbilstiba,
+    previewConfirmed: normalized.previewConfirmed,
+    pdfVisibility: pdf,
+    pdfBannerInclude: bannerInclude,
+    vehicleAiExtraction: normalized.vehicleAiExtraction,
+    vehicleAiExtractionMeta: normalized.vehicleAiExtractionMeta,
+    savedAt,
+  });
+}
+
 export function serializeOrderWorkspaceSnapshot(
   body: OrderWorkspacePersistBody,
   pdf: PdfVisibilitySettings,
@@ -225,6 +261,26 @@ export function serializeOrderWorkspaceSnapshot(
     vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
     savedAt,
   });
+}
+
+/** Hidratācija — salipina visus avotus bloku pa blokam (neizmet AutoDNA, ja local ir tikai Citi avoti). */
+export function mergeWorkspaceHydrationBodies(
+  bodies: (OrderWorkspacePersistBody | null | undefined)[],
+): OrderWorkspacePersistBody {
+  const empty: OrderWorkspacePersistBody = {
+    sourceBlocks: createDefaultSourceBlocks(),
+    iriss: "",
+    apskatesPlāns: "",
+    cenasAtbilstiba: "",
+    previewConfirmed: false,
+    vehicleAiExtraction: null,
+    vehicleAiExtractionMeta: null,
+  };
+  let merged = empty;
+  for (const b of bodies) {
+    if (b) merged = coalesceOrderWorkspacePersistBody(merged, b);
+  }
+  return merged;
 }
 
 /** Jaunākais `savedAt` uzvar; bez laika zīmoga — `fillScore` un avota prioritāte. */
@@ -335,14 +391,7 @@ export function pickWorkspaceHydrationCandidate<T>(
   candidates: WorkspaceHydrationPick<T>[],
   local: WorkspaceHydrationPick<T> | null,
   rawSourceBlocksBySource?: Partial<Record<WorkspaceHydrationSource, unknown>>,
-  opts?: {
-    /** Ja `true`, lokālais ar saturu vienmēr uzvar pār serveri/backup (neatkarīgi no laika). */
-    localSubstantive?: boolean;
-  },
 ): WorkspaceHydrationPick<T> | null {
-  if (opts?.localSubstantive && local) {
-    return local;
-  }
   const filtered = candidates.filter((c) => {
     const raw = rawSourceBlocksBySource?.[c.source];
     if (raw == null) return true;

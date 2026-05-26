@@ -102,6 +102,7 @@ export function AdminHistoryVendorPdfUpload({
         if (data.warnings?.length) {
           setNotice((prev) => (prev ? `${prev} ${data.warnings![0]}` : (data.warnings![0] ?? null)));
         }
+        onParseActiveChange?.(false);
         onImported({
           rawText: data.rawText ?? "",
           serviceHistory: data.serviceHistory ?? [],
