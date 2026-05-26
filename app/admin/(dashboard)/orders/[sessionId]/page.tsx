@@ -28,6 +28,8 @@ export default async function AdminOrderDetailPage({ params }: Props) {
           previewConfirmed: serverOrderDraft.workspace.previewConfirmed,
           pdfVisibility: serverOrderDraft.workspace.pdfVisibility,
           pdfBannerInclude: serverOrderDraft.workspace.pdfBannerInclude,
+          vehicleAiExtraction: serverOrderDraft.workspace.vehicleAiExtraction,
+          vehicleAiExtractionMeta: serverOrderDraft.workspace.vehicleAiExtractionMeta,
           savedAt: serverOrderDraft.updatedAt,
         })
       : null;

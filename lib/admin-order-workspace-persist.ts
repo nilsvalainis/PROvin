@@ -4,6 +4,7 @@
 import type { ProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
 import type { PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
+import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 
 export type OrderWorkspacePersistBody = {
@@ -38,6 +39,49 @@ export function parseWorkspaceSnapshotSavedAtMs(raw: string | null | undefined):
   }
 }
 
+/** API / server melnraksts — pilns darba zonas JSON (iesk. AI ekstrakciju). */
+export function buildOrderDraftWorkspaceBody(
+  body: OrderWorkspacePersistBody,
+  pdf: PdfVisibilitySettings,
+  bannerInclude: ProvinBannerPdfInclude,
+): OrderDraftWorkspaceBody {
+  return {
+    sourceBlocks: body.sourceBlocks,
+    iriss: body.iriss,
+    apskatesPlāns: body.apskatesPlāns,
+    cenasAtbilstiba: body.cenasAtbilstiba,
+    previewConfirmed: body.previewConfirmed,
+    pdfVisibility: pdf,
+    pdfBannerInclude: bannerInclude,
+    vehicleAiExtraction: body.vehicleAiExtraction,
+    vehicleAiExtractionMeta: body.vehicleAiExtractionMeta,
+  };
+}
+
+/** Jaunākā rezerves kopija pēc `savedAt` (masīvs jaunākais elements pirmais). */
+export function pickNewestBackupSnapshotRaw(rawBackup: string | null): {
+  data: string;
+  savedAtMs: number;
+} | null {
+  if (!rawBackup) return null;
+  try {
+    const arr = JSON.parse(rawBackup) as { savedAt?: string; data?: string }[];
+    if (!Array.isArray(arr)) return null;
+    let best: { data: string; savedAtMs: number } | null = null;
+    for (const item of arr) {
+      if (!item || typeof item.data !== "string") continue;
+      const t = typeof item.savedAt === "string" ? Date.parse(item.savedAt) : 0;
+      const savedAtMs = Number.isFinite(t) ? t : 0;
+      if (!best || savedAtMs > best.savedAtMs) {
+        best = { data: item.data, savedAtMs };
+      }
+    }
+    return best;
+  } catch {
+    return null;
+  }
+}
+
 export function serializeOrderWorkspaceSnapshot(
   body: OrderWorkspacePersistBody,
   pdf: PdfVisibilitySettings,
@@ -64,8 +108,10 @@ export function pickNewestWorkspaceHydration<T>(candidates: WorkspaceHydrationPi
   const rank: Record<WorkspaceHydrationSource, number> = { local: 3, backup: 2, server: 1 };
   const hasAnyTimestamp = candidates.some((c) => c.savedAtMs > 0);
   const sorted = [...candidates].sort((a, b) => {
-    if (hasAnyTimestamp && a.savedAtMs !== b.savedAtMs) {
-      return b.savedAtMs - a.savedAtMs;
+    if (hasAnyTimestamp) {
+      const aTs = a.savedAtMs > 0 ? a.savedAtMs : -1;
+      const bTs = b.savedAtMs > 0 ? b.savedAtMs : -1;
+      if (aTs !== bTs) return bTs - aTs;
     }
     const scoreA = a.fillScore ?? 0;
     const scoreB = b.fillScore ?? 0;

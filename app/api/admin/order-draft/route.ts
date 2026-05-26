@@ -9,6 +9,7 @@ import { listOrderDraftRevisions, patchOrderDraft, restoreOrderDraftRevision } f
 import type { OrderDraftOrderEdits, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
+import { parseVehicleAiFromWorkspaceRecord } from "@/lib/vehicle-ai-extraction-parse";
 
 export const maxDuration = 60;
 export const runtime = "nodejs";
@@ -108,6 +109,8 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
   if (!v || typeof v !== "object") return undefined;
   const o = v as Record<string, unknown>;
   if (!o.sourceBlocks || typeof o.sourceBlocks !== "object") return undefined;
+  const { extraction: vehicleAiExtraction, meta: vehicleAiExtractionMeta } =
+    parseVehicleAiFromWorkspaceRecord(o);
   return {
     sourceBlocks: o.sourceBlocks,
     iriss: typeof o.iriss === "string" ? o.iriss : "",
@@ -116,6 +119,8 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
     previewConfirmed: Boolean(o.previewConfirmed),
     pdfVisibility: mergePdfVisibility(o.pdfVisibility),
     pdfBannerInclude: mergeProvinBannerPdfInclude(o.pdfBannerInclude),
+    vehicleAiExtraction,
+    vehicleAiExtractionMeta,
   };
 }
 

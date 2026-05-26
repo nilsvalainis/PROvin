@@ -107,6 +107,8 @@ export function AdminOrderDetailView({
   const [orderEditsAutosaveFlash, setOrderEditsAutosaveFlash] = useState(false);
   const [orderEditsSaveServerOk, setOrderEditsSaveServerOk] = useState(true);
   const skipOrderEditsAutosaveFlash = useRef(true);
+  const editsRef = useRef(edits);
+  editsRef.current = edits;
   const [pdfVisibility, setPdfVisibility] = useState<PdfVisibilitySettings>(DEFAULT_PDF_VISIBILITY);
   const patchPdfVisibility = useCallback((patch: Partial<PdfVisibilitySettings>) => {
     setPdfVisibility((prev) => ({ ...prev, ...patch }));
@@ -286,7 +288,14 @@ export function AdminOrderDetailView({
         }
       })();
     }, 800);
-    return () => window.clearTimeout(t);
+    return () => {
+      window.clearTimeout(t);
+      try {
+        localStorage.setItem(storageKeyOrderEdits(order.id), JSON.stringify(editsRef.current));
+      } catch {
+        /* quota */
+      }
+    };
   }, [edits, hydrated, order.id, orderDraftPersistenceEnabled]);
 
   useEffect(() => {
@@ -308,10 +317,34 @@ export function AdminOrderDetailView({
   }, [edits, order.id]);
 
   useEffect(() => {
-    const onUnload = () => flushOrderEditsToStorage();
-    window.addEventListener("beforeunload", onUnload);
-    return () => window.removeEventListener("beforeunload", onUnload);
+    const onLeave = () => flushOrderEditsToStorage();
+    window.addEventListener("beforeunload", onLeave);
+    window.addEventListener("pagehide", onLeave);
+    return () => {
+      window.removeEventListener("beforeunload", onLeave);
+      window.removeEventListener("pagehide", onLeave);
+    };
   }, [flushOrderEditsToStorage]);
+
+  /** SPA navigācija — saglabāt orderEdits (kopsavilkuma lauki u.c.) pirms komponenta noņemšanas. */
+  useEffect(() => {
+    return () => {
+      try {
+        localStorage.setItem(storageKeyOrderEdits(order.id), JSON.stringify(editsRef.current));
+      } catch {
+        /* quota */
+      }
+      if (orderDraftPersistenceEnabled) {
+        void fetch("/api/admin/order-draft", {
+          method: "PATCH",
+          credentials: "include",
+          keepalive: true,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: order.id, orderEdits: editsRef.current }),
+        });
+      }
+    };
+  }, [order.id, orderDraftPersistenceEnabled]);
 
   const mergedVin = edits.vin !== undefined ? edits.vin : (order.vin ?? "");
   const mergedListing = edits.listingUrl !== undefined ? edits.listingUrl : (order.listingUrl ?? "");

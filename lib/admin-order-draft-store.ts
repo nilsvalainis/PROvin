@@ -82,6 +82,8 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
       previewConfirmed: Boolean(w.previewConfirmed),
       pdfVisibility: w.pdfVisibility ? mergePdfVisibility(w.pdfVisibility) : undefined,
       pdfBannerInclude: w.pdfBannerInclude ? mergeProvinBannerPdfInclude(w.pdfBannerInclude) : undefined,
+      vehicleAiExtraction: w.vehicleAiExtraction,
+      vehicleAiExtractionMeta: w.vehicleAiExtractionMeta,
     });
     const h = hydrateWorkspaceFromStorage(json);
     if (h) {
@@ -93,6 +95,8 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         previewConfirmed: h.previewConfirmed,
         pdfVisibility: h.pdfVisibility,
         pdfBannerInclude: h.pdfBannerInclude,
+        vehicleAiExtraction: h.vehicleAiExtraction,
+        vehicleAiExtractionMeta: h.vehicleAiExtractionMeta,
       };
     }
   }
@@ -255,6 +259,8 @@ export async function patchOrderDraft(
       previewConfirmed: workspacePatch.previewConfirmed,
       pdfVisibility: workspacePatch.pdfVisibility,
       pdfBannerInclude: workspacePatch.pdfBannerInclude,
+      vehicleAiExtraction: workspacePatch.vehicleAiExtraction,
+      vehicleAiExtractionMeta: workspacePatch.vehicleAiExtractionMeta,
     });
     const h = hydrateWorkspaceFromStorage(json);
     if (!h) return { ok: false, error: "invalid_workspace" };
@@ -266,6 +272,8 @@ export async function patchOrderDraft(
       previewConfirmed: h.previewConfirmed,
       pdfVisibility: h.pdfVisibility,
       pdfBannerInclude: h.pdfBannerInclude,
+      vehicleAiExtraction: h.vehicleAiExtraction,
+      vehicleAiExtractionMeta: h.vehicleAiExtractionMeta,
     };
   }
 
