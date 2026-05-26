@@ -15,8 +15,12 @@ import {
   PROVIN_MILEAGE_TABLE_DOM_KIND,
   PROVIN_MILEAGE_TABLE_FIELD,
   emptyAutoRecordsServiceRow,
+  emptySourcePdfChecklist,
+  normalizeSourcePdfChecklist,
   sourcePdfChecklistHasAny,
 } from "@/lib/admin-source-blocks";
+import { AdminAutoRecordsPdfUpload } from "@/components/admin/AdminAutoRecordsPdfUpload";
+import { mergeAutoRecordsServiceHistory } from "@/lib/auto-records-pdf-parse";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
 import {
   autoRecordsRowHasData,
@@ -116,6 +120,24 @@ export function AdminAutoRecordsSourceBlock({
           readOnly={readOnly}
           disabled={disabled}
           onBlockChange={onChange}
+        />
+        <AdminAutoRecordsPdfUpload
+          disabled={disabled}
+          readOnly={readOnly}
+          onImported={(result) => {
+            const merged = mergeAutoRecordsServiceHistory(value.serviceHistory, result.serviceHistory);
+            const checklistBase = value.pdfChecklist ?? emptySourcePdfChecklist();
+            const checklistNext = normalizeSourcePdfChecklist({
+              ...checklistBase,
+              ...result.suggestedPdfChecklist,
+            });
+            onChange({
+              ...value,
+              rawUnprocessedData: result.rawUnprocessedData || value.rawUnprocessedData,
+              serviceHistory: merged.length > 0 ? merged : [emptyAutoRecordsServiceRow()],
+              pdfChecklist: sourcePdfChecklistHasAny(checklistNext) ? checklistNext : value.pdfChecklist,
+            });
+          }}
         />
         <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
           Paste RAW data here
