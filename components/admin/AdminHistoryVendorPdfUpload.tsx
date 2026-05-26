@@ -65,7 +65,9 @@ export function AdminHistoryVendorPdfUpload({ target, disabled, readOnly, onImpo
           if (data.error === "unauthorized") setError("Nav admin piekļuves");
           else if (data.error === "file_too_large") setError(detail || "PDF fails pārāk liels");
           else if (data.error === "invalid_file_type") setError(detail || "Tikai PDF");
-          else if (data.error === "pdf_extract_failed") setError(detail || "Neizdevās nolasīt PDF tekstu");
+          else if (data.error === "pdf_extract_empty") {
+            setError(detail || "PDF ir skenēts — izmanto „Sistēmas anomālijas un AI analīze”");
+          } else if (data.error === "pdf_extract_failed") setError(detail || "Neizdevās nolasīt PDF tekstu");
           else setError(detail || "Neizdevās apstrādāt PDF");
           return;
         }

@@ -28,6 +28,8 @@ const ERROR_MESSAGES_LV: Record<string, string> = {
   missing_files: "Pievieno vismaz vienu PDF",
   extraction_failed: "Neizdevās izvilkt datus no PDF",
   pdf_extract_failed: "Neizdevās nolasīt PDF tekstu",
+  pdf_extract_empty:
+    "PDF teksta slānis tukšs (skenēts dokuments) — izmanto „Analizēt ar Gemini” (PDF tiek nosūtīts tieši)",
 };
 
 function humanizeGeminiDetail(raw: string): string {

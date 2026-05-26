@@ -1,21 +1,28 @@
 /**
- * Admin: vairāki vēstures PDF → teksts → Gemini JSON → VehicleAIExtraction.
- * POST multipart/form-data: sessionId, files[] (PDF).
+ * Admin: vairāki vēstures PDF → teksts un/vai inline PDF → Gemini JSON.
+ * POST multipart/form-data: sessionId, files[] (application/pdf).
  */
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { assertGeminiAllowedForSession } from "@/lib/admin-gemini-demo-guard";
 import { getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
-import { extractPdfText, detectHistoryPdfKind } from "@/lib/admin-portfolio-pdf-analysis";
+import { detectHistoryPdfKind } from "@/lib/admin-portfolio-pdf-analysis";
 import {
   extractVehicleDataWithGemini,
+  type PdfInlineAttachment,
   type PdfTextBundle,
 } from "@/lib/admin-vehicle-reports-gemini";
+import {
+  extractPdfTextDetailed,
+  logPdfExtractResult,
+  MIN_USABLE_TEXT_CHARS,
+} from "@/lib/pdf-text-extract-server";
 
 export const maxDuration = 120;
 export const runtime = "nodejs";
 
+const LOG_PREFIX = "[admin/reports/ai-extract]";
 const MAX_PDF_BYTES = 12 * 1024 * 1024;
 const MAX_FILES = 8;
 
@@ -70,7 +77,9 @@ export async function POST(req: Request) {
   }
 
   const bundles: PdfTextBundle[] = [];
+  const pdfAttachments: PdfInlineAttachment[] = [];
   const warnings: string[] = [];
+  const extractLog: Array<Record<string, unknown>> = [];
 
   for (const file of files) {
     if (!isPdfFile(file)) {
@@ -87,48 +96,79 @@ export async function POST(req: Request) {
     }
 
     const buffer = await file.arrayBuffer();
-    let text = "";
-    try {
-      text = await extractPdfText(buffer);
-    } catch {
-      warnings.push(`${file.name}: neizdevās nolasīt tekstu`);
-      continue;
-    }
-    if (!text.trim()) {
-      warnings.push(`${file.name}: tukšs teksta slānis (iespējams skenēts PDF)`);
-      continue;
-    }
-    const kind = detectHistoryPdfKind(file.name, text);
-    bundles.push({
+    const extracted = await extractPdfTextDetailed(buffer, { fileName: file.name });
+    logPdfExtractResult(LOG_PREFIX, extracted);
+
+    const kind = detectHistoryPdfKind(file.name, extracted.text);
+    const sourceHint = SOURCE_HINT[kind] ?? SOURCE_HINT.generic;
+
+    extractLog.push({
       fileName: file.name,
-      text,
-      sourceHint: SOURCE_HINT[kind] ?? SOURCE_HINT.generic,
+      stage: extracted.stage,
+      pageCount: extracted.pageCount,
+      textLayerCharCount: extracted.textLayerCharCount,
+      fileBytes: file.size,
+      errorMessage: extracted.errorMessage,
+    });
+
+    if (extracted.ok && extracted.text.trim().length >= MIN_USABLE_TEXT_CHARS) {
+      bundles.push({
+        fileName: file.name,
+        text: extracted.text,
+        sourceHint,
+      });
+      continue;
+    }
+
+    if (extracted.stage === "text_layer_empty") {
+      warnings.push(
+        `${file.name}: teksta slānis tukšs (${extracted.textLayerCharCount} rakstzīmes, ${extracted.pageCount} lpp.) — nosūtīts Gemini kā PDF`,
+      );
+    } else if (extracted.stage === "load_failed") {
+      warnings.push(
+        `${file.name}: PDF ielādes kļūda (${extracted.errorMessage ?? "unknown"}) — mēģināts Gemini inline PDF`,
+      );
+    } else {
+      warnings.push(`${file.name}: nepietiekams teksts — nosūtīts Gemini kā PDF`);
+    }
+
+    pdfAttachments.push({
+      fileName: file.name,
+      sourceHint,
+      buffer,
     });
   }
 
-  if (bundles.length === 0) {
+  if (bundles.length === 0 && pdfAttachments.length === 0) {
+    console.error(`${LOG_PREFIX} all_files_failed`, { sessionId, extractLog });
     return NextResponse.json(
-      { error: "pdf_extract_failed", detail: warnings.join("; ") || "Nav izvelkama teksta" },
+      {
+        error: "pdf_extract_failed",
+        detail: warnings.join("; ") || "Nav izvelkama teksta un neizdevās sagatavot PDF Gemini",
+        extractLog,
+      },
       { status: 422 },
     );
   }
 
   try {
-    const extraction = await extractVehicleDataWithGemini(bundles);
+    const extraction = await extractVehicleDataWithGemini({ textBundles: bundles, pdfAttachments });
     return NextResponse.json({
       ok: true,
       extraction,
       meta: {
         analyzedAt: new Date().toISOString(),
-        fileNames: bundles.map((b) => b.fileName),
-        sources: bundles.map((b) => b.sourceHint),
+        fileNames: files.map((f) => f.name),
+        sources: [...bundles.map((b) => b.sourceHint), ...pdfAttachments.map((p) => p.sourceHint)],
         charCounts: bundles.map((b) => b.text.length),
+        usedGeminiInlinePdf: pdfAttachments.map((p) => p.fileName),
+        extractLog,
       },
       warnings,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
-    console.error("[admin/reports/ai-extract]", msg, e);
+    console.error(`${LOG_PREFIX} gemini_failed`, { sessionId, msg, extractLog, stack: e instanceof Error ? e.stack : undefined });
     if (msg === "gemini_invalid_json") {
       return NextResponse.json({ error: "gemini_invalid_json", detail: "Nevalīds JSON no Gemini" }, { status: 502 });
     }

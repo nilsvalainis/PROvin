@@ -3,6 +3,9 @@
  */
 
 import { extractClaimRowsForPdfInsight, type ClaimTableRow } from "@/lib/claim-rows-parse";
+import { normalizePdfExtractedText } from "@/lib/pdf-text-normalize";
+
+export { normalizePdfExtractedText };
 
 export type KmSample = {
   km: number;
@@ -55,27 +58,6 @@ const OCR_MAX_PAGES = 4;
 
 function nonWhitespaceCharCount(s: string): number {
   return s.replace(/\s/g, "").length;
-}
-
-const LV_LETTER_CLASS = "A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž";
-
-/**
- * Daži izdevēju PDF (piem. carVertical) dod katru burtu/ciparu kā atsevišķu virknes elementu →
- * „2 9 9 5 1 9 k m”. Sakļaujam, lai strādātu nobraukuma un atslēgvārdu meklēšana.
- */
-function normalizePdfExtractedText(raw: string): string {
-  let t = raw.replace(/\u00a0/g, " ");
-  let prev = "";
-  while (t !== prev) {
-    prev = t;
-    t = t.replace(/(\d)\s+(?=\d)/g, "$1");
-  }
-  t = t.replace(/\b([kK])\s+([mM])\b/g, "$1$2");
-  const re = new RegExp(`\\b([${LV_LETTER_CLASS}])(?:\\s+([${LV_LETTER_CLASS}])){2,}\\b`, "g");
-  for (let i = 0; i < 12; i++) {
-    t = t.replace(re, (chunk) => chunk.replace(/\s+/g, ""));
-  }
-  return t;
 }
 
 const ACCIDENT_HINTS: { re: RegExp; label: string }[] = [
@@ -227,7 +209,11 @@ async function extractPdfTextWithOptionalOcr(buffer: ArrayBuffer): Promise<{ tex
 }
 
 /** Teksta slānis caur pdf.js; pārlūkā — papildu OCR, ja teksts īss (bieži skenēti PDF). */
-export async function extractPdfText(buffer: ArrayBuffer): Promise<string> {
+export async function extractPdfText(buffer: ArrayBuffer, opts?: { fileName?: string }): Promise<string> {
+  if (typeof window === "undefined") {
+    const { extractPdfTextOnServer } = await import("@/lib/pdf-text-extract-server");
+    return extractPdfTextOnServer(buffer, opts);
+  }
   const { text } = await extractPdfTextWithOptionalOcr(buffer);
   return text;
 }

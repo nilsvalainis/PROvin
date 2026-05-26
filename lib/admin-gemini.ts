@@ -30,11 +30,32 @@ export function formatGeminiSdkError(e: unknown): string {
   return "unknown";
 }
 
+export type GeminiUserPart =
+  | { text: string }
+  | { inlineData: { mimeType: string; data: string } };
+
 /** Strukturēta JSON atbilde (responseMimeType application/json). */
 export async function geminiGenerateJsonText(opts: {
   model: string;
   systemInstruction: string;
   userPrompt: string;
+  temperature?: number;
+  /** Papildus daļas (piem. inline PDF) pirms `userPrompt` teksta. */
+  extraParts?: GeminiUserPart[];
+}): Promise<string> {
+  const parts: GeminiUserPart[] = [...(opts.extraParts ?? []), { text: opts.userPrompt }];
+  return geminiGenerateJsonFromParts({
+    model: opts.model,
+    systemInstruction: opts.systemInstruction,
+    parts,
+    temperature: opts.temperature,
+  });
+}
+
+export async function geminiGenerateJsonFromParts(opts: {
+  model: string;
+  systemInstruction: string;
+  parts: GeminiUserPart[];
   temperature?: number;
 }): Promise<string> {
   const key = getGeminiApiKeyFromEnv();
@@ -47,7 +68,7 @@ export async function geminiGenerateJsonText(opts: {
       systemInstruction: opts.systemInstruction,
     });
     const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
+      contents: [{ role: "user", parts: opts.parts }],
       generationConfig: {
         temperature: opts.temperature ?? 0.2,
         responseMimeType: "application/json",

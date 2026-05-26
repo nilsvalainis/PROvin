@@ -1,12 +1,16 @@
 import "server-only";
 
-import { geminiGenerateJsonText } from "@/lib/admin-gemini";
+import { geminiGenerateJsonText, type GeminiUserPart } from "@/lib/admin-gemini";
 import { parseVehicleAIExtraction } from "@/lib/vehicle-ai-extraction-parse";
 import type { VehicleAIExtraction } from "@/lib/vehicle-ai-extraction-types";
 
 export const VEHICLE_AI_EXTRACTION_SYSTEM = `You are PROVIN.LV vehicle history forensic analyst.
-You receive raw text extracted from one or more vehicle history PDF reports (any language).
+You receive vehicle history from extracted PDF text and/or PDF files attached as binary documents.
 Return ONLY one valid JSON object matching the schema — no markdown, no commentary.
+
+Input modes:
+- Plain text extracts (may be partial).
+- Full PDF attachments when text extraction failed (scanned/image PDFs) — read the document directly.
 
 Output language rules:
 - anomalies[].description_lv and ai_generated_comments_lv MUST be fluent Latvian for the admin operator.
@@ -47,23 +51,64 @@ JSON schema:
 
 export type PdfTextBundle = { fileName: string; text: string; sourceHint: string };
 
-export function buildVehicleReportsUserPrompt(bundles: PdfTextBundle[]): string {
-  const parts = bundles.map((b, i) => {
-    const header = `--- PDF ${i + 1}: ${b.fileName} (${b.sourceHint}) ---`;
-    const body = b.text.trim().slice(0, 180_000);
-    return `${header}\n${body}`;
-  });
-  return `Analyze ALL PDF extracts below together.\n\n${parts.join("\n\n")}`;
+export type PdfInlineAttachment = {
+  fileName: string;
+  sourceHint: string;
+  buffer: ArrayBuffer;
+};
+
+export function buildVehicleReportsUserPrompt(bundles: PdfTextBundle[], pdfCount: number): string {
+  const parts: string[] = [];
+  if (bundles.length > 0) {
+    parts.push("=== EXTRACTED TEXT FROM PDFs ===");
+    for (const [i, b] of bundles.entries()) {
+      const header = `--- PDF ${i + 1}: ${b.fileName} (${b.sourceHint}) ---`;
+      const body = b.text.trim().slice(0, 180_000);
+      parts.push(`${header}\n${body}`);
+    }
+  }
+  if (pdfCount > 0) {
+    parts.push(
+      `=== BINARY PDF ATTACHMENTS (${pdfCount}) ===`,
+      "The PDF file(s) above in this message are attached directly before this instruction.",
+      "Read them fully (including tables, stamps, and images).",
+    );
+  }
+  parts.push("Analyze ALL sources together and return the JSON object only.");
+  return parts.join("\n\n");
 }
 
-export async function extractVehicleDataWithGemini(bundles: PdfTextBundle[]): Promise<VehicleAIExtraction> {
-  if (bundles.every((b) => !b.text.trim())) {
+function bufferToBase64(buffer: ArrayBuffer): string {
+  return Buffer.from(buffer).toString("base64");
+}
+
+export async function extractVehicleDataWithGemini(input: {
+  textBundles: PdfTextBundle[];
+  pdfAttachments?: PdfInlineAttachment[];
+}): Promise<VehicleAIExtraction> {
+  const pdfs = input.pdfAttachments ?? [];
+  if (input.textBundles.every((b) => !b.text.trim()) && pdfs.length === 0) {
     throw new Error("no_pdf_text");
   }
+
+  const extraParts: GeminiUserPart[] = [];
+  for (const pdf of pdfs) {
+    extraParts.push({
+      inlineData: {
+        mimeType: "application/pdf",
+        data: bufferToBase64(pdf.buffer),
+      },
+    });
+    extraParts.push({
+      text: `[Attached PDF document: ${pdf.fileName} — ${pdf.sourceHint}. Read this file for vehicle history data.]`,
+    });
+  }
+
   const raw = await geminiGenerateJsonText({
     model: "gemini-2.5-pro",
     systemInstruction: VEHICLE_AI_EXTRACTION_SYSTEM,
-    userPrompt: buildVehicleReportsUserPrompt(bundles),
+    extraParts,
+    userPrompt: buildVehicleReportsUserPrompt(input.textBundles, pdfs.length),
     temperature: 0.15,
   });
   return parseVehicleAIExtraction(raw);
