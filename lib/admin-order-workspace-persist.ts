@@ -91,12 +91,20 @@ export function countRawSourceBlockKeys(partial: unknown): number {
   return n;
 }
 
+/** Apgriež HTML bieži tukšu `<p><br></p>` — neuzskatīt par „bagātāku” par īsu lietotāja tekstu (IRISS u.c.). */
+function substantivePlainTextLen(htmlOrText: string): number {
+  return htmlOrText
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim().length;
+}
+
 function pickRicherTextField(incoming: string, baseline: string): string {
-  const i = incoming.trim();
-  const b = baseline.trim();
-  if (!b) return incoming;
-  if (!i) return baseline;
-  return i.length >= b.length ? incoming : baseline;
+  const inLen = substantivePlainTextLen(incoming);
+  const baseLen = substantivePlainTextLen(baseline);
+  if (baseLen === 0) return incoming;
+  if (inLen === 0) return baseline;
+  return inLen >= baseLen ? incoming : baseline;
 }
 
 function pickRicherSourceBlock<K extends SourceBlockKey>(
@@ -208,8 +216,10 @@ export function pickNewestBackupSnapshotRaw(rawBackup: string | null): {
 
 /** Pilni bloki no atmiņas — bez baseline apvienošanas (localStorage uzticības avots). */
 export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBody): OrderWorkspacePersistBody {
+  const merged = mergeSourceBlocksWithDefaults(body.sourceBlocks);
+  const complete: WorkspaceSourceBlocks = { ...createDefaultSourceBlocks(), ...merged };
   return {
-    sourceBlocks: mergeSourceBlocksWithDefaults(body.sourceBlocks),
+    sourceBlocks: complete,
     iriss: body.iriss,
     apskatesPlāns: body.apskatesPlāns,
     cenasAtbilstiba: body.cenasAtbilstiba,
