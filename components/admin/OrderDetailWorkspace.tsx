@@ -45,6 +45,7 @@ import {
 import {
   buildOrderDraftWorkspaceBody,
   coalesceOrderWorkspacePersistBody,
+  localWorkspaceHasSubstantiveContent,
   pickNewestBackupSnapshotRaw,
   pickWorkspaceHydrationCandidate,
   serializeOrderWorkspaceSnapshot,
@@ -52,6 +53,7 @@ import {
   workspaceHydrationFillScore,
   type OrderWorkspacePersistBody,
 } from "@/lib/admin-order-workspace-persist";
+import { usePathname } from "next/navigation";
 import {
   analyzeVinAndKm,
   segmentTextForPreview,
@@ -580,6 +582,13 @@ export function OrderDetailWorkspace({
   const [workspaceSaveFlash, setWorkspaceSaveFlash] = useState(false);
   const [workspaceSaveServerOk, setWorkspaceSaveServerOk] = useState(true);
   const [workspaceSaveBusy, setWorkspaceSaveBusy] = useState(false);
+  const [localSaveUi, setLocalSaveUi] = useState<{ phase: "idle" | "saving" | "saved"; atMs: number | null }>({
+    phase: "idle",
+    atMs: null,
+  });
+  const [, localSaveTick] = useState(0);
+  const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
   const [portfolio, setPortfolio] = useState<PortfolioEntry[]>([]);
   const portfolioRef = useRef<PortfolioEntry[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -701,6 +710,25 @@ export function OrderDetailWorkspace({
   );
 
   const readPersistBaseline = useCallback((): OrderWorkspacePersistBody | null => {
+    try {
+      const raw = localStorage.getItem(storageKeyWorkspace(payload.sessionId));
+      if (raw) {
+        const h = hydrateWorkspaceFromStorage(raw);
+        if (h) {
+          return {
+            sourceBlocks: h.sourceBlocks,
+            iriss: h.iriss,
+            apskatesPlāns: h.apskatesPlāns,
+            cenasAtbilstiba: h.cenasAtbilstiba,
+            previewConfirmed: Boolean(h.previewConfirmed),
+            vehicleAiExtraction: h.vehicleAiExtraction ?? null,
+            vehicleAiExtractionMeta: h.vehicleAiExtractionMeta ?? null,
+          };
+        }
+      }
+    } catch {
+      /* quota / parse */
+    }
     if (lastGoodPersistBodyRef.current) return lastGoodPersistBodyRef.current;
     const raw = hydrationSnapshotRef.current;
     if (!raw) return null;
@@ -715,7 +743,7 @@ export function OrderDetailWorkspace({
       vehicleAiExtraction: h.vehicleAiExtraction ?? null,
       vehicleAiExtractionMeta: h.vehicleAiExtractionMeta ?? null,
     };
-  }, []);
+  }, [payload.sessionId]);
 
   const onWorkspaceParseActiveChange = useCallback((active: boolean) => {
     workspaceParseActiveCountRef.current += active ? 1 : -1;
@@ -746,38 +774,54 @@ export function OrderDetailWorkspace({
     [payload.sessionId],
   );
 
-  const commitWorkspaceLocalNow = useCallback((opts?: { force?: boolean }) => {
-    if (!opts?.force && !workspaceHydrated) return;
-    const baseline = readPersistBaseline();
-    const safe = coalesceOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current), baseline);
-    wsPersistRef.current = {
-      ...wsPersistRef.current,
-      sourceBlocks: safe.sourceBlocks,
-      iriss: safe.iriss,
-      apskatesPlāns: safe.apskatesPlāns,
-      cenasAtbilstiba: safe.cenasAtbilstiba,
-      previewConfirmed: safe.previewConfirmed,
-      vehicleAiExtraction: safe.vehicleAiExtraction,
-      vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
-    };
-    lastGoodPersistBodyRef.current = safe;
-    const snapshot = serializeWorkspaceState(
-      wsPersistRef.current,
-      pdfVisibilityRef.current,
-      pdfBannerIncludeRef.current,
-      new Date().toISOString(),
-      baseline,
-    );
-    try {
-      localStorage.setItem(storageKeyWorkspace(payload.sessionId), snapshot);
-      const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
-      if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
-    } catch {
-      /* quota */
-    }
-    pushWorkspaceBackup(snapshot);
-    hydrationSnapshotRef.current = snapshot;
-  }, [payload.sessionId, pushWorkspaceBackup, readPersistBaseline, workspaceHydrated]);
+  const commitWorkspaceLocalNow = useCallback(
+    (opts?: { force?: boolean; quiet?: boolean }) => {
+      if (!opts?.force && !workspaceHydrated) return;
+      if (!opts?.quiet) {
+        setLocalSaveUi((prev) => (prev.phase === "saving" ? prev : { phase: "saving", atMs: prev.atMs }));
+      }
+      const baseline = readPersistBaseline();
+      const safe = coalesceOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current), baseline);
+      wsPersistRef.current = {
+        ...wsPersistRef.current,
+        sourceBlocks: safe.sourceBlocks,
+        iriss: safe.iriss,
+        apskatesPlāns: safe.apskatesPlāns,
+        cenasAtbilstiba: safe.cenasAtbilstiba,
+        previewConfirmed: safe.previewConfirmed,
+        vehicleAiExtraction: safe.vehicleAiExtraction,
+        vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
+      };
+      lastGoodPersistBodyRef.current = safe;
+      const snapshot = serializeWorkspaceState(
+        wsPersistRef.current,
+        pdfVisibilityRef.current,
+        pdfBannerIncludeRef.current,
+        new Date().toISOString(),
+        baseline,
+      );
+      try {
+        localStorage.setItem(storageKeyWorkspace(payload.sessionId), snapshot);
+        const leg = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
+        if (leg) localStorage.removeItem(storageKeyInternalLegacy(payload.sessionId));
+      } catch {
+        if (!opts?.quiet) setLocalSaveUi({ phase: "idle", atMs: null });
+        return;
+      }
+      pushWorkspaceBackup(snapshot);
+      hydrationSnapshotRef.current = snapshot;
+      if (!opts?.quiet) {
+        setLocalSaveUi({ phase: "saved", atMs: Date.now() });
+      }
+    },
+    [payload.sessionId, pushWorkspaceBackup, readPersistBaseline, workspaceHydrated],
+  );
+
+  /** Sinhrons `localStorage` — navigācijas / link klikšķa brīdī (bez gaidīšanas uz React unmount). */
+  const flushWorkspaceLocalStorageSync = useCallback(() => {
+    commitWorkspaceLocalNow({ force: true, quiet: true });
+    setLocalSaveUi({ phase: "saved", atMs: Date.now() });
+  }, [commitWorkspaceLocalNow]);
 
   const updateWs = useCallback(
     (patch: Partial<WorkspacePersist>) => {
@@ -1159,11 +1203,31 @@ export function OrderDetailWorkspace({
         }
       };
 
-      const picked = pickWorkspaceHydrationCandidate(candidates, localCandidate, {
-        local: parseRawSourceBlocks(localRaw),
-        backup: backupPick ? parseRawSourceBlocks(backupPick.data) : undefined,
-        server: parseRawSourceBlocks(serverWorkspaceJson),
-      });
+      const localPersistBodyForPick: OrderWorkspacePersistBody | null =
+        localHydrated ?
+          {
+            sourceBlocks: localHydrated.sourceBlocks,
+            iriss: localHydrated.iriss,
+            apskatesPlāns: localHydrated.apskatesPlāns,
+            cenasAtbilstiba: localHydrated.cenasAtbilstiba,
+            previewConfirmed: Boolean(localHydrated.previewConfirmed),
+            vehicleAiExtraction: localHydrated.vehicleAiExtraction ?? null,
+            vehicleAiExtractionMeta: localHydrated.vehicleAiExtractionMeta ?? null,
+          }
+        : null;
+      const localSubstantive =
+        localPersistBodyForPick != null && localWorkspaceHasSubstantiveContent(localPersistBodyForPick);
+
+      const picked = pickWorkspaceHydrationCandidate(
+        candidates,
+        localCandidate,
+        {
+          local: parseRawSourceBlocks(localRaw),
+          backup: backupPick ? parseRawSourceBlocks(backupPick.data) : undefined,
+          server: parseRawSourceBlocks(serverWorkspaceJson),
+        },
+        { localSubstantive },
+      );
 
       if (picked) {
         const chosen = picked.data;
@@ -1215,7 +1279,8 @@ export function OrderDetailWorkspace({
         const localSavedAtMs = parseWorkspaceSnapshotSavedAtMs(localRaw);
         const shouldOverwriteLocal =
           !rawV3 ||
-          (picked.source !== "local" &&
+          (!localSubstantive &&
+            picked.source !== "local" &&
             localSavedAtMs > 0 &&
             picked.savedAtMs > 0 &&
             picked.savedAtMs >= localSavedAtMs);
@@ -1439,6 +1504,13 @@ export function OrderDetailWorkspace({
     [isWorkspaceAutosaveBlocked, orderDraftPersistenceEnabled, payload.sessionId, readPersistBaseline],
   );
 
+  const forceNavigationFlush = useCallback(() => {
+    flushWorkspaceLocalStorageSync();
+    if (workspaceDirtyRef.current) {
+      flushWorkspaceServerPatch({ keepalive: true, showFlash: false });
+    }
+  }, [flushWorkspaceLocalStorageSync, flushWorkspaceServerPatch]);
+
   const scheduleWorkspaceServerPatch = useCallback(
     (opts?: { immediate?: boolean; keepalive?: boolean; showFlash?: boolean }) => {
       if (!orderDraftPersistenceEnabled || !workspaceHydratedOnceRef.current) return;
@@ -1536,53 +1608,74 @@ export function OrderDetailWorkspace({
   ]);
 
   useEffect(() => {
-    const onLeave = () => flushPersistWorkspace();
+    const onLeave = () => forceNavigationFlush();
     window.addEventListener("beforeunload", onLeave);
     window.addEventListener("pagehide", onLeave);
+    window.addEventListener("popstate", onLeave);
     return () => {
       window.removeEventListener("beforeunload", onLeave);
       window.removeEventListener("pagehide", onLeave);
+      window.removeEventListener("popstate", onLeave);
     };
-  }, [flushPersistWorkspace]);
+  }, [forceNavigationFlush]);
 
-  /** SPA navigācija (portfelis / cits pasūtījums) — `beforeunload` nestrādā. */
+  /** Link / pogas — sinhrons flush pirms Next.js SPA navigācijas (negaidīt unmount). */
+  useEffect(() => {
+    const onPointerDownCapture = (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      const anchor = (e.target as HTMLElement | null)?.closest("a[href]");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) {
+        return;
+      }
+      const a = anchor as HTMLAnchorElement;
+      if (a.target === "_blank" || a.hasAttribute("download")) return;
+      try {
+        const url = new URL(href, window.location.href);
+        if (url.origin !== window.location.origin) return;
+        if (url.pathname === window.location.pathname && url.search === window.location.search) return;
+      } catch {
+        return;
+      }
+      forceNavigationFlush();
+    };
+    document.addEventListener("pointerdown", onPointerDownCapture, true);
+    return () => document.removeEventListener("pointerdown", onPointerDownCapture, true);
+  }, [forceNavigationFlush]);
+
+  useLayoutEffect(() => {
+    if (pathnameRef.current === pathname) return;
+    forceNavigationFlush();
+    pathnameRef.current = pathname;
+  }, [pathname, forceNavigationFlush]);
+
+  /** SPA navigācija — dublējošs drošības tīkls. */
   useEffect(() => {
     return () => {
       if (workspaceServerSaveTimerRef.current) {
         clearTimeout(workspaceServerSaveTimerRef.current);
         workspaceServerSaveTimerRef.current = null;
       }
-      if (!workspaceHydratedOnceRef.current || !workspaceDirtyRef.current) return;
-      commitWorkspaceLocalNow({ force: true });
-      flushWorkspaceServerPatch({ keepalive: true, showFlash: false });
-    };
-  }, [payload.sessionId, commitWorkspaceLocalNow, flushWorkspaceServerPatch]);
-
-  useEffect(() => {
-    if (!workspaceHydrated) return;
-    const t = window.setTimeout(() => {
-      void (async () => {
-        if (isWorkspaceAutosaveBlocked()) return;
-        const baseline = readPersistBaseline();
-        const snapshot = serializeWorkspaceState(
-          wsPersistRef.current,
-          pdfVisibilityRef.current,
-          pdfBannerIncludeRef.current,
-          new Date().toISOString(),
-          baseline,
-        );
-        if (snapshot === hydrationSnapshotRef.current) return;
-        workspaceDirtyRef.current = true;
-        commitWorkspaceLocalNow({ force: true });
-        scheduleWorkspaceServerPatch({ showFlash: false });
-      })();
-    }, 750);
-    return () => {
-      window.clearTimeout(t);
+      if (!workspaceHydratedOnceRef.current) return;
+      flushWorkspaceLocalStorageSync();
       if (workspaceDirtyRef.current) {
-        commitWorkspaceLocalNow({ force: true });
+        flushWorkspaceServerPatch({ keepalive: true, showFlash: false });
       }
     };
+  }, [payload.sessionId, flushWorkspaceLocalStorageSync, flushWorkspaceServerPatch]);
+
+  /** Katra izmaiņa — tūlītējs lokālais saglabājums; serveris — īss debounce (bez 750 ms). */
+  useEffect(() => {
+    if (!workspaceHydrated) return;
+    if (isWorkspaceAutosaveBlocked()) return;
+    workspaceDirtyRef.current = true;
+    commitWorkspaceLocalNow({ force: true });
+    const t = window.setTimeout(() => {
+      if (isWorkspaceAutosaveBlocked()) return;
+      scheduleWorkspaceServerPatch({ showFlash: false });
+    }, 400);
+    return () => window.clearTimeout(t);
   }, [
     ws,
     pdfVisibility,
@@ -1591,8 +1684,13 @@ export function OrderDetailWorkspace({
     commitWorkspaceLocalNow,
     scheduleWorkspaceServerPatch,
     isWorkspaceAutosaveBlocked,
-    readPersistBaseline,
   ]);
+
+  useEffect(() => {
+    if (localSaveUi.phase !== "saved" || localSaveUi.atMs == null) return;
+    const id = window.setInterval(() => localSaveTick((n) => n + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [localSaveUi.phase, localSaveUi.atMs]);
 
   useEffect(() => {
     if (!workspaceHydrated) return;
@@ -2771,6 +2869,26 @@ export function OrderDetailWorkspace({
           >
             {workspaceSaveBusy ? "Saglabā…" : "Saglabāt"}
           </button>
+          <span
+            className="inline-flex max-w-[14rem] items-center gap-1 text-[10px] font-medium leading-tight text-[var(--color-provin-muted)]"
+            role="status"
+            aria-live="polite"
+          >
+            {localSaveUi.phase === "saving" ? (
+              <>
+                <Loader2 className="h-3 w-3 shrink-0 animate-spin text-emerald-700" aria-hidden />
+                Saglabā lokāli…
+              </>
+            ) : localSaveUi.phase === "saved" && localSaveUi.atMs != null ? (
+              <>
+                <Check className="h-3 w-3 shrink-0 text-emerald-600" aria-hidden />
+                Saglabāts pirms{" "}
+                {Math.max(0, Math.floor((Date.now() - localSaveUi.atMs) / 1000))} sek.
+              </>
+            ) : (
+              <span className="text-slate-400">Gaida izmaiņas…</span>
+            )}
+          </span>
           <AdminWorkspaceRestoreMenu
             sessionId={payload.sessionId}
             backupStorageKey={storageKeyWorkspaceBackup(payload.sessionId)}

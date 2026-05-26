@@ -288,6 +288,31 @@ export function workspaceHydrationFillScore(body: OrderWorkspacePersistBody): nu
   return s;
 }
 
+/** Vai lokālajā melnrakstā ir reāli dati (ne tikai tukši noklusējuma bloki). */
+export function localWorkspaceHasSubstantiveContent(body: OrderWorkspacePersistBody): boolean {
+  const hasText = (s: string, min = 8) => s.trim().length >= min;
+  if (hasText(body.iriss) || hasText(body.apskatesPlāns) || hasText(body.cenasAtbilstiba)) return true;
+  const b = mergeSourceBlocksWithDefaults(body.sourceBlocks);
+  if (hasText(b.autodna.comments) || hasText(b.carvertical.comments)) return true;
+  if (hasText(b.autodna.mileagePasteRaw ?? "", 12) || hasText(b.carvertical.mileagePasteRaw ?? "", 12)) {
+    return true;
+  }
+  if (vendorAvotuTrafficLevel(b.autodna) !== "empty" || vendorAvotuTrafficLevel(b.carvertical) !== "empty") {
+    return true;
+  }
+  if (tirgusTrafficLevel(b.tirgus) !== "empty" || listingAnalysisTrafficLevel(b.listing_analysis) !== "empty") {
+    return true;
+  }
+  if (csddTrafficLevel(b.csdd) !== "empty") return true;
+  if (autoRecordsTrafficLevel(b.auto_records) !== "empty" || ltabTrafficLevel(b.ltab) !== "empty") {
+    return true;
+  }
+  for (const section of b.citi_avoti.sections) {
+    if (hasText(section.rawUnprocessedData ?? "", 12) || hasText(section.comments)) return true;
+  }
+  return false;
+}
+
 /**
  * Ja lokālajā ir vairāk datu nekā izvēlētajā avotā, saglabāt localStorage (admin labojumi pēc PDF / navigācijas).
  */
@@ -310,7 +335,14 @@ export function pickWorkspaceHydrationCandidate<T>(
   candidates: WorkspaceHydrationPick<T>[],
   local: WorkspaceHydrationPick<T> | null,
   rawSourceBlocksBySource?: Partial<Record<WorkspaceHydrationSource, unknown>>,
+  opts?: {
+    /** Ja `true`, lokālais ar saturu vienmēr uzvar pār serveri/backup (neatkarīgi no laika). */
+    localSubstantive?: boolean;
+  },
 ): WorkspaceHydrationPick<T> | null {
+  if (opts?.localSubstantive && local) {
+    return local;
+  }
   const filtered = candidates.filter((c) => {
     const raw = rawSourceBlocksBySource?.[c.source];
     if (raw == null) return true;
