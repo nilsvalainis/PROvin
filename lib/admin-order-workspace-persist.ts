@@ -174,7 +174,7 @@ export function buildOrderDraftWorkspaceBody(
   body: OrderWorkspacePersistBody,
   pdf: PdfVisibilitySettings,
   bannerInclude: ProvinBannerPdfInclude,
-  /** Tikai īpašiem servera merge gadījumiem; klienta PATCH vienmēr bez baseline. */
+  /** Iepriekšējais canonical state — deep merge, lai daļējs PATCH neiztukšotu blokus. */
   baseline?: OrderWorkspacePersistBody | null,
 ): OrderDraftWorkspaceBody {
   const safe =
@@ -398,21 +398,104 @@ export function pickWorkspaceHydrationCandidate<T>(
   return picked;
 }
 
+type HydratedWorkspaceShape = {
+  sourceBlocks: WorkspaceSourceBlocks;
+  iriss: string;
+  apskatesPlāns: string;
+  cenasAtbilstiba: string;
+  previewConfirmed: boolean;
+  vehicleAiExtraction: VehicleAIExtraction | null;
+  vehicleAiExtractionMeta: VehicleAiExtractionMeta | null;
+};
+
+function hydratedToPersistBody(h: HydratedWorkspaceShape): OrderWorkspacePersistBody {
+  return {
+    sourceBlocks: h.sourceBlocks,
+    iriss: h.iriss,
+    apskatesPlāns: h.apskatesPlāns,
+    cenasAtbilstiba: h.cenasAtbilstiba,
+    previewConfirmed: Boolean(h.previewConfirmed),
+    vehicleAiExtraction: h.vehicleAiExtraction ?? null,
+    vehicleAiExtractionMeta: h.vehicleAiExtractionMeta ?? null,
+  };
+}
+
 /**
- * Ja pārlūkā ir derīgs `localStorage`, vienmēr tas — nevis servera/backup „frankenšteins”
- * (vecāki bloki no citas laika zīmes nedrīkst sajaukties ar jaunākiem).
+ * Hidratācija: server-first — visi avoti tiek salipināti bloku pa blokam;
+ * lokālais uzvar tikai ja jaunāks par serveri UN serverī nav substantīvu datu.
  */
-/** Ja pārlūkā ir parsējams melnraksts — vienmēr tas (servera `updatedAt` no `orderEdits` nedrīkst pārrakstīt). */
-export function pickOrderWorkspaceHydrationForLoad<T>(
+export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspaceShape>(
   candidates: WorkspaceHydrationPick<T>[],
   local: WorkspaceHydrationPick<T> | null,
   rawSourceBlocksBySource?: Partial<Record<WorkspaceHydrationSource, unknown>>,
 ): WorkspaceHydrationPick<T> | null {
-  if (local && local.source === "local") {
-    return local;
+  const filtered = candidates.filter((c) => {
+    const raw = rawSourceBlocksBySource?.[c.source];
+    if (raw == null) return true;
+    return !isSuspiciouslyIncompleteWorkspaceSnapshot(raw, c.fillScore ?? 0);
+  });
+  const pool = filtered.length > 0 ? filtered : candidates;
+
+  const serverPick = pool.find((c) => c.source === "server");
+  const serverHasData =
+    serverPick != null && localWorkspaceHasSubstantiveContent(hydratedToPersistBody(serverPick.data));
+
+  const bodies: OrderWorkspacePersistBody[] = [];
+  const order: WorkspaceHydrationSource[] = serverHasData
+    ? ["server", "backup", "local"]
+    : ["local", "backup", "server"];
+  for (const src of order) {
+    const c = pool.find((x) => x.source === src) ?? (src === "local" ? local : null);
+    if (c) bodies.push(hydratedToPersistBody(c.data));
   }
-  return pickWorkspaceHydrationCandidate(candidates, local, rawSourceBlocksBySource);
+  const merged = mergeWorkspaceHydrationBodies(bodies);
+
+  let picked: WorkspaceHydrationPick<T> | null = serverPick ?? null;
+  if (!picked) {
+    picked = pickNewestWorkspaceHydration(pool) ?? local;
+  }
+
+  if (local && !serverHasData) {
+    const localNewer =
+      local.savedAtMs > 0 &&
+      (picked == null || picked.savedAtMs <= 0 || local.savedAtMs > picked.savedAtMs);
+    if (localNewer) picked = local;
+  } else if (local && serverPick && local.savedAtMs > serverPick.savedAtMs + 5000) {
+    const localBody = hydratedToPersistBody(local.data);
+    if (localWorkspaceHasSubstantiveContent(localBody)) {
+      console.info("[workspace:hydrate] local_newer_than_server_merged", {
+        localSavedAtMs: local.savedAtMs,
+        serverSavedAtMs: serverPick.savedAtMs,
+      });
+    }
+  }
+
+  if (!picked) return null;
+
+  const mergedData = {
+    ...picked.data,
+    sourceBlocks: merged.sourceBlocks,
+    iriss: merged.iriss,
+    apskatesPlāns: merged.apskatesPlāns,
+    cenasAtbilstiba: merged.cenasAtbilstiba,
+    previewConfirmed: merged.previewConfirmed,
+    vehicleAiExtraction: merged.vehicleAiExtraction,
+    vehicleAiExtractionMeta: merged.vehicleAiExtractionMeta,
+  } as T;
+
+  return {
+    source: serverHasData ? "server" : picked.source,
+    data: mergedData,
+    savedAtMs: picked.savedAtMs,
+    fillScore: workspaceHydrationFillScore(merged),
+  };
 }
+
+/** Alias prasītajam nosaukumam dokumentācijā. */
+export const deepMergeWorkspacePersistBody = coalesceOrderWorkspacePersistBody;
+
+/** @deprecated Izmanto `pickOrderWorkspaceHydrationServerFirst`. */
+export const pickOrderWorkspaceHydrationForLoad = pickOrderWorkspaceHydrationServerFirst;
 
 /** Apvieno divus hidratētos ierakstus bloku pa blokam (drošs reload). */
 export function mergeHydratedWorkspaceBodies(

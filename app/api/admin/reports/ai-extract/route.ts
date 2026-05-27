@@ -24,6 +24,11 @@ import {
   logPdfExtractResult,
   MIN_USABLE_TEXT_CHARS,
 } from "@/lib/pdf-text-extract-server";
+import { patchOrderDraft, readOrderDraft, isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
+import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
+import { coalesceOrderDraftWorkspacePatch } from "@/lib/admin-order-draft-workspace-merge";
+import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
+import type { VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 
 export const maxDuration = 120;
 export const runtime = "nodejs";
@@ -217,19 +222,58 @@ export async function POST(req: Request) {
 
   try {
     const extraction = await extractVehicleDataWithGemini({ textBundles: bundles, pdfAttachments });
+    const analyzedAt = new Date().toISOString();
+    const meta: VehicleAiExtractionMeta & {
+      engine?: PdfIngestEngine;
+      enginesPerFile?: PdfIngestEngine[];
+      charCounts?: number[];
+      usedGeminiInlinePdf?: string[];
+      extractLog?: typeof extractLog;
+    } = {
+      analyzedAt,
+      fileNames: files.map((f) => f.name),
+      sources: [...bundles.map((b) => b.sourceHint), ...pdfAttachments.map((p) => p.sourceHint)],
+      engine: aggregateEngine,
+      enginesPerFile,
+      charCounts: bundles.map((b) => b.text.length),
+      usedGeminiInlinePdf: pdfAttachments.map((p) => p.fileName),
+      extractLog,
+    };
+
+    if (sessionId && isSafeOrderDraftSessionId(sessionId)) {
+      try {
+        const prev = await readOrderDraft(sessionId);
+        const prevW = prev?.workspace;
+        const incoming: OrderDraftWorkspaceBody = {
+          sourceBlocks: prevW?.sourceBlocks ?? createDefaultSourceBlocks(),
+          iriss: prevW?.iriss ?? "",
+          apskatesPlāns: prevW?.apskatesPlāns ?? "",
+          cenasAtbilstiba: prevW?.cenasAtbilstiba ?? "",
+          previewConfirmed: prevW?.previewConfirmed ?? false,
+          pdfVisibility: prevW?.pdfVisibility,
+          pdfBannerInclude: prevW?.pdfBannerInclude,
+          vehicleAiExtraction: extraction,
+          vehicleAiExtractionMeta: meta,
+        };
+        const { workspace } = coalesceOrderDraftWorkspacePatch(incoming, prevW ?? null, sessionId);
+        const persistResult = await patchOrderDraft(sessionId, { workspace });
+        if (persistResult.ok) {
+          console.info("[ai_extract:persist]", { sessionId });
+        } else {
+          console.warn("[ai_extract:persist]", { sessionId, error: persistResult.error });
+        }
+      } catch (e) {
+        console.warn("[ai_extract:persist]", {
+          sessionId,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       extraction,
-      meta: {
-        analyzedAt: new Date().toISOString(),
-        engine: aggregateEngine,
-        enginesPerFile,
-        fileNames: files.map((f) => f.name),
-        sources: [...bundles.map((b) => b.sourceHint), ...pdfAttachments.map((p) => p.sourceHint)],
-        charCounts: bundles.map((b) => b.text.length),
-        usedGeminiInlinePdf: pdfAttachments.map((p) => p.fileName),
-        extractLog,
-      },
+      meta,
       warnings,
     });
   } catch (e) {

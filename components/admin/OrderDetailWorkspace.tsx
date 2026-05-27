@@ -44,7 +44,8 @@ import {
 } from "@/lib/admin-portfolio-idb";
 import {
   buildOrderDraftWorkspaceBody,
-  pickOrderWorkspaceHydrationForLoad,
+  pickOrderWorkspaceHydrationServerFirst,
+  coalesceOrderWorkspacePersistBody,
   normalizeOrderWorkspacePersistBody,
   pickNewestBackupSnapshotRaw,
   serializeOrderWorkspaceSnapshotFromRef,
@@ -52,6 +53,12 @@ import {
   workspaceHydrationFillScore,
   type OrderWorkspacePersistBody,
 } from "@/lib/admin-order-workspace-persist";
+import {
+  bumpWorkspaceSaveGeneration,
+  fetchCanonicalWorkspace,
+  persistWorkspaceState,
+  workspacePersistFromDraftWorkspace,
+} from "@/lib/admin-workspace-persist-client";
 import { usePathname } from "next/navigation";
 import {
   analyzeVinAndKm,
@@ -583,6 +590,9 @@ export function OrderDetailWorkspace({
   const [workspaceSaveFlash, setWorkspaceSaveFlash] = useState(false);
   const [workspaceSaveServerOk, setWorkspaceSaveServerOk] = useState(true);
   const [workspaceSaveBusy, setWorkspaceSaveBusy] = useState(false);
+  const [workspaceAutosaveStatus, setWorkspaceAutosaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
   const pathname = usePathname();
   const pathnameRef = useRef(pathname);
   const [portfolio, setPortfolio] = useState<PortfolioEntry[]>([]);
@@ -752,17 +762,95 @@ export function OrderDetailWorkspace({
     commitWorkspaceLocalNow({ force: true });
   }, [commitWorkspaceLocalNow]);
 
+  const applyPersistBodyToWs = useCallback((merged: OrderWorkspacePersistBody): WorkspacePersist => {
+    const next: WorkspacePersist = {
+      sourceBlocks: merged.sourceBlocks,
+      iriss: merged.iriss,
+      apskatesPlāns: merged.apskatesPlāns,
+      cenasAtbilstiba: merged.cenasAtbilstiba,
+      previewConfirmed: merged.previewConfirmed,
+      vehicleAiExtraction: merged.vehicleAiExtraction,
+      vehicleAiExtractionMeta: merged.vehicleAiExtractionMeta,
+    };
+    wsPersistRef.current = next;
+    lastGoodPersistBodyRef.current = merged;
+    return next;
+  }, []);
+
   const updateWs = useCallback(
     (patch: Partial<WorkspacePersist>) => {
       workspaceDirtyRef.current = true;
       setWs((prev) => {
-        const next = { ...prev, ...patch };
-        wsPersistRef.current = next;
-        return next;
+        const merged = coalesceOrderWorkspacePersistBody(
+          normalizeOrderWorkspacePersistBody({
+            ...workspaceToPersistBody(prev),
+            ...patch,
+            sourceBlocks: patch.sourceBlocks ?? prev.sourceBlocks,
+          }),
+          workspaceToPersistBody(prev),
+        );
+        return applyPersistBodyToWs(merged);
       });
       commitWorkspaceLocalNow({ force: true });
     },
-    [commitWorkspaceLocalNow],
+    [applyPersistBodyToWs, commitWorkspaceLocalNow],
+  );
+
+  const syncWorkspaceFromServer = useCallback(
+    async (saveGen: number) => {
+      if (!orderDraftPersistenceEnabled) return;
+      const fresh = await fetchCanonicalWorkspace(payload.sessionId);
+      if (!fresh.workspace || saveGen !== workspaceServerSaveGenRef.current) return;
+      const body = workspacePersistFromDraftWorkspace(fresh.workspace);
+      if (!body) return;
+      const merged = coalesceOrderWorkspacePersistBody(body, lastGoodPersistBodyRef.current);
+      setWs(applyPersistBodyToWs(merged));
+      if (fresh.workspace.pdfVisibility) {
+        onPdfVisibilityChange(mergePdfVisibility(fresh.workspace.pdfVisibility));
+      }
+      if (fresh.workspace.pdfBannerInclude) {
+        setPdfBannerInclude(mergeProvinBannerPdfInclude(fresh.workspace.pdfBannerInclude));
+      }
+      commitWorkspaceLocalNow({ force: true });
+    },
+    [
+      applyPersistBodyToWs,
+      commitWorkspaceLocalNow,
+      onPdfVisibilityChange,
+      orderDraftPersistenceEnabled,
+      payload.sessionId,
+    ],
+  );
+
+  const persistWorkspacePatchToServer = useCallback(
+    async (patch: Partial<WorkspacePersist>, logContext: string) => {
+      if (!orderDraftPersistenceEnabled || !workspaceHydratedOnceRef.current) return true;
+      const myGen = bumpWorkspaceSaveGeneration();
+      workspaceServerSaveGenRef.current = myGen;
+      setWorkspaceAutosaveStatus("saving");
+      const baseline = lastGoodPersistBodyRef.current ?? workspaceToPersistBody(wsPersistRef.current);
+      const result = await persistWorkspaceState({
+        sessionId: payload.sessionId,
+        patch,
+        baseline,
+        pdfVisibility: pdfVisibilityRef.current,
+        pdfBannerInclude: pdfBannerIncludeRef.current,
+        saveGeneration: myGen,
+        logContext,
+      });
+      if (result.generation !== workspaceServerSaveGenRef.current) return true;
+      if (result.ok) {
+        setWorkspaceSaveServerOk(true);
+        setWorkspaceAutosaveStatus("saved");
+        setWorkspaceSaveFlash(true);
+        await syncWorkspaceFromServer(myGen);
+      } else {
+        setWorkspaceSaveServerOk(false);
+        setWorkspaceAutosaveStatus("error");
+      }
+      return result.ok;
+    },
+    [orderDraftPersistenceEnabled, payload.sessionId, syncWorkspaceFromServer],
   );
 
   const buildGeminiOrderPayload = useCallback(
@@ -975,19 +1063,21 @@ export function OrderDetailWorkspace({
     (key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]) => {
       workspaceDirtyRef.current = true;
       setWs((prev) => {
-        const next: WorkspacePersist = {
-          ...prev,
-          sourceBlocks: mergeSourceBlocksWithDefaults({
-            ...prev.sourceBlocks,
-            [key]: block,
+        const merged = coalesceOrderWorkspacePersistBody(
+          normalizeOrderWorkspacePersistBody({
+            ...workspaceToPersistBody(prev),
+            sourceBlocks: mergeSourceBlocksWithDefaults({
+              ...prev.sourceBlocks,
+              [key]: block,
+            }),
           }),
-        };
-        wsPersistRef.current = next;
-        return next;
+          workspaceToPersistBody(prev),
+        );
+        return applyPersistBodyToWs(merged);
       });
       commitWorkspaceLocalNow({ force: true });
     },
-    [commitWorkspaceLocalNow],
+    [applyPersistBodyToWs, commitWorkspaceLocalNow],
   );
 
   const runGeminiSourceComment = useCallback(
@@ -1121,7 +1211,7 @@ export function OrderDetailWorkspace({
         backup: backupPick ? parseRawSourceBlocks(backupPick.data) : undefined,
         server: parseRawSourceBlocks(serverWorkspaceJson),
       };
-      const picked = pickOrderWorkspaceHydrationForLoad(candidates, localCandidate, rawSourceBlocksBySource);
+      const picked = pickOrderWorkspaceHydrationServerFirst(candidates, localCandidate, rawSourceBlocksBySource);
 
       const toPersistBody = (
         h: NonNullable<typeof localHydrated> | NonNullable<typeof serverHydrated>,
@@ -1231,7 +1321,10 @@ export function OrderDetailWorkspace({
 
       let serverOk = !orderDraftPersistenceEnabled;
       if (orderDraftPersistenceEnabled && workspaceHydratedOnceRef.current) {
-        const myGen = ++workspaceServerSaveGenRef.current;
+        const myGen = bumpWorkspaceSaveGeneration();
+        workspaceServerSaveGenRef.current = myGen;
+        setWorkspaceAutosaveStatus("saving");
+        const baseline = lastGoodPersistBodyRef.current;
         try {
           const res = await fetch("/api/admin/order-draft", {
             method: "PATCH",
@@ -1243,24 +1336,28 @@ export function OrderDetailWorkspace({
                 fromRef,
                 pdfVisibilityRef.current,
                 pdfBannerIncludeRef.current,
+                baseline,
               ),
             }),
           });
           if (myGen === workspaceServerSaveGenRef.current) {
             if (res.ok) {
               serverOk = true;
+              setWorkspaceAutosaveStatus("saved");
             } else {
               serverOk = false;
+              setWorkspaceAutosaveStatus("error");
               const errBody = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
               const errCode = typeof errBody.error === "string" ? errBody.error : `http_${res.status}`;
-              console.warn("[OrderDetailWorkspace] order-draft PATCH failed:", errCode, errBody.detail ?? "");
+              console.warn("[workspace:persist_failed]", errCode, errBody.detail ?? "");
             }
           } else {
             serverOk = true;
           }
         } catch (e) {
           serverOk = false;
-          console.warn("[OrderDetailWorkspace] order-draft PATCH network error:", e);
+          setWorkspaceAutosaveStatus("error");
+          console.warn("[workspace:persist_failed]", e);
         }
       }
 
@@ -1276,8 +1373,11 @@ export function OrderDetailWorkspace({
   const flushWorkspaceServerPatch = useCallback(
     (opts?: { keepalive?: boolean; showFlash?: boolean }) => {
       if (!orderDraftPersistenceEnabled || !workspaceHydratedOnceRef.current) return;
-      const myGen = ++workspaceServerSaveGenRef.current;
+      const myGen = bumpWorkspaceSaveGeneration();
+      workspaceServerSaveGenRef.current = myGen;
       const fromRef = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
+      const baseline = lastGoodPersistBodyRef.current;
+      if (opts?.showFlash !== false) setWorkspaceAutosaveStatus("saving");
       void fetch("/api/admin/order-draft", {
         method: "PATCH",
         credentials: "include",
@@ -1289,10 +1389,16 @@ export function OrderDetailWorkspace({
             fromRef,
             pdfVisibilityRef.current,
             pdfBannerIncludeRef.current,
+            baseline,
           ),
         }),
       }).then((res) => {
         if (myGen !== workspaceServerSaveGenRef.current) return;
+        if (res.ok) {
+          if (opts?.showFlash !== false) setWorkspaceAutosaveStatus("saved");
+        } else {
+          setWorkspaceAutosaveStatus("error");
+        }
         if (opts?.showFlash === false) return;
         setWorkspaceSaveServerOk(res.ok);
         if (res.ok) setWorkspaceSaveFlash(true);
@@ -1319,7 +1425,7 @@ export function OrderDetailWorkspace({
         run();
         return;
       }
-      workspaceServerSaveTimerRef.current = setTimeout(run, 350);
+      workspaceServerSaveTimerRef.current = setTimeout(run, 800);
     },
     [flushWorkspaceServerPatch, orderDraftPersistenceEnabled],
   );
@@ -1466,9 +1572,10 @@ export function OrderDetailWorkspace({
     if (!workspaceHydrated) return;
     workspaceDirtyRef.current = true;
     commitWorkspaceLocalNow({ force: true });
+    setWorkspaceAutosaveStatus("saving");
     const t = window.setTimeout(() => {
       scheduleWorkspaceServerPatch({ showFlash: false });
-    }, 400);
+    }, 800);
     return () => window.clearTimeout(t);
   }, [
     ws,
@@ -2318,15 +2425,23 @@ export function OrderDetailWorkspace({
         }}
         onExtractionChange={(extraction, meta) => {
           updateWs({ vehicleAiExtraction: extraction, vehicleAiExtractionMeta: meta });
+          void persistWorkspacePatchToServer(
+            { vehicleAiExtraction: extraction, vehicleAiExtractionMeta: meta },
+            "ai_extract:persist",
+          );
         }}
         onApplyExtraction={(extraction) => {
           const applied = applyVehicleAiExtraction({
-            sourceBlocks: ws.sourceBlocks,
+            sourceBlocks: wsPersistRef.current.sourceBlocks,
             orderEdits: {},
             currentVin: payload.vin,
             extraction,
           });
           updateWs({ sourceBlocks: applied.sourceBlocks });
+          void persistWorkspacePatchToServer(
+            { sourceBlocks: applied.sourceBlocks },
+            "ai_extract:apply",
+          );
           if (applied.orderEdits.vin?.trim()) {
             onOrderEditsPatch?.({ vin: applied.orderEdits.vin });
           }
@@ -2656,7 +2771,15 @@ export function OrderDetailWorkspace({
           >
             {workspaceSaveBusy ? "Saglabā…" : "Saglabāt"}
           </button>
-          {workspaceSaveFlash ? (
+          {workspaceAutosaveStatus === "saving" ? (
+            <span className="text-[10px] font-medium text-[var(--color-provin-muted)]" role="status">
+              Saglabā…
+            </span>
+          ) : workspaceAutosaveStatus === "error" ? (
+            <span className="max-w-[12rem] text-[10px] font-semibold leading-tight text-amber-800" role="status">
+              Kļūda saglabājot
+            </span>
+          ) : workspaceSaveFlash || workspaceAutosaveStatus === "saved" ? (
             <span
               className={`max-w-[11rem] text-[10px] font-semibold leading-tight ${
                 orderDraftPersistenceEnabled && !workspaceSaveServerOk ? "text-amber-800" : "text-emerald-700"
@@ -2666,8 +2789,8 @@ export function OrderDetailWorkspace({
               {!orderDraftPersistenceEnabled
                 ? "Saglabāts pārlūkā"
                 : workspaceSaveServerOk
-                  ? "Saglabāts serverī un pārlūkā"
-                  : "Saglabāts pārlūkā — servera melnraksts neizdevās (pārbaudi ADMIN_ORDER_DRAFT_DIR / Blob)"}
+                  ? "Saglabāts"
+                  : "Saglabāts pārlūkā — servera melnraksts neizdevās"}
             </span>
           ) : null}
           {payload.isDemo ? (

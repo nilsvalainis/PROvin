@@ -5,7 +5,12 @@
  */
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { listOrderDraftRevisions, patchOrderDraft, restoreOrderDraftRevision } from "@/lib/admin-order-draft-store";
+import {
+  listOrderDraftRevisions,
+  patchOrderDraft,
+  readOrderDraft,
+  restoreOrderDraftRevision,
+} from "@/lib/admin-order-draft-store";
 import type { OrderDraftOrderEdits, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
@@ -25,6 +30,17 @@ export async function GET(req: Request) {
     if (!sessionId) {
       return NextResponse.json({ error: "missing_sessionId" }, { status: 400 });
     }
+    const workspaceOnly = url.searchParams.get("workspace") === "1";
+    if (workspaceOnly) {
+      const draft = await readOrderDraft(sessionId);
+      return NextResponse.json({
+        ok: true,
+        workspace: draft?.workspace ?? null,
+        workspaceSavedAt: draft?.workspaceSavedAt ?? draft?.updatedAt ?? null,
+        updatedAt: draft?.updatedAt ?? null,
+      });
+    }
+
     const limitRaw = Number(url.searchParams.get("limit") ?? "20");
     const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(100, Math.floor(limitRaw))) : 20;
     const revisions = await listOrderDraftRevisions(sessionId, limit);

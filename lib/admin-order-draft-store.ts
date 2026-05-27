@@ -15,6 +15,7 @@ import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
+import { coalesceOrderDraftWorkspacePatch } from "@/lib/admin-order-draft-workspace-merge";
 
 const DEFAULT_RELATIVE_DIR = ".data/admin-order-drafts";
 const DRAFT_REVISIONS_DIRNAME = "_revisions";
@@ -381,8 +382,23 @@ export async function patchOrderDraft(
   }
   const nextOrderEdits =
     patch.orderEdits !== undefined ? { ...prevEdits, ...sanitizedPatch } : prevEdits;
-  const nextWorkspace =
+
+  let nextWorkspace =
     workspacePatch !== undefined ? workspacePatch : prev?.workspace ?? null;
+  if (workspacePatch != null && workspacePatch !== undefined) {
+    const coalesced = coalesceOrderDraftWorkspacePatch(
+      workspacePatch,
+      prev?.workspace ?? null,
+      sessionId,
+    );
+    nextWorkspace = coalesced.workspace;
+    if (coalesced.regressive) {
+      console.warn("[workspace:persist_ok] regressive_patch_coalesced", {
+        sessionId,
+        changedFields: coalesced.changedFields,
+      });
+    }
+  }
   const updatedAt = new Date().toISOString();
   const workspaceSavedAt =
     workspacePatch !== undefined ? updatedAt : (prev?.workspaceSavedAt ?? prev?.updatedAt);
