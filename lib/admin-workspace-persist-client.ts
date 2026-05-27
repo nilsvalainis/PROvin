@@ -139,7 +139,6 @@ async function patchWorkspaceOnce(opts: PersistWorkspaceStateOptions): Promise<P
       workspace: draftBody,
       expectedWorkspaceRevision: opts.expectedWorkspaceRevision,
       saveGeneration: gen,
-      persistContext: opts.logContext ?? "client",
     }),
   });
   const data = (await res.json().catch(() => ({}))) as {

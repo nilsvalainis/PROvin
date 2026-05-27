@@ -16,49 +16,13 @@ type Props = {
   durableConfigured: boolean;
 };
 
-const HEALTH_SESSION_KEY = "provin.persistence.health.v1";
-const HEALTH_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-
-function readCachedHealth(): Health | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = sessionStorage.getItem(HEALTH_SESSION_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { at?: number; health?: Health };
-    if (!parsed?.health || typeof parsed.at !== "number") return null;
-    if (Date.now() - parsed.at > HEALTH_CACHE_MAX_AGE_MS) return null;
-    if (parsed.health.ok !== true || parsed.health.durable !== true) return null;
-    return parsed.health;
-  } catch {
-    return null;
-  }
-}
-
-function writeCachedHealth(health: Health): void {
-  if (typeof window === "undefined") return;
-  if (health.ok !== true || health.durable !== true) return;
-  try {
-    sessionStorage.setItem(HEALTH_SESSION_KEY, JSON.stringify({ at: Date.now(), health }));
-  } catch {
-    /* quota */
-  }
-}
-
 /** Runtime Blob/FS pārbaude — nevis tikai env flags. */
 export function AdminPersistenceHealthBanner({ durableConfigured }: Props) {
-  const [health, setHealth] = useState<Health | null>(() =>
-    durableConfigured ? readCachedHealth() : null,
-  );
-  const [loading, setLoading] = useState(durableConfigured && !readCachedHealth());
+  const [health, setHealth] = useState<Health | null>(null);
+  const [loading, setLoading] = useState(durableConfigured);
 
   useEffect(() => {
     if (!durableConfigured) {
-      setLoading(false);
-      return;
-    }
-    const cached = readCachedHealth();
-    if (cached) {
-      setHealth(cached);
       setLoading(false);
       return;
     }
@@ -66,10 +30,7 @@ export function AdminPersistenceHealthBanner({ durableConfigured }: Props) {
     void fetch("/api/admin/debug/persistence", { credentials: "include", cache: "no-store" })
       .then((r) => r.json())
       .then((data: Health) => {
-        if (!cancelled) {
-          setHealth(data);
-          writeCachedHealth(data);
-        }
+        if (!cancelled) setHealth(data);
       })
       .catch(() => {
         if (!cancelled) setHealth({ ok: false, durable: false });
@@ -116,7 +77,8 @@ export function AdminPersistenceHealthBanner({ durableConfigured }: Props) {
       role="alert"
     >
       Servera melnraksts nav pieejams — imports netiks saglabāts.
-      {blobErr ? ` ${blobErr}` : " Pārbaudi Vercel env un veic Redeploy."}{" "}
+      {blobErr ? ` ${blobErr}` : " Pārbaudi Vercel env un veic Redeploy."}
+      {" "}
       <a href="/api/admin/debug/persistence" className="underline" target="_blank" rel="noreferrer">
         Diagnostika
       </a>

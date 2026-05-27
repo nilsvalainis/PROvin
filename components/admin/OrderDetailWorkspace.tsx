@@ -151,7 +151,6 @@ import {
 import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
 import { AdminPersistenceHealthBanner } from "@/components/admin/AdminPersistenceHealthBanner";
 import { AdminVehicleReportsAiPanel } from "@/components/admin/AdminVehicleReportsAiPanel";
-import { orderDraftServerSaveDebounceMs } from "@/lib/admin-order-draft-save-timing";
 import { applyVehicleAiExtraction } from "@/lib/apply-vehicle-ai-extraction";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 
@@ -1415,7 +1414,7 @@ export function OrderDetailWorkspace({
         run();
         return;
       }
-      workspaceServerSaveTimerRef.current = setTimeout(run, orderDraftServerSaveDebounceMs());
+      workspaceServerSaveTimerRef.current = setTimeout(run, 800);
     },
     [flushWorkspaceServerPatch, orderDraftPersistenceEnabled],
   );
@@ -1563,10 +1562,9 @@ export function OrderDetailWorkspace({
     workspaceDirtyRef.current = true;
     commitWorkspaceLocalNow({ force: true });
     setWorkspaceAutosaveStatus("saving");
-    const debounceMs = orderDraftServerSaveDebounceMs();
     const t = window.setTimeout(() => {
       scheduleWorkspaceServerPatch({ showFlash: false });
-    }, debounceMs);
+    }, 800);
     return () => window.clearTimeout(t);
   }, [
     ws,
