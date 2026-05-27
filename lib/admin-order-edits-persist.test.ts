@@ -31,6 +31,17 @@ describe("pickOrderEditsForHydration", () => {
     const picked = pickOrderEditsForHydration(server, local);
     expect(picked.customerEmail).toBe("new@provin.lv");
   });
+
+  it("legacy local without savedAt is not stomped by server updatedAt alone", () => {
+    const server: OrderDraftState = {
+      orderEdits: { internalComment: "Vecs servera teksts" },
+      workspace: null,
+      updatedAt: "2026-06-01T12:00:00.000Z",
+    };
+    const local = JSON.stringify({ internalComment: "Jaunāks lokālais teksts" });
+    const picked = pickOrderEditsForHydration(server, local);
+    expect(picked.internalComment).toBe("Jaunāks lokālais teksts");
+  });
 });
 
 describe("parseOrderEditsFromLocalStorage", () => {

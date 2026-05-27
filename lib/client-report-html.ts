@@ -412,8 +412,8 @@ function buildPdfMileageSourceStripeSpanForKey(key: MileagePdfSourceKey): string
   return `<span class="${stripeCls}" role="img" aria-label="${escapeHtml(`Avots: ${MILEAGE_PDF_SOURCE_LEGEND[key].full}`)}"></span>`;
 }
 
-function buildPdfMileageSourceLegendAbbrevsHtml(mileageRows: UnifiedMileageRow[]): string {
-  const keySet = collectMileagePdfSourceKeysFromLabels(mileageRows.map((r) => r.sourceLabel));
+function buildPdfSourceLegendAbbrevsHtml(sourceLabels: string[]): string {
+  const keySet = collectMileagePdfSourceKeysFromLabels(sourceLabels);
   const ordered = mileagePdfLegendKeysInOrder(keySet);
   const parts: string[] = [];
   for (const k of ordered) {
@@ -429,6 +429,10 @@ function buildPdfMileageSourceLegendAbbrevsHtml(mileageRows: UnifiedMileageRow[]
   }
   if (parts.length === 0) return "";
   return `<span class="pdf-mileage-legend-terms-row">${parts.join("")}</span>`;
+}
+
+function buildPdfMileageSourceLegendAbbrevsHtml(mileageRows: UnifiedMileageRow[]): string {
+  return buildPdfSourceLegendAbbrevsHtml(mileageRows.map((r) => r.sourceLabel));
 }
 
 function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow, anomalyBySourceOrder: Map<number, boolean>): string {
@@ -514,15 +518,17 @@ export function buildUnifiedMileageTableHtml(
 function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
   const lossCell = formatLossAmountEurCell(r.lossAmount);
   const flagCell = buildPdfCountryFlagCellHtml(r.country);
-  return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo pdf-mileage-cell-loss">${lossCell}</td><td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
+  const stripeSpan = buildPdfMileageSourceStripeSpan(r.sourceLabel, "table");
+  const srcTd = `<td class="pdf-mileage-cell-src">${stripeSpan}</td>`;
+  return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo pdf-mileage-cell-loss">${lossCell}</td>${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
 }
 
 function buildIncidentHistoryTableHtml(rows: UnifiedIncidentRow[]): string {
   if (rows.length === 0) return "";
-  const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-flag" /></colgroup>`;
-  const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Zaudējuma summa</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
+  const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-src" /><col class="pdf-mileage-col-flag" /></colgroup>`;
+  const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Zaudējuma summa</th><th class="pdf-mileage-th-src" scope="col">Avots</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
   const body = rows.map(buildUnifiedIncidentRowHtml).join("\n");
-  return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--mileage-rows" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 
 /** Apvienota negadījumu tabula (AutoDNA, CarVertical, LTAB, Citi avoti) — tikai rindas ar aizpildītu zaudējumu summu. */
@@ -539,8 +545,13 @@ export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfV
   const rows = sortUnifiedIncidentsNewestFirst(collected);
   const tablesHtml = hasTable ? buildIncidentHistoryTableHtml(rows) : "";
   const sourceCount = hasTable ? new Set(collected.map((r) => r.sourceLabel)).size : 0;
+  const legendAbbrevs = hasTable ? buildPdfSourceLegendAbbrevsHtml(collected.map((r) => r.sourceLabel)) : "";
   const sourceCountHtml = hasTable
-    ? `<p class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-title">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</span></p>`
+    ? `<p class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-title">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</span>${
+        legendAbbrevs
+          ? `<span class="pdf-mileage-source-count-abbrevs">${legendAbbrevs}</span>`
+          : ""
+      }</p>`
     : "";
   const head = sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE);
   const body = `${tablesHtml}${sourceCountHtml}${adminNoteHtml}`;

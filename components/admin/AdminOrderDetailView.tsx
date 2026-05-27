@@ -315,11 +315,14 @@ export function AdminOrderDetailView({
 
   const flushOrderEditsToStorage = useCallback(() => {
     try {
-      localStorage.setItem(storageKeyOrderEdits(order.id), JSON.stringify(edits));
+      localStorage.setItem(
+        storageKeyOrderEdits(order.id),
+        serializeOrderEditsForLocalStorage(editsRef.current),
+      );
     } catch {
       /* quota */
     }
-  }, [edits, order.id]);
+  }, [order.id]);
 
   useEffect(() => {
     const onLeave = () => flushOrderEditsToStorage();
@@ -335,7 +338,10 @@ export function AdminOrderDetailView({
   useEffect(() => {
     return () => {
       try {
-        localStorage.setItem(storageKeyOrderEdits(order.id), JSON.stringify(editsRef.current));
+        localStorage.setItem(
+          storageKeyOrderEdits(order.id),
+          serializeOrderEditsForLocalStorage(editsRef.current),
+        );
       } catch {
         /* quota */
       }

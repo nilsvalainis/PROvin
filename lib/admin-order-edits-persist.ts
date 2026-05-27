@@ -99,7 +99,11 @@ export function pickOrderEditsForHydration(
   if (local.savedAtMs > serverMsOk + 500) {
     return coalesceOrderEdits(local.orderEdits, serverEdits);
   }
-  if (orderDraftHasOrderEdits(serverEdits) && serverMsOk >= local.savedAtMs) {
+  /** Legacy / beforeunload — bez `savedAt`; neļaut serverim pārrakstīt ar tikai `updatedAt`. */
+  if (local.savedAtMs === 0 && orderDraftHasOrderEdits(local.orderEdits)) {
+    return coalesceOrderEdits(local.orderEdits, serverEdits);
+  }
+  if (orderDraftHasOrderEdits(serverEdits) && serverMsOk > 0 && serverMsOk >= local.savedAtMs) {
     return coalesceOrderEdits(serverEdits, local.orderEdits);
   }
   if (orderDraftHasOrderEdits(local.orderEdits)) return local.orderEdits;

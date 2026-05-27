@@ -72,6 +72,10 @@ describe("unified PDF sections single block", () => {
     expect(html.indexOf("Grafika ģenerēšanā izmantotais avotu skaits:")).toBeLessThan(
       html.indexOf("Kopsavilkuma teksts"),
     );
+    expect(html).toContain("pdf-mileage-cell-src");
+    expect(html).toContain("pdf-mileage-source-stripe");
+    expect(html).toContain("pdf-mileage-legend-terms-row");
+    expect(html).toContain("pdf-mileage-source-count-abbrevs");
   });
 });
 
