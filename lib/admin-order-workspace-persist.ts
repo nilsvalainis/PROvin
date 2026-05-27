@@ -421,8 +421,8 @@ function hydratedToPersistBody(h: HydratedWorkspaceShape): OrderWorkspacePersist
 }
 
 /**
- * Hidratācija: server-first — visi avoti tiek salipināti bloku pa blokam;
- * lokālais uzvar tikai ja jaunāks par serveri UN serverī nav substantīvu datu.
+ * Hidratācija: vienmēr salipina visus avotus (local, backup, server); meta avots — pēc satura,
+ * ne tikai jaunākā servera `savedAt` (tukšs servera flush nedrīkst pārrakstīt pilnu localStorage).
  */
 export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspaceShape>(
   candidates: WorkspaceHydrationPick<T>[],
@@ -436,88 +436,71 @@ export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspa
   });
   const pool = filtered.length > 0 ? filtered : candidates;
 
-  const serverPick = pool.find((c) => c.source === "server");
-  const serverFillScore =
-    serverPick != null ? workspaceHydrationFillScore(hydratedToPersistBody(serverPick.data)) : 0;
-  const serverHasData = serverFillScore > 0;
+  const allPicks: WorkspaceHydrationPick<T>[] = [...pool];
+  if (local && !allPicks.some((p) => p.source === "local")) {
+    allPicks.push(local);
+  }
+  if (allPicks.length === 0) return null;
 
-  /** Server + local deep merge; jaunāks localStorage nedrīkst zaudēt pret vecu Blob/SSR. */
-  if (serverHasData && serverPick) {
-    const serverBody = hydratedToPersistBody(serverPick.data);
-    const localBody = local ? hydratedToPersistBody(local.data) : null;
-    const localIsNewer = Boolean(
-      local &&
-        localBody &&
-        local.savedAtMs > serverPick.savedAtMs + 500 &&
-        localWorkspaceHasSubstantiveContent(localBody),
-    );
-    const merged = localBody ?
-      coalesceOrderWorkspacePersistBody(
-        localIsNewer ? localBody : serverBody,
-        localIsNewer ? serverBody : localBody,
-      )
-    : serverBody;
-    const mergedData = {
-      ...serverPick.data,
-      sourceBlocks: merged.sourceBlocks,
-      iriss: merged.iriss,
-      apskatesPlāns: merged.apskatesPlāns,
-      cenasAtbilstiba: merged.cenasAtbilstiba,
-      previewConfirmed: merged.previewConfirmed,
-      vehicleAiExtraction: merged.vehicleAiExtraction,
-      vehicleAiExtractionMeta: merged.vehicleAiExtractionMeta,
-    } as T;
-    const pickSource: WorkspaceHydrationSource = localIsNewer ? "local" : "server";
-    const savedAtMs =
-      pickSource === "local" && local ? local.savedAtMs : serverPick.savedAtMs;
-    if (localIsNewer) {
-      console.info("[workspace:hydrate] local_newer_merged", {
-        localSavedAtMs: local?.savedAtMs,
-        serverSavedAtMs: serverPick.savedAtMs,
-      });
+  const bodiesForMerge = allPicks
+    .map((c) => ({
+      body: hydratedToPersistBody(c.data),
+      savedAtMs: c.savedAtMs,
+    }))
+    .sort((a, b) => {
+      const scoreDelta = workspaceHydrationFillScore(a.body) - workspaceHydrationFillScore(b.body);
+      if (scoreDelta !== 0) return scoreDelta;
+      return a.savedAtMs - b.savedAtMs;
+    });
+  let merged = bodiesForMerge[0]?.body ?? {
+    sourceBlocks: createDefaultSourceBlocks(),
+    iriss: "",
+    apskatesPlāns: "",
+    cenasAtbilstiba: "",
+    previewConfirmed: false,
+    vehicleAiExtraction: null,
+    vehicleAiExtractionMeta: null,
+  };
+  for (let i = 1; i < bodiesForMerge.length; i++) {
+    merged = coalesceOrderWorkspacePersistBody(bodiesForMerge[i]!.body, merged);
+  }
+  const mergedFillScore = workspaceHydrationFillScore(merged);
+
+  const localPick = allPicks.find((p) => p.source === "local") ?? local ?? null;
+  const serverPick = allPicks.find((p) => p.source === "server") ?? null;
+
+  let metaPick = pickNewestWorkspaceHydration(allPicks) ?? allPicks[0]!;
+
+  if (localPick) {
+    const localBody = hydratedToPersistBody(localPick.data);
+    const localScore = workspaceHydrationFillScore(localBody);
+    const serverBody = serverPick ? hydratedToPersistBody(serverPick.data) : null;
+    const serverScore = serverBody ? workspaceHydrationFillScore(serverBody) : 0;
+    const localSubstantive = localWorkspaceHasSubstantiveContent(localBody);
+
+    if (localSubstantive) {
+      const localNewer = !serverPick || localPick.savedAtMs > serverPick.savedAtMs + 500;
+      const localRicher = localScore > serverScore;
+      if (localNewer || localRicher) {
+        metaPick = localPick;
+        if (serverPick && localNewer) {
+          console.info("[workspace:hydrate] local_newer_merged", {
+            localSavedAtMs: localPick.savedAtMs,
+            serverSavedAtMs: serverPick.savedAtMs,
+          });
+        }
+      } else if (serverPick && serverScore > localScore) {
+        metaPick = serverPick;
+      }
+    } else if (serverPick && serverScore > localScore) {
+      metaPick = serverPick;
     }
-    return {
-      source: pickSource,
-      data: mergedData,
-      savedAtMs,
-      fillScore: workspaceHydrationFillScore(merged),
-    };
+  } else if (serverPick) {
+    metaPick = serverPick;
   }
-
-  const bodies: OrderWorkspacePersistBody[] = [];
-  const order: WorkspaceHydrationSource[] = serverHasData
-    ? ["server", "backup", "local"]
-    : ["local", "backup", "server"];
-  for (const src of order) {
-    const c = pool.find((x) => x.source === src) ?? (src === "local" ? local : null);
-    if (c) bodies.push(hydratedToPersistBody(c.data));
-  }
-  const merged = mergeWorkspaceHydrationBodies(bodies);
-
-  let picked: WorkspaceHydrationPick<T> | null = serverPick ?? null;
-  if (!picked) {
-    picked = pickNewestWorkspaceHydration(pool) ?? local;
-  }
-
-  if (local && !serverHasData) {
-    const localNewer =
-      local.savedAtMs > 0 &&
-      (picked == null || picked.savedAtMs <= 0 || local.savedAtMs > picked.savedAtMs);
-    if (localNewer) picked = local;
-  } else if (local && serverPick && local.savedAtMs > serverPick.savedAtMs + 5000) {
-    const localBody = hydratedToPersistBody(local.data);
-    if (localWorkspaceHasSubstantiveContent(localBody)) {
-      console.info("[workspace:hydrate] local_newer_than_server_merged", {
-        localSavedAtMs: local.savedAtMs,
-        serverSavedAtMs: serverPick.savedAtMs,
-      });
-    }
-  }
-
-  if (!picked) return null;
 
   const mergedData = {
-    ...picked.data,
+    ...metaPick.data,
     sourceBlocks: merged.sourceBlocks,
     iriss: merged.iriss,
     apskatesPlāns: merged.apskatesPlāns,
@@ -527,11 +510,13 @@ export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspa
     vehicleAiExtractionMeta: merged.vehicleAiExtractionMeta,
   } as T;
 
+  const savedAtMs = Math.max(0, ...allPicks.map((p) => p.savedAtMs));
+
   return {
-    source: serverHasData ? "server" : picked.source,
+    source: metaPick.source,
     data: mergedData,
-    savedAtMs: picked.savedAtMs,
-    fillScore: workspaceHydrationFillScore(merged),
+    savedAtMs,
+    fillScore: mergedFillScore,
   };
 }
 

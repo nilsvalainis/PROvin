@@ -45,6 +45,7 @@ import {
 import {
   pickOrderWorkspaceHydrationServerFirst,
   coalesceOrderWorkspacePersistBody,
+  isRegressiveWorkspacePersist,
   normalizeOrderWorkspacePersistBody,
   pickNewestBackupSnapshotRaw,
   serializeOrderWorkspaceSnapshotFromRef,
@@ -54,7 +55,9 @@ import {
 } from "@/lib/admin-order-workspace-persist";
 import {
   bumpWorkspaceSaveGeneration,
+  fetchCanonicalWorkspace,
   persistWorkspaceState,
+  workspacePersistFromDraftWorkspace,
 } from "@/lib/admin-workspace-persist-client";
 import { workspaceDebugLog } from "@/lib/admin-workspace-debug-log";
 import { usePathname } from "next/navigation";
@@ -637,6 +640,8 @@ export function OrderDetailWorkspace({
   const lastGoodPersistBodyRef = useRef<OrderWorkspacePersistBody | null>(null);
   const workspaceRevisionRef = useRef(0);
   const wsPersistRef = useRef(ws);
+  const wsStateRef = useRef(ws);
+  wsStateRef.current = ws;
   const orderEditsRef = useRef({ internal: internalCommentDraft, mileage: mileageCommentDraft });
   orderEditsRef.current = { internal: internalCommentDraft, mileage: mileageCommentDraft };
   const pdfVisibilityRef = useRef(pdfVisibility);
@@ -731,9 +736,18 @@ export function OrderDetailWorkspace({
     [payload.sessionId],
   );
 
+  const syncWsPersistRefFromState = useCallback(() => {
+    const fromWs = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsStateRef.current));
+    const fromRef = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
+    if (workspaceHydrationFillScore(fromWs) >= workspaceHydrationFillScore(fromRef)) {
+      wsPersistRef.current = wsStateRef.current;
+    }
+  }, []);
+
   const commitWorkspaceLocalNow = useCallback(
     (opts?: { force?: boolean }) => {
       if (!opts?.force && !workspaceHydrated) return;
+      syncWsPersistRefFromState();
       const normalized = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
       lastGoodPersistBodyRef.current = normalized;
       const snapshot = serializeOrderWorkspaceSnapshotFromRef(
@@ -752,13 +766,14 @@ export function OrderDetailWorkspace({
       pushWorkspaceBackup(snapshot);
       hydrationSnapshotRef.current = snapshot;
     },
-    [payload.sessionId, pushWorkspaceBackup, workspaceHydrated],
+    [payload.sessionId, pushWorkspaceBackup, syncWsPersistRefFromState, workspaceHydrated],
   );
 
   /** Sinhrons `localStorage` — navigācijas / link klikšķa brīdī (bez gaidīšanas uz React unmount). */
   const flushWorkspaceLocalStorageSync = useCallback(() => {
+    syncWsPersistRefFromState();
     commitWorkspaceLocalNow({ force: true });
-  }, [commitWorkspaceLocalNow]);
+  }, [commitWorkspaceLocalNow, syncWsPersistRefFromState]);
 
   const applyPersistBodyToWs = useCallback((merged: OrderWorkspacePersistBody): WorkspacePersist => {
     const next: WorkspacePersist = {
@@ -808,10 +823,35 @@ export function OrderDetailWorkspace({
         return false;
       }
       if (!workspaceHydratedOnceRef.current) return false;
+      syncWsPersistRefFromState();
       const myGen = bumpWorkspaceSaveGeneration();
       workspaceServerSaveGenRef.current = myGen;
       if (ui?.showFlash !== false) setWorkspaceAutosaveStatus("saving");
-      const body = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
+      let body = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
+      const baseline = lastGoodPersistBodyRef.current;
+      if (baseline && isRegressiveWorkspacePersist(body, baseline)) {
+        workspaceDebugLog("overwrite_detected", {
+          sessionId: payload.sessionId,
+          source: "client_patch",
+          fillScore: workspaceHydrationFillScore(body),
+          extra: {
+            context: logContext,
+            baselineScore: workspaceHydrationFillScore(baseline),
+            action: "coalesced_with_last_good",
+          },
+        });
+        body = coalesceOrderWorkspacePersistBody(body, baseline);
+        wsPersistRef.current = {
+          sourceBlocks: body.sourceBlocks,
+          iriss: body.iriss,
+          apskatesPlāns: body.apskatesPlāns,
+          cenasAtbilstiba: body.cenasAtbilstiba,
+          previewConfirmed: body.previewConfirmed,
+          vehicleAiExtraction: body.vehicleAiExtraction,
+          vehicleAiExtractionMeta: body.vehicleAiExtractionMeta,
+        };
+        wsStateRef.current = wsPersistRef.current;
+      }
       const result = await persistWorkspaceState({
         sessionId: payload.sessionId,
         body,
@@ -843,7 +883,7 @@ export function OrderDetailWorkspace({
       }
       return true;
     },
-    [commitWorkspaceLocalNow, orderDraftPersistenceEnabled, payload.sessionId],
+    [commitWorkspaceLocalNow, orderDraftPersistenceEnabled, payload.sessionId, syncWsPersistRefFromState],
   );
 
   const buildGeminiOrderPayload = useCallback(
@@ -1264,8 +1304,26 @@ export function OrderDetailWorkspace({
       });
 
       if (picked) {
-        const chosen = picked.data;
-        const body = toPersistBody(chosen);
+        let chosen = picked.data;
+        let body = toPersistBody(chosen);
+        if (
+          localCandidate &&
+          localCandidate.fillScore > 0 &&
+          workspaceHydrationFillScore(body) + 2 < localCandidate.fillScore
+        ) {
+          workspaceDebugLog("overwrite_detected", {
+            sessionId: payload.sessionId,
+            source: "hydrate",
+            fillScore: workspaceHydrationFillScore(body),
+            extra: {
+              localFillScore: localCandidate.fillScore,
+              pickedSource: picked.source,
+              action: "reverted_to_local_candidate",
+            },
+          });
+          chosen = localCandidate.data;
+          body = toPersistBody(chosen);
+        }
         const priorScore = lastGoodPersistBodyRef.current ?
           workspaceHydrationFillScore(lastGoodPersistBodyRef.current)
         : 0;
@@ -1350,6 +1408,54 @@ export function OrderDetailWorkspace({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `serverWorkspaceJson` refresh var pārrakstīt jaunāku lokālo darba zonu
   }, [payload.sessionId, payload.serverInternalComment, onPdfVisibilityChange, orderDraftPersistenceEnabled]);
 
+  /** Pēc hidratācijas — svaigs Blob/FS (SSR var būt novecojis pirms pēdējā flush). */
+  useEffect(() => {
+    if (!workspaceHydrated || !orderDraftPersistenceEnabled) return;
+    let cancelled = false;
+    void (async () => {
+      const fresh = await fetchCanonicalWorkspace(payload.sessionId);
+      if (cancelled || !fresh.workspace) return;
+      const freshBody = workspacePersistFromDraftWorkspace(fresh.workspace);
+      if (!freshBody) return;
+      syncWsPersistRefFromState();
+      const current = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
+      const merged = coalesceOrderWorkspacePersistBody(freshBody, current);
+      if (workspaceHydrationFillScore(merged) + 1 < workspaceHydrationFillScore(current)) return;
+      if (typeof fresh.workspaceRevision === "number" && fresh.workspaceRevision > 0) {
+        workspaceRevisionRef.current = fresh.workspaceRevision;
+      }
+      const nextWs: WorkspacePersist = {
+        sourceBlocks: merged.sourceBlocks,
+        iriss: merged.iriss,
+        apskatesPlāns: merged.apskatesPlāns,
+        cenasAtbilstiba: merged.cenasAtbilstiba,
+        previewConfirmed: merged.previewConfirmed,
+        vehicleAiExtraction: merged.vehicleAiExtraction,
+        vehicleAiExtractionMeta: merged.vehicleAiExtractionMeta,
+      };
+      wsPersistRef.current = nextWs;
+      wsStateRef.current = nextWs;
+      setWs(nextWs);
+      lastGoodPersistBodyRef.current = merged;
+      commitWorkspaceLocalNow({ force: true });
+      workspaceDebugLog("hydrate_source", {
+        sessionId: payload.sessionId,
+        source: "server_fetch",
+        fillScore: workspaceHydrationFillScore(merged),
+        revision: fresh.workspaceRevision,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    commitWorkspaceLocalNow,
+    orderDraftPersistenceEnabled,
+    payload.sessionId,
+    syncWsPersistRefFromState,
+    workspaceHydrated,
+  ]);
+
   const persistWorkspaceSnapshot = useCallback(
     async (opts?: { showFlash?: boolean; serverOnly?: boolean }): Promise<boolean> => {
       if (!workspaceHydrated) return false;
@@ -1402,7 +1508,12 @@ export function OrderDetailWorkspace({
   );
 
   const forceNavigationFlush = useCallback(() => {
+    if (!workspaceHydratedOnceRef.current) return;
     workspaceDirtyRef.current = true;
+    if (workspaceServerSaveTimerRef.current) {
+      clearTimeout(workspaceServerSaveTimerRef.current);
+      workspaceServerSaveTimerRef.current = null;
+    }
     flushWorkspaceLocalStorageSync();
     void flushWorkspaceServerPatch({ keepalive: true, showFlash: false });
   }, [flushWorkspaceLocalStorageSync, flushWorkspaceServerPatch]);
@@ -1570,14 +1681,22 @@ export function OrderDetailWorkspace({
     const t = window.setTimeout(() => {
       scheduleWorkspaceServerPatch({ showFlash: false });
     }, 800);
-    return () => window.clearTimeout(t);
+    return () => {
+      window.clearTimeout(t);
+      if (!workspaceHydratedOnceRef.current) return;
+      syncWsPersistRefFromState();
+      commitWorkspaceLocalNow({ force: true });
+      void persistFullWorkspaceRef("effect_cleanup_flush", { showFlash: false });
+    };
   }, [
     ws,
     pdfVisibility,
     pdfBannerInclude,
     workspaceHydrated,
     commitWorkspaceLocalNow,
+    persistFullWorkspaceRef,
     scheduleWorkspaceServerPatch,
+    syncWsPersistRefFromState,
   ]);
 
   useEffect(() => {
