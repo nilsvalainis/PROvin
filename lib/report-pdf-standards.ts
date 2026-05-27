@@ -71,6 +71,10 @@ export const CLIENT_REPORT_SECTION_LABELS = {
 export const CLIENT_REPORT_FOOTER_DISCLAIMER =
   "PROVIN.LV sniedz konsultatīvu pakalpojumu: transportlīdzekļa pieejamās informācijas izvērtējumu un ieteikumus. Tas nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze vai juridisks spriedums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.";
 
+/** Konfidencialitāte un aizliegums nodot trešajām personām — treknrakstā PDF kājenē. */
+export const PDF_SITE_FOOTER_CONFIDENTIALITY_NOTICE =
+  "Šī atskaite ir sagatavota ekskluzīvi tās pasūtītājam un ir izmantojama tikai personīgām vajadzībām. Atskaiti un tajā ietverto informāciju ir kategoriski aizliegts pavairot, publiski reproducēt, nodot vai jebkādā citā veidā darīt pieejamu trešajām personām (tostarp transportlīdzekļa pārdevējam) bez saskaņošanas ar PROVIN.LV.";
+
 /** PDF kājene — virsraksts kreisajai juridiskajai kolonnai. */
 export const PDF_SITE_FOOTER_IMPORTANT_TITLE = "SVARĪGA INFORMĀCIJA";
 

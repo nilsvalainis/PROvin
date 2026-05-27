@@ -99,6 +99,18 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).not.toContain("CITI AVOTI — Mans avots");
   });
 
+  it("PDF footer includes bold confidentiality notice under SVARĪGA INFORMĀCIJA", () => {
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload(),
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).toContain("SVARĪGA INFORMĀCIJA");
+    expect(doc).toContain('class="pdf-site-footer__confidentiality"');
+    expect(doc).toContain("kategoriski aizliegts pavairot");
+    expect(doc).toContain(`© ${new Date().getFullYear()} PROVIN.LV`);
+  });
+
   it("outvin vehicle info uses single-column pdf-v1-kv", () => {
     const report = emptyOutvinDealerReport();
     report.vehicleInfo.vinCode = "WVWZZZ";

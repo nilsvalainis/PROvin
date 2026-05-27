@@ -57,6 +57,7 @@ import {
 } from "@/lib/section-icons";
 import {
   CLIENT_REPORT_FOOTER_DISCLAIMER,
+  PDF_SITE_FOOTER_CONFIDENTIALITY_NOTICE,
   PDF_SITE_FOOTER_GDPR_LINE,
   PDF_SITE_FOOTER_IMPORTANT_TITLE,
   PDF_SITE_FOOTER_LEGAL_LABELS_STATIC,
@@ -811,6 +812,7 @@ function buildPdfSiteFooterHtml(year: number): string {
     'class="pdf-v1-logo pdf-site-footer__logo"',
   );
   const disclaimer = escapeHtml(CLIENT_REPORT_FOOTER_DISCLAIMER);
+  const confidentiality = escapeHtml(PDF_SITE_FOOTER_CONFIDENTIALITY_NOTICE);
   const valueBody = escapeHtml(PDF_SITE_FOOTER_VALUE_BODY);
   const copyright = escapeHtml(`© ${year} PROVIN.LV`);
   const refs = escapeHtml(PDF_SITE_FOOTER_LEGAL_LABELS_STATIC);
@@ -821,6 +823,7 @@ function buildPdfSiteFooterHtml(year: number): string {
 <div class="pdf-site-footer__col pdf-site-footer__col--legal">
 <h3 class="pdf-site-footer__important-title">${importantTitle}</h3>
 <p class="pdf-site-footer__disclaimer">${disclaimer}</p>
+<p class="pdf-site-footer__confidentiality"><strong>${confidentiality}</strong></p>
 </div>
 <div class="pdf-site-footer__col pdf-site-footer__col--brand">
 ${logo}
@@ -1295,6 +1298,10 @@ function clientReportPrintCss(): string {
         color:#6b7280;line-height:1.35;
       }
       .pdf-site-footer__disclaimer{margin:0;font-size:10px;font-weight:400;line-height:1.8;color:#6b7280;}
+      .pdf-site-footer__confidentiality{
+        margin:10px 0 0;font-size:10px;font-weight:700;line-height:1.8;color:#6b7280;
+      }
+      .pdf-site-footer__confidentiality strong{font-weight:700;}
       .pdf-site-footer__logo{display:block;width:118px;max-width:100%;height:auto;margin:0 0 10px;}
       .pdf-site-footer__value-body{margin:0;font-size:11px;font-weight:400;line-height:1.8;color:#6b7280;}
       .pdf-site-footer__bottom{
