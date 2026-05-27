@@ -34,7 +34,7 @@ function dealerServiceTable(log: OutvinDataBundle["dealerServiceLog"]): string {
         `<tr><td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.odometer)}</td><td>${escapeHtml(r.serviceNotes || r.country)}</td></tr>`,
     )
     .join("");
-  return `<table class="mirror-table mirror-table--compact"><thead><tr><th>Datums</th><th>Nobraukums, km</th><th>Servisa veids / Piezīmes</th></tr></thead><tbody>${tr}</tbody></table>`;
+  return `<table class="pdf-v1-kv pdf-v1-kv--outvin-log"><thead><tr><th>Datums</th><th>Nobraukums, km</th><th>Servisa veids / Piezīmes</th></tr></thead><tbody>${tr}</tbody></table>`;
 }
 
 function usCarfaxBlock(d: OutvinDataBundle["usCarfax"]): string {
@@ -58,7 +58,7 @@ function europeanTable(rows: OutvinDataBundle["europeanRegisters"]): string {
         `<tr><td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.country)}</td><td>${escapeHtml(r.registerType)}</td><td>${escapeHtml(r.details)}</td></tr>`,
     )
     .join("");
-  return `<table class="mirror-table mirror-table--compact"><thead><tr><th>Datums</th><th>Valsts</th><th>Veids</th><th>Dati</th></tr></thead><tbody>${tr}</tbody></table>`;
+  return `<table class="pdf-v1-kv pdf-v1-kv--outvin-log"><thead><tr><th>Datums</th><th>Valsts</th><th>Veids</th><th>Dati</th></tr></thead><tbody>${tr}</tbody></table>`;
 }
 
 export function buildOutvinBundlePdfInnerHtml(

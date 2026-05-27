@@ -38,6 +38,7 @@ import {
   buildPdfAdminMirrorVehicleBlock,
   pdfLayoutDraftExtraCss,
   pdfProvinWordmarkHtml,
+  pdfV1PanelHead,
   PDF_BRAND_BLUE_HEX,
   provincLogoSvg,
 } from "@/lib/client-report-pdf-layout-draft";
@@ -657,12 +658,14 @@ function buildAutoRecordsAvotuSubsection(
 
   if (!hasOutvin && !hasComments) return "";
 
-  const head = sectionHeadBrand(sectionIconPdfHtml("shieldCheck"), SOURCE_BLOCK_LABELS.auto_records);
+  const head = pdfV1PanelHead(
+    SOURCE_BLOCK_LABELS.auto_records.toLowerCase(),
+    sectionIconPdfHtml("shieldCheck"),
+  );
   const bodyParts: string[] = [];
   if (hasOutvin) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${outvinInner}</div>`);
   if (hasComments) bodyParts.push(pdfAvotuCommentIsland(commentBlock));
-  const body = `<div class="pdf-source-section-body">${bodyParts.join("\n")}</div>`;
-  return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
+  return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}${bodyParts.join("\n")}</div>`;
 }
 
 /** Trešās puses avots — tikai komentāri (nobraukums un negadījumi ir vienotajās tabulās augšā). */
@@ -741,15 +744,10 @@ function buildCitiAvotiAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilit
   for (const [i, section] of b.sections.entries()) {
     const comments = section.comments.trim();
     if (!comments) continue;
-    const label =
-      total > 1 && section.label?.trim() ?
-        `${SOURCE_BLOCK_LABELS.citi_avoti} — ${section.label.trim()}`
-      : total > 1 ?
-        `${SOURCE_BLOCK_LABELS.citi_avoti} — Avots ${i + 1}`
-      : SOURCE_BLOCK_LABELS.citi_avoti;
+    const subheadLabel = section.label?.trim() || (total > 1 ? `Avots ${i + 1}` : "");
     islands.push(
-      total > 1 ?
-        `<p class="pdf-citi-avoti-subhead">${escapeHtml(label)}</p>${pdfAvotuCommentIsland(comments)}`
+      subheadLabel ?
+        `<p class="pdf-citi-avoti-subhead">${escapeHtml(subheadLabel)}</p>${pdfAvotuCommentIsland(comments)}`
       : pdfAvotuCommentIsland(comments),
     );
   }
@@ -1275,21 +1273,14 @@ function clientReportPrintCss(): string {
       .mirror-table--csdd-mh{font-size:9pt!important;margin:2px 0 4px!important;}
       .mirror-table--csdd-mh td,.mirror-table--csdd-mh th{padding:3px 4px!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;}
       .mirror-table--csdd-mh thead th{font-size:9pt!important;}
-      .pdf-outvin-dealer-stack{margin:2px 0 4px;}
-      .pdf-outvin-subhead{margin:8px 0 3px!important;font-size:10px!important;font-weight:700!important;color:#0f172a!important;letter-spacing:0.04em;text-transform:uppercase;}
-      .pdf-outvin-dealer-stack > .pdf-outvin-subhead:first-child{margin-top:2px!important;}
-      .mirror-table--outvin-vehicle{font-size:8.5pt!important;margin:0 0 6px!important;}
-      .mirror-table--outvin-vehicle td,.mirror-table--outvin-vehicle th{
-        padding:2px 6px 2px 0!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;vertical-align:top;
+      .pdf-outvin-dealer-stack{margin:4px 0 0;}
+      .pdf-outvin-subhead{
+        margin:10px 0 4px!important;font-size:0.68rem!important;font-weight:600!important;
+        color:#86868b!important;letter-spacing:0.02em;text-transform:none;
       }
-      .mirror-table--outvin-vehicle td:nth-child(odd){color:#64748b;width:18%;font-weight:600;white-space:nowrap;}
-      .mirror-table--outvin-vehicle td:nth-child(even){color:#0f172a;width:32%;}
-      .pdf-outvin-plain{font-size:8.5pt;line-height:1.35;color:#0f172a;margin:0 0 6px;}
-      .pdf-outvin-equipment-grid{
-        display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;
-        font-size:7.5pt;line-height:1.3;color:#0f172a;margin:0 0 6px;
-      }
-      .pdf-outvin-equip-item{display:block;break-inside:avoid;}
+      .pdf-outvin-dealer-stack > .pdf-outvin-subhead:first-child{margin-top:0!important;}
+      .pdf-outvin-dealer-stack .pdf-v1-kv{margin:0 0 8px;}
+      .pdf-outvin-plain{font-size:0.74rem;line-height:1.45;color:#0f172a;margin:0 0 8px;}
       .tabular{font-variant-numeric:tabular-nums;}
       .mirror-font-error{padding:16px;color:#991b1b;font-size:13px;}
       .pdf-site-footer{

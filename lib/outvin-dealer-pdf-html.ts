@@ -1,9 +1,9 @@
 import {
-  OUTVIN_VEHICLE_INFO_PDF_PAIRS,
   OUTVIN_VEHICLE_INFO_ROWS,
   outvinDealerReportHasContent,
   outvinEquipmentLineHasData,
   type OutvinDealerReport,
+  type OutvinVehicleInfo,
 } from "@/lib/outvin-dealer-types";
 
 function escapeHtml(s: string): string {
@@ -12,10 +12,6 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-}
-
-function labelForKey(key: (typeof OUTVIN_VEHICLE_INFO_ROWS)[number]["key"]): string {
-  return OUTVIN_VEHICLE_INFO_ROWS.find((r) => r.key === key)?.labelEn ?? key;
 }
 
 function pdfSubLabel(title: string): string {
@@ -29,29 +25,34 @@ function pdfPlainBlock(text: string): string {
   return `<div class="pdf-outvin-plain">${body}</div>`;
 }
 
+function pdfKvTable(rows: { k: string; v: string }[]): string {
+  if (rows.length === 0) return "";
+  const body = rows
+    .map((r) => `<tr><td>${escapeHtml(r.k)}</td><td>${escapeHtml(r.v)}</td></tr>`)
+    .join("\n");
+  return `<table class="pdf-v1-kv"><tbody>${body}</tbody></table>`;
+}
+
+function vehicleInfoTable(vi: OutvinVehicleInfo): string {
+  const rows: { k: string; v: string }[] = [];
+  for (const { key, labelLv, labelEn } of OUTVIN_VEHICLE_INFO_ROWS) {
+    const v = vi[key].trim();
+    if (!v) continue;
+    rows.push({ k: labelLv || labelEn, v });
+  }
+  return pdfKvTable(rows);
+}
+
 export function buildOutvinDealerReportPdfInnerHtml(report: OutvinDealerReport | undefined | null): string {
   if (!outvinDealerReportHasContent(report) || !report) return "";
 
   const parts: string[] = [];
   const vi = report.vehicleInfo;
 
-  const vehicleRows: string[] = [];
-  for (const [leftKey, rightKey] of OUTVIN_VEHICLE_INFO_PDF_PAIRS) {
-    const lVal = vi[leftKey].trim();
-    const rVal = vi[rightKey].trim();
-    if (!lVal && !rVal) continue;
-    vehicleRows.push(
-      `<tr>
-        <td>${escapeHtml(labelForKey(leftKey))}</td><td>${escapeHtml(lVal || "—")}</td>
-        <td>${escapeHtml(labelForKey(rightKey))}</td><td>${escapeHtml(rVal || "—")}</td>
-      </tr>`,
-    );
-  }
-  if (vehicleRows.length > 0) {
+  const vehicleTable = vehicleInfoTable(vi);
+  if (vehicleTable) {
     parts.push(pdfSubLabel("VEHICLE INFORMATION"));
-    parts.push(
-      `<table class="mirror-table mirror-table--outvin-vehicle"><tbody>${vehicleRows.join("\n")}</tbody></table>`,
-    );
+    parts.push(vehicleTable);
   }
 
   const accident = report.accidentCheck.trim();
@@ -69,14 +70,17 @@ export function buildOutvinDealerReportPdfInnerHtml(report: OutvinDealerReport |
   const equip = report.equipment.filter(outvinEquipmentLineHasData);
   if (equip.length > 0) {
     parts.push(pdfSubLabel("EQUIPMENT LIST"));
-    const cells = equip.map((line) => {
-      const text =
-        line.code.trim() && line.description.trim()
-          ? `${line.code.trim()} - ${line.description.trim()}`
-          : line.code.trim() || line.description.trim();
-      return `<span class="pdf-outvin-equip-item">${escapeHtml(text)}</span>`;
-    });
-    parts.push(`<div class="pdf-outvin-equipment-grid">${cells.join("")}</div>`);
+    parts.push(
+      pdfKvTable(
+        equip.map((line, i) => {
+          const text =
+            line.code.trim() && line.description.trim()
+              ? `${line.code.trim()} — ${line.description.trim()}`
+              : line.code.trim() || line.description.trim();
+          return { k: equip.length > 1 ? `${i + 1}.` : "Aprīkojums", v: text };
+        }),
+      ),
+    );
   }
 
   return parts.join("\n");

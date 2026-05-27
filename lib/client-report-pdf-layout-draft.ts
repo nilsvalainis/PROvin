@@ -25,7 +25,7 @@ export function pdfProvinLvWordmarkHtml(): string {
   return `<span class="pdf-provin-wordmark"><span class="pdf-provin-wordmark-pro">PRO</span><span class="pdf-provin-wordmark-vin">VIN</span><span class="pdf-provin-wordmark-pro">.LV</span></span>`;
 }
 
-function pdfV1PanelHead(title: string, titleIconHtml = ""): string {
+export function pdfV1PanelHead(title: string, titleIconHtml = ""): string {
   const icon =
     titleIconHtml.trim() !== ""
       ? `<span class="pdf-sec-ico-wrap pdf-v1-panel-ico-wrap" aria-hidden="true">${titleIconHtml}</span>`
@@ -87,6 +87,14 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-kv td{padding:6px 0 6px;border-bottom:1px solid #f1f5f9;vertical-align:top}
       .pdf-v1-kv td:first-child{width:36%;color:#86868b;font-weight:500}
       .pdf-v1-kv tr:last-child td{border-bottom:none}
+      .pdf-v1-kv--outvin-log thead th{
+        font-size:0.68rem;font-weight:600;color:#86868b;text-align:left;
+        padding:6px 8px 6px 0;border-bottom:1px solid #f1f5f9;
+      }
+      .pdf-v1-kv--outvin-log tbody td{
+        padding:6px 8px 6px 0;border-bottom:1px solid #f1f5f9;color:#0f172a;vertical-align:top;
+      }
+      .pdf-v1-kv--outvin-log tbody td:first-child{width:auto;font-weight:400;color:#0f172a}
       .pdf-provin-wordmark{font-weight:inherit;letter-spacing:inherit;white-space:nowrap}
       .pdf-provin-wordmark-pro{color:#000}
       .pdf-provin-wordmark-vin{color:${PDF_BRAND_BLUE_HEX}}
