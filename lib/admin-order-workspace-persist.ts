@@ -174,9 +174,11 @@ export function buildOrderDraftWorkspaceBody(
   body: OrderWorkspacePersistBody,
   pdf: PdfVisibilitySettings,
   bannerInclude: ProvinBannerPdfInclude,
+  /** Tikai īpašiem servera merge gadījumiem; klienta PATCH vienmēr bez baseline. */
   baseline?: OrderWorkspacePersistBody | null,
 ): OrderDraftWorkspaceBody {
-  const safe = coalesceOrderWorkspacePersistBody(body, baseline ?? null);
+  const safe =
+    baseline != null ? coalesceOrderWorkspacePersistBody(body, baseline) : normalizeOrderWorkspacePersistBody(body);
   return {
     sourceBlocks: safe.sourceBlocks,
     iriss: safe.iriss,
@@ -379,24 +381,7 @@ export function localWorkspaceHasSubstantiveContent(body: OrderWorkspacePersistB
   return false;
 }
 
-/**
- * Ja lokālajā ir vairāk datu nekā izvēlētajā avotā, saglabāt localStorage (admin labojumi pēc PDF / navigācijas).
- */
-export function preferRicherLocalWorkspaceHydration<T>(
-  picked: WorkspaceHydrationPick<T> | null,
-  local: WorkspaceHydrationPick<T> | null,
-): WorkspaceHydrationPick<T> | null {
-  if (!picked || !local || picked.source === "local") return picked;
-  const localScore = local.fillScore ?? 0;
-  const pickedScore = picked.fillScore ?? 0;
-  if (localScore >= pickedScore + 2) return local;
-  if (local.savedAtMs > 0 && local.savedAtMs >= picked.savedAtMs - 3000 && localScore > pickedScore) {
-    return local;
-  }
-  return picked;
-}
-
-/** Hidratācijas izvēle: laiks + bagātāks local + nepilnīgu servera snapshot noraidīšana. */
+/** Hidratācijas izvēle: jaunākais `savedAt`; lokālais uzvar, ja jaunāks par izvēlēto. */
 export function pickWorkspaceHydrationCandidate<T>(
   candidates: WorkspaceHydrationPick<T>[],
   local: WorkspaceHydrationPick<T> | null,
@@ -410,8 +395,29 @@ export function pickWorkspaceHydrationCandidate<T>(
   const pool = filtered.length > 0 ? filtered : candidates;
   let picked = pickNewestWorkspaceHydration(pool);
   picked = applyStrictLocalTimestampHydration(picked, local);
-  picked = preferRicherLocalWorkspaceHydration(picked, local);
   return picked;
+}
+
+/**
+ * Ja pārlūkā ir derīgs `localStorage`, vienmēr tas — nevis servera/backup „frankenšteins”
+ * (vecāki bloki no citas laika zīmes nedrīkst sajaukties ar jaunākiem).
+ */
+export function pickOrderWorkspaceHydrationForLoad<T>(
+  candidates: WorkspaceHydrationPick<T>[],
+  local: WorkspaceHydrationPick<T> | null,
+  rawSourceBlocksBySource?: Partial<Record<WorkspaceHydrationSource, unknown>>,
+): WorkspaceHydrationPick<T> | null {
+  if (
+    local &&
+    local.source === "local" &&
+    !isSuspiciouslyIncompleteWorkspaceSnapshot(
+      rawSourceBlocksBySource?.local,
+      local.fillScore ?? 0,
+    )
+  ) {
+    return local;
+  }
+  return pickWorkspaceHydrationCandidate(candidates, local, rawSourceBlocksBySource);
 }
 
 /** Apvieno divus hidratētos ierakstus bloku pa blokam (drošs reload). */

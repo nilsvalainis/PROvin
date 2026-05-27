@@ -44,11 +44,9 @@ import {
 } from "@/lib/admin-portfolio-idb";
 import {
   buildOrderDraftWorkspaceBody,
-  coalesceOrderWorkspacePersistBody,
-  mergeWorkspaceHydrationBodies,
+  pickOrderWorkspaceHydrationForLoad,
   normalizeOrderWorkspacePersistBody,
   pickNewestBackupSnapshotRaw,
-  pickWorkspaceHydrationCandidate,
   serializeOrderWorkspaceSnapshotFromRef,
   parseWorkspaceSnapshotSavedAtMs,
   workspaceHydrationFillScore,
@@ -706,42 +704,6 @@ export function OrderDetailWorkspace({
     [payload.vin, ws.sourceBlocks, portfolio],
   );
 
-  const readPersistBaseline = useCallback((): OrderWorkspacePersistBody | null => {
-    try {
-      const raw = localStorage.getItem(storageKeyWorkspace(payload.sessionId));
-      if (raw) {
-        const h = hydrateWorkspaceFromStorage(raw);
-        if (h) {
-          return {
-            sourceBlocks: h.sourceBlocks,
-            iriss: h.iriss,
-            apskatesPlāns: h.apskatesPlāns,
-            cenasAtbilstiba: h.cenasAtbilstiba,
-            previewConfirmed: Boolean(h.previewConfirmed),
-            vehicleAiExtraction: h.vehicleAiExtraction ?? null,
-            vehicleAiExtractionMeta: h.vehicleAiExtractionMeta ?? null,
-          };
-        }
-      }
-    } catch {
-      /* quota / parse */
-    }
-    if (lastGoodPersistBodyRef.current) return lastGoodPersistBodyRef.current;
-    const raw = hydrationSnapshotRef.current;
-    if (!raw) return null;
-    const h = hydrateWorkspaceFromStorage(raw);
-    if (!h) return null;
-    return {
-      sourceBlocks: h.sourceBlocks,
-      iriss: h.iriss,
-      apskatesPlāns: h.apskatesPlāns,
-      cenasAtbilstiba: h.cenasAtbilstiba,
-      previewConfirmed: Boolean(h.previewConfirmed),
-      vehicleAiExtraction: h.vehicleAiExtraction ?? null,
-      vehicleAiExtractionMeta: h.vehicleAiExtractionMeta ?? null,
-    };
-  }, [payload.sessionId]);
-
   const pushWorkspaceBackup = useCallback(
     (snapshot: string) => {
       try {
@@ -1154,11 +1116,12 @@ export function OrderDetailWorkspace({
         }
       };
 
-      const picked = pickWorkspaceHydrationCandidate(candidates, localCandidate, {
+      const rawSourceBlocksBySource = {
         local: parseRawSourceBlocks(localRaw),
         backup: backupPick ? parseRawSourceBlocks(backupPick.data) : undefined,
         server: parseRawSourceBlocks(serverWorkspaceJson),
-      });
+      };
+      const picked = pickOrderWorkspaceHydrationForLoad(candidates, localCandidate, rawSourceBlocksBySource);
 
       const toPersistBody = (
         h: NonNullable<typeof localHydrated> | NonNullable<typeof serverHydrated>,
@@ -1174,23 +1137,19 @@ export function OrderDetailWorkspace({
 
       if (picked) {
         const chosen = picked.data;
-        const mergedBody = mergeWorkspaceHydrationBodies([
-          serverHydrated ? toPersistBody(serverHydrated) : null,
-          backupHydrated ? toPersistBody(backupHydrated) : null,
-          localHydrated ? toPersistBody(localHydrated) : null,
-        ]);
+        const body = toPersistBody(chosen);
         const hydratedWs: WorkspacePersist = {
-          sourceBlocks: mergedBody.sourceBlocks,
-          iriss: mergedBody.iriss,
-          apskatesPlāns: mergedBody.apskatesPlāns,
-          cenasAtbilstiba: mergedBody.cenasAtbilstiba,
-          previewConfirmed: mergedBody.previewConfirmed,
-          vehicleAiExtraction: mergedBody.vehicleAiExtraction,
-          vehicleAiExtractionMeta: mergedBody.vehicleAiExtractionMeta,
+          sourceBlocks: chosen.sourceBlocks,
+          iriss: chosen.iriss,
+          apskatesPlāns: chosen.apskatesPlāns,
+          cenasAtbilstiba: chosen.cenasAtbilstiba,
+          previewConfirmed: Boolean(chosen.previewConfirmed),
+          vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
+          vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
         };
         wsPersistRef.current = hydratedWs;
         setWs(hydratedWs);
-        lastGoodPersistBodyRef.current = mergedBody;
+        lastGoodPersistBodyRef.current = body;
         const mergedVisibility = mergePdfVisibility(chosen.pdfVisibility);
         const mergedBannerInclude = mergeProvinBannerPdfInclude(chosen.pdfBannerInclude);
         onPdfVisibilityChange(mergedVisibility);
@@ -1286,8 +1245,6 @@ export function OrderDetailWorkspace({
 
       let serverOk = !orderDraftPersistenceEnabled;
       if (orderDraftPersistenceEnabled && workspaceHydratedOnceRef.current) {
-        const baseline = lastGoodPersistBodyRef.current ?? readPersistBaseline();
-        const forServer = coalesceOrderWorkspacePersistBody(fromRef, baseline);
         const myGen = ++workspaceServerSaveGenRef.current;
         try {
           const res = await fetch("/api/admin/order-draft", {
@@ -1297,10 +1254,9 @@ export function OrderDetailWorkspace({
             body: JSON.stringify({
               sessionId: payload.sessionId,
               workspace: buildOrderDraftWorkspaceBody(
-                forServer,
+                fromRef,
                 pdfVisibilityRef.current,
                 pdfBannerIncludeRef.current,
-                baseline,
               ),
             }),
           });
@@ -1316,13 +1272,7 @@ export function OrderDetailWorkspace({
       }
       return localOk && (serverOk || !orderDraftPersistenceEnabled);
     },
-    [
-      orderDraftPersistenceEnabled,
-      payload.sessionId,
-      pushWorkspaceBackup,
-      readPersistBaseline,
-      workspaceHydrated,
-    ],
+    [orderDraftPersistenceEnabled, payload.sessionId, pushWorkspaceBackup, workspaceHydrated],
   );
 
   const flushWorkspaceServerPatch = useCallback(
@@ -1330,8 +1280,6 @@ export function OrderDetailWorkspace({
       if (!orderDraftPersistenceEnabled || !workspaceHydratedOnceRef.current) return;
       const myGen = ++workspaceServerSaveGenRef.current;
       const fromRef = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
-      const baseline = lastGoodPersistBodyRef.current ?? readPersistBaseline();
-      const forServer = coalesceOrderWorkspacePersistBody(fromRef, baseline);
       void fetch("/api/admin/order-draft", {
         method: "PATCH",
         credentials: "include",
@@ -1340,10 +1288,9 @@ export function OrderDetailWorkspace({
         body: JSON.stringify({
           sessionId: payload.sessionId,
           workspace: buildOrderDraftWorkspaceBody(
-            forServer,
+            fromRef,
             pdfVisibilityRef.current,
             pdfBannerIncludeRef.current,
-            baseline,
           ),
         }),
       }).then((res) => {
@@ -1353,7 +1300,7 @@ export function OrderDetailWorkspace({
         if (res.ok) setWorkspaceSaveFlash(true);
       });
     },
-    [orderDraftPersistenceEnabled, payload.sessionId, readPersistBaseline],
+    [orderDraftPersistenceEnabled, payload.sessionId],
   );
 
   const forceNavigationFlush = useCallback(() => {
