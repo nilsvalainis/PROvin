@@ -91,7 +91,10 @@ import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { internalCommentHtmlToPdfPlain } from "@/lib/admin-internal-comment-pdf";
-import { PDF_MILEAGE_HISTORY_COMMENT_LABEL } from "@/lib/admin-workspace-field-labels";
+import {
+  ADMIN_INCIDENTS_SUMMARY_LABEL,
+  PDF_MILEAGE_HISTORY_COMMENT_LABEL,
+} from "@/lib/admin-workspace-field-labels";
 import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-html";
 import { buildOutvinBundlePdfInnerHtml } from "@/lib/outvin-bundle-pdf-html";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
@@ -502,15 +505,8 @@ export function buildUnifiedMileageTableHtml(
   const head = sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE");
   const commentHtml = pdfReportCommentBox(p.mileageComment ?? "", PDF_MILEAGE_HISTORY_COMMENT_LABEL);
 
-  const chunks: string[] = [];
-  chunks.push(`<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${chartHtml}</div>`);
-  if (dualTables || sourceCountHtml) {
-    chunks.push(`<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-unified-mileage-zone--continued" role="region">${dualTables}${sourceCountHtml}</div>`);
-  }
-  if (commentHtml) {
-    chunks.push(`<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-unified-mileage-zone--continued" role="region">${commentHtml}</div>`);
-  }
-  return chunks.join("\n");
+  const body = `${chartHtml}${dualTables}${sourceCountHtml}${commentHtml}`;
+  return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
 }
 
 function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
@@ -528,31 +524,25 @@ function buildIncidentHistoryTableHtml(rows: UnifiedIncidentRow[]): string {
 }
 
 /** Apvienota negadījumu tabula (AutoDNA, CarVertical, LTAB, Citi avoti) — tikai rindas ar aizpildītu zaudējumu summu. */
-function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
+export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   if (!vis.unifiedIncidents) return "";
   // Per-source „Rādīt laukus” nefiltrē datus no šīs apvienotās sadaļas — tikai atsevišķos avotu blokos.
   const collected = collectUnifiedIncidentRows({
     manualVendorBlocks: p.manualVendorBlocks ?? null,
     manualLtabBlock: p.manualLtabBlock ?? null,
   });
-  const adminNoteHtml = pdfReportCommentBox(p.internalComment ?? "");
+  const adminNoteHtml = pdfReportCommentBox(p.internalComment ?? "", ADMIN_INCIDENTS_SUMMARY_LABEL);
   const hasTable = collected.length > 0;
   if (!hasTable && !adminNoteHtml) return "";
   const rows = sortUnifiedIncidentsNewestFirst(collected);
   const tablesHtml = hasTable ? buildIncidentHistoryTableHtml(rows) : "";
+  const sourceCount = hasTable ? new Set(collected.map((r) => r.sourceLabel)).size : 0;
   const sourceCountHtml = hasTable
-    ? `<p class="pdf-source-count-note">Grafika ģenerēšanā izmantotais avotu skaits: ${new Set(collected.map((r) => r.sourceLabel)).size}</p>`
+    ? `<p class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-title">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</span></p>`
     : "";
-  const chunks: string[] = [];
-  chunks.push(
-    `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card" role="region">${sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE)}${tablesHtml}${sourceCountHtml}</div>`,
-  );
-  if (adminNoteHtml) {
-    chunks.push(
-      `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card pdf-unified-incidents-zone--continued" role="region">${adminNoteHtml}</div>`,
-    );
-  }
-  return chunks.join("\n");
+  const head = sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE);
+  const body = `${tablesHtml}${sourceCountHtml}${adminNoteHtml}`;
+  return `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-incidents-zone__body">${body}</div></div>`;
 }
 
 /** CSDD — strukturētie lauki + komentāri (viena PDF zona, kā audita atskaitē). */
@@ -901,10 +891,17 @@ function clientReportPrintCss(): string {
         page-break-inside:auto;
         -webkit-column-break-inside:auto;
       }
-      .provin-report-doc .pdf-unified-mileage-zone--continued{
-        margin-top:0;
-        padding-top:8px;
-        border-top:1px solid #f1f5f9;
+      .provin-report-doc .pdf-unified-mileage-zone__body,
+      .provin-report-doc .pdf-unified-incidents-zone__body{
+        display:block;
+        width:100%;
+      }
+      .provin-report-doc .pdf-unified-mileage-zone__body > * + *,
+      .provin-report-doc .pdf-unified-incidents-zone__body > * + *{
+        margin-top:10px;
+      }
+      .provin-report-doc .pdf-source-count-note--mileage + .pdf-report-comment-note{
+        margin-top:6px;
       }
       .provin-report-doc .pdf-report-comment-note{margin-top:10px;}
       .sheet{background:#fff;padding:0;}
@@ -967,6 +964,10 @@ function clientReportPrintCss(): string {
       }
       .pdf-unified-incidents-zone{margin:0 0 14px;padding:12px 14px;background:#fff!important;border:1px solid #f1f5f9;border-radius:8px;box-shadow:0 1px 4px rgba(15,23,42,.05);}
       .pdf-unified-incidents-zone .pdf-sec-head{margin-top:0;}
+      .pdf-unified-incidents-zone__body > .pdf-report-comment-note:last-child,
+      .pdf-unified-mileage-zone__body > .pdf-report-comment-note:last-child{
+        margin-bottom:0;
+      }
       .pdf-source-section-body > .pdf-report-comment-note:first-child{margin-top:0;}
       .pdf-report-comment-note,
       .pdf-incident-internal-note,
