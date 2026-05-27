@@ -5,6 +5,7 @@
  */
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { orderDraftPersistRequiresVerify } from "@/lib/admin-order-draft-save-timing";
 import { listOrderDraftRevisions, patchOrderDraft, readOrderDraft, restoreOrderDraftRevision, isOrderDraftStorageDurable } from "@/lib/admin-order-draft-store";
 import type { OrderDraftOrderEdits, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
@@ -201,10 +202,12 @@ export async function PATCH(req: Request) {
       typeof b.saveGeneration === "number" && Number.isFinite(b.saveGeneration) ?
         Math.floor(b.saveGeneration)
       : undefined;
+    const persistContext = typeof b.persistContext === "string" ? b.persistContext.trim() : undefined;
 
     const result = await patchOrderDraft(sessionId, patch, {
       expectedWorkspaceRevision,
       saveGeneration,
+      skipPostWriteVerify: !orderDraftPersistRequiresVerify(persistContext),
     });
 
     if (!result.ok) {

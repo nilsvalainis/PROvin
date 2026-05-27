@@ -18,6 +18,7 @@ import { formatMoneyEur } from "@/lib/format-money";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import type { OrderDraftState } from "@/lib/admin-order-draft-types";
 import { orderDraftHasOrderEdits } from "@/lib/admin-order-draft-types";
+import { orderDraftServerSaveDebounceMs } from "@/lib/admin-order-draft-save-timing";
 
 /** Servera pasūtījums, serializējams uz klientu (bez server-only importiem). */
 export type AdminOrderDetailClientModel = {
@@ -273,7 +274,11 @@ export function AdminOrderDetailView({
               method: "PATCH",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ sessionId: order.id, orderEdits: edits }),
+              body: JSON.stringify({
+                sessionId: order.id,
+                orderEdits: edits,
+                persistContext: "autosave",
+              }),
             });
             srvOk = res.ok;
           } catch {
@@ -287,7 +292,7 @@ export function AdminOrderDetailView({
           setOrderEditsAutosaveFlash(true);
         }
       })();
-    }, 800);
+    }, orderDraftServerSaveDebounceMs());
     return () => {
       window.clearTimeout(t);
       try {

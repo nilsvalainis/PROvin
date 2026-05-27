@@ -1,6 +1,6 @@
 import { isDemoOrdersEnabled, listAdminOrders } from "@/lib/admin-orders";
 import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table";
-import { readOrderDraft } from "@/lib/admin-order-draft-store";
+import { readOrderDraftTableSummaries } from "@/lib/admin-order-draft-table-summary";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
 
@@ -8,21 +8,20 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminOrdersPage() {
   const { rows: orders, stripeError } = await listAdminOrders(50);
-  const ordersWithInvoice = await Promise.all(
-    orders.map(async (o) => {
-      const draft = await readOrderDraft(o.id);
-      const draftEmail = draft?.orderEdits?.customerEmail?.trim();
-      const draftName = draft?.orderEdits?.customerName?.trim();
-      const draftPhone = draft?.orderEdits?.customerPhone?.trim();
-      return {
-        ...o,
-        customerEmail: draftEmail ? draftEmail : o.customerEmail,
-        customerName: draftName || null,
-        customerPhone: draftPhone || null,
-        invoicePdfUrl: draft?.invoicePdfUrl ?? null,
-      };
-    }),
-  );
+  const draftSummaries = await readOrderDraftTableSummaries(orders.map((o) => o.id));
+  const ordersWithInvoice = orders.map((o) => {
+    const draft = draftSummaries.get(o.id);
+    const draftEmail = draft?.orderEdits?.customerEmail?.trim();
+    const draftName = draft?.orderEdits?.customerName?.trim();
+    const draftPhone = draft?.orderEdits?.customerPhone?.trim();
+    return {
+      ...o,
+      customerEmail: draftEmail ? draftEmail : o.customerEmail,
+      customerName: draftName || null,
+      customerPhone: draftPhone || null,
+      invoicePdfUrl: draft?.invoicePdfUrl ?? null,
+    };
+  });
   const tableOrders = serializeAdminOrderTableRows(ordersWithInvoice);
   const demoPrefOn = isDemoOrdersEnabled();
   const onlyDemoShown = orders.length > 0 && orders.every((o) => o.isDemo);

@@ -206,6 +206,8 @@ export type OrderDraftPatchOptions = {
   saveGeneration?: number;
   /** Atļauj regresīvu overwrite (tikai admin restore). */
   force?: boolean;
+  /** Autosave: izlaiž post-write read-back (samazina Blob simple ops; write+checksum joprojām notiek). */
+  skipPostWriteVerify?: boolean;
 };
 
 export type OrderDraftPatchSuccess = {
@@ -603,7 +605,7 @@ export async function patchOrderDraft(
     writeLatencyMs: Date.now() - writeStarted,
   });
 
-  if (workspacePatch !== undefined && nextWorkspace != null) {
+  if (workspacePatch !== undefined && nextWorkspace != null && options.skipPostWriteVerify !== true) {
     const verifyStarted = Date.now();
     const readBack = await readOrderDraft(sessionId);
     const verify = verifyWorkspaceIntegrity(readBack?.workspace, readBack?.workspaceRevision, {
