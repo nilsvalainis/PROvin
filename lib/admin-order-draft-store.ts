@@ -452,7 +452,7 @@ export async function patchOrderDraft(
   const prevRev = prev?.workspaceRevision ?? 0;
 
   if (patch.workspace !== undefined && options.expectedWorkspaceRevision != null) {
-    if (options.expectedWorkspaceRevision < prevRev) {
+    if (options.expectedWorkspaceRevision !== prevRev) {
       console.warn("[workspace:overwrite_blocked]", {
         sessionId,
         reason: "stale_revision",

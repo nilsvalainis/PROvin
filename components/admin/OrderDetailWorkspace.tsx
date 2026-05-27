@@ -149,6 +149,7 @@ import {
   type NotifyPortfolioUploadItem,
 } from "@/lib/admin-notify-report-ready-client";
 import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
+import { AdminPersistenceHealthBanner } from "@/components/admin/AdminPersistenceHealthBanner";
 import { AdminVehicleReportsAiPanel } from "@/components/admin/AdminVehicleReportsAiPanel";
 import { applyVehicleAiExtraction } from "@/lib/apply-vehicle-ai-extraction";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
@@ -832,7 +833,7 @@ export function OrderDetailWorkspace({
         setWorkspaceAutosaveStatus("error");
         return false;
       }
-      lastGoodPersistBodyRef.current = body;
+      lastGoodPersistBodyRef.current = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
       workspaceRevisionRef.current = result.workspaceRevision;
       commitWorkspaceLocalNow({ force: true });
       setWorkspaceSaveServerOk(true);
@@ -2731,16 +2732,7 @@ export function OrderDetailWorkspace({
         </p>
       ) : null}
 
-      {!orderDraftPersistenceEnabled ? (
-        <p
-          className="mx-auto mb-3 max-w-2xl rounded-lg border border-amber-500/40 bg-amber-50 px-3 py-2 text-center text-[11px] font-semibold leading-snug text-amber-950"
-          role="alert"
-        >
-          Servera melnraksts nav ilgtermiņa — dati pazudīs pēc refresh/deploy. Vercel: iestati{" "}
-          <code className="font-mono text-[10px]">ADMIN_ORDER_DRAFT_BLOB_PREFIX</code> un{" "}
-          <code className="font-mono text-[10px]">BLOB_READ_WRITE_TOKEN</code>, pēc tam redeploy.
-        </p>
-      ) : null}
+      <AdminPersistenceHealthBanner durableConfigured={orderDraftPersistenceEnabled} />
 
       <nav
         className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm"
