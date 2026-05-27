@@ -34,6 +34,8 @@ export type OrderDraftState = {
   orderEdits: OrderDraftOrderEdits;
   workspace: OrderDraftWorkspaceBody | null;
   updatedAt: string;
+  /** Kad pēdējo reizi saglabāta darba zona (atsevišķi no `updatedAt`, kas mainās arī pie `orderEdits`). */
+  workspaceSavedAt?: string;
   /** Relatīva saite uz saglabātu PDF rēķinu (pēc pirmās ģenerēšanas), piem. `/api/admin/invoice/cs_…/pdf` */
   invoicePdfUrl?: string;
   invoicePdfGeneratedAt?: string;

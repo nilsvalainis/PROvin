@@ -1159,20 +1159,6 @@ export function OrderDetailWorkspace({
           mergedVisibility,
           mergedBannerInclude,
         );
-        const localSavedAtMs = parseWorkspaceSnapshotSavedAtMs(localRaw);
-        const shouldOverwriteLocal =
-          !rawV3 ||
-          (picked.source !== "local" &&
-            localSavedAtMs > 0 &&
-            picked.savedAtMs > 0 &&
-            picked.savedAtMs >= localSavedAtMs);
-        if (shouldOverwriteLocal) {
-          try {
-            localStorage.setItem(keyV3, hydrationSnapshotRef.current);
-          } catch {
-            /* quota */
-          }
-        }
         if (rawV2) {
           try {
             localStorage.removeItem(keyV2);
@@ -1260,9 +1246,21 @@ export function OrderDetailWorkspace({
               ),
             }),
           });
-          serverOk = myGen === workspaceServerSaveGenRef.current ? res.ok : true;
-        } catch {
+          if (myGen === workspaceServerSaveGenRef.current) {
+            if (res.ok) {
+              serverOk = true;
+            } else {
+              serverOk = false;
+              const errBody = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+              const errCode = typeof errBody.error === "string" ? errBody.error : `http_${res.status}`;
+              console.warn("[OrderDetailWorkspace] order-draft PATCH failed:", errCode, errBody.detail ?? "");
+            }
+          } else {
+            serverOk = true;
+          }
+        } catch (e) {
           serverOk = false;
+          console.warn("[OrderDetailWorkspace] order-draft PATCH network error:", e);
         }
       }
 
@@ -1304,10 +1302,9 @@ export function OrderDetailWorkspace({
   );
 
   const forceNavigationFlush = useCallback(() => {
+    workspaceDirtyRef.current = true;
     flushWorkspaceLocalStorageSync();
-    if (workspaceDirtyRef.current) {
-      flushWorkspaceServerPatch({ keepalive: true, showFlash: false });
-    }
+    flushWorkspaceServerPatch({ keepalive: true, showFlash: false });
   }, [flushWorkspaceLocalStorageSync, flushWorkspaceServerPatch]);
 
   const scheduleWorkspaceServerPatch = useCallback(
@@ -2669,8 +2666,8 @@ export function OrderDetailWorkspace({
               {!orderDraftPersistenceEnabled
                 ? "Saglabāts pārlūkā"
                 : workspaceSaveServerOk
-                  ? "Saglabāts serverī"
-                  : "Saglabāts pārlūkā (serveris nav pieejams)"}
+                  ? "Saglabāts serverī un pārlūkā"
+                  : "Saglabāts pārlūkā — servera melnraksts neizdevās (pārbaudi ADMIN_ORDER_DRAFT_DIR / Blob)"}
             </span>
           ) : null}
           {payload.isDemo ? (

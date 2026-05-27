@@ -402,19 +402,13 @@ export function pickWorkspaceHydrationCandidate<T>(
  * Ja pārlūkā ir derīgs `localStorage`, vienmēr tas — nevis servera/backup „frankenšteins”
  * (vecāki bloki no citas laika zīmes nedrīkst sajaukties ar jaunākiem).
  */
+/** Ja pārlūkā ir parsējams melnraksts — vienmēr tas (servera `updatedAt` no `orderEdits` nedrīkst pārrakstīt). */
 export function pickOrderWorkspaceHydrationForLoad<T>(
   candidates: WorkspaceHydrationPick<T>[],
   local: WorkspaceHydrationPick<T> | null,
   rawSourceBlocksBySource?: Partial<Record<WorkspaceHydrationSource, unknown>>,
 ): WorkspaceHydrationPick<T> | null {
-  if (
-    local &&
-    local.source === "local" &&
-    !isSuspiciouslyIncompleteWorkspaceSnapshot(
-      rawSourceBlocksBySource?.local,
-      local.fillScore ?? 0,
-    )
-  ) {
+  if (local && local.source === "local") {
     return local;
   }
   return pickWorkspaceHydrationCandidate(candidates, local, rawSourceBlocksBySource);

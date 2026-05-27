@@ -1,7 +1,9 @@
 import "server-only";
 
 import fs from "fs/promises";
+import os from "os";
 import path from "path";
+import { get, put } from "@vercel/blob";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import type {
   OrderDraftOrderEdits,
@@ -18,12 +20,62 @@ const DEFAULT_RELATIVE_DIR = ".data/admin-order-drafts";
 const DRAFT_REVISIONS_DIRNAME = "_revisions";
 const MAX_DRAFT_REVISIONS_PER_SESSION = 40;
 
+type OrderDraftBlobConfig = { token: string; prefix: string };
+
+function resolveOrderDraftBlob(): OrderDraftBlobConfig | null {
+  const rawPrefix = (process.env.ADMIN_ORDER_DRAFT_BLOB_PREFIX ?? "").trim();
+  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim() ?? "";
+  if (!rawPrefix || !token) return null;
+  const prefix = rawPrefix.endsWith("/") ? rawPrefix : `${rawPrefix}/`;
+  return { token, prefix };
+}
+
 function resolveDraftDir(): string | null {
   const raw = process.env.ADMIN_ORDER_DRAFT_DIR?.trim() ?? "";
   const off = ["0", "false", "no", "off", "disabled"];
   if (off.includes(raw.toLowerCase())) return null;
   if (raw) return path.resolve(raw);
+  /** Vercel serverless: `cwd` apakšmape bieži nav rakstāma → PATCH 503. */
+  if (process.env.VERCEL === "1") {
+    return path.join(os.tmpdir(), "provin-admin-order-drafts");
+  }
   return path.join(process.cwd(), DEFAULT_RELATIVE_DIR);
+}
+
+function orderDraftBlobPathname(prefix: string, sessionId: string): string {
+  return `${prefix}${sessionId}.json`;
+}
+
+async function readOrderDraftJsonFromBlob(
+  sessionId: string,
+  blob: OrderDraftBlobConfig,
+): Promise<unknown | null> {
+  try {
+    const res = await get(orderDraftBlobPathname(blob.prefix, sessionId), {
+      access: "private",
+      token: blob.token,
+      useCache: false,
+    });
+    if (!res || res.statusCode !== 200 || !res.stream) return null;
+    const text = await new Response(res.stream).text();
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+async function writeOrderDraftJsonToBlob(
+  sessionId: string,
+  doc: unknown,
+  blob: OrderDraftBlobConfig,
+): Promise<void> {
+  await put(orderDraftBlobPathname(blob.prefix, sessionId), JSON.stringify(doc), {
+    access: "private",
+    token: blob.token,
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: "application/json",
+  });
 }
 
 /** Pasūtījuma JSON glabāšanas sakne (`.data/admin-order-drafts` vai `ADMIN_ORDER_DRAFT_DIR`). */
@@ -32,7 +84,7 @@ export function getOrderDraftStorageDir(): string | null {
 }
 
 export function isOrderDraftStoreEnabled(): boolean {
-  return resolveDraftDir() !== null;
+  return resolveDraftDir() !== null || resolveOrderDraftBlob() !== null;
 }
 
 /** Stripe `cs_*` vai demo `demo_order_*` u.tml. — tikai drošs failsistēmas nosaukums. */
@@ -101,24 +153,35 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
     }
   }
   const updatedAt = typeof o.updatedAt === "string" ? o.updatedAt : new Date(0).toISOString();
+  const workspaceSavedAt = typeof o.workspaceSavedAt === "string" ? o.workspaceSavedAt : undefined;
   if (typeof o.sessionId === "string" && o.sessionId !== sessionId) return null;
   const invoicePdfUrl = typeof o.invoicePdfUrl === "string" ? o.invoicePdfUrl : undefined;
   const invoicePdfGeneratedAt =
     typeof o.invoicePdfGeneratedAt === "string" ? o.invoicePdfGeneratedAt : undefined;
   const invoiceNumber = typeof o.invoiceNumber === "string" ? o.invoiceNumber : undefined;
-  return { orderEdits, workspace, updatedAt, invoicePdfUrl, invoicePdfGeneratedAt, invoiceNumber };
+  return { orderEdits, workspace, updatedAt, workspaceSavedAt, invoicePdfUrl, invoicePdfGeneratedAt, invoiceNumber };
 }
 
 export async function readOrderDraft(sessionId: string): Promise<OrderDraftState | null> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return null;
   const dir = resolveDraftDir();
-  if (!dir || !isSafeOrderDraftSessionId(sessionId)) return null;
-  try {
-    const raw = await fs.readFile(draftFilePath(dir, sessionId), "utf8");
-    const p = JSON.parse(raw) as unknown;
-    return normalizeLoadedDraft(p, sessionId);
-  } catch {
-    return null;
+  const blob = resolveOrderDraftBlob();
+  if (!dir && !blob) return null;
+
+  if (dir) {
+    try {
+      const raw = await fs.readFile(draftFilePath(dir, sessionId), "utf8");
+      const p = JSON.parse(raw) as unknown;
+      const normalized = normalizeLoadedDraft(p, sessionId);
+      if (normalized) return normalized;
+    } catch {
+      /* fall through to blob */
+    }
   }
+
+  if (!blob) return null;
+  const parsed = await readOrderDraftJsonFromBlob(sessionId, blob);
+  return parsed ? normalizeLoadedDraft(parsed, sessionId) : null;
 }
 
 export type { OrderDraftRevisionMeta } from "@/lib/admin-order-draft-types";
@@ -240,7 +303,8 @@ export async function patchOrderDraft(
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   try {
   const dir = resolveDraftDir();
-  if (!dir) return { ok: false, error: "store_disabled" };
+  const blobCfg = resolveOrderDraftBlob();
+  if (!dir && !blobCfg) return { ok: false, error: "store_disabled" };
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
 
   const order = await getCheckoutSessionDetail(sessionId);
@@ -320,10 +384,13 @@ export async function patchOrderDraft(
   const nextWorkspace =
     workspacePatch !== undefined ? workspacePatch : prev?.workspace ?? null;
   const updatedAt = new Date().toISOString();
+  const workspaceSavedAt =
+    workspacePatch !== undefined ? updatedAt : (prev?.workspaceSavedAt ?? prev?.updatedAt);
 
   const doc = {
     sessionId,
     updatedAt,
+    workspaceSavedAt,
     orderEdits: nextOrderEdits,
     workspace: nextWorkspace,
     ...(prev?.invoiceNumber != null ? { invoiceNumber: prev.invoiceNumber } : {}),
@@ -331,16 +398,34 @@ export async function patchOrderDraft(
     ...(prev?.invoicePdfGeneratedAt != null ? { invoicePdfGeneratedAt: prev.invoicePdfGeneratedAt } : {}),
   };
 
-  try {
-    await fs.mkdir(dir, { recursive: true });
-    const fp = draftFilePath(dir, sessionId);
-    const tmp = `${fp}.tmp`;
-    await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
-    await fs.rename(tmp, fp);
-    await writeOrderDraftRevision(dir, sessionId, doc, "patch");
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { ok: false, error: `write_failed:${msg}` };
+  let fsOk = false;
+  let blobOk = false;
+
+  if (dir) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+      const fp = draftFilePath(dir, sessionId);
+      const tmp = `${fp}.tmp`;
+      await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
+      await fs.rename(tmp, fp);
+      await writeOrderDraftRevision(dir, sessionId, doc, "patch");
+      fsOk = true;
+    } catch {
+      fsOk = false;
+    }
+  }
+
+  if (blobCfg) {
+    try {
+      await writeOrderDraftJsonToBlob(sessionId, doc, blobCfg);
+      blobOk = true;
+    } catch {
+      blobOk = false;
+    }
+  }
+
+  if (!fsOk && !blobOk) {
+    return { ok: false, error: "write_failed:fs_and_blob" };
   }
 
   return { ok: true, updatedAt };
