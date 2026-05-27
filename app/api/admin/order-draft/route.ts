@@ -5,12 +5,7 @@
  */
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import {
-  listOrderDraftRevisions,
-  patchOrderDraft,
-  readOrderDraft,
-  restoreOrderDraftRevision,
-} from "@/lib/admin-order-draft-store";
+import { listOrderDraftRevisions, patchOrderDraft, readOrderDraft, restoreOrderDraftRevision, isOrderDraftStorageDurable } from "@/lib/admin-order-draft-store";
 import type { OrderDraftOrderEdits, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
@@ -33,11 +28,14 @@ export async function GET(req: Request) {
     const workspaceOnly = url.searchParams.get("workspace") === "1";
     if (workspaceOnly) {
       const draft = await readOrderDraft(sessionId);
+      const durable = isOrderDraftStorageDurable();
       return NextResponse.json({
         ok: true,
         workspace: draft?.workspace ?? null,
         workspaceSavedAt: draft?.workspaceSavedAt ?? draft?.updatedAt ?? null,
         updatedAt: draft?.updatedAt ?? null,
+        durable,
+        storageBackend: durable ? (process.env.ADMIN_ORDER_DRAFT_BLOB_PREFIX?.trim() ? "blob" : "filesystem") : "none",
       });
     }
 
@@ -206,6 +204,9 @@ export async function PATCH(req: Request) {
       if (err === "store_disabled") {
         return NextResponse.json({ error: err }, { status: 503 });
       }
+      if (err === "store_not_durable") {
+        return NextResponse.json({ error: err, durable: false }, { status: 503 });
+      }
       if (err === "invalid_workspace") {
         return NextResponse.json({ error: err }, { status: 400 });
       }
@@ -218,7 +219,12 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: err }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, updatedAt: result.updatedAt });
+    return NextResponse.json({
+      ok: true,
+      updatedAt: result.updatedAt,
+      durable: result.durable,
+      storageBackend: result.storageBackend,
+    });
   } catch (e) {
     console.error("[order-draft] PATCH", e);
     const msg = e instanceof Error ? e.message : "unknown";

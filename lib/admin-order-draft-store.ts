@@ -163,26 +163,85 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
   return { orderEdits, workspace, updatedAt, workspaceSavedAt, invoicePdfUrl, invoicePdfGeneratedAt, invoiceNumber };
 }
 
+function isEphemeralDraftDir(dir: string): boolean {
+  const normalized = path.resolve(dir);
+  const tmp = path.resolve(os.tmpdir());
+  return normalized === tmp || normalized.startsWith(`${tmp}${path.sep}`);
+}
+
+/** Vai saglabāšana ir ilgtermiņa (Blob vai projekta FS), nevis Vercel /tmp. */
+export function isOrderDraftStorageDurable(): boolean {
+  if (resolveOrderDraftBlob()) return true;
+  const dir = resolveDraftDir();
+  if (!dir) return false;
+  if (process.env.VERCEL === "1" && isEphemeralDraftDir(dir)) return false;
+  return true;
+}
+
+export type OrderDraftWriteMeta = {
+  storageBackend: "blob" | "filesystem" | "blob+filesystem" | "none";
+  durable: boolean;
+};
+
+export function describeOrderDraftWriteResult(fsOk: boolean, blobOk: boolean, dir: string | null): OrderDraftWriteMeta {
+  const backend =
+    fsOk && blobOk ? "blob+filesystem"
+    : blobOk ? "blob"
+    : fsOk ? "filesystem"
+    : "none";
+  const durable = blobOk || (fsOk && dir != null && !isEphemeralDraftDir(dir));
+  return { storageBackend: backend, durable };
+}
+
+async function readOrderDraftFromFilesystem(
+  sessionId: string,
+  dir: string,
+): Promise<OrderDraftState | null> {
+  try {
+    const raw = await fs.readFile(draftFilePath(dir, sessionId), "utf8");
+    const p = JSON.parse(raw) as unknown;
+    return normalizeLoadedDraft(p, sessionId);
+  } catch {
+    return null;
+  }
+}
+
+async function readOrderDraftFromBlobStore(
+  sessionId: string,
+  blob: OrderDraftBlobConfig,
+): Promise<OrderDraftState | null> {
+  const parsed = await readOrderDraftJsonFromBlob(sessionId, blob);
+  return parsed ? normalizeLoadedDraft(parsed, sessionId) : null;
+}
+
+/** Izvēlas jaunāko starp diviem draft avotiem pēc `updatedAt`. */
+function pickNewerOrderDraft(
+  a: OrderDraftState | null,
+  b: OrderDraftState | null,
+): OrderDraftState | null {
+  if (!a) return b;
+  if (!b) return a;
+  const aTs = Date.parse(a.updatedAt);
+  const bTs = Date.parse(b.updatedAt);
+  const aOk = Number.isFinite(aTs) ? aTs : 0;
+  const bOk = Number.isFinite(bTs) ? bTs : 0;
+  return bOk >= aOk ? b : a;
+}
+
 export async function readOrderDraft(sessionId: string): Promise<OrderDraftState | null> {
   if (!isSafeOrderDraftSessionId(sessionId)) return null;
   const dir = resolveDraftDir();
   const blob = resolveOrderDraftBlob();
   if (!dir && !blob) return null;
 
-  if (dir) {
-    try {
-      const raw = await fs.readFile(draftFilePath(dir, sessionId), "utf8");
-      const p = JSON.parse(raw) as unknown;
-      const normalized = normalizeLoadedDraft(p, sessionId);
-      if (normalized) return normalized;
-    } catch {
-      /* fall through to blob */
-    }
-  }
+  const fromBlob = blob ? await readOrderDraftFromBlobStore(sessionId, blob) : null;
+  const fromFs = dir ? await readOrderDraftFromFilesystem(sessionId, dir) : null;
 
-  if (!blob) return null;
-  const parsed = await readOrderDraftJsonFromBlob(sessionId, blob);
-  return parsed ? normalizeLoadedDraft(parsed, sessionId) : null;
+  /** Vercel /tmp nav uzticams — Blob ir canonical, ja konfigurēts. */
+  if (blob && dir && isEphemeralDraftDir(dir)) {
+    return fromBlob ?? fromFs;
+  }
+  return pickNewerOrderDraft(fromFs, fromBlob);
 }
 
 export type { OrderDraftRevisionMeta } from "@/lib/admin-order-draft-types";
@@ -301,7 +360,10 @@ export async function restoreOrderDraftRevision(
 export async function patchOrderDraft(
   sessionId: string,
   patch: { orderEdits?: OrderDraftOrderEdits; workspace?: OrderDraftWorkspaceBody | null },
-): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; updatedAt: string; storageBackend: OrderDraftWriteMeta["storageBackend"]; durable: boolean }
+  | { ok: false; error: string }
+> {
   try {
   const dir = resolveDraftDir();
   const blobCfg = resolveOrderDraftBlob();
@@ -440,11 +502,29 @@ export async function patchOrderDraft(
     }
   }
 
+  const writeMeta = describeOrderDraftWriteResult(fsOk, blobOk, dir);
+
   if (!fsOk && !blobOk) {
     return { ok: false, error: "write_failed:fs_and_blob" };
   }
 
-  return { ok: true, updatedAt };
+  /** Vercel: bez Blob rakstīšana uz /tmp nav canonical — atgriež kļūdu. */
+  if (process.env.VERCEL === "1" && !writeMeta.durable) {
+    console.warn("[workspace:persist_failed]", {
+      sessionId,
+      error: "store_not_durable",
+      storageBackend: writeMeta.storageBackend,
+    });
+    return { ok: false, error: "store_not_durable" };
+  }
+
+  console.info("[workspace:persist_ok]", {
+    sessionId,
+    storageBackend: writeMeta.storageBackend,
+    durable: writeMeta.durable,
+  });
+
+  return { ok: true, updatedAt, storageBackend: writeMeta.storageBackend, durable: writeMeta.durable };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: `patch_failed:${msg}` };

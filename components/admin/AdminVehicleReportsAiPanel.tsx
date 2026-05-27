@@ -22,6 +22,8 @@ type Props = {
   /** Papildus PDF no portfeļa (tikai .pdf). */
   collectPortfolioPdfFiles?: () => Promise<File[]>;
   onApplyExtraction: (extraction: VehicleAIExtraction) => { filledFields: string[] };
+  /** Obligāti await pēc importa — servera persist + verify. */
+  onImportComplete?: () => Promise<boolean>;
   compact?: boolean;
 };
 
@@ -35,6 +37,7 @@ export function AdminVehicleReportsAiPanel({
   onExtractionChange,
   collectPortfolioPdfFiles,
   onApplyExtraction,
+  onImportComplete,
   compact,
 }: Props) {
   const inputId = useId();
@@ -134,6 +137,14 @@ export function AdminVehicleReportsAiPanel({
         const next = data.extraction.ai_generated_comments_lv.trim();
         onCommentsDraftChange(cur ? `${cur}\n\n${next}` : next);
       }
+      let persistOk = true;
+      if (onImportComplete) {
+        persistOk = await onImportComplete();
+      }
+      if (!persistOk) {
+        setError("Analīze pabeigta, bet servera saglabāšana neizdevās — pārbaudi Vercel Blob env.");
+        return;
+      }
       const inline = data.meta?.usedGeminiInlinePdf?.length
         ? ` Gemini lasīja ${data.meta.usedGeminiInlinePdf.length} PDF tieši.`
         : "";
@@ -158,6 +169,7 @@ export function AdminVehicleReportsAiPanel({
     onApplyExtraction,
     onCommentsDraftChange,
     onExtractionChange,
+    onImportComplete,
     pending,
     sessionId,
   ]);

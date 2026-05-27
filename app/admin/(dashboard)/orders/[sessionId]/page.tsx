@@ -3,7 +3,7 @@ import { MarkAdminStripeSessionOpened } from "@/components/admin/MarkAdminStripe
 import { AdminOrderDetailView } from "@/components/admin/AdminOrderDetailView";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { geminiAllowsOrder } from "@/lib/admin-gemini-access";
-import { isOrderDraftStoreEnabled, readOrderDraft } from "@/lib/admin-order-draft-store";
+import { isOrderDraftStorageDurable, readOrderDraft } from "@/lib/admin-order-draft-store";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,7 @@ export default async function AdminOrderDetailPage({ params }: Props) {
     notFound();
   }
 
-  const orderDraftPersistenceEnabled = isOrderDraftStoreEnabled();
+  const orderDraftPersistenceEnabled = isOrderDraftStorageDurable();
   const serverOrderDraft = await readOrderDraft(sessionId);
   const serverWorkspaceJson =
     serverOrderDraft?.workspace != null

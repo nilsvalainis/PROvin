@@ -57,8 +57,8 @@ import {
   bumpWorkspaceSaveGeneration,
   fetchCanonicalWorkspace,
   persistWorkspaceState,
-  workspacePersistFromDraftWorkspace,
 } from "@/lib/admin-workspace-persist-client";
+import { workspaceDebugLog } from "@/lib/admin-workspace-debug-log";
 import { usePathname } from "next/navigation";
 import {
   analyzeVinAndKm,
@@ -796,61 +796,60 @@ export function OrderDetailWorkspace({
     [applyPersistBodyToWs, commitWorkspaceLocalNow],
   );
 
-  const syncWorkspaceFromServer = useCallback(
-    async (saveGen: number) => {
-      if (!orderDraftPersistenceEnabled) return;
-      const fresh = await fetchCanonicalWorkspace(payload.sessionId);
-      if (!fresh.workspace || saveGen !== workspaceServerSaveGenRef.current) return;
-      const body = workspacePersistFromDraftWorkspace(fresh.workspace);
-      if (!body) return;
-      const merged = coalesceOrderWorkspacePersistBody(body, lastGoodPersistBodyRef.current);
-      setWs(applyPersistBodyToWs(merged));
-      if (fresh.workspace.pdfVisibility) {
-        onPdfVisibilityChange(mergePdfVisibility(fresh.workspace.pdfVisibility));
+  const persistFullWorkspaceRef = useCallback(
+    async (logContext: string): Promise<boolean> => {
+      if (!orderDraftPersistenceEnabled) {
+        workspaceDebugLog("persist_failed", {
+          sessionId: payload.sessionId,
+          source: "unknown",
+          error: "storage_not_durable",
+          detail: "ADMIN_ORDER_DRAFT_BLOB_PREFIX + BLOB_READ_WRITE_TOKEN required on Vercel",
+        });
+        setWorkspaceSaveServerOk(false);
+        setWorkspaceAutosaveStatus("error");
+        return false;
       }
-      if (fresh.workspace.pdfBannerInclude) {
-        setPdfBannerInclude(mergeProvinBannerPdfInclude(fresh.workspace.pdfBannerInclude));
-      }
-      commitWorkspaceLocalNow({ force: true });
-    },
-    [
-      applyPersistBodyToWs,
-      commitWorkspaceLocalNow,
-      onPdfVisibilityChange,
-      orderDraftPersistenceEnabled,
-      payload.sessionId,
-    ],
-  );
-
-  const persistWorkspacePatchToServer = useCallback(
-    async (patch: Partial<WorkspacePersist>, logContext: string) => {
-      if (!orderDraftPersistenceEnabled || !workspaceHydratedOnceRef.current) return true;
+      if (!workspaceHydratedOnceRef.current) return false;
       const myGen = bumpWorkspaceSaveGeneration();
       workspaceServerSaveGenRef.current = myGen;
       setWorkspaceAutosaveStatus("saving");
-      const baseline = lastGoodPersistBodyRef.current ?? workspaceToPersistBody(wsPersistRef.current);
+      const body = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
       const result = await persistWorkspaceState({
         sessionId: payload.sessionId,
-        patch,
-        baseline,
+        body,
+        baseline: lastGoodPersistBodyRef.current,
         pdfVisibility: pdfVisibilityRef.current,
         pdfBannerInclude: pdfBannerIncludeRef.current,
         saveGeneration: myGen,
         logContext,
       });
       if (result.generation !== workspaceServerSaveGenRef.current) return true;
-      if (result.ok) {
-        setWorkspaceSaveServerOk(true);
-        setWorkspaceAutosaveStatus("saved");
-        setWorkspaceSaveFlash(true);
-        await syncWorkspaceFromServer(myGen);
-      } else {
+      if (!result.ok) {
         setWorkspaceSaveServerOk(false);
         setWorkspaceAutosaveStatus("error");
+        return false;
       }
-      return result.ok;
+      lastGoodPersistBodyRef.current = body;
+      commitWorkspaceLocalNow({ force: true });
+      const verify = await fetchCanonicalWorkspace(payload.sessionId);
+      if (!verify.durable || !verify.workspace) {
+        workspaceDebugLog("persist_failed", {
+          sessionId: payload.sessionId,
+          source: "server_fetch",
+          error: "verify_read_empty",
+          durable: verify.durable,
+          storageBackend: verify.storageBackend,
+        });
+        setWorkspaceSaveServerOk(false);
+        setWorkspaceAutosaveStatus("error");
+        return false;
+      }
+      setWorkspaceSaveServerOk(true);
+      setWorkspaceAutosaveStatus("saved");
+      setWorkspaceSaveFlash(true);
+      return true;
     },
-    [orderDraftPersistenceEnabled, payload.sessionId, syncWorkspaceFromServer],
+    [commitWorkspaceLocalNow, orderDraftPersistenceEnabled, payload.sessionId],
   );
 
   const buildGeminiOrderPayload = useCallback(
@@ -1137,6 +1136,11 @@ export function OrderDetailWorkspace({
   useLayoutEffect(() => {
     setWorkspaceHydrated(false);
     workspaceHydratedOnceRef.current = false;
+    workspaceDebugLog("hydrate_start", {
+      sessionId: payload.sessionId,
+      source: "hydrate",
+      durable: orderDraftPersistenceEnabled,
+    });
     try {
       const keyV3 = storageKeyWorkspace(payload.sessionId);
       const keyV2 = `${LEGACY_WORKSPACE_V2_PREFIX}${payload.sessionId}`;
@@ -1146,7 +1150,39 @@ export function OrderDetailWorkspace({
       const rawBackup = localStorage.getItem(keyBackup);
       const localRaw = rawV3 ?? rawV2;
       const localHydrated = localRaw ? hydrateWorkspaceFromStorage(localRaw) : null;
+      if (localRaw) {
+        workspaceDebugLog("localstorage_restore", {
+          sessionId: payload.sessionId,
+          source: "localStorage",
+          payloadBytes: localRaw.length,
+          fillScore: localHydrated ? workspaceHydrationFillScore({
+            sourceBlocks: localHydrated.sourceBlocks,
+            iriss: localHydrated.iriss,
+            apskatesPlāns: localHydrated.apskatesPlāns,
+            cenasAtbilstiba: localHydrated.cenasAtbilstiba,
+            previewConfirmed: localHydrated.previewConfirmed,
+            vehicleAiExtraction: localHydrated.vehicleAiExtraction,
+            vehicleAiExtractionMeta: localHydrated.vehicleAiExtractionMeta,
+          }) : 0,
+        });
+      }
       const serverHydrated = serverWorkspaceJson ? hydrateWorkspaceFromStorage(serverWorkspaceJson) : null;
+      if (serverWorkspaceJson) {
+        workspaceDebugLog("hydrate_source", {
+          sessionId: payload.sessionId,
+          source: "server_ssr",
+          payloadBytes: serverWorkspaceJson.length,
+          fillScore: serverHydrated ? workspaceHydrationFillScore({
+            sourceBlocks: serverHydrated.sourceBlocks,
+            iriss: serverHydrated.iriss,
+            apskatesPlāns: serverHydrated.apskatesPlāns,
+            cenasAtbilstiba: serverHydrated.cenasAtbilstiba,
+            previewConfirmed: serverHydrated.previewConfirmed,
+            vehicleAiExtraction: serverHydrated.vehicleAiExtraction,
+            vehicleAiExtractionMeta: serverHydrated.vehicleAiExtractionMeta,
+          }) : 0,
+        });
+      }
       const backupPick = pickNewestBackupSnapshotRaw(rawBackup);
       const backupHydrated = backupPick ? hydrateWorkspaceFromStorage(backupPick.data) : null;
 
@@ -1228,6 +1264,23 @@ export function OrderDetailWorkspace({
       if (picked) {
         const chosen = picked.data;
         const body = toPersistBody(chosen);
+        const priorScore = lastGoodPersistBodyRef.current ?
+          workspaceHydrationFillScore(lastGoodPersistBodyRef.current)
+        : 0;
+        const nextScore = workspaceHydrationFillScore(body);
+        if (priorScore > 0 && nextScore + 2 < priorScore) {
+          workspaceDebugLog("overwrite_detected", {
+            sessionId: payload.sessionId,
+            source: "hydrate",
+            fillScore: nextScore,
+            extra: { priorScore, pickedSource: picked.source },
+          });
+        }
+        workspaceDebugLog("hydrate_source", {
+          sessionId: payload.sessionId,
+          source: picked.source === "server" ? "server_ssr" : picked.source === "local" ? "localStorage" : "unknown",
+          fillScore: nextScore,
+        });
         const hydratedWs: WorkspacePersist = {
           sourceBlocks: chosen.sourceBlocks,
           iriss: chosen.iriss,
@@ -1293,7 +1346,7 @@ export function OrderDetailWorkspace({
     workspaceDirtyRef.current = false;
     setWorkspaceHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `serverWorkspaceJson` refresh var pārrakstīt jaunāku lokālo darba zonu
-  }, [payload.sessionId, payload.serverInternalComment, onPdfVisibilityChange]);
+  }, [payload.sessionId, payload.serverInternalComment, onPdfVisibilityChange, orderDraftPersistenceEnabled]);
 
   const persistWorkspaceSnapshot = useCallback(
     async (opts?: { showFlash?: boolean; serverOnly?: boolean }): Promise<boolean> => {
@@ -1321,53 +1374,16 @@ export function OrderDetailWorkspace({
 
       let serverOk = !orderDraftPersistenceEnabled;
       if (orderDraftPersistenceEnabled && workspaceHydratedOnceRef.current) {
-        const myGen = bumpWorkspaceSaveGeneration();
-        workspaceServerSaveGenRef.current = myGen;
-        setWorkspaceAutosaveStatus("saving");
-        const baseline = lastGoodPersistBodyRef.current;
-        try {
-          const res = await fetch("/api/admin/order-draft", {
-            method: "PATCH",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              sessionId: payload.sessionId,
-              workspace: buildOrderDraftWorkspaceBody(
-                fromRef,
-                pdfVisibilityRef.current,
-                pdfBannerIncludeRef.current,
-                baseline,
-              ),
-            }),
-          });
-          if (myGen === workspaceServerSaveGenRef.current) {
-            if (res.ok) {
-              serverOk = true;
-              setWorkspaceAutosaveStatus("saved");
-            } else {
-              serverOk = false;
-              setWorkspaceAutosaveStatus("error");
-              const errBody = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
-              const errCode = typeof errBody.error === "string" ? errBody.error : `http_${res.status}`;
-              console.warn("[workspace:persist_failed]", errCode, errBody.detail ?? "");
-            }
-          } else {
-            serverOk = true;
-          }
-        } catch (e) {
-          serverOk = false;
-          setWorkspaceAutosaveStatus("error");
-          console.warn("[workspace:persist_failed]", e);
-        }
+        serverOk = await persistFullWorkspaceRef("manual_save");
       }
 
-      if (opts?.showFlash !== false) {
+      if (opts?.showFlash !== false && serverOk) {
         setWorkspaceSaveServerOk(serverOk);
         setWorkspaceSaveFlash(true);
       }
-      return localOk && (serverOk || !orderDraftPersistenceEnabled);
+      return localOk && serverOk;
     },
-    [orderDraftPersistenceEnabled, payload.sessionId, pushWorkspaceBackup, workspaceHydrated],
+    [orderDraftPersistenceEnabled, payload.sessionId, persistFullWorkspaceRef, pushWorkspaceBackup, workspaceHydrated],
   );
 
   const flushWorkspaceServerPatch = useCallback(
@@ -1392,16 +1408,24 @@ export function OrderDetailWorkspace({
             baseline,
           ),
         }),
-      }).then((res) => {
+      }).then(async (res) => {
         if (myGen !== workspaceServerSaveGenRef.current) return;
-        if (res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { ok?: boolean; durable?: boolean; error?: string };
+        const ok = res.ok && data.ok === true && data.durable !== false;
+        if (ok) {
           if (opts?.showFlash !== false) setWorkspaceAutosaveStatus("saved");
         } else {
           setWorkspaceAutosaveStatus("error");
+          workspaceDebugLog("persist_failed", {
+            sessionId: payload.sessionId,
+            source: "autosave",
+            error: typeof data.error === "string" ? data.error : `http_${res.status}`,
+            durable: data.durable,
+          });
         }
         if (opts?.showFlash === false) return;
-        setWorkspaceSaveServerOk(res.ok);
-        if (res.ok) setWorkspaceSaveFlash(true);
+        setWorkspaceSaveServerOk(ok);
+        if (ok) setWorkspaceSaveFlash(true);
       });
     },
     [orderDraftPersistenceEnabled, payload.sessionId],
@@ -2424,11 +2448,12 @@ export function OrderDetailWorkspace({
           return out;
         }}
         onExtractionChange={(extraction, meta) => {
+          workspaceDebugLog("import_received", {
+            sessionId: payload.sessionId,
+            source: "ai_extract",
+            changedKeys: ["vehicleAiExtraction", "vehicleAiExtractionMeta"],
+          });
           updateWs({ vehicleAiExtraction: extraction, vehicleAiExtractionMeta: meta });
-          void persistWorkspacePatchToServer(
-            { vehicleAiExtraction: extraction, vehicleAiExtractionMeta: meta },
-            "ai_extract:persist",
-          );
         }}
         onApplyExtraction={(extraction) => {
           const applied = applyVehicleAiExtraction({
@@ -2438,15 +2463,12 @@ export function OrderDetailWorkspace({
             extraction,
           });
           updateWs({ sourceBlocks: applied.sourceBlocks });
-          void persistWorkspacePatchToServer(
-            { sourceBlocks: applied.sourceBlocks },
-            "ai_extract:apply",
-          );
           if (applied.orderEdits.vin?.trim()) {
             onOrderEditsPatch?.({ vin: applied.orderEdits.vin });
           }
           return { filledFields: applied.filledFields };
         }}
+        onImportComplete={() => persistFullWorkspaceRef("ai_extract:complete")}
       />
     </section>
   );
@@ -2742,6 +2764,17 @@ export function OrderDetailWorkspace({
       {!workspaceHydrated ? (
         <p className="mx-auto mb-3 max-w-lg px-2 text-center text-sm text-[var(--color-provin-muted)]" role="status">
           Ielādē saglabātos avotu datus…
+        </p>
+      ) : null}
+
+      {!orderDraftPersistenceEnabled ? (
+        <p
+          className="mx-auto mb-3 max-w-2xl rounded-lg border border-amber-500/40 bg-amber-50 px-3 py-2 text-center text-[11px] font-semibold leading-snug text-amber-950"
+          role="alert"
+        >
+          Servera melnraksts nav ilgtermiņa — dati pazudīs pēc refresh/deploy. Vercel: iestati{" "}
+          <code className="font-mono text-[10px]">ADMIN_ORDER_DRAFT_BLOB_PREFIX</code> un{" "}
+          <code className="font-mono text-[10px]">BLOB_READ_WRITE_TOKEN</code>, pēc tam redeploy.
         </p>
       ) : null}
 
