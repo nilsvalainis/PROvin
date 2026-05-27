@@ -258,16 +258,18 @@ export async function POST(req: Request) {
         const { workspace } = coalesceOrderDraftWorkspacePatch(incoming, prevW ?? null, sessionId);
         const persistResult = await patchOrderDraft(sessionId, { workspace });
         if (persistResult.ok && persistResult.durable) {
-          console.info("[ai_extract:persist]", { sessionId, storageBackend: persistResult.storageBackend });
-        } else {
-          console.warn("[ai_extract:persist]", {
+          console.info("[ai_extract:persist]", {
             sessionId,
-            error: persistResult.ok ? "store_not_durable" : persistResult.error,
+            storageBackend: persistResult.storageBackend,
+            workspaceRevision: persistResult.workspaceRevision,
           });
+        } else {
+          const err = !persistResult.ok ? persistResult.error : "store_not_durable";
+          console.warn("[ai_extract:persist]", { sessionId, error: err });
           warnings.push(
-            persistResult.ok ?
-              "Servera melnraksts nav ilgtermiņa (Vercel /tmp) — iestati ADMIN_ORDER_DRAFT_BLOB_PREFIX + BLOB_READ_WRITE_TOKEN."
-            : `Servera saglabāšana neizdevās: ${persistResult.error}`,
+            err === "store_not_durable" ?
+              "Servera melnraksts nav ilgtermiņa — iestati ADMIN_ORDER_DRAFT_BLOB_PREFIX + BLOB_READ_WRITE_TOKEN."
+            : `Servera saglabāšana neizdevās: ${err}`,
           );
         }
       } catch (e) {

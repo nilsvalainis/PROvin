@@ -36,6 +36,10 @@ export type OrderDraftState = {
   updatedAt: string;
   /** Kad pēdējo reizi saglabāta darba zona (atsevišķi no `updatedAt`, kas mainās arī pie `orderEdits`). */
   workspaceSavedAt?: string;
+  /** Monotonic workspace revision — optimistic concurrency. */
+  workspaceRevision?: number;
+  /** Post-write integrity fingerprint. */
+  workspaceChecksum?: string;
   /** Relatīva saite uz saglabātu PDF rēķinu (pēc pirmās ģenerēšanas), piem. `/api/admin/invoice/cs_…/pdf` */
   invoicePdfUrl?: string;
   invoicePdfGeneratedAt?: string;

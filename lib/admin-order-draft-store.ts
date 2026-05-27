@@ -16,6 +16,11 @@ import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { coalesceOrderDraftWorkspacePatch } from "@/lib/admin-order-draft-workspace-merge";
+import {
+  stableWorkspaceChecksum,
+  verifyWorkspaceIntegrity,
+  workspaceFillScoreFromDraft,
+} from "@/lib/admin-workspace-integrity";
 
 const DEFAULT_RELATIVE_DIR = ".data/admin-order-drafts";
 const DRAFT_REVISIONS_DIRNAME = "_revisions";
@@ -155,12 +160,24 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
   }
   const updatedAt = typeof o.updatedAt === "string" ? o.updatedAt : new Date(0).toISOString();
   const workspaceSavedAt = typeof o.workspaceSavedAt === "string" ? o.workspaceSavedAt : undefined;
+  const workspaceRevision = typeof o.workspaceRevision === "number" && Number.isFinite(o.workspaceRevision) ? o.workspaceRevision : undefined;
+  const workspaceChecksum = typeof o.workspaceChecksum === "string" ? o.workspaceChecksum : undefined;
   if (typeof o.sessionId === "string" && o.sessionId !== sessionId) return null;
   const invoicePdfUrl = typeof o.invoicePdfUrl === "string" ? o.invoicePdfUrl : undefined;
   const invoicePdfGeneratedAt =
     typeof o.invoicePdfGeneratedAt === "string" ? o.invoicePdfGeneratedAt : undefined;
   const invoiceNumber = typeof o.invoiceNumber === "string" ? o.invoiceNumber : undefined;
-  return { orderEdits, workspace, updatedAt, workspaceSavedAt, invoicePdfUrl, invoicePdfGeneratedAt, invoiceNumber };
+  return {
+    orderEdits,
+    workspace,
+    updatedAt,
+    workspaceSavedAt,
+    workspaceRevision,
+    workspaceChecksum,
+    invoicePdfUrl,
+    invoicePdfGeneratedAt,
+    invoiceNumber,
+  };
 }
 
 function isEphemeralDraftDir(dir: string): boolean {
@@ -181,6 +198,31 @@ export function isOrderDraftStorageDurable(): boolean {
 export type OrderDraftWriteMeta = {
   storageBackend: "blob" | "filesystem" | "blob+filesystem" | "none";
   durable: boolean;
+};
+
+export type OrderDraftPatchOptions = {
+  /** Klienta zināmais revision pirms PATCH — noraida stale write. */
+  expectedWorkspaceRevision?: number;
+  saveGeneration?: number;
+  /** Atļauj regresīvu overwrite (tikai admin restore). */
+  force?: boolean;
+};
+
+export type OrderDraftPatchSuccess = {
+  ok: true;
+  updatedAt: string;
+  storageBackend: OrderDraftWriteMeta["storageBackend"];
+  durable: boolean;
+  workspaceRevision: number;
+  workspaceChecksum: string | null;
+  writeLatencyMs: number;
+  verifyLatencyMs: number;
+};
+
+export type OrderDraftPatchFailure = {
+  ok: false;
+  error: string;
+  currentRevision?: number;
 };
 
 export function describeOrderDraftWriteResult(fsOk: boolean, blobOk: boolean, dir: string | null): OrderDraftWriteMeta {
@@ -360,14 +402,16 @@ export async function restoreOrderDraftRevision(
 export async function patchOrderDraft(
   sessionId: string,
   patch: { orderEdits?: OrderDraftOrderEdits; workspace?: OrderDraftWorkspaceBody | null },
-): Promise<
-  | { ok: true; updatedAt: string; storageBackend: OrderDraftWriteMeta["storageBackend"]; durable: boolean }
-  | { ok: false; error: string }
-> {
+  options: OrderDraftPatchOptions = {},
+): Promise<OrderDraftPatchSuccess | OrderDraftPatchFailure> {
   try {
+  const writeStarted = Date.now();
   const dir = resolveDraftDir();
   const blobCfg = resolveOrderDraftBlob();
   if (!dir && !blobCfg) return { ok: false, error: "store_disabled" };
+  if (process.env.VERCEL === "1" && !blobCfg) {
+    return { ok: false, error: "store_not_durable" };
+  }
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
 
   const order = await getCheckoutSessionDetail(sessionId);
@@ -405,6 +449,21 @@ export async function patchOrderDraft(
   }
 
   const prev = await readOrderDraft(sessionId);
+  const prevRev = prev?.workspaceRevision ?? 0;
+
+  if (patch.workspace !== undefined && options.expectedWorkspaceRevision != null) {
+    if (options.expectedWorkspaceRevision < prevRev) {
+      console.warn("[workspace:overwrite_blocked]", {
+        sessionId,
+        reason: "stale_revision",
+        expectedRevision: options.expectedWorkspaceRevision,
+        currentRevision: prevRev,
+        saveGeneration: options.saveGeneration,
+      });
+      return { ok: false, error: "stale_revision", currentRevision: prevRev };
+    }
+  }
+
   const prevEdits = prev?.orderEdits ?? {};
 
   /**
@@ -452,10 +511,19 @@ export async function patchOrderDraft(
       workspacePatch,
       prev?.workspace ?? null,
       sessionId,
+      { force: options.force === true },
     );
+    if (coalesced.blocked) {
+      console.warn("[workspace:overwrite_blocked]", {
+        sessionId,
+        reason: "regressive_incoming",
+        changedFields: coalesced.changedFields,
+      });
+      return { ok: false, error: "overwrite_blocked", currentRevision: prevRev };
+    }
     nextWorkspace = coalesced.workspace;
     if (coalesced.regressive) {
-      console.warn("[workspace:persist_ok] regressive_patch_coalesced", {
+      console.warn("[workspace:merge_conflict]", {
         sessionId,
         changedFields: coalesced.changedFields,
       });
@@ -464,11 +532,17 @@ export async function patchOrderDraft(
   const updatedAt = new Date().toISOString();
   const workspaceSavedAt =
     workspacePatch !== undefined ? updatedAt : (prev?.workspaceSavedAt ?? prev?.updatedAt);
+  const workspaceRevision =
+    workspacePatch !== undefined && workspacePatch !== null ? prevRev + 1 : prevRev;
+  const workspaceChecksum =
+    nextWorkspace != null ? stableWorkspaceChecksum(nextWorkspace) : (prev?.workspaceChecksum ?? null);
 
   const doc = {
     sessionId,
     updatedAt,
     workspaceSavedAt,
+    workspaceRevision,
+    workspaceChecksum,
     orderEdits: nextOrderEdits,
     workspace: nextWorkspace,
     ...(prev?.invoiceNumber != null ? { invoiceNumber: prev.invoiceNumber } : {}),
@@ -478,8 +552,9 @@ export async function patchOrderDraft(
 
   let fsOk = false;
   let blobOk = false;
+  const skipEphemeralFs = Boolean(process.env.VERCEL === "1" && blobCfg && dir && isEphemeralDraftDir(dir));
 
-  if (dir) {
+  if (dir && !skipEphemeralFs) {
     try {
       await fs.mkdir(dir, { recursive: true });
       const fp = draftFilePath(dir, sessionId);
@@ -522,9 +597,54 @@ export async function patchOrderDraft(
     sessionId,
     storageBackend: writeMeta.storageBackend,
     durable: writeMeta.durable,
+    workspaceRevision,
+    workspaceChecksum,
+    saveGeneration: options.saveGeneration,
+    writeLatencyMs: Date.now() - writeStarted,
   });
 
-  return { ok: true, updatedAt, storageBackend: writeMeta.storageBackend, durable: writeMeta.durable };
+  if (workspacePatch !== undefined && nextWorkspace != null) {
+    const verifyStarted = Date.now();
+    const readBack = await readOrderDraft(sessionId);
+    const verify = verifyWorkspaceIntegrity(readBack?.workspace, readBack?.workspaceRevision, {
+      revision: workspaceRevision,
+      checksum: workspaceChecksum ?? stableWorkspaceChecksum(nextWorkspace),
+      fillScore: workspaceFillScoreFromDraft(nextWorkspace),
+    });
+    const verifyLatencyMs = Date.now() - verifyStarted;
+    if (!verify.ok) {
+      console.warn("[workspace:persist_failed]", {
+        sessionId,
+        error: "persistence_verification_failed",
+        reason: verify.reason,
+        expected: verify.expected,
+        actual: verify.actual,
+        verifyLatencyMs,
+      });
+      return { ok: false, error: "persistence_verification_failed", currentRevision: readBack?.workspaceRevision };
+    }
+    return {
+      ok: true,
+      updatedAt,
+      storageBackend: writeMeta.storageBackend,
+      durable: writeMeta.durable,
+      workspaceRevision: verify.revision,
+      workspaceChecksum: verify.checksum,
+      writeLatencyMs: Date.now() - writeStarted,
+      verifyLatencyMs,
+    };
+  }
+
+  return {
+    ok: true,
+    updatedAt,
+    storageBackend: writeMeta.storageBackend,
+    durable: writeMeta.durable,
+    workspaceRevision,
+    workspaceChecksum,
+    writeLatencyMs: Date.now() - writeStarted,
+    verifyLatencyMs: 0,
+  };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: `patch_failed:${msg}` };

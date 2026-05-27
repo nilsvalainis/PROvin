@@ -30,6 +30,8 @@ export default async function AdminOrderDetailPage({ params }: Props) {
           pdfBannerInclude: serverOrderDraft.workspace.pdfBannerInclude,
           vehicleAiExtraction: serverOrderDraft.workspace.vehicleAiExtraction,
           vehicleAiExtractionMeta: serverOrderDraft.workspace.vehicleAiExtractionMeta,
+          workspaceRevision: serverOrderDraft.workspaceRevision ?? 0,
+          workspaceChecksum: serverOrderDraft.workspaceChecksum ?? null,
           savedAt: serverOrderDraft.workspaceSavedAt ?? serverOrderDraft.updatedAt,
         })
       : null;

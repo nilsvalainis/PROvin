@@ -34,6 +34,8 @@ export async function GET(req: Request) {
         workspace: draft?.workspace ?? null,
         workspaceSavedAt: draft?.workspaceSavedAt ?? draft?.updatedAt ?? null,
         updatedAt: draft?.updatedAt ?? null,
+        workspaceRevision: draft?.workspaceRevision ?? 0,
+        workspaceChecksum: draft?.workspaceChecksum ?? null,
         durable,
         storageBackend: durable ? (process.env.ADMIN_ORDER_DRAFT_BLOB_PREFIX?.trim() ? "blob" : "filesystem") : "none",
       });
@@ -191,7 +193,19 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "empty_patch" }, { status: 400 });
     }
 
-    const result = await patchOrderDraft(sessionId, patch);
+    const expectedWorkspaceRevision =
+      typeof b.expectedWorkspaceRevision === "number" && Number.isFinite(b.expectedWorkspaceRevision) ?
+        Math.max(0, Math.floor(b.expectedWorkspaceRevision))
+      : undefined;
+    const saveGeneration =
+      typeof b.saveGeneration === "number" && Number.isFinite(b.saveGeneration) ?
+        Math.floor(b.saveGeneration)
+      : undefined;
+
+    const result = await patchOrderDraft(sessionId, patch, {
+      expectedWorkspaceRevision,
+      saveGeneration,
+    });
 
     if (!result.ok) {
       const err = result.error;
@@ -206,6 +220,18 @@ export async function PATCH(req: Request) {
       }
       if (err === "store_not_durable") {
         return NextResponse.json({ error: err, durable: false }, { status: 503 });
+      }
+      if (err === "stale_revision" || err === "overwrite_blocked") {
+        return NextResponse.json(
+          { error: err, currentRevision: result.currentRevision, durable: false },
+          { status: 409 },
+        );
+      }
+      if (err === "persistence_verification_failed") {
+        return NextResponse.json(
+          { error: err, currentRevision: result.currentRevision, durable: false },
+          { status: 503 },
+        );
       }
       if (err === "invalid_workspace") {
         return NextResponse.json({ error: err }, { status: 400 });
@@ -224,6 +250,10 @@ export async function PATCH(req: Request) {
       updatedAt: result.updatedAt,
       durable: result.durable,
       storageBackend: result.storageBackend,
+      workspaceRevision: result.workspaceRevision,
+      workspaceChecksum: result.workspaceChecksum,
+      writeLatencyMs: result.writeLatencyMs,
+      verifyLatencyMs: result.verifyLatencyMs,
     });
   } catch (e) {
     console.error("[order-draft] PATCH", e);

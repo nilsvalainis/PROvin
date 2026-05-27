@@ -18,11 +18,14 @@ export type WorkspaceDebugPayload = {
   changedKeys?: string[];
   payloadBytes?: number;
   fillScore?: number;
+  revision?: number;
+  checksum?: string;
   storageBackend?: string;
   durable?: boolean;
+  writeLatencyMs?: number;
+  verifyLatencyMs?: number;
   error?: string;
   detail?: string;
-  /** Papildu konteksts bez sensitīva satura. */
   extra?: Record<string, unknown>;
 };
 
@@ -45,6 +48,7 @@ export function workspaceDebugLog(
     | "hydrate_source"
     | "localstorage_restore"
     | "overwrite_detected"
+    | "overwrite_blocked"
     | "server_fetch"
     | "server_response",
   data: WorkspaceDebugPayload = {},
@@ -54,7 +58,7 @@ export function workspaceDebugLog(
     event: `workspace:${event}`,
     ...data,
   };
-  if (event === "persist_failed" || event === "overwrite_detected") {
+  if (event === "persist_failed" || event === "overwrite_detected" || event === "overwrite_blocked") {
     console.warn(line);
   } else {
     console.info(line);

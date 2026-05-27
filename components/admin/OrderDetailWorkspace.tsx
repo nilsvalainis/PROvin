@@ -43,7 +43,6 @@ import {
   type StoredPortfolioBlob,
 } from "@/lib/admin-portfolio-idb";
 import {
-  buildOrderDraftWorkspaceBody,
   pickOrderWorkspaceHydrationServerFirst,
   coalesceOrderWorkspacePersistBody,
   normalizeOrderWorkspacePersistBody,
@@ -55,7 +54,6 @@ import {
 } from "@/lib/admin-order-workspace-persist";
 import {
   bumpWorkspaceSaveGeneration,
-  fetchCanonicalWorkspace,
   persistWorkspaceState,
 } from "@/lib/admin-workspace-persist-client";
 import { workspaceDebugLog } from "@/lib/admin-workspace-debug-log";
@@ -638,6 +636,7 @@ export function OrderDetailWorkspace({
   const workspaceServerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const workspaceServerSaveGenRef = useRef(0);
   const lastGoodPersistBodyRef = useRef<OrderWorkspacePersistBody | null>(null);
+  const workspaceRevisionRef = useRef(0);
   const wsPersistRef = useRef(ws);
   const orderEditsRef = useRef({ internal: internalCommentDraft, mileage: mileageCommentDraft });
   orderEditsRef.current = { internal: internalCommentDraft, mileage: mileageCommentDraft };
@@ -797,7 +796,7 @@ export function OrderDetailWorkspace({
   );
 
   const persistFullWorkspaceRef = useCallback(
-    async (logContext: string): Promise<boolean> => {
+    async (logContext: string, ui?: { showFlash?: boolean }): Promise<boolean> => {
       if (!orderDraftPersistenceEnabled) {
         workspaceDebugLog("persist_failed", {
           sessionId: payload.sessionId,
@@ -812,7 +811,7 @@ export function OrderDetailWorkspace({
       if (!workspaceHydratedOnceRef.current) return false;
       const myGen = bumpWorkspaceSaveGeneration();
       workspaceServerSaveGenRef.current = myGen;
-      setWorkspaceAutosaveStatus("saving");
+      if (ui?.showFlash !== false) setWorkspaceAutosaveStatus("saving");
       const body = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
       const result = await persistWorkspaceState({
         sessionId: payload.sessionId,
@@ -820,33 +819,27 @@ export function OrderDetailWorkspace({
         baseline: lastGoodPersistBodyRef.current,
         pdfVisibility: pdfVisibilityRef.current,
         pdfBannerInclude: pdfBannerIncludeRef.current,
+        expectedWorkspaceRevision: workspaceRevisionRef.current,
         saveGeneration: myGen,
         logContext,
       });
       if (result.generation !== workspaceServerSaveGenRef.current) return true;
       if (!result.ok) {
+        if (typeof result.currentRevision === "number") {
+          workspaceRevisionRef.current = result.currentRevision;
+        }
         setWorkspaceSaveServerOk(false);
         setWorkspaceAutosaveStatus("error");
         return false;
       }
       lastGoodPersistBodyRef.current = body;
+      workspaceRevisionRef.current = result.workspaceRevision;
       commitWorkspaceLocalNow({ force: true });
-      const verify = await fetchCanonicalWorkspace(payload.sessionId);
-      if (!verify.durable || !verify.workspace) {
-        workspaceDebugLog("persist_failed", {
-          sessionId: payload.sessionId,
-          source: "server_fetch",
-          error: "verify_read_empty",
-          durable: verify.durable,
-          storageBackend: verify.storageBackend,
-        });
-        setWorkspaceSaveServerOk(false);
-        setWorkspaceAutosaveStatus("error");
-        return false;
-      }
       setWorkspaceSaveServerOk(true);
-      setWorkspaceAutosaveStatus("saved");
-      setWorkspaceSaveFlash(true);
+      if (ui?.showFlash !== false) {
+        setWorkspaceAutosaveStatus("saved");
+        setWorkspaceSaveFlash(true);
+      }
       return true;
     },
     [commitWorkspaceLocalNow, orderDraftPersistenceEnabled, payload.sessionId],
@@ -1168,6 +1161,14 @@ export function OrderDetailWorkspace({
       }
       const serverHydrated = serverWorkspaceJson ? hydrateWorkspaceFromStorage(serverWorkspaceJson) : null;
       if (serverWorkspaceJson) {
+        try {
+          const meta = JSON.parse(serverWorkspaceJson) as { workspaceRevision?: number };
+          if (typeof meta.workspaceRevision === "number") {
+            workspaceRevisionRef.current = meta.workspaceRevision;
+          }
+        } catch {
+          /* ignore */
+        }
         workspaceDebugLog("hydrate_source", {
           sessionId: payload.sessionId,
           source: "server_ssr",
@@ -1389,46 +1390,9 @@ export function OrderDetailWorkspace({
   const flushWorkspaceServerPatch = useCallback(
     (opts?: { keepalive?: boolean; showFlash?: boolean }) => {
       if (!orderDraftPersistenceEnabled || !workspaceHydratedOnceRef.current) return;
-      const myGen = bumpWorkspaceSaveGeneration();
-      workspaceServerSaveGenRef.current = myGen;
-      const fromRef = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
-      const baseline = lastGoodPersistBodyRef.current;
-      if (opts?.showFlash !== false) setWorkspaceAutosaveStatus("saving");
-      void fetch("/api/admin/order-draft", {
-        method: "PATCH",
-        credentials: "include",
-        keepalive: opts?.keepalive === true,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId: payload.sessionId,
-          workspace: buildOrderDraftWorkspaceBody(
-            fromRef,
-            pdfVisibilityRef.current,
-            pdfBannerIncludeRef.current,
-            baseline,
-          ),
-        }),
-      }).then(async (res) => {
-        if (myGen !== workspaceServerSaveGenRef.current) return;
-        const data = (await res.json().catch(() => ({}))) as { ok?: boolean; durable?: boolean; error?: string };
-        const ok = res.ok && data.ok === true && data.durable !== false;
-        if (ok) {
-          if (opts?.showFlash !== false) setWorkspaceAutosaveStatus("saved");
-        } else {
-          setWorkspaceAutosaveStatus("error");
-          workspaceDebugLog("persist_failed", {
-            sessionId: payload.sessionId,
-            source: "autosave",
-            error: typeof data.error === "string" ? data.error : `http_${res.status}`,
-            durable: data.durable,
-          });
-        }
-        if (opts?.showFlash === false) return;
-        setWorkspaceSaveServerOk(ok);
-        if (ok) setWorkspaceSaveFlash(true);
-      });
+      void persistFullWorkspaceRef("autosave", { showFlash: opts?.showFlash !== false });
     },
-    [orderDraftPersistenceEnabled, payload.sessionId],
+    [orderDraftPersistenceEnabled, persistFullWorkspaceRef],
   );
 
   const forceNavigationFlush = useCallback(() => {

@@ -437,8 +437,33 @@ export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspa
   const pool = filtered.length > 0 ? filtered : candidates;
 
   const serverPick = pool.find((c) => c.source === "server");
-  const serverHasData =
-    serverPick != null && localWorkspaceHasSubstantiveContent(hydratedToPersistBody(serverPick.data));
+  const serverFillScore =
+    serverPick != null ? workspaceHydrationFillScore(hydratedToPersistBody(serverPick.data)) : 0;
+  const serverHasData = serverFillScore > 0;
+
+  /** SSR guard: server ar datiem vienmēr uzvar pār localStorage cache. */
+  if (serverHasData && serverPick) {
+    const serverBody = hydratedToPersistBody(serverPick.data);
+    const localBody = local ? hydratedToPersistBody(local.data) : null;
+    const merged = localBody ?
+      coalesceOrderWorkspacePersistBody(localBody, serverBody)
+    : serverBody;
+    return {
+      source: "server",
+      data: {
+        ...serverPick.data,
+        sourceBlocks: merged.sourceBlocks,
+        iriss: merged.iriss,
+        apskatesPlāns: merged.apskatesPlāns,
+        cenasAtbilstiba: merged.cenasAtbilstiba,
+        previewConfirmed: merged.previewConfirmed,
+        vehicleAiExtraction: merged.vehicleAiExtraction,
+        vehicleAiExtractionMeta: merged.vehicleAiExtractionMeta,
+      } as T,
+      savedAtMs: serverPick.savedAtMs,
+      fillScore: workspaceHydrationFillScore(merged),
+    };
+  }
 
   const bodies: OrderWorkspacePersistBody[] = [];
   const order: WorkspaceHydrationSource[] = serverHasData

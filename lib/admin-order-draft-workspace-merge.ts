@@ -46,6 +46,7 @@ export function persistBodyToOrderDraftWorkspace(
 export type CoalesceWorkspacePatchResult = {
   workspace: OrderDraftWorkspaceBody;
   regressive: boolean;
+  blocked: boolean;
   changedFields: string[];
 };
 
@@ -54,10 +55,19 @@ export function coalesceOrderDraftWorkspacePatch(
   incoming: OrderDraftWorkspaceBody,
   baseline: OrderDraftWorkspaceBody | null | undefined,
   sessionId: string,
+  opts?: { force?: boolean },
 ): CoalesceWorkspacePatchResult {
   const inBody = orderDraftWorkspaceToPersistBody(incoming);
   const baseBody = baseline ? orderDraftWorkspaceToPersistBody(baseline) : null;
   const regressive = isRegressiveWorkspacePersist(inBody, baseBody);
+  if (regressive && !opts?.force && baseBody) {
+    return {
+      workspace: baseline!,
+      regressive: true,
+      blocked: true,
+      changedFields: [],
+    };
+  }
   if (regressive) {
     console.warn("[workspace:merge_conflict]", {
       sessionId,
@@ -77,7 +87,7 @@ export function coalesceOrderDraftWorkspacePatch(
     mergePdfVisibility(incoming.pdfVisibility ?? baseline?.pdfVisibility),
     mergeProvinBannerPdfInclude(incoming.pdfBannerInclude ?? baseline?.pdfBannerInclude),
   );
-  return { workspace, regressive, changedFields };
+  return { workspace, regressive, blocked: false, changedFields };
 }
 
 /** Alias prasītajam API nosaukumam. */
