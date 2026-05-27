@@ -43,21 +43,17 @@ import {
   type StoredPortfolioBlob,
 } from "@/lib/admin-portfolio-idb";
 import {
-  pickOrderWorkspaceHydrationServerFirst,
   coalesceOrderWorkspacePersistBody,
   isRegressiveWorkspacePersist,
   normalizeOrderWorkspacePersistBody,
-  pickNewestBackupSnapshotRaw,
   serializeOrderWorkspaceSnapshotFromRef,
-  parseWorkspaceSnapshotSavedAtMs,
   workspaceHydrationFillScore,
   type OrderWorkspacePersistBody,
 } from "@/lib/admin-order-workspace-persist";
+import { resolveOrderWorkspaceHydration } from "@/lib/admin-order-workspace-hydrate";
 import {
   bumpWorkspaceSaveGeneration,
-  fetchCanonicalWorkspace,
   persistWorkspaceState,
-  workspacePersistFromDraftWorkspace,
 } from "@/lib/admin-workspace-persist-client";
 import { workspaceDebugLog } from "@/lib/admin-workspace-debug-log";
 import { usePathname } from "next/navigation";
@@ -346,6 +342,8 @@ function storageKeyWorkspaceBackup(sessionId: string) {
 
 const LEGACY_WORKSPACE_V2_PREFIX = "provin-admin-workspace-v2-";
 const WORKSPACE_BACKUP_LIMIT = 20;
+/** Blob rezerve — localStorage katru reizi; serveris debounce (nav katras rakstzīmes). */
+const WORKSPACE_SERVER_AUTOSAVE_MS = 3500;
 
 /** Vecais viena lauka komentārs */
 function storageKeyInternalLegacy(sessionId: string) {
@@ -737,11 +735,7 @@ export function OrderDetailWorkspace({
   );
 
   const syncWsPersistRefFromState = useCallback(() => {
-    const fromWs = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsStateRef.current));
-    const fromRef = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
-    if (workspaceHydrationFillScore(fromWs) >= workspaceHydrationFillScore(fromRef)) {
-      wsPersistRef.current = wsStateRef.current;
-    }
+    wsPersistRef.current = wsStateRef.current;
   }, []);
 
   const commitWorkspaceLocalNow = useCallback(
@@ -1182,221 +1176,82 @@ export function OrderDetailWorkspace({
       const rawV3 = localStorage.getItem(keyV3);
       const rawV2 = localStorage.getItem(keyV2);
       const rawBackup = localStorage.getItem(keyBackup);
-      const localRaw = rawV3 ?? rawV2;
-      const localHydrated = localRaw ? hydrateWorkspaceFromStorage(localRaw) : null;
-      if (localRaw) {
-        workspaceDebugLog("localstorage_restore", {
-          sessionId: payload.sessionId,
-          source: "localStorage",
-          payloadBytes: localRaw.length,
-          fillScore: localHydrated ? workspaceHydrationFillScore({
-            sourceBlocks: localHydrated.sourceBlocks,
-            iriss: localHydrated.iriss,
-            apskatesPlāns: localHydrated.apskatesPlāns,
-            cenasAtbilstiba: localHydrated.cenasAtbilstiba,
-            previewConfirmed: localHydrated.previewConfirmed,
-            vehicleAiExtraction: localHydrated.vehicleAiExtraction,
-            vehicleAiExtractionMeta: localHydrated.vehicleAiExtractionMeta,
-          }) : 0,
-        });
-      }
-      const serverHydrated = serverWorkspaceJson ? hydrateWorkspaceFromStorage(serverWorkspaceJson) : null;
-      if (serverWorkspaceJson) {
-        try {
-          const meta = JSON.parse(serverWorkspaceJson) as { workspaceRevision?: number };
-          if (typeof meta.workspaceRevision === "number") {
-            workspaceRevisionRef.current = meta.workspaceRevision;
-          }
-        } catch {
-          /* ignore */
-        }
-        workspaceDebugLog("hydrate_source", {
-          sessionId: payload.sessionId,
-          source: "server_ssr",
-          payloadBytes: serverWorkspaceJson.length,
-          fillScore: serverHydrated ? workspaceHydrationFillScore({
-            sourceBlocks: serverHydrated.sourceBlocks,
-            iriss: serverHydrated.iriss,
-            apskatesPlāns: serverHydrated.apskatesPlāns,
-            cenasAtbilstiba: serverHydrated.cenasAtbilstiba,
-            previewConfirmed: serverHydrated.previewConfirmed,
-            vehicleAiExtraction: serverHydrated.vehicleAiExtraction,
-            vehicleAiExtractionMeta: serverHydrated.vehicleAiExtractionMeta,
-          }) : 0,
-        });
-      }
-      const backupPick = pickNewestBackupSnapshotRaw(rawBackup);
-      const backupHydrated = backupPick ? hydrateWorkspaceFromStorage(backupPick.data) : null;
-
-      const fillScoreFromHydrated = (
-        h: NonNullable<typeof localHydrated> | NonNullable<typeof serverHydrated> | NonNullable<typeof backupHydrated>,
-      ) =>
-        workspaceHydrationFillScore({
-          sourceBlocks: h.sourceBlocks,
-          iriss: h.iriss,
-          apskatesPlāns: h.apskatesPlāns,
-          cenasAtbilstiba: h.cenasAtbilstiba,
-          previewConfirmed: Boolean(h.previewConfirmed),
-          vehicleAiExtraction: h.vehicleAiExtraction ?? null,
-          vehicleAiExtractionMeta: h.vehicleAiExtractionMeta ?? null,
-        });
-
-      const candidates: {
-        source: "local" | "backup" | "server";
-        data: NonNullable<typeof localHydrated> | NonNullable<typeof serverHydrated> | NonNullable<typeof backupHydrated>;
-        savedAtMs: number;
-        fillScore: number;
-      }[] = [];
-      let localCandidate: (typeof candidates)[number] | null = null;
-      if (localHydrated) {
-        localCandidate = {
-          source: "local",
-          data: localHydrated,
-          savedAtMs: parseWorkspaceSnapshotSavedAtMs(localRaw),
-          fillScore: fillScoreFromHydrated(localHydrated),
-        };
-        candidates.push(localCandidate);
-      }
-      if (backupHydrated && backupPick) {
-        candidates.push({
-          source: "backup",
-          data: backupHydrated,
-          savedAtMs: backupPick.savedAtMs,
-          fillScore: fillScoreFromHydrated(backupHydrated),
-        });
-      }
-      if (serverHydrated) {
-        candidates.push({
-          source: "server",
-          data: serverHydrated,
-          savedAtMs: parseWorkspaceSnapshotSavedAtMs(serverWorkspaceJson),
-          fillScore: fillScoreFromHydrated(serverHydrated),
-        });
+      let legacyInternal: string | null = null;
+      try {
+        legacyInternal = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
+      } catch {
+        /* quota */
       }
 
-      const parseRawSourceBlocks = (raw: string | null | undefined): unknown => {
-        if (!raw) return undefined;
-        try {
-          const p = JSON.parse(raw) as { sourceBlocks?: unknown };
-          return p.sourceBlocks;
-        } catch {
-          return undefined;
-        }
-      };
-
-      const rawSourceBlocksBySource = {
-        local: parseRawSourceBlocks(localRaw),
-        backup: backupPick ? parseRawSourceBlocks(backupPick.data) : undefined,
-        server: parseRawSourceBlocks(serverWorkspaceJson),
-      };
-      const picked = pickOrderWorkspaceHydrationServerFirst(candidates, localCandidate, rawSourceBlocksBySource);
-
-      const toPersistBody = (
-        h: NonNullable<typeof localHydrated> | NonNullable<typeof serverHydrated>,
-      ): OrderWorkspacePersistBody => ({
-        sourceBlocks: h.sourceBlocks,
-        iriss: h.iriss,
-        apskatesPlāns: h.apskatesPlāns,
-        cenasAtbilstiba: h.cenasAtbilstiba,
-        previewConfirmed: Boolean(h.previewConfirmed),
-        vehicleAiExtraction: h.vehicleAiExtraction ?? null,
-        vehicleAiExtractionMeta: h.vehicleAiExtractionMeta ?? null,
+      const resolved = resolveOrderWorkspaceHydration({
+        localRaw: rawV3,
+        localRawLegacyV2: rawV2,
+        backupRaw: rawBackup,
+        serverWorkspaceJson,
+        serverInternalComment: payload.serverInternalComment,
+        legacyInternalRaw: legacyInternal,
       });
 
-      if (picked) {
-        let chosen = picked.data;
-        let body = toPersistBody(chosen);
-        if (
-          localCandidate &&
-          localCandidate.fillScore > 0 &&
-          workspaceHydrationFillScore(body) + 2 < localCandidate.fillScore
-        ) {
-          workspaceDebugLog("overwrite_detected", {
-            sessionId: payload.sessionId,
-            source: "hydrate",
-            fillScore: workspaceHydrationFillScore(body),
-            extra: {
-              localFillScore: localCandidate.fillScore,
-              pickedSource: picked.source,
-              action: "reverted_to_local_candidate",
-            },
-          });
-          chosen = localCandidate.data;
-          body = toPersistBody(chosen);
-        }
-        const priorScore = lastGoodPersistBodyRef.current ?
-          workspaceHydrationFillScore(lastGoodPersistBodyRef.current)
-        : 0;
-        const nextScore = workspaceHydrationFillScore(body);
-        if (priorScore > 0 && nextScore + 2 < priorScore) {
-          workspaceDebugLog("overwrite_detected", {
-            sessionId: payload.sessionId,
-            source: "hydrate",
-            fillScore: nextScore,
-            extra: { priorScore, pickedSource: picked.source },
-          });
-        }
-        workspaceDebugLog("hydrate_source", {
-          sessionId: payload.sessionId,
-          source: picked.source === "server" ? "server_ssr" : picked.source === "local" ? "localStorage" : "unknown",
-          fillScore: nextScore,
-        });
-        const hydratedWs: WorkspacePersist = {
-          sourceBlocks: chosen.sourceBlocks,
-          iriss: chosen.iriss,
-          apskatesPlāns: chosen.apskatesPlāns,
-          cenasAtbilstiba: chosen.cenasAtbilstiba,
-          previewConfirmed: Boolean(chosen.previewConfirmed),
-          vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
-          vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
-        };
-        wsPersistRef.current = hydratedWs;
-        setWs(hydratedWs);
-        lastGoodPersistBodyRef.current = body;
-        const mergedVisibility = mergePdfVisibility(chosen.pdfVisibility);
-        const mergedBannerInclude = mergeProvinBannerPdfInclude(chosen.pdfBannerInclude);
-        onPdfVisibilityChange(mergedVisibility);
-        setPdfBannerInclude(mergedBannerInclude);
-        hydrationSnapshotRef.current = serializeWorkspaceState(
-          hydratedWs,
-          mergedVisibility,
-          mergedBannerInclude,
-        );
-        if (rawV2) {
-          try {
-            localStorage.removeItem(keyV2);
-          } catch {
-            /* quota */
-          }
-        }
-      } else {
-        const legacy = localStorage.getItem(storageKeyInternalLegacy(payload.sessionId));
-        const serverC = payload.serverInternalComment?.trim();
-        if (legacy || serverC) {
-          const b = createDefaultSourceBlocks();
-          const parts: string[] = [];
-          if (serverC) parts.push(serverC);
-          if (legacy) parts.push(legacy);
-          b.autodna = { ...emptyVendorAvotuBlock(), comments: parts.join("\n\n") };
-          setWs({ ...EMPTY_WORKSPACE, sourceBlocks: b, previewConfirmed: false });
-          const mergedVisibility = mergePdfVisibility(undefined);
-          onPdfVisibilityChange(mergedVisibility);
-          setPdfBannerInclude({});
-          hydrationSnapshotRef.current = serializeWorkspaceState(
-            { ...EMPTY_WORKSPACE, sourceBlocks: b, previewConfirmed: false },
-            mergedVisibility,
-            {},
-          );
-        } else {
-          setWs(EMPTY_WORKSPACE);
-          const mergedVisibility = mergePdfVisibility(undefined);
-          onPdfVisibilityChange(mergedVisibility);
-          setPdfBannerInclude({});
-          hydrationSnapshotRef.current = serializeWorkspaceState(EMPTY_WORKSPACE, mergedVisibility, {});
+      const chosen = resolved.hydrated;
+      workspaceRevisionRef.current = resolved.workspaceRevision;
+
+      const body: OrderWorkspacePersistBody = {
+        sourceBlocks: chosen.sourceBlocks,
+        iriss: chosen.iriss,
+        apskatesPlāns: chosen.apskatesPlāns,
+        cenasAtbilstiba: chosen.cenasAtbilstiba,
+        previewConfirmed: Boolean(chosen.previewConfirmed),
+        vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
+        vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
+      };
+
+      workspaceDebugLog("hydrate_source", {
+        sessionId: payload.sessionId,
+        source:
+          resolved.source === "local" ||
+          resolved.source === "backup" ||
+          resolved.source === "legacy"
+            ? "localStorage"
+            : resolved.source === "server"
+              ? "server_ssr"
+              : "unknown",
+        fillScore: workspaceHydrationFillScore(body),
+        revision: resolved.workspaceRevision,
+      });
+
+      const hydratedWs: WorkspacePersist = {
+        sourceBlocks: chosen.sourceBlocks,
+        iriss: chosen.iriss,
+        apskatesPlāns: chosen.apskatesPlāns,
+        cenasAtbilstiba: chosen.cenasAtbilstiba,
+        previewConfirmed: Boolean(chosen.previewConfirmed),
+        vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
+        vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
+      };
+      wsPersistRef.current = hydratedWs;
+      wsStateRef.current = hydratedWs;
+      setWs(hydratedWs);
+      lastGoodPersistBodyRef.current = body;
+
+      const mergedVisibility = mergePdfVisibility(chosen.pdfVisibility);
+      const mergedBannerInclude = mergeProvinBannerPdfInclude(chosen.pdfBannerInclude);
+      onPdfVisibilityChange(mergedVisibility);
+      setPdfBannerInclude(mergedBannerInclude);
+
+      commitWorkspaceLocalNow({ force: true });
+      hydrationSnapshotRef.current = serializeWorkspaceState(hydratedWs, mergedVisibility, mergedBannerInclude);
+
+      if (rawV2) {
+        try {
+          localStorage.removeItem(keyV2);
+        } catch {
+          /* quota */
         }
       }
     } catch {
       setWs(EMPTY_WORKSPACE);
+      wsPersistRef.current = EMPTY_WORKSPACE;
+      wsStateRef.current = EMPTY_WORKSPACE;
       const mergedVisibility = mergePdfVisibility(undefined);
       onPdfVisibilityChange(mergedVisibility);
       setPdfBannerInclude({});
@@ -1405,56 +1260,8 @@ export function OrderDetailWorkspace({
     workspaceHydratedOnceRef.current = true;
     workspaceDirtyRef.current = false;
     setWorkspaceHydrated(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `serverWorkspaceJson` refresh var pārrakstīt jaunāku lokālo darba zonu
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- serverWorkspaceJson apzināti nav deps: localStorage vienmēr uzvar
   }, [payload.sessionId, payload.serverInternalComment, onPdfVisibilityChange, orderDraftPersistenceEnabled]);
-
-  /** Pēc hidratācijas — svaigs Blob/FS (SSR var būt novecojis pirms pēdējā flush). */
-  useEffect(() => {
-    if (!workspaceHydrated || !orderDraftPersistenceEnabled) return;
-    let cancelled = false;
-    void (async () => {
-      const fresh = await fetchCanonicalWorkspace(payload.sessionId);
-      if (cancelled || !fresh.workspace) return;
-      const freshBody = workspacePersistFromDraftWorkspace(fresh.workspace);
-      if (!freshBody) return;
-      syncWsPersistRefFromState();
-      const current = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
-      const merged = coalesceOrderWorkspacePersistBody(freshBody, current);
-      if (workspaceHydrationFillScore(merged) + 1 < workspaceHydrationFillScore(current)) return;
-      if (typeof fresh.workspaceRevision === "number" && fresh.workspaceRevision > 0) {
-        workspaceRevisionRef.current = fresh.workspaceRevision;
-      }
-      const nextWs: WorkspacePersist = {
-        sourceBlocks: merged.sourceBlocks,
-        iriss: merged.iriss,
-        apskatesPlāns: merged.apskatesPlāns,
-        cenasAtbilstiba: merged.cenasAtbilstiba,
-        previewConfirmed: merged.previewConfirmed,
-        vehicleAiExtraction: merged.vehicleAiExtraction,
-        vehicleAiExtractionMeta: merged.vehicleAiExtractionMeta,
-      };
-      wsPersistRef.current = nextWs;
-      wsStateRef.current = nextWs;
-      setWs(nextWs);
-      lastGoodPersistBodyRef.current = merged;
-      commitWorkspaceLocalNow({ force: true });
-      workspaceDebugLog("hydrate_source", {
-        sessionId: payload.sessionId,
-        source: "server_fetch",
-        fillScore: workspaceHydrationFillScore(merged),
-        revision: fresh.workspaceRevision,
-      });
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    commitWorkspaceLocalNow,
-    orderDraftPersistenceEnabled,
-    payload.sessionId,
-    syncWsPersistRefFromState,
-    workspaceHydrated,
-  ]);
 
   const persistWorkspaceSnapshot = useCallback(
     async (opts?: { showFlash?: boolean; serverOnly?: boolean }): Promise<boolean> => {
@@ -1530,7 +1337,7 @@ export function OrderDetailWorkspace({
         run();
         return;
       }
-      workspaceServerSaveTimerRef.current = setTimeout(run, 800);
+      workspaceServerSaveTimerRef.current = setTimeout(run, WORKSPACE_SERVER_AUTOSAVE_MS);
     },
     [flushWorkspaceServerPatch, orderDraftPersistenceEnabled],
   );
@@ -1680,24 +1487,9 @@ export function OrderDetailWorkspace({
     setWorkspaceAutosaveStatus("saving");
     const t = window.setTimeout(() => {
       scheduleWorkspaceServerPatch({ showFlash: false });
-    }, 800);
-    return () => {
-      window.clearTimeout(t);
-      if (!workspaceHydratedOnceRef.current) return;
-      syncWsPersistRefFromState();
-      commitWorkspaceLocalNow({ force: true });
-      void persistFullWorkspaceRef("effect_cleanup_flush", { showFlash: false });
-    };
-  }, [
-    ws,
-    pdfVisibility,
-    pdfBannerInclude,
-    workspaceHydrated,
-    commitWorkspaceLocalNow,
-    persistFullWorkspaceRef,
-    scheduleWorkspaceServerPatch,
-    syncWsPersistRefFromState,
-  ]);
+    }, WORKSPACE_SERVER_AUTOSAVE_MS);
+    return () => window.clearTimeout(t);
+  }, [ws, pdfVisibility, pdfBannerInclude, workspaceHydrated, commitWorkspaceLocalNow, scheduleWorkspaceServerPatch]);
 
   useEffect(() => {
     if (!workspaceHydrated) return;

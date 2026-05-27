@@ -18,7 +18,7 @@ describe("pickOrderEditsForHydration", () => {
     expect(picked.vin).toBe("NEWVIN12345678901");
   });
 
-  it("prefers newer server over older local", () => {
+  it("keeps localStorage when entry exists even if server is newer", () => {
     const server: OrderDraftState = {
       orderEdits: { customerEmail: "new@provin.lv" },
       workspace: null,
@@ -29,7 +29,7 @@ describe("pickOrderEditsForHydration", () => {
       orderEdits: { customerEmail: "old@provin.lv" },
     });
     const picked = pickOrderEditsForHydration(server, local);
-    expect(picked.customerEmail).toBe("new@provin.lv");
+    expect(picked.customerEmail).toBe("old@provin.lv");
   });
 
   it("legacy local without savedAt is not stomped by server updatedAt alone", () => {

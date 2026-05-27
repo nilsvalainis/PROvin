@@ -85,7 +85,7 @@ function coalesceOrderEdits(
 }
 
 /**
- * Pasūtījuma meta lauki (VIN, klients u.c.) — jaunākais avots uzvar; serveris nedrīkst pārrakstīt svaigu localStorage.
+ * Pasūtījuma meta lauki — ja pārlūkā ir `localStorage` ieraksts, tas ir patiesība (serveris tikai papildina tukšus).
  */
 export function pickOrderEditsForHydration(
   serverDraft: OrderDraftState | null | undefined,
@@ -93,20 +93,10 @@ export function pickOrderEditsForHydration(
 ): OrderDraftOrderEdits {
   const local = parseOrderEditsFromLocalStorage(localRaw);
   const serverEdits = serverDraft?.orderEdits ?? {};
-  const serverMs = serverDraft?.updatedAt ? Date.parse(serverDraft.updatedAt) : 0;
-  const serverMsOk = Number.isFinite(serverMs) ? serverMs : 0;
 
-  if (local.savedAtMs > serverMsOk + 500) {
+  if (localRaw?.trim()) {
     return coalesceOrderEdits(local.orderEdits, serverEdits);
   }
-  /** Legacy / beforeunload — bez `savedAt`; neļaut serverim pārrakstīt ar tikai `updatedAt`. */
-  if (local.savedAtMs === 0 && orderDraftHasOrderEdits(local.orderEdits)) {
-    return coalesceOrderEdits(local.orderEdits, serverEdits);
-  }
-  if (orderDraftHasOrderEdits(serverEdits) && serverMsOk > 0 && serverMsOk >= local.savedAtMs) {
-    return coalesceOrderEdits(serverEdits, local.orderEdits);
-  }
-  if (orderDraftHasOrderEdits(local.orderEdits)) return local.orderEdits;
   if (orderDraftHasOrderEdits(serverEdits)) return serverEdits;
   return {};
 }
