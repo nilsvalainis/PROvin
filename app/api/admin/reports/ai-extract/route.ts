@@ -58,7 +58,20 @@ function needsGeminiInlinePdf(extracted: Awaited<ReturnType<typeof extractPdfTex
   return false;
 }
 
+/** Pagaidām atslēgts — admin sadaļa „Sistēmas anomālijas un AI analīze” tiks pārbūvēta. */
+const AI_EXTRACT_DISABLED = true;
+
 export async function POST(req: Request) {
+  if (AI_EXTRACT_DISABLED) {
+    return NextResponse.json(
+      {
+        error: "feature_disabled",
+        detail: "Sistēmas anomālijas un AI analīze pagaidām nav pieejama.",
+      },
+      { status: 410 },
+    );
+  }
+
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 

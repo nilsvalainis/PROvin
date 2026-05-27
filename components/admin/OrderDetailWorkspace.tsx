@@ -150,8 +150,6 @@ import {
 } from "@/lib/admin-notify-report-ready-client";
 import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
 import { AdminPersistenceHealthBanner } from "@/components/admin/AdminPersistenceHealthBanner";
-import { AdminVehicleReportsAiPanel } from "@/components/admin/AdminVehicleReportsAiPanel";
-import { applyVehicleAiExtraction } from "@/lib/apply-vehicle-ai-extraction";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 
 function geminiFetchErrorMessage(
@@ -2397,51 +2395,6 @@ export function OrderDetailWorkspace({
       ) : (
         <p className="mt-1 flex-1 text-[11px] leading-tight text-[var(--color-provin-muted)]">Vēl nav pievienotu failu.</p>
       )}
-      <AdminVehicleReportsAiPanel
-        sessionId={payload.sessionId}
-        geminiAllowed={payload.geminiAllowed}
-        extraction={ws.vehicleAiExtraction}
-        extractionMeta={ws.vehicleAiExtractionMeta}
-        commentsDraft={internalCommentDraft}
-        onCommentsDraftChange={onInternalCommentChange}
-        compact={narrowPortfolioLayout}
-        collectPortfolioPdfFiles={async () => {
-          const out: File[] = [];
-          for (const p of portfolio) {
-            if (!/\.pdf$/i.test(p.name) && p.mime !== "application/pdf") continue;
-            const blob = await fetch(p.blobUrl).then((r) => r.blob());
-            out.push(
-              new File([blob], p.name, {
-                type: blob.type || "application/pdf",
-                lastModified: Number.isFinite(Date.parse(p.addedAt)) ? Date.parse(p.addedAt) : Date.now(),
-              }),
-            );
-          }
-          return out;
-        }}
-        onExtractionChange={(extraction, meta) => {
-          workspaceDebugLog("import_received", {
-            sessionId: payload.sessionId,
-            source: "ai_extract",
-            changedKeys: ["vehicleAiExtraction", "vehicleAiExtractionMeta"],
-          });
-          updateWs({ vehicleAiExtraction: extraction, vehicleAiExtractionMeta: meta });
-        }}
-        onApplyExtraction={(extraction) => {
-          const applied = applyVehicleAiExtraction({
-            sourceBlocks: wsPersistRef.current.sourceBlocks,
-            orderEdits: {},
-            currentVin: payload.vin,
-            extraction,
-          });
-          updateWs({ sourceBlocks: applied.sourceBlocks });
-          if (applied.orderEdits.vin?.trim()) {
-            onOrderEditsPatch?.({ vin: applied.orderEdits.vin });
-          }
-          return { filledFields: applied.filledFields };
-        }}
-        onImportComplete={() => persistFullWorkspaceRef("ai_extract:complete")}
-      />
     </section>
   );
 
