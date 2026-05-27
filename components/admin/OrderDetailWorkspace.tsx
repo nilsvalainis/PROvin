@@ -820,9 +820,11 @@ export function OrderDetailWorkspace({
         baseline: lastGoodPersistBodyRef.current,
         pdfVisibility: pdfVisibilityRef.current,
         pdfBannerInclude: pdfBannerIncludeRef.current,
-        expectedWorkspaceRevision: workspaceRevisionRef.current,
+        expectedWorkspaceRevision:
+          workspaceRevisionRef.current > 0 ? workspaceRevisionRef.current : undefined,
         saveGeneration: myGen,
         logContext,
+        fetchKeepalive: logContext === "navigation_flush",
       });
       if (result.generation !== workspaceServerSaveGenRef.current) return true;
       if (!result.ok) {
@@ -1389,9 +1391,14 @@ export function OrderDetailWorkspace({
   );
 
   const flushWorkspaceServerPatch = useCallback(
-    (opts?: { keepalive?: boolean; showFlash?: boolean }) => {
-      if (!orderDraftPersistenceEnabled || !workspaceHydratedOnceRef.current) return;
-      void persistFullWorkspaceRef("autosave", { showFlash: opts?.showFlash !== false });
+    (opts?: { keepalive?: boolean; showFlash?: boolean }): Promise<boolean> => {
+      if (!orderDraftPersistenceEnabled || !workspaceHydratedOnceRef.current) return Promise.resolve(false);
+      if (workspaceServerSaveTimerRef.current) {
+        clearTimeout(workspaceServerSaveTimerRef.current);
+        workspaceServerSaveTimerRef.current = null;
+      }
+      const ctx = opts?.keepalive ? "navigation_flush" : "autosave";
+      return persistFullWorkspaceRef(ctx, { showFlash: opts?.showFlash !== false });
     },
     [orderDraftPersistenceEnabled, persistFullWorkspaceRef],
   );
@@ -1399,7 +1406,7 @@ export function OrderDetailWorkspace({
   const forceNavigationFlush = useCallback(() => {
     workspaceDirtyRef.current = true;
     flushWorkspaceLocalStorageSync();
-    flushWorkspaceServerPatch({ keepalive: true, showFlash: false });
+    void flushWorkspaceServerPatch({ keepalive: true, showFlash: false });
   }, [flushWorkspaceLocalStorageSync, flushWorkspaceServerPatch]);
 
   const scheduleWorkspaceServerPatch = useCallback(

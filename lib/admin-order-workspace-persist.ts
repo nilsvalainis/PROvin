@@ -441,26 +441,45 @@ export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspa
     serverPick != null ? workspaceHydrationFillScore(hydratedToPersistBody(serverPick.data)) : 0;
   const serverHasData = serverFillScore > 0;
 
-  /** SSR guard: server ar datiem vienmēr uzvar pār localStorage cache. */
+  /** Server + local deep merge; jaunāks localStorage nedrīkst zaudēt pret vecu Blob/SSR. */
   if (serverHasData && serverPick) {
     const serverBody = hydratedToPersistBody(serverPick.data);
     const localBody = local ? hydratedToPersistBody(local.data) : null;
+    const localIsNewer = Boolean(
+      local &&
+        localBody &&
+        local.savedAtMs > serverPick.savedAtMs + 500 &&
+        localWorkspaceHasSubstantiveContent(localBody),
+    );
     const merged = localBody ?
-      coalesceOrderWorkspacePersistBody(localBody, serverBody)
+      coalesceOrderWorkspacePersistBody(
+        localIsNewer ? localBody : serverBody,
+        localIsNewer ? serverBody : localBody,
+      )
     : serverBody;
+    const mergedData = {
+      ...serverPick.data,
+      sourceBlocks: merged.sourceBlocks,
+      iriss: merged.iriss,
+      apskatesPlāns: merged.apskatesPlāns,
+      cenasAtbilstiba: merged.cenasAtbilstiba,
+      previewConfirmed: merged.previewConfirmed,
+      vehicleAiExtraction: merged.vehicleAiExtraction,
+      vehicleAiExtractionMeta: merged.vehicleAiExtractionMeta,
+    } as T;
+    const pickSource: WorkspaceHydrationSource = localIsNewer ? "local" : "server";
+    const savedAtMs =
+      pickSource === "local" && local ? local.savedAtMs : serverPick.savedAtMs;
+    if (localIsNewer) {
+      console.info("[workspace:hydrate] local_newer_merged", {
+        localSavedAtMs: local?.savedAtMs,
+        serverSavedAtMs: serverPick.savedAtMs,
+      });
+    }
     return {
-      source: "server",
-      data: {
-        ...serverPick.data,
-        sourceBlocks: merged.sourceBlocks,
-        iriss: merged.iriss,
-        apskatesPlāns: merged.apskatesPlāns,
-        cenasAtbilstiba: merged.cenasAtbilstiba,
-        previewConfirmed: merged.previewConfirmed,
-        vehicleAiExtraction: merged.vehicleAiExtraction,
-        vehicleAiExtractionMeta: merged.vehicleAiExtractionMeta,
-      } as T,
-      savedAtMs: serverPick.savedAtMs,
+      source: pickSource,
+      data: mergedData,
+      savedAtMs,
       fillScore: workspaceHydrationFillScore(merged),
     };
   }

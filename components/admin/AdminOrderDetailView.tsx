@@ -17,7 +17,10 @@ import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
 import { formatMoneyEur } from "@/lib/format-money";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import type { OrderDraftState } from "@/lib/admin-order-draft-types";
-import { orderDraftHasOrderEdits } from "@/lib/admin-order-draft-types";
+import {
+  pickOrderEditsForHydration,
+  serializeOrderEditsForLocalStorage,
+} from "@/lib/admin-order-edits-persist";
 
 /** Servera pasūtījums, serializējams uz klientu (bez server-only importiem). */
 export type AdminOrderDetailClientModel = {
@@ -62,19 +65,29 @@ type OrderEdits = {
   mileageComment?: string;
 };
 
-function initialEditsFromServerDraft(serverOrderDraft: OrderDraftState | null): OrderEdits {
-  const fromServer = serverOrderDraft?.orderEdits;
-  if (!orderDraftHasOrderEdits(fromServer)) return {};
+function initialEditsForOrder(
+  orderId: string,
+  serverOrderDraft: OrderDraftState | null,
+): OrderEdits {
+  let localRaw: string | null = null;
+  if (typeof window !== "undefined") {
+    try {
+      localRaw = localStorage.getItem(storageKeyOrderEdits(orderId));
+    } catch {
+      /* ignore */
+    }
+  }
+  const picked = pickOrderEditsForHydration(serverOrderDraft, localRaw);
   return {
-    ...(typeof fromServer!.vin === "string" ? { vin: fromServer!.vin } : {}),
-    ...(typeof fromServer!.listingUrl === "string" ? { listingUrl: fromServer!.listingUrl } : {}),
-    ...(typeof fromServer!.customerName === "string" ? { customerName: fromServer!.customerName } : {}),
-    ...(typeof fromServer!.customerEmail === "string" ? { customerEmail: fromServer!.customerEmail } : {}),
-    ...(typeof fromServer!.customerPhone === "string" ? { customerPhone: fromServer!.customerPhone } : {}),
-    ...(typeof fromServer!.contactMethod === "string" ? { contactMethod: fromServer!.contactMethod } : {}),
-    ...(typeof fromServer!.notes === "string" ? { notes: fromServer!.notes } : {}),
-    ...(typeof fromServer!.internalComment === "string" ? { internalComment: fromServer!.internalComment } : {}),
-    ...(typeof fromServer!.mileageComment === "string" ? { mileageComment: fromServer!.mileageComment } : {}),
+    ...(typeof picked.vin === "string" ? { vin: picked.vin } : {}),
+    ...(typeof picked.listingUrl === "string" ? { listingUrl: picked.listingUrl } : {}),
+    ...(typeof picked.customerName === "string" ? { customerName: picked.customerName } : {}),
+    ...(typeof picked.customerEmail === "string" ? { customerEmail: picked.customerEmail } : {}),
+    ...(typeof picked.customerPhone === "string" ? { customerPhone: picked.customerPhone } : {}),
+    ...(typeof picked.contactMethod === "string" ? { contactMethod: picked.contactMethod } : {}),
+    ...(typeof picked.notes === "string" ? { notes: picked.notes } : {}),
+    ...(typeof picked.internalComment === "string" ? { internalComment: picked.internalComment } : {}),
+    ...(typeof picked.mileageComment === "string" ? { mileageComment: picked.mileageComment } : {}),
   };
 }
 
@@ -100,7 +113,7 @@ export function AdminOrderDetailView({
     timeStyle: "short",
   });
 
-  const [edits, setEdits] = useState<OrderEdits>(() => initialEditsFromServerDraft(serverOrderDraft));
+  const [edits, setEdits] = useState<OrderEdits>(() => initialEditsForOrder(order.id, serverOrderDraft));
   const [hydrated, setHydrated] = useState(false);
   const [vinCopyFlash, setVinCopyFlash] = useState(false);
   const [listingCopyFlash, setListingCopyFlash] = useState(false);
@@ -194,49 +207,28 @@ export function AdminOrderDetailView({
    */
   useEffect(() => {
     const key = storageKeyOrderEdits(order.id);
-    const fromServer = serverOrderDraft?.orderEdits;
-    if (orderDraftHasOrderEdits(fromServer)) {
-      setEdits({
-        ...(typeof fromServer!.vin === "string" ? { vin: fromServer!.vin } : {}),
-        ...(typeof fromServer!.listingUrl === "string" ? { listingUrl: fromServer!.listingUrl } : {}),
-        ...(typeof fromServer!.customerName === "string" ? { customerName: fromServer!.customerName } : {}),
-        ...(typeof fromServer!.customerEmail === "string" ? { customerEmail: fromServer!.customerEmail } : {}),
-        ...(typeof fromServer!.customerPhone === "string" ? { customerPhone: fromServer!.customerPhone } : {}),
-        ...(typeof fromServer!.contactMethod === "string" ? { contactMethod: fromServer!.contactMethod } : {}),
-        ...(typeof fromServer!.notes === "string" ? { notes: fromServer!.notes } : {}),
-        ...(typeof fromServer!.internalComment === "string"
-          ? { internalComment: fromServer!.internalComment }
-          : {}),
-        ...(typeof fromServer!.mileageComment === "string" ? { mileageComment: fromServer!.mileageComment } : {}),
-      });
-      try {
-        localStorage.setItem(key, JSON.stringify(fromServer));
-      } catch {
-        /* quota */
-      }
-      setHydrated(true);
-      return;
-    }
+    let localRaw: string | null = null;
     try {
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const p = JSON.parse(raw) as Record<string, unknown>;
-        if (p && typeof p === "object") {
-          setEdits({
-            ...(typeof p.vin === "string" ? { vin: p.vin } : {}),
-            ...(typeof p.listingUrl === "string" ? { listingUrl: p.listingUrl } : {}),
-            ...(typeof p.customerName === "string" ? { customerName: p.customerName } : {}),
-            ...(typeof p.customerEmail === "string" ? { customerEmail: p.customerEmail } : {}),
-            ...(typeof p.customerPhone === "string" ? { customerPhone: p.customerPhone } : {}),
-            ...(typeof p.contactMethod === "string" ? { contactMethod: p.contactMethod } : {}),
-            ...(typeof p.notes === "string" ? { notes: p.notes } : {}),
-            ...(typeof p.internalComment === "string" ? { internalComment: p.internalComment } : {}),
-            ...(typeof p.mileageComment === "string" ? { mileageComment: p.mileageComment } : {}),
-          });
-        }
-      }
+      localRaw = localStorage.getItem(key);
     } catch {
       /* ignore */
+    }
+    const picked = pickOrderEditsForHydration(serverOrderDraft, localRaw);
+    setEdits({
+      ...(typeof picked.vin === "string" ? { vin: picked.vin } : {}),
+      ...(typeof picked.listingUrl === "string" ? { listingUrl: picked.listingUrl } : {}),
+      ...(typeof picked.customerName === "string" ? { customerName: picked.customerName } : {}),
+      ...(typeof picked.customerEmail === "string" ? { customerEmail: picked.customerEmail } : {}),
+      ...(typeof picked.customerPhone === "string" ? { customerPhone: picked.customerPhone } : {}),
+      ...(typeof picked.contactMethod === "string" ? { contactMethod: picked.contactMethod } : {}),
+      ...(typeof picked.notes === "string" ? { notes: picked.notes } : {}),
+      ...(typeof picked.internalComment === "string" ? { internalComment: picked.internalComment } : {}),
+      ...(typeof picked.mileageComment === "string" ? { mileageComment: picked.mileageComment } : {}),
+    });
+    try {
+      localStorage.setItem(key, serializeOrderEditsForLocalStorage(picked));
+    } catch {
+      /* quota */
     }
     setHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- skat. komentāru augšā (`serverOrderDraft` + refresh)
@@ -262,7 +254,7 @@ export function AdminOrderDetailView({
     const t = window.setTimeout(() => {
       void (async () => {
         try {
-          localStorage.setItem(storageKeyOrderEdits(order.id), JSON.stringify(edits));
+          localStorage.setItem(storageKeyOrderEdits(order.id), serializeOrderEditsForLocalStorage(edits));
         } catch {
           /* quota */
         }
@@ -273,6 +265,7 @@ export function AdminOrderDetailView({
               method: "PATCH",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
+              keepalive: true,
               body: JSON.stringify({ sessionId: order.id, orderEdits: edits }),
             });
             srvOk = res.ok;
@@ -291,9 +284,21 @@ export function AdminOrderDetailView({
     return () => {
       window.clearTimeout(t);
       try {
-        localStorage.setItem(storageKeyOrderEdits(order.id), JSON.stringify(editsRef.current));
+        localStorage.setItem(
+          storageKeyOrderEdits(order.id),
+          serializeOrderEditsForLocalStorage(editsRef.current),
+        );
       } catch {
         /* quota */
+      }
+      if (orderDraftPersistenceEnabled) {
+        void fetch("/api/admin/order-draft", {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          keepalive: true,
+          body: JSON.stringify({ sessionId: order.id, orderEdits: editsRef.current }),
+        });
       }
     };
   }, [edits, hydrated, order.id, orderDraftPersistenceEnabled]);

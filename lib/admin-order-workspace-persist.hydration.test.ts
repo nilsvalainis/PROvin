@@ -89,6 +89,35 @@ describe("pickOrderWorkspaceHydrationServerFirst", () => {
     expect(picked!.data.sourceBlocks.autodna.comments).toContain("Servera AutoDNA");
     expect(picked!.data.sourceBlocks.ltab.comments).toContain("Lokālais LTAB");
   });
+
+  it("marks local as source when local savedAt is newer with substantive edits", () => {
+    const serverBody = bodyWithAutodnaComment("Vecs servera teksts");
+    const localBody = bodyWithAutodnaComment("Jauns lokālais teksts garāks");
+    type H = typeof serverBody & { pdfVisibility?: object; pdfBannerInclude?: object };
+    const toHydrated = (b: OrderWorkspacePersistBody): H => ({
+      ...b,
+      pdfVisibility: {},
+      pdfBannerInclude: {},
+    });
+    const picked = pickOrderWorkspaceHydrationServerFirst(
+      [
+        {
+          source: "server",
+          data: toHydrated(serverBody),
+          savedAtMs: Date.parse("2026-01-01T00:00:00.000Z"),
+          fillScore: workspaceHydrationFillScore(serverBody),
+        },
+      ],
+      {
+        source: "local",
+        data: toHydrated(localBody),
+        savedAtMs: Date.parse("2026-01-05T00:00:00.000Z"),
+        fillScore: workspaceHydrationFillScore(localBody),
+      },
+    );
+    expect(picked?.source).toBe("local");
+    expect(picked?.data.sourceBlocks.autodna.comments).toContain("Jauns lokālais");
+  });
 });
 
 describe("mergeWorkspaceHydrationBodies", () => {

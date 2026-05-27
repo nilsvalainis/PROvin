@@ -35,6 +35,8 @@ export type PersistWorkspaceStateOptions = {
   expectedWorkspaceRevision?: number;
   saveGeneration?: number;
   logContext?: string;
+  /** Navigācijas flush — ļauj PATCH pabeigties pēc lapas atstāšanas. */
+  fetchKeepalive?: boolean;
 };
 
 export type PersistWorkspaceStateResult =
@@ -130,16 +132,20 @@ async function patchWorkspaceOnce(opts: PersistWorkspaceStateOptions): Promise<P
     extra: { context: opts.logContext ?? "client", generation: gen },
   });
 
+  const patchBody: Record<string, unknown> = {
+    sessionId: opts.sessionId,
+    workspace: draftBody,
+    saveGeneration: gen,
+  };
+  if (opts.expectedWorkspaceRevision != null && opts.expectedWorkspaceRevision > 0) {
+    patchBody.expectedWorkspaceRevision = opts.expectedWorkspaceRevision;
+  }
   const res = await fetch("/api/admin/order-draft", {
     method: "PATCH",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sessionId: opts.sessionId,
-      workspace: draftBody,
-      expectedWorkspaceRevision: opts.expectedWorkspaceRevision,
-      saveGeneration: gen,
-    }),
+    keepalive: opts.fetchKeepalive === true,
+    body: JSON.stringify(patchBody),
   });
   const data = (await res.json().catch(() => ({}))) as {
     ok?: boolean;

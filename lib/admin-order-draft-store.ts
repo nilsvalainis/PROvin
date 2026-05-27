@@ -451,7 +451,11 @@ export async function patchOrderDraft(
   const prev = await readOrderDraft(sessionId);
   const prevRev = prev?.workspaceRevision ?? 0;
 
-  if (patch.workspace !== undefined && options.expectedWorkspaceRevision != null) {
+  if (
+    patch.workspace !== undefined &&
+    options.expectedWorkspaceRevision != null &&
+    prevRev > 0
+  ) {
     if (options.expectedWorkspaceRevision !== prevRev) {
       console.warn("[workspace:overwrite_blocked]", {
         sessionId,
