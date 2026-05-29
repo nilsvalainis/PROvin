@@ -9,9 +9,6 @@ import {
   PROVIN_CONSENT_UPDATED_EVENT,
 } from "@/lib/cookie-consent";
 
-/** @temporary TikTok Events Manager verification — restore consent gate after verification. */
-const TIKTOK_PIXEL_BYPASS_CONSENT = true;
-
 function readAnalyticsAllowed(): boolean {
   if (typeof window === "undefined") return false;
   try {
@@ -31,8 +28,7 @@ type Props = {
 
 /**
  * Vercel Web Analytics — visiem apmeklējumiem (agregēti, pirmās puses mitināšanas statistika).
- * Google Analytics 4 — tikai pēc sīkdatņu joslas piekrišanas „analītikai”.
- * TikTok Pixel — pagaidu bez piekrišanas, kamēr `TIKTOK_PIXEL_BYPASS_CONSENT` ir `true`.
+ * Google Analytics 4 un TikTok Pixel — tikai pēc sīkdatņu joslas piekrišanas „analītikai”.
  */
 export function ConsentAwareAnalytics({ gaMeasurementId, tiktokPixelId }: Props) {
   const [gaAllowed, setGaAllowed] = useState(false);
@@ -75,7 +71,7 @@ gtag('config','${id}');`}
           </Script>
         </>
       ) : null}
-      {(TIKTOK_PIXEL_BYPASS_CONSENT || gaAllowed) && ttPixel ? (
+      {gaAllowed && ttPixel ? (
         <Script id="tiktok-pixel" strategy="afterInteractive">
           {`!function (w, d, t) {
   w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(
