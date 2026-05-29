@@ -75,38 +75,42 @@ export function AdminVendorAvotuSourceBlock({
   embedded = false,
   sectionIndex,
 }: Props) {
+  const serviceHistory = Array.isArray(value?.serviceHistory) ? value.serviceHistory : [];
+  const incidents = Array.isArray(value?.incidents) ? value.incidents : [];
+  const block = { ...value, serviceHistory, incidents };
+
   const displayRows =
-    value.serviceHistory.length > 0
-      ? sortAutoRecordsDescending([...value.serviceHistory])
+    serviceHistory.length > 0
+      ? sortAutoRecordsDescending([...serviceHistory])
       : [emptyAutoRecordsServiceRow()];
 
   const setMileageRow = (index: number, patch: Partial<AutoRecordsServiceRow>) => {
-    const rows = value.serviceHistory.length > 0 ? [...value.serviceHistory] : [emptyAutoRecordsServiceRow()];
+    const rows = serviceHistory.length > 0 ? [...serviceHistory] : [emptyAutoRecordsServiceRow()];
     rows[index] = { ...rows[index]!, ...patch };
     const next = sortAutoRecordsDescending(rows);
     const data = next.filter(autoRecordsRowHasData);
-    onChange({ ...value, serviceHistory: data.length > 0 ? next : [emptyAutoRecordsServiceRow()] });
+    onChange({ ...block, serviceHistory: data.length > 0 ? next : [emptyAutoRecordsServiceRow()] });
   };
 
   const addMileageRow = () => {
     onChange({
-      ...value,
-      serviceHistory: sortAutoRecordsDescending([...value.serviceHistory, emptyAutoRecordsServiceRow()]),
+      ...block,
+      serviceHistory: sortAutoRecordsDescending([...serviceHistory, emptyAutoRecordsServiceRow()]),
     });
   };
 
   const setIncidentRow = (index: number, patch: Partial<LtabIncidentRow>) => {
-    const rows = value.incidents.map((r, i) => (i === index ? { ...r, ...patch } : r));
-    onChange({ ...value, incidents: rows });
+    const rows = incidents.map((r, i) => (i === index ? { ...r, ...patch } : r));
+    onChange({ ...block, incidents: rows });
   };
 
   const addIncidentRow = () => {
-    onChange({ ...value, incidents: [...value.incidents, emptyLtabRow()] });
+    onChange({ ...block, incidents: [...incidents, emptyLtabRow()] });
   };
 
   const removeIncidentRow = (index: number) => {
-    if (value.incidents.length <= 1) return;
-    onChange({ ...value, incidents: value.incidents.filter((_, i) => i !== index) });
+    if (incidents.length <= 1) return;
+    onChange({ ...block, incidents: incidents.filter((_, i) => i !== index) });
   };
 
   const idBase = sectionIndex != null ? `${blockKey}-s${sectionIndex}` : blockKey;
@@ -115,7 +119,7 @@ export function AdminVendorAvotuSourceBlock({
     const parsed = parseCarverticalOdometerPaste(raw);
     if (parsed.length === 0) return;
     onChange({
-      ...value,
+      ...block,
       mileagePasteRaw: raw.slice(0, 24_000),
       serviceHistory: parsed,
     });
@@ -125,7 +129,7 @@ export function AdminVendorAvotuSourceBlock({
     const parsed = parseAutodnaMileagePaste(raw);
     if (parsed.length === 0) return;
     onChange({
-      ...value,
+      ...block,
       mileagePasteRaw: raw.slice(0, 24_000),
       serviceHistory: parsed,
     });
@@ -173,7 +177,7 @@ export function AdminVendorAvotuSourceBlock({
                   }
                   value={value.mileagePasteRaw ?? ""}
                   onChange={(e) =>
-                    onChange({ ...value, mileagePasteRaw: e.target.value.slice(0, 24_000) })
+                    onChange({ ...block, mileagePasteRaw: e.target.value.slice(0, 24_000) })
                   }
                   onBlur={(e) =>
                     blockKey === "carvertical"
@@ -448,7 +452,7 @@ export function AdminVendorAvotuSourceBlock({
             disabled={disabled}
             onChange={(next) =>
               onChange({
-                ...value,
+                ...block,
                 pdfChecklist: sourcePdfChecklistHasAny(next) ? next : undefined,
               })
             }
@@ -456,7 +460,7 @@ export function AdminVendorAvotuSourceBlock({
         ) : null}
         <AdminSourceCommentField
           value={value.comments}
-          onChange={(next) => onChange({ ...value, comments: next })}
+          onChange={(next) => onChange({ ...block, comments: next })}
           readOnly={readOnly}
           disabled={disabled}
           compact

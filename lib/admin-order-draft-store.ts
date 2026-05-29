@@ -132,18 +132,23 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
   let workspace: OrderDraftWorkspaceBody | null = null;
   if (o.workspace && typeof o.workspace === "object") {
     const w = o.workspace as Record<string, unknown>;
-    const json = JSON.stringify({
-      sourceBlocks: w.sourceBlocks,
-      iriss: typeof w.iriss === "string" ? w.iriss : "",
-      apskatesPlāns: typeof w.apskatesPlāns === "string" ? w.apskatesPlāns : "",
-      cenasAtbilstiba: typeof w.cenasAtbilstiba === "string" ? w.cenasAtbilstiba : "",
-      previewConfirmed: Boolean(w.previewConfirmed),
-      pdfVisibility: w.pdfVisibility ? mergePdfVisibility(w.pdfVisibility) : undefined,
-      pdfBannerInclude: w.pdfBannerInclude ? mergeProvinBannerPdfInclude(w.pdfBannerInclude) : undefined,
-      vehicleAiExtraction: w.vehicleAiExtraction,
-      vehicleAiExtractionMeta: w.vehicleAiExtractionMeta,
-    });
-    const h = hydrateWorkspaceFromStorage(json);
+    let json: string | null = null;
+    try {
+      json = JSON.stringify({
+        sourceBlocks: w.sourceBlocks,
+        iriss: typeof w.iriss === "string" ? w.iriss : "",
+        apskatesPlāns: typeof w.apskatesPlāns === "string" ? w.apskatesPlāns : "",
+        cenasAtbilstiba: typeof w.cenasAtbilstiba === "string" ? w.cenasAtbilstiba : "",
+        previewConfirmed: Boolean(w.previewConfirmed),
+        pdfVisibility: w.pdfVisibility ? mergePdfVisibility(w.pdfVisibility) : undefined,
+        pdfBannerInclude: w.pdfBannerInclude ? mergeProvinBannerPdfInclude(w.pdfBannerInclude) : undefined,
+        vehicleAiExtraction: w.vehicleAiExtraction,
+        vehicleAiExtractionMeta: w.vehicleAiExtractionMeta,
+      });
+    } catch {
+      json = null;
+    }
+    const h = json ? hydrateWorkspaceFromStorage(json) : null;
     if (h) {
       workspace = {
         sourceBlocks: h.sourceBlocks,

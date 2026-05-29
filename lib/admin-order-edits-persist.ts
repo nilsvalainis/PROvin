@@ -59,7 +59,7 @@ export function serializeOrderEditsForLocalStorage(orderEdits: OrderDraftOrderEd
  * Pasūtījuma meta lauki — ja pārlūkā ir `localStorage` ieraksts, tas ir patiesība (serveris tikai papildina tukšus).
  */
 export function pickOrderEditsForHydration(
-  serverDraft: OrderDraftState | null | undefined,
+  serverDraft: Pick<OrderDraftState, "orderEdits"> | OrderDraftState | null | undefined,
   localRaw: string | null,
 ): OrderDraftOrderEdits {
   const local = parseOrderEditsFromLocalStorage(localRaw);

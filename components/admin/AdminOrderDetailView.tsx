@@ -67,7 +67,7 @@ type OrderEdits = {
   mileageComment?: string;
 };
 
-function orderEditsFromServerDraft(serverOrderDraft: OrderDraftState | null): OrderEdits {
+function orderEditsFromServerDraft(serverOrderDraft: Pick<OrderDraftState, "orderEdits"> | null): OrderEdits {
   const picked = pickOrderEditsForHydration(serverOrderDraft, null);
   return {
     ...(typeof picked.vin === "string" ? { vin: picked.vin } : {}),
@@ -98,7 +98,7 @@ export function AdminOrderDetailView({
   geminiAllowed,
 }: {
   order: AdminOrderDetailClientModel;
-  serverOrderDraft: OrderDraftState | null;
+  serverOrderDraft: Pick<OrderDraftState, "orderEdits"> | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
   geminiAllowed: boolean;
