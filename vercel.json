@@ -1,5 +1,14 @@
 {
   "functions": {
+    "app/api/admin/autodna/get-report/route.ts": {
+      "maxDuration": 90
+    },
+    "app/api/admin/autodna/order-status/route.ts": {
+      "maxDuration": 90
+    },
+    "app/api/admin/autodna/download/route.ts": {
+      "maxDuration": 90
+    },
     "app/api/admin/reports/ai-extract/route.ts": {
       "maxDuration": 120,
       "memory": 3008
