@@ -800,9 +800,9 @@ export function ltabBlockToPlainText(b: LtabBlockState): string {
 
 export function vendorAvotuBlockHasContent(b: VendorAvotuBlockState): boolean {
   return (
-    b.serviceHistory.some(autoRecordsRowHasData) ||
-    b.incidents.some(ltabRowHasData) ||
-    b.comments.trim().length > 0 ||
+    (b.serviceHistory ?? []).some(autoRecordsRowHasData) ||
+    (b.incidents ?? []).some(ltabRowHasData) ||
+    (b.comments ?? "").trim().length > 0 ||
     sourcePdfChecklistHasAny(b.pdfChecklist)
   );
 }
@@ -916,9 +916,9 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
     if (!vendorAvotuBlockHasContent(b)) continue;
     out.push({
       title: SOURCE_BLOCK_LABELS[k],
-      mileageRows: b.serviceHistory.filter(autoRecordsRowHasData),
-      incidentRows: b.incidents.filter(ltabRowHasData),
-      comments: b.comments.trim(),
+      mileageRows: (b.serviceHistory ?? []).filter(autoRecordsRowHasData),
+      incidentRows: (b.incidents ?? []).filter(ltabRowHasData),
+      comments: (b.comments ?? "").trim(),
       ...(sourcePdfChecklistHasAny(b.pdfChecklist) ? { pdfChecklist: b.pdfChecklist } : {}),
     });
   }
@@ -928,9 +928,9 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
     if (!citiAvotiSectionHasContent(citi)) continue;
     out.push({
       title: citiAvotiSectionPdfTitle(citi, i, citiTotal),
-      mileageRows: citi.serviceHistory.filter(autoRecordsRowHasData),
-      incidentRows: citi.incidents.filter(ltabRowHasData),
-      comments: citi.comments.trim(),
+      mileageRows: (citi.serviceHistory ?? []).filter(autoRecordsRowHasData),
+      incidentRows: (citi.incidents ?? []).filter(ltabRowHasData),
+      comments: (citi.comments ?? "").trim(),
       ...(sourcePdfChecklistHasAny(citi.pdfChecklist) ? { pdfChecklist: citi.pdfChecklist } : {}),
     });
   }

@@ -92,7 +92,8 @@ export function countRawSourceBlockKeys(partial: unknown): number {
 }
 
 /** Apgriež HTML bieži tukšu `<p><br></p>` — neuzskatīt par „bagātāku” par īsu lietotāja tekstu (IRISS u.c.). */
-function substantivePlainTextLen(htmlOrText: string): number {
+function substantivePlainTextLen(htmlOrText: string | null | undefined): number {
+  if (htmlOrText == null) return 0;
   return htmlOrText
     .replace(/<[^>]*>/g, " ")
     .replace(/\s+/g, " ")
@@ -104,12 +105,12 @@ function substantivePlainTextLen(htmlOrText: string): number {
  * (piem. lietotājs saīsina Gemini ģenerētu IRISS / apskates plānu).
  * Tukšs ienākošais neiztukšo aizpildītu baseline (daļējs PATCH).
  */
-function pickRicherTextField(incoming: string, baseline: string): string {
+function pickRicherTextField(incoming: string | null | undefined, baseline: string | null | undefined): string {
   const inLen = substantivePlainTextLen(incoming);
   const baseLen = substantivePlainTextLen(baseline);
-  if (baseLen === 0) return incoming;
-  if (inLen === 0) return baseline;
-  return incoming;
+  if (baseLen === 0) return typeof incoming === "string" ? incoming : "";
+  if (inLen === 0) return typeof baseline === "string" ? baseline : "";
+  return typeof incoming === "string" ? incoming : "";
 }
 
 function pickRicherSourceBlock<K extends SourceBlockKey>(
@@ -227,12 +228,12 @@ export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBo
   const complete: WorkspaceSourceBlocks = { ...createDefaultSourceBlocks(), ...merged };
   return {
     sourceBlocks: complete,
-    iriss: body.iriss,
-    apskatesPlāns: body.apskatesPlāns,
-    cenasAtbilstiba: body.cenasAtbilstiba,
-    previewConfirmed: body.previewConfirmed,
-    vehicleAiExtraction: body.vehicleAiExtraction,
-    vehicleAiExtractionMeta: body.vehicleAiExtractionMeta,
+    iriss: typeof body.iriss === "string" ? body.iriss : "",
+    apskatesPlāns: typeof body.apskatesPlāns === "string" ? body.apskatesPlāns : "",
+    cenasAtbilstiba: typeof body.cenasAtbilstiba === "string" ? body.cenasAtbilstiba : "",
+    previewConfirmed: Boolean(body.previewConfirmed),
+    vehicleAiExtraction: body.vehicleAiExtraction ?? null,
+    vehicleAiExtractionMeta: body.vehicleAiExtractionMeta ?? null,
   };
 }
 

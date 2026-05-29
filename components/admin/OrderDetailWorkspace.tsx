@@ -1804,15 +1804,21 @@ export function OrderDetailWorkspace({
     setPdfBannerInclude((prev) => ({ ...prev, [kind]: included }));
   }, []);
 
-  const provinAlertBanners = useMemo(
-    () => computeProvinAlertBannersFromWorkspace(ws.sourceBlocks),
-    [ws.sourceBlocks],
-  );
+  const provinAlertBanners = useMemo(() => {
+    try {
+      return computeProvinAlertBannersFromWorkspace(blocksDisplaySafe);
+    } catch {
+      return [];
+    }
+  }, [blocksDisplaySafe]);
 
-  const provinInfoBanners = useMemo(
-    () => computeProvinInfoBannersFromWorkspace(ws.sourceBlocks),
-    [ws.sourceBlocks],
-  );
+  const provinInfoBanners = useMemo(() => {
+    try {
+      return computeProvinInfoBannersFromWorkspace(blocksDisplaySafe);
+    } catch {
+      return [];
+    }
+  }, [blocksDisplaySafe]);
 
   const hasIncidentDataForGemini = useMemo(
     () => orderHasIncidentDataForGemini(blocksDisplaySafe),

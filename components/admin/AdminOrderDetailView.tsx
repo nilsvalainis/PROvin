@@ -14,6 +14,7 @@ import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/A
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
+import { AdminOrderWorkspaceErrorBoundary } from "@/components/admin/AdminOrderWorkspaceErrorBoundary";
 import { formatMoneyEur } from "@/lib/format-money";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import type { OrderDraftState } from "@/lib/admin-order-draft-types";
@@ -357,6 +358,15 @@ export function AdminOrderDetailView({
     };
   }, [order.id, orderDraftPersistenceEnabled]);
 
+  const formatOrderCreated = (createdSec: number): string => {
+    if (!Number.isFinite(createdSec) || createdSec <= 0) return "—";
+    try {
+      return dateFmt.format(new Date(createdSec * 1000));
+    } catch {
+      return "—";
+    }
+  };
+
   const mergedVin = edits.vin !== undefined ? edits.vin : (order.vin ?? "");
   const mergedListing = edits.listingUrl !== undefined ? edits.listingUrl : (order.listingUrl ?? "");
   const mergedCustomerName = edits.customerName !== undefined ? edits.customerName : (order.customerName ?? "");
@@ -417,7 +427,7 @@ export function AdminOrderDetailView({
                   </div>
                   <div className="min-w-0">
                     <dt className={metaLabel}>Laiks</dt>
-                    <dd className={metaValue}>{dateFmt.format(new Date(order.created * 1000))}</dd>
+                    <dd className={metaValue}>{formatOrderCreated(order.created)}</dd>
                   </div>
                   <div className="min-w-0">
                     <dt className={metaLabel}>Statuss</dt>
@@ -738,7 +748,8 @@ export function AdminOrderDetailView({
 
       <div id={`admin-order-alerts-slot-${order.id}`} className="min-w-0" />
 
-      <OrderDetailWorkspace
+      <AdminOrderWorkspaceErrorBoundary sessionId={order.id}>
+        <OrderDetailWorkspace
         adminDark={adminDark}
         internalCommentDraft={mergedInternalComment}
         onInternalCommentChange={(v) => setEdits((prev) => ({ ...prev, internalComment: v }))}
@@ -771,7 +782,8 @@ export function AdminOrderDetailView({
           serverInternalComment: order.internalComment ?? null,
           serverAttachments: order.attachments ?? [],
         }}
-      />
+        />
+      </AdminOrderWorkspaceErrorBoundary>
       </div>
     </div>
   );

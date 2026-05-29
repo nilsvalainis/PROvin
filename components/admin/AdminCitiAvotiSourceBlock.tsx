@@ -52,7 +52,7 @@ export function AdminCitiAvotiSourceBlock({
   onPdfIncludeChange,
   geminiComment,
 }: Props) {
-  const sections = value.sections.length > 0 ? value.sections : [emptyCitiAvotiSection()];
+  const sections = (value.sections ?? []).length > 0 ? value.sections! : [emptyCitiAvotiSection()];
   const total = sections.length;
 
   const setSections = (next: CitiAvotiSectionState[]) => {

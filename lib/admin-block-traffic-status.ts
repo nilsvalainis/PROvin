@@ -154,9 +154,9 @@ export function expertSummaryTrafficLevel(p: {
   cenasAtbilstiba: string;
   previewConfirmed: boolean;
 }): TrafficFillLevel {
-  const a = p.iriss.trim();
-  const b = p.apskatesPlāns.trim();
-  const c = p.cenasAtbilstiba.trim();
+  const a = (p.iriss ?? "").trim();
+  const b = (p.apskatesPlāns ?? "").trim();
+  const c = (p.cenasAtbilstiba ?? "").trim();
   if (!a && !b && !c) return "empty";
   if (a && b && c && p.previewConfirmed) return "complete";
   return "partial";

@@ -144,7 +144,7 @@ export function collectUnifiedMileageRows(
   };
 
   if (!options?.omitCsddMileage) {
-    const csddRows = p.csddForm?.mileageHistory.filter(csddMileageRowHasData) ?? [];
+    const csddRows = (p.csddForm?.mileageHistory ?? []).filter(csddMileageRowHasData);
     for (const r of csddRows) {
       pushRow(r.date, r.odometer, r.country, "CSDD");
     }
@@ -153,7 +153,7 @@ export function collectUnifiedMileageRows(
   if (options?.omitAutoRecords) {
     /* skip auto records */
   } else {
-  const autoRows = p.autoRecordsBlock?.serviceHistory.filter(autoRecordsRowHasData) ?? [];
+  const autoRows = (p.autoRecordsBlock?.serviceHistory ?? []).filter(autoRecordsRowHasData);
   for (const r of autoRows) {
     const dateOut = formatAutoRecordsDateForOutput(r.date);
     const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
@@ -164,7 +164,7 @@ export function collectUnifiedMileageRows(
   const omitTitles = options?.omitVendorBlockTitles;
   const vendors = (p.manualVendorBlocks ?? []).filter((b) => !omitTitles || !omitTitles.has(b.title));
   for (const b of vendors) {
-    for (const r of b.mileageRows.filter(autoRecordsRowHasData)) {
+    for (const r of (b.mileageRows ?? []).filter(autoRecordsRowHasData)) {
       const dateOut = formatAutoRecordsDateForOutput(r.date);
       const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
       pushRow(dateOut, odoOut, r.country, b.title);
@@ -177,7 +177,7 @@ export function collectUnifiedMileageRows(
     for (const [i, section] of citiBlock.sections.entries()) {
       if (!citiAvotiSectionHasContent(section)) continue;
       const sourceLabel = citiAvotiSectionLabel(section, i, total).toUpperCase();
-      for (const r of section.serviceHistory.filter(autoRecordsRowHasData)) {
+      for (const r of (section.serviceHistory ?? []).filter(autoRecordsRowHasData)) {
         const dateOut = formatAutoRecordsDateForOutput(r.date);
         const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
         pushRow(dateOut, odoOut, r.country, sourceLabel);
