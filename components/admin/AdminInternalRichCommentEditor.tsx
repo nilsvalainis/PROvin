@@ -26,7 +26,7 @@ export function AdminRichCommentReadonly({
   /** `inline` — bez apmales / fona; ietvēruma kaste dod ārējais konteiners. */
   variant?: "card" | "inline";
 }) {
-  const t = html.trim();
+  const t = (typeof html === "string" ? html : "").trim();
   if (!t) return <span className="text-slate-400">—</span>;
   const safe = coerceAdminRichHtmlForDisplay(html);
   if (variant === "inline") {

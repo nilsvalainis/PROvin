@@ -35,14 +35,18 @@ export const TRAFFIC_HEADER_STRIP_CLASS: Record<TrafficFillLevel, string> = {
   complete: "border-l-[5px] border-l-[#4CAF50] bg-[rgba(76,175,80,0.02)]",
 };
 
+function wsStr(v: unknown): string {
+  return typeof v === "string" ? v : "";
+}
+
 function csddHasAnyInput(f: CsddFormFields): boolean {
-  return csddFormHasContent(f) || f.rawUnprocessedData.trim().length > 0;
+  return csddFormHasContent(f) || wsStr(f.rawUnprocessedData).trim().length > 0;
 }
 
 function csddIsComplete(f: CsddFormFields): boolean {
   if (!csddFormHasContent(f)) return false;
-  const mileageOk = f.mileageHistory.some(csddMileageRowHasData);
-  const structN = CSDD_FORM_STRUCTURED_FIELDS.filter(({ key }) => (f[key] as string).trim().length > 0).length;
+  const mileageOk = (f.mileageHistory ?? []).some(csddMileageRowHasData);
+  const structN = CSDD_FORM_STRUCTURED_FIELDS.filter(({ key }) => wsStr(f[key]).trim().length > 0).length;
   return mileageOk && structN >= 3;
 }
 
@@ -95,7 +99,7 @@ function citiAvotiSectionTrafficLevel(s: CitiAvotiSectionState): TrafficFillLeve
 }
 
 export function citiAvotiTrafficLevel(b: CitiAvotiBlockState): TrafficFillLevel {
-  const active = b.sections.map(citiAvotiSectionTrafficLevel).filter((l) => l !== "empty");
+  const active = (b.sections ?? []).map(citiAvotiSectionTrafficLevel).filter((l) => l !== "empty");
   if (active.length === 0) return "empty";
   if (active.every((l) => l === "complete")) return "complete";
   return "partial";
@@ -103,10 +107,10 @@ export function citiAvotiTrafficLevel(b: CitiAvotiBlockState): TrafficFillLevel 
 
 function tirgusComplete(f: TirgusFormFields): boolean {
   return (
-    f.listedForSale.trim().length > 0 &&
-    f.listingCreated.trim().length > 0 &&
-    f.priceDrop.trim().length > 0 &&
-    f.comments.trim().length > 0
+    wsStr(f.listedForSale).trim().length > 0 &&
+    wsStr(f.listingCreated).trim().length > 0 &&
+    wsStr(f.priceDrop).trim().length > 0 &&
+    wsStr(f.comments).trim().length > 0
   );
 }
 
@@ -118,9 +122,9 @@ export function tirgusTrafficLevel(f: TirgusFormFields): TrafficFillLevel {
 
 function listingAnalysisComplete(b: ListingAnalysisBlockState): boolean {
   return (
-    b.sellerPortrait.trim().length > 0 &&
-    b.photoAnalysis.trim().length > 0 &&
-    b.listingSalesContext.trim().length > 0
+    wsStr(b.sellerPortrait).trim().length > 0 &&
+    wsStr(b.photoAnalysis).trim().length > 0 &&
+    wsStr(b.listingSalesContext).trim().length > 0
   );
 }
 

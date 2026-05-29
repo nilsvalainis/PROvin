@@ -61,18 +61,19 @@ export function AdminSavableTextField({
   endAdornment,
   maxLength,
 }: AdminSavableTextFieldProps) {
+  const safeValue = typeof value === "string" ? value : "";
   const [viewMode, setViewMode] = useState(false);
   const [flash, setFlash] = useState(false);
-  const snapshotRef = useRef(value);
+  const snapshotRef = useRef(safeValue);
 
   useEffect(() => {
-    snapshotRef.current = value;
+    snapshotRef.current = safeValue;
     setViewMode(false);
   }, [resetVersion]); // eslint-disable-line react-hooks/exhaustive-deps -- snapshot atiestatās tikai pie resetVersion; value šajā brīdī ir aktuālais no render
 
   const save = () => {
     if (disabled) return;
-    snapshotRef.current = value;
+    snapshotRef.current = safeValue;
     onAfterSave?.();
     setViewMode(true);
     setFlash(true);
@@ -164,16 +165,16 @@ export function AdminSavableTextField({
         flexRowWithAdornment ? (
           <div className="flex min-w-0 items-center gap-1">
             <div className={viewBoxClassSized} id={`${id}-view`} aria-readonly>
-              {value.trim() ? value : <span className="text-slate-400">—</span>}
+              {safeValue.trim() ? safeValue : <span className="text-slate-400">—</span>}
             </div>
             {endAdornment}
           </div>
         ) : (
           <div className={viewBoxClass} id={`${id}-view`} aria-readonly>
             {multilineRich ? (
-              <AdminRichCommentReadonly variant="inline" html={value} />
-            ) : value.trim() ? (
-              value
+              <AdminRichCommentReadonly variant="inline" html={safeValue} />
+            ) : safeValue.trim() ? (
+              safeValue
             ) : (
               <span className="text-slate-400">—</span>
             )}
@@ -182,17 +183,17 @@ export function AdminSavableTextField({
       ) : multilineRich ? (
         <AdminAiPolishRichCommentShell
           compact={compact}
-          value={value}
+          value={safeValue}
           onChange={onChange}
           disabled={disabled}
           aria-label={label ?? placeholder ?? id}
         />
       ) : multiline ? (
-        <AdminAiPolishTextareaShell value={value} onPolished={onChange} disabled={disabled}>
+        <AdminAiPolishTextareaShell value={safeValue} onPolished={onChange} disabled={disabled}>
           <textarea
             id={id}
             className={`${fieldClass} resize-y ${textareaExtraClass}`.trim()}
-            value={value}
+            value={safeValue}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             spellCheck
@@ -206,7 +207,7 @@ export function AdminSavableTextField({
             id={id}
             type={inputType}
             className={fieldClassSized}
-            value={value}
+            value={safeValue}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             autoComplete="off"
@@ -220,7 +221,7 @@ export function AdminSavableTextField({
           id={id}
           type={inputType}
           className={fieldClass}
-          value={value}
+          value={safeValue}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           autoComplete="off"

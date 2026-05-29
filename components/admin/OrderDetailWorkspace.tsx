@@ -1840,15 +1840,28 @@ export function OrderDetailWorkspace({
 
   const traffic = useMemo(() => {
     const b = blocksDisplaySafe;
-    return {
-      csdd: csddTrafficLevel(b.csdd),
-      autodna: vendorAvotuTrafficLevel(b.autodna),
-      carvertical: vendorAvotuTrafficLevel(b.carvertical),
-      auto_records: autoRecordsTrafficLevel(b.auto_records),
-      ltab: ltabTrafficLevel(b.ltab),
-      citi_avoti: citiAvotiTrafficLevel(b.citi_avoti),
-      listingSection: listingSectionTrafficLevel(b.tirgus, b.listing_analysis),
+    const empty = {
+      csdd: "empty" as const,
+      autodna: "empty" as const,
+      carvertical: "empty" as const,
+      auto_records: "empty" as const,
+      ltab: "empty" as const,
+      citi_avoti: "empty" as const,
+      listingSection: "empty" as const,
     };
+    try {
+      return {
+        csdd: csddTrafficLevel(b.csdd),
+        autodna: vendorAvotuTrafficLevel(b.autodna),
+        carvertical: vendorAvotuTrafficLevel(b.carvertical),
+        auto_records: autoRecordsTrafficLevel(b.auto_records),
+        ltab: ltabTrafficLevel(b.ltab),
+        citi_avoti: citiAvotiTrafficLevel(b.citi_avoti),
+        listingSection: listingSectionTrafficLevel(b.tirgus, b.listing_analysis),
+      };
+    } catch {
+      return empty;
+    }
   }, [blocksDisplaySafe]);
 
   const expertTraffic = expertSummaryTrafficLevel({
@@ -2929,7 +2942,7 @@ export function OrderDetailWorkspace({
                     </p>
                   ) : null}
                   <AdminAiPolishRichCommentShell
-                    value={ws.cenasAtbilstiba}
+                    value={ws.cenasAtbilstiba ?? ""}
                     onChange={(next) => updateWs({ cenasAtbilstiba: next })}
                     aria-label="Cenas atbilstība"
                   />
@@ -2978,7 +2991,7 @@ export function OrderDetailWorkspace({
                     </p>
                   ) : null}
                   <AdminAiPolishRichCommentShell
-                    value={ws.apskatesPlāns}
+                    value={ws.apskatesPlāns ?? ""}
                     onChange={(next) => updateWs({ apskatesPlāns: next })}
                     aria-label="Ieteikumi klātienes apskatei"
                   />
@@ -3017,7 +3030,7 @@ export function OrderDetailWorkspace({
                     </p>
                   ) : null}
                   <AdminAiPolishRichCommentShell
-                    value={ws.iriss}
+                    value={ws.iriss ?? ""}
                     onChange={setIrissSummary}
                     aria-label="Galvenais kopsavilkums klientam"
                   />

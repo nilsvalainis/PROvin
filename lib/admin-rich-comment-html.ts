@@ -35,8 +35,8 @@ export function plainTextToMinimalRichHtml(text: string): string {
 }
 
 /** Admin bagātinātais HTML → vienots plakanais teksts (PDF / AI polish nosūtei). */
-export function adminRichHtmlToPlainText(html: string): string {
-  const s = sanitizeDraftTextForStorage(html);
+export function adminRichHtmlToPlainText(html: string | null | undefined): string {
+  const s = sanitizeDraftTextForStorage(typeof html === "string" ? html : "");
   if (!s.trim()) return "";
   let t = s.replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<\/div>/gi, "\n");
   t = t.replace(/<[^>]+>/g, "");
@@ -49,8 +49,8 @@ export function adminRichHtmlToPlainText(html: string): string {
 }
 
 /** Tikai tik daudz, lai uz admin lasīšanu ar dangerouslySetInnerHTML neielīstu skriptu. */
-export function coerceAdminRichHtmlForDisplay(html: string): string {
-  let s = sanitizeDraftTextForStorage(html);
+export function coerceAdminRichHtmlForDisplay(html: string | null | undefined): string {
+  let s = sanitizeDraftTextForStorage(typeof html === "string" ? html : "");
   s = s.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
   s = s.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)+/gi, "");
   return s;

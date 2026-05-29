@@ -248,10 +248,10 @@ export function emptyTirgusFields(): TirgusFormFields {
 export function tirgusFormHasContent(f: TirgusFormFields | null | undefined): boolean {
   if (!f) return false;
   return (
-    f.listedForSale.trim().length > 0 ||
-    f.listingCreated.trim().length > 0 ||
-    f.priceDrop.trim().length > 0 ||
-    f.comments.trim().length > 0
+    wsStr(f.listedForSale).trim().length > 0 ||
+    wsStr(f.listingCreated).trim().length > 0 ||
+    wsStr(f.priceDrop).trim().length > 0 ||
+    wsStr(f.comments).trim().length > 0
   );
 }
 
@@ -438,9 +438,9 @@ function mileageDateSortKey(s: string): number {
 /** Strukturētie lauki PDF atskaitei (bez raw). */
 export function csddFormHasContent(f: CsddFormFields): boolean {
   return (
-    CSDD_FORM_STRUCTURED_FIELDS.some(({ key }) => (f[key] as string).trim().length > 0) ||
-    f.mileageHistory.some(csddMileageRowHasData) ||
-    f.comments.trim().length > 0 ||
+    CSDD_FORM_STRUCTURED_FIELDS.some(({ key }) => wsStr(f[key]).trim().length > 0) ||
+    (f.mileageHistory ?? []).some(csddMileageRowHasData) ||
+    wsStr(f.comments).trim().length > 0 ||
     sourcePdfChecklistHasAny(f.pdfChecklist)
   );
 }
@@ -654,11 +654,11 @@ export function emptyListingAnalysisBlock(): ListingAnalysisBlockState {
 
 export function listingAnalysisHasContent(b: ListingAnalysisBlockState): boolean {
   return (
-    b.sellerPortrait.trim().length > 0 ||
-    b.photoAnalysis.trim().length > 0 ||
-    b.extraSellerName.trim().length > 0 ||
-    b.listingPasteRaw.trim().length > 0 ||
-    b.listingSalesContext.trim().length > 0
+    wsStr(b.sellerPortrait).trim().length > 0 ||
+    wsStr(b.photoAnalysis).trim().length > 0 ||
+    wsStr(b.extraSellerName).trim().length > 0 ||
+    wsStr(b.listingPasteRaw).trim().length > 0 ||
+    wsStr(b.listingSalesContext).trim().length > 0
   );
 }
 
@@ -683,18 +683,14 @@ export const LISTING_ANALYSIS_COMMENT_LABEL = "Komentāri";
 export function listingAnalysisToPlainText(b: ListingAnalysisBlockState): string {
   const L = LISTING_ANALYSIS_SUBSECTIONS;
   const parts: string[] = [];
-  if (b.extraSellerName.trim()) {
-    parts.push(`${LISTING_ANALYSIS_EXTRA_SELLER_LABEL}\n${b.extraSellerName.trim()}`);
-  }
-  if (b.sellerPortrait.trim()) {
-    parts.push(`${L.sellerPortrait}\nKomentāri\n${b.sellerPortrait.trim()}`);
-  }
-  if (b.photoAnalysis.trim()) {
-    parts.push(`${L.photoAnalysis}\nKomentāri\n${b.photoAnalysis.trim()}`);
-  }
-  if (b.listingSalesContext.trim()) {
-    parts.push(`${L.listingSalesContext}\nKomentāri\n${b.listingSalesContext.trim()}`);
-  }
+  const extra = wsStr(b.extraSellerName).trim();
+  const portrait = wsStr(b.sellerPortrait).trim();
+  const photos = wsStr(b.photoAnalysis).trim();
+  const sales = wsStr(b.listingSalesContext).trim();
+  if (extra) parts.push(`${LISTING_ANALYSIS_EXTRA_SELLER_LABEL}\n${extra}`);
+  if (portrait) parts.push(`${L.sellerPortrait}\nKomentāri\n${portrait}`);
+  if (photos) parts.push(`${L.photoAnalysis}\nKomentāri\n${photos}`);
+  if (sales) parts.push(`${L.listingSalesContext}\nKomentāri\n${sales}`);
   return parts.join("\n\n");
 }
 
@@ -741,15 +737,15 @@ export function standardBlockHasContent(b: StandardSourceBlockState): boolean {
 
 export function standardBlockToPlainText(b: StandardSourceBlockState): string {
   const lines = b.rows.filter(rowHasData).map((r) => `${r.date.trim()}\t${r.km.trim()}\t${r.amount.trim()}`);
-  const c = b.comments.trim();
+  const c = wsStr(b.comments).trim();
   return [...lines, ...(c ? [c] : [])].join("\n");
 }
 
 export function autoRecordsBlockHasContent(b: AutoRecordsBlockState): boolean {
   return (
-    b.serviceHistory.some(autoRecordsRowHasData) ||
-    b.rawUnprocessedData.trim().length > 0 ||
-    b.comments.trim().length > 0 ||
+    (b.serviceHistory ?? []).some(autoRecordsRowHasData) ||
+    wsStr(b.rawUnprocessedData).trim().length > 0 ||
+    wsStr(b.comments).trim().length > 0 ||
     outvinDealerReportHasContent(b.outvinReport) ||
     outvinBundleHasStructuredContent(b.outvin ?? getAutoRecordsOutvinBundle(b))
   );
@@ -778,14 +774,14 @@ export function ltabRowHasData(r: LtabIncidentRow): boolean {
 }
 
 export function ltabBlockHasContent(b: LtabBlockState): boolean {
-  return b.rows.some(ltabRowHasData) || b.comments.trim().length > 0;
+  return (b.rows ?? []).some(ltabRowHasData) || wsStr(b.comments).trim().length > 0;
 }
 
 /**
  * Teksts apdrošināšanas / OCTA heuristiku: katrā rindā datums + EUR, lai `parseClaimRowsFromLineBasedText` varētu nolasīt.
  */
 export function ltabBlockToPlainText(b: LtabBlockState): string {
-  const lines = b.rows.filter(ltabRowHasData).map((r) => {
+  const lines = (b.rows ?? []).filter(ltabRowHasData).map((r) => {
     const d = r.csngDate.trim();
     const rawAmt = r.lossAmount.trim();
     const amt =
@@ -794,7 +790,7 @@ export function ltabBlockToPlainText(b: LtabBlockState): string {
     const core = [d, amt].filter(Boolean).join("\t");
     return n ? `${core}\t${n}`.trim() : core;
   });
-  const c = b.comments.trim();
+  const c = wsStr(b.comments).trim();
   return [...lines, ...(c ? [c] : [])].join("\n");
 }
 
@@ -1281,9 +1277,83 @@ export function migrateLegacyCsddBlock(old: StandardSourceBlockState): CsddFormF
   return { ...emptyCsddFields(), rawUnprocessedData: rowText, comments: c };
 }
 
+function wsStr(v: unknown): string {
+  return typeof v === "string" ? v : "";
+}
+
+function repairVendorBlock(b: VendorAvotuBlockState | undefined): VendorAvotuBlockState {
+  const e = emptyVendorAvotuBlock();
+  if (!b) return e;
+  return {
+    serviceHistory: Array.isArray(b.serviceHistory) ? b.serviceHistory : e.serviceHistory,
+    incidents: Array.isArray(b.incidents) ? b.incidents : e.incidents,
+    comments: wsStr(b.comments),
+    ...(typeof b.mileagePasteRaw === "string" ? { mileagePasteRaw: b.mileagePasteRaw } : {}),
+    ...(b.pdfChecklist ? { pdfChecklist: b.pdfChecklist } : {}),
+  };
+}
+
+function repairCitiSection(s: CitiAvotiSectionState | undefined): CitiAvotiSectionState {
+  const v = repairVendorBlock(s);
+  return {
+    ...v,
+    rawUnprocessedData: wsStr(s?.rawUnprocessedData),
+    label: wsStr(s?.label),
+  };
+}
+
+/** Garantē masīvus un string laukus pēc merge (bojāts localStorage / daļējs stāvoklis). */
+export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): WorkspaceSourceBlocks {
+  const d = createDefaultSourceBlocks();
+  const csdd = blocks.csdd ?? d.csdd;
+  return {
+    csdd: {
+      ...d.csdd,
+      ...csdd,
+      mileageHistory: Array.isArray(csdd.mileageHistory) ? csdd.mileageHistory : d.csdd.mileageHistory,
+      comments: wsStr(csdd.comments),
+      rawUnprocessedData: wsStr(csdd.rawUnprocessedData),
+    },
+    autodna: repairVendorBlock(blocks.autodna),
+    carvertical: repairVendorBlock(blocks.carvertical),
+    auto_records: {
+      ...d.auto_records,
+      ...blocks.auto_records,
+      serviceHistory: Array.isArray(blocks.auto_records?.serviceHistory)
+        ? blocks.auto_records.serviceHistory
+        : d.auto_records.serviceHistory,
+      comments: wsStr(blocks.auto_records?.comments),
+      rawUnprocessedData: wsStr(blocks.auto_records?.rawUnprocessedData),
+    },
+    ltab: {
+      ...d.ltab,
+      ...blocks.ltab,
+      rows: Array.isArray(blocks.ltab?.rows) ? blocks.ltab.rows : d.ltab.rows,
+      comments: wsStr(blocks.ltab?.comments),
+      pdfImportRaw: wsStr(blocks.ltab?.pdfImportRaw),
+    },
+    tirgus: {
+      listedForSale: wsStr(blocks.tirgus?.listedForSale),
+      listingCreated: wsStr(blocks.tirgus?.listingCreated),
+      priceDrop: wsStr(blocks.tirgus?.priceDrop),
+      comments: wsStr(blocks.tirgus?.comments),
+    },
+    citi_avoti: {
+      sections: (blocks.citi_avoti?.sections ?? d.citi_avoti.sections).map(repairCitiSection),
+    },
+    listing_analysis: {
+      sellerPortrait: wsStr(blocks.listing_analysis?.sellerPortrait),
+      photoAnalysis: wsStr(blocks.listing_analysis?.photoAnalysis),
+      extraSellerName: wsStr(blocks.listing_analysis?.extraSellerName),
+      listingPasteRaw: wsStr(blocks.listing_analysis?.listingPasteRaw),
+      listingSalesContext: wsStr(blocks.listing_analysis?.listingSalesContext),
+    },
+  };
+}
+
 export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSourceBlocks {
   const base = createDefaultSourceBlocks();
-  if (!partial || typeof partial !== "object") return base;
+  if (!partial || typeof partial !== "object") return repairWorkspaceSourceBlocks(base);
   const o = partial as Record<string, unknown>;
 
   const rawCsdd = o.csdd;
@@ -1344,7 +1414,7 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
     base.citi_avoti = parseCitiAvotiRaw(rawCitiAvoti as Record<string, unknown>);
   }
 
-  return base;
+  return repairWorkspaceSourceBlocks(base);
 }
 
 function parseCitiAvotiSectionRaw(raw: unknown): CitiAvotiSectionState {
