@@ -788,15 +788,12 @@ export function OrderDetailWorkspace({
     (patch: Partial<WorkspacePersist>) => {
       workspaceDirtyRef.current = true;
       setWs((prev) => {
-        const merged = coalesceOrderWorkspacePersistBody(
-          normalizeOrderWorkspacePersistBody({
-            ...workspaceToPersistBody(prev),
-            ...patch,
-            sourceBlocks: patch.sourceBlocks ?? prev.sourceBlocks,
-          }),
-          workspaceToPersistBody(prev),
-        );
-        return applyPersistBodyToWs(merged);
+        const next = normalizeOrderWorkspacePersistBody({
+          ...workspaceToPersistBody(prev),
+          ...patch,
+          sourceBlocks: patch.sourceBlocks ?? prev.sourceBlocks,
+        });
+        return applyPersistBodyToWs(next);
       });
       commitWorkspaceLocalNow({ force: true });
     },
@@ -1090,17 +1087,14 @@ export function OrderDetailWorkspace({
     (key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]) => {
       workspaceDirtyRef.current = true;
       setWs((prev) => {
-        const merged = coalesceOrderWorkspacePersistBody(
-          normalizeOrderWorkspacePersistBody({
-            ...workspaceToPersistBody(prev),
-            sourceBlocks: mergeSourceBlocksWithDefaults({
-              ...prev.sourceBlocks,
-              [key]: block,
-            }),
+        const next = normalizeOrderWorkspacePersistBody({
+          ...workspaceToPersistBody(prev),
+          sourceBlocks: mergeSourceBlocksWithDefaults({
+            ...prev.sourceBlocks,
+            [key]: block,
           }),
-          workspaceToPersistBody(prev),
-        );
-        return applyPersistBodyToWs(merged);
+        });
+        return applyPersistBodyToWs(next);
       });
       commitWorkspaceLocalNow({ force: true });
     },

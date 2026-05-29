@@ -32,6 +32,19 @@ describe("pickOrderEditsForHydration", () => {
     expect(picked.customerEmail).toBe("old@provin.lv");
   });
 
+  it("local shorter internalComment wins over longer server (manual fix after AI)", () => {
+    const server: OrderDraftState = {
+      orderEdits: { internalComment: "Garš Gemini ģenerēts iekšējais komentārs ar papildu teikumiem." },
+      workspace: null,
+      updatedAt: "2026-06-01T12:00:00.000Z",
+    };
+    const local = serializeOrderEditsForLocalStorage({
+      internalComment: "Īss manuāls labojums.",
+    });
+    const picked = pickOrderEditsForHydration(server, local);
+    expect(picked.internalComment).toBe("Īss manuāls labojums.");
+  });
+
   it("legacy local without savedAt is not stomped by server updatedAt alone", () => {
     const server: OrderDraftState = {
       orderEdits: { internalComment: "Vecs servera teksts" },

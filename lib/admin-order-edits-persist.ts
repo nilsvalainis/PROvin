@@ -55,35 +55,6 @@ export function serializeOrderEditsForLocalStorage(orderEdits: OrderDraftOrderEd
   } satisfies OrderEditsLocalEnvelope);
 }
 
-function coalesceOrderEdits(
-  incoming: OrderDraftOrderEdits,
-  baseline: OrderDraftOrderEdits,
-): OrderDraftOrderEdits {
-  const keys = [
-    "vin",
-    "listingUrl",
-    "customerName",
-    "customerEmail",
-    "customerPhone",
-    "contactMethod",
-    "notes",
-    "internalComment",
-    "mileageComment",
-  ] as const;
-  const out: OrderDraftOrderEdits = { ...baseline };
-  for (const key of keys) {
-    const v = incoming[key];
-    if (typeof v !== "string") continue;
-    const trimmed = v.trim();
-    if (!trimmed) continue;
-    const prev = out[key];
-    if (typeof prev !== "string" || !prev.trim() || trimmed.length >= prev.trim().length) {
-      out[key] = v;
-    }
-  }
-  return out;
-}
-
 /**
  * Pasūtījuma meta lauki — ja pārlūkā ir `localStorage` ieraksts, tas ir patiesība (serveris tikai papildina tukšus).
  */
@@ -95,7 +66,7 @@ export function pickOrderEditsForHydration(
   const serverEdits = serverDraft?.orderEdits ?? {};
 
   if (localRaw?.trim()) {
-    return coalesceOrderEdits(local.orderEdits, serverEdits);
+    return { ...serverEdits, ...local.orderEdits };
   }
   if (orderDraftHasOrderEdits(serverEdits)) return serverEdits;
   return {};

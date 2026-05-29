@@ -43,6 +43,14 @@ describe("coalesceOrderWorkspacePersistBody", () => {
     expect(coalesced.sourceBlocks.autodna.comments).toContain("Pilns");
     expect(isRegressiveWorkspacePersist(coalesced, baseline)).toBe(false);
   });
+
+  it("coalesce keeps shorter user iriss over longer baseline (post-Gemini edit)", () => {
+    const baseline = { ...bodyWithAutodnaComment(""), iriss: "<p>Garš AI ģenerēts kopsavilkums ar daudz detaļām.</p>" };
+    const incoming = { ...baseline, iriss: "<p>Īss labojums.</p>" };
+    const coalesced = coalesceOrderWorkspacePersistBody(incoming, baseline);
+    expect(coalesced.iriss).toContain("Īss labojums");
+    expect(coalesced.iriss).not.toContain("Garš AI");
+  });
 });
 
 describe("pickOrderWorkspaceHydrationServerFirst", () => {

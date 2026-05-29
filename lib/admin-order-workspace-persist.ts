@@ -99,12 +99,17 @@ function substantivePlainTextLen(htmlOrText: string): number {
     .trim().length;
 }
 
+/**
+ * Apvieno vienu teksta lauku. Ja ienākošajam ir saturs, tas uzvar — arī īsāks par baseline
+ * (piem. lietotājs saīsina Gemini ģenerētu IRISS / apskates plānu).
+ * Tukšs ienākošais neiztukšo aizpildītu baseline (daļējs PATCH).
+ */
 function pickRicherTextField(incoming: string, baseline: string): string {
   const inLen = substantivePlainTextLen(incoming);
   const baseLen = substantivePlainTextLen(baseline);
   if (baseLen === 0) return incoming;
   if (inLen === 0) return baseline;
-  return inLen >= baseLen ? incoming : baseline;
+  return incoming;
 }
 
 function pickRicherSourceBlock<K extends SourceBlockKey>(
