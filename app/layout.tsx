@@ -3,7 +3,7 @@ import Script from "next/script";
 import { cookies } from "next/headers";
 import { Inter } from "next/font/google";
 import { ConsentAwareAnalytics } from "@/components/ConsentAwareAnalytics";
-import { getGaMeasurementId } from "@/lib/analytics-public";
+import { getGaMeasurementId, getTikTokPixelId } from "@/lib/analytics-public";
 import { SiteThemeProvider } from "@/components/providers/SiteThemeProvider";
 import { SITE_THEME_COOKIE_KEY, SITE_THEME_STORAGE_KEY, type SiteThemeMode } from "@/lib/site-theme";
 import "./globals.css";
@@ -17,6 +17,7 @@ const inter = Inter({
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const gaMeasurementId = getGaMeasurementId();
+  const tiktokPixelId = getTikTokPixelId();
   const cookieStore = await cookies();
   const cookieTheme = cookieStore.get(SITE_THEME_COOKIE_KEY)?.value;
   const initialTheme: SiteThemeMode = cookieTheme === "light" ? "light" : "dark";
@@ -32,7 +33,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         />
         <SiteThemeProvider initialTheme={initialTheme}>
           {children}
-          <ConsentAwareAnalytics gaMeasurementId={gaMeasurementId} />
+          <ConsentAwareAnalytics gaMeasurementId={gaMeasurementId} tiktokPixelId={tiktokPixelId} />
         </SiteThemeProvider>
       </body>
     </html>

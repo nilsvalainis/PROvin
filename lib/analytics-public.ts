@@ -37,3 +37,12 @@ export function getGaMeasurementId(): string | null {
   if (!/^G-[A-Z0-9]{6,20}$/i.test(raw)) return null;
   return raw.toUpperCase();
 }
+
+/** TikTok Pixel ID — publisks; pārrakstāms ar `NEXT_PUBLIC_TIKTOK_PIXEL_ID`, `0` — izslēgts. */
+export function getTikTokPixelId(): string | null {
+  const fromEnv = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID?.trim();
+  if (fromEnv === "0") return null;
+  const raw = fromEnv || "D8CKFMRC77UA4F3IGKA0";
+  if (!/^[A-Z0-9]{8,32}$/i.test(raw)) return null;
+  return raw.toUpperCase();
+}
