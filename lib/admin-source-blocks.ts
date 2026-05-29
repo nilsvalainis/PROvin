@@ -617,6 +617,12 @@ export function emptyVendorAvotuBlock(): VendorAvotuBlockState {
   };
 }
 
+/** Droša normalizācija — null / daļējs JSON neizraisa `.map()` / `.trim()` kļūdas. */
+export function coerceVendorAvotuBlock(b: unknown): VendorAvotuBlockState {
+  if (!b || typeof b !== "object") return emptyVendorAvotuBlock();
+  return repairVendorBlock(b as VendorAvotuBlockState);
+}
+
 export function emptyCitiAvotiSection(): CitiAvotiSectionState {
   return { ...emptyVendorAvotuBlock(), rawUnprocessedData: "", label: "" };
 }
@@ -794,40 +800,47 @@ export function ltabBlockToPlainText(b: LtabBlockState): string {
   return [...lines, ...(c ? [c] : [])].join("\n");
 }
 
-export function vendorAvotuBlockHasContent(b: VendorAvotuBlockState): boolean {
+export function vendorAvotuBlockHasContent(b: VendorAvotuBlockState | null | undefined): boolean {
+  const safe = coerceVendorAvotuBlock(b);
   return (
-    (b.serviceHistory ?? []).some(autoRecordsRowHasData) ||
-    (b.incidents ?? []).some(ltabRowHasData) ||
-    (b.comments ?? "").trim().length > 0 ||
-    sourcePdfChecklistHasAny(b.pdfChecklist)
+    (safe.serviceHistory ?? []).some(autoRecordsRowHasData) ||
+    (safe.incidents ?? []).some(ltabRowHasData) ||
+    wsStr(safe.comments).trim().length > 0 ||
+    sourcePdfChecklistHasAny(safe.pdfChecklist)
   );
 }
 
-export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState): string {
+export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState | null | undefined): string {
+  const safe = coerceVendorAvotuBlock(b);
   const lines: string[] = [];
-  const mh = (b.serviceHistory ?? []).filter(autoRecordsRowHasData);
+  const mh = (safe.serviceHistory ?? []).filter(autoRecordsRowHasData);
   if (mh.length > 0) {
     lines.push(CSDD_MILEAGE_UNIFIED_TITLE);
     for (const r of mh) {
+      const odometer = wsStr(r?.odometer);
+      const country = wsStr(r?.country).replace(/\s+/g, " ").trim();
       lines.push(
         [
-          formatAutoRecordsDateForOutput(r.date),
-          normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
-          r.country.replace(/\s+/g, " ").trim(),
+          formatAutoRecordsDateForOutput(wsStr(r?.date)),
+          normalizeAutoRecordsOdometer(odometer) || odometer.replace(/\D/g, ""),
+          country,
         ].join("\t"),
       );
     }
   }
-  const inc = (b.incidents ?? []).filter(ltabRowHasData);
+  const inc = (safe.incidents ?? []).filter(ltabRowHasData);
   if (inc.length > 0) {
     lines.push(NEGADIJUMU_VESTURE_TITLE);
     for (const r of inc) {
-      lines.push([r.incidentNo.trim(), r.csngDate.trim(), r.lossAmount.trim()].join("\t"));
+      lines.push(
+        [wsStr(r?.incidentNo).trim(), wsStr(r?.csngDate).trim(), wsStr(r?.lossAmount).trim()].join("\t"),
+      );
     }
   }
-  const checklistTxt = formatSourcePdfChecklistForPdf(b.pdfChecklist);
+  const checklistTxt = formatSourcePdfChecklistForPdf(safe.pdfChecklist);
   if (checklistTxt) lines.push(checklistTxt);
-  if ((b.comments ?? "").trim()) lines.push(`Komentāri\n${(b.comments ?? "").trim()}`);
+  const comments = wsStr(safe.comments).trim();
+  if (comments) lines.push(`Komentāri\n${comments}`);
   return lines.join("\n");
 }
 

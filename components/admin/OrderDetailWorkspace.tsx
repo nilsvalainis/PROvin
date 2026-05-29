@@ -372,7 +372,7 @@ function orderSourceBlockPlainText(key: SourceBlockKey, blocks: WorkspaceSourceB
       return autoRecordsBlockToPlainText(blocks.auto_records);
     case "autodna":
     case "carvertical":
-      return vendorAvotuBlockToPlainText(blocks[key]);
+      return vendorAvotuBlockToPlainText(blocks[key] ?? null);
   }
 }
 
@@ -579,6 +579,7 @@ export function OrderDetailWorkspace({
   pdfVisibility,
   onPdfVisibilityChange,
   alertsPortalDomId,
+  autodnaApiConfigured = false,
 }: {
   payload: OrderWorkspacePayload;
   adminDark: boolean;
@@ -601,6 +602,8 @@ export function OrderDetailWorkspace({
   onPdfVisibilityChange: (patch: Partial<PdfVisibilitySettings>) => void;
   /** Brīdinājumu bloks virs „Maksājums” (vecākā kolonnā). */
   alertsPortalDomId?: string;
+  /** Vai serverī ir konfigurēts autoDNA sandbox API (AUTODNA_* env). */
+  autodnaApiConfigured?: boolean;
 }) {
   const fileInputId = useId();
   const [ws, setWs] = useState<WorkspacePersist>(EMPTY_WORKSPACE);
@@ -1858,8 +1861,8 @@ export function OrderDetailWorkspace({
     try {
       return {
         csdd: csddTrafficLevel(b.csdd),
-        autodna: vendorAvotuTrafficLevel(b.autodna),
-        carvertical: vendorAvotuTrafficLevel(b.carvertical),
+        autodna: vendorAvotuTrafficLevel(b?.autodna),
+        carvertical: vendorAvotuTrafficLevel(b?.carvertical),
         auto_records: autoRecordsTrafficLevel(b.auto_records),
         ltab: ltabTrafficLevel(b.ltab),
         citi_avoti: citiAvotiTrafficLevel(b.citi_avoti),
@@ -2833,6 +2836,7 @@ export function OrderDetailWorkspace({
                 pdfInclude={pdfVisibility.autodna}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ autodna: next })}
                 geminiComment={geminiCommentSlot("autodna")}
+                autodnaApiConfigured={autodnaApiConfigured}
               />
             </div>
             <div id="admin-order-block-carvertical" className="flex min-h-0 min-w-0 flex-col">

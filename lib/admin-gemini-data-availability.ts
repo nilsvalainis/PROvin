@@ -13,10 +13,13 @@ import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
 
 function hasAnyIncidentTableRows(blocks: WorkspaceSourceBlocks): boolean {
   for (const key of ["autodna", "carvertical"] as const) {
-    if (blocks[key].incidents.some(ltabRowHasData)) return true;
+    const incidents = blocks[key]?.incidents;
+    if (Array.isArray(incidents) && incidents.some(ltabRowHasData)) return true;
   }
-  if (blocks.citi_avoti.sections.some((s) => s.incidents.some(ltabRowHasData))) return true;
-  return blocks.ltab.rows.some(ltabRowHasData);
+  const sections = blocks.citi_avoti?.sections;
+  if (Array.isArray(sections) && sections.some((s) => (s?.incidents ?? []).some(ltabRowHasData))) return true;
+  const rows = blocks.ltab?.rows;
+  return Array.isArray(rows) && rows.some(ltabRowHasData);
 }
 
 /** Vai pasūtījumā ir negadījumu dati Gemini ģenerēšanai. */

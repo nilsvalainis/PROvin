@@ -21,6 +21,7 @@ import {
   emptySourcePdfChecklist,
   normalizeSourcePdfChecklist,
   sourcePdfChecklistHasAny,
+  coerceVendorAvotuBlock,
 } from "@/lib/admin-source-blocks";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
@@ -59,6 +60,8 @@ type Props = {
   embedded?: boolean;
   /** Unikāli ID iegultām sekcijām. */
   sectionIndex?: number;
+  /** autoDNA sandbox API konfigurācija serverī (AUTODNA_* env). */
+  autodnaApiConfigured?: boolean;
 };
 
 export function AdminVendorAvotuSourceBlock({
@@ -74,10 +77,11 @@ export function AdminVendorAvotuSourceBlock({
   geminiComment,
   embedded = false,
   sectionIndex,
+  autodnaApiConfigured = false,
 }: Props) {
-  const serviceHistory = Array.isArray(value?.serviceHistory) ? value.serviceHistory : [];
-  const incidents = Array.isArray(value?.incidents) ? value.incidents : [];
-  const block = { ...value, serviceHistory, incidents };
+  const block = coerceVendorAvotuBlock(value);
+  const serviceHistory = block.serviceHistory ?? [];
+  const incidents = block.incidents ?? [];
 
   const displayRows =
     serviceHistory.length > 0
@@ -138,6 +142,15 @@ export function AdminVendorAvotuSourceBlock({
   const inner = (
     <div className={`flex min-h-0 flex-col overflow-hidden ${embedded ? "" : trafficFillLevel ? "p-0" : "p-2"}`}>
       <div className={`min-h-0 flex-1 overflow-y-auto ${embedded ? "" : trafficFillLevel ? "px-2 pt-2" : ""}`}>
+        {blockKey === "autodna" && !autodnaApiConfigured ? (
+          <p
+            className="mb-2 rounded-md border border-slate-200/90 bg-slate-50/90 px-2 py-1.5 text-[10px] leading-snug text-slate-600"
+            role="status"
+          >
+            autoDNA API vēl nav konfigurēts serverī (AUTODNA_API_URL, AUTODNA_EMAIL, AUTODNA_API_KEY). Manuāla
+            ievade un iekopēšana joprojām pieejama.
+          </p>
+        ) : null}
         <p className="mb-1.5 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
           <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}
@@ -157,8 +170,8 @@ export function AdminVendorAvotuSourceBlock({
                 id={`${idBase}-mileage-paste-raw`}
                 className="min-h-[56px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
               >
-                {(value.mileagePasteRaw ?? "").trim() ? (
-                  value.mileagePasteRaw
+                {(block.mileagePasteRaw ?? "").trim() ? (
+                  block.mileagePasteRaw
                 ) : (
                   <span className="text-slate-400">—</span>
                 )}
@@ -175,7 +188,7 @@ export function AdminVendorAvotuSourceBlock({
                       ? "Odometra rādījumu ieraksti + rindas (MM.YYYY. … km vai DD.MM.YYYY. … km)…"
                       : "TRANSPORTLĪDZEKĻA VĒSTURE + datumi, Odometra rādījums … km, Valsts …"
                   }
-                  value={value.mileagePasteRaw ?? ""}
+                  value={block.mileagePasteRaw ?? ""}
                   onChange={(e) =>
                     onChange({ ...block, mileagePasteRaw: e.target.value.slice(0, 24_000) })
                   }
@@ -197,8 +210,8 @@ export function AdminVendorAvotuSourceBlock({
                       className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
                       onClick={() =>
                         blockKey === "carvertical"
-                          ? applyCarverticalOdometerPaste(value.mileagePasteRaw ?? "")
-                          : applyAutodnaMileagePaste(value.mileagePasteRaw ?? "")
+                          ? applyCarverticalOdometerPaste(block.mileagePasteRaw ?? "")
+                          : applyAutodnaMileagePaste(block.mileagePasteRaw ?? "")
                       }
                     >
                       Ielasīt tabulā
@@ -343,7 +356,7 @@ export function AdminVendorAvotuSourceBlock({
                 </tr>
               </thead>
               <tbody>
-                {value.incidents.map((row, ri) => (
+                {incidents.map((row, ri) => (
                   <tr key={ri} className="border-b border-slate-100 last:border-b-0">
                     <td className={`${mileCell} align-top`}>
                       {readOnly ? (
@@ -413,7 +426,7 @@ export function AdminVendorAvotuSourceBlock({
                     </td>
                     {!readOnly ? (
                       <td className={`${mileCell} align-top`}>
-                        {value.incidents.length > 1 ? (
+                        {incidents.length > 1 ? (
                           <button
                             type="button"
                             disabled={disabled}
@@ -447,7 +460,7 @@ export function AdminVendorAvotuSourceBlock({
         {blockKey === "autodna" || blockKey === "carvertical" ? (
           <AdminSourcePdfChecklist
             idPrefix={idBase}
-            value={value.pdfChecklist}
+            value={block.pdfChecklist}
             readOnly={readOnly}
             disabled={disabled}
             onChange={(next) =>
@@ -459,7 +472,7 @@ export function AdminVendorAvotuSourceBlock({
           />
         ) : null}
         <AdminSourceCommentField
-          value={value.comments}
+          value={block.comments ?? ""}
           onChange={(next) => onChange({ ...block, comments: next })}
           readOnly={readOnly}
           disabled={disabled}

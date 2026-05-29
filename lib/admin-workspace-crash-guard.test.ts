@@ -53,8 +53,16 @@ describe("malformed workspace blocks do not throw", () => {
     expect(analysis.vinIssues.length).toBeGreaterThanOrEqual(0);
   });
 
-  it("empty defaults remain valid", () => {
-    const blocks = createDefaultSourceBlocks();
-    expect(() => computeProvinAlertBannersFromWorkspace(blocks)).not.toThrow();
+  it("handles null autodna block at workspace root", () => {
+    const corrupt = {
+      autodna: null,
+      carvertical: undefined,
+      csdd: { comments: "ok" },
+    };
+    const blocks = mergeSourceBlocksWithDefaults(corrupt);
+    expect(() => vendorAvotuTrafficLevel(blocks.autodna)).not.toThrow();
+    expect(vendorAvotuTrafficLevel(blocks.autodna)).toBe("empty");
+    expect(() => vendorAvotuBlockToPlainText(null)).not.toThrow();
+    expect(vendorAvotuBlockToPlainText(undefined)).toBe("");
   });
 });

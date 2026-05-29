@@ -1,18 +1,16 @@
 import "server-only";
 
 import { normalizeVin } from "@/lib/order-field-validation";
+import { readAutodnaEnvConfig, type AutodnaConfig } from "@/lib/autodna-config";
+
+export { readAutodnaEnvConfig as getAutodnaConfig, isAutodnaApiConfigured } from "@/lib/autodna-config";
+export type { AutodnaConfig } from "@/lib/autodna-config";
 
 /** Sandbox PL/LV: https://api-sandbox.autodna.pl/api/ | EN: https://api-sandbox.autodna.com/api/ */
 export const AUTODNA_SANDBOX_BASE_URL_PL = "https://api-sandbox.autodna.pl/api/";
 export const AUTODNA_SANDBOX_BASE_URL_EN = "https://api-sandbox.autodna.com/api/";
 
 export type AutodnaApiEndpoint = "getReport" | "orderStatus" | "download";
-
-export type AutodnaConfig = {
-  baseUrl: string;
-  email: string;
-  apiKey: string;
-};
 
 export type AutodnaGetReportParams = {
   vin: string;
@@ -53,6 +51,7 @@ export type AutodnaApiFailure = {
 };
 
 export type AutodnaApiErrorCode =
+  | "autodna_not_configured"
   | "autodna_ip_not_allowed"
   | "autodna_ip_blacklisted"
   | "autodna_unauthorized"
@@ -62,13 +61,18 @@ export type AutodnaApiErrorCode =
   | "autodna_upstream_error"
   | "autodna_invalid_response";
 
-export function getAutodnaConfig(): AutodnaConfig | null {
-  const baseRaw = process.env.AUTODNA_API_URL?.trim();
-  const email = process.env.AUTODNA_EMAIL?.trim();
-  const apiKey = process.env.AUTODNA_API_KEY?.trim();
-  if (!baseRaw || !email || !apiKey) return null;
-  const baseUrl = baseRaw.endsWith("/") ? baseRaw : `${baseRaw}/`;
-  return { baseUrl, email, apiKey };
+function autodnaNotConfiguredFailure(): AutodnaApiFailure {
+  return {
+    ok: false,
+    status: 503,
+    code: "autodna_not_configured",
+    message: "autoDNA API nav konfigurēts — trūkst AUTODNA_API_URL, AUTODNA_EMAIL vai AUTODNA_API_KEY.",
+  };
+}
+
+function resolveAutodnaConfig(config?: AutodnaConfig): AutodnaConfig | null {
+  if (config?.baseUrl && config.email && config.apiKey) return config;
+  return readAutodnaEnvConfig();
 }
 
 export function autodnaEndpointUrl(config: AutodnaConfig, endpoint: AutodnaApiEndpoint): string {
@@ -264,29 +268,36 @@ async function autodnaMultipartPost(
 /** POST /api/getReport — pasūta jaunu atskaiti. */
 export async function autodnaGetReport(
   params: AutodnaGetReportParams,
-  config: AutodnaConfig = getAutodnaConfig()!,
+  config?: AutodnaConfig,
 ): Promise<AutodnaJsonSuccess | AutodnaBinarySuccess | AutodnaApiFailure> {
-  return autodnaMultipartPost("getReport", buildGetReportFormData(params), config);
+  const cfg = resolveAutodnaConfig(config);
+  if (!cfg) return autodnaNotConfiguredFailure();
+  return autodnaMultipartPost("getReport", buildGetReportFormData(params), cfg);
 }
 
 /** POST /api/orderStatus — pārbauda, vai atskaite ir gatava. */
 export async function autodnaOrderStatus(
   params: AutodnaOrderStatusParams,
-  config: AutodnaConfig = getAutodnaConfig()!,
+  config?: AutodnaConfig,
 ): Promise<AutodnaJsonSuccess | AutodnaBinarySuccess | AutodnaApiFailure> {
-  return autodnaMultipartPost("orderStatus", buildOrderStatusFormData(params), config);
+  const cfg = resolveAutodnaConfig(config);
+  if (!cfg) return autodnaNotConfiguredFailure();
+  return autodnaMultipartPost("orderStatus", buildOrderStatusFormData(params), cfg);
 }
 
 /** POST /api/download — lejupielādē failu pēc orderId + fileCode. */
 export async function autodnaDownload(
   params: AutodnaDownloadParams,
-  config: AutodnaConfig = getAutodnaConfig()!,
+  config?: AutodnaConfig,
 ): Promise<AutodnaJsonSuccess | AutodnaBinarySuccess | AutodnaApiFailure> {
-  return autodnaMultipartPost("download", buildDownloadFormData(params), config);
+  const cfg = resolveAutodnaConfig(config);
+  if (!cfg) return autodnaNotConfiguredFailure();
+  return autodnaMultipartPost("download", buildDownloadFormData(params), cfg);
 }
 
 /** Mapē autoDNA kļūdu uz HTTP statusu admin API route. */
 export function autodnaFailureHttpStatus(code: AutodnaApiErrorCode, upstreamStatus: number): number {
+  if (code === "autodna_not_configured") return 503;
   if (code === "autodna_ip_not_allowed" || code === "autodna_ip_blacklisted") return 502;
   if (code === "autodna_unauthorized") return 502;
   if (code === "autodna_not_enough_credits") return 402;

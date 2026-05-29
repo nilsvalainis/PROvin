@@ -367,8 +367,8 @@ export function localWorkspaceHasSubstantiveContent(body: OrderWorkspacePersistB
   const hasText = (s: string, min = 8) => s.trim().length >= min;
   if (hasText(body.iriss) || hasText(body.apskatesPlāns) || hasText(body.cenasAtbilstiba)) return true;
   const b = mergeSourceBlocksWithDefaults(body.sourceBlocks);
-  if (hasText(b.autodna.comments) || hasText(b.carvertical.comments)) return true;
-  if (hasText(b.autodna.mileagePasteRaw ?? "", 12) || hasText(b.carvertical.mileagePasteRaw ?? "", 12)) {
+  if (hasText(b.autodna?.comments ?? "") || hasText(b.carvertical?.comments ?? "")) return true;
+  if (hasText(b.autodna?.mileagePasteRaw ?? "", 12) || hasText(b.carvertical?.mileagePasteRaw ?? "", 12)) {
     return true;
   }
   if (vendorAvotuTrafficLevel(b.autodna) !== "empty" || vendorAvotuTrafficLevel(b.carvertical) !== "empty") {

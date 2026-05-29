@@ -96,12 +96,14 @@ export function AdminOrderDetailView({
   serverWorkspaceJson,
   orderDraftPersistenceEnabled,
   geminiAllowed,
+  autodnaApiConfigured = false,
 }: {
   order: AdminOrderDetailClientModel;
   serverOrderDraft: Pick<OrderDraftState, "orderEdits"> | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
   geminiAllowed: boolean;
+  autodnaApiConfigured?: boolean;
 }) {
   const [edits, setEdits] = useState<OrderEdits>(() => orderEditsFromServerDraft(serverOrderDraft));
   const [hydrated, setHydrated] = useState(false);
@@ -749,6 +751,7 @@ export function AdminOrderDetailView({
         pdfVisibility={pdfVisibility}
         onPdfVisibilityChange={patchPdfVisibility}
         alertsPortalDomId={`admin-order-alerts-slot-${order.id}`}
+        autodnaApiConfigured={autodnaApiConfigured}
         payload={{
           sessionId: order.id,
           isDemo: Boolean(order.isDemo),
