@@ -1828,15 +1828,21 @@ export function OrderDetailWorkspace({
     }
   }, [blocksDisplaySafe]);
 
-  const hasIncidentDataForGemini = useMemo(
-    () => orderHasIncidentDataForGemini(blocksDisplaySafe),
-    [blocksDisplaySafe],
-  );
+  const hasIncidentDataForGemini = useMemo(() => {
+    try {
+      return orderHasIncidentDataForGemini(blocksDisplaySafe);
+    } catch {
+      return false;
+    }
+  }, [blocksDisplaySafe]);
 
-  const hasMileageDataForGemini = useMemo(
-    () => orderHasMileageDataForGemini(blocksDisplaySafe),
-    [blocksDisplaySafe],
-  );
+  const hasMileageDataForGemini = useMemo(() => {
+    try {
+      return orderHasMileageDataForGemini(blocksDisplaySafe);
+    } catch {
+      return false;
+    }
+  }, [blocksDisplaySafe]);
 
   const traffic = useMemo(() => {
     const b = blocksDisplaySafe;
@@ -1864,12 +1870,18 @@ export function OrderDetailWorkspace({
     }
   }, [blocksDisplaySafe]);
 
-  const expertTraffic = expertSummaryTrafficLevel({
-    iriss: ws.iriss,
-    apskatesPlāns: ws.apskatesPlāns,
-    cenasAtbilstiba: ws.cenasAtbilstiba,
-    previewConfirmed: ws.previewConfirmed,
-  });
+  const expertTraffic = (() => {
+    try {
+      return expertSummaryTrafficLevel({
+        iriss: ws.iriss ?? "",
+        apskatesPlāns: ws.apskatesPlāns ?? "",
+        cenasAtbilstiba: ws.cenasAtbilstiba ?? "",
+        previewConfirmed: ws.previewConfirmed,
+      });
+    } catch {
+      return "empty" as const;
+    }
+  })();
 
   const wizardStepLevels = useMemo((): TrafficFillLevel[] => {
     const dash = dashboardWizardTrafficLevel(payload);

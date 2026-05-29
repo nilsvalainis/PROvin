@@ -14,8 +14,9 @@ import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/A
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
-import { AdminOrderWorkspaceErrorBoundary } from "@/components/admin/AdminOrderWorkspaceErrorBoundary";
+import { ClientHydrationGate } from "@/components/admin/ClientHydrationGate";
 import { formatMoneyEur } from "@/lib/format-money";
+import { formatOrderTimestampSec } from "@/lib/format-order-datetime";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import type { OrderDraftState } from "@/lib/admin-order-draft-types";
 import {
@@ -66,19 +67,8 @@ type OrderEdits = {
   mileageComment?: string;
 };
 
-function initialEditsForOrder(
-  orderId: string,
-  serverOrderDraft: OrderDraftState | null,
-): OrderEdits {
-  let localRaw: string | null = null;
-  if (typeof window !== "undefined") {
-    try {
-      localRaw = localStorage.getItem(storageKeyOrderEdits(orderId));
-    } catch {
-      /* ignore */
-    }
-  }
-  const picked = pickOrderEditsForHydration(serverOrderDraft, localRaw);
+function orderEditsFromServerDraft(serverOrderDraft: OrderDraftState | null): OrderEdits {
+  const picked = pickOrderEditsForHydration(serverOrderDraft, null);
   return {
     ...(typeof picked.vin === "string" ? { vin: picked.vin } : {}),
     ...(typeof picked.listingUrl === "string" ? { listingUrl: picked.listingUrl } : {}),
@@ -113,12 +103,7 @@ export function AdminOrderDetailView({
   orderDraftPersistenceEnabled: boolean;
   geminiAllowed: boolean;
 }) {
-  const dateFmt = new Intl.DateTimeFormat("lv-LV", {
-    dateStyle: "long",
-    timeStyle: "short",
-  });
-
-  const [edits, setEdits] = useState<OrderEdits>(() => initialEditsForOrder(order.id, serverOrderDraft));
+  const [edits, setEdits] = useState<OrderEdits>(() => orderEditsFromServerDraft(serverOrderDraft));
   const [hydrated, setHydrated] = useState(false);
   const [vinCopyFlash, setVinCopyFlash] = useState(false);
   const [listingCopyFlash, setListingCopyFlash] = useState(false);
@@ -362,14 +347,7 @@ export function AdminOrderDetailView({
     };
   }, [order.id, orderDraftPersistenceEnabled]);
 
-  const formatOrderCreated = (createdSec: number): string => {
-    if (!Number.isFinite(createdSec) || createdSec <= 0) return "—";
-    try {
-      return dateFmt.format(new Date(createdSec * 1000));
-    } catch {
-      return "—";
-    }
-  };
+  const formatOrderCreated = (createdSec: number): string => formatOrderTimestampSec(createdSec);
 
   const mergedVin = edits.vin !== undefined ? editFieldStr(edits.vin) : editFieldStr(order.vin);
   const mergedListing = edits.listingUrl !== undefined ? editFieldStr(edits.listingUrl) : editFieldStr(order.listingUrl);
@@ -426,12 +404,16 @@ export function AdminOrderDetailView({
                   <div className="min-w-0">
                     <dt className={metaLabel}>Summa</dt>
                     <dd className={`${metaValue} font-medium tabular-nums`}>
-                      {formatMoneyEur(order.amountTotal, order.currency)}
+                      <ClientHydrationGate>
+                        {() => formatMoneyEur(order.amountTotal, order.currency)}
+                      </ClientHydrationGate>
                     </dd>
                   </div>
                   <div className="min-w-0">
                     <dt className={metaLabel}>Laiks</dt>
-                    <dd className={metaValue}>{formatOrderCreated(order.created)}</dd>
+                    <dd className={metaValue}>
+                      <ClientHydrationGate>{() => formatOrderCreated(order.created)}</ClientHydrationGate>
+                    </dd>
                   </div>
                   <div className="min-w-0">
                     <dt className={metaLabel}>Statuss</dt>
@@ -695,7 +677,6 @@ export function AdminOrderDetailView({
   );
 
   return (
-    <AdminOrderWorkspaceErrorBoundary sessionId={order.id}>
     <div
       className={`admin-order-page min-h-screen bg-[var(--color-canvas)] text-[var(--color-apple-text)] transition-[background-color,color] duration-200 ${adminDark ? "dark" : ""}`}
     >
@@ -789,6 +770,5 @@ export function AdminOrderDetailView({
       />
       </div>
     </div>
-    </AdminOrderWorkspaceErrorBoundary>
   );
 }

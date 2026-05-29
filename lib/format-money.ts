@@ -1,12 +1,14 @@
-export function formatMoneyEur(amountCents: number | null, currency: string | null): string {
-  if (amountCents == null) return "—";
-  const code = currency && currency.length === 3 ? currency.toUpperCase() : "EUR";
+export function formatMoneyEur(amountCents: number | null | undefined, currency: string | null | undefined): string {
+  if (amountCents == null || typeof amountCents !== "number" || !Number.isFinite(amountCents)) return "—";
+  const euros = amountCents / 100;
+  if (!Number.isFinite(euros)) return "—";
+  const code = typeof currency === "string" && currency.length === 3 ? currency.toUpperCase() : "EUR";
   try {
     return new Intl.NumberFormat("lv-LV", {
       style: "currency",
       currency: code,
-    }).format(amountCents / 100);
+    }).format(euros);
   } catch {
-    return `${(amountCents / 100).toFixed(2)} EUR`;
+    return `${euros.toFixed(2)} EUR`;
   }
 }
