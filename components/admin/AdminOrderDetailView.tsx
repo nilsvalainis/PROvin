@@ -96,6 +96,10 @@ function storageKeyOrderEdits(sessionId: string) {
   return `provin-admin-order-edits-v1-${sessionId}`;
 }
 
+function editFieldStr(v: string | undefined | null): string {
+  return typeof v === "string" ? v : "";
+}
+
 export function AdminOrderDetailView({
   order,
   serverOrderDraft,
@@ -367,23 +371,23 @@ export function AdminOrderDetailView({
     }
   };
 
-  const mergedVin = edits.vin !== undefined ? edits.vin : (order.vin ?? "");
-  const mergedListing = edits.listingUrl !== undefined ? edits.listingUrl : (order.listingUrl ?? "");
-  const mergedCustomerName = edits.customerName !== undefined ? edits.customerName : (order.customerName ?? "");
+  const mergedVin = edits.vin !== undefined ? editFieldStr(edits.vin) : editFieldStr(order.vin);
+  const mergedListing = edits.listingUrl !== undefined ? editFieldStr(edits.listingUrl) : editFieldStr(order.listingUrl);
+  const mergedCustomerName = edits.customerName !== undefined ? editFieldStr(edits.customerName) : editFieldStr(order.customerName);
   const mergedCustomerEmail =
     edits.customerEmail !== undefined
-      ? edits.customerEmail
-      : (order.customerEmail ?? order.customerDetailsEmail ?? "");
+      ? editFieldStr(edits.customerEmail)
+      : editFieldStr(order.customerEmail ?? order.customerDetailsEmail);
   const mergedCustomerPhone =
     edits.customerPhone !== undefined
-      ? edits.customerPhone
-      : (order.phone ?? order.customerDetailsPhone ?? "");
-  const mergedContactMethod = edits.contactMethod !== undefined ? edits.contactMethod : (order.contactMethod ?? "");
-  const mergedNotes = edits.notes !== undefined ? edits.notes : (order.notes ?? "");
+      ? editFieldStr(edits.customerPhone)
+      : editFieldStr(order.phone ?? order.customerDetailsPhone);
+  const mergedContactMethod = edits.contactMethod !== undefined ? editFieldStr(edits.contactMethod) : editFieldStr(order.contactMethod);
+  const mergedNotes = edits.notes !== undefined ? editFieldStr(edits.notes) : editFieldStr(order.notes);
   const mergedInternalComment =
-    edits.internalComment !== undefined ? edits.internalComment : (order.internalComment ?? "");
+    edits.internalComment !== undefined ? editFieldStr(edits.internalComment) : editFieldStr(order.internalComment);
   const mergedMileageComment =
-    edits.mileageComment !== undefined ? edits.mileageComment : "";
+    edits.mileageComment !== undefined ? editFieldStr(edits.mileageComment) : "";
 
   const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}`;
 
@@ -691,6 +695,7 @@ export function AdminOrderDetailView({
   );
 
   return (
+    <AdminOrderWorkspaceErrorBoundary sessionId={order.id}>
     <div
       className={`admin-order-page min-h-screen bg-[var(--color-canvas)] text-[var(--color-apple-text)] transition-[background-color,color] duration-200 ${adminDark ? "dark" : ""}`}
     >
@@ -748,8 +753,7 @@ export function AdminOrderDetailView({
 
       <div id={`admin-order-alerts-slot-${order.id}`} className="min-w-0" />
 
-      <AdminOrderWorkspaceErrorBoundary sessionId={order.id}>
-        <OrderDetailWorkspace
+      <OrderDetailWorkspace
         adminDark={adminDark}
         internalCommentDraft={mergedInternalComment}
         onInternalCommentChange={(v) => setEdits((prev) => ({ ...prev, internalComment: v }))}
@@ -782,9 +786,9 @@ export function AdminOrderDetailView({
           serverInternalComment: order.internalComment ?? null,
           serverAttachments: order.attachments ?? [],
         }}
-        />
-      </AdminOrderWorkspaceErrorBoundary>
+      />
       </div>
     </div>
+    </AdminOrderWorkspaceErrorBoundary>
   );
 }

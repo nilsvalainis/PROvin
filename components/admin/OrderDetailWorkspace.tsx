@@ -356,6 +356,26 @@ function formatBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function orderSourceBlockPlainText(key: SourceBlockKey, blocks: WorkspaceSourceBlocks): string {
+  switch (key) {
+    case "csdd":
+      return csddFormToPlainText(blocks.csdd);
+    case "ltab":
+      return ltabBlockToPlainText(blocks.ltab);
+    case "tirgus":
+      return tirgusFormToPlainText(blocks.tirgus);
+    case "citi_avoti":
+      return citiAvotiToPlainText(blocks.citi_avoti);
+    case "listing_analysis":
+      return listingAnalysisToPlainText(blocks.listing_analysis);
+    case "auto_records":
+      return autoRecordsBlockToPlainText(blocks.auto_records);
+    case "autodna":
+    case "carvertical":
+      return vendorAvotuBlockToPlainText(blocks[key]);
+  }
+}
+
 function workspaceToPersistBody(ws: WorkspacePersist): OrderWorkspacePersistBody {
   return {
     sourceBlocks: ws.sourceBlocks,
@@ -649,6 +669,12 @@ export function OrderDetailWorkspace({
   pdfBannerIncludeRef.current = pdfBannerInclude;
   const portfolioBytes = useMemo(() => portfolio.reduce((a, p) => a + p.size, 0), [portfolio]);
 
+  /** Sanitizēti bloki — jāaprēķina pirms jebkuras plain-text / VIN / km heuristikas. */
+  const blocksDisplaySafe = useMemo(
+    () => mergeSourceBlocksWithDefaults(ws.sourceBlocks as unknown),
+    [ws.sourceBlocks],
+  );
+
   const narrowPortfolioLayout = Boolean(portfolioPortalDomId);
 
   useLayoutEffect(() => {
@@ -687,33 +713,20 @@ export function OrderDetailWorkspace({
 
   const mergedKmPoints = useMemo(() => mergeKmForChart(pdfInsights), [pdfInsights]);
 
-  const previewAnalysis = useMemo(
-    () =>
-      analyzeVinAndKm({
+  const previewAnalysis = useMemo(() => {
+    try {
+      return analyzeVinAndKm({
         orderVin: payload.vin,
         blocks: SOURCE_BLOCK_KEYS.map((key) => ({
           label: SOURCE_BLOCK_LABELS[key],
-          text:
-            key === "csdd"
-              ? csddFormToPlainText(ws.sourceBlocks.csdd)
-              : key === "ltab"
-                ? ltabBlockToPlainText(ws.sourceBlocks.ltab)
-                : key === "tirgus"
-                  ? tirgusFormToPlainText(ws.sourceBlocks.tirgus)
-                  : key === "citi_avoti"
-                    ? citiAvotiToPlainText(ws.sourceBlocks.citi_avoti)
-                    : key === "listing_analysis"
-                      ? listingAnalysisToPlainText(ws.sourceBlocks.listing_analysis)
-                      : key === "auto_records"
-                        ? autoRecordsBlockToPlainText(ws.sourceBlocks.auto_records)
-                        : key === "autodna" || key === "carvertical"
-                          ? vendorAvotuBlockToPlainText(ws.sourceBlocks[key])
-                          : standardBlockToPlainText(ws.sourceBlocks[key]),
+          text: orderSourceBlockPlainText(key, blocksDisplaySafe),
         })),
         fileNames: portfolio.map((p) => p.name),
-      }),
-    [payload.vin, ws.sourceBlocks, portfolio],
-  );
+      });
+    } catch {
+      return { vins: [], vinIssues: [], kmByBlock: [], kmIssues: [] };
+    }
+  }, [payload.vin, blocksDisplaySafe, portfolio]);
 
   const pushWorkspaceBackup = useCallback(
     (snapshot: string) => {
@@ -770,17 +783,18 @@ export function OrderDetailWorkspace({
   }, [commitWorkspaceLocalNow, syncWsPersistRefFromState]);
 
   const applyPersistBodyToWs = useCallback((merged: OrderWorkspacePersistBody): WorkspacePersist => {
+    const normalized = normalizeOrderWorkspacePersistBody(merged);
     const next: WorkspacePersist = {
-      sourceBlocks: merged.sourceBlocks,
-      iriss: merged.iriss,
-      apskatesPlāns: merged.apskatesPlāns,
-      cenasAtbilstiba: merged.cenasAtbilstiba,
-      previewConfirmed: merged.previewConfirmed,
-      vehicleAiExtraction: merged.vehicleAiExtraction,
-      vehicleAiExtractionMeta: merged.vehicleAiExtractionMeta,
+      sourceBlocks: normalized.sourceBlocks,
+      iriss: normalized.iriss,
+      apskatesPlāns: normalized.apskatesPlāns,
+      cenasAtbilstiba: normalized.cenasAtbilstiba,
+      previewConfirmed: normalized.previewConfirmed,
+      vehicleAiExtraction: normalized.vehicleAiExtraction,
+      vehicleAiExtractionMeta: normalized.vehicleAiExtractionMeta,
     };
     wsPersistRef.current = next;
-    lastGoodPersistBodyRef.current = merged;
+    lastGoodPersistBodyRef.current = normalized;
     return next;
   }, []);
 
@@ -1769,12 +1783,6 @@ export function OrderDetailWorkspace({
   /** PDF drīkst ģenerēt arī ar tukšiem laukiem — redzamība kontrolēta ar `pdfVisibility`. */
   const canGeneratePdf = true;
 
-  /** Veci / bojāti lokālie JSON — vienmēr pilda trūkstošos laukus (piem. listing_analysis). */
-  const blocksDisplaySafe = useMemo(
-    () => mergeSourceBlocksWithDefaults(ws.sourceBlocks as unknown),
-    [ws.sourceBlocks],
-  );
-
   const geminiCommentSlot = useCallback(
     (key: GeminiSourceCommentBlockKey, citiAvotiSectionIndex?: number): AdminGeminiSourceCommentSlot => {
       const hasSourceData =
@@ -1905,18 +1913,18 @@ export function OrderDetailWorkspace({
     }
 
     const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeStyle: "short" });
-    const flatSources = blocksToLegacyFlatFields(ws.sourceBlocks);
+    const flatSources = blocksToLegacyFlatFields(blocksDisplaySafe);
     const html = buildClientReportDocumentHtml({
       payload: {
         ...payload,
         ...flatSources,
-        csddForm: ws.sourceBlocks.csdd,
-        tirgusForm: ws.sourceBlocks.tirgus,
-        manualVendorBlocks: toPdfManualVendorBlocks(ws.sourceBlocks),
-        manualLtabBlock: toPdfLtabManualBlock(ws.sourceBlocks.ltab),
-        autoRecordsBlock: ws.sourceBlocks.auto_records,
-        citiAvoti: ws.sourceBlocks.citi_avoti,
-        listingAnalysis: ws.sourceBlocks.listing_analysis,
+        csddForm: blocksDisplaySafe.csdd,
+        tirgusForm: blocksDisplaySafe.tirgus,
+        manualVendorBlocks: toPdfManualVendorBlocks(blocksDisplaySafe),
+        manualLtabBlock: toPdfLtabManualBlock(blocksDisplaySafe.ltab),
+        autoRecordsBlock: blocksDisplaySafe.auto_records,
+        citiAvoti: blocksDisplaySafe.citi_avoti,
+        listingAnalysis: blocksDisplaySafe.listing_analysis,
         iriss: ws.iriss,
         apskatesPlāns: ws.apskatesPlāns,
         cenasAtbilstiba: ws.cenasAtbilstiba,
@@ -2084,23 +2092,7 @@ export function OrderDetailWorkspace({
             <li key={key}>
               <span className="font-medium">{SOURCE_BLOCK_LABELS[key]}</span>
               <PreviewWorkspaceBody
-                text={
-                  key === "csdd"
-                    ? csddFormToPlainText(ws.sourceBlocks.csdd)
-                    : key === "ltab"
-                      ? ltabBlockToPlainText(ws.sourceBlocks.ltab)
-                      : key === "tirgus"
-                        ? tirgusFormToPlainText(ws.sourceBlocks.tirgus)
-                        : key === "citi_avoti"
-                          ? citiAvotiToPlainText(ws.sourceBlocks.citi_avoti)
-                          : key === "listing_analysis"
-                            ? listingAnalysisToPlainText(ws.sourceBlocks.listing_analysis)
-                            : key === "auto_records"
-                              ? autoRecordsBlockToPlainText(ws.sourceBlocks.auto_records)
-                              : key === "autodna" || key === "carvertical"
-                                ? vendorAvotuBlockToPlainText(ws.sourceBlocks[key])
-                                : standardBlockToPlainText(ws.sourceBlocks[key])
-                }
+                text={orderSourceBlockPlainText(key, blocksDisplaySafe)}
                 variant="default"
               />
             </li>
@@ -2444,15 +2436,15 @@ export function OrderDetailWorkspace({
     };
 
     const sourceTexts: Array<{ title: string; text: string }> = [
-      { title: "CSDD", text: csddFormToPlainText(ws.sourceBlocks.csdd) },
-      { title: "Datu servisi", text: [vendorAvotuBlockToPlainText(ws.sourceBlocks.autodna), vendorAvotuBlockToPlainText(ws.sourceBlocks.carvertical)].filter(Boolean).join("\n\n") },
-      { title: "Auto Records", text: autoRecordsBlockToPlainText(ws.sourceBlocks.auto_records) },
-      { title: "LTAB", text: ltabBlockToPlainText(ws.sourceBlocks.ltab) },
-      { title: "Citi avoti", text: citiAvotiToPlainText(ws.sourceBlocks.citi_avoti) },
-      { title: "Sludinājuma analīze", text: listingAnalysisToPlainText(ws.sourceBlocks.listing_analysis) },
-      { title: "Kopsavilkums", text: ws.iriss },
-      { title: "Apskates plāns", text: ws.apskatesPlāns },
-      { title: "Cenas atbilstība", text: ws.cenasAtbilstiba },
+      { title: "CSDD", text: csddFormToPlainText(blocksDisplaySafe.csdd) },
+      { title: "Datu servisi", text: [vendorAvotuBlockToPlainText(blocksDisplaySafe.autodna), vendorAvotuBlockToPlainText(blocksDisplaySafe.carvertical)].filter(Boolean).join("\n\n") },
+      { title: "Auto Records", text: autoRecordsBlockToPlainText(blocksDisplaySafe.auto_records) },
+      { title: "LTAB", text: ltabBlockToPlainText(blocksDisplaySafe.ltab) },
+      { title: "Citi avoti", text: citiAvotiToPlainText(blocksDisplaySafe.citi_avoti) },
+      { title: "Sludinājuma analīze", text: listingAnalysisToPlainText(blocksDisplaySafe.listing_analysis) },
+      { title: "Kopsavilkums", text: ws.iriss ?? "" },
+      { title: "Apskates plāns", text: ws.apskatesPlāns ?? "" },
+      { title: "Cenas atbilstība", text: ws.cenasAtbilstiba ?? "" },
     ];
 
     drawHeading("PROVIN AUDITS");
@@ -2475,7 +2467,7 @@ export function OrderDetailWorkspace({
     const pdfBytes = await pdf.save();
     const pdfBlob = new Blob([Uint8Array.from(pdfBytes)], { type: "application/pdf" });
     return new File([pdfBlob], buildProvinAuditPdfFilename(payload.vin), { type: "application/pdf" });
-  }, [payload.customerEmail, payload.customerName, payload.customerPhone, payload.vin, ws]);
+  }, [blocksDisplaySafe, payload.customerEmail, payload.customerName, payload.customerPhone, payload.vin, ws.apskatesPlāns, ws.cenasAtbilstiba, ws.iriss]);
 
   const handleWhatsAppSend = useCallback(async () => {
     if (!whatsappShareHref || !whatsappPhoneDigits) return;

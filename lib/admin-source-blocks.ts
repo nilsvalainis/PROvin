@@ -449,10 +449,10 @@ export function csddFormHasContent(f: CsddFormFields): boolean {
 export function csddFormToPlainText(f: CsddFormFields): string {
   const lines: string[] = [];
   for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
-    const v = (f[key] as string).trim();
+    const v = String((f[key] as string | undefined) ?? "").trim();
     if (v) lines.push(`${label} ${v}`);
   }
-  const mh = f.mileageHistory.filter(csddMileageRowHasData);
+  const mh = (f.mileageHistory ?? []).filter(csddMileageRowHasData);
   if (mh.length > 0) {
     lines.push(CSDD_MILEAGE_UNIFIED_TITLE);
     for (const row of mh) {
@@ -465,10 +465,10 @@ export function csddFormToPlainText(f: CsddFormFields): string {
   }
   const checklistTxt = formatSourcePdfChecklistForPdf(f.pdfChecklist);
   if (checklistTxt) lines.push(checklistTxt);
-  if (f.comments.trim()) {
-    lines.push(`${LISTING_ANALYSIS_COMMENT_LABEL}\n${f.comments.trim()}`);
+  if ((f.comments ?? "").trim()) {
+    lines.push(`${LISTING_ANALYSIS_COMMENT_LABEL}\n${(f.comments ?? "").trim()}`);
   }
-  if (f.rawUnprocessedData.trim()) lines.push(f.rawUnprocessedData.trim());
+  if ((f.rawUnprocessedData ?? "").trim()) lines.push((f.rawUnprocessedData ?? "").trim());
   return lines.join("\n");
 }
 
@@ -757,7 +757,7 @@ export function autoRecordsBlockHasContent(b: AutoRecordsBlockState): boolean {
 
 export function autoRecordsBlockToPlainText(b: AutoRecordsBlockState): string {
   const lines: string[] = [];
-  for (const r of b.serviceHistory.filter(autoRecordsRowHasData)) {
+  for (const r of (b.serviceHistory ?? []).filter(autoRecordsRowHasData)) {
     lines.push(
       [
         formatAutoRecordsDateForOutput(r.date),
@@ -768,8 +768,8 @@ export function autoRecordsBlockToPlainText(b: AutoRecordsBlockState): string {
   }
   const checklistTxt = formatSourcePdfChecklistForPdf(b.pdfChecklist);
   if (checklistTxt) lines.push(checklistTxt);
-  if (b.comments.trim()) lines.push(`Komentāri\n${b.comments.trim()}`);
-  if (b.rawUnprocessedData.trim()) lines.push(b.rawUnprocessedData.trim());
+  if ((b.comments ?? "").trim()) lines.push(`Komentāri\n${(b.comments ?? "").trim()}`);
+  if ((b.rawUnprocessedData ?? "").trim()) lines.push((b.rawUnprocessedData ?? "").trim());
   return lines.join("\n\n");
 }
 
@@ -809,7 +809,7 @@ export function vendorAvotuBlockHasContent(b: VendorAvotuBlockState): boolean {
 
 export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState): string {
   const lines: string[] = [];
-  const mh = b.serviceHistory.filter(autoRecordsRowHasData);
+  const mh = (b.serviceHistory ?? []).filter(autoRecordsRowHasData);
   if (mh.length > 0) {
     lines.push(CSDD_MILEAGE_UNIFIED_TITLE);
     for (const r of mh) {
@@ -822,7 +822,7 @@ export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState): string {
       );
     }
   }
-  const inc = b.incidents.filter(ltabRowHasData);
+  const inc = (b.incidents ?? []).filter(ltabRowHasData);
   if (inc.length > 0) {
     lines.push(NEGADIJUMU_VESTURE_TITLE);
     for (const r of inc) {
@@ -831,12 +831,12 @@ export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState): string {
   }
   const checklistTxt = formatSourcePdfChecklistForPdf(b.pdfChecklist);
   if (checklistTxt) lines.push(checklistTxt);
-  if (b.comments.trim()) lines.push(`Komentāri\n${b.comments.trim()}`);
+  if ((b.comments ?? "").trim()) lines.push(`Komentāri\n${(b.comments ?? "").trim()}`);
   return lines.join("\n");
 }
 
 export function citiAvotiHasContent(b: CitiAvotiBlockState): boolean {
-  return b.sections.some(citiAvotiSectionHasContent);
+  return (b.sections ?? []).some(citiAvotiSectionHasContent);
 }
 
 function citiAvotiSectionToPlainText(section: CitiAvotiSectionState): string {
@@ -849,9 +849,10 @@ function citiAvotiSectionToPlainText(section: CitiAvotiSectionState): string {
 }
 
 export function citiAvotiToPlainText(b: CitiAvotiBlockState): string {
-  const total = b.sections.length;
+  const sections = b.sections ?? [];
+  const total = sections.length;
   const parts: string[] = [];
-  for (const [i, section] of b.sections.entries()) {
+  for (const [i, section] of sections.entries()) {
     if (!citiAvotiSectionHasContent(section)) continue;
     const body = citiAvotiSectionToPlainText(section);
     if (!body) continue;
@@ -922,7 +923,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       ...(sourcePdfChecklistHasAny(b.pdfChecklist) ? { pdfChecklist: b.pdfChecklist } : {}),
     });
   }
-  const citiSections = blocks.citi_avoti.sections;
+  const citiSections = blocks.citi_avoti.sections ?? [];
   const citiTotal = citiSections.length;
   for (const [i, citi] of citiSections.entries()) {
     if (!citiAvotiSectionHasContent(citi)) continue;
