@@ -1,3 +1,5 @@
+import { cleanDateInput, parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
+
 const ORDER_DATETIME_TIME_ZONE = "Europe/Riga";
 
 let cachedOrderDateTimeFmt: Intl.DateTimeFormat | null = null;
@@ -13,13 +15,8 @@ function orderDateTimeFormatter(): Intl.DateTimeFormat {
   return cachedOrderDateTimeFmt;
 }
 
-/** Droši formatē Stripe `created` (Unix sekundes) admin UI. */
-export function formatOrderTimestampSec(createdSec: unknown): string {
-  if (typeof createdSec !== "number" || !Number.isFinite(createdSec) || createdSec <= 0) {
-    return "—";
-  }
-  const ms = createdSec * 1000;
-  if (!Number.isFinite(ms)) return "—";
+function formatDateFromMs(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) return "—";
   const date = new Date(ms);
   if (Number.isNaN(date.getTime())) return "—";
   try {
@@ -27,4 +24,17 @@ export function formatOrderTimestampSec(createdSec: unknown): string {
   } catch {
     return "—";
   }
+}
+
+/** Droši formatē Stripe `created` (Unix sekundes) vai LV datuma virkni admin UI. */
+export function formatOrderTimestampSec(createdSec: unknown): string {
+  if (typeof createdSec === "string") {
+    const ms = parseDotOrIsoDateToMs(cleanDateInput(createdSec));
+    return formatDateFromMs(ms);
+  }
+  if (typeof createdSec !== "number" || !Number.isFinite(createdSec) || createdSec <= 0) {
+    return "—";
+  }
+  const ms = createdSec * 1000;
+  return formatDateFromMs(ms);
 }

@@ -7,6 +7,7 @@ import {
   findDateInString,
   parseFlexibleDateToken,
 } from "@/lib/auto-records-date-odometer-parse";
+import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { parseAutoRecordsOdometerTable } from "@/lib/auto-records-odometer-table-parse";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
@@ -33,7 +34,7 @@ export function normalizeAutoRecordsOdometer(raw: string): string {
   return t.replace(/,/g, "").replace(/\D/g, "");
 }
 
-/** ISO (YYYY-MM-DD) → DD.MM.YYYY; jau DD.MM.YYYY → normalizē padding. */
+/** ISO (YYYY-MM-DD) → DD.MM.YYYY; jau DD.MM.YYYY → normalizē padding (saglabā `00.` displejam). */
 export function formatAutoRecordsDateForOutput(raw: string): string {
   const t = raw.trim();
   if (!t) return "";
@@ -56,12 +57,7 @@ export function formatAutoRecordsDateForOutput(raw: string): string {
 
 /** Kārtošanai: ISO vai DD.MM.YYYY → laika zīmogs (ms). */
 export function autoRecordsDateSortKey(s: string): number {
-  const t = s.trim();
-  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (iso) return Date.UTC(+iso[1], +iso[2] - 1, +iso[3]);
-  const lv = t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
-  if (lv) return Date.UTC(+lv[3], +lv[2] - 1, +lv[1]);
-  return 0;
+  return parseDotOrIsoDateToMs(s);
 }
 
 function isHeaderLine(line: string): boolean {

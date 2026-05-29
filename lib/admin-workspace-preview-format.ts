@@ -2,6 +2,8 @@
  * Priekšskata / PDF strukturēšana: tabulas, apakšvirsraksti (CSDD sadaļas), Tirgus secība, VIN/km.
  */
 
+import { cleanDateStr } from "@/lib/clean-date-str";
+
 export type PreviewSegment =
   | { type: "subheading"; title: string }
   | { type: "kv"; rows: [string, string][] }
@@ -48,12 +50,12 @@ export function tryTirgusHistoryGridLine(line: string): string | null {
 
 function parseTirgusHistoryDate(line: string): number {
   const tab = tryTirgusHistoryGridLine(line);
-  const first = tab ? tab.split("\t")[0] ?? "" : line;
+  const first = cleanDateStr(tab ? tab.split("\t")[0] ?? "" : line);
   const m = first.match(/(\d{1,2})[./](\d{1,2})[./](\d{2,4})/);
   if (!m) return 0;
-  const d = parseInt(m[1], 10);
-  const mo = parseInt(m[2], 10);
-  let y = parseInt(m[3], 10);
+  const d = Math.max(1, parseInt(m[1] ?? "1", 10));
+  const mo = parseInt(m[2] ?? "1", 10);
+  let y = parseInt(m[3] ?? "2000", 10);
   if (y < 100) y += 2000;
   return y * 400 + mo * 40 + d;
 }

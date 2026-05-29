@@ -1,6 +1,7 @@
 /**
  * AUTO RECORDS — elastīgi datuma / odometra tokeni no netīra PDF teksta.
  */
+import { cleanDateInput } from "@/lib/clean-date-str";
 import {
   extractCountryFromLocation,
   formatAutoRecordsDateForOutput,
@@ -16,7 +17,8 @@ const ODOMETER_TOKEN =
   /(\d{1,3}(?:[,.]\d{3})*|\d{4,7})\s*(?:km)?(?:\s*ServiceVisit)?/i;
 
 export function parseFlexibleDateToken(raw: string): string {
-  const t = raw.trim();
+  const t = cleanDateInput(raw);
+  if (!t) return "";
   const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (iso) return formatAutoRecordsDateForOutput(t);
   const slash = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);

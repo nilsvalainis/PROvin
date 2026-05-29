@@ -2,6 +2,7 @@
  * Strukturēti avotu bloki admin portfelī → sintēze uz PDF / km / VIN heuristiku.
  */
 
+import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude, type ProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
 import { parseVehicleAiFromWorkspaceRecord } from "@/lib/vehicle-ai-extraction-parse";
@@ -416,23 +417,7 @@ function mileageDedupKey(r: CsddMileageRow): string {
 }
 
 function mileageDateSortKey(s: string): number {
-  const t = s.trim();
-  const dm = t.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-  if (dm) {
-    const d = Number(dm[1]);
-    const mo = Number(dm[2]);
-    const y = Number(dm[3]);
-    if (d >= 1 && d <= 31 && mo >= 1 && mo <= 12 && y >= 1900 && y <= 2100) {
-      return new Date(y, mo - 1, d).getTime();
-    }
-    return 0;
-  }
-  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) {
-    const ts = new Date(t).getTime();
-    return Number.isNaN(ts) ? 0 : ts;
-  }
-  return 0;
+  return parseDotOrIsoDateToMs(s);
 }
 
 /** Strukturētie lauki PDF atskaitei (bez raw). */

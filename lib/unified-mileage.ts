@@ -12,6 +12,7 @@ import {
   type ClientManualVendorBlockPdf,
   type CsddFormFields,
 } from "@/lib/admin-source-blocks";
+import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import {
   autoRecordsRowHasData,
   formatAutoRecordsDateForOutput,
@@ -36,25 +37,8 @@ export type UnifiedMileageSourcePayload = {
 };
 
 export function parseMileageDateForSort(raw: string): number {
-  const t = raw.trim();
-  if (!t) return Number.NEGATIVE_INFINITY;
-  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (iso) {
-    const y = Number.parseInt(iso[1] ?? "", 10);
-    const m = Number.parseInt(iso[2] ?? "", 10);
-    const d = Number.parseInt(iso[3] ?? "", 10);
-    return Date.UTC(y, Math.max(0, m - 1), d);
-  }
-  const lv = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/);
-  if (lv) {
-    const d = Number.parseInt(lv[1] ?? "", 10);
-    const m = Number.parseInt(lv[2] ?? "", 10);
-    const yRaw = Number.parseInt(lv[3] ?? "", 10);
-    const y = yRaw < 100 ? 2000 + yRaw : yRaw;
-    return Date.UTC(y, Math.max(0, m - 1), d);
-  }
-  const ts = Date.parse(t);
-  return Number.isNaN(ts) ? Number.NEGATIVE_INFINITY : ts;
+  const ms = parseDotOrIsoDateToMs(raw);
+  return ms > 0 ? ms : Number.NEGATIVE_INFINITY;
 }
 
 export function parseOdometerKm(raw: string): number | null {
