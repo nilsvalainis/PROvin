@@ -110,6 +110,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
     });
     expect(doc).toContain("SVARĪGA INFORMĀCIJA");
+    expect(doc).toContain("digitāls datu apkopojums");
     expect(doc).toContain('class="pdf-site-footer__confidentiality"');
     expect(doc).toContain("kategoriski aizliegts pavairot");
     expect(doc).toContain(`© ${new Date().getFullYear()} PROVIN.LV`);

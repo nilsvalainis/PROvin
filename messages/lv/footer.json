@@ -16,6 +16,6 @@
     "companyRegNo": "Reģistrācijas numurs",
     "companyLegalAddress": "Juridiskā adrese",
     "companyIncompleteDev": "Izstrādātājam: iestatiet NEXT_PUBLIC_COMPANY_LEGAL_NAME, NEXT_PUBLIC_COMPANY_REG_NO un NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS (.env vai hosting).",
-    "disclaimer": "Datu avotu informācija ir informatīva; kopsavilkums ir profesionāls viedoklis, nevis juridisks spriedums vai oficiāla tehniskā ekspertīze."
+    "disclaimer": "PROVIN.LV sniedz konsultatīvu pakalpojumu: transportlīdzekļa pieejamās informācijas izvērtējumu un ieteikumus. Šis ir digitāls datu apkopojums, nevis automašīnas tehniskā diagnostika, un tas nekādā veidā nevar aizvietot pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze vai juridisks spriedums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients."
   }
 }

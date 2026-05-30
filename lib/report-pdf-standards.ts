@@ -69,7 +69,7 @@ export const CLIENT_REPORT_SECTION_LABELS = {
 
 /** Vienota juridiskā atruna — PDF kreisā kolonna zem „SVARĪGA INFORMĀCIJA”. */
 export const CLIENT_REPORT_FOOTER_DISCLAIMER =
-  "PROVIN.LV sniedz konsultatīvu pakalpojumu: transportlīdzekļa pieejamās informācijas izvērtējumu un ieteikumus. Tas nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze vai juridisks spriedums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.";
+  "PROVIN.LV sniedz konsultatīvu pakalpojumu: transportlīdzekļa pieejamās informācijas izvērtējumu un ieteikumus. Šis ir digitāls datu apkopojums, nevis automašīnas tehniskā diagnostika, un tas nekādā veidā nevar aizvietot pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze vai juridisks spriedums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.";
 
 /** Konfidencialitāte un aizliegums nodot trešajām personām — treknrakstā PDF kājenē. */
 export const PDF_SITE_FOOTER_CONFIDENTIALITY_NOTICE =
