@@ -21,7 +21,7 @@ import {
   type ListingAnalysisBlockState,
 } from "@/lib/admin-source-blocks";
 import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
-import { plainTextToMinimalRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { geminiPlainTextToRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
 
 const ta =
@@ -122,7 +122,7 @@ export function AdminListingAnalysisSourceBlock({
           return;
         }
         if (typeof data.text === "string" && data.text.trim()) {
-          onChange({ ...v, sellerPortrait: plainTextToMinimalRichHtml(data.text) });
+          onChange({ ...v, sellerPortrait: geminiPlainTextToRichHtml(data.text) });
         }
       } catch {
         setSellerAnalyzeErr("Gemini: neizdevās savienoties");
@@ -164,7 +164,7 @@ export function AdminListingAnalysisSourceBlock({
         return;
       }
       if (typeof data.text === "string") {
-        onChange({ ...v, listingSalesContext: plainTextToMinimalRichHtml(data.text) });
+        onChange({ ...v, listingSalesContext: geminiPlainTextToRichHtml(data.text) });
       }
     } catch {
       setAnalyzeErr("Groq: neizdevās savienoties");

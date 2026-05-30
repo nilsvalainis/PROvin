@@ -1,7 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, type ChangeEvent, type MouseEvent } from "react";
 import { coerceAdminRichHtmlForDisplay } from "@/lib/admin-rich-comment-html";
+import {
+  ADMIN_RICH_COMMENT_FONT_OPTIONS,
+  ADMIN_RICH_COMMENT_SIZE_OPTIONS,
+} from "@/lib/admin-rich-comment-fonts";
 
 /** Pievienot read-only `className`, ja HTML rāda ar `AdminRichCommentReadonly`. */
 export const ADMIN_RICH_READONLY_CHILD_MARKUP =
@@ -15,6 +19,9 @@ const editorShellCompactClass =
 
 const toolBtnClass =
   "rounded border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:hover:bg-white/10";
+
+const toolSelectClass =
+  "max-w-[7.5rem] rounded border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-1 py-0.5 text-[10px] text-[var(--color-apple-text)]";
 
 export function AdminRichCommentReadonly({
   html,
@@ -110,6 +117,66 @@ export function AdminInternalRichCommentEditor({
     [emit],
   );
 
+  const applySpanStyle = useCallback(
+    (style: Record<string, string>) => {
+      const el = ref.current;
+      if (!el) return;
+      el.focus();
+      const styleStr = Object.entries(style)
+        .filter(([, v]) => v.trim())
+        .map(([k, v]) => `${k}:${v}`)
+        .join(";");
+      if (!styleStr) return;
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      if (range.collapsed) {
+        try {
+          document.execCommand(
+            "insertHTML",
+            false,
+            `<span style="${styleStr}">&#8203;</span>`,
+          );
+        } catch {
+          /* ignore */
+        }
+      } else {
+        const contents = range.extractContents();
+        const span = document.createElement("span");
+        span.setAttribute("style", styleStr);
+        span.appendChild(contents);
+        range.insertNode(span);
+        sel.removeAllRanges();
+        const after = document.createRange();
+        after.selectNodeContents(span);
+        after.collapse(false);
+        sel.addRange(after);
+      }
+      emit();
+    },
+    [emit],
+  );
+
+  const onFontChange = useCallback(
+    (e: ChangeEvent<HTMLSelectElement>) => {
+      const opt = ADMIN_RICH_COMMENT_FONT_OPTIONS.find((f) => f.id === e.target.value);
+      e.target.value = "default";
+      if (!opt || !opt.css) return;
+      applySpanStyle({ "font-family": opt.css });
+    },
+    [applySpanStyle],
+  );
+
+  const onSizeChange = useCallback(
+    (e: ChangeEvent<HTMLSelectElement>) => {
+      const opt = ADMIN_RICH_COMMENT_SIZE_OPTIONS.find((s) => s.id === e.target.value);
+      e.target.value = "";
+      if (!opt) return;
+      applySpanStyle({ "font-size": opt.css });
+    },
+    [applySpanStyle],
+  );
+
   const onToolbarMouseDown = useCallback((e: MouseEvent) => {
     e.preventDefault();
   }, []);
@@ -147,6 +214,35 @@ export function AdminInternalRichCommentEditor({
         >
           <span className="font-semibold text-green-500">A</span>
         </button>
+        <select
+          className={toolSelectClass}
+          defaultValue="default"
+          onChange={onFontChange}
+          title="Fonts"
+          aria-label="Fonts"
+        >
+          {ADMIN_RICH_COMMENT_FONT_OPTIONS.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.label}
+            </option>
+          ))}
+        </select>
+        <select
+          className={toolSelectClass}
+          defaultValue=""
+          onChange={onSizeChange}
+          title="Izmērs"
+          aria-label="Burtu izmērs"
+        >
+          <option value="" disabled>
+            Izm.
+          </option>
+          {ADMIN_RICH_COMMENT_SIZE_OPTIONS.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}px
+            </option>
+          ))}
+        </select>
       </div>
       <div
         ref={ref}

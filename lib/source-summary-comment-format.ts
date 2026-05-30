@@ -20,6 +20,7 @@ const HYBRID_COMMENT_RULES = `COMMENTARY (mandatory) — hybrid "Factual Context
 3. If the report is entirely clean (no substantive history/notes/descriptions — empty or only generic blank markers): set comments EXACTLY to "Problēmas nav konstatētas." (nothing else).
 4. If the source contains ANY history, metadata, or descriptive notes: summarize the factual timeline in short sentences (not only problems).
 5. For clear conflicts, major mileage issues, or text mentioning damage/claims without structured rows: add a bullet prefixed "ANOMĀLIJA: " (e.g. "- ANOMĀLIJA: nobraukuma nesakritība …").
+6. NEVER use asterisk (*) for bullets — only hyphen (-) at line start.
 Example:
 - Reģistrēts neliels virsbūves bojājums Vācijā (summa <=100 EUR). Bojāta labā sāna priekšpuse un kreisais sāns.
 - 07.03.2021 Dīlera apkope pie 46,441 km.`;

@@ -129,7 +129,7 @@ import {
   AdminCommonPhrasesDrawerTrigger,
 } from "@/components/admin/AdminCommonPhrasesDrawer";
 import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
-import { plainTextToMinimalRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { geminiPlainTextToRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
@@ -949,7 +949,7 @@ export function OrderDetailWorkspace({
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        updateWs({ apskatesPlāns: plainTextToMinimalRichHtml(data.text) });
+        updateWs({ apskatesPlāns: geminiPlainTextToRichHtml(data.text) });
       }
     } catch {
       setGeminiInspectionErr("Gemini: neizdevās savienoties");
@@ -981,7 +981,7 @@ export function OrderDetailWorkspace({
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        updateWs({ cenasAtbilstiba: plainTextToMinimalRichHtml(data.text) });
+        updateWs({ cenasAtbilstiba: geminiPlainTextToRichHtml(data.text) });
       }
     } catch {
       setGeminiPriceErr("Gemini: neizdevās savienoties");
@@ -1013,7 +1013,7 @@ export function OrderDetailWorkspace({
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        setIrissSummary(plainTextToMinimalRichHtml(data.text));
+        setIrissSummary(geminiPlainTextToRichHtml(data.text));
       }
     } catch {
       setGeminiSummaryErr("Gemini: neizdevās savienoties");
@@ -1046,7 +1046,7 @@ export function OrderDetailWorkspace({
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        onInternalCommentChange(plainTextToMinimalRichHtml(data.text));
+        onInternalCommentChange(geminiPlainTextToRichHtml(data.text));
       }
     } catch {
       setGeminiIncidentsSummaryErr("Gemini: neizdevās savienoties");
@@ -1085,7 +1085,7 @@ export function OrderDetailWorkspace({
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        onMileageCommentChange(plainTextToMinimalRichHtml(data.text));
+        onMileageCommentChange(geminiPlainTextToRichHtml(data.text));
       }
     } catch {
       setGeminiMileageCommentErr("Gemini: neizdevās savienoties");
@@ -1152,7 +1152,7 @@ export function OrderDetailWorkspace({
           return;
         }
         if (typeof data.text === "string" && data.text.trim()) {
-          const html = plainTextToMinimalRichHtml(data.text);
+          const html = geminiPlainTextToRichHtml(data.text);
           const prevBlock = cur.sourceBlocks[blockKey];
           const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
             citiAvotiSectionIndex,

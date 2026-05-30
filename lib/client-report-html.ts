@@ -92,7 +92,7 @@ import {
 import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
-import { internalCommentHtmlToPdfPlain } from "@/lib/admin-internal-comment-pdf";
+import { adminRichHtmlToPdfSafeHtml } from "@/lib/admin-rich-comment-html";
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   PDF_MILEAGE_HISTORY_COMMENT_LABEL,
@@ -379,9 +379,8 @@ function extractVehicleMakeModel(csdd: string): string | null {
 
 /** Komentāru bloks — vienots stils visā atskaitē (kā NEGADĪJUMU VĒSTURE). */
 function pdfReportCommentBox(text: string, label = PDF_REPORT_COMMENT_LABEL): string {
-  const plain = internalCommentHtmlToPdfPlain(text).trim();
-  if (!plain) return "";
-  const body = escapeHtml(plain).replace(/\r?\n/g, "<br />");
+  const body = adminRichHtmlToPdfSafeHtml(text).trim();
+  if (!body) return "";
   return `<div class="pdf-report-comment-note" role="note"><p class="pdf-field-label">${escapeHtml(label)}</p><div class="pdf-report-comment-note-body">${body}</div></div>`;
 }
 
@@ -796,17 +795,17 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload, vis: PdfVisibilitySet
 /** Galvenais eksperta kopsavilkums — pilnā platumā, pēdējais lielais bloks pirms juridiskās piezīmes. */
 function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   if (!vis.iriss) return "";
-  const iriss = internalCommentHtmlToPdfPlain(p.iriss ?? "").trim();
-  const plan = internalCommentHtmlToPdfPlain(p.apskatesPlāns ?? "").trim();
-  if (!iriss && !plan) return "";
+  const irissHtml = (p.iriss ?? "").trim();
+  const planHtml = (p.apskatesPlāns ?? "").trim();
+  if (!irissHtml && !planHtml) return "";
   const inner: string[] = [];
-  if (plan) {
+  if (planHtml) {
     inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("car"), PDF_IRISS_SECTION_1));
-    inner.push(pdfReportCommentBox(plan));
+    inner.push(pdfReportCommentBox(planHtml));
   }
-  if (iriss) {
+  if (irissHtml) {
     inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("fileSearch"), PDF_IRISS_SECTION_2));
-    inner.push(pdfReportCommentBox(iriss));
+    inner.push(pdfReportCommentBox(irissHtml));
   }
   if (inner.length === 0) return "";
   const parts: string[] = [];
@@ -992,7 +991,13 @@ function clientReportPrintCss(): string {
       .pdf-mileage-comment-note .pdf-field-label{margin:0 0 6px;font-size:11px;font-weight:700;color:#0f172a;}
       .pdf-report-comment-note-body,
       .pdf-incident-internal-note-body,
-      .pdf-mileage-comment-note-body{margin:0;font-size:11px;line-height:1.45;color:#0f172a;font-family:Inter,sans-serif!important;}
+      .pdf-mileage-comment-note-body{margin:0;font-size:11px;line-height:1.55;color:#0f172a;font-family:Inter,sans-serif!important;}
+      .pdf-report-comment-note-body strong,
+      .pdf-report-comment-note-body b{font-weight:700;}
+      .pdf-report-comment-note-body em,
+      .pdf-report-comment-note-body i{font-style:italic;}
+      .pdf-report-comment-note-body u{text-decoration:underline;}
+      .pdf-report-comment-note-body span{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       .pdf-mileage-dual{
         display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;align-items:start;margin:8px 0 0;
       }

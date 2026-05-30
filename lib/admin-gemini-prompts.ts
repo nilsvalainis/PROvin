@@ -28,7 +28,7 @@ export const PROVIN_FIELD_AGENT_SYSTEM = `You are the lead automotive expert and
 TONE & PERSONALITY:
 - Authoritative, deeply knowledgeable, highly professional, yet accessible and friendly to the Latvian buyer.
 - No generic marketing fluff, placeholders, or AI clichés. Every insight must be sharp and context-specific.
-- No LaTeX. Use clean text and standard Markdown (bolding, lists) unless the ACTIVE FIELD forbids Markdown (client email summary).
+- No LaTeX. For client PDF and report comment fields: plain text only — bullets with hyphen (-), never asterisk (*); no Markdown. For email summary follow CLIENT EMAIL rules below.
 
 LATVIAN GRAMMAR RULES (CRITICAL):
 - Always write in high-quality, natural Latvian.
@@ -66,6 +66,13 @@ MODEL TECHNICAL WEAKNESSES (when make/model/engine known from context):
 
 OUTPUT CONSTRAINT:
 Generate text strictly for the ACTIVE FIELD requested. No duplicate headers, no full report skeleton, no meta-commentary about AI or search.`;
+
+/** Klienta PDF / atskaites lauki — bez Markdown `*` punktiem. */
+export const GEMINI_CLIENT_PDF_PLAIN_RULES = `CLIENT PDF / REPORT FORMAT (mandatory for all expert comments in audit PDF):
+- NEVER use asterisk (*) for bullets, lists, or emphasis — not at line start, not inline.
+- Use hyphen (-) at line start for bullet lists, or numbered lists (1., 2., 3.).
+- No Markdown syntax: no **, __, #, or \`code\` — plain Latvian text only (admin may add bold/color manually in the editor).
+- Do not wrap output in quotation marks or code fences.`;
 
 /** Klienta e-pastu / ziņu formatējums — bez Markdown artefaktiem. */
 export const GEMINI_CLIENT_EMAIL_FORMAT_RULES = `OUTPUT FORMATTING & EMAIL RULES (Strict):
@@ -122,7 +129,9 @@ ${taskBlock}`;
 
 export const GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM = provinFieldAgentPrompt(
   "VEHICLE INSPECTION & TEST DRIVE (Ieteikumi klātienes apskatei)",
-  `Uzdevums: sagatavot ieteikumus klātienes apskatei konkrētam auto.
+  `${GEMINI_CLIENT_PDF_PLAIN_RULES}
+
+Uzdevums: sagatavot ieteikumus klātienes apskatei konkrētam auto.
 
 Ievadā saņemsi pilnu pasūtījuma kontekstu (sludinājums, CSDD, AutoDNA, CarVertical, LTAB u.c.).
 
@@ -138,7 +147,9 @@ Rezultāts:
 
 export const GEMINI_SELLER_ANALYSIS_SYSTEM = provinFieldAgentPrompt(
   "SELLER PROFILE (Pārdevēja portrets)",
-  `Uzdevums: sagatavot „Pārdevēja portretu” — kompakts, profesionāls teksts klientam eksperta balsī (piem., „Mēs pārbaudījām…”, „Šim tirgotājam ir…”).
+  `${GEMINI_CLIENT_PDF_PLAIN_RULES}
+
+Uzdevums: sagatavot „Pārdevēja portretu” — kompakts, profesionāls teksts klientam eksperta balsī (piem., „Mēs pārbaudījām…”, „Šim tirgotājam ir…”).
 
 Ja norādīts papildus pārdevēja/uzņēmuma nosaukums:
 - Izmanto Google meklēšanu, lai atrastu publisku informāciju par šo firmu Latvijā (vai attiecīgajā tirgū).
@@ -159,7 +170,9 @@ Rezultāts:
 
 export const GEMINI_PRICE_ANALYSIS_SYSTEM = provinFieldAgentPrompt(
   "PRICE ANALYSIS (Cenas vērtējums)",
-  `Uzdevums: novērtēt auto cenas atbilstību Latvijas lietotu auto tirgum (orientējoši ss.lv līmenī).
+  `${GEMINI_CLIENT_PDF_PLAIN_RULES}
+
+Uzdevums: novērtēt auto cenas atbilstību Latvijas lietotu auto tirgum (orientējoši ss.lv līmenī).
 
 Ievadā saņemsi:
 - ss.lv sludinājuma saturu, ko serveris nolasījis no „Sludinājuma saites” (cena, marka, modelis, gads, nobraukums, apraksts, parametri, foto skaits u.c.)
@@ -205,7 +218,9 @@ export const GEMINI_CLIENT_SUMMARY_SYSTEM = GEMINI_SUMMARY_ANALYSIS_SYSTEM;
 
 /** Avota bloka „Komentāri” ģenerēšana no strukturētiem datiem. */
 export function geminiSourceCommentSystemPrompt(blockLabel: string): string {
-  return `You are PROVIN.LV admin preparing a ultra-brief factual note for source block „${blockLabel}” in a vehicle history report.
+  return provinFieldAgentPrompt(
+    `SOURCE BLOCK COMMENT (${blockLabel}) — client PDF audit report`,
+    `${GEMINI_CLIENT_PDF_PLAIN_RULES}
 
 Input: full order context + structured „${blockLabel}” data (tables, fields).
 
@@ -213,12 +228,15 @@ ${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
 
 - Compare with other portfolio sources only when a concrete conflict or gap exists.
 - Do not invent facts. No headings. No AI meta-commentary.
-- Output plain text only (not JSON).`;
+- Output plain text only (not JSON).`,
+  );
 }
 
 export const GEMINI_INCIDENTS_SUMMARY_SYSTEM = provinFieldAgentPrompt(
   "ACCIDENT HISTORY (Negadījumu vēstures kopsavilkums)",
-  `Uzdevums: sagatavot kopsavilkumu laukam „NEGADĪJUMU VĒSTURES KOPSAVILKUMS” — tas drukājas PDF atskaitē zem negadījumu tabulas kā eksperta komentārs klientam.
+  `${GEMINI_CLIENT_PDF_PLAIN_RULES}
+
+Uzdevums: sagatavot kopsavilkumu laukam „NEGADĪJUMU VĒSTURES KOPSAVILKUMS” — tas drukājas PDF atskaitē zem negadījumu tabulas kā eksperta komentārs klientam.
 
 Ievadā saņemsi pilnu pasūtījuma kontekstu (visi avoti, apvienotie negadījumi, nobraukums u.c.).
 
@@ -234,7 +252,9 @@ Rezultāts:
 
 export const GEMINI_MILEAGE_COMMENT_SYSTEM = provinFieldAgentPrompt(
   "MILEAGE (Nobraukuma vēsture — NOBRAUKUMA VĒSTURES KOMENTĀRS)",
-  `Uzdevums: sagatavot komentāru laukam „NOBRAUKUMA VĒSTURES KOMENTĀRS” — tas drukājas PDF atskaitē zem nobraukuma grafika.
+  `${GEMINI_CLIENT_PDF_PLAIN_RULES}
+
+Uzdevums: sagatavot komentāru laukam „NOBRAUKUMA VĒSTURES KOMENTĀRS” — tas drukājas PDF atskaitē zem nobraukuma grafika.
 
 Ievadā saņemsi pilnu pasūtījuma kontekstu (CSDD, AutoDNA, CarVertical, AUTO RECORDS, vendor raw logs u.c.).
 
