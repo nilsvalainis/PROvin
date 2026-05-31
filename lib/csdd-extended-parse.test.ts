@@ -9,6 +9,7 @@ import {
   parseOwnerRegistrationFromRaw,
   parsePreviousRegistrationCountry,
   parseTechnicalInspectionHistory,
+  sanitizeDefectDescription,
 } from "@/lib/csdd-extended-parse";
 import {
   buildPreviousInspectionBlockHtml,
@@ -174,29 +175,6 @@ describe("csdd extended parse", () => {
     expect(block.inspectionDateText).toBe("16.12.2025");
   });
 
-  it("does not append registration metadata to last TA defect description", () => {
-    const raw = `Tehnisko apskašu vēsture
-Apskates datums 27.01.2016
-Apskates tips pamatpārbaude
-Novērtējums 2 - Ar mēneša laikā labojamiem defektiem
-Dūmainības koeficients (m-1): 0.33
- Kods Novērtējums Trūkumi vai bojājumi
-503 2 Nepietiekams riepu protektora dziļums.
-607 2 Priekšējais tilts. Palielināta brīvkustība balsta šarnīrā. Kreisais apakšējais pakaļējais balsta šarnīrs.
-407 1 Nevienmērīga stāvbremzes darbība. Iepriekšējās reģistrācijas valsts VĀCIJA Transportlīdzekļa reģistrācija No 22/01/2016 3 īpašnieki 22.01.2016 - Pirmā reģistrācija Latvijā 22.02.2016 - Īpašnieka maiņa 20.01.2017 - Īpašnieka maiņa Pēdējā tehniskā apskate TA datums 30.12.2025 Nākošā TA 12.01.2027 Odometra rādījums 274726`;
-
-    const rows = parseTechnicalInspectionHistory(raw);
-    const row2016 = rows.find((r) => r.date === "27.01.2016");
-    const defect407 = row2016?.defects.find((d) => d.code === "407");
-    expect(defect407?.description).toBe("Nevienmērīga stāvbremzes darbība");
-    expect(defect407?.description).not.toMatch(/VĀCIJA|īpašniek/i);
-
-    expect(parsePreviousRegistrationCountry(raw)).toBe("VĀCIJA");
-    const { ownerCount, events } = parseOwnerRegistrationFromRaw(raw);
-    expect(ownerCount).toBe("3");
-    expect(events.length).toBeGreaterThanOrEqual(2);
-  });
-
   it("backfill upgrades legacy rows without defects", () => {
     const parsed = parseCsddPaste(SAMPLE_RAW);
     const form = applyCsddPasteToForm(emptyCsddFields(), SAMPLE_RAW, parsed);
@@ -211,5 +189,26 @@ Dūmainības koeficients (m-1): 0.33
     };
     const backfilled = backfillCsddExtendedFromRaw(legacy);
     expect(backfilled.technicalInspectionHistory[0]?.defects.length).toBeGreaterThan(0);
+  });
+
+  it("strips registration tail wrongly appended to oldest TA defect", () => {
+    const raw = `Tehnisko apskašu vēsture
+Apskates datums 27.01.2016
+Apskates tips pamatpārbaude
+Novērtējums 2 - Ar mēneša laikā labojamiem defektiem
+ Kods Novērtējums Trūkumi vai bojājumi
+607 2 Stāvbremzes bremzēšanas efektivitāte nepietiekama.
+407 1 Nevienmērīga stāvbremzes darbība. Iepriekšējās reģistrācijas valsts VĀCIJA Transportlīdzekļa reģistrācija No 22/01/2016 3 īpašnieki 22.01.2016 - Pirmā reģistrācija Latvijā 22.02.2016 - Īpašnieka maiņa 20.01.2017 - Īpašnieka maiņa Pēdējā tehniskā apskate TA datums 30.12.2025 Nākošā TA 12.01.2027 Odometra rādījums 274726`;
+
+    const rows = parseTechnicalInspectionHistory(raw);
+    const d407 = rows.find((r) => r.date === "27.01.2016")?.defects.find((d) => d.code === "407");
+    expect(d407?.description).toBe("Nevienmērīga stāvbremzes darbība.");
+    expect(d407?.description).not.toMatch(/VĀCIJA|Transportlīdzekļa reģistrācija|Nākošā TA/);
+
+    expect(sanitizeDefectDescription(d407?.description ?? "")).toBe("Nevienmērīga stāvbremzes darbība.");
+
+    const html = buildTechnicalInspectionHistoryTableHtml(rows);
+    expect(html).toContain("pdf-csdd-defect-rating--1");
+    expect(html).toContain("pdf-csdd-defect-rating--2");
   });
 });

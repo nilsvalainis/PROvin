@@ -1316,6 +1316,9 @@ function clientReportPrintCss(): string {
         padding:3px 4px!important;line-height:1.25!important;border-bottom:1px solid #eef2f7!important;
         color:#64748b!important;
       }
+      .mirror-table--csdd-defect-historic .pdf-csdd-defect-rating--1{color:#16a34a!important;font-weight:700;}
+      .mirror-table--csdd-defect-historic .pdf-csdd-defect-rating--2{color:#d97706!important;font-weight:700;}
+      .mirror-table--csdd-defect-historic .pdf-csdd-defect-rating--3{color:#dc2626!important;font-weight:700;}
       .mirror-table--csdd-mh{font-size:9pt!important;margin:2px 0 4px!important;}
       .mirror-table--csdd-mh td,.mirror-table--csdd-mh th{padding:3px 4px!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;}
       .mirror-table--csdd-mh thead th{font-size:9pt!important;}
