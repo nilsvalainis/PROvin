@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin-gemini-order-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
+import { buildPreviouslyGeneratedSourceCommentsContext } from "@/lib/admin-source-comment-blocks";
 
 function expertSection(label: string, html: string): string {
   const t = adminRichHtmlToPlainText(html).trim();
@@ -39,10 +40,16 @@ export async function generateSummaryAnalysisWithGemini(input: GeminiOrderContex
 
   const expertBundle = [sellerText, inspectionText, priceText].filter(Boolean).join("\n\n");
 
+  const sourceCommentsContext = buildPreviouslyGeneratedSourceCommentsContext(null, blocks).trim();
+
   const userPrompt = appendGeminiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
 
 ${orderContext ? `${orderContext}\n\n---\n\n` : ""}${
+      sourceCommentsContext
+        ? `Esošie eksperta komentāri avotu sadaļās (obligāti sintezē, neatkārto vārds vārdā):\n\n${sourceCommentsContext}\n\n---\n\n`
+        : ""
+    }${
       expertBundle
         ? `Eksperta jau sagatavotās sadaļas (papildus konteksts, nevis vienīgais avots):\n\n${expertBundle}\n\n---\n\n`
         : ""

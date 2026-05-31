@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { normalizeWhatsAppPhoneDigits } from "@/lib/admin-whatsapp-phone";
+import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
 
 function WhatsAppIconGlyph() {
   return (
@@ -35,18 +35,16 @@ export function AdminWhatsAppPdfSendButton({
   className?: string;
 }) {
   const phoneDigits = useMemo(() => normalizeWhatsAppPhoneDigits(phone), [phone]);
-  const whatsappShareHref = phoneDigits
-    ? `whatsapp://send?phone=${phoneDigits}&text=${encodeURIComponent(prefillMessage)}`
-    : null;
-  const whatsappWebHref = phoneDigits
-    ? `https://wa.me/${phoneDigits}?text=${encodeURIComponent(prefillMessage)}`
-    : null;
 
   const handleClick = useCallback(async () => {
-    if (!whatsappShareHref || !phoneDigits) return;
+    if (!phoneDigits) return;
+    const chatWindow = window.open("about:blank", "_blank", "noopener,noreferrer");
     try {
       const pdfFile = await generatePdf();
-      if (!pdfFile) return;
+      if (!pdfFile) {
+        chatWindow?.close();
+        return;
+      }
       const objectUrl = URL.createObjectURL(pdfFile);
       const a = document.createElement("a");
       a.href = objectUrl;
@@ -57,21 +55,17 @@ export function AdminWhatsAppPdfSendButton({
       a.remove();
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
 
-      window.location.href = whatsappShareHref;
-      if (whatsappWebHref) {
-        window.setTimeout(() => {
-          window.open(whatsappWebHref, "_blank", "noopener,noreferrer");
-        }, 900);
-      }
+      openWhatsAppChat(phoneDigits, prefillMessage, chatWindow);
       alert(
         "Atvērts WhatsApp čats. PDF konsultācija lejupielādēta automātiski — pievienojiet to kā pielikumu ziņai.",
       );
     } catch (error) {
+      chatWindow?.close();
       alert(error instanceof Error ? error.message.slice(0, 220) : "Neizdevās sagatavot PDF WhatsApp nosūtīšanai.");
     }
-  }, [generatePdf, phoneDigits, whatsappShareHref, whatsappWebHref]);
+  }, [generatePdf, phoneDigits, prefillMessage]);
 
-  if (!whatsappShareHref) {
+  if (!phoneDigits) {
     return (
       <span
         className={className ? `${btnDisabledClass} ${className}` : btnDisabledClass}

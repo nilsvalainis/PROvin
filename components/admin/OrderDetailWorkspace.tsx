@@ -119,17 +119,19 @@ import type { AdminGeminiSourceCommentSlot } from "@/components/admin/AdminSourc
 import {
   applySourceBlockGeneratedComment,
   citiAvotiSectionPlainTextExcludingComments,
+  isMainAnalysisSourceBlock,
   sourceBlockCommentsPlainForGemini,
   type GeminiSourceCommentBlockKey,
   sourceBlockHasDataExcludingComments,
 } from "@/lib/admin-source-comment-blocks";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
+import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
 import {
   AdminCommonPhrasesDrawer,
   AdminCommonPhrasesDrawerTrigger,
 } from "@/components/admin/AdminCommonPhrasesDrawer";
 import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
-import { geminiPlainTextToRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { geminiPlainTextToRichHtml, adminRichHtmlToPlainText, geminiExpertSourceCommentToRichHtml } from "@/lib/admin-rich-comment-html";
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
@@ -232,21 +234,6 @@ const workspaceSectionTitle = `font-medium uppercase tracking-wide text-[var(--c
 
 const workspaceSectionShell =
   "rounded-xl bg-[var(--admin-surface-elevated)] p-2 shadow-sm ring-1 ring-[var(--admin-border-subtle)]";
-
-function normalizeWhatsAppPhoneDigits(raw: string | null | undefined): string | null {
-  const t = (raw ?? "").trim();
-  if (!t) return null;
-  const compact = t.replace(/[\s\-().]/g, "");
-  let prefixed = compact;
-  if (!(prefixed.startsWith("+371") || prefixed.startsWith("00371") || prefixed.startsWith("371"))) {
-    prefixed = `+371${prefixed.replace(/\D/g, "")}`;
-  }
-  let digits = prefixed.replace(/\D/g, "");
-  if (digits.startsWith("00")) digits = digits.slice(2);
-  if (!digits) return null;
-  if (!digits.startsWith("371")) digits = `371${digits}`;
-  return digits;
-}
 
 const WHATSAPP_PREFILL_MESSAGE = `Sveiki!
 
@@ -1152,7 +1139,9 @@ export function OrderDetailWorkspace({
           return;
         }
         if (typeof data.text === "string" && data.text.trim()) {
-          const html = geminiPlainTextToRichHtml(data.text);
+          const html = isMainAnalysisSourceBlock(blockKey)
+            ? geminiExpertSourceCommentToRichHtml(data.text)
+            : geminiPlainTextToRichHtml(data.text);
           const prevBlock = cur.sourceBlocks[blockKey];
           const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
             citiAvotiSectionIndex,
@@ -2404,12 +2393,6 @@ export function OrderDetailWorkspace({
 
   const vinBar = (payload.vin ?? "").trim();
   const whatsappPhoneDigits = normalizeWhatsAppPhoneDigits(payload.customerPhone);
-  const whatsappShareHref = whatsappPhoneDigits
-    ? `whatsapp://send?phone=${whatsappPhoneDigits}&text=${encodeURIComponent(WHATSAPP_PREFILL_MESSAGE)}`
-    : null;
-  const whatsappWebHref = whatsappPhoneDigits
-    ? `https://wa.me/${whatsappPhoneDigits}?text=${encodeURIComponent(WHATSAPP_PREFILL_MESSAGE)}`
-    : null;
 
   const generateAuditPdfForWhatsApp = useCallback(async (): Promise<File | null> => {
     const pdf = await PDFDocument.create();
@@ -2498,10 +2481,14 @@ export function OrderDetailWorkspace({
   }, [blocksDisplaySafe, payload.customerEmail, payload.customerName, payload.customerPhone, payload.vin, ws.apskatesPlāns, ws.cenasAtbilstiba, ws.iriss]);
 
   const handleWhatsAppSend = useCallback(async () => {
-    if (!whatsappShareHref || !whatsappPhoneDigits) return;
+    if (!whatsappPhoneDigits) return;
+    const chatWindow = window.open("about:blank", "_blank", "noopener,noreferrer");
     try {
       const pdfFile = await generateAuditPdfForWhatsApp();
-      if (!pdfFile) return;
+      if (!pdfFile) {
+        chatWindow?.close();
+        return;
+      }
       const objectUrl = URL.createObjectURL(pdfFile);
       const a = document.createElement("a");
       a.href = objectUrl;
@@ -2512,21 +2499,13 @@ export function OrderDetailWorkspace({
       a.remove();
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
 
-      /**
-       * Prioritāte: desktop WhatsApp app (`whatsapp://`), fallback uz web (`wa.me`).
-       * Pārlūkprogrammu drošības dēļ failu pielikumu WhatsApp chat logam automātiski pievienot nevar.
-       */
-      window.location.href = whatsappShareHref;
-      if (whatsappWebHref) {
-        window.setTimeout(() => {
-          window.open(whatsappWebHref, "_blank", "noopener,noreferrer");
-        }, 900);
-      }
+      openWhatsAppChat(whatsappPhoneDigits, WHATSAPP_PREFILL_MESSAGE, chatWindow);
       alert("Atvērts WhatsApp čats. PDF atskaite lejupielādēta automātiski — pievienojiet to kā pielikumu ziņai.");
     } catch (error) {
+      chatWindow?.close();
       alert(error instanceof Error ? error.message.slice(0, 220) : "Neizdevās sagatavot PDF WhatsApp nosūtīšanai.");
     }
-  }, [generateAuditPdfForWhatsApp, whatsappPhoneDigits, whatsappShareHref, whatsappWebHref]);
+  }, [generateAuditPdfForWhatsApp, whatsappPhoneDigits]);
 
   return (
     <div className="relative min-w-0 pb-24">
@@ -2734,7 +2713,7 @@ export function OrderDetailWorkspace({
                 }}
               />
             ) : null}
-            {whatsappShareHref ? (
+            {whatsappPhoneDigits ? (
               <button
                 type="button"
                 onClick={handleWhatsAppSend}

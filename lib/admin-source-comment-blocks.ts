@@ -3,6 +3,7 @@
  */
 import {
   autoRecordsBlockToPlainText,
+  citiAvotiSectionLabel,
   citiAvotiToPlainText,
   emptyCitiAvotiSection,
   type CitiAvotiBlockState,
@@ -11,11 +12,13 @@ import {
   csddFormToPlainText,
   ltabBlockToPlainText,
   mergeSourceBlocksWithDefaults,
+  SOURCE_BLOCK_LABELS,
   type SourceBlockKey,
   tirgusFormToPlainText,
   vendorAvotuBlockToPlainText,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
 /** Avotu bloki ar „Komentāri” lauku (bez sludinājuma analīzes). */
 export type GeminiSourceCommentBlockKey = Exclude<SourceBlockKey, "listing_analysis">;
@@ -29,6 +32,22 @@ export const GEMINI_SOURCE_COMMENT_BLOCK_KEYS: GeminiSourceCommentBlockKey[] = [
   "citi_avoti",
   "tirgus",
 ];
+
+/** Galvenie foreniskās analīzes avoti — gemini-2.5-pro + dziļā eksperta prompta režīms. */
+export const MAIN_ANALYSIS_SOURCE_BLOCK_KEYS = [
+  "csdd",
+  "autodna",
+  "carvertical",
+  "ltab",
+] as const satisfies readonly GeminiSourceCommentBlockKey[];
+
+export type MainAnalysisSourceBlockKey = (typeof MAIN_ANALYSIS_SOURCE_BLOCK_KEYS)[number];
+
+export function isMainAnalysisSourceBlock(
+  blockKey: GeminiSourceCommentBlockKey,
+): blockKey is MainAnalysisSourceBlockKey {
+  return (MAIN_ANALYSIS_SOURCE_BLOCK_KEYS as readonly string[]).includes(blockKey);
+}
 
 export function isGeminiSourceCommentBlockKey(v: string): v is GeminiSourceCommentBlockKey {
   return (GEMINI_SOURCE_COMMENT_BLOCK_KEYS as string[]).includes(v);
@@ -124,6 +143,38 @@ export function sourceBlockCommentsPlainForGemini(
     return blocks.citi_avoti.sections[citiAvotiSectionIndex]?.comments ?? "";
   }
   return sourceBlockCommentsPlain(blockKey, sourceBlocks);
+}
+
+/**
+ * Citu avotu bloku jau sagatavotie ✨ komentāri — prompt chaining kontekstam.
+ * Izslēdz pašreiz ģenerējamo bloku/sekciju, lai novērstu atkārtošanos.
+ */
+export function buildPreviouslyGeneratedSourceCommentsContext(
+  currentBlockKey: GeminiSourceCommentBlockKey | null,
+  sourceBlocks: WorkspaceSourceBlocks,
+  citiAvotiSectionIndex?: number,
+): string {
+  const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
+  const parts: string[] = [];
+
+  for (const key of GEMINI_SOURCE_COMMENT_BLOCK_KEYS) {
+    if (key === "citi_avoti") {
+      const total = blocks.citi_avoti.sections.length;
+      for (const [i, section] of blocks.citi_avoti.sections.entries()) {
+        if (currentBlockKey === "citi_avoti" && i === citiAvotiSectionIndex) continue;
+        const plain = adminRichHtmlToPlainText(section.comments).trim();
+        if (!plain) continue;
+        parts.push(`### ${citiAvotiSectionLabel(section, i, total)}\n${plain}`);
+      }
+      continue;
+    }
+    if (currentBlockKey != null && key === currentBlockKey) continue;
+    const plain = adminRichHtmlToPlainText(sourceBlockCommentsPlain(key, blocks)).trim();
+    if (!plain) continue;
+    parts.push(`### ${SOURCE_BLOCK_LABELS[key]}\n${plain}`);
+  }
+
+  return parts.join("\n\n");
 }
 
 /** Pēc Gemini ģenerēšanas — ieraksta HTML komentārā (Citi avoti: konkrētā sekcija). */

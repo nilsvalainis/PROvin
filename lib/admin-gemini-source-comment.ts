@@ -1,10 +1,12 @@
 import "server-only";
 
-import { GEMINI_MODEL_FLASH, geminiGenerateText } from "@/lib/admin-gemini";
+import { GEMINI_MODEL_FLASH, GEMINI_MODEL_PRO, geminiGenerateText } from "@/lib/admin-gemini";
 import { geminiSourceCommentSystemPrompt } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import { buildGeminiOrderContextText } from "@/lib/admin-gemini-order-context";
 import {
+  buildPreviouslyGeneratedSourceCommentsContext,
+  isMainAnalysisSourceBlock,
   sourceBlockPlainTextForGemini,
   type GeminiSourceCommentBlockKey,
 } from "@/lib/admin-source-comment-blocks";
@@ -25,9 +27,10 @@ export type GeminiSourceCommentInput = {
   citiAvotiSectionIndex?: number;
 };
 
-/** Avota komentāru ģenerēšana — gemini-2.5-flash (Free Tier). */
+/** Avota komentāru ģenerēšana — galvenie avoti ar gemini-2.5-pro, pārējie ar flash. */
 export async function generateSourceCommentWithGemini(input: GeminiSourceCommentInput): Promise<string> {
   const blockLabel = SOURCE_BLOCK_LABELS[input.blockKey];
+  const deepAnalysis = isMainAnalysisSourceBlock(input.blockKey);
   const focusDataText = sourceBlockPlainTextForGemini(
     input.blockKey,
     input.sourceBlocks,
@@ -48,6 +51,19 @@ export async function generateSourceCommentWithGemini(input: GeminiSourceComment
     mileageComment: input.mileageComment ?? undefined,
   });
 
+  const previousComments = buildPreviouslyGeneratedSourceCommentsContext(
+    input.blockKey,
+    input.sourceBlocks,
+    input.citiAvotiSectionIndex,
+  );
+
+  const chainingSection = previousComments.trim()
+    ? `=== Esošie eksperta komentāri citos avotos (neatkārto — salīdzini un papildini) ===
+${previousComments}
+
+`
+    : "";
+
   const userPrompt = appendGeminiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
 Avota sadaļa (fokuss): ${blockLabel}
@@ -55,10 +71,10 @@ Avota sadaļa (fokuss): ${blockLabel}
 === Pilns pasūtījuma konteksts (visi avoti — salīdzināšanai) ===
 ${portfolioContext}
 
-=== Konkrētā avota „${blockLabel}” dati (bez esošajiem komentāriem) ===
+${chainingSection}=== Konkrētā avota „${blockLabel}” dati (bez esošajiem komentāriem) ===
 ${focusDataText}
 
-Sagatavo komentāru šai sadaļai klienta atskaitei. Salīdzini ar pārējiem avotiem portfeļā, iekļaujot negadījumu vēsturi un nobraukuma datus.`,
+Sagatavo komentāru šai sadaļai klienta atskaitei. Salīdzini ar pārējiem avotiem portfeļā un ar jau sagatavotajiem komentāriem citās sadaļās; neizdomā faktus.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain: input.existingDraftPlain,
@@ -66,10 +82,10 @@ Sagatavo komentāru šai sadaļai klienta atskaitei. Salīdzini ar pārējiem av
   );
 
   return geminiGenerateText({
-    model: GEMINI_MODEL_FLASH,
-    systemInstruction: geminiSourceCommentSystemPrompt(blockLabel),
+    model: deepAnalysis ? GEMINI_MODEL_PRO : GEMINI_MODEL_FLASH,
+    systemInstruction: geminiSourceCommentSystemPrompt(blockLabel, deepAnalysis),
     userPrompt,
-    temperature: 0.35,
+    temperature: deepAnalysis ? 0.25 : 0.35,
   });
 }
 

@@ -14,7 +14,7 @@ export const SOURCE_COMMENT_NO_ISSUES_LV = "Problēmas nav konstatētas.";
 
 export const SOURCE_COMMENT_ANOMALY_PREFIX = "ANOMĀLIJA: ";
 
-const HYBRID_COMMENT_RULES = `COMMENTARY (mandatory) — hybrid "Factual Context + Anomalies":
+const PDF_HYBRID_COMMENT_RULES = `COMMENTARY (mandatory) — hybrid "Factual Context + Anomalies":
 1. NEVER suppress normal context: damage zones, body sides, dealer/service milestones, registration facts, policy periods, Status Center notes, historical remarks — always extract as objective Latvian facts.
 2. Ultra-concise bullet list (- prefix per line), zero conversational fluff, max 4 bullets, max ~350 characters total.
 3. If the report is entirely clean (no substantive history/notes/descriptions — empty or only generic blank markers): set comments EXACTLY to "Problēmas nav konstatētas." (nothing else).
@@ -25,11 +25,24 @@ Example:
 - Reģistrēts neliels virsbūves bojājums Vācijā (summa <=100 EUR). Bojāta labā sāna priekšpuse un kreisais sāns.
 - 07.03.2021 Dīlera apkope pie 46,441 km.`;
 
-/** Gemini PDF extract JSON — obligāts komentāru formāts. */
-export const SOURCE_PDF_COMMENT_GEMINI_RULES = `COMMENTS field:\n${HYBRID_COMMENT_RULES}`;
+/** Dziļā eksperta analīze — CSDD, AutoDNA, CarVertical, LTAB ✨ admin komentāri. */
+export const HYBRID_COMMENT_RULES = `
+COMMENTARY RULES for PROVIN Senior Auto Expert:
+- FORMAT: DO NOT use bullet points, dashes, or numbered lists. Write in clean, cohesive paragraphs separated by double line breaks.
+- LENGTH: Expand the analysis. Target length is 800 - 1500 characters. Be thorough and detailed.
+- STYLE: Analytical, professional, high-competence automotive forensic style. No conversational fluff, no introductory platitudes.
+- EMPHASIS: You MUST use markdown bold (**text**) to highlight key critical findings, option codes, precise mileage figures, vehicle status, and high-risk anomalies.
+- LOGIC: Look for data contradictions between different sources. Do not just summarize; interpret what these numbers and technical faults actually mean for the vehicle's remaining lifespan.
+`;
 
-/** ✨ Avota bloka komentāru ģenerēšana (admin). */
+/** Gemini PDF extract JSON — obligāts komentāru formāts (īss, strukturēts). */
+export const SOURCE_PDF_COMMENT_GEMINI_RULES = `COMMENTS field:\n${PDF_HYBRID_COMMENT_RULES}`;
+
+/** ✨ Galveno avotu bloku komentāru ģenerēšana (admin) — dziļā forenzika. */
 export const SOURCE_BLOCK_COMMENT_GEMINI_RULES = `OUTPUT FORMAT (mandatory):\n${HYBRID_COMMENT_RULES}`;
+
+/** ✨ Sekundāro avotu bloku komentāri (AUTO RECORDS, Citi avoti, Tirgus) — kompakts formāts. */
+export const SOURCE_BLOCK_BRIEF_COMMENT_GEMINI_RULES = `OUTPUT FORMAT (mandatory):\n${PDF_HYBRID_COMMENT_RULES}`;
 
 export function formatAnomalyBullet(text: string): string {
   const core = text.trim().replace(/^[-•]\s*/, "").replace(/^ANOMĀLIJA:\s*/i, "");

@@ -51,6 +51,20 @@ export function geminiPlainTextToRichHtml(text: string): string {
   return plainTextToMinimalRichHtml(normalizeGeminiClientPlainText(text));
 }
 
+const EXPERT_BOLD_OPEN = "\uE010";
+const EXPERT_BOLD_CLOSE = "\uE011";
+
+/** Dziļās avotu analīzes ✨ — saglabā **bold** kā <strong> admin redaktoram un PDF. */
+export function geminiExpertSourceCommentToRichHtml(text: string): string {
+  let t = sanitizeDraftTextForStorage(text);
+  t = t.replace(/\*\*([^*\n]+)\*\*/g, `${EXPERT_BOLD_OPEN}$1${EXPERT_BOLD_CLOSE}`);
+  t = escapeHtmlPlain(t);
+  t = t
+    .replace(/\uE010/g, "<strong>")
+    .replace(/\uE011/g, "</strong>");
+  return t.replace(/\r?\n/g, "<br />");
+}
+
 /** Admin bagātinātais HTML → vienots plakanais teksts (PDF / AI polish nosūtei). */
 export function adminRichHtmlToPlainText(html: string | null | undefined): string {
   const s = sanitizeDraftTextForStorage(typeof html === "string" ? html : "");

@@ -1,6 +1,9 @@
 import "server-only";
 
-import { SOURCE_BLOCK_COMMENT_GEMINI_RULES } from "@/lib/source-summary-comment-format";
+import {
+  SOURCE_BLOCK_BRIEF_COMMENT_GEMINI_RULES,
+  SOURCE_BLOCK_COMMENT_GEMINI_RULES,
+} from "@/lib/source-summary-comment-format";
 
 /**
  * Admin Gemini system prompts.
@@ -66,6 +69,30 @@ MODEL TECHNICAL WEAKNESSES (when make/model/engine known from context):
 
 OUTPUT CONSTRAINT:
 Generate text strictly for the ACTIVE FIELD requested. No duplicate headers, no full report skeleton, no meta-commentary about AI or search.`;
+
+/** Master forensic prompt — galveno avotu (CSDD, AutoDNA, CarVertical, LTAB) ✨ komentāriem. */
+export const PROVIN_EXPERT_SYSTEM_PROMPT = `
+You are the Master Automotive Forensic AI for PROVIN. Your job is to analyze vehicle history data (CSDD, AutoDNA, CarVertical, LTAB) and write high-competence, deep-dive expert commentaries.
+
+CRITICAL ANALYSIS GUIDELINES:
+1. Gaps in History: If there is a multi-year gap in mileage history (especially after initial registration abroad), explicitly flag it as a "data vacuum" and calculate high risk of mileage rollback based on standard commercial usage (taxis run 50k-70k km/year).
+2. Taxi/Commercial Codes: Always scan for factory options like 937 (Taxi/Rental package), Artico leather (140A/MB-Tex), or roof antennas. Explain to the user how this masks real wear.
+3. CSDD Failure Trends: Analyze repetitive failures (e.g., suspension play, oil leaks, high opacity/smoke coefficients like >1.5 or 2.0). Connect these dots to prove systematic neglect or near-end-of-life component status.
+4. Data Asynchrony: If one database (e.g., LTAB/CarVertical) shows an accident but another (CSDD/AutoDNA) doesn't, flag this as database asynchrony and emphasize the necessity of physical paint-gauge inspection.
+5. Engine Hours Logic: Distinguish highway vs city driving profiles — high km/year with dense records may imply lower engine-hour stress than sparse Baltic city use; apply when mileage data supports it.
+6. Data Sufficiency: If the dataset is too sparse for a definitive driving-profile conclusion, state that objectively and outline probabilistic risks only.
+
+FEW-SHOT STYLE EXAMPLES (Follow this exact paragraph and bold formatting structure):
+
+Example 1 (CSDD & Mileage Forensics):
+"Transportlīdzeklis Latvijā pirmo reizi reģistrēts **2016. gada 22. janvārī**, kā izcelsmes valsti norādot Vāciju. Latvijas ekspluatācijas periodā fiksētā nobraukuma līkne ir konsekventa, sasniedzot **274 726 kilometrus**. Tomēr kā būtiskākais riska faktors jāuzsver **pilnīgs astoņu gadu datu vakuums** (2007–2015) pirms ievešanas Baltijā. Ņemot vērā dīlera datos apstiprināto taksometra statusu (**kods 937**), šādā periodā reālais nobraukums Eiropā loģiski sasniegtu **400 000 līdz 550 000 kilometru**. Pastāv ekstremāli augsts risks, kad bāzes odometra rādītājs pirms reģistrācijas Latvijā ir ticis apzināti samazināts par vairākiem simtiem tūkstošu kilometru."
+
+Example 2 (CSDD Technical Defects & Opacity):
+"Tehnisko apskašu vēsture Latvijā ir kritiska — transportlīdzeklis nav izgājis pamatpārbaudi ar pirmo reizi **kopumā sešas reizes**, pēdējo reizi novērtējumu '2' saņemot **2025. gada 16. decembrī**. Sistēmā hroniski atkārtojas vieni un tie paši defekti: progresējoša nesošo elementu korozija, pastāvīgas eļļas noplūdes no motora un transmisijas, kā arī brīvkustības priekšējā tilta svirās. Atgāzu pārbaudes uzrāda nestabilitāti — iepriekšējos gados dūmainības koeficients ir sasniedzis kritisku **2.32 un 2.95 atzīmi**, kas liecina par dzinēja un degvielas sistēmas resursa izsīkumu, lai gan pēdējā apskatē fiksēts koeficients **0.58**."
+
+Strictly enforce paragraph layout, no bullets, and heavy use of markdown bold for numbers/critical statuses.
+Always write in high-quality natural Latvian. Never invent facts absent from provided context.
+`;
 
 /** Klienta PDF / atskaites lauki — bez Markdown `*` punktiem. */
 export const GEMINI_CLIENT_PDF_PLAIN_RULES = `CLIENT PDF / REPORT FORMAT (mandatory for all expert comments in audit PDF):
@@ -217,14 +244,27 @@ Atbildi tikai ar gala ziņojuma tekstu — bez meta-komentāriem par AI.`;
 export const GEMINI_CLIENT_SUMMARY_SYSTEM = GEMINI_SUMMARY_ANALYSIS_SYSTEM;
 
 /** Avota bloka „Komentāri” ģenerēšana no strukturētiem datiem. */
-export function geminiSourceCommentSystemPrompt(blockLabel: string): string {
+export function geminiSourceCommentSystemPrompt(blockLabel: string, deepAnalysis = true): string {
+  if (deepAnalysis) {
+    return `${PROVIN_EXPERT_SYSTEM_PROMPT}
+
+ACTIVE SOURCE BLOCK: ${blockLabel} — client PDF audit report expert commentary.
+
+${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
+
+- Compare with other portfolio sources and with previously generated expert comments when provided in the user prompt.
+- Do not repeat findings already covered in other source comments; extend, cross-check, or add source-specific depth.
+- Do not invent facts. No section headings in output. No AI meta-commentary.
+- Output markdown bold (**text**) for critical figures and statuses; paragraph layout only (not JSON).`;
+  }
+
   return provinFieldAgentPrompt(
     `SOURCE BLOCK COMMENT (${blockLabel}) — client PDF audit report`,
     `${GEMINI_CLIENT_PDF_PLAIN_RULES}
 
 Input: full order context + structured „${blockLabel}” data (tables, fields).
 
-${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
+${SOURCE_BLOCK_BRIEF_COMMENT_GEMINI_RULES}
 
 - Compare with other portfolio sources only when a concrete conflict or gap exists.
 - Do not invent facts. No headings. No AI meta-commentary.

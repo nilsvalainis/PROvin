@@ -14,12 +14,45 @@ export function normalizeWhatsAppPhoneDigits(raw: string | null | undefined): st
   return digits;
 }
 
-/** Atver desktop WhatsApp (`whatsapp://`), pēc īsa laika — `wa.me` rezerve. */
-export function openWhatsAppChat(phoneDigits: string): void {
-  const appHref = `whatsapp://send?phone=${phoneDigits}`;
-  const webHref = `https://wa.me/${phoneDigits}`;
-  window.location.href = appHref;
-  window.setTimeout(() => {
-    window.open(webHref, "_blank", "noopener,noreferrer");
-  }, 900);
+function prefersWhatsAppAppOpen(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+/** Desktop WhatsApp Web — uzticamāks nekā `whatsapp://` → api.whatsapp.com. */
+export function buildWhatsAppWebSendUrl(phoneDigits: string, text?: string): string {
+  const params = new URLSearchParams({ phone: phoneDigits });
+  const trimmed = text?.trim();
+  if (trimmed) params.set("text", trimmed);
+  return `https://web.whatsapp.com/send?${params.toString()}`;
+}
+
+/** Mobilajā parasti atver WhatsApp lietotni. */
+export function buildWhatsAppMeUrl(phoneDigits: string, text?: string): string {
+  const trimmed = text?.trim();
+  if (!trimmed) return `https://wa.me/${phoneDigits}`;
+  return `https://wa.me/${phoneDigits}?text=${encodeURIComponent(trimmed)}`;
+}
+
+export function whatsAppChatUrl(phoneDigits: string, text?: string): string {
+  return prefersWhatsAppAppOpen()
+    ? buildWhatsAppMeUrl(phoneDigits, text)
+    : buildWhatsAppWebSendUrl(phoneDigits, text);
+}
+
+/**
+ * Atver WhatsApp sarunu jaunā cilnē.
+ * `targetWindow` — opcija async plūsmai (logs atvērts sinhroni pirms await).
+ */
+export function openWhatsAppChat(
+  phoneDigits: string,
+  text?: string,
+  targetWindow?: Window | null,
+): void {
+  const url = whatsAppChatUrl(phoneDigits, text);
+  if (targetWindow && !targetWindow.closed) {
+    targetWindow.location.href = url;
+    return;
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
 }
