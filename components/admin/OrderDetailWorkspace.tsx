@@ -135,10 +135,12 @@ import { geminiPlainTextToRichHtml, adminRichHtmlToPlainText, geminiExpertSource
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
+  ADMIN_SOURCES_COMPARISON_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import {
   orderHasIncidentDataForGemini,
   orderHasMileageDataForGemini,
+  orderHasSourceDataForGemini,
 } from "@/lib/admin-gemini-data-availability";
 import { buildProvinAuditPdfFilename } from "@/lib/audit-report-pdf-filename";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
@@ -557,6 +559,8 @@ export function OrderDetailWorkspace({
   onInternalCommentChange,
   mileageCommentDraft,
   onMileageCommentChange,
+  sourcesComparisonCommentDraft,
+  onSourcesComparisonCommentChange,
   onOrderEditsPatch,
   dashboardSlot,
   portfolioPortalDomId,
@@ -574,6 +578,8 @@ export function OrderDetailWorkspace({
   onInternalCommentChange: (value: string) => void;
   mileageCommentDraft: string;
   onMileageCommentChange: (value: string) => void;
+  sourcesComparisonCommentDraft: string;
+  onSourcesComparisonCommentChange: (value: string) => void;
   /** VIN un citi meta lauki no AI importa. */
   onOrderEditsPatch?: (patch: { vin?: string }) => void;
   /** 0. solis — maksājums, transports, klients, pielikumi, komentārs (vecāka 2×2 režģis). */
@@ -632,6 +638,8 @@ export function OrderDetailWorkspace({
   const [geminiIncidentsSummaryErr, setGeminiIncidentsSummaryErr] = useState<string | null>(null);
   const [geminiMileageCommentBusy, setGeminiMileageCommentBusy] = useState(false);
   const [geminiMileageCommentErr, setGeminiMileageCommentErr] = useState<string | null>(null);
+  const [geminiSourcesComparisonBusy, setGeminiSourcesComparisonBusy] = useState(false);
+  const [geminiSourcesComparisonErr, setGeminiSourcesComparisonErr] = useState<string | null>(null);
   const [geminiSourceCommentBusy, setGeminiSourceCommentBusy] = useState<GeminiSourceCommentBlockKey | null>(null);
   const [geminiSourceCommentErr, setGeminiSourceCommentErr] = useState<{
     key: GeminiSourceCommentBlockKey;
@@ -650,8 +658,16 @@ export function OrderDetailWorkspace({
   const wsPersistRef = useRef(ws);
   const wsStateRef = useRef(ws);
   wsStateRef.current = ws;
-  const orderEditsRef = useRef({ internal: internalCommentDraft, mileage: mileageCommentDraft });
-  orderEditsRef.current = { internal: internalCommentDraft, mileage: mileageCommentDraft };
+  const orderEditsRef = useRef({
+    internal: internalCommentDraft,
+    mileage: mileageCommentDraft,
+    sourcesComparison: sourcesComparisonCommentDraft,
+  });
+  orderEditsRef.current = {
+    internal: internalCommentDraft,
+    mileage: mileageCommentDraft,
+    sourcesComparison: sourcesComparisonCommentDraft,
+  };
   const pdfVisibilityRef = useRef(pdfVisibility);
   pdfVisibilityRef.current = pdfVisibility;
   const [pdfBannerInclude, setPdfBannerInclude] = useState<ProvinBannerPdfInclude>({});
@@ -897,6 +913,7 @@ export function OrderDetailWorkspace({
         cenasAtbilstiba: cur.cenasAtbilstiba,
         internalComment: edits.internal,
         mileageComment: edits.mileage,
+        sourcesComparisonComment: edits.sourcesComparison,
         operatorNotes: extra.operatorNotes,
         existingDraftPlain: extra.existingDraftPlain,
       };
@@ -1085,6 +1102,45 @@ export function OrderDetailWorkspace({
     mileageCommentDraft,
     onMileageCommentChange,
     payload.geminiAllowed,
+  ]);
+
+  const runGeminiSourcesComparison = useCallback(async (operatorNotes = "") => {
+    if (!payload.geminiAllowed || geminiSourcesComparisonBusy) return;
+    setGeminiSourcesComparisonBusy(true);
+    setGeminiSourcesComparisonErr(null);
+    try {
+      const res = await fetch("/api/admin/gemini/sources-comparison", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...buildGeminiOrderPayload({
+            operatorNotes,
+            existingDraftPlain: adminRichHtmlToPlainText(sourcesComparisonCommentDraft).trim(),
+          }),
+        }),
+      });
+      const { data, parseFailed } = await parseAdminGeminiResponse(res);
+      if (!res.ok) {
+        setGeminiSourcesComparisonErr(
+          geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās sagatavot avotu salīdzinājumu"),
+        );
+        return;
+      }
+      if (typeof data.text === "string" && data.text.trim()) {
+        onSourcesComparisonCommentChange(geminiPlainTextToRichHtml(data.text));
+      }
+    } catch {
+      setGeminiSourcesComparisonErr("Gemini: neizdevās savienoties");
+    } finally {
+      setGeminiSourcesComparisonBusy(false);
+    }
+  }, [
+    buildGeminiOrderPayload,
+    geminiSourcesComparisonBusy,
+    onSourcesComparisonCommentChange,
+    payload.geminiAllowed,
+    sourcesComparisonCommentDraft,
   ]);
 
   const updateSourceBlock = useCallback(
@@ -1377,6 +1433,7 @@ export function OrderDetailWorkspace({
     setPdfBannerInclude({});
     onInternalCommentChange("");
     onMileageCommentChange("");
+    onSourcesComparisonCommentChange("");
     setGeminiInspectionErr(null);
     setGeminiPriceErr(null);
     setGeminiSummaryErr(null);
@@ -1399,7 +1456,7 @@ export function OrderDetailWorkspace({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId: payload.sessionId,
-          orderEdits: { internalComment: "", mileageComment: "" },
+          orderEdits: { internalComment: "", mileageComment: "", sourcesComparisonComment: "" },
           workspace: {
             sourceBlocks: emptyBlocks,
             iriss: "",
@@ -1415,6 +1472,7 @@ export function OrderDetailWorkspace({
   }, [
     onInternalCommentChange,
     onMileageCommentChange,
+    onSourcesComparisonCommentChange,
     onPdfVisibilityChange,
     orderDraftPersistenceEnabled,
     payload.isDemo,
@@ -1831,6 +1889,14 @@ export function OrderDetailWorkspace({
   const hasMileageDataForGemini = useMemo(() => {
     try {
       return orderHasMileageDataForGemini(blocksDisplaySafe);
+    } catch {
+      return false;
+    }
+  }, [blocksDisplaySafe]);
+
+  const hasSourceDataForGemini = useMemo(() => {
+    try {
+      return orderHasSourceDataForGemini(blocksDisplaySafe);
     } catch {
       return false;
     }
@@ -3103,6 +3169,47 @@ export function OrderDetailWorkspace({
                       value={mileageCommentDraft}
                       onChange={onMileageCommentChange}
                       aria-label={ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}
+                    />
+                  </div>
+                </ListingAnalysisSubsectionHeading>
+                <ListingAnalysisSubsectionHeading
+                  icon={IRISS_CHROME_LUCIDE.sourcesComparison}
+                  title={ADMIN_SOURCES_COMPARISON_LABEL}
+                >
+                  <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
+                    Iekšējs materiāls blogam un mārketingam — netiek iekļauts klienta PDF. Ģenerē pēc visu avotu
+                    apkopošanas. Saglabājas automātiski.
+                  </p>
+                  <div className="mb-2 mt-2 flex flex-wrap items-center justify-end gap-2">
+                    <AdminGeminiGenerateWithPrefill
+                      label="Salīdzināt avotus"
+                      busy={geminiSourcesComparisonBusy}
+                      disabled={!payload.geminiAllowed || !hasSourceDataForGemini}
+                      demoOnly={!payload.geminiAllowed}
+                      title={
+                        !payload.geminiAllowed
+                          ? undefined
+                          : !hasSourceDataForGemini
+                            ? "Vispirms aizpildi avotu sadaļas"
+                            : undefined
+                      }
+                      onGenerate={(operatorNotes) => void runGeminiSourcesComparison(operatorNotes)}
+                    />
+                  </div>
+                  {geminiSourcesComparisonErr ? (
+                    <p
+                      className="mb-1.5 text-[9px] leading-snug text-amber-800/90"
+                      title={geminiSourcesComparisonErr}
+                    >
+                      {geminiSourcesComparisonErr}
+                    </p>
+                  ) : null}
+                  <div className="mt-2">
+                    <AdminAiPolishRichCommentShell
+                      compact
+                      value={sourcesComparisonCommentDraft}
+                      onChange={onSourcesComparisonCommentChange}
+                      aria-label={ADMIN_SOURCES_COMPARISON_LABEL}
                     />
                   </div>
                 </ListingAnalysisSubsectionHeading>

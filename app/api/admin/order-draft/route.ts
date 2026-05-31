@@ -118,6 +118,7 @@ function parseOrderEditsObject(v: unknown): OrderDraftOrderEdits | null {
   if (typeof o.notes === "string") out.notes = o.notes;
   if (typeof o.internalComment === "string") out.internalComment = o.internalComment;
   if (typeof o.mileageComment === "string") out.mileageComment = o.mileageComment;
+  if (typeof o.sourcesComparisonComment === "string") out.sourcesComparisonComment = o.sourcesComparisonComment;
   return out;
 }
 

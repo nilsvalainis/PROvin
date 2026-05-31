@@ -99,7 +99,7 @@ describe("unified PDF sections single block", () => {
     expect(html).toContain("pdf-mileage-source-count-abbrevs");
   });
 
-  it("incidents zone places CarVertical damage chart above kopsavilkums", () => {
+  it("embeds CarVertical damage detail under matching incident row", () => {
     const p = {
       internalComment: "Kopsavilkums",
       manualVendorBlocks: [
@@ -122,8 +122,11 @@ describe("unified PDF sections single block", () => {
     } as ClientReportPayload;
     const vis = mergePdfVisibility({ unifiedIncidents: true });
     const html = buildUnifiedIncidentsTableHtml(p, vis);
-    expect(html).toContain("pdf-cv-damage-chart");
-    expect(html.indexOf("pdf-cv-damage-chart")).toBeLessThan(html.indexOf("Kopsavilkums"));
+    expect(html).toContain("pdf-cv-damage-sub");
+    expect(html).toContain("Kreisā puse Priekšpuse");
+    expect(html).not.toContain("pdf-cv-damage-chart");
+    expect(html.indexOf("Kreisā puse Priekšpuse")).toBeGreaterThan(html.indexOf("00.06.2024"));
+    expect(html.indexOf("Kopsavilkums")).toBeGreaterThan(html.indexOf("Kreisā puse Priekšpuse"));
   });
 });
 

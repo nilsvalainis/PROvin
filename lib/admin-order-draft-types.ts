@@ -15,6 +15,8 @@ export type OrderDraftOrderEdits = {
   internalComment?: string;
   /** Nobraukuma vēstures komentārs — melnrakstā; PDF zem nobraukuma grafika. */
   mileageComment?: string;
+  /** Avotu salīdzinājums — tikai admin; nav PDF (bloga / mārketinga materiāls). */
+  sourcesComparisonComment?: string;
 };
 
 /** Tīrs JSON — `sourceBlocks` validē serverī ar `hydrateWorkspaceFromStorage`. */

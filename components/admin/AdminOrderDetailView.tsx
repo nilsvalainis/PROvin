@@ -65,6 +65,7 @@ type OrderEdits = {
   notes?: string;
   internalComment?: string;
   mileageComment?: string;
+  sourcesComparisonComment?: string;
 };
 
 function orderEditsFromServerDraft(serverOrderDraft: Pick<OrderDraftState, "orderEdits"> | null): OrderEdits {
@@ -79,6 +80,9 @@ function orderEditsFromServerDraft(serverOrderDraft: Pick<OrderDraftState, "orde
     ...(typeof picked.notes === "string" ? { notes: picked.notes } : {}),
     ...(typeof picked.internalComment === "string" ? { internalComment: picked.internalComment } : {}),
     ...(typeof picked.mileageComment === "string" ? { mileageComment: picked.mileageComment } : {}),
+    ...(typeof picked.sourcesComparisonComment === "string"
+      ? { sourcesComparisonComment: picked.sourcesComparisonComment }
+      : {}),
   };
 }
 
@@ -216,6 +220,9 @@ export function AdminOrderDetailView({
       ...(typeof picked.notes === "string" ? { notes: picked.notes } : {}),
       ...(typeof picked.internalComment === "string" ? { internalComment: picked.internalComment } : {}),
       ...(typeof picked.mileageComment === "string" ? { mileageComment: picked.mileageComment } : {}),
+      ...(typeof picked.sourcesComparisonComment === "string"
+        ? { sourcesComparisonComment: picked.sourcesComparisonComment }
+        : {}),
     });
     try {
       localStorage.setItem(key, serializeOrderEditsForLocalStorage(picked));
@@ -368,6 +375,8 @@ export function AdminOrderDetailView({
     edits.internalComment !== undefined ? editFieldStr(edits.internalComment) : editFieldStr(order.internalComment);
   const mergedMileageComment =
     edits.mileageComment !== undefined ? editFieldStr(edits.mileageComment) : "";
+  const mergedSourcesComparisonComment =
+    edits.sourcesComparisonComment !== undefined ? editFieldStr(edits.sourcesComparisonComment) : "";
 
   const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}`;
 
@@ -742,6 +751,10 @@ export function AdminOrderDetailView({
         onInternalCommentChange={(v) => setEdits((prev) => ({ ...prev, internalComment: v }))}
         mileageCommentDraft={mergedMileageComment}
         onMileageCommentChange={(v) => setEdits((prev) => ({ ...prev, mileageComment: v }))}
+        sourcesComparisonCommentDraft={mergedSourcesComparisonComment}
+        onSourcesComparisonCommentChange={(v) =>
+          setEdits((prev) => ({ ...prev, sourcesComparisonComment: v }))
+        }
         onOrderEditsPatch={(patch) => setEdits((prev) => ({ ...prev, ...patch }))}
         dashboardSlot={dashboardSlot}
         portfolioPortalDomId={`admin-portfolio-slot-${order.id}`}

@@ -219,7 +219,7 @@ export function parseCarverticalOdometerFromText(text: string): AutoRecordsServi
 }
 
 function cleanTimelineDescription(raw: string): string {
-  let t = raw
+  const t = raw
     .replace(/\s+/g, " ")
     .replace(/"carVertical"\s+secinājumi:?[\s\S]*/gi, "")
     .replace(/carVertical\s+secinājumi:?[\s\S]*/gi, "")

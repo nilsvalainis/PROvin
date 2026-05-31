@@ -22,6 +22,7 @@ import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
+  ADMIN_SOURCES_COMPARISON_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
@@ -42,6 +43,8 @@ export type GeminiOrderContextInput = {
   internalComment?: string;
   /** NOBRAUKUMA VĒSTURES KOMENTĀRS. */
   mileageComment?: string;
+  /** AVOTU SALĪDZINĀJUMS — iekšējs, nav PDF. */
+  sourcesComparisonComment?: string;
   operatorNotes?: string;
   existingDraftPlain?: string;
 };
@@ -192,6 +195,9 @@ export function buildGeminiOrderContextText(input: GeminiOrderContextInput): str
       : "",
     input.mileageComment?.trim()
       ? block(ADMIN_MILEAGE_HISTORY_COMMENT_LABEL, adminRichHtmlToPlainText(input.mileageComment))
+      : "",
+    input.sourcesComparisonComment?.trim()
+      ? block(ADMIN_SOURCES_COMPARISON_LABEL, adminRichHtmlToPlainText(input.sourcesComparisonComment))
       : "",
   ].filter(Boolean);
 

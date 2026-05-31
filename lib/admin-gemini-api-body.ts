@@ -22,6 +22,7 @@ export function parseGeminiOrderContextFromBody(
     extraSellerName: strFromBody(b.extraSellerName),
     internalComment: strFromBody(b.internalComment),
     mileageComment: strFromBody(b.mileageComment),
+    sourcesComparisonComment: strFromBody(b.sourcesComparisonComment),
     operatorNotes: strFromBody(b.operatorNotes),
     existingDraftPlain: strFromBody(b.existingDraftPlain),
   };

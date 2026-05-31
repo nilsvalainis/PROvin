@@ -33,24 +33,18 @@ export function buildCarVerticalTimelineHtml(
   return `<div class="pdf-cv-timeline${compact ? " pdf-cv-timeline--compact" : ""}"><p class="pdf-cv-subsection-title">${escapeHtml(CARVERTICAL_TIMELINE_TITLE)}</p><div class="pdf-cv-timeline-events">${body}</div></div>`;
 }
 
+/** Divu kolonnu apakštabula zem CarVertical negadījuma rindas (bez datuma dublikāta). */
+export function buildCarVerticalIncidentDamageSubHtml(
+  detail: Pick<CarVerticalDamageDetailRow, "damagedSides" | "damageGroups">,
+): string {
+  const sides = detail.damagedSides.trim() || "—";
+  const groups = detail.damageGroups.trim() || "—";
+  return `<div class="pdf-cv-damage-sub"><div class="pdf-cv-damage-sub-head"><span>Bojātā puse</span><span>Bojājumu grupas</span></div><div class="pdf-cv-damage-sub-row"><span class="pdf-cv-damage-sides">${escapeHtml(sides)}</span><span class="pdf-cv-damage-groups">${escapeHtml(groups)}</span></div></div>`;
+}
+
+/** @deprecated Apvienotajā negadījumu tabulā izmanto buildCarVerticalIncidentDamageSubHtml zem rindas. */
 export function buildCarVerticalDamageDetailsHtml(rows: CarVerticalDamageDetailRow[]): string {
-  const data = rows.filter((r) => r.date.trim() || r.lossAmount.trim() || r.damagedSides.trim());
+  const data = rows.filter((r) => r.damagedSides.trim() || r.damageGroups.trim());
   if (data.length === 0) return "";
-
-  const body = data
-    .map((r) => {
-      const parts = [
-        `<span class="pdf-cv-damage-date">${escapeHtml(r.date.trim() || "—")}</span>`,
-        r.damagedSides.trim()
-          ? `<span class="pdf-cv-damage-sides">${escapeHtml(r.damagedSides.trim())}</span>`
-          : "",
-        r.damageGroups.trim()
-          ? `<span class="pdf-cv-damage-groups">${escapeHtml(r.damageGroups.trim())}</span>`
-          : "",
-      ].filter(Boolean);
-      return `<div class="pdf-cv-damage-row">${parts.join("")}</div>`;
-    })
-    .join("");
-
-  return `<div class="pdf-cv-damage-chart"><div class="pdf-cv-damage-chart-head"><span>Datums</span><span>Bojātā puse</span><span>Bojājumu grupas</span></div>${body}</div>`;
+  return data.map((r) => buildCarVerticalIncidentDamageSubHtml(r)).join("");
 }

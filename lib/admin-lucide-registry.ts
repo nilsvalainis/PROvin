@@ -23,6 +23,7 @@ import {
   Tag,
   ClipboardPaste,
   FileText,
+  GitCompareArrows,
 } from "lucide-react";
 
 export const SOURCE_BLOCK_LUCIDE: Record<SourceBlockKey, LucideIcon> = {
@@ -54,6 +55,7 @@ export const IRISS_CHROME_LUCIDE = {
   inspection: CarFront,
   priceFit: Tag,
   internalNote: MessageSquare,
+  sourcesComparison: GitCompareArrows,
 } as const;
 
 export const LISTING_ANALYSIS_FIELD_LUCIDE: Record<

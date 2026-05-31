@@ -2,10 +2,17 @@
  * Pasūtījuma datu pieejamība Gemini ģenerēšanai — koplietojams UI un serverī.
  */
 import {
+  autoRecordsBlockHasContent,
+  citiAvotiHasContent,
+  csddFormHasContent,
+  ltabBlockHasContent,
   ltabRowHasData,
+  listingAnalysisHasContent,
   mergeSourceBlocksWithDefaults,
+  tirgusFormHasContent,
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
+  vendorAvotuBlockHasContent,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
@@ -34,6 +41,21 @@ export function orderHasIncidentDataForGemini(sourceBlocks: WorkspaceSourceBlock
     return true;
   }
   return hasAnyIncidentTableRows(blocks);
+}
+
+/** Vai pasūtījumā ir avotu dati Gemini avotu salīdzinājumam. */
+export function orderHasSourceDataForGemini(sourceBlocks: WorkspaceSourceBlocks): boolean {
+  const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
+  return [
+    csddFormHasContent(blocks.csdd),
+    vendorAvotuBlockHasContent(blocks.autodna),
+    vendorAvotuBlockHasContent(blocks.carvertical),
+    autoRecordsBlockHasContent(blocks.auto_records),
+    ltabBlockHasContent(blocks.ltab),
+    tirgusFormHasContent(blocks.tirgus),
+    citiAvotiHasContent(blocks.citi_avoti),
+    listingAnalysisHasContent(blocks.listing_analysis),
+  ].some(Boolean);
 }
 
 /** Vai pasūtījumā ir nobraukuma dati Gemini ģenerēšanai. */
