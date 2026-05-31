@@ -43,6 +43,39 @@ export type CsddOwnerChangeRow = {
 const PAGE_FOOTER_RE = /^\s*\d+\s*\/\s*\d+\s*$/;
 const DEFECT_ROW_RE = /^([\d.]+)\s+(\d)\s+(.*)$/;
 const OLD_DEFECT_ROW_RE = /^(\d{3})\s+(\d)\s+(.*)$/;
+/** CSDD sadaļu robežas — ne drīkst iekļaut defektu aprakstos / TA vēstures masīvā. */
+const CSDD_SECTION_BOUNDARY_RE =
+  /\b(?:Iepriekšēj[āa]s\s+reģistrācijas\s+valsts|Transportlīdzekļa\s+reģistrācija|Pēdēj[āa]\s+tehnisk[āa]\s+apskate|Informācija\s+sagatavota\s+elektroniski|Nobraukuma\s+vēsture|Tehniskie\s+dati|Detalizētais\s+vērtējums|Iepriekšēj[āa]s\s+apskates\s+dati|Powered\s+by\s+TCPDF)\b/i;
+
+const CSDD_TA_HISTORY_END_RE =
+  /\b(?:Iepriekšēj[āa]s\s+reģistrācijas\s+valsts|Transportlīdzekļa\s+reģistrācija|Pēdēj[āa]\s+tehnisk[āa]\s+apskate|Informācija\s+sagatavota\s+elektroniski|Powered\s+by\s+TCPDF)\b/i;
+
+function cleanDefectDescription(text: string): string {
+  return text.replace(/[.;,\s]+$/, "").trim();
+}
+
+function truncateAtCsddSectionBoundary(text: string): string {
+  const t = text.trim();
+  if (!t) return "";
+  const m = CSDD_SECTION_BOUNDARY_RE.exec(t);
+  if (!m || m.index == null || m.index === 0) {
+    return cleanDefectDescription(t.replace(/;+\s*$/, ""));
+  }
+  return cleanDefectDescription(t.slice(0, m.index));
+}
+
+function isCsddNonDefectMetadataLine(line: string): boolean {
+  const t = line.trim();
+  if (!t) return true;
+  if (CSDD_SECTION_BOUNDARY_RE.test(t)) return true;
+  if (/^No\s+\d{2}[./]\d{2}[./]\d{4}/i.test(t)) return true;
+  if (/^\d{2}[./]\d{2}[./]\d{4}\s*[-–—]\s*(Pirmā reģistrācija|Īpašnieka maiņa)/i.test(t)) return true;
+  if (/^\d+\s+(?:ī|i)pa[sš]niek/i.test(t)) return true;
+  if (/^Nākoš[āa]\s+TA\b/i.test(t)) return true;
+  if (/^TA\s+datums\b/i.test(t)) return true;
+  if (/^Odometra\s+rādījums\b/i.test(t)) return true;
+  return false;
+}
 
 export function emptyCsddPreviousInspectionBlock(): CsddPreviousInspectionBlock {
   return {
@@ -169,6 +202,11 @@ function parseMetadataIntoBlock(section: string, block: CsddPreviousInspectionBl
       continue;
     }
 
+    if (inDefectTable && isCsddNonDefectMetadataLine(line)) {
+      inDefectTable = false;
+      continue;
+    }
+
     if (inDefectTable) continue;
 
     const kv = parseKeyValueLine(line);
@@ -241,11 +279,13 @@ function parseTabDefectLine(line: string): CsddInspectionDefectRow | null {
     return {
       code: tabs[0]!,
       rating: tabs[1]!,
-      description: tabs
-        .slice(2)
-        .join(" ")
-        .replace(/;+\s*$/, "")
-        .trim(),
+      description: truncateAtCsddSectionBoundary(
+        tabs
+          .slice(2)
+          .join(" ")
+          .replace(/;+\s*$/, "")
+          .trim(),
+      ),
     };
   }
   const sp = line.match(/^([\d.]+)\s+(\d)\s+(.*)$/);
@@ -253,7 +293,7 @@ function parseTabDefectLine(line: string): CsddInspectionDefectRow | null {
     return {
       code: sp[1].trim(),
       rating: sp[2].trim(),
-      description: (sp[3] ?? "").replace(/;+\s*$/, "").trim(),
+      description: truncateAtCsddSectionBoundary((sp[3] ?? "").replace(/;+\s*$/, "").trim()),
     };
   }
   return null;
@@ -392,9 +432,7 @@ function extractTechnicalInspectionSection(raw: string): string {
     if (!/Apskates\s+datums/i.test(afterHeader)) continue;
     const start = m.index + m[0].length;
     const rest = text.slice(start);
-    const end = rest.search(
-      /Informācija\s+sagatavota\s+elektroniski|Powered\s+by\s+TCPDF/i,
-    );
+    const end = rest.search(CSDD_TA_HISTORY_END_RE);
     const chunk = end >= 0 ? rest.slice(0, end) : rest;
     if (chunk.length > best.length) best = chunk;
   }
@@ -404,6 +442,7 @@ function extractTechnicalInspectionSection(raw: string): string {
 function isDefectContinuationLine(line: string): boolean {
   if (!line.trim()) return false;
   if (PAGE_FOOTER_RE.test(line)) return false;
+  if (isCsddNonDefectMetadataLine(line)) return false;
   if (/^(Kods|Apskates|Novērtējums|Piezīmes|Dūmainības)\b/i.test(line)) return false;
   if (DEFECT_ROW_RE.test(line) || OLD_DEFECT_ROW_RE.test(line)) return false;
   return true;
@@ -428,16 +467,30 @@ function parseDefectsFromBlock(block: string): CsddInspectionDefectRow[] {
       current = {
         code: dm[1].trim(),
         rating: dm[2].trim(),
-        description: (dm[3] ?? "").trim(),
+        description: truncateAtCsddSectionBoundary((dm[3] ?? "").trim()),
       };
       inDefectTable = true;
       continue;
     }
 
+    if (inDefectTable && isCsddNonDefectMetadataLine(line)) {
+      inDefectTable = false;
+      if (current) {
+        defects.push(current);
+        current = null;
+      }
+      continue;
+    }
+
     if (inDefectTable && current && isDefectContinuationLine(line)) {
-      current.description = current.description
-        ? `${current.description} ${line}`.replace(/\s{2,}/g, " ").trim()
-        : line;
+      const extra = truncateAtCsddSectionBoundary(line);
+      if (!extra) {
+        inDefectTable = false;
+        continue;
+      }
+      current.description = cleanDefectDescription(
+        current.description ? `${current.description} ${extra}`.replace(/\s{2,}/g, " ") : extra,
+      );
     }
   }
   if (current) defects.push(current);
@@ -533,13 +586,21 @@ export function technicalInspectionRowHasData(r: CsddTechnicalInspectionRow): bo
   return Boolean(r.date.trim());
 }
 
+function extractInlineCountryValue(rawValue: string): string {
+  let v = rawValue.trim();
+  if (!v) return "";
+  const cut = v.search(/\bTransportlīdzekļa\b/i);
+  if (cut >= 0) v = v.slice(0, cut).trim();
+  return v.replace(/[.:,\s]+$/, "").trim();
+}
+
 export function parsePreviousRegistrationCountry(raw: string): string {
   const text = normalizeCsddRawText(raw);
   const inline = text.match(
     /Iepriekšēj[āa]s\s+reģistrācijas\s+valsts\s*:?\s*([^\n]+)/i,
   );
   if (inline?.[1]) {
-    const v = inline[1].trim();
+    const v = extractInlineCountryValue(inline[1]);
     if (v && !/^(Transportlīdzekļa|Statuss|Marka|Degviela|VIN|Reģistrācijas\s+numurs)/i.test(v)) {
       return v;
     }
@@ -578,16 +639,16 @@ export function parseOwnerRegistrationFromRaw(raw: string): {
 
   const events: CsddOwnerChangeRow[] = [];
   const sectionM = text.match(
-    /Transportlīdzekļa\s+reģistrācija([\s\S]*?)(?=Transportlīdzekļa\s+ekspluatācijas|Civiltiesiskā\s+apdrošināšana|Nobraukuma\s+vēsture|$)/i,
+    /Transportlīdzekļa\s+reģistrācija([\s\S]*?)(?=Transportlīdzekļa\s+ekspluatācijas|Civiltiesiskā\s+apdrošināšana|Nobraukuma\s+vēsture|Pēdēj[āa]\s+tehnisk[āa]\s+apskate|Informācija\s+sagatavota|$)/i,
   );
   if (sectionM?.[1]) {
-    for (const line of sectionM[1].split(/\n/)) {
-      const t = line.trim();
-      if (!t || PAGE_FOOTER_RE.test(t)) continue;
-      if (/^No\s+[\d./]+/i.test(t)) continue;
-      const ev = t.match(/^(\d{2}[./]\d{2}[./]\d{4})\s*[-–—]\s*(.+)$/);
-      if (ev?.[1] && ev[2]) {
-        events.push({ date: normalizeDotDate(ev[1]), label: ev[2].trim() });
+    const chunk = sectionM[1].replace(/\s+/g, " ").trim();
+    const eventRe =
+      /(\d{2}[./]\d{2}[./]\d{4})\s*[-–—]\s*(Pirmā reģistrācija Latvijā|Īpašnieka maiņa)/gi;
+    let evM: RegExpExecArray | null;
+    while ((evM = eventRe.exec(chunk)) !== null) {
+      if (evM[1] && evM[2]) {
+        events.push({ date: normalizeDotDate(evM[1]), label: evM[2].trim() });
       }
     }
   }
