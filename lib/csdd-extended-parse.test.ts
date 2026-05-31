@@ -124,9 +124,9 @@ describe("csdd extended parse", () => {
     const html = buildTechnicalInspectionHistoryTableHtml(rows);
     expect(html).toContain("2025");
     expect(html).toContain("pdf-csdd-ta-year-heading");
-    expect(html).toContain("5.3.4.");
+    expect(html).toContain("pdf-csdd-ta-year-frame");
     expect(html).toContain("Trūkumi vai bojājumi");
-    expect(html).toContain("mirror-table--csdd-defect");
+    expect(html).not.toContain("<th scope=\"col\">Kods</th>");
   });
 
   it("parses Detalizētais vērtējums into admin prevInspectionBlock", () => {
@@ -163,8 +163,9 @@ describe("csdd extended parse", () => {
     expect(form.prevInspectionBlock.defects[0]?.code).toBe("3.2.");
     expect(form.opacityCoefficient).toBe("0.09");
     const html = buildPreviousInspectionBlockHtml(form.prevInspectionBlock, "");
-    expect(html).toContain("3.2.");
-    expect(html).toContain("6.2.1.");
+    expect(html).toContain("stiklojuma bojājumi");
+    expect(html).toContain("korozijas bojājumi");
+    expect(html).toContain("pdf-csdd-ta-year-frame");
     expect(html).not.toContain("5.3.4.");
   });
 

@@ -1327,30 +1327,34 @@ function clientReportPrintCss(): string {
       }
       .pdf-csdd-ta-section{margin-top:8px;}
       .pdf-csdd-ta-table-wrap{display:flex;flex-direction:column;gap:10px;}
-      .pdf-csdd-ta-year-block{break-inside:avoid;page-break-inside:avoid;}
+      .pdf-csdd-ta-year-block{break-inside:avoid;page-break-inside:avoid;margin:0 0 10px;}
       .pdf-csdd-ta-year-heading{
         margin:0 0 4px;font-size:9pt;font-weight:700;letter-spacing:0.04em;
         text-transform:uppercase;color:#475569;
       }
+      .pdf-csdd-ta-year-frame{
+        padding:10px 12px;border:1px solid #e2e8f0;border-radius:6px;background:#ffffff;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
       .pdf-csdd-ta-inspection{margin:0 0 8px;}
+      .pdf-csdd-ta-inspection:last-child{margin-bottom:0;}
       .pdf-csdd-ta-inspection--historic{opacity:0.92;}
       .pdf-csdd-ta-inspection-meta{
         margin:0 0 3px;font-size:9pt;font-weight:600;line-height:1.3;color:#1d1d1f;
       }
       .pdf-csdd-ta-extras{margin:0 0 4px;}
-      .pdf-csdd-defect-code{width:14%;white-space:nowrap;}
-      .pdf-csdd-defect-rating{width:8%;text-align:center!important;white-space:nowrap;}
+      .pdf-csdd-defect-rating{width:10%;text-align:center!important;white-space:nowrap;}
       .pdf-csdd-defect-desc{text-align:left!important;white-space:normal;}
       .pdf-csdd-defect-empty{color:#64748b;font-style:italic;}
       .pdf-csdd-defect-rating--1{color:#16a34a!important;font-weight:700;}
       .pdf-csdd-defect-rating--2{color:#d97706!important;font-weight:700;}
       .pdf-csdd-defect-rating--3{color:#dc2626!important;font-weight:700;}
+      .mirror-table--csdd-defect-2col th:nth-child(1){width:10%;text-align:center!important;}
+      .mirror-table--csdd-defect-2col th:nth-child(2){width:90%;}
       .mirror-table--csdd-defect-current th:nth-child(1),
-      .mirror-table--csdd-defect-historic th:nth-child(1){width:14%;}
+      .mirror-table--csdd-defect-historic th:nth-child(1){width:10%;text-align:center!important;}
       .mirror-table--csdd-defect-current th:nth-child(2),
-      .mirror-table--csdd-defect-historic th:nth-child(2){width:8%;text-align:center!important;}
-      .mirror-table--csdd-defect-current th:nth-child(3),
-      .mirror-table--csdd-defect-historic th:nth-child(3){width:78%;}
+      .mirror-table--csdd-defect-historic th:nth-child(2){width:90%;}
       .pdf-csdd-owner-timeline{margin:8px 0 4px;padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;}
       .pdf-csdd-owner-count{margin:0 0 6px;font-size:9pt;color:#1d1d1f;}
       .pdf-csdd-owner-events{display:flex;flex-direction:column;gap:3px;}

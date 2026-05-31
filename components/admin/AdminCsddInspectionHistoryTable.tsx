@@ -4,6 +4,7 @@ import {
   groupTechnicalInspectionsByYear,
   isoDateToLvDisplay,
   previousInspectionBlockToRow,
+  type CsddInspectionDefectRow,
   type CsddPreviousInspectionBlock,
   type CsddTechnicalInspectionRow,
 } from "@/lib/csdd-extended-parse";
@@ -15,6 +16,46 @@ function ratingClass(rating: string): string {
   if (rating === "2") return "font-semibold text-amber-700";
   if (rating === "3") return "font-semibold text-red-700";
   return "text-[var(--color-provin-muted)]";
+}
+
+function inspectionYearFromDate(date: string): number | null {
+  const m = date.trim().match(/\d{2}\.\d{2}\.(\d{4})/);
+  if (!m?.[1]) return null;
+  const y = Number(m[1]);
+  return Number.isFinite(y) ? y : null;
+}
+
+function DefectTable({ defects }: { defects: CsddInspectionDefectRow[] }) {
+  return (
+    <table className="w-full border-collapse text-[11px]">
+      <thead>
+        <tr className="border-b border-slate-200 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
+          <th className={`${mileCell} w-10 text-center`}>Nov.</th>
+          <th className={mileCell}>Trūkumi vai bojājumi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {defects.length > 0 ? (
+          defects.map((d, i) => (
+            <tr key={`${d.code}-${i}`} className="border-b border-slate-100 last:border-b-0">
+              <td className={`${mileCell} align-top text-center tabular-nums ${ratingClass(d.rating)}`}>
+                {d.rating || "—"}
+              </td>
+              <td className={`${mileCell} align-top leading-snug text-[var(--color-apple-text)]`}>
+                {d.description || "—"}
+              </td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colSpan={2} className={`${mileCell} text-[var(--color-provin-muted)]`}>
+              Nav reģistrētu trūkumu vai bojājumi.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  );
 }
 
 export function CsddInspectionBlock({
@@ -35,7 +76,7 @@ export function CsddInspectionBlock({
 
   return (
     <div className={historic ? "opacity-90" : ""}>
-      <p className="border-b border-slate-100 bg-slate-50/90 px-1.5 py-1 text-[10px] font-medium leading-snug text-[var(--color-apple-text)]">
+      <p className="border-b border-slate-100 px-1.5 py-1 text-[10px] font-medium leading-snug text-[var(--color-apple-text)]">
         {meta}
       </p>
       {nextInspectionDateText?.trim() ? (
@@ -50,43 +91,7 @@ export function CsddInspectionBlock({
           {row.smokeCoefficient.trim()}
         </p>
       ) : null}
-      {row.notes?.trim() ? (
-        <p className="px-1.5 py-0.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-          <span className="text-[var(--color-apple-text)]">Piezīmes:</span> {row.notes.trim()}
-        </p>
-      ) : null}
-      <table className="w-full border-collapse text-[11px]">
-        <thead>
-          <tr className="border-b border-slate-200 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
-            <th className={mileCell}>Kods</th>
-            <th className={`${mileCell} w-10 text-center`}>Nov.</th>
-            <th className={mileCell}>Trūkumi vai bojājumi</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(row.defects ?? []).length > 0 ? (
-            (row.defects ?? []).map((d, i) => (
-              <tr key={`${d.code}-${i}`} className="border-b border-slate-100 last:border-b-0">
-                <td className={`${mileCell} align-top tabular-nums text-[var(--color-provin-muted)]`}>
-                  {d.code || "—"}
-                </td>
-                <td className={`${mileCell} align-top text-center tabular-nums ${ratingClass(d.rating)}`}>
-                  {d.rating || "—"}
-                </td>
-                <td className={`${mileCell} align-top leading-snug text-[var(--color-apple-text)]`}>
-                  {d.description || "—"}
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={3} className={`${mileCell} text-[var(--color-provin-muted)]`}>
-                Nav reģistrētu trūkumu vai bojājumu.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <DefectTable defects={row.defects ?? []} />
     </div>
   );
 }
@@ -108,9 +113,14 @@ export function AdminCsddInspectionHistoryTable({ rows }: Props) {
       {years.map((year) => (
         <div key={year}>
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">{year}</p>
-          <div className="overflow-x-auto rounded-lg border border-slate-200/90 bg-white">
-            {(byYear.get(year) ?? []).map((row) => (
-              <CsddInspectionBlock key={row.date + row.inspectionType} row={row} historic={row.date !== newestDate} />
+          <div className="overflow-x-auto rounded-md border border-slate-200 bg-white px-2 py-1.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            {(byYear.get(year) ?? []).map((row, i, arr) => (
+              <div
+                key={row.date + row.inspectionType}
+                className={i < arr.length - 1 ? "mb-2 border-b border-slate-100 pb-2" : ""}
+              >
+                <CsddInspectionBlock row={row} historic={row.date !== newestDate} />
+              </div>
             ))}
           </div>
         </div>
@@ -129,13 +139,20 @@ export function AdminCsddPreviousInspectionBlock({ block, prevInspectionDateIso 
     block.inspectionDateText.trim() ||
     (prevInspectionDateIso.trim() ? isoDateToLvDisplay(prevInspectionDateIso) : "");
   const row = previousInspectionBlockToRow(block, dateDisplay);
+  const year = inspectionYearFromDate(dateDisplay);
+
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200/90 bg-white">
-      <CsddInspectionBlock
-        row={row}
-        odometer={block.odometer}
-        nextInspectionDateText={block.nextInspectionDateText}
-      />
+    <div>
+      {year != null ? (
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">{year}</p>
+      ) : null}
+      <div className="overflow-x-auto rounded-md border border-slate-200 bg-white px-2 py-1.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <CsddInspectionBlock
+          row={row}
+          odometer={block.odometer}
+          nextInspectionDateText={block.nextInspectionDateText}
+        />
+      </div>
     </div>
   );
 }

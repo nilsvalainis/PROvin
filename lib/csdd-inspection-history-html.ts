@@ -1,5 +1,5 @@
 /**
- * Tehnisko apskašu vēstures tabula (PDF + admin HTML) — pa gadiem, katrs aizrādījums atsevišķā rindā.
+ * Tehnisko apskašu vēstures tabula (PDF) — pa gadiem, 2 kolonnas (Nov. + Trūkumi).
  */
 
 import {
@@ -8,6 +8,7 @@ import {
   type CsddPreviousInspectionBlock,
   type CsddTechnicalInspectionRow,
 } from "@/lib/csdd-extended-parse";
+import type { CsddInspectionDefectRow } from "@/lib/csdd-extended-parse";
 
 function escapeHtml(s: string): string {
   return s
@@ -24,14 +25,38 @@ function defectRatingClass(rating: string): string {
   return "";
 }
 
-function buildInspectionBlockHtml(
+function inspectionYearFromDate(date: string): number | null {
+  const m = date.trim().match(/\d{2}\.\d{2}\.(\d{4})/);
+  if (!m?.[1]) return null;
+  const y = Number(m[1]);
+  return Number.isFinite(y) ? y : null;
+}
+
+function buildDefectTableHtml(defects: CsddInspectionDefectRow[], historic: boolean): string {
+  const tableClass = historic
+    ? "mirror-table mirror-table--csdd-defect-historic mirror-table--csdd-defect-2col"
+    : "mirror-table mirror-table--csdd-defect-current mirror-table--csdd-defect-2col";
+  const defectBody =
+    defects.length > 0
+      ? defects
+          .map((d) => {
+            const rc = defectRatingClass(d.rating);
+            return `<tr><td class="pdf-csdd-defect-rating tabular ${rc}">${escapeHtml(d.rating)}</td><td class="pdf-csdd-defect-desc">${escapeHtml(d.description)}</td></tr>`;
+          })
+          .join("\n")
+      : `<tr><td colspan="2" class="pdf-csdd-defect-empty">Nav reģistrētu trūkumu vai bojājumi.</td></tr>`;
+
+  return `<table class="${tableClass}" role="table">
+<thead><tr><th scope="col">Nov.</th><th scope="col">Trūkumi vai bojājumi</th></tr></thead>
+<tbody>${defectBody}</tbody>
+</table>`;
+}
+
+function buildInspectionInnerHtml(
   row: CsddTechnicalInspectionRow,
   historic: boolean,
   opts?: { odometer?: string; nextInspectionDateText?: string },
 ): string {
-  const tableClass = historic
-    ? "mirror-table mirror-table--csdd-defect-historic"
-    : "mirror-table mirror-table--csdd-defect-current";
   const metaParts = [row.date, row.inspectionType];
   if (opts?.odometer?.trim()) metaParts.push(`${opts.odometer.trim()} km`);
   if (row.ratingLabel.trim()) metaParts.push(`Novērtējums ${row.ratingLabel.trim()}`);
@@ -47,35 +72,23 @@ function buildInspectionBlockHtml(
       `<p class="pdf-csdd-tech-line"><span class="pdf-csdd-tech-bit">Dūmainības koeficients (m⁻¹):</span> ${escapeHtml(row.smokeCoefficient.trim())}</p>`,
     );
   }
-  if (row.notes?.trim()) {
-    extras.push(
-      `<p class="pdf-csdd-tech-line"><span class="pdf-csdd-tech-bit">Piezīmes:</span> ${escapeHtml(row.notes.trim())}</p>`,
-    );
-  }
   const extrasHtml = extras.length > 0 ? `<div class="pdf-csdd-ta-extras">${extras.join("")}</div>` : "";
-
-  const defects = row.defects ?? [];
-  const defectBody =
-    defects.length > 0
-      ? defects
-          .map((d) => {
-            const rc = defectRatingClass(d.rating);
-            return `<tr><td class="pdf-csdd-defect-code tabular">${escapeHtml(d.code)}</td><td class="pdf-csdd-defect-rating tabular ${rc}">${escapeHtml(d.rating)}</td><td class="pdf-csdd-defect-desc">${escapeHtml(d.description)}</td></tr>`;
-          })
-          .join("\n")
-      : `<tr><td colspan="3" class="pdf-csdd-defect-empty">Nav reģistrētu trūkumu vai bojājumu.</td></tr>`;
+  const tableHtml = buildDefectTableHtml(row.defects ?? [], historic);
 
   return `<div class="pdf-csdd-ta-inspection${historic ? " pdf-csdd-ta-inspection--historic" : ""}">
 <p class="pdf-csdd-ta-inspection-meta">${meta}</p>
 ${extrasHtml}
-<table class="${tableClass}" role="table">
-<thead><tr><th scope="col">Kods</th><th scope="col">Nov.</th><th scope="col">Trūkumi vai bojājumi</th></tr></thead>
-<tbody>${defectBody}</tbody>
-</table>
+${tableHtml}
 </div>`;
 }
 
-/** PDF / admin — viena kolonna, bloki pa gadiem (jaunākais gads augšā). */
+function buildYearFramedBlock(year: number | null, innerHtml: string): string {
+  if (!innerHtml.trim()) return "";
+  const heading = year != null ? `<p class="pdf-csdd-ta-year-heading">${year}</p>` : "";
+  return `<div class="pdf-csdd-ta-year-block">${heading}<div class="pdf-csdd-ta-year-frame">${innerHtml}</div></div>`;
+}
+
+/** PDF — viena kolonna, bloki pa gadiem (jaunākais gads augšā). */
 export function buildTechnicalInspectionHistoryTableHtml(
   rows: CsddTechnicalInspectionRow[],
 ): string {
@@ -89,10 +102,10 @@ export function buildTechnicalInspectionHistoryTableHtml(
   const yearBlocks = years
     .map((year) => {
       const inspections = byYear.get(year) ?? [];
-      const blocks = inspections
-        .map((row) => buildInspectionBlockHtml(row, row.date !== newestDate))
+      const inner = inspections
+        .map((row) => buildInspectionInnerHtml(row, row.date !== newestDate))
         .join("");
-      return `<div class="pdf-csdd-ta-year-block"><p class="pdf-csdd-ta-year-heading">${year}</p>${blocks}</div>`;
+      return buildYearFramedBlock(year, inner);
     })
     .join("");
 
@@ -107,8 +120,9 @@ export function buildPreviousInspectionBlockHtml(
   if (!block.inspectionType.trim() && !(block.defects?.length)) return "";
   const dateDisplay = block.inspectionDateText.trim() || inspectionDate;
   const row = previousInspectionBlockToRow(block, dateDisplay);
-  return buildInspectionBlockHtml(row, false, {
+  const inner = buildInspectionInnerHtml(row, false, {
     odometer: block.odometer,
     nextInspectionDateText: block.nextInspectionDateText,
   });
+  return buildYearFramedBlock(inspectionYearFromDate(dateDisplay), inner);
 }
