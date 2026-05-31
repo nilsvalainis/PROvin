@@ -1343,18 +1343,21 @@ function clientReportPrintCss(): string {
         margin:0 0 3px;font-size:9pt;font-weight:600;line-height:1.3;color:#1d1d1f;
       }
       .pdf-csdd-ta-extras{margin:0 0 4px;}
-      .pdf-csdd-defect-rating{width:10%;text-align:center!important;white-space:nowrap;}
-      .pdf-csdd-defect-desc{text-align:left!important;white-space:normal;}
+      .mirror-table--csdd-defect-2col{table-layout:fixed;width:100%;}
+      .pdf-csdd-defect-rating{
+        width:1%;text-align:left!important;white-space:nowrap;
+        padding:3px 6px 3px 2px!important;
+      }
+      .pdf-csdd-defect-desc{text-align:left!important;white-space:normal;width:auto;}
       .pdf-csdd-defect-empty{color:#64748b;font-style:italic;}
       .pdf-csdd-defect-rating--1{color:#16a34a!important;font-weight:700;}
       .pdf-csdd-defect-rating--2{color:#d97706!important;font-weight:700;}
       .pdf-csdd-defect-rating--3{color:#dc2626!important;font-weight:700;}
-      .mirror-table--csdd-defect-2col th:nth-child(1){width:10%;text-align:center!important;}
-      .mirror-table--csdd-defect-2col th:nth-child(2){width:90%;}
-      .mirror-table--csdd-defect-current th:nth-child(1),
-      .mirror-table--csdd-defect-historic th:nth-child(1){width:10%;text-align:center!important;}
-      .mirror-table--csdd-defect-current th:nth-child(2),
-      .mirror-table--csdd-defect-historic th:nth-child(2){width:90%;}
+      .mirror-table--csdd-defect-2col th:nth-child(1){
+        width:1%;text-align:left!important;white-space:nowrap;
+        padding:3px 6px 3px 2px!important;
+      }
+      .mirror-table--csdd-defect-2col th:nth-child(2){width:auto;text-align:left!important;}
       .pdf-csdd-owner-timeline{margin:8px 0 4px;padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;}
       .pdf-csdd-owner-count{margin:0 0 6px;font-size:9pt;color:#1d1d1f;}
       .pdf-csdd-owner-events{display:flex;flex-direction:column;gap:3px;}

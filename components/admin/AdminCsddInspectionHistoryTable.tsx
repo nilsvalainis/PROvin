@@ -26,19 +26,24 @@ function inspectionYearFromDate(date: string): number | null {
 }
 
 function DefectTable({ defects }: { defects: CsddInspectionDefectRow[] }) {
+  const novCell = "whitespace-nowrap px-1 py-0.5 text-left";
   return (
-    <table className="w-full border-collapse text-[11px]">
+    <table className="w-full table-fixed border-collapse text-[11px]">
+      <colgroup>
+        <col className="w-[1px]" />
+        <col />
+      </colgroup>
       <thead>
         <tr className="border-b border-slate-200 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
-          <th className={`${mileCell} w-10 text-center`}>Nov.</th>
-          <th className={mileCell}>Trūkumi vai bojājumi</th>
+          <th className={novCell}>Nov.</th>
+          <th className={`${mileCell} text-left`}>Trūkumi vai bojājumi</th>
         </tr>
       </thead>
       <tbody>
         {defects.length > 0 ? (
           defects.map((d, i) => (
             <tr key={`${d.code}-${i}`} className="border-b border-slate-100 last:border-b-0">
-              <td className={`${mileCell} align-top text-center tabular-nums ${ratingClass(d.rating)}`}>
+              <td className={`${novCell} align-top tabular-nums ${ratingClass(d.rating)}`}>
                 {d.rating || "—"}
               </td>
               <td className={`${mileCell} align-top leading-snug text-[var(--color-apple-text)]`}>
