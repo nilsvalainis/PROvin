@@ -9,6 +9,8 @@ import {
   type CsddTechnicalInspectionRow,
 } from "@/lib/csdd-extended-parse";
 import type { CsddInspectionDefectRow } from "@/lib/csdd-extended-parse";
+import type { CsddInspectionWarningRow } from "@/lib/admin-source-blocks";
+import { buildCsddInspectionWarningsHtml } from "@/lib/csdd-inspection-warnings-html";
 
 function escapeHtml(s: string): string {
   return s
@@ -82,30 +84,45 @@ ${tableHtml}
 </div>`;
 }
 
-function buildYearFramedBlock(year: number | null, innerHtml: string): string {
-  if (!innerHtml.trim()) return "";
+function buildYearFramedBlock(
+  year: number | null,
+  innerHtml: string,
+  warningsHtml = "",
+): string {
+  const body = `${warningsHtml}${innerHtml}`.trim();
+  if (!body) return "";
   const heading = year != null ? `<p class="pdf-csdd-ta-year-heading">${year}</p>` : "";
-  return `<div class="pdf-csdd-ta-year-block">${heading}<div class="pdf-csdd-ta-year-frame">${innerHtml}</div></div>`;
+  return `<div class="pdf-csdd-ta-year-block">${heading}<div class="pdf-csdd-ta-year-frame">${body}</div></div>`;
+}
+
+function buildSectionPreambleWarnings(warnings: CsddInspectionWarningRow[] | undefined): string {
+  return buildCsddInspectionWarningsHtml(warnings);
 }
 
 /** PDF — viena kolonna, bloki pa gadiem (jaunākais gads augšā). */
 export function buildTechnicalInspectionHistoryTableHtml(
   rows: CsddTechnicalInspectionRow[],
+  warnings?: CsddInspectionWarningRow[],
 ): string {
   const data = rows.filter((r) => r.date.trim());
-  if (data.length === 0) return "";
+  const warningsHtml = buildSectionPreambleWarnings(warnings);
+  if (data.length === 0) {
+    if (!warningsHtml) return "";
+    return `<div class="pdf-csdd-ta-table-wrap">${buildYearFramedBlock(null, "", warningsHtml)}</div>`;
+  }
 
   const byYear = groupTechnicalInspectionsByYear(data);
   const years = [...byYear.keys()].sort((a, b) => b - a);
   const newestDate = data[0]?.date ?? "";
 
   const yearBlocks = years
-    .map((year) => {
+    .map((year, idx) => {
       const inspections = byYear.get(year) ?? [];
       const inner = inspections
         .map((row) => buildInspectionInnerHtml(row, row.date !== newestDate))
         .join("");
-      return buildYearFramedBlock(year, inner);
+      const warn = idx === 0 ? warningsHtml : "";
+      return buildYearFramedBlock(year, inner, warn);
     })
     .join("");
 
@@ -116,13 +133,17 @@ export function buildTechnicalInspectionHistoryTableHtml(
 export function buildPreviousInspectionBlockHtml(
   block: CsddPreviousInspectionBlock,
   inspectionDate: string,
+  warnings?: CsddInspectionWarningRow[],
 ): string {
-  if (!block.inspectionType.trim() && !(block.defects?.length)) return "";
+  const warningsHtml = buildSectionPreambleWarnings(warnings);
+  const hasBlock = block.inspectionType.trim() || (block.defects?.length ?? 0) > 0;
+  if (!hasBlock && !warningsHtml) return "";
   const dateDisplay = block.inspectionDateText.trim() || inspectionDate;
-  const row = previousInspectionBlockToRow(block, dateDisplay);
-  const inner = buildInspectionInnerHtml(row, false, {
-    odometer: block.odometer,
-    nextInspectionDateText: block.nextInspectionDateText,
-  });
-  return buildYearFramedBlock(inspectionYearFromDate(dateDisplay), inner);
+  const inner = hasBlock
+    ? buildInspectionInnerHtml(previousInspectionBlockToRow(block, dateDisplay), false, {
+        odometer: block.odometer,
+        nextInspectionDateText: block.nextInspectionDateText,
+      })
+    : "";
+  return buildYearFramedBlock(inspectionYearFromDate(dateDisplay), inner, warningsHtml);
 }

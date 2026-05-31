@@ -119,6 +119,8 @@ export function parseCsddTechnicalFields(
   | "ownerRegistrationEvents"
   | "ownerCountLatvia"
   | "prevInspectionBlock"
+  | "prevInspectionWarnings"
+  | "technicalInspectionWarnings"
 > {
   const st = extractRegistryStructuredFields(raw);
   const basics = parseLvRegistryBasics(raw);
@@ -527,6 +529,8 @@ export function applyCsddPasteToForm(
     nextInspectionDate,
     prevInspectionDate,
     mileageHistory,
+    prevInspectionWarnings: current.prevInspectionWarnings,
+    technicalInspectionWarnings: current.technicalInspectionWarnings,
     comments: current.comments,
   };
 }

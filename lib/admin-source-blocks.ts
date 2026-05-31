@@ -216,6 +216,10 @@ export type CsddFormFields = {
   ownerRegistrationEvents: CsddOwnerChangeRow[];
   /** „Iepriekšējās apskates dati” admin blokā — avots: „Detalizētais vērtējums” + tehniskie dati. */
   prevInspectionBlock: CsddPreviousInspectionBlock;
+  /** Manuālas brīdinājumu rindas — „Iepriekšējās apskates dati”. */
+  prevInspectionWarnings: CsddInspectionWarningRow[];
+  /** Manuālas brīdinājumu rindas — „Tehnisko apskašu vēsture”. */
+  technicalInspectionWarnings: CsddInspectionWarningRow[];
   /** Hronoloģiski sakārtots (jaunākais augšā): Datums | Odometrs | Valsts. */
   mileageHistory: CsddMileageRow[];
   /** Eksperta piezīmes — PDF CSDD apakšsadaļā (kā citiem avotiem). */
@@ -253,6 +257,25 @@ export const CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE = "Tehnisko apskašu vēstu
 
 /** CSDD „Iepriekšējās apskates dati” (admin + PDF). */
 export const CSDD_PREVIOUS_INSPECTION_TITLE = "Iepriekšējās apskates dati";
+
+export type CsddInspectionWarningSeverity = "gray" | "yellow" | "red";
+
+export type CsddInspectionWarningRow = {
+  text: string;
+  severity: CsddInspectionWarningSeverity;
+};
+
+export function emptyCsddInspectionWarningRow(): CsddInspectionWarningRow {
+  return { text: "", severity: "yellow" };
+}
+
+export function csddInspectionWarningRowHasData(r: CsddInspectionWarningRow): boolean {
+  return Boolean(r.text.trim());
+}
+
+export function filterCsddInspectionWarnings(rows: CsddInspectionWarningRow[] | undefined): CsddInspectionWarningRow[] {
+  return (rows ?? []).filter(csddInspectionWarningRowHasData);
+}
 
 /** @deprecated Lietot CSDD_FORM_STRUCTURED_FIELDS */
 export const CSDD_FORM_SHORT_FIELDS = CSDD_FORM_STRUCTURED_FIELDS;
@@ -319,6 +342,8 @@ export function emptyCsddFields(): CsddFormFields {
     technicalInspectionHistory: [],
     ownerRegistrationEvents: [],
     prevInspectionBlock: emptyCsddPreviousInspectionBlock(),
+    prevInspectionWarnings: [],
+    technicalInspectionWarnings: [],
     mileageHistory: [],
     comments: "",
     pdfChecklist: undefined,
@@ -1279,6 +1304,22 @@ function clipCsddField(v: unknown, max: number): string {
   return String(v ?? "").slice(0, max);
 }
 
+function parseCsddInspectionWarningStoredRaw(raw: unknown): CsddInspectionWarningRow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const o = item as Record<string, unknown>;
+      const text = clipCsddField(o.text, 2000);
+      const sev = o.severity;
+      const severity: CsddInspectionWarningSeverity =
+        sev === "gray" || sev === "yellow" || sev === "red" ? sev : "yellow";
+      if (!text.trim()) return null;
+      return { text, severity };
+    })
+    .filter((r): r is CsddInspectionWarningRow => r != null);
+}
+
 function parseCsddPreviousInspectionStoredRaw(raw: unknown): CsddPreviousInspectionBlock {
   if (!raw || typeof raw !== "object") return emptyCsddPreviousInspectionBlock();
   const o = raw as Record<string, unknown>;
@@ -1376,6 +1417,8 @@ function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFi
     technicalInspectionHistory: parseCsddTechnicalInspectionStoredRaw(raw.technicalInspectionHistory),
     ownerRegistrationEvents: parseCsddOwnerEventsStoredRaw(raw.ownerRegistrationEvents),
     prevInspectionBlock: parseCsddPreviousInspectionStoredRaw(raw.prevInspectionBlock),
+    prevInspectionWarnings: parseCsddInspectionWarningStoredRaw(raw.prevInspectionWarnings),
+    technicalInspectionWarnings: parseCsddInspectionWarningStoredRaw(raw.technicalInspectionWarnings),
     comments: clipCsddField(raw.comments, 12000),
     ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
   };
@@ -1471,6 +1514,12 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       csdd.prevInspectionBlock && typeof csdd.prevInspectionBlock === "object"
         ? parseCsddPreviousInspectionStoredRaw(csdd.prevInspectionBlock)
         : d.csdd.prevInspectionBlock,
+    prevInspectionWarnings: Array.isArray(csdd.prevInspectionWarnings)
+      ? parseCsddInspectionWarningStoredRaw(csdd.prevInspectionWarnings)
+      : d.csdd.prevInspectionWarnings,
+    technicalInspectionWarnings: Array.isArray(csdd.technicalInspectionWarnings)
+      ? parseCsddInspectionWarningStoredRaw(csdd.technicalInspectionWarnings)
+      : d.csdd.technicalInspectionWarnings,
     comments: wsStr(csdd.comments),
     rawUnprocessedData: wsStr(csdd.rawUnprocessedData),
   });

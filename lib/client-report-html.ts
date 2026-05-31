@@ -17,6 +17,7 @@ import {
   LISTING_ANALYSIS_COMMENT_LABEL,
   LISTING_HISTORY_SUBSECTION_TITLE,
   ltabRowHasData,
+  filterCsddInspectionWarnings,
   mergePdfChecklistAndComments,
   NEGADIJUMU_VESTURE_TITLE,
   sourcePdfChecklistHasAny,
@@ -99,7 +100,7 @@ import {
   buildPreviousInspectionBlockHtml,
   buildTechnicalInspectionHistoryTableHtml,
 } from "@/lib/csdd-inspection-history-html";
-import { isoDateToLvDisplay, previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
+import { emptyCsddPreviousInspectionBlock, isoDateToLvDisplay, previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
 import { buildOutvinBundlePdfInnerHtml } from "@/lib/outvin-bundle-pdf-html";
 import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-html";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
@@ -597,15 +598,18 @@ export function buildCsddAvotuZoneHtml(form: CsddFormFields): string {
   const prevInspectionDateDisplay = form.prevInspectionDate.trim()
     ? isoDateToLvDisplay(form.prevInspectionDate)
     : "";
+  const prevWarnings = filterCsddInspectionWarnings(form.prevInspectionWarnings);
+  const hasPrevBlock = prevBlock && previousInspectionBlockHasData(prevBlock);
   const prevInspectionHtml =
-    prevBlock && previousInspectionBlockHasData(prevBlock)
-      ? `<div class="pdf-csdd-ta-section"><p class="pdf-csdd-subsection-title">${escapeHtml(CSDD_PREVIOUS_INSPECTION_TITLE)}</p>${buildPreviousInspectionBlockHtml(prevBlock, prevInspectionDateDisplay)}</div>`
+    hasPrevBlock || prevWarnings.length > 0
+      ? `<div class="pdf-csdd-ta-section"><p class="pdf-csdd-subsection-title">${escapeHtml(CSDD_PREVIOUS_INSPECTION_TITLE)}</p>${buildPreviousInspectionBlockHtml(prevBlock ?? emptyCsddPreviousInspectionBlock(), prevInspectionDateDisplay, prevWarnings)}</div>`
       : "";
 
   const taRows = (form.technicalInspectionHistory ?? []).filter((r) => r.date.trim());
+  const taWarnings = filterCsddInspectionWarnings(form.technicalInspectionWarnings);
   const taTableHtml =
-    taRows.length > 0
-      ? `<div class="pdf-csdd-ta-section"><p class="pdf-csdd-subsection-title">${escapeHtml(CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE)}</p>${buildTechnicalInspectionHistoryTableHtml(taRows)}</div>`
+    taRows.length > 0 || taWarnings.length > 0
+      ? `<div class="pdf-csdd-ta-section"><p class="pdf-csdd-subsection-title">${escapeHtml(CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE)}</p>${buildTechnicalInspectionHistoryTableHtml(taRows, taWarnings)}</div>`
       : "";
 
   const commentHtml = hasComments ? pdfAvotuCommentIsland(commentTrim) : "";
@@ -1336,6 +1340,15 @@ function clientReportPrintCss(): string {
         padding:10px 12px;border:1px solid #e2e8f0;border-radius:6px;background:#ffffff;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      .pdf-csdd-ta-warnings{margin:0 0 8px;display:flex;flex-direction:column;gap:6px;}
+      .pdf-csdd-ta-warnings:last-child{margin-bottom:0;}
+      .pdf-csdd-ta-warn{
+        margin:0;padding:6px 8px;border-radius:4px;font-size:9pt;line-height:1.35;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-csdd-ta-warn--gray{border-left:3px solid #94a3b8;background:#f8fafc;color:#334155;}
+      .pdf-csdd-ta-warn--yellow{border-left:3px solid #d97706;background:#fffbeb;color:#78350f;}
+      .pdf-csdd-ta-warn--red{border-left:3px solid #dc2626;background:#fef2f2;color:#991b1b;}
       .pdf-csdd-ta-inspection{margin:0 0 8px;}
       .pdf-csdd-ta-inspection:last-child{margin-bottom:0;}
       .pdf-csdd-ta-inspection--historic{opacity:0.92;}
