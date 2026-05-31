@@ -7,6 +7,7 @@ import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis
 import {
   autoRecordsBlockHasContent,
   CSDD_FORM_STRUCTURED_FIELDS,
+  CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE,
   citiAvotiHasContent,
   csddFormHasContent,
   LISTING_ANALYSIS_SUBSECTIONS,
@@ -92,7 +93,10 @@ import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   PDF_MILEAGE_HISTORY_COMMENT_LABEL,
 } from "@/lib/admin-workspace-field-labels";
-import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-html";
+import {
+  buildOwnerRegistrationTimelineHtml,
+  buildTechnicalInspectionHistoryChartHtml,
+} from "@/lib/csdd-history-charts";
 import { buildOutvinBundlePdfInnerHtml } from "@/lib/outvin-bundle-pdf-html";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
 import { outvinBundleHasStructuredContent } from "@/lib/outvin-data-bundle";
@@ -577,9 +581,23 @@ export function buildCsddAvotuZoneHtml(form: CsddFormFields): string {
     regRows.length > 0
       ? `<table class="mirror-table mirror-table--csdd"><tbody>${regRows.join("\n")}</tbody></table>`
       : "";
+
+  const ownerTimelineHtml =
+    form.ownerCountLatvia.trim() || (form.ownerRegistrationEvents ?? []).some((e) => e.date.trim())
+      ? buildOwnerRegistrationTimelineHtml(form.ownerCountLatvia, form.ownerRegistrationEvents ?? [], {
+          compact: true,
+        })
+      : "";
+
+  const taRows = (form.technicalInspectionHistory ?? []).filter((r) => r.date.trim());
+  const taChartHtml =
+    taRows.length > 0
+      ? `<div class="pdf-csdd-ta-section"><p class="pdf-csdd-subsection-title">${escapeHtml(CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE)}</p>${buildTechnicalInspectionHistoryChartHtml(taRows, { compact: true })}</div>`
+      : "";
+
   const commentHtml = hasComments ? pdfAvotuCommentIsland(commentTrim) : "";
-  if (!tableHtml && !commentHtml) return "";
-  const bodyInner = `${tableHtml}${commentHtml}`;
+  if (!tableHtml && !ownerTimelineHtml && !taChartHtml && !commentHtml) return "";
+  const bodyInner = `${tableHtml}${ownerTimelineHtml}${taChartHtml}${commentHtml}`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-source-section-body">${bodyInner}</div></div>`;
 }
 
@@ -1288,6 +1306,24 @@ function clientReportPrintCss(): string {
       .mirror-table--csdd-mh{font-size:9pt!important;margin:2px 0 4px!important;}
       .mirror-table--csdd-mh td,.mirror-table--csdd-mh th{padding:3px 4px!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;}
       .mirror-table--csdd-mh thead th{font-size:9pt!important;}
+      .pdf-csdd-subsection-title{
+        margin:10px 0 6px;font-size:9pt;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#64748b;
+      }
+      .pdf-csdd-ta-section{margin-top:8px;}
+      .pdf-csdd-ta-chart{margin:4px 0 8px;}
+      .pdf-csdd-ta-year-row{display:flex;align-items:center;gap:8px;margin:0 0 5px;font-size:9pt;line-height:1.3;}
+      .pdf-csdd-ta-year-label{min-width:36px;font-weight:600;color:#475569;}
+      .pdf-csdd-ta-badges{display:flex;flex-wrap:wrap;gap:4px;}
+      .pdf-csdd-ta-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;font-size:8pt;color:#64748b;}
+      .pdf-csdd-ta-legend span{display:inline-flex;align-items:center;gap:4px;}
+      .pdf-csdd-ta-legend i{display:inline-block;width:8px;height:8px;border-radius:9999px;}
+      .pdf-csdd-sev-badge--muted{background:#94a3b8!important;color:#fff!important;font-size:8px!important;}
+      .pdf-csdd-owner-timeline{margin:8px 0 4px;padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;}
+      .pdf-csdd-owner-count{margin:0 0 6px;font-size:9pt;color:#1d1d1f;}
+      .pdf-csdd-owner-events{display:flex;flex-direction:column;gap:3px;}
+      .pdf-csdd-owner-event{display:flex;gap:8px;font-size:9pt;line-height:1.35;}
+      .pdf-csdd-owner-date{min-width:72px;font-weight:600;color:#475569;}
+      .pdf-csdd-owner-label{color:#1d1d1f;}
       .pdf-outvin-dealer-stack{margin:4px 0 0;}
       .pdf-outvin-subhead{
         margin:10px 0 4px!important;font-size:0.68rem!important;font-weight:600!important;

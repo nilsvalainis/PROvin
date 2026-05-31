@@ -12,6 +12,11 @@ import {
   type CsddMileageRow,
 } from "@/lib/admin-source-blocks";
 import {
+  parseOwnerRegistrationFromRaw,
+  parsePreviousRegistrationCountry,
+  parseTechnicalInspectionHistory,
+} from "@/lib/csdd-extended-parse";
+import {
   extractRegistryStructuredFields,
   normalizeRoadTaxDisplay,
   parseLvRegistryBasics,
@@ -97,7 +102,16 @@ function looseLvDateToIso(s: string): string {
  */
 export function parseCsddTechnicalFields(
   raw: string,
-): Omit<CsddFormFields, "rawUnprocessedData" | "mileageHistory" | "nextInspectionDate" | "prevInspectionDate"> {
+): Omit<
+  CsddFormFields,
+  | "rawUnprocessedData"
+  | "mileageHistory"
+  | "nextInspectionDate"
+  | "prevInspectionDate"
+  | "technicalInspectionHistory"
+  | "ownerRegistrationEvents"
+  | "ownerCountLatvia"
+> {
   const st = extractRegistryStructuredFields(raw);
   const basics = parseLvRegistryBasics(raw);
 
@@ -162,6 +176,8 @@ export function parseCsddTechnicalFields(
     if (m) particulateMatter = m[1].trim().slice(0, 120);
   }
 
+  const previousRegistrationCountry = parsePreviousRegistrationCountry(raw);
+
   return {
     makeModel,
     registrationNumber,
@@ -176,6 +192,8 @@ export function parseCsddTechnicalFields(
     registrationStatus,
     opacityCoefficient,
     particulateMatter,
+    previousRegistrationCountry,
+    ownerCountLatvia: "",
     comments: "",
   };
 }
@@ -190,6 +208,7 @@ function isCsddSectionHeaderLine(line: string): boolean {
     /^Detalizētais\s+vērtējums/i.test(t) ||
     /^Novērtējums\s*:/i.test(t) ||
     /^Iepriekšējās\s+apskates\s+dati\b/i.test(t) ||
+    /^Tehnisko\s+apska[šs]u\s+vēsture/i.test(t) ||
     /^Ceļa\s+nodoklis/i.test(t) ||
     /^Marka\s*,\s*modelis/i.test(t) ||
     /^Pirmās\s+reģistrācijas/i.test(t)
@@ -251,6 +270,12 @@ export function parseMileageHistoryLvBlock(text: string): CsddMileageRow[] {
         const sp = L.split(/\s+/).filter(Boolean);
         if (sp.length >= 2 && /^\d{2}\.\d{2}\.\d{4}$/.test(sp[0])) {
           pushLvRow(rows, sp[0], sp[1] ?? "");
+          i++;
+          continue;
+        }
+        const kmFirstDash = L.match(/^(\d[\d\s]*)\s*[-–—]\s*(\d{2}\.\d{2}\.\d{4})$/);
+        if (kmFirstDash?.[1] && kmFirstDash[2]) {
+          pushLvRow(rows, kmFirstDash[2], kmFirstDash[1]);
           i++;
           continue;
         }
@@ -423,6 +448,8 @@ export function applyCsddPasteToForm(
   parsed: CsddPasteParseResult,
 ): CsddFormFields {
   const tech = parseCsddTechnicalFields(rawText);
+  const ownerReg = parseOwnerRegistrationFromRaw(rawText);
+  const technicalInspectionHistory = parseTechnicalInspectionHistory(rawText);
   let nextInspectionDate = "";
   let prevInspectionDate = "";
   if (parsed.nextInspectionIso) {
@@ -439,6 +466,9 @@ export function applyCsddPasteToForm(
   return {
     ...emptyCsddFields(),
     ...tech,
+    ownerCountLatvia: ownerReg.ownerCount,
+    ownerRegistrationEvents: ownerReg.events,
+    technicalInspectionHistory,
     rawUnprocessedData: rawText,
     nextInspectionDate,
     prevInspectionDate,

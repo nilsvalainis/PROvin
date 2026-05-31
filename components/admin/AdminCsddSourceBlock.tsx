@@ -8,6 +8,7 @@ import {
   CSDD_FORM_STRUCTURED_FIELDS,
   CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
   CSDD_MILEAGE_UNIFIED_TITLE,
+  CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE,
   emptyCsddMileageRow,
   finalizeMileageHistory,
   LISTING_ANALYSIS_COMMENT_LABEL,
@@ -17,6 +18,10 @@ import {
 } from "@/lib/admin-source-blocks";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
 import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
+import {
+  buildOwnerRegistrationTimelineAdminHtml,
+  buildTechnicalInspectionHistoryChartAdminHtml,
+} from "@/lib/csdd-history-charts";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
@@ -193,8 +198,10 @@ export function AdminCsddSourceBlock({
           }
           const showFlag = isFlagField && flag !== "none";
 
+          const isOwnerCountField = key === "ownerCountLatvia";
+
           return (
-            <div key={key} className="min-w-0">
+            <div key={key} className={`min-w-0${isOwnerCountField ? " sm:col-span-2" : ""}`}>
               {isFlagField && showFlag ? (
                 <div
                   className="flex min-w-0 items-center gap-2"
@@ -240,9 +247,23 @@ export function AdminCsddSourceBlock({
                 <>
                   <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">{label}</label>
                   {readOnly ? (
-                    <div className="min-h-[28px] whitespace-pre-wrap rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] text-[var(--color-provin-muted)]">
-                      {strVal.trim() ? strVal : <span className="text-slate-400">—</span>}
-                    </div>
+                    <>
+                      <div className="min-h-[28px] whitespace-pre-wrap rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] text-[var(--color-provin-muted)]">
+                        {strVal.trim() ? strVal : <span className="text-slate-400">—</span>}
+                      </div>
+                      {isOwnerCountField &&
+                      (value.ownerCountLatvia.trim() || value.ownerRegistrationEvents.length > 0) ? (
+                        <div
+                          className="provin-csdd-owner-chart mt-2 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2 py-1.5 text-[11px]"
+                          dangerouslySetInnerHTML={{
+                            __html: buildOwnerRegistrationTimelineAdminHtml(
+                              value.ownerCountLatvia,
+                              value.ownerRegistrationEvents,
+                            ),
+                          }}
+                        />
+                      ) : null}
+                    </>
                   ) : dateKeys.has(key) ? (
                     <input
                       type="date"
@@ -262,6 +283,18 @@ export function AdminCsddSourceBlock({
                       aria-label={label}
                     />
                   )}
+                  {isOwnerCountField &&
+                  (value.ownerCountLatvia.trim() || value.ownerRegistrationEvents.length > 0) ? (
+                    <div
+                      className="provin-csdd-owner-chart mt-2 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2 py-1.5 text-[11px]"
+                      dangerouslySetInnerHTML={{
+                        __html: buildOwnerRegistrationTimelineAdminHtml(
+                          value.ownerCountLatvia,
+                          value.ownerRegistrationEvents,
+                        ),
+                      }}
+                    />
+                  ) : null}
                 </>
               )}
             </div>
@@ -390,6 +423,21 @@ export function AdminCsddSourceBlock({
           </button>
         )}
       </div>
+
+      {value.technicalInspectionHistory.some((r) => r.date.trim()) ? (
+        <div className="mt-3 border-t border-slate-200/80 pt-2">
+          <p className="mb-1.5 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
+            {CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE}
+          </p>
+          <div
+            className="provin-csdd-ta-chart rounded-lg border border-slate-200/90 bg-white px-2 py-2"
+            dangerouslySetInnerHTML={{
+              __html: buildTechnicalInspectionHistoryChartAdminHtml(value.technicalInspectionHistory),
+            }}
+          />
+        </div>
+      ) : null}
 
       <div className={`mt-2 w-full min-w-0 shrink-0 border-t border-slate-200/80 pt-2`}>
         <AdminSourcePdfChecklist

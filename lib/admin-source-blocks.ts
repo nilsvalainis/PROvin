@@ -26,6 +26,7 @@ import {
   type OutvinDataBundle,
 } from "@/lib/outvin-data-bundle";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
+import type { CsddOwnerChangeRow, CsddTechnicalInspectionRow } from "@/lib/csdd-extended-parse";
 
 export { type OutvinDealerReport } from "@/lib/outvin-dealer-types";
 export type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
@@ -195,6 +196,14 @@ export type CsddFormFields = {
   registrationStatus: string;
   opacityCoefficient: string;
   particulateMatter: string;
+  /** No CSDD raw — iepriekšējā reģistrācijas valsts. */
+  previousRegistrationCountry: string;
+  /** Īpašnieku skaits Latvijā (skaitlis no reģistrācijas sadaļas). */
+  ownerCountLatvia: string;
+  /** Tehnisko apskašu vēsture — parsēts no raw. */
+  technicalInspectionHistory: CsddTechnicalInspectionRow[];
+  /** Īpašnieku maiņu notikumi Latvijā. */
+  ownerRegistrationEvents: CsddOwnerChangeRow[];
   /** Hronoloģiski sakārtots (jaunākais augšā): Datums | Odometrs | Valsts. */
   mileageHistory: CsddMileageRow[];
   /** Eksperta piezīmes — PDF CSDD apakšsadaļā (kā citiem avotiem). */
@@ -223,7 +232,12 @@ export const CSDD_FORM_STRUCTURED_FIELDS: {
   { key: "registrationStatus", label: "Reģistrācijas statuss:" },
   { key: "opacityCoefficient", label: "Dūmainības koeficients (m⁻¹):" },
   { key: "particulateMatter", label: "Atgāzu cietās daļiņas:" },
+  { key: "previousRegistrationCountry", label: "Iepriekšējās reģistrācijas valsts:" },
+  { key: "ownerCountLatvia", label: "Īpašnieku skaits Latvijā:" },
 ];
+
+/** CSDD tehnisko apskašu vēstures bloka virsraksts (admin + PDF). */
+export const CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE = "Tehnisko apskašu vēsture";
 
 /** @deprecated Lietot CSDD_FORM_STRUCTURED_FIELDS */
 export const CSDD_FORM_SHORT_FIELDS = CSDD_FORM_STRUCTURED_FIELDS;
@@ -285,6 +299,10 @@ export function emptyCsddFields(): CsddFormFields {
     registrationStatus: "",
     opacityCoefficient: "",
     particulateMatter: "",
+    previousRegistrationCountry: "",
+    ownerCountLatvia: "",
+    technicalInspectionHistory: [],
+    ownerRegistrationEvents: [],
     mileageHistory: [],
     comments: "",
     pdfChecklist: undefined,
@@ -425,6 +443,8 @@ export function csddFormHasContent(f: CsddFormFields): boolean {
   return (
     CSDD_FORM_STRUCTURED_FIELDS.some(({ key }) => wsStr(f[key]).trim().length > 0) ||
     (f.mileageHistory ?? []).some(csddMileageRowHasData) ||
+    (f.technicalInspectionHistory ?? []).some((r) => r.date.trim()) ||
+    (f.ownerRegistrationEvents ?? []).some((r) => r.date.trim() || r.label.trim()) ||
     wsStr(f.comments).trim().length > 0 ||
     sourcePdfChecklistHasAny(f.pdfChecklist)
   );
@@ -446,6 +466,23 @@ export function csddFormToPlainText(f: CsddFormFields): string {
           .map((c) => c.replace(/\s+/g, " ").trim())
           .join("\t"),
       );
+    }
+  }
+  const ta = (f.technicalInspectionHistory ?? []).filter((r) => r.date.trim());
+  if (ta.length > 0) {
+    lines.push(CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE);
+    for (const row of ta) {
+      const sev = row.ratingLevel ?? row.maxDefectLevel;
+      const parts = [row.date, row.inspectionType, row.ratingLabel];
+      if (sev != null) parts.push(`defektu max: ${sev}`);
+      lines.push(parts.filter(Boolean).join(" | "));
+    }
+  }
+  const owners = (f.ownerRegistrationEvents ?? []).filter((r) => r.date.trim() || r.label.trim());
+  if (owners.length > 0) {
+    lines.push("Īpašnieku maiņas Latvijā:");
+    for (const row of owners) {
+      lines.push(`${row.date} — ${row.label}`);
     }
   }
   const checklistTxt = formatSourcePdfChecklistForPdf(f.pdfChecklist);
@@ -1205,6 +1242,43 @@ function clipCsddField(v: unknown, max: number): string {
   return String(v ?? "").slice(0, max);
 }
 
+function parseCsddTechnicalInspectionStoredRaw(raw: unknown): CsddTechnicalInspectionRow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const o = item as Record<string, unknown>;
+      const ratingRaw = o.ratingLevel;
+      const maxDefectRaw = o.maxDefectLevel;
+      const ratingLevel =
+        ratingRaw === 1 || ratingRaw === 2 || ratingRaw === 3 ? ratingRaw : null;
+      const maxDefectLevel =
+        maxDefectRaw === 1 || maxDefectRaw === 2 || maxDefectRaw === 3 ? maxDefectRaw : null;
+      return {
+        date: clipCsddField(o.date, 20),
+        inspectionType: clipCsddField(o.inspectionType, 120),
+        ratingLabel: clipCsddField(o.ratingLabel, 200),
+        ratingLevel,
+        maxDefectLevel,
+      };
+    })
+    .filter((r): r is CsddTechnicalInspectionRow => r != null && r.date.trim().length > 0);
+}
+
+function parseCsddOwnerEventsStoredRaw(raw: unknown): CsddOwnerChangeRow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const o = item as Record<string, unknown>;
+      const date = clipCsddField(o.date, 20);
+      const label = clipCsddField(o.label, 200);
+      if (!date.trim() && !label.trim()) return null;
+      return { date, label };
+    })
+    .filter((r): r is CsddOwnerChangeRow => r != null);
+}
+
 function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFields, "mileageHistory"> {
   return {
     rawUnprocessedData: clipCsddField(raw.rawUnprocessedData, 4000),
@@ -1223,6 +1297,10 @@ function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFi
     registrationStatus: clipCsddField(raw.registrationStatus, 120),
     opacityCoefficient: clipCsddField(raw.opacityCoefficient, 40),
     particulateMatter: clipCsddField(raw.particulateMatter, 80),
+    previousRegistrationCountry: clipCsddField(raw.previousRegistrationCountry, 120),
+    ownerCountLatvia: clipCsddField(raw.ownerCountLatvia, 8),
+    technicalInspectionHistory: parseCsddTechnicalInspectionStoredRaw(raw.technicalInspectionHistory),
+    ownerRegistrationEvents: parseCsddOwnerEventsStoredRaw(raw.ownerRegistrationEvents),
     comments: clipCsddField(raw.comments, 12000),
     ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
   };
@@ -1309,6 +1387,12 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       ...d.csdd,
       ...csdd,
       mileageHistory: Array.isArray(csdd.mileageHistory) ? csdd.mileageHistory : d.csdd.mileageHistory,
+      technicalInspectionHistory: Array.isArray(csdd.technicalInspectionHistory)
+        ? csdd.technicalInspectionHistory
+        : d.csdd.technicalInspectionHistory,
+      ownerRegistrationEvents: Array.isArray(csdd.ownerRegistrationEvents)
+        ? csdd.ownerRegistrationEvents
+        : d.csdd.ownerRegistrationEvents,
       comments: wsStr(csdd.comments),
       rawUnprocessedData: wsStr(csdd.rawUnprocessedData),
     },
