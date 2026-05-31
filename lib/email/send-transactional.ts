@@ -6,6 +6,7 @@ import { getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/m
 import { adminNewOrderHtml, auditCompletedEmailHtml, paymentConfirmationHtml } from "@/lib/email/html-templates";
 import type { OrderEmailPayload } from "@/lib/email/types";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { buildClientReportLegalFooterPlainText } from "@/lib/report-pdf-standards";
 import { routing } from "@/i18n/routing";
 
 /** true, ja servera vidē ir gan SMTP_USER, gan SMTP_PASS (Workspace / Gmail app password). */
@@ -233,6 +234,7 @@ export async function sendReportReadyEmail(opts: {
   const html = auditCompletedEmailHtml({
     carVin: hasRealVin ? carVin : "—",
     attachmentLines: deduped.map((a) => a.filename),
+    siteOrigin: getSiteOrigin(),
   });
 
   const text = [
@@ -246,6 +248,7 @@ export async function sendReportReadyEmail(opts: {
     ...deduped.map((a) => `- ${a.filename}`),
     "",
     "Saziņa: info@provin.lv (atbildot uz šo e-pastu).",
+    buildClientReportLegalFooterPlainText(),
     "",
     "Ar cieņu,",
     "PROVIN.LV",

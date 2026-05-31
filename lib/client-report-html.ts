@@ -56,12 +56,7 @@ import {
   vendorPdfTitleToIconId,
 } from "@/lib/section-icons";
 import {
-  CLIENT_REPORT_FOOTER_DISCLAIMER,
-  PDF_SITE_FOOTER_CONFIDENTIALITY_NOTICE,
-  PDF_SITE_FOOTER_GDPR_LINE,
-  PDF_SITE_FOOTER_IMPORTANT_TITLE,
-  PDF_SITE_FOOTER_LEGAL_LABELS_STATIC,
-  PDF_SITE_FOOTER_VALUE_BODY,
+  getClientReportLegalFooterBlocks,
 } from "@/lib/report-pdf-standards";
 import { buildUnifiedMileageChartWrapHtml } from "@/lib/unified-mileage-chart";
 import {
@@ -817,17 +812,18 @@ function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySett
 }
 
 function buildPdfSiteFooterHtml(year: number): string {
+  const b = getClientReportLegalFooterBlocks();
   const logo = provincLogoSvg().replace(
     'class="pdf-v1-logo"',
     'class="pdf-v1-logo pdf-site-footer__logo"',
   );
-  const disclaimer = escapeHtml(CLIENT_REPORT_FOOTER_DISCLAIMER);
-  const confidentiality = escapeHtml(PDF_SITE_FOOTER_CONFIDENTIALITY_NOTICE);
-  const valueBody = escapeHtml(PDF_SITE_FOOTER_VALUE_BODY);
+  const disclaimer = escapeHtml(b.disclaimer);
+  const confidentiality = escapeHtml(b.confidentiality);
+  const valueBody = escapeHtml(b.valueBody);
   const copyright = escapeHtml(`© ${year} PROVIN.LV`);
-  const refs = escapeHtml(PDF_SITE_FOOTER_LEGAL_LABELS_STATIC);
-  const gdpr = escapeHtml(PDF_SITE_FOOTER_GDPR_LINE);
-  const importantTitle = escapeHtml(PDF_SITE_FOOTER_IMPORTANT_TITLE);
+  const refs = escapeHtml(b.legalLabels);
+  const gdpr = escapeHtml(b.gdprLine);
+  const importantTitle = escapeHtml(b.importantTitle);
   return `<footer class="pdf-site-footer" role="contentinfo">
 <div class="pdf-site-footer__grid">
 <div class="pdf-site-footer__col pdf-site-footer__col--legal">

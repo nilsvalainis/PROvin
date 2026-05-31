@@ -1,4 +1,5 @@
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { getClientReportLegalFooterBlocks } from "@/lib/report-pdf-standards";
 
 /** Minimālistisks HTML — balts, daudz tukšuma, PROVIN zils CTA (kā vietne). */
 const BRAND = "#0061D2";
@@ -45,6 +46,26 @@ function ctaButton(href: string, label: string): string {
 </td></tr></table>`;
 }
 
+function clientReportLegalFooterEmailHtml(origin: string): string {
+  const b = getClientReportLegalFooterBlocks();
+  const base = origin.replace(/\/$/, "");
+  const termsUrl = `${base}/lietosanas-noteikumi`;
+  const privacyUrl = `${base}/privatuma-politika`;
+  const year = new Date().getFullYear();
+  const border = "#e5e7eb";
+
+  return `<div style="margin:28px 0 0;padding:20px 0 0;border-top:1px solid ${border};">
+<p style="margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${MUTED};">${esc(b.importantTitle)}</p>
+<p style="margin:0 0 12px;font-size:11px;line-height:1.55;color:${MUTED};">${esc(b.disclaimer)}</p>
+<p style="margin:0 0 16px;font-size:11px;line-height:1.55;color:${MUTED};"><strong>${esc(b.confidentiality)}</strong></p>
+<p style="margin:0 0 8px;font-size:11px;font-weight:600;color:${MUTED};">PROVIN.LV</p>
+<p style="margin:0 0 14px;font-size:11px;line-height:1.55;color:${MUTED};">${esc(b.valueBody)}</p>
+<p style="margin:0 0 4px;font-size:10px;color:${MUTED};">© ${year} PROVIN.LV</p>
+<p style="margin:0 0 4px;font-size:10px;color:${MUTED};"><a href="${esc(termsUrl)}" style="color:${BRAND};text-decoration:none;">Lietošanas noteikumi</a> · <a href="${esc(privacyUrl)}" style="color:${BRAND};text-decoration:none;">Privātuma politika</a></p>
+<p style="margin:0;font-size:10px;line-height:1.45;color:${MUTED};">${esc(b.gdprLine)}</p>
+</div>`;
+}
+
 export function paymentConfirmationHtml(opts: {
   invoiceUrl: string;
   thanksUrl: string;
@@ -79,7 +100,11 @@ export function adminNewOrderHtml(lines: { label: string; value: string }[]): st
 }
 
 /** E-pasts: „audits pabeigts” ar pielikumu sarakstu (faktiskie faili — nodemailer). */
-export function auditCompletedEmailHtml(opts: { carVin: string; attachmentLines: string[] }): string {
+export function auditCompletedEmailHtml(opts: {
+  carVin: string;
+  attachmentLines: string[];
+  siteOrigin?: string;
+}): string {
   const vinRaw = opts.carVin.trim();
   const hasVin = isValidVin(vinRaw);
   const vinEsc = hasVin ? esc(normalizeVin(vinRaw)) : "";
@@ -106,6 +131,7 @@ ${listHtml}`
 ${resultsBlock}
 <p style="margin:0 0 6px;font-size:15px;color:${INK};line-height:1.55;"><strong>Saziņa un jautājumi:</strong></p>
 <p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja rodas kādi papildu jautājumi, droši sazinieties ar mums, atbildot uz šo e-pastu (<a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>).</p>
+${opts.siteOrigin ? clientReportLegalFooterEmailHtml(opts.siteOrigin) : ""}
 <p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/><span style="color:${MUTED};font-weight:600;">PROVIN.LV</span></p>
 `;
   return shell(inner, { omitBrandRibbon: true });

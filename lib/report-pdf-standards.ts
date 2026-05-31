@@ -92,6 +92,45 @@ export const PDF_SITE_FOOTER_LEGAL_LABELS_STATIC = "Lietošanas noteikumi · Pri
 export const PDF_SITE_FOOTER_GDPR_LINE =
   "Personas datu apstrāde notiek saskaņā ar piemērojamiem tiesību aktiem (GDPR).";
 
+/** Vienots juridiskās kājenes saturs — PDF, e-pasts un citi klienta paziņojumi. */
+export type ClientReportLegalFooterBlocks = {
+  importantTitle: string;
+  disclaimer: string;
+  confidentiality: string;
+  valueBody: string;
+  legalLabels: string;
+  gdprLine: string;
+};
+
+export function getClientReportLegalFooterBlocks(): ClientReportLegalFooterBlocks {
+  return {
+    importantTitle: PDF_SITE_FOOTER_IMPORTANT_TITLE,
+    disclaimer: CLIENT_REPORT_FOOTER_DISCLAIMER,
+    confidentiality: PDF_SITE_FOOTER_CONFIDENTIALITY_NOTICE,
+    valueBody: PDF_SITE_FOOTER_VALUE_BODY,
+    legalLabels: PDF_SITE_FOOTER_LEGAL_LABELS_STATIC,
+    gdprLine: PDF_SITE_FOOTER_GDPR_LINE,
+  };
+}
+
+/** Plain-text kājene audita e-pastam un citiem paziņojumiem. */
+export function buildClientReportLegalFooterPlainText(): string {
+  const b = getClientReportLegalFooterBlocks();
+  return [
+    "",
+    b.importantTitle,
+    "",
+    b.disclaimer,
+    "",
+    b.confidentiality,
+    "",
+    b.valueBody,
+    "",
+    b.legalLabels,
+    b.gdprLine,
+  ].join("\n");
+}
+
 /** Noņem / aizstāj biežus trešo pušu komerciālos nosaukumus failu nosaukumos PDF sarakstā. */
 export function sanitizeAttachmentFileNameForReport(fileName: string): string {
   let s = fileName.replace(
