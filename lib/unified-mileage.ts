@@ -29,6 +29,14 @@ export type UnifiedMileageRow = {
   sourceLabel: string;
 };
 
+/** Tabulas rinda pēc km apvienošanas — vairāki avoti vienā „Avots” kolonnā. */
+export type UnifiedMileageDisplayRow = UnifiedMileageRow & {
+  sourceLabels: string[];
+};
+
+/** Maks. datumu starplaiks km apvienošanai (~2 kalendāra mēneši). */
+export const UNIFIED_MILEAGE_MERGE_MAX_DATE_SPAN_MS = 62 * 24 * 60 * 60 * 1000;
+
 export type UnifiedMileageSourcePayload = {
   csddForm?: CsddFormFields | null;
   autoRecordsBlock?: AutoRecordsBlockState | null;
@@ -66,11 +74,115 @@ export function sortMileageChronological(rows: UnifiedMileageRow[]): UnifiedMile
 export const UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM = 1000;
 
 /**
- * Nobraukuma tabula + līknei: hronoloģiska secība bez km apkopošanas / dublējumu izmešanas
- * (visi avoti un līdzīgi km paliek redzami).
+ * Nobraukuma tabula + līknei: hronoloģiska secība; tabulā km dublikāti apvienojas (skat. merge).
  */
 export function filterDuplicateOdometerKmReadings(rows: UnifiedMileageRow[]): UnifiedMileageRow[] {
   return sortMileageChronological([...rows]);
+}
+
+function sortableTimeForMerge(raw: number): number {
+  return raw === Number.NEGATIVE_INFINITY ? Number.POSITIVE_INFINITY : raw;
+}
+
+function clusterRowsByDateWindow(rows: UnifiedMileageRow[], maxSpanMs: number): UnifiedMileageRow[][] {
+  const sorted = [...rows].sort(
+    (a, b) => sortableTimeForMerge(a.sortableTime) - sortableTimeForMerge(b.sortableTime),
+  );
+  const clusters: UnifiedMileageRow[][] = [];
+  let current: UnifiedMileageRow[] = [];
+  let clusterMin = Number.POSITIVE_INFINITY;
+  let clusterMax = Number.NEGATIVE_INFINITY;
+
+  for (const row of sorted) {
+    const t = sortableTimeForMerge(row.sortableTime);
+    if (current.length === 0) {
+      current = [row];
+      clusterMin = clusterMax = t;
+      continue;
+    }
+    const nextMin = Math.min(clusterMin, t);
+    const nextMax = Math.max(clusterMax, t);
+    if (nextMax - nextMin <= maxSpanMs) {
+      current.push(row);
+      clusterMin = nextMin;
+      clusterMax = nextMax;
+    } else {
+      clusters.push(current);
+      current = [row];
+      clusterMin = clusterMax = t;
+    }
+  }
+  if (current.length > 0) clusters.push(current);
+  return clusters;
+}
+
+function uniqueSourceLabelsOrdered(rows: UnifiedMileageRow[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of rows) {
+    const lbl = r.sourceLabel.trim() || "Nezināms avots";
+    const key = lbl.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(lbl);
+  }
+  return out;
+}
+
+function mergeMileageCluster(cluster: UnifiedMileageRow[]): UnifiedMileageDisplayRow {
+  const chrono = sortMileageChronological(cluster);
+  const primary = chrono[chrono.length - 1] ?? cluster[0]!;
+  const labels = uniqueSourceLabelsOrdered(cluster);
+  const countries = [...new Set(cluster.map((r) => r.country.trim()).filter(Boolean))];
+  return {
+    ...primary,
+    country: countries.length <= 1 ? (countries[0] ?? primary.country) : countries.join(" / "),
+    sourceOrder: Math.min(...cluster.map((r) => r.sourceOrder)),
+    sourceLabel: labels[0] ?? primary.sourceLabel,
+    sourceLabels: labels,
+  };
+}
+
+/**
+ * Apvieno rindas ar identisku odometru (km), ja datumi atšķiras ne vairāk par ~2 mēnešiem.
+ * Atgriež hronoloģiski sakārtotas tabulas rindas ar `sourceLabels` vairākiem avotiem.
+ */
+export function mergeUnifiedMileageRowsByOdometer(
+  rows: UnifiedMileageRow[],
+  maxDateSpanMs = UNIFIED_MILEAGE_MERGE_MAX_DATE_SPAN_MS,
+): UnifiedMileageDisplayRow[] {
+  const mergeable: UnifiedMileageRow[] = [];
+  const passthrough: UnifiedMileageDisplayRow[] = [];
+
+  for (const row of rows) {
+    if (parseOdometerKm(row.odometer) === null) {
+      passthrough.push({ ...row, sourceLabels: [row.sourceLabel.trim() || "Nezināms avots"] });
+    } else {
+      mergeable.push(row);
+    }
+  }
+
+  const byKm = new Map<number, UnifiedMileageRow[]>();
+  for (const row of mergeable) {
+    const km = parseOdometerKm(row.odometer)!;
+    const bucket = byKm.get(km) ?? [];
+    bucket.push(row);
+    byKm.set(km, bucket);
+  }
+
+  const merged: UnifiedMileageDisplayRow[] = [];
+  for (const bucket of byKm.values()) {
+    for (const cluster of clusterRowsByDateWindow(bucket, maxDateSpanMs)) {
+      merged.push(mergeMileageCluster(cluster));
+    }
+  }
+
+  return sortMileageChronological([...merged, ...passthrough]) as UnifiedMileageDisplayRow[];
+}
+
+/** Tabulas / grafika rindas — hronoloģiski + km apvienošana. */
+export function prepareUnifiedMileageDisplayRows(rows: UnifiedMileageRow[]): UnifiedMileageDisplayRow[] {
+  return mergeUnifiedMileageRowsByOdometer(sortMileageChronological([...rows]));
 }
 
 /**

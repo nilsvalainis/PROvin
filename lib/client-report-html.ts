@@ -77,8 +77,9 @@ import {
 import {
   collectUnifiedMileageRows,
   computeOdometerAnomalyBySourceOrder,
-  filterDuplicateOdometerKmReadings,
+  prepareUnifiedMileageDisplayRows,
   type CollectUnifiedMileageOptions,
+  type UnifiedMileageDisplayRow,
   type UnifiedMileageRow,
   type UnifiedMileageSourcePayload,
 } from "@/lib/unified-mileage";
@@ -434,14 +435,37 @@ function buildPdfSourceLegendAbbrevsHtml(sourceLabels: string[]): string {
   return `<span class="pdf-mileage-legend-terms-row">${parts.join("")}</span>`;
 }
 
-function buildPdfMileageSourceLegendAbbrevsHtml(mileageRows: UnifiedMileageRow[]): string {
-  return buildPdfSourceLegendAbbrevsHtml(mileageRows.map((r) => r.sourceLabel));
+/** Vairākas avota svītriņas tabulas „Avots” kolonnā — horizontāli, ar nelielu atstarpi. */
+function buildPdfMileageSourceStripesHtml(sourceLabels: string[], size: "table" | "legend" = "table"): string {
+  const unique: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of sourceLabels) {
+    const t = raw.trim();
+    if (!t) continue;
+    const key = t.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(t);
+  }
+  if (unique.length === 0) unique.push("Nezināms avots");
+  const sizeCls = size === "legend" ? " pdf-mileage-source-stripes--legend" : " pdf-mileage-source-stripes--table";
+  const inner = unique.map((lbl) => buildPdfMileageSourceStripeSpan(lbl, size)).join("");
+  return `<span class="pdf-mileage-source-stripes${sizeCls}" role="presentation">${inner}</span>`;
 }
 
-function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow, anomalyBySourceOrder: Map<number, boolean>): string {
+function buildPdfMileageSourceLegendAbbrevsHtml(mileageRows: UnifiedMileageDisplayRow[]): string {
+  const labels = mileageRows.flatMap((r) => (r.sourceLabels.length > 0 ? r.sourceLabels : [r.sourceLabel]));
+  return buildPdfSourceLegendAbbrevsHtml(labels);
+}
+
+function buildUnifiedMileageTableRowHtml(
+  r: UnifiedMileageDisplayRow,
+  anomalyBySourceOrder: Map<number, boolean>,
+): string {
   const flagCell = buildPdfCountryFlagCellHtml(r.country);
   const odoEscaped = escapeHtml(r.odometer);
-  const stripeSpan = buildPdfMileageSourceStripeSpan(r.sourceLabel, "table");
+  const labels = r.sourceLabels.length > 0 ? r.sourceLabels : [r.sourceLabel];
+  const stripeSpan = buildPdfMileageSourceStripesHtml(labels, "table");
   const anom = anomalyBySourceOrder.get(r.sourceOrder) === true;
   const rowClass = anom ? "pdf-mileage-history-row pdf-mileage-history-row--anomaly" : "pdf-mileage-history-row";
   const ico = pdfLossAmountAlertIconHtml("red");
@@ -452,7 +476,10 @@ function buildUnifiedMileageTableRowHtml(r: UnifiedMileageRow, anomalyBySourceOr
   return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td>${odoTd}${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
 }
 
-function buildMileageHistoryTableHtml(rows: UnifiedMileageRow[], anomalyBySourceOrder: Map<number, boolean>): string {
+function buildMileageHistoryTableHtml(
+  rows: UnifiedMileageDisplayRow[],
+  anomalyBySourceOrder: Map<number, boolean>,
+): string {
   if (rows.length === 0) return "";
   const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-src" /><col class="pdf-mileage-col-flag" /></colgroup>`;
   const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Odometrs (km)</th><th class="pdf-mileage-th-src" scope="col">Avots</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
@@ -480,7 +507,7 @@ export function buildUnifiedMileageTableHtml(
     return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card" role="region">${headOnly}${commentBlock}</div>`;
   }
 
-  const mileageRows = filterDuplicateOdometerKmReadings(collected);
+  const mileageRows = prepareUnifiedMileageDisplayRows(collected);
   if (mileageRows.length === 0) return "";
 
   const anomalyBySourceOrder = computeOdometerAnomalyBySourceOrder(mileageRows);
@@ -503,7 +530,7 @@ export function buildUnifiedMileageTableHtml(
         ? buildMileageHistoryTableHtml(display, anomalyBySourceOrder)
         : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(leftRows, anomalyBySourceOrder)}</div><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(rightRows, anomalyBySourceOrder)}</div></div>`;
 
-  const sourceCount = new Set(mileageRows.map((r) => r.sourceLabel)).size;
+  const sourceCount = new Set(mileageRows.flatMap((r) => r.sourceLabels)).size;
   const legendAbbrevs = buildPdfMileageSourceLegendAbbrevsHtml(mileageRows);
   const sourceCountHtml = `<p class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-title">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</span>${
     legendAbbrevs
@@ -1095,6 +1122,13 @@ function clientReportPrintCss(): string {
       .pdf-mileage-source-stripe--dealer{background:#dc2626!important;}
       .pdf-mileage-source-stripe--cits{background:#ea580c!important;}
       .pdf-mileage-source-stripe--unknown{background:#94a3b8!important;}
+      .pdf-mileage-source-stripes{
+        display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;
+        max-width:100%;flex-wrap:nowrap;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-mileage-source-stripes--table{gap:3px;}
+      .pdf-mileage-source-stripes--legend{gap:2px;}
       .pdf-mileage-history-table td.pdf-mileage-cell-loss{
         text-align:center!important;
       }

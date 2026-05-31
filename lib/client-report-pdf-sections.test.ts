@@ -51,6 +51,27 @@ describe("unified PDF sections single block", () => {
     );
   });
 
+  it("merges same km from multiple sources into one row with multiple stripes", () => {
+    const csdd = emptyCsddFields();
+    csdd.mileageHistory.push({ date: "2020-06-01", odometer: "120000", country: "LV" });
+    const html = buildUnifiedMileageTableHtml({
+      csddForm: csdd,
+      manualVendorBlocks: [
+        {
+          title: "AutoDNA",
+          mileageRows: [{ date: "2020-07-01", odometer: "120000", country: "DE" }],
+          incidentRows: [],
+          comments: "",
+        },
+      ],
+    });
+    const rowMatches = html.match(/pdf-mileage-history-row/g) ?? [];
+    expect(rowMatches.length).toBe(1);
+    expect(html).toContain("pdf-mileage-source-stripes");
+    expect(html).toContain("pdf-mileage-source-stripe--csdd");
+    expect(html).toContain("pdf-mileage-source-stripe--autodna");
+  });
+
   it("incidents zone is one card: table, source count, kopsavilkums", () => {
     const p = {
       internalComment: "Kopsavilkuma teksts",
