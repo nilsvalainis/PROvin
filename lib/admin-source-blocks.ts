@@ -27,7 +27,7 @@ import {
 } from "@/lib/outvin-data-bundle";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
 import { backfillCsddExtendedFromRaw } from "@/lib/csdd-paste-parse";
-import type { CsddOwnerChangeRow, CsddTechnicalInspectionRow } from "@/lib/csdd-extended-parse";
+import type { CsddOwnerChangeRow, CsddTechnicalInspectionRow, CsddInspectionDefectRow } from "@/lib/csdd-extended-parse";
 
 export { type OutvinDealerReport } from "@/lib/outvin-dealer-types";
 export type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
@@ -473,10 +473,17 @@ export function csddFormToPlainText(f: CsddFormFields): string {
   if (ta.length > 0) {
     lines.push(CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE);
     for (const row of ta) {
-      const sev = row.ratingLevel ?? row.maxDefectLevel;
-      const parts = [row.date, row.inspectionType, row.ratingLabel];
-      if (sev != null) parts.push(`defektu max: ${sev}`);
-      lines.push(parts.filter(Boolean).join(" | "));
+      lines.push(
+        [row.date, row.inspectionType, row.ratingLabel ? `Novērtējums ${row.ratingLabel}` : ""]
+          .filter(Boolean)
+          .join(" · "),
+      );
+      if (row.smokeCoefficient.trim()) lines.push(`Dūmainības koeficients: ${row.smokeCoefficient.trim()}`);
+      if (row.notes.trim()) lines.push(`Piezīmes: ${row.notes.trim()}`);
+      for (const d of row.defects ?? []) {
+        if (!d.code.trim() && !d.description.trim()) continue;
+        lines.push(`${d.code}\t${d.rating}\t${d.description}`.trim());
+      }
     }
   }
   const owners = (f.ownerRegistrationEvents ?? []).filter((r) => r.date.trim() || r.label.trim());
@@ -1243,6 +1250,21 @@ function clipCsddField(v: unknown, max: number): string {
   return String(v ?? "").slice(0, max);
 }
 
+function parseCsddInspectionDefectStoredRaw(raw: unknown): CsddInspectionDefectRow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const o = item as Record<string, unknown>;
+      const code = clipCsddField(o.code, 40);
+      const rating = clipCsddField(o.rating, 4);
+      const description = clipCsddField(o.description, 2000);
+      if (!code.trim() && !rating.trim() && !description.trim()) return null;
+      return { code, rating, description };
+    })
+    .filter((r): r is CsddInspectionDefectRow => r != null);
+}
+
 function parseCsddTechnicalInspectionStoredRaw(raw: unknown): CsddTechnicalInspectionRow[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -1261,6 +1283,9 @@ function parseCsddTechnicalInspectionStoredRaw(raw: unknown): CsddTechnicalInspe
         ratingLabel: clipCsddField(o.ratingLabel, 200),
         ratingLevel,
         maxDefectLevel,
+        smokeCoefficient: clipCsddField(o.smokeCoefficient, 40),
+        notes: clipCsddField(o.notes, 500),
+        defects: parseCsddInspectionDefectStoredRaw(o.defects),
       };
     })
     .filter((r): r is CsddTechnicalInspectionRow => r != null && r.date.trim().length > 0);

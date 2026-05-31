@@ -93,10 +93,8 @@ import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   PDF_MILEAGE_HISTORY_COMMENT_LABEL,
 } from "@/lib/admin-workspace-field-labels";
-import {
-  buildOwnerRegistrationTimelineHtml,
-  buildTechnicalInspectionHistoryChartHtml,
-} from "@/lib/csdd-history-charts";
+import { buildOwnerRegistrationTimelineHtml } from "@/lib/csdd-history-charts";
+import { buildTechnicalInspectionHistoryTableHtml } from "@/lib/csdd-inspection-history-html";
 import { buildOutvinBundlePdfInnerHtml } from "@/lib/outvin-bundle-pdf-html";
 import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-html";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
@@ -591,14 +589,14 @@ export function buildCsddAvotuZoneHtml(form: CsddFormFields): string {
       : "";
 
   const taRows = (form.technicalInspectionHistory ?? []).filter((r) => r.date.trim());
-  const taChartHtml =
+  const taTableHtml =
     taRows.length > 0
-      ? `<div class="pdf-csdd-ta-section"><p class="pdf-csdd-subsection-title">${escapeHtml(CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE)}</p>${buildTechnicalInspectionHistoryChartHtml(taRows, { compact: true })}</div>`
+      ? `<div class="pdf-csdd-ta-section"><p class="pdf-csdd-subsection-title">${escapeHtml(CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE)}</p>${buildTechnicalInspectionHistoryTableHtml(taRows)}</div>`
       : "";
 
   const commentHtml = hasComments ? pdfAvotuCommentIsland(commentTrim) : "";
-  if (!tableHtml && !ownerTimelineHtml && !taChartHtml && !commentHtml) return "";
-  const bodyInner = `${tableHtml}${ownerTimelineHtml}${taChartHtml}${commentHtml}`;
+  if (!tableHtml && !ownerTimelineHtml && !taTableHtml && !commentHtml) return "";
+  const bodyInner = `${tableHtml}${ownerTimelineHtml}${taTableHtml}${commentHtml}`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-source-section-body">${bodyInner}</div></div>`;
 }
 
@@ -1311,14 +1309,31 @@ function clientReportPrintCss(): string {
         margin:10px 0 6px;font-size:9pt;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#64748b;
       }
       .pdf-csdd-ta-section{margin-top:8px;}
-      .pdf-csdd-ta-chart{margin:4px 0 8px;}
-      .pdf-csdd-ta-year-row{display:flex;align-items:center;gap:8px;margin:0 0 5px;font-size:9pt;line-height:1.3;}
-      .pdf-csdd-ta-year-label{min-width:36px;font-weight:600;color:#475569;}
-      .pdf-csdd-ta-badges{display:flex;flex-wrap:wrap;gap:4px;}
-      .pdf-csdd-ta-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;font-size:8pt;color:#64748b;}
-      .pdf-csdd-ta-legend span{display:inline-flex;align-items:center;gap:4px;}
-      .pdf-csdd-ta-legend i{display:inline-block;width:8px;height:8px;border-radius:9999px;}
-      .pdf-csdd-sev-badge--muted{background:#94a3b8!important;color:#fff!important;font-size:8px!important;}
+      .pdf-csdd-ta-table-wrap{display:flex;flex-direction:column;gap:10px;}
+      .pdf-csdd-ta-year-block{break-inside:avoid;page-break-inside:avoid;}
+      .pdf-csdd-ta-year-heading{
+        margin:0 0 4px;font-size:9pt;font-weight:700;letter-spacing:0.04em;
+        text-transform:uppercase;color:#475569;
+      }
+      .pdf-csdd-ta-inspection{margin:0 0 8px;}
+      .pdf-csdd-ta-inspection--historic{opacity:0.92;}
+      .pdf-csdd-ta-inspection-meta{
+        margin:0 0 3px;font-size:9pt;font-weight:600;line-height:1.3;color:#1d1d1f;
+      }
+      .pdf-csdd-ta-extras{margin:0 0 4px;}
+      .pdf-csdd-defect-code{width:14%;white-space:nowrap;}
+      .pdf-csdd-defect-rating{width:8%;text-align:center!important;white-space:nowrap;}
+      .pdf-csdd-defect-desc{text-align:left!important;white-space:normal;}
+      .pdf-csdd-defect-empty{color:#64748b;font-style:italic;}
+      .pdf-csdd-defect-rating--1{color:#16a34a!important;font-weight:700;}
+      .pdf-csdd-defect-rating--2{color:#d97706!important;font-weight:700;}
+      .pdf-csdd-defect-rating--3{color:#dc2626!important;font-weight:700;}
+      .mirror-table--csdd-defect-current th:nth-child(1),
+      .mirror-table--csdd-defect-historic th:nth-child(1){width:14%;}
+      .mirror-table--csdd-defect-current th:nth-child(2),
+      .mirror-table--csdd-defect-historic th:nth-child(2){width:8%;text-align:center!important;}
+      .mirror-table--csdd-defect-current th:nth-child(3),
+      .mirror-table--csdd-defect-historic th:nth-child(3){width:78%;}
       .pdf-csdd-owner-timeline{margin:8px 0 4px;padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;}
       .pdf-csdd-owner-count{margin:0 0 6px;font-size:9pt;color:#1d1d1f;}
       .pdf-csdd-owner-events{display:flex;flex-direction:column;gap:3px;}

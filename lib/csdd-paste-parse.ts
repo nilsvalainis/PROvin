@@ -499,6 +499,12 @@ export function backfillCsddExtendedFromRaw(csdd: CsddFormFields): CsddFormField
   }
   if (!(csdd.technicalInspectionHistory ?? []).some((r) => r.date.trim()) && ta.length > 0) {
     patch.technicalInspectionHistory = ta;
+  } else if (
+    ta.length > 0 &&
+    !(csdd.technicalInspectionHistory ?? []).some((r) => (r.defects?.length ?? 0) > 0) &&
+    ta.some((r) => (r.defects?.length ?? 0) > 0)
+  ) {
+    patch.technicalInspectionHistory = ta;
   }
 
   if (Object.keys(patch).length === 0) return csdd;

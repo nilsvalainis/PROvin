@@ -6,7 +6,7 @@ import {
   parsePreviousRegistrationCountry,
   parseTechnicalInspectionHistory,
 } from "@/lib/csdd-extended-parse";
-import { buildTechnicalInspectionHistoryChartHtml } from "@/lib/csdd-history-charts";
+import { buildTechnicalInspectionHistoryTableHtml } from "@/lib/csdd-inspection-history-html";
 import { csddFormToPlainText } from "@/lib/admin-source-blocks";
 
 const SAMPLE_RAW = `Iepriekšējās reģistrācijas valsts VĀCIJA
@@ -49,14 +49,16 @@ describe("csdd extended parse", () => {
     expect(events[0]?.label).toMatch(/Pirmā reģistrācija/i);
   });
 
-  it("parses technical inspection history with severity levels", () => {
+  it("parses technical inspection history with all defect rows", () => {
     const rows = parseTechnicalInspectionHistory(SAMPLE_RAW);
     expect(rows.length).toBeGreaterThanOrEqual(3);
     expect(rows[0]?.date).toBe("16.12.2025");
     expect(rows[0]?.ratingLevel).toBe(2);
-    expect(rows[0]?.maxDefectLevel).toBe(2);
+    expect(rows[0]?.defects).toHaveLength(2);
+    expect(rows[0]?.defects[0]?.code).toBe("5.3.4.");
+    expect(rows[0]?.defects[0]?.rating).toBe("2");
     const old2016 = rows.find((r) => r.date === "27.01.2016");
-    expect(old2016?.maxDefectLevel).toBe(2);
+    expect(old2016?.defects[0]?.code).toBe("503");
   });
 
   it("applyCsddPasteToForm fills extended fields without breaking mileage", () => {
@@ -69,35 +71,38 @@ describe("csdd extended parse", () => {
     expect(form.mileageHistory.some((r) => r.odometer === "274516")).toBe(true);
   });
 
-  it("plain text for Gemini includes TA history", () => {
+  it("plain text for Gemini includes each defect line", () => {
     const parsed = parseCsddPaste(SAMPLE_RAW);
     const form = applyCsddPasteToForm(emptyCsddFields(), SAMPLE_RAW, parsed);
     const text = csddFormToPlainText(form);
     expect(text).toContain("Tehnisko apskašu vēsture");
-    expect(text).toContain("16.12.2025");
-    expect(text).toContain("Īpašnieku maiņas Latvijā");
+    expect(text).toContain("5.3.4.");
+    expect(text).toContain("Priekšējais tilts");
   });
 
-  it("chart HTML renders severity badges by year", () => {
+  it("table HTML groups by year with defect rows", () => {
     const rows = parseTechnicalInspectionHistory(SAMPLE_RAW);
-    const html = buildTechnicalInspectionHistoryChartHtml(rows, { compact: true });
+    const html = buildTechnicalInspectionHistoryTableHtml(rows);
     expect(html).toContain("2025");
-    expect(html).toContain("pdf-csdd-sev-badge");
+    expect(html).toContain("pdf-csdd-ta-year-heading");
+    expect(html).toContain("5.3.4.");
+    expect(html).toContain("Trūkumi vai bojājumi");
+    expect(html).toContain("mirror-table--csdd-defect");
   });
 
-  it("backfill fills extended fields from saved raw without full re-paste", () => {
+  it("backfill upgrades legacy rows without defects", () => {
     const parsed = parseCsddPaste(SAMPLE_RAW);
     const form = applyCsddPasteToForm(emptyCsddFields(), SAMPLE_RAW, parsed);
-    const stripped = {
+    const legacy = {
       ...form,
-      previousRegistrationCountry: "",
-      ownerCountLatvia: "",
-      ownerRegistrationEvents: [],
-      technicalInspectionHistory: [],
+      technicalInspectionHistory: form.technicalInspectionHistory.map((r) => ({
+        ...r,
+        defects: [],
+        smokeCoefficient: "",
+        notes: "",
+      })),
     };
-    const backfilled = backfillCsddExtendedFromRaw(stripped);
-    expect(backfilled.previousRegistrationCountry).toBe("VĀCIJA");
-    expect(backfilled.ownerCountLatvia).toBe("3");
-    expect(backfilled.technicalInspectionHistory.length).toBeGreaterThanOrEqual(3);
+    const backfilled = backfillCsddExtendedFromRaw(legacy);
+    expect(backfilled.technicalInspectionHistory[0]?.defects.length).toBeGreaterThan(0);
   });
 });

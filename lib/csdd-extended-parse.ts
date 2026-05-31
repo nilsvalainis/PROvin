@@ -2,6 +2,12 @@
  * CSDD paplašinātie lauki no raw: tehnisko apskašu vēsture, īpašnieku maiņas, iepriekšējā valsts.
  */
 
+export type CsddInspectionDefectRow = {
+  code: string;
+  rating: string;
+  description: string;
+};
+
 export type CsddTechnicalInspectionRow = {
   date: string;
   inspectionType: string;
@@ -10,6 +16,9 @@ export type CsddTechnicalInspectionRow = {
   ratingLevel: 1 | 2 | 3 | null;
   /** Augstākais defekta novērtējums tabulā (1–3). */
   maxDefectLevel: 1 | 2 | 3 | null;
+  smokeCoefficient: string;
+  notes: string;
+  defects: CsddInspectionDefectRow[];
 };
 
 export type CsddOwnerChangeRow = {
@@ -18,8 +27,8 @@ export type CsddOwnerChangeRow = {
 };
 
 const PAGE_FOOTER_RE = /^\s*\d+\s*\/\s*\d+\s*$/;
-const DEFECT_ROW_RE = /^([\d.]+)\s+(\d)\s+/;
-const OLD_DEFECT_ROW_RE = /^(\d{3})\s+(\d)\s+/;
+const DEFECT_ROW_RE = /^([\d.]+)\s+(\d)\s+(.*)$/;
+const OLD_DEFECT_ROW_RE = /^(\d{3})\s+(\d)\s+(.*)$/;
 
 /** PDF/NBSP un līdzīgas atstarpes → parasta atstarpe pirms regex. */
 export function normalizeCsddRawText(raw: string): string {
@@ -38,6 +47,12 @@ function parseInspectionDateMs(date: string): number {
   const m = date.trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
   if (!m) return 0;
   return Date.UTC(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+}
+
+function parseInspectionYear(date: string): number | null {
+  const m = date.trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!m) return null;
+  return Number(m[3]);
 }
 
 function toRatingLevel(n: number): 1 | 2 | 3 | null {
@@ -64,6 +79,49 @@ function extractTechnicalInspectionSection(raw: string): string {
   return best;
 }
 
+function isDefectContinuationLine(line: string): boolean {
+  if (!line.trim()) return false;
+  if (PAGE_FOOTER_RE.test(line)) return false;
+  if (/^(Kods|Apskates|Novērtējums|Piezīmes|Dūmainības)\b/i.test(line)) return false;
+  if (DEFECT_ROW_RE.test(line) || OLD_DEFECT_ROW_RE.test(line)) return false;
+  return true;
+}
+
+function parseDefectsFromBlock(block: string): CsddInspectionDefectRow[] {
+  const defects: CsddInspectionDefectRow[] = [];
+  let inDefectTable = false;
+  let current: CsddInspectionDefectRow | null = null;
+
+  for (const rawLine of block.split(/\n/)) {
+    const line = rawLine.trim();
+    if (!line || PAGE_FOOTER_RE.test(line)) continue;
+    if (/^Kods\s+Novērtējums/i.test(line)) {
+      inDefectTable = true;
+      continue;
+    }
+
+    const dm = line.match(DEFECT_ROW_RE) ?? line.match(OLD_DEFECT_ROW_RE);
+    if (dm?.[1] && dm[2]) {
+      if (current) defects.push(current);
+      current = {
+        code: dm[1].trim(),
+        rating: dm[2].trim(),
+        description: (dm[3] ?? "").trim(),
+      };
+      inDefectTable = true;
+      continue;
+    }
+
+    if (inDefectTable && current && isDefectContinuationLine(line)) {
+      current.description = current.description
+        ? `${current.description} ${line}`.replace(/\s{2,}/g, " ").trim()
+        : line;
+    }
+  }
+  if (current) defects.push(current);
+  return defects;
+}
+
 function parseInspectionBlock(block: string): CsddTechnicalInspectionRow | null {
   const dateM = block.match(/Apskates\s+datums\s+(\d{2}\.\d{2}\.\d{4})/i);
   if (!dateM?.[1]) return null;
@@ -76,24 +134,19 @@ function parseInspectionBlock(block: string): CsddTechnicalInspectionRow | null 
   const ratingLabel = ratingM?.[1]?.trim() ?? "";
   const ratingLevel = ratingM?.[1] ? toRatingLevel(Number.parseInt(ratingM[1], 10)) : null;
 
+  const smokeM = block.match(/Dūmainības\s+koeficients\s*\([^)]*\)\s*:\s*([^\n]+)/i);
+  const smokeCoefficient = smokeM?.[1]?.trim() ?? "";
+
+  const notesM = block.match(/Piezīmes\s+([\s\S]*?)(?=\n\s*Kods\s+Novērtējums|\n\s*[\d.]+\s+\d\s+|$)/i);
+  let notes = notesM?.[1]?.replace(/\s+/g, " ").trim() ?? "";
+  if (notes.length > 500) notes = notes.slice(0, 500);
+
+  const defects = parseDefectsFromBlock(block);
   let maxDefectLevel: 1 | 2 | 3 | null = null;
-  let inDefectTable = false;
-  for (const rawLine of block.split(/\n/)) {
-    const line = rawLine.trim();
-    if (!line || PAGE_FOOTER_RE.test(line)) continue;
-    if (/^Kods\s+Novērtējums/i.test(line)) {
-      inDefectTable = true;
-      continue;
-    }
-    if (inDefectTable || DEFECT_ROW_RE.test(line) || OLD_DEFECT_ROW_RE.test(line)) {
-      const dm = line.match(DEFECT_ROW_RE) ?? line.match(OLD_DEFECT_ROW_RE);
-      if (dm?.[2]) {
-        inDefectTable = true;
-        const lvl = toRatingLevel(Number.parseInt(dm[2], 10));
-        if (lvl != null && (maxDefectLevel == null || lvl > maxDefectLevel)) {
-          maxDefectLevel = lvl;
-        }
-      }
+  for (const d of defects) {
+    const lvl = toRatingLevel(Number.parseInt(d.rating, 10));
+    if (lvl != null && (maxDefectLevel == null || lvl > maxDefectLevel)) {
+      maxDefectLevel = lvl;
     }
   }
 
@@ -103,6 +156,9 @@ function parseInspectionBlock(block: string): CsddTechnicalInspectionRow | null 
     ratingLabel,
     ratingLevel,
     maxDefectLevel,
+    smokeCoefficient,
+    notes,
+    defects,
   };
 }
 
@@ -114,6 +170,23 @@ export function parseTechnicalInspectionHistory(raw: string): CsddTechnicalInspe
   const blocks = section.split(/(?=Apskates\s+datums\s)/i).filter((b) => /Apskates\s+datums/i.test(b));
   const rows = blocks.map(parseInspectionBlock).filter((r): r is CsddTechnicalInspectionRow => r != null);
   return rows.sort((a, b) => parseInspectionDateMs(b.date) - parseInspectionDateMs(a.date));
+}
+
+export function groupTechnicalInspectionsByYear(
+  rows: CsddTechnicalInspectionRow[],
+): Map<number, CsddTechnicalInspectionRow[]> {
+  const map = new Map<number, CsddTechnicalInspectionRow[]>();
+  for (const row of rows) {
+    const y = parseInspectionYear(row.date);
+    if (y == null) continue;
+    const arr = map.get(y) ?? [];
+    arr.push(row);
+    map.set(y, arr);
+  }
+  for (const arr of map.values()) {
+    arr.sort((a, b) => parseInspectionDateMs(b.date) - parseInspectionDateMs(a.date));
+  }
+  return map;
 }
 
 export function technicalInspectionRowHasData(r: CsddTechnicalInspectionRow): boolean {
@@ -186,9 +259,14 @@ export function ownerChangeRowHasData(r: CsddOwnerChangeRow): boolean {
   return Boolean(r.date.trim() || r.label.trim());
 }
 
-/** Efektīvais grafika līmenis — sliktākais no kopējā novērtējuma un defektu tabulas. */
+/** Efektīvais līmenis — sliktākais no kopējā novērtējuma un defektu tabulas. */
 export function effectiveInspectionSeverity(row: CsddTechnicalInspectionRow): 1 | 2 | 3 | null {
-  const levels = [row.ratingLevel, row.maxDefectLevel].filter((x): x is 1 | 2 | 3 => x != null);
+  const defectLevels = (row.defects ?? [])
+    .map((d) => toRatingLevel(Number.parseInt(d.rating, 10)))
+    .filter((x): x is 1 | 2 | 3 => x != null);
+  const levels = [row.ratingLevel, row.maxDefectLevel, ...defectLevels].filter(
+    (x): x is 1 | 2 | 3 => x != null,
+  );
   if (levels.length === 0) return null;
   return Math.max(...levels) as 1 | 2 | 3;
 }

@@ -18,11 +18,9 @@ import {
   sourcePdfChecklistHasAny,
 } from "@/lib/admin-source-blocks";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
+import { AdminCsddInspectionHistoryTable } from "@/components/admin/AdminCsddInspectionHistoryTable";
 import { applyCsddPasteToForm, backfillCsddExtendedFromRaw, parseCsddPaste } from "@/lib/csdd-paste-parse";
-import {
-  buildOwnerRegistrationTimelineAdminHtml,
-  buildTechnicalInspectionHistoryChartAdminHtml,
-} from "@/lib/csdd-history-charts";
+import { buildOwnerRegistrationTimelineAdminHtml } from "@/lib/csdd-history-charts";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
@@ -120,7 +118,10 @@ export function AdminCsddSourceBlock({
       backfilled.previousRegistrationCountry !== value.previousRegistrationCountry ||
       backfilled.ownerCountLatvia !== value.ownerCountLatvia ||
       backfilled.ownerRegistrationEvents.length !== value.ownerRegistrationEvents.length ||
-      backfilled.technicalInspectionHistory.length !== value.technicalInspectionHistory.length
+      backfilled.technicalInspectionHistory.length !== value.technicalInspectionHistory.length ||
+      backfilled.technicalInspectionHistory.some(
+        (r, i) => (r.defects?.length ?? 0) !== (value.technicalInspectionHistory[i]?.defects?.length ?? 0),
+      )
     ) {
       onChange(backfilled);
     }
@@ -449,15 +450,11 @@ export function AdminCsddSourceBlock({
           {CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE}
         </p>
         {taRows.length > 0 ? (
-          <div
-            className="provin-csdd-ta-chart rounded-lg border border-slate-200/90 bg-white px-2 py-2"
-            dangerouslySetInnerHTML={{
-              __html: buildTechnicalInspectionHistoryChartAdminHtml(value.technicalInspectionHistory),
-            }}
-          />
+          <AdminCsddInspectionHistoryTable rows={value.technicalInspectionHistory} />
         ) : (
           <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-2 py-2 text-[10px] text-slate-400">
-            Ielīmē pilnu CSDD raw tekstu — novērtējumu grafiks (1 / 2 / 3 pa gadiem) aizpildīsies automātiski.
+            Ielīmē pilnu CSDD raw tekstu — tehnisko apskašu tabula (pa gadiem, katrs aizrādījums atsevišķā rindā)
+            aizpildīsies automātiski.
           </p>
         )}
       </div>
