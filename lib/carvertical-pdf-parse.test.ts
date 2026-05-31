@@ -52,6 +52,15 @@ describe("parseCarverticalTimelineFromText", () => {
     expect(rows[1]?.country).toBe("Šveice");
     expect(rows[1]?.description).toMatch(/novērtēj/i);
   });
+
+  it("shortens long timeline descriptions to event titles only", () => {
+    const long =
+      "Ražots Šī transportlīdzekļa ražošanas gads ir fiksēts. Spēkrats norādītajā valstī var būt ražots vai reģistrēts.";
+    const rows = parseCarverticalTimelineFromText(
+      `Transportlīdzekļa ierakstu laikposms\n12.2016. Nezināma valsts ${long}`,
+    );
+    expect(rows[0]?.description).toBe("Ražots");
+  });
 });
 
 describe("parseCarverticalDamagesFromText", () => {

@@ -219,12 +219,36 @@ export function parseCarverticalOdometerFromText(text: string): AutoRecordsServi
 }
 
 function cleanTimelineDescription(raw: string): string {
-  return raw
+  let t = raw
     .replace(/\s+/g, " ")
-    .replace(/"carVertical"\s+secinājumi:?/gi, "")
-    .replace(/carVertical\s+secinājumi:?/gi, "")
-    .trim()
-    .slice(0, 400);
+    .replace(/"carVertical"\s+secinājumi:?[\s\S]*/gi, "")
+    .replace(/carVertical\s+secinājumi:?[\s\S]*/gi, "")
+    .trim();
+
+  const titles = [
+    "Reģistrēts citā valstī",
+    "Fiksēts novērtējums",
+    "Mainītas īpašumtiesības",
+    "Veikta tehniskā apskate",
+    "Noņemts no uzskaites",
+    "Pirmā reģistrācija",
+    "Reģistrēts",
+    "Ražots",
+  ].sort((a, b) => b.length - a.length);
+
+  for (const title of titles) {
+    if (t.toLowerCase().startsWith(title.toLowerCase())) return title;
+  }
+
+  for (const stop of [/\s+Šim\s+transportl/i, /\s+Šī\s+transportl/i, /\s+Šis\s+transportl/i]) {
+    const idx = t.search(stop);
+    if (idx > 0) return t.slice(0, idx).trim().replace(/[.:]+$/, "");
+  }
+
+  const firstClause = t.match(/^(.{2,64}?)\.\s+(?:Š|Taču|Spēkrats|Mēs)/i);
+  if (firstClause?.[1]) return firstClause[1].trim();
+
+  return t.length > 64 ? t.slice(0, 64).trim() : t;
 }
 
 const TIMELINE_COUNTRY_NAMES = [
