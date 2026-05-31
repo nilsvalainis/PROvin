@@ -193,7 +193,6 @@ export function parseCsddTechnicalFields(
     opacityCoefficient,
     particulateMatter,
     previousRegistrationCountry,
-    ownerCountLatvia: "",
     comments: "",
   };
 }

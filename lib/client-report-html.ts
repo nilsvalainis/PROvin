@@ -98,6 +98,7 @@ import {
   buildTechnicalInspectionHistoryChartHtml,
 } from "@/lib/csdd-history-charts";
 import { buildOutvinBundlePdfInnerHtml } from "@/lib/outvin-bundle-pdf-html";
+import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-html";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
 import { outvinBundleHasStructuredContent } from "@/lib/outvin-data-bundle";
 
