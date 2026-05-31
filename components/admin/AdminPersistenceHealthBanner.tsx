@@ -59,15 +59,7 @@ export function AdminPersistenceHealthBanner({ durableConfigured }: Props) {
   if (loading) return null;
 
   if (health?.ok && health.durable) {
-    return (
-      <p
-        className="mx-auto mb-3 max-w-2xl rounded-lg border border-emerald-600/25 bg-emerald-50/80 px-3 py-1.5 text-center text-[10px] font-medium text-emerald-900"
-        role="status"
-      >
-        Servera melnraksts: {health.backend ?? "blob"} — saglabāšana aktīva
-        {health.blob?.canWrite && health.blob?.canRead ? " (read/write OK)" : ""}.
-      </p>
-    );
+    return null;
   }
 
   const blobErr = health?.blob?.error?.trim();
