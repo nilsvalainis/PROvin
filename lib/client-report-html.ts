@@ -1357,20 +1357,28 @@ function clientReportPrintCss(): string {
       }
       .pdf-csdd-ta-extras{margin:0 0 4px;}
       .mirror-table--csdd-defect-2col{table-layout:fixed;width:100%;}
+      .mirror-table--csdd-defect-2col .pdf-csdd-defect-col-nov{width:2.25em;}
+      .mirror-table--csdd-defect-2col .pdf-csdd-defect-col-desc{width:auto;}
       .pdf-csdd-defect-rating{
-        width:1%;text-align:left!important;white-space:nowrap;
-        padding:3px 6px 3px 2px!important;
+        width:2.25em;min-width:2.25em;max-width:2.75em;text-align:left!important;white-space:nowrap;
+        padding:3px 12px 3px 0!important;
       }
-      .pdf-csdd-defect-desc{text-align:left!important;white-space:normal;width:auto;}
+      .pdf-csdd-defect-desc{text-align:left!important;white-space:normal;width:auto;padding:3px 0 3px 4px!important;}
       .pdf-csdd-defect-empty{color:#64748b;font-style:italic;}
       .pdf-csdd-defect-rating--1{color:#16a34a!important;font-weight:700;}
       .pdf-csdd-defect-rating--2{color:#d97706!important;font-weight:700;}
       .pdf-csdd-defect-rating--3{color:#dc2626!important;font-weight:700;}
       .mirror-table--csdd-defect-2col th:nth-child(1){
-        width:1%;text-align:left!important;white-space:nowrap;
-        padding:3px 6px 3px 2px!important;
+        width:2.25em;min-width:2.25em;text-align:left!important;white-space:nowrap;
+        padding:3px 12px 3px 0!important;
       }
-      .mirror-table--csdd-defect-2col th:nth-child(2){width:auto;text-align:left!important;}
+      .mirror-table--csdd-defect-2col th:nth-child(2){width:auto;text-align:left!important;padding:3px 0 3px 4px!important;}
+      .mirror-table--csdd-defect-2col td.pdf-csdd-defect-rating{
+        padding-right:12px!important;
+      }
+      .mirror-table--csdd-defect-2col td.pdf-csdd-defect-desc{
+        padding-left:4px!important;
+      }
       .pdf-csdd-owner-timeline{margin:8px 0 4px;padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;}
       .pdf-csdd-owner-count{margin:0 0 6px;font-size:9pt;color:#1d1d1f;}
       .pdf-csdd-owner-events{display:flex;flex-direction:column;gap:3px;}

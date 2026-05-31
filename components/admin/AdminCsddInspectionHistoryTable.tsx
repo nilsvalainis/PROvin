@@ -26,27 +26,29 @@ function inspectionYearFromDate(date: string): number | null {
 }
 
 function DefectTable({ defects }: { defects: CsddInspectionDefectRow[] }) {
-  const novCell = "whitespace-nowrap px-1 py-0.5 text-left";
+  const novCell =
+    "w-[2.25rem] min-w-[2.25rem] max-w-[2.75rem] shrink-0 whitespace-nowrap py-0.5 pl-0 pr-3 text-left tabular-nums";
+  const descCell = `${mileCell} pl-1 text-left`;
   return (
     <table className="w-full table-fixed border-collapse text-[11px]">
       <colgroup>
-        <col className="w-[1px]" />
+        <col className="w-[2.25rem]" />
         <col />
       </colgroup>
       <thead>
         <tr className="border-b border-slate-200 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
           <th className={novCell}>Nov.</th>
-          <th className={`${mileCell} text-left`}>Trūkumi vai bojājumi</th>
+          <th className={descCell}>Trūkumi vai bojājumi</th>
         </tr>
       </thead>
       <tbody>
         {defects.length > 0 ? (
           defects.map((d, i) => (
             <tr key={`${d.code}-${i}`} className="border-b border-slate-100 last:border-b-0">
-              <td className={`${novCell} align-top tabular-nums ${ratingClass(d.rating)}`}>
+              <td className={`${novCell} align-top ${ratingClass(d.rating)}`}>
                 {d.rating || "—"}
               </td>
-              <td className={`${mileCell} align-top leading-snug text-[var(--color-apple-text)]`}>
+              <td className={`${descCell} align-top leading-snug text-[var(--color-apple-text)]`}>
                 {d.description || "—"}
               </td>
             </tr>
