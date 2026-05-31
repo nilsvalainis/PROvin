@@ -119,10 +119,10 @@ export function AdminCsddInspectionWarningsEditor({
           </div>
         ),
       )}
-      {!readOnly && !disabled ? (
+      {!readOnly ? (
         <button
           type="button"
-          className="rounded-md border border-dashed border-slate-300 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:border-slate-400 hover:bg-slate-50"
+          className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-apple-text)] shadow-sm hover:bg-slate-50"
           onClick={addRow}
         >
           + Brīdinājums

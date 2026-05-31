@@ -176,6 +176,37 @@ export function AdminCsddSourceBlock({
       }
     >
       <div className={trafficFillLevel ? "space-y-2 p-2" : "space-y-2 p-2"}>
+      {!readOnly || prevWarnings.length > 0 || taWarnings.length > 0 ? (
+        <div className="rounded-lg border border-slate-200/90 bg-slate-50/60 px-2 py-2">
+          <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            Brīdinājumi (PDF)
+          </p>
+          <div className="space-y-3">
+            <div>
+              <p className="mb-1 text-[10px] font-medium text-[var(--color-provin-muted)]">
+                {CSDD_PREVIOUS_INSPECTION_TITLE}
+              </p>
+              <AdminCsddInspectionWarningsEditor
+                idPrefix="csdd_prev_warn"
+                value={value.prevInspectionWarnings}
+                readOnly={readOnly}
+                onChange={(next) => onChange({ ...value, prevInspectionWarnings: next })}
+              />
+            </div>
+            <div>
+              <p className="mb-1 text-[10px] font-medium text-[var(--color-provin-muted)]">
+                {CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE}
+              </p>
+              <AdminCsddInspectionWarningsEditor
+                idPrefix="csdd_ta_warn"
+                value={value.technicalInspectionWarnings}
+                readOnly={readOnly}
+                onChange={(next) => onChange({ ...value, technicalInspectionWarnings: next })}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="mb-2 min-w-0">
         <label
           className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]"
@@ -461,24 +492,17 @@ export function AdminCsddSourceBlock({
           <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
           {CSDD_PREVIOUS_INSPECTION_TITLE}
         </p>
-        <AdminCsddInspectionWarningsEditor
-          idPrefix="csdd_prev_warn"
-          value={value.prevInspectionWarnings}
-          readOnly={readOnly}
-          disabled={disabled}
-          onChange={(next) => onChange({ ...value, prevInspectionWarnings: next })}
-        />
         {hasPrevInspection ? (
           <AdminCsddPreviousInspectionBlock
             block={value.prevInspectionBlock}
             prevInspectionDateIso={value.prevInspectionDate}
           />
-        ) : !readOnly && !disabled ? null : prevWarnings.length === 0 ? (
+        ) : !readOnly && !disabled ? null : (
           <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-2 py-2 text-[10px] text-slate-400">
             Ielīmē pilnu CSDD raw tekstu — iepriekšējās apskates bloks (defektu tabula) aizpildīsies
             automātiski.
           </p>
-        ) : null}
+        )}
       </div>
 
       <div className="mt-3 border-t border-slate-200/80 pt-2">
@@ -486,21 +510,14 @@ export function AdminCsddSourceBlock({
           <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
           {CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE}
         </p>
-        <AdminCsddInspectionWarningsEditor
-          idPrefix="csdd_ta_warn"
-          value={value.technicalInspectionWarnings}
-          readOnly={readOnly}
-          disabled={disabled}
-          onChange={(next) => onChange({ ...value, technicalInspectionWarnings: next })}
-        />
         {taRows.length > 0 ? (
           <AdminCsddInspectionHistoryTable rows={value.technicalInspectionHistory} />
-        ) : !readOnly && !disabled ? null : taWarnings.length === 0 ? (
+        ) : !readOnly && !disabled ? null : (
           <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-2 py-2 text-[10px] text-slate-400">
             Ielīmē pilnu CSDD raw tekstu — tehnisko apskašu tabula (pa gadiem, katrs aizrādījums atsevišķā rindā)
             aizpildīsies automātiski.
           </p>
-        ) : null}
+        )}
       </div>
 
       <div className={`mt-2 w-full min-w-0 shrink-0 border-t border-slate-200/80 pt-2`}>
