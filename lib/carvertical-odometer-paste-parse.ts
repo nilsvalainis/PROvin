@@ -1,6 +1,6 @@
 /**
- * CarVertical „Odometra rādījumu ieraksti” — iekopēts teksts → servisa vēstures rindas.
- * Atbalsta MM.YYYY. un DD.MM.YYYY., tūkstošu atdalītājs (atstarpe), rindas ar/bez „km”.
+ * CarVertical odometra žurnāls — iekopēts teksts → servisa vēstures rindas.
+ * Atbalsta MM.YYYY., DD.MM.YYYY. un fragmentētu PDF izkārtojumu.
  */
 
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
@@ -9,8 +9,9 @@ import {
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
+import { parseCarverticalOdometerFromText } from "@/lib/carvertical-pdf-parse";
 
-const HEADER_RE = /^\s*Odometra\s+rād[īi]jumu\s+ieraksti\s*$/i;
+const HEADER_RE = /^\s*Odometra\s+r[aā]d[īi]jumu\s+ieraksti\s*$/i;
 
 function normalizeSpaces(s: string): string {
   return s.replace(/\u00a0/g, " ").trim();
@@ -60,6 +61,15 @@ function tryParseLine(line: string): AutoRecordsServiceRow | null {
 
 /** Parsē visu žurnālu; dublikātus (datums+km) izlaiž; kārto kā AUTO RECORDS (jaunākais augšā). */
 export function parseCarverticalOdometerPaste(raw: string): AutoRecordsServiceRow[] {
+  const fragmented = parseCarverticalOdometerFromText(raw);
+  if (fragmented.length > 0) {
+    return fragmented.map((r) => ({
+      date: formatAutoRecordsDateForOutput(r.date),
+      odometer: normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
+      country: r.country.trim(),
+    }));
+  }
+
   const lines = raw.split(/\r?\n/);
   const out: AutoRecordsServiceRow[] = [];
   const seen = new Set<string>();

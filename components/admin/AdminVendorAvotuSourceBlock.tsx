@@ -12,6 +12,7 @@ import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import type { LtabIncidentRow, VendorAvotuBlockState } from "@/lib/admin-source-blocks";
 import {
   CSDD_MILEAGE_UNIFIED_TITLE,
+  CARVERTICAL_TIMELINE_TITLE,
   NEGADIJUMU_VESTURE_TITLE,
   PROVIN_MILEAGE_TABLE_DOM_KIND,
   PROVIN_MILEAGE_TABLE_FIELD,
@@ -31,7 +32,7 @@ import {
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
-import { parseCarverticalOdometerPaste } from "@/lib/carvertical-odometer-paste-parse";
+import { parseCarverticalPdfText } from "@/lib/carvertical-pdf-parse";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
@@ -120,12 +121,25 @@ export function AdminVendorAvotuSourceBlock({
   const idBase = sectionIndex != null ? `${blockKey}-s${sectionIndex}` : blockKey;
 
   const applyCarverticalOdometerPaste = (raw: string) => {
-    const parsed = parseCarverticalOdometerPaste(raw);
-    if (parsed.length === 0) return;
+    const parsed = parseCarverticalPdfText(raw);
+    if (
+      parsed.serviceHistory.length === 0 &&
+      parsed.timeline.length === 0 &&
+      parsed.incidents.length === 0
+    ) {
+      return;
+    }
+    const nextIncidents =
+      parsed.incidents.length > 0
+        ? parsed.incidents
+        : incidents.filter((r) => r.csngDate.trim() || r.lossAmount.trim() || r.incidentNo.trim());
     onChange({
       ...block,
       mileagePasteRaw: raw.slice(0, 24_000),
-      serviceHistory: parsed,
+      ...(parsed.serviceHistory.length > 0 ? { serviceHistory: parsed.serviceHistory } : {}),
+      ...(parsed.incidents.length > 0 ? { incidents: nextIncidents } : {}),
+      ...(parsed.timeline.length > 0 ? { vehicleHistoryTimeline: parsed.timeline } : {}),
+      ...(parsed.damageDetails.length > 0 ? { damageDetails: parsed.damageDetails } : {}),
     });
   };
 
@@ -340,11 +354,49 @@ export function AdminVendorAvotuSourceBlock({
           </button>
         ) : null}
 
+        {blockKey === "carvertical" && (block.vehicleHistoryTimeline ?? []).length > 0 ? (
+          <div className="mt-4 border-t border-slate-200 pt-3">
+            <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+              {CARVERTICAL_TIMELINE_TITLE}
+            </p>
+            <div className="space-y-1 rounded-lg border border-slate-200/90 bg-slate-50/70 px-2 py-1.5">
+              {(block.vehicleHistoryTimeline ?? []).map((row, ti) => (
+                <div key={ti} className="flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] leading-snug">
+                  <span className="font-semibold text-slate-600">{row.date || "—"}</span>
+                  {row.country.trim() ? (
+                    <span className="text-slate-500">{row.country.trim()}</span>
+                  ) : null}
+                  <span className="min-w-0 flex-1 text-[var(--color-apple-text)]">{row.description}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         <div className="mt-4 border-t border-slate-200 pt-3">
           <p className="mb-2 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
             <AdminProvinLucide icon={SUBHEADING_LUCIDE.incidents} />
             {NEGADIJUMU_VESTURE_TITLE}
           </p>
+          {blockKey === "carvertical" && (block.damageDetails ?? []).length > 0 ? (
+            <div className="mb-3 overflow-x-auto rounded-lg border border-amber-200/80 bg-amber-50/40">
+              <div className="grid grid-cols-[minmax(72px,0.9fr)_minmax(96px,1fr)_minmax(120px,1.4fr)] gap-2 border-b border-amber-200/70 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                <span>Datums</span>
+                <span>Bojātā puse</span>
+                <span>Bojājumu grupas</span>
+              </div>
+              {(block.damageDetails ?? []).map((row, di) => (
+                <div
+                  key={di}
+                  className="grid grid-cols-[minmax(72px,0.9fr)_minmax(96px,1fr)_minmax(120px,1.4fr)] gap-2 border-b border-amber-100/80 px-2 py-1.5 text-[11px] last:border-b-0"
+                >
+                  <span className="font-semibold text-slate-600">{row.date || "—"}</span>
+                  <span className="text-[var(--color-apple-text)]">{row.damagedSides.trim() || "—"}</span>
+                  <span className="text-[var(--color-provin-muted)]">{row.damageGroups.trim() || "—"}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
           <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">
             <table className="w-full min-w-[280px] border-collapse text-[11px]">
               <thead>

@@ -12,6 +12,7 @@ import {
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
 import { parseCarverticalOdometerPaste } from "@/lib/carvertical-odometer-paste-parse";
+import { parseCarverticalPdfText } from "@/lib/carvertical-pdf-parse";
 import { extractClaimRowsForPdfInsight, type ClaimTableRow } from "@/lib/claim-rows-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
@@ -164,9 +165,16 @@ export function parseVendorPdfLocal(
   const factualMeta: string[] = [];
 
   let serviceHistory: AutoRecordsServiceRow[] = [];
+  let vehicleHistoryTimeline: HistoryVendorPdfParseResult["vehicleHistoryTimeline"];
+  let damageDetails: HistoryVendorPdfParseResult["damageDetails"];
+  let carverticalIncidents: LtabIncidentRow[] = [];
 
   if (target === "carvertical") {
-    serviceHistory = parseCarverticalOdometerPaste(trimmed);
+    const parsed = parseCarverticalPdfText(trimmed);
+    serviceHistory = parsed.serviceHistory;
+    vehicleHistoryTimeline = parsed.timeline;
+    damageDetails = parsed.damageDetails;
+    carverticalIncidents = parsed.incidents;
     if (serviceHistory.length === 0) {
       serviceHistory = extractCarverticalOdometerRegex(trimmed);
     }
@@ -174,6 +182,12 @@ export function parseVendorPdfLocal(
     const dmg = extractCarverticalDamageCount(trimmed);
     if (vin) factualMeta.push(vin);
     if (dmg) factualMeta.push(dmg);
+    if (parsed.timeline.length > 0) {
+      factualMeta.push(`${parsed.timeline.length} vēstures ieraksti (laikposms)`);
+    }
+    if (parsed.damageDetails.length > 0) {
+      factualMeta.push(`${parsed.damageDetails.length} bojājumu ieraksti`);
+    }
   } else if (target === "autodna") {
     serviceHistory = parseAutodnaMileagePaste(trimmed);
     const reg = extractAutodnaFirstRegistration(trimmed);
@@ -185,7 +199,10 @@ export function parseVendorPdfLocal(
   serviceHistory = sortAutoRecordsDescending(serviceHistory.filter(autoRecordsRowHasData));
 
   const claims = extractClaimRowsForPdfInsight(trimmed, 1);
-  let incidents = claimRowsToLtabRows(claims);
+  let incidents =
+    target === "carvertical" && carverticalIncidents.length > 0
+      ? carverticalIncidents
+      : claimRowsToLtabRows(claims);
 
   if (target === "ltab") {
     incidents = dedupeLtab(incidents);
@@ -227,6 +244,8 @@ export function parseVendorPdfLocal(
     rawText,
     serviceHistory,
     incidents,
+    ...(vehicleHistoryTimeline?.length ? { vehicleHistoryTimeline } : {}),
+    ...(damageDetails?.length ? { damageDetails } : {}),
     suggestedPdfChecklist: suggestChecklist(serviceHistory, incidents, trimmed),
     suggestedComments,
     warnings: warnings.length ? warnings : [],

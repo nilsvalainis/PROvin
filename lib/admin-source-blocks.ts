@@ -2,6 +2,11 @@
  * Strukturēti avotu bloki admin portfelī → sintēze uz PDF / km / VIN heuristiku.
  */
 
+import {
+  CARVERTICAL_TIMELINE_TITLE,
+  type CarVerticalDamageDetailRow,
+  type CarVerticalTimelineRow,
+} from "@/lib/carvertical-pdf-parse";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude, type ProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
@@ -626,6 +631,10 @@ export type VendorAvotuBlockState = {
   comments: string;
   /** CarVertical odometra žurnāla RAW (tikai admin; nav obligāti PDF). */
   mileagePasteRaw?: string;
+  /** CarVertical — transportlīdzekļa ierakstu laikposms. */
+  vehicleHistoryTimeline?: CarVerticalTimelineRow[];
+  /** CarVertical — bojājumu detaļas (PDF grafiks + admin). */
+  damageDetails?: CarVerticalDamageDetailRow[];
   pdfChecklist?: SourcePdfChecklist;
 };
 
@@ -889,6 +898,8 @@ export function vendorAvotuBlockHasContent(b: VendorAvotuBlockState | null | und
   return (
     (safe.serviceHistory ?? []).some(autoRecordsRowHasData) ||
     (safe.incidents ?? []).some(ltabRowHasData) ||
+    (safe.vehicleHistoryTimeline ?? []).some((r) => r.date.trim() || r.description.trim()) ||
+    (safe.damageDetails ?? []).some((r) => r.date.trim() || r.lossAmount.trim()) ||
     wsStr(safe.comments).trim().length > 0 ||
     sourcePdfChecklistHasAny(safe.pdfChecklist)
   );
@@ -919,6 +930,13 @@ export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState | null | un
       lines.push(
         [wsStr(r?.incidentNo).trim(), wsStr(r?.csngDate).trim(), wsStr(r?.lossAmount).trim()].join("\t"),
       );
+    }
+  }
+  const timeline = (safe.vehicleHistoryTimeline ?? []).filter((r) => r.date.trim() || r.description.trim());
+  if (timeline.length > 0) {
+    lines.push(CARVERTICAL_TIMELINE_TITLE);
+    for (const r of timeline) {
+      lines.push([r.date, r.country, r.description].join("\t"));
     }
   }
   const checklistTxt = formatSourcePdfChecklistForPdf(safe.pdfChecklist);
@@ -995,6 +1013,8 @@ export type ClientManualVendorBlockPdf = {
   incidentRows: LtabIncidentRow[];
   comments: string;
   pdfChecklist?: SourcePdfChecklist;
+  vehicleHistoryTimeline?: CarVerticalTimelineRow[];
+  damageDetails?: CarVerticalDamageDetailRow[];
 };
 
 /** Strukturēts LTAB bloks PDF — atsevišķi panelī pēc AutoDNA / CV / Auto-Records (kā admin režģī). */
@@ -1014,6 +1034,12 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       incidentRows: (b.incidents ?? []).filter(ltabRowHasData),
       comments: (b.comments ?? "").trim(),
       ...(sourcePdfChecklistHasAny(b.pdfChecklist) ? { pdfChecklist: b.pdfChecklist } : {}),
+      ...(k === "carvertical" && (b.vehicleHistoryTimeline ?? []).length > 0
+        ? { vehicleHistoryTimeline: b.vehicleHistoryTimeline }
+        : {}),
+      ...(k === "carvertical" && (b.damageDetails ?? []).length > 0
+        ? { damageDetails: b.damageDetails }
+        : {}),
     });
   }
   const citiSections = blocks.citi_avoti.sections ?? [];
@@ -1192,12 +1218,40 @@ function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBloc
   if ("serviceHistory" in raw || "incidents" in raw) {
     const shIn = Array.isArray(raw.serviceHistory) ? raw.serviceHistory : [];
     const incIn = Array.isArray(raw.incidents) ? raw.incidents : [];
+    const timelineIn = Array.isArray(raw.vehicleHistoryTimeline) ? raw.vehicleHistoryTimeline : [];
+    const damageIn = Array.isArray(raw.damageDetails) ? raw.damageDetails : [];
     return {
       serviceHistory: normalizeVendorMileageRowsFromRaw(shIn as unknown[]),
       incidents: normalizeVendorIncidentsFromRaw(incIn as unknown[]),
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
       ...(typeof raw.mileagePasteRaw === "string"
         ? { mileagePasteRaw: raw.mileagePasteRaw.slice(0, 24_000) }
+        : {}),
+      ...(timelineIn.length > 0
+        ? {
+            vehicleHistoryTimeline: timelineIn.map((row) => {
+              const x = row as Record<string, unknown>;
+              return {
+                date: String(x.date ?? "").slice(0, 40),
+                country: String(x.country ?? "").slice(0, 120),
+                description: String(x.description ?? "").slice(0, 400),
+              };
+            }),
+          }
+        : {}),
+      ...(damageIn.length > 0
+        ? {
+            damageDetails: damageIn.map((row) => {
+              const x = row as Record<string, unknown>;
+              return {
+                date: String(x.date ?? "").slice(0, 40),
+                country: String(x.country ?? "").slice(0, 120),
+                lossAmount: String(x.lossAmount ?? "").slice(0, 120),
+                damagedSides: String(x.damagedSides ?? "").slice(0, 200),
+                damageGroups: String(x.damageGroups ?? "").slice(0, 600),
+              };
+            }),
+          }
         : {}),
       ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
     };
@@ -1483,6 +1537,8 @@ function repairVendorBlock(b: VendorAvotuBlockState | undefined): VendorAvotuBlo
     incidents: Array.isArray(b.incidents) ? b.incidents : e.incidents,
     comments: wsStr(b.comments),
     ...(typeof b.mileagePasteRaw === "string" ? { mileagePasteRaw: b.mileagePasteRaw } : {}),
+    ...(Array.isArray(b.vehicleHistoryTimeline) ? { vehicleHistoryTimeline: b.vehicleHistoryTimeline } : {}),
+    ...(Array.isArray(b.damageDetails) ? { damageDetails: b.damageDetails } : {}),
     ...(b.pdfChecklist ? { pdfChecklist: b.pdfChecklist } : {}),
   };
 }

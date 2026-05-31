@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emptyCsddFields, emptyCitiAvotiSection } from "@/lib/admin-source-blocks";
+import { emptyCsddFields, emptyCitiAvotiSection, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import {
   buildUnifiedIncidentsTableHtml,
   buildUnifiedMileageTableHtml,
@@ -97,6 +97,33 @@ describe("unified PDF sections single block", () => {
     expect(html).toContain("pdf-mileage-source-stripe");
     expect(html).toContain("pdf-mileage-legend-terms-row");
     expect(html).toContain("pdf-mileage-source-count-abbrevs");
+  });
+
+  it("incidents zone places CarVertical damage chart above kopsavilkums", () => {
+    const p = {
+      internalComment: "Kopsavilkums",
+      manualVendorBlocks: [
+        {
+          title: SOURCE_BLOCK_LABELS.carvertical,
+          mileageRows: [],
+          incidentRows: [{ csngDate: "00.06.2024", lossAmount: "5001 € – 10 000 €", incidentNo: "Šveice" }],
+          comments: "",
+          damageDetails: [
+            {
+              date: "00.06.2024",
+              country: "Šveice",
+              lossAmount: "5001 € – 10 000 €",
+              damagedSides: "Kreisā puse Priekšpuse",
+              damageGroups: "Ārējās virsbūves detaļas",
+            },
+          ],
+        },
+      ],
+    } as ClientReportPayload;
+    const vis = mergePdfVisibility({ unifiedIncidents: true });
+    const html = buildUnifiedIncidentsTableHtml(p, vis);
+    expect(html).toContain("pdf-cv-damage-chart");
+    expect(html.indexOf("pdf-cv-damage-chart")).toBeLessThan(html.indexOf("Kopsavilkums"));
   });
 });
 

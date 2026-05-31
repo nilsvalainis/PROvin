@@ -97,6 +97,7 @@ import {
   PDF_MILEAGE_HISTORY_COMMENT_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import { buildOwnerRegistrationTimelineHtml } from "@/lib/csdd-history-charts";
+import { buildCarVerticalDamageDetailsHtml, buildCarVerticalTimelineHtml } from "@/lib/carvertical-report-html";
 import {
   buildPreviousInspectionBlockHtml,
   buildTechnicalInspectionHistoryTableHtml,
@@ -569,9 +570,13 @@ export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfV
     manualVendorBlocks: p.manualVendorBlocks ?? null,
     manualLtabBlock: p.manualLtabBlock ?? null,
   });
+  const carverticalDamageRows =
+    (p.manualVendorBlocks ?? []).find((b) => b.title === SOURCE_BLOCK_LABELS.carvertical)?.damageDetails ??
+    [];
+  const damageChartHtml = buildCarVerticalDamageDetailsHtml(carverticalDamageRows);
   const adminNoteHtml = pdfReportCommentBox(p.internalComment ?? "", ADMIN_INCIDENTS_SUMMARY_LABEL);
   const hasTable = collected.length > 0;
-  if (!hasTable && !adminNoteHtml) return "";
+  if (!hasTable && !adminNoteHtml && !damageChartHtml) return "";
   const rows = sortUnifiedIncidentsNewestFirst(collected);
   const tablesHtml = hasTable ? buildIncidentHistoryTableHtml(rows) : "";
   const sourceCount = hasTable ? new Set(collected.map((r) => r.sourceLabel)).size : 0;
@@ -584,7 +589,7 @@ export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfV
       }</p>`
     : "";
   const head = sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE);
-  const body = `${tablesHtml}${sourceCountHtml}${adminNoteHtml}`;
+  const body = `${damageChartHtml}${tablesHtml}${sourceCountHtml}${adminNoteHtml}`;
   return `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-incidents-zone__body">${body}</div></div>`;
 }
 
@@ -736,16 +741,20 @@ function buildAutoRecordsAvotuSubsection(
   return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}${bodyParts.join("\n")}</div>`;
 }
 
-/** Trešās puses avots — tikai komentāri (nobraukums un negadījumi ir vienotajās tabulās augšā). */
+/** Trešās puses avots — komentāri + CarVertical laikposms. */
 function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf, vis: PdfVisibilitySettings): string {
   const L = SOURCE_BLOCK_LABELS;
   if (b.title === L.autodna && !vis.autodna) return "";
   if (b.title === L.carvertical && !vis.carvertical) return "";
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const hasComments = commentBlock.trim().length > 0;
-  if (!hasComments) return "";
+  const timelineHtml =
+    b.title === L.carvertical && (b.vehicleHistoryTimeline ?? []).length > 0
+      ? buildCarVerticalTimelineHtml(b.vehicleHistoryTimeline ?? [], { compact: true })
+      : "";
+  if (!hasComments && !timelineHtml) return "";
   const head = sectionHeadBrand(sectionIconPdfHtml(vendorPdfTitleToIconId(b.title)), b.title);
-  const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(commentBlock)}</div>`;
+  const body = `<div class="pdf-source-section-body">${timelineHtml}${hasComments ? pdfAvotuCommentIsland(commentBlock) : ""}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
 
@@ -1427,6 +1436,20 @@ function clientReportPrintCss(): string {
         padding-left:4px!important;
       }
       .pdf-csdd-owner-timeline{margin:8px 0 4px;padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;}
+      .pdf-cv-subsection-title{margin:0 0 6px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#64748b;}
+      .pdf-cv-timeline{margin:6px 0 10px;padding:8px 10px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;}
+      .pdf-cv-timeline-event{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:10px;line-height:1.35;margin:0 0 3px;}
+      .pdf-cv-timeline-date{min-width:72px;font-weight:700;color:#475569;}
+      .pdf-cv-timeline-country{color:#64748b;}
+      .pdf-cv-timeline-desc{color:#1d1d1f;flex:1 1 160px;}
+      .pdf-cv-damage-chart{margin:0 0 10px;border:1px solid #fde68a;border-radius:8px;background:#fffbeb;overflow:hidden;}
+      .pdf-cv-damage-chart-head,.pdf-cv-damage-row{display:grid;grid-template-columns:minmax(72px,.9fr) minmax(96px,1fr) minmax(120px,1.4fr);gap:8px;padding:6px 10px;font-size:10px;line-height:1.35;}
+      .pdf-cv-damage-chart-head{font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;border-bottom:1px solid #fde68a;background:#fef3c7;}
+      .pdf-cv-damage-row{border-bottom:1px solid #fef3c7;}
+      .pdf-cv-damage-row:last-child{border-bottom:none;}
+      .pdf-cv-damage-date{font-weight:700;color:#475569;}
+      .pdf-cv-damage-sides{color:#1d1d1f;}
+      .pdf-cv-damage-groups{color:#64748b;}
       .pdf-csdd-owner-count{margin:0 0 6px;font-size:9pt;color:#1d1d1f;}
       .pdf-csdd-owner-events{display:flex;flex-direction:column;gap:3px;}
       .pdf-csdd-owner-event{display:flex;gap:8px;font-size:9pt;line-height:1.35;}

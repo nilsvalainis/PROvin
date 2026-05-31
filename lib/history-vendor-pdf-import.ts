@@ -3,13 +3,14 @@
  */
 import type { LtabIncidentRow, SourcePdfChecklist } from "@/lib/admin-source-blocks";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
+import type { CarVerticalDamageDetailRow, CarVerticalTimelineRow } from "@/lib/carvertical-pdf-parse";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
 import {
   autoRecordsRowHasData,
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
-import { parseCarverticalOdometerPaste } from "@/lib/carvertical-odometer-paste-parse";
+import { parseCarverticalPdfText } from "@/lib/carvertical-pdf-parse";
 import { extractClaimRowsForPdfInsight, type ClaimTableRow } from "@/lib/claim-rows-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { mergeAutoRecordsServiceHistory } from "@/lib/auto-records-pdf-parse";
@@ -24,6 +25,8 @@ export type HistoryVendorPdfParseResult = {
   rawText: string;
   serviceHistory: AutoRecordsServiceRow[];
   incidents: LtabIncidentRow[];
+  vehicleHistoryTimeline?: CarVerticalTimelineRow[];
+  damageDetails?: CarVerticalDamageDetailRow[];
   suggestedPdfChecklist: Partial<SourcePdfChecklist>;
   warnings: string[];
   meta: {
@@ -99,11 +102,31 @@ export function parseHistoryVendorPdfText(
   let serviceHistory: AutoRecordsServiceRow[] = [];
 
   if (target === "carvertical") {
-    serviceHistory = parseCarverticalOdometerPaste(trimmed);
+    const parsed = parseCarverticalPdfText(trimmed);
+    serviceHistory = parsed.serviceHistory;
     if (serviceHistory.length === 0) {
       warnings.push("Odometra žurnāla rindas netika atpazītas — teksts saglabāts iekopēšanas laukā.");
     }
-  } else if (target === "autodna") {
+    const claims = extractClaimRowsForPdfInsight(trimmed, 1);
+    const claimIncidents = claimRowsToLtabRows(claims);
+    const incidents =
+      parsed.incidents.length > 0 ? parsed.incidents : claimIncidents;
+    return {
+      rawText,
+      serviceHistory: sortAutoRecordsDescending(serviceHistory.filter(autoRecordsRowHasData)),
+      incidents,
+      vehicleHistoryTimeline: parsed.timeline,
+      damageDetails: parsed.damageDetails,
+      suggestedPdfChecklist: suggestChecklist(trimmed, serviceHistory, incidents),
+      warnings,
+      meta: {
+        charCount,
+        mileageRowCount: serviceHistory.length,
+        incidentRowCount: incidents.length,
+      },
+    };
+  }
+  if (target === "autodna") {
     serviceHistory = parseAutodnaMileagePaste(trimmed);
     if (serviceHistory.length === 0) {
       warnings.push("TRANSPORTLĪDZEKĻA VĒSTURE rindas netika atpazītas — teksts saglabāts iekopēšanas laukā.");
