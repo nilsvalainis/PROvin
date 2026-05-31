@@ -125,9 +125,9 @@ type PreviousProps = {
 };
 
 export function AdminCsddPreviousInspectionBlock({ block, prevInspectionDateIso }: PreviousProps) {
-  const dateDisplay = prevInspectionDateIso.trim()
-    ? isoDateToLvDisplay(prevInspectionDateIso)
-    : "";
+  const dateDisplay =
+    block.inspectionDateText.trim() ||
+    (prevInspectionDateIso.trim() ? isoDateToLvDisplay(prevInspectionDateIso) : "");
   const row = previousInspectionBlockToRow(block, dateDisplay);
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200/90 bg-white">

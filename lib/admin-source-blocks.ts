@@ -214,7 +214,7 @@ export type CsddFormFields = {
   technicalInspectionHistory: CsddTechnicalInspectionRow[];
   /** Īpašnieku maiņu notikumi Latvijā. */
   ownerRegistrationEvents: CsddOwnerChangeRow[];
-  /** „Iepriekšējās apskates dati” — pēdējā TA ar defektu tabulu. */
+  /** „Iepriekšējās apskates dati” admin blokā — avots: „Detalizētais vērtējums” + tehniskie dati. */
   prevInspectionBlock: CsddPreviousInspectionBlock;
   /** Hronoloģiski sakārtots (jaunākais augšā): Datums | Odometrs | Valsts. */
   mileageHistory: CsddMileageRow[];
@@ -1287,6 +1287,7 @@ function parseCsddPreviousInspectionStoredRaw(raw: unknown): CsddPreviousInspect
     ratingRaw === 1 || ratingRaw === 2 || ratingRaw === 3 ? ratingRaw : null;
   return {
     inspectionType: clipCsddField(o.inspectionType, 120),
+    inspectionDateText: clipCsddField(o.inspectionDateText, 40),
     nextInspectionDateText: clipCsddField(o.nextInspectionDateText, 40),
     odometer: clipCsddField(o.odometer, 20),
     ratingLabel: clipCsddField(o.ratingLabel, 200),

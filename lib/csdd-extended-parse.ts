@@ -10,7 +10,9 @@ export type CsddInspectionDefectRow = {
 
 export type CsddPreviousInspectionBlock = {
   inspectionType: string;
-  /** No raw „Nākamās apskates datums” (DD.MM.GGGG). */
+  /** Apskates datums (DD.MM.GGGG) — Detalizētajam vērtējumam no nobraukuma / galvas. */
+  inspectionDateText: string;
+  /** No raw „Nākamās apskates datums” (DD.MM.GGGG) — tikai vēsturiskiem blokiem. */
   nextInspectionDateText: string;
   odometer: string;
   ratingLabel: string;
@@ -45,6 +47,7 @@ const OLD_DEFECT_ROW_RE = /^(\d{3})\s+(\d)\s+(.*)$/;
 export function emptyCsddPreviousInspectionBlock(): CsddPreviousInspectionBlock {
   return {
     inspectionType: "",
+    inspectionDateText: "",
     nextInspectionDateText: "",
     odometer: "",
     ratingLabel: "",
@@ -108,47 +111,47 @@ function normPrevKey(key: string): string {
     .replace(/\s+/g, " ");
 }
 
-function extractPreviousInspectionSection(raw: string): string {
+function extractSectionAfterHeader(
+  raw: string,
+  headerRe: RegExp,
+  endRes: RegExp,
+): string {
   const text = normalizeCsddRawText(raw);
-  const header = /Iepriekšējās\s+apskates\s+dati/i.exec(text);
+  const header = headerRe.exec(text);
   if (!header) return "";
   const tail = text.slice(header.index! + header[0].length);
-  const end = tail.search(
-    /^(Nobraukuma\s+vēsture|Tehnisko\s+apskašu\s+vēsture|Transportlīdzekļa\s+reģistrācija|Pēdējā\s+tehniskā\s+apskate)/im,
-  );
+  const end = tail.search(endRes);
   return end >= 0 ? tail.slice(0, end) : tail;
 }
 
-function parseTabDefectLine(line: string): CsddInspectionDefectRow | null {
-  const tabs = line.split("\t").map((t) => t.trim());
-  if (tabs.length >= 3 && /^[\d.]+$/.test(tabs[0]!) && /^[123]$/.test(tabs[1]!)) {
-    return {
-      code: tabs[0]!,
-      rating: tabs[1]!,
-      description: tabs
-        .slice(2)
-        .join(" ")
-        .replace(/;+\s*$/, "")
-        .trim(),
-    };
-  }
-  const sp = line.match(/^([\d.]+)\s+(\d)\s+(.*)$/);
-  if (sp?.[1] && sp[2]) {
-    return {
-      code: sp[1].trim(),
-      rating: sp[2].trim(),
-      description: (sp[3] ?? "").replace(/;+\s*$/, "").trim(),
-    };
-  }
-  return null;
+function extractDetailedRatingSection(raw: string): string {
+  return extractSectionAfterHeader(
+    raw,
+    /Detalizētais\s+vērtējums/i,
+    /^(Iepriekšējās\s+apskates\s+dati|Nobraukuma\s+vēsture|Tehnisko\s+apskašu\s+vēsture|Transportlīdzekļa\s+reģistrācija|Pēdējā\s+tehniskā\s+apskate)/im,
+  );
 }
 
-/** „Iepriekšējās apskates dati” — CSDD e.csdd.lv tab/kolonu formāts. */
-export function parsePreviousInspectionFromRaw(raw: string): CsddPreviousInspectionBlock {
-  const block = emptyCsddPreviousInspectionBlock();
-  const section = extractPreviousInspectionSection(raw);
-  if (!section.trim()) return block;
+function extractPreviousInspectionSection(raw: string): string {
+  return extractSectionAfterHeader(
+    raw,
+    /Iepriekšējās\s+apskates\s+dati/i,
+    /^(Nobraukuma\s+vēsture|Tehnisko\s+apskašu\s+vēsture|Transportlīdzekļa\s+reģistrācija|Pēdējā\s+tehniskā\s+apskate)/im,
+  );
+}
 
+function extractTehniskieDatiHead(raw: string): string {
+  const text = normalizeCsddRawText(raw);
+  const idx = text.search(/Detalizētais\s+vērtējums/i);
+  if (idx >= 0) return text.slice(0, idx);
+  const idx2 = text.search(/Iepriekšējās\s+apskates\s+dati/i);
+  if (idx2 >= 0) return text.slice(0, idx2);
+  const idx3 = text.search(/Nobraukuma\s+vēsture/i);
+  if (idx3 >= 0) return text.slice(0, idx3);
+  return text.slice(0, 2500);
+}
+
+function parseMetadataIntoBlock(section: string, block: CsddPreviousInspectionBlock): void {
   let inDefectTable = false;
   for (const rawLine of section.split("\n")) {
     const line = rawLine.trim();
@@ -189,8 +192,122 @@ export function parsePreviousInspectionFromRaw(raw: string): CsddPreviousInspect
       block.notes = val;
     }
   }
+}
+
+/** Nobraukuma tabulā atrod datumu pēc odometra (pirmā sakritība). */
+export function findMileageDateForOdometer(raw: string, odometer: string): string {
+  const target = normalizeOdometerDigits(odometer);
+  if (!target) return "";
+  const text = normalizeCsddRawText(raw);
+  for (const line of text.split("\n")) {
+    const t = line.trim();
+    const dash = t.match(/^(\d[\d\s]*)\s*[-–—]\s*(\d{2}[./]\d{2}[./]\d{4})/);
+    if (dash?.[1] && dash[2] && normalizeOdometerDigits(dash[1]) === target) {
+      return normalizeDotDate(dash[2]);
+    }
+    const tab = t.split("\t");
+    if (tab.length >= 2) {
+      const o = normalizeOdometerDigits(tab[1] ?? tab[0] ?? "");
+      const d = (tab[0] ?? tab[1] ?? "").match(/\d{2}[./]\d{2}[./]\d{4}/);
+      if (o === target && d) return normalizeDotDate(d[0]);
+    }
+  }
+  return "";
+}
+
+/** Pirmais „Nākamās apskates datums” visā raw; rezerve — „Nākošā TA”. */
+export function extractFirstNextInspectionDateIso(raw: string): string | null {
+  const text = normalizeCsddRawText(raw);
+  for (const line of text.split("\n")) {
+    const m = line.match(/Nākamās\s+apskates\s+datums\s*:\s*(.+)$/i);
+    if (!m?.[1]) continue;
+    const dm = m[1].trim().match(/\d{2}[./]\d{2}[./]\d{4}/);
+    if (dm) {
+      const iso = lvDateToIsoFlexible(normalizeDotDate(dm[0]));
+      if (iso) return iso;
+    }
+  }
+  const taM = text.match(/Nākoš[āa]\s+TA\s*[:.]?\s*(\d{2}[./]\d{2}[./]\d{4})/i);
+  if (taM?.[1]) {
+    const iso = lvDateToIsoFlexible(normalizeDotDate(taM[1]));
+    if (iso) return iso;
+  }
+  return null;
+}
+
+function parseTabDefectLine(line: string): CsddInspectionDefectRow | null {
+  const tabs = line.split("\t").map((t) => t.trim());
+  if (tabs.length >= 3 && /^[\d.]+$/.test(tabs[0]!) && /^[123]$/.test(tabs[1]!)) {
+    return {
+      code: tabs[0]!,
+      rating: tabs[1]!,
+      description: tabs
+        .slice(2)
+        .join(" ")
+        .replace(/;+\s*$/, "")
+        .trim(),
+    };
+  }
+  const sp = line.match(/^([\d.]+)\s+(\d)\s+(.*)$/);
+  if (sp?.[1] && sp[2]) {
+    return {
+      code: sp[1].trim(),
+      rating: sp[2].trim(),
+      description: (sp[3] ?? "").replace(/;+\s*$/, "").trim(),
+    };
+  }
+  return null;
+}
+
+/**
+ * „Detalizētais vērtējums” + tehniskie dati augšā — admin bloks „Iepriekšējās apskates dati”.
+ * Jaunākais TA ieraksts (defektu tabula).
+ */
+export function parseDetailedRatingBlockFromRaw(raw: string): CsddPreviousInspectionBlock {
+  const block = emptyCsddPreviousInspectionBlock();
+  const detailedSection = extractDetailedRatingSection(raw);
+  const headSection = extractTehniskieDatiHead(raw);
+
+  if (headSection.trim()) parseMetadataIntoBlock(headSection, block);
+  if (detailedSection.trim()) {
+    const defectsOnly = emptyCsddPreviousInspectionBlock();
+    parseMetadataIntoBlock(detailedSection, defectsOnly);
+    if (defectsOnly.defects.length > 0) block.defects = defectsOnly.defects;
+  }
+
+  block.nextInspectionDateText = "";
+  const dateFromMileage = block.odometer ? findMileageDateForOdometer(raw, block.odometer) : "";
+  const headTa = parseLastTechnicalInspectionHead(raw);
+  block.inspectionDateText = dateFromMileage || headTa?.date || "";
 
   return block;
+}
+
+/** Raw sadaļa „Iepriekšējās apskates dati” — iepriekšējā TA (tab/kolonu formāts). */
+export function parseIeprieksejasApskatesSection(raw: string): CsddPreviousInspectionBlock {
+  const block = emptyCsddPreviousInspectionBlock();
+  const section = extractPreviousInspectionSection(raw);
+  if (!section.trim()) return block;
+  parseMetadataIntoBlock(section, block);
+  if (block.odometer && !block.inspectionDateText) {
+    block.inspectionDateText = findMileageDateForOdometer(raw, block.odometer);
+  }
+  return block;
+}
+
+/** @deprecated Lietot `parseDetailedRatingBlockFromRaw` vai `parseIeprieksejasApskatesSection`. */
+export function parsePreviousInspectionFromRaw(raw: string): CsddPreviousInspectionBlock {
+  return parseIeprieksejasApskatesSection(raw);
+}
+
+/** „Iepriekšējās apskates dati” → rinda tehnisko apskašu vēsturei. */
+export function parseIeprieksejasApskatesTaRow(raw: string): CsddTechnicalInspectionRow | null {
+  const block = parseIeprieksejasApskatesSection(raw);
+  if (!previousInspectionBlockHasData(block)) return null;
+  const date =
+    block.inspectionDateText.trim() ||
+    (block.odometer ? findMileageDateForOdometer(raw, block.odometer) : "");
+  return previousInspectionBlockToRow(block, date);
 }
 
 /** Dokumenta augšdaļa — „Pēdējā tehniskā apskate / TA datums”. */
@@ -367,13 +484,31 @@ function parseInspectionBlock(block: string): CsddTechnicalInspectionRow | null 
   };
 }
 
-/** Tehnisko apskašu vēsture — jaunākā augšā. */
-export function parseTechnicalInspectionHistory(raw: string): CsddTechnicalInspectionRow[] {
+function parseTechnicalInspectionHistorySection(raw: string): CsddTechnicalInspectionRow[] {
   const section = extractTechnicalInspectionSection(raw);
   if (!section.trim()) return [];
 
   const blocks = section.split(/(?=Apskates\s+datums\s)/i).filter((b) => /Apskates\s+datums/i.test(b));
-  const rows = blocks.map(parseInspectionBlock).filter((r): r is CsddTechnicalInspectionRow => r != null);
+  return blocks.map(parseInspectionBlock).filter((r): r is CsddTechnicalInspectionRow => r != null);
+}
+
+/** Tehnisko apskašu vēsture — „Iepriekšējās apskates dati” kā jaunākais + vēstures sadaļa. */
+export function parseTechnicalInspectionHistory(raw: string): CsddTechnicalInspectionRow[] {
+  const sectionRows = parseTechnicalInspectionHistorySection(raw);
+  const ieprieksejasRow = parseIeprieksejasApskatesTaRow(raw);
+
+  const rows = [...sectionRows];
+  if (ieprieksejasRow) {
+    const date = ieprieksejasRow.date.trim();
+    if (date) {
+      const dupIdx = rows.findIndex((r) => r.date.trim() === date);
+      if (dupIdx >= 0) rows[dupIdx] = ieprieksejasRow;
+      else rows.unshift(ieprieksejasRow);
+    } else {
+      rows.unshift(ieprieksejasRow);
+    }
+  }
+
   return rows.sort((a, b) => parseInspectionDateMs(b.date) - parseInspectionDateMs(a.date));
 }
 

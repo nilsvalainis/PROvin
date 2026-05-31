@@ -105,7 +105,8 @@ export function buildPreviousInspectionBlockHtml(
   inspectionDate: string,
 ): string {
   if (!block.inspectionType.trim() && !(block.defects?.length)) return "";
-  const row = previousInspectionBlockToRow(block, inspectionDate);
+  const dateDisplay = block.inspectionDateText.trim() || inspectionDate;
+  const row = previousInspectionBlockToRow(block, dateDisplay);
   return buildInspectionBlockHtml(row, false, {
     odometer: block.odometer,
     nextInspectionDateText: block.nextInspectionDateText,
