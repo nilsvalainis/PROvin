@@ -1,7 +1,12 @@
 "use client";
 
-import type { CsddTechnicalInspectionRow } from "@/lib/csdd-extended-parse";
-import { groupTechnicalInspectionsByYear } from "@/lib/csdd-extended-parse";
+import {
+  groupTechnicalInspectionsByYear,
+  isoDateToLvDisplay,
+  previousInspectionBlockToRow,
+  type CsddPreviousInspectionBlock,
+  type CsddTechnicalInspectionRow,
+} from "@/lib/csdd-extended-parse";
 
 const mileCell = "px-1.5 py-0.5";
 
@@ -12,16 +17,33 @@ function ratingClass(rating: string): string {
   return "text-[var(--color-provin-muted)]";
 }
 
-function InspectionBlock({ row, historic }: { row: CsddTechnicalInspectionRow; historic: boolean }) {
-  const metaParts = [row.date, row.inspectionType, row.ratingLabel ? `Novērtējums ${row.ratingLabel}` : ""]
-    .filter(Boolean)
-    .join(" · ");
+export function CsddInspectionBlock({
+  row,
+  historic,
+  odometer,
+  nextInspectionDateText,
+}: {
+  row: CsddTechnicalInspectionRow;
+  historic?: boolean;
+  odometer?: string;
+  nextInspectionDateText?: string;
+}) {
+  const metaParts = [row.date, row.inspectionType];
+  if (odometer?.trim()) metaParts.push(`${odometer.trim()} km`);
+  if (row.ratingLabel) metaParts.push(`Novērtējums ${row.ratingLabel}`);
+  const meta = metaParts.filter(Boolean).join(" · ");
 
   return (
     <div className={historic ? "opacity-90" : ""}>
       <p className="border-b border-slate-100 bg-slate-50/90 px-1.5 py-1 text-[10px] font-medium leading-snug text-[var(--color-apple-text)]">
-        {metaParts}
+        {meta}
       </p>
+      {nextInspectionDateText?.trim() ? (
+        <p className="px-1.5 py-0.5 text-[10px] text-[var(--color-provin-muted)]">
+          <span className="text-[var(--color-apple-text)]">Nākamās apskates datums:</span>{" "}
+          {nextInspectionDateText.trim()}
+        </p>
+      ) : null}
       {row.smokeCoefficient?.trim() ? (
         <p className="px-1.5 py-0.5 text-[10px] text-[var(--color-provin-muted)]">
           <span className="text-[var(--color-apple-text)]">Dūmainības koeficients (m⁻¹):</span>{" "}
@@ -88,11 +110,32 @@ export function AdminCsddInspectionHistoryTable({ rows }: Props) {
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">{year}</p>
           <div className="overflow-x-auto rounded-lg border border-slate-200/90 bg-white">
             {(byYear.get(year) ?? []).map((row) => (
-              <InspectionBlock key={row.date + row.inspectionType} row={row} historic={row.date !== newestDate} />
+              <CsddInspectionBlock key={row.date + row.inspectionType} row={row} historic={row.date !== newestDate} />
             ))}
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+type PreviousProps = {
+  block: CsddPreviousInspectionBlock;
+  prevInspectionDateIso: string;
+};
+
+export function AdminCsddPreviousInspectionBlock({ block, prevInspectionDateIso }: PreviousProps) {
+  const dateDisplay = prevInspectionDateIso.trim()
+    ? isoDateToLvDisplay(prevInspectionDateIso)
+    : "";
+  const row = previousInspectionBlockToRow(block, dateDisplay);
+  return (
+    <div className="overflow-x-auto rounded-lg border border-slate-200/90 bg-white">
+      <CsddInspectionBlock
+        row={row}
+        odometer={block.odometer}
+        nextInspectionDateText={block.nextInspectionDateText}
+      />
     </div>
   );
 }

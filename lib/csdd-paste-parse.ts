@@ -13,9 +13,14 @@ import {
 } from "@/lib/admin-source-blocks";
 import {
   parseOwnerRegistrationFromRaw,
+  parsePreviousInspectionFromRaw,
   parsePreviousRegistrationCountry,
+  parseLastTechnicalInspectionHead,
   parseTechnicalInspectionHistory,
   normalizeCsddRawText,
+  lvDateToIsoFlexible,
+  isoDateToLvDisplay,
+  previousInspectionBlockHasData,
 } from "@/lib/csdd-extended-parse";
 import {
   extractRegistryStructuredFields,
@@ -112,6 +117,7 @@ export function parseCsddTechnicalFields(
   | "technicalInspectionHistory"
   | "ownerRegistrationEvents"
   | "ownerCountLatvia"
+  | "prevInspectionBlock"
 > {
   const st = extractRegistryStructuredFields(raw);
   const basics = parseLvRegistryBasics(raw);
@@ -451,29 +457,66 @@ export function applyCsddPasteToForm(
   const tech = parseCsddTechnicalFields(normalizedRaw);
   const ownerReg = parseOwnerRegistrationFromRaw(normalizedRaw);
   const technicalInspectionHistory = parseTechnicalInspectionHistory(normalizedRaw);
+  const prevInspectionBlock = parsePreviousInspectionFromRaw(normalizedRaw);
+  const lastTaHead = parseLastTechnicalInspectionHead(normalizedRaw);
+
   let nextInspectionDate = "";
   let prevInspectionDate = "";
-  if (parsed.nextInspectionIso) {
+  if (prevInspectionBlock.nextInspectionDateText.trim()) {
+    const iso = lvDateToIsoFlexible(prevInspectionBlock.nextInspectionDateText);
+    if (iso) nextInspectionDate = iso;
+  }
+  if (!nextInspectionDate && parsed.nextInspectionIso) {
     nextInspectionDate = parsed.nextInspectionIso;
-  } else if (!isLikelyStructuredCsddPaste(normalizedRaw)) {
+  } else if (!nextInspectionDate && !isLikelyStructuredCsddPaste(normalizedRaw)) {
     nextInspectionDate = current.nextInspectionDate;
   }
-  if (parsed.prevInspectionIso) {
+
+  if (lastTaHead?.date) {
+    const iso = lvDateToIsoFlexible(lastTaHead.date);
+    if (iso) prevInspectionDate = iso;
+  }
+  if (!prevInspectionDate && parsed.prevInspectionIso) {
     prevInspectionDate = parsed.prevInspectionIso;
-  } else if (!isLikelyStructuredCsddPaste(normalizedRaw)) {
+  } else if (!prevInspectionDate && !isLikelyStructuredCsddPaste(normalizedRaw)) {
     prevInspectionDate = current.prevInspectionDate;
+  }
+
+  let opacityCoefficient = tech.opacityCoefficient;
+  if (!opacityCoefficient.trim() && prevInspectionBlock.smokeCoefficient.trim()) {
+    opacityCoefficient = prevInspectionBlock.smokeCoefficient;
+  }
+
+  let mileageHistory = parsed.mileageHistory;
+  if (prevInspectionBlock.odometer.trim() && prevInspectionDate) {
+    const lvDate = isoDateToLvDisplay(prevInspectionDate);
+    const exists = mileageHistory.some(
+      (r) => r.odometer === prevInspectionBlock.odometer && r.date === lvDate,
+    );
+    if (!exists) {
+      mileageHistory = finalizeMileageHistory([
+        ...mileageHistory,
+        {
+          date: lvDate,
+          odometer: prevInspectionBlock.odometer,
+          country: CSDD_MILEAGE_COUNTRY_LV,
+        },
+      ]);
+    }
   }
 
   return {
     ...emptyCsddFields(),
     ...tech,
+    opacityCoefficient,
     ownerCountLatvia: ownerReg.ownerCount,
     ownerRegistrationEvents: ownerReg.events,
     technicalInspectionHistory,
+    prevInspectionBlock,
     rawUnprocessedData: rawText,
     nextInspectionDate,
     prevInspectionDate,
-    mileageHistory: parsed.mileageHistory,
+    mileageHistory,
     comments: current.comments,
   };
 }
@@ -486,6 +529,7 @@ export function backfillCsddExtendedFromRaw(csdd: CsddFormFields): CsddFormField
   const country = parsePreviousRegistrationCountry(raw);
   const ownerReg = parseOwnerRegistrationFromRaw(raw);
   const ta = parseTechnicalInspectionHistory(raw);
+  const prevBlock = parsePreviousInspectionFromRaw(raw);
 
   const patch: Partial<CsddFormFields> = {};
   if (!csdd.previousRegistrationCountry.trim() && country) {
@@ -505,6 +549,20 @@ export function backfillCsddExtendedFromRaw(csdd: CsddFormFields): CsddFormField
     ta.some((r) => (r.defects?.length ?? 0) > 0)
   ) {
     patch.technicalInspectionHistory = ta;
+  }
+
+  if (
+    !previousInspectionBlockHasData(csdd.prevInspectionBlock) &&
+    previousInspectionBlockHasData(prevBlock)
+  ) {
+    patch.prevInspectionBlock = prevBlock;
+    if (!csdd.nextInspectionDate.trim() && prevBlock.nextInspectionDateText.trim()) {
+      const iso = lvDateToIsoFlexible(prevBlock.nextInspectionDateText);
+      if (iso) patch.nextInspectionDate = iso;
+    }
+    if (!csdd.opacityCoefficient.trim() && prevBlock.smokeCoefficient.trim()) {
+      patch.opacityCoefficient = prevBlock.smokeCoefficient;
+    }
   }
 
   if (Object.keys(patch).length === 0) return csdd;

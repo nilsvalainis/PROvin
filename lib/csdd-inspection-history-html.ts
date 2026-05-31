@@ -4,6 +4,8 @@
 
 import {
   groupTechnicalInspectionsByYear,
+  previousInspectionBlockToRow,
+  type CsddPreviousInspectionBlock,
   type CsddTechnicalInspectionRow,
 } from "@/lib/csdd-extended-parse";
 
@@ -22,19 +24,24 @@ function defectRatingClass(rating: string): string {
   return "";
 }
 
-function buildInspectionMetaLine(row: CsddTechnicalInspectionRow): string {
-  const parts = [row.date];
-  if (row.inspectionType.trim()) parts.push(row.inspectionType.trim());
-  if (row.ratingLabel.trim()) parts.push(`Novērtējums ${row.ratingLabel.trim()}`);
-  return parts.join(" · ");
-}
-
-function buildInspectionBlockHtml(row: CsddTechnicalInspectionRow, historic: boolean): string {
+function buildInspectionBlockHtml(
+  row: CsddTechnicalInspectionRow,
+  historic: boolean,
+  opts?: { odometer?: string; nextInspectionDateText?: string },
+): string {
   const tableClass = historic
     ? "mirror-table mirror-table--csdd-defect-historic"
     : "mirror-table mirror-table--csdd-defect-current";
-  const meta = escapeHtml(buildInspectionMetaLine(row));
+  const metaParts = [row.date, row.inspectionType];
+  if (opts?.odometer?.trim()) metaParts.push(`${opts.odometer.trim()} km`);
+  if (row.ratingLabel.trim()) metaParts.push(`Novērtējums ${row.ratingLabel.trim()}`);
+  const meta = escapeHtml(metaParts.filter(Boolean).join(" · "));
   const extras: string[] = [];
+  if (opts?.nextInspectionDateText?.trim()) {
+    extras.push(
+      `<p class="pdf-csdd-tech-line"><span class="pdf-csdd-tech-bit">Nākamās apskates datums:</span> ${escapeHtml(opts.nextInspectionDateText.trim())}</p>`,
+    );
+  }
   if (row.smokeCoefficient?.trim()) {
     extras.push(
       `<p class="pdf-csdd-tech-line"><span class="pdf-csdd-tech-bit">Dūmainības koeficients (m⁻¹):</span> ${escapeHtml(row.smokeCoefficient.trim())}</p>`,
@@ -90,4 +97,17 @@ export function buildTechnicalInspectionHistoryTableHtml(
     .join("");
 
   return `<div class="pdf-csdd-ta-table-wrap">${yearBlocks}</div>`;
+}
+
+/** „Iepriekšējās apskates dati” — viena TA ar defektu tabulu. */
+export function buildPreviousInspectionBlockHtml(
+  block: CsddPreviousInspectionBlock,
+  inspectionDate: string,
+): string {
+  if (!block.inspectionType.trim() && !(block.defects?.length)) return "";
+  const row = previousInspectionBlockToRow(block, inspectionDate);
+  return buildInspectionBlockHtml(row, false, {
+    odometer: block.odometer,
+    nextInspectionDateText: block.nextInspectionDateText,
+  });
 }

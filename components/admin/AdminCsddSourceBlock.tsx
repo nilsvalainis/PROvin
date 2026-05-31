@@ -9,6 +9,7 @@ import {
   CSDD_FORM_STRUCTURED_FIELDS,
   CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
   CSDD_MILEAGE_UNIFIED_TITLE,
+  CSDD_PREVIOUS_INSPECTION_TITLE,
   CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE,
   emptyCsddMileageRow,
   finalizeMileageHistory,
@@ -18,7 +19,11 @@ import {
   sourcePdfChecklistHasAny,
 } from "@/lib/admin-source-blocks";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
-import { AdminCsddInspectionHistoryTable } from "@/components/admin/AdminCsddInspectionHistoryTable";
+import {
+  AdminCsddInspectionHistoryTable,
+  AdminCsddPreviousInspectionBlock,
+} from "@/components/admin/AdminCsddInspectionHistoryTable";
+import { previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
 import { applyCsddPasteToForm, backfillCsddExtendedFromRaw, parseCsddPaste } from "@/lib/csdd-paste-parse";
 import { buildOwnerRegistrationTimelineAdminHtml } from "@/lib/csdd-history-charts";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
@@ -121,13 +126,16 @@ export function AdminCsddSourceBlock({
       backfilled.technicalInspectionHistory.length !== value.technicalInspectionHistory.length ||
       backfilled.technicalInspectionHistory.some(
         (r, i) => (r.defects?.length ?? 0) !== (value.technicalInspectionHistory[i]?.defects?.length ?? 0),
-      )
+      ) ||
+      previousInspectionBlockHasData(backfilled.prevInspectionBlock) !==
+        previousInspectionBlockHasData(value.prevInspectionBlock)
     ) {
       onChange(backfilled);
     }
   }, [value.rawUnprocessedData, value, onChange]);
 
   const taRows = value.technicalInspectionHistory.filter((r) => r.date.trim());
+  const hasPrevInspection = previousInspectionBlockHasData(value.prevInspectionBlock);
 
   const mileageRows =
     value.mileageHistory.length > 0 ? value.mileageHistory : [emptyCsddMileageRow()];
@@ -172,7 +180,7 @@ export function AdminCsddSourceBlock({
           CSDD Neapstrādātie dati (Paste here)
         </label>
         {readOnly ? (
-          <div className="min-h-[72px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
+          <div className="max-h-[480px] min-h-[120px] overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
             {value.rawUnprocessedData.trim() ? (
               value.rawUnprocessedData
             ) : (
@@ -187,8 +195,8 @@ export function AdminCsddSourceBlock({
           >
             <textarea
               id="csdd_raw_data"
-              className="w-full min-h-[96px] resize-y rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
-              rows={5}
+              className="w-full min-h-[240px] max-h-[480px] resize-y rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
+              rows={12}
               value={value.rawUnprocessedData}
               disabled={disabled}
               placeholder="Ielīmē šeit visu tekstu no CSDD…"
@@ -441,6 +449,24 @@ export function AdminCsddSourceBlock({
           >
             + Rinda
           </button>
+        )}
+      </div>
+
+      <div className="mt-3 border-t border-slate-200/80 pt-2">
+        <p className="mb-1.5 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+          <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
+          {CSDD_PREVIOUS_INSPECTION_TITLE}
+        </p>
+        {hasPrevInspection ? (
+          <AdminCsddPreviousInspectionBlock
+            block={value.prevInspectionBlock}
+            prevInspectionDateIso={value.prevInspectionDate}
+          />
+        ) : (
+          <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-2 py-2 text-[10px] text-slate-400">
+            Ielīmē pilnu CSDD raw tekstu — iepriekšējās apskates bloks (defektu tabula) aizpildīsies
+            automātiski.
+          </p>
         )}
       </div>
 

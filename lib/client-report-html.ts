@@ -7,6 +7,7 @@ import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis
 import {
   autoRecordsBlockHasContent,
   CSDD_FORM_STRUCTURED_FIELDS,
+  CSDD_PREVIOUS_INSPECTION_TITLE,
   CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE,
   citiAvotiHasContent,
   csddFormHasContent,
@@ -94,7 +95,11 @@ import {
   PDF_MILEAGE_HISTORY_COMMENT_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import { buildOwnerRegistrationTimelineHtml } from "@/lib/csdd-history-charts";
-import { buildTechnicalInspectionHistoryTableHtml } from "@/lib/csdd-inspection-history-html";
+import {
+  buildPreviousInspectionBlockHtml,
+  buildTechnicalInspectionHistoryTableHtml,
+} from "@/lib/csdd-inspection-history-html";
+import { isoDateToLvDisplay, previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
 import { buildOutvinBundlePdfInnerHtml } from "@/lib/outvin-bundle-pdf-html";
 import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-html";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
@@ -588,6 +593,15 @@ export function buildCsddAvotuZoneHtml(form: CsddFormFields): string {
         })
       : "";
 
+  const prevBlock = form.prevInspectionBlock;
+  const prevInspectionDateDisplay = form.prevInspectionDate.trim()
+    ? isoDateToLvDisplay(form.prevInspectionDate)
+    : "";
+  const prevInspectionHtml =
+    prevBlock && previousInspectionBlockHasData(prevBlock)
+      ? `<div class="pdf-csdd-ta-section"><p class="pdf-csdd-subsection-title">${escapeHtml(CSDD_PREVIOUS_INSPECTION_TITLE)}</p>${buildPreviousInspectionBlockHtml(prevBlock, prevInspectionDateDisplay)}</div>`
+      : "";
+
   const taRows = (form.technicalInspectionHistory ?? []).filter((r) => r.date.trim());
   const taTableHtml =
     taRows.length > 0
@@ -595,8 +609,8 @@ export function buildCsddAvotuZoneHtml(form: CsddFormFields): string {
       : "";
 
   const commentHtml = hasComments ? pdfAvotuCommentIsland(commentTrim) : "";
-  if (!tableHtml && !ownerTimelineHtml && !taTableHtml && !commentHtml) return "";
-  const bodyInner = `${tableHtml}${ownerTimelineHtml}${taTableHtml}${commentHtml}`;
+  if (!tableHtml && !ownerTimelineHtml && !prevInspectionHtml && !taTableHtml && !commentHtml) return "";
+  const bodyInner = `${tableHtml}${ownerTimelineHtml}${prevInspectionHtml}${taTableHtml}${commentHtml}`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-source-section-body">${bodyInner}</div></div>`;
 }
 

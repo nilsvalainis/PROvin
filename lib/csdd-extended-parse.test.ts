@@ -3,10 +3,14 @@ import { applyCsddPasteToForm, backfillCsddExtendedFromRaw, parseCsddPaste } fro
 import { emptyCsddFields } from "@/lib/admin-source-blocks";
 import {
   parseOwnerRegistrationFromRaw,
+  parsePreviousInspectionFromRaw,
   parsePreviousRegistrationCountry,
   parseTechnicalInspectionHistory,
 } from "@/lib/csdd-extended-parse";
-import { buildTechnicalInspectionHistoryTableHtml } from "@/lib/csdd-inspection-history-html";
+import {
+  buildPreviousInspectionBlockHtml,
+  buildTechnicalInspectionHistoryTableHtml,
+} from "@/lib/csdd-inspection-history-html";
 import { csddFormToPlainText } from "@/lib/admin-source-blocks";
 
 const SAMPLE_RAW = `Iepriekšējās reģistrācijas valsts VĀCIJA
@@ -36,6 +40,20 @@ Novērtējums 2 - Ar mēneša laikā labojamiem defektiem
  Kods Novērtējums Trūkumi vai bojājumi
 503 2 Nepietiekams riepu protektora dziļums.
 Informācija sagatavota elektroniski 31.05.2026 11:56:58.`;
+
+const PREV_INSPECTION_RAW = `Iepriekšējās apskates dati
+Pārbaudes veids:\tPamatpārbaude
+Nākamās apskates datums:\t15.01.2026
+Odometra rādījums:\t274516
+Novērtējums:\t2 - Ar mēneša laikā labojamiem defektiem
+Dūmainības koeficients (m-1):\t0.58
+Piezīmes:\tStāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.
+Kods\tNovērtējums:\tTrūkumi vai bojājumi
+3.2.\t1\tRedzamību vai izturību būtiski neietekmējoši stiklojuma bojājumi.
+6.2.1.\t1\tVirsbūves stiprību un citus satiksmes dalībniekus neapdraudoši korozijas bojājumi
+5.3.4.\t2\tPriekšējais tilts. Palielināta brīvkustība balstiekārtas šarnīrā. Kreisais augšējais šarnīrs.;
+Nobraukuma vēsture
+274516 - 16.12.2025`;
 
 describe("csdd extended parse", () => {
   it("parses previous registration country", () => {
@@ -88,6 +106,29 @@ describe("csdd extended parse", () => {
     expect(html).toContain("5.3.4.");
     expect(html).toContain("Trūkumi vai bojājumi");
     expect(html).toContain("mirror-table--csdd-defect");
+  });
+
+  it("parses previous inspection block from tab-separated CSDD paste", () => {
+    const block = parsePreviousInspectionFromRaw(PREV_INSPECTION_RAW);
+    expect(block.inspectionType).toBe("Pamatpārbaude");
+    expect(block.nextInspectionDateText).toBe("15.01.2026");
+    expect(block.odometer).toBe("274516");
+    expect(block.ratingLevel).toBe(2);
+    expect(block.smokeCoefficient).toBe("0.58");
+    expect(block.defects).toHaveLength(3);
+    expect(block.defects[2]?.code).toBe("5.3.4.");
+    expect(block.defects[2]?.rating).toBe("2");
+  });
+
+  it("applyCsddPasteToForm fills previous inspection block and next date", () => {
+    const parsed = parseCsddPaste(PREV_INSPECTION_RAW);
+    const form = applyCsddPasteToForm(emptyCsddFields(), PREV_INSPECTION_RAW, parsed);
+    expect(form.prevInspectionBlock.inspectionType).toBe("Pamatpārbaude");
+    expect(form.nextInspectionDate).toBe("2026-01-15");
+    expect(form.opacityCoefficient).toBe("0.58");
+    const html = buildPreviousInspectionBlockHtml(form.prevInspectionBlock, "16.12.2025");
+    expect(html).toContain("5.3.4.");
+    expect(html).toContain("274516 km");
   });
 
   it("backfill upgrades legacy rows without defects", () => {
