@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
@@ -17,7 +18,7 @@ import {
   sourcePdfChecklistHasAny,
 } from "@/lib/admin-source-blocks";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
-import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
+import { applyCsddPasteToForm, backfillCsddExtendedFromRaw, parseCsddPaste } from "@/lib/csdd-paste-parse";
 import {
   buildOwnerRegistrationTimelineAdminHtml,
   buildTechnicalInspectionHistoryChartAdminHtml,
@@ -108,6 +109,24 @@ export function AdminCsddSourceBlock({
     const parsed = parseCsddPaste(raw);
     onChange(applyCsddPasteToForm(value, raw, parsed));
   };
+
+  const backfillAttemptedRef = useRef<string>("");
+  useEffect(() => {
+    const raw = value.rawUnprocessedData.trim();
+    if (!raw || backfillAttemptedRef.current === raw) return;
+    const backfilled = backfillCsddExtendedFromRaw(value);
+    backfillAttemptedRef.current = raw;
+    if (
+      backfilled.previousRegistrationCountry !== value.previousRegistrationCountry ||
+      backfilled.ownerCountLatvia !== value.ownerCountLatvia ||
+      backfilled.ownerRegistrationEvents.length !== value.ownerRegistrationEvents.length ||
+      backfilled.technicalInspectionHistory.length !== value.technicalInspectionHistory.length
+    ) {
+      onChange(backfilled);
+    }
+  }, [value.rawUnprocessedData, value, onChange]);
+
+  const taRows = value.technicalInspectionHistory.filter((r) => r.date.trim());
 
   const mileageRows =
     value.mileageHistory.length > 0 ? value.mileageHistory : [emptyCsddMileageRow()];
@@ -424,20 +443,24 @@ export function AdminCsddSourceBlock({
         )}
       </div>
 
-      {value.technicalInspectionHistory.some((r) => r.date.trim()) ? (
-        <div className="mt-3 border-t border-slate-200/80 pt-2">
-          <p className="mb-1.5 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-            <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
-            {CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE}
-          </p>
+      <div className="mt-3 border-t border-slate-200/80 pt-2">
+        <p className="mb-1.5 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+          <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
+          {CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE}
+        </p>
+        {taRows.length > 0 ? (
           <div
             className="provin-csdd-ta-chart rounded-lg border border-slate-200/90 bg-white px-2 py-2"
             dangerouslySetInnerHTML={{
               __html: buildTechnicalInspectionHistoryChartAdminHtml(value.technicalInspectionHistory),
             }}
           />
-        </div>
-      ) : null}
+        ) : (
+          <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-2 py-2 text-[10px] text-slate-400">
+            Ielīmē pilnu CSDD raw tekstu — novērtējumu grafiks (1 / 2 / 3 pa gadiem) aizpildīsies automātiski.
+          </p>
+        )}
+      </div>
 
       <div className={`mt-2 w-full min-w-0 shrink-0 border-t border-slate-200/80 pt-2`}>
         <AdminSourcePdfChecklist

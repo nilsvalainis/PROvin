@@ -21,6 +21,19 @@ const PAGE_FOOTER_RE = /^\s*\d+\s*\/\s*\d+\s*$/;
 const DEFECT_ROW_RE = /^([\d.]+)\s+(\d)\s+/;
 const OLD_DEFECT_ROW_RE = /^(\d{3})\s+(\d)\s+/;
 
+/** PDF/NBSP un līdzīgas atstarpes → parasta atstarpe pirms regex. */
+export function normalizeCsddRawText(raw: string): string {
+  return raw
+    .replace(/\r/g, "")
+    .replace(/[\u00A0\u202F\u2007]/g, " ")
+    .replace(/\uFEFF/g, "")
+    .replace(/[ \t]+\n/g, "\n");
+}
+
+function normalizeDotDate(date: string): string {
+  return date.trim().replace(/\//g, ".");
+}
+
 function parseInspectionDateMs(date: string): number {
   const m = date.trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
   if (!m) return 0;
@@ -33,14 +46,22 @@ function toRatingLevel(n: number): 1 | 2 | 3 | null {
 }
 
 function extractTechnicalInspectionSection(raw: string): string {
-  const text = raw.replace(/\r/g, "");
-  const header = /Tehnisko\s+apska[šs]u\s+vēsture/i.exec(text);
-  if (!header) return "";
-  const tail = text.slice(header.index! + header[0].length);
-  const end = tail.search(
-    /Informācija\s+sagatavota\s+elektroniski|Powered\s+by\s+TCPDF/i,
-  );
-  return end >= 0 ? tail.slice(0, end) : tail;
+  const text = normalizeCsddRawText(raw);
+  const re = /Tehnisko\s+apska[šs]u\s+vēsture/gi;
+  let best = "";
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const afterHeader = text.slice(m.index + m[0].length, m.index + m[0].length + 500);
+    if (!/Apskates\s+datums/i.test(afterHeader)) continue;
+    const start = m.index + m[0].length;
+    const rest = text.slice(start);
+    const end = rest.search(
+      /Informācija\s+sagatavota\s+elektroniski|Powered\s+by\s+TCPDF/i,
+    );
+    const chunk = end >= 0 ? rest.slice(0, end) : rest;
+    if (chunk.length > best.length) best = chunk;
+  }
+  return best;
 }
 
 function parseInspectionBlock(block: string): CsddTechnicalInspectionRow | null {
@@ -100,31 +121,61 @@ export function technicalInspectionRowHasData(r: CsddTechnicalInspectionRow): bo
 }
 
 export function parsePreviousRegistrationCountry(raw: string): string {
-  const m = raw.replace(/\r/g, "").match(/Iepriekšēj[āa]s\s+reģistrācijas\s+valsts\s+([^\n]+)/i);
-  return m?.[1]?.trim() ?? "";
+  const text = normalizeCsddRawText(raw);
+  const inline = text.match(
+    /Iepriekšēj[āa]s\s+reģistrācijas\s+valsts\s*:?\s*([^\n]+)/i,
+  );
+  if (inline?.[1]) {
+    const v = inline[1].trim();
+    if (v && !/^(Transportlīdzekļa|Statuss|Marka|Degviela|VIN|Reģistrācijas\s+numurs)/i.test(v)) {
+      return v;
+    }
+  }
+  const lines = text.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!.trim();
+    if (!/^Iepriekšēj[āa]s\s+reģistrācijas\s+valsts\s*:?\s*$/i.test(line)) continue;
+    for (let j = i + 1; j < lines.length && j < i + 4; j++) {
+      const v = lines[j]!.trim();
+      if (!v || PAGE_FOOTER_RE.test(v)) continue;
+      if (/^(Transportlīdzekļa|Statuss|Marka|Degviela|VIN|Reģistrācijas)/i.test(v)) break;
+      return v;
+    }
+  }
+  return "";
 }
 
 export function parseOwnerRegistrationFromRaw(raw: string): {
   ownerCount: string;
   events: CsddOwnerChangeRow[];
 } {
-  const text = raw.replace(/\r/g, "");
+  const text = normalizeCsddRawText(raw);
   let ownerCount = "";
-  const countM = text.match(
-    /Transportlīdzekļa\s+reģistrācija[\s\S]*?No\s+[\d./]+\s+(\d+)\s+īpašniek/i,
-  );
-  if (countM?.[1]) ownerCount = countM[1].trim();
+  const countPatterns = [
+    /Transportlīdzekļa\s+reģistrācija[\s\S]*?No\s+[\d./]+\s+(\d+)\s+(?:ī|i)pa[sš]niek/i,
+    /Transportlīdzekļa\s+reģistrācija[\s\S]{0,400}?(\d+)\s+(?:ī|i)pa[sš]niek/i,
+  ];
+  for (const re of countPatterns) {
+    const countM = text.match(re);
+    if (countM?.[1]) {
+      ownerCount = countM[1].trim();
+      break;
+    }
+  }
 
   const events: CsddOwnerChangeRow[] = [];
   const sectionM = text.match(
-    /Transportlīdzekļa\s+reģistrācija([\s\S]*?)(?=Transportlīdzekļa\s+ekspluatācijas|Civiltiesiskā\s+apdrošināšana|$)/i,
+    /Transportlīdzekļa\s+reģistrācija([\s\S]*?)(?=Transportlīdzekļa\s+ekspluatācijas|Civiltiesiskā\s+apdrošināšana|Nobraukuma\s+vēsture|$)/i,
   );
   if (sectionM?.[1]) {
     for (const line of sectionM[1].split(/\n/)) {
       const t = line.trim();
       if (!t || PAGE_FOOTER_RE.test(t)) continue;
-      const ev = t.match(/^(\d{2}\.\d{2}\.\d{4})\s*[-–—]\s*(.+)$/);
-      if (ev?.[1] && ev[2]) events.push({ date: ev[1], label: ev[2].trim() });
+      if (/^No\s+[\d./]+/i.test(t)) continue;
+      const ev = t.match(/^(\d{2}[./]\d{2}[./]\d{4})\s*[-–—]\s*(.+)$/);
+      if (ev?.[1] && ev[2]) {
+        events.push({ date: normalizeDotDate(ev[1]), label: ev[2].trim() });
+      }
     }
   }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
+import { applyCsddPasteToForm, backfillCsddExtendedFromRaw, parseCsddPaste } from "@/lib/csdd-paste-parse";
 import { emptyCsddFields } from "@/lib/admin-source-blocks";
 import {
   parseOwnerRegistrationFromRaw,
@@ -83,5 +83,21 @@ describe("csdd extended parse", () => {
     const html = buildTechnicalInspectionHistoryChartHtml(rows, { compact: true });
     expect(html).toContain("2025");
     expect(html).toContain("pdf-csdd-sev-badge");
+  });
+
+  it("backfill fills extended fields from saved raw without full re-paste", () => {
+    const parsed = parseCsddPaste(SAMPLE_RAW);
+    const form = applyCsddPasteToForm(emptyCsddFields(), SAMPLE_RAW, parsed);
+    const stripped = {
+      ...form,
+      previousRegistrationCountry: "",
+      ownerCountLatvia: "",
+      ownerRegistrationEvents: [],
+      technicalInspectionHistory: [],
+    };
+    const backfilled = backfillCsddExtendedFromRaw(stripped);
+    expect(backfilled.previousRegistrationCountry).toBe("VĀCIJA");
+    expect(backfilled.ownerCountLatvia).toBe("3");
+    expect(backfilled.technicalInspectionHistory.length).toBeGreaterThanOrEqual(3);
   });
 });

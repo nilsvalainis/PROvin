@@ -81,11 +81,11 @@ export function buildTechnicalInspectionHistoryChartHtml(
           return severityBadgeHtml(sev, row.date, compact);
         })
         .join("");
-      return `<div class="pdf-csdd-ta-year-row"><span class="pdf-csdd-ta-year-label">${year}</span><span class="pdf-csdd-ta-badges">${badges}</span></div>`;
+      return `<div class="pdf-csdd-ta-year-row" style="display:flex;align-items:center;gap:8px;margin:0 0 5px;font-size:11px;line-height:1.3;"><span class="pdf-csdd-ta-year-label" style="min-width:36px;font-weight:600;color:#475569;">${year}</span><span class="pdf-csdd-ta-badges" style="display:flex;flex-wrap:wrap;gap:4px;">${badges}</span></div>`;
     })
     .join("");
 
-  const legend = `<div class="pdf-csdd-ta-legend"><span><i style="background:${SEVERITY_COLORS[1]}"></i>1 — pieļaujami</span><span><i style="background:${SEVERITY_COLORS[2]}"></i>2 — labojami mēneša laikā</span><span><i style="background:${SEVERITY_COLORS[3]}"></i>3 — būtiski</span></div>`;
+  const legend = `<div class="pdf-csdd-ta-legend" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:10px;color:#64748b;"><span style="display:inline-flex;align-items:center;gap:4px;"><i style="display:inline-block;width:8px;height:8px;border-radius:9999px;background:${SEVERITY_COLORS[1]}"></i>1 — pieļaujami</span><span style="display:inline-flex;align-items:center;gap:4px;"><i style="display:inline-block;width:8px;height:8px;border-radius:9999px;background:${SEVERITY_COLORS[2]}"></i>2 — labojami mēneša laikā</span><span style="display:inline-flex;align-items:center;gap:4px;"><i style="display:inline-block;width:8px;height:8px;border-radius:9999px;background:${SEVERITY_COLORS[3]}"></i>3 — būtiski</span></div>`;
 
   return `<div class="pdf-csdd-ta-chart${compact ? " pdf-csdd-ta-chart--compact" : ""}">${yearBlocks}${legend}</div>`;
 }
@@ -101,17 +101,17 @@ export function buildOwnerRegistrationTimelineHtml(
 
   const compact = opts?.compact === true;
   const countHtml = ownerCount.trim()
-    ? `<p class="pdf-csdd-owner-count"><strong>${escapeHtml(ownerCount.trim())}</strong> īpašniek${ownerCount.trim() === "1" ? "s" : "i"} Latvijā</p>`
+    ? `<p class="pdf-csdd-owner-count" style="margin:0 0 6px;font-size:11px;color:#1d1d1f;"><strong>${escapeHtml(ownerCount.trim())}</strong> īpašniek${ownerCount.trim() === "1" ? "s" : "i"} Latvijā</p>`
     : "";
 
   const rows = ev
     .map(
       (e) =>
-        `<div class="pdf-csdd-owner-event"><span class="pdf-csdd-owner-date">${escapeHtml(e.date)}</span><span class="pdf-csdd-owner-label">${escapeHtml(e.label)}</span></div>`,
+        `<div class="pdf-csdd-owner-event" style="display:flex;gap:8px;font-size:11px;line-height:1.35;margin:0 0 2px;"><span class="pdf-csdd-owner-date" style="min-width:72px;font-weight:600;color:#475569;">${escapeHtml(e.date)}</span><span class="pdf-csdd-owner-label" style="color:#1d1d1f;">${escapeHtml(e.label)}</span></div>`,
     )
     .join("");
 
-  return `<div class="pdf-csdd-owner-timeline${compact ? " pdf-csdd-owner-timeline--compact" : ""}">${countHtml}${rows ? `<div class="pdf-csdd-owner-events">${rows}</div>` : ""}</div>`;
+  return `<div class="pdf-csdd-owner-timeline${compact ? " pdf-csdd-owner-timeline--compact" : ""}" style="margin:4px 0;padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;">${countHtml}${rows ? `<div class="pdf-csdd-owner-events">${rows}</div>` : ""}</div>`;
 }
 
 /** Admin React — tā pati vizualizācija ar Tailwind-friendly klasēm. */

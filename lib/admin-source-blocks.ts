@@ -26,6 +26,7 @@ import {
   type OutvinDataBundle,
 } from "@/lib/outvin-data-bundle";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
+import { backfillCsddExtendedFromRaw } from "@/lib/csdd-paste-parse";
 import type { CsddOwnerChangeRow, CsddTechnicalInspectionRow } from "@/lib/csdd-extended-parse";
 
 export { type OutvinDealerReport } from "@/lib/outvin-dealer-types";
@@ -1382,20 +1383,21 @@ function repairCitiSection(s: CitiAvotiSectionState | undefined): CitiAvotiSecti
 export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): WorkspaceSourceBlocks {
   const d = createDefaultSourceBlocks();
   const csdd = blocks.csdd ?? d.csdd;
+  const csddRepaired = backfillCsddExtendedFromRaw({
+    ...d.csdd,
+    ...csdd,
+    mileageHistory: Array.isArray(csdd.mileageHistory) ? csdd.mileageHistory : d.csdd.mileageHistory,
+    technicalInspectionHistory: Array.isArray(csdd.technicalInspectionHistory)
+      ? csdd.technicalInspectionHistory
+      : d.csdd.technicalInspectionHistory,
+    ownerRegistrationEvents: Array.isArray(csdd.ownerRegistrationEvents)
+      ? csdd.ownerRegistrationEvents
+      : d.csdd.ownerRegistrationEvents,
+    comments: wsStr(csdd.comments),
+    rawUnprocessedData: wsStr(csdd.rawUnprocessedData),
+  });
   return {
-    csdd: {
-      ...d.csdd,
-      ...csdd,
-      mileageHistory: Array.isArray(csdd.mileageHistory) ? csdd.mileageHistory : d.csdd.mileageHistory,
-      technicalInspectionHistory: Array.isArray(csdd.technicalInspectionHistory)
-        ? csdd.technicalInspectionHistory
-        : d.csdd.technicalInspectionHistory,
-      ownerRegistrationEvents: Array.isArray(csdd.ownerRegistrationEvents)
-        ? csdd.ownerRegistrationEvents
-        : d.csdd.ownerRegistrationEvents,
-      comments: wsStr(csdd.comments),
-      rawUnprocessedData: wsStr(csdd.rawUnprocessedData),
-    },
+    csdd: csddRepaired,
     autodna: repairVendorBlock(blocks.autodna),
     carvertical: repairVendorBlock(blocks.carvertical),
     auto_records: {

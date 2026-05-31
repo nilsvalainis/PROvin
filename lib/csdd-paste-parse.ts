@@ -15,6 +15,7 @@ import {
   parseOwnerRegistrationFromRaw,
   parsePreviousRegistrationCountry,
   parseTechnicalInspectionHistory,
+  normalizeCsddRawText,
 } from "@/lib/csdd-extended-parse";
 import {
   extractRegistryStructuredFields,
@@ -446,19 +447,20 @@ export function applyCsddPasteToForm(
   rawText: string,
   parsed: CsddPasteParseResult,
 ): CsddFormFields {
-  const tech = parseCsddTechnicalFields(rawText);
-  const ownerReg = parseOwnerRegistrationFromRaw(rawText);
-  const technicalInspectionHistory = parseTechnicalInspectionHistory(rawText);
+  const normalizedRaw = normalizeCsddRawText(rawText);
+  const tech = parseCsddTechnicalFields(normalizedRaw);
+  const ownerReg = parseOwnerRegistrationFromRaw(normalizedRaw);
+  const technicalInspectionHistory = parseTechnicalInspectionHistory(normalizedRaw);
   let nextInspectionDate = "";
   let prevInspectionDate = "";
   if (parsed.nextInspectionIso) {
     nextInspectionDate = parsed.nextInspectionIso;
-  } else if (!isLikelyStructuredCsddPaste(rawText)) {
+  } else if (!isLikelyStructuredCsddPaste(normalizedRaw)) {
     nextInspectionDate = current.nextInspectionDate;
   }
   if (parsed.prevInspectionIso) {
     prevInspectionDate = parsed.prevInspectionIso;
-  } else if (!isLikelyStructuredCsddPaste(rawText)) {
+  } else if (!isLikelyStructuredCsddPaste(normalizedRaw)) {
     prevInspectionDate = current.prevInspectionDate;
   }
 
@@ -474,4 +476,31 @@ export function applyCsddPasteToForm(
     mileageHistory: parsed.mileageHistory,
     comments: current.comments,
   };
+}
+
+/** Aizpilda jaunos laukus no jau saglabātā raw (piem. pēc deploy vai migrācijas). */
+export function backfillCsddExtendedFromRaw(csdd: CsddFormFields): CsddFormFields {
+  const raw = normalizeCsddRawText(csdd.rawUnprocessedData ?? "");
+  if (!raw) return csdd;
+
+  const country = parsePreviousRegistrationCountry(raw);
+  const ownerReg = parseOwnerRegistrationFromRaw(raw);
+  const ta = parseTechnicalInspectionHistory(raw);
+
+  const patch: Partial<CsddFormFields> = {};
+  if (!csdd.previousRegistrationCountry.trim() && country) {
+    patch.previousRegistrationCountry = country;
+  }
+  if (!csdd.ownerCountLatvia.trim() && ownerReg.ownerCount) {
+    patch.ownerCountLatvia = ownerReg.ownerCount;
+  }
+  if (!(csdd.ownerRegistrationEvents ?? []).some((e) => e.date.trim()) && ownerReg.events.length > 0) {
+    patch.ownerRegistrationEvents = ownerReg.events;
+  }
+  if (!(csdd.technicalInspectionHistory ?? []).some((r) => r.date.trim()) && ta.length > 0) {
+    patch.technicalInspectionHistory = ta;
+  }
+
+  if (Object.keys(patch).length === 0) return csdd;
+  return { ...csdd, ...patch };
 }
