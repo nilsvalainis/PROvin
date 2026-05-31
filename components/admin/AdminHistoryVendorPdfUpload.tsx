@@ -89,6 +89,10 @@ export function AdminHistoryVendorPdfUpload({
         const parts: string[] = [];
         if (data.meta?.mileageRowCount) parts.push(`${data.meta.mileageRowCount} nobraukuma`);
         if (data.meta?.incidentRowCount) parts.push(`${data.meta.incidentRowCount} negadījumu`);
+        if (data.vehicleHistoryTimeline?.length) {
+          parts.push(`${data.vehicleHistoryTimeline.length} vēstures ierakstu`);
+        }
+        if (data.damageDetails?.length) parts.push(`${data.damageDetails.length} bojājumu`);
         if (parts.length > 0) {
           setNotice(
             `Importēts no „${file.name}”: ${parts.join(", ")} rinda(s)${viaGemini ? " (Plan B: Gemini)" : " (Plan A: lokāli)"}.`,
@@ -108,6 +112,10 @@ export function AdminHistoryVendorPdfUpload({
           rawText: data.rawText ?? "",
           serviceHistory: data.serviceHistory ?? [],
           incidents: data.incidents ?? [],
+          ...(data.vehicleHistoryTimeline?.length
+            ? { vehicleHistoryTimeline: data.vehicleHistoryTimeline }
+            : {}),
+          ...(data.damageDetails?.length ? { damageDetails: data.damageDetails } : {}),
           suggestedPdfChecklist: data.suggestedPdfChecklist ?? {},
           suggestedComments: data.suggestedComments,
           warnings: data.warnings ?? [],

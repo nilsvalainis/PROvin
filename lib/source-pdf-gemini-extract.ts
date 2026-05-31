@@ -279,7 +279,11 @@ function autoRecordsResultFromGemini(
 }
 
 export function vendorParseHasData(r: HistoryVendorPdfParseResult): boolean {
-  return r.serviceHistory.some(autoRecordsRowHasData) || r.incidents.some(ltabRowHasData) || r.rawText.length > 80;
+  if (r.serviceHistory.some(autoRecordsRowHasData)) return true;
+  if (r.incidents.some(ltabRowHasData)) return true;
+  if ((r.vehicleHistoryTimeline ?? []).some((row) => row.date.trim() || row.description.trim())) return true;
+  if ((r.damageDetails ?? []).some((row) => row.date.trim() || row.lossAmount.trim())) return true;
+  return r.rawText.length > 80;
 }
 
 export function autoRecordsParseHasData(r: AutoRecordsPdfParseResult): boolean {

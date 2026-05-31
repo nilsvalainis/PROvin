@@ -12,7 +12,6 @@ import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import type { LtabIncidentRow, VendorAvotuBlockState } from "@/lib/admin-source-blocks";
 import {
   CSDD_MILEAGE_UNIFIED_TITLE,
-  CARVERTICAL_TIMELINE_TITLE,
   NEGADIJUMU_VESTURE_TITLE,
   PROVIN_MILEAGE_TABLE_DOM_KIND,
   PROVIN_MILEAGE_TABLE_FIELD,
@@ -32,12 +31,21 @@ import {
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
-import { parseCarverticalPdfText } from "@/lib/carvertical-pdf-parse";
+import {
+  CARVERTICAL_TIMELINE_TITLE,
+  parseCarverticalPdfText,
+} from "@/lib/carvertical-pdf-parse";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
+import type { HistoryVendorPdfParseResult } from "@/lib/history-vendor-pdf-import";
+import {
+  mergeLtabIncidentRows,
+  mergeVendorServiceHistory,
+} from "@/lib/history-vendor-pdf-import";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -153,6 +161,37 @@ export function AdminVendorAvotuSourceBlock({
     });
   };
 
+  const applyVendorPdfImport = (result: HistoryVendorPdfParseResult) => {
+    const raw = result.rawText.trim();
+    const nextService =
+      result.serviceHistory.length > 0
+        ? mergeVendorServiceHistory(serviceHistory, result.serviceHistory)
+        : serviceHistory;
+    const nextIncidents =
+      result.incidents.length > 0 ? mergeLtabIncidentRows(incidents, result.incidents) : incidents;
+
+    if (blockKey === "carvertical") {
+      onChange({
+        ...block,
+        ...(raw ? { mileagePasteRaw: raw.slice(0, 24_000) } : {}),
+        ...(nextService.length > 0 ? { serviceHistory: nextService } : {}),
+        ...(nextIncidents.length > 0 ? { incidents: nextIncidents } : {}),
+        ...(result.vehicleHistoryTimeline?.length
+          ? { vehicleHistoryTimeline: result.vehicleHistoryTimeline }
+          : {}),
+        ...(result.damageDetails?.length ? { damageDetails: result.damageDetails } : {}),
+      });
+      return;
+    }
+
+    onChange({
+      ...block,
+      ...(raw ? { mileagePasteRaw: raw.slice(0, 24_000) } : {}),
+      ...(nextService.length > 0 ? { serviceHistory: nextService } : {}),
+      ...(nextIncidents.length > 0 ? { incidents: nextIncidents } : {}),
+    });
+  };
+
   const inner = (
     <div className={`flex min-h-0 flex-col overflow-hidden ${embedded ? "" : trafficFillLevel ? "p-0" : "p-2"}`}>
       <div className={`min-h-0 flex-1 overflow-y-auto ${embedded ? "" : trafficFillLevel ? "px-2 pt-2" : ""}`}>
@@ -170,7 +209,14 @@ export function AdminVendorAvotuSourceBlock({
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
         {blockKey === "carvertical" || blockKey === "autodna" ? (
-          <div className="mb-2">
+          <>
+            <AdminHistoryVendorPdfUpload
+              target={blockKey}
+              disabled={disabled}
+              readOnly={readOnly}
+              onImported={applyVendorPdfImport}
+            />
+            <div className="mb-2">
             <label
               className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]"
               htmlFor={`${idBase}-mileage-paste-raw`}
@@ -238,6 +284,7 @@ export function AdminVendorAvotuSourceBlock({
               </>
             )}
           </div>
+          </>
         ) : null}
         <div
           className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90"

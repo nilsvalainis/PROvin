@@ -147,6 +147,8 @@ function extractAutodnaStatusCenterNote(text: string): string | undefined {
 export function vendorLocalParseHasData(r: HistoryVendorPdfParseResult): boolean {
   if (r.serviceHistory.some(autoRecordsRowHasData)) return true;
   if (r.incidents.some(ltabRowHasData)) return true;
+  if ((r.vehicleHistoryTimeline ?? []).some((row) => row.date.trim() || row.description.trim())) return true;
+  if ((r.damageDetails ?? []).some((row) => row.date.trim() || row.lossAmount.trim())) return true;
   return false;
 }
 

@@ -41,6 +41,12 @@ export type CarVerticalParseResult = {
 export function normalizeCarVerticalPdfText(raw: string): string {
   let t = sanitizePdfTextForParsing(raw);
   t = t.replace(/[\u000c\u200b]/g, "");
+  // pdf.js sadalīti vārdi (tikai zināmi fragmenti — nevis vispārīga salīmēšana)
+  t = t.replace(/Transportlīdzek\s+ļ\s+a/gi, "Transportlīdzekļa");
+  t = t.replace(/Transportl\s+[īi]\s*dzek\s+ļ\s+a/gi, "Transportlīdzekļa");
+  t = t.replace(/Ra\s+ž\s+ots/gi, "Ražots");
+  t = t.replace(/Nov\s+[eē]\s+rt\s+[eē]\s+j\s+ums/gi, "Novērtējums");
+  t = t.replace(/lai\s+kposms/gi, "laikposms");
   // Ģenerēšanas datums: 24.05.2 + 26 → 24.05.2026
   t = t.replace(/(\d{1,2}\.\d{1,2}\.\d)\s+(\d{2})\b/g, "$1$2");
   // Īsi sadalīti vārdu fragmenti (1–3 burti nākamajā rindā)
@@ -60,6 +66,11 @@ export function normalizeCarVerticalPdfText(raw: string): string {
   // Timeline: 04.2 + 0 + 24. Itālija → 04.2024. Itālija
   t = t.replace(
     /(\d{1,2})\.(\d)\s*\n\s*(\d)\s*\n\s*(\d{2})\.(?=\s*[A-Za-zĀČĒĢĪĶĻŅŠŪŽ])/g,
+    (_, a, b, c, d) => `${a}.${b}${c}${d}.`,
+  );
+  // pdf.js: 06.2 0 24. Šveice → 06.2024. Šveice
+  t = t.replace(
+    /(\d{1,2})\.(\d)\s+(\d)\s+(\d{2})\.(?=\s*[A-Za-zĀČĒĢĪĶĻŅŠŪŽ])/g,
     (_, a, b, c, d) => `${a}.${b}${c}${d}.`,
   );
   t = t.replace(/Raž\s*\n\s*o\s*\n\s*ts/gi, "Ražots");
@@ -156,13 +167,6 @@ export function normalizeCarVerticalDateToken(raw: string): string {
   }
 
   return "";
-}
-
-function parseMmYyyyFromParts(monthOrDay: string, yearDigits: string): string {
-  const head = Number.parseInt(monthOrDay, 10);
-  const year = Number.parseInt(yearDigits, 10);
-  if (head < 1 || head > 12 || year < 1980 || year > 2100) return "";
-  return formatAutoRecordsDateForOutput(`00.${String(head).padStart(2, "0")}.${year}`);
 }
 
 function rowKey(date: string, odometer: string): string {
@@ -263,7 +267,7 @@ function splitTimelineCountryAndDescription(rest: string): { country: string; de
 export function parseCarverticalTimelineFromText(text: string): CarVerticalTimelineRow[] {
   const norm = normalizeCarVerticalPdfText(text);
   const section =
-    extractSection(norm, /Transportl[īi]dzekļa\s+ierakstu\s+lai\s*kposms/i, [
+    extractSection(norm, /Transportl[\s\S]{0,40}?ierakstu\s+lai\s*kposms/i, [
       /\+44\s/,
       /Datu avoti/i,
       /Specifik[aā]cija/i,
@@ -273,6 +277,27 @@ export function parseCarverticalTimelineFromText(text: string): CarVerticalTimel
 
   if (!section.trim()) return [];
 
+  const fromLines = parseCarverticalTimelineFromLines(section);
+  const fromChunks = parseCarverticalTimelineFromChunks(section);
+  const merged = fromLines.length >= fromChunks.length ? fromLines : fromChunks;
+
+  const seen = new Set<string>();
+  const out: CarVerticalTimelineRow[] = [];
+  for (const row of merged) {
+    const key = `${row.date}|${row.country}|${row.description}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+  }
+
+  return out.sort((a, b) => {
+    const da = a.date.split(".").reverse().join("-");
+    const db = b.date.split(".").reverse().join("-");
+    return da.localeCompare(db);
+  });
+}
+
+function parseCarverticalTimelineFromLines(section: string): CarVerticalTimelineRow[] {
   const lines = section
     .split(/\n/)
     .map((l) => l.replace(/\s+/g, " ").trim())
@@ -312,12 +337,29 @@ export function parseCarverticalTimelineFromText(text: string): CarVerticalTimel
     if (!description) continue;
     out.push({ date, country, description });
   }
+  return out;
+}
 
-  return out.sort((a, b) => {
-    const da = a.date.split(".").reverse().join("-");
-    const db = b.date.split(".").reverse().join("-");
-    return da.localeCompare(db);
-  });
+function parseCarverticalTimelineFromChunks(section: string): CarVerticalTimelineRow[] {
+  const flattened = section.replace(/\s+/g, " ").trim();
+  const eventChunks = flattened
+    .split(/(?=\d{1,2}(?:\.\d{1,2})?\.\d{4}\.?\s)/)
+    .map((c) => c.trim())
+    .filter(Boolean);
+
+  const out: CarVerticalTimelineRow[] = [];
+  for (const chunk of eventChunks) {
+    const m = chunk.match(/^(\d{1,2}(?:\.\d{1,2})?\.\d{4})\.?\s*(.*)$/);
+    if (!m) continue;
+    const date = normalizeCarVerticalDateToken(m[1] ?? "");
+    if (!date) continue;
+
+    const { country, description: descTail } = splitTimelineCountryAndDescription(m[2] ?? "");
+    const description = cleanTimelineDescription(descTail);
+    if (!description) continue;
+    out.push({ date, country, description });
+  }
+  return out;
 }
 
 function parseDamageDate(raw: string): string {
@@ -329,25 +371,57 @@ function parseDamageDate(raw: string): string {
   return normalizeCarVerticalDateToken(t);
 }
 
+function normalizeCarVerticalDamageText(text: string): string {
+  let t = text;
+  t = t.replace(/Priek\s+š\s+puse/gi, "Priekšpuse");
+  t = t.replace(/iepriek\s+š/gi, "iepriekš");
+  t = t.replace(/Dzesē\s+š\s+anas/gi, "Dzesēšanas");
+  t = t.replace(/kondicionē\s+š\s+anas/gi, "kondicionēšanas");
+  t = t.replace(/Š\s+veice/gi, "Šveice");
+  t = t.replace(/deta\s+ļ\s+as/gi, "detaļas");
+  return t;
+}
+
+function flattenDamageGroups(raw: string): string {
+  return raw
+    .split(/\n/)
+    .map((l) => l.replace(/\s+/g, " ").trim())
+    .filter((l) => l.length > 2 && !/^\d+$/.test(l))
+    .join("; ")
+    .replace(/\s+(Ārējās|Ārējais|Virsbūves)/g, "; $1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function pushDamageRecord(
+  incidents: LtabIncidentRow[],
+  damageDetails: CarVerticalDamageDetailRow[],
+  row: CarVerticalDamageDetailRow,
+): void {
+  if (!row.lossAmount && !row.damagedSides && !row.damageGroups) return;
+  const dup = damageDetails.some(
+    (d) => d.date === row.date && d.lossAmount === row.lossAmount && d.country === row.country,
+  );
+  if (dup) return;
+  if (row.lossAmount) incidents.push({ csngDate: row.date, lossAmount: row.lossAmount, incidentNo: row.country });
+  damageDetails.push(row);
+}
+
 /** Bojājumu / novērtējumu ieraksti. */
 export function parseCarverticalDamagesFromText(text: string): {
   incidents: LtabIncidentRow[];
   damageDetails: CarVerticalDamageDetailRow[];
 } {
-  const norm = normalizeCarVerticalPdfText(text);
-  const section =
-    extractSection(norm, /Boj[āa]jumi[\s\S]{0,80}?Vai\s+transportl/i, [
-      /Dabas stih/i,
-      /Tirgus v[eē]rt/i,
-      /Emisijas/i,
-      /Specifik[aā]cija/i,
-    ]) || extractSection(norm, /Nov[eē]rt[eē]jums/i, [/Dabas stih/i, /Tirgus v[eē]rt/i]) || "";
+  const norm = normalizeCarVerticalDamageText(normalizeCarVerticalPdfText(text));
 
-  if (!section.trim()) return { incidents: [], damageDetails: [] };
+  const hasExplicitDamage =
+    /Nov[eē]rt[eē]jums/i.test(norm) &&
+    (/Aptuven[āa]\s+iepriek[sš]/i.test(norm) || /Boj[āa]t[āa]\s+puse/i.test(norm));
+
   if (
-    /Nav atrasti boj[āa]jumu|Nav konstat[eē]tas probl[eē]mas/i.test(section) &&
-    !/Nov[eē]rt[eē]jums/i.test(section) &&
-    !/atrada[mā]?[\s\S]{0,60}\d+\s+ierakst/i.test(section)
+    /Nav atrasti boj[āa]jumu/i.test(norm) &&
+    !/atrada[mā]?\s+\d+\s+ierakst/i.test(norm) &&
+    !hasExplicitDamage
   ) {
     return { incidents: [], damageDetails: [] };
   }
@@ -355,36 +429,30 @@ export function parseCarverticalDamagesFromText(text: string): {
   const incidents: LtabIncidentRow[] = [];
   const damageDetails: CarVerticalDamageDetailRow[] = [];
 
-  const blockRe =
-    /(\d{1,2}(?:\.\d{1,2})?\.\d{4})\.?\s+([A-Za-zĀČĒĢĪĪĶĻŅŠŪŽāčēģīķļņšūž]+)[\s\S]{0,1200}?(?=Dabas stih|Tirgus v|Specifik|$)/gi;
-  let bm: RegExpExecArray | null;
-  while ((bm = blockRe.exec(norm)) !== null) {
-    const chunk = bm[0] ?? "";
-    if (!/Nov[eē]rt[eē]jums|Aptuven[āa]\s+iepriek[sš]\s+g[ūu]t/i.test(chunk)) continue;
-    if (!/5001|10\s*000|boj[āa]jumu\s+v[eē]rt/i.test(chunk) && !/Boj[āa]t[āa]\s+puse/i.test(chunk)) continue;
+  // pdf.js / RAW: Novērtējums bloks (datums var būt pirms vai pēc)
+  for (const m of norm.matchAll(/Nov[eē]rt[eē]jums/gi)) {
+    const start = Math.max(0, (m.index ?? 0) - 200);
+    const block = norm.slice(start, (m.index ?? 0) + 4000);
+    if (!/Aptuven[āa]\s+iepriek[sš]/i.test(block)) continue;
 
-    const date = parseDamageDate(bm[1] ?? "");
-    const country = normalizeCountryNameLv((bm[2] ?? "").trim()) || (bm[2] ?? "").trim();
-    if (!date) continue;
-
-    const lossM = chunk.match(/Aptuven[āa]\s+iepriek[sš]\s+g[ūu]t[oa]\s+boj[āa]jumu\s+v[eē]rt[īi]ba\s*([\s\S]{0,120}?)(?:Boj[āa]jumu|Dabas|$)/i);
+    const lossM = block.match(
+      /Aptuven[āa]\s+iepriek[sš]\s+g[ūu]t[oa]?\s+boj[āa]jumu\s+v[eē]rt[īi]ba\s*([\s\S]{0,100}?)(?:Boj[āa]jumu\s*grupas|\d{1,2}\.\d{4}|Dabas stih|$)/i,
+    );
     const lossAmount = (lossM?.[1] ?? "").replace(/\s+/g, " ").trim();
+    if (!lossAmount || !/\d/.test(lossAmount)) continue;
 
-    const sidesM = chunk.match(/Boj[āa]t[āa]\s+puse\s*([\s\S]{0,100}?)(?:Aptuven|Boj[āa]jumu|$)/i);
+    const dateM = block.match(/(\d{1,2}(?:\.\d{1,2})?\.\d{4})\.?\s+/);
+    const date = dateM?.[1] ? parseDamageDate(dateM[1]) : "";
+    const afterDate = dateM ? block.slice((dateM.index ?? 0) + dateM[0].length, (dateM.index ?? 0) + dateM[0].length + 80) : "";
+    const { country } = splitTimelineCountryAndDescription(afterDate.trim());
+
+    const sidesM = block.match(/Boj[āa]t[āa]\s+puse\s*([\s\S]{0,120}?)(?:Aptuven)/i);
     const damagedSides = (sidesM?.[1] ?? "").replace(/\s+/g, " ").replace(/\bA\b/g, "").trim();
 
-    const groupsM = chunk.match(/Boj[āa]jumu\s*grupas\s*([\s\S]{0,600}?)(?:\n\s*\d+\s*$|Dabas stih|M[eē]s sal|$)/i);
-    const damageGroups = (groupsM?.[1] ?? "")
-      .split(/\n/)
-      .map((l) => l.replace(/\s+/g, " ").trim())
-      .filter((l) => l.length > 2 && !/^\d+$/.test(l))
-      .join("; ")
-      .trim();
+    const groupsM = block.match(/Boj[āa]jumu\s*grupas\s*([\s\S]{0,800}?)(?:\d{1,2}(?:\.\d{1,2})?\.\d{4}|Dabas stih|Tirgus|$)/i);
+    const damageGroups = flattenDamageGroups(groupsM?.[1] ?? "");
 
-    if (!lossAmount && !damagedSides && !damageGroups) continue;
-
-    if (lossAmount) incidents.push({ csngDate: date, lossAmount, incidentNo: country });
-    damageDetails.push({ date, country, lossAmount, damagedSides, damageGroups });
+    pushDamageRecord(incidents, damageDetails, { date, country, lossAmount, damagedSides, damageGroups });
   }
 
   return { incidents, damageDetails };
