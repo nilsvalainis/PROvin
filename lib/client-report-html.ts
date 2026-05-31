@@ -97,8 +97,7 @@ import {
   PDF_MILEAGE_HISTORY_COMMENT_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import { buildOwnerRegistrationTimelineHtml } from "@/lib/csdd-history-charts";
-import { buildCarVerticalIncidentDamageSubHtml, buildCarVerticalTimelineHtml } from "@/lib/carvertical-report-html";
-import { matchCarVerticalDamageDetail } from "@/lib/carvertical-damage-match";
+import { buildCarVerticalTimelineHtml } from "@/lib/carvertical-report-html";
 import {
   buildPreviousInspectionBlockHtml,
   buildTechnicalInspectionHistoryTableHtml,
@@ -547,44 +546,19 @@ export function buildUnifiedMileageTableHtml(
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
 }
 
-function buildUnifiedIncidentRowHtml(
-  r: UnifiedIncidentRow,
-  damageDetail?: { damagedSides: string; damageGroups: string },
-): string {
+function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
   const lossCell = formatLossAmountEurCell(r.lossAmount);
   const flagCell = buildPdfCountryFlagCellHtml(r.country);
   const stripeSpan = buildPdfMileageSourceStripeSpan(r.sourceLabel, "table");
   const srcTd = `<td class="pdf-mileage-cell-src"><span class="pdf-mileage-cell-src-inner">${stripeSpan}</span></td>`;
-  const mainRow = `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo pdf-mileage-cell-loss">${lossCell}</td>${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
-  if (!damageDetail || (!damageDetail.damagedSides.trim() && !damageDetail.damageGroups.trim())) {
-    return mainRow;
-  }
-  const subHtml = buildCarVerticalIncidentDamageSubHtml(damageDetail);
-  return `${mainRow}<tr class="pdf-cv-damage-sub-row"><td class="pdf-cv-damage-sub-cell" colspan="4">${subHtml}</td></tr>`;
+  return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo pdf-mileage-cell-loss">${lossCell}</td>${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
 }
 
-function buildIncidentHistoryTableHtml(
-  rows: UnifiedIncidentRow[],
-  carverticalDamageDetails: import("@/lib/carvertical-pdf-parse").CarVerticalDamageDetailRow[] = [],
-): string {
+function buildIncidentHistoryTableHtml(rows: UnifiedIncidentRow[]): string {
   if (rows.length === 0) return "";
   const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-src" /><col class="pdf-mileage-col-flag" /></colgroup>`;
   const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Zaudējuma summa</th><th class="pdf-mileage-th-src" scope="col">Avots</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
-  const body = rows
-    .map((r) => {
-      const damage =
-        r.sourceLabel === SOURCE_BLOCK_LABELS.carvertical
-          ? matchCarVerticalDamageDetail(
-              { csngDate: r.date, incidentNo: r.country, lossAmount: r.lossAmount },
-              carverticalDamageDetails,
-            )
-          : undefined;
-      return buildUnifiedIncidentRowHtml(
-        r,
-        damage ? { damagedSides: damage.damagedSides, damageGroups: damage.damageGroups } : undefined,
-      );
-    })
-    .join("\n");
+  const body = rows.map(buildUnifiedIncidentRowHtml).join("\n");
   return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--mileage-rows" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 
@@ -596,14 +570,11 @@ export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfV
     manualVendorBlocks: p.manualVendorBlocks ?? null,
     manualLtabBlock: p.manualLtabBlock ?? null,
   });
-  const carverticalDamageRows =
-    (p.manualVendorBlocks ?? []).find((b) => b.title === SOURCE_BLOCK_LABELS.carvertical)?.damageDetails ??
-    [];
   const adminNoteHtml = pdfReportCommentBox(p.internalComment ?? "", ADMIN_INCIDENTS_SUMMARY_LABEL);
   const hasTable = collected.length > 0;
   if (!hasTable && !adminNoteHtml) return "";
   const rows = sortUnifiedIncidentsNewestFirst(collected);
-  const tablesHtml = hasTable ? buildIncidentHistoryTableHtml(rows, carverticalDamageRows) : "";
+  const tablesHtml = hasTable ? buildIncidentHistoryTableHtml(rows) : "";
   const sourceCount = hasTable ? new Set(collected.map((r) => r.sourceLabel)).size : 0;
   const legendAbbrevs = hasTable ? buildPdfSourceLegendAbbrevsHtml(collected.map((r) => r.sourceLabel)) : "";
   const sourceCountHtml = hasTable
@@ -1467,14 +1438,6 @@ function clientReportPrintCss(): string {
       .pdf-cv-timeline-date{min-width:72px;font-weight:700;color:#475569;}
       .pdf-cv-timeline-country{color:#64748b;}
       .pdf-cv-timeline-desc{color:#1d1d1f;flex:1 1 160px;}
-      .pdf-cv-damage-sub{margin:0 0 2px;border:1px solid #fde68a;border-radius:6px;background:#fffbeb;overflow:hidden;}
-      .pdf-cv-damage-sub-head,.pdf-cv-damage-sub-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:5px 10px;font-size:9px;line-height:1.35;}
-      .pdf-cv-damage-sub-head{font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;border-bottom:1px solid #fde68a;background:#fef3c7;}
-      .pdf-cv-damage-sub-row{border-bottom:none;}
-      .pdf-cv-damage-sub-row .pdf-cv-damage-sides{color:#1d1d1f;}
-      .pdf-cv-damage-sub-row .pdf-cv-damage-groups{color:#64748b;}
-      .pdf-cv-damage-sub-row td,.pdf-cv-damage-sub-cell{padding:2px 0 4px!important;border:none!important;background:transparent!important;}
-      .pdf-cv-damage-sub-row .pdf-cv-damage-sub{width:100%;}
       .pdf-csdd-owner-count{margin:0 0 6px;font-size:9pt;color:#1d1d1f;}
       .pdf-csdd-owner-events{display:flex;flex-direction:column;gap:3px;}
       .pdf-csdd-owner-event{display:flex;gap:8px;font-size:9pt;line-height:1.35;}

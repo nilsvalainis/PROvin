@@ -1,6 +1,5 @@
 "use client";
 
-import { Fragment } from "react";
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import {
@@ -36,7 +35,6 @@ import {
   CARVERTICAL_TIMELINE_TITLE,
   parseCarverticalPdfText,
 } from "@/lib/carvertical-pdf-parse";
-import { matchCarVerticalDamageDetail } from "@/lib/carvertical-damage-match";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
 import type { HistoryVendorPdfParseResult } from "@/lib/history-vendor-pdf-import";
 import {
@@ -438,25 +436,8 @@ export function AdminVendorAvotuSourceBlock({
                 </tr>
               </thead>
               <tbody>
-                {incidents.map((row, ri) => {
-                  const damageDetail =
-                    blockKey === "carvertical"
-                      ? matchCarVerticalDamageDetail(
-                          {
-                            csngDate: row.csngDate,
-                            incidentNo: row.incidentNo,
-                            lossAmount: row.lossAmount,
-                          },
-                          block.damageDetails,
-                        )
-                      : undefined;
-                  const showDamageSub =
-                    damageDetail &&
-                    (damageDetail.damagedSides.trim() || damageDetail.damageGroups.trim());
-                  const colSpan = readOnly ? 3 : 4;
-                  return (
-                    <Fragment key={ri}>
-                      <tr className="border-b border-slate-100 last:border-b-0">
+                {incidents.map((row, ri) => (
+                  <tr key={ri} className="border-b border-slate-100 last:border-b-0">
                     <td className={`${mileCell} align-top`}>
                       {readOnly ? (
                         <span className="text-[var(--color-provin-muted)]">{row.csngDate.trim() || "—"}</span>
@@ -538,30 +519,8 @@ export function AdminVendorAvotuSourceBlock({
                         ) : null}
                       </td>
                     ) : null}
-                      </tr>
-                      {showDamageSub ? (
-                        <tr className="border-b border-amber-100/80 bg-amber-50/30">
-                          <td colSpan={colSpan} className={`${mileCell} py-1`}>
-                            <div className="overflow-hidden rounded-md border border-amber-200/80 bg-amber-50/50">
-                              <div className="grid grid-cols-2 gap-2 border-b border-amber-200/70 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-slate-500">
-                                <span>Bojātā puse</span>
-                                <span>Bojājumu grupas</span>
-                              </div>
-                              <div className="grid grid-cols-2 gap-2 px-2 py-1 text-[11px]">
-                                <span className="text-[var(--color-apple-text)]">
-                                  {damageDetail!.damagedSides.trim() || "—"}
-                                </span>
-                                <span className="text-[var(--color-provin-muted)]">
-                                  {damageDetail!.damageGroups.trim() || "—"}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : null}
-                    </Fragment>
-                  );
-                })}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
