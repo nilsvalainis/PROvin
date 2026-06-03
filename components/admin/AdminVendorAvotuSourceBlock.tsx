@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import {
@@ -20,6 +21,7 @@ import {
   emptyAutoRecordsServiceRow,
   emptyLtabRow,
   emptySourcePdfChecklist,
+  ltabRowHasData,
   normalizeSourcePdfChecklist,
   sourcePdfChecklistHasAny,
   coerceVendorAvotuBlock,
@@ -36,6 +38,7 @@ import {
   CARVERTICAL_TIMELINE_TITLE,
   parseCarverticalPdfText,
 } from "@/lib/carvertical-pdf-parse";
+import { matchCarVerticalDamageDetail } from "@/lib/carvertical-damage-match";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
 import type { HistoryVendorPdfParseResult } from "@/lib/history-vendor-pdf-import";
 import {
@@ -92,6 +95,7 @@ export function AdminVendorAvotuSourceBlock({
   const block = coerceVendorAvotuBlock(value);
   const serviceHistory = block.serviceHistory ?? [];
   const incidents = block.incidents ?? [];
+  const incidentsHaveData = incidents.some(ltabRowHasData);
 
   const displayRows =
     serviceHistory.length > 0
@@ -426,7 +430,8 @@ export function AdminVendorAvotuSourceBlock({
             <AdminProvinLucide icon={SUBHEADING_LUCIDE.incidents} />
             {NEGADIJUMU_VESTURE_TITLE}
           </p>
-          <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">
+          {!readOnly || incidentsHaveData ? (
+          <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90 bg-gradient-to-b from-slate-50/50 to-white shadow-[0_1px_8px_rgba(15,23,42,0.04)]">
             <table className="w-full min-w-[280px] border-collapse text-[11px]">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
@@ -437,8 +442,32 @@ export function AdminVendorAvotuSourceBlock({
                 </tr>
               </thead>
               <tbody>
-                {incidents.map((row, ri) => (
-                  <tr key={ri} className="border-b border-slate-100 last:border-b-0">
+                {incidents.map((row, ri) => {
+                  const damageDetail =
+                    blockKey === "carvertical"
+                      ? matchCarVerticalDamageDetail(
+                          {
+                            csngDate: row.csngDate,
+                            incidentNo: row.incidentNo,
+                            lossAmount: row.lossAmount,
+                          },
+                          block.damageDetails,
+                        )
+                      : undefined;
+                  const showDamageSub =
+                    damageDetail &&
+                    (damageDetail.damagedSides.trim() || damageDetail.damageGroups.trim());
+                  const colSpan = readOnly ? 3 : 4;
+                  const rowHasData = ltabRowHasData(row);
+                  return (
+                    <Fragment key={ri}>
+                      <tr
+                        className={
+                          rowHasData
+                            ? "border-b border-slate-100 last:border-b-0"
+                            : "border-b border-slate-100/70 last:border-b-0 opacity-60"
+                        }
+                      >
                     <td className={`${mileCell} align-top`}>
                       {readOnly ? (
                         <span className="text-[var(--color-provin-muted)]">{row.csngDate.trim() || "—"}</span>
@@ -520,11 +549,38 @@ export function AdminVendorAvotuSourceBlock({
                         ) : null}
                       </td>
                     ) : null}
-                  </tr>
-                ))}
+                      </tr>
+                      {showDamageSub ? (
+                        <tr className="border-b border-slate-100/80 bg-slate-50/80">
+                          <td colSpan={colSpan} className={`${mileCell} py-1`}>
+                            <div className="overflow-hidden rounded-md border border-slate-200/90 bg-white/90 shadow-sm">
+                              <div className="grid grid-cols-2 gap-2 border-b border-slate-200/80 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-slate-500">
+                                <span>Bojātā puse</span>
+                                <span>Bojājumu grupas</span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 px-2 py-1 text-[11px]">
+                                <span className="font-medium text-[var(--color-apple-text)]">
+                                  {damageDetail!.damagedSides.trim() || "—"}
+                                </span>
+                                <span className="text-[var(--color-provin-muted)]">
+                                  {damageDetail!.damageGroups.trim() || "—"}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
+          ) : (
+            <p className="rounded-lg border border-dashed border-slate-200/90 bg-slate-50/60 px-3 py-2 text-[11px] text-[var(--color-provin-muted)]">
+              Nav ievadītu negadījumu.
+            </p>
+          )}
           {!readOnly && !disabled ? (
             <button
               type="button"

@@ -97,7 +97,8 @@ import {
   PDF_MILEAGE_HISTORY_COMMENT_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import { buildOwnerRegistrationTimelineHtml } from "@/lib/csdd-history-charts";
-import { buildCarVerticalTimelineHtml } from "@/lib/carvertical-report-html";
+import { buildCarVerticalIncidentDamageSubHtml, buildCarVerticalTimelineHtml } from "@/lib/carvertical-report-html";
+import { matchCarVerticalDamageDetail } from "@/lib/carvertical-damage-match";
 import {
   buildPreviousInspectionBlockHtml,
   buildTechnicalInspectionHistoryTableHtml,
@@ -552,20 +553,45 @@ export function buildUnifiedMileageTableHtml(
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
 }
 
-function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
+function buildUnifiedIncidentRowHtml(
+  r: UnifiedIncidentRow,
+  damageDetail?: { damagedSides: string; damageGroups: string },
+): string {
   const lossCell = formatLossAmountEurCell(r.lossAmount);
   const flagCell = buildPdfCountryFlagCellHtml(r.country);
   const stripeSpan = buildPdfMileageSourceStripeSpan(r.sourceLabel, "table");
   const srcTd = `<td class="pdf-mileage-cell-src"><span class="pdf-mileage-cell-src-inner">${stripeSpan}</span></td>`;
-  return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo pdf-mileage-cell-loss">${lossCell}</td>${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
+  const mainRow = `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo pdf-mileage-cell-loss">${lossCell}</td>${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
+  if (!damageDetail || (!damageDetail.damagedSides.trim() && !damageDetail.damageGroups.trim())) {
+    return mainRow;
+  }
+  const subHtml = buildCarVerticalIncidentDamageSubHtml(damageDetail);
+  return `${mainRow}<tr class="pdf-cv-damage-sub-row"><td class="pdf-cv-damage-sub-cell" colspan="4">${subHtml}</td></tr>`;
 }
 
-function buildIncidentHistoryTableHtml(rows: UnifiedIncidentRow[]): string {
+function buildIncidentHistoryTableHtml(
+  rows: UnifiedIncidentRow[],
+  carverticalDamageDetails: import("@/lib/carvertical-pdf-parse").CarVerticalDamageDetailRow[] = [],
+): string {
   if (rows.length === 0) return "";
   const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-src" /><col class="pdf-mileage-col-flag" /></colgroup>`;
   const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Zaudējuma summa</th><th class="pdf-mileage-th-src" scope="col">Avots</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
-  const body = rows.map(buildUnifiedIncidentRowHtml).join("\n");
-  return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--mileage-rows" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  const body = rows
+    .map((r) => {
+      const damage =
+        r.sourceLabel === SOURCE_BLOCK_LABELS.carvertical
+          ? matchCarVerticalDamageDetail(
+              { csngDate: r.date, incidentNo: r.country, lossAmount: r.lossAmount },
+              carverticalDamageDetails,
+            )
+          : undefined;
+      return buildUnifiedIncidentRowHtml(
+        r,
+        damage ? { damagedSides: damage.damagedSides, damageGroups: damage.damageGroups } : undefined,
+      );
+    })
+    .join("\n");
+  return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--mileage-rows pdf-mileage-history-table--incidents" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 
 /** Apvienota negadījumu tabula (AutoDNA, CarVertical, LTAB, Citi avoti) — tikai rindas ar aizpildītu zaudējumu summu. */
@@ -576,11 +602,14 @@ export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfV
     manualVendorBlocks: p.manualVendorBlocks ?? null,
     manualLtabBlock: p.manualLtabBlock ?? null,
   });
+  const carverticalDamageRows =
+    (p.manualVendorBlocks ?? []).find((b) => b.title === SOURCE_BLOCK_LABELS.carvertical)?.damageDetails ??
+    [];
   const adminNoteHtml = pdfReportCommentBox(p.internalComment ?? "", ADMIN_INCIDENTS_SUMMARY_LABEL);
   const hasTable = collected.length > 0;
   if (!hasTable && !adminNoteHtml) return "";
   const rows = sortUnifiedIncidentsNewestFirst(collected);
-  const tablesHtml = hasTable ? buildIncidentHistoryTableHtml(rows) : "";
+  const tablesHtml = hasTable ? buildIncidentHistoryTableHtml(rows, carverticalDamageRows) : "";
   const sourceCount = hasTable ? new Set(collected.map((r) => r.sourceLabel)).size : 0;
   const legendAbbrevs = hasTable ? buildPdfSourceLegendAbbrevsHtml(collected.map((r) => r.sourceLabel)) : "";
   const sourceCountHtml = hasTable
@@ -1059,6 +1088,18 @@ function clientReportPrintCss(): string {
       .pdf-unified-mileage-zone__body > .pdf-report-comment-note:last-child{
         margin-bottom:0;
       }
+      .pdf-mileage-history-table--incidents tbody tr.pdf-mileage-history-row:nth-child(4n+1),
+      .pdf-mileage-history-table--incidents tbody tr.pdf-mileage-history-row:nth-child(4n+2){
+        background:#fafbfc;
+      }
+      .pdf-cv-damage-sub{margin:0 0 2px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;overflow:hidden;}
+      .pdf-cv-damage-sub-head,.pdf-cv-damage-sub-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:5px 10px;font-size:9px;line-height:1.35;}
+      .pdf-cv-damage-sub-head{font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;border-bottom:1px solid #e2e8f0;background:#f1f5f9;}
+      .pdf-cv-damage-sub-row{border-bottom:none;}
+      .pdf-cv-damage-sub-row .pdf-cv-damage-sides{color:#1d1d1f;font-weight:500;}
+      .pdf-cv-damage-sub-row .pdf-cv-damage-groups{color:#64748b;}
+      .pdf-cv-damage-sub-row td,.pdf-cv-damage-sub-cell{padding:2px 0 4px!important;border:none!important;background:transparent!important;}
+      .pdf-cv-damage-sub-row .pdf-cv-damage-sub{width:100%;}
       .pdf-source-section-body > .pdf-report-comment-note:first-child{margin-top:0;}
       .pdf-report-comment-note,
       .pdf-incident-internal-note,
