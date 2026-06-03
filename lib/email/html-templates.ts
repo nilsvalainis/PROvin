@@ -68,7 +68,6 @@ function clientReportLegalFooterEmailHtml(origin: string): string {
 
 export function paymentConfirmationHtml(opts: {
   invoiceUrl: string;
-  thanksUrl: string;
   amountLine: string;
   vin: string;
 }): string {
@@ -78,8 +77,6 @@ export function paymentConfirmationHtml(opts: {
 <p style="margin:0 0 6px;font-size:14px;"><strong>Summa:</strong> ${esc(opts.amountLine)}</p>
 <p style="margin:0 0 24px;font-size:14px;"><strong>VIN:</strong> ${esc(opts.vin)}</p>
 ${ctaButton(opts.invoiceUrl, "Lejupielādēt rēķinu (PDF)")}
-<p style="margin:16px 0 0;font-size:13px;color:${MUTED};">Varat arī vēlāk lejupielādēt rēķinu no pateicības lapas pēc apmaksas.</p>
-<p style="margin:20px 0 0;font-size:13px;"><a href="${esc(opts.thanksUrl)}" style="color:${BRAND};text-decoration:none;font-weight:500;">Atvērt pateicības lapu →</a></p>
 `;
   return shell(inner);
 }
