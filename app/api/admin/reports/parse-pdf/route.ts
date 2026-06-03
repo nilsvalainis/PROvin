@@ -1,6 +1,6 @@
 /**
  * Admin: vēstures PDF → strukturēti dati.
- * Plan A: pdf-parse + lokālā heuristika. Plan B: Gemini tikai skenētiem / neatpazītiem PDF.
+ * Noklusējums: Gemini Pro lasa pilnu PDF; lokālais parsers — fallback.
  */
 import { NextResponse } from "next/server";
 

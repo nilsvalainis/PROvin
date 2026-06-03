@@ -11,15 +11,15 @@ const LABELS: Record<
 > = {
   autodna: {
     title: "Augšupielādēt AutoDNA PDF atskaiti",
-    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB · skenētiem PDF — Gemini",
+    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB · Gemini Pro lasa pilnu PDF",
   },
   carvertical: {
     title: "Augšupielādēt CarVertical PDF atskaiti",
-    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB · skenētiem PDF — Gemini",
+    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB · Gemini Pro lasa pilnu PDF",
   },
   ltab: {
     title: "Augšupielādēt LTAB / OCTA PDF atskaiti",
-    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB · skenētiem PDF — Gemini",
+    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB · Gemini Pro lasa pilnu PDF",
   },
 };
 
@@ -85,7 +85,15 @@ export function AdminHistoryVendorPdfUpload({
         }
 
         const viaGemini =
-          data.meta?.engine === "gemini_fallback" || data.meta?.extractionMethod === "gemini";
+          data.meta?.engine === "gemini_primary" ||
+          data.meta?.engine === "gemini_fallback" ||
+          data.meta?.extractionMethod === "gemini";
+        const engineLabel =
+          data.meta?.engine === "gemini_primary"
+            ? "Gemini Pro (PDF)"
+            : viaGemini
+              ? "Gemini Pro"
+              : "lokāli";
         const parts: string[] = [];
         if (data.meta?.mileageRowCount) parts.push(`${data.meta.mileageRowCount} nobraukuma`);
         if (data.meta?.incidentRowCount) parts.push(`${data.meta.incidentRowCount} negadījumu`);
@@ -95,13 +103,13 @@ export function AdminHistoryVendorPdfUpload({
         if (data.damageDetails?.length) parts.push(`${data.damageDetails.length} bojājumu`);
         if (parts.length > 0) {
           setNotice(
-            `Importēts no „${file.name}”: ${parts.join(", ")} rinda(s)${viaGemini ? " (Plan B: Gemini)" : " (Plan A: lokāli)"}.`,
+            `Importēts no „${file.name}”: ${parts.join(", ")} rinda(s) (${engineLabel}).`,
           );
         } else {
           setNotice(
             viaGemini
-              ? `Plan B (Gemini) — „${file.name}”; pārbaudi tabulas.`
-              : `Plan A (lokāli) — „${file.name}”; pārbaudi RAW / tabulu.`,
+              ? `${engineLabel} — „${file.name}”; pārbaudi tabulas.`
+              : `Lokāli — „${file.name}”; ieteicams pārimportēt (Gemini Pro).`,
           );
         }
         if (data.warnings?.length) {

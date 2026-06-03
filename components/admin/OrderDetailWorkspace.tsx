@@ -111,6 +111,7 @@ import {
   Scale,
   RotateCcw,
   Send,
+  Sparkles,
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
@@ -647,6 +648,10 @@ export function OrderDetailWorkspace({
   } | null>(null);
   const notifyReportPdfExtraRef = useRef<HTMLInputElement>(null);
   const [portfolioDropActive, setPortfolioDropActive] = useState(false);
+  const [prepareDraftBusy, setPrepareDraftBusy] = useState(false);
+  const [prepareDraftPhase, setPrepareDraftPhase] = useState<string | null>(null);
+  const [prepareDraftErr, setPrepareDraftErr] = useState<string | null>(null);
+  const [prepareDraftNotice, setPrepareDraftNotice] = useState<string | null>(null);
   const portfolioDragDepth = useRef(0);
   const hydrationSnapshotRef = useRef("");
   const workspaceDirtyRef = useRef(false);
@@ -1212,6 +1217,111 @@ export function OrderDetailWorkspace({
     },
     [buildGeminiOrderPayload, geminiSourceCommentBusy, payload.geminiAllowed, updateSourceBlock],
   );
+
+  const runPrepareDraft = useCallback(async () => {
+    if (!payload.geminiAllowed || prepareDraftBusy) return;
+    const pdfs = portfolioRef.current.filter(
+      (p) => p.mime === "application/pdf" || /\.pdf$/i.test(p.name),
+    );
+    if (pdfs.length === 0) {
+      setPrepareDraftErr("Portfelī nav PDF — vispirms pievieno avotu atskaites (CarVertical, AutoDNA u.c.).");
+      return;
+    }
+    setPrepareDraftBusy(true);
+    setPrepareDraftErr(null);
+    setPrepareDraftNotice(null);
+    setPrepareDraftPhase("Analizējam PDF ar Gemini Pro un ģenerējam komentārus…");
+    try {
+      const cur = wsPersistRef.current;
+      const edits = orderEditsRef.current;
+      const fd = new FormData();
+      fd.set("sessionId", payload.sessionId);
+      fd.set("vin", payload.vin ?? "");
+      fd.set("listingUrl", payload.listingUrl ?? "");
+      fd.set("customerName", payload.customerName ?? "");
+      fd.set("notes", payload.notes ?? "");
+      fd.set("internalComment", edits.internal);
+      fd.set("mileageComment", edits.mileage);
+      fd.set("sourcesComparisonComment", edits.sourcesComparison);
+      fd.set("sourceBlocks", JSON.stringify(cur.sourceBlocks));
+      fd.set("generateComments", "true");
+      for (const p of pdfs) {
+        const blob = await fetch(p.blobUrl).then((r) => r.blob());
+        fd.append(
+          "files",
+          new File([blob], p.name, { type: p.mime || "application/pdf" }),
+        );
+      }
+      const res = await fetch("/api/admin/prepare-draft", {
+        method: "POST",
+        body: fd,
+        credentials: "include",
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        detail?: string;
+        sourceBlocks?: WorkspaceSourceBlocks;
+        orderEdits?: {
+          internalComment?: string;
+          mileageComment?: string;
+          sourcesComparisonComment?: string;
+        };
+        steps?: { status: string }[];
+        warnings?: string[];
+      };
+      if (!res.ok) {
+        setPrepareDraftErr(
+          typeof data.detail === "string" && data.detail.trim()
+            ? data.detail
+            : data.error === "missing_gemini_key"
+              ? "Nav GEMINI_API_KEY serverī"
+              : "Neizdevās sagatavot melnrakstu",
+        );
+        return;
+      }
+      if (data.sourceBlocks) {
+        updateWs({ sourceBlocks: mergeSourceBlocksWithDefaults(data.sourceBlocks) });
+      }
+      if (typeof data.orderEdits?.internalComment === "string" && data.orderEdits.internalComment.trim()) {
+        onInternalCommentChange(data.orderEdits.internalComment);
+      }
+      if (typeof data.orderEdits?.mileageComment === "string" && data.orderEdits.mileageComment.trim()) {
+        onMileageCommentChange(data.orderEdits.mileageComment);
+      }
+      if (
+        typeof data.orderEdits?.sourcesComparisonComment === "string" &&
+        data.orderEdits.sourcesComparisonComment.trim()
+      ) {
+        onSourcesComparisonCommentChange(data.orderEdits.sourcesComparisonComment);
+      }
+      const okSteps = (data.steps ?? []).filter((s) => s.status === "ok").length;
+      const warn = (data.warnings ?? [])[0];
+      setPrepareDraftNotice(
+        warn
+          ? `Melnraksts sagatavots (${okSteps} soļi). ${warn}`
+          : `Melnraksts sagatavots (${okSteps} soļi) — pārskati avotu tabulas un komentārus.`,
+      );
+      setWizardStep(1);
+    } catch {
+      setPrepareDraftErr("Neizdevās savienoties ar serveri");
+    } finally {
+      setPrepareDraftBusy(false);
+      setPrepareDraftPhase(null);
+    }
+  }, [
+    onInternalCommentChange,
+    onMileageCommentChange,
+    onSourcesComparisonCommentChange,
+    payload.customerName,
+    payload.geminiAllowed,
+    payload.listingUrl,
+    payload.notes,
+    payload.sessionId,
+    payload.vin,
+    prepareDraftBusy,
+    updateWs,
+  ]);
 
   useEffect(() => {
     portfolioRef.current = portfolio;
@@ -2248,6 +2358,22 @@ export function OrderDetailWorkspace({
             ) : null}
           </h2>
           <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+            {payload.geminiAllowed ? (
+              <button
+                type="button"
+                onClick={() => void runPrepareDraft()}
+                disabled={prepareDraftBusy || portfolio.every((p) => p.mime !== "application/pdf" && !/\.pdf$/i.test(p.name))}
+                className="inline-flex items-center gap-1 rounded-md border border-[var(--color-provin-accent)]/30 bg-[var(--color-provin-accent-soft)]/80 px-2 py-1 text-[10px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent-soft)] disabled:cursor-not-allowed disabled:opacity-45"
+                title="Portfeļa PDF → avotu tabulas + Gemini Pro komentāru melnraksts"
+              >
+                {prepareDraftBusy ? (
+                  <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden />
+                ) : (
+                  <Sparkles className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
+                )}
+                Sagatavot melnrakstu
+              </button>
+            ) : null}
             {payload.paymentStatus?.toLowerCase() === "paid" &&
             payload.customerEmail?.trim() &&
             isValidOrderEmail(payload.customerEmail.trim()) ? (
@@ -2269,6 +2395,21 @@ export function OrderDetailWorkspace({
           </div>
         </div>
       </div>
+      {prepareDraftPhase ? (
+        <p className="mt-1 text-[10px] leading-snug text-[var(--color-provin-accent)]" role="status">
+          {prepareDraftPhase}
+        </p>
+      ) : null}
+      {prepareDraftNotice ? (
+        <p className="mt-1 text-[10px] leading-snug text-emerald-800/90" role="status">
+          {prepareDraftNotice}
+        </p>
+      ) : null}
+      {prepareDraftErr ? (
+        <p className="mt-1 text-[10px] leading-snug text-amber-800/90" role="alert">
+          {prepareDraftErr}
+        </p>
+      ) : null}
       <div
         onDragEnter={(e) => {
           e.preventDefault();

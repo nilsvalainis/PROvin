@@ -2,8 +2,7 @@ import "server-only";
 
 import { getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
 import { parseAutoRecordsPdfText, type AutoRecordsPdfParseResult } from "@/lib/auto-records-pdf-parse";
-import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
-import { ltabRowHasData } from "@/lib/admin-source-blocks";
+import { parseCarverticalPdfText } from "@/lib/carvertical-pdf-parse";
 import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/history-vendor-pdf-import";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import { extractPdfTextDetailed, type PdfExtractResult } from "@/lib/pdf-text-extract-server";
@@ -42,25 +41,62 @@ function withEngine<T extends { meta: { engine?: PdfIngestEngine } }>(
   };
 }
 
-async function runGeminiPlanB(
+function enrichCarverticalGeminiResult(
+  result: HistoryVendorPdfParseResult,
+  textHint: string,
+): HistoryVendorPdfParseResult {
+  const hint = textHint.trim();
+  if (!hint) return result;
+  const cv = parseCarverticalPdfText(hint);
+  return {
+    ...result,
+    ...(cv.timeline.length > 0 && !(result.vehicleHistoryTimeline ?? []).length
+      ? { vehicleHistoryTimeline: cv.timeline }
+      : {}),
+    ...(cv.damageDetails.length > 0 && !(result.damageDetails ?? []).length
+      ? { damageDetails: cv.damageDetails }
+      : {}),
+    ...(result.serviceHistory.length === 0 && cv.serviceHistory.length > 0
+      ? { serviceHistory: cv.serviceHistory }
+      : {}),
+    ...(result.incidents.length === 0 && cv.incidents.length > 0 ? { incidents: cv.incidents } : {}),
+  };
+}
+
+function enrichVendorGeminiResult(
+  target: HistoryVendorPdfTarget,
+  result: HistoryVendorPdfParseResult,
+  textHint: string,
+): HistoryVendorPdfParseResult {
+  if (target === "carvertical") return enrichCarverticalGeminiResult(result, textHint);
+  return result;
+}
+
+async function runGeminiExtract(
   target: SourcePdfIngestTarget,
   buffer: ArrayBuffer,
   fileName: string,
   textHint: string,
   extract: PdfExtractResult,
+  engine: PdfIngestEngine,
 ): Promise<HistoryVendorPdfParseResult | AutoRecordsPdfParseResult> {
   if (!getGeminiApiKeyFromEnv()) {
     throw new Error("missing_gemini_key");
   }
-  console.info(`${LOG_PREFIX} plan_b_gemini`, { fileName, target, stage: extract.stage });
+  console.info(`${LOG_PREFIX} gemini_extract`, { fileName, target, engine, stage: extract.stage });
   const result = await extractSourcePdfWithGemini({ target, buffer, fileName, textHint });
-  if ("incidents" in result) {
-    return withEngine(result, "gemini_fallback", extract.backend);
+  if ("incidents" in result && target !== "auto_records") {
+    const enriched = enrichVendorGeminiResult(
+      target as HistoryVendorPdfTarget,
+      result,
+      textHint,
+    );
+    return withEngine(enriched, engine, extract.backend);
   }
-  return withEngine(result, "gemini_fallback", extract.backend);
+  return withEngine(result, engine, extract.backend);
 }
 
-function shouldUsePlanB(
+function shouldUseLegacyPlanB(
   target: SourcePdfIngestTarget,
   extract: PdfExtractResult,
   text: string,
@@ -94,13 +130,23 @@ function shouldUsePlanB(
   return { use: false, reason: "local_ok" };
 }
 
+function parseHasData(
+  target: SourcePdfIngestTarget,
+  result: HistoryVendorPdfParseResult | AutoRecordsPdfParseResult,
+): boolean {
+  return "incidents" in result ? vendorParseHasData(result) : autoRecordsParseHasData(result);
+}
+
 /**
- * Viena PDF imports: Plan A (lokāls) → Plan B (Gemini tikai skenētiem / neatpazītiem).
+ * Viena PDF imports.
+ * Noklusējums: Gemini Pro lasa pilnu PDF (vizuāli); lokālais parsers — tikai ja nav GEMINI_API_KEY vai Gemini neizdodas.
  */
 export async function ingestSourcePdfFile(opts: {
   target: SourcePdfIngestTarget;
   buffer: ArrayBuffer;
   fileName: string;
+  /** false — tikai lokālais + vecais Plan B fallback. */
+  preferGemini?: boolean;
 }): Promise<{
   result: HistoryVendorPdfParseResult | AutoRecordsPdfParseResult;
   extract: PdfExtractResult;
@@ -108,6 +154,7 @@ export async function ingestSourcePdfFile(opts: {
   planReason: string;
 }> {
   const { target, buffer, fileName } = opts;
+  const preferGemini = opts.preferGemini !== false;
   const extract = await extractPdfTextDetailed(buffer, { fileName });
   const text = extract.text;
 
@@ -120,36 +167,80 @@ export async function ingestSourcePdfFile(opts: {
     localAuto = withEngine(parseAutoRecordsPdfText(text), "local_parser", extract.backend);
   }
 
-  const decision = shouldUsePlanB(target, extract, text, localVendor, localAuto);
+  if (preferGemini && getGeminiApiKeyFromEnv()) {
+    try {
+      const geminiResult = await runGeminiExtract(
+        target,
+        buffer,
+        fileName,
+        text,
+        extract,
+        "gemini_primary",
+      );
+      if (parseHasData(target, geminiResult)) {
+        return { result: geminiResult, extract, plan: "gemini_primary", planReason: "gemini_default" };
+      }
+      console.warn(`${LOG_PREFIX} gemini_empty`, { fileName, target });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn(`${LOG_PREFIX} gemini_failed_fallback_local`, { fileName, target, msg });
+    }
+  }
 
-  if (!decision.use) {
+  const decision = shouldUseLegacyPlanB(target, extract, text, localVendor, localAuto);
+
+  if (!decision.use && localVendor) {
     console.info(`${LOG_PREFIX} plan_a_ok`, { fileName, target, reason: decision.reason, backend: extract.backend });
-    const result = target === "auto_records" ? localAuto! : localVendor!;
-    return { result, extract, plan: "local_parser", planReason: decision.reason };
+    return { result: localVendor, extract, plan: "local_parser", planReason: decision.reason };
+  }
+  if (!decision.use && localAuto) {
+    console.info(`${LOG_PREFIX} plan_a_ok`, { fileName, target, reason: decision.reason, backend: extract.backend });
+    return { result: localAuto, extract, plan: "local_parser", planReason: decision.reason };
   }
 
-  const geminiResult = await runGeminiPlanB(target, buffer, fileName, text, extract);
-  const warnings = "warnings" in geminiResult ? [...geminiResult.warnings] : [];
-  if (decision.reason === "empty_text_layer") {
-    warnings.unshift(
-      extract.stage === "load_failed"
-        ? `Teksta slānis neielādējās (${extract.errorMessage ?? "parser"}) — Plan B: Gemini.`
-        : `Skenēts PDF (0 zīmes tekstā) — Plan B: Gemini.`,
+  if (getGeminiApiKeyFromEnv()) {
+    const geminiResult = await runGeminiExtract(
+      target,
+      buffer,
+      fileName,
+      text,
+      extract,
+      "gemini_fallback",
     );
-  } else if (decision.reason === "vendor_structure_unmatched" || decision.reason === "auto_records_structure_unmatched") {
-    warnings.unshift("Avota struktūra neatpazīta lokāli — Plan B: Gemini.");
-  } else if (decision.reason.includes("no_rows")) {
-    warnings.unshift("Lokālā heuristika neatrada rindas — Plan B: Gemini.");
+    const warnings = "warnings" in geminiResult ? [...geminiResult.warnings] : [];
+    if (decision.reason === "empty_text_layer") {
+      warnings.unshift(
+        extract.stage === "load_failed"
+          ? `Teksta slānis neielādējās (${extract.errorMessage ?? "parser"}) — Gemini.`
+          : `Skenēts PDF (0 zīmes tekstā) — Gemini.`,
+      );
+    } else if (
+      decision.reason === "vendor_structure_unmatched" ||
+      decision.reason === "auto_records_structure_unmatched"
+    ) {
+      warnings.unshift("Avota struktūra neatpazīta lokāli — Gemini.");
+    } else if (decision.reason.includes("no_rows")) {
+      warnings.unshift("Lokālā heuristika neatrada rindas — Gemini.");
+    } else if (decision.reason === "gemini_default") {
+      /* noop */
+    } else {
+      warnings.unshift("Gemini fallback pēc lokālā neveiksmīgā mēģinājuma.");
+    }
+    if ("warnings" in geminiResult) {
+      geminiResult.warnings = warnings;
+    }
+    return {
+      result: geminiResult,
+      extract,
+      plan: "gemini_fallback",
+      planReason: decision.reason,
+    };
   }
 
-  if ("warnings" in geminiResult) {
-    geminiResult.warnings = warnings;
+  const fallback = target === "auto_records" ? localAuto : localVendor;
+  if (fallback && parseHasData(target, fallback)) {
+    return { result: fallback, extract, plan: "local_parser", planReason: "no_gemini_key" };
   }
 
-  return {
-    result: geminiResult,
-    extract,
-    plan: "gemini_fallback",
-    planReason: decision.reason,
-  };
+  throw new Error("missing_gemini_key");
 }
