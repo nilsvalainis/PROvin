@@ -6,6 +6,7 @@ import {
   AdminSourceCommentField,
   type AdminGeminiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
+import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
@@ -559,6 +560,13 @@ export function AdminVendorAvotuSourceBlock({
           compact
           gemini={geminiComment}
           aria-label="Avota komentāri"
+        />
+        <AdminGeminiContextRawField
+          value={block.geminiContextRaw ?? ""}
+          onChange={(next) => onChange({ ...block, geminiContextRaw: next })}
+          readOnly={readOnly}
+          disabled={disabled}
+          ariaLabel="Avots — Gemini AI papildu konteksts"
         />
       </div>
     </div>

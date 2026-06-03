@@ -1,6 +1,6 @@
 import "server-only";
 
-import { GEMINI_MODEL_FLASH, GEMINI_MODEL_PRO, geminiGenerateText } from "@/lib/admin-gemini";
+import { GEMINI_MODEL_PRO, geminiGenerateText } from "@/lib/admin-gemini";
 import { geminiSourceCommentSystemPrompt } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import { buildGeminiOrderContextText } from "@/lib/admin-gemini-order-context";
@@ -27,7 +27,7 @@ export type GeminiSourceCommentInput = {
   citiAvotiSectionIndex?: number;
 };
 
-/** Avota komentāru ģenerēšana — galvenie avoti ar gemini-2.5-pro, pārējie ar flash. */
+/** Avota komentāru ģenerēšana — vienmēr gemini-2.5-pro. */
 export async function generateSourceCommentWithGemini(input: GeminiSourceCommentInput): Promise<string> {
   const blockLabel = SOURCE_BLOCK_LABELS[input.blockKey];
   const deepAnalysis = isMainAnalysisSourceBlock(input.blockKey);
@@ -82,7 +82,7 @@ Sagatavo komentāru šai sadaļai klienta atskaitei. Salīdzini ar pārējiem av
   );
 
   return geminiGenerateText({
-    model: deepAnalysis ? GEMINI_MODEL_PRO : GEMINI_MODEL_FLASH,
+    model: GEMINI_MODEL_PRO,
     systemInstruction: geminiSourceCommentSystemPrompt(blockLabel, deepAnalysis),
     userPrompt,
     temperature: deepAnalysis ? 0.25 : 0.35,

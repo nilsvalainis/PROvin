@@ -4,6 +4,7 @@ import {
   AdminSourceCommentField,
   type AdminGeminiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
+import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
@@ -179,6 +180,13 @@ export function AdminLtabSourceBlock({
               compact
               gemini={geminiComment}
               aria-label="LTAB — komentāri"
+            />
+            <AdminGeminiContextRawField
+              value={value.geminiContextRaw}
+              onChange={(next) => onChange({ ...value, geminiContextRaw: next })}
+              readOnly={readOnly}
+              disabled={disabled}
+              ariaLabel="LTAB — Gemini AI papildu konteksts"
             />
           </div>
       </div>

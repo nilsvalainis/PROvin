@@ -12,6 +12,7 @@ import {
   postNotifyReportReadyViaBlob,
   type NotifyPortfolioUploadItem,
 } from "@/lib/admin-notify-report-ready-client";
+import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
 
 export type AdminOrdersTableRow = SerializedAdminOrderTableRow;
 
@@ -233,11 +234,11 @@ export function AdminOrdersTable({
   void consultationList;
   const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short" });
   const [clientOverrides, setClientOverrides] = useState<
-    Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string }>
+    Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string; vin?: string }>
   >({});
 
   useEffect(() => {
-    const next: Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string }> = {};
+    const next: Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string; vin?: string }> = {};
     for (const o of orders) {
       try {
         const prefix = rowEditsLocalStoragePrefix(o, orderEditsLocalStorageKeyPrefix);
@@ -247,11 +248,13 @@ export function AdminOrdersTable({
         const customerName = typeof p.customerName === "string" ? p.customerName.trim() : "";
         const customerEmail = typeof p.customerEmail === "string" ? p.customerEmail.trim() : "";
         const customerPhone = typeof p.customerPhone === "string" ? p.customerPhone.trim() : "";
-        if (!customerName && !customerEmail && !customerPhone) continue;
+        const vin = typeof p.vin === "string" ? p.vin.trim() : "";
+        if (!customerName && !customerEmail && !customerPhone && !vin) continue;
         next[o.id] = {
           ...(customerName ? { customerName } : {}),
           ...(customerEmail ? { customerEmail } : {}),
           ...(customerPhone ? { customerPhone } : {}),
+          ...(vin ? { vin } : {}),
         };
       } catch {
         /* ignore localStorage parsing issues */
@@ -265,10 +268,11 @@ export function AdminOrdersTable({
   return (
     <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[980px] text-left text-sm">
+        <table className="w-full min-w-[1080px] text-left text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/90 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-provin-muted)]">
               <th className="px-4 py-3.5">Datums</th>
+              <th className="px-4 py-3.5">Termiņš (48 h)</th>
               <th className="px-4 py-3.5">VIN</th>
               <th className="px-4 py-3.5">Klients</th>
               <th className="px-4 py-3.5">Statuss</th>
@@ -286,6 +290,8 @@ export function AdminOrdersTable({
               const name = ov?.customerName ?? (o.customerName?.trim() ?? "");
               const email = ov?.customerEmail ?? (o.customerEmail?.trim() ?? "");
               const phone = ov?.customerPhone ?? (o.customerPhone?.trim() ?? "");
+              const vin = ov?.vin ?? (o.vin?.trim() ?? "");
+              const hasVin = vin.length > 0;
               const primaryClient = name || email || phone || "—";
               const secondaryClient = [name ? email : "", phone].filter(Boolean).join(" · ");
               return (
@@ -307,8 +313,11 @@ export function AdminOrdersTable({
                       ) : null}
                     </span>
                   </td>
+                  <td className="whitespace-nowrap px-4 py-3.5">
+                    {hasVin ? <AdminAuditDeadlineCell createdUnixSec={o.created} /> : <span className="text-[var(--color-provin-muted)]">—</span>}
+                  </td>
                   <td className="max-w-[140px] truncate px-4 py-3.5 font-mono text-xs text-[var(--color-apple-text)]">
-                    {o.vin ?? "—"}
+                    {vin || "—"}
                   </td>
                   <td className="max-w-[260px] px-4 py-3.5 text-[var(--color-apple-text)]">
                     <div className="min-w-0">

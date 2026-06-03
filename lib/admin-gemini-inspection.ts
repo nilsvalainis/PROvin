@@ -1,6 +1,6 @@
 import "server-only";
 
-import { GEMINI_MODEL_FLASH } from "@/lib/admin-gemini";
+import { GEMINI_MODEL_PRO } from "@/lib/admin-gemini";
 import { geminiGenerateText } from "@/lib/admin-gemini";
 import { GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
@@ -34,7 +34,7 @@ Sagatavo ieteikumus klātienes apskatei šim auto.`,
   );
 
   return geminiGenerateText({
-    model: GEMINI_MODEL_FLASH,
+    model: GEMINI_MODEL_PRO,
     systemInstruction: GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM,
     userPrompt,
     temperature: 0.35,

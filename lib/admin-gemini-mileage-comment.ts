@@ -1,6 +1,6 @@
 import "server-only";
 
-import { GEMINI_MODEL_FLASH, geminiGenerateText } from "@/lib/admin-gemini";
+import { GEMINI_MODEL_PRO, geminiGenerateText } from "@/lib/admin-gemini";
 import { GEMINI_MILEAGE_COMMENT_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
@@ -38,7 +38,7 @@ Analizē apvienoto nobraukuma vēsturi un visas odometra anomālijas visos avoto
   );
 
   return geminiGenerateText({
-    model: GEMINI_MODEL_FLASH,
+    model: GEMINI_MODEL_PRO,
     systemInstruction: GEMINI_MILEAGE_COMMENT_SYSTEM,
     userPrompt,
     temperature: 0.35,

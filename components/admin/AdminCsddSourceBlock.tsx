@@ -42,6 +42,7 @@ import {
   AdminSourceCommentField,
   type AdminGeminiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
+import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AlertTriangle } from "lucide-react";
 
@@ -541,6 +542,13 @@ export function AdminCsddSourceBlock({
           compact
           gemini={geminiComment}
           aria-label={`CSDD — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+        />
+        <AdminGeminiContextRawField
+          value={value.geminiContextRaw}
+          onChange={(next) => onChange({ ...value, geminiContextRaw: next })}
+          readOnly={readOnly}
+          disabled={disabled}
+          ariaLabel="CSDD — Gemini AI papildu konteksts"
         />
       </div>
       </div>

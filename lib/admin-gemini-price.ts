@@ -1,6 +1,6 @@
 import "server-only";
 
-import { GEMINI_MODEL_FLASH, geminiGenerateText } from "@/lib/admin-gemini";
+import { GEMINI_MODEL_PRO, geminiGenerateText } from "@/lib/admin-gemini";
 import { GEMINI_PRICE_ANALYSIS_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
@@ -45,7 +45,7 @@ Novērtē, vai šī auto cena ir adekvāta Latvijas lietotu auto tirgum (ss.lv l
   );
 
   return geminiGenerateText({
-    model: GEMINI_MODEL_FLASH,
+    model: GEMINI_MODEL_PRO,
     systemInstruction: GEMINI_PRICE_ANALYSIS_SYSTEM,
     userPrompt,
     temperature: 0.35,

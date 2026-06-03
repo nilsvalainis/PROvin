@@ -4,6 +4,7 @@ import {
   AdminSourceCommentField,
   type AdminGeminiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
+import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
@@ -316,6 +317,13 @@ export function AdminAutoRecordsSourceBlock({
           gemini={geminiComment}
           readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
           aria-label="AUTO RECORDS — komentāri"
+        />
+        <AdminGeminiContextRawField
+          value={value.geminiContextRaw}
+          onChange={(next) => onChange({ ...value, geminiContextRaw: next })}
+          readOnly={readOnly}
+          disabled={disabled}
+          ariaLabel="AUTO RECORDS — Gemini AI papildu konteksts"
         />
           </div>
       </div>

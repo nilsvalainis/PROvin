@@ -2,12 +2,12 @@ import "server-only";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-/** Dziļā analīze — pārdevējs (grounding), gala kopsavilkums. */
+/** Admin ✨ ģenerēšana — vienmēr maksas režīms (2.5 Pro). Flash atstāts tikai atsaucēm / dokumentācijai. */
 export const GEMINI_MODEL_PRO = "gemini-2.5-pro";
-/** Ātrākas darbības — gramatika, avotu komentāri, ieteikumi, cena (Free Tier). */
+/** @deprecated Admin ģenerēšanai izmanto GEMINI_MODEL_PRO. */
 export const GEMINI_MODEL_FLASH = "gemini-2.5-flash";
-/** Rezerves modelis, ja 2.5 flash/pro pārslogoti (503). */
-export const GEMINI_MODEL_FLASH_FALLBACK = "gemini-2.0-flash";
+/** @deprecated Admin failover — tikai Pro (maksas). */
+export const GEMINI_MODEL_FLASH_FALLBACK = "gemini-2.5-pro";
 
 export function getGeminiApiKeyFromEnv(): string | null {
   const k = process.env.GEMINI_API_KEY?.trim();
@@ -36,21 +36,20 @@ function isTransientHttpStatus(status: number): boolean {
 }
 
 function alternateModel(primary: string): string {
-  if (primary === GEMINI_MODEL_FLASH) return GEMINI_MODEL_PRO;
-  if (primary === GEMINI_MODEL_PRO) return GEMINI_MODEL_FLASH;
+  void primary;
   return GEMINI_MODEL_PRO;
 }
 
-/** Secība: pieprasītais → otrs 2.5 → 2.0 flash (bez dublikātiem). */
+/** Secība: pieprasītais Pro → atkārtots Pro mēģinājums transient kļūdām. */
 export function geminiFailoverModels(primary: string): string[] {
+  const pro = GEMINI_MODEL_PRO;
   const out: string[] = [];
   const add = (m: string) => {
     const t = m.trim();
     if (t && !out.includes(t)) out.push(t);
   };
-  add(primary);
-  add(alternateModel(primary));
-  add(GEMINI_MODEL_FLASH_FALLBACK);
+  add(primary.includes("pro") ? primary : pro);
+  add(pro);
   return out;
 }
 

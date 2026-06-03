@@ -10,6 +10,7 @@ import {
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude, type ProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
+import { appendGeminiContextRawSection, clipGeminiContextRaw } from "@/lib/admin-gemini-context-raw";
 import { parseVehicleAiFromWorkspaceRecord } from "@/lib/vehicle-ai-extraction-parse";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 import type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
@@ -229,6 +230,8 @@ export type CsddFormFields = {
   mileageHistory: CsddMileageRow[];
   /** Eksperta piezīmes — PDF CSDD apakšsadaļā (kā citiem avotiem). */
   comments: string;
+  /** Papildu konteksts tikai Gemini AI — nav PDF. */
+  geminiContextRaw: string;
   /** PDF apstiprinājumi — drukājas kopā ar komentāriem. */
   pdfChecklist?: SourcePdfChecklist;
 };
@@ -291,6 +294,8 @@ export type TirgusFormFields = {
   listingCreated: string;
   priceDrop: string;
   comments: string;
+  /** Papildu konteksts tikai Gemini AI — nav PDF. */
+  geminiContextRaw: string;
 };
 
 export const TIRGUS_LABEL_LISTED = "Auto pārdošanā (dienas):";
@@ -300,7 +305,7 @@ export const TIRGUS_LABEL_PRICE_DROP = "Cenas kritums (eiro):";
 export const TIRGUS_LABEL_COMMENTS = "Komentāri:";
 
 export function emptyTirgusFields(): TirgusFormFields {
-  return { listedForSale: "", listingCreated: "", priceDrop: "", comments: "" };
+  return { listedForSale: "", listingCreated: "", priceDrop: "", comments: "", geminiContextRaw: "" };
 }
 
 export function tirgusFormHasContent(f: TirgusFormFields | null | undefined): boolean {
@@ -351,6 +356,7 @@ export function emptyCsddFields(): CsddFormFields {
     technicalInspectionWarnings: [],
     mileageHistory: [],
     comments: "",
+    geminiContextRaw: "",
     pdfChecklist: undefined,
   };
 }
@@ -605,6 +611,8 @@ export type AutoRecordsBlockState = {
   outvinReport?: OutvinDealerReport;
   /** Kā citiem avotiem — piezīmes zem tabulas. */
   comments: string;
+  /** Papildu konteksts tikai Gemini AI — nav PDF. */
+  geminiContextRaw: string;
   pdfChecklist?: SourcePdfChecklist;
 };
 
@@ -622,6 +630,8 @@ export type LtabBlockState = {
   comments: string;
   /** PDF importa RAW (tikai admin; nav obligāti klienta PDF). */
   pdfImportRaw?: string;
+  /** Papildu konteksts tikai Gemini AI — nav PDF. */
+  geminiContextRaw: string;
 };
 
 /** AutoDNA / CarVertical — nobraukums (kā AUTO RECORDS) + negadījumi (kā LTAB). */
@@ -636,6 +646,8 @@ export type VendorAvotuBlockState = {
   /** CarVertical — bojājumu detaļas (PDF grafiks + admin). */
   damageDetails?: CarVerticalDamageDetailRow[];
   pdfChecklist?: SourcePdfChecklist;
+  /** Papildu konteksts tikai Gemini AI — nav PDF. */
+  geminiContextRaw: string;
 };
 
 /** Viens papildu avots „Citi avoti” — struktūra kā AutoDNA / CarVertical + RAW žurnāls. */
@@ -661,6 +673,8 @@ export type ListingAnalysisBlockState = {
   listingPasteRaw: string;
   /** Eksperta / AI sagatavots konteksts — PDF. */
   listingSalesContext: string;
+  /** Papildu konteksts tikai Gemini AI — nav PDF. */
+  geminiContextRaw: string;
 };
 
 export type WorkspaceSourceBlocks = {
@@ -691,6 +705,7 @@ export function emptyAutoRecordsBlock(): AutoRecordsBlockState {
     rawUnprocessedData: "",
     serviceHistory: [emptyAutoRecordsServiceRow()],
     comments: "",
+    geminiContextRaw: "",
   };
 }
 
@@ -699,7 +714,7 @@ export function emptyLtabRow(): LtabIncidentRow {
 }
 
 export function emptyLtabBlock(): LtabBlockState {
-  return { rows: [emptyLtabRow()], comments: "", pdfImportRaw: "" };
+  return { rows: [emptyLtabRow()], comments: "", pdfImportRaw: "", geminiContextRaw: "" };
 }
 
 export function emptyVendorAvotuBlock(): VendorAvotuBlockState {
@@ -707,6 +722,7 @@ export function emptyVendorAvotuBlock(): VendorAvotuBlockState {
     serviceHistory: [emptyAutoRecordsServiceRow()],
     incidents: [emptyLtabRow()],
     comments: "",
+    geminiContextRaw: "",
   };
 }
 
@@ -748,6 +764,7 @@ export function emptyListingAnalysisBlock(): ListingAnalysisBlockState {
     extraSellerName: "",
     listingPasteRaw: "",
     listingSalesContext: "",
+    geminiContextRaw: "",
   };
 }
 
@@ -810,6 +827,7 @@ function parseListingAnalysisRaw(raw: Record<string, unknown>): ListingAnalysisB
     extraSellerName,
     listingPasteRaw,
     listingSalesContext,
+    geminiContextRaw: clip(raw.geminiContextRaw),
   };
 }
 
@@ -956,7 +974,7 @@ function citiAvotiSectionToPlainText(section: CitiAvotiSectionState): string {
   if (raw) parts.push(`RAW datu žurnāls\n${raw}`);
   const vendor = vendorAvotuBlockToPlainText(section);
   if (vendor) parts.push(vendor);
-  return parts.join("\n\n");
+  return appendGeminiContextRawSection(parts.join("\n\n"), section.geminiContextRaw);
 }
 
 export function citiAvotiToPlainText(b: CitiAvotiBlockState): string {
@@ -1131,6 +1149,7 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
       rawUnprocessedData: String(raw.rawUnprocessedData ?? "").slice(0, 500_000),
       serviceHistory: normalized,
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
+      geminiContextRaw: clipGeminiContextRaw(raw.geminiContextRaw),
       ...(outvin ? { outvin } : {}),
       ...(outvinReport ? { outvinReport } : {}),
       ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
@@ -1143,6 +1162,7 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
     rawUnprocessedData: legacyText.slice(0, 500_000),
     serviceHistory: [emptyAutoRecordsServiceRow()],
     comments: "",
+    geminiContextRaw: "",
   };
 }
 
@@ -1191,6 +1211,7 @@ export function migrateLegacyVendorBlock(legacy: StandardSourceBlockState): Vend
     serviceHistory,
     incidents,
     comments: legacy.comments,
+    geminiContextRaw: "",
   };
 }
 
@@ -1224,6 +1245,7 @@ function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBloc
       serviceHistory: normalizeVendorMileageRowsFromRaw(shIn as unknown[]),
       incidents: normalizeVendorIncidentsFromRaw(incIn as unknown[]),
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
+      geminiContextRaw: clipGeminiContextRaw(raw.geminiContextRaw),
       ...(typeof raw.mileagePasteRaw === "string"
         ? { mileagePasteRaw: raw.mileagePasteRaw.slice(0, 24_000) }
         : {}),
@@ -1280,7 +1302,12 @@ function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
     };
   });
   if (rows.length === 0) {
-    return { rows: [emptyLtabRow()], comments, ...(pdfImportRaw ? { pdfImportRaw } : {}) };
+    return {
+      rows: [emptyLtabRow()],
+      comments,
+      geminiContextRaw: clipGeminiContextRaw(raw.geminiContextRaw),
+      ...(pdfImportRaw ? { pdfImportRaw } : {}),
+    };
   }
   const { head, trailing } = splitTrailingEmptyBy(rows, ltabRowHasData);
   const dataRows = head.filter(ltabRowHasData);
@@ -1288,6 +1315,7 @@ function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
   return {
     rows: combined.length > 0 ? combined : [emptyLtabRow()],
     comments,
+    geminiContextRaw: clipGeminiContextRaw(raw.geminiContextRaw),
     ...(pdfImportRaw ? { pdfImportRaw } : {}),
   };
 }
@@ -1474,6 +1502,7 @@ function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFi
     prevInspectionWarnings: parseCsddInspectionWarningStoredRaw(raw.prevInspectionWarnings),
     technicalInspectionWarnings: parseCsddInspectionWarningStoredRaw(raw.technicalInspectionWarnings),
     comments: clipCsddField(raw.comments, 12000),
+    geminiContextRaw: clipCsddField(raw.geminiContextRaw, 24_000),
     ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
   };
 }
@@ -1504,6 +1533,7 @@ function parseTirgusBlockRaw(raw: Record<string, unknown>): TirgusFormFields {
       listingCreated: clip(raw.listingCreated),
       priceDrop: clip(raw.priceDrop),
       comments: typeof raw.comments === "string" ? raw.comments : "",
+      geminiContextRaw: clip(raw.geminiContextRaw),
     };
   }
   if ("rows" in raw || "comments" in raw) {
@@ -1536,6 +1566,7 @@ function repairVendorBlock(b: VendorAvotuBlockState | undefined): VendorAvotuBlo
     serviceHistory: Array.isArray(b.serviceHistory) ? b.serviceHistory : e.serviceHistory,
     incidents: Array.isArray(b.incidents) ? b.incidents : e.incidents,
     comments: wsStr(b.comments),
+    geminiContextRaw: wsStr(b.geminiContextRaw),
     ...(typeof b.mileagePasteRaw === "string" ? { mileagePasteRaw: b.mileagePasteRaw } : {}),
     ...(Array.isArray(b.vehicleHistoryTimeline) ? { vehicleHistoryTimeline: b.vehicleHistoryTimeline } : {}),
     ...(Array.isArray(b.damageDetails) ? { damageDetails: b.damageDetails } : {}),
@@ -1578,6 +1609,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       : d.csdd.technicalInspectionWarnings,
     comments: wsStr(csdd.comments),
     rawUnprocessedData: wsStr(csdd.rawUnprocessedData),
+    geminiContextRaw: wsStr(csdd.geminiContextRaw),
   });
   return {
     csdd: csddRepaired,
@@ -1591,6 +1623,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
         : d.auto_records.serviceHistory,
       comments: wsStr(blocks.auto_records?.comments),
       rawUnprocessedData: wsStr(blocks.auto_records?.rawUnprocessedData),
+      geminiContextRaw: wsStr(blocks.auto_records?.geminiContextRaw),
     },
     ltab: {
       ...d.ltab,
@@ -1598,12 +1631,14 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       rows: Array.isArray(blocks.ltab?.rows) ? blocks.ltab.rows : d.ltab.rows,
       comments: wsStr(blocks.ltab?.comments),
       pdfImportRaw: wsStr(blocks.ltab?.pdfImportRaw),
+      geminiContextRaw: wsStr(blocks.ltab?.geminiContextRaw),
     },
     tirgus: {
       listedForSale: wsStr(blocks.tirgus?.listedForSale),
       listingCreated: wsStr(blocks.tirgus?.listingCreated),
       priceDrop: wsStr(blocks.tirgus?.priceDrop),
       comments: wsStr(blocks.tirgus?.comments),
+      geminiContextRaw: wsStr(blocks.tirgus?.geminiContextRaw),
     },
     citi_avoti: {
       sections: (blocks.citi_avoti?.sections ?? d.citi_avoti.sections).map(repairCitiSection),
@@ -1614,6 +1649,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       extraSellerName: wsStr(blocks.listing_analysis?.extraSellerName),
       listingPasteRaw: wsStr(blocks.listing_analysis?.listingPasteRaw),
       listingSalesContext: wsStr(blocks.listing_analysis?.listingSalesContext),
+      geminiContextRaw: wsStr(blocks.listing_analysis?.geminiContextRaw),
     },
   };
 }
@@ -1720,7 +1756,7 @@ export function migrateFlatWorkspaceToBlocks(flat: {
 }): WorkspaceSourceBlocks {
   const b = createDefaultSourceBlocks();
   if (flat.csdd?.trim()) b.csdd = { ...emptyCsddFields(), rawUnprocessedData: flat.csdd.trim() };
-  if (flat.ltab?.trim()) b.ltab = { rows: [emptyLtabRow()], comments: flat.ltab.trim() };
+  if (flat.ltab?.trim()) b.ltab = { ...emptyLtabBlock(), comments: flat.ltab.trim() };
   if (flat.tirgus?.trim()) b.tirgus = { ...emptyTirgusFields(), comments: flat.tirgus.trim() };
   if (flat.citi?.trim()) {
     b.citi_avoti = {

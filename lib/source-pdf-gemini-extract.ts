@@ -1,7 +1,7 @@
 import "server-only";
 
 import {
-  GEMINI_MODEL_FLASH,
+  GEMINI_MODEL_PRO,
   geminiGenerateJsonText,
   type GeminiUserPart,
 } from "@/lib/admin-gemini";
@@ -318,7 +318,7 @@ export async function extractSourcePdfWithGemini(opts: {
 
   if (target === "auto_records") {
     const raw = await geminiGenerateJsonText({
-      model: GEMINI_MODEL_FLASH,
+      model: GEMINI_MODEL_PRO,
       systemInstruction: AUTO_RECORDS_SYSTEM,
       extraParts,
       userPrompt: `Extract AUTO RECORDS fields from this PDF.${textSection}`,
@@ -337,7 +337,7 @@ export async function extractSourcePdfWithGemini(opts: {
 
   const vendorTarget = target as HistoryVendorPdfTarget;
   const raw = await geminiGenerateJsonText({
-    model: GEMINI_MODEL_FLASH,
+    model: GEMINI_MODEL_PRO,
     systemInstruction: VENDOR_SYSTEM,
     extraParts,
     userPrompt: `${TARGET_USER[vendorTarget]}\n\nExtract all fields.${textSection}`,

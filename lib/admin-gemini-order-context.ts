@@ -19,6 +19,7 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { appendGeminiContextRawSection } from "@/lib/admin-gemini-context-raw";
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
@@ -168,6 +169,21 @@ export function buildGeminiOrderContextText(input: GeminiOrderContextInput): str
           : `Sludinājuma apraksts (iekopēts, nav PDF):\n${paste}`;
       }
     }
+    const geminiRaw =
+      key === "csdd"
+        ? blocks.csdd.geminiContextRaw
+        : key === "autodna" || key === "carvertical"
+          ? blocks[key].geminiContextRaw
+          : key === "auto_records"
+            ? blocks.auto_records.geminiContextRaw
+            : key === "ltab"
+              ? blocks.ltab.geminiContextRaw
+              : key === "tirgus"
+                ? blocks.tirgus.geminiContextRaw
+                : key === "listing_analysis"
+                  ? blocks.listing_analysis.geminiContextRaw
+                  : "";
+    sectionText = appendGeminiContextRawSection(sectionText, geminiRaw);
     const section = block(SOURCE_BLOCK_LABELS[key], sectionText);
     if (section) parts.push(section);
   }

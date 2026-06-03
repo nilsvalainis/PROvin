@@ -18,6 +18,7 @@ import {
   vendorAvotuBlockToPlainText,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import { appendGeminiContextRawSection } from "@/lib/admin-gemini-context-raw";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
 /** Avotu bloki ar „Komentāri” lauku (bez sludinājuma analīzes). */
@@ -58,22 +59,28 @@ export function sourceBlockPlainTextExcludingComments(
   sourceBlocks: WorkspaceSourceBlocks,
 ): string {
   const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
+  let base = "";
   switch (blockKey) {
     case "csdd":
-      return csddFormToPlainText({ ...blocks.csdd, comments: "" }).trim();
+      base = csddFormToPlainText({ ...blocks.csdd, comments: "" }).trim();
+      return appendGeminiContextRawSection(base, blocks.csdd.geminiContextRaw);
     case "autodna":
     case "carvertical":
-      return vendorAvotuBlockToPlainText({ ...blocks[blockKey], comments: "" }).trim();
+      base = vendorAvotuBlockToPlainText({ ...blocks[blockKey], comments: "" }).trim();
+      return appendGeminiContextRawSection(base, blocks[blockKey].geminiContextRaw);
     case "citi_avoti":
       return citiAvotiToPlainText({
         sections: blocks.citi_avoti.sections.map((s) => ({ ...s, comments: "" })),
       }).trim();
     case "auto_records":
-      return autoRecordsBlockToPlainText({ ...blocks.auto_records, comments: "" }).trim();
+      base = autoRecordsBlockToPlainText({ ...blocks.auto_records, comments: "" }).trim();
+      return appendGeminiContextRawSection(base, blocks.auto_records.geminiContextRaw);
     case "ltab":
-      return ltabBlockToPlainText({ ...blocks.ltab, comments: "" }).trim();
+      base = ltabBlockToPlainText({ ...blocks.ltab, comments: "" }).trim();
+      return appendGeminiContextRawSection(base, blocks.ltab.geminiContextRaw);
     case "tirgus":
-      return tirgusFormToPlainText({ ...blocks.tirgus, comments: "" }).trim();
+      base = tirgusFormToPlainText({ ...blocks.tirgus, comments: "" }).trim();
+      return appendGeminiContextRawSection(base, blocks.tirgus.geminiContextRaw);
     default:
       return "";
   }
@@ -114,9 +121,12 @@ export function sourceBlockHasDataExcludingComments(
 }
 
 export function citiAvotiSectionPlainTextExcludingComments(section: CitiAvotiSectionState): string {
-  return citiAvotiToPlainText({
-    sections: [{ ...section, comments: "" }],
-  }).trim();
+  return appendGeminiContextRawSection(
+    citiAvotiToPlainText({
+      sections: [{ ...section, comments: "" }],
+    }).trim(),
+    section.geminiContextRaw,
+  );
 }
 
 export function sourceBlockPlainTextForGemini(

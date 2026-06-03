@@ -9,6 +9,7 @@ import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminGeminiGenerateWithPrefill } from "@/components/admin/AdminGeminiGenerateWithPrefill";
+import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { ListingAnalysisSubsectionHeading } from "@/components/admin/AdminListingAnalysisSectionChrome";
@@ -380,6 +381,13 @@ export function AdminListingAnalysisSourceBlock({
           )}
         </ListingAnalysisSubsectionHeading>
       </div>
+      <AdminGeminiContextRawField
+        value={v.geminiContextRaw}
+        onChange={(next) => onChange({ ...v, geminiContextRaw: next })}
+        readOnly={readOnly}
+        disabled={disabled}
+        ariaLabel="Sludinājuma analīze — Gemini AI papildu konteksts"
+      />
     </div>
   );
 }

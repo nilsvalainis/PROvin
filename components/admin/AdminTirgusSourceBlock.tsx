@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminSourceCommentField, type AdminGeminiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
+import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
 import { ListedForSaleFieldChrome } from "@/components/admin/ListedForSaleFieldChrome";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { PriceDropArrowIcon } from "@/components/icons/PriceDropArrowIcon";
@@ -143,16 +144,25 @@ export function AdminTirgusSourceBlock({
 
   const commentsBlock =
     variant === "embedded" ? (
-      <AdminSourceCommentField
-        value={val.comments}
-        onChange={(next) => setField("comments", next)}
-        readOnly={readOnly}
-        disabled={disabled}
-        compact={embDense}
-        gemini={geminiComment}
-        readonlyClassName={commentsReadonlyClassEmbedded}
-        aria-label={`${LISTING_HISTORY_SUBSECTION_TITLE} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-      />
+      <>
+        <AdminSourceCommentField
+          value={val.comments}
+          onChange={(next) => setField("comments", next)}
+          readOnly={readOnly}
+          disabled={disabled}
+          compact={embDense}
+          gemini={geminiComment}
+          readonlyClassName={commentsReadonlyClassEmbedded}
+          aria-label={`${LISTING_HISTORY_SUBSECTION_TITLE} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+        />
+        <AdminGeminiContextRawField
+          value={val.geminiContextRaw}
+          onChange={(next) => setField("geminiContextRaw", next)}
+          readOnly={readOnly}
+          disabled={disabled}
+          ariaLabel="Tirgus — Gemini AI papildu konteksts"
+        />
+      </>
     ) : (
       <div className="mt-auto w-full min-w-0 shrink-0 pt-2">
         <AdminSourceCommentField
@@ -163,6 +173,13 @@ export function AdminTirgusSourceBlock({
           gemini={geminiComment}
           readonlyClassName={commentsReadonlyClassDefault}
           aria-label={`Tirgus — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+        />
+        <AdminGeminiContextRawField
+          value={val.geminiContextRaw}
+          onChange={(next) => setField("geminiContextRaw", next)}
+          readOnly={readOnly}
+          disabled={disabled}
+          ariaLabel="Tirgus — Gemini AI papildu konteksts"
         />
       </div>
     );
