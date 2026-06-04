@@ -35,16 +35,19 @@ COMMENTARY RULES for PROVIN Senior Auto Expert:
 - LOGIC: Look for data contradictions between different sources. Do not just summarize; interpret what these numbers and technical faults actually mean for the vehicle's remaining lifespan.
 `;
 
-/** Gemini PDF extract JSON — obligāts komentāru formāts (īss, strukturēts). */
-export const SOURCE_PDF_COMMENT_GEMINI_RULES = `COMMENTS field:\n${PDF_HYBRID_COMMENT_RULES}`;
+/** Gemini PDF extract JSON — eksperta komentārs (visi avoti). */
+export const SOURCE_PDF_COMMENT_GEMINI_RULES = `COMMENTS field (client PDF expert commentary):
+${HYBRID_COMMENT_RULES}
+- Extract and interpret ALL substantive facts from this report: mileage, damage zones, registration, insurance, policy periods, dealer/service milestones — not only anomalies.
+- Never return a generic one-liner when tables or descriptive history exist in the PDF.`;
 
-/** ✨ Galveno avotu bloku komentāru ģenerēšana (admin) — dziļā forenzika (ieskaitot OFICIĀLĀ DĪLERA DATI). */
+/** ✨ Visu avotu bloku „Komentāri” ģenerēšana (admin) — dziļā forenzika. */
 export const SOURCE_BLOCK_COMMENT_GEMINI_RULES = `OUTPUT FORMAT (mandatory):\n${HYBRID_COMMENT_RULES}`;
 
-/** ✨ Sekundāro avotu bloku komentāri (Citi avoti, Tirgus) — kompakts formāts. */
-export const SOURCE_BLOCK_BRIEF_COMMENT_GEMINI_RULES = `OUTPUT FORMAT (mandatory):\n${PDF_HYBRID_COMMENT_RULES}`;
+/** @deprecated Izmanto SOURCE_BLOCK_COMMENT_GEMINI_RULES — vairs nav īsā režīma. */
+export const SOURCE_BLOCK_BRIEF_COMMENT_GEMINI_RULES = SOURCE_BLOCK_COMMENT_GEMINI_RULES;
 
-/** auto-records.com / Outvin PDF imports — eksperta komentārs (ne īsie 4 bulleti). */
+/** auto-records.com / Outvin PDF — papildus dīlera specifika virs SOURCE_PDF_COMMENT_GEMINI_RULES. */
 export const AUTO_RECORDS_PDF_COMMENT_GEMINI_RULES = `COMMENTS field (OFICIĀLĀ DĪLERA DATI / Outvin / auto-records):
 ${HYBRID_COMMENT_RULES}
 - Cover type code, engine code, equipment, accident/stolen checks, and dealer service timeline—not only km digits.

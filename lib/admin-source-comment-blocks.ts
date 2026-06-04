@@ -34,21 +34,16 @@ export const GEMINI_SOURCE_COMMENT_BLOCK_KEYS: GeminiSourceCommentBlockKey[] = [
   "tirgus",
 ];
 
-/** Galvenie foreniskās analīzes avoti — gemini-2.5-pro + dziļā eksperta prompta režīms. */
-export const MAIN_ANALYSIS_SOURCE_BLOCK_KEYS = [
-  "csdd",
-  "autodna",
-  "carvertical",
-  "ltab",
-  "auto_records",
-] as const satisfies readonly GeminiSourceCommentBlockKey[];
+/** Visi avotu bloki ar ✨ Gemini „Komentāri” — vienots dziļā eksperta režīms. */
+export const MAIN_ANALYSIS_SOURCE_BLOCK_KEYS: readonly GeminiSourceCommentBlockKey[] =
+  GEMINI_SOURCE_COMMENT_BLOCK_KEYS;
 
-export type MainAnalysisSourceBlockKey = (typeof MAIN_ANALYSIS_SOURCE_BLOCK_KEYS)[number];
+export type MainAnalysisSourceBlockKey = GeminiSourceCommentBlockKey;
 
 export function isMainAnalysisSourceBlock(
   blockKey: GeminiSourceCommentBlockKey,
 ): blockKey is MainAnalysisSourceBlockKey {
-  return (MAIN_ANALYSIS_SOURCE_BLOCK_KEYS as readonly string[]).includes(blockKey);
+  return isGeminiSourceCommentBlockKey(blockKey);
 }
 
 export function isGeminiSourceCommentBlockKey(v: string): v is GeminiSourceCommentBlockKey {

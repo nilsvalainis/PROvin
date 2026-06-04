@@ -6,7 +6,6 @@ import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-no
 import { buildGeminiOrderContextText } from "@/lib/admin-gemini-order-context";
 import {
   buildPreviouslyGeneratedSourceCommentsContext,
-  isMainAnalysisSourceBlock,
   sourceBlockPlainTextForGemini,
   type GeminiSourceCommentBlockKey,
 } from "@/lib/admin-source-comment-blocks";
@@ -30,7 +29,6 @@ export type GeminiSourceCommentInput = {
 /** Avota komentāru ģenerēšana — vienmēr gemini-2.5-pro. */
 export async function generateSourceCommentWithGemini(input: GeminiSourceCommentInput): Promise<string> {
   const blockLabel = SOURCE_BLOCK_LABELS[input.blockKey];
-  const deepAnalysis = isMainAnalysisSourceBlock(input.blockKey);
   const focusDataText = sourceBlockPlainTextForGemini(
     input.blockKey,
     input.sourceBlocks,
@@ -83,9 +81,9 @@ Sagatavo komentāru šai sadaļai klienta atskaitei. Salīdzini ar pārējiem av
 
   return geminiGenerateText({
     model: GEMINI_MODEL_PRO,
-    systemInstruction: geminiSourceCommentSystemPrompt(blockLabel, deepAnalysis),
+    systemInstruction: geminiSourceCommentSystemPrompt(blockLabel),
     userPrompt,
-    temperature: deepAnalysis ? 0.25 : 0.35,
+    temperature: 0.25,
   });
 }
 

@@ -34,7 +34,6 @@ import { PDF_GEMINI_INLINE_MAX_BYTES } from "@/lib/pdf-api-limits";
 import {
   AUTO_RECORDS_PDF_COMMENT_GEMINI_RULES,
   normalizeExpertSourcePdfComment,
-  normalizeSourcePdfComment,
   SOURCE_PDF_COMMENT_GEMINI_RULES,
 } from "@/lib/source-summary-comment-format";
 import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
@@ -258,7 +257,7 @@ function vendorResultFromGemini(
   const { damageDetails, vehicleHistoryTimeline } = parseDamageAndTimeline(payload);
   const mileagePasteRaw = asString(payload.mileagePasteRaw, 24_000);
   const rawText = asString(payload.rawTextSnippet ?? payload.rawText, MAX_RAW);
-  const comments = normalizeSourcePdfComment(asString(payload.comments, 800));
+  const comments = normalizeExpertSourcePdfComment(asString(payload.comments, 2400));
   const suggestedPdfChecklist = normalizeChecklist(payload.pdfChecklist);
 
   const base = parseHistoryVendorPdfText(target, rawText || mileagePasteRaw);

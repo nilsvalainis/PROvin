@@ -7,9 +7,18 @@ import { emptyAutoRecordsBlock, mergeSourceBlocksWithDefaults } from "@/lib/admi
 import { outvinDealerReportToPlainText, emptyOutvinDealerReport } from "@/lib/outvin-dealer-types";
 
 describe("isMainAnalysisSourceBlock", () => {
-  it("treats auto_records as deep analysis source", () => {
-    expect(isMainAnalysisSourceBlock("auto_records")).toBe(true);
-    expect(isMainAnalysisSourceBlock("tirgus")).toBe(false);
+  it("treats all Gemini source blocks as deep analysis", () => {
+    for (const key of [
+      "csdd",
+      "autodna",
+      "carvertical",
+      "ltab",
+      "auto_records",
+      "citi_avoti",
+      "tirgus",
+    ] as const) {
+      expect(isMainAnalysisSourceBlock(key)).toBe(true);
+    }
   });
 });
 

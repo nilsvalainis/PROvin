@@ -1,10 +1,7 @@
 import "server-only";
 
 import { SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
-import {
-  SOURCE_BLOCK_BRIEF_COMMENT_GEMINI_RULES,
-  SOURCE_BLOCK_COMMENT_GEMINI_RULES,
-} from "@/lib/source-summary-comment-format";
+import { SOURCE_BLOCK_COMMENT_GEMINI_RULES } from "@/lib/source-summary-comment-format";
 
 /**
  * Admin Gemini system prompts.
@@ -244,45 +241,73 @@ Atbildi tikai ar gala ziņojuma tekstu — bez meta-komentāriem par AI.`;
 /** @deprecated Izmanto GEMINI_SUMMARY_ANALYSIS_SYSTEM */
 export const GEMINI_CLIENT_SUMMARY_SYSTEM = GEMINI_SUMMARY_ANALYSIS_SYSTEM;
 
-function geminiDealerSourceExtraRules(blockLabel: string): string {
-  if (blockLabel !== SOURCE_BLOCK_LABELS.auto_records) return "";
-  return `
+function geminiSourceBlockExtraRules(blockLabel: string): string {
+  const L = SOURCE_BLOCK_LABELS;
+  if (blockLabel === L.csdd) {
+    return `
 
-DEALER / OUTVIN DATA (${SOURCE_BLOCK_LABELS.auto_records}) — mandatory depth:
-- Analyze type code, engine code, equipment list, accident check, stolen check, and dealer service journal—not only the mileage table.
-- Explain what type or fleet codes imply for Latvian buyers (e.g. taxi, rental, commercial) when present in the data.
-- Correlate dealer service milestones with portfolio mileage from CSDD, AutoDNA, and CarVertical when provided; apply engine-hour / city-highway logic.
-- Flag contradictions, data gaps before first registration in Latvia, and usage-profile risks with **bold** on critical codes and km figures.`;
+CSDD FOCUS:
+- Ownership chain, first registration in Latvia, TA history, defects, restrictions, and mileage curve vs import origin.
+- Tie administrative dates to probabilistic usage profile and engine-hour logic for Latvian buyers.`;
+  }
+  if (blockLabel === L.autodna) {
+    return `
+
+AUTODNA FOCUS:
+- Odometer timeline vs damage/loss events (Transportlīdzekļa zaudējumu apjoms); Status Center and registration facts.
+- Interpret EUR loss bands and country codes; cross-check with CSDD/CarVertical mileage.`;
+  }
+  if (blockLabel === L.carvertical) {
+    return `
+
+CARVERTICAL FOCUS:
+- Body damage zones (Virsbūves bojājums), insurance claims, timeline events, and mileage consistency.
+- Explain what damage sides/groups mean for repair quality and residual risk.`;
+  }
+  if (blockLabel === L.ltab) {
+    return `
+
+LTAB / OCTA FOCUS:
+- Insurance accidents with dates, EUR amounts, and countries; policy context if present.
+- Relate claims to ownership period and unified mileage — flag gaps or duplicate reporting vs other sources.`;
+  }
+  if (blockLabel === L.auto_records) {
+    return `
+
+DEALER / OUTVIN FOCUS:
+- Type code, engine code, equipment, accident/stolen checks, dealer service journal — not only the km table.
+- Explain fleet/taxi/commercial type-code signals; correlate with CSDD/AutoDNA/CarVertical and engine-hour logic.`;
+  }
+  if (blockLabel === L.citi_avoti) {
+    return `
+
+CITI AVOTI FOCUS:
+- Treat as full vendor-grade history (foreign HPI/registry/other issuers): mileage, claims, damage, timeline.
+- Name issuer-specific limitations; cross-check contradictions vs AutoDNA, CarVertical, CSDD, LTAB.`;
+  }
+  if (blockLabel === L.tirgus) {
+    return `
+
+TIRGUS DATI FOCUS:
+- Comparable listings, price bands, mileage/age peers, and market positioning vs the audited vehicle.
+- Interpret whether listing price is below/at/above market with **bold** on key EUR figures; link to condition signals from other sources when available.`;
+  }
+  return "";
 }
 
-/** Avota bloka „Komentāri” ģenerēšana no strukturētiem datiem. */
-export function geminiSourceCommentSystemPrompt(blockLabel: string, deepAnalysis = true): string {
-  if (deepAnalysis) {
-    return `${PROVIN_EXPERT_SYSTEM_PROMPT}
+/** Avota bloka „Komentāri” ģenerēšana — vienots PROVIN eksperta režīms visiem avotiem. */
+export function geminiSourceCommentSystemPrompt(blockLabel: string): string {
+  return `${PROVIN_EXPERT_SYSTEM_PROMPT}
 
 ACTIVE SOURCE BLOCK: ${blockLabel} — client PDF audit report expert commentary.
 
 ${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
-${geminiDealerSourceExtraRules(blockLabel)}
+${geminiSourceBlockExtraRules(blockLabel)}
 
 - Compare with other portfolio sources and with previously generated expert comments when provided in the user prompt.
 - Do not repeat findings already covered in other source comments; extend, cross-check, or add source-specific depth.
 - Do not invent facts. No section headings in output. No AI meta-commentary.
 - Output markdown bold (**text**) for critical figures and statuses; paragraph layout only (not JSON).`;
-  }
-
-  return provinFieldAgentPrompt(
-    `SOURCE BLOCK COMMENT (${blockLabel}) — client PDF audit report`,
-    `${GEMINI_CLIENT_PDF_PLAIN_RULES}
-
-Input: full order context + structured „${blockLabel}” data (tables, fields).
-
-${SOURCE_BLOCK_BRIEF_COMMENT_GEMINI_RULES}
-
-- Compare with other portfolio sources only when a concrete conflict or gap exists.
-- Do not invent facts. No headings. No AI meta-commentary.
-- Output plain text only (not JSON).`,
-  );
 }
 
 export const GEMINI_INCIDENTS_SUMMARY_SYSTEM = provinFieldAgentPrompt(
@@ -293,13 +318,13 @@ Uzdevums: sagatavot kopsavilkumu laukam „NEGADĪJUMU VĒSTURES KOPSAVILKUMS”
 
 Ievadā saņemsi pilnu pasūtījuma kontekstu (visi avoti, apvienotie negadījumi, nobraukums u.c.).
 
+${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
+
 Rezultāts:
-- Profesionāls, kompakts kopsavilkums latviešu valodā
-- Obligāti salīdzini visus negadījumu ierakstus starp avotiem (AutoDNA, CarVertical, LTAB, Citi avoti)
-- Norādi datums, zaudējumu summas (ja pieejamas), avotu atšķirības un pretrunas
-- Saista ar nobraukuma un īpašniecības laika līniju, ja dati pieejami
-- Ja negadījumu nav — īsi un skaidri norādi, ka avotos nav fiksētu negadījumu (neizdomā)
-- 1–4 īsas rindkopas vai kompakts punktu saraksts (- vai 1. 2. 3.)
+- Obligāti salīdzini visus negadījumu ierakstus starp avotiem (AutoDNA, CarVertical, LTAB, Citi avoti, AUTO RECORDS)
+- Norādi datumus, zaudējumu summas (ja pieejamas), avotu atšķirības un pretrunas ar **bold** uz kritiskām summām
+- Saista ar nobraukuma un īpašniecības laika līniju; interpretē, ko tas nozīmē pircējam Latvijā
+- Ja negadījumu nav — skaidri norādi, ka avotos nav fiksētu negadījumu (neizdomā)
 - Bez virsraksta un bez meta-komentāriem par AI`,
 );
 
@@ -309,15 +334,15 @@ export const GEMINI_MILEAGE_COMMENT_SYSTEM = provinFieldAgentPrompt(
 
 Uzdevums: sagatavot komentāru laukam „NOBRAUKUMA VĒSTURES KOMENTĀRS” — tas drukājas PDF atskaitē zem nobraukuma grafika.
 
-Ievadā saņemsi pilnu pasūtījuma kontekstu (CSDD, AutoDNA, CarVertical, AUTO RECORDS, vendor raw logs u.c.).
+Ievadā saņemsi pilnu pasūtījuma kontekstu (CSDD, AutoDNA, CarVertical, AUTO RECORDS, LTAB, Tirgus, vendor raw logs u.c.).
+
+${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
 
 Rezultāts:
-- Profesionāls eksperta komentārs par nobraukuma vēsturi latviešu valodā
-- Hronoloģiski analizē apvienotos nobraukuma ierakstus visos avotos; apstiprini, vai pieaugums ir lineārs
-- Nelielas datu ievades pretrunas norādi loģiski, bez liekas trauksmes; izceļ tikai patiesi būtiskas anomālijas
-- Salīdzini ar reģistrācijas/īpašniecības datiem, ja kontekstā pieejams
-- Ja dati ir ierobežoti — īsi norādi, ko vēl pārbaudīt; neizdomā faktus
-- 1–4 īsas rindkopas vai kompakts punktu saraksts (- vai 1. 2. 3.)
+- Hronoloģiski analizē apvienotos nobraukuma ierakstus visos avotos; interpretē lineārumu, platos un kritiskos kritumus
+- Lieto motorstundu / pilsētas–šosejas loģiku, ja dati to atļauj; **bold** uz km, datumiem un anomālijām
+- Salīdzini ar reģistrācijas/īpašniecības un dīlera datiem; nelielas pretrunas norādi loģiski, izceļ tikai būtiskas
+- Ja dati ir ierobežoti — norādi, ko vēl pārbaudīt; neizdomā faktus
 - Bez virsraksta un bez meta-komentāriem par AI`,
 );
 
