@@ -76,6 +76,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Nederīgs produkts." }, { status: 400 });
   }
 
+  const email = typeof raw.email === "string" ? raw.email.trim() : "";
+  const phone = typeof raw.phone === "string" ? raw.phone.trim() : "";
   const listingUrl = typeof raw.listingUrl === "string" ? raw.listingUrl.trim() : "";
   const vinInput = typeof raw.vin === "string" ? raw.vin : "";
   const vin = normalizeVin(vinInput);
