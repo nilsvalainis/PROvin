@@ -7,9 +7,9 @@ import demoStyles from "@/app/[locale]/demo/page.module.css";
 import styles from "@/app/test-pricing/test-pricing.module.css";
 import { useSiteTheme } from "@/components/providers/SiteThemeProvider";
 import {
-  TEST_PRICING_FEATURE_ROWS,
   TEST_PRICING_PLANS,
   validateTestPricingCheckout,
+  type TestPricingPlanConfig,
   type TestPricingPlanId,
 } from "@/lib/test-pricing-plans";
 import { normalizeVin } from "@/lib/order-field-validation";
@@ -21,6 +21,49 @@ type ColumnState = {
 
 const initialColumnState = (): ColumnState => ({ listingUrl: "", vin: "" });
 
+function PlanFeatures({ plan }: { plan: TestPricingPlanConfig }) {
+  if (plan.featureSections) {
+    return (
+      <div className={styles.featureSections}>
+        {plan.featureSections.map((section) => (
+          <div key={section.header} className={styles.featureSection}>
+            <p
+              className={
+                section.tone === "highlight" ? styles.sectionHeaderHighlight : styles.sectionHeaderMuted
+              }
+            >
+              {section.header}
+            </p>
+            <ul className={styles.featureList}>
+              {section.items.map((item) => (
+                <li key={item.label} className={styles.featureRow}>
+                  <span className={styles.featureIcon} aria-hidden>
+                    {item.icon}
+                  </span>
+                  <span>{item.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <ul className={styles.featureList}>
+      {(plan.features ?? []).map((item) => (
+        <li key={item.label} className={styles.featureRow}>
+          <span className={styles.featureIcon} aria-hidden>
+            {item.icon}
+          </span>
+          <span>{item.label}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function TestPricingPage() {
   const searchParams = useSearchParams();
   const { theme, toggleTheme } = useSiteTheme();
@@ -28,7 +71,6 @@ export function TestPricingPage() {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<TestPricingPlanId | null>(null);
   const [fields, setFields] = useState<Record<TestPricingPlanId, ColumnState>>({
-    listing_filter: initialColumnState(),
     mini: initialColumnState(),
     premium: initialColumnState(),
   });
@@ -84,7 +126,11 @@ export function TestPricingPage() {
             withdrawalConsent: consent,
           }),
         });
-        const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string; errors?: string[] };
+        const data = (await res.json().catch(() => ({}))) as {
+          url?: string;
+          error?: string;
+          errors?: string[];
+        };
         if (!res.ok || !data.url) {
           throw new Error(data.errors?.[0] ?? data.error ?? "Neizdevās sākt maksājumu.");
         }
@@ -98,27 +144,26 @@ export function TestPricingPage() {
     [consent, fields],
   );
 
-  const themeLabel = useMemo(() => (theme === "dark" ? "Gaišs" : "Tumšs"), [theme]);
+  const themeLabel = useMemo(() => (theme === "dark" ? "☀️ Gaišs" : "🌙 Tumšs"), [theme]);
 
   return (
     <div className={styles.page}>
-      <div className={styles.pageInner}>
-        <header className={styles.topBar}>
-          <p className={styles.brand}>PROVIN.LV — testa cenas</p>
-          <div className={styles.topActions}>
-            <button type="button" className={styles.themeBtn} onClick={toggleTheme}>
-              {themeLabel}
-            </button>
-            <Link href="/lv" className={styles.ghostLink}>
-              Sākums
-            </Link>
-          </div>
-        </header>
+      <button
+        type="button"
+        className={styles.themeFloat}
+        onClick={toggleTheme}
+        aria-label="Pārslēgt tēmu"
+      >
+        {themeLabel}
+      </button>
 
-        <h1 className={styles.pageTitle}>Izvēlies audita paketi</h1>
-        <p className={styles.pageLead}>
-          Izolēta testa lapa — neskar galvenās lapas hero formu. Pēc apmaksas Stripe savāc e-pastu un tālruni.
-        </p>
+      <div className={styles.pageInner}>
+        <header className={styles.pageHeader}>
+          <h1 className={styles.pageTitle}>Izvēlies audita paketi</h1>
+          <p className={styles.pageLead}>
+            Kompakta testa lapa — neskar galvenās lapas hero. Stripe Checkout prasa e-pastu un tālruni.
+          </p>
+        </header>
 
         {cancelled ? (
           <p className={styles.cancelNote}>Maksājums tika atcelts. Vari mēģināt vēlreiz.</p>
@@ -130,9 +175,10 @@ export function TestPricingPage() {
             const col = fields[plan.id];
             const errs = fieldErrors[plan.id];
             const isPremium = plan.id === "premium";
-            const ctaClass = isPremium
-              ? `${demoStyles.ctaButton} w-full !mt-0 !max-w-none`
-              : `${demoStyles.ctaButtonSecondary} w-full !mt-0 !max-w-none`;
+            const ctaClass =
+              plan.ctaVariant === "primary"
+                ? `${demoStyles.ctaButton} ${styles.ctaBtn}`
+                : `${demoStyles.ctaButtonSecondary} ${styles.ctaBtn}`;
 
             return (
               <article
@@ -140,81 +186,76 @@ export function TestPricingPage() {
                 className={`${styles.card} ${isPremium ? styles.cardPremium : ""}`}
               >
                 {isPremium ? <span className={styles.badgePopular}>POPULĀRĀKĀ IZVĒLE</span> : null}
-                <h2 className={styles.cardTitle}>{plan.title}</h2>
-                <p className={styles.cardPrice}>{plan.priceLabel}</p>
-                <p className={styles.cardDesc}>{plan.description}</p>
 
-                <ul className={styles.featureList}>
-                  {TEST_PRICING_FEATURE_ROWS.map((row) => {
-                    const on = plan.features[row.id];
-                    return (
-                      <li key={row.id} className={styles.featureRow}>
-                        <span className={styles.featureIcon} aria-hidden>
-                          {on ? "✔️" : "❌"}
-                        </span>
-                        <span className={on ? undefined : styles.featureOff}>{row.label}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-
-                <div className={styles.inputsBlock}>
-                  <div className={styles.field}>
-                    <label className={styles.fieldLabel} htmlFor={`${plan.id}-listing`}>
-                      Sludinājuma saite
-                    </label>
-                    <input
-                      id={`${plan.id}-listing`}
-                      type="url"
-                      inputMode="url"
-                      autoComplete="url"
-                      placeholder="Iekopē linku..."
-                      className={`${styles.fieldInput} ${errs?.listingUrl ? styles.fieldInputError : ""}`}
-                      value={col.listingUrl}
-                      onChange={(e) => updateField(plan.id, "listingUrl", e.target.value)}
-                    />
-                    {errs?.listingUrl ? <p className={styles.fieldError}>{errs.listingUrl}</p> : null}
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.fieldLabel} htmlFor={`${plan.id}-vin`}>
-                      VIN numurs
-                      {plan.vinRequired ? (
-                        <span className="normal-case tracking-normal text-[#f87171]"> *</span>
-                      ) : null}
-                    </label>
-                    <input
-                      id={`${plan.id}-vin`}
-                      type="text"
-                      autoComplete="off"
-                      spellCheck={false}
-                      maxLength={17}
-                      placeholder={plan.vinPlaceholder}
-                      className={`${styles.fieldInput} ${errs?.vin ? styles.fieldInputError : ""}`}
-                      value={col.vin}
-                      onChange={(e) => updateField(plan.id, "vin", e.target.value.toUpperCase())}
-                    />
-                    {errs?.vin ? <p className={styles.fieldError}>{errs.vin}</p> : null}
-                  </div>
+                <div className={styles.cardBody}>
+                  <h2 className={styles.cardTitle}>{plan.title}</h2>
+                  <p className={styles.cardPrice}>{plan.priceLabel}</p>
+                  <p className={styles.cardDesc}>{plan.description}</p>
+                  {plan.valueBar ? <p className={styles.valueBar}>{plan.valueBar}</p> : null}
+                  <PlanFeatures plan={plan} />
                 </div>
 
-                <p className={styles.turnaround}>{plan.turnaround}</p>
+                <div className={styles.cardFooter}>
+                  <div className={styles.inputsBlock}>
+                    <div className={styles.field}>
+                      <label className={styles.fieldLabel} htmlFor={`${plan.id}-listing`}>
+                        Sludinājuma saite
+                      </label>
+                      <input
+                        id={`${plan.id}-listing`}
+                        type="url"
+                        inputMode="url"
+                        autoComplete="url"
+                        placeholder="Iekopē linku..."
+                        className={`${styles.fieldInput} ${errs?.listingUrl ? styles.fieldInputError : ""}`}
+                        value={col.listingUrl}
+                        onChange={(e) => updateField(plan.id, "listingUrl", e.target.value)}
+                      />
+                      {errs?.listingUrl ? (
+                        <p className={styles.fieldError}>{errs.listingUrl}</p>
+                      ) : null}
+                    </div>
+                    <div className={styles.field}>
+                      <label className={styles.fieldLabel} htmlFor={`${plan.id}-vin`}>
+                        VIN numurs
+                        {plan.vinRequired ? (
+                          <span className={styles.requiredMark}> *</span>
+                        ) : null}
+                      </label>
+                      <input
+                        id={`${plan.id}-vin`}
+                        type="text"
+                        autoComplete="off"
+                        spellCheck={false}
+                        maxLength={17}
+                        placeholder={plan.vinPlaceholder}
+                        className={`${styles.fieldInput} ${errs?.vin ? styles.fieldInputError : ""}`}
+                        value={col.vin}
+                        onChange={(e) => updateField(plan.id, "vin", e.target.value.toUpperCase())}
+                      />
+                      {errs?.vin ? <p className={styles.fieldError}>{errs.vin}</p> : null}
+                    </div>
+                  </div>
 
-                <div className={styles.ctaWrap}>
-                  <button
-                    type="button"
-                    className={ctaClass}
-                    disabled={loadingPlan !== null}
-                    onClick={() => void checkout(plan.id)}
-                  >
-                    {loadingPlan === plan.id ? "Novirza uz Stripe…" : plan.ctaLabel}
-                  </button>
+                  <p className={styles.turnaround}>{plan.turnaround}</p>
+
+                  <div className={styles.ctaWrap}>
+                    <button
+                      type="button"
+                      className={ctaClass}
+                      disabled={loadingPlan !== null}
+                      onClick={() => void checkout(plan.id)}
+                    >
+                      {loadingPlan === plan.id ? "Novirza uz Stripe…" : plan.ctaLabel}
+                    </button>
+                  </div>
                 </div>
               </article>
             );
           })}
         </div>
 
-        <div className={styles.consentBlock}>
+        <div className={styles.consentWrap}>
           <label className={styles.consentRow}>
             <input
               type="checkbox"

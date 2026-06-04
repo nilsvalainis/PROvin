@@ -4,7 +4,6 @@ export type CheckoutLineKind =
   | "audit"
   | "consultation"
   | "provin_select"
-  | "listing_filter"
   | "mini"
   | "premium";
 
@@ -13,8 +12,8 @@ export function getCheckoutLineFromSession(session: Stripe.Checkout.Session): Ch
   const raw = session.metadata?.checkout_line?.trim().toLowerCase();
   if (raw === "provin_select") return "provin_select";
   if (raw === "consultation") return "consultation";
-  if (raw === "listing_filter") return "listing_filter";
   if (raw === "mini") return "mini";
+  if (raw === "listing_filter") return "mini";
   if (raw === "premium") return "premium";
   return "audit";
 }

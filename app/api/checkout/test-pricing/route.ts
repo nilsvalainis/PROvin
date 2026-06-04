@@ -130,8 +130,8 @@ export async function POST(req: Request) {
     line_items: [lineItem],
     success_url: `${origin}${thanksPath}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${cancelPath}`,
+    /* Tālrunis obligāti; e-pasts — Stripe Checkout payment režīmā (viesa klients). */
     phone_number_collection: { enabled: true },
-    billing_address_collection: "auto",
     metadata: {
       checkout_line: plan.id,
       product_tier: plan.id,

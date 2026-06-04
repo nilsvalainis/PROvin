@@ -4,37 +4,20 @@ import {
   normalizeVin,
 } from "@/lib/order-field-validation";
 
-/** Testa cenu lapa `/test-pricing` — trīs produktu līnijas (nav saistītas ar hero OrderForm). */
+/** Testa cenu lapa `/test-pricing` — MINI + PREMIUM (nav saistītas ar hero OrderForm). */
 
-export type TestPricingPlanId = "listing_filter" | "mini" | "premium";
+export type TestPricingPlanId = "mini" | "premium";
 
-export type TestPricingFeatureId =
-  | "listing_analysis"
-  | "technical_risks"
-  | "lv_registry"
-  | "ta_history"
-  | "foreign_registry"
-  | "autodna"
-  | "carvertical"
-  | "dealer_db"
-  | "consultation";
-
-export type TestPricingFeatureRow = {
-  id: TestPricingFeatureId;
+export type TestPricingFeatureItem = {
+  icon: string;
   label: string;
 };
 
-export const TEST_PRICING_FEATURE_ROWS: TestPricingFeatureRow[] = [
-  { id: "listing_analysis", label: "Sludinājuma analīze" },
-  { id: "technical_risks", label: "Tehnisko risku analīze" },
-  { id: "lv_registry", label: "Pārbaude Latvijas reģistros" },
-  { id: "ta_history", label: "Tehnisko apskašu vēsture" },
-  { id: "foreign_registry", label: "Ārvalsts reģistri" },
-  { id: "autodna", label: "AutoDNA datubāze" },
-  { id: "carvertical", label: "CarVertical datubāze" },
-  { id: "dealer_db", label: "Oficiālo dīleru datubāzes" },
-  { id: "consultation", label: "Individuāla konsultācija" },
-];
+export type TestPricingFeatureSection = {
+  header: string;
+  tone: "muted" | "highlight";
+  items: TestPricingFeatureItem[];
+};
 
 export type TestPricingPlanConfig = {
   id: TestPricingPlanId;
@@ -43,67 +26,42 @@ export type TestPricingPlanConfig = {
   amountCents: number;
   stripePriceEnvKey: string;
   description: string;
+  /** Tikai PREMIUM — zem apraksta. */
+  valueBar?: string;
   turnaround: string;
   ctaLabel: string;
+  ctaVariant: "secondary" | "primary";
   vinRequired: boolean;
   vinPlaceholder: string;
-  features: Record<TestPricingFeatureId, boolean>;
+  /** Vienkārša saraksta forma (MINI). */
+  features?: TestPricingFeatureItem[];
+  /** Sekciju forma (PREMIUM). */
+  featureSections?: TestPricingFeatureSection[];
   productName: string;
   productDesc: string;
 };
 
 export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
   {
-    id: "listing_filter",
-    title: "PROVIN SLUDINĀJUMA FILTRS",
-    priceLabel: "19,99 €",
-    amountCents: 1999,
-    stripePriceEnvKey: "STRIPE_PRICE_LISTING_FILTER",
-    description:
-      "Kam domāts: Ātrai sludinājuma un modeļa risku izvērtēšanai pirms saziņas ar pārdevēju.",
-    turnaround: "⏱️ Izpilde: 1 - 12h",
-    ctaLabel: "PĀRBAUDĪT SLUDINĀJUMU",
-    vinRequired: false,
-    vinPlaceholder: "Ievadi VIN (ja ir)",
-    productName: "PROVIN sludinājuma filtrs",
-    productDesc: "Sludinājuma un modeļa risku izvērtējums pirms saziņas ar pārdevēju.",
-    features: {
-      listing_analysis: true,
-      technical_risks: true,
-      lv_registry: true,
-      ta_history: false,
-      foreign_registry: false,
-      autodna: false,
-      carvertical: false,
-      dealer_db: false,
-      consultation: false,
-    },
-  },
-  {
     id: "mini",
     title: "PROVIN MINI",
-    priceLabel: "49,99 €",
-    amountCents: 4999,
+    priceLabel: "29,99 €",
+    amountCents: 2999,
     stripePriceEnvKey: "STRIPE_PRICE_MINI",
-    description:
-      "Kam domāts: Latvijā reģistrētu auto padziļinātai analīzei bez maksas vēstures atskaitēm.",
-    turnaround: "⏱️ Izpilde: līdz 24h",
-    ctaLabel: "PASŪTĪT MINI AUDITU",
-    vinRequired: true,
-    vinPlaceholder: "Ievadi VIN (obligāts)",
-    productName: "PROVIN MINI audits",
-    productDesc: "Padziļināta analīze Latvijā reģistrētam transportlīdzeklim.",
-    features: {
-      listing_analysis: true,
-      technical_risks: true,
-      lv_registry: true,
-      ta_history: true,
-      foreign_registry: true,
-      autodna: false,
-      carvertical: false,
-      dealer_db: false,
-      consultation: true,
-    },
+    description: "Sludinājuma, risku analīzei un LV auto padziļinātai pārbaudei.",
+    turnaround: "⏱️ Izpilde: līdz 12-24h",
+    ctaLabel: "PĀRBAUDĪT AUTO",
+    ctaVariant: "secondary",
+    vinRequired: false,
+    vinPlaceholder: "Ievadi VIN (ja ir)",
+    productName: "PROVIN MINI",
+    productDesc: "Sludinājuma, risku analīze un LV auto padziļināta pārbaude.",
+    features: [
+      { icon: "✔️", label: "Sludinājuma & tehnisko risku analīze" },
+      { icon: "✔️", label: "Pārbaude Latvijas reģistros" },
+      { icon: "✔️", label: "Tehnisko apskašu (TA) vēsture & odometrs" },
+      { icon: "✔️", label: "Ārvalstu reģistru primārā kontrole" },
+    ],
   },
   {
     id: "premium",
@@ -112,24 +70,37 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
     amountCents: 9900,
     stripePriceEnvKey: "STRIPE_PRICE_PREMIUM",
     description:
-      "Kam domāts: Latvijā reģistrētu, kā arī jebkura Eiropas vai Amerikas auto pilnai vēstures izpētei.",
+      "Maksimāls drošības līmenis – pilna vietējo un starptautisko datubāzu izpēte iekļaujot maksas vēstures atskaites.",
+    valueBar: "💡 Ietver visu MINI paketi + Starptautisko izpēti",
     turnaround: "⏱️ Izpilde: līdz 48h",
     ctaLabel: "PASŪTĪT PREMIUM AUDITU",
+    ctaVariant: "primary",
     vinRequired: true,
     vinPlaceholder: "Ievadi VIN (obligāts)",
-    productName: "PROVIN PREMIUM audits",
-    productDesc: "Pilna vēstures izpēte ar starptautiskām datubāzēm.",
-    features: {
-      listing_analysis: true,
-      technical_risks: true,
-      lv_registry: true,
-      ta_history: true,
-      foreign_registry: true,
-      autodna: true,
-      carvertical: true,
-      dealer_db: true,
-      consultation: true,
-    },
+    productName: "PROVIN PREMIUM",
+    productDesc: "Pilna vietējo un starptautisko datubāzu izpēte ar maksas vēstures atskaitēm.",
+    featureSections: [
+      {
+        header: "[ 📦 IEKĻAUTS NO MINI PAKETES ]",
+        tone: "muted",
+        items: [
+          { icon: "➕", label: "Sludinājuma & tehnisko risku analīze" },
+          { icon: "➕", label: "Pārbaude Latvijas reģistros" },
+          { icon: "➕", label: "Tehnisko apskašu (TA) vēsture" },
+          { icon: "➕", label: "Ārvalstu reģistru primārā kontrole" },
+        ],
+      },
+      {
+        header: "[ 🔥 + PREMIUM EKSKLUZĪVIE DATI ]",
+        tone: "highlight",
+        items: [
+          { icon: "🚀", label: "carVertical pilnā atskaite" },
+          { icon: "🚀", label: "autoDNA vēstures atskaite" },
+          { icon: "🚀", label: "Oficiālo dīleru sistēmu dati" },
+          { icon: "🚀", label: "Eksperta pirkuma rekomendācija" },
+        ],
+      },
+    ],
   },
 ];
 
@@ -138,7 +109,7 @@ export function getTestPricingPlan(id: TestPricingPlanId): TestPricingPlanConfig
 }
 
 export function isTestPricingPlanId(v: string): v is TestPricingPlanId {
-  return v === "listing_filter" || v === "mini" || v === "premium";
+  return v === "mini" || v === "premium";
 }
 
 export type TestPricingCheckoutFieldErrors = {
