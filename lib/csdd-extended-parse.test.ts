@@ -8,6 +8,7 @@ import {
   parseIeprieksejasApskatesTaRow,
   parseOwnerRegistrationFromRaw,
   parsePreviousRegistrationCountry,
+  resolvePrevInspectionBlockFromRaw,
   parseTechnicalInspectionHistory,
   sanitizeDefectDescription,
 } from "@/lib/csdd-extended-parse";
@@ -157,16 +158,16 @@ describe("csdd extended parse", () => {
     expect(form.nextInspectionDate).toBe("2027-03-17");
   });
 
-  it("applyCsddPasteToForm maps sections correctly", () => {
+  it("applyCsddPasteToForm maps Iepriekšējās apskates dati into prevInspectionBlock", () => {
     const parsed = parseCsddPaste(FULL_CSDD_RAW);
     const form = applyCsddPasteToForm(emptyCsddFields(), FULL_CSDD_RAW, parsed);
-    expect(form.prevInspectionBlock.defects[0]?.code).toBe("3.2.");
-    expect(form.opacityCoefficient).toBe("0.09");
+    expect(form.prevInspectionBlock.odometer).toBe("274516");
+    expect(form.prevInspectionBlock.defects.some((d) => d.code === "5.3.4.")).toBe(true);
+    expect(form.opacityCoefficient).toBe("0.58");
     const html = buildPreviousInspectionBlockHtml(form.prevInspectionBlock, "");
-    expect(html).toContain("stiklojuma bojājumi");
-    expect(html).toContain("korozijas bojājumi");
+    expect(html).toContain("Priekšējais tilts");
+    expect(html).toContain("274516 km");
     expect(html).toContain("pdf-csdd-ta-year-frame");
-    expect(html).not.toContain("5.3.4.");
   });
 
   it("parses Iepriekšējās apskates section metadata", () => {
@@ -174,6 +175,12 @@ describe("csdd extended parse", () => {
     expect(block.odometer).toBe("274516");
     expect(block.ratingLevel).toBe(2);
     expect(block.inspectionDateText).toBe("16.12.2025");
+  });
+
+  it("resolvePrevInspectionBlockFromRaw prefers Iepriekšējās apskates dati", () => {
+    const block = resolvePrevInspectionBlockFromRaw(FULL_CSDD_RAW);
+    expect(block.odometer).toBe("274516");
+    expect(block.defects.some((d) => d.code === "5.3.4.")).toBe(true);
   });
 
   it("backfill upgrades legacy rows without defects", () => {

@@ -317,6 +317,16 @@ export function parsePreviousInspectionFromRaw(raw: string): CsddPreviousInspect
   return parseIeprieksejasApskatesSection(raw);
 }
 
+/**
+ * Admin bloks „Iepriekšējās apskates dati” — prioritāte sadaļai ar šo virsrakstu PDF/raw.
+ * Ja tās nav, „Detalizētais vērtējums” / tehniskie dati augšā.
+ */
+export function resolvePrevInspectionBlockFromRaw(raw: string): CsddPreviousInspectionBlock {
+  const iep = parseIeprieksejasApskatesSection(raw);
+  if (previousInspectionBlockHasData(iep)) return iep;
+  return parseDetailedRatingBlockFromRaw(raw);
+}
+
 /** „Iepriekšējās apskates dati” → rinda tehnisko apskašu vēsturei. */
 export function parseIeprieksejasApskatesTaRow(raw: string): CsddTechnicalInspectionRow | null {
   const block = parseIeprieksejasApskatesSection(raw);

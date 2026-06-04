@@ -15,6 +15,7 @@ import {
   parseOwnerRegistrationFromRaw,
   parseDetailedRatingBlockFromRaw,
   parsePreviousRegistrationCountry,
+  resolvePrevInspectionBlockFromRaw,
   parseLastTechnicalInspectionHead,
   parseTechnicalInspectionHistory,
   normalizeCsddRawText,
@@ -461,7 +462,7 @@ export function applyCsddPasteToForm(
   const tech = parseCsddTechnicalFields(normalizedRaw);
   const ownerReg = parseOwnerRegistrationFromRaw(normalizedRaw);
   const technicalInspectionHistory = parseTechnicalInspectionHistory(normalizedRaw);
-  const prevInspectionBlock = parseDetailedRatingBlockFromRaw(normalizedRaw);
+  const prevInspectionBlock = resolvePrevInspectionBlockFromRaw(normalizedRaw);
   const lastTaHead = parseLastTechnicalInspectionHead(normalizedRaw);
 
   let nextInspectionDate = "";
@@ -544,7 +545,7 @@ export function backfillCsddExtendedFromRaw(csdd: CsddFormFields): CsddFormField
   const country = parsePreviousRegistrationCountry(raw);
   const ownerReg = parseOwnerRegistrationFromRaw(raw);
   const ta = parseTechnicalInspectionHistory(raw);
-  const prevBlock = parseDetailedRatingBlockFromRaw(raw);
+  const prevBlock = resolvePrevInspectionBlockFromRaw(raw);
 
   const patch: Partial<CsddFormFields> = {};
   if (!csdd.previousRegistrationCountry.trim() && country) {

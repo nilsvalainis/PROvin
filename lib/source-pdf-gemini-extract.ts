@@ -5,7 +5,7 @@ import {
   geminiGenerateJsonText,
   type GeminiUserPart,
 } from "@/lib/admin-gemini";
-import { emptyCsddFields, type CsddFormFields, type SourcePdfChecklist } from "@/lib/admin-source-blocks";
+import type { CsddFormFields, SourcePdfChecklist } from "@/lib/admin-source-blocks";
 import {
   autoRecordsMileageRowHasData,
   formatAutoRecordsDateForOutput,
@@ -17,7 +17,7 @@ import type {
   CarVerticalDamageDetailRow,
   CarVerticalTimelineRow,
 } from "@/lib/carvertical-pdf-parse";
-import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
+import { buildCsddFieldsFromPdfSources } from "@/lib/csdd-pdf-ingest";
 import type { SourcePdfIngestTarget } from "@/lib/pdf-source-ingest";
 import type { AutoRecordsPdfParseResult } from "@/lib/auto-records-pdf-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
@@ -198,13 +198,26 @@ const CITI_AVOTI_USER = `TARGET: Foreign or uncommon vehicle history PDF (not Au
 Read the document layout and map equivalent sections: odometer/mileage tables → serviceHistory (km required), accidents/claims/damage → incidents + damageDetails when body zones exist, other timeline → vehicleHistoryTimeline.
 Set vendorLabel in JSON root if the report issuer name is visible (footer/header).`;
 
-const CSDD_SYSTEM = `You are PROVIN.LV admin PDF extractor for CSDD Latvia vehicle registry printouts (e.csdd.lv style).
-Return ONLY valid JSON:
+const CSDD_SYSTEM = `You are PROVIN.LV admin PDF extractor for CSDD Latvia vehicle registry printouts (e.csdd.lv / csdd.lv PDF).
+Return ONLY valid JSON.
+
+PRIORITY: "rawUnprocessedData" must contain the COMPLETE verbatim PDF text (all pages, all tables, all defect lines) up to 120000 characters. Copy every section header and row — this drives automated parsing. Do NOT summarize rawUnprocessedData.
+
+Required sections in rawUnprocessedData when present in PDF:
+- Iepriekšējās reģistrācijas valsts (e.g. VĀCIJA, Vācija)
+- Transportlīdzekļa reģistrācija (īpašnieku skaits, datumi, Pirmā reģistrācija Latvijā, Īpašnieka maiņa)
+- Tehniskie dati / Pārbaudes veids / Nākamās apskates datums / Odometra rādījums / Novērtējums / Dūmainības koeficients
+- Detalizētais vērtējums (defect table: Kods, Novērtējums, Trūkumi vai bojājumi)
+- Iepriekšējās apskates dati (FULL previous TA: dates, odometer, rating, smoke, Piezīmes, every defect row)
+- Nobraukuma vēsture / Nobraukums ārvalstīs (date + km lines)
+- Tehnisko apskašu vēsture (EVERY "Apskates datums" block with all defects)
+
+Also fill structured JSON (backup if layout is clear):
 {
-  "rawUnprocessedData": "string — full extract for admin raw field (max 120000 chars)",
+  "rawUnprocessedData": "string",
   "makeModel": "string",
   "registrationNumber": "string",
-  "firstRegistration": "YYYY-MM-DD or DD.MM.YYYY",
+  "firstRegistration": "YYYY-MM-DD",
   "nextInspectionDate": "YYYY-MM-DD",
   "prevInspectionDate": "YYYY-MM-DD",
   "engineDisplacementCm3": "string",
@@ -217,14 +230,36 @@ Return ONLY valid JSON:
   "registrationStatus": "string",
   "opacityCoefficient": "string",
   "particulateMatter": "string",
-  "previousRegistrationCountry": "string",
-  "ownerCountLatvia": "string",
-  "mileageHistory": [{"date":"DD.MM.YYYY","odometer":"digits only","country":"Latvija or foreign"}],
+  "previousRegistrationCountry": "string — Iepriekšējās reģistrācijas valsts",
+  "ownerCountLatvia": "string — digit only",
+  "ownerRegistrationEvents": [{"date":"DD.MM.YYYY","label":"string"}],
+  "prevInspectionBlock": {
+    "inspectionType": "string",
+    "inspectionDateText": "DD.MM.YYYY",
+    "nextInspectionDateText": "DD.MM.YYYY",
+    "odometer": "digits",
+    "ratingLabel": "string",
+    "ratingLevel": 1|2|3,
+    "smokeCoefficient": "string",
+    "notes": "string",
+    "defects": [{"code":"string","rating":"1|2|3","description":"string"}]
+  },
+  "technicalInspectionHistory": [{
+    "date":"DD.MM.YYYY",
+    "inspectionType":"string",
+    "ratingLabel":"string",
+    "ratingLevel":1|2|3,
+    "smokeCoefficient":"string",
+    "notes":"string",
+    "defects":[{"code":"string","rating":"string","description":"string"}]
+  }],
+  "mileageHistory": [{"date":"DD.MM.YYYY","odometer":"digits","country":"string"}],
   "warnings": ["string"]
 }
 Rules:
-- mileageHistory: only rows with explicit odometer km (≥3 digits). Date+country without km → omit.
-- Preserve Latvian field labels context in rawUnprocessedData.`;
+- prevInspectionBlock = section "Iepriekšējās apskates dati" when present (not current "Tehniskie dati" head).
+- technicalInspectionHistory: all historic TA blocks from "Tehnisko apskašu vēsture".
+- mileageHistory: only lines with km digits (≥3).`;
 
 const CLASSIFY_SYSTEM = `You classify a vehicle history PDF for PROVIN.LV admin routing.
 Return ONLY JSON: {"target":"autodna"|"carvertical"|"ltab"|"auto_records"|"csdd"|"citi_avoti","vendorLabel":"optional string"}
@@ -333,40 +368,26 @@ function vendorResultFromGemini(
   };
 }
 
-function csddResultFromGemini(payload: Record<string, unknown>, fileName: string): CsddPdfParseResult {
-  const rawUnprocessedData = asString(payload.rawUnprocessedData ?? payload.rawTextSnippet, MAX_RAW);
-  const parsed = parseCsddPaste(rawUnprocessedData);
-  let fields = applyCsddPasteToForm(emptyCsddFields(), rawUnprocessedData, parsed);
-
-  const strField = (key: keyof CsddFormFields, max = 200) => {
-    const v = asString(payload[key], max);
-    if (v) fields = { ...fields, [key]: v };
-  };
-  strField("makeModel", 120);
-  strField("registrationNumber", 32);
-  strField("firstRegistration", 32);
-  strField("nextInspectionDate", 32);
-  strField("prevInspectionDate", 32);
-  strField("engineDisplacementCm3", 32);
-  strField("enginePowerKw", 16);
-  strField("fuelType", 80);
-  strField("emissionStandard", 40);
-  strField("grossMassKg", 32);
-  strField("curbMassKg", 32);
-  strField("roadTaxEur", 32);
-  strField("registrationStatus", 80);
-  strField("opacityCoefficient", 32);
-  strField("particulateMatter", 80);
-  strField("previousRegistrationCountry", 80);
-  strField("ownerCountLatvia", 8);
+function csddResultFromGemini(
+  payload: Record<string, unknown>,
+  fileName: string,
+  textHint?: string,
+): CsddPdfParseResult {
+  const geminiRaw = asString(payload.rawUnprocessedData ?? payload.rawTextSnippet, MAX_RAW);
+  const { fields, rawUnprocessedData } = buildCsddFieldsFromPdfSources({
+    textHint,
+    geminiRaw,
+    geminiPayload: payload,
+  });
 
   const mileageFromGemini = dedupeServiceRows(
     (Array.isArray(payload.mileageHistory) ? payload.mileageHistory : [])
       .map(normalizeServiceRow)
       .filter((r): r is AutoRecordsServiceRow => r !== null),
   );
-  if (mileageFromGemini.length > 0) {
-    fields = {
+  let mergedFields = fields;
+  if (mileageFromGemini.length > 0 && !fields.mileageHistory.some((r) => r.odometer.trim())) {
+    mergedFields = {
       ...fields,
       mileageHistory: mileageFromGemini.map((r) => ({
         date: r.date,
@@ -380,10 +401,13 @@ function csddResultFromGemini(payload: Record<string, unknown>, fileName: string
     .filter((w): w is string => typeof w === "string")
     .slice(0, 6);
   warnings.unshift(`Datu avots: Gemini PDF CSDD (${fileName}).`);
+  if (textHint?.trim() && rawUnprocessedData.length > geminiRaw.length * 1.1) {
+    warnings.push("Papildināts ar PDF teksta slāni — pilnāks parsējums.");
+  }
 
   return {
     rawUnprocessedData,
-    fields,
+    fields: mergedFields,
     warnings,
     meta: { charCount: rawUnprocessedData.length, engine: "gemini_fallback", extractionMethod: "gemini" },
   };
@@ -574,7 +598,7 @@ export async function extractSourcePdfWithGemini(opts: {
     }
     if (!payload) throw new Error("gemini_invalid_json");
     console.info(`${LOG_PREFIX} csdd_ok`, { fileName });
-    return csddResultFromGemini(payload, fileName);
+    return csddResultFromGemini(payload, fileName, textHint);
   }
 
   if (target === "auto_records") {

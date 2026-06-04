@@ -7,6 +7,7 @@ import { parseCarverticalPdfText } from "@/lib/carvertical-pdf-parse";
 import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/history-vendor-pdf-import";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import { extractPdfTextDetailed, type PdfExtractResult } from "@/lib/pdf-text-extract-server";
+import { buildCsddFieldsFromPdfSources } from "@/lib/csdd-pdf-ingest";
 import {
   autoRecordsParseHasData,
   csddParseHasData,
@@ -14,6 +15,26 @@ import {
   vendorParseHasData,
   type CsddPdfParseResult,
 } from "@/lib/source-pdf-gemini-extract";
+
+function enrichCsddGeminiResult(result: CsddPdfParseResult, textHint: string): CsddPdfParseResult {
+  const hint = textHint.trim();
+  if (!hint) return result;
+  const { fields, rawUnprocessedData } = buildCsddFieldsFromPdfSources({
+    textHint: hint,
+    geminiRaw: result.rawUnprocessedData,
+  });
+  return {
+    ...result,
+    rawUnprocessedData,
+    fields,
+    warnings: [
+      ...result.warnings.filter((w) => !w.includes("teksta slāni")),
+      ...(rawUnprocessedData.length > result.rawUnprocessedData.length
+        ? ["Apvienots ar PDF teksta slāni lokālajam parserim."]
+        : []),
+    ],
+  };
+}
 import {
   detectVendorPdfStructure,
   parseVendorPdfLocal,
@@ -112,7 +133,9 @@ async function runGeminiExtract(
   console.info(`${LOG_PREFIX} gemini_extract`, { fileName, target, engine, stage: extract.stage });
   const result = await extractSourcePdfWithGemini({ target, buffer, fileName, textHint });
   if (target === "csdd") {
-    return withEngine(result as CsddPdfParseResult, engine, extract.backend);
+    const csdd = result as CsddPdfParseResult;
+    const enriched = enrichCsddGeminiResult(csdd, textHint);
+    return withEngine(enriched, engine, extract.backend);
   }
   if ("incidents" in result) {
     const vendorTarget =
