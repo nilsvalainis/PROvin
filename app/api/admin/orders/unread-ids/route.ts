@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { filterAdminOrdersForDashboard } from "@/lib/admin-order-amount-filter";
 import { listAdminOrders } from "@/lib/admin-orders";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,9 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const { rows } = await listAdminOrders(100);
-  const ids = rows.filter((r) => r.paymentStatus === "paid" && !r.isDemo).map((r) => r.id);
+  const { rows } = await listAdminOrders();
+  const ids = filterAdminOrdersForDashboard(rows, false)
+    .filter((r) => r.paymentStatus === "paid" && !r.isDemo)
+    .map((r) => r.id);
   return NextResponse.json({ ids }, { headers: { "Cache-Control": "private, no-store" } });
 }

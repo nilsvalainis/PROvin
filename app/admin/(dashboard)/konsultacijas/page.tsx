@@ -8,7 +8,7 @@ import { renderProvinText } from "@/lib/provin-wordmark";
 export const dynamic = "force-dynamic";
 
 export default async function AdminConsultationsPage() {
-  const { rows: consultations, stripeError } = await listAdminConsultations(50);
+  const { rows: consultations, stripeError } = await listAdminConsultations();
   const rowsWithDraft = await Promise.all(
     consultations.map(async (o) => {
       const draft = await readConsultationDraft(o.id);

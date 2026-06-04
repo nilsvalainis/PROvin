@@ -1,4 +1,9 @@
+import Link from "next/link";
 import { isDemoOrdersEnabled, listAdminOrders } from "@/lib/admin-orders";
+import {
+  countAdminOrdersHiddenByAmountFilter,
+  filterAdminOrdersForDashboard,
+} from "@/lib/admin-order-amount-filter";
 import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
@@ -6,8 +11,16 @@ import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminOrdersPage() {
-  const { rows: orders, stripeError } = await listAdminOrders(50);
+export default async function AdminOrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ show_all?: string }>;
+}) {
+  const sp = await searchParams;
+  const showAll = sp.show_all === "1" || sp.show_all === "true";
+  const { rows: allOrders, stripeError } = await listAdminOrders();
+  const hiddenByAmount = countAdminOrdersHiddenByAmountFilter(allOrders);
+  const orders = filterAdminOrdersForDashboard(allOrders, showAll);
   const ordersWithInvoice = await Promise.all(
     orders.map(async (o) => {
       const draft = await readOrderDraft(o.id);
@@ -30,6 +43,34 @@ export default async function AdminOrdersPage() {
 
   return (
     <div className="w-full max-w-none">
+      {hiddenByAmount > 0 ? (
+        <div className="mt-3 rounded-2xl border border-slate-200/90 bg-slate-50/90 px-4 py-3 text-sm text-[var(--color-apple-text)] shadow-sm">
+          {showAll ? (
+            <p>
+              Rāda <strong className="font-semibold">visus</strong> apmaksātos pasūtījumus no Stripe (
+              {allOrders.length}).{" "}
+              <Link
+                href="/admin/dashboard"
+                className="font-medium text-[var(--color-provin-accent)] underline-offset-2 hover:underline"
+              >
+                Noklusējuma skats (tikai virs 10 €)
+              </Link>
+            </p>
+          ) : (
+            <p>
+              Noklusējumā rāda tikai pasūtījumus ar summu <strong className="font-semibold">lielāku par 10 €</strong> (
+              {orders.length} no {allOrders.length}). Slēpti: {hiddenByAmount}.{" "}
+              <Link
+                href="/admin/dashboard?show_all=1"
+                className="font-medium text-[var(--color-provin-accent)] underline-offset-2 hover:underline"
+              >
+                Rādīt visus
+              </Link>
+            </p>
+          )}
+        </div>
+      ) : null}
+
       {hasStripeIssue && orders.length > 0 ? (
         <div
           className={`mt-3 rounded-2xl border px-4 py-3.5 text-sm shadow-sm ${

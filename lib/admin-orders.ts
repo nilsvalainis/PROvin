@@ -61,28 +61,49 @@ export type AdminOrderDetail = AdminOrderRow & {
 
 /** Neļauj admin panelim gaidīt Stripe atbildi bezgalīgi (noklusējuma SDK ~80s ir par garu). */
 const STRIPE_CHECKOUT_LIST_TIMEOUT_MS = 12_000;
+const STRIPE_CHECKOUT_PAGE_SIZE = 100;
+/** Līdz ~8000 Checkout sesijām (apmaksātās filtrē pēc lapas). */
+const STRIPE_CHECKOUT_MAX_PAGES = 80;
 
-export async function listPaidCheckoutSessions(limit = 50): Promise<AdminOrderRow[]> {
+function sessionToAdminOrderRow(s: Stripe.Checkout.Session): AdminOrderRow | null {
+  if (s.payment_status !== "paid") return null;
+  const order = getOrderFieldsFromSession(s);
+  return {
+    id: s.id,
+    created: s.created,
+    amountTotal: s.amount_total,
+    currency: s.currency?.toUpperCase() ?? null,
+    paymentStatus: s.payment_status,
+    customerEmail: s.customer_email ?? s.customer_details?.email ?? null,
+    vin: order.vin,
+    checkoutLine: getCheckoutLineFromSession(s),
+  };
+}
+
+/** Visi apmaksātie Stripe Checkout — ar lapošanu (ne tikai pirmās 50–100). */
+export async function listPaidCheckoutSessions(): Promise<AdminOrderRow[]> {
   const stripe = getStripe();
-  const res = await stripe.checkout.sessions.list(
-    { limit },
-    { timeout: STRIPE_CHECKOUT_LIST_TIMEOUT_MS },
-  );
   const rows: AdminOrderRow[] = [];
-  for (const s of res.data) {
-    if (s.payment_status !== "paid") continue;
-    const order = getOrderFieldsFromSession(s);
-    rows.push({
-      id: s.id,
-      created: s.created,
-      amountTotal: s.amount_total,
-      currency: s.currency?.toUpperCase() ?? null,
-      paymentStatus: s.payment_status,
-      customerEmail: s.customer_email ?? s.customer_details?.email ?? null,
-      vin: order.vin,
-      checkoutLine: getCheckoutLineFromSession(s),
-    });
+  let startingAfter: string | undefined;
+
+  for (let page = 0; page < STRIPE_CHECKOUT_MAX_PAGES; page++) {
+    const res = await stripe.checkout.sessions.list(
+      {
+        limit: STRIPE_CHECKOUT_PAGE_SIZE,
+        ...(startingAfter ? { starting_after: startingAfter } : {}),
+      },
+      { timeout: STRIPE_CHECKOUT_LIST_TIMEOUT_MS },
+    );
+    if (res.data.length === 0) break;
+    for (const s of res.data) {
+      const row = sessionToAdminOrderRow(s);
+      if (row) rows.push(row);
+    }
+    if (!res.has_more) break;
+    startingAfter = res.data[res.data.length - 1]?.id;
+    if (!startingAfter) break;
   }
+
   return rows.sort((a, b) => b.created - a.created);
 }
 
@@ -93,21 +114,25 @@ export async function listPaidCheckoutSessions(limit = 50): Promise<AdminOrderRo
 export async function needsUrgentCompanyLegalOnAdmin(): Promise<boolean> {
   if (getCompanyLegal().isComplete) return false;
   try {
-    const rows = await listPaidCheckoutSessions(1);
-    return rows.length > 0;
+    const stripe = getStripe();
+    const res = await stripe.checkout.sessions.list(
+      { limit: 20 },
+      { timeout: STRIPE_CHECKOUT_LIST_TIMEOUT_MS },
+    );
+    return res.data.some((s) => s.payment_status === "paid");
   } catch {
     return false;
   }
 }
 
-export async function listAdminOrders(limit = 50): Promise<{
+export async function listAdminOrders(): Promise<{
   rows: AdminOrderRow[];
   stripeError: string | null;
 }> {
   let real: AdminOrderRow[] = [];
   let stripeError: string | null = null;
   try {
-    real = await listPaidCheckoutSessions(limit);
+    real = await listPaidCheckoutSessions();
   } catch {
     stripeError =
       "Neizdevās ielādēt pasūtījumus no Stripe. Pārbaudi, vai serverī ir iestatīts STRIPE_SECRET_KEY.";
@@ -122,14 +147,14 @@ export async function listAdminOrders(limit = 50): Promise<{
 }
 
 /** Apmaksātas PROVIN SELECT stratēģiskās konsultācijas (`checkout_line=provin_select`). */
-export async function listAdminConsultations(limit = 50): Promise<{
+export async function listAdminConsultations(): Promise<{
   rows: AdminOrderRow[];
   stripeError: string | null;
 }> {
   let real: AdminOrderRow[] = [];
   let stripeError: string | null = null;
   try {
-    real = (await listPaidCheckoutSessions(limit)).filter((r) => r.checkoutLine === "provin_select");
+    real = (await listPaidCheckoutSessions()).filter((r) => r.checkoutLine === "provin_select");
   } catch {
     stripeError =
       "Neizdevās ielādēt konsultācijas no Stripe. Pārbaudi, vai serverī ir iestatīts STRIPE_SECRET_KEY.";
