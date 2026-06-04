@@ -314,7 +314,11 @@ export function AdminOrdersTable({
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3.5">
-                    {hasVin ? <AdminAuditDeadlineCell createdUnixSec={o.created} /> : <span className="text-[var(--color-provin-muted)]">—</span>}
+                    {hasVin ? (
+                      <AdminAuditDeadlineCell sessionId={o.id} createdUnixSec={o.created} />
+                    ) : (
+                      <span className="text-[var(--color-provin-muted)]">—</span>
+                    )}
                   </td>
                   <td className="max-w-[140px] truncate px-4 py-3.5 font-mono text-xs text-[var(--color-apple-text)]">
                     {vin || "—"}
