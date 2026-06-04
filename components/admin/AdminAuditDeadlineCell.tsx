@@ -13,7 +13,7 @@ const PILL_BASE =
   "inline-flex cursor-pointer rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ring-1 transition hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/35";
 
 const PILL_BY_STATUS: Record<AuditDeadlineStatus, string> = {
-  ok: "bg-emerald-50 text-emerald-800 ring-emerald-200/80 hover:bg-emerald-100/90",
+  ok: "bg-white text-[var(--color-apple-text)] ring-slate-200/90 hover:bg-slate-50/95",
   urgent: "bg-amber-50 text-amber-900 ring-amber-200/90 hover:bg-amber-100/90",
   overdue: "bg-red-50 text-red-700 ring-red-200/85 hover:bg-red-100/90",
 };
