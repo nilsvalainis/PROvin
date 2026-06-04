@@ -7,16 +7,8 @@ import { parseCarverticalPdfText } from "@/lib/carvertical-pdf-parse";
 import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/history-vendor-pdf-import";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import { extractPdfTextDetailed, type PdfExtractResult } from "@/lib/pdf-text-extract-server";
-import {
-  buildCsddLocalParseFromText,
-  buildCsddPdfParseResultFromTextLayer,
-  csddPdfTextLayerUsable,
-  type CsddPdfParseResult,
-} from "@/lib/csdd-pdf-ingest";
-import {
-  extractCsddPdfWithGeminiStructured,
-  mergeCsddPdfParseResults,
-} from "@/lib/csdd-gemini-structured";
+import type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
+import { extractCsddPdfWithGeminiStructured } from "@/lib/csdd-gemini-structured";
 import { parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
 import {
@@ -31,24 +23,8 @@ import {
   vendorLocalParseHasData,
 } from "@/lib/vendor-pdf-local-parse";
 
-function enrichCsddGeminiResult(
-  result: CsddPdfParseResult,
-  textHint: string,
-  fileName: string,
-): CsddPdfParseResult {
-  const hint = textHint.trim();
-  if (!hint) return result;
-  const local = buildCsddPdfParseResultFromTextLayer(hint, fileName);
-  const merged = mergeCsddPdfParseResults(local, result, hint);
-  return {
-    ...merged,
-    warnings: [
-      ...result.warnings.filter((w) => !w.includes("teksta slāni")),
-      ...(merged.rawUnprocessedData.length > result.rawUnprocessedData.length
-        ? ["Apvienots ar PDF teksta slāni."]
-        : []),
-    ],
-  };
+function enrichCsddGeminiResult(result: CsddPdfParseResult): CsddPdfParseResult {
+  return result;
 }
 
 const LOG_PREFIX = "[pdf-source-ingest]";
@@ -151,9 +127,7 @@ async function runGeminiExtract(
   console.info(`${LOG_PREFIX} gemini_extract`, { fileName, target, engine, stage: extract.stage });
   const result = await extractSourcePdfWithGemini({ target, buffer, fileName, textHint });
   if (target === "csdd") {
-    const csdd = result as CsddPdfParseResult;
-    const enriched = enrichCsddGeminiResult(csdd, textHint, fileName);
-    return withEngine(enriched, engine, extract.backend);
+    return withEngine(enrichCsddGeminiResult(result as CsddPdfParseResult), engine, extract.backend);
   }
   if ("incidents" in result) {
     const vendorTarget =
@@ -218,7 +192,7 @@ function parseHasData(
 
 /**
  * Viena PDF imports.
- * Noklusējums: Gemini Pro lasa pilnu PDF (vizuāli); lokālais parsers — tikai ja nav GEMINI_API_KEY vai Gemini neizdodas.
+ * CSDD: tikai Gemini Structured Output (PDF pielikums + shēma).
  */
 export async function ingestSourcePdfFile(opts: {
   target: SourcePdfIngestTarget;
@@ -252,54 +226,32 @@ export async function ingestSourcePdfFile(opts: {
   }
 
   if (target === "csdd") {
-    const localCsdd =
-      buildCsddPdfParseResultFromTextLayer(text, fileName) ??
-      (text.trim().length >= 200 ? buildCsddLocalParseFromText(text, fileName) : null);
-    if (preferGemini && getGeminiApiKeyFromEnv()) {
-      try {
-        const structured = await extractCsddPdfWithGeminiStructured({
-          buffer,
-          fileName,
-          textHint: text,
-        });
-        const merged = mergeCsddPdfParseResults(localCsdd, structured, text);
-        if (csddParseHasData(merged)) {
-          console.info(`${LOG_PREFIX} csdd_structured_ok`, {
-            fileName,
-            mileage: merged.fields.mileageHistory.filter((r) => r.odometer.trim()).length,
-            taDefects: merged.fields.technicalInspectionHistory.reduce(
-              (n, r) => n + (r.defects?.length ?? 0),
-              0,
-            ),
-          });
-          return {
-            result: withEngine(merged, "gemini_primary", extract.backend),
-            extract,
-            plan: "gemini_primary",
-            planReason: "csdd_structured_output",
-          };
-        }
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        console.warn(`${LOG_PREFIX} csdd_structured_failed`, { fileName, msg });
-      }
+    if (!preferGemini || !getGeminiApiKeyFromEnv()) {
+      throw new Error("missing_gemini_key");
     }
-    if (localCsdd && csddParseHasData(localCsdd)) {
-      console.info(`${LOG_PREFIX} csdd_text_layer_ok`, {
-        fileName,
-        chars: localCsdd.rawUnprocessedData.length,
-        backend: extract.backend,
-      });
-      return {
-        result: withEngine(localCsdd, "local_parser", extract.backend),
-        extract,
-        plan: "local_parser",
-        planReason: "csdd_text_layer",
-      };
+    const structured = await extractCsddPdfWithGeminiStructured({
+      buffer,
+      fileName,
+      textHint: text,
+    });
+    if (!csddParseHasData(structured)) {
+      console.warn(`${LOG_PREFIX} csdd_gemini_sparse`, { fileName });
     }
-    if (csddPdfTextLayerUsable(text)) {
-      console.warn(`${LOG_PREFIX} csdd_text_layer_partial`, { fileName });
-    }
+    console.info(`${LOG_PREFIX} csdd_gemini_only_ok`, {
+      fileName,
+      mileage: structured.fields.mileageHistory.filter((r) => r.odometer.trim()).length,
+      taDefects: structured.fields.technicalInspectionHistory.reduce(
+        (n, r) => n + (r.defects?.length ?? 0),
+        0,
+      ),
+      prevDefects: structured.fields.prevInspectionBlock.defects?.length ?? 0,
+    });
+    return {
+      result: withEngine(structured, "gemini_primary", extract.backend),
+      extract,
+      plan: "gemini_primary",
+      planReason: "csdd_gemini_only",
+    };
   }
 
   if (

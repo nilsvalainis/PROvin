@@ -7,19 +7,20 @@ import {
 } from "@/lib/admin-gemini";
 import type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
 import { normalizeCsddRawText } from "@/lib/csdd-extended-parse";
-import { mergeCsddPdfRawSources } from "@/lib/csdd-pdf-raw-merge";
 import { PDF_GEMINI_INLINE_MAX_BYTES } from "@/lib/pdf-api-limits";
 import {
   CSDD_GEMINI_RESPONSE_SCHEMA,
   CSDD_GEMINI_STRUCTURED_SYSTEM,
   csddFieldsFromStructuredGeminiPayload,
   countTaDefects,
+  finalizeCsddGeminiPdfResult,
 } from "@/lib/csdd-gemini-structured-map";
 
 export {
   CSDD_GEMINI_RESPONSE_SCHEMA,
   CSDD_GEMINI_STRUCTURED_SYSTEM,
   csddFieldsFromStructuredGeminiPayload,
+  finalizeCsddGeminiPdfResult,
   mergeCsddPdfParseResults,
   sanitizeCsddRegistrationNumber,
 } from "@/lib/csdd-gemini-structured-map";
@@ -55,10 +56,10 @@ export async function extractCsddPdfWithGeminiStructured(opts: {
     });
   }
   extraParts.push({
-    text: `[CSDD PDF: ${opts.fileName}]\n${
+    text: `[CSDD PDF: ${opts.fileName}]\nRead the attached PDF document (all pages). Extract every table from the PDF layout.\n${
       textHint.length > 0
-        ? `TEXT LAYER (primary — extract ALL mileage pairs and ALL defect codes from this):\n${textHint.slice(0, 90_000)}`
-        : "Read the attached PDF."
+        ? `Optional incomplete text-layer hint (PDF wins if different):\n${textHint.slice(0, 60_000)}`
+        : ""
     }`,
   });
 
@@ -78,25 +79,31 @@ export async function extractCsddPdfWithGeminiStructured(opts: {
   }
   if (!payload) throw new Error("gemini_invalid_json");
 
-  const geminiRaw = asString(payload.rawTekstaFragments, 8000);
-  const combinedRaw = mergeCsddPdfRawSources(textHint, geminiRaw);
-  const fields = csddFieldsFromStructuredGeminiPayload(payload, combinedRaw);
+  const rawForStorage =
+    textHint.length > 0
+      ? textHint.slice(0, 500_000)
+      : asString(payload.rawTekstaFragments, 8000);
+  const fields = csddFieldsFromStructuredGeminiPayload(payload, rawForStorage);
 
   console.info(`${LOG_PREFIX} ok`, {
     fileName: opts.fileName,
     mileage: fields.mileageHistory.filter((r) => r.odometer.trim()).length,
     ta: fields.technicalInspectionHistory.length,
     defects: countTaDefects(fields.technicalInspectionHistory),
+    prevDefects: fields.prevInspectionBlock.defects?.length ?? 0,
   });
 
-  return {
-    rawUnprocessedData: combinedRaw,
-    fields,
-    warnings: [`Datu avots: Gemini Structured Output (${opts.fileName}).`],
-    meta: {
-      charCount: combinedRaw.length,
-      engine: "gemini_primary",
-      extractionMethod: "gemini",
+  return finalizeCsddGeminiPdfResult(
+    {
+      rawUnprocessedData: rawForStorage,
+      fields,
+      warnings: [`Datu avots: Gemini Structured Output — PDF (${opts.fileName}).`],
+      meta: {
+        charCount: rawForStorage.length,
+        engine: "gemini_primary",
+        extractionMethod: "gemini",
+      },
     },
-  };
+    textHint,
+  );
 }
