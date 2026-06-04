@@ -1,38 +1,16 @@
 /**
- * Admin: Gemini — cenas atbilstības analīze (tikai DEMO pasūtījumi).
- * Rezultāts → workspace `cenasAtbilstiba`.
- * Atslēga: `process.env.GEMINI_API_KEY` (tikai serverī).
+ * Admin: Gemini — tirgus dati (ss.lv + IRISS EU izsoles + Latvijas tirgus).
  */
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { assertGeminiAllowedForSession } from "@/lib/admin-gemini-demo-guard";
 import { getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
-import { generatePriceAnalysisWithGemini } from "@/lib/admin-gemini-price";
 import { mergeSourceBlocksFromBody, parseGeminiOrderContextFromBody } from "@/lib/admin-gemini-api-body";
+import { generateTirgusMarketWithGemini } from "@/lib/admin-gemini-tirgus-market";
 
 export const maxDuration = 90;
 export const runtime = "nodejs";
-
-type BodyShape = {
-  sessionId?: unknown;
-  vin?: unknown;
-  listingUrl?: unknown;
-  customerName?: unknown;
-  notes?: unknown;
-  sourceBlocks?: unknown;
-  iriss?: unknown;
-  apskatesPlāns?: unknown;
-  cenasAtbilstiba?: unknown;
-  internalComment?: unknown;
-  mileageComment?: unknown;
-  operatorNotes?: unknown;
-  existingDraftPlain?: unknown;
-};
-
-function str(v: unknown): string {
-  return typeof v === "string" ? v : "";
-}
 
 export async function POST(req: Request) {
   const ok = await getAdminSession();
@@ -52,8 +30,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
 
-  const b = body as BodyShape;
-  const sessionId = str(b.sessionId).trim();
+  const b = body as Record<string, unknown>;
+  const sessionId = typeof b.sessionId === "string" ? b.sessionId.trim() : "";
   const guard = await assertGeminiAllowedForSession(sessionId);
   if (!guard.ok) {
     return NextResponse.json(
@@ -65,13 +43,16 @@ export async function POST(req: Request) {
   const sourceBlocks = mergeSourceBlocksFromBody(b);
 
   try {
-    const text = await generatePriceAnalysisWithGemini(parseGeminiOrderContextFromBody(b, sourceBlocks));
-    return NextResponse.json({ text });
+    const result = await generateTirgusMarketWithGemini(parseGeminiOrderContextFromBody(b, sourceBlocks));
+    return NextResponse.json(result);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
-    console.error("[gemini/price-analysis]", msg);
+    console.error("[gemini/tirgus-market]", msg);
     if (msg === "empty_order_context") {
       return NextResponse.json({ error: "empty_order_context" }, { status: 400 });
+    }
+    if (msg === "empty_tirgus_comment") {
+      return NextResponse.json({ error: "empty_tirgus_comment" }, { status: 502 });
     }
     return NextResponse.json({ error: "generation_failed", detail: msg }, { status: 502 });
   }

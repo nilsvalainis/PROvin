@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminGeminiGenerateWithPrefill } from "@/components/admin/AdminGeminiGenerateWithPrefill";
 import { AdminSourceCommentField, type AdminGeminiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
 import { ListedForSaleFieldChrome } from "@/components/admin/ListedForSaleFieldChrome";
@@ -29,6 +30,11 @@ type Props = {
   /** Zemāks augstums (admin kompaktais skats). */
   compact?: boolean;
   geminiComment?: AdminGeminiSourceCommentSlot;
+  /** ss.lv + IRISS EU izsoles + LV tirgus — strukturēta Gemini analīze. */
+  marketGeminiAllowed?: boolean;
+  marketGeminiBusy?: boolean;
+  marketGeminiError?: string | null;
+  onMarketGeminiAnalyze?: (operatorNotes: string) => void;
 };
 
 export function AdminTirgusSourceBlock({
@@ -39,6 +45,10 @@ export function AdminTirgusSourceBlock({
   variant = "default",
   compact = false,
   geminiComment,
+  marketGeminiAllowed = false,
+  marketGeminiBusy = false,
+  marketGeminiError = null,
+  onMarketGeminiAnalyze,
 }: Props) {
   const val = value ?? emptyTirgusFields();
   const setField = (key: keyof TirgusFormFields, v: string) => {
@@ -184,10 +194,29 @@ export function AdminTirgusSourceBlock({
       </div>
     );
 
+  const marketAnalyzeRow =
+    onMarketGeminiAnalyze ? (
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <AdminGeminiGenerateWithPrefill
+          label="Analizēt tirgu (ss.lv + EU izsoles)"
+          busy={marketGeminiBusy}
+          disabled={!marketGeminiAllowed}
+          demoOnly={!marketGeminiAllowed}
+          onGenerate={(notes) => onMarketGeminiAnalyze(notes)}
+        />
+        {marketGeminiError ? (
+          <p className="w-full text-[9px] leading-snug text-amber-800/90" title={marketGeminiError}>
+            {marketGeminiError}
+          </p>
+        ) : null}
+      </div>
+    ) : null;
+
   if (variant === "embedded") {
     return (
       <div className={shell}>
         <div className={embDense ? "space-y-1.5" : "space-y-2"}>
+          {marketAnalyzeRow}
           {tableBlock}
           {commentsBlock}
         </div>

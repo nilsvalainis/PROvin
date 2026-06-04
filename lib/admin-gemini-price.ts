@@ -8,33 +8,25 @@ import {
   type GeminiOrderContextInput,
 } from "@/lib/admin-gemini-order-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
-import {
-  fetchListingAiSnapshot,
-  formatListingAiSnapshotForGemini,
-} from "@/lib/listing-scrape";
+import { buildMarketAnalysisGeminiContext } from "@/lib/admin-market-gemini-context";
 
 export async function generatePriceAnalysisWithGemini(input: GeminiOrderContextInput): Promise<string> {
-  const listingUrl = input.listingUrl?.trim() ?? "";
-  const listingBlock = listingUrl
-    ? formatListingAiSnapshotForGemini(await fetchListingAiSnapshot(listingUrl))
-    : "";
-
   const context = buildGeminiOrderContextText(input);
+  const { text: marketContext } = await buildMarketAnalysisGeminiContext({
+    listingUrl: input.listingUrl,
+    sourceBlocks: input.sourceBlocks,
+  });
 
-  if (!context.trim() && !listingBlock.trim()) {
+  if (!context.trim() && !marketContext.trim()) {
     throw new Error("empty_order_context");
-  }
-
-  if (listingUrl && listingBlock.includes("neizdevās nolasīt")) {
-    throw new Error("listing_scrape_failed");
   }
 
   const userPrompt = appendGeminiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
 
-${listingBlock ? `${listingBlock}\n\n---\n\n` : ""}${context}
+${marketContext ? `${marketContext}\n\n---\n\n` : ""}${context}
 
-Novērtē, vai šī auto cena ir adekvāta Latvijas lietotu auto tirgum (ss.lv līmenī). Izmanto augstāk norādīto ss.lv sludinājuma saturu (cena, gads, marka, nobraukums, apraksts u.c.) un pārējo pasūtījuma kontekstu. Sagatavo tekstu laukam „Cenas atbilstība”.`,
+Novērtē cenas atbilstību Latvijas lietotu auto tirgum (ss.lv), salīdzinot ar Eiropas izsoļu/wholesale cenām (IRISS) un pārējiem avotiem. Sagatavo tekstu laukam „Cenas atbilstība”.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:

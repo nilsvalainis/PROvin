@@ -632,6 +632,8 @@ export function OrderDetailWorkspace({
   const [geminiInspectionBusy, setGeminiInspectionBusy] = useState(false);
   const [geminiInspectionErr, setGeminiInspectionErr] = useState<string | null>(null);
   const [geminiPriceBusy, setGeminiPriceBusy] = useState(false);
+  const [geminiTirgusMarketBusy, setGeminiTirgusMarketBusy] = useState(false);
+  const [geminiTirgusMarketErr, setGeminiTirgusMarketErr] = useState<string | null>(null);
   const [geminiPriceErr, setGeminiPriceErr] = useState<string | null>(null);
   const [geminiSummaryBusy, setGeminiSummaryBusy] = useState(false);
   const [geminiSummaryErr, setGeminiSummaryErr] = useState<string | null>(null);
@@ -990,7 +992,7 @@ export function OrderDetailWorkspace({
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        updateWs({ cenasAtbilstiba: geminiPlainTextToRichHtml(data.text) });
+        updateWs({ cenasAtbilstiba: geminiExpertSourceCommentToRichHtml(data.text) });
       }
     } catch {
       setGeminiPriceErr("Gemini: neizdevās savienoties");
@@ -1164,6 +1166,68 @@ export function OrderDetailWorkspace({
       commitWorkspaceLocalNow({ force: true });
     },
     [applyPersistBodyToWs, commitWorkspaceLocalNow],
+  );
+
+  const runGeminiTirgusMarket = useCallback(
+    async (operatorNotes = "") => {
+      if (!payload.geminiAllowed || geminiTirgusMarketBusy) return;
+      setGeminiTirgusMarketBusy(true);
+      setGeminiTirgusMarketErr(null);
+      try {
+        const cur = wsPersistRef.current;
+        const res = await fetch("/api/admin/gemini/tirgus-market", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...buildGeminiOrderPayload({
+              operatorNotes,
+              existingDraftPlain: adminRichHtmlToPlainText(cur.sourceBlocks.tirgus.comments).trim(),
+            }),
+          }),
+        });
+        const { data, parseFailed } = await parseAdminGeminiResponse(res);
+        if (!res.ok) {
+          setGeminiTirgusMarketErr(
+            geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās analizēt tirgu"),
+          );
+          return;
+        }
+        const market = data as {
+          comments?: string;
+          listedForSale?: string;
+          listingCreated?: string;
+          priceDrop?: string;
+        };
+        const comments = typeof market.comments === "string" ? market.comments.trim() : "";
+        if (!comments) {
+          setGeminiTirgusMarketErr("Gemini: tukšs komentārs");
+          return;
+        }
+        const prev = cur.sourceBlocks.tirgus;
+        updateSourceBlock("tirgus", {
+          ...prev,
+          listedForSale:
+            typeof market.listedForSale === "string" && market.listedForSale.trim()
+              ? market.listedForSale.trim()
+              : prev.listedForSale,
+          listingCreated:
+            typeof market.listingCreated === "string" && market.listingCreated.trim()
+              ? market.listingCreated.trim()
+              : prev.listingCreated,
+          priceDrop:
+            typeof market.priceDrop === "string" && market.priceDrop.trim()
+              ? market.priceDrop.trim()
+              : prev.priceDrop,
+          comments: geminiExpertSourceCommentToRichHtml(comments),
+        });
+      } catch {
+        setGeminiTirgusMarketErr("Gemini: neizdevās savienoties");
+      } finally {
+        setGeminiTirgusMarketBusy(false);
+      }
+    },
+    [buildGeminiOrderPayload, geminiTirgusMarketBusy, payload.geminiAllowed, updateSourceBlock],
   );
 
   const runGeminiSourceComment = useCallback(
@@ -3114,6 +3178,10 @@ export function OrderDetailWorkspace({
                       onChange={(next) => updateSourceBlock("tirgus", next)}
                       variant="embedded"
                       geminiComment={geminiCommentSlot("tirgus")}
+                      marketGeminiAllowed={payload.geminiAllowed}
+                      marketGeminiBusy={geminiTirgusMarketBusy}
+                      marketGeminiError={geminiTirgusMarketErr}
+                      onMarketGeminiAnalyze={(notes) => void runGeminiTirgusMarket(notes)}
                     />
                   </div>
                 </ListingAnalysisSubsectionHeading>

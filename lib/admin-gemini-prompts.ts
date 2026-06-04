@@ -193,30 +193,45 @@ Rezultāts:
 - Bez virsrakstiem un bez meta-komentāriem par AI vai meklēšanu`,
 );
 
-export const GEMINI_PRICE_ANALYSIS_SYSTEM = provinFieldAgentPrompt(
-  "PRICE ANALYSIS (Cenas vērtējums)",
-  `${GEMINI_CLIENT_PDF_PLAIN_RULES}
+export const GEMINI_PRICE_ANALYSIS_SYSTEM = `${PROVIN_EXPERT_SYSTEM_PROMPT}
 
-Uzdevums: novērtēt auto cenas atbilstību Latvijas lietotu auto tirgum (orientējoši ss.lv līmenī).
+ACTIVE FIELD: Cenas atbilstība — Latvijas tirgus + Eiropas izsoļu salīdzinājums.
+
+${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
 
 Ievadā saņemsi:
-- ss.lv sludinājuma saturu, ko serveris nolasījis no „Sludinājuma saites” (cena, marka, modelis, gads, nobraukums, apraksts, parametri, foto skaits u.c.)
-- papildus — pilnu pasūtījuma kontekstu: CSDD, tirgus dati, AutoDNA, CarVertical, LTAB u.c.
+- ss.lv sludinājumu (ja saite pieejama) — cena, parametri, cenu vēsture, dienas platformā
+- IRISS agregātu: Mobile.de, Autobid.de, OpenLane, AUTO1 — līdzīgu auto cenas Eiropā
+- Outvin / dīlera / izsoļu un Eiropas reģistru dati, ja pieejami
+- Admin „Tirgus dati” un pilnu pasūtījuma portfeli (CSDD, AutoDNA, CarVertical, LTAB u.c.)
 
 Analīzes loģika:
-- Obligāti izmanto ss.lv sludinājumā norādīto cenu un auto parametrus — neprasi datus, kas jau ir sludinājumā.
-- Ņem vērā marku, modeli, gadu, nobraukumu, dzinēju, ātrumkārbu, komplektāciju no sludinājuma un avotiem.
-- Ja CSDD/AutoDNA/CarVertical norāda defektus, avārijas vai citus riskus — iekļauj tos cenas vērtējumā.
-- Salīdzini ar tipisku līdzīgu auto cenu Latvijā; neizdomā konkrētus ss.lv sludinājumus, ja to nav kontekstā.
-- Ja tirgus datos ir cenu diapazons vai salīdzinājumi — izmanto tos; citādi argumentē no auto parametriem un sludinājuma cenas.
+- Obligāti salīdzini **Latvijas ss.lv līmeni** ar **Vācijas/Eiropas wholesale un izsoļu** cenām no IRISS — norādi importa/uzcenojuma loģiku, ja redzama.
+- Izmanto tikai kontekstā esošos faktus; neizdomā konkrētus sludinājumus vai lotus.
+- Ja ss.lv nav nolasīts — analizē no pārējiem avotiem un norādi datu ierobežojumu.
+- **Bold** kritiskām EUR summām, nobraukumam, dienām pārdošanā, cenu kritumam.
 
-Rezultāts klientam (1–3 īsas rindkopas, eksperta balsī, piem., „Šī auto cena ir…”, „Ņemot vērā nobraukumu…”):
-- Skaidrs secinājums: cena ir ZEM vidējā tirgus līmeņa / ATBILST vidējam / VIRS vidējā / nevar droši novērtēt (tikai ja patiešām trūkst datu).
-- Ja cena šķiet aizdomīgi zema vai nepamatoti augsta — īsi paskaidro iespējamos iemeslus (defekti, nobraukums, tirgus situācija u.c.), bet neizdomā faktus.
-- Beigās — īss praktisks secinājums klientam (piem., vai ir vērts risināt sarunu par cenu).
+Bez virsrakstiem, bez meta-komentāriem par AI.`;
 
-Bez virsrakstiem, bez meta-komentāriem par AI.`,
-);
+export const GEMINI_TIRGUS_MARKET_SYSTEM = `${PROVIN_EXPERT_SYSTEM_PROMPT}
+
+ACTIVE TASK: Tirgus dati (ss.lv + Latvijas tirgus + Eiropas izsoļu portāli) — strukturēta analīze.
+
+Return ONLY valid JSON:
+{
+  "listedForSale": "string — dienas pārdošanā ss.lv (tikai skaitlis vai īss teksts)",
+  "listingCreated": "string — izvietošanas datums DD.MM.YYYY vai teksts no avota",
+  "priceDrop": "string — cenas kritums EUR (tikai skaitlis, bez €), ja zināms",
+  "comments": "string — eksperta komentārs latviešu valodā"
+}
+
+${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
+
+Rules for comments:
+- Salīdzini ss.lv sludinājumu, Latvijas tirgus signālus un IRISS Mobile.de / Autobid / OpenLane / AUTO1 salīdzinājumus.
+- Interpretē, vai auto Latvijā ir par zemu / par augstu / atbilstoši, ņemot vērā importa izcelsmi un riskus no citiem avotiem.
+- Ja IRISS datu nav — skaidri norādi, ka jāsinhronizē izsoļu portāli.
+- comments: paragraph layout, **bold** for key figures; no bullet lists.`;
 
 export const GEMINI_SUMMARY_ANALYSIS_SYSTEM = `${PROVIN_FIELD_AGENT_SYSTEM}
 
