@@ -1,6 +1,6 @@
 import "server-only";
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, type Schema } from "@google/generative-ai";
 
 /** Admin ✨ ģenerēšana — vienmēr maksas režīms (2.5 Pro). Flash atstāts tikai atsaucēm / dokumentācijai. */
 export const GEMINI_MODEL_PRO = "gemini-2.5-pro";
@@ -141,6 +141,9 @@ export type GeminiUserPart =
   | { text: string }
   | { inlineData: { mimeType: string; data: string } };
 
+/** JSON Schema priekš Gemini Structured Outputs (responseSchema). */
+export type GeminiJsonSchema = Schema;
+
 async function geminiGenerateJsonFromPartsOnce(
   key: string,
   opts: {
@@ -148,6 +151,7 @@ async function geminiGenerateJsonFromPartsOnce(
     systemInstruction: string;
     parts: GeminiUserPart[];
     temperature?: number;
+    responseSchema?: GeminiJsonSchema;
   },
 ): Promise<string> {
   const genAI = new GoogleGenerativeAI(key);
@@ -160,6 +164,7 @@ async function geminiGenerateJsonFromPartsOnce(
     generationConfig: {
       temperature: opts.temperature ?? 0.2,
       responseMimeType: "application/json",
+      ...(opts.responseSchema ? { responseSchema: opts.responseSchema } : {}),
     },
   });
   const text = result.response.text()?.trim();
@@ -193,6 +198,7 @@ export async function geminiGenerateJsonFromParts(opts: {
   systemInstruction: string;
   parts: GeminiUserPart[];
   temperature?: number;
+  responseSchema?: GeminiJsonSchema;
 }): Promise<string> {
   const key = getGeminiApiKeyFromEnv();
   if (!key) throw new Error("missing_gemini_key");
@@ -201,6 +207,20 @@ export async function geminiGenerateJsonFromParts(opts: {
     primaryModel: opts.model,
     logLabel: "json",
     run: (model) => geminiGenerateJsonFromPartsOnce(key, { ...opts, model }),
+  });
+}
+
+/** Structured Outputs — obligāts JSON atbilstoši responseSchema. */
+export async function geminiGenerateJsonWithSchema(opts: {
+  model: string;
+  systemInstruction: string;
+  parts: GeminiUserPart[];
+  responseSchema: GeminiJsonSchema;
+  temperature?: number;
+}): Promise<string> {
+  return geminiGenerateJsonFromParts({
+    ...opts,
+    temperature: opts.temperature ?? 0,
   });
 }
 

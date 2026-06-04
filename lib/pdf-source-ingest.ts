@@ -8,42 +8,45 @@ import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import { extractPdfTextDetailed, type PdfExtractResult } from "@/lib/pdf-text-extract-server";
 import {
-  buildCsddFieldsFromPdfSources,
   buildCsddPdfParseResultFromTextLayer,
   csddPdfTextLayerUsable,
+  type CsddPdfParseResult,
 } from "@/lib/csdd-pdf-ingest";
+import {
+  extractCsddPdfWithGeminiStructured,
+  mergeCsddPdfParseResults,
+} from "@/lib/csdd-gemini-structured";
 import {
   autoRecordsParseHasData,
   csddParseHasData,
   extractSourcePdfWithGemini,
   vendorParseHasData,
 } from "@/lib/source-pdf-gemini-extract";
-import type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
-
-function enrichCsddGeminiResult(result: CsddPdfParseResult, textHint: string): CsddPdfParseResult {
-  const hint = textHint.trim();
-  if (!hint) return result;
-  const { fields, rawUnprocessedData } = buildCsddFieldsFromPdfSources({
-    textHint: hint,
-    geminiRaw: result.rawUnprocessedData,
-  });
-  return {
-    ...result,
-    rawUnprocessedData,
-    fields,
-    warnings: [
-      ...result.warnings.filter((w) => !w.includes("teksta slāni")),
-      ...(rawUnprocessedData.length > result.rawUnprocessedData.length
-        ? ["Apvienots ar PDF teksta slāni lokālajam parserim."]
-        : []),
-    ],
-  };
-}
 import {
   detectVendorPdfStructure,
   parseVendorPdfLocal,
   vendorLocalParseHasData,
 } from "@/lib/vendor-pdf-local-parse";
+
+function enrichCsddGeminiResult(
+  result: CsddPdfParseResult,
+  textHint: string,
+  fileName: string,
+): CsddPdfParseResult {
+  const hint = textHint.trim();
+  if (!hint) return result;
+  const local = buildCsddPdfParseResultFromTextLayer(hint, fileName);
+  const merged = mergeCsddPdfParseResults(local, result, hint);
+  return {
+    ...merged,
+    warnings: [
+      ...result.warnings.filter((w) => !w.includes("teksta slāni")),
+      ...(merged.rawUnprocessedData.length > result.rawUnprocessedData.length
+        ? ["Apvienots ar PDF teksta slāni."]
+        : []),
+    ],
+  };
+}
 
 const LOG_PREFIX = "[pdf-source-ingest]";
 const MIN_TEXT_FOR_STRUCTURE = 40;
@@ -138,7 +141,7 @@ async function runGeminiExtract(
   const result = await extractSourcePdfWithGemini({ target, buffer, fileName, textHint });
   if (target === "csdd") {
     const csdd = result as CsddPdfParseResult;
-    const enriched = enrichCsddGeminiResult(csdd, textHint);
+    const enriched = enrichCsddGeminiResult(csdd, textHint, fileName);
     return withEngine(enriched, engine, extract.backend);
   }
   if ("incidents" in result) {
@@ -239,6 +242,35 @@ export async function ingestSourcePdfFile(opts: {
 
   if (target === "csdd") {
     const localCsdd = buildCsddPdfParseResultFromTextLayer(text, fileName);
+    if (preferGemini && getGeminiApiKeyFromEnv()) {
+      try {
+        const structured = await extractCsddPdfWithGeminiStructured({
+          buffer,
+          fileName,
+          textHint: text,
+        });
+        const merged = mergeCsddPdfParseResults(localCsdd, structured, text);
+        if (csddParseHasData(merged)) {
+          console.info(`${LOG_PREFIX} csdd_structured_ok`, {
+            fileName,
+            mileage: merged.fields.mileageHistory.filter((r) => r.odometer.trim()).length,
+            taDefects: merged.fields.technicalInspectionHistory.reduce(
+              (n, r) => n + (r.defects?.length ?? 0),
+              0,
+            ),
+          });
+          return {
+            result: withEngine(merged, "gemini_primary", extract.backend),
+            extract,
+            plan: "gemini_primary",
+            planReason: "csdd_structured_output",
+          };
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn(`${LOG_PREFIX} csdd_structured_failed`, { fileName, msg });
+      }
+    }
     if (localCsdd && csddParseHasData(localCsdd)) {
       console.info(`${LOG_PREFIX} csdd_text_layer_ok`, {
         fileName,

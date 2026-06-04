@@ -3,6 +3,25 @@
  */
 import { emptyCsddFields, type CsddFormFields } from "@/lib/admin-source-blocks";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
+import {
+  normalizeCsddRawText,
+  previousInspectionBlockHasData,
+  resolvePrevInspectionBlockFromRaw,
+  type CsddInspectionDefectRow,
+  type CsddOwnerChangeRow,
+  type CsddPreviousInspectionBlock,
+  type CsddTechnicalInspectionRow,
+} from "@/lib/csdd-extended-parse";
+import { mergeCsddPdfRawSources } from "@/lib/csdd-pdf-raw-merge";
+
+export { mergeCsddPdfRawSources } from "@/lib/csdd-pdf-raw-merge";
+import {
+  applyCsddPasteToForm,
+  backfillCsddExtendedFromRaw,
+  isLikelyStructuredCsddPaste,
+  parseCsddPaste,
+  type CsddPasteParseResult,
+} from "@/lib/csdd-paste-parse";
 
 export type CsddPdfParseResult = {
   rawUnprocessedData: string;
@@ -14,56 +33,8 @@ export type CsddPdfParseResult = {
     extractionMethod: "gemini" | "text_layer";
   };
 };
-import {
-  normalizeCsddRawText,
-  previousInspectionBlockHasData,
-  resolvePrevInspectionBlockFromRaw,
-  type CsddInspectionDefectRow,
-  type CsddOwnerChangeRow,
-  type CsddPreviousInspectionBlock,
-  type CsddTechnicalInspectionRow,
-} from "@/lib/csdd-extended-parse";
-import {
-  applyCsddPasteToForm,
-  backfillCsddExtendedFromRaw,
-  isLikelyStructuredCsddPaste,
-  parseCsddPaste,
-  type CsddPasteParseResult,
-} from "@/lib/csdd-paste-parse";
-
-const CSDD_SECTION_MARKERS = [
-  "Iepriekšējās reģistrācijas valsts",
-  "Transportlīdzekļa reģistrācija",
-  "Tehniskie dati",
-  "Detalizētais vērtējums",
-  "Iepriekšējās apskates dati",
-  "Nobraukuma vēsture",
-  "Nobraukums ārvalst",
-  "Tehnisko apskašu vēsture",
-  "Pēdējā tehniskā apskate",
-] as const;
 
 const CSDD_TEXT_LAYER_MIN_CHARS = 280;
-
-/** Apvieno PDF teksta slāni un Gemini transkriptu — PDF teksts ir primārais avots (kā manuāls raw paste). */
-export function mergeCsddPdfRawSources(textHint: string, geminiRaw: string): string {
-  const pdf = normalizeCsddRawText(textHint).trim();
-  const gemini = normalizeCsddRawText(geminiRaw).trim();
-  if (!pdf) return gemini;
-  if (!gemini) return pdf;
-  if (pdf.includes(gemini)) return pdf;
-  if (gemini.includes(pdf) && pdf.length >= gemini.length * 0.55) return pdf;
-
-  const missingChunks: string[] = [];
-  for (const marker of CSDD_SECTION_MARKERS) {
-    if (gemini.includes(marker) && !pdf.includes(marker)) {
-      const idx = gemini.indexOf(marker);
-      missingChunks.push(gemini.slice(idx, idx + 12_000));
-    }
-  }
-  if (missingChunks.length === 0) return pdf.slice(0, 500_000);
-  return `${pdf}\n\n${missingChunks.join("\n\n")}`.slice(0, 500_000);
-}
 
 /** Vai PDF teksta slānis pietiek lokālajam CSDD parserim (tāpat kā veiksmīgs raw paste). */
 export function csddPdfTextLayerUsable(text: string): boolean {
