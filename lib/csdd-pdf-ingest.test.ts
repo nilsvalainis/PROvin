@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildCsddFieldsFromPdfSources, mergeCsddPdfRawSources } from "@/lib/csdd-pdf-ingest";
+import {
+  buildCsddFieldsFromPdfSources,
+  buildCsddPdfParseResultFromTextLayer,
+  mergeCsddPdfRawSources,
+} from "@/lib/csdd-pdf-ingest";
 import { previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
 
 const SAMPLE_RAW = `Iepriekšējās reģistrācijas valsts VĀCIJA
@@ -37,5 +41,11 @@ describe("csdd-pdf-ingest", () => {
     expect(previousInspectionBlockHasData(fields.prevInspectionBlock)).toBe(true);
     expect(fields.prevInspectionBlock.defects.some((d) => d.code === "5.3.4.")).toBe(true);
     expect(fields.technicalInspectionHistory.length).toBeGreaterThan(0);
+  });
+
+  it("buildCsddPdfParseResultFromTextLayer matches paste-quality parse", () => {
+    const parsed = buildCsddPdfParseResultFromTextLayer(SAMPLE_RAW, "csdd.pdf");
+    expect(parsed?.fields.previousRegistrationCountry).toBe("VĀCIJA");
+    expect(parsed?.meta.extractionMethod).toBe("text_layer");
   });
 });

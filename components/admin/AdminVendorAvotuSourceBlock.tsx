@@ -28,6 +28,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
+import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import {
   autoRecordsRowHasData,
   formatAutoRecordsDateForOutput,
@@ -511,6 +512,12 @@ export function AdminVendorAvotuSourceBlock({
                             data-provin-field={PROVIN_VENDOR_FIELD.zaudejumuSumma}
                             data-row-index={ri}
                             onChange={(e) => setIncidentRow(ri, { lossAmount: e.target.value })}
+                            onBlur={(e) => {
+                              const n = normalizeLossAmountEurDisplay(e.target.value);
+                              if (n !== e.target.value.trim()) {
+                                setIncidentRow(ri, { lossAmount: n });
+                              }
+                            }}
                             aria-label={`Zaudējumu summa, ${blockKey}, rinda ${ri + 1}`}
                           />
                         )}

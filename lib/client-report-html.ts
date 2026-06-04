@@ -88,6 +88,7 @@ import {
   getParticulateMatterUiFlag,
   type CsddFieldUiFlag,
 } from "@/lib/csdd-ui-flags";
+import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
@@ -97,7 +98,7 @@ import {
   PDF_MILEAGE_HISTORY_COMMENT_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import { buildOwnerRegistrationTimelineHtml } from "@/lib/csdd-history-charts";
-import { buildCarVerticalIncidentDamageSubHtml, buildCarVerticalTimelineHtml } from "@/lib/carvertical-report-html";
+import { buildCarVerticalIncidentDamageSubHtml } from "@/lib/carvertical-report-html";
 import { matchCarVerticalDamageDetail } from "@/lib/carvertical-damage-match";
 import {
   buildPreviousInspectionBlockHtml,
@@ -357,10 +358,11 @@ function formatTirgusPriceDropCellHtml(raw: string): string {
 }
 
 function formatLossAmountEurCell(raw: string): string {
-  const t = raw.trim();
+  const display = normalizeLossAmountEurDisplay(raw);
+  const t = display || raw.trim();
   const esc = escapeHtml(t);
   if (!t) return esc;
-  const flag = getLossAmountUiFlag(raw);
+  const flag = getLossAmountUiFlag(display || raw);
   if (flag === "none") return esc;
   const tier = flag === "red" ? "red" : "yellow";
   const ico = pdfLossAmountAlertIconHtml(tier);
@@ -772,20 +774,16 @@ function buildAutoRecordsAvotuSubsection(
   return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}${bodyParts.join("\n")}</div>`;
 }
 
-/** Trešās puses avots — komentāri + CarVertical laikposms. */
+/** Trešās puses avots — tikai komentāri PDF (laikposms paliek Gemini kontekstam, nav drukāts). */
 function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf, vis: PdfVisibilitySettings): string {
   const L = SOURCE_BLOCK_LABELS;
   if (b.title === L.autodna && !vis.autodna) return "";
   if (b.title === L.carvertical && !vis.carvertical) return "";
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const hasComments = commentBlock.trim().length > 0;
-  const timelineHtml =
-    b.title === L.carvertical && (b.vehicleHistoryTimeline ?? []).length > 0
-      ? buildCarVerticalTimelineHtml(b.vehicleHistoryTimeline ?? [], { compact: true })
-      : "";
-  if (!hasComments && !timelineHtml) return "";
+  if (!hasComments) return "";
   const head = sectionHeadBrand(sectionIconPdfHtml(vendorPdfTitleToIconId(b.title)), b.title);
-  const body = `<div class="pdf-source-section-body">${timelineHtml}${hasComments ? pdfAvotuCommentIsland(commentBlock) : ""}</div>`;
+  const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(commentBlock)}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
 

@@ -3,6 +3,7 @@
  */
 
 import type { ClientManualLtabBlockPdf, ClientManualVendorBlockPdf, LtabIncidentRow } from "@/lib/admin-source-blocks";
+import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import { parseMileageDateForSort } from "@/lib/unified-mileage";
 
 export type UnifiedIncidentRow = {
@@ -36,7 +37,7 @@ export function collectUnifiedIncidentRows(args: {
     const d = r.csngDate.trim();
     out.push({
       date: d || "—",
-      lossAmount: r.lossAmount.trim(),
+      lossAmount: normalizeLossAmountEurDisplay(r.lossAmount) || r.lossAmount.trim(),
       country: r.incidentNo.trim() || "—",
       sortableTime: parseMileageDateForSort(d),
       sourceOrder: sourceOrder++,

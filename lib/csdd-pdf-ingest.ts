@@ -2,6 +2,18 @@
  * CSDD PDF → forma: apvieno PDF teksta slāni ar Gemini izvilkumu un lokālo parseri.
  */
 import { emptyCsddFields, type CsddFormFields } from "@/lib/admin-source-blocks";
+import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
+
+export type CsddPdfParseResult = {
+  rawUnprocessedData: string;
+  fields: CsddFormFields;
+  warnings: string[];
+  meta: {
+    charCount: number;
+    engine: PdfIngestEngine;
+    extractionMethod: "gemini" | "text_layer";
+  };
+};
 import {
   normalizeCsddRawText,
   previousInspectionBlockHasData,
@@ -14,6 +26,7 @@ import {
 import {
   applyCsddPasteToForm,
   backfillCsddExtendedFromRaw,
+  isLikelyStructuredCsddPaste,
   parseCsddPaste,
   type CsddPasteParseResult,
 } from "@/lib/csdd-paste-parse";
@@ -30,26 +43,62 @@ const CSDD_SECTION_MARKERS = [
   "Pēdējā tehniskā apskate",
 ] as const;
 
-/** Apvieno PDF teksta slāni un Gemini transkriptu — maksimāls saturs lokālajam parserim. */
-export function mergeCsddPdfRawSources(textHint: string, geminiRaw: string): string {
-  const a = normalizeCsddRawText(textHint).trim();
-  const b = normalizeCsddRawText(geminiRaw).trim();
-  if (!a) return b;
-  if (!b) return a;
-  if (b.length > 0 && a.includes(b)) return a;
-  if (a.length > 0 && b.includes(a)) return b;
+const CSDD_TEXT_LAYER_MIN_CHARS = 280;
 
-  const longer = a.length >= b.length ? a : b;
-  const shorter = a.length >= b.length ? b : a;
+/** Apvieno PDF teksta slāni un Gemini transkriptu — PDF teksts ir primārais avots (kā manuāls raw paste). */
+export function mergeCsddPdfRawSources(textHint: string, geminiRaw: string): string {
+  const pdf = normalizeCsddRawText(textHint).trim();
+  const gemini = normalizeCsddRawText(geminiRaw).trim();
+  if (!pdf) return gemini;
+  if (!gemini) return pdf;
+  if (pdf.includes(gemini)) return pdf;
+  if (gemini.includes(pdf) && pdf.length >= gemini.length * 0.55) return pdf;
+
   const missingChunks: string[] = [];
   for (const marker of CSDD_SECTION_MARKERS) {
-    if (shorter.includes(marker) && !longer.includes(marker)) {
-      const idx = shorter.indexOf(marker);
-      missingChunks.push(shorter.slice(idx, idx + 12_000));
+    if (gemini.includes(marker) && !pdf.includes(marker)) {
+      const idx = gemini.indexOf(marker);
+      missingChunks.push(gemini.slice(idx, idx + 12_000));
     }
   }
-  if (missingChunks.length === 0) return longer;
-  return `${longer}\n\n${missingChunks.join("\n\n")}`.slice(0, 500_000);
+  if (missingChunks.length === 0) return pdf.slice(0, 500_000);
+  return `${pdf}\n\n${missingChunks.join("\n\n")}`.slice(0, 500_000);
+}
+
+/** Vai PDF teksta slānis pietiek lokālajam CSDD parserim (tāpat kā veiksmīgs raw paste). */
+export function csddPdfTextLayerUsable(text: string): boolean {
+  const t = normalizeCsddRawText(text).trim();
+  if (t.replace(/\s/g, "").length < CSDD_TEXT_LAYER_MIN_CHARS) return false;
+  return isLikelyStructuredCsddPaste(t);
+}
+
+/** Ātra CSDD forma tikai no PDF teksta slāņa (bez Gemini). */
+export function buildCsddPdfParseResultFromTextLayer(
+  text: string,
+  fileName: string,
+): CsddPdfParseResult | null {
+  if (!csddPdfTextLayerUsable(text)) return null;
+  const { fields, rawUnprocessedData } = buildCsddFieldsFromPdfSources({
+    textHint: text,
+    geminiRaw: "",
+  });
+  const hasData =
+    Boolean(fields.previousRegistrationCountry.trim()) ||
+    Boolean(fields.ownerCountLatvia.trim()) ||
+    (fields.technicalInspectionHistory ?? []).some((r) => r.date.trim()) ||
+    previousInspectionBlockHasData(fields.prevInspectionBlock) ||
+    fields.mileageHistory.some((r) => r.odometer.trim());
+  if (!hasData && rawUnprocessedData.length < 400) return null;
+  return {
+    rawUnprocessedData,
+    fields,
+    warnings: [`Datu avots: PDF teksta slānis (${fileName}) — lokālais parsers.`],
+    meta: {
+      charCount: rawUnprocessedData.length,
+      engine: "local_parser",
+      extractionMethod: "text_layer",
+    },
+  };
 }
 
 function asRecord(v: unknown): Record<string, unknown> | null {

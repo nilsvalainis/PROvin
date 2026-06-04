@@ -21,6 +21,7 @@ import {
   sortAutoRecordsDescending,
 } from "./auto-records-paste-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import { normalizeLossAmountEurDisplay, normalizeLtabIncidentRow } from "@/lib/loss-amount-format";
 import {
   emptyOutvinDealerReport,
   outvinDealerReportHasContent,
@@ -1223,11 +1224,11 @@ function normalizeVendorIncidentsFromRaw(rowsIn: unknown[]): LtabIncidentRow[] {
   const rows: LtabIncidentRow[] = rowsIn.map((row) => {
     if (!row || typeof row !== "object") return emptyLtabRow();
     const x = row as Record<string, unknown>;
-    return {
+    return normalizeLtabIncidentRow({
       incidentNo: String(x.incidentNo ?? "").slice(0, 120),
       csngDate: String(x.csngDate ?? "").slice(0, 120),
       lossAmount: String(x.lossAmount ?? "").slice(0, 120),
-    };
+    });
   });
   const { head, trailing } = splitTrailingEmptyBy(rows, ltabRowHasData);
   const dataRows = head.filter(ltabRowHasData);
@@ -1268,7 +1269,7 @@ function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBloc
               return {
                 date: String(x.date ?? "").slice(0, 40),
                 country: String(x.country ?? "").slice(0, 120),
-                lossAmount: String(x.lossAmount ?? "").slice(0, 120),
+                lossAmount: normalizeLossAmountEurDisplay(String(x.lossAmount ?? "")).slice(0, 120),
                 damagedSides: String(x.damagedSides ?? "").slice(0, 200),
                 damageGroups: String(x.damageGroups ?? "").slice(0, 600),
               };
@@ -1289,17 +1290,17 @@ function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
     if (!row || typeof row !== "object") return emptyLtabRow();
     const x = row as Record<string, unknown>;
     if ("incidentNo" in x || "csngDate" in x || "lossAmount" in x) {
-      return {
+      return normalizeLtabIncidentRow({
         incidentNo: String(x.incidentNo ?? "").slice(0, 120),
         csngDate: String(x.csngDate ?? "").slice(0, 120),
         lossAmount: String(x.lossAmount ?? "").slice(0, 120),
-      };
+      });
     }
-    return {
+    return normalizeLtabIncidentRow({
       incidentNo: String(x.km ?? "").slice(0, 120),
       csngDate: String(x.date ?? "").slice(0, 120),
       lossAmount: String(x.amount ?? "").slice(0, 120),
-    };
+    });
   });
   if (rows.length === 0) {
     return {
@@ -1562,9 +1563,16 @@ function wsStr(v: unknown): string {
 function repairVendorBlock(b: VendorAvotuBlockState | undefined): VendorAvotuBlockState {
   const e = emptyVendorAvotuBlock();
   if (!b) return e;
+  const incidents = (Array.isArray(b.incidents) ? b.incidents : e.incidents).map((r) =>
+    normalizeLtabIncidentRow({
+      incidentNo: wsStr(r?.incidentNo),
+      csngDate: wsStr(r?.csngDate),
+      lossAmount: normalizeLossAmountEurDisplay(wsStr(r?.lossAmount)),
+    }),
+  );
   return {
     serviceHistory: Array.isArray(b.serviceHistory) ? b.serviceHistory : e.serviceHistory,
-    incidents: Array.isArray(b.incidents) ? b.incidents : e.incidents,
+    incidents,
     comments: wsStr(b.comments),
     geminiContextRaw: wsStr(b.geminiContextRaw),
     ...(typeof b.mileagePasteRaw === "string" ? { mileagePasteRaw: b.mileagePasteRaw } : {}),

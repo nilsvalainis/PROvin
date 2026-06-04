@@ -7,14 +7,18 @@ import { parseCarverticalPdfText } from "@/lib/carvertical-pdf-parse";
 import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/history-vendor-pdf-import";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import { extractPdfTextDetailed, type PdfExtractResult } from "@/lib/pdf-text-extract-server";
-import { buildCsddFieldsFromPdfSources } from "@/lib/csdd-pdf-ingest";
+import {
+  buildCsddFieldsFromPdfSources,
+  buildCsddPdfParseResultFromTextLayer,
+  csddPdfTextLayerUsable,
+} from "@/lib/csdd-pdf-ingest";
 import {
   autoRecordsParseHasData,
   csddParseHasData,
   extractSourcePdfWithGemini,
   vendorParseHasData,
-  type CsddPdfParseResult,
 } from "@/lib/source-pdf-gemini-extract";
+import type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
 
 function enrichCsddGeminiResult(result: CsddPdfParseResult, textHint: string): CsddPdfParseResult {
   const hint = textHint.trim();
@@ -231,6 +235,46 @@ export async function ingestSourcePdfFile(opts: {
     localVendor = parseVendorPdfLocal(target, text, { textBackend: extract.backend });
   } else if (target === "auto_records" && extract.textLayerCharCount >= MIN_TEXT_FOR_STRUCTURE) {
     localAuto = withEngine(parseAutoRecordsPdfText(text), "local_parser", extract.backend);
+  }
+
+  if (target === "csdd") {
+    const localCsdd = buildCsddPdfParseResultFromTextLayer(text, fileName);
+    if (localCsdd && csddParseHasData(localCsdd)) {
+      console.info(`${LOG_PREFIX} csdd_text_layer_ok`, {
+        fileName,
+        chars: localCsdd.rawUnprocessedData.length,
+        backend: extract.backend,
+      });
+      return {
+        result: withEngine(localCsdd, "local_parser", extract.backend),
+        extract,
+        plan: "local_parser",
+        planReason: "csdd_text_layer",
+      };
+    }
+    if (csddPdfTextLayerUsable(text)) {
+      console.warn(`${LOG_PREFIX} csdd_text_layer_partial`, { fileName });
+    }
+  }
+
+  if (
+    localVendor &&
+    vendorLocalParseHasData(localVendor) &&
+    target !== "citi_avoti" &&
+    extract.textLayerCharCount >= MIN_TEXT_FOR_STRUCTURE &&
+    detectVendorPdfStructure(target as HistoryVendorPdfTarget, text).matched
+  ) {
+    console.info(`${LOG_PREFIX} vendor_text_layer_ok`, { fileName, target, backend: extract.backend });
+    return {
+      result: localVendor,
+      extract,
+      plan: "local_parser",
+      planReason: "vendor_text_layer",
+    };
+  }
+
+  if (localAuto && autoRecordsParseHasData(localAuto) && extract.textLayerCharCount >= MIN_TEXT_FOR_STRUCTURE) {
+    return { result: localAuto, extract, plan: "local_parser", planReason: "auto_records_text_layer" };
   }
 
   if (preferGemini && getGeminiApiKeyFromEnv()) {

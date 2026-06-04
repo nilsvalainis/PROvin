@@ -69,10 +69,14 @@ function extractNextInspectionDateIsoFromHead(headText: string): string | null {
 export function isLikelyStructuredCsddPaste(rawText: string): boolean {
   if (rawText.length > 200) return true;
   return (
+    /\bIepriekšējās\s+reģistrācijas\s+valsts\b/i.test(rawText) ||
     /\bIepriekšējās\s+apskates\s+dati\b/i.test(rawText) ||
     /\bNobraukuma\s+vēsture/i.test(rawText) ||
     /\bNobraukums\s+ārvalst/i.test(rawText) ||
     /\bTehniskie\s+dati\b/i.test(rawText) ||
+    /\bTehnisko\s+apskašu\s+vēsture/i.test(rawText) ||
+    /\bDetalizētais\s+vērtējums/i.test(rawText) ||
+    /\bTransportlīdzekļa\s+reģistrācija/i.test(rawText) ||
     /\bMarka\s*,\s*modelis\b/i.test(rawText)
   );
 }

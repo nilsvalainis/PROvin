@@ -10,6 +10,7 @@ import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { LtabBlockState, LtabIncidentRow } from "@/lib/admin-source-blocks";
+import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
@@ -120,6 +121,10 @@ export function AdminLtabSourceBlock({
                               value={row.lossAmount}
                               disabled={disabled}
                               onChange={(e) => setRow(ri, { lossAmount: e.target.value })}
+                              onBlur={(e) => {
+                                const n = normalizeLossAmountEurDisplay(e.target.value);
+                                if (n !== e.target.value.trim()) setRow(ri, { lossAmount: n });
+                              }}
                               aria-label={`LTAB Zaudējumu summa, rinda ${ri + 1}`}
                             />
                           )}

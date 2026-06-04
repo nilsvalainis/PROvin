@@ -17,10 +17,11 @@ import type {
   CarVerticalDamageDetailRow,
   CarVerticalTimelineRow,
 } from "@/lib/carvertical-pdf-parse";
-import { buildCsddFieldsFromPdfSources } from "@/lib/csdd-pdf-ingest";
+import { buildCsddFieldsFromPdfSources, type CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
 import type { SourcePdfIngestTarget } from "@/lib/pdf-source-ingest";
 import type { AutoRecordsPdfParseResult } from "@/lib/auto-records-pdf-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
 import {
@@ -37,16 +38,7 @@ import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 
 export type SourcePdfExtractTarget = SourcePdfIngestTarget;
 
-export type CsddPdfParseResult = {
-  rawUnprocessedData: string;
-  fields: CsddFormFields;
-  warnings: string[];
-  meta: {
-    charCount: number;
-    engine: "gemini_fallback";
-    extractionMethod: "gemini";
-  };
-};
+export type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
 
 export type PdfClassifyResult = {
   target: SourcePdfIngestTarget;
@@ -110,7 +102,7 @@ function normalizeIncidentRow(raw: unknown): LtabIncidentRow | null {
   if (!o) return null;
   const row: LtabIncidentRow = {
     csngDate: formatAutoRecordsDateForOutput(asString(o.csngDate ?? o.date, 32)),
-    lossAmount: asString(o.lossAmount ?? o.amount, 64),
+    lossAmount: normalizeLossAmountEurDisplay(asString(o.lossAmount ?? o.amount, 64)),
     incidentNo: normalizeCountryNameLv(asString(o.incidentNo ?? o.country, 80)),
   };
   return ltabRowHasData(row) ? row : null;

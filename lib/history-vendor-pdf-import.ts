@@ -15,6 +15,7 @@ import { parseCarverticalPdfText } from "@/lib/carvertical-pdf-parse";
 import { extractClaimRowsForPdfInsight, type ClaimTableRow } from "@/lib/claim-rows-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { mergeAutoRecordsServiceHistory } from "@/lib/auto-records-pdf-parse";
+import { normalizeLtabIncidentRow } from "@/lib/loss-amount-format";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 
@@ -44,11 +45,13 @@ export type HistoryVendorPdfParseResult = {
 };
 
 function claimRowsToLtabRows(claims: ClaimTableRow[]): LtabIncidentRow[] {
-  return claims.map((c) => ({
-    csngDate: c.date.trim(),
-    lossAmount: c.amount.trim(),
-    incidentNo: normalizeCountryNameLv(c.iso) || c.iso,
-  }));
+  return claims.map((c) =>
+    normalizeLtabIncidentRow({
+      csngDate: c.date.trim(),
+      lossAmount: c.amount.trim(),
+      incidentNo: normalizeCountryNameLv(c.iso) || c.iso,
+    }),
+  );
 }
 
 function mergeLtabIncidentRows(existing: LtabIncidentRow[], imported: LtabIncidentRow[]): LtabIncidentRow[] {
