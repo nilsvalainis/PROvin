@@ -24,6 +24,10 @@ export default function middleware(request: NextRequest) {
     return res;
   }
 
+  if (pathname === "/test-pricing" || pathname.startsWith("/test-pricing/")) {
+    return NextResponse.next();
+  }
+
   if (pathname.startsWith("/admin")) {
     const requestHeaders = new Headers(request.headers);
     if (!pathname.startsWith("/admin/login")) {
