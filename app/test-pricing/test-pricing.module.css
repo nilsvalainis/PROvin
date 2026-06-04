@@ -68,6 +68,36 @@
   color: var(--test-pricing-muted);
 }
 
+.contactBlock {
+  margin: 0 auto clamp(1rem, 2.5vw, 1.35rem);
+  max-width: 28rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--test-pricing-border);
+  background: var(--test-pricing-surface);
+}
+
+.contactHeading {
+  margin: 0 0 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--test-pricing-muted);
+}
+
+.contactFields {
+  display: grid;
+  gap: 0.65rem;
+}
+
+@media (min-width: 520px) {
+  .contactFields {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+}
+
 .grid {
   display: grid;
   gap: 1rem;

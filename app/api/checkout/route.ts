@@ -4,9 +4,8 @@ import { getOrderCopy } from "@/lib/checkout-copy";
 import { homePath } from "@/lib/paths";
 import { routing } from "@/i18n/routing";
 import {
+  getOrderContactFieldErrors,
   isPlausibleListingUrl,
-  isValidOrderEmail,
-  isValidOrderPhone,
   isValidVin,
   normalizeVin,
 } from "@/lib/order-field-validation";
@@ -173,12 +172,9 @@ export async function POST(req: Request) {
     if (!withdrawalConsent) {
       errors.push(copy.errors.withdrawalRequired);
     }
-    if (!email || !isValidOrderEmail(email)) {
-      errors.push(copy.validation.email);
-    }
-    if (!phone || !isValidOrderPhone(phone)) {
-      errors.push(copy.validation.phone);
-    }
+    const contact = getOrderContactFieldErrors(email, phone);
+    if (contact.email) errors.push(copy.validation.email);
+    if (contact.phone) errors.push(copy.validation.phone);
     if (!selectPlannedBudget) {
       errors.push(requiredMsg);
     }
@@ -198,12 +194,9 @@ export async function POST(req: Request) {
     if (listingUrl && !isPlausibleListingUrl(listingUrl)) {
       errors.push(copy.validation.listing);
     }
-    if (!email || !isValidOrderEmail(email)) {
-      errors.push(copy.validation.email);
-    }
-    if (!phone || !isValidOrderPhone(phone)) {
-      errors.push(copy.validation.phone);
-    }
+    const contact = getOrderContactFieldErrors(email, phone);
+    if (contact.email) errors.push(copy.validation.email);
+    if (contact.phone) errors.push(copy.validation.phone);
   }
 
   if (errors.length > 0) {

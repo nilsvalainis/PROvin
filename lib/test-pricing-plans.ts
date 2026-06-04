@@ -1,4 +1,5 @@
 import {
+  getOrderContactFieldErrors,
   isPlausibleListingUrl,
   isValidVin,
   normalizeVin,
@@ -113,6 +114,8 @@ export function isTestPricingPlanId(v: string): v is TestPricingPlanId {
 }
 
 export type TestPricingCheckoutFieldErrors = {
+  email?: string;
+  phone?: string;
   listingUrl?: string;
   vin?: string;
   consent?: string;
@@ -120,11 +123,17 @@ export type TestPricingCheckoutFieldErrors = {
 
 export function validateTestPricingCheckout(
   plan: TestPricingPlanConfig,
+  email: string,
+  phone: string,
   listingUrl: string,
   vin: string,
   withdrawalConsent: boolean,
 ): { ok: true } | { ok: false; errors: TestPricingCheckoutFieldErrors } {
   const errors: TestPricingCheckoutFieldErrors = {};
+
+  const contact = getOrderContactFieldErrors(email, phone);
+  if (contact.email) errors.email = contact.email;
+  if (contact.phone) errors.phone = contact.phone;
 
   if (!listingUrl.trim()) {
     errors.listingUrl = "Ievadi sludinājuma saiti.";

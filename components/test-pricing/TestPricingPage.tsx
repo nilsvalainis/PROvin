@@ -67,8 +67,11 @@ function PlanFeatures({ plan }: { plan: TestPricingPlanConfig }) {
 export function TestPricingPage() {
   const searchParams = useSearchParams();
   const { theme, toggleTheme } = useSiteTheme();
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [consent, setConsent] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const [contactErrors, setContactErrors] = useState<{ email?: string; phone?: string }>({});
   const [loadingPlan, setLoadingPlan] = useState<TestPricingPlanId | null>(null);
   const [fields, setFields] = useState<Record<TestPricingPlanId, ColumnState>>({
     mini: initialColumnState(),
@@ -104,14 +107,27 @@ export function TestPricingPage() {
       if (!plan) return;
       const col = fields[planId];
       setGlobalError(null);
-      const validation = validateTestPricingCheckout(plan, col.listingUrl, col.vin, consent);
+      const validation = validateTestPricingCheckout(
+        plan,
+        email,
+        phone,
+        col.listingUrl,
+        col.vin,
+        consent,
+      );
       if (!validation.ok) {
-        setFieldErrors((prev) => ({ ...prev, [planId]: validation.errors }));
-        if (validation.errors.consent) {
-          setGlobalError(validation.errors.consent);
+        const { email: emailErr, phone: phoneErr, consent: consentErr, ...planErrs } =
+          validation.errors;
+        setContactErrors({ email: emailErr, phone: phoneErr });
+        setFieldErrors((prev) => ({ ...prev, [planId]: planErrs }));
+        if (consentErr) {
+          setGlobalError(consentErr);
+        } else if (emailErr || phoneErr) {
+          setGlobalError(emailErr ?? phoneErr ?? null);
         }
         return;
       }
+      setContactErrors({});
       setFieldErrors((prev) => ({ ...prev, [planId]: {} }));
       setLoadingPlan(planId);
       try {
@@ -120,6 +136,8 @@ export function TestPricingPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             planId,
+            email: email.trim(),
+            phone: phone.trim(),
             listingUrl: col.listingUrl.trim(),
             vin: normalizeVin(col.vin),
             locale: "lv",
@@ -141,7 +159,7 @@ export function TestPricingPage() {
         setLoadingPlan(null);
       }
     },
-    [consent, fields],
+    [consent, email, fields, phone],
   );
 
   const themeLabel = useMemo(() => (theme === "dark" ? "☀️ Gaišs" : "🌙 Tumšs"), [theme]);
@@ -161,9 +179,58 @@ export function TestPricingPage() {
         <header className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Izvēlies audita paketi</h1>
           <p className={styles.pageLead}>
-            Kompakta testa lapa — neskar galvenās lapas hero. Stripe Checkout prasa e-pastu un tālruni.
+            Kompakta testa lapa — neskar galvenās lapas hero. Pirms maksājuma obligāta e-pasta un tālruņa
+            ievade.
           </p>
         </header>
+
+        <div className={styles.contactBlock}>
+          <p className={styles.contactHeading}>Kontaktinformācija</p>
+          <div className={styles.contactFields}>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel} htmlFor="test-pricing-email">
+                E-pasts <span className={styles.requiredMark}>*</span>
+              </label>
+              <input
+                id="test-pricing-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="tavs@epasts.lv"
+                className={`${styles.fieldInput} ${contactErrors.email ? styles.fieldInputError : ""}`}
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setContactErrors((p) => ({ ...p, email: undefined }));
+                }}
+              />
+              {contactErrors.email ? (
+                <p className={styles.fieldError}>{contactErrors.email}</p>
+              ) : null}
+            </div>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel} htmlFor="test-pricing-phone">
+                Tālrunis <span className={styles.requiredMark}>*</span>
+              </label>
+              <input
+                id="test-pricing-phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="+371 ..."
+                className={`${styles.fieldInput} ${contactErrors.phone ? styles.fieldInputError : ""}`}
+                value={phone}
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  setContactErrors((p) => ({ ...p, phone: undefined }));
+                }}
+              />
+              {contactErrors.phone ? (
+                <p className={styles.fieldError}>{contactErrors.phone}</p>
+              ) : null}
+            </div>
+          </div>
+        </div>
 
         {cancelled ? (
           <p className={styles.cancelNote}>Maksājums tika atcelts. Vari mēģināt vēlreiz.</p>

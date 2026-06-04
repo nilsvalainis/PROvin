@@ -4,6 +4,7 @@ import { getPublicSiteOrigin } from "@/lib/site-url";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import {
+  getOrderContactFieldErrors,
   isPlausibleListingUrl,
   isValidVin,
   normalizeVin,
@@ -53,6 +54,8 @@ export async function POST(req: Request) {
 
   let raw: {
     planId?: unknown;
+    email?: unknown;
+    phone?: unknown;
     listingUrl?: unknown;
     vin?: unknown;
     locale?: unknown;
@@ -84,6 +87,9 @@ export async function POST(req: Request) {
     : routing.defaultLocale;
 
   const errors: string[] = [];
+  const contact = getOrderContactFieldErrors(email, phone);
+  if (contact.email) errors.push(contact.email);
+  if (contact.phone) errors.push(contact.phone);
   if (!withdrawalConsent) {
     errors.push("Apstiprini noteikumus un digitālā satura izpildi.");
   }
@@ -127,17 +133,18 @@ export async function POST(req: Request) {
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
+    customer_email: email,
     line_items: [lineItem],
     success_url: `${origin}${thanksPath}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${cancelPath}`,
-    /* Tālrunis obligāti; e-pasts — Stripe Checkout payment režīmā (viesa klients). */
-    phone_number_collection: { enabled: true },
+    phone_number_collection: { enabled: false },
     metadata: {
       checkout_line: plan.id,
       product_tier: plan.id,
       listing_url: listingUrl,
       vin: vin || "",
       report_delivery: "email",
+      phone,
       withdrawal_waiver_ack: "true",
       authorization_ack: "true",
       source_page: "test-pricing",

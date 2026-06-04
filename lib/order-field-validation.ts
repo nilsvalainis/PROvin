@@ -1,5 +1,6 @@
 /**
- * Kopīga pasūtījuma lauku validācija — OrderForm (UI) un /api/checkout (serveris).
+ * Kopīga pasūtījuma lauku validācija — OrderForm (UI) un visi checkout API (serveris).
+ * E-pasts un tālrunis obligāti pirms Stripe sesijas (`getOrderContactFieldErrors`).
  */
 
 export function normalizeVin(s: string): string {
@@ -65,6 +66,37 @@ export function isValidOrderPhone(s: string): boolean {
 }
 
 export type OrderFieldErrorKey = "vin" | "listing" | "email" | "phone";
+
+export type OrderContactFieldErrors = {
+  email?: string;
+  phone?: string;
+};
+
+/** Obligāta kontaktinformācija pirms jebkuras Stripe Checkout sesijas. */
+export function getOrderContactFieldErrors(
+  email: string,
+  phone: string,
+): OrderContactFieldErrors {
+  const errors: OrderContactFieldErrors = {};
+  const emailTrim = email.trim();
+  if (!emailTrim) {
+    errors.email = "Ievadi e-pastu.";
+  } else if (!isValidOrderEmail(email)) {
+    errors.email = "E-pasta adrese nav derīga.";
+  }
+  const phoneTrim = phone.trim();
+  if (!phoneTrim) {
+    errors.phone = "Ievadi tālruņa numuru.";
+  } else if (!isValidOrderPhone(phone)) {
+    errors.phone = "Tālruņa numurs nav derīgs.";
+  }
+  return errors;
+}
+
+export function orderContactFieldsValid(email: string, phone: string): boolean {
+  const e = getOrderContactFieldErrors(email, phone);
+  return !e.email && !e.phone;
+}
 
 export function validateOrderFields(input: {
   vin: string;
