@@ -46,7 +46,7 @@ JSON schema:
       "description_lv": "string — one short factual sentence in Latvian, no fluff"
     }
   ],
-  "ai_generated_comments_lv": "string — hybrid factual context + anomalies: if no substantive history anywhere use exactly \"Problēmas nav konstatētas.\"; else short bullets (- prefix) with objective timeline/metadata; prefix clear conflicts with ANOMĀLIJA:, max 4 bullets, ~350 chars"
+  "ai_generated_comments_lv": "string — if no substantive history anywhere use exactly \"Problēmas nav konstatētas.\"; else 2–4 short paragraphs separated by blank lines; each paragraph opens with **bold** topic hook (3–10 words); never line-start \"- \" or bullet lists; prefix clear conflicts with **Anomālija:** in prose; max ~600 chars"
 }`;
 
 export type PdfTextBundle = { fileName: string; text: string; sourceHint: string };

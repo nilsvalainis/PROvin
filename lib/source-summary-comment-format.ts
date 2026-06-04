@@ -25,14 +25,24 @@ Example:
 - Reģistrēts neliels virsbūves bojājums Vācijā (summa <=100 EUR). Bojāta labā sāna priekšpuse un kreisais sāns.
 - 07.03.2021 Dīlera apkope pie 46,441 km.`;
 
+/** Vienots eksperta komentāru vizuālais formāts — ✨ avoti, PDF, cena, nobraukums u.c. */
+export const GEMINI_EXPERT_PARAGRAPH_PRESENTATION = `
+VISUAL PRESENTATION (mandatory for all expert client PDF comments):
+- STRUCTURE: Write ONLY in paragraphs — separate paragraphs with a blank line (double newline). NEVER start any line with "- ", "• ", "* ", "– ", or "1." / "2." — no bullet lists, no numbered lists, no list-style prefixes of any kind.
+- PARAGRAPH OPENER: Every paragraph MUST begin with a short **bold** topic hook (3–10 words) naming the theme — e.g. **Nobraukuma vēsture Latvijā**, **Cenu pozīcija tirgū**, **Tehnisko apskašu tendence** — then continue in natural prose in the same paragraph.
+- SCANABILITY: Keep each paragraph to 2–4 sentences. Prefer several short focused paragraphs over one dense wall of text.
+- EMPHASIS: Use **bold** inline for key dates, km, EUR sums, option codes, and risk labels — never bold an entire paragraph.
+- HUMAN TONE: Write like a senior Latvian inspector briefing a buyer — concrete, varied rhythm, no AI filler ("Kopumā var secināt", "Svarīgi atzīmēt", "Turklāt jāpiemin", "Nav šaubu"). Do not wrap the whole output in quotation marks.
+- ANOMALIES: State risks inside prose; you may use **Anomālija:** as a bold paragraph opener when a clear conflict exists — still never prefix with "- ".
+`;
+
 /** Dziļā eksperta analīze — CSDD, AutoDNA, CarVertical, LTAB ✨ admin komentāri. */
 export const HYBRID_COMMENT_RULES = `
 COMMENTARY RULES for PROVIN Senior Auto Expert:
-- FORMAT: DO NOT use bullet points, dashes, or numbered lists. Write in clean, cohesive paragraphs separated by double line breaks.
-- LENGTH: Expand the analysis. Target length is 800 - 1500 characters. Be thorough and detailed.
-- STYLE: Analytical, professional, high-competence automotive forensic style. No conversational fluff, no introductory platitudes.
-- EMPHASIS: You MUST use markdown bold (**text**) to highlight key critical findings, option codes, precise mileage figures, vehicle status, and high-risk anomalies.
-- LOGIC: Look for data contradictions between different sources. Do not just summarize; interpret what these numbers and technical faults actually mean for the vehicle's remaining lifespan.
+${GEMINI_EXPERT_PARAGRAPH_PRESENTATION}
+- LENGTH: Target 800–1500 characters for source comments; thorough but not repetitive.
+- STYLE: Analytical, professional automotive forensic Latvian. No conversational fluff or meta-commentary.
+- LOGIC: Interpret contradictions and what findings mean for the buyer — do not only list raw facts.
 `;
 
 /** Gemini PDF extract JSON — eksperta komentārs (visi avoti). */
@@ -70,7 +80,13 @@ export function normalizeExpertSourcePdfComment(raw: string | undefined | null, 
   }
   const paras = t
     .split(/\n\n+/)
-    .map((p) => p.trim().replace(/\s+/g, " "))
+    .map((p) =>
+      p
+        .trim()
+        .replace(/\s+/g, " ")
+        .replace(/^\s*[-•*–]\s+/gm, "")
+        .replace(/^\s*\d+[\.)]\s+/gm, ""),
+    )
     .filter(Boolean)
     .slice(0, 8);
   let out = paras.join("\n\n");

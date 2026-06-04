@@ -54,9 +54,19 @@ export function geminiPlainTextToRichHtml(text: string): string {
 const EXPERT_BOLD_OPEN = "\uE010";
 const EXPERT_BOLD_CLOSE = "\uE011";
 
+/** Noņem sarakstu prefiksus no Gemini eksperta komentāra (ja modelis tomēr izmanto "- "). */
+export function normalizeGeminiExpertParagraphText(text: string): string {
+  let t = sanitizeDraftTextForStorage(text);
+  t = t.replace(/^\s*[-•*–]\s+/gm, "");
+  t = t.replace(/^\s*\d+[\.)]\s+/gm, "");
+  t = t.replace(/^ANOMĀLIJA:\s*/gim, "**Anomālija:** ");
+  t = t.replace(/\r\n/g, "\n");
+  return t.trim();
+}
+
 /** Dziļās avotu analīzes ✨ — saglabā **bold** kā <strong> admin redaktoram un PDF. */
 export function geminiExpertSourceCommentToRichHtml(text: string): string {
-  let t = sanitizeDraftTextForStorage(text);
+  let t = normalizeGeminiExpertParagraphText(text);
   t = t.replace(/\*\*([^*\n]+)\*\*/g, `${EXPERT_BOLD_OPEN}$1${EXPERT_BOLD_CLOSE}`);
   t = escapeHtmlPlain(t);
   t = t

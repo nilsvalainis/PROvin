@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   adminRichHtmlToPdfSafeHtml,
+  geminiExpertSourceCommentToRichHtml,
   geminiPlainTextToRichHtml,
   normalizeGeminiClientPlainText,
+  normalizeGeminiExpertParagraphText,
 } from "@/lib/admin-rich-comment-html";
 
 describe("normalizeGeminiClientPlainText", () => {
@@ -35,5 +37,24 @@ describe("adminRichHtmlToPdfSafeHtml", () => {
 describe("geminiPlainTextToRichHtml", () => {
   it("normalizes then wraps lines", () => {
     expect(geminiPlainTextToRichHtml("* Punkts")).toBe("- Punkts");
+  });
+});
+
+describe("normalizeGeminiExpertParagraphText", () => {
+  it("strips leading hyphen bullets", () => {
+    expect(normalizeGeminiExpertParagraphText("- Pirmais\n- Otrais")).toBe("Pirmais\nOtrais");
+  });
+
+  it("converts ANOMĀLIJA prefix to bold hook", () => {
+    expect(normalizeGeminiExpertParagraphText("ANOMĀLIJA: nobraukums")).toBe("**Anomālija:** nobraukums");
+  });
+});
+
+describe("geminiExpertSourceCommentToRichHtml", () => {
+  it("preserves bold and strips list prefixes at line start", () => {
+    const html = geminiExpertSourceCommentToRichHtml("**Nobraukums.**\n\n- Fakts bez saraksta.");
+    expect(html).toContain("<strong>Nobraukums.</strong>");
+    expect(html).not.toMatch(/<br \/>- Fakts/);
+    expect(html).toContain("Fakts bez saraksta.");
   });
 });
