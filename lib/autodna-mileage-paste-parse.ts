@@ -5,6 +5,7 @@
 
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import {
+  autoRecordsMileageRowHasData,
   formatAutoRecordsDateForOutput,
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
@@ -140,9 +141,11 @@ export function parseAutodnaMileagePaste(raw: string): AutoRecordsServiceRow[] {
   flush();
 
   const sorted = sortAutoRecordsDescending(out);
-  return sorted.map((r) => ({
-    date: formatAutoRecordsDateForOutput(r.date),
-    odometer: normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
-    country: r.country.trim(),
-  }));
+  return sorted
+    .map((r) => ({
+      date: formatAutoRecordsDateForOutput(r.date),
+      odometer: normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
+      country: r.country.trim(),
+    }))
+    .filter(autoRecordsMileageRowHasData);
 }

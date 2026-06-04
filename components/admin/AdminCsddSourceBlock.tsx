@@ -26,6 +26,7 @@ import {
 import { AdminCsddInspectionWarningsEditor } from "@/components/admin/AdminCsddInspectionWarningsEditor";
 import { previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
 import { filterCsddInspectionWarnings } from "@/lib/admin-source-blocks";
+import { AdminCsddPdfUpload } from "@/components/admin/AdminCsddPdfUpload";
 import { applyCsddPasteToForm, backfillCsddExtendedFromRaw, parseCsddPaste } from "@/lib/csdd-paste-parse";
 import { buildOwnerRegistrationTimelineAdminHtml } from "@/lib/csdd-history-charts";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
@@ -207,6 +208,23 @@ export function AdminCsddSourceBlock({
             </div>
           </div>
         </div>
+      ) : null}
+      {!readOnly ? (
+        <AdminCsddPdfUpload
+          disabled={disabled}
+          readOnly={readOnly}
+          onImported={({ rawUnprocessedData, fields }) => {
+            const raw = rawUnprocessedData.trim() || value.rawUnprocessedData;
+            const parsed = raw.trim() ? parseCsddPaste(raw) : parseCsddPaste(value.rawUnprocessedData);
+            onChange(
+              applyCsddPasteToForm(
+                { ...value, ...fields, rawUnprocessedData: raw || value.rawUnprocessedData },
+                raw || value.rawUnprocessedData,
+                parsed,
+              ),
+            );
+          }}
+        />
       ) : null}
       <div className="mb-2 min-w-0">
         <label

@@ -1,6 +1,9 @@
 import "server-only";
 
-import { detectSourcePdfIngestTarget } from "@/lib/admin-source-pdf-detect";
+import {
+  detectSourcePdfIngestTarget,
+  labelFromUnknownPdfFileName,
+} from "@/lib/admin-source-pdf-detect";
 import { generateIncidentsSummaryWithGemini } from "@/lib/admin-gemini-incidents-summary";
 import { generateMileageCommentWithGemini } from "@/lib/admin-gemini-mileage-comment";
 import type { GeminiOrderContextInput } from "@/lib/admin-gemini-order-context";
@@ -22,10 +25,14 @@ import {
 import type { AutoRecordsPdfParseResult } from "@/lib/auto-records-pdf-parse";
 import { mergeAutoRecordsServiceHistory } from "@/lib/auto-records-pdf-parse";
 import {
+  citiAvotiSectionHasContent,
+  emptyCitiAvotiSection,
   mergeSourceBlocksWithDefaults,
   normalizeSourcePdfChecklist,
   sourcePdfChecklistHasAny,
   type AutoRecordsBlockState,
+  type CitiAvotiBlockState,
+  type CsddFormFields,
   type LtabBlockState,
   type VendorAvotuBlockState,
   type WorkspaceSourceBlocks,
@@ -35,6 +42,10 @@ import { mergeLtabIncidentRows, mergeVendorServiceHistory } from "@/lib/history-
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { ingestSourcePdfFile, type SourcePdfIngestTarget } from "@/lib/pdf-source-ingest";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
+import {
+  classifyPdfIngestTargetWithGemini,
+  type CsddPdfParseResult,
+} from "@/lib/source-pdf-gemini-extract";
 
 export type PrepareDraftStep = {
   id: string;
@@ -120,6 +131,40 @@ function vendorBlockKey(target: HistoryVendorPdfTarget): "autodna" | "carvertica
   return target === "carvertical" ? "carvertical" : "autodna";
 }
 
+function applyCsddImport(existing: CsddFormFields, result: CsddPdfParseResult): CsddFormFields {
+  const raw = result.rawUnprocessedData.trim();
+  const imported = result.fields;
+  return {
+    ...existing,
+    ...imported,
+    ...(raw ? { rawUnprocessedData: raw.slice(0, 500_000) } : {}),
+    comments: existing.comments || imported.comments,
+    geminiContextRaw: existing.geminiContextRaw || imported.geminiContextRaw,
+  };
+}
+
+function applyCitiAvotiImport(
+  block: CitiAvotiBlockState,
+  result: HistoryVendorPdfParseResult,
+  label: string,
+): CitiAvotiBlockState {
+  const sections = [...(block.sections ?? [])];
+  let idx = sections.findIndex((s) => !citiAvotiSectionHasContent(s));
+  if (idx < 0) {
+    sections.push(emptyCitiAvotiSection());
+    idx = sections.length - 1;
+  }
+  const existing = sections[idx] ?? emptyCitiAvotiSection();
+  const merged = applyVendorImport(existing, result);
+  sections[idx] = {
+    ...merged,
+    label: label.trim() || existing.label || "",
+    rawUnprocessedData:
+      result.rawText.trim().slice(0, 120_000) || existing.rawUnprocessedData || "",
+  };
+  return { sections };
+}
+
 function plainCommentToHtml(blockKey: GeminiSourceCommentBlockKey, plain: string): string {
   return isMainAnalysisSourceBlock(blockKey)
     ? geminiExpertSourceCommentToRichHtml(plain)
@@ -149,20 +194,17 @@ export async function runPrepareDraftPipeline(input: {
 
   for (const pdf of input.pdfs) {
     const stepId = `pdf:${pdf.fileName}`;
-    let target = pdf.target ?? null;
+    const quick = await extractPdfTextDetailed(pdf.buffer, { fileName: pdf.fileName });
+    let target = pdf.target ?? detectSourcePdfIngestTarget(pdf.fileName, quick.text);
+    let citiLabel = labelFromUnknownPdfFileName(pdf.fileName);
     if (!target) {
-      const quick = await extractPdfTextDetailed(pdf.buffer, { fileName: pdf.fileName });
-      target = detectSourcePdfIngestTarget(pdf.fileName, quick.text);
-    }
-    if (!target) {
-      steps.push({
-        id: stepId,
-        label: pdf.fileName,
-        status: "skipped",
-        detail: "Neizdevās noteikt avotu — pievieno nosaukumā CarVertical, AutoDNA, LTAB vai Auto Records.",
+      const classified = await classifyPdfIngestTargetWithGemini({
+        buffer: pdf.buffer,
+        fileName: pdf.fileName,
+        textHint: quick.text,
       });
-      warnings.push(`${pdf.fileName}: avots nav noteikts — izlaižam.`);
-      continue;
+      target = classified.target;
+      if (classified.label) citiLabel = classified.label;
     }
 
     try {
@@ -185,6 +227,20 @@ export async function runPrepareDraftPipeline(input: {
           ...blocks,
           ltab: applyLtabImport(blocks.ltab, result as HistoryVendorPdfParseResult),
         };
+      } else if (target === "csdd") {
+        blocks = {
+          ...blocks,
+          csdd: applyCsddImport(blocks.csdd, result as CsddPdfParseResult),
+        };
+      } else if (target === "citi_avoti") {
+        blocks = {
+          ...blocks,
+          citi_avoti: applyCitiAvotiImport(
+            blocks.citi_avoti,
+            result as HistoryVendorPdfParseResult,
+            citiLabel,
+          ),
+        };
       } else {
         const key = vendorBlockKey(target);
         blocks = {
@@ -197,11 +253,13 @@ export async function runPrepareDraftPipeline(input: {
         warnings.push(...result.warnings.slice(0, 3).map((w) => `${pdf.fileName}: ${w}`));
       }
 
+      const targetLabel =
+        target === "citi_avoti" ? `citi_avoti (${citiLabel})` : target;
       steps.push({
         id: stepId,
         label: pdf.fileName,
         status: "ok",
-        detail: `${target} · ${engineLabel}`,
+        detail: `${targetLabel} · ${engineLabel}`,
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

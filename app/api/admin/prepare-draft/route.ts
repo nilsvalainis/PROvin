@@ -32,7 +32,16 @@ function isPdfFile(file: File): boolean {
 
 function parseTargetHint(raw: string): SourcePdfIngestTarget | null {
   const t = raw.trim().toLowerCase();
-  if (t === "carvertical" || t === "autodna" || t === "ltab" || t === "auto_records") return t;
+  if (
+    t === "carvertical" ||
+    t === "autodna" ||
+    t === "ltab" ||
+    t === "auto_records" ||
+    t === "csdd" ||
+    t === "citi_avoti"
+  ) {
+    return t;
+  }
   return null;
 }
 

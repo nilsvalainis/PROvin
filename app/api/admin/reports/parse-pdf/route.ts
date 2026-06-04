@@ -6,16 +6,36 @@ import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import type { AutoRecordsPdfParseResult } from "@/lib/auto-records-pdf-parse";
-import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/history-vendor-pdf-import";
+import type { HistoryVendorPdfParseResult } from "@/lib/history-vendor-pdf-import";
 import { PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
-import { ingestSourcePdfFile } from "@/lib/pdf-source-ingest";
+import { ingestSourcePdfFile, type SourcePdfIngestTarget } from "@/lib/pdf-source-ingest";
 import { logPdfExtractResult } from "@/lib/pdf-text-extract-server";
-import { autoRecordsParseHasData, vendorParseHasData } from "@/lib/source-pdf-gemini-extract";
+import {
+  autoRecordsParseHasData,
+  csddParseHasData,
+  vendorParseHasData,
+  type CsddPdfParseResult,
+} from "@/lib/source-pdf-gemini-extract";
 
 export const maxDuration = 120;
 export const runtime = "nodejs";
 
 const LOG_PREFIX = "[admin/reports/parse-pdf]";
+
+const ALLOWED_TARGETS: SourcePdfIngestTarget[] = [
+  "autodna",
+  "carvertical",
+  "ltab",
+  "auto_records",
+  "csdd",
+  "citi_avoti",
+];
+
+function parseHasData(target: SourcePdfIngestTarget, result: unknown): boolean {
+  if (target === "csdd") return csddParseHasData(result as CsddPdfParseResult);
+  if (target === "auto_records") return autoRecordsParseHasData(result as AutoRecordsPdfParseResult);
+  return vendorParseHasData(result as HistoryVendorPdfParseResult);
+}
 
 export async function POST(req: Request) {
   const ok = await getAdminSession();
@@ -64,10 +84,9 @@ export async function POST(req: Request) {
   }
 
   const targetRaw = String(form.get("target") ?? "auto_records").trim().toLowerCase();
-  const vendorTargets: HistoryVendorPdfTarget[] = ["autodna", "carvertical", "ltab"];
-  const target = vendorTargets.includes(targetRaw as HistoryVendorPdfTarget)
-    ? (targetRaw as HistoryVendorPdfTarget)
-    : ("auto_records" as const);
+  const target: SourcePdfIngestTarget = ALLOWED_TARGETS.includes(targetRaw as SourcePdfIngestTarget)
+    ? (targetRaw as SourcePdfIngestTarget)
+    : "auto_records";
 
   try {
     const buffer = await file.arrayBuffer();
@@ -78,10 +97,7 @@ export async function POST(req: Request) {
     });
     logPdfExtractResult(LOG_PREFIX, extract);
 
-    const hasData =
-      "incidents" in result ? vendorParseHasData(result as HistoryVendorPdfParseResult) : autoRecordsParseHasData(result as AutoRecordsPdfParseResult);
-
-    if (!hasData) {
+    if (!parseHasData(target, result)) {
       return NextResponse.json(
         {
           error: "extraction_failed",
@@ -101,12 +117,32 @@ export async function POST(req: Request) {
       backend: extract.backend,
     });
 
+    if (target === "csdd") {
+      const csdd = result as CsddPdfParseResult;
+      return NextResponse.json({
+        ok: true,
+        fileName: file.name,
+        target: "csdd",
+        rawUnprocessedData: csdd.rawUnprocessedData,
+        fields: csdd.fields,
+        warnings: csdd.warnings,
+        meta: {
+          ...csdd.meta,
+          engine: plan,
+          planReason,
+          textBackend: extract.backend,
+        },
+      });
+    }
+
+    const vendorOrAuto = result as HistoryVendorPdfParseResult | AutoRecordsPdfParseResult;
     return NextResponse.json({
       ok: true,
       fileName: file.name,
-      ...result,
+      target,
+      ...vendorOrAuto,
       meta: {
-        ...result.meta,
+        ...vendorOrAuto.meta,
         engine: plan,
         planReason,
         textBackend: extract.backend,

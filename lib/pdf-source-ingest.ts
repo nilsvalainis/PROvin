@@ -2,14 +2,17 @@ import "server-only";
 
 import { getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
 import { parseAutoRecordsPdfText, type AutoRecordsPdfParseResult } from "@/lib/auto-records-pdf-parse";
+import { parseHistoryVendorPdfText } from "@/lib/history-vendor-pdf-import";
 import { parseCarverticalPdfText } from "@/lib/carvertical-pdf-parse";
 import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/history-vendor-pdf-import";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import { extractPdfTextDetailed, type PdfExtractResult } from "@/lib/pdf-text-extract-server";
 import {
   autoRecordsParseHasData,
+  csddParseHasData,
   extractSourcePdfWithGemini,
   vendorParseHasData,
+  type CsddPdfParseResult,
 } from "@/lib/source-pdf-gemini-extract";
 import {
   detectVendorPdfStructure,
@@ -20,7 +23,7 @@ import {
 const LOG_PREFIX = "[pdf-source-ingest]";
 const MIN_TEXT_FOR_STRUCTURE = 40;
 
-export type SourcePdfIngestTarget = HistoryVendorPdfTarget | "auto_records";
+export type SourcePdfIngestTarget = HistoryVendorPdfTarget | "auto_records" | "csdd" | "citi_avoti";
 
 function autoRecordsStructureDetected(text: string): boolean {
   return /ODOMETER\s+CHECK|auto[\s_-]*records|Event\s+Date/i.test(text.slice(0, 200_000));
@@ -63,12 +66,35 @@ function enrichCarverticalGeminiResult(
   };
 }
 
+function enrichAutodnaGeminiResult(
+  result: HistoryVendorPdfParseResult,
+  textHint: string,
+): HistoryVendorPdfParseResult {
+  const hint = textHint.trim();
+  if (!hint) return result;
+  const local = parseHistoryVendorPdfText("autodna", hint);
+  return {
+    ...result,
+    ...(result.serviceHistory.length === 0 && local.serviceHistory.length > 0
+      ? { serviceHistory: local.serviceHistory }
+      : {}),
+    ...(result.incidents.length === 0 && local.incidents.length > 0 ? { incidents: local.incidents } : {}),
+    ...(local.damageDetails?.length && !(result.damageDetails ?? []).length
+      ? { damageDetails: local.damageDetails }
+      : {}),
+    ...(local.vehicleHistoryTimeline?.length && !(result.vehicleHistoryTimeline ?? []).length
+      ? { vehicleHistoryTimeline: local.vehicleHistoryTimeline }
+      : {}),
+  };
+}
+
 function enrichVendorGeminiResult(
   target: HistoryVendorPdfTarget,
   result: HistoryVendorPdfParseResult,
   textHint: string,
 ): HistoryVendorPdfParseResult {
   if (target === "carvertical") return enrichCarverticalGeminiResult(result, textHint);
+  if (target === "autodna") return enrichAutodnaGeminiResult(result, textHint);
   return result;
 }
 
@@ -79,18 +105,22 @@ async function runGeminiExtract(
   textHint: string,
   extract: PdfExtractResult,
   engine: PdfIngestEngine,
-): Promise<HistoryVendorPdfParseResult | AutoRecordsPdfParseResult> {
+): Promise<HistoryVendorPdfParseResult | AutoRecordsPdfParseResult | CsddPdfParseResult> {
   if (!getGeminiApiKeyFromEnv()) {
     throw new Error("missing_gemini_key");
   }
   console.info(`${LOG_PREFIX} gemini_extract`, { fileName, target, engine, stage: extract.stage });
   const result = await extractSourcePdfWithGemini({ target, buffer, fileName, textHint });
-  if ("incidents" in result && target !== "auto_records") {
-    const enriched = enrichVendorGeminiResult(
-      target as HistoryVendorPdfTarget,
-      result,
-      textHint,
-    );
+  if (target === "csdd") {
+    return withEngine(result as CsddPdfParseResult, engine, extract.backend);
+  }
+  if ("incidents" in result) {
+    const vendorTarget =
+      target === "citi_avoti" ? "autodna" : target === "auto_records" ? null : (target as HistoryVendorPdfTarget);
+    const enriched =
+      vendorTarget != null
+        ? enrichVendorGeminiResult(vendorTarget, result as HistoryVendorPdfParseResult, textHint)
+        : (result as HistoryVendorPdfParseResult);
     return withEngine(enriched, engine, extract.backend);
   }
   return withEngine(result, engine, extract.backend);
@@ -120,6 +150,10 @@ function shouldUseLegacyPlanB(
     return { use: false, reason: "local_ok" };
   }
 
+  if (target === "csdd" || target === "citi_avoti") {
+    return { use: true, reason: "gemini_only_target" };
+  }
+
   const structure = detectVendorPdfStructure(target, text);
   if (!structure.matched) {
     return { use: true, reason: "vendor_structure_unmatched" };
@@ -132,9 +166,13 @@ function shouldUseLegacyPlanB(
 
 function parseHasData(
   target: SourcePdfIngestTarget,
-  result: HistoryVendorPdfParseResult | AutoRecordsPdfParseResult,
+  result: HistoryVendorPdfParseResult | AutoRecordsPdfParseResult | CsddPdfParseResult,
 ): boolean {
-  return "incidents" in result ? vendorParseHasData(result) : autoRecordsParseHasData(result);
+  if (target === "csdd") return csddParseHasData(result as CsddPdfParseResult);
+  if (target === "citi_avoti" || "incidents" in result) {
+    return vendorParseHasData(result as HistoryVendorPdfParseResult);
+  }
+  return autoRecordsParseHasData(result as AutoRecordsPdfParseResult);
 }
 
 /**
@@ -148,7 +186,7 @@ export async function ingestSourcePdfFile(opts: {
   /** false — tikai lokālais + vecais Plan B fallback. */
   preferGemini?: boolean;
 }): Promise<{
-  result: HistoryVendorPdfParseResult | AutoRecordsPdfParseResult;
+  result: HistoryVendorPdfParseResult | AutoRecordsPdfParseResult | CsddPdfParseResult;
   extract: PdfExtractResult;
   plan: PdfIngestEngine;
   planReason: string;
@@ -161,7 +199,12 @@ export async function ingestSourcePdfFile(opts: {
   let localVendor: HistoryVendorPdfParseResult | undefined;
   let localAuto: AutoRecordsPdfParseResult | undefined;
 
-  if (target !== "auto_records" && extract.textLayerCharCount >= MIN_TEXT_FOR_STRUCTURE) {
+  if (
+    target !== "auto_records" &&
+    target !== "csdd" &&
+    target !== "citi_avoti" &&
+    extract.textLayerCharCount >= MIN_TEXT_FOR_STRUCTURE
+  ) {
     localVendor = parseVendorPdfLocal(target, text, { textBackend: extract.backend });
   } else if (target === "auto_records" && extract.textLayerCharCount >= MIN_TEXT_FOR_STRUCTURE) {
     localAuto = withEngine(parseAutoRecordsPdfText(text), "local_parser", extract.backend);

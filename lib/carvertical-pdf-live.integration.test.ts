@@ -36,23 +36,23 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
 const hasLivePdfs = existsSync(BMW_PDF) && existsSync(SKODA_PDF);
 
 describe.skipIf(!hasLivePdfs)("CarVertical live PDF extraction", () => {
-  it("parses BMW X1 PDF (27 mileage, timeline, no damage)", async () => {
+  it("parses BMW X1 PDF (26 mileage with km, timeline, no damage)", async () => {
     const text = await extractPdfText(readFileSync(BMW_PDF));
     expect(text.length).toBeGreaterThan(5000);
 
     const parsed = parseVendorPdfLocal("carvertical", text);
-    expect(parsed.serviceHistory.length).toBe(27);
+    expect(parsed.serviceHistory.length).toBe(26);
     expect(parsed.vehicleHistoryTimeline?.length ?? 0).toBeGreaterThanOrEqual(6);
     expect(parsed.damageDetails?.length ?? 0).toBe(0);
     expect(parsed.serviceHistory.some((r) => r.odometer === "295012")).toBe(true);
   });
 
-  it("parses Škoda Kodiaq PDF (12 mileage, timeline, 1 damage)", async () => {
+  it("parses Škoda Kodiaq PDF (11 mileage with km, timeline, 1 damage)", async () => {
     const text = await extractPdfText(readFileSync(SKODA_PDF));
     expect(text.length).toBeGreaterThan(5000);
 
     const parsed = parseVendorPdfLocal("carvertical", text);
-    expect(parsed.serviceHistory.length).toBe(12);
+    expect(parsed.serviceHistory.length).toBe(11);
     expect(parsed.vehicleHistoryTimeline?.length ?? 0).toBeGreaterThanOrEqual(2);
     expect(parsed.damageDetails?.length ?? 0).toBe(1);
     expect(parsed.incidents.some((r) => r.incidentNo.includes("Šveice"))).toBe(true);

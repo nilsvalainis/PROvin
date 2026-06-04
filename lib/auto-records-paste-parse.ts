@@ -173,3 +173,10 @@ export function parseAutoRecordsPaste(raw: string): AutoRecordsServiceRow[] {
 export function autoRecordsRowHasData(r: AutoRecordsServiceRow): boolean {
   return Boolean(r.date.trim() || r.odometer.trim() || r.country.trim());
 }
+
+/** Nobraukuma tabulai — rinda tikai ar faktisku odometru (gads bez km neiet). */
+export function autoRecordsMileageRowHasData(r: AutoRecordsServiceRow): boolean {
+  const digits = r.odometer.replace(/\D/g, "");
+  if (digits.length < 3) return false;
+  return Boolean(r.date.trim() || r.country.trim());
+}

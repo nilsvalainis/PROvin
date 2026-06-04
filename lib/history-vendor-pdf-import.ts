@@ -6,6 +6,7 @@ import { ltabRowHasData } from "@/lib/admin-source-blocks";
 import type { CarVerticalDamageDetailRow, CarVerticalTimelineRow } from "@/lib/carvertical-pdf-parse";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
 import {
+  autoRecordsMileageRowHasData,
   autoRecordsRowHasData,
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
@@ -113,7 +114,7 @@ export function parseHistoryVendorPdfText(
       parsed.incidents.length > 0 ? parsed.incidents : claimIncidents;
     return {
       rawText,
-      serviceHistory: sortAutoRecordsDescending(serviceHistory.filter(autoRecordsRowHasData)),
+      serviceHistory: sortAutoRecordsDescending(serviceHistory.filter(autoRecordsMileageRowHasData)),
       incidents,
       vehicleHistoryTimeline: parsed.timeline,
       damageDetails: parsed.damageDetails,
@@ -133,7 +134,7 @@ export function parseHistoryVendorPdfText(
     }
   }
 
-  serviceHistory = sortAutoRecordsDescending(serviceHistory.filter(autoRecordsRowHasData));
+  serviceHistory = sortAutoRecordsDescending(serviceHistory.filter(autoRecordsMileageRowHasData));
 
   const claims = extractClaimRowsForPdfInsight(trimmed, 1);
   const incidents = claimRowsToLtabRows(claims);

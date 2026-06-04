@@ -5,14 +5,20 @@ import {
   geminiGenerateJsonText,
   type GeminiUserPart,
 } from "@/lib/admin-gemini";
-import type { SourcePdfChecklist } from "@/lib/admin-source-blocks";
+import { emptyCsddFields, type CsddFormFields, type SourcePdfChecklist } from "@/lib/admin-source-blocks";
 import {
-  autoRecordsRowHasData,
+  autoRecordsMileageRowHasData,
   formatAutoRecordsDateForOutput,
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
+import type {
+  CarVerticalDamageDetailRow,
+  CarVerticalTimelineRow,
+} from "@/lib/carvertical-pdf-parse";
+import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
+import type { SourcePdfIngestTarget } from "@/lib/pdf-source-ingest";
 import type { AutoRecordsPdfParseResult } from "@/lib/auto-records-pdf-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
@@ -29,7 +35,23 @@ import {
 } from "@/lib/source-summary-comment-format";
 import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 
-export type SourcePdfExtractTarget = HistoryVendorPdfTarget | "auto_records";
+export type SourcePdfExtractTarget = SourcePdfIngestTarget;
+
+export type CsddPdfParseResult = {
+  rawUnprocessedData: string;
+  fields: CsddFormFields;
+  warnings: string[];
+  meta: {
+    charCount: number;
+    engine: "gemini_fallback";
+    extractionMethod: "gemini";
+  };
+};
+
+export type PdfClassifyResult = {
+  target: SourcePdfIngestTarget;
+  label?: string;
+};
 
 const LOG_PREFIX = "[source-pdf-gemini]";
 const MAX_RAW = 120_000;
@@ -54,7 +76,33 @@ function normalizeServiceRow(raw: unknown): AutoRecordsServiceRow | null {
   const odometer = normalizeAutoRecordsOdometer(asString(o.odometer, 32));
   const country = normalizeCountryNameLv(asString(o.country, 80));
   const row: AutoRecordsServiceRow = { date, odometer, country };
-  return autoRecordsRowHasData(row) ? row : null;
+  return autoRecordsMileageRowHasData(row) ? row : null;
+}
+
+function normalizeDamageDetailRow(raw: unknown): CarVerticalDamageDetailRow | null {
+  const o = asRecord(raw);
+  if (!o) return null;
+  const row: CarVerticalDamageDetailRow = {
+    date: formatAutoRecordsDateForOutput(asString(o.date, 32)),
+    country: normalizeCountryNameLv(asString(o.country, 80)),
+    lossAmount: asString(o.lossAmount ?? o.amount, 64),
+    damagedSides: asString(o.damagedSides ?? o.sides, 120),
+    damageGroups: asString(o.damageGroups ?? o.groups, 200),
+  };
+  if (!row.date.trim() && !row.lossAmount.trim() && !row.damagedSides.trim()) return null;
+  return row;
+}
+
+function normalizeTimelineRow(raw: unknown): CarVerticalTimelineRow | null {
+  const o = asRecord(raw);
+  if (!o) return null;
+  const row: CarVerticalTimelineRow = {
+    date: formatAutoRecordsDateForOutput(asString(o.date, 32)),
+    country: normalizeCountryNameLv(asString(o.country, 80)),
+    description: asString(o.description, 240),
+  };
+  if (!row.date.trim() && !row.description.trim()) return null;
+  return row;
 }
 
 function normalizeIncidentRow(raw: unknown): LtabIncidentRow | null {
@@ -82,7 +130,7 @@ function dedupeServiceRows(rows: AutoRecordsServiceRow[]): AutoRecordsServiceRow
   const seen = new Set<string>();
   const out: AutoRecordsServiceRow[] = [];
   for (const r of rows) {
-    if (!autoRecordsRowHasData(r)) continue;
+    if (!autoRecordsMileageRowHasData(r)) continue;
     const key = `${r.date}|${r.odometer}|${r.country}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -115,6 +163,8 @@ JSON schema:
   "rawTextSnippet": "string — short representative excerpt (max 8000 chars)",
   "serviceHistory": [{"date":"DD.MM.YYYY","odometer":"digits","country":"string"}],
   "incidents": [{"csngDate":"DD.MM.YYYY","lossAmount":"e.g. 2930.00 €","incidentNo":"country name or ISO"}],
+  "damageDetails": [{"date":"DD.MM.YYYY","country":"string","lossAmount":"EUR range or amount","damagedSides":"string","damageGroups":"string"}],
+  "vehicleHistoryTimeline": [{"date":"DD.MM.YYYY","country":"string","description":"string"}],
   "pdfChecklist": {"incidents": boolean, "mileageHistory": boolean, "mileageLine": boolean},
   "comments": "string — see COMMENTS rules below"
 }
@@ -122,22 +172,68 @@ JSON schema:
 ${SOURCE_PDF_COMMENT_GEMINI_RULES}
 
 Rules:
-- serviceHistory: ALL chronological odometer readings (newest-first order in array is OK).
-- incidents: ALL damage/claim/accident rows with date + amount + country.
+- serviceHistory: ONLY rows with explicit odometer km digits (≥3 digits). If a timeline line has only year/date without km — do NOT add to serviceHistory.
+- incidents: ALL damage/claim/accident rows with date + amount + country (including insurance tables).
+- damageDetails: body damage sections (CarVertical „Virsbūves bojājums”, AutoDNA damage tables) — every event with date, country, loss/cost, affected sides/zones.
+- vehicleHistoryTimeline: non-mileage history events (registration, sale, inspection) when shown separately from odometer log.
 - pdfChecklist.incidents true if any accident/claim/damage mentioned; mileageHistory true if odometer history exists; mileageLine true if chart/curve looks consistent.
 - comments: factual context (damage zone text, dealer milestones, registration) AND anomalies per COMMENTS rules — never output only "no issues" when descriptive history exists.
 - Never invent VIN or plate; use only PDF content.`;
 
 const TARGET_USER: Record<HistoryVendorPdfTarget, string> = {
-  autodna: `TARGET: AutoDNA report.
-Extract: TRANSPORTLĪDZEKĻA VĒSTURE mileage rows (date, odometer km, country), registration/first-registration dates, computed average mileage, Status Center notes, damage/claim rows into incidents.
-In comments: list objective facts (e.g. first registration, dealer service at X km, body damage descriptions) and prefix true conflicts with ANOMĀLIJA:.`,
+  autodna: `TARGET: AutoDNA report (Latvian UI labels).
+CRITICAL terminology:
+- "TRANSPORTLĪDZEKĻA VĒSTURE" = odometer timeline → serviceHistory ONLY when km digits are shown next to the date.
+- "Transportlīdzekļa zaudējumu apjoms" / "Zaudējumu apjoms" = damage/insurance loss events → map EVERY row to incidents[] (csngDate, lossAmount EUR, incidentNo=country). Also mirror into damageDetails when sides/zones are listed.
+- Year-only lines in history without km are NOT mileage rows.
+Extract: first registration, Status Center, average mileage text into comments.`,
   carvertical: `TARGET: CarVertical report.
-Extract: full Odometer / mileage log into serviceHistory, claim events into incidents, damage count.
-In comments: include body damage zone descriptions (Virsbūves bojājums, affected sides), key mileage milestones, market hints if shown — not only problems.`,
+Extract: Odometer / mileage log → serviceHistory (km required per row), insurance claims → incidents, "Virsbūves bojājums" / damage sections → damageDetails (date, country, lossAmount, damagedSides, damageGroups), timeline events → vehicleHistoryTimeline.
+In comments: body damage zones, mileage milestones, market hints.`,
   ltab: `TARGET: LTAB / OCTA Latvia insurance report.
 Extract ONLY insurance accidents: each row needs csngDate, lossAmount (EUR), incidentNo as country. Put policy period / negadījumu skaits / reģ. nr. in comments as facts. serviceHistory may be empty array.`,
 };
+
+const CITI_AVOTI_USER = `TARGET: Foreign or uncommon vehicle history PDF (not AutoDNA/CarVertical/LTAB/Auto Records/CSDD).
+Read the document layout and map equivalent sections: odometer/mileage tables → serviceHistory (km required), accidents/claims/damage → incidents + damageDetails when body zones exist, other timeline → vehicleHistoryTimeline.
+Set vendorLabel in JSON root if the report issuer name is visible (footer/header).`;
+
+const CSDD_SYSTEM = `You are PROVIN.LV admin PDF extractor for CSDD Latvia vehicle registry printouts (e.csdd.lv style).
+Return ONLY valid JSON:
+{
+  "rawUnprocessedData": "string — full extract for admin raw field (max 120000 chars)",
+  "makeModel": "string",
+  "registrationNumber": "string",
+  "firstRegistration": "YYYY-MM-DD or DD.MM.YYYY",
+  "nextInspectionDate": "YYYY-MM-DD",
+  "prevInspectionDate": "YYYY-MM-DD",
+  "engineDisplacementCm3": "string",
+  "enginePowerKw": "string",
+  "fuelType": "string",
+  "emissionStandard": "string",
+  "grossMassKg": "string",
+  "curbMassKg": "string",
+  "roadTaxEur": "string",
+  "registrationStatus": "string",
+  "opacityCoefficient": "string",
+  "particulateMatter": "string",
+  "previousRegistrationCountry": "string",
+  "ownerCountLatvia": "string",
+  "mileageHistory": [{"date":"DD.MM.YYYY","odometer":"digits only","country":"Latvija or foreign"}],
+  "warnings": ["string"]
+}
+Rules:
+- mileageHistory: only rows with explicit odometer km (≥3 digits). Date+country without km → omit.
+- Preserve Latvian field labels context in rawUnprocessedData.`;
+
+const CLASSIFY_SYSTEM = `You classify a vehicle history PDF for PROVIN.LV admin routing.
+Return ONLY JSON: {"target":"autodna"|"carvertical"|"ltab"|"auto_records"|"csdd"|"citi_avoti","vendorLabel":"optional string"}
+- autodna: AutoDNA branding or TRANSPORTLĪDZEKĻA VĒSTURE / Transportlīdzekļa zaudējumu apjoms
+- carvertical: CarVertical branding, VIN report layout
+- ltab: LTAB / OCTA Latvia insurance
+- auto_records: auto-records.com ODOMETER CHECK
+- csdd: CSDD / e.csdd.lv registry printout
+- citi_avoti: any other issuer (HPI, national registry abroad, etc.) — set vendorLabel to issuer name if visible`;
 
 const AUTO_RECORDS_SYSTEM = `You are PROVIN.LV admin PDF extractor for auto-records.com dealer reports.
 Return ONLY valid JSON:
@@ -166,6 +262,18 @@ In comments: factual service timeline (e.g. dealer visit at km) and damage notes
 
 Also extract VEHICLE INFORMATION fields into vehicleInfo (VIN Code, Model, Series, Generation, Type code, Engine code, Steering side, Color, Interior, Transmission). If value is missing or shown as "-" then use empty string for that field.`;
 
+function parseDamageAndTimeline(payload: Record<string, unknown>) {
+  const damageDetails = (Array.isArray(payload.damageDetails) ? payload.damageDetails : [])
+    .map(normalizeDamageDetailRow)
+    .filter((r): r is CarVerticalDamageDetailRow => r !== null);
+  const vehicleHistoryTimeline = (
+    Array.isArray(payload.vehicleHistoryTimeline) ? payload.vehicleHistoryTimeline : []
+  )
+    .map(normalizeTimelineRow)
+    .filter((r): r is CarVerticalTimelineRow => r !== null);
+  return { damageDetails, vehicleHistoryTimeline };
+}
+
 function vendorResultFromGemini(
   target: HistoryVendorPdfTarget,
   payload: Record<string, unknown>,
@@ -181,6 +289,7 @@ function vendorResultFromGemini(
       .map(normalizeIncidentRow)
       .filter((r): r is LtabIncidentRow => r !== null),
   );
+  const { damageDetails, vehicleHistoryTimeline } = parseDamageAndTimeline(payload);
   const mileagePasteRaw = asString(payload.mileagePasteRaw, 24_000);
   const rawText = asString(payload.rawTextSnippet ?? payload.rawText, MAX_RAW);
   const comments = normalizeSourcePdfComment(asString(payload.comments, 800));
@@ -188,7 +297,11 @@ function vendorResultFromGemini(
 
   const base = parseHistoryVendorPdfText(target, rawText || mileagePasteRaw);
   const warnings = [...base.warnings];
-  if (serviceHistory.length === 0 && incidents.length === 0) {
+  if (
+    serviceHistory.length === 0 &&
+    incidents.length === 0 &&
+    damageDetails.length === 0
+  ) {
     warnings.push("Gemini neatrada strukturētas rindas — pārbaudi PDF manuāli.");
   } else {
     warnings.push(`Datu avots: Gemini PDF (${fileName}).`);
@@ -198,6 +311,15 @@ function vendorResultFromGemini(
     rawText: rawText || mileagePasteRaw || base.rawText,
     serviceHistory: serviceHistory.length > 0 ? serviceHistory : base.serviceHistory,
     incidents: incidents.length > 0 ? incidents : base.incidents,
+    ...(damageDetails.length > 0 || (base.damageDetails ?? []).length > 0
+      ? { damageDetails: damageDetails.length > 0 ? damageDetails : base.damageDetails }
+      : {}),
+    ...(vehicleHistoryTimeline.length > 0 || (base.vehicleHistoryTimeline ?? []).length > 0
+      ? {
+          vehicleHistoryTimeline:
+            vehicleHistoryTimeline.length > 0 ? vehicleHistoryTimeline : base.vehicleHistoryTimeline,
+        }
+      : {}),
     suggestedPdfChecklist: { ...base.suggestedPdfChecklist, ...suggestedPdfChecklist },
     suggestedComments: comments,
     warnings,
@@ -208,6 +330,62 @@ function vendorResultFromGemini(
       engine: "gemini_fallback",
       extractionMethod: "gemini",
     },
+  };
+}
+
+function csddResultFromGemini(payload: Record<string, unknown>, fileName: string): CsddPdfParseResult {
+  const rawUnprocessedData = asString(payload.rawUnprocessedData ?? payload.rawTextSnippet, MAX_RAW);
+  const parsed = parseCsddPaste(rawUnprocessedData);
+  let fields = applyCsddPasteToForm(emptyCsddFields(), rawUnprocessedData, parsed);
+
+  const strField = (key: keyof CsddFormFields, max = 200) => {
+    const v = asString(payload[key], max);
+    if (v) fields = { ...fields, [key]: v };
+  };
+  strField("makeModel", 120);
+  strField("registrationNumber", 32);
+  strField("firstRegistration", 32);
+  strField("nextInspectionDate", 32);
+  strField("prevInspectionDate", 32);
+  strField("engineDisplacementCm3", 32);
+  strField("enginePowerKw", 16);
+  strField("fuelType", 80);
+  strField("emissionStandard", 40);
+  strField("grossMassKg", 32);
+  strField("curbMassKg", 32);
+  strField("roadTaxEur", 32);
+  strField("registrationStatus", 80);
+  strField("opacityCoefficient", 32);
+  strField("particulateMatter", 80);
+  strField("previousRegistrationCountry", 80);
+  strField("ownerCountLatvia", 8);
+
+  const mileageFromGemini = dedupeServiceRows(
+    (Array.isArray(payload.mileageHistory) ? payload.mileageHistory : [])
+      .map(normalizeServiceRow)
+      .filter((r): r is AutoRecordsServiceRow => r !== null),
+  );
+  if (mileageFromGemini.length > 0) {
+    fields = {
+      ...fields,
+      mileageHistory: mileageFromGemini.map((r) => ({
+        date: r.date,
+        odometer: r.odometer,
+        country: r.country || "Latvija",
+      })),
+    };
+  }
+
+  const warnings = (Array.isArray(payload.warnings) ? payload.warnings : [])
+    .filter((w): w is string => typeof w === "string")
+    .slice(0, 6);
+  warnings.unshift(`Datu avots: Gemini PDF CSDD (${fileName}).`);
+
+  return {
+    rawUnprocessedData,
+    fields,
+    warnings,
+    meta: { charCount: rawUnprocessedData.length, engine: "gemini_fallback", extractionMethod: "gemini" },
   };
 }
 
@@ -278,8 +456,18 @@ function autoRecordsResultFromGemini(
   };
 }
 
+export function csddParseHasData(r: CsddPdfParseResult): boolean {
+  if (r.rawUnprocessedData.length > 120) return true;
+  const f = r.fields;
+  return Boolean(
+    f.makeModel.trim() ||
+      f.registrationNumber.trim() ||
+      f.mileageHistory.some((row) => row.date.trim() || row.odometer.trim()),
+  );
+}
+
 export function vendorParseHasData(r: HistoryVendorPdfParseResult): boolean {
-  if (r.serviceHistory.some(autoRecordsRowHasData)) return true;
+  if (r.serviceHistory.some(autoRecordsMileageRowHasData)) return true;
   if (r.incidents.some(ltabRowHasData)) return true;
   if ((r.vehicleHistoryTimeline ?? []).some((row) => row.date.trim() || row.description.trim())) return true;
   if ((r.damageDetails ?? []).some((row) => row.date.trim() || row.lossAmount.trim())) return true;
@@ -287,7 +475,61 @@ export function vendorParseHasData(r: HistoryVendorPdfParseResult): boolean {
 }
 
 export function autoRecordsParseHasData(r: AutoRecordsPdfParseResult): boolean {
-  return r.serviceHistory.some(autoRecordsRowHasData) || r.rawUnprocessedData.length > 80;
+  return r.serviceHistory.some(autoRecordsMileageRowHasData) || r.rawUnprocessedData.length > 80;
+}
+
+const VALID_CLASSIFY_TARGETS = new Set<SourcePdfIngestTarget>([
+  "autodna",
+  "carvertical",
+  "ltab",
+  "auto_records",
+  "csdd",
+  "citi_avoti",
+]);
+
+/** Gemini klasificē avotu pēc PDF satura (kad nosaukums nav pietiekams). */
+export async function classifyPdfIngestTargetWithGemini(opts: {
+  buffer: ArrayBuffer;
+  fileName: string;
+  textHint?: string;
+}): Promise<PdfClassifyResult> {
+  const { buffer, fileName, textHint } = opts;
+  if (buffer.byteLength > PDF_GEMINI_INLINE_MAX_BYTES) {
+    return { target: "citi_avoti", label: fileName.replace(/\.pdf$/i, "") };
+  }
+  const extraParts: GeminiUserPart[] = [
+    {
+      inlineData: { mimeType: "application/pdf", data: bufferToBase64(buffer) },
+    },
+    { text: `[PDF document: ${fileName}]` },
+  ];
+  const textSection =
+    textHint && textHint.trim().length > 0
+      ? `\n\nText extract:\n${textHint.trim().slice(0, 40_000)}`
+      : "";
+  try {
+    const raw = await geminiGenerateJsonText({
+      model: GEMINI_MODEL_PRO,
+      systemInstruction: CLASSIFY_SYSTEM,
+      extraParts,
+      userPrompt: `Classify this PDF.${textSection}`,
+      temperature: 0,
+    });
+    const payload = asRecord(JSON.parse(raw));
+    const targetRaw = asString(payload?.target, 32).toLowerCase();
+    const target = VALID_CLASSIFY_TARGETS.has(targetRaw as SourcePdfIngestTarget)
+      ? (targetRaw as SourcePdfIngestTarget)
+      : "citi_avoti";
+    const label = asString(payload?.vendorLabel, 80);
+    console.info(`${LOG_PREFIX} classify_ok`, { fileName, target, label });
+    return { target, ...(label ? { label } : {}) };
+  } catch (e) {
+    console.warn(`${LOG_PREFIX} classify_failed`, {
+      fileName,
+      msg: e instanceof Error ? e.message : String(e),
+    });
+    return { target: "citi_avoti", label: fileName.replace(/\.pdf$/i, "") };
+  }
 }
 
 export async function extractSourcePdfWithGemini(opts: {
@@ -295,7 +537,7 @@ export async function extractSourcePdfWithGemini(opts: {
   buffer: ArrayBuffer;
   fileName: string;
   textHint?: string;
-}): Promise<HistoryVendorPdfParseResult | AutoRecordsPdfParseResult> {
+}): Promise<HistoryVendorPdfParseResult | AutoRecordsPdfParseResult | CsddPdfParseResult> {
   const { target, buffer, fileName, textHint } = opts;
   if (buffer.byteLength > PDF_GEMINI_INLINE_MAX_BYTES) {
     throw new Error("pdf_too_large_for_gemini");
@@ -316,6 +558,25 @@ export async function extractSourcePdfWithGemini(opts: {
       ? `\n\nPartial text layer extract (may be incomplete):\n${textHint.trim().slice(0, 60_000)}`
       : "\n\nNo usable text layer — read the PDF binary attachment.";
 
+  if (target === "csdd") {
+    const raw = await geminiGenerateJsonText({
+      model: GEMINI_MODEL_PRO,
+      systemInstruction: CSDD_SYSTEM,
+      extraParts,
+      userPrompt: `Extract CSDD registry fields from this PDF.${textSection}`,
+      temperature: 0.1,
+    });
+    let payload: Record<string, unknown> | null;
+    try {
+      payload = asRecord(JSON.parse(raw));
+    } catch {
+      throw new Error("gemini_invalid_json");
+    }
+    if (!payload) throw new Error("gemini_invalid_json");
+    console.info(`${LOG_PREFIX} csdd_ok`, { fileName });
+    return csddResultFromGemini(payload, fileName);
+  }
+
   if (target === "auto_records") {
     const raw = await geminiGenerateJsonText({
       model: GEMINI_MODEL_PRO,
@@ -335,12 +596,17 @@ export async function extractSourcePdfWithGemini(opts: {
     return autoRecordsResultFromGemini(payload, fileName);
   }
 
-  const vendorTarget = target as HistoryVendorPdfTarget;
+  const vendorTarget: HistoryVendorPdfTarget =
+    target === "citi_avoti" ? "autodna" : (target as HistoryVendorPdfTarget);
+  const userIntro =
+    target === "citi_avoti"
+      ? `${CITI_AVOTI_USER}\nFile name hint: ${fileName}`
+      : TARGET_USER[vendorTarget];
   const raw = await geminiGenerateJsonText({
     model: GEMINI_MODEL_PRO,
     systemInstruction: VENDOR_SYSTEM,
     extraParts,
-    userPrompt: `${TARGET_USER[vendorTarget]}\n\nExtract all fields.${textSection}`,
+    userPrompt: `${userIntro}\n\nExtract all fields.${textSection}`,
     temperature: 0.1,
   });
   let payload: Record<string, unknown> | null;
@@ -352,9 +618,10 @@ export async function extractSourcePdfWithGemini(opts: {
   if (!payload) throw new Error("gemini_invalid_json");
   console.info(`${LOG_PREFIX} vendor_ok`, {
     fileName,
-    target: vendorTarget,
+    target,
     mileage: Array.isArray(payload.serviceHistory) ? payload.serviceHistory.length : 0,
     incidents: Array.isArray(payload.incidents) ? payload.incidents.length : 0,
+    damage: Array.isArray(payload.damageDetails) ? payload.damageDetails.length : 0,
   });
   return vendorResultFromGemini(vendorTarget, payload, fileName);
 }

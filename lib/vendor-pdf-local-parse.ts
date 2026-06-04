@@ -5,6 +5,7 @@ import type { LtabIncidentRow, SourcePdfChecklist } from "@/lib/admin-source-blo
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
 import {
+  autoRecordsMileageRowHasData,
   autoRecordsRowHasData,
   formatAutoRecordsDateForOutput,
   normalizeAutoRecordsOdometer,
@@ -198,7 +199,7 @@ export function parseVendorPdfLocal(
     if (statusNote) factualMeta.push(statusNote);
   }
 
-  serviceHistory = sortAutoRecordsDescending(serviceHistory.filter(autoRecordsRowHasData));
+  serviceHistory = sortAutoRecordsDescending(serviceHistory.filter(autoRecordsMileageRowHasData));
 
   const claims = extractClaimRowsForPdfInsight(trimmed, 1);
   let incidents =

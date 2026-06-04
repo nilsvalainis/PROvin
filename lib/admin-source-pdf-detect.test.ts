@@ -14,7 +14,11 @@ describe("detectSourcePdfIngestTarget", () => {
     expect(detectSourcePdfIngestTarget("LTAB_OCTA_abc.pdf", "")).toBe("ltab");
   });
 
-  it("returns null for unknown", () => {
-    expect(detectSourcePdfIngestTarget("random.pdf", "some text")).toBeNull();
+  it("detects CSDD from text", () => {
+    expect(detectSourcePdfIngestTarget("report.pdf", "CSDD reģistrācijas dati e.csdd.lv")).toBe("csdd");
+  });
+
+  it("returns null for unknown without vendor hints", () => {
+    expect(detectSourcePdfIngestTarget("random.pdf", "some generic text")).toBeNull();
   });
 });
