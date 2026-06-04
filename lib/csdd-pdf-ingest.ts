@@ -43,6 +43,70 @@ export function csddPdfTextLayerUsable(text: string): boolean {
   return isLikelyStructuredCsddPaste(t);
 }
 
+/** Lokālais parsers no jebkura CSDD teksta (PDF slānis vai apvienots raw). */
+export function buildCsddLocalParseFromText(text: string, fileName: string): CsddPdfParseResult {
+  const { fields, rawUnprocessedData } = buildCsddFieldsFromPdfSources({
+    textHint: text,
+    geminiRaw: "",
+  });
+  return {
+    rawUnprocessedData,
+    fields,
+    warnings: [`Datu avots: lokālais CSDD parsers (${fileName}).`],
+    meta: {
+      charCount: rawUnprocessedData.length,
+      engine: "local_parser",
+      extractionMethod: "text_layer",
+    },
+  };
+}
+
+function countMileageRows(fields: CsddFormFields): number {
+  return fields.mileageHistory.filter((r) => r.odometer.trim()).length;
+}
+
+function countPrevDefects(fields: CsddFormFields): number {
+  return fields.prevInspectionBlock.defects?.length ?? 0;
+}
+
+function countTaDefectsInFields(fields: CsddFormFields): number {
+  return (fields.technicalInspectionHistory ?? []).reduce(
+    (n, r) => n + (r.defects?.length ?? 0),
+    0,
+  );
+}
+
+/** Apvieno divus lokāli parsētus laukus — ņem pilnākos masīvus. */
+export function pickRicherCsddFields(primary: CsddFormFields, secondary: CsddFormFields): CsddFormFields {
+  const mileage =
+    countMileageRows(secondary) > countMileageRows(primary)
+      ? secondary.mileageHistory
+      : primary.mileageHistory;
+  const ta =
+    countTaDefectsInFields(secondary) > countTaDefectsInFields(primary)
+      ? secondary.technicalInspectionHistory
+      : primary.technicalInspectionHistory;
+  const prev =
+    countPrevDefects(secondary) > countPrevDefects(primary)
+      ? secondary.prevInspectionBlock
+      : previousInspectionBlockHasData(secondary.prevInspectionBlock)
+        ? secondary.prevInspectionBlock
+        : primary.prevInspectionBlock;
+
+  return {
+    ...primary,
+    ...secondary,
+    mileageHistory: mileage.length > 0 ? mileage : primary.mileageHistory,
+    technicalInspectionHistory:
+      ta.length > 0 ? ta : primary.technicalInspectionHistory,
+    prevInspectionBlock: prev,
+    registrationNumber: secondary.registrationNumber.trim() || primary.registrationNumber,
+    ownerCountLatvia: secondary.ownerCountLatvia.trim() || primary.ownerCountLatvia,
+    previousRegistrationCountry:
+      secondary.previousRegistrationCountry.trim() || primary.previousRegistrationCountry,
+  };
+}
+
 /** Ātra CSDD forma tikai no PDF teksta slāņa (bez Gemini). */
 export function buildCsddPdfParseResultFromTextLayer(
   text: string,

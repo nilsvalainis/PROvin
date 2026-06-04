@@ -8,7 +8,11 @@ import {
   type CsddFormFields,
   type CsddMileageRow,
 } from "@/lib/admin-source-blocks";
-import type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
+import {
+  buildCsddFieldsFromPdfSources,
+  pickRicherCsddFields,
+  type CsddPdfParseResult,
+} from "@/lib/csdd-pdf-ingest";
 import {
   lvDateToIsoFlexible,
   previousInspectionBlockHasData,
@@ -113,7 +117,8 @@ export const CSDD_GEMINI_STRUCTURED_SYSTEM = `You extract CSDD Latvia vehicle re
 
 CRITICAL RULES:
 - registracijasNumurs: ONLY the license plate (e.g. KG982). Never append "Statuss", "Reģistrācijas", or other labels.
-- nobraukumaVesture: EVERY row from "Nobraukuma vēsture" — each odometer reading with its date. Never leave empty if the section exists.
+- nobraukumaVesture: EVERY row from "Nobraukuma vēsture" — format often "274516 - 16.12.2025" (km then date). Never leave empty if the section exists.
+- ieprieksejasApskatesDatums / truukumi: from "Iepriekšējās apskates dati" OR "Detalizētais vērtējums" under "Pēdējā tehniskā apskate" — all Kods rows.
 - tehniskoApskasuVesture: Group EVERY defect code under the correct inspection date. Copy full apraksts text next to each kods.
 - NEVER invent the phrase "Nav reģistrētu trūkumu vai bojājumu" unless that is the ONLY text in the PDF for that inspection with zero kods rows.
 - If defect table has rows like 5.3.4. / 3.2. — you MUST output them in truukumi[].
@@ -327,47 +332,20 @@ export function mergeCsddPdfParseResults(
     textHint,
     gemini.rawUnprocessedData || asString(gemini.fields.rawUnprocessedData, 120_000),
   );
-  const base = gemini.fields;
-  const loc = local?.fields;
-
-  if (!loc) {
-    return {
-      ...gemini,
-      rawUnprocessedData: combinedRaw,
-      fields: { ...base, rawUnprocessedData: combinedRaw.slice(0, 500_000) },
-    };
-  }
-
-  const mileage =
-    base.mileageHistory.filter((r) => r.odometer.trim()).length >=
-    loc.mileageHistory.filter((r) => r.odometer.trim()).length
-      ? base.mileageHistory
-      : loc.mileageHistory;
-
-  const ta =
-    countTaDefects(base.technicalInspectionHistory) >= countTaDefects(loc.technicalInspectionHistory)
-      ? base.technicalInspectionHistory
-      : loc.technicalInspectionHistory;
-
+  const { fields: reparsed } = buildCsddFieldsFromPdfSources({ textHint: combinedRaw });
+  let merged = reparsed;
+  if (local?.fields) merged = pickRicherCsddFields(merged, local.fields);
+  merged = pickRicherCsddFields(merged, gemini.fields);
   const reg = sanitizeCsddRegistrationNumber(
-    base.registrationNumber.trim() || loc.registrationNumber,
+    gemini.fields.registrationNumber.trim() || merged.registrationNumber,
   );
 
   return {
     rawUnprocessedData: combinedRaw,
     fields: {
-      ...loc,
-      ...base,
+      ...merged,
       registrationNumber: reg,
-      mileageHistory: mileage.length > 0 ? mileage : loc.mileageHistory,
-      technicalInspectionHistory: ta.length > 0 ? ta : loc.technicalInspectionHistory,
-      prevInspectionBlock: previousInspectionBlockHasData(base.prevInspectionBlock)
-        ? base.prevInspectionBlock
-        : loc.prevInspectionBlock,
       rawUnprocessedData: combinedRaw.slice(0, 500_000),
-      ownerCountLatvia: base.ownerCountLatvia.trim() || loc.ownerCountLatvia,
-      previousRegistrationCountry:
-        base.previousRegistrationCountry.trim() || loc.previousRegistrationCountry,
     },
     warnings: [...gemini.warnings, ...(local?.warnings ?? [])].slice(0, 8),
     meta: {

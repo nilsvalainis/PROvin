@@ -3,6 +3,7 @@
  */
 import type { LtabIncidentRow, SourcePdfChecklist } from "@/lib/admin-source-blocks";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
+import { parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
 import {
   autoRecordsMileageRowHasData,
@@ -65,6 +66,7 @@ export function detectVendorPdfStructure(target: HistoryVendorPdfTarget, text: s
 
   if (target === "autodna") {
     if (/TRANSPORTLĪDZEKĻA\s+VĒSTURE/i.test(t)) markers.push("transportlidzekla_vesture");
+    if (/Transportlīdzekļa\s+zaudējumu\s+apjoms|Zaudējumu\s+apjoms/i.test(t)) markers.push("zaudējumu_apjoms");
     if (/Pirm[āa]s\s+re[gģ]istr[aā]cijas\s+datums/i.test(t)) markers.push("pirmas_registracijas");
     if (/autodna|auto\s*dna/i.test(t)) markers.push("autodna_brand");
     if (/Odometra\s+rād[īi]jums/i.test(t)) markers.push("odometrs");
@@ -202,10 +204,13 @@ export function parseVendorPdfLocal(
   serviceHistory = sortAutoRecordsDescending(serviceHistory.filter(autoRecordsMileageRowHasData));
 
   const claims = extractClaimRowsForPdfInsight(trimmed, 1);
+  const autodnaDamage = target === "autodna" ? parseAutodnaDamageEvents(trimmed) : [];
   let incidents =
     target === "carvertical" && carverticalIncidents.length > 0
       ? carverticalIncidents
-      : claimRowsToLtabRows(claims);
+      : autodnaDamage.length > 0
+        ? autodnaDamage
+        : claimRowsToLtabRows(claims);
 
   if (target === "ltab") {
     incidents = dedupeLtab(incidents);

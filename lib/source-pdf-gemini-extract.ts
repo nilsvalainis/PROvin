@@ -177,7 +177,7 @@ const TARGET_USER: Record<HistoryVendorPdfTarget, string> = {
   autodna: `TARGET: AutoDNA report (Latvian UI labels).
 CRITICAL terminology:
 - "TRANSPORTLĪDZEKĻA VĒSTURE" = odometer timeline → serviceHistory ONLY when km digits are shown next to the date.
-- "Transportlīdzekļa zaudējumu apjoms" / "Zaudējumu apjoms" = damage/insurance loss events → map EVERY row to incidents[] (csngDate, lossAmount EUR, incidentNo=country). Also mirror into damageDetails when sides/zones are listed.
+- "Transportlīdzekļa zaudējumu apjoms" / "Zaudējumu apjoms" = damage/insurance loss events → map EVERY row to incidents[] (csngDate as MM.YYYY timeline date, lossAmount as full EUR range e.g. "300 - 400 EUR" or "40 000 - 41 000 EUR", incidentNo=country from "Valsts …"). Also mirror into damageDetails when sides/zones are listed.
 - Year-only lines in history without km are NOT mileage rows.
 Extract: first registration, Status Center, average mileage text into comments.`,
   carvertical: `TARGET: CarVertical report.

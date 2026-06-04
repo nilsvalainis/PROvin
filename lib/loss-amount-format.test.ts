@@ -14,4 +14,9 @@ describe("normalizeLossAmountEurDisplay", () => {
   it("returns empty for non-numeric", () => {
     expect(normalizeLossAmountEurDisplay("nav datu")).toBe("");
   });
+
+  it("formats EUR ranges", () => {
+    expect(normalizeLossAmountEurDisplay("300 - 400 EUR")).toBe("300 - 400 €");
+    expect(normalizeLossAmountEurDisplay("40 000 - 41 000 EUR")).toBe("40 000 - 41 000 €");
+  });
 });

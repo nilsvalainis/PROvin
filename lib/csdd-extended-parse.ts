@@ -295,7 +295,13 @@ export function parseDetailedRatingBlockFromRaw(raw: string): CsddPreviousInspec
   block.nextInspectionDateText = "";
   const dateFromMileage = block.odometer ? findMileageDateForOdometer(raw, block.odometer) : "";
   const headTa = parseLastTechnicalInspectionHead(raw);
-  block.inspectionDateText = dateFromMileage || headTa?.date || "";
+  block.inspectionDateText = dateFromMileage || headTa?.date || block.inspectionDateText;
+  if (headTa?.odometer && !block.odometer.trim()) block.odometer = headTa.odometer;
+  if (headTa?.ratingLabel && !block.ratingLabel.trim()) {
+    block.ratingLabel = headTa.ratingLabel;
+    const rm = headTa.ratingLabel.match(/^(\d)/);
+    if (rm) block.ratingLevel = toRatingLevel(Number.parseInt(rm[1]!, 10));
+  }
 
   return block;
 }

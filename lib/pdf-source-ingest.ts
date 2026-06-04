@@ -8,6 +8,7 @@ import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import { extractPdfTextDetailed, type PdfExtractResult } from "@/lib/pdf-text-extract-server";
 import {
+  buildCsddLocalParseFromText,
   buildCsddPdfParseResultFromTextLayer,
   csddPdfTextLayerUsable,
   type CsddPdfParseResult,
@@ -16,6 +17,8 @@ import {
   extractCsddPdfWithGeminiStructured,
   mergeCsddPdfParseResults,
 } from "@/lib/csdd-gemini-structured";
+import { parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
+import { ltabRowHasData } from "@/lib/admin-source-blocks";
 import {
   autoRecordsParseHasData,
   csddParseHasData,
@@ -101,12 +104,20 @@ function enrichAutodnaGeminiResult(
   const hint = textHint.trim();
   if (!hint) return result;
   const local = parseHistoryVendorPdfText("autodna", hint);
+  const damageLocal = parseAutodnaDamageEvents(hint);
+  const incidents =
+    result.incidents.filter(ltabRowHasData).length >= damageLocal.length &&
+    result.incidents.filter(ltabRowHasData).length >= local.incidents.filter(ltabRowHasData).length
+      ? result.incidents
+      : damageLocal.length > 0
+        ? damageLocal
+        : local.incidents;
   return {
     ...result,
     ...(result.serviceHistory.length === 0 && local.serviceHistory.length > 0
       ? { serviceHistory: local.serviceHistory }
       : {}),
-    ...(result.incidents.length === 0 && local.incidents.length > 0 ? { incidents: local.incidents } : {}),
+    incidents,
     ...(local.damageDetails?.length && !(result.damageDetails ?? []).length
       ? { damageDetails: local.damageDetails }
       : {}),
@@ -241,7 +252,9 @@ export async function ingestSourcePdfFile(opts: {
   }
 
   if (target === "csdd") {
-    const localCsdd = buildCsddPdfParseResultFromTextLayer(text, fileName);
+    const localCsdd =
+      buildCsddPdfParseResultFromTextLayer(text, fileName) ??
+      (text.trim().length >= 200 ? buildCsddLocalParseFromText(text, fileName) : null);
     if (preferGemini && getGeminiApiKeyFromEnv()) {
       try {
         const structured = await extractCsddPdfWithGeminiStructured({

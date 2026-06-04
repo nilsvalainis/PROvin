@@ -7,6 +7,11 @@ import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 function parseLossEurWholeAmount(raw: string): number | null {
   const t = raw.trim().replace(/EUR|€/gi, "").trim();
   if (!t || !/\d/.test(t)) return null;
+  const rangeOnly = t.match(/^([\d\s.]+)\s*[-–—]\s*([\d\s.]+)$/);
+  if (rangeOnly) {
+    const hi = Number.parseInt(rangeOnly[2]!.replace(/[\s.]/g, ""), 10);
+    return Number.isNaN(hi) ? null : hi;
+  }
   const commaCents = t.match(/^([\d\s.]+),(\d{1,2})$/);
   if (commaCents) {
     const whole = Number.parseInt(commaCents[1]!.replace(/[\s.]/g, ""), 10);
@@ -21,13 +26,25 @@ function parseLossEurWholeAmount(raw: string): number | null {
   return n > 0 || /0/.test(t) ? n : null;
 }
 
-/** Formatē summu kā „1 234 €” vai tukšu, ja nav ciparu. */
+function formatEurGrouped(n: number): string {
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+/** Formatē summu kā „1 234 €” vai diapazonu „300 - 400 €”. */
 export function normalizeLossAmountEurDisplay(raw: string): string {
+  const t = raw.trim().replace(/EUR|€/gi, "").trim();
+  const range = t.match(/^([\d\s.]+)\s*[-–—]\s*([\d\s.]+)$/);
+  if (range) {
+    const lo = Number.parseInt(range[1]!.replace(/[\s.]/g, ""), 10);
+    const hi = Number.parseInt(range[2]!.replace(/[\s.]/g, ""), 10);
+    if (!Number.isNaN(lo) && !Number.isNaN(hi) && lo > 0 && hi > 0) {
+      return `${formatEurGrouped(lo)} - ${formatEurGrouped(hi)} €`;
+    }
+  }
   const n = parseLossEurWholeAmount(raw);
   if (n == null) return "";
   if (n <= 0) return "0 €";
-  const grouped = n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-  return `${grouped} €`;
+  return `${formatEurGrouped(n)} €`;
 }
 
 export function normalizeLtabIncidentRow(row: LtabIncidentRow): LtabIncidentRow {

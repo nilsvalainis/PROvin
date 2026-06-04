@@ -4,6 +4,7 @@
 import type { LtabIncidentRow, SourcePdfChecklist } from "@/lib/admin-source-blocks";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
 import type { CarVerticalDamageDetailRow, CarVerticalTimelineRow } from "@/lib/carvertical-pdf-parse";
+import { parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
 import {
   autoRecordsMileageRowHasData,
@@ -140,7 +141,9 @@ export function parseHistoryVendorPdfText(
   serviceHistory = sortAutoRecordsDescending(serviceHistory.filter(autoRecordsMileageRowHasData));
 
   const claims = extractClaimRowsForPdfInsight(trimmed, 1);
-  const incidents = claimRowsToLtabRows(claims);
+  const autodnaDamage = target === "autodna" ? parseAutodnaDamageEvents(trimmed) : [];
+  const incidents =
+    autodnaDamage.length > 0 ? autodnaDamage : claimRowsToLtabRows(claims);
 
   if (target === "ltab" && incidents.length === 0) {
     warnings.push("LTAB negadījumu rindas (datums + EUR) netika atrastas — teksts saglabāts RAW laukā.");

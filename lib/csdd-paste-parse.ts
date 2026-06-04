@@ -11,6 +11,7 @@ import {
   type CsddFormFields,
   type CsddMileageRow,
 } from "@/lib/admin-source-blocks";
+import { parseCsddMileagePairsDense } from "@/lib/csdd-mileage-dense-parse";
 import {
   parseOwnerRegistrationFromRaw,
   parseDetailedRatingBlockFromRaw,
@@ -436,10 +437,13 @@ function extractPrevInspectionIsoFromLvFirstRow(raw: string): string | null {
 
 export function parseCsddPaste(raw: string): CsddPasteParseResult {
   const fromLvBlock = parseMileageHistoryLvBlock(raw);
-  const lvRecords: CsddMileageRow[] = fromLvBlock.map((row) => ({
+  const fromDense = parseCsddMileagePairsDense(raw);
+  const lvSource =
+    fromLvBlock.length >= fromDense.length ? fromLvBlock : fromDense.length > 0 ? fromDense : fromLvBlock;
+  const lvRecords: CsddMileageRow[] = lvSource.map((row) => ({
     date: row.date,
     odometer: row.odometer,
-    country: CSDD_MILEAGE_COUNTRY_LV,
+    country: row.country?.trim() || CSDD_MILEAGE_COUNTRY_LV,
   }));
   const foreignRecords = parseMileageAbroadBlock(raw);
   const totalMileage = [...lvRecords, ...foreignRecords];
