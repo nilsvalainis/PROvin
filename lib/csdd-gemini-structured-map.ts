@@ -12,6 +12,7 @@ import type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
 import {
   emptyCsddPreviousInspectionBlock,
   lvDateToIsoFlexible,
+  normalizeCsddRawText,
   previousInspectionBlockHasData,
   type CsddInspectionDefectRow,
   type CsddPreviousInspectionBlock,
@@ -72,6 +73,32 @@ export const CSDD_GEMINI_RESPONSE_SCHEMA: GeminiJsonSchema = {
         required: ["datums", "odometrs"],
       },
     },
+    ieprieksejasApskatesDati: {
+      type: SchemaType.OBJECT,
+      description:
+        "Iepriekšējās apskates dati / Pēdējā tehniskā apskate + Detalizētais vērtējums — obligāti visi kodi",
+      properties: {
+        datums: { type: SchemaType.STRING },
+        parbaudesVeids: { type: SchemaType.STRING },
+        odometrs: { type: SchemaType.INTEGER },
+        vertesanasLimeklis: { type: SchemaType.STRING },
+        vertesanasSkaitlis: { type: SchemaType.INTEGER },
+        dumannibasKoeficients: { type: SchemaType.STRING },
+        piezimes: { type: SchemaType.STRING },
+        truukumi: {
+          type: SchemaType.ARRAY,
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              kods: { type: SchemaType.STRING },
+              vertesanas: { type: SchemaType.INTEGER },
+              apraksts: { type: SchemaType.STRING },
+            },
+            required: ["kods", "apraksts"],
+          },
+        },
+      },
+    },
     tehniskoApskasuVesture: {
       type: SchemaType.ARRAY,
       description: "Katra apskate ar visiem defektu kodiem — NEģenerēt 'Nav reģistrētu trūkumu' ja ir kodi",
@@ -110,17 +137,39 @@ export const CSDD_GEMINI_RESPONSE_SCHEMA: GeminiJsonSchema = {
 };
 
 export const CSDD_GEMINI_STRUCTURED_SYSTEM = `You extract CSDD Latvia vehicle registry PDF (e.csdd.lv) into the JSON schema.
-The attached PDF is the ONLY authoritative source. Optional text hints may be incomplete — read tables and layout from the PDF.
+The attached PDF is the ONLY authoritative source. Read ALL pages including multi-page "Tehnisko apskašu vēsture".
 
 CRITICAL RULES:
 - registracijasNumurs: ONLY the license plate (e.g. KG982). Never append "Statuss", "Reģistrācijas", or other labels.
-- nobraukumaVesture: EVERY row from "Nobraukuma vēsture" — format often "274516 - 16.12.2025" (km then date). Never leave empty if the section exists.
-- ieprieksejasApskatesDati: fill from "Iepriekšējās apskates dati" OR "Pēdējā tehniskā apskate" + "Detalizētais vērtējums" — all defect codes in truukumi[].
-- tehniskoApskasuVesture: Group EVERY defect code under the correct inspection date. Copy full apraksts text next to each kods.
-- NEVER invent the phrase "Nav reģistrētu trūkumu vai bojājumu" unless that is the ONLY text in the PDF for that inspection with zero kods rows.
-- If defect table has rows like 5.3.4. / 3.2. — you MUST output them in truukumi[].
-- Dates: prefer DD.MM.YYYY in output strings; ISO also accepted.
-- valsts: use "LV" or "Latvija" for Latvia mileage rows.`;
+- nobraukumaVesture: EVERY row from "Nobraukuma vēsture" — format often "274516 - 16.12.2025" (km then date).
+- ieprieksejasApskatesDati: section "Iepriekšējās apskates dati" OR current TA from "Pēdējā tehniskā apskate" + defect table under "Detalizētais vērtējums".
+- tehniskoApskasuVesture: EVERY historical block starting with "Apskates datums" in "Tehnisko apskašu vēsture" (often pages 3–6). One JSON object per inspection date.
+- For EACH inspection: copy EVERY row from columns Kods / Novērtējums / Trūkumi vai bojājumi into truukumi[] (codes like 5.3.4., 3.2., 503, 618).
+- NEVER output "Nav reģistrētu trūkumu vai bojājumu" when the table lists concrete codes.
+- Include inspection with rating 1 or 2 even when many defects — do not skip older years.
+- Dates: DD.MM.YYYY. valsts for mileage: LV or Latvija.`;
+
+/** Otrais izsaukums, ja pilnajā shēmā TA palika tukša (garš PDF). */
+export const CSDD_TA_GEMINI_RESPONSE_SCHEMA: GeminiJsonSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    ieprieksejasApskatesDati: (CSDD_GEMINI_RESPONSE_SCHEMA as { properties?: Record<string, unknown> })
+      .properties?.ieprieksejasApskatesDati as GeminiJsonSchema,
+    tehniskoApskasuVesture: (CSDD_GEMINI_RESPONSE_SCHEMA as { properties?: Record<string, unknown> })
+      .properties?.tehniskoApskasuVesture as GeminiJsonSchema,
+  },
+  required: ["tehniskoApskasuVesture"],
+};
+
+export const CSDD_TA_GEMINI_STRUCTURED_SYSTEM = `You extract ONLY technical inspection (TA) data from a CSDD Latvia vehicle PDF.
+
+MANDATORY:
+1) ieprieksejasApskatesDati — from "Iepriekšējās apskates dati" OR "Detalizētais vērtējums" under current "Pēdējā tehniskā apskate".
+2) tehniskoApskasuVesture — EVERY block in "Tehnisko apskašu vēsture" with header "Apskates datums DD.MM.YYYY".
+
+For each inspection block extract: parbaudesVeids, vertesanasLimeklis, vertesanasSkaitlis, dumannibasKoeficients, piezimes, and ALL truukumi[] rows (kods, vertesanas 1-3, full apraksts text).
+
+Codes may be dotted (5.3.4.) or plain (503, 618). Never skip defects. Never invent "Nav reģistrētu trūkumu" when codes exist.`;
 
 function asRecord(v: unknown): Record<string, unknown> | null {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
@@ -201,6 +250,14 @@ function mapDefectRow(raw: unknown): CsddInspectionDefectRow | null {
   };
 }
 
+function sortTechnicalInspectionRows(rows: CsddTechnicalInspectionRow[]): CsddTechnicalInspectionRow[] {
+  return [...rows].sort((a, b) => {
+    const ta = Date.parse(dateToIsoInput(b.date) || b.date);
+    const tb = Date.parse(dateToIsoInput(a.date) || a.date);
+    return (Number.isNaN(ta) ? 0 : ta) - (Number.isNaN(tb) ? 0 : tb);
+  });
+}
+
 function mapTechnicalInspectionRows(raw: unknown): CsddTechnicalInspectionRow[] {
   if (!Array.isArray(raw)) return [];
   const out: CsddTechnicalInspectionRow[] = [];
@@ -234,7 +291,37 @@ function mapTechnicalInspectionRows(raw: unknown): CsddTechnicalInspectionRow[] 
       defects,
     });
   }
-  return out.filter((r) => r.date.trim());
+  return sortTechnicalInspectionRows(out.filter((r) => r.date.trim()));
+}
+
+/** Normalizē alternatīvus JSON atslēgas nosaukumus (reti no modeļa). */
+export function normalizeStructuredGeminiPayload(
+  payload: Record<string, unknown>,
+): Record<string, unknown> {
+  const out = { ...payload };
+  if (!out.tehniskoApskasuVesture && Array.isArray(payload.technicalInspectionHistory)) {
+    out.tehniskoApskasuVesture = payload.technicalInspectionHistory;
+  }
+  if (!out.ieprieksejasApskatesDati && payload.previousInspectionData) {
+    out.ieprieksejasApskatesDati = payload.previousInspectionData;
+  }
+  if (!out.nobraukumaVesture && Array.isArray(payload.mileageHistory)) {
+    out.nobraukumaVesture = payload.mileageHistory;
+  }
+  if (!out.pamataDati && payload.basicData) {
+    out.pamataDati = payload.basicData;
+  }
+  return out;
+}
+
+/** Teksta hints — tikai TA sadaļas otrajam Gemini izsaukumam. */
+export function extractTaSectionTextHint(raw: string): string {
+  const text = normalizeCsddRawText(raw);
+  const idx = text.search(
+    /Tehnisko\s+apska[šs]u\s+vēsture|Iepriekšējās\s+apskates\s+dati|Detalizētais\s+vērtējums|Pēdējā\s+tehniskā\s+apskate/i,
+  );
+  if (idx < 0) return text.slice(0, 80_000);
+  return text.slice(idx, idx + 100_000);
 }
 
 function mapMileageRows(raw: unknown): CsddMileageRow[] {
@@ -283,15 +370,16 @@ export function csddFieldsFromStructuredGeminiPayload(
   payload: Record<string, unknown>,
   combinedRaw: string,
 ): CsddFormFields {
-  const pam = asRecord(payload.pamataDati) ?? {};
-  const ta = mapTechnicalInspectionRows(payload.tehniskoApskasuVesture);
-  const mileage = mapMileageRows(payload.nobraukumaVesture);
+  const normalized = normalizeStructuredGeminiPayload(payload);
+  const pam = asRecord(normalized.pamataDati) ?? {};
+  const ta = mapTechnicalInspectionRows(normalized.tehniskoApskasuVesture);
+  const mileage = mapMileageRows(normalized.nobraukumaVesture);
 
   const nextInspectionIso = dateToIsoInput(asString(pam.nakosasApskatesDatums, 32));
   const prevInspectionIso = dateToIsoInput(asString(pam.ieprieksejasApskatesDatums, 32));
   const firstRegIso = dateToIsoInput(asString(pam.pirmasRegistracijaLatvija, 32));
 
-  let prevInspectionBlock = mapPrevInspectionFromGemini(payload.ieprieksejasApskatesDati);
+  let prevInspectionBlock = mapPrevInspectionFromGemini(normalized.ieprieksejasApskatesDati);
   if (!previousInspectionBlockHasData(prevInspectionBlock)) {
     const prevDate = dateToLvDisplay(asString(pam.ieprieksejasApskatesDatums, 32));
     const match =
@@ -345,6 +433,66 @@ export function csddFieldsFromStructuredGeminiPayload(
 
 export function countTaDefects(rows: CsddTechnicalInspectionRow[]): number {
   return rows.reduce((n, r) => n + (r.defects?.length ?? 0), 0);
+}
+
+/** Vai vajadzīgs otrais Gemini izsaukums tikai TA datiem. */
+export function csddTaExtractionLooksIncomplete(
+  fields: CsddFormFields,
+  textHint?: string,
+): boolean {
+  const defectCount = countTaDefects(fields.technicalInspectionHistory);
+  const prevDefects = fields.prevInspectionBlock.defects?.length ?? 0;
+  if (fields.technicalInspectionHistory.length === 0 && prevDefects === 0) return true;
+  if (defectCount === 0 && prevDefects === 0) return true;
+
+  const hint = (textHint ?? "").trim();
+  if (!hint) return false;
+  const inspectionDates = hint.match(/Apskates\s+datums/gi)?.length ?? 0;
+  if (inspectionDates >= 3 && fields.technicalInspectionHistory.length < 2) return true;
+  if (inspectionDates >= 5 && defectCount < 3) return true;
+  return false;
+}
+
+/** Apvieno TA-only Gemini atbildi ar esošajiem laukiem (saglabā nobraukumu u.c.). */
+export function mergeCsddTaGeminiIntoFields(
+  fields: CsddFormFields,
+  taPayload: Record<string, unknown>,
+): CsddFormFields {
+  const normalized = normalizeStructuredGeminiPayload(taPayload);
+  const taRows = mapTechnicalInspectionRows(normalized.tehniskoApskasuVesture);
+  const prevBlock = mapPrevInspectionFromGemini(normalized.ieprieksejasApskatesDati);
+
+  const existingDefects = countTaDefects(fields.technicalInspectionHistory);
+  const newDefects = countTaDefects(taRows);
+  const existingPrevDefects = fields.prevInspectionBlock.defects?.length ?? 0;
+  const newPrevDefects = prevBlock.defects?.length ?? 0;
+
+  let technicalInspectionHistory = fields.technicalInspectionHistory;
+  if (
+    taRows.length > technicalInspectionHistory.length ||
+    newDefects > existingDefects
+  ) {
+    technicalInspectionHistory = taRows;
+  }
+
+  let prevInspectionBlock = fields.prevInspectionBlock;
+  if (
+    newPrevDefects > existingPrevDefects ||
+    (previousInspectionBlockHasData(prevBlock) &&
+      !previousInspectionBlockHasData(prevInspectionBlock))
+  ) {
+    prevInspectionBlock = prevBlock;
+  }
+
+  return {
+    ...fields,
+    technicalInspectionHistory,
+    prevInspectionBlock,
+    opacityCoefficient:
+      fields.opacityCoefficient.trim() ||
+      technicalInspectionHistory[0]?.smokeCoefficient?.trim() ||
+      "",
+  };
 }
 
 /**

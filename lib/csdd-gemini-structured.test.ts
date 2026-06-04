@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { emptyCsddFields } from "@/lib/admin-source-blocks";
 import {
   csddFieldsFromStructuredGeminiPayload,
+  csddTaExtractionLooksIncomplete,
+  mergeCsddTaGeminiIntoFields,
   sanitizeCsddRegistrationNumber,
 } from "@/lib/csdd-gemini-structured-map";
 
@@ -82,5 +85,77 @@ describe("csddFieldsFromStructuredGeminiPayload", () => {
     const defects = fields.technicalInspectionHistory[0]?.defects ?? [];
     expect(defects).toHaveLength(1);
     expect(defects[0]?.code).toBe("3.2.");
+  });
+
+  it("maps ieprieksejasApskatesDati into prevInspectionBlock", () => {
+    const fields = csddFieldsFromStructuredGeminiPayload(
+      {
+        pamataDati: { markaModelis: "TEST", registracijasNumurs: "KG982" },
+        nobraukumaVesture: [],
+        tehniskoApskasuVesture: [],
+        ieprieksejasApskatesDati: {
+          datums: "30.12.2025",
+          vertesanasSkaitlis: 2,
+          truukumi: [{ kods: "503", vertesanas: 2, apraksts: "Bremžu tests." }],
+        },
+      },
+      "",
+    );
+    expect(fields.prevInspectionBlock.defects).toHaveLength(1);
+    expect(fields.prevInspectionBlock.defects[0]?.code).toBe("503");
+  });
+});
+
+describe("csddTaExtractionLooksIncomplete", () => {
+  it("flags empty TA with multiple Apskates datums in hint", () => {
+    const fields = { ...emptyCsddFields(), technicalInspectionHistory: [] };
+    const hint =
+      "Tehnisko apskašu vēsture\nApskates datums 16.12.2025\nApskates datums 04.12.2024\nApskates datums 01.01.2020";
+    expect(csddTaExtractionLooksIncomplete(fields, hint)).toBe(true);
+  });
+
+  it("does not flag when defects are present", () => {
+    const fields = csddFieldsFromStructuredGeminiPayload(
+      {
+        pamataDati: { markaModelis: "X", registracijasNumurs: "AB1" },
+        nobraukumaVesture: [],
+        tehniskoApskasuVesture: [
+          {
+            datums: "01.01.2024",
+            truukumi: [{ kods: "3.2.", vertesanas: 1, apraksts: "Stikls." }],
+          },
+        ],
+      },
+      "",
+    );
+    expect(csddTaExtractionLooksIncomplete(fields, "")).toBe(false);
+  });
+});
+
+describe("mergeCsddTaGeminiIntoFields", () => {
+  it("replaces empty TA history with second-pass rows", () => {
+    const base = csddFieldsFromStructuredGeminiPayload(
+      {
+        pamataDati: { markaModelis: "MERCEDES", registracijasNumurs: "KG982" },
+        nobraukumaVesture: [{ datums: "16.12.2025", odometrs: 274726, valsts: "LV" }],
+        tehniskoApskasuVesture: [],
+      },
+      "",
+    );
+    const merged = mergeCsddTaGeminiIntoFields(base, {
+      tehniskoApskasuVesture: [
+        {
+          datums: "16.12.2025",
+          truukumi: [{ kods: "5.3.4.", vertesanas: 2, apraksts: "Tilts." }],
+        },
+        {
+          datums: "04.12.2024",
+          truukumi: [{ kods: "618", vertesanas: 1, apraksts: "Gaismas." }],
+        },
+      ],
+    });
+    expect(merged.mileageHistory.filter((r) => r.odometer.trim())).toHaveLength(1);
+    expect(merged.technicalInspectionHistory).toHaveLength(2);
+    expect(merged.technicalInspectionHistory[0]?.date).toBe("16.12.2025");
   });
 });
