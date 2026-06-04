@@ -43,11 +43,16 @@ export type CsddOwnerChangeRow = {
 const PAGE_FOOTER_RE = /^\s*\d+\s*\/\s*\d+\s*$/;
 const DEFECT_ROW_RE = /^([\d.]+)\s+(\d)\s+(.*)$/;
 const OLD_DEFECT_ROW_RE = /^(\d{3})\s+(\d)\s+(.*)$/;
-/** Teksts defekta aprakstā — sākas jauna CSDD sadaļa (nav trūkumu turpinājums). */
+/** Teksts defekta aprakstā — sākas jauna CSDD sadaļa vai nodokļu bloks (nav trūkumu turpinājums). */
 const CSDD_TAIL_SECTION_IN_LINE_RE =
-  /\s+(Iepriekšēj[āa]s\s+reģistrācijas(?:\s+valsts)?|Transportlīdzekļa\s+reģistrācija|Pēdēj[āa]\s+tehnisk[āa]\s+apskate|Nākoš[āa]\s+TA\b|Tehniskie\s+dati|Informācija\s+sagatavota|Nobraukuma\s+vēsture|Detalizētais\s+vērtējums|Iepriekšējās\s+apskates\s+dati)/i;
+  /\s+(Iepriekšēj[āa]s\s+reģistrācijas(?:\s+valsts)?|Transportlīdzekļa\s+(?:reģistrācija|ekspluatācijas\s+nodoklis)|Ceļa\s+nodoklis|Uzņēmuma\s+vieglo\s+transportlīdzekļu|Pēdēj[āa]\s+tehnisk[āa]\s+apskate|Nākoš[āa]\s+TA\b|Tehniskie\s+dati|Informācija\s+sagatavota|Nobraukuma\s+vēsture|Detalizētais\s+vērtējums|Iepriekšējās\s+apskates\s+dati)/i;
 const CSDD_SECTION_START_LINE_RE =
-  /^(Iepriekšēj[āa]s\s+reģistrācijas|Transportlīdzekļa\s+reģistrācija|Pēdēj[āa]\s+tehnisk[āa]\s+apskate|Nākoš[āa]\s+TA\b|Tehniskie\s+dati|Informācija\s+sagatavota|Nobraukuma\s+vēsture|Detalizētais\s+vērtējums|Iepriekšējās\s+apskates\s+dati)/i;
+  /^(Iepriekšēj[āa]s\s+reģistrācijas|Transportlīdzekļa\s+(?:reģistrācija|ekspluatācijas\s+nodoklis)|Ceļa\s+nodoklis|Uzņēmuma\s+vieglo\s+transportlīdzekļu|Pēdēj[āa]\s+tehnisk[āa]\s+apskate|Nākoš[āa]\s+TA\b|Tehniskie\s+dati|Informācija\s+sagatavota|Nobraukuma\s+vēsture|Detalizētais\s+vērtējums|Iepriekšējās\s+apskates\s+dati)/i;
+/** Pilna rinda — ceļa / ekspluatācijas nodoklis (bieži ielīp kopā ar pēdējo defektu copy-paste). */
+const ROAD_TAX_BLOCK_LINE_RE =
+  /^(Transportlīdzekļa\s+ekspluatācijas\s+nodoklis|Ceļa\s+nodoklis|Uzņēmuma\s+vieglo\s+transportlīdzekļu)/i;
+/** Nov. + Trūkumi (bez Kods) — viena cipara novērtējums un apraksts. */
+const NOV_ONLY_DEFECT_ROW_RE = /^([123])\s+(.+)$/;
 const TA_HISTORY_SECTION_END_RE =
   /Informācija\s+sagatavota\s+elektroniski|Powered\s+by\s+TCPDF|Iepriekšēj[āa]s\s+reģistrācijas\s+valsts|Transportlīdzekļa\s+reģistrācija|Pēdēj[āa]\s+tehnisk[āa]\s+apskate/im;
 
@@ -183,6 +188,11 @@ function parseMetadataIntoBlock(section: string, block: CsddPreviousInspectionBl
       continue;
     }
 
+    if (ROAD_TAX_BLOCK_LINE_RE.test(line)) {
+      inDefectTable = false;
+      continue;
+    }
+
     const defect = parseTabDefectLine(line);
     if (defect) {
       inDefectTable = true;
@@ -263,6 +273,13 @@ function parseTabDefectLine(line: string): CsddInspectionDefectRow | null {
       code: tabs[0]!,
       rating: tabs[1]!,
       description: tabs.slice(2).join(" "),
+    });
+  }
+  if (tabs.length === 2 && /^[123]$/.test(tabs[0]!) && tabs[1]!.length > 0) {
+    return finalizeDefectRow({
+      code: "",
+      rating: tabs[0]!,
+      description: tabs[1]!,
     });
   }
   const sp = line.match(/^([\d.]+)\s+(\d)\s+(.*)$/);
@@ -439,6 +456,7 @@ function isDefectContinuationLine(line: string): boolean {
   if (/^(Kods|Apskates|Novērtējums|Piezīmes|Dūmainības)\b/i.test(line)) return false;
   if (DEFECT_ROW_RE.test(line) || OLD_DEFECT_ROW_RE.test(line)) return false;
   if (CSDD_TAIL_SECTION_IN_LINE_RE.test(line)) return false;
+  if (ROAD_TAX_BLOCK_LINE_RE.test(line)) return false;
   return true;
 }
 
@@ -459,13 +477,13 @@ function parseDefectsFromBlock(block: string): CsddInspectionDefectRow[] {
     const line = rawLine.trim();
     if (!line || PAGE_FOOTER_RE.test(line)) continue;
 
-    if (CSDD_SECTION_START_LINE_RE.test(line)) {
+    if (CSDD_SECTION_START_LINE_RE.test(line) || ROAD_TAX_BLOCK_LINE_RE.test(line)) {
       inDefectTable = false;
       current = flushCurrentDefect(defects, current);
       continue;
     }
 
-    if (/^Kods\s+Novērtējums/i.test(line)) {
+    if (/^Kods\s+Novērtējums/i.test(line) || /^Nov\.\s+Trūkumi/i.test(line)) {
       inDefectTable = true;
       continue;
     }
@@ -477,6 +495,18 @@ function parseDefectsFromBlock(block: string): CsddInspectionDefectRow[] {
         code: dm[1].trim(),
         rating: dm[2].trim(),
         description: dm[3] ?? "",
+      });
+      inDefectTable = true;
+      continue;
+    }
+
+    const novOnly = line.match(NOV_ONLY_DEFECT_ROW_RE);
+    if (novOnly?.[1] && novOnly[2] && !/^[\d.]{2,}/.test(novOnly[2].trim())) {
+      current = flushCurrentDefect(defects, current);
+      current = finalizeDefectRow({
+        code: "",
+        rating: novOnly[1].trim(),
+        description: novOnly[2].trim(),
       });
       inDefectTable = true;
       continue;

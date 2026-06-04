@@ -2,6 +2,8 @@
  * CSDD defektu kodi (X.X.X / X.X.X.X) un aprakstu sadalīšana — „Detalizētais vērtējums”, „Iepriekšējās apskates dati”.
  */
 
+import { sanitizeDefectDescription } from "@/lib/csdd-extended-parse";
+
 export type CsddDefectRow = {
   code: string;
   rating: string;
@@ -36,7 +38,7 @@ export function parseDefectRowsFromText(block: string): CsddDefectRow[] {
   const matches = [...normalized.matchAll(DEFECT_CODE_RE)];
   if (matches.length === 0) {
     const { rating, defects } = splitRatingAndDefects(normalized);
-    return [{ code: "", rating, defects }];
+    return [{ code: "", rating, defects: sanitizeDefectDescription(defects) }];
   }
 
   const rows: CsddDefectRow[] = [];
@@ -46,10 +48,12 @@ export function parseDefectRowsFromText(block: string): CsddDefectRow[] {
     const end = i + 1 < matches.length ? matches[i + 1].index! : normalized.length;
     const body = normalized.slice(start, end).trim();
     const { rating, defects } = splitRatingAndDefects(body);
-    rows.push({ code, rating, defects });
+    rows.push({ code, rating, defects: sanitizeDefectDescription(defects) });
   }
 
-  return rows.filter((r) => r.code.trim() || r.rating.trim() || r.defects.trim());
+  return rows
+    .map((r) => ({ ...r, defects: sanitizeDefectDescription(r.defects) }))
+    .filter((r) => r.code.trim() || r.rating.trim() || r.defects.trim());
 }
 
 export function defectRowHasData(r: CsddDefectRow): boolean {

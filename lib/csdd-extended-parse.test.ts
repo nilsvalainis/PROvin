@@ -199,6 +199,36 @@ describe("csdd extended parse", () => {
     expect(backfilled.technicalInspectionHistory[0]?.defects.length).toBeGreaterThan(0);
   });
 
+  it("strips road tax block glued to Nov-only corrosion defect (27.01.2016 paste)", () => {
+    const corrosion =
+      "Virsbūves stiprību un citus satiksmes dalībniekus neapdraudoši korozijas bojājumi";
+    const taxTail =
+      "Transportlīdzekļa ekspluatācijas nodoklis 162,00 EUR - uz gadu (pilnā apmērā) 81,00 EUR - noņemšanai no uzskaites 94,50 EUR - līdz gada beigām, ja nodoklis par esošo mēnesi nav samaksāts 81,00 EUR - līdz gada beigām, ja nodoklis par esošo mēnesi ir samaksāts Uzņēmuma vieglo transportlīdzekļu nodokļa likme (īpašniekam nav jāmaksā): 60 EUR - mēnesī";
+    const raw = `Tehnisko apskašu vēsture
+Apskates datums 27.01.2016
+Apskates tips pamatpārbaude
+Novērtējums 2 - Ar mēneša laikā labojamiem defektiem
+Nov. Trūkumi vai bojājumi
+2 Nepietiekams riepu protektora dziļums.
+2 Priekšējais tilts. Palielināta brīvkustība balsta šarnīrā.
+1 Nevienmērīga stāvbremzes darbība.
+1 Redzamību vai izturību būtiski neietekmējoši stiklojuma bojājumi.
+1 ${corrosion} ${taxTail}
+1 Redzamību vai izturību būtiski neietekmējoši stiklojuma bojājumi.
+1 ${corrosion}
+2 Priekšējais tilts. Palielināta brīvkustība balstiekārtas šarnīrā.
+Informācija sagatavota elektroniski`;
+
+    const rows = parseTechnicalInspectionHistory(raw);
+    const defects = rows.find((r) => r.date === "27.01.2016")?.defects ?? [];
+    const corrosionRows = defects.filter((d) => d.description.includes("korozijas"));
+    expect(corrosionRows.length).toBeGreaterThanOrEqual(1);
+    for (const d of corrosionRows) {
+      expect(d.description).toBe(corrosion);
+      expect(d.description).not.toMatch(/ekspluatācijas\s+nodoklis|EUR\s*-\s*uz\s+gadu|vieglo\s+transportlīdzekļu/i);
+    }
+  });
+
   it("strips registration tail wrongly appended to oldest TA defect", () => {
     const raw = `Tehnisko apskašu vēsture
 Apskates datums 27.01.2016
