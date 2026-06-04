@@ -38,11 +38,42 @@ COMMENTARY RULES for PROVIN Senior Auto Expert:
 /** Gemini PDF extract JSON — obligāts komentāru formāts (īss, strukturēts). */
 export const SOURCE_PDF_COMMENT_GEMINI_RULES = `COMMENTS field:\n${PDF_HYBRID_COMMENT_RULES}`;
 
-/** ✨ Galveno avotu bloku komentāru ģenerēšana (admin) — dziļā forenzika. */
+/** ✨ Galveno avotu bloku komentāru ģenerēšana (admin) — dziļā forenzika (ieskaitot OFICIĀLĀ DĪLERA DATI). */
 export const SOURCE_BLOCK_COMMENT_GEMINI_RULES = `OUTPUT FORMAT (mandatory):\n${HYBRID_COMMENT_RULES}`;
 
-/** ✨ Sekundāro avotu bloku komentāri (AUTO RECORDS, Citi avoti, Tirgus) — kompakts formāts. */
+/** ✨ Sekundāro avotu bloku komentāri (Citi avoti, Tirgus) — kompakts formāts. */
 export const SOURCE_BLOCK_BRIEF_COMMENT_GEMINI_RULES = `OUTPUT FORMAT (mandatory):\n${PDF_HYBRID_COMMENT_RULES}`;
+
+/** auto-records.com / Outvin PDF imports — eksperta komentārs (ne īsie 4 bulleti). */
+export const AUTO_RECORDS_PDF_COMMENT_GEMINI_RULES = `COMMENTS field (OFICIĀLĀ DĪLERA DATI / Outvin / auto-records):
+${HYBRID_COMMENT_RULES}
+- Cover type code, engine code, equipment, accident/stolen checks, and dealer service timeline—not only km digits.
+- Explain fleet/taxi/commercial type-code signals for Latvian buyers when present.
+- Never return a generic one-liner when VEHICLE INFORMATION or service tables exist in the PDF.`;
+
+/** Saglabā rindkopas no Gemini (PDF imports), nevis piespiedu 4 bulletus. */
+export function normalizeExpertSourcePdfComment(raw: string | undefined | null, maxLen = 1600): string {
+  const t = (raw ?? "").trim();
+  if (!t) return SOURCE_COMMENT_NO_ISSUES_LV;
+  if (
+    /^problēmas\s+nav\s+konstatētas\.?$/i.test(t) ||
+    /^nav\s+konstatētas?\s+problēmas\.?$/i.test(t) ||
+    (/^problēmas\s+nav\s+konstatētas/i.test(t) && t.length < 80)
+  ) {
+    return SOURCE_COMMENT_NO_ISSUES_LV;
+  }
+  if (/^(ok|clean|none|no issues)/i.test(t) && t.length < 60) {
+    return SOURCE_COMMENT_NO_ISSUES_LV;
+  }
+  const paras = t
+    .split(/\n\n+/)
+    .map((p) => p.trim().replace(/\s+/g, " "))
+    .filter(Boolean)
+    .slice(0, 8);
+  let out = paras.join("\n\n");
+  if (out.length > maxLen) out = `${out.slice(0, maxLen - 1).trim()}…`;
+  return out || SOURCE_COMMENT_NO_ISSUES_LV;
+}
 
 export function formatAnomalyBullet(text: string): string {
   const core = text.trim().replace(/^[-•]\s*/, "").replace(/^ANOMĀLIJA:\s*/i, "");

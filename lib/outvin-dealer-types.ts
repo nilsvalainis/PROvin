@@ -93,6 +93,33 @@ export function outvinVehicleInfoHasData(v: OutvinVehicleInfo): boolean {
   return OUTVIN_VEHICLE_INFO_ROWS.some(({ key }) => v[key].trim().length > 0);
 }
 
+/** Plakans teksts Gemini / admin kontekstam (bez HTML). */
+export function outvinDealerReportToPlainText(r: OutvinDealerReport): string {
+  const lines: string[] = [];
+  const vi = r.vehicleInfo;
+  if (outvinVehicleInfoHasData(vi)) {
+    lines.push("Transporta informācija:");
+    for (const { key, labelLv, labelEn } of OUTVIN_VEHICLE_INFO_ROWS) {
+      const v = vi[key].trim();
+      if (v) lines.push(`${labelLv || labelEn}: ${v}`);
+    }
+  }
+  const accident = r.accidentCheck.trim();
+  if (accident) lines.push(`Negadījumu pārbaude: ${accident}`);
+  const stolen = r.stolenCheck.trim();
+  if (stolen) lines.push(`Nozagts transportlīdzeklis: ${stolen}`);
+  const equipment = r.equipment.filter(outvinEquipmentLineHasData);
+  if (equipment.length > 0) {
+    lines.push("Komplektācija / aprīkojums:");
+    for (const line of equipment) {
+      const code = line.code.trim();
+      const desc = line.description.trim();
+      lines.push(code && desc ? `${code} — ${desc}` : code || desc);
+    }
+  }
+  return lines.join("\n");
+}
+
 export function outvinDealerReportHasContent(r: OutvinDealerReport | undefined | null): boolean {
   if (!r) return false;
   return (

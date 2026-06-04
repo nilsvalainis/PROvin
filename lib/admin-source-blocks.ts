@@ -25,14 +25,17 @@ import { normalizeLossAmountEurDisplay, normalizeLtabIncidentRow } from "@/lib/l
 import {
   emptyOutvinDealerReport,
   outvinDealerReportHasContent,
+  outvinDealerReportToPlainText,
   type OutvinDealerReport,
 } from "@/lib/outvin-dealer-types";
 import {
   outvinBundleHasStructuredContent,
+  outvinDealerServiceRowHasData,
   parseOutvinDataBundleRaw,
   type OutvinDataBundle,
 } from "@/lib/outvin-data-bundle";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
+import { outvinBundleToDealerReport } from "@/lib/outvin-purchase-map";
 import { backfillCsddExtendedFromRaw } from "@/lib/csdd-paste-parse";
 import type {
   CsddOwnerChangeRow,
@@ -871,15 +874,53 @@ export function autoRecordsBlockHasContent(b: AutoRecordsBlockState): boolean {
 
 export function autoRecordsBlockToPlainText(b: AutoRecordsBlockState): string {
   const lines: string[] = [];
-  for (const r of (b.serviceHistory ?? []).filter(autoRecordsRowHasData)) {
-    lines.push(
-      [
-        formatAutoRecordsDateForOutput(r.date),
-        normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
-        r.country.replace(/\s+/g, " ").trim(),
-      ].join("\t"),
-    );
+  const mileageRows = (b.serviceHistory ?? []).filter(autoRecordsRowHasData);
+  if (mileageRows.length > 0) {
+    lines.push("Nobraukuma / servisa vēsture (tabula):");
+    for (const r of mileageRows) {
+      lines.push(
+        [
+          formatAutoRecordsDateForOutput(r.date),
+          normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
+          r.country.replace(/\s+/g, " ").trim(),
+        ].join("\t"),
+      );
+    }
   }
+
+  const outvinReport =
+    b.outvinReport && outvinDealerReportHasContent(b.outvinReport)
+      ? b.outvinReport
+      : (() => {
+          const bundle = b.outvin ?? getAutoRecordsOutvinBundle(b);
+          return bundle && outvinBundleHasStructuredContent(bundle)
+            ? outvinBundleToDealerReport(bundle)
+            : undefined;
+        })();
+  if (outvinReport && outvinDealerReportHasContent(outvinReport)) {
+    lines.push("Oficiālā dīlera atskaite (Outvin / auto-records):");
+    lines.push(outvinDealerReportToPlainText(outvinReport));
+  }
+
+  const outvinBundle = b.outvin ?? getAutoRecordsOutvinBundle(b);
+  const dealerLog = (outvinBundle?.dealerServiceLog ?? []).filter(outvinDealerServiceRowHasData);
+  if (dealerLog.length > 0) {
+    lines.push("Dīlera servisa žurnāls:");
+    for (const r of dealerLog) {
+      const notes = r.serviceNotes?.trim();
+      lines.push(
+        [
+          formatAutoRecordsDateForOutput(r.date),
+          normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
+          r.country.replace(/\s+/g, " ").trim(),
+          notes,
+        ]
+          .filter(Boolean)
+          .join("\t"),
+      );
+    }
+  }
+
   const checklistTxt = formatSourcePdfChecklistForPdf(b.pdfChecklist);
   if (checklistTxt) lines.push(checklistTxt);
   if ((b.comments ?? "").trim()) lines.push(`Komentāri\n${(b.comments ?? "").trim()}`);

@@ -40,6 +40,7 @@ export const MAIN_ANALYSIS_SOURCE_BLOCK_KEYS = [
   "autodna",
   "carvertical",
   "ltab",
+  "auto_records",
 ] as const satisfies readonly GeminiSourceCommentBlockKey[];
 
 export type MainAnalysisSourceBlockKey = (typeof MAIN_ANALYSIS_SOURCE_BLOCK_KEYS)[number];

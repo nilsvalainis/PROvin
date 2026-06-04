@@ -32,6 +32,8 @@ import {
 } from "@/lib/history-vendor-pdf-import";
 import { PDF_GEMINI_INLINE_MAX_BYTES } from "@/lib/pdf-api-limits";
 import {
+  AUTO_RECORDS_PDF_COMMENT_GEMINI_RULES,
+  normalizeExpertSourcePdfComment,
   normalizeSourcePdfComment,
   SOURCE_PDF_COMMENT_GEMINI_RULES,
 } from "@/lib/source-summary-comment-format";
@@ -218,12 +220,11 @@ Return ONLY valid JSON:
     "interior": "string",
     "transmission": "string"
   },
-  "comments": "string — see COMMENTS rules",
+  "comments": "string — see COMMENTS rules below",
   "warnings": ["string"]
 }
-${SOURCE_PDF_COMMENT_GEMINI_RULES}
+${AUTO_RECORDS_PDF_COMMENT_GEMINI_RULES}
 Extract every service/odometer row from tables (dates YYYY-MM-DD or DD.MM.YYYY; odometer even if glued to "km" or "ServiceVisit"). checklist.incidents if damage/accident mentioned.
-In comments: factual service timeline (e.g. dealer visit at km) and damage notes from text; use ANOMĀLIJA: only for clear conflicts.
 
 Also extract VEHICLE INFORMATION fields into vehicleInfo (VIN Code, Model, Series, Generation, Type code, Engine code, Steering side, Color, Interior, Transmission). If value is missing or shown as "-" then use empty string for that field.`;
 
@@ -309,7 +310,7 @@ function autoRecordsResultFromGemini(
   );
   const rawUnprocessedData = asString(payload.rawUnprocessedData, MAX_RAW);
   const suggestedPdfChecklist = normalizeChecklist(payload.pdfChecklist);
-  const suggestedComments = normalizeSourcePdfComment(asString(payload.comments, 800));
+  const suggestedComments = normalizeExpertSourcePdfComment(asString(payload.comments, 2400));
   const vehiclePayload = asRecord(payload.vehicleInfo);
   const normalizeVehicleField = (v: unknown) => {
     if (typeof v !== "string") return "";

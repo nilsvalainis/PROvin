@@ -1,5 +1,6 @@
 import "server-only";
 
+import { SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import {
   SOURCE_BLOCK_BRIEF_COMMENT_GEMINI_RULES,
   SOURCE_BLOCK_COMMENT_GEMINI_RULES,
@@ -243,6 +244,17 @@ Atbildi tikai ar gala ziņojuma tekstu — bez meta-komentāriem par AI.`;
 /** @deprecated Izmanto GEMINI_SUMMARY_ANALYSIS_SYSTEM */
 export const GEMINI_CLIENT_SUMMARY_SYSTEM = GEMINI_SUMMARY_ANALYSIS_SYSTEM;
 
+function geminiDealerSourceExtraRules(blockLabel: string): string {
+  if (blockLabel !== SOURCE_BLOCK_LABELS.auto_records) return "";
+  return `
+
+DEALER / OUTVIN DATA (${SOURCE_BLOCK_LABELS.auto_records}) — mandatory depth:
+- Analyze type code, engine code, equipment list, accident check, stolen check, and dealer service journal—not only the mileage table.
+- Explain what type or fleet codes imply for Latvian buyers (e.g. taxi, rental, commercial) when present in the data.
+- Correlate dealer service milestones with portfolio mileage from CSDD, AutoDNA, and CarVertical when provided; apply engine-hour / city-highway logic.
+- Flag contradictions, data gaps before first registration in Latvia, and usage-profile risks with **bold** on critical codes and km figures.`;
+}
+
 /** Avota bloka „Komentāri” ģenerēšana no strukturētiem datiem. */
 export function geminiSourceCommentSystemPrompt(blockLabel: string, deepAnalysis = true): string {
   if (deepAnalysis) {
@@ -251,6 +263,7 @@ export function geminiSourceCommentSystemPrompt(blockLabel: string, deepAnalysis
 ACTIVE SOURCE BLOCK: ${blockLabel} — client PDF audit report expert commentary.
 
 ${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
+${geminiDealerSourceExtraRules(blockLabel)}
 
 - Compare with other portfolio sources and with previously generated expert comments when provided in the user prompt.
 - Do not repeat findings already covered in other source comments; extend, cross-check, or add source-specific depth.
