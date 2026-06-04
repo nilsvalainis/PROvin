@@ -2805,8 +2805,7 @@ export function OrderDetailWorkspace({
                   Nosūtīt klientam e-pastu
                 </h3>
                 <p className="mt-2 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-                  Tiks pievienoti <strong>visi portfeļa faili</strong> ({portfolio.length}). Rēķina PDF serveris pievieno{" "}
-                  <strong>automātiski</strong>. Kopējais pielikumu apjoms — līdz ~{formatBytes(NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES)}.
+                  Tiks pievienoti <strong>visi portfeļa faili</strong> ({portfolio.length}). Rēķins netiek sūtīts atkārtoti — klients to jau saņēma pēc apmaksas. Kopējais pielikumu apjoms — līdz ~{formatBytes(NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES)}.
                 </p>
                 <p className="mt-2 text-[10px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
                   Saņēmējs

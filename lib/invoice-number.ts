@@ -1,7 +1,7 @@
 import "server-only";
 
 import {
-  getOrderDraftStorageDir,
+  isOrderDraftStorageDurable,
   readOrderDraft,
   upsertOrderDraftInvoiceFields,
 } from "@/lib/admin-order-draft-store";
@@ -27,7 +27,7 @@ export async function getOrCreateInvoiceNumber(sessionId: string, created: numbe
   const draft = await readOrderDraft(sessionId);
   if (draft?.invoiceNumber) return draft.invoiceNumber;
 
-  if (!getOrderDraftStorageDir()) {
+  if (!isOrderDraftStorageDurable()) {
     return fallbackInvoiceNumber(sessionId, created);
   }
 

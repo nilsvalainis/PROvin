@@ -36,6 +36,11 @@ function resolveOrderDraftBlob(): OrderDraftBlobConfig | null {
   return { token, prefix };
 }
 
+/** Blob konfigurācija rēķinu skaitītājam un pasūtījumu JSON (Vercel produkcija). */
+export function getOrderDraftBlobConfig(): OrderDraftBlobConfig | null {
+  return resolveOrderDraftBlob();
+}
+
 function resolveDraftDir(): string | null {
   const raw = process.env.ADMIN_ORDER_DRAFT_DIR?.trim() ?? "";
   const off = ["0", "false", "no", "off", "disabled"];
@@ -674,7 +679,8 @@ export async function upsertOrderDraftInvoiceFields(
   fields: Partial<{ invoiceNumber: string; invoicePdfUrl: string; invoicePdfGeneratedAt: string }>,
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   const dir = resolveDraftDir();
-  if (!dir) return { ok: false, error: "store_disabled" };
+  const blob = resolveOrderDraftBlob();
+  if (!dir && !blob) return { ok: false, error: "store_disabled" };
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
 
   const prev = await readOrderDraft(sessionId);
@@ -684,22 +690,44 @@ export async function upsertOrderDraftInvoiceFields(
     updatedAt,
     orderEdits: prev?.orderEdits ?? {},
     workspace: prev?.workspace ?? null,
+    ...(prev?.workspaceRevision != null ? { workspaceRevision: prev.workspaceRevision } : {}),
+    ...(prev?.workspaceChecksum != null ? { workspaceChecksum: prev.workspaceChecksum } : {}),
     ...(prev?.invoiceNumber != null ? { invoiceNumber: prev.invoiceNumber } : {}),
     ...(prev?.invoicePdfUrl != null ? { invoicePdfUrl: prev.invoicePdfUrl } : {}),
     ...(prev?.invoicePdfGeneratedAt != null ? { invoicePdfGeneratedAt: prev.invoicePdfGeneratedAt } : {}),
     ...fields,
   };
 
-  try {
-    await fs.mkdir(dir, { recursive: true });
-    const fp = draftFilePath(dir, sessionId);
-    const tmp = `${fp}.tmp`;
-    await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
-    await fs.rename(tmp, fp);
-    await writeOrderDraftRevision(dir, sessionId, doc, "invoice");
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { ok: false, error: `write_failed:${msg}` };
+  let fsOk = false;
+  let blobOk = false;
+
+  if (dir) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+      const fp = draftFilePath(dir, sessionId);
+      const tmp = `${fp}.tmp`;
+      await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
+      await fs.rename(tmp, fp);
+      await writeOrderDraftRevision(dir, sessionId, doc, "invoice");
+      fsOk = true;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!blob) return { ok: false, error: `write_failed:${msg}` };
+    }
+  }
+
+  if (blob) {
+    try {
+      await writeOrderDraftJsonToBlob(sessionId, doc, blob);
+      blobOk = true;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!fsOk) return { ok: false, error: `blob_write_failed:${msg}` };
+    }
+  }
+
+  if (!fsOk && !blobOk) {
+    return { ok: false, error: "write_failed:no_backend" };
   }
 
   return { ok: true, updatedAt };

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
-import { getInvoiceEmailAttachment } from "@/lib/email/invoice-email-attachment";
 import {
   collectAttachmentsFromFormData,
   collectAttachmentsFromJsonBase64,
@@ -75,7 +74,7 @@ function mapParseError(e: unknown): NextResponse | null {
  * Nosūta klientam „audits gatavs” ar pielikumiem (nodemailer + SMTP).
  * – JSON: { sessionId, customerEmail?, attachmentsBase64?: { filename, data, mimeType? }[] }
  * – multipart/form-data: sessionId, customerEmail?, reportPdf (optional → PROVIN_AUDITS_<VIN>.pdf), attachment (repeat)
- * Rēķina PDF tiek pievienots automātiski apmaksātiem pasūtījumiem.
+ * Rēķins netiek pievienots — klients to jau saņēma apmaksas apstiprinājumā (PDF saite).
  */
 export async function POST(req: Request) {
   if (!(await getAdminSession())) {
@@ -224,37 +223,22 @@ export async function POST(req: Request) {
     );
   }
 
-  let invoice: ReportReadyMailAttachment | null = null;
-  let invoiceAttachError: string | null = null;
-  try {
-    invoice = await getInvoiceEmailAttachment(sessionId);
-  } catch (e) {
-    invoiceAttachError = e instanceof Error ? e.message : String(e);
-    console.error("[api/admin/notify-report-ready] invoice attachment", e);
-  }
-
-  const merged: ReportReadyMailAttachment[] = [...manualAttachments];
-  if (invoice) merged.push(invoice);
-
-  if (merged.length === 0) {
-    const invoiceHint = invoiceAttachError
-      ? `Rēķina PDF kļūda: ${invoiceAttachError}`
-      : "Rēķina PDF nav izdevies sagatavot (pārbaudi Stripe sesijas summu un servera logus).";
+  if (manualAttachments.length === 0) {
     return NextResponse.json(
       {
         error: "no_attachments",
-        message: `Nav derīgu pielikumu — ${invoiceHint} Pievieno audita PDF (tabula: klienta portfelis; vai pasūtījuma forma „Nosūtīt klientam”).`,
-        detail: invoiceAttachError ?? undefined,
+        message:
+          "Nav derīgu pielikumu — pievieno audita PDF (tabula: klienta portfelis; vai pasūtījuma forma „Nosūtīt klientam”).",
       },
       { status: 400 },
     );
   }
 
-  if (totalAttachmentBytes(merged) > MAX_NOTIFY_ATTACHMENTS_BYTES) {
+  if (totalAttachmentBytes(manualAttachments) > MAX_NOTIFY_ATTACHMENTS_BYTES) {
     return NextResponse.json(
       {
         error: "attachments_too_large",
-        message: `Kopā ar rēķinu pielikumi pārsniedz ${MAX_NOTIFY_ATTACHMENTS_BYTES / (1024 * 1024)} MB — samaziniet failu apjomu.`,
+        message: `Pielikumi pārsniedz ${MAX_NOTIFY_ATTACHMENTS_BYTES / (1024 * 1024)} MB — samaziniet failu apjomu.`,
       },
       { status: 413 },
     );
@@ -267,7 +251,7 @@ export async function POST(req: Request) {
     await sendReportReadyEmail({
       to,
       carVin: notifyVin || "—",
-      attachments: merged,
+      attachments: manualAttachments,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Nezināma kļūda";

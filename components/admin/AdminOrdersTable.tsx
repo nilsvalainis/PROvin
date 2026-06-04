@@ -196,7 +196,7 @@ function NotifyReportReadyCell({
         }}
         disabled={phase === "loading"}
         className="inline-flex max-w-[200px] items-center justify-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-[var(--color-provin-accent-soft)]/40 disabled:cursor-not-allowed disabled:opacity-60"
-        title="Nosūtīt klientam e-pastu ar klienta portfeļa failiem un rēķinu"
+        title="Nosūtīt klientam e-pastu ar klienta portfeļa failiem"
       >
         {phase === "loading" ? (
           <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
