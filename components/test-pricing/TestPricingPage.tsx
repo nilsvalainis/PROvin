@@ -13,6 +13,8 @@ import {
 } from "@/lib/test-pricing-plans";
 
 function FeatureRow({ item }: { item: TestPricingFeatureItem }) {
+  if (item.kind === "exclusion") return null;
+
   if (item.kind === "includes") {
     return (
       <li className={styles.featureRow}>
@@ -20,7 +22,8 @@ function FeatureRow({ item }: { item: TestPricingFeatureItem }) {
           ✓
         </span>
         <span>
-          Viss no <strong className={styles.featureBrand}>{item.packageName}</strong>
+          Viss no{" "}
+          <strong className={styles.featureBrand}>PROVIN {item.tierName}</strong>
         </span>
       </li>
     );
@@ -29,7 +32,7 @@ function FeatureRow({ item }: { item: TestPricingFeatureItem }) {
   return (
     <li className={styles.featureRow}>
       <span className={styles.featureIcon} aria-hidden>
-        {item.icon}
+        ✔️
       </span>
       <span>{item.label}</span>
     </li>
@@ -39,14 +42,19 @@ function FeatureRow({ item }: { item: TestPricingFeatureItem }) {
 function PlanFeatures({ plan }: { plan: TestPricingPlanConfig }) {
   return (
     <ul className={styles.featureList}>
-      {plan.features.map((item) => (
-        <FeatureRow
-          key={item.kind === "includes" ? item.packageName : item.label}
-          item={item}
-        />
-      ))}
+      {plan.features
+        .filter((item) => item.kind !== "exclusion")
+        .map((item) => (
+          <FeatureRow key={featureRowKey(item)} item={item} />
+        ))}
     </ul>
   );
+}
+
+function featureRowKey(item: TestPricingFeatureItem): string {
+  if (item.kind === "includes") return `includes-${item.tierName}`;
+  if (item.kind === "exclusion") return `exclusion-${item.label}`;
+  return item.label;
 }
 
 export function TestPricingPage() {

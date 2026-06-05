@@ -9,8 +9,9 @@ import {
 export type TestPricingPlanId = "mini" | "plus" | "premium";
 
 export type TestPricingFeatureItem =
-  | { kind: "bullet"; icon: string; label: string }
-  | { kind: "includes"; packageName: "PROVIN MINI" | "PROVIN PLUS" };
+  | { kind: "bullet"; label: string }
+  | { kind: "includes"; tierName: "MINI" | "PLUS" }
+  | { kind: "exclusion"; label: string };
 
 export type TestPricingPlanConfig = {
   id: TestPricingPlanId;
@@ -46,9 +47,13 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
     productName: "PROVIN MINI",
     productDesc: "Sludinājuma risku analīze un LV auto padziļināta pārbaude.",
     features: [
-      { kind: "bullet", icon: "✔️", label: "Sludinājuma analīze" },
-      { kind: "bullet", icon: "✔️", label: "Tehnisko risku izvērtēšana" },
-      { kind: "bullet", icon: "✔️", label: "Individuāla konsultācija" },
+      { kind: "bullet", label: "Sludinājuma analīze" },
+      { kind: "bullet", label: "Tehnisko risku izvērtēšana" },
+      { kind: "bullet", label: "Individuāla konsultācija" },
+      {
+        kind: "exclusion",
+        label: "Maksas vēstures atskaites un ārvalstu dati NAV iekļauti",
+      },
     ],
   },
   {
@@ -66,10 +71,14 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
     productName: "PROVIN PLUS",
     productDesc: "Latvijas un Ziemeļvalstu reģistru vēstures pārbaude.",
     features: [
-      { kind: "includes", packageName: "PROVIN MINI" },
-      { kind: "bullet", icon: "✔️", label: "Vietējo reģistru pārbaude" },
-      { kind: "bullet", icon: "✔️", label: "Ziemeļvalstu reģistru pārbaude" },
-      { kind: "bullet", icon: "✔️", label: "Tehnisko apskašu vēsture" },
+      { kind: "includes", tierName: "MINI" },
+      { kind: "bullet", label: "Vietējo reģistru pārbaude" },
+      { kind: "bullet", label: "Ziemeļvalstu reģistru pārbaude" },
+      { kind: "bullet", label: "Tehnisko apskašu vēsture" },
+      {
+        kind: "exclusion",
+        label: "CarVertical & AutoDNA maksas atskaites NAV iekļautas",
+      },
     ],
   },
   {
@@ -87,10 +96,10 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
     productName: "PROVIN PREMIUM",
     productDesc: "Pilna vietējo un starptautisko datu izpēte ar maksas vēstures atskaitēm.",
     features: [
-      { kind: "includes", packageName: "PROVIN MINI" },
-      { kind: "includes", packageName: "PROVIN PLUS" },
-      { kind: "bullet", icon: "✔️", label: "Oficiālo dīleru vēsture*" },
-      { kind: "bullet", icon: "✔️", label: "CarVertical & AutoDNA" },
+      { kind: "includes", tierName: "MINI" },
+      { kind: "includes", tierName: "PLUS" },
+      { kind: "bullet", label: "Oficiālo dīleru vēsture*" },
+      { kind: "bullet", label: "CarVertical & AutoDNA" },
     ],
   },
 ];

@@ -21,15 +21,15 @@ describe("test-pricing plans", () => {
     const mini = getTestPricingPlan("mini")!;
     expect(mini.amountCents).toBe(1999);
     expect(mini.turnaround).toContain("24h");
-    expect(mini.features).toHaveLength(3);
+    expect(mini.features.filter((f) => f.kind === "bullet")).toHaveLength(3);
+    expect(mini.features.some((f) => f.kind === "exclusion")).toBe(true);
   });
 
   it("plus uses 3999 cents and includes mini tier", () => {
     const plus = getTestPricingPlan("plus")!;
     expect(plus.amountCents).toBe(3999);
-    expect(plus.features.some((f) => f.kind === "includes" && f.packageName === "PROVIN MINI")).toBe(
-      true,
-    );
+    expect(plus.features.some((f) => f.kind === "includes" && f.tierName === "MINI")).toBe(true);
+    expect(plus.features.some((f) => f.kind === "exclusion")).toBe(true);
   });
 
   it("premium is highlighted with 9999 cents and 48h turnaround", () => {
