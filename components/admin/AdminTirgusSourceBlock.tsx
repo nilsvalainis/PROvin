@@ -17,6 +17,8 @@ import {
 } from "@/lib/admin-source-blocks";
 import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 
+import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
+
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
@@ -34,7 +36,7 @@ type Props = {
   marketGeminiAllowed?: boolean;
   marketGeminiBusy?: boolean;
   marketGeminiError?: string | null;
-  onMarketGeminiAnalyze?: (operatorNotes: string) => void;
+  onMarketGeminiAnalyze?: (operatorNotes: string, modelTier: GeminiAdminModelTier) => void;
 };
 
 export function AdminTirgusSourceBlock({
@@ -202,7 +204,7 @@ export function AdminTirgusSourceBlock({
           busy={marketGeminiBusy}
           disabled={!marketGeminiAllowed}
           demoOnly={!marketGeminiAllowed}
-          onGenerate={(notes) => onMarketGeminiAnalyze(notes)}
+          onGenerate={(notes, tier) => onMarketGeminiAnalyze(notes, tier)}
         />
         {marketGeminiError ? (
           <p className="w-full text-[9px] leading-snug text-amber-800/90" title={marketGeminiError}>

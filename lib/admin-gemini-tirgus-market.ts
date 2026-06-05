@@ -1,6 +1,6 @@
 import "server-only";
 
-import { GEMINI_MODEL_PRO, geminiGenerateJsonText } from "@/lib/admin-gemini";
+import { geminiGenerateJsonText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
 import { GEMINI_TIRGUS_MARKET_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
@@ -69,7 +69,7 @@ Ja ss.lv datos ir dienas platformā — izmanto to listedForSale; ja ir cenu vē
   );
 
   const raw = await geminiGenerateJsonText({
-    model: GEMINI_MODEL_PRO,
+    model: resolveGeminiAdminModel(input.modelTier),
     systemInstruction: GEMINI_TIRGUS_MARKET_SYSTEM,
     userPrompt,
     temperature: 0.25,

@@ -3,6 +3,7 @@ import "server-only";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { strFromBody } from "@/lib/admin-gemini-operator-notes";
+import { parseGeminiModelTier } from "@/lib/gemini-admin-model-tier";
 import type { GeminiOrderContextInput } from "@/lib/admin-gemini-order-context";
 
 export function parseGeminiOrderContextFromBody(
@@ -25,6 +26,7 @@ export function parseGeminiOrderContextFromBody(
     sourcesComparisonComment: strFromBody(b.sourcesComparisonComment),
     operatorNotes: strFromBody(b.operatorNotes),
     existingDraftPlain: strFromBody(b.existingDraftPlain),
+    modelTier: parseGeminiModelTier(b.modelTier),
   };
 }
 

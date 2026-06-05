@@ -25,6 +25,7 @@ import {
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
   ADMIN_SOURCES_COMPARISON_LABEL,
 } from "@/lib/admin-workspace-field-labels";
+import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
 
@@ -48,6 +49,8 @@ export type GeminiOrderContextInput = {
   sourcesComparisonComment?: string;
   operatorNotes?: string;
   existingDraftPlain?: string;
+  /** Pro (noklusējums) vai Flash — admin ✨ pogas izvēle. */
+  modelTier?: GeminiAdminModelTier;
 };
 
 function block(label: string, body: string): string {

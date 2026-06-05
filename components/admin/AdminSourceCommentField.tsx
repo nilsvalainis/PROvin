@@ -5,12 +5,14 @@ import { AdminGeminiGenerateWithPrefill } from "@/components/admin/AdminGeminiGe
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { LISTING_ANALYSIS_COMMENT_LABEL } from "@/lib/admin-source-blocks";
 
+import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
+
 export type AdminGeminiSourceCommentSlot = {
   allowed: boolean;
   busy: boolean;
   error: string | null;
   hasSourceData: boolean;
-  onGenerate: (operatorNotes: string) => void;
+  onGenerate: (operatorNotes: string, modelTier: GeminiAdminModelTier) => void;
 };
 
 type Props = {

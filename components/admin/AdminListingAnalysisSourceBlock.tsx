@@ -24,6 +24,7 @@ import {
 import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
 import { geminiPlainTextToRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
+import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
 
 const ta =
   "min-h-[72px] w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20";
@@ -96,7 +97,7 @@ export function AdminListingAnalysisSourceBlock({
     (v.extraSellerName.trim().length > 0 || v.listingPasteRaw.trim().length > 0);
 
   const runSellerGeminiAnalyze = useCallback(
-    async (operatorNotes: string) => {
+    async (operatorNotes: string, modelTier: GeminiAdminModelTier = "pro") => {
       if (!canRunSellerGemini || sellerAnalyzing || disabled || readOnly || !buildGeminiPayload) return;
       setSellerAnalyzing(true);
       setSellerAnalyzeErr(null);
@@ -111,6 +112,7 @@ export function AdminListingAnalysisSourceBlock({
             extraSellerName: v.extraSellerName,
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(v.sellerPortrait).trim(),
+            modelTier,
           }),
         });
         const { data, parseFailed } = await parseAdminGeminiResponse(res);

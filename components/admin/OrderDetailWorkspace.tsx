@@ -153,6 +153,7 @@ import {
   type NotifyPortfolioUploadItem,
 } from "@/lib/admin-notify-report-ready-client";
 import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
+import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
 import { AdminPersistenceHealthBanner } from "@/components/admin/AdminPersistenceHealthBanner";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 
@@ -937,7 +938,7 @@ export function OrderDetailWorkspace({
     [updateWs],
   );
 
-  const runGeminiInspectionRecommendations = useCallback(async (operatorNotes = "") => {
+  const runGeminiInspectionRecommendations = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
     if (!payload.geminiAllowed || geminiInspectionBusy) return;
     setGeminiInspectionBusy(true);
     setGeminiInspectionErr(null);
@@ -952,6 +953,7 @@ export function OrderDetailWorkspace({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(cur.apskatesPlāns).trim(),
           }),
+          modelTier,
         }),
       });
       const { data, parseFailed } = await parseAdminGeminiResponse(res);
@@ -969,7 +971,7 @@ export function OrderDetailWorkspace({
     }
   }, [buildGeminiOrderPayload, geminiInspectionBusy, payload.geminiAllowed, updateWs]);
 
-  const runGeminiPriceAnalysis = useCallback(async (operatorNotes = "") => {
+  const runGeminiPriceAnalysis = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
     if (!payload.geminiAllowed || geminiPriceBusy) return;
     setGeminiPriceBusy(true);
     setGeminiPriceErr(null);
@@ -984,6 +986,7 @@ export function OrderDetailWorkspace({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(cur.cenasAtbilstiba).trim(),
           }),
+          modelTier,
         }),
       });
       const { data, parseFailed } = await parseAdminGeminiResponse(res);
@@ -1001,7 +1004,7 @@ export function OrderDetailWorkspace({
     }
   }, [buildGeminiOrderPayload, geminiPriceBusy, payload.geminiAllowed, updateWs]);
 
-  const runGeminiSummaryAnalysis = useCallback(async (operatorNotes = "") => {
+  const runGeminiSummaryAnalysis = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
     if (!payload.geminiAllowed || geminiSummaryBusy) return;
     setGeminiSummaryBusy(true);
     setGeminiSummaryErr(null);
@@ -1016,6 +1019,7 @@ export function OrderDetailWorkspace({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(cur.iriss).trim(),
           }),
+          modelTier,
         }),
       });
       const { data, parseFailed } = await parseAdminGeminiResponse(res);
@@ -1033,7 +1037,7 @@ export function OrderDetailWorkspace({
     }
   }, [buildGeminiOrderPayload, geminiSummaryBusy, payload.geminiAllowed, setIrissSummary]);
 
-  const runGeminiIncidentsSummary = useCallback(async (operatorNotes = "") => {
+  const runGeminiIncidentsSummary = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
     if (!payload.geminiAllowed || geminiIncidentsSummaryBusy) return;
     setGeminiIncidentsSummaryBusy(true);
     setGeminiIncidentsSummaryErr(null);
@@ -1047,6 +1051,7 @@ export function OrderDetailWorkspace({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(internalCommentDraft).trim(),
           }),
+          modelTier,
         }),
       });
       const { data, parseFailed } = await parseAdminGeminiResponse(res);
@@ -1072,7 +1077,7 @@ export function OrderDetailWorkspace({
     payload.geminiAllowed,
   ]);
 
-  const runGeminiMileageComment = useCallback(async (operatorNotes = "") => {
+  const runGeminiMileageComment = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
     if (!payload.geminiAllowed || geminiMileageCommentBusy) return;
     setGeminiMileageCommentBusy(true);
     setGeminiMileageCommentErr(null);
@@ -1086,6 +1091,7 @@ export function OrderDetailWorkspace({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(mileageCommentDraft).trim(),
           }),
+          modelTier,
         }),
       });
       const { data, parseFailed } = await parseAdminGeminiResponse(res);
@@ -1111,7 +1117,7 @@ export function OrderDetailWorkspace({
     payload.geminiAllowed,
   ]);
 
-  const runGeminiSourcesComparison = useCallback(async (operatorNotes = "") => {
+  const runGeminiSourcesComparison = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
     if (!payload.geminiAllowed || geminiSourcesComparisonBusy) return;
     setGeminiSourcesComparisonBusy(true);
     setGeminiSourcesComparisonErr(null);
@@ -1125,6 +1131,7 @@ export function OrderDetailWorkspace({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(sourcesComparisonCommentDraft).trim(),
           }),
+          modelTier,
         }),
       });
       const { data, parseFailed } = await parseAdminGeminiResponse(res);
@@ -1169,7 +1176,7 @@ export function OrderDetailWorkspace({
   );
 
   const runGeminiTirgusMarket = useCallback(
-    async (operatorNotes = "") => {
+    async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
       if (!payload.geminiAllowed || geminiTirgusMarketBusy) return;
       setGeminiTirgusMarketBusy(true);
       setGeminiTirgusMarketErr(null);
@@ -1184,6 +1191,7 @@ export function OrderDetailWorkspace({
               operatorNotes,
               existingDraftPlain: adminRichHtmlToPlainText(cur.sourceBlocks.tirgus.comments).trim(),
             }),
+            modelTier,
           }),
         });
         const { data, parseFailed } = await parseAdminGeminiResponse(res);
@@ -1231,7 +1239,7 @@ export function OrderDetailWorkspace({
   );
 
   const runGeminiSourceComment = useCallback(
-    async (blockKey: GeminiSourceCommentBlockKey, operatorNotes = "", citiAvotiSectionIndex?: number) => {
+    async (blockKey: GeminiSourceCommentBlockKey, operatorNotes = "", citiAvotiSectionIndex?: number, modelTier: GeminiAdminModelTier = "pro") => {
       if (!payload.geminiAllowed || geminiSourceCommentBusy) return;
       setGeminiSourceCommentBusy(blockKey);
       setGeminiSourceCommentErr(null);
@@ -1253,6 +1261,7 @@ export function OrderDetailWorkspace({
             }),
             blockKey,
             ...(citiAvotiSectionIndex != null ? { citiAvotiSectionIndex } : {}),
+            modelTier,
           }),
         });
         const { data, parseFailed } = await parseAdminGeminiResponse(res);
@@ -2020,7 +2029,8 @@ export function OrderDetailWorkspace({
         busy: geminiSourceCommentBusy === key,
         error: geminiSourceCommentErr?.key === key ? geminiSourceCommentErr.msg : null,
         hasSourceData,
-        onGenerate: (operatorNotes) => void runGeminiSourceComment(key, operatorNotes, citiAvotiSectionIndex),
+        onGenerate: (operatorNotes, modelTier) =>
+          void runGeminiSourceComment(key, operatorNotes, citiAvotiSectionIndex, modelTier),
       };
     },
     [
@@ -3180,7 +3190,7 @@ export function OrderDetailWorkspace({
                       marketGeminiAllowed={payload.geminiAllowed}
                       marketGeminiBusy={geminiTirgusMarketBusy}
                       marketGeminiError={geminiTirgusMarketErr}
-                      onMarketGeminiAnalyze={(notes) => void runGeminiTirgusMarket(notes)}
+                      onMarketGeminiAnalyze={(notes, tier) => void runGeminiTirgusMarket(notes, tier)}
                     />
                   </div>
                 </ListingAnalysisSubsectionHeading>
@@ -3202,7 +3212,7 @@ export function OrderDetailWorkspace({
                       busy={geminiPriceBusy}
                       disabled={!payload.geminiAllowed}
                       demoOnly={!payload.geminiAllowed}
-                      onGenerate={(operatorNotes) => void runGeminiPriceAnalysis(operatorNotes)}
+                      onGenerate={(operatorNotes, modelTier) => void runGeminiPriceAnalysis(operatorNotes, modelTier)}
                     />
                   </div>
                   {geminiPriceErr ? (
@@ -3251,7 +3261,8 @@ export function OrderDetailWorkspace({
                       busy={geminiInspectionBusy}
                       disabled={!payload.geminiAllowed}
                       demoOnly={!payload.geminiAllowed}
-                      onGenerate={(operatorNotes) => void runGeminiInspectionRecommendations(operatorNotes)}
+                      onGenerate={(operatorNotes, modelTier) =>
+                        void runGeminiInspectionRecommendations(operatorNotes, modelTier)}
                     />
                   </div>
                   {geminiInspectionErr ? (
@@ -3290,7 +3301,7 @@ export function OrderDetailWorkspace({
                             ? "Vispirms ģenerē vai aizpildi pārdevēja, ieteikumu vai cenas sadaļu"
                             : undefined
                       }
-                      onGenerate={(operatorNotes) => void runGeminiSummaryAnalysis(operatorNotes)}
+                      onGenerate={(operatorNotes, modelTier) => void runGeminiSummaryAnalysis(operatorNotes, modelTier)}
                     />
                   </div>
                   {geminiSummaryErr ? (
@@ -3326,7 +3337,8 @@ export function OrderDetailWorkspace({
                             ? "Vispirms aizpildi negadījumu tabulas avotos"
                             : undefined
                       }
-                      onGenerate={(operatorNotes) => void runGeminiIncidentsSummary(operatorNotes)}
+                      onGenerate={(operatorNotes, modelTier) =>
+                        void runGeminiIncidentsSummary(operatorNotes, modelTier)}
                     />
                   </div>
                   {geminiIncidentsSummaryErr ? (
@@ -3363,7 +3375,7 @@ export function OrderDetailWorkspace({
                             ? "Vispirms aizpildi nobraukuma tabulas avotos"
                             : undefined
                       }
-                      onGenerate={(operatorNotes) => void runGeminiMileageComment(operatorNotes)}
+                      onGenerate={(operatorNotes, modelTier) => void runGeminiMileageComment(operatorNotes, modelTier)}
                     />
                   </div>
                   {geminiMileageCommentErr ? (
@@ -3401,7 +3413,8 @@ export function OrderDetailWorkspace({
                             ? "Vispirms aizpildi avotu sadaļas"
                             : undefined
                       }
-                      onGenerate={(operatorNotes) => void runGeminiSourcesComparison(operatorNotes)}
+                      onGenerate={(operatorNotes, modelTier) =>
+                        void runGeminiSourcesComparison(operatorNotes, modelTier)}
                     />
                   </div>
                   {geminiSourcesComparisonErr ? (

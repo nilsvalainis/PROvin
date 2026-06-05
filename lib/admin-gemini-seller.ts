@@ -1,6 +1,6 @@
 import "server-only";
 
-import { GEMINI_MODEL_PRO, geminiGenerateTextWithGoogleSearch } from "@/lib/admin-gemini";
+import { geminiGenerateTextWithGoogleSearch, resolveGeminiAdminModel } from "@/lib/admin-gemini";
 import { GEMINI_SELLER_ANALYSIS_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
@@ -51,7 +51,7 @@ ${taskBlock}`,
   );
 
   return geminiGenerateTextWithGoogleSearch({
-    model: GEMINI_MODEL_PRO,
+    model: resolveGeminiAdminModel(input.modelTier),
     systemInstruction: GEMINI_SELLER_ANALYSIS_SYSTEM,
     userPrompt,
     temperature: 0.35,

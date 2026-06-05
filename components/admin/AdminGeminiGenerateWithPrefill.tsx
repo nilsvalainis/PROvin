@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Loader2, MessageSquarePlus } from "lucide-react";
 
 import { AdminGeminiGenerateButton } from "@/components/admin/AdminGeminiGenerateButton";
+import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
 
 type Props = {
   label: string;
@@ -13,7 +14,7 @@ type Props = {
   title?: string;
   dialogTitle?: string;
   dialogHint?: string;
-  onGenerate: (operatorNotes: string) => void | Promise<void>;
+  onGenerate: (operatorNotes: string, modelTier: GeminiAdminModelTier) => void | Promise<void>;
 };
 
 export function AdminGeminiGenerateWithPrefill({
@@ -28,6 +29,7 @@ export function AdminGeminiGenerateWithPrefill({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
+  const [pendingTier, setPendingTier] = useState<GeminiAdminModelTier>("pro");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleId = useId();
 
@@ -36,6 +38,11 @@ export function AdminGeminiGenerateWithPrefill({
     const t = window.setTimeout(() => textareaRef.current?.focus(), 0);
     return () => window.clearTimeout(t);
   }, [open]);
+
+  const openDialog = (tier: GeminiAdminModelTier) => {
+    setPendingTier(tier);
+    setOpen(true);
+  };
 
   const close = () => {
     if (busy) return;
@@ -46,19 +53,30 @@ export function AdminGeminiGenerateWithPrefill({
     const trimmed = notes.trim();
     setOpen(false);
     setNotes("");
-    void onGenerate(trimmed);
+    void onGenerate(trimmed, pendingTier);
   };
 
   return (
     <>
-      <AdminGeminiGenerateButton
-        label={label}
-        disabled={disabled}
-        busy={busy}
-        demoOnly={demoOnly}
-        title={title}
-        onClick={() => setOpen(true)}
-      />
+      <div className="inline-flex flex-wrap items-center gap-1.5">
+        <AdminGeminiGenerateButton
+          label={label}
+          variant="pro"
+          disabled={disabled}
+          busy={busy}
+          demoOnly={demoOnly}
+          title={title}
+          onClick={() => openDialog("pro")}
+        />
+        <AdminGeminiGenerateButton
+          label="Flash"
+          variant="flash"
+          disabled={disabled}
+          busy={busy}
+          demoOnly={demoOnly}
+          onClick={() => openDialog("flash")}
+        />
+      </div>
       {open ? (
         <div
           className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 p-3 sm:items-center"
@@ -79,6 +97,9 @@ export function AdminGeminiGenerateWithPrefill({
                   {dialogTitle}
                 </h3>
                 <p className="mt-1 text-[11px] leading-snug text-[var(--color-provin-muted)]">{dialogHint}</p>
+                <p className="mt-1 text-[10px] font-medium text-[var(--color-provin-muted)]">
+                  Modelis: {pendingTier === "flash" ? "Gemini 2.5 Flash" : "Gemini 2.5 Pro"}
+                </p>
               </div>
             </div>
             <textarea
@@ -101,12 +122,14 @@ export function AdminGeminiGenerateWithPrefill({
               </button>
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50 ${
+                  pendingTier === "flash" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-violet-600 hover:bg-violet-700"
+                }`}
                 disabled={busy}
                 onClick={confirm}
               >
                 {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : null}
-                Ģenerēt
+                {pendingTier === "flash" ? "Ģenerēt (Flash)" : "Ģenerēt (Pro)"}
               </button>
             </div>
           </div>

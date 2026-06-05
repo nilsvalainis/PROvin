@@ -1,6 +1,6 @@
 import "server-only";
 
-import { GEMINI_MODEL_PRO, geminiGenerateText } from "@/lib/admin-gemini";
+import { geminiGenerateText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
 import { geminiSourceCommentSystemPrompt } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import { buildGeminiOrderContextText } from "@/lib/admin-gemini-order-context";
@@ -10,6 +10,7 @@ import {
   type GeminiSourceCommentBlockKey,
 } from "@/lib/admin-source-comment-blocks";
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
 
 export type GeminiSourceCommentInput = {
   sessionId: string;
@@ -24,9 +25,10 @@ export type GeminiSourceCommentInput = {
   operatorNotes?: string | null;
   existingDraftPlain?: string | null;
   citiAvotiSectionIndex?: number;
+  modelTier?: GeminiAdminModelTier;
 };
 
-/** Avota komentāru ģenerēšana — vienmēr gemini-2.5-pro. */
+/** Avota komentāru ģenerēšana — Pro vai Flash (admin izvēle). */
 export async function generateSourceCommentWithGemini(input: GeminiSourceCommentInput): Promise<string> {
   const blockLabel = SOURCE_BLOCK_LABELS[input.blockKey];
   const focusDataText = sourceBlockPlainTextForGemini(
@@ -80,7 +82,7 @@ Sagatavo komentāru šai sadaļai klienta atskaitei. Salīdzini ar pārējiem av
   );
 
   return geminiGenerateText({
-    model: GEMINI_MODEL_PRO,
+    model: resolveGeminiAdminModel(input.modelTier),
     systemInstruction: geminiSourceCommentSystemPrompt(blockLabel),
     userPrompt,
     temperature: 0.25,

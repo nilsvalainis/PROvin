@@ -11,6 +11,7 @@ import {
   isGeminiSourceCommentBlockKey,
 } from "@/lib/admin-gemini-source-comment";
 import { mergeSourceBlocksFromBody } from "@/lib/admin-gemini-api-body";
+import { parseGeminiModelTier } from "@/lib/gemini-admin-model-tier";
 import { sourceBlockCommentsPlainForGemini } from "@/lib/admin-source-comment-blocks";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
@@ -30,6 +31,7 @@ type BodyShape = {
   operatorNotes?: unknown;
   existingDraftPlain?: unknown;
   citiAvotiSectionIndex?: unknown;
+  modelTier?: unknown;
 };
 
 function str(v: unknown): string {
@@ -94,6 +96,7 @@ export async function POST(req: Request) {
       mileageComment: str(b.mileageComment),
       operatorNotes: str(b.operatorNotes),
       existingDraftPlain,
+      modelTier: parseGeminiModelTier(b.modelTier),
     });
     return NextResponse.json({ text });
   } catch (e) {
