@@ -24,3 +24,15 @@ export function normalizeListingAnalysisPhotos(raw: unknown): ListingAnalysisPho
   }
   return out;
 }
+
+/** PATCH merge — nekad nezaudē vairāk fotogrāfiju; vienāda skaita gadījumā ienākošā secība (kārtošana). */
+export function mergeListingAnalysisPhotoLists(
+  incoming: ListingAnalysisPhotoMeta[] | null | undefined,
+  baseline: ListingAnalysisPhotoMeta[] | null | undefined,
+): ListingAnalysisPhotoMeta[] {
+  const a = normalizeListingAnalysisPhotos(incoming);
+  const b = normalizeListingAnalysisPhotos(baseline);
+  if (a.length > b.length) return a;
+  if (b.length > a.length) return b;
+  return a;
+}

@@ -9,6 +9,7 @@ import {
   SOURCE_BLOCK_KEYS,
   createDefaultSourceBlocks,
   mergeSourceBlocksWithDefaults,
+  type ListingAnalysisBlockState,
   type SourceBlockKey,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
@@ -23,6 +24,7 @@ import {
   vendorAvotuTrafficLevel,
   type TrafficFillLevel,
 } from "@/lib/admin-block-traffic-status";
+import { mergeListingAnalysisPhotoLists } from "@/lib/listing-analysis-photo-types";
 
 export type OrderWorkspacePersistBody = {
   sourceBlocks: WorkspaceSourceBlocks;
@@ -125,6 +127,17 @@ function pickRicherSourceBlock<K extends SourceBlockKey>(
   return incoming;
 }
 
+function pickRicherListingAnalysisBlock(
+  incoming: ListingAnalysisBlockState,
+  baseline: ListingAnalysisBlockState,
+): ListingAnalysisBlockState {
+  const picked = pickRicherSourceBlock("listing_analysis", incoming, baseline);
+  return {
+    ...picked,
+    photos: mergeListingAnalysisPhotoLists(incoming.photos, baseline.photos),
+  };
+}
+
 /**
  * Apvieno ienākošo darba zonu ar pēdējo zināmo labo momentuzņēmumu — nekad neiztukšo bloku,
  * kurā baseline jau bija dati (piem. saglabā AutoDNA, ja saglabā tikai Citi avoti).
@@ -146,8 +159,7 @@ export function coalesceOrderWorkspacePersistBody(
     ltab: pickRicherSourceBlock("ltab", incomingBlocks.ltab, baselineBlocks.ltab),
     tirgus: pickRicherSourceBlock("tirgus", incomingBlocks.tirgus, baselineBlocks.tirgus),
     citi_avoti: pickRicherSourceBlock("citi_avoti", incomingBlocks.citi_avoti, baselineBlocks.citi_avoti),
-    listing_analysis: pickRicherSourceBlock(
-      "listing_analysis",
+    listing_analysis: pickRicherListingAnalysisBlock(
       incomingBlocks.listing_analysis,
       baselineBlocks.listing_analysis,
     ),

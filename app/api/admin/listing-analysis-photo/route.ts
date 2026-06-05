@@ -88,6 +88,8 @@ export async function POST(req: Request) {
     const form = await req.formData();
     const sessionId = String(form.get("sessionId") ?? "").trim();
     const file = form.get("file");
+    const countRaw = String(form.get("currentCount") ?? "").trim();
+    const clientCount = Number.parseInt(countRaw, 10);
 
     if (!sessionId || !isSafeOrderDraftSessionId(sessionId)) {
       return NextResponse.json({ error: "invalid_session" }, { status: 400 });
@@ -99,8 +101,10 @@ export async function POST(req: Request) {
     const orderOk = await assertOrderAccess(sessionId);
     if (!orderOk) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-    const count = await persistedPhotoCount(sessionId);
-    if (count >= LISTING_ANALYSIS_MAX_PHOTOS) {
+    const persisted = await persistedPhotoCount(sessionId);
+    const effectiveCount =
+      Number.isFinite(clientCount) && clientCount >= 0 ? Math.max(persisted, clientCount) : persisted;
+    if (effectiveCount >= LISTING_ANALYSIS_MAX_PHOTOS) {
       return NextResponse.json({ error: "photo_limit" }, { status: 400 });
     }
 
@@ -114,12 +118,19 @@ export async function POST(req: Request) {
     }
 
     const photoId = makeListingAnalysisPhotoId();
-    await writeListingAnalysisPhotoJpeg(sessionId, photoId, buf);
+    try {
+      await writeListingAnalysisPhotoJpeg(sessionId, photoId, buf);
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e);
+      console.error("[listing-analysis-photo] POST write", sessionId, detail);
+      return NextResponse.json({ error: "write_failed", detail }, { status: 503 });
+    }
 
     return NextResponse.json({ ok: true, id: photoId });
   } catch (e) {
-    console.error("[listing-analysis-photo] POST", e);
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[listing-analysis-photo] POST", msg);
+    return NextResponse.json({ error: "server_error", detail: msg }, { status: 500 });
   }
 }
 

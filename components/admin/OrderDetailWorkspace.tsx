@@ -1178,7 +1178,7 @@ export function OrderDetailWorkspace({
   );
 
   const commitListingPhotosStructural = useCallback(
-    (nextPhotos: ListingAnalysisBlockState["photos"]) => {
+    async (nextPhotos: ListingAnalysisBlockState["photos"]) => {
       workspaceDirtyRef.current = true;
       flushSync(() => {
         setWs((prev) => {
@@ -1195,7 +1195,7 @@ export function OrderDetailWorkspace({
       });
       commitWorkspaceLocalNow({ force: true });
       if (orderDraftPersistenceEnabled) {
-        void persistFullWorkspaceRef("listing_photos");
+        await persistFullWorkspaceRef("listing_photos", { showFlash: false });
       }
     },
     [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],

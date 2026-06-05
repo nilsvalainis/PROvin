@@ -13,10 +13,6 @@ import type {
 } from "@/lib/admin-order-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
-import {
-  collectListingAnalysisPhotoIdsFromWorkspace,
-  pruneOrphanListingAnalysisPhotos,
-} from "@/lib/admin-listing-analysis-photo-store";
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { coalesceOrderDraftWorkspacePatch } from "@/lib/admin-order-draft-workspace-merge";
@@ -628,15 +624,6 @@ export async function patchOrderDraft(
     saveGeneration: options.saveGeneration,
     writeLatencyMs: Date.now() - writeStarted,
   });
-
-  if (nextWorkspace != null) {
-    void pruneOrphanListingAnalysisPhotos(
-      sessionId,
-      collectListingAnalysisPhotoIdsFromWorkspace(nextWorkspace),
-    ).catch(() => {
-      /* ignore fs/blob cleanup errors */
-    });
-  }
 
   if (workspacePatch !== undefined && nextWorkspace != null) {
     const verifyStarted = Date.now();

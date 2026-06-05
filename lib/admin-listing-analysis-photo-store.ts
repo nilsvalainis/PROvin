@@ -94,7 +94,12 @@ export async function writeListingAnalysisPhotoJpeg(
     }
   }
 
-  if (!blobOk && !fsOk) throw new Error("write_failed");
+  if (!blobOk && !fsOk) {
+    if (process.env.VERCEL === "1" && blob && !blobOk) {
+      throw new Error("blob_write_failed");
+    }
+    throw new Error("write_failed");
+  }
 }
 
 export async function readListingAnalysisPhotoJpeg(
