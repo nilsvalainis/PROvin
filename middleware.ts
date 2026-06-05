@@ -11,6 +11,11 @@ const intlMiddleware = createMiddleware(routing);
 
 export default function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
+
+  if (pathname === "/sitemap.xml" || pathname === "/robots.txt") {
+    return NextResponse.next();
+  }
+
   const themeParam = searchParams.get("theme");
   if (themeParam === "light" || themeParam === "dark") {
     const redirectUrl = request.nextUrl.clone();
@@ -39,5 +44,7 @@ export default function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  matcher: [
+    "/((?!api|_next|_vercel|sitemap\\.xml|robots\\.txt|.*\\..*).*)",
+  ],
 };

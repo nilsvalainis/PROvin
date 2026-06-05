@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { sendPaymentConfirmationEmail } from "@/lib/email/send-transactional";
 import { notifyAdminEmail, notifyAdminTelegram } from "@/lib/notify";
 import { persistPaidOrderInvoice } from "@/lib/invoice-storage";
+import { triggerInvoiceSequenceRepairInBackground } from "@/lib/invoice-counter";
 import { releaseStripeEvent, tryBeginStripeEvent } from "@/lib/stripe-webhook-dedupe";
 import { ensureConsultationDraftSeed } from "@/lib/admin-consultation-draft-store";
 import { getCheckoutLineFromSession, getOrderFieldsFromSession } from "@/lib/stripe-session";
@@ -95,6 +96,7 @@ async function fulfillPaidCheckoutSession(
     void persistPaidOrderInvoice(session.id).catch((err) => {
       console.error("invoice persist:", err);
     });
+    triggerInvoiceSequenceRepairInBackground();
 
     if (getCheckoutLineFromSession(session) === "provin_select") {
       void ensureConsultationDraftSeed(session.id).catch((err) => {

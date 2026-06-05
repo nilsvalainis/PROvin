@@ -162,6 +162,13 @@ async function ensureInvoiceSequenceRepairedOnce(): Promise<CounterData> {
   return repairOncePromise;
 }
 
+/** Admin / webhook fons — nebloķē klienta rēķina lejupielādi. */
+export function triggerInvoiceSequenceRepairInBackground(): void {
+  void ensureInvoiceSequenceRepairedOnce().catch((e) => {
+    console.error("[invoice-counter] background repair failed", e);
+  });
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
@@ -171,8 +178,6 @@ function sleep(ms: number): Promise<void> {
  * Produkcijā skaitītājs glabājas Vercel Blob (`_meta/invoice-year-sequence.json`), nevis /tmp.
  */
 export async function nextInvoiceSequenceForYear(year: number): Promise<number> {
-  await ensureInvoiceSequenceRepairedOnce();
-
   const blob = getOrderDraftBlobConfig();
   if (blob) {
     for (let attempt = 0; attempt < 8; attempt++) {

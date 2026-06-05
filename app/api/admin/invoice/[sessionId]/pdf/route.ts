@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { upsertOrderDraftInvoiceFields } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
-import { buildInvoicePdfBytes } from "@/lib/invoice-pdf";
-import { getOrCreateInvoiceNumber } from "@/lib/invoice-number";
-import { readInvoicePdfFromDisk, resolveInvoiceDir, writeInvoicePdfToDisk } from "@/lib/invoice-storage";
+import { getOrBuildInvoicePdfForSession } from "@/lib/invoice-storage";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 type RouteContext = { params: Promise<{ sessionId: string }> };
 
-function pdfHeaders(sessionId: string, invoiceNumber: string, bytes: Uint8Array) {
+function pdfHeaders(invoiceNumber: string, bytes: Uint8Array) {
   const safeName = `invoice-${invoiceNumber.replace(/[^\w.-]+/g, "_")}.pdf`;
   return {
     "Content-Type": "application/pdf",
@@ -44,46 +41,20 @@ export async function GET(_req: Request, ctx: RouteContext) {
     );
   }
 
-  const invoiceNumber = await getOrCreateInvoiceNumber(sessionId, order.created);
-
-  const cached = await readInvoicePdfFromDisk(sessionId);
-  if (cached) {
-    return new NextResponse(Buffer.from(cached), {
-      status: 200,
-      headers: pdfHeaders(sessionId, invoiceNumber, cached),
-    });
-  }
-
-  let bytes: Uint8Array;
+  let result;
   try {
-    bytes = await buildInvoicePdfBytes({
-      id: order.id,
-      created: order.created,
-      amountTotal: order.amountTotal,
-      currency: order.currency,
-      customerEmail: order.customerEmail,
-      customerDetailsEmail: order.customerDetailsEmail,
-      vin: order.vin,
-      invoiceNumber,
-    });
+    result = await getOrBuildInvoicePdfForSession(sessionId);
   } catch (error) {
     console.error("[api/admin/invoice/pdf] PDF generation failed:", error);
     return NextResponse.json({ error: "pdf_generation_failed" }, { status: 500 });
   }
 
-  if (resolveInvoiceDir()) {
-    const wrote = await writeInvoicePdfToDisk(sessionId, bytes);
-    if (wrote) {
-      const relUrl = `/api/admin/invoice/${encodeURIComponent(sessionId)}/pdf`;
-      await upsertOrderDraftInvoiceFields(sessionId, {
-        invoicePdfUrl: relUrl,
-        invoicePdfGeneratedAt: new Date().toISOString(),
-      });
-    }
+  if (!result) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  return new NextResponse(Buffer.from(bytes), {
+  return new NextResponse(Buffer.from(result.bytes), {
     status: 200,
-    headers: pdfHeaders(sessionId, invoiceNumber, bytes),
+    headers: pdfHeaders(result.invoiceNumber, result.bytes),
   });
 }

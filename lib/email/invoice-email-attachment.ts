@@ -3,7 +3,7 @@ import "server-only";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { buildInvoicePdfBytes } from "@/lib/invoice-pdf";
 import { getOrCreateInvoiceNumber } from "@/lib/invoice-number";
-import { readInvoicePdfFromDisk } from "@/lib/invoice-storage";
+import { readInvoicePdfCached } from "@/lib/invoice-storage";
 
 export type InvoiceEmailAttachment = {
   filename: string;
@@ -27,10 +27,10 @@ export async function getInvoiceEmailAttachment(sessionId: string): Promise<Invo
   const safe = invoiceNumber.replace(/[^\w.-]+/g, "_") || "PRV";
   const filename = `rekins_${safe}.pdf`;
 
-  const disk = await readInvoicePdfFromDisk(sessionId);
+  const cached = await readInvoicePdfCached(sessionId);
   let bytes: Uint8Array;
-  if (disk) {
-    bytes = disk;
+  if (cached) {
+    bytes = cached;
   } else {
     bytes = await buildInvoicePdfBytes({
       id: order.id,
