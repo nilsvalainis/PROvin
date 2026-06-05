@@ -1,4 +1,4 @@
-/* Izolēta testa cenu lapa — kompakts 2 kolonnas, heroFormCard inputi */
+/* Izolēta testa cenu lapa — 3 kolonnas, bez formas berzes */
 
 .page {
   position: relative;
@@ -14,7 +14,7 @@
 
 .pageInner {
   margin: 0 auto;
-  max-width: 56rem;
+  max-width: 72rem;
 }
 
 .themeFloat {
@@ -68,45 +68,15 @@
   color: var(--test-pricing-muted);
 }
 
-.contactBlock {
-  margin: 0 auto clamp(1rem, 2.5vw, 1.35rem);
-  max-width: 28rem;
-  padding: 0.85rem 1rem;
-  border-radius: 14px;
-  border: 1px solid var(--test-pricing-border);
-  background: var(--test-pricing-surface);
-}
-
-.contactHeading {
-  margin: 0 0 0.65rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--test-pricing-muted);
-}
-
-.contactFields {
-  display: grid;
-  gap: 0.65rem;
-}
-
-@media (min-width: 520px) {
-  .contactFields {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-  }
-}
-
 .grid {
   display: grid;
   gap: 1rem;
   align-items: stretch;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 960px) {
   .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1.15rem;
   }
 }
@@ -116,6 +86,7 @@
   display: flex;
   min-height: 100%;
   flex-direction: column;
+  justify-content: space-between;
   border-radius: 18px;
   padding: clamp(1rem, 2vw, 1.25rem);
   border: 1px solid var(--test-pricing-card-border);
@@ -131,7 +102,7 @@
     0 20px 40px rgb(0 102 255 / 0.14);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 960px) {
   .cardPremium {
     transform: scale(1.025);
     z-index: 2;
@@ -164,9 +135,17 @@
   min-height: 0;
 }
 
+.featuresGrow {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .cardFooter {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   margin-top: auto;
   padding-top: 0.75rem;
 }
@@ -196,61 +175,12 @@
   color: var(--test-pricing-muted);
 }
 
-.valueBar {
-  margin: 0 0 0.65rem;
-  padding: 0.45rem 0.6rem;
-  border-radius: 10px;
-  border: 1px solid rgb(0 102 255 / 0.28);
-  background: rgb(0 102 255 / 0.1);
-  font-size: 0.72rem;
-  font-weight: 600;
-  line-height: 1.35;
-  color: var(--test-pricing-ink);
-}
-
-html[data-site-theme="light"] .valueBar {
-  background: rgb(0 102 255 / 0.08);
-}
-
-.featureSections {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.featureSection {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.sectionHeaderMuted {
-  margin: 0 0 0.15rem;
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  line-height: 1.3;
-  color: var(--test-pricing-muted);
-}
-
-.sectionHeaderHighlight {
-  margin: 0.35rem 0 0.15rem;
-  font-size: 0.64rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  line-height: 1.3;
-  color: var(--test-pricing-ink);
-}
-
-html[data-site-theme="dark"] .sectionHeaderHighlight {
-  color: rgb(255 200 120 / 0.95);
-}
-
 .featureList {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 0;
 }
@@ -276,70 +206,23 @@ html[data-site-theme="dark"] .sectionHeaderHighlight {
   line-height: 1.35;
 }
 
-.inputsBlock {
-  display: grid;
-  gap: 0.65rem;
-}
-
-.field {
-  display: grid;
-  gap: 0.3rem;
-}
-
-.fieldLabel {
-  font-size: 0.68rem;
+.featureIconBlue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--test-pricing-label);
-}
-
-.requiredMark {
-  color: #f87171;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-.fieldInput {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 44px;
-  border-radius: 12px;
-  border: 1px solid var(--test-pricing-input-border);
-  background: var(--test-pricing-input-bg);
-  padding: 0 14px;
-  font-size: 14px;
   line-height: 1.35;
-  color: var(--test-pricing-ink);
-  outline: none;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+  color: #0066ff;
 }
 
-.fieldInput::placeholder {
-  color: var(--test-pricing-placeholder);
-}
-
-.fieldInput:focus {
-  border-color: rgb(0 102 255 / 0.65);
-  box-shadow: 0 0 0 3px rgb(0 102 255 / 0.18);
-}
-
-.fieldInputError {
-  border-color: rgb(248 113 113 / 0.85);
-  box-shadow: 0 0 0 2px rgb(248 113 113 / 0.2);
-}
-
-.fieldError {
-  margin: 0;
-  font-size: 0.68rem;
-  line-height: 1.35;
-  color: #f87171;
+.featureBrand {
+  font-weight: 700;
+  color: #0066ff;
 }
 
 .turnaround {
-  margin: 0.65rem 0 0;
+  margin: 0;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--test-pricing-muted);
@@ -354,44 +237,6 @@ html[data-site-theme="dark"] .sectionHeaderHighlight {
   max-width: none !important;
   margin-top: 0 !important;
   min-height: 50px !important;
-}
-
-.consentWrap {
-  margin: clamp(1.5rem, 4vw, 2rem) auto 0;
-  max-width: 36rem;
-  display: flex;
-  justify-content: center;
-}
-
-.consentRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  padding: 0.85rem 1rem;
-  border-radius: 14px;
-  border: 1px solid var(--test-pricing-card-border);
-  background: var(--test-pricing-card-bg);
-}
-
-.consentCheckbox {
-  margin-top: 0.12rem;
-  height: 1rem;
-  width: 1rem;
-  flex-shrink: 0;
-  accent-color: #0066ff;
-}
-
-.consentText {
-  margin: 0;
-  font-size: 0.75rem;
-  line-height: 1.45;
-  color: var(--test-pricing-muted);
-}
-
-.consentText a {
-  color: #0066ff;
-  text-decoration: underline;
-  text-underline-offset: 2px;
 }
 
 .globalError {
@@ -423,7 +268,6 @@ html[data-site-theme="light"] .globalError {
   --test-pricing-page-bg: #121418;
   --test-pricing-ink: rgb(245 248 252 / 0.96);
   --test-pricing-muted: rgb(210 214 222 / 0.72);
-  --test-pricing-label: rgb(210 214 222 / 0.82);
   --test-pricing-border: rgb(255 255 255 / 0.1);
   --test-pricing-surface: rgb(18 20 24 / 0.92);
   --test-pricing-surface-hover: rgb(28 32 40 / 0.95);
@@ -431,16 +275,12 @@ html[data-site-theme="light"] .globalError {
   --test-pricing-card-border: rgb(255 255 255 / 0.08);
   --test-pricing-card-shadow: 0 14px 32px rgb(0 0 0 / 0.28), 0 0 0 1px rgb(0 102 255 / 0.1);
   --test-pricing-row-border: rgb(255 255 255 / 0.06);
-  --test-pricing-input-bg: rgb(8 10 14 / 0.55);
-  --test-pricing-input-border: rgb(255 255 255 / 0.12);
-  --test-pricing-placeholder: rgb(210 214 222 / 0.45);
 }
 
 html[data-site-theme="light"] .page {
   --test-pricing-page-bg: #f5f5f7;
   --test-pricing-ink: #1d1d1f;
   --test-pricing-muted: #6e6e73;
-  --test-pricing-label: #5a6577;
   --test-pricing-border: rgb(24 31 42 / 0.14);
   --test-pricing-surface: rgb(255 255 255 / 0.94);
   --test-pricing-surface-hover: #fff;
@@ -448,7 +288,4 @@ html[data-site-theme="light"] .page {
   --test-pricing-card-border: rgb(24 31 42 / 0.14);
   --test-pricing-card-shadow: 0 14px 28px rgb(24 31 42 / 0.09), 0 0 0 1px rgb(0 102 255 / 0.08);
   --test-pricing-row-border: rgb(24 31 42 / 0.08);
-  --test-pricing-input-bg: #fff;
-  --test-pricing-input-border: rgb(24 31 42 / 0.18);
-  --test-pricing-placeholder: #86868b;
 }

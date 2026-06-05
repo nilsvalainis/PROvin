@@ -1,64 +1,42 @@
 import { describe, expect, it } from "vitest";
-import { getTestPricingPlan, validateTestPricingCheckout } from "@/lib/test-pricing-plans";
+import {
+  getTestPricingPlan,
+  isTestPricingPlanId,
+  TEST_PRICING_PLANS,
+} from "@/lib/test-pricing-plans";
 
-const validListing = "https://www.ss.lv/transport/cars/bmw/5-series/sell/";
-
-describe("validateTestPricingCheckout", () => {
-  const miniPlan = getTestPricingPlan("mini")!;
-  const premiumPlan = getTestPricingPlan("premium")!;
-
-  it("mini uses 2999 cents", () => {
-    expect(miniPlan.amountCents).toBe(2999);
-    expect(miniPlan.vinRequired).toBe(false);
+describe("test-pricing plans", () => {
+  it("exposes mini, plus, and premium in order", () => {
+    expect(TEST_PRICING_PLANS.map((p) => p.id)).toEqual(["mini", "plus", "premium"]);
   });
 
-  const validEmail = "klients@example.com";
-  const validPhone = "+37120000000";
-
-  it("requires email and phone before checkout", () => {
-    const r = validateTestPricingCheckout(miniPlan, "", "", validListing, "", true);
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors.email).toBeTruthy();
-      expect(r.errors.phone).toBeTruthy();
-    }
+  it("recognizes valid plan ids", () => {
+    expect(isTestPricingPlanId("mini")).toBe(true);
+    expect(isTestPricingPlanId("plus")).toBe(true);
+    expect(isTestPricingPlanId("premium")).toBe(true);
+    expect(isTestPricingPlanId("other")).toBe(false);
   });
 
-  it("requires listing URL", () => {
-    const r = validateTestPricingCheckout(
-      miniPlan,
-      validEmail,
-      validPhone,
-      "",
-      "",
+  it("mini uses 2999 cents and 24h turnaround", () => {
+    const mini = getTestPricingPlan("mini")!;
+    expect(mini.amountCents).toBe(2999);
+    expect(mini.turnaround).toContain("24h");
+    expect(mini.features).toHaveLength(3);
+  });
+
+  it("plus uses 4999 cents and includes mini tier", () => {
+    const plus = getTestPricingPlan("plus")!;
+    expect(plus.amountCents).toBe(4999);
+    expect(plus.features.some((f) => f.kind === "includes" && f.packageName === "PROVIN MINI")).toBe(
       true,
     );
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors.listingUrl).toBeTruthy();
   });
 
-  it("allows optional VIN on mini", () => {
-    const r = validateTestPricingCheckout(
-      miniPlan,
-      validEmail,
-      validPhone,
-      validListing,
-      "",
-      true,
-    );
-    expect(r.ok).toBe(true);
-  });
-
-  it("requires VIN on premium", () => {
-    const r = validateTestPricingCheckout(
-      premiumPlan,
-      validEmail,
-      validPhone,
-      validListing,
-      "",
-      true,
-    );
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors.vin).toBeTruthy();
+  it("premium is highlighted with 9900 cents and 48h turnaround", () => {
+    const premium = getTestPricingPlan("premium")!;
+    expect(premium.amountCents).toBe(9900);
+    expect(premium.highlighted).toBe(true);
+    expect(premium.turnaround).toContain("48h");
+    expect(premium.vinRequired).toBe(true);
   });
 });

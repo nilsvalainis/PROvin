@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
+import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
-import {
-  getOrderContactFieldErrors,
-  isPlausibleListingUrl,
-  isValidVin,
-  normalizeVin,
-} from "@/lib/order-field-validation";
 import {
   getTestPricingPlan,
   isTestPricingPlanId,
@@ -35,6 +30,26 @@ function resolveStripePriceId(envKey: string): string | null {
   return id.startsWith("price_") ? id : null;
 }
 
+function buildCheckoutCustomFields(plan: { vinRequired: boolean }): Stripe.Checkout.SessionCreateParams.CustomField[] {
+  return [
+    {
+      key: "listing_url",
+      label: { type: "custom", custom: "Sludinājuma saite" },
+      type: "text",
+      optional: false,
+    },
+    {
+      key: "vin",
+      label: {
+        type: "custom",
+        custom: plan.vinRequired ? "VIN (17 zīmes, obligāts)" : "VIN (ja zināms)",
+      },
+      type: "text",
+      optional: !plan.vinRequired,
+    },
+  ];
+}
+
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
   const checkoutRl = checkRateLimit(`checkout-test-pricing:${ip}`, CHECKOUT_MAX_PER_WINDOW, CHECKOUT_WINDOW_MS);
@@ -52,15 +67,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Maksājumu sistēma nav konfigurēta." }, { status: 500 });
   }
 
-  let raw: {
-    planId?: unknown;
-    email?: unknown;
-    phone?: unknown;
-    listingUrl?: unknown;
-    vin?: unknown;
-    locale?: unknown;
-    withdrawalConsent?: unknown;
-  };
+  let raw: { planId?: unknown; locale?: unknown };
   try {
     raw = (await req.json()) as typeof raw;
   } catch {
@@ -76,38 +83,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Nederīgs produkts." }, { status: 400 });
   }
 
-  const email = typeof raw.email === "string" ? raw.email.trim() : "";
-  const phone = typeof raw.phone === "string" ? raw.phone.trim() : "";
-  const listingUrl = typeof raw.listingUrl === "string" ? raw.listingUrl.trim() : "";
-  const vinInput = typeof raw.vin === "string" ? raw.vin : "";
-  const vin = normalizeVin(vinInput);
-  const withdrawalConsent = raw.withdrawalConsent === true;
-
   const localeRaw = typeof raw.locale === "string" ? raw.locale : routing.defaultLocale;
   const locale = routing.locales.includes(localeRaw as (typeof routing.locales)[number])
     ? localeRaw
     : routing.defaultLocale;
-
-  const errors: string[] = [];
-  const contact = getOrderContactFieldErrors(email, phone);
-  if (contact.email) errors.push(contact.email);
-  if (contact.phone) errors.push(contact.phone);
-  if (!withdrawalConsent) {
-    errors.push("Apstiprini noteikumus un digitālā satura izpildi.");
-  }
-  if (!listingUrl) {
-    errors.push("Ievadi sludinājuma saiti.");
-  } else if (!isPlausibleListingUrl(listingUrl)) {
-    errors.push("Saitei jābūt pilnai adresei uz konkrētu sludinājumu.");
-  }
-  if (plan.vinRequired) {
-    if (!vin || !isValidVin(vin)) errors.push("Ievadi derīgu 17 zīmju VIN.");
-  } else if (vinInput.trim() && (!vin || !isValidVin(vin))) {
-    errors.push("VIN formāts nav derīgs.");
-  }
-  if (errors.length > 0) {
-    return NextResponse.json({ error: errors[0], errors }, { status: 400 });
-  }
 
   const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim()
     ? getPublicSiteOrigin()
@@ -135,20 +114,16 @@ export async function POST(req: Request) {
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    customer_email: email,
     line_items: [lineItem],
     success_url: `${origin}${thanksPath}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${cancelPath}`,
-    phone_number_collection: { enabled: false },
+    phone_number_collection: { enabled: true },
+    consent_collection: { terms_of_service: "required" },
+    custom_fields: buildCheckoutCustomFields(plan),
     metadata: {
       checkout_line: plan.id,
       product_tier: plan.id,
-      listing_url: listingUrl,
-      vin: vin || "",
       report_delivery: "email",
-      phone,
-      withdrawal_waiver_ack: "true",
-      authorization_ack: "true",
       source_page: "test-pricing",
     },
     locale: stripeLocale(locale) as "lv",
