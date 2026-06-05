@@ -26,8 +26,8 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
   {
     id: "mini",
     title: "PROVIN MINI",
-    priceLabel: "29,99 €",
-    amountCents: 2999,
+    priceLabel: "19,99 €",
+    amountCents: 1999,
     stripePriceEnvKey: "STRIPE_PRICE_MINI",
     description: "Ātrai sludinājuma risku analīzei un LV auto padziļinātai pārbaudei.",
     turnaround: "⏱️ Izpilde: līdz 24h",
@@ -45,8 +45,8 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
   {
     id: "plus",
     title: "PROVIN PLUS",
-    priceLabel: "49,99 €",
-    amountCents: 4999,
+    priceLabel: "39,99 €",
+    amountCents: 3999,
     stripePriceEnvKey: "STRIPE_PRICE_PLUS",
     description: "Latvijā un Ziemeļvalstīs reģistrētu auto vēstures pārbaude.",
     turnaround: "⏱️ Izpilde: līdz 24h",
@@ -65,8 +65,8 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
   {
     id: "premium",
     title: "PROVIN PREMIUM",
-    priceLabel: "99,00 €",
-    amountCents: 9900,
+    priceLabel: "99,99 €",
+    amountCents: 9999,
     stripePriceEnvKey: "STRIPE_PRICE_PREMIUM",
     description: "Maksimāls drošības līmenis – pilna vietējo un starptautisko datu izpēte.",
     turnaround: "⏱️ Izpilde: līdz 48h",

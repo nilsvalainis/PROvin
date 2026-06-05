@@ -17,24 +17,24 @@ describe("test-pricing plans", () => {
     expect(isTestPricingPlanId("other")).toBe(false);
   });
 
-  it("mini uses 2999 cents and 24h turnaround", () => {
+  it("mini uses 1999 cents and 24h turnaround", () => {
     const mini = getTestPricingPlan("mini")!;
-    expect(mini.amountCents).toBe(2999);
+    expect(mini.amountCents).toBe(1999);
     expect(mini.turnaround).toContain("24h");
     expect(mini.features).toHaveLength(3);
   });
 
-  it("plus uses 4999 cents and includes mini tier", () => {
+  it("plus uses 3999 cents and includes mini tier", () => {
     const plus = getTestPricingPlan("plus")!;
-    expect(plus.amountCents).toBe(4999);
+    expect(plus.amountCents).toBe(3999);
     expect(plus.features.some((f) => f.kind === "includes" && f.packageName === "PROVIN MINI")).toBe(
       true,
     );
   });
 
-  it("premium is highlighted with 9900 cents and 48h turnaround", () => {
+  it("premium is highlighted with 9999 cents and 48h turnaround", () => {
     const premium = getTestPricingPlan("premium")!;
-    expect(premium.amountCents).toBe(9900);
+    expect(premium.amountCents).toBe(9999);
     expect(premium.highlighted).toBe(true);
     expect(premium.turnaround).toContain("48h");
     expect(premium.vinRequired).toBe(true);
