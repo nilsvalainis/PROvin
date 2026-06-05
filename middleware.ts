@@ -29,7 +29,12 @@ export default function middleware(request: NextRequest) {
     return res;
   }
 
-  if (pathname === "/test-pricing" || pathname.startsWith("/test-pricing/")) {
+  if (
+    pathname === "/test-pricing" ||
+    pathname.startsWith("/test-pricing/") ||
+    pathname === "/test-pricing-2" ||
+    pathname.startsWith("/test-pricing-2/")
+  ) {
     return NextResponse.next();
   }
 

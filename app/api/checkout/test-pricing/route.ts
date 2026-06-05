@@ -4,9 +4,11 @@ import { getStripe } from "@/lib/stripe";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { normalizeVin } from "@/lib/order-field-validation";
 import {
   getTestPricingPlan,
   isTestPricingPlanId,
+  validateTestPricingStep2,
   type TestPricingPlanId,
 } from "@/lib/test-pricing-plans";
 import { routing } from "@/i18n/routing";
@@ -67,7 +69,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Maksājumu sistēma nav konfigurēta." }, { status: 500 });
   }
 
-  let raw: { planId?: unknown; locale?: unknown };
+  let raw: {
+    planId?: unknown;
+    locale?: unknown;
+    listingUrl?: unknown;
+    vin?: unknown;
+    withdrawalConsent?: unknown;
+    sourcePage?: unknown;
+  };
   try {
     raw = (await req.json()) as typeof raw;
   } catch {
@@ -88,6 +97,24 @@ export async function POST(req: Request) {
     ? localeRaw
     : routing.defaultLocale;
 
+  const sourcePage =
+    typeof raw.sourcePage === "string" && raw.sourcePage.trim() ? raw.sourcePage.trim() : "test-pricing";
+  const listingUrl = typeof raw.listingUrl === "string" ? raw.listingUrl.trim() : "";
+  const vinInput = typeof raw.vin === "string" ? raw.vin : "";
+  const vin = normalizeVin(vinInput);
+  const withdrawalConsent = raw.withdrawalConsent === true;
+  const clientCollected = sourcePage === "test-pricing-2";
+
+  if (clientCollected) {
+    const validation = validateTestPricingStep2(plan, listingUrl, vinInput, withdrawalConsent);
+    if (!validation.ok) {
+      const errors = validation.errors;
+      const first =
+        errors.listingUrl ?? errors.vin ?? errors.consent ?? "Aizpildi obligātos laukus.";
+      return NextResponse.json({ error: first, errors: Object.values(errors) }, { status: 400 });
+    }
+  }
+
   const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim()
     ? getPublicSiteOrigin()
     : process.env.VERCEL_URL
@@ -95,7 +122,8 @@ export async function POST(req: Request) {
       : "http://localhost:3000";
 
   const thanksPath = `/${locale}/paldies`;
-  const cancelPath = "/test-pricing?atcelts=1";
+  const cancelPath =
+    sourcePage === "test-pricing-2" ? "/test-pricing-2?atcelts=1" : "/test-pricing?atcelts=1";
 
   const priceId = resolveStripePriceId(plan.stripePriceEnvKey);
   const lineItem = priceId
@@ -118,13 +146,25 @@ export async function POST(req: Request) {
     success_url: `${origin}${thanksPath}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${cancelPath}`,
     phone_number_collection: { enabled: true },
-    consent_collection: { terms_of_service: "required" },
-    custom_fields: buildCheckoutCustomFields(plan),
+    ...(clientCollected
+      ? {}
+      : {
+          consent_collection: { terms_of_service: "required" as const },
+          custom_fields: buildCheckoutCustomFields(plan),
+        }),
     metadata: {
       checkout_line: plan.id,
       product_tier: plan.id,
+      listing_url: listingUrl,
+      vin: vin || "",
       report_delivery: "email",
-      source_page: "test-pricing",
+      source_page: sourcePage,
+      ...(clientCollected
+        ? {
+            withdrawal_waiver_ack: "true",
+            authorization_ack: "true",
+          }
+        : {}),
     },
     locale: stripeLocale(locale) as "lv",
   });

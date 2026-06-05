@@ -38,5 +38,6 @@ describe("test-pricing plans", () => {
     expect(premium.highlighted).toBe(true);
     expect(premium.turnaround).toContain("48h");
     expect(premium.vinRequired).toBe(true);
+    expect(premium.heroCtaLabel).toContain("99,99");
   });
 });

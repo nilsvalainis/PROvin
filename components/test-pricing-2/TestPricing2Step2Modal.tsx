@@ -1,0 +1,204 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import demoStyles from "@/app/[locale]/demo/page.module.css";
+import styles from "@/app/test-pricing-2/test-pricing-2.module.css";
+import { normalizeVin } from "@/lib/order-field-validation";
+import {
+  getTestPricingPlan,
+  validateTestPricingStep2,
+  type TestPricingPlanId,
+} from "@/lib/test-pricing-plans";
+
+type Props = {
+  planId: TestPricingPlanId;
+  open: boolean;
+  onClose: () => void;
+};
+
+export function TestPricing2Step2Modal({ planId, open, onClose }: Props) {
+  const titleId = useId();
+  const firstFieldRef = useRef<HTMLInputElement>(null);
+  const plan = getTestPricingPlan(planId);
+  const [listingUrl, setListingUrl] = useState("");
+  const [vin, setVin] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [errors, setErrors] = useState<{ listingUrl?: string; vin?: string; consent?: string }>({});
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    firstFieldRef.current?.focus();
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  const submit = useCallback(async () => {
+    if (!plan) return;
+    setGlobalError(null);
+    const validation = validateTestPricingStep2(plan, listingUrl, vin, consent);
+    if (!validation.ok) {
+      setErrors(validation.errors);
+      if (validation.errors.consent) setGlobalError(validation.errors.consent);
+      return;
+    }
+    setErrors({});
+    setLoading(true);
+    try {
+      const res = await fetch("/api/checkout/test-pricing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId,
+          locale: "lv",
+          listingUrl: listingUrl.trim(),
+          vin: normalizeVin(vin),
+          withdrawalConsent: consent,
+          sourcePage: "test-pricing-2",
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        error?: string;
+        errors?: string[];
+      };
+      if (!res.ok || !data.url) {
+        throw new Error(data.errors?.[0] ?? data.error ?? "Neizdevās sākt maksājumu.");
+      }
+      window.location.href = data.url;
+    } catch (e) {
+      setGlobalError(e instanceof Error ? e.message : "Neizdevās sākt maksājumu.");
+    } finally {
+      setLoading(false);
+    }
+  }, [consent, listingUrl, plan, planId, vin]);
+
+  if (!open || !plan) return null;
+
+  return (
+    <div
+      className={styles.modalOverlay}
+      role="presentation"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className={styles.modalCard}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id={titleId} className={styles.modalTitle}>
+          Pabeidz pasūtījumu — {plan.title}
+        </h2>
+        <p className={styles.modalLead}>
+          Ievadi sludinājuma saiti un VIN (ja nepieciešams). Tālāk novirzīsim uz Stripe maksājumu.
+        </p>
+
+        {globalError ? <p className={styles.modalGlobalError}>{globalError}</p> : null}
+
+        <div className={styles.modalFields}>
+          <div className={styles.field}>
+            <label className={styles.fieldLabel} htmlFor="tp2-listing">
+              Sludinājuma saite <span className={styles.requiredMark}>*</span>
+            </label>
+            <input
+              ref={firstFieldRef}
+              id="tp2-listing"
+              type="url"
+              inputMode="url"
+              autoComplete="url"
+              placeholder="Iekopē linku..."
+              className={`${styles.fieldInput} ${errors.listingUrl ? styles.fieldInputError : ""}`}
+              value={listingUrl}
+              onChange={(e) => {
+                setListingUrl(e.target.value);
+                setErrors((p) => ({ ...p, listingUrl: undefined }));
+              }}
+            />
+            {errors.listingUrl ? <p className={styles.fieldError}>{errors.listingUrl}</p> : null}
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.fieldLabel} htmlFor="tp2-vin">
+              VIN numurs
+              {plan.vinRequired ? <span className={styles.requiredMark}> *</span> : null}
+            </label>
+            <input
+              id="tp2-vin"
+              type="text"
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={17}
+              placeholder={plan.vinRequired ? "Ievadi VIN (obligāts)" : "Ievadi VIN (ja ir)"}
+              className={`${styles.fieldInput} ${errors.vin ? styles.fieldInputError : ""}`}
+              value={vin}
+              onChange={(e) => {
+                setVin(e.target.value.toUpperCase());
+                setErrors((p) => ({ ...p, vin: undefined }));
+              }}
+            />
+            {errors.vin ? <p className={styles.fieldError}>{errors.vin}</p> : null}
+          </div>
+
+          <label className={styles.consentRow}>
+            <input
+              type="checkbox"
+              className={styles.consentCheckbox}
+              checked={consent}
+              onChange={(e) => {
+                setConsent(e.target.checked);
+                setErrors((p) => ({ ...p, consent: undefined }));
+                if (e.target.checked) setGlobalError(null);
+              }}
+            />
+            <span className={styles.consentText}>
+              Apstiprinu{" "}
+              <Link href="/lv/lietosanas-noteikumi" target="_blank" rel="noopener noreferrer">
+                lietošanas noteikumus
+              </Link>
+              ,{" "}
+              <Link href="/lv/privatuma-politika" target="_blank" rel="noopener noreferrer">
+                privātuma politiku
+              </Link>{" "}
+              un piekrītu digitālā satura tūlītējai izpildei (atteikuma tiesību zaudēšana).
+            </span>
+          </label>
+          {errors.consent && !globalError ? (
+            <p className={styles.fieldError}>{errors.consent}</p>
+          ) : null}
+        </div>
+
+        <div className={styles.modalActions}>
+          <button
+            type="button"
+            className={`${demoStyles.ctaButton} ${styles.ctaBtn}`}
+            disabled={loading}
+            onClick={() => void submit()}
+          >
+            {loading ? "Novirza uz Stripe…" : plan.heroCtaLabel}
+          </button>
+          <button type="button" className={styles.modalDismiss} onClick={onClose}>
+            Atcelt
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
