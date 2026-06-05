@@ -2187,6 +2187,11 @@ export function OrderDetailWorkspace({
   );
 
   const openPrintReport = async () => {
+    syncWsPersistRefFromState();
+    if (orderDraftPersistenceEnabled) {
+      await flushWorkspaceServerPatch({ showFlash: false });
+    }
+
     let listingMarket: ListingMarketSnapshot | null = null;
     const listingUrl = payload.listingUrl?.trim();
     if (listingUrl) {
@@ -2207,23 +2212,42 @@ export function OrderDetailWorkspace({
 
     const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeStyle: "short" });
     const flatSources = blocksToLegacyFlatFields(blocksDisplaySafe);
+    const listingBlocks = mergeSourceBlocksWithDefaults(wsPersistRef.current.sourceBlocks);
+    const photoIds = (listingBlocks.listing_analysis.photos ?? []).map((p) => p.id);
     const listingAnalysisPhotoDataUrls = new Map<string, string>();
-    for (const ph of blocksDisplaySafe.listing_analysis.photos ?? []) {
+    let resolvedPhotoIds = photoIds;
+    if (photoIds.length > 0) {
       try {
-        const res = await fetch(
-          `/api/admin/listing-analysis-photo?sessionId=${encodeURIComponent(payload.sessionId)}&photoId=${encodeURIComponent(ph.id)}`,
-          { credentials: "include" },
-        );
-        if (!res.ok) continue;
-        const buf = await res.arrayBuffer();
-        const bytes = new Uint8Array(buf);
-        let binary = "";
-        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]!);
-        listingAnalysisPhotoDataUrls.set(ph.id, `data:image/jpeg;base64,${btoa(binary)}`);
+        const res = await fetch("/api/admin/listing-analysis-photo/pdf-batch", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: payload.sessionId, photoIds }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          dataUrls?: Record<string, string>;
+          missing?: string[];
+        };
+        if (res.ok && data.dataUrls) {
+          for (const [id, url] of Object.entries(data.dataUrls)) {
+            listingAnalysisPhotoDataUrls.set(id, url);
+          }
+          const fromBatch = Object.keys(data.dataUrls);
+          resolvedPhotoIds = [
+            ...photoIds.filter((id) => data.dataUrls![id]),
+            ...fromBatch.filter((id) => !photoIds.includes(id)),
+          ];
+        }
       } catch {
-        /* skip missing photo */
+        /* PDF bez fotogrāfijām, ja batch neizdevās */
       }
     }
+    const listingAnalysisForPdf = {
+      ...listingBlocks.listing_analysis,
+      photos: resolvedPhotoIds
+        .filter((id) => listingAnalysisPhotoDataUrls.has(id))
+        .map((id) => ({ id })),
+    };
     const html = buildClientReportDocumentHtml({
       payload: {
         ...payload,
@@ -2234,7 +2258,7 @@ export function OrderDetailWorkspace({
         manualLtabBlock: toPdfLtabManualBlock(blocksDisplaySafe.ltab),
         autoRecordsBlock: blocksDisplaySafe.auto_records,
         citiAvoti: blocksDisplaySafe.citi_avoti,
-        listingAnalysis: blocksDisplaySafe.listing_analysis,
+        listingAnalysis: listingAnalysisForPdf,
         iriss: ws.iriss,
         apskatesPlāns: ws.apskatesPlāns,
         cenasAtbilstiba: ws.cenasAtbilstiba,

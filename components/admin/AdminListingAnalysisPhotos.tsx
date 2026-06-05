@@ -34,6 +34,9 @@ function uploadErrorMessage(error: string | undefined, detail?: string): string 
       ? "Neizdevās saglabāt Blob — pārbaudi BLOB_READ_WRITE_TOKEN."
       : "Neizdevās saglabāt failu serverī.";
   }
+  if (error === "write_verify_failed") {
+    return "Fails augšupielādēts, bet neizdevās apstiprināt — mēģini vēlreiz.";
+  }
   if (error === "not_found") return "Pasūtījums nav atrasts.";
   if (detail) return detail.slice(0, 180);
   return "Augšupielāde neizdevās.";
