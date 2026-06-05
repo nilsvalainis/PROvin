@@ -9,6 +9,7 @@ import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminGeminiGenerateWithPrefill } from "@/components/admin/AdminGeminiGenerateWithPrefill";
+import { AdminListingAnalysisPhotos } from "@/components/admin/AdminListingAnalysisPhotos";
 import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
@@ -57,6 +58,9 @@ type Props = {
   /** Gemini — ja atļauts šim pasūtījumam (skat. GEMINI_DEMO_ONLY). */
   geminiAllowed?: boolean;
   buildGeminiPayload?: () => GeminiListingAnalysisPayload;
+  sessionId?: string;
+  photosPersistenceEnabled?: boolean;
+  onListingPhotosStructuralCommit?: (next: ListingAnalysisBlockState["photos"]) => void;
 };
 
 export function AdminListingAnalysisSourceBlock({
@@ -69,6 +73,9 @@ export function AdminListingAnalysisSourceBlock({
   autoGrow = false,
   geminiAllowed = true,
   buildGeminiPayload,
+  sessionId,
+  photosPersistenceEnabled = false,
+  onListingPhotosStructuralCommit,
 }: Props) {
   const v = value ?? emptyListingAnalysisBlock();
   const L = LISTING_ANALYSIS_SUBSECTIONS;
@@ -297,6 +304,14 @@ export function AdminListingAnalysisSourceBlock({
               aria-label={`${L.photoAnalysis} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
             />
           )}
+          {sessionId && onListingPhotosStructuralCommit ? (
+            <AdminListingAnalysisPhotos
+              sessionId={sessionId}
+              photos={v.photos ?? []}
+              disabled={readOnly || disabled || !photosPersistenceEnabled}
+              onPhotosStructuralCommit={(next) => onListingPhotosStructuralCommit(next)}
+            />
+          ) : null}
         </ListingAnalysisSubsectionHeading>
 
         <ListingAnalysisSubsectionHeading

@@ -803,7 +803,29 @@ function buildLtabAvotuSubsection(
 /**
  * Sludinājuma analīze — patstāvīgs bloks: vispirms „Sludinājuma vēsture” (tirgus dati), tad pārējās apakšsadaļas.
  */
-function buildListingAnalysisPriorityHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
+function buildListingAnalysisPhotosPdfHtml(
+  photos: { id: string }[] | null | undefined,
+  dataUrls: Map<string, string> | undefined,
+): string {
+  const list = photos ?? [];
+  if (list.length === 0 || !dataUrls?.size) return "";
+  const cells: string[] = [];
+  for (const ph of list) {
+    const src = dataUrls.get(ph.id);
+    if (!src) continue;
+    cells.push(
+      `<figure class="pdf-listing-photo-cell"><img class="pdf-listing-photo-img" src="${src}" alt=""/></figure>`,
+    );
+  }
+  if (cells.length === 0) return "";
+  return `<div class="pdf-listing-photo-grid">${cells.join("")}</div>`;
+}
+
+function buildListingAnalysisPriorityHtml(
+  p: ClientReportPayload,
+  vis: PdfVisibilitySettings,
+  listingAnalysisPhotoDataUrls?: Map<string, string>,
+): string {
   if (!vis.sludinajums) return "";
   const tirgusBody = buildTirgusListingHistoryBodyHtml(p);
   const b = p.listingAnalysis;
@@ -823,7 +845,13 @@ function buildListingAnalysisPriorityHtml(p: ClientReportPayload, vis: PdfVisibi
       inner.push(box);
     };
     cat(L.sellerPortrait, b.sellerPortrait);
-    cat(L.photoAnalysis, b.photoAnalysis);
+    const photosHtml = buildListingAnalysisPhotosPdfHtml(b.photos, listingAnalysisPhotoDataUrls);
+    const photoCommentBox = pdfReportCommentBox(b.photoAnalysis);
+    if (photoCommentBox || photosHtml) {
+      inner.push(pdfFieldLabelWithIcon(pdfListingAnalysisFieldIconHtml(L.photoAnalysis), L.photoAnalysis));
+      if (photoCommentBox) inner.push(photoCommentBox);
+      if (photosHtml) inner.push(photosHtml);
+    }
     cat(L.listingSalesContext, b.listingSalesContext);
   }
   const priceFitBox = pdfReportCommentBox(p.cenasAtbilstiba ?? "");
@@ -1046,6 +1074,14 @@ function clientReportPrintCss(): string {
       }
       .pdf-listing-analysis-stack > .pdf-report-comment-note{margin:0 0 10px;}
       .pdf-listing-analysis-stack > .pdf-field-label--row + .pdf-report-comment-note{margin-top:4px;}
+      .pdf-listing-photo-grid{
+        display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 12px;
+      }
+      .pdf-listing-photo-cell{margin:0;break-inside:avoid;}
+      .pdf-listing-photo-img{
+        width:100%;height:auto;max-height:220px;object-fit:contain;
+        border-radius:6px;border:1px solid #e2e8f0;display:block;background:#f8fafc;
+      }
       .pdf-listing-history-frame{
         border:1px solid #f1f5f9;
         border-radius:6px;
@@ -1576,8 +1612,9 @@ export function buildClientReportDocumentHtml(args: {
   pdfInsights: PdfPortfolioFileInsight[];
   dateFmt: Intl.DateTimeFormat;
   formatBytes: (n: number) => string;
+  listingAnalysisPhotoDataUrls?: Map<string, string>;
 }): string {
-  const { payload: p, dateFmt } = args;
+  const { payload: p, dateFmt, listingAnalysisPhotoDataUrls } = args;
   const vis = mergePdfVisibility(p.pdfVisibility);
 
   const money =
@@ -1670,7 +1707,7 @@ export function buildClientReportDocumentHtml(args: {
   const avotuHtml = buildAvotuDatiSectionHtml(p, vis);
   if (avotuHtml) lines.push(avotuHtml);
 
-  const listingPriorityHtml = buildListingAnalysisPriorityHtml(p, vis);
+  const listingPriorityHtml = buildListingAnalysisPriorityHtml(p, vis, listingAnalysisPhotoDataUrls);
   if (listingPriorityHtml) lines.push(listingPriorityHtml);
 
   const approvedHtml = buildApprovedByIrissHtml(p, vis);

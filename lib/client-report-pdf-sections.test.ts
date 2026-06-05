@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emptyCsddFields, emptyCitiAvotiSection, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
+import { createDefaultSourceBlocks, emptyCsddFields, emptyCitiAvotiSection, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import {
   buildUnifiedIncidentsTableHtml,
   buildUnifiedMileageTableHtml,
@@ -165,6 +165,32 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).toContain('class="pdf-site-footer__confidentiality"');
     expect(doc).toContain("kategoriski aizliegts pavairot");
     expect(doc).toContain(`© ${new Date().getFullYear()} PROVIN.LV`);
+  });
+
+  it("listing analysis photos render in two-column grid under Fotogrāfiju analīze", () => {
+    const dataUrls = new Map<string, string>([
+      ["la_ph_aabbccddeeff001122334455", "data:image/jpeg;base64,/9j/4AAQ"],
+      ["la_ph_112233445566778899aabbcc", "data:image/jpeg;base64,/9j/4AAQ"],
+    ]);
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        listingAnalysis: {
+          ...createDefaultSourceBlocks().listing_analysis,
+          photoAnalysis: "<p><strong>Rūsa</strong> uz sliežu.</p>",
+          photos: [{ id: "la_ph_aabbccddeeff001122334455" }, { id: "la_ph_112233445566778899aabbcc" }],
+        },
+        pdfVisibility: mergePdfVisibility({ sludinajums: true }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+      listingAnalysisPhotoDataUrls: dataUrls,
+    });
+    expect(doc).toContain("Fotogrāfiju analīze");
+    expect(doc).toContain("pdf-listing-photo-grid");
+    expect(doc).toContain("Rūsa");
+    expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(2);
   });
 
   it("outvin vehicle info uses single-column pdf-v1-kv", () => {

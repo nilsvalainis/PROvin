@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { createPortal } from "react-dom";
 import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePortfolioFileRow";
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
@@ -33,6 +34,7 @@ import {
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
   type SourceBlockKey,
+  type ListingAnalysisBlockState,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import {
@@ -1175,6 +1177,30 @@ export function OrderDetailWorkspace({
     [applyPersistBodyToWs, commitWorkspaceLocalNow],
   );
 
+  const commitListingPhotosStructural = useCallback(
+    (nextPhotos: ListingAnalysisBlockState["photos"]) => {
+      workspaceDirtyRef.current = true;
+      flushSync(() => {
+        setWs((prev) => {
+          const blocks = mergeSourceBlocksWithDefaults(prev.sourceBlocks);
+          const next = normalizeOrderWorkspacePersistBody({
+            ...workspaceToPersistBody(prev),
+            sourceBlocks: {
+              ...blocks,
+              listing_analysis: { ...blocks.listing_analysis, photos: nextPhotos },
+            },
+          });
+          return applyPersistBodyToWs(next);
+        });
+      });
+      commitWorkspaceLocalNow({ force: true });
+      if (orderDraftPersistenceEnabled) {
+        void persistFullWorkspaceRef("listing_photos");
+      }
+    },
+    [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
+  );
+
   const runGeminiTirgusMarket = useCallback(
     async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
       if (!payload.geminiAllowed || geminiTirgusMarketBusy) return;
@@ -2181,6 +2207,23 @@ export function OrderDetailWorkspace({
 
     const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeStyle: "short" });
     const flatSources = blocksToLegacyFlatFields(blocksDisplaySafe);
+    const listingAnalysisPhotoDataUrls = new Map<string, string>();
+    for (const ph of blocksDisplaySafe.listing_analysis.photos ?? []) {
+      try {
+        const res = await fetch(
+          `/api/admin/listing-analysis-photo?sessionId=${encodeURIComponent(payload.sessionId)}&photoId=${encodeURIComponent(ph.id)}`,
+          { credentials: "include" },
+        );
+        if (!res.ok) continue;
+        const buf = await res.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]!);
+        listingAnalysisPhotoDataUrls.set(ph.id, `data:image/jpeg;base64,${btoa(binary)}`);
+      } catch {
+        /* skip missing photo */
+      }
+    }
     const html = buildClientReportDocumentHtml({
       payload: {
         ...payload,
@@ -2205,6 +2248,7 @@ export function OrderDetailWorkspace({
       pdfInsights,
       dateFmt,
       formatBytes,
+      listingAnalysisPhotoDataUrls,
     });
 
     const w = window.open("", "_blank");
@@ -3203,6 +3247,9 @@ export function OrderDetailWorkspace({
                     autoGrow
                     geminiAllowed={payload.geminiAllowed}
                     buildGeminiPayload={buildGeminiListingPayload}
+                    sessionId={payload.sessionId}
+                    photosPersistenceEnabled={orderDraftPersistenceEnabled}
+                    onListingPhotosStructuralCommit={commitListingPhotosStructural}
                   />
                 </div>
                 <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.priceFit} title="3. Cenas atbilstība">

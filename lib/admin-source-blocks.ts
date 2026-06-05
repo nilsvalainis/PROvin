@@ -11,6 +11,8 @@ import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude, type ProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
 import { appendGeminiContextRawSection, clipGeminiContextRaw } from "@/lib/admin-gemini-context-raw";
+import { normalizeListingAnalysisPhotos } from "@/lib/listing-analysis-photo-types";
+import type { ListingAnalysisPhotoMeta } from "@/lib/listing-analysis-photo-types";
 import { parseVehicleAiFromWorkspaceRecord } from "@/lib/vehicle-ai-extraction-parse";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 import type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
@@ -671,6 +673,8 @@ export type CitiAvotiBlockState = {
 export type ListingAnalysisBlockState = {
   sellerPortrait: string;
   photoAnalysis: string;
+  /** Fotogrāfiju vizuālie pierādījumi — PDF režģī zem „Fotogrāfiju analīze”. */
+  photos: ListingAnalysisPhotoMeta[];
   /** Papildus pārdevēja / uzņēmuma nosaukums — admin + Gemini meklēšanai; nav PDF. */
   extraSellerName: string;
   /** Iekopēts neapstrādāts sludinājuma teksts — tikai adminā, nav PDF. */
@@ -765,6 +769,7 @@ export function emptyListingAnalysisBlock(): ListingAnalysisBlockState {
   return {
     sellerPortrait: "",
     photoAnalysis: "",
+    photos: [],
     extraSellerName: "",
     listingPasteRaw: "",
     listingSalesContext: "",
@@ -776,6 +781,7 @@ export function listingAnalysisHasContent(b: ListingAnalysisBlockState): boolean
   return (
     wsStr(b.sellerPortrait).trim().length > 0 ||
     wsStr(b.photoAnalysis).trim().length > 0 ||
+    (b.photos?.length ?? 0) > 0 ||
     wsStr(b.extraSellerName).trim().length > 0 ||
     wsStr(b.listingPasteRaw).trim().length > 0 ||
     wsStr(b.listingSalesContext).trim().length > 0
@@ -828,6 +834,7 @@ function parseListingAnalysisRaw(raw: Record<string, unknown>): ListingAnalysisB
   return {
     sellerPortrait,
     photoAnalysis,
+    photos: normalizeListingAnalysisPhotos(raw.photos),
     extraSellerName,
     listingPasteRaw,
     listingSalesContext,
@@ -1695,6 +1702,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
     listing_analysis: {
       sellerPortrait: wsStr(blocks.listing_analysis?.sellerPortrait),
       photoAnalysis: wsStr(blocks.listing_analysis?.photoAnalysis),
+      photos: normalizeListingAnalysisPhotos(blocks.listing_analysis?.photos),
       extraSellerName: wsStr(blocks.listing_analysis?.extraSellerName),
       listingPasteRaw: wsStr(blocks.listing_analysis?.listingPasteRaw),
       listingSalesContext: wsStr(blocks.listing_analysis?.listingSalesContext),
