@@ -164,11 +164,12 @@
 }
 
 .featureRowExclusion {
-  margin-top: 0.15rem;
-  padding-top: 0.55rem;
-  border-top: 1px solid rgb(248 113 113 / 0.18);
+  margin-top: 0.05rem;
   border-bottom: 0;
-  color: rgb(254 202 202 / 0.92);
+}
+
+.featureRowExclusion:last-child {
+  border-bottom: 0;
 }
 
 .featureRow:last-child {
@@ -233,13 +234,11 @@
   width: 100% !important;
   max-width: none !important;
   margin-top: 0 !important;
+  box-shadow: 0 4px 10px rgb(13 110 234 / 0.1), 0 1px 0 rgb(255 255 255 / 0.16) inset !important;
 }
 
 .ctaBtnPremium {
-  box-shadow:
-    0 11px 21px rgb(13 110 234 / 0.28),
-    0 2px 0 rgb(255 255 255 / 0.22) inset,
-    0 0 28px rgb(0 102 255 / 0.22) !important;
+  box-shadow: 0 5px 12px rgb(13 110 234 / 0.14), 0 1px 0 rgb(255 255 255 / 0.18) inset !important;
 }
 
 .cancelNote {
@@ -477,11 +476,6 @@ html[data-site-theme="light"] .panelDesc {
 
 html[data-site-theme="light"] .featureRow {
   border-bottom-color: rgb(24 31 42 / 0.08);
-}
-
-html[data-site-theme="light"] .featureRowExclusion {
-  color: #b91c1c;
-  border-top-color: rgb(248 113 113 / 0.25);
 }
 
 html[data-site-theme="light"] .featureMark {

@@ -52,7 +52,7 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
       { kind: "bullet", label: "Individuāla konsultācija" },
       {
         kind: "exclusion",
-        label: "Maksas vēstures atskaites un ārvalstu dati NAV iekļauti",
+        label: "Nav iekļauts CarVertical & AutoDNA",
       },
     ],
   },
@@ -77,7 +77,7 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
       { kind: "bullet", label: "Tehnisko apskašu vēsture" },
       {
         kind: "exclusion",
-        label: "CarVertical & AutoDNA maksas atskaites NAV iekļautas",
+        label: "Nav iekļauts CarVertical & AutoDNA",
       },
     ],
   },
