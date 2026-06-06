@@ -25,18 +25,26 @@ describe("test-pricing-5 display", () => {
     expect(isTp5BlockLocked("mini", "premium")).toBe(false);
   });
 
-  it("returns active block count for fusion border height", () => {
+  it("returns active block count for liquid accent height", () => {
     expect(getTp5ActiveBlockCount("mini")).toBe(1);
     expect(getTp5ActiveBlockCount("plus")).toBe(2);
     expect(getTp5ActiveBlockCount("premium")).toBe(3);
   });
 
-  it("exposes static copy per semantic group", () => {
-    expect(getTp5BlockRows("plus").map((r) => r.label)).toEqual([
-      "Vietējo reģistru pārbaude",
-      "Ziemeļvalstu reģistru pārbaude",
-      "Tehnisko apskašu vēsture",
+  it("exposes finalized copy per semantic group", () => {
+    expect(getTp5BlockRows("mini").map((r) => r.label)).toEqual([
+      "Sludinājuma analīze",
+      "Tehnisko risku izvērtēšana",
+      "Pirkuma rekomendācija",
     ]);
-    expect(getTp5BlockRows("premium").some((r) => r.label.includes("carVertical"))).toBe(true);
+    expect(getTp5BlockRows("plus").map((r) => r.label)).toEqual([
+      "Eiropas publisko reģistru pārbaude",
+      "Tehnisko apskašu vēsture",
+      "Individuāla konsultācija",
+    ]);
+    expect(getTp5BlockRows("premium").map((r) => r.label)).toEqual([
+      "carVertical & autoDNA atskaites",
+      "Oficiālo dīleru sistēmu dati",
+    ]);
   });
 });

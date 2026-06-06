@@ -23,19 +23,18 @@ export const TP5_FEATURE_BLOCKS: Tp5FeatureBlock[] = [
 const MINI_ROWS: Tp5DisplayRow[] = [
   { kind: "bullet", id: "mini-1", label: "Sludinājuma analīze" },
   { kind: "bullet", id: "mini-2", label: "Tehnisko risku izvērtēšana" },
-  { kind: "bullet", id: "mini-3", label: "Individuāla konsultācija" },
+  { kind: "bullet", id: "mini-3", label: "Pirkuma rekomendācija" },
 ];
 
 const PLUS_ROWS: Tp5DisplayRow[] = [
-  { kind: "bullet", id: "plus-1", label: "Vietējo reģistru pārbaude" },
-  { kind: "bullet", id: "plus-2", label: "Ziemeļvalstu reģistru pārbaude" },
-  { kind: "bullet", id: "plus-3", label: "Tehnisko apskašu vēsture" },
+  { kind: "bullet", id: "plus-1", label: "Eiropas publisko reģistru pārbaude" },
+  { kind: "bullet", id: "plus-2", label: "Tehnisko apskašu vēsture" },
+  { kind: "bullet", id: "plus-3", label: "Individuāla konsultācija" },
 ];
 
 const PREMIUM_ROWS: Tp5DisplayRow[] = [
-  { kind: "bullet", id: "prem-1", label: "carVertical & autoDNA pilnās atskaites" },
+  { kind: "bullet", id: "prem-1", label: "carVertical & autoDNA atskaites" },
   { kind: "bullet", id: "prem-2", label: "Oficiālo dīleru sistēmu dati" },
-  { kind: "bullet", id: "prem-3", label: "Eksperta pirkuma rekomendācija" },
 ];
 
 const BLOCK_ROWS: Record<Tp5BlockId, Tp5DisplayRow[]> = {
