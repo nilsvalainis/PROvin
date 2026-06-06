@@ -1,0 +1,407 @@
+/* /test-pricing-5 — spatial glass dashboard */
+
+.pageRoot {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  color: rgb(245 248 252 / 0.96);
+  background: #070809;
+}
+
+.heroSurface {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: scale(1) translateZ(0);
+}
+
+.heroSurfacePremium {
+  transform: scale(0.985) translateZ(0);
+}
+
+.heroBackdrop {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.35;
+}
+
+.heroScrim {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgb(255 255 255 / 0.04), transparent 55%),
+    linear-gradient(180deg, rgb(7 8 9 / 0.55) 0%, rgb(7 8 9 / 0.92) 48%, #070809 100%);
+}
+
+.heroInner {
+  position: relative;
+  z-index: 2;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 40rem;
+  padding:
+    clamp(1.25rem, 4vw, 2rem)
+    max(1rem, env(safe-area-inset-right, 0px))
+    clamp(1.75rem, 5vw, 2.5rem)
+    max(1rem, env(safe-area-inset-left, 0px));
+}
+
+.heroTitle {
+  margin: 0 0 0.85rem;
+  font-size: clamp(1.65rem, 5.2vw, 2.35rem);
+  line-height: 1.08;
+  font-weight: 620;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.heroTitleLine {
+  display: block;
+}
+
+.heroSubhead {
+  margin: 0 0 1.35rem;
+  font-size: clamp(0.92rem, 2.4vw, 1.05rem);
+  line-height: 1.55;
+  font-weight: 450;
+  color: rgb(255 255 255 / 0.78);
+  text-wrap: balance;
+}
+
+.stage {
+  perspective: 1200px;
+  perspective-origin: 50% 40%;
+}
+
+.spatialCard {
+  position: relative;
+  border-radius: 22px;
+  padding: clamp(1rem, 3vw, 1.25rem);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 0.06) 0%, rgb(255 255 255 / 0.02) 42%, rgb(255 255 255 / 0.015) 100%);
+  transform-style: preserve-3d;
+  will-change: transform, box-shadow;
+  transition:
+    transform 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.spatialCardElevated {
+  transform: translateZ(52px) scale(1.018);
+  box-shadow: 0 40px 80px -20px rgb(0 0 0 / 0.9);
+}
+
+.spatialCardRecessed {
+  transform: translateZ(8px) scale(0.998);
+  box-shadow: 0 18px 36px -18px rgb(0 0 0 / 0.75);
+}
+
+.tierSwitcher {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin: 0 0 1.1rem;
+  padding: 0.28rem;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.15);
+  background: rgb(255 255 255 / 0.03);
+}
+
+.tierTabBtn {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 2.65rem;
+  padding: 0.5rem 0.35rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.tierTabPill {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+}
+
+.tierTabLabel {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(0.68rem, 2.6vw, 0.78rem);
+  font-weight: 650;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: rgb(245 248 252 / 0.88);
+}
+
+.tierStar {
+  font-size: 0.58rem;
+  opacity: 0.75;
+}
+
+.panelDesc {
+  margin: 0 0 0.9rem;
+  font-size: 0.875rem;
+  line-height: 1.52;
+  color: rgb(210 214 222 / 0.78);
+}
+
+.stackList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.stackBlock {
+  border-radius: 16px;
+  padding: 0.55rem 0.65rem 0.65rem;
+  border: 1px solid rgb(255 255 255 / 0.06);
+  background: rgb(255 255 255 / 0.015);
+}
+
+.stackBlockOpen {
+  opacity: 1;
+}
+
+.stackBlockLocked {
+  opacity: 0.96;
+}
+
+.stackBlockTitle {
+  margin: 0 0 0.35rem;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(210 214 222 / 0.55);
+}
+
+.stackBlockBody {
+  position: relative;
+}
+
+.featureList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.featureRow {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0.22rem 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.featureMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+  color: rgb(210 214 222 / 0.86);
+}
+
+.featureMarkBlue {
+  color: #3d8bfd;
+}
+
+.featureBrand {
+  font-weight: 650;
+  color: #3d8bfd;
+}
+
+.refractOverlay {
+  position: absolute;
+  inset: -0.15rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  background: rgb(255 255 255 / 0.03);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  backdrop-filter: blur(12px) saturate(180%);
+  transform-origin: center;
+}
+
+.refractLens {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgb(255 255 255 / 0.14), transparent 58%),
+    linear-gradient(160deg, rgb(255 255 255 / 0.08), transparent 45%, rgb(255 255 255 / 0.04));
+  pointer-events: none;
+}
+
+.lockCenter {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(12 14 18 / 0.55);
+  color: rgb(245 248 252 / 0.88);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+}
+
+.turnaround {
+  margin: 0.85rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgb(210 214 222 / 0.62);
+}
+
+.ctaWrap {
+  margin-top: 1rem;
+}
+
+.liquidCta {
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 54px;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%);
+  color: #fff;
+  font-family: inherit;
+  font-size: clamp(0.72rem, 2.2vw, 0.84rem);
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.65);
+  transition: filter 0.2s ease;
+}
+
+.liquidCta:hover {
+  filter: brightness(1.05);
+}
+
+.liquidCtaShimmer {
+  position: absolute;
+  inset: -40% -60%;
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgb(255 255 255 / 0.14) 48%,
+    transparent 58%
+  );
+  animation: tp5Shimmer 5.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.liquidCtaLabel {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes tp5Shimmer {
+  0%,
+  100% {
+    transform: translateX(-35%) rotate(8deg);
+  }
+  50% {
+    transform: translateX(35%) rotate(8deg);
+  }
+}
+
+.cancelNote {
+  margin: 0 auto 0.75rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: rgb(210 214 222 / 0.72);
+}
+
+.bodySection {
+  position: relative;
+  z-index: 1;
+  background: #070809;
+}
+
+.compactSection {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .compactSection {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquidCtaShimmer {
+    animation: none;
+  }
+
+  .spatialCard,
+  .heroSurface {
+    transition: none;
+  }
+}
+
+html[data-site-theme="light"] .pageRoot,
+html[data-site-theme="light"] .bodySection {
+  color: #1d1d1f;
+  background: #f3f4f6;
+}
+
+html[data-site-theme="light"] .heroScrim {
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgb(255 255 255 / 0.65), transparent 55%),
+    linear-gradient(180deg, rgb(243 244 246 / 0.72) 0%, #f3f4f6 100%);
+}
+
+html[data-site-theme="light"] .heroSubhead,
+html[data-site-theme="light"] .panelDesc,
+html[data-site-theme="light"] .turnaround {
+  color: #6e6e73;
+}
+
+html[data-site-theme="light"] .spatialCard {
+  border-color: rgb(24 31 42 / 0.1);
+  background: rgb(255 255 255 / 0.88);
+}
+
+html[data-site-theme="light"] .spatialCardElevated {
+  box-shadow: 0 40px 80px -24px rgb(24 31 42 / 0.22);
+}
+
+html[data-site-theme="light"] .featureMark {
+  color: #6e6e73;
+}
+
+html[data-site-theme="light"] .lockCenter {
+  background: rgb(255 255 255 / 0.82);
+  color: #1d1d1f;
+}

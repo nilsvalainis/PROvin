@@ -15,7 +15,7 @@ type Props = {
   planId: TestPricingPlanId;
   open: boolean;
   onClose: () => void;
-  sourcePage: "test-pricing-2" | "test-pricing-3" | "test-pricing-4";
+  sourcePage: "test-pricing-2" | "test-pricing-3" | "test-pricing-4" | "test-pricing-5";
 };
 
 export function TestPricingStep2Modal({ planId, open, onClose, sourcePage }: Props) {

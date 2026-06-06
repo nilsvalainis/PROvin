@@ -3,6 +3,7 @@ export const TEST_PRICING_MODAL_CHECKOUT_PAGES = new Set([
   "test-pricing-2",
   "test-pricing-3",
   "test-pricing-4",
+  "test-pricing-5",
 ]);
 
 export function isTestPricingModalCheckoutPage(sourcePage: string): boolean {
