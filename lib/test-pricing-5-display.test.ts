@@ -43,7 +43,8 @@ describe("test-pricing-5 display", () => {
       "Individuāla konsultācija",
     ]);
     expect(getTp5BlockRows("premium").map((r) => r.label)).toEqual([
-      "carVertical & autoDNA atskaites",
+      "carVertical vēstures atskaite",
+      "autoDNA vēstures atskaite",
       "Oficiālo dīleru sistēmu dati",
     ]);
   });

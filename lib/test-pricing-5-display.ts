@@ -33,8 +33,9 @@ const PLUS_ROWS: Tp5DisplayRow[] = [
 ];
 
 const PREMIUM_ROWS: Tp5DisplayRow[] = [
-  { kind: "bullet", id: "prem-1", label: "carVertical & autoDNA atskaites" },
-  { kind: "bullet", id: "prem-2", label: "Oficiālo dīleru sistēmu dati" },
+  { kind: "bullet", id: "prem-1", label: "carVertical vēstures atskaite" },
+  { kind: "bullet", id: "prem-2", label: "autoDNA vēstures atskaite" },
+  { kind: "bullet", id: "prem-3", label: "Oficiālo dīleru sistēmu dati" },
 ];
 
 const BLOCK_ROWS: Record<Tp5BlockId, Tp5DisplayRow[]> = {

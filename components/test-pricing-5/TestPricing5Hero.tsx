@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
-import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
@@ -14,6 +13,12 @@ import {
   type Tp5DisplayRow,
   type Tp5FeatureBlock,
 } from "@/lib/test-pricing-5-display";
+import {
+  TP5_HERO_SUBHEAD,
+  TP5_HERO_TITLE_LINE_1,
+  TP5_HERO_TITLE_LINE_2,
+  TP5_TRUST_BADGE,
+} from "@/lib/test-pricing-5-hero-copy";
 import {
   getTestPricingPlan,
   TEST_PRICING_PLANS,
@@ -39,13 +44,11 @@ function FeatureRow({
   index,
   reducedMotion,
   active,
-  tierKey,
 }: {
   row: Tp5DisplayRow;
   index: number;
   reducedMotion: boolean;
   active: boolean;
-  tierKey: TestPricingPlanId;
 }) {
   const delay = reducedMotion ? 0 : index * 0.04;
 
@@ -121,7 +124,6 @@ function InactiveGroup({
             index={startIndex + rowIndex}
             reducedMotion
             active={false}
-            tierKey={block.unlockTier}
           />
         ))}
       </ul>
@@ -130,7 +132,6 @@ function InactiveGroup({
 }
 
 export function TestPricing5Hero() {
-  const tHero = useTranslations("Hero");
   const searchParams = useSearchParams();
   const reducedMotion = useReducedMotion();
   const [selectedId, setSelectedId] = useState<TestPricingPlanId>("premium");
@@ -167,14 +168,13 @@ export function TestPricing5Hero() {
             <p className={styles.cancelNote}>Maksājums tika atcelts. Vari mēģināt vēlreiz.</p>
           ) : null}
 
-          <h1 id="tp5-hero-title" className={styles.heroTitle}>
-            <span className={styles.heroTitleLine}>{tHero("productTitlePart1")}</span>
-            <span className={styles.heroTitleLine}>
-              {tHero("productTitlePart2")}
-              {tHero("productTitlePart3")}
-            </span>
-          </h1>
-          <p className={styles.heroSubhead}>{tHero("productSubheadRich")}</p>
+          <header className={styles.heroCopy}>
+            <h1 id="tp5-hero-title" className={styles.heroTitle}>
+              <span className={styles.heroTitleLine}>{TP5_HERO_TITLE_LINE_1}</span>
+              <span className={styles.heroTitleLine}>{TP5_HERO_TITLE_LINE_2}</span>
+            </h1>
+            <p className={styles.heroSubhead}>{TP5_HERO_SUBHEAD}</p>
+          </header>
 
           <div className={styles.stage}>
             <article
@@ -220,8 +220,6 @@ export function TestPricing5Hero() {
                 </div>
               </LayoutGroup>
 
-              <p className={styles.panelDesc}>{selectedPlan.description}</p>
-
               <div className={styles.featureStack}>
                 <motion.div
                   className={styles.liquidAccent}
@@ -237,7 +235,6 @@ export function TestPricing5Hero() {
                         index={index}
                         reducedMotion={!!reducedMotion}
                         active
-                        tierKey={selectedId}
                       />
                     ))}
                   </ul>
@@ -268,6 +265,7 @@ export function TestPricing5Hero() {
                   <span className={styles.liquidCtaShimmer} aria-hidden />
                   <span className={styles.liquidCtaLabel}>{selectedPlan.heroCtaLabel}</span>
                 </button>
+                <p className={styles.trustBadge}>{TP5_TRUST_BADGE}</p>
               </div>
             </article>
           </div>
