@@ -30,7 +30,8 @@ const TIER_LABEL: Record<TestPricingPlanId, string> = {
   premium: "PREMIUM",
 };
 
-const SPRING = { type: "spring" as const, stiffness: 420, damping: 32, mass: 0.72 };
+const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
+const ACCENT_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 const ROW_SPRING = { type: "spring" as const, stiffness: 480, damping: 34, mass: 0.62 };
 
 function FeatureRow({
@@ -38,23 +39,36 @@ function FeatureRow({
   index,
   reducedMotion,
   active,
+  tierKey,
 }: {
   row: Tp5DisplayRow;
   index: number;
   reducedMotion: boolean;
   active: boolean;
+  tierKey: TestPricingPlanId;
 }) {
-  const delay = reducedMotion ? 0 : index * 0.045;
+  const delay = reducedMotion ? 0 : index * 0.04;
+
+  if (!active) {
+    return (
+      <li className={styles.featureRow}>
+        <span className={`${styles.featureMark} ${styles.featureMarkMuted}`} aria-hidden>
+          ✓
+        </span>
+        <span className={styles.featureLabelMuted}>{row.label}</span>
+      </li>
+    );
+  }
 
   return (
     <motion.li
       className={styles.featureRow}
-      initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+      initial={reducedMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...ROW_SPRING, delay }}
     >
       <motion.span
-        className={`${styles.featureMark} ${active ? styles.featureMarkBlue : styles.featureMarkMuted}`}
+        className={`${styles.featureMark} ${styles.featureMarkBlue}`}
         aria-hidden
         initial={reducedMotion ? false : { opacity: 0, scale: 0.82 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -63,7 +77,7 @@ function FeatureRow({
         ✓
       </motion.span>
       <motion.span
-        className={active ? styles.featureLabelActive : styles.featureLabelMuted}
+        className={styles.featureLabelActive}
         initial={reducedMotion ? false : { opacity: 0, x: -6 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ ...ROW_SPRING, delay: delay + 0.08 }}
@@ -74,49 +88,20 @@ function FeatureRow({
   );
 }
 
-function ActiveBlock({
-  block,
-  blockIndex,
-  reducedMotion,
-  tierKey,
-}: {
-  block: Tp5FeatureBlock;
-  blockIndex: number;
-  reducedMotion: boolean;
-  tierKey: TestPricingPlanId;
-}) {
-  const rows = getTp5BlockRows(block.id);
-
-  return (
-    <section className={styles.fusionBlock}>
-      <p className={styles.fusionBlockTitle}>{block.title}</p>
-      <ul className={styles.featureList}>
-        {rows.map((row, rowIndex) => (
-          <FeatureRow
-            key={`${tierKey}-${row.id}`}
-            row={row}
-            index={blockIndex * 4 + rowIndex}
-            reducedMotion={reducedMotion}
-            active
-          />
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function InactiveBlock({
+function InactiveGroup({
   block,
   onSelect,
+  startIndex,
 }: {
   block: Tp5FeatureBlock;
   onSelect: (tier: TestPricingPlanId) => void;
+  startIndex: number;
 }) {
   const rows = getTp5BlockRows(block.id);
 
   return (
     <section
-      className={styles.stackBlockInactive}
+      className={styles.inactiveGroup}
       role="button"
       tabIndex={0}
       aria-label={`Izvēlēties ${block.title} paketi`}
@@ -128,15 +113,16 @@ function InactiveBlock({
         }
       }}
     >
-      <p className={styles.fusionBlockTitleMuted}>{block.title}</p>
       <ul className={styles.featureList}>
-        {rows.map((row) => (
-          <li key={row.id} className={styles.featureRow}>
-            <span className={`${styles.featureMark} ${styles.featureMarkMuted}`} aria-hidden>
-              ✓
-            </span>
-            <span className={styles.featureLabelMuted}>{row.label}</span>
-          </li>
+        {rows.map((row, rowIndex) => (
+          <FeatureRow
+            key={row.id}
+            row={row}
+            index={startIndex + rowIndex}
+            reducedMotion
+            active={false}
+            tierKey={block.unlockTier}
+          />
         ))}
       </ul>
     </section>
@@ -164,6 +150,9 @@ export function TestPricing5Hero() {
   const activeBlockCount = getTp5ActiveBlockCount(selectedId);
   const activeBlocks = TP5_FEATURE_BLOCKS.slice(0, activeBlockCount);
   const inactiveBlocks = TP5_FEATURE_BLOCKS.slice(activeBlockCount);
+
+  const activeRows = activeBlocks.flatMap((block) => getTp5BlockRows(block.id));
+  let inactiveRowOffset = activeRows.length;
 
   return (
     <>
@@ -203,14 +192,14 @@ export function TestPricing5Hero() {
                         type="button"
                         role="tab"
                         aria-selected={active}
-                        className={`${styles.tierTabBtn} ${active ? styles.tierTabBtnActive : styles.tierTabBtnInactive}`}
+                        className={styles.tierTabBtn}
                         onClick={() => setSelectedId(id)}
                       >
                         {active ? (
                           <motion.span
                             layoutId="tp5-tab-pill"
                             className={styles.tierTabPill}
-                            transition={SPRING}
+                            transition={TAB_TRANSITION}
                             aria-hidden
                           />
                         ) : null}
@@ -233,27 +222,39 @@ export function TestPricing5Hero() {
 
               <p className={styles.panelDesc}>{selectedPlan.description}</p>
 
-              <div className={styles.stackList}>
+              <div className={styles.featureStack}>
                 <motion.div
-                  className={styles.fusionFrame}
+                  className={styles.liquidAccent}
                   data-tier={selectedId}
                   layout
-                  transition={SPRING}
+                  transition={ACCENT_TRANSITION}
                 >
-                  {activeBlocks.map((block, blockIndex) => (
-                    <ActiveBlock
-                      key={block.id}
-                      block={block}
-                      blockIndex={blockIndex}
-                      reducedMotion={!!reducedMotion}
-                      tierKey={selectedId}
-                    />
-                  ))}
+                  <ul className={styles.featureList}>
+                    {activeRows.map((row, index) => (
+                      <FeatureRow
+                        key={`${selectedId}-${row.id}`}
+                        row={row}
+                        index={index}
+                        reducedMotion={!!reducedMotion}
+                        active
+                        tierKey={selectedId}
+                      />
+                    ))}
+                  </ul>
                 </motion.div>
 
-                {inactiveBlocks.map((block) => (
-                  <InactiveBlock key={block.id} block={block} onSelect={setSelectedId} />
-                ))}
+                {inactiveBlocks.map((block) => {
+                  const offset = inactiveRowOffset;
+                  inactiveRowOffset += getTp5BlockRows(block.id).length;
+                  return (
+                    <InactiveGroup
+                      key={block.id}
+                      block={block}
+                      onSelect={setSelectedId}
+                      startIndex={offset}
+                    />
+                  );
+                })}
               </div>
 
               <p className={styles.turnaround}>{selectedPlan.turnaround}</p>
