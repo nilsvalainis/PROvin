@@ -63,7 +63,7 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
     amountCents: 3999,
     stripePriceEnvKey: "STRIPE_PRICE_PLUS",
     description: "Latvijā un Ziemeļvalstīs reģistrētu auto vēstures pārbaude.",
-    turnaround: "⏱️ Izpilde: līdz 24h",
+    turnaround: "⏱️ Izpilde: līdz 48h",
     ctaLabel: "PASŪTĪT PLUS AUDITU",
     heroCtaLabel: "PASŪTĪT PLUS AUDITU — 39,99 €",
     highlighted: false,
