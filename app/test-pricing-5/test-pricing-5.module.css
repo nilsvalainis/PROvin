@@ -107,8 +107,20 @@
   padding: 0.55rem 0.4rem;
   border: 0;
   border-radius: 999px;
-  background: transparent;
   cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.tierTabBtnInactive {
+  background: rgb(255 255 255 / 0.08);
+}
+
+.tierTabBtnInactive:hover {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.tierTabBtnActive {
+  background: transparent;
 }
 
 .tierTabPill {
@@ -123,9 +135,9 @@
 .tierTabLabel {
   position: relative;
   z-index: 1;
-  font-size: clamp(0.68rem, 2.6vw, 0.78rem);
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
+  font-size: clamp(0.75rem, 2.4vw, 0.875rem);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .tierTabLabelActive {
@@ -134,13 +146,8 @@
 }
 
 .tierTabLabelInactive {
-  font-weight: 650;
+  font-weight: 600;
   color: rgb(255 255 255 / 0.85);
-}
-
-.tierStar {
-  font-size: 0.58rem;
-  opacity: 0.85;
 }
 
 .featureStack {
@@ -221,6 +228,36 @@
 .featureLabelMuted {
   color: rgb(210 214 222 / 0.78);
   font-weight: 450;
+}
+
+.featureRowPremium {
+  min-height: 2rem;
+}
+
+.featureLabelPremium {
+  font-weight: 650;
+  background: linear-gradient(
+    120deg,
+    rgb(245 248 252 / 0.98) 0%,
+    rgb(191 219 254 / 0.95) 42%,
+    rgb(245 248 252 / 0.92) 78%,
+    rgb(147 197 253 / 0.88) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 200% 100%;
+  animation: tp5PremiumSheen 6s ease-in-out infinite;
+}
+
+@keyframes tp5PremiumSheen {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .turnaround {
@@ -333,6 +370,13 @@
     animation: none;
   }
 
+  .featureLabelPremium {
+    animation: none;
+    background: none;
+    color: rgb(245 248 252 / 0.98);
+    font-weight: 650;
+  }
+
   .liquidAccent,
   .tierTabPill {
     transition: none;
@@ -362,6 +406,14 @@ html[data-site-theme="light"] .tierSwitcher {
   background: rgb(24 31 42 / 0.04);
 }
 
+html[data-site-theme="light"] .tierTabBtnInactive {
+  background: rgb(24 31 42 / 0.06);
+}
+
+html[data-site-theme="light"] .tierTabBtnInactive:hover {
+  background: rgb(24 31 42 / 0.1);
+}
+
 html[data-site-theme="light"] .tierTabLabelInactive {
   color: rgb(24 31 42 / 0.72);
 }
@@ -377,6 +429,14 @@ html[data-site-theme="light"] .liquidAccent {
 
 html[data-site-theme="light"] .featureLabelActive {
   color: #1d1d1f;
+}
+
+html[data-site-theme="light"] .featureLabelPremium {
+  animation: none;
+  background: linear-gradient(120deg, #1d1d1f 0%, #2563eb 50%, #1d1d1f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 html[data-site-theme="light"] .featureMarkMuted,

@@ -10,13 +10,16 @@ import {
   getTp5ActiveBlockCount,
   getTp5BlockRows,
   TP5_FEATURE_BLOCKS,
+  type Tp5BlockId,
   type Tp5DisplayRow,
   type Tp5FeatureBlock,
 } from "@/lib/test-pricing-5-display";
 import {
+  TP5_CHECKOUT_SOURCE,
   TP5_HERO_SUBHEAD,
   TP5_HERO_TITLE_LINE_1,
   TP5_HERO_TITLE_LINE_2,
+  TP5_PRICE_TAB_LABEL,
   TP5_TRUST_BADGE,
 } from "@/lib/test-pricing-5-hero-copy";
 import {
@@ -29,26 +32,24 @@ import {
   useTestPricingTierSwipe,
 } from "@/lib/use-test-pricing-tier-swipe";
 
-const TIER_LABEL: Record<TestPricingPlanId, string> = {
-  mini: "MINI",
-  plus: "PLUS",
-  premium: "PREMIUM",
-};
-
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 const ACCENT_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 const ROW_SPRING = { type: "spring" as const, stiffness: 480, damping: 34, mass: 0.62 };
+
+type ActiveRowEntry = { row: Tp5DisplayRow; blockId: Tp5BlockId };
 
 function FeatureRow({
   row,
   index,
   reducedMotion,
   active,
+  premiumHighlight,
 }: {
   row: Tp5DisplayRow;
   index: number;
   reducedMotion: boolean;
   active: boolean;
+  premiumHighlight?: boolean;
 }) {
   const delay = reducedMotion ? 0 : index * 0.04;
 
@@ -65,7 +66,7 @@ function FeatureRow({
 
   return (
     <motion.li
-      className={styles.featureRow}
+      className={`${styles.featureRow} ${premiumHighlight ? styles.featureRowPremium : ""}`}
       initial={reducedMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...ROW_SPRING, delay }}
@@ -80,7 +81,9 @@ function FeatureRow({
         ✓
       </motion.span>
       <motion.span
-        className={styles.featureLabelActive}
+        className={
+          premiumHighlight ? styles.featureLabelPremium : styles.featureLabelActive
+        }
         initial={reducedMotion ? false : { opacity: 0, x: -6 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ ...ROW_SPRING, delay: delay + 0.08 }}
@@ -101,13 +104,14 @@ function InactiveGroup({
   startIndex: number;
 }) {
   const rows = getTp5BlockRows(block.id);
+  const priceLabel = TP5_PRICE_TAB_LABEL[block.unlockTier];
 
   return (
     <section
       className={styles.inactiveGroup}
       role="button"
       tabIndex={0}
-      aria-label={`Izvēlēties ${block.title} paketi`}
+      aria-label={`Izvēlēties ${priceLabel} paketi`}
       onClick={() => onSelect(block.unlockTier)}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -152,8 +156,11 @@ export function TestPricing5Hero() {
   const activeBlocks = TP5_FEATURE_BLOCKS.slice(0, activeBlockCount);
   const inactiveBlocks = TP5_FEATURE_BLOCKS.slice(activeBlockCount);
 
-  const activeRows = activeBlocks.flatMap((block) => getTp5BlockRows(block.id));
-  let inactiveRowOffset = activeRows.length;
+  const activeRowEntries: ActiveRowEntry[] = activeBlocks.flatMap((block) =>
+    getTp5BlockRows(block.id).map((row) => ({ row, blockId: block.id })),
+  );
+  let inactiveRowOffset = activeRowEntries.length;
+  const isPremiumTier = selectedId === "premium";
 
   return (
     <>
@@ -183,7 +190,11 @@ export function TestPricing5Hero() {
               onTouchEnd={onSwipeAreaTouchEnd}
             >
               <LayoutGroup id="tp5-tabs">
-                <div className={styles.tierSwitcher} role="tablist" aria-label="Izvēlies audita paketi">
+                <div
+                  className={styles.tierSwitcher}
+                  role="tablist"
+                  aria-label="Izvēlies audita cenu"
+                >
                   {TEST_PRICING_TIER_ORDER.map((id) => {
                     const active = selectedId === id;
                     return (
@@ -192,7 +203,8 @@ export function TestPricing5Hero() {
                         type="button"
                         role="tab"
                         aria-selected={active}
-                        className={styles.tierTabBtn}
+                        aria-label={`${TP5_PRICE_TAB_LABEL[id]} audits`}
+                        className={`${styles.tierTabBtn} ${active ? styles.tierTabBtnActive : styles.tierTabBtnInactive}`}
                         onClick={() => setSelectedId(id)}
                       >
                         {active ? (
@@ -206,13 +218,7 @@ export function TestPricing5Hero() {
                         <span
                           className={`${styles.tierTabLabel} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
                         >
-                          {TIER_LABEL[id]}
-                          {id === "premium" ? (
-                            <span className={styles.tierStar} aria-hidden>
-                              {" "}
-                              ★
-                            </span>
-                          ) : null}
+                          {TP5_PRICE_TAB_LABEL[id]}
                         </span>
                       </button>
                     );
@@ -228,13 +234,14 @@ export function TestPricing5Hero() {
                   transition={ACCENT_TRANSITION}
                 >
                   <ul className={styles.featureList}>
-                    {activeRows.map((row, index) => (
+                    {activeRowEntries.map(({ row, blockId }, index) => (
                       <FeatureRow
                         key={`${selectedId}-${row.id}`}
                         row={row}
                         index={index}
                         reducedMotion={!!reducedMotion}
                         active
+                        premiumHighlight={isPremiumTier && blockId === "premium"}
                       />
                     ))}
                   </ul>
@@ -276,7 +283,7 @@ export function TestPricing5Hero() {
         planId={selectedId}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        sourcePage="test-pricing-5"
+        sourcePage={TP5_CHECKOUT_SOURCE}
       />
     </>
   );

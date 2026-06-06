@@ -50,10 +50,9 @@ export function TestPricingTestHeader() {
   return (
     <header className={`sticky top-0 z-[42] isolate w-full ${headerSurface}`}>
       <div className="mx-auto flex min-h-12 w-full min-w-0 max-w-none items-center gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:min-h-11 sm:gap-3">
-        <Link href="/" className={logoClass} aria-label="PROVIN.LV">
+        <Link href="/" className={logoClass} aria-label="PROVIN">
           <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
           <span className="text-provin-accent">VIN</span>
-          <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>.LV</span>
         </Link>
 
         <div className="ml-auto flex min-w-0 items-center justify-end gap-2 sm:gap-3">
