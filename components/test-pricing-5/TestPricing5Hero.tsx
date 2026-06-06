@@ -60,7 +60,7 @@ function FeatureRow({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ ...ROW_SPRING, delay: Math.max(0, delay - 0.08) }}
       >
-        ✔
+        ✓
       </motion.span>
       <motion.span
         className={active ? styles.featureLabelActive : styles.featureLabelMuted}
@@ -133,7 +133,7 @@ function InactiveBlock({
         {rows.map((row) => (
           <li key={row.id} className={styles.featureRow}>
             <span className={`${styles.featureMark} ${styles.featureMarkMuted}`} aria-hidden>
-              ✔
+              ✓
             </span>
             <span className={styles.featureLabelMuted}>{row.label}</span>
           </li>
@@ -203,7 +203,7 @@ export function TestPricing5Hero() {
                         type="button"
                         role="tab"
                         aria-selected={active}
-                        className={styles.tierTabBtn}
+                        className={`${styles.tierTabBtn} ${active ? styles.tierTabBtnActive : styles.tierTabBtnInactive}`}
                         onClick={() => setSelectedId(id)}
                       >
                         {active ? (
@@ -211,9 +211,12 @@ export function TestPricing5Hero() {
                             layoutId="tp5-tab-pill"
                             className={styles.tierTabPill}
                             transition={SPRING}
+                            aria-hidden
                           />
                         ) : null}
-                        <span className={styles.tierTabLabel}>
+                        <span
+                          className={`${styles.tierTabLabel} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
+                        >
                           {TIER_LABEL[id]}
                           {id === "premium" ? (
                             <span className={styles.tierStar} aria-hidden>
@@ -231,7 +234,12 @@ export function TestPricing5Hero() {
               <p className={styles.panelDesc}>{selectedPlan.description}</p>
 
               <div className={styles.stackList}>
-                <div className={styles.fusionFrame} data-tier={selectedId}>
+                <motion.div
+                  className={styles.fusionFrame}
+                  data-tier={selectedId}
+                  layout
+                  transition={SPRING}
+                >
                   {activeBlocks.map((block, blockIndex) => (
                     <ActiveBlock
                       key={block.id}
@@ -241,7 +249,7 @@ export function TestPricing5Hero() {
                       tierKey={selectedId}
                     />
                   ))}
-                </div>
+                </motion.div>
 
                 {inactiveBlocks.map((block) => (
                   <InactiveBlock key={block.id} block={block} onSelect={setSelectedId} />
