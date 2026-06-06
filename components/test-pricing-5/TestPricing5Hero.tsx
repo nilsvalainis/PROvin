@@ -1,24 +1,18 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import {
-  AnimatePresence,
-  LayoutGroup,
-  motion,
-  useReducedMotion,
-} from "framer-motion";
+import { useMemo, useState } from "react";
+import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
-import { PremiumLockIcon } from "@/components/test-pricing-5/PremiumLockIcon";
 import { TestPricingStep2Modal } from "@/components/test-pricing-shared/TestPricingStep2Modal";
 import {
+  getTp5ActiveBlockCount,
   getTp5BlockRows,
-  isTp5BlockLocked,
   TP5_FEATURE_BLOCKS,
-  type Tp5BlockId,
   type Tp5DisplayRow,
+  type Tp5FeatureBlock,
 } from "@/lib/test-pricing-5-display";
 import {
   getTestPricingPlan,
@@ -43,40 +37,14 @@ function FeatureRow({
   row,
   index,
   reducedMotion,
+  active,
 }: {
   row: Tp5DisplayRow;
   index: number;
   reducedMotion: boolean;
+  active: boolean;
 }) {
   const delay = reducedMotion ? 0 : index * 0.045;
-
-  if (row.kind === "inherit") {
-    return (
-      <motion.li
-        className={styles.featureRow}
-        initial={reducedMotion ? false : { opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ ...ROW_SPRING, delay }}
-      >
-        <motion.span
-          className={`${styles.featureMark} ${styles.featureMarkBlue}`}
-          aria-hidden
-          initial={reducedMotion ? false : { opacity: 0, scale: 0.82 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ ...ROW_SPRING, delay: Math.max(0, delay - 0.08) }}
-        >
-          ✔
-        </motion.span>
-        <motion.span
-          initial={reducedMotion ? false : { opacity: 0, x: -6 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ ...ROW_SPRING, delay: delay + 0.08 }}
-        >
-          Viss no <strong className={styles.featureBrand}>{row.tierName}</strong>
-        </motion.span>
-      </motion.li>
-    );
-  }
 
   return (
     <motion.li
@@ -86,7 +54,7 @@ function FeatureRow({
       transition={{ ...ROW_SPRING, delay }}
     >
       <motion.span
-        className={styles.featureMark}
+        className={`${styles.featureMark} ${active ? styles.featureMarkBlue : styles.featureMarkMuted}`}
         aria-hidden
         initial={reducedMotion ? false : { opacity: 0, scale: 0.82 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -95,6 +63,7 @@ function FeatureRow({
         ✔
       </motion.span>
       <motion.span
+        className={active ? styles.featureLabelActive : styles.featureLabelMuted}
         initial={reducedMotion ? false : { opacity: 0, x: -6 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ ...ROW_SPRING, delay: delay + 0.08 }}
@@ -105,33 +74,72 @@ function FeatureRow({
   );
 }
 
-function LockedBlockOverlay({
-  unlocking,
-  onUnlock,
-  blockTitle,
+function ActiveBlock({
+  block,
+  blockIndex,
+  reducedMotion,
+  tierKey,
 }: {
-  unlocking: boolean;
-  onUnlock: () => void;
-  blockTitle: string;
+  block: Tp5FeatureBlock;
+  blockIndex: number;
+  reducedMotion: boolean;
+  tierKey: TestPricingPlanId;
 }) {
+  const rows = getTp5BlockRows(block.id);
+
   return (
-    <motion.button
-      type="button"
-      className={styles.refractOverlay}
-      aria-label={`Atbloķēt ${blockTitle} paketi`}
-      onClick={onUnlock}
-      initial={false}
-      animate={{
-        backdropFilter: unlocking ? "blur(0px) saturate(100%)" : "blur(12px) saturate(180%)",
-        scale: unlocking ? 1 : 1.012,
+    <section className={styles.fusionBlock}>
+      <p className={styles.fusionBlockTitle}>{block.title}</p>
+      <ul className={styles.featureList}>
+        {rows.map((row, rowIndex) => (
+          <FeatureRow
+            key={`${tierKey}-${row.id}`}
+            row={row}
+            index={blockIndex * 4 + rowIndex}
+            reducedMotion={reducedMotion}
+            active
+          />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function InactiveBlock({
+  block,
+  onSelect,
+}: {
+  block: Tp5FeatureBlock;
+  onSelect: (tier: TestPricingPlanId) => void;
+}) {
+  const rows = getTp5BlockRows(block.id);
+
+  return (
+    <section
+      className={styles.stackBlockInactive}
+      role="button"
+      tabIndex={0}
+      aria-label={`Izvēlēties ${block.title} paketi`}
+      onClick={() => onSelect(block.unlockTier)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect(block.unlockTier);
+        }
       }}
-      transition={{ type: "spring", stiffness: 560, damping: 34 }}
     >
-      <div className={styles.refractLens} aria-hidden />
-      <div className={styles.lockCenter}>
-        <PremiumLockIcon unlocked={false} unlocking={unlocking} />
-      </div>
-    </motion.button>
+      <p className={styles.fusionBlockTitleMuted}>{block.title}</p>
+      <ul className={styles.featureList}>
+        {rows.map((row) => (
+          <li key={row.id} className={styles.featureRow}>
+            <span className={`${styles.featureMark} ${styles.featureMarkMuted}`} aria-hidden>
+              ✔
+            </span>
+            <span className={styles.featureLabelMuted}>{row.label}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -140,7 +148,6 @@ export function TestPricing5Hero() {
   const searchParams = useSearchParams();
   const reducedMotion = useReducedMotion();
   const [selectedId, setSelectedId] = useState<TestPricingPlanId>("premium");
-  const [unlockingBlock, setUnlockingBlock] = useState<Tp5BlockId | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   const { onSwipeAreaTouchStart, onSwipeAreaTouchEnd } = useTestPricingTierSwipe(
@@ -154,28 +161,13 @@ export function TestPricing5Hero() {
     [selectedId],
   );
 
-  const isPremium = selectedId === "premium";
-
-  const unlockBlock = useCallback(
-    (blockId: Tp5BlockId) => {
-      const block = TP5_FEATURE_BLOCKS.find((b) => b.id === blockId);
-      if (!block || !isTp5BlockLocked(blockId, selectedId)) return;
-
-      setUnlockingBlock(blockId);
-      window.setTimeout(() => {
-        setSelectedId(block.unlockTier);
-        setUnlockingBlock(null);
-      }, reducedMotion ? 0 : 320);
-    },
-    [reducedMotion, selectedId],
-  );
+  const activeBlockCount = getTp5ActiveBlockCount(selectedId);
+  const activeBlocks = TP5_FEATURE_BLOCKS.slice(0, activeBlockCount);
+  const inactiveBlocks = TP5_FEATURE_BLOCKS.slice(activeBlockCount);
 
   return (
     <>
-      <section
-        className={`${styles.heroSurface} ${isPremium ? styles.heroSurfacePremium : ""}`}
-        aria-labelledby="tp5-hero-title"
-      >
+      <section className={styles.heroSurface} aria-labelledby="tp5-hero-title">
         <div className={styles.heroBackdrop} aria-hidden>
           <HeroVisual />
         </div>
@@ -196,10 +188,8 @@ export function TestPricing5Hero() {
           <p className={styles.heroSubhead}>{tHero("productSubheadRich")}</p>
 
           <div className={styles.stage}>
-            <motion.article
-              className={`${styles.spatialCard} ${isPremium ? styles.spatialCardElevated : styles.spatialCardRecessed}`}
-              layout
-              transition={SPRING}
+            <article
+              className={styles.spatialCard}
               onTouchStart={onSwipeAreaTouchStart}
               onTouchEnd={onSwipeAreaTouchEnd}
             >
@@ -241,43 +231,21 @@ export function TestPricing5Hero() {
               <p className={styles.panelDesc}>{selectedPlan.description}</p>
 
               <div className={styles.stackList}>
-                <AnimatePresence mode="popLayout" initial={false}>
-                  {TP5_FEATURE_BLOCKS.map((block, blockIndex) => {
-                    const locked = isTp5BlockLocked(block.id, selectedId);
-                    const rows = getTp5BlockRows(block.id, selectedId);
-                    const unlocking = unlockingBlock === block.id;
+                <div className={styles.fusionFrame} data-tier={selectedId}>
+                  {activeBlocks.map((block, blockIndex) => (
+                    <ActiveBlock
+                      key={block.id}
+                      block={block}
+                      blockIndex={blockIndex}
+                      reducedMotion={!!reducedMotion}
+                      tierKey={selectedId}
+                    />
+                  ))}
+                </div>
 
-                    return (
-                      <motion.section
-                        key={block.id}
-                        className={`${styles.stackBlock} ${locked ? styles.stackBlockLocked : styles.stackBlockOpen}`}
-                        layout
-                        transition={SPRING}
-                      >
-                        <p className={styles.stackBlockTitle}>{block.title}</p>
-                        <div className={styles.stackBlockBody}>
-                          <ul className={styles.featureList}>
-                            {rows.map((row, rowIndex) => (
-                              <FeatureRow
-                                key={`${selectedId}-${row.id}`}
-                                row={row}
-                                index={blockIndex * 4 + rowIndex}
-                                reducedMotion={!!reducedMotion}
-                              />
-                            ))}
-                          </ul>
-                          {locked ? (
-                            <LockedBlockOverlay
-                              blockTitle={block.title}
-                              unlocking={unlocking}
-                              onUnlock={() => unlockBlock(block.id)}
-                            />
-                          ) : null}
-                        </div>
-                      </motion.section>
-                    );
-                  })}
-                </AnimatePresence>
+                {inactiveBlocks.map((block) => (
+                  <InactiveBlock key={block.id} block={block} onSelect={setSelectedId} />
+                ))}
               </div>
 
               <p className={styles.turnaround}>{selectedPlan.turnaround}</p>
@@ -292,7 +260,7 @@ export function TestPricing5Hero() {
                   <span className={styles.liquidCtaLabel}>{selectedPlan.heroCtaLabel}</span>
                 </button>
               </div>
-            </motion.article>
+            </article>
           </div>
         </div>
       </section>

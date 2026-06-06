@@ -1,26 +1,42 @@
 import { describe, expect, it } from "vitest";
-import { getTp5BlockRows, isTp5BlockLocked } from "@/lib/test-pricing-5-display";
+import {
+  getTp5ActiveBlockCount,
+  getTp5BlockRows,
+  isTp5BlockActive,
+  isTp5BlockLocked,
+} from "@/lib/test-pricing-5-display";
 
 describe("test-pricing-5 display", () => {
-  it("locks plus and premium when mini is active", () => {
-    expect(isTp5BlockLocked("mini", "mini")).toBe(false);
+  it("activates contiguous blocks from mini upward", () => {
+    expect(isTp5BlockActive("mini", "mini")).toBe(true);
+    expect(isTp5BlockActive("plus", "mini")).toBe(false);
+    expect(isTp5BlockActive("premium", "mini")).toBe(false);
+
+    expect(isTp5BlockActive("mini", "plus")).toBe(true);
+    expect(isTp5BlockActive("plus", "plus")).toBe(true);
+    expect(isTp5BlockActive("premium", "plus")).toBe(false);
+
+    expect(isTp5BlockActive("premium", "premium")).toBe(true);
+  });
+
+  it("maps lock helper to inactive blocks outside the blue frame", () => {
     expect(isTp5BlockLocked("plus", "mini")).toBe(true);
-    expect(isTp5BlockLocked("premium", "mini")).toBe(true);
-  });
-
-  it("locks only premium when plus is active", () => {
     expect(isTp5BlockLocked("premium", "plus")).toBe(true);
-    expect(isTp5BlockLocked("plus", "plus")).toBe(false);
+    expect(isTp5BlockLocked("mini", "premium")).toBe(false);
   });
 
-  it("shows inherit MINI row in plus block when plus is active", () => {
-    const rows = getTp5BlockRows("plus", "plus");
-    expect(rows.some((r) => r.kind === "inherit" && r.tierName === "MINI")).toBe(true);
+  it("returns active block count for fusion border height", () => {
+    expect(getTp5ActiveBlockCount("mini")).toBe(1);
+    expect(getTp5ActiveBlockCount("plus")).toBe(2);
+    expect(getTp5ActiveBlockCount("premium")).toBe(3);
   });
 
-  it("shows native premium rows without inherit when premium is active", () => {
-    const rows = getTp5BlockRows("premium", "premium");
-    expect(rows.some((r) => r.kind === "inherit")).toBe(false);
-    expect(rows.some((r) => r.kind === "bullet" && r.label.includes("carVertical"))).toBe(true);
+  it("exposes static copy per semantic group", () => {
+    expect(getTp5BlockRows("plus").map((r) => r.label)).toEqual([
+      "Vietējo reģistru pārbaude",
+      "Ziemeļvalstu reģistru pārbaude",
+      "Tehnisko apskašu vēsture",
+    ]);
+    expect(getTp5BlockRows("premium").some((r) => r.label.includes("carVertical"))).toBe(true);
   });
 });

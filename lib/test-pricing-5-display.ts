@@ -2,9 +2,11 @@ import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
 
 export type Tp5BlockId = "mini" | "plus" | "premium";
 
-export type Tp5DisplayRow =
-  | { kind: "bullet"; label: string; id: string }
-  | { kind: "inherit"; tierName: "MINI" | "PLUS"; id: string };
+export type Tp5DisplayRow = {
+  kind: "bullet";
+  label: string;
+  id: string;
+};
 
 export type Tp5FeatureBlock = {
   id: Tp5BlockId;
@@ -36,46 +38,31 @@ const PREMIUM_ROWS: Tp5DisplayRow[] = [
   { kind: "bullet", id: "prem-3", label: "Eksperta pirkuma rekomendācija" },
 ];
 
+const BLOCK_ROWS: Record<Tp5BlockId, Tp5DisplayRow[]> = {
+  mini: MINI_ROWS,
+  plus: PLUS_ROWS,
+  premium: PREMIUM_ROWS,
+};
+
 const TIER_RANK: Record<TestPricingPlanId, number> = {
   mini: 0,
   plus: 1,
   premium: 2,
 };
 
+export function isTp5BlockActive(blockId: Tp5BlockId, activeTier: TestPricingPlanId): boolean {
+  return TIER_RANK[blockId] <= TIER_RANK[activeTier];
+}
+
+/** @deprecated Use isTp5BlockActive — kept for tests migrating from lock model */
 export function isTp5BlockLocked(blockId: Tp5BlockId, activeTier: TestPricingPlanId): boolean {
-  return TIER_RANK[blockId] > TIER_RANK[activeTier];
+  return !isTp5BlockActive(blockId, activeTier);
 }
 
-export function getTp5BlockRows(
-  blockId: Tp5BlockId,
-  activeTier: TestPricingPlanId,
-): Tp5DisplayRow[] {
-  if (blockId === "mini") return MINI_ROWS;
-
-  if (blockId === "plus") {
-    if (activeTier === "plus") {
-      return [{ kind: "inherit", tierName: "MINI", id: "plus-inherit-mini" }, ...PLUS_ROWS];
-    }
-    return PLUS_ROWS;
-  }
-
-  if (activeTier === "premium") {
-    return PREMIUM_ROWS;
-  }
-  if (activeTier === "plus") {
-    return PREMIUM_ROWS;
-  }
-  return PREMIUM_ROWS;
+export function getTp5ActiveBlockCount(activeTier: TestPricingPlanId): number {
+  return TIER_RANK[activeTier] + 1;
 }
 
-export function getTp5VisibleRowIds(activeTier: TestPricingPlanId): string[] {
-  const ids: string[] = [];
-  for (const block of TP5_FEATURE_BLOCKS) {
-    if (!isTp5BlockLocked(block.id, activeTier)) {
-      ids.push(...getTp5BlockRows(block.id, activeTier).map((r) => r.id));
-    } else {
-      ids.push(...getTp5BlockRows(block.id, activeTier).map((r) => r.id));
-    }
-  }
-  return ids;
+export function getTp5BlockRows(blockId: Tp5BlockId): Tp5DisplayRow[] {
+  return BLOCK_ROWS[blockId];
 }
