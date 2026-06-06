@@ -1,0 +1,321 @@
+/* /test-pricing-3 — stacked value list */
+
+.pageRoot {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  color: rgb(245 248 252 / 0.96);
+  background: #050505;
+}
+
+.heroSurface {
+  position: relative;
+  overflow: hidden;
+}
+
+.heroBackdrop {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.heroScrim {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgb(5 5 5 / 0.55) 0%, rgb(5 5 5 / 0.82) 42%, rgb(5 5 5 / 0.94) 100%);
+}
+
+.heroInner {
+  position: relative;
+  z-index: 2;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 40rem;
+  padding:
+    clamp(1.25rem, 4vw, 2rem)
+    max(1rem, env(safe-area-inset-right, 0px))
+    clamp(1.75rem, 5vw, 2.5rem)
+    max(1rem, env(safe-area-inset-left, 0px));
+}
+
+.heroTitle {
+  margin: 0 0 0.85rem;
+  font-size: clamp(1.65rem, 5.2vw, 2.35rem);
+  line-height: 1.08;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.heroTitleLine {
+  display: block;
+}
+
+.heroSubhead {
+  margin: 0 0 1.35rem;
+  font-size: clamp(0.92rem, 2.4vw, 1.05rem);
+  line-height: 1.55;
+  font-weight: 450;
+  color: rgb(255 255 255 / 0.88);
+  text-wrap: balance;
+}
+
+.tierSwitcher {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3rem;
+  margin: 0 0 1.15rem;
+  padding: 0.3rem;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.15);
+  background: rgb(255 255 255 / 0.03);
+}
+
+.tierTabWrap {
+  position: relative;
+  min-width: 0;
+}
+
+.tierTab {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgb(210 214 222 / 0.72);
+  font-family: inherit;
+  font-size: clamp(0.72rem, 2.8vw, 0.82rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.tierTabActive {
+  color: #fff;
+  background: linear-gradient(180deg, #2290ff 0%, #0d5fd4 100%);
+  box-shadow:
+    0 8px 18px rgb(13 110 234 / 0.24),
+    0 0 0 1px rgb(0 102 255 / 0.4);
+}
+
+.tierBadge {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 2;
+  transform: translate(-50%, -58%);
+  font-size: 0.55rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.tierPanel {
+  border-radius: 18px;
+  padding: clamp(1rem, 3vw, 1.2rem);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: rgb(255 255 255 / 0.03);
+  box-shadow: 0 14px 32px rgb(0 0 0 / 0.28);
+}
+
+.tierPanelSwipe {
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.panelDesc {
+  margin: 0 0 0.85rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgb(210 214 222 / 0.82);
+}
+
+.stackList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.stackBlock {
+  border-radius: 14px;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: rgb(255 255 255 / 0.02);
+  transition:
+    opacity 0.22s ease,
+    filter 0.22s ease;
+}
+
+.stackBlockActive {
+  opacity: 1;
+  filter: none;
+}
+
+.stackBlockFaded {
+  opacity: 0.28;
+}
+
+.stackBlockTitle {
+  margin: 0 0 0.35rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(210 214 222 / 0.65);
+}
+
+.featureList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.featureRow {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0.24rem 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.featureMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+  color: rgb(210 214 222 / 0.88);
+}
+
+.featureLabelFaded {
+  text-decoration: line-through;
+  text-decoration-color: rgb(255 255 255 / 0.35);
+  text-decoration-thickness: 1px;
+}
+
+.blockWarning {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: 0.45rem;
+  align-items: start;
+  margin: 0.45rem 0 0;
+  padding-top: 0.35rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: rgb(210 214 222 / 0.88);
+}
+
+.featureMarkCross {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #f87171;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.turnaround {
+  margin: 0.85rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgb(210 214 222 / 0.72);
+}
+
+.ctaWrap {
+  margin-top: 1rem;
+}
+
+.ctaBtn {
+  width: 100% !important;
+  max-width: none !important;
+  margin-top: 0 !important;
+  box-shadow: 0 4px 10px rgb(13 110 234 / 0.1), 0 1px 0 rgb(255 255 255 / 0.16) inset !important;
+}
+
+.ctaBtnGlow {
+  box-shadow: 0 5px 12px rgb(13 110 234 / 0.14), 0 1px 0 rgb(255 255 255 / 0.18) inset !important;
+}
+
+.cancelNote {
+  margin: 0 auto 0.75rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: rgb(210 214 222 / 0.72);
+}
+
+.bodySection {
+  position: relative;
+  z-index: 1;
+  background: #050505;
+}
+
+.compactSection {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .compactSection {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+}
+
+html[data-site-theme="light"] .pageRoot,
+html[data-site-theme="light"] .bodySection {
+  color: #1d1d1f;
+  background: #f5f5f7;
+}
+
+html[data-site-theme="light"] .heroScrim {
+  background:
+    linear-gradient(180deg, rgb(245 245 247 / 0.72) 0%, rgb(245 245 247 / 0.92) 48%, #f5f5f7 100%);
+}
+
+html[data-site-theme="light"] .heroSubhead {
+  color: rgb(30 41 59 / 0.88);
+}
+
+html[data-site-theme="light"] .tierSwitcher {
+  border-color: rgb(24 31 42 / 0.15);
+  background: rgb(255 255 255 / 0.72);
+}
+
+html[data-site-theme="light"] .tierPanel,
+html[data-site-theme="light"] .stackBlock {
+  border-color: rgb(24 31 42 / 0.12);
+  background: rgb(255 255 255 / 0.94);
+}
+
+html[data-site-theme="light"] .panelDesc,
+html[data-site-theme="light"] .turnaround {
+  color: #6e6e73;
+}
+
+html[data-site-theme="light"] .featureMark {
+  color: #6e6e73;
+}
+
+html[data-site-theme="light"] .featureLabelFaded {
+  text-decoration-color: rgb(24 31 42 / 0.35);
+}

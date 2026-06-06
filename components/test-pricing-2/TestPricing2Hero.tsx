@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import demoStyles from "@/app/[locale]/demo/page.module.css";
 import styles from "@/app/test-pricing-2/test-pricing-2.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
-import { TestPricing2Step2Modal } from "@/components/test-pricing-2/TestPricing2Step2Modal";
+import { TestPricingStep2Modal } from "@/components/test-pricing-shared/TestPricingStep2Modal";
 import {
   TEST_PRICING_PLANS,
   type TestPricingFeatureItem,
@@ -171,10 +171,11 @@ export function TestPricing2Hero() {
         </div>
       </section>
 
-      <TestPricing2Step2Modal
+      <TestPricingStep2Modal
         planId={selectedId}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
+        sourcePage="test-pricing-2"
       />
     </>
   );

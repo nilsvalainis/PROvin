@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import demoStyles from "@/app/[locale]/demo/page.module.css";
-import styles from "@/app/test-pricing-2/test-pricing-2.module.css";
+import styles from "@/components/test-pricing-shared/test-pricing-modal.module.css";
 import { normalizeVin } from "@/lib/order-field-validation";
 import {
   getTestPricingPlan,
@@ -15,9 +15,10 @@ type Props = {
   planId: TestPricingPlanId;
   open: boolean;
   onClose: () => void;
+  sourcePage: "test-pricing-2" | "test-pricing-3" | "test-pricing-4";
 };
 
-export function TestPricing2Step2Modal({ planId, open, onClose }: Props) {
+export function TestPricingStep2Modal({ planId, open, onClose, sourcePage }: Props) {
   const titleId = useId();
   const firstFieldRef = useRef<HTMLInputElement>(null);
   const plan = getTestPricingPlan(planId);
@@ -68,7 +69,7 @@ export function TestPricing2Step2Modal({ planId, open, onClose }: Props) {
           listingUrl: listingUrl.trim(),
           vin: normalizeVin(vin),
           withdrawalConsent: consent,
-          sourcePage: "test-pricing-2",
+          sourcePage,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -85,7 +86,7 @@ export function TestPricing2Step2Modal({ planId, open, onClose }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [consent, listingUrl, plan, planId, vin]);
+  }, [consent, listingUrl, plan, planId, sourcePage, vin]);
 
   if (!open || !plan) return null;
 
@@ -115,12 +116,12 @@ export function TestPricing2Step2Modal({ planId, open, onClose }: Props) {
 
         <div className={styles.modalFields}>
           <div className={styles.field}>
-            <label className={styles.fieldLabel} htmlFor="tp2-listing">
+            <label className={styles.fieldLabel} htmlFor={`${sourcePage}-listing`}>
               Sludinājuma saite <span className={styles.requiredMark}>*</span>
             </label>
             <input
               ref={firstFieldRef}
-              id="tp2-listing"
+              id={`${sourcePage}-listing`}
               type="url"
               inputMode="url"
               autoComplete="url"
@@ -136,12 +137,12 @@ export function TestPricing2Step2Modal({ planId, open, onClose }: Props) {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.fieldLabel} htmlFor="tp2-vin">
+            <label className={styles.fieldLabel} htmlFor={`${sourcePage}-vin`}>
               VIN numurs
               {plan.vinRequired ? <span className={styles.requiredMark}> *</span> : null}
             </label>
             <input
-              id="tp2-vin"
+              id={`${sourcePage}-vin`}
               type="text"
               autoComplete="off"
               spellCheck={false}

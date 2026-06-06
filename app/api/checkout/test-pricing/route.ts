@@ -11,6 +11,10 @@ import {
   validateTestPricingStep2,
   type TestPricingPlanId,
 } from "@/lib/test-pricing-plans";
+import {
+  isTestPricingModalCheckoutPage,
+  testPricingCancelPath,
+} from "@/lib/test-pricing-checkout-pages";
 import { routing } from "@/i18n/routing";
 
 export const runtime = "nodejs";
@@ -103,7 +107,7 @@ export async function POST(req: Request) {
   const vinInput = typeof raw.vin === "string" ? raw.vin : "";
   const vin = normalizeVin(vinInput);
   const withdrawalConsent = raw.withdrawalConsent === true;
-  const clientCollected = sourcePage === "test-pricing-2";
+  const clientCollected = isTestPricingModalCheckoutPage(sourcePage);
 
   if (clientCollected) {
     const validation = validateTestPricingStep2(plan, listingUrl, vinInput, withdrawalConsent);
@@ -122,8 +126,7 @@ export async function POST(req: Request) {
       : "http://localhost:3000";
 
   const thanksPath = `/${locale}/paldies`;
-  const cancelPath =
-    sourcePage === "test-pricing-2" ? "/test-pricing-2?atcelts=1" : "/test-pricing?atcelts=1";
+  const cancelPath = testPricingCancelPath(sourcePage);
 
   const priceId = resolveStripePriceId(plan.stripePriceEnvKey);
   const lineItem = priceId

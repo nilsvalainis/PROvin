@@ -1,0 +1,195 @@
+/* Kopīgs Step 2 modālis testa cenu lapām */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding:
+    max(0.75rem, env(safe-area-inset-top, 0px))
+    max(0.75rem, env(safe-area-inset-right, 0px))
+    max(0.75rem, env(safe-area-inset-bottom, 0px))
+    max(0.75rem, env(safe-area-inset-left, 0px));
+  background: rgb(0 0 0 / 0.72);
+  backdrop-filter: blur(6px);
+}
+
+@media (min-width: 520px) {
+  .modalOverlay {
+    align-items: center;
+  }
+}
+
+.modalCard {
+  box-sizing: border-box;
+  width: min(100%, 26rem);
+  max-height: min(92dvh, 640px);
+  overflow: auto;
+  border-radius: 20px;
+  padding: 1.15rem 1.1rem 1.2rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: linear-gradient(180deg, rgb(28 32 40 / 0.98) 0%, rgb(16 18 22 / 0.99) 100%);
+  box-shadow: 0 24px 48px rgb(0 0 0 / 0.45);
+}
+
+.modalTitle {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.modalLead {
+  margin: 0 0 1rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: rgb(210 214 222 / 0.72);
+}
+
+.modalFields {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.32rem;
+}
+
+.fieldLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgb(210 214 222 / 0.82);
+}
+
+.requiredMark {
+  color: #f87171;
+}
+
+.fieldInput {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 46px;
+  border-radius: 12px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(8 10 14 / 0.55);
+  padding: 0 14px;
+  font-size: 14px;
+  line-height: 1.35;
+  color: rgb(245 248 252 / 0.96);
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.fieldInput::placeholder {
+  color: rgb(210 214 222 / 0.45);
+}
+
+.fieldInput:focus {
+  border-color: rgb(0 102 255 / 0.65);
+  box-shadow: 0 0 0 3px rgb(0 102 255 / 0.18);
+}
+
+.fieldInputError {
+  border-color: rgb(248 113 113 / 0.85);
+  box-shadow: 0 0 0 2px rgb(248 113 113 / 0.2);
+}
+
+.fieldError {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: #f87171;
+}
+
+.consentRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-top: 0.15rem;
+}
+
+.consentCheckbox {
+  margin-top: 0.12rem;
+  height: 1rem;
+  width: 1rem;
+  flex-shrink: 0;
+  accent-color: #0066ff;
+}
+
+.consentText {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: rgb(210 214 222 / 0.78);
+}
+
+.consentText a {
+  color: #0066ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.modalActions {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.modalDismiss {
+  min-height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgb(210 214 222 / 0.72);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.modalDismiss:hover {
+  color: rgb(245 248 252 / 0.92);
+}
+
+.modalGlobalError {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid rgb(248 113 113 / 0.45);
+  background: rgb(248 113 113 / 0.1);
+  color: #fecaca;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.ctaBtn {
+  width: 100% !important;
+  max-width: none !important;
+  margin-top: 0 !important;
+  box-shadow: 0 4px 10px rgb(13 110 234 / 0.1), 0 1px 0 rgb(255 255 255 / 0.16) inset !important;
+}
+
+html[data-site-theme="light"] .modalCard {
+  border-color: rgb(24 31 42 / 0.14);
+  background: #fff;
+}
+
+html[data-site-theme="light"] .modalLead,
+html[data-site-theme="light"] .consentText {
+  color: #6e6e73;
+}
+
+html[data-site-theme="light"] .fieldInput {
+  border-color: rgb(24 31 42 / 0.18);
+  background: #fff;
+  color: #1d1d1f;
+}
