@@ -359,6 +359,11 @@
   margin-top: 0.7rem;
 }
 
+.ctaWrap .featureFootnote {
+  margin: 0.55rem 0 0;
+  text-align: center;
+}
+
 .liquidCta {
   position: relative;
   overflow: hidden;

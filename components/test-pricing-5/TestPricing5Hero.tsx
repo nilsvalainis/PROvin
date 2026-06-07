@@ -222,21 +222,34 @@ export function TestPricing5Hero() {
       </div>
       <div className={styles.heroScrim} aria-hidden />
 
-      <div className={styles.heroInner}>
+      <div
+        className={`${styles.heroInner} lg:grid lg:grid-cols-12 lg:items-start lg:gap-12 lg:!max-w-7xl lg:mx-auto lg:px-8 lg:pt-16 lg:pb-20`}
+      >
         {cancelled ? (
-          <p className={styles.cancelNote}>Maksājums tika atcelts. Vari mēģināt vēlreiz.</p>
+          <p className={`${styles.cancelNote} lg:col-span-12`}>
+            Maksājums tika atcelts. Vari mēģināt vēlreiz.
+          </p>
         ) : null}
 
-        <header className={styles.heroCopy}>
-          <h1 id="tp5-hero-title" className={styles.heroTitle}>
+        <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:pt-2`}>
+          <h1
+            id="tp5-hero-title"
+            className={`${styles.heroTitle} lg:text-5xl lg:font-bold lg:leading-tight lg:tracking-tight`}
+          >
             {TP5_HERO_TITLE_PREFIX}
-            <span className={styles.heroTitleAccent}>{TP5_HERO_TITLE_ACCENT}</span>
+            <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
+              {TP5_HERO_TITLE_ACCENT}
+            </span>
           </h1>
-          <p className={styles.heroSubhead}>{TP5_HERO_SUBHEAD}</p>
+          <p
+            className={`${styles.heroSubhead} lg:mt-5 lg:max-w-xl lg:text-lg lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block`}
+          >
+            {TP5_HERO_SUBHEAD}
+          </p>
         </header>
 
-        <div className={styles.stage}>
-          <article className={styles.spatialCard}>
+        <div className={`${styles.stage} lg:col-span-5 lg:w-full`}>
+          <article className={`${styles.spatialCard} w-full lg:ml-auto lg:max-w-[440px]`}>
             <div className={styles.cardHeader}>
               <LayoutGroup id="tp5-tabs">
                 <div className={styles.tierSwitcher} role="tablist" aria-label="Izvēlies audita cenu">
@@ -311,10 +324,6 @@ export function TestPricing5Hero() {
                 );
               })}
 
-              {isPremiumTier ? (
-                <p className={styles.featureFootnote}>{TP5_DEALER_FOOTNOTE}</p>
-              ) : null}
-
               <div
                 className={styles.inlineFields}
                 onTouchStart={stopSwipePropagation}
@@ -362,6 +371,9 @@ export function TestPricing5Hero() {
                 <span className={styles.liquidCtaShimmer} aria-hidden />
                 <span className={styles.liquidCtaLabel}>{TP5_CTA_LABEL[selectedId]}</span>
               </button>
+              {isPremiumTier ? (
+                <p className={styles.featureFootnote}>{TP5_DEALER_FOOTNOTE}</p>
+              ) : null}
             </div>
           </article>
         </div>
