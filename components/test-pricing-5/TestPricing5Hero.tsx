@@ -225,7 +225,7 @@ export function TestPricing5Hero() {
       <div className={styles.heroScrim} aria-hidden />
 
       <div
-        className={`${styles.heroInner} lg:grid lg:grid-cols-12 lg:items-start lg:gap-12 lg:!max-w-7xl lg:mx-auto lg:px-8 lg:pt-16 lg:pb-16`}
+        className={`${styles.heroInner} lg:grid lg:grid-cols-12 lg:items-center lg:gap-12 lg:!max-w-7xl lg:mx-auto lg:px-8 lg:pt-16 lg:pb-16`}
       >
         {cancelled ? (
           <p className={`${styles.cancelNote} lg:col-span-12`}>
@@ -234,10 +234,7 @@ export function TestPricing5Hero() {
         ) : null}
 
         <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:text-left`}>
-          <h1
-            id="tp5-hero-title"
-            className={`${styles.heroTitle} lg:font-bold lg:tracking-tight lg:text-white`}
-          >
+          <h1 id="tp5-hero-title" className={styles.heroTitle}>
             <span className="lg:hidden">
               {TP5_HERO_TITLE_PREFIX}
               <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
@@ -254,7 +251,7 @@ export function TestPricing5Hero() {
               </span>
             </span>
           </h1>
-          <p className={`${styles.heroSubhead} lg:line-clamp-none lg:overflow-visible lg:block`}>
+          <p className={styles.heroSubhead}>
             {TP5_HERO_SUBHEAD}
           </p>
         </header>
