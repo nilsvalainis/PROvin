@@ -224,7 +224,7 @@ export function TestPricing5Hero() {
       <div className={styles.heroScrim} aria-hidden />
 
       <div
-        className={`${styles.heroInner} lg:grid lg:grid-cols-12 lg:items-start lg:gap-12 lg:!max-w-7xl lg:mx-auto lg:px-8 lg:pt-12 lg:pb-16`}
+        className={`${styles.heroInner} lg:grid lg:grid-cols-12 lg:items-stretch lg:gap-12 lg:!max-w-7xl lg:mx-auto lg:px-8 lg:pt-12 lg:pb-16`}
       >
         {cancelled ? (
           <p className={`${styles.cancelNote} lg:col-span-12`}>
@@ -232,25 +232,29 @@ export function TestPricing5Hero() {
           </p>
         ) : null}
 
-        <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:pt-2 lg:text-left`}>
-          <h1
-            id="tp5-hero-title"
-            className={`${styles.heroTitle} lg:text-4xl lg:font-bold lg:leading-tight lg:tracking-tight lg:text-white xl:text-5xl`}
-          >
-            {TP5_HERO_TITLE_PREFIX}
-            <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
-              {TP5_HERO_TITLE_ACCENT}
-            </span>
-          </h1>
-          <p
-            className={`${styles.heroSubhead} lg:mt-5 lg:max-w-xl lg:text-base lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:text-lg`}
-          >
-            {TP5_HERO_SUBHEAD}
-          </p>
+        <header
+          className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:flex lg:h-full lg:flex-col lg:justify-between lg:pt-2 lg:text-left`}
+        >
+          <div className="lg:max-w-xl">
+            <h1
+              id="tp5-hero-title"
+              className={`${styles.heroTitle} lg:text-4xl lg:font-bold lg:leading-tight lg:tracking-tight lg:text-white xl:text-5xl`}
+            >
+              {TP5_HERO_TITLE_PREFIX}
+              <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
+                {TP5_HERO_TITLE_ACCENT}
+              </span>
+            </h1>
+            <p
+              className={`${styles.heroSubhead} lg:mt-5 lg:max-w-xl lg:text-base lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:text-lg`}
+            >
+              {TP5_HERO_SUBHEAD}
+            </p>
+          </div>
           <TestPricing5DesktopValueGrid />
         </header>
 
-        <div className={`${styles.stage} lg:col-span-5 lg:w-full`}>
+        <div className={`${styles.stage} lg:col-span-5 lg:flex lg:w-full lg:justify-end`}>
           <article className={`${styles.spatialCard} w-full lg:ml-auto lg:max-w-[440px]`}>
             <div className={styles.cardHeader}>
               <LayoutGroup id="tp5-tabs">
