@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type SyntheticEvent } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
 import {
@@ -14,7 +14,6 @@ import {
   type Tp5FeatureBlock,
 } from "@/lib/test-pricing-5-display";
 import {
-  getTp5CheckoutHref,
   TP5_CTA_LABEL,
   TP5_TAB_LABEL,
   TP5_TIER_META,
@@ -25,6 +24,12 @@ import {
   TP5_HERO_TITLE_PREFIX,
   TP5_TRUST_BADGE,
 } from "@/lib/test-pricing-5-hero-copy";
+import {
+  TP5_INLINE_CHECKOUT_SOURCE,
+  validateTp5InlineFields,
+  type Tp5InlineFieldErrors,
+} from "@/lib/test-pricing-5-inline-checkout";
+import { normalizeVin } from "@/lib/order-field-validation";
 import {
   getTestPricingPlan,
   TEST_PRICING_PLANS,
@@ -139,10 +144,14 @@ function InactiveGroup({
 }
 
 export function TestPricing5Hero() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const reducedMotion = useReducedMotion();
   const [selectedId, setSelectedId] = useState<TestPricingPlanId>("premium");
+  const [vin, setVin] = useState("");
+  const [listingUrl, setListingUrl] = useState("");
+  const [errors, setErrors] = useState<Tp5InlineFieldErrors>({});
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const { onSwipeAreaTouchStart, onSwipeAreaTouchEnd } = useTestPricingTierSwipe(
     selectedId,
@@ -166,8 +175,48 @@ export function TestPricing5Hero() {
   const isPremiumTier = selectedId === "premium";
   const tierMeta = TP5_TIER_META[selectedId];
 
-  const goToCheckout = () => {
-    router.push(getTp5CheckoutHref(selectedId));
+  const submitCheckout = useCallback(async () => {
+    setGlobalError(null);
+    const validation = validateTp5InlineFields(listingUrl, vin);
+    if (!validation.ok) {
+      setErrors(validation.errors);
+      const first = validation.errors.listingUrl ?? validation.errors.vin;
+      if (first) setGlobalError(first);
+      return;
+    }
+    setErrors({});
+    setLoading(true);
+    try {
+      const res = await fetch("/api/checkout/test-pricing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: selectedId,
+          locale: "lv",
+          listingUrl: listingUrl.trim(),
+          vin: normalizeVin(vin),
+          withdrawalConsent: true,
+          sourcePage: TP5_INLINE_CHECKOUT_SOURCE,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        error?: string;
+        errors?: string[];
+      };
+      if (!res.ok || !data.url) {
+        throw new Error(data.errors?.[0] ?? data.error ?? "Neizdevās sākt maksājumu.");
+      }
+      window.location.href = data.url;
+    } catch (e) {
+      setGlobalError(e instanceof Error ? e.message : "Neizdevās sākt maksājumu.");
+    } finally {
+      setLoading(false);
+    }
+  }, [listingUrl, selectedId, vin]);
+
+  const stopSwipePropagation = (event: SyntheticEvent) => {
+    event.stopPropagation();
   };
 
   return (
@@ -269,10 +318,49 @@ export function TestPricing5Hero() {
               })}
             </div>
 
+            <div
+              className={styles.inlineFields}
+              onTouchStart={stopSwipePropagation}
+              onTouchEnd={stopSwipePropagation}
+            >
+              <input
+                type="text"
+                className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
+                value={vin}
+                onChange={(event) => setVin(event.target.value.toUpperCase())}
+                placeholder="VIN kods (17-zīmju šasijas numurs)"
+                aria-label="VIN kods (17-zīmju šasijas numurs)"
+                autoComplete="off"
+                spellCheck={false}
+                inputMode="text"
+                maxLength={17}
+              />
+              {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
+              <input
+                type="url"
+                className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
+                value={listingUrl}
+                onChange={(event) => setListingUrl(event.target.value)}
+                placeholder="Sludinājuma saite (ss.com, brc.lv u.c.)"
+                aria-label="Sludinājuma saite (ss.com, brc.lv u.c.)"
+                autoComplete="url"
+                inputMode="url"
+              />
+              {errors.listingUrl ? (
+                <p className={styles.inlineFieldError}>{errors.listingUrl}</p>
+              ) : null}
+            </div>
+
             <p className={styles.turnaround}>{selectedPlan.turnaround}</p>
 
             <div className={styles.ctaWrap}>
-              <button type="button" className={styles.liquidCta} onClick={goToCheckout}>
+              {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
+              <button
+                type="button"
+                className={styles.liquidCta}
+                onClick={submitCheckout}
+                disabled={loading}
+              >
                 <span className={styles.liquidCtaShimmer} aria-hidden />
                 <span className={styles.liquidCtaLabel}>{TP5_CTA_LABEL[selectedId]}</span>
               </button>

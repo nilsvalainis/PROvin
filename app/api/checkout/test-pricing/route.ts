@@ -15,6 +15,10 @@ import {
   isTestPricingModalCheckoutPage,
   testPricingCancelPath,
 } from "@/lib/test-pricing-checkout-pages";
+import {
+  TP5_INLINE_CHECKOUT_SOURCE,
+  validateTp5InlineFields,
+} from "@/lib/test-pricing-5-inline-checkout";
 import { routing } from "@/i18n/routing";
 
 export const runtime = "nodejs";
@@ -110,11 +114,17 @@ export async function POST(req: Request) {
   const clientCollected = isTestPricingModalCheckoutPage(sourcePage);
 
   if (clientCollected) {
-    const validation = validateTestPricingStep2(plan, listingUrl, vinInput, withdrawalConsent);
+    const validation =
+      sourcePage === TP5_INLINE_CHECKOUT_SOURCE
+        ? validateTp5InlineFields(listingUrl, vinInput)
+        : validateTestPricingStep2(plan, listingUrl, vinInput, withdrawalConsent);
     if (!validation.ok) {
       const errors = validation.errors;
       const first =
-        errors.listingUrl ?? errors.vin ?? errors.consent ?? "Aizpildi obligātos laukus.";
+        errors.listingUrl ??
+        errors.vin ??
+        ("consent" in errors ? errors.consent : undefined) ??
+        "Aizpildi obligātos laukus.";
       return NextResponse.json({ error: first, errors: Object.values(errors) }, { status: 400 });
     }
   }
@@ -168,6 +178,9 @@ export async function POST(req: Request) {
         ? {
             withdrawal_waiver_ack: "true",
             authorization_ack: "true",
+            ...(sourcePage === TP5_INLINE_CHECKOUT_SOURCE
+              ? { inline_checkout: "true" }
+              : {}),
           }
         : {}),
     },
