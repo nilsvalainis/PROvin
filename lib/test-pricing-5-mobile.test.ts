@@ -19,14 +19,15 @@ describe("test-pricing-5 mobile two-tier model", () => {
     expect(mini.title).toBe("PROVIN MINI");
     expect(mini.buttonText).toBe("PASŪTĪT MINI AUDITU — 39,99 €");
     expect(mini.features.filter((feature) => feature.included)).toHaveLength(3);
-    expect(mini.features.filter((feature) => !feature.included)).toHaveLength(4);
+    expect(mini.features.filter((feature) => !feature.included)).toHaveLength(3);
   });
 
-  it("maps AUDITS to all seven included features", () => {
+  it("maps AUDITS to all six included features", () => {
     const audits = getTp5MobileService("audits");
     expect(audits.title).toBe("PROVIN AUDITS");
     expect(audits.description).toContain("oficiālā dīlera sistēmu datus");
     expect(audits.buttonText).toBe("PASŪTĪT PROVIN AUDITU — 89,99 €");
+    expect(audits.features).toHaveLength(6);
     expect(audits.features.every((feature) => feature.included)).toBe(true);
   });
 });

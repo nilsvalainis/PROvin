@@ -31,7 +31,7 @@ const MINI_ROWS: Tp5DisplayRow[] = [
 const PLUS_ROWS: Tp5DisplayRow[] = [
   { kind: "bullet", id: "plus-1", label: "Eiropas publisko reģistru pārbaude" },
   { kind: "bullet", id: "plus-2", label: "Tehnisko apskašu vēsture" },
-  { kind: "bullet", id: "plus-3", label: "Individuāla konsultācija" },
+  { kind: "bullet", id: "plus-3", label: "Individuāla konsultācija un atbalsts pirms darījuma." },
 ];
 
 const PREMIUM_ROWS: Tp5DisplayRow[] = [

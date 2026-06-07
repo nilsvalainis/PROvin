@@ -28,11 +28,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
       { name: "Ieteikumi klātienes apskatei", included: true },
       { name: "carVertical un autoDNA integrācija", included: false },
       { name: "Oficiālo dīleru sistēmu dati*", included: false },
-      { name: "Individuāla konsultācija", included: false },
-      {
-        name: "📞 Konsultācija un atbalsts — tieša saziņa pirms darījuma.",
-        included: false,
-      },
+      { name: "Individuāla konsultācija un atbalsts pirms darījuma.", included: false },
     ],
   },
   {
@@ -48,11 +44,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
       { name: "Ieteikumi klātienes apskatei", included: true },
       { name: "carVertical un autoDNA integrācija", included: true },
       { name: "Oficiālo dīleru sistēmu dati*", included: true },
-      { name: "Individuāla konsultācija", included: true },
-      {
-        name: "📞 Konsultācija un atbalsts — tieša saziņa pirms darījuma.",
-        included: true,
-      },
+      { name: "Individuāla konsultācija un atbalsts pirms darījuma.", included: true },
     ],
   },
 ];

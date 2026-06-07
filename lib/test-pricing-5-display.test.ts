@@ -40,7 +40,7 @@ describe("test-pricing-5 display", () => {
     expect(getTp5BlockRows("plus").map((r) => r.label)).toEqual([
       "Eiropas publisko reģistru pārbaude",
       "Tehnisko apskašu vēsture",
-      "Individuāla konsultācija",
+      "Individuāla konsultācija un atbalsts pirms darījuma.",
     ]);
     expect(getTp5BlockRows("premium").map((r) => r.label)).toEqual([
       "carVertical vēstures atskaite",
