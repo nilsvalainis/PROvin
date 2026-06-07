@@ -1,0 +1,28 @@
+.pageRoot {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  color: rgb(245 248 252 / 0.96);
+  background: #070809;
+}
+
+.pageInner {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding:
+    clamp(1.25rem, 4vw, 2rem)
+    max(1rem, env(safe-area-inset-right, 0px))
+    clamp(1.5rem, 5vw, 2.5rem)
+    max(1rem, env(safe-area-inset-left, 0px));
+}
+
+.checkoutCard {
+  width: min(100%, 26rem);
+}
+
+html[data-site-theme="light"] .pageRoot {
+  color: #1d1d1f;
+  background: #f3f4f6;
+}

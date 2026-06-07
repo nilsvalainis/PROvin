@@ -4,6 +4,7 @@ export const TEST_PRICING_MODAL_CHECKOUT_PAGES = new Set([
   "test-pricing-3",
   "test-pricing-4",
   "test-pricing-5",
+  "test-checkout",
 ]);
 
 export function isTestPricingModalCheckoutPage(sourcePage: string): boolean {
@@ -11,6 +12,7 @@ export function isTestPricingModalCheckoutPage(sourcePage: string): boolean {
 }
 
 export function testPricingCancelPath(sourcePage: string): string {
+  if (sourcePage === "test-checkout") return "/test-pricing-5?atcelts=1";
   if (sourcePage === "test-pricing") return "/test-pricing?atcelts=1";
   if (sourcePage.startsWith("test-pricing-")) return `/${sourcePage}?atcelts=1`;
   return "/test-pricing?atcelts=1";

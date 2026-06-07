@@ -107,20 +107,8 @@
   padding: 0.55rem 0.4rem;
   border: 0;
   border-radius: 999px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.tierTabBtnInactive {
-  background: rgb(255 255 255 / 0.08);
-}
-
-.tierTabBtnInactive:hover {
-  background: rgb(255 255 255 / 0.12);
-}
-
-.tierTabBtnActive {
   background: transparent;
+  cursor: pointer;
 }
 
 .tierTabPill {
@@ -168,13 +156,15 @@
 .inactiveGroup {
   padding: 0.55rem 0.75rem 0.65rem;
   border-radius: 16px;
-  opacity: 0.4;
   cursor: pointer;
-  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.inactiveGroup:hover {
-  opacity: 0.52;
+.inactiveGroup .featureLabelMuted {
+  color: rgb(210 214 222 / 0.42);
+}
+
+.inactiveGroup:hover .featureLabelMuted {
+  color: rgb(210 214 222 / 0.55);
 }
 
 .inactiveGroup:focus-visible {
@@ -218,6 +208,13 @@
 
 .featureMarkMuted {
   color: rgb(210 214 222 / 0.72);
+}
+
+.featureMarkCross {
+  color: #ef4444;
+  font-size: 0.84rem;
+  font-weight: 700;
+  opacity: 1;
 }
 
 .featureLabelActive {
@@ -406,14 +403,6 @@ html[data-site-theme="light"] .tierSwitcher {
   background: rgb(24 31 42 / 0.04);
 }
 
-html[data-site-theme="light"] .tierTabBtnInactive {
-  background: rgb(24 31 42 / 0.06);
-}
-
-html[data-site-theme="light"] .tierTabBtnInactive:hover {
-  background: rgb(24 31 42 / 0.1);
-}
-
 html[data-site-theme="light"] .tierTabLabelInactive {
   color: rgb(24 31 42 / 0.72);
 }
@@ -444,6 +433,10 @@ html[data-site-theme="light"] .featureLabelMuted {
   color: #6e6e73;
 }
 
-html[data-site-theme="light"] .inactiveGroup {
-  opacity: 0.45;
+html[data-site-theme="light"] .inactiveGroup .featureLabelMuted {
+  color: rgb(110 110 115 / 0.55);
+}
+
+html[data-site-theme="light"] .featureMarkCross {
+  color: #dc2626;
 }
