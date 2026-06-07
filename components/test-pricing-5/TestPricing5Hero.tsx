@@ -225,7 +225,7 @@ export function TestPricing5Hero() {
       <div className={styles.heroScrim} aria-hidden />
 
       <div
-        className={`${styles.heroInner} lg:grid lg:grid-cols-12 lg:items-center lg:gap-12 lg:max-w-7xl lg:mx-auto lg:px-8 lg:pt-16 lg:pb-16`}
+        className={`${styles.heroInner} lg:grid lg:grid-cols-12 lg:items-center lg:gap-12 lg:!max-w-7xl lg:mx-auto lg:px-8 lg:pt-16 lg:pb-16`}
       >
         {cancelled ? (
           <p className={`${styles.cancelNote} lg:col-span-12`}>
@@ -233,11 +233,8 @@ export function TestPricing5Hero() {
           </p>
         ) : null}
 
-        <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:min-w-0 lg:text-left`}>
-          <h1
-            id="tp5-hero-title"
-            className={`${styles.heroTitle} lg:!text-4xl lg:font-bold lg:leading-[1.15] lg:tracking-tight lg:text-white xl:!text-5xl`}
-          >
+        <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:text-left`}>
+          <h1 id="tp5-hero-title" className={styles.heroTitle}>
             <span className="lg:hidden">
               {TP5_HERO_TITLE_PREFIX}
               <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
@@ -254,24 +251,16 @@ export function TestPricing5Hero() {
               </span>
             </span>
           </h1>
-          <p
-            className={`${styles.heroSubhead} lg:mt-6 lg:max-w-[44ch] lg:!text-base lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:!text-lg`}
-          >
+          <p className={styles.heroSubhead}>
             {TP5_HERO_SUBHEAD}
           </p>
         </header>
 
-        <div
-          className={`${styles.stage} lg:col-span-5 lg:ml-auto lg:w-[420px] lg:shrink-0 xl:w-[440px]`}
-        >
-          <article className={`${styles.spatialCard} w-full`}>
+        <div className={`${styles.stage} lg:col-span-5 lg:w-full`}>
+          <article className={`${styles.spatialCard} w-full lg:ml-auto lg:max-w-[440px]`}>
             <div className={styles.cardHeader}>
               <LayoutGroup id="tp5-tabs">
-                <div
-                  className={`${styles.tierSwitcher} lg:items-center lg:justify-items-stretch`}
-                  role="tablist"
-                  aria-label="Izvēlies audita cenu"
-                >
+                <div className={styles.tierSwitcher} role="tablist" aria-label="Izvēlies audita cenu">
                   {TEST_PRICING_TIER_ORDER.map((id) => {
                     const active = selectedId === id;
                     return (
@@ -281,7 +270,7 @@ export function TestPricing5Hero() {
                         role="tab"
                         aria-selected={active}
                         aria-label={`${TP5_TAB_LABEL[id]} audits`}
-                        className={`${styles.tierTabBtn} lg:items-center lg:justify-center`}
+                        className={styles.tierTabBtn}
                         onClick={() => setSelectedId(id)}
                       >
                         {active ? (
@@ -293,7 +282,7 @@ export function TestPricing5Hero() {
                           />
                         ) : null}
                         <span
-                          className={`${styles.tierTabLabel} lg:items-center lg:justify-center ${id === "premium" ? `${styles.tierTabLabelCompact} lg:!text-xs lg:!tracking-wide` : ""} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
+                          className={`${styles.tierTabLabel} ${id === "premium" ? styles.tierTabLabelCompact : ""} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
                         >
                           {TP5_TAB_LABEL[id]}
                         </span>
@@ -305,11 +294,7 @@ export function TestPricing5Hero() {
 
               <div className={styles.tierMeta} aria-live="polite">
                 <p className={styles.tierMetaTitle}>{tierMeta.title}</p>
-                <p
-                  className={`${styles.tierMetaDesc} lg:line-clamp-none lg:overflow-visible lg:block`}
-                >
-                  {tierMeta.description}
-                </p>
+                <p className={styles.tierMetaDesc}>{tierMeta.description}</p>
               </div>
             </div>
 
