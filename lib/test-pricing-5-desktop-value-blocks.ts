@@ -9,16 +9,17 @@ import {
 } from "lucide-react";
 
 export type Tp5DesktopValueBlock = {
-  title: string;
+  titleLine1: string;
+  titleLine2: string;
   Icon: LucideIcon;
 };
 
 /** Desktop-only hero value grid on `/test-pricing-5` — 3×2 borderless layout, Lucide product icons. */
 export const TP5_DESKTOP_VALUE_BLOCKS: Tp5DesktopValueBlock[] = [
-  { title: "SLUDINĀJUMA AUDITS", Icon: ScanSearch },
-  { title: "VĒSTURES ANALĪZE", Icon: History },
-  { title: "OFICIĀLO DĪLERU DATI", Icon: ShieldCheck },
-  { title: "TEHNISKO RISKU ANALĪZE", Icon: AlertTriangle },
-  { title: "IETEIKUMI KLĀTIENES APSKATEI", Icon: ListChecks },
-  { title: "KONSULTĀCIJAS UN ATBALSTS", Icon: Headphones },
+  { titleLine1: "SLUDINĀJUMA", titleLine2: "AUDITS", Icon: ScanSearch },
+  { titleLine1: "VĒSTURES", titleLine2: "ANALĪZE", Icon: History },
+  { titleLine1: "OFICIĀLO", titleLine2: "DĪLERU DATI", Icon: ShieldCheck },
+  { titleLine1: "TEHNISKO RISKU", titleLine2: "ANALĪZE", Icon: AlertTriangle },
+  { titleLine1: "IETEIKUMI KLĀTIENES", titleLine2: "APSKATEI", Icon: ListChecks },
+  { titleLine1: "KONSULTĀCIJAS", titleLine2: "UN ATBALSTS", Icon: Headphones },
 ];

@@ -22,6 +22,8 @@ import {
 import {
   TP5_HERO_SUBHEAD,
   TP5_HERO_TITLE_ACCENT,
+  TP5_HERO_TITLE_DESKTOP_LINE1,
+  TP5_HERO_TITLE_DESKTOP_LINE2_PREFIX,
   TP5_HERO_TITLE_PREFIX,
 } from "@/lib/test-pricing-5-hero-copy";
 import {
@@ -235,15 +237,26 @@ export function TestPricing5Hero() {
         <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:text-left`}>
           <h1
             id="tp5-hero-title"
-            className={`${styles.heroTitle} lg:text-5xl lg:font-bold lg:leading-tight lg:tracking-tight lg:text-white xl:text-6xl`}
+            className={`${styles.heroTitle} lg:text-6xl lg:font-bold lg:leading-[1.05] lg:tracking-tight lg:text-white xl:text-7xl`}
           >
-            {TP5_HERO_TITLE_PREFIX}
-            <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
-              {TP5_HERO_TITLE_ACCENT}
+            <span className="lg:hidden">
+              {TP5_HERO_TITLE_PREFIX}
+              <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
+                {TP5_HERO_TITLE_ACCENT}
+              </span>
+            </span>
+            <span className="hidden lg:block">
+              <span className="lg:block">{TP5_HERO_TITLE_DESKTOP_LINE1}</span>
+              <span className="lg:block">
+                {TP5_HERO_TITLE_DESKTOP_LINE2_PREFIX}
+                <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
+                  {TP5_HERO_TITLE_ACCENT}
+                </span>
+              </span>
             </span>
           </h1>
           <p
-            className={`${styles.heroSubhead} lg:mt-6 lg:max-w-2xl lg:text-lg lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:text-xl`}
+            className={`${styles.heroSubhead} lg:mt-6 lg:max-w-2xl lg:text-xl lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:text-2xl xl:leading-relaxed`}
           >
             {TP5_HERO_SUBHEAD}
           </p>
