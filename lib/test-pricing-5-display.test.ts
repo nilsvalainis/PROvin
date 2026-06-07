@@ -47,5 +47,6 @@ describe("test-pricing-5 display", () => {
       "autoDNA vēstures atskaite",
       "Oficiālo dīleru sistēmu dati",
     ]);
+    expect(getTp5BlockRows("premium")[2]?.footnoteMark).toBe(true);
   });
 });

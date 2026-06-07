@@ -30,20 +30,23 @@ export type Tp5TierMeta = {
 export const TP5_TIER_META: Record<TestPricingPlanId, Tp5TierMeta> = {
   mini: {
     title: "MINI AUDITS",
-    description:
-      "Pamata pārbaude pirms auto apskates klātienē, lai atsijātu acīmredzami sliktus variantus.",
+    description: "Pamata pārbaude, risku analīze un ieteikumi klātienes apskatei.",
   },
   plus: {
     title: "PLUS AUDITS",
     description:
-      "Padziļināta juridisko un tehnisko datu analīze, kas ietver personīgu eksperta slēdzienu.",
+      "Padziļināta tehnisko datu analīze un konsultācija Latvijā ekspluatētiem auto.",
   },
   premium: {
     title: "PROVIN AUDITS",
     description:
-      "Maksimālā iespējamā digitālā pārbaude ar visu maksas datubāzu un dīleru sistēmu integrāciju.",
+      "Maksimāla visu datu analīze iekļaujot maksas atskaites un dīlera sistēmu datus*.",
   },
 };
+
+/** Muted footnote when PROVIN tier dealer-system row is active. */
+export const TP5_DEALER_FOOTNOTE =
+  "*Dati no oficiālo dīleru sistēmām ir pieejami noteiktiem ražotājiem.";
 
 export const TP5_CHECKOUT_SOURCE = "test-checkout" as const;
 

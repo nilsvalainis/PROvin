@@ -15,6 +15,7 @@ import {
 } from "@/lib/test-pricing-5-display";
 import {
   TP5_CTA_LABEL,
+  TP5_DEALER_FOOTNOTE,
   TP5_TAB_LABEL,
   TP5_TIER_META,
 } from "@/lib/test-pricing-5-checkout-routing";
@@ -41,7 +42,6 @@ import {
 } from "@/lib/use-test-pricing-tier-swipe";
 
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
-const ACCENT_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 const ROW_SPRING = { type: "spring" as const, stiffness: 480, damping: 34, mass: 0.62 };
 
 type ActiveRowEntry = { row: Tp5DisplayRow; blockId: Tp5BlockId };
@@ -60,6 +60,7 @@ function FeatureRow({
   premiumHighlight?: boolean;
 }) {
   const delay = reducedMotion ? 0 : index * 0.04;
+  const label = row.footnoteMark ? `${row.label}*` : row.label;
 
   if (!active) {
     return (
@@ -67,7 +68,7 @@ function FeatureRow({
         <span className={`${styles.featureMark} ${styles.featureMarkCross}`} aria-hidden>
           ✕
         </span>
-        <span className={styles.featureLabelMuted}>{row.label}</span>
+        <span className={styles.featureLabelMuted}>{label}</span>
       </li>
     );
   }
@@ -96,7 +97,7 @@ function FeatureRow({
         animate={{ opacity: 1, x: 0 }}
         transition={{ ...ROW_SPRING, delay: delay + 0.08 }}
       >
-        {row.label}
+        {label}
       </motion.span>
     </motion.li>
   );
@@ -240,56 +241,53 @@ export function TestPricing5Hero() {
         </header>
 
         <div className={styles.stage}>
-          <article
-            className={styles.spatialCard}
-            onTouchStart={onSwipeAreaTouchStart}
-            onTouchEnd={onSwipeAreaTouchEnd}
-          >
-            <LayoutGroup id="tp5-tabs">
-              <div className={styles.tierSwitcher} role="tablist" aria-label="Izvēlies audita cenu">
-                {TEST_PRICING_TIER_ORDER.map((id) => {
-                  const active = selectedId === id;
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      role="tab"
-                      aria-selected={active}
-                      aria-label={`${TP5_TAB_LABEL[id]} audits`}
-                      className={styles.tierTabBtn}
-                      onClick={() => setSelectedId(id)}
-                    >
-                      {active ? (
-                        <motion.span
-                          layoutId="tp5-tab-pill"
-                          className={styles.tierTabPill}
-                          transition={TAB_TRANSITION}
-                          aria-hidden
-                        />
-                      ) : null}
-                      <span
-                        className={`${styles.tierTabLabel} ${id === "premium" ? styles.tierTabLabelCompact : ""} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
+          <article className={styles.spatialCard}>
+            <div className={styles.cardHeader}>
+              <LayoutGroup id="tp5-tabs">
+                <div className={styles.tierSwitcher} role="tablist" aria-label="Izvēlies audita cenu">
+                  {TEST_PRICING_TIER_ORDER.map((id) => {
+                    const active = selectedId === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        aria-label={`${TP5_TAB_LABEL[id]} audits`}
+                        className={styles.tierTabBtn}
+                        onClick={() => setSelectedId(id)}
                       >
-                        {TP5_TAB_LABEL[id]}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </LayoutGroup>
+                        {active ? (
+                          <motion.span
+                            layoutId="tp5-tab-pill"
+                            className={styles.tierTabPill}
+                            transition={TAB_TRANSITION}
+                            aria-hidden
+                          />
+                        ) : null}
+                        <span
+                          className={`${styles.tierTabLabel} ${id === "premium" ? styles.tierTabLabelCompact : ""} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
+                        >
+                          {TP5_TAB_LABEL[id]}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </LayoutGroup>
 
-            <div className={styles.tierMeta} aria-live="polite">
-              <p className={styles.tierMetaTitle}>{tierMeta.title}</p>
-              <p className={styles.tierMetaDesc}>{tierMeta.description}</p>
+              <div className={styles.tierMeta} aria-live="polite">
+                <p className={styles.tierMetaTitle}>{tierMeta.title}</p>
+                <p className={styles.tierMetaDesc}>{tierMeta.description}</p>
+              </div>
             </div>
 
-            <div className={styles.featureStack}>
-              <motion.div
-                className={styles.liquidAccent}
-                data-tier={selectedId}
-                layout
-                transition={ACCENT_TRANSITION}
-              >
+            <div
+              className={styles.featureStack}
+              onTouchStart={onSwipeAreaTouchStart}
+              onTouchEnd={onSwipeAreaTouchEnd}
+            >
+              <div className={styles.liquidAccent} data-tier={selectedId}>
                 <ul className={styles.featureList}>
                   {activeRowEntries.map(({ row, blockId }, index) => (
                     <FeatureRow
@@ -302,7 +300,40 @@ export function TestPricing5Hero() {
                     />
                   ))}
                 </ul>
-              </motion.div>
+              </div>
+
+              <div
+                className={styles.inlineFields}
+                onTouchStart={stopSwipePropagation}
+                onTouchEnd={stopSwipePropagation}
+              >
+                <input
+                  type="text"
+                  className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
+                  value={vin}
+                  onChange={(event) => setVin(event.target.value.toUpperCase())}
+                  placeholder="Ievadi VIN kodu"
+                  aria-label="Ievadi VIN kodu"
+                  autoComplete="off"
+                  spellCheck={false}
+                  inputMode="text"
+                  maxLength={17}
+                />
+                {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
+                <input
+                  type="url"
+                  className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
+                  value={listingUrl}
+                  onChange={(event) => setListingUrl(event.target.value)}
+                  placeholder="Iekopē sludinājuma linku"
+                  aria-label="Iekopē sludinājuma linku"
+                  autoComplete="url"
+                  inputMode="url"
+                />
+                {errors.listingUrl ? (
+                  <p className={styles.inlineFieldError}>{errors.listingUrl}</p>
+                ) : null}
+              </div>
 
               {inactiveBlocks.map((block) => {
                 const offset = inactiveRowOffset;
@@ -316,38 +347,9 @@ export function TestPricing5Hero() {
                   />
                 );
               })}
-            </div>
 
-            <div
-              className={styles.inlineFields}
-              onTouchStart={stopSwipePropagation}
-              onTouchEnd={stopSwipePropagation}
-            >
-              <input
-                type="text"
-                className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
-                value={vin}
-                onChange={(event) => setVin(event.target.value.toUpperCase())}
-                placeholder="VIN kods (17-zīmju šasijas numurs)"
-                aria-label="VIN kods (17-zīmju šasijas numurs)"
-                autoComplete="off"
-                spellCheck={false}
-                inputMode="text"
-                maxLength={17}
-              />
-              {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
-              <input
-                type="url"
-                className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
-                value={listingUrl}
-                onChange={(event) => setListingUrl(event.target.value)}
-                placeholder="Sludinājuma saite (ss.com, brc.lv u.c.)"
-                aria-label="Sludinājuma saite (ss.com, brc.lv u.c.)"
-                autoComplete="url"
-                inputMode="url"
-              />
-              {errors.listingUrl ? (
-                <p className={styles.inlineFieldError}>{errors.listingUrl}</p>
+              {isPremiumTier ? (
+                <p className={styles.featureFootnote}>{TP5_DEALER_FOOTNOTE}</p>
               ) : null}
             </div>
 

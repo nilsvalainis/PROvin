@@ -10,7 +10,7 @@
 
 .heroSurface {
   position: relative;
-  overflow: hidden;
+  overflow-x: clip;
 }
 
 .heroBackdrop {
@@ -81,12 +81,20 @@
 
 .spatialCard {
   position: relative;
+  display: flex;
+  flex-direction: column;
   border-radius: 18px;
   padding: 0.75rem;
   border: 1px solid rgb(255 255 255 / 0.08);
   background:
     linear-gradient(145deg, rgb(255 255 255 / 0.06) 0%, rgb(255 255 255 / 0.02) 42%, rgb(255 255 255 / 0.015) 100%);
   box-shadow: 0 24px 48px -20px rgb(0 0 0 / 0.75);
+}
+
+.cardHeader {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
 }
 
 .tierSwitcher {
@@ -172,9 +180,12 @@
 }
 
 .featureStack {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  min-width: 0;
 }
 
 .liquidAccent {
@@ -290,6 +301,15 @@
   }
 }
 
+.featureFootnote {
+  margin: 0.1rem 0 0;
+  padding: 0 0.15rem;
+  font-size: 0.62rem;
+  line-height: 1.4;
+  font-weight: 450;
+  color: rgb(210 214 222 / 0.48);
+}
+
 .turnaround {
   margin: 0.5rem 0 0;
   font-size: 0.7rem;
@@ -301,19 +321,20 @@
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  margin-top: 0.55rem;
+  margin: 0.15rem 0 0;
+  min-width: 0;
 }
 
 .inlineInput {
   box-sizing: border-box;
   width: 100%;
-  min-height: 46px;
+  min-height: 44px;
   border-radius: 12px;
   border: 1px solid rgb(255 255 255 / 0.15);
   background: rgb(8 10 14 / 0.55);
-  padding: 0 14px;
+  padding: 0.625rem 14px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 1rem;
   line-height: 1.35;
   color: rgb(245 248 252 / 0.96);
   outline: none;
@@ -325,6 +346,7 @@
 
 .inlineInput::placeholder {
   color: rgb(210 214 222 / 0.45);
+  font-size: 1rem;
 }
 
 .inlineInput:focus {
@@ -534,8 +556,12 @@
   }
 
   .inlineFields {
-    margin-top: 0.65rem;
+    margin: 0.2rem 0 0;
     gap: 0.5rem;
+  }
+
+  .featureFootnote {
+    font-size: 0.65rem;
   }
 
   .ctaWrap {
@@ -583,7 +609,8 @@ html[data-site-theme="light"] .heroScrim {
 html[data-site-theme="light"] .heroSubhead,
 html[data-site-theme="light"] .tierMetaDesc,
 html[data-site-theme="light"] .turnaround,
-html[data-site-theme="light"] .trustBadge {
+html[data-site-theme="light"] .trustBadge,
+html[data-site-theme="light"] .featureFootnote {
   color: #6e6e73;
 }
 
@@ -632,6 +659,10 @@ html[data-site-theme="light"] .inactiveGroup .featureLabelMuted {
 
 html[data-site-theme="light"] .featureMarkCross {
   color: #dc2626;
+}
+
+html[data-site-theme="light"] .featureFootnote {
+  color: rgb(110 110 115 / 0.72);
 }
 
 html[data-site-theme="light"] .inlineInput {

@@ -6,6 +6,8 @@ export type Tp5DisplayRow = {
   kind: "bullet";
   label: string;
   id: string;
+  /** Renders a trailing asterisk and enables the dealer-system footnote on premium tier. */
+  footnoteMark?: boolean;
 };
 
 export type Tp5FeatureBlock = {
@@ -35,7 +37,12 @@ const PLUS_ROWS: Tp5DisplayRow[] = [
 const PREMIUM_ROWS: Tp5DisplayRow[] = [
   { kind: "bullet", id: "prem-1", label: "carVertical vēstures atskaite" },
   { kind: "bullet", id: "prem-2", label: "autoDNA vēstures atskaite" },
-  { kind: "bullet", id: "prem-3", label: "Oficiālo dīleru sistēmu dati" },
+  {
+    kind: "bullet",
+    id: "prem-3",
+    label: "Oficiālo dīleru sistēmu dati",
+    footnoteMark: true,
+  },
 ];
 
 const BLOCK_ROWS: Record<Tp5BlockId, Tp5DisplayRow[]> = {
