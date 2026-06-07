@@ -25,6 +25,7 @@ import {
   TP5_HERO_TITLE_DESKTOP_LINE1,
   TP5_HERO_TITLE_DESKTOP_LINE2_PREFIX,
   TP5_HERO_TITLE_PREFIX,
+  TP5_DESKTOP_TRUST_LINE,
 } from "@/lib/test-pricing-5-hero-copy";
 import {
   TP5_INLINE_CHECKOUT_SOURCE,
@@ -220,13 +221,17 @@ export function TestPricing5Hero() {
 
   return (
     <section className={styles.heroSurface} aria-labelledby="tp5-hero-title">
-      <div className={styles.heroBackdrop} aria-hidden>
+      <div className={`${styles.heroBackdrop} lg:!invisible lg:!opacity-0`} aria-hidden>
         <HeroVisual />
       </div>
       <div className={styles.heroScrim} aria-hidden />
+      <div
+        className="pointer-events-none absolute inset-0 z-[1] hidden lg:block lg:bg-[radial-gradient(ellipse_55%_45%_at_78%_42%,rgba(37,99,235,0.1),transparent_70%)]"
+        aria-hidden
+      />
 
       <div
-        className={`${styles.heroInner} lg:grid lg:grid-cols-12 lg:items-start lg:gap-12 lg:!max-w-7xl lg:mx-auto lg:px-8 lg:pt-16 lg:pb-16`}
+        className={`${styles.heroInner} lg:grid lg:grid-cols-12 lg:items-stretch lg:gap-12 lg:!max-w-7xl lg:mx-auto lg:px-8 lg:pt-16 lg:pb-20`}
       >
         {cancelled ? (
           <p className={`${styles.cancelNote} lg:col-span-12`}>
@@ -234,33 +239,42 @@ export function TestPricing5Hero() {
           </p>
         ) : null}
 
-        <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:text-left`}>
-          <h1
-            id="tp5-hero-title"
-            className={`${styles.heroTitle} lg:text-6xl lg:font-bold lg:leading-[1.05] lg:tracking-tight lg:text-white xl:text-7xl`}
-          >
-            <span className="lg:hidden">
-              {TP5_HERO_TITLE_PREFIX}
-              <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
-                {TP5_HERO_TITLE_ACCENT}
-              </span>
-            </span>
-            <span className="hidden lg:block">
-              <span className="lg:block">{TP5_HERO_TITLE_DESKTOP_LINE1}</span>
-              <span className="lg:block">
-                {TP5_HERO_TITLE_DESKTOP_LINE2_PREFIX}
+        <header
+          className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:flex lg:min-h-full lg:flex-col lg:justify-between lg:text-left`}
+        >
+          <div className="lg:max-w-[42ch]">
+            <h1
+              id="tp5-hero-title"
+              className={`${styles.heroTitle} lg:text-6xl lg:font-bold lg:leading-[1.08] lg:tracking-tight lg:text-white xl:text-6xl`}
+            >
+              <span className="lg:hidden">
+                {TP5_HERO_TITLE_PREFIX}
                 <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
                   {TP5_HERO_TITLE_ACCENT}
                 </span>
               </span>
-            </span>
-          </h1>
-          <p
-            className={`${styles.heroSubhead} lg:mt-6 lg:max-w-2xl lg:text-xl lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:text-2xl xl:leading-relaxed`}
-          >
-            {TP5_HERO_SUBHEAD}
-          </p>
-          <TestPricing5DesktopValueGrid />
+              <span className="hidden lg:block">
+                <span className="lg:block">{TP5_HERO_TITLE_DESKTOP_LINE1}</span>
+                <span className="lg:block">
+                  {TP5_HERO_TITLE_DESKTOP_LINE2_PREFIX}
+                  <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
+                    {TP5_HERO_TITLE_ACCENT}
+                  </span>
+                </span>
+              </span>
+            </h1>
+            <p
+              className={`${styles.heroSubhead} lg:mt-6 lg:max-w-[42ch] lg:text-xl lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:text-xl xl:leading-relaxed`}
+            >
+              {TP5_HERO_SUBHEAD}
+            </p>
+          </div>
+          <div className="lg:mt-10 lg:flex lg:flex-col lg:gap-0">
+            <p className="m-0 hidden lg:mb-8 lg:block lg:text-sm lg:leading-relaxed lg:text-gray-500">
+              {TP5_DESKTOP_TRUST_LINE}
+            </p>
+            <TestPricing5DesktopValueGrid />
+          </div>
         </header>
 
         <div className={`${styles.stage} lg:col-span-5 lg:w-full`}>
