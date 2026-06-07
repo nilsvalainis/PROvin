@@ -50,13 +50,11 @@ function FeatureRow({
   index,
   reducedMotion,
   active,
-  premiumHighlight,
 }: {
   row: Tp5DisplayRow;
   index: number;
   reducedMotion: boolean;
   active: boolean;
-  premiumHighlight?: boolean;
 }) {
   const delay = reducedMotion ? 0 : index * 0.04;
   const label = row.footnoteMark ? `${row.label}*` : row.label;
@@ -74,7 +72,7 @@ function FeatureRow({
 
   return (
     <motion.li
-      className={`${styles.featureRow} ${premiumHighlight ? styles.featureRowPremium : ""}`}
+      className={styles.featureRow}
       initial={reducedMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...ROW_SPRING, delay }}
@@ -89,9 +87,7 @@ function FeatureRow({
         ✓
       </motion.span>
       <motion.span
-        className={
-          premiumHighlight ? styles.featureLabelPremium : styles.featureLabelActive
-        }
+        className={styles.featureLabelActive}
         initial={reducedMotion ? false : { opacity: 0, x: -6 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ ...ROW_SPRING, delay: delay + 0.08 }}
@@ -171,8 +167,6 @@ export function TestPricing5Hero() {
   const activeRowEntries: ActiveRowEntry[] = activeBlocks.flatMap((block) =>
     getTp5BlockRows(block.id).map((row) => ({ row, blockId: block.id })),
   );
-  const activeStandardEntries = activeRowEntries.filter(({ blockId }) => blockId !== "premium");
-  const activePremiumEntries = activeRowEntries.filter(({ blockId }) => blockId === "premium");
   let inactiveRowOffset = activeRowEntries.length;
   const isPremiumTier = selectedId === "premium";
   const tierMeta = TP5_TIER_META[selectedId];
@@ -255,19 +249,19 @@ export function TestPricing5Hero() {
                         role="tab"
                         aria-selected={active}
                         aria-label={`${TP5_TAB_LABEL[id]} audits`}
-                        className={`${styles.tierTabBtn} ${id === "premium" ? styles.tierTabBtnFlagship : ""}`}
+                        className={styles.tierTabBtn}
                         onClick={() => setSelectedId(id)}
                       >
                         {active ? (
                           <motion.span
                             layoutId="tp5-tab-pill"
-                            className={`${styles.tierTabPill} ${id === "premium" ? styles.tierTabPillFlagship : ""}`}
+                            className={styles.tierTabPill}
                             transition={TAB_TRANSITION}
                             aria-hidden
                           />
                         ) : null}
                         <span
-                          className={`${styles.tierTabLabel} ${id === "premium" ? styles.tierTabLabelFlagship : ""} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
+                          className={`${styles.tierTabLabel} ${id === "premium" ? styles.tierTabLabelCompact : ""} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
                         >
                           {TP5_TAB_LABEL[id]}
                         </span>
@@ -288,33 +282,16 @@ export function TestPricing5Hero() {
               onTouchStart={onSwipeAreaTouchStart}
               onTouchEnd={onSwipeAreaTouchEnd}
             >
-              {activeStandardEntries.length > 0 ? (
+              {activeRowEntries.length > 0 ? (
                 <div className={styles.liquidAccent} data-tier={selectedId}>
                   <ul className={styles.featureList}>
-                    {activeStandardEntries.map(({ row }, index) => (
+                    {activeRowEntries.map(({ row }, index) => (
                       <FeatureRow
                         key={`${selectedId}-${row.id}`}
                         row={row}
                         index={index}
                         reducedMotion={!!reducedMotion}
                         active
-                      />
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-
-              {isPremiumTier && activePremiumEntries.length > 0 ? (
-                <div className={styles.premiumDataGroup}>
-                  <ul className={styles.featureList}>
-                    {activePremiumEntries.map(({ row }, index) => (
-                      <FeatureRow
-                        key={`${selectedId}-${row.id}`}
-                        row={row}
-                        index={activeStandardEntries.length + index}
-                        reducedMotion={!!reducedMotion}
-                        active
-                        premiumHighlight
                       />
                     ))}
                   </ul>
@@ -337,39 +314,39 @@ export function TestPricing5Hero() {
               {isPremiumTier ? (
                 <p className={styles.featureFootnote}>{TP5_DEALER_FOOTNOTE}</p>
               ) : null}
-            </div>
 
-            <div
-              className={styles.inlineFields}
-              onTouchStart={stopSwipePropagation}
-              onTouchEnd={stopSwipePropagation}
-            >
-              <input
-                type="text"
-                className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
-                value={vin}
-                onChange={(event) => setVin(event.target.value.toUpperCase())}
-                placeholder="Ievadi VIN kodu"
-                aria-label="Ievadi VIN kodu"
-                autoComplete="off"
-                spellCheck={false}
-                inputMode="text"
-                maxLength={17}
-              />
-              {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
-              <input
-                type="url"
-                className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
-                value={listingUrl}
-                onChange={(event) => setListingUrl(event.target.value)}
-                placeholder="Iekopē sludinājuma linku"
-                aria-label="Iekopē sludinājuma linku"
-                autoComplete="url"
-                inputMode="url"
-              />
-              {errors.listingUrl ? (
-                <p className={styles.inlineFieldError}>{errors.listingUrl}</p>
-              ) : null}
+              <div
+                className={styles.inlineFields}
+                onTouchStart={stopSwipePropagation}
+                onTouchEnd={stopSwipePropagation}
+              >
+                <input
+                  type="text"
+                  className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
+                  value={vin}
+                  onChange={(event) => setVin(event.target.value.toUpperCase())}
+                  placeholder="Ievadi VIN kodu"
+                  aria-label="Ievadi VIN kodu"
+                  autoComplete="off"
+                  spellCheck={false}
+                  inputMode="text"
+                  maxLength={17}
+                />
+                {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
+                <input
+                  type="url"
+                  className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
+                  value={listingUrl}
+                  onChange={(event) => setListingUrl(event.target.value)}
+                  placeholder="Iekopē sludinājuma linku"
+                  aria-label="Iekopē sludinājuma linku"
+                  autoComplete="url"
+                  inputMode="url"
+                />
+                {errors.listingUrl ? (
+                  <p className={styles.inlineFieldError}>{errors.listingUrl}</p>
+                ) : null}
+              </div>
             </div>
 
             <p className={styles.turnaround}>{selectedPlan.turnaround}</p>
