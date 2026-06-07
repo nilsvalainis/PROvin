@@ -49,6 +49,7 @@ type TestPricing5DesktopPricingGridProps = {
   onOpenCheckout: (planId: TestPricingPlanId) => void;
 };
 
+/** Desktop lg+ — three clones of the approved mobile `spatialCard` shell (no tabs/inputs). */
 export function TestPricing5DesktopPricingGrid({ onOpenCheckout }: TestPricing5DesktopPricingGridProps) {
   return (
     <div className="lg:grid lg:grid-cols-3 lg:gap-8 lg:max-w-7xl lg:mx-auto lg:px-8 lg:mt-12 lg:items-stretch">
@@ -59,57 +60,56 @@ export function TestPricing5DesktopPricingGrid({ onOpenCheckout }: TestPricing5D
         if (!getTestPricingPlan(planId)) return null;
 
         return (
-          <article
-            key={planId}
-            className={`${styles.spatialCard} lg:h-full lg:flex lg:flex-col lg:justify-between`}
-          >
-            <div className={styles.cardHeader}>
-              <div className={styles.tierMeta} aria-live="polite">
-                <p className={styles.tierMetaTitle}>{tierMeta.title}</p>
-                <p
-                  className={`${styles.tierMetaDesc} lg:line-clamp-none lg:block lg:overflow-visible`}
-                >
-                  {tierMeta.description}
-                </p>
+          <div key={planId} className="lg:min-w-0 lg:h-full">
+            <article className={`${styles.spatialCard} w-full lg:flex lg:h-full lg:flex-col lg:justify-between`}>
+              <div className={styles.cardHeader}>
+                <div className={styles.tierMeta} aria-live="polite">
+                  <p className={styles.tierMetaTitle}>{tierMeta.title}</p>
+                  <p className={styles.tierMetaDesc}>{tierMeta.description}</p>
+                </div>
               </div>
-            </div>
 
-            <div className={`${styles.featureStack} lg:flex-1`}>
-              {activeRowEntries.length > 0 ? (
-                <div className={styles.liquidAccent} data-tier={planId}>
-                  <ul className={styles.featureList}>
-                    {activeRowEntries.map(({ row }) => (
-                      <DesktopFeatureRow key={`${planId}-active-${row.id}`} row={row} active />
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
+              <div className={`${styles.featureStack} lg:flex-1`}>
+                {activeRowEntries.length > 0 ? (
+                  <div className={styles.liquidAccent} data-tier={planId}>
+                    <ul className={styles.featureList}>
+                      {activeRowEntries.map(({ row }) => (
+                        <DesktopFeatureRow key={`${planId}-active-${row.id}`} row={row} active />
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
 
-              {inactiveBlocks.map((block) => (
-                <div
-                  key={block.id}
-                  className={`${styles.inactiveGroup} lg:pointer-events-none lg:cursor-default`}
+                {inactiveBlocks.map((block) => (
+                  <div
+                    key={block.id}
+                    className={`${styles.inactiveGroup} lg:pointer-events-none lg:cursor-default`}
+                  >
+                    <ul className={styles.featureList}>
+                      {getTp5BlockRows(block.id).map((row) => (
+                        <DesktopFeatureRow
+                          key={`${planId}-inactive-${row.id}`}
+                          row={row}
+                          active={false}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+
+              <div className={styles.ctaWrap}>
+                <button
+                  type="button"
+                  className={styles.liquidCta}
+                  onClick={() => onOpenCheckout(planId)}
                 >
-                  <ul className={styles.featureList}>
-                    {getTp5BlockRows(block.id).map((row) => (
-                      <DesktopFeatureRow key={`${planId}-inactive-${row.id}`} row={row} active={false} />
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-
-            <div className={styles.ctaWrap}>
-              <button
-                type="button"
-                className={styles.liquidCta}
-                onClick={() => onOpenCheckout(planId)}
-              >
-                <span className={styles.liquidCtaShimmer} aria-hidden />
-                <span className={styles.liquidCtaLabel}>{TP5_CTA_LABEL[planId]}</span>
-              </button>
-            </div>
-          </article>
+                  <span className={styles.liquidCtaShimmer} aria-hidden />
+                  <span className={styles.liquidCtaLabel}>{TP5_CTA_LABEL[planId]}</span>
+                </button>
+              </div>
+            </article>
+          </div>
         );
       })}
     </div>

@@ -280,10 +280,10 @@ export function TestPricing5Hero() {
 
   return (
     <section className={styles.heroSurface} aria-labelledby="tp5-hero-title">
-      <div className={styles.heroBackdrop} aria-hidden>
+      <div className={`${styles.heroBackdrop} lg:hidden`} aria-hidden>
         <HeroVisual />
       </div>
-      <div className={styles.heroScrim} aria-hidden />
+      <div className={`${styles.heroScrim} lg:hidden`} aria-hidden />
 
       {/* Mobile / tablet — frozen single-card switcher (md and below) */}
       <div className={`${styles.heroInner} lg:hidden`}>
@@ -433,22 +433,22 @@ export function TestPricing5Hero() {
       </div>
 
       {/* Desktop — centered hero + 3-column pricing grid (lg and above) */}
-      <div className="hidden lg:block lg:pb-16">
+      <div className="relative z-[2] hidden bg-[#070809] lg:block lg:pb-16">
         {cancelled ? (
           <p className={`${styles.cancelNote} lg:mx-auto lg:max-w-7xl lg:px-8 lg:text-center`}>
             Maksājums tika atcelts. Vari mēģināt vēlreiz.
           </p>
         ) : null}
 
-        <header className="lg:max-w-7xl lg:mx-auto lg:px-8 lg:pt-16 lg:text-center">
+        <header className="lg:mx-auto lg:max-w-7xl lg:px-8 lg:pt-16 lg:text-center">
           <h1
             id="tp5-hero-title-desktop"
-            className="lg:text-5xl lg:font-bold lg:leading-[1.15] lg:text-white"
+            className="lg:text-4xl lg:font-bold lg:leading-[1.15] lg:text-center lg:text-white"
           >
             {TP5_HERO_TITLE_PREFIX}
             <span className="text-[#2563EB]">{TP5_HERO_TITLE_ACCENT}</span>
           </h1>
-          <p className="lg:mt-4 lg:max-w-2xl lg:mx-auto lg:text-base lg:leading-relaxed lg:text-gray-300">
+          <p className="lg:mx-auto lg:mt-4 lg:max-w-2xl lg:text-center lg:text-base lg:leading-relaxed lg:text-gray-300">
             {TP5_HERO_SUBHEAD}
           </p>
         </header>

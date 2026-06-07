@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { TP5_TIER_META } from "@/lib/test-pricing-5-checkout-routing";
 import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout";
@@ -67,7 +68,7 @@ export function TestPricing5DesktopCheckoutModal({
 
   if (!open || !planId || !plan || !tierMeta) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
       role="presentation"
@@ -88,11 +89,11 @@ export function TestPricing5DesktopCheckoutModal({
           ×
         </button>
 
-        <h2 id={titleId} className="m-0 pr-10 text-lg font-bold leading-snug text-white">
+        <h2 id={titleId} className="mb-6 pr-10 text-xl font-bold text-white">
           Noformēt pasūtījumu: {tierMeta.title}
         </h2>
 
-        <div className={`${styles.inlineFields} lg:mt-6`}>
+        <div className={styles.inlineFields}>
           <input
             ref={firstFieldRef}
             type="text"
@@ -122,22 +123,18 @@ export function TestPricing5DesktopCheckoutModal({
           ) : null}
         </div>
 
-        <p className={`${styles.turnaround} lg:mt-4`}>{plan.turnaround}</p>
+        <p className={styles.turnaround}>{plan.turnaround}</p>
 
-        {globalError ? <p className={`${styles.checkoutError} lg:mt-3`}>{globalError}</p> : null}
+        {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
 
-        <button
-          type="button"
-          className={`${styles.liquidCta} lg:mt-6`}
-          onClick={onSubmit}
-          disabled={loading}
-        >
+        <button type="button" className={styles.liquidCta} onClick={onSubmit} disabled={loading}>
           <span className={styles.liquidCtaShimmer} aria-hidden />
           <span className={styles.liquidCtaLabel}>
             {loading ? "Nosūta…" : "Turpināt uz apmaksu"}
           </span>
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
