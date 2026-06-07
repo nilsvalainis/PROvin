@@ -1,80 +1,45 @@
 "use client";
 
-import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
+import { LayoutGroup, motion } from "framer-motion";
 import { type SyntheticEvent, type TouchEvent } from "react";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
-import type { Tp5DisplayRow } from "@/lib/test-pricing-5-display";
 import { TP5_DEALER_FOOTNOTE } from "@/lib/test-pricing-5-checkout-routing";
 import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout";
 import {
-  getTp5MobileFeatureLayout,
-  TP5_MOBILE_CTA_LABEL,
-  TP5_MOBILE_TAB_LABEL,
-  TP5_MOBILE_TIER_META,
-  TP5_MOBILE_TIER_ORDER,
+  getTp5MobileService,
+  TP5_MOBILE_SERVICES,
   TP5_MOBILE_TURNAROUND,
-  type Tp5MobileTierId,
+  type Tp5MobileFeature,
+  type Tp5MobileServiceId,
 } from "@/lib/test-pricing-5-mobile";
 
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
-const ROW_SPRING = { type: "spring" as const, stiffness: 480, damping: 34, mass: 0.62 };
 
-function MobileFeatureRow({
-  row,
-  index,
-  reducedMotion,
-  active,
-}: {
-  row: Tp5DisplayRow;
-  index: number;
-  reducedMotion: boolean;
-  active: boolean;
-}) {
-  const delay = reducedMotion ? 0 : index * 0.04;
-  const label = row.footnoteMark ? `${row.label}*` : row.label;
-
-  if (!active) {
+function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
+  if (feature.included) {
     return (
       <li className={styles.featureRow}>
-        <span className={`${styles.featureMark} ${styles.featureMarkCross}`} aria-hidden>
-          ✕
+        <span className={`${styles.featureMark} ${styles.featureMarkBlue}`} aria-hidden>
+          ✔️
         </span>
-        <span className={styles.featureLabelMuted}>{label}</span>
+        <span className={styles.featureLabelActive}>{feature.name}</span>
       </li>
     );
   }
 
   return (
-    <motion.li
-      className={styles.featureRow}
-      initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ ...ROW_SPRING, delay }}
-    >
-      <motion.span
-        className={`${styles.featureMark} ${styles.featureMarkBlue}`}
-        aria-hidden
-        initial={reducedMotion ? false : { opacity: 0, scale: 0.82 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ ...ROW_SPRING, delay: Math.max(0, delay - 0.08) }}
-      >
-        ✓
-      </motion.span>
-      <motion.span
-        className={styles.featureLabelActive}
-        initial={reducedMotion ? false : { opacity: 0, x: -6 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ ...ROW_SPRING, delay: delay + 0.08 }}
-      >
-        {label}
-      </motion.span>
-    </motion.li>
+    <li className={styles.featureRow}>
+      <span className={`${styles.featureMark} ${styles.featureMarkCross}`} aria-hidden>
+        ❌
+      </span>
+      <span className={styles.featureLabelMuted}>{feature.name}</span>
+    </li>
   );
 }
 
 type Tp5MobilePricingCardProps = {
-  selectedId: Tp5MobileTierId;
-  setSelectedId: (id: Tp5MobileTierId) => void;
+  activeServiceId: Tp5MobileServiceId;
+  setActiveServiceId: (id: Tp5MobileServiceId) => void;
   vin: string;
   listingUrl: string;
   errors: Tp5InlineFieldErrors;
@@ -89,8 +54,8 @@ type Tp5MobilePricingCardProps = {
 };
 
 export function Tp5MobilePricingCard({
-  selectedId,
-  setSelectedId,
+  activeServiceId,
+  setActiveServiceId,
   vin,
   listingUrl,
   errors,
@@ -103,9 +68,7 @@ export function Tp5MobilePricingCard({
   onSwipeAreaTouchEnd,
   stopSwipePropagation,
 }: Tp5MobilePricingCardProps) {
-  const reducedMotion = useReducedMotion();
-  const tierMeta = TP5_MOBILE_TIER_META[selectedId];
-  const { activeRows, inactiveRows } = getTp5MobileFeatureLayout(selectedId);
+  const activeService = getTp5MobileService(activeServiceId);
 
   return (
     <article className={`${styles.spatialCard} w-full`}>
@@ -116,17 +79,17 @@ export function Tp5MobilePricingCard({
             role="tablist"
             aria-label="Izvēlies audita paketi"
           >
-            {TP5_MOBILE_TIER_ORDER.map((id) => {
-              const active = selectedId === id;
+            {TP5_MOBILE_SERVICES.map((service) => {
+              const active = activeServiceId === service.id;
               return (
                 <button
-                  key={id}
+                  key={service.id}
                   type="button"
                   role="tab"
                   aria-selected={active}
-                  aria-label={`${TP5_MOBILE_TAB_LABEL[id]} pakete`}
+                  aria-label={`${service.title} pakete`}
                   className={styles.tierTabBtn}
-                  onClick={() => setSelectedId(id)}
+                  onClick={() => setActiveServiceId(service.id)}
                 >
                   {active ? (
                     <motion.span
@@ -139,7 +102,7 @@ export function Tp5MobilePricingCard({
                   <span
                     className={`${styles.tierTabLabel} ${styles.tierTabLabelCompact} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
                   >
-                    {TP5_MOBILE_TAB_LABEL[id]}
+                    {service.title}
                   </span>
                 </button>
               );
@@ -148,8 +111,8 @@ export function Tp5MobilePricingCard({
         </LayoutGroup>
 
         <div className={styles.tierMeta} aria-live="polite">
-          <p className={styles.tierMetaTitle}>{tierMeta.title}</p>
-          <p className={styles.tierMetaDesc}>{tierMeta.description}</p>
+          <p className={styles.tierMetaTitle}>{activeService.title}</p>
+          <p className={styles.tierMetaDesc}>{activeService.description}</p>
         </div>
       </div>
 
@@ -158,37 +121,13 @@ export function Tp5MobilePricingCard({
         onTouchStart={onSwipeAreaTouchStart}
         onTouchEnd={onSwipeAreaTouchEnd}
       >
-        {activeRows.length > 0 ? (
-          <div className={styles.liquidAccent} data-tier={selectedId}>
-            <ul className={styles.featureList}>
-              {activeRows.map((row, index) => (
-                <MobileFeatureRow
-                  key={row.id}
-                  row={row}
-                  index={index}
-                  reducedMotion={!!reducedMotion}
-                  active
-                />
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        {inactiveRows.length > 0 ? (
-          <div className={styles.inactiveGroup}>
-            <ul className={styles.featureList}>
-              {inactiveRows.map((row, index) => (
-                <MobileFeatureRow
-                  key={row.id}
-                  row={row}
-                  index={activeRows.length + index}
-                  reducedMotion
-                  active={false}
-                />
-              ))}
-            </ul>
-          </div>
-        ) : null}
+        <div className={styles.liquidAccent} data-tier={activeServiceId}>
+          <ul className={styles.featureList}>
+            {activeService.features.map((feature) => (
+              <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
+            ))}
+          </ul>
+        </div>
 
         <div
           className={styles.inlineFields}
@@ -230,7 +169,7 @@ export function Tp5MobilePricingCard({
         {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
         <button type="button" className={styles.liquidCta} onClick={onSubmit} disabled={loading}>
           <span className={styles.liquidCtaShimmer} aria-hidden />
-          <span className={styles.liquidCtaLabel}>{TP5_MOBILE_CTA_LABEL[selectedId]}</span>
+          <span className={styles.liquidCtaLabel}>{activeService.buttonText}</span>
         </button>
         <p className={styles.featureFootnote}>{TP5_DEALER_FOOTNOTE}</p>
       </div>

@@ -1,69 +1,82 @@
 import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
-import type { Tp5DisplayRow } from "@/lib/test-pricing-5-display";
 
-/** Mobile `/test-pricing-5` — two-tier product model (maps to plus / premium checkout). */
-export type Tp5MobileTierId = Extract<TestPricingPlanId, "plus" | "premium">;
+export type Tp5MobileFeature = { name: string; included: boolean };
 
-export const TP5_MOBILE_TIER_ORDER: Tp5MobileTierId[] = ["plus", "premium"];
+export type Tp5MobileServiceId = "mini" | "audits";
 
-export const TP5_MOBILE_TAB_LABEL: Record<Tp5MobileTierId, string> = {
-  plus: "PROVIN MINI",
-  premium: "PROVIN AUDITS",
+export type Tp5MobileService = {
+  id: Tp5MobileServiceId;
+  title: string;
+  price: string;
+  buttonText: string;
+  description: string;
+  features: Tp5MobileFeature[];
 };
 
-export const TP5_MOBILE_TIER_META: Record<
-  Tp5MobileTierId,
-  { title: string; description: string }
-> = {
-  plus: {
+/** Mobile `/test-pricing-5` — approved 2-tier product schema. */
+export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
+  {
+    id: "mini",
     title: "PROVIN MINI",
+    price: "39,99 €",
+    buttonText: "PASŪTĪT MINI AUDITU — 39,99 €",
     description:
       "Padziļināta tehnisko datu analīze un konsultācija. Rekomendējam veikt Latvijā reģistrētiem auto.",
+    features: [
+      { name: "Sludinājuma un tehnisko risku analīze", included: true },
+      { name: "TA vēsture un publisko reģistru pārbaude", included: true },
+      { name: "Ieteikumi klātienes apskatei", included: true },
+      { name: "carVertical un autoDNA integrācija", included: false },
+      { name: "Oficiālo dīleru sistēmu dati*", included: false },
+      { name: "Individuāla konsultācija", included: false },
+      {
+        name: "📞 Konsultācija un atbalsts — tieša saziņa pirms darījuma.",
+        included: false,
+      },
+    ],
   },
-  premium: {
+  {
+    id: "audits",
     title: "PROVIN AUDITS",
+    price: "89,99 €",
+    buttonText: "PASŪTĪT PROVIN AUDITU — 89,99 €",
     description:
-      "Maksimālā pieejamā datu aizsardzība un reāls ekspertu atbalsts dārga auto iegādei.",
-  },
-};
-
-export const TP5_MOBILE_CTA_LABEL: Record<Tp5MobileTierId, string> = {
-  plus: "PASŪTĪT MINI AUDITU — 39,99 €",
-  premium: "PASŪTĪT PROVIN AUDITU — 89,99 €",
-};
-
-export const TP5_MOBILE_TURNAROUND = "⏱️ Izpilde: līdz 48h";
-
-const MOBILE_FEATURE_ROWS: Tp5DisplayRow[] = [
-  { kind: "bullet", id: "mob-1", label: "Sludinājuma un tehnisko risku analīze" },
-  { kind: "bullet", id: "mob-2", label: "TA vēsture un publisko reģistru pārbaude" },
-  { kind: "bullet", id: "mob-3", label: "Ieteikumi klātienes apskatei" },
-  { kind: "bullet", id: "mob-4", label: "carVertical un autoDNA integrācija" },
-  {
-    kind: "bullet",
-    id: "mob-5",
-    label: "Oficiālo dīleru sistēmu dati",
-    footnoteMark: true,
-  },
-  { kind: "bullet", id: "mob-6", label: "Individuāla konsultācija" },
-  {
-    kind: "bullet",
-    id: "mob-7",
-    label: "📞 Konsultācija un atbalsts — tieša saziņa pirms darījuma.",
+      "Maksimāla visu datu analīze iekļaujot maksas atskaites un oficiālā dīlera sistēmu datus*.",
+    features: [
+      { name: "Sludinājuma un tehnisko risku analīze", included: true },
+      { name: "TA vēsture un publisko reģistru pārbaude", included: true },
+      { name: "Ieteikumi klātienes apskatei", included: true },
+      { name: "carVertical un autoDNA integrācija", included: true },
+      { name: "Oficiālo dīleru sistēmu dati*", included: true },
+      { name: "Individuāla konsultācija", included: true },
+      {
+        name: "📞 Konsultācija un atbalsts — tieša saziņa pirms darījuma.",
+        included: true,
+      },
+    ],
   },
 ];
 
-const MINI_ACTIVE_COUNT = 3;
+export const TP5_MOBILE_SERVICE_ORDER: Tp5MobileServiceId[] = TP5_MOBILE_SERVICES.map(
+  (service) => service.id,
+);
 
-export function getTp5MobileFeatureLayout(tierId: Tp5MobileTierId): {
-  activeRows: Tp5DisplayRow[];
-  inactiveRows: Tp5DisplayRow[];
-} {
-  if (tierId === "premium") {
-    return { activeRows: MOBILE_FEATURE_ROWS, inactiveRows: [] };
+export const TP5_MOBILE_TURNAROUND = "⏱️ Izpilde: līdz 48h";
+
+/** Stripe checkout plan mapping for mobile tiers. */
+export const TP5_MOBILE_CHECKOUT_PLAN: Record<Tp5MobileServiceId, TestPricingPlanId> = {
+  mini: "plus",
+  audits: "premium",
+};
+
+export function getTp5MobileService(id: Tp5MobileServiceId): Tp5MobileService {
+  const service = TP5_MOBILE_SERVICES.find((entry) => entry.id === id);
+  if (!service) {
+    throw new Error(`Unknown mobile service: ${id}`);
   }
-  return {
-    activeRows: MOBILE_FEATURE_ROWS.slice(0, MINI_ACTIVE_COUNT),
-    inactiveRows: MOBILE_FEATURE_ROWS.slice(MINI_ACTIVE_COUNT),
-  };
+  return service;
+}
+
+export function getTp5MobileServiceIndex(id: Tp5MobileServiceId): number {
+  return TP5_MOBILE_SERVICE_ORDER.indexOf(id);
 }

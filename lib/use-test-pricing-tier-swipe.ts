@@ -6,16 +6,17 @@ import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
 const TIER_ORDER: TestPricingPlanId[] = ["mini", "plus", "premium"];
 const SWIPE_THRESHOLD_PX = 48;
 
-export function useTestPricingTierSwipe(
-  selectedId: TestPricingPlanId,
-  setSelectedId: (id: TestPricingPlanId) => void,
-  tierOrder: readonly TestPricingPlanId[] = TIER_ORDER,
+export function useTierSwipe<T extends string>(
+  selectedId: T,
+  setSelectedId: (id: T) => void,
+  tierOrder: readonly T[],
 ) {
   const touchStartX = useRef<number | null>(null);
 
   const selectTierByOffset = useCallback(
     (offset: -1 | 1) => {
       const idx = tierOrder.indexOf(selectedId);
+      if (idx < 0) return;
       const next = idx + offset;
       if (next < 0 || next >= tierOrder.length) return;
       setSelectedId(tierOrder[next]!);
@@ -41,6 +42,15 @@ export function useTestPricingTierSwipe(
   );
 
   return { onSwipeAreaTouchStart, onSwipeAreaTouchEnd };
+}
+
+/** Desktop `/test-pricing-5` three-tier swipe helper. */
+export function useTestPricingTierSwipe(
+  selectedId: TestPricingPlanId,
+  setSelectedId: (id: TestPricingPlanId) => void,
+  tierOrder: readonly TestPricingPlanId[] = TIER_ORDER,
+) {
+  return useTierSwipe(selectedId, setSelectedId, tierOrder);
 }
 
 export { TIER_ORDER as TEST_PRICING_TIER_ORDER };

@@ -27,7 +27,11 @@ import {
   TP5_HERO_TITLE_ACCENT,
   TP5_HERO_TITLE_PREFIX,
 } from "@/lib/test-pricing-5-hero-copy";
-import { TP5_MOBILE_TIER_ORDER, type Tp5MobileTierId } from "@/lib/test-pricing-5-mobile";
+import {
+  TP5_MOBILE_CHECKOUT_PLAN,
+  TP5_MOBILE_SERVICE_ORDER,
+  type Tp5MobileServiceId,
+} from "@/lib/test-pricing-5-mobile";
 import {
   TP5_INLINE_CHECKOUT_SOURCE,
   validateTp5InlineFields,
@@ -43,6 +47,7 @@ import {
 import {
   TEST_PRICING_TIER_ORDER,
   useTestPricingTierSwipe,
+  useTierSwipe,
 } from "@/lib/use-test-pricing-tier-swipe";
 
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
@@ -322,21 +327,15 @@ export function TestPricing5Hero() {
   const searchParams = useSearchParams();
   const reducedMotion = useReducedMotion();
   const [selectedId, setSelectedId] = useState<TestPricingPlanId>("premium");
-  const [mobileSelectedId, setMobileSelectedId] = useState<Tp5MobileTierId>("premium");
+  const [mobileActiveId, setMobileActiveId] = useState<Tp5MobileServiceId>("audits");
   const [vin, setVin] = useState("");
   const [listingUrl, setListingUrl] = useState("");
   const [errors, setErrors] = useState<Tp5InlineFieldErrors>({});
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleMobileTierChange = useCallback((id: TestPricingPlanId) => {
-    if (id === "plus" || id === "premium") {
-      setMobileSelectedId(id);
-    }
-  }, []);
-
   const { onSwipeAreaTouchStart: onMobileSwipeStart, onSwipeAreaTouchEnd: onMobileSwipeEnd } =
-    useTestPricingTierSwipe(mobileSelectedId, handleMobileTierChange, TP5_MOBILE_TIER_ORDER);
+    useTierSwipe(mobileActiveId, setMobileActiveId, TP5_MOBILE_SERVICE_ORDER);
 
   const cancelled = searchParams.get("atcelts") === "1";
   const selectedPlan = useMemo(
@@ -394,8 +393,8 @@ export function TestPricing5Hero() {
   }, [listingUrl, vin]);
 
   const submitMobileCheckout = useCallback(() => {
-    void submitCheckout(mobileSelectedId);
-  }, [mobileSelectedId, submitCheckout]);
+    void submitCheckout(TP5_MOBILE_CHECKOUT_PLAN[mobileActiveId]);
+  }, [mobileActiveId, submitCheckout]);
 
   const submitDesktopCheckout = useCallback(() => {
     void submitCheckout(selectedId);
@@ -448,8 +447,8 @@ export function TestPricing5Hero() {
 
         <div className={styles.stage}>
           <Tp5MobilePricingCard
-            selectedId={mobileSelectedId}
-            setSelectedId={setMobileSelectedId}
+            activeServiceId={mobileActiveId}
+            setActiveServiceId={setMobileActiveId}
             vin={vin}
             listingUrl={listingUrl}
             errors={errors}
