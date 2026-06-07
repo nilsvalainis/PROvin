@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useMemo, useState, type SyntheticEvent } from "react";
+import { useCallback, useMemo, useState, type SyntheticEvent, type TouchEvent } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
-import { TestPricing5DesktopCheckoutModal } from "@/components/test-pricing-5/TestPricing5DesktopCheckoutModal";
-import { TestPricing5DesktopPricingGrid } from "@/components/test-pricing-5/TestPricing5DesktopPricingGrid";
+import { TestPricing5DesktopValueGrid } from "@/components/test-pricing-5/TestPricing5DesktopValueGrid";
 import {
   getTp5ActiveBlockCount,
   getTp5BlockRows,
@@ -20,6 +19,7 @@ import {
   TP5_DEALER_FOOTNOTE,
   TP5_TAB_LABEL,
   TP5_TIER_META,
+  type Tp5TierMeta,
 } from "@/lib/test-pricing-5-checkout-routing";
 import {
   TP5_HERO_SUBHEAD,
@@ -35,6 +35,7 @@ import { normalizeVin } from "@/lib/order-field-validation";
 import {
   getTestPricingPlan,
   TEST_PRICING_PLANS,
+  type TestPricingPlanConfig,
   type TestPricingPlanId,
 } from "@/lib/test-pricing-plans";
 import {
@@ -141,6 +142,180 @@ function InactiveGroup({
   );
 }
 
+type Tp5InteractivePricingCardProps = {
+  selectedId: TestPricingPlanId;
+  setSelectedId: (id: TestPricingPlanId) => void;
+  tierMeta: Tp5TierMeta;
+  selectedPlan: TestPricingPlanConfig;
+  activeRowEntries: ActiveRowEntry[];
+  inactiveBlocks: Tp5FeatureBlock[];
+  reducedMotion: boolean;
+  vin: string;
+  listingUrl: string;
+  errors: Tp5InlineFieldErrors;
+  globalError: string | null;
+  loading: boolean;
+  onVinChange: (value: string) => void;
+  onListingUrlChange: (value: string) => void;
+  onSubmit: () => void;
+  tabLayoutGroupId: string;
+  tabPillLayoutId: string;
+  tierMetaDescClassName?: string;
+  onSwipeAreaTouchStart?: (event: TouchEvent) => void;
+  onSwipeAreaTouchEnd?: (event: TouchEvent) => void;
+  stopSwipePropagation?: (event: SyntheticEvent) => void;
+};
+
+function Tp5InteractivePricingCard({
+  selectedId,
+  setSelectedId,
+  tierMeta,
+  selectedPlan,
+  activeRowEntries,
+  inactiveBlocks,
+  reducedMotion,
+  vin,
+  listingUrl,
+  errors,
+  globalError,
+  loading,
+  onVinChange,
+  onListingUrlChange,
+  onSubmit,
+  tabLayoutGroupId,
+  tabPillLayoutId,
+  tierMetaDescClassName,
+  onSwipeAreaTouchStart,
+  onSwipeAreaTouchEnd,
+  stopSwipePropagation,
+}: Tp5InteractivePricingCardProps) {
+  let inactiveRowOffset = activeRowEntries.length;
+  const isPremiumTier = selectedId === "premium";
+
+  return (
+    <article className={`${styles.spatialCard} w-full`}>
+      <div className={styles.cardHeader}>
+        <LayoutGroup id={tabLayoutGroupId}>
+          <div className={styles.tierSwitcher} role="tablist" aria-label="Izvēlies audita cenu">
+            {TEST_PRICING_TIER_ORDER.map((id) => {
+              const active = selectedId === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  aria-label={`${TP5_TAB_LABEL[id]} audits`}
+                  className={styles.tierTabBtn}
+                  onClick={() => setSelectedId(id)}
+                >
+                  {active ? (
+                    <motion.span
+                      layoutId={tabPillLayoutId}
+                      className={styles.tierTabPill}
+                      transition={TAB_TRANSITION}
+                      aria-hidden
+                    />
+                  ) : null}
+                  <span
+                    className={`${styles.tierTabLabel} ${id === "premium" ? styles.tierTabLabelCompact : ""} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
+                  >
+                    {TP5_TAB_LABEL[id]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </LayoutGroup>
+
+        <div className={styles.tierMeta} aria-live="polite">
+          <p className={styles.tierMetaTitle}>{tierMeta.title}</p>
+          <p className={tierMetaDescClassName ?? styles.tierMetaDesc}>{tierMeta.description}</p>
+        </div>
+      </div>
+
+      <div
+        className={styles.featureStack}
+        onTouchStart={onSwipeAreaTouchStart}
+        onTouchEnd={onSwipeAreaTouchEnd}
+      >
+        {activeRowEntries.length > 0 ? (
+          <div className={styles.liquidAccent} data-tier={selectedId}>
+            <ul className={styles.featureList}>
+              {activeRowEntries.map(({ row }, index) => (
+                <FeatureRow
+                  key={`${selectedId}-${row.id}`}
+                  row={row}
+                  index={index}
+                  reducedMotion={!!reducedMotion}
+                  active
+                />
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {inactiveBlocks.map((block) => {
+          const offset = inactiveRowOffset;
+          inactiveRowOffset += getTp5BlockRows(block.id).length;
+          return (
+            <InactiveGroup
+              key={block.id}
+              block={block}
+              onSelect={setSelectedId}
+              startIndex={offset}
+            />
+          );
+        })}
+
+        <div
+          className={styles.inlineFields}
+          onTouchStart={stopSwipePropagation}
+          onTouchEnd={stopSwipePropagation}
+        >
+          <input
+            type="text"
+            className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
+            value={vin}
+            onChange={(event) => onVinChange(event.target.value.toUpperCase())}
+            placeholder="Ievadi VIN kodu"
+            aria-label="Ievadi VIN kodu"
+            autoComplete="off"
+            spellCheck={false}
+            inputMode="text"
+            maxLength={17}
+          />
+          {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
+          <input
+            type="url"
+            className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
+            value={listingUrl}
+            onChange={(event) => onListingUrlChange(event.target.value)}
+            placeholder="Iekopē sludinājuma linku"
+            aria-label="Iekopē sludinājuma linku"
+            autoComplete="url"
+            inputMode="url"
+          />
+          {errors.listingUrl ? (
+            <p className={styles.inlineFieldError}>{errors.listingUrl}</p>
+          ) : null}
+        </div>
+      </div>
+
+      <p className={styles.turnaround}>{selectedPlan.turnaround}</p>
+
+      <div className={styles.ctaWrap}>
+        {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
+        <button type="button" className={styles.liquidCta} onClick={onSubmit} disabled={loading}>
+          <span className={styles.liquidCtaShimmer} aria-hidden />
+          <span className={styles.liquidCtaLabel}>{TP5_CTA_LABEL[selectedId]}</span>
+        </button>
+        {isPremiumTier ? <p className={styles.featureFootnote}>{TP5_DEALER_FOOTNOTE}</p> : null}
+      </div>
+    </article>
+  );
+}
+
 export function TestPricing5Hero() {
   const searchParams = useSearchParams();
   const reducedMotion = useReducedMotion();
@@ -150,13 +325,6 @@ export function TestPricing5Hero() {
   const [errors, setErrors] = useState<Tp5InlineFieldErrors>({});
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const [desktopModalPlanId, setDesktopModalPlanId] = useState<TestPricingPlanId | null>(null);
-  const [modalVin, setModalVin] = useState("");
-  const [modalListingUrl, setModalListingUrl] = useState("");
-  const [modalErrors, setModalErrors] = useState<Tp5InlineFieldErrors>({});
-  const [modalGlobalError, setModalGlobalError] = useState<string | null>(null);
-  const [modalLoading, setModalLoading] = useState(false);
 
   const { onSwipeAreaTouchStart, onSwipeAreaTouchEnd } = useTestPricingTierSwipe(
     selectedId,
@@ -176,8 +344,6 @@ export function TestPricing5Hero() {
   const activeRowEntries: ActiveRowEntry[] = activeBlocks.flatMap((block) =>
     getTp5BlockRows(block.id).map((row) => ({ row, blockId: block.id })),
   );
-  let inactiveRowOffset = activeRowEntries.length;
-  const isPremiumTier = selectedId === "premium";
   const tierMeta = TP5_TIER_META[selectedId];
 
   const submitCheckout = useCallback(async () => {
@@ -220,72 +386,36 @@ export function TestPricing5Hero() {
     }
   }, [listingUrl, selectedId, vin]);
 
-  const openDesktopModal = useCallback((planId: TestPricingPlanId) => {
-    setDesktopModalPlanId(planId);
-    setModalErrors({});
-    setModalGlobalError(null);
-  }, []);
-
-  const closeDesktopModal = useCallback(() => {
-    setDesktopModalPlanId(null);
-    setModalErrors({});
-    setModalGlobalError(null);
-  }, []);
-
-  const submitDesktopCheckout = useCallback(async () => {
-    if (!desktopModalPlanId) return;
-    const planId = desktopModalPlanId;
-    setModalGlobalError(null);
-    const validation = validateTp5InlineFields(modalListingUrl, modalVin);
-    if (!validation.ok) {
-      setModalErrors(validation.errors);
-      const first = validation.errors.listingUrl ?? validation.errors.vin;
-      if (first) setModalGlobalError(first);
-      return;
-    }
-    setModalErrors({});
-    setModalLoading(true);
-    try {
-      const res = await fetch("/api/checkout/test-pricing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planId,
-          locale: "lv",
-          listingUrl: modalListingUrl.trim(),
-          vin: normalizeVin(modalVin),
-          withdrawalConsent: true,
-          sourcePage: TP5_INLINE_CHECKOUT_SOURCE,
-        }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        url?: string;
-        error?: string;
-        errors?: string[];
-      };
-      if (!res.ok || !data.url) {
-        throw new Error(data.errors?.[0] ?? data.error ?? "Neizdevās sākt maksājumu.");
-      }
-      window.location.href = data.url;
-    } catch (e) {
-      setModalGlobalError(e instanceof Error ? e.message : "Neizdevās sākt maksājumu.");
-    } finally {
-      setModalLoading(false);
-    }
-  }, [desktopModalPlanId, modalListingUrl, modalVin]);
-
   const stopSwipePropagation = (event: SyntheticEvent) => {
     event.stopPropagation();
   };
 
+  const pricingCardProps = {
+    selectedId,
+    setSelectedId,
+    tierMeta,
+    selectedPlan,
+    activeRowEntries,
+    inactiveBlocks,
+    reducedMotion: !!reducedMotion,
+    vin,
+    listingUrl,
+    errors,
+    globalError,
+    loading,
+    onVinChange: setVin,
+    onListingUrlChange: setListingUrl,
+    onSubmit: submitCheckout,
+  };
+
   return (
     <section className={styles.heroSurface} aria-labelledby="tp5-hero-title">
-      <div className={`${styles.heroBackdrop} lg:hidden`} aria-hidden>
+      <div className={styles.heroBackdrop} aria-hidden>
         <HeroVisual />
       </div>
-      <div className={`${styles.heroScrim} lg:hidden`} aria-hidden />
+      <div className={styles.heroScrim} aria-hidden />
 
-      {/* Mobile / tablet — frozen single-card switcher (md and below) */}
+      {/* Mobile / tablet — frozen single-card switcher (below lg) */}
       <div className={`${styles.heroInner} lg:hidden`}>
         {cancelled ? (
           <p className={styles.cancelNote}>Maksājums tika atcelts. Vari mēģināt vēlreiz.</p>
@@ -302,178 +432,55 @@ export function TestPricing5Hero() {
         </header>
 
         <div className={styles.stage}>
-          <article className={`${styles.spatialCard} w-full`}>
-            <div className={styles.cardHeader}>
-              <LayoutGroup id="tp5-tabs">
-                <div className={styles.tierSwitcher} role="tablist" aria-label="Izvēlies audita cenu">
-                  {TEST_PRICING_TIER_ORDER.map((id) => {
-                    const active = selectedId === id;
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        role="tab"
-                        aria-selected={active}
-                        aria-label={`${TP5_TAB_LABEL[id]} audits`}
-                        className={styles.tierTabBtn}
-                        onClick={() => setSelectedId(id)}
-                      >
-                        {active ? (
-                          <motion.span
-                            layoutId="tp5-tab-pill"
-                            className={styles.tierTabPill}
-                            transition={TAB_TRANSITION}
-                            aria-hidden
-                          />
-                        ) : null}
-                        <span
-                          className={`${styles.tierTabLabel} ${id === "premium" ? styles.tierTabLabelCompact : ""} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
-                        >
-                          {TP5_TAB_LABEL[id]}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </LayoutGroup>
-
-              <div className={styles.tierMeta} aria-live="polite">
-                <p className={styles.tierMetaTitle}>{tierMeta.title}</p>
-                <p className={styles.tierMetaDesc}>{tierMeta.description}</p>
-              </div>
-            </div>
-
-            <div
-              className={styles.featureStack}
-              onTouchStart={onSwipeAreaTouchStart}
-              onTouchEnd={onSwipeAreaTouchEnd}
-            >
-              {activeRowEntries.length > 0 ? (
-                <div className={styles.liquidAccent} data-tier={selectedId}>
-                  <ul className={styles.featureList}>
-                    {activeRowEntries.map(({ row }, index) => (
-                      <FeatureRow
-                        key={`${selectedId}-${row.id}`}
-                        row={row}
-                        index={index}
-                        reducedMotion={!!reducedMotion}
-                        active
-                      />
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-
-              {inactiveBlocks.map((block) => {
-                const offset = inactiveRowOffset;
-                inactiveRowOffset += getTp5BlockRows(block.id).length;
-                return (
-                  <InactiveGroup
-                    key={block.id}
-                    block={block}
-                    onSelect={setSelectedId}
-                    startIndex={offset}
-                  />
-                );
-              })}
-
-              <div
-                className={styles.inlineFields}
-                onTouchStart={stopSwipePropagation}
-                onTouchEnd={stopSwipePropagation}
-              >
-                <input
-                  type="text"
-                  className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
-                  value={vin}
-                  onChange={(event) => setVin(event.target.value.toUpperCase())}
-                  placeholder="Ievadi VIN kodu"
-                  aria-label="Ievadi VIN kodu"
-                  autoComplete="off"
-                  spellCheck={false}
-                  inputMode="text"
-                  maxLength={17}
-                />
-                {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
-                <input
-                  type="url"
-                  className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
-                  value={listingUrl}
-                  onChange={(event) => setListingUrl(event.target.value)}
-                  placeholder="Iekopē sludinājuma linku"
-                  aria-label="Iekopē sludinājuma linku"
-                  autoComplete="url"
-                  inputMode="url"
-                />
-                {errors.listingUrl ? (
-                  <p className={styles.inlineFieldError}>{errors.listingUrl}</p>
-                ) : null}
-              </div>
-            </div>
-
-            <p className={styles.turnaround}>{selectedPlan.turnaround}</p>
-
-            <div className={styles.ctaWrap}>
-              {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
-              <button
-                type="button"
-                className={styles.liquidCta}
-                onClick={submitCheckout}
-                disabled={loading}
-              >
-                <span className={styles.liquidCtaShimmer} aria-hidden />
-                <span className={styles.liquidCtaLabel}>{TP5_CTA_LABEL[selectedId]}</span>
-              </button>
-              {isPremiumTier ? (
-                <p className={styles.featureFootnote}>{TP5_DEALER_FOOTNOTE}</p>
-              ) : null}
-            </div>
-          </article>
+          <Tp5InteractivePricingCard
+            {...pricingCardProps}
+            tabLayoutGroupId="tp5-tabs"
+            tabPillLayoutId="tp5-tab-pill"
+            onSwipeAreaTouchStart={onSwipeAreaTouchStart}
+            onSwipeAreaTouchEnd={onSwipeAreaTouchEnd}
+            stopSwipePropagation={stopSwipePropagation}
+          />
         </div>
       </div>
 
-      {/* Desktop — centered hero + 3-column pricing grid (lg and above) */}
-      <div className="relative z-[2] hidden bg-[#070809] lg:block lg:pb-16">
+      {/* Desktop — 2-column asymmetric hero (lg and above) */}
+      <div
+        className={`${styles.heroInner} hidden lg:grid lg:grid-cols-12 lg:items-start lg:gap-12 lg:!max-w-7xl lg:mx-auto lg:px-8 lg:pt-20 lg:pb-16`}
+      >
         {cancelled ? (
-          <p className={`${styles.cancelNote} lg:mx-auto lg:max-w-7xl lg:px-8 lg:text-center`}>
+          <p className={`${styles.cancelNote} lg:col-span-12`}>
             Maksājums tika atcelts. Vari mēģināt vēlreiz.
           </p>
         ) : null}
 
-        <header className="lg:mx-auto lg:max-w-7xl lg:px-8 lg:pt-16 lg:text-center">
+        <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:min-w-0 lg:text-left`}>
           <h1
             id="tp5-hero-title-desktop"
-            className="lg:text-4xl lg:font-bold lg:leading-[1.15] lg:text-center lg:text-white"
+            className={`${styles.heroTitle} lg:!text-4xl lg:font-bold lg:leading-[1.15] lg:tracking-tight lg:text-white xl:!text-5xl`}
           >
             {TP5_HERO_TITLE_PREFIX}
-            <span className="text-[#2563EB]">{TP5_HERO_TITLE_ACCENT}</span>
+            <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
+              {TP5_HERO_TITLE_ACCENT}
+            </span>
           </h1>
-          <p className="lg:mx-auto lg:mt-4 lg:max-w-2xl lg:text-center lg:text-base lg:leading-relaxed lg:text-gray-300">
+          <p
+            className={`${styles.heroSubhead} lg:mt-6 lg:max-w-[44ch] lg:!text-base lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:!text-lg`}
+          >
             {TP5_HERO_SUBHEAD}
           </p>
+          <TestPricing5DesktopValueGrid />
         </header>
 
-        <TestPricing5DesktopPricingGrid onOpenCheckout={openDesktopModal} />
-
-        <p
-          className={`${styles.featureFootnote} lg:mx-auto lg:mt-8 lg:max-w-2xl lg:px-8 lg:text-center`}
+        <div
+          className={`${styles.stage} lg:col-span-5 lg:ml-auto lg:w-[420px] lg:shrink-0 xl:w-[440px]`}
         >
-          {TP5_DEALER_FOOTNOTE}
-        </p>
-
-        <TestPricing5DesktopCheckoutModal
-          planId={desktopModalPlanId}
-          open={desktopModalPlanId !== null}
-          vin={modalVin}
-          listingUrl={modalListingUrl}
-          errors={modalErrors}
-          globalError={modalGlobalError}
-          loading={modalLoading}
-          onClose={closeDesktopModal}
-          onVinChange={setModalVin}
-          onListingUrlChange={setModalListingUrl}
-          onSubmit={submitDesktopCheckout}
-        />
+          <Tp5InteractivePricingCard
+            {...pricingCardProps}
+            tabLayoutGroupId="tp5-tabs-desktop"
+            tabPillLayoutId="tp5-tab-pill-desktop"
+            tierMetaDescClassName={`${styles.tierMetaDesc} lg:line-clamp-none lg:block lg:overflow-visible`}
+          />
+        </div>
       </div>
     </section>
   );
