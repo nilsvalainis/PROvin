@@ -5,7 +5,6 @@ import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
-import { TestPricing5DesktopValueGrid } from "@/components/test-pricing-5/TestPricing5DesktopValueGrid";
 import {
   getTp5ActiveBlockCount,
   getTp5BlockRows,
@@ -22,6 +21,7 @@ import {
   type Tp5TierMeta,
 } from "@/lib/test-pricing-5-checkout-routing";
 import {
+  TP5_DESKTOP_TRUST_LINE,
   TP5_HERO_SUBHEAD,
   TP5_HERO_TITLE_ACCENT,
   TP5_HERO_TITLE_PREFIX,
@@ -445,7 +445,7 @@ export function TestPricing5Hero() {
 
       {/* Desktop — 2-column asymmetric hero (lg and above) */}
       <div
-        className={`${styles.heroInner} hidden lg:grid lg:grid-cols-12 lg:items-start lg:gap-12 lg:!max-w-7xl lg:mx-auto lg:px-8 lg:pt-20 lg:pb-16`}
+        className={`${styles.heroInner} hidden lg:grid lg:grid-cols-12 lg:items-center lg:gap-16 lg:!max-w-7xl lg:mx-auto lg:px-8 lg:pt-20 lg:pb-12`}
       >
         {cancelled ? (
           <p className={`${styles.cancelNote} lg:col-span-12`}>
@@ -456,7 +456,7 @@ export function TestPricing5Hero() {
         <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:min-w-0 lg:text-left`}>
           <h1
             id="tp5-hero-title-desktop"
-            className={`${styles.heroTitle} lg:!text-4xl lg:font-bold lg:leading-[1.15] lg:tracking-tight lg:text-white xl:!text-5xl`}
+            className={`${styles.heroTitle} lg:!text-5xl lg:!font-extrabold lg:leading-[1.1] lg:tracking-tight lg:text-white xl:!text-6xl`}
           >
             {TP5_HERO_TITLE_PREFIX}
             <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
@@ -464,11 +464,13 @@ export function TestPricing5Hero() {
             </span>
           </h1>
           <p
-            className={`${styles.heroSubhead} lg:mt-6 lg:max-w-[44ch] lg:!text-base lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:!text-lg`}
+            className={`${styles.heroSubhead} lg:mt-8 lg:max-w-[46ch] lg:!text-lg lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:!text-xl`}
           >
             {TP5_HERO_SUBHEAD}
           </p>
-          <TestPricing5DesktopValueGrid />
+          <p className="lg:mt-16 lg:flex lg:items-center lg:gap-2 lg:border-t lg:border-white/5 lg:pt-8 lg:text-sm lg:font-medium lg:tracking-wide lg:text-gray-500">
+            {TP5_DESKTOP_TRUST_LINE}
+          </p>
         </header>
 
         <div
