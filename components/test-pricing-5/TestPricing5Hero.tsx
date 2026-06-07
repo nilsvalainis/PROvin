@@ -22,8 +22,6 @@ import {
 import {
   TP5_HERO_SUBHEAD,
   TP5_HERO_TITLE_ACCENT,
-  TP5_HERO_TITLE_DESKTOP_LINE1,
-  TP5_HERO_TITLE_DESKTOP_LINE2_PREFIX,
   TP5_HERO_TITLE_PREFIX,
 } from "@/lib/test-pricing-5-hero-copy";
 import {
@@ -225,7 +223,7 @@ export function TestPricing5Hero() {
       <div className={styles.heroScrim} aria-hidden />
 
       <div
-        className={`${styles.heroInner} lg:grid lg:grid-cols-12 lg:items-center lg:gap-12 lg:!max-w-7xl lg:mx-auto lg:px-8 lg:pt-16 lg:pb-16`}
+        className={`${styles.heroInner} lg:grid lg:grid-cols-12 lg:items-start lg:gap-12 lg:max-w-7xl lg:mx-auto lg:px-8 lg:pt-20 lg:pb-16`}
       >
         {cancelled ? (
           <p className={`${styles.cancelNote} lg:col-span-12`}>
@@ -234,24 +232,26 @@ export function TestPricing5Hero() {
         ) : null}
 
         <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:text-left`}>
-          <h1 id="tp5-hero-title" className={styles.heroTitle}>
+          <h1
+            id="tp5-hero-title"
+            className={`${styles.heroTitle} lg:!text-4xl lg:font-bold lg:leading-[1.15] lg:tracking-tight lg:text-white xl:!text-5xl`}
+          >
             <span className="lg:hidden">
               {TP5_HERO_TITLE_PREFIX}
               <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
                 {TP5_HERO_TITLE_ACCENT}
               </span>
             </span>
-            <span className="hidden lg:block">
-              <span className="lg:block">{TP5_HERO_TITLE_DESKTOP_LINE1}</span>
-              <span className="lg:block">
-                {TP5_HERO_TITLE_DESKTOP_LINE2_PREFIX}
-                <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
-                  {TP5_HERO_TITLE_ACCENT}
-                </span>
+            <span className="hidden lg:inline">
+              {TP5_HERO_TITLE_PREFIX}
+              <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
+                {TP5_HERO_TITLE_ACCENT}
               </span>
             </span>
           </h1>
-          <p className={styles.heroSubhead}>
+          <p
+            className={`${styles.heroSubhead} lg:mt-6 lg:max-w-[42ch] lg:!text-base lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:!text-lg`}
+          >
             {TP5_HERO_SUBHEAD}
           </p>
         </header>
