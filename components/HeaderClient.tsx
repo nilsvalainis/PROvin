@@ -43,11 +43,11 @@ export function HeaderClient() {
   const headerChromeDark = isDarkHeaderSurface || isDemoGraphiteHeader;
 
   const themeBtnOnDarkHeroClass =
-    "min-h-9 min-w-9 h-9 w-9 border-transparent bg-transparent text-white shadow-none hover:border-transparent hover:bg-transparent focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#050505]";
+    "min-h-7 min-w-7 h-7 w-7 border-transparent bg-transparent text-white shadow-none hover:border-transparent hover:bg-transparent focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#050505] lg:min-h-9 lg:min-w-9 lg:h-9 lg:w-9";
   const themeBtnGraphiteClass =
-    "min-h-9 min-w-9 h-9 w-9 border-transparent bg-transparent text-white shadow-none hover:border-transparent hover:bg-transparent focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#383a40]";
+    "min-h-7 min-w-7 h-7 w-7 border-transparent bg-transparent text-white shadow-none hover:border-transparent hover:bg-transparent focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#383a40] lg:min-h-9 lg:min-w-9 lg:h-9 lg:w-9";
   const themeBtnLightChromeClass =
-    "min-h-9 min-w-9 h-9 w-9 border-transparent bg-transparent text-[#1d1d1f] shadow-none hover:border-transparent hover:bg-transparent focus-visible:ring-[rgb(0_102_255/0.35)] focus-visible:ring-offset-white";
+    "min-h-7 min-w-7 h-7 w-7 border-transparent bg-transparent text-[#1d1d1f] shadow-none hover:border-transparent hover:bg-transparent focus-visible:ring-[rgb(0_102_255/0.35)] focus-visible:ring-offset-white lg:min-h-9 lg:min-w-9 lg:h-9 lg:w-9";
 
   const graphiteHeaderSurface =
     "border-b border-black/30 bg-[#383a40] pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#383a40]/94";
@@ -79,8 +79,8 @@ export function HeaderClient() {
 
   const logoClass = [
     headerChromeDark
-      ? "flex min-h-11 min-w-11 shrink-0 items-center text-[28.98px] font-bold tracking-tight text-white transition-colors hover:text-white/90 sm:min-h-0 sm:min-w-0"
-      : "flex min-h-11 min-w-11 shrink-0 items-center text-[28.98px] font-bold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent sm:min-h-0 sm:min-w-0",
+      ? "flex min-h-9 min-w-9 shrink-0 items-center text-[23.18px] font-bold tracking-tight text-white transition-colors hover:text-white/90 lg:min-h-0 lg:min-w-0 lg:text-[28.98px]"
+      : "flex min-h-9 min-w-9 shrink-0 items-center text-[23.18px] font-bold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent lg:min-h-0 lg:min-w-0 lg:text-[28.98px]",
     !isDarkHeaderSurface && !isHome && !isDemoPath && !isProvinSelectPieteikums ? logoRailMarginClass : null,
     logoHomeRailAlignClass,
   ]
@@ -126,7 +126,7 @@ export function HeaderClient() {
   }, [pathname]);
 
   const headerInnerClass = [
-    "mx-auto flex min-h-12 w-full min-w-0 items-center gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:min-h-11 sm:gap-3",
+    "mx-auto flex min-h-[2.4rem] w-full min-w-0 items-center gap-1.5 pl-[max(0.8rem,env(safe-area-inset-left,0px))] pr-[max(0.8rem,env(safe-area-inset-right,0px))] sm:min-h-9 lg:min-h-11 lg:gap-3 lg:pl-[max(1rem,env(safe-area-inset-left,0px))] lg:pr-[max(1rem,env(safe-area-inset-right,0px))]",
     isHome || isProvinSelectPieteikums ? "max-w-none" : "max-w-[980px] lg:max-w-[1024px]",
   ].join(" ");
 
@@ -139,7 +139,7 @@ export function HeaderClient() {
           {isHome ? null : <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>.LV</span>}
         </Link>
 
-        <div className="flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3">
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 lg:gap-3">
           {showHomeNavRail ? (
             <nav
               className="relative z-[52] mr-1 ml-auto hidden min-w-0 flex-wrap items-center justify-end gap-x-4 lg:flex xl:gap-x-6"
@@ -164,12 +164,12 @@ export function HeaderClient() {
               aria-expanded={mobileMenuOpen}
               aria-controls="header-mobile-nav-panel"
               onClick={() => setMobileMenuOpen((o) => !o)}
-              className={`lg:hidden relative z-[52] inline-flex h-9 w-9 shrink-0 items-center justify-center border-0 bg-transparent p-0 outline-none shadow-none transition focus-visible:ring-2 focus-visible:ring-[#0066ff]/45 focus-visible:ring-offset-2 hover:bg-transparent ${
+              className={`lg:hidden relative z-[52] inline-flex h-7 w-7 shrink-0 items-center justify-center border-0 bg-transparent p-0 outline-none shadow-none transition focus-visible:ring-2 focus-visible:ring-[#0066ff]/45 focus-visible:ring-offset-2 hover:bg-transparent ${
                 headerChromeDark ? "text-white focus-visible:ring-offset-[#050505]" : "text-[#1d1d1f] focus-visible:ring-offset-white"
               }`}
               aria-label={mobileMenuOpen ? tHeader("menuClose") : tHeader("menuOpen")}
             >
-              {mobileMenuOpen ? <X className="h-[22px] w-[22px]" strokeWidth={1.75} /> : <Menu className="h-[22px] w-[22px]" strokeWidth={1.75} />}
+              {mobileMenuOpen ? <X className="h-[18px] w-[18px]" strokeWidth={1.75} /> : <Menu className="h-[18px] w-[18px]" strokeWidth={1.75} />}
             </button>
           ) : null}
 
@@ -177,7 +177,7 @@ export function HeaderClient() {
           <Link
             href={pathname as never}
             locale={targetLocale}
-            className={`relative z-[52] inline-flex min-h-[2.25rem] min-w-[2.25rem] shrink-0 items-center justify-center text-[calc(15px*1.15)] leading-none no-underline transition md:text-[calc(17px*1.15)] ${
+            className={`relative z-[52] inline-flex min-h-[1.8rem] min-w-[1.8rem] shrink-0 items-center justify-center text-[13.8px] leading-none no-underline transition lg:min-h-[2.25rem] lg:min-w-[2.25rem] lg:text-[calc(17px*1.15)] ${
               headerChromeDark ? "text-white hover:text-white/80" : "text-[#1d1d1f] hover:text-[#111827]"
             }`}
             aria-label={localeLabel}
@@ -190,14 +190,14 @@ export function HeaderClient() {
 
       {showHomeNavRail && mobileMenuOpen ? (
         <div id="header-mobile-nav-panel" className={`relative z-[44] lg:hidden ${mobilePanelBg} border-t`}>
-          <nav aria-label={tRail("navAria")} className="flex flex-col gap-px py-3 pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))]">
+          <nav aria-label={tRail("navAria")} className="flex flex-col gap-px py-2.5 pr-[max(0.8rem,env(safe-area-inset-right))] pl-[max(0.8rem,env(safe-area-inset-left))] lg:py-3 lg:pl-[max(1rem,env(safe-area-inset-left))] lg:pr-[max(1rem,env(safe-area-inset-right))]">
             {navSections.map((s) => (
               <Link
                 key={`mob-${s.labelKey}:${s.href}`}
                 href={s.href}
                 prefetch={false}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`min-h-[3rem] shrink-0 content-center px-2 py-2.5 text-[12px] font-semibold uppercase tracking-[0.16em] no-underline outline-none ring-inset transition focus-visible:bg-white/5 focus-visible:ring-2 focus-visible:ring-[#0066ff]/35 ${navLinkInactive}`}
+                className={`min-h-[2.4rem] shrink-0 content-center px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] no-underline outline-none ring-inset transition focus-visible:bg-white/5 focus-visible:ring-2 focus-visible:ring-[#0066ff]/35 lg:min-h-[3rem] lg:py-2.5 lg:text-[12px] ${navLinkInactive}`}
               >
                 <span>{navLabelForKey(s.labelKey)}</span>
               </Link>
