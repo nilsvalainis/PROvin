@@ -41,7 +41,6 @@ import {
   TEST_PRICING_TIER_ORDER,
   useTestPricingTierSwipe,
 } from "@/lib/use-test-pricing-tier-swipe";
-import { TestPricing5DesktopValueGrid } from "@/components/test-pricing-5/TestPricing5DesktopValueGrid";
 
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 const ROW_SPRING = { type: "spring" as const, stiffness: 480, damping: 34, mass: 0.62 };
@@ -237,7 +236,7 @@ export function TestPricing5Hero() {
         <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:text-left`}>
           <h1
             id="tp5-hero-title"
-            className={`${styles.heroTitle} lg:text-[7.5rem] lg:font-bold lg:leading-[1.05] lg:tracking-tight lg:text-white xl:text-[9rem]`}
+            className={`${styles.heroTitle} lg:text-[9rem] lg:font-bold lg:leading-[1.04] lg:tracking-tight lg:text-white xl:text-[10.5rem]`}
           >
             <span className="lg:hidden">
               {TP5_HERO_TITLE_PREFIX}
@@ -256,11 +255,10 @@ export function TestPricing5Hero() {
             </span>
           </h1>
           <p
-            className={`${styles.heroSubhead} lg:mt-8 lg:max-w-4xl lg:text-[2.5rem] lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:text-[3rem] xl:leading-relaxed`}
+            className={`${styles.heroSubhead} lg:mt-10 lg:max-w-4xl lg:text-[3rem] lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:text-[3.5rem] xl:leading-relaxed`}
           >
             {TP5_HERO_SUBHEAD}
           </p>
-          <TestPricing5DesktopValueGrid />
         </header>
 
         <div className={`${styles.stage} lg:col-span-5 lg:w-full`}>
