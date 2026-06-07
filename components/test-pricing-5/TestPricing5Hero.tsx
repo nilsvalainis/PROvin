@@ -237,7 +237,7 @@ export function TestPricing5Hero() {
         <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:text-left`}>
           <h1
             id="tp5-hero-title"
-            className={`${styles.heroTitle} lg:text-6xl lg:font-bold lg:leading-[1.05] lg:tracking-tight lg:text-white xl:text-7xl`}
+            className={`${styles.heroTitle} lg:text-[7.5rem] lg:font-bold lg:leading-[1.05] lg:tracking-tight lg:text-white xl:text-[9rem]`}
           >
             <span className="lg:hidden">
               {TP5_HERO_TITLE_PREFIX}
@@ -256,7 +256,7 @@ export function TestPricing5Hero() {
             </span>
           </h1>
           <p
-            className={`${styles.heroSubhead} lg:mt-6 lg:max-w-2xl lg:text-xl lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:text-2xl xl:leading-relaxed`}
+            className={`${styles.heroSubhead} lg:mt-8 lg:max-w-4xl lg:text-[2.5rem] lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:text-[3rem] xl:leading-relaxed`}
           >
             {TP5_HERO_SUBHEAD}
           </p>
