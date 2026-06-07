@@ -9,7 +9,3 @@ export const TP5_HERO_TITLE_DESKTOP_LINE2_PREFIX = "un sludinājuma ";
 
 export const TP5_HERO_SUBHEAD =
   "Uzzini visu par savu nākamo auto. Apvienojam auto vēstures datus un sludinājuma analīzi vienā pārskatāmā auditā.";
-
-/** Desktop-only trust micro-line above the value grid. */
-export const TP5_DESKTOP_TRUST_LINE =
-  "Izpilde 24–48h · Drošs Stripe maksājums · LV auto ekspertu komanda";
