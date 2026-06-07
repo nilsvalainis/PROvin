@@ -236,7 +236,7 @@ export function TestPricing5Hero() {
         <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:text-left`}>
           <h1
             id="tp5-hero-title"
-            className={`${styles.heroTitle} lg:text-[9rem] lg:font-bold lg:leading-[1.04] lg:tracking-tight lg:text-white xl:text-[10.5rem]`}
+            className={`${styles.heroTitle} lg:text-[13.5rem] lg:font-bold lg:leading-[1.02] lg:tracking-tight lg:text-white xl:text-[15.75rem]`}
           >
             <span className="lg:hidden">
               {TP5_HERO_TITLE_PREFIX}
