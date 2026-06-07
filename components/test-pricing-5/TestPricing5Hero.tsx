@@ -5,6 +5,7 @@ import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
+import { TestPricing5DesktopPricingGrid } from "@/components/test-pricing-5/TestPricing5DesktopPricingGrid";
 import {
   getTp5ActiveBlockCount,
   getTp5BlockRows,
@@ -22,8 +23,6 @@ import {
 import {
   TP5_HERO_SUBHEAD,
   TP5_HERO_TITLE_ACCENT,
-  TP5_HERO_TITLE_DESKTOP_LINE1,
-  TP5_HERO_TITLE_DESKTOP_LINE2_PREFIX,
   TP5_HERO_TITLE_PREFIX,
 } from "@/lib/test-pricing-5-hero-copy";
 import {
@@ -44,6 +43,12 @@ import {
 
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 const ROW_SPRING = { type: "spring" as const, stiffness: 480, damping: 34, mass: 0.62 };
+
+const EMPTY_DESKTOP_FIELDS: Record<TestPricingPlanId, { vin: string; listingUrl: string }> = {
+  mini: { vin: "", listingUrl: "" },
+  plus: { vin: "", listingUrl: "" },
+  premium: { vin: "", listingUrl: "" },
+};
 
 type ActiveRowEntry = { row: Tp5DisplayRow; blockId: Tp5BlockId };
 
@@ -151,6 +156,15 @@ export function TestPricing5Hero() {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [desktopFields, setDesktopFields] = useState(EMPTY_DESKTOP_FIELDS);
+  const [desktopErrors, setDesktopErrors] = useState<
+    Partial<Record<TestPricingPlanId, Tp5InlineFieldErrors>>
+  >({});
+  const [desktopGlobalErrors, setDesktopGlobalErrors] = useState<
+    Partial<Record<TestPricingPlanId, string>>
+  >({});
+  const [desktopLoadingPlanId, setDesktopLoadingPlanId] = useState<TestPricingPlanId | null>(null);
+
   const { onSwipeAreaTouchStart, onSwipeAreaTouchEnd } = useTestPricingTierSwipe(
     selectedId,
     setSelectedId,
@@ -213,6 +227,50 @@ export function TestPricing5Hero() {
     }
   }, [listingUrl, selectedId, vin]);
 
+  const submitDesktopCheckout = useCallback(async (planId: TestPricingPlanId) => {
+    const { vin: tierVin, listingUrl: tierListingUrl } = desktopFields[planId];
+    setDesktopGlobalErrors((prev) => ({ ...prev, [planId]: undefined }));
+    const validation = validateTp5InlineFields(tierListingUrl, tierVin);
+    if (!validation.ok) {
+      setDesktopErrors((prev) => ({ ...prev, [planId]: validation.errors }));
+      const first = validation.errors.listingUrl ?? validation.errors.vin;
+      if (first) setDesktopGlobalErrors((prev) => ({ ...prev, [planId]: first }));
+      return;
+    }
+    setDesktopErrors((prev) => ({ ...prev, [planId]: {} }));
+    setDesktopLoadingPlanId(planId);
+    try {
+      const res = await fetch("/api/checkout/test-pricing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId,
+          locale: "lv",
+          listingUrl: tierListingUrl.trim(),
+          vin: normalizeVin(tierVin),
+          withdrawalConsent: true,
+          sourcePage: TP5_INLINE_CHECKOUT_SOURCE,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        error?: string;
+        errors?: string[];
+      };
+      if (!res.ok || !data.url) {
+        throw new Error(data.errors?.[0] ?? data.error ?? "Neizdevās sākt maksājumu.");
+      }
+      window.location.href = data.url;
+    } catch (e) {
+      setDesktopGlobalErrors((prev) => ({
+        ...prev,
+        [planId]: e instanceof Error ? e.message : "Neizdevās sākt maksājumu.",
+      }));
+    } finally {
+      setDesktopLoadingPlanId(null);
+    }
+  }, [desktopFields]);
+
   const stopSwipePropagation = (event: SyntheticEvent) => {
     event.stopPropagation();
   };
@@ -224,40 +282,24 @@ export function TestPricing5Hero() {
       </div>
       <div className={styles.heroScrim} aria-hidden />
 
-      <div
-        className={`${styles.heroInner} lg:grid lg:grid-cols-12 lg:items-center lg:gap-12 lg:!max-w-7xl lg:mx-auto lg:px-8 lg:pt-16 lg:pb-16`}
-      >
+      {/* Mobile / tablet — frozen single-card switcher (md and below) */}
+      <div className={`${styles.heroInner} lg:hidden`}>
         {cancelled ? (
-          <p className={`${styles.cancelNote} lg:col-span-12`}>
-            Maksājums tika atcelts. Vari mēģināt vēlreiz.
-          </p>
+          <p className={styles.cancelNote}>Maksājums tika atcelts. Vari mēģināt vēlreiz.</p>
         ) : null}
 
-        <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:text-left`}>
+        <header className={styles.heroCopy}>
           <h1 id="tp5-hero-title" className={styles.heroTitle}>
-            <span className="lg:hidden">
-              {TP5_HERO_TITLE_PREFIX}
-              <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
-                {TP5_HERO_TITLE_ACCENT}
-              </span>
-            </span>
-            <span className="hidden lg:block">
-              <span className="lg:block">{TP5_HERO_TITLE_DESKTOP_LINE1}</span>
-              <span className="lg:block">
-                {TP5_HERO_TITLE_DESKTOP_LINE2_PREFIX}
-                <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
-                  {TP5_HERO_TITLE_ACCENT}
-                </span>
-              </span>
+            {TP5_HERO_TITLE_PREFIX}
+            <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
+              {TP5_HERO_TITLE_ACCENT}
             </span>
           </h1>
-          <p className={styles.heroSubhead}>
-            {TP5_HERO_SUBHEAD}
-          </p>
+          <p className={styles.heroSubhead}>{TP5_HERO_SUBHEAD}</p>
         </header>
 
-        <div className={`${styles.stage} lg:col-span-5 lg:w-full`}>
-          <article className={`${styles.spatialCard} w-full lg:ml-auto lg:max-w-[440px]`}>
+        <div className={styles.stage}>
+          <article className={`${styles.spatialCard} w-full`}>
             <div className={styles.cardHeader}>
               <LayoutGroup id="tp5-tabs">
                 <div className={styles.tierSwitcher} role="tablist" aria-label="Izvēlies audita cenu">
@@ -385,6 +427,48 @@ export function TestPricing5Hero() {
             </div>
           </article>
         </div>
+      </div>
+
+      {/* Desktop — centered hero + 3-column pricing grid (lg and above) */}
+      <div className="hidden lg:block lg:pb-16">
+        {cancelled ? (
+          <p className={`${styles.cancelNote} lg:mx-auto lg:max-w-7xl lg:px-8 lg:text-center`}>
+            Maksājums tika atcelts. Vari mēģināt vēlreiz.
+          </p>
+        ) : null}
+
+        <header className="lg:max-w-7xl lg:mx-auto lg:px-8 lg:pt-16 lg:text-center">
+          <h1
+            id="tp5-hero-title-desktop"
+            className="lg:text-4xl lg:font-bold lg:leading-[1.15] lg:text-white"
+          >
+            {TP5_HERO_TITLE_PREFIX}
+            <span className="text-[#2563EB]">{TP5_HERO_TITLE_ACCENT}</span>
+          </h1>
+          <p className="lg:mt-4 lg:max-w-2xl lg:mx-auto lg:text-base lg:leading-relaxed lg:text-gray-300">
+            {TP5_HERO_SUBHEAD}
+          </p>
+        </header>
+
+        <TestPricing5DesktopPricingGrid
+          fields={desktopFields}
+          errors={desktopErrors}
+          globalErrors={desktopGlobalErrors}
+          loadingPlanId={desktopLoadingPlanId}
+          onVinChange={(planId, value) =>
+            setDesktopFields((prev) => ({
+              ...prev,
+              [planId]: { ...prev[planId], vin: value },
+            }))
+          }
+          onListingUrlChange={(planId, value) =>
+            setDesktopFields((prev) => ({
+              ...prev,
+              [planId]: { ...prev[planId], listingUrl: value },
+            }))
+          }
+          onSubmit={submitDesktopCheckout}
+        />
       </div>
     </section>
   );

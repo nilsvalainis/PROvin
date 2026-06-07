@@ -548,57 +548,6 @@
   }
 }
 
-@media (min-width: 1024px) {
-  .heroSurface {
-    min-height: calc(100svh - 4.5rem);
-  }
-
-  .heroInner {
-    min-height: calc(100svh - 6.5rem);
-    align-items: center;
-  }
-
-  .heroCopy {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: min(46vh, 35rem);
-    margin: 0;
-  }
-
-  .heroTitle {
-    margin: 0 0 0.6rem;
-    font-size: clamp(2.8rem, min(11.2vh, 6vw), 6.8rem) !important;
-    line-height: 1.02 !important;
-    font-weight: 700 !important;
-    letter-spacing: -0.03em;
-    color: #fff;
-  }
-
-  .heroSubhead {
-    margin: clamp(1rem, 3.2vh, 2.4rem) 0 0;
-    font-size: clamp(1rem, min(3.6vh, 1.76vw), 2.4rem) !important;
-    line-height: 1.32 !important;
-    font-weight: 450;
-    color: rgb(209 213 219 / 0.92);
-    -webkit-line-clamp: unset;
-    display: block;
-    overflow: visible;
-    max-width: 38ch;
-  }
-}
-
-@media (min-width: 1280px) {
-  .heroTitle {
-    font-size: clamp(3.2rem, min(12vh, 5.6vw), 7.6rem) !important;
-  }
-
-  .heroSubhead {
-    font-size: clamp(1.2rem, min(4vh, 1.92vw), 2.6rem) !important;
-    max-width: 40ch;
-  }
-}
-
 @media (min-width: 640px) {
   .compactSection {
     padding-top: 2rem;
