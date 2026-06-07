@@ -9,17 +9,18 @@ const SWIPE_THRESHOLD_PX = 48;
 export function useTestPricingTierSwipe(
   selectedId: TestPricingPlanId,
   setSelectedId: (id: TestPricingPlanId) => void,
+  tierOrder: readonly TestPricingPlanId[] = TIER_ORDER,
 ) {
   const touchStartX = useRef<number | null>(null);
 
   const selectTierByOffset = useCallback(
     (offset: -1 | 1) => {
-      const idx = TIER_ORDER.indexOf(selectedId);
+      const idx = tierOrder.indexOf(selectedId);
       const next = idx + offset;
-      if (next < 0 || next >= TIER_ORDER.length) return;
-      setSelectedId(TIER_ORDER[next]);
+      if (next < 0 || next >= tierOrder.length) return;
+      setSelectedId(tierOrder[next]!);
     },
-    [selectedId, setSelectedId],
+    [selectedId, setSelectedId, tierOrder],
   );
 
   const onSwipeAreaTouchStart = useCallback((e: React.TouchEvent) => {

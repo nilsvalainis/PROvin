@@ -5,6 +5,7 @@ import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
+import { Tp5MobilePricingCard } from "@/components/test-pricing-5/Tp5MobilePricingCard";
 import {
   getTp5ActiveBlockCount,
   getTp5BlockRows,
@@ -26,6 +27,7 @@ import {
   TP5_HERO_TITLE_ACCENT,
   TP5_HERO_TITLE_PREFIX,
 } from "@/lib/test-pricing-5-hero-copy";
+import { TP5_MOBILE_TIER_ORDER, type Tp5MobileTierId } from "@/lib/test-pricing-5-mobile";
 import {
   TP5_INLINE_CHECKOUT_SOURCE,
   validateTp5InlineFields,
@@ -320,16 +322,21 @@ export function TestPricing5Hero() {
   const searchParams = useSearchParams();
   const reducedMotion = useReducedMotion();
   const [selectedId, setSelectedId] = useState<TestPricingPlanId>("premium");
+  const [mobileSelectedId, setMobileSelectedId] = useState<Tp5MobileTierId>("premium");
   const [vin, setVin] = useState("");
   const [listingUrl, setListingUrl] = useState("");
   const [errors, setErrors] = useState<Tp5InlineFieldErrors>({});
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const { onSwipeAreaTouchStart, onSwipeAreaTouchEnd } = useTestPricingTierSwipe(
-    selectedId,
-    setSelectedId,
-  );
+  const handleMobileTierChange = useCallback((id: TestPricingPlanId) => {
+    if (id === "plus" || id === "premium") {
+      setMobileSelectedId(id);
+    }
+  }, []);
+
+  const { onSwipeAreaTouchStart: onMobileSwipeStart, onSwipeAreaTouchEnd: onMobileSwipeEnd } =
+    useTestPricingTierSwipe(mobileSelectedId, handleMobileTierChange, TP5_MOBILE_TIER_ORDER);
 
   const cancelled = searchParams.get("atcelts") === "1";
   const selectedPlan = useMemo(
@@ -346,7 +353,7 @@ export function TestPricing5Hero() {
   );
   const tierMeta = TP5_TIER_META[selectedId];
 
-  const submitCheckout = useCallback(async () => {
+  const submitCheckout = useCallback(async (planId: TestPricingPlanId) => {
     setGlobalError(null);
     const validation = validateTp5InlineFields(listingUrl, vin);
     if (!validation.ok) {
@@ -362,7 +369,7 @@ export function TestPricing5Hero() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          planId: selectedId,
+          planId,
           locale: "lv",
           listingUrl: listingUrl.trim(),
           vin: normalizeVin(vin),
@@ -384,7 +391,15 @@ export function TestPricing5Hero() {
     } finally {
       setLoading(false);
     }
-  }, [listingUrl, selectedId, vin]);
+  }, [listingUrl, vin]);
+
+  const submitMobileCheckout = useCallback(() => {
+    void submitCheckout(mobileSelectedId);
+  }, [mobileSelectedId, submitCheckout]);
+
+  const submitDesktopCheckout = useCallback(() => {
+    void submitCheckout(selectedId);
+  }, [selectedId, submitCheckout]);
 
   const stopSwipePropagation = (event: SyntheticEvent) => {
     event.stopPropagation();
@@ -405,7 +420,7 @@ export function TestPricing5Hero() {
     loading,
     onVinChange: setVin,
     onListingUrlChange: setListingUrl,
-    onSubmit: submitCheckout,
+    onSubmit: submitDesktopCheckout,
   };
 
   return (
@@ -432,12 +447,19 @@ export function TestPricing5Hero() {
         </header>
 
         <div className={styles.stage}>
-          <Tp5InteractivePricingCard
-            {...pricingCardProps}
-            tabLayoutGroupId="tp5-tabs"
-            tabPillLayoutId="tp5-tab-pill"
-            onSwipeAreaTouchStart={onSwipeAreaTouchStart}
-            onSwipeAreaTouchEnd={onSwipeAreaTouchEnd}
+          <Tp5MobilePricingCard
+            selectedId={mobileSelectedId}
+            setSelectedId={setMobileSelectedId}
+            vin={vin}
+            listingUrl={listingUrl}
+            errors={errors}
+            globalError={globalError}
+            loading={loading}
+            onVinChange={setVin}
+            onListingUrlChange={setListingUrl}
+            onSubmit={submitMobileCheckout}
+            onSwipeAreaTouchStart={onMobileSwipeStart}
+            onSwipeAreaTouchEnd={onMobileSwipeEnd}
             stopSwipePropagation={stopSwipePropagation}
           />
         </div>
