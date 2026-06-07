@@ -17,11 +17,12 @@ import {
   getTp5CheckoutHref,
   TP5_CTA_LABEL,
   TP5_TAB_LABEL,
+  TP5_TIER_META,
 } from "@/lib/test-pricing-5-checkout-routing";
 import {
   TP5_HERO_SUBHEAD,
-  TP5_HERO_TITLE_LINE_1,
-  TP5_HERO_TITLE_LINE_2,
+  TP5_HERO_TITLE_ACCENT,
+  TP5_HERO_TITLE_PREFIX,
   TP5_TRUST_BADGE,
 } from "@/lib/test-pricing-5-hero-copy";
 import {
@@ -163,6 +164,7 @@ export function TestPricing5Hero() {
   );
   let inactiveRowOffset = activeRowEntries.length;
   const isPremiumTier = selectedId === "premium";
+  const tierMeta = TP5_TIER_META[selectedId];
 
   const goToCheckout = () => {
     router.push(getTp5CheckoutHref(selectedId));
@@ -182,8 +184,8 @@ export function TestPricing5Hero() {
 
         <header className={styles.heroCopy}>
           <h1 id="tp5-hero-title" className={styles.heroTitle}>
-            <span className={styles.heroTitleLine}>{TP5_HERO_TITLE_LINE_1}</span>
-            <span className={styles.heroTitleLine}>{TP5_HERO_TITLE_LINE_2}</span>
+            {TP5_HERO_TITLE_PREFIX}
+            <span className={styles.heroTitleAccent}>{TP5_HERO_TITLE_ACCENT}</span>
           </h1>
           <p className={styles.heroSubhead}>{TP5_HERO_SUBHEAD}</p>
         </header>
@@ -217,7 +219,7 @@ export function TestPricing5Hero() {
                         />
                       ) : null}
                       <span
-                        className={`${styles.tierTabLabel} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
+                        className={`${styles.tierTabLabel} ${id === "premium" ? styles.tierTabLabelCompact : ""} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
                       >
                         {TP5_TAB_LABEL[id]}
                       </span>
@@ -226,6 +228,11 @@ export function TestPricing5Hero() {
                 })}
               </div>
             </LayoutGroup>
+
+            <div className={styles.tierMeta} aria-live="polite">
+              <p className={styles.tierMetaTitle}>{tierMeta.title}</p>
+              <p className={styles.tierMetaDesc}>{tierMeta.description}</p>
+            </div>
 
             <div className={styles.featureStack}>
               <motion.div

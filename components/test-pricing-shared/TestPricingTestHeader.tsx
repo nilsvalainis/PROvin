@@ -28,7 +28,7 @@ export function TestPricingTestHeader() {
   }, []);
 
   const headerSurface = headerChromeDark
-    ? "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)]"
+    ? "border-b border-white/[0.05] bg-transparent pt-[env(safe-area-inset-top,0px)]"
     : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
   const logoClass = headerChromeDark
@@ -49,7 +49,7 @@ export function TestPricingTestHeader() {
 
   return (
     <header className={`sticky top-0 z-[42] isolate w-full ${headerSurface}`}>
-      <div className="mx-auto flex min-h-12 w-full min-w-0 max-w-none items-center gap-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:min-h-11 sm:gap-3">
+      <div className="mx-auto flex min-h-10 w-full min-w-0 max-w-none items-center gap-2 py-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] md:min-h-11 md:py-0 md:gap-3">
         <Link href="/" className={logoClass} aria-label="PROVIN">
           <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
           <span className="text-provin-accent">VIN</span>
