@@ -43,7 +43,7 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
     ctaLabel: "PĀRBAUDĪT AUTO",
     heroCtaLabel: "PASŪTĪT MINI AUDITU — 19,99 €",
     highlighted: false,
-    vinRequired: false,
+    vinRequired: true,
     productName: "PROVIN MINI",
     productDesc: "Sludinājuma risku analīze un LV auto padziļināta pārbaude.",
     features: [
@@ -67,7 +67,7 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
     ctaLabel: "PASŪTĪT PLUS AUDITU",
     heroCtaLabel: "PASŪTĪT PLUS AUDITU — 39,99 €",
     highlighted: false,
-    vinRequired: false,
+    vinRequired: true,
     productName: "PROVIN PLUS",
     productDesc: "Latvijas un Ziemeļvalstu reģistru vēstures pārbaude.",
     features: [
@@ -134,16 +134,9 @@ export function validateTestPricingStep2(
   }
 
   const vinNorm = vin.trim();
-  if (plan.vinRequired) {
-    const normalized = normalizeVin(vinNorm);
-    if (!normalized || !isValidVin(normalized)) {
-      errors.vin = "Ievadi derīgu 17 zīmju VIN.";
-    }
-  } else if (vinNorm) {
-    const normalized = normalizeVin(vinNorm);
-    if (!isValidVin(normalized)) {
-      errors.vin = "VIN formāts nav derīgs.";
-    }
+  const normalized = normalizeVin(vinNorm);
+  if (!normalized || !isValidVin(normalized)) {
+    errors.vin = "Ievadi derīgu 17 zīmju VIN kodu.";
   }
 
   if (!withdrawalConsent) {

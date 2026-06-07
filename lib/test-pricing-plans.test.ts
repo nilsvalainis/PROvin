@@ -3,6 +3,7 @@ import {
   getTestPricingPlan,
   isTestPricingPlanId,
   TEST_PRICING_PLANS,
+  validateTestPricingStep2,
 } from "@/lib/test-pricing-plans";
 
 describe("test-pricing plans", () => {
@@ -21,6 +22,7 @@ describe("test-pricing plans", () => {
     const mini = getTestPricingPlan("mini")!;
     expect(mini.amountCents).toBe(1999);
     expect(mini.turnaround).toContain("24h");
+    expect(mini.vinRequired).toBe(true);
     expect(mini.features.filter((f) => f.kind === "bullet")).toHaveLength(3);
     expect(mini.features.some((f) => f.kind === "exclusion")).toBe(true);
   });
@@ -39,5 +41,28 @@ describe("test-pricing plans", () => {
     expect(premium.turnaround).toContain("48h");
     expect(premium.vinRequired).toBe(true);
     expect(premium.heroCtaLabel).toContain("99,99");
+  });
+
+  it("requires listing url, vin, and consent for all tiers", () => {
+    const mini = getTestPricingPlan("mini")!;
+    const plus = getTestPricingPlan("plus")!;
+
+    expect(validateTestPricingStep2(mini, "", "", false).ok).toBe(false);
+    expect(
+      validateTestPricingStep2(
+        plus,
+        "https://www.ss.lv/msg/lv/transport/cars/example.html",
+        "",
+        true,
+      ).ok,
+    ).toBe(false);
+    expect(
+      validateTestPricingStep2(
+        plus,
+        "https://www.ss.lv/msg/lv/transport/cars/example.html",
+        "1HGCM82633A004352",
+        true,
+      ).ok,
+    ).toBe(true);
   });
 });

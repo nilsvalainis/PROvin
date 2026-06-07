@@ -6,6 +6,7 @@ import demoStyles from "@/app/[locale]/demo/page.module.css";
 import modalStyles from "@/components/test-pricing-shared/test-pricing-modal.module.css";
 import styles from "@/app/test-checkout/test-checkout.module.css";
 import { normalizeVin } from "@/lib/order-field-validation";
+import { getTestPricingCheckoutFormCopy } from "@/lib/test-pricing-checkout-copy";
 import {
   TP5_CHECKOUT_SOURCE,
   TP5_CTA_LABEL,
@@ -73,15 +74,15 @@ export function TestCheckoutForm({ planId }: Props) {
 
   if (!plan) return null;
 
+  const formCopy = getTestPricingCheckoutFormCopy(planId);
+
   return (
     <div className={styles.pageInner}>
       <article className={`${modalStyles.modalCard} ${styles.checkoutCard}`}>
         <h1 id={titleId} className={modalStyles.modalTitle}>
-          Pabeidz pasūtījumu — {plan.title}
+          {formCopy.title}
         </h1>
-        <p className={modalStyles.modalLead}>
-          Ievadi sludinājuma saiti un VIN (ja nepieciešams). Tālāk novirzīsim uz Stripe maksājumu.
-        </p>
+        <p className={modalStyles.modalLead}>{formCopy.lead}</p>
 
         {globalError ? <p className={modalStyles.modalGlobalError}>{globalError}</p> : null}
 
@@ -109,8 +110,7 @@ export function TestCheckoutForm({ planId }: Props) {
 
           <div className={modalStyles.field}>
             <label className={modalStyles.fieldLabel} htmlFor={`${TP5_CHECKOUT_SOURCE}-vin`}>
-              VIN numurs
-              {plan.vinRequired ? <span className={modalStyles.requiredMark}> *</span> : null}
+              VIN kods <span className={modalStyles.requiredMark}>*</span>
             </label>
             <input
               id={`${TP5_CHECKOUT_SOURCE}-vin`}
@@ -118,7 +118,7 @@ export function TestCheckoutForm({ planId }: Props) {
               autoComplete="off"
               spellCheck={false}
               maxLength={17}
-              placeholder={plan.vinRequired ? "Ievadi VIN (obligāts)" : "Ievadi VIN (ja ir)"}
+              placeholder="Ievadi 17 zīmju VIN kodu"
               className={`${modalStyles.fieldInput} ${errors.vin ? modalStyles.fieldInputError : ""}`}
               value={vin}
               onChange={(e) => {

@@ -48,10 +48,10 @@ function buildCheckoutCustomFields(plan: { vinRequired: boolean }): Stripe.Check
       key: "vin",
       label: {
         type: "custom",
-        custom: plan.vinRequired ? "VIN (17 zīmes, obligāts)" : "VIN (ja zināms)",
+        custom: "VIN (17 zīmes, obligāts)",
       },
       type: "text",
-      optional: !plan.vinRequired,
+      optional: false,
     },
   ];
 }
@@ -148,7 +148,9 @@ export async function POST(req: Request) {
     line_items: [lineItem],
     success_url: `${origin}${thanksPath}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${cancelPath}`,
+    customer_creation: "always",
     phone_number_collection: { enabled: true },
+    billing_address_collection: "required",
     ...(clientCollected
       ? {}
       : {

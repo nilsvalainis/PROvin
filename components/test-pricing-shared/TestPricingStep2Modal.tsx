@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import demoStyles from "@/app/[locale]/demo/page.module.css";
 import styles from "@/components/test-pricing-shared/test-pricing-modal.module.css";
 import { normalizeVin } from "@/lib/order-field-validation";
+import { getTestPricingCheckoutFormCopy } from "@/lib/test-pricing-checkout-copy";
 import {
   getTestPricingPlan,
   validateTestPricingStep2,
@@ -90,6 +91,8 @@ export function TestPricingStep2Modal({ planId, open, onClose, sourcePage }: Pro
 
   if (!open || !plan) return null;
 
+  const formCopy = getTestPricingCheckoutFormCopy(planId);
+
   return (
     <div
       className={styles.modalOverlay}
@@ -106,11 +109,9 @@ export function TestPricingStep2Modal({ planId, open, onClose, sourcePage }: Pro
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id={titleId} className={styles.modalTitle}>
-          Pabeidz pasūtījumu — {plan.title}
+          {formCopy.title}
         </h2>
-        <p className={styles.modalLead}>
-          Ievadi sludinājuma saiti un VIN (ja nepieciešams). Tālāk novirzīsim uz Stripe maksājumu.
-        </p>
+        <p className={styles.modalLead}>{formCopy.lead}</p>
 
         {globalError ? <p className={styles.modalGlobalError}>{globalError}</p> : null}
 
@@ -138,8 +139,7 @@ export function TestPricingStep2Modal({ planId, open, onClose, sourcePage }: Pro
 
           <div className={styles.field}>
             <label className={styles.fieldLabel} htmlFor={`${sourcePage}-vin`}>
-              VIN numurs
-              {plan.vinRequired ? <span className={styles.requiredMark}> *</span> : null}
+              VIN kods <span className={styles.requiredMark}>*</span>
             </label>
             <input
               id={`${sourcePage}-vin`}
@@ -147,7 +147,7 @@ export function TestPricingStep2Modal({ planId, open, onClose, sourcePage }: Pro
               autoComplete="off"
               spellCheck={false}
               maxLength={17}
-              placeholder={plan.vinRequired ? "Ievadi VIN (obligāts)" : "Ievadi VIN (ja ir)"}
+              placeholder="Ievadi 17 zīmju VIN kodu"
               className={`${styles.fieldInput} ${errors.vin ? styles.fieldInputError : ""}`}
               value={vin}
               onChange={(e) => {
