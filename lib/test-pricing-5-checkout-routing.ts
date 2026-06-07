@@ -40,7 +40,7 @@ export const TP5_TIER_META: Record<TestPricingPlanId, Tp5TierMeta> = {
   premium: {
     title: "PROVIN AUDITS",
     description:
-      "Maksimāla visu datu analīze iekļaujot maksas atskaites un dīlera sistēmu datus*.",
+      "Maksimāla visu datu analīze iekļaujot maksas atskaites un oficiālā dīlera sistēmu datus*.",
   },
 };
 
