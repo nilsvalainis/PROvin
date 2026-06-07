@@ -7,16 +7,8 @@ import {
   TP5_FEATURE_BLOCKS,
   type Tp5DisplayRow,
 } from "@/lib/test-pricing-5-display";
-import {
-  TP5_CTA_LABEL,
-  TP5_DEALER_FOOTNOTE,
-  TP5_TIER_META,
-} from "@/lib/test-pricing-5-checkout-routing";
-import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout";
-import {
-  getTestPricingPlan,
-  type TestPricingPlanId,
-} from "@/lib/test-pricing-plans";
+import { TP5_CTA_LABEL, TP5_TIER_META } from "@/lib/test-pricing-5-checkout-routing";
+import { getTestPricingPlan, type TestPricingPlanId } from "@/lib/test-pricing-plans";
 import { TEST_PRICING_TIER_ORDER } from "@/lib/use-test-pricing-tier-swipe";
 
 function DesktopFeatureRow({ row, active }: { row: Tp5DisplayRow; active: boolean }) {
@@ -53,38 +45,18 @@ function getTierFeatureLayout(planId: TestPricingPlanId) {
   return { activeRowEntries, inactiveBlocks };
 }
 
-type DesktopFieldState = Record<TestPricingPlanId, { vin: string; listingUrl: string }>;
-
 type TestPricing5DesktopPricingGridProps = {
-  fields: DesktopFieldState;
-  errors: Partial<Record<TestPricingPlanId, Tp5InlineFieldErrors>>;
-  globalErrors: Partial<Record<TestPricingPlanId, string>>;
-  loadingPlanId: TestPricingPlanId | null;
-  onVinChange: (planId: TestPricingPlanId, value: string) => void;
-  onListingUrlChange: (planId: TestPricingPlanId, value: string) => void;
-  onSubmit: (planId: TestPricingPlanId) => void;
+  onOpenCheckout: (planId: TestPricingPlanId) => void;
 };
 
-export function TestPricing5DesktopPricingGrid({
-  fields,
-  errors,
-  globalErrors,
-  loadingPlanId,
-  onVinChange,
-  onListingUrlChange,
-  onSubmit,
-}: TestPricing5DesktopPricingGridProps) {
+export function TestPricing5DesktopPricingGrid({ onOpenCheckout }: TestPricing5DesktopPricingGridProps) {
   return (
     <div className="lg:grid lg:grid-cols-3 lg:gap-8 lg:max-w-7xl lg:mx-auto lg:px-8 lg:mt-12 lg:items-stretch">
       {TEST_PRICING_TIER_ORDER.map((planId) => {
-        const plan = getTestPricingPlan(planId);
         const tierMeta = TP5_TIER_META[planId];
         const { activeRowEntries, inactiveBlocks } = getTierFeatureLayout(planId);
-        const planErrors = errors[planId];
-        const planFields = fields[planId];
-        const isLoading = loadingPlanId === planId;
 
-        if (!plan) return null;
+        if (!getTestPricingPlan(planId)) return null;
 
         return (
           <article
@@ -102,7 +74,7 @@ export function TestPricing5DesktopPricingGrid({
               </div>
             </div>
 
-            <div className={`${styles.featureStack} lg:flex-1 lg:flex lg:flex-col`}>
+            <div className={`${styles.featureStack} lg:flex-1`}>
               {activeRowEntries.length > 0 ? (
                 <div className={styles.liquidAccent} data-tier={planId}>
                   <ul className={styles.featureList}>
@@ -125,55 +97,17 @@ export function TestPricing5DesktopPricingGrid({
                   </ul>
                 </div>
               ))}
-
-              <div className={styles.inlineFields}>
-                <input
-                  type="text"
-                  className={`${styles.inlineInput} ${planErrors?.vin ? styles.inlineInputError : ""}`}
-                  value={planFields.vin}
-                  onChange={(event) => onVinChange(planId, event.target.value.toUpperCase())}
-                  placeholder="Ievadi VIN kodu"
-                  aria-label="Ievadi VIN kodu"
-                  autoComplete="off"
-                  spellCheck={false}
-                  inputMode="text"
-                  maxLength={17}
-                />
-                {planErrors?.vin ? <p className={styles.inlineFieldError}>{planErrors.vin}</p> : null}
-                <input
-                  type="url"
-                  className={`${styles.inlineInput} ${planErrors?.listingUrl ? styles.inlineInputError : ""}`}
-                  value={planFields.listingUrl}
-                  onChange={(event) => onListingUrlChange(planId, event.target.value)}
-                  placeholder="Iekopē sludinājuma linku"
-                  aria-label="Iekopē sludinājuma linku"
-                  autoComplete="url"
-                  inputMode="url"
-                />
-                {planErrors?.listingUrl ? (
-                  <p className={styles.inlineFieldError}>{planErrors.listingUrl}</p>
-                ) : null}
-              </div>
             </div>
 
-            <p className={styles.turnaround}>{plan.turnaround}</p>
-
             <div className={styles.ctaWrap}>
-              {globalErrors[planId] ? (
-                <p className={styles.checkoutError}>{globalErrors[planId]}</p>
-              ) : null}
               <button
                 type="button"
                 className={styles.liquidCta}
-                onClick={() => onSubmit(planId)}
-                disabled={isLoading}
+                onClick={() => onOpenCheckout(planId)}
               >
                 <span className={styles.liquidCtaShimmer} aria-hidden />
                 <span className={styles.liquidCtaLabel}>{TP5_CTA_LABEL[planId]}</span>
               </button>
-              {planId === "premium" ? (
-                <p className={styles.featureFootnote}>{TP5_DEALER_FOOTNOTE}</p>
-              ) : null}
             </div>
           </article>
         );

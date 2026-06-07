@@ -5,6 +5,7 @@ import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
+import { TestPricing5DesktopCheckoutModal } from "@/components/test-pricing-5/TestPricing5DesktopCheckoutModal";
 import { TestPricing5DesktopPricingGrid } from "@/components/test-pricing-5/TestPricing5DesktopPricingGrid";
 import {
   getTp5ActiveBlockCount,
@@ -43,12 +44,6 @@ import {
 
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 const ROW_SPRING = { type: "spring" as const, stiffness: 480, damping: 34, mass: 0.62 };
-
-const EMPTY_DESKTOP_FIELDS: Record<TestPricingPlanId, { vin: string; listingUrl: string }> = {
-  mini: { vin: "", listingUrl: "" },
-  plus: { vin: "", listingUrl: "" },
-  premium: { vin: "", listingUrl: "" },
-};
 
 type ActiveRowEntry = { row: Tp5DisplayRow; blockId: Tp5BlockId };
 
@@ -156,14 +151,12 @@ export function TestPricing5Hero() {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const [desktopFields, setDesktopFields] = useState(EMPTY_DESKTOP_FIELDS);
-  const [desktopErrors, setDesktopErrors] = useState<
-    Partial<Record<TestPricingPlanId, Tp5InlineFieldErrors>>
-  >({});
-  const [desktopGlobalErrors, setDesktopGlobalErrors] = useState<
-    Partial<Record<TestPricingPlanId, string>>
-  >({});
-  const [desktopLoadingPlanId, setDesktopLoadingPlanId] = useState<TestPricingPlanId | null>(null);
+  const [desktopModalPlanId, setDesktopModalPlanId] = useState<TestPricingPlanId | null>(null);
+  const [modalVin, setModalVin] = useState("");
+  const [modalListingUrl, setModalListingUrl] = useState("");
+  const [modalErrors, setModalErrors] = useState<Tp5InlineFieldErrors>({});
+  const [modalGlobalError, setModalGlobalError] = useState<string | null>(null);
+  const [modalLoading, setModalLoading] = useState(false);
 
   const { onSwipeAreaTouchStart, onSwipeAreaTouchEnd } = useTestPricingTierSwipe(
     selectedId,
@@ -227,18 +220,31 @@ export function TestPricing5Hero() {
     }
   }, [listingUrl, selectedId, vin]);
 
-  const submitDesktopCheckout = useCallback(async (planId: TestPricingPlanId) => {
-    const { vin: tierVin, listingUrl: tierListingUrl } = desktopFields[planId];
-    setDesktopGlobalErrors((prev) => ({ ...prev, [planId]: undefined }));
-    const validation = validateTp5InlineFields(tierListingUrl, tierVin);
+  const openDesktopModal = useCallback((planId: TestPricingPlanId) => {
+    setDesktopModalPlanId(planId);
+    setModalErrors({});
+    setModalGlobalError(null);
+  }, []);
+
+  const closeDesktopModal = useCallback(() => {
+    setDesktopModalPlanId(null);
+    setModalErrors({});
+    setModalGlobalError(null);
+  }, []);
+
+  const submitDesktopCheckout = useCallback(async () => {
+    if (!desktopModalPlanId) return;
+    const planId = desktopModalPlanId;
+    setModalGlobalError(null);
+    const validation = validateTp5InlineFields(modalListingUrl, modalVin);
     if (!validation.ok) {
-      setDesktopErrors((prev) => ({ ...prev, [planId]: validation.errors }));
+      setModalErrors(validation.errors);
       const first = validation.errors.listingUrl ?? validation.errors.vin;
-      if (first) setDesktopGlobalErrors((prev) => ({ ...prev, [planId]: first }));
+      if (first) setModalGlobalError(first);
       return;
     }
-    setDesktopErrors((prev) => ({ ...prev, [planId]: {} }));
-    setDesktopLoadingPlanId(planId);
+    setModalErrors({});
+    setModalLoading(true);
     try {
       const res = await fetch("/api/checkout/test-pricing", {
         method: "POST",
@@ -246,8 +252,8 @@ export function TestPricing5Hero() {
         body: JSON.stringify({
           planId,
           locale: "lv",
-          listingUrl: tierListingUrl.trim(),
-          vin: normalizeVin(tierVin),
+          listingUrl: modalListingUrl.trim(),
+          vin: normalizeVin(modalVin),
           withdrawalConsent: true,
           sourcePage: TP5_INLINE_CHECKOUT_SOURCE,
         }),
@@ -262,14 +268,11 @@ export function TestPricing5Hero() {
       }
       window.location.href = data.url;
     } catch (e) {
-      setDesktopGlobalErrors((prev) => ({
-        ...prev,
-        [planId]: e instanceof Error ? e.message : "Neizdevās sākt maksājumu.",
-      }));
+      setModalGlobalError(e instanceof Error ? e.message : "Neizdevās sākt maksājumu.");
     } finally {
-      setDesktopLoadingPlanId(null);
+      setModalLoading(false);
     }
-  }, [desktopFields]);
+  }, [desktopModalPlanId, modalListingUrl, modalVin]);
 
   const stopSwipePropagation = (event: SyntheticEvent) => {
     event.stopPropagation();
@@ -440,7 +443,7 @@ export function TestPricing5Hero() {
         <header className="lg:max-w-7xl lg:mx-auto lg:px-8 lg:pt-16 lg:text-center">
           <h1
             id="tp5-hero-title-desktop"
-            className="lg:text-4xl lg:font-bold lg:leading-[1.15] lg:text-white"
+            className="lg:text-5xl lg:font-bold lg:leading-[1.15] lg:text-white"
           >
             {TP5_HERO_TITLE_PREFIX}
             <span className="text-[#2563EB]">{TP5_HERO_TITLE_ACCENT}</span>
@@ -450,23 +453,25 @@ export function TestPricing5Hero() {
           </p>
         </header>
 
-        <TestPricing5DesktopPricingGrid
-          fields={desktopFields}
-          errors={desktopErrors}
-          globalErrors={desktopGlobalErrors}
-          loadingPlanId={desktopLoadingPlanId}
-          onVinChange={(planId, value) =>
-            setDesktopFields((prev) => ({
-              ...prev,
-              [planId]: { ...prev[planId], vin: value },
-            }))
-          }
-          onListingUrlChange={(planId, value) =>
-            setDesktopFields((prev) => ({
-              ...prev,
-              [planId]: { ...prev[planId], listingUrl: value },
-            }))
-          }
+        <TestPricing5DesktopPricingGrid onOpenCheckout={openDesktopModal} />
+
+        <p
+          className={`${styles.featureFootnote} lg:mx-auto lg:mt-8 lg:max-w-2xl lg:px-8 lg:text-center`}
+        >
+          {TP5_DEALER_FOOTNOTE}
+        </p>
+
+        <TestPricing5DesktopCheckoutModal
+          planId={desktopModalPlanId}
+          open={desktopModalPlanId !== null}
+          vin={modalVin}
+          listingUrl={modalListingUrl}
+          errors={modalErrors}
+          globalError={modalGlobalError}
+          loading={modalLoading}
+          onClose={closeDesktopModal}
+          onVinChange={setModalVin}
+          onListingUrlChange={setModalListingUrl}
           onSubmit={submitDesktopCheckout}
         />
       </div>
