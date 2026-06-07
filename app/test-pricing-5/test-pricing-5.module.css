@@ -441,7 +441,7 @@
   padding-bottom: 1.5rem;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 768px) and (max-width: 1023.98px) {
   .heroInner {
     padding:
       clamp(1rem, 3vw, 2rem)
@@ -471,7 +471,9 @@
     overflow: visible;
     max-width: 36rem;
   }
+}
 
+@media (min-width: 768px) {
   .spatialCard {
     border-radius: 20px;
     padding: clamp(0.85rem, 2.8vw, 1.25rem);
@@ -543,6 +545,40 @@
 
   .ctaWrap {
     margin-top: 0.85rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .heroTitle {
+    margin: 0 0 0.75rem;
+    font-size: clamp(4.5rem, 10vmin, 13.5rem);
+    line-height: 1.02;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #fff;
+  }
+
+  .heroSubhead {
+    margin: 2.5rem 0 0;
+    font-size: clamp(1.75rem, 3.2vw, 3rem);
+    line-height: 1.35;
+    font-weight: 450;
+    color: rgb(209 213 219 / 0.92);
+    -webkit-line-clamp: unset;
+    display: block;
+    overflow: visible;
+    max-width: 42rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .heroTitle {
+    font-size: clamp(5rem, 11vmin, 15.75rem);
+  }
+
+  .heroSubhead {
+    font-size: clamp(2rem, 3.5vw, 3.5rem);
+    max-width: 48rem;
   }
 }
 
