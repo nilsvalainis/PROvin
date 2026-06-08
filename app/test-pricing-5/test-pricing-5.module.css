@@ -13,10 +13,10 @@
   display: flex;
   flex-direction: column;
   color: rgb(245 248 252 / 0.96);
-  background-color: #0a0a0a;
+  background-color: #0d0d0d;
   background-image:
-    radial-gradient(ellipse 130% 72% at 50% -6%, rgb(255 255 255 / 0.038) 0%, transparent 54%),
-    linear-gradient(180deg, #121212 0%, #0d0d0d 16%, #080808 38%, #040404 62%, #000000 100%);
+    radial-gradient(ellipse 130% 72% at 50% -6%, rgb(255 255 255 / 0.048) 0%, transparent 54%),
+    linear-gradient(180deg, #171717 0%, #121212 16%, #080808 38%, #040404 62%, #000000 100%);
   background-repeat: no-repeat;
   background-attachment: fixed, fixed;
 }
