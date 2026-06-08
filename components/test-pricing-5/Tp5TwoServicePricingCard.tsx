@@ -18,7 +18,7 @@ const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 const FEATURE_MARK_CLASS =
   "inline-flex h-6 w-6 shrink-0 items-center justify-center text-[0.98rem] font-bold leading-none";
 
-function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
+function FeatureRow({ feature }: { feature: Tp5MobileFeature }) {
   if (feature.included) {
     return (
       <li className={styles.featureRow}>
@@ -40,7 +40,7 @@ function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
   );
 }
 
-type Tp5MobilePricingCardProps = {
+type Tp5TwoServicePricingCardProps = {
   activeServiceId: Tp5MobileServiceId;
   setActiveServiceId: (id: Tp5MobileServiceId) => void;
   vin: string;
@@ -51,12 +51,15 @@ type Tp5MobilePricingCardProps = {
   onVinChange: (value: string) => void;
   onListingUrlChange: (value: string) => void;
   onSubmit: () => void;
-  onSwipeAreaTouchStart: (event: TouchEvent) => void;
-  onSwipeAreaTouchEnd: (event: TouchEvent) => void;
-  stopSwipePropagation: (event: SyntheticEvent) => void;
+  tabLayoutGroupId?: string;
+  tabPillLayoutId?: string;
+  tierMetaDescClassName?: string;
+  onSwipeAreaTouchStart?: (event: TouchEvent) => void;
+  onSwipeAreaTouchEnd?: (event: TouchEvent) => void;
+  stopSwipePropagation?: (event: SyntheticEvent) => void;
 };
 
-export function Tp5MobilePricingCard({
+export function Tp5TwoServicePricingCard({
   activeServiceId,
   setActiveServiceId,
   vin,
@@ -67,16 +70,19 @@ export function Tp5MobilePricingCard({
   onVinChange,
   onListingUrlChange,
   onSubmit,
+  tabLayoutGroupId = "tp5-tabs",
+  tabPillLayoutId = "tp5-tab-pill",
+  tierMetaDescClassName,
   onSwipeAreaTouchStart,
   onSwipeAreaTouchEnd,
   stopSwipePropagation,
-}: Tp5MobilePricingCardProps) {
+}: Tp5TwoServicePricingCardProps) {
   const activeService = getTp5MobileService(activeServiceId);
 
   return (
     <article className={`${styles.spatialCard} w-full`}>
       <div className={styles.cardHeader}>
-        <LayoutGroup id="tp5-tabs-mobile">
+        <LayoutGroup id={tabLayoutGroupId}>
           <div
             className={`${styles.tierSwitcher} ${styles.tierSwitcherTwo}`}
             role="tablist"
@@ -96,7 +102,7 @@ export function Tp5MobilePricingCard({
                 >
                   {active ? (
                     <motion.span
-                      layoutId="tp5-tab-pill-mobile"
+                      layoutId={tabPillLayoutId}
                       className={styles.tierTabPill}
                       transition={TAB_TRANSITION}
                       aria-hidden
@@ -115,7 +121,7 @@ export function Tp5MobilePricingCard({
 
         <div className={styles.tierMeta} aria-live="polite">
           <p className={styles.tierMetaTitle}>{activeService.title}</p>
-          <p className={styles.tierMetaDesc}>{activeService.description}</p>
+          <p className={tierMetaDescClassName ?? styles.tierMetaDesc}>{activeService.description}</p>
         </div>
       </div>
 
@@ -127,7 +133,7 @@ export function Tp5MobilePricingCard({
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
           <ul className={styles.featureList}>
             {activeService.features.map((feature) => (
-              <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
+              <FeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
             ))}
           </ul>
         </div>
@@ -179,3 +185,6 @@ export function Tp5MobilePricingCard({
     </article>
   );
 }
+
+/** @deprecated Use Tp5TwoServicePricingCard */
+export const Tp5MobilePricingCard = Tp5TwoServicePricingCard;
