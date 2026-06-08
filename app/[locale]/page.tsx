@@ -6,6 +6,7 @@ import { HomeServiceComparisonSelect } from "@/components/home/HomeServiceCompar
 import { IrissSection } from "@/components/IrissSection";
 import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
+import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 
 const HomePricingHero = dynamic(() => import("@/components/home/HomePricingHero"), {
   loading: () => (
@@ -19,7 +20,7 @@ const HomePricingHero = dynamic(() => import("@/components/home/HomePricingHero"
 
 export default function HomePage() {
   return (
-    <div className={productHeroStyles.demoRoot}>
+    <div className={`${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
       <div className="home-hero-pricing-unified demo-design-dir flex min-h-0 min-w-0 flex-col text-zinc-100">
         <Suspense fallback={null}>
           <HomePricingHero />

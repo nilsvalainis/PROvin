@@ -95,7 +95,7 @@
  */
 /* Hero + „KAS IEKĻAUTS CENĀ?” — viens nepārtraukts fons (tikai ar `.demo-design-dir` uz tā paša čaulas — pārspēj pamattoni) */
 .home-hero-pricing-unified.demo-design-dir {
-  background: #050508;
+  background: transparent;
   box-shadow: none;
 }
 
