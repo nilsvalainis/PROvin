@@ -14,10 +14,10 @@ export type Tp5MobileService = {
 };
 
 const TP5_MOBILE_FEATURE_NAMES = [
-  "Individuāla konsultācija",
   "Sludinājuma un tehnisko risku analīze",
   "EU reģistru pārbaude & TA vēsture",
   "Ieteikumi klātienes apskatei",
+  "Individuāla konsultācija",
   "carVertical integrācija",
   "autoDNA integrācija",
   "Oficiālo dīleru dati*",

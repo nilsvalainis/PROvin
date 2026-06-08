@@ -7,10 +7,10 @@ import {
 } from "@/lib/test-pricing-5-mobile";
 
 const FULL_FEATURE_STACK = [
-  "Individuāla konsultācija",
   "Sludinājuma un tehnisko risku analīze",
   "EU reģistru pārbaude & TA vēsture",
   "Ieteikumi klātienes apskatei",
+  "Individuāla konsultācija",
   "carVertical integrācija",
   "autoDNA integrācija",
   "Oficiālo dīleru dati*",
@@ -34,8 +34,10 @@ describe("test-pricing-5 mobile two-tier model", () => {
     expect(mini.features.map((feature) => feature.name)).toEqual(FULL_FEATURE_STACK);
     expect(mini.features.filter((feature) => feature.included)).toHaveLength(4);
     expect(mini.features.filter((feature) => !feature.included)).toHaveLength(4);
-    expect(mini.features[0]?.name).toBe("Individuāla konsultācija");
+    expect(mini.features[0]?.name).toBe("Sludinājuma un tehnisko risku analīze");
     expect(mini.features[0]?.included).toBe(true);
+    expect(mini.features[3]?.name).toBe("Individuāla konsultācija");
+    expect(mini.features[3]?.included).toBe(true);
     expect(mini.features[4]?.included).toBe(false);
     expect(mini.features[4]?.name).toBe("carVertical integrācija");
     expect(mini.features[7]?.included).toBe(false);

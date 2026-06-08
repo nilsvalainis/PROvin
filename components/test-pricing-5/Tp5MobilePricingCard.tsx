@@ -51,9 +51,12 @@ type Tp5MobilePricingCardProps = {
   onVinChange: (value: string) => void;
   onListingUrlChange: (value: string) => void;
   onSubmit: () => void;
-  onSwipeAreaTouchStart: (event: TouchEvent) => void;
-  onSwipeAreaTouchEnd: (event: TouchEvent) => void;
-  stopSwipePropagation: (event: SyntheticEvent) => void;
+  tabLayoutGroupId?: string;
+  tabPillLayoutId?: string;
+  tierMetaDescClassName?: string;
+  onSwipeAreaTouchStart?: (event: TouchEvent) => void;
+  onSwipeAreaTouchEnd?: (event: TouchEvent) => void;
+  stopSwipePropagation?: (event: SyntheticEvent) => void;
 };
 
 export function Tp5MobilePricingCard({
@@ -67,6 +70,9 @@ export function Tp5MobilePricingCard({
   onVinChange,
   onListingUrlChange,
   onSubmit,
+  tabLayoutGroupId = "tp5-tabs-mobile",
+  tabPillLayoutId = "tp5-tab-pill-mobile",
+  tierMetaDescClassName,
   onSwipeAreaTouchStart,
   onSwipeAreaTouchEnd,
   stopSwipePropagation,
@@ -76,7 +82,7 @@ export function Tp5MobilePricingCard({
   return (
     <article className={`${styles.spatialCard} w-full`}>
       <div className={styles.cardHeader}>
-        <LayoutGroup id="tp5-tabs-mobile">
+        <LayoutGroup id={tabLayoutGroupId}>
           <div
             className={`${styles.tierSwitcher} ${styles.tierSwitcherTwo}`}
             role="tablist"
@@ -96,7 +102,7 @@ export function Tp5MobilePricingCard({
                 >
                   {active ? (
                     <motion.span
-                      layoutId="tp5-tab-pill-mobile"
+                      layoutId={tabPillLayoutId}
                       className={styles.tierTabPill}
                       transition={TAB_TRANSITION}
                       aria-hidden
@@ -115,7 +121,7 @@ export function Tp5MobilePricingCard({
 
         <div className={styles.tierMeta} aria-live="polite">
           <p className={styles.tierMetaTitle}>{activeService.title}</p>
-          <p className={styles.tierMetaDesc}>{activeService.description}</p>
+          <p className={tierMetaDescClassName ?? styles.tierMetaDesc}>{activeService.description}</p>
         </div>
       </div>
 
