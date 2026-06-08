@@ -40,7 +40,7 @@ export function normalizeSitePath(pathname: string | null | undefined): string {
 export function buildSiteRailSections(normalizedPath: string): readonly SiteRailSection[] {
   const bujHref = normalizedPath === "/biezi-jautajumi" ? "/biezi-jautajumi" : "/#biezi-jautajumi";
   /* Secība: Sākums → Audits → Konsultācija → Par mums → BUJ → Kontakti */
-  const pricingHref = isProvinAuditsStandalonePublic() ? "/#cena" : `/#${ORDER_SECTION_ID}`;
+  const pricingHref = isProvinAuditsStandalonePublic() ? "/#cena" : "/#home-hero";
   const out: SiteRailSection[] = [
     { href: "/", labelKey: "sakums" },
     { href: pricingHref, labelKey: "kasIekljauts" },
@@ -61,8 +61,7 @@ export function siteRailActiveFromHash(raw: string): number | null {
   const bujIdx = provin ? 4 : 3;
   const kontaktiIdx = provin ? 5 : 4;
 
-  if (h === "home-hero" || h === "home-intro") return 0;
-  if (h === ORDER_SECTION_ID || h === "order-form") return 0;
+  if (h === "home-hero" || h === "home-intro" || h === ORDER_SECTION_ID || h === "order-form") return 0;
   if (h === "site-content" || h === "cena") return 1;
   if (provin && (h === PROVIN_SELECT_SECTION_ID || h === PROVIN_SELECT_FORM_HASH)) return 2;
   if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) return provin ? 3 : 2;

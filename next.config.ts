@@ -80,6 +80,14 @@ const nextConfig: NextConfig = {
         source: "/test-checkout",
         headers: [...securityHeaders, ...noStoreTestPricing],
       },
+      {
+        source: "/lv",
+        headers: [...securityHeaders, ...noStoreTestPricing],
+      },
+      {
+        source: "/en",
+        headers: [...securityHeaders, ...noStoreTestPricing],
+      },
     ];
   },
 };

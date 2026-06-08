@@ -12,7 +12,7 @@ export function homePath(locale: string): string {
  * Pasūtījuma forma sākumlapā — `Link` no `@/i18n/navigation` (prefiksu pievieno next-intl).
  */
 export function orderSectionHref(): string {
-  return `/#${ORDER_SECTION_ID}`;
+  return "/#home-hero";
 }
 
 /** BUJ sadaļas enkurss mājas lapā — `Link`-drošs ceļš. */

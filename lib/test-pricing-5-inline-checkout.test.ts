@@ -26,6 +26,7 @@ describe("test-pricing-5 inline checkout", () => {
   it("recognizes tp5 checkout sources", () => {
     expect(isTp5CheckoutSource("test-pricing-5")).toBe(true);
     expect(isTp5CheckoutSource("test-checkout")).toBe(true);
+    expect(isTp5CheckoutSource("home-pricing")).toBe(true);
     expect(isTp5CheckoutSource("test-pricing-2")).toBe(false);
   });
 

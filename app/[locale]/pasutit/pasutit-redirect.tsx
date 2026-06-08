@@ -4,7 +4,6 @@ import { useLocale } from "next-intl";
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ORDER_SECTION_ID } from "@/lib/order-section";
 import { homePath } from "@/lib/paths";
 
 export function PasutitRedirect() {
@@ -16,7 +15,7 @@ export function PasutitRedirect() {
     const q = searchParams.get("atcelts") === "1" ? "?atcelts=1" : "";
     const base = homePath(locale);
     const path = base === "/" ? "/" : base;
-    window.location.replace(`${path}${q}#${ORDER_SECTION_ID}`);
+    window.location.replace(`${path}${q}#home-hero`);
   }, [searchParams, locale]);
 
   return (

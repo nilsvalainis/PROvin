@@ -138,7 +138,7 @@ export async function POST(req: Request) {
       : "http://localhost:3000";
 
   const thanksPath = `/${locale}/paldies`;
-  const cancelPath = testPricingCancelPath(sourcePage);
+  const cancelPath = testPricingCancelPath(sourcePage, locale);
 
   const tp5Product = isTp5CheckoutSource(sourcePage)
     ? getTp5StripeCheckoutProduct(plan.id)
@@ -198,9 +198,7 @@ export async function POST(req: Request) {
         ? {
             withdrawal_waiver_ack: "true",
             authorization_ack: "true",
-            ...(sourcePage === TP5_INLINE_CHECKOUT_SOURCE
-              ? { inline_checkout: "true" }
-              : {}),
+            ...(isTp5CheckoutSource(sourcePage) ? { inline_checkout: "true" } : {}),
           }
         : {}),
     },

@@ -3,6 +3,7 @@ import {
   isValidVin,
   normalizeVin,
 } from "@/lib/order-field-validation";
+import { HOME_PRICING_CHECKOUT_SOURCE } from "@/lib/home-pricing-checkout";
 import { TP5_CHECKOUT_SOURCE } from "@/lib/test-pricing-5-checkout-routing";
 import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
 
@@ -14,7 +15,7 @@ export type Tp5StripeCheckoutProduct = {
   amountCents: number;
 };
 
-/** `/test-pricing-5` un `/test-checkout` — vienmēr `price_data` (bez Stripe Catalog ID). */
+/** Sākumlapa, `/test-pricing-5` un `/test-checkout` — vienmēr `price_data` (bez Stripe Catalog ID). */
 export const TP5_STRIPE_CHECKOUT_PRODUCT: Record<
   Extract<TestPricingPlanId, "plus" | "premium">,
   Tp5StripeCheckoutProduct
@@ -33,7 +34,11 @@ export const TP5_STRIPE_CHECKOUT_PRODUCT: Record<
 };
 
 export function isTp5CheckoutSource(sourcePage: string): boolean {
-  return sourcePage === TP5_INLINE_CHECKOUT_SOURCE || sourcePage === TP5_CHECKOUT_SOURCE;
+  return (
+    sourcePage === TP5_INLINE_CHECKOUT_SOURCE ||
+    sourcePage === TP5_CHECKOUT_SOURCE ||
+    sourcePage === HOME_PRICING_CHECKOUT_SOURCE
+  );
 }
 
 export function getTp5StripeCheckoutProduct(
