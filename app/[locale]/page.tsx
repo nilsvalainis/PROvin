@@ -5,7 +5,6 @@ import { HomeServiceComparisonAudit, HomeServiceComparisonSelect } from "@/compo
 import { IrissSection } from "@/components/IrissSection";
 import { isProvinAuditsStandalonePublic } from "@/lib/legacy-standalone-product-routes";
 import { isProvinSelectPublic } from "@/lib/provin-select-flags";
-import { PricingIncluded } from "@/components/PricingIncluded";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 
 const HomeProductHero = dynamic(() => import("@/components/home/HomeProductHero"), {
@@ -25,11 +24,7 @@ export default async function HomePage() {
         <HomeProductHero
           showProvinSelect={isProvinSelectPublic()}
           comparisonContent={
-            isProvinAuditsStandalonePublic() ? (
-              <HomeServiceComparisonAudit />
-            ) : (
-              <PricingIncluded embedded />
-            )
+            isProvinAuditsStandalonePublic() ? <HomeServiceComparisonAudit /> : null
           }
         />
 

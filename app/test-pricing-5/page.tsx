@@ -6,6 +6,8 @@ import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { Footer } from "@/components/Footer";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "PROVIN — testa cenas (v5)",
   robots: { index: false, follow: false },

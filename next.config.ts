@@ -56,10 +56,29 @@ const nextConfig: NextConfig = {
     return [{ source: "/api/webhook/stripe", destination: "/api/webhooks/stripe" }];
   },
   async headers() {
+    const noStoreTestPricing: { key: string; value: string }[] = [
+      {
+        key: "Cache-Control",
+        value: "private, no-cache, no-store, max-age=0, must-revalidate",
+      },
+    ];
+
     return [
       {
         source: "/:path*",
         headers: securityHeaders,
+      },
+      {
+        source: "/test-pricing-5",
+        headers: [...securityHeaders, ...noStoreTestPricing],
+      },
+      {
+        source: "/test-pricing-5/:path*",
+        headers: [...securityHeaders, ...noStoreTestPricing],
+      },
+      {
+        source: "/test-checkout",
+        headers: [...securityHeaders, ...noStoreTestPricing],
       },
     ];
   },

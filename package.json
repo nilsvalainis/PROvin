@@ -8,7 +8,7 @@
     "dev:clean": "npm run clean && npm run dev",
     "dev:turbo": "next dev --turbopack --hostname localhost --port 3040",
     "dev:stable": "CHOKIDAR_USEPOLLING=1 WATCHPACK_POLLING=true next dev --hostname localhost --port 3001",
-    "build": "next build",
+    "build": "rm -rf .next && next build",
     "start": "next start",
     "orders:backup-all": "node scripts/orders-backup-all.mjs --load-env-local",
     "consultation:restore-artis": "node scripts/restore-consultation-artis.mjs",

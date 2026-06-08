@@ -87,7 +87,7 @@ function FeatureTooltip({ label }: { label: string }) {
 
 export function Tp5DesktopFeatureIconRow() {
   return (
-    <div className="hidden w-full lg:block lg:mt-16">
+    <div className={styles.tp5DesktopFeatureRow}>
       <DiagnosticScanLine variant="rail" motion="sweepLtr" className="w-full" />
       <ul
         className="mt-8 flex w-full list-none items-center justify-between gap-1"

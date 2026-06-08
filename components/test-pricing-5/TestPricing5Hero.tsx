@@ -100,7 +100,7 @@ export function TestPricing5Hero() {
       <div className={styles.heroScrim} aria-hidden />
 
       {/* Mobile / tablet — frozen single-card switcher (below lg) */}
-      <div className={`${styles.heroInner} lg:hidden`}>
+      <div className={styles.heroInnerMobile}>
         {cancelled ? (
           <p className={styles.cancelNote}>Maksājums tika atcelts. Vari mēģināt vēlreiz.</p>
         ) : null}
@@ -135,36 +135,25 @@ export function TestPricing5Hero() {
       </div>
 
       {/* Desktop — 2-column asymmetric hero (lg and above) */}
-      <div
-        className={`${styles.heroInner} hidden lg:grid lg:grid-cols-12 lg:items-center lg:gap-16 lg:!max-w-7xl lg:mx-auto lg:px-8 lg:pt-20 lg:pb-12`}
-      >
+      <div className={styles.heroInnerDesktop}>
         {cancelled ? (
-          <p className={`${styles.cancelNote} lg:col-span-12`}>
+          <p className={`${styles.cancelNote} ${styles.cancelNoteDesktop}`}>
             Maksājums tika atcelts. Vari mēģināt vēlreiz.
           </p>
         ) : null}
 
-        <header className={`${styles.heroCopy} lg:col-span-7 lg:mb-0 lg:min-w-0 lg:text-left`}>
-          <h1
-            id="tp5-hero-title-desktop"
-            className={`${styles.heroTitle} lg:!text-5xl lg:!font-extrabold lg:leading-[1.1] lg:tracking-tight lg:text-white xl:!text-6xl`}
-          >
+        <header className={styles.heroCopyDesktop}>
+          <h1 id="tp5-hero-title-desktop" className={styles.heroTitleDesktop}>
             {TP5_HERO_TITLE_PREFIX}
             <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
               {TP5_HERO_TITLE_ACCENT}
             </span>
           </h1>
-          <p
-            className={`${styles.heroSubhead} lg:mt-8 lg:max-w-[46ch] lg:!text-lg lg:leading-relaxed lg:text-gray-300 lg:line-clamp-none lg:overflow-visible lg:block xl:!text-xl`}
-          >
-            {TP5_HERO_SUBHEAD}
-          </p>
+          <p className={styles.heroSubheadDesktop}>{TP5_HERO_SUBHEAD}</p>
           <Tp5DesktopFeatureIconRow />
         </header>
 
-        <div
-          className={`${styles.stage} lg:col-span-5 lg:ml-auto lg:w-[420px] lg:shrink-0 xl:w-[440px]`}
-        >
+        <div className={`${styles.stage} ${styles.heroStageDesktop}`}>
           <Tp5MobilePricingCard
             activeServiceId={desktopActiveId}
             setActiveServiceId={setDesktopActiveId}

@@ -1,4 +1,5 @@
 import { ORDER_SECTION_ID } from "@/lib/order-section";
+import { isProvinAuditsStandalonePublic } from "@/lib/legacy-standalone-product-routes";
 import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 import { PROVIN_SELECT_FORM_HASH, PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
 
@@ -39,9 +40,10 @@ export function normalizeSitePath(pathname: string | null | undefined): string {
 export function buildSiteRailSections(normalizedPath: string): readonly SiteRailSection[] {
   const bujHref = normalizedPath === "/biezi-jautajumi" ? "/biezi-jautajumi" : "/#biezi-jautajumi";
   /* Secība: Sākums → Audits → Konsultācija → Par mums → BUJ → Kontakti */
+  const pricingHref = isProvinAuditsStandalonePublic() ? "/#cena" : `/#${ORDER_SECTION_ID}`;
   const out: SiteRailSection[] = [
     { href: "/", labelKey: "sakums" },
-    { href: "/#cena", labelKey: "kasIekljauts" },
+    { href: pricingHref, labelKey: "kasIekljauts" },
   ];
   if (isProvinSelectPublic()) out.push({ href: `/#${PROVIN_SELECT_SECTION_ID}`, labelKey: "provinSelect" });
   out.push(
