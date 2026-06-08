@@ -16,7 +16,7 @@ import {
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 
 const FEATURE_MARK_CLASS =
-  "inline-flex h-5 w-5 shrink-0 items-center justify-center text-[0.82rem] font-bold leading-none";
+  "inline-flex h-6 w-6 shrink-0 items-center justify-center text-[0.98rem] font-bold leading-none";
 
 function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
   if (feature.included) {

@@ -29,7 +29,7 @@ describe("test-pricing-5 mobile two-tier model", () => {
     const mini = getTp5MobileService("mini");
     expect(mini.title).toBe("PROVIN MINI");
     expect(mini.buttonText).toBe("PASŪTĪT MINI AUDITU — 39,99 €");
-    expect(mini.description).toContain("Latvijā 🇱🇻 ilgāku laiku");
+    expect(mini.description).toContain("Latvijā 🇱🇻 lietotiem auto");
     expect(mini.features).toHaveLength(8);
     expect(mini.features.map((feature) => feature.name)).toEqual(FULL_FEATURE_STACK);
     expect(mini.features.filter((feature) => feature.included)).toHaveLength(4);
