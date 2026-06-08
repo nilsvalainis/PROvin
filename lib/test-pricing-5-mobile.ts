@@ -13,13 +13,24 @@ export type Tp5MobileService = {
   features: Tp5MobileFeature[];
 };
 
-const AUDITS_FEATURE_ROWS: Tp5MobileFeature[] = [
-  { name: "Auto vēstures pārbaude", included: true },
-  { name: "carVertical integrācija", included: true },
-  { name: "autoDNA integrācija", included: true },
-  { name: "Oficiālo dīleru dati*", included: true },
-  { name: "Individuāla konsultācija", included: true },
-];
+const TP5_MOBILE_FEATURE_NAMES = [
+  "Sludinājuma un tehnisko risku analīze",
+  "EU reģistru pārbaude & TA vēsture",
+  "Ieteikumi klātienes apskatei",
+  "carVertical integrācija",
+  "autoDNA integrācija",
+  "Oficiālo dīleru dati*",
+  "Individuāla konsultācija",
+] as const;
+
+const MINI_ACTIVE_FEATURE_COUNT = 3;
+
+function buildTp5MobileFeatures(includedThroughIndex: number): Tp5MobileFeature[] {
+  return TP5_MOBILE_FEATURE_NAMES.map((name, index) => ({
+    name,
+    included: index < includedThroughIndex,
+  }));
+}
 
 /** Mobile `/test-pricing-5` — approved 2-tier product schema. */
 export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
@@ -30,12 +41,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     buttonText: "PASŪTĪT MINI AUDITU — 39,99 €",
     description:
       "Sludinājuma, tehnisko datu un risku analīze. Rekomendējam veikt Latvijā ilgāku laiku reģistrētiem auto.",
-    features: [
-      { name: "Sludinājuma un tehnisko risku analīze", included: true },
-      { name: "EU reģistru pārbaude & TA vēsture", included: true },
-      { name: "Ieteikumi klātienes apskatei", included: true },
-      ...AUDITS_FEATURE_ROWS.map((feature) => ({ ...feature, included: false })),
-    ],
+    features: buildTp5MobileFeatures(MINI_ACTIVE_FEATURE_COUNT),
   },
   {
     id: "audits",
@@ -43,8 +49,8 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     price: "89,99 €",
     buttonText: "PASŪTĪT PROVIN AUDITU — 89,99 €",
     description:
-      "Detalizēta auto vēstures un risku analīze iekļaujot dažādas maksas vēstures atskaites un oficiālo dīleru datus*.",
-    features: AUDITS_FEATURE_ROWS,
+      "Detalizēta auto vēstures un risku analīze iekļaujot dažādas maksas vēstures atskaites un oficiālā dīlera sistēmu datus*.",
+    features: buildTp5MobileFeatures(TP5_MOBILE_FEATURE_NAMES.length),
   },
 ];
 
