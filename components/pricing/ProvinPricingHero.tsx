@@ -109,11 +109,13 @@ export function ProvinPricingHero({
   };
 
   return (
-    <section id={sectionId} className={styles.heroSurface} aria-labelledby={mobileTitleId}>
-      <div className={styles.heroBackdrop} aria-hidden>
-        <HeroVisual />
-      </div>
-      <div className={styles.heroScrim} aria-hidden />
+    <div className={styles.heroPricingShell}>
+      <section id={sectionId} className={styles.heroSurface} aria-labelledby={mobileTitleId}>
+        <div className={styles.heroAmbientGlow} aria-hidden />
+        <div className={styles.heroBackdrop} aria-hidden>
+          <HeroVisual />
+        </div>
+        <div className={styles.heroScrim} aria-hidden />
 
       <div className={styles.heroInnerMobile}>
         {cancelled ? (
@@ -185,6 +187,7 @@ export function ProvinPricingHero({
           />
         </div>
       </div>
-    </section>
+      </section>
+    </div>
   );
 }
