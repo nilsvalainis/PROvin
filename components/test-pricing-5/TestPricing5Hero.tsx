@@ -4,9 +4,9 @@ import { useCallback, useState, type SyntheticEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
+import { Tp5DesktopFeatureIconRow } from "@/components/test-pricing-5/Tp5DesktopFeatureIconRow";
 import { Tp5MobilePricingCard } from "@/components/test-pricing-5/Tp5MobilePricingCard";
 import {
-  TP5_DESKTOP_TRUST_LINE,
   TP5_HERO_SUBHEAD,
   TP5_HERO_TITLE_ACCENT,
   TP5_HERO_TITLE_PREFIX,
@@ -159,9 +159,7 @@ export function TestPricing5Hero() {
           >
             {TP5_HERO_SUBHEAD}
           </p>
-          <p className="lg:mt-16 lg:flex lg:items-center lg:gap-2 lg:border-t lg:border-white/5 lg:pt-8 lg:text-sm lg:font-medium lg:tracking-wide lg:text-gray-500">
-            {TP5_DESKTOP_TRUST_LINE}
-          </p>
+          <Tp5DesktopFeatureIconRow />
         </header>
 
         <div
