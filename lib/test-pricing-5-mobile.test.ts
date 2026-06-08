@@ -29,7 +29,7 @@ describe("test-pricing-5 mobile two-tier model", () => {
     const mini = getTp5MobileService("mini");
     expect(mini.title).toBe("PROVIN MINI");
     expect(mini.buttonText).toBe("PASŪTĪT MINI AUDITU — 39,99 €");
-    expect(mini.description).toContain("ilgāku laiku reģistrētiem auto");
+    expect(mini.description).toContain("Latvijā 🇱🇻 ilgāku laiku");
     expect(mini.features).toHaveLength(8);
     expect(mini.features.map((feature) => feature.name)).toEqual(FULL_FEATURE_STACK);
     expect(mini.features.filter((feature) => feature.included)).toHaveLength(4);
@@ -45,7 +45,7 @@ describe("test-pricing-5 mobile two-tier model", () => {
   it("maps AUDITS to all eight active rows in the full stack", () => {
     const audits = getTp5MobileService("audits");
     expect(audits.title).toBe("PROVIN AUDITS");
-    expect(audits.description).toContain("oficiālā dīlera sistēmu datus");
+    expect(audits.description).toContain("oficiālā dīlera datus");
     expect(audits.buttonText).toBe("PASŪTĪT PROVIN AUDITU — 89,99 €");
     expect(audits.features).toHaveLength(8);
     expect(audits.features.map((feature) => feature.name)).toEqual(FULL_FEATURE_STACK);

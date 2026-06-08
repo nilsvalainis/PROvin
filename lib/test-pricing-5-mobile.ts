@@ -41,7 +41,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     price: "39,99 €",
     buttonText: "PASŪTĪT MINI AUDITU — 39,99 €",
     description:
-      "Sludinājuma, tehnisko datu un risku analīze. Rekomendējam veikt Latvijā ilgāku laiku reģistrētiem auto.",
+      "Sludinājuma, tehnisko datu un risku analīze. Rekomendējam veikt Latvijā 🇱🇻 ilgāku laiku reģistrētiem auto.",
     features: buildTp5MobileFeatures(MINI_ACTIVE_FEATURE_COUNT),
   },
   {
@@ -50,7 +50,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     price: "89,99 €",
     buttonText: "PASŪTĪT PROVIN AUDITU — 89,99 €",
     description:
-      "Detalizēta auto vēstures un risku analīze iekļaujot dažādas maksas vēstures atskaites un oficiālā dīlera sistēmu datus*.",
+      "Detalizēta auto vēstures un risku analīze iekļaujot dažādas maksas vēstures atskaites un oficiālā dīlera datus*.",
     features: buildTp5MobileFeatures(TP5_MOBILE_FEATURE_NAMES.length),
   },
 ];
