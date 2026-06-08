@@ -6,7 +6,7 @@
 /* Sākumlapa: nav pelēkā `body` fona aiz tp5 hero ambienta. */
 html:has(.home-page-canvas-root),
 body:has(.home-page-canvas-root) {
-  background-color: #000;
+  background-color: #0f131e;
   background-image: none;
 }
 
@@ -19,8 +19,11 @@ body:has(.home-page-canvas-root) {
 .home-page-canvas-root #biezi-jautajumi,
 .home-page-canvas-root #kas-ir-iriss,
 .home-page-canvas-root #kontakti,
-.home-page-canvas-root footer {
+.home-page-canvas-root footer,
+.home-page-canvas-root .heroIntroSurface,
+.home-page-canvas-root .heroPricingShell {
   background: transparent !important;
+  background-image: none !important;
   box-shadow: none !important;
 }
 

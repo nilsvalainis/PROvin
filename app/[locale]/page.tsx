@@ -20,29 +20,31 @@ const HomePricingHero = dynamic(() => import("@/components/home/HomePricingHero"
 
 export default function HomePage() {
   return (
-    <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
-      <div className="home-hero-pricing-unified demo-design-dir flex min-h-0 min-w-0 flex-col text-zinc-100">
+    <div
+      className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas} min-h-full bg-gradient-to-b from-[#0F131E] via-[#090C13] to-[#000000]`}
+    >
+      <div className="home-hero-pricing-unified demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
         <Suspense fallback={null}>
           <HomePricingHero />
         </Suspense>
 
         <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink scroll-mt-14">
           {isProvinSelectPublic() ? (
-            <section className="demo-design-dir__section pt-16 pb-12 sm:pt-20 sm:pb-16 md:pt-24 md:pb-20">
+            <section className="demo-design-dir__section bg-transparent pt-16 pb-12 sm:pt-20 sm:pb-16 md:pt-24 md:pb-20">
               <div className="demo-design-dir__shell">
                 <HomeServiceComparisonSelect />
               </div>
             </section>
           ) : null}
 
-          <section className="demo-design-dir__section pt-16 pb-12 sm:pt-20 sm:pb-16 md:pt-24 md:pb-20">
+          <section className="demo-design-dir__section bg-transparent pt-16 pb-12 sm:pt-20 sm:pb-16 md:pt-24 md:pb-20">
             <div className="demo-design-dir__shell">
               <IrissSection editorialColumn />
             </div>
           </section>
           <HomeFaqSection />
 
-          <section className="demo-design-dir__section pb-0">
+          <section className="demo-design-dir__section bg-transparent pb-0">
             <Footer />
           </section>
         </div>
