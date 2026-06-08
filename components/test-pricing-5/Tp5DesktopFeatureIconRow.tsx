@@ -52,18 +52,12 @@ function FeatureIconGlyph({ icon }: { icon: Tp5DesktopHeroFeatureIcon }) {
 
 function FeatureTooltip({ label }: { label: string }) {
   return (
-    <div
+    <span
       role="tooltip"
-      className="pointer-events-none absolute bottom-[calc(100%+0.65rem)] left-1/2 z-20 w-max max-w-[14rem] -translate-x-1/2 translate-y-1 opacity-0 transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
+      className="pointer-events-none absolute bottom-[calc(100%+0.55rem)] left-1/2 z-20 w-max max-w-[14rem] -translate-x-1/2 translate-y-1 text-center text-xs font-medium tracking-wide text-zinc-300 opacity-0 transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
     >
-      <div className="rounded-xl border border-white/10 bg-slate-950/90 px-4 py-2 text-center text-sm font-medium text-white shadow-2xl backdrop-blur-md">
-        {label}
-      </div>
-      <span
-        className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border-b border-r border-white/10 bg-slate-950/90"
-        aria-hidden
-      />
-    </div>
+      {label}
+    </span>
   );
 }
 
