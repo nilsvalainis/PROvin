@@ -1,20 +1,19 @@
 /* /test-pricing-5 — liquid accent feature stack */
 
-.pageRoot {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  color: rgb(245 248 252 / 0.96);
-  background: #070809;
-}
-
-/* Sākumlapas čaula — hero fons definē `.heroPricingShell` (tp5 koncepts). */
+.pageRoot,
 .homePageCanvas {
+  position: relative;
+  isolation: isolate;
   min-width: 0;
   display: flex;
   flex-direction: column;
   color: rgb(245 248 252 / 0.96);
   background-color: #070809;
+  background-image:
+    radial-gradient(ellipse 120% 85% at 14% 16%, rgb(37 99 235 / 0.2) 0%, transparent 54%),
+    radial-gradient(ellipse 95% 72% at 86% 20%, rgb(59 130 246 / 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse 110% 65% at 50% 108%, rgb(15 23 42 / 0.55) 0%, transparent 58%),
+    linear-gradient(180deg, rgb(6 10 18) 0%, #070809 46%, rgb(5 8 14) 100%);
 }
 
 /* Zem hero: pakāpeniski tumšāks fons līdz kājenei (iepriekšējās sākumlapas princips). */
@@ -43,9 +42,9 @@
   color: rgb(250 250 252 / 0.98);
   background-color: #070809;
   background-image:
-    radial-gradient(ellipse 120% 85% at 14% 16%, rgb(37 99 235 / 0.16) 0%, transparent 54%),
-    radial-gradient(ellipse 95% 72% at 86% 20%, rgb(59 130 246 / 0.12) 0%, transparent 50%),
-    radial-gradient(ellipse 110% 65% at 50% 108%, rgb(15 23 42 / 0.62) 0%, transparent 58%),
+    radial-gradient(ellipse 120% 85% at 14% 16%, rgb(37 99 235 / 0.2) 0%, transparent 54%),
+    radial-gradient(ellipse 95% 72% at 86% 20%, rgb(59 130 246 / 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse 110% 65% at 50% 108%, rgb(15 23 42 / 0.55) 0%, transparent 58%),
     linear-gradient(180deg, rgb(6 10 18) 0%, #070809 46%, rgb(5 8 14) 100%);
 }
 
@@ -55,10 +54,10 @@
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(ellipse 72% 48% at 78% 34%, rgb(37 99 235 / 0.2) 0%, transparent 58%),
-    radial-gradient(ellipse 58% 42% at 18% 58%, rgb(96 165 250 / 0.1) 0%, transparent 56%),
-    radial-gradient(ellipse 90% 40% at 50% -8%, rgb(255 255 255 / 0.05) 0%, transparent 62%);
-  opacity: 0.95;
+    radial-gradient(ellipse 72% 48% at 78% 34%, rgb(37 99 235 / 0.26) 0%, transparent 58%),
+    radial-gradient(ellipse 58% 42% at 18% 58%, rgb(96 165 250 / 0.14) 0%, transparent 56%),
+    radial-gradient(ellipse 90% 40% at 50% -8%, rgb(255 255 255 / 0.06) 0%, transparent 62%);
+  opacity: 1;
 }
 
 .heroSurface {
@@ -66,12 +65,18 @@
   overflow-x: clip;
 }
 
+@media (min-width: 1024px) {
+  .heroSurface {
+    overflow: visible;
+  }
+}
+
 .heroBackdrop {
   pointer-events: none;
   position: absolute;
   inset: 0;
   z-index: 1;
-  opacity: 0.48;
+  opacity: 0.52;
 }
 
 .heroScrim {
@@ -80,9 +85,10 @@
   inset: 0;
   z-index: 2;
   background:
-    radial-gradient(120% 80% at 50% -10%, rgb(96 165 250 / 0.09), transparent 55%),
-    radial-gradient(ellipse 85% 55% at 72% 28%, rgb(37 99 235 / 0.07) 0%, transparent 60%),
-    linear-gradient(180deg, rgb(7 8 9 / 0.42) 0%, rgb(7 8 9 / 0.86) 48%, rgb(7 8 9 / 0.96) 100%);
+    radial-gradient(ellipse 105% 75% at 24% 30%, rgb(37 99 235 / 0.14) 0%, transparent 58%),
+    radial-gradient(ellipse 92% 68% at 78% 28%, rgb(59 130 246 / 0.12) 0%, transparent 56%),
+    radial-gradient(120% 80% at 50% -10%, rgb(96 165 250 / 0.1), transparent 55%),
+    linear-gradient(180deg, rgb(7 8 9 / 0.14) 0%, rgb(7 8 9 / 0.34) 55%, rgb(7 8 9 / 0.52) 100%);
 }
 
 /* Sākumlapa: peldošais headeris — mobilajā atstarpes augšā (lg+ jau ir `.heroInnerDesktop`). */
@@ -93,6 +99,14 @@
 @media (min-width: 1024px) {
   .homePageCanvas .heroSurface {
     padding-top: 0;
+  }
+
+  /* Peldošais headeris ārpus `<main>` — hero fons stiepjas zem navigācijas. */
+  .homePageCanvas .heroPricingShell {
+    margin-top: calc(-1 * (env(safe-area-inset-top, 0px) + 2.75rem));
+    padding-top: calc(env(safe-area-inset-top, 0px) + 2.75rem);
+    min-height: 100vh;
+    min-height: 100dvh;
   }
 }
 

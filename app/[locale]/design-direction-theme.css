@@ -2,6 +2,14 @@
  * Layout / stila virziens — `.demo-design-dir` sakne (klases nosaukums vēsturisks).
  * Importēts `app/[locale]/layout.tsx` (sākumlapa un pārējās sadaļas).
  */
+
+/* Sākumlapa: nav pelēkā `body` fona aiz tp5 hero ambienta. */
+html:has(.home-page-canvas-root),
+body:has(.home-page-canvas-root) {
+  background-color: #070809;
+  background-image: none;
+}
+
 .demo-design-dir {
   --dd-max: 72rem;
   --dd-pad: clamp(1rem, 3vw, 1.75rem);
