@@ -8,44 +8,32 @@
   display: flex;
   flex-direction: column;
   color: rgb(245 248 252 / 0.96);
-  background-color: #070809;
-  background-image:
-    radial-gradient(ellipse 120% 85% at 14% 16%, rgb(37 99 235 / 0.2) 0%, transparent 54%),
-    radial-gradient(ellipse 95% 72% at 86% 20%, rgb(59 130 246 / 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse 110% 65% at 50% 108%, rgb(15 23 42 / 0.55) 0%, transparent 58%),
-    linear-gradient(180deg, rgb(6 10 18) 0%, #070809 46%, rgb(5 8 14) 100%);
+  background-color: #0b0f19;
 }
 
-/* Zem hero: pakāpeniski tumšāks fons līdz kājenei (iepriekšējās sākumlapas princips). */
+/* Zem hero: obsidiāns → tīrs melns pie kājenes. */
 .pageCanvasTail {
   position: relative;
-  background-color: #030304;
-  background-image:
-    radial-gradient(ellipse 85% 55% at 18% 0%, rgb(96 165 250 / 0.06) 0%, transparent 52%),
-    radial-gradient(ellipse 72% 48% at 82% 8%, rgb(37 99 235 / 0.05) 0%, transparent 50%),
-    linear-gradient(
-      180deg,
-      #070809 0%,
-      rgb(7 8 9) 10%,
-      rgb(6 7 9) 28%,
-      rgb(5 5 7) 52%,
-      rgb(4 4 5) 74%,
-      rgb(3 3 4) 92%,
-      #030304 100%
-    );
+  background-color: #000;
+  background-image: linear-gradient(
+    180deg,
+    #0b0f19 0%,
+    rgb(6 8 14) 14%,
+    rgb(3 4 7) 38%,
+    rgb(1 1 2) 68%,
+    #000 100%
+  );
 }
 
-/* Koplietots sākumlapai un /test-pricing-5 — premium ambient fons. */
+/* Koplietots sākumlapai un /test-pricing-5 — dziļš obsidiāns + lokalizēts zilais mirdzējums. */
 .heroPricingShell {
   position: relative;
   isolation: isolate;
   color: rgb(250 250 252 / 0.98);
-  background-color: #070809;
+  background-color: #0b0f19;
   background-image:
-    radial-gradient(ellipse 120% 85% at 14% 16%, rgb(37 99 235 / 0.2) 0%, transparent 54%),
-    radial-gradient(ellipse 95% 72% at 86% 20%, rgb(59 130 246 / 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse 110% 65% at 50% 108%, rgb(15 23 42 / 0.55) 0%, transparent 58%),
-    linear-gradient(180deg, rgb(6 10 18) 0%, #070809 46%, rgb(5 8 14) 100%);
+    radial-gradient(circle at 20% 30%, rgb(37 99 235 / 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 76% 34%, rgb(67 56 202 / 0.09) 0%, transparent 46%);
 }
 
 .heroAmbientGlow {
@@ -54,9 +42,8 @@
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(ellipse 72% 48% at 78% 34%, rgb(37 99 235 / 0.26) 0%, transparent 58%),
-    radial-gradient(ellipse 58% 42% at 18% 58%, rgb(96 165 250 / 0.14) 0%, transparent 56%),
-    radial-gradient(ellipse 90% 40% at 50% -8%, rgb(255 255 255 / 0.06) 0%, transparent 62%);
+    radial-gradient(circle at 22% 32%, rgb(37 99 235 / 0.14) 0%, transparent 48%),
+    radial-gradient(circle at 24% 48%, rgb(79 70 229 / 0.08) 0%, transparent 44%);
   opacity: 1;
 }
 
@@ -76,7 +63,7 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-  opacity: 0.52;
+  opacity: 0.22;
 }
 
 .heroScrim {
@@ -84,11 +71,7 @@
   position: absolute;
   inset: 0;
   z-index: 2;
-  background:
-    radial-gradient(ellipse 105% 75% at 24% 30%, rgb(37 99 235 / 0.14) 0%, transparent 58%),
-    radial-gradient(ellipse 92% 68% at 78% 28%, rgb(59 130 246 / 0.12) 0%, transparent 56%),
-    radial-gradient(120% 80% at 50% -10%, rgb(96 165 250 / 0.1), transparent 55%),
-    linear-gradient(180deg, rgb(7 8 9 / 0.14) 0%, rgb(7 8 9 / 0.34) 55%, rgb(7 8 9 / 0.52) 100%);
+  background: radial-gradient(circle at 20% 28%, rgb(37 99 235 / 0.1) 0%, transparent 50%);
 }
 
 /* Sākumlapa: peldošais headeris — mobilajā atstarpes augšā (lg+ jau ir `.heroInnerDesktop`). */
