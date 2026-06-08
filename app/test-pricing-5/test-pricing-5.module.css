@@ -646,3 +646,106 @@ html[data-site-theme="light"] .inlineInput:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgb(37 99 235 / 0.18);
 }
+
+/* tp5 desktop hero — carVertical & autoDNA idle premium pulse (lg+ icon row) */
+
+@keyframes tp5BrandRingIdleCarVertical {
+  0%,
+  100% {
+    border-color: rgb(255 255 255 / 0.1);
+    color: rgb(107 114 128);
+    box-shadow: none;
+    opacity: 0.6;
+  }
+  50% {
+    border-color: rgb(37 99 235 / 0.38);
+    color: rgb(96 165 250 / 0.9);
+    box-shadow: 0 0 15px rgb(37 99 235 / 0.12);
+    opacity: 0.82;
+  }
+}
+
+@keyframes tp5BrandRingIdleAutoDna {
+  0%,
+  100% {
+    border-color: rgb(255 255 255 / 0.1);
+    color: rgb(107 114 128);
+    box-shadow: none;
+    opacity: 0.6;
+  }
+  50% {
+    border-color: rgb(249 115 22 / 0.38);
+    color: rgb(251 146 60 / 0.92);
+    box-shadow: 0 0 15px rgb(249 115 22 / 0.12);
+    opacity: 0.82;
+  }
+}
+
+@keyframes tp5BrandLogoIdleCarVertical {
+  0%,
+  100% {
+    opacity: 0.6;
+    filter: grayscale(1) saturate(0.85);
+  }
+  50% {
+    opacity: 0.88;
+    filter: grayscale(0.25) saturate(1.35) brightness(1.05);
+  }
+}
+
+@keyframes tp5BrandLogoIdleAutoDna {
+  0%,
+  100% {
+    opacity: 0.6;
+    filter: grayscale(1) saturate(0.85);
+  }
+  50% {
+    opacity: 0.9;
+    filter: grayscale(0.2) saturate(1.45) sepia(0.15);
+  }
+}
+
+.brandIconIdleCarVertical:not(:hover):not(:focus-visible) {
+  animation: tp5BrandRingIdleCarVertical 3s ease-in-out infinite;
+}
+
+.brandIconIdleAutoDna:not(:hover):not(:focus-visible) {
+  animation: tp5BrandRingIdleAutoDna 3s ease-in-out infinite;
+}
+
+.brandIconIdleCarVertical:hover,
+.brandIconIdleCarVertical:focus-visible {
+  animation: none;
+}
+
+.brandIconIdleAutoDna:hover,
+.brandIconIdleAutoDna:focus-visible {
+  animation: none;
+}
+
+.brandLogoIdleCarVertical {
+  transition:
+    opacity 0.3s ease,
+    filter 0.3s ease;
+}
+
+.brandLogoIdleAutoDna {
+  transition:
+    opacity 0.3s ease,
+    filter 0.3s ease;
+}
+
+.brandIconIdleCarVertical:not(:hover):not(:focus-visible) .brandLogoIdleCarVertical {
+  animation: tp5BrandLogoIdleCarVertical 3s ease-in-out infinite;
+}
+
+.brandIconIdleAutoDna:not(:hover):not(:focus-visible) .brandLogoIdleAutoDna {
+  animation: tp5BrandLogoIdleAutoDna 3s ease-in-out infinite;
+}
+
+.brandIconIdleCarVertical:hover .brandLogoIdleCarVertical,
+.brandIconIdleCarVertical:focus-visible .brandLogoIdleCarVertical,
+.brandIconIdleAutoDna:hover .brandLogoIdleAutoDna,
+.brandIconIdleAutoDna:focus-visible .brandLogoIdleAutoDna {
+  animation: none;
+}
