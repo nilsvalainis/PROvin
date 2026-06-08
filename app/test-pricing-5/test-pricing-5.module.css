@@ -1,17 +1,10 @@
 /* /test-pricing-5 — liquid accent feature stack */
 
-.pageRoot {
-  position: relative;
-  isolation: isolate;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  color: rgb(245 248 252 / 0.96);
-  background-color: #141414;
-  background-image: linear-gradient(180deg, #141414 0%, #0a0a0a 50%, #000000 100%);
-}
-
-/* Sākumlapa: struktūra — fona gradients definēts Tailwind uz `.home-page-canvas-root`. */
+/*
+ * Vienots tp5 + sākumlapas master canvas — neitrāls charcoal → melns.
+ * Smalks augšējais radial (tikai balts α) dod premium dziļumu bez zila piejaukuma.
+ */
+.pageRoot,
 .homePageCanvas {
   position: relative;
   isolation: isolate;
@@ -20,6 +13,16 @@
   display: flex;
   flex-direction: column;
   color: rgb(245 248 252 / 0.96);
+  background-color: #0a0a0a;
+  background-image:
+    radial-gradient(ellipse 130% 72% at 50% -6%, rgb(255 255 255 / 0.038) 0%, transparent 54%),
+    linear-gradient(180deg, #121212 0%, #0d0d0d 16%, #080808 38%, #040404 62%, #000000 100%);
+  background-repeat: no-repeat;
+  background-attachment: fixed, fixed;
+}
+
+.homePageCanvas {
+  min-height: 100dvh;
 }
 
 .pageCanvasTail {

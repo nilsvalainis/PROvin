@@ -6,7 +6,7 @@
 /* Sākumlapa: nav pelēkā `body` fona aiz tp5 hero ambienta. */
 html:has(.home-page-canvas-root),
 body:has(.home-page-canvas-root) {
-  background-color: #000000;
+  background-color: #0a0a0a;
   background-image: none !important;
 }
 
