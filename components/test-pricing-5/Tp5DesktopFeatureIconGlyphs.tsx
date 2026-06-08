@@ -1,6 +1,9 @@
+import Image from "next/image";
 import type { Tp5DesktopHeroFeatureIcon } from "@/lib/test-pricing-5-desktop-hero-features";
 
 const GLYPH_CLASS = "h-6 w-6 shrink-0";
+const BRAND_LOGO_CLASS =
+  "h-6 w-6 shrink-0 object-contain opacity-60 grayscale transition-all duration-300 group-hover:opacity-100 group-hover:grayscale-0";
 
 type GlyphProps = { className?: string };
 
@@ -63,29 +66,29 @@ function IconInspectionTips({ className = GLYPH_CLASS }: GlyphProps) {
   );
 }
 
-/** Monochrome carVertical c + v monogram (brand silhouette). */
-function IconCarVertical({ className = GLYPH_CLASS }: GlyphProps) {
+function IconCarVertical() {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M6.2 8.4c0-2.4 1.9-4.3 4.2-4.3 1.5 0 2.8.8 3.5 2-.2 1.6-1 3-2.2 3.9-1.5 1.1-3.3 1.7-5.1 1.7-.3 0-.4-.2-.4-.3z" />
-      <path
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2.1"
-        d="M11.8 11.2 14.2 13.8 20.2 6.8"
-      />
-    </svg>
+    <Image
+      src="/brand/carvertical-logo.png"
+      alt=""
+      width={24}
+      height={24}
+      className={BRAND_LOGO_CLASS}
+      aria-hidden
+    />
   );
 }
 
-/** Monochrome autoDNA stylized italic “a”. */
-function IconAutoDna({ className = GLYPH_CLASS }: GlyphProps) {
+function IconAutoDna() {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M13.8 17.2h-2.1l-.55-1.45H8.1l-.55 1.45H5.5l3.65-9.4h2.5l3.65 9.4zm-4.35-3.35h1.7l-.85-2.25-.85 2.25z" />
-    </svg>
+    <Image
+      src="/brand/autodna-logo.png"
+      alt=""
+      width={24}
+      height={24}
+      className={BRAND_LOGO_CLASS}
+      aria-hidden
+    />
   );
 }
 
@@ -131,9 +134,9 @@ export function Tp5DesktopFeatureIconGlyph({
     case "inspection-tips":
       return <IconInspectionTips className={className} />;
     case "carvertical":
-      return <IconCarVertical className={className} />;
+      return <IconCarVertical />;
     case "autodna":
-      return <IconAutoDna className={className} />;
+      return <IconAutoDna />;
     case "dealer-data":
       return <IconDealerData className={className} />;
     case "international":
