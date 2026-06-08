@@ -14,16 +14,17 @@ export type Tp5MobileService = {
 };
 
 const TP5_MOBILE_FEATURE_NAMES = [
+  "Individuāla konsultācija",
   "Sludinājuma un tehnisko risku analīze",
   "EU reģistru pārbaude & TA vēsture",
   "Ieteikumi klātienes apskatei",
   "carVertical integrācija",
   "autoDNA integrācija",
   "Oficiālo dīleru dati*",
-  "Individuāla konsultācija",
+  "Starptautiska vēstures pārbaude",
 ] as const;
 
-const MINI_ACTIVE_FEATURE_COUNT = 3;
+const MINI_ACTIVE_FEATURE_COUNT = 4;
 
 function buildTp5MobileFeatures(includedThroughIndex: number): Tp5MobileFeature[] {
   return TP5_MOBILE_FEATURE_NAMES.map((name, index) => ({
