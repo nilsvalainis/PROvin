@@ -5,6 +5,7 @@ import {
   TP5_MOBILE_SERVICES,
   TP5_MOBILE_SERVICE_ORDER,
 } from "@/lib/test-pricing-5-mobile";
+import { getTestPricingPlan } from "@/lib/test-pricing-plans";
 
 const FULL_FEATURE_STACK = [
   "Sludinājuma un tehnisko risku analīze",
@@ -48,9 +49,19 @@ describe("test-pricing-5 mobile two-tier model", () => {
     const audits = getTp5MobileService("audits");
     expect(audits.title).toBe("PROVIN AUDITS");
     expect(audits.description).toContain("oficiālā dīlera datus");
-    expect(audits.buttonText).toBe("PASŪTĪT PROVIN AUDITU — 89,99 €");
+    expect(audits.price).toBe("99,99 €");
+    expect(audits.buttonText).toBe("PASŪTĪT PROVIN AUDITU — 99,99 €");
     expect(audits.features).toHaveLength(8);
     expect(audits.features.map((feature) => feature.name)).toEqual(FULL_FEATURE_STACK);
     expect(audits.features.every((feature) => feature.included)).toBe(true);
+  });
+
+  it("maps checkout tiers to Stripe plan amounts (MINI 39.99, AUDITS 99.99)", () => {
+    const miniPlan = getTestPricingPlan(TP5_MOBILE_CHECKOUT_PLAN.mini)!;
+    const auditsPlan = getTestPricingPlan(TP5_MOBILE_CHECKOUT_PLAN.audits)!;
+    expect(miniPlan.amountCents).toBe(3999);
+    expect(miniPlan.stripePriceEnvKey).toBe("STRIPE_PRICE_PLUS");
+    expect(auditsPlan.amountCents).toBe(9999);
+    expect(auditsPlan.stripePriceEnvKey).toBe("STRIPE_PRICE_PREMIUM");
   });
 });

@@ -47,8 +47,8 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
   {
     id: "audits",
     title: "PROVIN AUDITS",
-    price: "89,99 €",
-    buttonText: "PASŪTĪT PROVIN AUDITU — 89,99 €",
+    price: "99,99 €",
+    buttonText: "PASŪTĪT PROVIN AUDITU — 99,99 €",
     description:
       "Detalizēta auto vēstures un risku analīze iekļaujot dažādas maksas vēstures atskaites un oficiālā dīlera datus*.",
     features: buildTp5MobileFeatures(TP5_MOBILE_FEATURE_NAMES.length),

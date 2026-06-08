@@ -1,10 +1,9 @@
 /**
- * PROVIN SELECT (konsultācijas sadaļa, hero otrā poga, API).
- * Pēc noklusējuma redzams (produkcijā pēc deploy). Pilnībā slēpt: Vercel / `.env` →
- * `NEXT_PUBLIC_PROVIN_SELECT_PUBLIC=0` (vai `false` / `no` / `off`) — lapā nav, API 404.
+ * PROVIN SELECT (konsultācijas sadaļa, hero otrā poga, `/provin-select`, API).
+ * Pēc noklusējuma slēpts, kamēr `/test-pricing-5` ir primārais. Atkal ieslēgt:
+ * `NEXT_PUBLIC_PROVIN_SELECT_PUBLIC=1` (vai `true` / `yes` / `on`).
  */
 export function isProvinSelectPublic(): boolean {
   const v = (process.env.NEXT_PUBLIC_PROVIN_SELECT_PUBLIC ?? "").trim().toLowerCase();
-  if (v === "0" || v === "false" || v === "no" || v === "off") return false;
-  return true;
+  return v === "1" || v === "true" || v === "yes" || v === "on";
 }

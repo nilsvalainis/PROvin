@@ -3,6 +3,7 @@ import { Footer } from "@/components/Footer";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { HomeServiceComparisonAudit, HomeServiceComparisonSelect } from "@/components/home/HomeServiceComparison";
 import { IrissSection } from "@/components/IrissSection";
+import { isProvinAuditsStandalonePublic } from "@/lib/legacy-standalone-product-routes";
 import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 import { PricingIncluded } from "@/components/PricingIncluded";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
@@ -24,7 +25,11 @@ export default async function HomePage() {
         <HomeProductHero
           showProvinSelect={isProvinSelectPublic()}
           comparisonContent={
-            isProvinSelectPublic() ? <HomeServiceComparisonAudit /> : <PricingIncluded embedded />
+            isProvinAuditsStandalonePublic() ? (
+              <HomeServiceComparisonAudit />
+            ) : (
+              <PricingIncluded embedded />
+            )
           }
         />
 

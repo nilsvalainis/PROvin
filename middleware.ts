@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { routing } from "./i18n/routing";
+import { shouldBlockLegacyStandaloneProductPath } from "./lib/legacy-standalone-product-routes";
 import { SITE_THEME_COOKIE_KEY } from "./lib/site-theme";
 
 /* Lokāli: `next dev` / `next start` ar `--hostname 127.0.0.1` un `localhost` hostu atšķirība var radīt
@@ -14,6 +15,13 @@ export default function middleware(request: NextRequest) {
 
   if (pathname === "/sitemap.xml" || pathname === "/robots.txt") {
     return NextResponse.next();
+  }
+
+  if (shouldBlockLegacyStandaloneProductPath(pathname)) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/lv";
+    redirectUrl.search = "";
+    return NextResponse.redirect(redirectUrl);
   }
 
   if (searchParams.has("theme")) {
