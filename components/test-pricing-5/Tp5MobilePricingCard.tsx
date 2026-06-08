@@ -19,8 +19,11 @@ function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
   if (feature.included) {
     return (
       <li className={styles.featureRow}>
-        <span className={`${styles.featureMark} ${styles.featureMarkBlue}`} aria-hidden>
-          ✔️
+        <span
+          className={`${styles.featureMark} text-[#2563EB] font-bold`}
+          aria-hidden
+        >
+          ✓
         </span>
         <span className={styles.featureLabelActive}>{feature.name}</span>
       </li>

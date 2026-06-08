@@ -13,6 +13,14 @@ export type Tp5MobileService = {
   features: Tp5MobileFeature[];
 };
 
+const AUDITS_FEATURE_ROWS: Tp5MobileFeature[] = [
+  { name: "Auto vēstures pārbaude", included: true },
+  { name: "carVertical integrācija", included: true },
+  { name: "autoDNA integrācija", included: true },
+  { name: "Oficiālo dīleru dati*", included: true },
+  { name: "Individuāla konsultācija", included: true },
+];
+
 /** Mobile `/test-pricing-5` — approved 2-tier product schema. */
 export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
   {
@@ -21,14 +29,12 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     price: "39,99 €",
     buttonText: "PASŪTĪT MINI AUDITU — 39,99 €",
     description:
-      "Padziļināta tehnisko datu analīze un konsultācija. Rekomendējam veikt Latvijā reģistrētiem auto.",
+      "Sludinājuma, tehnisko datu un risku analīze. Rekomendējam veikt Latvijā ilgāku laiku reģistrētiem auto.",
     features: [
       { name: "Sludinājuma un tehnisko risku analīze", included: true },
-      { name: "TA vēsture un publisko reģistru pārbaude", included: true },
+      { name: "EU reģistru pārbaude & TA vēsture", included: true },
       { name: "Ieteikumi klātienes apskatei", included: true },
-      { name: "carVertical un autoDNA integrācija", included: false },
-      { name: "Oficiālo dīleru sistēmu dati*", included: false },
-      { name: "Individuāla konsultācija un atbalsts pirms darījuma.", included: false },
+      ...AUDITS_FEATURE_ROWS.map((feature) => ({ ...feature, included: false })),
     ],
   },
   {
@@ -37,15 +43,8 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     price: "89,99 €",
     buttonText: "PASŪTĪT PROVIN AUDITU — 89,99 €",
     description:
-      "Maksimāla visu datu analīze iekļaujot maksas atskaites un oficiālā dīlera sistēmu datus*.",
-    features: [
-      { name: "Sludinājuma un tehnisko risku analīze", included: true },
-      { name: "TA vēsture un publisko reģistru pārbaude", included: true },
-      { name: "Ieteikumi klātienes apskatei", included: true },
-      { name: "carVertical un autoDNA integrācija", included: true },
-      { name: "Oficiālo dīleru sistēmu dati*", included: true },
-      { name: "Individuāla konsultācija un atbalsts pirms darījuma.", included: true },
-    ],
+      "Detalizēta auto vēstures un risku analīze iekļaujot dažādas maksas vēstures atskaites un oficiālo dīleru datus*.",
+    features: AUDITS_FEATURE_ROWS,
   },
 ];
 
