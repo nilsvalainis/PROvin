@@ -1,5 +1,3 @@
-import { ORDER_SECTION_ID } from "@/lib/order-section";
-
 /**
  * Publiskais ceļš ar lokales prefiksu (`localePrefix: "always"` → `/lv`).
  * Lietot Stripe / `window.location` / pilniem URL — **ne** `next-intl` `Link`.
