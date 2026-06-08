@@ -26,7 +26,10 @@ export default function HomePage() {
           <HomePricingHero />
         </Suspense>
 
-        <div id="site-content" className="min-w-0 pb-0 text-white home-body-ink scroll-mt-14">
+        <div
+          id="site-content"
+          className={`min-w-0 pb-0 text-white home-body-ink scroll-mt-14 ${tp5Styles.pageCanvasTail}`}
+        >
           {isProvinSelectPublic() ? (
             <section className="demo-design-dir__section pt-16 pb-12 sm:pt-20 sm:pb-16 md:pt-24 md:pb-20">
               <div className="demo-design-dir__shell">

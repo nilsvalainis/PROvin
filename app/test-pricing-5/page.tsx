@@ -20,7 +20,7 @@ export default function TestPricing5RoutePage() {
         <TestPricing5Hero />
       </Suspense>
 
-      <div className={`home-body-ink ${styles.bodySection}`}>
+      <div className={`home-body-ink ${styles.bodySection} ${styles.pageCanvasTail}`}>
         <section className={`demo-design-dir__section ${styles.compactSection}`}>
           <div className="demo-design-dir__shell">
             <IrissSection editorialColumn />
