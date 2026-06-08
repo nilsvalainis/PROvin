@@ -1,7 +1,6 @@
 /* /test-pricing-5 — liquid accent feature stack */
 
-.pageRoot,
-.homePageCanvas {
+.pageRoot {
   position: relative;
   isolation: isolate;
   min-width: 0;
@@ -11,29 +10,56 @@
   background-color: #0b0f19;
 }
 
-/* Zem hero: obsidiāns → tīrs melns pie kājenes. */
+/* Sākumlapa: VIENĪGAIS fona engines — hero → kājene. */
+.homePageCanvas {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  color: rgb(245 248 252 / 0.96);
+  background-color: #0b0f19;
+  background-image: linear-gradient(
+    180deg,
+    #0b0f19 0%,
+    #0b0f19 20%,
+    #05070b 50%,
+    #030304 75%,
+    #000000 100%
+  );
+}
+
+/* /test-pricing-5 zem hero (homepage izmanto tikai `.homePageCanvas`). */
 .pageCanvasTail {
   position: relative;
+  background: transparent;
+}
+
+.pageRoot .pageCanvasTail {
   background-color: #000;
   background-image: linear-gradient(
     180deg,
     #0b0f19 0%,
-    rgb(6 8 14) 14%,
-    rgb(3 4 7) 38%,
-    rgb(1 1 2) 68%,
-    #000 100%
+    #05070b 50%,
+    #000000 100%
   );
 }
 
-/* Koplietots sākumlapai un /test-pricing-5 — dziļš obsidiāns + lokalizēts zilais mirdzējums. */
+/* Koplietots sākumlapai un /test-pricing-5 — lokalizēts zilais mirdzējums (bez atsevišķa canvas). */
 .heroPricingShell {
   position: relative;
   isolation: isolate;
   color: rgb(250 250 252 / 0.98);
-  background-color: #0b0f19;
+  background-color: transparent;
   background-image:
     radial-gradient(circle at 20% 30%, rgb(37 99 235 / 0.15) 0%, transparent 50%),
     radial-gradient(circle at 76% 34%, rgb(67 56 202 / 0.09) 0%, transparent 46%);
+}
+
+/* /test-pricing-5: pageRoot nes master toni, hero var būt ar pamatu. */
+.pageRoot .heroPricingShell {
+  background-color: #0b0f19;
 }
 
 .heroAmbientGlow {
