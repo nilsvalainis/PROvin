@@ -21,7 +21,7 @@ const HomePricingHero = dynamic(() => import("@/components/home/HomePricingHero"
 export default function HomePage() {
   return (
     <div
-      className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas} min-h-full bg-gradient-to-b from-[#0F131E] via-[#090C13] to-[#000000]`}
+      className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas} min-h-dvh bg-gradient-to-b from-[#141414] via-[#0a0a0a] to-[#000000]`}
     >
       <div className="home-hero-pricing-unified demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
         <Suspense fallback={null}>

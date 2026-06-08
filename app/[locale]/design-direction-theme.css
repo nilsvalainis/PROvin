@@ -6,20 +6,19 @@
 /* Sākumlapa: nav pelēkā `body` fona aiz tp5 hero ambienta. */
 html:has(.home-page-canvas-root),
 body:has(.home-page-canvas-root) {
-  background-color: #0f131e;
-  background-image: none;
+  background-color: #000000;
+  background-image: none !important;
 }
 
 /*
- * Sākumlapa: viens nepārtraukts canvas — bez sekciju fonu, robežu un footer scrim slāņiem.
+ * Sākumlapa: viens nepārtraukts canvas — starpsekcijas caurspīdīgas, bez robežām.
+ * Kājene: saglabā savu `.home-footer-scrim` (neapspiest ar display:none).
  */
 .home-page-canvas-root .home-hero-pricing-unified,
 .home-page-canvas-root #site-content,
 .home-page-canvas-root .demo-design-dir__section,
 .home-page-canvas-root #biezi-jautajumi,
 .home-page-canvas-root #kas-ir-iriss,
-.home-page-canvas-root #kontakti,
-.home-page-canvas-root footer,
 .home-page-canvas-root .heroIntroSurface,
 .home-page-canvas-root .heroPricingShell {
   background: transparent !important;
@@ -30,8 +29,7 @@ body:has(.home-page-canvas-root) {
 .home-page-canvas-root .demo-design-dir__section,
 .home-page-canvas-root #biezi-jautajumi,
 .home-page-canvas-root #kas-ir-iriss,
-.home-page-canvas-root .home-footer-rule,
-.home-page-canvas-root footer {
+.home-page-canvas-root .home-footer-rule {
   border-top: none !important;
   border-bottom: none !important;
 }
@@ -40,8 +38,8 @@ body:has(.home-page-canvas-root) {
   content: none !important;
 }
 
-.home-page-canvas-root footer .home-footer-scrim {
-  display: none !important;
+html:has(.home-page-canvas-root) main {
+  background: transparent !important;
 }
 
 .demo-design-dir {
