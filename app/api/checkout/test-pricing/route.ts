@@ -16,6 +16,8 @@ import {
   testPricingCancelPath,
 } from "@/lib/test-pricing-checkout-pages";
 import {
+  getTp5StripeCheckoutProduct,
+  isTp5CheckoutSource,
   TP5_INLINE_CHECKOUT_SOURCE,
   validateTp5InlineFields,
 } from "@/lib/test-pricing-5-inline-checkout";
@@ -138,20 +140,38 @@ export async function POST(req: Request) {
   const thanksPath = `/${locale}/paldies`;
   const cancelPath = testPricingCancelPath(sourcePage);
 
-  const priceId = resolveStripePriceId(plan.stripePriceEnvKey);
-  const lineItem = priceId
-    ? { price: priceId, quantity: 1 }
-    : {
+  const tp5Product = isTp5CheckoutSource(sourcePage)
+    ? getTp5StripeCheckoutProduct(plan.id)
+    : null;
+
+  const lineItem = tp5Product
+    ? {
         price_data: {
           currency: "eur",
           product_data: {
-            name: plan.productName,
-            description: plan.productDesc,
+            name: tp5Product.productName,
+            description: tp5Product.productDesc,
           },
-          unit_amount: plan.amountCents,
+          unit_amount: tp5Product.amountCents,
         },
         quantity: 1,
-      };
+      }
+    : (() => {
+        const priceId = resolveStripePriceId(plan.stripePriceEnvKey);
+        return priceId
+          ? { price: priceId, quantity: 1 }
+          : {
+              price_data: {
+                currency: "eur",
+                product_data: {
+                  name: plan.productName,
+                  description: plan.productDesc,
+                },
+                unit_amount: plan.amountCents,
+              },
+              quantity: 1,
+            };
+      })();
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
