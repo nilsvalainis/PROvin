@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import demoStyles from "@/app/[locale]/demo/page.module.css";
 import styles from "@/app/test-pricing/test-pricing.module.css";
-import { useSiteTheme } from "@/components/providers/SiteThemeProvider";
 import {
   TEST_PRICING_PLANS,
   type TestPricingFeatureItem,
@@ -59,7 +58,6 @@ function featureRowKey(item: TestPricingFeatureItem): string {
 
 export function TestPricingPage() {
   const searchParams = useSearchParams();
-  const { theme, toggleTheme } = useSiteTheme();
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<TestPricingPlanId | null>(null);
 
@@ -90,19 +88,8 @@ export function TestPricingPage() {
     }
   }, []);
 
-  const themeLabel = useMemo(() => (theme === "dark" ? "☀️ Gaišs" : "🌙 Tumšs"), [theme]);
-
   return (
     <div className={styles.page}>
-      <button
-        type="button"
-        className={styles.themeFloat}
-        onClick={toggleTheme}
-        aria-label="Pārslēgt tēmu"
-      >
-        {themeLabel}
-      </button>
-
       <div className={styles.pageInner}>
         <header className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Izvēlies audita paketi</h1>

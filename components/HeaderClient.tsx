@@ -9,8 +9,6 @@ import {
   normalizeSitePath,
   type SiteRailLabelKey,
 } from "@/lib/site-rail-sections";
-import { useSiteTheme } from "@/components/providers/SiteThemeProvider";
-import { SiteThemeHeaderButton } from "@/components/site-theme/SiteThemeHeaderButton";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
 /** Mājas navigācijas rindkopas kā `/#…` vai `/biezi-jautajumi`. */
@@ -23,7 +21,6 @@ export function HeaderClient() {
   const localeLabel = locale === "lv" ? "Switch to English" : "Pārslēgt uz latviešu valodu";
   const normalizedPath = normalizeSitePath(pathname);
   const isProvinSelectPieteikums = normalizedPath === "/provin-select-pieteikums";
-  const { theme } = useSiteTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const tHeader = useTranslations("Header");
   const tRail = useTranslations("SiteRail");
@@ -36,32 +33,19 @@ export function HeaderClient() {
     normalizedPath === "/biezi-jautajumi";
 
   const isDemoPath = pathname.includes("/demo");
-  /** Sākumlapas „caurspīdīgais” hero headeris — tikai tumšajā tēmā; gaišajā — kā pārējās lapas. PROVIN SELECT pieteikums tumšajā — tā pat kā hero. */
-  const isDarkHeaderSurface =
-    (isHome && theme === "dark") || (isProvinSelectPieteikums && theme === "dark");
-  const isDemoGraphiteHeader = isDemoPath && theme === "dark";
+  /** Sākumlapas un PROVIN SELECT pieteikuma caurspīdīgais hero headeris. */
+  const isDarkHeaderSurface = isHome || isProvinSelectPieteikums;
+  const isDemoGraphiteHeader = isDemoPath;
   const headerChromeDark = isDarkHeaderSurface || isDemoGraphiteHeader;
-
-  const themeBtnOnDarkHeroClass =
-    "min-h-7 min-w-7 h-7 w-7 border-transparent bg-transparent text-white shadow-none hover:border-transparent hover:bg-transparent focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#050505] lg:min-h-9 lg:min-w-9 lg:h-9 lg:w-9";
-  const themeBtnGraphiteClass =
-    "min-h-7 min-w-7 h-7 w-7 border-transparent bg-transparent text-white shadow-none hover:border-transparent hover:bg-transparent focus-visible:ring-[#0066ff]/40 focus-visible:ring-offset-[#383a40] lg:min-h-9 lg:min-w-9 lg:h-9 lg:w-9";
-  const themeBtnLightChromeClass =
-    "min-h-7 min-w-7 h-7 w-7 border-transparent bg-transparent text-[#1d1d1f] shadow-none hover:border-transparent hover:bg-transparent focus-visible:ring-[rgb(0_102_255/0.35)] focus-visible:ring-offset-white lg:min-h-9 lg:min-w-9 lg:h-9 lg:w-9";
 
   const graphiteHeaderSurface =
     "border-b border-black/30 bg-[#383a40] pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#383a40]/94";
-
-  const provinSelectLightHeaderSurface =
-    "border-b border-amber-950/12 bg-[#fff9ef]/94 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#fff9ef]/90";
 
   const headerSurface = isDemoGraphiteHeader
     ? graphiteHeaderSurface
     : isDarkHeaderSurface
       ? "border-b border-white/[0.06] bg-transparent pt-[env(safe-area-inset-top,0px)] md:border-b md:border-white/[0.06]"
-      : isProvinSelectPieteikums && theme === "light"
-        ? provinSelectLightHeaderSurface
-        : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
+      : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
   const logoAlignWithRailSakums = showHomeNavRail;
 
@@ -88,9 +72,6 @@ export function HeaderClient() {
     .join(" ");
 
   const navSections = useMemo(() => buildSiteRailSections(normalizedPath), [normalizedPath]);
-
-  const themeBtnClass =
-    isDemoGraphiteHeader ? themeBtnGraphiteClass : headerChromeDark ? themeBtnOnDarkHeroClass : themeBtnLightChromeClass;
 
   /** Tādas pašas PROVIN krāsas kā kreisās sliedes tekstiem. */
   const navLabelForKey = (labelKey: SiteRailLabelKey) => {
@@ -173,7 +154,6 @@ export function HeaderClient() {
             </button>
           ) : null}
 
-          <SiteThemeHeaderButton className={themeBtnClass} />
           <Link
             href={pathname as never}
             locale={targetLocale}

@@ -16,12 +16,11 @@ export default function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const themeParam = searchParams.get("theme");
-  if (themeParam === "light" || themeParam === "dark") {
+  if (searchParams.has("theme")) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.searchParams.delete("theme");
     const res = NextResponse.redirect(redirectUrl);
-    res.cookies.set(SITE_THEME_COOKIE_KEY, themeParam, {
+    res.cookies.set(SITE_THEME_COOKIE_KEY, "dark", {
       path: "/",
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 365,

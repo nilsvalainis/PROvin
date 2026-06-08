@@ -17,36 +17,6 @@
   max-width: 72rem;
 }
 
-.themeFloat {
-  position: fixed;
-  top: max(0.85rem, env(safe-area-inset-top, 0px));
-  right: max(0.85rem, env(safe-area-inset-right, 0px));
-  z-index: 50;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.35rem;
-  padding: 0 0.9rem;
-  border-radius: 999px;
-  border: 1px solid var(--test-pricing-border);
-  background: var(--test-pricing-surface);
-  color: var(--test-pricing-ink);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.22);
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.15s ease;
-}
-
-.themeFloat:hover {
-  border-color: rgb(0 102 255 / 0.4);
-  background: var(--test-pricing-surface-hover);
-}
-
 .pageHeader {
   text-align: center;
   margin-bottom: clamp(1.25rem, 3vw, 1.75rem);

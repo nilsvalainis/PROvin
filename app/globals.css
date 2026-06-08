@@ -45,7 +45,7 @@
       transparent 58%
     ),
     #030304;
-  /* Tēmas pamats (tumšais); gaišais — `site-theme-light.css` uz `html[data-site-theme="light"]` */
+  /* Tēmas pamats — vienmēr tumšā (`data-site-theme="dark"`). */
   --site-html-bg: #121418;
   --site-body-bg: #121418;
   --site-body-gradient: linear-gradient(180deg, #161920 0%, #13161c 56%, #121418 100%);
