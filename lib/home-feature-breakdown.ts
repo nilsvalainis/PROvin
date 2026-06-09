@@ -7,32 +7,29 @@ export type HomeFeatureBreakdownItem = {
 };
 
 export type HomeFeatureBreakdownPackage = {
-  id: "local" | "premium";
+  id: "mini" | "audits";
   title: string;
   goal: string;
-  summary: string;
   items: HomeFeatureBreakdownItem[];
 };
 
 export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
   {
-    id: "local",
-    title: 'Bāzes pakete: "Vietējā pārbaude"',
+    id: "mini",
+    title: "PROVIN MINI",
     goal:
-      "Ātra un efektīva analīze automašīnām, kuras jau ilgāku laiku atrodas un tiek ekspluatētas Latvijā.",
-    summary:
-      "Sludinājuma, tehnisko datu un risku analīze. Rekomendējam veikt auto, kas Latvijā reģistrēti jau kādu laiku, lai pārliecinātos par to tehnisko stāvokli un 'zemūdens akmeņiem'.",
+      "Sludinājuma, tehnisko datu un risku analīze automašīnām, kuras jau ilgāku laiku atrodas un tiek ekspluatētas Latvijā.",
     items: [
       {
         title: "Sludinājuma un tehnisko risku analīze",
         description:
-          "Profesionāls sludinājuma vizuālais un tekstuālais novērtējums (slēptu defektu vai neatbilstību identificēšana).",
+          "Sludinājuma un agregātu izvērtējums. Uzticamības prognoze un ekspluatācijas riski.",
         icon: "listing-analysis",
       },
       {
         title: "EU reģistru pārbaude & TA vēsture",
         description:
-          "Detalizēta Latvijas un Eiropas publisko reģistru datu analīze, tostarp pēdējo tehnisko apskašu vēsture, fiksētie nobraukumi un aizrādījumi.",
+          "Detalizēta Latvijas un Eiropas publisko reģistru datu analīze, tostarp visu tehnisko apskašu vēsture.",
         icon: "eu-registry",
       },
       {
@@ -44,12 +41,10 @@ export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
     ],
   },
   {
-    id: "premium",
-    title: '🔥 Premium pakete: "Pilna vēstures analīze"',
+    id: "audits",
+    title: "PROVIN AUDITS",
     goal:
-      "Maksimāla drošība pirms dārga pirkuma vai tikko no ārzemēm ievestu automašīnu pilnīga izpēte.",
-    summary:
-      "Detalizēta auto vēstures un risku analīze, apvienojot lielākos maksas datubāzu pārskatus un oficiālo dīleru informāciju pilnīgam sirdsmieram.",
+      "Maksimāla drošība vai tikko no ārvalstīm ievestu automašīnu pilnīga izpēte. Detalizēta auto vēstures un risku analīze, apvienojot lielākos maksas datubāzu pārskatus un oficiālo dīleru datus.",
     items: [
       {
         title: "Starptautiska vēstures pārbaude",
@@ -58,26 +53,23 @@ export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
       },
       {
         title: "carVertical integrācija",
-        description:
-          "Nobraukuma manipulāciju, slēptu bojājumu un zagto auto datubāzu pārbaude.",
+        description: "Nobraukuma manipulāciju, bojājumu un arhīva fotogrāfiju pārbaude.",
         icon: "carvertical",
       },
       {
         title: "autoDNA integrācija",
-        description:
-          "Papildu datu dublēšana, aprīkojuma rūpnīcas specifikācijas un arhīva fotogrāfiju pārbaude (ja pieejamas).",
+        description: "Nobraukuma manipulāciju, bojājumu un arhīva fotogrāfiju pārbaude.",
         icon: "autodna",
       },
       {
         title: "Oficiālo dīleru dati*",
-        description:
-          "Informācija no ražotāja autorizētajiem servisiem par veiktajām apkopēm, remontdarbiem un atsaukuma kampaņām.",
+        description: "Informācija no autorizētajiem servisiem par fiksētajiem nobraukuma datiem.",
         icon: "dealer-data",
       },
       {
         title: "Individuāla konsultācija",
         description:
-          'Eksperta slēdziens un telefona vai online saruna, lai izrunātu visus "par" un "pret" konkrētā auto iegādei.',
+          'Konsultācija pirms klātienes apskates, lai izrunātu visus "par" un "pret" konkrētā auto iegādei.',
         icon: "consultation",
       },
     ],
