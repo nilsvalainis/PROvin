@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { ProvinHeroTransitionBanner } from "@/components/pricing/ProvinHeroTransitionBanner";
 import { TestPricing5Hero } from "@/components/test-pricing-5/TestPricing5Hero";
 import { TestPricingTestShell } from "@/components/test-pricing-shared/TestPricingTestShell";
 import { IrissSection } from "@/components/IrissSection";
@@ -19,6 +20,8 @@ export default function TestPricing5RoutePage() {
       <Suspense fallback={null}>
         <TestPricing5Hero />
       </Suspense>
+
+      <ProvinHeroTransitionBanner />
 
       <div className={`home-body-ink ${styles.bodySection} ${styles.pageCanvasTail}`}>
         <section className={`demo-design-dir__section ${styles.compactSection}`}>

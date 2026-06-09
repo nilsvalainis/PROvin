@@ -8,7 +8,6 @@ import { HeroVisual } from "@/components/HeroVisual";
 import { Tp5DesktopFeatureIconRow } from "@/components/test-pricing-5/Tp5DesktopFeatureIconRow";
 import { Tp5MobilePricingCard } from "@/components/test-pricing-5/Tp5MobilePricingCard";
 import {
-  TP5_HERO_SUBHEAD,
   TP5_HERO_TITLE_ACCENT,
   TP5_HERO_TITLE_PREFIX,
 } from "@/lib/test-pricing-5-hero-copy";
@@ -129,7 +128,6 @@ export function ProvinPricingHero({
               {TP5_HERO_TITLE_ACCENT}
             </span>
           </h1>
-          <p className={styles.heroSubhead}>{TP5_HERO_SUBHEAD}</p>
         </header>
 
         <div className={styles.stage}>
@@ -165,7 +163,6 @@ export function ProvinPricingHero({
               {TP5_HERO_TITLE_ACCENT}
             </span>
           </h1>
-          <p className={styles.heroSubheadDesktop}>{TP5_HERO_SUBHEAD}</p>
           <Tp5DesktopFeatureIconRow />
         </header>
 

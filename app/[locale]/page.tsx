@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { Footer } from "@/components/Footer";
 import { HomeFeatureBreakdown } from "@/components/home/HomeFeatureBreakdown";
+import { ProvinHeroTransitionBanner } from "@/components/pricing/ProvinHeroTransitionBanner";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { HomeServiceComparisonSelect } from "@/components/home/HomeServiceComparison";
 import { IrissSection } from "@/components/IrissSection";
@@ -26,6 +27,8 @@ export default function HomePage() {
         <Suspense fallback={null}>
           <HomePricingHero />
         </Suspense>
+
+        <ProvinHeroTransitionBanner />
 
         <HomeFeatureBreakdown />
 
