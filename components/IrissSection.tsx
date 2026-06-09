@@ -3,6 +3,7 @@ import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { IrissZigzagRow } from "@/components/IrissZigzagRow";
 import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
 import {
+  homeDarkProvinWordmarkOptions,
   homeEditorialSectionBodyLeadClass,
   homeEditorialSectionTitleClass,
   homeHeroSubheadBodyClass,
@@ -19,7 +20,9 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
   const core = (
     <div className="about-provin-section mx-auto w-full max-w-[min(100%,80rem)] px-1 sm:px-2">
       <header className="text-center">
-        <h2 className={homeEditorialSectionTitleClass}>{renderProvinText(t("title"))}</h2>
+        <h2 className={homeEditorialSectionTitleClass}>
+          {renderProvinText(t("title"), homeDarkProvinWordmarkOptions)}
+        </h2>
         <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
           <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
         </div>
@@ -40,16 +43,22 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         <div className="flex flex-col gap-12 sm:gap-14 lg:gap-16 xl:gap-20">
           <IrissZigzagRow videoId="vlUsjQyEqME" startSeconds={90} playLabel={t("youtubePlayAria")}>
             <div className="w-full">
-              <p className={homeHeroSubheadBodyClass}>{t("body1")}</p>
+              <p className={homeHeroSubheadBodyClass}>
+                {renderProvinText(t("body1"), homeDarkProvinWordmarkOptions)}
+              </p>
             </div>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="I5Xc0uFmbdo" reverse playLabel={t("youtubePlayAria")}>
-            <p className={homeHeroSubheadBodyClass}>{renderProvinText(t("body2"))}</p>
+            <p className={homeHeroSubheadBodyClass}>
+              {renderProvinText(t("body2"), homeDarkProvinWordmarkOptions)}
+            </p>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="klwAEEdNXko" playLabel={t("youtubePlayAria")}>
-            <p className={homeHeroSubheadBodyClass}>{renderProvinText(t("body3"))}</p>
+            <p className={homeHeroSubheadBodyClass}>
+              {renderProvinText(t("body3"), homeDarkProvinWordmarkOptions)}
+            </p>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="7pBr-91QUjw" reverse playLabel={t("youtubePlayAria")}>

@@ -71,6 +71,15 @@ export const homeEditorialSectionBodyLeadClass =
 export const homeHeroSubheadBodyClass =
   "mx-auto max-w-xl text-balance text-center text-[0.8125rem] font-[450] leading-[1.5] tracking-normal text-[rgb(228_231_236/0.94)] lg:max-w-[46ch] lg:text-[1.125rem] lg:leading-[1.625] lg:text-[rgb(236_238_242/0.96)]";
 
+/** Starp hero un paketēm — ķermeņa teksts ar lielām vertikālām atstarpēm (ne virsraksta izmērs). */
+export const homeHeroTransitionBodyClass =
+  "mx-auto max-w-3xl px-4 text-balance text-center text-[0.8125rem] font-[450] leading-[1.62] tracking-normal text-gray-400/95 sm:text-[0.875rem] md:max-w-[42rem] md:text-[0.9375rem] md:leading-[1.68] lg:text-base lg:leading-[1.72]";
+
+/** Tumšā homepage virsma — PRO balti, VIN zili. */
+export const homeDarkProvinWordmarkOptions = {
+  proAndSuffixClassName: "provin-wordmark-pro--surface-dark",
+} as const;
+
 /**
  * Otrā līmeņa virsraksts kā IRISS autoritātes rindiņa virs ķermeņa teksta.
  */

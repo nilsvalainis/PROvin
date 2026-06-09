@@ -8,8 +8,9 @@ import {
   Users,
 } from "lucide-react";
 import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
-import { homeContentMaxClass } from "@/lib/home-layout";
+import { homeContentMaxClass, homeDarkProvinWordmarkOptions } from "@/lib/home-layout";
 import { HOME_FEATURE_BREAKDOWN_PACKAGES } from "@/lib/home-feature-breakdown";
+import { renderProvinText } from "@/lib/provin-wordmark";
 import { getTp5MobileService } from "@/lib/test-pricing-5-mobile";
 import type { Tp5DesktopHeroFeatureIcon } from "@/lib/test-pricing-5-desktop-hero-features";
 
@@ -83,13 +84,13 @@ export function HomeFeatureBreakdown() {
               <article key={pkg.id} className={`${tp5Styles.featureBreakdownCard} min-w-0`}>
                 <header className="min-w-0">
                   <h3 className="text-balance text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl">
-                    {pkg.title}
+                    {renderProvinText(pkg.title, homeDarkProvinWordmarkOptions)}
                   </h3>
                   <p className="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-gray-500">
                     Mērķis
                   </p>
                   <p className="mt-1.5 text-balance text-[0.8125rem] font-medium leading-[1.55] text-zinc-200 sm:text-[0.875rem] sm:leading-[1.6]">
-                    {pkg.goal}
+                    {renderProvinText(pkg.goal, homeDarkProvinWordmarkOptions)}
                   </p>
                 </header>
 
@@ -101,10 +102,10 @@ export function HomeFeatureBreakdown() {
                       </span>
                       <div className="min-w-0 flex-1 pt-0.5">
                         <p className="text-balance text-[0.8125rem] font-bold leading-snug text-zinc-100 sm:text-[0.875rem]">
-                          {item.title}
+                          {renderProvinText(item.title, homeDarkProvinWordmarkOptions)}
                         </p>
                         <p className="mt-1 text-balance text-[0.8125rem] font-normal leading-[1.55] text-gray-400 sm:text-[0.875rem] sm:leading-[1.6]">
-                          {item.description}
+                          {renderProvinText(item.description, homeDarkProvinWordmarkOptions)}
                         </p>
                       </div>
                     </li>
