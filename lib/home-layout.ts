@@ -66,6 +66,12 @@ export const homeEditorialSectionBodyLeadClass =
   "demo-design-dir__body mx-auto mt-3 max-w-[min(100%,40rem)] text-balance sm:mt-4";
 
 /**
+ * Hero apakšvirsraksts (tp5 `.heroSubhead` / `.heroSubheadDesktop`) — IRISS redakcijas rindkopām.
+ */
+export const homeHeroSubheadBodyClass =
+  "mx-auto max-w-xl text-balance text-center text-[0.8125rem] font-[450] leading-[1.5] tracking-normal text-[rgb(228_231_236/0.94)] lg:max-w-[46ch] lg:text-[1.125rem] lg:leading-[1.625] lg:text-[rgb(236_238_242/0.96)]";
+
+/**
  * Otrā līmeņa virsraksts kā IRISS autoritātes rindiņa virs ķermeņa teksta.
  */
 export const homeEditorialAuthorityHeadingClass =

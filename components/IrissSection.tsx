@@ -5,12 +5,9 @@ import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
 import {
   homeEditorialSectionBodyLeadClass,
   homeEditorialSectionTitleClass,
+  homeHeroSubheadBodyClass,
 } from "@/lib/home-layout";
 import { renderProvinText } from "@/lib/provin-wordmark";
-
-/** IRISS / KAS IR PROVIN — rindkopas vienots tonis kā iepriekšējais „hook”. */
-const irissFeatureParagraphClass =
-  "about-provin-hook mx-auto max-w-xl text-balance text-center text-[1.2rem] font-light leading-snug tracking-[0.012em] sm:text-[1.5rem]";
 
 export async function IrissSection({ editorialColumn = false }: { editorialColumn?: boolean } = {}) {
   const t = await getTranslations("Iriss");
@@ -43,16 +40,16 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
         <div className="flex flex-col gap-12 sm:gap-14 lg:gap-16 xl:gap-20">
           <IrissZigzagRow videoId="vlUsjQyEqME" startSeconds={90} playLabel={t("youtubePlayAria")}>
             <div className="w-full">
-              <p className={irissFeatureParagraphClass}>{t("body1")}</p>
+              <p className={homeHeroSubheadBodyClass}>{t("body1")}</p>
             </div>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="I5Xc0uFmbdo" reverse playLabel={t("youtubePlayAria")}>
-            <p className={irissFeatureParagraphClass}>{renderProvinText(t("body2"))}</p>
+            <p className={homeHeroSubheadBodyClass}>{renderProvinText(t("body2"))}</p>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="klwAEEdNXko" playLabel={t("youtubePlayAria")}>
-            <p className={irissFeatureParagraphClass}>{renderProvinText(t("body3"))}</p>
+            <p className={homeHeroSubheadBodyClass}>{renderProvinText(t("body3"))}</p>
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="7pBr-91QUjw" reverse playLabel={t("youtubePlayAria")}>
