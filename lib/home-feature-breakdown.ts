@@ -50,7 +50,7 @@ export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
     id: "audits",
     title: "PROVIN AUDITS",
     goal:
-      "Maksimāla drošība vai tikko no ārvalstīm ievestu automašīnu pilnīga izpēte. Detalizēta auto vēstures un risku analīze, apvienojot lielākos maksas datubāzu pārskatus un oficiālo dīleru datus.",
+      "Detalizēta auto vēstures un risku analīze, apvienojot lielākos maksas datubāzu pārskatus un oficiālo dīleru datus. Maksimāla drošība no ārvalstīm ievestu automašīnu pilnīgai izpētei.",
     items: [
       {
         title: "Starptautiska vēstures pārbaude",

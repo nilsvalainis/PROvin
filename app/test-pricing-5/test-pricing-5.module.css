@@ -61,25 +61,6 @@
   display: none;
 }
 
-/* Sākumlapa: peldošais headeris — mobilajā atstarpes augšā (lg+ jau ir `.heroInnerDesktop`). */
-.homePageCanvas .heroSurface {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 2.25rem);
-}
-
-@media (min-width: 1024px) {
-  .homePageCanvas .heroSurface {
-    padding-top: 0;
-  }
-
-  /* Peldošais headeris ārpus `<main>` — hero fons stiepjas zem navigācijas. */
-  .homePageCanvas .heroPricingShell {
-    margin-top: calc(-1 * (env(safe-area-inset-top, 0px) + 2.75rem));
-    padding-top: calc(env(safe-area-inset-top, 0px) + 2.75rem);
-    min-height: 100vh;
-    min-height: 100dvh;
-  }
-}
-
 .heroInner {
   position: relative;
   z-index: 3;

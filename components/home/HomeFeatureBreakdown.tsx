@@ -99,10 +99,14 @@ export function HomeFeatureBreakdown() {
                       <span className={BADGE_CLASS}>
                         <FeatureBadgeIcon icon={item.icon} />
                       </span>
-                      <p className="min-w-0 flex-1 pt-0.5 text-balance text-[0.8125rem] leading-[1.55] sm:text-[0.875rem] sm:leading-[1.6]">
-                        <span className="font-bold text-zinc-100">{item.title}</span>
-                        <span className="font-normal text-gray-400"> — {item.description}</span>
-                      </p>
+                      <div className="min-w-0 flex-1 pt-0.5">
+                        <p className="text-balance text-[0.8125rem] font-bold leading-snug text-zinc-100 sm:text-[0.875rem]">
+                          {item.title}
+                        </p>
+                        <p className="mt-1 text-balance text-[0.8125rem] font-normal leading-[1.55] text-gray-400 sm:text-[0.875rem] sm:leading-[1.6]">
+                          {item.description}
+                        </p>
+                      </div>
                     </li>
                   ))}
                 </ul>

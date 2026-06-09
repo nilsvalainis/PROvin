@@ -41,14 +41,10 @@ export function HeaderClient() {
   const graphiteHeaderSurface =
     "border-b border-black/30 bg-[#383a40] pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#383a40]/94";
 
-  const headerPositionClass = isDarkHeaderSurface
-    ? "absolute top-0 left-0 z-50"
-    : "sticky top-0 z-[42]";
-
   const headerSurface = isDemoGraphiteHeader
     ? graphiteHeaderSurface
     : isDarkHeaderSurface
-      ? "bg-transparent pt-[env(safe-area-inset-top,0px)]"
+      ? "border-b border-white/[0.08] bg-[#07080a]/96 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-[#07080a]/92"
       : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
   const logoAlignWithRailSakums = showHomeNavRail;
@@ -116,7 +112,7 @@ export function HeaderClient() {
   ].join(" ");
 
   return (
-    <header className={`${headerPositionClass} isolate w-full ${headerSurface}`}>
+    <header className={`sticky top-0 z-[42] isolate w-full ${headerSurface}`}>
       <div className={headerInnerClass}>
         <Link href="/" className={logoClass} aria-label={isHome ? "PROVIN" : "PROVIN.LV"}>
           <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
