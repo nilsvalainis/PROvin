@@ -7,5 +7,6 @@ export const TP5_HERO_TITLE_ACCENT = "audits";
 export const TP5_HERO_TITLE_DESKTOP_LINE1 = "Auto vēstures";
 export const TP5_HERO_TITLE_DESKTOP_LINE2_PREFIX = "un sludinājuma ";
 
-export const TP5_HERO_SUBHEAD =
-  "Uzzini visu par savu nākamo auto. Apvienojam auto vēstures datus un sludinājuma analīzi vienā pārskatāmā auditā.";
+export const TP5_HERO_SUBHEAD_LEAD = "Uzzini visu par savu nākamo auto.";
+export const TP5_HERO_SUBHEAD_ACCENT =
+  "Apvienojam auto vēstures datus un sludinājuma analīzi vienā pārskatāmā auditā.";

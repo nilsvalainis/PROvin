@@ -71,9 +71,13 @@ export const homeEditorialSectionBodyLeadClass =
 export const homeHeroSubheadBodyClass =
   "mx-auto max-w-xl text-balance text-center text-[0.8125rem] font-[450] leading-[1.5] tracking-normal text-[rgb(228_231_236/0.94)] lg:max-w-[46ch] lg:text-[1.125rem] lg:leading-[1.625] lg:text-[rgb(236_238_242/0.96)]";
 
-/** Starp hero un paketēm — ķermeņa teksts ar lielām vertikālām atstarpēm (ne virsraksta izmērs). */
-export const homeHeroTransitionBodyClass =
-  "mx-auto max-w-3xl px-4 text-balance text-center text-[0.8125rem] font-[450] leading-[1.62] tracking-normal text-gray-400/95 sm:text-[0.875rem] md:max-w-[42rem] md:text-[0.9375rem] md:leading-[1.68] lg:text-base lg:leading-[1.72]";
+/** Kā IRISS punchline — puse balta, puse zila; identiski izmēri visā lapā. */
+export const homeEditorialPunchlineClass =
+  "about-provin-punchline mx-auto max-w-xl text-balance text-center text-[1.463rem] font-semibold leading-[1.06] tracking-tight sm:text-[1.95rem] lg:text-[2.438rem]";
+
+export const homeEditorialPunchlineLeadClass = "about-provin-punchline-lead block";
+
+export const homeEditorialPunchlineAccentClass = "about-provin-punchline-accent mt-1.5 block sm:mt-2";
 
 /** Tumšā homepage virsma — PRO balti, VIN zili. */
 export const homeDarkProvinWordmarkOptions = {

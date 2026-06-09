@@ -4,6 +4,9 @@ import { IrissZigzagRow } from "@/components/IrissZigzagRow";
 import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
 import {
   homeDarkProvinWordmarkOptions,
+  homeEditorialPunchlineAccentClass,
+  homeEditorialPunchlineClass,
+  homeEditorialPunchlineLeadClass,
   homeEditorialSectionBodyLeadClass,
   homeEditorialSectionTitleClass,
   homeHeroSubheadBodyClass,
@@ -62,9 +65,9 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
           </IrissZigzagRow>
 
           <IrissZigzagRow videoId="7pBr-91QUjw" reverse playLabel={t("youtubePlayAria")}>
-            <p className="about-provin-punchline mx-auto max-w-xl text-balance text-center text-[1.463rem] font-semibold leading-[1.06] tracking-tight sm:text-[1.95rem] lg:text-[2.438rem]">
-              <span className="about-provin-punchline-lead block">{t("punchlineLead")}</span>
-              <span className="about-provin-punchline-accent mt-1.5 block sm:mt-2">{t("punchlineAccent")}</span>
+            <p className={homeEditorialPunchlineClass}>
+              <span className={homeEditorialPunchlineLeadClass}>{t("punchlineLead")}</span>
+              <span className={homeEditorialPunchlineAccentClass}>{t("punchlineAccent")}</span>
             </p>
           </IrissZigzagRow>
         </div>
