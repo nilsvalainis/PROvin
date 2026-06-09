@@ -180,7 +180,8 @@ export async function POST(req: Request) {
     cancel_url: `${origin}${cancelPath}`,
     customer_creation: "always",
     phone_number_collection: { enabled: true },
-    billing_address_collection: "required",
+    billing_address_collection: "auto",
+    allow_promotion_codes: true,
     ...(clientCollected
       ? {}
       : {
