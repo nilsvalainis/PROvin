@@ -96,23 +96,24 @@ export function HomeFeatureBreakdown() {
 
                 <ul className="mt-6 flex min-w-0 flex-1 flex-col gap-4 sm:mt-7 sm:gap-5">
                   {pkg.items.map((item) => (
-                    <li key={item.title} className="flex min-w-0 items-start gap-3 sm:gap-3.5">
-                      <span className={BADGE_CLASS}>
+                    <li
+                      key={item.title}
+                      className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-1.5 sm:gap-x-3.5 sm:gap-y-2"
+                    >
+                      <span className={`${BADGE_CLASS} row-span-2`}>
                         <FeatureBadgeIcon icon={item.icon} />
                       </span>
-                      <div className="min-w-0 flex-1 pt-0.5">
-                        <p className="text-balance text-[0.8125rem] font-bold leading-snug text-zinc-100 sm:text-[0.875rem]">
-                          {renderProvinText(item.title, homeDarkProvinWordmarkOptions)}
-                        </p>
-                        <p className="mt-1 text-balance text-[0.8125rem] font-normal leading-[1.55] text-gray-400 sm:text-[0.875rem] sm:leading-[1.6]">
-                          {renderProvinText(item.description, homeDarkProvinWordmarkOptions)}
-                        </p>
-                      </div>
+                      <p className="col-start-2 row-start-1 min-w-0 text-[0.8125rem] font-bold leading-snug text-zinc-100 sm:text-[0.875rem]">
+                        {renderProvinText(item.title, homeDarkProvinWordmarkOptions)}
+                      </p>
+                      <p className="col-start-2 row-start-2 min-w-0 text-[0.8125rem] font-normal leading-[1.55] text-gray-400 sm:text-[0.875rem] sm:leading-[1.6]">
+                        {renderProvinText(item.description, homeDarkProvinWordmarkOptions)}
+                      </p>
                     </li>
                   ))}
                 </ul>
 
-                <div className={`${tp5Styles.ctaWrap} mt-6 sm:mt-7`}>
+                <div className={`${tp5Styles.ctaWrap} mt-8 sm:mt-10`}>
                   <a href={HOME_HERO_CTA_HREF} className={tp5Styles.liquidCtaLink}>
                     <span className={tp5Styles.liquidCtaShimmer} aria-hidden />
                     <span className={tp5Styles.liquidCtaLabel}>{ctaLabel}</span>
