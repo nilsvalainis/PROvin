@@ -5,8 +5,6 @@ import { type SyntheticEvent, type TouchEvent } from "react";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { TP5_DEALER_FOOTNOTE } from "@/lib/test-pricing-5-checkout-routing";
 import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout";
-import { homeDarkProvinWordmarkOptions } from "@/lib/home-layout";
-import { renderProvinText } from "@/lib/provin-wordmark";
 import {
   getTp5MobileService,
   TP5_MOBILE_SERVICES,
@@ -27,9 +25,7 @@ function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
         <span className={`${FEATURE_MARK_CLASS} text-[#2563EB]`} aria-hidden>
           ✓
         </span>
-        <span className={styles.featureLabelActive}>
-          {renderProvinText(feature.name, homeDarkProvinWordmarkOptions)}
-        </span>
+        <span className={styles.featureLabelActive}>{feature.name}</span>
       </li>
     );
   }
@@ -115,7 +111,7 @@ export function Tp5MobilePricingCard({
                   <span
                     className={`${styles.tierTabLabel} ${styles.tierTabLabelCompact} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
                   >
-                    {renderProvinText(service.title, homeDarkProvinWordmarkOptions)}
+                    {service.title}
                   </span>
                 </button>
               );
@@ -124,12 +120,8 @@ export function Tp5MobilePricingCard({
         </LayoutGroup>
 
         <div className={styles.tierMeta} aria-live="polite">
-          <p className={styles.tierMetaTitle}>
-            {renderProvinText(activeService.title, homeDarkProvinWordmarkOptions)}
-          </p>
-          <p className={tierMetaDescClassName ?? styles.tierMetaDesc}>
-            {renderProvinText(activeService.description, homeDarkProvinWordmarkOptions)}
-          </p>
+          <p className={styles.tierMetaTitle}>{activeService.title}</p>
+          <p className={tierMetaDescClassName ?? styles.tierMetaDesc}>{activeService.description}</p>
         </div>
       </div>
 
