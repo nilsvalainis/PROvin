@@ -76,16 +76,13 @@ export function HomeFeatureBreakdown() {
           PROVIN MINI un PROVIN AUDITS
         </h2>
 
-        <div className="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-2 lg:grid-rows-[auto_repeat(4,minmax(0,auto))_auto] lg:items-stretch lg:gap-x-8 lg:gap-y-5">
+        <div className="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-2 lg:gap-8">
           {HOME_FEATURE_BREAKDOWN_PACKAGES.map((pkg) => {
             const ctaLabel = getTp5MobileService(pkg.id).buttonText;
 
             return (
-              <article
-                key={pkg.id}
-                className={`${tp5Styles.featureBreakdownCard} flex min-w-0 flex-col lg:row-span-6 lg:grid lg:grid-rows-subgrid`}
-              >
-                <header className="min-w-0 lg:min-h-0 lg:self-stretch">
+              <article key={pkg.id} className={`${tp5Styles.featureBreakdownCard} min-w-0`}>
+                <header className="min-w-0">
                   <h3 className="text-balance text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl">
                     {renderProvinText(pkg.title, homeDarkProvinWordmarkOptions)}
                   </h3>
@@ -97,11 +94,11 @@ export function HomeFeatureBreakdown() {
                   </p>
                 </header>
 
-                <ul className="mt-6 flex min-w-0 flex-1 flex-col gap-4 sm:mt-7 sm:gap-5 lg:contents lg:mt-0">
+                <ul className="mt-6 flex min-w-0 flex-1 flex-col gap-4 sm:mt-7 sm:gap-5">
                   {pkg.items.map((item) => (
                     <li
                       key={item.title}
-                      className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-1.5 sm:gap-x-3.5 sm:gap-y-2 lg:min-h-0 lg:self-stretch"
+                      className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-1.5 sm:gap-x-3.5 sm:gap-y-2"
                     >
                       <span className={`${BADGE_CLASS} row-span-2`}>
                         <FeatureBadgeIcon icon={item.icon} />
@@ -116,7 +113,7 @@ export function HomeFeatureBreakdown() {
                   ))}
                 </ul>
 
-                <div className={`${tp5Styles.ctaWrap} mt-8 sm:mt-10 lg:mt-0 lg:self-end`}>
+                <div className={`${tp5Styles.ctaWrap} mt-8 sm:mt-10`}>
                   <a href={HOME_HERO_CTA_HREF} className={tp5Styles.liquidCtaLink}>
                     <span className={tp5Styles.liquidCtaShimmer} aria-hidden />
                     <span className={tp5Styles.liquidCtaLabel}>{ctaLabel}</span>
