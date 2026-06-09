@@ -23,7 +23,6 @@ export const TP5_STRIPE_CHECKOUT_PRODUCT: Record<
 > = {
   plus: {
     productName: "PROVIN MINI",
-    productDesc: "Sludinājuma, tehnisko datu un risku analīze.",
     amountCents: 3999,
   },
   premium: {

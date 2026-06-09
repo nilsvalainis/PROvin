@@ -28,15 +28,6 @@ export const runtime = "nodejs";
 const CHECKOUT_MAX_PER_WINDOW = 40;
 const CHECKOUT_WINDOW_MS = 10 * 60 * 1000;
 
-const stripeLocales = new Set([
-  "auto", "bg", "cs", "da", "de", "el", "en", "es", "et", "fi", "fil", "fr", "hr", "hu", "id", "it", "ja", "ko",
-  "lt", "lv", "ms", "mt", "nb", "nl", "pl", "pt", "ro", "ru", "sk", "sl", "sv", "th", "tr", "vi", "zh", "zh-HK",
-]);
-
-function stripeLocale(locale: string): string {
-  return stripeLocales.has(locale) ? locale : "lv";
-}
-
 function resolveStripePriceId(envKey: string): string | null {
   const id = (process.env[envKey] ?? "").trim();
   return id.startsWith("price_") ? id : null;
@@ -203,7 +194,13 @@ export async function POST(req: Request) {
           }
         : {}),
     },
-    locale: stripeLocale(locale) as "lv",
+    /**
+     * Stripe Checkout apzināti angliski: LV tulkojumā atlaides lauks ir
+     * „Pievienojiet reklāmas kodu”, ko nevar pārrakstīt. Zīmolu nosaukumi
+     * (PROVIN MINI / AUDITS) paliek netulkoti; lapa rāda tikai nosaukumu,
+     * cenu un Stripe maksājumu laukus.
+     */
+    locale: "en",
   });
 
   if (!session.url) {
