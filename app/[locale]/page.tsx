@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { Footer } from "@/components/Footer";
+import { HomeFeatureBreakdown } from "@/components/home/HomeFeatureBreakdown";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { HomeServiceComparisonSelect } from "@/components/home/HomeServiceComparison";
 import { IrissSection } from "@/components/IrissSection";
@@ -25,6 +26,8 @@ export default function HomePage() {
         <Suspense fallback={null}>
           <HomePricingHero />
         </Suspense>
+
+        <HomeFeatureBreakdown />
 
         <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink scroll-mt-14">
           {isProvinSelectPublic() ? (
