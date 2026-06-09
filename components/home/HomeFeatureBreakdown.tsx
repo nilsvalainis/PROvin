@@ -82,7 +82,7 @@ export function HomeFeatureBreakdown() {
 
             return (
               <article key={pkg.id} className={`${tp5Styles.featureBreakdownCard} min-w-0`}>
-                <header className="min-w-0">
+                <header className="min-w-0 lg:min-h-[120px]">
                   <h3 className="text-balance text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl">
                     {renderProvinText(pkg.title, homeDarkProvinWordmarkOptions)}
                   </h3>
@@ -106,7 +106,7 @@ export function HomeFeatureBreakdown() {
                       <p className="col-start-2 row-start-1 min-w-0 text-[0.8125rem] font-bold leading-snug text-zinc-100 sm:text-[0.875rem]">
                         {renderProvinText(item.title, homeDarkProvinWordmarkOptions)}
                       </p>
-                      <p className="col-start-2 row-start-2 min-w-0 text-[0.8125rem] font-normal leading-[1.55] text-gray-400 sm:text-[0.875rem] sm:leading-[1.6]">
+                      <p className="col-start-2 row-start-2 min-w-0 text-[0.8125rem] font-normal leading-[1.55] text-gray-400 sm:text-[0.875rem] sm:leading-[1.6] lg:line-clamp-2 lg:min-h-[40px]">
                         {renderProvinText(item.description, homeDarkProvinWordmarkOptions)}
                       </p>
                     </li>
