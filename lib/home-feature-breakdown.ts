@@ -38,6 +38,12 @@ export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
           "Praktisks kontrolsaraksts un padomi, kam tieši pievērst uzmanību, dodoties skatīties konkrēto auto dzīvē.",
         icon: "inspection-tips",
       },
+      {
+        title: "Individuāla konsultācija",
+        description:
+          'Konsultācija pirms klātienes apskates, lai izrunātu visus "par" un "pret" konkrētā auto iegādei.',
+        icon: "consultation",
+      },
     ],
   },
   {
@@ -65,12 +71,6 @@ export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
         title: "Oficiālo dīleru dati*",
         description: "Informācija no autorizētajiem servisiem par fiksētajiem nobraukuma datiem.",
         icon: "dealer-data",
-      },
-      {
-        title: "Individuāla konsultācija",
-        description:
-          'Konsultācija pirms klātienes apskates, lai izrunātu visus "par" un "pret" konkrētā auto iegādei.',
-        icon: "consultation",
       },
     ],
   },

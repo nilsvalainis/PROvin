@@ -161,6 +161,11 @@
     0 24px 48px -20px rgb(0 0 0 / 0.75);
 }
 
+.featureBreakdownCard {
+  composes: spatialCard;
+  padding: 1.25rem;
+}
+
 .cardHeader {
   position: relative;
   z-index: 2;
@@ -488,6 +493,15 @@
   z-index: 1;
 }
 
+.liquidCtaLink {
+  composes: liquidCta;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
+}
+
 @keyframes tp5Shimmer {
   0%,
   100% {
@@ -658,6 +672,10 @@
   .spatialCard {
     border-radius: 20px;
     padding: clamp(0.85rem, 2.8vw, 1.25rem);
+  }
+
+  .featureBreakdownCard {
+    padding: clamp(1.25rem, 3vw, 1.75rem);
   }
 
   .tierSwitcher {
