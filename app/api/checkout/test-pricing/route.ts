@@ -150,7 +150,7 @@ export async function POST(req: Request) {
           currency: "eur",
           product_data: {
             name: tp5Product.productName,
-            description: tp5Product.productDesc,
+            ...(tp5Product.productDesc ? { description: tp5Product.productDesc } : {}),
           },
           unit_amount: tp5Product.amountCents,
         },

@@ -11,7 +11,8 @@ export const TP5_INLINE_CHECKOUT_SOURCE = "test-pricing-5" as const;
 
 export type Tp5StripeCheckoutProduct = {
   productName: string;
-  productDesc: string;
+  /** Ja nav — Stripe Checkout rāda tikai nosaukumu un cenu. */
+  productDesc?: string;
   amountCents: number;
 };
 
@@ -27,8 +28,6 @@ export const TP5_STRIPE_CHECKOUT_PRODUCT: Record<
   },
   premium: {
     productName: "PROVIN AUDITS",
-    productDesc:
-      "Detalizēta auto vēstures un risku analīze ar maksas vēstures atskaitēm un oficiālā dīlera datiem.",
     amountCents: 9999,
   },
 };
