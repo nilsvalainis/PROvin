@@ -4,28 +4,28 @@
     "items": [
       {
         "id": "provin-vs-standard",
-        "q": "How is PROVIN different from a standard VIN report?",
-        "a": "A standard report is usually just an algorithm-generated fact sheet. PROVIN goes further — we do not simply forward data, we interpret it. We analyze listing credibility, seller behavior patterns and model-specific risks that no automated tool can fully evaluate. You receive not just a PDF with tables, but a clear expert conclusion in human language: buy or do not buy."
+        "q": "Why does a car history check matter?",
+        "a": "A standard report is just an algorithm-generated fact sheet. The PROVIN audit goes a step further — we don't simply pass the data on, we interpret it. We analyse the credibility of the listing, the seller's psychology and model-specific risks that no automated tool can evaluate. Instead of a PDF full of tables, you receive a clear expert verdict in plain language: buy or walk away."
       },
       {
         "id": "vin-decoding-not-enough",
-        "q": "Why is VIN decoding alone not enough?",
-        "a": "Because no single database is perfect. Data coverage across Europe differs significantly — information present in one source may be missing in another, and vice versa. Relying on one automated report can make you miss critical accident or odometer manipulation data. A complete picture requires comparing and cross-checking multiple independent sources."
+        "q": "How do I check a car by its VIN number?",
+        "a": "No single database is perfect. Data sources across Europe differ dramatically — information recorded in one resource can be completely missing from another, and vice versa. Relying on a single automated report means you risk missing critical information about accidents or odometer tampering. A complete picture requires comparing and cross-referencing several independent sources. Don't gamble on a single source."
       },
       {
         "id": "understand-reports",
-        "q": "How to understand vehicle history reports?",
-        "a": "Start by understanding what each line really means: mileage curves, accident categories and country registry specifics. The key is to compare sources and detect inconsistencies. PROVIN gathers data from multiple resources, analyzes it in detail and combines it into one structured report with a clear conclusion."
+        "q": "Which car history reports are the most accurate?",
+        "a": "Start with what each line actually means: mileage curves, accident categories and the quirks of national registries. The key is to compare sources and look for contradictions. PROVIN collects the data itself from a range of resources, analyses it in detail and combines it into one clear, structured report. You receive a clear summary of the specific car."
       },
       {
         "id": "data-completeness",
-        "q": "Are the data always complete?",
-        "a": "No database is fully complete. We compare sources and clearly mark where information is inconsistent or missing. The conclusion helps decision-making but does not replace an in-person technical inspection. A service-center or expert inspection is recommended in all cases."
+        "q": "Is the data always complete?",
+        "a": "No database is complete. We compare the sources and point out where information is contradictory or missing. The verdict helps you make a decision, but it does not replace an inspection at a workshop. An additional inspection at a service centre or by an expert is recommended in any case."
       },
       {
         "id": "delivery-time",
-        "q": "How long does it take to receive results?",
-        "a": "Our goal is to deliver full analysis within 48 hours after successful payment. If additional time is needed (for example, rare models or delayed data sources), we will let you know."
+        "q": "How long does it take to get the results?",
+        "a": "Our goal is to deliver the full analysis within 48 hours of successful payment. If extra time is needed (for example, rare models or delayed data), we will let you know."
       }
     ]
   }

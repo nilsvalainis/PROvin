@@ -32,6 +32,20 @@ describe("test-pricing-5 inline checkout", () => {
     expect(validateTp5InlineFields("https://www.ss.lv", "KG982").ok).toBe(false);
   });
 
+  it("localizes validation messages (lv default, en on request)", () => {
+    const lv = validateTp5InlineFields("", "");
+    expect(lv.ok).toBe(false);
+    if (!lv.ok) {
+      expect(lv.errors.vin).toContain("Ievadi derīgu VIN kodu");
+    }
+    const en = validateTp5InlineFields("https://www.ss.lv", "", "en");
+    expect(en.ok).toBe(false);
+    if (!en.ok) {
+      expect(en.errors.vin).toContain("Enter a valid VIN");
+      expect(en.errors.listingUrl).toContain("full link");
+    }
+  });
+
   it("recognizes tp5 checkout sources", () => {
     expect(isTp5CheckoutSource("test-pricing-5")).toBe(true);
     expect(isTp5CheckoutSource("test-checkout")).toBe(true);

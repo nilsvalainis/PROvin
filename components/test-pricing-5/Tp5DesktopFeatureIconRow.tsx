@@ -9,12 +9,14 @@ import {
   Users,
 } from "lucide-react";
 import Image from "next/image";
+import { useLocale } from "next-intl";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import {
-  TP5_DESKTOP_HERO_FEATURES,
+  getTp5DesktopHeroFeatures,
   type Tp5DesktopHeroFeatureIcon,
 } from "@/lib/test-pricing-5-desktop-hero-features";
+import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 
 const ICON_BTN_BASE =
   "relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.03] text-zinc-300 opacity-75 shadow-[0_0_12px_rgba(37,99,235,0.08)] transition-all duration-300 will-change-[transform,box-shadow,border-color,color] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB]";
@@ -86,14 +88,18 @@ function FeatureTooltip({ label }: { label: string }) {
 }
 
 export function Tp5DesktopFeatureIconRow() {
+  const locale = useLocale();
+  const features = getTp5DesktopHeroFeatures(locale);
+  const uiCopy = getTp5UiCopy(locale);
+
   return (
     <div className={styles.tp5DesktopFeatureRow}>
       <DiagnosticScanLine variant="rail" motion="sweepLtr" className="w-full" />
       <ul
         className="mt-8 flex w-full list-none items-center justify-between gap-1"
-        aria-label="PROVIN audita pakalpojumu priekšrocības"
+        aria-label={uiCopy.featureIconRowAria}
       >
-        {TP5_DESKTOP_HERO_FEATURES.map((feature) => {
+        {features.map((feature) => {
           const idlePulse = brandIdleClass(feature.icon);
           return (
             <li key={feature.label} className="flex shrink-0">

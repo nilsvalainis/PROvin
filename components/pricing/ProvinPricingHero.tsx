@@ -7,15 +7,13 @@ import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
 import { Tp5DesktopFeatureIconRow } from "@/components/test-pricing-5/Tp5DesktopFeatureIconRow";
 import { Tp5MobilePricingCard } from "@/components/test-pricing-5/Tp5MobilePricingCard";
-import {
-  TP5_HERO_TITLE_ACCENT,
-  TP5_HERO_TITLE_PREFIX,
-} from "@/lib/test-pricing-5-hero-copy";
+import { getTp5HeroCopy } from "@/lib/test-pricing-5-hero-copy";
 import {
   TP5_MOBILE_CHECKOUT_PLAN,
   TP5_MOBILE_SERVICE_ORDER,
   type Tp5MobileServiceId,
 } from "@/lib/test-pricing-5-mobile";
+import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 import {
   validateTp5InlineFields,
   type Tp5InlineFieldErrors,
@@ -38,6 +36,8 @@ export function ProvinPricingHero({
   desktopTitleId = "provin-pricing-hero-title-desktop",
 }: Props) {
   const locale = useLocale();
+  const heroCopy = getTp5HeroCopy(locale);
+  const uiCopy = getTp5UiCopy(locale);
   const searchParams = useSearchParams();
   const [mobileActiveId, setMobileActiveId] = useState<Tp5MobileServiceId>("audits");
   const [desktopActiveId, setDesktopActiveId] = useState<Tp5MobileServiceId>("audits");
@@ -55,7 +55,7 @@ export function ProvinPricingHero({
   const submitCheckout = useCallback(
     async (planId: TestPricingPlanId) => {
       setGlobalError(null);
-      const validation = validateTp5InlineFields(listingUrl, vin);
+      const validation = validateTp5InlineFields(listingUrl, vin, locale);
       if (!validation.ok) {
         setErrors(validation.errors);
         const first = validation.errors.listingUrl ?? validation.errors.vin;
@@ -83,16 +83,16 @@ export function ProvinPricingHero({
           errors?: string[];
         };
         if (!res.ok || !data.url) {
-          throw new Error(data.errors?.[0] ?? data.error ?? "Neizdevās sākt maksājumu.");
+          throw new Error(data.errors?.[0] ?? data.error ?? uiCopy.checkoutErrorFallback);
         }
         window.location.href = data.url;
       } catch (e) {
-        setGlobalError(e instanceof Error ? e.message : "Neizdevās sākt maksājumu.");
+        setGlobalError(e instanceof Error ? e.message : uiCopy.checkoutErrorFallback);
       } finally {
         setLoading(false);
       }
     },
-    [checkoutSource, listingUrl, locale, vin],
+    [checkoutSource, listingUrl, locale, uiCopy.checkoutErrorFallback, vin],
   );
 
   const submitMobileCheckout = useCallback(() => {
@@ -117,15 +117,13 @@ export function ProvinPricingHero({
         <div className={styles.heroScrim} aria-hidden />
 
       <div className={styles.heroInnerMobile}>
-        {cancelled ? (
-          <p className={styles.cancelNote}>Maksājums tika atcelts. Vari mēģināt vēlreiz.</p>
-        ) : null}
+        {cancelled ? <p className={styles.cancelNote}>{uiCopy.cancelNote}</p> : null}
 
         <header className={styles.heroCopy}>
           <h1 id={mobileTitleId} className={styles.heroTitle}>
-            {TP5_HERO_TITLE_PREFIX}
+            {heroCopy.titlePrefix}
             <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
-              {TP5_HERO_TITLE_ACCENT}
+              {heroCopy.titleAccent}
             </span>
           </h1>
         </header>
@@ -151,16 +149,14 @@ export function ProvinPricingHero({
 
       <div className={styles.heroInnerDesktop}>
         {cancelled ? (
-          <p className={`${styles.cancelNote} ${styles.cancelNoteDesktop}`}>
-            Maksājums tika atcelts. Vari mēģināt vēlreiz.
-          </p>
+          <p className={`${styles.cancelNote} ${styles.cancelNoteDesktop}`}>{uiCopy.cancelNote}</p>
         ) : null}
 
         <header className={styles.heroCopyDesktop}>
           <h1 id={desktopTitleId} className={styles.heroTitleDesktop}>
-            {TP5_HERO_TITLE_PREFIX}
+            {heroCopy.titlePrefix}
             <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
-              {TP5_HERO_TITLE_ACCENT}
+              {heroCopy.titleAccent}
             </span>
           </h1>
           <Tp5DesktopFeatureIconRow />

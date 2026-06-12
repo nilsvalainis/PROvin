@@ -75,3 +75,71 @@ export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
     ],
   },
 ];
+
+const HOME_FEATURE_BREAKDOWN_PACKAGES_EN: HomeFeatureBreakdownPackage[] = [
+  {
+    id: "mini",
+    title: "PROVIN MINI",
+    goal:
+      "Listing, technical data and risk analysis for cars that have already spent a longer time on Latvian roads. The check focuses on an in-depth review of local usage, recent roadworthiness inspection history and public registry data. The service delivers a full assessment of the major components, a reliability outlook and a summary of potential running risks.",
+    items: [
+      {
+        title: "Listing and technical risk analysis",
+        description:
+          "Assessment of the listing and major components. Reliability outlook and running risks.",
+        icon: "listing-analysis",
+      },
+      {
+        title: "EU registry check & inspection history",
+        description:
+          "Detailed analysis of Latvian and European public registry data, including the full roadworthiness inspection history.",
+        icon: "eu-registry",
+      },
+      {
+        title: "In-person inspection guidance",
+        description:
+          "A practical checklist and tips on exactly what to look out for when going to see the car in person.",
+        icon: "inspection-tips",
+      },
+      {
+        title: "Personal consultation",
+        description:
+          "A consultation before the in-person viewing to talk through all the pros and cons of buying the specific car.",
+        icon: "consultation",
+      },
+    ],
+  },
+  {
+    id: "audits",
+    title: "PROVIN AUDIT",
+    goal:
+      "Maximum confidence — or a complete investigation of cars recently imported from abroad. An in-depth vehicle history and risk analysis that combines the leading paid database reports with official dealer data. The audit is built as a full-service solution: it automatically includes the PROVIN MINI check and extends it with information from international paid databases and official dealer systems.",
+    items: [
+      {
+        title: "International history check",
+        description: "In-depth analysis of previous owners, registrations and legal status.",
+        icon: "international",
+      },
+      {
+        title: "carVertical integration",
+        description: "Checks for mileage manipulation, damage records and archive photos.",
+        icon: "carvertical",
+      },
+      {
+        title: "autoDNA integration",
+        description: "Checks for mileage manipulation, damage records and archive photos.",
+        icon: "autodna",
+      },
+      {
+        title: "Official dealer data*",
+        description: "Information from authorised service centres on recorded mileage readings.",
+        icon: "dealer-data",
+      },
+    ],
+  },
+];
+
+/** Locale-aware package cards; anything other than `en` falls back to Latvian. */
+export function getHomeFeatureBreakdownPackages(locale?: string): HomeFeatureBreakdownPackage[] {
+  return locale === "en" ? HOME_FEATURE_BREAKDOWN_PACKAGES_EN : HOME_FEATURE_BREAKDOWN_PACKAGES;
+}

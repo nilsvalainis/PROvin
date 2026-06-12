@@ -111,15 +111,15 @@ export async function POST(req: Request) {
   if (clientCollected) {
     const validation =
       sourcePage === TP5_INLINE_CHECKOUT_SOURCE
-        ? validateTp5InlineFields(listingUrl, vinInput)
-        : validateTestPricingStep2(plan, listingUrl, vinInput, withdrawalConsent);
+        ? validateTp5InlineFields(listingUrl, vinInput, locale)
+        : validateTestPricingStep2(plan, listingUrl, vinInput, withdrawalConsent, locale);
     if (!validation.ok) {
       const errors = validation.errors;
       const first =
         errors.listingUrl ??
         errors.vin ??
         ("consent" in errors ? errors.consent : undefined) ??
-        "Aizpildi obligātos laukus.";
+        (locale === "en" ? "Please fill in the required fields." : "Aizpildi obligātos laukus.");
       return NextResponse.json({ error: first, errors: Object.values(errors) }, { status: 400 });
     }
   }

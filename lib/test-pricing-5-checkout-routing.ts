@@ -48,6 +48,14 @@ export const TP5_TIER_META: Record<TestPricingPlanId, Tp5TierMeta> = {
 export const TP5_DEALER_FOOTNOTE =
   "*Dati no oficiālo dīleru sistēmām ir pieejami noteiktiem ražotājiem.";
 
+const TP5_DEALER_FOOTNOTE_EN =
+  "*Official dealer system data is available for selected manufacturers.";
+
+/** Locale-aware dealer footnote; anything other than `en` falls back to Latvian. */
+export function getTp5DealerFootnote(locale?: string): string {
+  return locale === "en" ? TP5_DEALER_FOOTNOTE_EN : TP5_DEALER_FOOTNOTE;
+}
+
 export const TP5_CHECKOUT_SOURCE = "test-checkout" as const;
 
 export function getTp5CheckoutHref(planId: TestPricingPlanId): string {

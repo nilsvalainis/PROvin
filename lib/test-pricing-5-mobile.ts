@@ -24,10 +24,24 @@ const TP5_MOBILE_FEATURE_NAMES = [
   "Starptautiska vēstures pārbaude",
 ] as const;
 
+const TP5_MOBILE_FEATURE_NAMES_EN = [
+  "Listing and technical risk analysis",
+  "EU registry check & inspection history",
+  "In-person inspection guidance",
+  "Personal consultation",
+  "carVertical integration",
+  "autoDNA integration",
+  "Official dealer data*",
+  "International history check",
+] as const;
+
 const MINI_ACTIVE_FEATURE_COUNT = 4;
 
-function buildTp5MobileFeatures(includedThroughIndex: number): Tp5MobileFeature[] {
-  return TP5_MOBILE_FEATURE_NAMES.map((name, index) => ({
+function buildTp5MobileFeatures(
+  names: readonly string[],
+  includedThroughIndex: number,
+): Tp5MobileFeature[] {
+  return names.map((name, index) => ({
     name,
     included: index < includedThroughIndex,
   }));
@@ -42,7 +56,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     buttonText: "PASŪTĪT MINI AUDITU — 39,99 €",
     description:
       "Sludinājuma, tehnisko datu un risku analīze. Rekomendējam veikt Latvijā 🇱🇻 lietotiem auto.",
-    features: buildTp5MobileFeatures(MINI_ACTIVE_FEATURE_COUNT),
+    features: buildTp5MobileFeatures(TP5_MOBILE_FEATURE_NAMES, MINI_ACTIVE_FEATURE_COUNT),
   },
   {
     id: "audits",
@@ -51,7 +65,31 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     buttonText: "PASŪTĪT PROVIN AUDITU — 99,99 €",
     description:
       "Detalizēta auto vēstures un risku analīze iekļaujot dažādas maksas vēstures atskaites un oficiālā dīlera datus*.",
-    features: buildTp5MobileFeatures(TP5_MOBILE_FEATURE_NAMES.length),
+    features: buildTp5MobileFeatures(TP5_MOBILE_FEATURE_NAMES, TP5_MOBILE_FEATURE_NAMES.length),
+  },
+];
+
+const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
+  {
+    id: "mini",
+    title: "PROVIN MINI",
+    price: "€39.99",
+    buttonText: "ORDER MINI AUDIT — €39.99",
+    description:
+      "Analysis of the listing, technical data and risks. Recommended for cars used in Latvia 🇱🇻.",
+    features: buildTp5MobileFeatures(TP5_MOBILE_FEATURE_NAMES_EN, MINI_ACTIVE_FEATURE_COUNT),
+  },
+  {
+    id: "audits",
+    title: "PROVIN AUDIT",
+    price: "€99.99",
+    buttonText: "ORDER PROVIN AUDIT — €99.99",
+    description:
+      "In-depth vehicle history and risk analysis, combining several paid history reports and official dealer data*.",
+    features: buildTp5MobileFeatures(
+      TP5_MOBILE_FEATURE_NAMES_EN,
+      TP5_MOBILE_FEATURE_NAMES_EN.length,
+    ),
   },
 ];
 
@@ -61,14 +99,25 @@ export const TP5_MOBILE_SERVICE_ORDER: Tp5MobileServiceId[] = TP5_MOBILE_SERVICE
 
 export const TP5_MOBILE_TURNAROUND = "⏱️ Izpilde: līdz 48h";
 
+const TP5_MOBILE_TURNAROUND_EN = "⏱️ Delivery: within 48h";
+
 /** Stripe checkout plan mapping for mobile tiers. */
 export const TP5_MOBILE_CHECKOUT_PLAN: Record<Tp5MobileServiceId, TestPricingPlanId> = {
   mini: "plus",
   audits: "premium",
 };
 
-export function getTp5MobileService(id: Tp5MobileServiceId): Tp5MobileService {
-  const service = TP5_MOBILE_SERVICES.find((entry) => entry.id === id);
+/** Locale-aware tier list; anything other than `en` falls back to Latvian. */
+export function getTp5MobileServices(locale?: string): Tp5MobileService[] {
+  return locale === "en" ? TP5_MOBILE_SERVICES_EN : TP5_MOBILE_SERVICES;
+}
+
+export function getTp5MobileTurnaround(locale?: string): string {
+  return locale === "en" ? TP5_MOBILE_TURNAROUND_EN : TP5_MOBILE_TURNAROUND;
+}
+
+export function getTp5MobileService(id: Tp5MobileServiceId, locale?: string): Tp5MobileService {
+  const service = getTp5MobileServices(locale).find((entry) => entry.id === id);
   if (!service) {
     throw new Error(`Unknown mobile service: ${id}`);
   }

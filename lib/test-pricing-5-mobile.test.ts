@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   getTp5MobileService,
+  getTp5MobileServices,
+  getTp5MobileTurnaround,
   TP5_MOBILE_CHECKOUT_PLAN,
   TP5_MOBILE_SERVICES,
   TP5_MOBILE_SERVICE_ORDER,
@@ -54,6 +56,24 @@ describe("test-pricing-5 mobile two-tier model", () => {
     expect(audits.features).toHaveLength(8);
     expect(audits.features.map((feature) => feature.name)).toEqual(FULL_FEATURE_STACK);
     expect(audits.features.every((feature) => feature.included)).toBe(true);
+  });
+
+  it("keeps the English tier copy structurally identical to Latvian", () => {
+    const lv = getTp5MobileServices();
+    const en = getTp5MobileServices("en");
+    expect(en.map((service) => service.id)).toEqual(lv.map((service) => service.id));
+    en.forEach((service, index) => {
+      expect(service.features).toHaveLength(lv[index]!.features.length);
+      expect(service.features.map((feature) => feature.included)).toEqual(
+        lv[index]!.features.map((feature) => feature.included),
+      );
+    });
+    expect(getTp5MobileService("mini", "en").buttonText).toBe("ORDER MINI AUDIT — €39.99");
+    expect(getTp5MobileService("audits", "en").title).toBe("PROVIN AUDIT");
+    expect(getTp5MobileTurnaround("en")).toContain("48h");
+    /** Nezināms vai tukšs locale — latviešu noklusējums. */
+    expect(getTp5MobileService("mini").buttonText).toBe("PASŪTĪT MINI AUDITU — 39,99 €");
+    expect(getTp5MobileServices("de")).toEqual(lv);
   });
 
   it("maps checkout tiers to Stripe plan amounts (MINI 39.99, AUDITS 99.99)", () => {

@@ -2,16 +2,18 @@
 
 import { LayoutGroup, motion } from "framer-motion";
 import { type SyntheticEvent, type TouchEvent } from "react";
+import { useLocale } from "next-intl";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
-import { TP5_DEALER_FOOTNOTE } from "@/lib/test-pricing-5-checkout-routing";
+import { getTp5DealerFootnote } from "@/lib/test-pricing-5-checkout-routing";
 import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout";
 import {
   getTp5MobileService,
-  TP5_MOBILE_SERVICES,
-  TP5_MOBILE_TURNAROUND,
+  getTp5MobileServices,
+  getTp5MobileTurnaround,
   type Tp5MobileFeature,
   type Tp5MobileServiceId,
 } from "@/lib/test-pricing-5-mobile";
+import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 
@@ -77,7 +79,10 @@ export function Tp5MobilePricingCard({
   onSwipeAreaTouchEnd,
   stopSwipePropagation,
 }: Tp5MobilePricingCardProps) {
-  const activeService = getTp5MobileService(activeServiceId);
+  const locale = useLocale();
+  const uiCopy = getTp5UiCopy(locale);
+  const services = getTp5MobileServices(locale);
+  const activeService = getTp5MobileService(activeServiceId, locale);
 
   return (
     <article className={`${styles.spatialCard} w-full`}>
@@ -86,9 +91,9 @@ export function Tp5MobilePricingCard({
           <div
             className={`${styles.tierSwitcher} ${styles.tierSwitcherTwo}`}
             role="tablist"
-            aria-label="Izvēlies audita paketi"
+            aria-label={uiCopy.packageTabsAria}
           >
-            {TP5_MOBILE_SERVICES.map((service) => {
+            {services.map((service) => {
               const active = activeServiceId === service.id;
               return (
                 <button
@@ -96,7 +101,7 @@ export function Tp5MobilePricingCard({
                   type="button"
                   role="tab"
                   aria-selected={active}
-                  aria-label={`${service.title} pakete`}
+                  aria-label={`${service.title}${uiCopy.packageAriaSuffix}`}
                   className={styles.tierTabBtn}
                   onClick={() => setActiveServiceId(service.id)}
                 >
@@ -148,8 +153,8 @@ export function Tp5MobilePricingCard({
             className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
             value={vin}
             onChange={(event) => onVinChange(event.target.value.toUpperCase())}
-            placeholder="Ievadi VIN vai numurzīmi"
-            aria-label="Ievadi VIN kodu vai valsts numurzīmi"
+            placeholder={uiCopy.vinPlaceholder}
+            aria-label={uiCopy.vinAria}
             autoComplete="off"
             spellCheck={false}
             inputMode="text"
@@ -161,8 +166,8 @@ export function Tp5MobilePricingCard({
             className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
             value={listingUrl}
             onChange={(event) => onListingUrlChange(event.target.value)}
-            placeholder="Iekopē sludinājuma linku (nav obligāti)"
-            aria-label="Iekopē sludinājuma linku (nav obligāti)"
+            placeholder={uiCopy.listingPlaceholder}
+            aria-label={uiCopy.listingAria}
             autoComplete="url"
             inputMode="url"
           />
@@ -172,7 +177,7 @@ export function Tp5MobilePricingCard({
         </div>
       </div>
 
-      <p className={styles.turnaround}>{TP5_MOBILE_TURNAROUND}</p>
+      <p className={styles.turnaround}>{getTp5MobileTurnaround(locale)}</p>
 
       <div className={styles.ctaWrap}>
         {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
@@ -180,7 +185,7 @@ export function Tp5MobilePricingCard({
           <span className={styles.liquidCtaShimmer} aria-hidden />
           <span className={styles.liquidCtaLabel}>{activeService.buttonText}</span>
         </button>
-        <p className={styles.featureFootnote}>{TP5_DEALER_FOOTNOTE}</p>
+        <p className={styles.featureFootnote}>{getTp5DealerFootnote(locale)}</p>
       </div>
     </article>
   );

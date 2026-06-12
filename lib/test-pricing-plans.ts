@@ -118,28 +118,44 @@ export type TestPricingStep2FieldErrors = {
   consent?: string;
 };
 
+const TEST_PRICING_STEP2_MESSAGES = {
+  lv: {
+    listingUrl: "Saitei jābūt pilnai adresei uz konkrētu sludinājumu.",
+    vin: "Ievadi derīgu VIN kodu vai valsts numurzīmi (3–6 zīmes).",
+    consent: "Apstiprini noteikumus un digitālā satura izpildi.",
+  },
+  en: {
+    listingUrl: "Please enter the full link to a specific listing.",
+    vin: "Enter a valid VIN or licence plate number (3–6 characters).",
+    consent: "Please accept the terms and the digital content delivery conditions.",
+  },
+} as const;
+
 export function validateTestPricingStep2(
   plan: TestPricingPlanConfig,
   listingUrl: string,
   vin: string,
   withdrawalConsent: boolean,
+  locale?: string,
 ): { ok: true } | { ok: false; errors: TestPricingStep2FieldErrors } {
+  const messages =
+    locale === "en" ? TEST_PRICING_STEP2_MESSAGES.en : TEST_PRICING_STEP2_MESSAGES.lv;
   const errors: TestPricingStep2FieldErrors = {};
   const listing = listingUrl.trim();
 
   /** Sludinājuma saite nav obligāta — pārbauda tikai tad, ja ievadīta. */
   if (listing && !isPlausibleListingUrl(listing)) {
-    errors.listingUrl = "Saitei jābūt pilnai adresei uz konkrētu sludinājumu.";
+    errors.listingUrl = messages.listingUrl;
   }
 
   const vinNorm = vin.trim();
   const normalized = normalizeVin(vinNorm);
   if (!normalized || !isValidVinOrPlate(normalized)) {
-    errors.vin = "Ievadi derīgu VIN kodu vai valsts numurzīmi (3–6 zīmes).";
+    errors.vin = messages.vin;
   }
 
   if (!withdrawalConsent) {
-    errors.consent = "Apstiprini noteikumus un digitālā satura izpildi.";
+    errors.consent = messages.consent;
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors };

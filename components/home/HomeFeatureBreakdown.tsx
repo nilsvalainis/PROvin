@@ -7,11 +7,13 @@ import {
   Store,
   Users,
 } from "lucide-react";
+import { useLocale } from "next-intl";
 import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { homeContentMaxClass, homeDarkProvinWordmarkOptions } from "@/lib/home-layout";
-import { HOME_FEATURE_BREAKDOWN_PACKAGES } from "@/lib/home-feature-breakdown";
+import { getHomeFeatureBreakdownPackages } from "@/lib/home-feature-breakdown";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import { getTp5MobileService } from "@/lib/test-pricing-5-mobile";
+import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 import type { Tp5DesktopHeroFeatureIcon } from "@/lib/test-pricing-5-desktop-hero-features";
 
 const BADGE_CLASS =
@@ -65,6 +67,10 @@ function FeatureBadgeIcon({ icon }: { icon: Tp5DesktopHeroFeatureIcon }) {
 }
 
 export function HomeFeatureBreakdown() {
+  const locale = useLocale();
+  const uiCopy = getTp5UiCopy(locale);
+  const packages = getHomeFeatureBreakdownPackages(locale);
+
   return (
     <section
       id="paketes"
@@ -73,12 +79,12 @@ export function HomeFeatureBreakdown() {
     >
       <div className={homeContentMaxClass}>
         <h2 id="home-feature-breakdown-heading" className="sr-only">
-          PROVIN MINI un PROVIN AUDITS
+          {uiCopy.breakdownHeading}
         </h2>
 
         <div className="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-2 lg:gap-8">
-          {HOME_FEATURE_BREAKDOWN_PACKAGES.map((pkg) => {
-            const ctaLabel = getTp5MobileService(pkg.id).buttonText;
+          {packages.map((pkg) => {
+            const ctaLabel = getTp5MobileService(pkg.id, locale).buttonText;
 
             return (
               <article key={pkg.id} className={`${tp5Styles.featureBreakdownCard} min-w-0`}>
@@ -87,7 +93,7 @@ export function HomeFeatureBreakdown() {
                     {renderProvinText(pkg.title, homeDarkProvinWordmarkOptions)}
                   </h3>
                   <p className="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-gray-500">
-                    Mērķis
+                    {uiCopy.goalLabel}
                   </p>
                   <p className="mt-1.5 text-balance text-[0.8125rem] font-medium leading-[1.55] text-zinc-200 sm:text-[0.875rem] sm:leading-[1.6]">
                     {renderProvinText(pkg.goal, homeDarkProvinWordmarkOptions)}

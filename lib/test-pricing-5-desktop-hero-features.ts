@@ -25,3 +25,19 @@ export const TP5_DESKTOP_HERO_FEATURES: Tp5DesktopHeroFeature[] = [
   { label: "Oficiālo dīleru dati*", icon: "dealer-data" },
   { label: "Starptautiska vēstures pārbaude", icon: "international" },
 ];
+
+const TP5_DESKTOP_HERO_FEATURES_EN: Tp5DesktopHeroFeature[] = [
+  { label: "Personal consultation", icon: "consultation" },
+  { label: "Listing and technical risk analysis", icon: "listing-analysis" },
+  { label: "EU registry check & inspection history", icon: "eu-registry" },
+  { label: "In-person inspection guidance", icon: "inspection-tips" },
+  { label: "carVertical integration", icon: "carvertical" },
+  { label: "autoDNA integration", icon: "autodna" },
+  { label: "Official dealer data*", icon: "dealer-data" },
+  { label: "International history check", icon: "international" },
+];
+
+/** Locale-aware icon-row labels; anything other than `en` falls back to Latvian. */
+export function getTp5DesktopHeroFeatures(locale?: string): Tp5DesktopHeroFeature[] {
+  return locale === "en" ? TP5_DESKTOP_HERO_FEATURES_EN : TP5_DESKTOP_HERO_FEATURES;
+}

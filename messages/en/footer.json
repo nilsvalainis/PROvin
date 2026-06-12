@@ -16,6 +16,6 @@
     "companyRegNo": "Registration number",
     "companyLegalAddress": "Legal address",
     "companyIncompleteDev": "Developer note: set NEXT_PUBLIC_COMPANY_LEGAL_NAME, NEXT_PUBLIC_COMPANY_REG_NO and NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS (.env or hosting).",
-    "disclaimer": "Information from data sources is for reference only. The final summary represents a professional expert opinion, not a legal judgment or official technical expertise."
+    "disclaimer": "PROVIN.LV provides an advisory service: an assessment of the information available about a vehicle, together with recommendations. It is a digital data summary, not a technical diagnosis of the car, and it can in no way replace a full in-person inspection of the vehicle. The report is not an extract issued by a public authority, an independent technical assessment or a legal judgment. The final decision on purchasing the vehicle rests with the client."
   }
 }
