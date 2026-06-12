@@ -5,6 +5,7 @@ import { getPublicSiteOrigin } from "@/lib/site-url";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { normalizeVin } from "@/lib/order-field-validation";
+import { CLIENT_COMMENT_CUSTOM_FIELD } from "@/lib/stripe-session";
 import {
   getTestPricingPlan,
   isTestPricingPlanId,
@@ -50,6 +51,7 @@ function buildCheckoutCustomFields(plan: { vinRequired: boolean }): Stripe.Check
       type: "text",
       optional: false,
     },
+    CLIENT_COMMENT_CUSTOM_FIELD,
   ];
 }
 
@@ -174,7 +176,10 @@ export async function POST(req: Request) {
     billing_address_collection: "auto",
     allow_promotion_codes: true,
     ...(clientCollected
-      ? {}
+      ? {
+          /** VIN/saite jau savākti formā — Stripe lapā tikai „Klienta komentārs”. */
+          custom_fields: [CLIENT_COMMENT_CUSTOM_FIELD],
+        }
       : {
           consent_collection: { terms_of_service: "required" as const },
           custom_fields: buildCheckoutCustomFields(plan),

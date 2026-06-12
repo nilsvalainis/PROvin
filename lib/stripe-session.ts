@@ -18,6 +18,19 @@ export function getCheckoutLineFromSession(session: Stripe.Checkout.Session): Ch
   return "audit";
 }
 
+/**
+ * Stripe Checkout papildu lauks „Klienta komentārs” — klients var pievienot
+ * būtisku informāciju par ievadītajiem datiem tieši pirms apmaksas.
+ * Stripe `custom_fields` ierobežojumi: viena rinda, max 255 rakstzīmes.
+ */
+export const CLIENT_COMMENT_CUSTOM_FIELD = {
+  key: "client_comment",
+  label: { type: "custom", custom: "Klienta komentārs" },
+  type: "text",
+  optional: true,
+  text: { maximum_length: 255 },
+} satisfies Stripe.Checkout.SessionCreateParams.CustomField;
+
 export function getCustomFieldValue(
   session: Stripe.Checkout.Session,
   key: string
@@ -48,12 +61,20 @@ export function getOrderFieldsFromSession(session: Stripe.Checkout.Session): {
     return v.trim();
   };
 
+  /** Formas piezīmes (`metadata.notes`) + Stripe lapā ievadītais „Klienta komentārs”. */
+  const metaNotes = meta("notes");
+  const clientComment = getCustomFieldValue(session, "client_comment")?.trim() || null;
+  const notes =
+    metaNotes && clientComment && metaNotes !== clientComment
+      ? `${metaNotes}\n\n${clientComment}`
+      : (metaNotes ?? clientComment);
+
   return {
     vin: meta("vin") ?? getCustomFieldValue(session, "vin"),
     listingUrl: meta("listing_url") ?? getCustomFieldValue(session, "listing_url"),
     contactMethod: meta("contact_method") ?? getCustomFieldValue(session, "contact_method"),
     customerName: meta("customer_name"),
-    notes: meta("notes"),
+    notes,
     formPhone: meta("phone"),
   };
 }

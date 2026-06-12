@@ -13,6 +13,7 @@ import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
+import { CLIENT_COMMENT_CUSTOM_FIELD } from "@/lib/stripe-session";
 import { PROVIN_SELECT_FORM_HASH } from "@/lib/provin-select-section";
 import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 
@@ -274,6 +275,8 @@ export async function POST(req: Request) {
     success_url: `${origin}${thanksPath}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${cancelPath}`,
     phone_number_collection: { enabled: false },
+    /** Stripe lapā — papildu lauks „Klienta komentārs” (nav obligāts). */
+    custom_fields: [CLIENT_COMMENT_CUSTOM_FIELD],
     metadata: {
       checkout_line: checkoutLine,
       ...(checkoutLine !== "provin_select" ? { vin } : {}),
