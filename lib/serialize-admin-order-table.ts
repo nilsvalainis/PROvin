@@ -17,6 +17,8 @@ export type SerializedAdminOrderTableRow = {
   /** Ja ir, tabula var novirzīt „Atvērt” uz `/admin/konsultacijas` PROVIN SELECT sesijām. */
   checkoutLine?: CheckoutLineKind;
   isDemo?: boolean;
+  /** Manuāli izveidots pasūtījums — tabulā Summa/Laiks ir labojami. */
+  isManual?: boolean;
   invoicePdfUrl: string | null;
 };
 
@@ -32,6 +34,7 @@ type RowInput = {
   vin: unknown;
   checkoutLine?: unknown;
   isDemo?: unknown;
+  isManual?: unknown;
   invoicePdfUrl?: unknown;
 };
 
@@ -70,6 +73,7 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
       vin: o.vin == null || o.vin === undefined ? null : String(o.vin),
       ...(checkoutLine ? { checkoutLine } : {}),
       ...(Boolean(o.isDemo) ? { isDemo: true as const } : {}),
+      ...(Boolean(o.isManual) ? { isManual: true as const } : {}),
       invoicePdfUrl:
         o.invoicePdfUrl == null || o.invoicePdfUrl === undefined ? null : String(o.invoicePdfUrl),
     };

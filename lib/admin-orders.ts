@@ -3,6 +3,12 @@ import "server-only";
 import type Stripe from "stripe";
 import { getCompanyLegal } from "@/lib/company";
 import { getDemoConsultationDetail, getDemoConsultationRows, getDemoOrderDetail, getDemoOrderRows } from "@/lib/demo-orders";
+import {
+  getManualOrder,
+  isManualOrderId,
+  listManualOrders,
+  type ManualOrderRecord,
+} from "@/lib/admin-manual-orders";
 import { getStripe } from "@/lib/stripe";
 import {
   getCheckoutLineFromSession,
@@ -31,6 +37,8 @@ export type AdminOrderRow = {
   checkoutLine?: CheckoutLineKind;
   /** Demonstrācijas pasūtījums (ADMIN_DEMO_ORDERS) */
   isDemo?: boolean;
+  /** Admin panelī manuāli izveidots pasūtījums (ne no Stripe) — Summa/Laiks labojami. */
+  isManual?: boolean;
 };
 
 export type AdminOrderDetail = AdminOrderRow & {
@@ -64,6 +72,21 @@ const STRIPE_CHECKOUT_LIST_TIMEOUT_MS = 12_000;
 const STRIPE_CHECKOUT_PAGE_SIZE = 100;
 /** Līdz ~8000 Checkout sesijām (apmaksātās filtrē pēc lapas). */
 const STRIPE_CHECKOUT_MAX_PAGES = 80;
+
+function manualOrderToAdminOrderRow(rec: ManualOrderRecord): AdminOrderRow {
+  return {
+    id: rec.id,
+    created: rec.created,
+    amountTotal: rec.amountTotal,
+    currency: rec.currency,
+    /** Manuālie pasūtījumi = individuāli piedāvājumi pirms apmaksas. */
+    paymentStatus: "unpaid",
+    customerEmail: null,
+    vin: null,
+    checkoutLine: "audit",
+    isManual: true,
+  };
+}
 
 function sessionToAdminOrderRow(s: Stripe.Checkout.Session): AdminOrderRow | null {
   if (s.payment_status !== "paid") return null;
@@ -138,11 +161,18 @@ export async function listAdminOrders(): Promise<{
       "Neizdevās ielādēt pasūtījumus no Stripe. Pārbaudi, vai serverī ir iestatīts STRIPE_SECRET_KEY.";
   }
 
+  let manual: AdminOrderRow[] = [];
+  try {
+    manual = (await listManualOrders()).map(manualOrderToAdminOrderRow);
+  } catch {
+    manual = [];
+  }
+
   /** Ja Stripe saraksts neizdodas, rādām demo pat tad, ja ADMIN_DEMO_ORDERS=0 — lai admin nav tukšs. */
   const includeDemo = isDemoOrdersEnabled() || stripeError !== null;
   const demo = includeDemo ? (getDemoOrderRows() as AdminOrderRow[]) : [];
   /** Visi apmaksātie Checkout (`audit`, `consultation`, `provin_select`) — PROVIN SELECT arī `/admin/konsultacijas`, bet šeit kopējā plūsma. */
-  const rows = [...demo, ...real];
+  const rows = [...demo, ...[...manual, ...real].sort((a, b) => b.created - a.created)];
   return { rows, stripeError };
 }
 
@@ -166,6 +196,23 @@ export async function listAdminConsultations(): Promise<{
 }
 
 export async function getCheckoutSessionDetail(sessionId: string): Promise<AdminOrderDetail | null> {
+  if (isManualOrderId(sessionId)) {
+    const rec = await getManualOrder(sessionId);
+    if (!rec) return null;
+    return {
+      ...manualOrderToAdminOrderRow(rec),
+      listingUrl: null,
+      customerName: null,
+      phone: null,
+      contactMethod: null,
+      notes: null,
+      customerDetailsEmail: null,
+      customerDetailsPhone: null,
+      internalComment: null,
+      attachments: [],
+    };
+  }
+
   const demo = getDemoOrderDetail(sessionId);
   if (demo && isDemoOrdersEnabled()) {
     return demo as AdminOrderDetail;

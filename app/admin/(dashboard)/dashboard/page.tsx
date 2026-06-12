@@ -6,6 +6,7 @@ import {
 } from "@/lib/admin-order-amount-filter";
 import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
+import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
 
@@ -114,6 +115,10 @@ export default async function AdminOrdersPage({
           ) : null}
         </div>
       ) : null}
+
+      <div className="mt-4 flex justify-end">
+        <AdminCreateManualOrderButton />
+      </div>
 
       {orders.length > 0 ? <AdminOrdersTable orders={tableOrders} /> : null}
 

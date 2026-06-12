@@ -4,11 +4,14 @@ export const ADMIN_ORDER_MIN_AMOUNT_CENTS = 1000;
 export type AdminOrderAmountFilterRow = {
   amountTotal: number | null;
   isDemo?: boolean;
+  isManual?: boolean;
 };
 
-/** Rāda sarakstā: demo vienmēr; pārējie tikai ja summa ir lielāka par 10 €. */
+/** Rāda sarakstā: demo un manuālie vienmēr; pārējie tikai ja summa ir lielāka par 10 €. */
 export function passesAdminOrderAmountFilter(row: AdminOrderAmountFilterRow): boolean {
   if (row.isDemo) return true;
+  /** Manuālie pasūtījumi sākas tukši (bez summas) — tiem vienmēr jābūt redzamiem. */
+  if (row.isManual) return true;
   const cents = row.amountTotal;
   if (cents == null || !Number.isFinite(cents)) return false;
   return cents > ADMIN_ORDER_MIN_AMOUNT_CENTS;
