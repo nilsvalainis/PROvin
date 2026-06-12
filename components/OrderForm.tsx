@@ -10,7 +10,7 @@ import {
   isPlausibleListingUrl,
   isValidOrderEmail,
   isValidOrderPhone,
-  isValidVin,
+  isValidVinOrPlate,
   normalizeVin,
   validateOrderFields,
 } from "@/lib/order-field-validation";
@@ -33,7 +33,7 @@ function buildHeroStep2FieldMessages(
   t: (key: string) => string,
 ): Record<HeroStep2FieldKey, string | null> {
   const vn = normalizeVin(vinTrim);
-  const vinMsg = !vn || !isValidVin(vn) ? (!vn ? t("validation.fieldEmpty") : t("validation.vin")) : null;
+  const vinMsg = !vn || !isValidVinOrPlate(vn) ? (!vn ? t("validation.fieldEmpty") : t("validation.vin")) : null;
   const listingMsg =
     listingTrim && !isPlausibleListingUrl(listingTrim) ? t("validation.listing") : null;
   const et = emailTrim.trim();
@@ -124,7 +124,7 @@ export function OrderForm({
 
   function goToStepTwo() {
     const vinNormalized = normalizeVin(vin);
-    const vinOk = Boolean(vinNormalized && isValidVin(vinNormalized));
+    const vinOk = Boolean(vinNormalized && isValidVinOrPlate(vinNormalized));
     const listingTrim = listingUrl.trim();
     const listingValidIfPresent = !listingTrim || isPlausibleListingUrl(listingTrim);
 

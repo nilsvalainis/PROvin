@@ -7,7 +7,7 @@ import {
 } from "@/lib/test-pricing-5-inline-checkout";
 
 describe("test-pricing-5 inline checkout", () => {
-  it("requires valid vin and listing url", () => {
+  it("requires vin or plate; listing url is optional", () => {
     expect(validateTp5InlineFields("", "").ok).toBe(false);
     expect(
       validateTp5InlineFields(
@@ -21,6 +21,15 @@ describe("test-pricing-5 inline checkout", () => {
         "1HGCM82633A004352",
       ).ok,
     ).toBe(true);
+    /** Bez sludinājuma saites — derīgs VIN vai numurzīme pietiek. */
+    expect(validateTp5InlineFields("", "1HGCM82633A004352").ok).toBe(true);
+    expect(validateTp5InlineFields("", "KG982").ok).toBe(true);
+    expect(validateTp5InlineFields("", "AB-1234").ok).toBe(true);
+    /** Numurzīme ārpus 3–6 zīmēm vai nepilns VIN — kļūda. */
+    expect(validateTp5InlineFields("", "AB").ok).toBe(false);
+    expect(validateTp5InlineFields("", "ABCD123").ok).toBe(false);
+    /** Ja saite ievadīta — tai jābūt pilnai (ne tikai sakne). */
+    expect(validateTp5InlineFields("https://www.ss.lv", "KG982").ok).toBe(false);
   });
 
   it("recognizes tp5 checkout sources", () => {

@@ -148,8 +148,8 @@ export function Tp5MobilePricingCard({
             className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
             value={vin}
             onChange={(event) => onVinChange(event.target.value.toUpperCase())}
-            placeholder="Ievadi VIN kodu"
-            aria-label="Ievadi VIN kodu"
+            placeholder="Ievadi VIN vai numurzīmi"
+            aria-label="Ievadi VIN kodu vai valsts numurzīmi"
             autoComplete="off"
             spellCheck={false}
             inputMode="text"
@@ -161,8 +161,8 @@ export function Tp5MobilePricingCard({
             className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
             value={listingUrl}
             onChange={(event) => onListingUrlChange(event.target.value)}
-            placeholder="Iekopē sludinājuma linku"
-            aria-label="Iekopē sludinājuma linku"
+            placeholder="Iekopē sludinājuma linku (nav obligāti)"
+            aria-label="Iekopē sludinājuma linku (nav obligāti)"
             autoComplete="url"
             inputMode="url"
           />

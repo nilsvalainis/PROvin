@@ -2,7 +2,7 @@
 
 import {
   isPlausibleListingUrl,
-  isValidVin,
+  isValidVinOrPlate,
   normalizeVin,
 } from "@/lib/order-field-validation";
 
@@ -127,16 +127,15 @@ export function validateTestPricingStep2(
   const errors: TestPricingStep2FieldErrors = {};
   const listing = listingUrl.trim();
 
-  if (!listing) {
-    errors.listingUrl = "Ievadi sludinājuma saiti.";
-  } else if (!isPlausibleListingUrl(listing)) {
+  /** Sludinājuma saite nav obligāta — pārbauda tikai tad, ja ievadīta. */
+  if (listing && !isPlausibleListingUrl(listing)) {
     errors.listingUrl = "Saitei jābūt pilnai adresei uz konkrētu sludinājumu.";
   }
 
   const vinNorm = vin.trim();
   const normalized = normalizeVin(vinNorm);
-  if (!normalized || !isValidVin(normalized)) {
-    errors.vin = "Ievadi derīgu 17 zīmju VIN kodu.";
+  if (!normalized || !isValidVinOrPlate(normalized)) {
+    errors.vin = "Ievadi derīgu VIN kodu vai valsts numurzīmi (3–6 zīmes).";
   }
 
   if (!withdrawalConsent) {

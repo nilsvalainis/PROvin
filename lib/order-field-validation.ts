@@ -19,6 +19,22 @@ export function isOutvinApiVin(v: string): boolean {
   return /^[A-HJ-NPR-Z0-9]{17}$/.test(normalizeVin(v));
 }
 
+export function normalizePlateNumber(s: string): string {
+  return s.trim().toUpperCase().replace(/[\s-]/g, "");
+}
+
+/** Valsts numurzīme: 3–6 zīmes (burti/cipari) pēc atstarpju un defišu noņemšanas. */
+export function isValidPlateNumber(v: string): boolean {
+  const n = normalizePlateNumber(v);
+  if (n.length < 3 || n.length > 6) return false;
+  return /^[A-Z0-9]+$/.test(n);
+}
+
+/** Pasūtījuma “VIN” lauks: pieņem VIN kodu (11–17) vai valsts numurzīmi (3–6 zīmes). */
+export function isValidVinOrPlate(v: string): boolean {
+  return isValidVin(v) || isValidPlateNumber(v);
+}
+
 export function isValidHttpUrl(s: string): boolean {
   try {
     const u = new URL(s);
@@ -105,7 +121,7 @@ export function validateOrderFields(input: {
   phone: string;
 }): OrderFieldErrorKey | null {
   const vin = normalizeVin(input.vin);
-  if (!vin || !isValidVin(vin)) return "vin";
+  if (!vin || !isValidVinOrPlate(vin)) return "vin";
   const listingTrim = input.listingUrl.trim();
   if (listingTrim && !isPlausibleListingUrl(listingTrim)) return "listing";
   if (!input.email.trim() || !isValidOrderEmail(input.email)) return "email";

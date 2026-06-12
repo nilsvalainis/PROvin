@@ -1,6 +1,6 @@
 import {
   isPlausibleListingUrl,
-  isValidVin,
+  isValidVinOrPlate,
   normalizeVin,
 } from "@/lib/order-field-validation";
 import { HOME_PRICING_CHECKOUT_SOURCE } from "@/lib/home-pricing-checkout";
@@ -60,15 +60,14 @@ export function validateTp5InlineFields(
   const errors: Tp5InlineFieldErrors = {};
   const listing = listingUrl.trim();
 
-  if (!listing) {
-    errors.listingUrl = "Ievadi sludinājuma saiti.";
-  } else if (!isPlausibleListingUrl(listing)) {
+  /** Sludinājuma saite nav obligāta — pārbauda tikai tad, ja ievadīta. */
+  if (listing && !isPlausibleListingUrl(listing)) {
     errors.listingUrl = "Saitei jābūt pilnai adresei uz konkrētu sludinājumu.";
   }
 
   const normalized = normalizeVin(vin.trim());
-  if (!normalized || !isValidVin(normalized)) {
-    errors.vin = "Ievadi derīgu 17 zīmju VIN kodu.";
+  if (!normalized || !isValidVinOrPlate(normalized)) {
+    errors.vin = "Ievadi derīgu VIN kodu vai valsts numurzīmi (3–6 zīmes).";
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors };

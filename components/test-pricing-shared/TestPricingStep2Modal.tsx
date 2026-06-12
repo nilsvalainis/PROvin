@@ -118,7 +118,7 @@ export function TestPricingStep2Modal({ planId, open, onClose, sourcePage }: Pro
         <div className={styles.modalFields}>
           <div className={styles.field}>
             <label className={styles.fieldLabel} htmlFor={`${sourcePage}-listing`}>
-              Sludinājuma saite <span className={styles.requiredMark}>*</span>
+              Sludinājuma saite (nav obligāti)
             </label>
             <input
               ref={firstFieldRef}
@@ -139,7 +139,7 @@ export function TestPricingStep2Modal({ planId, open, onClose, sourcePage }: Pro
 
           <div className={styles.field}>
             <label className={styles.fieldLabel} htmlFor={`${sourcePage}-vin`}>
-              VIN kods <span className={styles.requiredMark}>*</span>
+              VIN kods vai numurzīme <span className={styles.requiredMark}>*</span>
             </label>
             <input
               id={`${sourcePage}-vin`}
@@ -147,7 +147,7 @@ export function TestPricingStep2Modal({ planId, open, onClose, sourcePage }: Pro
               autoComplete="off"
               spellCheck={false}
               maxLength={17}
-              placeholder="Ievadi 17 zīmju VIN kodu"
+              placeholder="Ievadi VIN kodu vai numurzīmi"
               className={`${styles.fieldInput} ${errors.vin ? styles.fieldInputError : ""}`}
               value={vin}
               onChange={(e) => {

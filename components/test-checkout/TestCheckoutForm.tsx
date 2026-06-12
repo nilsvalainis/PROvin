@@ -89,7 +89,7 @@ export function TestCheckoutForm({ planId }: Props) {
         <div className={modalStyles.modalFields}>
           <div className={modalStyles.field}>
             <label className={modalStyles.fieldLabel} htmlFor={`${TP5_CHECKOUT_SOURCE}-listing`}>
-              Sludinājuma saite <span className={modalStyles.requiredMark}>*</span>
+              Sludinājuma saite (nav obligāti)
             </label>
             <input
               ref={firstFieldRef}
@@ -110,7 +110,7 @@ export function TestCheckoutForm({ planId }: Props) {
 
           <div className={modalStyles.field}>
             <label className={modalStyles.fieldLabel} htmlFor={`${TP5_CHECKOUT_SOURCE}-vin`}>
-              VIN kods <span className={modalStyles.requiredMark}>*</span>
+              VIN kods vai numurzīme <span className={modalStyles.requiredMark}>*</span>
             </label>
             <input
               id={`${TP5_CHECKOUT_SOURCE}-vin`}
@@ -118,7 +118,7 @@ export function TestCheckoutForm({ planId }: Props) {
               autoComplete="off"
               spellCheck={false}
               maxLength={17}
-              placeholder="Ievadi 17 zīmju VIN kodu"
+              placeholder="Ievadi VIN kodu vai numurzīmi"
               className={`${modalStyles.fieldInput} ${errors.vin ? modalStyles.fieldInputError : ""}`}
               value={vin}
               onChange={(e) => {

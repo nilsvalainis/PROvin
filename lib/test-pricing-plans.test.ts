@@ -43,7 +43,7 @@ describe("test-pricing plans", () => {
     expect(premium.heroCtaLabel).toContain("99,99");
   });
 
-  it("requires listing url, vin, and consent for all tiers", () => {
+  it("requires vin or plate and consent; listing url is optional", () => {
     const mini = getTestPricingPlan("mini")!;
     const plus = getTestPricingPlan("plus")!;
 
@@ -64,5 +64,10 @@ describe("test-pricing plans", () => {
         true,
       ).ok,
     ).toBe(true);
+    /** Sludinājuma saite nav obligāta — VIN vai numurzīme + piekrišana pietiek. */
+    expect(validateTestPricingStep2(plus, "", "1HGCM82633A004352", true).ok).toBe(true);
+    expect(validateTestPricingStep2(plus, "", "KG982", true).ok).toBe(true);
+    expect(validateTestPricingStep2(plus, "", "KG982", false).ok).toBe(false);
+    expect(validateTestPricingStep2(plus, "", "AB", true).ok).toBe(false);
   });
 });
