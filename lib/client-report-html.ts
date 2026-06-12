@@ -98,8 +98,6 @@ import {
   PDF_MILEAGE_HISTORY_COMMENT_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import { buildOwnerRegistrationTimelineHtml } from "@/lib/csdd-history-charts";
-import { buildCarVerticalIncidentDamageSubHtml } from "@/lib/carvertical-report-html";
-import { matchCarVerticalDamageDetail } from "@/lib/carvertical-damage-match";
 import {
   buildPreviousInspectionBlockHtml,
   buildTechnicalInspectionHistoryTableHtml,
@@ -555,44 +553,20 @@ export function buildUnifiedMileageTableHtml(
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
 }
 
-function buildUnifiedIncidentRowHtml(
-  r: UnifiedIncidentRow,
-  damageDetail?: { damagedSides: string; damageGroups: string },
-): string {
+// „Bojātā puse / Bojājumu grupas” apakšbloku PDF pagaidām nerādām (dati paliek admin pusē).
+function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
   const lossCell = formatLossAmountEurCell(r.lossAmount);
   const flagCell = buildPdfCountryFlagCellHtml(r.country);
   const stripeSpan = buildPdfMileageSourceStripeSpan(r.sourceLabel, "table");
   const srcTd = `<td class="pdf-mileage-cell-src"><span class="pdf-mileage-cell-src-inner">${stripeSpan}</span></td>`;
-  const mainRow = `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo pdf-mileage-cell-loss">${lossCell}</td>${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
-  if (!damageDetail || (!damageDetail.damagedSides.trim() && !damageDetail.damageGroups.trim())) {
-    return mainRow;
-  }
-  const subHtml = buildCarVerticalIncidentDamageSubHtml(damageDetail);
-  return `${mainRow}<tr class="pdf-cv-damage-sub-row"><td class="pdf-cv-damage-sub-cell" colspan="4">${subHtml}</td></tr>`;
+  return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo pdf-mileage-cell-loss">${lossCell}</td>${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
 }
 
-function buildIncidentHistoryTableHtml(
-  rows: UnifiedIncidentRow[],
-  carverticalDamageDetails: import("@/lib/carvertical-pdf-parse").CarVerticalDamageDetailRow[] = [],
-): string {
+function buildIncidentHistoryTableHtml(rows: UnifiedIncidentRow[]): string {
   if (rows.length === 0) return "";
   const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-src" /><col class="pdf-mileage-col-flag" /></colgroup>`;
   const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Zaudējuma summa</th><th class="pdf-mileage-th-src" scope="col">Avots</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
-  const body = rows
-    .map((r) => {
-      const damage =
-        r.sourceLabel === SOURCE_BLOCK_LABELS.carvertical
-          ? matchCarVerticalDamageDetail(
-              { csngDate: r.date, incidentNo: r.country, lossAmount: r.lossAmount },
-              carverticalDamageDetails,
-            )
-          : undefined;
-      return buildUnifiedIncidentRowHtml(
-        r,
-        damage ? { damagedSides: damage.damagedSides, damageGroups: damage.damageGroups } : undefined,
-      );
-    })
-    .join("\n");
+  const body = rows.map((r) => buildUnifiedIncidentRowHtml(r)).join("\n");
   return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--mileage-rows pdf-mileage-history-table--incidents" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 
@@ -604,14 +578,11 @@ export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfV
     manualVendorBlocks: p.manualVendorBlocks ?? null,
     manualLtabBlock: p.manualLtabBlock ?? null,
   });
-  const carverticalDamageRows =
-    (p.manualVendorBlocks ?? []).find((b) => b.title === SOURCE_BLOCK_LABELS.carvertical)?.damageDetails ??
-    [];
   const adminNoteHtml = pdfReportCommentBox(p.internalComment ?? "", ADMIN_INCIDENTS_SUMMARY_LABEL);
   const hasTable = collected.length > 0;
   if (!hasTable && !adminNoteHtml) return "";
   const rows = sortUnifiedIncidentsNewestFirst(collected);
-  const tablesHtml = hasTable ? buildIncidentHistoryTableHtml(rows, carverticalDamageRows) : "";
+  const tablesHtml = hasTable ? buildIncidentHistoryTableHtml(rows) : "";
   const sourceCount = hasTable ? new Set(collected.map((r) => r.sourceLabel)).size : 0;
   const legendAbbrevs = hasTable ? buildPdfSourceLegendAbbrevsHtml(collected.map((r) => r.sourceLabel)) : "";
   const sourceCountHtml = hasTable
