@@ -1,5 +1,5 @@
-/** Sludinājuma analīzes „Fotogrāfiju analīze” — vizuālie pierādījumi PDF. */
-export const LISTING_ANALYSIS_MAX_PHOTOS = 12;
+/** Sludinājuma analīzes „Fotogrāfiju analīze” — vizuālie pierādījumi PDF (līdz 50 gab.). */
+export const LISTING_ANALYSIS_MAX_PHOTOS = 50;
 
 export type ListingAnalysisPhotoMeta = {
   id: string;
