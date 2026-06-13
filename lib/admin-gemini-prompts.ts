@@ -351,7 +351,7 @@ Rezultāts:
 - Obligāti salīdzini visus negadījumu ierakstus starp avotiem (AutoDNA, CarVertical, LTAB, Citi avoti, AUTO RECORDS)
 - Norādi datumus, zaudējumu summas (ja pieejamas), avotu atšķirības un pretrunas ar **bold** uz kritiskām summām
 - Saista ar nobraukuma un īpašniecības laika līniju; interpretē, ko tas nozīmē pircējam Latvijā
-- Ja negadījumu nav — skaidri norādi, ka avotos nav fiksētu negadījumu (neizdomā)
+- Ja negadījumu nav — skaidri norādi, ka avotos nav fiksētu negadījumu vai apdrošināšanas izmaksu; salīdzini avotus (piemin, kurus pārbaudīji) un pievieno saprātīgu atrunu, ka tas neizslēdz nefiksētu negadījumu vai kosmētisku krāsojumu (neizdomā faktus)
 - Bez virsraksta un bez meta-komentāriem par AI`,
 );
 

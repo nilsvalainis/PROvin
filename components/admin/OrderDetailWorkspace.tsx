@@ -3399,15 +3399,8 @@ export function OrderDetailWorkspace({
                     <AdminGeminiGenerateWithPrefill
                       label="Sagatavot atbildi"
                       busy={geminiIncidentsSummaryBusy}
-                      disabled={!payload.geminiAllowed || !hasIncidentDataForGemini}
+                      disabled={!payload.geminiAllowed}
                       demoOnly={!payload.geminiAllowed}
-                      title={
-                        !payload.geminiAllowed
-                          ? undefined
-                          : !hasIncidentDataForGemini
-                            ? "Vispirms aizpildi negadījumu tabulas avotos"
-                            : undefined
-                      }
                       onGenerate={(operatorNotes, modelTier) =>
                         void runGeminiIncidentsSummary(operatorNotes, modelTier)}
                     />

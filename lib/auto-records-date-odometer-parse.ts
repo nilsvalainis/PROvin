@@ -33,9 +33,22 @@ export function parseFlexibleDateToken(raw: string): string {
 }
 
 export function extractOdometerFromFragment(fragment: string): string {
-  const m = fragment.match(ODOMETER_TOKEN);
+  const kmMatch = fragment.match(/([\d]{1,3}(?:[,.]\d{3})*|\d[\d\s]{0,7})\s*km\b/i);
+  if (kmMatch?.[1]) {
+    const km = normalizeAutoRecordsOdometer(kmMatch[1]);
+    if (km) return km;
+  }
+
+  const withoutIsoDate = fragment.replace(/^\d{4}-\d{2}-\d{2}\s*[-–—]?\s*/, "");
+  const m = withoutIsoDate.match(ODOMETER_TOKEN);
   if (!m?.[1]) return "";
-  return normalizeAutoRecordsOdometer(m[1]) || m[1].replace(/[^\d]/g, "");
+  const km = normalizeAutoRecordsOdometer(m[1]);
+  if (!km || km.length < 1) return "";
+  /** Neatpazīt ISO gada prefiksu (2023) kā nobraukumu. */
+  if (/^\d{4}$/.test(km) && Number.parseInt(km, 10) >= 1980 && Number.parseInt(km, 10) <= 2100) {
+    return "";
+  }
+  return km;
 }
 
 export function findDateInString(s: string): string | null {

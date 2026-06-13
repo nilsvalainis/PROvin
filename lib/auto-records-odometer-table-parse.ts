@@ -10,6 +10,7 @@ import {
   extractCountryFromLocation,
   formatAutoRecordsDateForOutput,
   normalizeAutoRecordsOdometer,
+  sanitizeMileageCountryField,
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
@@ -17,13 +18,17 @@ import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 
 const PLACEHOLDER_LOCATION = /^-+$|^(—|–)$/;
 
+/** Atstarpēta tabula: YYYY-MM-DD [-|vieta] odometrs km ServiceVisit */
+const ROW_SPACED =
+  /^(\d{4}-\d{2}-\d{2})\s+(?:-\s*|([A-Za-zÀ-ž][^0-9]*?)\s+)?([\d]{1,3}(?:,\d{3})*|\d{1,7})\s*km(?:\s*Service\s*Visit)?/i;
+
 /** Rinda bez atstarpes starp datumu, vietu un km. */
 const ROW_NO_LOCATION =
-  /^(\d{4}-\d{2}-\d{2})-([\d]{1,3}(?:,\d{3})+)\s*km\s*Service\s*Visit/i;
+  /^(\d{4}-\d{2}-\d{2})-([\d]{1,3}(?:,\d{3})*|\d{1,7})\s*km\s*Service\s*Visit/i;
 
 /** Datums + pilsēta/valsts (var saturēt komatus) + km. */
 const ROW_WITH_LOCATION =
-  /^(\d{4}-\d{2}-\d{2})([A-Za-zÀ-ž][^0-9]*?)([\d]{1,3}(?:,\d{3})+)\s*km\s*Service\s*Visit/i;
+  /^(\d{4}-\d{2}-\d{2})([A-Za-zÀ-ž][^0-9]*?)([\d]{1,3}(?:,\d{3})*|\d{1,7})\s*km\s*Service\s*Visit/i;
 
 function normalizeLocation(raw: string): string {
   const t = raw.replace(/\s+/g, " ").trim();
@@ -36,7 +41,17 @@ function parseOdometerTableLine(line: string): AutoRecordsServiceRow | null {
   if (!trimmed || /^(status|event\s+date|odometer)/i.test(trimmed)) return null;
   if (!/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return null;
 
-  let m = trimmed.match(ROW_NO_LOCATION);
+  let m = trimmed.match(ROW_SPACED);
+  if (m) {
+    const date = formatAutoRecordsDateForOutput(m[1] ?? "");
+    const odometer = normalizeAutoRecordsOdometer(m[3] ?? "");
+    if (!date || !odometer) return null;
+    const locRaw = (m[2] ?? "").trim();
+    const country = locRaw ? sanitizeMileageCountryField(normalizeLocation(locRaw)) : "";
+    return { date, odometer, country };
+  }
+
+  m = trimmed.match(ROW_NO_LOCATION);
   if (m) {
     const date = formatAutoRecordsDateForOutput(m[1] ?? "");
     const odometer = normalizeAutoRecordsOdometer(m[2] ?? "");
@@ -51,7 +66,7 @@ function parseOdometerTableLine(line: string): AutoRecordsServiceRow | null {
     const odometer = normalizeAutoRecordsOdometer(m[3] ?? "");
     if (!date || !odometer) return null;
     const country = normalizeLocation(locRaw);
-    return { date, odometer, country: country ? normalizeCountryNameLv(country) : "" };
+    return { date, odometer, country: country ? sanitizeMileageCountryField(normalizeCountryNameLv(country)) : "" };
   }
 
   return null;

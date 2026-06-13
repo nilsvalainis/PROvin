@@ -21,17 +21,29 @@ export type AutoRecordsServiceRow = {
 /** Pēdējais vārds pēc pēdējā komata Event Location laukā (piem. „Germany”). */
 export function extractCountryFromLocation(location: string): string {
   const t = location.trim();
-  if (!t) return "";
+  if (!t || /^-+$|^(—|–)$/.test(t)) return "";
   const lastComma = t.lastIndexOf(",");
   const segment = lastComma >= 0 ? t.slice(lastComma + 1).trim() : t;
   const words = segment.split(/\s+/).filter(Boolean);
-  return words.length ? normalizeCountryNameLv(words[words.length - 1]!) : "";
+  if (!words.length) return "";
+  const lastWord = words[words.length - 1]!;
+  if (/^[\d\s,.]+$/.test(lastWord)) return "";
+  return sanitizeMileageCountryField(lastWord);
 }
 
 /** Noņem komatus un „km”, atstāj tikai ciparus. */
 export function normalizeAutoRecordsOdometer(raw: string): string {
   const t = raw.replace(/\s*km\s*/gi, " ").trim();
-  return t.replace(/,/g, "").replace(/\D/g, "");
+  return t.replace(/,/g, "").replace(/\s/g, "").replace(/\D/g, "");
+}
+
+/** Valsts lauks — tikai teksts; cipari (piem. nobraukuma atliekas) netiek rādīti. */
+export function sanitizeMileageCountryField(raw: string): string {
+  const t = raw.replace(/\s+/g, " ").trim();
+  if (!t || t === "—" || t === "-" || /^[\d\s,.]+$/.test(t)) return "";
+  const normalized = normalizeCountryNameLv(t);
+  if (!normalized || /^[\d\s,.]+$/.test(normalized)) return "";
+  return normalized;
 }
 
 /** ISO (YYYY-MM-DD) → DD.MM.YYYY; jau DD.MM.YYYY → normalizē padding (saglabā `00.` displejam). */
@@ -75,6 +87,9 @@ function parseDataLine(line: string): AutoRecordsServiceRow | null {
   const normalized = line.replace(/\|/g, " ").replace(/\s{2,}/g, " ").trim();
   if (!normalized) return null;
 
+  const spaced = parseSpacedOdometerCheckLine(normalized);
+  if (spaced) return spaced;
+
   const parts = normalized
     .split(/\t+|\s{2,}|\|/)
     .map((p) => p.trim())
@@ -89,8 +104,9 @@ function parseDataLine(line: string): AutoRecordsServiceRow | null {
       const odometer = extractOdometerFromFragment(rest) || extractOdometerFromFragment(normalized);
       if (date && odometer) {
         const loc = parts[di + 1] ?? "";
-        const country =
-          lineHasDateToken(loc) ? "" : extractCountryFromLocation(loc).replace(/\s+/g, " ").trim();
+        const country = lineHasDateToken(loc) || /^-+$/.test(loc.trim())
+          ? ""
+          : sanitizeMileageCountryField(extractCountryFromLocation(loc));
         return { date, odometer, country };
       }
     }
@@ -102,7 +118,7 @@ function parseDataLine(line: string): AutoRecordsServiceRow | null {
     if (odometer) {
       const date = parseFlexibleDateToken(dateInLine);
       const beforeKm = normalized.slice(0, normalized.toLowerCase().indexOf("km"));
-      const country = extractCountryFromLocation(beforeKm).replace(/\s+/g, " ").trim();
+      const country = sanitizeMileageCountryField(extractCountryFromLocation(beforeKm));
       return { date, odometer, country };
     }
   }
@@ -118,8 +134,43 @@ function parseDataLine(line: string): AutoRecordsServiceRow | null {
   return {
     date,
     odometer,
-    country: extractCountryFromLocation(locPart).replace(/\s+/g, " ").trim(),
+    country: sanitizeMileageCountryField(extractCountryFromLocation(locPart)),
   };
+}
+
+/** YYYY-MM-DD [vieta|-] odometrs km — atstarpēta ODOMETER CHECK tabula no portāla. */
+function parseSpacedOdometerCheckLine(line: string): AutoRecordsServiceRow | null {
+  const m = line.match(
+    /^(\d{4}-\d{2}-\d{2})\s+(?:-\s*|([A-Za-zÀ-ž][^0-9]*?)\s+)?([\d]{1,3}(?:,\d{3})*|\d{1,7})\s*km(?:\s*Service\s*Visit)?/i,
+  );
+  if (!m) return null;
+  const date = parseFlexibleDateToken(m[1] ?? "");
+  const odometer = normalizeAutoRecordsOdometer(m[3] ?? "");
+  if (!date || !odometer) return null;
+  const locRaw = (m[2] ?? "").trim();
+  const country = locRaw ? sanitizeMileageCountryField(extractCountryFromLocation(locRaw)) : "";
+  return { date, odometer, country };
+}
+
+function mergeAutoRecordsParsedRows(rows: AutoRecordsServiceRow[]): AutoRecordsServiceRow[] {
+  const byKey = new Map<string, AutoRecordsServiceRow>();
+  for (const row of rows) {
+    if (!row.date.trim() || !row.odometer.trim()) continue;
+    const key = `${row.date}|${row.odometer}`;
+    const existing = byKey.get(key);
+    if (!existing || (!existing.country && row.country)) {
+      byKey.set(key, row);
+    }
+  }
+  return sortAutoRecordsDescending([...byKey.values()]);
+}
+
+function formatAutoRecordsParsedRows(rows: AutoRecordsServiceRow[]): AutoRecordsServiceRow[] {
+  return mergeAutoRecordsParsedRows(rows).map((r) => ({
+    date: formatAutoRecordsDateForOutput(r.date),
+    odometer: normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
+    country: sanitizeMileageCountryField(r.country),
+  }));
 }
 
 /** Jaunākais augšā (pēc datuma DD.MM.YYYY / ISO, tad odometra); rindas bez derīga datuma — apakšā. */
@@ -147,27 +198,22 @@ export function parseAutoRecordsPaste(raw: string): AutoRecordsServiceRow[] {
   if (!/ODOMETER\s+CHECK/i.test(cleaned)) return [];
 
   const tableRows = parseAutoRecordsOdometerTable(cleaned);
-  if (tableRows.length > 0) return tableRows;
 
   const lines = cleaned.split(/\r?\n/);
   let i = 0;
   while (i < lines.length && !/ODOMETER\s+CHECK/i.test(lines[i]!)) i++;
-  if (i >= lines.length) return [];
+  if (i >= lines.length) return formatAutoRecordsParsedRows(tableRows);
   i++;
-  const out: AutoRecordsServiceRow[] = [];
+  const lineRows: AutoRecordsServiceRow[] = [];
   for (; i < lines.length; i++) {
     const line = lines[i]!.trim();
     if (!line) continue;
     if (isHeaderLine(line)) continue;
     const row = parseDataLine(line);
-    if (row && row.date) out.push(row);
+    if (row && row.date) lineRows.push(row);
   }
-  const sorted = sortAutoRecordsDescending(out);
-  return sorted.map((r) => ({
-    date: formatAutoRecordsDateForOutput(r.date),
-    odometer: normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
-    country: normalizeCountryNameLv(r.country.replace(/\s+/g, " ").trim()),
-  }));
+
+  return formatAutoRecordsParsedRows([...tableRows, ...lineRows]);
 }
 
 export function autoRecordsRowHasData(r: AutoRecordsServiceRow): boolean {

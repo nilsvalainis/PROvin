@@ -91,83 +91,92 @@ export function AdminListingAnalysisPhotos({
     };
   }, []);
 
-  const pickFiles = () => {
-    if (disabled || busy) return;
-    setError(null);
-    fileRef.current?.click();
-  };
-
   const processFiles = async (list: FileList | File[]) => {
     if (!list.length || disabled) return;
     setBusy(true);
     setError(null);
     setStatusLine(null);
-    let rolling = [...photos];
-    const files = Array.from(list);
+    const files = Array.from(list).slice(0, Math.max(0, LISTING_ANALYSIS_MAX_PHOTOS - photos.length));
+    if (files.length === 0) {
+      setError(`Sasniegts limits (${LISTING_ANALYSIS_MAX_PHOTOS} fotogrāfijas).`);
+      setBusy(false);
+      return;
+    }
+
+    const pendingEntries: PendingUpload[] = files.map((file, i) => ({
+      key: `pending_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 8)}`,
+      fileName: file.name,
+      phase: "compressing" as const,
+      previewUrl: URL.createObjectURL(file),
+    }));
+    setPending(pendingEntries);
+    setStatusLine(`Apstrādā ${files.length} fotogrāfijas…`);
+
     try {
+      const compressed: { key: string; jpeg: File; previewUrl: string }[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i]!;
-        if (rolling.length >= LISTING_ANALYSIS_MAX_PHOTOS) {
-          setError(`Sasniegts limits (${LISTING_ANALYSIS_MAX_PHOTOS} fotogrāfijas).`);
-          break;
-        }
-        const key = `pending_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 8)}`;
-        const previewUrl = URL.createObjectURL(file);
-        setPending((p) => [
-          ...p,
-          { key, fileName: file.name, phase: "compressing", previewUrl },
-        ]);
-        setStatusLine(`Apstrādā ${i + 1}/${files.length}: ${file.name}`);
-
-        let jpeg: File;
+        const key = pendingEntries[i]!.key;
         try {
-          jpeg = await compressImageFileToJpegForConsultation(file);
+          const jpeg = await compressImageFileToJpegForConsultation(file);
+          compressed.push({ key, jpeg, previewUrl: pendingEntries[i]!.previewUrl });
+          setPending((p) => p.map((x) => (x.key === key ? { ...x, phase: "uploading" } : x)));
         } catch {
-          URL.revokeObjectURL(previewUrl);
+          URL.revokeObjectURL(pendingEntries[i]!.previewUrl);
           setPending((p) =>
             p.map((x) =>
               x.key === key ? { ...x, phase: "error" as const, error: "Neizdevās apstrādāt attēlu" } : x,
             ),
           );
-          setError("Neizdevās apstrādāt attēlu (piem. HEIF/HEIC). Mēģini Safari vai eksportē JPG.");
-          continue;
         }
+      }
 
-        setPending((p) => p.map((x) => (x.key === key ? { ...x, phase: "uploading" } : x)));
-        setStatusLine(`Augšupielādē ${i + 1}/${files.length}…`);
+      if (compressed.length === 0) {
+        setError("Neizdevās apstrādāt attēlus (piem. HEIF/HEIC). Mēģini Safari vai eksportē JPG.");
+        return;
+      }
 
-        const fd = new FormData();
-        fd.set("sessionId", sessionId);
-        fd.set("currentCount", String(rolling.length));
-        fd.set("file", jpeg);
-        const res = await fetch("/api/admin/listing-analysis-photo", {
-          method: "POST",
-          body: fd,
-          credentials: "include",
-        });
-        const data = (await res.json().catch(() => ({}))) as {
-          ok?: boolean;
-          id?: string;
-          error?: string;
-          detail?: string;
-        };
-        if (!res.ok || !data.id) {
-          URL.revokeObjectURL(previewUrl);
-          const msg = uploadErrorMessage(data.error, data.detail);
-          setPending((p) =>
-            p.map((x) => (x.key === key ? { ...x, phase: "error" as const, error: msg } : x)),
-          );
-          setError(msg);
-          continue;
-        }
+      setStatusLine(`Augšupielādē ${compressed.length} fotogrāfijas…`);
+      let rolling = [...photos];
+      const uploaded: ListingAnalysisPhotoMeta[] = [];
 
-        previewUrlsRef.current.set(data.id, previewUrl);
-        rolling = [...rolling, { id: data.id }];
-        setPending((p) => p.map((x) => (x.key === key ? { ...x, phase: "saving" } : x)));
-        setStatusLine(`Saglabā darba zonā ${i + 1}/${files.length}…`);
+      await Promise.all(
+        compressed.map(async ({ key, jpeg, previewUrl }, uploadIndex) => {
+          const fd = new FormData();
+          fd.set("sessionId", sessionId);
+          fd.set("currentCount", String(photos.length + uploadIndex));
+          fd.set("file", jpeg);
+          const res = await fetch("/api/admin/listing-analysis-photo", {
+            method: "POST",
+            body: fd,
+            credentials: "include",
+          });
+          const data = (await res.json().catch(() => ({}))) as {
+            ok?: boolean;
+            id?: string;
+            error?: string;
+            detail?: string;
+          };
+          if (!res.ok || !data.id) {
+            URL.revokeObjectURL(previewUrl);
+            const msg = uploadErrorMessage(data.error, data.detail);
+            setPending((p) =>
+              p.map((x) => (x.key === key ? { ...x, phase: "error" as const, error: msg } : x)),
+            );
+            setError(msg);
+            return;
+          }
+          previewUrlsRef.current.set(data.id, previewUrl);
+          uploaded.push({ id: data.id });
+          setPending((p) => p.filter((x) => x.key !== key));
+        }),
+      );
+
+      if (uploaded.length > 0) {
+        rolling = [...rolling, ...uploaded];
+        setStatusLine(`Saglabā ${uploaded.length} fotogrāfijas…`);
         await onPhotosStructuralCommit(rolling);
-        setPending((p) => p.filter((x) => x.key !== key));
-        setStatusLine(`Pievienots ${i + 1}/${files.length}.`);
+        setStatusLine(`Pievienotas ${uploaded.length} fotogrāfijas.`);
       }
     } finally {
       setBusy(false);
@@ -189,6 +198,33 @@ export function AdminListingAnalysisPhotos({
     const files = e.dataTransfer.files;
     if (!files?.length) return;
     await processFiles(files);
+  };
+
+  const removeAllPhotos = async () => {
+    if (disabled || busy || photos.length === 0) return;
+    if (!window.confirm(`Dzēst visas ${photos.length} fotogrāfijas?`)) return;
+    setBusy(true);
+    setError(null);
+    setStatusLine("Dzēš visas fotogrāfijas…");
+    try {
+      await fetch("/api/admin/listing-analysis-photo", {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, deleteAll: true }),
+      });
+      for (const p of photos) {
+        const cached = previewUrlsRef.current.get(p.id);
+        if (cached) {
+          URL.revokeObjectURL(cached);
+          previewUrlsRef.current.delete(p.id);
+        }
+      }
+      await onPhotosStructuralCommit([]);
+    } finally {
+      setBusy(false);
+      setStatusLine(null);
+    }
   };
 
   const removePhoto = async (photoId: string) => {
@@ -267,15 +303,28 @@ export function AdminListingAnalysisPhotos({
           Fotogrāfijas (PDF režģis)
         </p>
         {!disabled ? (
-          <button
-            type="button"
-            onClick={pickFiles}
-            disabled={busy || photos.length >= LISTING_ANALYSIS_MAX_PHOTOS}
-            className="inline-flex items-center gap-1 rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[10px] font-medium text-[var(--admin-field-text)] disabled:opacity-45"
-          >
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <ImagePlus className="h-3.5 w-3.5" aria-hidden />}
-            Pievienot
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <label
+              htmlFor={inputId}
+              className={`inline-flex cursor-pointer items-center gap-1 rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[10px] font-medium text-[var(--admin-field-text)] ${
+                busy || photos.length >= LISTING_ANALYSIS_MAX_PHOTOS ? "pointer-events-none opacity-45" : "hover:bg-black/[0.03]"
+              }`}
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <ImagePlus className="h-3.5 w-3.5" aria-hidden />}
+              Pievienot
+            </label>
+            {photos.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => void removeAllPhotos()}
+                disabled={busy}
+                className="inline-flex items-center gap-1 rounded-md border border-red-200/80 bg-red-50/80 px-2 py-1 text-[10px] font-medium text-red-700 hover:bg-red-100/80 disabled:opacity-45 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
+              >
+                <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                Dzēst visas
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </div>
 
@@ -283,7 +332,7 @@ export function AdminListingAnalysisPhotos({
         ref={fileRef}
         id={inputId}
         type="file"
-        accept="image/*,.heic,.heif"
+        accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
         multiple
         className="sr-only"
         onChange={(e) => void onFileChange(e)}

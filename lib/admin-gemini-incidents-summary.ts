@@ -12,22 +12,31 @@ import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { ADMIN_INCIDENTS_SUMMARY_LABEL } from "@/lib/admin-workspace-field-labels";
 
 export async function generateIncidentsSummaryWithGemini(input: GeminiOrderContextInput): Promise<string> {
-  if (!orderHasIncidentDataForGemini(input.sourceBlocks)) {
-    throw new Error("empty_incident_data");
-  }
+  const hasIncidents = orderHasIncidentDataForGemini(input.sourceBlocks);
 
   const orderContext = buildGeminiOrderContextText({
     ...input,
     internalComment: undefined,
   });
 
+  const noIncidentHint = hasIncidents
+    ? ""
+    : `
+
+SVARĪGI: Avotos nav fiksētu negadījumu vai apdrošināšanas izmaksu ierakstu. Sagatavo īsu, profesionālu kopsavilkumu, kurā:
+- Salīdzini avotus (piemin konkrētos avotus, kas tika pārbaudīti)
+- Skaidri norādi, ka oficiāli negadījumi vai fiksētas apdrošināšanas izmaksas netika konstatētas
+- Pievieno loģisku atrunu, ka tas neizslēdz nefiksētu negadījumu vai kosmētisku krāsojumu pagātnē
+- Neizdomā negadījumus, summas vai datumus`;
+
   const userPrompt = appendGeminiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
 
 ${orderContext}
+${noIncidentHint}
 
 Sagatavo kopsavilkumu laukam „${ADMIN_INCIDENTS_SUMMARY_LABEL}”.
-Analizē VISUS negadījumu ierakstus visos avotos, salīdzini ar nobraukumu un īpašniecības laiku.`,
+${hasIncidents ? "Analizē VISUS negadījumu ierakstus visos avotos, salīdzini ar nobraukumu un īpašniecības laiku." : "Šis ir „nav konstatēts” scenārijs — skaidri un pārliecinoši, bez dramatizēšanas."}`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:

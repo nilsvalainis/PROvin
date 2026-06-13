@@ -7,6 +7,7 @@ import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import {
   formatAutoRecordsDateForOutput,
   normalizeAutoRecordsOdometer,
+  sanitizeMileageCountryField,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
@@ -173,6 +174,45 @@ function rowKey(date: string, odometer: string): string {
   return `${date}|${odometer}`;
 }
 
+const CV_ODOMETER_HEADER_RE = /^\s*Odometra\s+r[aā]d[īi]jumu\s+ieraksti\s*$/i;
+
+/** Viena rinda: MM.YYYY. … km vai DD.MM.YYYY. … km (CarVertical iekopēts žurnāls). */
+export function parseCarverticalOdometerLine(line: string): AutoRecordsServiceRow | null {
+  const s = line.replace(/\u00a0/g, " ").trim().replace(/[;\s]+$/g, "");
+  if (!s || CV_ODOMETER_HEADER_RE.test(s)) return null;
+
+  const ddmmyyyy = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})\.?\s*[-–—]?\s*([\d\s]+)\s*km\b/i);
+  if (ddmmyyyy) {
+    const token = `${ddmmyyyy[1]}.${ddmmyyyy[2]}.${ddmmyyyy[3]}`;
+    const date = normalizeCarVerticalDateToken(token);
+    const km = normalizeAutoRecordsOdometer(ddmmyyyy[4] ?? "");
+    if (date && km) return { date, odometer: km, country: "" };
+  }
+
+  const mmyyyy = s.match(/^(\d{1,2})\.(\d{4})\.?\s*[-–—]?\s*([\d\s]+)\s*km\b/i);
+  if (mmyyyy) {
+    const date = normalizeCarVerticalDateToken(`${mmyyyy[1]}.${mmyyyy[2]}`);
+    const km = normalizeAutoRecordsOdometer(mmyyyy[3] ?? "");
+    if (date && km) return { date, odometer: km, country: "" };
+  }
+
+  return null;
+}
+
+function parseCarverticalOdometerLines(text: string): AutoRecordsServiceRow[] {
+  const out: AutoRecordsServiceRow[] = [];
+  const seen = new Set<string>();
+  for (const line of text.split(/\r?\n/)) {
+    const row = parseCarverticalOdometerLine(line);
+    if (!row) continue;
+    const key = rowKey(row.date, row.odometer);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+  }
+  return out;
+}
+
 function pushOdometerRow(
   out: AutoRecordsServiceRow[],
   seen: Set<string>,
@@ -191,6 +231,10 @@ function pushOdometerRow(
 /** Odometra ieraksti no normalizēta vai fragmentēta teksta. */
 export function parseCarverticalOdometerFromText(text: string): AutoRecordsServiceRow[] {
   const norm = normalizeCarVerticalPdfText(text);
+
+  const lineRows = parseCarverticalOdometerLines(norm);
+  if (lineRows.length > 0) return sortAutoRecordsDescending(lineRows);
+
   const section =
     extractSection(norm, /Odometra\s+r[aā]d[īi]jumu\s+ieraksti/i, [
       /Brauk[sš]anas\s+parad/i,
@@ -502,9 +546,11 @@ export function inferOdometerCountriesFromTimeline(
   }
 
   return rows.map((r) => {
-    if (r.country.trim()) return r;
+    if (r.country.trim()) {
+      return { ...r, country: sanitizeMileageCountryField(r.country) };
+    }
     const c = byMonthYear.get(monthYearKey(r.date));
-    return c ? { ...r, country: c } : r;
+    return c ? { ...r, country: sanitizeMileageCountryField(c) } : r;
   });
 }
 
@@ -520,7 +566,9 @@ export function parseCarverticalPdfText(raw: string): CarVerticalParseResult {
     serviceHistory: serviceHistory.map((r) => ({
       date: formatAutoRecordsDateForOutput(r.date),
       odometer: normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, ""),
-      country: r.country.trim() === CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL ? "" : r.country.trim(),
+      country: sanitizeMileageCountryField(
+        r.country.trim() === CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL ? "" : r.country.trim(),
+      ),
     })),
     timeline,
     incidents,

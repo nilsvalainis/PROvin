@@ -151,18 +151,38 @@ export async function DELETE(req: Request) {
     const b = body as Record<string, unknown>;
     const sessionId = typeof b.sessionId === "string" ? b.sessionId.trim() : "";
     const photoId = typeof b.photoId === "string" ? b.photoId.trim() : "";
+    const deleteAll = b.deleteAll === true;
+    const photoIdsRaw = b.photoIds;
+    const photoIds =
+      Array.isArray(photoIdsRaw) && photoIdsRaw.length > 0
+        ? photoIdsRaw.filter((id): id is string => typeof id === "string" && isSafeListingAnalysisPhotoId(id.trim()))
+        : [];
+
     if (!sessionId || !isSafeOrderDraftSessionId(sessionId)) {
       return NextResponse.json({ error: "invalid_session" }, { status: 400 });
-    }
-    if (!isSafeListingAnalysisPhotoId(photoId)) {
-      return NextResponse.json({ error: "invalid_photoId" }, { status: 400 });
     }
 
     const orderOk = await assertOrderAccess(sessionId);
     if (!orderOk) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
+    if (deleteAll) {
+      const draft = await readOrderDraft(sessionId);
+      const ids = [...collectListingAnalysisPhotoIdsFromWorkspace(draft?.workspace ?? null)];
+      await Promise.all(ids.map((id) => deleteListingAnalysisPhoto(sessionId, id)));
+      return NextResponse.json({ ok: true, deleted: ids.length });
+    }
+
+    if (photoIds.length > 0) {
+      await Promise.all(photoIds.map((id) => deleteListingAnalysisPhoto(sessionId, id.trim())));
+      return NextResponse.json({ ok: true, deleted: photoIds.length });
+    }
+
+    if (!isSafeListingAnalysisPhotoId(photoId)) {
+      return NextResponse.json({ error: "invalid_photoId" }, { status: 400 });
+    }
+
     await deleteListingAnalysisPhoto(sessionId, photoId);
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, deleted: 1 });
   } catch (e) {
     console.error("[listing-analysis-photo] DELETE", e);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
