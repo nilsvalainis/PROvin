@@ -34,6 +34,7 @@ import {
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
+import { normalizeListingAnalysisPhotoGroups } from "@/lib/listing-analysis-photo-types";
 import {
   buildPdfAdminMirrorClientBlock,
   buildPdfAdminMirrorNotesBlock,
@@ -775,21 +776,34 @@ function buildLtabAvotuSubsection(
  * Sludinājuma analīze — patstāvīgs bloks: vispirms „Sludinājuma vēsture” (tirgus dati), tad pārējās apakšsadaļas.
  */
 function buildListingAnalysisPhotosPdfHtml(
-  photos: { id: string }[] | null | undefined,
+  photoGroups: { title: string; photos: { id: string }[] }[] | null | undefined,
+  legacyPhotos: { id: string }[] | null | undefined,
   dataUrls: Map<string, string> | undefined,
 ): string {
-  const list = photos ?? [];
-  if (list.length === 0 || !dataUrls?.size) return "";
-  const cells: string[] = [];
-  for (const ph of list) {
-    const src = dataUrls.get(ph.id);
-    if (!src) continue;
-    cells.push(
-      `<figure class="pdf-listing-photo-cell"><img class="pdf-listing-photo-img" src="${src}" alt=""/></figure>`,
+  if (!dataUrls?.size) return "";
+
+  const groups = normalizeListingAnalysisPhotoGroups(photoGroups, legacyPhotos);
+  if (groups.length === 0) return "";
+
+  const sections: string[] = [];
+  for (const group of groups) {
+    const cells: string[] = [];
+    for (const ph of group.photos) {
+      const src = dataUrls.get(ph.id);
+      if (!src) continue;
+      cells.push(
+        `<figure class="pdf-listing-photo-cell"><img class="pdf-listing-photo-img" src="${src}" alt=""/></figure>`,
+      );
+    }
+    if (cells.length === 0) continue;
+    const titleHtml = group.title.trim()
+      ? `<p class="pdf-listing-photo-group-title">${escapeHtml(group.title.trim())}</p>`
+      : "";
+    sections.push(
+      `<section class="pdf-listing-photo-group">${titleHtml}<div class="pdf-listing-photo-grid">${cells.join("")}</div></section>`,
     );
   }
-  if (cells.length === 0) return "";
-  return `<div class="pdf-listing-photo-grid">${cells.join("")}</div>`;
+  return sections.join("");
 }
 
 function buildListingAnalysisPriorityHtml(
@@ -816,7 +830,7 @@ function buildListingAnalysisPriorityHtml(
       inner.push(box);
     };
     cat(L.sellerPortrait, b.sellerPortrait);
-    const photosHtml = buildListingAnalysisPhotosPdfHtml(b.photos, listingAnalysisPhotoDataUrls);
+    const photosHtml = buildListingAnalysisPhotosPdfHtml(b.photoGroups, b.photos, listingAnalysisPhotoDataUrls);
     const photoCommentBox = pdfReportCommentBox(b.photoAnalysis);
     if (photoCommentBox || photosHtml) {
       inner.push(pdfFieldLabelWithIcon(pdfListingAnalysisFieldIconHtml(L.photoAnalysis), L.photoAnalysis));
@@ -1046,7 +1060,12 @@ function clientReportPrintCss(): string {
       .pdf-listing-analysis-stack > .pdf-report-comment-note{margin:0 0 10px;}
       .pdf-listing-analysis-stack > .pdf-field-label--row + .pdf-report-comment-note{margin-top:4px;}
       .pdf-listing-photo-grid{
-        display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 12px;
+        display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 8px;
+      }
+      .pdf-listing-photo-group{margin:0 0 14px;}
+      .pdf-listing-photo-group:last-child{margin-bottom:0;}
+      .pdf-listing-photo-group-title{
+        margin:0 0 6px;font-size:0.72rem;font-weight:700;color:#334155;letter-spacing:0.02em;
       }
       .pdf-listing-photo-cell{margin:0;break-inside:avoid;}
       .pdf-listing-photo-img{

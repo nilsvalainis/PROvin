@@ -60,7 +60,7 @@ type Props = {
   buildGeminiPayload?: () => GeminiListingAnalysisPayload;
   sessionId?: string;
   photosPersistenceEnabled?: boolean;
-  onListingPhotosStructuralCommit?: (next: ListingAnalysisBlockState["photos"]) => void;
+  onListingPhotoGroupsStructuralCommit?: (next: ListingAnalysisBlockState["photoGroups"]) => void;
 };
 
 export function AdminListingAnalysisSourceBlock({
@@ -75,7 +75,7 @@ export function AdminListingAnalysisSourceBlock({
   buildGeminiPayload,
   sessionId,
   photosPersistenceEnabled = false,
-  onListingPhotosStructuralCommit,
+  onListingPhotoGroupsStructuralCommit,
 }: Props) {
   const v = value ?? emptyListingAnalysisBlock();
   const L = LISTING_ANALYSIS_SUBSECTIONS;
@@ -304,12 +304,12 @@ export function AdminListingAnalysisSourceBlock({
               aria-label={`${L.photoAnalysis} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
             />
           )}
-          {sessionId && onListingPhotosStructuralCommit ? (
+          {sessionId && onListingPhotoGroupsStructuralCommit ? (
             <AdminListingAnalysisPhotos
               sessionId={sessionId}
-              photos={v.photos ?? []}
+              photoGroups={v.photoGroups ?? []}
               disabled={readOnly || disabled || !photosPersistenceEnabled}
-              onPhotosStructuralCommit={(next) => onListingPhotosStructuralCommit(next)}
+              onPhotoGroupsStructuralCommit={(next) => onListingPhotoGroupsStructuralCommit(next)}
             />
           ) : null}
         </ListingAnalysisSubsectionHeading>

@@ -37,6 +37,7 @@ import {
   type ListingAnalysisBlockState,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import { syncListingAnalysisPhotoGroupsAndFlat } from "@/lib/listing-analysis-photo-types";
 import {
   idbDeletePortfolio,
   idbGetPortfolio,
@@ -1177,8 +1178,9 @@ export function OrderDetailWorkspace({
     [applyPersistBodyToWs, commitWorkspaceLocalNow],
   );
 
-  const commitListingPhotosStructural = useCallback(
-    async (nextPhotos: ListingAnalysisBlockState["photos"]) => {
+  const commitListingPhotoGroupsStructural = useCallback(
+    async (nextGroups: ListingAnalysisBlockState["photoGroups"]) => {
+      const synced = syncListingAnalysisPhotoGroupsAndFlat(nextGroups);
       workspaceDirtyRef.current = true;
       flushSync(() => {
         setWs((prev) => {
@@ -1187,7 +1189,11 @@ export function OrderDetailWorkspace({
             ...workspaceToPersistBody(prev),
             sourceBlocks: {
               ...blocks,
-              listing_analysis: { ...blocks.listing_analysis, photos: nextPhotos },
+              listing_analysis: {
+                ...blocks.listing_analysis,
+                photoGroups: synced.photoGroups,
+                photos: synced.photos,
+              },
             },
           });
           return applyPersistBodyToWs(next);
@@ -3273,7 +3279,7 @@ export function OrderDetailWorkspace({
                     buildGeminiPayload={buildGeminiListingPayload}
                     sessionId={payload.sessionId}
                     photosPersistenceEnabled={orderDraftPersistenceEnabled}
-                    onListingPhotosStructuralCommit={commitListingPhotosStructural}
+                    onListingPhotoGroupsStructuralCommit={commitListingPhotoGroupsStructural}
                   />
                 </div>
                 <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.priceFit} title="3. Cenas atbilstība">

@@ -177,6 +177,13 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
         listingAnalysis: {
           ...createDefaultSourceBlocks().listing_analysis,
           photoAnalysis: "<p><strong>Rūsa</strong> uz sliežu.</p>",
+          photoGroups: [
+            {
+              id: "la_phg_aabbccddeeff001122334455",
+              title: "2024-06-12 — ss.com",
+              photos: [{ id: "la_ph_aabbccddeeff001122334455" }, { id: "la_ph_112233445566778899aabbcc" }],
+            },
+          ],
           photos: [{ id: "la_ph_aabbccddeeff001122334455" }, { id: "la_ph_112233445566778899aabbcc" }],
         },
         pdfVisibility: mergePdfVisibility({ sludinajums: true }),
@@ -189,6 +196,8 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     });
     expect(doc).toContain("Fotogrāfiju analīze");
     expect(doc).toContain("pdf-listing-photo-grid");
+    expect(doc).toContain("pdf-listing-photo-group-title");
+    expect(doc).toContain("2024-06-12 — ss.com");
     expect(doc).toContain("Rūsa");
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(2);
   });

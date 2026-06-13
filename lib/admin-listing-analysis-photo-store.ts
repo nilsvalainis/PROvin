@@ -12,7 +12,9 @@ import {
   isSafeOrderDraftSessionId,
 } from "@/lib/admin-order-draft-store";
 import {
+  flattenListingAnalysisPhotoGroups,
   isListingAnalysisPhotoId,
+  normalizeListingAnalysisPhotoGroups,
   normalizeListingAnalysisPhotos,
   type ListingAnalysisPhotoMeta,
 } from "@/lib/listing-analysis-photo-types";
@@ -61,9 +63,9 @@ export function collectListingAnalysisPhotoIdsFromWorkspace(
   const keep = new Set<string>();
   const raw = workspace?.sourceBlocks;
   if (!raw || typeof raw !== "object") return keep;
-  const la = (raw as { listing_analysis?: { photos?: unknown } }).listing_analysis;
-  const photos = normalizeListingAnalysisPhotos(la?.photos);
-  for (const ph of photos) keep.add(ph.id);
+  const la = (raw as { listing_analysis?: { photos?: unknown; photoGroups?: unknown } }).listing_analysis;
+  const groups = normalizeListingAnalysisPhotoGroups(la?.photoGroups, la?.photos);
+  for (const ph of flattenListingAnalysisPhotoGroups(groups)) keep.add(ph.id);
   return keep;
 }
 

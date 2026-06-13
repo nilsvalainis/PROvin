@@ -24,7 +24,11 @@ import {
   vendorAvotuTrafficLevel,
   type TrafficFillLevel,
 } from "@/lib/admin-block-traffic-status";
-import { mergeListingAnalysisPhotoLists } from "@/lib/listing-analysis-photo-types";
+import {
+  mergeListingAnalysisPhotoGroups,
+  normalizeListingAnalysisPhotoGroups,
+  syncListingAnalysisPhotoGroupsAndFlat,
+} from "@/lib/listing-analysis-photo-types";
 
 export type OrderWorkspacePersistBody = {
   sourceBlocks: WorkspaceSourceBlocks;
@@ -132,9 +136,17 @@ function pickRicherListingAnalysisBlock(
   baseline: ListingAnalysisBlockState,
 ): ListingAnalysisBlockState {
   const picked = pickRicherSourceBlock("listing_analysis", incoming, baseline);
+  const mergedGroups = mergeListingAnalysisPhotoGroups(
+    incoming.photoGroups,
+    incoming.photos,
+    baseline.photoGroups,
+    baseline.photos,
+  );
+  const synced = syncListingAnalysisPhotoGroupsAndFlat(mergedGroups);
   return {
     ...picked,
-    photos: mergeListingAnalysisPhotoLists(incoming.photos, baseline.photos),
+    photoGroups: synced.photoGroups,
+    photos: synced.photos,
   };
 }
 

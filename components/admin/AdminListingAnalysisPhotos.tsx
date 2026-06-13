@@ -1,16 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { GripVertical, ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { FolderPlus, GripVertical, ImagePlus, Loader2, Trash2 } from "lucide-react";
 
-import type { ListingAnalysisPhotoMeta } from "@/lib/listing-analysis-photo-types";
-import { LISTING_ANALYSIS_MAX_PHOTOS } from "@/lib/listing-analysis-photo-types";
+import {
+  countListingAnalysisPhotos,
+  emptyListingAnalysisPhotoGroup,
+  LISTING_ANALYSIS_MAX_PHOTOS,
+  type ListingAnalysisPhotoGroup,
+  type ListingAnalysisPhotoMeta,
+} from "@/lib/listing-analysis-photo-types";
 import { compressImageFileToJpegForConsultation } from "@/lib/consultation-photo-client-compress";
 
 type UploadPhase = "compressing" | "uploading" | "saving" | "done" | "error";
 
 type PendingUpload = {
   key: string;
+  groupId: string;
   fileName: string;
   phase: UploadPhase;
   previewUrl: string;
@@ -19,9 +25,9 @@ type PendingUpload = {
 
 type Props = {
   sessionId: string;
-  photos: ListingAnalysisPhotoMeta[];
+  photoGroups: ListingAnalysisPhotoGroup[];
   disabled: boolean;
-  onPhotosStructuralCommit: (next: ListingAnalysisPhotoMeta[]) => void | Promise<void>;
+  onPhotoGroupsStructuralCommit: (next: ListingAnalysisPhotoGroup[]) => void | Promise<void>;
 };
 
 function uploadErrorMessage(error: string | undefined, detail?: string): string {
@@ -57,21 +63,26 @@ function phaseLabel(phase: UploadPhase, fileName: string): string {
   }
 }
 
+function totalPhotos(groups: ListingAnalysisPhotoGroup[]): number {
+  return countListingAnalysisPhotos(groups);
+}
+
 export function AdminListingAnalysisPhotos({
   sessionId,
-  photos,
+  photoGroups,
   disabled,
-  onPhotosStructuralCommit,
+  onPhotoGroupsStructuralCommit,
 }: Props) {
-  const inputId = useId();
+  const baseInputId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
+  const uploadTargetGroupIdRef = useRef<string | null>(null);
   const previewUrlsRef = useRef<Map<string, string>>(new Map());
-  const dragIndexRef = useRef<number | null>(null);
+  const dragRef = useRef<{ groupId: string; index: number } | null>(null);
   const [pending, setPending] = useState<PendingUpload[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusLine, setStatusLine] = useState<string | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState<{ groupId: string; index: number } | null>(null);
 
   const serverImgSrc = useCallback(
     (photoId: string) =>
@@ -91,12 +102,90 @@ export function AdminListingAnalysisPhotos({
     };
   }, []);
 
-  const processFiles = async (list: FileList | File[]) => {
+  const commitGroups = useCallback(
+    async (next: ListingAnalysisPhotoGroup[], status?: string) => {
+      if (status) setStatusLine(status);
+      try {
+        await onPhotoGroupsStructuralCommit(next);
+      } finally {
+        if (status) window.setTimeout(() => setStatusLine(null), 1500);
+      }
+    },
+    [onPhotoGroupsStructuralCommit],
+  );
+
+  const updateGroupTitleOnBlur = (groupId: string, raw: string) => {
+    const title = raw.trim().slice(0, 120);
+    const group = photoGroups.find((g) => g.id === groupId);
+    if (!group || group.title === title) return;
+    void commitGroups(photoGroups.map((g) => (g.id === groupId ? { ...g, title } : g)));
+  };
+
+  const addGroup = () => {
+    const n = photoGroups.length + 1;
+    void commitGroups(
+      [...photoGroups, { ...emptyListingAnalysisPhotoGroup(), title: n === 1 ? "" : `Grupa ${n}` }],
+      "Pievienota jauna grupa",
+    );
+  };
+
+  const removeGroup = async (groupId: string) => {
+    const group = photoGroups.find((g) => g.id === groupId);
+    if (!group || disabled || busy) return;
+    if (group.photos.length > 0) {
+      const ok = window.confirm(
+        `Dzēst grupu „${group.title.trim() || "bez nosaukuma"}” ar ${group.photos.length} fotogrāfijām?`,
+      );
+      if (!ok) return;
+    }
+    setBusy(true);
+    setError(null);
+    setStatusLine("Dzēš grupu…");
+    try {
+      if (group.photos.length > 0) {
+        await fetch("/api/admin/listing-analysis-photo", {
+          method: "DELETE",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, photoIds: group.photos.map((p) => p.id) }),
+        });
+        for (const p of group.photos) {
+          const cached = previewUrlsRef.current.get(p.id);
+          if (cached) {
+            URL.revokeObjectURL(cached);
+            previewUrlsRef.current.delete(p.id);
+          }
+        }
+      }
+      await commitGroups(photoGroups.filter((g) => g.id !== groupId));
+    } finally {
+      setBusy(false);
+      setStatusLine(null);
+    }
+  };
+
+  const openFilePicker = (groupId: string) => {
+    uploadTargetGroupIdRef.current = groupId;
+    fileRef.current?.click();
+  };
+
+  const processFiles = async (list: FileList | File[], targetGroupId: string) => {
     if (!list.length || disabled) return;
+    let groups = photoGroups;
+    if (!groups.some((g) => g.id === targetGroupId)) {
+      const n = groups.length + 1;
+      groups = [
+        ...groups,
+        { ...emptyListingAnalysisPhotoGroup(), id: targetGroupId, title: n === 1 ? "" : `Grupa ${n}` },
+      ];
+    }
+    const group = groups.find((g) => g.id === targetGroupId)!;
+    const currentTotal = totalPhotos(groups);
+
     setBusy(true);
     setError(null);
     setStatusLine(null);
-    const files = Array.from(list).slice(0, Math.max(0, LISTING_ANALYSIS_MAX_PHOTOS - photos.length));
+    const files = Array.from(list).slice(0, Math.max(0, LISTING_ANALYSIS_MAX_PHOTOS - currentTotal));
     if (files.length === 0) {
       setError(`Sasniegts limits (${LISTING_ANALYSIS_MAX_PHOTOS} fotogrāfijas).`);
       setBusy(false);
@@ -105,11 +194,12 @@ export function AdminListingAnalysisPhotos({
 
     const pendingEntries: PendingUpload[] = files.map((file, i) => ({
       key: `pending_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 8)}`,
+      groupId: targetGroupId,
       fileName: file.name,
       phase: "compressing" as const,
       previewUrl: URL.createObjectURL(file),
     }));
-    setPending(pendingEntries);
+    setPending((p) => [...p, ...pendingEntries]);
     setStatusLine(`Apstrādā ${files.length} fotogrāfijas…`);
 
     try {
@@ -137,14 +227,14 @@ export function AdminListingAnalysisPhotos({
       }
 
       setStatusLine(`Augšupielādē ${compressed.length} fotogrāfijas…`);
-      let rolling = [...photos];
       const uploaded: ListingAnalysisPhotoMeta[] = [];
+      const groupPhotoCount = group.photos.length;
 
       await Promise.all(
         compressed.map(async ({ key, jpeg, previewUrl }, uploadIndex) => {
           const fd = new FormData();
           fd.set("sessionId", sessionId);
-          fd.set("currentCount", String(photos.length + uploadIndex));
+          fd.set("currentCount", String(currentTotal + uploadIndex));
           fd.set("file", jpeg);
           const res = await fetch("/api/admin/listing-analysis-photo", {
             method: "POST",
@@ -173,10 +263,12 @@ export function AdminListingAnalysisPhotos({
       );
 
       if (uploaded.length > 0) {
-        rolling = [...rolling, ...uploaded];
+        const nextGroups = groups.map((g) =>
+          g.id === targetGroupId ? { ...g, photos: [...g.photos, ...uploaded] } : g,
+        );
         setStatusLine(`Saglabā ${uploaded.length} fotogrāfijas…`);
-        await onPhotosStructuralCommit(rolling);
-        setStatusLine(`Pievienotas ${uploaded.length} fotogrāfijas.`);
+        await commitGroups(nextGroups);
+        setStatusLine(`Pievienotas ${uploaded.length} fotogrāfijas (${groupPhotoCount + uploaded.length} šajā grupā).`);
       }
     } finally {
       setBusy(false);
@@ -188,21 +280,23 @@ export function AdminListingAnalysisPhotos({
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = e.target.files;
     e.target.value = "";
-    if (!list?.length) return;
-    await processFiles(list);
+    const groupId = uploadTargetGroupIdRef.current;
+    if (!list?.length || !groupId) return;
+    await processFiles(list, groupId);
   };
 
-  const onDropZone = async (e: React.DragEvent) => {
+  const onDropZone = async (e: React.DragEvent, groupId: string) => {
     e.preventDefault();
     if (disabled || busy) return;
     const files = e.dataTransfer.files;
     if (!files?.length) return;
-    await processFiles(files);
+    await processFiles(files, groupId);
   };
 
   const removeAllPhotos = async () => {
-    if (disabled || busy || photos.length === 0) return;
-    if (!window.confirm(`Dzēst visas ${photos.length} fotogrāfijas?`)) return;
+    const count = totalPhotos(photoGroups);
+    if (disabled || busy || count === 0) return;
+    if (!window.confirm(`Dzēst visas ${count} fotogrāfijas?`)) return;
     setBusy(true);
     setError(null);
     setStatusLine("Dzēš visas fotogrāfijas…");
@@ -213,21 +307,23 @@ export function AdminListingAnalysisPhotos({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, deleteAll: true }),
       });
-      for (const p of photos) {
-        const cached = previewUrlsRef.current.get(p.id);
-        if (cached) {
-          URL.revokeObjectURL(cached);
-          previewUrlsRef.current.delete(p.id);
+      for (const g of photoGroups) {
+        for (const p of g.photos) {
+          const cached = previewUrlsRef.current.get(p.id);
+          if (cached) {
+            URL.revokeObjectURL(cached);
+            previewUrlsRef.current.delete(p.id);
+          }
         }
       }
-      await onPhotosStructuralCommit([]);
+      await commitGroups([]);
     } finally {
       setBusy(false);
       setStatusLine(null);
     }
   };
 
-  const removePhoto = async (photoId: string) => {
+  const removePhoto = async (groupId: string, photoId: string) => {
     if (disabled || busy) return;
     setBusy(true);
     setError(null);
@@ -244,76 +340,73 @@ export function AdminListingAnalysisPhotos({
         URL.revokeObjectURL(cached);
         previewUrlsRef.current.delete(photoId);
       }
-      await onPhotosStructuralCommit(photos.filter((p) => p.id !== photoId));
+      const next = photoGroups.map((g) =>
+        g.id === groupId ? { ...g, photos: g.photos.filter((p) => p.id !== photoId) } : g,
+      );
+      await commitGroups(next);
     } finally {
       setBusy(false);
       setStatusLine(null);
     }
   };
 
-  const commitReorder = useCallback(
-    async (next: ListingAnalysisPhotoMeta[]) => {
-      setStatusLine("Saglabā secību…");
-      try {
-        await onPhotosStructuralCommit(next);
-      } finally {
-        window.setTimeout(() => setStatusLine(null), 1500);
-      }
-    },
-    [onPhotosStructuralCommit],
-  );
-
-  const onDragStart = (index: number) => {
-    if (disabled || busy) return;
-    dragIndexRef.current = index;
+  const commitReorder = async (groupId: string, nextPhotos: ListingAnalysisPhotoMeta[]) => {
+    const next = photoGroups.map((g) => (g.id === groupId ? { ...g, photos: nextPhotos } : g));
+    await commitGroups(next, "Saglabā secību…");
   };
 
-  const onDragOverItem = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
+  const onDragStart = (groupId: string, index: number) => {
     if (disabled || busy) return;
-    setDragOverIndex(index);
+    dragRef.current = { groupId, index };
   };
 
-  const onDropItem = (e: React.DragEvent, dropIndex: number) => {
+  const onDragOverItem = (e: React.DragEvent, groupId: string, index: number) => {
     e.preventDefault();
-    setDragOverIndex(null);
-    const from = dragIndexRef.current;
-    dragIndexRef.current = null;
-    if (from == null || from === dropIndex || disabled || busy) return;
-    const next = [...photos];
-    const [moved] = next.splice(from, 1);
+    if (disabled || busy) return;
+    setDragOver({ groupId, index });
+  };
+
+  const onDropItem = (e: React.DragEvent, groupId: string, dropIndex: number) => {
+    e.preventDefault();
+    setDragOver(null);
+    const from = dragRef.current;
+    dragRef.current = null;
+    if (!from || from.groupId !== groupId || from.index === dropIndex || disabled || busy) return;
+    const group = photoGroups.find((g) => g.id === groupId);
+    if (!group) return;
+    const next = [...group.photos];
+    const [moved] = next.splice(from.index, 1);
     if (!moved) return;
     next.splice(dropIndex, 0, moved);
-    void commitReorder(next);
+    void commitReorder(groupId, next);
   };
 
   const onDragEnd = () => {
-    dragIndexRef.current = null;
-    setDragOverIndex(null);
+    dragRef.current = null;
+    setDragOver(null);
   };
 
+  const photoCount = totalPhotos(photoGroups);
+  const atLimit = photoCount >= LISTING_ANALYSIS_MAX_PHOTOS;
+
   return (
-    <div
-      className="mt-2 min-w-0 space-y-2 rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.02] p-2 dark:bg-white/[0.03]"
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => void onDropZone(e)}
-    >
+    <div className="mt-2 min-w-0 space-y-3 rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.02] p-2 dark:bg-white/[0.03]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
-          Fotogrāfijas (PDF režģis)
+          Fotogrāfijas (PDF režģis) · {photoCount}/{LISTING_ANALYSIS_MAX_PHOTOS}
         </p>
         {!disabled ? (
           <div className="flex flex-wrap items-center gap-2">
-            <label
-              htmlFor={inputId}
-              className={`inline-flex cursor-pointer items-center gap-1 rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[10px] font-medium text-[var(--admin-field-text)] ${
-                busy || photos.length >= LISTING_ANALYSIS_MAX_PHOTOS ? "pointer-events-none opacity-45" : "hover:bg-black/[0.03]"
-              }`}
+            <button
+              type="button"
+              onClick={addGroup}
+              disabled={busy}
+              className="inline-flex items-center gap-1 rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[10px] font-medium text-[var(--admin-field-text)] hover:bg-black/[0.03] disabled:opacity-45"
             >
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <ImagePlus className="h-3.5 w-3.5" aria-hidden />}
-              Pievienot
-            </label>
-            {photos.length > 0 ? (
+              <FolderPlus className="h-3.5 w-3.5" aria-hidden />
+              Pievienot grupu
+            </button>
+            {photoCount > 0 ? (
               <button
                 type="button"
                 onClick={() => void removeAllPhotos()}
@@ -330,7 +423,7 @@ export function AdminListingAnalysisPhotos({
 
       <input
         ref={fileRef}
-        id={inputId}
+        id={baseInputId}
         type="file"
         accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
         multiple
@@ -370,57 +463,113 @@ export function AdminListingAnalysisPhotos({
         </ul>
       ) : null}
 
-      {photos.length === 0 && pending.length === 0 && !busy ? (
+      {photoGroups.length === 0 && pending.length === 0 && !busy ? (
         <p className="text-[10px] text-[var(--color-provin-muted)]">
-          Velc failus šeit vai izmanto „Pievienot” (JPG, PNG, WEBP u.c.) — attēli tiks saspiesti un iekļauti PDF zem
-          komentāra. Kārtošanai — pavelc sīktēlu.
+          Izveido grupu ar virsrakstu (piem. datums vai avots), tad pievieno fotogrāfijas — PDF rādīs virsrakstu un
+          attēlus zem tā. Kārtošanai — pavelc sīktēlu.
         </p>
       ) : null}
 
-      {photos.length > 0 ? (
-        <ul className="flex flex-wrap gap-2">
-          {photos.map((p, index) => (
-            <li
-              key={p.id}
-              draggable={!disabled && !busy}
-              onDragStart={() => onDragStart(index)}
-              onDragOver={(e) => onDragOverItem(e, index)}
-              onDrop={(e) => onDropItem(e, index)}
-              onDragEnd={onDragEnd}
-              className={`group relative flex h-[4.5rem] w-[4.5rem] shrink-0 cursor-grab flex-col overflow-hidden rounded-md border bg-black/[0.06] active:cursor-grabbing dark:bg-white/10 ${
-                dragOverIndex === index
-                  ? "border-[var(--color-provin-accent)] ring-2 ring-[var(--color-provin-accent)]/30"
-                  : "border-[var(--admin-field-border)]"
-              }`}
-              title="Velc, lai mainītu secību PDF"
-            >
-              <span className="absolute left-0.5 top-0.5 z-10 rounded bg-black/45 p-0.5 text-white opacity-0 transition group-hover:opacity-100">
-                <GripVertical className="h-3 w-3" aria-hidden />
-              </span>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={displaySrc(p.id)}
-                alt=""
-                className="h-full w-full object-cover"
-                loading="lazy"
-                decoding="async"
-                draggable={false}
+      {photoGroups.map((group, groupIndex) => (
+        <section
+          key={group.id}
+          className="space-y-2 rounded-md border border-[var(--admin-field-border)]/70 bg-[var(--admin-field-bg)]/40 p-2"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => void onDropZone(e, group.id)}
+        >
+          <div className="flex flex-wrap items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <label className="mb-0.5 block text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
+                Grupas virsraksts {photoGroups.length > 1 ? `#${groupIndex + 1}` : ""}
+              </label>
+              <input
+                type="text"
+                key={`${group.id}:${group.title}`}
+                defaultValue={group.title}
+                onBlur={(e) => updateGroupTitleOnBlur(group.id, e.target.value)}
+                disabled={disabled || busy}
+                placeholder="piem. 2024-06-12 — ss.com sludinājums"
+                className="w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[11px] text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20 disabled:opacity-45"
               />
-              {!disabled ? (
+            </div>
+            {!disabled ? (
+              <div className="flex shrink-0 flex-wrap items-center gap-1.5 pt-4">
                 <button
                   type="button"
-                  onClick={() => void removePhoto(p.id)}
-                  disabled={busy}
-                  className="absolute right-0.5 top-0.5 z-10 inline-flex h-5 w-5 items-center justify-center rounded bg-black/55 text-white opacity-0 transition group-hover:opacity-100 disabled:opacity-40"
-                  aria-label="Noņemt fotogrāfiju"
+                  onClick={() => openFilePicker(group.id)}
+                  disabled={busy || atLimit}
+                  className={`inline-flex items-center gap-1 rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[10px] font-medium text-[var(--admin-field-text)] ${
+                    busy || atLimit ? "pointer-events-none opacity-45" : "hover:bg-black/[0.03]"
+                  }`}
                 >
-                  <Trash2 className="h-3 w-3" aria-hidden />
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <ImagePlus className="h-3.5 w-3.5" aria-hidden />}
+                  Pievienot
                 </button>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      ) : null}
+                <button
+                  type="button"
+                  onClick={() => void removeGroup(group.id)}
+                  disabled={busy}
+                  className="inline-flex items-center gap-1 rounded-md border border-red-200/80 px-2 py-1 text-[10px] font-medium text-red-700 hover:bg-red-50/80 disabled:opacity-45 dark:border-red-900/50 dark:text-red-300"
+                  title="Dzēst grupu"
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          {group.photos.length === 0 && pending.every((p) => p.groupId !== group.id) ? (
+            <p className="text-[10px] text-[var(--color-provin-muted)]">
+              Velc failus šeit vai izmanto „Pievienot”.
+            </p>
+          ) : null}
+
+          {group.photos.length > 0 ? (
+            <ul className="flex flex-wrap gap-2">
+              {group.photos.map((p, index) => (
+                <li
+                  key={p.id}
+                  draggable={!disabled && !busy}
+                  onDragStart={() => onDragStart(group.id, index)}
+                  onDragOver={(e) => onDragOverItem(e, group.id, index)}
+                  onDrop={(e) => onDropItem(e, group.id, index)}
+                  onDragEnd={onDragEnd}
+                  className={`group relative flex h-[4.5rem] w-[4.5rem] shrink-0 cursor-grab flex-col overflow-hidden rounded-md border bg-black/[0.06] active:cursor-grabbing dark:bg-white/10 ${
+                    dragOver?.groupId === group.id && dragOver.index === index
+                      ? "border-[var(--color-provin-accent)] ring-2 ring-[var(--color-provin-accent)]/30"
+                      : "border-[var(--admin-field-border)]"
+                  }`}
+                  title="Velc, lai mainītu secību PDF"
+                >
+                  <span className="absolute left-0.5 top-0.5 z-10 rounded bg-black/45 p-0.5 text-white opacity-0 transition group-hover:opacity-100">
+                    <GripVertical className="h-3 w-3" aria-hidden />
+                  </span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={displaySrc(p.id)}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                    draggable={false}
+                  />
+                  {!disabled ? (
+                    <button
+                      type="button"
+                      onClick={() => void removePhoto(group.id, p.id)}
+                      disabled={busy}
+                      className="absolute right-0.5 top-0.5 z-10 inline-flex h-5 w-5 items-center justify-center rounded bg-black/55 text-white opacity-0 transition group-hover:opacity-100 disabled:opacity-40"
+                      aria-label="Noņemt fotogrāfiju"
+                    >
+                      <Trash2 className="h-3 w-3" aria-hidden />
+                    </button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ))}
     </div>
   );
 }

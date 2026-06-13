@@ -36,6 +36,10 @@ describe("listing analysis photo merge on coalesce", () => {
     const merged = coalesceOrderWorkspacePersistBody(incoming, baseline);
     expect(merged.sourceBlocks.listing_analysis.photos).toHaveLength(1);
     expect(merged.sourceBlocks.listing_analysis.photos[0]?.id).toBe("la_ph_aabbccddeeff001122334455");
+    expect(merged.sourceBlocks.listing_analysis.photoGroups).toHaveLength(1);
+    expect(merged.sourceBlocks.listing_analysis.photoGroups[0]?.photos[0]?.id).toBe(
+      "la_ph_aabbccddeeff001122334455",
+    );
   });
 
   it("prefers incoming order when photo count matches (reorder)", () => {
