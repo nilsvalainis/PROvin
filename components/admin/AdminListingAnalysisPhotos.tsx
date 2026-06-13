@@ -30,6 +30,8 @@ type Props = {
   onPhotoGroupsStructuralCommit: (next: ListingAnalysisPhotoGroup[]) => void | Promise<void>;
 };
 
+const IMAGE_FILE_RE = /\.(jpe?g|png|webp|gif|heic|heif)$/i;
+
 function uploadErrorMessage(error: string | undefined, detail?: string): string {
   if (error === "photo_limit") return `Sasniegts limits (${LISTING_ANALYSIS_MAX_PHOTOS} fotogrāfijas).`;
   if (error === "file_too_large") return "Fails pēc kompresijas joprojām pārāk liels.";
@@ -67,6 +69,40 @@ function totalPhotos(groups: ListingAnalysisPhotoGroup[]): number {
   return countListingAnalysisPhotos(groups);
 }
 
+function isImageFile(file: File): boolean {
+  if (file.type.startsWith("image/")) return true;
+  return IMAGE_FILE_RE.test(file.name);
+}
+
+function collectImageFiles(list: FileList | File[] | null | undefined): File[] {
+  if (!list?.length) return [];
+  return Array.from(list).filter(isImageFile);
+}
+
+function collectImageFilesFromDataTransfer(dt: DataTransfer): File[] {
+  const fromFiles = collectImageFiles(dt.files);
+  if (fromFiles.length > 0) return fromFiles;
+  const out: File[] = [];
+  for (const item of Array.from(dt.items)) {
+    if (item.kind !== "file") continue;
+    const file = item.getAsFile();
+    if (file && isImageFile(file)) out.push(file);
+  }
+  return out;
+}
+
+function newDefaultGroup(index: number): ListingAnalysisPhotoGroup {
+  return { ...emptyListingAnalysisPhotoGroup(), title: `Grupa ${index}` };
+}
+
+function ensureGroupInList(
+  groups: ListingAnalysisPhotoGroup[],
+  targetGroupId: string,
+): ListingAnalysisPhotoGroup[] {
+  if (groups.some((g) => g.id === targetGroupId)) return groups;
+  return [...groups, { ...newDefaultGroup(groups.length + 1), id: targetGroupId }];
+}
+
 export function AdminListingAnalysisPhotos({
   sessionId,
   photoGroups,
@@ -74,15 +110,17 @@ export function AdminListingAnalysisPhotos({
   onPhotoGroupsStructuralCommit,
 }: Props) {
   const baseInputId = useId();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const uploadTargetGroupIdRef = useRef<string | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const defaultGroupIdRef = useRef(emptyListingAnalysisPhotoGroup().id);
   const previewUrlsRef = useRef<Map<string, string>>(new Map());
   const dragRef = useRef<{ groupId: string; index: number } | null>(null);
+  const dropDepthRef = useRef(0);
   const [pending, setPending] = useState<PendingUpload[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusLine, setStatusLine] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<{ groupId: string; index: number } | null>(null);
+  const [dropActiveGroupId, setDropActiveGroupId] = useState<string | null>(null);
 
   const serverImgSrc = useCallback(
     (photoId: string) =>
@@ -99,6 +137,22 @@ export function AdminListingAnalysisPhotos({
     return () => {
       for (const url of previewUrlsRef.current.values()) URL.revokeObjectURL(url);
       previewUrlsRef.current.clear();
+    };
+  }, []);
+
+  /** Novērš pārlūka noklusējumu — atvērt attēlu jauns tabs, nevis importēt. */
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const blockWindowDrop = (e: DragEvent) => {
+      if (!el.contains(e.target as Node)) return;
+      e.preventDefault();
+    };
+    window.addEventListener("dragover", blockWindowDrop);
+    window.addEventListener("drop", blockWindowDrop);
+    return () => {
+      window.removeEventListener("dragover", blockWindowDrop);
+      window.removeEventListener("drop", blockWindowDrop);
     };
   }, []);
 
@@ -123,10 +177,7 @@ export function AdminListingAnalysisPhotos({
 
   const addGroup = () => {
     const n = photoGroups.length + 1;
-    void commitGroups(
-      [...photoGroups, { ...emptyListingAnalysisPhotoGroup(), title: n === 1 ? "" : `Grupa ${n}` }],
-      "Pievienota jauna grupa",
-    );
+    void commitGroups([...photoGroups, newDefaultGroup(n)], "Pievienota jauna grupa");
   };
 
   const removeGroup = async (groupId: string) => {
@@ -164,28 +215,18 @@ export function AdminListingAnalysisPhotos({
     }
   };
 
-  const openFilePicker = (groupId: string) => {
-    uploadTargetGroupIdRef.current = groupId;
-    fileRef.current?.click();
-  };
+  const processFiles = async (list: FileList | File[] | null | undefined, targetGroupId: string) => {
+    const imageFiles = collectImageFiles(list);
+    if (!imageFiles.length || disabled) return;
 
-  const processFiles = async (list: FileList | File[], targetGroupId: string) => {
-    if (!list.length || disabled) return;
-    let groups = photoGroups;
-    if (!groups.some((g) => g.id === targetGroupId)) {
-      const n = groups.length + 1;
-      groups = [
-        ...groups,
-        { ...emptyListingAnalysisPhotoGroup(), id: targetGroupId, title: n === 1 ? "" : `Grupa ${n}` },
-      ];
-    }
+    let groups = ensureGroupInList(photoGroups, targetGroupId);
     const group = groups.find((g) => g.id === targetGroupId)!;
     const currentTotal = totalPhotos(groups);
 
     setBusy(true);
     setError(null);
     setStatusLine(null);
-    const files = Array.from(list).slice(0, Math.max(0, LISTING_ANALYSIS_MAX_PHOTOS - currentTotal));
+    const files = imageFiles.slice(0, Math.max(0, LISTING_ANALYSIS_MAX_PHOTOS - currentTotal));
     if (files.length === 0) {
       setError(`Sasniegts limits (${LISTING_ANALYSIS_MAX_PHOTOS} fotogrāfijas).`);
       setBusy(false);
@@ -277,19 +318,41 @@ export function AdminListingAnalysisPhotos({
     }
   };
 
-  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onFileChange = async (groupId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const list = e.target.files;
     e.target.value = "";
-    const groupId = uploadTargetGroupIdRef.current;
-    if (!list?.length || !groupId) return;
+    if (!list?.length) return;
     await processFiles(list, groupId);
+  };
+
+  const onDragEnterZone = (e: React.DragEvent, groupId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropDepthRef.current += 1;
+    setDropActiveGroupId(groupId);
+  };
+
+  const onDragOverZone = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const onDragLeaveZone = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropDepthRef.current = Math.max(0, dropDepthRef.current - 1);
+    if (dropDepthRef.current === 0) setDropActiveGroupId(null);
   };
 
   const onDropZone = async (e: React.DragEvent, groupId: string) => {
     e.preventDefault();
+    e.stopPropagation();
+    dropDepthRef.current = 0;
+    setDropActiveGroupId(null);
     if (disabled || busy) return;
-    const files = e.dataTransfer.files;
-    if (!files?.length) return;
+    const files = collectImageFilesFromDataTransfer(e.dataTransfer);
+    if (!files.length) return;
     await processFiles(files, groupId);
   };
 
@@ -362,13 +425,24 @@ export function AdminListingAnalysisPhotos({
 
   const onDragOverItem = (e: React.DragEvent, groupId: string, index: number) => {
     e.preventDefault();
+    e.stopPropagation();
     if (disabled || busy) return;
+    if (e.dataTransfer.types.includes("Files")) {
+      e.dataTransfer.dropEffect = "copy";
+      return;
+    }
     setDragOver({ groupId, index });
   };
 
   const onDropItem = (e: React.DragEvent, groupId: string, dropIndex: number) => {
     e.preventDefault();
+    e.stopPropagation();
     setDragOver(null);
+    const files = collectImageFilesFromDataTransfer(e.dataTransfer);
+    if (files.length) {
+      void processFiles(files, groupId);
+      return;
+    }
     const from = dragRef.current;
     dragRef.current = null;
     if (!from || from.groupId !== groupId || from.index === dropIndex || disabled || busy) return;
@@ -388,9 +462,62 @@ export function AdminListingAnalysisPhotos({
 
   const photoCount = totalPhotos(photoGroups);
   const atLimit = photoCount >= LISTING_ANALYSIS_MAX_PHOTOS;
+  const defaultGroupId = defaultGroupIdRef.current;
+
+  const renderFileInput = (groupId: string) => (
+    <input
+      id={`${baseInputId}-${groupId}`}
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
+      multiple
+      className="sr-only"
+      onChange={(e) => void onFileChange(groupId, e)}
+      disabled={disabled || busy || atLimit}
+    />
+  );
+
+  const renderOpenLabel = (groupId: string, compact = false) => (
+    <label
+      htmlFor={`${baseInputId}-${groupId}`}
+      className={`inline-flex cursor-pointer items-center gap-1 rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[10px] font-medium text-[var(--admin-field-text)] ${
+        disabled || busy || atLimit ? "pointer-events-none opacity-45" : "hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+      } ${compact ? "" : "shadow-sm"}`}
+    >
+      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <ImagePlus className="h-3.5 w-3.5" aria-hidden />}
+      Atvērt no datora…
+    </label>
+  );
+
+  const renderDropZone = (groupId: string, hint: string) => (
+    <div
+      onDragEnter={(e) => onDragEnterZone(e, groupId)}
+      onDragOver={onDragOverZone}
+      onDragLeave={onDragLeaveZone}
+      onDrop={(e) => void onDropZone(e, groupId)}
+      className={`rounded-md border border-dashed px-3 py-3 transition-colors ${
+        dropActiveGroupId === groupId
+          ? "border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)]/40"
+          : "border-[var(--admin-field-border)] bg-black/[0.02] dark:bg-white/[0.02]"
+      } ${disabled || busy ? "pointer-events-none opacity-45" : ""}`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">{hint}</p>
+        {!disabled ? renderOpenLabel(groupId, true) : null}
+      </div>
+      {renderFileInput(groupId)}
+    </div>
+  );
 
   return (
-    <div className="mt-2 min-w-0 space-y-3 rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.02] p-2 dark:bg-white/[0.03]">
+    <div
+      ref={rootRef}
+      className="mt-2 min-w-0 space-y-3 rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.02] p-2 dark:bg-white/[0.03]"
+      onDragOver={onDragOverZone}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
           Fotogrāfijas (PDF režģis) · {photoCount}/{LISTING_ANALYSIS_MAX_PHOTOS}
@@ -420,17 +547,6 @@ export function AdminListingAnalysisPhotos({
           </div>
         ) : null}
       </div>
-
-      <input
-        ref={fileRef}
-        id={baseInputId}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
-        multiple
-        className="sr-only"
-        onChange={(e) => void onFileChange(e)}
-        disabled={disabled || busy}
-      />
 
       {disabled ? (
         <p className="text-[10px] text-amber-700 dark:text-amber-300">
@@ -463,20 +579,15 @@ export function AdminListingAnalysisPhotos({
         </ul>
       ) : null}
 
-      {photoGroups.length === 0 && pending.length === 0 && !busy ? (
-        <p className="text-[10px] text-[var(--color-provin-muted)]">
-          Izveido grupu ar virsrakstu (piem. datums vai avots), tad pievieno fotogrāfijas — PDF rādīs virsrakstu un
-          attēlus zem tā. Kārtošanai — pavelc sīktēlu.
-        </p>
-      ) : null}
+      {photoGroups.length === 0 && !disabled
+        ? renderDropZone(
+            defaultGroupId,
+            "Velc attēlus šeit vai izmanto „Atvērt no datora…” — tiks izveidota pirmā grupa. Pēc tam vari pievienot virsrakstu (datums, avots).",
+          )
+        : null}
 
       {photoGroups.map((group, groupIndex) => (
-        <section
-          key={group.id}
-          className="space-y-2 rounded-md border border-[var(--admin-field-border)]/70 bg-[var(--admin-field-bg)]/40 p-2"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => void onDropZone(e, group.id)}
-        >
+        <section key={group.id} className="space-y-2 rounded-md border border-[var(--admin-field-border)]/70 bg-[var(--admin-field-bg)]/40 p-2">
           <div className="flex flex-wrap items-start gap-2">
             <div className="min-w-0 flex-1">
               <label className="mb-0.5 block text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
@@ -494,17 +605,7 @@ export function AdminListingAnalysisPhotos({
             </div>
             {!disabled ? (
               <div className="flex shrink-0 flex-wrap items-center gap-1.5 pt-4">
-                <button
-                  type="button"
-                  onClick={() => openFilePicker(group.id)}
-                  disabled={busy || atLimit}
-                  className={`inline-flex items-center gap-1 rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[10px] font-medium text-[var(--admin-field-text)] ${
-                    busy || atLimit ? "pointer-events-none opacity-45" : "hover:bg-black/[0.03]"
-                  }`}
-                >
-                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <ImagePlus className="h-3.5 w-3.5" aria-hidden />}
-                  Pievienot
-                </button>
+                {renderOpenLabel(group.id)}
                 <button
                   type="button"
                   onClick={() => void removeGroup(group.id)}
@@ -518,11 +619,12 @@ export function AdminListingAnalysisPhotos({
             ) : null}
           </div>
 
-          {group.photos.length === 0 && pending.every((p) => p.groupId !== group.id) ? (
-            <p className="text-[10px] text-[var(--color-provin-muted)]">
-              Velc failus šeit vai izmanto „Pievienot”.
-            </p>
-          ) : null}
+          {renderDropZone(
+            group.id,
+            group.photos.length === 0 && pending.every((p) => p.groupId !== group.id)
+              ? "Velc attēlus šeit vai izmanto „Atvērt no datora…”."
+              : "Velc jaunus attēlus šeit, lai pievienotu grupai.",
+          )}
 
           {group.photos.length > 0 ? (
             <ul className="flex flex-wrap gap-2">
