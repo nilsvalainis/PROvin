@@ -134,9 +134,10 @@ export function AdminListingAnalysisPhotos({
   );
 
   useEffect(() => {
+    const previewUrls = previewUrlsRef.current;
     return () => {
-      for (const url of previewUrlsRef.current.values()) URL.revokeObjectURL(url);
-      previewUrlsRef.current.clear();
+      for (const url of previewUrls.values()) URL.revokeObjectURL(url);
+      previewUrls.clear();
     };
   }, []);
 
@@ -219,7 +220,7 @@ export function AdminListingAnalysisPhotos({
     const imageFiles = collectImageFiles(list);
     if (!imageFiles.length || disabled) return;
 
-    let groups = ensureGroupInList(photoGroups, targetGroupId);
+    const groups = ensureGroupInList(photoGroups, targetGroupId);
     const group = groups.find((g) => g.id === targetGroupId)!;
     const currentTotal = totalPhotos(groups);
 
