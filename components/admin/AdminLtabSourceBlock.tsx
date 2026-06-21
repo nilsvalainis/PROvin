@@ -8,9 +8,14 @@ import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContex
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
+import { AdminIncidentFieldFillOption } from "@/components/admin/AdminIncidentFieldFillOption";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { LtabBlockState, LtabIncidentRow } from "@/lib/admin-source-blocks";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
+import {
+  ADMIN_INCIDENT_DATA_UNAVAILABLE,
+  isIncidentDataUnavailableText,
+} from "@/lib/admin-incident-field-presets";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
@@ -90,15 +95,22 @@ export function AdminLtabSourceBlock({
                         {readOnly ? (
                           <span className="text-[var(--color-provin-muted)]">{row.csngDate.trim() || "—"}</span>
                         ) : (
-                          <input
-                            type="text"
-                            className={inp}
-                            placeholder="piem., 2024"
-                            value={row.csngDate}
-                            disabled={disabled}
-                            onChange={(e) => setRow(ri, { csngDate: e.target.value })}
-                            aria-label={`LTAB Datums, rinda ${ri + 1}`}
-                          />
+                          <div>
+                            <input
+                              type="text"
+                              className={inp}
+                              placeholder="piem., 2024"
+                              value={row.csngDate}
+                              disabled={disabled}
+                              onChange={(e) => setRow(ri, { csngDate: e.target.value })}
+                              aria-label={`LTAB Datums, rinda ${ri + 1}`}
+                            />
+                            <AdminIncidentFieldFillOption
+                              value={row.csngDate}
+                              disabled={disabled}
+                              onFill={() => setRow(ri, { csngDate: ADMIN_INCIDENT_DATA_UNAVAILABLE })}
+                            />
+                          </div>
                         )}
                       </td>
                       <td className={`${mileCell} align-top`}>
@@ -114,19 +126,27 @@ export function AdminLtabSourceBlock({
                               {row.lossAmount.trim() || "—"}
                             </span>
                           ) : (
-                            <input
-                              type="text"
-                              className={`${inp} max-w-full border-0 bg-transparent shadow-none ring-0 focus:ring-0`}
-                              placeholder="2930.00 €"
-                              value={row.lossAmount}
-                              disabled={disabled}
-                              onChange={(e) => setRow(ri, { lossAmount: e.target.value })}
-                              onBlur={(e) => {
-                                const n = normalizeLossAmountEurDisplay(e.target.value);
-                                if (n !== e.target.value.trim()) setRow(ri, { lossAmount: n });
-                              }}
-                              aria-label={`LTAB Zaudējumu summa, rinda ${ri + 1}`}
-                            />
+                            <div>
+                              <input
+                                type="text"
+                                className={`${inp} max-w-full border-0 bg-transparent shadow-none ring-0 focus:ring-0`}
+                                placeholder="2930.00 €"
+                                value={row.lossAmount}
+                                disabled={disabled}
+                                onChange={(e) => setRow(ri, { lossAmount: e.target.value })}
+                                onBlur={(e) => {
+                                  if (isIncidentDataUnavailableText(e.target.value)) return;
+                                  const n = normalizeLossAmountEurDisplay(e.target.value);
+                                  if (n !== e.target.value.trim()) setRow(ri, { lossAmount: n });
+                                }}
+                                aria-label={`LTAB Zaudējumu summa, rinda ${ri + 1}`}
+                              />
+                              <AdminIncidentFieldFillOption
+                                value={row.lossAmount}
+                                disabled={disabled}
+                                onFill={() => setRow(ri, { lossAmount: ADMIN_INCIDENT_DATA_UNAVAILABLE })}
+                              />
+                            </div>
                           )}
                         </LossAmountFieldChrome>
                       </td>
@@ -134,14 +154,21 @@ export function AdminLtabSourceBlock({
                         {readOnly ? (
                           <CountryFlagWithCode countryLabel={row.incidentNo.trim() || "—"} />
                         ) : (
-                          <AdminCountryCombobox
-                            className={inp}
-                            placeholder="Latvija"
-                            value={row.incidentNo}
-                            disabled={disabled}
-                            onChange={(next) => setRow(ri, { incidentNo: next })}
-                            aria-label={`LTAB Valsts, rinda ${ri + 1}`}
-                          />
+                          <div>
+                            <AdminCountryCombobox
+                              className={inp}
+                              placeholder="Latvija"
+                              value={row.incidentNo}
+                              disabled={disabled}
+                              onChange={(next) => setRow(ri, { incidentNo: next })}
+                              aria-label={`LTAB Valsts, rinda ${ri + 1}`}
+                            />
+                            <AdminIncidentFieldFillOption
+                              value={row.incidentNo}
+                              disabled={disabled}
+                              onFill={() => setRow(ri, { incidentNo: ADMIN_INCIDENT_DATA_UNAVAILABLE })}
+                            />
+                          </div>
                         )}
                       </td>
                       {!readOnly ? (

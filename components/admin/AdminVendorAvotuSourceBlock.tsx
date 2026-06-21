@@ -9,6 +9,7 @@ import {
 } from "@/components/admin/AdminSourceCommentField";
 import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
+import { AdminIncidentFieldFillOption } from "@/components/admin/AdminIncidentFieldFillOption";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import type { LtabIncidentRow, VendorAvotuBlockState } from "@/lib/admin-source-blocks";
@@ -29,6 +30,10 @@ import {
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
+import {
+  ADMIN_INCIDENT_DATA_UNAVAILABLE,
+  isIncidentDataUnavailableText,
+} from "@/lib/admin-incident-field-presets";
 import {
   autoRecordsRowHasData,
   formatAutoRecordsDateForOutput,
@@ -473,19 +478,26 @@ export function AdminVendorAvotuSourceBlock({
                       {readOnly ? (
                         <span className="text-[var(--color-provin-muted)]">{row.csngDate.trim() || "—"}</span>
                       ) : (
-                        <input
-                          type="text"
-                          className={inp}
-                          placeholder="piem., 2024"
-                          value={row.csngDate}
-                          disabled={disabled}
-                          id={`${idBase}-${PROVIN_VENDOR_FIELD.csngDatums}-${ri}`}
-                          name={`${PROVIN_VENDOR_FIELD.csngDatums}[${ri}]`}
-                          data-provin-field={PROVIN_VENDOR_FIELD.csngDatums}
-                          data-row-index={ri}
-                          onChange={(e) => setIncidentRow(ri, { csngDate: e.target.value })}
-                          aria-label={`Datums, ${blockKey}, rinda ${ri + 1}`}
-                        />
+                        <div>
+                          <input
+                            type="text"
+                            className={inp}
+                            placeholder="piem., 2024"
+                            value={row.csngDate}
+                            disabled={disabled}
+                            id={`${idBase}-${PROVIN_VENDOR_FIELD.csngDatums}-${ri}`}
+                            name={`${PROVIN_VENDOR_FIELD.csngDatums}[${ri}]`}
+                            data-provin-field={PROVIN_VENDOR_FIELD.csngDatums}
+                            data-row-index={ri}
+                            onChange={(e) => setIncidentRow(ri, { csngDate: e.target.value })}
+                            aria-label={`Datums, ${blockKey}, rinda ${ri + 1}`}
+                          />
+                          <AdminIncidentFieldFillOption
+                            value={row.csngDate}
+                            disabled={disabled}
+                            onFill={() => setIncidentRow(ri, { csngDate: ADMIN_INCIDENT_DATA_UNAVAILABLE })}
+                          />
+                        </div>
                       )}
                     </td>
                     <td className={`${mileCell} align-top`}>
@@ -501,25 +513,33 @@ export function AdminVendorAvotuSourceBlock({
                             {row.lossAmount.trim() || "—"}
                           </span>
                         ) : (
-                          <input
-                            type="text"
-                            className={`${inp} max-w-full border-0 bg-transparent shadow-none ring-0 focus:ring-0`}
-                            placeholder="2930.00 €"
-                            value={row.lossAmount}
-                            disabled={disabled}
-                            id={`${idBase}-${PROVIN_VENDOR_FIELD.zaudejumuSumma}-${ri}`}
-                            name={`${PROVIN_VENDOR_FIELD.zaudejumuSumma}[${ri}]`}
-                            data-provin-field={PROVIN_VENDOR_FIELD.zaudejumuSumma}
-                            data-row-index={ri}
-                            onChange={(e) => setIncidentRow(ri, { lossAmount: e.target.value })}
-                            onBlur={(e) => {
-                              const n = normalizeLossAmountEurDisplay(e.target.value);
-                              if (n !== e.target.value.trim()) {
-                                setIncidentRow(ri, { lossAmount: n });
-                              }
-                            }}
-                            aria-label={`Zaudējumu summa, ${blockKey}, rinda ${ri + 1}`}
-                          />
+                          <div>
+                            <input
+                              type="text"
+                              className={`${inp} max-w-full border-0 bg-transparent shadow-none ring-0 focus:ring-0`}
+                              placeholder="2930.00 €"
+                              value={row.lossAmount}
+                              disabled={disabled}
+                              id={`${idBase}-${PROVIN_VENDOR_FIELD.zaudejumuSumma}-${ri}`}
+                              name={`${PROVIN_VENDOR_FIELD.zaudejumuSumma}[${ri}]`}
+                              data-provin-field={PROVIN_VENDOR_FIELD.zaudejumuSumma}
+                              data-row-index={ri}
+                              onChange={(e) => setIncidentRow(ri, { lossAmount: e.target.value })}
+                              onBlur={(e) => {
+                                if (isIncidentDataUnavailableText(e.target.value)) return;
+                                const n = normalizeLossAmountEurDisplay(e.target.value);
+                                if (n !== e.target.value.trim()) {
+                                  setIncidentRow(ri, { lossAmount: n });
+                                }
+                              }}
+                              aria-label={`Zaudējumu summa, ${blockKey}, rinda ${ri + 1}`}
+                            />
+                            <AdminIncidentFieldFillOption
+                              value={row.lossAmount}
+                              disabled={disabled}
+                              onFill={() => setIncidentRow(ri, { lossAmount: ADMIN_INCIDENT_DATA_UNAVAILABLE })}
+                            />
+                          </div>
                         )}
                       </LossAmountFieldChrome>
                     </td>
@@ -527,18 +547,25 @@ export function AdminVendorAvotuSourceBlock({
                       {readOnly ? (
                         <CountryFlagWithCode countryLabel={row.incidentNo.trim() || "—"} />
                       ) : (
-                        <AdminCountryCombobox
-                          className={inp}
-                          placeholder="Latvija"
-                          value={row.incidentNo}
-                          disabled={disabled}
-                          id={`${idBase}-${PROVIN_VENDOR_FIELD.negadijumuSkaits}-${ri}`}
-                          name={`${PROVIN_VENDOR_FIELD.negadijumuSkaits}[${ri}]`}
-                          data-provin-field={PROVIN_VENDOR_FIELD.negadijumuSkaits}
-                          data-row-index={ri}
-                          onChange={(next) => setIncidentRow(ri, { incidentNo: next })}
-                          aria-label={`Valsts, ${blockKey}, rinda ${ri + 1}`}
-                        />
+                        <div>
+                          <AdminCountryCombobox
+                            className={inp}
+                            placeholder="Latvija"
+                            value={row.incidentNo}
+                            disabled={disabled}
+                            id={`${idBase}-${PROVIN_VENDOR_FIELD.negadijumuSkaits}-${ri}`}
+                            name={`${PROVIN_VENDOR_FIELD.negadijumuSkaits}[${ri}]`}
+                            data-provin-field={PROVIN_VENDOR_FIELD.negadijumuSkaits}
+                            data-row-index={ri}
+                            onChange={(next) => setIncidentRow(ri, { incidentNo: next })}
+                            aria-label={`Valsts, ${blockKey}, rinda ${ri + 1}`}
+                          />
+                          <AdminIncidentFieldFillOption
+                            value={row.incidentNo}
+                            disabled={disabled}
+                            onFill={() => setIncidentRow(ri, { incidentNo: ADMIN_INCIDENT_DATA_UNAVAILABLE })}
+                          />
+                        </div>
                       )}
                     </td>
                     {!readOnly ? (

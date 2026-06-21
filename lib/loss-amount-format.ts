@@ -3,6 +3,10 @@
  */
 import { amountToIntRough } from "@/lib/claim-rows-parse";
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
+import {
+  ADMIN_INCIDENT_DATA_UNAVAILABLE,
+  isIncidentDataUnavailableText,
+} from "@/lib/admin-incident-field-presets";
 
 function parseLossEurWholeAmount(raw: string): number | null {
   const t = raw.trim().replace(/EUR|€/gi, "").trim();
@@ -32,6 +36,7 @@ function formatEurGrouped(n: number): string {
 
 /** Formatē summu kā „1 234 €” vai diapazonu „300 - 400 €”. */
 export function normalizeLossAmountEurDisplay(raw: string): string {
+  if (isIncidentDataUnavailableText(raw)) return ADMIN_INCIDENT_DATA_UNAVAILABLE;
   const t = raw.trim().replace(/EUR|€/gi, "").trim();
   const range = t.match(/^([\d\s.]+)\s*[-–—]\s*([\d\s.]+)$/);
   if (range) {
