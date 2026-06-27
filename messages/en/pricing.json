@@ -7,7 +7,7 @@
     "grid": [
       {
         "title": "FULL HISTORY ANALYSIS",
-        "body": "Synthesis of official dealer*, international and local registry data. Mileage, accidents, and theft records."
+        "body": "Synthesis of official dealer & auction portal archives*, international and local registry data. Mileage, accidents, and theft records."
       },
       {
         "title": "LISTING AUDIT",
@@ -24,6 +24,6 @@
       }
     ],
     "irissLink": "WHO IS BEHIND PROVIN?",
-    "autoRecordsFootnote": "* Available only for specific manufacturers"
+    "autoRecordsFootnote": "* Official dealer system data and auction archives are available for selected manufacturers and models"
   }
 }

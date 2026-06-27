@@ -45,7 +45,7 @@ describe("test-pricing-5 display", () => {
     expect(getTp5BlockRows("premium").map((r) => r.label)).toEqual([
       "carVertical vēstures atskaite",
       "autoDNA vēstures atskaite",
-      "Oficiālo dīleru sistēmu dati",
+      "Oficiālo dīleru un izsoļu portālu arhīvs*",
     ]);
     expect(getTp5BlockRows("premium")[2]?.footnoteMark).toBe(true);
   });

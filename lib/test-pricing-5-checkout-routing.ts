@@ -40,16 +40,16 @@ export const TP5_TIER_META: Record<TestPricingPlanId, Tp5TierMeta> = {
   premium: {
     title: "PROVIN AUDITS",
     description:
-      "Maksimāla visu datu analīze iekļaujot maksas atskaites un oficiālā dīlera sistēmu datus*.",
+      "Maksimāla visu datu analīze iekļaujot maksas atskaites, oficiālo dīleru un izsoļu portālu arhīvu*.",
   },
 };
 
 /** Muted footnote when PROVIN tier dealer-system row is active. */
 export const TP5_DEALER_FOOTNOTE =
-  "*Dati no oficiālo dīleru sistēmām ir pieejami noteiktiem ražotājiem.";
+  "*Dati no oficiālo dīleru sistēmām un izsoļu arhīviem ir pieejami noteiktiem ražotājiem un modeļiem.";
 
 const TP5_DEALER_FOOTNOTE_EN =
-  "*Official dealer system data is available for selected manufacturers.";
+  "*Official dealer system data and auction archives are available for selected manufacturers and models.";
 
 /** Locale-aware dealer footnote; anything other than `en` falls back to Latvian. */
 export function getTp5DealerFootnote(locale?: string): string {

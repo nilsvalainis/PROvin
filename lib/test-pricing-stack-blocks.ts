@@ -33,7 +33,7 @@ export const TEST_PRICING_STACK_BLOCKS: StackFeatureBlock[] = [
     items: [
       "carVertical pilnā atskaite",
       "autoDNA vēstures atskaite",
-      "Oficiālo dīleru sistēmu dati",
+      "Oficiālo dīleru un izsoļu portālu arhīvs*",
       "Eksperta pirkuma rekomendācija",
     ],
   },
@@ -59,7 +59,7 @@ export function getStackBlocksViewState(tier: TestPricingPlanId): StackBlocksVie
       plus: "active",
       premium: "faded",
       warningAfterBlock: "premium",
-      warningText: "CarVertical, autoDNA & Dīleru dati NAV iekļauti",
+      warningText: "CarVertical, autoDNA & dīleru/izsoļu arhīvs NAV iekļauts",
     };
   }
   return {

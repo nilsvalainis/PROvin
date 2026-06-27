@@ -16,7 +16,7 @@ export const TEST_PRICING_COMPARE_ROWS: CompareMatrixRow[] = [
   { label: "Tehnisko apskašu vēsture", mini: false, plus: true, premium: true },
   { label: "carVertical pilnā atskaite", mini: false, plus: false, premium: true },
   { label: "autoDNA vēstures atskaite", mini: false, plus: false, premium: true },
-  { label: "Oficiālo dīleru sistēmu dati", mini: false, plus: false, premium: true },
+  { label: "Oficiālo dīleru un izsoļu portālu arhīvs*", mini: false, plus: false, premium: true },
   { label: "Eksperta pirkuma rekomendācija", mini: false, plus: false, premium: true },
 ];
 

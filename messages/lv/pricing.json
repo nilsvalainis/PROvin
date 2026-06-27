@@ -7,7 +7,7 @@
     "grid": [
       {
         "title": "PILNA VĒSTURES ANALĪZE",
-        "body": "Oficiālo dīleru*, starptautisko un vietējo reģistru datu sintēze. Nobraukums, negadījumi un zādzības."
+        "body": "Oficiālo dīleru un izsoļu portālu arhīvu*, starptautisko un vietējo reģistru datu sintēze. Nobraukums, negadījumi un zādzības."
       },
       {
         "title": "SLUDINĀJUMA AUDITS",
@@ -24,6 +24,6 @@
       }
     ],
     "irissLink": "KAS SLĒPJAS AIZ PROVIN?",
-    "autoRecordsFootnote": "* Var tikt izmantots tikai noteiktiem ražotājiem"
+    "autoRecordsFootnote": "* Dati no oficiālo dīleru sistēmām un izsoļu arhīviem ir pieejami noteiktiem ražotājiem un modeļiem"
   }
 }

@@ -16,7 +16,7 @@ const FULL_FEATURE_STACK = [
   "Individuāla konsultācija",
   "carVertical integrācija",
   "autoDNA integrācija",
-  "Oficiālo dīleru dati*",
+  "Oficiālo dīleru un izsoļu portālu arhīvs*",
   "Starptautiska vēstures pārbaude",
 ];
 
@@ -50,7 +50,7 @@ describe("test-pricing-5 mobile two-tier model", () => {
   it("maps AUDITS to all eight active rows in the full stack", () => {
     const audits = getTp5MobileService("audits");
     expect(audits.title).toBe("PROVIN AUDITS");
-    expect(audits.description).toContain("oficiālā dīlera datus");
+    expect(audits.description).toContain("izsoļu portālu arhīvu");
     expect(audits.price).toBe("99,99 €");
     expect(audits.buttonText).toBe("PASŪTĪT PROVIN AUDITU — 99,99 €");
     expect(audits.features).toHaveLength(8);

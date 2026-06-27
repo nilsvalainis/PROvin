@@ -40,7 +40,7 @@ const PREMIUM_ROWS: Tp5DisplayRow[] = [
   {
     kind: "bullet",
     id: "prem-3",
-    label: "Oficiālo dīleru sistēmu dati",
+    label: "Oficiālo dīleru un izsoļu portālu arhīvs*",
     footnoteMark: true,
   },
 ];

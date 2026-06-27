@@ -98,7 +98,7 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
     features: [
       { kind: "includes", tierName: "MINI" },
       { kind: "includes", tierName: "PLUS" },
-      { kind: "bullet", label: "Oficiālo dīleru vēsture*" },
+      { kind: "bullet", label: "Oficiālo dīleru un izsoļu portālu arhīvs*" },
       { kind: "bullet", label: "CarVertical & AutoDNA" },
     ],
   },

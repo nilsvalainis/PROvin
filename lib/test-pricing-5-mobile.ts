@@ -20,7 +20,7 @@ const TP5_MOBILE_FEATURE_NAMES = [
   "Individuāla konsultācija",
   "carVertical integrācija",
   "autoDNA integrācija",
-  "Oficiālo dīleru dati*",
+  "Oficiālo dīleru un izsoļu portālu arhīvs*",
   "Starptautiska vēstures pārbaude",
 ] as const;
 
@@ -31,7 +31,7 @@ const TP5_MOBILE_FEATURE_NAMES_EN = [
   "Personal consultation",
   "carVertical integration",
   "autoDNA integration",
-  "Official dealer data*",
+  "Official dealer & auction portal archive*",
   "International history check",
 ] as const;
 
@@ -64,7 +64,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     price: "99,99 €",
     buttonText: "PASŪTĪT PROVIN AUDITU — 99,99 €",
     description:
-      "Detalizēta auto vēstures un risku analīze iekļaujot dažādas maksas vēstures atskaites un oficiālā dīlera datus*.",
+      "Detalizēta auto vēstures un risku analīze iekļaujot dažādas maksas vēstures atskaites, oficiālo dīleru un izsoļu portālu arhīvu*.",
     features: buildTp5MobileFeatures(TP5_MOBILE_FEATURE_NAMES, TP5_MOBILE_FEATURE_NAMES.length),
   },
 ];
@@ -85,7 +85,7 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     price: "€99.99",
     buttonText: "ORDER PROVIN AUDIT — €99.99",
     description:
-      "In-depth vehicle history and risk analysis, combining several paid history reports and official dealer data*.",
+      "In-depth vehicle history and risk analysis, combining several paid history reports, official dealer data and auction portal archives*.",
     features: buildTp5MobileFeatures(
       TP5_MOBILE_FEATURE_NAMES_EN,
       TP5_MOBILE_FEATURE_NAMES_EN.length,

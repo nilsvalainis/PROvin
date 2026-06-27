@@ -22,7 +22,7 @@ export const TP5_DESKTOP_HERO_FEATURES: Tp5DesktopHeroFeature[] = [
   { label: "Ieteikumi klātienes apskatei", icon: "inspection-tips" },
   { label: "carVertical integrācija", icon: "carvertical" },
   { label: "autoDNA integrācija", icon: "autodna" },
-  { label: "Oficiālo dīleru dati*", icon: "dealer-data" },
+  { label: "Oficiālo dīleru un izsoļu portālu arhīvs*", icon: "dealer-data" },
   { label: "Starptautiska vēstures pārbaude", icon: "international" },
 ];
 
@@ -33,7 +33,7 @@ const TP5_DESKTOP_HERO_FEATURES_EN: Tp5DesktopHeroFeature[] = [
   { label: "In-person inspection guidance", icon: "inspection-tips" },
   { label: "carVertical integration", icon: "carvertical" },
   { label: "autoDNA integration", icon: "autodna" },
-  { label: "Official dealer data*", icon: "dealer-data" },
+  { label: "Official dealer & auction portal archive*", icon: "dealer-data" },
   { label: "International history check", icon: "international" },
 ];
 

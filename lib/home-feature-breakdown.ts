@@ -50,7 +50,7 @@ export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
     id: "audits",
     title: "PROVIN AUDITS",
     goal:
-      "Maksimāla drošība vai tikko no ārvalstīm ievestu automašīnu pilnīga izpēte. Detalizēta auto vēstures un risku analīze, apvienojot lielākos maksas datubāzu pārskatus un oficiālo dīleru datus. Audits ir izveidots kā pilna servisa risinājums, kas automātiski sevī ietver arī PROVIN MINI pārbaudi un paplašina to ar starptautisko maksas datubāzu un oficiālo dīleru sistēmu informāciju.",
+      "Maksimāla drošība vai tikko no ārvalstīm ievestu automašīnu pilnīga izpēte. Detalizēta auto vēstures un risku analīze, apvienojot lielākos maksas datubāzu pārskatus, dīleru sistēmas un vēsturisko izsoļu portālu arhīvus. Audits ir izveidots kā pilna servisa risinājums, kas automātiski sevī ietver arī PROVIN MINI pārbaudi un paplašina to ar starptautisko maksas datubāzu, oficiālo dīleru sistēmu informāciju un Eiropas izsoļu foto arhīviem.",
     items: [
       {
         title: "Starptautiska vēstures pārbaude",
@@ -68,8 +68,9 @@ export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
         icon: "autodna",
       },
       {
-        title: "Oficiālo dīleru dati*",
-        description: "Informācija no autorizētajiem servisiem par fiksētajiem nobraukuma datiem.",
+        title: "Oficiālo dīleru un izsoļu portālu arhīvs*",
+        description:
+          "Dati no autorizētajiem servisiem un vēsturisko izsoļu portālu arhīviem, ieskaitot sākotnējos bojājumu attēlus pirms auto remonta.",
         icon: "dealer-data",
       },
     ],
@@ -113,7 +114,7 @@ const HOME_FEATURE_BREAKDOWN_PACKAGES_EN: HomeFeatureBreakdownPackage[] = [
     id: "audits",
     title: "PROVIN AUDIT",
     goal:
-      "Maximum confidence — or a complete investigation of cars recently imported from abroad. An in-depth vehicle history and risk analysis that combines the leading paid database reports with official dealer data. The audit is built as a full-service solution: it automatically includes the PROVIN MINI check and extends it with information from international paid databases and official dealer systems.",
+      "Maximum confidence — or a complete investigation of cars recently imported from abroad. An in-depth vehicle history and risk analysis that combines the leading paid database reports, dealer systems and historical auction portal archives. The audit is built as a full-service solution: it automatically includes the PROVIN MINI check and extends it with information from international paid databases, official dealer systems and European auction photo archives.",
     items: [
       {
         title: "International history check",
@@ -131,8 +132,9 @@ const HOME_FEATURE_BREAKDOWN_PACKAGES_EN: HomeFeatureBreakdownPackage[] = [
         icon: "autodna",
       },
       {
-        title: "Official dealer data*",
-        description: "Information from authorised service centres on recorded mileage readings.",
+        title: "Official dealer & auction portal archive*",
+        description:
+          "Data from authorised service centres and historical auction portal archives, including original damage photos before repairs.",
         icon: "dealer-data",
       },
     ],
