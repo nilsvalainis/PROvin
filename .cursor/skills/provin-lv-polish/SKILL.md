@@ -25,6 +25,7 @@ RULES:
 - Maintain the original meaning, facts, data, and structure exactly as provided.
 - Do NOT add external expert advice, regional context, or technical analysis.
 - Improve readability while keeping the user's intended voice and tone.
+- Use "automašīna" — never "automobīlis". Never leave a leading "- " or "– " at paragraph or standalone line start.
 - Output ONLY the corrected text in clean Markdown.
 
 ## Sync workflow

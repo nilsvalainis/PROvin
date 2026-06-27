@@ -10,6 +10,7 @@ import {
 import { buildMarketAnalysisGeminiContext } from "@/lib/admin-market-gemini-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import type { TirgusFormFields } from "@/lib/admin-source-blocks";
+import { normalizeProvinExpertGeminiComment } from "@/lib/source-summary-comment-format";
 
 export type TirgusMarketGeminiResult = {
   listedForSale: string;
@@ -28,7 +29,10 @@ function parseTirgusMarketJson(raw: string): TirgusMarketGeminiResult {
     listedForSale: clipField(typeof payload.listedForSale === "string" ? payload.listedForSale : "", 32),
     listingCreated: clipField(typeof payload.listingCreated === "string" ? payload.listingCreated : "", 64),
     priceDrop: clipField(typeof payload.priceDrop === "string" ? payload.priceDrop : "", 32),
-    comments: clipField(typeof payload.comments === "string" ? payload.comments : "", 4000),
+    comments: normalizeProvinExpertGeminiComment(
+      clipField(typeof payload.comments === "string" ? payload.comments : "", 4000),
+      4000,
+    ),
   };
 }
 

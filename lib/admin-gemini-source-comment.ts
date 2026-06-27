@@ -1,6 +1,6 @@
 import "server-only";
 
-import { geminiGenerateText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
+import { geminiGenerateExpertText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
 import { geminiSourceCommentSystemPrompt } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import { buildGeminiOrderContextText } from "@/lib/admin-gemini-order-context";
@@ -81,7 +81,7 @@ Sagatavo komentāru šai sadaļai klienta atskaitei. Salīdzini ar pārējiem av
     },
   );
 
-  return geminiGenerateText({
+  return geminiGenerateExpertText({
     model: resolveGeminiAdminModel(input.modelTier),
     systemInstruction: geminiSourceCommentSystemPrompt(blockLabel),
     userPrompt,

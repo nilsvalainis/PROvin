@@ -11,6 +11,10 @@ import {
   isTransientHttpStatus,
 } from "@/lib/gemini-model-failover";
 import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
+import {
+  applyProvinReportCopyVocabulary,
+  normalizeProvinExpertGeminiComment,
+} from "@/lib/source-summary-comment-format";
 
 export {
   GEMINI_MODEL_FLASH,
@@ -246,6 +250,29 @@ export async function geminiGenerateText(opts: {
     logLabel: "text",
     run: (model) => geminiGenerateTextOnce(key, { ...opts, model }),
   });
+}
+
+/** Eksperta PDF komentāri — pēc ģenerēšanas normalizē vārdu krājumu un rindkopu formātu. */
+export async function geminiGenerateExpertText(opts: {
+  model: string;
+  systemInstruction: string;
+  userPrompt: string;
+  temperature?: number;
+  maxLen?: number;
+}): Promise<string> {
+  const raw = await geminiGenerateText(opts);
+  return normalizeProvinExpertGeminiComment(raw, opts.maxLen ?? 2400);
+}
+
+/** Vārdu krājums bez rindkopu pārformatēšanas — e-pasts, checklist u.c. */
+export async function geminiGenerateTextWithVocabulary(opts: {
+  model: string;
+  systemInstruction: string;
+  userPrompt: string;
+  temperature?: number;
+}): Promise<string> {
+  const raw = await geminiGenerateText(opts);
+  return applyProvinReportCopyVocabulary(raw);
 }
 
 type GenerateContentApiResponse = {

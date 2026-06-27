@@ -34,6 +34,7 @@ TONE & PERSONALITY:
 
 LATVIAN GRAMMAR RULES:
 - Always generate text in high-quality, natural Latvian.
+- Use "automašīna" (or "auto") — NEVER "automobīlis". Never start a paragraph with "- " or "– ".
 - For checklists, action steps, or physical vehicle inspection notes, strictly use objective Latvian phrasing (e.g., "Jāpārbauda...", "Ieteicams novērtēt...", "Rūpīgi jāapskata...").
 
 EXPERT KNOWLEDGE BASE & FORENSIC LOGIC:

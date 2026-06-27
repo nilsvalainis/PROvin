@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin-gemini-order-context";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { applyProvinReportCopyVocabulary } from "@/lib/source-summary-comment-format";
 
 export async function generateSellerAnalysisWithGemini(input: GeminiOrderContextInput): Promise<string> {
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
@@ -50,10 +51,11 @@ ${taskBlock}`,
     },
   );
 
-  return geminiGenerateTextWithGoogleSearch({
+  const raw = await geminiGenerateTextWithGoogleSearch({
     model: resolveGeminiAdminModel(input.modelTier),
     systemInstruction: GEMINI_SELLER_ANALYSIS_SYSTEM,
     userPrompt,
     temperature: 0.35,
   });
+  return applyProvinReportCopyVocabulary(raw);
 }

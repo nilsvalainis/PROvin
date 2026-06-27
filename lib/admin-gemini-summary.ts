@@ -1,6 +1,6 @@
 import "server-only";
 
-import { geminiGenerateText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
+import { geminiGenerateTextWithVocabulary, resolveGeminiAdminModel } from "@/lib/admin-gemini";
 import { GEMINI_SUMMARY_ANALYSIS_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
@@ -64,7 +64,7 @@ Sintezē VISU portfeļa kontekstu — avotu datus, tabulas, komentārus un ekspe
     },
   );
 
-  return geminiGenerateText({
+  return geminiGenerateTextWithVocabulary({
     model: resolveGeminiAdminModel(input.modelTier),
     systemInstruction: GEMINI_SUMMARY_ANALYSIS_SYSTEM,
     userPrompt,

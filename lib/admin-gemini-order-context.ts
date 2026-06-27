@@ -20,6 +20,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { appendGeminiContextRawSection } from "@/lib/admin-gemini-context-raw";
+import { buildPreviouslyGeneratedSourceCommentsContext } from "@/lib/admin-source-comment-blocks";
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
@@ -128,6 +129,39 @@ function vendorRawLogsPlainText(blocks: WorkspaceSourceBlocks): string {
   return parts.join("\n\n");
 }
 
+/** Visi jau aizpildītie eksperta komentāri — stila reference ✨ ģenerēšanai. */
+export function buildFinishedReportStyleReferenceSection(input: {
+  sourceBlocks: WorkspaceSourceBlocks;
+  irissSummary?: string;
+  inspectionPlan?: string;
+  priceFit?: string;
+  internalComment?: string;
+  mileageComment?: string;
+}): string {
+  const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
+  const parts: string[] = [];
+
+  const sourceComments = buildPreviouslyGeneratedSourceCommentsContext(null, blocks).trim();
+  if (sourceComments) parts.push(sourceComments);
+
+  const expertFields: Array<[string, string | undefined]> = [
+    [ADMIN_MILEAGE_HISTORY_COMMENT_LABEL, input.mileageComment],
+    [ADMIN_INCIDENTS_SUMMARY_LABEL, input.internalComment],
+    ["Cenas atbilstība", input.priceFit],
+    ["Ieteikumi klātienes apskatei", input.inspectionPlan],
+    ["2. Kopsavilkums", input.irissSummary],
+  ];
+  for (const [label, html] of expertFields) {
+    const plain = adminRichHtmlToPlainText(html ?? "").trim();
+    if (!plain) continue;
+    parts.push(`### ${label}\n${plain}`);
+  }
+
+  if (parts.length === 0) return "";
+  return `### Gatavo PROVIN audita komentāru stila reference (obligāti atdarini rindkopu ritmu, **bold** ievadu, vārdu krājumu „automašīna”, bez domuzīmes rindkopu sākumā)
+${parts.join("\n\n")}`;
+}
+
 /** Visi pieejamie pasūtījuma dati vienā prompta kontekstā. */
 export function buildGeminiOrderContextText(input: GeminiOrderContextInput): string {
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
@@ -223,6 +257,16 @@ export function buildGeminiOrderContextText(input: GeminiOrderContextInput): str
   if (expertParts.length > 0) {
     parts.push(block("Eksperta piezīmes un melnraksti", expertParts.join("\n\n")));
   }
+
+  const styleReference = buildFinishedReportStyleReferenceSection({
+    sourceBlocks: blocks,
+    irissSummary: input.irissSummary,
+    inspectionPlan: input.inspectionPlan,
+    priceFit: input.priceFit,
+    internalComment: input.internalComment,
+    mileageComment: input.mileageComment,
+  });
+  if (styleReference) parts.push(styleReference);
 
   return parts.filter(Boolean).join("\n\n");
 }

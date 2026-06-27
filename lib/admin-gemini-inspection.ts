@@ -1,6 +1,6 @@
 import "server-only";
 
-import { geminiGenerateText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
+import { geminiGenerateTextWithVocabulary, resolveGeminiAdminModel } from "@/lib/admin-gemini";
 import { GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
@@ -32,7 +32,7 @@ Sagatavo ieteikumus klātienes apskatei šim auto.`,
     },
   );
 
-  return geminiGenerateText({
+  return geminiGenerateTextWithVocabulary({
     model: resolveGeminiAdminModel(input.modelTier),
     systemInstruction: GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM,
     userPrompt,

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { geminiGenerateText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
+import { geminiGenerateTextWithVocabulary, resolveGeminiAdminModel } from "@/lib/admin-gemini";
 import { GEMINI_SOURCES_COMPARISON_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
@@ -42,7 +42,7 @@ Salīdzini VISUS avotus, izceļ PROVIN vērtību vairāku datu apkopojumā, un s
     },
   );
 
-  return geminiGenerateText({
+  return geminiGenerateTextWithVocabulary({
     model: resolveGeminiAdminModel(input.modelTier),
     systemInstruction: GEMINI_SOURCES_COMPARISON_SYSTEM,
     userPrompt,

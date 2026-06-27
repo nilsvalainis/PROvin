@@ -1,6 +1,6 @@
 import "server-only";
 
-import { geminiGenerateText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
+import { geminiGenerateExpertText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
 import { GEMINI_INCIDENTS_SUMMARY_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
@@ -46,7 +46,7 @@ ${hasIncidents ? "Analizē VISUS negadījumu ierakstus visos avotos, salīdzini 
     },
   );
 
-  return geminiGenerateText({
+  return geminiGenerateExpertText({
     model: resolveGeminiAdminModel(input.modelTier),
     systemInstruction: GEMINI_INCIDENTS_SUMMARY_SYSTEM,
     userPrompt,

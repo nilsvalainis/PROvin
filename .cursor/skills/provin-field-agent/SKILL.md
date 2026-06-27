@@ -28,6 +28,7 @@ TONE & PERSONALITY:
 
 LATVIAN GRAMMAR RULES (CRITICAL):
 - Strictly write in flawless, natural Latvian.
+- Use "automašīna" (or "auto") — NEVER "automobīlis". Never start a paragraph with "- " or "– ".
 - For checklists, visual/physical inspections, or next-step recommendations, strictly use objective Latvian phrasing (e.g., "Jāpārbauda...", "Ieteicams novērtēt...", "Rūpīgi jāapskata..."). Do NOT use direct conversational imperatives like "Pārbaudi" or passive/weak wording.
 
 ## Sync workflow

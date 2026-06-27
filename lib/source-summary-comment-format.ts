@@ -14,6 +14,76 @@ export const SOURCE_COMMENT_NO_ISSUES_LV = "Problēmas nav konstatētas.";
 
 export const SOURCE_COMMENT_ANOMALY_PREFIX = "ANOMĀLIJA: ";
 
+/** Obligātā vārdu krājuma un rindkopu disciplīna — visi ✨ eksperta komentāri. */
+export const PROVIN_REPORT_COPY_VOCABULARY = `LATVIAN VOCABULARY & PHRASING (mandatory):
+- Use "automašīna" (or "auto", "šī automašīna") when referring to the vehicle in buyer-facing prose — NEVER "automobīlis".
+- "transportlīdzeklis" is allowed only when citing official CSDD/registry wording verbatim; otherwise prefer "automašīna".
+- Mid-sentence dashes for ranges (piem. 2007–2015, 300–400 €) are fine; NEVER start a paragraph or standalone sentence with "- " or "– ".`;
+
+/** Aizstāj „automobīlis” formas ar „automašīna” pircējam domātajā tekstā. */
+export function applyProvinReportCopyVocabulary(text: string): string {
+  let out = text;
+  const replacements: Array<[RegExp, string]> = [
+    [/\bAutomobīļiem\b/g, "Automašīnām"],
+    [/\bautomobīļiem\b/g, "automašīnām"],
+    [/\bAutomobīļu\b/g, "Automašīnu"],
+    [/\bautomobīļu\b/g, "automašīnu"],
+    [/\bAutomobīlim\b/g, "Automašīnai"],
+    [/\bautomobīlim\b/g, "automašīnai"],
+    [/\bAutomobīļa\b/g, "Automašīnas"],
+    [/\bautomobīļa\b/g, "automašīnas"],
+    [/\bAutomobīlis\b/g, "Automašīna"],
+    [/\bautomobīlis\b/g, "automašīna"],
+  ];
+  for (const [re, rep] of replacements) out = out.replace(re, rep);
+  return out;
+}
+
+/** No rindkopām noņem sarakstu prefiksus un normalizē atstarpes — ✨ eksperta komentāri. */
+export function normalizeProvinExpertGeminiComment(raw: string | undefined | null, maxLen = 2400): string {
+  const t = applyProvinReportCopyVocabulary((raw ?? "").trim());
+  if (!t) return t;
+  return normalizeExpertSourcePdfComment(t, maxLen);
+}
+
+/** Gatavo PROVIN audita atskaišu komentāru paraugi — few-shot stils ✨ ģeneratoram. */
+export const PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES = `FEW-SHOT STYLE EXAMPLES (match this exact paragraph structure, bold hooks, and tone):
+
+Example 1 (CSDD & nobraukums):
+"**Nobraukuma vēsture un datu vakuums.** Automašīna Latvijā pirmo reizi reģistrēta **2016. gada 22. janvārī**, kā izcelsmes valsti norādot Vāciju. Latvijas ekspluatācijas periodā fiksētā nobraukuma līkne ir konsekventa, sasniedzot **274 726 kilometrus**. Tomēr kā būtiskākais riska faktors jāuzsver **pilnīgs astoņu gadu datu vakuums** (2007–2015) pirms ievešanas Baltijā.
+
+**Taksometra statuss un nobraukuma risks.** Ņemot vērā dīlera datos apstiprināto taksometra statusu (**kods 937**), šādā periodā reālais nobraukums Eiropā loģiski sasniegtu **400 000 līdz 550 000 kilometru**. Pastāv ekstremāli augsts risks, ka odometra rādītājs pirms reģistrācijas Latvijā ir ticis samazināts par vairākiem simtiem tūkstošu kilometru."
+
+Example 2 (CSDD tehniskā apskate):
+"**Tehnisko apskašu vēsture.** Automašīna nav izgājusi pamatpārbaudi ar pirmo reizi **kopumā sešas reizes**, pēdējo reizi novērtējumu '2' saņemot **2025. gada 16. decembrī**. Sistēmā hroniski atkārtojas vieni un tie paši defekti: progresējoša nesošo elementu korozija, pastāvīgas eļļas noplūdes no motora un transmisijas, kā arī brīvkustības priekšējā tilta svirās.
+
+**Dūmainības un dzinēja resursa signāli.** Atgāzu pārbaudes uzrāda nestabilitāti — iepriekšējos gados dūmainības koeficients ir sasniedzis kritisku **2.32 un 2.95 atzīmi**, kas liecina par dzinēja un degvielas sistēmas resursa izsīkumu, lai gan pēdējā apskatē fiksēts koeficients **0.58**."
+
+Example 3 (negadījumi):
+"**Apdrošināšanas ieraksti un avotu salīdzinājums.** CarVertical fiksē **2019. gada jūlijā** Vācijā reģistrētu negadījumu ar zaudējumu diapazonu **5 001–10 000 €**, savukārt LTAB un AutoDNA šim periodam konkrētu izmaksu neuzrāda. Šāda datu asinhronija tipiski nozīmē, ka daļa bojājumu tika novērsta ārpus oficiālās apdrošināšanas vai ieraksts nav nonācis visās datubāzēs.
+
+**Praktiskā nozīme pircējam.** Pat ja summas nav milzīgas, šāds ieraksts obligāti jāsasaista ar virsbūves stāvokli klātienē — īpaši krāsas biezums, šuvju platums un panelu simetrija. Bez fiziskas pārbaudes nevar izslēgt strukturālu remontu vai slēptu kosmētiku."
+
+Example 4 (cena / tirgus):
+"**Cenas pozīcija Latvijas tirgū.** Sludinājumā norādītā cena **14 900 €** atbilst vidējam līmenim ss.lv segmentā šim modeļa gadam un dzinējam, tomēr **nobraukums 218 000 km** un iepriekš minētais datu vakuums samazina faktisko vērtību salīdzinājumā ar līdzīgiem auto ar pilnu servisa vēsturi.
+
+**Importa un izsoles konteksts.** IRISS dati rāda līdzīgus eksemplārus Vācijas wholesale segmentā **11 500–12 800 €** apmērā, kas pēc loģiskā uzcenojuma, reģistrācijas un risku rezerves atstāj ierobežotu telpu sarunām par cenu samazinājumu."
+
+Example 5 (AutoDNA — bojājumi):
+"**Apdrošināšanas un zaudējumu ieraksti.** AutoDNA fiksē **2018. gada martā** Vācijā reģistrētu negadījumu ar zaudējumu **2 930 €**, bojājot galvenokārt priekšējo labo sānu un priekšējo kreiso durvi. Ieraksts ir konsekvents ar CarVertical laika līniju, kas norāda uz strukturālu remontu, nevis kosmētisku skrāpējumu.
+
+**Datu uzticamība.** Summas apmērs un bojājumu zonas liecina par vidēja smaguma sadursmi — obligāti jāsalīdzina ar virsbūves šuvju platumu, krāsas biezumu un panelu simetriju klātienē, jo CSDD/LTAB šim periodam konkrētu izmaksu neuzrāda."
+
+Example 6 (AUTO RECORDS / dīlera dati):
+"**Dīlera servisa vēsture un komerciālais konteksts.** Outvin datos automašīna klasificēta ar tipa kodu, kas atbilst taksometra/komerciālai ekspluatācijai (**937**), un servisa žurnālā redzamas regulāras apkopes ik **15 000–18 000 km** Vācijā pirms ievešanas. Tas neizslēdz intensīvu pilsētas režīmu, bet norāda, ka uzturēšana nav bijusi pilnīgi ignorēta.
+
+**Nobraukuma korelācija.** Pēdējais fiksētais nobraukums dīlera ierakstā (**198 420 km**, **2023. gada augusts**) ir jāsalīdzina ar CSDD un AutoDNA līknēm — jebkura nesaskaņa pēc importa ir augsta prioritāte pircējam."
+
+Example 7 (nobraukuma komentārs):
+"**Hronoloģija un lineārums.** Visos pieejamajos avotos nobraukuma līkne ir lineāra ar vidēji **22 000–24 000 km gadā** pēc pirmās reģistrācijas Vācijā **2014. gadā**; kritiski kritumi nav konstatēti. Automašīnas profils atbilst šosejas režīmam ar zemāku motorstundu slodzi nekā tipiskam Rīgas pilsētas auto.
+
+**Datu blīvums.** Ieraksti ir bieži (reizi 6–12 mēnešos), kas ļauj objektīvi secināt par braukšanas režīmu; tomēr pēdējais gads pirms pārdošanas Latvijā ir ar retākiem fiksējumiem, tāpēc klātienē jāpārbauda odometrs un servisa uzlīmes pret pēdējiem datiem."`;
+
 const PDF_HYBRID_COMMENT_RULES = `COMMENTARY (mandatory) — hybrid "Factual Context + Anomalies":
 1. NEVER suppress normal context: damage zones, body sides, dealer/service milestones, registration facts, policy periods, Status Center notes, historical remarks — always extract as objective Latvian facts.
 2. Ultra-concise bullet list (- prefix per line), zero conversational fluff, max 4 bullets, max ~350 characters total.
@@ -28,12 +98,14 @@ Example:
 /** Vienots eksperta komentāru vizuālais formāts — ✨ avoti, PDF, cena, nobraukums u.c. */
 export const GEMINI_EXPERT_PARAGRAPH_PRESENTATION = `
 VISUAL PRESENTATION (mandatory for all expert client PDF comments):
-- STRUCTURE: Write ONLY in paragraphs — separate paragraphs with a blank line (double newline). NEVER start any line with "- ", "• ", "* ", "– ", or "1." / "2." — no bullet lists, no numbered lists, no list-style prefixes of any kind.
+${PROVIN_REPORT_COPY_VOCABULARY}
+- STRUCTURE: Write ONLY in paragraphs — separate paragraphs with a blank line (double newline). NEVER start any line with "- ", "• ", "* ", "– ", or "1." / "2." — no bullet lists, no numbered lists, no list-style prefixes of any kind. (Exception: dedicated inspection checklist fields may use "- " list lines — not paragraph prose.)
 - PARAGRAPH OPENER: Every paragraph MUST begin with a short **bold** topic hook (3–10 words) naming the theme — e.g. **Nobraukuma vēsture Latvijā**, **Cenu pozīcija tirgū**, **Tehnisko apskašu tendence** — then continue in natural prose in the same paragraph.
 - SCANABILITY: Keep each paragraph to 2–4 sentences. Prefer several short focused paragraphs over one dense wall of text.
 - EMPHASIS: Use **bold** inline for key dates, km, EUR sums, option codes, and risk labels — never bold an entire paragraph.
 - HUMAN TONE: Write like a senior Latvian inspector briefing a buyer — concrete, varied rhythm, no AI filler ("Kopumā var secināt", "Svarīgi atzīmēt", "Turklāt jāpiemin", "Nav šaubu"). Do not wrap the whole output in quotation marks.
 - ANOMALIES: State risks inside prose; you may use **Anomālija:** as a bold paragraph opener when a clear conflict exists — still never prefix with "- ".
+- STYLE REFERENCE: When the user prompt includes existing expert comments or drafts from this order, treat them as the canonical finished-report reference — match their paragraph rhythm, bold hooks, vocabulary ("automašīna"), and tone; extend with new facts, do not switch to a different format.
 `;
 
 /** Dziļā eksperta analīze — CSDD, AutoDNA, CarVertical, LTAB ✨ admin komentāri. */
@@ -66,7 +138,7 @@ ${HYBRID_COMMENT_RULES}
 
 /** Saglabā rindkopas no Gemini (PDF imports), nevis piespiedu 4 bulletus. */
 export function normalizeExpertSourcePdfComment(raw: string | undefined | null, maxLen = 1600): string {
-  const t = (raw ?? "").trim();
+  const t = applyProvinReportCopyVocabulary((raw ?? "").trim());
   if (!t) return SOURCE_COMMENT_NO_ISSUES_LV;
   if (
     /^problēmas\s+nav\s+konstatētas\.?$/i.test(t) ||

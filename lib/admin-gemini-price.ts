@@ -1,6 +1,6 @@
 import "server-only";
 
-import { geminiGenerateText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
+import { geminiGenerateExpertText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
 import { GEMINI_PRICE_ANALYSIS_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
@@ -36,7 +36,7 @@ Novērtē cenas atbilstību Latvijas lietotu auto tirgum (ss.lv), salīdzinot ar
     },
   );
 
-  return geminiGenerateText({
+  return geminiGenerateExpertText({
     model: resolveGeminiAdminModel(input.modelTier),
     systemInstruction: GEMINI_PRICE_ANALYSIS_SYSTEM,
     userPrompt,
