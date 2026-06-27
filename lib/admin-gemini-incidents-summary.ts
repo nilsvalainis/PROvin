@@ -4,7 +4,7 @@ import { geminiGenerateExpertText, resolveGeminiAdminModel } from "@/lib/admin-g
 import { GEMINI_INCIDENTS_SUMMARY_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
-  buildGeminiOrderContextText,
+  buildFullGeminiOrderContextText,
   type GeminiOrderContextInput,
 } from "@/lib/admin-gemini-order-context";
 import { orderHasIncidentDataForGemini } from "@/lib/admin-gemini-data-availability";
@@ -14,7 +14,7 @@ import { ADMIN_INCIDENTS_SUMMARY_LABEL } from "@/lib/admin-workspace-field-label
 export async function generateIncidentsSummaryWithGemini(input: GeminiOrderContextInput): Promise<string> {
   const hasIncidents = orderHasIncidentDataForGemini(input.sourceBlocks);
 
-  const orderContext = buildGeminiOrderContextText({
+  const orderContext = await buildFullGeminiOrderContextText({
     ...input,
     internalComment: undefined,
   });

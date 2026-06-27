@@ -3,6 +3,7 @@ import "server-only";
 import { SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import {
   GEMINI_EXPERT_PARAGRAPH_PRESENTATION,
+  GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES,
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
   PROVIN_REPORT_COPY_VOCABULARY,
   SOURCE_BLOCK_COMMENT_GEMINI_RULES,
@@ -72,6 +73,9 @@ MODEL TECHNICAL WEAKNESSES (when make/model/engine known from context):
 - Engine codes, thermal stress on downsized engines; advise realistic oil intervals (e.g. shorten 25–30k km OEM intervals toward 10–12k km when justified).
 - Interior: Artico/imitation leather vs real leather upkeep; LED optics moisture; paint type risks.
 - Clear market myths from data (e.g. Mercedes modular engine vs Renault architecture — state only what chassis/engine context supports).
+- When the user prompt includes HISTORICAL AUDIT REPORTS from similar vehicles (same engine code, transmission, or model generation), reuse their model-specific inspection themes and aggregate forensics — never copy client-specific km, VIN, or dates from those excerpts.
+
+${GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES}
 
 OUTPUT CONSTRAINT:
 Generate text strictly for the ACTIVE FIELD requested. No duplicate headers, no full report skeleton, no meta-commentary about AI or search.`;

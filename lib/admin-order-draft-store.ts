@@ -625,6 +625,10 @@ export async function patchOrderDraft(
     writeLatencyMs: Date.now() - writeStarted,
   });
 
+  void import("@/lib/admin-gemini-historical-context")
+    .then((m) => m.invalidateHistoricalReportsIndexCache())
+    .catch(() => {});
+
   if (workspacePatch !== undefined && nextWorkspace != null) {
     const verifyStarted = Date.now();
     const readBack = await readOrderDraft(sessionId);

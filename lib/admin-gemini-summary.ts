@@ -4,7 +4,7 @@ import { geminiGenerateTextWithVocabulary, resolveGeminiAdminModel } from "@/lib
 import { GEMINI_SUMMARY_ANALYSIS_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
-  buildGeminiOrderContextText,
+  buildFullGeminiOrderContextText,
   type GeminiOrderContextInput,
 } from "@/lib/admin-gemini-order-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
@@ -27,7 +27,7 @@ export async function generateSummaryAnalysisWithGemini(input: GeminiOrderContex
   const inspectionText = expertSection("Ieteikumi klātienes apskatei", inspectionPlan);
   const priceText = expertSection("Cenas atbilstība", priceFit);
 
-  const orderContext = buildGeminiOrderContextText({
+  const orderContext = await buildFullGeminiOrderContextText({
     ...input,
     irissSummary: undefined,
     inspectionPlan: undefined,

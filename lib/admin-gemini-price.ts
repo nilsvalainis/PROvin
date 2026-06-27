@@ -4,14 +4,14 @@ import { geminiGenerateExpertText, resolveGeminiAdminModel } from "@/lib/admin-g
 import { GEMINI_PRICE_ANALYSIS_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
-  buildGeminiOrderContextText,
+  buildFullGeminiOrderContextText,
   type GeminiOrderContextInput,
 } from "@/lib/admin-gemini-order-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { buildMarketAnalysisGeminiContext } from "@/lib/admin-market-gemini-context";
 
 export async function generatePriceAnalysisWithGemini(input: GeminiOrderContextInput): Promise<string> {
-  const context = buildGeminiOrderContextText(input);
+  const context = await buildFullGeminiOrderContextText(input);
   const { text: marketContext } = await buildMarketAnalysisGeminiContext({
     listingUrl: input.listingUrl,
     sourceBlocks: input.sourceBlocks,

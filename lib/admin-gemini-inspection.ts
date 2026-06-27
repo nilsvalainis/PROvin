@@ -4,7 +4,7 @@ import { geminiGenerateTextWithVocabulary, resolveGeminiAdminModel } from "@/lib
 import { GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
-  buildGeminiOrderContextText,
+  buildFullGeminiOrderContextText,
   type GeminiOrderContextInput,
 } from "@/lib/admin-gemini-order-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
@@ -12,7 +12,7 @@ import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 export async function generateInspectionRecommendationsWithGemini(
   input: GeminiOrderContextInput,
 ): Promise<string> {
-  const context = buildGeminiOrderContextText(input);
+  const context = await buildFullGeminiOrderContextText(input);
   if (!context.trim()) {
     throw new Error("empty_order_context");
   }

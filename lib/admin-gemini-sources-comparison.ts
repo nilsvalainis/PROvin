@@ -4,7 +4,7 @@ import { geminiGenerateTextWithVocabulary, resolveGeminiAdminModel } from "@/lib
 import { GEMINI_SOURCES_COMPARISON_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
-  buildGeminiOrderContextText,
+  buildFullGeminiOrderContextText,
   type GeminiOrderContextInput,
 } from "@/lib/admin-gemini-order-context";
 import { orderHasSourceDataForGemini } from "@/lib/admin-gemini-data-availability";
@@ -21,7 +21,7 @@ export async function generateSourcesComparisonWithGemini(input: GeminiOrderCont
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
   const sourceCommentsContext = buildPreviouslyGeneratedSourceCommentsContext(null, blocks).trim();
 
-  const orderContext = buildGeminiOrderContextText({
+  const orderContext = await buildFullGeminiOrderContextText({
     ...input,
     sourcesComparisonComment: undefined,
   });

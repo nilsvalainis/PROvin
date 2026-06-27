@@ -4,7 +4,7 @@ import { geminiGenerateTextWithGoogleSearch, resolveGeminiAdminModel } from "@/l
 import { GEMINI_SELLER_ANALYSIS_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
-  buildGeminiOrderContextText,
+  buildFullGeminiOrderContextText,
   type GeminiOrderContextInput,
 } from "@/lib/admin-gemini-order-context";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
@@ -21,7 +21,7 @@ export async function generateSellerAnalysisWithGemini(input: GeminiOrderContext
     throw new Error("missing_seller_input");
   }
 
-  const context = buildGeminiOrderContextText({
+  const context = await buildFullGeminiOrderContextText({
     ...input,
     extraSellerName: extraSeller || undefined,
   });

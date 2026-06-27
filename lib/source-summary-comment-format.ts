@@ -108,6 +108,13 @@ ${PROVIN_REPORT_COPY_VOCABULARY}
 - STYLE REFERENCE: When the user prompt includes existing expert comments or drafts from this order, treat them as the canonical finished-report reference — match their paragraph rhythm, bold hooks, vocabulary ("automašīna"), and tone; extend with new facts, do not switch to a different format.
 `;
 
+/** Vēsturisko auditu konteksts — citu klientu gatavas atskaites ar līdzīgiem agregātiem. */
+export const GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS (cross-client reference — when present below):
+- These excerpts come from OTHER completed PROVIN audits with similar make/model/year, engine code, transmission, or fuel type — use them to reuse model-specific forensic patterns, inspection checklist themes, phrasing rhythm, and aggregate-specific advice (e.g. known weak points for that engine/gearbox generation).
+- NEVER copy client-specific facts from historical excerpts: no VIN, plate, km, dates, EUR sums, seller names, or order IDs — adapt the logic and style only.
+- Prefer historical inspection recommendations and model-technical commentary when the current order lacks depth; always reconcile with the ACTIVE order's actual data.
+- Match the same paragraph + **bold** hook format and "automašīna" vocabulary as in historical excerpts.`;
+
 /** Dziļā eksperta analīze — CSDD, AutoDNA, CarVertical, LTAB ✨ admin komentāri. */
 export const HYBRID_COMMENT_RULES = `
 COMMENTARY RULES for PROVIN Senior Auto Expert:

@@ -29,6 +29,7 @@ import {
 import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
+import { buildHistoricalReportsGeminiContext } from "@/lib/admin-gemini-historical-context";
 
 export type GeminiOrderContextInput = {
   sessionId: string;
@@ -269,4 +270,17 @@ export function buildGeminiOrderContextText(input: GeminiOrderContextInput): str
   if (styleReference) parts.push(styleReference);
 
   return parts.filter(Boolean).join("\n\n");
+}
+
+/** Pilns pasūtījuma + vēsturisko auditu konteksts ✨ ģenerēšanai. */
+export async function buildFullGeminiOrderContextText(input: GeminiOrderContextInput): Promise<string> {
+  const base = buildGeminiOrderContextText(input);
+  const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
+  const historical = await buildHistoricalReportsGeminiContext({
+    sessionId: input.sessionId,
+    sourceBlocks: blocks,
+    vin: input.vin,
+  });
+  if (!historical.trim()) return base;
+  return `${base}\n\n${historical}`;
 }

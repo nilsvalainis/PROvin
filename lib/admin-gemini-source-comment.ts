@@ -3,7 +3,7 @@ import "server-only";
 import { geminiGenerateExpertText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
 import { geminiSourceCommentSystemPrompt } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
-import { buildGeminiOrderContextText } from "@/lib/admin-gemini-order-context";
+import { buildFullGeminiOrderContextText } from "@/lib/admin-gemini-order-context";
 import {
   buildPreviouslyGeneratedSourceCommentsContext,
   sourceBlockPlainTextForGemini,
@@ -40,7 +40,7 @@ export async function generateSourceCommentWithGemini(input: GeminiSourceComment
     throw new Error("empty_source_data");
   }
 
-  const portfolioContext = buildGeminiOrderContextText({
+  const portfolioContext = await buildFullGeminiOrderContextText({
     sessionId: input.sessionId,
     vin: input.vin?.trim() || null,
     listingUrl: input.listingUrl?.trim() || null,

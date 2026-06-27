@@ -4,7 +4,7 @@ import { geminiGenerateJsonText, resolveGeminiAdminModel } from "@/lib/admin-gem
 import { GEMINI_TIRGUS_MARKET_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
-  buildGeminiOrderContextText,
+  buildFullGeminiOrderContextText,
   type GeminiOrderContextInput,
 } from "@/lib/admin-gemini-order-context";
 import { buildMarketAnalysisGeminiContext } from "@/lib/admin-market-gemini-context";
@@ -39,7 +39,7 @@ function parseTirgusMarketJson(raw: string): TirgusMarketGeminiResult {
 export async function generateTirgusMarketWithGemini(
   input: GeminiOrderContextInput,
 ): Promise<TirgusMarketGeminiResult> {
-  const orderContext = buildGeminiOrderContextText(input);
+  const orderContext = await buildFullGeminiOrderContextText(input);
   const { text: marketContext, listingSnapshot } = await buildMarketAnalysisGeminiContext({
     listingUrl: input.listingUrl,
     sourceBlocks: input.sourceBlocks,

@@ -4,7 +4,7 @@ import { geminiGenerateExpertText, resolveGeminiAdminModel } from "@/lib/admin-g
 import { GEMINI_MILEAGE_COMMENT_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
-  buildGeminiOrderContextText,
+  buildFullGeminiOrderContextText,
   type GeminiOrderContextInput,
 } from "@/lib/admin-gemini-order-context";
 import { orderHasMileageDataForGemini } from "@/lib/admin-gemini-data-availability";
@@ -16,7 +16,7 @@ export async function generateMileageCommentWithGemini(input: GeminiOrderContext
     throw new Error("empty_mileage_data");
   }
 
-  const orderContext = buildGeminiOrderContextText({
+  const orderContext = await buildFullGeminiOrderContextText({
     ...input,
     mileageComment: undefined,
   });
