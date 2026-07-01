@@ -18,7 +18,7 @@ export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
     id: "mini",
     title: "PROVIN MINI",
     goal:
-      "Sludinājuma, tehnisko datu un risku analīze automašīnām, kuras jau ilgāku laiku atrodas un tiek ekspluatētas Latvijā. Pārbaude ir fokusēta uz vietējās ekspluatācijas, pēdējo tehnisko apskašu vēstures un publisko reģistru datu padziļinātu izvērtējumu. Pakalpojums nodrošina pilnu agregātu analīzi, uzticamības prognozi un iespējamo ekspluatācijas risku kopsavilkumu.",
+      "Sludinājuma un tehnisko datu analīze automašīnām, kas jau tiek ekspluatētas Latvijā. Pārbaude fokusējas uz vietējo vēsturi, pēdējo tehnisko apskašu datiem un publisko reģistru izvērtējumu, nodrošinot uzticamības prognozi un iespējamo risku kopsavilkumu.",
     items: [
       {
         title: "Sludinājuma un tehnisko risku analīze",
@@ -50,7 +50,7 @@ export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
     id: "audits",
     title: "PROVIN AUDITS",
     goal:
-      "Maksimāla drošība vai tikko no ārvalstīm ievestu automašīnu pilnīga izpēte. Detalizēta auto vēstures un risku analīze, apvienojot lielākos maksas datubāzu pārskatus, dīleru sistēmas un vēsturisko izsoļu portālu arhīvus. Audits ir izveidots kā pilna servisa risinājums, kas automātiski sevī ietver arī PROVIN MINI pārbaudi un paplašina to ar starptautisko maksas datubāzu, oficiālo dīleru sistēmu informāciju un Eiropas izsoļu foto arhīviem.",
+      "Maksimāla drošība un pilnīga izpēte no ārvalstīm ievestiem auto. Apvieno starptautisko maksas datubāzu pārskatus, oficiālo dīleru sistēmu informāciju un Eiropas izsoļu foto arhīvus, sniedzot padziļinātu vēstures, reālā nobraukuma un slēpto bojājumu analīzi.",
     items: [
       {
         title: "Starptautiska vēstures pārbaude",

@@ -112,7 +112,13 @@ export function HomeFeatureBreakdown() {
                       <p className="col-start-2 row-start-1 min-w-0 text-[0.8125rem] font-bold leading-snug text-zinc-100 sm:text-[0.875rem]">
                         {renderProvinText(item.title, homeDarkProvinWordmarkOptions)}
                       </p>
-                      <p className="col-start-2 row-start-2 min-w-0 text-[0.8125rem] font-normal leading-[1.55] text-gray-400 sm:text-[0.875rem] sm:leading-[1.6] lg:line-clamp-2 lg:min-h-[40px]">
+                      <p
+                        className={`col-start-2 row-start-2 min-w-0 text-[0.8125rem] font-normal leading-[1.55] text-gray-400 sm:text-[0.875rem] sm:leading-[1.6] ${
+                          pkg.id === "audits"
+                            ? "line-clamp-2 min-h-[2.5rem] overflow-hidden sm:min-h-[2.8rem]"
+                            : "lg:line-clamp-2 lg:min-h-[40px]"
+                        }`}
+                      >
                         {renderProvinText(item.description, homeDarkProvinWordmarkOptions)}
                       </p>
                     </li>
