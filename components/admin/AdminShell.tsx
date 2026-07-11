@@ -12,6 +12,7 @@ import { IrissOrderSortSelect } from "./IrissOrderSortSelect";
 import { IrissPasutijumiStatusFilter } from "./IrissPasutijumiStatusFilter";
 import { LogoutButton } from "./LogoutButton";
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
+import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
 
 /** Mobilajā admin augšējā joslā — tās pašas 3 strīpiņas kā publiskajā HeaderClient. */
 function AdminMobileMenuIcon({ lineClass }: { lineClass: string }) {
@@ -175,9 +176,11 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
           </div>
         </aside>
         <AdminShellLayoutContext.Provider value={shellLayoutValue}>
-          <AdminShellMainWithMobilePull isDetailScreen={isDetailScreen} notice={notice}>
-            {children}
-          </AdminShellMainWithMobilePull>
+          <AdminAuditDeadlineTickProvider>
+            <AdminShellMainWithMobilePull isDetailScreen={isDetailScreen} notice={notice}>
+              {children}
+            </AdminShellMainWithMobilePull>
+          </AdminAuditDeadlineTickProvider>
         </AdminShellLayoutContext.Provider>
       </div>
     </div>

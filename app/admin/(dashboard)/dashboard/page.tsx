@@ -5,7 +5,7 @@ import {
   filterAdminOrdersForDashboard,
 } from "@/lib/admin-order-amount-filter";
 import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table";
-import { readOrderDraft } from "@/lib/admin-order-draft-store";
+import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
@@ -22,21 +22,17 @@ export default async function AdminOrdersPage({
   const { rows: allOrders, stripeError } = await listAdminOrders();
   const hiddenByAmount = countAdminOrdersHiddenByAmountFilter(allOrders);
   const orders = filterAdminOrdersForDashboard(allOrders, showAll);
-  const ordersWithInvoice = await Promise.all(
-    orders.map(async (o) => {
-      const draft = await readOrderDraft(o.id);
-      const draftEmail = draft?.orderEdits?.customerEmail?.trim();
-      const draftName = draft?.orderEdits?.customerName?.trim();
-      const draftPhone = draft?.orderEdits?.customerPhone?.trim();
-      return {
-        ...o,
-        customerEmail: draftEmail ? draftEmail : o.customerEmail,
-        customerName: draftName || null,
-        customerPhone: draftPhone || null,
-        invoicePdfUrl: draft?.invoicePdfUrl ?? null,
-      };
-    }),
-  );
+  const draftSummaries = await readOrderDraftSummaries(orders.map((o) => o.id));
+  const ordersWithInvoice = orders.map((o) => {
+    const draft = draftSummaries.get(o.id);
+    return {
+      ...o,
+      customerEmail: draft?.customerEmail ? draft.customerEmail : o.customerEmail,
+      customerName: draft?.customerName || null,
+      customerPhone: draft?.customerPhone || null,
+      invoicePdfUrl: draft?.invoicePdfUrl ?? null,
+    };
+  });
   const tableOrders = serializeAdminOrderTableRows(ordersWithInvoice);
   const demoPrefOn = isDemoOrdersEnabled();
   const onlyDemoShown = orders.length > 0 && orders.every((o) => o.isDemo);

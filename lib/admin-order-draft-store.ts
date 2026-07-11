@@ -5,6 +5,11 @@ import os from "os";
 import path from "path";
 import { get, put } from "@vercel/blob";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
+import { getStripeCheckoutSessionMeta } from "@/lib/admin-stripe-cache";
+import {
+  invalidateOrderDraftCache,
+  readOrderDraftCached,
+} from "@/lib/admin-order-draft-cache";
 import type {
   OrderDraftOrderEdits,
   OrderDraftRevisionMeta,
@@ -65,7 +70,7 @@ async function readOrderDraftJsonFromBlob(
     const res = await get(orderDraftBlobPathname(blob.prefix, sessionId), {
       access: "private",
       token: blob.token,
-      useCache: false,
+      useCache: true,
     });
     if (!res || res.statusCode !== 200 || !res.stream) return null;
     const text = await new Response(res.stream).text();
@@ -283,7 +288,7 @@ function pickNewerOrderDraft(
   return bOk >= aOk ? b : a;
 }
 
-export async function readOrderDraft(sessionId: string): Promise<OrderDraftState | null> {
+export async function readOrderDraftUncached(sessionId: string): Promise<OrderDraftState | null> {
   if (!isSafeOrderDraftSessionId(sessionId)) return null;
   const dir = resolveDraftDir();
   const blob = resolveOrderDraftBlob();
@@ -297,6 +302,10 @@ export async function readOrderDraft(sessionId: string): Promise<OrderDraftState
     return fromBlob ?? fromFs;
   }
   return pickNewerOrderDraft(fromFs, fromBlob);
+}
+
+export async function readOrderDraft(sessionId: string): Promise<OrderDraftState | null> {
+  return readOrderDraftCached(sessionId, () => readOrderDraftUncached(sessionId));
 }
 
 export type { OrderDraftRevisionMeta } from "@/lib/admin-order-draft-types";
@@ -427,9 +436,9 @@ export async function patchOrderDraft(
   }
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
 
-  const order = await getCheckoutSessionDetail(sessionId);
-  if (!order) return { ok: false, error: "not_found" };
-  if (order.checkoutLine === "provin_select") {
+  const orderMeta = await getStripeCheckoutSessionMeta(sessionId, () => getCheckoutSessionDetail(sessionId));
+  if (!orderMeta) return { ok: false, error: "not_found" };
+  if (orderMeta.checkoutLine === "provin_select") {
     return { ok: false, error: "consultation_session" };
   }
 
@@ -461,7 +470,7 @@ export async function patchOrderDraft(
     };
   }
 
-  const prev = await readOrderDraft(sessionId);
+  const prev = await readOrderDraftUncached(sessionId);
   const prevRev = prev?.workspaceRevision ?? 0;
 
   if (
@@ -625,40 +634,61 @@ export async function patchOrderDraft(
     writeLatencyMs: Date.now() - writeStarted,
   });
 
+  invalidateOrderDraftCache(sessionId);
+
   void import("@/lib/admin-gemini-historical-context")
     .then((m) => m.invalidateHistoricalReportsIndexCache())
     .catch(() => {});
 
   if (workspacePatch !== undefined && nextWorkspace != null) {
-    const verifyStarted = Date.now();
-    const readBack = await readOrderDraft(sessionId);
-    const verify = verifyWorkspaceIntegrity(readBack?.workspace, readBack?.workspaceRevision, {
-      revision: workspaceRevision,
-      checksum: workspaceChecksum ?? stableWorkspaceChecksum(nextWorkspace),
-      fillScore: workspaceFillScoreFromDraft(nextWorkspace),
-    });
-    const verifyLatencyMs = Date.now() - verifyStarted;
-    if (!verify.ok) {
-      console.warn("[workspace:persist_failed]", {
-        sessionId,
-        error: "persistence_verification_failed",
-        reason: verify.reason,
-        expected: verify.expected,
-        actual: verify.actual,
-        verifyLatencyMs,
-      });
-      return { ok: false, error: "persistence_verification_failed", currentRevision: readBack?.workspaceRevision };
-    }
-    return {
-      ok: true,
+    const expectedChecksum = workspaceChecksum ?? stableWorkspaceChecksum(nextWorkspace);
+    const successPayload = {
+      ok: true as const,
       updatedAt,
       storageBackend: writeMeta.storageBackend,
       durable: writeMeta.durable,
-      workspaceRevision: verify.revision,
-      workspaceChecksum: verify.checksum,
+      workspaceRevision,
+      workspaceChecksum: expectedChecksum,
       writeLatencyMs: Date.now() - writeStarted,
-      verifyLatencyMs,
     };
+
+    const runVerify = async () => {
+      const verifyStarted = Date.now();
+      const readBack = await readOrderDraftUncached(sessionId);
+      const verify = verifyWorkspaceIntegrity(readBack?.workspace, readBack?.workspaceRevision, {
+        revision: workspaceRevision,
+        checksum: expectedChecksum,
+        fillScore: workspaceFillScoreFromDraft(nextWorkspace),
+      });
+      const verifyLatencyMs = Date.now() - verifyStarted;
+      if (!verify.ok) {
+        console.warn("[workspace:persist_failed]", {
+          sessionId,
+          error: "persistence_verification_failed",
+          reason: verify.reason,
+          expected: verify.expected,
+          actual: verify.actual,
+          verifyLatencyMs,
+        });
+      }
+      return { verify, verifyLatencyMs, readBack };
+    };
+
+    if (process.env.ADMIN_WORKSPACE_VERIFY_PERSIST === "1") {
+      const { verify, verifyLatencyMs, readBack } = await runVerify();
+      if (!verify.ok) {
+        return { ok: false, error: "persistence_verification_failed", currentRevision: readBack?.workspaceRevision };
+      }
+      return {
+        ...successPayload,
+        workspaceRevision: verify.revision,
+        workspaceChecksum: verify.checksum,
+        verifyLatencyMs,
+      };
+    }
+
+    void runVerify();
+    return { ...successPayload, verifyLatencyMs: 0 };
   }
 
   return {
@@ -734,6 +764,7 @@ export async function upsertOrderDraftInvoiceFields(
     return { ok: false, error: "write_failed:no_backend" };
   }
 
+  invalidateOrderDraftCache(sessionId);
   return { ok: true, updatedAt };
 }
 

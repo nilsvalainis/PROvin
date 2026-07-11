@@ -1,6 +1,6 @@
 import { listAdminConsultations } from "@/lib/admin-orders";
 import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table";
-import { readConsultationDraft } from "@/lib/admin-consultation-draft-store";
+import { readConsultationDraftSummaries } from "@/lib/admin-consultation-draft-summaries";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
 import { renderProvinText } from "@/lib/provin-wordmark";
@@ -9,21 +9,17 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminConsultationsPage() {
   const { rows: consultations, stripeError } = await listAdminConsultations();
-  const rowsWithDraft = await Promise.all(
-    consultations.map(async (o) => {
-      const draft = await readConsultationDraft(o.id);
-      const draftEmail = draft?.orderEdits?.customerEmail?.trim();
-      const draftName = draft?.orderEdits?.customerName?.trim();
-      const draftPhone = draft?.orderEdits?.customerPhone?.trim();
-      return {
-        ...o,
-        customerEmail: draftEmail ? draftEmail : o.customerEmail,
-        customerName: draftName || null,
-        customerPhone: draftPhone || null,
-        invoicePdfUrl: null,
-      };
-    }),
-  );
+  const draftSummaries = await readConsultationDraftSummaries(consultations.map((o) => o.id));
+  const rowsWithDraft = consultations.map((o) => {
+    const draft = draftSummaries.get(o.id);
+    return {
+      ...o,
+      customerEmail: draft?.customerEmail ? draft.customerEmail : o.customerEmail,
+      customerName: draft?.customerName || null,
+      customerPhone: draft?.customerPhone || null,
+      invoicePdfUrl: null,
+    };
+  });
   const tableRows = serializeAdminOrderTableRows(rowsWithDraft);
   const onlyDemoShown = consultations.length > 0 && consultations.every((o) => o.isDemo);
   const hasStripeIssue = Boolean(stripeError);

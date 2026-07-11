@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { formatAuditDeadlineRemaining, type AuditDeadlineStatus } from "@/lib/admin-audit-deadline";
+import { useAdminAuditDeadlineTick } from "@/components/admin/AdminAuditDeadlineTickProvider";
 import {
   ADMIN_AUDIT_COMPLETE_STORAGE_KEY,
   readAuditCompleteIdsFromStorage,
@@ -28,7 +29,7 @@ export function AdminAuditDeadlineCell({
   sessionId: string;
   createdUnixSec: number;
 }) {
-  const [tick, setTick] = useState(0);
+  const tick = useAdminAuditDeadlineTick();
   const [completeIds, setCompleteIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
@@ -40,11 +41,6 @@ export function AdminAuditDeadlineCell({
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  useEffect(() => {
-    const id = window.setInterval(() => setTick((n) => n + 1), 60_000);
-    return () => window.clearInterval(id);
   }, []);
 
   void tick;

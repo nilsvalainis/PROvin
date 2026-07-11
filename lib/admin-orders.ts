@@ -9,6 +9,10 @@ import {
   listManualOrders,
   type ManualOrderRecord,
 } from "@/lib/admin-manual-orders";
+import {
+  getCachedCheckoutSessionDetail,
+  getCachedPaidCheckoutSessions,
+} from "@/lib/admin-stripe-cache";
 import { getStripe } from "@/lib/stripe";
 import {
   getCheckoutLineFromSession,
@@ -104,7 +108,7 @@ function sessionToAdminOrderRow(s: Stripe.Checkout.Session): AdminOrderRow | nul
 }
 
 /** Visi apmaksātie Stripe Checkout — ar lapošanu (ne tikai pirmās 50–100). */
-export async function listPaidCheckoutSessions(): Promise<AdminOrderRow[]> {
+async function fetchPaidCheckoutSessionsUncached(): Promise<AdminOrderRow[]> {
   const stripe = getStripe();
   const rows: AdminOrderRow[] = [];
   let startingAfter: string | undefined;
@@ -128,6 +132,10 @@ export async function listPaidCheckoutSessions(): Promise<AdminOrderRow[]> {
   }
 
   return rows.sort((a, b) => b.created - a.created);
+}
+
+export async function listPaidCheckoutSessions(): Promise<AdminOrderRow[]> {
+  return getCachedPaidCheckoutSessions(fetchPaidCheckoutSessionsUncached);
 }
 
 /**
@@ -195,7 +203,7 @@ export async function listAdminConsultations(): Promise<{
   return { rows, stripeError };
 }
 
-export async function getCheckoutSessionDetail(sessionId: string): Promise<AdminOrderDetail | null> {
+async function fetchCheckoutSessionDetailUncached(sessionId: string): Promise<AdminOrderDetail | null> {
   if (isManualOrderId(sessionId)) {
     const rec = await getManualOrder(sessionId);
     if (!rec) return null;
@@ -279,6 +287,10 @@ export async function getCheckoutSessionDetail(sessionId: string): Promise<Admin
         }
       : {}),
   };
+}
+
+export async function getCheckoutSessionDetail(sessionId: string): Promise<AdminOrderDetail | null> {
+  return getCachedCheckoutSessionDetail(sessionId, () => fetchCheckoutSessionDetailUncached(sessionId));
 }
 
 /** Tikai PROVIN SELECT konsultācijas (apmaksātas); citiem session ID — `null`. */

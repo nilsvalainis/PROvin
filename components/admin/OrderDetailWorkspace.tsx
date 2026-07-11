@@ -1808,12 +1808,17 @@ export function OrderDetailWorkspace({
 
   useEffect(() => {
     let cancelled = false;
+    if (!previewOpen) return () => {
+      cancelled = true;
+    };
     const pdfs = portfolio.filter((p) => p.mime === "application/pdf" || /\.pdf$/i.test(p.name));
     if (pdfs.length === 0) {
       setPdfInsights([]);
       setPdfScanning(false);
       setPdfScanError(null);
-      return;
+      return () => {
+        cancelled = true;
+      };
     }
     setPdfScanning(true);
     setPdfScanError(null);
@@ -1840,7 +1845,7 @@ export function OrderDetailWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [portfolio]);
+  }, [previewOpen, portfolio]);
 
   const persistPortfolio = useCallback(
     async (next: PortfolioEntry[]): Promise<boolean> => {
@@ -2308,7 +2313,7 @@ export function OrderDetailWorkspace({
     window.setTimeout(schedulePrint, 900);
   };
 
-  const previewBody = (
+  const previewBody = previewOpen ? (
     <div
       className={`admin-order-page fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 ${adminDark ? "dark" : ""}`}
       role="dialog"
@@ -2460,7 +2465,7 @@ export function OrderDetailWorkspace({
         </div>
       </div>
     </div>
-  );
+  ) : null;
 
   const portfolioShellClass = `${workspaceSectionShell} min-h-[150px] min-w-0 flex flex-col ${
     narrowPortfolioLayout ? "h-full max-h-[min(88vh,960px)] overflow-y-auto overflow-x-hidden" : ""
@@ -2864,7 +2869,7 @@ export function OrderDetailWorkspace({
 
   return (
     <div className="relative min-w-0 pb-24">
-      {previewOpen ? previewBody : null}
+      {previewBody}
 
       {portfolioAllFilesModal != null && typeof document !== "undefined"
         ? createPortal(portfolioAllFilesModal, document.body)
