@@ -13,6 +13,13 @@ import {
   getCachedCheckoutSessionDetail,
   getCachedPaidCheckoutSessions,
 } from "@/lib/admin-stripe-cache";
+import {
+  readStripePaidIndex,
+  shouldRefreshStripePaidIndexInBackground,
+  shouldRefreshStripePaidIndexSync,
+  upsertStripePaidIndexRow,
+  writeStripePaidIndex,
+} from "@/lib/admin-stripe-paid-index";
 import { getStripe } from "@/lib/stripe";
 import {
   getCheckoutLineFromSession,
@@ -117,6 +124,7 @@ async function fetchPaidCheckoutSessionsUncached(): Promise<AdminOrderRow[]> {
     const res = await stripe.checkout.sessions.list(
       {
         limit: STRIPE_CHECKOUT_PAGE_SIZE,
+        status: "complete",
         ...(startingAfter ? { starting_after: startingAfter } : {}),
       },
       { timeout: STRIPE_CHECKOUT_LIST_TIMEOUT_MS },
@@ -134,8 +142,40 @@ async function fetchPaidCheckoutSessionsUncached(): Promise<AdminOrderRow[]> {
   return rows.sort((a, b) => b.created - a.created);
 }
 
+async function refreshStripePaidIndexFromStripe(): Promise<AdminOrderRow[]> {
+  const rows = await fetchPaidCheckoutSessionsUncached();
+  await writeStripePaidIndex(rows);
+  return rows;
+}
+
+async function resolvePaidCheckoutSessions(): Promise<AdminOrderRow[]> {
+  const index = await readStripePaidIndex();
+  if (index && index.rows.length > 0 && !shouldRefreshStripePaidIndexSync(index)) {
+    if (shouldRefreshStripePaidIndexInBackground(index)) {
+      try {
+        const { after } = await import("next/server");
+        after(() => {
+          void refreshStripePaidIndexFromStripe().catch((err) => {
+            console.warn("[admin-orders] background stripe index refresh failed", err);
+          });
+        });
+      } catch {
+        /* test / non-next runtime */
+      }
+    }
+    return index.rows;
+  }
+  return refreshStripePaidIndexFromStripe();
+}
+
 export async function listPaidCheckoutSessions(): Promise<AdminOrderRow[]> {
-  return getCachedPaidCheckoutSessions(fetchPaidCheckoutSessionsUncached);
+  return getCachedPaidCheckoutSessions(resolvePaidCheckoutSessions);
+}
+
+/** Webhook — pievieno/atjaunina vienu rindu indeksā bez pilna Stripe skenējuma. */
+export async function upsertPaidCheckoutSessionFromStripe(session: Stripe.Checkout.Session): Promise<void> {
+  const row = sessionToAdminOrderRow(session);
+  if (row) await upsertStripePaidIndexRow(row);
 }
 
 /**
@@ -144,10 +184,12 @@ export async function listPaidCheckoutSessions(): Promise<AdminOrderRow[]> {
  */
 export async function needsUrgentCompanyLegalOnAdmin(): Promise<boolean> {
   if (getCompanyLegal().isComplete) return false;
+  const index = await readStripePaidIndex();
+  if (index?.rows.some((r) => r.paymentStatus === "paid" && !r.isDemo)) return true;
   try {
     const stripe = getStripe();
     const res = await stripe.checkout.sessions.list(
-      { limit: 20 },
+      { limit: 1, status: "complete" },
       { timeout: STRIPE_CHECKOUT_LIST_TIMEOUT_MS },
     );
     return res.data.some((s) => s.payment_status === "paid");

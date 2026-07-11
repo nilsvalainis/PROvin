@@ -10,6 +10,10 @@ import {
   invalidateOrderDraftCache,
   readOrderDraftCached,
 } from "@/lib/admin-order-draft-cache";
+import {
+  dashboardDraftEntryFromOrderEdits,
+  upsertDashboardDraftIndexEntry,
+} from "@/lib/admin-dashboard-draft-index";
 import type {
   OrderDraftOrderEdits,
   OrderDraftRevisionMeta,
@@ -636,6 +640,14 @@ export async function patchOrderDraft(
 
   invalidateOrderDraftCache(sessionId);
 
+  void upsertDashboardDraftIndexEntry(
+    sessionId,
+    dashboardDraftEntryFromOrderEdits(
+      nextOrderEdits,
+      typeof doc.invoicePdfUrl === "string" ? doc.invoicePdfUrl : prev?.invoicePdfUrl ?? null,
+    ),
+  ).catch(() => {});
+
   void import("@/lib/admin-gemini-historical-context")
     .then((m) => m.invalidateHistoricalReportsIndexCache())
     .catch(() => {});
@@ -765,6 +777,12 @@ export async function upsertOrderDraftInvoiceFields(
   }
 
   invalidateOrderDraftCache(sessionId);
+  const invoicePdfUrl =
+    typeof fields.invoicePdfUrl === "string" ? fields.invoicePdfUrl : (prev?.invoicePdfUrl ?? null);
+  void upsertDashboardDraftIndexEntry(
+    sessionId,
+    dashboardDraftEntryFromOrderEdits(doc.orderEdits, invoicePdfUrl),
+  ).catch(() => {});
   return { ok: true, updatedAt };
 }
 

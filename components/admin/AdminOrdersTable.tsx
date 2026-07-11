@@ -482,29 +482,38 @@ export function AdminOrdersTable({
   >({});
 
   useEffect(() => {
-    const next: Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string; vin?: string }> = {};
-    for (const o of orders) {
-      try {
-        const prefix = rowEditsLocalStoragePrefix(o, orderEditsLocalStorageKeyPrefix);
-        const raw = localStorage.getItem(`${prefix}${o.id}`);
-        if (!raw) continue;
-        const p = JSON.parse(raw) as Record<string, unknown>;
-        const customerName = typeof p.customerName === "string" ? p.customerName.trim() : "";
-        const customerEmail = typeof p.customerEmail === "string" ? p.customerEmail.trim() : "";
-        const customerPhone = typeof p.customerPhone === "string" ? p.customerPhone.trim() : "";
-        const vin = typeof p.vin === "string" ? p.vin.trim() : "";
-        if (!customerName && !customerEmail && !customerPhone && !vin) continue;
-        next[o.id] = {
-          ...(customerName ? { customerName } : {}),
-          ...(customerEmail ? { customerEmail } : {}),
-          ...(customerPhone ? { customerPhone } : {}),
-          ...(vin ? { vin } : {}),
-        };
-      } catch {
-        /* ignore localStorage parsing issues */
+    const run = () => {
+      const next: Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string; vin?: string }> = {};
+      for (const o of orders) {
+        try {
+          const prefix = rowEditsLocalStoragePrefix(o, orderEditsLocalStorageKeyPrefix);
+          const raw = localStorage.getItem(`${prefix}${o.id}`);
+          if (!raw) continue;
+          const p = JSON.parse(raw) as Record<string, unknown>;
+          const customerName = typeof p.customerName === "string" ? p.customerName.trim() : "";
+          const customerEmail = typeof p.customerEmail === "string" ? p.customerEmail.trim() : "";
+          const customerPhone = typeof p.customerPhone === "string" ? p.customerPhone.trim() : "";
+          const vin = typeof p.vin === "string" ? p.vin.trim() : "";
+          if (!customerName && !customerEmail && !customerPhone && !vin) continue;
+          next[o.id] = {
+            ...(customerName ? { customerName } : {}),
+            ...(customerEmail ? { customerEmail } : {}),
+            ...(customerPhone ? { customerPhone } : {}),
+            ...(vin ? { vin } : {}),
+          };
+        } catch {
+          /* ignore localStorage parsing issues */
+        }
       }
+      setClientOverrides(next);
+    };
+
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(run, { timeout: 800 });
+      return () => window.cancelIdleCallback(id);
     }
-    setClientOverrides(next);
+    const t = window.setTimeout(run, 0);
+    return () => window.clearTimeout(t);
   }, [orders, orderEditsLocalStorageKeyPrefix]);
 
   const detailBaseNormalized = orderDetailHrefBase.replace(/\/$/, "");

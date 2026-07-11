@@ -8,6 +8,7 @@ import { triggerInvoiceSequenceRepairInBackground } from "@/lib/invoice-counter"
 import { releaseStripeEvent, tryBeginStripeEvent } from "@/lib/stripe-webhook-dedupe";
 import { ensureConsultationDraftSeed } from "@/lib/admin-consultation-draft-store";
 import { getCheckoutLineFromSession, getOrderFieldsFromSession } from "@/lib/stripe-session";
+import { upsertPaidCheckoutSessionFromStripe } from "@/lib/admin-orders";
 import { getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -43,6 +44,10 @@ async function fulfillPaidCheckoutSession(
   }
 
   try {
+    void upsertPaidCheckoutSessionFromStripe(session).catch((err) => {
+      console.warn("[stripe webhook] paid index upsert failed:", err);
+    });
+
     const order = getOrderFieldsFromSession(session);
     const email = session.customer_details?.email ?? session.customer_email ?? null;
     const phoneStripe = session.customer_details?.phone ?? null;

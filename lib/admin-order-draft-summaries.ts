@@ -1,7 +1,6 @@
 import "server-only";
 
-import { readOrderDraftCached } from "@/lib/admin-order-draft-cache";
-import { readOrderDraftUncached, type OrderDraftState } from "@/lib/admin-order-draft-store";
+import { readDashboardDraftSummaries } from "@/lib/admin-dashboard-draft-index";
 
 export type OrderDraftDashboardSummary = {
   customerEmail: string | null;
@@ -10,38 +9,11 @@ export type OrderDraftDashboardSummary = {
   invoicePdfUrl: string | null;
 };
 
-const EMPTY_SUMMARY: OrderDraftDashboardSummary = {
-  customerEmail: null,
-  customerName: null,
-  customerPhone: null,
-  invoicePdfUrl: null,
-};
-
-function draftToSummary(draft: OrderDraftState | null): OrderDraftDashboardSummary {
-  if (!draft) return EMPTY_SUMMARY;
-  const email = draft.orderEdits?.customerEmail?.trim();
-  const name = draft.orderEdits?.customerName?.trim();
-  const phone = draft.orderEdits?.customerPhone?.trim();
-  return {
-    customerEmail: email || null,
-    customerName: name || null,
-    customerPhone: phone || null,
-    invoicePdfUrl: draft.invoicePdfUrl ?? null,
-  };
-}
-
-/** Batch dashboard lauki — izmanto kešotu readOrderDraft. */
+/** Viena JSON lasīšana — nevis N× Blob/FS melnrakstu lasījumi. */
 export async function readOrderDraftSummaries(
   sessionIds: string[],
 ): Promise<Map<string, OrderDraftDashboardSummary>> {
-  const unique = [...new Set(sessionIds.filter(Boolean))];
-  const pairs = await Promise.all(
-    unique.map(async (id) => {
-      const draft = await readOrderDraftCached(id, () => readOrderDraftUncached(id));
-      return [id, draftToSummary(draft)] as const;
-    }),
-  );
-  return new Map(pairs);
+  return readDashboardDraftSummaries(sessionIds);
 }
 
 export { invalidateOrderDraftCache } from "@/lib/admin-order-draft-cache";
