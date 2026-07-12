@@ -13,6 +13,10 @@ import {
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+import {
+  looksLikeMileageHistoryOdometerPaste,
+  parseMileageHistoryOdometerPaste,
+} from "@/lib/mileage-history-odometer-paste-parse";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -71,6 +75,18 @@ export function AdminCitiAvotiSourceBlock({
   const removeSection = (index: number) => {
     if (sections.length <= 1) return;
     setSections(sections.filter((_, i) => i !== index));
+  };
+
+  const applyCitiAvotiRawPaste = (index: number, raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed || !looksLikeMileageHistoryOdometerPaste(trimmed)) return;
+    const parsed = parseMileageHistoryOdometerPaste(trimmed);
+    if (parsed.length === 0) return;
+    updateSection(index, {
+      rawUnprocessedData: trimmed.slice(0, 500_000),
+      mileagePasteRaw: trimmed.slice(0, 24_000),
+      serviceHistory: parsed,
+    });
   };
 
   return (
@@ -142,18 +158,35 @@ export function AdminCitiAvotiSourceBlock({
                     )}
                   </div>
                 ) : (
-                  <textarea
-                    id={`citi-avoti-raw-${index}`}
-                    className="mb-2 w-full min-h-[72px] resize-y rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
-                    rows={3}
-                    disabled={disabled}
-                    placeholder="Iekopē neapstrādātos datus no avota (atsaucei; netiek automātiski parsēts)…"
-                    value={section.rawUnprocessedData ?? ""}
-                    onChange={(e) =>
-                      updateSection(index, { rawUnprocessedData: e.target.value.slice(0, 500_000) })
-                    }
-                    aria-label={`Citi avoti RAW žurnāls ${index + 1}`}
-                  />
+                  <>
+                    <textarea
+                      id={`citi-avoti-raw-${index}`}
+                      className="mb-1 w-full min-h-[72px] resize-y rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
+                      rows={3}
+                      disabled={disabled}
+                      placeholder="Iekopē avota RAW (piem. Mileage history + km + YYYY-MM-DD)…"
+                      value={section.rawUnprocessedData ?? ""}
+                      onChange={(e) =>
+                        updateSection(index, { rawUnprocessedData: e.target.value.slice(0, 500_000) })
+                      }
+                      onBlur={(e) => applyCitiAvotiRawPaste(index, e.currentTarget.value)}
+                      aria-label={`Citi avoti RAW žurnāls ${index + 1}`}
+                    />
+                    {!disabled ? (
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
+                          onClick={() => applyCitiAvotiRawPaste(index, section.rawUnprocessedData ?? "")}
+                        >
+                          Ielasīt tabulā
+                        </button>
+                        <span className="text-[10px] text-slate-400">
+                          Atpazīst „Mileage history” — odometrs (km) + datums (YYYY-MM-DD).
+                        </span>
+                      </div>
+                    ) : null}
+                  </>
                 )}
 
                 <AdminVendorAvotuSourceBlock

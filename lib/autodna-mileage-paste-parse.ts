@@ -11,6 +11,10 @@ import {
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import {
+  looksLikeMileageHistoryOdometerPaste,
+  parseMileageHistoryOdometerPaste,
+} from "@/lib/mileage-history-odometer-paste-parse";
 
 const HEADER_RE = /^\s*TRANSPORTLĪDZEKĻA\s+VĒSTURE\s*$/i;
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/i;
@@ -139,6 +143,10 @@ export function parseAutodnaMileagePaste(raw: string): AutoRecordsServiceRow[] {
     if (current) current.lines.push(line);
   }
   flush();
+
+  if (out.length === 0 && looksLikeMileageHistoryOdometerPaste(raw)) {
+    return parseMileageHistoryOdometerPaste(raw);
+  }
 
   const sorted = sortAutoRecordsDescending(out);
   return sorted
