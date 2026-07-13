@@ -1,5 +1,5 @@
 /**
- * Vienots „Zaudējumu summa” attēlojums — tikai cipari + „ €” (admin + PDF + importi).
+ * Vienots „Zaudējumu summa” attēlojums — EUR summas formatēšana; citādi saglabā brīvu tekstu.
  */
 import { amountToIntRough } from "@/lib/claim-rows-parse";
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
@@ -34,10 +34,12 @@ function formatEurGrouped(n: number): string {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
-/** Formatē summu kā „1 234 €” vai diapazonu „300 - 400 €”. */
+/** Formatē summu kā „1 234 €”, diapazonu „300 - 400 €” vai atgriež nemainītu brīvo tekstu. */
 export function normalizeLossAmountEurDisplay(raw: string): string {
-  if (isIncidentDataUnavailableText(raw)) return ADMIN_INCIDENT_DATA_UNAVAILABLE;
-  const t = raw.trim().replace(/EUR|€/gi, "").trim();
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  if (isIncidentDataUnavailableText(trimmed)) return ADMIN_INCIDENT_DATA_UNAVAILABLE;
+  const t = trimmed.replace(/EUR|€/gi, "").trim();
   const range = t.match(/^([\d\s.]+)\s*[-–—]\s*([\d\s.]+)$/);
   if (range) {
     const lo = Number.parseInt(range[1]!.replace(/[\s.]/g, ""), 10);
@@ -46,10 +48,12 @@ export function normalizeLossAmountEurDisplay(raw: string): string {
       return `${formatEurGrouped(lo)} - ${formatEurGrouped(hi)} €`;
     }
   }
-  const n = parseLossEurWholeAmount(raw);
-  if (n == null) return "";
-  if (n <= 0) return "0 €";
-  return `${formatEurGrouped(n)} €`;
+  const n = parseLossEurWholeAmount(trimmed);
+  if (n != null) {
+    if (n <= 0) return "0 €";
+    return `${formatEurGrouped(n)} €`;
+  }
+  return trimmed;
 }
 
 export function normalizeLtabIncidentRow(row: LtabIncidentRow): LtabIncidentRow {

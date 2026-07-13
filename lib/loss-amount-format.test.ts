@@ -11,8 +11,9 @@ describe("normalizeLossAmountEurDisplay", () => {
     expect(normalizeLossAmountEurDisplay("12 500,00 €")).toBe("12 500 €");
   });
 
-  it("returns empty for non-numeric", () => {
-    expect(normalizeLossAmountEurDisplay("nav datu")).toBe("");
+  it("preserves free-text when not a parseable amount", () => {
+    expect(normalizeLossAmountEurDisplay("nav datu")).toBe("nav datu");
+    expect(normalizeLossAmountEurDisplay("  apstrīdēts  ")).toBe("apstrīdēts");
   });
 
   it("preserves incident data-unavailable sentinel", () => {
