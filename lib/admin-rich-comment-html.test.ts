@@ -32,6 +32,29 @@ describe("adminRichHtmlToPdfSafeHtml", () => {
     expect(out).toContain('style="color:#ef4444;font-size:14px"');
     expect(out).toContain("Sarkans");
   });
+
+  it("does not double-space contentEditable div lines with trailing br", () => {
+    const html =
+      "<div><strong>11.2023</strong><br></div><div>Eļļas un eļļas filtru maiņa;<br></div><div>Ford Eļļas apkope (IOLM).<br></div>";
+    const out = adminRichHtmlToPdfSafeHtml(html);
+    expect(out).not.toContain("<br /><br />");
+    expect(out).toBe(
+      "<strong>11.2023</strong><br />Eļļas un eļļas filtru maiņa;<br />Ford Eļļas apkope (IOLM).",
+    );
+  });
+
+  it("does not double-space paragraph blocks", () => {
+    const html = "<p><strong>11.2023</strong></p><p>Eļļas un eļļas filtru maiņa;</p>";
+    const out = adminRichHtmlToPdfSafeHtml(html);
+    expect(out).not.toContain("<br /><br />");
+    expect(out).toBe("<strong>11.2023</strong><br />Eļļas un eļļas filtru maiņa;");
+  });
+
+  it("preserves intentional blank line from empty contentEditable block", () => {
+    const html = "<div>Pirma rinda</div><div><br></div><div>Otra rinda</div>";
+    const out = adminRichHtmlToPdfSafeHtml(html);
+    expect(out).toBe("Pirma rinda<br /><br />Otra rinda");
+  });
 });
 
 describe("geminiPlainTextToRichHtml", () => {

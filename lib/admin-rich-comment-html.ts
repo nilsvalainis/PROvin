@@ -75,11 +75,23 @@ export function geminiExpertSourceCommentToRichHtml(text: string): string {
   return t.replace(/\r?\n/g, "<br />");
 }
 
+function normalizeRichHtmlBlockLineBreaks(html: string): string {
+  let s = html;
+  // Tukšas rindas no contentEditable: <div><br></div>
+  s = s.replace(/<(?:div|p)[^>]*>\s*(?:<br\s*\/?>\s*)*<\/(?:div|p)>/gi, "\n");
+  // <br> tieši pirms bloka beigām — lieks, jo pats </div>/</p> jau ir rindas pāreja
+  s = s.replace(/<br\s*\/?>\s*(?=<\/(?:div|p)>)/gi, "");
+  s = s.replace(/<br\s*\/?>/gi, "\n");
+  s = s.replace(/<\/(?:div|p)>/gi, "\n");
+  s = s.replace(/<(?:div|p)[^>]*>/gi, "");
+  return s;
+}
+
 /** Admin bagātinātais HTML → vienots plakanais teksts (PDF / AI polish nosūtei). */
 export function adminRichHtmlToPlainText(html: string | null | undefined): string {
   const s = sanitizeDraftTextForStorage(typeof html === "string" ? html : "");
   if (!s.trim()) return "";
-  let t = s.replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<\/div>/gi, "\n");
+  let t = normalizeRichHtmlBlockLineBreaks(s);
   t = t.replace(/<[^>]+>/g, "");
   t = decodeBasicHtmlEntities(t);
   return t
@@ -182,14 +194,14 @@ export function adminRichHtmlToPdfSafeHtml(html: string): string {
   let s = coerceAdminRichHtmlForDisplay(html);
   if (!s.trim()) return "";
 
-  s = s.replace(/<br\s*\/?>/gi, "\n");
-  s = s.replace(/<\/p>/gi, "\n\n").replace(/<p[^>]*>/gi, "");
-  s = s.replace(/<\/div>/gi, "\n").replace(/<div[^>]*>/gi, "");
+  s = normalizeRichHtmlBlockLineBreaks(s);
   s = replaceInlineTagsWithMarkers(s);
   s = s.replace(/<[^>]+>/g, "");
   s = decodeBasicHtmlEntities(s);
   s = escapeHtmlPlain(s);
   s = restorePdfMarkersToHtml(s);
+  s = s.replace(/\n{3,}/g, "\n\n");
+  s = s.replace(/\n+$/g, "");
   s = s.replace(/\r?\n/g, "<br />");
   return s.trim();
 }
