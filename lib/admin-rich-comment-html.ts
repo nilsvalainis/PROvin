@@ -75,6 +75,126 @@ export function geminiExpertSourceCommentToRichHtml(text: string): string {
   return t.replace(/\r?\n/g, "<br />");
 }
 
+function parseCssDeclarations(styleRaw: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const chunk of styleRaw.split(";")) {
+    const idx = chunk.indexOf(":");
+    if (idx < 0) continue;
+    const key = chunk.slice(0, idx).trim().toLowerCase();
+    const val = chunk.slice(idx + 1).trim();
+    if (key && val) out[key] = val;
+  }
+  return out;
+}
+
+function isBoldFontWeight(value: string): boolean {
+  const v = value.trim().toLowerCase();
+  if (v === "bold" || v === "bolder") return true;
+  const n = Number.parseInt(v, 10);
+  return !Number.isNaN(n) && n >= 600;
+}
+
+function hasUnderlineDecoration(decl: Record<string, string>): boolean {
+  const deco = `${decl["text-decoration"] ?? ""} ${decl["text-decoration-line"] ?? ""}`;
+  return deco.includes("underline");
+}
+
+function buildPreservedInlineStyle(decl: Record<string, string>): string {
+  const allowed: string[] = [];
+  const color = decl.color;
+  if (color && isSafePdfColor(color)) allowed.push(`color:${color}`);
+  const fontSize = decl["font-size"];
+  if (fontSize && /^\d+(?:\.\d+)?(?:px|pt|rem|em)$/.test(fontSize)) {
+    allowed.push(`font-size:${fontSize}`);
+  }
+  const fontFamily = decl["font-family"];
+  if (fontFamily) {
+    const first = fontFamily.replace(/['"]/g, "").split(",")[0]?.trim().toLowerCase() ?? "";
+    if (ADMIN_RICH_PDF_FONT_WHITELIST.has(first)) {
+      allowed.push(`font-family:${fontFamily}`);
+    }
+  }
+  return allowed.join(";");
+}
+
+/** Pārvērš `span style="font-weight:bold"` u.c. par semantiskajiem tagiem — PDF un ielīmēšanai. */
+export function promoteInlineStyleSemantics(html: string): string {
+  let prev = "";
+  let s = html;
+  let guard = 0;
+  while (s !== prev && guard < 64) {
+    prev = s;
+    guard += 1;
+    s = s.replace(
+      /<span(\s[^>]*)?style="([^"]*)"([^>]*)>([\s\S]*?)<\/span>/gi,
+      (_full, _before, styleRaw, _after, inner) => {
+        const decl = parseCssDeclarations(styleRaw);
+        const preservedStyle = buildPreservedInlineStyle(decl);
+        const bold = decl["font-weight"] ? isBoldFontWeight(decl["font-weight"]) : false;
+        const italic =
+          decl["font-style"] === "italic" || decl["font-style"] === "oblique";
+        const underline = hasUnderlineDecoration(decl);
+
+        let out = inner;
+        if (underline) out = `<u>${out}</u>`;
+        if (italic) out = `<em>${out}</em>`;
+        if (bold) out = `<strong>${out}</strong>`;
+        if (preservedStyle) out = `<span style="${preservedStyle}">${out}</span>`;
+        return out;
+      },
+    );
+  }
+  return s;
+}
+
+function stripWordPasteBoilerplate(html: string): string {
+  let s = html;
+  s = s.replace(/<!--[\s\S]*?-->/g, "");
+  s = s.replace(/<(?:\/?)(?:o:p|xml|meta|link|style|head|title|body)[^>]*>/gi, "");
+  s = s.replace(/<\/?font[^>]*>/gi, "");
+  s = s.replace(/\sclass="[^"]*"/gi, "");
+  s = s.replace(/\sclass='[^']*'/gi, "");
+  s = s.replace(/\sid="[^"]*"/gi, "");
+  s = s.replace(/\sdata-[\w-]+="[^"]*"/gi, "");
+  return s;
+}
+
+function stripFontFamilyAndSizeFromInlineStyles(html: string): string {
+  return html.replace(/\sstyle="([^"]*)"/gi, (_match, styleRaw) => {
+    const allowed: string[] = [];
+    for (const chunk of styleRaw.split(";")) {
+      const idx = chunk.indexOf(":");
+      if (idx < 0) continue;
+      const prop = chunk.slice(0, idx).trim().toLowerCase();
+      const val = chunk.slice(idx + 1).trim();
+      if (!val) continue;
+      if (prop === "font-family" || prop === "font-size") continue;
+      if (prop === "color" && isSafePdfColor(val)) allowed.push(`color:${val}`);
+    }
+    return allowed.length ? ` style="${allowed.join(";")}"` : "";
+  });
+}
+
+function stripDecorativeInlineStylesFromSemanticTags(html: string): string {
+  return html.replace(
+    /<(strong|b|em|i|u)(\s[^>]*?)\sstyle="[^"]*"([^>]*)>/gi,
+    "<$1$2$3>",
+  );
+}
+
+/**
+ * Ielīmēts HTML → editora noklusējuma fonts/izmērs; saglabā treknrakstu, kursīvu, pasvītrojumu un krāsu.
+ */
+export function normalizePastedAdminRichHtml(html: string): string {
+  let s = coerceAdminRichHtmlForDisplay(html);
+  s = stripWordPasteBoilerplate(s);
+  s = promoteInlineStyleSemantics(s);
+  s = stripFontFamilyAndSizeFromInlineStyles(s);
+  s = stripDecorativeInlineStylesFromSemanticTags(s);
+  s = s.replace(/<span\s*>([\s\S]*?)<\/span>/gi, "$1");
+  return s.trim();
+}
+
 function normalizeRichHtmlBlockLineBreaks(html: string): string {
   let s = html;
   // Tukšas rindas no contentEditable: <div><br></div>
@@ -194,6 +314,7 @@ export function adminRichHtmlToPdfSafeHtml(html: string): string {
   let s = coerceAdminRichHtmlForDisplay(html);
   if (!s.trim()) return "";
 
+  s = promoteInlineStyleSemantics(s);
   s = normalizeRichHtmlBlockLineBreaks(s);
   s = replaceInlineTagsWithMarkers(s);
   s = s.replace(/<[^>]+>/g, "");

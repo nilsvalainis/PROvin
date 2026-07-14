@@ -1,4 +1,4 @@
-import { internalCommentHtmlToPdfPlain } from "@/lib/admin-internal-comment-pdf";
+import { adminRichHtmlToPdfSafeHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
@@ -15,6 +15,20 @@ function esc(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function richCommentBody(html: string): string {
+  return adminRichHtmlToPdfSafeHtml(html).trim();
+}
+
+function richCommentCard(html: string): string {
+  const body = richCommentBody(html);
+  return body ? `<div class="ipdf-card"><div class="ipdf-rich-comment">${body}</div></div>` : "";
+}
+
+function richCommentSummary(html: string): string {
+  const body = richCommentBody(html);
+  return body ? `<div class="ipdf-summary"><div class="ipdf-rich-comment">${body}</div></div>` : "";
 }
 
 function rowIf(label: string, value: string): string {
@@ -291,6 +305,11 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       color: ${INK};
     }
     .ipdf-card pre { margin: 0; font-family: inherit; font-weight: 400; white-space: pre-wrap; word-break: break-word; color: ${SLATE_600}; font-size: 0.78rem; letter-spacing: 0.011em; }
+    .ipdf-rich-comment { margin: 0; font-family: inherit; font-weight: 400; white-space: pre-wrap; word-break: break-word; color: ${SLATE_600}; font-size: 0.78rem; line-height: 1.45; letter-spacing: 0.011em; }
+    .ipdf-rich-comment strong, .ipdf-rich-comment b { font-weight: 700; }
+    .ipdf-rich-comment em, .ipdf-rich-comment i { font-style: italic; }
+    .ipdf-rich-comment u { text-decoration: underline; }
+    .ipdf-rich-comment span { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .ipdf-eval-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
     @media (max-width: 560px) { .ipdf-eval-grid { grid-template-columns: 1fr; } }
     .ipdf-cl-item {
@@ -347,6 +366,7 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       color: ${INK};
     }
     .ipdf-summary pre { margin: 0; font-family: inherit; font-weight: 400; white-space: pre-wrap; color: ${SLATE_600}; font-size: 0.82rem; letter-spacing: 0.011em; }
+    .ipdf-summary .ipdf-rich-comment { font-size: 0.82rem; }
     .ipdf-notes { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; min-height: 48px; background: ${PANEL}; }
     .ipdf-notes pre { margin: 0; font-weight: 400; letter-spacing: 0.011em; }
     .ipdf-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -515,24 +535,28 @@ export function buildIrissOfferPrintHtml(
     ${checklistRow(accent, offer.hasSecondWheelSet, "Otrs riteņu komplekts")}
   </div>`;
 
-  const specialNotes = internalCommentHtmlToPdfPlain(offer.specialNotes ?? "").trim();
-  const specialInner = specialNotes ? `<div class="ipdf-card"><pre>${esc(specialNotes)}</pre></div>` : "";
+  const specialInner = richCommentCard(offer.specialNotes ?? "");
 
-  const visual = internalCommentHtmlToPdfPlain(offer.visualAssessment ?? "").trim();
-  const technical = internalCommentHtmlToPdfPlain(offer.technicalAssessment ?? "").trim();
+  const visualPlain = adminRichHtmlToPlainText(offer.visualAssessment ?? "").trim();
+  const technicalPlain = adminRichHtmlToPlainText(offer.technicalAssessment ?? "").trim();
+  const visualRich = richCommentBody(offer.visualAssessment ?? "");
+  const technicalRich = richCommentBody(offer.technicalAssessment ?? "");
   const visualHealthInner =
-    visual && parseScoreOutOf10(visual) !== null
-      ? `<div class="ipdf-card">${healthScaleHtml(accent, "Vizuālais novērtējums", visual, { omitHeading: true })}</div>`
+    visualPlain && parseScoreOutOf10(visualPlain) !== null
+      ? `<div class="ipdf-card">${healthScaleHtml(accent, "Vizuālais novērtējums", visualPlain, { omitHeading: true })}</div>`
       : "";
-  const visualDetailInner = visual ? `<div class="ipdf-card"><pre>${esc(visual)}</pre></div>` : "";
+  const visualDetailInner = visualRich
+    ? `<div class="ipdf-card"><div class="ipdf-rich-comment">${visualRich}</div></div>`
+    : "";
   const technicalHealthInner =
-    technical && parseScoreOutOf10(technical) !== null
-      ? `<div class="ipdf-card">${healthScaleHtml(accent, "Tehniskais novērtējums", technical, { omitHeading: true })}</div>`
+    technicalPlain && parseScoreOutOf10(technicalPlain) !== null
+      ? `<div class="ipdf-card">${healthScaleHtml(accent, "Tehniskais novērtējums", technicalPlain, { omitHeading: true })}</div>`
       : "";
-  const technicalDetailInner = technical ? `<div class="ipdf-card"><pre>${esc(technical)}</pre></div>` : "";
+  const technicalDetailInner = technicalRich
+    ? `<div class="ipdf-card"><div class="ipdf-rich-comment">${technicalRich}</div></div>`
+    : "";
 
-  const summary = internalCommentHtmlToPdfPlain(offer.summary ?? "").trim();
-  const summaryInner = summary ? `<div class="ipdf-summary"><pre>${esc(summary)}</pre></div>` : "";
+  const summaryInner = richCommentSummary(offer.summary ?? "");
 
   const evalSections = [
     blockIf("Novērtējuma atzīmes", checklistHtml),

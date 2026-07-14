@@ -1,7 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type ChangeEvent, type MouseEvent } from "react";
-import { coerceAdminRichHtmlForDisplay } from "@/lib/admin-rich-comment-html";
+import { useCallback, useEffect, useRef, type ChangeEvent, type ClipboardEvent, type MouseEvent } from "react";
+import {
+  coerceAdminRichHtmlForDisplay,
+  normalizePastedAdminRichHtml,
+  plainTextToMinimalRichHtml,
+} from "@/lib/admin-rich-comment-html";
 import {
   ADMIN_RICH_COMMENT_FONT_OPTIONS,
   ADMIN_RICH_COMMENT_SIZE_OPTIONS,
@@ -181,6 +185,28 @@ export function AdminInternalRichCommentEditor({
     e.preventDefault();
   }, []);
 
+  const onPaste = useCallback(
+    (e: ClipboardEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const el = ref.current;
+      if (!el) return;
+      el.focus();
+      const html = e.clipboardData.getData("text/html");
+      const plain = e.clipboardData.getData("text/plain");
+      const toInsert = html.trim()
+        ? normalizePastedAdminRichHtml(html)
+        : plainTextToMinimalRichHtml(plain);
+      if (!toInsert) return;
+      try {
+        document.execCommand("insertHTML", false, toInsert);
+      } catch {
+        document.execCommand("insertText", false, plain);
+      }
+      emit();
+    },
+    [emit],
+  );
+
   return (
     <div className={className}>
       <div
@@ -254,6 +280,7 @@ export function AdminInternalRichCommentEditor({
         role="textbox"
         onInput={emit}
         onBlur={emit}
+        onPaste={onPaste}
       />
     </div>
   );

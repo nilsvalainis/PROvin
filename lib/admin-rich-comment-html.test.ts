@@ -5,6 +5,8 @@ import {
   geminiPlainTextToRichHtml,
   normalizeGeminiClientPlainText,
   normalizeGeminiExpertParagraphText,
+  normalizePastedAdminRichHtml,
+  promoteInlineStyleSemantics,
 } from "@/lib/admin-rich-comment-html";
 
 describe("normalizeGeminiClientPlainText", () => {
@@ -54,6 +56,40 @@ describe("adminRichHtmlToPdfSafeHtml", () => {
     const html = "<div>Pirma rinda</div><div><br></div><div>Otra rinda</div>";
     const out = adminRichHtmlToPdfSafeHtml(html);
     expect(out).toBe("Pirma rinda<br /><br />Otra rinda");
+  });
+
+  it("preserves bold from pasted span font-weight styles", () => {
+    const html =
+      '<span style="font-family:Calibri;font-size:11pt;font-weight:bold">11.2023</span>';
+    const out = adminRichHtmlToPdfSafeHtml(html);
+    expect(out).toContain("<strong>11.2023</strong>");
+  });
+});
+
+describe("normalizePastedAdminRichHtml", () => {
+  it("strips pasted font family and size but keeps bold", () => {
+    const pasted =
+      '<p class="MsoNormal"><span style="font-size:14pt;font-family:Arial;font-weight:bold">11.2023</span><span style="font-size:14pt;font-family:Arial"> teksts</span></p>';
+    const out = normalizePastedAdminRichHtml(pasted);
+    expect(out).not.toContain("font-family");
+    expect(out).not.toContain("font-size");
+    expect(out).not.toContain("MsoNormal");
+    expect(out).toContain("<strong>11.2023</strong>");
+  });
+
+  it("keeps allowed text color from paste", () => {
+    const pasted = '<span style="color:#ef4444;font-size:16px;font-family:Georgia">Sarkans</span>';
+    const out = normalizePastedAdminRichHtml(pasted);
+    expect(out).toContain('style="color:#ef4444"');
+    expect(out).not.toContain("font-family");
+    expect(out).not.toContain("font-size");
+  });
+});
+
+describe("promoteInlineStyleSemantics", () => {
+  it("promotes italic and underline spans", () => {
+    const html = '<span style="font-style:italic;text-decoration:underline">Teksts</span>';
+    expect(promoteInlineStyleSemantics(html)).toBe("<em><u>Teksts</u></em>");
   });
 });
 
