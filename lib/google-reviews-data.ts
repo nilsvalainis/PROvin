@@ -10,7 +10,6 @@ export type GoogleReviewEntry = {
   /** Relatīvais laiks kā Google (LV). */
   relativeDateLv: string;
   text: string;
-  featured?: boolean;
 };
 
 const DEFAULT_GOOGLE_REVIEWS_PROFILE_URL = "https://share.google/NZamMCLrvxOPi9sy9";
@@ -23,7 +22,6 @@ export const GOOGLE_REVIEWS: GoogleReviewEntry[] = [
     author: "Aigars Smiltnieks",
     rating: 5,
     relativeDateLv: "pirms mēneša",
-    featured: true,
     text: `Ļoti profesionāla un kvalitatīva pieeja auto pārbaudei. Pasūtīju PROVIN auditu, un saņemtā atskaite pārspēja gaidīto — ļoti detalizēta, padziļināta un ar daudz vērtīgu informāciju, ko standarta pārbaudēs nemaz nevar ieraudzīt.
 
 Pateicoties šim auditam, varēju daudz drošāk izvērtēt auto stāvokli un pieņemt informētu lēmumu. Īpaši novērtēju ieguldīto darbu, uzmanību detaļām un atsaucīgo komunikāciju visa procesa laikā.
@@ -62,12 +60,4 @@ Noteikti iesaku ikvienam, kurš vēlas saprast patieso automašīnas stāvokli p
 
 export function getGoogleReviewsProfileUrl(): string {
   return process.env.NEXT_PUBLIC_GOOGLE_REVIEWS_URL?.trim() || DEFAULT_GOOGLE_REVIEWS_PROFILE_URL;
-}
-
-export function getFeaturedGoogleReview(): GoogleReviewEntry {
-  return GOOGLE_REVIEWS.find((r) => r.featured) ?? GOOGLE_REVIEWS[0]!;
-}
-
-export function getSecondaryGoogleReviews(): GoogleReviewEntry[] {
-  return GOOGLE_REVIEWS.filter((r) => !r.featured);
 }
