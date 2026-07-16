@@ -265,6 +265,7 @@ export async function POST(req: Request) {
           previewConfirmed: prevW?.previewConfirmed ?? false,
           pdfVisibility: prevW?.pdfVisibility,
           pdfBannerInclude: prevW?.pdfBannerInclude,
+          manualBanners: prevW?.manualBanners,
           vehicleAiExtraction: extraction,
           vehicleAiExtractionMeta: meta,
         };

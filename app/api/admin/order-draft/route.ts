@@ -8,7 +8,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { listOrderDraftRevisions, patchOrderDraft, readOrderDraft, restoreOrderDraftRevision, isOrderDraftStorageDurable } from "@/lib/admin-order-draft-store";
 import type { OrderDraftOrderEdits, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
-import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
+import { mergeProvinBannerPdfInclude, mergeProvinManualBanners } from "@/lib/provin-alert-banners";
 import { parseVehicleAiFromWorkspaceRecord } from "@/lib/vehicle-ai-extraction-parse";
 
 export const maxDuration = 60;
@@ -136,6 +136,7 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
     previewConfirmed: Boolean(o.previewConfirmed),
     pdfVisibility: mergePdfVisibility(o.pdfVisibility),
     pdfBannerInclude: mergeProvinBannerPdfInclude(o.pdfBannerInclude),
+    manualBanners: mergeProvinManualBanners(o.manualBanners),
     vehicleAiExtraction,
     vehicleAiExtractionMeta,
   };

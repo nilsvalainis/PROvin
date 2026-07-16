@@ -9,7 +9,12 @@ import {
 } from "@/lib/carvertical-pdf-parse";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
-import { mergeProvinBannerPdfInclude, type ProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
+import {
+  mergeProvinBannerPdfInclude,
+  mergeProvinManualBanners,
+  type ProvinBannerPdfInclude,
+  type ProvinManualBanner,
+} from "@/lib/provin-alert-banners";
 import { appendGeminiContextRawSection, clipGeminiContextRaw } from "@/lib/admin-gemini-context-raw";
 import {
   countListingAnalysisPhotos,
@@ -830,7 +835,7 @@ export function listingAnalysisToPlainText(b: ListingAnalysisBlockState): string
 }
 
 function parseListingAnalysisRaw(raw: Record<string, unknown>): ListingAnalysisBlockState {
-  const clip = (v: unknown) => String(v ?? "").slice(0, 8000);
+  const clip = (v: unknown) => String(v ?? "").slice(0, 50_000);
   const sellerPortrait = clip(raw.sellerPortrait);
   const photoAnalysis = clip(raw.photoAnalysis);
   const extraSellerName = clip(raw.extraSellerName);
@@ -1853,6 +1858,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   previewConfirmed: boolean;
   pdfVisibility: PdfVisibilitySettings;
   pdfBannerInclude: ProvinBannerPdfInclude;
+  manualBanners: ProvinManualBanner[];
   vehicleAiExtraction: VehicleAIExtraction | null;
   vehicleAiExtractionMeta: VehicleAiExtractionMeta | null;
 } | null {
@@ -1882,6 +1888,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
       previewConfirmed: Boolean(p.previewConfirmed),
       pdfVisibility: mergePdfVisibility(p.pdfVisibility),
       pdfBannerInclude: mergeProvinBannerPdfInclude(p.pdfBannerInclude),
+      manualBanners: mergeProvinManualBanners(p.manualBanners),
       vehicleAiExtraction,
       vehicleAiExtractionMeta,
     };

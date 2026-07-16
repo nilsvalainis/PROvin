@@ -1,7 +1,8 @@
 /**
  * Pasūtījuma darba zonas serializācija un hidratācijas izvēle (jaunākais `savedAt` uzvar).
  */
-import type { ProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
+import type { ProvinBannerPdfInclude, ProvinManualBanner } from "@/lib/provin-alert-banners";
+import { mergeProvinManualBanners } from "@/lib/provin-alert-banners";
 import type { PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
@@ -206,6 +207,7 @@ export function buildOrderDraftWorkspaceBody(
   bannerInclude: ProvinBannerPdfInclude,
   /** Iepriekšējais canonical state — deep merge, lai daļējs PATCH neiztukšotu blokus. */
   baseline?: OrderWorkspacePersistBody | null,
+  manualBanners: ProvinManualBanner[] = [],
 ): OrderDraftWorkspaceBody {
   const safe =
     baseline != null ? coalesceOrderWorkspacePersistBody(body, baseline) : normalizeOrderWorkspacePersistBody(body);
@@ -217,6 +219,7 @@ export function buildOrderDraftWorkspaceBody(
     previewConfirmed: safe.previewConfirmed,
     pdfVisibility: pdf,
     pdfBannerInclude: bannerInclude,
+    manualBanners: mergeProvinManualBanners(manualBanners),
     vehicleAiExtraction: safe.vehicleAiExtraction,
     vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
   };
@@ -267,6 +270,7 @@ export function serializeOrderWorkspaceSnapshotFromRef(
   pdf: PdfVisibilitySettings,
   bannerInclude: ProvinBannerPdfInclude,
   savedAt = new Date().toISOString(),
+  manualBanners: ProvinManualBanner[] = [],
 ): string {
   const normalized = normalizeOrderWorkspacePersistBody(body);
   return JSON.stringify({
@@ -277,6 +281,7 @@ export function serializeOrderWorkspaceSnapshotFromRef(
     previewConfirmed: normalized.previewConfirmed,
     pdfVisibility: pdf,
     pdfBannerInclude: bannerInclude,
+    manualBanners: mergeProvinManualBanners(manualBanners),
     vehicleAiExtraction: normalized.vehicleAiExtraction,
     vehicleAiExtractionMeta: normalized.vehicleAiExtractionMeta,
     savedAt,
@@ -289,6 +294,7 @@ export function serializeOrderWorkspaceSnapshot(
   bannerInclude: ProvinBannerPdfInclude,
   savedAt = new Date().toISOString(),
   baseline?: OrderWorkspacePersistBody | null,
+  manualBanners: ProvinManualBanner[] = [],
 ): string {
   const safe = coalesceOrderWorkspacePersistBody(body, baseline ?? null);
   return JSON.stringify({
@@ -299,6 +305,7 @@ export function serializeOrderWorkspaceSnapshot(
     previewConfirmed: safe.previewConfirmed,
     pdfVisibility: pdf,
     pdfBannerInclude: bannerInclude,
+    manualBanners: mergeProvinManualBanners(manualBanners),
     vehicleAiExtraction: safe.vehicleAiExtraction,
     vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
     savedAt,

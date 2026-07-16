@@ -80,12 +80,15 @@ import {
   ListingAnalysisSubsectionHeading,
 } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
+import { AdminManualBannersEditor } from "@/components/admin/AdminManualBannersEditor";
 import {
   computeProvinAlertBannersFromWorkspace,
   computeProvinInfoBannersFromWorkspace,
   mergeProvinBannerPdfInclude,
+  mergeProvinManualBanners,
   type ProvinBannerKind,
   type ProvinBannerPdfInclude,
+  type ProvinManualBanner,
 } from "@/lib/provin-alert-banners";
 import { IRISS_CHROME_LUCIDE, LISTING_ANALYSIS_CHROME_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
@@ -387,12 +390,14 @@ function serializeWorkspaceState(
   pdf: PdfVisibilitySettings,
   bannerInclude: ProvinBannerPdfInclude,
   savedAt?: string,
+  manualBanners: ProvinManualBanner[] = [],
 ): string {
   return serializeOrderWorkspaceSnapshotFromRef(
     workspaceToPersistBody(ws),
     pdf,
     bannerInclude,
     savedAt,
+    manualBanners,
   );
 }
 
@@ -684,6 +689,9 @@ export function OrderDetailWorkspace({
   const [pdfBannerInclude, setPdfBannerInclude] = useState<ProvinBannerPdfInclude>({});
   const pdfBannerIncludeRef = useRef(pdfBannerInclude);
   pdfBannerIncludeRef.current = pdfBannerInclude;
+  const [manualBanners, setManualBanners] = useState<ProvinManualBanner[]>([]);
+  const manualBannersRef = useRef(manualBanners);
+  manualBannersRef.current = manualBanners;
   const portfolioBytes = useMemo(() => portfolio.reduce((a, p) => a + p.size, 0), [portfolio]);
 
   /** Sanitizēti bloki — jāaprēķina pirms jebkuras plain-text / VIN / km heuristikas. */
@@ -779,6 +787,7 @@ export function OrderDetailWorkspace({
         pdfVisibilityRef.current,
         pdfBannerIncludeRef.current,
         new Date().toISOString(),
+        manualBannersRef.current,
       );
       try {
         localStorage.setItem(storageKeyWorkspace(payload.sessionId), snapshot);
@@ -880,6 +889,7 @@ export function OrderDetailWorkspace({
         baseline: lastGoodPersistBodyRef.current,
         pdfVisibility: pdfVisibilityRef.current,
         pdfBannerInclude: pdfBannerIncludeRef.current,
+        manualBanners: manualBannersRef.current,
         expectedWorkspaceRevision:
           workspaceRevisionRef.current > 0 ? workspaceRevisionRef.current : undefined,
         saveGeneration: myGen,
@@ -1506,11 +1516,19 @@ export function OrderDetailWorkspace({
 
       const mergedVisibility = mergePdfVisibility(chosen.pdfVisibility);
       const mergedBannerInclude = mergeProvinBannerPdfInclude(chosen.pdfBannerInclude);
+      const mergedManualBanners = mergeProvinManualBanners(chosen.manualBanners);
       onPdfVisibilityChange(mergedVisibility);
       setPdfBannerInclude(mergedBannerInclude);
+      setManualBanners(mergedManualBanners);
 
       commitWorkspaceLocalNow({ force: true });
-      hydrationSnapshotRef.current = serializeWorkspaceState(hydratedWs, mergedVisibility, mergedBannerInclude);
+      hydrationSnapshotRef.current = serializeWorkspaceState(
+        hydratedWs,
+        mergedVisibility,
+        mergedBannerInclude,
+        undefined,
+        mergedManualBanners,
+      );
 
       if (rawV2) {
         try {
@@ -1526,7 +1544,8 @@ export function OrderDetailWorkspace({
       const mergedVisibility = mergePdfVisibility(undefined);
       onPdfVisibilityChange(mergedVisibility);
       setPdfBannerInclude({});
-      hydrationSnapshotRef.current = serializeWorkspaceState(EMPTY_WORKSPACE, mergedVisibility, {});
+      setManualBanners([]);
+      hydrationSnapshotRef.current = serializeWorkspaceState(EMPTY_WORKSPACE, mergedVisibility, {}, undefined, []);
     }
     workspaceHydratedOnceRef.current = true;
     workspaceDirtyRef.current = false;
@@ -1546,6 +1565,7 @@ export function OrderDetailWorkspace({
           pdfVisibilityRef.current,
           pdfBannerIncludeRef.current,
           new Date().toISOString(),
+          manualBannersRef.current,
         );
         try {
           localStorage.setItem(storageKeyWorkspace(payload.sessionId), snapshot);
@@ -1646,6 +1666,7 @@ export function OrderDetailWorkspace({
     setWs({ ...EMPTY_WORKSPACE, sourceBlocks: emptyBlocks });
     onPdfVisibilityChange(mergedVisibility);
     setPdfBannerInclude({});
+    setManualBanners([]);
     onInternalCommentChange("");
     onMileageCommentChange("");
     onSourcesComparisonCommentChange("");
@@ -1660,7 +1681,7 @@ export function OrderDetailWorkspace({
     void idbDeletePortfolio(payload.sessionId);
     try {
       localStorage.removeItem(storageKeyWorkspace(payload.sessionId));
-      hydrationSnapshotRef.current = serializeWorkspaceState(EMPTY_WORKSPACE, mergedVisibility, {});
+      hydrationSnapshotRef.current = serializeWorkspaceState(EMPTY_WORKSPACE, mergedVisibility, {}, undefined, []);
     } catch {
       /* quota */
     }
@@ -1680,6 +1701,7 @@ export function OrderDetailWorkspace({
             previewConfirmed: false,
             pdfVisibility: mergedVisibility,
             pdfBannerInclude: {},
+            manualBanners: [],
           },
         }),
       });
@@ -1762,13 +1784,13 @@ export function OrderDetailWorkspace({
       scheduleWorkspaceServerPatch({ showFlash: false });
     }, WORKSPACE_SERVER_AUTOSAVE_MS);
     return () => window.clearTimeout(t);
-  }, [ws, pdfVisibility, pdfBannerInclude, workspaceHydrated, commitWorkspaceLocalNow, scheduleWorkspaceServerPatch]);
+  }, [ws, pdfVisibility, pdfBannerInclude, manualBanners, workspaceHydrated, commitWorkspaceLocalNow, scheduleWorkspaceServerPatch]);
 
   useEffect(() => {
     if (!workspaceHydrated) return;
     workspaceDirtyRef.current = true;
     commitWorkspaceLocalNow({ force: true });
-  }, [pdfVisibility, pdfBannerInclude, workspaceHydrated, commitWorkspaceLocalNow]);
+  }, [pdfVisibility, pdfBannerInclude, manualBanners, workspaceHydrated, commitWorkspaceLocalNow]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2276,6 +2298,7 @@ export function OrderDetailWorkspace({
         listingMarket,
         pdfVisibility,
         pdfBannerInclude,
+        manualBanners,
         internalComment: internalCommentDraft,
         mileageComment: mileageCommentDraft,
       },
@@ -2728,8 +2751,7 @@ export function OrderDetailWorkspace({
   const showPortfolioInline = !portfolioPortalDomId || !portfolioPortalEl;
   const showPortfolioPortal = Boolean(portfolioPortalDomId && portfolioPortalEl);
 
-  const alertsSection =
-    provinAlertBanners.length > 0 || provinInfoBanners.length > 0 ? (
+  const alertsSection = (
       <section id="admin-order-section-bridinajumi" className={`${workspaceSectionShell} mb-1.5`}>
         <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
           <h2 className={workspaceSectionTitle}>Brīdinājumi un informācija (PDF)</h2>
@@ -2745,9 +2767,10 @@ export function OrderDetailWorkspace({
             pdfInclude={pdfBannerInclude}
             onPdfIncludeChange={patchBannerPdfInclude}
           />
+          <AdminManualBannersEditor banners={manualBanners} onChange={setManualBanners} />
         </div>
       </section>
-    ) : null;
+    );
 
   const showAlertsPortal = Boolean(alertsPortalDomId && alertsPortalEl);
 

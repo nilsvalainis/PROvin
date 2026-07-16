@@ -30,8 +30,9 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { computeLatviaRegistrationTenure } from "@/lib/latvia-registration-tenure";
+import { computeAverageAnnualMileageFromPayloadSlice } from "@/lib/average-annual-mileage";
 
-export type ProvinInfoBannerKind = "lv_registration_tenure";
+export type ProvinInfoBannerKind = "lv_registration_tenure" | "avg_annual_mileage";
 
 export type ProvinAlertBannerKind =
   | "odometer"
@@ -41,6 +42,17 @@ export type ProvinAlertBannerKind =
   | "inspection";
 
 export type ProvinBannerKind = ProvinAlertBannerKind | ProvinInfoBannerKind;
+
+/** Manuāli pievienoti augšējās joslas brīdinājumi (admin). */
+export type ProvinManualBannerSeverity = "grey" | "yellow" | "red";
+
+export type ProvinManualBanner = {
+  id: string;
+  text: string;
+  severity: ProvinManualBannerSeverity;
+  /** `false` = nerādīt PDF; trūkstošs vai `true` = rādīt. */
+  includeInPdf?: boolean;
+};
 
 /** `false` = neiekļaut PDF; trūkstošs vai `true` = rādīt (noklusējums). */
 export type ProvinBannerPdfInclude = Partial<Record<ProvinBannerKind, boolean>>;
@@ -53,7 +65,12 @@ export const PROVIN_ALERT_BANNER_KINDS = [
   "inspection",
 ] as const satisfies readonly ProvinAlertBannerKind[];
 
-export const PROVIN_INFO_BANNER_KINDS = ["lv_registration_tenure"] as const satisfies readonly ProvinInfoBannerKind[];
+export const PROVIN_INFO_BANNER_KINDS = [
+  "lv_registration_tenure",
+  "avg_annual_mileage",
+] as const satisfies readonly ProvinInfoBannerKind[];
+
+const MANUAL_BANNER_SEVERITIES = new Set<ProvinManualBannerSeverity>(["grey", "yellow", "red"]);
 
 export function isProvinBannerIncludedInPdf(
   kind: ProvinBannerKind,
@@ -70,6 +87,42 @@ export function mergeProvinBannerPdfInclude(raw: unknown): ProvinBannerPdfInclud
     if (typeof o[kind] === "boolean") out[kind] = o[kind];
   }
   return out;
+}
+
+export function mergeProvinManualBanners(raw: unknown): ProvinManualBanner[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ProvinManualBanner[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const id = typeof o.id === "string" ? o.id.trim() : "";
+    const text = typeof o.text === "string" ? o.text : "";
+    const severity = o.severity;
+    if (!id) continue;
+    if (typeof severity !== "string" || !MANUAL_BANNER_SEVERITIES.has(severity as ProvinManualBannerSeverity)) {
+      continue;
+    }
+    const banner: ProvinManualBanner = {
+      id: id.slice(0, 64),
+      text: text.slice(0, 2000),
+      severity: severity as ProvinManualBannerSeverity,
+    };
+    if (typeof o.includeInPdf === "boolean") banner.includeInPdf = o.includeInPdf;
+    out.push(banner);
+  }
+  return out.slice(0, 20);
+}
+
+export function filterManualBannersForPdf(banners: ProvinManualBanner[]): ProvinManualBanner[] {
+  return banners.filter((b) => b.includeInPdf !== false && b.text.trim().length > 0);
+}
+
+export function createEmptyManualBanner(severity: ProvinManualBannerSeverity = "grey"): ProvinManualBanner {
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `mb-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  return { id, text: "", severity, includeInPdf: true };
 }
 
 export function filterAlertBannersForPdf(
@@ -258,15 +311,31 @@ export function buildPdfInfoBannersHtml(banners: ProvinInfoBanner[]): string {
   return `<div class="pdf-info-banners-stack">${blocks.join("\n")}</div>`;
 }
 
+/** PDF HTML: manuālie baneri — pelēks kā info, dzeltens/sarkans kā brīdinājumi. */
+export function buildPdfManualBannersHtml(banners: ProvinManualBanner[]): string {
+  const forPdf = filterManualBannersForPdf(banners);
+  if (forPdf.length === 0) return "";
+  const blocks = forPdf.map((b) => {
+    if (b.severity === "grey") {
+      return `<div class="pdf-info-banner pdf-info-banner--grey" role="note" data-provin-manual="${escapeHtmlPdf(b.id)}">${pdfInfoBannerIconHtml()}<p class="pdf-info-banner-text">${escapeHtmlPdf(b.text)}</p></div>`;
+    }
+    return `<div class="pdf-alert-banner pdf-alert-banner--${b.severity}" role="alert" data-provin-manual="${escapeHtmlPdf(b.id)}" data-provin-severity="${b.severity}">${pdfAlertBannerIconsHtml()}<p class="pdf-alert-banner-text">${escapeHtmlPdf(b.text)}</p></div>`;
+  });
+  return `<div class="pdf-alert-banners-stack pdf-manual-banners-stack">${blocks.join("\n")}</div>`;
+}
+
 export function computeProvinInfoBannersFromPayloadSlice(
   p: UnifiedMileageSourcePayload & {
     csddForm?: CsddFormFields | null;
     manualLtabBlock?: ClientManualLtabBlockPdf | null;
     manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
     autoRecordsBlock?: import("@/lib/admin-source-blocks").AutoRecordsBlockState | null;
+    citiAvotiBlock?: import("@/lib/admin-source-blocks").CitiAvotiBlockState | null;
   },
   referenceDate?: Date,
 ): ProvinInfoBanner[] {
+  const out: ProvinInfoBanner[] = [];
+
   const tenure = computeLatviaRegistrationTenure({
     csddForm: p.csddForm,
     autoRecordsBlock: p.autoRecordsBlock ?? null,
@@ -274,8 +343,24 @@ export function computeProvinInfoBannersFromPayloadSlice(
     manualLtabBlock: p.manualLtabBlock ?? null,
     referenceDate,
   });
-  if (!tenure) return [];
-  return [{ kind: "lv_registration_tenure", text: tenure.sentence }];
+  if (tenure) {
+    out.push({ kind: "lv_registration_tenure", text: tenure.sentence });
+  }
+
+  const avg = computeAverageAnnualMileageFromPayloadSlice(
+    {
+      csddForm: p.csddForm,
+      autoRecordsBlock: p.autoRecordsBlock ?? null,
+      manualVendorBlocks: p.manualVendorBlocks ?? null,
+      citiAvotiBlock: p.citiAvotiBlock ?? null,
+    },
+    referenceDate,
+  );
+  if (avg) {
+    out.push({ kind: "avg_annual_mileage", text: avg.sentence });
+  }
+
+  return out;
 }
 
 export function computeProvinInfoBannersFromWorkspace(
@@ -288,6 +373,7 @@ export function computeProvinInfoBannersFromWorkspace(
       autoRecordsBlock: ws.auto_records,
       manualVendorBlocks: toPdfManualVendorBlocks(ws),
       manualLtabBlock: toPdfLtabManualBlock(ws.ltab),
+      citiAvotiBlock: ws.citi_avoti,
     },
     referenceDate,
   );

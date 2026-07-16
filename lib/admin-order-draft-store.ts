@@ -21,7 +21,7 @@ import type {
   OrderDraftWorkspaceBody,
 } from "@/lib/admin-order-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
-import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
+import { mergeProvinBannerPdfInclude, mergeProvinManualBanners } from "@/lib/provin-alert-banners";
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { coalesceOrderDraftWorkspacePatch } from "@/lib/admin-order-draft-workspace-merge";
@@ -159,6 +159,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         previewConfirmed: Boolean(w.previewConfirmed),
         pdfVisibility: w.pdfVisibility ? mergePdfVisibility(w.pdfVisibility) : undefined,
         pdfBannerInclude: w.pdfBannerInclude ? mergeProvinBannerPdfInclude(w.pdfBannerInclude) : undefined,
+        manualBanners: w.manualBanners ? mergeProvinManualBanners(w.manualBanners) : undefined,
         vehicleAiExtraction: w.vehicleAiExtraction,
         vehicleAiExtractionMeta: w.vehicleAiExtractionMeta,
       });
@@ -175,6 +176,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         previewConfirmed: h.previewConfirmed,
         pdfVisibility: h.pdfVisibility,
         pdfBannerInclude: h.pdfBannerInclude,
+        manualBanners: h.manualBanners,
         vehicleAiExtraction: h.vehicleAiExtraction,
         vehicleAiExtractionMeta: h.vehicleAiExtractionMeta,
       };
@@ -456,6 +458,7 @@ export async function patchOrderDraft(
       previewConfirmed: workspacePatch.previewConfirmed,
       pdfVisibility: workspacePatch.pdfVisibility,
       pdfBannerInclude: workspacePatch.pdfBannerInclude,
+      manualBanners: workspacePatch.manualBanners,
       vehicleAiExtraction: workspacePatch.vehicleAiExtraction,
       vehicleAiExtractionMeta: workspacePatch.vehicleAiExtractionMeta,
     });
@@ -469,6 +472,7 @@ export async function patchOrderDraft(
       previewConfirmed: h.previewConfirmed,
       pdfVisibility: h.pdfVisibility,
       pdfBannerInclude: h.pdfBannerInclude,
+      manualBanners: h.manualBanners,
       vehicleAiExtraction: h.vehicleAiExtraction,
       vehicleAiExtractionMeta: h.vehicleAiExtractionMeta,
     };

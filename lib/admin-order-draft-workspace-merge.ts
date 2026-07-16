@@ -4,7 +4,7 @@
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
-import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
+import { mergeProvinBannerPdfInclude, mergeProvinManualBanners } from "@/lib/provin-alert-banners";
 import {
   coalesceOrderWorkspacePersistBody,
   isRegressiveWorkspacePersist,
@@ -28,6 +28,7 @@ export function persistBodyToOrderDraftWorkspace(
   body: OrderWorkspacePersistBody,
   pdfVisibility: OrderDraftWorkspaceBody["pdfVisibility"],
   pdfBannerInclude: OrderDraftWorkspaceBody["pdfBannerInclude"],
+  manualBanners: OrderDraftWorkspaceBody["manualBanners"] = [],
 ): OrderDraftWorkspaceBody {
   const safe = normalizeOrderWorkspacePersistBody(body);
   return {
@@ -38,6 +39,7 @@ export function persistBodyToOrderDraftWorkspace(
     previewConfirmed: safe.previewConfirmed,
     pdfVisibility: mergePdfVisibility(pdfVisibility),
     pdfBannerInclude: mergeProvinBannerPdfInclude(pdfBannerInclude),
+    manualBanners: mergeProvinManualBanners(manualBanners),
     vehicleAiExtraction: safe.vehicleAiExtraction,
     vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
   };
@@ -86,6 +88,9 @@ export function coalesceOrderDraftWorkspacePatch(
     coalesced,
     mergePdfVisibility(incoming.pdfVisibility ?? baseline?.pdfVisibility),
     mergeProvinBannerPdfInclude(incoming.pdfBannerInclude ?? baseline?.pdfBannerInclude),
+    mergeProvinManualBanners(
+      incoming.manualBanners ?? baseline?.manualBanners ?? [],
+    ),
   );
   return { workspace, regressive, blocked: false, changedFields };
 }

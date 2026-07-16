@@ -1,7 +1,8 @@
 /**
  * Klienta darba zonas canonical persist — serveris ir source of truth.
  */
-import type { ProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
+import type { ProvinBannerPdfInclude, ProvinManualBanner } from "@/lib/provin-alert-banners";
+import { mergeProvinManualBanners } from "@/lib/provin-alert-banners";
 import type { PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import {
@@ -32,6 +33,7 @@ export type PersistWorkspaceStateOptions = {
   baseline: OrderWorkspacePersistBody | null;
   pdfVisibility: PdfVisibilitySettings;
   pdfBannerInclude: ProvinBannerPdfInclude;
+  manualBanners?: ProvinManualBanner[];
   expectedWorkspaceRevision?: number;
   saveGeneration?: number;
   logContext?: string;
@@ -118,6 +120,7 @@ async function patchWorkspaceOnce(opts: PersistWorkspaceStateOptions): Promise<P
     opts.pdfVisibility,
     opts.pdfBannerInclude,
     opts.baseline,
+    opts.manualBanners ?? [],
   );
   const expectedChecksum = stableWorkspaceChecksum(draftBody);
   const expectedFill = workspaceHydrationFillScore(merged);
@@ -249,6 +252,7 @@ export function workspacePersistFromDraftWorkspace(
     previewConfirmed: w.previewConfirmed,
     pdfVisibility: w.pdfVisibility,
     pdfBannerInclude: w.pdfBannerInclude,
+    manualBanners: mergeProvinManualBanners(w.manualBanners),
     vehicleAiExtraction: w.vehicleAiExtraction,
     vehicleAiExtractionMeta: w.vehicleAiExtractionMeta,
   });

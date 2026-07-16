@@ -28,6 +28,8 @@ export type OrderDraftWorkspaceBody = {
   previewConfirmed: boolean;
   pdfVisibility?: import("@/lib/pdf-visibility").PdfVisibilitySettings;
   pdfBannerInclude?: import("@/lib/provin-alert-banners").ProvinBannerPdfInclude;
+  /** Manuāli pievienoti PDF / admin augšējās joslas brīdinājumi. */
+  manualBanners?: import("@/lib/provin-alert-banners").ProvinManualBanner[];
   vehicleAiExtraction?: import("@/lib/vehicle-ai-extraction-types").VehicleAIExtraction | null;
   vehicleAiExtractionMeta?: import("@/lib/vehicle-ai-extraction-types").VehicleAiExtractionMeta | null;
 };

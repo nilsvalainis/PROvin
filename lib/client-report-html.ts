@@ -50,10 +50,12 @@ import { pdfCountryCodeLetters, pdfCountryFlagEmoji } from "@/lib/pdf-country-fl
 import {
   buildPdfAlertBannersHtml,
   buildPdfInfoBannersHtml,
+  buildPdfManualBannersHtml,
   computeProvinAlertBannersFromPayloadSlice,
   computeProvinInfoBannersFromPayloadSlice,
   filterAlertBannersForPdf,
   filterInfoBannersForPdf,
+  mergeProvinManualBanners,
 } from "@/lib/provin-alert-banners";
 import {
   sectionIconPdfHtml,
@@ -169,6 +171,8 @@ export type ClientReportPayload = {
   pdfVisibility?: PdfVisibilitySettings | null;
   /** Atsevišķi brīdinājumu / info baneri PDF (noklusējums — visi ieslēgti). */
   pdfBannerInclude?: import("@/lib/provin-alert-banners").ProvinBannerPdfInclude | null;
+  /** Manuāli pievienoti augšējās joslas brīdinājumi. */
+  manualBanners?: import("@/lib/provin-alert-banners").ProvinManualBanner[] | null;
   /** Iekšējās piezīmes (var saturēt vienkāršu HTML no admin redaktora) — PDF zem apvienotās negadījumu tabulas. */
   internalComment?: string | null;
   /** NOBRAUKUMA VĒSTURES KOMENTĀRS — PDF zem nobraukuma grafika. */
@@ -1643,12 +1647,18 @@ export function buildClientReportDocumentHtml(args: {
             autoRecordsBlock: p.autoRecordsBlock ?? null,
             manualVendorBlocks: p.manualVendorBlocks ?? null,
             manualLtabBlock: p.manualLtabBlock ?? null,
+            citiAvotiBlock: p.citiAvoti ?? null,
           }),
           p.pdfBannerInclude,
         ),
       )
     : "";
   if (infoBannersHtml) lines.push(infoBannersHtml);
+
+  const manualBannersHtml = vis.alerts
+    ? buildPdfManualBannersHtml(mergeProvinManualBanners(p.manualBanners))
+    : "";
+  if (manualBannersHtml) lines.push(manualBannersHtml);
 
   const alertBannersHtml = vis.alerts
     ? buildPdfAlertBannersHtml(
