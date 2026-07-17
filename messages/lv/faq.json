@@ -1,41 +1,36 @@
 {
   "Faq": {
-    "title": "BUJ",
+    "title": "Biežāk uzdotie jautājumi (BUJ)",
     "items": [
       {
         "id": "what-is-provin-audit",
         "q": "Kas ir PROVIN audits?",
-        "a": "PROVIN audits ir konsultatīvs digitālais pakalpojums: mēs apvienojam pieejamos vēstures datus, sludinājuma izvērtējumu un modeļa tehnisko risku skatījumu vienā skaidrā atskaitē ar ieteikumiem. Tas palīdz pieņemt informētu lēmumu pirms auto iegādes, bet neaizstāj klātienes apskati servisā un nav valsts institūcijas izraksts vai juridiski saistošs sertifikāts."
-      },
-      {
-        "id": "mini-vs-audits",
-        "q": "Ar ko atšķiras PROVIN MINI no PROVIN AUDITS?",
-        "a": "PROVIN MINI (39,99 €) ir fokuss uz sludinājuma un tehnisko risku analīzi, ES/LV publiskajiem reģistriem un TA vēsturi, ieteikumiem klātienes apskatei un individuālu konsultāciju — ieteicams auto, kas jau tiek ekspluatēts Latvijā. PROVIN AUDITS (99,99 €) ietver MINI saturu un papildus padziļinātu starptautisko vēstures pārbaudi ar maksas datubāzēm (piem. carVertical, autoDNA) un oficiālo dīleru / izsoļu arhīvu datiem, kur tie pieejami — ieteicams īpaši no ārvalstīm ievestiem auto."
+        "a": "PROVIN ir tavs konsultants un privātais detektīvs auto iegādes procesā. Mēs nesniedzam vienkārši sausu datu izdruku. Mēs apvienojam informāciju no starptautiskajām maksas datubāzēm, oficiālo dīleru servisu vēstures un Eiropas izsoļu foto arhīviem, papildinot to ar pašu svarīgāko — sludinājuma analīzi un konkrētā modeļa tehnisko risku izvērtējumu."
       },
       {
         "id": "vs-standard-pdf",
-        "q": "Ar ko PROVIN atšķiras no parastas vēstures PDF atskaites?",
-        "a": "Standarta atskaite bieži ir automatizēta faktu lapa. PROVIN datus interpretē: salīdzina avotus, analizē sludinājumu un modeļa tipiskos riskus, un sniedz eksperta kopsavilkumu cilvēka valodā — ne tikai tabulas."
+        "q": "Ar ko PROVIN atšķiras no parastas auto vēstures atskaites?",
+        "a": "Standarta automatizētā atskaite sniedz tikai neapstrādātus sistēmas datus (bieži vien nepilnīgus), kuros pircējam ir grūti orientēties vai pamanīt sakritības. Mēs datus nevis vienkārši pārsūtām, bet analizējam un salīdzinām. Mēs savienojam avotus, nolasām sludinājuma zemtekstus, izvērtējam konkrētā dzinēja un kārbas vājās vietas, kā arī sniedzam personīgu konsultāciju pa tālruni, lai izrunātu visus \"par\" un \"pret\"."
       },
       {
-        "id": "price-and-delivery",
-        "q": "Cik maksā un cik ilgi jāgaida rezultātu?",
-        "a": "PROVIN MINI — 39,99 €; PROVIN AUDITS — 99,99 € (cena redzama arī pasūtījuma brīdī). Mērķis ir piegādāt atskaiti uz e-pastu līdz 48 stundām pēc veiksmīgas apmaksas un pilnīgas pasūtījuma informācijas. Ja nepieciešams papildu laiks (reti modeļi, datu kavēšanās), mēs par to informēsim."
+        "id": "mini-vs-audits",
+        "q": "Kuru auditu izvēlēties — PROVIN MINI vai PROVIN AUDITS?",
+        "a": "PROVIN MINI (39,99 €) ir piemērots automašīnām, kas jau ilgāku laiku tiek ekspluatētas Latvijā. Fokuss ir uz vietējo vēsturi, CSDD un ES publiskajiem reģistriem, pēdējo tehnisko apskašu (TA) datiem, sludinājuma analīzi un praktiskiem ieteikumiem klātienes apskatei.\n\nPROVIN AUDITS (99,99 €) ir pilna izpēte no ārvalstīm ievestiem auto. Tajā ietilpst visa MINI pakete + maksas starptautiskās datubāzes (carVertical, autoDNA, Cebia u.c.), oficiālo dīleru systems dati un Eiropas izsoļu foto arhīvi, ļaujot ieraut gaismā reālo auto stāvokli un nobraukumu pirms remonta un importa."
+      },
+      {
+        "id": "delivery-time",
+        "q": "Cik ilgi jāgaida atskaite?",
+        "a": "Standarta izpildes laiks ir līdz 48 stundām pēc maksājuma saņemšanas. Tā kā katru auto pārbaudām un analizējam manuāli, mums ir svarīgi rūpīgi izpētīt visas detaļas. Tiklīdz audits ir gatavs, nosūtām to uz tavu e-pastu un vienojamies par īsu konsultāciju pa tālruni."
       },
       {
         "id": "what-to-provide",
-        "q": "Kas jānorāda pasūtījumā?",
-        "a": "Nepieciešams VIN (17 zīmes) vai valsts numurzīme, e-pasts un tālrunis. Sludinājuma saite nav obligāta, bet, ja to norādāt, lūdzam pilnu saiti uz konkrēto sludinājumu — tā palīdz precīzākai analīzei."
+        "q": "Kas man jānorāda pasūtot?",
+        "a": "Tev vajadzīgs tikai auto VIN numurs vai valsts reģistrācijas numurs, kā arī tavs e-pasts un tālrunis. Ja tev ir sludinājuma saite — obligāti pievieno arī to! Sludinājuma bildes un pārdevēja apraksts sniedz ļoti daudz vērtīgas informācijas mūsu analīzei."
       },
       {
         "id": "data-completeness",
-        "q": "Vai dati vienmēr ir pilnīgi?",
-        "a": "Neviena datubāze nav perfekta. Mēs salīdzinām avotus un norādām, kur informācija ir pretrunīga vai trūkst. Slēdziens palīdz pieņemt lēmumu, bet neaizstāj pārbaudi servisā. Papildu apskate klātienē ir ieteicama jebkurā gadījumā."
-      },
-      {
-        "id": "contact",
-        "q": "Kā sazināties ar PROVIN?",
-        "a": "Rakstiet e-pastu no vietnes kājenes vai izmantojiet WhatsApp pogu (apakšējā labajā stūrī) — atvērsies WhatsApp saruna ar mūsu numuru."
+        "q": "Vai auto vēstures dati vienmēr ir 100% pilnīgi?",
+        "a": "Būsim godīgi — pasaulē nav vienas \"ideālas\" datubāzes, un ne godīgie, ne viltīgie pārdevēji visu nefiksē uz papīra. Mūsu darbs ir savilkt kopā visus pieejamos pavedienus un norādīt uz pretrunām, ja tādas ir. PROVIN audits dod tev milzīgu priekšrocību sarunās un pasargā no acīmredzama \"ieberziena\", taču fiziska auto diagnostika servisā pirms pirkšanas vienmēr ir saprātīgs pēdējais solis."
       }
     ]
   }
