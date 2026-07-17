@@ -5,9 +5,13 @@
  *
  *   node scripts/admin-full-backup.mjs
  *   node scripts/admin-full-backup.mjs --load-env-local
+ *   node scripts/admin-full-backup.mjs --load-env-local --purpose pre-copilot-agent
+ *
+ * Atjaunošana: npm run admin:restore-full -- --from latest --confirm
  */
 import fs from "node:fs/promises";
 import path from "node:path";
+import { execSync } from "node:child_process";
 
 const root = process.cwd();
 
@@ -101,9 +105,25 @@ async function backupBlobPrefix(prefix, token, destDir) {
   return { files, bytes, skipped: files === 0 };
 }
 
+function readGitCommit() {
+  try {
+    return execSync("git rev-parse HEAD", { cwd: root, encoding: "utf8" }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function readPurposeArg() {
+  const idx = process.argv.indexOf("--purpose");
+  if (idx >= 0 && process.argv[idx + 1]) return process.argv[idx + 1].trim();
+  return "admin-full-backup";
+}
+
 async function main() {
   if (process.argv.includes("--load-env-local")) await loadEnvLocal();
 
+  const purpose = readPurposeArg();
+  const gitCommit = readGitCommit();
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const backupRoot = path.join(root, ".data", "admin-full-backups", stamp);
   await fs.mkdir(backupRoot, { recursive: true });
@@ -163,14 +183,24 @@ async function main() {
     exportedAt: new Date().toISOString(),
     backupRoot,
     dropboxProjectRoot: root,
+    gitCommit,
+    gitBranch: (() => {
+      try {
+        return execSync("git rev-parse --abbrev-ref HEAD", { cwd: root, encoding: "utf8" }).trim();
+      } catch {
+        return null;
+      }
+    })(),
     reports,
     restoreHint:
-      "Atjauno: kopē `filesystem/*` atpakaļ uz `.data/<source>/`. Blob: augšupielādē caur Vercel Blob vai admin export API.",
-    purpose: "Pre-admin-performance-upgrade full backup",
+      "Datu atjaunošana: npm run admin:restore-full -- --from <timestamp> --confirm. Kods: git checkout <gitCommit>. Blob: atkārtot backup ar BLOB_READ_WRITE_TOKEN.",
+    purpose,
   };
   await fs.writeFile(path.join(backupRoot, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 
-  console.log(`\n✓ Pilns admin backup: ${backupRoot}\n`);
+  console.log(`\n✓ Pilns admin backup: ${backupRoot}`);
+  if (gitCommit) console.log(`  git: ${gitCommit.slice(0, 12)} (${purpose})`);
+  console.log("");
   for (const r of reports) {
     if (r.skipped) console.log(`  ${r.source}: nav datu (${r.path})${r.reason ? ` — ${r.reason}` : ""}`);
     else console.log(`  ${r.source}: ${r.files} faili, ${(r.bytes / 1024).toFixed(1)} KB`);
