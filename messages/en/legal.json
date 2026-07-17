@@ -3,34 +3,58 @@
     "privacyMetaTitle": "Privacy Policy",
     "privacyMetaDescription": "How PROVIN.LV processes personal data, cookies, and analytics after consent under GDPR.",
     "privacyTitle": "Privacy Policy",
-    "privacyLead": "This document describes how PROVIN.LV (\"we\", \"service\") processes personal data, what cookies are used, and how you can accept or reject non-essential analytics and first-touch (UTM) data storage.",
+    "privacyLead": "This document describes how PROVIN.LV (\"we\", \"service\") processes personal data, what cookies are used, and how you can accept or reject non-essential analytics and first-touch (UTM) data storage. Legal identity and controller details are stated at the start of this document.",
     "sections": [
       {
         "title": "1. Controller",
-        "body": "The data controller is PROVIN.LV; full legal details are provided at the start of this document. Contact details are listed in the website footer."
+        "body": "The data controller is PROVIN.LV; full legal details are provided at the start of this document. Contact: email and WhatsApp listed in the website footer."
       },
       {
         "title": "2. What data we process",
-        "body": "Order data may include name, email, phone, VIN, listing URL, free-form message and payment metadata (processed by Stripe according to its policy). Technical server logs may be used for security and stability."
+        "body": "Order data may include name (if provided), email, phone, VIN or license plate, listing URL (if provided), free-form message and payment metadata (processed by Stripe according to its policy). Technical server logs may be used for security and stability. The homepage may display curated public Google reviews (without extra tracking scripts for that block)."
       },
       {
         "title": "3. Purposes and legal basis",
-        "body": "Contract performance and order processing; legitimate interests such as security and error prevention; analytics and UTM storage only after explicit consent."
+        "body": "Contract performance and order processing (GDPR Art. 6(1)(b)); legitimate interests such as security and error prevention (Art. 6(1)(f)); analytics and UTM storage only after explicit consent via the cookie banner (Art. 6(1)(a))."
+      },
+      {
+        "title": "4. Cookies and essential functions",
+        "body": "Essential functions (e.g. language preference, session, security) may use cookies or similar technologies without separate consent where objectively necessary to provide the service."
+      },
+      {
+        "title": "5. Analytics and first-touch data (after consent)",
+        "body": "If you accept “analytics” in the cookie banner, we may store limited first-visit information: path, HTTP referrer (if available), and marketing parameters from the link (UTM). The goal is to understand where visitors come from (e.g. TikTok, YouTube, search), not to track individuals across all third-party platforms. This data is not sold."
+      },
+      {
+        "title": "6. Third parties",
+        "body": "Payments: Stripe. Hosting: e.g. Vercel. Vercel Web Analytics collects aggregated visit data for all visits. Google Analytics 4 and TikTok Pixel load only if you consent to analytics; if an ID is not configured, the related scripts are not loaded. Contact: email (footer) and WhatsApp (footer and floating button)."
+      },
+      {
+        "title": "7. Retention",
+        "body": "Order and customer data are kept as long as needed for service delivery and legal requirements. Analytics/first-touch cookie lifetime is limited (typically up to 180 days) unless stated otherwise."
+      },
+      {
+        "title": "8. Your rights",
+        "body": "Under GDPR you may access, rectify, erase, restrict or object to processing, and request portability where applicable. Complaints may be filed with the supervisory authority (in Latvia — DVI)."
+      },
+      {
+        "title": "9. Policy changes",
+        "body": "We may update this policy. Material changes will be indicated on the site or in the cookie banner if needed."
       }
     ],
     "termsMetaTitle": "Terms of Service",
     "termsMetaDescription": "PROVIN.LV terms: service scope, payment, refund policy, distance contract and digital content withdrawal terms.",
     "termsTitle": "PROVIN.LV Terms of Service",
-    "termsUpdated": "Effective from: April 3, 2026",
-    "termsLead": "These terms govern the legal relationship between you and PROVIN.LV for use of provin.lv and ordering paid consultation services.",
+    "termsUpdated": "Effective from: 17 July 2026",
+    "termsLead": "These terms govern the legal relationship between you and PROVIN.LV for use of provin.lv and ordering paid consultative report services (PROVIN MINI and PROVIN AUDIT).",
     "termsSections": [
       {
         "title": "1. Scope and acceptance",
-        "body": "By submitting an order and confirming these terms, the customer agrees to the full terms and immediate service execution."
+        "body": "By submitting an order and confirming these terms, the customer agrees to the full terms, the authorization in section 3.5 of the Latvian terms (where applicable), and immediate service execution."
       },
       {
         "title": "2. Service nature",
-        "body": "PROVIN provides a consultative service and expert analysis; conclusions are advisory and do not replace technical inspection."
+        "body": "PROVIN provides consultative digital reports: PROVIN MINI (€39.99) and PROVIN AUDIT (€99.99), as shown at checkout. Conclusions are advisory and do not replace an in-person technical inspection or a legal certificate."
       },
       {
         "title": "3. Data sources",
@@ -42,7 +66,7 @@
       },
       {
         "title": "5. Orders, pricing, payment and refunds",
-        "body": "Pricing is shown at checkout; payment is processed by Stripe; refund rules for digital content are defined in section 11."
+        "body": "Orders require VIN or license plate, email and phone; listing URL is optional but must be a valid listing link if provided. Pricing is shown at checkout (MINI €39.99 / AUDIT €99.99 as orientative current prices). Payment is processed by Stripe; refund rules for digital content are defined in section 11."
       },
       {
         "title": "6. Delivery timelines",
@@ -50,7 +74,7 @@
       },
       {
         "title": "7. Customer obligations",
-        "body": "Customers must provide accurate data and ensure they have rights to any provided third-party materials."
+        "body": "Customers must provide accurate data (VIN or plate; valid listing URL if provided) and ensure they have rights to any provided third-party materials."
       },
       {
         "title": "8. Intellectual property",
@@ -75,7 +99,7 @@
           },
           {
             "heading": "11.2. Digital content exception",
-            "body": "By explicitly consenting to immediate execution and acknowledging withdrawal waiver, the customer loses withdrawal rights for digital content as allowed by law."
+            "body": "By explicitly consenting to immediate execution and acknowledging withdrawal waiver, the customer loses withdrawal rights for digital content as allowed by Cabinet Regulation No. 255 (22.13) and applicable consumer law."
           },
           {
             "heading": "11.3. Other consumer rights",
@@ -103,7 +127,7 @@
   },
   "Cookies": {
     "bannerTitle": "Cookies and privacy",
-    "bannerText": "We use required cookies for website operation. If you consent, we also store anonymous first-touch and UTM data for traffic source analysis.",
+    "bannerText": "We use required cookies for website operation. If you consent to analytics, we may also store anonymous first-touch and UTM data and load Google Analytics and/or TikTok Pixel (when configured) to understand traffic sources.",
     "reject": "Required only",
     "acceptAnalytics": "Accept analytics and storage",
     "privacyLink": "Privacy Policy"

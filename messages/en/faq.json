@@ -3,29 +3,39 @@
     "title": "FAQ",
     "items": [
       {
-        "id": "provin-vs-standard",
-        "q": "Why does a car history check matter?",
-        "a": "A standard report is just an algorithm-generated fact sheet. The PROVIN audit goes a step further — we don't simply pass the data on, we interpret it. We analyse the credibility of the listing, the seller's psychology and model-specific risks that no automated tool can evaluate. Instead of a PDF full of tables, you receive a clear expert verdict in plain language: buy or walk away."
+        "id": "what-is-provin-audit",
+        "q": "What is a PROVIN audit?",
+        "a": "A PROVIN audit is a consultative digital service: we combine available history data, listing analysis and model-specific technical risk insight into one clear report with recommendations. It helps you make an informed buying decision, but it does not replace an in-person workshop inspection and is not an official government extract or a legally binding certificate."
       },
       {
-        "id": "vin-decoding-not-enough",
-        "q": "How do I check a car by its VIN number?",
-        "a": "No single database is perfect. Data sources across Europe differ dramatically — information recorded in one resource can be completely missing from another, and vice versa. Relying on a single automated report means you risk missing critical information about accidents or odometer tampering. A complete picture requires comparing and cross-referencing several independent sources. Don't gamble on a single source."
+        "id": "mini-vs-audits",
+        "q": "How does PROVIN MINI differ from PROVIN AUDIT?",
+        "a": "PROVIN MINI (€39.99) focuses on listing and technical risk analysis, EU/Latvian public registries and inspection history, in-person viewing tips and a personal consultation — recommended for cars already used in Latvia. PROVIN AUDIT (€99.99) includes the MINI scope plus deeper international history checks with paid databases (e.g. carVertical, autoDNA) and official dealer / auction archive data where available — especially useful for imported cars."
       },
       {
-        "id": "understand-reports",
-        "q": "Which car history reports are the most accurate?",
-        "a": "Start with what each line actually means: mileage curves, accident categories and the quirks of national registries. The key is to compare sources and look for contradictions. PROVIN collects the data itself from a range of resources, analyses it in detail and combines it into one clear, structured report. You receive a clear summary of the specific car."
+        "id": "vs-standard-pdf",
+        "q": "How is PROVIN different from a standard history PDF?",
+        "a": "A standard report is often an automated fact sheet. PROVIN interprets the data: we compare sources, analyse the listing and typical model risks, and deliver an expert summary in plain language — not just tables."
+      },
+      {
+        "id": "price-and-delivery",
+        "q": "How much does it cost and how long does delivery take?",
+        "a": "PROVIN MINI — €39.99; PROVIN AUDIT — €99.99 (also shown at checkout). We aim to email the report within 48 hours after successful payment and complete order details. If extra time is needed (rare models, delayed data), we will let you know."
+      },
+      {
+        "id": "what-to-provide",
+        "q": "What do I need to provide when ordering?",
+        "a": "A VIN (17 characters) or plate number, email and phone. A listing URL is optional, but if you provide one, please use the full link to that specific listing — it helps a more precise analysis."
       },
       {
         "id": "data-completeness",
         "q": "Is the data always complete?",
-        "a": "No database is complete. We compare the sources and point out where information is contradictory or missing. The verdict helps you make a decision, but it does not replace an inspection at a workshop. An additional inspection at a service centre or by an expert is recommended in any case."
+        "a": "No database is perfect. We compare sources and highlight contradictions or gaps. The verdict supports your decision but does not replace a workshop inspection. An additional in-person check is recommended in any case."
       },
       {
-        "id": "delivery-time",
-        "q": "How long does it take to get the results?",
-        "a": "Our goal is to deliver the full analysis within 48 hours of successful payment. If extra time is needed (for example, rare models or delayed data), we will let you know."
+        "id": "contact",
+        "q": "How can I contact PROVIN?",
+        "a": "Use the email link in the website footer or the WhatsApp button (bottom right) to open a chat with our number."
       }
     ]
   }

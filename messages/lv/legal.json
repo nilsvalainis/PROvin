@@ -11,7 +11,7 @@
       },
       {
         "title": "2. Kādus datus apstrādājam",
-        "body": "Pasūtījuma ietvaros: vārds, e-pasts, tālrunis, VIN, sludinājuma saite, brīvas formas ziņojums un maksājuma metadati (apstrādi veic maksājumu apstrādātājs Stripe saskaņā ar tā politiku). Vietnes lietošanā: tehniskie žurnāli servera līmenī (piemēram, IP adrese, pieprasījuma laiks) var tikt izmantoti drošības un darbspējas nodrošināšanai."
+        "body": "Pasūtījuma ietvaros: vārds (ja norādīts), e-pasts, tālrunis, VIN vai valsts numurzīme, sludinājuma saite (ja norādīta), brīvas formas ziņojums un maksājuma metadati (apstrādi veic maksājumu apstrādātājs Stripe saskaņā ar tā politiku). Vietnes lietošanā: tehniskie žurnāli servera līmenī (piemēram, IP adrese, pieprasījuma laiks) var tikt izmantoti drošības un darbspējas nodrošināšanai. Mājas lapā varam rādīt kurētas, publiski pieejamas Google atsauksmes (bez papildu izsekošanas skriptiem atsauksmju blokam)."
       },
       {
         "title": "3. Mērķi un tiesiskais pamats",
@@ -27,7 +27,7 @@
       },
       {
         "title": "6. Trešās puses",
-        "body": "Maksājumi: Stripe. Vietnes mitināšana: jūsu izvēlētais pakalpojumu sniedzējs (piemēram, Vercel). Vercel Web Analytics apkopo agregētus apmeklējumu un lapu skatījumu datus visiem apmeklējumiem (pirmās puses statistika mitināšanas ietvaros). Google Analytics 4 ielādējas tikai tad, ja sīkdatņu joslā piekrītat „analītikai”; ja GA nav konfigurēts, Google skripti netiek ielādēti."
+        "body": "Maksājumi: Stripe. Vietnes mitināšana: jūsu izvēlētais pakalpojumu sniedzējs (piemēram, Vercel). Vercel Web Analytics apkopo agregētus apmeklējumu un lapu skatījumu datus visiem apmeklējumiem (pirmās puses statistika mitināšanas ietvaros). Google Analytics 4 un TikTok Pixel ielādējas tikai tad, ja sīkdatņu joslā piekrītat „analītikai”; ja attiecīgais identifikators nav konfigurēts, attiecīgie skripti netiek ielādēti. Saziņa: e-pasts (kājenē) un WhatsApp (kājene un peldošā poga vietnē)."
       },
       {
         "title": "7. Glabāšanas termiņš",
@@ -45,7 +45,7 @@
     "termsMetaTitle": "Lietošanas noteikumi",
     "termsMetaDescription": "PROVIN.LV lietošanas noteikumi: pakalpojuma būtība, apmaksa, atmaksa, distances līgums un atteikuma tiesības digitālajam saturam.",
     "termsTitle": "PROVIN.LV lietošanas noteikumi",
-    "termsUpdated": "Spēkā no: 2026. gada 3. aprīļa",
+    "termsUpdated": "Spēkā no: 2026. gada 17. jūlija",
     "termsLead": "Šie noteikumi nosaka tiesiskās attiecības starp jums (turpmāk — „Klients”) un pakalpojuma sniedzēju PROVIN.LV (turpmāk — „mēs”) par vietnes provin.lv izmantošanu un maksas konsultatīvā pakalpojuma pasūtīšanu. Lūdzu izlasiet tos kopā ar Privātuma politiku. Cenas, apmaksas un atmaksas pamatprincipi, kā arī atteikuma tiesību nepiemērošana digitālajam saturam, ir izklāstīti 5. un <section11>11. punktā</section11> (tur — <note>treknrakstā izcelta sadaļa par atteikuma tiesībām un MK 255 22.13.</note>). Zemāk norādīti juridiskā sniedzēja rekvizīti.",
     "termsSections": [
       {
@@ -54,7 +54,7 @@
       },
       {
         "title": "2. Pakalpojuma būtība un konsultatīvais raksturs",
-        "body": "2.1. PROVIN pamatā sniedz konsultatīvu pakalpojumu: transportlīdzekļa identifikācijas datu, sludinājuma un pieejamās informācijas izvērtējumu, apkopojumu un ieteikumus (turpmāk — „Atskaite” vai „Pakalpojums”). Pakalpojums ir paredzēts, lai palīdzētu pieņemt informētu lēmumu; tas nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze, mehāniķa diagnoze, juridisks spriedums vai oficiāla transportlīdzekļa pārbaude uz ceļa.\n\nPROVIN sniegtais vērtējums ir subjektīvs eksperta viedoklis. Tas nav uzskatāms par juridiski saistošu atzinumu vai tehnisko sertifikātu. PROVIN neuzņemas atbildību par finansiāliem zaudējumiem, kas Klientam var rasties, pieņemot lēmumu par transportlīdzekļa iegādi, balstoties uz šo konsultatīvo viedokli.\n\n2.2. Atskaitē sniegtie secinājumi balstās uz PROVIN profesionālo pieredzi un tajā brīdī pieejamo informāciju. Tiem ir ieteikuma raksturs. Gala lēmumu par transportlīdzekļa iegādi, pārbaudi pie trešajām personām un risku uzņemšanos pieņem vienīgi Klients.\n\n2.3. Pakalpojums nav paredzēts kā pilnīga garantija pret visiem iespējamiem slēptiem defektiem, krāpšanu vai datu nepilnībām avotos, ko PROVIN nekontrolē."
+        "body": "2.1. PROVIN pamatā sniedz konsultatīvu pakalpojumu: transportlīdzekļa identifikācijas datu, sludinājuma un pieejamās informācijas izvērtējumu, apkopojumu un ieteikumus (turpmāk — „Atskaite” vai „Pakalpojums”). Vietnē pieejamie produkti ir PROVIN MINI un PROVIN AUDITS (cenas norādītas vietnē pasūtījuma brīdī). Pakalpojums ir paredzēts, lai palīdzētu pieņemt informētu lēmumu; tas nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze, mehāniķa diagnoze, juridisks spriedums vai oficiāla transportlīdzekļa pārbaude uz ceļa.\n\nPROVIN sniegtais vērtējums ir subjektīvs eksperta viedoklis. Tas nav uzskatāms par juridiski saistošu atzinumu vai tehnisko sertifikātu. PROVIN neuzņemas atbildību par finansiāliem zaudējumiem, kas Klientam var rasties, pieņemot lēmumu par transportlīdzekļa iegādi, balstoties uz šo konsultatīvo viedokli.\n\n2.2. Atskaitē sniegtie secinājumi balstās uz PROVIN profesionālo pieredzi un tajā brīdī pieejamo informāciju. Tiem ir ieteikuma raksturs. Gala lēmumu par transportlīdzekļa iegādi, pārbaudi pie trešajām personām un risku uzņemšanos pieņem vienīgi Klients.\n\n2.3. Pakalpojums nav paredzēts kā pilnīga garantija pret visiem iespējamiem slēptiem defektiem, krāpšanu vai datu nepilnībām avotos, ko PROVIN nekontrolē."
       },
       {
         "title": "3. Informācijas avoti un Pakalpojuma struktūra",
@@ -66,7 +66,7 @@
       },
       {
         "title": "5. Pasūtījums, cena, apmaksa un atmaksas pamatprincipi",
-        "body": "5.1. Pasūtījums tiek noformēts elektroniski, norādot PROVIN pieprasīto informāciju (tostarp VIN, sludinājuma saiti un citus laukus pēc vietnes formas).\n\n5.2. Pakalpojuma cena ir skaidri norādīta vietnē (pasūtījuma formā / kopsavilkumā) pasūtījuma brīdī un ietver piemērojamos nodokļus, ja tie ir paredzēti normatīvajos aktos. Cena var tikt mainīta nākotnē jauniem pasūtījumiem; par konkrēto pasūtījumu spēkā ir cena, kas bija norādīta pirms apmaksas apstiprināšanas.\n\n5.3. Apmaksu nodrošina trešās puses maksājumu apstrādātājs (piemēram, Stripe). Maksājuma apstrādes tiesiskais pamats un datu apstrāde ir aprakstīta Privātuma politikā un maksājumu apstrādātāja dokumentos.\n\n5.4. Maksājums par Pakalpojumu ir galīgs. Ņemot vērā Pakalpojuma specifiku (tūlītēja digitālā satura sagatavošanas uzsākšana), atmaksa pēc Atskaites sagatavošanas procesa uzsākšanas netiek veikta, izņemot gadījumus, kas minēti šo noteikumu 11. punktā."
+        "body": "5.1. Pasūtījums tiek noformēts elektroniski, norādot PROVIN pieprasīto informāciju. Obligāti: VIN (17 zīmes) vai valsts numurzīme, e-pasts un tālrunis. Sludinājuma saite nav obligāta; ja tā tiek norādīta, tai jābūt derīgai saitei uz konkrētu sludinājumu. Citi lauki — pēc vietnes formas.\n\n5.2. Pakalpojuma cena ir skaidri norādīta vietnē (pasūtījuma formā / kopsavilkumā) pasūtījuma brīdī un ietver piemērojamos nodokļus, ja tie ir paredzēti normatīvajos aktos. Aktuālie produkti un orientējošās cenas: PROVIN MINI — 39,99 €; PROVIN AUDITS — 99,99 € (precīzā cena — tā, kas redzama pirms apmaksas). Cena var tikt mainīta nākotnē jauniem pasūtījumiem; par konkrēto pasūtījumu spēkā ir cena, kas bija norādīta pirms apmaksas apstiprināšanas.\n\n5.3. Apmaksu nodrošina trešās puses maksājumu apstrādātājs (piemēram, Stripe). Maksājuma apstrādes tiesiskais pamats un datu apstrāde ir aprakstīta Privātuma politikā un maksājumu apstrādātāja dokumentos.\n\n5.4. Maksājums par Pakalpojumu ir galīgs. Ņemot vērā Pakalpojuma specifiku (tūlītēja digitālā satura sagatavošanas uzsākšana), atmaksa pēc Atskaites sagatavošanas procesa uzsākšanas netiek veikta, izņemot gadījumus, kas minēti šo noteikumu 11. punktā."
       },
       {
         "title": "6. Izpilde, piegāde un pieļaujamās novirzes",
@@ -74,7 +74,7 @@
       },
       {
         "title": "7. Klienta pienākumi un garantijas par nodoto informāciju",
-        "body": "7.1. Klients nodrošina patiesu, precīzu un pilnīgu informāciju, kas nepieciešama Pakalpojumam (piemēram, pareizu VIN, derīgu sludinājuma saiti).\n\n7.2. Ja Klients iesniedz trešo pušu atskaites, dokumentu kopijas vai citus materiālus, Klients apliecina, ka tam ir tiesības šos materiālus nodot PROVIN Pakalpojuma izpildei un ka to izmantošana nepārkāpj trešo pušu tiesības.\n\n7.3. Klients ir atbildīgs par to, kā izmanto Atskaites saturu, tostarp par lēmumiem trešajām personām (piemēram, pārdevējam) sniegtās informācijas ietvaros."
+        "body": "7.1. Klients nodrošina patiesu, precīzu un pilnīgu informāciju, kas nepieciešama Pakalpojumam (piemēram, pareizu VIN vai valsts numurzīmi; ja norādīta — derīgu sludinājuma saiti).\n\n7.2. Ja Klients iesniedz trešo pušu atskaites, dokumentu kopijas vai citus materiālus, Klients apliecina, ka tam ir tiesības šos materiālus nodot PROVIN Pakalpojuma izpildei un ka to izmantošana nepārkāpj trešo pušu tiesības.\n\n7.3. Klients ir atbildīgs par to, kā izmanto Atskaites saturu, tostarp par lēmumiem trešajām personām (piemēram, pārdevējam) sniegtās informācijas ietvaros."
       },
       {
         "title": "8. Intelektuālā īpašuma tiesības uz PROVIN materiālu",
@@ -127,7 +127,7 @@
   },
   "Cookies": {
     "bannerTitle": "Sīkdatnes un privātums",
-    "bannerText": "Mēs izmantojam nepieciešamās sīkdatnes vietnes darbībai. Ja piekrītat, varam arī saglabāt anonīmu informāciju par pirmo lapu un mārketinga saites parametrus (UTM), lai saprastu, no kurienes apmeklētāji ierodas.",
+    "bannerText": "Mēs izmantojam nepieciešamās sīkdatnes vietnes darbībai. Ja piekrītat analītikai, varam saglabāt anonīmu informāciju par pirmo lapu un mārketinga saites parametrus (UTM), kā arī ielādēt Google Analytics un/vai TikTok Pixel (ja konfigurēti), lai saprastu, no kurienes apmeklētāji ierodas.",
     "reject": "Tikai nepieciešamās",
     "acceptAnalytics": "Piekrītu analītikai un saglabāšanai",
     "privacyLink": "Privātuma politika"

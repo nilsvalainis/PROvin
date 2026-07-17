@@ -14,8 +14,6 @@ import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
 import { CLIENT_COMMENT_CUSTOM_FIELD } from "@/lib/stripe-session";
-import { PROVIN_SELECT_FORM_HASH } from "@/lib/provin-select-section";
-import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 
 export const runtime = "nodejs";
 
@@ -31,8 +29,9 @@ const CHECKOUT_WINDOW_MS = 10 * 60 * 1000;
 
 const NOTES_MAX = 500;
 const NAME_MAX = 120;
-/** Stripe metadata vērtību maks.; sakrīt ar `sanitizeDraftTextForStorage` griestiem. */
-const STRIPE_META_MAX = 500;
+
+/** Legacy `/api/checkout` — PROVIN AUDITS (99,99 €). MINI/AUDITS homepage checkout: `/api/checkout/test-pricing`. */
+const AUDIT_UNIT_AMOUNT_CENTS = 9999;
 
 type CheckoutBody = {
   vin?: unknown;
@@ -42,28 +41,50 @@ type CheckoutBody = {
   name?: unknown;
   notes?: unknown;
   locale?: unknown;
-  /** `audit` (79,99 €) — noklusējums; `consultation` (49,99 €) — opcionāli; `provin_select` (49,99 €) — PROVIN SELECT, bez VIN. */
+  /** Legacy: only `audit` is accepted. `consultation` / `provin_select` return 404. */
   checkoutLine?: unknown;
   /** Obligāta klienta piekrišana PTN atteikšanās tiesību zaudēšanai (digitāls saturs, tūlītēja izpilde). */
   withdrawalConsent?: unknown;
-  /** PROVIN SELECT stratēģijas anketa — atbilst admin `orderEdits` laukiem. */
-  selectBrandModel?: unknown;
-  selectProductionYearsDpf?: unknown;
-  selectPlannedBudget?: unknown;
-  selectEngineType?: unknown;
-  selectTransmission?: unknown;
-  selectMaxMileage?: unknown;
-  selectExteriorColor?: unknown;
-  selectInteriorMaterial?: unknown;
-  selectRequiredEquipment?: unknown;
-  selectDesiredEquipment?: unknown;
 };
 
-function clipProvinSelectMeta(s: string, maxLen: number): string {
-  return s.trim().slice(0, Math.min(maxLen, STRIPE_META_MAX));
-}
-
-const stripeLocales = new Set(["auto", "bg", "cs", "da", "de", "el", "en", "es", "et", "fi", "fil", "fr", "hr", "hu", "id", "it", "ja", "ko", "lt", "lv", "ms", "mt", "nb", "nl", "pl", "pt", "ro", "ru", "sk", "sl", "sv", "th", "tr", "vi", "zh", "zh-HK"]);
+const stripeLocales = new Set([
+  "auto",
+  "bg",
+  "cs",
+  "da",
+  "de",
+  "el",
+  "en",
+  "es",
+  "et",
+  "fi",
+  "fil",
+  "fr",
+  "hr",
+  "hu",
+  "id",
+  "it",
+  "ja",
+  "ko",
+  "lt",
+  "lv",
+  "ms",
+  "mt",
+  "nb",
+  "nl",
+  "pl",
+  "pt",
+  "ro",
+  "ru",
+  "sk",
+  "sl",
+  "sv",
+  "th",
+  "tr",
+  "vi",
+  "zh",
+  "zh-HK",
+]);
 
 function stripeLocale(locale: string): string {
   if (stripeLocales.has(locale)) return locale;
@@ -104,14 +125,7 @@ export async function POST(req: Request) {
   const copy = await getOrderCopy(locale);
 
   const rawCheckoutLine = typeof raw.checkoutLine === "string" ? raw.checkoutLine.trim() : "";
-  const checkoutLine =
-    rawCheckoutLine === "provin_select"
-      ? "provin_select"
-      : rawCheckoutLine === "consultation"
-        ? "consultation"
-        : "audit";
-
-  if (checkoutLine === "provin_select" && !isProvinSelectPublic()) {
+  if (rawCheckoutLine === "provin_select" || rawCheckoutLine === "consultation") {
     return NextResponse.json({ error: copy.errors.badRequest }, { status: 404 });
   }
 
@@ -119,86 +133,25 @@ export async function POST(req: Request) {
   const listingUrl = typeof raw.listingUrl === "string" ? raw.listingUrl.trim() : "";
   const email = typeof raw.email === "string" ? raw.email.trim() : "";
   const phone = typeof raw.phone === "string" ? raw.phone.trim() : "";
-  const name =
-    typeof raw.name === "string" ? raw.name.trim().slice(0, NAME_MAX) : "";
+  const name = typeof raw.name === "string" ? raw.name.trim().slice(0, NAME_MAX) : "";
   const notesRaw = typeof raw.notes === "string" ? raw.notes.trim() : "";
   const notes = notesRaw.slice(0, NOTES_MAX);
   const withdrawalConsent = raw.withdrawalConsent === true;
 
-  const selectBrandModel = clipProvinSelectMeta(
-    typeof raw.selectBrandModel === "string" ? raw.selectBrandModel : "",
-    400,
-  );
-  const selectProductionYearsDpf = clipProvinSelectMeta(
-    typeof raw.selectProductionYearsDpf === "string" ? raw.selectProductionYearsDpf : "",
-    120,
-  );
-  const selectPlannedBudget = clipProvinSelectMeta(
-    typeof raw.selectPlannedBudget === "string" ? raw.selectPlannedBudget : "",
-    120,
-  );
-  const selectEngineType = clipProvinSelectMeta(
-    typeof raw.selectEngineType === "string" ? raw.selectEngineType : "",
-    200,
-  );
-  const selectTransmission = clipProvinSelectMeta(
-    typeof raw.selectTransmission === "string" ? raw.selectTransmission : "",
-    120,
-  );
-  const selectMaxMileage = clipProvinSelectMeta(
-    typeof raw.selectMaxMileage === "string" ? raw.selectMaxMileage : "",
-    120,
-  );
-  const selectExteriorColor = clipProvinSelectMeta(
-    typeof raw.selectExteriorColor === "string" ? raw.selectExteriorColor : "",
-    400,
-  );
-  const selectInteriorMaterial = clipProvinSelectMeta(
-    typeof raw.selectInteriorMaterial === "string" ? raw.selectInteriorMaterial : "",
-    400,
-  );
-  const selectRequiredEquipment = clipProvinSelectMeta(
-    typeof raw.selectRequiredEquipment === "string" ? raw.selectRequiredEquipment : "",
-    STRIPE_META_MAX,
-  );
-  const selectDesiredEquipment = clipProvinSelectMeta(
-    typeof raw.selectDesiredEquipment === "string" ? raw.selectDesiredEquipment : "",
-    STRIPE_META_MAX,
-  );
-
   const errors: string[] = [];
-  const requiredMsg = copy.validation.required ?? copy.validation.fieldEmpty;
 
-  if (checkoutLine === "provin_select") {
-    if (!withdrawalConsent) {
-      errors.push(copy.errors.withdrawalRequired);
-    }
-    const contact = getOrderContactFieldErrors(email, phone);
-    if (contact.email) errors.push(copy.validation.email);
-    if (contact.phone) errors.push(copy.validation.phone);
-    if (!selectPlannedBudget) {
-      errors.push(requiredMsg);
-    }
-    if (!selectEngineType) {
-      errors.push(requiredMsg);
-    }
-    if (!selectTransmission) {
-      errors.push(requiredMsg);
-    }
-  } else {
-    if (!withdrawalConsent) {
-      errors.push(copy.errors.withdrawalRequired);
-    }
-    if (!vin || !isValidVinOrPlate(vin)) {
-      errors.push(copy.validation.vin);
-    }
-    if (listingUrl && !isPlausibleListingUrl(listingUrl)) {
-      errors.push(copy.validation.listing);
-    }
-    const contact = getOrderContactFieldErrors(email, phone);
-    if (contact.email) errors.push(copy.validation.email);
-    if (contact.phone) errors.push(copy.validation.phone);
+  if (!withdrawalConsent) {
+    errors.push(copy.errors.withdrawalRequired);
   }
+  if (!vin || !isValidVinOrPlate(vin)) {
+    errors.push(copy.validation.vin);
+  }
+  if (listingUrl && !isPlausibleListingUrl(listingUrl)) {
+    errors.push(copy.validation.listing);
+  }
+  const contact = getOrderContactFieldErrors(email, phone);
+  if (contact.email) errors.push(copy.validation.email);
+  if (contact.phone) errors.push(copy.validation.phone);
 
   if (errors.length > 0) {
     return NextResponse.json({ error: errors[0], errors }, { status: 400 });
@@ -212,49 +165,14 @@ export async function POST(req: Request) {
 
   const home = homePath(locale);
   const thanksPath = `${home}/paldies`;
-  const cancelHash =
-    checkoutLine === "provin_select" ? PROVIN_SELECT_FORM_HASH : ORDER_SECTION_ID;
-  const cancelPath = `${home}?atcelts=1#${cancelHash}`;
+  const cancelPath = `${home}?atcelts=1#${ORDER_SECTION_ID}`;
 
   const misc = (await import(`../../../messages/${locale}/misc.json`)).default as {
     Misc: {
       checkoutProductName: string;
       checkoutProductDesc: string;
-      checkoutConsultationProductName: string;
-      checkoutConsultationProductDesc: string;
-      checkoutProvinSelectProductName: string;
-      checkoutProvinSelectProductDesc: string;
     };
   };
-
-  const isAudit = checkoutLine === "audit";
-  const isProvinSelect = checkoutLine === "provin_select";
-
-  const provinSelectMetadata: Record<string, string> = {};
-  if (isProvinSelect) {
-    if (selectBrandModel) provinSelectMetadata.select_brand_model = selectBrandModel;
-    if (selectProductionYearsDpf) provinSelectMetadata.select_production_years = selectProductionYearsDpf;
-    provinSelectMetadata.select_planned_budget = selectPlannedBudget;
-    provinSelectMetadata.select_engine_type = selectEngineType;
-    provinSelectMetadata.select_transmission = selectTransmission;
-    if (selectMaxMileage) provinSelectMetadata.select_max_mileage = selectMaxMileage;
-    if (selectExteriorColor) provinSelectMetadata.select_exterior_color = selectExteriorColor;
-    if (selectInteriorMaterial) provinSelectMetadata.select_interior_material = selectInteriorMaterial;
-    if (selectRequiredEquipment) provinSelectMetadata.select_required_equipment = selectRequiredEquipment;
-    if (selectDesiredEquipment) provinSelectMetadata.select_desired_equipment = selectDesiredEquipment;
-  }
-
-  const productName = isAudit
-    ? misc.Misc.checkoutProductName
-    : isProvinSelect
-      ? misc.Misc.checkoutProvinSelectProductName
-      : misc.Misc.checkoutConsultationProductName;
-  const productDesc = isAudit
-    ? misc.Misc.checkoutProductDesc
-    : isProvinSelect
-      ? misc.Misc.checkoutProvinSelectProductDesc
-      : misc.Misc.checkoutConsultationProductDesc;
-  const unitAmountCents = isAudit ? 7999 : 4999;
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -264,10 +182,10 @@ export async function POST(req: Request) {
         price_data: {
           currency: "eur",
           product_data: {
-            name: productName,
-            description: productDesc,
+            name: misc.Misc.checkoutProductName,
+            description: misc.Misc.checkoutProductDesc,
           },
-          unit_amount: unitAmountCents,
+          unit_amount: AUDIT_UNIT_AMOUNT_CENTS,
         },
         quantity: 1,
       },
@@ -278,9 +196,9 @@ export async function POST(req: Request) {
     /** Stripe lapā — papildu lauks „Klienta komentārs” (nav obligāts). */
     custom_fields: [CLIENT_COMMENT_CUSTOM_FIELD],
     metadata: {
-      checkout_line: checkoutLine,
-      ...(checkoutLine !== "provin_select" ? { vin } : {}),
-      listing_url: checkoutLine === "provin_select" ? "" : listingUrl || "",
+      checkout_line: "audit",
+      vin,
+      listing_url: listingUrl || "",
       report_delivery: "email",
       phone,
       /** Klienta apzināta atteikšanās no PTN atteikuma tiesībām (digitāls saturs, tūlītēja izpilde). */
@@ -289,7 +207,6 @@ export async function POST(req: Request) {
       authorization_ack: "true",
       ...(name ? { customer_name: name } : {}),
       ...(notes ? { notes } : {}),
-      ...(isProvinSelect ? provinSelectMetadata : {}),
     },
     locale: stripeLocale(locale) as "lv",
   });

@@ -49,8 +49,8 @@ type OrderFormProps = {
   formId?: string;
   hideStepOneCta?: boolean;
   onStepChange?: (step: 1 | 2) => void;
-  /** Noklusējums `audit` (79,99 €). `consultation` — 49,99 € (sākumlapas hero). */
-  checkoutLine?: "audit" | "consultation";
+  /** Noklusējums `audit` (PROVIN AUDITS 99,99 €). Stratēģiskā konsultācija vairs netiek piedāvāta. */
+  checkoutLine?: "audit";
 };
 
 export function OrderForm({
@@ -87,7 +87,7 @@ export function OrderForm({
   const [consentError, setConsentError] = useState<string | null>(null);
   const hero = variant === "hero";
   const compact = variant === "compact";
-  const summaryEurMajor = checkoutLine === "consultation" ? "49,99" : "79,99";
+  const summaryEurMajor = "99,99";
   const errorRef = useRef<HTMLParagraphElement | null>(null);
   const lenis = useLenis();
 
@@ -637,7 +637,7 @@ export function OrderForm({
                   </span>
                 </div>
                 <p className="order-form-hero-summary-note mt-2 text-[11px] font-normal leading-snug text-[#e5e7eb]/58 sm:text-[12px]">
-                  {checkoutLine === "consultation" ? t("summaryNoteConsultation") : t("summaryNote")}
+                  {t("summaryNote")}
                 </p>
               </div>
             ) : null}

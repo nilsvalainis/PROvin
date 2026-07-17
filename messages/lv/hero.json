@@ -43,11 +43,11 @@
         "body": ""
       }
     ],
-    "cta": "PASŪTĪT — 79,99 €",
-    "heroMobileOrderCta": "PASŪTĪT AUDITU – 79,99 €",
-    "heroResultTime": "Saņem rezultātu 24h laikā",
-    "heroConsultLink": "Nezini ko pirkt? → Piesakies konsultācijai",
-    "heroConsultCta": "NEZINI, KO PIRKT? PIESAKIES KONSULTĀCIJAI!",
+    "cta": "PASŪTĪT — no 39,99 €",
+    "heroMobileOrderCta": "PASŪTĪT — no 39,99 €",
+    "heroResultTime": "Saņem rezultātu 48h laikā",
+    "heroConsultLink": "",
+    "heroConsultCta": "",
     "orderPin": "Pasūtīt",
     "trustBody": "",
     "scrollToPricingAria": "Turpināt",

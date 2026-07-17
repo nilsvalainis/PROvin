@@ -5,9 +5,7 @@ import { HomeFeatureBreakdown } from "@/components/home/HomeFeatureBreakdown";
 import { HomeGoogleReviews } from "@/components/home/HomeGoogleReviews";
 import { ProvinHeroTransitionBanner } from "@/components/pricing/ProvinHeroTransitionBanner";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
-import { HomeServiceComparisonSelect } from "@/components/home/HomeServiceComparison";
 import { IrissSection } from "@/components/IrissSection";
-import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 
@@ -36,14 +34,6 @@ export default function HomePage() {
         <HomeGoogleReviews />
 
         <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink scroll-mt-14">
-          {isProvinSelectPublic() ? (
-            <section className="demo-design-dir__section bg-transparent pt-16 pb-12 sm:pt-20 sm:pb-16 md:pt-24 md:pb-20">
-              <div className="demo-design-dir__shell">
-                <HomeServiceComparisonSelect />
-              </div>
-            </section>
-          ) : null}
-
           <section className="demo-design-dir__section bg-transparent pt-16 pb-12 sm:pt-20 sm:pb-16 md:pt-24 md:pb-20">
             <div className="demo-design-dir__shell">
               <IrissSection editorialColumn />
