@@ -7,15 +7,30 @@ const DEMO_IDS = {
   exp2: "demo_order_exp_2",
   /** Eksperimentu veidne 3 — tukša, ar reset. */
   exp3: "demo_order_exp_3",
+  /** Eksperimentu veidne 4 — tukša, ar reset. */
+  exp4: "demo_order_exp_4",
+  /** Eksperimentu veidne 5 — tukša, ar reset. */
+  exp5: "demo_order_exp_5",
+  /** Eksperimentu veidne 6 — tukša, ar reset. */
+  exp6: "demo_order_exp_6",
   /** PROVIN SELECT stratēģiskā konsultācija (apmaksāts paraugs). */
   consultation: "demo_consultation_select",
 } as const;
 
+/** Tukšās audit parauga veidnes (id + created ISO). */
+const BLANK_AUDIT_DEMOS: { id: string; iso: string }[] = [
+  { id: DEMO_IDS.exp1, iso: "2026-05-21T09:00:00+03:00" },
+  { id: DEMO_IDS.exp2, iso: "2026-05-21T08:30:00+03:00" },
+  { id: DEMO_IDS.exp3, iso: "2026-05-21T08:00:00+03:00" },
+  { id: DEMO_IDS.exp4, iso: "2026-05-21T07:30:00+03:00" },
+  { id: DEMO_IDS.exp5, iso: "2026-05-21T07:00:00+03:00" },
+  { id: DEMO_IDS.exp6, iso: "2026-05-21T06:30:00+03:00" },
+];
+
 const created = (iso: string) => Math.floor(new Date(iso).getTime() / 1000);
 
-/** Demo rindas sarakstam (augšā — jaunākie). */
-export function getDemoOrderRows() {
-  const blankDemo = (id: string, iso: string) => ({
+function blankDemoRow(id: string, iso: string) {
+  return {
     id,
     created: created(iso),
     amountTotal: 7999,
@@ -24,12 +39,37 @@ export function getDemoOrderRows() {
     customerEmail: null,
     vin: null,
     isDemo: true,
-  });
-  return [
-    blankDemo(DEMO_IDS.exp1, "2026-05-21T09:00:00+03:00"),
-    blankDemo(DEMO_IDS.exp2, "2026-05-21T08:30:00+03:00"),
-    blankDemo(DEMO_IDS.exp3, "2026-05-21T08:00:00+03:00"),
-  ].sort((a, b) => b.created - a.created);
+  };
+}
+
+function blankDemoDetail(id: string, iso: string) {
+  return {
+    id,
+    created: created(iso),
+    amountTotal: 7999,
+    currency: "EUR",
+    paymentStatus: "paid" as const,
+    customerEmail: null,
+    vin: null,
+    listingUrl: null,
+    customerName: null,
+    contactMethod: null,
+    phone: null,
+    notes: null,
+    customerDetailsEmail: null,
+    customerDetailsPhone: null,
+    isDemo: true,
+    checkoutLine: "audit" as const,
+    internalComment: null,
+    attachments: [] as { label: string; fileName: string }[],
+  };
+}
+
+/** Demo rindas sarakstam (augšā — jaunākie). */
+export function getDemoOrderRows() {
+  return BLANK_AUDIT_DEMOS.map((d) => blankDemoRow(d.id, d.iso)).sort(
+    (a, b) => b.created - a.created,
+  );
 }
 
 /** Demo rindas sarakstam „Konsultācijas” (PROVIN SELECT). */
@@ -85,28 +125,7 @@ export function getDemoConsultationDetail(sessionId: string) {
 }
 
 export function getDemoOrderDetail(sessionId: string) {
-  const blankDetail = (id: string, iso: string) => ({
-    id,
-    created: created(iso),
-    amountTotal: 7999,
-    currency: "EUR",
-    paymentStatus: "paid" as const,
-    customerEmail: null,
-    vin: null,
-    listingUrl: null,
-    customerName: null,
-    contactMethod: null,
-    phone: null,
-    notes: null,
-    customerDetailsEmail: null,
-    customerDetailsPhone: null,
-    isDemo: true,
-    checkoutLine: "audit" as const,
-    internalComment: null,
-    attachments: [] as { label: string; fileName: string }[],
-  });
-  if (sessionId === DEMO_IDS.exp1) return blankDetail(DEMO_IDS.exp1, "2026-05-21T09:00:00+03:00");
-  if (sessionId === DEMO_IDS.exp2) return blankDetail(DEMO_IDS.exp2, "2026-05-21T08:30:00+03:00");
-  if (sessionId === DEMO_IDS.exp3) return blankDetail(DEMO_IDS.exp3, "2026-05-21T08:00:00+03:00");
-  return null;
+  const match = BLANK_AUDIT_DEMOS.find((d) => d.id === sessionId);
+  if (!match) return null;
+  return blankDemoDetail(match.id, match.iso);
 }
