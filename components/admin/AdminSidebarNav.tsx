@@ -21,12 +21,15 @@ export function AdminSidebarNav({ baseUrl, orientation = "vertical" }: Props) {
   const horizontal = orientation === "horizontal";
 
   const consultationsActive = Boolean(pathname?.startsWith("/admin/konsultacijas"));
+  const rekiniActive = Boolean(pathname?.startsWith("/admin/commission-invoice"));
+  const statistikaActive = Boolean(pathname?.startsWith("/admin/statistika"));
   const sakumsActive =
     !consultationsActive &&
+    !rekiniActive &&
+    !statistikaActive &&
     (pathname === "/admin/dashboard" ||
       pathname === "/admin/dashboard/" ||
       Boolean(pathname?.startsWith("/admin/orders/")));
-  const rekiniActive = Boolean(pathname?.startsWith("/admin/commission-invoice"));
 
   return (
     <nav className={horizontal ? "flex flex-wrap items-center gap-1" : "flex flex-col items-stretch gap-1"}>
@@ -35,6 +38,9 @@ export function AdminSidebarNav({ baseUrl, orientation = "vertical" }: Props) {
       </Link>
       <Link href="/admin/konsultacijas" className={navItemClass(consultationsActive)}>
         Konsultācijas
+      </Link>
+      <Link href="/admin/statistika" className={navItemClass(statistikaActive)}>
+        Statistika
       </Link>
       <Link href="/admin/commission-invoice" className={navItemClass(rekiniActive)}>
         RĒĶINI
