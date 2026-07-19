@@ -24,7 +24,12 @@ export type Tp5UiCopy = {
   breakdownHeading: string;
   /** Small uppercase label above each package goal paragraph. */
   goalLabel: string;
+  /** Secondary text link under AUDITS CTA — opens sample PDF. */
+  sampleReportLink: string;
 };
+
+/** Publiskais PROVIN AUDITS atskaites piemērs (`public/samples/…`). */
+export const TP5_AUDITS_SAMPLE_REPORT_HREF = "/samples/provin-audits-piemers.pdf";
 
 const TP5_UI_COPY_LV: Tp5UiCopy = {
   cancelNote: "Maksājums tika atcelts. Vari mēģināt vēlreiz.",
@@ -39,6 +44,7 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   transitionBannerAria: "PROVIN pakalpojuma kopsavilkums",
   breakdownHeading: "PROVIN MINI un PROVIN AUDITS",
   goalLabel: "Mērķis",
+  sampleReportLink: "Skatīt atskaites piemēru (PDF)",
 };
 
 const TP5_UI_COPY_EN: Tp5UiCopy = {
@@ -54,6 +60,7 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   transitionBannerAria: "PROVIN service overview",
   breakdownHeading: "PROVIN MINI and PROVIN AUDIT",
   goalLabel: "Purpose",
+  sampleReportLink: "View sample report (PDF)",
 };
 
 export function getTp5UiCopy(locale?: string): Tp5UiCopy {

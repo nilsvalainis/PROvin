@@ -13,7 +13,7 @@ import {
   type Tp5MobileFeature,
   type Tp5MobileServiceId,
 } from "@/lib/test-pricing-5-mobile";
-import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
+import { TP5_AUDITS_SAMPLE_REPORT_HREF, getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 
@@ -185,6 +185,16 @@ export function Tp5MobilePricingCard({
           <span className={styles.liquidCtaShimmer} aria-hidden />
           <span className={styles.liquidCtaLabel}>{activeService.buttonText}</span>
         </button>
+        {activeServiceId === "audits" ? (
+          <a
+            href={TP5_AUDITS_SAMPLE_REPORT_HREF}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.sampleReportLink}
+          >
+            {uiCopy.sampleReportLink}
+          </a>
+        ) : null}
         <p className={styles.featureFootnote}>{getTp5DealerFootnote(locale)}</p>
       </div>
     </article>
