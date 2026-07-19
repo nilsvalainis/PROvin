@@ -17,7 +17,7 @@ const AUTODNA_DAMAGE_EVENT_RE =
 
 function monthYearToDateDisplay(month: string, year: string): string {
   const mo = month.padStart(2, "0");
-  return formatAutoRecordsDateForOutput(`00.${mo}.${year}`);
+  return formatAutoRecordsDateForOutput(`01.${mo}.${year}`);
 }
 
 function dedupeIncidents(rows: LtabIncidentRow[]): LtabIncidentRow[] {

@@ -8,6 +8,7 @@ import {
   type CarVerticalTimelineRow,
 } from "@/lib/carvertical-pdf-parse";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
+import { deepSanitizeDraftStrings } from "@/lib/admin-draft-sanitize";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import {
   mergeProvinBannerPdfInclude,
@@ -1864,7 +1865,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
 } | null {
   if (!raw) return null;
   try {
-    const p = JSON.parse(raw) as Record<string, unknown>;
+    const p = deepSanitizeDraftStrings(JSON.parse(raw)) as Record<string, unknown>;
     let sourceBlocks: WorkspaceSourceBlocks;
     if (p.sourceBlocks && typeof p.sourceBlocks === "object") {
       sourceBlocks = mergeSourceBlocksWithDefaults(p.sourceBlocks);

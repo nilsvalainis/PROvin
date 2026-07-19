@@ -1,10 +1,15 @@
 import type { CarVerticalDamageDetailRow } from "@/lib/carvertical-pdf-parse";
+import { cleanDateStr } from "@/lib/clean-date-str";
 
 export type CarVerticalIncidentMatchInput = {
   csngDate: string;
   incidentNo: string;
   lossAmount?: string;
 };
+
+function datesEqual(a: string, b: string): boolean {
+  return cleanDateStr(a.trim()) === cleanDateStr(b.trim());
+}
 
 /** Sasaista CarVertical negadījuma rindu ar bojājumu detaļām (datums + valsts, pēc vajadzības summa). */
 export function matchCarVerticalDamageDetail(
@@ -24,7 +29,7 @@ export function matchCarVerticalDamageDetail(
   if (date && country) {
     const exact = rows.find(
       (r) =>
-        r.date.trim() === date &&
+        datesEqual(r.date, date) &&
         (r.country.trim().toLowerCase() === countryLower ||
           countryLower.includes(r.country.trim().toLowerCase()) ||
           r.country.trim().toLowerCase().includes(countryLower)),
@@ -36,7 +41,7 @@ export function matchCarVerticalDamageDetail(
     const lossDigits = loss.replace(/\D/g, "").slice(0, 4);
     if (lossDigits.length >= 3) {
       const byLoss = rows.find((r) => {
-        if (r.date.trim() !== date) return false;
+        if (!datesEqual(r.date, date)) return false;
         const rowLoss = r.lossAmount.replace(/\D/g, "").slice(0, 4);
         return rowLoss.length >= 3 && rowLoss === lossDigits;
       });
@@ -45,7 +50,7 @@ export function matchCarVerticalDamageDetail(
   }
 
   if (date) {
-    const byDate = rows.filter((r) => r.date.trim() === date);
+    const byDate = rows.filter((r) => datesEqual(r.date, date));
     if (byDate.length === 1) return byDate[0];
   }
 

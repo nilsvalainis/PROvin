@@ -144,7 +144,7 @@ function extractSection(text: string, startRe: RegExp, endRes: RegExp[]): string
   return text.slice(from, from + end);
 }
 
-/** MM.YYYY vai DD.MM.YYYY → displeja formāts ar 00. prefiksu, ja trūkst dienas/mēneša. */
+/** MM.YYYY vai DD.MM.YYYY → displeja formāts; bez dienas → `01.MM.YYYY`. */
 export function normalizeCarVerticalDateToken(raw: string): string {
   const t = raw.trim().replace(/\.$/, "");
   if (!t) return "";
@@ -164,7 +164,7 @@ export function normalizeCarVerticalDateToken(raw: string): string {
     const mo = Number.parseInt(mmyyyy[1] ?? "", 10);
     const y = Number.parseInt(mmyyyy[2] ?? "", 10);
     if (mo < 1 || mo > 12 || y < 1980 || y > 2100) return "";
-    return formatAutoRecordsDateForOutput(`00.${String(mo).padStart(2, "0")}.${y}`);
+    return formatAutoRecordsDateForOutput(`01.${String(mo).padStart(2, "0")}.${y}`);
   }
 
   return "";

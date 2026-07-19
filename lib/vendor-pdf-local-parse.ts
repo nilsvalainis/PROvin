@@ -121,7 +121,7 @@ function extractCarverticalOdometerRegex(text: string): AutoRecordsServiceRow[] 
     const y = Number.parseInt(m[2] ?? "", 10);
     const km = normalizeAutoRecordsOdometer(m[3] ?? "");
     if (mo < 1 || mo > 12 || y < 1980 || !km) continue;
-    const date = `00.${String(mo).padStart(2, "0")}.${y}`;
+    const date = `01.${String(mo).padStart(2, "0")}.${y}`;
     const key = `${date}|${km}`;
     if (seen.has(key)) continue;
     seen.add(key);

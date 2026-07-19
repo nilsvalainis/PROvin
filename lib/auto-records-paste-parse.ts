@@ -7,7 +7,7 @@ import {
   findDateInString,
   parseFlexibleDateToken,
 } from "@/lib/auto-records-date-odometer-parse";
-import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
+import { cleanDateStr, parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { parseAutoRecordsOdometerTable } from "@/lib/auto-records-odometer-table-parse";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
@@ -46,22 +46,24 @@ export function sanitizeMileageCountryField(raw: string): string {
   return normalized;
 }
 
-/** ISO (YYYY-MM-DD) → DD.MM.YYYY; jau DD.MM.YYYY → normalizē padding (saglabā `00.` displejam). */
+/** ISO (YYYY-MM-DD) → DD.MM.YYYY; jau DD.MM.YYYY → normalizē padding; nezināma diena `00.` → `01.`. */
 export function formatAutoRecordsDateForOutput(raw: string): string {
-  const t = raw.trim();
+  const t = cleanDateStr(raw.trim());
   if (!t) return "";
   const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (iso) {
     const y = +iso[1];
     const m = +iso[2];
-    const d = +iso[3];
+    let d = +iso[3];
+    if (d === 0) d = 1;
     return `${String(d).padStart(2, "0")}.${String(m).padStart(2, "0")}.${y}`;
   }
   const lv = t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
   if (lv) {
-    const d = +lv[1];
+    let d = +lv[1];
     const m = +lv[2];
     const y = +lv[3];
+    if (d === 0) d = 1;
     return `${String(d).padStart(2, "0")}.${String(m).padStart(2, "0")}.${y}`;
   }
   return t;

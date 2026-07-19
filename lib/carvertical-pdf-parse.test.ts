@@ -19,15 +19,15 @@ describe("parseCarverticalOdometerFromText", () => {
     const rows = parseCarverticalOdometerFromText(BMW_X1_ODOMETER_RAW);
     expect(rows.length).toBe(27);
     expect(rows.some((r) => r.odometer === "295012")).toBe(true);
-    expect(rows.some((r) => r.date === "00.12.2016" && r.odometer === "17")).toBe(true);
-    expect(rows.some((r) => r.date === "00.03.2026" && r.odometer === "295012")).toBe(true);
+    expect(rows.some((r) => r.date === "01.12.2016" && r.odometer === "17")).toBe(true);
+    expect(rows.some((r) => r.date === "01.03.2026" && r.odometer === "295012")).toBe(true);
   });
 
   it("parses Škoda Kodiaq fragmented odometer (12 records)", () => {
     const rows = parseCarverticalOdometerFromText(SKODA_ODOMETER_RAW);
     expect(rows.length).toBe(12);
     expect(rows.some((r) => r.odometer === "156942")).toBe(true);
-    expect(rows.some((r) => r.date === "00.10.2017" && r.odometer === "19")).toBe(true);
+    expect(rows.some((r) => r.date === "01.10.2017" && r.odometer === "19")).toBe(true);
   });
 
   it("paste parser delegates to fragmented parser", () => {
@@ -69,7 +69,7 @@ describe("parseCarverticalDamagesFromText", () => {
     expect(incidents.length).toBe(1);
     expect(incidents[0]?.lossAmount).toContain("5001");
     expect(incidents[0]?.incidentNo).toBe("Šveice");
-    expect(incidents[0]?.csngDate).toBe("00.06.2024");
+    expect(incidents[0]?.csngDate).toBe("01.06.2024");
     expect(damageDetails[0]?.damagedSides).toMatch(/Kreisā puse/i);
     expect(damageDetails[0]?.damageGroups).toMatch(/Dzesēšanas/i);
   });
@@ -87,6 +87,6 @@ describe("parseCarverticalPdfText", () => {
     const raw = `${BMW_X1_ODOMETER_RAW}\n${BMW_X1_TIMELINE_RAW}`;
     const result = parseCarverticalPdfText(raw);
     const lvRows = result.serviceHistory.filter((r) => r.country === "Latvija");
-    expect(lvRows.some((r) => r.date.startsWith("00.03.2026"))).toBe(true);
+    expect(lvRows.some((r) => r.date.startsWith("01.03.2026"))).toBe(true);
   });
 });

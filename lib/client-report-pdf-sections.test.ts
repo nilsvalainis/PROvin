@@ -106,11 +106,11 @@ describe("unified PDF sections single block", () => {
         {
           title: SOURCE_BLOCK_LABELS.carvertical,
           mileageRows: [],
-          incidentRows: [{ csngDate: "00.06.2024", lossAmount: "5001 € – 10 000 €", incidentNo: "Šveice" }],
+          incidentRows: [{ csngDate: "01.06.2024", lossAmount: "5001 € – 10 000 €", incidentNo: "Šveice" }],
           comments: "",
           damageDetails: [
             {
-              date: "00.06.2024",
+              date: "01.06.2024",
               country: "Šveice",
               lossAmount: "5001 € – 10 000 €",
               damagedSides: "Kreisā puse Priekšpuse",
@@ -122,7 +122,7 @@ describe("unified PDF sections single block", () => {
     } as ClientReportPayload;
     const vis = mergePdfVisibility({ unifiedIncidents: true });
     const html = buildUnifiedIncidentsTableHtml(p, vis);
-    expect(html).toContain("00.06.2024");
+    expect(html).toContain("01.06.2024");
     expect(html).not.toContain("pdf-cv-damage-sub");
     expect(html).not.toContain("Kreisā puse Priekšpuse");
     expect(html).not.toContain("Ārējās virsbūves detaļas");

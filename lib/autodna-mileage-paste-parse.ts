@@ -64,7 +64,7 @@ function parseAutodnaDateLine(line: string): string {
     const mo = Number.parseInt(mmyyyy[1] ?? "", 10);
     const y = mmyyyy[2] ?? "";
     if (mo < 1 || mo > 12) return "";
-    return `00.${String(mo).padStart(2, "0")}.${y}`;
+    return `01.${String(mo).padStart(2, "0")}.${y}`;
   }
   return "";
 }

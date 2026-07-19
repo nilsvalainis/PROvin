@@ -1,12 +1,18 @@
 /**
- * Šveices / AutoDNA importi bieži lieto dienu `00` (mēnesis bez dienas, piem. `00.01.2026`).
- * Pirms `Date` / sortēšanas normalizē uz `01.`, lai nebūtu Invalid Date vai NaN.
+ * Šveices / AutoDNA importi bieži lieto dienu `00` (mēnesis bez precīzas dienas, piem. `00.01.2026`).
+ * Profesionālam attēlojumam normalizējam uz `01.` (mēneša sākums).
  */
+
+/** `00.MM.YYYY` (un tekstā iegultie) → `01.MM.YYYY`. */
+export function normalizeUnknownDayDatesInText(s: string): string {
+  if (typeof s !== "string" || !s) return typeof s === "string" ? s : "";
+  return s.replace(/\b00\.(\d{2}\.\d{4})\b/g, "01.$1");
+}
 
 /** Ja datums sākas ar `00.`, aizstāj dienu ar `01.` */
 export function cleanDateStr(dateStr: string): string {
   if (typeof dateStr !== "string") return "";
-  const t = dateStr.trim();
+  const t = normalizeUnknownDayDatesInText(dateStr.trim());
   if (t.startsWith("00.")) {
     return `01.${t.substring(3)}`;
   }

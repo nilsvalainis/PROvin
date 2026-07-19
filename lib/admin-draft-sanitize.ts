@@ -3,15 +3,18 @@
  * kas var izraisīt `JSON.stringify` / serializācijas problēmas pēc AI teksta ielīmēšanas.
  */
 
+import { normalizeUnknownDayDatesInText } from "@/lib/clean-date-str";
+
 const MAX_DRAFT_STRING = 120_000;
 const MAX_DRAFT_DATA_URL_STRING = 15_000_000;
 
-/** Noņem BOM, NUL un vadības simbolus (izņemot \t \n \r). */
+/** Noņem BOM, NUL un vadības simbolus (izņemot \t \n \r); `00.MM.YYYY` → `01.MM.YYYY`. */
 export function sanitizeDraftTextForStorage(s: string, maxLen = MAX_DRAFT_STRING): string {
   if (typeof s !== "string") return "";
   let t = s.replace(/\uFEFF/g, "");
   t = t.replace(/\u0000/g, "");
   t = t.replace(/[\u0001-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+  t = normalizeUnknownDayDatesInText(t);
   return t.length > maxLen ? t.slice(0, maxLen) : t;
 }
 

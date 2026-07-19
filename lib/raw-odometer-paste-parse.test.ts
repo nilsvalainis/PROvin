@@ -66,8 +66,8 @@ describe("CarVertical odometer paste", () => {
     const rows = parseCarverticalOdometerFromText(CARVERTICAL_RAW);
     expect(rows).toHaveLength(16);
     expect(rows.every((r) => r.odometer.length > 0)).toBe(true);
-    expect(rows.find((r) => r.date === "00.12.2017")?.odometer).toBe("6");
-    expect(rows.find((r) => r.date === "00.11.2025")?.odometer).toBe("92610");
+    expect(rows.find((r) => r.date === "01.12.2017")?.odometer).toBe("6");
+    expect(rows.find((r) => r.date === "01.11.2025")?.odometer).toBe("92610");
     expect(rows.every((r) => r.country === "" || !/^\d+$/.test(r.country))).toBe(true);
   });
 
