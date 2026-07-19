@@ -10,6 +10,9 @@ const PDF_MILEAGE_CHART_LINE = PDF_BRAND_BLUE_HEX;
 const PDF_MILEAGE_CHART_GRID = "#e8eaed";
 const PDF_MILEAGE_CHART_AXIS = "#9ca3af";
 
+/** Minimālā horizontālā atstarpe starp gada etiķetēm (px viewBox), lai „2016”/„2017” nepārklājas. */
+const YEAR_LABEL_MIN_GAP_PX = 34;
+
 function linearSvgPath(points: { x: number; y: number }[]): string {
   if (points.length === 0) return "";
   let d = `M ${points[0]!.x.toFixed(1)} ${points[0]!.y.toFixed(1)}`;
@@ -18,6 +21,59 @@ function linearSvgPath(points: { x: number; y: number }[]): string {
     d += ` L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
   }
   return d;
+}
+
+/**
+ * Gada X = kalendārā gada un datu diapazona `[tMin, tMax]` krustpunkta vidus.
+ * Tādējādi etiķete nepaliek pie kreisās malas, ja dati sākas gada beigās.
+ */
+export function yearLabelXInRange(
+  year: number,
+  tMin: number,
+  tMax: number,
+  xOf: (time: number) => number,
+  padL: number,
+  plotW: number,
+): number | null {
+  const y0 = Date.UTC(year, 0, 1);
+  const y1 = Date.UTC(year + 1, 0, 1);
+  const from = Math.max(tMin, y0);
+  const to = Math.min(tMax, y1);
+  if (to < from) return null;
+  const mid = from === to ? from : (from + to) / 2;
+  const gx = xOf(mid);
+  return Math.min(padL + plotW, Math.max(padL, gx));
+}
+
+/** Atstāj etiķetes ar min. atstarpi; vienmēr mēģina saglabāt pirmo un pēdējo gadu. */
+export function pickNonOverlappingYearTicks(
+  candidates: { year: number; x: number }[],
+  minGapPx: number = YEAR_LABEL_MIN_GAP_PX,
+): { year: number; x: number }[] {
+  if (candidates.length <= 1) return candidates;
+  const sorted = [...candidates].sort((a, b) => a.x - b.x || a.year - b.year);
+  const first = sorted[0]!;
+  const last = sorted[sorted.length - 1]!;
+  if (sorted.length === 2) {
+    return last.x - first.x >= minGapPx ? sorted : [first];
+  }
+
+  const kept: { year: number; x: number }[] = [first];
+  for (let i = 1; i < sorted.length - 1; i++) {
+    const c = sorted[i]!;
+    const prev = kept[kept.length - 1]!;
+    if (c.x - prev.x < minGapPx) continue;
+    if (last.x - c.x < minGapPx) continue;
+    kept.push(c);
+  }
+  if (last.x - kept[kept.length - 1]!.x >= minGapPx || kept[kept.length - 1]!.year === last.year) {
+    if (kept[kept.length - 1]!.year !== last.year) kept.push(last);
+  } else if (kept.length > 1) {
+    kept[kept.length - 1] = last;
+  } else {
+    kept.push(last);
+  }
+  return kept;
 }
 
 /**
@@ -81,7 +137,7 @@ export function buildUnifiedMileageChartWrapHtml(
   const yStart = yMin;
   const yEnd = yMax;
   const yearSpan = Math.max(0, yEnd - yStart);
-  const yearStep = yearSpan <= 10 ? 1 : 2;
+  const yearStep = yearSpan <= 10 ? 1 : yearSpan <= 20 ? 2 : 3;
   const tickSet = new Set<number>();
   for (let y = yStart; y <= yEnd; y += yearStep) {
     tickSet.add(y);
@@ -89,14 +145,17 @@ export function buildUnifiedMileageChartWrapHtml(
   tickSet.add(yEnd);
   const tickYears = [...tickSet].sort((a, b) => a - b);
 
+  const candidates: { year: number; x: number }[] = [];
+  for (const y of tickYears) {
+    const gx = yearLabelXInRange(y, tMin, tMax, xOf, padL, plotW);
+    if (gx == null) continue;
+    candidates.push({ year: y, x: gx });
+  }
+  const placed = pickNonOverlappingYearTicks(candidates, compact ? 30 : YEAR_LABEL_MIN_GAP_PX);
+
   const gridLines: string[] = [];
   const yearLabels: string[] = [];
-  for (const y of tickYears) {
-    const yStartTs = Date.UTC(yStart, 0, 1);
-    const yEndTs = Date.UTC(yEnd, 0, 1);
-    const yearTime = tMax === tMin ? tMin : Math.min(yEndTs, Math.max(yStartTs, Date.UTC(y, 0, 1)));
-    let gx = xOf(yearTime);
-    gx = Math.min(padL + plotW, Math.max(padL, gx));
+  for (const { year: y, x: gx } of placed) {
     gridLines.push(
       `<line class="pdf-mileage-chart-grid" x1="${gx.toFixed(1)}" y1="${padT}" x2="${gx.toFixed(1)}" y2="${padT + plotH}" />`,
     );
