@@ -28,7 +28,7 @@ ${orderContext}
 
 Sagatavo komentāru laukam „${ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}”.
 Šis ir APKOPOJOŠAIS nobraukuma lauks: sintezē visu avotu odometra ainu (lineārums, vakuumi, anomālijas, motorstundas, ja dati ļauj).
-Neatkārto avotu bojājumu/TA/dīlera komentāru tekstu — fokusējas uz nobraukumu.`}
+Neatkārto avotu bojājumu/TA/dīlera komentāru tekstu — fokusējas uz nobraukumu.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:
