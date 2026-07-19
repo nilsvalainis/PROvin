@@ -6,6 +6,7 @@ import {
   getGaMeasurementId,
   isVercelDeployment,
 } from "@/lib/analytics-public";
+import { getSampleReportClickStats } from "@/lib/sample-report-click-store";
 
 export const metadata = {
   title: "Statistika",
@@ -18,6 +19,13 @@ export default async function AdminStatistikaPage() {
   const dashboardUrl = getAnalyticsDashboardUrl();
   const gaId = getGaMeasurementId();
   const onVercel = isVercelDeployment();
+  const sampleClicks = await getSampleReportClickStats();
+  const sampleLastLabel = sampleClicks.lastClickedAt
+    ? new Date(sampleClicks.lastClickedAt).toLocaleString("lv-LV", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : null;
 
   return (
     <div className="w-full max-w-none">
@@ -35,6 +43,29 @@ export default async function AdminStatistikaPage() {
       </AdminDashboardHeaderWithMenu>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
+          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Atskaites piemērs (PDF)</h2>
+          <p className="mt-3 text-[2rem] font-semibold tracking-tight text-[var(--color-apple-text)] tabular-nums">
+            {sampleClicks.total}
+          </p>
+          <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
+            Klikšķi uz „Skatīt atskaites piemēru” (PROVIN AUDITS hero). Skaitītājs ir pirmās puses — bez personu datiem.
+          </p>
+          {sampleLastLabel ? (
+            <p className="mt-3 text-[12px] text-[var(--color-provin-muted)]">
+              Pēdējais klikšķis:{" "}
+              <span className="font-medium text-[var(--color-apple-text)]">{sampleLastLabel}</span>
+            </p>
+          ) : (
+            <p className="mt-3 text-[12px] text-[var(--color-provin-muted)]">Vēl nav reģistrētu klikšķu.</p>
+          )}
+          <p className="mt-3 text-[11px] leading-relaxed text-[var(--color-provin-muted)]">
+            Produkcijā saglabājas caur{" "}
+            <code className="rounded bg-slate-100 px-1 py-0.5 text-[10px]">BLOB_READ_WRITE_TOKEN</code> (ja
+            iestatīts); citādi lokālajā <code className="rounded bg-slate-100 px-1 py-0.5 text-[10px]">.data/</code>.
+          </p>
+        </div>
+
         <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
           <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Vercel Web Analytics</h2>
           <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">

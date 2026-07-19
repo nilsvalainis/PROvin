@@ -14,6 +14,7 @@ import {
   type Tp5MobileServiceId,
 } from "@/lib/test-pricing-5-mobile";
 import { TP5_AUDITS_SAMPLE_REPORT_HREF, getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
+import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 
@@ -191,6 +192,7 @@ export function Tp5MobilePricingCard({
             target="_blank"
             rel="noopener noreferrer"
             className={styles.sampleReportLink}
+            onClick={() => recordSampleReportClick()}
           >
             {uiCopy.sampleReportLink}
           </a>
