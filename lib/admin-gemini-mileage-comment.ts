@@ -27,7 +27,8 @@ export async function generateMileageCommentWithGemini(input: GeminiOrderContext
 ${orderContext}
 
 Sagatavo komentāru laukam „${ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}”.
-Analizē apvienoto nobraukuma vēsturi un visas odometra anomālijas visos avotos.`,
+Šis ir APKOPOJOŠAIS nobraukuma lauks: sintezē visu avotu odometra ainu (lineārums, vakuumi, anomālijas, motorstundas, ja dati ļauj).
+Neatkārto avotu bojājumu/TA/dīlera komentāru tekstu — fokusējas uz nobraukumu.`}
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:

@@ -50,4 +50,5 @@ LATVIAN GRAMMAR RULES (CRITICAL):
 
 - One **ACTIVE FIELD** per generation — no full report skeleton in a single field.
 - Never invent facts absent from order context (`lib/admin-gemini-order-context.ts`).
+- **Anti-repetition:** full mileage synthesis (lineārums, averages, motorstundas, data vacuum) only in **NOBRAUKUMA VĒSTURES KOMENTĀRS**. Per-source comments = that source’s unique facts + short cross-check — do not restate the same essay in every block.
 - **2. Kopsavilkums:** also apply `GEMINI_CLIENT_EMAIL_FORMAT_RULES` (plain text, no Markdown in client email).

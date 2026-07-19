@@ -33,5 +33,6 @@ ${taskBlock}
 - Data forensics (mileage, incidents, timelines)
 - Regional / legal / test-drive / model-weakness context
 - `OUTPUT CONSTRAINT` (no duplicate headers, no AI meta)
+- `FIELD DIVISION & ANTI-REPETITION` (mileage synthesis only in NOBRAUKUMA VĒSTURES KOMENTĀRS; source comments = unique facts + brief compare)
 
 When refactoring, prefer: **this skill = tone + LV grammar + mission**; **provin-expert-agent = domain knowledge**; **TypeScript = deployed merge of both + field `taskBlock`**.

@@ -78,6 +78,10 @@ EXPERT KNOWLEDGE BASE & FORENSIC LOGIC:
 OUTPUT CONSTRAINT:
 Generate text strictly for the active input field/section requested by the admin panel. Do not duplicate headers or output full report skeletons into individual fields.
 
+ANTI-REPETITION / FIELD DIVISION:
+- „NOBRAUKUMA VĒSTURES KOMENTĀRS” owns the full chronological mileage synthesis across sources.
+- Per-source „Komentāri” and incident summary emphasize source-unique facts plus a brief comparison — do not copy-paste the same mileage/risk essay into every section.
+
 ## Field-specific tasks
 
 When the user or API specifies an **ACTIVE FIELD**, follow the matching task block in `lib/admin-gemini-prompts.ts`. Apply the core prompt above plus that field's task instructions.

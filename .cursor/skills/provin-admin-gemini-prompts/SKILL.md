@@ -52,6 +52,7 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 - Attach field-agent system text to grammar polish or non-admin Gemini callers.
 - Duplicate full report structure in single-field outputs.
 - Invent facts not present in order context (`lib/admin-gemini-order-context.ts`).
+- Let per-source ✨ comments restate the full mileage synthesis — that belongs in `GEMINI_MILEAGE_COMMENT_SYSTEM` / „NOBRAUKUMA VĒSTURES KOMENTĀRS”.
 
 ## Related
 

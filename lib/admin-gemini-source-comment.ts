@@ -58,11 +58,17 @@ export async function generateSourceCommentWithGemini(input: GeminiSourceComment
   );
 
   const chainingSection = previousComments.trim()
-    ? `=== Esošie eksperta komentāri citos avotos (neatkārto — salīdzini un papildini) ===
+    ? `=== Esošie eksperta komentāri citos avotos (NEATKĀRTO saturu — tikai īss salīdzinājums / delta) ===
 ${previousComments}
 
 `
     : "";
+
+  const mileageHint = input.mileageComment?.trim()
+    ? `Esošais „NOBRAUKUMA VĒSTURES KOMENTĀRS” jau ir kontekstā — NEATKĀRTO tā nobraukuma forenziku; ja km sakrīt, pietiek ar vienu teikumu.
+`
+    : `Pilno nobraukuma hronoloģiju, vidējos km/gadā un motorstundu profilu NEIEKĻAUJ šeit — to raksta tikai „NOBRAUKUMA VĒSTURES KOMENTĀRS”.
+`;
 
   const userPrompt = appendGeminiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
@@ -74,7 +80,9 @@ ${portfolioContext}
 ${chainingSection}=== Konkrētā avota „${blockLabel}” dati (bez esošajiem komentāriem) ===
 ${focusDataText}
 
-Sagatavo komentāru šai sadaļai klienta atskaitei. Salīdzini ar pārējiem avotiem portfeļā un ar jau sagatavotajiem komentāriem citās sadaļās; neizdomā faktus.`,
+Sagatavo komentāru TIKAI šai avota sadaļai klienta atskaitei.
+Prioritāte: unikālie fakti no „${blockLabel}” + īss salīdzinājums ar citiem avotiem (kas sakrīt / kas atšķiras).
+${mileageHint}Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain: input.existingDraftPlain,

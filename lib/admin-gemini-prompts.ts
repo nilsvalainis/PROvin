@@ -48,6 +48,11 @@ CROSS-SOURCE DISCIPLINE (all field types):
 - Never invent facts absent from the provided context.
 - Reconcile CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, listing, and expert notes; state conflicts clearly for the client.
 
+FIELD DIVISION & ANTI-REPETITION (critical — client PDF must not feel copy-pasted):
+- „NOBRAUKUMA VĒSTURES KOMENTĀRS” is the ONLY place for the full chronological mileage synthesis: lineārums, annual averages, motorstundas / city–highway profile, multi-source odometer correlation, data vacuum narrative, and global odometer-risk conclusions.
+- Per-source „Komentāri”, negadījumu kopsavilkums, and other expert fields: emphasize what THAT source uniquely shows + a brief comparison (what matches / differs). Do NOT rewrite the same full mileage story, the same vacuum essay, or the same closing risk paragraph in every block.
+- When other expert comments already exist in the prompt: treat them as covered ground — add deltas only; never paraphrase the same facts at similar length.
+
 DATA FORENSICS (mileage, incidents, source comments, summary — when timeline data exists):
 - Do not blindly copy dates/km — correlate across sources and flag hidden gaps or contradictions.
 - Registration/import vs sale: if >3 weeks between first registration in destination country and actual sale without explanation, warn that "slēpta uzturēšana" may indicate pre-sale repair, odometer correction, or document issues (only when dates support it).
@@ -277,43 +282,43 @@ function geminiSourceBlockExtraRules(blockLabel: string): string {
     return `
 
 CSDD FOCUS:
-- Ownership chain, first registration in Latvia, TA history, defects, restrictions, and mileage curve vs import origin.
-- Tie administrative dates to probabilistic usage profile and engine-hour logic for Latvian buyers.`;
+- Ownership chain, first registration in Latvia, TA history, defects, restrictions — CSDD-unique administrative facts.
+- Brief note if CSDD km/TA dates conflict with other sources; do not rewrite the full multi-source odometer essay (that is the mileage comment).`;
   }
   if (blockLabel === L.autodna) {
     return `
 
 AUTODNA FOCUS:
-- Odometer timeline vs damage/loss events (Transportlīdzekļa zaudējumu apjoms); Status Center and registration facts.
-- Interpret EUR loss bands and country codes; cross-check with CSDD/CarVertical mileage.`;
+- Damage/loss events (Transportlīdzekļa zaudējumu apjoms), Status Center, registration facts unique to AutoDNA.
+- Interpret EUR loss bands and country codes; one short km cross-check vs CSDD/CarVertical only if this source adds a new conflict — do not restate the full odometer essay.`;
   }
   if (blockLabel === L.carvertical) {
     return `
 
 CARVERTICAL FOCUS:
-- Body damage zones (Virsbūves bojājums), insurance claims, timeline events, and mileage consistency.
-- Explain what damage sides/groups mean for repair quality and residual risk.`;
+- Body damage zones (Virsbūves bojājums), insurance claims, and timeline events unique to CarVertical.
+- Explain what damage sides/groups mean for repair quality; brief mileage consistency note only if CV differs from other sources.`;
   }
   if (blockLabel === L.ltab) {
     return `
 
 LTAB / OCTA FOCUS:
 - Insurance accidents with dates, EUR amounts, and countries; policy context if present.
-- Relate claims to ownership period and unified mileage — flag gaps or duplicate reporting vs other sources.`;
+- Relate claims to ownership period; flag duplicate reporting vs other sources — do not rewrite the full mileage synthesis.`;
   }
   if (blockLabel === L.auto_records) {
     return `
 
 DEALER / OUTVIN FOCUS:
 - Type code, engine code, equipment, accident/stolen checks, dealer service journal — not only the km table.
-- Explain fleet/taxi/commercial type-code signals; correlate with CSDD/AutoDNA/CarVertical and engine-hour logic.`;
+- Explain fleet/taxi/commercial type-code signals; one brief km/date cross-check vs CSDD/AutoDNA/CarVertical — leave engine-hour narrative to the mileage comment.`;
   }
   if (blockLabel === L.citi_avoti) {
     return `
 
 CITI AVOTI FOCUS:
-- Treat as full vendor-grade history (foreign HPI/registry/other issuers): mileage, claims, damage, timeline.
-- Name issuer-specific limitations; cross-check contradictions vs AutoDNA, CarVertical, CSDD, LTAB.`;
+- Issuer-specific history this block uniquely adds (claims, damage, registry facts) — not a second copy of AutoDNA/CarVertical essays.
+- Name issuer limitations; short contradiction flags vs other sources only.`;
   }
   if (blockLabel === L.tirgus) {
     return `
@@ -329,14 +334,17 @@ TIRGUS DATI FOCUS:
 export function geminiSourceCommentSystemPrompt(blockLabel: string): string {
   return `${PROVIN_EXPERT_SYSTEM_PROMPT}
 
-ACTIVE SOURCE BLOCK: ${blockLabel} — client PDF audit report expert commentary.
+ACTIVE SOURCE BLOCK: ${blockLabel} — client PDF audit report expert commentary for THIS source only.
 
 ${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
 ${geminiSourceBlockExtraRules(blockLabel)}
 
-- Compare with other portfolio sources and with previously generated expert comments when provided in the user prompt.
-- Do not repeat findings already covered in other source comments; extend, cross-check, or add source-specific depth.
-- Match the tone, paragraph rhythm, and **bold** hook style of any existing expert comments in the order — they are the canonical finished-report reference.
+DIVISION OF LABOUR (mandatory):
+- Primary content = facts, tables, and signals that THIS source uniquely provides (damage zones, TA defects, dealer codes, claims, Status Center, etc.).
+- Comparison = short (typically one paragraph or less): what matches or conflicts with other sources — not a second full audit.
+- Do NOT write the global mileage chronology, annual km averages, motorstundas profile, or data-vacuum essay here — that belongs exclusively in „NOBRAUKUMA VĒSTURES KOMENTĀRS”. If this source only confirms the same km line, say so in one sentence and move on to unique content.
+- If previously generated expert comments (other sources or mileage) appear in the user prompt: do not paraphrase them; only add what is still missing for ${blockLabel}.
+- Match the tone, paragraph rhythm, and **bold** hook style of any existing expert comments — extend format, do not duplicate substance.
 - Do not invent facts. No section headings in output. No AI meta-commentary.
 - Every paragraph opens with **bold** topic hook; never start a line with "- ", "•", or "*".`;
 }
@@ -354,7 +362,7 @@ ${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
 Rezultāts:
 - Obligāti salīdzini visus negadījumu ierakstus starp avotiem (AutoDNA, CarVertical, LTAB, Citi avoti, AUTO RECORDS)
 - Norādi datumus, zaudējumu summas (ja pieejamas), avotu atšķirības un pretrunas ar **bold** uz kritiskām summām
-- Saista ar nobraukuma un īpašniecības laika līniju; interpretē, ko tas nozīmē pircējam Latvijā
+- Īsi saista ar īpašniecības/km logu tikai tad, ja tas skaidro negadījuma kontekstu — NEATKĀRTO pilnu nobraukuma forenziku (tā ir „NOBRAUKUMA VĒSTURES KOMENTĀRĀ”)
 - Ja negadījumu nav — skaidri norādi, ka avotos nav fiksētu negadījumu vai apdrošināšanas izmaksu; salīdzini avotus (piemin, kurus pārbaudīji) un pievieno saprātīgu atrunu, ka tas neizslēdz nefiksētu negadījumu vai kosmētisku krāsojumu (neizdomā faktus)
 - Bez virsraksta un bez meta-komentāriem par AI`,
 );
@@ -363,18 +371,19 @@ export const GEMINI_MILEAGE_COMMENT_SYSTEM = provinFieldAgentPrompt(
   "MILEAGE (Nobraukuma vēsture — NOBRAUKUMA VĒSTURES KOMENTĀRS)",
   `${GEMINI_CLIENT_PDF_EXPERT_MARKDOWN_RULES}
 
-Uzdevums: sagatavot komentāru laukam „NOBRAUKUMA VĒSTURES KOMENTĀRS” — tas drukājas PDF atskaitē zem nobraukuma grafika.
+Uzdevums: sagatavot komentāru laukam „NOBRAUKUMA VĒSTURES KOMENTĀRS” — tas drukājas PDF atskaitē zem nobraukuma grafika. Šis ir atskaites APKOPOJOŠAIS nobraukuma lauks: šeit drīkst (un vajag) sintezēt visu avotu odometra ainu vienā stāstā.
 
-Ievadā saņemsi pilnu pasūtījuma kontekstu (CSDD, AutoDNA, CarVertical, AUTO RECORDS, LTAB, Tirgus, vendor raw logs u.c.).
+Ievadā saņemsi pilnu pasūtījuma kontekstu (CSDD, AutoDNA, CarVertical, AUTO RECORDS, LTAB, Tirgus, vendor raw logs u.c.). Ja jau ir avotu „Komentāri”, izmanto tos kā izeju, bet NEATKĀRTO to bojājumu/TA/dīlera tekstu — fokusējas uz nobraukumu.
 
 ${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
 
-Rezultāts:
-- Hronoloģiski analizē apvienotos nobraukuma ierakstus visos avotos; interpretē lineārumu, platos un kritiskos kritumus
+Rezultāts (šī lauka mandāts — atšķirībā no avotu komentāriem):
+- Hronoloģiski analizē apvienotos nobraukuma ierakstus visos avotos; interpretē lineārumu, platos, kritiskos kritumus, datu vakuumus
 - Lieto motorstundu / pilsētas–šosejas loģiku, ja dati to atļauj; **bold** uz km, datumiem un anomālijām
-- Salīdzini ar reģistrācijas/īpašniecības un dīlera datiem; nelielas pretrunas norādi loģiski, izceļ tikai būtiskas
+- Salīdzini avotu km līknes un reģistrācijas/īpašniecības/dīlera atskaites punktus; izceļ tikai būtiskas pretrunas
 - Ja dati ir ierobežoti — norādi, ko vēl pārbaudīt; neizdomā faktus
-- Bez virsraksta un bez meta-komentāriem par AI`,
+- Bez virsraksta un bez meta-komentāriem par AI
+- LENGTH: thorough synthesis is appropriate here (typically fuller than a single source comment)`,
 );
 
 export const GEMINI_SOURCES_COMPARISON_SYSTEM = `${provinFieldAgentPrompt(

@@ -49,10 +49,10 @@ export function normalizeProvinExpertGeminiComment(raw: string | undefined | nul
 /** Gatavo PROVIN audita atskaišu komentāru paraugi — few-shot stils ✨ ģeneratoram. */
 export const PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES = `FEW-SHOT STYLE EXAMPLES (match this exact paragraph structure, bold hooks, and tone):
 
-Example 1 (CSDD & nobraukums):
-"**Nobraukuma vēsture un datu vakuums.** Automašīna Latvijā pirmo reizi reģistrēta **2016. gada 22. janvārī**, kā izcelsmes valsti norādot Vāciju. Latvijas ekspluatācijas periodā fiksētā nobraukuma līkne ir konsekventa, sasniedzot **274 726 kilometrus**. Tomēr kā būtiskākais riska faktors jāuzsver **pilnīgs astoņu gadu datu vakuums** (2007–2015) pirms ievešanas Baltijā.
+Example 1 (CSDD — avota fokuss, nevis pilna nobraukuma eseja):
+"**Pirmā reģistrācija Latvijā.** Automašīna CSDD datos Latvijā pirmo reizi reģistrēta **2016. gada 22. janvārī**, kā izcelsmes valsti norādot Vāciju; īpašnieku maiņu ķēde pēc importa ir īsa un bez ierobežojumu atzīmēm.
 
-**Taksometra statuss un nobraukuma risks.** Ņemot vērā dīlera datos apstiprināto taksometra statusu (**kods 937**), šādā periodā reālais nobraukums Eiropā loģiski sasniegtu **400 000 līdz 550 000 kilometru**. Pastāv ekstremāli augsts risks, ka odometra rādītājs pirms reģistrācijas Latvijā ir ticis samazināts par vairākiem simtiem tūkstošu kilometru."
+**Tehnisko apskašu tendence.** Pamata pārbaudi ar pirmo reizi nav izgājusi **sešas reizes**; hroniski atkārtojas korozija, eļļas noplūdes un priekšējā tilta brīvkustības. Salīdzinājumā ar AutoDNA/CarVertical CSDD šeit ir vienīgais avots ar atkārtotu TA defektu sēriju."
 
 Example 2 (CSDD tehniskā apskate):
 "**Tehnisko apskašu vēsture.** Automašīna nav izgājusi pamatpārbaudi ar pirmo reizi **kopumā sešas reizes**, pēdējo reizi novērtējumu '2' saņemot **2025. gada 16. decembrī**. Sistēmā hroniski atkārtojas vieni un tie paši defekti: progresējoša nesošo elementu korozija, pastāvīgas eļļas noplūdes no motora un transmisijas, kā arī brīvkustības priekšējā tilta svirās.
@@ -65,24 +65,24 @@ Example 3 (negadījumi):
 **Praktiskā nozīme pircējam.** Pat ja summas nav milzīgas, šāds ieraksts obligāti jāsasaista ar virsbūves stāvokli klātienē — īpaši krāsas biezums, šuvju platums un panelu simetrija. Bez fiziskas pārbaudes nevar izslēgt strukturālu remontu vai slēptu kosmētiku."
 
 Example 4 (cena / tirgus):
-"**Cenas pozīcija Latvijas tirgū.** Sludinājumā norādītā cena **14 900 €** atbilst vidējam līmenim ss.lv segmentā šim modeļa gadam un dzinējam, tomēr **nobraukums 218 000 km** un iepriekš minētais datu vakuums samazina faktisko vērtību salīdzinājumā ar līdzīgiem auto ar pilnu servisa vēsturi.
+"**Cenas pozīcija Latvijas tirgū.** Sludinājumā norādītā cena **14 900 €** atbilst vidējam līmenim ss.lv segmentā šim modeļa gadam un dzinējam, tomēr **nobraukums 218 000 km** un ierobežota servisa dokumentācija samazina faktisko vērtību pret līdzīgiem auto ar pilnu vēsturi.
 
 **Importa un izsoles konteksts.** IRISS dati rāda līdzīgus eksemplārus Vācijas wholesale segmentā **11 500–12 800 €** apmērā, kas pēc loģiskā uzcenojuma, reģistrācijas un risku rezerves atstāj ierobežotu telpu sarunām par cenu samazinājumu."
 
-Example 5 (AutoDNA — bojājumi):
-"**Apdrošināšanas un zaudējumu ieraksti.** AutoDNA fiksē **2018. gada martā** Vācijā reģistrētu negadījumu ar zaudējumu **2 930 €**, bojājot galvenokārt priekšējo labo sānu un priekšējo kreiso durvi. Ieraksts ir konsekvents ar CarVertical laika līniju, kas norāda uz strukturālu remontu, nevis kosmētisku skrāpējumu.
+Example 5 (AutoDNA — bojājumi; īss salīdzinājums, bez nobraukuma pārstāsta):
+"**Apdrošināšanas un zaudējumu ieraksti.** AutoDNA fiksē **2018. gada martā** Vācijā reģistrētu negadījumu ar zaudējumu **2 930 €**, bojājot galvenokārt priekšējo labo sānu un priekšējo kreiso durvi. Pret CarVertical laika līniju datums sakrīt — AutoDNA šeit dod precīzāku summu un zonas.
 
-**Datu uzticamība.** Summas apmērs un bojājumu zonas liecina par vidēja smaguma sadursmi — obligāti jāsalīdzina ar virsbūves šuvju platumu, krāsas biezumu un panelu simetriju klātienē, jo CSDD/LTAB šim periodam konkrētu izmaksu neuzrāda."
+**Datu asinhronija.** CSDD/LTAB šim periodam konkrētu izmaksu neuzrāda; praktiski tas nozīmē, ka virsbūves kvalitāte jāpārbauda klātienē, nevis jāatkārto visa odometra stāsta no citiem avotiem."
 
 Example 6 (AUTO RECORDS / dīlera dati):
-"**Dīlera servisa vēsture un komerciālais konteksts.** Outvin datos automašīna klasificēta ar tipa kodu, kas atbilst taksometra/komerciālai ekspluatācijai (**937**), un servisa žurnālā redzamas regulāras apkopes ik **15 000–18 000 km** Vācijā pirms ievešanas. Tas neizslēdz intensīvu pilsētas režīmu, bet norāda, ka uzturēšana nav bijusi pilnīgi ignorēta.
+"**Dīlera servisa vēsture un komerciālais konteksts.** Outvin datos automašīna klasificēta ar tipa kodu, kas atbilst taksometra/komerciālai ekspluatācijai (**937**), un servisa žurnālā redzamas regulāras apkopes ik **15 000–18 000 km** Vācijā pirms ievešanas. Šis ir unikāls dīlera signāls, ko CSDD/AutoDNA tabulas nesniedz.
 
-**Nobraukuma korelācija.** Pēdējais fiksētais nobraukums dīlera ierakstā (**198 420 km**, **2023. gada augusts**) ir jāsalīdzina ar CSDD un AutoDNA līknēm — jebkura nesaskaņa pēc importa ir augsta prioritāte pircējam."
+**Īss km salīdzinājums.** Pēdējais dīlera fiksējums (**198 420 km**, **2023. gada augusts**) sakrīt ar CSDD/AutoDNA līkni tajā pašā logā — detalizēto nobraukuma forenziku atstāj „NOBRAUKUMA VĒSTURES KOMENTĀRAM”."
 
-Example 7 (nobraukuma komentārs):
+Example 7 (NOBRAUKUMA VĒSTURES KOMENTĀRS — vienīgā vieta pilnai apkopošanai):
 "**Hronoloģija un lineārums.** Visos pieejamajos avotos nobraukuma līkne ir lineāra ar vidēji **22 000–24 000 km gadā** pēc pirmās reģistrācijas Vācijā **2014. gadā**; kritiski kritumi nav konstatēti. Automašīnas profils atbilst šosejas režīmam ar zemāku motorstundu slodzi nekā tipiskam Rīgas pilsētas auto.
 
-**Datu blīvums.** Ieraksti ir bieži (reizi 6–12 mēnešos), kas ļauj objektīvi secināt par braukšanas režīmu; tomēr pēdējais gads pirms pārdošanas Latvijā ir ar retākiem fiksējumiem, tāpēc klātienē jāpārbauda odometrs un servisa uzlīmes pret pēdējiem datiem."`;
+**Datu blīvums un vakuums.** Ieraksti ir bieži (reizi 6–12 mēnešos), kas ļauj objektīvi secināt par braukšanas režīmu; tomēr pirms ievešanas Latvijā ir **astoņu gadu datu vakuums** (2007–2015), un ņemot vērā dīlera **kodu 937**, reālais Eiropas nobraukums varētu būt ievērojami augstāks — šī ir atskaites apkopojošā nobraukuma interpretācija."`;
 
 const PDF_HYBRID_COMMENT_RULES = `COMMENTARY (mandatory) — hybrid "Factual Context + Anomalies":
 1. NEVER suppress normal context: damage zones, body sides, dealer/service milestones, registration facts, policy periods, Status Center notes, historical remarks — always extract as objective Latvian facts.
@@ -119,9 +119,10 @@ export const GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS
 export const HYBRID_COMMENT_RULES = `
 COMMENTARY RULES for PROVIN Senior Auto Expert:
 ${GEMINI_EXPERT_PARAGRAPH_PRESENTATION}
-- LENGTH: Target 800–1500 characters for source comments; thorough but not repetitive.
+- LENGTH: Target 600–1100 characters for per-source comments; thorough on THIS source, not a second full-report essay.
 - STYLE: Analytical, professional automotive forensic Latvian. No conversational fluff or meta-commentary.
 - LOGIC: Interpret contradictions and what findings mean for the buyer — do not only list raw facts.
+- ANTI-REPETITION (critical): Do NOT restate the same mileage timeline, annual averages, engine-hour essay, data-vacuum narrative, or global risk conclusion already suitable for „NOBRAUKUMA VĒSTURES KOMENTĀRS” or already written in other source comments. Per-source text = unique facts from THIS source + a short cross-check (1–2 sentences) vs other sources. Leave the full chronological mileage synthesis to the mileage-history comment field.
 `;
 
 /** Gemini PDF extract JSON — eksperta komentārs (visi avoti). */
