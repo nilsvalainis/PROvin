@@ -4,12 +4,14 @@
  *
  * 1) Teorētiskā līkne: pie back-roll (≥1000 km kritums) pieskaita nobraukuma nobīdi.
  * 2) Vidējais = (teorētiskais pēdējais − pirmais) / gadi.
- * 3) Intensīvākais periods = intervāls ar augstāko gada likmi uz teorētiskās līknes.
+ * 3) Intensīvākais periods = intervāls ≥90 dienas ar augstāko gada likmi uz teorētiskās līknes
+ *    (īsāki posmi = ceļojumi / datu kļūdas — neizmanto ikgadējai ekstrapolācijai).
  * 4) Rezerves: intervālu vidējais / pirmā reģistrācija — ja teorētiskā līkne nav pietiekama.
  */
 
 import type { CsddFormFields } from "@/lib/admin-source-blocks";
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
+import { countryLabelToIso2 } from "@/lib/country-names-lv";
 import {
   collectUnifiedMileageRows,
   filterDuplicateOdometerKmReadings,
@@ -18,6 +20,9 @@ import {
   type UnifiedMileageRow,
   type UnifiedMileageSourcePayload,
 } from "@/lib/unified-mileage";
+
+/** Minimālais intervāls intensīvākā perioda / intervālu vidējā aprēķinam (dienas). */
+export const MIN_INTENSIVE_INTERVAL_DAYS = 90;
 
 export type AverageAnnualMileageMethod =
   | "theoretical_span"
@@ -40,6 +45,7 @@ type MileagePoint = {
   t: number;
   km: number;
   dateDisplay: string;
+  country: string;
 };
 
 type TheoreticalPoint = MileagePoint & {
@@ -58,6 +64,10 @@ function yearsBetweenMs(fromMs: number, toMs: number): number {
   return Math.max(0, (toMs - fromMs) / (365.25 * 86_400_000));
 }
 
+function daysBetweenMs(fromMs: number, toMs: number): number {
+  return Math.max(0, (toMs - fromMs) / 86_400_000);
+}
+
 function formatKmLv(n: number): string {
   return Math.round(n).toLocaleString("lv-LV");
 }
@@ -65,6 +75,40 @@ function formatKmLv(n: number): string {
 function dayKeyUtc(ms: number): string {
   const d = new Date(ms);
   return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+}
+
+/** ISO → lokatīvs teikumam „fiksēts Nīderlandē”. */
+const ISO_LOCATIVE_LV: Record<string, string> = {
+  NL: "Nīderlandē",
+  LV: "Latvijā",
+  LT: "Lietuvā",
+  EE: "Igaunijā",
+  DE: "Vācijā",
+  BE: "Beļģijā",
+  FR: "Francijā",
+  DK: "Dānijā",
+  ES: "Spānijā",
+  IT: "Itālijā",
+  FI: "Somijā",
+  SE: "Zviedrijā",
+  PL: "Polijā",
+  AT: "Austrijā",
+  GB: "Apvienotajā Karalistē",
+  CH: "Šveicē",
+  CZ: "Čehijā",
+  SK: "Slovākijā",
+  HU: "Ungārijā",
+  US: "ASV",
+};
+
+function countryLocative(country: string): string | null {
+  const iso = countryLabelToIso2(country);
+  if (!iso) return null;
+  return ISO_LOCATIVE_LV[iso] ?? null;
+}
+
+function isLatviaCountry(country: string): boolean {
+  return countryLabelToIso2(country) === "LV";
 }
 
 /** Viena diena → maksimālais odometra rādījums (vairāki avoti). */
@@ -76,9 +120,10 @@ function pointsFromRows(rows: UnifiedMileageRow[]): MileagePoint[] {
     if (km === null) continue;
     const key = dayKeyUtc(r.sortableTime);
     const display = formatAutoRecordsDateForOutput(r.date) || r.date.trim();
+    const country = (r.country ?? "").trim();
     const prev = byDay.get(key);
     if (!prev || km > prev.km) {
-      byDay.set(key, { t: r.sortableTime, km, dateDisplay: display });
+      byDay.set(key, { t: r.sortableTime, km, dateDisplay: display, country });
     }
   }
   return [...byDay.values()].sort((a, b) => (a.t !== b.t ? a.t - b.t : a.km - b.km));
@@ -92,11 +137,15 @@ export function reconstructTheoreticalMileagePath(points: MileagePoint[]): {
   path: TheoreticalPoint[];
   correctedForAnomaly: boolean;
   totalRollbackKm: number;
+  /** Kritums tieši pirms LV ieraksta (tipiska importa atskrūvēšana). */
+  rollbackBeforeLvRegistration: boolean;
 } {
   const path: TheoreticalPoint[] = [];
   let offset = 0;
   let prevRaw: number | null = null;
+  let prevCountry = "";
   let totalRollbackKm = 0;
+  let rollbackBeforeLvRegistration = false;
 
   for (const p of points) {
     if (prevRaw !== null && p.km < prevRaw) {
@@ -104,6 +153,9 @@ export function reconstructTheoreticalMileagePath(points: MileagePoint[]): {
       if (drop >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM) {
         offset += drop;
         totalRollbackKm += drop;
+        if (isLatviaCountry(p.country) && prevCountry && !isLatviaCountry(prevCountry)) {
+          rollbackBeforeLvRegistration = true;
+        }
       }
     }
     path.push({
@@ -111,12 +163,14 @@ export function reconstructTheoreticalMileagePath(points: MileagePoint[]): {
       theoreticalKm: p.km + offset,
     });
     prevRaw = p.km;
+    prevCountry = p.country;
   }
 
   return {
     path,
     correctedForAnomaly: totalRollbackKm > 0,
     totalRollbackKm,
+    rollbackBeforeLvRegistration,
   };
 }
 
@@ -127,27 +181,37 @@ type PeakInterval = {
   toMs: number;
   kmPerYear: number;
   dKm: number;
+  country: string;
 };
 
+/**
+ * Augstākā gada likme starp jebkuriem punktiem ar ≥ {@link MIN_INTENSIVE_INTERVAL_DAYS} dienu starplaiku.
+ * Īsāki posmi (ceļojumi / kļūdas) netiek ņemti vērā — arī kā „kaimiņi”, kas sadala garāku posmu.
+ * Formula: (Δkm / dienas) × 365.25
+ */
 function findMostIntensiveInterval(path: TheoreticalPoint[]): PeakInterval | null {
   let best: PeakInterval | null = null;
-  for (let i = 1; i < path.length; i++) {
-    const a = path[i - 1]!;
-    const b = path[i]!;
-    const years = yearsBetweenMs(a.t, b.t);
-    const dKm = b.theoreticalKm - a.theoreticalKm;
-    if (years < 14 / 365.25 || dKm <= 0) continue;
-    const kmPerYear = dKm / years;
-    if (kmPerYear < 500 || kmPerYear > 200_000) continue;
-    if (!best || kmPerYear > best.kmPerYear) {
-      best = {
-        fromDisplay: a.dateDisplay,
-        toDisplay: b.dateDisplay,
-        fromMs: a.t,
-        toMs: b.t,
-        kmPerYear,
-        dKm,
-      };
+  for (let i = 0; i < path.length; i++) {
+    const a = path[i]!;
+    for (let j = i + 1; j < path.length; j++) {
+      const b = path[j]!;
+      const days = daysBetweenMs(a.t, b.t);
+      if (days < MIN_INTENSIVE_INTERVAL_DAYS) continue;
+      const dKm = b.theoreticalKm - a.theoreticalKm;
+      if (dKm <= 0) continue;
+      const kmPerYear = (dKm / days) * 365.25;
+      if (kmPerYear < 500 || kmPerYear > 200_000) continue;
+      if (!best || kmPerYear > best.kmPerYear) {
+        best = {
+          fromDisplay: a.dateDisplay,
+          toDisplay: b.dateDisplay,
+          fromMs: a.t,
+          toMs: b.t,
+          kmPerYear,
+          dKm,
+          country: b.country || a.country,
+        };
+      }
     }
   }
   return best;
@@ -157,16 +221,23 @@ function buildSentence(args: {
   kmPerYear: number;
   correctedForAnomaly: boolean;
   totalRollbackKm: number;
+  rollbackBeforeLvRegistration: boolean;
   peak: PeakInterval | null;
 }): string {
   const avg = formatKmLv(args.kmPerYear);
-  let sentence = args.correctedForAnomaly
-    ? `Saskaņā ar mūsu rīcībā esošajiem datiem un teorētiski koriģēto odometra vēsturi (ņemot vērā konstatētās nobraukuma neatbilstības aptuveni ${formatKmLv(args.totalRollbackKm)} km apmērā) transportlīdzekļa vidējais gada nobraukums ir aptuveni ${avg} km.`
-    : `Saskaņā ar mūsu rīcībā esošajiem datiem transportlīdzekļa vidējais gada nobraukums ir aptuveni ${avg} km.`;
+  let sentence: string;
+  if (args.correctedForAnomaly) {
+    const where = args.rollbackBeforeLvRegistration ? " pirms reģistrācijas Latvijā" : "";
+    sentence = `Saskaņā ar mūsu rīcībā esošajiem datiem un teorētiski koriģēto odometra vēsturi (ņemot vērā konstatēto nobraukuma samazināšanu par ${formatKmLv(args.totalRollbackKm)} km${where}), transportlīdzekļa vidējais gada nobraukums ir aptuveni ${avg} km.`;
+  } else {
+    sentence = `Saskaņā ar mūsu rīcībā esošajiem datiem transportlīdzekļa vidējais gada nobraukums ir aptuveni ${avg} km.`;
+  }
 
   if (args.peak) {
     const peakRate = formatKmLv(args.peak.kmPerYear);
-    sentence += ` Intensīvākais periods: no ${args.peak.fromDisplay} līdz ${args.peak.toDisplay} (aptuveni ${peakRate} km gadā).`;
+    const loc = countryLocative(args.peak.country);
+    const place = loc ? ` fiksēts ${loc}` : "";
+    sentence += ` Intensīvākais ticamais periods${place} no ${args.peak.fromDisplay} līdz ${args.peak.toDisplay} (aptuveni ${peakRate} km gadā).`;
   }
 
   return sentence;
@@ -176,6 +247,7 @@ function fromTheoreticalSpan(
   path: TheoreticalPoint[],
   correctedForAnomaly: boolean,
   totalRollbackKm: number,
+  rollbackBeforeLvRegistration: boolean,
 ): AverageAnnualMileageResult | null {
   if (path.length < 2) return null;
   const first = path[0]!;
@@ -194,37 +266,54 @@ function fromTheoreticalSpan(
     peakKmPerYear: peak ? Math.round(peak.kmPerYear) : undefined,
     peakFromDisplay: peak?.fromDisplay,
     peakToDisplay: peak?.toDisplay,
-    sentence: buildSentence({ kmPerYear, correctedForAnomaly, totalRollbackKm, peak }),
+    sentence: buildSentence({
+      kmPerYear,
+      correctedForAnomaly,
+      totalRollbackKm,
+      rollbackBeforeLvRegistration,
+      peak,
+    }),
   };
 }
 
-/** Rezerves bez teorētiskās korekcijas: intervālu aritmētiskais vidējais (tikai augoši posmi). */
+/** Rezerves bez teorētiskās korekcijas: vidējais no katra punkta līdz nākamajam ≥90d punktam; peak = max pāris ≥90d. */
 function fromIntervalMean(points: MileagePoint[]): AverageAnnualMileageResult | null {
   if (points.length < 2) return null;
-  const rates: number[] = [];
+  const consecutiveRates: number[] = [];
   let peak: PeakInterval | null = null;
-  for (let i = 1; i < points.length; i++) {
-    const a = points[i - 1]!;
-    const b = points[i]!;
-    const years = yearsBetweenMs(a.t, b.t);
-    const dKm = b.km - a.km;
-    if (years < 14 / 365.25 || dKm <= 0) continue;
-    const rate = dKm / years;
-    if (rate < 1 || rate > 150_000) continue;
-    rates.push(rate);
-    if (!peak || rate > peak.kmPerYear) {
-      peak = {
-        fromDisplay: a.dateDisplay,
-        toDisplay: b.dateDisplay,
-        fromMs: a.t,
-        toMs: b.t,
-        kmPerYear: rate,
-        dKm,
-      };
+
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i]!;
+    let nextRateTaken = false;
+    for (let j = i + 1; j < points.length; j++) {
+      const b = points[j]!;
+      const days = daysBetweenMs(a.t, b.t);
+      if (days < MIN_INTENSIVE_INTERVAL_DAYS) continue;
+      const dKm = b.km - a.km;
+      if (dKm <= 0) continue;
+      const rate = (dKm / days) * 365.25;
+      if (rate < 1 || rate > 150_000) continue;
+      if (!nextRateTaken) {
+        consecutiveRates.push(rate);
+        nextRateTaken = true;
+      }
+      if (!peak || rate > peak.kmPerYear) {
+        peak = {
+          fromDisplay: a.dateDisplay,
+          toDisplay: b.dateDisplay,
+          fromMs: a.t,
+          toMs: b.t,
+          kmPerYear: rate,
+          dKm,
+          country: b.country || a.country,
+        };
+      }
     }
   }
-  if (rates.length === 0) return null;
-  const kmPerYear = Math.round(rates.reduce((s, x) => s + x, 0) / rates.length);
+  if (consecutiveRates.length === 0) return null;
+  const kmPerYear = Math.round(
+    consecutiveRates.reduce((s, x) => s + x, 0) / consecutiveRates.length,
+  );
   if (kmPerYear < 1) return null;
   return {
     kmPerYear,
@@ -237,6 +326,7 @@ function fromIntervalMean(points: MileagePoint[]): AverageAnnualMileageResult | 
       kmPerYear,
       correctedForAnomaly: false,
       totalRollbackKm: 0,
+      rollbackBeforeLvRegistration: false,
       peak,
     }),
   };
@@ -258,27 +348,16 @@ function fromFirstRegistration(
   if (years < 0.25 || latest.km <= 0) return null;
   const kmPerYear = Math.round(latest.km / years);
   if (kmPerYear < 1 || kmPerYear > 150_000) return null;
-  const fromDisplay = formatAutoRecordsDateForOutput(firstReg) || firstReg;
-  const peak: PeakInterval = {
-    fromDisplay,
-    toDisplay: latest.dateDisplay,
-    fromMs: t0,
-    toMs: end,
-    kmPerYear,
-    dKm: latest.km,
-  };
   return {
     kmPerYear,
     method: "first_registration",
     correctedForAnomaly: false,
-    peakKmPerYear: kmPerYear,
-    peakFromDisplay: fromDisplay,
-    peakToDisplay: latest.dateDisplay,
     sentence: buildSentence({
       kmPerYear,
       correctedForAnomaly: false,
       totalRollbackKm: 0,
-      peak,
+      rollbackBeforeLvRegistration: false,
+      peak: null,
     }),
   };
 }
@@ -290,10 +369,11 @@ export function computeAverageAnnualMileage(args: {
 }): AverageAnnualMileageResult | null {
   const ref = args.referenceDate ?? new Date();
   const points = pointsFromRows(args.unifiedMileageRows);
-  const { path, correctedForAnomaly, totalRollbackKm } = reconstructTheoreticalMileagePath(points);
+  const { path, correctedForAnomaly, totalRollbackKm, rollbackBeforeLvRegistration } =
+    reconstructTheoreticalMileagePath(points);
 
   return (
-    fromTheoreticalSpan(path, correctedForAnomaly, totalRollbackKm) ??
+    fromTheoreticalSpan(path, correctedForAnomaly, totalRollbackKm, rollbackBeforeLvRegistration) ??
     fromIntervalMean(points) ??
     fromFirstRegistration(points, args.csddForm, ref)
   );
