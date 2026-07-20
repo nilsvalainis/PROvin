@@ -59,10 +59,15 @@ Example 2 (CSDD tehniskā apskate):
 
 **Dūmainības un dzinēja resursa signāli.** Atgāzu pārbaudes uzrāda nestabilitāti — iepriekšējos gados dūmainības koeficients ir sasniedzis kritisku **2.32 un 2.95 atzīmi**, kas liecina par dzinēja un degvielas sistēmas resursa izsīkumu, lai gan pēdējā apskatē fiksēts koeficients **0.58**."
 
-Example 3 (negadījumi):
-"**Apdrošināšanas ieraksti un avotu salīdzinājums.** CarVertical fiksē **2019. gada jūlijā** Vācijā reģistrētu negadījumu ar zaudējumu diapazonu **5 001–10 000 €**, savukārt LTAB un AutoDNA šim periodam konkrētu izmaksu neuzrāda. Šāda datu asinhronija tipiski nozīmē, ka daļa bojājumu tika novērsta ārpus oficiālās apdrošināšanas vai ieraksts nav nonācis visās datubāzēs.
+Example 3 (negadījumi — kontekstuāla summas interpretācija):
+"**Apdrošināšanas ieraksti un avotu salīdzinājums.** CarVertical fiksē **2019. gada jūlijā** Vācijā reģistrētu negadījumu ar zaudējumu diapazonu **5 001–10 000 €**, savukārt LTAB un AutoDNA šim periodam konkrētu izmaksu neuzrāda. Auto tajā brīdī bija **~8 gadus vecs** vidējā segmenta universālis — šāda summa šai klasei liecina par **būtisku**, ne tikai kosmētisku remontu, nevis par „dārgu mazā skrāpējuma” premium scenāriju.
 
-**Praktiskā nozīme pircējam.** Pat ja summas nav milzīgas, šāds ieraksts obligāti jāsasaista ar virsbūves stāvokli klātienē — īpaši krāsas biezums, šuvju platums un panelu simetrija. Bez fiziskas pārbaudes nevar izslēgt strukturālu remontu vai slēptu kosmētiku."
+**Praktiskā nozīme pircējam.** Pat ja LTAB neko nerāda, ierakstu jāsasaista ar virsbūves stāvokli klātienē — krāsas biezums, šuvju platums un panelu simetrija. Bez fiziskas pārbaudes nevar izslēgt strukturālu remontu."
+
+Example 3b (augsta summa, bet relatīvi neliels smagums premium klasē):
+"**Zaudējumu apjoms kontekstā.** AutoDNA fiksē **2022. gada februārī** Vācijā apdrošināšanas izmaksu **6 840 €**, bojājot priekšējo buferi un labo priekšējo lukturi. Incidenta brīdī automašīnai bija **~1 gads** un tā ir **premium** klase ar adaptīvo gaismu un parkošanās sensoriem — šāda summa šeit bieži atspoguļo dārgu OEM detaļu un dīlera darbu, ne obligāti smagu rāmi vai total loss.
+
+**Ko pārbaudīt klātienē.** Joprojām obligāta virsbūves pārbaude (šuvju platums, radar/stereo kamera aiz bufera), bet secinājums nav automātiski „katastrofāls negadījums” — gan izmaksas, gan bojājumu zonas jāvērtē kopā ar vecumu un klasi."
 
 Example 4 (cena / tirgus):
 "**Cenas pozīcija Latvijas tirgū.** Sludinājumā norādītā cena **14 900 €** atbilst vidējam līmenim ss.lv segmentā šim modeļa gadam un dzinējam, tomēr **nobraukums 218 000 km** un ierobežota servisa dokumentācija samazina faktisko vērtību pret līdzīgiem auto ar pilnu vēsturi.
@@ -108,6 +113,18 @@ ${PROVIN_REPORT_COPY_VOCABULARY}
 - STYLE REFERENCE: When the user prompt includes existing expert comments or drafts from this order, treat them as the canonical finished-report reference — match their paragraph rhythm, bold hooks, vocabulary ("automašīna"), and tone; extend with new facts, do not switch to a different format.
 `;
 
+/** Apdrošināšanas / zaudējumu summu interpretācija — ne absolūts skaitlis, bet konteksts. */
+export const GEMINI_DAMAGE_CLAIM_CONTEXT_RULES = `DAMAGE & CLAIM AMOUNT CONTEXT (mandatory when interpreting EUR loss / zaudējumu apjoms):
+- NEVER treat an insurance payout or loss amount as absolute crash severity in isolation — always calibrate against vehicle context available in the order (make/model/class, first registration year, age at incident date, equipment level, market where repaired, damaged zones if listed).
+- Context axes to weigh explicitly:
+  1) Vehicle age at incident — same EUR sum means very different structural risk on a 15-year budget car vs a 1-year-old premium car.
+  2) Class & new price tier — premium/luxury (Mercedes S/E, BMW 5/7, Audi A6/A8, Porsche, etc.) vs budget segment (old Fabia, Logan, Corolla base): high EUR on premium often reflects expensive parts, sensors, aluminum/carbon panels, dealer labor — not necessarily total loss or frame damage.
+  3) Equipment & construction complexity — matrix LED/ laser headlights, ADAS/radar in bumper, panoramic roof, air suspension, plug-in hybrid battery enclosure: even „small” parking damage can produce **5 000–15 000 €** invoices in Germany.
+  4) Repair market — German/DACH labor and OEM parts inflate totals vs Baltic cosmetic repairs; distinguish „expensive to fix” from „structurally totaled”.
+  5) Damage zones from data — correlate EUR with affected sides (bumper only vs structural pillars/dills); a moderate sum with multiple panels can still be serious on an old car.
+- Buyer-facing wording: state whether the sum suggests **relatīvi smagu** bojājumu šai auto klasei/vecumam, **dārgu, bet iespējams lokālu** premium remontu, vai **neskaidru** smagumu, ja trūkst zonu/aprīkojuma datu — never imply „milzīgs negadījums” from EUR alone without context.
+- Examples (logic, not templates): **5 000 €** on a **12-year-old** **~8 000 €** segment car **recently** → likely material damage relative to residual value. **5 000 €** on a **1-year-old premium** in **Germany** with front bumper + headlight zones → may be parking/low-speed impact with costly OEM parts — still requires paint-gauge inspection, but not automatically „write-off level”.`;
+
 /** Vēsturisko auditu konteksts — citu klientu gatavas atskaites ar līdzīgiem agregātiem. */
 export const GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS (cross-client reference — when present below):
 - These excerpts come from OTHER completed PROVIN audits with similar make/model/year, engine code, transmission, or fuel type — use them to reuse model-specific forensic patterns, inspection checklist themes, phrasing rhythm, and aggregate-specific advice (e.g. known weak points for that engine/gearbox generation).
@@ -122,6 +139,7 @@ ${GEMINI_EXPERT_PARAGRAPH_PRESENTATION}
 - LENGTH: Target 600–1100 characters for per-source comments; thorough on THIS source, not a second full-report essay.
 - STYLE: Analytical, professional automotive forensic Latvian. No conversational fluff or meta-commentary.
 - LOGIC: Interpret contradictions and what findings mean for the buyer — do not only list raw facts.
+${GEMINI_DAMAGE_CLAIM_CONTEXT_RULES}
 - ANTI-REPETITION (critical): Do NOT restate the same mileage timeline, annual averages, engine-hour essay, data-vacuum narrative, or global risk conclusion already suitable for „NOBRAUKUMA VĒSTURES KOMENTĀRS” or already written in other source comments. Per-source text = unique facts from THIS source + a short cross-check (1–2 sentences) vs other sources. Leave the full chronological mileage synthesis to the mileage-history comment field.
 `;
 

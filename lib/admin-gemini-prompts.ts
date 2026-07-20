@@ -2,6 +2,7 @@ import "server-only";
 
 import { SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import {
+  GEMINI_DAMAGE_CLAIM_CONTEXT_RULES,
   GEMINI_EXPERT_PARAGRAPH_PRESENTATION,
   GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES,
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
@@ -59,6 +60,7 @@ DATA FORENSICS (mileage, incidents, source comments, summary — when timeline d
 - Odometer: check chronological km across sources; note drops, impossible plateaus, or same-day swings; distinguish likely data-entry error from manipulation when evidence allows.
 - Align repairs, TA, ownership changes, and registration gaps with mileage and incident timelines.
 - For incidents: cross-check all accident records (AutoDNA, CarVertical, LTAB, other) against km and ownership periods.
+${GEMINI_DAMAGE_CLAIM_CONTEXT_RULES}
 
 REGIONAL MARKET & TECHNICAL CONTEXT (apply from origin/country/market signals in data — do not guess origin):
 - GERMANY / CENTRAL EUROPE: highway use — often clean undercarriage but stone chips (bumper, hood, windshield); continuous mechanical wear — service history matters.
@@ -96,6 +98,7 @@ CRITICAL ANALYSIS GUIDELINES:
 4. Data Asynchrony: If one database (e.g., LTAB/CarVertical) shows an accident but another (CSDD/AutoDNA) doesn't, flag this as database asynchrony and emphasize the necessity of physical paint-gauge inspection.
 5. Engine Hours Logic: Distinguish highway vs city driving profiles — high km/year with dense records may imply lower engine-hour stress than sparse Baltic city use; apply when mileage data supports it.
 6. Data Sufficiency: If the dataset is too sparse for a definitive driving-profile conclusion, state that objectively and outline probabilistic risks only.
+7. Claim Amount Context: Never label a EUR loss as „heavy” or „minor” without calibrating to vehicle age, class, equipment complexity, repair market, and damaged zones — high EUR on young premium German cars often means expensive parts/labor, not necessarily structural write-off; the same EUR on an old cheap car may imply severe damage relative to value.
 
 ${PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES}
 
@@ -290,21 +293,21 @@ CSDD FOCUS:
 
 AUTODNA FOCUS:
 - Damage/loss events (Transportlīdzekļa zaudējumu apjoms), Status Center, registration facts unique to AutoDNA.
-- Interpret EUR loss bands and country codes; one short km cross-check vs CSDD/CarVertical only if this source adds a new conflict — do not restate the full odometer essay.`;
+- Apply DAMAGE & CLAIM AMOUNT CONTEXT rules when interpreting EUR bands and country codes; one short km cross-check only if this source adds a new conflict.`;
   }
   if (blockLabel === L.carvertical) {
     return `
 
 CARVERTICAL FOCUS:
 - Body damage zones (Virsbūves bojājums), insurance claims, and timeline events unique to CarVertical.
-- Explain what damage sides/groups mean for repair quality; brief mileage consistency note only if CV differs from other sources.`;
+- Apply DAMAGE & CLAIM AMOUNT CONTEXT rules — correlate EUR with zones and vehicle age/class; brief mileage note only if CV differs from other sources.`;
   }
   if (blockLabel === L.ltab) {
     return `
 
 LTAB / OCTA FOCUS:
 - Insurance accidents with dates, EUR amounts, and countries; policy context if present.
-- Relate claims to ownership period; flag duplicate reporting vs other sources — do not rewrite the full mileage synthesis.`;
+- Apply DAMAGE & CLAIM AMOUNT CONTEXT rules when stating severity; flag duplicate reporting vs other sources — do not rewrite the full mileage synthesis.`;
   }
   if (blockLabel === L.auto_records) {
     return `
@@ -362,6 +365,8 @@ ${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
 Rezultāts:
 - Obligāti salīdzini visus negadījumu ierakstus starp avotiem (AutoDNA, CarVertical, LTAB, Citi avoti, AUTO RECORDS)
 - Norādi datumus, zaudējumu summas (ja pieejamas), avotu atšķirības un pretrunas ar **bold** uz kritiskām summām
+- Katru EUR summu interpretē pēc konteksta (auto vecums incidenta brīdī, klase, aprīkojums, remonta tirgus, bojājumu zonas) — nevis automātiski kā „smagu” vai „vieglu” tikai pēc skaitļa
+${GEMINI_DAMAGE_CLAIM_CONTEXT_RULES}
 - Īsi saista ar īpašniecības/km logu tikai tad, ja tas skaidro negadījuma kontekstu — NEATKĀRTO pilnu nobraukuma forenziku (tā ir „NOBRAUKUMA VĒSTURES KOMENTĀRĀ”)
 - Ja negadījumu nav — skaidri norādi, ka avotos nav fiksētu negadījumu vai apdrošināšanas izmaksu; salīdzini avotus (piemin, kurus pārbaudīji) un pievieno saprātīgu atrunu, ka tas neizslēdz nefiksētu negadījumu vai kosmētisku krāsojumu (neizdomā faktus)
 - Bez virsraksta un bez meta-komentāriem par AI`,
