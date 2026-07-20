@@ -54,6 +54,11 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 - Invent facts not present in order context (`lib/admin-gemini-order-context.ts`).
 - Let per-source ✨ comments restate the full mileage synthesis — that belongs in `GEMINI_MILEAGE_COMMENT_SYSTEM` / „NOBRAUKUMA VĒSTURES KOMENTĀRS”.
 
+## Prompt version & evals
+
+- Bump `PROVIN_GEMINI_PROMPT_VERSION` in `lib/gemini-prompt-version.ts` when changing client-facing prompt rules.
+- Regression: `lib/gemini-eval/` (golden comment fixtures + prompt invariant tests) — run via `npm test`.
+
 ## Related
 
 - [provin-expert-agent/reference.md](../provin-expert-agent/reference.md)

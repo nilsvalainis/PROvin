@@ -11,6 +11,7 @@ import {
   isTransientHttpStatus,
 } from "@/lib/gemini-model-failover";
 import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
+import { PROVIN_GEMINI_PROMPT_VERSION } from "@/lib/gemini-prompt-version";
 import {
   applyProvinReportCopyVocabulary,
   normalizeProvinExpertGeminiComment,
@@ -82,12 +83,14 @@ export async function runGeminiWithModelFailover<T>(opts: {
 
   const models = geminiFailoverModels(opts.primaryModel);
   let lastTransient: unknown = null;
+  const startedAt = Date.now();
 
   for (let round = 0; round < FAILOVER_BACKOFF_MS.length; round++) {
     const delayMs = FAILOVER_BACKOFF_MS[round];
     if (delayMs > 0) {
       console.warn(`${LOG_PREFIX} backoff_retry`, {
         label: opts.logLabel ?? "gemini",
+        promptVersion: PROVIN_GEMINI_PROMPT_VERSION,
         round,
         delayMs,
         models,
@@ -98,14 +101,14 @@ export async function runGeminiWithModelFailover<T>(opts: {
     for (const model of models) {
       try {
         const result = await opts.run(model);
-        if (model !== opts.primaryModel) {
-          console.info(`${LOG_PREFIX} failover_ok`, {
-            label: opts.logLabel ?? "gemini",
-            round,
-            primary: opts.primaryModel,
-            used: model,
-          });
-        }
+        console.info(`${LOG_PREFIX} ok`, {
+          label: opts.logLabel ?? "gemini",
+          promptVersion: PROVIN_GEMINI_PROMPT_VERSION,
+          primary: opts.primaryModel,
+          used: model,
+          failover: model !== opts.primaryModel,
+          latencyMs: Date.now() - startedAt,
+        });
         return result;
       } catch (e) {
         if (!isGeminiTransientError(e)) {
@@ -114,6 +117,7 @@ export async function runGeminiWithModelFailover<T>(opts: {
         lastTransient = e;
         console.warn(`${LOG_PREFIX} transient_error`, {
           label: opts.logLabel ?? "gemini",
+          promptVersion: PROVIN_GEMINI_PROMPT_VERSION,
           round,
           model,
           message: geminiErrorMessage(e).slice(0, 240),

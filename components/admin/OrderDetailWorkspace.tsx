@@ -1360,6 +1360,7 @@ export function OrderDetailWorkspace({
       fd.set("sourcesComparisonComment", edits.sourcesComparison);
       fd.set("sourceBlocks", JSON.stringify(cur.sourceBlocks));
       fd.set("generateComments", "true");
+      fd.set("modelTier", "pro");
       for (const p of pdfs) {
         const blob = await fetch(p.blobUrl).then((r) => r.blob());
         fd.append(

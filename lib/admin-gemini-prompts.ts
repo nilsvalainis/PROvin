@@ -1,6 +1,7 @@
 import "server-only";
 
 import { SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
+import { PROVIN_GEMINI_PROMPT_VERSION } from "@/lib/gemini-prompt-version";
 import {
   GEMINI_DAMAGE_CLAIM_CONTEXT_RULES,
   GEMINI_EXPERT_PARAGRAPH_PRESENTATION,
@@ -9,6 +10,8 @@ import {
   PROVIN_REPORT_COPY_VOCABULARY,
   SOURCE_BLOCK_COMMENT_GEMINI_RULES,
 } from "@/lib/source-summary-comment-format";
+
+export { PROVIN_GEMINI_PROMPT_VERSION };
 
 /**
  * Admin Gemini system prompts.
@@ -19,6 +22,8 @@ import {
  * **Grammar polish only:** `GEMINI_LV_POLISH_SYSTEM` — `/api/admin/ai-polish-lv` (`lib/admin-gemini-polish.ts`). Must NOT use field-agent rules.
  *
  * Canonical Cursor skills: `.cursor/skills/provin-field-agent/SKILL.md` (base tone/LV), `.cursor/skills/provin-expert-agent/SKILL.md` (domain), `.cursor/skills/provin-lv-polish/SKILL.md` (grammar polish only).
+ *
+ * Prompt version: bump `PROVIN_GEMINI_PROMPT_VERSION` in `lib/gemini-prompt-version.ts` when changing client-facing copy rules.
  */
 
 /** Admin ✨ gramatikas labošana (`/api/admin/ai-polish-lv`). Nav provin-field-agent. */

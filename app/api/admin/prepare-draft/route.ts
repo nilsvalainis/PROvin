@@ -9,6 +9,7 @@ import { getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
 import { mergeSourceBlocksFromBody, parseGeminiOrderContextFromBody } from "@/lib/admin-gemini-api-body";
 import { runPrepareDraftPipeline, type PrepareDraftPdfInput } from "@/lib/admin-prepare-draft";
 import { detectSourcePdfIngestTarget } from "@/lib/admin-source-pdf-detect";
+import { PROVIN_GEMINI_PROMPT_VERSION } from "@/lib/gemini-prompt-version";
 import {
   PDF_MAX_FILE_BYTES,
   PDF_MAX_FILES,
@@ -140,11 +141,17 @@ export async function POST(req: Request) {
       internalComment: form.get("internalComment"),
       mileageComment: form.get("mileageComment"),
       sourcesComparisonComment: form.get("sourcesComparisonComment"),
+      modelTier: form.get("modelTier"),
     },
     sourceBlocks,
   );
 
-  console.info(`${LOG_PREFIX} start`, { sessionId, pdfCount: pdfs.length, generateComments });
+  console.info(`${LOG_PREFIX} start`, {
+    sessionId,
+    pdfCount: pdfs.length,
+    generateComments,
+    modelTier: context.modelTier ?? "pro",
+  });
 
   try {
     const result = await runPrepareDraftPipeline({
@@ -156,7 +163,11 @@ export async function POST(req: Request) {
     const imported = result.steps.filter((s) => s.id.startsWith("pdf:") && s.status === "ok").length;
     console.info(`${LOG_PREFIX} ok`, { sessionId, imported, steps: result.steps.length });
 
-    return NextResponse.json({ ok: true, ...result });
+    return NextResponse.json({
+      ok: true,
+      promptVersion: PROVIN_GEMINI_PROMPT_VERSION,
+      ...result,
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error(`${LOG_PREFIX} failed`, { sessionId, msg });

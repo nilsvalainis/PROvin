@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
 import {
   autoRecordsBlockToPlainText,
   citiAvotiSectionLabel,
@@ -272,8 +273,39 @@ export function buildGeminiOrderContextText(input: GeminiOrderContextInput): str
   return parts.filter(Boolean).join("\n\n");
 }
 
-/** Pilns pasūtījuma + vēsturisko auditu konteksts ✨ ģenerēšanai. */
+const ORDER_CONTEXT_CACHE_TTL_MS = 60_000;
+const orderContextCache = new Map<string, { text: string; expiresAt: number }>();
+
+function orderContextCacheKey(input: GeminiOrderContextInput): string {
+  const payload = {
+    sessionId: input.sessionId,
+    vin: input.vin,
+    listingUrl: input.listingUrl,
+    customerName: input.customerName,
+    notes: input.notes,
+    sourceBlocks: input.sourceBlocks,
+    irissSummary: input.irissSummary,
+    inspectionPlan: input.inspectionPlan,
+    priceFit: input.priceFit,
+    extraSellerName: input.extraSellerName,
+    internalComment: input.internalComment,
+    mileageComment: input.mileageComment,
+    sourcesComparisonComment: input.sourcesComparisonComment,
+  };
+  return createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+}
+
+/** Notīra konteksta kešu (tests / pēc masveida draft izmaiņām). */
+export function invalidateGeminiOrderContextCache(): void {
+  orderContextCache.clear();
+}
+
+/** Pilns pasūtījuma + vēsturisko auditu konteksts ✨ ģenerēšanai (īss TTL kešs). */
 export async function buildFullGeminiOrderContextText(input: GeminiOrderContextInput): Promise<string> {
+  const cacheKey = orderContextCacheKey(input);
+  const hit = orderContextCache.get(cacheKey);
+  if (hit && hit.expiresAt > Date.now()) return hit.text;
+
   const base = buildGeminiOrderContextText(input);
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
   const historical = await buildHistoricalReportsGeminiContext({
@@ -281,6 +313,7 @@ export async function buildFullGeminiOrderContextText(input: GeminiOrderContextI
     sourceBlocks: blocks,
     vin: input.vin,
   });
-  if (!historical.trim()) return base;
-  return `${base}\n\n${historical}`;
+  const text = historical.trim() ? `${base}\n\n${historical}` : base;
+  orderContextCache.set(cacheKey, { text, expiresAt: Date.now() + ORDER_CONTEXT_CACHE_TTL_MS });
+  return text;
 }

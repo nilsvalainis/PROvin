@@ -272,13 +272,23 @@ export async function runPrepareDraftPipeline(input: {
     return { sourceBlocks: blocks, orderEdits, steps, warnings };
   }
 
-  const ctxBase: GeminiOrderContextInput = { ...input.context, sourceBlocks: blocks };
+  const modelTier = input.context.modelTier;
+  const ctxBase: GeminiOrderContextInput = { ...input.context, sourceBlocks: blocks, modelTier };
 
-  for (const blockKey of GEMINI_SOURCE_COMMENT_BLOCK_KEYS) {
+  /** Avotu komentāri paralēli — sākuma Prepare Draft brīdī sibling komentāru vēl nav; mileage/negadījumi secīgi pēc tam. */
+  const commentJobs = GEMINI_SOURCE_COMMENT_BLOCK_KEYS.map(async (blockKey) => {
     const stepId = `comment:${blockKey}`;
     if (!sourceBlockHasDataExcludingComments(blockKey, blocks)) {
-      steps.push({ id: stepId, label: `Komentārs: ${blockKey}`, status: "skipped", detail: "Nav avota datu" });
-      continue;
+      return {
+        blockKey,
+        step: {
+          id: stepId,
+          label: `Komentārs: ${blockKey}`,
+          status: "skipped" as const,
+          detail: "Nav avota datu",
+        },
+        html: null as string | null,
+      };
     }
     try {
       const existingPlain = adminRichHtmlToPlainText(
@@ -295,24 +305,44 @@ export async function runPrepareDraftPipeline(input: {
         internalComment: ctxBase.internalComment,
         mileageComment: ctxBase.mileageComment,
         existingDraftPlain: existingPlain,
+        modelTier,
       });
-      if (text.trim()) {
-        const html = plainCommentToHtml(blockKey, text);
-        const prevBlock = blocks[blockKey];
-        blocks = {
-          ...blocks,
-          [blockKey]: applySourceBlockGeneratedComment(blockKey, prevBlock, html),
-        };
-      }
-      steps.push({ id: stepId, label: `Komentārs: ${blockKey}`, status: "ok" });
+      const html = text.trim() ? plainCommentToHtml(blockKey, text) : null;
+      return {
+        blockKey,
+        step: { id: stepId, label: `Komentārs: ${blockKey}`, status: "ok" as const },
+        html,
+      };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      steps.push({ id: stepId, label: `Komentārs: ${blockKey}`, status: "error", detail: msg });
-      warnings.push(`Komentārs (${blockKey}): ${msg}`);
+      return {
+        blockKey,
+        step: {
+          id: stepId,
+          label: `Komentārs: ${blockKey}`,
+          status: "error" as const,
+          detail: msg,
+        },
+        html: null as string | null,
+        warning: `Komentārs (${blockKey}): ${msg}`,
+      };
+    }
+  });
+
+  const commentResults = await Promise.all(commentJobs);
+  for (const result of commentResults) {
+    steps.push(result.step);
+    if (result.warning) warnings.push(result.warning);
+    if (result.html) {
+      const prevBlock = blocks[result.blockKey];
+      blocks = {
+        ...blocks,
+        [result.blockKey]: applySourceBlockGeneratedComment(result.blockKey, prevBlock, result.html),
+      };
     }
   }
 
-  const ctxAfterComments: GeminiOrderContextInput = { ...ctxBase, sourceBlocks: blocks };
+  const ctxAfterComments: GeminiOrderContextInput = { ...ctxBase, sourceBlocks: blocks, modelTier };
 
   try {
     const mileageText = await generateMileageCommentWithGemini(ctxAfterComments);
