@@ -1041,7 +1041,7 @@ export function OrderDetailWorkspace({
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        setIrissSummary(geminiPlainTextToRichHtml(data.text));
+        setIrissSummary(geminiExpertSourceCommentToRichHtml(data.text));
       }
     } catch {
       setGeminiSummaryErr("Gemini: neizdevās savienoties");

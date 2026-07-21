@@ -80,4 +80,45 @@ describe("buildUnifiedMileageChartWrapHtml", () => {
       expect(xs[i]! - xs[i - 1]!).toBeGreaterThanOrEqual(30);
     }
   });
+
+  it("renders dramatic anomaly markers and rollback overlay", () => {
+    const rows: UnifiedMileageRow[] = [
+      {
+        date: "01.01.2020",
+        odometer: "100000",
+        country: "NL",
+        sortableTime: Date.UTC(2020, 0, 1),
+        sourceOrder: 0,
+        sourceLabel: "AutoDNA",
+      },
+      {
+        date: "01.01.2021",
+        odometer: "150000",
+        country: "NL",
+        sortableTime: Date.UTC(2021, 0, 1),
+        sourceOrder: 1,
+        sourceLabel: "AutoDNA",
+      },
+      {
+        date: "01.01.2022",
+        odometer: "80000",
+        country: "LV",
+        sortableTime: Date.UTC(2022, 0, 1),
+        sourceOrder: 2,
+        sourceLabel: "CSDD",
+      },
+    ];
+    const anomalyMap = new Map<number, boolean>([
+      [0, false],
+      [1, false],
+      [2, true],
+    ]);
+    const html = buildUnifiedMileageChartWrapHtml(rows, anomalyMap);
+    expect(html).toContain("pdf-mileage-chart-wrap--has-anomaly");
+    expect(html).toContain("pdf-mileage-chart-rollback");
+    expect(html).toContain("pdf-mileage-chart-anomaly-halo");
+    expect(html).toContain("pdf-mileage-chart-dot--anomaly");
+    expect(html).toContain("Odometra anomālija");
+    expect(html).toMatch(/r="5\.5"|r="6"/);
+  });
 });

@@ -49,6 +49,8 @@ describe("PROVIN Gemini prompt invariants", () => {
     expect(prompts).toContain("GEMINI_DAMAGE_CLAIM_CONTEXT_RULES");
     expect(prompts).toContain("PROVIN_GEMINI_PROMPT_VERSION");
     expect(prompts).toMatch(/NOBRAUKUMA VĒSTURES KOMENTĀRS/);
+    expect(prompts).toContain("GEMINI_CLIENT_PDF_EXPERT_MARKDOWN_RULES");
+    expect(prompts).toMatch(/APPROVED BY IRISS/);
   });
 
   it("polish uses Flash model", () => {

@@ -2,6 +2,7 @@
  * PDF / UI — nobraukuma līknes SVG (zila līnija; anomāliju punkti sarkani).
  */
 
+import { reconstructTheoreticalMileagePath } from "@/lib/average-annual-mileage";
 import { sortMileageChronological, parseOdometerKm, type UnifiedMileageRow } from "@/lib/unified-mileage";
 
 import { PDF_BRAND_BLUE_HEX } from "@/lib/client-report-pdf-layout-draft";
@@ -76,6 +77,14 @@ export function pickNonOverlappingYearTicks(
   return kept;
 }
 
+type ChartPlotPoint = {
+  x: number;
+  yTrend: number;
+  yRaw: number;
+  sourceOrder: number;
+  isAnomaly: boolean;
+};
+
 /**
  * @param anomalyBySourceOrder — no `computeOdometerAnomalyBySourceOrder`
  */
@@ -90,18 +99,36 @@ export function buildUnifiedMileageChartWrapHtml(
     .map((r) => {
       const km = parseOdometerKm(r.odometer);
       if (km == null || r.sortableTime === Number.NEGATIVE_INFINITY) return null;
-      return { year: new Date(r.sortableTime).getUTCFullYear(), time: r.sortableTime, km, sourceOrder: r.sourceOrder };
+      const display = r.date.trim();
+      return {
+        year: new Date(r.sortableTime).getUTCFullYear(),
+        time: r.sortableTime,
+        km,
+        sourceOrder: r.sourceOrder,
+        dateDisplay: display,
+      };
     })
-    .filter((x): x is { year: number; time: number; km: number; sourceOrder: number } => x != null);
+    .filter((x): x is { year: number; time: number; km: number; sourceOrder: number; dateDisplay: string } => x != null);
 
   if (series.length === 0) return "";
 
+  const { path: theoreticalPath, correctedForAnomaly } = reconstructTheoreticalMileagePath(
+    series.map((s) => ({ t: s.time, km: s.km, dateDisplay: s.dateDisplay, country: "" })),
+  );
+
   const tMin = series[0]!.time;
   const tMax = series[series.length - 1]!.time;
-  const yMin = series[0]!.year;
-  const yMax = series[series.length - 1]!.year;
-  let kmMin = Math.min(...series.map((s) => s.km));
-  let kmMax = Math.max(...series.map((s) => s.km));
+  const yStart = series[0]!.year;
+  const yEnd = series[series.length - 1]!.year;
+
+  let kmMin = Number.POSITIVE_INFINITY;
+  let kmMax = Number.NEGATIVE_INFINITY;
+  for (let i = 0; i < series.length; i++) {
+    const raw = series[i]!.km;
+    const theoretical = theoreticalPath[i]?.theoreticalKm ?? raw;
+    kmMin = Math.min(kmMin, raw, theoretical);
+    kmMax = Math.max(kmMax, raw, theoretical);
+  }
   if (kmMin === kmMax) {
     kmMin = Math.max(0, kmMin - 1);
     kmMax += 1;
@@ -125,17 +152,22 @@ export function buildUnifiedMileageChartWrapHtml(
   };
   const yOf = (km: number) => padT + plotH - ((km - kmMin) / (kmMax - kmMin)) * plotH;
 
-  const pts = series.map((s) => ({
-    x: xOf(s.time),
-    y: yOf(s.km),
-    sourceOrder: s.sourceOrder,
-  }));
-  const pathPts = pts.map((p) => ({ x: p.x, y: p.y }));
-  const pathD = linearSvgPath(pathPts);
-  const hasAnomaly = series.some((s) => anomalyBySourceOrder.get(s.sourceOrder) === true);
+  const plotPoints: ChartPlotPoint[] = series.map((s, i) => {
+    const theoretical = theoreticalPath[i]?.theoreticalKm ?? s.km;
+    const trendKm = correctedForAnomaly ? theoretical : s.km;
+    return {
+      x: xOf(s.time),
+      yTrend: yOf(trendKm),
+      yRaw: yOf(s.km),
+      sourceOrder: s.sourceOrder,
+      isAnomaly: anomalyBySourceOrder.get(s.sourceOrder) === true,
+    };
+  });
 
-  const yStart = yMin;
-  const yEnd = yMax;
+  const pathPts = plotPoints.map((p) => ({ x: p.x, y: p.yTrend }));
+  const pathD = linearSvgPath(pathPts);
+  const hasAnomaly = plotPoints.some((p) => p.isAnomaly);
+
   const yearSpan = Math.max(0, yEnd - yStart);
   const yearStep = yearSpan <= 10 ? 1 : yearSpan <= 20 ? 2 : 3;
   const tickSet = new Set<number>();
@@ -164,46 +196,76 @@ export function buildUnifiedMileageChartWrapHtml(
     );
   }
 
+  const rollbackOverlays: string[] = [];
+  const anomalyMarkers: string[] = [];
+  for (let i = 0; i < plotPoints.length; i++) {
+    const p = plotPoints[i]!;
+    if (!p.isAnomaly) continue;
+    const prev = i > 0 ? plotPoints[i - 1]! : null;
+    if (prev) {
+      rollbackOverlays.push(
+        `<line class="pdf-mileage-chart-rollback" x1="${prev.x.toFixed(1)}" y1="${prev.yRaw.toFixed(1)}" x2="${p.x.toFixed(1)}" y2="${p.yRaw.toFixed(1)}" />`,
+      );
+    }
+    const haloR = compact ? 10 : 11;
+    const dotR = compact ? 5.5 : 6;
+    anomalyMarkers.push(
+      `<line class="pdf-mileage-chart-anomaly-pin" x1="${p.x.toFixed(1)}" y1="${(p.yRaw + haloR + 2).toFixed(1)}" x2="${p.x.toFixed(1)}" y2="${(padT + plotH).toFixed(1)}" />`,
+      `<circle class="pdf-mileage-chart-anomaly-halo" cx="${p.x.toFixed(1)}" cy="${p.yRaw.toFixed(1)}" r="${haloR}" />`,
+      `<circle class="pdf-mileage-chart-dot pdf-mileage-chart-dot--anomaly" cx="${p.x.toFixed(1)}" cy="${p.yRaw.toFixed(1)}" r="${dotR}" />`,
+    );
+  }
+
   const dotR = series.length === 1 ? 4 : 3;
   const maxNormalDots = compact ? 6 : 7;
   const visibleDotSourceOrders = new Set<number>();
-  if (hasAnomaly || pts.length <= maxNormalDots) {
-    for (const p of pts) visibleDotSourceOrders.add(p.sourceOrder);
+  if (hasAnomaly || plotPoints.length <= maxNormalDots) {
+    for (const p of plotPoints) visibleDotSourceOrders.add(p.sourceOrder);
   } else {
-    visibleDotSourceOrders.add(pts[0]!.sourceOrder);
-    visibleDotSourceOrders.add(pts[pts.length - 1]!.sourceOrder);
+    visibleDotSourceOrders.add(plotPoints[0]!.sourceOrder);
+    visibleDotSourceOrders.add(plotPoints[plotPoints.length - 1]!.sourceOrder);
     const midSlots = Math.max(0, maxNormalDots - 2);
     for (let i = 1; i <= midSlots; i++) {
-      const idx = Math.round((i * (pts.length - 1)) / (midSlots + 1));
-      visibleDotSourceOrders.add(pts[idx]!.sourceOrder);
+      const idx = Math.round((i * (plotPoints.length - 1)) / (midSlots + 1));
+      visibleDotSourceOrders.add(plotPoints[idx]!.sourceOrder);
     }
   }
-  const dots = pts
-    .filter((p) => visibleDotSourceOrders.has(p.sourceOrder))
+  for (const p of plotPoints) {
+    if (p.isAnomaly) visibleDotSourceOrders.add(p.sourceOrder);
+  }
+
+  const normalDots = plotPoints
+    .filter((p) => visibleDotSourceOrders.has(p.sourceOrder) && !p.isAnomaly)
     .map((p) => {
-      const anom = anomalyBySourceOrder.get(p.sourceOrder) === true;
-      const cls = anom ? "pdf-mileage-chart-dot pdf-mileage-chart-dot--anomaly" : "pdf-mileage-chart-dot";
-      return `<circle class="${cls}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${dotR}" />`;
+      return `<circle class="pdf-mileage-chart-dot" cx="${p.x.toFixed(1)}" cy="${p.yTrend.toFixed(1)}" r="${dotR}" />`;
     })
     .join("");
 
   const pathHtml =
     series.length === 1 ? "" : `<path class="pdf-mileage-chart-path" fill="none" d="${pathD}" />`;
 
+  const legendAnomaly = hasAnomaly
+    ? `<span class="pdf-mileage-chart-legend-anomaly" aria-hidden="true"><span class="pdf-mileage-chart-legend-anomaly-dot"></span><span class="pdf-mileage-chart-legend-text">Odometra anomālija</span></span>`
+    : "";
+
   const svgInner = `
 <svg class="pdf-mileage-chart-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Nobraukuma līkne pēc gada">
   ${gridLines.join("\n  ")}
+  ${rollbackOverlays.join("\n  ")}
   ${pathHtml}
-  ${dots}
+  ${normalDots}
+  ${anomalyMarkers.join("\n  ")}
   ${yearLabels.join("\n  ")}
 </svg>
 <div class="pdf-mileage-chart-legend">
   <span class="pdf-mileage-chart-legend-line" aria-hidden="true"></span>
   <span class="pdf-mileage-chart-legend-text">Nobraukums</span>
+  ${legendAnomaly}
 </div>`.trim();
 
   const wrapCls = compact ? "pdf-mileage-chart-wrap pdf-mileage-chart-wrap--compact" : "pdf-mileage-chart-wrap";
-  return `<div class="${wrapCls}">${svgInner}</div>`;
+  const anomalyCls = hasAnomaly ? " pdf-mileage-chart-wrap--has-anomaly" : "";
+  return `<div class="${wrapCls}${anomalyCls}">${svgInner}</div>`;
 }
 
 export { PDF_MILEAGE_CHART_LINE, PDF_MILEAGE_CHART_GRID, PDF_MILEAGE_CHART_AXIS };

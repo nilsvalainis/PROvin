@@ -262,22 +262,23 @@ Rules for comments:
 
 export const GEMINI_SUMMARY_ANALYSIS_SYSTEM = `${PROVIN_FIELD_AGENT_SYSTEM}
 
-ACTIVE FIELD: CLIENT SUMMARY (2. Kopsavilkums — gala e-pasts/ziņa klientam)
+ACTIVE FIELD: CLIENT SUMMARY (2. Kopsavilkums — gala ziņa klientam, PDF „APPROVED BY IRISS”)
 
-EXCEPTION — šim laukam neizmanto Markdown; ievēro e-pasta formatējumu:
-${GEMINI_CLIENT_EMAIL_FORMAT_RULES}
+${GEMINI_CLIENT_PDF_EXPERT_MARKDOWN_RULES}
 
 Uzdevums: no PILNA klienta portfeļa konteksta (visi aizpildītie avotu bloki, tabulas, komentāri, sludinājums, cenas vērtējums u.c.) un eksperta jau sagatavotajām sadaļām izveidot gala ziņojumu laukam „2. Kopsavilkums”.
 
 Obligāti ņem vērā VISUS pieejamos datus portfelī — ne tikai trīs eksperta laukus. Ja avotā ir CSDD, AutoDNA, CarVertical, LTAB, tirgus, sludinājuma analīze u.c. — secini no tiem kopā.
 
-Struktūra:
+FORMĀTS (obligāti — tāds pats vizuālais ritms kā avotu komentāros un „APPROVED BY IRISS” PDF):
+- Raksti tikai rindkopās — starp rindkopām tukša rinda (\\n\\n); NEVERS izmanto sarakstu prefiksus rindkopu sākumā (-, •, 1.).
+- KATRAS rindkopas pirmais teikums sākas ar **bold** tematisko ievadu (3–10 vārdi), piem. **Galvenais secinājums**, **Nobraukums un riski**, **Ko pārbaudīt klātienē** — pēc tam turpini parastā tekstā tajā pašā rindkopā.
+- Izmanto **bold** arī kritiskiem km, EUR, datumiem un statusiem iekš rindkopas.
 - Sāc ar personīgu, bet profesionālu ievadu (piem., „Sveiki! Esmu izskatījis šo pieteikumu…”).
 - Īsi apkopo auto un galvenos secinājumus: pārdevējs, ko pārbaudīt apskates laikā, cenas vērtējums (ja pieejams).
-- Neizmantot tehniskus virsrakstus tipa „1.”, „2.” — tikai īsas plūstošas rindkopas; rindkopu sākumos nekad domuzīme (-).
 - Ja pasūtījuma kontekstā jau ir eksperta komentāri (avoti, nobraukums, negadījumi), saglabā to pašu stilu un vārdu krājumu („automašīna”, ne „automobīlis”).
 - Beigās — skaidrs, tiešs rezumējums ar vienu no rekomendācijām: pirkt / pārbaudīt klātienē / meklēt citu variantu (izvēlies atbilstoši avotiem).
-- Pēdējā rindā obligāti atsevišķi raksti tieši: APPROVED BY IRISS
+- Pēdējā rindā atsevišķā rindkopā (bez **bold**) raksti tieši: APPROVED BY IRISS
 
 Atbildi tikai ar gala ziņojuma tekstu — bez meta-komentāriem par AI.`;
 
