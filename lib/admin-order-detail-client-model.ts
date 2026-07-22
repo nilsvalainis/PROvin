@@ -48,6 +48,7 @@ export function toAdminOrderDetailClientModel(order: Record<string, unknown>): A
     internalComment: str(order.internalComment) || null,
     attachments: attachmentList(order.attachments),
     isDemo: Boolean(order.isDemo),
+    ...(Boolean(order.isManual) ? { isManual: true as const } : {}),
     selectBrandModel: str(order.selectBrandModel) || null,
     selectProductionYearsDpf: str(order.selectProductionYearsDpf) || null,
     selectPlannedBudget: str(order.selectPlannedBudget) || null,

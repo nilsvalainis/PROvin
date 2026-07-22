@@ -10,6 +10,7 @@ import {
 import { deleteNotifyBlobUrls, fetchNotifyBlobAttachmentsForEmail } from "@/lib/email/notify-blob-attachments-fetch";
 import { isSmtpConfigured, sendReportReadyEmail, type ReportReadyMailAttachment } from "@/lib/email/send-transactional";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
+import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import { isValidOrderEmail, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 /** Stripe metadata var būt tukšs; VIN bieži ir tikai admina melnrakstā (`orderEdits.vin`). */
@@ -140,18 +141,24 @@ export async function POST(req: Request) {
   if (!order) {
     return NextResponse.json({ error: "not_found", message: "Pasūtījums nav atrasts." }, { status: 404 });
   }
-  const orderPaymentStatus = String(order.paymentStatus ?? "").trim().toLowerCase();
-  if (orderPaymentStatus !== "paid") {
-    return NextResponse.json(
-      {
-        error: "order_not_paid",
-        message: `E-pastu var sūtīt tikai apmaksātam pasūtījumam. Pašreizējais statuss: ${order.paymentStatus ?? "unknown"}.`,
-      },
-      { status: 400 },
-    );
-  }
 
   const draft = await readOrderDraft(sessionId);
+  const draftCustomerEmail = draft?.orderEdits?.customerEmail?.trim() ?? "";
+  const fromOrder = (order.customerEmail ?? order.customerDetailsEmail ?? "").trim();
+  const toCandidate =
+    [bodyCustomerEmail, draftCustomerEmail, fromOrder].find((v) => v && isValidOrderEmail(v))?.trim() ?? "";
+
+  if (!canNotifyClientOrder(order, toCandidate)) {
+    const orderPaymentStatus = String(order.paymentStatus ?? "").trim().toLowerCase();
+    const message =
+      orderPaymentStatus === "paid"
+        ? "Nepieciešams derīgs klienta e-pasts."
+        : order.isManual || sessionId.startsWith("manual_order_")
+          ? "Manuālam pasūtījumam nepieciešams derīgs klienta e-pasts."
+          : `E-pastu var sūtīt tikai apmaksātam pasūtījumam. Pašreizējais statuss: ${order.paymentStatus ?? "unknown"}.`;
+    return NextResponse.json({ error: "order_not_eligible", message }, { status: 400 });
+  }
+
   const notifyVin = resolveVinForNotify(order.vin, draft?.orderEdits?.vin);
 
   let manualAttachments: ReportReadyMailAttachment[] = [];
@@ -194,11 +201,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_body", message: "Neizdevās apstrādāt pielikumus." }, { status: 400 });
   }
 
-  const draftCustomerEmail = draft?.orderEdits?.customerEmail?.trim() ?? "";
-  const fromOrder = (order.customerEmail ?? order.customerDetailsEmail ?? "").trim();
-  /** 1) multipart/JSON `customerEmail` (admin izvēle šajā sūtījumā) 2) melnraksts 3) Stripe. */
-  const to =
-    [bodyCustomerEmail, draftCustomerEmail, fromOrder].find((v) => v && isValidOrderEmail(v))?.trim() ?? "";
+  const to = toCandidate;
   if (!to) {
     return NextResponse.json({ error: "no_customer_email" }, { status: 400 });
   }

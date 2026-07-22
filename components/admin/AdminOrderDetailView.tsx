@@ -43,6 +43,8 @@ export type AdminOrderDetailClientModel = {
   internalComment?: string | null;
   attachments?: { label: string; fileName: string }[];
   isDemo?: boolean;
+  /** Admin panelī manuāli izveidots pasūtījums (ne no Stripe). */
+  isManual?: boolean;
   selectBrandModel?: string | null;
   selectProductionYearsDpf?: string | null;
   selectPlannedBudget?: string | null;
@@ -774,6 +776,7 @@ export function AdminOrderDetailView({
           amountTotal: order.amountTotal,
           currency: order.currency,
           paymentStatus: order.paymentStatus,
+          isManual: Boolean(order.isManual),
           listingUrl: mergedListing.trim() || null,
           customerEmail: mergedCustomerEmail.trim() || null,
           customerPhone: mergedCustomerPhone.trim() || null,

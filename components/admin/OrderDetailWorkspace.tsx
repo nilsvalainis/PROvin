@@ -153,6 +153,11 @@ import { buildProvinAuditPdfFilename } from "@/lib/audit-report-pdf-filename";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 import {
+  canNotifyClientOrder,
+  isManualNotifyClientOrder,
+  notifyClientBlockedMessage,
+} from "@/lib/admin-notify-client-eligibility";
+import {
   isNotifyBlobUploadEnabled,
   postNotifyReportReadyMultipart,
   postNotifyReportReadyViaBlob,
@@ -183,6 +188,7 @@ export type OrderWorkspacePayload = {
   amountTotal: number | null;
   currency: string | null;
   paymentStatus: string;
+  isManual?: boolean;
   listingUrl: string | null;
   customerEmail: string | null;
   customerPhone: string | null;
@@ -1918,8 +1924,8 @@ export function OrderDetailWorkspace({
 
   const sendNotifyWithWorkspaceAttachments = useCallback(async () => {
     setNotifyErr(null);
-    if (payload.paymentStatus?.toLowerCase() !== "paid") {
-      setNotifyErr("Nosūtīt var tikai apmaksātam pasūtījumam.");
+    if (!canNotifyClientOrder(payload, payload.customerEmail)) {
+      setNotifyErr(notifyClientBlockedMessage(payload));
       setNotifyPhase("error");
       return;
     }
@@ -1930,7 +1936,10 @@ export function OrderDetailWorkspace({
       return;
     }
     const ESTIMATE_INVOICE = 450 * 1024;
-    if (portfolioBytes + ESTIMATE_INVOICE > NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES) {
+    if (
+      !isManualNotifyClientOrder(payload) &&
+      portfolioBytes + ESTIMATE_INVOICE > NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES
+    ) {
       setNotifyErr(
         `Portfeļa apjoms (~${formatBytes(Math.round(portfolioBytes))}) kopā ar rēķinu var pārsniegt e-pasta limitu (~${formatBytes(NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES)}). Noņem failus no portfeļa vai samazini to izmēru.`,
       );
@@ -2017,8 +2026,8 @@ export function OrderDetailWorkspace({
       setNotifyPhase("error");
     }
   }, [
+    payload,
     payload.sessionId,
-    payload.paymentStatus,
     payload.customerEmail,
     payload.vin,
     portfolio,
@@ -2551,15 +2560,17 @@ export function OrderDetailWorkspace({
                 Sagatavot melnrakstu
               </button>
             ) : null}
-            {payload.paymentStatus?.toLowerCase() === "paid" &&
-            payload.customerEmail?.trim() &&
-            isValidOrderEmail(payload.customerEmail.trim()) ? (
+            {canNotifyClientOrder(payload, payload.customerEmail?.trim()) ? (
               <button
                 type="button"
                 onClick={openNotifyClientDialog}
                 disabled={notifyPhase === "loading"}
                 className="inline-flex items-center gap-1 rounded-md border border-emerald-700/25 bg-emerald-50/90 px-2 py-1 text-[10px] font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100/95 disabled:opacity-50 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-900/50"
-                title="Nosūtīt klientam e-pastu ar portfeļa failiem un rēķinu"
+                title={
+                  isManualNotifyClientOrder(payload)
+                    ? "Nosūtīt klientam e-pastu ar portfeļa failiem (manuāls pasūtījums)"
+                    : "Nosūtīt klientam e-pastu ar portfeļa failiem un rēķinu"
+                }
               >
                 <Send className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
                 Nosūtīt klientam
@@ -2918,7 +2929,11 @@ export function OrderDetailWorkspace({
                   Nosūtīt klientam e-pastu
                 </h3>
                 <p className="mt-2 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-                  Tiks pievienoti <strong>visi portfeļa faili</strong> ({portfolio.length}). Rēķins netiek sūtīts atkārtoti — klients to jau saņēma pēc apmaksas. Kopējais pielikumu apjoms — līdz ~{formatBytes(NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES)}.
+                  Tiks pievienoti <strong>visi portfeļa faili</strong> ({portfolio.length}).
+                  {isManualNotifyClientOrder(payload)
+                    ? " Manuālam pasūtījumam rēķins netiek pievienots."
+                    : " Rēķins netiek sūtīts atkārtoti — klients to jau saņēma pēc apmaksas."}{" "}
+                  Kopējais pielikumu apjoms — līdz ~{formatBytes(NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES)}.
                 </p>
                 <p className="mt-2 text-[10px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
                   Saņēmējs

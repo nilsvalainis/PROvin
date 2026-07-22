@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Check, FileText, Loader2, Pencil, Send, Trash2, X } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
+import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
 import { idbGetPortfolio, type StoredPortfolioBlob } from "@/lib/admin-portfolio-idb";
 import {
@@ -81,12 +82,15 @@ function NotifyReportReadyCell({
   sessionId,
   paymentStatus,
   customerEmail,
+  isManual,
 }: {
   sessionId: string;
   paymentStatus: string;
   customerEmail: string | null;
+  isManual?: boolean;
 }) {
-  const paid = paymentStatus.toLowerCase() === "paid";
+  const order = { id: sessionId, paymentStatus, customerEmail, isManual };
+  const canNotify = canNotifyClientOrder(order, customerEmail);
   const email = customerEmail?.trim() ?? "";
   const [phase, setPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [errMsg, setErrMsg] = useState<string | null>(null);
@@ -162,7 +166,10 @@ function NotifyReportReadyCell({
     }
   }, [email, sessionId]);
 
-  if (!paid) {
+  if (!canNotify) {
+    if (isManual && !email) {
+      return <span className="text-[11px] font-medium text-amber-800">Nav e-pasta</span>;
+    }
     return <span className="text-[11px] text-[var(--color-provin-muted)]">—</span>;
   }
   if (!email) {
@@ -624,6 +631,7 @@ export function AdminOrdersTable({
                       sessionId={o.id}
                       paymentStatus={o.paymentStatus}
                       customerEmail={email || null}
+                      isManual={o.isManual}
                     />
                   </td>
                   <td className="px-4 py-3.5 text-right">
