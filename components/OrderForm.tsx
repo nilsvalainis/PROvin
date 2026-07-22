@@ -51,6 +51,8 @@ type OrderFormProps = {
   onStepChange?: (step: 1 | 2) => void;
   /** Noklusējums `audit` (PROVIN AUDITS 99,99 €). Stratēģiskā konsultācija vairs netiek piedāvāta. */
   checkoutLine?: "audit";
+  /** Iekšējais operatora pasūtījums bez Stripe (`/pasutit?key=…`). */
+  operatorMode?: { operatorKey: string };
 };
 
 export function OrderForm({
@@ -60,6 +62,7 @@ export function OrderForm({
   hideStepOneCta = false,
   onStepChange,
   checkoutLine = "audit",
+  operatorMode,
 }: OrderFormProps) {
   const t = useTranslations("Order");
   const te = useTranslations("Order.errors");
@@ -87,6 +90,7 @@ export function OrderForm({
   const [consentError, setConsentError] = useState<string | null>(null);
   const hero = variant === "hero";
   const compact = variant === "compact";
+  const isOperator = Boolean(operatorMode?.operatorKey);
   const summaryEurMajor = "99,99";
   const errorRef = useRef<HTMLParagraphElement | null>(null);
   const lenis = useLenis();
@@ -189,7 +193,7 @@ export function OrderForm({
       }
     }
 
-    if (!withdrawalConsent) {
+    if (!isOperator && !withdrawalConsent) {
       setConsentError(te("withdrawalRequired"));
       requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById("order-checkout-consent")?.focus()));
       return;
@@ -197,6 +201,37 @@ export function OrderForm({
 
     setLoading(true);
     try {
+      if (isOperator) {
+        const res = await fetch("/api/operator-order", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Operator-Order-Key": operatorMode!.operatorKey,
+          },
+          body: JSON.stringify({
+            operatorKey: operatorMode!.operatorKey,
+            name: nameTrim || undefined,
+            email: emailTrim,
+            phone: phoneTrim,
+            vin: normalizeVin(vinTrim),
+            listingUrl: listingTrim,
+            notes: notesTrim || undefined,
+          }),
+        });
+        const data = (await res.json()) as { orderId?: string; error?: string; errors?: string[] };
+        if (!res.ok) {
+          const msg = data.errors?.[0] ?? data.error ?? te("operatorFailed");
+          setError(msg);
+          return;
+        }
+        if (data.orderId) {
+          window.location.href = `/admin/orders/${encodeURIComponent(data.orderId)}`;
+          return;
+        }
+        setError(te("operatorFailed"));
+        return;
+      }
+
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -627,7 +662,7 @@ export function OrderForm({
       >
         {hero ? (
           <>
-            {step === 2 ? (
+            {step === 2 && !isOperator ? (
               <div className="order-form-hero-rule border-b border-[#c0c0c0]/35 pb-4" role="group" aria-label={t("ariaSummary")}>
                 <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                   <span className="order-form-hero-summary-label min-w-0 shrink text-[13px] font-medium text-[#e5e7eb]">{t("summaryLabel")}</span>
@@ -652,7 +687,7 @@ export function OrderForm({
                 </button>
               </div>
             ) : null}
-            {step === 2 ? (
+            {step === 2 && !isOperator ? (
               <div className="order-form-hero-rule border-b border-[#c0c0c0]/35 pb-4">
                 <label
                   htmlFor="order-checkout-consent"
@@ -711,15 +746,17 @@ export function OrderForm({
               className="provin-home-pill-cta provin-home-pill-cta--wide mx-auto mt-1 flex min-h-[52px] w-full max-w-[min(100%,416px)] touch-manipulation items-center justify-center gap-2 whitespace-normal text-balance text-center text-[clamp(10px,2.95vw,11px)] font-medium leading-snug tracking-[0.12em] disabled:opacity-60 sm:min-h-[50px]"
             >
               {loading ? (
-                t("payLoading")
+                isOperator ? t("operatorSubmitLoading") : t("payLoading")
               ) : (
                 <>
-                  {t("payButton")}
-                  <ArrowRight
-                    className="order-form-hero-pay-arrow h-4 w-4 shrink-0 text-white/90"
-                    strokeWidth={2}
-                    aria-hidden
-                  />
+                  {isOperator ? t("operatorSubmitButton") : t("payButton")}
+                  {!isOperator ? (
+                    <ArrowRight
+                      className="order-form-hero-pay-arrow h-4 w-4 shrink-0 text-white/90"
+                      strokeWidth={2}
+                      aria-hidden
+                    />
+                  ) : null}
                 </>
               )}
             </button>
@@ -733,7 +770,7 @@ export function OrderForm({
                 {t("backToFirstStep")}
               </button>
             ) : null}
-            {step === 2 ? (
+            {step === 2 && !isOperator ? (
               <p className="order-form-hero-stripe-note text-center text-[10px] font-normal leading-relaxed text-[#e5e7eb]/48 sm:text-[11px]">
                 {t("stripeNote")}
               </p>
@@ -741,7 +778,7 @@ export function OrderForm({
           </>
         ) : (
           <>
-            {step === 2 ? (
+            {step === 2 && !isOperator ? (
               <div className="border-b border-[#050505]/12 pb-4">
                 <label
                   htmlFor="order-checkout-consent"
@@ -814,7 +851,7 @@ export function OrderForm({
                   disabled={loading}
                   className="provin-btn provin-btn--compact inline-flex min-h-11 w-full min-w-[180px] items-center justify-center rounded-full px-7 py-[10px] text-[14px] font-normal shadow-[0_3px_10px_rgba(0,0,0,0.08)] disabled:opacity-60 sm:w-auto sm:min-h-10"
                 >
-                  {loading ? t("payLoading") : t("payButton")}
+                  {loading ? (isOperator ? t("operatorSubmitLoading") : t("payLoading")) : isOperator ? t("operatorSubmitButton") : t("payButton")}
                 </button>
               )}
               {step === 2 ? (
@@ -826,7 +863,7 @@ export function OrderForm({
                   {t("backToFirstStep")}
                 </button>
               ) : null}
-              {step === 2 ? (
+              {step === 2 && !isOperator ? (
                 <p className="text-center text-[10px] font-normal leading-snug text-[#aeaeb2] sm:max-w-[14rem] sm:text-right">
                   {t("stripeNote")}
                 </p>
