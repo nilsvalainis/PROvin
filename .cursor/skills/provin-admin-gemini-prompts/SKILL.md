@@ -29,8 +29,8 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 | Export | Active field | Consumer |
 |--------|--------------|----------|
 | `PROVIN_FIELD_AGENT_SYSTEM` | Base | All field-agent prompts |
-| `GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM` | Ieteikumi klātienes apskatei | `admin-gemini-inspection.ts` |
-| `GEMINI_SELLER_ANALYSIS_SYSTEM` | Pārdevēja portrets | `admin-gemini-seller.ts` |
+| `GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM` | Ieteikumi klātienes apskatei | `admin-gemini-inspection.ts` — **expert markdown** (bold hooks, no `- `) |
+| `GEMINI_SELLER_ANALYSIS_SYSTEM` | Pārdevēja portrets | `admin-gemini-seller.ts` — **expert markdown** |
 | `GEMINI_PRICE_ANALYSIS_SYSTEM` | Cenas vērtējums | `admin-gemini-price.ts` |
 | `GEMINI_SUMMARY_ANALYSIS_SYSTEM` | 2. Kopsavilkums | `admin-gemini-summary.ts` |
 | `GEMINI_MILEAGE_COMMENT_SYSTEM` | Nobraukuma vēstures komentārs | `admin-gemini-mileage-comment.ts` |

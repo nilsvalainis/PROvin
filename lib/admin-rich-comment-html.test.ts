@@ -101,11 +101,22 @@ describe("geminiPlainTextToRichHtml", () => {
 
 describe("normalizeGeminiExpertParagraphText", () => {
   it("strips leading hyphen bullets", () => {
-    expect(normalizeGeminiExpertParagraphText("- Pirmais\n- Otrais")).toBe("Pirmais\nOtrais");
+    expect(normalizeGeminiExpertParagraphText("- Pirmais punkts. Turpinājums.\n- Otrais punkts. Teksts.")).toContain(
+      "**Pirmais punkts.**",
+    );
+    expect(normalizeGeminiExpertParagraphText("- Pirmais punkts. Turpinājums.")).not.toMatch(/^- /m);
   });
 
   it("converts ANOMĀLIJA prefix to bold hook", () => {
-    expect(normalizeGeminiExpertParagraphText("ANOMĀLIJA: nobraukums")).toBe("**Anomālija:** nobraukums");
+    expect(normalizeGeminiExpertParagraphText("ANOMĀLIJA: nobraukums")).toContain("**Anomālija:**");
+  });
+
+  it("auto-bolds first sentence when markdown hooks are missing", () => {
+    const out = normalizeGeminiExpertParagraphText(
+      "Virsbūves pārbaude ar krāsas mērītāju. Automašīnai jāveic mērījumi uz šuvēm.",
+    );
+    expect(out).toMatch(/^\*\*Virsbūves pārbaude ar krāsas mērītāju\.\*\*/);
+    expect(out).toContain("Automašīnai jāveic");
   });
 });
 
@@ -115,5 +126,14 @@ describe("geminiExpertSourceCommentToRichHtml", () => {
     expect(html).toContain("<strong>Nobraukums.</strong>");
     expect(html).not.toMatch(/<br \/>- Fakts/);
     expect(html).toContain("Fakts bez saraksta.");
+  });
+
+  it("formats inspection-style hyphen lists into bold openers", () => {
+    const html = geminiExpertSourceCommentToRichHtml(
+      "- Virsbūves pārbaude ar krāsas mērītāju. Jāmēra šuves.\n- Neatkarīga diagnostika servisā. Jāpārbauda kļūdu kodi.",
+    );
+    expect(html).toContain("<strong>Virsbūves pārbaude ar krāsas mērītāju.</strong>");
+    expect(html).toContain("<strong>Neatkarīga diagnostika servisā.</strong>");
+    expect(html).not.toContain("- Virsbūves");
   });
 });

@@ -126,7 +126,6 @@ import type { AdminGeminiSourceCommentSlot } from "@/components/admin/AdminSourc
 import {
   applySourceBlockGeneratedComment,
   citiAvotiSectionPlainTextExcludingComments,
-  isMainAnalysisSourceBlock,
   sourceBlockCommentsPlainForGemini,
   type GeminiSourceCommentBlockKey,
   sourceBlockHasDataExcludingComments,
@@ -138,7 +137,7 @@ import {
   AdminCommonPhrasesDrawerTrigger,
 } from "@/components/admin/AdminCommonPhrasesDrawer";
 import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
-import { geminiPlainTextToRichHtml, adminRichHtmlToPlainText, geminiExpertSourceCommentToRichHtml } from "@/lib/admin-rich-comment-html";
+import { adminRichHtmlToPlainText, geminiExpertSourceCommentToRichHtml } from "@/lib/admin-rich-comment-html";
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
@@ -981,7 +980,7 @@ export function OrderDetailWorkspace({
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        updateWs({ apskatesPlāns: geminiPlainTextToRichHtml(data.text) });
+        updateWs({ apskatesPlāns: geminiExpertSourceCommentToRichHtml(data.text) });
       }
     } catch {
       setGeminiInspectionErr("Gemini: neizdevās savienoties");
@@ -1081,7 +1080,7 @@ export function OrderDetailWorkspace({
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        onInternalCommentChange(geminiPlainTextToRichHtml(data.text));
+        onInternalCommentChange(geminiExpertSourceCommentToRichHtml(data.text));
       }
     } catch {
       setGeminiIncidentsSummaryErr("Gemini: neizdevās savienoties");
@@ -1121,7 +1120,7 @@ export function OrderDetailWorkspace({
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        onMileageCommentChange(geminiPlainTextToRichHtml(data.text));
+        onMileageCommentChange(geminiExpertSourceCommentToRichHtml(data.text));
       }
     } catch {
       setGeminiMileageCommentErr("Gemini: neizdevās savienoties");
@@ -1161,7 +1160,7 @@ export function OrderDetailWorkspace({
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        onSourcesComparisonCommentChange(geminiPlainTextToRichHtml(data.text));
+        onSourcesComparisonCommentChange(geminiExpertSourceCommentToRichHtml(data.text));
       }
     } catch {
       setGeminiSourcesComparisonErr("Gemini: neizdevās savienoties");
@@ -1321,9 +1320,7 @@ export function OrderDetailWorkspace({
           return;
         }
         if (typeof data.text === "string" && data.text.trim()) {
-          const html = isMainAnalysisSourceBlock(blockKey)
-            ? geminiExpertSourceCommentToRichHtml(data.text)
-            : geminiPlainTextToRichHtml(data.text);
+          const html = geminiExpertSourceCommentToRichHtml(data.text);
           const prevBlock = cur.sourceBlocks[blockKey];
           const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
             citiAvotiSectionIndex,

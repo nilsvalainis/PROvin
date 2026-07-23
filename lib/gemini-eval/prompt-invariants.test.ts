@@ -53,6 +53,17 @@ describe("PROVIN Gemini prompt invariants", () => {
     expect(prompts).toMatch(/APPROVED BY IRISS/);
   });
 
+  it("inspection and seller prompts use expert markdown, not hyphen checklists", () => {
+    const prompts = readRepo("lib/admin-gemini-prompts.ts");
+    expect(prompts).toMatch(
+      /GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?GEMINI_CLIENT_PDF_EXPERT_MARKDOWN_RULES/,
+    );
+    expect(prompts).toMatch(
+      /GEMINI_SELLER_ANALYSIS_SYSTEM[\s\S]*?GEMINI_CLIENT_PDF_EXPERT_MARKDOWN_RULES/,
+    );
+    expect(prompts).toMatch(/NEKAD nesāc rindu ar "- "/);
+  });
+
   it("polish uses Flash model", () => {
     const polish = readRepo("lib/admin-gemini-polish.ts");
     expect(polish).toMatch(/GEMINI_MODEL_FLASH/);

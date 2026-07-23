@@ -54,6 +54,46 @@ export function geminiPlainTextToRichHtml(text: string): string {
 const EXPERT_BOLD_OPEN = "\uE010";
 const EXPERT_BOLD_CLOSE = "\uE011";
 
+/**
+ * Ja rindkopai trūkst **bold** ievada, ietin pirmo teikumu (vai pirmos vārdus) **…**.
+ * Nodrošina vienotu vizuālo stilu, pat ja modelis aizmirst Markdown.
+ */
+export function ensureExpertBoldParagraphOpeners(text: string): string {
+  const blocks = text
+    .split(/\n\n+/)
+    .flatMap((block) => {
+      const lines = block
+        .split(/\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+      if (lines.length > 1) return lines;
+      return block.trim() ? [block.trim()] : [];
+    });
+
+  return blocks
+    .map((para) => {
+      const p = para.trim();
+      if (!p) return p;
+      if (/^\*\*[^*\n]+?\*\*/.test(p)) return p;
+
+      const sentence = p.match(/^([^.!?\n]{2,110}?[.!?])(\s+|$)([\s\S]*)/);
+      if (sentence) {
+        const hook = sentence[1]!.replace(/^\*\*|\*\*$/g, "").trim();
+        const rest = (sentence[3] ?? "").trimStart();
+        if (!hook) return p;
+        return rest ? `**${hook}** ${rest}` : `**${hook}**`;
+      }
+
+      const words = p.split(/\s+/).filter(Boolean);
+      if (words.length === 0) return p;
+      const hookLen = Math.min(Math.max(3, Math.ceil(words.length / 4)), Math.min(8, words.length));
+      const hook = words.slice(0, hookLen).join(" ");
+      const rest = words.slice(hookLen).join(" ");
+      return rest ? `**${hook}** ${rest}` : `**${hook}**`;
+    })
+    .join("\n\n");
+}
+
 /** Noņem sarakstu prefiksus no Gemini eksperta komentāra (ja modelis tomēr izmanto "- "). */
 export function normalizeGeminiExpertParagraphText(text: string): string {
   let t = sanitizeDraftTextForStorage(text);
@@ -61,7 +101,8 @@ export function normalizeGeminiExpertParagraphText(text: string): string {
   t = t.replace(/^\s*\d+[\.)]\s+/gm, "");
   t = t.replace(/^ANOMĀLIJA:\s*/gim, "**Anomālija:** ");
   t = t.replace(/\r\n/g, "\n");
-  return t.trim();
+  t = t.trim();
+  return ensureExpertBoldParagraphOpeners(t);
 }
 
 /** Dziļās avotu analīzes ✨ — saglabā **bold** kā <strong> admin redaktoram un PDF. */

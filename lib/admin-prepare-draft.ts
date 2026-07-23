@@ -12,14 +12,12 @@ import { generateSourcesComparisonWithGemini } from "@/lib/admin-gemini-sources-
 import {
   applySourceBlockGeneratedComment,
   GEMINI_SOURCE_COMMENT_BLOCK_KEYS,
-  isMainAnalysisSourceBlock,
   sourceBlockCommentsPlainForGemini,
   sourceBlockHasDataExcludingComments,
   type GeminiSourceCommentBlockKey,
 } from "@/lib/admin-source-comment-blocks";
 import {
   geminiExpertSourceCommentToRichHtml,
-  geminiPlainTextToRichHtml,
   adminRichHtmlToPlainText,
 } from "@/lib/admin-rich-comment-html";
 import type { AutoRecordsPdfParseResult } from "@/lib/auto-records-pdf-parse";
@@ -165,10 +163,8 @@ function applyCitiAvotiImport(
   return { sections };
 }
 
-function plainCommentToHtml(blockKey: GeminiSourceCommentBlockKey, plain: string): string {
-  return isMainAnalysisSourceBlock(blockKey)
-    ? geminiExpertSourceCommentToRichHtml(plain)
-    : geminiPlainTextToRichHtml(plain);
+function plainCommentToHtml(_blockKey: GeminiSourceCommentBlockKey, plain: string): string {
+  return geminiExpertSourceCommentToRichHtml(plain);
 }
 
 function countSourcesWithData(blocks: WorkspaceSourceBlocks): number {
