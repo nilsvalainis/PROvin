@@ -70,7 +70,8 @@ describe("test-pricing-5 mobile two-tier model", () => {
     });
     expect(getTp5MobileService("mini", "en").buttonText).toBe("ORDER MINI AUDIT — €39.99");
     expect(getTp5MobileService("audits", "en").title).toBe("PROVIN AUDIT");
-    expect(getTp5MobileTurnaround("en")).toContain("48h");
+    expect(getTp5MobileTurnaround("en")).toContain("24-72h");
+    expect(getTp5MobileTurnaround("lv")).toContain("24-72h");
     /** Nezināms vai tukšs locale — latviešu noklusējums. */
     expect(getTp5MobileService("mini").buttonText).toBe("PASŪTĪT MINI AUDITU — 39,99 €");
     expect(getTp5MobileServices("de")).toEqual(lv);

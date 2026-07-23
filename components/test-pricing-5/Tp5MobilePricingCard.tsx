@@ -15,6 +15,7 @@ import {
 } from "@/lib/test-pricing-5-mobile";
 import { TP5_AUDITS_SAMPLE_REPORT_HREF, getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
+import { Tp5TurnaroundInfoTip } from "@/components/test-pricing-5/Tp5TurnaroundInfoTip";
 
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 
@@ -178,7 +179,10 @@ export function Tp5MobilePricingCard({
         </div>
       </div>
 
-      <p className={styles.turnaround}>{getTp5MobileTurnaround(locale)}</p>
+      <p className={styles.turnaround}>
+        <span>{getTp5MobileTurnaround(locale)}</span>
+        <Tp5TurnaroundInfoTip copy={uiCopy} />
+      </p>
 
       <div className={styles.ctaWrap}>
         {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}

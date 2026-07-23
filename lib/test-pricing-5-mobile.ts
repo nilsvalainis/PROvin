@@ -97,9 +97,9 @@ export const TP5_MOBILE_SERVICE_ORDER: Tp5MobileServiceId[] = TP5_MOBILE_SERVICE
   (service) => service.id,
 );
 
-export const TP5_MOBILE_TURNAROUND = "⏱️ Izpilde: līdz 48h";
+export const TP5_MOBILE_TURNAROUND = "⏱️ Izpilde: 24-72h";
 
-const TP5_MOBILE_TURNAROUND_EN = "⏱️ Delivery: within 48h";
+const TP5_MOBILE_TURNAROUND_EN = "⏱️ Delivery: 24-72h";
 
 /** Stripe checkout plan mapping for mobile tiers. */
 export const TP5_MOBILE_CHECKOUT_PLAN: Record<Tp5MobileServiceId, TestPricingPlanId> = {
