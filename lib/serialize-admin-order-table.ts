@@ -16,6 +16,8 @@ export type SerializedAdminOrderTableRow = {
   vin: string | null;
   /** CSDD „Marka, modelis” — kad ievadīts darba zonā. */
   makeModel: string | null;
+  /** 48 h termiņš atzīmēts kā izpildīts (servera persistents). */
+  auditComplete?: boolean;
   /** Ja ir, tabula var novirzīt „Atvērt” uz `/admin/konsultacijas` PROVIN SELECT sesijām. */
   checkoutLine?: CheckoutLineKind;
   isDemo?: boolean;
@@ -35,6 +37,7 @@ type RowInput = {
   customerPhone?: unknown;
   vin: unknown;
   makeModel?: unknown;
+  auditComplete?: unknown;
   checkoutLine?: unknown;
   isDemo?: unknown;
   isManual?: unknown;
@@ -78,6 +81,7 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
         o.makeModel == null || o.makeModel === undefined || !String(o.makeModel).trim()
           ? null
           : String(o.makeModel).trim(),
+      ...(Boolean(o.auditComplete) ? { auditComplete: true as const } : {}),
       ...(checkoutLine ? { checkoutLine } : {}),
       ...(Boolean(o.isDemo) ? { isDemo: true as const } : {}),
       ...(Boolean(o.isManual) ? { isManual: true as const } : {}),

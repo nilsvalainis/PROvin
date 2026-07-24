@@ -585,7 +585,11 @@ export function AdminOrdersTable({
                   </td>
                   <td className="whitespace-nowrap px-4 py-3.5">
                     {hasVin ? (
-                      <AdminAuditDeadlineCell sessionId={o.id} createdUnixSec={o.created} />
+                      <AdminAuditDeadlineCell
+                        sessionId={o.id}
+                        createdUnixSec={o.created}
+                        initialComplete={Boolean(o.auditComplete)}
+                      />
                     ) : (
                       <span className="text-[var(--color-provin-muted)]">—</span>
                     )}

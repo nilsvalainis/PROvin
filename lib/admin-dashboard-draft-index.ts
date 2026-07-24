@@ -15,6 +15,8 @@ export type DashboardDraftIndexEntry = {
   invoicePdfUrl: string | null;
   /** CSDD „Marka, modelis” — kad ievadīts darba zonā. */
   makeModel: string | null;
+  /** 48 h termiņa manuāla „Izpildīts” atzīme (ISO laiks; `null` = nav atzīmēts). */
+  auditCompletedAt: string | null;
 };
 
 type DashboardDraftIndexDoc = {
@@ -29,6 +31,7 @@ const EMPTY_ENTRY: DashboardDraftIndexEntry = {
   customerPhone: null,
   invoicePdfUrl: null,
   makeModel: null,
+  auditCompletedAt: null,
 };
 
 function indexFsPath(dir: string): string {
@@ -48,6 +51,10 @@ function normalizeEntry(raw: unknown): DashboardDraftIndexEntry | null {
     customerPhone: typeof o.customerPhone === "string" ? o.customerPhone : null,
     invoicePdfUrl: typeof o.invoicePdfUrl === "string" ? o.invoicePdfUrl : null,
     makeModel: typeof o.makeModel === "string" && o.makeModel.trim() ? o.makeModel.trim() : null,
+    auditCompletedAt:
+      typeof o.auditCompletedAt === "string" && o.auditCompletedAt.trim()
+        ? o.auditCompletedAt.trim()
+        : null,
   };
 }
 
@@ -153,6 +160,8 @@ export async function upsertDashboardDraftIndexEntry(
     customerPhone: patch.customerPhone !== undefined ? patch.customerPhone : prev.customerPhone,
     invoicePdfUrl: patch.invoicePdfUrl !== undefined ? patch.invoicePdfUrl : prev.invoicePdfUrl,
     makeModel: patch.makeModel !== undefined ? patch.makeModel : prev.makeModel,
+    auditCompletedAt:
+      patch.auditCompletedAt !== undefined ? patch.auditCompletedAt : prev.auditCompletedAt,
   };
   doc.updatedAt = new Date().toISOString();
   await writeDashboardDraftIndexDoc(doc);
@@ -247,7 +256,7 @@ export function dashboardDraftEntryFromOrderEdits(
   } | null | undefined,
   invoicePdfUrl?: string | null,
   workspace?: unknown,
-): DashboardDraftIndexEntry {
+): Partial<DashboardDraftIndexEntry> {
   const email = orderEdits?.customerEmail?.trim();
   const name = orderEdits?.customerName?.trim();
   const phone = orderEdits?.customerPhone?.trim();

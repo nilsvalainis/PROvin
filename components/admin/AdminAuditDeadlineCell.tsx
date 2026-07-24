@@ -6,12 +6,11 @@ import { useAdminAuditDeadlineTick } from "@/components/admin/AdminAuditDeadline
 import {
   ADMIN_AUDIT_COMPLETE_STORAGE_KEY,
   readAuditCompleteIdsFromStorage,
-  toggleAuditCompleteInSet,
-  writeAuditCompleteIdsToStorage,
+  setAuditCompleteInLocalCache,
 } from "@/lib/admin-audit-deadline-complete";
 
 const PILL_BASE =
-  "inline-flex cursor-pointer rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ring-1 transition hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/35";
+  "inline-flex cursor-pointer rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ring-1 transition hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/35 disabled:cursor-wait disabled:opacity-70";
 
 const PILL_BY_STATUS: Record<AuditDeadlineStatus, string> = {
   ok: "bg-white text-[var(--color-apple-text)] ring-slate-200/90 hover:bg-slate-50/95",
@@ -25,35 +24,107 @@ const PILL_COMPLETED =
 export function AdminAuditDeadlineCell({
   sessionId,
   createdUnixSec,
+  initialComplete = false,
 }: {
   sessionId: string;
   createdUnixSec: number;
+  /** Servera persistents stāvoklis no dashboard indeksa. */
+  initialComplete?: boolean;
 }) {
   const tick = useAdminAuditDeadlineTick();
-  const [completeIds, setCompleteIds] = useState<Set<string>>(() => new Set());
+  const [isComplete, setIsComplete] = useState(initialComplete);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setCompleteIds(readAuditCompleteIdsFromStorage((k) => localStorage.getItem(k)));
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === ADMIN_AUDIT_COMPLETE_STORAGE_KEY) {
-        setCompleteIds(readAuditCompleteIdsFromStorage((k) => localStorage.getItem(k)));
+    setIsComplete(initialComplete);
+  }, [initialComplete, sessionId]);
+
+  /** Vienreizēja migrācija: vecā localStorage atzīme → serveris. */
+  useEffect(() => {
+    if (initialComplete) return;
+    const localIds = readAuditCompleteIdsFromStorage((k) => localStorage.getItem(k));
+    if (!localIds.has(sessionId)) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/admin/audit-deadline-complete", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, complete: true }),
+        });
+        if (!cancelled && res.ok) {
+          setIsComplete(true);
+          setAuditCompleteInLocalCache(
+            sessionId,
+            true,
+            (k) => localStorage.getItem(k),
+            (k, v) => localStorage.setItem(k, v),
+          );
+        }
+      } catch {
+        /* ignore — lietotājs var noklikšķināt manuāli */
       }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialComplete, sessionId]);
+
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== ADMIN_AUDIT_COMPLETE_STORAGE_KEY) return;
+      const ids = readAuditCompleteIdsFromStorage((k) => localStorage.getItem(k));
+      setIsComplete(ids.has(sessionId) || initialComplete);
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, []);
+  }, [sessionId, initialComplete]);
 
   void tick;
   const { label, status } = formatAuditDeadlineRemaining(createdUnixSec);
-  const isComplete = completeIds.has(sessionId);
 
-  const onToggle = useCallback(() => {
-    setCompleteIds((prev) => {
-      const next = toggleAuditCompleteInSet(prev, sessionId);
-      writeAuditCompleteIdsToStorage((k, v) => localStorage.setItem(k, v), next);
-      return next;
-    });
-  }, [sessionId]);
+  const onToggle = useCallback(async () => {
+    if (saving) return;
+    const next = !isComplete;
+    setIsComplete(next);
+    setSaving(true);
+    setAuditCompleteInLocalCache(
+      sessionId,
+      next,
+      (k) => localStorage.getItem(k),
+      (k, v) => localStorage.setItem(k, v),
+    );
+    try {
+      const res = await fetch("/api/admin/audit-deadline-complete", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, complete: next }),
+      });
+      if (!res.ok) {
+        setIsComplete(!next);
+        setAuditCompleteInLocalCache(
+          sessionId,
+          !next,
+          (k) => localStorage.getItem(k),
+          (k, v) => localStorage.setItem(k, v),
+        );
+        console.error("[admin] audit-deadline-complete", res.status, await res.text().catch(() => ""));
+      }
+    } catch (e) {
+      setIsComplete(!next);
+      setAuditCompleteInLocalCache(
+        sessionId,
+        !next,
+        (k) => localStorage.getItem(k),
+        (k, v) => localStorage.setItem(k, v),
+      );
+      console.error("[admin] audit-deadline-complete fetch", e);
+    } finally {
+      setSaving(false);
+    }
+  }, [isComplete, saving, sessionId]);
 
   const displayLabel = isComplete ? "Izpildīts" : label;
   const pillClass = isComplete ? PILL_COMPLETED : PILL_BY_STATUS[status];
@@ -61,7 +132,8 @@ export function AdminAuditDeadlineCell({
   return (
     <button
       type="button"
-      onClick={onToggle}
+      onClick={() => void onToggle()}
+      disabled={saving}
       className={`${PILL_BASE} tabular-nums ${pillClass}`}
       aria-pressed={isComplete}
       title={

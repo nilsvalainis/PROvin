@@ -1,4 +1,8 @@
-/** Admin pasūtījumu saraksts — 48 h termiņa manuāla „Izpildīts” atzīme (localStorage). */
+/**
+ * Admin pasūtījumu saraksts — 48 h termiņa manuāla „Izpildīts” atzīme.
+ * Servera avots: dashboard draft index (`auditCompletedAt`).
+ * localStorage — tikai īslaicīgs UX kešs / migrācija no vecās versijas.
+ */
 
 export const ADMIN_AUDIT_COMPLETE_STORAGE_KEY = "provin-admin-audit-complete-v1";
 
@@ -35,4 +39,16 @@ export function toggleAuditCompleteInSet(ids: Set<string>, sessionId: string): S
   if (next.has(sessionId)) next.delete(sessionId);
   else next.add(sessionId);
   return next;
+}
+
+export function setAuditCompleteInLocalCache(
+  sessionId: string,
+  complete: boolean,
+  getItem: (key: string) => string | null,
+  setItem: (key: string, value: string) => void,
+): void {
+  const ids = readAuditCompleteIdsFromStorage(getItem);
+  if (complete) ids.add(sessionId);
+  else ids.delete(sessionId);
+  writeAuditCompleteIdsToStorage(setItem, ids);
 }

@@ -32,6 +32,7 @@ export default async function AdminOrdersPage({
       customerPhone: draft?.customerPhone || null,
       invoicePdfUrl: draft?.invoicePdfUrl ?? null,
       makeModel: draft?.makeModel || null,
+      auditComplete: Boolean(draft?.auditCompletedAt),
     };
   });
   const tableOrders = serializeAdminOrderTableRows(ordersWithInvoice);

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  ADMIN_AUDIT_COMPLETE_STORAGE_KEY,
   parseAuditCompleteIds,
   serializeAuditCompleteIds,
+  setAuditCompleteInLocalCache,
   toggleAuditCompleteInSet,
 } from "@/lib/admin-audit-deadline-complete";
 
@@ -17,5 +19,31 @@ describe("admin-audit-deadline-complete", () => {
     expect(a.has("cs_x")).toBe(true);
     const b = toggleAuditCompleteInSet(a, "cs_x");
     expect(b.has("cs_x")).toBe(false);
+  });
+
+  it("setAuditCompleteInLocalCache writes expected set", () => {
+    const store = new Map<string, string>();
+    setAuditCompleteInLocalCache(
+      "cs_1",
+      true,
+      (k) => store.get(k) ?? null,
+      (k, v) => {
+        store.set(k, v);
+      },
+    );
+    expect(parseAuditCompleteIds(store.get(ADMIN_AUDIT_COMPLETE_STORAGE_KEY) ?? null).has("cs_1")).toBe(
+      true,
+    );
+    setAuditCompleteInLocalCache(
+      "cs_1",
+      false,
+      (k) => store.get(k) ?? null,
+      (k, v) => {
+        store.set(k, v);
+      },
+    );
+    expect(parseAuditCompleteIds(store.get(ADMIN_AUDIT_COMPLETE_STORAGE_KEY) ?? null).has("cs_1")).toBe(
+      false,
+    );
   });
 });
