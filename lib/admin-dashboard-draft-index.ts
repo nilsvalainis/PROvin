@@ -3,6 +3,7 @@ import "server-only";
 import fs from "fs/promises";
 import path from "node:path";
 import { get, put } from "@vercel/blob";
+import { extractCsddMakeModelFromWorkspace } from "@/lib/admin-csdd-make-model";
 import { getOrderDraftBlobConfig, getOrderDraftStorageDir } from "@/lib/admin-order-draft-store";
 
 const INDEX_FILENAME = "admin-dashboard-draft-index.json";
@@ -12,6 +13,8 @@ export type DashboardDraftIndexEntry = {
   customerName: string | null;
   customerPhone: string | null;
   invoicePdfUrl: string | null;
+  /** CSDD „Marka, modelis” — kad ievadīts darba zonā. */
+  makeModel: string | null;
 };
 
 type DashboardDraftIndexDoc = {
@@ -25,6 +28,7 @@ const EMPTY_ENTRY: DashboardDraftIndexEntry = {
   customerName: null,
   customerPhone: null,
   invoicePdfUrl: null,
+  makeModel: null,
 };
 
 function indexFsPath(dir: string): string {
@@ -43,6 +47,7 @@ function normalizeEntry(raw: unknown): DashboardDraftIndexEntry | null {
     customerName: typeof o.customerName === "string" ? o.customerName : null,
     customerPhone: typeof o.customerPhone === "string" ? o.customerPhone : null,
     invoicePdfUrl: typeof o.invoicePdfUrl === "string" ? o.invoicePdfUrl : null,
+    makeModel: typeof o.makeModel === "string" && o.makeModel.trim() ? o.makeModel.trim() : null,
   };
 }
 
@@ -147,20 +152,90 @@ export async function upsertDashboardDraftIndexEntry(
     customerName: patch.customerName !== undefined ? patch.customerName : prev.customerName,
     customerPhone: patch.customerPhone !== undefined ? patch.customerPhone : prev.customerPhone,
     invoicePdfUrl: patch.invoicePdfUrl !== undefined ? patch.invoicePdfUrl : prev.invoicePdfUrl,
+    makeModel: patch.makeModel !== undefined ? patch.makeModel : prev.makeModel,
   };
   doc.updatedAt = new Date().toISOString();
   await writeDashboardDraftIndexDoc(doc);
 }
 
-/** Viena JSON lasīšana visiem dashboard laukiem. */
+async function readMakeModelFromDraftFile(sessionId: string): Promise<string | null> {
+  const dir = getOrderDraftStorageDir();
+  const blob = getOrderDraftBlobConfig();
+
+  if (dir) {
+    try {
+      const raw = JSON.parse(await fs.readFile(path.join(dir, `${sessionId}.json`), "utf8")) as {
+        workspace?: unknown;
+      };
+      const mm = extractCsddMakeModelFromWorkspace(raw.workspace);
+      if (mm) return mm;
+    } catch {
+      /* try blob */
+    }
+  }
+
+  if (blob) {
+    try {
+      const res = await get(`${blob.prefix}${sessionId}.json`, {
+        access: "private",
+        token: blob.token,
+        useCache: true,
+      });
+      if (!res || res.statusCode !== 200 || !res.stream) return null;
+      const raw = JSON.parse(await new Response(res.stream).text()) as { workspace?: unknown };
+      return extractCsddMakeModelFromWorkspace(raw.workspace);
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+/** Viena JSON lasīšana visiem dashboard laukiem; trūkstošo makeModel mēģina aizpildīt no melnraksta. */
 export async function readDashboardDraftSummaries(
   sessionIds: string[],
 ): Promise<Map<string, DashboardDraftIndexEntry>> {
   const doc = await readDashboardDraftIndexDoc();
   const out = new Map<string, DashboardDraftIndexEntry>();
+  const missingMakeModel: string[] = [];
+
   for (const id of sessionIds) {
-    out.set(id, doc.entries[id] ?? EMPTY_ENTRY);
+    const entry = doc.entries[id] ?? EMPTY_ENTRY;
+    out.set(id, entry);
+    if (!entry.makeModel) missingMakeModel.push(id);
   }
+
+  if (missingMakeModel.length > 0) {
+    const BACKFILL_CAP = 40;
+    const toFill = missingMakeModel.slice(0, BACKFILL_CAP);
+    const found: { id: string; makeModel: string }[] = [];
+    await Promise.all(
+      toFill.map(async (id) => {
+        const mm = await readMakeModelFromDraftFile(id);
+        if (mm) {
+          found.push({ id, makeModel: mm });
+          out.set(id, { ...(out.get(id) ?? EMPTY_ENTRY), makeModel: mm });
+        }
+      }),
+    );
+    if (found.length > 0) {
+      void (async () => {
+        try {
+          const latest = await readDashboardDraftIndexDoc();
+          for (const { id, makeModel } of found) {
+            const prev = latest.entries[id] ?? EMPTY_ENTRY;
+            latest.entries[id] = { ...prev, makeModel };
+          }
+          latest.updatedAt = new Date().toISOString();
+          await writeDashboardDraftIndexDoc(latest);
+        } catch {
+          /* ignore background index warm */
+        }
+      })();
+    }
+  }
+
   return out;
 }
 
@@ -171,6 +246,7 @@ export function dashboardDraftEntryFromOrderEdits(
     customerPhone?: string | null;
   } | null | undefined,
   invoicePdfUrl?: string | null,
+  workspace?: unknown,
 ): DashboardDraftIndexEntry {
   const email = orderEdits?.customerEmail?.trim();
   const name = orderEdits?.customerName?.trim();
@@ -180,5 +256,6 @@ export function dashboardDraftEntryFromOrderEdits(
     customerName: name || null,
     customerPhone: phone || null,
     invoicePdfUrl: invoicePdfUrl ?? null,
+    makeModel: extractCsddMakeModelFromWorkspace(workspace),
   };
 }

@@ -528,12 +528,13 @@ export function AdminOrdersTable({
   return (
     <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1080px] text-left text-sm">
+        <table className="w-full min-w-[1180px] text-left text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/90 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-provin-muted)]">
               <th className="px-4 py-3.5">Datums</th>
               <th className="px-4 py-3.5">Termiņš (48 h)</th>
               <th className="px-4 py-3.5">VIN</th>
+              <th className="px-4 py-3.5">Marka, modelis</th>
               <th className="px-4 py-3.5">Klients</th>
               <th className="px-4 py-3.5">Statuss</th>
               <th className="px-4 py-3.5 text-right">Summa</th>
@@ -591,6 +592,14 @@ export function AdminOrdersTable({
                   </td>
                   <td className="max-w-[140px] truncate px-4 py-3.5 font-mono text-xs text-[var(--color-apple-text)]">
                     {vin || "—"}
+                  </td>
+                  <td
+                    className="max-w-[180px] truncate px-4 py-3.5 text-[13px] text-[var(--color-apple-text)]"
+                    title={o.makeModel?.trim() || undefined}
+                  >
+                    {o.makeModel?.trim() || (
+                      <span className="text-[var(--color-provin-muted)]">—</span>
+                    )}
                   </td>
                   <td className="max-w-[260px] px-4 py-3.5 text-[var(--color-apple-text)]">
                     <div className="min-w-0">

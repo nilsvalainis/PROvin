@@ -31,6 +31,7 @@ export default async function AdminOrdersPage({
       customerName: draft?.customerName || null,
       customerPhone: draft?.customerPhone || null,
       invoicePdfUrl: draft?.invoicePdfUrl ?? null,
+      makeModel: draft?.makeModel || null,
     };
   });
   const tableOrders = serializeAdminOrderTableRows(ordersWithInvoice);

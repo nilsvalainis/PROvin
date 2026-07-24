@@ -649,6 +649,7 @@ export async function patchOrderDraft(
     dashboardDraftEntryFromOrderEdits(
       nextOrderEdits,
       typeof doc.invoicePdfUrl === "string" ? doc.invoicePdfUrl : prev?.invoicePdfUrl ?? null,
+      nextWorkspace,
     ),
   ).catch(() => {});
 
@@ -785,7 +786,7 @@ export async function upsertOrderDraftInvoiceFields(
     typeof fields.invoicePdfUrl === "string" ? fields.invoicePdfUrl : (prev?.invoicePdfUrl ?? null);
   void upsertDashboardDraftIndexEntry(
     sessionId,
-    dashboardDraftEntryFromOrderEdits(doc.orderEdits, invoicePdfUrl),
+    dashboardDraftEntryFromOrderEdits(doc.orderEdits, invoicePdfUrl, doc.workspace),
   ).catch(() => {});
   return { ok: true, updatedAt };
 }
