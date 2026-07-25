@@ -74,7 +74,8 @@ async function readOrderDraftJsonFromBlob(
     const res = await get(orderDraftBlobPathname(blob.prefix, sessionId), {
       access: "private",
       token: blob.token,
-      useCache: true,
+      /** Bez keša — citādi „Izpildīts” / workspace PATCH var nolasīt novecojušu JSON un pārrakstīt. */
+      useCache: false,
     });
     if (!res || res.statusCode !== 200 || !res.stream) return null;
     const text = await new Response(res.stream).text();
@@ -191,6 +192,12 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
   const invoicePdfGeneratedAt =
     typeof o.invoicePdfGeneratedAt === "string" ? o.invoicePdfGeneratedAt : undefined;
   const invoiceNumber = typeof o.invoiceNumber === "string" ? o.invoiceNumber : undefined;
+  const auditCompletedAt =
+    typeof o.auditCompletedAt === "string" && o.auditCompletedAt.trim()
+      ? o.auditCompletedAt.trim()
+      : o.auditCompletedAt === null
+        ? null
+        : undefined;
   return {
     orderEdits,
     workspace,
@@ -201,6 +208,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
     invoicePdfUrl,
     invoicePdfGeneratedAt,
     invoiceNumber,
+    ...(auditCompletedAt !== undefined ? { auditCompletedAt } : {}),
   };
 }
 
@@ -412,6 +420,9 @@ export async function restoreOrderDraftRevision(
     ...(normalized.invoicePdfGeneratedAt != null
       ? { invoicePdfGeneratedAt: normalized.invoicePdfGeneratedAt }
       : {}),
+    ...(normalized.auditCompletedAt !== undefined
+      ? { auditCompletedAt: normalized.auditCompletedAt }
+      : {}),
   };
   try {
     await fs.mkdir(dir, { recursive: true });
@@ -587,6 +598,7 @@ export async function patchOrderDraft(
     ...(prev?.invoiceNumber != null ? { invoiceNumber: prev.invoiceNumber } : {}),
     ...(prev?.invoicePdfUrl != null ? { invoicePdfUrl: prev.invoicePdfUrl } : {}),
     ...(prev?.invoicePdfGeneratedAt != null ? { invoicePdfGeneratedAt: prev.invoicePdfGeneratedAt } : {}),
+    ...(prev?.auditCompletedAt !== undefined ? { auditCompletedAt: prev.auditCompletedAt } : {}),
   };
 
   let fsOk = false;
@@ -746,6 +758,7 @@ export async function upsertOrderDraftInvoiceFields(
     ...(prev?.invoiceNumber != null ? { invoiceNumber: prev.invoiceNumber } : {}),
     ...(prev?.invoicePdfUrl != null ? { invoicePdfUrl: prev.invoicePdfUrl } : {}),
     ...(prev?.invoicePdfGeneratedAt != null ? { invoicePdfGeneratedAt: prev.invoicePdfGeneratedAt } : {}),
+    ...(prev?.auditCompletedAt !== undefined ? { auditCompletedAt: prev.auditCompletedAt } : {}),
     ...fields,
   };
 
@@ -789,6 +802,89 @@ export async function upsertOrderDraftInvoiceFields(
     dashboardDraftEntryFromOrderEdits(doc.orderEdits, invoicePdfUrl, doc.workspace),
   ).catch(() => {});
   return { ok: true, updatedAt };
+}
+
+/**
+ * Saglabā 48 h termiņa „Izpildīts” atzīmi pasūtījuma melnraksta JSON (Blob — durable uz Vercel).
+ * Dashboard indekss tiek atjaunināts kā kešs pēc veiksmīgas rakstīšanas.
+ */
+export async function upsertOrderDraftAuditComplete(
+  sessionId: string,
+  complete: boolean,
+): Promise<
+  | { ok: true; updatedAt: string; auditCompletedAt: string | null; durable: boolean }
+  | { ok: false; error: string }
+> {
+  const dir = resolveDraftDir();
+  const blob = resolveOrderDraftBlob();
+  if (!dir && !blob) return { ok: false, error: "store_disabled" };
+  if (process.env.VERCEL === "1" && !blob) return { ok: false, error: "store_not_durable" };
+  if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
+
+  const prev = await readOrderDraft(sessionId);
+  const updatedAt = new Date().toISOString();
+  const auditCompletedAt = complete ? updatedAt : null;
+  const doc = {
+    sessionId,
+    updatedAt,
+    orderEdits: prev?.orderEdits ?? {},
+    workspace: prev?.workspace ?? null,
+    ...(prev?.workspaceRevision != null ? { workspaceRevision: prev.workspaceRevision } : {}),
+    ...(prev?.workspaceChecksum != null ? { workspaceChecksum: prev.workspaceChecksum } : {}),
+    ...(prev?.workspaceSavedAt != null ? { workspaceSavedAt: prev.workspaceSavedAt } : {}),
+    ...(prev?.invoiceNumber != null ? { invoiceNumber: prev.invoiceNumber } : {}),
+    ...(prev?.invoicePdfUrl != null ? { invoicePdfUrl: prev.invoicePdfUrl } : {}),
+    ...(prev?.invoicePdfGeneratedAt != null ? { invoicePdfGeneratedAt: prev.invoicePdfGeneratedAt } : {}),
+    auditCompletedAt,
+  };
+
+  let fsOk = false;
+  let blobOk = false;
+  const skipEphemeralFs = Boolean(process.env.VERCEL === "1" && blob && dir && isEphemeralDraftDir(dir));
+
+  if (dir && !skipEphemeralFs) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+      const fp = draftFilePath(dir, sessionId);
+      const tmp = `${fp}.tmp`;
+      await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
+      await fs.rename(tmp, fp);
+      fsOk = true;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!blob) return { ok: false, error: `write_failed:${msg}` };
+    }
+  }
+
+  if (blob) {
+    try {
+      await writeOrderDraftJsonToBlob(sessionId, doc, blob);
+      blobOk = true;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!fsOk) return { ok: false, error: `blob_write_failed:${msg}` };
+    }
+  }
+
+  if (!fsOk && !blobOk) return { ok: false, error: "write_failed:no_backend" };
+  if (process.env.VERCEL === "1" && !blobOk) return { ok: false, error: "store_not_durable" };
+
+  invalidateOrderDraftCache(sessionId);
+  void upsertDashboardDraftIndexEntry(sessionId, {
+    ...dashboardDraftEntryFromOrderEdits(
+      doc.orderEdits,
+      typeof doc.invoicePdfUrl === "string" ? doc.invoicePdfUrl : null,
+      doc.workspace,
+    ),
+    auditCompletedAt,
+  }).catch(() => {});
+
+  return {
+    ok: true,
+    updatedAt,
+    auditCompletedAt,
+    durable: blobOk || (fsOk && process.env.VERCEL !== "1"),
+  };
 }
 
 /** @deprecated Lietot `upsertOrderDraftInvoiceFields`. */

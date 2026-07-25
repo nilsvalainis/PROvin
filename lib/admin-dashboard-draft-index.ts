@@ -88,7 +88,7 @@ async function readIndexFromBlob(blob: { token: string; prefix: string }): Promi
     const res = await get(indexBlobPath(blob.prefix), {
       access: "private",
       token: blob.token,
-      useCache: true,
+      useCache: false,
     });
     if (!res || res.statusCode !== 200 || !res.stream) return null;
     const raw = JSON.parse(await new Response(res.stream).text()) as unknown;
@@ -167,17 +167,30 @@ export async function upsertDashboardDraftIndexEntry(
   await writeDashboardDraftIndexDoc(doc);
 }
 
-async function readMakeModelFromDraftFile(sessionId: string): Promise<string | null> {
+async function readDraftFileSummaryFields(
+  sessionId: string,
+): Promise<{ makeModel: string | null; auditCompletedAt: string | null }> {
+  const empty = { makeModel: null as string | null, auditCompletedAt: null as string | null };
   const dir = getOrderDraftStorageDir();
   const blob = getOrderDraftBlobConfig();
+
+  const fromRaw = (raw: { workspace?: unknown; auditCompletedAt?: unknown }) => {
+    const makeModel = extractCsddMakeModelFromWorkspace(raw.workspace);
+    const auditCompletedAt =
+      typeof raw.auditCompletedAt === "string" && raw.auditCompletedAt.trim()
+        ? raw.auditCompletedAt.trim()
+        : null;
+    return { makeModel, auditCompletedAt };
+  };
 
   if (dir) {
     try {
       const raw = JSON.parse(await fs.readFile(path.join(dir, `${sessionId}.json`), "utf8")) as {
         workspace?: unknown;
+        auditCompletedAt?: unknown;
       };
-      const mm = extractCsddMakeModelFromWorkspace(raw.workspace);
-      if (mm) return mm;
+      const parsed = fromRaw(raw);
+      if (parsed.makeModel || parsed.auditCompletedAt) return parsed;
     } catch {
       /* try blob */
     }
@@ -188,43 +201,61 @@ async function readMakeModelFromDraftFile(sessionId: string): Promise<string | n
       const res = await get(`${blob.prefix}${sessionId}.json`, {
         access: "private",
         token: blob.token,
-        useCache: true,
+        useCache: false,
       });
-      if (!res || res.statusCode !== 200 || !res.stream) return null;
-      const raw = JSON.parse(await new Response(res.stream).text()) as { workspace?: unknown };
-      return extractCsddMakeModelFromWorkspace(raw.workspace);
+      if (!res || res.statusCode !== 200 || !res.stream) return empty;
+      const raw = JSON.parse(await new Response(res.stream).text()) as {
+        workspace?: unknown;
+        auditCompletedAt?: unknown;
+      };
+      return fromRaw(raw);
     } catch {
-      return null;
+      return empty;
     }
   }
 
-  return null;
+  return empty;
 }
 
-/** Viena JSON lasīšana visiem dashboard laukiem; trūkstošo makeModel mēģina aizpildīt no melnraksta. */
+/** Viena JSON lasīšana visiem dashboard laukiem; trūkstošo makeModel / auditComplete aizpilda no melnraksta. */
 export async function readDashboardDraftSummaries(
   sessionIds: string[],
 ): Promise<Map<string, DashboardDraftIndexEntry>> {
   const doc = await readDashboardDraftIndexDoc();
   const out = new Map<string, DashboardDraftIndexEntry>();
-  const missingMakeModel: string[] = [];
+  const needsBackfill: string[] = [];
 
   for (const id of sessionIds) {
     const entry = doc.entries[id] ?? EMPTY_ENTRY;
     out.set(id, entry);
-    if (!entry.makeModel) missingMakeModel.push(id);
+    if (!entry.makeModel || !entry.auditCompletedAt) needsBackfill.push(id);
   }
 
-  if (missingMakeModel.length > 0) {
+  if (needsBackfill.length > 0) {
     const BACKFILL_CAP = 40;
-    const toFill = missingMakeModel.slice(0, BACKFILL_CAP);
-    const found: { id: string; makeModel: string }[] = [];
+    const toFill = needsBackfill.slice(0, BACKFILL_CAP);
+    const found: { id: string; makeModel?: string; auditCompletedAt?: string }[] = [];
     await Promise.all(
       toFill.map(async (id) => {
-        const mm = await readMakeModelFromDraftFile(id);
-        if (mm) {
-          found.push({ id, makeModel: mm });
-          out.set(id, { ...(out.get(id) ?? EMPTY_ENTRY), makeModel: mm });
+        const prev = out.get(id) ?? EMPTY_ENTRY;
+        if (prev.makeModel && prev.auditCompletedAt) return;
+        const fromDraft = await readDraftFileSummaryFields(id);
+        const makeModel = prev.makeModel || fromDraft.makeModel;
+        const auditCompletedAt = prev.auditCompletedAt || fromDraft.auditCompletedAt;
+        if (
+          (makeModel && makeModel !== prev.makeModel) ||
+          (auditCompletedAt && auditCompletedAt !== prev.auditCompletedAt)
+        ) {
+          found.push({
+            id,
+            ...(makeModel ? { makeModel } : {}),
+            ...(auditCompletedAt ? { auditCompletedAt } : {}),
+          });
+          out.set(id, {
+            ...prev,
+            makeModel: makeModel ?? prev.makeModel,
+            auditCompletedAt: auditCompletedAt ?? prev.auditCompletedAt,
+          });
         }
       }),
     );
@@ -232,9 +263,13 @@ export async function readDashboardDraftSummaries(
       void (async () => {
         try {
           const latest = await readDashboardDraftIndexDoc();
-          for (const { id, makeModel } of found) {
-            const prev = latest.entries[id] ?? EMPTY_ENTRY;
-            latest.entries[id] = { ...prev, makeModel };
+          for (const row of found) {
+            const prev = latest.entries[row.id] ?? EMPTY_ENTRY;
+            latest.entries[row.id] = {
+              ...prev,
+              ...(row.makeModel ? { makeModel: row.makeModel } : {}),
+              ...(row.auditCompletedAt ? { auditCompletedAt: row.auditCompletedAt } : {}),
+            };
           }
           latest.updatedAt = new Date().toISOString();
           await writeDashboardDraftIndexDoc(latest);

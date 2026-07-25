@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { upsertDashboardDraftIndexEntry } from "@/lib/admin-dashboard-draft-index";
+import { upsertOrderDraftAuditComplete } from "@/lib/admin-order-draft-store";
 import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
 
 export const runtime = "nodejs";
 
 /**
- * Persistē 48 h termiņa „Izpildīts” atzīmi dashboard indeksā (ne tikai localStorage).
+ * Persistē 48 h termiņa „Izpildīts” atzīmi pasūtījuma melnraksta JSON (Blob).
  * Body: { sessionId: string, complete: boolean }
  */
 export async function POST(req: Request) {
@@ -43,14 +43,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "missing_complete" }, { status: 400 });
   }
 
-  const auditCompletedAt = complete ? new Date().toISOString() : null;
-  try {
-    await upsertDashboardDraftIndexEntry(sessionId, { auditCompletedAt });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "unknown";
-    console.error("[audit-deadline-complete] upsert failed", msg);
-    return NextResponse.json({ error: "store_failed", detail: msg }, { status: 503 });
+  const res = await upsertOrderDraftAuditComplete(sessionId, complete);
+  if (!res.ok) {
+    const status =
+      res.error === "store_disabled" || res.error === "store_not_durable" ? 503 : 500;
+    console.error("[audit-deadline-complete] upsert failed", res.error);
+    return NextResponse.json(
+      {
+        error: res.error,
+        message:
+          res.error === "store_not_durable" || res.error === "store_disabled"
+            ? "Neizdevās saglabāt — pārbaudi BLOB_READ_WRITE_TOKEN / ADMIN_ORDER_DRAFT_BLOB_PREFIX."
+            : "Neizdevās saglabāt „Izpildīts” atzīmi.",
+      },
+      { status },
+    );
   }
 
-  return NextResponse.json({ ok: true, sessionId, complete, auditCompletedAt });
+  return NextResponse.json({
+    ok: true,
+    sessionId,
+    complete,
+    auditCompletedAt: res.auditCompletedAt,
+    durable: res.durable,
+  });
 }

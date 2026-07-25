@@ -49,6 +49,8 @@ export type OrderDraftState = {
   invoicePdfGeneratedAt?: string;
   /** Piem. PRV-2026-0001 */
   invoiceNumber?: string;
+  /** 48 h termiņa „Izpildīts” — ISO laiks; `null`/nav = nav atzīmēts. Persistē ar melnrakstu (Blob). */
+  auditCompletedAt?: string | null;
 };
 
 export function orderDraftHasOrderEdits(e: OrderDraftOrderEdits | undefined): boolean {

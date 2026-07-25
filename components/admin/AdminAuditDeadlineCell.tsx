@@ -102,6 +102,7 @@ export function AdminAuditDeadlineCell({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, complete: next }),
       });
+      const data = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
       if (!res.ok) {
         setIsComplete(!next);
         setAuditCompleteInLocalCache(
@@ -110,7 +111,12 @@ export function AdminAuditDeadlineCell({
           (k) => localStorage.getItem(k),
           (k, v) => localStorage.setItem(k, v),
         );
-        console.error("[admin] audit-deadline-complete", res.status, await res.text().catch(() => ""));
+        const msg =
+          (typeof data.message === "string" && data.message) ||
+          (typeof data.error === "string" && data.error) ||
+          "Neizdevās saglabāt „Izpildīts” atzīmi.";
+        window.alert(msg);
+        console.error("[admin] audit-deadline-complete", res.status, data);
       }
     } catch (e) {
       setIsComplete(!next);
@@ -120,6 +126,7 @@ export function AdminAuditDeadlineCell({
         (k) => localStorage.getItem(k),
         (k, v) => localStorage.setItem(k, v),
       );
+      window.alert("Tīkla kļūda — „Izpildīts” netika saglabāts. Mēģini vēlreiz.");
       console.error("[admin] audit-deadline-complete fetch", e);
     } finally {
       setSaving(false);
