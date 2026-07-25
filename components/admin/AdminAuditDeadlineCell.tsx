@@ -28,7 +28,7 @@ export function AdminAuditDeadlineCell({
 }: {
   sessionId: string;
   createdUnixSec: number;
-  /** Servera persistents stāvoklis no dashboard indeksa. */
+  /** Servera persistents stāvoklis no audit_complete_index. */
   initialComplete?: boolean;
 }) {
   const tick = useAdminAuditDeadlineTick();

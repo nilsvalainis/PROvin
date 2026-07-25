@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-describe("upsertOrderDraftAuditComplete durability gate", () => {
+describe("setAuditDeadlineComplete durability gate", () => {
   const prevVercel = process.env.VERCEL;
   const prevBlob = process.env.BLOB_READ_WRITE_TOKEN;
   const prevPrefix = process.env.ADMIN_ORDER_DRAFT_BLOB_PREFIX;
@@ -25,8 +25,8 @@ describe("upsertOrderDraftAuditComplete durability gate", () => {
   });
 
   it("rejects Vercel writes without Blob config", async () => {
-    const { upsertOrderDraftAuditComplete } = await import("@/lib/admin-order-draft-store");
-    const res = await upsertOrderDraftAuditComplete("cs_test_audit_1", true);
+    const { setAuditDeadlineComplete } = await import("@/lib/admin-audit-complete-store");
+    const res = await setAuditDeadlineComplete("cs_test_audit_1", true);
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toBe("store_not_durable");
   });

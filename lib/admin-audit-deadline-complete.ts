@@ -1,6 +1,6 @@
 /**
  * Admin pasūtījumu saraksts — 48 h termiņa manuāla „Izpildīts” atzīme.
- * Servera avots: dashboard draft index (`auditCompletedAt`).
+ * Servera avots: `lib/admin-audit-complete-store.ts` (atsevišķs Blob indekss).
  * localStorage — tikai īslaicīgs UX kešs / migrācija no vecās versijas.
  */
 

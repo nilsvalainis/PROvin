@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { upsertOrderDraftAuditComplete } from "@/lib/admin-order-draft-store";
+import { setAuditDeadlineComplete } from "@/lib/admin-audit-complete-store";
 import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
 
 export const runtime = "nodejs";
 
 /**
- * Persistē 48 h termiņa „Izpildīts” atzīmi pasūtījuma melnraksta JSON (Blob).
+ * Persistē 48 h termiņa „Izpildīts” atzīmi atsevišķā durable indeksā (Blob).
  * Body: { sessionId: string, complete: boolean }
  */
 export async function POST(req: Request) {
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "missing_complete" }, { status: 400 });
   }
 
-  const res = await upsertOrderDraftAuditComplete(sessionId, complete);
+  const res = await setAuditDeadlineComplete(sessionId, complete);
   if (!res.ok) {
     const status =
       res.error === "store_disabled" || res.error === "store_not_durable" ? 503 : 500;
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     ok: true,
     sessionId,
     complete,
-    auditCompletedAt: res.auditCompletedAt,
+    auditCompletedAt: res.completedAt,
     durable: res.durable,
   });
 }
