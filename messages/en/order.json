@@ -26,7 +26,7 @@
     "urlPlaceholder": "https://…",
     "listingHint": "Please provide the exact listing URL. Every link is checked manually.",
     "summaryLabel": "Total",
-    "summaryNote": "One-time payment for the selected PROVIN report (MINI €39.99 or AUDIT €99.99): preparation and PDF delivery by email, usually within 48h after successful payment.",
+    "summaryNote": "One-time payment for the selected PROVIN report (MINI €39.99 or AUDIT €99.99): preparation and PDF delivery by email, usually within 24-72h after successful payment.",
     "summaryNoteConsultation": "",
     "continueButton": "Continue",
     "backToFirstStep": "Back",
