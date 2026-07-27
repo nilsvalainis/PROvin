@@ -18,10 +18,10 @@ describe("test-pricing plans", () => {
     expect(isTestPricingPlanId("other")).toBe(false);
   });
 
-  it("mini uses 1999 cents and 24h turnaround", () => {
+  it("mini uses 1999 cents and 24-72h turnaround", () => {
     const mini = getTestPricingPlan("mini")!;
     expect(mini.amountCents).toBe(1999);
-    expect(mini.turnaround).toContain("24h");
+    expect(mini.turnaround).toContain("24-72h");
     expect(mini.vinRequired).toBe(true);
     expect(mini.features.filter((f) => f.kind === "bullet")).toHaveLength(3);
     expect(mini.features.some((f) => f.kind === "exclusion")).toBe(true);
@@ -30,15 +30,16 @@ describe("test-pricing plans", () => {
   it("plus uses 3999 cents and includes mini tier", () => {
     const plus = getTestPricingPlan("plus")!;
     expect(plus.amountCents).toBe(3999);
+    expect(plus.turnaround).toContain("24-72h");
     expect(plus.features.some((f) => f.kind === "includes" && f.tierName === "MINI")).toBe(true);
     expect(plus.features.some((f) => f.kind === "exclusion")).toBe(true);
   });
 
-  it("premium is highlighted with 9999 cents and 48h turnaround", () => {
+  it("premium is highlighted with 9999 cents and 24-72h turnaround", () => {
     const premium = getTestPricingPlan("premium")!;
     expect(premium.amountCents).toBe(9999);
     expect(premium.highlighted).toBe(true);
-    expect(premium.turnaround).toContain("48h");
+    expect(premium.turnaround).toContain("24-72h");
     expect(premium.vinRequired).toBe(true);
     expect(premium.heroCtaLabel).toContain("99,99");
   });
