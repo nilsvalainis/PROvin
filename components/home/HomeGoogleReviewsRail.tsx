@@ -37,7 +37,11 @@ function ReviewCard({
       href={profileUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="provin-google-review-card"
+      className={
+        duplicate
+          ? "provin-google-review-card provin-google-review-card--marquee-dup"
+          : "provin-google-review-card"
+      }
       title={preview}
       aria-label={`${review.author}: ${preview}`}
       aria-hidden={duplicate || undefined}
@@ -57,7 +61,7 @@ function ReviewCard({
   );
 }
 
-/** Horizontāla rinda ar lēnu auto-slīdēšanu (pauze uz hover). */
+/** Horizontāla rinda: mobilajā — manuāls swipe; no md — lēna auto-slīdēšana. */
 export function HomeGoogleReviewsRail({ profileUrl }: { profileUrl: string }) {
   return (
     <div className="provin-google-reviews-rail-shell mt-6 sm:mt-8">

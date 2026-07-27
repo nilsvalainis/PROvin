@@ -1418,7 +1418,11 @@ html:not([data-site-theme="light"]) .home-service-comparison-select-col {
 }
 
 .provin-google-reviews-marquee {
-  overflow: hidden;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 0.25rem;
   padding: 0.2rem 0;
 }
 
@@ -1426,13 +1430,31 @@ html:not([data-site-theme="light"]) .home-service-comparison-select-col {
   display: flex;
   width: max-content;
   gap: 0.85rem;
-  animation: provin-google-reviews-scroll 55s linear infinite;
-  will-change: transform;
 }
 
-.provin-google-reviews-marquee:hover .provin-google-reviews-track,
-.provin-google-reviews-marquee:focus-within .provin-google-reviews-track {
-  animation-play-state: paused;
+.provin-google-review-card--marquee-dup {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .provin-google-reviews-marquee {
+    overflow: hidden;
+    scroll-snap-type: none;
+  }
+
+  .provin-google-reviews-track {
+    animation: provin-google-reviews-scroll 55s linear infinite;
+    will-change: transform;
+  }
+
+  .provin-google-review-card--marquee-dup {
+    display: flex;
+  }
+
+  .provin-google-reviews-marquee:hover .provin-google-reviews-track,
+  .provin-google-reviews-marquee:focus-within .provin-google-reviews-track {
+    animation-play-state: paused;
+  }
 }
 
 @keyframes provin-google-reviews-scroll {
@@ -1446,13 +1468,16 @@ html:not([data-site-theme="light"]) .home-service-comparison-select-col {
 
 @media (prefers-reduced-motion: reduce) {
   .provin-google-reviews-track {
-    animation: none;
+    animation: none !important;
   }
 
   .provin-google-reviews-marquee {
     overflow-x: auto;
-    overscroll-behavior-x: contain;
-    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+
+  .provin-google-review-card--marquee-dup {
+    display: none;
   }
 }
 
@@ -1462,6 +1487,7 @@ html:not([data-site-theme="light"]) .home-service-comparison-select-col {
   flex-direction: column;
   gap: 0.55rem;
   height: 11.5rem;
+  scroll-snap-align: start;
   padding: 1rem 1.1rem;
   border-radius: 1rem;
   border: 1px solid rgb(255 255 255 / 0.1);
