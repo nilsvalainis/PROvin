@@ -125,6 +125,41 @@ export const GEMINI_DAMAGE_CLAIM_CONTEXT_RULES = `DAMAGE & CLAIM AMOUNT CONTEXT 
 - Buyer-facing wording: state whether the sum suggests **relatīvi smagu** bojājumu šai auto klasei/vecumam, **dārgu, bet iespējams lokālu** premium remontu, vai **neskaidru** smagumu, ja trūkst zonu/aprīkojuma datu — never imply „milzīgs negadījums” from EUR alone without context.
 - Examples (logic, not templates): **5 000 €** on a **12-year-old** **~8 000 €** segment car **recently** → likely material damage relative to residual value. **5 000 €** on a **1-year-old premium** in **Germany** with front bumper + headlight zones → may be parking/low-speed impact with costly OEM parts — still requires paint-gauge inspection, but not automatically „write-off level”.`;
 
+/** Elektroauto (BEV) un plug-in hibrīdu (PHEV) pārbaude — obligāti, kad konteksts to norāda. */
+export const GEMINI_EV_BEV_FORENSICS_RULES = `ELECTRIC & PLUG-IN FORENSICS (mandatory when context indicates full electric (BEV), „elektriskais”, „elektro”, PHEV / plug-in hybrid, or an unmistakably electric model/generation — skip for pure petrol/diesel ICE unless only mild hybrid with no plug):
+
+WHEN TO ACTIVATE:
+- CSDD „Degvielas veids” / fuel type mentions elektriskais, elektro, hybrid ar uzlādes spraudni, u.c.; sludinājums vai aprīkojums min kWh, SOH, DC uzlādi, Type 2/CCS; tipiski BEV modeļi (Tesla, ID., e-tron, Leaf, Zoe, Ioniq/EV6 u.tml.).
+
+CORE PRINCIPLE (buyer education — especially in **2. Kopsavilkums**, klātienes ieteikumi, cena, avotu komentāri):
+- Akumulatora veselība nav tikai viens **SOH** (State of Health) procents no rīku vai dīlera ekrāna. Interpretē SOH kopā ar uzlādes paradumiem, klimatu, nobraukumu, garantiju un faktisko diapazonu.
+- Ja SOH nav avotos — neizdomā skaitli; skaidri pasaki, ka klātienē jāverificē ar diagnostiku / ražotāja servisu un jājautā par uzlādes vēsturi.
+
+CHARGING HABITS & DEGRADATION (explain in clear Latvian for the client):
+- **Uzlādes diapazons (SOC):** ilgtermiņā labākā prakse ikdienā ir turēt uzlādi aptuveni **20–80 %** (ne obligāti katru dienu līdz centim, bet izvairīties no pastāvīgas „vienmēr 100 %” un biežas dziļas izlādes zem **10 %**). Pastāvīga uzturēšana pie **100 %** (īpaši karstumā) un bieža **ātrā DC uzlāde** līdz pilnam akumulatoram paātrina novecošanu salīdzinājumā ar mājas/AC uzlādi vidējā diapazonā.
+- **Ātrā (DC) vs mājas (AC) uzlāde:** bieža **ātrā uzlāde** (piem. Ceļu tīkla stacijas, >50–150 kW) ir ērta, bet intensīvāka termiskā slodze — riskantāk akumulatoram nekā galvenokārt **mājas vai darba vietas AC uzlāde** (3,7–11 kW, dažiem 22 kW). Ja avotos vai sarunā ar pārdevēju iespējams secināt „tikai ātrā uzlāde” / komerciāls lietojums — to min kā degradācijas risku, pat ja SOH šķiet labs.
+- **Termiskais konteksts:** Latvijas/Baltijas ziemas (auksts akumulators pirms DC), vasaras karstums un auto novietošana ārā vs garāžā ietekmē reālo resursu. Karstumā uzlādēt līdz 100 % un atstāt stāvēt — sliktāks scenārijs nekā mērens diapazons mājās.
+- **Ilgs stāvēšanas laiks:** mēnešiem gara stāvēšana pie augsta vai ļoti zema SOC var bojāt šūnas — jautā par lietošanas režīmu, ja auto ilgi stāvējis pēc importa.
+
+DATA & DOCUMENTATION:
+- Prasīt / komentēt: **HV akumulatora garantijas** atlikušais laiks un km, ražotāja **BMS / akumulatora kampaņas** un programmatūras atjauninājumi, servisa pieraksti par **aukstuma šķidruma / baterijas termisko sistēmu** (ne tikai „eļļas maiņa”).
+- Pēc negadījuma: strukturāls remonts zem grīdas / šķērsbalsta zonā var skart **augstsprieguma bloku** — korelē ar CarVertical/AutoDNA zonām; klātienē jāvērtē, vai remonts veikts pēc ražotāja procedūrām.
+- Importi: pārbaudīt **CCS/Type 2** saderību, uzlādes kabeļa komplektāciju, vai nav „tikai ASV spec” bez Eiropas uzlādes risinājuma.
+
+PHEV (plug-in hybrid) — papildus ICE loģikai:
+- Neaptur tikai ar elektrisko daļu: **benzīna/dīzeļa** serviss, **sajūga/ātrumkārba**, **AdBlue/DPF** (ja dīzelis) joprojām svarīgi. HV baterija + mazs elektriskais nobraukums bieži nozīmē biežu uzlādi līdz pilnam — pieminēt **20–80 %** principu arī PHEV ikdienai.
+
+KLĀTIENES APSKATE / TESTA BRAUCIENS (EV — aizstāj vai papildina ICE 3 posmus, ja pilnībā elektrisks):
+- Pirms brauciena: **SOH / uzlādes stāvoklis** (ja displejs rāda), kļūdu kodi, **12 V palīgakumulators** (bieža EV „neiedarbojas” cēlonis), uzlādes portu stāvoklis un kabeļi.
+- Pilsēta: vienmērīga reģenerācija, trokšņi no reduktora/gultņiem, vibrācijas (ne tikai dzinēja troksnis — EV ir kluss).
+- Šoseja: stabils temps, **reālais patēriņš / diapazons** vs rādījums (ja iespējams), tempomat, ADAS bez brīdinājumu kaskādes.
+- Dinamika: pilna pedāļa pievilkšana bez jaudas ierobežojuma ikonām, bez negaidītas jaudas samazināšanas (termiska aizsardzība) normālā testā.
+- Ja iespējams: viena **DC uzlādes sesija** vai vismaz uzlādes portā diagnostika — ne obligāti kopsavilkumā solīt, bet ieteikumos klātienē minēt, ja pircējs nopietni vērtē akumulatoru.
+
+ANTI-HALLUCINATION:
+- Neizdomā SOH %, kWh kapacitāti vai „tikai mājas uzlādi”, ja avotos nav pamata. Formulē kā **jautājumus pārdevējam** un **pārbaudes punktus klātienē**.
+- Kopsavilkumā (2. Kopsavilkums): ja auto ir elektrisks, **obligāti** iekļauj vismaz vienu rindkopu par akumulatora/uzlādes riskiem (SOH + uzlādes režīms + ko pārbaudīt), nevis tikai ICE motorstundu eseju.`;
+
 /** Vēsturisko auditu konteksts — citu klientu gatavas atskaites ar līdzīgiem agregātiem. */
 export const GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS (cross-client reference — when present below):
 - These excerpts come from OTHER completed PROVIN audits with similar make/model/year, engine code, transmission, or fuel type — use them to reuse model-specific forensic patterns, inspection checklist themes, phrasing rhythm, and aggregate-specific advice (e.g. known weak points for that engine/gearbox generation).

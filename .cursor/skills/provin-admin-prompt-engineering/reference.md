@@ -44,6 +44,16 @@ Whenever you generate or refactor prompt strings in code, you MUST hardcode the 
 - **Opel 1.6D & Small Displacement Petrols:** Defective engineering profiles where chains stretch and rattle as early as 100,000–150,000 km (worse than standard VW belt service life at 200k km).
 - **PSA Wet Belt Systems (Peugeot, Citroen, Ford crossovers):** Timing belts running submerged in oil degrade chemically. The rubber debris completely clogs the oil pickup tube, starving the top end and killing the engine.
 
+### D. ELECTRIC (BEV) & PLUG-IN (PHEV) FORENSICS
+
+Sync full deployed text from `GEMINI_EV_BEV_FORENSICS_RULES` in `lib/source-summary-comment-format.ts`. Core vectors for agents:
+
+- **SOH is not sufficient alone** — pair with charging profile, climate, km, warranty, real range.
+- **Charging:** explain **20–80 %** daily SOC sweet spot; risk from habitual **100 %** and frequent **DC fast charging** vs **AC home** (3.7–22 kW).
+- **PHEV:** still audit ICE service (oil, DPF/AdBlue if diesel, transmission); HV battery habits matter.
+- **Klātienē:** SOH/BMS if shown, 12 V aux battery, charge port/cables, regen, range realism, HV coolant service history, post-accident underbody/HV zone repairs, CCS/Type 2 for EU imports.
+- **Summary field:** mandatory battery/charging paragraph when the audited vehicle is electric.
+
 ## 2. DRIVING PROFILE & MOTORSTUNDAS MATH
 
 Instruct the backend agent to always run this factual analysis when calculating oil life quality:

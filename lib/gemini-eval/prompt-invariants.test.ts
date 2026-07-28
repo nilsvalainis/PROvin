@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { PROVIN_GEMINI_PROMPT_VERSION } from "@/lib/gemini-prompt-version";
 import {
   GEMINI_DAMAGE_CLAIM_CONTEXT_RULES,
+  GEMINI_EV_BEV_FORENSICS_RULES,
   HYBRID_COMMENT_RULES,
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
   PROVIN_REPORT_COPY_VOCABULARY,
@@ -47,6 +48,7 @@ describe("PROVIN Gemini prompt invariants", () => {
     const prompts = readRepo("lib/admin-gemini-prompts.ts");
     expect(prompts).toContain("FIELD DIVISION & ANTI-REPETITION");
     expect(prompts).toContain("GEMINI_DAMAGE_CLAIM_CONTEXT_RULES");
+    expect(prompts).toContain("GEMINI_EV_BEV_FORENSICS_RULES");
     expect(prompts).toContain("PROVIN_GEMINI_PROMPT_VERSION");
     expect(prompts).toMatch(/NOBRAUKUMA VĒSTURES KOMENTĀRS/);
     expect(prompts).toContain("GEMINI_CLIENT_PDF_EXPERT_MARKDOWN_RULES");
@@ -68,6 +70,12 @@ describe("PROVIN Gemini prompt invariants", () => {
     const polish = readRepo("lib/admin-gemini-polish.ts");
     expect(polish).toMatch(/GEMINI_MODEL_FLASH/);
     expect(polish).not.toMatch(/model:\s*GEMINI_MODEL_PRO/);
+  });
+
+  it("EV forensics rules cover SOH and charging habits", () => {
+    expect(GEMINI_EV_BEV_FORENSICS_RULES).toMatch(/SOH/i);
+    expect(GEMINI_EV_BEV_FORENSICS_RULES).toMatch(/20.?80/i);
+    expect(GEMINI_EV_BEV_FORENSICS_RULES).toMatch(/DC|ātrā/i);
   });
 
   it("prepare-draft parallelizes source comments", () => {

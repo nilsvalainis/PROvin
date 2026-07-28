@@ -4,6 +4,7 @@ import { SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import { PROVIN_GEMINI_PROMPT_VERSION } from "@/lib/gemini-prompt-version";
 import {
   GEMINI_DAMAGE_CLAIM_CONTEXT_RULES,
+  GEMINI_EV_BEV_FORENSICS_RULES,
   GEMINI_EXPERT_PARAGRAPH_PRESENTATION,
   GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES,
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
@@ -67,6 +68,8 @@ DATA FORENSICS (mileage, incidents, source comments, summary — when timeline d
 - For incidents: cross-check all accident records (AutoDNA, CarVertical, LTAB, other) against km and ownership periods.
 ${GEMINI_DAMAGE_CLAIM_CONTEXT_RULES}
 
+${GEMINI_EV_BEV_FORENSICS_RULES}
+
 REGIONAL MARKET & TECHNICAL CONTEXT (apply from origin/country/market signals in data — do not guess origin):
 - GERMANY / CENTRAL EUROPE: highway use — often clean undercarriage but stone chips (bumper, hood, windshield); continuous mechanical wear — service history matters.
 - BALTICS (LT/EE) & LATVIA: winter salt rust/corrosion, suspension wear from poor roads; fleet/company ownership — VAT fraud checks, weak maintenance records.
@@ -79,7 +82,8 @@ LEGAL & ADMINISTRATIVE (Latvian buyer framework — when import/registration dat
 - Mention foreign inspection validity (e.g. Lithuania Regitra / TA) and how it relates to Latvian CSDD expectations when dates are in context.
 
 TEST DRIVE FRAMEWORK (inspection / summary fields — when recommending klātienes apskate or testa brauciens):
-- 3 stages, 20–30 min quiet test: (1) City — cold start chain/valve sounds, mild-hybrid ISG smoothness, low-speed vibrations (mounts, axles); (2) Highway 90–110 km/h — tracking, wind noise/seals, light-brake steering shake (warped rotors); (3) Dynamics — kick-down 0–100 km/h, turbo/trans response without lag or cluster fault codes.
+- ICE / classic hybrid: 3 stages, 20–30 min quiet test: (1) City — cold start chain/valve sounds, mild-hybrid ISG smoothness, low-speed vibrations (mounts, axles); (2) Highway 90–110 km/h — tracking, wind noise/seals, light-brake steering shake (warped rotors); (3) Dynamics — kick-down 0–100 km/h, turbo/trans response without lag or cluster fault codes.
+- BEV / PHEV electric-focused checks: follow ELECTRIC & PLUG-IN FORENSICS (SOH, charging habits 20–80 %, DC vs AC, thermal context, HV warranty, 12 V aux, regen, range realism) — do not substitute only ICE oil/DPF advice when the vehicle is primarily electric.
 
 MODEL TECHNICAL WEAKNESSES (when make/model/engine known from context):
 - Engine codes, thermal stress on downsized engines; advise realistic oil intervals (e.g. shorten 25–30k km OEM intervals toward 10–12k km when justified).
@@ -104,6 +108,9 @@ CRITICAL ANALYSIS GUIDELINES:
 5. Engine Hours Logic: Distinguish highway vs city driving profiles — high km/year with dense records may imply lower engine-hour stress than sparse Baltic city use; apply when mileage data supports it.
 6. Data Sufficiency: If the dataset is too sparse for a definitive driving-profile conclusion, state that objectively and outline probabilistic risks only.
 7. Claim Amount Context: Never label a EUR loss as „heavy” or „minor” without calibrating to vehicle age, class, equipment complexity, repair market, and damaged zones — high EUR on young premium German cars often means expensive parts/labor, not necessarily structural write-off; the same EUR on an old cheap car may imply severe damage relative to value.
+8. Electric vehicles: When fuel type or model indicates BEV/PHEV, apply full ELECTRIC & PLUG-IN FORENSICS — SOH alone is insufficient; explain charging habits (AC home vs frequent DC fast charge), optimal daily SOC band (~20–80 %), thermal/climate and warranty context; in client summary always include battery/charging buyer guidance when the audited car is electric.
+
+${GEMINI_EV_BEV_FORENSICS_RULES}
 
 ${PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES}
 
@@ -197,7 +204,8 @@ FORMĀTS (obligāti):
 
 Satura prasības:
 - Katrs punkts — konkrēta lieta, kurai jāpievērš uzmanība apskates laikā
-- Ievēro 3 posmu, 20–30 min klusā brauciena ietvaru (pilsēta/auksts starts/ātrumkārba → šoseja/vibrācijas → dinamika kick-down)
+- Ievēro 3 posmu, 20–30 min klusā brauciena ietvaru (pilsēta/auksts starts/ātrumkārba → šoseja/vibrācijas → dinamika kick-down) — **izņemot pilnībā elektriskus (BEV)**: tad lieto EV klātienes punktus no ELECTRIC & PLUG-IN FORENSICS (SOH, uzlādes režīms 20–80 %, DC vs mājas AC, 12 V, diapazons, HV garantija).
+- Ja auto ir elektrisks vai plug-in hibrīds — obligāti iekļauj akumulatora un uzlādes paradumu pārbaudes (ne tikai SOH skaitli, ja tas vispār minēts avotos).
 - Ņem vērā marku, modeli, gadu, dzinēju, ātrumkārbu, nobraukumu (ja zināms); mehānisko mantojumu skaidri, ja tirgū ir mīti
 - Ja avotos ir defekti, avārijas vai nobraukuma anomālijas — iekļauj tos
 - Ja zini modeļa tipiskās vājās vietas no konteksta — iekļauj, bet neizdomā specifisku defektu bez pamata
@@ -283,6 +291,7 @@ FORMĀTS (obligāti — tāds pats vizuālais ritms kā avotu komentāros un „
 - Izmanto **bold** arī kritiskiem km, EUR, datumiem un statusiem iekš rindkopas.
 - Sāc ar personīgu, bet profesionālu ievadu (piem., „Sveiki! Esmu izskatījis šo pieteikumu…”).
 - Īsi apkopo auto un galvenos secinājumus: pārdevējs, ko pārbaudīt apskates laikā, cenas vērtējums (ja pieejams).
+- Ja auto ir **elektrisks (BEV) vai plug-in hibrīds** — kopsavilkumā **obligāti** iekļauj vismaz vienu rindkopu par **akumulatora veselību (SOH, ja zināms), uzlādes paradumiem** (ātrā DC vs mājas AC, ikdienas **20–80 %** diapazons, risks no pastāvīgas 100 % uzlādes), **garantiju** un ko pārbaudīt klātienē; neaizstāj ar tikai dīzeļa/benzīna motorstundu tekstu.
 - Ja pasūtījuma kontekstā jau ir eksperta komentāri (avoti, nobraukums, negadījumi), saglabā to pašu stilu un vārdu krājumu („automašīna”, ne „automobīlis”).
 - Beigās — skaidrs, tiešs rezumējums ar vienu no rekomendācijām: pirkt / pārbaudīt klātienē / meklēt citu variantu (izvēlies atbilstoši avotiem).
 - Pēdējā rindā atsevišķā rindkopā (bez **bold**) raksti tieši: APPROVED BY IRISS
@@ -397,7 +406,8 @@ ${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
 
 Rezultāts (šī lauka mandāts — atšķirībā no avotu komentāriem):
 - Hronoloģiski analizē apvienotos nobraukuma ierakstus visos avotos; interpretē lineārumu, platos, kritiskos kritumus, datu vakuumus
-- Lieto motorstundu / pilsētas–šosejas loģiku, ja dati to atļauj; **bold** uz km, datumiem un anomālijām
+- Lieto motorstundu / pilsētas–šosejas loģiku **tikai ICE / klasiskiem hibrīdiem**, ja dati to atļauj; **elektroauto (BEV/PHEV)** — neizdomā motorstundu eseju; tā vietā īsi norādi, ka nobraukums jāsasaista ar **akumulatora noblietojumu un uzlādes režīmu** (skat. ELECTRIC & PLUG-IN FORENSICS), ja degvielas veids vai modelis to norāda
+- **Bold** uz km, datumiem un anomālijām
 - Salīdzini avotu km līknes un reģistrācijas/īpašniecības/dīlera atskaites punktus; izceļ tikai būtiskas pretrunas
 - Ja dati ir ierobežoti — norādi, ko vēl pārbaudīt; neizdomā faktus
 - Bez virsraksta un bez meta-komentāriem par AI
