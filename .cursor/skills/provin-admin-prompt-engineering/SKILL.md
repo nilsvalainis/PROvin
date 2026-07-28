@@ -31,6 +31,8 @@ Whenever you generate or refactor prompt strings in code, you **MUST** hardcode 
 | High financial risk engine segments | §1.C |
 | Driving profile & motorstundas math | §2 |
 | Regional & forensic signatures | §3 |
+| Manufacturer aggregate case packs (deployed) | `lib/provin-aggregate-case-rules.ts` + `lib/admin-gemini-aggregate-knowledge.ts` |
+| Learnings from saved audits (Blob index) | `lib/admin-audit-learnings-store.ts` |
 
 Port substance into `PROVIN_FIELD_AGENT_SYSTEM` and/or field-specific `taskBlock` strings via `provinFieldAgentPrompt()`. Keep [provin-expert-agent](../provin-expert-agent/SKILL.md) aligned for Cursor-side expert copy; avoid drift between skill, reference, and deployed constants.
 

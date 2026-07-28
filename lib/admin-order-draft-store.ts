@@ -669,6 +669,13 @@ export async function patchOrderDraft(
     .then((m) => m.invalidateHistoricalReportsIndexCache())
     .catch(() => {});
 
+  void import("@/lib/admin-gemini-aggregate-knowledge")
+    .then(async (m) => {
+      await m.recordAuditAggregateLearningFromDraft(doc as OrderDraftState);
+      m.invalidateAuditLearningsCache();
+    })
+    .catch(() => {});
+
   if (workspacePatch !== undefined && nextWorkspace != null) {
     const expectedChecksum = workspaceChecksum ?? stableWorkspaceChecksum(nextWorkspace);
     const successPayload = {

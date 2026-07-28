@@ -49,6 +49,7 @@ describe("PROVIN Gemini prompt invariants", () => {
     expect(prompts).toContain("FIELD DIVISION & ANTI-REPETITION");
     expect(prompts).toContain("GEMINI_DAMAGE_CLAIM_CONTEXT_RULES");
     expect(prompts).toContain("GEMINI_EV_BEV_FORENSICS_RULES");
+    expect(prompts).toContain("GEMINI_AGGREGATE_KNOWLEDGE_RULES");
     expect(prompts).toContain("PROVIN_GEMINI_PROMPT_VERSION");
     expect(prompts).toMatch(/NOBRAUKUMA VĒSTURES KOMENTĀRS/);
     expect(prompts).toContain("GEMINI_CLIENT_PDF_EXPERT_MARKDOWN_RULES");

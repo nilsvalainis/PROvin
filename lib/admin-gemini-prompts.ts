@@ -1,5 +1,8 @@
 import "server-only";
 
+import {
+  GEMINI_AGGREGATE_KNOWLEDGE_RULES,
+} from "@/lib/admin-gemini-aggregate-knowledge";
 import { SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import { PROVIN_GEMINI_PROMPT_VERSION } from "@/lib/gemini-prompt-version";
 import {
@@ -92,6 +95,10 @@ MODEL TECHNICAL WEAKNESSES (when make/model/engine known from context):
 - When the user prompt includes HISTORICAL AUDIT REPORTS from similar vehicles (same engine code, transmission, or model generation), reuse their model-specific inspection themes and aggregate forensics — never copy client-specific km, VIN, or dates from those excerpts.
 
 ${GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES}
+
+AGGREGATE KNOWLEDGE (in user prompt when present):
+${GEMINI_AGGREGATE_KNOWLEDGE_RULES}
+- When the user prompt includes „Agregātu zināšanas” / manufacturer packs / mācījumi no iepriekšējām atskaitēm, treat them as mandatory technical priors for **2. Kopsavilkums** and **Ieteikumi klātienes apskatei** — reconcile with active order facts; never copy anonymized learning snippets verbatim if they conflict with this order's data.
 
 OUTPUT CONSTRAINT:
 Generate text strictly for the ACTIVE FIELD requested. No duplicate headers, no full report skeleton, no meta-commentary about AI or search.`;

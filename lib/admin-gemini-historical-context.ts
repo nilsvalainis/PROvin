@@ -92,6 +92,7 @@ function extractHistoricalSnippets(draft: OrderDraftState): Array<{ label: strin
 
   pushSnippet(snippets, ADMIN_MILEAGE_HISTORY_COMMENT_LABEL, draft.orderEdits.mileageComment);
   pushSnippet(snippets, ADMIN_INCIDENTS_SUMMARY_LABEL, draft.orderEdits.internalComment);
+  pushSnippet(snippets, "2. Kopsavilkums", ws.iriss);
   pushSnippet(snippets, "Ieteikumi klātienes apskatei", ws.apskatesPlāns);
   pushSnippet(snippets, "Cenas atbilstība", ws.cenasAtbilstiba);
 

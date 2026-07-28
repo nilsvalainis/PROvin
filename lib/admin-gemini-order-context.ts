@@ -31,6 +31,7 @@ import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
 import { buildHistoricalReportsGeminiContext } from "@/lib/admin-gemini-historical-context";
+import { buildAggregateKnowledgeGeminiContext } from "@/lib/admin-gemini-aggregate-knowledge";
 
 export type GeminiOrderContextInput = {
   sessionId: string;
@@ -313,7 +314,12 @@ export async function buildFullGeminiOrderContextText(input: GeminiOrderContextI
     sourceBlocks: blocks,
     vin: input.vin,
   });
-  const text = historical.trim() ? `${base}\n\n${historical}` : base;
+  const aggregateKnowledge = await buildAggregateKnowledgeGeminiContext({
+    sourceBlocks: blocks,
+    vin: input.vin,
+  });
+  const sections = [base, historical, aggregateKnowledge].filter((s) => s.trim());
+  const text = sections.join("\n\n");
   orderContextCache.set(cacheKey, { text, expiresAt: Date.now() + ORDER_CONTEXT_CACHE_TTL_MS });
   return text;
 }

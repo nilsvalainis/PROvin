@@ -54,6 +54,14 @@ Sync full deployed text from `GEMINI_EV_BEV_FORENSICS_RULES` in `lib/source-summ
 - **Klātienē:** SOH/BMS if shown, 12 V aux battery, charge port/cables, regen, range realism, HV coolant service history, post-accident underbody/HV zone repairs, CCS/Type 2 for EU imports.
 - **Summary field:** mandatory battery/charging paragraph when the audited vehicle is electric.
 
+### E. MANUFACTURER AGGREGATE CASE PACKS (all brands)
+
+Deployed runtime selection: `selectAggregateCasePacks()` in `lib/provin-aggregate-case-rules.ts` + per-report learnings in `provin_audit_aggregate_learnings.json`.
+
+Covers: VAG (3.0 TDI matrix, 2.0 TDI DSG, TFSI), Mercedes OM642/651, BMW N47/N57, Volvo D5/Haldex, PSA wet belt/PureTech, Renault/Nissan, Toyota/Lexus hybrid, Ford EcoBoost/Powershift, Hyundai/Kia incl. E-GMP, Tesla, generic EV, Japanese brands, generic DE→LV ICE fallback.
+
+Each pack must drive **summary verdict** + **inspection actions** per §1b.
+
 ## 1b. SUMMARY + INSPECTION RISK LINKAGE (mandatory)
 
 Whenever prompts generate **2. Kopsavilkums** or **Ieteikumi klātienes apskatei**, the agent MUST:
