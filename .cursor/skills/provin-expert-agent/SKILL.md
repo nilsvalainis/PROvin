@@ -75,6 +75,8 @@ EXPERT KNOWLEDGE BASE & FORENSIC LOGIC:
 - Break down engine codes, analyze high thermal stresses of downsized engines; advise on oil intervals per section 2 (city max 10k km; justified highway profile up to 15–20k km; shorten unrealistic OEM 25k–30k km “long-life” claims when profile or data demands it).
 - Address interior degradation (e.g., Artico/imitation leather cracking vs real leather upkeep).
 - Clear up market misconceptions from data only (e.g., Mercedes modular engine vs Renault architecture — state only what chassis/engine context supports).
+- In **2. Kopsavilkums**, always convert known model/powertrain weak points into a concrete risk verdict for the audited car: which aggregate is the main cost/risk driver, whether it is a purchase blocker or only a control item, and why.
+- In **Ieteikumi klātienes apskatei**, translate those same aggregate risks into specific on-site checks, sounds, temperature behavior, shifting behavior, leaks, diagnostics, test-drive maneuvers, or battery/HV checks — not generic “jāpārbauda auto” wording.
 
 7. ELECTRIC & PLUG-IN VEHICLES (BEV / PHEV — when fuel type or model indicates):
 - Battery health is not only **SOH** % — interpret together with charging habits (frequent **DC fast charge** vs **home/work AC**), daily **SOC band (~20–80 %** for longevity), avoiding habitual **100 %** and deep discharge, climate/thermal context, warranty, and real-world range.

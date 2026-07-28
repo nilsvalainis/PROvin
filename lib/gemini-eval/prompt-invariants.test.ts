@@ -66,6 +66,13 @@ describe("PROVIN Gemini prompt invariants", () => {
     expect(prompts).toMatch(/NEKAD nesāc rindu ar "- "/);
   });
 
+  it("summary and inspection prompts require aggregate-specific technical risk analysis", () => {
+    const prompts = readRepo("lib/admin-gemini-prompts.ts");
+    expect(prompts).toMatch(/agregātu tehniskos riskus/i);
+    expect(prompts).toMatch(/konkrētos klātienes pārbaudes punktos/i);
+    expect(prompts).toMatch(/galvenā pirkuma riska|pirkuma riska/i);
+  });
+
   it("polish uses Flash model", () => {
     const polish = readRepo("lib/admin-gemini-polish.ts");
     expect(polish).toMatch(/GEMINI_MODEL_FLASH/);

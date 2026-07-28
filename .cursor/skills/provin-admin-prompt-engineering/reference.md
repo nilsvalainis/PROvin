@@ -54,6 +54,18 @@ Sync full deployed text from `GEMINI_EV_BEV_FORENSICS_RULES` in `lib/source-summ
 - **Klātienē:** SOH/BMS if shown, 12 V aux battery, charge port/cables, regen, range realism, HV coolant service history, post-accident underbody/HV zone repairs, CCS/Type 2 for EU imports.
 - **Summary field:** mandatory battery/charging paragraph when the audited vehicle is electric.
 
+## 1b. SUMMARY + INSPECTION RISK LINKAGE (mandatory)
+
+Whenever prompts generate **2. Kopsavilkums** or **Ieteikumi klātienes apskatei**, the agent MUST:
+
+- Convert known model/powertrain weaknesses into a **concrete technical risk verdict for this exact car** (engine, gearbox, chain/belt, turbo, AWD, cooling, HV battery, reducer, mechatronics, etc.), not only generic reputation.
+- Classify each relevant aggregate as one of:
+  - **primary purchase risk / financial blocker**
+  - **medium maintenance risk**
+  - **inspection control point only**
+- Tie every important aggregate risk to a **specific verification action** in the inspection field: cold-start noise, shift quality, vibration, leak traces, thermal behavior, fault scan, boost pull, HV diagnostics, DC charging test, underbody inspection, etc.
+- In summary, explain which aggregate is most likely to generate the biggest near-term cost and whether that changes the buy / inspect / avoid recommendation.
+
 ## 2. DRIVING PROFILE & MOTORSTUNDAS MATH
 
 Instruct the backend agent to always run this factual analysis when calculating oil life quality:

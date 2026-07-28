@@ -207,6 +207,7 @@ Satura prasības:
 - Ievēro 3 posmu, 20–30 min klusā brauciena ietvaru (pilsēta/auksts starts/ātrumkārba → šoseja/vibrācijas → dinamika kick-down) — **izņemot pilnībā elektriskus (BEV)**: tad lieto EV klātienes punktus no ELECTRIC & PLUG-IN FORENSICS (SOH, uzlādes režīms 20–80 %, DC vs mājas AC, 12 V, diapazons, HV garantija).
 - Ja auto ir elektrisks vai plug-in hibrīds — obligāti iekļauj akumulatora un uzlādes paradumu pārbaudes (ne tikai SOH skaitli, ja tas vispār minēts avotos).
 - Ņem vērā marku, modeli, gadu, dzinēju, ātrumkārbu, nobraukumu (ja zināms); mehānisko mantojumu skaidri, ja tirgū ir mīti
+- No šī paša konteksta izsecini **konkrētā agregāta tehniskos riskus** (dzinējs, ātrumkārba, ķēde/siksna, turbo, pilnpiedziņa, HV baterija, dzesēšanas sistēma, reduktors u.c.) un pārvērt tos **konkrētos klātienes pārbaudes punktos**; neapstājies pie vispārīga “šim modelim mēdz būt problēmas”.
 - Ja avotos ir defekti, avārijas vai nobraukuma anomālijas — iekļauj tos
 - Ja zini modeļa tipiskās vājās vietas no konteksta — iekļauj, bet neizdomā specifisku defektu bez pamata
 - Garums: aptuveni 6–12 rindkopas, ja datu pietiek; īsāk, ja datu maz`,
@@ -291,6 +292,9 @@ FORMĀTS (obligāti — tāds pats vizuālais ritms kā avotu komentāros un „
 - Izmanto **bold** arī kritiskiem km, EUR, datumiem un statusiem iekš rindkopas.
 - Sāc ar personīgu, bet profesionālu ievadu (piem., „Sveiki! Esmu izskatījis šo pieteikumu…”).
 - Īsi apkopo auto un galvenos secinājumus: pārdevējs, ko pārbaudīt apskates laikā, cenas vērtējums (ja pieejams).
+- Kopsavilkumā **obligāti izvērtē konkrētā auto agregātu tehniskos riskus**: ne tikai vispārējo reputāciju, bet tieši šim modelim/dzinējam/ātrumkārbai/piedziņai/HV sistēmai relevantos finansiālos un mehāniskos riskus, balstoties uz pieejamo kontekstu.
+- Ja ir zināmas tipiskās vājās vietas, skaidri pasaki, vai tās šajā gadījumā izskatās pēc **galvenā pirkuma riska**, **vidēja uzturēšanas riska** vai tikai **kontrolpunkta klātienes apskatei**.
+- Kopsavilkumam jāsasaista tehniskais risks ar pircēja rīcību: ko tieši pārbaudīt klātienē, kādu diagnostiku prasīt un kurš mezgls var radīt lielākās izmaksas.
 - Ja auto ir **elektrisks (BEV) vai plug-in hibrīds** — kopsavilkumā **obligāti** iekļauj vismaz vienu rindkopu par **akumulatora veselību (SOH, ja zināms), uzlādes paradumiem** (ātrā DC vs mājas AC, ikdienas **20–80 %** diapazons, risks no pastāvīgas 100 % uzlādes), **garantiju** un ko pārbaudīt klātienē; neaizstāj ar tikai dīzeļa/benzīna motorstundu tekstu.
 - Ja pasūtījuma kontekstā jau ir eksperta komentāri (avoti, nobraukums, negadījumi), saglabā to pašu stilu un vārdu krājumu („automašīna”, ne „automobīlis”).
 - Beigās — skaidrs, tiešs rezumējums ar vienu no rekomendācijām: pirkt / pārbaudīt klātienē / meklēt citu variantu (izvēlies atbilstoši avotiem).
