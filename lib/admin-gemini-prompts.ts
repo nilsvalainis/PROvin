@@ -55,8 +55,14 @@ LATVIAN GRAMMAR RULES (CRITICAL):
 - For checklists, visual/physical inspections, or next-step recommendations, strictly use objective phrasing (e.g. "Jāpārbauda...", "Ieteicams novērtēt...", "Rūpīgi jāapskata..."). Do not use direct imperatives like "Pārbaudi" or weak passive wording.
 
 CROSS-SOURCE DISCIPLINE (all field types):
-- Never invent facts absent from the provided context.
+- Never invent facts absent from the provided context — except when ACTIVE FIELD rules explicitly allow Google Search grounding to fill model/powertrain technical risk knowledge (see CLIENT SUMMARY).
 - Reconcile CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, listing, and expert notes; state conflicts clearly for the client.
+
+OPERATOR COMMANDS (when the user prompt contains „OPERATORA KOMANDAS” / eksperta piezīmes pirms ģenerēšanas):
+- These are the HIGHEST PRIORITY instructions from the PROVIN admin operator for THIS generation.
+- Execute them precisely: include requested facts, phrasings, risk emphasis, and corrections.
+- If they conflict with default length/style preferences, follow the operator.
+- Do NOT ignore, paraphrase away, or bury operator-requested content under generic filler.
 
 FIELD DIVISION & ANTI-REPETITION (critical — client PDF must not feel copy-pasted):
 - „NOBRAUKUMA VĒSTURES KOMENTĀRS” is the ONLY place for the full chronological mileage synthesis: lineārums, annual averages, motorstundas / city–highway profile, multi-source odometer correlation, data vacuum narrative, and global odometer-risk conclusions.
@@ -293,15 +299,24 @@ Uzdevums: no PILNA klienta portfeļa konteksta (visi aizpildītie avotu bloki, t
 
 Obligāti ņem vērā VISUS pieejamos datus portfelī — ne tikai trīs eksperta laukus. Ja avotā ir CSDD, AutoDNA, CarVertical, LTAB, tirgus, sludinājuma analīze u.c. — secini no tiem kopā.
 
+OPERATORA KOMANDAS (kritiski):
+- Ja promptā ir sadaļa „OPERATORA KOMANDAS” — tā ir ABSOLŪTA prioritāte. Precīzi izpildi, ko eksperts prasa (fakti, frāzes, risku uzsvars). Neignorē.
+
+TEHNISKO RISKU ANALĪZE (OBLIGĀTA — produkta kritiskā sadaļa):
+- Katrā kopsavilkumā **OBLIGĀTI** iekļauj vismaz vienu (labāk 1–2) atsevišķu rindkopu ar **bold** ievadu tipa **Tehniskie riski**, **Agregātu riski**, **Modeļa vājās vietas** vai līdzīgi.
+- Saturs: konkrētā **markas/modeļa/gada/dzinēja/ātrumkārbas/piedziņas** (un EV gadījumā HV baterijas) tipiskie un šim auto relevantie tehniskie/finansiālie riski.
+- Klasificē katru nozīmīgo agregātu: **galvenais pirkuma risks** / **vidējs uzturēšanas risks** / **kontrolpunkts klātienē**.
+- Sasaisti risku ar rīcību: ko pārbaudīt, kādu diagnostiku prasīt, kurš mezgls var radīt lielākās izmaksas.
+- AVOTI šai analīzei (šādā secībā): (1) agregātu zināšanas / vēsturiskie auditi promptā, ja ir; (2) pasūtījuma CSDD/Outvin/engine code; (3) **Google Search grounding** — ja kontekstā trūkst pietiekamu modeļa-specifisku risku, MEKLĒ un sintezē tipiskās vājās vietas šim agregātam (ķēde, DSG, DPF, wet belt, SOH u.tml.).
+- Neatkarīgi no tā, vai PROVIN jau ir līdzīgs audits — tehnisko risku rindkopa JĀBŪT VIENMĒR. Neaizstāj ar tikai nobraukuma/negadījumu eseju.
+- Neizdomā VIN/km/EUR no meklēšanas; meklē tikai tipiskās agregātu problēmas un apkopes loģiku, tad pielāgo AKTĪVAJAM auto.
+
 FORMĀTS (obligāti — tāds pats vizuālais ritms kā avotu komentāros un „APPROVED BY IRISS” PDF):
 - Raksti tikai rindkopās — starp rindkopām tukša rinda (\\n\\n); NEVERS izmanto sarakstu prefiksus rindkopu sākumā (-, •, 1.).
-- KATRAS rindkopas pirmais teikums sākas ar **bold** tematisko ievadu (3–10 vārdi), piem. **Galvenais secinājums**, **Nobraukums un riski**, **Ko pārbaudīt klātienē** — pēc tam turpini parastā tekstā tajā pašā rindkopā.
+- KATRAS rindkopas pirmais teikums sākas ar **bold** tematisko ievadu (3–10 vārdi), piem. **Galvenais secinājums**, **Tehniskie riski**, **Ko pārbaudīt klātienē** — pēc tam turpini parastā tekstā tajā pašā rindkopā.
 - Izmanto **bold** arī kritiskiem km, EUR, datumiem un statusiem iekš rindkopas.
 - Sāc ar personīgu, bet profesionālu ievadu (piem., „Sveiki! Esmu izskatījis šo pieteikumu…”).
 - Īsi apkopo auto un galvenos secinājumus: pārdevējs, ko pārbaudīt apskates laikā, cenas vērtējums (ja pieejams).
-- Kopsavilkumā **obligāti izvērtē konkrētā auto agregātu tehniskos riskus**: ne tikai vispārējo reputāciju, bet tieši šim modelim/dzinējam/ātrumkārbai/piedziņai/HV sistēmai relevantos finansiālos un mehāniskos riskus, balstoties uz pieejamo kontekstu.
-- Ja ir zināmas tipiskās vājās vietas, skaidri pasaki, vai tās šajā gadījumā izskatās pēc **galvenā pirkuma riska**, **vidēja uzturēšanas riska** vai tikai **kontrolpunkta klātienes apskatei**.
-- Kopsavilkumam jāsasaista tehniskais risks ar pircēja rīcību: ko tieši pārbaudīt klātienē, kādu diagnostiku prasīt un kurš mezgls var radīt lielākās izmaksas.
 - Ja auto ir **elektrisks (BEV) vai plug-in hibrīds** — kopsavilkumā **obligāti** iekļauj vismaz vienu rindkopu par **akumulatora veselību (SOH, ja zināms), uzlādes paradumiem** (ātrā DC vs mājas AC, ikdienas **20–80 %** diapazons, risks no pastāvīgas 100 % uzlādes), **garantiju** un ko pārbaudīt klātienē; neaizstāj ar tikai dīzeļa/benzīna motorstundu tekstu.
 - Ja pasūtījuma kontekstā jau ir eksperta komentāri (avoti, nobraukums, negadījumi), saglabā to pašu stilu un vārdu krājumu („automašīna”, ne „automobīlis”).
 - Beigās — skaidrs, tiešs rezumējums ar vienu no rekomendācijām: pirkt / pārbaudīt klātienē / meklēt citu variantu (izvēlies atbilstoši avotiem).

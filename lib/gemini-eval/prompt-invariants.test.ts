@@ -69,9 +69,28 @@ describe("PROVIN Gemini prompt invariants", () => {
 
   it("summary and inspection prompts require aggregate-specific technical risk analysis", () => {
     const prompts = readRepo("lib/admin-gemini-prompts.ts");
-    expect(prompts).toMatch(/agregātu tehniskos riskus/i);
-    expect(prompts).toMatch(/konkrētos klātienes pārbaudes punktos/i);
-    expect(prompts).toMatch(/galvenā pirkuma riska|pirkuma riska/i);
+    expect(prompts).toMatch(/TEHNISKO RISKU ANALĪZE/i);
+    expect(prompts).toMatch(/OPERATORA KOMANDAS/i);
+    expect(prompts).toMatch(/konkrētos klātienes pārbaudes punktos|Agregātu riski|Tehniskie riski/i);
+  });
+
+  it("operator notes are prepended with highest priority", () => {
+    const notes = readRepo("lib/admin-gemini-operator-notes.ts");
+    expect(notes).toMatch(/AUGSTĀKĀ PRIORITĀTE/);
+    expect(notes).toMatch(/parts\.push\(userPrompt/);
+  });
+
+  it("summary generation uses Google Search grounding", () => {
+    const summary = readRepo("lib/admin-gemini-summary.ts");
+    expect(summary).toMatch(/geminiGenerateTextWithGoogleSearch/);
+    expect(summary).toMatch(/TEHNISKO RISKU ANALĪZE/);
+  });
+
+  it("avg annual mileage banner is removed from info banners", () => {
+    const banners = readRepo("lib/provin-alert-banners.ts");
+    expect(banners).not.toMatch(/avg_annual_mileage/);
+    expect(banners).not.toMatch(/computeAverageAnnualMileage/);
+    expect(banners).toMatch(/lv_registration_tenure/);
   });
 
   it("polish uses Flash model", () => {

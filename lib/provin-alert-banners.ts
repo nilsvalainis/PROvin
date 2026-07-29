@@ -30,9 +30,8 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { computeLatviaRegistrationTenure } from "@/lib/latvia-registration-tenure";
-import { computeAverageAnnualMileageFromPayloadSlice } from "@/lib/average-annual-mileage";
 
-export type ProvinInfoBannerKind = "lv_registration_tenure" | "avg_annual_mileage";
+export type ProvinInfoBannerKind = "lv_registration_tenure";
 
 export type ProvinAlertBannerKind =
   | "odometer"
@@ -67,7 +66,6 @@ export const PROVIN_ALERT_BANNER_KINDS = [
 
 export const PROVIN_INFO_BANNER_KINDS = [
   "lv_registration_tenure",
-  "avg_annual_mileage",
 ] as const satisfies readonly ProvinInfoBannerKind[];
 
 const MANUAL_BANNER_SEVERITIES = new Set<ProvinManualBannerSeverity>(["grey", "yellow", "red"]);
@@ -345,19 +343,6 @@ export function computeProvinInfoBannersFromPayloadSlice(
   });
   if (tenure) {
     out.push({ kind: "lv_registration_tenure", text: tenure.sentence });
-  }
-
-  const avg = computeAverageAnnualMileageFromPayloadSlice(
-    {
-      csddForm: p.csddForm,
-      autoRecordsBlock: p.autoRecordsBlock ?? null,
-      manualVendorBlocks: p.manualVendorBlocks ?? null,
-      citiAvotiBlock: p.citiAvotiBlock ?? null,
-    },
-    referenceDate,
-  );
-  if (avg) {
-    out.push({ kind: "avg_annual_mileage", text: avg.sentence });
   }
 
   return out;

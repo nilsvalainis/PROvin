@@ -1,6 +1,9 @@
 import "server-only";
 
-import { geminiGenerateExpertText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
+import {
+  geminiGenerateTextWithGoogleSearch,
+  resolveGeminiAdminModel,
+} from "@/lib/admin-gemini";
 import { GEMINI_SUMMARY_ANALYSIS_SYSTEM } from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
 import {
@@ -10,6 +13,7 @@ import {
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { buildPreviouslyGeneratedSourceCommentsContext } from "@/lib/admin-source-comment-blocks";
+import { normalizeProvinExpertGeminiComment } from "@/lib/source-summary-comment-format";
 
 function expertSection(label: string, html: string): string {
   const t = adminRichHtmlToPlainText(html).trim();
@@ -42,8 +46,13 @@ export async function generateSummaryAnalysisWithGemini(input: GeminiOrderContex
 
   const sourceCommentsContext = buildPreviouslyGeneratedSourceCommentsContext(null, blocks).trim();
 
+  const makeModel = blocks.csdd.makeModel.trim();
+  const fuel = blocks.csdd.fuelType.trim();
+  const vehicleHint = [makeModel, fuel].filter(Boolean).join(", ");
+
   const userPrompt = appendGeminiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
+${vehicleHint ? `Identificētais auto (CSDD): ${vehicleHint}` : ""}
 
 ${orderContext ? `${orderContext}\n\n---\n\n` : ""}${
       sourceCommentsContext
@@ -54,7 +63,12 @@ ${orderContext ? `${orderContext}\n\n---\n\n` : ""}${
         ? `Eksperta jau sagatavotās sadaļas (papildus konteksts, nevis vienīgais avots):\n\n${expertBundle}\n\n---\n\n`
         : ""
     }Sagatavo gala kopsavilkumu klientam laukam „2. Kopsavilkums”.
-Sintezē VISU portfeļa kontekstu — avotu datus, tabulas, komentārus un eksperta sadaļas.`,
+Sintezē VISU portfeļa kontekstu — avotu datus, tabulas, komentārus un eksperta sadaļas.
+
+KRITISKI — TEHNISKO RISKU ANALĪZE:
+- Obligāti iekļauj atsevišķu rindkopu ar **bold** ievadu (**Tehniskie riski** / **Agregātu riski** / **Modeļa vājās vietas**) par šī konkrētā modeļa/dzinēja/ātrumkārbas tipiskajiem riskiem.
+- Ja promptā jau ir agregātu zināšanas — izmanto tās. Ja trūkst — izmanto Google Search, lai atrastu tipiskās vājās vietas šim agregātam, tad pielāgo šim auto.
+- Bez šīs rindkopas kopsavilkums NAV derīgs.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:
@@ -64,11 +78,11 @@ Sintezē VISU portfeļa kontekstu — avotu datus, tabulas, komentārus un ekspe
     },
   );
 
-  return geminiGenerateExpertText({
+  const raw = await geminiGenerateTextWithGoogleSearch({
     model: resolveGeminiAdminModel(input.modelTier),
     systemInstruction: GEMINI_SUMMARY_ANALYSIS_SYSTEM,
     userPrompt,
-    temperature: 0.35,
-    maxLen: 3200,
+    temperature: 0.3,
   });
+  return normalizeProvinExpertGeminiComment(raw, 3600);
 }

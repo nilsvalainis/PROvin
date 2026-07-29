@@ -24,7 +24,7 @@ export function AdminGeminiGenerateWithPrefill({
   demoOnly,
   title,
   dialogTitle = "Papildu piezīmes AI",
-  dialogHint = "Ievadi korekcijas, papildinājumus vai kontekstu. AI apvienos tos ar automātiski ģenerēto tekstu un esošo melnrakstu.",
+                dialogHint = "Ievadi korekcijas, papildinājumus vai kontekstu. AI precīzi izpildīs šīs komandas (augstākā prioritāte) un apvienos ar ģenerējamo tekstu.",
   onGenerate,
 }: Props) {
   const [open, setOpen] = useState(false);

@@ -1,6 +1,9 @@
 import "server-only";
 
-/** Papildina Gemini lietotāja promptu ar eksperta piezīmēm un esošo melnrakstu. */
+/**
+ * Papildina Gemini lietotāja promptu ar eksperta piezīmēm un esošo melnrakstu.
+ * Operatora komandas iet **pirms** konteksta — citādi milzīgs portfelis tās pārspēj.
+ */
 export function appendGeminiOperatorNotesSection(
   userPrompt: string,
   options?: {
@@ -8,19 +11,32 @@ export function appendGeminiOperatorNotesSection(
     existingDraftPlain?: string | null;
   },
 ): string {
-  const parts = [userPrompt.trim()];
-  const draft = options?.existingDraftPlain?.trim();
-  if (draft) {
-    parts.push(
-      `=== Esošais melnraksts (jāapvieno ar jauno tekstu — nevis jāatkārto vārds vārdā) ===\n${draft}`,
-    );
-  }
+  const parts: string[] = [];
   const notes = options?.operatorNotes?.trim();
   if (notes) {
     parts.push(
-      `=== Eksperta piezīmes pirms ģenerēšanas (obligāti iekļauj, koriģē un apvieno ar ģenerējamo saturu) ===\n${notes}`,
+      [
+        "=== OPERATORA KOMANDAS (AUGSTĀKĀ PRIORITĀTE — PRECĪZI IZPILDĪT) ===",
+        "Šīs ir admin eksperta tiešās instrukcijas šim ģenerējumam.",
+        "Tās OVERWRITE / pārspēj noklusējuma stilu, garumu un satura uzsvaru, ja ir konflikts.",
+        "Obligāti: iekļauj pieprasītos faktus, formulējumus un secinājumus; neizlaid un neaizstāj ar vispārīgu tekstu.",
+        "Ja komanda liek rakstīt par tehniskajiem riskiem, modeļa vājajām vietām vai konkrētu frāzi — TAS JĀBŪT izejas tekstā.",
+        "",
+        notes,
+        "",
+        "=== BEIGAS OPERATORA KOMANDĀM ===",
+      ].join("\n"),
     );
   }
+
+  const draft = options?.existingDraftPlain?.trim();
+  if (draft) {
+    parts.push(
+      `=== Esošais melnraksts (jāapvieno ar jauno tekstu — nevis jāatkārto vārds vārdā; operatora komandas virs tā) ===\n${draft}`,
+    );
+  }
+
+  parts.push(userPrompt.trim());
   return parts.filter(Boolean).join("\n\n");
 }
 
