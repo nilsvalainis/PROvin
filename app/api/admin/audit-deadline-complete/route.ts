@@ -4,11 +4,9 @@ import { setAuditDeadlineComplete } from "@/lib/admin-audit-complete-store";
 import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-/**
- * Persistē 48 h termiņa „Izpildīts” atzīmi atsevišķā durable indeksā (Blob).
- * Body: { sessionId: string, complete: boolean }
- */
+/** Body: { sessionId: string, complete: boolean } */
 export async function POST(req: Request) {
   if (!(await getAdminSession())) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -45,18 +43,16 @@ export async function POST(req: Request) {
 
   const res = await setAuditDeadlineComplete(sessionId, complete);
   if (!res.ok) {
-    const status =
-      res.error === "store_disabled" || res.error === "store_not_durable" ? 503 : 500;
-    console.error("[audit-deadline-complete] upsert failed", res.error);
+    console.error("[audit-deadline-complete]", res.error);
     return NextResponse.json(
       {
         error: res.error,
         message:
           res.error === "store_not_durable" || res.error === "store_disabled"
-            ? "Neizdevās saglabāt — pārbaudi BLOB_READ_WRITE_TOKEN / ADMIN_ORDER_DRAFT_BLOB_PREFIX."
-            : "Neizdevās saglabāt „Izpildīts” atzīmi.",
+            ? "Neizdevās saglabāt — trūkst BLOB_READ_WRITE_TOKEN / ADMIN_ORDER_DRAFT_BLOB_PREFIX."
+            : "Neizdevās saglabāt „Izpildīts”.",
       },
-      { status },
+      { status: res.error === "store_disabled" || res.error === "store_not_durable" ? 503 : 500 },
     );
   }
 
@@ -65,6 +61,5 @@ export async function POST(req: Request) {
     sessionId,
     complete,
     auditCompletedAt: res.completedAt,
-    durable: res.durable,
   });
 }

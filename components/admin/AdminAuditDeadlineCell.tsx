@@ -3,11 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { formatAuditDeadlineRemaining, type AuditDeadlineStatus } from "@/lib/admin-audit-deadline";
 import { useAdminAuditDeadlineTick } from "@/components/admin/AdminAuditDeadlineTickProvider";
-import {
-  ADMIN_AUDIT_COMPLETE_STORAGE_KEY,
-  readAuditCompleteIdsFromStorage,
-  setAuditCompleteInLocalCache,
-} from "@/lib/admin-audit-deadline-complete";
 
 const PILL_BASE =
   "inline-flex cursor-pointer rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ring-1 transition hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/35 disabled:cursor-wait disabled:opacity-70";
@@ -28,7 +23,7 @@ export function AdminAuditDeadlineCell({
 }: {
   sessionId: string;
   createdUnixSec: number;
-  /** Servera persistents stāvoklis no audit_complete_index. */
+  /** Servera stāvoklis pēc lapas ielādes. */
   initialComplete?: boolean;
 }) {
   const tick = useAdminAuditDeadlineTick();
@@ -39,48 +34,6 @@ export function AdminAuditDeadlineCell({
     setIsComplete(initialComplete);
   }, [initialComplete, sessionId]);
 
-  /** Vienreizēja migrācija: vecā localStorage atzīme → serveris. */
-  useEffect(() => {
-    if (initialComplete) return;
-    const localIds = readAuditCompleteIdsFromStorage((k) => localStorage.getItem(k));
-    if (!localIds.has(sessionId)) return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch("/api/admin/audit-deadline-complete", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId, complete: true }),
-        });
-        if (!cancelled && res.ok) {
-          setIsComplete(true);
-          setAuditCompleteInLocalCache(
-            sessionId,
-            true,
-            (k) => localStorage.getItem(k),
-            (k, v) => localStorage.setItem(k, v),
-          );
-        }
-      } catch {
-        /* ignore — lietotājs var noklikšķināt manuāli */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [initialComplete, sessionId]);
-
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key !== ADMIN_AUDIT_COMPLETE_STORAGE_KEY) return;
-      const ids = readAuditCompleteIdsFromStorage((k) => localStorage.getItem(k));
-      setIsComplete(ids.has(sessionId) || initialComplete);
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, [sessionId, initialComplete]);
-
   void tick;
   const { label, status } = formatAuditDeadlineRemaining(createdUnixSec);
 
@@ -89,12 +42,6 @@ export function AdminAuditDeadlineCell({
     const next = !isComplete;
     setIsComplete(next);
     setSaving(true);
-    setAuditCompleteInLocalCache(
-      sessionId,
-      next,
-      (k) => localStorage.getItem(k),
-      (k, v) => localStorage.setItem(k, v),
-    );
     try {
       const res = await fetch("/api/admin/audit-deadline-complete", {
         method: "POST",
@@ -105,51 +52,31 @@ export function AdminAuditDeadlineCell({
       const data = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
       if (!res.ok) {
         setIsComplete(!next);
-        setAuditCompleteInLocalCache(
-          sessionId,
-          !next,
-          (k) => localStorage.getItem(k),
-          (k, v) => localStorage.setItem(k, v),
-        );
-        const msg =
+        window.alert(
           (typeof data.message === "string" && data.message) ||
-          (typeof data.error === "string" && data.error) ||
-          "Neizdevās saglabāt „Izpildīts” atzīmi.";
-        window.alert(msg);
-        console.error("[admin] audit-deadline-complete", res.status, data);
+            (typeof data.error === "string" && data.error) ||
+            "Neizdevās saglabāt „Izpildīts”.",
+        );
+        return;
       }
-    } catch (e) {
+    } catch {
       setIsComplete(!next);
-      setAuditCompleteInLocalCache(
-        sessionId,
-        !next,
-        (k) => localStorage.getItem(k),
-        (k, v) => localStorage.setItem(k, v),
-      );
-      window.alert("Tīkla kļūda — „Izpildīts” netika saglabāts. Mēģini vēlreiz.");
-      console.error("[admin] audit-deadline-complete fetch", e);
+      window.alert("Tīkla kļūda — „Izpildīts” netika saglabāts.");
     } finally {
       setSaving(false);
     }
   }, [isComplete, saving, sessionId]);
-
-  const displayLabel = isComplete ? "Izpildīts" : label;
-  const pillClass = isComplete ? PILL_COMPLETED : PILL_BY_STATUS[status];
 
   return (
     <button
       type="button"
       onClick={() => void onToggle()}
       disabled={saving}
-      className={`${PILL_BASE} tabular-nums ${pillClass}`}
+      className={`${PILL_BASE} tabular-nums ${isComplete ? PILL_COMPLETED : PILL_BY_STATUS[status]}`}
       aria-pressed={isComplete}
-      title={
-        isComplete
-          ? "Atzīmēts kā izpildīts — klikšķis atceļ"
-          : "Klikšķini, lai atzīmētu audita sagatavošanu kā izpildītu (48 h)"
-      }
+      title={isComplete ? "Izpildīts — klikšķis atceļ" : "Atzīmēt auditu kā izpildītu"}
     >
-      {displayLabel}
+      {isComplete ? "Izpildīts" : label}
     </button>
   );
 }
