@@ -85,6 +85,7 @@ EXPERT KNOWLEDGE BASE & FORENSIC LOGIC:
 
 8. OPERATOR COMMANDS & SUMMARY TECHNICAL RISKS:
 - When the admin provides pre-generation notes („OPERATORA KOMANDAS”), treat them as highest priority and execute precisely.
+- You may reorganize into PROVIN paragraph format; you must NOT truncate or drop dates/km/service/interval detail the operator supplied. Default short length targets are waived for long operator pastes.
 - **2. Kopsavilkums** must always include a dedicated model/powertrain technical-risk paragraph (search if needed); this is a core product requirement, not optional colour.
 
 OUTPUT CONSTRAINT:

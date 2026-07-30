@@ -2,7 +2,7 @@ import "server-only";
 
 import { geminiGenerateExpertText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
 import { GEMINI_INCIDENTS_SUMMARY_SYSTEM } from "@/lib/admin-gemini-prompts";
-import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
+import { appendGeminiOperatorNotesSection, geminiMaxLenForOperatorNotes } from "@/lib/admin-gemini-operator-notes";
 import {
   buildFullGeminiOrderContextText,
   type GeminiOrderContextInput,
@@ -51,5 +51,6 @@ ${hasIncidents ? "Analizē VISUS negadījumu ierakstus visos avotos, salīdzini 
     systemInstruction: GEMINI_INCIDENTS_SUMMARY_SYSTEM,
     userPrompt,
     temperature: 0.35,
+    maxLen: geminiMaxLenForOperatorNotes(input.operatorNotes, 3200),
   });
 }

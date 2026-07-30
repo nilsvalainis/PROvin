@@ -2,7 +2,7 @@ import "server-only";
 
 import { geminiGenerateExpertText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
 import { GEMINI_PRICE_ANALYSIS_SYSTEM } from "@/lib/admin-gemini-prompts";
-import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
+import { appendGeminiOperatorNotesSection, geminiMaxLenForOperatorNotes } from "@/lib/admin-gemini-operator-notes";
 import {
   buildFullGeminiOrderContextText,
   type GeminiOrderContextInput,
@@ -41,5 +41,6 @@ Novērtē cenas atbilstību Latvijas lietotu auto tirgum (ss.lv), salīdzinot ar
     systemInstruction: GEMINI_PRICE_ANALYSIS_SYSTEM,
     userPrompt,
     temperature: 0.35,
+    maxLen: geminiMaxLenForOperatorNotes(input.operatorNotes, 3200),
   });
 }

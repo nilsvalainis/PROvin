@@ -77,7 +77,14 @@ describe("PROVIN Gemini prompt invariants", () => {
   it("operator notes are prepended with highest priority", () => {
     const notes = readRepo("lib/admin-gemini-operator-notes.ts");
     expect(notes).toMatch(/AUGSTĀKĀ PRIORITĀTE/);
+    expect(notes).toMatch(/NEDRĪKSTI APGRAIZĪT/);
+    expect(notes).toMatch(/geminiMaxLenForOperatorNotes/);
     expect(notes).toMatch(/parts\.push\(userPrompt/);
+  });
+
+  it("hybrid comment rules waive short length when operator supplies detail", () => {
+    expect(HYBRID_COMMENT_RULES).toMatch(/LENGTH OVERRIDE/i);
+    expect(HYBRID_COMMENT_RULES).toMatch(/IGNORE the 600–1100/i);
   });
 
   it("summary generation uses Google Search grounding", () => {

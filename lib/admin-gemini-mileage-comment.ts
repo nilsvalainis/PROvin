@@ -2,7 +2,7 @@ import "server-only";
 
 import { geminiGenerateExpertText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
 import { GEMINI_MILEAGE_COMMENT_SYSTEM } from "@/lib/admin-gemini-prompts";
-import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
+import { appendGeminiOperatorNotesSection, geminiMaxLenForOperatorNotes } from "@/lib/admin-gemini-operator-notes";
 import {
   buildFullGeminiOrderContextText,
   type GeminiOrderContextInput,
@@ -28,7 +28,7 @@ ${orderContext}
 
 Sagatavo komentāru laukam „${ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}”.
 Šis ir APKOPOJOŠAIS nobraukuma lauks: sintezē visu avotu odometra ainu (lineārums, vakuumi, anomālijas, motorstundas, ja dati ļauj).
-Neatkārto avotu bojājumu/TA/dīlera komentāru tekstu — fokusējas uz nobraukumu.`,
+Neatkārto avotu bojājumu/TA/dīlera komentāru tekstu — fokusējas uz nobraukumu — IZŅEMOT, ja OPERATORA KOMANDĀS iedots plašs materiāls: tad to saglabā pilnībā (pārkārto, neapgraizi).`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:
@@ -43,5 +43,6 @@ Neatkārto avotu bojājumu/TA/dīlera komentāru tekstu — fokusējas uz nobrau
     systemInstruction: GEMINI_MILEAGE_COMMENT_SYSTEM,
     userPrompt,
     temperature: 0.35,
+    maxLen: geminiMaxLenForOperatorNotes(input.operatorNotes, 4000),
   });
 }

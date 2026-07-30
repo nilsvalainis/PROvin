@@ -106,7 +106,7 @@ VISUAL PRESENTATION (mandatory for all expert client PDF comments):
 ${PROVIN_REPORT_COPY_VOCABULARY}
 - STRUCTURE: Write ONLY in paragraphs — separate paragraphs with a blank line (double newline). NEVER start any line with "- ", "• ", "* ", "– ", or "1." / "2." — no bullet lists, no numbered lists, no list-style prefixes of any kind. This applies to EVERY expert field, including ieteikumi klātienes apskatei, pārdevēja portrets, avotu komentāri, nobraukums, negadījumi, cena and kopsavilkums.
 - PARAGRAPH OPENER: Every paragraph MUST begin with a short **bold** topic hook (3–10 words) naming the theme — e.g. **Nobraukuma vēsture Latvijā**, **Virsbūves pārbaude ar krāsas mērītāju**, **Tehnisko apskašu tendence** — then continue in natural prose in the same paragraph.
-- SCANABILITY: Keep each paragraph to 2–4 sentences. Prefer several short focused paragraphs over one dense wall of text.
+- SCANABILITY: Keep each paragraph to 2–4 sentences by default. When OPERATORA KOMANDAS supply dense timelines or interval analysis, allow longer paragraphs and more paragraphs — never sacrifice operator detail for scanability.
 - EMPHASIS: Use **bold** inline for key dates, km, EUR sums, option codes, and risk labels — never bold an entire paragraph.
 - HUMAN TONE: Write like a senior Latvian inspector briefing a buyer — concrete, varied rhythm, no AI filler ("Kopumā var secināt", "Svarīgi atzīmēt", "Turklāt jāpiemin", "Nav šaubu"). Do not wrap the whole output in quotation marks.
 - ANOMALIES: State risks inside prose; you may use **Anomālija:** as a bold paragraph opener when a clear conflict exists — still never prefix with "- ".
@@ -171,11 +171,12 @@ export const GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS
 export const HYBRID_COMMENT_RULES = `
 COMMENTARY RULES for PROVIN Senior Auto Expert:
 ${GEMINI_EXPERT_PARAGRAPH_PRESENTATION}
-- LENGTH: Target 600–1100 characters for per-source comments; thorough on THIS source, not a second full-report essay.
-- STYLE: Analytical, professional automotive forensic Latvian. No conversational fluff or meta-commentary.
-- LOGIC: Interpret contradictions and what findings mean for the buyer — do not only list raw facts.
+- LENGTH (default when generating from source data alone): Target 600–1100 characters for per-source comments — thorough on THIS source, not a second full-report essay.
+- LENGTH OVERRIDE: When the user prompt includes substantial OPERATORA KOMANDAS / eksperta piezīmes with detailed prose, dates, km, service history, or interval analysis — IGNORE the 600–1100 target. Preserve the operator's detail density; reorganize into paragraphs with **bold** hooks; do not compress into a short formula. Output may be long.
+- STYLE: Analytical, professional automotive forensic Latvian. Flexible structure — not one fixed 3-paragraph template. Match the richness of the operator material when present.
+- LOGIC: Interpret contradictions and what findings mean for the buyer — do not only list raw facts; but never drop operator-supplied facts to fit a template.
 ${GEMINI_DAMAGE_CLAIM_CONTEXT_RULES}
-- ANTI-REPETITION (critical): Do NOT restate the same mileage timeline, annual averages, engine-hour essay, data-vacuum narrative, or global risk conclusion already suitable for „NOBRAUKUMA VĒSTURES KOMENTĀRS” or already written in other source comments. Per-source text = unique facts from THIS source + a short cross-check (1–2 sentences) vs other sources. Leave the full chronological mileage synthesis to the mileage-history comment field.
+- ANTI-REPETITION (critical): Do NOT restate the same mileage timeline, annual averages, engine-hour essay, data-vacuum narrative, or global risk conclusion already suitable for „NOBRAUKUMA VĒSTURES KOMENTĀRS” or already written in other source comments — UNLESS the operator notes explicitly supply that material for THIS field; then keep the operator's detail here. Per-source text = unique facts from THIS source + a short cross-check (1–2 sentences) vs other sources when generating from data alone.
 `;
 
 /** Gemini PDF extract JSON — eksperta komentārs (visi avoti). */

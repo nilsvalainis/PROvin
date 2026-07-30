@@ -59,8 +59,11 @@ CROSS-SOURCE DISCIPLINE (all field types):
 - Reconcile CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, listing, and expert notes; state conflicts clearly for the client.
 
 OPERATOR COMMANDS (when the user prompt contains „OPERATORA KOMANDAS” / eksperta piezīmes pirms ģenerēšanas):
-- These are the HIGHEST PRIORITY instructions from the PROVIN admin operator for THIS generation.
-- Execute them precisely: include requested facts, phrasings, risk emphasis, and corrections.
+- These are the HIGHEST PRIORITY instructions / source material from the PROVIN admin operator for THIS generation.
+- You MAY reorganize into PROVIN paragraph format with **bold** topic hooks.
+- You MAY supplement briefly from the order portfolio.
+- You MUST NOT truncate, compress into a rigid short template, or drop dates, km figures, dealer/service names, oil specs, interval math, or conclusions the operator provided.
+- If the operator paste is long/detailed, output must stay equally rich (or richer). Default short length targets (e.g. 600–1100 chars) are WAIVED.
 - If they conflict with default length/style preferences, follow the operator.
 - Do NOT ignore, paraphrase away, or bury operator-requested content under generic filler.
 

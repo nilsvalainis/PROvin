@@ -2,7 +2,7 @@ import "server-only";
 
 import { geminiGenerateExpertText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
 import { geminiSourceCommentSystemPrompt } from "@/lib/admin-gemini-prompts";
-import { appendGeminiOperatorNotesSection } from "@/lib/admin-gemini-operator-notes";
+import { appendGeminiOperatorNotesSection, geminiMaxLenForOperatorNotes } from "@/lib/admin-gemini-operator-notes";
 import { buildFullGeminiOrderContextText } from "@/lib/admin-gemini-order-context";
 import {
   buildPreviouslyGeneratedSourceCommentsContext,
@@ -82,7 +82,8 @@ ${focusDataText}
 
 Sagatavo komentāru TIKAI šai avota sadaļai klienta atskaitei.
 Prioritāte: unikālie fakti no „${blockLabel}” + īss salīdzinājums ar citiem avotiem (kas sakrīt / kas atšķiras).
-${mileageHint}Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.`,
+${mileageHint}Ja OPERATORA KOMANDĀS ir plašs teksts — pārkārto PROVIN stilā, bet NEAPGRAIZI detalizāciju (datumi, km, servisi, intervāli).
+Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain: input.existingDraftPlain,
@@ -94,6 +95,7 @@ ${mileageHint}Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz t�
     systemInstruction: geminiSourceCommentSystemPrompt(blockLabel),
     userPrompt,
     temperature: 0.25,
+    maxLen: geminiMaxLenForOperatorNotes(input.operatorNotes, 3200),
   });
 }
 
