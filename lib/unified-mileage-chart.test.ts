@@ -121,4 +121,49 @@ describe("buildUnifiedMileageChartWrapHtml", () => {
     expect(html).toContain("Odometra anomālija");
     expect(html).toMatch(/r="5\.5"|r="6"/);
   });
+
+  it("omits extra-digit spike from chart path so Y scale stays sane", () => {
+    const rows: UnifiedMileageRow[] = [
+      {
+        date: "01.03.2010",
+        odometer: "25581",
+        country: "DE",
+        sortableTime: Date.UTC(2010, 2, 1),
+        sourceOrder: 0,
+        sourceLabel: "DNA",
+      },
+      {
+        date: "29.03.2010",
+        odometer: "255811",
+        country: "DE",
+        sortableTime: Date.UTC(2010, 2, 29),
+        sourceOrder: 1,
+        sourceLabel: "DEALER",
+      },
+      {
+        date: "01.01.2011",
+        odometer: "49481",
+        country: "DE",
+        sortableTime: Date.UTC(2011, 0, 1),
+        sourceOrder: 2,
+        sourceLabel: "CV",
+      },
+    ];
+    const anomalyMap = new Map<number, boolean>([
+      [0, false],
+      [1, true],
+      [2, false],
+    ]);
+    const html = buildUnifiedMileageChartWrapHtml(rows, anomalyMap, {
+      compact: true,
+      chartExcludeSourceOrders: new Set([1]),
+    });
+    // Spike excluded → no anomaly marker on chart (table still warns).
+    expect(html).not.toContain("pdf-mileage-chart-dot--anomaly");
+    expect(html).not.toContain("pdf-mileage-chart-wrap--has-anomaly");
+    const pathMatch = html.match(/class="pdf-mileage-chart-path"[^>]*d="([^"]+)"/);
+    expect(pathMatch?.[1]).toBeTruthy();
+    // Only two vertices (25k → 49k); spike would add a third L segment.
+    expect(pathMatch![1]!.match(/ L /g)?.length ?? 0).toBe(1);
+  });
 });

@@ -186,10 +186,71 @@ export function prepareUnifiedMileageDisplayRows(rows: UnifiedMileageRow[]): Uni
 }
 
 /**
- * Back-roll: anomālija tikai ja V_current < V_previous un starpība ≥ {@link UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM} km.
+ * Tipiska ieraksta kļūda: ekstra cipars (piem. 25 581 → 255 811).
  */
-export function computeOdometerAnomalyBySourceOrder(rows: UnifiedMileageRow[]): Map<number, boolean> {
+export function looksLikeExtraDigitOdometerTypo(spikeKm: number, neighborKm: number): boolean {
+  if (!(neighborKm >= 1_000 && spikeKm > neighborKm * 5)) return false;
+  const tol = Math.max(100, neighborKm * 0.02);
+  if (Math.abs(spikeKm - neighborKm * 10) <= tol) return true;
+  if (Math.abs(spikeKm / 10 - neighborKm) <= tol) return true;
+  if (Math.abs(Math.round(spikeKm / 10) - neighborKm) <= Math.max(200, neighborKm * 0.03)) return true;
+  return false;
+}
+
+/**
+ * Adatas spike starp zemākiem kaimiņiem — neiekļauj grafikā (Y skala citādi izkropļojas).
+ */
+export function isSpuriousMileageSpike(currKm: number, prevKm: number | null, nextKm: number | null): boolean {
+  if (prevKm == null || nextKm == null) return false;
+  if (!(currKm > prevKm && nextKm < currKm)) return false;
+  const up = currKm - prevKm;
+  const down = currKm - nextKm;
+  if (down < Math.max(UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM, up * 0.4)) return false;
+  if (looksLikeExtraDigitOdometerTypo(currKm, prevKm) || looksLikeExtraDigitOdometerTypo(currKm, nextKm)) {
+    return true;
+  }
+  // Liels lēciens uz augšu, tad lielākā daļa „pazūd”, un nākamais punkts ir tuvāk iepriekšējam.
+  if (up >= 80_000 && Math.abs(nextKm - prevKm) < Math.abs(nextKm - currKm) * 0.5) return true;
+  if (up >= 100_000 && nextKm <= prevKm + Math.max(up * 0.25, 50_000) && nextKm >= prevKm * 0.3) {
+    return true;
+  }
+  return false;
+}
+
+export type UnifiedMileageAnomalyAnalysis = {
+  anomalyBySourceOrder: Map<number, boolean>;
+  /** Extra-digit / needle spike — izlaist no līknes (tabulā tomēr ar brīdinājumu). */
+  chartExcludeSourceOrders: Set<number>;
+};
+
+/**
+ * 1) Atzīmē viltus spike (ekstra cipars u.c.) — tabulā + izslēgšana no grafika.
+ * 2) Back-roll uz ķēdes *bez* šiem spike: V_current < V_previous un Δ ≥ {@link UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM}.
+ */
+export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): UnifiedMileageAnomalyAnalysis {
   const sorted = sortMileageChronological(rows);
+  const chartExclude = new Set<number>();
+
+  const pts: { sourceOrder: number; km: number }[] = [];
+  for (const r of sorted) {
+    const km = parseOdometerKm(r.odometer);
+    if (km !== null) pts.push({ sourceOrder: r.sourceOrder, km });
+  }
+
+  for (let i = 0; i < pts.length; i++) {
+    const prev = i > 0 ? pts[i - 1]!.km : null;
+    const next = i < pts.length - 1 ? pts[i + 1]!.km : null;
+    const curr = pts[i]!;
+    if (isSpuriousMileageSpike(curr.km, prev, next)) {
+      chartExclude.add(curr.sourceOrder);
+      continue;
+    }
+    // Spike kā pēdējais punkts: tikai ×10 pret iepriekšējo.
+    if (next == null && prev != null && looksLikeExtraDigitOdometerTypo(curr.km, prev)) {
+      chartExclude.add(curr.sourceOrder);
+    }
+  }
+
   const map = new Map<number, boolean>();
   let prevKm: number | null = null;
   for (const r of sorted) {
@@ -198,14 +259,22 @@ export function computeOdometerAnomalyBySourceOrder(rows: UnifiedMileageRow[]): 
       map.set(r.sourceOrder, false);
       continue;
     }
+    if (chartExclude.has(r.sourceOrder)) {
+      map.set(r.sourceOrder, true);
+      continue;
+    }
     const anom =
-      prevKm !== null &&
-      km < prevKm &&
-      prevKm - km >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM;
+      prevKm !== null && km < prevKm && prevKm - km >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM;
     map.set(r.sourceOrder, anom);
     prevKm = km;
   }
-  return map;
+
+  return { anomalyBySourceOrder: map, chartExcludeSourceOrders: chartExclude };
+}
+
+/** @see analyzeUnifiedMileageAnomalies */
+export function computeOdometerAnomalyBySourceOrder(rows: UnifiedMileageRow[]): Map<number, boolean> {
+  return analyzeUnifiedMileageAnomalies(rows).anomalyBySourceOrder;
 }
 
 export type CollectUnifiedMileageOptions = {

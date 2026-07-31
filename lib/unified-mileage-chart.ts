@@ -3,7 +3,12 @@
  */
 
 import { reconstructTheoreticalMileagePath } from "@/lib/average-annual-mileage";
-import { sortMileageChronological, parseOdometerKm, type UnifiedMileageRow } from "@/lib/unified-mileage";
+import {
+  analyzeUnifiedMileageAnomalies,
+  sortMileageChronological,
+  parseOdometerKm,
+  type UnifiedMileageRow,
+} from "@/lib/unified-mileage";
 
 import { PDF_BRAND_BLUE_HEX } from "@/lib/client-report-pdf-layout-draft";
 
@@ -86,17 +91,20 @@ type ChartPlotPoint = {
 };
 
 /**
- * @param anomalyBySourceOrder — no `computeOdometerAnomalyBySourceOrder`
+ * @param anomalyBySourceOrder — no `analyzeUnifiedMileageAnomalies` / `computeOdometerAnomalyBySourceOrder`
  */
 export function buildUnifiedMileageChartWrapHtml(
   rows: UnifiedMileageRow[],
   anomalyBySourceOrder: Map<number, boolean>,
-  opts?: { compact?: boolean },
+  opts?: { compact?: boolean; chartExcludeSourceOrders?: Set<number> },
 ): string {
   const compact = opts?.compact === true;
+  const chartExclude =
+    opts?.chartExcludeSourceOrders ?? analyzeUnifiedMileageAnomalies(rows).chartExcludeSourceOrders;
   const chrono = sortMileageChronological(rows);
   const series = chrono
     .map((r) => {
+      if (chartExclude.has(r.sourceOrder)) return null;
       const km = parseOdometerKm(r.odometer);
       if (km == null || r.sortableTime === Number.NEGATIVE_INFINITY) return null;
       const display = r.date.trim();

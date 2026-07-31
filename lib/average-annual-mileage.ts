@@ -13,6 +13,7 @@ import type { CsddFormFields } from "@/lib/admin-source-blocks";
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
 import { countryLabelToIso2 } from "@/lib/country-names-lv";
 import {
+  analyzeUnifiedMileageAnomalies,
   collectUnifiedMileageRows,
   filterDuplicateOdometerKmReadings,
   parseMileageDateForSort,
@@ -368,7 +369,12 @@ export function computeAverageAnnualMileage(args: {
   referenceDate?: Date;
 }): AverageAnnualMileageResult | null {
   const ref = args.referenceDate ?? new Date();
-  const points = pointsFromRows(args.unifiedMileageRows);
+  const { chartExcludeSourceOrders } = analyzeUnifiedMileageAnomalies(args.unifiedMileageRows);
+  const rowsForAvg =
+    chartExcludeSourceOrders.size === 0
+      ? args.unifiedMileageRows
+      : args.unifiedMileageRows.filter((r) => !chartExcludeSourceOrders.has(r.sourceOrder));
+  const points = pointsFromRows(rowsForAvg);
   const { path, correctedForAnomaly, totalRollbackKm, rollbackBeforeLvRegistration } =
     reconstructTheoreticalMileagePath(points);
 

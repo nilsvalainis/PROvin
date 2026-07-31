@@ -79,7 +79,7 @@ import {
 } from "@/lib/pdf-mileage-source";
 import {
   collectUnifiedMileageRows,
-  computeOdometerAnomalyBySourceOrder,
+  analyzeUnifiedMileageAnomalies,
   prepareUnifiedMileageDisplayRows,
   type CollectUnifiedMileageOptions,
   type UnifiedMileageDisplayRow,
@@ -523,7 +523,7 @@ export function buildUnifiedMileageTableHtml(
   const mileageRows = prepareUnifiedMileageDisplayRows(collected);
   if (mileageRows.length === 0) return "";
 
-  const anomalyBySourceOrder = computeOdometerAnomalyBySourceOrder(mileageRows);
+  const { anomalyBySourceOrder, chartExcludeSourceOrders } = analyzeUnifiedMileageAnomalies(mileageRows);
 
   const rows = [...mileageRows].sort((a, b) => {
     if (a.sortableTime !== b.sortableTime) return b.sortableTime - a.sortableTime;
@@ -531,7 +531,10 @@ export function buildUnifiedMileageTableHtml(
   });
 
   const display = rows;
-  const chartHtml = buildUnifiedMileageChartWrapHtml(mileageRows, anomalyBySourceOrder, { compact: true });
+  const chartHtml = buildUnifiedMileageChartWrapHtml(mileageRows, anomalyBySourceOrder, {
+    compact: true,
+    chartExcludeSourceOrders,
+  });
 
   const mid = Math.ceil(display.length / 2) || 0;
   const leftRows = display.slice(0, mid);
