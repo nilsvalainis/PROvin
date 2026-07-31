@@ -48,15 +48,18 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(audits.features.every((feature) => feature.included)).toBe(true);
   });
 
-  it("maps dealer to eight rows matching audit stack height, refund footnote", () => {
+  it("maps dealer to two active rows while list height stays eight-row budget", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.price).toBe("24,99 €");
     expect(dealer.buttonText).toBe("PASŪTĪT DĪLERA DATUS — 24,99 €");
     expect(dealer.description).toContain("nav iekļauts PROVIN MINI un PROVIN AUDITS");
-    expect(dealer.features).toHaveLength(8);
+    expect(dealer.features).toHaveLength(2);
+    expect(dealer.features.map((f) => f.name)).toEqual([
+      "Oficiālā dīlera servisa vēsture",
+      "100% naudas atmaksa",
+    ]);
     expect(dealer.features.every((feature) => feature.included)).toBe(true);
-    expect(dealer.turnaround).toBeUndefined();
     expect(dealer.footnote).toContain("100%");
     expect(getTp5MobileTurnaround()).toContain("24-72h");
   });

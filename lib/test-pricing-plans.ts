@@ -119,10 +119,8 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
     productDesc:
       "Oficiālie dīlera / ražotāja servisa vēstures ieraksti. Ja dati nav pieejami — 100% naudas atmaksa.",
     features: [
-      { kind: "bullet", label: "Oficiālie dīlera servisa ieraksti" },
-      { kind: "bullet", label: "Nav iekļauts PROVIN MINI un PROVIN AUDITS" },
-      { kind: "bullet", label: "Ja dati nav pieejami — 100% naudas atmaksa" },
-      { kind: "bullet", label: "Daļēji ieraksti = derīga piegāde" },
+      { kind: "bullet", label: "Oficiālā dīlera servisa vēsture" },
+      { kind: "bullet", label: "100% naudas atmaksa" },
     ],
   },
 ];

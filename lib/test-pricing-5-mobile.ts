@@ -63,25 +63,13 @@ const TP5_MOBILE_FEATURE_NAMES_EN = [
 ] as const;
 
 const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
-  { name: "Oficiālie dīlera servisa ieraksti", included: true },
-  { name: "Šajā atskaitē nav PROVIN MINI", included: true },
-  { name: "Šajā atskaitē nav PROVIN AUDITS", included: true },
-  { name: "Ja dati nav — 100% naudas atmaksa", included: true },
-  { name: "Daļēji ieraksti = derīga piegāde", included: true },
-  { name: "BMW, Mercedes-Benz, Audi, VW u.c.", included: true },
-  { name: "Land Rover, Jaguar, MINI, Škoda", included: true },
-  { name: "SEAT, Smart, Dacia, Renault, Rolls-Royce", included: true },
+  { name: "Oficiālā dīlera servisa vēsture", included: true },
+  { name: "100% naudas atmaksa", included: true },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
-  { name: "Official dealer service records", included: true },
-  { name: "Does not include PROVIN MINI", included: true },
-  { name: "Does not include PROVIN AUDIT", included: true },
-  { name: "No data available — 100% refund", included: true },
-  { name: "Partial records = valid delivery", included: true },
-  { name: "BMW, Mercedes-Benz, Audi, VW and more", included: true },
-  { name: "Land Rover, Jaguar, MINI, Škoda", included: true },
-  { name: "SEAT, Smart, Dacia, Renault, Rolls-Royce", included: true },
+  { name: "Official dealer service history", included: true },
+  { name: "100% money-back guarantee", included: true },
 ];
 
 const MINI_ACTIVE_FEATURE_COUNT = 4;
