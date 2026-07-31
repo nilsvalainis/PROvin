@@ -186,7 +186,7 @@ export function Tp5MobilePricingCard({
 
       <p className={styles.turnaround}>
         <span>{turnaroundLabel}</span>
-        <Tp5TurnaroundInfoTip copy={uiCopy} />
+        {activeServiceId === "dealer" ? null : <Tp5TurnaroundInfoTip copy={uiCopy} />}
       </p>
 
       <div className={styles.ctaWrap}>

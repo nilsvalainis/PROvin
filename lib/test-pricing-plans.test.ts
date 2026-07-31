@@ -49,7 +49,7 @@ describe("test-pricing plans", () => {
     expect(dealer.amountCents).toBe(2499);
     expect(dealer.productName).toBe("Oficiālā dīlera servisa vēstures dati");
     expect(dealer.productDesc).toContain("100%");
-    expect(dealer.turnaround).toContain("24-72h");
+    expect(dealer.turnaround).toContain("24-48h");
   });
 
   it("requires vin or plate and consent; listing url is optional", () => {

@@ -20,7 +20,7 @@
       {
         "id": "dealer-data",
         "q": "Kas ir Oficiālā dīlera servisa vēstures dati?",
-        "a": "Tas ir neatkarīgs produkts (24,99 €) — oficiālie dīlera / ražotāja servisa vēstures ieraksti. Šajā atskaitē nav iekļauts PROVIN MINI un PROVIN AUDITS. Izpilde: 24–72h. Ja dati nav pieejami — 100% naudas atmaksa. Ja ieraksti ir tikai daļēji, tas ir derīga piegāde."
+        "a": "Tas ir neatkarīgs produkts (24,99 €) — oficiālie dīlera / ražotāja servisa vēstures ieraksti. Šajā atskaitē iekļauti tikai dati no oficiālo dīleru datubāzēm. Izpilde: 24–48h. Ja oficiālo dīleru datubāzē ieraksti nav pieejami — 100% naudas atmaksa."
       },
       {
         "id": "delivery-time",

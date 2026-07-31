@@ -110,7 +110,7 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
     stripePriceEnvKey: "STRIPE_PRICE_DEALER",
     description:
       "Oficiālā dīlera servisa vēstures dati — bez PROVIN eksperta analīzes.",
-    turnaround: "⏱️ Izpilde: 24-72h",
+    turnaround: "⏱️ Izpilde: 24-48h",
     ctaLabel: "PASŪTĪT DĪLERA DATUS",
     heroCtaLabel: "PASŪTĪT DĪLERA DATUS — 24,99 €",
     highlighted: false,

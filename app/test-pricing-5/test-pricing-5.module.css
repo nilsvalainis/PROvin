@@ -375,6 +375,7 @@
   line-height: 1.4;
   font-weight: 450;
   color: rgb(210 214 222 / 0.48);
+  white-space: pre-line;
 }
 
 .turnaround {

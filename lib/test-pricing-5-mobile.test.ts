@@ -53,14 +53,16 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.price).toBe("24,99 €");
     expect(dealer.buttonText).toBe("PASŪTĪT DĪLERA DATUS — 24,99 €");
-    expect(dealer.description).toContain("nav iekļauts PROVIN MINI un PROVIN AUDITS");
+    expect(dealer.description).toContain("tikai dati no oficiālo dīleru datubāzēm");
     expect(dealer.features).toHaveLength(2);
     expect(dealer.features.map((f) => f.name)).toEqual([
       "Oficiālā dīlera servisa vēsture",
       "100% naudas atmaksa",
     ]);
     expect(dealer.features.every((feature) => feature.included)).toBe(true);
-    expect(dealer.footnote).toContain("100%");
+    expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-48h");
+    expect(dealer.footnote).toContain("100% naudas atmaksa");
+    expect(dealer.footnote).toContain("oficiālo dīleru datubāzē");
     expect(getTp5MobileTurnaround()).toContain("24-72h");
   });
 

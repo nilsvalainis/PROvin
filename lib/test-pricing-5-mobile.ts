@@ -75,10 +75,10 @@ const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
 const MINI_ACTIVE_FEATURE_COUNT = 4;
 
 const DEALER_FOOTNOTE_LV =
-  "*Ja oficiālie ieraksti nav pieejami šim VIN — 100% naudas atmaksa. Daļēji pieejami ieraksti ir derīga piegāde.";
+  "100% naudas atmaksa\nJa oficiālo dīleru datubāzē ieraksti nav pieejami, mēs atmaksāsim visu iemaksāto naudu.";
 
 const DEALER_FOOTNOTE_EN =
-  "*If no official records are available for this VIN — 100% refund. Partial records count as valid delivery.";
+  "100% money-back guarantee\nIf official dealer database records are unavailable, we will refund the full amount paid.";
 
 function buildTp5MobileFeatures(
   names: readonly string[],
@@ -116,8 +116,9 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     price: "24,99 €",
     buttonText: "PASŪTĪT DĪLERA DATUS — 24,99 €",
     description:
-      "Oficiālā dīlera servisa vēstures dati. Šajā atskaitē nav iekļauts PROVIN MINI un PROVIN AUDITS;",
+      "Oficiālā dīlera servisa vēstures dati. Šajā atskaitē iekļauti tikai dati no oficiālo dīleru datubāzēm.",
     features: DEALER_FEATURES_LV,
+    turnaround: "⏱️ Izpilde: 24-48h",
     footnote: DEALER_FOOTNOTE_LV,
   },
 ];
@@ -150,8 +151,9 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     price: "€24.99",
     buttonText: "ORDER DEALER DATA — €24.99",
     description:
-      "Official dealer service history data. This report does not include PROVIN MINI or PROVIN AUDIT;",
+      "Official dealer service history data. This report includes only data from official dealer databases.",
     features: DEALER_FEATURES_EN,
+    turnaround: "⏱️ Delivery: 24-48h",
     footnote: DEALER_FOOTNOTE_EN,
   },
 ];
