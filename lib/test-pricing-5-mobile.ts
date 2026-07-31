@@ -81,9 +81,9 @@ const DEALER_BRANDS_HEADING_LV = "Atbalstītie ražotāji";
 const DEALER_BRANDS_HEADING_EN = "Supported manufacturers";
 
 const DEALER_EXTRA_NOTE_LV =
-  "Dati tiek iegūti no oficiālajām dīleru / ražotāju datubāzēm. Ja ierakstu nav — pilna naudas atmaksa.";
+  "Dati tiek iegūti no oficiālajām dīleru / ražotāju datubāzēm.\nJa ierakstu nav — pilna naudas atmaksa.";
 const DEALER_EXTRA_NOTE_EN =
-  "Data comes from official dealer / manufacturer databases. If no records exist — full refund.";
+  "Data comes from official dealer / manufacturer databases.\nIf no records exist — full refund.";
 
 const MINI_ACTIVE_FEATURE_COUNT = 4;
 
@@ -92,12 +92,6 @@ const DEALER_FOOTNOTE_LV =
 
 const DEALER_FOOTNOTE_EN =
   "If official dealer database records are unavailable, we will refund the full amount paid.";
-
-const DEALER_EXTRA_NOTE_LV =
-  "Dati tiek iegūti no oficiālajām dīleru / ražotāju datubāzēm.\nJa ierakstu nav — pilna naudas atmaksa.";
-
-const DEALER_EXTRA_NOTE_EN =
-  "Data comes from official dealer / manufacturer databases.\nIf no records exist — full refund.";
 
 function buildTp5MobileFeatures(
   names: readonly string[],
