@@ -401,6 +401,7 @@
   line-height: 1.35;
   font-weight: 450;
   color: rgb(210 214 222 / 0.62);
+  white-space: pre-line;
 }
 
 .dealerBrandWrap {

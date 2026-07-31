@@ -39,7 +39,6 @@ export const TP5_DEALER_BRANDS = [
   "Smart",
   "Dacia",
   "Renault",
-  "Rolls-Royce",
 ] as const;
 
 const TP5_MOBILE_FEATURE_NAMES = [
@@ -89,10 +88,16 @@ const DEALER_EXTRA_NOTE_EN =
 const MINI_ACTIVE_FEATURE_COUNT = 4;
 
 const DEALER_FOOTNOTE_LV =
-  "100% naudas atmaksa\nJa oficiālo dīleru datubāzē ieraksti nav pieejami, mēs atmaksāsim visu iemaksāto naudu.";
+  "Ja oficiālo dīleru datubāzē ieraksti nav pieejami, mēs atmaksāsim visu iemaksāto naudu.";
 
 const DEALER_FOOTNOTE_EN =
-  "100% money-back guarantee\nIf official dealer database records are unavailable, we will refund the full amount paid.";
+  "If official dealer database records are unavailable, we will refund the full amount paid.";
+
+const DEALER_EXTRA_NOTE_LV =
+  "Dati tiek iegūti no oficiālajām dīleru / ražotāju datubāzēm.\nJa ierakstu nav — pilna naudas atmaksa.";
+
+const DEALER_EXTRA_NOTE_EN =
+  "Data comes from official dealer / manufacturer databases.\nIf no records exist — full refund.";
 
 function buildTp5MobileFeatures(
   names: readonly string[],
@@ -129,8 +134,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     title: "DĪLERA DATI",
     price: "24,99 €",
     buttonText: "PASŪTĪT DĪLERA DATUS — 24,99 €",
-    description:
-      "Oficiālā dīlera servisa vēstures dati. Šajā atskaitē iekļauti tikai dati no oficiālo dīleru datubāzēm.",
+    description: "Šajā atskaitē iekļauti tikai dati no oficiālo dīleru datubāzēm.",
     features: DEALER_FEATURES_LV,
     brands: TP5_DEALER_BRANDS,
     brandsHeading: DEALER_BRANDS_HEADING_LV,
@@ -167,8 +171,7 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     title: "DEALER DATA",
     price: "€24.99",
     buttonText: "ORDER DEALER DATA — €24.99",
-    description:
-      "Official dealer service history data. This report includes only data from official dealer databases.",
+    description: "This report includes only data from official dealer databases.",
     features: DEALER_FEATURES_EN,
     brands: TP5_DEALER_BRANDS,
     brandsHeading: DEALER_BRANDS_HEADING_EN,
