@@ -6,7 +6,7 @@ import {
   normalizeVin,
 } from "@/lib/order-field-validation";
 
-export type TestPricingPlanId = "mini" | "plus" | "premium";
+export type TestPricingPlanId = "mini" | "plus" | "premium" | "dealer";
 
 export type TestPricingFeatureItem =
   | { kind: "bullet"; label: string }
@@ -102,6 +102,29 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
       { kind: "bullet", label: "CarVertical & AutoDNA" },
     ],
   },
+  {
+    id: "dealer",
+    title: "DĪLERA DATI",
+    priceLabel: "24,99 €",
+    amountCents: 2499,
+    stripePriceEnvKey: "STRIPE_PRICE_DEALER",
+    description:
+      "Oficiālā dīlera servisa vēstures dati — bez PROVIN eksperta analīzes.",
+    turnaround: "⏱️ Izpilde: tipiski līdz 24h / max 48h",
+    ctaLabel: "PASŪTĪT DĪLERA DATUS",
+    heroCtaLabel: "PASŪTĪT DĪLERA DATUS — 24,99 €",
+    highlighted: false,
+    vinRequired: true,
+    productName: "Oficiālā dīlera servisa vēstures dati",
+    productDesc:
+      "Oficiālie dīlera / ražotāja servisa vēstures ieraksti. Ja dati nav pieejami — 100% naudas atmaksa.",
+    features: [
+      { kind: "bullet", label: "Oficiālie dīlera servisa ieraksti" },
+      { kind: "bullet", label: "Bez PROVIN eksperta analīzes" },
+      { kind: "bullet", label: "Ja dati nav pieejami — 100% naudas atmaksa" },
+      { kind: "bullet", label: "Daļēji ieraksti = derīga piegāde" },
+    ],
+  },
 ];
 
 export function getTestPricingPlan(id: TestPricingPlanId): TestPricingPlanConfig | undefined {
@@ -109,7 +132,7 @@ export function getTestPricingPlan(id: TestPricingPlanId): TestPricingPlanConfig
 }
 
 export function isTestPricingPlanId(v: string): v is TestPricingPlanId {
-  return v === "mini" || v === "plus" || v === "premium";
+  return v === "mini" || v === "plus" || v === "premium" || v === "dealer";
 }
 
 export type TestPricingStep2FieldErrors = {

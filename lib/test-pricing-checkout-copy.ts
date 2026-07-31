@@ -18,6 +18,10 @@ const CHECKOUT_FORM_COPY: Record<TestPricingPlanId, TestPricingCheckoutFormCopy>
     title: "Pabeidz pasūtījumu — PROVIN AUDITS",
     lead: "Ievadi sludinājuma saiti un VIN kodu.",
   },
+  dealer: {
+    title: "Pabeidz pasūtījumu — Oficiālā dīlera servisa vēstures dati",
+    lead: "Ievadi VIN kodu (sludinājuma saite nav nepieciešama).",
+  },
 };
 
 export function getTestPricingCheckoutFormCopy(

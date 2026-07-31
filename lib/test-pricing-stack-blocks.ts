@@ -62,6 +62,7 @@ export function getStackBlocksViewState(tier: TestPricingPlanId): StackBlocksVie
       warningText: "CarVertical, autoDNA & dīleru/izsoļu arhīvs NAV iekļauts",
     };
   }
+  /** mini + dealer (dealer is not an audit stack tier). */
   return {
     mini: "active",
     plus: "faded",

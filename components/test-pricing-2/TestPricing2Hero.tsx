@@ -18,6 +18,7 @@ const TIER_TAB_LABEL: Record<TestPricingPlanId, string> = {
   mini: "MINI",
   plus: "PLUS",
   premium: "PREMIUM",
+  dealer: "DĪLERA",
 };
 const SWIPE_THRESHOLD_PX = 48;
 

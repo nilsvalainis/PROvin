@@ -18,7 +18,7 @@ export type Tp5StripeCheckoutProduct = {
 
 /** Sākumlapa, `/test-pricing-5` un `/test-checkout` — vienmēr `price_data` (bez Stripe Catalog ID). */
 export const TP5_STRIPE_CHECKOUT_PRODUCT: Record<
-  Extract<TestPricingPlanId, "plus" | "premium">,
+  Extract<TestPricingPlanId, "plus" | "premium" | "dealer">,
   Tp5StripeCheckoutProduct
 > = {
   plus: {
@@ -28,6 +28,11 @@ export const TP5_STRIPE_CHECKOUT_PRODUCT: Record<
   premium: {
     productName: "PROVIN AUDITS",
     amountCents: 9999,
+  },
+  dealer: {
+    productName: "Oficiālā dīlera servisa vēstures dati",
+    productDesc: "Official dealer service history. 100% refund if no data available.",
+    amountCents: 2499,
   },
 };
 
@@ -42,7 +47,7 @@ export function isTp5CheckoutSource(sourcePage: string): boolean {
 export function getTp5StripeCheckoutProduct(
   planId: TestPricingPlanId,
 ): Tp5StripeCheckoutProduct | null {
-  if (planId === "plus" || planId === "premium") {
+  if (planId === "plus" || planId === "premium" || planId === "dealer") {
     return TP5_STRIPE_CHECKOUT_PRODUCT[planId];
   }
   return null;

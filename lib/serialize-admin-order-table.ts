@@ -46,7 +46,16 @@ type RowInput = {
 
 function optionalCheckoutLine(o: RowInput): CheckoutLineKind | undefined {
   const c = o.checkoutLine;
-  if (c === "audit" || c === "consultation" || c === "provin_select") return c;
+  if (
+    c === "audit" ||
+    c === "consultation" ||
+    c === "provin_select" ||
+    c === "mini" ||
+    c === "premium" ||
+    c === "dealer"
+  ) {
+    return c;
+  }
   return undefined;
 }
 

@@ -85,16 +85,22 @@ export function Tp5MobilePricingCard({
   const uiCopy = getTp5UiCopy(locale);
   const services = getTp5MobileServices(locale);
   const activeService = getTp5MobileService(activeServiceId, locale);
+  const isDealer = activeServiceId === "dealer";
+  const turnaroundLabel = activeService.turnaround ?? getTp5MobileTurnaround(locale);
+  const footnote = activeService.footnote ?? getTp5DealerFootnote(locale);
+  /** Dealer meta title uses the full product name; tab stays short. */
+  const metaTitle =
+    activeServiceId === "dealer"
+      ? locale === "en"
+        ? "Official dealer service history data"
+        : "Oficiālā dīlera servisa vēstures dati"
+      : activeService.title;
 
   return (
     <article className={`${styles.spatialCard} w-full`}>
       <div className={styles.cardHeader}>
         <LayoutGroup id={tabLayoutGroupId}>
-          <div
-            className={`${styles.tierSwitcher} ${styles.tierSwitcherTwo}`}
-            role="tablist"
-            aria-label={uiCopy.packageTabsAria}
-          >
+          <div className={styles.tierSwitcher} role="tablist" aria-label={uiCopy.packageTabsAria}>
             {services.map((service) => {
               const active = activeServiceId === service.id;
               return (
@@ -127,7 +133,7 @@ export function Tp5MobilePricingCard({
         </LayoutGroup>
 
         <div className={styles.tierMeta} aria-live="polite">
-          <p className={styles.tierMetaTitle}>{activeService.title}</p>
+          <p className={styles.tierMetaTitle}>{metaTitle}</p>
           <p className={tierMetaDescClassName ?? styles.tierMetaDesc}>{activeService.description}</p>
         </div>
       </div>
@@ -143,6 +149,16 @@ export function Tp5MobilePricingCard({
               <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
             ))}
           </ul>
+          {activeService.brands && activeService.brands.length > 0 ? (
+            <div className={styles.dealerBrandBlock}>
+              {activeService.brandsHeading ? (
+                <p className={styles.dealerBrandHeading}>{activeService.brandsHeading}</p>
+              ) : null}
+              <p className={styles.dealerBrandWrap} aria-label={activeService.brandsHeading}>
+                {activeService.brands.join(" · ")}
+              </p>
+            </div>
+          ) : null}
         </div>
 
         <div
@@ -163,25 +179,29 @@ export function Tp5MobilePricingCard({
             maxLength={17}
           />
           {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
-          <input
-            type="url"
-            className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
-            value={listingUrl}
-            onChange={(event) => onListingUrlChange(event.target.value)}
-            placeholder={uiCopy.listingPlaceholder}
-            aria-label={uiCopy.listingAria}
-            autoComplete="url"
-            inputMode="url"
-          />
-          {errors.listingUrl ? (
-            <p className={styles.inlineFieldError}>{errors.listingUrl}</p>
+          {!activeService.hideListingUrl ? (
+            <>
+              <input
+                type="url"
+                className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
+                value={listingUrl}
+                onChange={(event) => onListingUrlChange(event.target.value)}
+                placeholder={uiCopy.listingPlaceholder}
+                aria-label={uiCopy.listingAria}
+                autoComplete="url"
+                inputMode="url"
+              />
+              {errors.listingUrl ? (
+                <p className={styles.inlineFieldError}>{errors.listingUrl}</p>
+              ) : null}
+            </>
           ) : null}
         </div>
       </div>
 
       <p className={styles.turnaround}>
-        <span>{getTp5MobileTurnaround(locale)}</span>
-        <Tp5TurnaroundInfoTip copy={uiCopy} />
+        <span>{turnaroundLabel}</span>
+        {!isDealer ? <Tp5TurnaroundInfoTip copy={uiCopy} /> : null}
       </p>
 
       <div className={styles.ctaWrap}>
@@ -201,7 +221,7 @@ export function Tp5MobilePricingCard({
             {uiCopy.sampleReportLink}
           </a>
         ) : null}
-        <p className={styles.featureFootnote}>{getTp5DealerFootnote(locale)}</p>
+        <p className={styles.featureFootnote}>{footnote}</p>
       </div>
     </article>
   );

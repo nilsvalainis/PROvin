@@ -25,6 +25,7 @@ const TIER_TAB_LABEL: Record<TestPricingPlanId, string> = {
   mini: "MINI",
   plus: "PLUS",
   premium: "PREMIUM",
+  dealer: "DĪLERA",
 };
 
 function StackBlock({

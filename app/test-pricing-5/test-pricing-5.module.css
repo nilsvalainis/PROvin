@@ -343,6 +343,29 @@
   font-weight: 450;
 }
 
+.dealerBrandBlock {
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.dealerBrandHeading {
+  margin: 0 0 0.2rem;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(37 99 235 / 0.9);
+}
+
+.dealerBrandWrap {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  font-weight: 500;
+  color: rgb(245 248 252 / 0.88);
+}
+
 .featureFootnote {
   margin: 0.1rem 0 0;
   padding: 0 0.15rem;
@@ -961,6 +984,18 @@ html[data-site-theme="light"] .liquidAccent {
 
 html[data-site-theme="light"] .featureLabelActive {
   color: #1d1d1f;
+}
+
+html[data-site-theme="light"] .dealerBrandHeading {
+  color: rgb(37 99 235 / 0.95);
+}
+
+html[data-site-theme="light"] .dealerBrandWrap {
+  color: #3a3a3c;
+}
+
+html[data-site-theme="light"] .dealerBrandBlock {
+  border-top-color: rgb(0 0 0 / 0.08);
 }
 
 html[data-site-theme="light"] .featureMarkMuted,

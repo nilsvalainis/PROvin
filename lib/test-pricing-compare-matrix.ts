@@ -24,10 +24,12 @@ export const TEST_PRICING_COMPARE_PRICES: Record<TestPricingPlanId, string> = {
   mini: "19,99 €",
   plus: "39,99 €",
   premium: "99,99 €",
+  dealer: "24,99 €",
 };
 
 export const TEST_PRICING_COMPARE_LABELS: Record<TestPricingPlanId, string> = {
   mini: "MINI",
   plus: "PLUS",
   premium: "PREMIUM",
+  dealer: "DĪLERA",
 };

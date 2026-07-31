@@ -5,7 +5,8 @@ export type CheckoutLineKind =
   | "consultation"
   | "provin_select"
   | "mini"
-  | "premium";
+  | "premium"
+  | "dealer";
 
 /** Stripe Checkout `metadata.checkout_line` — vecām sesijām bez lauka uzskatām par `audit`. */
 export function getCheckoutLineFromSession(session: Stripe.Checkout.Session): CheckoutLineKind {
@@ -15,6 +16,8 @@ export function getCheckoutLineFromSession(session: Stripe.Checkout.Session): Ch
   if (raw === "mini") return "mini";
   if (raw === "listing_filter") return "mini";
   if (raw === "premium") return "premium";
+  if (raw === "dealer") return "dealer";
+  if (raw === "plus") return "mini";
   return "audit";
 }
 

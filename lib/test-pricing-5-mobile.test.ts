@@ -3,6 +3,7 @@ import {
   getTp5MobileService,
   getTp5MobileServices,
   getTp5MobileTurnaround,
+  TP5_DEALER_BRANDS,
   TP5_MOBILE_CHECKOUT_PLAN,
   TP5_MOBILE_SERVICES,
   TP5_MOBILE_SERVICE_ORDER,
@@ -20,12 +21,13 @@ const FULL_FEATURE_STACK = [
   "Starptautiska vēstures pārbaude",
 ];
 
-describe("test-pricing-5 mobile two-tier model", () => {
-  it("exposes mini and audits only", () => {
-    expect(TP5_MOBILE_SERVICE_ORDER).toEqual(["mini", "audits"]);
-    expect(TP5_MOBILE_SERVICES).toHaveLength(2);
+describe("test-pricing-5 mobile three-tier model", () => {
+  it("exposes mini, audits and dealer", () => {
+    expect(TP5_MOBILE_SERVICE_ORDER).toEqual(["mini", "audits", "dealer"]);
+    expect(TP5_MOBILE_SERVICES).toHaveLength(3);
     expect(TP5_MOBILE_CHECKOUT_PLAN.mini).toBe("plus");
     expect(TP5_MOBILE_CHECKOUT_PLAN.audits).toBe("premium");
+    expect(TP5_MOBILE_CHECKOUT_PLAN.dealer).toBe("dealer");
   });
 
   it("maps MINI to four active and four inactive rows in the full stack", () => {
@@ -37,25 +39,27 @@ describe("test-pricing-5 mobile two-tier model", () => {
     expect(mini.features.map((feature) => feature.name)).toEqual(FULL_FEATURE_STACK);
     expect(mini.features.filter((feature) => feature.included)).toHaveLength(4);
     expect(mini.features.filter((feature) => !feature.included)).toHaveLength(4);
-    expect(mini.features[0]?.name).toBe("Sludinājuma un tehnisko risku analīze");
-    expect(mini.features[0]?.included).toBe(true);
-    expect(mini.features[3]?.name).toBe("Individuāla konsultācija");
-    expect(mini.features[3]?.included).toBe(true);
-    expect(mini.features[4]?.included).toBe(false);
-    expect(mini.features[4]?.name).toBe("carVertical integrācija");
-    expect(mini.features[7]?.included).toBe(false);
-    expect(mini.features[7]?.name).toBe("Starptautiska vēstures pārbaude");
   });
 
   it("maps AUDITS to all eight active rows in the full stack", () => {
     const audits = getTp5MobileService("audits");
     expect(audits.title).toBe("PROVIN AUDITS");
-    expect(audits.description).toContain("izsoļu portālu arhīvu");
     expect(audits.price).toBe("99,99 €");
-    expect(audits.buttonText).toBe("PASŪTĪT PROVIN AUDITU — 99,99 €");
     expect(audits.features).toHaveLength(8);
-    expect(audits.features.map((feature) => feature.name)).toEqual(FULL_FEATURE_STACK);
     expect(audits.features.every((feature) => feature.included)).toBe(true);
+  });
+
+  it("maps dealer to four promise rows, brands and VIN-only checkout", () => {
+    const dealer = getTp5MobileService("dealer");
+    expect(dealer.title).toBe("DĪLERA DATI");
+    expect(dealer.price).toBe("24,99 €");
+    expect(dealer.buttonText).toBe("PASŪTĪT DĪLERA DATUS — 24,99 €");
+    expect(dealer.hideListingUrl).toBe(true);
+    expect(dealer.features).toHaveLength(4);
+    expect(dealer.features.every((feature) => feature.included)).toBe(true);
+    expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
+    expect(dealer.turnaround).toContain("24h");
+    expect(dealer.footnote).toContain("100%");
   });
 
   it("keeps the English tier copy structurally identical to Latvian", () => {
@@ -68,21 +72,17 @@ describe("test-pricing-5 mobile two-tier model", () => {
         lv[index]!.features.map((feature) => feature.included),
       );
     });
-    expect(getTp5MobileService("mini", "en").buttonText).toBe("ORDER MINI AUDIT — €39.99");
-    expect(getTp5MobileService("audits", "en").title).toBe("PROVIN AUDIT");
+    expect(getTp5MobileService("dealer", "en").title).toBe("DEALER DATA");
     expect(getTp5MobileTurnaround("en")).toContain("24-72h");
-    expect(getTp5MobileTurnaround("lv")).toContain("24-72h");
-    /** Nezināms vai tukšs locale — latviešu noklusējums. */
-    expect(getTp5MobileService("mini").buttonText).toBe("PASŪTĪT MINI AUDITU — 39,99 €");
-    expect(getTp5MobileServices("de")).toEqual(lv);
   });
 
-  it("maps checkout tiers to Stripe plan amounts (MINI 39.99, AUDITS 99.99)", () => {
+  it("maps checkout tiers to Stripe plan amounts", () => {
     const miniPlan = getTestPricingPlan(TP5_MOBILE_CHECKOUT_PLAN.mini)!;
     const auditsPlan = getTestPricingPlan(TP5_MOBILE_CHECKOUT_PLAN.audits)!;
+    const dealerPlan = getTestPricingPlan(TP5_MOBILE_CHECKOUT_PLAN.dealer)!;
     expect(miniPlan.amountCents).toBe(3999);
-    expect(miniPlan.stripePriceEnvKey).toBe("STRIPE_PRICE_PLUS");
     expect(auditsPlan.amountCents).toBe(9999);
-    expect(auditsPlan.stripePriceEnvKey).toBe("STRIPE_PRICE_PREMIUM");
+    expect(dealerPlan.amountCents).toBe(2499);
+    expect(dealerPlan.productName).toContain("dīlera");
   });
 });

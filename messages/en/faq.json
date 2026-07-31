@@ -18,6 +18,11 @@
         "a": "PROVIN MINI (€39.99) suits cars that have already been used in Latvia for a longer time. The focus is local history, CSDD and EU public registries, recent technical inspection (TA) data, listing analysis and practical tips for an in-person viewing.\n\nPROVIN AUDIT (€99.99) is a full investigation for cars imported from abroad. It includes the full MINI package plus paid international databases (carVertical, autoDNA, Cebia and others), official dealer system data and European auction photo archives — so you can see the real condition and mileage before repairs and import."
       },
       {
+        "id": "dealer-data",
+        "q": "What is Official dealer service history data?",
+        "a": "An independent product (€24.99) — official dealer/manufacturer service records without PROVIN expert analysis. Typically within 24h, guaranteed within 48h. If no data is available — 100% refund. Partial records count as valid delivery."
+      },
+      {
         "id": "delivery-time",
         "q": "How long does the report take?",
         "a": "Standard turnaround is within 48 hours after payment is received. Because we check and analyse every car manually, we take care to examine the details thoroughly. As soon as the audit is ready, we email it to you and arrange a short phone consultation."

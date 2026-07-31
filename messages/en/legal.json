@@ -46,7 +46,7 @@
     "termsMetaDescription": "PROVIN.LV terms: service scope, payment, refund policy, distance contract and digital content withdrawal terms.",
     "termsTitle": "PROVIN.LV Terms of Service",
     "termsUpdated": "Effective from: 17 July 2026",
-    "termsLead": "These terms govern the legal relationship between you and PROVIN.LV for use of provin.lv and ordering paid consultative report services (PROVIN MINI and PROVIN AUDIT).",
+    "termsLead": "These terms govern the legal relationship between you and PROVIN.LV for use of provin.lv and ordering paid services: consultative reports (PROVIN MINI and PROVIN AUDIT) and official dealer service history data.",
     "termsSections": [
       {
         "title": "1. Scope and acceptance",
@@ -54,7 +54,7 @@
       },
       {
         "title": "2. Service nature",
-        "body": "PROVIN provides consultative digital reports: PROVIN MINI (€39.99) and PROVIN AUDIT (€99.99), as shown at checkout. Conclusions are advisory and do not replace an in-person technical inspection or a legal certificate."
+        "body": "PROVIN provides consultative digital reports: PROVIN MINI (€39.99) and PROVIN AUDIT (€99.99), as shown at checkout. Conclusions are advisory and do not replace an in-person technical inspection or a legal certificate.\n\nSeparately, PROVIN offers “Official dealer service history data” (hero tab: DEALER DATA): digital delivery of official dealer/manufacturer service records where available for the VIN and supported brand. This product does not include PROVIN expert analysis. If no official records are available after ordering, the customer receives a 100% refund. Partial records count as valid delivery and do not qualify for a refund."
       },
       {
         "title": "3. Data sources",
@@ -66,11 +66,11 @@
       },
       {
         "title": "5. Orders, pricing, payment and refunds",
-        "body": "Orders require VIN or license plate, email and phone; listing URL is optional but must be a valid listing link if provided. Pricing is shown at checkout (MINI €39.99 / AUDIT €99.99 as orientative current prices). Payment is processed by Stripe; refund rules for digital content are defined in section 11."
+        "body": "Orders require VIN or license plate, email and phone; listing URL is optional but must be a valid listing link if provided. Pricing is shown at checkout (Official dealer service history data €24.99 / MINI €39.99 / AUDIT €99.99 as orientative current prices). Payment is processed by Stripe; refund rules for digital content are defined in section 11. A 100% refund applies if official dealer data cannot be obtained (see section 2)."
       },
       {
         "title": "6. Delivery timelines",
-        "body": "The report is usually delivered within 48 hours after successful payment and complete order data."
+        "body": "Consultative reports are usually delivered within 48 hours after successful payment and complete order data. Official dealer service history data is typically delivered within 24 hours, guaranteed within 48 hours."
       },
       {
         "title": "7. Customer obligations",

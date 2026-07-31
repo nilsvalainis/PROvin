@@ -53,11 +53,13 @@ describe("test-pricing-5 inline checkout", () => {
     expect(isTp5CheckoutSource("test-pricing-2")).toBe(false);
   });
 
-  it("locks tp5 price_data to MINI 3999 and AUDITS 9999 cents with brand names", () => {
+  it("locks tp5 price_data to MINI 3999, AUDITS 9999 and dealer 2499 cents", () => {
     expect(TP5_STRIPE_CHECKOUT_PRODUCT.plus.amountCents).toBe(3999);
     expect(TP5_STRIPE_CHECKOUT_PRODUCT.plus.productName).toBe("PROVIN MINI");
     expect(TP5_STRIPE_CHECKOUT_PRODUCT.premium.amountCents).toBe(9999);
     expect(TP5_STRIPE_CHECKOUT_PRODUCT.premium.productName).toBe("PROVIN AUDITS");
+    expect(TP5_STRIPE_CHECKOUT_PRODUCT.dealer.amountCents).toBe(2499);
+    expect(getTp5StripeCheckoutProduct("dealer")?.productName).toContain("dīlera");
     expect(getTp5StripeCheckoutProduct("premium")?.productName).toBe("PROVIN AUDITS");
     expect(getTp5StripeCheckoutProduct("mini")).toBeNull();
   });

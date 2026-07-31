@@ -5,6 +5,7 @@ export const TP5_TAB_LABEL = {
   mini: "19,99 €",
   plus: "39,99 €",
   premium: "PROVIN AUDITS",
+  dealer: "DĪLERA DATI",
 } as const;
 
 /** Dynamic baseline CTA copy on `/test-pricing-5`. */
@@ -12,6 +13,7 @@ export const TP5_CTA_LABEL = {
   mini: "PASŪTĪT AUDITU — 19,99 €",
   plus: "PASŪTĪT AUDITU — 39,99 €",
   premium: "PASŪTĪT PROVIN AUDITU — 99,99 €",
+  dealer: "PASŪTĪT DĪLERA DATUS — 24,99 €",
 } as const;
 
 /** Hard-coded `plan` query values for `/test-checkout`. */
@@ -19,6 +21,7 @@ export const TP5_CHECKOUT_PLAN_QUERY = {
   mini: "19.99",
   plus: "39.99",
   premium: "PROVIN",
+  dealer: "24.99",
 } as const;
 
 export type Tp5TierMeta = {
@@ -41,6 +44,11 @@ export const TP5_TIER_META: Record<TestPricingPlanId, Tp5TierMeta> = {
     title: "PROVIN AUDITS",
     description:
       "Maksimāla visu datu analīze iekļaujot maksas atskaites, oficiālo dīleru un izsoļu portālu arhīvu*.",
+  },
+  dealer: {
+    title: "DĪLERA DATI",
+    description:
+      "Oficiālā dīlera servisa vēstures dati — bez PROVIN eksperta analīzes.",
   },
 };
 
@@ -69,6 +77,7 @@ export function resolveTp5PlanFromCheckoutQuery(
   const normalized = param.trim();
   if (normalized === "19.99") return "mini";
   if (normalized === "39.99") return "plus";
+  if (normalized === "24.99") return "dealer";
   if (normalized.toUpperCase() === "PROVIN" || normalized.toUpperCase() === "PRO") return "premium";
   return null;
 }

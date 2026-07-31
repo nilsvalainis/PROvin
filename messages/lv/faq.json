@@ -18,6 +18,11 @@
         "a": "PROVIN MINI (39,99 €) ir piemērots automašīnām, kas jau ilgāku laiku tiek ekspluatētas Latvijā. Fokuss ir uz vietējo vēsturi, CSDD un ES publiskajiem reģistriem, pēdējo tehnisko apskašu (TA) datiem, sludinājuma analīzi un praktiskiem ieteikumiem klātienes apskatei.\n\nPROVIN AUDITS (99,99 €) ir pilna izpēte no ārvalstīm ievestiem auto. Tajā ietilpst visa MINI pakete + maksas starptautiskās datubāzes (carVertical, autoDNA, Cebia u.c.), oficiālo dīleru systems dati un Eiropas izsoļu foto arhīvi, ļaujot ieraut gaismā reālo auto stāvokli un nobraukumu pirms remonta un importa."
       },
       {
+        "id": "dealer-data",
+        "q": "Kas ir Oficiālā dīlera servisa vēstures dati?",
+        "a": "Tas ir neatkarīgs produkts (24,99 €) — oficiālie dīlera / ražotāja servisa vēstures ieraksti bez PROVIN eksperta analīzes. Tipiski līdz 24h, garantēti līdz 48h. Ja dati nav pieejami — 100% naudas atmaksa. Ja ieraksti ir tikai daļēji, tas ir derīga piegāde."
+      },
+      {
         "id": "delivery-time",
         "q": "Cik ilgi jāgaida atskaite?",
         "a": "Standarta izpildes laiks ir līdz 48 stundām pēc maksājuma saņemšanas. Tā kā katru auto pārbaudām un analizējam manuāli, mums ir svarīgi rūpīgi izpētīt visas detaļas. Tiklīdz audits ir gatavs, nosūtām to uz tavu e-pastu un vienojamies par īsu konsultāciju pa tālruni."

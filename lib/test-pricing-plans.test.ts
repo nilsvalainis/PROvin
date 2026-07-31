@@ -7,14 +7,15 @@ import {
 } from "@/lib/test-pricing-plans";
 
 describe("test-pricing plans", () => {
-  it("exposes mini, plus, and premium in order", () => {
-    expect(TEST_PRICING_PLANS.map((p) => p.id)).toEqual(["mini", "plus", "premium"]);
+  it("exposes mini, plus, premium and dealer in order", () => {
+    expect(TEST_PRICING_PLANS.map((p) => p.id)).toEqual(["mini", "plus", "premium", "dealer"]);
   });
 
   it("recognizes valid plan ids", () => {
     expect(isTestPricingPlanId("mini")).toBe(true);
     expect(isTestPricingPlanId("plus")).toBe(true);
     expect(isTestPricingPlanId("premium")).toBe(true);
+    expect(isTestPricingPlanId("dealer")).toBe(true);
     expect(isTestPricingPlanId("other")).toBe(false);
   });
 
@@ -41,6 +42,14 @@ describe("test-pricing plans", () => {
     expect(premium.turnaround).toContain("48h");
     expect(premium.vinRequired).toBe(true);
     expect(premium.heroCtaLabel).toContain("99,99");
+  });
+
+  it("dealer is 2499 cents with refund-oriented product copy", () => {
+    const dealer = getTestPricingPlan("dealer")!;
+    expect(dealer.amountCents).toBe(2499);
+    expect(dealer.productName).toBe("Oficiālā dīlera servisa vēstures dati");
+    expect(dealer.productDesc).toContain("100%");
+    expect(dealer.turnaround).toContain("24h");
   });
 
   it("requires vin or plate and consent; listing url is optional", () => {

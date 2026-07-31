@@ -52,6 +52,7 @@ const BLOCK_ROWS: Record<Tp5BlockId, Tp5DisplayRow[]> = {
 };
 
 const TIER_RANK: Record<TestPricingPlanId, number> = {
+  dealer: -1,
   mini: 0,
   plus: 1,
   premium: 2,

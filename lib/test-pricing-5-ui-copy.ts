@@ -44,7 +44,7 @@ export const TP5_TURNAROUND_INFO_PHONE_TEL = "+37129502039";
 const TP5_UI_COPY_LV: Tp5UiCopy = {
   cancelNote: "Maksājums tika atcelts. Vari mēģināt vēlreiz.",
   checkoutErrorFallback: "Neizdevās sākt maksājumu.",
-  packageTabsAria: "Izvēlies audita paketi",
+  packageTabsAria: "Izvēlies paketi",
   packageAriaSuffix: " pakete",
   vinPlaceholder: "Ievadi VIN kodu",
   vinAria: "Ievadi VIN kodu vai valsts numurzīmi",
@@ -64,7 +64,7 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
 const TP5_UI_COPY_EN: Tp5UiCopy = {
   cancelNote: "The payment was cancelled. You can try again.",
   checkoutErrorFallback: "Could not start the payment.",
-  packageTabsAria: "Choose an audit package",
+  packageTabsAria: "Choose a package",
   packageAriaSuffix: " package",
   vinPlaceholder: "Enter VIN code",
   vinAria: "Enter a VIN code or licence plate number",
