@@ -563,6 +563,14 @@
     text-decoration-color 0.2s ease;
 }
 
+.sampleReportLinkSpacer {
+  display: block;
+  margin: 0.65rem 0 0;
+  height: calc(0.72rem * 1.4);
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .sampleReportLink:hover {
   color: rgb(248 250 252 / 0.95);
   text-decoration-color: rgb(248 250 252 / 0.55);

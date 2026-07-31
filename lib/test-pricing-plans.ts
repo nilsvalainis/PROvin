@@ -110,7 +110,7 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
     stripePriceEnvKey: "STRIPE_PRICE_DEALER",
     description:
       "Oficiālā dīlera servisa vēstures dati — bez PROVIN eksperta analīzes.",
-    turnaround: "⏱️ Izpilde: tipiski līdz 24h / max 48h",
+    turnaround: "⏱️ Izpilde: 24-72h",
     ctaLabel: "PASŪTĪT DĪLERA DATUS",
     heroCtaLabel: "PASŪTĪT DĪLERA DATUS — 24,99 €",
     highlighted: false,
@@ -120,7 +120,7 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
       "Oficiālie dīlera / ražotāja servisa vēstures ieraksti. Ja dati nav pieejami — 100% naudas atmaksa.",
     features: [
       { kind: "bullet", label: "Oficiālie dīlera servisa ieraksti" },
-      { kind: "bullet", label: "Bez PROVIN eksperta analīzes" },
+      { kind: "bullet", label: "Nav iekļauts PROVIN MINI un PROVIN AUDITS" },
       { kind: "bullet", label: "Ja dati nav pieejami — 100% naudas atmaksa" },
       { kind: "bullet", label: "Daļēji ieraksti = derīga piegāde" },
     ],

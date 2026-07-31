@@ -64,16 +64,24 @@ const TP5_MOBILE_FEATURE_NAMES_EN = [
 
 const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
   { name: "Oficiālie dīlera servisa ieraksti", included: true },
-  { name: "Bez PROVIN eksperta analīzes", included: true },
+  { name: "Šajā atskaitē nav PROVIN MINI", included: true },
+  { name: "Šajā atskaitē nav PROVIN AUDITS", included: true },
   { name: "Ja dati nav — 100% naudas atmaksa", included: true },
   { name: "Daļēji ieraksti = derīga piegāde", included: true },
+  { name: "BMW, Mercedes-Benz, Audi, VW u.c.", included: true },
+  { name: "Land Rover, Jaguar, MINI, Škoda", included: true },
+  { name: "SEAT, Smart, Dacia, Renault, Rolls-Royce", included: true },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
   { name: "Official dealer service records", included: true },
-  { name: "No PROVIN expert analysis", included: true },
+  { name: "Does not include PROVIN MINI", included: true },
+  { name: "Does not include PROVIN AUDIT", included: true },
   { name: "No data available — 100% refund", included: true },
   { name: "Partial records = valid delivery", included: true },
+  { name: "BMW, Mercedes-Benz, Audi, VW and more", included: true },
+  { name: "Land Rover, Jaguar, MINI, Škoda", included: true },
+  { name: "SEAT, Smart, Dacia, Renault, Rolls-Royce", included: true },
 ];
 
 const MINI_ACTIVE_FEATURE_COUNT = 4;
@@ -120,12 +128,8 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     price: "24,99 €",
     buttonText: "PASŪTĪT DĪLERA DATUS — 24,99 €",
     description:
-      "Oficiālā dīlera servisa vēstures dati. Bez PROVIN analīzes — tikai oficiālie ieraksti.",
+      "Oficiālā dīlera servisa vēstures dati. Šajā atskaitē nav iekļauts PROVIN MINI un PROVIN AUDITS;",
     features: DEALER_FEATURES_LV,
-    brands: TP5_DEALER_BRANDS,
-    brandsHeading: "Atbalstītie ražotāji",
-    hideListingUrl: true,
-    turnaround: "⏱️ Izpilde: tipiski līdz 24h / max 48h",
     footnote: DEALER_FOOTNOTE_LV,
   },
 ];
@@ -158,12 +162,8 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     price: "€24.99",
     buttonText: "ORDER DEALER DATA — €24.99",
     description:
-      "Official dealer service history data. No PROVIN analysis — official records only.",
+      "Official dealer service history data. This report does not include PROVIN MINI or PROVIN AUDIT;",
     features: DEALER_FEATURES_EN,
-    brands: TP5_DEALER_BRANDS,
-    brandsHeading: "Supported manufacturers",
-    hideListingUrl: true,
-    turnaround: "⏱️ Delivery: typically within 24h / max 48h",
     footnote: DEALER_FOOTNOTE_EN,
   },
 ];

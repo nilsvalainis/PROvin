@@ -85,7 +85,6 @@ export function Tp5MobilePricingCard({
   const uiCopy = getTp5UiCopy(locale);
   const services = getTp5MobileServices(locale);
   const activeService = getTp5MobileService(activeServiceId, locale);
-  const isDealer = activeServiceId === "dealer";
   const turnaroundLabel = activeService.turnaround ?? getTp5MobileTurnaround(locale);
   const footnote = activeService.footnote ?? getTp5DealerFootnote(locale);
   /** Dealer meta title uses the full product name; tab stays short. */
@@ -149,16 +148,6 @@ export function Tp5MobilePricingCard({
               <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
             ))}
           </ul>
-          {activeService.brands && activeService.brands.length > 0 ? (
-            <div className={styles.dealerBrandBlock}>
-              {activeService.brandsHeading ? (
-                <p className={styles.dealerBrandHeading}>{activeService.brandsHeading}</p>
-              ) : null}
-              <p className={styles.dealerBrandWrap} aria-label={activeService.brandsHeading}>
-                {activeService.brands.join(" · ")}
-              </p>
-            </div>
-          ) : null}
         </div>
 
         <div
@@ -179,29 +168,25 @@ export function Tp5MobilePricingCard({
             maxLength={17}
           />
           {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
-          {!activeService.hideListingUrl ? (
-            <>
-              <input
-                type="url"
-                className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
-                value={listingUrl}
-                onChange={(event) => onListingUrlChange(event.target.value)}
-                placeholder={uiCopy.listingPlaceholder}
-                aria-label={uiCopy.listingAria}
-                autoComplete="url"
-                inputMode="url"
-              />
-              {errors.listingUrl ? (
-                <p className={styles.inlineFieldError}>{errors.listingUrl}</p>
-              ) : null}
-            </>
+          <input
+            type="url"
+            className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
+            value={listingUrl}
+            onChange={(event) => onListingUrlChange(event.target.value)}
+            placeholder={uiCopy.listingPlaceholder}
+            aria-label={uiCopy.listingAria}
+            autoComplete="url"
+            inputMode="url"
+          />
+          {errors.listingUrl ? (
+            <p className={styles.inlineFieldError}>{errors.listingUrl}</p>
           ) : null}
         </div>
       </div>
 
       <p className={styles.turnaround}>
         <span>{turnaroundLabel}</span>
-        {!isDealer ? <Tp5TurnaroundInfoTip copy={uiCopy} /> : null}
+        <Tp5TurnaroundInfoTip copy={uiCopy} />
       </p>
 
       <div className={styles.ctaWrap}>
@@ -220,7 +205,9 @@ export function Tp5MobilePricingCard({
           >
             {uiCopy.sampleReportLink}
           </a>
-        ) : null}
+        ) : (
+          <span className={styles.sampleReportLinkSpacer} aria-hidden />
+        )}
         <p className={styles.featureFootnote}>{footnote}</p>
       </div>
     </article>

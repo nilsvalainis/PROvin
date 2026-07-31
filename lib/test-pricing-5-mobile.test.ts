@@ -3,7 +3,6 @@ import {
   getTp5MobileService,
   getTp5MobileServices,
   getTp5MobileTurnaround,
-  TP5_DEALER_BRANDS,
   TP5_MOBILE_CHECKOUT_PLAN,
   TP5_MOBILE_SERVICES,
   TP5_MOBILE_SERVICE_ORDER,
@@ -49,17 +48,17 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(audits.features.every((feature) => feature.included)).toBe(true);
   });
 
-  it("maps dealer to four promise rows, brands and VIN-only checkout", () => {
+  it("maps dealer to eight rows matching audit stack height, refund footnote", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.price).toBe("24,99 €");
     expect(dealer.buttonText).toBe("PASŪTĪT DĪLERA DATUS — 24,99 €");
-    expect(dealer.hideListingUrl).toBe(true);
-    expect(dealer.features).toHaveLength(4);
+    expect(dealer.description).toContain("nav iekļauts PROVIN MINI un PROVIN AUDITS");
+    expect(dealer.features).toHaveLength(8);
     expect(dealer.features.every((feature) => feature.included)).toBe(true);
-    expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
-    expect(dealer.turnaround).toContain("24h");
+    expect(dealer.turnaround).toBeUndefined();
     expect(dealer.footnote).toContain("100%");
+    expect(getTp5MobileTurnaround()).toContain("24-72h");
   });
 
   it("keeps the English tier copy structurally identical to Latvian", () => {
