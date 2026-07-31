@@ -292,8 +292,13 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  /* 8 feature rows — keeps dealer (2 rows) the same height as MINI/AUDITS. */
+  /* 8 feature rows — keeps MINI/AUDITS stack height stable. */
   min-height: calc(8 * (1.65rem + 0.28rem));
+}
+
+.featureListDealer {
+  /* Dealer fills the slot with brands + note — avoid empty forced gap. */
+  min-height: 0;
 }
 
 .featureRow {
@@ -346,18 +351,56 @@
 }
 
 .dealerBrandBlock {
-  margin-top: 0.35rem;
-  padding-top: 0.35rem;
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
   border-top: 1px solid rgb(255 255 255 / 0.08);
 }
 
 .dealerBrandHeading {
-  margin: 0 0 0.2rem;
+  margin: 0 0 0.28rem;
   font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgb(37 99 235 / 0.9);
+}
+
+.dealerBrandGrid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 0.45rem;
+  row-gap: 0.1rem;
+}
+
+.dealerBrandItem {
+  display: grid;
+  grid-template-columns: 0.9rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.2rem;
+  min-height: 1.15rem;
+  font-size: 0.68rem;
+  line-height: 1.25;
+  font-weight: 500;
+  color: rgb(245 248 252 / 0.9);
+}
+
+.dealerBrandCheck {
+  color: #2563eb;
+  font-weight: 700;
+  font-size: 0.72rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.dealerExtraNote {
+  margin: 0.4rem 0 0;
+  font-size: 0.62rem;
+  line-height: 1.35;
+  font-weight: 450;
+  color: rgb(210 214 222 / 0.62);
 }
 
 .dealerBrandWrap {
@@ -873,6 +916,10 @@
     min-height: calc(8 * (1.85rem + 0.36rem));
   }
 
+  .featureListDealer {
+    min-height: 0;
+  }
+
   .turnaround {
     margin: 0.65rem 0 0;
     font-size: 0.75rem;
@@ -1003,6 +1050,14 @@ html[data-site-theme="light"] .featureLabelActive {
 
 html[data-site-theme="light"] .dealerBrandHeading {
   color: rgb(37 99 235 / 0.95);
+}
+
+html[data-site-theme="light"] .dealerBrandItem {
+  color: #3a3a3c;
+}
+
+html[data-site-theme="light"] .dealerExtraNote {
+  color: #6e6e73;
 }
 
 html[data-site-theme="light"] .dealerBrandWrap {

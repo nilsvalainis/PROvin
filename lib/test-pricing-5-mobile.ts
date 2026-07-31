@@ -16,6 +16,8 @@ export type Tp5MobileService = {
   brands?: readonly string[];
   /** Brands block heading above the compact list. */
   brandsHeading?: string;
+  /** Short note under brands (dealer tier). */
+  extraNote?: string;
   /** Hide listing URL field (dealer: VIN only). */
   hideListingUrl?: boolean;
   /** Per-tier turnaround; falls back to shared audit turnaround. */
@@ -65,12 +67,24 @@ const TP5_MOBILE_FEATURE_NAMES_EN = [
 const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
   { name: "Oficiālā dīlera servisa vēsture", included: true },
   { name: "100% naudas atmaksa", included: true },
+  { name: "Digitālie ieraksti: apkopes un remonti", included: true },
+  { name: "Piegāde e-pastā 24–48h laikā", included: true },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
   { name: "Official dealer service history", included: true },
   { name: "100% money-back guarantee", included: true },
+  { name: "Digital records: services and repairs", included: true },
+  { name: "Email delivery within 24–48h", included: true },
 ];
+
+const DEALER_BRANDS_HEADING_LV = "Atbalstītie ražotāji";
+const DEALER_BRANDS_HEADING_EN = "Supported manufacturers";
+
+const DEALER_EXTRA_NOTE_LV =
+  "Dati tiek iegūti no oficiālajām dīleru / ražotāju datubāzēm. Ja ierakstu nav — pilna naudas atmaksa.";
+const DEALER_EXTRA_NOTE_EN =
+  "Data comes from official dealer / manufacturer databases. If no records exist — full refund.";
 
 const MINI_ACTIVE_FEATURE_COUNT = 4;
 
@@ -118,6 +132,9 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     description:
       "Oficiālā dīlera servisa vēstures dati. Šajā atskaitē iekļauti tikai dati no oficiālo dīleru datubāzēm.",
     features: DEALER_FEATURES_LV,
+    brands: TP5_DEALER_BRANDS,
+    brandsHeading: DEALER_BRANDS_HEADING_LV,
+    extraNote: DEALER_EXTRA_NOTE_LV,
     turnaround: "⏱️ Izpilde: 24-48h",
     footnote: DEALER_FOOTNOTE_LV,
   },
@@ -153,6 +170,9 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     description:
       "Official dealer service history data. This report includes only data from official dealer databases.",
     features: DEALER_FEATURES_EN,
+    brands: TP5_DEALER_BRANDS,
+    brandsHeading: DEALER_BRANDS_HEADING_EN,
+    extraNote: DEALER_EXTRA_NOTE_EN,
     turnaround: "⏱️ Delivery: 24-48h",
     footnote: DEALER_FOOTNOTE_EN,
   },

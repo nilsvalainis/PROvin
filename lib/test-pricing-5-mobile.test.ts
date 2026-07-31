@@ -3,6 +3,7 @@ import {
   getTp5MobileService,
   getTp5MobileServices,
   getTp5MobileTurnaround,
+  TP5_DEALER_BRANDS,
   TP5_MOBILE_CHECKOUT_PLAN,
   TP5_MOBILE_SERVICES,
   TP5_MOBILE_SERVICE_ORDER,
@@ -48,21 +49,21 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(audits.features.every((feature) => feature.included)).toBe(true);
   });
 
-  it("maps dealer to two active rows while list height stays eight-row budget", () => {
+  it("maps dealer to four rows, brand grid and refund footnote", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.price).toBe("24,99 €");
     expect(dealer.buttonText).toBe("PASŪTĪT DĪLERA DATUS — 24,99 €");
     expect(dealer.description).toContain("tikai dati no oficiālo dīleru datubāzēm");
-    expect(dealer.features).toHaveLength(2);
-    expect(dealer.features.map((f) => f.name)).toEqual([
-      "Oficiālā dīlera servisa vēsture",
-      "100% naudas atmaksa",
-    ]);
+    expect(dealer.features).toHaveLength(4);
+    expect(dealer.features[0]?.name).toBe("Oficiālā dīlera servisa vēsture");
+    expect(dealer.features[1]?.name).toBe("100% naudas atmaksa");
     expect(dealer.features.every((feature) => feature.included)).toBe(true);
+    expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
+    expect(dealer.brandsHeading).toBe("Atbalstītie ražotāji");
+    expect(dealer.extraNote).toContain("oficiālajām dīleru");
     expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-48h");
     expect(dealer.footnote).toContain("100% naudas atmaksa");
-    expect(dealer.footnote).toContain("oficiālo dīleru datubāzē");
     expect(getTp5MobileTurnaround()).toContain("24-72h");
   });
 

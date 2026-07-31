@@ -143,11 +143,37 @@ export function Tp5MobilePricingCard({
         onTouchEnd={onSwipeAreaTouchEnd}
       >
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
-          <ul className={styles.featureList}>
+          <ul
+            className={
+              activeServiceId === "dealer"
+                ? `${styles.featureList} ${styles.featureListDealer}`
+                : styles.featureList
+            }
+          >
             {activeService.features.map((feature) => (
               <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
             ))}
           </ul>
+          {activeService.brands && activeService.brands.length > 0 ? (
+            <div className={styles.dealerBrandBlock}>
+              {activeService.brandsHeading ? (
+                <p className={styles.dealerBrandHeading}>{activeService.brandsHeading}</p>
+              ) : null}
+              <ul className={styles.dealerBrandGrid} aria-label={activeService.brandsHeading}>
+                {activeService.brands.map((brand) => (
+                  <li key={brand} className={styles.dealerBrandItem}>
+                    <span className={styles.dealerBrandCheck} aria-hidden>
+                      ✓
+                    </span>
+                    <span>{brand}</span>
+                  </li>
+                ))}
+              </ul>
+              {activeService.extraNote ? (
+                <p className={styles.dealerExtraNote}>{activeService.extraNote}</p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div
