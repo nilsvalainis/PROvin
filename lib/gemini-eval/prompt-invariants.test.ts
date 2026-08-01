@@ -74,6 +74,16 @@ describe("PROVIN Gemini prompt invariants", () => {
     expect(prompts).toMatch(/VISIEM avotu|VISUS avotu/i);
   });
 
+  it("field-agent prompts enforce epistemic hedging for digital-only audits", () => {
+    const prompts = readRepo("lib/admin-gemini-prompts.ts");
+    expect(prompts).toMatch(/EPISTEMIC HEDGING/);
+    expect(prompts).toMatch(/NOT.*physically inspected|fiziski nav apskatījis/i);
+    expect(prompts).toMatch(/visticamāk|ļoti iespējams|teorētiski/);
+    expect(prompts).toMatch(/tehniski perfekts/);
+    const vocab = readRepo("lib/source-summary-comment-format.ts");
+    expect(vocab).toMatch(/EPISTEMIC HEDGING/);
+  });
+
   it("summary and inspection prompts require aggregate-specific technical risk analysis", () => {
     const prompts = readRepo("lib/admin-gemini-prompts.ts");
     expect(prompts).toMatch(/TEHNISKO RISKU ANALĪZE|TECHNICAL RISK ANALYSIS/i);
