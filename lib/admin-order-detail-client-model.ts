@@ -49,6 +49,9 @@ export function toAdminOrderDetailClientModel(order: Record<string, unknown>): A
     attachments: attachmentList(order.attachments),
     isDemo: Boolean(order.isDemo),
     ...(Boolean(order.isManual) ? { isManual: true as const } : {}),
+    ...(typeof order.checkoutLine === "string" && order.checkoutLine.trim()
+      ? { checkoutLine: order.checkoutLine.trim() }
+      : {}),
     selectBrandModel: str(order.selectBrandModel) || null,
     selectProductionYearsDpf: str(order.selectProductionYearsDpf) || null,
     selectPlannedBudget: str(order.selectPlannedBudget) || null,

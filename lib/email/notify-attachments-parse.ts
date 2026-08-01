@@ -48,7 +48,11 @@ function normalizeMime(filename: string, declared: string | null): string {
 
 export async function collectAttachmentsFromFormData(
   form: FormData,
-  options?: { auditReportVin?: string | null },
+  options?: {
+    auditReportVin?: string | null;
+    checkoutLine?: string | null;
+    amountTotalCents?: number | null;
+  },
 ): Promise<{
   attachments: ParsedMailAttachment[];
   totalBytes: number;
@@ -92,7 +96,10 @@ export async function collectAttachmentsFromFormData(
       throw new Error("unsupported_file_type");
     }
     out.push({
-      filename: buildProvinAuditPdfFilename(options?.auditReportVin),
+      filename: buildProvinAuditPdfFilename(options?.auditReportVin, {
+        checkoutLine: options?.checkoutLine,
+        amountTotalCents: options?.amountTotalCents,
+      }),
       content: buf,
       contentType: "application/pdf",
     });

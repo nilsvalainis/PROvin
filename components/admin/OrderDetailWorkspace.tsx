@@ -149,7 +149,7 @@ import {
   orderHasMileageDataForGemini,
   orderHasSourceDataForGemini,
 } from "@/lib/admin-gemini-data-availability";
-import { buildProvinAuditPdfFilename } from "@/lib/audit-report-pdf-filename";
+import { buildProvinAuditPdfFilename, resolveProvinAuditPdfProductBrand } from "@/lib/audit-report-pdf-filename";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 import {
@@ -189,6 +189,8 @@ export type OrderWorkspacePayload = {
   currency: string | null;
   paymentStatus: string;
   isManual?: boolean;
+  /** Stripe checkout line — PDF faila nosaukumam (MINI vs AUDITS). */
+  checkoutLine?: string | null;
   listingUrl: string | null;
   customerEmail: string | null;
   customerPhone: string | null;
@@ -1994,7 +1996,10 @@ export function OrderDetailWorkspace({
     setNotifyPhase("loading");
     try {
       const extraRaw = notifyReportPdfExtraRef.current?.files?.[0] ?? null;
-      const auditName = buildProvinAuditPdfFilename(payload.vin);
+      const auditName = buildProvinAuditPdfFilename(payload.vin, {
+        checkoutLine: payload.checkoutLine,
+        amountTotalCents: payload.amountTotal,
+      });
       const extraReport =
         extraRaw && extraRaw.size > 0
           ? new File([extraRaw], auditName, {
@@ -2375,8 +2380,10 @@ export function OrderDetailWorkspace({
     w.document.write(html);
     w.document.close();
 
-    const vinSlug = (payload.vin?.trim().replace(/[^A-Za-z0-9]/g, "_") || "nav_VIN").slice(0, 48);
-    const printTitle = `Atskaite_${vinSlug}.pdf`;
+    const printTitle = buildProvinAuditPdfFilename(payload.vin, {
+      checkoutLine: payload.checkoutLine,
+      amountTotalCents: payload.amountTotal,
+    });
     let printed = false;
     const schedulePrint = () => {
       if (printed) return;
@@ -2901,7 +2908,12 @@ export function OrderDetailWorkspace({
       { title: "Cenas atbilstība", text: ws.cenasAtbilstiba ?? "" },
     ];
 
-    drawHeading("PROVIN AUDITS");
+    drawHeading(
+      resolveProvinAuditPdfProductBrand({
+        checkoutLine: payload.checkoutLine,
+        amountTotalCents: payload.amountTotal,
+      }).replace(/_/g, " "),
+    );
     drawParagraph(`VIN: ${(payload.vin ?? "—").trim() || "—"}`);
     drawParagraph(`Klients: ${(payload.customerName ?? "—").trim() || "—"}`);
     drawParagraph(`Tālrunis: ${(payload.customerPhone ?? "—").trim() || "—"}`);
@@ -2920,8 +2932,27 @@ export function OrderDetailWorkspace({
 
     const pdfBytes = await pdf.save();
     const pdfBlob = new Blob([Uint8Array.from(pdfBytes)], { type: "application/pdf" });
-    return new File([pdfBlob], buildProvinAuditPdfFilename(payload.vin), { type: "application/pdf" });
-  }, [blocksDisplaySafe, payload.customerEmail, payload.customerName, payload.customerPhone, payload.vin, ws.apskatesPlāns, ws.cenasAtbilstiba, ws.iriss, ws.tehniskoRiskuAnalize]);
+    return new File(
+      [pdfBlob],
+      buildProvinAuditPdfFilename(payload.vin, {
+        checkoutLine: payload.checkoutLine,
+        amountTotalCents: payload.amountTotal,
+      }),
+      { type: "application/pdf" },
+    );
+  }, [
+    blocksDisplaySafe,
+    payload.amountTotal,
+    payload.checkoutLine,
+    payload.customerEmail,
+    payload.customerName,
+    payload.customerPhone,
+    payload.vin,
+    ws.apskatesPlāns,
+    ws.cenasAtbilstiba,
+    ws.iriss,
+    ws.tehniskoRiskuAnalize,
+  ]);
 
   const handleWhatsAppSend = useCallback(async () => {
     if (!whatsappPhoneDigits) return;
@@ -2992,7 +3023,12 @@ export function OrderDetailWorkspace({
                 <div className="mt-3 border-t border-[var(--admin-border-subtle)] pt-3">
                   <label className="mb-1 block text-[10px] font-medium text-[var(--color-provin-muted)]">
                     Papildu audita PDF (ja nav portfelī) — nosūtīts kā{" "}
-                    <span className="font-mono">{buildProvinAuditPdfFilename(payload.vin)}</span>
+                    <span className="font-mono">
+                      {buildProvinAuditPdfFilename(payload.vin, {
+                        checkoutLine: payload.checkoutLine,
+                        amountTotalCents: payload.amountTotal,
+                      })}
+                    </span>
                   </label>
                   <input
                     ref={notifyReportPdfExtraRef}

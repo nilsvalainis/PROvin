@@ -45,6 +45,8 @@ export type AdminOrderDetailClientModel = {
   isDemo?: boolean;
   /** Admin panelī manuāli izveidots pasūtījums (ne no Stripe). */
   isManual?: boolean;
+  /** Stripe `metadata.checkout_line` — MINI vs AUDITS PDF nosaukumam. */
+  checkoutLine?: string | null;
   selectBrandModel?: string | null;
   selectProductionYearsDpf?: string | null;
   selectPlannedBudget?: string | null;
@@ -777,6 +779,7 @@ export function AdminOrderDetailView({
           currency: order.currency,
           paymentStatus: order.paymentStatus,
           isManual: Boolean(order.isManual),
+          checkoutLine: order.checkoutLine ?? null,
           listingUrl: mergedListing.trim() || null,
           customerEmail: mergedCustomerEmail.trim() || null,
           customerPhone: mergedCustomerPhone.trim() || null,

@@ -1,12 +1,45 @@
+import type { CheckoutLineKind } from "@/lib/stripe-session";
+
 /**
- * Klienta audita PDF pielikuma standarta nosaukums e-pastā.
- * Formāts: PROVIN_AUDITS_<VIN>.pdf (VIN — tikai burti un cipari, lielie burti).
- * Piem.: PROVIN_AUDITS_VSSZZZ5PZ7R010576
+ * Klienta audita PDF pielikuma standarta nosaukums.
+ * Formāts: PROVIN_AUDITS_<VIN>.pdf vai PROVIN_MINI_<VIN>.pdf
+ * (atkarībā no pasūtītā produkta; VIN — tikai burti un cipari, lielie burti).
  */
-export function buildProvinAuditPdfFilename(vin: string | null | undefined): string {
+
+export type ProvinAuditPdfProductBrand = "PROVIN_AUDITS" | "PROVIN_MINI";
+
+/** MINI = 39,99 €; AUDITS = 99,99 € (un vecāki 79,99 € audit pasūtījumi). */
+const MINI_AMOUNT_CENTS = 3999;
+
+export function resolveProvinAuditPdfProductBrand(args: {
+  checkoutLine?: CheckoutLineKind | string | null;
+  amountTotalCents?: number | null;
+}): ProvinAuditPdfProductBrand {
+  const line = (args.checkoutLine ?? "").toString().trim().toLowerCase();
+  if (line === "mini" || line === "plus" || line === "listing_filter") return "PROVIN_MINI";
+  if (line === "premium" || line === "audit") return "PROVIN_AUDITS";
+  // Dealer / SELECT / unknown — pēc summas; 39,99 € = MINI.
+  if (args.amountTotalCents === MINI_AMOUNT_CENTS) return "PROVIN_MINI";
+  return "PROVIN_AUDITS";
+}
+
+export function buildProvinAuditPdfFilename(
+  vin: string | null | undefined,
+  product?: {
+    checkoutLine?: CheckoutLineKind | string | null;
+    amountTotalCents?: number | null;
+    brand?: ProvinAuditPdfProductBrand | null;
+  },
+): string {
+  const brand =
+    product?.brand ??
+    resolveProvinAuditPdfProductBrand({
+      checkoutLine: product?.checkoutLine,
+      amountTotalCents: product?.amountTotalCents,
+    });
   const v = (vin ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   const slug = v.length > 0 ? v : "NAV_VIN";
-  return `PROVIN_AUDITS_${slug}.pdf`;
+  return `${brand}_${slug}.pdf`;
 }
 
 /** PROVIN SELECT konsultācijas PDF nosaukums e-pasta pielikumam (bez VIN). */

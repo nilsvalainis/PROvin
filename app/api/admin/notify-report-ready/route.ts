@@ -74,7 +74,7 @@ function mapParseError(e: unknown): NextResponse | null {
 /**
  * Nosūta klientam „audits gatavs” ar pielikumiem (nodemailer + SMTP).
  * – JSON: { sessionId, customerEmail?, attachmentsBase64?: { filename, data, mimeType? }[] }
- * – multipart/form-data: sessionId, customerEmail?, reportPdf (optional → PROVIN_AUDITS_<VIN>.pdf), attachment (repeat)
+ * – multipart/form-data: sessionId, customerEmail?, reportPdf (optional → PROVIN_AUDITS_<VIN>.pdf vai PROVIN_MINI_<VIN>.pdf), attachment (repeat)
  * Rēķins netiek pievienots — klients to jau saņēma apmaksas apstiprinājumā (PDF saite).
  */
 export async function POST(req: Request) {
@@ -168,6 +168,8 @@ export async function POST(req: Request) {
     if (multipartForm) {
       const { attachments } = await collectAttachmentsFromFormData(multipartForm, {
         auditReportVin: notifyVin || null,
+        checkoutLine: order.checkoutLine ?? null,
+        amountTotalCents: order.amountTotal ?? null,
       });
       manualAttachments = attachments.map((a) => ({
         filename: a.filename,
