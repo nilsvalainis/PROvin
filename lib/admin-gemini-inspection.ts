@@ -20,15 +20,25 @@ export async function generateInspectionRecommendationsWithGemini(
 
   const techPlain = adminRichHtmlToPlainText(input.technicalRiskAnalysis ?? "").trim();
   const techSection = techPlain
-    ? `\n\n---\n\nJau sagatavotā „${ADMIN_TECHNICAL_RISKS_LABEL}” (OBLIGĀTI ņem vērā — pārvērt riskus par klātienes pārbaudes punktiem, nedublē visu eseju):\n\n${techPlain}\n`
-    : `\n\nPiezīme: „${ADMIN_TECHNICAL_RISKS_LABEL}” vēl nav aizpildīta — izsecini agregātu riskus no portfeļa un pārvērt par klātienes punktiem.\n`;
+    ? `\n\n---\n\nJau sagatavotā „${ADMIN_TECHNICAL_RISKS_LABEL}” (pārvērt par klātienes soļiem; nedublē visu eseju):\n\n${techPlain}\n`
+    : "";
 
   const userPrompt = appendGeminiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
 
 ${context}
 ${techSection}
-Sagatavo ieteikumus klātienes apskatei šim auto (lauks „2. Ieteikumi klātienes apskatei”).`,
+---
+
+Sagatavo ieteikumus klātienes apskatei (lauks „2. Ieteikumi klātienes apskatei”).
+
+OBLIGĀTI sintezē no VISIEM pieejamajiem avotiem un konteksta blokiem augstāk:
+- visi avotu bloki / tabulas / esošie komentāri;
+- tehnisko risku sadaļa (ja ir);
+- nobraukums, negadījumi, TA, dīleris, pārdevējs, cena;
+- vēsturiskie līdzīgo auto auditi un agregātu mācījumi (ja ir).
+
+Katrs punkts — konkrēta pārbaude + kāpēc šim auto. Īsi, vērtīgi, bez ūdens.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:

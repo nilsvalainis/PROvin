@@ -7,7 +7,11 @@ import {
   formatVehicleFingerprintLabel,
   type VehicleReportFingerprint,
 } from "@/lib/admin-vehicle-report-fingerprint";
-import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import {
+  mergeSourceBlocksWithDefaults,
+  SOURCE_BLOCK_LABELS,
+  type WorkspaceSourceBlocks,
+} from "@/lib/admin-source-blocks";
 import { workspaceFillScoreFromDraft } from "@/lib/admin-workspace-integrity";
 import {
   formatAggregateCasePacksForGemini,
@@ -25,9 +29,10 @@ import {
 export const GEMINI_AGGREGATE_KNOWLEDGE_RULES = `PROVIN AGGREGĀTU ZINĀŠANAS (statiskā bāze + mācījumi no iepriekšējām atskaitēm):
 - Kombinē zemāk esošās ražotāju/agregātu pakas ar AKTĪVĀ pasūtījuma datiem un (ja ir) vēsturisko auditu fragmentiem.
 - Katru agregāta risku klasificē: **galvenais pirkuma risks** / **vidējs uzturēšanas risks** / **kontrolpunkts klātienē**.
-- **1. Tehnisko risku analīze** ir galvenā vieta detalizētai agregātu forenzikai; **2. Ieteikumi klātienes apskatei** pārvērš riskus pārbaudes punktos; **3. Kopsavilkums** nedublē garo tehnisko eseju.
+- **1. Tehnisko risku analīze** — detalizēta agregātu forenzika; **2. Ieteikumi** — pārbaudes punkti; **3. Kopsavilkums** — kopaina bez garas tehniskās dublikācijas; **avotu/nobraukuma/negadījumu komentāri** — arī lieto šīs zināšanas, kur relevantas.
 - Mācījumi no citām atskaitēm — tikai paraugi un forenzikas loģika; **nekopē** klienta VIN, km, datumus, EUR, pasūtījuma ID.
-- Ja statiskā paka un mācījumi konfliktē ar aktīvā auto datiem — uzvar aktīvā pasūtījuma fakti.`;
+- Ja statiskā paka un mācījumi konfliktē ar aktīvā auto datiem — uzvar aktīvā pasūtījuma fakti.
+- Pēc katras bagātīgas atskaites PROVIN saglabā anonimizētus mācījumus — uzskati tos par institucionālo atmiņu nākamajiem līdzīgiem agregātiem.`;
 
 function redactLearningText(text: string): string {
   return text
@@ -39,35 +44,59 @@ function redactLearningText(text: string): string {
     .replace(/\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b/g, "[datums]");
 }
 
-function clipLearningSnippet(text: string, max = 380): string {
+function clipLearningSnippet(text: string, max = 400): string {
   const t = redactLearningText(text.replace(/\s+/g, " ").trim());
   if (t.length <= max) return t;
   return `${t.slice(0, max - 1).trim()}…`;
 }
 
+/** Īss „mācību” fragments — pirmās 1–2 teikuma daļas ar riska/EUR signāliem. */
+function distillLesson(plain: string, tag: string, max = 360): string | null {
+  const cleaned = plain.replace(/\s+/g, " ").trim();
+  if (cleaned.length < 70) return null;
+  const sentences = cleaned.split(/(?<=[.!?…])\s+/).filter((s) => s.trim().length > 25);
+  const pick = sentences.slice(0, 2).join(" ").trim() || cleaned.slice(0, max);
+  return clipLearningSnippet(`[${tag}] ${pick}`, max);
+}
 
 function extractLearningSnippetsFromDraft(draft: OrderDraftState): string[] {
   const ws = draft.workspace;
   if (!ws) return [];
   const out: string[] = [];
-  const push = (raw: string | undefined) => {
+  const pushTagged = (tag: string, raw: string | undefined, minLen = 70) => {
     const plain = adminRichHtmlToPlainText(raw ?? "").trim();
-    if (plain.length < 80) return;
-    out.push(clipLearningSnippet(plain));
+    if (plain.length < minLen) return;
+    const lesson = distillLesson(plain, tag);
+    if (lesson) out.push(lesson);
   };
-  push(ws.tehniskoRiskuAnalize);
-  push(ws.apskatesPlāns);
-  push(ws.iriss);
-  push(draft.orderEdits.mileageComment);
-  push(ws.cenasAtbilstiba);
-  return [...new Set(out)].slice(0, 6);
+
+  pushTagged("Tehnika", ws.tehniskoRiskuAnalize, 60);
+  pushTagged("Apskate", ws.apskatesPlāns, 60);
+  pushTagged("Kopsavilkums", ws.iriss, 80);
+  pushTagged("Nobraukums", draft.orderEdits.mileageComment, 70);
+  pushTagged("Negadījumi", draft.orderEdits.internalComment, 70);
+  pushTagged("Cena", ws.cenasAtbilstiba, 70);
+
+  const blocks = mergeSourceBlocksWithDefaults(ws.sourceBlocks as WorkspaceSourceBlocks);
+  const sourcePairs: Array<[string, string]> = [
+    [SOURCE_BLOCK_LABELS.csdd, blocks.csdd.comments],
+    [SOURCE_BLOCK_LABELS.autodna, blocks.autodna.comments],
+    [SOURCE_BLOCK_LABELS.carvertical, blocks.carvertical.comments],
+    [SOURCE_BLOCK_LABELS.auto_records, blocks.auto_records.comments],
+    [SOURCE_BLOCK_LABELS.ltab, blocks.ltab.comments],
+  ];
+  for (const [label, comments] of sourcePairs) {
+    pushTagged(`Avots:${label}`, comments, 90);
+  }
+
+  return [...new Set(out)].slice(0, 10);
 }
 
 export function draftQualifiesForAggregateLearning(draft: OrderDraftState): boolean {
   if (!draft.workspace) return false;
   const fill = workspaceFillScoreFromDraft(draft.workspace);
   const snippets = extractLearningSnippetsFromDraft(draft);
-  return snippets.length >= 2 && (fill >= 6 || snippets.some((s) => s.length >= 150));
+  return snippets.length >= 2 && (fill >= 5 || snippets.some((s) => s.length >= 120));
 }
 
 /** Pēc veiksmīgas atskaites saglabāšanas — papildina mācījumu indeksu (fire-and-forget). */
@@ -102,7 +131,7 @@ async function rankLearningKeysForFingerprint(fp: VehicleReportFingerprint): Pro
     if (engine && k.includes(engine)) out.push(k);
     else if (make && k.includes(make)) out.push(k);
   }
-  return out.slice(0, 3);
+  return out.slice(0, 4);
 }
 
 export type AggregateKnowledgeContextInput = {

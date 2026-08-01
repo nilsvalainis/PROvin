@@ -47,9 +47,10 @@ function engineScore(fp: VehicleReportFingerprint, codes: string[]): number {
   return 0;
 }
 
-const PACK_BODY_HEADER = `Katrā atbilstošā laukā (īpaši **2. Kopsavilkums** un **Ieteikumi klātienes apskatei**):
+const PACK_BODY_HEADER = `Katrā atbilstošā laukā (īpaši **1. Tehnisko risku analīze**, **2. Ieteikumi klātienes apskatei**, avotu komentāri):
 - Pārvērt riskus par **konkrētu spriedumu šim auto** (galvenais pirkuma risks / vidējs uzturēšanas risks / tikai kontrolpunkts).
-- Saisti katru svarīgu agregātu ar **konkrētu klātienes darbību** — ne vispārīgu „jāpārbauda auto”.`;
+- Saisti katru svarīgu agregātu ar **konkrētu klātienes darbību** — ne vispārīgu „jāpārbauda auto”.
+- Raksti **blīvi** — EUR diapazoni un tipiskās slimības bez garas ievada esejas.`;
 
 export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
   {

@@ -72,6 +72,12 @@ FIELD DIVISION & ANTI-REPETITION (critical — client PDF must not feel copy-pas
 - Per-source „Komentāri”, negadījumu kopsavilkums, and other expert fields: emphasize what THAT source uniquely shows + a brief comparison (what matches / differs). Do NOT rewrite the same full mileage story, the same vacuum essay, or the same closing risk paragraph in every block.
 - When other expert comments already exist in the prompt: treat them as covered ground — add deltas only; never paraphrase the same facts at similar length.
 
+CLIENT VALUE DENSITY (critical — every comment window):
+- Prefer **short, high-value** buyer guidance over long essays. Every paragraph must teach the client something actionable (risk, cost band, what to check, what it means for purchase).
+- Cut filler: no greetings, no „esmu izskatījis”, no repeating the same risk in three fields, no generic „auto jāpārbauda klātienē” without naming the component.
+- Dense ≠ incomplete: keep **concrete** engine/gearbox/codes, EUR ranges when known, dates/km only when they change the decision.
+- Historical audits + aggregate packs in the prompt are **institutional memory** — reuse forensic patterns and inspection themes for THIS field; never invent that you „remember” facts not in the prompt.
+
 DATA FORENSICS (mileage, incidents, source comments, summary — when timeline data exists):
 - Do not blindly copy dates/km — correlate across sources and flag hidden gaps or contradictions.
 - Registration/import vs sale: if >3 weeks between first registration in destination country and actual sale without explanation, warn that "slēpta uzturēšana" may indicate pre-sale repair, odometer correction, or document issues (only when dates support it).
@@ -102,12 +108,13 @@ MODEL TECHNICAL WEAKNESSES (when make/model/engine known from context):
 - Interior: Artico/imitation leather vs real leather upkeep; LED optics moisture; paint type risks.
 - Clear market myths from data (e.g. Mercedes modular engine vs Renault architecture — state only what chassis/engine context supports).
 - When the user prompt includes HISTORICAL AUDIT REPORTS from similar vehicles (same engine code, transmission, or model generation), reuse their model-specific inspection themes and aggregate forensics — never copy client-specific km, VIN, or dates from those excerpts.
+- This applies to **every** expert comment window (avotu komentāri, nobraukums, negadījumi, tehniskie riski, apskate, kopsavilkums, cena) — not only the summary.
 
 ${GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES}
 
 AGGREGATE KNOWLEDGE (in user prompt when present):
 ${GEMINI_AGGREGATE_KNOWLEDGE_RULES}
-- When the user prompt includes „Agregātu zināšanas” / manufacturer packs / mācījumi no iepriekšējām atskaitēm, treat them as mandatory technical priors for **2. Kopsavilkums** and **Ieteikumi klātienes apskatei** — reconcile with active order facts; never copy anonymized learning snippets verbatim if they conflict with this order's data.
+- When the user prompt includes „Agregātu zināšanas” / manufacturer packs / mācījumi no iepriekšējām atskaitēm, treat them as mandatory technical priors for **all** ACTIVE FIELD comment generations — reconcile with active order facts; never copy anonymized learning snippets verbatim if they conflict with this order's data.
 
 OUTPUT CONSTRAINT:
 Generate text strictly for the ACTIVE FIELD requested. No duplicate headers, no full report skeleton, no meta-commentary about AI or search.`;
@@ -230,7 +237,7 @@ AVOTI (šādā secībā): (1) agregātu zināšanas / vēsturiskie auditi; (2) C
 
 FORMĀTS:
 - Tikai rindkopas ar **bold** ievadu; NEKAD "- " rindas sākumā.
-- Garums: bagātīgs un kompetents (tipiski 7–14 rindkopas, ja datu pietiek) — šī ir padziļinātā tehniskā sadaļa, ne īss kopsavilkums.
+- CLIENT VALUE DENSITY: bagātīgs, bet **bez ūdens** — katra rindkopa = risks/stiprā puse + kāpēc + aptuvenās izmaksas vai klātienes sekas. Tipiski 6–10 rindkopas (ne 14+ ar atkārtojumiem).
 - Bez „Sveiki”, bez sarunas ievada — šī ir atskaites sadaļa.
 - Bez virsrakstiem un bez meta-komentāriem par AI.`,
 );
@@ -239,25 +246,28 @@ export const GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM = provinFieldAgentPrompt(
   "VEHICLE INSPECTION & TEST DRIVE (2. Ieteikumi klātienes apskatei)",
   `${GEMINI_CLIENT_PDF_EXPERT_MARKDOWN_RULES}
 
-Uzdevums: sagatavot ieteikumus klātienes apskatei konkrētam auto — tāds pats vizuālais formāts kā avotu komentāros un nobraukuma komentārā.
+Uzdevums: sagatavot ieteikumus klātienes apskatei konkrētam auto — tāds pats vizuālais formāts kā avotu komentāros.
 
-Ievadā saņemsi pilnu pasūtījuma kontekstu (sludinājums, CSDD, AutoDNA, CarVertical, LTAB u.c.) un, ja jau sagatavota, sadaļu **„1. Tehnisko risku analīze”**.
+Ievadā saņemsi **pilnu** pasūtījuma kontekstu: VISUS avotu blokus (CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, tirgus, sludinājums u.c.), tabulas, esošos komentārus, eksperta sadaļas, **vēsturiskos līdzīgo auto auditus** un **agregātu zināšanas/mācījumus**.
 
 FORMĀTS (obligāti):
 - Tikai rindkopas ar tukšu rindu starp tām — NEKAD nesāc rindu ar "- ", "•", "*" vai numuru.
 - Katra rindkopa sākas ar **bold** tematisko ievadu (piem. **Virsbūves pārbaude ar krāsas mērītāju.**), tad turpini parastā tekstā tajā pašā rindkopā.
 - Formulējumi: Jāpārbauda…, Ieteicams…, Rūpīgi jāapskata… (ne „Pārbaudi”).
+- CLIENT VALUE DENSITY: īsi un vērtīgi — katrs punkts = konkrēta pārbaude + kāpēc tā svarīga šim auto; bez garas tehniskās esejas (tā ir 1. sadaļā).
 
-Satura prasības:
-- Katrs punkts — konkrēta lieta, kurai jāpievērš uzmanība apskates laikā
-- **OBLIGĀTI ņem vērā „Tehnisko risku analīzi”** (ja tā ir kontekstā): pārvērt tur minētos agregātu riskus un izmaksu punkus par **konkrētiem klātienes pārbaudes soļiem**; nedublē visu tehnisko eseju — tikai rīcības punktus.
-- Ievēro 3 posmu, 20–30 min klusā brauciena ietvaru (pilsēta/auksts starts/ātrumkārba → šoseja/vibrācijas → dinamika kick-down) — **izņemot pilnībā elektriskus (BEV)**: tad lieto EV klātienes punktus no ELECTRIC & PLUG-IN FORENSICS (SOH, uzlādes režīms 20–80 %, DC vs mājas AC, 12 V, diapazons, HV garantija).
-- Ja auto ir elektrisks vai plug-in hibrīds — obligāti iekļauj akumulatora un uzlādes paradumu pārbaudes (ne tikai SOH skaitli, ja tas vispār minēts avotos).
-- Ņem vērā marku, modeli, gadu, dzinēju, ātrumkārbu, nobraukumu (ja zināms); mehānisko mantojumu skaidri, ja tirgū ir mīti
-- No konteksta izsecini **konkrētā agregāta tehniskos riskus** un pārvērt tos **konkrētos klātienes pārbaudes punktos**; neapstājies pie vispārīga “šim modelim mēdz būt problēmas”.
-- Ja avotos ir defekti, avārijas vai nobraukuma anomālijas — iekļauj tos
-- Ja zini modeļa tipiskās vājās vietas no konteksta — iekļauj, bet neizdomā specifisku defektu bez pamata
-- Garums: aptuveni 6–12 rindkopas, ja datu pietiek; īsāk, ja datu maz`,
+Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sadaļas):
+- **Tehnisko risku analīze** (ja ir) — pārvērt par klātienes soļiem; nedublē visu eseju.
+- **Nobraukums / anomālijas / vakuums** — konkrēti, ko mērīt/vaicāt klātienē.
+- **Negadījumi / krāsojums / zaudējumi** — krāsas biezums, šuves, stikli, paneļi.
+- **CSDD TA / defekti / īpašniecība** — atkārtoti aizrādījumi = prioritāte.
+- **Dīlera / Outvin / serviss** — tipa kodi, eļļas intervāli, trūkstošie ieraksti.
+- **Pārdevējs / sludinājums / cena** — ko pārbaudīt pret solīto stāvokli.
+- **Vēsturiskie auditi + agregātu pakas** — tipiskās šī agregāta klātienes pārbaudes; pielāgo AKTĪVAJAM auto.
+- Ievēro 3 posmu, 20–30 min klusā brauciena ietvaru (pilsēta/auksts starts/ātrumkārba → šoseja/vibrācijas → dinamika kick-down) — **izņemot BEV**: tad EV punkti no ELECTRIC & PLUG-IN FORENSICS.
+- Ja auto ir elektrisks vai plug-in — obligāti akumulatora/uzlādes pārbaudes.
+- Neizdomā specifisku defektu bez pamata datos vai tipiskajā agregāta zināšanā.
+- Garums: aptuveni 6–10 vērtīgas rindkopas (ne garāks par nepieciešamo); īsāk, ja datu maz.`,
 );
 
 export const GEMINI_SELLER_ANALYSIS_SYSTEM = provinFieldAgentPrompt(
@@ -340,6 +350,7 @@ DALĪJUMS AR CITĀM IRISS SADAĻĀM (kritiski — pret dubultošanu):
 - Detalizētā agregātu / tipisko slimību / izmaksu analīze dzīvo sadaļā **„1. Tehnisko risku analīze”** — kopsavilkumā to NEATKĀRTO gari. Pietiek ar īsu atsaukšanos (1 īsa rindkopa max), ja vajag, un pāreju uz kopējo ainu.
 - Klātienes pārbaudes soļi dzīvo **„2. Ieteikumi klātienes apskatei”** — kopsavilkumā nesaraksti visu checklistu.
 - Kopsavilkums = **brīvā formā kopējā aina**: īpašniecība/km/negadījumi/tirgus/pārdevējs/cena + skaidrs gala vērtējums pirkumam — sintezēts no VISĀM avotu sadaļām un komentāriem.
+- CLIENT VALUE DENSITY: 4–7 spēcīgas rindkopas bieži pietiek; kvalitāte > garums.
 
 FORMĀTS (obligāti — tāds pats vizuālais ritms kā avotu komentāros un „APPROVED BY IRISS” PDF):
 - Raksti tikai rindkopās — starp rindkopām tukša rinda (\\n\\n); NEVERS izmanto sarakstu prefiksus rindkopu sākumā (-, •, 1.).

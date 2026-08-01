@@ -162,18 +162,19 @@ ANTI-HALLUCINATION:
 
 /** Vēsturisko auditu konteksts — citu klientu gatavas atskaites ar līdzīgiem agregātiem. */
 export const GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS (cross-client reference — when present below):
-- These excerpts come from OTHER completed PROVIN audits with similar make/model/year, engine code, transmission, or fuel type — use them to reuse model-specific forensic patterns, inspection checklist themes, phrasing rhythm, and aggregate-specific advice (e.g. known weak points for that engine/gearbox generation).
-- NEVER copy client-specific facts from historical excerpts: no VIN, plate, km, dates, EUR sums, seller names, or order IDs — adapt the logic and style only.
-- Prefer historical inspection recommendations and model-technical commentary when the current order lacks depth; always reconcile with the ACTIVE order's actual data.
-- Match the same paragraph + **bold** hook format and "automašīna" vocabulary as in historical excerpts.`;
+- These excerpts come from OTHER completed PROVIN audits with similar make/model/year, engine code, transmission, or fuel type — they are PROVIN **institutional memory**.
+- Reuse model-specific forensic patterns, inspection checklist themes, phrasing rhythm, cost-band thinking, and aggregate-specific advice for **whatever ACTIVE FIELD** you are writing (source comments, mileage, incidents, technical risks, inspection, summary, price).
+- NEVER copy client-specific facts from historical excerpts: no VIN, plate, km, dates, EUR sums tied to that other order, seller names, or order IDs — adapt the logic and style only.
+- Prefer historical **Tehnisko risku** and **Ieteikumi klātienes apskatei** when the current order lacks depth; always reconcile with the ACTIVE order's actual data.
+- Match the same paragraph + **bold** hook format and "automašīna" vocabulary; keep CLIENT VALUE DENSITY (short, high-value — no fluff).`;
 
 /** Dziļā eksperta analīze — CSDD, AutoDNA, CarVertical, LTAB ✨ admin komentāri. */
 export const HYBRID_COMMENT_RULES = `
 COMMENTARY RULES for PROVIN Senior Auto Expert:
 ${GEMINI_EXPERT_PARAGRAPH_PRESENTATION}
-- LENGTH (default when generating from source data alone): Target 600–1100 characters for per-source comments — thorough on THIS source, not a second full-report essay.
+- LENGTH (default when generating from source data alone): Target 600–1100 characters for per-source comments — thorough on THIS source, not a second full-report essay. Prefer **value density**: fewer paragraphs if each is sharper.
 - LENGTH OVERRIDE: When the user prompt includes substantial OPERATORA KOMANDAS / eksperta piezīmes with detailed prose, dates, km, service history, or interval analysis — IGNORE the 600–1100 target. Preserve the operator's detail density; reorganize into paragraphs with **bold** hooks; do not compress into a short formula. Output may be long.
-- STYLE: Analytical, professional automotive forensic Latvian. Flexible structure — not one fixed 3-paragraph template. Match the richness of the operator material when present.
+- STYLE: Analytical, professional automotive forensic Latvian. Flexible structure — not one fixed 3-paragraph template. Match the richness of the operator material when present. No greetings, no filler restating the section title.
 - LOGIC: Interpret contradictions and what findings mean for the buyer — do not only list raw facts; but never drop operator-supplied facts to fit a template.
 ${GEMINI_DAMAGE_CLAIM_CONTEXT_RULES}
 - ANTI-REPETITION (critical): Do NOT restate the same mileage timeline, annual averages, engine-hour essay, data-vacuum narrative, or global risk conclusion already suitable for „NOBRAUKUMA VĒSTURES KOMENTĀRS” or already written in other source comments — UNLESS the operator notes explicitly supply that material for THIS field; then keep the operator's detail here. Per-source text = unique facts from THIS source + a short cross-check (1–2 sentences) vs other sources when generating from data alone.

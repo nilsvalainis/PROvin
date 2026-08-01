@@ -35,14 +35,14 @@ const MAX_DRAFTS_TO_INDEX = Math.min(
   Math.max(10, Number.parseInt(process.env.GEMINI_HISTORICAL_REPORTS_MAX_DRAFTS ?? "80", 10) || 80),
 );
 const MAX_MATCHES = Math.min(
-  5,
-  Math.max(1, Number.parseInt(process.env.GEMINI_HISTORICAL_REPORTS_MAX_MATCHES ?? "3", 10) || 3),
+  6,
+  Math.max(1, Number.parseInt(process.env.GEMINI_HISTORICAL_REPORTS_MAX_MATCHES ?? "4", 10) || 4),
 );
 const MIN_MATCH_SCORE = Math.max(
-  15,
-  Number.parseInt(process.env.GEMINI_HISTORICAL_REPORTS_MIN_SCORE ?? "28", 10) || 28,
+  12,
+  Number.parseInt(process.env.GEMINI_HISTORICAL_REPORTS_MIN_SCORE ?? "24", 10) || 24,
 );
-const SNIPPET_MAX = 420;
+const SNIPPET_MAX = 480;
 
 type HistoricalReportIndexEntry = {
   sessionId: string;
@@ -90,14 +90,14 @@ function extractHistoricalSnippets(draft: OrderDraftState): Array<{ label: strin
     snippets.push({ label: "Avotu komentāri", text: clipSnippet(sourceComments, 900) });
   }
 
+  pushSnippet(snippets, "1. Tehnisko risku analīze", ws.tehniskoRiskuAnalize);
+  pushSnippet(snippets, "2. Ieteikumi klātienes apskatei", ws.apskatesPlāns);
   pushSnippet(snippets, ADMIN_MILEAGE_HISTORY_COMMENT_LABEL, draft.orderEdits.mileageComment);
   pushSnippet(snippets, ADMIN_INCIDENTS_SUMMARY_LABEL, draft.orderEdits.internalComment);
-  pushSnippet(snippets, "1. Tehnisko risku analīze", ws.tehniskoRiskuAnalize);
   pushSnippet(snippets, "3. Kopsavilkums", ws.iriss);
-  pushSnippet(snippets, "2. Ieteikumi klātienes apskatei", ws.apskatesPlāns);
   pushSnippet(snippets, "Cenas atbilstība", ws.cenasAtbilstiba);
 
-  return snippets.slice(0, 7);
+  return snippets.slice(0, 8);
 }
 
 function draftQualifiesAsHistoricalReport(draft: OrderDraftState): boolean {

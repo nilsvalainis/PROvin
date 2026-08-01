@@ -11,8 +11,8 @@ import { getOrderDraftBlobConfig, getOrderDraftStorageDir } from "@/lib/admin-or
  */
 
 const LEARNINGS_FILENAME = "provin_audit_aggregate_learnings.json";
-const MAX_SNIPPETS_PER_KEY = 8;
-const SNIPPET_MAX_LEN = 380;
+const MAX_SNIPPETS_PER_KEY = 12;
+const SNIPPET_MAX_LEN = 420;
 
 export type AuditAggregateLearningEntry = {
   key: string;

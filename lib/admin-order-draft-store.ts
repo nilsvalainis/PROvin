@@ -673,6 +673,10 @@ export async function patchOrderDraft(
     .then((m) => m.invalidateHistoricalReportsIndexCache())
     .catch(() => {});
 
+  void import("@/lib/admin-gemini-order-context")
+    .then((m) => m.invalidateGeminiOrderContextCache())
+    .catch(() => {});
+
   void import("@/lib/admin-gemini-aggregate-knowledge")
     .then(async (m) => {
       await m.recordAuditAggregateLearningFromDraft(doc as OrderDraftState);

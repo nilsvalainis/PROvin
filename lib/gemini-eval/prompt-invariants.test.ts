@@ -67,11 +67,18 @@ describe("PROVIN Gemini prompt invariants", () => {
     expect(prompts).toMatch(/NEKAD nesāc rindu ar "- "/);
   });
 
+  it("field-agent prompts encode client value density and institutional memory", () => {
+    const prompts = readRepo("lib/admin-gemini-prompts.ts");
+    expect(prompts).toMatch(/CLIENT VALUE DENSITY/);
+    expect(prompts).toMatch(/institutional memory/i);
+    expect(prompts).toMatch(/VISIEM avotu|VISUS avotu/i);
+  });
+
   it("summary and inspection prompts require aggregate-specific technical risk analysis", () => {
     const prompts = readRepo("lib/admin-gemini-prompts.ts");
     expect(prompts).toMatch(/TEHNISKO RISKU ANALĪZE|TECHNICAL RISK ANALYSIS/i);
     expect(prompts).toMatch(/OPERATORA KOMANDAS/i);
-    expect(prompts).toMatch(/konkrētos klātienes pārbaudes punktos|Agregātu riski|Tehnisko risku/i);
+    expect(prompts).toMatch(/klātienes pārbaudes|Agregātu riski|Tehnisko risku/i);
     expect(prompts).toMatch(/NESĀC ar „Sveiki”|NESĀC ar \"Sveiki\"|Bez „Sveiki”/i);
   });
 

@@ -12,7 +12,9 @@ description: Syncs PROVIN expert-agent rules into admin Gemini system prompts fo
 | `/api/admin/gemini/*` | `/api/admin/ai-polish-lv` |
 | `lib/admin-gemini-{inspection,seller,price,summary,incidents-summary,mileage-comment,source-comment}.ts` | `lib/admin-gemini-polish.ts` → `GEMINI_LV_POLISH_SYSTEM` only |
 
-Field agent prompts are for **data processing and Latvian expert copy** on admin ✨ actions: avotu komentāri, nobraukums, negadījumi, pārdevēja portrets, apskate, cena, kopsavilkums.
+Field agent prompts are for **data processing and Latvian expert copy** on admin ✨ actions: avotu komentāri, nobraukums, negadījumi, pārdevēja portrets, apskate, cena, tehniskie riski, kopsavilkums.
+
+**Institutional memory:** every ✨ generation receives historical similar-audit excerpts + aggregate case packs + learnings saved after each substantive workspace persist (`recordAuditAggregateLearningFromDraft`). Prefer client **value density** over long essays.
 
 ## Source of truth
 
