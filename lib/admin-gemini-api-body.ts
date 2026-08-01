@@ -19,6 +19,7 @@ export function parseGeminiOrderContextFromBody(
     sourceBlocks,
     irissSummary: strFromBody(b.iriss),
     inspectionPlan: strFromBody(b.apskatesPlāns),
+    technicalRiskAnalysis: strFromBody(b.tehniskoRiskuAnalize),
     priceFit: strFromBody(b.cenasAtbilstiba),
     extraSellerName: strFromBody(b.extraSellerName),
     internalComment: strFromBody(b.internalComment),

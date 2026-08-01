@@ -29,16 +29,17 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 | Export | Active field | Consumer |
 |--------|--------------|----------|
 | `PROVIN_FIELD_AGENT_SYSTEM` | Base | All field-agent prompts |
-| `GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM` | Ieteikumi klātienes apskatei | `admin-gemini-inspection.ts` — **expert markdown** (bold hooks, no `- `) |
+| `GEMINI_TECHNICAL_RISKS_ANALYSIS_SYSTEM` | 1. Tehnisko risku analīze | `admin-gemini-technical-risks.ts` — Google Search + aggregate knowledge |
+| `GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM` | 2. Ieteikumi klātienes apskatei | `admin-gemini-inspection.ts` — **expert markdown** (bold hooks, no `- `); uses technical-risks section |
 | `GEMINI_SELLER_ANALYSIS_SYSTEM` | Pārdevēja portrets | `admin-gemini-seller.ts` — **expert markdown** |
 | `GEMINI_PRICE_ANALYSIS_SYSTEM` | Cenas vērtējums | `admin-gemini-price.ts` |
-| `GEMINI_SUMMARY_ANALYSIS_SYSTEM` | 2. Kopsavilkums | `admin-gemini-summary.ts` |
+| `GEMINI_SUMMARY_ANALYSIS_SYSTEM` | 3. Kopsavilkums | `admin-gemini-summary.ts` — free-form synthesis, no „Sveiki”, avoid duplicating technical risks |
 | `GEMINI_MILEAGE_COMMENT_SYSTEM` | Nobraukuma vēstures komentārs | `admin-gemini-mileage-comment.ts` |
 | `GEMINI_INCIDENTS_SUMMARY_SYSTEM` | Negadījumu vēstures kopsavilkums | `admin-gemini-incidents-summary.ts` |
 | `geminiSourceCommentSystemPrompt(label)` | Avota „Komentāri” | `admin-gemini-source-comment.ts` |
 | `GEMINI_LV_POLISH_SYSTEM` | Gramatika (✨ polish) | `admin-gemini-polish.ts` → [provin-lv-polish](../provin-lv-polish/SKILL.md) |
 
-`GEMINI_CLIENT_EMAIL_FORMAT_RULES` applies only to **2. Kopsavilkums** (plain text, end with `APPROVED BY IRISS`).
+`GEMINI_CLIENT_EMAIL_FORMAT_RULES` applies only to **3. Kopsavilkums** (plain text, end with `APPROVED BY IRISS`).
 
 ## Sync workflow
 

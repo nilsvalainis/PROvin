@@ -1855,6 +1855,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   sourceBlocks: WorkspaceSourceBlocks;
   iriss: string;
   apskatesPlāns: string;
+  tehniskoRiskuAnalize: string;
   cenasAtbilstiba: string;
   previewConfirmed: boolean;
   pdfVisibility: PdfVisibilitySettings;
@@ -1885,6 +1886,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
       sourceBlocks,
       iriss: typeof p.iriss === "string" ? p.iriss : "",
       apskatesPlāns: typeof p.apskatesPlāns === "string" ? p.apskatesPlāns : "",
+      tehniskoRiskuAnalize: typeof p.tehniskoRiskuAnalize === "string" ? p.tehniskoRiskuAnalize : "",
       cenasAtbilstiba: typeof p.cenasAtbilstiba === "string" ? p.cenasAtbilstiba : "",
       previewConfirmed: Boolean(p.previewConfirmed),
       pdfVisibility: mergePdfVisibility(p.pdfVisibility),

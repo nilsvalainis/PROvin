@@ -142,6 +142,7 @@ import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
   ADMIN_SOURCES_COMPARISON_LABEL,
+  ADMIN_TECHNICAL_RISKS_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import {
   orderHasIncidentDataForGemini,
@@ -212,6 +213,7 @@ type WorkspacePersist = {
   iriss: string;
   /** §7 PDF — personalizēts apskates plāns klātienē. */
   apskatesPlāns: string;
+  tehniskoRiskuAnalize: string;
   cenasAtbilstiba: string;
   previewConfirmed: boolean;
   vehicleAiExtraction: VehicleAIExtraction | null;
@@ -222,6 +224,7 @@ const EMPTY_WORKSPACE: WorkspacePersist = {
   sourceBlocks: createDefaultSourceBlocks(),
   iriss: "",
   apskatesPlāns: "",
+  tehniskoRiskuAnalize: "",
   cenasAtbilstiba: "",
   previewConfirmed: false,
   vehicleAiExtraction: null,
@@ -383,6 +386,7 @@ function workspaceToPersistBody(ws: WorkspacePersist): OrderWorkspacePersistBody
     sourceBlocks: ws.sourceBlocks,
     iriss: ws.iriss,
     apskatesPlāns: ws.apskatesPlāns,
+    tehniskoRiskuAnalize: ws.tehniskoRiskuAnalize,
     cenasAtbilstiba: ws.cenasAtbilstiba,
     previewConfirmed: ws.previewConfirmed,
     vehicleAiExtraction: ws.vehicleAiExtraction,
@@ -645,6 +649,8 @@ export function OrderDetailWorkspace({
   const [notifyLastSentTo, setNotifyLastSentTo] = useState<string | null>(null);
   const [geminiInspectionBusy, setGeminiInspectionBusy] = useState(false);
   const [geminiInspectionErr, setGeminiInspectionErr] = useState<string | null>(null);
+  const [geminiTechnicalRisksBusy, setGeminiTechnicalRisksBusy] = useState(false);
+  const [geminiTechnicalRisksErr, setGeminiTechnicalRisksErr] = useState<string | null>(null);
   const [geminiPriceBusy, setGeminiPriceBusy] = useState(false);
   const [geminiTirgusMarketBusy, setGeminiTirgusMarketBusy] = useState(false);
   const [geminiTirgusMarketErr, setGeminiTirgusMarketErr] = useState<string | null>(null);
@@ -819,6 +825,7 @@ export function OrderDetailWorkspace({
       sourceBlocks: normalized.sourceBlocks,
       iriss: normalized.iriss,
       apskatesPlāns: normalized.apskatesPlāns,
+      tehniskoRiskuAnalize: normalized.tehniskoRiskuAnalize,
       cenasAtbilstiba: normalized.cenasAtbilstiba,
       previewConfirmed: normalized.previewConfirmed,
       vehicleAiExtraction: normalized.vehicleAiExtraction,
@@ -881,6 +888,7 @@ export function OrderDetailWorkspace({
           sourceBlocks: body.sourceBlocks,
           iriss: body.iriss,
           apskatesPlāns: body.apskatesPlāns,
+          tehniskoRiskuAnalize: body.tehniskoRiskuAnalize,
           cenasAtbilstiba: body.cenasAtbilstiba,
           previewConfirmed: body.previewConfirmed,
           vehicleAiExtraction: body.vehicleAiExtraction,
@@ -936,6 +944,7 @@ export function OrderDetailWorkspace({
         sourceBlocks: cur.sourceBlocks,
         iriss: cur.iriss,
         apskatesPlāns: cur.apskatesPlāns,
+        tehniskoRiskuAnalize: cur.tehniskoRiskuAnalize,
         cenasAtbilstiba: cur.cenasAtbilstiba,
         internalComment: edits.internal,
         mileageComment: edits.mileage,
@@ -955,6 +964,41 @@ export function OrderDetailWorkspace({
     },
     [updateWs],
   );
+
+  const runGeminiTechnicalRiskAnalysis = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
+    if (!payload.geminiAllowed || geminiTechnicalRisksBusy) return;
+    setGeminiTechnicalRisksBusy(true);
+    setGeminiTechnicalRisksErr(null);
+    try {
+      const cur = wsPersistRef.current;
+      const res = await fetch("/api/admin/gemini/technical-risk-analysis", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...buildGeminiOrderPayload({
+            operatorNotes,
+            existingDraftPlain: adminRichHtmlToPlainText(cur.tehniskoRiskuAnalize).trim(),
+          }),
+          modelTier,
+        }),
+      });
+      const { data, parseFailed } = await parseAdminGeminiResponse(res);
+      if (!res.ok) {
+        setGeminiTechnicalRisksErr(
+          geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās ģenerēt tehnisko risku analīzi"),
+        );
+        return;
+      }
+      if (typeof data.text === "string" && data.text.trim()) {
+        updateWs({ tehniskoRiskuAnalize: geminiExpertSourceCommentToRichHtml(data.text) });
+      }
+    } catch {
+      setGeminiTechnicalRisksErr("Gemini: neizdevās savienoties");
+    } finally {
+      setGeminiTechnicalRisksBusy(false);
+    }
+  }, [buildGeminiOrderPayload, geminiTechnicalRisksBusy, payload.geminiAllowed, updateWs]);
 
   const runGeminiInspectionRecommendations = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
     if (!payload.geminiAllowed || geminiInspectionBusy) return;
@@ -1484,6 +1528,7 @@ export function OrderDetailWorkspace({
         sourceBlocks: chosen.sourceBlocks,
         iriss: chosen.iriss,
         apskatesPlāns: chosen.apskatesPlāns,
+        tehniskoRiskuAnalize: chosen.tehniskoRiskuAnalize,
         cenasAtbilstiba: chosen.cenasAtbilstiba,
         previewConfirmed: Boolean(chosen.previewConfirmed),
         vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
@@ -1508,6 +1553,7 @@ export function OrderDetailWorkspace({
         sourceBlocks: chosen.sourceBlocks,
         iriss: chosen.iriss,
         apskatesPlāns: chosen.apskatesPlāns,
+        tehniskoRiskuAnalize: chosen.tehniskoRiskuAnalize,
         cenasAtbilstiba: chosen.cenasAtbilstiba,
         previewConfirmed: Boolean(chosen.previewConfirmed),
         vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
@@ -1675,6 +1721,7 @@ export function OrderDetailWorkspace({
     onMileageCommentChange("");
     onSourcesComparisonCommentChange("");
     setGeminiInspectionErr(null);
+    setGeminiTechnicalRisksErr(null);
     setGeminiPriceErr(null);
     setGeminiSummaryErr(null);
     setGeminiSourceCommentErr(null);
@@ -1701,6 +1748,7 @@ export function OrderDetailWorkspace({
             sourceBlocks: emptyBlocks,
             iriss: "",
             apskatesPlāns: "",
+            tehniskoRiskuAnalize: "",
             cenasAtbilstiba: "",
             previewConfirmed: false,
             pdfVisibility: mergedVisibility,
@@ -2183,6 +2231,7 @@ export function OrderDetailWorkspace({
       return expertSummaryTrafficLevel({
         iriss: ws.iriss ?? "",
         apskatesPlāns: ws.apskatesPlāns ?? "",
+        tehniskoRiskuAnalize: ws.tehniskoRiskuAnalize ?? "",
         cenasAtbilstiba: ws.cenasAtbilstiba ?? "",
         previewConfirmed: ws.previewConfirmed,
       });
@@ -2301,6 +2350,7 @@ export function OrderDetailWorkspace({
         listingAnalysis: listingAnalysisForPdf,
         iriss: ws.iriss,
         apskatesPlāns: ws.apskatesPlāns,
+        tehniskoRiskuAnalize: ws.tehniskoRiskuAnalize,
         cenasAtbilstiba: ws.cenasAtbilstiba,
         listingMarket,
         pdfVisibility,
@@ -2846,6 +2896,7 @@ export function OrderDetailWorkspace({
       { title: "Citi avoti", text: citiAvotiToPlainText(blocksDisplaySafe.citi_avoti) },
       { title: "Sludinājuma analīze", text: listingAnalysisToPlainText(blocksDisplaySafe.listing_analysis) },
       { title: "Kopsavilkums", text: ws.iriss ?? "" },
+      { title: ADMIN_TECHNICAL_RISKS_LABEL, text: ws.tehniskoRiskuAnalize ?? "" },
       { title: "Apskates plāns", text: ws.apskatesPlāns ?? "" },
       { title: "Cenas atbilstība", text: ws.cenasAtbilstiba ?? "" },
     ];
@@ -2870,7 +2921,7 @@ export function OrderDetailWorkspace({
     const pdfBytes = await pdf.save();
     const pdfBlob = new Blob([Uint8Array.from(pdfBytes)], { type: "application/pdf" });
     return new File([pdfBlob], buildProvinAuditPdfFilename(payload.vin), { type: "application/pdf" });
-  }, [blocksDisplaySafe, payload.customerEmail, payload.customerName, payload.customerPhone, payload.vin, ws.apskatesPlāns, ws.cenasAtbilstiba, ws.iriss]);
+  }, [blocksDisplaySafe, payload.customerEmail, payload.customerName, payload.customerPhone, payload.vin, ws.apskatesPlāns, ws.cenasAtbilstiba, ws.iriss, ws.tehniskoRiskuAnalize]);
 
   const handleWhatsAppSend = useCallback(async () => {
     if (!whatsappPhoneDigits) return;
@@ -3370,8 +3421,33 @@ export function OrderDetailWorkspace({
               />
               <div className="space-y-3 bg-transparent px-2 pb-2 pt-2">
                 <ListingAnalysisSubsectionHeading
+                  icon={IRISS_CHROME_LUCIDE.technicalRisks}
+                  title={`1. ${ADMIN_TECHNICAL_RISKS_LABEL}`}
+                >
+                  <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
+                    <AdminGeminiGenerateWithPrefill
+                      label="Ģenerēt analīzi"
+                      busy={geminiTechnicalRisksBusy}
+                      disabled={!payload.geminiAllowed}
+                      demoOnly={!payload.geminiAllowed}
+                      onGenerate={(operatorNotes, modelTier) =>
+                        void runGeminiTechnicalRiskAnalysis(operatorNotes, modelTier)}
+                    />
+                  </div>
+                  {geminiTechnicalRisksErr ? (
+                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiTechnicalRisksErr}>
+                      {geminiTechnicalRisksErr}
+                    </p>
+                  ) : null}
+                  <AdminAiPolishRichCommentShell
+                    value={ws.tehniskoRiskuAnalize ?? ""}
+                    onChange={(next) => updateWs({ tehniskoRiskuAnalize: next })}
+                    aria-label={ADMIN_TECHNICAL_RISKS_LABEL}
+                  />
+                </ListingAnalysisSubsectionHeading>
+                <ListingAnalysisSubsectionHeading
                   icon={IRISS_CHROME_LUCIDE.inspection}
-                  title="1. Ieteikumi klātienes apskatei"
+                  title="2. Ieteikumi klātienes apskatei"
                 >
                   <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
                     <AdminGeminiGenerateWithPrefill
@@ -3394,7 +3470,7 @@ export function OrderDetailWorkspace({
                     aria-label="Ieteikumi klātienes apskatei"
                   />
                 </ListingAnalysisSubsectionHeading>
-                <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.summary} title="2. Kopsavilkums">
+                <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.summary} title="3. Kopsavilkums">
                   <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
                     <AdminGeminiGenerateWithPrefill
                       label="Sagatavot atbildi"
@@ -3403,6 +3479,7 @@ export function OrderDetailWorkspace({
                         !payload.geminiAllowed ||
                         !(
                           adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
+                          adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim() ||
                           adminRichHtmlToPlainText(ws.apskatesPlāns).trim() ||
                           adminRichHtmlToPlainText(ws.cenasAtbilstiba).trim()
                         )
@@ -3413,10 +3490,11 @@ export function OrderDetailWorkspace({
                           ? undefined
                           : !(
                                 adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
+                                adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim() ||
                                 adminRichHtmlToPlainText(ws.apskatesPlāns).trim() ||
                                 adminRichHtmlToPlainText(ws.cenasAtbilstiba).trim()
                               )
-                            ? "Vispirms ģenerē vai aizpildi pārdevēja, ieteikumu vai cenas sadaļu"
+                            ? "Vispirms ģenerē vai aizpildi tehnisko risku, pārdevēja, ieteikumu vai cenas sadaļu"
                             : undefined
                       }
                       onGenerate={(operatorNotes, modelTier) => void runGeminiSummaryAnalysis(operatorNotes, modelTier)}

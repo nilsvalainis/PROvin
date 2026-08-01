@@ -24,6 +24,7 @@ import {
   ClipboardPaste,
   FileText,
   GitCompareArrows,
+  Wrench,
 } from "lucide-react";
 
 export const SOURCE_BLOCK_LUCIDE: Record<SourceBlockKey, LucideIcon> = {
@@ -51,6 +52,7 @@ export const LISTING_ANALYSIS_CHROME_LUCIDE = {
 
 export const IRISS_CHROME_LUCIDE = {
   mainSection: ShieldCheck,
+  technicalRisks: Wrench,
   summary: FileSearch,
   inspection: CarFront,
   priceFit: Tag,

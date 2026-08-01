@@ -30,6 +30,7 @@ function minimalPayload(overrides: Partial<ClientReportPayload> = {}): ClientRep
     citi: "",
     iriss: "",
     apskatesPlāns: "",
+    tehniskoRiskuAnalize: "",
     cenasAtbilstiba: "",
     ...overrides,
   } as ClientReportPayload;
@@ -210,5 +211,26 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(html).toContain("pdf-v1-kv");
     expect(html).not.toContain("mirror-table--outvin-vehicle");
     expect(html).not.toContain("pdf-outvin-equipment-grid");
+  });
+
+  it("APPROVED BY IRISS prints technical risks before inspection and summary", () => {
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        tehniskoRiskuAnalize: "<p>Tech risks body</p>",
+        apskatesPlāns: "<p>Inspection body</p>",
+        iriss: "<p>Summary body</p>",
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    const iTech = doc.indexOf("1. Tehnisko risku analīze");
+    const iInsp = doc.indexOf("2. Ieteikumi klātienes apskatei");
+    const iSum = doc.indexOf("3. Kopsavilkums");
+    expect(iTech).toBeGreaterThan(-1);
+    expect(iInsp).toBeGreaterThan(iTech);
+    expect(iSum).toBeGreaterThan(iInsp);
+    expect(doc).toContain("Tech risks body");
   });
 });

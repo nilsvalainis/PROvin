@@ -16,6 +16,7 @@ function bodyWithAutodnaComment(comment: string): OrderWorkspacePersistBody {
     sourceBlocks: blocks,
     iriss: "",
     apskatesPlāns: "",
+      tehniskoRiskuAnalize: "",
     cenasAtbilstiba: "",
     previewConfirmed: false,
     vehicleAiExtraction: null,

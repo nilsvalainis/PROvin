@@ -17,6 +17,7 @@ export function orderDraftWorkspaceToPersistBody(w: OrderDraftWorkspaceBody): Or
     sourceBlocks: mergeSourceBlocksWithDefaults(w.sourceBlocks),
     iriss: w.iriss,
     apskatesPlāns: w.apskatesPlāns,
+    tehniskoRiskuAnalize: w.tehniskoRiskuAnalize,
     cenasAtbilstiba: w.cenasAtbilstiba,
     previewConfirmed: w.previewConfirmed,
     vehicleAiExtraction: w.vehicleAiExtraction ?? null,
@@ -35,6 +36,7 @@ export function persistBodyToOrderDraftWorkspace(
     sourceBlocks: safe.sourceBlocks,
     iriss: safe.iriss,
     apskatesPlāns: safe.apskatesPlāns,
+    tehniskoRiskuAnalize: safe.tehniskoRiskuAnalize,
     cenasAtbilstiba: safe.cenasAtbilstiba,
     previewConfirmed: safe.previewConfirmed,
     pdfVisibility: mergePdfVisibility(pdfVisibility),
@@ -81,6 +83,9 @@ export function coalesceOrderDraftWorkspacePatch(
   if (baseBody) {
     if (coalesced.iriss !== baseBody.iriss) changedFields.push("iriss");
     if (coalesced.apskatesPlāns !== baseBody.apskatesPlāns) changedFields.push("apskatesPlāns");
+    if (coalesced.tehniskoRiskuAnalize !== baseBody.tehniskoRiskuAnalize) {
+      changedFields.push("tehniskoRiskuAnalize");
+    }
     if (coalesced.cenasAtbilstiba !== baseBody.cenasAtbilstiba) changedFields.push("cenasAtbilstiba");
     if (coalesced.vehicleAiExtraction !== baseBody.vehicleAiExtraction) changedFields.push("vehicleAiExtraction");
   }

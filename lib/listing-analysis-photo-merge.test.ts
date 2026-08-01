@@ -16,6 +16,7 @@ describe("listing analysis photo merge on coalesce", () => {
       },
       iriss: "",
       apskatesPlāns: "",
+      tehniskoRiskuAnalize: "",
       cenasAtbilstiba: "",
       previewConfirmed: false,
     });
@@ -30,6 +31,7 @@ describe("listing analysis photo merge on coalesce", () => {
       },
       iriss: "",
       apskatesPlāns: "",
+      tehniskoRiskuAnalize: "",
       cenasAtbilstiba: "",
       previewConfirmed: false,
     });
@@ -56,6 +58,7 @@ describe("listing analysis photo merge on coalesce", () => {
       },
       iriss: "",
       apskatesPlāns: "",
+      tehniskoRiskuAnalize: "",
       cenasAtbilstiba: "",
       previewConfirmed: false,
     });
@@ -69,6 +72,7 @@ describe("listing analysis photo merge on coalesce", () => {
       },
       iriss: "",
       apskatesPlāns: "",
+      tehniskoRiskuAnalize: "",
       cenasAtbilstiba: "",
       previewConfirmed: false,
     });

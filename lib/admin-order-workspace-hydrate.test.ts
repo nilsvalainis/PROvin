@@ -11,6 +11,7 @@ function snapshotWithAutodnaComment(comment: string, savedAt: string): string {
       sourceBlocks: blocks,
       iriss: "",
       apskatesPlāns: "",
+      tehniskoRiskuAnalize: "",
       cenasAtbilstiba: "",
       previewConfirmed: false,
       vehicleAiExtraction: null,

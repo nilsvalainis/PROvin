@@ -8,6 +8,7 @@ import {
   type GeminiOrderContextInput,
 } from "@/lib/admin-gemini-order-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { ADMIN_TECHNICAL_RISKS_LABEL } from "@/lib/admin-workspace-field-labels";
 
 export async function generateInspectionRecommendationsWithGemini(
   input: GeminiOrderContextInput,
@@ -17,12 +18,17 @@ export async function generateInspectionRecommendationsWithGemini(
     throw new Error("empty_order_context");
   }
 
+  const techPlain = adminRichHtmlToPlainText(input.technicalRiskAnalysis ?? "").trim();
+  const techSection = techPlain
+    ? `\n\n---\n\nJau sagatavotā „${ADMIN_TECHNICAL_RISKS_LABEL}” (OBLIGĀTI ņem vērā — pārvērt riskus par klātienes pārbaudes punktiem, nedublē visu eseju):\n\n${techPlain}\n`
+    : `\n\nPiezīme: „${ADMIN_TECHNICAL_RISKS_LABEL}” vēl nav aizpildīta — izsecini agregātu riskus no portfeļa un pārvērt par klātienes punktiem.\n`;
+
   const userPrompt = appendGeminiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
 
 ${context}
-
-Sagatavo ieteikumus klātienes apskatei šim auto.`,
+${techSection}
+Sagatavo ieteikumus klātienes apskatei šim auto (lauks „2. Ieteikumi klātienes apskatei”).`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:

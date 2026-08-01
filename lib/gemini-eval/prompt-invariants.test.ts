@@ -69,9 +69,10 @@ describe("PROVIN Gemini prompt invariants", () => {
 
   it("summary and inspection prompts require aggregate-specific technical risk analysis", () => {
     const prompts = readRepo("lib/admin-gemini-prompts.ts");
-    expect(prompts).toMatch(/TEHNISKO RISKU ANALĪZE/i);
+    expect(prompts).toMatch(/TEHNISKO RISKU ANALĪZE|TECHNICAL RISK ANALYSIS/i);
     expect(prompts).toMatch(/OPERATORA KOMANDAS/i);
-    expect(prompts).toMatch(/konkrētos klātienes pārbaudes punktos|Agregātu riski|Tehniskie riski/i);
+    expect(prompts).toMatch(/konkrētos klātienes pārbaudes punktos|Agregātu riski|Tehnisko risku/i);
+    expect(prompts).toMatch(/NESĀC ar „Sveiki”|NESĀC ar \"Sveiki\"|Bez „Sveiki”/i);
   });
 
   it("operator notes are prepended with highest priority", () => {
@@ -90,7 +91,9 @@ describe("PROVIN Gemini prompt invariants", () => {
   it("summary generation uses Google Search grounding", () => {
     const summary = readRepo("lib/admin-gemini-summary.ts");
     expect(summary).toMatch(/geminiGenerateTextWithGoogleSearch/);
-    expect(summary).toMatch(/TEHNISKO RISKU ANALĪZE/);
+    expect(summary).toMatch(/Tehnisko risku|NEDUBLĒ|nedublē/i);
+    const tech = readRepo("lib/admin-gemini-technical-risks.ts");
+    expect(tech).toMatch(/geminiGenerateTextWithGoogleSearch/);
   });
 
   it("avg annual mileage banner is removed from info banners", () => {

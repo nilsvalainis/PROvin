@@ -26,6 +26,7 @@ import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
   ADMIN_SOURCES_COMPARISON_LABEL,
+  ADMIN_TECHNICAL_RISKS_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
@@ -43,6 +44,8 @@ export type GeminiOrderContextInput = {
   /** Eksperta jau sagatavotais saturs (konteksts, ne pārrakstīšanai). */
   irissSummary?: string;
   inspectionPlan?: string;
+  /** 1. Tehnisko risku analīze. */
+  technicalRiskAnalysis?: string;
   priceFit?: string;
   extraSellerName?: string;
   /** NEGADĪJUMU VĒSTURES KOPSAVILKUMS (iekšējais). */
@@ -137,6 +140,7 @@ export function buildFinishedReportStyleReferenceSection(input: {
   sourceBlocks: WorkspaceSourceBlocks;
   irissSummary?: string;
   inspectionPlan?: string;
+  technicalRiskAnalysis?: string;
   priceFit?: string;
   internalComment?: string;
   mileageComment?: string;
@@ -151,8 +155,9 @@ export function buildFinishedReportStyleReferenceSection(input: {
     [ADMIN_MILEAGE_HISTORY_COMMENT_LABEL, input.mileageComment],
     [ADMIN_INCIDENTS_SUMMARY_LABEL, input.internalComment],
     ["Cenas atbilstība", input.priceFit],
-    ["Ieteikumi klātienes apskatei", input.inspectionPlan],
-    ["2. Kopsavilkums", input.irissSummary],
+    [ADMIN_TECHNICAL_RISKS_LABEL, input.technicalRiskAnalysis],
+    ["2. Ieteikumi klātienes apskatei", input.inspectionPlan],
+    ["3. Kopsavilkums", input.irissSummary],
   ];
   for (const [label, html] of expertFields) {
     const plain = adminRichHtmlToPlainText(html ?? "").trim();
@@ -237,6 +242,9 @@ export function buildGeminiOrderContextText(input: GeminiOrderContextInput): str
   if (crossSource.length > 0) parts.push(crossSource.join("\n\n"));
 
   const expertParts = [
+    input.technicalRiskAnalysis?.trim()
+      ? block(`Eksperta ${ADMIN_TECHNICAL_RISKS_LABEL} (melnraksts)`, adminRichHtmlToPlainText(input.technicalRiskAnalysis))
+      : "",
     input.inspectionPlan?.trim()
       ? block("Eksperta ieteikumi apskatei (melnraksts)", adminRichHtmlToPlainText(input.inspectionPlan))
       : "",
@@ -265,6 +273,7 @@ export function buildGeminiOrderContextText(input: GeminiOrderContextInput): str
     sourceBlocks: blocks,
     irissSummary: input.irissSummary,
     inspectionPlan: input.inspectionPlan,
+    technicalRiskAnalysis: input.technicalRiskAnalysis,
     priceFit: input.priceFit,
     internalComment: input.internalComment,
     mileageComment: input.mileageComment,
@@ -287,6 +296,7 @@ function orderContextCacheKey(input: GeminiOrderContextInput): string {
     sourceBlocks: input.sourceBlocks,
     irissSummary: input.irissSummary,
     inspectionPlan: input.inspectionPlan,
+    technicalRiskAnalysis: input.technicalRiskAnalysis,
     priceFit: input.priceFit,
     extraSellerName: input.extraSellerName,
     internalComment: input.internalComment,

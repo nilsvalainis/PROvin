@@ -98,6 +98,9 @@ import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibi
 import { adminRichHtmlToPdfSafeHtml } from "@/lib/admin-rich-comment-html";
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
+  PDF_IRISS_SECTION_INSPECTION,
+  PDF_IRISS_SECTION_SUMMARY,
+  PDF_IRISS_SECTION_TECHNICAL_RISKS,
   PDF_MILEAGE_HISTORY_COMMENT_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import { buildOwnerRegistrationTimelineHtml } from "@/lib/csdd-history-charts";
@@ -114,8 +117,6 @@ import { outvinBundleHasStructuredContent } from "@/lib/outvin-data-bundle";
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
 const PDF_APPROVED_BY_IRISS = "APPROVED BY IRISS";
-const PDF_IRISS_SECTION_1 = "1. Ieteikumi klātienes apskatei";
-const PDF_IRISS_SECTION_2 = "2. Kopsavilkums";
 const PDF_LISTING_SECTION_PRICE = "3. Cenas atbilstība";
 const PDF_INCIDENT_INTERNAL_COMMENT_LABEL = "Komentārs";
 /** Vienots komentāru bloka virsraksts visā PDF atskaitē (kā NEGADĪJUMU VĒSTURE). */
@@ -159,6 +160,7 @@ export type ClientReportPayload = {
   citi: string;
   iriss: string;
   apskatesPlāns: string;
+  tehniskoRiskuAnalize: string;
   cenasAtbilstiba: string;
   listingMarket?: import("@/lib/listing-scrape").ListingMarketSnapshot | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[];
@@ -910,16 +912,21 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload, vis: PdfVisibilitySet
 /** Galvenais eksperta kopsavilkums — pilnā platumā, pēdējais lielais bloks pirms juridiskās piezīmes. */
 function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   if (!vis.iriss) return "";
+  const techHtml = (p.tehniskoRiskuAnalize ?? "").trim();
   const irissHtml = (p.iriss ?? "").trim();
   const planHtml = (p.apskatesPlāns ?? "").trim();
-  if (!irissHtml && !planHtml) return "";
+  if (!irissHtml && !planHtml && !techHtml) return "";
   const inner: string[] = [];
+  if (techHtml) {
+    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("wrench"), PDF_IRISS_SECTION_TECHNICAL_RISKS));
+    inner.push(pdfReportCommentBox(techHtml));
+  }
   if (planHtml) {
-    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("car"), PDF_IRISS_SECTION_1));
+    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("car"), PDF_IRISS_SECTION_INSPECTION));
     inner.push(pdfReportCommentBox(planHtml));
   }
   if (irissHtml) {
-    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("fileSearch"), PDF_IRISS_SECTION_2));
+    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("fileSearch"), PDF_IRISS_SECTION_SUMMARY));
     inner.push(pdfReportCommentBox(irissHtml));
   }
   if (inner.length === 0) return "";

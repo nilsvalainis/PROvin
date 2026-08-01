@@ -24,6 +24,7 @@ export type OrderDraftWorkspaceBody = {
   sourceBlocks: unknown;
   iriss: string;
   apskatesPlāns: string;
+  tehniskoRiskuAnalize: string;
   cenasAtbilstiba: string;
   previewConfirmed: boolean;
   pdfVisibility?: import("@/lib/pdf-visibility").PdfVisibilitySettings;

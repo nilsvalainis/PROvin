@@ -261,6 +261,7 @@ export async function POST(req: Request) {
           sourceBlocks: prevW?.sourceBlocks ?? createDefaultSourceBlocks(),
           iriss: prevW?.iriss ?? "",
           apskatesPlāns: prevW?.apskatesPlāns ?? "",
+          tehniskoRiskuAnalize: prevW?.tehniskoRiskuAnalize ?? "",
           cenasAtbilstiba: prevW?.cenasAtbilstiba ?? "",
           previewConfirmed: prevW?.previewConfirmed ?? false,
           pdfVisibility: prevW?.pdfVisibility,

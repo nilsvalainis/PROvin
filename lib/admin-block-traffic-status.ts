@@ -198,19 +198,21 @@ export function portfolioFilesTrafficLevel(fileCount: number): TrafficFillLevel 
   return "complete";
 }
 
-/** 4. sadaļa — Kopsavilkums / IRISS (trīs lauki + priekšskata apstiprinājums). */
+/** 4. sadaļa — Kopsavilkums / IRISS (tehniskie riski + apskate + kopsavilkums + cena/priekšskats). */
 export function expertSummaryTrafficLevel(p: {
   iriss?: string | null;
   apskatesPlāns?: string | null;
+  tehniskoRiskuAnalize?: string | null;
   cenasAtbilstiba?: string | null;
   previewConfirmed?: boolean;
 } | null | undefined): TrafficFillLevel {
   try {
     const a = wsStr(p?.iriss).trim();
     const b = wsStr(p?.apskatesPlāns).trim();
+    const tech = wsStr(p?.tehniskoRiskuAnalize).trim();
     const c = wsStr(p?.cenasAtbilstiba).trim();
-    if (!a && !b && !c) return "empty";
-    if (a && b && c && p?.previewConfirmed) return "complete";
+    if (!a && !b && !c && !tech) return "empty";
+    if (a && b && c && tech && p?.previewConfirmed) return "complete";
     return "partial";
   } catch {
     return "empty";

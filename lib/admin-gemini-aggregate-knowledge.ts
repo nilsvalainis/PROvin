@@ -25,7 +25,7 @@ import {
 export const GEMINI_AGGREGATE_KNOWLEDGE_RULES = `PROVIN AGGREGĀTU ZINĀŠANAS (statiskā bāze + mācījumi no iepriekšējām atskaitēm):
 - Kombinē zemāk esošās ražotāju/agregātu pakas ar AKTĪVĀ pasūtījuma datiem un (ja ir) vēsturisko auditu fragmentiem.
 - Katru agregāta risku klasificē: **galvenais pirkuma risks** / **vidējs uzturēšanas risks** / **kontrolpunkts klātienē**.
-- **2. Kopsavilkums** un **Ieteikumi klātienes apskatei** obligāti sasaista risku ar konkrētu pārbaudi.
+- **1. Tehnisko risku analīze** ir galvenā vieta detalizētai agregātu forenzikai; **2. Ieteikumi klātienes apskatei** pārvērš riskus pārbaudes punktos; **3. Kopsavilkums** nedublē garo tehnisko eseju.
 - Mācījumi no citām atskaitēm — tikai paraugi un forenzikas loģika; **nekopē** klienta VIN, km, datumus, EUR, pasūtījuma ID.
 - Ja statiskā paka un mācījumi konfliktē ar aktīvā auto datiem — uzvar aktīvā pasūtījuma fakti.`;
 
@@ -55,11 +55,12 @@ function extractLearningSnippetsFromDraft(draft: OrderDraftState): string[] {
     if (plain.length < 80) return;
     out.push(clipLearningSnippet(plain));
   };
+  push(ws.tehniskoRiskuAnalize);
   push(ws.apskatesPlāns);
   push(ws.iriss);
   push(draft.orderEdits.mileageComment);
   push(ws.cenasAtbilstiba);
-  return [...new Set(out)].slice(0, 5);
+  return [...new Set(out)].slice(0, 6);
 }
 
 export function draftQualifiesForAggregateLearning(draft: OrderDraftState): boolean {

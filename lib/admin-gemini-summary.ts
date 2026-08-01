@@ -13,6 +13,7 @@ import {
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { buildPreviouslyGeneratedSourceCommentsContext } from "@/lib/admin-source-comment-blocks";
+import { ADMIN_TECHNICAL_RISKS_LABEL } from "@/lib/admin-workspace-field-labels";
 import { normalizeProvinExpertGeminiComment } from "@/lib/source-summary-comment-format";
 
 function expertSection(label: string, html: string): string {
@@ -24,25 +25,28 @@ function expertSection(label: string, html: string): string {
 export async function generateSummaryAnalysisWithGemini(input: GeminiOrderContextInput): Promise<string> {
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
   const sellerPortrait = blocks.listing_analysis.sellerPortrait;
+  const technicalRisks = input.technicalRiskAnalysis ?? "";
   const inspectionPlan = input.inspectionPlan ?? "";
   const priceFit = input.priceFit ?? "";
 
   const sellerText = expertSection("Pārdevēja portrets", sellerPortrait);
-  const inspectionText = expertSection("Ieteikumi klātienes apskatei", inspectionPlan);
+  const techText = expertSection(`1. ${ADMIN_TECHNICAL_RISKS_LABEL}`, technicalRisks);
+  const inspectionText = expertSection("2. Ieteikumi klātienes apskatei", inspectionPlan);
   const priceText = expertSection("Cenas atbilstība", priceFit);
 
   const orderContext = await buildFullGeminiOrderContextText({
     ...input,
     irissSummary: undefined,
     inspectionPlan: undefined,
+    technicalRiskAnalysis: undefined,
     priceFit: undefined,
   });
 
-  if (!sellerText && !inspectionText && !priceText && !orderContext.trim()) {
+  if (!sellerText && !techText && !inspectionText && !priceText && !orderContext.trim()) {
     throw new Error("missing_expert_sections");
   }
 
-  const expertBundle = [sellerText, inspectionText, priceText].filter(Boolean).join("\n\n");
+  const expertBundle = [sellerText, techText, inspectionText, priceText].filter(Boolean).join("\n\n");
 
   const sourceCommentsContext = buildPreviouslyGeneratedSourceCommentsContext(null, blocks).trim();
 
@@ -62,13 +66,13 @@ ${orderContext ? `${orderContext}\n\n---\n\n` : ""}${
       expertBundle
         ? `Eksperta jau sagatavotās sadaļas (papildus konteksts, nevis vienīgais avots):\n\n${expertBundle}\n\n---\n\n`
         : ""
-    }Sagatavo gala kopsavilkumu klientam laukam „2. Kopsavilkums”.
-Sintezē VISU portfeļa kontekstu — avotu datus, tabulas, komentārus un eksperta sadaļas.
+    }Sagatavo gala kopsavilkumu klientam laukam „3. Kopsavilkums”.
+Sintezē VISU portfeļa kontekstu — avotu datus, tabulas, komentārus un eksperta sadaļas — brīvā formā kā kopējo ainu.
 
-KRITISKI — TEHNISKO RISKU ANALĪZE:
-- Obligāti iekļauj atsevišķu rindkopu ar **bold** ievadu (**Tehniskie riski** / **Agregātu riski** / **Modeļa vājās vietas**) par šī konkrētā modeļa/dzinēja/ātrumkārbas tipiskajiem riskiem.
-- Ja promptā jau ir agregātu zināšanas — izmanto tās. Ja trūkst — izmanto Google Search, lai atrastu tipiskās vājās vietas šim agregātam, tad pielāgo šim auto.
-- Bez šīs rindkopas kopsavilkums NAV derīgs.`,
+KRITISKI:
+- Nedublē detalizēto „${ADMIN_TECHNICAL_RISKS_LABEL}” un apskates checklistu; īsi atsaucies, ja vajag.
+- NESĀC ar „Sveiki” vai sarunas uzrunu — šī ir atskaite.
+- Beigās: APPROVED BY IRISS.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:

@@ -39,6 +39,7 @@ export type GeminiListingAnalysisPayload = {
   sourceBlocks: unknown;
   iriss: string;
   apskatesPlāns: string;
+  tehniskoRiskuAnalize: string;
   cenasAtbilstiba: string;
   internalComment?: string;
   mileageComment?: string;

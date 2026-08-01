@@ -35,6 +35,7 @@ export type OrderWorkspacePersistBody = {
   sourceBlocks: WorkspaceSourceBlocks;
   iriss: string;
   apskatesPlāns: string;
+  tehniskoRiskuAnalize: string;
   cenasAtbilstiba: string;
   previewConfirmed: boolean;
   vehicleAiExtraction: VehicleAIExtraction | null;
@@ -181,6 +182,7 @@ export function coalesceOrderWorkspacePersistBody(
     sourceBlocks: mergeSourceBlocksWithDefaults(mergedBlocks),
     iriss: pickRicherTextField(incoming.iriss, baseline.iriss),
     apskatesPlāns: pickRicherTextField(incoming.apskatesPlāns, baseline.apskatesPlāns),
+    tehniskoRiskuAnalize: pickRicherTextField(incoming.tehniskoRiskuAnalize, baseline.tehniskoRiskuAnalize),
     cenasAtbilstiba: pickRicherTextField(incoming.cenasAtbilstiba, baseline.cenasAtbilstiba),
     previewConfirmed: incoming.previewConfirmed || baseline.previewConfirmed,
     vehicleAiExtraction: incoming.vehicleAiExtraction ?? baseline.vehicleAiExtraction,
@@ -215,6 +217,7 @@ export function buildOrderDraftWorkspaceBody(
     sourceBlocks: safe.sourceBlocks,
     iriss: safe.iriss,
     apskatesPlāns: safe.apskatesPlāns,
+    tehniskoRiskuAnalize: safe.tehniskoRiskuAnalize,
     cenasAtbilstiba: safe.cenasAtbilstiba,
     previewConfirmed: safe.previewConfirmed,
     pdfVisibility: pdf,
@@ -257,6 +260,7 @@ export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBo
     sourceBlocks: complete,
     iriss: typeof body.iriss === "string" ? body.iriss : "",
     apskatesPlāns: typeof body.apskatesPlāns === "string" ? body.apskatesPlāns : "",
+    tehniskoRiskuAnalize: typeof body.tehniskoRiskuAnalize === "string" ? body.tehniskoRiskuAnalize : "",
     cenasAtbilstiba: typeof body.cenasAtbilstiba === "string" ? body.cenasAtbilstiba : "",
     previewConfirmed: Boolean(body.previewConfirmed),
     vehicleAiExtraction: body.vehicleAiExtraction ?? null,
@@ -277,6 +281,7 @@ export function serializeOrderWorkspaceSnapshotFromRef(
     sourceBlocks: normalized.sourceBlocks,
     iriss: normalized.iriss,
     apskatesPlāns: normalized.apskatesPlāns,
+    tehniskoRiskuAnalize: normalized.tehniskoRiskuAnalize,
     cenasAtbilstiba: normalized.cenasAtbilstiba,
     previewConfirmed: normalized.previewConfirmed,
     pdfVisibility: pdf,
@@ -301,6 +306,7 @@ export function serializeOrderWorkspaceSnapshot(
     sourceBlocks: safe.sourceBlocks,
     iriss: safe.iriss,
     apskatesPlāns: safe.apskatesPlāns,
+    tehniskoRiskuAnalize: safe.tehniskoRiskuAnalize,
     cenasAtbilstiba: safe.cenasAtbilstiba,
     previewConfirmed: safe.previewConfirmed,
     pdfVisibility: pdf,
@@ -320,6 +326,7 @@ export function mergeWorkspaceHydrationBodies(
     sourceBlocks: createDefaultSourceBlocks(),
     iriss: "",
     apskatesPlāns: "",
+    tehniskoRiskuAnalize: "",
     cenasAtbilstiba: "",
     previewConfirmed: false,
     vehicleAiExtraction: null,
@@ -380,6 +387,7 @@ export function workspaceHydrationFillScore(body: OrderWorkspacePersistBody): nu
   let s = 0;
   if (body.iriss.trim()) s += 2;
   if (body.apskatesPlāns.trim()) s += 2;
+  if (body.tehniskoRiskuAnalize.trim()) s += 2;
   if (body.cenasAtbilstiba.trim()) s += 2;
   if (body.previewConfirmed) s += 1;
   s += csddTrafficLevel(body.sourceBlocks.csdd) === "empty" ? 0 : 2;
@@ -396,7 +404,13 @@ export function workspaceHydrationFillScore(body: OrderWorkspacePersistBody): nu
 /** Vai lokālajā melnrakstā ir reāli dati (ne tikai tukši noklusējuma bloki). */
 export function localWorkspaceHasSubstantiveContent(body: OrderWorkspacePersistBody): boolean {
   const hasText = (s: string, min = 8) => s.trim().length >= min;
-  if (hasText(body.iriss) || hasText(body.apskatesPlāns) || hasText(body.cenasAtbilstiba)) return true;
+  if (
+    hasText(body.iriss) ||
+    hasText(body.apskatesPlāns) ||
+    hasText(body.tehniskoRiskuAnalize) ||
+    hasText(body.cenasAtbilstiba)
+  )
+    return true;
   const b = mergeSourceBlocksWithDefaults(body.sourceBlocks);
   if (hasText(b.autodna?.comments ?? "") || hasText(b.carvertical?.comments ?? "")) return true;
   if (hasText(b.autodna?.mileagePasteRaw ?? "", 12) || hasText(b.carvertical?.mileagePasteRaw ?? "", 12)) {
@@ -439,6 +453,7 @@ type HydratedWorkspaceShape = {
   sourceBlocks: WorkspaceSourceBlocks;
   iriss: string;
   apskatesPlāns: string;
+  tehniskoRiskuAnalize: string;
   cenasAtbilstiba: string;
   previewConfirmed: boolean;
   vehicleAiExtraction: VehicleAIExtraction | null;
@@ -450,6 +465,7 @@ function hydratedToPersistBody(h: HydratedWorkspaceShape): OrderWorkspacePersist
     sourceBlocks: h.sourceBlocks,
     iriss: h.iriss,
     apskatesPlāns: h.apskatesPlāns,
+    tehniskoRiskuAnalize: h.tehniskoRiskuAnalize,
     cenasAtbilstiba: h.cenasAtbilstiba,
     previewConfirmed: Boolean(h.previewConfirmed),
     vehicleAiExtraction: h.vehicleAiExtraction ?? null,
@@ -493,6 +509,7 @@ export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspa
     sourceBlocks: createDefaultSourceBlocks(),
     iriss: "",
     apskatesPlāns: "",
+    tehniskoRiskuAnalize: "",
     cenasAtbilstiba: "",
     previewConfirmed: false,
     vehicleAiExtraction: null,
@@ -541,6 +558,7 @@ export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspa
     sourceBlocks: merged.sourceBlocks,
     iriss: merged.iriss,
     apskatesPlāns: merged.apskatesPlāns,
+    tehniskoRiskuAnalize: merged.tehniskoRiskuAnalize,
     cenasAtbilstiba: merged.cenasAtbilstiba,
     previewConfirmed: merged.previewConfirmed,
     vehicleAiExtraction: merged.vehicleAiExtraction,

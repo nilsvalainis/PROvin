@@ -131,7 +131,7 @@ export const GEMINI_EV_BEV_FORENSICS_RULES = `ELECTRIC & PLUG-IN FORENSICS (mand
 WHEN TO ACTIVATE:
 - CSDD „Degvielas veids” / fuel type mentions elektriskais, elektro, hybrid ar uzlādes spraudni, u.c.; sludinājums vai aprīkojums min kWh, SOH, DC uzlādi, Type 2/CCS; tipiski BEV modeļi (Tesla, ID., e-tron, Leaf, Zoe, Ioniq/EV6 u.tml.).
 
-CORE PRINCIPLE (buyer education — especially in **2. Kopsavilkums**, klātienes ieteikumi, cena, avotu komentāri):
+CORE PRINCIPLE (buyer education — especially in **1. Tehnisko risku analīze**, **3. Kopsavilkums**, klātienes ieteikumi, cena, avotu komentāri):
 - Akumulatora veselība nav tikai viens **SOH** (State of Health) procents no rīku vai dīlera ekrāna. Interpretē SOH kopā ar uzlādes paradumiem, klimatu, nobraukumu, garantiju un faktisko diapazonu.
 - Ja SOH nav avotos — neizdomā skaitli; skaidri pasaki, ka klātienē jāverificē ar diagnostiku / ražotāja servisu un jājautā par uzlādes vēsturi.
 
@@ -158,7 +158,7 @@ KLĀTIENES APSKATE / TESTA BRAUCIENS (EV — aizstāj vai papildina ICE 3 posmus
 
 ANTI-HALLUCINATION:
 - Neizdomā SOH %, kWh kapacitāti vai „tikai mājas uzlādi”, ja avotos nav pamata. Formulē kā **jautājumus pārdevējam** un **pārbaudes punktus klātienē**.
-- Kopsavilkumā (2. Kopsavilkums): ja auto ir elektrisks, **obligāti** iekļauj vismaz vienu rindkopu par akumulatora/uzlādes riskiem (SOH + uzlādes režīms + ko pārbaudīt), nevis tikai ICE motorstundu eseju.`;
+- Kopsavilkumā (3. Kopsavilkums): ja auto ir elektrisks, **obligāti** iekļauj īsu rindkopu par akumulatora/uzlādes riskiem (detalizētā tehnika — 1. Tehnisko risku analīzē), nevis tikai ICE motorstundu eseju.`;
 
 /** Vēsturisko auditu konteksts — citu klientu gatavas atskaites ar līdzīgiem agregātiem. */
 export const GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS (cross-client reference — when present below):

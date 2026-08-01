@@ -92,11 +92,12 @@ function extractHistoricalSnippets(draft: OrderDraftState): Array<{ label: strin
 
   pushSnippet(snippets, ADMIN_MILEAGE_HISTORY_COMMENT_LABEL, draft.orderEdits.mileageComment);
   pushSnippet(snippets, ADMIN_INCIDENTS_SUMMARY_LABEL, draft.orderEdits.internalComment);
-  pushSnippet(snippets, "2. Kopsavilkums", ws.iriss);
-  pushSnippet(snippets, "Ieteikumi klātienes apskatei", ws.apskatesPlāns);
+  pushSnippet(snippets, "1. Tehnisko risku analīze", ws.tehniskoRiskuAnalize);
+  pushSnippet(snippets, "3. Kopsavilkums", ws.iriss);
+  pushSnippet(snippets, "2. Ieteikumi klātienes apskatei", ws.apskatesPlāns);
   pushSnippet(snippets, "Cenas atbilstība", ws.cenasAtbilstiba);
 
-  return snippets.slice(0, 6);
+  return snippets.slice(0, 7);
 }
 
 function draftQualifiesAsHistoricalReport(draft: OrderDraftState): boolean {
