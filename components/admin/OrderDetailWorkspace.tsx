@@ -3064,7 +3064,6 @@ export function OrderDetailWorkspace({
                           >
                             <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[var(--admin-border-subtle)] bg-white dark:bg-zinc-900">
                               {isImage ? (
-                                // eslint-disable-next-line @next/next/no-img-element -- blob URL thumbnail
                                 <img
                                   src={p.blobUrl}
                                   alt=""
