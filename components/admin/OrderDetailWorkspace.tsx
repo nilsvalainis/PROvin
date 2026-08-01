@@ -114,6 +114,7 @@ import {
   Loader2,
   MessageSquare,
   Newspaper,
+  FileText,
   Scale,
   RotateCcw,
   Send,
@@ -671,6 +672,8 @@ export function OrderDetailWorkspace({
     msg: string;
   } | null>(null);
   const notifyReportPdfExtraRef = useRef<HTMLInputElement>(null);
+  /** Papildu audita PDF meta dialoga priekšskatam (nosaukums pēc pārdēvēšanas). */
+  const [notifyExtraPdfMeta, setNotifyExtraPdfMeta] = useState<{ name: string; size: number } | null>(null);
   const [portfolioDropActive, setPortfolioDropActive] = useState(false);
   const [prepareDraftBusy, setPrepareDraftBusy] = useState(false);
   const [prepareDraftPhase, setPrepareDraftPhase] = useState<string | null>(null);
@@ -1966,6 +1969,8 @@ export function OrderDetailWorkspace({
     setNotifyErr(null);
     setNotifyPhase("idle");
     setNotifyLastSentTo(null);
+    setNotifyExtraPdfMeta(null);
+    if (notifyReportPdfExtraRef.current) notifyReportPdfExtraRef.current.value = "";
     setNotifyDialogOpen(true);
   }, []);
 
@@ -2063,6 +2068,7 @@ export function OrderDetailWorkspace({
         return;
       }
       if (notifyReportPdfExtraRef.current) notifyReportPdfExtraRef.current.value = "";
+      setNotifyExtraPdfMeta(null);
       setNotifyDialogOpen(false);
       const sentTo = typeof data.sentTo === "string" ? data.sentTo.trim() : null;
       setNotifyLastSentTo(sentTo);
@@ -3001,67 +3007,175 @@ export function OrderDetailWorkspace({
               }}
             >
               <div
-                className="max-h-[min(90vh,520px)] w-full max-w-md overflow-y-auto rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] p-4 shadow-xl"
+                className="flex max-h-[min(92vh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] shadow-xl"
                 onClick={(e) => e.stopPropagation()}
               >
-                <h3 id="workspace-notify-email-title" className="text-sm font-semibold text-[var(--color-apple-text)]">
-                  Nosūtīt klientam e-pastu
-                </h3>
-                <p className="mt-2 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-                  Tiks pievienoti <strong>visi portfeļa faili</strong> ({portfolio.length}).
-                  {isManualNotifyClientOrder(payload)
-                    ? " Manuālam pasūtījumam rēķins netiek pievienots."
-                    : " Rēķins netiek sūtīts atkārtoti — klients to jau saņēma pēc apmaksas."}{" "}
-                  Kopējais pielikumu apjoms — līdz ~{formatBytes(NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES)}.
-                </p>
-                <p className="mt-2 text-[10px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
-                  Saņēmējs
-                </p>
-                <p className="mt-0.5 break-all font-mono text-[11px] text-[var(--color-apple-text)]">
-                  {payload.customerEmail?.trim()}
-                </p>
-                <div className="mt-3 border-t border-[var(--admin-border-subtle)] pt-3">
-                  <label className="mb-1 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                    Papildu audita PDF (ja nav portfelī) — nosūtīts kā{" "}
-                    <span className="font-mono">
-                      {buildProvinAuditPdfFilename(payload.vin, {
-                        checkoutLine: payload.checkoutLine,
-                        amountTotalCents: payload.amountTotal,
-                      })}
-                    </span>
-                  </label>
-                  <input
-                    ref={notifyReportPdfExtraRef}
-                    type="file"
-                    accept="application/pdf,.pdf"
-                    className="block w-full text-[11px] text-[var(--color-apple-text)] file:mr-2 file:rounded-md file:border file:border-slate-200 file:bg-slate-50 file:px-2 file:py-1 file:text-[11px] dark:file:border-zinc-600 dark:file:bg-zinc-800"
-                  />
+                <div className="shrink-0 border-b border-[var(--admin-border-subtle)] px-4 pb-3 pt-4">
+                  <h3 id="workspace-notify-email-title" className="text-sm font-semibold text-[var(--color-apple-text)]">
+                    Nosūtīt klientam e-pastu
+                  </h3>
+                  <p className="mt-2 text-[11px] leading-snug text-[var(--color-provin-muted)]">
+                    Tiks pievienoti <strong>visi portfeļa faili</strong>
+                    {notifyExtraPdfMeta ? " un papildu audita PDF" : ""}.{" "}
+                    {isManualNotifyClientOrder(payload)
+                      ? "Manuālam pasūtījumam rēķins netiek pievienots."
+                      : "Rēķins netiek sūtīts atkārtoti — klients to jau saņēma pēc apmaksas."}{" "}
+                    Kopējais pielikumu apjoms — līdz ~{formatBytes(NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES)}.
+                  </p>
+                  <p className="mt-2 text-[10px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
+                    Saņēmējs
+                  </p>
+                  <p className="mt-0.5 break-all font-mono text-[11px] text-[var(--color-apple-text)]">
+                    {payload.customerEmail?.trim()}
+                  </p>
                 </div>
-                {notifyErr ? (
-                  <p className="mt-2 text-[11px] leading-snug text-red-600">{notifyErr}</p>
-                ) : null}
-                <div className="mt-4 flex flex-wrap justify-end gap-2">
-                  <button
-                    type="button"
-                    disabled={notifyPhase === "loading"}
-                    className="rounded-lg border border-[var(--admin-border-subtle)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] disabled:opacity-50"
-                    onClick={() => setNotifyDialogOpen(false)}
-                  >
-                    Atcelt
-                  </button>
-                  <button
-                    type="button"
-                    disabled={notifyPhase === "loading"}
-                    onClick={() => void sendNotifyWithWorkspaceAttachments()}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-provin-accent)] px-3 py-1.5 text-[11px] font-semibold text-white hover:opacity-95 disabled:opacity-50"
-                  >
-                    {notifyPhase === "loading" ? (
-                      <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
-                    ) : (
-                      <Send className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                    )}
-                    Sūtīt
-                  </button>
+
+                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
+                      Pielikumu priekšskats
+                    </p>
+                    <p className="text-[10px] text-[var(--color-provin-muted)]">
+                      {portfolio.length + (notifyExtraPdfMeta ? 1 : 0)}{" "}
+                      {portfolio.length + (notifyExtraPdfMeta ? 1 : 0) === 1 ? "fails" : "faili"}
+                      {portfolio.length > 0 || notifyExtraPdfMeta
+                        ? ` · ${formatBytes(
+                            Math.round(portfolioBytes + (notifyExtraPdfMeta?.size ?? 0)),
+                          )}`
+                        : null}
+                    </p>
+                  </div>
+
+                  {portfolio.length === 0 && !notifyExtraPdfMeta ? (
+                    <p className="mt-2 rounded-lg border border-amber-200/80 bg-amber-50/90 px-2.5 py-2 text-[11px] leading-snug text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+                      Portfelī nav failu. Pievieno failus sadaļā „1. Pielikumi” vai zemāk — papildu audita PDF,
+                      pirms sūti e-pastu.
+                    </p>
+                  ) : (
+                    <ul className="mt-2 space-y-1.5" aria-label="E-pasta pielikumi">
+                      {portfolio.map((p, i) => {
+                        const isImage =
+                          p.mime.startsWith("image/") ||
+                          /\.(jpe?g|png|webp|gif)$/i.test(p.name);
+                        return (
+                          <li
+                            key={p.id}
+                            className="flex items-start gap-2.5 rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] px-2 py-1.5"
+                          >
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[var(--admin-border-subtle)] bg-white dark:bg-zinc-900">
+                              {isImage ? (
+                                // eslint-disable-next-line @next/next/no-img-element -- blob URL thumbnail
+                                <img
+                                  src={p.blobUrl}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <FileText
+                                  className="h-5 w-5 text-[var(--color-provin-muted)]"
+                                  aria-hidden
+                                />
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <a
+                                href={p.blobUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="break-all text-[11px] font-medium leading-snug text-[var(--color-apple-text)] underline-offset-2 hover:underline"
+                                title="Atvērt priekšskatā"
+                              >
+                                {p.name}
+                              </a>
+                              <p className="mt-0.5 text-[10px] text-[var(--color-provin-muted)]">
+                                {i + 1}. · {formatBytes(p.size)}
+                                {p.mime ? ` · ${p.mime}` : null}
+                              </p>
+                            </div>
+                          </li>
+                        );
+                      })}
+                      {notifyExtraPdfMeta ? (
+                        <li className="flex items-start gap-2.5 rounded-lg border border-dashed border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent)]/[0.06] px-2 py-1.5">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[var(--admin-border-subtle)] bg-white dark:bg-zinc-900">
+                            <FileText
+                              className="h-5 w-5 text-[var(--color-provin-accent)]"
+                              aria-hidden
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="break-all font-mono text-[11px] font-medium leading-snug text-[var(--color-apple-text)]">
+                              {notifyExtraPdfMeta.name}
+                            </p>
+                            <p className="mt-0.5 text-[10px] text-[var(--color-provin-muted)]">
+                              Papildu audita PDF · {formatBytes(notifyExtraPdfMeta.size)}
+                            </p>
+                          </div>
+                        </li>
+                      ) : null}
+                    </ul>
+                  )}
+
+                  <div className="mt-3 border-t border-[var(--admin-border-subtle)] pt-3">
+                    <label className="mb-1 block text-[10px] font-medium text-[var(--color-provin-muted)]">
+                      Papildu audita PDF (ja nav portfelī) — nosūtīts kā{" "}
+                      <span className="font-mono">
+                        {buildProvinAuditPdfFilename(payload.vin, {
+                          checkoutLine: payload.checkoutLine,
+                          amountTotalCents: payload.amountTotal,
+                        })}
+                      </span>
+                    </label>
+                    <input
+                      ref={notifyReportPdfExtraRef}
+                      type="file"
+                      accept="application/pdf,.pdf"
+                      className="block w-full text-[11px] text-[var(--color-apple-text)] file:mr-2 file:rounded-md file:border file:border-slate-200 file:bg-slate-50 file:px-2 file:py-1 file:text-[11px] dark:file:border-zinc-600 dark:file:bg-zinc-800"
+                      onChange={() => {
+                        const raw = notifyReportPdfExtraRef.current?.files?.[0] ?? null;
+                        if (!raw || raw.size <= 0) {
+                          setNotifyExtraPdfMeta(null);
+                          return;
+                        }
+                        setNotifyExtraPdfMeta({
+                          name: buildProvinAuditPdfFilename(payload.vin, {
+                            checkoutLine: payload.checkoutLine,
+                            amountTotalCents: payload.amountTotal,
+                          }),
+                          size: raw.size,
+                        });
+                      }}
+                    />
+                  </div>
+                  {notifyErr ? (
+                    <p className="mt-2 text-[11px] leading-snug text-red-600">{notifyErr}</p>
+                  ) : null}
+                </div>
+
+                <div className="shrink-0 border-t border-[var(--admin-border-subtle)] px-4 py-3">
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <button
+                      type="button"
+                      disabled={notifyPhase === "loading"}
+                      className="rounded-lg border border-[var(--admin-border-subtle)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] disabled:opacity-50"
+                      onClick={() => setNotifyDialogOpen(false)}
+                    >
+                      Atcelt
+                    </button>
+                    <button
+                      type="button"
+                      disabled={notifyPhase === "loading"}
+                      onClick={() => void sendNotifyWithWorkspaceAttachments()}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-provin-accent)] px-3 py-1.5 text-[11px] font-semibold text-white hover:opacity-95 disabled:opacity-50"
+                    >
+                      {notifyPhase === "loading" ? (
+                        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                      ) : (
+                        <Send className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      )}
+                      Sūtīt
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>,
