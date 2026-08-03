@@ -412,22 +412,14 @@ function pdfAvotuCommentIsland(text: string): string {
 /** Svītriņa HTML — tabulas „Avots” kolonnā vai leģendā. */
 function buildPdfMileageSourceStripeSpan(sourceLabel: string, size: "table" | "legend" = "table"): string {
   const key = mileageSourceLabelToPdfKey(sourceLabel);
-  const stripeMod = key === "unknown" ? "unknown" : key;
   const sizeCls = size === "legend" ? " pdf-mileage-source-stripe--legend" : " pdf-mileage-source-stripe--table";
-  const stripeCls = `pdf-mileage-source-stripe pdf-mileage-source-stripe--${stripeMod}${sizeCls}`;
-  const aria =
-    key !== "unknown"
-      ? `Avots: ${MILEAGE_PDF_SOURCE_LEGEND[key].full}`
-      : `Avots: ${sourceLabel.trim() || "nezināms"}`;
+  const stripeCls = `pdf-mileage-source-stripe pdf-mileage-source-stripe--${key}${sizeCls}`;
+  const aria = `Avots: ${MILEAGE_PDF_SOURCE_LEGEND[key].full}`;
   return `<span class="${stripeCls}" role="img" aria-label="${escapeHtml(aria)}"></span>`;
 }
 
 function buildPdfMileageSourceStripeSpanForKey(key: MileagePdfSourceKey): string {
-  const stripeMod = key === "unknown" ? "unknown" : key;
-  const stripeCls = `pdf-mileage-source-stripe pdf-mileage-source-stripe--${stripeMod} pdf-mileage-source-stripe--legend`;
-  if (key === "unknown") {
-    return `<span class="${stripeCls}" aria-hidden="true"></span>`;
-  }
+  const stripeCls = `pdf-mileage-source-stripe pdf-mileage-source-stripe--${key} pdf-mileage-source-stripe--legend`;
   return `<span class="${stripeCls}" role="img" aria-label="${escapeHtml(`Avots: ${MILEAGE_PDF_SOURCE_LEGEND[key].full}`)}"></span>`;
 }
 
@@ -439,11 +431,6 @@ function buildPdfSourceLegendAbbrevsHtml(sourceLabels: string[]): string {
     const abbrev = MILEAGE_PDF_SOURCE_LEGEND[k].abbrev;
     parts.push(
       `<span class="pdf-mileage-legend-term"><span class="pdf-mileage-legend-term-stripe">${buildPdfMileageSourceStripeSpanForKey(k)}</span><span class="pdf-mileage-legend-term-text">${escapeHtml(abbrev)}</span></span>`,
-    );
-  }
-  if (keySet.has("unknown")) {
-    parts.push(
-      `<span class="pdf-mileage-legend-term"><span class="pdf-mileage-legend-term-stripe">${buildPdfMileageSourceStripeSpanForKey("unknown")}</span><span class="pdf-mileage-legend-term-text">?</span></span>`,
     );
   }
   if (parts.length === 0) return "";
@@ -462,7 +449,7 @@ function buildPdfMileageSourceStripesHtml(sourceLabels: string[], size: "table" 
     seen.add(key);
     unique.push(t);
   }
-  if (unique.length === 0) unique.push("Nezināms avots");
+  if (unique.length === 0) unique.push("CITS");
   const sizeCls = size === "legend" ? " pdf-mileage-source-stripes--legend" : " pdf-mileage-source-stripes--table";
   const inner = unique.map((lbl) => buildPdfMileageSourceStripeSpan(lbl, size)).join("");
   return `<span class="pdf-mileage-source-stripes${sizeCls}" role="presentation">${inner}</span>`;
@@ -1234,8 +1221,9 @@ function clientReportPrintCss(): string {
       .pdf-mileage-source-stripe--autodna{background:#1e3a8a!important;}
       .pdf-mileage-source-stripe--carvertical{background:#eab308!important;}
       .pdf-mileage-source-stripe--dealer{background:#dc2626!important;}
+      .pdf-mileage-source-stripe--ltab{background:#b91c1c!important;}
       .pdf-mileage-source-stripe--cits{background:#ea580c!important;}
-      .pdf-mileage-source-stripe--unknown{background:#94a3b8!important;}
+      .pdf-mileage-source-stripe--unknown{background:#ea580c!important;}
       .pdf-mileage-source-stripes{
         display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;
         flex-wrap:nowrap;flex-shrink:0;
