@@ -123,7 +123,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     price: "39,99 €",
     buttonText: "PASŪTĪT MINI AUDITU — 39,99 €",
     description:
-      "Sludinājuma, risku un LV vēstures analīze ar konsultāciju — bez starptautiskajām maksas atskaitēm.",
+      "Sludinājuma, tehnisko datu un risku analīze. Rekomendējam veikt Latvijā 🇱🇻 lietotiem auto.",
     features: buildTp5MobileFeatures(TP5_MOBILE_FEATURE_NAMES, MINI_ACTIVE_FEATURE_COUNT),
     footnote: " ",
   },
@@ -133,7 +133,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     price: "99,99 €",
     buttonText: "PASŪTĪT PROVIN AUDITU — 99,99 €",
     description:
-      "Viena cena — vairākas starptautiskas vēstures atskaites plus PROVIN eksperta analīze un konsultācija vienā pārskatā.",
+      "Detalizēta auto vēstures un risku analīze iekļaujot dažādas maksas vēstures atskaites, oficiālo dīleru un izsoļu portālu arhīvu*.",
     features: buildTp5MobileFeatures(TP5_MOBILE_FEATURE_NAMES, TP5_MOBILE_FEATURE_NAMES.length),
     footnote: AUDITS_FOOTNOTE_LV,
   },
@@ -159,7 +159,7 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     price: "€39.99",
     buttonText: "ORDER MINI AUDIT — €39.99",
     description:
-      "Listing, risk and LV history analysis with consultation — without international paid reports.",
+      "Analysis of the listing, technical data and risks. Recommended for cars used in Latvia 🇱🇻.",
     features: buildTp5MobileFeatures(TP5_MOBILE_FEATURE_NAMES_EN, MINI_ACTIVE_FEATURE_COUNT),
     footnote: " ",
   },
@@ -169,7 +169,7 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     price: "€99.99",
     buttonText: "ORDER PROVIN AUDIT — €99.99",
     description:
-      "One price — several international history reports plus PROVIN expert analysis and consultation in a single overview.",
+      "In-depth vehicle history and risk analysis, combining several paid history reports, official dealer data and auction portal archives*.",
     features: buildTp5MobileFeatures(
       TP5_MOBILE_FEATURE_NAMES_EN,
       TP5_MOBILE_FEATURE_NAMES_EN.length,
