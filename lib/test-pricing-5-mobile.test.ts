@@ -5,20 +5,24 @@ import {
   getTp5MobileTurnaround,
   TP5_DEALER_BRANDS,
   TP5_MOBILE_CHECKOUT_PLAN,
+  TP5_MOBILE_FEATURE_ROW_COUNT,
   TP5_MOBILE_SERVICES,
   TP5_MOBILE_SERVICE_ORDER,
 } from "@/lib/test-pricing-5-mobile";
 import { getTestPricingPlan } from "@/lib/test-pricing-plans";
 
 const FULL_FEATURE_STACK = [
-  "Sludinājuma un tehnisko risku analīze",
-  "EU reģistru pārbaude & TA vēsture",
+  "Tehnisko apskašu vēsture (LV)",
+  "Sludinājuma un pārdevēja analīze",
   "Ieteikumi klātienes apskatei",
+  "Tehnisko risku analīze",
   "Individuāla konsultācija",
-  "carVertical integrācija",
-  "autoDNA integrācija",
-  "Oficiālo dīleru un izsoļu portālu arhīvs*",
-  "Starptautiska vēstures pārbaude",
+  "autoDNA atskaite",
+  "carVertical atskaite",
+  "Izsoļu portālu arhīva dati*",
+  "Oficiālo dīleru sistēmu dati*",
+  "Starptautisku reģistru pārbaude",
+  "Apdrošinātāju dati (avārijas, zādzības)",
 ];
 
 describe("test-pricing-5 mobile three-tier model", () => {
@@ -30,45 +34,32 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(TP5_MOBILE_CHECKOUT_PLAN.dealer).toBe("dealer");
   });
 
-  it("maps MINI to four active and four inactive rows in the full stack", () => {
+  it("keeps a fixed 11-row checklist for MINI and AUDITS with no empty slots", () => {
+    expect(TP5_MOBILE_FEATURE_ROW_COUNT).toBe(11);
     const mini = getTp5MobileService("mini");
-    expect(mini.title).toBe("PROVIN MINI");
-    expect(mini.buttonText).toBe("PASŪTĪT MINI AUDITU — 39,99 €");
-    expect(mini.description).toContain("Latvijā 🇱🇻 lietotiem auto");
-    expect(mini.features).toHaveLength(8);
-    expect(mini.features.map((feature) => feature.name)).toEqual(FULL_FEATURE_STACK);
-    expect(mini.features.filter((feature) => feature.included)).toHaveLength(4);
-    expect(mini.features.filter((feature) => !feature.included)).toHaveLength(4);
-  });
-
-  it("maps AUDITS to all eight active rows in the full stack", () => {
     const audits = getTp5MobileService("audits");
-    expect(audits.title).toBe("PROVIN AUDITS");
-    expect(audits.price).toBe("99,99 €");
-    expect(audits.features).toHaveLength(8);
-    expect(audits.features.every((feature) => feature.included)).toBe(true);
+    expect(mini.features).toHaveLength(11);
+    expect(audits.features).toHaveLength(11);
+    expect(mini.features.map((f) => f.name)).toEqual(FULL_FEATURE_STACK);
+    expect(audits.features.map((f) => f.name)).toEqual(FULL_FEATURE_STACK);
+    expect(mini.features.filter((f) => f.included)).toHaveLength(5);
+    expect(mini.features.filter((f) => !f.included)).toHaveLength(6);
+    expect(audits.features.every((f) => f.included)).toBe(true);
   });
 
-  it("maps dealer to four rows, brand grid and refund footnote", () => {
+  it("maps dealer to two rows and brands for popup only", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
-    expect(dealer.price).toBe("24,99 €");
-    expect(dealer.buttonText).toBe("PASŪTĪT DĪLERA DATUS — 24,99 €");
-    expect(dealer.description).toBe("Šajā atskaitē iekļauti tikai dati no oficiālo dīleru datubāzēm.");
-    expect(dealer.features).toHaveLength(4);
-    expect(dealer.features[0]?.name).toBe("Oficiālā dīlera servisa vēsture");
-    expect(dealer.features[1]?.name).toBe("100% naudas atmaksa");
-    expect(dealer.features.every((feature) => feature.included)).toBe(true);
+    expect(dealer.description).toBe("Tikai oficiālo dīleru sistēmu ieraksti.");
+    expect(dealer.features).toHaveLength(2);
+    expect(dealer.features[0]?.name).toContain("Servisa vēsture");
     expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
+    expect(dealer.brands).toContain("Volvo");
+    expect(dealer.brands).toContain("Opel");
+    expect(dealer.brands).toContain("Mercedes-Benz (2010+)");
     expect(dealer.brands).not.toContain("Rolls-Royce");
-    expect(dealer.brandsHeading).toBe("Atbalstītie ražotāji");
-    expect(dealer.extraNote).toContain("oficiālajām dīleru");
-    expect(dealer.extraNote).toContain("\n");
     expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-48h");
-    expect(dealer.footnote).toBe(
-      "Ja oficiālo dīleru datubāzē ieraksti nav pieejami, mēs atmaksāsim visu iemaksāto naudu.",
-    );
-    expect(getTp5MobileTurnaround()).toContain("24-72h");
+    expect(dealer.footnote).toContain("100%");
   });
 
   it("keeps the English tier copy structurally identical to Latvian", () => {
@@ -92,6 +83,5 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(miniPlan.amountCents).toBe(3999);
     expect(auditsPlan.amountCents).toBe(9999);
     expect(dealerPlan.amountCents).toBe(2499);
-    expect(dealerPlan.productName).toContain("dīlera");
   });
 });

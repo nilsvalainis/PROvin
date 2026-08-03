@@ -15,6 +15,7 @@ import {
 } from "@/lib/test-pricing-5-mobile";
 import { TP5_AUDITS_SAMPLE_REPORT_HREF, getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
+import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import { Tp5TurnaroundInfoTip } from "@/components/test-pricing-5/Tp5TurnaroundInfoTip";
 
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
@@ -85,9 +86,9 @@ export function Tp5MobilePricingCard({
   const uiCopy = getTp5UiCopy(locale);
   const services = getTp5MobileServices(locale);
   const activeService = getTp5MobileService(activeServiceId, locale);
+  const isDealer = activeServiceId === "dealer";
   const turnaroundLabel = activeService.turnaround ?? getTp5MobileTurnaround(locale);
   const footnote = activeService.footnote ?? getTp5DealerFootnote(locale);
-  /** Dealer meta title uses the full product name; tab stays short. */
   const metaTitle =
     activeServiceId === "dealer"
       ? locale === "en"
@@ -143,35 +144,14 @@ export function Tp5MobilePricingCard({
         onTouchEnd={onSwipeAreaTouchEnd}
       >
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
-          <ul
-            className={
-              activeServiceId === "dealer"
-                ? `${styles.featureList} ${styles.featureListDealer}`
-                : styles.featureList
-            }
-          >
+          <ul className={styles.featureList}>
             {activeService.features.map((feature) => (
               <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
             ))}
           </ul>
-          {activeService.brands && activeService.brands.length > 0 ? (
-            <div className={styles.dealerBrandBlock}>
-              {activeService.brandsHeading ? (
-                <p className={styles.dealerBrandHeading}>{activeService.brandsHeading}</p>
-              ) : null}
-              <ul className={styles.dealerBrandGrid} aria-label={activeService.brandsHeading}>
-                {activeService.brands.map((brand) => (
-                  <li key={brand} className={styles.dealerBrandItem}>
-                    <span className={styles.dealerBrandCheck} aria-hidden>
-                      ✓
-                    </span>
-                    <span>{brand}</span>
-                  </li>
-                ))}
-              </ul>
-              {activeService.extraNote ? (
-                <p className={styles.dealerExtraNote}>{activeService.extraNote}</p>
-              ) : null}
+          {isDealer && activeService.brands && activeService.brands.length > 0 ? (
+            <div className={styles.dealerBrandsSlot}>
+              <Tp5DealerBrandsTip brands={activeService.brands} copy={uiCopy} />
             </div>
           ) : null}
         </div>
@@ -212,7 +192,11 @@ export function Tp5MobilePricingCard({
 
       <p className={styles.turnaround}>
         <span>{turnaroundLabel}</span>
-        {activeServiceId === "dealer" ? null : <Tp5TurnaroundInfoTip copy={uiCopy} />}
+        {isDealer ? (
+          <span className={styles.turnaroundInfoSpacer} aria-hidden />
+        ) : (
+          <Tp5TurnaroundInfoTip copy={uiCopy} />
+        )}
       </p>
 
       <div className={styles.ctaWrap}>

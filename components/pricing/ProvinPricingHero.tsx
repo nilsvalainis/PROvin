@@ -176,7 +176,7 @@ export function ProvinPricingHero({
             onSubmit={submitDesktopCheckout}
             tabLayoutGroupId="tp5-tabs-desktop"
             tabPillLayoutId="tp5-tab-pill-desktop"
-            tierMetaDescClassName={`${styles.tierMetaDesc} lg:line-clamp-none lg:block lg:overflow-visible`}
+            tierMetaDescClassName={styles.tierMetaDesc}
           />
         </div>
       </div>

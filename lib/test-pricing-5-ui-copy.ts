@@ -32,6 +32,16 @@ export type Tp5UiCopy = {
   turnaroundInfoBody: string;
   /** Visible phone label in the tip (e.g. 29502039). */
   turnaroundInfoPhoneLabel: string;
+  /** Dealer brands trigger label. */
+  dealerBrandsTrigger: string;
+  /** Dealer brands popup aria / title. */
+  dealerBrandsAria: string;
+  /** Year-range note at top of brands popup. */
+  dealerBrandsYearNote: string;
+  /** Refund note at bottom of brands popup. */
+  dealerBrandsRefundNote: string;
+  /** Close button label for brands dialog. */
+  dealerBrandsClose: string;
 };
 
 /** Publiskais PROVIN AUDITS atskaites piemērs (`public/samples/…`). */
@@ -59,6 +69,12 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   turnaroundInfoBody:
     "Pamata vēstures datus un vispārēju komentāru nepieciešamības gadījumā pēc pieprasījuma iespējams saņemt 1-2h laikā, šādos gadījumos lūdzam sazināties ar mums telefoniski.",
   turnaroundInfoPhoneLabel: TP5_TURNAROUND_INFO_PHONE_LOCAL,
+  dealerBrandsTrigger: "Atbalstītie ražotāji",
+  dealerBrandsAria: "Atbalstītie ražotāji",
+  dealerBrandsYearNote:
+    "Oficiālie dīlera dati parasti pieejami automašīnām, kas ražotas aptuveni 2009.–2017. gadā (precīzs periods atkarīgs no ražotāja). Piemēram, Mercedes-Benz — bieži no 2010+.",
+  dealerBrandsRefundNote: "Ja šim VIN / gadam ierakstu nav — 100% naudas atmaksa.",
+  dealerBrandsClose: "Aizvērt",
 };
 
 const TP5_UI_COPY_EN: Tp5UiCopy = {
@@ -79,6 +95,12 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   turnaroundInfoBody:
     "If needed, basic history data and a general comment can be provided within 1–2 hours on request — in those cases please contact us by phone.",
   turnaroundInfoPhoneLabel: TP5_TURNAROUND_INFO_PHONE_LOCAL,
+  dealerBrandsTrigger: "Supported manufacturers",
+  dealerBrandsAria: "Supported manufacturers",
+  dealerBrandsYearNote:
+    "Official dealer data is usually available for cars built around 2009–2017 (exact range depends on the manufacturer). For example, Mercedes-Benz — often from 2010+.",
+  dealerBrandsRefundNote: "If no records exist for this VIN / year — 100% refund.",
+  dealerBrandsClose: "Close",
 };
 
 export function getTp5UiCopy(locale?: string): Tp5UiCopy {
