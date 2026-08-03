@@ -47,19 +47,24 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(audits.features.every((f) => f.included)).toBe(true);
   });
 
-  it("maps dealer to two rows and brands for popup only", () => {
+  it("maps dealer to six rows plus refund explanation note", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
-    expect(dealer.description).toBe("Tikai oficiālo dīleru sistēmu ieraksti.");
-    expect(dealer.features).toHaveLength(2);
-    expect(dealer.features[0]?.name).toContain("Servisa vēsture");
+    expect(dealer.description).toContain("izsoļu portālu arhīvā");
+    expect(dealer.features).toHaveLength(6);
+    expect(dealer.features.every((f) => f.included)).toBe(true);
+    expect(dealer.features.map((f) => f.name)).toEqual([
+      "Odometra rādījumi",
+      "Servisa vēsture",
+      "Apkopju intervāli",
+      "Veiktie remontdarbi u.c.",
+      "Izsoļu portālu arhīva dati*",
+      "Individuāla konsultācija",
+    ]);
+    expect(dealer.extraNote).toBe("Ja dati nav pieejami — 100% naudas atmaksa.");
     expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
-    expect(dealer.brands).toContain("Volvo");
-    expect(dealer.brands).toContain("Opel");
-    expect(dealer.brands).toContain("Mercedes-Benz (2010+)");
-    expect(dealer.brands).not.toContain("Rolls-Royce");
     expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-48h");
-    expect(dealer.footnote).toContain("100%");
+    expect(dealer.footnote).toContain("ja dati ir pieejami");
   });
 
   it("keeps the English tier copy structurally identical to Latvian", () => {

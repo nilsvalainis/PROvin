@@ -15,6 +15,8 @@ export type Tp5MobileService = {
   /** Brands for dealer popup only (not rendered inline). */
   brands?: readonly string[];
   brandsHeading?: string;
+  /** Explanatory note under checklist (not a ✓ row). */
+  extraNote?: string;
   /** Hide listing URL field (dealer: VIN only). */
   hideListingUrl?: boolean;
   /** Per-tier turnaround; falls back to shared audit turnaround. */
@@ -75,13 +77,21 @@ const TP5_MOBILE_FEATURE_NAMES_EN = [
 const MINI_ACTIVE_FEATURE_COUNT = 5;
 
 const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
-  { name: "Servisa vēsture, apkopju intervāli u.c.", included: true },
-  { name: "Ja dati nav pieejami — 100% naudas atmaksa", included: true },
+  { name: "Odometra rādījumi", included: true },
+  { name: "Servisa vēsture", included: true },
+  { name: "Apkopju intervāli", included: true },
+  { name: "Veiktie remontdarbi u.c.", included: true },
+  { name: "Izsoļu portālu arhīva dati*", included: true },
+  { name: "Individuāla konsultācija", included: true },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
-  { name: "Service history, service intervals, etc.", included: true },
-  { name: "If no data available — 100% refund", included: true },
+  { name: "Odometer readings", included: true },
+  { name: "Service history", included: true },
+  { name: "Service intervals", included: true },
+  { name: "Repairs performed, etc.", included: true },
+  { name: "Auction portal archive data*", included: true },
+  { name: "Personal consultation", included: true },
 ];
 
 const DEALER_BRANDS_HEADING_LV = "Atbalstītie ražotāji";
@@ -90,11 +100,11 @@ const DEALER_BRANDS_HEADING_EN = "Supported manufacturers";
 const AUDITS_FOOTNOTE_LV = "*ja dati ir pieejami";
 const AUDITS_FOOTNOTE_EN = "*if data is available";
 
-const DEALER_FOOTNOTE_LV =
-  "Atmaksājam 100%, ja oficiālajā datubāzē ierakstu nav.";
+const DEALER_EXTRA_NOTE_LV = "Ja dati nav pieejami — 100% naudas atmaksa.";
+const DEALER_EXTRA_NOTE_EN = "If no data is available — 100% refund.";
 
-const DEALER_FOOTNOTE_EN =
-  "We refund 100% if official database records are unavailable.";
+const DEALER_FOOTNOTE_LV = "*ja dati ir pieejami";
+const DEALER_FOOTNOTE_EN = "*if data is available";
 
 function buildTp5MobileFeatures(
   names: readonly string[],
@@ -136,10 +146,11 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     title: "DĪLERA DATI",
     price: "24,99 €",
     buttonText: "PASŪTĪT DĪLERA DATUS — 24,99 €",
-    description: "Tikai oficiālo dīleru sistēmu ieraksti.",
+    description: "Oficiālo dīleru sistēmu ieraksti un pārbaude izsoļu portālu arhīvā.",
     features: DEALER_FEATURES_LV,
     brands: TP5_DEALER_BRANDS,
     brandsHeading: DEALER_BRANDS_HEADING_LV,
+    extraNote: DEALER_EXTRA_NOTE_LV,
     turnaround: "⏱️ Izpilde: 24-48h",
     footnote: DEALER_FOOTNOTE_LV,
   },
@@ -174,10 +185,11 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     title: "DEALER DATA",
     price: "€24.99",
     buttonText: "ORDER DEALER DATA — €24.99",
-    description: "Official dealer system records only.",
+    description: "Official dealer system records and auction portal archive check.",
     features: DEALER_FEATURES_EN,
     brands: TP5_DEALER_BRANDS,
     brandsHeading: DEALER_BRANDS_HEADING_EN,
+    extraNote: DEALER_EXTRA_NOTE_EN,
     turnaround: "⏱️ Delivery: 24-48h",
     footnote: DEALER_FOOTNOTE_EN,
   },

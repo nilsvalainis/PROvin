@@ -149,6 +149,9 @@ export function Tp5MobilePricingCard({
               <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
             ))}
           </ul>
+          {activeService.extraNote ? (
+            <p className={styles.dealerExplainNote}>{activeService.extraNote}</p>
+          ) : null}
           {isDealer && activeService.brands && activeService.brands.length > 0 ? (
             <div className={styles.dealerBrandsSlot}>
               <Tp5DealerBrandsTip brands={activeService.brands} copy={uiCopy} />

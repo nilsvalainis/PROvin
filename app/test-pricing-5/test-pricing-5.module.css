@@ -365,6 +365,15 @@
   min-height: 0;
 }
 
+.dealerExplainNote {
+  margin: 0.45rem 0 0;
+  padding: 0.15rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  font-weight: 500;
+  color: rgb(210 214 222 / 0.72);
+}
+
 .dealerBrandsTip {
   position: relative;
   display: inline-flex;
@@ -1171,6 +1180,10 @@ html[data-site-theme="light"] .liquidAccent {
 
 html[data-site-theme="light"] .featureLabelActive {
   color: #1d1d1f;
+}
+
+html[data-site-theme="light"] .dealerExplainNote {
+  color: #6e6e73;
 }
 
 html[data-site-theme="light"] .dealerBrandsTrigger {
