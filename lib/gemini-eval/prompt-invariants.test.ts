@@ -69,6 +69,13 @@ describe("PROVIN Gemini prompt invariants", () => {
     expect(prompts).toMatch(/NEKAD nesāc rindu ar "- "/);
   });
 
+  it("summary prompt demands short opinion not section recapitulation", () => {
+    const prompts = readRepo("lib/admin-gemini-prompts.ts");
+    expect(prompts).toMatch(/GEMINI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?profesionālo viedokli/i);
+    expect(prompts).toMatch(/GEMINI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?NEKĀDĀ GADĪJUMĀ nepārraksti/i);
+    expect(prompts).toMatch(/GEMINI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?3–5 īsas rindkopas/);
+  });
+
   it("field-agent prompts encode client value density and institutional memory", () => {
     const prompts = readRepo("lib/admin-gemini-prompts.ts");
     expect(prompts).toMatch(/CLIENT VALUE DENSITY/);

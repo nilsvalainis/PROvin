@@ -60,19 +60,21 @@ ${vehicleHint ? `Identificētais auto (CSDD): ${vehicleHint}` : ""}
 
 ${orderContext ? `${orderContext}\n\n---\n\n` : ""}${
       sourceCommentsContext
-        ? `Esošie eksperta komentāri avotu sadaļās (obligāti sintezē, neatkārto vārds vārdā):\n\n${sourceCommentsContext}\n\n---\n\n`
+        ? `Esošie eksperta komentāri avotu sadaļās (TIKAI konteksts — NEATKĀRTO un neapkopo teikumus):\n\n${sourceCommentsContext}\n\n---\n\n`
         : ""
     }${
       expertBundle
-        ? `Eksperta jau sagatavotās sadaļas (papildus konteksts, nevis vienīgais avots):\n\n${expertBundle}\n\n---\n\n`
+        ? `Eksperta jau sagatavotās sadaļas (TIKAI konteksts — NEATKĀRTO detalizāciju):\n\n${expertBundle}\n\n---\n\n`
         : ""
     }Sagatavo gala kopsavilkumu klientam laukam „3. Kopsavilkums”.
-Sintezē VISU portfeļa kontekstu — avotu datus, tabulas, komentārus un eksperta sadaļas — brīvā formā kā kopējo ainu.
+
+Uzdevums: īss, skaidrs **profesionāls viedoklis** par datu **kopainu** + **rekomendācija**. Brīvā formā — nevis katra punkta atkārtošana.
 
 KRITISKI:
-- Nedublē detalizēto „${ADMIN_TECHNICAL_RISKS_LABEL}” un apskates checklistu; īsi atsaucies, ja vajag.
-- Avotu komentārus, nobraukumu un negadījumus SINTEZĒ — neparafrāzē katru avotu no jauna gandrīz tādā pašā garumā.
-- NESĀC ar „Sveiki” vai sarunas uzrunu — šī ir atskaite.
+- NEATKĀRTO un neapkopo jau ģenerētos teikumus no avotiem / nobraukuma / negadījumiem / „${ADMIN_TECHNICAL_RISKS_LABEL}” / apskates.
+- Neveido „CSDD… AutoDNA… CarVertical…” katalogu.
+- Tipiski 3–5 īsas rindkopas + APPROVED BY IRISS.
+- NESĀC ar „Sveiki” vai sarunas uzrunu.
 - Beigās: APPROVED BY IRISS.`,
     {
       operatorNotes: input.operatorNotes,
@@ -91,6 +93,6 @@ KRITISKI:
   });
   return normalizeProvinExpertGeminiComment(
     raw,
-    geminiMaxLenForOperatorNotes(input.operatorNotes, 3600),
+    geminiMaxLenForOperatorNotes(input.operatorNotes, 2200),
   );
 }

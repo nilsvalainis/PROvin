@@ -79,7 +79,7 @@ FIELD DIVISION & ANTI-REPETITION (critical — independent audit feedback: do NO
 - STRICT ROLES — each ACTIVE FIELD has ONE job; never absorb another field’s essay:
   • „1. Tehnisko risku analīze” = model/powertrain typical weaknesses, strengths, EUR cost bands — NOT a full mileage/incident rewrite, NOT a klātienes checklist, NOT the purchase verdict essay.
   • „2. Ieteikumi klātienes apskatei” = concrete in-person checks + why for THIS car — convert risks into steps; do NOT restate the full technical-risk essay or summary verdict.
-  • „3. Kopsavilkums” = overall purchase picture + calibrated recommendation — brief pointers only to risks/inspection; do NOT reprint source essays, tech-risk catalogue, or checklist.
+  • „3. Kopsavilkums” = short professional opinion + purchase recommendation on the overall picture — NOT a recapitulation or paraphrase of already-generated source/IRISS sentences; NOT a point-by-point digest of every section.
   • „NOBRAUKUMA VĒSTURES KOMENTĀRS” = ONLY place for full chronological mileage synthesis (lineārums, averages, motorstundas/city–highway, multi-source odometer correlation, data vacuum, global odometer-risk conclusions).
   • „NEGADĪJUMU VĒSTURES KOPSAVILKUMS” = incident/claims synthesis across sources — not a second mileage essay and not a full tech-risk dump.
   • Per-source „Komentāri” = unique facts from THAT source + a short delta vs others (confirm in 1 sentence if already covered).
@@ -362,32 +362,35 @@ ACTIVE FIELD: CLIENT SUMMARY (3. Kopsavilkums — gala ziņa klientam, PDF „AP
 
 ${GEMINI_CLIENT_PDF_EXPERT_MARKDOWN_RULES}
 
-Uzdevums: no PILNA klienta portfeļa konteksta (visi aizpildītie avotu bloki, tabulas, komentāri, sludinājums, cenas vērtējums u.c.) un eksperta jau sagatavotajām sadaļām izveidot gala ziņojumu laukam „3. Kopsavilkums”.
+Uzdevums: uzrakstīt **īsu, skaidru profesionālo viedokli** par visu atskaitē iegūto datu **kopainu** un **rekomendāciju** pircējam — lauks „3. Kopsavilkums”.
 
-Obligāti ņem vērā VISUS pieejamos datus portfelī — ne tikai eksperta laukus. Ja avotā ir CSDD, AutoDNA, CarVertical, LTAB, tirgus, sludinājuma analīze u.c. — secini no tiem kopā.
+KAS ŠIS IR (obligāti):
+- Brīvā formā eksperta spriedums: kāda ir kopaina pēc datiem, kas ir galvenie riski/signāli, un **ko ieteicams darīt** (pirkt / pārbaudīt klātienē / meklēt citu) — kalibrēti (visticamāk / pēc datiem / ar atrunu).
+- Ņem vērā VISU portfeli un jau sagatavotās sadaļas kā **izejas materiālu**, bet **neraksti to no jauna**.
+
+KAS ŠIS NAV (kritiski — pret atkārtošanos):
+- NEKĀDĀ GADĪJUMĀ nepārraksti / neapkopo jau ģenerētos teikumus no avotu komentāriem, nobraukuma, negadījumiem, tehnisko risku, apskates vai cenas.
+- Neveido punktu-pa-punktam kopsavilkumu („CSDD saka… AutoDNA saka… CarVertical saka…”).
+- Nedetalizē katru faktu, km līniju, negadījumu vai tipisko slimību — tas jau ir citās sadaļās.
+- Nav „īssāka versija” no iepriekšējām esejām — ir **jauns, kompakts viedoklis**.
 
 OPERATORA KOMANDAS (kritiski):
-- Ja promptā ir sadaļa „OPERATORA KOMANDAS” — tā ir ABSOLŪTA prioritāte. Precīzi izpildi, ko eksperts prasa (fakti, frāzes, risku uzsvars). Neignorē.
+- Ja promptā ir sadaļa „OPERATORA KOMANDAS” — tā ir ABSOLŪTA prioritāte. Precīzi izpildi, ko eksperts prasa.
 
-DALĪJUMS AR CITĀM IRISS SADAĻĀM (kritiski — pret dubultošanu):
-- Detalizētā agregātu / tipisko slimību / izmaksu analīze dzīvo sadaļā **„1. Tehnisko risku analīze”** — kopsavilkumā to NEATKĀRTO gari. Pietiek ar īsu atsaukšanos (1 īsa rindkopa max), ja vajag, un pāreju uz kopējo ainu.
-- Klātienes pārbaudes soļi dzīvo **„2. Ieteikumi klātienes apskatei”** — kopsavilkumā nesaraksti visu checklistu.
-- Avotu „Komentāri”, nobraukuma un negadījumu komentāri jau ir uzrakstīti — kopsavilkumā **sintezē**, neparafrāzē katru avotu no jauna gandrīz tādā pašā garumā.
-- Kopsavilkums = **brīvā formā kopējā aina**: īpašniecība/km/negadījumi/tirgus/pārdevējs/cena + skaidrs gala vērtējums pirkumam — sintezēts no VISĀM avotu sadaļām un komentāriem.
-- CLIENT VALUE DENSITY: 4–7 spēcīgas rindkopas bieži pietiek; kvalitāte > garums.
+DALĪJUMS:
+- „1. Tehnisko risku analīze” / „2. Ieteikumi…” / avotu komentāri = detalizācija citur; kopsavilkumā max 1 īsa atsaukšanās, ja vajag.
+- CLIENT VALUE DENSITY: tipiski **3–5 īsas rindkopas** (+ APPROVED BY IRISS). Garāks tikai, ja operators to prasa.
 
-FORMĀTS (obligāti — tāds pats vizuālais ritms kā avotu komentāros un „APPROVED BY IRISS” PDF):
-- Raksti tikai rindkopās — starp rindkopām tukša rinda (\\n\\n); NEVERS izmanto sarakstu prefiksus rindkopu sākumā (-, •, 1.).
-- KATRAS rindkopas pirmais teikums sākas ar **bold** tematisko ievadu (3–10 vārdi), piem. **Galvenais secinājums**, **Nobraukuma aina**, **Ko tas nozīmē pircējam** — pēc tam turpini parastā tekstā tajā pašā rindkopā.
-- Izmanto **bold** arī kritiskiem km, EUR, datumiem un statusiem iekš rindkopas.
-- Šī ir **atskaite, ne saruna**: NESĀC ar „Sveiki”, „Labdien”, „Esmu izskatījis…” vai līdzīgu uzrunu. Sāc uzreiz ar satura rindkopu.
-- Īsi apkopo auto un galvenos secinājumus brīvā formā: vēsture, risku līmenis (bez garas tehniskās dublikācijas), pārdevējs, cenas vērtējums (ja pieejams).
-- Ja auto ir **elektrisks (BEV) vai plug-in hibrīds** — kopsavilkumā **obligāti** iekļauj īsu rindkopu par **akumulatora veselību / uzlādes paradumiem / garantiju** (detalizētā tehnika — risku sadaļā).
-- Ja pasūtījuma kontekstā jau ir eksperta komentāri (avoti, nobraukums, negadījumi), saglabā to pašu stilu un vārdu krājumu („automašīna”, ne „automobīlis”).
-- Beigās — skaidrs, tiešs, bet **kalibrēts** rezumējums (visticamāk / pēc datiem / ar atrunu par klātieni) ar vienu no rekomendācijām: pirkt / pārbaudīt klātienē / meklēt citu variantu — **nekad** „garantēti drošs pirkums bez apskates”.
-- Pēdējā rindā atsevišķā rindkopā (bez **bold**) raksti tieši: APPROVED BY IRISS
+FORMĀTS (obligāti):
+- Tikai rindkopas ar tukšu rindu starp tām; NEKAD "- ", "•", "1." rindas sākumā.
+- Katra rindkopa sākas ar **bold** tematisko ievadu (piem. **Kopējā aina.**, **Galvenais risks.**, **Rekomendācija.**).
+- **Bold** arī kritiskiem skaitļiem, ja tie maina verdiktu — bet bez faktu kataloga.
+- NESĀC ar „Sveiki”, „Labdien”, „Esmu izskatījis…”.
+- Ja auto ir **BEV/PHEV** — 1 īsa rindkopa par akumulatoru/uzlādi/garantiju (detalizācija — risku sadaļā).
+- Beigās — skaidra, kalibrēta rekomendācija; **nekad** „garantēti drošs bez apskates”.
+- Pēdējā rindā atsevišķā rindkopā (bez **bold**): APPROVED BY IRISS
 
-Atbildi tikai ar gala ziņojuma tekstu — bez meta-komentāriem par AI.`;
+Atbildi tikai ar gala tekstu — bez meta-komentāriem par AI.`;
 
 /** @deprecated Izmanto GEMINI_SUMMARY_ANALYSIS_SYSTEM */
 export const GEMINI_CLIENT_SUMMARY_SYSTEM = GEMINI_SUMMARY_ANALYSIS_SYSTEM;
