@@ -72,7 +72,7 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   dealerBrandsTrigger: "Atbalstītie ražotāji",
   dealerBrandsAria: "Atbalstītie ražotāji",
   dealerBrandsYearNote:
-    "Oficiālie dīlera dati parasti pieejami automašīnām, kas ražotas aptuveni 2009.–2017. gadā (precīzs periods atkarīgs no ražotāja). Piemēram, Mercedes-Benz — bieži no 2010+.",
+    "Oficiālie dīlera dati parasti pieejami automašīnām, kas ražotas no 2009.–2026. gadam.",
   dealerBrandsRefundNote: "Ja šim VIN / gadam ierakstu nav — 100% naudas atmaksa.",
   dealerBrandsClose: "Aizvērt",
 };
@@ -98,7 +98,7 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   dealerBrandsTrigger: "Supported manufacturers",
   dealerBrandsAria: "Supported manufacturers",
   dealerBrandsYearNote:
-    "Official dealer data is usually available for cars built around 2009–2017 (exact range depends on the manufacturer). For example, Mercedes-Benz — often from 2010+.",
+    "Official dealer data is usually available for cars built from 2009–2026.",
   dealerBrandsRefundNote: "If no records exist for this VIN / year — 100% refund.",
   dealerBrandsClose: "Close",
 };
