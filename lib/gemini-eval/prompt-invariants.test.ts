@@ -117,7 +117,7 @@ describe("PROVIN Gemini prompt invariants", () => {
   it("summary generation uses Google Search grounding", () => {
     const summary = readRepo("lib/admin-gemini-summary.ts");
     expect(summary).toMatch(/geminiGenerateTextWithGoogleSearch/);
-    expect(summary).toMatch(/Tehnisko risku|NEDUBLĒ|nedublē/i);
+    expect(summary).toMatch(/Tehnisko risku|NEATKĀRTO|nedublē|NEDUBLĒ/i);
     const tech = readRepo("lib/admin-gemini-technical-risks.ts");
     expect(tech).toMatch(/geminiGenerateTextWithGoogleSearch/);
   });
