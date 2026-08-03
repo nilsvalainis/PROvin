@@ -80,18 +80,14 @@ const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
   { name: "Odometra rādījumi", included: true },
   { name: "Servisa vēsture", included: true },
   { name: "Apkopju intervāli", included: true },
-  { name: "Veiktie remontdarbi u.c.", included: true },
-  { name: "Izsoļu portālu arhīva dati*", included: true },
-  { name: "Individuāla konsultācija", included: true },
+  { name: "Kopsavilkums", included: true },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
   { name: "Odometer readings", included: true },
   { name: "Service history", included: true },
   { name: "Service intervals", included: true },
-  { name: "Repairs performed, etc.", included: true },
-  { name: "Auction portal archive data*", included: true },
-  { name: "Personal consultation", included: true },
+  { name: "Summary", included: true },
 ];
 
 const DEALER_BRANDS_HEADING_LV = "Atbalstītie ražotāji";

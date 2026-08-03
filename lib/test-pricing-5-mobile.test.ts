@@ -47,19 +47,17 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(audits.features.every((f) => f.included)).toBe(true);
   });
 
-  it("maps dealer to six rows plus refund explanation note", () => {
+  it("maps dealer to four rows plus refund explanation note", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.description).toContain("izsoļu portālu arhīvā");
-    expect(dealer.features).toHaveLength(6);
+    expect(dealer.features).toHaveLength(4);
     expect(dealer.features.every((f) => f.included)).toBe(true);
     expect(dealer.features.map((f) => f.name)).toEqual([
       "Odometra rādījumi",
       "Servisa vēsture",
       "Apkopju intervāli",
-      "Veiktie remontdarbi u.c.",
-      "Izsoļu portālu arhīva dati*",
-      "Individuāla konsultācija",
+      "Kopsavilkums",
     ]);
     expect(dealer.extraNote).toBe("Ja dati nav pieejami — 100% naudas atmaksa.");
     expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
