@@ -36,7 +36,7 @@ ${orderContext}
 ${noIncidentHint}
 
 Sagatavo kopsavilkumu laukam „${ADMIN_INCIDENTS_SUMMARY_LABEL}”.
-${hasIncidents ? "Analizē VISUS negadījumu ierakstus visos avotos, salīdzini ar nobraukumu un īpašniecības laiku." : "Šis ir „nav konstatēts” scenārijs — skaidri un pārliecinoši, bez dramatizēšanas."}`,
+${hasIncidents ? "Analizē VISUS negadījumu ierakstus visos avotos, salīdzini ar nobraukumu un īpašniecības laiku. NEATKĀRTO jau uzrakstītos avotu komentārus gandrīz tādā pašā garumā — sintezē un izcel pretrunas/unikālo." : "Šis ir „nav konstatēts” scenārijs — skaidri un pārliecinoši, bez dramatizēšanas."}`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:

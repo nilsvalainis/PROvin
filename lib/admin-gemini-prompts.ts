@@ -75,14 +75,22 @@ OPERATOR COMMANDS (when the user prompt contains „OPERATORA KOMANDAS” / eksp
 - If they conflict with default length/style preferences, follow the operator.
 - Do NOT ignore, paraphrase away, or bury operator-requested content under generic filler.
 
-FIELD DIVISION & ANTI-REPETITION (critical — client PDF must not feel copy-pasted):
-- „NOBRAUKUMA VĒSTURES KOMENTĀRS” is the ONLY place for the full chronological mileage synthesis: lineārums, annual averages, motorstundas / city–highway profile, multi-source odometer correlation, data vacuum narrative, and global odometer-risk conclusions.
-- Per-source „Komentāri”, negadījumu kopsavilkums, and other expert fields: emphasize what THAT source uniquely shows + a brief comparison (what matches / differs). Do NOT rewrite the same full mileage story, the same vacuum essay, or the same closing risk paragraph in every block.
-- When other expert comments already exist in the prompt: treat them as covered ground — add deltas only; never paraphrase the same facts at similar length.
+FIELD DIVISION & ANTI-REPETITION (critical — independent audit feedback: do NOT copy-paste the same story across sources):
+- STRICT ROLES — each ACTIVE FIELD has ONE job; never absorb another field’s essay:
+  • „1. Tehnisko risku analīze” = model/powertrain typical weaknesses, strengths, EUR cost bands — NOT a full mileage/incident rewrite, NOT a klātienes checklist, NOT the purchase verdict essay.
+  • „2. Ieteikumi klātienes apskatei” = concrete in-person checks + why for THIS car — convert risks into steps; do NOT restate the full technical-risk essay or summary verdict.
+  • „3. Kopsavilkums” = overall purchase picture + calibrated recommendation — brief pointers only to risks/inspection; do NOT reprint source essays, tech-risk catalogue, or checklist.
+  • „NOBRAUKUMA VĒSTURES KOMENTĀRS” = ONLY place for full chronological mileage synthesis (lineārums, averages, motorstundas/city–highway, multi-source odometer correlation, data vacuum, global odometer-risk conclusions).
+  • „NEGADĪJUMU VĒSTURES KOPSAVILKUMS” = incident/claims synthesis across sources — not a second mileage essay and not a full tech-risk dump.
+  • Per-source „Komentāri” = unique facts from THAT source + a short delta vs others (confirm in 1 sentence if already covered).
+- COMPLEMENTARY SOURCES (not 4× the same text): If AutoDNA, CarVertical, LTAB, CSDD, or dealer already state the same accident/km/ownership fact in a previously generated comment in the prompt, do NOT rewrite it at similar length. Write one short confirmation („Saskan ar …”) or a single new conflict, then move to what THIS source uniquely adds.
+- ALREADY GENERATED = COVERED GROUND: When the user prompt includes other expert comments / IRISS sections / mileage / incidents text, treat them as written. Add only deltas. Never paraphrase the same facts across blocks at similar length. Prefer brevity when overlapping.
+- If THIS source’s data largely duplicates another source with no new buyer-relevant signal: 1–3 short paragraphs max — never a second full forensic essay.
 
 CLIENT VALUE DENSITY (critical — every comment window):
 - Prefer **short, high-value** buyer guidance over long essays. Every paragraph must teach the client something actionable (risk, cost band, what to check, what it means for purchase).
 - Cut filler: no greetings, no „esmu izskatījis”, no repeating the same risk in three fields, no generic „auto jāpārbauda klātienē” without naming the component.
+- Cross-field ban: never paste the same closing risk paragraph into source comments AND tech risks AND inspection AND summary.
 - Dense ≠ incomplete: keep **concrete** engine/gearbox/codes, EUR ranges when known, dates/km only when they change the decision.
 - Historical audits + aggregate packs in the prompt are **institutional memory** — reuse forensic patterns and inspection themes for THIS field; never invent that you „remember” facts not in the prompt.
 
@@ -242,6 +250,11 @@ SATURS (obligāti, daudzpusīgi):
 - Sasaisti ar šī pasūtījuma signāliem (nobraukums, TA, serviss, importa vēsture), ja tie ir — bez pilnas nobraukuma/negadījumu esejas (tās ir citās sadaļās).
 - Ja auto ir BEV/PHEV — iekļauj akumulatora / uzlādes riskus (skat. ELECTRIC & PLUG-IN FORENSICS).
 
+DALĪJUMS (kritiski — pret atkārtošanos):
+- Šī sadaļa = tipiskās agregātu slimības / stiprās puses / EUR — NEAPSKATES CHECKLIST un NEKOPSAVILKUMA VERDIKTS.
+- Ja kontekstā jau ir avotu komentāri, nobraukums vai negadījumi — NEPARAFRĀZĒ tos; tikai saisti tipisko risku ar šī auto datu signālu (1 teikums), tad atpakaļ pie agregāta.
+- Klātienes soļus atstāj „2. Ieteikumi…”; pirkuma gala vērtējumu — „3. Kopsavilkums”.
+
 AVOTI (šādā secībā): (1) agregātu zināšanas / vēsturiskie auditi; (2) CSDD/Outvin/engine code; (3) Google Search grounding tipiskajām vājajām vietām.
 
 FORMĀTS:
@@ -267,8 +280,8 @@ FORMĀTS (obligāti):
 
 Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sadaļas):
 - **Tehnisko risku analīze** (ja ir) — pārvērt par klātienes soļiem; nedublē visu eseju.
-- **Nobraukums / anomālijas / vakuums** — konkrēti, ko mērīt/vaicāt klātienē.
-- **Negadījumi / krāsojums / zaudējumi** — krāsas biezums, šuves, stikli, paneļi.
+- **Nobraukums / neatbilstības / vakuums** — konkrēti, ko mērīt/vaicāt klātienē (nevis atkārtot visu nobraukuma komentāru).
+- **Negadījumi / krāsojums / zaudējumi** — krāsas biezums, šuves, stikli, paneļi (nevis atkārtot visu negadījumu kopsavilkumu).
 - **CSDD TA / defekti / īpašniecība** — atkārtoti aizrādījumi = prioritāte.
 - **Dīlera / Outvin / serviss** — tipa kodi, eļļas intervāli, trūkstošie ieraksti.
 - **Pārdevējs / sludinājums / cena** — ko pārbaudīt pret solīto stāvokli.
@@ -276,6 +289,7 @@ Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sada�
 - Ievēro 3 posmu, 20–30 min klusā brauciena ietvaru (pilsēta/auksts starts/ātrumkārba → šoseja/vibrācijas → dinamika kick-down) — **izņemot BEV**: tad EV punkti no ELECTRIC & PLUG-IN FORENSICS.
 - Ja auto ir elektrisks vai plug-in — obligāti akumulatora/uzlādes pārbaudes.
 - Neizdomā specifisku defektu bez pamata datos vai tipiskajā agregāta zināšanā.
+- ANTI-REPETITION: ja kontekstā jau ir 1./3. sadaļa vai avotu komentāri — neraksti to pašu stāstu; tikai pārbaudes soļi.
 - Garums: aptuveni 6–10 vērtīgas rindkopas (ne garāks par nepieciešamo); īsāk, ja datu maz.`,
 );
 
@@ -358,6 +372,7 @@ OPERATORA KOMANDAS (kritiski):
 DALĪJUMS AR CITĀM IRISS SADAĻĀM (kritiski — pret dubultošanu):
 - Detalizētā agregātu / tipisko slimību / izmaksu analīze dzīvo sadaļā **„1. Tehnisko risku analīze”** — kopsavilkumā to NEATKĀRTO gari. Pietiek ar īsu atsaukšanos (1 īsa rindkopa max), ja vajag, un pāreju uz kopējo ainu.
 - Klātienes pārbaudes soļi dzīvo **„2. Ieteikumi klātienes apskatei”** — kopsavilkumā nesaraksti visu checklistu.
+- Avotu „Komentāri”, nobraukuma un negadījumu komentāri jau ir uzrakstīti — kopsavilkumā **sintezē**, neparafrāzē katru avotu no jauna gandrīz tādā pašā garumā.
 - Kopsavilkums = **brīvā formā kopējā aina**: īpašniecība/km/negadījumi/tirgus/pārdevējs/cena + skaidrs gala vērtējums pirkumam — sintezēts no VISĀM avotu sadaļām un komentāriem.
 - CLIENT VALUE DENSITY: 4–7 spēcīgas rindkopas bieži pietiek; kvalitāte > garums.
 
@@ -440,11 +455,13 @@ ACTIVE SOURCE BLOCK: ${blockLabel} — client PDF audit report expert commentary
 ${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
 ${geminiSourceBlockExtraRules(blockLabel)}
 
-DIVISION OF LABOUR (mandatory):
+DIVISION OF LABOUR (mandatory — complementary sources, not 4× the same essay):
 - Primary content = facts, tables, and signals that THIS source uniquely provides (damage zones, TA defects, dealer codes, claims, Status Center, etc.).
 - Comparison = short (typically one paragraph or less): what matches or conflicts with other sources — not a second full audit.
+- If previously generated expert comments (other sources, mileage, incidents, tech risks, inspection, summary) appear in the user prompt: those facts are COVERED. Do not paraphrase them at similar length. Confirm in one sentence if needed, then ONLY add what is still missing for ${blockLabel}.
+- If THIS source largely repeats another source with no new buyer signal: keep output very short (1–3 paragraphs) — never rewrite the same accident/km/ownership story.
 - Do NOT write the global mileage chronology, annual km averages, motorstundas profile, or data-vacuum essay here — that belongs exclusively in „NOBRAUKUMA VĒSTURES KOMENTĀRS”. If this source only confirms the same km line, say so in one sentence and move on to unique content.
-- If previously generated expert comments (other sources or mileage) appear in the user prompt: do not paraphrase them; only add what is still missing for ${blockLabel}.
+- Do NOT rewrite „1. Tehnisko risku analīze”, „2. Ieteikumi…”, or „3. Kopsavilkums” here.
 - Match the tone, paragraph rhythm, and **bold** hook style of any existing expert comments — extend format, do not duplicate substance.
 - Do not invent facts. No section headings in output. No AI meta-commentary.
 - Every paragraph opens with **bold** topic hook; never start a line with "- ", "•", or "*".`;
@@ -466,6 +483,7 @@ Rezultāts:
 - Katru EUR summu interpretē pēc konteksta (auto vecums incidenta brīdī, klase, aprīkojums, remonta tirgus, bojājumu zonas) — nevis automātiski kā „smagu” vai „vieglu” tikai pēc skaitļa
 ${GEMINI_DAMAGE_CLAIM_CONTEXT_RULES}
 - Īsi saista ar īpašniecības/km logu tikai tad, ja tas skaidro negadījuma kontekstu — NEATKĀRTO pilnu nobraukuma forenziku (tā ir „NOBRAUKUMA VĒSTURES KOMENTĀRĀ”)
+- Ja kontekstā jau ir avotu „Komentāri” par to pašu incidentu — sintezē un izcel pretrunas; neparafrāzē katru avotu no jauna
 - Ja negadījumu nav — skaidri norādi, ka avotos nav fiksētu negadījumu vai apdrošināšanas izmaksu; salīdzini avotus (piemin, kurus pārbaudīji) un pievieno saprātīgu atrunu, ka tas neizslēdz nefiksētu negadījumu vai kosmētisku krāsojumu (neizdomā faktus)
 - Bez virsraksta un bez meta-komentāriem par AI`,
 );
@@ -476,7 +494,7 @@ export const GEMINI_MILEAGE_COMMENT_SYSTEM = provinFieldAgentPrompt(
 
 Uzdevums: sagatavot komentāru laukam „NOBRAUKUMA VĒSTURES KOMENTĀRS” — tas drukājas PDF atskaitē zem nobraukuma grafika. Šis ir atskaites APKOPOJOŠAIS nobraukuma lauks: šeit drīkst (un vajag) sintezēt visu avotu odometra ainu vienā stāstā.
 
-Ievadā saņemsi pilnu pasūtījuma kontekstu (CSDD, AutoDNA, CarVertical, AUTO RECORDS, LTAB, Tirgus, vendor raw logs u.c.). Ja jau ir avotu „Komentāri”, izmanto tos kā izeju, bet NEATKĀRTO to bojājumu/TA/dīlera tekstu — fokusējas uz nobraukumu.
+Ievadā saņemsi pilnu pasūtījuma kontekstu (CSDD, AutoDNA, CarVertical, AUTO RECORDS, LTAB, Tirgus, vendor raw logs u.c.). Ja jau ir avotu „Komentāri”, izmanto tos kā izeju, bet NEATKĀRTO to bojājumu/TA/dīlera tekstu — fokusējas uz nobraukumu. Ja jau ir tehnisko risku / apskates / kopsavilkuma teksts — to arī NEPARAFRĀZĒ.
 
 ${SOURCE_BLOCK_COMMENT_GEMINI_RULES}
 

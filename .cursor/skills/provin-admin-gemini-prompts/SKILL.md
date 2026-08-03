@@ -56,6 +56,7 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 - Duplicate full report structure in single-field outputs.
 - Invent facts not present in order context (`lib/admin-gemini-order-context.ts`).
 - Let per-source ✨ comments restate the full mileage synthesis — that belongs in `GEMINI_MILEAGE_COMMENT_SYSTEM` / „NOBRAUKUMA VĒSTURES KOMENTĀRS”.
+- Let tech risks, inspection recommendations, and summary absorb each other’s essays — keep strict field roles (complement, don’t 4×-repeat).
 
 ## Prompt version & evals
 

@@ -71,6 +71,7 @@ Sintezē VISU portfeļa kontekstu — avotu datus, tabulas, komentārus un ekspe
 
 KRITISKI:
 - Nedublē detalizēto „${ADMIN_TECHNICAL_RISKS_LABEL}” un apskates checklistu; īsi atsaucies, ja vajag.
+- Avotu komentārus, nobraukumu un negadījumus SINTEZĒ — neparafrāzē katru avotu no jauna gandrīz tādā pašā garumā.
 - NESĀC ar „Sveiki” vai sarunas uzrunu — šī ir atskaite.
 - Beigās: APPROVED BY IRISS.`,
     {

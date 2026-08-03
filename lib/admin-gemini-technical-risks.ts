@@ -45,7 +45,9 @@ KRITISKI:
 - Fokusējas uz šī auto agregātiem (dzinējs, ātrumkārba, piedziņa, EV baterija u.c.): tipiskās slimības, lietotāju sūdzības, aptuvenās remonta izmaksas EUR diapazonā, ja zināms no zināšanām/meklēšanas.
 - Izmanto PROVIN agregātu zināšanas un vēsturiskos auditus no konteksta; ja trūkst — Google Search tipiskajām vājajām vietām, tad pielāgo AKTĪVAJAM auto.
 - Norādi arī stiprās puses (uzticami motori/kārbas), bet uzsver: arī labākie agregāti var būt slikti uzturēti — īpaši Latvijā ekspluatētiem auto.
-- Neizdomā VIN/km/EUR no šī pasūtījuma; aptuvenās izmaksas — orientējošas, ar atrunu.`,
+- Neizdomā VIN/km/EUR no šī pasūtījuma; aptuvenās izmaksas — orientējošas, ar atrunu.
+- NEATKĀRTO jau uzrakstītos avotu/nobraukuma/negadījumu komentārus gandrīz tādā pašā garumā — tikai saisti tipisko agregāta risku ar šī auto datiem.
+- Nescrībi klātienes checklistu (2. sadaļa) un nenosaki gala pirkuma verdiktu (3. sadaļa).`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:

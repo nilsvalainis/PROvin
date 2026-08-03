@@ -58,7 +58,7 @@ export async function generateSourceCommentWithGemini(input: GeminiSourceComment
   );
 
   const chainingSection = previousComments.trim()
-    ? `=== Esošie eksperta komentāri citos avotos (NEATKĀRTO saturu — tikai īss salīdzinājums / delta) ===
+    ? `=== Esošie eksperta komentāri citos avotos (JAU UZRAKSTĪTI — NEATKĀRTO; tikai īss delta / papildinājums) ===
 ${previousComments}
 
 `
@@ -82,6 +82,8 @@ ${focusDataText}
 
 Sagatavo komentāru TIKAI šai avota sadaļai klienta atskaitei.
 Prioritāte: unikālie fakti no „${blockLabel}” + īss salīdzinājums ar citiem avotiem (kas sakrīt / kas atšķiras).
+Avotiem JĀPAPILDINA viens otru — NEKĀDĀ GADĪJUMĀ nepārraksti gandrīz to pašu eseju 4× (negadījums / km / īpašniecība), ja tas jau ir citā komentārā.
+Ja šis avots tikai apstiprina jau uzrakstīto: 1–3 īsas rindkopas max.
 ${mileageHint}Ja OPERATORA KOMANDĀS ir plašs teksts — pārkārto PROVIN stilā, bet NEAPGRAIZI detalizāciju (datumi, km, servisi, intervāli).
 Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.`,
     {

@@ -38,7 +38,8 @@ OBLIGĀTI sintezē no VISIEM pieejamajiem avotiem un konteksta blokiem augstāk:
 - nobraukums, negadījumi, TA, dīleris, pārdevējs, cena;
 - vēsturiskie līdzīgo auto auditi un agregātu mācījumi (ja ir).
 
-Katrs punkts — konkrēta pārbaude + kāpēc šim auto. Īsi, vērtīgi, bez ūdens.`,
+Katrs punkts — konkrēta pārbaude + kāpēc šim auto. Īsi, vērtīgi, bez ūdens.
+NEATKĀRTO jau uzrakstīto tehnisko risku eseju, avotu komentārus, nobraukuma/negadījumu tekstu vai kopsavilkuma verdiktu — tikai pārvērt signālus par klātienes soļiem.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:

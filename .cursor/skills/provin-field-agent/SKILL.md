@@ -52,5 +52,6 @@ LATVIAN GRAMMAR RULES (CRITICAL):
 
 - One **ACTIVE FIELD** per generation — no full report skeleton in a single field.
 - Never invent facts absent from order context (`lib/admin-gemini-order-context.ts`).
-- **Anti-repetition:** full mileage synthesis (lineārums, averages, motorstundas, data vacuum) only in **NOBRAUKUMA VĒSTURES KOMENTĀRS**. Per-source comments = that source’s unique facts + short cross-check — do not restate the same essay in every block.
-- **2. Kopsavilkums:** also apply `GEMINI_CLIENT_EMAIL_FORMAT_RULES` (plain text, no Markdown in client email).
+- **Anti-repetition / complementary sources:** each field has a strict job (tech risks ≠ inspection ≠ summary ≠ mileage ≠ incidents ≠ per-source comments). When generating any comment, treat already-generated expert comments in the prompt as covered ground — add deltas only; never paraphrase the same accident/km/ownership story at similar length across AutoDNA/CarVertical/LTAB/CSDD. Sources must **complement** each other (short confirm + unique facts), not repeat 4×.
+- Full mileage synthesis (lineārums, averages, motorstundas, data vacuum) only in **NOBRAUKUMA VĒSTURES KOMENTĀRS**.
+- **3. Kopsavilkums:** also apply `GEMINI_CLIENT_EMAIL_FORMAT_RULES` (plain text, no Markdown in client email).

@@ -44,9 +44,11 @@ describe("PROVIN Gemini prompt invariants", () => {
     );
   });
 
-  it("field-agent prompts file encodes field division and claim context", () => {
+  it("field-agent prompts encode field division and claim context", () => {
     const prompts = readRepo("lib/admin-gemini-prompts.ts");
     expect(prompts).toContain("FIELD DIVISION & ANTI-REPETITION");
+    expect(prompts).toContain("COMPLEMENTARY SOURCES");
+    expect(prompts).toContain("STRICT ROLES");
     expect(prompts).toContain("GEMINI_DAMAGE_CLAIM_CONTEXT_RULES");
     expect(prompts).toContain("GEMINI_EV_BEV_FORENSICS_RULES");
     expect(prompts).toContain("GEMINI_AGGREGATE_KNOWLEDGE_RULES");
