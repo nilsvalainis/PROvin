@@ -23,6 +23,11 @@ import {
 import type { AutoRecordsPdfParseResult } from "@/lib/auto-records-pdf-parse";
 import { mergeAutoRecordsServiceHistory } from "@/lib/auto-records-pdf-parse";
 import {
+  ADMIN_MILEAGE_PASTE_RAW_MAX_LEN,
+  ADMIN_PDF_IMPORT_RAW_MAX_LEN,
+  ADMIN_RAW_UNPROCESSED_MAX_LEN,
+} from "@/lib/admin-raw-field-limits";
+import {
   citiAvotiSectionHasContent,
   emptyCitiAvotiSection,
   mergeSourceBlocksWithDefaults,
@@ -90,7 +95,7 @@ function applyVendorImport(
   });
   return {
     ...existing,
-    ...(raw ? { mileagePasteRaw: raw.slice(0, 24_000) } : {}),
+    ...(raw ? { mileagePasteRaw: raw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN) } : {}),
     ...(nextService.length > 0 ? { serviceHistory: nextService } : {}),
     ...(nextIncidents.length > 0 ? { incidents: nextIncidents } : {}),
     ...(result.vehicleHistoryTimeline?.length ? { vehicleHistoryTimeline: result.vehicleHistoryTimeline } : {}),
@@ -106,7 +111,7 @@ function applyLtabImport(existing: LtabBlockState, result: HistoryVendorPdfParse
       result.incidents.length > 0
         ? mergeLtabIncidentRows(existing.rows, result.incidents)
         : existing.rows,
-    ...(result.rawText.trim() ? { pdfImportRaw: result.rawText.trim().slice(0, 120_000) } : {}),
+    ...(result.rawText.trim() ? { pdfImportRaw: result.rawText.trim().slice(0, ADMIN_PDF_IMPORT_RAW_MAX_LEN) } : {}),
   };
 }
 
@@ -117,7 +122,7 @@ function applyAutoRecordsImport(
   return {
     ...existing,
     ...(result.rawUnprocessedData.trim()
-      ? { rawUnprocessedData: result.rawUnprocessedData.trim().slice(0, 500_000) }
+      ? { rawUnprocessedData: result.rawUnprocessedData.trim().slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN) }
       : {}),
     ...(result.serviceHistory.length > 0
       ? { serviceHistory: mergeAutoRecordsServiceHistory(existing.serviceHistory, result.serviceHistory) }
@@ -135,7 +140,7 @@ function applyCsddImport(existing: CsddFormFields, result: CsddPdfParseResult): 
   return {
     ...existing,
     ...imported,
-    ...(raw ? { rawUnprocessedData: raw.slice(0, 500_000) } : {}),
+    ...(raw ? { rawUnprocessedData: raw.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN) } : {}),
     comments: existing.comments || imported.comments,
     geminiContextRaw: existing.geminiContextRaw || imported.geminiContextRaw,
   };
@@ -158,7 +163,7 @@ function applyCitiAvotiImport(
     ...merged,
     label: label.trim() || existing.label || "",
     rawUnprocessedData:
-      result.rawText.trim().slice(0, 120_000) || existing.rawUnprocessedData || "",
+      result.rawText.trim().slice(0, ADMIN_PDF_IMPORT_RAW_MAX_LEN) || existing.rawUnprocessedData || "",
   };
   return { sections };
 }

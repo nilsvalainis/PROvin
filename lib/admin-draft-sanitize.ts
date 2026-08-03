@@ -4,8 +4,9 @@
  */
 
 import { normalizeUnknownDayDatesInText } from "@/lib/clean-date-str";
+import { ADMIN_DRAFT_STRING_MAX_LEN } from "@/lib/admin-raw-field-limits";
 
-const MAX_DRAFT_STRING = 120_000;
+const MAX_DRAFT_STRING = ADMIN_DRAFT_STRING_MAX_LEN;
 const MAX_DRAFT_DATA_URL_STRING = 15_000_000;
 
 /** Noņem BOM, NUL un vadības simbolus (izņemot \t \n \r); `00.MM.YYYY` → `01.MM.YYYY`. */

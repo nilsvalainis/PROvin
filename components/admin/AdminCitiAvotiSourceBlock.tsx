@@ -10,6 +10,10 @@ import {
   type CitiAvotiSectionState,
   type VendorAvotuBlockState,
 } from "@/lib/admin-source-blocks";
+import {
+  ADMIN_MILEAGE_PASTE_RAW_MAX_LEN,
+  ADMIN_RAW_UNPROCESSED_MAX_LEN,
+} from "@/lib/admin-raw-field-limits";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
@@ -83,8 +87,8 @@ export function AdminCitiAvotiSourceBlock({
     const parsed = parseMileageHistoryOdometerPaste(trimmed);
     if (parsed.length === 0) return;
     updateSection(index, {
-      rawUnprocessedData: trimmed.slice(0, 500_000),
-      mileagePasteRaw: trimmed.slice(0, 24_000),
+      rawUnprocessedData: trimmed.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+      mileagePasteRaw: trimmed.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
       serviceHistory: parsed,
     });
   };
@@ -167,7 +171,7 @@ export function AdminCitiAvotiSourceBlock({
                       placeholder="Iekopē avota RAW (piem. Mileage history + km + YYYY-MM-DD)…"
                       value={section.rawUnprocessedData ?? ""}
                       onChange={(e) =>
-                        updateSection(index, { rawUnprocessedData: e.target.value.slice(0, 500_000) })
+                        updateSection(index, { rawUnprocessedData: e.target.value.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN) })
                       }
                       onBlur={(e) => applyCitiAvotiRawPaste(index, e.currentTarget.value)}
                       aria-label={`Citi avoti RAW žurnāls ${index + 1}`}

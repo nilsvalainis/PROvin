@@ -23,6 +23,7 @@ import {
 import { mergeOutvinServiceRows } from "@/lib/outvin-history-map";
 import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import { parseOutvinVehicleInfoFromAutoRecordsText } from "@/lib/auto-records-vehicle-info-parse";
+import { ADMIN_PDF_IMPORT_RAW_MAX_LEN } from "@/lib/admin-raw-field-limits";
 
 export type AutoRecordsPdfParseResult = {
   serviceHistory: AutoRecordsServiceRow[];
@@ -43,7 +44,7 @@ export type AutoRecordsPdfParseResult = {
   };
 };
 
-const MAX_RAW_SNIPPET = 120_000;
+const MAX_RAW_SNIPPET = ADMIN_PDF_IMPORT_RAW_MAX_LEN;
 
 const KM_AFTER_DATE =
   /(\d{4}-\d{2}-\d{2})[^\d]{0,120}?(\d{1,3}(?:,\d{3})+)\s*km(?:\s*ServiceVisit)?/gi;

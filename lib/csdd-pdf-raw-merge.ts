@@ -1,4 +1,5 @@
 import { normalizeCsddRawText } from "@/lib/csdd-extended-parse";
+import { ADMIN_RAW_UNPROCESSED_MAX_LEN } from "@/lib/admin-raw-field-limits";
 
 const CSDD_SECTION_MARKERS = [
   "Iepriekšējās reģistrācijas valsts",
@@ -28,6 +29,6 @@ export function mergeCsddPdfRawSources(textHint: string, geminiRaw: string): str
       missingChunks.push(gemini.slice(idx, idx + 12_000));
     }
   }
-  if (missingChunks.length === 0) return pdf.slice(0, 500_000);
-  return `${pdf}\n\n${missingChunks.join("\n\n")}`.slice(0, 500_000);
+  if (missingChunks.length === 0) return pdf.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN);
+  return `${pdf}\n\n${missingChunks.join("\n\n")}`.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN);
 }

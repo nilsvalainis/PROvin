@@ -19,10 +19,11 @@ import { mergeAutoRecordsServiceHistory } from "@/lib/auto-records-pdf-parse";
 import { normalizeLtabIncidentRow } from "@/lib/loss-amount-format";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
+import { ADMIN_PDF_IMPORT_RAW_MAX_LEN } from "@/lib/admin-raw-field-limits";
 
 export type HistoryVendorPdfTarget = "autodna" | "carvertical" | "ltab";
 
-const MAX_RAW = 120_000;
+const MAX_RAW = ADMIN_PDF_IMPORT_RAW_MAX_LEN;
 
 export type HistoryVendorPdfParseResult = {
   rawText: string;

@@ -26,8 +26,9 @@ import {
   mileageTimelineFacts,
 } from "@/lib/source-summary-comment-format";
 import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/history-vendor-pdf-import";
+import { ADMIN_PDF_IMPORT_RAW_MAX_LEN } from "@/lib/admin-raw-field-limits";
 
-const MAX_RAW = 120_000;
+const MAX_RAW = ADMIN_PDF_IMPORT_RAW_MAX_LEN;
 
 export type VendorStructureMatch = {
   matched: boolean;

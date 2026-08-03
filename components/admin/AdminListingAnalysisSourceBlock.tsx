@@ -22,6 +22,7 @@ import {
   LISTING_ANALYSIS_SUBSECTIONS,
   type ListingAnalysisBlockState,
 } from "@/lib/admin-source-blocks";
+import { ADMIN_LISTING_PASTE_RAW_MAX_LEN } from "@/lib/admin-raw-field-limits";
 import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
 import { geminiExpertSourceCommentToRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
@@ -356,7 +357,9 @@ export function AdminListingAnalysisSourceBlock({
             <AdminAiPolishTextareaShell
               value={v.listingPasteRaw}
               disabled={disabled}
-              onPolished={(next) => onChange({ ...v, listingPasteRaw: next })}
+              onPolished={(next) =>
+                onChange({ ...v, listingPasteRaw: next.slice(0, ADMIN_LISTING_PASTE_RAW_MAX_LEN) })
+              }
             >
               <textarea
                 ref={refPaste}
@@ -364,7 +367,13 @@ export function AdminListingAnalysisSourceBlock({
                 disabled={disabled}
                 rows={dense ? 2 : 4}
                 value={v.listingPasteRaw}
-                onChange={(e) => onChange({ ...v, listingPasteRaw: e.target.value })}
+                maxLength={ADMIN_LISTING_PASTE_RAW_MAX_LEN}
+                onChange={(e) =>
+                  onChange({
+                    ...v,
+                    listingPasteRaw: e.target.value.slice(0, ADMIN_LISTING_PASTE_RAW_MAX_LEN),
+                  })
+                }
                 placeholder=""
                 aria-label={`${LISTING_ANALYSIS_LISTING_PASTE_LABEL} — ievade analīzei (nav PDF)`}
               />

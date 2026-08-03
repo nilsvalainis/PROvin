@@ -3,6 +3,8 @@
  * PDF teksts bieži ir „blīvs” — meklējam datumu un EUR apjomu arī logu fragmentos starp rindām.
  */
 
+import { ADMIN_RAW_UNPROCESSED_MAX_LEN } from "@/lib/admin-raw-field-limits";
+
 export type ClaimTableRow = {
   date: string;
   desc: string;
@@ -96,7 +98,7 @@ export function parseClaimRowsFromLineBasedText(blob: string, sourceNote?: strin
  */
 export function parseClaimRowsFromDenseText(text: string, sourceNote: string): ClaimTableRow[] {
   const rows: ClaimTableRow[] = [];
-  const t = text.replace(/\u00a0/g, " ").slice(0, 500_000);
+  const t = text.replace(/\u00a0/g, " ").slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN);
   const seen = new Set<string>();
 
   const reDateAmount =

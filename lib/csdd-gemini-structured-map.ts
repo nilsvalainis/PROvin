@@ -18,6 +18,7 @@ import {
   type CsddPreviousInspectionBlock,
   type CsddTechnicalInspectionRow,
 } from "@/lib/csdd-extended-parse";
+import { ADMIN_RAW_UNPROCESSED_MAX_LEN } from "@/lib/admin-raw-field-limits";
 
 import { SchemaType, type Schema } from "@google/generative-ai";
 
@@ -406,7 +407,7 @@ export function csddFieldsFromStructuredGeminiPayload(
 
   return {
     ...emptyCsddFields(),
-    rawUnprocessedData: combinedRaw.slice(0, 500_000),
+    rawUnprocessedData: combinedRaw.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
     makeModel: asString(pam.markaModelis, 120),
     registrationNumber: sanitizeCsddRegistrationNumber(asString(pam.registracijasNumurs, 32)),
     firstRegistration: firstRegIso,
@@ -513,13 +514,13 @@ export function finalizeCsddGeminiPdfResult(
   textHint: string,
 ): CsddPdfParseResult {
   const hint = textHint.trim();
-  const raw = hint.length > 0 ? hint.slice(0, 500_000) : gemini.rawUnprocessedData;
+  const raw = hint.length > 0 ? hint.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN) : gemini.rawUnprocessedData;
   return {
     ...gemini,
     rawUnprocessedData: raw,
     fields: {
       ...gemini.fields,
-      rawUnprocessedData: raw.slice(0, 500_000),
+      rawUnprocessedData: raw.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
     },
     warnings: gemini.warnings.filter((w) => !/lokāl|teksta slāni|apvienot/i.test(w)),
     meta: {

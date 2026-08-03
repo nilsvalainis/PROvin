@@ -1,7 +1,9 @@
 /** Admin-only papildu konteksts Gemini promptiem — nekad klienta PDF. */
 
+import { ADMIN_MILEAGE_PASTE_RAW_MAX_LEN } from "@/lib/admin-raw-field-limits";
+
 export const GEMINI_CONTEXT_RAW_SECTION_TITLE = "Papildu AI konteksts (nav PDF)";
-export const GEMINI_CONTEXT_RAW_MAX_LEN = 24_000;
+export const GEMINI_CONTEXT_RAW_MAX_LEN = ADMIN_MILEAGE_PASTE_RAW_MAX_LEN;
 export const GEMINI_CONTEXT_RAW_FIELD_LABEL = "Papildu AI konteksts (nav PDF)";
 
 export function clipGeminiContextRaw(value: unknown): string {

@@ -37,6 +37,10 @@ import {
   SOURCE_PDF_COMMENT_GEMINI_RULES,
 } from "@/lib/source-summary-comment-format";
 import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
+import {
+  ADMIN_MILEAGE_PASTE_RAW_MAX_LEN,
+  ADMIN_PDF_IMPORT_RAW_MAX_LEN,
+} from "@/lib/admin-raw-field-limits";
 
 export type SourcePdfExtractTarget = SourcePdfIngestTarget;
 
@@ -48,7 +52,7 @@ export type PdfClassifyResult = {
 };
 
 const LOG_PREFIX = "[source-pdf-gemini]";
-const MAX_RAW = 120_000;
+const MAX_RAW = ADMIN_PDF_IMPORT_RAW_MAX_LEN;
 
 function bufferToBase64(buffer: ArrayBuffer): string {
   return Buffer.from(buffer).toString("base64");
@@ -58,7 +62,7 @@ function asRecord(v: unknown): Record<string, unknown> | null {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
 }
 
-function asString(v: unknown, max = 120_000): string {
+function asString(v: unknown, max = ADMIN_PDF_IMPORT_RAW_MAX_LEN): string {
   if (typeof v !== "string") return "";
   return v.trim().slice(0, max);
 }
@@ -204,7 +208,7 @@ Return ONLY JSON: {"target":"autodna"|"carvertical"|"ltab"|"auto_records"|"csdd"
 const AUTO_RECORDS_SYSTEM = `You are PROVIN.LV admin PDF extractor for auto-records.com dealer reports.
 Return ONLY valid JSON:
 {
-  "rawUnprocessedData": "string — key sections: ODOMETER CHECK, service events (max 120000 chars)",
+  "rawUnprocessedData": "string — key sections: ODOMETER CHECK, service events (max 500000 chars)",
   "serviceHistory": [{"date":"DD.MM.YYYY","odometer":"digits","country":"string"}],
   "pdfChecklist": {"incidents": boolean, "mileageHistory": boolean, "mileageLine": boolean},
   "vehicleInfo": {
@@ -255,7 +259,7 @@ function vendorResultFromGemini(
       .filter((r): r is LtabIncidentRow => r !== null),
   );
   const { damageDetails, vehicleHistoryTimeline } = parseDamageAndTimeline(payload);
-  const mileagePasteRaw = asString(payload.mileagePasteRaw, 24_000);
+  const mileagePasteRaw = asString(payload.mileagePasteRaw, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN);
   const rawText = asString(payload.rawTextSnippet ?? payload.rawText, MAX_RAW);
   const comments = normalizeExpertSourcePdfComment(asString(payload.comments, 2400));
   const suggestedPdfChecklist = normalizeChecklist(payload.pdfChecklist);

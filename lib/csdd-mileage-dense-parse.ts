@@ -8,6 +8,7 @@ import {
   type CsddMileageRow,
 } from "@/lib/admin-source-blocks";
 import { normalizeCsddRawText } from "@/lib/csdd-extended-parse";
+import { ADMIN_MILEAGE_PASTE_RAW_MAX_LEN } from "@/lib/admin-raw-field-limits";
 
 const MILEAGE_PAIR_RE = /(\d{4,7})\s*[-–—]\s*(\d{2}\.\d{2}\.\d{4})/g;
 
@@ -22,7 +23,7 @@ export function extractCsddNobraukumaSection(raw: string): string {
   const start = head.index + head[0].length;
   const tail = text.slice(start);
   const end = tail.search(NOBRAUKUMA_END_RE);
-  return (end >= 0 ? tail.slice(0, end) : tail).slice(0, 24_000);
+  return (end >= 0 ? tail.slice(0, end) : tail).slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN);
 }
 
 /** Visi odometrs + datums pāri no sadaļas vai visa raw. */

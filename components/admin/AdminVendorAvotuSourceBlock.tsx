@@ -27,6 +27,9 @@ import {
   sourcePdfChecklistHasAny,
   coerceVendorAvotuBlock,
 } from "@/lib/admin-source-blocks";
+import {
+  ADMIN_MILEAGE_PASTE_RAW_MAX_LEN,
+} from "@/lib/admin-raw-field-limits";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
@@ -154,7 +157,7 @@ export function AdminVendorAvotuSourceBlock({
         : incidents.filter((r) => r.csngDate.trim() || r.lossAmount.trim() || r.incidentNo.trim());
     onChange({
       ...block,
-      mileagePasteRaw: raw.slice(0, 24_000),
+      mileagePasteRaw: raw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
       ...(parsed.serviceHistory.length > 0 ? { serviceHistory: parsed.serviceHistory } : {}),
       ...(parsed.incidents.length > 0 ? { incidents: nextIncidents } : {}),
       ...(parsed.timeline.length > 0 ? { vehicleHistoryTimeline: parsed.timeline } : {}),
@@ -167,7 +170,7 @@ export function AdminVendorAvotuSourceBlock({
     if (parsed.length === 0) return;
     onChange({
       ...block,
-      mileagePasteRaw: raw.slice(0, 24_000),
+      mileagePasteRaw: raw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
       serviceHistory: parsed,
     });
   };
@@ -184,7 +187,7 @@ export function AdminVendorAvotuSourceBlock({
     if (blockKey === "carvertical") {
       onChange({
         ...block,
-        ...(raw ? { mileagePasteRaw: raw.slice(0, 24_000) } : {}),
+        ...(raw ? { mileagePasteRaw: raw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN) } : {}),
         ...(nextService.length > 0 ? { serviceHistory: nextService } : {}),
         ...(nextIncidents.length > 0 ? { incidents: nextIncidents } : {}),
         ...(result.vehicleHistoryTimeline?.length
@@ -197,7 +200,7 @@ export function AdminVendorAvotuSourceBlock({
 
     onChange({
       ...block,
-      ...(raw ? { mileagePasteRaw: raw.slice(0, 24_000) } : {}),
+      ...(raw ? { mileagePasteRaw: raw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN) } : {}),
       ...(nextService.length > 0 ? { serviceHistory: nextService } : {}),
       ...(nextIncidents.length > 0 ? { incidents: nextIncidents } : {}),
     });
@@ -261,7 +264,7 @@ export function AdminVendorAvotuSourceBlock({
                   }
                   value={block.mileagePasteRaw ?? ""}
                   onChange={(e) =>
-                    onChange({ ...block, mileagePasteRaw: e.target.value.slice(0, 24_000) })
+                    onChange({ ...block, mileagePasteRaw: e.target.value.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN) })
                   }
                   onBlur={(e) =>
                     blockKey === "carvertical"

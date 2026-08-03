@@ -18,6 +18,12 @@ import {
 } from "@/lib/provin-alert-banners";
 import { appendGeminiContextRawSection, clipGeminiContextRaw } from "@/lib/admin-gemini-context-raw";
 import {
+  ADMIN_LISTING_PASTE_RAW_MAX_LEN,
+  ADMIN_MILEAGE_PASTE_RAW_MAX_LEN,
+  ADMIN_PDF_IMPORT_RAW_MAX_LEN,
+  ADMIN_RAW_UNPROCESSED_MAX_LEN,
+} from "@/lib/admin-raw-field-limits";
+import {
   countListingAnalysisPhotos,
   normalizeListingAnalysisPhotoGroups,
   normalizeListingAnalysisPhotos,
@@ -208,7 +214,7 @@ export type CsddMileageAbroadRow = {
  * PDF atspoguļo tikai strukturētos laukus (ne raw).
  */
 /** CSDD raw — max garums (kā citi_avoti). */
-export const CSDD_RAW_UNPROCESSED_MAX_LEN = 500_000;
+export const CSDD_RAW_UNPROCESSED_MAX_LEN = ADMIN_RAW_UNPROCESSED_MAX_LEN;
 
 export type CsddFormFields = {
   /** Tikai admin — ielīmētais teksts; netiek drukāts PDF. */
@@ -836,13 +842,14 @@ export function listingAnalysisToPlainText(b: ListingAnalysisBlockState): string
 }
 
 function parseListingAnalysisRaw(raw: Record<string, unknown>): ListingAnalysisBlockState {
-  const clip = (v: unknown) => String(v ?? "").slice(0, 50_000);
-  const sellerPortrait = clip(raw.sellerPortrait);
-  const photoAnalysis = clip(raw.photoAnalysis);
-  const extraSellerName = clip(raw.extraSellerName);
+  const clip = (v: unknown) => String(v ?? "").slice(0, ADMIN_LISTING_PASTE_RAW_MAX_LEN);
+  const clipComment = (v: unknown) => String(v ?? "").slice(0, 50_000);
+  const sellerPortrait = clipComment(raw.sellerPortrait);
+  const photoAnalysis = clipComment(raw.photoAnalysis);
+  const extraSellerName = clipComment(raw.extraSellerName);
   const listingPasteRaw = clip(raw.listingPasteRaw);
-  let listingSalesContext = clip(raw.listingSalesContext);
-  const legacyListingDescription = clip(raw.listingDescription);
+  let listingSalesContext = clipComment(raw.listingSalesContext);
+  const legacyListingDescription = clipComment(raw.listingDescription);
   if (!listingSalesContext && legacyListingDescription) {
     listingSalesContext = legacyListingDescription;
   }
@@ -857,7 +864,7 @@ function parseListingAnalysisRaw(raw: Record<string, unknown>): ListingAnalysisB
     extraSellerName,
     listingPasteRaw,
     listingSalesContext,
-    geminiContextRaw: clip(raw.geminiContextRaw),
+    geminiContextRaw: clipGeminiContextRaw(raw.geminiContextRaw),
   };
 }
 
@@ -1214,7 +1221,7 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
     const outvinReport = parseOutvinDealerReportRaw(raw.outvinReport);
     const outvin = parseOutvinDataBundleRaw(raw.outvin);
     return {
-      rawUnprocessedData: String(raw.rawUnprocessedData ?? "").slice(0, 500_000),
+      rawUnprocessedData: String(raw.rawUnprocessedData ?? "").slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
       serviceHistory: normalized,
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
       geminiContextRaw: clipGeminiContextRaw(raw.geminiContextRaw),
@@ -1227,7 +1234,7 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
   const legacyText = standardBlockToPlainText(legacy).trim();
   if (!legacyText) return emptyAutoRecordsBlock();
   return {
-    rawUnprocessedData: legacyText.slice(0, 500_000),
+    rawUnprocessedData: legacyText.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
     serviceHistory: [emptyAutoRecordsServiceRow()],
     comments: "",
     geminiContextRaw: "",
@@ -1315,7 +1322,7 @@ function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBloc
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
       geminiContextRaw: clipGeminiContextRaw(raw.geminiContextRaw),
       ...(typeof raw.mileagePasteRaw === "string"
-        ? { mileagePasteRaw: raw.mileagePasteRaw.slice(0, 24_000) }
+        ? { mileagePasteRaw: raw.mileagePasteRaw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN) }
         : {}),
       ...(timelineIn.length > 0
         ? {
@@ -1352,7 +1359,7 @@ function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBloc
 function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
   const rowsIn = Array.isArray(raw.rows) ? raw.rows : [];
   const comments = typeof raw.comments === "string" ? raw.comments : "";
-  const pdfImportRaw = typeof raw.pdfImportRaw === "string" ? raw.pdfImportRaw.slice(0, 120_000) : "";
+  const pdfImportRaw = typeof raw.pdfImportRaw === "string" ? raw.pdfImportRaw.slice(0, ADMIN_PDF_IMPORT_RAW_MAX_LEN) : "";
   const rows: LtabIncidentRow[] = rowsIn.map((row) => {
     if (!row || typeof row !== "object") return emptyLtabRow();
     const x = row as Record<string, unknown>;
@@ -1570,7 +1577,7 @@ function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFi
     prevInspectionWarnings: parseCsddInspectionWarningStoredRaw(raw.prevInspectionWarnings),
     technicalInspectionWarnings: parseCsddInspectionWarningStoredRaw(raw.technicalInspectionWarnings),
     comments: clipCsddField(raw.comments, 12000),
-    geminiContextRaw: clipCsddField(raw.geminiContextRaw, 24_000),
+    geminiContextRaw: clipCsddField(raw.geminiContextRaw, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
     ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
   };
 }
@@ -1816,7 +1823,7 @@ function parseCitiAvotiSectionRaw(raw: unknown): CitiAvotiSectionState {
   return {
     ...vendor,
     rawUnprocessedData:
-      typeof o.rawUnprocessedData === "string" ? o.rawUnprocessedData.slice(0, 500_000) : "",
+      typeof o.rawUnprocessedData === "string" ? o.rawUnprocessedData.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN) : "",
     label: typeof o.label === "string" ? o.label.slice(0, 120) : "",
   };
 }

@@ -8,6 +8,7 @@ import {
 import type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
 import { normalizeCsddRawText } from "@/lib/csdd-extended-parse";
 import { PDF_GEMINI_INLINE_MAX_BYTES } from "@/lib/pdf-api-limits";
+import { ADMIN_RAW_UNPROCESSED_MAX_LEN } from "@/lib/admin-raw-field-limits";
 import {
   CSDD_GEMINI_RESPONSE_SCHEMA,
   CSDD_GEMINI_STRUCTURED_SYSTEM,
@@ -87,7 +88,7 @@ export async function extractCsddPdfWithGeminiStructured(opts: {
 
   const rawForStorage =
     textHint.length > 0
-      ? textHint.slice(0, 500_000)
+      ? textHint.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN)
       : asString(payload.rawTekstaFragments, 8000);
   let fields = csddFieldsFromStructuredGeminiPayload(
     normalizeStructuredGeminiPayload(payload),
