@@ -1,0 +1,33 @@
+/* VIP.VIN demo — feature stack sized for 4 rows (not TP5's 11-row slot). */
+
+.featureStackCompact {
+  height: auto;
+  min-height: 0;
+}
+
+.vinSlot {
+  margin: 0 0 0.55rem;
+}
+
+.demoBanner {
+  margin: 0 0 0.75rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgb(37 99 235 / 0.35);
+  background: rgb(37 99 235 / 0.12);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgb(147 197 253 / 0.95);
+  text-align: center;
+}
+
+.demoNote {
+  margin: 0 0 0.45rem;
+  text-align: center;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: rgb(147 197 253 / 0.95);
+}

@@ -18,7 +18,8 @@ export function SiteOrderCtaPin() {
     p === "" ||
     p === "/pasutit" ||
     p === "/biezi-jautajumi" ||
-    p === "/provin-select-pieteikums";
+    p === "/provin-select-pieteikums" ||
+    p.startsWith("/demo/");
 
   if (hidePin) return null;
 

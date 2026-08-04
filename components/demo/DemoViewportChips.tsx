@@ -8,6 +8,7 @@ const VARIANTS = [
   { href: "/demo/mobile-narrow", label: "Šaurais mobilais" },
   { href: "/demo/mobile-wide", label: "Platais mobilais" },
   { href: "/demo/twin-hero", label: "Divas kartītes (atsevišķi)" },
+  { href: "/demo/azvin", label: "VIP.VIN (AZ)" },
 ] as const;
 
 function pathActive(pathname: string | null, href: string) {
@@ -15,6 +16,7 @@ function pathActive(pathname: string | null, href: string) {
   const p = pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
   if (href === "/demo") return p === "/demo";
   if (href === "/demo/twin-hero") return p === "/demo/twin-hero";
+  if (href === "/demo/azvin") return p === "/demo/azvin";
   return p === href;
 }
 

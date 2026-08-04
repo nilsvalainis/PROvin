@@ -33,9 +33,10 @@ export function HeaderClient() {
     normalizedPath === "/biezi-jautajumi";
 
   const isDemoPath = pathname.includes("/demo");
+  const isAzvinDemo = pathname.includes("/demo/azvin");
   /** Sākumlapas un PROVIN SELECT pieteikuma caurspīdīgais hero headeris. */
-  const isDarkHeaderSurface = isHome || isProvinSelectPieteikums;
-  const isDemoGraphiteHeader = isDemoPath;
+  const isDarkHeaderSurface = isHome || isProvinSelectPieteikums || isAzvinDemo;
+  const isDemoGraphiteHeader = isDemoPath && !isAzvinDemo;
   const headerChromeDark = isDarkHeaderSurface || isDemoGraphiteHeader;
 
   const graphiteHeaderSurface =
@@ -108,17 +109,24 @@ export function HeaderClient() {
 
   const headerInnerClass = [
     "mx-auto flex min-h-[2.4rem] w-full min-w-0 items-center gap-1.5 pl-[max(0.8rem,env(safe-area-inset-left,0px))] pr-[max(0.8rem,env(safe-area-inset-right,0px))] sm:min-h-9 lg:min-h-11 lg:gap-3 lg:pl-[max(1rem,env(safe-area-inset-left,0px))] lg:pr-[max(1rem,env(safe-area-inset-right,0px))]",
-    isHome || isProvinSelectPieteikums ? "max-w-none" : "max-w-[980px] lg:max-w-[1024px]",
+    isHome || isProvinSelectPieteikums || isAzvinDemo ? "max-w-none" : "max-w-[980px] lg:max-w-[1024px]",
   ].join(" ");
 
   return (
     <header className={`sticky top-0 z-[42] isolate w-full ${headerSurface}`}>
       <div className={headerInnerClass}>
-        <Link href="/" className={logoClass} aria-label={isHome ? "PROVIN" : "PROVIN.LV"}>
-          <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
-          <span className="text-provin-accent">VIN</span>
-          {isHome ? null : <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>.LV</span>}
-        </Link>
+        {isAzvinDemo ? (
+          <Link href="/demo/azvin" className={logoClass} aria-label="VIP.VIN">
+            <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>VIP.</span>
+            <span className="text-provin-accent">VIN</span>
+          </Link>
+        ) : (
+          <Link href="/" className={logoClass} aria-label={isHome ? "PROVIN" : "PROVIN.LV"}>
+            <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
+            <span className="text-provin-accent">VIN</span>
+            {isHome ? null : <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>.LV</span>}
+          </Link>
+        )}
 
         <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 lg:gap-3">
           {showHomeNavRail ? (
