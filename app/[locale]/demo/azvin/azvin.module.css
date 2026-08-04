@@ -1,4 +1,4 @@
-/* VIP.VIN demo — feature stack sized for 4 rows (not TP5's 11-row slot). */
+/* AZ.VIN demo */
 
 .featureStackCompact {
   height: auto;
@@ -6,7 +6,7 @@
 }
 
 .vinSlot {
-  margin: 0 0 0.55rem;
+  margin: 0.55rem 0 0;
 }
 
 .demoBanner {
@@ -30,4 +30,160 @@
   font-size: 0.72rem;
   line-height: 1.35;
   color: rgb(147 197 253 / 0.95);
+}
+
+.langSwitcher {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0 0 0.75rem;
+}
+
+.langBtn {
+  min-width: 2.4rem;
+  min-height: 1.85rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 8px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(0 0 0 / 0.28);
+  color: rgb(220 224 232 / 0.75);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.langBtnActive {
+  border-color: rgb(37 99 235 / 0.55);
+  background: rgb(37 99 235 / 0.28);
+  color: #fff;
+}
+
+.serviceList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.serviceRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.85rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(8 10 14 / 0.45);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.serviceRow:hover:not(:disabled) {
+  border-color: rgb(37 99 235 / 0.45);
+  background: rgb(37 99 235 / 0.08);
+}
+
+.serviceRowChecked {
+  border-color: rgb(37 99 235 / 0.65);
+  background: rgb(37 99 235 / 0.14);
+  box-shadow: 0 0 0 1px rgb(37 99 235 / 0.2);
+}
+
+.serviceRowDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.35);
+}
+
+.serviceCheck {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  margin-top: 0.1rem;
+  border-radius: 6px;
+  border: 2px solid rgb(255 255 255 / 0.35);
+  background: rgb(0 0 0 / 0.35);
+  color: transparent;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.serviceCheckOn {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.serviceCheckDisabled {
+  border-color: rgb(255 255 255 / 0.18);
+  background: rgb(0 0 0 / 0.2);
+}
+
+.serviceBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.serviceName {
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.3;
+  color: rgb(245 248 252 / 0.96);
+}
+
+.serviceMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  color: rgb(180 186 198 / 0.9);
+}
+
+.servicePrice {
+  font-weight: 700;
+  color: rgb(147 197 253 / 0.95);
+  font-variant-numeric: tabular-nums;
+}
+
+.serviceSoon {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  color: rgb(161 161 170 / 0.95);
+}
+
+/* Force icon row visible on mobile for AZ.VIN demo. */
+.iconRowAlways {
+  display: block !important;
+  margin-top: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.iconRowAlways :global(ul) {
+  margin-top: 1.25rem !important;
+}
+
+@media (min-width: 1024px) {
+  .iconRowAlways {
+    margin-top: 4rem;
+  }
 }

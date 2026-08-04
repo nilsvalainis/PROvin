@@ -5,13 +5,22 @@ import azvinStyles from "@/app/[locale]/demo/azvin/azvin.module.css";
 import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import {
   AZVIN_DEALER_BRANDS,
-  AZVIN_HERO_COPY,
+  AZVIN_LOCALES,
+  AZVIN_LOCALE_LABELS,
+  AZVIN_SERVICE_ENABLED,
+  AZVIN_SERVICE_IDS,
+  type AzvinHeroCopy,
+  type AzvinLocale,
+  type AzvinServiceId,
 } from "@/lib/azvin-hero-copy";
 
-const FEATURE_MARK_CLASS =
-  "inline-flex h-6 w-6 shrink-0 items-center justify-center text-[0.98rem] font-bold leading-none";
-
 type Props = {
+  copy: AzvinHeroCopy;
+  locale: AzvinLocale;
+  onLocaleChange: (locale: AzvinLocale) => void;
+  selected: ReadonlySet<AzvinServiceId>;
+  onToggleService: (id: AzvinServiceId) => void;
+  totalAzn: number;
   vin: string;
   vinError: string | null;
   globalError: string | null;
@@ -22,6 +31,12 @@ type Props = {
 };
 
 export function AzvinPricingCard({
+  copy,
+  locale,
+  onLocaleChange,
+  selected,
+  onToggleService,
+  totalAzn,
   vin,
   vinError,
   globalError,
@@ -30,12 +45,106 @@ export function AzvinPricingCard({
   onVinChange,
   onSubmit,
 }: Props) {
-  const copy = AZVIN_HERO_COPY;
-
   return (
     <article className={`${styles.spatialCard} w-full`}>
       <div className={styles.cardHeader}>
-        <p className={azvinStyles.demoBanner}>VIP.VIN · Azerbaijan demo</p>
+        <p className={azvinStyles.demoBanner}>{copy.demoBanner}</p>
+
+        <div className={azvinStyles.langSwitcher} role="group" aria-label={copy.langSwitcherAria}>
+          {AZVIN_LOCALES.map((code) => {
+            const active = code === locale;
+            return (
+              <button
+                key={code}
+                type="button"
+                className={`${azvinStyles.langBtn} ${active ? azvinStyles.langBtnActive : ""}`}
+                aria-pressed={active}
+                onClick={() => onLocaleChange(code)}
+              >
+                {AZVIN_LOCALE_LABELS[code]}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className={styles.tierMeta} aria-live="polite">
+          <p className={styles.tierMetaTitle}>{copy.cardTitle}</p>
+          <p className={styles.tierMetaDesc}>{copy.cardDescription}</p>
+        </div>
+      </div>
+
+      <div className={styles.featureStack}>
+        <div className={`${styles.liquidAccent} ${azvinStyles.featureStackCompact}`}>
+          <ul className={azvinStyles.serviceList}>
+            {AZVIN_SERVICE_IDS.map((id) => {
+              const service = copy.services[id];
+              const enabled = AZVIN_SERVICE_ENABLED[id];
+              const checked = selected.has(id);
+              return (
+                <li key={id}>
+                  <button
+                    type="button"
+                    className={[
+                      azvinStyles.serviceRow,
+                      checked ? azvinStyles.serviceRowChecked : "",
+                      !enabled ? azvinStyles.serviceRowDisabled : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    aria-pressed={enabled ? checked : undefined}
+                    aria-disabled={!enabled}
+                    disabled={!enabled}
+                    onClick={() => {
+                      if (enabled) onToggleService(id);
+                    }}
+                  >
+                    <span
+                      className={[
+                        azvinStyles.serviceCheck,
+                        checked ? azvinStyles.serviceCheckOn : "",
+                        !enabled ? azvinStyles.serviceCheckDisabled : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      aria-hidden
+                    >
+                      {checked ? "✓" : ""}
+                    </span>
+                    <span className={azvinStyles.serviceBody}>
+                      <span className={azvinStyles.serviceName}>{service.name}</span>
+                      <span className={azvinStyles.serviceMeta}>
+                        <span className={azvinStyles.servicePrice}>{service.priceLabel}</span>
+                        {service.comingSoon ? (
+                          <span className={azvinStyles.serviceSoon}>{service.comingSoon}</span>
+                        ) : null}
+                      </span>
+                      {id === "dealer" ? (
+                        <span
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                          }}
+                          onKeyDown={(event) => event.stopPropagation()}
+                        >
+                          <Tp5DealerBrandsTip
+                            brands={AZVIN_DEALER_BRANDS}
+                            copy={{
+                              dealerBrandsTrigger: copy.dealerBrandsTrigger,
+                              dealerBrandsAria: copy.dealerBrandsAria,
+                              dealerBrandsYearNote: copy.dealerBrandsYearNote,
+                              dealerBrandsRefundNote: copy.dealerBrandsRefundNote,
+                              dealerBrandsClose: copy.dealerBrandsClose,
+                            }}
+                          />
+                        </span>
+                      ) : null}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
 
         <div className={azvinStyles.vinSlot}>
           <input
@@ -52,38 +161,6 @@ export function AzvinPricingCard({
           />
           {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
         </div>
-
-        <div className={styles.tierMeta} aria-live="polite">
-          <p className={styles.tierMetaTitle}>{copy.cardTitle}</p>
-          <p className={styles.tierMetaDesc}>{copy.cardDescription}</p>
-        </div>
-      </div>
-
-      <div className={styles.featureStack}>
-        <div className={`${styles.liquidAccent} ${azvinStyles.featureStackCompact}`}>
-          <ul className={styles.featureList}>
-            {copy.features.map((name) => (
-              <li key={name} className={styles.featureRow}>
-                <span className={`${FEATURE_MARK_CLASS} text-[#2563EB]`} aria-hidden>
-                  ✓
-                </span>
-                <span className={styles.featureLabelActive}>{name}</span>
-              </li>
-            ))}
-          </ul>
-          <div className={styles.dealerBrandsSlot}>
-            <Tp5DealerBrandsTip
-              brands={AZVIN_DEALER_BRANDS}
-              copy={{
-                dealerBrandsTrigger: copy.dealerBrandsTrigger,
-                dealerBrandsAria: copy.dealerBrandsAria,
-                dealerBrandsYearNote: copy.dealerBrandsYearNote,
-                dealerBrandsRefundNote: copy.dealerBrandsRefundNote,
-                dealerBrandsClose: copy.dealerBrandsClose,
-              }}
-            />
-          </div>
-        </div>
       </div>
 
       <p className={styles.turnaround}>
@@ -95,7 +172,7 @@ export function AzvinPricingCard({
         {demoNote ? <p className={azvinStyles.demoNote}>{demoNote}</p> : null}
         <button type="button" className={styles.liquidCta} onClick={onSubmit} disabled={loading}>
           <span className={styles.liquidCtaShimmer} aria-hidden />
-          <span className={styles.liquidCtaLabel}>{copy.ctaLabel}</span>
+          <span className={styles.liquidCtaLabel}>{copy.ctaLabel(totalAzn)}</span>
         </button>
         <p className={styles.featureFootnote}>{copy.footnote}</p>
       </div>

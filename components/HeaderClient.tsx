@@ -116,9 +116,11 @@ export function HeaderClient() {
     <header className={`sticky top-0 z-[42] isolate w-full ${headerSurface}`}>
       <div className={headerInnerClass}>
         {isAzvinDemo ? (
-          <Link href="/demo/azvin" className={logoClass} aria-label="VIP.VIN">
-            <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>VIP.</span>
-            <span className="text-provin-accent">VIN</span>
+          <Link href="/demo/azvin" className={logoClass} aria-label="AZ.VIN">
+            <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>AZ.</span>
+            <span style={{ color: "#00B5E2" }}>V</span>
+            <span style={{ color: "#E30A17" }}>I</span>
+            <span style={{ color: "#3F9C35" }}>N</span>
           </Link>
         ) : (
           <Link href="/" className={logoClass} aria-label={isHome ? "PROVIN" : "PROVIN.LV"}>

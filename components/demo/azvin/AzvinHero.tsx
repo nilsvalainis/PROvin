@@ -1,23 +1,72 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
+import { AzvinBrandMark } from "@/components/demo/azvin/AzvinBrandMark";
+import { AzvinFeatureIconRow } from "@/components/demo/azvin/AzvinFeatureIconRow";
 import { AzvinPricingCard } from "@/components/demo/azvin/AzvinPricingCard";
-import { AZVIN_HERO_COPY } from "@/lib/azvin-hero-copy";
+import {
+  getAzvinHeroCopy,
+  sumAzvinSelectedAzn,
+  type AzvinLocale,
+  type AzvinServiceId,
+} from "@/lib/azvin-hero-copy";
 import { isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
 
+const LOCALE_STORAGE_KEY = "azvin-demo-locale";
+
+function readStoredLocale(): AzvinLocale {
+  if (typeof window === "undefined") return "az";
+  const raw = window.localStorage.getItem(LOCALE_STORAGE_KEY);
+  if (raw === "az" || raw === "en" || raw === "ru" || raw === "lv") return raw;
+  return "az";
+}
+
 export function AzvinHero() {
-  const copy = AZVIN_HERO_COPY;
+  const [locale, setLocale] = useState<AzvinLocale>("az");
+  const [selected, setSelected] = useState<Set<AzvinServiceId>>(() => new Set());
   const [vin, setVin] = useState("");
   const [vinError, setVinError] = useState<string | null>(null);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [demoNote, setDemoNote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    setLocale(readStoredLocale());
+  }, []);
+
+  const copy = useMemo(() => getAzvinHeroCopy(locale), [locale]);
+  const totalAzn = useMemo(() => sumAzvinSelectedAzn(selected), [selected]);
+
+  const onLocaleChange = useCallback((next: AzvinLocale) => {
+    setLocale(next);
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
+    setGlobalError(null);
+    setDemoNote(null);
+    setVinError(null);
+  }, []);
+
+  const onToggleService = useCallback((id: AzvinServiceId) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    setGlobalError(null);
+    setDemoNote(null);
+  }, []);
+
   const onSubmit = useCallback(() => {
     setGlobalError(null);
     setDemoNote(null);
+
+    if (totalAzn <= 0) {
+      setGlobalError(copy.ctaSelectHint);
+      return;
+    }
+
     const normalized = normalizeVin(vin);
     if (!isValidVinOrPlate(normalized)) {
       setVinError(copy.vinInvalid);
@@ -30,7 +79,23 @@ export function AzvinHero() {
       setLoading(false);
       setDemoNote(copy.ctaDemoNote);
     }, 400);
-  }, [copy.ctaDemoNote, copy.vinInvalid, vin]);
+  }, [copy.ctaDemoNote, copy.ctaSelectHint, copy.vinInvalid, totalAzn, vin]);
+
+  const cardProps = {
+    copy,
+    locale,
+    onLocaleChange,
+    selected,
+    onToggleService,
+    totalAzn,
+    vin,
+    vinError,
+    globalError,
+    demoNote,
+    loading,
+    onVinChange: setVin,
+    onSubmit,
+  };
 
   return (
     <div className={styles.heroPricingShell}>
@@ -53,18 +118,11 @@ export function AzvinHero() {
                 {copy.titleAccent}
               </span>
             </h1>
+            <AzvinFeatureIconRow copy={copy} forceVisible />
           </header>
 
           <div className={styles.stage}>
-            <AzvinPricingCard
-              vin={vin}
-              vinError={vinError}
-              globalError={globalError}
-              demoNote={demoNote}
-              loading={loading}
-              onVinChange={setVin}
-              onSubmit={onSubmit}
-            />
+            <AzvinPricingCard {...cardProps} />
           </div>
         </div>
 
@@ -77,22 +135,15 @@ export function AzvinHero() {
               </span>
             </h1>
             <p className={styles.heroSubheadDesktop}>
-              <span className="font-semibold text-white">{copy.brand}</span>
+              <AzvinBrandMark className="font-semibold" />
               {" — "}
               {copy.cardDescription}
             </p>
+            <AzvinFeatureIconRow copy={copy} />
           </header>
 
           <div className={`${styles.stage} ${styles.heroStageDesktop}`}>
-            <AzvinPricingCard
-              vin={vin}
-              vinError={vinError}
-              globalError={globalError}
-              demoNote={demoNote}
-              loading={loading}
-              onVinChange={setVin}
-              onSubmit={onSubmit}
-            />
+            <AzvinPricingCard {...cardProps} />
           </div>
         </div>
       </section>

@@ -8,7 +8,7 @@ const VARIANTS = [
   { href: "/demo/mobile-narrow", label: "Šaurais mobilais" },
   { href: "/demo/mobile-wide", label: "Platais mobilais" },
   { href: "/demo/twin-hero", label: "Divas kartītes (atsevišķi)" },
-  { href: "/demo/azvin", label: "VIP.VIN (AZ)" },
+  { href: "/demo/azvin", label: "AZ.VIN" },
 ] as const;
 
 function pathActive(pathname: string | null, href: string) {

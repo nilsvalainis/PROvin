@@ -5,7 +5,7 @@ import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 
 export const metadata: Metadata = {
-  title: "VIP.VIN demo (Azerbaijan)",
+  title: "AZ.VIN demo (Azerbaijan)",
   robots: { index: false, follow: false },
 };
 
