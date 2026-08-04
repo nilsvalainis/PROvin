@@ -137,6 +137,11 @@ import {
   AdminCommonPhrasesDrawer,
   AdminCommonPhrasesDrawerTrigger,
 } from "@/components/admin/AdminCommonPhrasesDrawer";
+import {
+  AdminOrderCopilotPanel,
+  AdminOrderCopilotTrigger,
+} from "@/components/admin/AdminOrderCopilotPanel";
+import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
 import { adminRichHtmlToPlainText, geminiExpertSourceCommentToRichHtml } from "@/lib/admin-rich-comment-html";
 import {
@@ -640,6 +645,7 @@ export function OrderDetailWorkspace({
   const [pdfScanError, setPdfScanError] = useState<string | null>(null);
   const [wizardStep, setWizardStep] = useState(0);
   const [phrasesOpen, setPhrasesOpen] = useState(false);
+  const [copilotOpen, setCopilotOpen] = useState(false);
   const [vinBarCopyFlash, setVinBarCopyFlash] = useState(false);
   const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
   const [alertsPortalEl, setAlertsPortalEl] = useState<HTMLElement | null>(null);
@@ -1234,6 +1240,43 @@ export function OrderDetailWorkspace({
             ...prev.sourceBlocks,
             [key]: block,
           }),
+        });
+        return applyPersistBodyToWs(next);
+      });
+      commitWorkspaceLocalNow({ force: true });
+    },
+    [applyPersistBodyToWs, commitWorkspaceLocalNow],
+  );
+
+  const applyCopilotPatchedBlocks = useCallback(
+    (patched: Partial<WorkspaceSourceBlocks>, changedKeys: CopilotSourceKey[]) => {
+      if (!changedKeys.length) return;
+      workspaceDirtyRef.current = true;
+      setWs((prev) => {
+        const merged = { ...prev.sourceBlocks };
+        for (const key of changedKeys) {
+          if (patched[key] != null) {
+            (merged as Record<string, unknown>)[key] = patched[key];
+          }
+        }
+        const next = normalizeOrderWorkspacePersistBody({
+          ...workspaceToPersistBody(prev),
+          sourceBlocks: mergeSourceBlocksWithDefaults(merged),
+        });
+        return applyPersistBodyToWs(next);
+      });
+      commitWorkspaceLocalNow({ force: true });
+    },
+    [applyPersistBodyToWs, commitWorkspaceLocalNow],
+  );
+
+  const restoreCopilotBlocksSnapshot = useCallback(
+    (snapshot: WorkspaceSourceBlocks) => {
+      workspaceDirtyRef.current = true;
+      setWs((prev) => {
+        const next = normalizeOrderWorkspacePersistBody({
+          ...workspaceToPersistBody(prev),
+          sourceBlocks: mergeSourceBlocksWithDefaults(snapshot),
         });
         return applyPersistBodyToWs(next);
       });
@@ -3190,6 +3233,15 @@ export function OrderDetailWorkspace({
       {showPortfolioPortal ? createPortal(portfolioSection, portfolioPortalEl!) : null}
 
       <AdminCommonPhrasesDrawer open={phrasesOpen} onClose={() => setPhrasesOpen(false)} />
+      <AdminOrderCopilotPanel
+        open={copilotOpen}
+        onClose={() => setCopilotOpen(false)}
+        sessionId={payload.sessionId}
+        geminiAllowed={payload.geminiAllowed}
+        getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
+        applyPatchedBlocks={applyCopilotPatchedBlocks}
+        restoreBlocksSnapshot={restoreCopilotBlocksSnapshot}
+      />
 
       {!workspaceHydrated ? (
         <p className="mx-auto mb-3 max-w-lg px-2 text-center text-sm text-[var(--color-provin-muted)]" role="status">
@@ -3259,6 +3311,14 @@ export function OrderDetailWorkspace({
             </button>
           ) : null}
           <AdminCommonPhrasesDrawerTrigger open={phrasesOpen} onOpen={() => setPhrasesOpen(true)} />
+          <AdminOrderCopilotTrigger
+            open={copilotOpen}
+            disabled={!payload.geminiAllowed}
+            onOpen={() => {
+              setPhrasesOpen(false);
+              setCopilotOpen(true);
+            }}
+          />
           <div className="flex min-w-0 flex-1 flex-wrap items-stretch gap-1 sm:gap-1.5">
             {wizardStepsUi.map(({ label, Icon }, idx) => {
               const lvl = wizardStepLevels[idx] ?? "empty";
