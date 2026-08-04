@@ -20,40 +20,48 @@ export { parseCopilotGeminiPayload } from "@/lib/admin-copilot-parse";
 export const ADMIN_COPILOT_SYSTEM = `You are PROVIN.LV admin Order Copilot — an operator assistant that fills vehicle history tables in the admin panel.
 
 You receive:
-- Operator chat (Latvian or English)
-- Optional PDF attachment (read it visually like Gemini web — tables, dates, amounts)
+- Operator chat (Latvian or English) — often a short command like "izvelc datus no PDF" / "aizpildi tabulas"
+- One OR MORE PDF attachments (AutoDNA, CarVertical, LTAB/OCTA, Auto Records, other). Read each visually like Gemini web.
 - Current table snapshot for this order
 
-Your job: propose structured actions that INSERT rows into the correct source tables. Never invent VIN, plates, dates, km, or EUR amounts not present in the operator message or PDF.
+Your job: from ALL attached PDFs + the message, propose structured actions that INSERT rows into the correct source tables. Never invent VIN, plates, dates, km, or EUR amounts not present in the operator message or PDFs.
+
+What PROVIN typically extracts from these reports (do this for each matching PDF):
+- AutoDNA → autodna: TRANSPORTLĪDZEKĻA VĒSTURE odometer rows (km required) + Transportlīdzekļa zaudējumu apjoms / damage-claim rows → incidents
+- CarVertical → carvertical: odometer/mileage log + insurance claims/incidents (+ damage details map into incidents when amount+date exist)
+- LTAB / OCTA → ltab: insurance accident rows only (date + EUR + country)
+- Auto Records / ODOMETER CHECK → auto_records: mileage rows only
+- Other foreign reports → citi_avoti (first section): mileage + incidents when present
 
 Sources (must match exactly):
-- autodna — AutoDNA (mileage + incidents)
-- carvertical — CarVertical (mileage + incidents)
-- ltab — LTAB/OCTA (incidents only)
-- auto_records — AUTO RECORDS (mileage only)
-- citi_avoti — Citi avoti / other sources (mileage + incidents; first section)
+- autodna | carvertical | ltab | auto_records | citi_avoti
 
 Actions:
-1) upsert_incident — NEGADĪJUMU VĒSTURE row: date, lossAmount (EUR or free text), country
-2) upsert_mileage — NOBRAUKUMS row: date, odometer (digits), country
+1) upsert_incident — NEGADĪJUMU VĒSTURE: date, lossAmount (EUR or free text), country
+2) upsert_mileage — NOBRAUKUMS: date, odometer (digits), country
+
+When multiple PDFs are attached:
+- Classify each PDF by branding/layout and fill the matching source
+- Extract ALL readable mileage and incident rows (not just a sample)
+- Prefer high confidence when the vendor is clear from the PDF itself
+- One short reply summarizing which sources you filled
 
 Confidence:
-- high — source + fields clearly stated by operator OR clearly readable in PDF for that vendor
-- medium — source inferred or partial fields
+- high — source clear from PDF branding/filename/layout OR operator named the source
+- medium — source inferred
 - low — guessy
 
-If source is ambiguous and multiple vendors exist, set clarificationNeeded (short Latvian question) and leave actions empty OR only include actions you are sure about.
+If a PDF vendor is unclear, set clarificationNeeded (short Latvian) for that file only; still extract the PDFs you are sure about.
 
-reply: short Latvian confirmation of what you will fill (or what you need). No markdown fences.
+reply: short Latvian confirmation. No markdown fences.
 
 Rules:
-- Dates: prefer DD.MM.YYYY (accept ISO and normalize in text)
+- Dates: prefer DD.MM.YYYY
 - lossAmount: keep ranges like "300 - 400 EUR"; free text allowed if not a number
-- odometer: digits only in the field (no "km")
+- odometer: digits only (no "km")
 - country: Latvian names when known (Vācija, Latvija, …)
-- PDF: map AutoDNA / CarVertical / LTAB / Auto Records / other → correct source
 - Do NOT write expert commentary fields — only table rows
-- Deduplicate against existing snapshot rows when the same date+amount or date+km already exists (omit those actions)`;
+- Deduplicate against existing snapshot and across PDFs (same date+amount or date+km → omit duplicate actions)`;
 
 const ACTION_ITEM_SCHEMA: Schema = {
   type: SchemaType.OBJECT,
@@ -95,6 +103,9 @@ export async function runOrderCopilotGemini(opts: {
   message: string;
   sourceBlocks: WorkspaceSourceBlocks;
   history?: CopilotChatMessage[];
+  /** Viens vai vairāki PDF (Gemini lasa katru). */
+  pdfs?: { fileName: string; buffer: ArrayBuffer }[];
+  /** @deprecated izmanto pdfs */
   pdf?: { fileName: string; buffer: ArrayBuffer };
 }): Promise<CopilotGeminiResponse> {
   const summary = buildCopilotBlocksSummary(opts.sourceBlocks);
@@ -103,13 +114,18 @@ export async function runOrderCopilotGemini(opts: {
     .map((m) => `${m.role === "user" ? "Operator" : "Copilot"}: ${m.content.slice(0, 1500)}`)
     .join("\n");
 
+  const pdfs = [
+    ...(opts.pdfs ?? []),
+    ...(opts.pdf && opts.pdf.buffer.byteLength > 0 ? [opts.pdf] : []),
+  ].filter((p) => p.buffer.byteLength > 0);
+
   const parts: GeminiUserPart[] = [];
-  if (opts.pdf && opts.pdf.buffer.byteLength > 0) {
+  for (const [i, pdf] of pdfs.entries()) {
     parts.push({
-      inlineData: { mimeType: "application/pdf", data: bufferToBase64(opts.pdf.buffer) },
+      inlineData: { mimeType: "application/pdf", data: bufferToBase64(pdf.buffer) },
     });
     parts.push({
-      text: `[Attached PDF: ${opts.pdf.fileName}. Read the full document visually — extract mileage and accident/claim rows. Prefer Gemini-web quality, not text-layer OCR.]`,
+      text: `[PDF ${i + 1}/${pdfs.length}: ${pdf.fileName}. Read fully (tables, claims, odometer). Map to the correct PROVIN source. Prefer visual reading like Gemini web.]`,
     });
   }
 
@@ -118,8 +134,12 @@ export async function runOrderCopilotGemini(opts: {
       "=== CURRENT TABLES ===",
       summary,
       historyLines ? `\n=== RECENT CHAT ===\n${historyLines}` : "",
+      `\n=== ATTACHED PDFs ===\n${pdfs.length ? pdfs.map((p, i) => `${i + 1}. ${p.fileName}`).join("\n") : "(none)"}`,
       "\n=== OPERATOR MESSAGE ===",
-      opts.message.trim() || "(PDF only — extract structured rows for the matching vendor)",
+      opts.message.trim() ||
+        (pdfs.length > 1
+          ? "(Multi-PDF) Extract all mileage + incident rows from every attached report into the matching sources."
+          : "(PDF only — extract structured rows for the matching vendor)"),
       "\nReturn JSON matching the schema.",
     ]
       .filter(Boolean)

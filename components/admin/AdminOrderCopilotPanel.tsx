@@ -147,11 +147,11 @@ export function AdminOrderCopilotPanel({
       id: "welcome",
       role: "system",
       content:
-        "Velc logu aiz virsraksta joslas (⋮⋮), lai novietotu citur. Pēc komandas samazinās, kamēr Tu turpini darbu. Piemērs: „AutoDNA: negadījums 17.11.2020, 5000 €, Vācija”.",
+        "Velc aiz virsraksta. Pievieno vairākus PDF (AutoDNA, CarVertical, LTAB…) un īsu komandu, piem. „izvelc datus”. Pēc sūtīšanas samazinās, kamēr Tu turpini darbu.",
     },
   ]);
   const [draft, setDraft] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [undoSnapshot, setUndoSnapshot] = useState<WorkspaceSourceBlocks | null>(null);
@@ -283,18 +283,20 @@ export function AdminOrderCopilotPanel({
   const send = useCallback(async () => {
     if (busy || !geminiAllowed) return;
     const text = draft.trim();
-    if (!text && !file) return;
+    if (!text && files.length === 0) return;
 
     setBusy(true);
     setError(null);
     setUnreadDone(false);
     setMinimized(true);
 
-    const userLabel = text || `(PDF: ${file?.name ?? "fails"})`;
+    const userLabel =
+      text ||
+      (files.length === 1 ? `(PDF: ${files[0]!.name})` : `(${files.length} PDF)`);
     setMessages((prev) => [...prev, { id: newId(), role: "user", content: userLabel }]);
     setDraft("");
-    const fileToSend = file;
-    setFile(null);
+    const filesToSend = files;
+    setFiles([]);
     if (fileRef.current) fileRef.current.value = "";
 
     try {
@@ -304,7 +306,7 @@ export function AdminOrderCopilotPanel({
       fd.set("applyMode", "auto");
       fd.set("history", JSON.stringify(historyForApi()));
       fd.set("sourceBlocks", JSON.stringify(getSourceBlocks()));
-      if (fileToSend) fd.set("file", fileToSend);
+      for (const f of filesToSend) fd.append("files", f);
 
       const res = await fetch("/api/admin/copilot", {
         method: "POST",
@@ -321,8 +323,9 @@ export function AdminOrderCopilotPanel({
         if (data.error === "unauthorized") setError("Nav admin piekļuves");
         else if (data.error === "missing_gemini_key") setError("Nav GEMINI_API_KEY");
         else if (data.error === "gemini_demo_only") setError("Gemini tikai DEMO pasūtījumiem");
-        else if (data.error === "file_too_large") setError(detail || "PDF pārāk liels");
-        else setError(detail || data.error || "Copilot kļūda");
+        else if (data.error === "file_too_large" || data.error === "too_many_files") {
+          setError(detail || "PDF limits pārsniegts");
+        } else setError(detail || data.error || "Copilot kļūda");
         setMessages((prev) => [
           ...prev,
           { id: newId(), role: "assistant", content: "Neizdevās apstrādāt — skatīt kļūdu panelī." },
@@ -362,7 +365,7 @@ export function AdminOrderCopilotPanel({
     } finally {
       setBusy(false);
     }
-  }, [busy, draft, file, geminiAllowed, getSourceBlocks, historyForApi, mergePatch, sessionId]);
+  }, [busy, draft, files, geminiAllowed, getSourceBlocks, historyForApi, mergePatch, sessionId]);
 
   const confirmActions = useCallback(
     async (actions: CopilotAction[]) => {
@@ -481,7 +484,7 @@ export function AdminOrderCopilotPanel({
   const panel = (
     <aside
       data-copilot-panel
-      className={`fixed z-[45] flex h-[min(32rem,calc(100vh-7rem))] w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] shadow-2xl ${
+      className={`fixed z-[45] flex h-[min(32rem,calc(100vh-7rem))] w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-white text-[var(--color-apple-text)] shadow-2xl dark:bg-zinc-950 dark:text-zinc-100 ${
         dragging ? "cursor-grabbing select-none" : ""
       }`}
       style={posStyle}
@@ -576,28 +579,56 @@ export function AdminOrderCopilotPanel({
 
       {error ? <p className="px-3 pb-1 text-xs text-red-600 dark:text-red-400">{error}</p> : null}
 
-      <div className="border-t border-[var(--admin-border-subtle)] p-3">
-        {file ? (
-          <div className="mb-2 flex items-center justify-between gap-2 rounded-md bg-black/[0.04] px-2 py-1 text-xs dark:bg-white/10">
-            <span className="truncate">{file.name}</span>
-            <button type="button" className="shrink-0 underline" onClick={() => setFile(null)}>
-              Noņemt
-            </button>
-          </div>
+      <div className="border-t border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] p-3">
+        {files.length > 0 ? (
+          <ul className="mb-2 max-h-28 space-y-1 overflow-y-auto">
+            {files.map((f, i) => (
+              <li
+                key={`${f.name}-${f.size}-${i}`}
+                className="flex items-center justify-between gap-2 rounded-md border border-[var(--admin-border-subtle)] bg-white px-2 py-1 text-xs text-[var(--color-apple-text)] dark:bg-zinc-900 dark:text-zinc-100"
+              >
+                <span className="min-w-0 truncate font-medium" title={f.name}>
+                  {f.name}
+                </span>
+                <button
+                  type="button"
+                  className="shrink-0 font-medium text-emerald-800 underline dark:text-emerald-300"
+                  onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
+                >
+                  Noņemt
+                </button>
+              </li>
+            ))}
+          </ul>
         ) : null}
         <div className="flex items-end gap-2">
           <input
             ref={fileRef}
             type="file"
             accept="application/pdf,.pdf"
+            multiple
             className="hidden"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            onChange={(e) => {
+              const picked = Array.from(e.target.files ?? []);
+              if (!picked.length) return;
+              setFiles((prev) => {
+                const next = [...prev];
+                for (const f of picked) {
+                  if (!/\.pdf$/i.test(f.name)) continue;
+                  if (next.some((x) => x.name === f.name && x.size === f.size)) continue;
+                  if (next.length >= 8) break;
+                  next.push(f);
+                }
+                return next;
+              });
+              e.target.value = "";
+            }}
           />
           <button
             type="button"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] hover:bg-black/5 dark:hover:bg-white/10"
-            title="Pievienot PDF"
-            disabled={busy || !geminiAllowed}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-white text-[var(--color-apple-text)] hover:bg-black/5 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-white/10"
+            title="Pievienot PDF (vairākus)"
+            disabled={busy || !geminiAllowed || files.length >= 8}
             onClick={() => fileRef.current?.click()}
           >
             <FileUp className="h-4 w-4" aria-hidden />
@@ -608,8 +639,17 @@ export function AdminOrderCopilotPanel({
           <textarea
             id={inputId}
             rows={2}
-            className="min-h-[2.5rem] flex-1 resize-none rounded-lg border border-[var(--admin-border-subtle)] bg-transparent px-2.5 py-2 text-sm outline-none focus:border-emerald-500"
-            placeholder={geminiAllowed ? "Uzraksti uzdevumu…" : "Gemini nav pieejams šim pasūtījumam"}
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="off"
+            className="min-h-[2.5rem] flex-1 resize-none rounded-lg border border-[var(--admin-border-subtle)] bg-white px-2.5 py-2 text-sm text-[var(--color-apple-text)] outline-none placeholder:text-[var(--color-provin-muted)] focus:border-emerald-600 dark:bg-zinc-900 dark:text-zinc-100"
+            placeholder={
+              geminiAllowed
+                ? files.length
+                  ? "Piem. izvelc datus no PDF…"
+                  : "Uzraksti uzdevumu vai pievieno PDF…"
+                : "Gemini nav pieejams šim pasūtījumam"
+            }
             value={draft}
             disabled={busy || !geminiAllowed}
             onChange={(e) => setDraft(e.target.value)}
@@ -623,7 +663,7 @@ export function AdminOrderCopilotPanel({
           <button
             type="button"
             className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50"
-            disabled={busy || !geminiAllowed || (!draft.trim() && !file)}
+            disabled={busy || !geminiAllowed || (!draft.trim() && files.length === 0)}
             onClick={() => void send()}
             aria-label="Sūtīt un turpināt darbu"
             title="Sūtīt — logs samazinās, Tu turpini darbu"
@@ -631,6 +671,11 @@ export function AdminOrderCopilotPanel({
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </button>
         </div>
+        {files.length > 0 ? (
+          <p className="mt-1.5 text-[10px] text-[var(--color-provin-muted)]">
+            {files.length}/8 PDF · Gemini klasificēs avotu pēc katras atskaites
+          </p>
+        ) : null}
       </div>
     </aside>
   );

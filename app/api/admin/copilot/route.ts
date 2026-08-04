@@ -10,7 +10,7 @@ import { applyCopilotActions } from "@/lib/admin-copilot-apply";
 import { runOrderCopilotGemini } from "@/lib/admin-copilot-gemini";
 import type { CopilotAction, CopilotChatMessage } from "@/lib/admin-copilot-types";
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
-import { PDF_GEMINI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
+import { PDF_GEMINI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES, PDF_MAX_FILES, PDF_MAX_TOTAL_BYTES } from "@/lib/pdf-api-limits";
 
 export const maxDuration = 120;
 export const runtime = "nodejs";
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
   let message = "";
   let history: CopilotChatMessage[] = [];
   let sourceBlocks: WorkspaceSourceBlocks | null = null;
-  let pdf: { fileName: string; buffer: ArrayBuffer } | undefined;
+  let pdfs: { fileName: string; buffer: ArrayBuffer }[] = [];
   let applyMode: "auto" | "preview" = "auto";
 
   try {
@@ -87,30 +87,64 @@ export async function POST(req: Request) {
       sourceBlocks = parseSourceBlocks(form.get("sourceBlocks"));
       const mode = str(form.get("applyMode")).trim();
       if (mode === "preview") applyMode = "preview";
-      const file = form.get("file");
-      if (file && file instanceof File && file.size > 0) {
+
+      const candidates: File[] = [];
+      for (const key of ["files", "file"]) {
+        for (const entry of form.getAll(key)) {
+          if (entry instanceof File && entry.size > 0) candidates.push(entry);
+        }
+      }
+      // dedupe by name+size
+      const seen = new Set<string>();
+      const unique = candidates.filter((f) => {
+        const k = `${f.name}:${f.size}`;
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+      if (unique.length > PDF_MAX_FILES) {
+        return NextResponse.json(
+          { error: "too_many_files", detail: `Maks. ${PDF_MAX_FILES} PDF vienā reizē` },
+          { status: 400 },
+        );
+      }
+      let totalBytes = 0;
+      for (const file of unique) {
         const name = (file.name || "report.pdf").toLowerCase();
         const mime = (file.type || "").toLowerCase();
         if (mime && mime !== "application/pdf" && !mime.includes("pdf")) {
-          return NextResponse.json({ error: "invalid_file_type", detail: "Tikai PDF" }, { status: 400 });
+          return NextResponse.json({ error: "invalid_file_type", detail: `Tikai PDF: ${file.name}` }, { status: 400 });
         }
         if (name && !name.endsWith(".pdf")) {
-          return NextResponse.json({ error: "invalid_file_type", detail: "Tikai PDF" }, { status: 400 });
+          return NextResponse.json({ error: "invalid_file_type", detail: `Tikai PDF: ${file.name}` }, { status: 400 });
         }
         if (file.size > PDF_MAX_FILE_BYTES) {
           return NextResponse.json(
-            { error: "file_too_large", detail: `Maks. ${Math.round(PDF_MAX_FILE_BYTES / (1024 * 1024))} MB` },
+            {
+              error: "file_too_large",
+              detail: `${file.name}: maks. ${Math.round(PDF_MAX_FILE_BYTES / (1024 * 1024))} MB`,
+            },
+            { status: 413 },
+          );
+        }
+        totalBytes += file.size;
+        if (totalBytes > PDF_MAX_TOTAL_BYTES) {
+          return NextResponse.json(
+            {
+              error: "file_too_large",
+              detail: `Kopā pārāk lieli PDF (maks. ${Math.round(PDF_MAX_TOTAL_BYTES / (1024 * 1024))} MB)`,
+            },
             { status: 413 },
           );
         }
         const buffer = await file.arrayBuffer();
         if (buffer.byteLength > PDF_GEMINI_INLINE_MAX_BYTES) {
           return NextResponse.json(
-            { error: "file_too_large", detail: "PDF pārāk liels Gemini inline (maks. ~18 MB)" },
+            { error: "file_too_large", detail: `${file.name}: pārāk liels Gemini inline (maks. ~18 MB)` },
             { status: 413 },
           );
         }
-        pdf = { fileName: file.name || "report.pdf", buffer };
+        pdfs.push({ fileName: file.name || "report.pdf", buffer });
       }
     } else {
       let body: unknown;
@@ -138,7 +172,7 @@ export async function POST(req: Request) {
   if (!sessionId) {
     return NextResponse.json({ error: "missing_session" }, { status: 400 });
   }
-  if (!message && !pdf) {
+  if (!message && pdfs.length === 0) {
     return NextResponse.json({ error: "empty_message", detail: "Ieraksti ziņu vai pievieno PDF" }, { status: 400 });
   }
   if (!sourceBlocks) {
@@ -158,7 +192,7 @@ export async function POST(req: Request) {
       message,
       sourceBlocks,
       history,
-      pdf,
+      pdfs,
     });
 
     const autoResult = applyCopilotActions(sourceBlocks, gemini.actions, {
@@ -175,7 +209,7 @@ export async function POST(req: Request) {
       actions: gemini.actions.length,
       auto: autoResult.applied.length,
       confirm: needsConfirm.length,
-      pdf: Boolean(pdf),
+      pdfCount: pdfs.length,
     });
 
     return NextResponse.json({
