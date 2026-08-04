@@ -10,13 +10,14 @@ import {
   type AzvinIconId,
 } from "@/lib/azvin-hero-copy";
 
-const ICON_BTN_BASE =
-  "relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.03] text-zinc-300 opacity-75 shadow-[0_0_12px_rgba(37,99,235,0.08)] transition-all duration-300 will-change-[transform,box-shadow,border-color,color] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB]";
-
-const ICON_BTN_HOVER =
-  "hover:scale-105 hover:border-[#2563EB] hover:text-[#2563EB] hover:opacity-100 hover:shadow-[0_0_20px_rgba(37,99,235,0.25)]";
-
 const LUCIDE_ICON_CLASS = "h-6 w-6 [stroke-width:1.6]";
+
+const ICON_BTN_CLASS: Record<AzvinIconId, string> = {
+  koreaUsa: azvinStyles.iconBtnKorea,
+  europe: azvinStyles.iconBtnEurope,
+  auction: azvinStyles.iconBtnAuction,
+  dealer: azvinStyles.iconBtnDealer,
+};
 
 function IconGlyph({ id }: { id: AzvinIconId }) {
   switch (id) {
@@ -70,7 +71,7 @@ export function AzvinFeatureIconRow({ copy, forceVisible = false }: Props) {
             <li key={id} className="flex shrink-0">
               <button
                 type="button"
-                className={`group relative ${ICON_BTN_BASE} ${ICON_BTN_HOVER}`}
+                className={`group ${azvinStyles.iconBtn} ${ICON_BTN_CLASS[id]}`}
                 aria-label={label}
               >
                 <FeatureTooltip label={label} />

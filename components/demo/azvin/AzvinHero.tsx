@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
 import { AzvinBrandMark } from "@/components/demo/azvin/AzvinBrandMark";
@@ -12,16 +12,8 @@ import {
   type AzvinLocale,
   type AzvinServiceId,
 } from "@/lib/azvin-hero-copy";
+import { readAzvinLocale, subscribeAzvinLocale } from "@/lib/azvin-locale";
 import { isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
-
-const LOCALE_STORAGE_KEY = "azvin-demo-locale";
-
-function readStoredLocale(): AzvinLocale {
-  if (typeof window === "undefined") return "az";
-  const raw = window.localStorage.getItem(LOCALE_STORAGE_KEY);
-  if (raw === "az" || raw === "en" || raw === "ru" || raw === "lv") return raw;
-  return "az";
-}
 
 export function AzvinHero() {
   const [locale, setLocale] = useState<AzvinLocale>("az");
@@ -33,19 +25,17 @@ export function AzvinHero() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setLocale(readStoredLocale());
+    setLocale(readAzvinLocale());
+    return subscribeAzvinLocale((next) => {
+      setLocale(next);
+      setGlobalError(null);
+      setDemoNote(null);
+      setVinError(null);
+    });
   }, []);
 
-  const copy = useMemo(() => getAzvinHeroCopy(locale), [locale]);
-  const totalAzn = useMemo(() => sumAzvinSelectedAzn(selected), [selected]);
-
-  const onLocaleChange = useCallback((next: AzvinLocale) => {
-    setLocale(next);
-    window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
-    setGlobalError(null);
-    setDemoNote(null);
-    setVinError(null);
-  }, []);
+  const copy = getAzvinHeroCopy(locale);
+  const totalAzn = sumAzvinSelectedAzn(selected);
 
   const onToggleService = useCallback((id: AzvinServiceId) => {
     setSelected((prev) => {
@@ -83,8 +73,6 @@ export function AzvinHero() {
 
   const cardProps = {
     copy,
-    locale,
-    onLocaleChange,
     selected,
     onToggleService,
     totalAzn,

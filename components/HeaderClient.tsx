@@ -10,6 +10,7 @@ import {
   type SiteRailLabelKey,
 } from "@/lib/site-rail-sections";
 import { renderProvinText } from "@/lib/provin-wordmark";
+import { AzvinLocaleSwitcher } from "@/components/demo/azvin/AzvinLocaleSwitcher";
 
 /** Mājas navigācijas rindkopas kā `/#…` vai `/biezi-jautajumi`. */
 export function HeaderClient() {
@@ -118,9 +119,7 @@ export function HeaderClient() {
         {isAzvinDemo ? (
           <Link href="/demo/azvin" className={logoClass} aria-label="AZ.VIN">
             <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>AZ.</span>
-            <span style={{ color: "#00B5E2" }}>V</span>
-            <span style={{ color: "#E30A17" }}>I</span>
-            <span style={{ color: "#3F9C35" }}>N</span>
+            <span className="text-provin-accent">VIN</span>
           </Link>
         ) : (
           <Link href="/" className={logoClass} aria-label={isHome ? "PROVIN" : "PROVIN.LV"}>
@@ -164,17 +163,21 @@ export function HeaderClient() {
             </button>
           ) : null}
 
-          <Link
-            href={pathname as never}
-            locale={targetLocale}
-            className={`relative z-[52] inline-flex min-h-[1.8rem] min-w-[1.8rem] shrink-0 items-center justify-center text-[13.8px] leading-none no-underline transition lg:min-h-[2.25rem] lg:min-w-[2.25rem] lg:text-[calc(17px*1.15)] ${
-              headerChromeDark ? "text-white hover:text-white/80" : "text-[#1d1d1f] hover:text-[#111827]"
-            }`}
-            aria-label={localeLabel}
-            title={localeLabel}
-          >
-            <span aria-hidden>{localeFlag}</span>
-          </Link>
+          {isAzvinDemo ? (
+            <AzvinLocaleSwitcher dark={headerChromeDark} />
+          ) : (
+            <Link
+              href={pathname as never}
+              locale={targetLocale}
+              className={`relative z-[52] inline-flex min-h-[1.8rem] min-w-[1.8rem] shrink-0 items-center justify-center text-[13.8px] leading-none no-underline transition lg:min-h-[2.25rem] lg:min-w-[2.25rem] lg:text-[calc(17px*1.15)] ${
+                headerChromeDark ? "text-white hover:text-white/80" : "text-[#1d1d1f] hover:text-[#111827]"
+              }`}
+              aria-label={localeLabel}
+              title={localeLabel}
+            >
+              <span aria-hidden>{localeFlag}</span>
+            </Link>
+          )}
         </div>
       </div>
 

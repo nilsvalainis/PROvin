@@ -7,13 +7,6 @@ export const AZVIN_DEALER_BRANDS = TP5_DEALER_BRANDS;
 export const AZVIN_LOCALES = ["az", "en", "ru", "lv"] as const;
 export type AzvinLocale = (typeof AZVIN_LOCALES)[number];
 
-export const AZVIN_LOCALE_LABELS: Record<AzvinLocale, string> = {
-  az: "AZ",
-  en: "EN",
-  ru: "RU",
-  lv: "LV",
-};
-
 /** Purchasable services (Europe is listed but not selectable yet). */
 export const AZVIN_SERVICE_IDS = ["koreaUsa", "dealer", "europe"] as const;
 export type AzvinServiceId = (typeof AZVIN_SERVICE_IDS)[number];

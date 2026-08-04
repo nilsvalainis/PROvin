@@ -5,19 +5,14 @@ import azvinStyles from "@/app/[locale]/demo/azvin/azvin.module.css";
 import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import {
   AZVIN_DEALER_BRANDS,
-  AZVIN_LOCALES,
-  AZVIN_LOCALE_LABELS,
   AZVIN_SERVICE_ENABLED,
   AZVIN_SERVICE_IDS,
   type AzvinHeroCopy,
-  type AzvinLocale,
   type AzvinServiceId,
 } from "@/lib/azvin-hero-copy";
 
 type Props = {
   copy: AzvinHeroCopy;
-  locale: AzvinLocale;
-  onLocaleChange: (locale: AzvinLocale) => void;
   selected: ReadonlySet<AzvinServiceId>;
   onToggleService: (id: AzvinServiceId) => void;
   totalAzn: number;
@@ -32,8 +27,6 @@ type Props = {
 
 export function AzvinPricingCard({
   copy,
-  locale,
-  onLocaleChange,
   selected,
   onToggleService,
   totalAzn,
@@ -49,28 +42,8 @@ export function AzvinPricingCard({
     <article className={`${styles.spatialCard} w-full`}>
       <div className={styles.cardHeader}>
         <p className={azvinStyles.demoBanner}>{copy.demoBanner}</p>
-
-        <div className={azvinStyles.langSwitcher} role="group" aria-label={copy.langSwitcherAria}>
-          {AZVIN_LOCALES.map((code) => {
-            const active = code === locale;
-            return (
-              <button
-                key={code}
-                type="button"
-                className={`${azvinStyles.langBtn} ${active ? azvinStyles.langBtnActive : ""}`}
-                aria-pressed={active}
-                onClick={() => onLocaleChange(code)}
-              >
-                {AZVIN_LOCALE_LABELS[code]}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className={styles.tierMeta} aria-live="polite">
-          <p className={styles.tierMetaTitle}>{copy.cardTitle}</p>
-          <p className={styles.tierMetaDesc}>{copy.cardDescription}</p>
-        </div>
+        <p className={azvinStyles.cardTitle}>{copy.cardTitle}</p>
+        <p className={azvinStyles.cardDesc}>{copy.cardDescription}</p>
       </div>
 
       <div className={styles.featureStack}>
@@ -163,7 +136,7 @@ export function AzvinPricingCard({
         </div>
       </div>
 
-      <p className={styles.turnaround}>
+      <p className={azvinStyles.turnaroundPremium}>
         <span>{copy.turnaround}</span>
       </p>
 
@@ -174,7 +147,7 @@ export function AzvinPricingCard({
           <span className={styles.liquidCtaShimmer} aria-hidden />
           <span className={styles.liquidCtaLabel}>{copy.ctaLabel(totalAzn)}</span>
         </button>
-        <p className={styles.featureFootnote}>{copy.footnote}</p>
+        <p className={azvinStyles.footnotePremium}>{copy.footnote}</p>
       </div>
     </article>
   );
