@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { Bot, FileUp, Loader2, Send, Undo2, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Bot, FileUp, Loader2, Minimize2, Send, Undo2, X } from "lucide-react";
 import type { CopilotAction, CopilotChatMessage, CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 
@@ -42,22 +43,24 @@ export function AdminOrderCopilotTrigger({
   open,
   onOpen,
   disabled,
+  busy,
 }: {
   open: boolean;
   onOpen: () => void;
   disabled?: boolean;
+  busy?: boolean;
 }) {
   return (
     <button
       type="button"
       disabled={disabled}
       className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-emerald-200/90 bg-emerald-50 px-2.5 text-sm font-medium text-emerald-900 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
-      title="Order Copilot — chat + PDF"
+      title="Order Copilot — chat + PDF (nebloķē paneli)"
       aria-label="Atvērt Order Copilot"
       aria-expanded={open}
       onClick={onOpen}
     >
-      <Bot className="h-4 w-4" aria-hidden />
+      {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Bot className="h-4 w-4" aria-hidden />}
       <span className="hidden sm:inline">Copilot</span>
     </button>
   );
@@ -71,16 +74,20 @@ export function AdminOrderCopilotPanel({
   getSourceBlocks,
   applyPatchedBlocks,
   restoreBlocksSnapshot,
-}: Props) {
+  onBusyChange,
+}: Props & { onBusyChange?: (busy: boolean) => void }) {
   const inputId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const [minimized, setMinimized] = useState(false);
+  const [unreadDone, setUnreadDone] = useState(false);
   const [messages, setMessages] = useState<UiMessage[]>([
     {
       id: "welcome",
       role: "system",
       content:
-        "Raksti brīvi vai pievieno PDF. Piemērs: „AutoDNA: negadījums 17.11.2020, 5000 €, Vācija”. Skaidras high-confidence rindas aizpildās automātiski; neskaidrām — apstiprini.",
+        "Peldošs logs — aizsedz tikai stūri. Pēc komandas automātiski samazinās, kamēr Tu turpini darbu. Piemērs: „AutoDNA: negadījums 17.11.2020, 5000 €, Vācija”.",
     },
   ]);
   const [draft, setDraft] = useState("");
@@ -90,9 +97,24 @@ export function AdminOrderCopilotPanel({
   const [undoSnapshot, setUndoSnapshot] = useState<WorkspaceSourceBlocks | null>(null);
 
   useEffect(() => {
-    if (!open) return;
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    onBusyChange?.(busy);
+  }, [busy, onBusyChange]);
+
+  useEffect(() => {
+    if (open) {
+      setMinimized(false);
+      setUnreadDone(false);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || minimized) return;
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
-  }, [messages, open, busy]);
+  }, [messages, open, busy, minimized]);
 
   const historyForApi = useCallback((): CopilotChatMessage[] => {
     return messages
@@ -116,6 +138,10 @@ export function AdminOrderCopilotPanel({
 
     setBusy(true);
     setError(null);
+    setUnreadDone(false);
+    // Uzreiz samazina — operators turpina darbu, kamēr Gemini strādā
+    setMinimized(true);
+
     const userLabel = text || `(PDF: ${file?.name ?? "fails"})`;
     setMessages((prev) => [...prev, { id: newId(), role: "user", content: userLabel }]);
     setDraft("");
@@ -151,8 +177,9 @@ export function AdminOrderCopilotPanel({
         else setError(detail || data.error || "Copilot kļūda");
         setMessages((prev) => [
           ...prev,
-          { id: newId(), role: "assistant", content: "Neizdevās apstrādāt — skatīt kļūdu zemāk." },
+          { id: newId(), role: "assistant", content: "Neizdevās apstrādāt — skatīt kļūdu panelī." },
         ]);
+        setUnreadDone(true);
         return;
       }
 
@@ -180,8 +207,10 @@ export function AdminOrderCopilotPanel({
           autoApplied: data.autoApplied,
         },
       ]);
+      setUnreadDone(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "network_error");
+      setUnreadDone(true);
     } finally {
       setBusy(false);
     }
@@ -192,6 +221,7 @@ export function AdminOrderCopilotPanel({
       if (busy || !actions.length) return;
       setBusy(true);
       setError(null);
+      setMinimized(true);
       try {
         const res = await fetch("/api/admin/copilot", {
           method: "PUT",
@@ -206,6 +236,7 @@ export function AdminOrderCopilotPanel({
         const data = (await res.json().catch(() => ({}))) as CopilotApiOk & { error?: string; detail?: string };
         if (!res.ok) {
           setError(data.detail || data.error || "Apstiprināšana neizdevās");
+          setUnreadDone(true);
           return;
         }
         mergePatch(data.patchedSourceBlocks, data.changedKeys);
@@ -217,6 +248,7 @@ export function AdminOrderCopilotPanel({
             content: `Apstiprināts: ${(data.autoApplied ?? []).map((a) => a.label ?? a.type).join("; ") || "—"}`,
           },
         ]);
+        setUnreadDone(true);
       } finally {
         setBusy(false);
       }
@@ -234,141 +266,183 @@ export function AdminOrderCopilotPanel({
     ]);
   }, [restoreBlocksSnapshot, undoSnapshot]);
 
-  if (!open) return null;
+  const requestClose = useCallback(() => {
+    if (busy) {
+      setMinimized(true);
+      return;
+    }
+    setMinimized(false);
+    setUnreadDone(false);
+    onClose();
+  }, [busy, onClose]);
 
-  return (
-    <>
-      <button
-        type="button"
-        className="fixed inset-0 z-[55] bg-black/30"
-        aria-label="Aizvērt Copilot"
-        onClick={onClose}
-      />
-      <aside
-        className="fixed right-0 top-0 z-[56] flex h-full w-full max-w-md flex-col border-l border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] shadow-2xl"
-        aria-label="Order Copilot"
-      >
-        <div className="flex items-center justify-between gap-2 border-b border-[var(--admin-border-subtle)] px-3 py-2.5">
-          <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Order Copilot</h2>
-            <p className="truncate text-[11px] text-[var(--color-provin-muted)]">Chat + PDF → tabulas</p>
-          </div>
-          <div className="flex items-center gap-1">
-            {undoSnapshot ? (
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-amber-800 hover:bg-amber-50 dark:text-amber-200 dark:hover:bg-amber-950/40"
-                onClick={undo}
-                title="Atsaukt pēdējo aizpildījumu"
-              >
-                <Undo2 className="h-3.5 w-3.5" aria-hidden />
-                Atsaukt
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="rounded-md p-1.5 text-[var(--color-provin-muted)] hover:bg-black/5 dark:hover:bg-white/10"
-              aria-label="Aizvērt"
-              onClick={onClose}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+  const expand = useCallback(() => {
+    setMinimized(false);
+    setUnreadDone(false);
+  }, []);
 
-        <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-3 py-3 text-sm">
-          {messages.map((m) => (
-            <div
-              key={m.id}
-              className={
-                m.role === "user"
-                  ? "ml-6 rounded-lg bg-emerald-600/90 px-3 py-2 text-white"
-                  : m.role === "system"
-                    ? "rounded-lg border border-dashed border-[var(--admin-border-subtle)] px-3 py-2 text-[12px] text-[var(--color-provin-muted)]"
-                    : "mr-4 rounded-lg bg-black/[0.04] px-3 py-2 text-[var(--color-apple-text)] dark:bg-white/10"
-              }
-            >
-              <div className="whitespace-pre-wrap">{m.content}</div>
-              {m.needsConfirm && m.needsConfirm.length > 0 ? (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    className="rounded-md bg-emerald-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
-                    onClick={() => confirmActions(m.needsConfirm!)}
-                  >
-                    Apstiprināt ({m.needsConfirm.length})
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          ))}
-          {busy ? (
-            <div className="flex items-center gap-2 text-xs text-[var(--color-provin-muted)]">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-              Gemini lasa / aizpilda…
-            </div>
-          ) : null}
-        </div>
+  if (!mounted || !open) return null;
 
-        {error ? <p className="px-3 pb-1 text-xs text-red-600 dark:text-red-400">{error}</p> : null}
-
-        <div className="border-t border-[var(--admin-border-subtle)] p-3">
-          {file ? (
-            <div className="mb-2 flex items-center justify-between gap-2 rounded-md bg-black/[0.04] px-2 py-1 text-xs dark:bg-white/10">
-              <span className="truncate">{file.name}</span>
-              <button type="button" className="shrink-0 underline" onClick={() => setFile(null)}>
-                Noņemt
-              </button>
-            </div>
-          ) : null}
-          <div className="flex items-end gap-2">
-            <input
-              ref={fileRef}
-              type="file"
-              accept="application/pdf,.pdf"
-              className="hidden"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            />
-            <button
-              type="button"
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] hover:bg-black/5 dark:hover:bg-white/10"
-              title="Pievienot PDF"
-              disabled={busy || !geminiAllowed}
-              onClick={() => fileRef.current?.click()}
-            >
-              <FileUp className="h-4 w-4" aria-hidden />
-            </button>
-            <label htmlFor={inputId} className="sr-only">
-              Ziņa Copilot
-            </label>
-            <textarea
-              id={inputId}
-              rows={2}
-              className="min-h-[2.5rem] flex-1 resize-none rounded-lg border border-[var(--admin-border-subtle)] bg-transparent px-2.5 py-2 text-sm outline-none focus:border-emerald-500"
-              placeholder={geminiAllowed ? "Uzraksti uzdevumu…" : "Gemini nav pieejams šim pasūtījumam"}
-              value={draft}
-              disabled={busy || !geminiAllowed}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  void send();
-                }
-              }}
-            />
-            <button
-              type="button"
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50"
-              disabled={busy || !geminiAllowed || (!draft.trim() && !file)}
-              onClick={() => void send()}
-              aria-label="Sūtīt"
-            >
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </button>
-          </div>
-        </div>
-      </aside>
-    </>
+  const chip = (
+    <button
+      type="button"
+      className="fixed bottom-20 right-4 z-[45] flex max-w-[16rem] items-center gap-2 rounded-full border border-emerald-300/80 bg-emerald-50 px-3 py-2 text-left text-xs font-medium text-emerald-950 shadow-lg dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-50"
+      onClick={expand}
+      title="Atvērt Copilot (panelis nav bloķēts)"
+    >
+      {busy ? (
+        <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+      ) : (
+        <Bot className="h-4 w-4 shrink-0" aria-hidden />
+      )}
+      <span className="min-w-0 truncate">
+        {busy ? "Copilot strādā… Turpini darbu" : unreadDone ? "Copilot gatavs — atver" : "Copilot (samazināts)"}
+      </span>
+      {unreadDone && !busy ? (
+        <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-600" aria-hidden />
+      ) : null}
+    </button>
   );
+
+  const panel = (
+    <aside
+      className="fixed bottom-20 right-3 z-[45] flex h-[min(32rem,calc(100vh-7rem))] w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] shadow-2xl"
+      aria-label="Order Copilot"
+    >
+      <div className="flex items-center justify-between gap-2 border-b border-[var(--admin-border-subtle)] px-3 py-2">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Order Copilot</h2>
+          <p className="truncate text-[11px] text-[var(--color-provin-muted)]">
+            {busy ? "Strādā fonā — panelis nebloķē" : "Chat + PDF → tabulas"}
+          </p>
+        </div>
+        <div className="flex items-center gap-0.5">
+          {undoSnapshot ? (
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-amber-800 hover:bg-amber-50 dark:text-amber-200 dark:hover:bg-amber-950/40"
+              onClick={undo}
+              title="Atsaukt pēdējo aizpildījumu"
+            >
+              <Undo2 className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="rounded-md p-1.5 text-[var(--color-provin-muted)] hover:bg-black/5 dark:hover:bg-white/10"
+            aria-label="Samazināt"
+            title="Samazināt — turpini darbu"
+            onClick={() => setMinimized(true)}
+          >
+            <Minimize2 className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            className="rounded-md p-1.5 text-[var(--color-provin-muted)] hover:bg-black/5 dark:hover:bg-white/10"
+            aria-label={busy ? "Samazināt (Copilot vēl strādā)" : "Aizvērt"}
+            title={busy ? "Kamēr strādā — tikai samazina" : "Aizvērt"}
+            onClick={requestClose}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-3 py-3 text-sm">
+        {messages.map((m) => (
+          <div
+            key={m.id}
+            className={
+              m.role === "user"
+                ? "ml-6 rounded-lg bg-emerald-600/90 px-3 py-2 text-white"
+                : m.role === "system"
+                  ? "rounded-lg border border-dashed border-[var(--admin-border-subtle)] px-3 py-2 text-[12px] text-[var(--color-provin-muted)]"
+                  : "mr-4 rounded-lg bg-black/[0.04] px-3 py-2 text-[var(--color-apple-text)] dark:bg-white/10"
+            }
+          >
+            <div className="whitespace-pre-wrap">{m.content}</div>
+            {m.needsConfirm && m.needsConfirm.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={busy}
+                  className="rounded-md bg-emerald-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+                  onClick={() => confirmActions(m.needsConfirm!)}
+                >
+                  Apstiprināt ({m.needsConfirm.length})
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ))}
+        {busy ? (
+          <div className="flex items-center gap-2 text-xs text-[var(--color-provin-muted)]">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+            Gemini lasa / aizpilda fonā…
+          </div>
+        ) : null}
+      </div>
+
+      {error ? <p className="px-3 pb-1 text-xs text-red-600 dark:text-red-400">{error}</p> : null}
+
+      <div className="border-t border-[var(--admin-border-subtle)] p-3">
+        {file ? (
+          <div className="mb-2 flex items-center justify-between gap-2 rounded-md bg-black/[0.04] px-2 py-1 text-xs dark:bg-white/10">
+            <span className="truncate">{file.name}</span>
+            <button type="button" className="shrink-0 underline" onClick={() => setFile(null)}>
+              Noņemt
+            </button>
+          </div>
+        ) : null}
+        <div className="flex items-end gap-2">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+          <button
+            type="button"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] hover:bg-black/5 dark:hover:bg-white/10"
+            title="Pievienot PDF"
+            disabled={busy || !geminiAllowed}
+            onClick={() => fileRef.current?.click()}
+          >
+            <FileUp className="h-4 w-4" aria-hidden />
+          </button>
+          <label htmlFor={inputId} className="sr-only">
+            Ziņa Copilot
+          </label>
+          <textarea
+            id={inputId}
+            rows={2}
+            className="min-h-[2.5rem] flex-1 resize-none rounded-lg border border-[var(--admin-border-subtle)] bg-transparent px-2.5 py-2 text-sm outline-none focus:border-emerald-500"
+            placeholder={geminiAllowed ? "Uzraksti uzdevumu…" : "Gemini nav pieejams šim pasūtījumam"}
+            value={draft}
+            disabled={busy || !geminiAllowed}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void send();
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50"
+            disabled={busy || !geminiAllowed || (!draft.trim() && !file)}
+            onClick={() => void send()}
+            aria-label="Sūtīt un turpināt darbu"
+            title="Sūtīt — logs samazinās, Tu turpini darbu"
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
+
+  return createPortal(minimized ? chip : panel, document.body);
 }

@@ -646,6 +646,7 @@ export function OrderDetailWorkspace({
   const [wizardStep, setWizardStep] = useState(0);
   const [phrasesOpen, setPhrasesOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
+  const [copilotBusy, setCopilotBusy] = useState(false);
   const [vinBarCopyFlash, setVinBarCopyFlash] = useState(false);
   const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
   const [alertsPortalEl, setAlertsPortalEl] = useState<HTMLElement | null>(null);
@@ -3241,6 +3242,7 @@ export function OrderDetailWorkspace({
         getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
         applyPatchedBlocks={applyCopilotPatchedBlocks}
         restoreBlocksSnapshot={restoreCopilotBlocksSnapshot}
+        onBusyChange={setCopilotBusy}
       />
 
       {!workspaceHydrated ? (
@@ -3313,6 +3315,7 @@ export function OrderDetailWorkspace({
           <AdminCommonPhrasesDrawerTrigger open={phrasesOpen} onOpen={() => setPhrasesOpen(true)} />
           <AdminOrderCopilotTrigger
             open={copilotOpen}
+            busy={copilotBusy}
             disabled={!payload.geminiAllowed}
             onOpen={() => {
               setPhrasesOpen(false);
