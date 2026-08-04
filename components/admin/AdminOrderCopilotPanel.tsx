@@ -102,6 +102,7 @@ export function AdminOrderCopilotTrigger({
   return (
     <button
       type="button"
+      data-copilot-trigger
       disabled={disabled}
       className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-emerald-200/90 bg-emerald-50 px-2.5 text-sm font-medium text-emerald-900 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
       title="Order Copilot — chat + PDF (nebloķē paneli)"
@@ -183,6 +184,20 @@ export function AdminOrderCopilotPanel({
       setUnreadDone(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open || minimized) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (dragging || dragRef.current) return;
+      const t = e.target as HTMLElement | null;
+      if (!t) return;
+      if (t.closest("[data-copilot-panel]")) return;
+      if (t.closest("[data-copilot-trigger]")) return;
+      setMinimized(true);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [open, minimized, dragging]);
 
   useEffect(() => {
     if (!open || minimized) return;
@@ -426,6 +441,7 @@ export function AdminOrderCopilotPanel({
 
   const chip = (
     <div
+      data-copilot-panel
       className={`fixed z-[45] flex max-w-[16rem] touch-none items-center gap-1 rounded-full border border-emerald-300/80 bg-emerald-50 pr-1 text-left text-xs font-medium text-emerald-950 shadow-lg dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-50 ${
         dragging ? "cursor-grabbing" : ""
       }`}
@@ -464,6 +480,7 @@ export function AdminOrderCopilotPanel({
 
   const panel = (
     <aside
+      data-copilot-panel
       className={`fixed z-[45] flex h-[min(32rem,calc(100vh-7rem))] w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] shadow-2xl ${
         dragging ? "cursor-grabbing select-none" : ""
       }`}
