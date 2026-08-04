@@ -75,12 +75,6 @@ export function AdminManualBannersEditor({
         </div>
       </div>
 
-      {banners.length === 0 ? (
-        <p className="text-[10px] text-[var(--color-provin-muted)]">
-          Pievieno pelēku, dzeltenu vai sarkanu joslu ar savu tekstu — tā parādīsies PDF augšā.
-        </p>
-      ) : null}
-
       {banners.map((b) => {
         const chrome = severityChrome(b.severity);
         const Icon = chrome.Icon;
