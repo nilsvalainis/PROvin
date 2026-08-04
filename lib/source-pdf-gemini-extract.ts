@@ -153,7 +153,7 @@ function dedupeIncidents(rows: LtabIncidentRow[]): LtabIncidentRow[] {
 const VENDOR_SYSTEM = `You are PROVIN.LV admin PDF data extractor. Read the attached vehicle history PDF (and optional text extract) for ONE vendor report.
 Return ONLY valid JSON — no markdown.
 
-Map every table and timeline you can find into structured fields. Dates as DD.MM.YYYY when possible. Odometer as digits only (no "km"). Country names in Latvian when known (e.g. Latvija, Vācija).
+Map every table and timeline you can find into structured fields. Dates as DD.MM.YYYY when possible. If the source shows only MM.YYYY / M.YYYY (e.g. 06.2020), always expand to 01.MM.YYYY (e.g. 01.06.2020). Odometer as digits only (no "km"). Country names in Latvian when known (e.g. Latvija, Vācija).
 
 JSON schema:
 {
@@ -182,7 +182,7 @@ const TARGET_USER: Record<HistoryVendorPdfTarget, string> = {
   autodna: `TARGET: AutoDNA report (Latvian UI labels).
 CRITICAL terminology:
 - "TRANSPORTLĪDZEKĻA VĒSTURE" = odometer timeline → serviceHistory ONLY when km digits are shown next to the date.
-- "Transportlīdzekļa zaudējumu apjoms" / "Zaudējumu apjoms" = damage/insurance loss events → map EVERY row to incidents[] (csngDate as MM.YYYY timeline date, lossAmount as full EUR range e.g. "300 - 400 EUR" or "40 000 - 41 000 EUR", incidentNo=country from "Valsts …"). Also mirror into damageDetails when sides/zones are listed.
+- "Transportlīdzekļa zaudējumu apjoms" / "Zaudējumu apjoms" = damage/insurance loss events → map EVERY row to incidents[] (csngDate: if source is MM.YYYY use 01.MM.YYYY e.g. 06.2020 → 01.06.2020; lossAmount as full EUR range e.g. "300 - 400 EUR" or "40 000 - 41 000 EUR", incidentNo=country from "Valsts …"). Also mirror into damageDetails when sides/zones are listed.
 - Year-only lines in history without km are NOT mileage rows.
 Extract: first registration, Status Center, average mileage text into comments.`,
   carvertical: `TARGET: CarVertical report.

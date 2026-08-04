@@ -56,7 +56,7 @@ If a PDF vendor is unclear, set clarificationNeeded (short Latvian) for that fil
 reply: short Latvian confirmation. No markdown fences.
 
 Rules:
-- Dates: prefer DD.MM.YYYY
+- Dates: always full DD.MM.YYYY in output. If the report shows only MM.YYYY / M.YYYY (e.g. 06.2020 or 11.2019), convert to 01.MM.YYYY (e.g. 01.06.2020). Never leave month-year-only dates.
 - lossAmount: keep ranges like "300 - 400 EUR"; free text allowed if not a number
 - odometer: digits only (no "km")
 - country: Latvian names when known (Vācija, Latvija, …)

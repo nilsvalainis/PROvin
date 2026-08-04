@@ -46,7 +46,7 @@ export function sanitizeMileageCountryField(raw: string): string {
   return normalized;
 }
 
-/** ISO (YYYY-MM-DD) → DD.MM.YYYY; jau DD.MM.YYYY → normalizē padding; nezināma diena `00.` → `01.`. */
+/** ISO (YYYY-MM-DD) → DD.MM.YYYY; MM.YYYY → 01.MM.YYYY; jau DD.MM.YYYY → normalizē padding; nezināma diena `00.` → `01.`. */
 export function formatAutoRecordsDateForOutput(raw: string): string {
   const t = cleanDateStr(raw.trim());
   if (!t) return "";
@@ -58,6 +58,14 @@ export function formatAutoRecordsDateForOutput(raw: string): string {
     if (d === 0) d = 1;
     return `${String(d).padStart(2, "0")}.${String(m).padStart(2, "0")}.${y}`;
   }
+  const isoMonth = t.match(/^(\d{4})-(\d{2})$/);
+  if (isoMonth) {
+    const y = +isoMonth[1];
+    const m = +isoMonth[2];
+    if (m >= 1 && m <= 12) {
+      return `01.${String(m).padStart(2, "0")}.${y}`;
+    }
+  }
   const lv = t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
   if (lv) {
     let d = +lv[1];
@@ -65,6 +73,15 @@ export function formatAutoRecordsDateForOutput(raw: string): string {
     const y = +lv[3];
     if (d === 0) d = 1;
     return `${String(d).padStart(2, "0")}.${String(m).padStart(2, "0")}.${y}`;
+  }
+  // MM.YYYY / M.YYYY (AutoDNA / atskaišu mēneša datumi) → 01.MM.YYYY
+  const monthYear = t.match(/^(\d{1,2})\.(\d{4})$/);
+  if (monthYear) {
+    const m = +monthYear[1];
+    const y = +monthYear[2];
+    if (m >= 1 && m <= 12 && y >= 1900 && y <= 2100) {
+      return `01.${String(m).padStart(2, "0")}.${y}`;
+    }
   }
   return t;
 }

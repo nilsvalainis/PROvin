@@ -35,6 +35,12 @@ describe("formatAutoRecordsDateForOutput", () => {
     expect(formatAutoRecordsDateForOutput("00.05.2025")).toBe("01.05.2025");
     expect(formatAutoRecordsDateForOutput("15.05.2025")).toBe("15.05.2025");
   });
+
+  it("expands MM.YYYY to 01.MM.YYYY", () => {
+    expect(formatAutoRecordsDateForOutput("06.2020")).toBe("01.06.2020");
+    expect(formatAutoRecordsDateForOutput("11.2019")).toBe("01.11.2019");
+    expect(formatAutoRecordsDateForOutput("2020-06")).toBe("01.06.2020");
+  });
 });
 
 describe("deepSanitizeDraftStrings", () => {
