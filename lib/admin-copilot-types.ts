@@ -1,5 +1,5 @@
 /**
- * Admin Order Copilot — strukturētās darbības (negadījumi / nobraukums).
+ * Admin Order Copilot — strukturētās darbības (negadījumi / nobraukums / serviss / RAW).
  */
 
 export const COPILOT_SOURCE_KEYS = [
@@ -34,7 +34,29 @@ export type CopilotMileageAction = {
   note?: string;
 };
 
-export type CopilotAction = CopilotIncidentAction | CopilotMileageAction;
+/** Oficiālā dīlera „Servisa vēsture” — faktu rindas (datums + km + darbi). */
+export type CopilotServiceHistoryAction = {
+  type: "set_service_history";
+  source: "auto_records";
+  text: string;
+  confidence: CopilotConfidence;
+  note?: string;
+};
+
+/** Būtiska papildu info → avota RAW žurnāls. */
+export type CopilotAppendRawAction = {
+  type: "append_raw";
+  source: CopilotSourceKey;
+  text: string;
+  confidence: CopilotConfidence;
+  note?: string;
+};
+
+export type CopilotAction =
+  | CopilotIncidentAction
+  | CopilotMileageAction
+  | CopilotServiceHistoryAction
+  | CopilotAppendRawAction;
 
 export type CopilotChatMessage = {
   role: "user" | "assistant";

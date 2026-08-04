@@ -272,6 +272,16 @@ export function AdminAutoRecordsSourceBlock({
             }
           />
           <AdminSourceCommentField
+            label="Servisa vēsture"
+            value={value.serviceHistoryNotes ?? ""}
+            onChange={(next) => onChange({ ...value, serviceHistoryNotes: next })}
+            readOnly={readOnly}
+            disabled={disabled}
+            compact
+            readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
+            aria-label="AUTO RECORDS — Servisa vēsture"
+          />
+          <AdminSourceCommentField
             value={value.comments}
             onChange={(next) => onChange({ ...value, comments: next })}
             readOnly={readOnly}

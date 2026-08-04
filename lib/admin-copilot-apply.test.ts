@@ -76,6 +76,37 @@ describe("applyCopilotActions", () => {
     const result = applyCopilotActions(blocks, actions, { onlyAuto: false });
     expect(result.skipped[0]?.reason).toBe("auto_records_has_no_incidents");
   });
+
+  it("sets Servisa vēsture on auto_records", () => {
+    const blocks = createDefaultSourceBlocks();
+    const actions: CopilotAction[] = [
+      {
+        type: "set_service_history",
+        source: "auto_records",
+        text: "12.03.2019 | 87450 km | Eļļas maiņa\n01.06.2020 | 102300 km | Bremžu kluči",
+        confidence: "high",
+      },
+    ];
+    const result = applyCopilotActions(blocks, actions, { onlyAuto: true });
+    expect(result.applied).toHaveLength(1);
+    expect(result.sourceBlocks.auto_records.serviceHistoryNotes).toContain("Eļļas maiņa");
+    expect(result.sourceBlocks.auto_records.serviceHistoryNotes).toContain("102300");
+  });
+
+  it("appends significant facts to source RAW", () => {
+    const blocks = createDefaultSourceBlocks();
+    const actions: CopilotAction[] = [
+      {
+        type: "append_raw",
+        source: "autodna",
+        text: "Type code: 8V\nTaxi: nē",
+        confidence: "high",
+      },
+    ];
+    const result = applyCopilotActions(blocks, actions, { onlyAuto: true });
+    expect(result.applied).toHaveLength(1);
+    expect(result.sourceBlocks.autodna.geminiContextRaw).toContain("Type code: 8V");
+  });
 });
 
 describe("buildCopilotBlocksSummary", () => {
@@ -101,10 +132,27 @@ describe("parseCopilotGeminiPayload", () => {
             country: "Latvija",
             confidence: "high",
           },
+          {
+            type: "set_service_history",
+            source: "autodna",
+            text: "01.01.2020 | 10000 km | Apkope",
+            confidence: "high",
+          },
+          {
+            type: "append_raw",
+            source: "carvertical",
+            text: "Stolen check: clear",
+            confidence: "medium",
+          },
         ],
       }),
     );
-    expect(r.actions).toHaveLength(1);
+    expect(r.actions).toHaveLength(3);
     expect(r.actions[0]?.type).toBe("upsert_incident");
+    expect(r.actions[1]?.type).toBe("set_service_history");
+    if (r.actions[1]?.type === "set_service_history") {
+      expect(r.actions[1].source).toBe("auto_records");
+    }
+    expect(r.actions[2]?.type).toBe("append_raw");
   });
 });

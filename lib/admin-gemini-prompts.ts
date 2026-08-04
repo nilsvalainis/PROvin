@@ -428,8 +428,9 @@ LTAB / OCTA FOCUS:
   if (blockLabel === L.auto_records) {
     return `
 
-DEALER / OUTVIN FOCUS:
-- Type code, engine code, equipment, accident/stolen checks, dealer service journal — not only the km table.
+DEALER / AUTO RECORDS FOCUS:
+- Type code, engine code, equipment, accident/stolen checks, and „Servisa vēsture” (service/repair journal: date + odometer + work done) — not only the km table.
+- When Servisa vēsture / RAW facts are present in context, weave those maintenance facts into the buyer comment; do not invent services.
 - Explain fleet/taxi/commercial type-code signals; one brief km/date cross-check vs CSDD/AutoDNA/CarVertical — leave engine-hour narrative to the mileage comment.`;
   }
   if (blockLabel === L.citi_avoti) {

@@ -27,22 +27,20 @@ function asConfidence(v: unknown): CopilotConfidence {
 function parseAction(raw: unknown): CopilotAction | null {
   const o = asRecord(raw);
   if (!o) return null;
-  const type = asString(o.type, 32);
+  const type = asString(o.type, 40);
   const sourceRaw = asString(o.source, 32);
   if (!isCopilotSourceKey(sourceRaw)) return null;
   const source: CopilotSourceKey = sourceRaw;
-  const date = asString(o.date, 40);
   const confidence = asConfidence(o.confidence);
-  const country = asString(o.country, 80);
   const note = asString(o.note, 200);
 
   if (type === "upsert_incident") {
     return {
       type: "upsert_incident",
       source,
-      date,
+      date: asString(o.date, 40),
       lossAmount: asString(o.lossAmount, 120),
-      country,
+      country: asString(o.country, 80),
       confidence,
       ...(note ? { note } : {}),
     };
@@ -51,9 +49,31 @@ function parseAction(raw: unknown): CopilotAction | null {
     return {
       type: "upsert_mileage",
       source,
-      date,
+      date: asString(o.date, 40),
       odometer: asString(o.odometer, 32),
-      country,
+      country: asString(o.country, 80),
+      confidence,
+      ...(note ? { note } : {}),
+    };
+  }
+  if (type === "set_service_history") {
+    const text = asString(o.text, 12_000);
+    if (!text) return null;
+    return {
+      type: "set_service_history",
+      source: "auto_records",
+      text,
+      confidence,
+      ...(note ? { note } : {}),
+    };
+  }
+  if (type === "append_raw") {
+    const text = asString(o.text, 12_000);
+    if (!text) return null;
+    return {
+      type: "append_raw",
+      source,
+      text,
       confidence,
       ...(note ? { note } : {}),
     };
@@ -72,7 +92,7 @@ export function parseCopilotGeminiPayload(rawJson: string): CopilotGeminiRespons
   if (!o) throw new Error("gemini_invalid_json");
   const actionsIn = Array.isArray(o.actions) ? o.actions : [];
   const actions: CopilotAction[] = [];
-  for (const item of actionsIn.slice(0, 80)) {
+  for (const item of actionsIn.slice(0, 120)) {
     const a = parseAction(item);
     if (a) actions.push(a);
   }

@@ -15,6 +15,12 @@ import {
   type CitiAvotiBlockState,
 } from "@/lib/admin-source-blocks";
 import {
+  ADMIN_MILEAGE_PASTE_RAW_MAX_LEN,
+  ADMIN_PDF_IMPORT_RAW_MAX_LEN,
+  ADMIN_RAW_UNPROCESSED_MAX_LEN,
+} from "@/lib/admin-raw-field-limits";
+import { clipGeminiContextRaw } from "@/lib/admin-gemini-context-raw";
+import {
   autoRecordsMileageRowHasData,
   formatAutoRecordsDateForOutput,
   normalizeAutoRecordsOdometer,
@@ -25,9 +31,11 @@ import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import type {
   CopilotAction,
+  CopilotAppendRawAction,
   CopilotConfidence,
   CopilotIncidentAction,
   CopilotMileageAction,
+  CopilotServiceHistoryAction,
   CopilotSourceKey,
 } from "@/lib/admin-copilot-types";
 import { isCopilotSourceKey } from "@/lib/admin-copilot-types";
@@ -153,6 +161,95 @@ function applyMileageToCiti(b: CitiAvotiBlockState, row: AutoRecordsServiceRow):
   return { sections };
 }
 
+function appendText(existing: string, incoming: string, maxLen: number): string {
+  const add = incoming.trim();
+  if (!add) return existing;
+  const base = existing.trim();
+  if (!base) return add.slice(0, maxLen);
+  if (base.includes(add)) return base.slice(0, maxLen);
+  return `${base}\n\n${add}`.slice(0, maxLen);
+}
+
+function applyServiceHistoryNotes(
+  b: AutoRecordsBlockState,
+  action: CopilotServiceHistoryAction,
+): AutoRecordsBlockState {
+  return {
+    ...b,
+    serviceHistoryNotes: appendText(b.serviceHistoryNotes ?? "", action.text, 12_000),
+  };
+}
+
+function applyAppendRaw(
+  blocks: WorkspaceSourceBlocks,
+  action: CopilotAppendRawAction,
+): { blocks: WorkspaceSourceBlocks; ok: boolean; reason?: string } {
+  const text = action.text.trim();
+  if (!text) return { blocks, ok: false, reason: "empty_raw_text" };
+
+  if (action.source === "auto_records") {
+    return {
+      ok: true,
+      blocks: {
+        ...blocks,
+        auto_records: {
+          ...blocks.auto_records,
+          rawUnprocessedData: appendText(
+            blocks.auto_records.rawUnprocessedData ?? "",
+            text,
+            ADMIN_RAW_UNPROCESSED_MAX_LEN,
+          ),
+        },
+      },
+    };
+  }
+  if (action.source === "ltab") {
+    return {
+      ok: true,
+      blocks: {
+        ...blocks,
+        ltab: {
+          ...blocks.ltab,
+          pdfImportRaw: appendText(blocks.ltab.pdfImportRaw ?? "", text, ADMIN_PDF_IMPORT_RAW_MAX_LEN),
+        },
+      },
+    };
+  }
+  if (action.source === "autodna" || action.source === "carvertical") {
+    const key = action.source;
+    const cur = ensureVendor(blocks[key]);
+    return {
+      ok: true,
+      blocks: {
+        ...blocks,
+        [key]: {
+          ...cur,
+          geminiContextRaw: clipGeminiContextRaw(
+            appendText(cur.geminiContextRaw ?? "", text, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
+          ),
+        },
+      },
+    };
+  }
+  if (action.source === "citi_avoti") {
+    const sections = [...(blocks.citi_avoti.sections ?? [])];
+    if (sections.length === 0) {
+      sections.push({
+        ...emptyVendorAvotuBlock(),
+        rawUnprocessedData: text.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+      });
+    } else {
+      const s0 = sections[0]!;
+      sections[0] = {
+        ...s0,
+        rawUnprocessedData: appendText(s0.rawUnprocessedData ?? "", text, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+      };
+    }
+    return { ok: true, blocks: { ...blocks, citi_avoti: { sections } } };
+  }
+  return { blocks, ok: false, reason: "unknown_source" };
+}
+
 export function shouldAutoApply(confidence: CopilotConfidence, clarificationNeeded: string): boolean {
   if (clarificationNeeded.trim()) return false;
   return confidence === "high";
@@ -227,6 +324,28 @@ export function applyCopilotActions(
       }
       applied.push(action);
       changed.add(action.source);
+      continue;
+    }
+
+    if (action.type === "set_service_history") {
+      next = {
+        ...next,
+        auto_records: applyServiceHistoryNotes(next.auto_records, action),
+      };
+      applied.push(action);
+      changed.add("auto_records");
+      continue;
+    }
+
+    if (action.type === "append_raw") {
+      const result = applyAppendRaw(next, action);
+      if (!result.ok) {
+        skipped.push({ action, reason: result.reason ?? "append_raw_failed" });
+        continue;
+      }
+      next = result.blocks;
+      applied.push(action);
+      changed.add(action.source);
     }
   }
 
@@ -272,6 +391,10 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
   pushMile("carvertical", b.carvertical.serviceHistory);
   pushInc("ltab", b.ltab.rows);
   pushMile("auto_records", b.auto_records.serviceHistory);
+  if ((b.auto_records.serviceHistoryNotes ?? "").trim()) {
+    lines.push("auto_records Servisa vēsture:");
+    lines.push(b.auto_records.serviceHistoryNotes.trim().slice(0, 2000));
+  }
   const citi0 = b.citi_avoti.sections[0];
   if (citi0) {
     pushInc("citi_avoti", citi0.incidents);

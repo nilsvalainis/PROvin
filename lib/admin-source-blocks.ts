@@ -634,6 +634,11 @@ export type AutoRecordsBlockState = {
   outvinReport?: OutvinDealerReport;
   /** Kā citiem avotiem — piezīmes zem tabulas. */
   comments: string;
+  /**
+   * Servisa / apkopes vēstures faktu saraksts (datums + odometrs + darbi).
+   * Admin lauks „Servisa vēsture”; Copilot aizpilda no AutoDNA u.c. PDF.
+   */
+  serviceHistoryNotes: string;
   /** Papildu konteksts tikai Gemini AI — nav PDF. */
   geminiContextRaw: string;
   pdfChecklist?: SourcePdfChecklist;
@@ -732,6 +737,7 @@ export function emptyAutoRecordsBlock(): AutoRecordsBlockState {
     rawUnprocessedData: "",
     serviceHistory: [emptyAutoRecordsServiceRow()],
     comments: "",
+    serviceHistoryNotes: "",
     geminiContextRaw: "",
   };
 }
@@ -900,6 +906,7 @@ export function autoRecordsBlockHasContent(b: AutoRecordsBlockState): boolean {
     (b.serviceHistory ?? []).some(autoRecordsRowHasData) ||
     wsStr(b.rawUnprocessedData).trim().length > 0 ||
     wsStr(b.comments).trim().length > 0 ||
+    wsStr(b.serviceHistoryNotes).trim().length > 0 ||
     outvinDealerReportHasContent(b.outvinReport) ||
     outvinBundleHasStructuredContent(b.outvin ?? getAutoRecordsOutvinBundle(b))
   );
@@ -956,6 +963,9 @@ export function autoRecordsBlockToPlainText(b: AutoRecordsBlockState): string {
 
   const checklistTxt = formatSourcePdfChecklistForPdf(b.pdfChecklist);
   if (checklistTxt) lines.push(checklistTxt);
+  if ((b.serviceHistoryNotes ?? "").trim()) {
+    lines.push(`Servisa vēsture\n${(b.serviceHistoryNotes ?? "").trim()}`);
+  }
   if ((b.comments ?? "").trim()) lines.push(`Komentāri\n${(b.comments ?? "").trim()}`);
   if ((b.rawUnprocessedData ?? "").trim()) lines.push((b.rawUnprocessedData ?? "").trim());
   return lines.join("\n\n");
@@ -1224,6 +1234,8 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
       rawUnprocessedData: String(raw.rawUnprocessedData ?? "").slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
       serviceHistory: normalized,
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
+      serviceHistoryNotes:
+        typeof raw.serviceHistoryNotes === "string" ? raw.serviceHistoryNotes.slice(0, 12000) : "",
       geminiContextRaw: clipGeminiContextRaw(raw.geminiContextRaw),
       ...(outvin ? { outvin } : {}),
       ...(outvinReport ? { outvinReport } : {}),
@@ -1237,6 +1249,7 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
     rawUnprocessedData: legacyText.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
     serviceHistory: [emptyAutoRecordsServiceRow()],
     comments: "",
+    serviceHistoryNotes: "",
     geminiContextRaw: "",
   };
 }
@@ -1704,6 +1717,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
         ? blocks.auto_records.serviceHistory
         : d.auto_records.serviceHistory,
       comments: wsStr(blocks.auto_records?.comments),
+      serviceHistoryNotes: wsStr(blocks.auto_records?.serviceHistoryNotes),
       rawUnprocessedData: wsStr(blocks.auto_records?.rawUnprocessedData),
       geminiContextRaw: wsStr(blocks.auto_records?.geminiContextRaw),
     },

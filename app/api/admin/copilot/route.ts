@@ -59,7 +59,19 @@ function describeAction(a: CopilotAction): string {
   if (a.type === "upsert_incident") {
     return `${a.source} · negadījums ${a.date || "—"} · ${a.lossAmount || "—"} · ${a.country || "—"} (${a.confidence})`;
   }
-  return `${a.source} · nobraukums ${a.date || "—"} · ${a.odometer || "—"} km · ${a.country || "—"} (${a.confidence})`;
+  if (a.type === "upsert_mileage") {
+    return `${a.source} · nobraukums ${a.date || "—"} · ${a.odometer || "—"} km · ${a.country || "—"} (${a.confidence})`;
+  }
+  if (a.type === "set_service_history") {
+    const lines = a.text.trim().split(/\n+/).filter(Boolean).length;
+    return `auto_records · Servisa vēsture (${lines} rindas) (${a.confidence})`;
+  }
+  if (a.type === "append_raw") {
+    const preview = a.text.trim().slice(0, 60).replace(/\s+/g, " ");
+    return `${a.source} · RAW · ${preview}${a.text.trim().length > 60 ? "…" : ""} (${a.confidence})`;
+  }
+  const _exhaustive: never = a;
+  return String(_exhaustive);
 }
 
 export async function POST(req: Request) {
