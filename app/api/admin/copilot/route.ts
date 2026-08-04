@@ -75,7 +75,7 @@ export async function POST(req: Request) {
   let message = "";
   let history: CopilotChatMessage[] = [];
   let sourceBlocks: WorkspaceSourceBlocks | null = null;
-  let pdfs: { fileName: string; buffer: ArrayBuffer }[] = [];
+  const pdfs: { fileName: string; buffer: ArrayBuffer }[] = [];
   let applyMode: "auto" | "preview" = "auto";
 
   try {
