@@ -228,3 +228,44 @@ export function autoRecordsMileageRowHasData(r: AutoRecordsServiceRow): boolean 
   if (digits.length < 3) return false;
   return Boolean(r.date.trim() || r.country.trim());
 }
+
+/**
+ * OFICIĀLĀ DĪLERA DATI — servisa narratīvs:
+ * `02.2026. (278 484 km | Vācija): Veikta regulārā apkope…`
+ * Saglabā tikai datumu (→ 01.MM.YYYY), km un valsti; aprakstu ignorē.
+ * Piezīme: `sanitizePdfTextForParsing` aizstāj `|` ar atstarpi — atbalstām arī bez pipe.
+ */
+const DEALER_SERVICE_NARRATIVE_LINE_RE =
+  /^(\d{1,2})\.(\d{4})\.\s*\(([\d\s.,]+)\s*km\s*[| ]\s*([^)]+?)\)\s*[:;.]?/i;
+
+export function looksLikeOfficialDealerServiceNarrative(raw: string): boolean {
+  const t = raw.replace(/\u00a0/g, " ");
+  return /(\d{1,2})\.(\d{4})\.\s*\([\d\s.,]+\s*km\s*[| ]\s*[^)]+\)/i.test(t);
+}
+
+export function parseOfficialDealerServiceNarrativePaste(raw: string): AutoRecordsServiceRow[] {
+  // Neizmantojam sanitizePdfTextForParsing — tas izņem `|` starp km un valsti.
+  const text = raw.replace(/\u00a0/g, " ").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const rows: AutoRecordsServiceRow[] = [];
+  for (const line of text.split(/\n/)) {
+    const s = line.trim().replace(/[;\s]+$/g, "");
+    if (!s) continue;
+    const m = DEALER_SERVICE_NARRATIVE_LINE_RE.exec(s);
+    if (!m) continue;
+    const mo = Number.parseInt(m[1] ?? "", 10);
+    const y = Number.parseInt(m[2] ?? "", 10);
+    if (mo < 1 || mo > 12 || y < 1980 || y > 2100) continue;
+    const odometer = normalizeAutoRecordsOdometer(m[3] ?? "");
+    if (!odometer || odometer.length < 1) continue;
+    if (/^\d{4}$/.test(odometer) && Number.parseInt(odometer, 10) >= 1980 && Number.parseInt(odometer, 10) <= 2100) {
+      continue;
+    }
+    const country = sanitizeMileageCountryField((m[4] ?? "").trim());
+    rows.push({
+      date: formatAutoRecordsDateForOutput(`01.${String(mo).padStart(2, "0")}.${y}`),
+      odometer,
+      country,
+    });
+  }
+  return formatAutoRecordsParsedRows(rows);
+}

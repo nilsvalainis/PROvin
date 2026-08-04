@@ -24,8 +24,10 @@ import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfCheckl
 import {
   autoRecordsRowHasData,
   formatAutoRecordsDateForOutput,
+  looksLikeOfficialDealerServiceNarrative,
   normalizeAutoRecordsOdometer,
   parseAutoRecordsPaste,
+  parseOfficialDealerServiceNarrativePaste,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
 import {
@@ -95,6 +97,11 @@ export function AdminAutoRecordsSourceBlock({
         ...next,
         serviceHistory: parsed.length > 0 ? parsed : [emptyAutoRecordsServiceRow()],
       };
+    } else if (looksLikeOfficialDealerServiceNarrative(raw)) {
+      const parsed = parseOfficialDealerServiceNarrativePaste(raw);
+      if (parsed.length > 0) {
+        next = { ...next, serviceHistory: parsed };
+      }
     }
     onChange(next);
   };
