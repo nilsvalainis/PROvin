@@ -712,7 +712,9 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
   return parts.join("\n");
 }
 
-/** AUTO RECORDS — Outvin dīlera dati PDF; nobraukums tikai vienotajā tabulā; komentāri atsevišķi. */
+const PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL = "Servisa vēsture";
+
+/** AUTO RECORDS — Outvin dīlera dati PDF; nobraukums tikai vienotajā tabulā; servisa vēsture + komentāri atsevišķi. */
 function buildAutoRecordsAvotuSubsection(
   b: AutoRecordsBlockState | null | undefined,
   vis: PdfVisibilitySettings,
@@ -726,11 +728,16 @@ function buildAutoRecordsAvotuSubsection(
     : "";
   const legacyInner = buildOutvinDealerReportPdfInnerHtml(b.outvinReport);
   const outvinInner = bundleInner.trim() || legacyInner.trim();
+  const serviceHistoryNotes = (b.serviceHistoryNotes ?? "").trim();
+  const serviceHistoryBox = serviceHistoryNotes
+    ? pdfReportCommentBox(serviceHistoryNotes, PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL)
+    : "";
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const hasComments = commentBlock.trim().length > 0;
   const hasOutvin = outvinInner.length > 0;
+  const hasServiceHistory = serviceHistoryBox.length > 0;
 
-  if (!hasOutvin && !hasComments) return "";
+  if (!hasOutvin && !hasServiceHistory && !hasComments) return "";
 
   const head = pdfV1PanelHead(
     SOURCE_BLOCK_LABELS.auto_records.toLowerCase(),
@@ -738,6 +745,7 @@ function buildAutoRecordsAvotuSubsection(
   );
   const bodyParts: string[] = [];
   if (hasOutvin) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${outvinInner}</div>`);
+  if (hasServiceHistory) bodyParts.push(serviceHistoryBox);
   if (hasComments) bodyParts.push(pdfAvotuCommentIsland(commentBlock));
   return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}${bodyParts.join("\n")}</div>`;
 }

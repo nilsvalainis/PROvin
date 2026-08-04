@@ -132,6 +132,27 @@ describe("unified PDF sections single block", () => {
 });
 
 describe("CITI AVOTI and Outvin PDF labels", () => {
+  it("renders Auto Records Servisa vēsture in client PDF", () => {
+    const autoRecords = {
+      ...createDefaultSourceBlocks().auto_records,
+      serviceHistoryNotes: "12.03.2019 | 87450 km | Eļļas maiņa\n01.06.2020 | 102300 km | Bremžu kluči",
+      comments: "",
+    };
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        autoRecordsBlock: autoRecords,
+        pdfVisibility: mergePdfVisibility({ auto_records: true }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).toContain("Servisa vēsture");
+    expect(doc).toContain("Eļļas maiņa");
+    expect(doc).toContain("102300");
+  });
+
   it("citi avoti subheads use manual label only, without CITI AVOTI prefix", () => {
     const p = {
       citiAvoti: {
