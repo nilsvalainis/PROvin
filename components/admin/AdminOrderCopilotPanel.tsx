@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
-import { Bot, FileUp, Loader2, Minimize2, Send, Undo2, X } from "lucide-react";
+import { Bot, FileUp, GripVertical, Loader2, Minimize2, Send, Undo2, X } from "lucide-react";
 import type { CopilotAction, CopilotChatMessage, CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 
@@ -35,8 +35,57 @@ type Props = {
   restoreBlocksSnapshot: (snapshot: WorkspaceSourceBlocks) => void;
 };
 
+type PanelPos = { left: number; top: number };
+
+const POS_STORAGE_KEY = "provin-admin-copilot-pos-v1";
+const PANEL_W = 384;
+const PANEL_H = 512;
+const CHIP_W = 256;
+const CHIP_H = 44;
+const MARGIN = 12;
+
 function newId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function defaultPos(minimized: boolean): PanelPos {
+  if (typeof window === "undefined") return { left: 24, top: 24 };
+  const w = minimized ? CHIP_W : Math.min(PANEL_W, window.innerWidth - MARGIN * 2);
+  const h = minimized ? CHIP_H : Math.min(PANEL_H, window.innerHeight - 96);
+  return {
+    left: Math.max(MARGIN, window.innerWidth - w - MARGIN),
+    top: Math.max(MARGIN, window.innerHeight - h - 80),
+  };
+}
+
+function clampPos(pos: PanelPos, minimized: boolean): PanelPos {
+  if (typeof window === "undefined") return pos;
+  const w = minimized ? CHIP_W : Math.min(PANEL_W, window.innerWidth - MARGIN * 2);
+  const h = minimized ? CHIP_H : Math.min(PANEL_H, window.innerHeight - 96);
+  return {
+    left: Math.min(Math.max(MARGIN, pos.left), Math.max(MARGIN, window.innerWidth - w - MARGIN)),
+    top: Math.min(Math.max(MARGIN, pos.top), Math.max(MARGIN, window.innerHeight - h - MARGIN)),
+  };
+}
+
+function loadStoredPos(): PanelPos | null {
+  try {
+    const raw = localStorage.getItem(POS_STORAGE_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as Partial<PanelPos>;
+    if (typeof p.left === "number" && typeof p.top === "number") return { left: p.left, top: p.top };
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function savePos(pos: PanelPos) {
+  try {
+    localStorage.setItem(POS_STORAGE_KEY, JSON.stringify(pos));
+  } catch {
+    /* ignore */
+  }
 }
 
 export function AdminOrderCopilotTrigger({
@@ -79,15 +128,25 @@ export function AdminOrderCopilotPanel({
   const inputId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    origLeft: number;
+    origTop: number;
+    moved: boolean;
+  } | null>(null);
   const [mounted, setMounted] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [unreadDone, setUnreadDone] = useState(false);
+  const [pos, setPos] = useState<PanelPos>({ left: 24, top: 24 });
+  const [dragging, setDragging] = useState(false);
   const [messages, setMessages] = useState<UiMessage[]>([
     {
       id: "welcome",
       role: "system",
       content:
-        "Peldošs logs — aizsedz tikai stūri. Pēc komandas automātiski samazinās, kamēr Tu turpini darbu. Piemērs: „AutoDNA: negadījums 17.11.2020, 5000 €, Vācija”.",
+        "Velc logu aiz virsraksta joslas (⋮⋮), lai novietotu citur. Pēc komandas samazinās, kamēr Tu turpini darbu. Piemērs: „AutoDNA: negadījums 17.11.2020, 5000 €, Vācija”.",
     },
   ]);
   const [draft, setDraft] = useState("");
@@ -98,7 +157,21 @@ export function AdminOrderCopilotPanel({
 
   useEffect(() => {
     setMounted(true);
+    const stored = loadStoredPos();
+    setPos(clampPos(stored ?? defaultPos(false), false));
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    setPos((p) => clampPos(p, minimized));
+  }, [minimized, mounted]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const onResize = () => setPos((p) => clampPos(p, minimized));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [minimized, mounted]);
 
   useEffect(() => {
     onBusyChange?.(busy);
@@ -115,6 +188,67 @@ export function AdminOrderCopilotPanel({
     if (!open || minimized) return;
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [messages, open, busy, minimized]);
+
+  const commitPos = useCallback((next: PanelPos, isMinimized: boolean) => {
+    const clamped = clampPos(next, isMinimized);
+    setPos(clamped);
+    savePos(clamped);
+  }, []);
+
+  const onDragPointerDown = useCallback(
+    (e: ReactPointerEvent) => {
+      if (e.button !== 0) return;
+      const target = e.target as HTMLElement | null;
+      // Atļauj vilkt no data-copilot-drag (t.sk. grip pogas); citas pogas bloķē
+      if (target?.closest("button, a, input, textarea, select, label") && !target.closest("[data-copilot-drag]")) {
+        return;
+      }
+      e.preventDefault();
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      dragRef.current = {
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startY: e.clientY,
+        origLeft: pos.left,
+        origTop: pos.top,
+        moved: false,
+      };
+      setDragging(true);
+    },
+    [pos.left, pos.top],
+  );
+
+  const onDragPointerMove = useCallback(
+    (e: ReactPointerEvent) => {
+      const d = dragRef.current;
+      if (!d || d.pointerId !== e.pointerId) return;
+      const dx = e.clientX - d.startX;
+      const dy = e.clientY - d.startY;
+      if (Math.abs(dx) + Math.abs(dy) > 3) d.moved = true;
+      setPos(clampPos({ left: d.origLeft + dx, top: d.origTop + dy }, minimized));
+    },
+    [minimized],
+  );
+
+  const onDragPointerUp = useCallback(
+    (e: ReactPointerEvent) => {
+      const d = dragRef.current;
+      if (!d || d.pointerId !== e.pointerId) return;
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+      const next = clampPos(
+        { left: d.origLeft + (e.clientX - d.startX), top: d.origTop + (e.clientY - d.startY) },
+        minimized,
+      );
+      dragRef.current = null;
+      setDragging(false);
+      commitPos(next, minimized);
+    },
+    [commitPos, minimized],
+  );
 
   const historyForApi = useCallback((): CopilotChatMessage[] => {
     return messages
@@ -139,7 +273,6 @@ export function AdminOrderCopilotPanel({
     setBusy(true);
     setError(null);
     setUnreadDone(false);
-    // Uzreiz samazina — operators turpina darbu, kamēr Gemini strādā
     setMinimized(true);
 
     const userLabel = text || `(PDF: ${file?.name ?? "fails"})`;
@@ -277,46 +410,87 @@ export function AdminOrderCopilotPanel({
   }, [busy, onClose]);
 
   const expand = useCallback(() => {
+    if (dragRef.current?.moved) return;
     setMinimized(false);
     setUnreadDone(false);
   }, []);
 
   if (!mounted || !open) return null;
 
+  const posStyle: CSSProperties = {
+    left: pos.left,
+    top: pos.top,
+    right: "auto",
+    bottom: "auto",
+  };
+
   const chip = (
-    <button
-      type="button"
-      className="fixed bottom-20 right-4 z-[45] flex max-w-[16rem] items-center gap-2 rounded-full border border-emerald-300/80 bg-emerald-50 px-3 py-2 text-left text-xs font-medium text-emerald-950 shadow-lg dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-50"
-      onClick={expand}
-      title="Atvērt Copilot (panelis nav bloķēts)"
+    <div
+      className={`fixed z-[45] flex max-w-[16rem] touch-none items-center gap-1 rounded-full border border-emerald-300/80 bg-emerald-50 pr-1 text-left text-xs font-medium text-emerald-950 shadow-lg dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-50 ${
+        dragging ? "cursor-grabbing" : ""
+      }`}
+      style={posStyle}
     >
-      {busy ? (
-        <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
-      ) : (
-        <Bot className="h-4 w-4 shrink-0" aria-hidden />
-      )}
-      <span className="min-w-0 truncate">
-        {busy ? "Copilot strādā… Turpini darbu" : unreadDone ? "Copilot gatavs — atver" : "Copilot (samazināts)"}
-      </span>
-      {unreadDone && !busy ? (
-        <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-600" aria-hidden />
-      ) : null}
-    </button>
+      <button
+        type="button"
+        data-copilot-drag
+        className={`flex cursor-grab items-center self-stretch rounded-l-full px-2 text-emerald-800/80 active:cursor-grabbing dark:text-emerald-200/80 ${
+          dragging ? "cursor-grabbing" : ""
+        }`}
+        aria-label="Pārvietot Copilot"
+        title="Velc, lai pārvietotu"
+        onPointerDown={onDragPointerDown}
+        onPointerMove={onDragPointerMove}
+        onPointerUp={onDragPointerUp}
+        onPointerCancel={onDragPointerUp}
+      >
+        <GripVertical className="h-4 w-4" aria-hidden />
+      </button>
+      <button type="button" className="flex min-w-0 flex-1 items-center gap-2 py-2 pr-2" onClick={expand} title="Atvērt Copilot">
+        {busy ? (
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+        ) : (
+          <Bot className="h-4 w-4 shrink-0" aria-hidden />
+        )}
+        <span className="min-w-0 truncate">
+          {busy ? "Copilot strādā… Turpini darbu" : unreadDone ? "Copilot gatavs — atver" : "Copilot (samazināts)"}
+        </span>
+        {unreadDone && !busy ? (
+          <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-600" aria-hidden />
+        ) : null}
+      </button>
+    </div>
   );
 
   const panel = (
     <aside
-      className="fixed bottom-20 right-3 z-[45] flex h-[min(32rem,calc(100vh-7rem))] w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] shadow-2xl"
+      className={`fixed z-[45] flex h-[min(32rem,calc(100vh-7rem))] w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] shadow-2xl ${
+        dragging ? "cursor-grabbing select-none" : ""
+      }`}
+      style={posStyle}
       aria-label="Order Copilot"
     >
-      <div className="flex items-center justify-between gap-2 border-b border-[var(--admin-border-subtle)] px-3 py-2">
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Order Copilot</h2>
-          <p className="truncate text-[11px] text-[var(--color-provin-muted)]">
-            {busy ? "Strādā fonā — panelis nebloķē" : "Chat + PDF → tabulas"}
-          </p>
+      <div
+        data-copilot-drag
+        className={`flex touch-none items-center justify-between gap-2 border-b border-[var(--admin-border-subtle)] px-2 py-2 ${
+          dragging ? "cursor-grabbing" : "cursor-grab"
+        }`}
+        onPointerDown={onDragPointerDown}
+        onPointerMove={onDragPointerMove}
+        onPointerUp={onDragPointerUp}
+        onPointerCancel={onDragPointerUp}
+        title="Velc, lai pārvietotu logu"
+      >
+        <div className="flex min-w-0 items-center gap-1.5">
+          <GripVertical className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" aria-hidden />
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Order Copilot</h2>
+            <p className="truncate text-[11px] text-[var(--color-provin-muted)]">
+              {busy ? "Strādā fonā — panelis nebloķē" : "Velc virsrakstu · Chat + PDF"}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0.5" onPointerDown={(e) => e.stopPropagation()}>
           {undoSnapshot ? (
             <button
               type="button"
