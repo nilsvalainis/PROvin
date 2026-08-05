@@ -1,11 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
-import { HeroVisual } from "@/components/HeroVisual";
-import { AzvinBrandMark } from "@/components/demo/azvin/AzvinBrandMark";
-import { AzvinFeatureIconRow } from "@/components/demo/azvin/AzvinFeatureIconRow";
-import { AzvinPricingCard } from "@/components/demo/azvin/AzvinPricingCard";
+import { AzvinMobileCheckout } from "@/components/demo/azvin/AzvinMobileCheckout";
 import {
   getAzvinHeroCopy,
   sumAzvinSelectedAzn,
@@ -14,6 +10,7 @@ import {
 } from "@/lib/azvin-hero-copy";
 import { readAzvinLocale, subscribeAzvinLocale } from "@/lib/azvin-locale";
 import { isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
+import styles from "@/app/[locale]/demo/azvin/azvin.module.css";
 
 export function AzvinHero() {
   const [locale, setLocale] = useState<AzvinLocale>("az");
@@ -71,69 +68,23 @@ export function AzvinHero() {
     }, 400);
   }, [copy.ctaDemoNote, copy.ctaSelectHint, copy.vinInvalid, totalAzn, vin]);
 
-  const cardProps = {
-    copy,
-    selected,
-    onToggleService,
-    totalAzn,
-    vin,
-    vinError,
-    globalError,
-    demoNote,
-    loading,
-    onVinChange: setVin,
-    onSubmit,
-  };
-
   return (
-    <div className={styles.heroPricingShell}>
-      <section
-        id="azvin-hero"
-        className={styles.heroSurface}
-        aria-labelledby="azvin-hero-title"
-      >
-        <div className={styles.heroAmbientGlow} aria-hidden />
-        <div className={styles.heroBackdrop} aria-hidden>
-          <HeroVisual />
-        </div>
-        <div className={styles.heroScrim} aria-hidden />
-
-        <div className={styles.heroInnerMobile}>
-          <header className={styles.heroCopy}>
-            <h1 id="azvin-hero-title" className={styles.heroTitle}>
-              {copy.titlePrefix}
-              <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
-                {copy.titleAccent}
-              </span>
-            </h1>
-          </header>
-
-          <div className={styles.stage}>
-            <AzvinPricingCard {...cardProps} />
-          </div>
-        </div>
-
-        <div className={styles.heroInnerDesktop}>
-          <header className={styles.heroCopyDesktop}>
-            <h1 id="azvin-hero-title-desktop" className={styles.heroTitleDesktop}>
-              {copy.titlePrefix}
-              <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
-                {copy.titleAccent}
-              </span>
-            </h1>
-            <p className={styles.heroSubheadDesktop}>
-              <AzvinBrandMark className="font-semibold" />
-              {" — "}
-              {copy.cardDescription}
-            </p>
-            <AzvinFeatureIconRow copy={copy} />
-          </header>
-
-          <div className={`${styles.stage} ${styles.heroStageDesktop}`}>
-            <AzvinPricingCard {...cardProps} />
-          </div>
-        </div>
-      </section>
-    </div>
+    <section id="azvin-hero" className={styles.page} aria-labelledby="azvin-hero-title">
+      <div className={styles.phoneCanvas}>
+        <AzvinMobileCheckout
+          copy={copy}
+          selected={selected}
+          onToggleService={onToggleService}
+          totalAzn={totalAzn}
+          vin={vin}
+          vinError={vinError}
+          globalError={globalError}
+          demoNote={demoNote}
+          loading={loading}
+          onVinChange={setVin}
+          onSubmit={onSubmit}
+        />
+      </div>
+    </section>
   );
 }

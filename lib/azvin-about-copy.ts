@@ -7,15 +7,14 @@ export type AzvinAboutCopy = {
   eyebrow: string;
   title: string;
   lead: string;
-  directionsTitle: string;
-  directions: readonly {
+  bentoTitle: string;
+  bento: readonly {
     id: string;
     title: string;
     body: string;
     accent?: string;
   }[];
   brandsTitle: string;
-  brandsLead: string;
   ctaLabel: string;
   punchlineLead: string;
   punchlineAccent: string;
@@ -23,32 +22,18 @@ export type AzvinAboutCopy = {
 
 const ABOUT_EN: AzvinAboutCopy = {
   sectionId: "about",
-  eyebrow: "About us",
-  title: "Who we are",
-  lead:
-    "AZ.VIN helps buyers check imported cars with official dealer records, auction archives and mileage history from Europe, Korea and the USA — clear data before you pay.",
-  directionsTitle: "What we check",
-  directions: [
-    {
-      id: "koreaUsa",
-      title: "Korea & USA",
-      body: "Auction, ownership, mileage and legal-status trails.",
-    },
-    {
-      id: "dealer",
-      title: "Official dealer",
-      body: "Manufacturer / authorised service history for supported brands.",
-    },
-    {
-      id: "europe",
-      title: "Europe",
-      body: "Registry, inspection and European history depth.",
-      accent: "Coming next",
-    },
+  eyebrow: "About",
+  title: "Built for imported cars",
+  lead: "Official dealer records, auction archives and mileage trails — Europe, Korea and the USA.",
+  bentoTitle: "What you get",
+  bento: [
+    { id: "dealer", title: "Dealer history", body: "Authorised service records for supported brands." },
+    { id: "auction", title: "Auction data", body: "Portal archives for Korea & USA imports." },
+    { id: "mileage", title: "Mileage trail", body: "Odometer and usage history where available." },
+    { id: "europe", title: "Europe", body: "Registry and inspection depth.", accent: "Soon" },
   ],
   brandsTitle: "Dealer brands",
-  brandsLead: "Official dealer history coverage (VIN / year dependent):",
-  ctaLabel: "Check a vehicle",
+  ctaLabel: "Check VIN",
   punchlineLead: "Check VIN.",
   punchlineAccent: "Don't be fooled.",
 };
@@ -56,31 +41,17 @@ const ABOUT_EN: AzvinAboutCopy = {
 const ABOUT_AZ: AzvinAboutCopy = {
   sectionId: "about",
   eyebrow: "Haqqımızda",
-  title: "Biz kimik",
-  lead:
-    "AZ.VIN idxal avtomobilləri üçün rəsmi diler qeydləri, hərrac arxivləri və yürüş tarixini bir hesabatda birləşdirir — Avropa, Koreya və ABŞ.",
-  directionsTitle: "Nə yoxlayırıq",
-  directions: [
-    {
-      id: "koreaUsa",
-      title: "Koreya və ABŞ",
-      body: "Hərrac, sahiblik, yürüş və hüquqi status.",
-    },
-    {
-      id: "dealer",
-      title: "Rəsmi diler",
-      body: "İstehsalçı / rəsmi şəbəkə servis tarixi.",
-    },
-    {
-      id: "europe",
-      title: "Avropa",
-      body: "Reyestr, texniki baxış və Avropa tarixi.",
-      accent: "Tezliklə",
-    },
+  title: "İdxal avtomobillər üçün",
+  lead: "Rəsmi diler, hərrac arxivləri və yürüş — Avropa, Koreya və ABŞ.",
+  bentoTitle: "Nə alırsınız",
+  bento: [
+    { id: "dealer", title: "Diler tarixi", body: "Rəsmi şəbəkə servis qeydləri." },
+    { id: "auction", title: "Hərrac", body: "Koreya və ABŞ portal arxivləri." },
+    { id: "mileage", title: "Yürüş", body: "Odometr və istismar izi." },
+    { id: "europe", title: "Avropa", body: "Reyestr və texniki baxış.", accent: "Tezliklə" },
   ],
   brandsTitle: "Diler markaları",
-  brandsLead: "Rəsmi diler tarixi (VIN / ildən asılıdır):",
-  ctaLabel: "Avtomobili yoxla",
+  ctaLabel: "VIN yoxla",
   punchlineLead: "VIN yoxla.",
   punchlineAccent: "Aldanma.",
 };
@@ -88,31 +59,17 @@ const ABOUT_AZ: AzvinAboutCopy = {
 const ABOUT_RU: AzvinAboutCopy = {
   sectionId: "about",
   eyebrow: "О нас",
-  title: "Кто мы",
-  lead:
-    "AZ.VIN помогает проверить импортное авто: официальный дилер, аукционы и пробег из Европы, Кореи и США — до покупки.",
-  directionsTitle: "Что проверяем",
-  directions: [
-    {
-      id: "koreaUsa",
-      title: "Корея и США",
-      body: "Аукционы, владельцы, пробег и правовой статус.",
-    },
-    {
-      id: "dealer",
-      title: "Официальный дилер",
-      body: "Сервисная история производителя / сети.",
-    },
-    {
-      id: "europe",
-      title: "Европа",
-      body: "Реестры, техосмотр и европейская история.",
-      accent: "Скоро",
-    },
+  title: "Для импортных авто",
+  lead: "Официальный дилер, аукционы и пробег — Европа, Корея и США.",
+  bentoTitle: "Что вы получаете",
+  bento: [
+    { id: "dealer", title: "Дилер", body: "Сервисные записи официальной сети." },
+    { id: "auction", title: "Аукционы", body: "Архивы Кореи и США." },
+    { id: "mileage", title: "Пробег", body: "Одометр и история эксплуатации." },
+    { id: "europe", title: "Европа", body: "Реестры и техосмотр.", accent: "Скоро" },
   ],
   brandsTitle: "Дилерские бренды",
-  brandsLead: "Официальная дилерская история (зависит от VIN / года):",
-  ctaLabel: "Проверить авто",
+  ctaLabel: "Проверить VIN",
   punchlineLead: "Проверь VIN.",
   punchlineAccent: "Не обманывайся.",
 };
@@ -120,31 +77,17 @@ const ABOUT_RU: AzvinAboutCopy = {
 const ABOUT_LV: AzvinAboutCopy = {
   sectionId: "about",
   eyebrow: "Par mums",
-  title: "Kas mēs esam",
-  lead:
-    "AZ.VIN palīdz pārbaudīt importētus auto — oficiālie dīleri, izsoļu arhīvi un nobraukuma vēsture no Eiropas, Korejas un ASV.",
-  directionsTitle: "Ko pārbaudām",
-  directions: [
-    {
-      id: "koreaUsa",
-      title: "Koreja un ASV",
-      body: "Izsoles, īpašnieki, nobraukums un juridiskais statuss.",
-    },
-    {
-      id: "dealer",
-      title: "Oficiālais dīleris",
-      body: "Ražotāja / oficiālā tīkla servisa vēsture.",
-    },
-    {
-      id: "europe",
-      title: "Eiropa",
-      body: "Reģistri, tehniskā apskate un Eiropas vēsture.",
-      accent: "Drīzumā",
-    },
+  title: "Importētiem auto",
+  lead: "Oficiālie dīleri, izsoļu arhīvi un nobraukums — Eiropa, Koreja un ASV.",
+  bentoTitle: "Ko saņemsi",
+  bento: [
+    { id: "dealer", title: "Dīlera vēsture", body: "Oficiālā tīkla servisa ieraksti." },
+    { id: "auction", title: "Izsoles", body: "Korejas un ASV portālu arhīvi." },
+    { id: "mileage", title: "Nobraukums", body: "Odometra un ekspluatācijas pēda." },
+    { id: "europe", title: "Eiropa", body: "Reģistri un tehniskā apskate.", accent: "Drīzumā" },
   ],
   brandsTitle: "Dīleru zīmoli",
-  brandsLead: "Oficiālā dīlera vēsture (atkarīga no VIN / gada):",
-  ctaLabel: "Pārbaudīt auto",
+  ctaLabel: "Pārbaudīt VIN",
   punchlineLead: "Pārbaudi VIN.",
   punchlineAccent: "Neļaujies apmānīt.",
 };

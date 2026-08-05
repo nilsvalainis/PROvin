@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
-import productHeroStyles from "@/app/[locale]/demo/page.module.css";
-import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { AzvinAboutSection } from "@/components/demo/azvin/AzvinAboutSection";
+import styles from "@/app/[locale]/demo/azvin/azvin.module.css";
 
 export const metadata: Metadata = {
   title: "AZ.VIN demo (Azerbaijan)",
@@ -14,24 +13,20 @@ const AzvinHero = dynamic(
   () => import("@/components/demo/azvin/AzvinHero").then((m) => m.AzvinHero),
   {
     loading: () => (
-      <div
-        className={`home-hero-pricing-unified demo-design-dir home-hero-intro-surface ${productHeroStyles.heroIntroSurface} ${productHeroStyles.heroHomeLoadingShell}`}
-        aria-busy="true"
-        aria-label="Loading…"
-      />
+      <div className={styles.page} aria-busy="true" aria-label="Loading…">
+        <div className={styles.phoneCanvas} />
+      </div>
     ),
   },
 );
 
 export default function AzvinDemoPage() {
   return (
-    <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
-      <div className="home-hero-pricing-unified demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
-        <Suspense fallback={null}>
-          <AzvinHero />
-        </Suspense>
-        <AzvinAboutSection />
-      </div>
+    <div className={styles.page}>
+      <Suspense fallback={null}>
+        <AzvinHero />
+      </Suspense>
+      <AzvinAboutSection />
     </div>
   );
 }

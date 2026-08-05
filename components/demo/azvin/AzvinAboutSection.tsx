@@ -2,13 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
-import {
-  homeEditorialPunchlineAccentClass,
-  homeEditorialPunchlineClass,
-  homeEditorialPunchlineLeadClass,
-  homeEditorialSectionBodyLeadClass,
-  homeEditorialSectionTitleClass,
-} from "@/lib/home-layout";
 import { getAzvinAboutCopy } from "@/lib/azvin-about-copy";
 import { AZVIN_DEALER_BRANDS } from "@/lib/azvin-dealer-brands";
 import type { AzvinLocale } from "@/lib/azvin-hero-copy";
@@ -28,53 +21,50 @@ export function AzvinAboutSection() {
   return (
     <section
       id={copy.sectionId}
-      className={`demo-design-dir__section home-body-ink scroll-mt-16 py-14 sm:py-18 md:py-20 ${styles.aboutSection}`}
+      className={styles.aboutSection}
       aria-labelledby="azvin-about-heading"
     >
-      <div className="demo-design-dir__shell">
-        <header className={`text-center ${styles.aboutIntro}`}>
+      <div className={styles.aboutCanvas}>
+        <header className={styles.aboutHeader}>
           <p className={styles.aboutEyebrow}>{copy.eyebrow}</p>
-          <h2 id="azvin-about-heading" className={homeEditorialSectionTitleClass}>
+          <h2 id="azvin-about-heading" className={styles.aboutTitle}>
             {copy.title}
           </h2>
-          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
-            <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
-          </div>
-          <p className={homeEditorialSectionBodyLeadClass}>{copy.lead}</p>
+          <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
+          <p className={styles.aboutLead}>{copy.lead}</p>
         </header>
 
-        <div className={`${styles.aboutBlock} ${styles.aboutPanel}`}>
-          <h3 className={styles.aboutBlockTitle}>{copy.directionsTitle}</h3>
-          <div className={styles.directionsGrid}>
-            {copy.directions.map((direction) => (
-              <article key={direction.id} className={styles.directionCard} data-direction={direction.id}>
-                <h4 className={styles.directionTitle}>{direction.title}</h4>
-                <p className={styles.directionBody}>{direction.body}</p>
-                {direction.accent ? <p className={styles.directionAccent}>{direction.accent}</p> : null}
+        <div>
+          <h3 className={styles.blockTitle}>{copy.bentoTitle}</h3>
+          <div className={styles.bentoGrid}>
+            {copy.bento.map((tile) => (
+              <article
+                key={tile.id}
+                className={`${styles.bentoTile} ${tile.accent ? styles.bentoTileSoon : ""}`}
+              >
+                <h4 className={styles.bentoTitle}>{tile.title}</h4>
+                <p className={styles.bentoBody}>{tile.body}</p>
+                {tile.accent ? <p className={styles.bentoAccent}>{tile.accent}</p> : null}
               </article>
             ))}
           </div>
         </div>
 
-        <div className={`${styles.aboutBlock} ${styles.aboutPanel}`}>
-          <h3 className={styles.aboutBlockTitle}>{copy.brandsTitle}</h3>
-          <p className={styles.aboutBlockLead}>{copy.brandsLead}</p>
-          <ul className={styles.brandsGrid}>
+        <div>
+          <h3 className={styles.blockTitle}>{copy.brandsTitle}</h3>
+          <ul className={styles.brandChips}>
             {AZVIN_DEALER_BRANDS.map((brand) => (
-              <li key={brand} className={styles.brandItem}>
-                <span className={styles.brandCheck} aria-hidden>
-                  ✓
-                </span>
-                <span>{brand}</span>
+              <li key={brand} className={styles.brandChip}>
+                {brand}
               </li>
             ))}
           </ul>
         </div>
 
         <div className={styles.aboutCloser}>
-          <p className={`${homeEditorialPunchlineClass} ${styles.aboutPunchline}`}>
-            <span className={homeEditorialPunchlineLeadClass}>{copy.punchlineLead}</span>
-            <span className={homeEditorialPunchlineAccentClass}>{copy.punchlineAccent}</span>
+          <p className={styles.punchline}>
+            <span className={styles.punchlineLead}>{copy.punchlineLead}</span>
+            <span className={styles.punchlineAccent}>{copy.punchlineAccent}</span>
           </p>
           <a href="#azvin-hero" className={styles.aboutCta}>
             {copy.ctaLabel}
