@@ -385,7 +385,7 @@ export function AdminOrderCopilotPanel({
     } finally {
       setBusy(false);
     }
-  }, [busy, draft, files, geminiAllowed, getSourceBlocks, historyForApi, mergePatch, sessionId]);
+  }, [allowedSources, busy, draft, files, geminiAllowed, getSourceBlocks, historyForApi, mergePatch, sessionId]);
 
   const confirmActions = useCallback(
     async (actions: CopilotAction[]) => {

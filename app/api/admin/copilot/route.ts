@@ -12,6 +12,7 @@ import { runOrderCopilotGemini } from "@/lib/admin-copilot-gemini";
 import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey, isCopilotSourceKey } from "@/lib/admin-copilot-types";
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { PDF_GEMINI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES, PDF_MAX_FILES, PDF_MAX_TOTAL_BYTES } from "@/lib/pdf-api-limits";
+import type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { ingestSourcePdfFile } from "@/lib/pdf-source-ingest";
 import { csddParseHasData } from "@/lib/source-pdf-gemini-extract";
@@ -238,10 +239,15 @@ export async function POST(req: Request) {
             buffer: pdf.buffer,
             fileName: pdf.fileName,
           });
-          if (csddParseHasData(result)) {
+          const csddResult = result as CsddPdfParseResult;
+          if (csddParseHasData(csddResult)) {
             workingBlocks = {
               ...workingBlocks,
-              csdd: mergeCsddFieldsFillEmpty(workingBlocks.csdd, result.fields, result.rawUnprocessedData),
+              csdd: mergeCsddFieldsFillEmpty(
+                workingBlocks.csdd,
+                csddResult.fields,
+                csddResult.rawUnprocessedData,
+              ),
             };
             csddImportNotes.push(`CSDD PDF „${pdf.fileName}” — aizpildīti tukšie lauki (TA vēsture, nobraukums u.c.).`);
           }
