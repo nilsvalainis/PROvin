@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { Bot, FileUp, GripVertical, Loader2, Minimize2, Send, Undo2, X } from "lucide-react";
-import type { CopilotAction, CopilotChatMessage, CopilotSourceKey } from "@/lib/admin-copilot-types";
-import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey } from "@/lib/admin-copilot-types";
+import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 
 type UiMessage = {
   id: string;
@@ -43,6 +43,13 @@ const PANEL_H = 512;
 const CHIP_W = 256;
 const CHIP_H = 44;
 const MARGIN = 12;
+const SOURCE_TOGGLE_LABELS: Record<CopilotSourceKey, string> = {
+  autodna: SOURCE_BLOCK_LABELS.autodna,
+  carvertical: SOURCE_BLOCK_LABELS.carvertical,
+  ltab: SOURCE_BLOCK_LABELS.ltab,
+  auto_records: "Oficiālais dīleris",
+  citi_avoti: SOURCE_BLOCK_LABELS.citi_avoti,
+};
 
 function newId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -155,6 +162,7 @@ export function AdminOrderCopilotPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [undoSnapshot, setUndoSnapshot] = useState<WorkspaceSourceBlocks | null>(null);
+  const [allowedSources, setAllowedSources] = useState<CopilotSourceKey[]>([...COPILOT_SOURCE_KEYS]);
 
   useEffect(() => {
     setMounted(true);
@@ -271,6 +279,16 @@ export function AdminOrderCopilotPanel({
       .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
   }, [messages]);
 
+  const toggleSource = useCallback((source: CopilotSourceKey) => {
+    setAllowedSources((prev) => {
+      if (prev.includes(source)) {
+        return prev.length === 1 ? prev : prev.filter((item) => item !== source);
+      }
+      const next = [...prev, source];
+      return COPILOT_SOURCE_KEYS.filter((item) => next.includes(item));
+    });
+  }, []);
+
   const mergePatch = useCallback(
     (patched: Partial<WorkspaceSourceBlocks> | undefined, keys: CopilotSourceKey[] | undefined) => {
       if (!patched || !keys?.length) return;
@@ -306,6 +324,7 @@ export function AdminOrderCopilotPanel({
       fd.set("applyMode", "auto");
       fd.set("history", JSON.stringify(historyForApi()));
       fd.set("sourceBlocks", JSON.stringify(getSourceBlocks()));
+      fd.set("allowedSources", JSON.stringify(allowedSources));
       for (const f of filesToSend) fd.append("files", f);
 
       const res = await fetch("/api/admin/copilot", {
@@ -381,6 +400,7 @@ export function AdminOrderCopilotPanel({
           body: JSON.stringify({
             sessionId,
             sourceBlocks: getSourceBlocks(),
+            allowedSources,
             actions,
           }),
         });
@@ -404,7 +424,7 @@ export function AdminOrderCopilotPanel({
         setBusy(false);
       }
     },
-    [busy, getSourceBlocks, mergePatch, sessionId],
+    [allowedSources, busy, getSourceBlocks, mergePatch, sessionId],
   );
 
   const undo = useCallback(() => {
@@ -601,81 +621,113 @@ export function AdminOrderCopilotPanel({
             ))}
           </ul>
         ) : null}
-        <div className="flex items-end gap-2">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/pdf,.pdf"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              const picked = Array.from(e.target.files ?? []);
-              if (!picked.length) return;
-              setFiles((prev) => {
-                const next = [...prev];
-                for (const f of picked) {
-                  if (!/\.pdf$/i.test(f.name)) continue;
-                  if (next.some((x) => x.name === f.name && x.size === f.size)) continue;
-                  if (next.length >= 8) break;
-                  next.push(f);
+        <div className="flex items-stretch gap-3">
+          <div className="w-28 shrink-0 rounded-lg border border-[var(--admin-border-subtle)] bg-white/80 p-2 dark:bg-zinc-900">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">Mērķa avoti</p>
+            <div className="space-y-1.5">
+              {COPILOT_SOURCE_KEYS.map((source) => {
+                const active = allowedSources.includes(source);
+                return (
+                  <button
+                    key={source}
+                    type="button"
+                    aria-pressed={active}
+                    disabled={busy || !geminiAllowed}
+                    onClick={() => toggleSource(source)}
+                    className={`w-full rounded-md border px-2 py-1.5 text-left text-[11px] font-medium transition ${
+                      active
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-100"
+                        : "border-[var(--admin-border-subtle)] bg-white text-[var(--color-provin-muted)] hover:bg-black/5 dark:bg-zinc-950 dark:hover:bg-white/10"
+                    } disabled:opacity-50`}
+                    title={active ? "Izslēgt šo avotu" : "Ieslēgt šo avotu"}
+                  >
+                    {SOURCE_TOGGLE_LABELS[source]}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[10px] leading-snug text-[var(--color-provin-muted)]">
+              Gemini drīkst rakstīt tikai ieslēgtajos avotos.
+            </p>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/pdf,.pdf"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                const picked = Array.from(e.target.files ?? []);
+                if (!picked.length) return;
+                setFiles((prev) => {
+                  const next = [...prev];
+                  for (const f of picked) {
+                    if (!/\.pdf$/i.test(f.name)) continue;
+                    if (next.some((x) => x.name === f.name && x.size === f.size)) continue;
+                    if (next.length >= 8) break;
+                    next.push(f);
+                  }
+                  return next;
+                });
+                e.target.value = "";
+              }}
+            />
+            <div className="flex items-end gap-2">
+              <button
+                type="button"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-white text-[var(--color-apple-text)] hover:bg-black/5 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-white/10"
+                title="Pievienot PDF (vairākus)"
+                disabled={busy || !geminiAllowed || files.length >= 8}
+                onClick={() => fileRef.current?.click()}
+              >
+                <FileUp className="h-4 w-4" aria-hidden />
+              </button>
+              <label htmlFor={inputId} className="sr-only">
+                Ziņa Copilot
+              </label>
+              <textarea
+                id={inputId}
+                rows={2}
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="off"
+                className="min-h-[2.5rem] flex-1 resize-none rounded-lg border border-[var(--admin-border-subtle)] bg-white px-2.5 py-2 text-sm text-[var(--color-apple-text)] outline-none placeholder:text-[var(--color-provin-muted)] focus:border-emerald-600 dark:bg-zinc-900 dark:text-zinc-100"
+                placeholder={
+                  geminiAllowed
+                    ? files.length
+                      ? "Piem. izvelc datus no PDF…"
+                      : "Uzraksti uzdevumu vai pievieno PDF…"
+                    : "Gemini nav pieejams šim pasūtījumam"
                 }
-                return next;
-              });
-              e.target.value = "";
-            }}
-          />
-          <button
-            type="button"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-white text-[var(--color-apple-text)] hover:bg-black/5 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-white/10"
-            title="Pievienot PDF (vairākus)"
-            disabled={busy || !geminiAllowed || files.length >= 8}
-            onClick={() => fileRef.current?.click()}
-          >
-            <FileUp className="h-4 w-4" aria-hidden />
-          </button>
-          <label htmlFor={inputId} className="sr-only">
-            Ziņa Copilot
-          </label>
-          <textarea
-            id={inputId}
-            rows={2}
-            spellCheck={false}
-            autoCorrect="off"
-            autoCapitalize="off"
-            className="min-h-[2.5rem] flex-1 resize-none rounded-lg border border-[var(--admin-border-subtle)] bg-white px-2.5 py-2 text-sm text-[var(--color-apple-text)] outline-none placeholder:text-[var(--color-provin-muted)] focus:border-emerald-600 dark:bg-zinc-900 dark:text-zinc-100"
-            placeholder={
-              geminiAllowed
-                ? files.length
-                  ? "Piem. izvelc datus no PDF…"
-                  : "Uzraksti uzdevumu vai pievieno PDF…"
-                : "Gemini nav pieejams šim pasūtījumam"
-            }
-            value={draft}
-            disabled={busy || !geminiAllowed}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                void send();
-              }
-            }}
-          />
-          <button
-            type="button"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50"
-            disabled={busy || !geminiAllowed || (!draft.trim() && files.length === 0)}
-            onClick={() => void send()}
-            aria-label="Sūtīt un turpināt darbu"
-            title="Sūtīt — logs samazinās, Tu turpini darbu"
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </button>
+                value={draft}
+                disabled={busy || !geminiAllowed}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    void send();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50"
+                disabled={busy || !geminiAllowed || allowedSources.length === 0 || (!draft.trim() && files.length === 0)}
+                onClick={() => void send()}
+                aria-label="Sūtīt un turpināt darbu"
+                title="Sūtīt — logs samazinās, Tu turpini darbu"
+              >
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
         </div>
-        {files.length > 0 ? (
-          <p className="mt-1.5 text-[10px] text-[var(--color-provin-muted)]">
-            {files.length}/8 PDF · Gemini klasificēs avotu pēc katras atskaites
-          </p>
-        ) : null}
+        <p className="mt-1.5 text-[10px] text-[var(--color-provin-muted)]">
+          {files.length > 0 ? `${files.length}/8 PDF · ` : ""}
+          Aktīvi avoti: {allowedSources.map((source) => SOURCE_TOGGLE_LABELS[source]).join(", ")}
+        </p>
       </div>
     </aside>
   );

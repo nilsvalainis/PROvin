@@ -12,7 +12,7 @@ import {
 } from "@/lib/admin-gemini";
 import { buildCopilotBlocksSummary } from "@/lib/admin-copilot-apply";
 import { parseCopilotGeminiPayload } from "@/lib/admin-copilot-parse";
-import type { CopilotChatMessage, CopilotGeminiResponse } from "@/lib/admin-copilot-types";
+import { COPILOT_SOURCE_KEYS, type CopilotChatMessage, type CopilotGeminiResponse, type CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 
 export { parseCopilotGeminiPayload } from "@/lib/admin-copilot-parse";
@@ -114,6 +114,7 @@ function bufferToBase64(buffer: ArrayBuffer): string {
 export async function runOrderCopilotGemini(opts: {
   message: string;
   sourceBlocks: WorkspaceSourceBlocks;
+  allowedSources?: CopilotSourceKey[];
   history?: CopilotChatMessage[];
   /** Viens vai vairāki PDF (Gemini lasa katru). */
   pdfs?: { fileName: string; buffer: ArrayBuffer }[];
@@ -121,6 +122,7 @@ export async function runOrderCopilotGemini(opts: {
   pdf?: { fileName: string; buffer: ArrayBuffer };
 }): Promise<CopilotGeminiResponse> {
   const summary = buildCopilotBlocksSummary(opts.sourceBlocks);
+  const allowedSources = (opts.allowedSources?.length ? opts.allowedSources : [...COPILOT_SOURCE_KEYS]).filter((v, i, arr) => arr.indexOf(v) === i);
   const historyLines = (opts.history ?? [])
     .slice(-8)
     .map((m) => `${m.role === "user" ? "Operator" : "Copilot"}: ${m.content.slice(0, 1500)}`)
@@ -145,6 +147,8 @@ export async function runOrderCopilotGemini(opts: {
     text: [
       "=== CURRENT TABLES ===",
       summary,
+      `\n=== ENABLED TARGET SOURCES ===\n${allowedSources.join(", ")}`,
+      "\nOnly emit actions for the enabled target sources above. If a fact belongs elsewhere, skip it instead of redirecting it into another source. If auto_records is not enabled, do not emit set_service_history.",
       historyLines ? `\n=== RECENT CHAT ===\n${historyLines}` : "",
       `\n=== ATTACHED PDFs ===\n${pdfs.length ? pdfs.map((p, i) => `${i + 1}. ${p.fileName}`).join("\n") : "(none)"}`,
       "\n=== OPERATOR MESSAGE ===",

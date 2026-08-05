@@ -8,7 +8,7 @@ import { assertGeminiAllowedForSession } from "@/lib/admin-gemini-demo-guard";
 import { getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
 import { applyCopilotActions } from "@/lib/admin-copilot-apply";
 import { runOrderCopilotGemini } from "@/lib/admin-copilot-gemini";
-import type { CopilotAction, CopilotChatMessage } from "@/lib/admin-copilot-types";
+import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey, isCopilotSourceKey } from "@/lib/admin-copilot-types";
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { PDF_GEMINI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES, PDF_MAX_FILES, PDF_MAX_TOTAL_BYTES } from "@/lib/pdf-api-limits";
 
@@ -55,6 +55,23 @@ function parseSourceBlocks(raw: unknown): WorkspaceSourceBlocks | null {
   return mergeSourceBlocksWithDefaults(raw as Partial<WorkspaceSourceBlocks>);
 }
 
+function parseAllowedSources(raw: unknown): CopilotSourceKey[] {
+  const input = typeof raw === "string" ? (() => {
+    try {
+      return JSON.parse(raw) as unknown;
+    } catch {
+      return raw.split(",").map((part) => part.trim());
+    }
+  })() : raw;
+  if (!Array.isArray(input)) return [...COPILOT_SOURCE_KEYS];
+  const out: CopilotSourceKey[] = [];
+  for (const item of input) {
+    if (typeof item !== "string" || !isCopilotSourceKey(item) || out.includes(item)) continue;
+    out.push(item);
+  }
+  return out.length > 0 ? out : [...COPILOT_SOURCE_KEYS];
+}
+
 function describeAction(a: CopilotAction): string {
   if (a.type === "upsert_incident") {
     return `${a.source} · negadījums ${a.date || "—"} · ${a.lossAmount || "—"} · ${a.country || "—"} (${a.confidence})`;
@@ -87,6 +104,7 @@ export async function POST(req: Request) {
   let message = "";
   let history: CopilotChatMessage[] = [];
   let sourceBlocks: WorkspaceSourceBlocks | null = null;
+  let allowedSources: CopilotSourceKey[] = [...COPILOT_SOURCE_KEYS];
   const pdfs: { fileName: string; buffer: ArrayBuffer }[] = [];
   let applyMode: "auto" | "preview" = "auto";
 
@@ -97,6 +115,7 @@ export async function POST(req: Request) {
       message = str(form.get("message")).trim();
       history = parseHistory(form.get("history"));
       sourceBlocks = parseSourceBlocks(form.get("sourceBlocks"));
+      allowedSources = parseAllowedSources(form.get("allowedSources"));
       const mode = str(form.get("applyMode")).trim();
       if (mode === "preview") applyMode = "preview";
 
@@ -173,6 +192,7 @@ export async function POST(req: Request) {
       message = str(b.message).trim();
       history = parseHistory(b.history);
       sourceBlocks = parseSourceBlocks(b.sourceBlocks);
+      allowedSources = parseAllowedSources(b.allowedSources);
       if (str(b.applyMode).trim() === "preview") applyMode = "preview";
     }
   } catch (e) {
@@ -203,22 +223,30 @@ export async function POST(req: Request) {
     const gemini = await runOrderCopilotGemini({
       message,
       sourceBlocks,
+      allowedSources,
       history,
       pdfs,
     });
+    const allowedSet = new Set<CopilotSourceKey>(allowedSources);
+    const blocked = gemini.actions.filter((a) => !allowedSet.has(a.source));
+    const allowedActions = gemini.actions.filter((a) => allowedSet.has(a.source));
 
-    const autoResult = applyCopilotActions(sourceBlocks, gemini.actions, {
+    const autoResult = applyCopilotActions(sourceBlocks, allowedActions, {
       onlyAuto: true,
       clarificationNeeded: gemini.clarificationNeeded,
     });
     const needsConfirm = autoResult.skipped.filter((s) => s.reason === "needs_confirm").map((s) => s.action);
-    const hardSkipped = autoResult.skipped.filter((s) => s.reason !== "needs_confirm");
+    const hardSkipped = [
+      ...autoResult.skipped.filter((s) => s.reason !== "needs_confirm"),
+      ...blocked.map((action) => ({ action, reason: "source_disabled" as const })),
+    ];
 
     const shouldPatch = applyMode === "auto" && autoResult.applied.length > 0;
 
     console.info(`${LOG_PREFIX} ok`, {
       sessionId: sessionId.slice(0, 12),
       actions: gemini.actions.length,
+      allowedSources,
       auto: autoResult.applied.length,
       confirm: needsConfirm.length,
       pdfCount: pdfs.length,
@@ -281,6 +309,7 @@ export async function PUT(req: Request) {
 
   const sourceBlocks = parseSourceBlocks(b.sourceBlocks);
   if (!sourceBlocks) return NextResponse.json({ error: "missing_source_blocks" }, { status: 400 });
+  const allowedSources = parseAllowedSources(b.allowedSources);
 
   const actionsRaw = Array.isArray(b.actions) ? b.actions : [];
   const { parseCopilotGeminiPayload } = await import("@/lib/admin-copilot-parse");
@@ -294,11 +323,17 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "invalid_actions" }, { status: 400 });
   }
 
-  const result = applyCopilotActions(sourceBlocks, actions, { onlyAuto: false });
+  const allowedSet = new Set<CopilotSourceKey>(allowedSources);
+  const allowedActions = actions.filter((a) => allowedSet.has(a.source));
+  const blocked = actions.filter((a) => !allowedSet.has(a.source));
+  const result = applyCopilotActions(sourceBlocks, allowedActions, { onlyAuto: false });
   return NextResponse.json({
     ok: true,
     autoApplied: result.applied.map((a) => ({ ...a, label: describeAction(a) })),
-    skipped: result.skipped.map((s) => ({ ...s.action, label: describeAction(s.action), reason: s.reason })),
+    skipped: [
+      ...result.skipped.map((s) => ({ ...s.action, label: describeAction(s.action), reason: s.reason })),
+      ...blocked.map((a) => ({ ...a, label: describeAction(a), reason: "source_disabled" })),
+    ],
     patchedSourceBlocks: Object.fromEntries(result.changedKeys.map((k) => [k, result.sourceBlocks[k]])),
     changedKeys: result.changedKeys,
   });
