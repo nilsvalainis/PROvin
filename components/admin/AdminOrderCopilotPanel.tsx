@@ -44,6 +44,7 @@ const CHIP_W = 256;
 const CHIP_H = 44;
 const MARGIN = 12;
 const SOURCE_TOGGLE_LABELS: Record<CopilotSourceKey, string> = {
+  csdd: SOURCE_BLOCK_LABELS.csdd,
   autodna: SOURCE_BLOCK_LABELS.autodna,
   carvertical: SOURCE_BLOCK_LABELS.carvertical,
   ltab: SOURCE_BLOCK_LABELS.ltab,

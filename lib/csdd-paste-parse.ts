@@ -140,10 +140,17 @@ export function parseCsddTechnicalFields(
   if (regPlateM?.[1]) {
     registrationNumber = regPlateM[1].replace(/\s+/g, "").trim();
   } else {
-    const regEnd = raw.match(
-      /Reģistrācijas\s+numurs:\s*([-A-ZĀČĒĢĪĶĻŅŠŪŽ0-9]+)\s*$/im,
+    const regInline = raw.match(
+      /Reģistrācijas\s+numurs\s+([A-ZĀČĒĢĪĶĻŅŠŪŽ0-9\-]{2,12})(?=\s*(?:\r?\n|Statuss|Pilna|Marka|$))/im,
     );
-    if (regEnd?.[1]) registrationNumber = regEnd[1].trim();
+    if (regInline?.[1]) {
+      registrationNumber = regInline[1].replace(/\s+/g, "").trim();
+    } else {
+      const regEnd = raw.match(
+        /Reģistrācijas\s+numurs:\s*([-A-ZĀČĒĢĪĶĻŅŠŪŽ0-9]+)\s*$/im,
+      );
+      if (regEnd?.[1]) registrationNumber = regEnd[1].trim();
+    }
   }
 
   const firstRegSrc = st.firstReg ?? basics.firstReg;

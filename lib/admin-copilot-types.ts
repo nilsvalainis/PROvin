@@ -3,6 +3,7 @@
  */
 
 export const COPILOT_SOURCE_KEYS = [
+  "csdd",
   "autodna",
   "carvertical",
   "ltab",

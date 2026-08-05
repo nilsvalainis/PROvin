@@ -7,10 +7,14 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { assertGeminiAllowedForSession } from "@/lib/admin-gemini-demo-guard";
 import { getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
 import { applyCopilotActions } from "@/lib/admin-copilot-apply";
+import { isLikelyCsddPdfText, mergeCsddFieldsFillEmpty } from "@/lib/admin-copilot-csdd";
 import { runOrderCopilotGemini } from "@/lib/admin-copilot-gemini";
 import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey, isCopilotSourceKey } from "@/lib/admin-copilot-types";
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { PDF_GEMINI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES, PDF_MAX_FILES, PDF_MAX_TOTAL_BYTES } from "@/lib/pdf-api-limits";
+import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
+import { ingestSourcePdfFile } from "@/lib/pdf-source-ingest";
+import { csddParseHasData } from "@/lib/source-pdf-gemini-extract";
 
 export const maxDuration = 120;
 export const runtime = "nodejs";
@@ -220,28 +224,82 @@ export async function POST(req: Request) {
   }
 
   try {
-    const gemini = await runOrderCopilotGemini({
-      message,
-      sourceBlocks,
-      allowedSources,
-      history,
-      pdfs,
-    });
     const allowedSet = new Set<CopilotSourceKey>(allowedSources);
+    let workingBlocks = sourceBlocks;
+    const csddImportNotes: string[] = [];
+
+    if (allowedSet.has("csdd") && pdfs.length > 0) {
+      for (const pdf of pdfs) {
+        const extract = await extractPdfTextDetailed(pdf.buffer, { fileName: pdf.fileName });
+        if (!isLikelyCsddPdfText(extract.text)) continue;
+        try {
+          const { result } = await ingestSourcePdfFile({
+            target: "csdd",
+            buffer: pdf.buffer,
+            fileName: pdf.fileName,
+          });
+          if (csddParseHasData(result)) {
+            workingBlocks = {
+              ...workingBlocks,
+              csdd: mergeCsddFieldsFillEmpty(workingBlocks.csdd, result.fields, result.rawUnprocessedData),
+            };
+            csddImportNotes.push(`CSDD PDF „${pdf.fileName}” — aizpildīti tukšie lauki (TA vēsture, nobraukums u.c.).`);
+          }
+        } catch (csddErr) {
+          const detail = csddErr instanceof Error ? csddErr.message : "unknown";
+          console.warn(`${LOG_PREFIX} csdd_pdf_failed`, { fileName: pdf.fileName, detail });
+          csddImportNotes.push(`CSDD PDF „${pdf.fileName}” — neizdevās pilnībā importēt (${detail}).`);
+        }
+      }
+    }
+
+    const skipGenericCopilot =
+      allowedSet.has("csdd") &&
+      allowedSources.length === 1 &&
+      pdfs.length > 0 &&
+      csddImportNotes.some((n) => n.includes("aizpildīti"));
+
+    const gemini = skipGenericCopilot
+      ? {
+          reply:
+            csddImportNotes.join("\n") ||
+            "CSDD PDF apstrādāts — pārbaudi CSDD avota laukus un raw, ja kaut kas trūkst.",
+          actions: [] as CopilotAction[],
+          clarificationNeeded: "",
+        }
+      : await runOrderCopilotGemini({
+          message,
+          sourceBlocks: workingBlocks,
+          allowedSources,
+          history,
+          pdfs,
+        });
+
     const blocked = gemini.actions.filter((a) => !allowedSet.has(a.source));
     const allowedActions = gemini.actions.filter((a) => allowedSet.has(a.source));
 
-    const autoResult = applyCopilotActions(sourceBlocks, allowedActions, {
+    const autoResult = applyCopilotActions(workingBlocks, allowedActions, {
       onlyAuto: true,
       clarificationNeeded: gemini.clarificationNeeded,
     });
+    workingBlocks = autoResult.sourceBlocks;
+
+    const changedKeys = new Set<CopilotSourceKey>(autoResult.changedKeys);
+    if (workingBlocks.csdd !== sourceBlocks.csdd) {
+      changedKeys.add("csdd");
+    }
+
     const needsConfirm = autoResult.skipped.filter((s) => s.reason === "needs_confirm").map((s) => s.action);
     const hardSkipped = [
       ...autoResult.skipped.filter((s) => s.reason !== "needs_confirm"),
       ...blocked.map((action) => ({ action, reason: "source_disabled" as const })),
     ];
 
-    const shouldPatch = applyMode === "auto" && autoResult.applied.length > 0;
+    const shouldPatch = applyMode === "auto" && (autoResult.applied.length > 0 || changedKeys.has("csdd"));
+    const replyParts = [gemini.reply.trim()];
+    if (csddImportNotes.length > 0 && !skipGenericCopilot) {
+      replyParts.push(csddImportNotes.join("\n"));
+    }
 
     console.info(`${LOG_PREFIX} ok`, {
       sessionId: sessionId.slice(0, 12),
@@ -250,11 +308,14 @@ export async function POST(req: Request) {
       auto: autoResult.applied.length,
       confirm: needsConfirm.length,
       pdfCount: pdfs.length,
+      csddImports: csddImportNotes.length,
     });
+
+    const changedList = [...changedKeys];
 
     return NextResponse.json({
       ok: true,
-      reply: gemini.reply,
+      reply: replyParts.filter(Boolean).join("\n\n"),
       clarificationNeeded: gemini.clarificationNeeded,
       actions: gemini.actions.map((a) => ({ ...a, label: describeAction(a) })),
       autoApplied: shouldPatch
@@ -262,11 +323,10 @@ export async function POST(req: Request) {
         : [],
       needsConfirm: needsConfirm.map((a) => ({ ...a, label: describeAction(a) })),
       skipped: hardSkipped.map((s) => ({ ...s.action, label: describeAction(s.action), reason: s.reason })),
-      // Client merges these keys into local workspace (autosave follows)
       patchedSourceBlocks: shouldPatch
-        ? Object.fromEntries(autoResult.changedKeys.map((k) => [k, autoResult.sourceBlocks[k]]))
+        ? Object.fromEntries(changedList.map((k) => [k, workingBlocks[k]]))
         : {},
-      changedKeys: shouldPatch ? autoResult.changedKeys : [],
+      changedKeys: shouldPatch ? changedList : [],
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
