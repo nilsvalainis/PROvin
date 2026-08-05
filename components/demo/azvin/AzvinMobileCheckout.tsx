@@ -132,6 +132,72 @@ export function AzvinMobileCheckout({
         </header>
 
         <div className={styles.heroPanel}>
+          <div className={styles.servicesBlock}>
+            <p className={styles.servicesLabel}>{copy.servicesLabel}</p>
+            <ul className={styles.chipList} aria-label={copy.iconRowAria}>
+              {AZVIN_SERVICE_IDS.map((id) => {
+                const service = copy.services[id];
+                const enabled = AZVIN_SERVICE_ENABLED[id];
+                const checked = selected.has(id);
+                return (
+                  <li key={id}>
+                    <motion.button
+                      type="button"
+                      layout={!reduceMotion}
+                      className={[
+                        styles.chip,
+                        checked ? styles.chipOn : "",
+                        !enabled ? styles.chipDisabled : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      aria-pressed={enabled ? checked : undefined}
+                      aria-disabled={!enabled}
+                      disabled={!enabled}
+                      onClick={() => {
+                        if (enabled) onToggleService(id);
+                      }}
+                      whileTap={enabled && !reduceMotion ? { scale: 0.98 } : undefined}
+                    >
+                      <span
+                        className={`${styles.chipCheck} ${checked ? styles.chipCheckOn : ""}`}
+                        aria-hidden
+                      >
+                        {checked ? "✓" : ""}
+                      </span>
+                      <span className={styles.chipBody}>
+                        <span className={styles.chipName}>{service.name}</span>
+                        <span className={styles.chipHint}>{service.hint}</span>
+                        {id === "dealer" ? (
+                          <span
+                            className={styles.chipTip}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                            }}
+                            onKeyDown={(event) => event.stopPropagation()}
+                          >
+                            <Tp5DealerBrandsTip
+                              brands={AZVIN_DEALER_BRANDS}
+                              copy={{
+                                dealerBrandsTrigger: copy.dealerBrandsTrigger,
+                                dealerBrandsAria: copy.dealerBrandsAria,
+                                dealerBrandsYearNote: copy.dealerBrandsYearNote,
+                                dealerBrandsRefundNote: copy.dealerBrandsRefundNote,
+                                dealerBrandsClose: copy.dealerBrandsClose,
+                              }}
+                            />
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className={styles.chipPrice}>{service.priceLabel}</span>
+                    </motion.button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
           <div className={styles.vinWrap}>
             <div className={styles.vinField}>
               <input
@@ -155,72 +221,6 @@ export function AzvinMobileCheckout({
             </div>
             {vinError ? <p className={styles.fieldError}>{vinError}</p> : null}
           </div>
-
-          <ul className={styles.chipList} aria-label={copy.iconRowAria}>
-            {AZVIN_SERVICE_IDS.map((id) => {
-              const service = copy.services[id];
-              const enabled = AZVIN_SERVICE_ENABLED[id];
-              const checked = selected.has(id);
-              return (
-                <li key={id}>
-                  <motion.button
-                    type="button"
-                    layout={!reduceMotion}
-                    className={[
-                      styles.chip,
-                      checked ? styles.chipOn : "",
-                      !enabled ? styles.chipDisabled : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    aria-pressed={enabled ? checked : undefined}
-                    aria-disabled={!enabled}
-                    disabled={!enabled}
-                    onClick={() => {
-                      if (enabled) onToggleService(id);
-                    }}
-                    whileTap={enabled && !reduceMotion ? { scale: 0.98 } : undefined}
-                  >
-                    <span
-                      className={`${styles.chipCheck} ${checked ? styles.chipCheckOn : ""}`}
-                      aria-hidden
-                    >
-                      {checked ? "✓" : ""}
-                    </span>
-                    <span className={styles.chipBody}>
-                      <span className={styles.chipName}>{service.name}</span>
-                      <span className={styles.chipMeta}>
-                        <span className={styles.chipPrice}>{service.priceLabel}</span>
-                        {service.comingSoon ? (
-                          <span className={styles.chipSoon}>{service.comingSoon}</span>
-                        ) : null}
-                      </span>
-                      {id === "dealer" ? (
-                        <span
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                          }}
-                          onKeyDown={(event) => event.stopPropagation()}
-                        >
-                          <Tp5DealerBrandsTip
-                            brands={AZVIN_DEALER_BRANDS}
-                            copy={{
-                              dealerBrandsTrigger: copy.dealerBrandsTrigger,
-                              dealerBrandsAria: copy.dealerBrandsAria,
-                              dealerBrandsYearNote: copy.dealerBrandsYearNote,
-                              dealerBrandsRefundNote: copy.dealerBrandsRefundNote,
-                              dealerBrandsClose: copy.dealerBrandsClose,
-                            }}
-                          />
-                        </span>
-                      ) : null}
-                    </span>
-                  </motion.button>
-                </li>
-              );
-            })}
-          </ul>
 
           <p className={styles.turnaroundMobile}>{copy.turnaround}</p>
 

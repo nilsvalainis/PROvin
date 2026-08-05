@@ -7,20 +7,20 @@ export { AZVIN_DEALER_BRANDS };
 export const AZVIN_LOCALES = ["az", "en", "ru", "lv"] as const;
 export type AzvinLocale = (typeof AZVIN_LOCALES)[number];
 
-/** Purchasable services (Europe is listed but not selectable yet). */
+/** Purchasable services. */
 export const AZVIN_SERVICE_IDS = ["koreaUsa", "dealer", "europe"] as const;
 export type AzvinServiceId = (typeof AZVIN_SERVICE_IDS)[number];
 
 export const AZVIN_SERVICE_PRICES_AZN: Record<AzvinServiceId, number> = {
   koreaUsa: 15,
   dealer: 30,
-  europe: 0,
+  europe: 50,
 };
 
 export const AZVIN_SERVICE_ENABLED: Record<AzvinServiceId, boolean> = {
   koreaUsa: true,
   dealer: true,
-  europe: false,
+  europe: true,
 };
 
 /** Marketing icon row (4 pillars) — separate from purchasable checkboxes. */
@@ -34,9 +34,10 @@ export type AzvinHeroCopy = {
   cardTitle: string;
   cardDescription: string;
   demoBanner: string;
+  servicesLabel: string;
   services: Record<
     AzvinServiceId,
-    { name: string; priceLabel: string; comingSoon?: string }
+    { name: string; hint: string; priceLabel: string; comingSoon?: string }
   >;
   icons: Record<AzvinIconId, string>;
   iconRowAria: string;
@@ -63,13 +64,22 @@ const COPY_AZ: AzvinHeroCopy = {
   cardTitle: "AZ.VIN hesabat",
   cardDescription: "Avropa, Koreya və ABŞ avtomobilləri üçün rəsmi diler, hərrac portalı və yürüş tarixi məlumatları.",
   demoBanner: "AZ.VIN · Azərbaycan demo",
+  servicesLabel: "Xidmətləri seçin",
   services: {
-    koreaUsa: { name: "Koreya və ABŞ tarixi", priceLabel: "15 AZN" },
-    dealer: { name: "Rəsmi diler tarixi", priceLabel: "30 AZN" },
+    koreaUsa: {
+      name: "Koreya və ABŞ tarixi",
+      hint: "Hərrac · yürüş · hüquqi status",
+      priceLabel: "15 AZN",
+    },
+    dealer: {
+      name: "Rəsmi diler tarixi",
+      hint: "İstehsalçı servis qeydləri",
+      priceLabel: "30 AZN",
+    },
     europe: {
       name: "Avropa tarixi",
-      priceLabel: "—",
-      comingSoon: "Tezliklə",
+      hint: "Reyestr · texniki baxış · risklər",
+      priceLabel: "50 AZN",
     },
   },
   icons: {
@@ -104,13 +114,22 @@ const COPY_EN: AzvinHeroCopy = {
   cardDescription:
     "Official dealer, auction portal and mileage history data for cars from Europe, Korea and the USA.",
   demoBanner: "AZ.VIN · Azerbaijan demo",
+  servicesLabel: "Select services",
   services: {
-    koreaUsa: { name: "Korea & USA history", priceLabel: "15 AZN" },
-    dealer: { name: "Official dealer history", priceLabel: "30 AZN" },
+    koreaUsa: {
+      name: "Korea & USA history",
+      hint: "Auction · mileage · legal status",
+      priceLabel: "15 AZN",
+    },
+    dealer: {
+      name: "Official dealer history",
+      hint: "Manufacturer service records",
+      priceLabel: "30 AZN",
+    },
     europe: {
       name: "Europe history",
-      priceLabel: "—",
-      comingSoon: "Coming soon",
+      hint: "Registry · inspections · risks",
+      priceLabel: "50 AZN",
     },
   },
   icons: {
@@ -146,13 +165,22 @@ const COPY_RU: AzvinHeroCopy = {
   cardTitle: "Отчёт AZ.VIN",
   cardDescription: "Данные официальных дилеров, аукционов и пробега для авто из Европы, Кореи и США.",
   demoBanner: "AZ.VIN · Демо Азербайджан",
+  servicesLabel: "Выберите услуги",
   services: {
-    koreaUsa: { name: "История Корея и США", priceLabel: "15 AZN" },
-    dealer: { name: "История официального дилера", priceLabel: "30 AZN" },
+    koreaUsa: {
+      name: "История Корея и США",
+      hint: "Аукцион · пробег · правовой статус",
+      priceLabel: "15 AZN",
+    },
+    dealer: {
+      name: "История официального дилера",
+      hint: "Сервисные записи производителя",
+      priceLabel: "30 AZN",
+    },
     europe: {
       name: "История Европы",
-      priceLabel: "—",
-      comingSoon: "Скоро",
+      hint: "Реестры · техосмотр · риски",
+      priceLabel: "50 AZN",
     },
   },
   icons: {
@@ -189,13 +217,22 @@ const COPY_LV: AzvinHeroCopy = {
   cardDescription:
     "Oficiālo dīleru, izsoļu portālu un nobraukuma vēstures dati automašīnām no Eiropas, Korejas un ASV.",
   demoBanner: "AZ.VIN · Azerbaidžānas demo",
+  servicesLabel: "Izvēlies pakalpojumus",
   services: {
-    koreaUsa: { name: "Korejas un ASV vēsture", priceLabel: "15 AZN" },
-    dealer: { name: "Oficiālā dīlera vēsture", priceLabel: "30 AZN" },
+    koreaUsa: {
+      name: "Korejas un ASV vēsture",
+      hint: "Izsoles · nobraukums · juridiskais statuss",
+      priceLabel: "15 AZN",
+    },
+    dealer: {
+      name: "Oficiālā dīlera vēsture",
+      hint: "Ražotāja servisa ieraksti",
+      priceLabel: "30 AZN",
+    },
     europe: {
       name: "Eiropas vēsture",
-      priceLabel: "—",
-      comingSoon: "Drīzumā",
+      hint: "Reģistri · TA · risku signāli",
+      priceLabel: "50 AZN",
     },
   },
   icons: {
