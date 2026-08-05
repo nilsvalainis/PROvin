@@ -20,6 +20,10 @@ import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { emptyLtabRow } from "@/lib/admin-source-blocks";
+import {
+  LTAB_COMMENT_TEMPLATES,
+  applyLtabCommentTemplate,
+} from "@/lib/admin-ltab-comment-presets";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -203,6 +207,29 @@ export function AdminLtabSourceBlock({
           </div>
 
           <div className={`mt-auto w-full min-w-0 shrink-0 pt-2 ${trafficFillLevel ? "px-2 pb-2" : ""}`}>
+            {!readOnly && !disabled ? (
+              <div className="mb-1.5 flex flex-wrap items-center gap-1">
+                <span className="text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
+                  Šabloni
+                </span>
+                {LTAB_COMMENT_TEMPLATES.map((template) => (
+                  <button
+                    key={template.id}
+                    type="button"
+                    className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:border-[var(--color-provin-accent)]/40 hover:bg-slate-50"
+                    title={template.text}
+                    onClick={() =>
+                      onChange({
+                        ...value,
+                        comments: applyLtabCommentTemplate(value.comments, template.text),
+                      })
+                    }
+                  >
+                    {template.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <AdminSourceCommentField
               label="Komentāri:"
               value={value.comments}
