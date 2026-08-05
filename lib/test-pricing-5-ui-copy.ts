@@ -36,10 +36,6 @@ export type Tp5UiCopy = {
   dealerBrandsTrigger: string;
   /** Dealer brands popup aria / title. */
   dealerBrandsAria: string;
-  /** Year-range note at top of brands popup. */
-  dealerBrandsYearNote: string;
-  /** Refund note at bottom of brands popup. */
-  dealerBrandsRefundNote: string;
   /** Close button label for brands dialog. */
   dealerBrandsClose: string;
 };
@@ -71,9 +67,6 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   turnaroundInfoPhoneLabel: TP5_TURNAROUND_INFO_PHONE_LOCAL,
   dealerBrandsTrigger: "Atbalstītie ražotāji",
   dealerBrandsAria: "Atbalstītie ražotāji",
-  dealerBrandsYearNote:
-    "Oficiālie dīlera dati parasti pieejami automašīnām, kas ražotas no 2009.–2026. gadam.",
-  dealerBrandsRefundNote: "Ja šim VIN / gadam ierakstu nav — 100% naudas atmaksa.",
   dealerBrandsClose: "Aizvērt",
 };
 
@@ -97,9 +90,6 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   turnaroundInfoPhoneLabel: TP5_TURNAROUND_INFO_PHONE_LOCAL,
   dealerBrandsTrigger: "Supported manufacturers",
   dealerBrandsAria: "Supported manufacturers",
-  dealerBrandsYearNote:
-    "Official dealer data is usually available for cars built from 2009–2026.",
-  dealerBrandsRefundNote: "If no records exist for this VIN / year — 100% refund.",
   dealerBrandsClose: "Close",
 };
 

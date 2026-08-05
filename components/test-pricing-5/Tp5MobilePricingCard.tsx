@@ -25,12 +25,29 @@ const FEATURE_MARK_CLASS =
 
 function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
   if (feature.included) {
+    const isGuarantee = feature.tone === "guarantee";
     return (
       <li className={styles.featureRow}>
-        <span className={`${FEATURE_MARK_CLASS} text-[#2563EB]`} aria-hidden>
+        <span
+          className={`${FEATURE_MARK_CLASS} ${isGuarantee ? "text-emerald-400" : "text-[#2563EB]"}`}
+          aria-hidden
+        >
           ✓
         </span>
-        <span className={styles.featureLabelActive}>{feature.name}</span>
+        <span className={isGuarantee ? styles.featureLabelGuarantee : styles.featureLabelActive}>
+          {feature.name}
+        </span>
+      </li>
+    );
+  }
+
+  if (feature.tone === "soft") {
+    return (
+      <li className={styles.featureRow}>
+        <span className={`${FEATURE_MARK_CLASS} text-white/35`} aria-hidden>
+          —
+        </span>
+        <span className={styles.featureLabelSoft}>{feature.name}</span>
       </li>
     );
   }
@@ -149,15 +166,15 @@ export function Tp5MobilePricingCard({
               <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
             ))}
           </ul>
-          {activeService.extraNote ? (
-            <p className={styles.dealerExplainNote}>{activeService.extraNote}</p>
-          ) : null}
-          {isDealer && activeService.brands && activeService.brands.length > 0 ? (
-            <div className={styles.dealerBrandsSlot}>
-              <Tp5DealerBrandsTip brands={activeService.brands} copy={uiCopy} />
-            </div>
-          ) : null}
         </div>
+        {activeService.extraNote ? (
+          <p className={styles.dealerExplainNote}>{activeService.extraNote}</p>
+        ) : null}
+        {isDealer && activeService.brands && activeService.brands.length > 0 ? (
+          <div className={styles.dealerBrandsSlot}>
+            <Tp5DealerBrandsTip brands={activeService.brands} copy={uiCopy} />
+          </div>
+        ) : null}
 
         <div
           className={styles.inlineFields}

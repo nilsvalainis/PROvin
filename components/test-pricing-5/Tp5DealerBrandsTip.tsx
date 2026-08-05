@@ -6,17 +6,10 @@ import type { Tp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 
 type Props = {
   brands: readonly string[];
-  copy: Pick<
-    Tp5UiCopy,
-    | "dealerBrandsTrigger"
-    | "dealerBrandsAria"
-    | "dealerBrandsYearNote"
-    | "dealerBrandsRefundNote"
-    | "dealerBrandsClose"
-  >;
+  copy: Pick<Tp5UiCopy, "dealerBrandsTrigger" | "dealerBrandsAria" | "dealerBrandsClose">;
 };
 
-/** „Atbalstītie ražotāji ⓘ” — opens a compact brands dialog. */
+/** „Atbalstītie ražotāji ⓘ” — opens a compact brands-only dialog. */
 export function Tp5DealerBrandsTip({ brands, copy }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -84,7 +77,6 @@ export function Tp5DealerBrandsTip({ brands, copy }: Props) {
               ×
             </button>
           </div>
-          <p className={styles.dealerBrandsYearNote}>{copy.dealerBrandsYearNote}</p>
           <ul className={styles.dealerBrandsPopupGrid}>
             {brands.map((brand) => (
               <li key={brand} className={styles.dealerBrandItem}>
@@ -95,7 +87,6 @@ export function Tp5DealerBrandsTip({ brands, copy }: Props) {
               </li>
             ))}
           </ul>
-          <p className={styles.dealerBrandsRefundNote}>{copy.dealerBrandsRefundNote}</p>
         </div>
       ) : null}
     </div>

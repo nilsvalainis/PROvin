@@ -176,8 +176,6 @@ export function AzvinMobileCheckout({
                               copy={{
                                 dealerBrandsTrigger: copy.dealerBrandsTrigger,
                                 dealerBrandsAria: copy.dealerBrandsAria,
-                                dealerBrandsYearNote: copy.dealerBrandsYearNote,
-                                dealerBrandsRefundNote: copy.dealerBrandsRefundNote,
                                 dealerBrandsClose: copy.dealerBrandsClose,
                               }}
                             />

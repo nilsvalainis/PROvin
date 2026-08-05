@@ -1,6 +1,13 @@
 import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
 
-export type Tp5MobileFeature = { name: string; included: boolean };
+export type Tp5FeatureTone = "default" | "soft" | "guarantee";
+
+export type Tp5MobileFeature = {
+  name: string;
+  included: boolean;
+  /** soft = muted dash (not a red ✕); guarantee = refund-style ✓ */
+  tone?: Tp5FeatureTone;
+};
 
 export type Tp5MobileServiceId = "mini" | "audits" | "dealer";
 
@@ -45,49 +52,63 @@ export const TP5_DEALER_BRANDS = [
   "Volvo",
 ] as const;
 
-/** Shared checklist — MINI includes the first 5; AUDITS includes all. */
-const TP5_MOBILE_FEATURE_NAMES = [
-  "Tehnisko apskašu vēsture (LV)",
-  "Sludinājuma un pārdevēja analīze",
-  "Ieteikumi klātienes apskatei",
-  "Tehnisko risku analīze",
-  "Individuāla konsultācija",
-  "autoDNA atskaite",
-  "carVertical atskaite",
-  "Izsoļu portālu arhīva dati*",
-  "Oficiālo dīleru sistēmu dati*",
-  "Starptautisku reģistru pārbaude",
-  "Apdrošinātāju dati (avārijas, zādzības)",
-] as const;
+/** Card checklist always shows exactly five rows across all tiers. */
+export const TP5_MOBILE_FEATURE_ROW_COUNT = 5;
 
-const TP5_MOBILE_FEATURE_NAMES_EN = [
-  "Technical inspection history (LV)",
-  "Listing and seller analysis",
-  "In-person inspection guidance",
-  "Technical risk analysis",
-  "Personal consultation",
-  "autoDNA report",
-  "carVertical report",
-  "Auction portal archive data*",
-  "Official dealer system data*",
-  "International registry check",
-  "Insurer data (accidents, theft)",
-] as const;
+const AUDITS_FEATURES_LV: Tp5MobileFeature[] = [
+  { name: "Konsultācija un ieteikumi klātienes apskatei", included: true },
+  { name: "Apdrošinātāju dati un tehnisko apskašu vēsture", included: true },
+  { name: "Sludinājuma, pārdevēja un tehnisko risku analīze", included: true },
+  { name: "CarVertical + AutoDNA + EU reģistru pārbaude", included: true },
+  { name: "Oficiālo dīleru un izsoļu portālu arhīva dati*", included: true },
+];
 
-const MINI_ACTIVE_FEATURE_COUNT = 5;
+const AUDITS_FEATURES_EN: Tp5MobileFeature[] = [
+  { name: "Consultation and in-person viewing tips", included: true },
+  { name: "Insurer data and technical inspection history", included: true },
+  { name: "Listing, seller and technical risk analysis", included: true },
+  { name: "CarVertical + AutoDNA + EU registry check", included: true },
+  { name: "Official dealer and auction portal archive data*", included: true },
+];
+
+const MINI_FEATURES_LV: Tp5MobileFeature[] = [
+  { name: "Konsultācija un ieteikumi klātienes apskatei", included: true },
+  { name: "Apdrošinātāju dati un tehnisko apskašu vēsture", included: true },
+  { name: "Sludinājuma, pārdevēja un tehnisko risku analīze", included: true },
+  { name: "CarVertical + AutoDNA + EU reģistru pārbaude", included: false },
+  { name: "Oficiālo dīleru un izsoļu portālu arhīva dati*", included: false },
+];
+
+const MINI_FEATURES_EN: Tp5MobileFeature[] = [
+  { name: "Consultation and in-person viewing tips", included: true },
+  { name: "Insurer data and technical inspection history", included: true },
+  { name: "Listing, seller and technical risk analysis", included: true },
+  { name: "CarVertical + AutoDNA + EU registry check", included: false },
+  { name: "Official dealer and auction portal archive data*", included: false },
+];
 
 const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
-  { name: "Odometra rādījumi", included: true },
-  { name: "Servisa vēsture", included: true },
-  { name: "Apkopju intervāli", included: true },
-  { name: "Kopsavilkums", included: true },
+  { name: "Servisa un apkopju vēsture", included: true },
+  { name: "Odometra rādījumi un kopsavilkums", included: true },
+  {
+    name: "100% naudas atmaksa (ja dati nav pieejami)",
+    included: true,
+    tone: "guarantee",
+  },
+  { name: "Bez PROVIN PDF vēstures audita", included: false, tone: "soft" },
+  { name: "Bez individuālas konsultācijas", included: false, tone: "soft" },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
-  { name: "Odometer readings", included: true },
-  { name: "Service history", included: true },
-  { name: "Service intervals", included: true },
-  { name: "Summary", included: true },
+  { name: "Service and maintenance history", included: true },
+  { name: "Odometer readings and summary", included: true },
+  {
+    name: "100% refund (if no data is available)",
+    included: true,
+    tone: "guarantee",
+  },
+  { name: "Without a PROVIN PDF history audit", included: false, tone: "soft" },
+  { name: "Without personal consultation", included: false, tone: "soft" },
 ];
 
 const DEALER_BRANDS_HEADING_LV = "Atbalstītie ražotāji";
@@ -96,24 +117,13 @@ const DEALER_BRANDS_HEADING_EN = "Supported manufacturers";
 const AUDITS_FOOTNOTE_LV = "*ja dati ir pieejami";
 const AUDITS_FOOTNOTE_EN = "*if data is available";
 
-const DEALER_EXTRA_NOTE_LV = "Ja dati nav pieejami — 100% naudas atmaksa.";
-const DEALER_EXTRA_NOTE_EN = "If no data is available — 100% refund.";
+const DEALER_YEAR_NOTE_LV =
+  "Oficiālie dīlera dati parasti pieejami automašīnām, kas ražotas no 2009.–2026. gadam.";
+const DEALER_YEAR_NOTE_EN =
+  "Official dealer data is usually available for cars built from 2009–2026.";
 
 const DEALER_FOOTNOTE_LV = "*ja dati ir pieejami";
 const DEALER_FOOTNOTE_EN = "*if data is available";
-
-function buildTp5MobileFeatures(
-  names: readonly string[],
-  includedThroughIndex: number,
-): Tp5MobileFeature[] {
-  return names.map((name, index) => ({
-    name,
-    included: index < includedThroughIndex,
-  }));
-}
-
-/** Feature row count shared by MINI/AUDITS — drives fixed liquidAccent height. */
-export const TP5_MOBILE_FEATURE_ROW_COUNT = TP5_MOBILE_FEATURE_NAMES.length;
 
 /** Mobile `/test-pricing-5` + home hero — MINI, AUDITS, dealer data. */
 export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
@@ -122,9 +132,8 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     title: "PROVIN MINI",
     price: "39,99 €",
     buttonText: "PASŪTĪT MINI AUDITU — 39,99 €",
-    description:
-      "Sludinājuma, tehnisko datu un risku analīze. Rekomendējam veikt Latvijā 🇱🇻 lietotiem auto.",
-    features: buildTp5MobileFeatures(TP5_MOBILE_FEATURE_NAMES, MINI_ACTIVE_FEATURE_COUNT),
+    description: "Rekomendējam veikt Latvijā ekspluatētiem auto. 🇱🇻",
+    features: MINI_FEATURES_LV,
     footnote: " ",
   },
   {
@@ -132,9 +141,8 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     title: "PROVIN AUDITS",
     price: "99,99 €",
     buttonText: "PASŪTĪT PROVIN AUDITU — 99,99 €",
-    description:
-      "Detalizēta auto vēstures un risku analīze iekļaujot dažādas maksas vēstures atskaites, oficiālo dīleru un izsoļu portālu arhīvu*.",
-    features: buildTp5MobileFeatures(TP5_MOBILE_FEATURE_NAMES, TP5_MOBILE_FEATURE_NAMES.length),
+    description: "Pilnīgākais auto pārbaudes komplekts Latvijā. 🇪🇺",
+    features: AUDITS_FEATURES_LV,
     footnote: AUDITS_FOOTNOTE_LV,
   },
   {
@@ -142,11 +150,11 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     title: "DĪLERA DATI",
     price: "24,99 €",
     buttonText: "PASŪTĪT DĪLERA DATUS — 24,99 €",
-    description: "Oficiālo dīleru sistēmu ieraksti un pārbaude izsoļu portālu arhīvā.",
+    description: "Tiešā piekļuve oficiālo dīleru datiem. 🌐",
     features: DEALER_FEATURES_LV,
     brands: TP5_DEALER_BRANDS,
     brandsHeading: DEALER_BRANDS_HEADING_LV,
-    extraNote: DEALER_EXTRA_NOTE_LV,
+    extraNote: DEALER_YEAR_NOTE_LV,
     turnaround: "⏱️ Izpilde: 24-48h",
     footnote: DEALER_FOOTNOTE_LV,
   },
@@ -158,9 +166,8 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     title: "PROVIN MINI",
     price: "€39.99",
     buttonText: "ORDER MINI AUDIT — €39.99",
-    description:
-      "Analysis of the listing, technical data and risks. Recommended for cars used in Latvia 🇱🇻.",
-    features: buildTp5MobileFeatures(TP5_MOBILE_FEATURE_NAMES_EN, MINI_ACTIVE_FEATURE_COUNT),
+    description: "Recommended for cars used in Latvia. 🇱🇻",
+    features: MINI_FEATURES_EN,
     footnote: " ",
   },
   {
@@ -168,12 +175,8 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     title: "PROVIN AUDIT",
     price: "€99.99",
     buttonText: "ORDER PROVIN AUDIT — €99.99",
-    description:
-      "In-depth vehicle history and risk analysis, combining several paid history reports, official dealer data and auction portal archives*.",
-    features: buildTp5MobileFeatures(
-      TP5_MOBILE_FEATURE_NAMES_EN,
-      TP5_MOBILE_FEATURE_NAMES_EN.length,
-    ),
+    description: "The most complete vehicle check package in Latvia. 🇪🇺",
+    features: AUDITS_FEATURES_EN,
     footnote: AUDITS_FOOTNOTE_EN,
   },
   {
@@ -181,11 +184,11 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     title: "DEALER DATA",
     price: "€24.99",
     buttonText: "ORDER DEALER DATA — €24.99",
-    description: "Official dealer system records and auction portal archive check.",
+    description: "Direct access to official dealer data. 🌐",
     features: DEALER_FEATURES_EN,
     brands: TP5_DEALER_BRANDS,
     brandsHeading: DEALER_BRANDS_HEADING_EN,
-    extraNote: DEALER_EXTRA_NOTE_EN,
+    extraNote: DEALER_YEAR_NOTE_EN,
     turnaround: "⏱️ Delivery: 24-48h",
     footnote: DEALER_FOOTNOTE_EN,
   },
@@ -218,7 +221,7 @@ export function getTp5MobileTurnaround(locale?: string): string {
 export function getTp5MobileService(id: Tp5MobileServiceId, locale?: string): Tp5MobileService {
   const service = getTp5MobileServices(locale).find((entry) => entry.id === id);
   if (!service) {
-    throw new Error(`Unknown mobile service: ${id}`);
+    throw new Error(`Unknown TP5 mobile service: ${id}`);
   }
   return service;
 }
