@@ -157,14 +157,8 @@ export function AzvinMobileCheckout({
                       onClick={() => {
                         if (enabled) onToggleService(id);
                       }}
-                      whileTap={enabled && !reduceMotion ? { scale: 0.98 } : undefined}
+                      whileTap={enabled && !reduceMotion ? { scale: 0.985 } : undefined}
                     >
-                      <span
-                        className={`${styles.chipCheck} ${checked ? styles.chipCheckOn : ""}`}
-                        aria-hidden
-                      >
-                        {checked ? "✓" : ""}
-                      </span>
                       <span className={styles.chipBody}>
                         <span className={styles.chipName}>{service.name}</span>
                         <span className={styles.chipHint}>{service.hint}</span>
