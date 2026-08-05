@@ -32,7 +32,7 @@ export function AzvinAboutSection() {
       aria-labelledby="azvin-about-heading"
     >
       <div className="demo-design-dir__shell">
-        <header className="text-center">
+        <header className={`text-center ${styles.aboutIntro}`}>
           <p className={styles.aboutEyebrow}>{copy.eyebrow}</p>
           <h2 id="azvin-about-heading" className={homeEditorialSectionTitleClass}>
             {copy.title}
@@ -44,7 +44,7 @@ export function AzvinAboutSection() {
           <p className={`${homeEditorialSectionBodyLeadClass} ${styles.aboutMission}`}>{copy.mission}</p>
         </header>
 
-        <div className={styles.aboutBlock}>
+        <div className={`${styles.aboutBlock} ${styles.aboutPanel}`}>
           <h3 className={styles.aboutBlockTitle}>{copy.directionsTitle}</h3>
           <div className={styles.directionsGrid}>
             {copy.directions.map((direction) => (
@@ -57,7 +57,7 @@ export function AzvinAboutSection() {
           </div>
         </div>
 
-        <div className={styles.aboutBlock}>
+        <div className={`${styles.aboutBlock} ${styles.aboutPanel}`}>
           <h3 className={styles.aboutBlockTitle}>{copy.differentTitle}</h3>
           <div className={styles.differentGrid}>
             {copy.different.map((item) => (
@@ -69,7 +69,7 @@ export function AzvinAboutSection() {
           </div>
         </div>
 
-        <div className={styles.aboutBlock}>
+        <div className={`${styles.aboutBlock} ${styles.aboutPanel}`}>
           <h3 className={styles.aboutBlockTitle}>{copy.brandsTitle}</h3>
           <p className={styles.aboutBlockLead}>{copy.brandsLead}</p>
           <ul className={styles.brandsGrid}>
@@ -84,7 +84,7 @@ export function AzvinAboutSection() {
           </ul>
         </div>
 
-        <div className={styles.aboutBlock}>
+        <div className={`${styles.aboutBlock} ${styles.aboutPanel}`}>
           <h3 className={styles.aboutBlockTitle}>{copy.reportTitle}</h3>
           <p className={styles.aboutBlockLead}>{copy.reportLead}</p>
           <ul className={styles.reportList}>
@@ -99,7 +99,7 @@ export function AzvinAboutSection() {
           </ul>
         </div>
 
-        <div className={styles.aboutBlock}>
+        <div className={`${styles.aboutBlock} ${styles.aboutPanel}`}>
           <h3 className={styles.aboutBlockTitle}>{copy.trustTitle}</h3>
           <ul className={styles.trustList}>
             {copy.trust.map((item) => (
@@ -113,7 +113,7 @@ export function AzvinAboutSection() {
           </ul>
         </div>
 
-        <div className={styles.aboutBlock}>
+        <div className={`${styles.aboutBlock} ${styles.aboutPanel}`}>
           <h3 className={styles.aboutBlockTitle}>{copy.statsTitle}</h3>
           <div className={styles.statsGrid}>
             {copy.stats.map((stat) => (
@@ -125,7 +125,7 @@ export function AzvinAboutSection() {
           </div>
         </div>
 
-        <div className={`${styles.aboutBlock} ${styles.aboutContact}`}>
+        <div className={`${styles.aboutBlock} ${styles.aboutPanel} ${styles.aboutContact}`}>
           <h3 className={styles.aboutBlockTitle}>{copy.contactTitle}</h3>
           <p className={styles.aboutBlockLead}>{copy.contactBody}</p>
           <a href="#azvin-hero" className={styles.aboutCta}>

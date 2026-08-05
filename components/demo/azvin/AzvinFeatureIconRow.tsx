@@ -12,13 +12,6 @@ import {
 
 const LUCIDE_ICON_CLASS = "h-6 w-6 [stroke-width:1.6]";
 
-const ICON_BTN_CLASS: Record<AzvinIconId, string> = {
-  koreaUsa: azvinStyles.iconBtnKorea,
-  europe: azvinStyles.iconBtnEurope,
-  auction: azvinStyles.iconBtnAuction,
-  dealer: azvinStyles.iconBtnDealer,
-};
-
 function IconGlyph({ id }: { id: AzvinIconId }) {
   switch (id) {
     case "koreaUsa":
@@ -71,7 +64,7 @@ export function AzvinFeatureIconRow({ copy, forceVisible = false }: Props) {
             <li key={id} className="flex shrink-0">
               <button
                 type="button"
-                className={`group ${azvinStyles.iconBtn} ${ICON_BTN_CLASS[id]}`}
+                className={`group ${azvinStyles.iconBtn}`}
                 aria-label={label}
               >
                 <FeatureTooltip label={label} />
