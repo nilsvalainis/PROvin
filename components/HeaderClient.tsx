@@ -11,6 +11,7 @@ import {
 } from "@/lib/site-rail-sections";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import { AzvinLocaleSwitcher } from "@/components/demo/azvin/AzvinLocaleSwitcher";
+import { AzvinAboutNavLink } from "@/components/demo/azvin/AzvinAboutNavLink";
 
 /** Mājas navigācijas rindkopas kā `/#…` vai `/biezi-jautajumi`. */
 export function HeaderClient() {
@@ -164,7 +165,12 @@ export function HeaderClient() {
           ) : null}
 
           {isAzvinDemo ? (
-            <AzvinLocaleSwitcher dark={headerChromeDark} />
+            <>
+              <AzvinAboutNavLink
+                className={`relative z-[52] mr-1 hidden whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.18em] no-underline transition-colors sm:inline-flex ${navLinkInactive}`}
+              />
+              <AzvinLocaleSwitcher dark={headerChromeDark} />
+            </>
           ) : (
             <Link
               href={pathname as never}

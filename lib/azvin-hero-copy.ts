@@ -1,8 +1,8 @@
-import { TP5_DEALER_BRANDS } from "@/lib/test-pricing-5-mobile";
+import { AZVIN_DEALER_BRANDS } from "@/lib/azvin-dealer-brands";
 
 /** AZ.VIN / Azerbaijan market demo — 4 UI locales (az, en, ru, lv). */
 
-export const AZVIN_DEALER_BRANDS = TP5_DEALER_BRANDS;
+export { AZVIN_DEALER_BRANDS };
 
 export const AZVIN_LOCALES = ["az", "en", "ru", "lv"] as const;
 export type AzvinLocale = (typeof AZVIN_LOCALES)[number];

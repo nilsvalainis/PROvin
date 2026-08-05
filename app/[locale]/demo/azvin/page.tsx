@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import { AzvinAboutSection } from "@/components/demo/azvin/AzvinAboutSection";
 
 export const metadata: Metadata = {
   title: "AZ.VIN demo (Azerbaijan)",
@@ -29,6 +30,7 @@ export default function AzvinDemoPage() {
         <Suspense fallback={null}>
           <AzvinHero />
         </Suspense>
+        <AzvinAboutSection />
       </div>
     </div>
   );
