@@ -41,8 +41,6 @@ export function AzvinPricingCard({
   return (
     <article className={`${styles.spatialCard} w-full`}>
       <div className={styles.cardHeader}>
-        <p className={azvinStyles.demoBanner}>{copy.demoBanner}</p>
-        <p className={azvinStyles.cardTitle}>{copy.cardTitle}</p>
         <p className={azvinStyles.cardDesc}>{copy.cardDescription}</p>
       </div>
 

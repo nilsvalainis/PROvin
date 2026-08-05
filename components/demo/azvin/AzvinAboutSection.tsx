@@ -28,7 +28,7 @@ export function AzvinAboutSection() {
   return (
     <section
       id={copy.sectionId}
-      className={`demo-design-dir__section home-body-ink scroll-mt-16 py-16 sm:py-20 md:py-24 ${styles.aboutSection}`}
+      className={`demo-design-dir__section home-body-ink scroll-mt-16 py-14 sm:py-18 md:py-20 ${styles.aboutSection}`}
       aria-labelledby="azvin-about-heading"
     >
       <div className="demo-design-dir__shell">
@@ -41,7 +41,6 @@ export function AzvinAboutSection() {
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
           <p className={homeEditorialSectionBodyLeadClass}>{copy.lead}</p>
-          <p className={`${homeEditorialSectionBodyLeadClass} ${styles.aboutMission}`}>{copy.mission}</p>
         </header>
 
         <div className={`${styles.aboutBlock} ${styles.aboutPanel}`}>
@@ -52,18 +51,6 @@ export function AzvinAboutSection() {
                 <h4 className={styles.directionTitle}>{direction.title}</h4>
                 <p className={styles.directionBody}>{direction.body}</p>
                 {direction.accent ? <p className={styles.directionAccent}>{direction.accent}</p> : null}
-              </article>
-            ))}
-          </div>
-        </div>
-
-        <div className={`${styles.aboutBlock} ${styles.aboutPanel}`}>
-          <h3 className={styles.aboutBlockTitle}>{copy.differentTitle}</h3>
-          <div className={styles.differentGrid}>
-            {copy.different.map((item) => (
-              <article key={item.title} className={styles.differentCard}>
-                <h4 className={styles.differentTitle}>{item.title}</h4>
-                <p className={styles.differentBody}>{item.body}</p>
               </article>
             ))}
           </div>
@@ -84,59 +71,15 @@ export function AzvinAboutSection() {
           </ul>
         </div>
 
-        <div className={`${styles.aboutBlock} ${styles.aboutPanel}`}>
-          <h3 className={styles.aboutBlockTitle}>{copy.reportTitle}</h3>
-          <p className={styles.aboutBlockLead}>{copy.reportLead}</p>
-          <ul className={styles.reportList}>
-            {copy.reportItems.map((item) => (
-              <li key={item} className={styles.reportItem}>
-                <span className={styles.brandCheck} aria-hidden>
-                  ✓
-                </span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className={`${styles.aboutBlock} ${styles.aboutPanel}`}>
-          <h3 className={styles.aboutBlockTitle}>{copy.trustTitle}</h3>
-          <ul className={styles.trustList}>
-            {copy.trust.map((item) => (
-              <li key={item} className={styles.trustItem}>
-                <span className={styles.brandCheck} aria-hidden>
-                  ✓
-                </span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className={`${styles.aboutBlock} ${styles.aboutPanel}`}>
-          <h3 className={styles.aboutBlockTitle}>{copy.statsTitle}</h3>
-          <div className={styles.statsGrid}>
-            {copy.stats.map((stat) => (
-              <div key={stat.label} className={styles.statCard}>
-                <p className={styles.statValue}>{stat.value}</p>
-                <p className={styles.statLabel}>{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className={`${styles.aboutBlock} ${styles.aboutPanel} ${styles.aboutContact}`}>
-          <h3 className={styles.aboutBlockTitle}>{copy.contactTitle}</h3>
-          <p className={styles.aboutBlockLead}>{copy.contactBody}</p>
+        <div className={styles.aboutCloser}>
+          <p className={`${homeEditorialPunchlineClass} ${styles.aboutPunchline}`}>
+            <span className={homeEditorialPunchlineLeadClass}>{copy.punchlineLead}</span>
+            <span className={homeEditorialPunchlineAccentClass}>{copy.punchlineAccent}</span>
+          </p>
           <a href="#azvin-hero" className={styles.aboutCta}>
             {copy.ctaLabel}
           </a>
         </div>
-
-        <p className={`${homeEditorialPunchlineClass} ${styles.aboutPunchline}`}>
-          <span className={homeEditorialPunchlineLeadClass}>{copy.punchlineLead}</span>
-          <span className={homeEditorialPunchlineAccentClass}>{copy.punchlineAccent}</span>
-        </p>
       </div>
     </section>
   );
