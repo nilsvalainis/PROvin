@@ -264,9 +264,9 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  /* Fixed slot = 11 checklist rows (MINI/AUDITS). */
-  height: calc(11 * (1.65rem + 0.28rem));
-  min-height: calc(11 * (1.65rem + 0.28rem));
+  /* Fixed slot: 4 core rows + “view all” trigger + explain-note line. */
+  height: calc(4 * (1.95rem + 0.12rem) + 2.35rem + 1.55rem);
+  min-height: calc(4 * (1.95rem + 0.12rem) + 2.35rem + 1.55rem);
   padding: 0.45rem 0.65rem 0.5rem;
   border-radius: 14px;
   background: rgb(37 99 235 / 0.06);
@@ -304,13 +304,35 @@
 
 .featureRow {
   display: grid;
-  grid-template-columns: 1.15rem minmax(0, 1fr);
+  grid-template-columns: 1.25rem minmax(0, 1fr);
   align-items: start;
-  gap: 0.35rem;
-  min-height: 1.65rem;
-  padding: 0.14rem 0;
-  font-size: 0.78rem;
-  line-height: 1.3;
+  column-gap: 0.4rem;
+  min-height: 1.95rem;
+  padding: 0.12rem 0;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.featureMarkCheck,
+.featureMarkCrossInline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.15rem;
+  margin-top: 0.08rem;
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.featureMarkCheck {
+  color: #2563eb;
+}
+
+.featureMarkCrossInline {
+  color: #ef4444;
 }
 
 .featureMark {
@@ -366,12 +388,145 @@
 }
 
 .dealerExplainNote {
-  margin: 0.45rem 0 0;
-  padding: 0.15rem 0 0;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  min-height: 1.35rem;
   font-size: 0.68rem;
   line-height: 1.35;
   font-weight: 500;
   color: rgb(210 214 222 / 0.72);
+}
+
+.dealerExplainNote[data-empty] {
+  visibility: hidden;
+}
+
+.featuresMoreSlot {
+  margin-top: 0.35rem;
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+}
+
+.featuresMoreTrigger {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0.15rem 0;
+  border: 0;
+  background: transparent;
+  color: rgb(147 197 253 / 0.95);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: rgb(147 197 253 / 0.35);
+  text-underline-offset: 0.16em;
+  cursor: pointer;
+}
+
+.featuresMoreTrigger:hover {
+  color: rgb(191 219 254 / 1);
+  text-decoration-color: rgb(191 219 254 / 0.55);
+}
+
+.featuresModalRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.featuresModalBackdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(0 0 0 / 0.62);
+  cursor: pointer;
+}
+
+.featuresModalPanel {
+  position: relative;
+  z-index: 1;
+  width: min(24rem, 100%);
+  max-height: min(34rem, 86vh);
+  overflow: auto;
+  padding: 1rem 1rem 0.9rem;
+  border-radius: 1rem;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(18 20 24 / 0.98);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 0.5);
+  outline: none;
+}
+
+.featuresModalHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.featuresModalTitle {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(37 99 235 / 0.95);
+  line-height: 1.35;
+}
+
+.featuresModalClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0.4rem;
+  background: rgb(255 255 255 / 0.06);
+  color: rgb(230 233 238 / 0.9);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.featuresModalList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.featuresModalRow {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  align-items: start;
+  column-gap: 0.4rem;
+  min-height: 1.7rem;
+  padding: 0.18rem 0;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.featuresModalFootnote {
+  margin: 0.55rem 0 0;
+  font-size: 0.62rem;
+  line-height: 1.4;
+  color: rgb(210 214 222 / 0.55);
+}
+
+.featuresModalBrands {
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
 }
 
 .dealerBrandsTip {
@@ -1043,15 +1198,15 @@
   .featureRow {
     grid-template-columns: 1.25rem minmax(0, 1fr);
     gap: 0.45rem;
-    min-height: 1.85rem;
-    padding: 0.18rem 0;
-    font-size: clamp(0.78rem, 2.1vw, 0.8125rem);
-    line-height: 1.32;
+    min-height: 1.95rem;
+    padding: 0.14rem 0;
+    font-size: clamp(0.84rem, 2.1vw, 0.9rem);
+    line-height: 1.35;
   }
 
   .liquidAccent {
-    height: calc(11 * (1.85rem + 0.36rem));
-    min-height: calc(11 * (1.85rem + 0.36rem));
+    height: calc(4 * (1.95rem + 0.14rem) + 2.35rem + 1.55rem);
+    min-height: calc(4 * (1.95rem + 0.14rem) + 2.35rem + 1.55rem);
   }
 
   .turnaround {
@@ -1183,6 +1338,29 @@ html[data-site-theme="light"] .featureLabelActive {
 }
 
 html[data-site-theme="light"] .dealerExplainNote {
+  color: #6e6e73;
+}
+
+html[data-site-theme="light"] .featuresMoreTrigger {
+  color: #2563eb;
+}
+
+html[data-site-theme="light"] .featuresModalPanel {
+  background: rgb(255 255 255 / 0.98);
+  border-color: rgb(24 31 42 / 0.12);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 0.16);
+}
+
+html[data-site-theme="light"] .featuresModalTitle {
+  color: #2563eb;
+}
+
+html[data-site-theme="light"] .featuresModalClose {
+  background: rgb(0 0 0 / 0.05);
+  color: #1d1d1f;
+}
+
+html[data-site-theme="light"] .featuresModalFootnote {
   color: #6e6e73;
 }
 

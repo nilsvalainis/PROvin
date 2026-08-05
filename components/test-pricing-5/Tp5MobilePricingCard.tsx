@@ -1,7 +1,7 @@
 "use client";
 
 import { LayoutGroup, motion } from "framer-motion";
-import { type SyntheticEvent, type TouchEvent } from "react";
+import { useEffect, useState, type SyntheticEvent, type TouchEvent } from "react";
 import { useLocale } from "next-intl";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { getTp5DealerFootnote } from "@/lib/test-pricing-5-checkout-routing";
@@ -15,19 +15,16 @@ import {
 } from "@/lib/test-pricing-5-mobile";
 import { TP5_AUDITS_SAMPLE_REPORT_HREF, getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
-import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
+import { Tp5FeaturesModal } from "@/components/test-pricing-5/Tp5FeaturesModal";
 import { Tp5TurnaroundInfoTip } from "@/components/test-pricing-5/Tp5TurnaroundInfoTip";
 
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
-
-const FEATURE_MARK_CLASS =
-  "inline-flex h-6 w-6 shrink-0 items-center justify-center text-[0.98rem] font-bold leading-none";
 
 function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
   if (feature.included) {
     return (
       <li className={styles.featureRow}>
-        <span className={`${FEATURE_MARK_CLASS} text-[#2563EB]`} aria-hidden>
+        <span className={styles.featureMarkCheck} aria-hidden>
           ✓
         </span>
         <span className={styles.featureLabelActive}>{feature.name}</span>
@@ -37,7 +34,7 @@ function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
 
   return (
     <li className={styles.featureRow}>
-      <span className={`${FEATURE_MARK_CLASS} text-[#ef4444]`} aria-hidden>
+      <span className={styles.featureMarkCrossInline} aria-hidden>
         ✕
       </span>
       <span className={styles.featureLabelMuted}>{feature.name}</span>
@@ -89,12 +86,17 @@ export function Tp5MobilePricingCard({
   const isDealer = activeServiceId === "dealer";
   const turnaroundLabel = activeService.turnaround ?? getTp5MobileTurnaround(locale);
   const footnote = activeService.footnote ?? getTp5DealerFootnote(locale);
+  const [modalOpen, setModalOpen] = useState(false);
   const metaTitle =
     activeServiceId === "dealer"
       ? locale === "en"
         ? "Official dealer service history data"
         : "Oficiālā dīlera servisa vēstures dati"
       : activeService.title;
+
+  useEffect(() => {
+    setModalOpen(false);
+  }, [activeServiceId]);
 
   return (
     <article className={`${styles.spatialCard} w-full`}>
@@ -149,14 +151,21 @@ export function Tp5MobilePricingCard({
               <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
             ))}
           </ul>
-          {activeService.extraNote ? (
-            <p className={styles.dealerExplainNote}>{activeService.extraNote}</p>
-          ) : null}
-          {isDealer && activeService.brands && activeService.brands.length > 0 ? (
-            <div className={styles.dealerBrandsSlot}>
-              <Tp5DealerBrandsTip brands={activeService.brands} copy={uiCopy} />
-            </div>
-          ) : null}
+          <div className={styles.featuresMoreSlot}>
+            <button
+              type="button"
+              className={styles.featuresMoreTrigger}
+              onClick={(event) => {
+                event.stopPropagation();
+                setModalOpen(true);
+              }}
+            >
+              [ {activeService.modalTrigger} ]
+            </button>
+          </div>
+          <p className={styles.dealerExplainNote} data-empty={!activeService.extraNote || undefined}>
+            {activeService.extraNote ?? "\u00a0"}
+          </p>
         </div>
 
         <div
@@ -223,6 +232,20 @@ export function Tp5MobilePricingCard({
         )}
         <p className={styles.featureFootnote}>{footnote}</p>
       </div>
+
+      <Tp5FeaturesModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={activeService.modalTitle}
+        features={activeService.modalFeatures}
+        footnote={activeService.footnote}
+        brands={activeService.brands}
+        brandsHeading={activeService.brandsHeading}
+        brandsYearNote={isDealer ? uiCopy.dealerBrandsYearNote : undefined}
+        brandsRefundNote={isDealer ? uiCopy.dealerBrandsRefundNote : undefined}
+        extraNote={activeService.extraNote}
+        closeLabel={uiCopy.dealerBrandsClose}
+      />
     </article>
   );
 }
