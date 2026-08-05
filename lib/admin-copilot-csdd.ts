@@ -7,19 +7,22 @@ import {
   type CsddFormFields,
 } from "@/lib/admin-source-blocks";
 import { mergeCsddPdfRawSources } from "@/lib/csdd-pdf-raw-merge";
-import { previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
+import {
+  previousInspectionBlockHasData,
+  type CsddTechnicalInspectionRow,
+} from "@/lib/csdd-extended-parse";
 import { backfillCsddExtendedFromRaw, isLikelyStructuredCsddPaste } from "@/lib/csdd-paste-parse";
 
 function countMileageRows(f: CsddFormFields): number {
   return f.mileageHistory.filter((r) => r.odometer.trim()).length;
 }
 
-function countTaRows(f: CsddFormFields): number {
-  return (f.technicalInspectionHistory ?? []).filter((r) => r.date.trim()).length;
+function countTaRows(rows: CsddTechnicalInspectionRow[] | undefined): number {
+  return (rows ?? []).filter((r) => r.date.trim()).length;
 }
 
-function countTaDefects(f: CsddFormFields): number {
-  return (f.technicalInspectionHistory ?? []).reduce((n, r) => n + (r.defects?.length ?? 0), 0);
+function countTaDefects(rows: CsddTechnicalInspectionRow[] | undefined): number {
+  return (rows ?? []).reduce((n, r) => n + (r.defects?.length ?? 0), 0);
 }
 
 /** Vai PDF teksta slānis izskatās pēc CSDD e.csdd.lv transportlīdzekļa datu izdrukas. */
@@ -74,8 +77,8 @@ export function mergeCsddFieldsFillEmpty(
   if (!(next.technicalInspectionHistory ?? []).some((r) => r.date.trim()) && incTa.some((r) => r.date.trim())) {
     next = { ...next, technicalInspectionHistory: incTa };
   } else if (
-    countTaRows(incTa) > countTaRows(next) &&
-    countTaDefects(incTa) > countTaDefects(next)
+    countTaRows(incTa) > countTaRows(next.technicalInspectionHistory) &&
+    countTaDefects(incTa) > countTaDefects(next.technicalInspectionHistory)
   ) {
     next = { ...next, technicalInspectionHistory: incTa };
   }
