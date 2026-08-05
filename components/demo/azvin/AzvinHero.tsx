@@ -70,7 +70,7 @@ export function AzvinHero() {
 
   return (
     <section id="azvin-hero" className={styles.page} aria-labelledby="azvin-hero-title">
-      <div className={styles.phoneCanvas}>
+      <div className={styles.heroShell}>
         <AzvinMobileCheckout
           copy={copy}
           selected={selected}
