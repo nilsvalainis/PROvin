@@ -76,8 +76,9 @@ const ABOUT_EN: AzvinAboutCopy = {
       body: "Typical turnaround within 24 hours. Priority cases can be faster on request.",
     },
     {
-      title: "Money-back clarity",
-      body: "If dealer data is not available for your VIN / year — 100% refund. No games.",
+      title: "Money-back guarantee",
+      body:
+        "14-day full refund guarantee if data is not available for your report. No questions asked.",
     },
     {
       title: "Privacy first",
@@ -111,7 +112,7 @@ const ABOUT_EN: AzvinAboutCopy = {
     { value: "3", label: "Core regions" },
     { value: "17+", label: "Dealer brands" },
     { value: "24h", label: "Typical delivery" },
-    { value: "100%", label: "Refund if no dealer data" },
+    { value: "14d", label: "Full refund guarantee" },
   ],
   contactTitle: "Get in touch",
   contactBody: "Questions about AZ.VIN or a specific VIN? Start with a check — or reach us after you order.",
@@ -163,7 +164,8 @@ const ABOUT_AZ: AzvinAboutCopy = {
     },
     {
       title: "Pulun qaytarılması",
-      body: "VIN / il üçün diler məlumatı yoxdursa — 100% geri ödəniş.",
+      body:
+        "Hesabat üçün məlumat yoxdursa — 14 günlük tam geri ödəniş zəmanəti. Əlavə suallar olmadan.",
     },
     {
       title: "Məxfilik",
@@ -197,7 +199,7 @@ const ABOUT_AZ: AzvinAboutCopy = {
     { value: "3", label: "Əsas region" },
     { value: "17+", label: "Diler markası" },
     { value: "24s", label: "Tipik çatdırılma" },
-    { value: "100%", label: "Diler datası yoxdursa geri ödəniş" },
+    { value: "14d", label: "Tam geri ödəniş zəmanəti" },
   ],
   contactTitle: "Əlaqə",
   contactBody: "AZ.VIN və ya konkret VIN barədə sualınız var? Yoxlama ilə başlayın.",
@@ -249,7 +251,8 @@ const ABOUT_RU: AzvinAboutCopy = {
     },
     {
       title: "Возврат средств",
-      body: "Нет дилерских данных по VIN / году — 100% возврат.",
+      body:
+        "14-дневная гарантия полного возврата, если данные по отчёту недоступны. Без лишних вопросов.",
     },
     {
       title: "Конфиденциальность",
@@ -283,7 +286,7 @@ const ABOUT_RU: AzvinAboutCopy = {
     { value: "3", label: "Ключевых региона" },
     { value: "17+", label: "Дилерских брендов" },
     { value: "24ч", label: "Типичный срок" },
-    { value: "100%", label: "Возврат без дилерских данных" },
+    { value: "14д", label: "Гарантия полного возврата" },
   ],
   contactTitle: "Связаться",
   contactBody: "Вопросы по AZ.VIN или конкретному VIN? Начните с проверки.",
@@ -335,7 +338,8 @@ const ABOUT_LV: AzvinAboutCopy = {
     },
     {
       title: "Naudas atmaksa",
-      body: "Ja dīlera datu nav šim VIN / gadam — 100% atmaksa.",
+      body:
+        "14 dienu pilnas maksas atmaksas garantija, ja jūsu ziņojumam dati nav pieejami. Bez papildu jautājumiem.",
     },
     {
       title: "Privātums",
@@ -369,7 +373,7 @@ const ABOUT_LV: AzvinAboutCopy = {
     { value: "3", label: "Galvenie reģioni" },
     { value: "17+", label: "Dīleru zīmoli" },
     { value: "24h", label: "Tipisks izpildes laiks" },
-    { value: "100%", label: "Atmaksa bez dīlera datiem" },
+    { value: "14d", label: "Pilnas atmaksas garantija" },
   ],
   contactTitle: "Sazinies",
   contactBody: "Jautājumi par AZ.VIN vai konkrētu VIN? Sāc ar pārbaudi.",

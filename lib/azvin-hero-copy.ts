@@ -61,7 +61,7 @@ const COPY_AZ: AzvinHeroCopy = {
   titlePrefix: "Avtomobil tarixi ",
   titleAccent: "yoxlaması",
   cardTitle: "AZ.VIN hesabat",
-  cardDescription: "İdxal avtomobilləri üçün tarix məlumatları.",
+  cardDescription: "Avropa, Koreya və ABŞ avtomobilləri üçün rəsmi diler, hərrac portalı və yürüş tarixi məlumatları.",
   demoBanner: "AZ.VIN · Azərbaycan demo",
   services: {
     koreaUsa: { name: "Koreya və ABŞ tarixi", priceLabel: "15 AZN" },
@@ -85,12 +85,12 @@ const COPY_AZ: AzvinHeroCopy = {
   ctaSelectHint: "Ən azı bir xidmət seçin.",
   ctaDemoNote: "Demo — ödəniş tezliklə.",
   turnaround: "Tipik çatdırılma: 24 saat",
-  footnote: "Məlumat mövcud deyilsə — 100% pulun qaytarılması.",
+  footnote: "Hesabat üçün məlumat yoxdursa — 14 günlük tam geri ödəniş zəmanəti. Əlavə suallar olmadan.",
   dealerBrandsTrigger: "Dəstəklənən istehsalçılar",
   dealerBrandsAria: "Dəstəklənən istehsalçılar",
   dealerBrandsYearNote:
     "Rəsmi diler məlumatları adətən 2009–2026-cı illərdə istehsal olunmuş avtomobillər üçün mövcuddur.",
-  dealerBrandsRefundNote: "Bu VIN / il üçün qeyd yoxdursa — 100% pulun qaytarılması.",
+  dealerBrandsRefundNote: "Hesabat üçün məlumat yoxdursa — 14 günlük tam geri ödəniş. Əlavə suallar olmadan.",
   dealerBrandsClose: "Bağla",
   vinInvalid: "Düzgün VIN daxil edin (11–17 simvol).",
   langSwitcherAria: "Dil",
@@ -101,7 +101,8 @@ const COPY_EN: AzvinHeroCopy = {
   titlePrefix: "Vehicle history ",
   titleAccent: "check",
   cardTitle: "AZ.VIN report",
-  cardDescription: "History data for imported cars.",
+  cardDescription:
+    "Official dealer, auction portal and mileage history data for cars from Europe, Korea and the USA.",
   demoBanner: "AZ.VIN · Azerbaijan demo",
   services: {
     koreaUsa: { name: "Korea & USA history", priceLabel: "15 AZN" },
@@ -125,12 +126,14 @@ const COPY_EN: AzvinHeroCopy = {
   ctaSelectHint: "Select at least one service.",
   ctaDemoNote: "Demo only — checkout coming soon.",
   turnaround: "Typical delivery: 24h",
-  footnote: "If data is not available — 100% refund.",
+  footnote:
+    "14-day full refund guarantee if data is not available for your report. No questions asked.",
   dealerBrandsTrigger: "Supported manufacturers",
   dealerBrandsAria: "Supported manufacturers",
   dealerBrandsYearNote:
     "Official dealer data is usually available for vehicles built 2009–2026.",
-  dealerBrandsRefundNote: "If no records exist for this VIN / year — 100% refund.",
+  dealerBrandsRefundNote:
+    "14-day full refund if data is not available for your report. No questions asked.",
   dealerBrandsClose: "Close",
   vinInvalid: "Enter a valid VIN (11–17 characters).",
   langSwitcherAria: "Language",
@@ -141,7 +144,7 @@ const COPY_RU: AzvinHeroCopy = {
   titlePrefix: "Проверка истории ",
   titleAccent: "авто",
   cardTitle: "Отчёт AZ.VIN",
-  cardDescription: "Данные истории для импортных авто.",
+  cardDescription: "Данные официальных дилеров, аукционов и пробега для авто из Европы, Кореи и США.",
   demoBanner: "AZ.VIN · Демо Азербайджан",
   services: {
     koreaUsa: { name: "История Корея и США", priceLabel: "15 AZN" },
@@ -165,12 +168,14 @@ const COPY_RU: AzvinHeroCopy = {
   ctaSelectHint: "Выберите хотя бы одну услугу.",
   ctaDemoNote: "Демо — оплата скоро.",
   turnaround: "Срок: 24ч",
-  footnote: "Если данные недоступны — 100% возврат средств.",
+  footnote:
+    "14-дневная гарантия полного возврата, если данные по отчёту недоступны. Без лишних вопросов.",
   dealerBrandsTrigger: "Поддерживаемые производители",
   dealerBrandsAria: "Поддерживаемые производители",
   dealerBrandsYearNote:
     "Официальные данные дилера обычно доступны для авто 2009–2026 гг.",
-  dealerBrandsRefundNote: "Если записей по этому VIN / году нет — 100% возврат.",
+  dealerBrandsRefundNote:
+    "14-дневная гарантия полного возврата, если данные недоступны. Без лишних вопросов.",
   dealerBrandsClose: "Закрыть",
   vinInvalid: "Введите корректный VIN (11–17 символов).",
   langSwitcherAria: "Язык",
@@ -181,7 +186,8 @@ const COPY_LV: AzvinHeroCopy = {
   titlePrefix: "Auto vēstures ",
   titleAccent: "pārbaude",
   cardTitle: "AZ.VIN atskaite",
-  cardDescription: "Vēstures dati importētām automašīnām.",
+  cardDescription:
+    "Oficiālo dīleru, izsoļu portālu un nobraukuma vēstures dati automašīnām no Eiropas, Korejas un ASV.",
   demoBanner: "AZ.VIN · Azerbaidžānas demo",
   services: {
     koreaUsa: { name: "Korejas un ASV vēsture", priceLabel: "15 AZN" },
@@ -205,12 +211,14 @@ const COPY_LV: AzvinHeroCopy = {
   ctaSelectHint: "Izvēlies vismaz vienu pakalpojumu.",
   ctaDemoNote: "Demo — apmaksa drīzumā.",
   turnaround: "Tipisks izpildes laiks: 24h",
-  footnote: "Ja dati nav pieejami - 100% naudas atmaksa.",
+  footnote:
+    "14 dienu pilnas maksas atmaksas garantija, ja jūsu ziņojumam dati nav pieejami. Bez papildu jautājumiem.",
   dealerBrandsTrigger: "Atbalstītie ražotāji",
   dealerBrandsAria: "Atbalstītie ražotāji",
   dealerBrandsYearNote:
     "Oficiālie dīlera dati parasti pieejami automašīnām, kas ražotas no 2009.–2026. gadam.",
-  dealerBrandsRefundNote: "Ja šim VIN / gadam ierakstu nav — 100% naudas atmaksa.",
+  dealerBrandsRefundNote:
+    "14 dienu pilnas atmaksas garantija, ja dati nav pieejami. Bez papildu jautājumiem.",
   dealerBrandsClose: "Aizvērt",
   vinInvalid: "Ievadi derīgu VIN (11–17 rakstzīmes).",
   langSwitcherAria: "Valoda",
