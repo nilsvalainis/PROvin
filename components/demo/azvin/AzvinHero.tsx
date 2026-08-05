@@ -106,7 +106,6 @@ export function AzvinHero() {
                 {copy.titleAccent}
               </span>
             </h1>
-            <AzvinFeatureIconRow copy={copy} forceVisible />
           </header>
 
           <div className={styles.stage}>

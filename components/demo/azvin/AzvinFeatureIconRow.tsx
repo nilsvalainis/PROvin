@@ -40,19 +40,12 @@ function FeatureTooltip({ label }: { label: string }) {
 
 type Props = {
   copy: AzvinHeroCopy;
-  /** Show on mobile too (PROVIN desktop-only row uses CSS hide). */
-  forceVisible?: boolean;
 };
 
-export function AzvinFeatureIconRow({ copy, forceVisible = false }: Props) {
+/** Desktop (lg+) only — hidden on phone via tp5DesktopFeatureRow CSS. */
+export function AzvinFeatureIconRow({ copy }: Props) {
   return (
-    <div
-      className={
-        forceVisible
-          ? `${styles.tp5DesktopFeatureRow} ${azvinStyles.iconRowAlways}`
-          : styles.tp5DesktopFeatureRow
-      }
-    >
+    <div className={styles.tp5DesktopFeatureRow}>
       <DiagnosticScanLine variant="rail" motion="sweepLtr" className="w-full" />
       <ul
         className="mt-8 flex w-full list-none items-center justify-between gap-1"
@@ -62,11 +55,7 @@ export function AzvinFeatureIconRow({ copy, forceVisible = false }: Props) {
           const label = copy.icons[id];
           return (
             <li key={id} className="flex shrink-0">
-              <button
-                type="button"
-                className={`group ${azvinStyles.iconBtn}`}
-                aria-label={label}
-              >
+              <button type="button" className={`group ${azvinStyles.iconBtn}`} aria-label={label}>
                 <FeatureTooltip label={label} />
                 <IconGlyph id={id} />
               </button>

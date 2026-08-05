@@ -194,17 +194,6 @@
   color: rgb(148 154 166 / 0.88);
 }
 
-/* Force icon row visible on mobile for AZ.VIN demo. */
-.iconRowAlways {
-  display: block !important;
-  margin-top: 1.25rem;
-  margin-bottom: 0.25rem;
-}
-
-.iconRowAlways :global(ul) {
-  margin-top: 1.25rem !important;
-}
-
 .iconBtn {
   position: relative;
   display: flex;
@@ -237,10 +226,6 @@
 }
 
 @media (min-width: 1024px) {
-  .iconRowAlways {
-    margin-top: 4rem;
-  }
-
   .serviceName {
     font-size: 1.08rem;
   }
