@@ -5,9 +5,9 @@ import { PROVIN_SELECT_FORM_HASH, PROVIN_SELECT_SECTION_ID } from "@/lib/provin-
 /** Sadaļu DOM `id` secība mājas lapā (scroll / rail — sakrīt ar dokumenta secību un izvēlnes rindām). */
 export function getSiteRailHomeScrollIds(): readonly string[] {
   if (isProvinSelectPublic()) {
-    return ["home-hero", PROVIN_SELECT_SECTION_ID, "kas-ir-iriss"] as const;
+    return ["home-hero", PROVIN_SELECT_SECTION_ID] as const;
   }
-  return ["home-hero", "kas-ir-iriss"] as const;
+  return ["home-hero"] as const;
 }
 
 export type SiteRailLabelKey =
@@ -44,7 +44,7 @@ export function buildSiteRailSections(_normalizedPath: string): readonly SiteRai
   const out: SiteRailSection[] = [
     { href: "/", labelKey: "sakums" },
     { href: "/pakalpojumi", labelKey: "pakalpojumi" },
-    { href: "/#kas-ir-iriss", labelKey: "kasSlapjasAizProvin" },
+    { href: "/par-mums", labelKey: "kasSlapjasAizProvin" },
     { href: "/blogs", labelKey: "blogs" },
   ];
   if (isProvinSelectPublic()) out.push({ href: `/#${PROVIN_SELECT_SECTION_ID}`, labelKey: "provinSelect" });
@@ -66,7 +66,7 @@ export function siteRailActiveFromHash(raw: string): number | null {
     const idx = railIndex("provinSelect", sections);
     return idx >= 0 ? idx : null;
   }
-  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) {
+  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav") || h === "par-mums") {
     return railIndex("kasSlapjasAizProvin", sections);
   }
   if (h === "pakalpojumi" || h.startsWith("pakalpojums-")) {
@@ -84,6 +84,7 @@ export function siteRailRouteActiveIndex(pathname: string | null | undefined): n
   const sections = buildSiteRailSections(p);
   if (p === "/pasutit") return railIndex("sakums", sections);
   if (p === "/pakalpojumi") return railIndex("pakalpojumi", sections);
+  if (p === "/par-mums") return railIndex("kasSlapjasAizProvin", sections);
   if (p === "/blogs") return railIndex("blogs", sections);
   /* FAQ page remains reachable but is no longer a menu item. */
   if (p === "/biezi-jautajumi") return railIndex("sakums", sections);

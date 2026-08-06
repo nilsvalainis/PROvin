@@ -29,6 +29,7 @@ export function HeaderClient() {
 
   const isHome = normalizedPath === "/" || normalizedPath === "";
   const isPakalpojumi = normalizedPath === "/pakalpojumi";
+  const isParMums = normalizedPath === "/par-mums";
   const isBlogs = normalizedPath === "/blogs";
   /** Tās pašas lapas kā kreisā slide — arī šeit navigācijas saraksts. */
   const showHomeNavRail =
@@ -36,13 +37,14 @@ export function HeaderClient() {
     normalizedPath === "/pasutit" ||
     normalizedPath === "/biezi-jautajumi" ||
     isPakalpojumi ||
+    isParMums ||
     isBlogs;
 
   const isDemoPath = pathname.includes("/demo");
   const isAzvinDemo = pathname.includes("/demo/azvin");
-  /** Sākumlapas, pakalpojumu / blogu kataloga un PROVIN SELECT pieteikuma caurspīdīgais hero headeris. */
+  /** Sākumlapas, pakalpojumu / Par mums / blogu un PROVIN SELECT pieteikuma caurspīdīgais hero headeris. */
   const isDarkHeaderSurface =
-    isHome || isProvinSelectPieteikums || isAzvinDemo || isPakalpojumi || isBlogs;
+    isHome || isProvinSelectPieteikums || isAzvinDemo || isPakalpojumi || isParMums || isBlogs;
   const isDemoGraphiteHeader = isDemoPath && !isAzvinDemo;
   const headerChromeDark = isDarkHeaderSurface || isDemoGraphiteHeader;
 
@@ -114,14 +116,15 @@ export function HeaderClient() {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  const isFullBleedDarkNav = isHome || isProvinSelectPieteikums || isAzvinDemo || isPakalpojumi || isBlogs;
+  const isFullBleedDarkNav =
+    isHome || isProvinSelectPieteikums || isAzvinDemo || isPakalpojumi || isParMums || isBlogs;
 
   const headerInnerClass = [
     "mx-auto flex min-h-[2.4rem] w-full min-w-0 items-center gap-1.5 pl-[max(0.8rem,env(safe-area-inset-left,0px))] pr-[max(0.8rem,env(safe-area-inset-right,0px))] sm:min-h-9 lg:min-h-11 lg:gap-3 lg:pl-[max(1rem,env(safe-area-inset-left,0px))] lg:pr-[max(1rem,env(safe-area-inset-right,0px))]",
     isFullBleedDarkNav ? "max-w-none" : "max-w-[980px] lg:max-w-[1024px]",
   ].join(" ");
 
-  const logoShowsLvSuffix = !(isHome || isPakalpojumi || isBlogs);
+  const logoShowsLvSuffix = !(isHome || isPakalpojumi || isParMums || isBlogs);
 
   return (
     <header className={`sticky top-0 z-[42] isolate w-full ${headerSurface}`}>

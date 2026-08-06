@@ -56,7 +56,7 @@ describe("pakalpojumi catalog", () => {
     ]);
   });
 
-  it("keeps Par mums in the site rail after Pakalpojumi", () => {
+  it("keeps Par mums in the site rail as its own page", () => {
     const sections = buildSiteRailSections("/");
     const keys = sections.map((s) => s.labelKey);
     expect(keys).toContain("pakalpojumi");
@@ -65,7 +65,9 @@ describe("pakalpojumi catalog", () => {
     expect(keys.indexOf("kasSlapjasAizProvin")).toBeGreaterThan(keys.indexOf("pakalpojumi"));
     expect(keys).not.toContain("buj");
     expect(keys).not.toContain("kontakti");
+    expect(sections.find((s) => s.labelKey === "kasSlapjasAizProvin")?.href).toBe("/par-mums");
     expect(siteRailRouteActiveIndex("/pakalpojumi")).toBe(keys.indexOf("pakalpojumi"));
+    expect(siteRailRouteActiveIndex("/par-mums")).toBe(keys.indexOf("kasSlapjasAizProvin"));
     expect(siteRailRouteActiveIndex("/blogs")).toBe(keys.indexOf("blogs"));
   });
 });

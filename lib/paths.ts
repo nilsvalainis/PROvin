@@ -28,9 +28,14 @@ export function blogsHref(): string {
   return "/blogs";
 }
 
-/** IRISS / „kas slēpjās” sadaļa — `Link`-drošs ceļš. */
+/** Par mums — `Link`-drošs ceļš. */
+export function parMumsHref(): string {
+  return "/par-mums";
+}
+
+/** @deprecated Prefer `parMumsHref()` — sadaļa tagad ir atsevišķa lapa. */
 export function irissAnchorHref(): string {
-  return "/#kas-ir-iriss";
+  return "/par-mums";
 }
 
 /** PROVIN SELECT konsultācijas pieteikums — atsevišķa lapa (bez formas sākumlapā). */

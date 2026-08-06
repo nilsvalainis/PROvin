@@ -8,6 +8,7 @@ describe("shouldHideSiteOrderCtaPin", () => {
     expect(shouldHideSiteOrderCtaPin("/pasutit")).toBe(true);
     expect(shouldHideSiteOrderCtaPin("/lv/pakalpojumi")).toBe(true);
     expect(shouldHideSiteOrderCtaPin("/pakalpojumi")).toBe(true);
+    expect(shouldHideSiteOrderCtaPin("/par-mums")).toBe(true);
     expect(shouldHideSiteOrderCtaPin("/blogs")).toBe(true);
     expect(shouldHideSiteOrderCtaPin("/biezi-jautajumi")).toBe(true);
     expect(shouldHideSiteOrderCtaPin("/provin-select-pieteikums")).toBe(true);
