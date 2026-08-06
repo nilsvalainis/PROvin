@@ -36,6 +36,16 @@ export function Tp5DealerBrandsTip({ brands, copy }: Props) {
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    const mq = window.matchMedia("(max-width: 767.98px)");
+    if (mq.matches) document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
   return (
     <div ref={rootRef} className={styles.dealerBrandsTip}>
       <button
@@ -58,69 +68,89 @@ export function Tp5DealerBrandsTip({ brands, copy }: Props) {
 
       <AnimatePresence>
         {open ? (
-          <motion.div
-            id={dialogId}
-            role="dialog"
-            aria-modal="false"
-            aria-labelledby={titleId}
-            className={styles.dealerBrandsPopup}
-            onClick={(event) => event.stopPropagation()}
-            onTouchStart={(event) => event.stopPropagation()}
-            initial={
-              reduceMotion ? { opacity: 1 } : { opacity: 0, y: 10, scale: 0.96, filter: "blur(6px)" }
-            }
-            animate={
-              reduceMotion
-                ? { opacity: 1 }
-                : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
-            }
-            exit={
-              reduceMotion
-                ? { opacity: 0 }
-                : { opacity: 0, y: 8, scale: 0.97, filter: "blur(4px)" }
-            }
-            transition={
-              reduceMotion
-                ? { duration: 0.12 }
-                : { type: "spring", stiffness: 420, damping: 28, mass: 0.7 }
-            }
-          >
-            <div className={styles.dealerBrandsPopupGlow} aria-hidden />
-            <div className={styles.dealerBrandsPopupHead}>
-              <div className={styles.dealerBrandsPopupHeadText}>
-                <p id={titleId} className={styles.dealerBrandsPopupTitle}>
-                  {copy.dealerBrandsAria}
-                </p>
-                <p className={styles.dealerBrandsPopupCount}>{brands.length}</p>
-              </div>
-              <button
-                type="button"
-                className={styles.dealerBrandsPopupClose}
-                aria-label={copy.dealerBrandsClose}
-                onClick={() => setOpen(false)}
+          <>
+            <motion.button
+              type="button"
+              className={styles.dealerBrandsBackdrop}
+              aria-label={copy.dealerBrandsClose}
+              initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+              transition={{ duration: reduceMotion ? 0.12 : 0.22 }}
+              onClick={() => setOpen(false)}
+            />
+            <div className={styles.dealerBrandsPopupLayer}>
+              <motion.div
+                id={dialogId}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                className={styles.dealerBrandsPopup}
+                onClick={(event) => event.stopPropagation()}
+                onTouchStart={(event) => event.stopPropagation()}
+                initial={
+                  reduceMotion
+                    ? { opacity: 1 }
+                    : { opacity: 0, y: 14, scale: 0.94, filter: "blur(6px)" }
+                }
+                animate={
+                  reduceMotion
+                    ? { opacity: 1 }
+                    : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
+                }
+                exit={
+                  reduceMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, y: 10, scale: 0.96, filter: "blur(4px)" }
+                }
+                transition={
+                  reduceMotion
+                    ? { duration: 0.12 }
+                    : { type: "spring", stiffness: 420, damping: 28, mass: 0.7 }
+                }
               >
-                <span aria-hidden>×</span>
-              </button>
+                <div className={styles.dealerBrandsPopupGlow} aria-hidden />
+                <div className={styles.dealerBrandsPopupHead}>
+                  <div className={styles.dealerBrandsPopupHeadText}>
+                    <p id={titleId} className={styles.dealerBrandsPopupTitle}>
+                      {copy.dealerBrandsAria}
+                    </p>
+                    <p className={styles.dealerBrandsPopupCount}>{brands.length}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.dealerBrandsPopupClose}
+                    aria-label={copy.dealerBrandsClose}
+                    onClick={() => setOpen(false)}
+                  >
+                    <span aria-hidden>×</span>
+                  </button>
+                </div>
+                <div className={styles.dealerBrandsPopupDivider} aria-hidden />
+                <ul className={styles.dealerBrandsPopupGrid}>
+                  {brands.map((brand, index) => (
+                    <motion.li
+                      key={brand}
+                      className={styles.dealerBrandItem}
+                      initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={
+                        reduceMotion
+                          ? { duration: 0 }
+                          : {
+                              delay: 0.04 + index * 0.018,
+                              duration: 0.28,
+                              ease: [0.22, 1, 0.36, 1],
+                            }
+                      }
+                    >
+                      <span className={styles.dealerBrandChip}>{brand}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </motion.div>
             </div>
-            <div className={styles.dealerBrandsPopupDivider} aria-hidden />
-            <ul className={styles.dealerBrandsPopupGrid}>
-              {brands.map((brand, index) => (
-                <motion.li
-                  key={brand}
-                  className={styles.dealerBrandItem}
-                  initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={
-                    reduceMotion
-                      ? { duration: 0 }
-                      : { delay: 0.04 + index * 0.018, duration: 0.28, ease: [0.22, 1, 0.36, 1] }
-                  }
-                >
-                  <span className={styles.dealerBrandChip}>{brand}</span>
-                </motion.li>
-              ))}
-            </ul>
-          </motion.div>
+          </>
         ) : null}
       </AnimatePresence>
     </div>

@@ -395,6 +395,14 @@
   max-width: 100%;
 }
 
+.dealerBrandsBackdrop {
+  display: none;
+}
+
+.dealerBrandsPopupLayer {
+  display: contents;
+}
+
 .dealerBrandsTrigger {
   display: inline-flex;
   align-items: center;
@@ -449,6 +457,43 @@
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   transform-origin: top left;
+}
+
+@media (max-width: 767.98px) {
+  .dealerBrandsBackdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgb(2 6 23 / 0.58);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    cursor: pointer;
+  }
+
+  .dealerBrandsPopupLayer {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 81;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    pointer-events: none;
+  }
+
+  .dealerBrandsPopup {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: min(20.5rem, calc(100vw - 2.5rem));
+    max-height: min(70vh, 28rem);
+    pointer-events: auto;
+    transform-origin: center center;
+  }
 }
 
 .dealerBrandsPopupGlow {

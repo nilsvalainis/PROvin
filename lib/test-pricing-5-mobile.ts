@@ -40,7 +40,7 @@ export const TP5_DEALER_BRANDS = [
   "Dacia",
   "Jaguar",
   "Land Rover",
-  "Mercedes-Benz (2010+)",
+  "Mercedes-Benz",
   "MINI",
   "Opel",
   "Peugeot",

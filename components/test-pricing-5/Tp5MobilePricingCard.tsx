@@ -167,8 +167,8 @@ export function Tp5MobilePricingCard({
   const metaTitle =
     activeServiceId === "dealer"
       ? locale === "en"
-        ? "Official dealer service history data"
-        : "Oficiālā dīlera servisa vēstures dati"
+        ? "Authorized dealer data"
+        : "Autorizētā dīlera dati"
       : activeService.title;
 
   return (
