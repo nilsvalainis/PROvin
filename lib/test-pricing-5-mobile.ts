@@ -7,6 +7,8 @@ export type Tp5MobileFeature = {
   included: boolean;
   /** soft = muted dash (not a red ✕); guarantee = refund-style ✓ */
   tone?: Tp5FeatureTone;
+  /** Optional supporting line (dealer highlight card). */
+  subtitle?: string;
 };
 
 export type Tp5MobileServiceId = "mini" | "audits" | "dealer";
@@ -102,11 +104,19 @@ const MINI_FEATURES_EN: Tp5MobileFeature[] = [
 ];
 
 const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
-  { name: "Odometra rādījumi un apkopju vēsture", included: true },
+  {
+    name: "Odometra rādījumi un apkopju vēsture",
+    subtitle: "Oficiālie servisu ieraksti un nobraukuma fiksācija no ražotāju datubāzēm",
+    included: true,
+  },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
-  { name: "Odometer readings and service history", included: true },
+  {
+    name: "Odometer readings and service history",
+    subtitle: "Official service records and mileage logs from manufacturer databases",
+    included: true,
+  },
 ];
 
 /** Mobile `/test-pricing-5` + home hero — MINI, AUDITS, dealer data. */

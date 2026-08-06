@@ -58,7 +58,27 @@ function SampleReportPdfIcon() {
   );
 }
 
-function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
+function DealerFeatureHighlight({ feature }: { feature: Tp5MobileFeature }) {
+  return (
+    <div
+      className="mb-6 flex items-center gap-3.5 rounded-xl border border-blue-500/20 bg-blue-500/10 p-3.5 shadow-[0_8px_24px_-12px_rgba(37,99,235,0.45)] backdrop-blur-sm"
+      role="listitem"
+    >
+      <span
+        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[0.95rem] font-bold leading-none text-white shadow-[0_0_12px_rgba(37,99,235,0.35)]"
+        aria-hidden
+      >
+        ✓
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="m-0 text-[0.92rem] font-semibold leading-snug text-slate-100">{feature.name}</p>
+        {feature.subtitle ? (
+          <p className="mt-0.5 m-0 text-xs font-normal leading-snug text-slate-400">{feature.subtitle}</p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
   if (feature.tone === "info") {
     return (
       <li className={styles.featureRowPlain}>
@@ -275,11 +295,15 @@ export function Tp5MobilePricingCard({
         onTouchEnd={onSwipeAreaTouchEnd}
       >
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
-          <ul className={styles.featureList}>
-            {activeService.features.map((feature) => (
-              <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
-            ))}
-          </ul>
+          {isDealer && activeService.features[0] ? (
+            <DealerFeatureHighlight feature={activeService.features[0]} />
+          ) : (
+            <ul className={styles.featureList}>
+              {activeService.features.map((feature) => (
+                <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
+              ))}
+            </ul>
+          )}
           {isDealer ? <DealerBrandBadges /> : null}
         </div>
 
