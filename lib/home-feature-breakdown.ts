@@ -60,13 +60,13 @@ export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
       {
         title: "carVertical integrācija",
         description:
-          "Nobraukuma un bojājumu pārbaude. Lai nodrošinātu konkrētajam reģionam atbilstošākos datus, atskaite var tikt aizstāta ar CARFAX vai citu specializētu datubāzi.",
+          "Lai nodrošinātu konkrētajam reģionam atbilstošākos datus, atskaite var tikt aizstāta ar CARFAX vai citu specializētu datubāzi.",
         icon: "carvertical",
       },
       {
         title: "autoDNA integrācija",
         description:
-          "Nobraukuma un bojājumu pārbaude. Lai nodrošinātu konkrētajam reģionam atbilstošākos datus, atskaite var tikt aizstāta ar CEBIA vai citu specializētu datubāzi.",
+          "Lai nodrošinātu konkrētajam reģionam atbilstošākos datus, atskaite var tikt aizstāta ar CEBIA vai citu specializētu datubāzi.",
         icon: "autodna",
       },
       {
@@ -126,13 +126,13 @@ const HOME_FEATURE_BREAKDOWN_PACKAGES_EN: HomeFeatureBreakdownPackage[] = [
       {
         title: "carVertical integration",
         description:
-          "Mileage and damage checks. To ensure the most relevant data for the specific region, the report may be substituted with CARFAX or another specialised database.",
+          "To ensure the most relevant data for the specific region, the report may be substituted with CARFAX or another specialised database.",
         icon: "carvertical",
       },
       {
         title: "autoDNA integration",
         description:
-          "Mileage and damage checks. To ensure the most relevant data for the specific region, the report may be substituted with CEBIA or another specialised database.",
+          "To ensure the most relevant data for the specific region, the report may be substituted with CEBIA or another specialised database.",
         icon: "autodna",
       },
       {
