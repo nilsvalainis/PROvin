@@ -386,17 +386,31 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  position: relative;
+  z-index: 3;
+  overflow: visible;
 }
 
 .dealerInlineBrandCell {
+  position: relative;
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 0;
+  margin: 0;
   padding: 0.12rem;
+  border: 0;
   border-radius: 0.55rem;
   background: transparent;
+  appearance: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dealerInlineBrandCell:focus-visible {
+  outline: 2px solid var(--color-provin-accent, #2563eb);
+  outline-offset: 2px;
 }
 
 .dealerInlineBrandLogo {
@@ -422,10 +436,93 @@
   opacity: 0.98;
 }
 
-.dealerInlineBrandCell:hover .dealerInlineBrandLogo {
+.dealerInlineBrandCell:hover .dealerInlineBrandLogo,
+.dealerInlineBrandCellOpen .dealerInlineBrandLogo,
+.dealerInlineBrandCell:focus-visible .dealerInlineBrandLogo {
   opacity: 1;
   transform: translateY(-1px) scale(1.04);
   filter: drop-shadow(0 4px 10px rgb(37 99 235 / 0.28));
+}
+
+.dealerInlineBrandTip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.28rem);
+  z-index: 24;
+  max-width: min(9.5rem, calc(100vw - 2rem));
+  padding: 0.28rem 0.5rem;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 0.45rem;
+  background: linear-gradient(160deg, rgb(32 36 46 / 0.98) 0%, rgb(16 18 26 / 0.98) 100%);
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.32);
+  color: rgb(248 250 252 / 0.96);
+  font-family: inherit;
+  font-size: 0.62rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-50%) translateY(0.15rem);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+
+.dealerInlineBrandTip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 0.42rem;
+  height: 0.42rem;
+  transform: translateX(-50%) translateY(-42%) rotate(45deg);
+  border-right: 1px solid rgb(255 255 255 / 0.14);
+  border-bottom: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(16 18 26 / 0.98);
+}
+
+.dealerInlineBrandCell:hover .dealerInlineBrandTip,
+.dealerInlineBrandCellOpen .dealerInlineBrandTip,
+.dealerInlineBrandCell:focus-visible .dealerInlineBrandTip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Edge columns: keep label inside the card */
+.dealerInlineBrandCell:nth-child(4n + 1) .dealerInlineBrandTip {
+  left: 0;
+  transform: translateX(0) translateY(0.15rem);
+}
+
+.dealerInlineBrandCell:nth-child(4n + 1):hover .dealerInlineBrandTip,
+.dealerInlineBrandCell:nth-child(4n + 1).dealerInlineBrandCellOpen .dealerInlineBrandTip,
+.dealerInlineBrandCell:nth-child(4n + 1):focus-visible .dealerInlineBrandTip {
+  transform: translateX(0) translateY(0);
+}
+
+.dealerInlineBrandCell:nth-child(4n + 1) .dealerInlineBrandTip::after {
+  left: 0.85rem;
+}
+
+.dealerInlineBrandCell:nth-child(4n) .dealerInlineBrandTip {
+  left: auto;
+  right: 0;
+  transform: translateX(0) translateY(0.15rem);
+}
+
+.dealerInlineBrandCell:nth-child(4n):hover .dealerInlineBrandTip,
+.dealerInlineBrandCell:nth-child(4n).dealerInlineBrandCellOpen .dealerInlineBrandTip,
+.dealerInlineBrandCell:nth-child(4n):focus-visible .dealerInlineBrandTip {
+  transform: translateX(0) translateY(0);
+}
+
+.dealerInlineBrandCell:nth-child(4n) .dealerInlineBrandTip::after {
+  left: auto;
+  right: 0.85rem;
+  transform: translateX(0) translateY(-42%) rotate(45deg);
 }
 
 html[data-site-theme="light"] .dealerInlineBrandLogo {
@@ -440,8 +537,23 @@ html[data-site-theme="light"] .dealerInlineBrandLogoDarkPlate {
   opacity: 0.92;
 }
 
-html[data-site-theme="light"] .dealerInlineBrandCell:hover .dealerInlineBrandLogo {
+html[data-site-theme="light"] .dealerInlineBrandCell:hover .dealerInlineBrandLogo,
+html[data-site-theme="light"] .dealerInlineBrandCellOpen .dealerInlineBrandLogo,
+html[data-site-theme="light"] .dealerInlineBrandCell:focus-visible .dealerInlineBrandLogo {
   filter: drop-shadow(0 4px 10px rgb(37 99 235 / 0.22));
+}
+
+html[data-site-theme="light"] .dealerInlineBrandTip {
+  border-color: rgb(15 23 42 / 0.1);
+  background: #fff;
+  box-shadow: 0 8px 20px rgb(15 23 42 / 0.12);
+  color: #0f172a;
+}
+
+html[data-site-theme="light"] .dealerInlineBrandTip::after {
+  border-right-color: rgb(15 23 42 / 0.1);
+  border-bottom-color: rgb(15 23 42 / 0.1);
+  background: #fff;
 }
 
 .featureLabelMuted {
