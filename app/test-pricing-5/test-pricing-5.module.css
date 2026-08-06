@@ -236,6 +236,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgb(37 99 235 / 0.92);
+  display: none;
 }
 
 .tierMetaDesc {
@@ -303,11 +304,19 @@
   display: grid;
   grid-template-columns: 1.15rem minmax(0, 1fr);
   align-items: start;
-  gap: 0.35rem;
+  gap: 0.25rem;
   min-height: 1.65rem;
-  padding: 0.14rem 0;
-  font-size: 0.875rem;
-  line-height: 1.3;
+  padding: 0.1rem 0;
+  font-size: 0.76rem;
+  line-height: 1.2;
+}
+
+.featureRowPlain {
+  display: block;
+  min-height: 1.65rem;
+  padding: 0.1rem 0 0.1rem 1.4rem;
+  font-size: 0.76rem;
+  line-height: 1.2;
 }
 
 .featureMark {
@@ -341,6 +350,7 @@
 .featureLabelActive {
   color: #e2e8f0;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .featureLabelGuarantee {
@@ -356,14 +366,16 @@
 .featureLabelInfo {
   color: rgb(148 163 184 / 0.95);
   font-weight: 450;
-  font-size: 0.875rem;
-  line-height: 1.32;
+  font-size: 0.76rem;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .featureBrandsInline {
   display: inline-flex;
   align-items: center;
   min-width: 0;
+  white-space: nowrap;
 }
 
 .featureLabelMuted {
@@ -388,12 +400,12 @@
   align-items: center;
   gap: 0.35rem;
   margin: 0;
-  padding: 0.2rem 0;
+  padding: 0;
   border: 0;
   background: transparent;
   color: rgb(147 197 253 / 0.95);
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   font-weight: 650;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -405,14 +417,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.05rem;
-  height: 1.05rem;
-  border: 1px solid rgb(147 197 253 / 0.55);
+  width: 0.95rem;
+  height: 0.95rem;
+  border: 1px solid rgb(148 163 184 / 0.4);
   border-radius: 999px;
-  font-size: 0.62rem;
+  background: rgb(15 23 42 / 0.52);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+  font-size: 0.56rem;
   font-weight: 700;
-  font-style: italic;
   line-height: 1;
+  color: rgb(226 232 240 / 0.92);
 }
 
 .dealerBrandsPopup {
@@ -587,17 +601,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.05rem;
-  height: 1.05rem;
+  width: 0.95rem;
+  height: 0.95rem;
   padding: 0;
-  border: 1px solid rgb(210 214 222 / 0.45);
+  border: 1px solid rgb(148 163 184 / 0.4);
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.06);
-  color: rgb(228 231 236 / 0.88);
+  background: rgb(15 23 42 / 0.52);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+  color: rgb(226 232 240 / 0.92);
   font-family: inherit;
-  font-size: 0.62rem;
+  font-size: 0.56rem;
   font-weight: 700;
-  font-style: italic;
   line-height: 1;
   cursor: help;
   transition:
@@ -1058,6 +1072,7 @@
 
   .tierMetaTitle {
     font-size: 0.68rem;
+    display: block;
   }
 
   .tierMetaDesc {
@@ -1078,6 +1093,13 @@
     gap: 0.45rem;
     min-height: 1.85rem;
     padding: 0.18rem 0;
+    font-size: clamp(0.78rem, 2.1vw, 0.8125rem);
+    line-height: 1.32;
+  }
+
+  .featureRowPlain {
+    min-height: 1.85rem;
+    padding: 0.18rem 0 0.18rem 1.7rem;
     font-size: clamp(0.78rem, 2.1vw, 0.8125rem);
     line-height: 1.32;
   }
@@ -1148,9 +1170,10 @@ html[data-site-theme="light"] .turnaroundUrgency {
 }
 
 html[data-site-theme="light"] .turnaroundInfoBtn {
-  border-color: rgb(29 29 31 / 0.28);
-  background: rgb(255 255 255 / 0.9);
-  color: #3a3a3c;
+  border-color: rgb(148 163 184 / 0.35);
+  background: rgb(241 245 249 / 0.95);
+  color: #334155;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.75);
 }
 
 html[data-site-theme="light"] .turnaroundInfoBtn:hover,
@@ -1235,6 +1258,13 @@ html[data-site-theme="light"] .featureLabelActive {
 
 html[data-site-theme="light"] .dealerBrandsTrigger {
   color: #2563eb;
+}
+
+html[data-site-theme="light"] .dealerBrandsTriggerInfo {
+  border-color: rgb(148 163 184 / 0.35);
+  background: rgb(241 245 249 / 0.95);
+  color: #334155;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.75);
 }
 
 html[data-site-theme="light"] .dealerBrandsPopup {

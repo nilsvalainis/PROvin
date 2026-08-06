@@ -60,7 +60,7 @@ export function Tp5TurnaroundInfoTip({ copy }: Props) {
           setOpen((prev) => !prev);
         }}
       >
-        i
+        <span aria-hidden>i</span>
       </button>
       {open ? (
         <span id={tipId} role="tooltip" className={styles.turnaroundInfoPopup}>
