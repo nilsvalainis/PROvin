@@ -45,22 +45,22 @@ export const TP5_DEALER_BRANDS = TP5_DEALER_BRAND_ROWS.flat();
 
 /** Public logo paths for dealer brand grid cells. */
 export const TP5_DEALER_BRAND_LOGO_SRC: Record<(typeof TP5_DEALER_BRANDS)[number], string> = {
-  "Mercedes-Benz": "/brand-logos/mercedes.svg?v=3",
-  Volvo: "/brand-logos/volvo.png?v=3",
-  Jaguar: "/brand-logos/jaguar.png?v=3",
-  "Land Rover": "/brand-logos/land-rover.png?v=3",
-  BMW: "/brand-logos/bmw.png?v=3",
-  MINI: "/brand-logos/mini.png?v=3",
-  Audi: "/brand-logos/audi.png?v=3",
-  Volkswagen: "/brand-logos/volkswagen.png?v=3",
-  Škoda: "/brand-logos/skoda.png?v=3",
-  SEAT: "/brand-logos/seat.png?v=3",
-  Peugeot: "/brand-logos/peugeot.png?v=3",
-  Citroën: "/brand-logos/citroen.png?v=3",
-  Renault: "/brand-logos/renault.png?v=3",
-  Dacia: "/brand-logos/dacia.png?v=3",
-  Opel: "/brand-logos/opel.png?v=3",
-  Smart: "/brand-logos/smart.png?v=3",
+  "Mercedes-Benz": "/brand-logos/mercedes.svg?v=4",
+  Volvo: "/brand-logos/volvo.svg?v=4",
+  Jaguar: "/brand-logos/jaguar.svg?v=4",
+  "Land Rover": "/brand-logos/land-rover.svg?v=4",
+  BMW: "/brand-logos/bmw.svg?v=4",
+  MINI: "/brand-logos/mini.svg?v=4",
+  Audi: "/brand-logos/audi.svg?v=4",
+  Volkswagen: "/brand-logos/volkswagen.svg?v=4",
+  Škoda: "/brand-logos/skoda.svg?v=4",
+  SEAT: "/brand-logos/seat.svg?v=4",
+  Peugeot: "/brand-logos/peugeot.svg?v=4",
+  Citroën: "/brand-logos/citroen.svg?v=4",
+  Renault: "/brand-logos/renault.svg?v=4",
+  Dacia: "/brand-logos/dacia.svg?v=4",
+  Opel: "/brand-logos/opel.svg?v=4",
+  Smart: "/brand-logos/smart.svg?v=4",
 };
 
 /** Brands whose PNG still ships with a solid black plate (none after alpha strip). */
