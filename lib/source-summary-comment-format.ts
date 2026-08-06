@@ -194,7 +194,7 @@ export const SOURCE_BLOCK_COMMENT_GEMINI_RULES = `OUTPUT FORMAT (mandatory):\n${
 export const SOURCE_BLOCK_BRIEF_COMMENT_GEMINI_RULES = SOURCE_BLOCK_COMMENT_GEMINI_RULES;
 
 /** auto-records.com / Outvin PDF — papildus dīlera specifika virs SOURCE_PDF_COMMENT_GEMINI_RULES. */
-export const AUTO_RECORDS_PDF_COMMENT_GEMINI_RULES = `COMMENTS field (OFICIĀLĀ DĪLERA DATI / Outvin / auto-records):
+export const AUTO_RECORDS_PDF_COMMENT_GEMINI_RULES = `COMMENTS field (OFICIĀLĀ DĪLERA DATI):
 ${HYBRID_COMMENT_RULES}
 - Cover type code, engine code, equipment, accident/stolen checks, and dealer service timeline—not only km digits.
 - Explain fleet/taxi/commercial type-code signals for Latvian buyers when present.

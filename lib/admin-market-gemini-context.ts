@@ -97,7 +97,7 @@ function formatOutvinAuctionContext(blocks: WorkspaceSourceBlocks): string {
 
   const arPlain = autoRecordsBlockToPlainText(ar).trim();
   if (arPlain && lines.length === 0) {
-    lines.push("### AUTO RECORDS", arPlain.slice(0, 6000));
+    lines.push("### OFICIĀLĀ DĪLERA DATI", arPlain.slice(0, 6000));
   }
 
   return lines.join("\n\n");

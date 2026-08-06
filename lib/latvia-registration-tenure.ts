@@ -82,7 +82,7 @@ function collectLatviaFixedDates(input: LatviaRegistrationTenureInput): DateCand
 
   for (const r of input.autoRecordsBlock?.serviceHistory ?? []) {
     if (!autoRecordsRowHasData(r)) continue;
-    if (isLatviaCountryName(r.country)) pushCandidate(out, r.date, "AUTO RECORDS");
+    if (isLatviaCountryName(r.country)) pushCandidate(out, r.date, "OFICIĀLĀ DĪLERA DATI");
   }
 
   for (const b of input.manualVendorBlocks ?? []) {

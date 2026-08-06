@@ -28,10 +28,19 @@ import {
   parseOfficialDealerServiceNarrativePaste,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
+import {
+  emptyOutvinDealerReport,
+  outvinVehicleInfoHasData,
+  type OutvinVehicleInfo,
+} from "@/lib/outvin-dealer-types";
+import { AdminOutvinDealerReportFields } from "@/components/admin/AdminOutvinDealerReportFields";
+import { parseOutvinVehicleInfoFromAutoRecordsText } from "@/lib/auto-records-vehicle-info-parse";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+
+const DEALER_ARIA = "Oficiālā dīlera dati";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -61,8 +70,23 @@ export function AdminAutoRecordsSourceBlock({
   onPdfIncludeChange,
   geminiComment,
 }: Props) {
+  const mergeVehicleInfoFromText = (raw: string, base: AutoRecordsBlockState): AutoRecordsBlockState => {
+    const patch = parseOutvinVehicleInfoFromAutoRecordsText(raw);
+    if (!Object.values(patch).some((v) => typeof v === "string" && v.trim())) return base;
+    const reportBase = base.outvinReport ?? emptyOutvinDealerReport();
+    const nextVehicleInfo: OutvinVehicleInfo = { ...reportBase.vehicleInfo };
+    for (const [k, v] of Object.entries(patch) as [keyof OutvinVehicleInfo, string][]) {
+      if (typeof v === "string" && v.trim()) nextVehicleInfo[k] = v.trim();
+    }
+    if (!outvinVehicleInfoHasData(nextVehicleInfo)) return base;
+    return { ...base, outvinReport: { ...reportBase, vehicleInfo: nextVehicleInfo } };
+  };
+
   const handleRaw = (raw: string) => {
     let next: AutoRecordsBlockState = { ...value, rawUnprocessedData: raw };
+    if (/VEHICLE\s+INFORMATION/i.test(raw)) {
+      next = mergeVehicleInfoFromText(raw, next);
+    }
     if (/ODOMETER\s+CHECK/i.test(raw)) {
       const parsed = parseAutoRecordsPaste(raw);
       next = {
@@ -77,6 +101,8 @@ export function AdminAutoRecordsSourceBlock({
     }
     onChange(next);
   };
+
+  const outvinReport = value.outvinReport ?? emptyOutvinDealerReport();
 
   const displayRows =
     value.serviceHistory.length > 0
@@ -133,12 +159,19 @@ export function AdminAutoRecordsSourceBlock({
                 disabled={disabled}
                 placeholder="Ielīmē tekstu, kas sākas ar ODOMETER CHECK…"
                 onChange={(e) => handleRaw(e.target.value)}
-                aria-label="AUTO RECORDS neapstrādātie dati"
+                aria-label={`${DEALER_ARIA} — neapstrādātie dati`}
               />
             </AdminAiPolishTextareaShell>
           )}
 
-          <p className="mb-1.5 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+          <AdminOutvinDealerReportFields
+            report={outvinReport}
+            readOnly={readOnly}
+            disabled={disabled}
+            onChange={(next) => onChange({ ...value, outvinReport: next })}
+          />
+
+          <p className="mb-1.5 mt-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
             <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
             {CSDD_MILEAGE_UNIFIED_TITLE}
           </p>
@@ -186,7 +219,7 @@ export function AdminAutoRecordsSourceBlock({
                           data-provin-block="auto_records"
                           data-row-index={i}
                           onChange={(e) => setRow(i, { date: e.target.value })}
-                          aria-label={`AUTO RECORDS datums ${i + 1}`}
+                          aria-label={`${DEALER_ARIA} datums ${i + 1}`}
                         />
                       )}
                     </td>
@@ -215,7 +248,7 @@ export function AdminAutoRecordsSourceBlock({
                           onChange={(e) =>
                             setRow(i, { odometer: normalizeAutoRecordsOdometer(e.target.value) })
                           }
-                          aria-label={`AUTO RECORDS odometrs ${i + 1}`}
+                          aria-label={`${DEALER_ARIA} odometrs ${i + 1}`}
                         />
                       )}
                     </td>
@@ -238,7 +271,7 @@ export function AdminAutoRecordsSourceBlock({
                           data-provin-block="auto_records"
                           data-row-index={i}
                           onChange={(next) => setRow(i, { country: next })}
-                          aria-label={`AUTO RECORDS valsts ${i + 1}`}
+                          aria-label={`${DEALER_ARIA} valsts ${i + 1}`}
                         />
                       )}
                     </td>
@@ -279,7 +312,7 @@ export function AdminAutoRecordsSourceBlock({
             disabled={disabled}
             compact
             readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
-            aria-label="AUTO RECORDS — Servisa vēsture"
+            aria-label={`${DEALER_ARIA} — Servisa vēsture`}
           />
           <AdminSourceCommentField
             value={value.comments}
@@ -289,14 +322,14 @@ export function AdminAutoRecordsSourceBlock({
             compact
             gemini={geminiComment}
             readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
-            aria-label="AUTO RECORDS — komentāri"
+            aria-label={`${DEALER_ARIA} — komentāri`}
           />
           <AdminGeminiContextRawField
             value={value.geminiContextRaw}
             onChange={(next) => onChange({ ...value, geminiContextRaw: next })}
             readOnly={readOnly}
             disabled={disabled}
-            ariaLabel="AUTO RECORDS — Gemini AI papildu konteksts"
+            ariaLabel={`${DEALER_ARIA} — Gemini AI papildu konteksts`}
           />
         </div>
       </div>

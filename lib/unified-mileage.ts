@@ -322,7 +322,7 @@ export function collectUnifiedMileageRows(
   for (const r of autoRows) {
     const dateOut = formatAutoRecordsDateForOutput(r.date);
     const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
-    pushRow(dateOut, odoOut, r.country, "AUTO RECORDS");
+    pushRow(dateOut, odoOut, r.country, "OFICIĀLĀ DĪLERA DATI");
   }
   }
 

@@ -624,13 +624,13 @@ export type StandardSourceBlockState = {
   comments: string;
 };
 
-/** AUTO RECORDS — ielīmēts RAW + parsētā servisa vēsture (PDF: tabula bez raw). */
+/** Oficiālā dīlera dati — ielīmēts RAW + parsētā servisa vēsture (PDF: tabula bez raw). */
 export type AutoRecordsBlockState = {
   rawUnprocessedData: string;
   serviceHistory: AutoRecordsServiceRow[];
-  /** Outvin Check & Buy — strukturētie dati + raw cache. */
+  /** Strukturētie Outvin API dati (legacy; UI netiek rādīts). */
   outvin?: OutvinDataBundle;
-  /** Outvin dīlera atskaite — transporta info, negadījumi, nozagts, komplektācija (PDF bez km tabulas). */
+  /** Oficiālā dīlera atskaite — transporta info (VIN, tips u.c.), negadījumi, nozagts, komplektācija. */
   outvinReport?: OutvinDealerReport;
   /** Kā citiem avotiem — piezīmes zem tabulas. */
   comments: string;
@@ -938,7 +938,7 @@ export function autoRecordsBlockToPlainText(b: AutoRecordsBlockState): string {
             : undefined;
         })();
   if (outvinReport && outvinDealerReportHasContent(outvinReport)) {
-    lines.push("Oficiālā dīlera atskaite (Outvin / auto-records):");
+    lines.push("Oficiālā dīlera dati:");
     lines.push(outvinDealerReportToPlainText(outvinReport));
   }
 

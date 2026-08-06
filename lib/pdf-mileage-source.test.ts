@@ -14,6 +14,7 @@ describe("mileageSourceLabelToPdfKey", () => {
     expect(mileageSourceLabelToPdfKey("CarVertical")).toBe("carvertical");
     expect(mileageSourceLabelToPdfKey("CV")).toBe("carvertical");
     expect(mileageSourceLabelToPdfKey("AUTO RECORDS")).toBe("dealer");
+    expect(mileageSourceLabelToPdfKey("OFICIĀLĀ DĪLERA DATI")).toBe("dealer");
     expect(mileageSourceLabelToPdfKey("DEALER")).toBe("dealer");
     expect(mileageSourceLabelToPdfKey("LTAB")).toBe("ltab");
     expect(mileageSourceLabelToPdfKey("CITI AVOTI")).toBe("cits");

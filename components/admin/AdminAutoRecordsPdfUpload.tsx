@@ -171,7 +171,7 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported, onPa
           <FileUp className="h-5 w-5 text-[var(--color-provin-accent)]" aria-hidden />
         )}
         <span className="text-[11px] font-medium text-[var(--color-apple-text)]">
-          Augšupielādēt auto-records.com PDF atskaiti
+          Augšupielādēt oficiālā dīlera PDF atskaiti
         </span>
         <span className="text-[9px] leading-snug text-[var(--color-provin-muted)]">
           Velc PDF šeit vai klikšķini · maks. 15 MB · skenētiem PDF — Gemini
