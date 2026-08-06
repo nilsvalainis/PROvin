@@ -118,14 +118,23 @@ export function HomeFeatureBreakdown({
         </h2>
 
         <nav aria-label={uiCopy.catalogNavAria} className="mb-8 sm:mb-10">
-          <ul className="flex flex-wrap items-stretch justify-center gap-x-0 border-b border-white/[0.1]">
-            {packages.map((pkg) => (
-              <li key={`nav-${pkg.id}`} className="min-w-0">
+          <ul className="flex flex-wrap items-stretch justify-center gap-y-2 border-b border-white/[0.1]">
+            {packages.map((pkg, index) => (
+              <li key={`nav-${pkg.id}`} className="flex min-w-0 items-stretch">
+                {index > 0 ? (
+                  <span
+                    className="mx-1 flex select-none items-center self-center px-2 text-[0.65rem] font-light leading-none text-white/25 sm:mx-1.5 sm:px-3"
+                    aria-hidden
+                  >
+                    |
+                  </span>
+                ) : null}
                 <a
                   href={`#${catalogPackageAnchorId(pkg.id)}`}
-                  className="-mb-px inline-flex max-w-full items-center justify-center border-b-2 border-transparent px-2.5 pb-3 pt-1 text-center text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-zinc-400 transition-colors hover:border-[#60a5fa] hover:text-zinc-100 focus-visible:border-[#60a5fa] focus-visible:text-zinc-100 focus-visible:outline-none sm:px-3.5 sm:text-[0.75rem]"
+                  className="-mb-px inline-flex max-w-full items-center justify-center border-b-2 border-transparent px-1.5 pb-3 pt-1 text-center text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-zinc-400 transition-colors hover:border-[#60a5fa] hover:text-zinc-100 focus-visible:border-[#60a5fa] focus-visible:text-zinc-100 focus-visible:outline-none sm:px-2 sm:text-[0.75rem]"
                 >
-                  {renderProvinText(pkg.title, homeDarkProvinWordmarkOptions)}
+                  {/* Plain title — monochrome (no PROVIN wordmark split) and keeps the space after PROVIN. */}
+                  {pkg.title}
                 </a>
               </li>
             ))}

@@ -40,14 +40,14 @@ function railIndex(labelKey: SiteRailLabelKey, sections: readonly SiteRailSectio
  * Mobilā / sliežu izvēlne: `href` bez `/lv` — `next-intl` `Link` pats prefiksē (`applyPathnamePrefix`).
  */
 export function buildSiteRailSections(_normalizedPath: string): readonly SiteRailSection[] {
-  /* Secība: Sākums → Pakalpojumi → Blogs → Konsultācija (ja publiska) → Par mums */
+  /* Secība: Sākums → Pakalpojumi → Par mums → Blogs → Konsultācija (ja publiska) */
   const out: SiteRailSection[] = [
     { href: "/", labelKey: "sakums" },
     { href: "/pakalpojumi", labelKey: "pakalpojumi" },
+    { href: "/#kas-ir-iriss", labelKey: "kasSlapjasAizProvin" },
     { href: "/blogs", labelKey: "blogs" },
   ];
   if (isProvinSelectPublic()) out.push({ href: `/#${PROVIN_SELECT_SECTION_ID}`, labelKey: "provinSelect" });
-  out.push({ href: "/#kas-ir-iriss", labelKey: "kasSlapjasAizProvin" });
   return out;
 }
 

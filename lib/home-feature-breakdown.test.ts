@@ -56,11 +56,13 @@ describe("pakalpojumi catalog", () => {
     ]);
   });
 
-  it("adds Pakalpojumi and Blogs to the site rail without BUJ/Kontakti", () => {
+  it("keeps Par mums in the site rail after Pakalpojumi", () => {
     const sections = buildSiteRailSections("/");
     const keys = sections.map((s) => s.labelKey);
     expect(keys).toContain("pakalpojumi");
+    expect(keys).toContain("kasSlapjasAizProvin");
     expect(keys).toContain("blogs");
+    expect(keys.indexOf("kasSlapjasAizProvin")).toBeGreaterThan(keys.indexOf("pakalpojumi"));
     expect(keys).not.toContain("buj");
     expect(keys).not.toContain("kontakti");
     expect(siteRailRouteActiveIndex("/pakalpojumi")).toBe(keys.indexOf("pakalpojumi"));
