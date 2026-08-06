@@ -8,7 +8,6 @@ import { CookieConsent } from "@/components/CookieConsent";
 import { WhatsAppFab } from "@/components/WhatsAppFab";
 import { LenisProvider } from "@/components/providers/LenisProvider";
 import { Header } from "@/components/Header";
-import { SiteOrderCtaPin } from "@/components/home/SiteOrderCtaPin";
 import { HomeReloadScrollToTop } from "@/components/home/HomeReloadScrollToTop";
 import { SiteJsonLd } from "@/components/seo/SiteJsonLd";
 import { getCompanyPublicBrand } from "@/lib/company";
@@ -101,7 +100,6 @@ export default async function LocaleLayout({ children, params }: Props) {
       <LenisProvider>
         <HomeReloadScrollToTop />
         <LocaleHtmlLang />
-        <SiteOrderCtaPin />
         <Header />
         <main className="relative z-10 min-w-0 max-w-full overflow-x-clip pt-0 pb-0">
           {children}
