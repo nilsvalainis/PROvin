@@ -18,11 +18,14 @@ type Props = {
 /** lg breakpoint — desktop keeps the original scrollable iframe preview. */
 const DESKTOP_MQ = "(min-width: 1024px)";
 
+/** Bust CDN/browser cache when page-1 rasters are regenerated. */
+const MOBILE_PAGE1_ASSET_VERSION = "2";
+
 /** Static first-page raster for mobile (native PDF iframe zooms/steals scroll on iOS). */
 function mobilePreviewImageSrc(pdfHref: string): string | null {
   const path = pdfHref.split("#")[0] ?? "";
   if (!path.endsWith(".pdf")) return null;
-  return `${path.replace(/\.pdf$/i, "-page1.webp")}`;
+  return `${path.replace(/\.pdf$/i, "-page1.webp")}?v=${MOBILE_PAGE1_ASSET_VERSION}`;
 }
 
 /** Defaults to desktop so web never flashes the mobile static image. */
