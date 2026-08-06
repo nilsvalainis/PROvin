@@ -18,7 +18,14 @@ type Props = {
 /** lg breakpoint — desktop keeps the original scrollable iframe preview. */
 const DESKTOP_MQ = "(min-width: 1024px)";
 
-/** Defaults to desktop so web never flashes the mobile lock layer. */
+/** Static first-page raster for mobile (native PDF iframe zooms/steals scroll on iOS). */
+function mobilePreviewImageSrc(pdfHref: string): string | null {
+  const path = pdfHref.split("#")[0] ?? "";
+  if (!path.endsWith(".pdf")) return null;
+  return `${path.replace(/\.pdf$/i, "-page1.webp")}`;
+}
+
+/** Defaults to desktop so web never flashes the mobile static image. */
 function useIsDesktopPreview() {
   const [isDesktop, setIsDesktop] = useState(true);
 
@@ -34,8 +41,9 @@ function useIsDesktopPreview() {
 }
 
 /**
- * Desktop/web: original scrollable PDF iframe.
- * Mobile: native PDF iframe (clean original colors) locked — no pan/scroll until Pietuvināt.
+ * Desktop/web: scrollable PDF iframe (unchanged).
+ * Mobile: static first-page image (fit, clean colors); touches pass through so the page scrolls;
+ * PDF interaction only via „Pietuvināt”.
  */
 export function SampleReportPreview({
   href,
@@ -76,18 +84,14 @@ export function SampleReportPreview({
     setOpen(true);
   };
 
-  /** Desktop inline — scrollable native PDF (unchanged). */
   const desktopPaneSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
-  /** Mobile inline — native PDF, first page; interaction blocked in UI. */
-  const mobilePaneSrc = href
-    ? `${href}#page=1&view=FitH&toolbar=0&navpanes=0&scrollbar=0`
-    : null;
+  const mobileImageSrc = href ? mobilePreviewImageSrc(href) : null;
   const lightboxSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
 
   return (
     <>
       <div className="flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-black/35 shadow-[0_12px_40px_-20px_rgba(0,0,0,0.7)]">
-        <div className="flex items-center justify-between gap-2 border-b border-white/10 px-3 py-2">
+        <div className="pointer-events-none relative z-[2] flex items-center justify-between gap-2 border-b border-white/10 px-3 py-2">
           <p
             id={titleId}
             className="min-w-0 truncate text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-zinc-400"
@@ -98,7 +102,7 @@ export function SampleReportPreview({
             <button
               type="button"
               onClick={openLightbox}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-[0.6875rem] font-medium text-[#60a5fa] transition hover:bg-white/5 hover:text-[#93c5fd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]/40"
+              className="pointer-events-auto inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-[0.6875rem] font-medium text-[#60a5fa] transition hover:bg-white/5 hover:text-[#93c5fd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]/40"
               aria-haspopup="dialog"
               aria-expanded={open}
             >
@@ -124,23 +128,17 @@ export function SampleReportPreview({
             )}
           </div>
         ) : (
-          <div className="relative h-[min(28rem,55vh)] w-full overflow-hidden overscroll-none bg-white sm:h-[min(32rem,58vh)]">
-            {mobilePaneSrc ? (
-              <>
-                <iframe
-                  title={`${title} — ${previewLabel}`}
-                  src={mobilePaneSrc}
-                  className="pointer-events-none absolute inset-0 h-full w-full border-0 bg-white"
-                  loading="lazy"
-                  tabIndex={-1}
-                />
-                {/* Lock pan/zoom/scroll — native PDF stays clean; scroll only after Pietuvināt. */}
-                <div
-                  className="absolute inset-0 z-[1] touch-none select-none bg-transparent"
-                  aria-hidden
-                  onWheel={(e) => e.preventDefault()}
-                />
-              </>
+          <div className="pointer-events-none relative flex h-[min(28rem,55vh)] w-full items-center justify-center overflow-hidden bg-white p-1.5 sm:h-[min(32rem,58vh)]">
+            {mobileImageSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={mobileImageSrc}
+                alt=""
+                className="max-h-full max-w-full object-contain"
+                draggable={false}
+                loading="eager"
+                decoding="async"
+              />
             ) : (
               <div className="flex h-full items-center justify-center bg-zinc-950 px-6 text-center">
                 <p className="text-sm font-medium text-zinc-500">{comingSoonLabel}</p>
