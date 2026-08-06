@@ -79,7 +79,7 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   dealerBrandsAria: "Atbalstītie ražotāji",
   dealerBrandsClose: "Aizvērt",
   dealerRefundBanner:
-    "🛡️ 100% Naudas atmaksas garantija: Ja dīleru datubāzēs dati nav pieejami, veiksim pilnu atmaksu.",
+    "100% Naudas atmaksas garantija: Ja dīleru datubāzēs dati nav pieejami, veiksim pilnu atmaksu.",
 };
 
 const TP5_UI_COPY_EN: Tp5UiCopy = {
@@ -105,7 +105,7 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   dealerBrandsAria: "Supported manufacturers",
   dealerBrandsClose: "Close",
   dealerRefundBanner:
-    "🛡️ 100% refund guarantee: If no data is available in dealer databases, we will issue a full refund.",
+    "100% refund guarantee: If no data is available in dealer databases, we will issue a full refund.",
 };
 
 export function getTp5UiCopy(locale?: string): Tp5UiCopy {

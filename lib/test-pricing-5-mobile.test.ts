@@ -25,7 +25,6 @@ const DEALER_ROWS_LV = [
   "Odometera rādījumu ieraksti",
   "Kopsavilkums un komentāri",
   "Atbalstītie ražotāji",
-  "Vecākiem auto dati var nebūt pieejami",
 ];
 
 describe("test-pricing-5 mobile three-tier model", () => {
@@ -37,11 +36,11 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(TP5_MOBILE_CHECKOUT_PLAN.dealer).toBe("dealer");
   });
 
-  it("keeps a fixed five-row checklist on every tier", () => {
+  it("keeps a five-row checklist on MINI/AUDITS and four on dealer", () => {
     expect(TP5_MOBILE_FEATURE_ROW_COUNT).toBe(5);
-    for (const id of TP5_MOBILE_SERVICE_ORDER) {
-      expect(getTp5MobileService(id).features).toHaveLength(5);
-    }
+    expect(getTp5MobileService("mini").features).toHaveLength(5);
+    expect(getTp5MobileService("audits").features).toHaveLength(5);
+    expect(getTp5MobileService("dealer").features).toHaveLength(4);
   });
 
   it("maps AUDITS and MINI as the same compare stack without flag emojis", () => {
@@ -59,14 +58,13 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(mini.features.some((f) => f.name.includes("CSDD"))).toBe(false);
   });
 
-  it("maps dealer to five rows, inline brands trigger and older-car notice", () => {
+  it("maps dealer to four rows with inline brands trigger", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.description).toContain("oficiālo dīleru");
     expect(dealer.description).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
     expect(dealer.features.map((f) => f.name)).toEqual(DEALER_ROWS_LV);
     expect(dealer.features[3]?.tone).toBe("brands");
-    expect(dealer.features[4]?.tone).toBe("info");
     expect(dealer.extraNote).toBeUndefined();
     expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
     expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-48h");

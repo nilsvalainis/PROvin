@@ -96,7 +96,6 @@ const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
     included: false,
     tone: "brands",
   },
-  { name: "Vecākiem auto dati var nebūt pieejami", included: false, tone: "info" },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
@@ -108,7 +107,6 @@ const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
     included: false,
     tone: "brands",
   },
-  { name: "Data may be unavailable for older cars", included: false, tone: "info" },
 ];
 
 const DEALER_BRANDS_HEADING_LV = "Atbalstītie ražotāji";
