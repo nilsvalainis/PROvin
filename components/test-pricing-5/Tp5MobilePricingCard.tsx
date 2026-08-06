@@ -79,6 +79,8 @@ function DealerFeatureHighlight({ feature }: { feature: Tp5MobileFeature }) {
     </div>
   );
 }
+
+function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
   if (feature.tone === "info") {
     return (
       <li className={styles.featureRowPlain}>
