@@ -85,7 +85,7 @@ export function siteRailRouteActiveIndex(pathname: string | null | undefined): n
   if (p === "/pasutit") return railIndex("sakums", sections);
   if (p === "/pakalpojumi") return railIndex("pakalpojumi", sections);
   if (p === "/par-mums") return railIndex("kasSlapjasAizProvin", sections);
-  if (p === "/blogs") return railIndex("blogs", sections);
+  if (p === "/blogs" || p.startsWith("/blogs/")) return railIndex("blogs", sections);
   /* FAQ page remains reachable but is no longer a menu item. */
   if (p === "/biezi-jautajumi") return railIndex("sakums", sections);
   return null;

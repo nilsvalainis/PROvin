@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { BlogPageShell } from "@/components/blog/BlogPageShell";
 import { BlogPostView } from "@/components/blog/BlogPostView";
-import productHeroStyles from "@/app/[locale]/demo/page.module.css";
-import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { getAllBlogSlugs, getBlogPost, resolveBlogLocale } from "@/lib/blog/posts";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 
@@ -41,10 +40,8 @@ export default async function BlogPostPage({ params }: Props) {
   if (!post) notFound();
 
   return (
-    <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
-      <div className="demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
-        <BlogPostView post={post} locale={locale} />
-      </div>
-    </div>
+    <BlogPageShell>
+      <BlogPostView post={post} locale={locale} />
+    </BlogPageShell>
   );
 }

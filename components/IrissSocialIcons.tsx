@@ -14,17 +14,25 @@ export function IrissSocialIcons({
   instagram,
   socialLabel,
   socialSoon,
+  tone = "dark",
 }: {
   tiktok?: string;
   youtube?: string;
   instagram?: string;
   socialLabel: string;
   socialSoon: string;
+  /** `light` — gandrīz balta bloga virsma. */
+  tone?: "dark" | "light";
 }) {
   const btnClass =
-    "iriss-social-btn flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-[#b8bcc4] shadow-sm transition will-change-[box-shadow,border-color] hover:border-provin-accent/45 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent";
+    tone === "light"
+      ? "iriss-social-btn flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-full border border-black/10 bg-white text-[#4b5563] shadow-sm transition will-change-[box-shadow,border-color] hover:border-provin-accent/45 hover:text-[#111827] hover:shadow-[0_0_16px_rgba(0,102,255,0.22)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent"
+      : "iriss-social-btn flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-[#b8bcc4] shadow-sm transition will-change-[box-shadow,border-color] hover:border-provin-accent/45 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-provin-accent";
 
-  const disabledClass = `${btnClass} cursor-default opacity-55 hover:border-white/15 hover:bg-white/[0.06] hover:text-[#b8bcc4] hover:shadow-none`;
+  const disabledClass =
+    tone === "light"
+      ? `${btnClass} cursor-default opacity-55 hover:border-black/10 hover:text-[#4b5563] hover:shadow-none`
+      : `${btnClass} cursor-default opacity-55 hover:border-white/15 hover:bg-white/[0.06] hover:text-[#b8bcc4] hover:shadow-none`;
 
   return (
     <ul className="flex list-none flex-wrap items-center justify-center gap-3" aria-label={socialLabel}>
