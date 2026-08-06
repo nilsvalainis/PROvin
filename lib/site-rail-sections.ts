@@ -12,6 +12,7 @@ export function getSiteRailHomeScrollIds(): readonly string[] {
 
 export type SiteRailLabelKey =
   | "sakums"
+  | "pakalpojumi"
   | "provinSelect"
   | "kasSlapjasAizProvin"
   | "buj"
@@ -32,13 +33,21 @@ export function normalizeSitePath(pathname: string | null | undefined): string {
   return p;
 }
 
+function railIndex(labelKey: SiteRailLabelKey, sections: readonly SiteRailSection[]): number {
+  return sections.findIndex((s) => s.labelKey === labelKey);
+}
+
 /**
  * Mobilā / sliežu izvēlne: `href` bez `/lv` — `next-intl` `Link` pats prefiksē (`applyPathnamePrefix`).
  */
 export function buildSiteRailSections(normalizedPath: string): readonly SiteRailSection[] {
   const bujHref = normalizedPath === "/biezi-jautajumi" ? "/biezi-jautajumi" : "/#biezi-jautajumi";
-  /* Secība: Sākums → Konsultācija (ja publiska) → Par mums → BUJ → Kontakti */
-  const out: SiteRailSection[] = [{ href: "/", labelKey: "sakums" }];
+  const pakalpojumiHref = normalizedPath === "/pakalpojumi" ? "/pakalpojumi" : "/pakalpojumi";
+  /* Secība: Sākums → Pakalpojumi → Konsultācija (ja publiska) → Par mums → BUJ → Kontakti */
+  const out: SiteRailSection[] = [
+    { href: "/", labelKey: "sakums" },
+    { href: pakalpojumiHref, labelKey: "pakalpojumi" },
+  ];
   if (isProvinSelectPublic()) out.push({ href: `/#${PROVIN_SELECT_SECTION_ID}`, labelKey: "provinSelect" });
   out.push(
     { href: "/#kas-ir-iriss", labelKey: "kasSlapjasAizProvin" },
@@ -51,27 +60,34 @@ export function buildSiteRailSections(normalizedPath: string): readonly SiteRail
 export function siteRailActiveFromHash(raw: string): number | null {
   const h = raw.replace(/^#/, "").toLowerCase();
   if (!h) return null;
-  const provin = isProvinSelectPublic();
-  const aboutIdx = provin ? 2 : 1;
-  const bujIdx = provin ? 3 : 2;
-  const kontaktiIdx = provin ? 4 : 3;
-
-  if (h === "home-hero" || h === "home-intro" || h === ORDER_SECTION_ID || h === "order-form") return 0;
+  const sections = buildSiteRailSections("/");
+  if (h === "home-hero" || h === "home-intro" || h === ORDER_SECTION_ID || h === "order-form") {
+    return railIndex("sakums", sections);
+  }
   /* Cena / vecais Audits enkurs — nav atsevišķas izvēlnes rindas; uzskatām par sākumu. */
-  if (h === "site-content" || h === "cena") return 0;
-  if (provin && (h === PROVIN_SELECT_SECTION_ID || h === PROVIN_SELECT_FORM_HASH)) return 1;
-  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) return aboutIdx;
-  if (h === "biezi-jautajumi") return bujIdx;
-  if (h === "kontakti") return kontaktiIdx;
+  if (h === "site-content" || h === "cena" || h === "paketes") return railIndex("sakums", sections);
+  if (h === PROVIN_SELECT_SECTION_ID || h === PROVIN_SELECT_FORM_HASH) {
+    const idx = railIndex("provinSelect", sections);
+    return idx >= 0 ? idx : null;
+  }
+  if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) {
+    return railIndex("kasSlapjasAizProvin", sections);
+  }
+  if (h === "biezi-jautajumi") return railIndex("buj", sections);
+  if (h === "kontakti") return railIndex("kontakti", sections);
+  if (h === "pakalpojumi" || h.startsWith("pakalpojums-")) {
+    return railIndex("pakalpojumi", sections);
+  }
   return null;
 }
 
 export function siteRailRouteActiveIndex(pathname: string | null | undefined): number | null {
   if (pathname == null) return null;
   const p = normalizeSitePath(pathname);
-  const provin = isProvinSelectPublic();
-  if (p === "/pasutit") return 0;
-  if (p === "/biezi-jautajumi") return provin ? 3 : 2;
+  const sections = buildSiteRailSections(p);
+  if (p === "/pasutit") return railIndex("sakums", sections);
+  if (p === "/pakalpojumi") return railIndex("pakalpojumi", sections);
+  if (p === "/biezi-jautajumi") return railIndex("buj", sections);
   return null;
 }
 

@@ -32,12 +32,14 @@ export function HeaderClient() {
   const showHomeNavRail =
     isHome ||
     normalizedPath === "/pasutit" ||
-    normalizedPath === "/biezi-jautajumi";
+    normalizedPath === "/biezi-jautajumi" ||
+    normalizedPath === "/pakalpojumi";
 
   const isDemoPath = pathname.includes("/demo");
   const isAzvinDemo = pathname.includes("/demo/azvin");
-  /** Sākumlapas un PROVIN SELECT pieteikuma caurspīdīgais hero headeris. */
-  const isDarkHeaderSurface = isHome || isProvinSelectPieteikums || isAzvinDemo;
+  /** Sākumlapas, pakalpojumu kataloga un PROVIN SELECT pieteikuma caurspīdīgais hero headeris. */
+  const isDarkHeaderSurface =
+    isHome || isProvinSelectPieteikums || isAzvinDemo || normalizedPath === "/pakalpojumi";
   const isDemoGraphiteHeader = isDemoPath && !isAzvinDemo;
   const headerChromeDark = isDarkHeaderSurface || isDemoGraphiteHeader;
 

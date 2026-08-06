@@ -20,8 +20,10 @@ export type Tp5UiCopy = {
   featureIconRowAria: string;
   /** Transition banner section aria-label. */
   transitionBannerAria: string;
-  /** Screen-reader heading of the package breakdown section. */
+  /** Screen-reader / catalog page heading for package breakdown. */
   breakdownHeading: string;
+  /** Visible H1/H2 on `/pakalpojumi`. */
+  catalogHeading: string;
   /** Small uppercase label above each package goal paragraph. */
   goalLabel: string;
   /** Secondary text link under AUDITS CTA — opens sample PDF. */
@@ -67,7 +69,8 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   listingAria: "Iekopē sludinājuma linku",
   featureIconRowAria: "PROVIN audita pakalpojumu priekšrocības",
   transitionBannerAria: "PROVIN pakalpojuma kopsavilkums",
-  breakdownHeading: "PROVIN MINI un PROVIN AUDITS",
+  breakdownHeading: "PROVIN pakalpojumi",
+  catalogHeading: "Pakalpojumi",
   goalLabel: "MĒRĶIS",
   sampleReportLink: "Skatīt atskaites piemēru (PDF)",
   turnaroundUrgencyCta: "Vajag ātrāk (1-2h)?",
@@ -93,7 +96,8 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   listingAria: "Paste the listing link",
   featureIconRowAria: "PROVIN audit service benefits",
   transitionBannerAria: "PROVIN service overview",
-  breakdownHeading: "PROVIN MINI and PROVIN AUDIT",
+  breakdownHeading: "PROVIN services",
+  catalogHeading: "Services",
   goalLabel: "Purpose",
   sampleReportLink: "View sample report (PDF)",
   turnaroundUrgencyCta: "Need it faster (1–2h)?",

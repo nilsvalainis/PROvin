@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     [
       { path: "", changeFrequency: "weekly", priority: 1 },
       { path: "/pasutit", changeFrequency: "monthly", priority: 0.85 },
+      { path: "/pakalpojumi", changeFrequency: "weekly", priority: 0.8 },
       { path: "/biezi-jautajumi", changeFrequency: "monthly", priority: 0.65 },
       { path: "/privatuma-politika", changeFrequency: "yearly", priority: 0.4 },
       { path: "/lietosanas-noteikumi", changeFrequency: "yearly", priority: 0.4 },

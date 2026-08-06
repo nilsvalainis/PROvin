@@ -18,6 +18,11 @@ export function faqHashHref(): string {
   return "/#biezi-jautajumi";
 }
 
+/** Pakalpojumu katalogs — `Link`-drošs ceļš. */
+export function pakalpojumiHref(): string {
+  return "/pakalpojumi";
+}
+
 /** IRISS / „kas slēpjās” sadaļa — `Link`-drošs ceļš. */
 export function irissAnchorHref(): string {
   return "/#kas-ir-iriss";

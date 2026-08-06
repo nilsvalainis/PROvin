@@ -1,20 +1,29 @@
+"use client";
+
 import Image from "next/image";
 import {
   ClipboardCheck,
+  Gauge,
   Globe2,
   Search,
   ShieldCheck,
   Store,
+  Tags,
   Users,
 } from "lucide-react";
 import { useLocale } from "next-intl";
 import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import { Link } from "@/i18n/navigation";
 import { homeContentMaxClass, homeDarkProvinWordmarkOptions } from "@/lib/home-layout";
-import { getHomeFeatureBreakdownPackages } from "@/lib/home-feature-breakdown";
+import {
+  getCatalogFeatureBreakdownPackages,
+  type HomeFeatureBreakdownIcon,
+} from "@/lib/home-feature-breakdown";
+import { homeHeroCheckoutHref } from "@/lib/home-hero-plan";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import { getTp5MobileService } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
-import type { Tp5DesktopHeroFeatureIcon } from "@/lib/test-pricing-5-desktop-hero-features";
+import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 
 const BADGE_CLASS =
   "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-400 sm:h-10 sm:w-10";
@@ -23,15 +32,14 @@ const LUCIDE_ICON_CLASS = "h-4 w-4 [stroke-width:1.6] sm:h-[1.125rem] sm:w-[1.12
 
 const BRAND_LOGO_CLASS = "h-4 w-4 shrink-0 object-contain opacity-80 sm:h-[1.125rem] sm:w-[1.125rem]";
 
-const HOME_HERO_CTA_HREF = "#home-hero";
-
-function FeatureBadgeIcon({ icon }: { icon: Tp5DesktopHeroFeatureIcon }) {
+function FeatureBadgeIcon({ icon }: { icon: HomeFeatureBreakdownIcon }) {
   switch (icon) {
     case "consultation":
       return <Users className={LUCIDE_ICON_CLASS} aria-hidden />;
     case "listing-analysis":
       return <Search className={LUCIDE_ICON_CLASS} aria-hidden />;
     case "eu-registry":
+    case "refund":
       return <ShieldCheck className={LUCIDE_ICON_CLASS} aria-hidden />;
     case "inspection-tips":
       return <ClipboardCheck className={LUCIDE_ICON_CLASS} aria-hidden />;
@@ -39,6 +47,10 @@ function FeatureBadgeIcon({ icon }: { icon: Tp5DesktopHeroFeatureIcon }) {
       return <Globe2 className={LUCIDE_ICON_CLASS} aria-hidden />;
     case "dealer-data":
       return <Store className={LUCIDE_ICON_CLASS} aria-hidden />;
+    case "odometer":
+      return <Gauge className={LUCIDE_ICON_CLASS} aria-hidden />;
+    case "brands":
+      return <Tags className={LUCIDE_ICON_CLASS} aria-hidden />;
     case "carvertical":
       return (
         <Image
@@ -66,28 +78,49 @@ function FeatureBadgeIcon({ icon }: { icon: Tp5DesktopHeroFeatureIcon }) {
   }
 }
 
-export function HomeFeatureBreakdown() {
+type Props = {
+  /** Visible page heading (catalog). When omitted, heading is screen-reader only. */
+  showHeading?: boolean;
+  sectionId?: string;
+};
+
+export function HomeFeatureBreakdown({
+  showHeading = true,
+  sectionId = "pakalpojumi",
+}: Props) {
   const locale = useLocale();
   const uiCopy = getTp5UiCopy(locale);
-  const packages = getHomeFeatureBreakdownPackages(locale);
+  const packages = getCatalogFeatureBreakdownPackages(locale);
 
   return (
     <section
-      id="paketes"
-      className="scroll-mt-16 bg-transparent px-4 pb-10 pt-0 sm:px-6 sm:pb-14 lg:pb-16"
+      id={sectionId}
+      className="scroll-mt-16 bg-transparent px-4 pb-10 pt-6 sm:px-6 sm:pb-14 sm:pt-8 lg:pb-16"
       aria-labelledby="home-feature-breakdown-heading"
     >
       <div className={homeContentMaxClass}>
-        <h2 id="home-feature-breakdown-heading" className="sr-only">
-          {uiCopy.breakdownHeading}
+        <h2
+          id="home-feature-breakdown-heading"
+          className={
+            showHeading
+              ? "mb-6 text-balance text-2xl font-bold tracking-tight text-zinc-100 sm:mb-8 sm:text-3xl"
+              : "sr-only"
+          }
+        >
+          {uiCopy.catalogHeading}
         </h2>
 
-        <div className="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-2 lg:gap-8">
+        <div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 md:gap-6 lg:gap-8">
           {packages.map((pkg) => {
             const ctaLabel = getTp5MobileService(pkg.id, locale).buttonText;
+            const checkoutHref = homeHeroCheckoutHref(pkg.id);
 
             return (
-              <article key={pkg.id} className={`${tp5Styles.featureBreakdownCard} min-w-0`}>
+              <article
+                key={pkg.id}
+                id={`pakalpojums-${pkg.id}`}
+                className={`${tp5Styles.featureBreakdownCard} flex min-w-0 flex-col`}
+              >
                 <header className="min-w-0 lg:min-h-[120px]">
                   <h3 className="text-balance text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl">
                     {renderProvinText(pkg.title, homeDarkProvinWordmarkOptions)}
@@ -112,22 +145,32 @@ export function HomeFeatureBreakdown() {
                       <p className="col-start-2 row-start-1 min-w-0 text-[0.8125rem] font-bold leading-snug text-zinc-100 sm:text-[0.875rem]">
                         {renderProvinText(item.title, homeDarkProvinWordmarkOptions)}
                       </p>
-                      <p
-                        className={`col-start-2 row-start-2 min-w-0 text-[0.8125rem] font-normal leading-[1.55] text-gray-400 sm:text-[0.875rem] sm:leading-[1.6] ${
-                          pkg.id === "audits" ? "" : "lg:line-clamp-2 lg:min-h-[40px]"
-                        }`}
-                      >
+                      <p className="col-start-2 row-start-2 min-w-0 text-[0.8125rem] font-normal leading-[1.55] text-gray-400 sm:text-[0.875rem] sm:leading-[1.6]">
                         {renderProvinText(item.description, homeDarkProvinWordmarkOptions)}
                       </p>
                     </li>
                   ))}
                 </ul>
 
-                <div className={`${tp5Styles.ctaWrap} mt-8 sm:mt-10`}>
-                  <a href={HOME_HERO_CTA_HREF} className={tp5Styles.liquidCtaLink}>
+                <div className={`${tp5Styles.ctaWrap} mt-auto pt-8 sm:pt-10`}>
+                  <Link href={checkoutHref} className={tp5Styles.liquidCtaLink}>
                     <span className={tp5Styles.liquidCtaShimmer} aria-hidden />
                     <span className={tp5Styles.liquidCtaLabel}>{ctaLabel}</span>
-                  </a>
+                  </Link>
+                  {pkg.sampleReportHref ? (
+                    <a
+                      href={pkg.sampleReportHref}
+                      className={tp5Styles.sampleReportLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        recordSampleReportClick();
+                      }}
+                    >
+                      <span aria-hidden>📄 </span>
+                      {uiCopy.sampleReportLink}
+                    </a>
+                  ) : null}
                 </div>
               </article>
             );

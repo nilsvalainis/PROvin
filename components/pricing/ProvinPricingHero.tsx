@@ -21,6 +21,7 @@ import {
 import { normalizeVin } from "@/lib/order-field-validation";
 import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
 import { useTierSwipe } from "@/lib/use-test-pricing-tier-swipe";
+import { parseHeroPlanParam } from "@/lib/home-hero-plan";
 
 type Props = {
   checkoutSource: string;
@@ -39,8 +40,10 @@ export function ProvinPricingHero({
   const heroCopy = getTp5HeroCopy(locale);
   const uiCopy = getTp5UiCopy(locale);
   const searchParams = useSearchParams();
-  const [mobileActiveId, setMobileActiveId] = useState<Tp5MobileServiceId>("audits");
-  const [desktopActiveId, setDesktopActiveId] = useState<Tp5MobileServiceId>("audits");
+  const initialPlan =
+    parseHeroPlanParam(searchParams.get("plan") ?? searchParams.get("tab")) ?? "audits";
+  const [mobileActiveId, setMobileActiveId] = useState<Tp5MobileServiceId>(initialPlan);
+  const [desktopActiveId, setDesktopActiveId] = useState<Tp5MobileServiceId>(initialPlan);
   const [vin, setVin] = useState("");
   const [listingUrl, setListingUrl] = useState("");
   const [errors, setErrors] = useState<Tp5InlineFieldErrors>({});
