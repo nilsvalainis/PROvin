@@ -1,8 +1,9 @@
 /**
- * PDF / UI — nobraukuma līknes SVG (zila līnija; anomāliju punkti sarkani).
+ * PDF / UI — nobraukuma līknes SVG (zila līnija pa reālajiem km; anomāliju punkti sarkani).
+ * Odometra kritumu rāda proporcionāli uz līknes (ne tikai ar sarkano punktu).
+ * Teoretiskā korekcija (`reconstructTheoreticalMileagePath`) paliek vidējā gada nobraukumam, ne grafikam.
  */
 
-import { reconstructTheoreticalMileagePath } from "@/lib/average-annual-mileage";
 import {
   analyzeUnifiedMileageAnomalies,
   sortMileageChronological,
@@ -84,8 +85,8 @@ export function pickNonOverlappingYearTicks(
 
 type ChartPlotPoint = {
   x: number;
-  yTrend: number;
-  yRaw: number;
+  /** SVG Y no reālā odometra (km ↓ → Y ↑). */
+  y: number;
   sourceOrder: number;
   isAnomaly: boolean;
 };
@@ -120,10 +121,6 @@ export function buildUnifiedMileageChartWrapHtml(
 
   if (series.length === 0) return "";
 
-  const { path: theoreticalPath, correctedForAnomaly } = reconstructTheoreticalMileagePath(
-    series.map((s) => ({ t: s.time, km: s.km, dateDisplay: s.dateDisplay, country: "" })),
-  );
-
   const tMin = series[0]!.time;
   const tMax = series[series.length - 1]!.time;
   const yStart = series[0]!.year;
@@ -131,11 +128,9 @@ export function buildUnifiedMileageChartWrapHtml(
 
   let kmMin = Number.POSITIVE_INFINITY;
   let kmMax = Number.NEGATIVE_INFINITY;
-  for (let i = 0; i < series.length; i++) {
-    const raw = series[i]!.km;
-    const theoretical = theoreticalPath[i]?.theoreticalKm ?? raw;
-    kmMin = Math.min(kmMin, raw, theoretical);
-    kmMax = Math.max(kmMax, raw, theoretical);
+  for (const s of series) {
+    kmMin = Math.min(kmMin, s.km);
+    kmMax = Math.max(kmMax, s.km);
   }
   if (kmMin === kmMax) {
     kmMin = Math.max(0, kmMin - 1);
@@ -160,19 +155,14 @@ export function buildUnifiedMileageChartWrapHtml(
   };
   const yOf = (km: number) => padT + plotH - ((km - kmMin) / (kmMax - kmMin)) * plotH;
 
-  const plotPoints: ChartPlotPoint[] = series.map((s, i) => {
-    const theoretical = theoreticalPath[i]?.theoreticalKm ?? s.km;
-    const trendKm = correctedForAnomaly ? theoretical : s.km;
-    return {
-      x: xOf(s.time),
-      yTrend: yOf(trendKm),
-      yRaw: yOf(s.km),
-      sourceOrder: s.sourceOrder,
-      isAnomaly: anomalyBySourceOrder.get(s.sourceOrder) === true,
-    };
-  });
+  const plotPoints: ChartPlotPoint[] = series.map((s) => ({
+    x: xOf(s.time),
+    y: yOf(s.km),
+    sourceOrder: s.sourceOrder,
+    isAnomaly: anomalyBySourceOrder.get(s.sourceOrder) === true,
+  }));
 
-  const pathPts = plotPoints.map((p) => ({ x: p.x, y: p.yTrend }));
+  const pathPts = plotPoints.map((p) => ({ x: p.x, y: p.y }));
   const pathD = linearSvgPath(pathPts);
   const hasAnomaly = plotPoints.some((p) => p.isAnomaly);
 
@@ -212,15 +202,15 @@ export function buildUnifiedMileageChartWrapHtml(
     const prev = i > 0 ? plotPoints[i - 1]! : null;
     if (prev) {
       rollbackOverlays.push(
-        `<line class="pdf-mileage-chart-rollback" x1="${prev.x.toFixed(1)}" y1="${prev.yRaw.toFixed(1)}" x2="${p.x.toFixed(1)}" y2="${p.yRaw.toFixed(1)}" />`,
+        `<line class="pdf-mileage-chart-rollback" x1="${prev.x.toFixed(1)}" y1="${prev.y.toFixed(1)}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" />`,
       );
     }
     const haloR = compact ? 10 : 11;
     const dotR = compact ? 5.5 : 6;
     anomalyMarkers.push(
-      `<line class="pdf-mileage-chart-anomaly-pin" x1="${p.x.toFixed(1)}" y1="${(p.yRaw + haloR + 2).toFixed(1)}" x2="${p.x.toFixed(1)}" y2="${(padT + plotH).toFixed(1)}" />`,
-      `<circle class="pdf-mileage-chart-anomaly-halo" cx="${p.x.toFixed(1)}" cy="${p.yRaw.toFixed(1)}" r="${haloR}" />`,
-      `<circle class="pdf-mileage-chart-dot pdf-mileage-chart-dot--anomaly" cx="${p.x.toFixed(1)}" cy="${p.yRaw.toFixed(1)}" r="${dotR}" />`,
+      `<line class="pdf-mileage-chart-anomaly-pin" x1="${p.x.toFixed(1)}" y1="${(p.y + haloR + 2).toFixed(1)}" x2="${p.x.toFixed(1)}" y2="${(padT + plotH).toFixed(1)}" />`,
+      `<circle class="pdf-mileage-chart-anomaly-halo" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${haloR}" />`,
+      `<circle class="pdf-mileage-chart-dot pdf-mileage-chart-dot--anomaly" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${dotR}" />`,
     );
   }
 
@@ -245,7 +235,7 @@ export function buildUnifiedMileageChartWrapHtml(
   const normalDots = plotPoints
     .filter((p) => visibleDotSourceOrders.has(p.sourceOrder) && !p.isAnomaly)
     .map((p) => {
-      return `<circle class="pdf-mileage-chart-dot" cx="${p.x.toFixed(1)}" cy="${p.yTrend.toFixed(1)}" r="${dotR}" />`;
+      return `<circle class="pdf-mileage-chart-dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${dotR}" />`;
     })
     .join("");
 

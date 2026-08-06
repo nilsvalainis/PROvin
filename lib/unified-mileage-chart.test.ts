@@ -122,6 +122,49 @@ describe("buildUnifiedMileageChartWrapHtml", () => {
     expect(html).toMatch(/r="5\.5"|r="6"/);
   });
 
+  it("draws the main path through the raw rollback (proportional drop), not a corrected climb", () => {
+    const rows: UnifiedMileageRow[] = [
+      {
+        date: "01.01.2020",
+        odometer: "100000",
+        country: "NL",
+        sortableTime: Date.UTC(2020, 0, 1),
+        sourceOrder: 0,
+        sourceLabel: "AutoDNA",
+      },
+      {
+        date: "01.01.2021",
+        odometer: "150000",
+        country: "NL",
+        sortableTime: Date.UTC(2021, 0, 1),
+        sourceOrder: 1,
+        sourceLabel: "AutoDNA",
+      },
+      {
+        date: "01.01.2022",
+        odometer: "80000",
+        country: "LV",
+        sortableTime: Date.UTC(2022, 0, 1),
+        sourceOrder: 2,
+        sourceLabel: "CSDD",
+      },
+    ];
+    const anomalyMap = new Map<number, boolean>([
+      [0, false],
+      [1, false],
+      [2, true],
+    ]);
+    const html = buildUnifiedMileageChartWrapHtml(rows, anomalyMap);
+    const pathMatch = html.match(/class="pdf-mileage-chart-path"[^>]*d="([^"]+)"/);
+    expect(pathMatch?.[1]).toBeTruthy();
+    const ys = [...pathMatch![1]!.matchAll(/[\d.]+ ([\d.]+)/g)].map((m) => Number.parseFloat(m[1]!));
+    expect(ys).toHaveLength(3);
+    // SVG Y grows downward: 150k is highest on chart (lowest Y), 80k drop is lowest (highest Y).
+    expect(ys[1]!).toBeLessThan(ys[0]!);
+    expect(ys[2]!).toBeGreaterThan(ys[1]!);
+    expect(ys[2]!).toBeGreaterThan(ys[0]!);
+  });
+
   it("omits extra-digit spike from chart path so Y scale stays sane", () => {
     const rows: UnifiedMileageRow[] = [
       {
