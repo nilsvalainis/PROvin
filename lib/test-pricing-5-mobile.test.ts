@@ -22,10 +22,10 @@ const SHARED_COMPARE_ROWS_LV = [
 
 const DEALER_ROWS_LV = [
   "Oficiālā servisa un apkopju vēsture",
-  "Odometera rādījumu un kampaņu ieraksti",
-  "Vispārējs komentārs par vēsturi",
-  "Neietver pilno PROVIN PDF vēstures un risku atskaiti",
-  "100% Naudas atmaksa, ja dīlera dati datubāzēs nav pieejami",
+  "Odometera rādījumu ieraksti",
+  "Komentārs par vēsturi",
+  "Papildinājums standarta vēstures atskaitēm",
+  "Nav iekļauta PROVIN PDF vēstures un risku atskaite",
 ];
 
 describe("test-pricing-5 mobile three-tier model", () => {
@@ -59,14 +59,14 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(mini.features.some((f) => f.name.includes("CSDD"))).toBe(false);
   });
 
-  it("maps dealer to five rows, info note, guarantee and brands-only tip data", () => {
+  it("maps dealer to five rows, shield add-on, info note and brands-only tip data", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.description).toContain("oficiālo dīleru");
     expect(dealer.description).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
     expect(dealer.features.map((f) => f.name)).toEqual(DEALER_ROWS_LV);
-    expect(dealer.features[3]?.tone).toBe("info");
-    expect(dealer.features[4]?.tone).toBe("guarantee");
+    expect(dealer.features[3]?.tone).toBe("shield");
+    expect(dealer.features[4]?.tone).toBe("info");
     expect(dealer.extraNote).toContain("2009");
     expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
     expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-48h");

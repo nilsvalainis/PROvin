@@ -63,7 +63,7 @@ function MobileFeatureRow({
   feature: Tp5MobileFeature;
   isDealer: boolean;
 }) {
-  const checkClass = isDealer ? "text-emerald-400" : "text-[#2563EB]";
+  const checkClass = isDealer ? "text-amber-400" : "text-[#2563EB]";
 
   if (feature.tone === "info") {
     return (
@@ -76,19 +76,24 @@ function MobileFeatureRow({
     );
   }
 
-  if (feature.included) {
-    const isGuarantee = feature.tone === "guarantee";
+  if (feature.tone === "shield") {
     return (
       <li className={styles.featureRow}>
-        <span
-          className={`${FEATURE_MARK_CLASS} ${isGuarantee ? "text-emerald-400" : checkClass}`}
-          aria-hidden
-        >
-          {isGuarantee ? "🛡️" : "✓"}
+        <span className={`${FEATURE_MARK_CLASS} text-amber-400`} aria-hidden>
+          🛡️
         </span>
-        <span className={isGuarantee ? styles.featureLabelGuarantee : styles.featureLabelActive}>
-          {feature.name}
+        <span className={styles.featureLabelShield}>{feature.name}</span>
+      </li>
+    );
+  }
+
+  if (feature.included) {
+    return (
+      <li className={styles.featureRow}>
+        <span className={`${FEATURE_MARK_CLASS} ${checkClass}`} aria-hidden>
+          ✓
         </span>
+        <span className={styles.featureLabelActive}>{feature.name}</span>
       </li>
     );
   }

@@ -1,6 +1,6 @@
 import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
 
-export type Tp5FeatureTone = "default" | "soft" | "guarantee" | "info";
+export type Tp5FeatureTone = "default" | "soft" | "guarantee" | "info" | "shield";
 
 export type Tp5MobileFeature = {
   name: string;
@@ -89,33 +89,33 @@ const MINI_FEATURES_EN: Tp5MobileFeature[] = [
 
 const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
   { name: "Oficiālā servisa un apkopju vēsture", included: true },
-  { name: "Odometera rādījumu un kampaņu ieraksti", included: true },
-  { name: "Vispārējs komentārs par vēsturi", included: true },
+  { name: "Odometera rādījumu ieraksti", included: true },
+  { name: "Komentārs par vēsturi", included: true },
   {
-    name: "Neietver pilno PROVIN PDF vēstures un risku atskaiti",
-    included: false,
-    tone: "info",
+    name: "Papildinājums standarta vēstures atskaitēm",
+    included: true,
+    tone: "shield",
   },
   {
-    name: "100% Naudas atmaksa, ja dīlera dati datubāzēs nav pieejami",
-    included: true,
-    tone: "guarantee",
+    name: "Nav iekļauta PROVIN PDF vēstures un risku atskaite",
+    included: false,
+    tone: "info",
   },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
   { name: "Official service and maintenance history", included: true },
-  { name: "Odometer readings and campaign records", included: true },
-  { name: "General comment on the history", included: true },
+  { name: "Odometer readings", included: true },
+  { name: "Comment on the history", included: true },
   {
-    name: "Does not include the full PROVIN PDF history and risk report",
-    included: false,
-    tone: "info",
+    name: "Supplement to standard history reports",
+    included: true,
+    tone: "shield",
   },
   {
-    name: "100% refund if dealer data is unavailable in the databases",
-    included: true,
-    tone: "guarantee",
+    name: "PROVIN PDF history and risk report is not included",
+    included: false,
+    tone: "info",
   },
 ];
 
