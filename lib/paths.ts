@@ -23,6 +23,11 @@ export function pakalpojumiHref(): string {
   return "/pakalpojumi";
 }
 
+/** Blogs — `Link`-drošs ceļš. */
+export function blogsHref(): string {
+  return "/blogs";
+}
+
 /** IRISS / „kas slēpjās” sadaļa — `Link`-drošs ceļš. */
 export function irissAnchorHref(): string {
   return "/#kas-ir-iriss";

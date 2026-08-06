@@ -29,18 +29,20 @@ export function HeaderClient() {
 
   const isHome = normalizedPath === "/" || normalizedPath === "";
   const isPakalpojumi = normalizedPath === "/pakalpojumi";
+  const isBlogs = normalizedPath === "/blogs";
   /** Tās pašas lapas kā kreisā slide — arī šeit navigācijas saraksts. */
   const showHomeNavRail =
     isHome ||
     normalizedPath === "/pasutit" ||
     normalizedPath === "/biezi-jautajumi" ||
-    isPakalpojumi;
+    isPakalpojumi ||
+    isBlogs;
 
   const isDemoPath = pathname.includes("/demo");
   const isAzvinDemo = pathname.includes("/demo/azvin");
-  /** Sākumlapas, pakalpojumu kataloga un PROVIN SELECT pieteikuma caurspīdīgais hero headeris. */
+  /** Sākumlapas, pakalpojumu / blogu kataloga un PROVIN SELECT pieteikuma caurspīdīgais hero headeris. */
   const isDarkHeaderSurface =
-    isHome || isProvinSelectPieteikums || isAzvinDemo || isPakalpojumi;
+    isHome || isProvinSelectPieteikums || isAzvinDemo || isPakalpojumi || isBlogs;
   const isDemoGraphiteHeader = isDemoPath && !isAzvinDemo;
   const headerChromeDark = isDarkHeaderSurface || isDemoGraphiteHeader;
 

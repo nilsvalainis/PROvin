@@ -10,13 +10,15 @@
     "checkoutProvinSelectProductName": "PROVIN SELECT\nStrategic consultation",
     "checkoutProvinSelectProductDesc": "Individual consultation for car purchase decisions"
   },
+  "Blogs": {
+    "comingSoon": "Coming soon"
+  },
   "SiteRail": {
     "navAria": "Main sections",
     "sakums": "Home",
     "pakalpojumi": "Services",
+    "blogs": "Blogs",
     "provinSelect": "Consultation",
-    "kasSlapjasAizProvin": "About us",
-    "buj": "FAQ",
-    "kontakti": "Contacts"
+    "kasSlapjasAizProvin": "About us"
   }
 }

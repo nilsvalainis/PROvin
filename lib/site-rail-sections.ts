@@ -5,18 +5,17 @@ import { PROVIN_SELECT_FORM_HASH, PROVIN_SELECT_SECTION_ID } from "@/lib/provin-
 /** Sadaļu DOM `id` secība mājas lapā (scroll / rail — sakrīt ar dokumenta secību un izvēlnes rindām). */
 export function getSiteRailHomeScrollIds(): readonly string[] {
   if (isProvinSelectPublic()) {
-    return ["home-hero", PROVIN_SELECT_SECTION_ID, "kas-ir-iriss", "biezi-jautajumi", "kontakti"] as const;
+    return ["home-hero", PROVIN_SELECT_SECTION_ID, "kas-ir-iriss"] as const;
   }
-  return ["home-hero", "kas-ir-iriss", "biezi-jautajumi", "kontakti"] as const;
+  return ["home-hero", "kas-ir-iriss"] as const;
 }
 
 export type SiteRailLabelKey =
   | "sakums"
   | "pakalpojumi"
+  | "blogs"
   | "provinSelect"
-  | "kasSlapjasAizProvin"
-  | "buj"
-  | "kontakti";
+  | "kasSlapjasAizProvin";
 
 export type SiteRailSection = {
   href: string;
@@ -40,20 +39,15 @@ function railIndex(labelKey: SiteRailLabelKey, sections: readonly SiteRailSectio
 /**
  * Mobilā / sliežu izvēlne: `href` bez `/lv` — `next-intl` `Link` pats prefiksē (`applyPathnamePrefix`).
  */
-export function buildSiteRailSections(normalizedPath: string): readonly SiteRailSection[] {
-  const bujHref = normalizedPath === "/biezi-jautajumi" ? "/biezi-jautajumi" : "/#biezi-jautajumi";
-  const pakalpojumiHref = normalizedPath === "/pakalpojumi" ? "/pakalpojumi" : "/pakalpojumi";
-  /* Secība: Sākums → Pakalpojumi → Konsultācija (ja publiska) → Par mums → BUJ → Kontakti */
+export function buildSiteRailSections(_normalizedPath: string): readonly SiteRailSection[] {
+  /* Secība: Sākums → Pakalpojumi → Blogs → Konsultācija (ja publiska) → Par mums */
   const out: SiteRailSection[] = [
     { href: "/", labelKey: "sakums" },
-    { href: pakalpojumiHref, labelKey: "pakalpojumi" },
+    { href: "/pakalpojumi", labelKey: "pakalpojumi" },
+    { href: "/blogs", labelKey: "blogs" },
   ];
   if (isProvinSelectPublic()) out.push({ href: `/#${PROVIN_SELECT_SECTION_ID}`, labelKey: "provinSelect" });
-  out.push(
-    { href: "/#kas-ir-iriss", labelKey: "kasSlapjasAizProvin" },
-    { href: bujHref, labelKey: "buj" },
-    { href: "/#kontakti", labelKey: "kontakti" },
-  );
+  out.push({ href: "/#kas-ir-iriss", labelKey: "kasSlapjasAizProvin" });
   return out;
 }
 
@@ -64,8 +58,10 @@ export function siteRailActiveFromHash(raw: string): number | null {
   if (h === "home-hero" || h === "home-intro" || h === ORDER_SECTION_ID || h === "order-form") {
     return railIndex("sakums", sections);
   }
-  /* Cena / vecais Audits enkurs — nav atsevišķas izvēlnes rindas; uzskatām par sākumu. */
-  if (h === "site-content" || h === "cena" || h === "paketes") return railIndex("sakums", sections);
+  /* Cena / vecais Audits / FAQ / kontakti enkuri — nav atsevišķas izvēlnes rindas. */
+  if (h === "site-content" || h === "cena" || h === "paketes" || h === "biezi-jautajumi" || h === "kontakti") {
+    return railIndex("sakums", sections);
+  }
   if (h === PROVIN_SELECT_SECTION_ID || h === PROVIN_SELECT_FORM_HASH) {
     const idx = railIndex("provinSelect", sections);
     return idx >= 0 ? idx : null;
@@ -73,10 +69,11 @@ export function siteRailActiveFromHash(raw: string): number | null {
   if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav")) {
     return railIndex("kasSlapjasAizProvin", sections);
   }
-  if (h === "biezi-jautajumi") return railIndex("buj", sections);
-  if (h === "kontakti") return railIndex("kontakti", sections);
   if (h === "pakalpojumi" || h.startsWith("pakalpojums-")) {
     return railIndex("pakalpojumi", sections);
+  }
+  if (h === "blogs") {
+    return railIndex("blogs", sections);
   }
   return null;
 }
@@ -87,7 +84,9 @@ export function siteRailRouteActiveIndex(pathname: string | null | undefined): n
   const sections = buildSiteRailSections(p);
   if (p === "/pasutit") return railIndex("sakums", sections);
   if (p === "/pakalpojumi") return railIndex("pakalpojumi", sections);
-  if (p === "/biezi-jautajumi") return railIndex("buj", sections);
+  if (p === "/blogs") return railIndex("blogs", sections);
+  /* FAQ page remains reachable but is no longer a menu item. */
+  if (p === "/biezi-jautajumi") return railIndex("sakums", sections);
   return null;
 }
 

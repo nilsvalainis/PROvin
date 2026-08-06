@@ -10,6 +10,8 @@
     "faqDescription": "Biežāk uzdotie jautājumi par PROVIN auditiem, cenām un piegādi.",
     "servicesTitle": "Pakalpojumi | PROVIN",
     "servicesDescription": "PROVIN MINI, PROVIN AUDITS, DĪLERA DATI un citi auto vēstures pakalpojumi — mērķis, iekļautais un pasūtījums.",
+    "blogsTitle": "Blogs | PROVIN",
+    "blogsDescription": "PROVIN un IRISS bloga ieraksti — drīzumā.",
     "thanksTitle": "Paldies par pasūtījumu",
     "thanksDescription": "Pasūtījums saņemts. Īss apstiprinājums pēc veiksmīgas apmaksas ar Stripe."
   }

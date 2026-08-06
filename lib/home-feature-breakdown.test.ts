@@ -56,11 +56,14 @@ describe("pakalpojumi catalog", () => {
     ]);
   });
 
-  it("adds Pakalpojumi to the site rail", () => {
+  it("adds Pakalpojumi and Blogs to the site rail without BUJ/Kontakti", () => {
     const sections = buildSiteRailSections("/");
-    expect(sections.map((s) => s.labelKey)).toContain("pakalpojumi");
-    expect(siteRailRouteActiveIndex("/pakalpojumi")).toBe(
-      sections.findIndex((s) => s.labelKey === "pakalpojumi"),
-    );
+    const keys = sections.map((s) => s.labelKey);
+    expect(keys).toContain("pakalpojumi");
+    expect(keys).toContain("blogs");
+    expect(keys).not.toContain("buj");
+    expect(keys).not.toContain("kontakti");
+    expect(siteRailRouteActiveIndex("/pakalpojumi")).toBe(keys.indexOf("pakalpojumi"));
+    expect(siteRailRouteActiveIndex("/blogs")).toBe(keys.indexOf("blogs"));
   });
 });

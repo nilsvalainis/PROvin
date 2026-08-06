@@ -10,13 +10,15 @@
     "checkoutProvinSelectProductName": "PROVIN SELECT\nStratēģiskā konsultācija",
     "checkoutProvinSelectProductDesc": "Individuāla konsultācija auto iegādes jautājumos"
   },
+  "Blogs": {
+    "comingSoon": "Drīzumā"
+  },
   "SiteRail": {
     "navAria": "Galvenās sadaļas",
     "sakums": "Sākums",
     "pakalpojumi": "Pakalpojumi",
+    "blogs": "Blogs",
     "provinSelect": "Konsultācija",
-    "kasSlapjasAizProvin": "Par mums",
-    "buj": "BUJ",
-    "kontakti": "Kontakti"
+    "kasSlapjasAizProvin": "Par mums"
   }
 }
