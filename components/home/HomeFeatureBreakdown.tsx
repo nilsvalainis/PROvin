@@ -19,6 +19,7 @@ import { SampleReportPreview } from "@/components/home/SampleReportPreview";
 import { Link } from "@/i18n/navigation";
 import { homeContentMaxClass, homeDarkProvinWordmarkOptions } from "@/lib/home-layout";
 import {
+  catalogPackageAnchorId,
   getCatalogFeatureBreakdownPackages,
   type HomeFeatureBreakdownIcon,
 } from "@/lib/home-feature-breakdown";
@@ -109,12 +110,30 @@ export function HomeFeatureBreakdown({
           id="home-feature-breakdown-heading"
           className={
             showHeading
-              ? "mb-8 text-balance text-2xl font-bold tracking-tight text-zinc-100 sm:mb-10 sm:text-3xl"
+              ? "mb-5 text-balance text-2xl font-bold tracking-tight text-zinc-100 sm:mb-6 sm:text-3xl"
               : "sr-only"
           }
         >
           {uiCopy.catalogHeading}
         </h2>
+
+        <nav
+          aria-label={uiCopy.catalogNavAria}
+          className="mb-8 sm:mb-10"
+        >
+          <ul className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+            {packages.map((pkg) => (
+              <li key={`nav-${pkg.id}`}>
+                <a
+                  href={`#${catalogPackageAnchorId(pkg.id)}`}
+                  className="inline-flex max-w-full items-center justify-center rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-2 text-center text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-zinc-100 transition hover:border-white/30 hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]/45 sm:px-4 sm:text-[0.75rem]"
+                >
+                  {renderProvinText(pkg.title, homeDarkProvinWordmarkOptions)}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
         <div className="flex flex-col">
           {packages.map((pkg) => {
@@ -123,8 +142,8 @@ export function HomeFeatureBreakdown({
             return (
               <article
                 key={pkg.id}
-                id={`pakalpojums-${pkg.id}`}
-                className="border-b border-white/[0.08] py-8 first:pt-0 last:border-b-0 sm:py-10 lg:py-12"
+                id={catalogPackageAnchorId(pkg.id)}
+                className="scroll-mt-24 border-b border-white/[0.08] py-8 first:pt-0 last:border-b-0 sm:scroll-mt-28 sm:py-10 lg:py-12"
               >
                 <div className="grid min-w-0 grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(17.5rem,22.5rem)] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:gap-12">
                   <div className="min-w-0">

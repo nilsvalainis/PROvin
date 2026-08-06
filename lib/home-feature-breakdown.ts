@@ -324,6 +324,10 @@ const HOME_FEATURE_BREAKDOWN_PACKAGES_EN: HomeFeatureBreakdownPackage[] = [
   KOREA_USA_EN,
 ];
 
+export function catalogPackageAnchorId(id: HomeFeatureBreakdownPackageId): string {
+  return `pakalpojums-${id}`;
+}
+
 /** Locale-aware catalog packages; anything other than `en` falls back to Latvian. */
 export function getHomeFeatureBreakdownPackages(locale?: string): HomeFeatureBreakdownPackage[] {
   return locale === "en" ? HOME_FEATURE_BREAKDOWN_PACKAGES_EN : HOME_FEATURE_BREAKDOWN_PACKAGES;

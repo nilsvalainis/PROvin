@@ -5,7 +5,10 @@ import {
   homeHeroCheckoutHref,
   parseHeroPlanParam,
 } from "@/lib/home-hero-plan";
-import { getCatalogFeatureBreakdownPackages } from "@/lib/home-feature-breakdown";
+import {
+  catalogPackageAnchorId,
+  getCatalogFeatureBreakdownPackages,
+} from "@/lib/home-feature-breakdown";
 import { buildSiteRailSections, siteRailRouteActiveIndex } from "@/lib/site-rail-sections";
 
 describe("home-hero-plan", () => {
@@ -41,6 +44,16 @@ describe("pakalpojumi catalog", () => {
     expect(koreaUsa.buttonText).toContain("19,99");
     expect(koreaUsa.items).toHaveLength(4);
     expect(koreaUsa.items[1]?.title).toContain("Izsoļu");
+  });
+
+  it("builds stable section anchors for jump pills (scales with catalog size)", () => {
+    const pkgs = getCatalogFeatureBreakdownPackages();
+    expect(pkgs.map((p) => catalogPackageAnchorId(p.id))).toEqual([
+      "pakalpojums-mini",
+      "pakalpojums-audits",
+      "pakalpojums-dealer",
+      "pakalpojums-koreaUsa",
+    ]);
   });
 
   it("adds Pakalpojumi to the site rail", () => {
