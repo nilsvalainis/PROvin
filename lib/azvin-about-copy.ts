@@ -28,7 +28,11 @@ const ABOUT_EN: AzvinAboutCopy = {
   bentoTitle: "Packages",
   bento: [
     { id: "koreaUsa", title: "Korea & USA", body: "Auction · mileage · legal status. From 19 AZN." },
-    { id: "europe", title: "Europe PRO", body: "CarVertical + AutoDNA + EU registries. 149 AZN." },
+    {
+      id: "europe",
+      title: "Europe PRO",
+      body: "Full Europe check — CarVertical*, AutoDNA*, registries, auctions, dealer data. 149 AZN.",
+    },
     { id: "dealer", title: "Dealer data", body: "Manufacturer service history and mileage. 49 AZN." },
     { id: "refund", title: "Refund", body: "Full refund if dealer databases have no data." },
   ],
@@ -46,7 +50,11 @@ const ABOUT_AZ: AzvinAboutCopy = {
   bentoTitle: "Paketlər",
   bento: [
     { id: "koreaUsa", title: "Koreya və ABŞ", body: "Hərrac · yürüş · hüquqi status. 19 AZN-dən." },
-    { id: "europe", title: "Avropa PRO", body: "CarVertical + AutoDNA + EU. 149 AZN." },
+    {
+      id: "europe",
+      title: "Avropa PRO",
+      body: "Tam Avropa yoxlaması — CarVertical*, AutoDNA*, reyestr, hərrac, diler. 149 AZN.",
+    },
     { id: "dealer", title: "Diler məlumatı", body: "İstehsalçı servis tarixi və yürüş. 49 AZN." },
     { id: "refund", title: "Geri ödəniş", body: "Diler bazasında məlumat yoxdursa — tam geri ödəniş." },
   ],
@@ -64,7 +72,11 @@ const ABOUT_RU: AzvinAboutCopy = {
   bentoTitle: "Пакеты",
   bento: [
     { id: "koreaUsa", title: "Корея и США", body: "Аукцион · пробег · статус. От 19 AZN." },
-    { id: "europe", title: "Европа PRO", body: "CarVertical + AutoDNA + ЕС. 149 AZN." },
+    {
+      id: "europe",
+      title: "Европа PRO",
+      body: "Полная проверка Европы — CarVertical*, AutoDNA*, реестры, аукционы, дилер. 149 AZN.",
+    },
     { id: "dealer", title: "Данные дилера", body: "Сервисная история и пробег. 49 AZN." },
     { id: "refund", title: "Возврат", body: "Полный возврат, если данных нет в дилерских базах." },
   ],
@@ -82,7 +94,11 @@ const ABOUT_LV: AzvinAboutCopy = {
   bentoTitle: "Paketes",
   bento: [
     { id: "koreaUsa", title: "Koreja un ASV", body: "Izsoles · nobraukums · statuss. No 19 AZN." },
-    { id: "europe", title: "Eiropa PRO", body: "CarVertical + AutoDNA + EU. 149 AZN." },
+    {
+      id: "europe",
+      title: "Eiropa PRO",
+      body: "Pilns Eiropas komplekts — CarVertical*, AutoDNA*, reģistri, izsoles, dīleris. 149 AZN.",
+    },
     { id: "dealer", title: "Dīlera dati", body: "Ražotāja servisa vēsture un nobraukums. 49 AZN." },
     { id: "refund", title: "Atmaksa", body: "Pilna atmaksa, ja dīleru datubāzēs datu nav." },
   ],

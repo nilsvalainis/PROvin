@@ -21,6 +21,10 @@ export type AzvinMobileService = {
   layout: "checklist" | "koreaHighlight" | "dealer";
   brands?: readonly string[];
   turnaround?: string;
+  /** Asterisk footnote under checklist (e.g. CarVertical*/AutoDNA*). */
+  extraNote?: string;
+  /** Show the 100% dealer-data refund banner above CTA. */
+  showRefundBanner?: boolean;
 };
 
 /** Tab order: left EUROPE PRO · center Korea & USA (default) · right Dealer. */
@@ -101,24 +105,52 @@ const KOREA_FEATURES_LV: AzvinMobileFeature[] = [
 ];
 
 const EUROPE_FEATURES_EN: AzvinMobileFeature[] = [
-  { name: "CarVertical + AutoDNA + EU registry check", included: true },
-  { name: "Official dealer and auction portal archive data*", included: false },
+  { name: "CarVertical* history report", included: true },
+  { name: "AutoDNA* history report", included: true },
+  { name: "European registry check", included: true },
+  { name: "Auction portal archive data", included: true },
+  { name: "Official dealer data", included: true },
+  { name: "Consultation", included: true },
 ];
 
 const EUROPE_FEATURES_AZ: AzvinMobileFeature[] = [
-  { name: "CarVertical + AutoDNA + EU reyestri yoxlaması", included: true },
-  { name: "Rəsmi diler və hərrac portalı arxiv məlumatları*", included: false },
+  { name: "CarVertical* tarix hesabatı", included: true },
+  { name: "AutoDNA* tarix hesabatı", included: true },
+  { name: "Avropa reyestr yoxlaması", included: true },
+  { name: "Hərrac portalı arxiv məlumatları", included: true },
+  { name: "Rəsmi diler məlumatları", included: true },
+  { name: "Konsultasiya", included: true },
 ];
 
 const EUROPE_FEATURES_RU: AzvinMobileFeature[] = [
-  { name: "CarVertical + AutoDNA + проверка реестров ЕС", included: true },
-  { name: "Архивные данные официальных дилеров и аукционов*", included: false },
+  { name: "Отчёт истории CarVertical*", included: true },
+  { name: "Отчёт истории AutoDNA*", included: true },
+  { name: "Проверка европейских реестров", included: true },
+  { name: "Архивные данные аукционов", included: true },
+  { name: "Официальные данные дилера", included: true },
+  { name: "Консультация", included: true },
 ];
 
 const EUROPE_FEATURES_LV: AzvinMobileFeature[] = [
-  { name: "CarVertical + AutoDNA + EU reģistru pārbaude", included: true },
-  { name: "Oficiālo dīleru un izsoļu portālu arhīva dati*", included: false },
+  { name: "CarVertical* vēstures atskaite", included: true },
+  { name: "AutoDNA* vēstures atskaite", included: true },
+  { name: "Eiropas reģistru pārbaude", included: true },
+  { name: "Izsoļu portālu arhīva dati", included: true },
+  { name: "Oficiālā dīlera dati", included: true },
+  { name: "Konsultācija", included: true },
 ];
+
+const EUROPE_NOTE_EN =
+  "*To provide the most relevant data for a given EU region, a report may be replaced with another specialised paid report.";
+
+const EUROPE_NOTE_AZ =
+  "*Müəyyən EU regionu üçün ən uyğun məlumatı təmin etmək üçün hesabat digər ixtisaslaşmış pullu hesabatla əvəz oluna bilər.";
+
+const EUROPE_NOTE_RU =
+  "*Чтобы обеспечить наиболее релевантные данные для конкретного региона ЕС, отчёт может быть заменён другим специализированным платным отчётом.";
+
+const EUROPE_NOTE_LV =
+  "*Lai nodrošinātu konkrētajam EU reģionam atbilstošākos datus, atskaite var tikt aizstāta ar citu specializētu maksas atskaiti.";
 
 function buildServices(locale: AzvinLocale): AzvinMobileService[] {
   if (locale === "en") {
@@ -129,10 +161,12 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         price: "149 AZN",
         priceAzn: 149,
         buttonText: "ORDER EUROPE PRO — 149 AZN",
-        description: "CarVertical, AutoDNA and EU registry depth.",
+        description: "Full vehicle check package for cars used in Europe.",
         features: EUROPE_FEATURES_EN,
         layout: "checklist",
-        turnaround: "⏱️ Delivery: 24-72h",
+        turnaround: "⏱️ Delivery: 24h",
+        extraNote: EUROPE_NOTE_EN,
+        showRefundBanner: true,
       },
       {
         id: "koreaUsa",
@@ -156,6 +190,7 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         layout: "dealer",
         brands: TP5_DEALER_BRANDS,
         turnaround: "⏱️ Delivery: 24-48h",
+        showRefundBanner: true,
       },
     ];
   }
@@ -168,10 +203,12 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         price: "149 AZN",
         priceAzn: 149,
         buttonText: "ЗАКАЗАТЬ ЕВРОПА PRO — 149 AZN",
-        description: "CarVertical, AutoDNA и реестры ЕС.",
+        description: "Полный пакет проверки авто, эксплуатируемых в Европе.",
         features: EUROPE_FEATURES_RU,
         layout: "checklist",
-        turnaround: "⏱️ Срок: 24-72ч",
+        turnaround: "⏱️ Срок: 24ч",
+        extraNote: EUROPE_NOTE_RU,
+        showRefundBanner: true,
       },
       {
         id: "koreaUsa",
@@ -195,6 +232,7 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         layout: "dealer",
         brands: TP5_DEALER_BRANDS,
         turnaround: "⏱️ Срок: 24-48ч",
+        showRefundBanner: true,
       },
     ];
   }
@@ -207,10 +245,12 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         price: "149 AZN",
         priceAzn: 149,
         buttonText: "PASŪTĪT EIROPA PRO — 149 AZN",
-        description: "CarVertical, AutoDNA un EU reģistru dziļums.",
+        description: "Pilns auto pārbaudes komplekts Eiropā lietotiem auto.",
         features: EUROPE_FEATURES_LV,
         layout: "checklist",
-        turnaround: "⏱️ Izpilde: 24-72h",
+        turnaround: "⏱️ Izpilde: 24h",
+        extraNote: EUROPE_NOTE_LV,
+        showRefundBanner: true,
       },
       {
         id: "koreaUsa",
@@ -234,6 +274,7 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         layout: "dealer",
         brands: TP5_DEALER_BRANDS,
         turnaround: "⏱️ Izpilde: 24-48h",
+        showRefundBanner: true,
       },
     ];
   }
@@ -246,10 +287,12 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
       price: "149 AZN",
       priceAzn: 149,
       buttonText: "SİFARİŞ AVROPA PRO — 149 AZN",
-      description: "CarVertical, AutoDNA və EU reyestr dərinliyi.",
+      description: "Avropada istifadə olunan avtomobillər üçün tam yoxlama paketi.",
       features: EUROPE_FEATURES_AZ,
       layout: "checklist",
-      turnaround: "⏱️ Çatdırılma: 24-72 saat",
+      turnaround: "⏱️ Çatdırılma: 24 saat",
+      extraNote: EUROPE_NOTE_AZ,
+      showRefundBanner: true,
     },
     {
       id: "koreaUsa",
@@ -273,6 +316,7 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
       layout: "dealer",
       brands: TP5_DEALER_BRANDS,
       turnaround: "⏱️ Çatdırılma: 24-48 saat",
+      showRefundBanner: true,
     },
   ];
 }

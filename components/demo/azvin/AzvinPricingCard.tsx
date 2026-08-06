@@ -295,6 +295,9 @@ export function AzvinPricingCard({
             </ul>
           )}
           {isDealer ? <DealerBrandBadges brandsAria={uiCopy.dealerBrandsAria} /> : null}
+          {activeService.extraNote ? (
+            <p className={styles.featureFootnote}>{activeService.extraNote}</p>
+          ) : null}
         </div>
 
         <div
@@ -336,7 +339,9 @@ export function AzvinPricingCard({
       {turnaroundLabel ? <p className={styles.turnaround}>{turnaroundLabel}</p> : null}
 
       <div className={styles.ctaWrap}>
-        {isDealer ? <p className={styles.dealerRefundBanner}>{uiCopy.dealerRefundBanner}</p> : null}
+        {activeService.showRefundBanner ? (
+          <p className={styles.dealerRefundBanner}>{uiCopy.dealerRefundBanner}</p>
+        ) : null}
         {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
         {demoNote ? <p className={styles.checkoutError} style={{ color: "#93c5fd" }}>{demoNote}</p> : null}
         <button type="button" className={styles.liquidCta} onClick={onSubmit} disabled={loading}>
