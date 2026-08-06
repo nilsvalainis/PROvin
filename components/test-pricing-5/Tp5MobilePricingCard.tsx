@@ -56,7 +56,28 @@ function SampleReportPdfIcon() {
   );
 }
 
-function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
+function MobileFeatureRow({
+  feature,
+  dealerBrands,
+  uiCopy,
+}: {
+  feature: Tp5MobileFeature;
+  dealerBrands?: readonly string[];
+  uiCopy: ReturnType<typeof getTp5UiCopy>;
+}) {
+  if (feature.tone === "brands") {
+    return (
+      <li className={styles.featureRow}>
+        <span className={`${FEATURE_MARK_CLASS} text-slate-400/80`} aria-hidden>
+          ℹ
+        </span>
+        <span className={styles.featureBrandsInline}>
+          {dealerBrands ? <Tp5DealerBrandsTip brands={dealerBrands} copy={uiCopy} /> : feature.name}
+        </span>
+      </li>
+    );
+  }
+
   if (feature.tone === "info") {
     return (
       <li className={styles.featureRow}>
@@ -206,18 +227,15 @@ export function Tp5MobilePricingCard({
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
           <ul className={styles.featureList}>
             {activeService.features.map((feature) => (
-              <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
+              <MobileFeatureRow
+                key={`${activeServiceId}-${feature.name}`}
+                feature={feature}
+                dealerBrands={isDealer ? activeService.brands : undefined}
+                uiCopy={uiCopy}
+              />
             ))}
           </ul>
         </div>
-        {activeService.extraNote ? (
-          <p className={styles.dealerExplainNote}>{activeService.extraNote}</p>
-        ) : null}
-        {isDealer && activeService.brands && activeService.brands.length > 0 ? (
-          <div className={styles.dealerBrandsSlot}>
-            <Tp5DealerBrandsTip brands={activeService.brands} copy={uiCopy} />
-          </div>
-        ) : null}
 
         <div
           className={styles.inlineFields}

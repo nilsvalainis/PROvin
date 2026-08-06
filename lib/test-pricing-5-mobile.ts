@@ -1,6 +1,6 @@
 import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
 
-export type Tp5FeatureTone = "default" | "soft" | "guarantee" | "info";
+export type Tp5FeatureTone = "default" | "soft" | "guarantee" | "info" | "brands";
 
 export type Tp5MobileFeature = {
   name: string;
@@ -90,34 +90,29 @@ const MINI_FEATURES_EN: Tp5MobileFeature[] = [
 const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
   { name: "Oficiālā servisa un apkopju vēsture", included: true },
   { name: "Odometera rādījumu ieraksti", included: true },
-  { name: "Komentārs par vēsturi", included: true },
+  { name: "Kopsavilkums un komentāri", included: true },
   {
-    name: "Neietver pilno PROVIN PDF vēstures un risku atskaiti",
+    name: "Atbalstītie ražotāji",
     included: false,
-    tone: "info",
+    tone: "brands",
   },
-  { name: "Papildinājums standarta vēstures atskaitēm", included: true },
+  { name: "Vecākiem auto dati var nebūt pieejami", included: false, tone: "info" },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
   { name: "Official service and maintenance history", included: true },
   { name: "Odometer readings", included: true },
-  { name: "Comment on the history", included: true },
+  { name: "Summary and comments", included: true },
   {
-    name: "Does not include the full PROVIN PDF history and risk report",
+    name: "Supported manufacturers",
     included: false,
-    tone: "info",
+    tone: "brands",
   },
-  { name: "Supplement to standard history reports", included: true },
+  { name: "Data may be unavailable for older cars", included: false, tone: "info" },
 ];
 
 const DEALER_BRANDS_HEADING_LV = "Atbalstītie ražotāji";
 const DEALER_BRANDS_HEADING_EN = "Supported manufacturers";
-
-const DEALER_YEAR_NOTE_LV =
-  "Oficiālie dīlera dati parasti pieejami automašīnām, kas ražotas no 2009.–2026. gadam.";
-const DEALER_YEAR_NOTE_EN =
-  "Official dealer data is usually available for cars built from 2009–2026.";
 
 /** Mobile `/test-pricing-5` + home hero — MINI, AUDITS, dealer data. */
 export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
@@ -146,7 +141,6 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     features: DEALER_FEATURES_LV,
     brands: TP5_DEALER_BRANDS,
     brandsHeading: DEALER_BRANDS_HEADING_LV,
-    extraNote: DEALER_YEAR_NOTE_LV,
     turnaround: "⏱️ Izpilde: 24-48h",
   },
 ];
@@ -177,7 +171,6 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     features: DEALER_FEATURES_EN,
     brands: TP5_DEALER_BRANDS,
     brandsHeading: DEALER_BRANDS_HEADING_EN,
-    extraNote: DEALER_YEAR_NOTE_EN,
     turnaround: "⏱️ Delivery: 24-48h",
   },
 ];
