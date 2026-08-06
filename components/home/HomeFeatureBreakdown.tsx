@@ -110,7 +110,7 @@ export function HomeFeatureBreakdown({
           id="home-feature-breakdown-heading"
           className={
             showHeading
-              ? "mb-5 text-balance text-2xl font-bold tracking-tight text-zinc-100 sm:mb-6 sm:text-3xl"
+              ? "mb-5 text-balance text-2xl font-bold uppercase tracking-[0.1em] text-zinc-400 sm:mb-6 sm:text-3xl"
               : "sr-only"
           }
         >
