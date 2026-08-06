@@ -56,15 +56,7 @@ function SampleReportPdfIcon() {
   );
 }
 
-function MobileFeatureRow({
-  feature,
-  isDealer,
-}: {
-  feature: Tp5MobileFeature;
-  isDealer: boolean;
-}) {
-  const checkClass = isDealer ? "text-amber-400" : "text-[#2563EB]";
-
+function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
   if (feature.tone === "info") {
     return (
       <li className={styles.featureRow}>
@@ -76,21 +68,10 @@ function MobileFeatureRow({
     );
   }
 
-  if (feature.tone === "shield") {
-    return (
-      <li className={styles.featureRow}>
-        <span className={`${FEATURE_MARK_CLASS} text-amber-400`} aria-hidden>
-          🛡️
-        </span>
-        <span className={styles.featureLabelShield}>{feature.name}</span>
-      </li>
-    );
-  }
-
   if (feature.included) {
     return (
       <li className={styles.featureRow}>
-        <span className={`${FEATURE_MARK_CLASS} ${checkClass}`} aria-hidden>
+        <span className={`${FEATURE_MARK_CLASS} text-[#2563EB]`} aria-hidden>
           ✓
         </span>
         <span className={styles.featureLabelActive}>{feature.name}</span>
@@ -176,10 +157,7 @@ export function Tp5MobilePricingCard({
       : activeService.title;
 
   return (
-    <article
-      className={`${styles.spatialCard} w-full`}
-      data-active-tier={activeServiceId}
-    >
+    <article className={`${styles.spatialCard} w-full`}>
       <div className={styles.cardHeader}>
         <LayoutGroup id={tabLayoutGroupId}>
           <div className={styles.tierSwitcher} role="tablist" aria-label={uiCopy.packageTabsAria}>
@@ -228,11 +206,7 @@ export function Tp5MobilePricingCard({
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
           <ul className={styles.featureList}>
             {activeService.features.map((feature) => (
-              <MobileFeatureRow
-                key={`${activeServiceId}-${feature.name}`}
-                feature={feature}
-                isDealer={isDealer}
-              />
+              <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
             ))}
           </ul>
         </div>

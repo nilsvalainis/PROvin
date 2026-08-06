@@ -1,6 +1,6 @@
 import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
 
-export type Tp5FeatureTone = "default" | "soft" | "guarantee" | "info" | "shield";
+export type Tp5FeatureTone = "default" | "soft" | "guarantee" | "info";
 
 export type Tp5MobileFeature = {
   name: string;
@@ -92,15 +92,11 @@ const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
   { name: "Odometera rādījumu ieraksti", included: true },
   { name: "Komentārs par vēsturi", included: true },
   {
-    name: "Papildinājums standarta vēstures atskaitēm",
-    included: true,
-    tone: "shield",
-  },
-  {
-    name: "Nav iekļauta PROVIN PDF vēstures un risku atskaite",
+    name: "Neietver pilno PROVIN PDF vēstures un risku atskaiti",
     included: false,
     tone: "info",
   },
+  { name: "Papildinājums standarta vēstures atskaitēm", included: true },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
@@ -108,15 +104,11 @@ const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
   { name: "Odometer readings", included: true },
   { name: "Comment on the history", included: true },
   {
-    name: "Supplement to standard history reports",
-    included: true,
-    tone: "shield",
-  },
-  {
-    name: "PROVIN PDF history and risk report is not included",
+    name: "Does not include the full PROVIN PDF history and risk report",
     included: false,
     tone: "info",
   },
+  { name: "Supplement to standard history reports", included: true },
 ];
 
 const DEALER_BRANDS_HEADING_LV = "Atbalstītie ražotāji";
