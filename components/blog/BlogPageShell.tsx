@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
+import productHeroStyles from "@/app/[locale]/demo/page.module.css";
+import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 
-/** Gandrīz balta bloga lasīšanas virsma (bez tumšā home canvas). */
+/** Tumšā bloga virsma — tā pati home/pakalpojumi canvas loģika. */
 export function BlogPageShell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-[100dvh] bg-[#f7f8fa] text-[#1d1d1f]">
-      <div className="flex min-h-0 min-w-0 flex-col bg-[#f7f8fa]">{children}</div>
+    <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
+      <div className="demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">{children}</div>
     </div>
   );
 }

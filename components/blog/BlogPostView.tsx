@@ -16,30 +16,30 @@ export async function BlogPostView({ post, locale }: Props) {
   const { content, usingFallback } = resolveBlogLocale(post, locale);
 
   return (
-    <article className="relative scroll-mt-16 px-4 pb-16 pt-10 sm:pb-20 sm:pt-12">
-      <div className="relative mx-auto w-full max-w-[min(100%,80rem)] px-1 sm:px-2">
+    <article className="home-body-ink relative scroll-mt-16 bg-transparent px-4 pb-16 pt-10 sm:pb-20 sm:pt-12">
+      <div className="demo-design-dir__shell relative mx-auto w-full max-w-[min(100%,80rem)] px-1 sm:px-2">
         <p className="mx-auto max-w-[min(42.5rem,calc(100vw-2rem))]">
           <Link
             href="/blogs"
-            className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6b7280] no-underline transition hover:text-provin-accent"
+            className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45 no-underline transition hover:text-provin-accent"
           >
             {t("backToList")}
           </Link>
         </p>
 
         <header className="mx-auto mt-6 max-w-[min(42.5rem,calc(100vw-2rem))] text-center sm:mt-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
             <span>{post.category}</span>
-            <span className="mx-2 text-[#d1d5db]">·</span>
+            <span className="mx-2 text-white/20">·</span>
             <time dateTime={post.publishedAt}>{formatPostDate(post.publishedAt, locale)}</time>
           </p>
-          <h1 className="mt-3 text-balance text-[1.55rem] font-semibold tracking-tight text-[#111827] sm:text-[2rem] lg:text-[2.25rem]">
+          <h1 className="mt-3 text-balance text-[1.55rem] font-semibold tracking-tight text-white/[0.96] sm:text-[2rem] lg:text-[2.25rem]">
             {content.title}
           </h1>
           <div className="mx-auto mt-4 w-full max-w-[min(100%,28rem)]">
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
-          {usingFallback ? <p className="mt-4 text-sm text-[#6b7280]">{t("lvOnlyNote")}</p> : null}
+          {usingFallback ? <p className="mt-4 text-sm text-white/45">{t("lvOnlyNote")}</p> : null}
         </header>
 
         <div className="mt-10 sm:mt-12">
@@ -51,7 +51,7 @@ export async function BlogPostView({ post, locale }: Props) {
             {post.tags.map((tag) => (
               <li
                 key={tag}
-                className="border border-black/10 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6b7280]"
+                className="border border-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45"
               >
                 {tag}
               </li>

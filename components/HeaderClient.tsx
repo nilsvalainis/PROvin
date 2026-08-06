@@ -43,11 +43,10 @@ export function HeaderClient() {
   const isDemoPath = pathname.includes("/demo");
   const isAzvinDemo = pathname.includes("/demo/azvin");
   /**
-   * Tumšais headeris — sākums / pakalpojumi / Par mums / SELECT / azvin.
-   * Blogs ir gandrīz balta lasīšanas virsma → gaišais chrome (bet tā pati full-bleed izvēlne).
+   * Tumšais headeris — sākums / pakalpojumi / Par mums / blogs (arī `/blogs/[slug]`) / SELECT / azvin.
    */
   const isDarkHeaderSurface =
-    isHome || isProvinSelectPieteikums || isAzvinDemo || isPakalpojumi || isParMums;
+    isHome || isProvinSelectPieteikums || isAzvinDemo || isPakalpojumi || isParMums || isBlogs;
   const isDemoGraphiteHeader = isDemoPath && !isAzvinDemo;
   const headerChromeDark = isDarkHeaderSurface || isDemoGraphiteHeader;
 
