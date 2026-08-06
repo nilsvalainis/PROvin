@@ -12,7 +12,11 @@ import {
   type Tp5MobileFeature,
   type Tp5MobileServiceId,
 } from "@/lib/test-pricing-5-mobile";
-import { TP5_AUDITS_SAMPLE_REPORT_HREF, getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
+import {
+  TP5_AUDITS_SAMPLE_REPORT_HREF,
+  TP5_DEALER_SAMPLE_REPORT_HREF,
+  getTp5UiCopy,
+} from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import { Tp5TurnaroundInfoTip } from "@/components/test-pricing-5/Tp5TurnaroundInfoTip";
@@ -52,16 +56,35 @@ function SampleReportPdfIcon() {
   );
 }
 
-function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
+function MobileFeatureRow({
+  feature,
+  isDealer,
+}: {
+  feature: Tp5MobileFeature;
+  isDealer: boolean;
+}) {
+  const checkClass = isDealer ? "text-emerald-400" : "text-[#2563EB]";
+
+  if (feature.tone === "info") {
+    return (
+      <li className={styles.featureRow}>
+        <span className={`${FEATURE_MARK_CLASS} text-slate-400/80`} aria-hidden>
+          ℹ
+        </span>
+        <span className={styles.featureLabelInfo}>{feature.name}</span>
+      </li>
+    );
+  }
+
   if (feature.included) {
     const isGuarantee = feature.tone === "guarantee";
     return (
       <li className={styles.featureRow}>
         <span
-          className={`${FEATURE_MARK_CLASS} ${isGuarantee ? "text-emerald-400" : "text-[#2563EB]"}`}
+          className={`${FEATURE_MARK_CLASS} ${isGuarantee ? "text-emerald-400" : checkClass}`}
           aria-hidden
         >
-          ✓
+          {isGuarantee ? "🛡️" : "✓"}
         </span>
         <span className={isGuarantee ? styles.featureLabelGuarantee : styles.featureLabelActive}>
           {feature.name}
@@ -133,7 +156,13 @@ export function Tp5MobilePricingCard({
   const services = getTp5MobileServices(locale);
   const activeService = getTp5MobileService(activeServiceId, locale);
   const isDealer = activeServiceId === "dealer";
+  const isAudits = activeServiceId === "audits";
   const turnaroundLabel = activeService.turnaround ?? getTp5MobileTurnaround(locale);
+  const sampleReportHref = isDealer
+    ? TP5_DEALER_SAMPLE_REPORT_HREF
+    : isAudits
+      ? TP5_AUDITS_SAMPLE_REPORT_HREF
+      : null;
   const metaTitle =
     activeServiceId === "dealer"
       ? locale === "en"
@@ -142,7 +171,10 @@ export function Tp5MobilePricingCard({
       : activeService.title;
 
   return (
-    <article className={`${styles.spatialCard} w-full`}>
+    <article
+      className={`${styles.spatialCard} w-full`}
+      data-active-tier={activeServiceId}
+    >
       <div className={styles.cardHeader}>
         <LayoutGroup id={tabLayoutGroupId}>
           <div className={styles.tierSwitcher} role="tablist" aria-label={uiCopy.packageTabsAria}>
@@ -191,7 +223,11 @@ export function Tp5MobilePricingCard({
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
           <ul className={styles.featureList}>
             {activeService.features.map((feature) => (
-              <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
+              <MobileFeatureRow
+                key={`${activeServiceId}-${feature.name}`}
+                feature={feature}
+                isDealer={isDealer}
+              />
             ))}
           </ul>
         </div>
@@ -252,14 +288,17 @@ export function Tp5MobilePricingCard({
       </p>
 
       <div className={styles.ctaWrap}>
+        {isDealer ? (
+          <p className={styles.dealerRefundBanner}>{uiCopy.dealerRefundBanner}</p>
+        ) : null}
         {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
         <button type="button" className={styles.liquidCta} onClick={onSubmit} disabled={loading}>
           <span className={styles.liquidCtaShimmer} aria-hidden />
           <span className={styles.liquidCtaLabel}>{activeService.buttonText}</span>
         </button>
-        {activeServiceId === "audits" ? (
+        {sampleReportHref ? (
           <a
-            href={TP5_AUDITS_SAMPLE_REPORT_HREF}
+            href={sampleReportHref}
             target="_blank"
             rel="noopener noreferrer"
             className={styles.sampleReportLink}

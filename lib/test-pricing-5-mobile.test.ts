@@ -9,6 +9,7 @@ import {
   TP5_MOBILE_SERVICES,
   TP5_MOBILE_SERVICE_ORDER,
 } from "@/lib/test-pricing-5-mobile";
+import { TP5_DEALER_SAMPLE_REPORT_HREF } from "@/lib/test-pricing-5-ui-copy";
 import { getTestPricingPlan } from "@/lib/test-pricing-plans";
 
 const SHARED_COMPARE_ROWS_LV = [
@@ -17,6 +18,14 @@ const SHARED_COMPARE_ROWS_LV = [
   "Sludinājuma, pārdevēja un tehnisko risku analīze",
   "CarVertical + AutoDNA + EU reģistru pārbaude",
   "Oficiālo dīleru un izsoļu portālu arhīva dati*",
+];
+
+const DEALER_ROWS_LV = [
+  "Oficiālā servisa un apkopju vēsture",
+  "Odometera rādījumu un kampaņu ieraksti",
+  "Vispārējs komentārs par vēsturi",
+  "Neietver pilno PROVIN PDF vēstures un risku atskaiti",
+  "100% Naudas atmaksa, ja dīlera dati datubāzēs nav pieejami",
 ];
 
 describe("test-pricing-5 mobile three-tier model", () => {
@@ -50,25 +59,19 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(mini.features.some((f) => f.name.includes("CSDD"))).toBe(false);
   });
 
-  it("maps dealer to data rows, guarantee, soft scope notes and brands-only tip data", () => {
+  it("maps dealer to five rows, info note, guarantee and brands-only tip data", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.description).toContain("oficiālo dīleru");
     expect(dealer.description).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
-    expect(dealer.features.map((f) => f.name)).toEqual([
-      "Servisa un apkopju vēsture",
-      "Odometra rādījumi un kopsavilkums",
-      "100% naudas atmaksa (ja dati nav pieejami)",
-      "Bez PROVIN PDF vēstures audita",
-      "Bez individuālas konsultācijas",
-    ]);
-    expect(dealer.features[2]?.tone).toBe("guarantee");
-    expect(dealer.features[3]?.tone).toBe("soft");
-    expect(dealer.features[4]?.tone).toBe("soft");
+    expect(dealer.features.map((f) => f.name)).toEqual(DEALER_ROWS_LV);
+    expect(dealer.features[3]?.tone).toBe("info");
+    expect(dealer.features[4]?.tone).toBe("guarantee");
     expect(dealer.extraNote).toContain("2009");
     expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
     expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-48h");
     expect(dealer.footnote).toBeUndefined();
+    expect(TP5_DEALER_SAMPLE_REPORT_HREF).toBe("/samples/provin-dilera-dati-piemers.pdf");
   });
 
   it("keeps the English tier copy structurally identical to Latvian", () => {

@@ -42,10 +42,15 @@ export type Tp5UiCopy = {
   dealerBrandsAria: string;
   /** Close button label for brands dialog. */
   dealerBrandsClose: string;
+  /** Refund guarantee banner above dealer CTA. */
+  dealerRefundBanner: string;
 };
 
 /** Publiskais PROVIN AUDITS atskaites piemērs (`public/samples/…`). */
 export const TP5_AUDITS_SAMPLE_REPORT_HREF = "/samples/provin-audits-piemers.pdf";
+
+/** Publiskais DĪLERA DATI atskaites piemērs (`public/samples/…`). */
+export const TP5_DEALER_SAMPLE_REPORT_HREF = "/samples/provin-dilera-dati-piemers.pdf";
 
 /** Tālrunis tipā / tel: — LV lokālais numurs bez +371. */
 export const TP5_TURNAROUND_INFO_PHONE_LOCAL = "29502039";
@@ -73,6 +78,8 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   dealerBrandsTrigger: "Atbalstītie ražotāji",
   dealerBrandsAria: "Atbalstītie ražotāji",
   dealerBrandsClose: "Aizvērt",
+  dealerRefundBanner:
+    "🛡️ 100% Naudas atmaksas garantija: Ja dīleru datubāzēs informācija netiks atrasta, veiksim pilnu naudas atmaksu.",
 };
 
 const TP5_UI_COPY_EN: Tp5UiCopy = {
@@ -97,6 +104,8 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   dealerBrandsTrigger: "Supported manufacturers",
   dealerBrandsAria: "Supported manufacturers",
   dealerBrandsClose: "Close",
+  dealerRefundBanner:
+    "🛡️ 100% refund guarantee: If no information is found in dealer databases, we will issue a full refund.",
 };
 
 export function getTp5UiCopy(locale?: string): Tp5UiCopy {

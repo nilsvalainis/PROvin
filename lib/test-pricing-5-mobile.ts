@@ -1,6 +1,6 @@
 import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
 
-export type Tp5FeatureTone = "default" | "soft" | "guarantee";
+export type Tp5FeatureTone = "default" | "soft" | "guarantee" | "info";
 
 export type Tp5MobileFeature = {
   name: string;
@@ -88,27 +88,35 @@ const MINI_FEATURES_EN: Tp5MobileFeature[] = [
 ];
 
 const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
-  { name: "Servisa un apkopju vēsture", included: true },
-  { name: "Odometra rādījumi un kopsavilkums", included: true },
+  { name: "Oficiālā servisa un apkopju vēsture", included: true },
+  { name: "Odometera rādījumu un kampaņu ieraksti", included: true },
+  { name: "Vispārējs komentārs par vēsturi", included: true },
   {
-    name: "100% naudas atmaksa (ja dati nav pieejami)",
+    name: "Neietver pilno PROVIN PDF vēstures un risku atskaiti",
+    included: false,
+    tone: "info",
+  },
+  {
+    name: "100% Naudas atmaksa, ja dīlera dati datubāzēs nav pieejami",
     included: true,
     tone: "guarantee",
   },
-  { name: "Bez PROVIN PDF vēstures audita", included: false, tone: "soft" },
-  { name: "Bez individuālas konsultācijas", included: false, tone: "soft" },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
-  { name: "Service and maintenance history", included: true },
-  { name: "Odometer readings and summary", included: true },
+  { name: "Official service and maintenance history", included: true },
+  { name: "Odometer readings and campaign records", included: true },
+  { name: "General comment on the history", included: true },
   {
-    name: "100% refund (if no data is available)",
+    name: "Does not include the full PROVIN PDF history and risk report",
+    included: false,
+    tone: "info",
+  },
+  {
+    name: "100% refund if dealer data is unavailable in the databases",
     included: true,
     tone: "guarantee",
   },
-  { name: "Without a PROVIN PDF history audit", included: false, tone: "soft" },
-  { name: "Without personal consultation", included: false, tone: "soft" },
 ];
 
 const DEALER_BRANDS_HEADING_LV = "Atbalstītie ražotāji";

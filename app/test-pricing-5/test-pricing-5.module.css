@@ -264,9 +264,6 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  /* Fixed slot = 5 checklist rows across all tiers. */
-  height: calc(5 * (1.65rem + 0.28rem));
-  min-height: calc(5 * (1.65rem + 0.28rem));
   padding: 0.45rem 0.65rem 0.5rem;
   border-radius: 14px;
   background: rgb(37 99 235 / 0.06);
@@ -275,6 +272,11 @@
   backdrop-filter: blur(4px);
   transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: visible;
+}
+
+.liquidAccent[data-tier="dealer"] {
+  background: rgb(16 185 129 / 0.08);
+  box-shadow: inset 0 0 24px rgb(16 185 129 / 0.08);
 }
 
 .inactiveGroup {
@@ -354,6 +356,13 @@
 .featureLabelSoft {
   color: rgb(210 214 222 / 0.55);
   font-weight: 450;
+}
+
+.featureLabelInfo {
+  color: rgb(148 163 184 / 0.92);
+  font-weight: 450;
+  font-size: 0.74rem;
+  line-height: 1.32;
 }
 
 .featureLabelMuted {
@@ -745,6 +754,19 @@
   margin-top: 0.7rem;
 }
 
+.dealerRefundBanner {
+  margin: 0 0 0.65rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid rgb(16 185 129 / 0.3);
+  border-radius: 0.625rem;
+  background: rgb(2 44 34 / 0.3);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: rgb(167 243 208 / 0.95);
+  text-align: center;
+}
+
 .ctaWrap .featureFootnote {
   margin: 0.55rem 0 0;
   text-align: center;
@@ -847,6 +869,30 @@
   justify-content: center;
   text-align: center;
   text-decoration: none;
+}
+
+.spatialCard[data-active-tier="dealer"] .tierTabPill {
+  border-color: rgb(16 185 129 / 0.35);
+  background: linear-gradient(180deg, #10b981 0%, #0d9488 100%);
+  box-shadow: 0 10px 24px -12px rgb(16 185 129 / 0.45);
+}
+
+.spatialCard[data-active-tier="dealer"] .tierMetaTitle {
+  color: rgb(52 211 153 / 0.95);
+}
+
+.spatialCard[data-active-tier="dealer"] .liquidCta {
+  border-color: rgb(16 185 129 / 0.35);
+  background: linear-gradient(180deg, #10b981 0%, #0d9488 100%);
+  box-shadow: 0 10px 24px -12px rgb(16 185 129 / 0.45);
+}
+
+.spatialCard[data-active-tier="dealer"] .dealerBrandsTrigger {
+  color: rgb(110 231 183 / 0.95);
+}
+
+.spatialCard[data-active-tier="dealer"] .dealerBrandsTriggerInfo {
+  border-color: rgb(110 231 183 / 0.55);
 }
 
 @keyframes tp5Shimmer {
@@ -1075,11 +1121,6 @@
     line-height: 1.32;
   }
 
-  .liquidAccent {
-    height: calc(5 * (1.85rem + 0.36rem));
-    min-height: calc(5 * (1.85rem + 0.36rem));
-  }
-
   .turnaround {
     margin: 0.65rem 0 0;
     font-size: 0.75rem;
@@ -1211,6 +1252,20 @@ html[data-site-theme="light"] .spatialCard {
 
 html[data-site-theme="light"] .liquidAccent {
   background: rgb(37 99 235 / 0.06);
+}
+
+html[data-site-theme="light"] .liquidAccent[data-tier="dealer"] {
+  background: rgb(16 185 129 / 0.08);
+}
+
+html[data-site-theme="light"] .featureLabelInfo {
+  color: rgb(100 116 139 / 0.95);
+}
+
+html[data-site-theme="light"] .dealerRefundBanner {
+  border-color: rgb(16 185 129 / 0.35);
+  background: rgb(236 253 245 / 0.85);
+  color: #047857;
 }
 
 html[data-site-theme="light"] .featureLabelActive {
