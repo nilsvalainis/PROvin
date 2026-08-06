@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useLocale } from "next-intl";
 import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import { SampleReportPreview } from "@/components/home/SampleReportPreview";
 import { Link } from "@/i18n/navigation";
 import { homeContentMaxClass, homeDarkProvinWordmarkOptions } from "@/lib/home-layout";
 import {
@@ -25,7 +26,6 @@ import { homeHeroCheckoutHref } from "@/lib/home-hero-plan";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import type { Tp5MobileServiceId } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
-import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 
 const BADGE_CLASS =
   "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-400 sm:h-10 sm:w-10";
@@ -109,14 +109,14 @@ export function HomeFeatureBreakdown({
           id="home-feature-breakdown-heading"
           className={
             showHeading
-              ? "mb-6 text-balance text-2xl font-bold tracking-tight text-zinc-100 sm:mb-8 sm:text-3xl"
+              ? "mb-8 text-balance text-2xl font-bold tracking-tight text-zinc-100 sm:mb-10 sm:text-3xl"
               : "sr-only"
           }
         >
           {uiCopy.catalogHeading}
         </h2>
 
-        <div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 md:gap-6 lg:gap-8">
+        <div className="flex flex-col">
           {packages.map((pkg) => {
             const checkoutHref = homeHeroCheckoutHref(pkg.id as Tp5MobileServiceId);
 
@@ -124,58 +124,60 @@ export function HomeFeatureBreakdown({
               <article
                 key={pkg.id}
                 id={`pakalpojums-${pkg.id}`}
-                className={`${tp5Styles.featureBreakdownCard} flex min-w-0 flex-col`}
+                className="border-b border-white/[0.08] py-8 first:pt-0 last:border-b-0 sm:py-10 lg:py-12"
               >
-                <header className="min-w-0 lg:min-h-[120px]">
-                  <h3 className="text-balance text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl">
-                    {renderProvinText(pkg.title, homeDarkProvinWordmarkOptions)}
-                  </h3>
-                  <p className="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-gray-500">
-                    {uiCopy.goalLabel}
-                  </p>
-                  <p className="mt-1.5 text-balance text-[0.8125rem] font-medium leading-[1.55] text-zinc-200 sm:text-[0.875rem] sm:leading-[1.6]">
-                    {renderProvinText(pkg.goal, homeDarkProvinWordmarkOptions)}
-                  </p>
-                </header>
-
-                <ul className="mt-6 flex min-w-0 flex-1 flex-col gap-4 sm:mt-7 sm:gap-5">
-                  {pkg.items.map((item) => (
-                    <li
-                      key={item.title}
-                      className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-1.5 sm:gap-x-3.5 sm:gap-y-2"
-                    >
-                      <span className={`${BADGE_CLASS} row-span-2`}>
-                        <FeatureBadgeIcon icon={item.icon} />
-                      </span>
-                      <p className="col-start-2 row-start-1 min-w-0 text-[0.8125rem] font-bold leading-snug text-zinc-100 sm:text-[0.875rem]">
-                        {renderProvinText(item.title, homeDarkProvinWordmarkOptions)}
+                <div className="grid min-w-0 grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(17.5rem,22.5rem)] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:gap-12">
+                  <div className="min-w-0">
+                    <header className="min-w-0">
+                      <h3 className="text-balance text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl">
+                        {renderProvinText(pkg.title, homeDarkProvinWordmarkOptions)}
+                      </h3>
+                      <p className="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-gray-500">
+                        {uiCopy.goalLabel}
                       </p>
-                      <p className="col-start-2 row-start-2 min-w-0 text-[0.8125rem] font-normal leading-[1.55] text-gray-400 sm:text-[0.875rem] sm:leading-[1.6]">
-                        {renderProvinText(item.description, homeDarkProvinWordmarkOptions)}
+                      <p className="mt-1.5 text-balance text-[0.8125rem] font-medium leading-[1.55] text-zinc-200 sm:text-[0.875rem] sm:leading-[1.6]">
+                        {renderProvinText(pkg.goal, homeDarkProvinWordmarkOptions)}
                       </p>
-                    </li>
-                  ))}
-                </ul>
+                    </header>
 
-                <div className={`${tp5Styles.ctaWrap} mt-auto pt-8 sm:pt-10`}>
-                  <Link href={checkoutHref} className={tp5Styles.liquidCtaLink}>
-                    <span className={tp5Styles.liquidCtaShimmer} aria-hidden />
-                    <span className={tp5Styles.liquidCtaLabel}>{pkg.buttonText}</span>
-                  </Link>
-                  {pkg.sampleReportHref ? (
-                    <a
+                    <ul className="mt-6 flex min-w-0 flex-col gap-4 sm:mt-7 sm:gap-5">
+                      {pkg.items.map((item) => (
+                        <li
+                          key={item.title}
+                          className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-1.5 sm:gap-x-3.5 sm:gap-y-2"
+                        >
+                          <span className={`${BADGE_CLASS} row-span-2`}>
+                            <FeatureBadgeIcon icon={item.icon} />
+                          </span>
+                          <p className="col-start-2 row-start-1 min-w-0 text-[0.8125rem] font-bold leading-snug text-zinc-100 sm:text-[0.875rem]">
+                            {renderProvinText(item.title, homeDarkProvinWordmarkOptions)}
+                          </p>
+                          <p className="col-start-2 row-start-2 min-w-0 text-[0.8125rem] font-normal leading-[1.55] text-gray-400 sm:text-[0.875rem] sm:leading-[1.6]">
+                            {renderProvinText(item.description, homeDarkProvinWordmarkOptions)}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className={`${tp5Styles.ctaWrap} mt-7 sm:mt-8`}>
+                      <Link href={checkoutHref} className={tp5Styles.liquidCtaLink}>
+                        <span className={tp5Styles.liquidCtaShimmer} aria-hidden />
+                        <span className={tp5Styles.liquidCtaLabel}>{pkg.buttonText}</span>
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="min-w-0 lg:sticky lg:top-20">
+                    <SampleReportPreview
                       href={pkg.sampleReportHref}
-                      className={tp5Styles.sampleReportLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        recordSampleReportClick();
-                      }}
-                    >
-                      <span aria-hidden>📄 </span>
-                      {uiCopy.sampleReportLink}
-                    </a>
-                  ) : null}
+                      title={pkg.title}
+                      previewLabel={uiCopy.sampleReportPreviewLabel}
+                      enlargeLabel={uiCopy.sampleReportEnlarge}
+                      closeLabel={uiCopy.sampleReportClose}
+                      openPdfLabel={uiCopy.sampleReportLink}
+                      comingSoonLabel={uiCopy.sampleReportComingSoon}
+                    />
+                  </div>
                 </div>
               </article>
             );

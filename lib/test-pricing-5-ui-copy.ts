@@ -28,6 +28,14 @@ export type Tp5UiCopy = {
   goalLabel: string;
   /** Secondary text link under AUDITS CTA — opens sample PDF. */
   sampleReportLink: string;
+  /** Catalog PDF preview chrome label. */
+  sampleReportPreviewLabel: string;
+  /** Catalog PDF preview enlarge control. */
+  sampleReportEnlarge: string;
+  /** Catalog PDF lightbox close. */
+  sampleReportClose: string;
+  /** Placeholder when a package has no sample PDF yet. */
+  sampleReportComingSoon: string;
   /** Secondary CTA inline on the turnaround bar (before the info icon). */
   turnaroundUrgencyCta: string;
   /** Aria / title for the turnaround info tip control. */
@@ -76,6 +84,10 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   catalogHeading: "Pakalpojumi",
   goalLabel: "MĒRĶIS",
   sampleReportLink: "Skatīt atskaites piemēru (PDF)",
+  sampleReportPreviewLabel: "Atskaites piemērs",
+  sampleReportEnlarge: "Pietuvināt",
+  sampleReportClose: "Aizvērt",
+  sampleReportComingSoon: "Atskaites piemērs drīzumā",
   turnaroundUrgencyCta: "Vajag ātrāk (1-2h)?",
   turnaroundInfoAria: "Vairāk par steidzamu izpildi",
   turnaroundInfoTitle: "Vajag atskaiti steidzami?",
@@ -103,6 +115,10 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   catalogHeading: "Services",
   goalLabel: "Purpose",
   sampleReportLink: "View sample report (PDF)",
+  sampleReportPreviewLabel: "Sample report",
+  sampleReportEnlarge: "Enlarge",
+  sampleReportClose: "Close",
+  sampleReportComingSoon: "Sample report coming soon",
   turnaroundUrgencyCta: "Need it faster (1–2h)?",
   turnaroundInfoAria: "More about urgent delivery",
   turnaroundInfoTitle: "Need a report urgently?",
