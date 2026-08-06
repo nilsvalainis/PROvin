@@ -15,7 +15,25 @@ type Props = {
   comingSoonLabel: string;
 };
 
-/** Renders PDF page 1 as a static, non-interactive bitmap (no zoom/scroll). */
+/** lg breakpoint — desktop keeps the original scrollable iframe preview. */
+const DESKTOP_MQ = "(min-width: 1024px)";
+
+/** Defaults to desktop so web never flashes the static mobile canvas. */
+function useIsDesktopPreview() {
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    const mq = window.matchMedia(DESKTOP_MQ);
+    const apply = () => setIsDesktop(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  return isDesktop;
+}
+
+/** Mobile-only: PDF page 1 as a static, non-interactive bitmap (no zoom/scroll). */
 function StaticFirstPagePreview({ href, title, previewLabel }: { href: string; title: string; previewLabel: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [failed, setFailed] = useState(false);
@@ -42,7 +60,6 @@ function StaticFirstPagePreview({ href, title, previewLabel }: { href: string; t
         const cssWidth = Math.max(200, Math.floor((parent?.clientWidth ?? 320) - padX));
         const cssHeight = Math.max(180, Math.floor((parent?.clientHeight ?? 360) - padY));
         const unscaled = page.getViewport({ scale: 1 });
-        /** Fit entire first page inside the frame (contain) — avoids default “zoomed crop”. */
         const scale = Math.min(cssWidth / unscaled.width, cssHeight / unscaled.height);
         const viewport = page.getViewport({ scale });
 
@@ -70,7 +87,6 @@ function StaticFirstPagePreview({ href, title, previewLabel }: { href: string; t
   }, [href]);
 
   if (failed) {
-    /* Fallback: embed first page, interaction blocked by parent overlay. */
     return (
       <iframe
         title={`${title} — ${previewLabel}`}
@@ -92,7 +108,10 @@ function StaticFirstPagePreview({ href, title, previewLabel }: { href: string; t
   );
 }
 
-/** Inline: static first-page fit, no scroll. Lightbox (Pietuvināt): full scrollable PDF. */
+/**
+ * Desktop/web: original scrollable PDF iframe in the pane.
+ * Mobile: static first-page fit; scroll only after „Pietuvināt” lightbox.
+ */
 export function SampleReportPreview({
   href,
   title,
@@ -104,6 +123,7 @@ export function SampleReportPreview({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const isDesktop = useIsDesktopPreview();
   const titleId = useId();
   const dialogTitleId = useId();
 
@@ -131,6 +151,8 @@ export function SampleReportPreview({
     setOpen(true);
   };
 
+  /** Desktop inline preview — same as before the mobile-only change. */
+  const desktopPaneSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
   const lightboxSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
 
   return (
@@ -157,25 +179,41 @@ export function SampleReportPreview({
           ) : null}
         </div>
 
-        <div className="relative h-[min(24rem,52vh)] w-full overflow-hidden overscroll-none bg-zinc-950 sm:h-[min(30rem,56vh)] lg:h-[36rem]">
-          {href ? (
-            <>
-              <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-2 sm:p-3">
-                <StaticFirstPagePreview href={href} title={title} previewLabel={previewLabel} />
-              </div>
-              {/* Block pan/zoom/scroll until Pietuvināt. */}
-              <div
-                className="absolute inset-0 z-[1] touch-none select-none"
-                aria-hidden
-                onWheel={(e) => e.preventDefault()}
+        {isDesktop ? (
+          <div className="relative h-[min(28rem,55vh)] w-full bg-zinc-950 sm:h-[min(32rem,58vh)] lg:h-[36rem]">
+            {desktopPaneSrc ? (
+              <iframe
+                title={`${title} — ${previewLabel}`}
+                src={desktopPaneSrc}
+                className="absolute inset-0 h-full w-full border-0 bg-zinc-950"
+                loading="lazy"
               />
-            </>
-          ) : (
-            <div className="flex h-full items-center justify-center px-6 text-center">
-              <p className="text-sm font-medium text-zinc-500">{comingSoonLabel}</p>
-            </div>
-          )}
-        </div>
+            ) : (
+              <div className="flex h-full items-center justify-center px-6 text-center">
+                <p className="text-sm font-medium text-zinc-500">{comingSoonLabel}</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="relative h-[min(24rem,52vh)] w-full overflow-hidden overscroll-none bg-zinc-950 sm:h-[min(30rem,56vh)]">
+            {href ? (
+              <>
+                <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-2 sm:p-3">
+                  <StaticFirstPagePreview href={href} title={title} previewLabel={previewLabel} />
+                </div>
+                <div
+                  className="absolute inset-0 z-[1] touch-none select-none"
+                  aria-hidden
+                  onWheel={(e) => e.preventDefault()}
+                />
+              </>
+            ) : (
+              <div className="flex h-full items-center justify-center px-6 text-center">
+                <p className="text-sm font-medium text-zinc-500">{comingSoonLabel}</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {mounted && open && lightboxSrc
