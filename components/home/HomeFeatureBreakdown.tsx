@@ -117,16 +117,13 @@ export function HomeFeatureBreakdown({
           {uiCopy.catalogHeading}
         </h2>
 
-        <nav
-          aria-label={uiCopy.catalogNavAria}
-          className="mb-8 sm:mb-10"
-        >
-          <ul className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+        <nav aria-label={uiCopy.catalogNavAria} className="mb-8 sm:mb-10">
+          <ul className="flex flex-wrap items-stretch justify-center gap-x-0 border-b border-white/[0.1]">
             {packages.map((pkg) => (
-              <li key={`nav-${pkg.id}`}>
+              <li key={`nav-${pkg.id}`} className="min-w-0">
                 <a
                   href={`#${catalogPackageAnchorId(pkg.id)}`}
-                  className="inline-flex max-w-full items-center justify-center rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-2 text-center text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-zinc-100 transition hover:border-white/30 hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]/45 sm:px-4 sm:text-[0.75rem]"
+                  className="-mb-px inline-flex max-w-full items-center justify-center border-b-2 border-transparent px-2.5 pb-3 pt-1 text-center text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-zinc-400 transition-colors hover:border-[#60a5fa] hover:text-zinc-100 focus-visible:border-[#60a5fa] focus-visible:text-zinc-100 focus-visible:outline-none sm:px-3.5 sm:text-[0.75rem]"
                 >
                   {renderProvinText(pkg.title, homeDarkProvinWordmarkOptions)}
                 </a>
