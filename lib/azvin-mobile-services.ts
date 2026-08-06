@@ -75,7 +75,7 @@ const DEALER_FEATURES_RU: AzvinMobileFeature[] = [
 ];
 
 const KOREA_FEATURES_EN: AzvinMobileFeature[] = [
-  { name: "Korea & USA history report*", included: true },
+  { name: "Korea & USA history report", included: true },
   { name: "Odometer and mileage records", included: true },
   { name: "Auction portal archive (Copart, IAAI, etc.)", included: true },
   { name: "Damage, accident and salvage records", included: true },
@@ -84,7 +84,7 @@ const KOREA_FEATURES_EN: AzvinMobileFeature[] = [
 ];
 
 const KOREA_FEATURES_AZ: AzvinMobileFeature[] = [
-  { name: "Koreya və ABŞ tarix hesabatı*", included: true },
+  { name: "Koreya və ABŞ tarix hesabatı", included: true },
   { name: "Odometr və yürüş qeydləri", included: true },
   { name: "Hərrac portalı arxivi (Copart, IAAI və s.)", included: true },
   { name: "Zədələnmə, qəza və salvage qeydləri", included: true },
@@ -93,7 +93,7 @@ const KOREA_FEATURES_AZ: AzvinMobileFeature[] = [
 ];
 
 const KOREA_FEATURES_RU: AzvinMobileFeature[] = [
-  { name: "Отчёт истории Корея и США*", included: true },
+  { name: "Отчёт истории Корея и США", included: true },
   { name: "Записи одометра и пробега", included: true },
   { name: "Архив аукционов (Copart, IAAI и др.)", included: true },
   { name: "Повреждения, аварии и salvage-записи", included: true },
@@ -102,25 +102,13 @@ const KOREA_FEATURES_RU: AzvinMobileFeature[] = [
 ];
 
 const KOREA_FEATURES_LV: AzvinMobileFeature[] = [
-  { name: "Korejas un ASV vēstures atskaite*", included: true },
+  { name: "Korejas un ASV vēstures atskaite", included: true },
   { name: "Nobraukuma un odometra ieraksti", included: true },
   { name: "Izsoļu portālu arhīvs (Copart, IAAI u.c.)", included: true },
   { name: "Bojājumu, avāriju un salvage ieraksti", included: true },
   { name: "Title, zādzību un apgrūtinājumu pārbaude", included: true },
   { name: "Konsultācija", included: true },
 ];
-
-const KOREA_NOTE_EN =
-  "*To provide the most relevant data for Korea or the USA, the report may be replaced with another specialised paid report for that market.";
-
-const KOREA_NOTE_AZ =
-  "*Koreya və ya ABŞ bazarı üçün ən uyğun məlumatı təmin etmək üçün hesabat digər ixtisaslaşmış pullu hesabatla əvəz oluna bilər.";
-
-const KOREA_NOTE_RU =
-  "*Чтобы обеспечить наиболее релевантные данные для Кореи или США, отчёт может быть заменён другим специализированным платным отчётом для этого рынка.";
-
-const KOREA_NOTE_LV =
-  "*Lai nodrošinātu Korejai vai ASV atbilstošākos datus, atskaite var tikt aizstāta ar citu specializētu maksas atskaiti attiecīgajam tirgum.";
 
 const KOREA_REFUND_EN =
   "100% refund guarantee: If no data is available in Korea / USA databases, we will issue a full refund.";
@@ -208,7 +196,6 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         features: KOREA_FEATURES_EN,
         layout: "checklist",
         turnaround: "⏱️ Delivery: 24h",
-        extraNote: KOREA_NOTE_EN,
         showRefundBanner: true,
         refundBanner: KOREA_REFUND_EN,
       },
@@ -253,7 +240,6 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         features: KOREA_FEATURES_RU,
         layout: "checklist",
         turnaround: "⏱️ Срок: 24ч",
-        extraNote: KOREA_NOTE_RU,
         showRefundBanner: true,
         refundBanner: KOREA_REFUND_RU,
       },
@@ -298,7 +284,6 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         features: KOREA_FEATURES_LV,
         layout: "checklist",
         turnaround: "⏱️ Izpilde: 24h",
-        extraNote: KOREA_NOTE_LV,
         showRefundBanner: true,
         refundBanner: KOREA_REFUND_LV,
       },
@@ -343,7 +328,6 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
       features: KOREA_FEATURES_AZ,
       layout: "checklist",
       turnaround: "⏱️ Çatdırılma: 24 saat",
-      extraNote: KOREA_NOTE_AZ,
       showRefundBanner: true,
       refundBanner: KOREA_REFUND_AZ,
     },
