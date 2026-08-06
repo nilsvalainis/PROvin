@@ -379,46 +379,69 @@
 }
 
 .dealerInlineBrands {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.28rem;
   margin-top: 0.55rem;
-  padding-top: 0.15rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-.dealerInlineBrandRow {
+.dealerInlineBrandCell {
+  aspect-ratio: 1 / 1;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-
-.dealerInlineBrandBadge {
-  display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.625rem;
-  border-radius: 0.5rem;
-  border: 1px solid rgb(51 65 85 / 0.6);
-  background: rgb(15 23 42 / 0.6);
-  color: #cbd5e1;
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1.2;
-  letter-spacing: 0.01em;
-  cursor: default;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  justify-content: center;
+  min-width: 0;
+  padding: 0.15rem;
+  border-radius: 0.55rem;
+  background: transparent;
 }
 
-.dealerInlineBrandBadge:hover {
-  background: #2563eb;
-  border-color: #60a5fa;
-  color: #fff;
-  transform: translateY(-0.125rem);
-  box-shadow: 0 10px 18px -8px rgb(59 130 246 / 0.35);
+.dealerInlineBrandLogo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 2.05rem;
+  max-height: 2.05rem;
+  object-fit: contain;
+  object-position: center;
+  opacity: 0.94;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.28));
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    filter 0.2s ease;
+  user-select: none;
+  pointer-events: none;
+}
+
+.dealerInlineBrandLogoDarkPlate {
+  mix-blend-mode: lighten;
+  opacity: 0.98;
+}
+
+.dealerInlineBrandCell:hover .dealerInlineBrandLogo {
+  opacity: 1;
+  transform: translateY(-1px) scale(1.04);
+  filter: drop-shadow(0 4px 10px rgb(37 99 235 / 0.28));
+}
+
+html[data-site-theme="light"] .dealerInlineBrandLogo {
+  opacity: 0.9;
+  filter: drop-shadow(0 1px 2px rgb(15 23 42 / 0.12));
+}
+
+html[data-site-theme="light"] .dealerInlineBrandLogoDarkPlate {
+  mix-blend-mode: normal;
+  /* Soften solid black plates on light UI */
+  filter: drop-shadow(0 1px 2px rgb(15 23 42 / 0.12));
+  opacity: 0.92;
+}
+
+html[data-site-theme="light"] .dealerInlineBrandCell:hover .dealerInlineBrandLogo {
+  filter: drop-shadow(0 4px 10px rgb(37 99 235 / 0.22));
 }
 
 .featureLabelMuted {
@@ -1411,18 +1434,6 @@ html[data-site-theme="light"] .liquidAccent {
 
 html[data-site-theme="light"] .featureLabelInfo {
   color: rgb(100 116 139 / 0.95);
-}
-
-html[data-site-theme="light"] .dealerInlineBrandBadge {
-  border-color: rgb(148 163 184 / 0.45);
-  background: rgb(248 250 252 / 0.95);
-  color: #475569;
-}
-
-html[data-site-theme="light"] .dealerInlineBrandBadge:hover {
-  background: #2563eb;
-  border-color: #60a5fa;
-  color: #fff;
 }
 
 html[data-site-theme="light"] .featureBrandsInline {

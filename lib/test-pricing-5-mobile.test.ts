@@ -52,7 +52,7 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(mini.features.some((f) => f.name.includes("CSDD"))).toBe(false);
   });
 
-  it("maps dealer to one bullet plus three inline brand rows", () => {
+  it("maps dealer to one bullet plus a 4x4 brand logo grid", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.description).toContain("oficiālo dīleru");
@@ -61,9 +61,11 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(dealer.extraNote).toBeUndefined();
     expect(TP5_DEALER_BRAND_ROWS).toEqual([
       ["Mercedes-Benz", "Volvo", "Jaguar", "Land Rover"],
-      ["BMW", "MINI", "Audi", "Volkswagen", "Škoda", "SEAT"],
-      ["Peugeot", "Citroën", "Renault", "Dacia", "Opel", "Smart"],
+      ["BMW", "MINI", "Audi", "Volkswagen"],
+      ["Škoda", "SEAT", "Peugeot", "Citroën"],
+      ["Renault", "Dacia", "Opel", "Smart"],
     ]);
+    expect(TP5_DEALER_BRANDS).toHaveLength(16);
     expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
     expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-48h");
     expect(TP5_DEALER_SAMPLE_REPORT_HREF).toBe("/samples/provin-dilera-dati-piemers.pdf");

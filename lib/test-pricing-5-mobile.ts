@@ -32,15 +32,39 @@ export type Tp5MobileService = {
   footnote?: string;
 };
 
-/** Merged supported manufacturers — display order for inline badge rows. */
+/** Supported manufacturers in a fixed 4×4 display grid. */
 export const TP5_DEALER_BRAND_ROWS = [
   ["Mercedes-Benz", "Volvo", "Jaguar", "Land Rover"],
-  ["BMW", "MINI", "Audi", "Volkswagen", "Škoda", "SEAT"],
-  ["Peugeot", "Citroën", "Renault", "Dacia", "Opel", "Smart"],
+  ["BMW", "MINI", "Audi", "Volkswagen"],
+  ["Škoda", "SEAT", "Peugeot", "Citroën"],
+  ["Renault", "Dacia", "Opel", "Smart"],
 ] as const;
 
-/** Flat brand list (same set as badge rows). */
+/** Flat brand list (same set as grid). */
 export const TP5_DEALER_BRANDS = TP5_DEALER_BRAND_ROWS.flat();
+
+/** Public logo paths for dealer brand grid cells. */
+export const TP5_DEALER_BRAND_LOGO_SRC: Record<(typeof TP5_DEALER_BRANDS)[number], string> = {
+  "Mercedes-Benz": "/brand-logos/mercedes.svg",
+  Volvo: "/brand-logos/volvo.png",
+  Jaguar: "/brand-logos/jaguar.png",
+  "Land Rover": "/brand-logos/land-rover.png",
+  BMW: "/brand-logos/bmw.png",
+  MINI: "/brand-logos/mini.png",
+  Audi: "/brand-logos/audi.png",
+  Volkswagen: "/brand-logos/volkswagen.png",
+  Škoda: "/brand-logos/skoda.png",
+  SEAT: "/brand-logos/seat.png",
+  Peugeot: "/brand-logos/peugeot.png",
+  Citroën: "/brand-logos/citroen.png",
+  Renault: "/brand-logos/renault.png",
+  Dacia: "/brand-logos/dacia.png",
+  Opel: "/brand-logos/opel.png",
+  Smart: "/brand-logos/smart.png",
+};
+
+/** Brands whose PNG ships with a solid black plate — soften on dark UI. */
+export const TP5_DEALER_BRAND_DARK_PLATE = new Set<string>(["Dacia", "Smart"]);
 
 /** Card checklist row count for MINI/AUDITS compare stack. */
 export const TP5_MOBILE_FEATURE_ROW_COUNT = 5;

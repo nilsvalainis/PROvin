@@ -9,6 +9,8 @@ import {
   getTp5MobileService,
   getTp5MobileServices,
   getTp5MobileTurnaround,
+  TP5_DEALER_BRAND_DARK_PLATE,
+  TP5_DEALER_BRAND_LOGO_SRC,
   TP5_DEALER_BRAND_ROWS,
   type Tp5MobileFeature,
   type Tp5MobileServiceId,
@@ -100,15 +102,23 @@ function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
 function DealerBrandBadges() {
   return (
     <div className={styles.dealerInlineBrands} aria-label="Atbalstītie ražotāji">
-      {TP5_DEALER_BRAND_ROWS.map((row, rowIndex) => (
-        <div key={rowIndex} className={styles.dealerInlineBrandRow}>
-          {row.map((brand) => (
-            <span key={brand} className={styles.dealerInlineBrandBadge}>
-              {brand}
-            </span>
-          ))}
-        </div>
-      ))}
+      {TP5_DEALER_BRAND_ROWS.flat().map((brand) => {
+        const src = TP5_DEALER_BRAND_LOGO_SRC[brand];
+        const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
+        return (
+          <div key={brand} className={styles.dealerInlineBrandCell} title={brand}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              alt={brand}
+              className={`${styles.dealerInlineBrandLogo}${darkPlate ? ` ${styles.dealerInlineBrandLogoDarkPlate}` : ""}`}
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
