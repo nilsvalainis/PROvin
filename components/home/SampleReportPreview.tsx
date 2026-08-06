@@ -1,7 +1,7 @@
 "use client";
 
 import { Expand, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 
@@ -18,7 +18,7 @@ type Props = {
 /** lg breakpoint — desktop keeps the original scrollable iframe preview. */
 const DESKTOP_MQ = "(min-width: 1024px)";
 
-/** Defaults to desktop so web never flashes the static mobile canvas. */
+/** Defaults to desktop so web never flashes the mobile lock layer. */
 function useIsDesktopPreview() {
   const [isDesktop, setIsDesktop] = useState(true);
 
@@ -33,84 +33,9 @@ function useIsDesktopPreview() {
   return isDesktop;
 }
 
-/** Mobile-only: PDF page 1 as a static, non-interactive bitmap (no zoom/scroll). */
-function StaticFirstPagePreview({ href, title, previewLabel }: { href: string; title: string; previewLabel: string }) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    (async () => {
-      try {
-        const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-        const loadingTask = pdfjs.getDocument({ url: href, withCredentials: false });
-        const pdf = await loadingTask.promise;
-        if (cancelled) return;
-        const page = await pdf.getPage(1);
-        if (cancelled) return;
-
-        const parent = canvas.parentElement;
-        const cs = parent ? getComputedStyle(parent) : null;
-        const padX = cs ? parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) : 0;
-        const padY = cs ? parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) : 0;
-        const cssWidth = Math.max(200, Math.floor((parent?.clientWidth ?? 320) - padX));
-        const cssHeight = Math.max(180, Math.floor((parent?.clientHeight ?? 360) - padY));
-        const unscaled = page.getViewport({ scale: 1 });
-        const scale = Math.min(cssWidth / unscaled.width, cssHeight / unscaled.height);
-        const viewport = page.getViewport({ scale });
-
-        const outputScale = Math.min(window.devicePixelRatio || 1, 2);
-        canvas.width = Math.floor(viewport.width * outputScale);
-        canvas.height = Math.floor(viewport.height * outputScale);
-        canvas.style.width = `${Math.floor(viewport.width)}px`;
-        canvas.style.height = `${Math.floor(viewport.height)}px`;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          setFailed(true);
-          return;
-        }
-        const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : undefined;
-        await page.render({ canvasContext: ctx, viewport, transform }).promise;
-      } catch {
-        if (!cancelled) setFailed(true);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [href]);
-
-  if (failed) {
-    return (
-      <iframe
-        title={`${title} — ${previewLabel}`}
-        src={`${href}#page=1&view=FitH&toolbar=0&navpanes=0&scrollbar=0`}
-        className="pointer-events-none absolute inset-0 h-full w-full border-0 bg-zinc-950"
-        loading="lazy"
-        tabIndex={-1}
-        aria-hidden
-      />
-    );
-  }
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="pointer-events-none mx-auto block h-auto max-h-full w-auto max-w-full"
-      aria-hidden
-    />
-  );
-}
-
 /**
- * Desktop/web: original scrollable PDF iframe in the pane.
- * Mobile: static first-page fit; scroll only after „Pietuvināt” lightbox.
+ * Desktop/web: original scrollable PDF iframe.
+ * Mobile: native PDF iframe (clean original colors) locked — no pan/scroll until Pietuvināt.
  */
 export function SampleReportPreview({
   href,
@@ -151,8 +76,12 @@ export function SampleReportPreview({
     setOpen(true);
   };
 
-  /** Desktop inline preview — same as before the mobile-only change. */
+  /** Desktop inline — scrollable native PDF (unchanged). */
   const desktopPaneSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
+  /** Mobile inline — native PDF, first page; interaction blocked in UI. */
+  const mobilePaneSrc = href
+    ? `${href}#page=1&view=FitH&toolbar=0&navpanes=0&scrollbar=0`
+    : null;
   const lightboxSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
 
   return (
@@ -195,20 +124,25 @@ export function SampleReportPreview({
             )}
           </div>
         ) : (
-          <div className="relative h-[min(24rem,52vh)] w-full overflow-hidden overscroll-none bg-zinc-950 sm:h-[min(30rem,56vh)]">
-            {href ? (
+          <div className="relative h-[min(28rem,55vh)] w-full overflow-hidden overscroll-none bg-white sm:h-[min(32rem,58vh)]">
+            {mobilePaneSrc ? (
               <>
-                <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-2 sm:p-3">
-                  <StaticFirstPagePreview href={href} title={title} previewLabel={previewLabel} />
-                </div>
+                <iframe
+                  title={`${title} — ${previewLabel}`}
+                  src={mobilePaneSrc}
+                  className="pointer-events-none absolute inset-0 h-full w-full border-0 bg-white"
+                  loading="lazy"
+                  tabIndex={-1}
+                />
+                {/* Lock pan/zoom/scroll — native PDF stays clean; scroll only after Pietuvināt. */}
                 <div
-                  className="absolute inset-0 z-[1] touch-none select-none"
+                  className="absolute inset-0 z-[1] touch-none select-none bg-transparent"
                   aria-hidden
                   onWheel={(e) => e.preventDefault()}
                 />
               </>
             ) : (
-              <div className="flex h-full items-center justify-center px-6 text-center">
+              <div className="flex h-full items-center justify-center bg-zinc-950 px-6 text-center">
                 <p className="text-sm font-medium text-zinc-500">{comingSoonLabel}</p>
               </div>
             )}
