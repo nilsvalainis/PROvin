@@ -11,7 +11,15 @@ export function useTierSwipe<T extends string>(
   setSelectedId: (id: T) => void,
   tierOrder: readonly T[],
 ) {
-  const touchStartX = useRef<number | null>(null);
+  const startX = useRef<number | null>(null);
+  const startY = useRef<number | null>(null);
+  const axisLock = useRef<"none" | "horizontal" | "vertical">("none");
+
+  const reset = useCallback(() => {
+    startX.current = null;
+    startY.current = null;
+    axisLock.current = "none";
+  }, []);
 
   const selectTierByOffset = useCallback(
     (offset: -1 | 1) => {
@@ -25,23 +33,60 @@ export function useTierSwipe<T extends string>(
   );
 
   const onSwipeAreaTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.changedTouches[0]?.clientX ?? null;
+    const t = e.touches[0] ?? e.changedTouches[0];
+    if (!t) return;
+    startX.current = t.clientX;
+    startY.current = t.clientY;
+    axisLock.current = "none";
   }, []);
+
+  const onSwipeAreaTouchMove = useCallback((e: React.TouchEvent) => {
+    if (startX.current === null || startY.current === null) return;
+    const t = e.touches[0] ?? e.changedTouches[0];
+    if (!t) return;
+    if (axisLock.current === "none") {
+      const dx = Math.abs(t.clientX - startX.current);
+      const dy = Math.abs(t.clientY - startY.current);
+      if (dx < 10 && dy < 10) return;
+      axisLock.current = dx >= dy ? "horizontal" : "vertical";
+    }
+  }, []);
+
+  const finishSwipe = useCallback(
+    (endX: number | undefined) => {
+      if (startX.current === null || endX === undefined) {
+        reset();
+        return;
+      }
+      if (axisLock.current === "vertical") {
+        reset();
+        return;
+      }
+      const delta = endX - startX.current;
+      if (delta <= -SWIPE_THRESHOLD_PX) selectTierByOffset(1);
+      else if (delta >= SWIPE_THRESHOLD_PX) selectTierByOffset(-1);
+      reset();
+    },
+    [reset, selectTierByOffset],
+  );
 
   const onSwipeAreaTouchEnd = useCallback(
     (e: React.TouchEvent) => {
-      if (touchStartX.current === null) return;
-      const endX = e.changedTouches[0]?.clientX;
-      if (endX === undefined) return;
-      const delta = endX - touchStartX.current;
-      if (delta <= -SWIPE_THRESHOLD_PX) selectTierByOffset(1);
-      else if (delta >= SWIPE_THRESHOLD_PX) selectTierByOffset(-1);
-      touchStartX.current = null;
+      finishSwipe(e.changedTouches[0]?.clientX);
     },
-    [selectTierByOffset],
+    [finishSwipe],
   );
 
-  return { onSwipeAreaTouchStart, onSwipeAreaTouchEnd };
+  const onSwipeAreaTouchCancel = useCallback(() => {
+    reset();
+  }, [reset]);
+
+  return {
+    onSwipeAreaTouchStart,
+    onSwipeAreaTouchMove,
+    onSwipeAreaTouchEnd,
+    onSwipeAreaTouchCancel,
+  };
 }
 
 /** Desktop `/test-pricing-5` three-tier swipe helper. */

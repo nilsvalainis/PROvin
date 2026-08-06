@@ -55,10 +55,12 @@ describe("test-pricing-5 mobile three-tier model", () => {
   it("maps dealer to one bullet plus a 4x4 brand logo grid", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
-    expect(dealer.description).toContain("oficiālo dīleru");
-    expect(dealer.features.map((f) => f.name)).toEqual(["Odometra rādījumi un apkopju vēsture"]);
+    expect(dealer.description).toBe("");
+    expect(dealer.features.map((f) => f.name)).toEqual(["Dīleru servisa vēsture un nobraukums"]);
     expect(dealer.features[0]?.included).toBe(true);
-    expect(dealer.features[0]?.subtitle).toContain("ražotāju datubāzēm");
+    expect(dealer.features[0]?.subtitle).toBe(
+      "Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.",
+    );
     expect(dealer.extraNote).toBeUndefined();
     expect(TP5_DEALER_BRAND_ROWS).toEqual([
       ["Mercedes-Benz", "Volvo", "Jaguar", "Land Rover"],

@@ -105,16 +105,16 @@ const MINI_FEATURES_EN: Tp5MobileFeature[] = [
 
 const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
   {
-    name: "Odometra rādījumi un apkopju vēsture",
-    subtitle: "Oficiālie servisu ieraksti un nobraukuma fiksācija no ražotāju datubāzēm",
+    name: "Dīleru servisa vēsture un nobraukums",
+    subtitle: "Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.",
     included: true,
   },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
   {
-    name: "Odometer readings and service history",
-    subtitle: "Official service records and mileage logs from manufacturer databases",
+    name: "Dealer service history and mileage",
+    subtitle: "Direct access to official manufacturer service records.",
     included: true,
   },
 ];
@@ -142,7 +142,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     title: "DĪLERA DATI",
     price: "24,99 €",
     buttonText: "PASŪTĪT DĪLERA DATUS — 24,99 €",
-    description: "Tiešā piekļuve oficiālo dīleru datiem.",
+    description: "",
     features: DEALER_FEATURES_LV,
     brands: TP5_DEALER_BRANDS,
     turnaround: "⏱️ Izpilde: 24-48h",
@@ -171,7 +171,7 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     title: "DEALER DATA",
     price: "€24.99",
     buttonText: "ORDER DEALER DATA — €24.99",
-    description: "Direct access to official dealer data.",
+    description: "",
     features: DEALER_FEATURES_EN,
     brands: TP5_DEALER_BRANDS,
     turnaround: "⏱️ Delivery: 24-48h",

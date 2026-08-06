@@ -1,6 +1,7 @@
 "use client";
 
 import { LayoutGroup, motion } from "framer-motion";
+import { Globe } from "lucide-react";
 import { type SyntheticEvent, type TouchEvent, useEffect, useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
@@ -60,16 +61,8 @@ function SampleReportPdfIcon() {
 
 function DealerFeatureHighlight({ feature }: { feature: Tp5MobileFeature }) {
   return (
-    <div
-      className="mb-6 flex items-center gap-3.5 rounded-xl border border-blue-500/20 bg-blue-500/10 p-3.5 shadow-[0_8px_24px_-12px_rgba(37,99,235,0.45)] backdrop-blur-sm"
-      role="listitem"
-    >
-      <span
-        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[0.95rem] font-bold leading-none text-white shadow-[0_0_12px_rgba(37,99,235,0.35)]"
-        aria-hidden
-      >
-        ✓
-      </span>
+    <div className="mb-6 flex items-center gap-3.5" role="listitem">
+      <Globe className="h-6 w-6 shrink-0 text-slate-300 stroke-[1.5]" aria-hidden />
       <div className="min-w-0 flex-1">
         <p className="m-0 text-[0.92rem] font-semibold leading-snug text-slate-100">{feature.name}</p>
         {feature.subtitle ? (
@@ -124,6 +117,7 @@ function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
 function DealerBrandBadges() {
   const [openBrand, setOpenBrand] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const touchMovedRef = useRef(false);
 
   useEffect(() => {
     if (!openBrand) return;
@@ -154,9 +148,10 @@ function DealerBrandBadges() {
         const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
         const open = openBrand === brand;
         return (
-          <button
+          <div
             key={brand}
-            type="button"
+            role="button"
+            tabIndex={0}
             className={`${styles.dealerInlineBrandCell}${open ? ` ${styles.dealerInlineBrandCellOpen}` : ""}`}
             aria-label={brand}
             aria-expanded={open}
@@ -164,9 +159,20 @@ function DealerBrandBadges() {
             onMouseLeave={() => setOpenBrand((prev) => (prev === brand ? null : prev))}
             onFocus={() => setOpenBrand(brand)}
             onBlur={() => setOpenBrand((prev) => (prev === brand ? null : prev))}
-            onClick={(event) => {
+            onTouchStart={() => {
+              touchMovedRef.current = false;
+            }}
+            onTouchMove={() => {
+              touchMovedRef.current = true;
+            }}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
               event.preventDefault();
-              event.stopPropagation();
+              setOpenBrand((prev) => (prev === brand ? null : brand));
+            }}
+            onClick={() => {
+              /* Ignore click synthesized after a horizontal card swipe. */
+              if (touchMovedRef.current) return;
               /* Desktop: hover already shows the tip. Touch: tap toggles. */
               if (typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
                 return;
@@ -186,7 +192,7 @@ function DealerBrandBadges() {
             <span className={styles.dealerInlineBrandTip} role="tooltip">
               {brand}
             </span>
-          </button>
+          </div>
         );
       })}
     </div>
@@ -208,7 +214,9 @@ type Tp5MobilePricingCardProps = {
   tabPillLayoutId?: string;
   tierMetaDescClassName?: string;
   onSwipeAreaTouchStart?: (event: TouchEvent) => void;
+  onSwipeAreaTouchMove?: (event: TouchEvent) => void;
   onSwipeAreaTouchEnd?: (event: TouchEvent) => void;
+  onSwipeAreaTouchCancel?: (event: TouchEvent) => void;
   stopSwipePropagation?: (event: SyntheticEvent) => void;
 };
 
@@ -227,7 +235,9 @@ export function Tp5MobilePricingCard({
   tabPillLayoutId = "tp5-tab-pill-mobile",
   tierMetaDescClassName,
   onSwipeAreaTouchStart,
+  onSwipeAreaTouchMove,
   onSwipeAreaTouchEnd,
+  onSwipeAreaTouchCancel,
   stopSwipePropagation,
 }: Tp5MobilePricingCardProps) {
   const locale = useLocale();
@@ -250,7 +260,13 @@ export function Tp5MobilePricingCard({
       : activeService.title;
 
   return (
-    <article className={`${styles.spatialCard} w-full`}>
+    <article
+      className={`${styles.spatialCard} w-full`}
+      onTouchStart={onSwipeAreaTouchStart}
+      onTouchMove={onSwipeAreaTouchMove}
+      onTouchEnd={onSwipeAreaTouchEnd}
+      onTouchCancel={onSwipeAreaTouchCancel}
+    >
       <div className={styles.cardHeader}>
         <LayoutGroup id={tabLayoutGroupId}>
           <div className={styles.tierSwitcher} role="tablist" aria-label={uiCopy.packageTabsAria}>
@@ -285,17 +301,15 @@ export function Tp5MobilePricingCard({
           </div>
         </LayoutGroup>
 
-        <div className={styles.tierMeta} aria-live="polite">
-          <p className={styles.tierMetaTitle}>{metaTitle}</p>
-          <p className={tierMetaDescClassName ?? styles.tierMetaDesc}>{activeService.description}</p>
-        </div>
+        {activeService.description.trim() ? (
+          <div className={styles.tierMeta} aria-live="polite">
+            <p className={styles.tierMetaTitle}>{metaTitle}</p>
+            <p className={tierMetaDescClassName ?? styles.tierMetaDesc}>{activeService.description}</p>
+          </div>
+        ) : null}
       </div>
 
-      <div
-        className={styles.featureStack}
-        onTouchStart={onSwipeAreaTouchStart}
-        onTouchEnd={onSwipeAreaTouchEnd}
-      >
+      <div className={styles.featureStack}>
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
           {isDealer && activeService.features[0] ? (
             <DealerFeatureHighlight feature={activeService.features[0]} />
@@ -312,7 +326,9 @@ export function Tp5MobilePricingCard({
         <div
           className={styles.inlineFields}
           onTouchStart={stopSwipePropagation}
+          onTouchMove={stopSwipePropagation}
           onTouchEnd={stopSwipePropagation}
+          onTouchCancel={stopSwipePropagation}
         >
           <input
             type="text"

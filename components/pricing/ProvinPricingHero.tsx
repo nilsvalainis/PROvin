@@ -47,8 +47,19 @@ export function ProvinPricingHero({
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const { onSwipeAreaTouchStart: onMobileSwipeStart, onSwipeAreaTouchEnd: onMobileSwipeEnd } =
-    useTierSwipe(mobileActiveId, setMobileActiveId, TP5_MOBILE_SERVICE_ORDER);
+  const {
+    onSwipeAreaTouchStart: onMobileSwipeStart,
+    onSwipeAreaTouchMove: onMobileSwipeMove,
+    onSwipeAreaTouchEnd: onMobileSwipeEnd,
+    onSwipeAreaTouchCancel: onMobileSwipeCancel,
+  } = useTierSwipe(mobileActiveId, setMobileActiveId, TP5_MOBILE_SERVICE_ORDER);
+
+  const {
+    onSwipeAreaTouchStart: onDesktopSwipeStart,
+    onSwipeAreaTouchMove: onDesktopSwipeMove,
+    onSwipeAreaTouchEnd: onDesktopSwipeEnd,
+    onSwipeAreaTouchCancel: onDesktopSwipeCancel,
+  } = useTierSwipe(desktopActiveId, setDesktopActiveId, TP5_MOBILE_SERVICE_ORDER);
 
   const cancelled = searchParams.get("atcelts") === "1";
 
@@ -141,7 +152,9 @@ export function ProvinPricingHero({
             onListingUrlChange={setListingUrl}
             onSubmit={submitMobileCheckout}
             onSwipeAreaTouchStart={onMobileSwipeStart}
+            onSwipeAreaTouchMove={onMobileSwipeMove}
             onSwipeAreaTouchEnd={onMobileSwipeEnd}
+            onSwipeAreaTouchCancel={onMobileSwipeCancel}
             stopSwipePropagation={stopSwipePropagation}
           />
         </div>
@@ -174,6 +187,11 @@ export function ProvinPricingHero({
             onVinChange={setVin}
             onListingUrlChange={setListingUrl}
             onSubmit={submitDesktopCheckout}
+            onSwipeAreaTouchStart={onDesktopSwipeStart}
+            onSwipeAreaTouchMove={onDesktopSwipeMove}
+            onSwipeAreaTouchEnd={onDesktopSwipeEnd}
+            onSwipeAreaTouchCancel={onDesktopSwipeCancel}
+            stopSwipePropagation={stopSwipePropagation}
             tabLayoutGroupId="tp5-tabs-desktop"
             tabPillLayoutId="tp5-tab-pill-desktop"
             tierMetaDescClassName={styles.tierMetaDesc}

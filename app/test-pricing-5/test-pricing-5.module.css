@@ -140,6 +140,8 @@
   box-shadow:
     0 25px 50px -12px rgb(0 0 0 / 0.65),
     0 24px 48px -20px rgb(0 0 0 / 0.75);
+  /* Keep vertical scroll; leave horizontal gestures to tier swipe handlers. */
+  touch-action: pan-y;
 }
 
 .featureBreakdownCard {
@@ -149,7 +151,7 @@
 
 .cardHeader {
   position: relative;
-  z-index: 2;
+  z-index: 30;
   flex-shrink: 0;
 }
 
@@ -406,6 +408,7 @@
   appearance: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
 }
 
 .dealerInlineBrandCell:focus-visible {
@@ -1004,6 +1007,8 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   gap: 0.45rem;
   margin: 0.35rem 0 0;
   min-width: 0;
+  /* Allow normal input gestures inside the pan-y swipe card. */
+  touch-action: manipulation;
 }
 
 .inlineInput {
