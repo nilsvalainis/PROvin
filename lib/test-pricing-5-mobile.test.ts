@@ -53,7 +53,7 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(mini.features.some((f) => f.name.includes("CSDD"))).toBe(false);
   });
 
-  it("maps dealer to one bullet plus a 4x4 brand logo grid", () => {
+  it("maps dealer to one highlight feature (brand logos live on the desktop hero rail)", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.description).toBe("");
