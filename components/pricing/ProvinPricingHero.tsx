@@ -178,7 +178,7 @@ export function ProvinPricingHero({
               {heroCopy.titleAccent}
             </span>
           </h1>
-          <Tp5DesktopFeatureIconRow />
+          <Tp5DesktopFeatureIconRow activeServiceId={desktopActiveId} />
         </header>
 
         <div className={`${styles.stage} ${styles.heroStageDesktop}`}>

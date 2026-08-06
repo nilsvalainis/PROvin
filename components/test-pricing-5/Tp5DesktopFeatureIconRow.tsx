@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import Image from "next/image";
+import { AnimatePresence, motion } from "framer-motion";
 import { useLocale } from "next-intl";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
@@ -16,10 +17,20 @@ import {
   getTp5DesktopHeroFeatures,
   type Tp5DesktopHeroFeatureIcon,
 } from "@/lib/test-pricing-5-desktop-hero-features";
+import {
+  TP5_DEALER_BRAND_DARK_PLATE,
+  TP5_DEALER_BRAND_LOGO_SRC,
+  TP5_DEALER_BRANDS,
+  type Tp5MobileServiceId,
+} from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 
 const ICON_BTN_BASE =
-  "relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.03] text-zinc-300 opacity-75 shadow-[0_0_12px_rgba(37,99,235,0.08)] transition-all duration-300 will-change-[transform,box-shadow,border-color,color] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB]";
+  "relative flex shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.03] text-zinc-300 opacity-75 shadow-[0_0_12px_rgba(37,99,235,0.08)] transition-all duration-300 will-change-[transform,box-shadow,border-color,color] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB]";
+
+const ICON_BTN_FEATURE = `${ICON_BTN_BASE} h-14 w-14`;
+
+const ICON_BTN_BRAND = `${ICON_BTN_BASE} h-11 w-11 xl:h-12 xl:w-12`;
 
 const ICON_BTN_HOVER =
   "hover:scale-105 hover:border-[#2563EB] hover:text-[#2563EB] hover:opacity-100 hover:shadow-[0_0_20px_rgba(37,99,235,0.25)]";
@@ -28,6 +39,11 @@ const LUCIDE_ICON_CLASS = "h-6 w-6 [stroke-width:1.6]";
 
 const BRAND_LOGO_CLASS =
   "h-6 w-6 shrink-0 object-contain opacity-60 grayscale transition-all duration-300 group-hover:opacity-100 group-hover:grayscale-0";
+
+const DEALER_LOGO_CLASS =
+  "h-5 w-5 shrink-0 object-contain opacity-80 transition-all duration-300 group-hover:opacity-100 group-hover:scale-105 xl:h-6 xl:w-6";
+
+const SWAP_TRANSITION = { duration: 0.28, ease: [0.4, 0, 0.2, 1] as const };
 
 function brandIdleClass(icon: Tp5DesktopHeroFeatureIcon): string | undefined {
   if (icon === "carvertical") return styles.brandIconIdleCarVertical;
@@ -87,34 +103,87 @@ function FeatureTooltip({ label }: { label: string }) {
   );
 }
 
-export function Tp5DesktopFeatureIconRow() {
+type Props = {
+  /** Desktop pricing card active tier — dealer swaps the rail to manufacturer logos. */
+  activeServiceId?: Tp5MobileServiceId;
+};
+
+export function Tp5DesktopFeatureIconRow({ activeServiceId = "audits" }: Props) {
   const locale = useLocale();
   const features = getTp5DesktopHeroFeatures(locale);
   const uiCopy = getTp5UiCopy(locale);
+  const showDealerBrands = activeServiceId === "dealer";
 
   return (
     <div className={styles.tp5DesktopFeatureRow}>
       <DiagnosticScanLine variant="rail" motion="sweepLtr" className="w-full" />
-      <ul
-        className="mt-8 flex w-full list-none items-center justify-between gap-1"
-        aria-label={uiCopy.featureIconRowAria}
-      >
-        {features.map((feature) => {
-          const idlePulse = brandIdleClass(feature.icon);
-          return (
-            <li key={feature.label} className="flex shrink-0">
-              <button
-                type="button"
-                className={`group relative ${ICON_BTN_BASE} ${ICON_BTN_HOVER}${idlePulse ? ` ${idlePulse}` : ""}`}
-                aria-label={feature.label}
-              >
-                <FeatureTooltip label={feature.label} />
-                <FeatureIconGlyph icon={feature.icon} />
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="relative mt-8 min-h-[7.5rem] w-full">
+        <AnimatePresence mode="wait" initial={false}>
+          {showDealerBrands ? (
+            <motion.ul
+              key="dealer-brands"
+              className="absolute inset-x-0 top-0 grid w-full list-none grid-cols-8 gap-x-1 gap-y-2.5 xl:gap-y-3"
+              aria-label={uiCopy.dealerBrandsAria}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={SWAP_TRANSITION}
+            >
+              {TP5_DEALER_BRANDS.map((brand) => {
+                const src = TP5_DEALER_BRAND_LOGO_SRC[brand];
+                const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
+                return (
+                  <li key={brand} className="flex justify-center">
+                    <button
+                      type="button"
+                      className={`group relative ${ICON_BTN_BRAND} ${ICON_BTN_HOVER}`}
+                      aria-label={brand}
+                    >
+                      <FeatureTooltip label={brand} />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={src}
+                        alt=""
+                        className={`${DEALER_LOGO_CLASS}${darkPlate ? ` ${styles.dealerInlineBrandLogoDarkPlate}` : ""}`}
+                        loading="lazy"
+                        decoding="async"
+                        draggable={false}
+                        aria-hidden
+                      />
+                    </button>
+                  </li>
+                );
+              })}
+            </motion.ul>
+          ) : (
+            <motion.ul
+              key="audit-features"
+              className="absolute inset-x-0 top-0 flex w-full list-none items-center justify-between gap-1"
+              aria-label={uiCopy.featureIconRowAria}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={SWAP_TRANSITION}
+            >
+              {features.map((feature) => {
+                const idlePulse = brandIdleClass(feature.icon);
+                return (
+                  <li key={feature.label} className="flex shrink-0">
+                    <button
+                      type="button"
+                      className={`group relative ${ICON_BTN_FEATURE} ${ICON_BTN_HOVER}${idlePulse ? ` ${idlePulse}` : ""}`}
+                      aria-label={feature.label}
+                    >
+                      <FeatureTooltip label={feature.label} />
+                      <FeatureIconGlyph icon={feature.icon} />
+                    </button>
+                  </li>
+                );
+              })}
+            </motion.ul>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
