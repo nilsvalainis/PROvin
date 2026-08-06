@@ -108,11 +108,7 @@ export function HomeFeatureBreakdown({
       <div className={homeContentMaxClass}>
         <h2
           id="home-feature-breakdown-heading"
-          className={
-            showHeading
-              ? "mb-5 text-balance text-2xl font-bold uppercase tracking-[0.1em] text-zinc-400 sm:mb-6 sm:text-3xl"
-              : "sr-only"
-          }
+          className="sr-only"
         >
           {uiCopy.catalogHeading}
         </h2>
