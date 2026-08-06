@@ -27,7 +27,11 @@ const ABOUT_EN: AzvinAboutCopy = {
   lead: "Three clear packages — Korea & USA, Europe PRO, and official dealer data.",
   bentoTitle: "Packages",
   bento: [
-    { id: "koreaUsa", title: "Korea & USA", body: "Auction · mileage · legal status. From 19 AZN." },
+    {
+      id: "koreaUsa",
+      title: "Korea & USA",
+      body: "Auction archives, mileage, damage/salvage and title status. 19 AZN.",
+    },
     {
       id: "europe",
       title: "Europe PRO",
@@ -49,7 +53,11 @@ const ABOUT_AZ: AzvinAboutCopy = {
   lead: "Üç paket — Koreya və ABŞ, Avropa PRO və rəsmi diler məlumatları.",
   bentoTitle: "Paketlər",
   bento: [
-    { id: "koreaUsa", title: "Koreya və ABŞ", body: "Hərrac · yürüş · hüquqi status. 19 AZN-dən." },
+    {
+      id: "koreaUsa",
+      title: "Koreya və ABŞ",
+      body: "Hərrac arxivi, yürüş, zədələnmə/salvage və title statusu. 19 AZN.",
+    },
     {
       id: "europe",
       title: "Avropa PRO",
@@ -71,7 +79,11 @@ const ABOUT_RU: AzvinAboutCopy = {
   lead: "Три пакета — Корея и США, Европа PRO и данные официального дилера.",
   bentoTitle: "Пакеты",
   bento: [
-    { id: "koreaUsa", title: "Корея и США", body: "Аукцион · пробег · статус. От 19 AZN." },
+    {
+      id: "koreaUsa",
+      title: "Корея и США",
+      body: "Архив аукционов, пробег, повреждения/salvage и title-статус. 19 AZN.",
+    },
     {
       id: "europe",
       title: "Европа PRO",
@@ -93,7 +105,11 @@ const ABOUT_LV: AzvinAboutCopy = {
   lead: "Trīs paketes — Koreja un ASV, Eiropa PRO un oficiālie dīlera dati.",
   bentoTitle: "Paketes",
   bento: [
-    { id: "koreaUsa", title: "Koreja un ASV", body: "Izsoles · nobraukums · statuss. No 19 AZN." },
+    {
+      id: "koreaUsa",
+      title: "Koreja un ASV",
+      body: "Izsoļu arhīvs, nobraukums, bojājumi/salvage un title statuss. 19 AZN.",
+    },
     {
       id: "europe",
       title: "Eiropa PRO",

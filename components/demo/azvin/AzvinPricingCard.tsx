@@ -227,9 +227,9 @@ export function AzvinPricingCard({
   const services = getAzvinMobileServices(locale);
   const activeService = getAzvinMobileService(activeServiceId, locale);
   const isDealer = activeService.layout === "dealer";
-  const isKorea = activeService.layout === "koreaHighlight";
   const turnaroundLabel = activeService.turnaround ?? "";
   const sampleReportHref = isDealer ? AZVIN_DEALER_SAMPLE_REPORT_HREF : null;
+  const refundBannerText = activeService.refundBanner ?? uiCopy.dealerRefundBanner;
 
   return (
     <article
@@ -285,8 +285,6 @@ export function AzvinPricingCard({
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
           {isDealer && activeService.features[0] ? (
             <HighlightFeature feature={activeService.features[0]} />
-          ) : isKorea && activeService.features[0] ? (
-            <HighlightFeature feature={activeService.features[0]} />
           ) : (
             <ul className={styles.featureList}>
               {activeService.features.map((feature) => (
@@ -340,7 +338,7 @@ export function AzvinPricingCard({
 
       <div className={styles.ctaWrap}>
         {activeService.showRefundBanner ? (
-          <p className={styles.dealerRefundBanner}>{uiCopy.dealerRefundBanner}</p>
+          <p className={styles.dealerRefundBanner}>{refundBannerText}</p>
         ) : null}
         {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
         {demoNote ? <p className={styles.checkoutError} style={{ color: "#93c5fd" }}>{demoNote}</p> : null}

@@ -18,13 +18,15 @@ export type AzvinMobileService = {
   description: string;
   features: AzvinMobileFeature[];
   /** Dealer highlight uses Globe + brands grid (PROVIN 1:1). */
-  layout: "checklist" | "koreaHighlight" | "dealer";
+  layout: "checklist" | "dealer";
   brands?: readonly string[];
   turnaround?: string;
   /** Asterisk footnote under checklist (e.g. CarVertical*/AutoDNA*). */
   extraNote?: string;
-  /** Show the 100% dealer-data refund banner above CTA. */
+  /** Show refund banner above CTA. */
   showRefundBanner?: boolean;
+  /** Optional refund banner override (else shared dealer refund copy). */
+  refundBanner?: string;
 };
 
 /** Tab order: left EUROPE PRO · center Korea & USA (default) · right Dealer. */
@@ -73,36 +75,64 @@ const DEALER_FEATURES_RU: AzvinMobileFeature[] = [
 ];
 
 const KOREA_FEATURES_EN: AzvinMobileFeature[] = [
-  {
-    name: "Korea & USA history",
-    subtitle: "Auction · mileage · legal status",
-    included: true,
-  },
+  { name: "Korea & USA history report*", included: true },
+  { name: "Odometer and mileage records", included: true },
+  { name: "Auction portal archive (Copart, IAAI, etc.)", included: true },
+  { name: "Damage, accident and salvage records", included: true },
+  { name: "Title, theft and lien status check", included: true },
+  { name: "Consultation", included: true },
 ];
 
 const KOREA_FEATURES_AZ: AzvinMobileFeature[] = [
-  {
-    name: "Koreya və ABŞ tarixi",
-    subtitle: "Hərrac · yürüş · hüquqi status",
-    included: true,
-  },
+  { name: "Koreya və ABŞ tarix hesabatı*", included: true },
+  { name: "Odometr və yürüş qeydləri", included: true },
+  { name: "Hərrac portalı arxivi (Copart, IAAI və s.)", included: true },
+  { name: "Zədələnmə, qəza və salvage qeydləri", included: true },
+  { name: "Title, oğurluq və girov statusu yoxlaması", included: true },
+  { name: "Konsultasiya", included: true },
 ];
 
 const KOREA_FEATURES_RU: AzvinMobileFeature[] = [
-  {
-    name: "История Корея и США",
-    subtitle: "Аукцион · пробег · правовой статус",
-    included: true,
-  },
+  { name: "Отчёт истории Корея и США*", included: true },
+  { name: "Записи одометра и пробега", included: true },
+  { name: "Архив аукционов (Copart, IAAI и др.)", included: true },
+  { name: "Повреждения, аварии и salvage-записи", included: true },
+  { name: "Проверка title, угона и обременений", included: true },
+  { name: "Консультация", included: true },
 ];
 
 const KOREA_FEATURES_LV: AzvinMobileFeature[] = [
-  {
-    name: "Korejas un ASV vēsture",
-    subtitle: "Izsoles · nobraukums · juridiskais statuss",
-    included: true,
-  },
+  { name: "Korejas un ASV vēstures atskaite*", included: true },
+  { name: "Nobraukuma un odometra ieraksti", included: true },
+  { name: "Izsoļu portālu arhīvs (Copart, IAAI u.c.)", included: true },
+  { name: "Bojājumu, avāriju un salvage ieraksti", included: true },
+  { name: "Title, zādzību un apgrūtinājumu pārbaude", included: true },
+  { name: "Konsultācija", included: true },
 ];
+
+const KOREA_NOTE_EN =
+  "*To provide the most relevant data for Korea or the USA, the report may be replaced with another specialised paid report for that market.";
+
+const KOREA_NOTE_AZ =
+  "*Koreya və ya ABŞ bazarı üçün ən uyğun məlumatı təmin etmək üçün hesabat digər ixtisaslaşmış pullu hesabatla əvəz oluna bilər.";
+
+const KOREA_NOTE_RU =
+  "*Чтобы обеспечить наиболее релевантные данные для Кореи или США, отчёт может быть заменён другим специализированным платным отчётом для этого рынка.";
+
+const KOREA_NOTE_LV =
+  "*Lai nodrošinātu Korejai vai ASV atbilstošākos datus, atskaite var tikt aizstāta ar citu specializētu maksas atskaiti attiecīgajam tirgum.";
+
+const KOREA_REFUND_EN =
+  "100% refund guarantee: If no data is available in Korea / USA databases, we will issue a full refund.";
+
+const KOREA_REFUND_AZ =
+  "100% pulun qaytarılması zəmanəti: Koreya / ABŞ bazalarında məlumat yoxdursa, tam geri ödəniş edəcəyik.";
+
+const KOREA_REFUND_RU =
+  "100% гарантия возврата: если данных нет в базах Кореи / США, сделаем полный возврат.";
+
+const KOREA_REFUND_LV =
+  "100% Naudas atmaksas garantija: Ja Korejas / ASV datubāzēs dati nav pieejami, veiksim pilnu atmaksu.";
 
 const EUROPE_FEATURES_EN: AzvinMobileFeature[] = [
   { name: "CarVertical* history report", included: true },
@@ -174,10 +204,13 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         price: "19 AZN",
         priceAzn: 19,
         buttonText: "ORDER KOREA & USA — 19 AZN",
-        description: "",
+        description: "Full vehicle check package for cars used in Korea and the USA.",
         features: KOREA_FEATURES_EN,
-        layout: "koreaHighlight",
+        layout: "checklist",
         turnaround: "⏱️ Delivery: 24h",
+        extraNote: KOREA_NOTE_EN,
+        showRefundBanner: true,
+        refundBanner: KOREA_REFUND_EN,
       },
       {
         id: "dealer",
@@ -216,10 +249,13 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         price: "19 AZN",
         priceAzn: 19,
         buttonText: "ЗАКАЗАТЬ КОРЕЯ И США — 19 AZN",
-        description: "",
+        description: "Полный пакет проверки авто, эксплуатируемых в Корее и США.",
         features: KOREA_FEATURES_RU,
-        layout: "koreaHighlight",
+        layout: "checklist",
         turnaround: "⏱️ Срок: 24ч",
+        extraNote: KOREA_NOTE_RU,
+        showRefundBanner: true,
+        refundBanner: KOREA_REFUND_RU,
       },
       {
         id: "dealer",
@@ -258,10 +294,13 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         price: "19 AZN",
         priceAzn: 19,
         buttonText: "PASŪTĪT KOREJA UN ASV — 19 AZN",
-        description: "",
+        description: "Pilns auto pārbaudes komplekts Korejā un ASV lietotiem auto.",
         features: KOREA_FEATURES_LV,
-        layout: "koreaHighlight",
+        layout: "checklist",
         turnaround: "⏱️ Izpilde: 24h",
+        extraNote: KOREA_NOTE_LV,
+        showRefundBanner: true,
+        refundBanner: KOREA_REFUND_LV,
       },
       {
         id: "dealer",
@@ -300,10 +339,13 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
       price: "19 AZN",
       priceAzn: 19,
       buttonText: "SİFARİŞ KOREYA VƏ ABŞ — 19 AZN",
-      description: "",
+      description: "Koreya və ABŞ-da istifadə olunan avtomobillər üçün tam yoxlama paketi.",
       features: KOREA_FEATURES_AZ,
-      layout: "koreaHighlight",
+      layout: "checklist",
       turnaround: "⏱️ Çatdırılma: 24 saat",
+      extraNote: KOREA_NOTE_AZ,
+      showRefundBanner: true,
+      refundBanner: KOREA_REFUND_AZ,
     },
     {
       id: "dealer",
