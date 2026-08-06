@@ -3,31 +3,23 @@
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { orderSectionHref } from "@/lib/paths";
-import { normalizeSitePath } from "@/lib/site-rail-sections";
+import { shouldHideSiteOrderCtaPin } from "@/lib/site-order-cta-pin";
 
 /**
  * Globāla „Pasūtīt” — labais augšējais stūris, pill estētika kā mobilā pasūtīšanas josla.
- * Slēpts tur, kur jau ir sliede / headera izvēlne (sākums, pasūtīt, BUJ).
+ * Slēpts tur, kur jau ir sliede / headera izvēlne (sākums, pasūtīt, pakalpojumi, BUJ).
  */
 export function SiteOrderCtaPin() {
   const pathname = usePathname() ?? "";
   const t = useTranslations("Hero");
-  const p = normalizeSitePath(pathname);
-  const hidePin =
-    p === "/" ||
-    p === "" ||
-    p === "/pasutit" ||
-    p === "/biezi-jautajumi" ||
-    p === "/provin-select-pieteikums" ||
-    p.startsWith("/demo/");
 
-  if (hidePin) return null;
+  if (shouldHideSiteOrderCtaPin(pathname)) return null;
 
   return (
     <Link
       href={orderSectionHref()}
       aria-label={t("cta")}
-      className="provin-home-pill-cta provin-home-pill-cta--fit fixed right-[max(1.25rem,env(safe-area-inset-right,0px))] top-[max(1.25rem,env(safe-area-inset-top,0px))] z-[48] touch-manipulation whitespace-nowrap shadow-[0_5px_17px_rgba(0,0,0,0.13)] active:scale-95"
+      className="provin-home-pill-cta provin-home-pill-cta--fit provin-home-pill-cta--viewport-pin touch-manipulation whitespace-nowrap shadow-[0_5px_17px_rgba(0,0,0,0.13)] active:scale-95"
     >
       {t("orderPin")}
     </Link>

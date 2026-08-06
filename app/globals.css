@@ -553,6 +553,17 @@ html[data-site-theme="light"] .order-form-hero-field textarea:-webkit-autofill:f
     0 0 11px rgb(0 102 255 / 0.15);
 }
 
+/*
+ * Globālais viewport pin — ārpus Tailwind @layer un pēc glass `position: relative`,
+ * lai „PASŪTĪT” nepaliek relative plūsmā (kropļojums headerī).
+ */
+.provin-home-pill-cta.provin-home-pill-cta--viewport-pin {
+  position: fixed;
+  top: max(1.25rem, env(safe-area-inset-top, 0px));
+  right: max(1.25rem, env(safe-area-inset-right, 0px));
+  z-index: 48;
+}
+
 :where(.provin-home-pill-cta, .provin-btn, [class*="bg-provin-accent"])::before {
   content: "";
   position: absolute;
