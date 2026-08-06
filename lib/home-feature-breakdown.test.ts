@@ -34,6 +34,8 @@ describe("pakalpojumi catalog", () => {
     expect(dealer.items).toHaveLength(4);
     expect(dealer.goal).toContain("autorizēto servisu");
     expect(dealer.sampleReportHref).toContain("dilera");
+    const mini = pkgs.find((p) => p.id === "mini")!;
+    expect(mini.sampleReportHref).toContain("provin-mini-piemers");
     const koreaUsa = pkgs.find((p) => p.id === "koreaUsa")!;
     expect(koreaUsa.title).toBe("ASV UN KOREJA");
     expect(koreaUsa.buttonText).toContain("19,99");

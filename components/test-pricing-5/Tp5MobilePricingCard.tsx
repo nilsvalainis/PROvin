@@ -16,6 +16,7 @@ import {
 import {
   TP5_AUDITS_SAMPLE_REPORT_HREF,
   TP5_DEALER_SAMPLE_REPORT_HREF,
+  TP5_MINI_SAMPLE_REPORT_HREF,
   getTp5UiCopy,
 } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
@@ -158,12 +159,15 @@ export function Tp5MobilePricingCard({
   const activeService = getTp5MobileService(activeServiceId, locale);
   const isDealer = activeServiceId === "dealer";
   const isAudits = activeServiceId === "audits";
+  const isMini = activeServiceId === "mini";
   const turnaroundLabel = activeService.turnaround ?? getTp5MobileTurnaround(locale);
   const sampleReportHref = isDealer
     ? TP5_DEALER_SAMPLE_REPORT_HREF
     : isAudits
       ? TP5_AUDITS_SAMPLE_REPORT_HREF
-      : null;
+      : isMini
+        ? TP5_MINI_SAMPLE_REPORT_HREF
+        : null;
   const metaTitle =
     activeServiceId === "dealer"
       ? locale === "en"

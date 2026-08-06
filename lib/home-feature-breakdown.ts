@@ -2,6 +2,7 @@ import type { Tp5DesktopHeroFeatureIcon } from "@/lib/test-pricing-5-desktop-her
 import {
   TP5_AUDITS_SAMPLE_REPORT_HREF,
   TP5_DEALER_SAMPLE_REPORT_HREF,
+  TP5_MINI_SAMPLE_REPORT_HREF,
 } from "@/lib/test-pricing-5-ui-copy";
 
 /** Icons used on package breakdown cards (extends hero icon set). */
@@ -36,6 +37,7 @@ const MINI_LV: HomeFeatureBreakdownPackage = {
   id: "mini",
   title: "PROVIN MINI",
   buttonText: "PASŪTĪT MINI AUDITU — 39,99 €",
+  sampleReportHref: TP5_MINI_SAMPLE_REPORT_HREF,
   goal:
     "Sludinājuma un tehnisko datu analīze automašīnām, kas jau tiek ekspluatētas Latvijā. Pārbaude fokusējas uz vietējo vēsturi, pēdējo tehnisko apskašu datiem un publisko reģistru izvērtējumu, nodrošinot uzticamības prognozi un iespējamo risku kopsavilkumu.",
   items: [
@@ -173,6 +175,7 @@ const MINI_EN: HomeFeatureBreakdownPackage = {
   id: "mini",
   title: "PROVIN MINI",
   buttonText: "ORDER MINI AUDIT — €39.99",
+  sampleReportHref: TP5_MINI_SAMPLE_REPORT_HREF,
   goal:
     "Listing, technical data and risk analysis for cars that have already spent a longer time on Latvian roads. The check focuses on an in-depth review of local usage, recent roadworthiness inspection history and public registry data. The service delivers a full assessment of the major components, a reliability outlook and a summary of potential running risks.",
   items: [

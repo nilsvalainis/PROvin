@@ -10,7 +10,7 @@ import {
   TP5_MOBILE_SERVICES,
   TP5_MOBILE_SERVICE_ORDER,
 } from "@/lib/test-pricing-5-mobile";
-import { TP5_DEALER_SAMPLE_REPORT_HREF } from "@/lib/test-pricing-5-ui-copy";
+import { TP5_DEALER_SAMPLE_REPORT_HREF, TP5_MINI_SAMPLE_REPORT_HREF } from "@/lib/test-pricing-5-ui-copy";
 import { getTestPricingPlan } from "@/lib/test-pricing-plans";
 
 const SHARED_COMPARE_ROWS_LV = [
@@ -73,6 +73,7 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
     expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-48h");
     expect(TP5_DEALER_SAMPLE_REPORT_HREF).toBe("/samples/provin-dilera-dati-piemers.pdf");
+    expect(TP5_MINI_SAMPLE_REPORT_HREF).toBe("/samples/provin-mini-piemers.pdf");
   });
 
   it("keeps the English tier copy structurally identical to Latvian", () => {

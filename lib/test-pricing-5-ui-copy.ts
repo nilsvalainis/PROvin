@@ -48,6 +48,9 @@ export type Tp5UiCopy = {
   dealerRefundBanner: string;
 };
 
+/** Publiskais PROVIN MINI atskaites piemērs (`public/samples/…`). */
+export const TP5_MINI_SAMPLE_REPORT_HREF = "/samples/provin-mini-piemers.pdf";
+
 /** Publiskais PROVIN AUDITS atskaites piemērs (`public/samples/…`). */
 export const TP5_AUDITS_SAMPLE_REPORT_HREF = "/samples/provin-audits-piemers.pdf";
 
