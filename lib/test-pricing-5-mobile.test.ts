@@ -35,13 +35,13 @@ describe("test-pricing-5 mobile three-tier model", () => {
     }
   });
 
-  it("maps AUDITS and MINI as the same compare stack with EU/LV framing", () => {
+  it("maps AUDITS and MINI as the same compare stack without flag emojis", () => {
     const mini = getTp5MobileService("mini");
     const audits = getTp5MobileService("audits");
     expect(audits.description).toContain("Pilnīgākais");
-    expect(audits.description).toContain("🇪🇺");
+    expect(audits.description).not.toMatch(/[\u{1F1E6}-\u{1F1FF}]/u);
     expect(mini.description).toContain("Latvijā ekspluatētiem");
-    expect(mini.description).toContain("🇱🇻");
+    expect(mini.description).not.toMatch(/[\u{1F1E6}-\u{1F1FF}]/u);
     expect(audits.features.map((f) => f.name)).toEqual(SHARED_COMPARE_ROWS_LV);
     expect(mini.features.map((f) => f.name)).toEqual(SHARED_COMPARE_ROWS_LV);
     expect(audits.features.every((f) => f.included)).toBe(true);
@@ -54,7 +54,7 @@ describe("test-pricing-5 mobile three-tier model", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.description).toContain("oficiālo dīleru");
-    expect(dealer.description).toContain("🌐");
+    expect(dealer.description).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
     expect(dealer.features.map((f) => f.name)).toEqual([
       "Servisa un apkopju vēsture",
       "Odometra rādījumi un kopsavilkums",
@@ -68,7 +68,7 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(dealer.extraNote).toContain("2009");
     expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
     expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-48h");
-    expect(dealer.footnote).toContain("ja dati ir pieejami");
+    expect(dealer.footnote).toBeUndefined();
   });
 
   it("keeps the English tier copy structurally identical to Latvian", () => {

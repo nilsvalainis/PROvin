@@ -4,7 +4,6 @@ import { LayoutGroup, motion } from "framer-motion";
 import { type SyntheticEvent, type TouchEvent } from "react";
 import { useLocale } from "next-intl";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
-import { getTp5DealerFootnote } from "@/lib/test-pricing-5-checkout-routing";
 import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout";
 import {
   getTp5MobileService,
@@ -22,6 +21,36 @@ const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 
 const FEATURE_MARK_CLASS =
   "inline-flex h-6 w-6 shrink-0 items-center justify-center text-[0.98rem] font-bold leading-none";
+
+function SampleReportPdfIcon() {
+  return (
+    <svg
+      className={styles.sampleReportLinkIcon}
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+    >
+      <path
+        d="M6 2.75A1.75 1.75 0 0 1 7.75 1h3.086a1.75 1.75 0 0 1 1.237.513l2.924 2.924A1.75 1.75 0 0 1 15.5 5.674V16.25A1.75 1.75 0 0 1 13.75 18H7.75A1.75 1.75 0 0 1 6 16.25V2.75Z"
+        stroke="currentColor"
+        strokeWidth="1.35"
+      />
+      <path
+        d="M10.75 1v3.5A1.25 1.25 0 0 0 12 5.75h3.5"
+        stroke="currentColor"
+        strokeWidth="1.35"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7.25 10.25h5.5M7.25 12.75h3.5"
+        stroke="currentColor"
+        strokeWidth="1.35"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
   if (feature.included) {
@@ -105,7 +134,6 @@ export function Tp5MobilePricingCard({
   const activeService = getTp5MobileService(activeServiceId, locale);
   const isDealer = activeServiceId === "dealer";
   const turnaroundLabel = activeService.turnaround ?? getTp5MobileTurnaround(locale);
-  const footnote = activeService.footnote ?? getTp5DealerFootnote(locale);
   const metaTitle =
     activeServiceId === "dealer"
       ? locale === "en"
@@ -212,11 +240,15 @@ export function Tp5MobilePricingCard({
 
       <p className={styles.turnaround}>
         <span>{turnaroundLabel}</span>
-        {isDealer ? (
-          <span className={styles.turnaroundInfoSpacer} aria-hidden />
-        ) : (
-          <Tp5TurnaroundInfoTip copy={uiCopy} />
-        )}
+        {!isDealer ? (
+          <>
+            <span className={styles.turnaroundDivider} aria-hidden>
+              |
+            </span>
+            <span className={styles.turnaroundUrgency}>{uiCopy.turnaroundUrgencyCta}</span>
+            <Tp5TurnaroundInfoTip copy={uiCopy} />
+          </>
+        ) : null}
       </p>
 
       <div className={styles.ctaWrap}>
@@ -233,12 +265,12 @@ export function Tp5MobilePricingCard({
             className={styles.sampleReportLink}
             onClick={() => recordSampleReportClick()}
           >
-            {uiCopy.sampleReportLink}
+            <SampleReportPdfIcon />
+            <span>{uiCopy.sampleReportLink}</span>
           </a>
         ) : (
           <span className={styles.sampleReportLinkSpacer} aria-hidden />
         )}
-        <p className={styles.featureFootnote}>{footnote}</p>
       </div>
     </article>
   );

@@ -26,12 +26,16 @@ export type Tp5UiCopy = {
   goalLabel: string;
   /** Secondary text link under AUDITS CTA — opens sample PDF. */
   sampleReportLink: string;
+  /** Secondary CTA inline on the turnaround bar (before the info icon). */
+  turnaroundUrgencyCta: string;
   /** Aria / title for the turnaround info tip control. */
   turnaroundInfoAria: string;
+  /** Popup heading for urgent delivery. */
+  turnaroundInfoTitle: string;
   /** Body text inside the turnaround info popup (phone shown separately). */
   turnaroundInfoBody: string;
-  /** Visible phone label in the tip (e.g. 29502039). */
-  turnaroundInfoPhoneLabel: string;
+  /** Clickable phone link label in the tip. */
+  turnaroundInfoPhoneLink: string;
   /** Dealer brands trigger label. */
   dealerBrandsTrigger: string;
   /** Dealer brands popup aria / title. */
@@ -61,10 +65,11 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   breakdownHeading: "PROVIN MINI un PROVIN AUDITS",
   goalLabel: "Mērķis",
   sampleReportLink: "Skatīt atskaites piemēru (PDF)",
-  turnaroundInfoAria: "Vairāk par izpildes laiku",
-  turnaroundInfoBody:
-    "Pamata vēstures datus un vispārēju komentāru nepieciešamības gadījumā pēc pieprasījuma iespējams saņemt 1-2h laikā, šādos gadījumos lūdzam sazināties ar mums telefoniski.",
-  turnaroundInfoPhoneLabel: TP5_TURNAROUND_INFO_PHONE_LOCAL,
+  turnaroundUrgencyCta: "Vajag ātrāk (1-2h)?",
+  turnaroundInfoAria: "Vairāk par steidzamu izpildi",
+  turnaroundInfoTitle: "Vajag atskaiti steidzami?",
+  turnaroundInfoBody: "Pamata datus un vispārēju komentāru iespējams saņemt 1–2h laikā.",
+  turnaroundInfoPhoneLink: `📞 Zvanīt uzreiz: ${TP5_TURNAROUND_INFO_PHONE_LOCAL}`,
   dealerBrandsTrigger: "Atbalstītie ražotāji",
   dealerBrandsAria: "Atbalstītie ražotāji",
   dealerBrandsClose: "Aizvērt",
@@ -84,10 +89,11 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   breakdownHeading: "PROVIN MINI and PROVIN AUDIT",
   goalLabel: "Purpose",
   sampleReportLink: "View sample report (PDF)",
-  turnaroundInfoAria: "More about delivery time",
-  turnaroundInfoBody:
-    "If needed, basic history data and a general comment can be provided within 1–2 hours on request — in those cases please contact us by phone.",
-  turnaroundInfoPhoneLabel: TP5_TURNAROUND_INFO_PHONE_LOCAL,
+  turnaroundUrgencyCta: "Need it faster (1–2h)?",
+  turnaroundInfoAria: "More about urgent delivery",
+  turnaroundInfoTitle: "Need a report urgently?",
+  turnaroundInfoBody: "Basic data and a general comment can be provided within 1–2 hours.",
+  turnaroundInfoPhoneLink: `📞 Call now: ${TP5_TURNAROUND_INFO_PHONE_LOCAL}`,
   dealerBrandsTrigger: "Supported manufacturers",
   dealerBrandsAria: "Supported manufacturers",
   dealerBrandsClose: "Close",

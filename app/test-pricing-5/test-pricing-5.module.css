@@ -240,15 +240,15 @@
 
 .tierMetaDesc {
   margin: 0;
-  font-size: 0.75rem;
-  line-height: 1.4;
-  font-weight: 450;
-  color: rgb(212 216 224 / 0.88);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  font-weight: 600;
+  color: #e2e8f0;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  min-height: calc(2 * 1.4em);
+  min-height: calc(2 * 1.45em);
 }
 
 .featureStack {
@@ -560,6 +560,7 @@
 
 .turnaround {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
@@ -570,12 +571,14 @@
   min-height: 1.35rem;
 }
 
-.turnaroundInfoSpacer {
-  display: inline-block;
-  width: 1.05rem;
-  height: 1.05rem;
-  flex-shrink: 0;
-  visibility: hidden;
+.turnaroundDivider {
+  color: rgb(210 214 222 / 0.35);
+  font-weight: 500;
+}
+
+.turnaroundUrgency {
+  color: rgb(226 232 240 / 0.88);
+  font-weight: 600;
 }
 
 .turnaroundInfo {
@@ -653,6 +656,15 @@
   background: rgb(14 16 22 / 0.98);
 }
 
+.turnaroundInfoPopupTitle {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: rgb(248 250 252 / 0.98);
+}
+
 .turnaroundInfoPopupText {
   display: block;
 }
@@ -660,16 +672,16 @@
 .turnaroundInfoPhone {
   display: inline-block;
   margin-top: 0.45rem;
-  color: #93c5fd;
-  font-weight: 650;
-  letter-spacing: 0.02em;
+  color: #60a5fa;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   text-decoration: none;
+  transition: color 0.15s ease;
 }
 
 .turnaroundInfoPhone:hover {
-  color: #bfdbfe;
+  color: #93c5fd;
   text-decoration: underline;
-  text-underline-offset: 0.12em;
 }
 
 .inlineFields {
@@ -739,33 +751,38 @@
 }
 
 .sampleReportLink {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
   margin: 0.65rem 0 0;
   text-align: center;
-  font-size: 0.72rem;
-  font-weight: 500;
+  font-size: 0.8125rem;
+  font-weight: 600;
   line-height: 1.4;
   letter-spacing: 0.01em;
-  color: rgb(210 214 222 / 0.78);
-  text-decoration: underline;
-  text-decoration-color: rgb(210 214 222 / 0.35);
-  text-underline-offset: 0.18em;
-  transition:
-    color 0.2s ease,
-    text-decoration-color 0.2s ease;
+  color: #60a5fa;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.sampleReportLinkIcon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
 }
 
 .sampleReportLinkSpacer {
   display: block;
   margin: 0.65rem 0 0;
-  height: calc(0.72rem * 1.4);
+  height: calc(0.8125rem * 1.4);
   visibility: hidden;
   pointer-events: none;
 }
 
 .sampleReportLink:hover {
-  color: rgb(248 250 252 / 0.95);
-  text-decoration-color: rgb(248 250 252 / 0.55);
+  color: #93c5fd;
 }
 
 .sampleReportLink:focus-visible {
@@ -1037,7 +1054,7 @@
   }
 
   .tierMetaDesc {
-    font-size: 0.8125rem;
+    font-size: 0.9375rem;
     -webkit-line-clamp: unset;
     display: block;
     overflow: visible;
@@ -1115,10 +1132,17 @@ html[data-site-theme="light"] .heroScrim {
 }
 
 html[data-site-theme="light"] .heroSubhead,
-html[data-site-theme="light"] .tierMetaDesc,
 html[data-site-theme="light"] .turnaround,
 html[data-site-theme="light"] .featureFootnote {
   color: #6e6e73;
+}
+
+html[data-site-theme="light"] .tierMetaDesc {
+  color: #334155;
+}
+
+html[data-site-theme="light"] .turnaroundUrgency {
+  color: #475569;
 }
 
 html[data-site-theme="light"] .turnaroundInfoBtn {
@@ -1147,6 +1171,10 @@ html[data-site-theme="light"] .turnaroundInfoPopup::after {
   background: #fff;
 }
 
+html[data-site-theme="light"] .turnaroundInfoPopupTitle {
+  color: #0f172a;
+}
+
 html[data-site-theme="light"] .turnaroundInfoPhone {
   color: #2563eb;
 }
@@ -1156,13 +1184,11 @@ html[data-site-theme="light"] .turnaroundInfoPhone:hover {
 }
 
 html[data-site-theme="light"] .sampleReportLink {
-  color: rgb(29 29 31 / 0.72);
-  text-decoration-color: rgb(29 29 31 / 0.28);
+  color: #2563eb;
 }
 
 html[data-site-theme="light"] .sampleReportLink:hover {
-  color: #1d1d1f;
-  text-decoration-color: rgb(29 29 31 / 0.5);
+  color: #1d4ed8;
 }
 
 html[data-site-theme="light"] .tierMetaTitle {

@@ -8,7 +8,13 @@ import {
 } from "@/lib/test-pricing-5-ui-copy";
 
 type Props = {
-  copy: Pick<Tp5UiCopy, "turnaroundInfoAria" | "turnaroundInfoBody" | "turnaroundInfoPhoneLabel">;
+  copy: Pick<
+    Tp5UiCopy,
+    | "turnaroundInfoAria"
+    | "turnaroundInfoTitle"
+    | "turnaroundInfoBody"
+    | "turnaroundInfoPhoneLink"
+  >;
 };
 
 /** Mazs „i” pie izpildes laika — hover un klikšķis atver skaidrojumu. */
@@ -58,13 +64,14 @@ export function Tp5TurnaroundInfoTip({ copy }: Props) {
       </button>
       {open ? (
         <span id={tipId} role="tooltip" className={styles.turnaroundInfoPopup}>
+          <span className={styles.turnaroundInfoPopupTitle}>{copy.turnaroundInfoTitle}</span>
           <span className={styles.turnaroundInfoPopupText}>{copy.turnaroundInfoBody}</span>
           <a
             href={`tel:${TP5_TURNAROUND_INFO_PHONE_TEL}`}
             className={styles.turnaroundInfoPhone}
             onClick={(event) => event.stopPropagation()}
           >
-            {copy.turnaroundInfoPhoneLabel}
+            {copy.turnaroundInfoPhoneLink}
           </a>
         </span>
       ) : null}

@@ -114,16 +114,10 @@ const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
 const DEALER_BRANDS_HEADING_LV = "Atbalstītie ražotāji";
 const DEALER_BRANDS_HEADING_EN = "Supported manufacturers";
 
-const AUDITS_FOOTNOTE_LV = "*ja dati ir pieejami";
-const AUDITS_FOOTNOTE_EN = "*if data is available";
-
 const DEALER_YEAR_NOTE_LV =
   "Oficiālie dīlera dati parasti pieejami automašīnām, kas ražotas no 2009.–2026. gadam.";
 const DEALER_YEAR_NOTE_EN =
   "Official dealer data is usually available for cars built from 2009–2026.";
-
-const DEALER_FOOTNOTE_LV = "*ja dati ir pieejami";
-const DEALER_FOOTNOTE_EN = "*if data is available";
 
 /** Mobile `/test-pricing-5` + home hero — MINI, AUDITS, dealer data. */
 export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
@@ -132,31 +126,28 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     title: "PROVIN MINI",
     price: "39,99 €",
     buttonText: "PASŪTĪT MINI AUDITU — 39,99 €",
-    description: "Rekomendējam veikt Latvijā ekspluatētiem auto. 🇱🇻",
+    description: "Rekomendējam veikt Latvijā ekspluatētiem auto.",
     features: MINI_FEATURES_LV,
-    footnote: " ",
   },
   {
     id: "audits",
     title: "PROVIN AUDITS",
     price: "99,99 €",
     buttonText: "PASŪTĪT PROVIN AUDITU — 99,99 €",
-    description: "Pilnīgākais auto pārbaudes komplekts Latvijā. 🇪🇺",
+    description: "Pilnīgākais auto pārbaudes komplekts Latvijā.",
     features: AUDITS_FEATURES_LV,
-    footnote: AUDITS_FOOTNOTE_LV,
   },
   {
     id: "dealer",
     title: "DĪLERA DATI",
     price: "24,99 €",
     buttonText: "PASŪTĪT DĪLERA DATUS — 24,99 €",
-    description: "Tiešā piekļuve oficiālo dīleru datiem. 🌐",
+    description: "Tiešā piekļuve oficiālo dīleru datiem.",
     features: DEALER_FEATURES_LV,
     brands: TP5_DEALER_BRANDS,
     brandsHeading: DEALER_BRANDS_HEADING_LV,
     extraNote: DEALER_YEAR_NOTE_LV,
     turnaround: "⏱️ Izpilde: 24-48h",
-    footnote: DEALER_FOOTNOTE_LV,
   },
 ];
 
@@ -166,31 +157,28 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     title: "PROVIN MINI",
     price: "€39.99",
     buttonText: "ORDER MINI AUDIT — €39.99",
-    description: "Recommended for cars used in Latvia. 🇱🇻",
+    description: "Recommended for cars used in Latvia.",
     features: MINI_FEATURES_EN,
-    footnote: " ",
   },
   {
     id: "audits",
     title: "PROVIN AUDIT",
     price: "€99.99",
     buttonText: "ORDER PROVIN AUDIT — €99.99",
-    description: "The most complete vehicle check package in Latvia. 🇪🇺",
+    description: "The most complete vehicle check package in Latvia.",
     features: AUDITS_FEATURES_EN,
-    footnote: AUDITS_FOOTNOTE_EN,
   },
   {
     id: "dealer",
     title: "DEALER DATA",
     price: "€24.99",
     buttonText: "ORDER DEALER DATA — €24.99",
-    description: "Direct access to official dealer data. 🌐",
+    description: "Direct access to official dealer data.",
     features: DEALER_FEATURES_EN,
     brands: TP5_DEALER_BRANDS,
     brandsHeading: DEALER_BRANDS_HEADING_EN,
     extraNote: DEALER_YEAR_NOTE_EN,
     turnaround: "⏱️ Delivery: 24-48h",
-    footnote: DEALER_FOOTNOTE_EN,
   },
 ];
 
