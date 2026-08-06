@@ -563,11 +563,6 @@ html:has(.home-page-canvas-root) main {
     font-size: clamp(1.495rem, calc(2.86vw + 0.65rem), 2.145rem);
   }
 
-  /* Blogs „DRĪZUMĀ” — 3× pret mobilā title (+30 % bāzi) */
-  .demo-design-dir .blogs-coming-soon-title {
-    font-size: clamp(4.485rem, calc(8.58vw + 1.95rem), 6.435rem);
-  }
-
   .demo-design-dir .demo-design-dir__kicker {
     font-size: calc(10px * 1.3);
   }

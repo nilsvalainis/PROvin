@@ -11,7 +11,19 @@
     "checkoutProvinSelectProductDesc": "Individuāla konsultācija auto iegādes jautājumos"
   },
   "Blogs": {
-    "comingSoon": "DRĪZUMĀ"
+    "comingSoon": "DRĪZUMĀ",
+    "intro": "Šeit ir IRISS | Perekupa Dienasgrāmata.\nLietotu auto tirgus nav godīga spēle — pārdevējs zina noteikumus, pircējs bieži ienāk ar cerībām. Es rakstu no otras puses: kādas kārtis tiek noklusētas, kā strādā sludinājumi un kur cilvēki zaudē naudu. Bez glaimiem. Ar komentāriem — ja piekrīti, strīdies; ja zini labāk, pierādi.",
+    "readMore": "Lasīt ierakstu",
+    "backToList": "← Visi ieraksti",
+    "lvOnlyNote": "Pilnais teksts pieejams latviešu valodā.",
+    "commentsTitle": "Komentāri",
+    "commentsEmpty": "Pagaidām klusums — esi pirmais.",
+    "commentName": "Vārds",
+    "commentBody": "Komentārs",
+    "commentSubmit": "Publicēt",
+    "commentSubmitting": "Sūta…",
+    "commentSuccess": "Komentārs publicēts.",
+    "commentError": "Neizdevās nosūtīt. Pamēģini vēlreiz."
   },
   "SiteRail": {
     "navAria": "Galvenās sadaļas",

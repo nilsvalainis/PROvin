@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { listBlogPosts } from "@/lib/blog/posts";
 import { routing } from "@/i18n/routing";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 
@@ -6,6 +7,7 @@ import { getPublicSiteOrigin } from "@/lib/site-url";
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = getPublicSiteOrigin().replace(/\/$/, "");
   const lastModified = new Date();
+  const posts = listBlogPosts();
 
   const entries: MetadataRoute.Sitemap = [];
 
@@ -13,17 +15,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     path: string;
     changeFrequency: NonNullable<MetadataRoute.Sitemap[number]["changeFrequency"]>;
     priority: number;
-  }[] =
-    [
-      { path: "", changeFrequency: "weekly", priority: 1 },
-      { path: "/pasutit", changeFrequency: "monthly", priority: 0.85 },
-      { path: "/pakalpojumi", changeFrequency: "weekly", priority: 0.8 },
-      { path: "/par-mums", changeFrequency: "monthly", priority: 0.75 },
-      { path: "/blogs", changeFrequency: "weekly", priority: 0.7 },
-      { path: "/biezi-jautajumi", changeFrequency: "monthly", priority: 0.65 },
-      { path: "/privatuma-politika", changeFrequency: "yearly", priority: 0.4 },
-      { path: "/lietosanas-noteikumi", changeFrequency: "yearly", priority: 0.4 },
-    ];
+  }[] = [
+    { path: "", changeFrequency: "weekly", priority: 1 },
+    { path: "/pasutit", changeFrequency: "monthly", priority: 0.85 },
+    { path: "/pakalpojumi", changeFrequency: "weekly", priority: 0.8 },
+    { path: "/par-mums", changeFrequency: "monthly", priority: 0.75 },
+    { path: "/blogs", changeFrequency: "weekly", priority: 0.75 },
+    { path: "/biezi-jautajumi", changeFrequency: "monthly", priority: 0.65 },
+    { path: "/privatuma-politika", changeFrequency: "yearly", priority: 0.4 },
+    { path: "/lietosanas-noteikumi", changeFrequency: "yearly", priority: 0.4 },
+  ];
 
   for (const locale of routing.locales) {
     const prefix = `/${locale}`;
@@ -33,6 +34,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
         lastModified,
         changeFrequency,
         priority,
+      });
+    }
+    for (const post of posts) {
+      entries.push({
+        url: `${base}${prefix}/blogs/${post.slug}`,
+        lastModified: new Date(`${post.publishedAt}T12:00:00.000Z`),
+        changeFrequency: "monthly",
+        priority: 0.65,
       });
     }
   }

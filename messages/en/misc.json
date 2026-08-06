@@ -11,7 +11,19 @@
     "checkoutProvinSelectProductDesc": "Individual consultation for car purchase decisions"
   },
   "Blogs": {
-    "comingSoon": "COMING SOON"
+    "comingSoon": "COMING SOON",
+    "intro": "This is IRISS | Car Dealer’s Diary.\nThe used-car market isn’t a fair game — sellers know the rules, buyers often walk in on hope. I write from the other side: what gets left unsaid, how listings work, and where people lose money. No soft edges. Comments welcome — agree, argue, or prove me wrong.",
+    "readMore": "Read post",
+    "backToList": "← All posts",
+    "lvOnlyNote": "Full story is available in Latvian.",
+    "commentsTitle": "Comments",
+    "commentsEmpty": "Quiet so far — be the first.",
+    "commentName": "Name",
+    "commentBody": "Comment",
+    "commentSubmit": "Post",
+    "commentSubmitting": "Sending…",
+    "commentSuccess": "Comment posted.",
+    "commentError": "Couldn’t send. Try again."
   },
   "SiteRail": {
     "navAria": "Main sections",
