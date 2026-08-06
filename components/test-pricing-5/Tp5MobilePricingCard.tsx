@@ -7,8 +7,8 @@ import { useLocale } from "next-intl";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout";
 import {
+  getTp5HeroTabServices,
   getTp5MobileService,
-  getTp5MobileServices,
   getTp5MobileTurnaround,
   TP5_DEALER_BRAND_DARK_PLATE,
   TP5_DEALER_BRAND_LOGO_SRC,
@@ -242,7 +242,7 @@ export function Tp5MobilePricingCard({
 }: Tp5MobilePricingCardProps) {
   const locale = useLocale();
   const uiCopy = getTp5UiCopy(locale);
-  const services = getTp5MobileServices(locale);
+  const services = getTp5HeroTabServices(activeServiceId, locale);
   const activeService = getTp5MobileService(activeServiceId, locale);
   const isDealer = activeServiceId === "dealer";
   const isAudits = activeServiceId === "audits";
@@ -269,8 +269,11 @@ export function Tp5MobilePricingCard({
     >
       <div className={styles.cardHeader}>
         <LayoutGroup id={tabLayoutGroupId}>
-          <div className={styles.tierSwitcher} role="tablist" aria-label={uiCopy.packageTabsAria}>
-            {services.map((service) => {
+          <div
+            className={`${styles.tierSwitcher}${services.length >= 4 ? ` ${styles.tierSwitcherFour}` : ""}`}
+            role="tablist"
+            aria-label={uiCopy.packageTabsAria}
+          >            {services.map((service) => {
               const active = activeServiceId === service.id;
               return (
                 <button

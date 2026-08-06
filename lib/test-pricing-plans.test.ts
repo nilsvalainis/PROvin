@@ -7,8 +7,14 @@ import {
 } from "@/lib/test-pricing-plans";
 
 describe("test-pricing plans", () => {
-  it("exposes mini, plus, premium and dealer in order", () => {
-    expect(TEST_PRICING_PLANS.map((p) => p.id)).toEqual(["mini", "plus", "premium", "dealer"]);
+  it("exposes mini, plus, premium, dealer and koreaUsa in order", () => {
+    expect(TEST_PRICING_PLANS.map((p) => p.id)).toEqual([
+      "mini",
+      "plus",
+      "premium",
+      "dealer",
+      "koreaUsa",
+    ]);
   });
 
   it("recognizes valid plan ids", () => {

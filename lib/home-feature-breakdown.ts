@@ -9,7 +9,9 @@ export type HomeFeatureBreakdownIcon =
   | Tp5DesktopHeroFeatureIcon
   | "odometer"
   | "brands"
-  | "refund";
+  | "refund"
+  | "auction"
+  | "damage";
 
 export type HomeFeatureBreakdownItem = {
   title: string;
@@ -17,13 +19,15 @@ export type HomeFeatureBreakdownItem = {
   icon: HomeFeatureBreakdownIcon;
 };
 
-export type HomeFeatureBreakdownPackageId = "mini" | "audits" | "dealer";
+export type HomeFeatureBreakdownPackageId = "mini" | "audits" | "dealer" | "koreaUsa";
 
 export type HomeFeatureBreakdownPackage = {
   id: HomeFeatureBreakdownPackageId;
   title: string;
   goal: string;
   items: HomeFeatureBreakdownItem[];
+  /** CTA label on the catalog card. */
+  buttonText: string;
   /** Optional PDF sample under the CTA. */
   sampleReportHref?: string;
 };
@@ -31,6 +35,7 @@ export type HomeFeatureBreakdownPackage = {
 const MINI_LV: HomeFeatureBreakdownPackage = {
   id: "mini",
   title: "PROVIN MINI",
+  buttonText: "PASŪTĪT MINI AUDITU — 39,99 €",
   goal:
     "Sludinājuma un tehnisko datu analīze automašīnām, kas jau tiek ekspluatētas Latvijā. Pārbaude fokusējas uz vietējo vēsturi, pēdējo tehnisko apskašu datiem un publisko reģistru izvērtējumu, nodrošinot uzticamības prognozi un iespējamo risku kopsavilkumu.",
   items: [
@@ -64,6 +69,7 @@ const MINI_LV: HomeFeatureBreakdownPackage = {
 const AUDITS_LV: HomeFeatureBreakdownPackage = {
   id: "audits",
   title: "PROVIN AUDITS",
+  buttonText: "PASŪTĪT PROVIN AUDITU — 99,99 €",
   goal:
     "Maksimāla drošība un pilnīga izpēte no ārvalstīm ievestiem auto. Apvieno PROVIN MINI un starptautisko maksas datubāzu pārskatus, oficiālo dīleru sistēmu informāciju un izsoļu foto arhīvus, sniedzot padziļinātu vēstures, nobraukuma un risku analīzi.",
   items: [
@@ -97,6 +103,7 @@ const AUDITS_LV: HomeFeatureBreakdownPackage = {
 const DEALER_LV: HomeFeatureBreakdownPackage = {
   id: "dealer",
   title: "DĪLERA DATI",
+  buttonText: "PASŪTĪT DĪLERA DATUS — 24,99 €",
   goal:
     "Oficiālās dīleru servisa vēstures un ražotāju datubāzu analīze automašīnām. Pārbaude fokusējas uz autorizēto servisu ierakstiem, hronoloģisko nobraukumu, veiktajām apkopēm un rūpnīcas atsaukumiem, nodrošinot maksimālu pārredzamību par auto reālo ekspluatāciju.",
   items: [
@@ -128,9 +135,44 @@ const DEALER_LV: HomeFeatureBreakdownPackage = {
   sampleReportHref: TP5_DEALER_SAMPLE_REPORT_HREF,
 };
 
+const KOREA_USA_LV: HomeFeatureBreakdownPackage = {
+  id: "koreaUsa",
+  title: "ASV UN KOREJA",
+  buttonText: "PASŪTĪT ASV UN KOREJA — 19,99 €",
+  goal:
+    "Pilns auto pārbaudes komplekts ASV un Korejā ekspluatētiem vai no šīm valstīm importētiem transportlīdzekļiem. Pārbaude fokusējas uz oficiālo reģistru ierakstiem, izsoļu vēsturi un vizuālajiem bojājumiem, nodrošinot pilnīgu skaidrību par auto reālo stāvokli pirms tā iegādes vai reģistrācijas.",
+  items: [
+    {
+      title: "Oficiālo reģistru vēsture",
+      description:
+        "Pieeja apvienotajām ASV un Korejas transportlīdzekļu datubāzēm, kā arī oficiālajiem reģistrācijas (Title) statusiem.",
+      icon: "international",
+    },
+    {
+      title: "Izsoļu arhīvs un foto",
+      description:
+        "ASV (Copart, IAAI) un Korejas izsoļu vēsture ar pievienotiem attēliem pirms auto remonta.",
+      icon: "auction",
+    },
+    {
+      title: "Bojājumu un nobraukuma analīze",
+      description:
+        "Apdrošināšanas gadījumu (salvage / junk ieraksti), avāriju, nobraukuma hronoloģijas un zādzību pārbaude.",
+      icon: "damage",
+    },
+    {
+      title: "100% Naudas atmaksas garantija",
+      description:
+        "Ja ASV un Korejas datubāzēs par konkrēto VIN kodu dati nav pieejami, veiksim pilnu pirkuma atmaksu.",
+      icon: "refund",
+    },
+  ],
+};
+
 const MINI_EN: HomeFeatureBreakdownPackage = {
   id: "mini",
   title: "PROVIN MINI",
+  buttonText: "ORDER MINI AUDIT — €39.99",
   goal:
     "Listing, technical data and risk analysis for cars that have already spent a longer time on Latvian roads. The check focuses on an in-depth review of local usage, recent roadworthiness inspection history and public registry data. The service delivers a full assessment of the major components, a reliability outlook and a summary of potential running risks.",
   items: [
@@ -164,6 +206,7 @@ const MINI_EN: HomeFeatureBreakdownPackage = {
 const AUDITS_EN: HomeFeatureBreakdownPackage = {
   id: "audits",
   title: "PROVIN AUDIT",
+  buttonText: "ORDER PROVIN AUDIT — €99.99",
   goal:
     "Maximum confidence and a complete investigation of cars imported from abroad. Combines PROVIN MINI with international paid database reports, official dealer system data and auction photo archives, delivering in-depth history, mileage and risk analysis.",
   items: [
@@ -197,6 +240,7 @@ const AUDITS_EN: HomeFeatureBreakdownPackage = {
 const DEALER_EN: HomeFeatureBreakdownPackage = {
   id: "dealer",
   title: "DEALER DATA",
+  buttonText: "ORDER DEALER DATA — €24.99",
   goal:
     "Official dealer service history and manufacturer database analysis for vehicles. The check focuses on authorised service records, chronological mileage, completed maintenance and factory recalls, providing maximum transparency into the car’s real operating history.",
   items: [
@@ -228,17 +272,53 @@ const DEALER_EN: HomeFeatureBreakdownPackage = {
   sampleReportHref: TP5_DEALER_SAMPLE_REPORT_HREF,
 };
 
+const KOREA_USA_EN: HomeFeatureBreakdownPackage = {
+  id: "koreaUsa",
+  title: "USA & KOREA",
+  buttonText: "ORDER USA & KOREA — €19.99",
+  goal:
+    "A full vehicle check package for cars used in the USA and Korea or imported from these countries. The check focuses on official registry records, auction history and visual damage, giving complete clarity on the car’s real condition before purchase or registration.",
+  items: [
+    {
+      title: "Official registry history",
+      description:
+        "Access to combined US and Korea vehicle databases, plus official registration (Title) statuses.",
+      icon: "international",
+    },
+    {
+      title: "Auction archive and photos",
+      description:
+        "US (Copart, IAAI) and Korea auction history with attached images from before repairs.",
+      icon: "auction",
+    },
+    {
+      title: "Damage and mileage analysis",
+      description:
+        "Insurance events (salvage / junk records), accidents, mileage chronology and theft checks.",
+      icon: "damage",
+    },
+    {
+      title: "100% money-back guarantee",
+      description:
+        "If no data is available for the specific VIN in US and Korea databases, we will issue a full purchase refund.",
+      icon: "refund",
+    },
+  ],
+};
+
 /** Full catalog for `/pakalpojumi` (extensible to 4–6 services). */
 export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
   MINI_LV,
   AUDITS_LV,
   DEALER_LV,
+  KOREA_USA_LV,
 ];
 
 const HOME_FEATURE_BREAKDOWN_PACKAGES_EN: HomeFeatureBreakdownPackage[] = [
   MINI_EN,
   AUDITS_EN,
   DEALER_EN,
+  KOREA_USA_EN,
 ];
 
 /** Locale-aware catalog packages; anything other than `en` falls back to Latvian. */

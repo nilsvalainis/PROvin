@@ -26,6 +26,7 @@ const TIER_TAB_LABEL: Record<TestPricingPlanId, string> = {
   plus: "PLUS",
   premium: "PREMIUM",
   dealer: "DĪLERA",
+  koreaUsa: "ASV/KOREJA",
 };
 
 function StackBlock({

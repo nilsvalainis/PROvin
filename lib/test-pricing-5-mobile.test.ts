@@ -22,12 +22,13 @@ const SHARED_COMPARE_ROWS_LV = [
 ];
 
 describe("test-pricing-5 mobile three-tier model", () => {
-  it("exposes mini, audits and dealer", () => {
-    expect(TP5_MOBILE_SERVICE_ORDER).toEqual(["mini", "audits", "dealer"]);
-    expect(TP5_MOBILE_SERVICES).toHaveLength(3);
+  it("exposes mini, audits, dealer and catalog koreaUsa", () => {
+    expect(TP5_MOBILE_SERVICE_ORDER).toEqual(["mini", "audits", "dealer", "koreaUsa"]);
+    expect(TP5_MOBILE_SERVICES).toHaveLength(4);
     expect(TP5_MOBILE_CHECKOUT_PLAN.mini).toBe("plus");
     expect(TP5_MOBILE_CHECKOUT_PLAN.audits).toBe("premium");
     expect(TP5_MOBILE_CHECKOUT_PLAN.dealer).toBe("dealer");
+    expect(TP5_MOBILE_CHECKOUT_PLAN.koreaUsa).toBe("koreaUsa");
   });
 
   it("keeps a five-row checklist on MINI/AUDITS and one feature on dealer", () => {
@@ -95,8 +96,10 @@ describe("test-pricing-5 mobile three-tier model", () => {
     const miniPlan = getTestPricingPlan(TP5_MOBILE_CHECKOUT_PLAN.mini)!;
     const auditsPlan = getTestPricingPlan(TP5_MOBILE_CHECKOUT_PLAN.audits)!;
     const dealerPlan = getTestPricingPlan(TP5_MOBILE_CHECKOUT_PLAN.dealer)!;
+    const koreaUsaPlan = getTestPricingPlan(TP5_MOBILE_CHECKOUT_PLAN.koreaUsa)!;
     expect(miniPlan.amountCents).toBe(3999);
     expect(auditsPlan.amountCents).toBe(9999);
     expect(dealerPlan.amountCents).toBe(2499);
+    expect(koreaUsaPlan.amountCents).toBe(1999);
   });
 });

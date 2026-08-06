@@ -6,6 +6,7 @@ export const TP5_TAB_LABEL = {
   plus: "39,99 €",
   premium: "PROVIN AUDITS",
   dealer: "DĪLERA DATI",
+  koreaUsa: "ASV UN KOREJA",
 } as const;
 
 /** Dynamic baseline CTA copy on `/test-pricing-5`. */
@@ -14,6 +15,7 @@ export const TP5_CTA_LABEL = {
   plus: "PASŪTĪT AUDITU — 39,99 €",
   premium: "PASŪTĪT PROVIN AUDITU — 99,99 €",
   dealer: "PASŪTĪT DĪLERA DATUS — 24,99 €",
+  koreaUsa: "PASŪTĪT ASV UN KOREJA — 19,99 €",
 } as const;
 
 /** Hard-coded `plan` query values for `/test-checkout`. */
@@ -22,6 +24,7 @@ export const TP5_CHECKOUT_PLAN_QUERY = {
   plus: "39.99",
   premium: "PROVIN",
   dealer: "24.99",
+  koreaUsa: "koreaUsa",
 } as const;
 
 export type Tp5TierMeta = {
@@ -49,6 +52,11 @@ export const TP5_TIER_META: Record<TestPricingPlanId, Tp5TierMeta> = {
     title: "DĪLERA DATI",
     description:
       "Oficiālā dīlera servisa vēstures dati — bez PROVIN eksperta analīzes.",
+  },
+  koreaUsa: {
+    title: "ASV UN KOREJA",
+    description:
+      "Pilns auto pārbaudes komplekts ASV un Korejā ekspluatētiem vai no šīm valstīm importētiem transportlīdzekļiem.",
   },
 };
 
@@ -78,6 +86,9 @@ export function resolveTp5PlanFromCheckoutQuery(
   if (normalized === "19.99") return "mini";
   if (normalized === "39.99") return "plus";
   if (normalized === "24.99") return "dealer";
+  if (normalized === "koreaUsa" || normalized.toUpperCase() === "ASV" || normalized.toUpperCase() === "KOREA") {
+    return "koreaUsa";
+  }
   if (normalized.toUpperCase() === "PROVIN" || normalized.toUpperCase() === "PRO") return "premium";
   return null;
 }

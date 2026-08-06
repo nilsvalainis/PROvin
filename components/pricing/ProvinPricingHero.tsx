@@ -9,8 +9,8 @@ import { Tp5DesktopFeatureIconRow } from "@/components/test-pricing-5/Tp5Desktop
 import { Tp5MobilePricingCard } from "@/components/test-pricing-5/Tp5MobilePricingCard";
 import { getTp5HeroCopy } from "@/lib/test-pricing-5-hero-copy";
 import {
+  getTp5HeroSwipeOrder,
   TP5_MOBILE_CHECKOUT_PLAN,
-  TP5_MOBILE_SERVICE_ORDER,
   type Tp5MobileServiceId,
 } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
@@ -50,19 +50,22 @@ export function ProvinPricingHero({
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const mobileSwipeOrder = getTp5HeroSwipeOrder(mobileActiveId);
+  const desktopSwipeOrder = getTp5HeroSwipeOrder(desktopActiveId);
+
   const {
     onSwipeAreaTouchStart: onMobileSwipeStart,
     onSwipeAreaTouchMove: onMobileSwipeMove,
     onSwipeAreaTouchEnd: onMobileSwipeEnd,
     onSwipeAreaTouchCancel: onMobileSwipeCancel,
-  } = useTierSwipe(mobileActiveId, setMobileActiveId, TP5_MOBILE_SERVICE_ORDER);
+  } = useTierSwipe(mobileActiveId, setMobileActiveId, mobileSwipeOrder);
 
   const {
     onSwipeAreaTouchStart: onDesktopSwipeStart,
     onSwipeAreaTouchMove: onDesktopSwipeMove,
     onSwipeAreaTouchEnd: onDesktopSwipeEnd,
     onSwipeAreaTouchCancel: onDesktopSwipeCancel,
-  } = useTierSwipe(desktopActiveId, setDesktopActiveId, TP5_MOBILE_SERVICE_ORDER);
+  } = useTierSwipe(desktopActiveId, setDesktopActiveId, desktopSwipeOrder);
 
   const cancelled = searchParams.get("atcelts") === "1";
 

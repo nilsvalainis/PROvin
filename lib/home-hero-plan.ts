@@ -13,6 +13,12 @@ const HERO_PLAN_ALIAS: Record<string, Tp5MobileServiceId> = {
   dealer: "dealer",
   dilera: "dealer",
   "dealer-data": "dealer",
+  koreausa: "koreaUsa",
+  "korea-usa": "koreaUsa",
+  korea: "koreaUsa",
+  usa: "koreaUsa",
+  "usa-korea": "koreaUsa",
+  asv: "koreaUsa",
 };
 
 /** Parse `?plan=` / `?tab=` into a hero tier id. */

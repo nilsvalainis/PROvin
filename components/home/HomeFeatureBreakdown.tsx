@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import {
+  Camera,
   ClipboardCheck,
   Gauge,
   Globe2,
@@ -9,6 +10,7 @@ import {
   ShieldCheck,
   Store,
   Tags,
+  TriangleAlert,
   Users,
 } from "lucide-react";
 import { useLocale } from "next-intl";
@@ -21,7 +23,7 @@ import {
 } from "@/lib/home-feature-breakdown";
 import { homeHeroCheckoutHref } from "@/lib/home-hero-plan";
 import { renderProvinText } from "@/lib/provin-wordmark";
-import { getTp5MobileService } from "@/lib/test-pricing-5-mobile";
+import type { Tp5MobileServiceId } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 
@@ -51,6 +53,10 @@ function FeatureBadgeIcon({ icon }: { icon: HomeFeatureBreakdownIcon }) {
       return <Gauge className={LUCIDE_ICON_CLASS} aria-hidden />;
     case "brands":
       return <Tags className={LUCIDE_ICON_CLASS} aria-hidden />;
+    case "auction":
+      return <Camera className={LUCIDE_ICON_CLASS} aria-hidden />;
+    case "damage":
+      return <TriangleAlert className={LUCIDE_ICON_CLASS} aria-hidden />;
     case "carvertical":
       return (
         <Image
@@ -112,8 +118,7 @@ export function HomeFeatureBreakdown({
 
         <div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 md:gap-6 lg:gap-8">
           {packages.map((pkg) => {
-            const ctaLabel = getTp5MobileService(pkg.id, locale).buttonText;
-            const checkoutHref = homeHeroCheckoutHref(pkg.id);
+            const checkoutHref = homeHeroCheckoutHref(pkg.id as Tp5MobileServiceId);
 
             return (
               <article
@@ -155,7 +160,7 @@ export function HomeFeatureBreakdown({
                 <div className={`${tp5Styles.ctaWrap} mt-auto pt-8 sm:pt-10`}>
                   <Link href={checkoutHref} className={tp5Styles.liquidCtaLink}>
                     <span className={tp5Styles.liquidCtaShimmer} aria-hidden />
-                    <span className={tp5Styles.liquidCtaLabel}>{ctaLabel}</span>
+                    <span className={tp5Styles.liquidCtaLabel}>{pkg.buttonText}</span>
                   </Link>
                   {pkg.sampleReportHref ? (
                     <a

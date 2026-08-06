@@ -18,7 +18,7 @@ export type Tp5StripeCheckoutProduct = {
 
 /** Sākumlapa, `/test-pricing-5` un `/test-checkout` — vienmēr `price_data` (bez Stripe Catalog ID). */
 export const TP5_STRIPE_CHECKOUT_PRODUCT: Record<
-  Extract<TestPricingPlanId, "plus" | "premium" | "dealer">,
+  Extract<TestPricingPlanId, "plus" | "premium" | "dealer" | "koreaUsa">,
   Tp5StripeCheckoutProduct
 > = {
   plus: {
@@ -34,6 +34,12 @@ export const TP5_STRIPE_CHECKOUT_PRODUCT: Record<
     productDesc: "Official dealer service history. 100% refund if no data available.",
     amountCents: 2499,
   },
+  koreaUsa: {
+    productName: "ASV UN KOREJA",
+    productDesc:
+      "ASV and Korea registry, auction archive and damage check. 100% refund if no data available.",
+    amountCents: 1999,
+  },
 };
 
 export function isTp5CheckoutSource(sourcePage: string): boolean {
@@ -47,7 +53,7 @@ export function isTp5CheckoutSource(sourcePage: string): boolean {
 export function getTp5StripeCheckoutProduct(
   planId: TestPricingPlanId,
 ): Tp5StripeCheckoutProduct | null {
-  if (planId === "plus" || planId === "premium" || planId === "dealer") {
+  if (planId === "plus" || planId === "premium" || planId === "dealer" || planId === "koreaUsa") {
     return TP5_STRIPE_CHECKOUT_PRODUCT[planId];
   }
   return null;

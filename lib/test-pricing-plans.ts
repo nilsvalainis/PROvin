@@ -6,7 +6,7 @@ import {
   normalizeVin,
 } from "@/lib/order-field-validation";
 
-export type TestPricingPlanId = "mini" | "plus" | "premium" | "dealer";
+export type TestPricingPlanId = "mini" | "plus" | "premium" | "dealer" | "koreaUsa";
 
 export type TestPricingFeatureItem =
   | { kind: "bullet"; label: string }
@@ -123,6 +123,29 @@ export const TEST_PRICING_PLANS: TestPricingPlanConfig[] = [
       { kind: "bullet", label: "100% naudas atmaksa" },
     ],
   },
+  {
+    id: "koreaUsa",
+    title: "ASV UN KOREJA",
+    priceLabel: "19,99 €",
+    amountCents: 1999,
+    stripePriceEnvKey: "STRIPE_PRICE_KOREA_USA",
+    description:
+      "Pilns auto pārbaudes komplekts ASV un Korejā ekspluatētiem vai no šīm valstīm importētiem transportlīdzekļiem.",
+    turnaround: "⏱️ Izpilde: 24-48h",
+    ctaLabel: "PASŪTĪT ASV UN KOREJA",
+    heroCtaLabel: "PASŪTĪT ASV UN KOREJA — 19,99 €",
+    highlighted: false,
+    vinRequired: true,
+    productName: "ASV UN KOREJA",
+    productDesc:
+      "ASV un Korejas reģistru, izsoļu arhīva un bojājumu pārbaude. 100% naudas atmaksa, ja dati nav pieejami.",
+    features: [
+      { kind: "bullet", label: "Oficiālo reģistru vēsture" },
+      { kind: "bullet", label: "Izsoļu arhīvs un foto" },
+      { kind: "bullet", label: "Bojājumu un nobraukuma analīze" },
+      { kind: "bullet", label: "100% naudas atmaksa" },
+    ],
+  },
 ];
 
 export function getTestPricingPlan(id: TestPricingPlanId): TestPricingPlanConfig | undefined {
@@ -130,7 +153,7 @@ export function getTestPricingPlan(id: TestPricingPlanId): TestPricingPlanConfig
 }
 
 export function isTestPricingPlanId(v: string): v is TestPricingPlanId {
-  return v === "mini" || v === "plus" || v === "premium" || v === "dealer";
+  return v === "mini" || v === "plus" || v === "premium" || v === "dealer" || v === "koreaUsa";
 }
 
 export type TestPricingStep2FieldErrors = {

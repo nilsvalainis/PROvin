@@ -25,6 +25,7 @@ export const TEST_PRICING_COMPARE_PRICES: Record<TestPricingPlanId, string> = {
   plus: "39,99 €",
   premium: "99,99 €",
   dealer: "24,99 €",
+  koreaUsa: "19,99 €",
 };
 
 export const TEST_PRICING_COMPARE_LABELS: Record<TestPricingPlanId, string> = {
@@ -32,4 +33,5 @@ export const TEST_PRICING_COMPARE_LABELS: Record<TestPricingPlanId, string> = {
   plus: "PLUS",
   premium: "PREMIUM",
   dealer: "DĪLERA",
+  koreaUsa: "ASV/KOREJA",
 };

@@ -11,7 +11,7 @@ import { buildSiteRailSections, siteRailRouteActiveIndex } from "@/lib/site-rail
 describe("home-hero-plan", () => {
   it("keeps hero tabs within the catalog deep-link cap", () => {
     expect(HERO_CHECKOUT_TAB_IDS.length).toBeLessThanOrEqual(HERO_CHECKOUT_TAB_MAX);
-    expect(HERO_CHECKOUT_TAB_IDS).toEqual(["mini", "audits", "dealer"]);
+    expect(HERO_CHECKOUT_TAB_IDS).toEqual(["mini", "audits", "dealer", "koreaUsa"]);
   });
 
   it("parses plan query aliases", () => {
@@ -26,14 +26,19 @@ describe("home-hero-plan", () => {
 });
 
 describe("pakalpojumi catalog", () => {
-  it("exposes three detailed cards including dealer", () => {
+  it("exposes four detailed cards including dealer and koreaUsa", () => {
     const pkgs = getCatalogFeatureBreakdownPackages();
-    expect(pkgs.map((p) => p.id)).toEqual(["mini", "audits", "dealer"]);
+    expect(pkgs.map((p) => p.id)).toEqual(["mini", "audits", "dealer", "koreaUsa"]);
     const dealer = pkgs.find((p) => p.id === "dealer")!;
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.items).toHaveLength(4);
     expect(dealer.goal).toContain("autorizēto servisu");
     expect(dealer.sampleReportHref).toContain("dilera");
+    const koreaUsa = pkgs.find((p) => p.id === "koreaUsa")!;
+    expect(koreaUsa.title).toBe("ASV UN KOREJA");
+    expect(koreaUsa.buttonText).toContain("19,99");
+    expect(koreaUsa.items).toHaveLength(4);
+    expect(koreaUsa.items[1]?.title).toContain("Izsoļu");
   });
 
   it("adds Pakalpojumi to the site rail", () => {

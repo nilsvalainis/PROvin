@@ -11,7 +11,7 @@ export type Tp5MobileFeature = {
   subtitle?: string;
 };
 
-export type Tp5MobileServiceId = "mini" | "audits" | "dealer";
+export type Tp5MobileServiceId = "mini" | "audits" | "dealer" | "koreaUsa";
 
 export type Tp5MobileService = {
   id: Tp5MobileServiceId;
@@ -119,7 +119,24 @@ const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
   },
 ];
 
-/** Mobile `/test-pricing-5` + home hero — MINI, AUDITS, dealer data. */
+const KOREA_USA_FEATURES_LV: Tp5MobileFeature[] = [
+  { name: "Oficiālo reģistru vēsture", included: true },
+  { name: "Izsoļu arhīvs un foto", included: true },
+  { name: "Bojājumu un nobraukuma analīze", included: true },
+  { name: "100% Naudas atmaksas garantija", included: true, tone: "guarantee" },
+];
+
+const KOREA_USA_FEATURES_EN: Tp5MobileFeature[] = [
+  { name: "Official registry history", included: true },
+  { name: "Auction archive and photos", included: true },
+  { name: "Damage and mileage analysis", included: true },
+  { name: "100% money-back guarantee", included: true, tone: "guarantee" },
+];
+
+/** Tabs always shown on the home hero (catalog-only tiers appear when deep-linked). */
+export const TP5_HERO_TAB_IDS: readonly Tp5MobileServiceId[] = ["mini", "audits", "dealer"];
+
+/** Mobile `/test-pricing-5` + home hero — MINI, AUDITS, dealer data (+ catalog deep-link tiers). */
 export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
   {
     id: "mini",
@@ -145,6 +162,15 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     description: "",
     features: DEALER_FEATURES_LV,
     brands: TP5_DEALER_BRANDS,
+    turnaround: "⏱️ Izpilde: 24-48h",
+  },
+  {
+    id: "koreaUsa",
+    title: "ASV UN KOREJA",
+    price: "19,99 €",
+    buttonText: "PASŪTĪT ASV UN KOREJA — 19,99 €",
+    description: "Pilns komplekts ASV un Korejā lietotiem vai importētiem auto.",
+    features: KOREA_USA_FEATURES_LV,
     turnaround: "⏱️ Izpilde: 24-48h",
   },
 ];
@@ -176,6 +202,15 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     brands: TP5_DEALER_BRANDS,
     turnaround: "⏱️ Delivery: 24-48h",
   },
+  {
+    id: "koreaUsa",
+    title: "USA & KOREA",
+    price: "€19.99",
+    buttonText: "ORDER USA & KOREA — €19.99",
+    description: "Full check package for US and Korea used or imported vehicles.",
+    features: KOREA_USA_FEATURES_EN,
+    turnaround: "⏱️ Delivery: 24-48h",
+  },
 ];
 
 export const TP5_MOBILE_SERVICE_ORDER: Tp5MobileServiceId[] = TP5_MOBILE_SERVICES.map(
@@ -191,7 +226,23 @@ export const TP5_MOBILE_CHECKOUT_PLAN: Record<Tp5MobileServiceId, TestPricingPla
   mini: "plus",
   audits: "premium",
   dealer: "dealer",
+  koreaUsa: "koreaUsa",
 };
+
+/** Hero tab list — keep main switcher at 3; include deep-linked catalog tiers when active. */
+export function getTp5HeroTabServices(
+  activeId: Tp5MobileServiceId,
+  locale?: string,
+): Tp5MobileService[] {
+  const all = getTp5MobileServices(locale);
+  return all.filter(
+    (service) => TP5_HERO_TAB_IDS.includes(service.id) || service.id === activeId,
+  );
+}
+
+export function getTp5HeroSwipeOrder(activeId: Tp5MobileServiceId): Tp5MobileServiceId[] {
+  return getTp5HeroTabServices(activeId).map((service) => service.id);
+}
 
 /** Locale-aware tier list; anything other than `en` falls back to Latvian. */
 export function getTp5MobileServices(locale?: string): Tp5MobileService[] {
