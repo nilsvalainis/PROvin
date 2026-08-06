@@ -136,14 +136,11 @@ export function ProvinPricingHero({
       <div className={styles.heroInnerMobile}>
         {cancelled ? <p className={styles.cancelNote}>{uiCopy.cancelNote}</p> : null}
 
-        <header className={styles.heroCopy}>
-          <h1 id={mobileTitleId} className={styles.heroTitle}>
-            {heroCopy.titlePrefix}
-            <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
-              {heroCopy.titleAccent}
-            </span>
-          </h1>
-        </header>
+        {/* Mobile: no visible H1 — desktop hero keeps the full title. */}
+        <h1 id={mobileTitleId} className="sr-only">
+          {heroCopy.titlePrefix}
+          {heroCopy.titleAccent}
+        </h1>
 
         <div className={styles.stage}>
           <Tp5MobilePricingCard
