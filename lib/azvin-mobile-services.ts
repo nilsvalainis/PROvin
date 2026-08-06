@@ -21,7 +21,7 @@ export type AzvinMobileService = {
   layout: "checklist" | "dealer";
   brands?: readonly string[];
   turnaround?: string;
-  /** Asterisk footnote under checklist (e.g. CarVertical*/AutoDNA*). */
+  /** Asterisk footnote under checklist (e.g. CarVertical*, AutoDNA*). */
   extraNote?: string;
   /** Show refund banner above CTA. */
   showRefundBanner?: boolean;
