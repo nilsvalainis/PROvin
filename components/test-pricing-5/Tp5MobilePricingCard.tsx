@@ -18,8 +18,10 @@ import {
   TP5_DEALER_SAMPLE_REPORT_HREF,
   TP5_MINI_SAMPLE_REPORT_HREF,
   getTp5UiCopy,
+  type Tp5UiCopy,
 } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
+import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import { Tp5TurnaroundInfoTip } from "@/components/test-pricing-5/Tp5TurnaroundInfoTip";
 
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
@@ -57,7 +59,15 @@ function SampleReportPdfIcon() {
   );
 }
 
-function DealerFeatureHighlight({ feature }: { feature: Tp5MobileFeature }) {
+function DealerFeatureHighlight({
+  feature,
+  brands,
+  uiCopy,
+}: {
+  feature: Tp5MobileFeature;
+  brands: readonly string[];
+  uiCopy: Pick<Tp5UiCopy, "dealerBrandsTrigger" | "dealerBrandsAria" | "dealerBrandsClose">;
+}) {
   return (
     <div className="mb-6 flex items-center gap-3.5" role="listitem">
       <Globe className="h-6 w-6 shrink-0 text-slate-300 stroke-[1.5]" aria-hidden />
@@ -65,6 +75,11 @@ function DealerFeatureHighlight({ feature }: { feature: Tp5MobileFeature }) {
         <p className="m-0 text-[0.92rem] font-semibold leading-snug text-slate-100">{feature.name}</p>
         {feature.subtitle ? (
           <p className="mt-0.5 m-0 text-xs font-normal leading-snug text-slate-400">{feature.subtitle}</p>
+        ) : null}
+        {brands.length > 0 ? (
+          <div className={styles.dealerBrandsUnderSubtitle}>
+            <Tp5DealerBrandsTip brands={brands} copy={uiCopy} />
+          </div>
         ) : null}
       </div>
     </div>
@@ -231,7 +246,11 @@ export function Tp5MobilePricingCard({
       <div className={styles.featureStack}>
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
           {isDealer && activeService.features[0] ? (
-            <DealerFeatureHighlight feature={activeService.features[0]} />
+            <DealerFeatureHighlight
+              feature={activeService.features[0]}
+              brands={activeService.brands ?? []}
+              uiCopy={uiCopy}
+            />
           ) : (
             <ul className={styles.featureList}>
               {activeService.features.map((feature) => (
