@@ -114,12 +114,14 @@ export function HeaderClient() {
     setMobileMenuOpen(false);
   }, [pathname]);
 
+  const isFullBleedDarkNav = isHome || isProvinSelectPieteikums || isAzvinDemo || isPakalpojumi || isBlogs;
+
   const headerInnerClass = [
     "mx-auto flex min-h-[2.4rem] w-full min-w-0 items-center gap-1.5 pl-[max(0.8rem,env(safe-area-inset-left,0px))] pr-[max(0.8rem,env(safe-area-inset-right,0px))] sm:min-h-9 lg:min-h-11 lg:gap-3 lg:pl-[max(1rem,env(safe-area-inset-left,0px))] lg:pr-[max(1rem,env(safe-area-inset-right,0px))]",
-    isHome || isProvinSelectPieteikums || isAzvinDemo || isPakalpojumi
-      ? "max-w-none"
-      : "max-w-[980px] lg:max-w-[1024px]",
+    isFullBleedDarkNav ? "max-w-none" : "max-w-[980px] lg:max-w-[1024px]",
   ].join(" ");
+
+  const logoShowsLvSuffix = !(isHome || isPakalpojumi || isBlogs);
 
   return (
     <header className={`sticky top-0 z-[42] isolate w-full ${headerSurface}`}>
@@ -130,12 +132,12 @@ export function HeaderClient() {
             <span className="text-provin-accent">VIN</span>
           </Link>
         ) : (
-          <Link href="/" className={logoClass} aria-label={isHome || isPakalpojumi ? "PROVIN" : "PROVIN.LV"}>
+          <Link href="/" className={logoClass} aria-label={logoShowsLvSuffix ? "PROVIN.LV" : "PROVIN"}>
             <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
             <span className="text-provin-accent">VIN</span>
-            {isHome || isPakalpojumi ? null : (
+            {logoShowsLvSuffix ? (
               <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>.LV</span>
-            )}
+            ) : null}
           </Link>
         )}
 
