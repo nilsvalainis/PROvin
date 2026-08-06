@@ -68,7 +68,7 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   featureIconRowAria: "PROVIN audita pakalpojumu priekšrocības",
   transitionBannerAria: "PROVIN pakalpojuma kopsavilkums",
   breakdownHeading: "PROVIN MINI un PROVIN AUDITS",
-  goalLabel: "Mērķis",
+  goalLabel: "MĒRĶIS",
   sampleReportLink: "Skatīt atskaites piemēru (PDF)",
   turnaroundUrgencyCta: "Vajag ātrāk (1-2h)?",
   turnaroundInfoAria: "Vairāk par steidzamu izpildi",

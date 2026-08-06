@@ -50,7 +50,7 @@ export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
     id: "audits",
     title: "PROVIN AUDITS",
     goal:
-      "Maksimāla drošība un pilnīga izpēte no ārvalstīm ievestiem auto. Apvieno starptautisko maksas datubāzu pārskatus, oficiālo dīleru sistēmu informāciju un Eiropas izsoļu foto arhīvus, sniedzot padziļinātu vēstures, nobraukuma un risku analīzi.",
+      "Maksimāla drošība un pilnīga izpēte no ārvalstīm ievestiem auto. Apvieno PROVIN MINI un starptautisko maksas datubāzu pārskatus, oficiālo dīleru sistēmu informāciju un izsoļu foto arhīvus, sniedzot padziļinātu vēstures, nobraukuma un risku analīzi.",
     items: [
       {
         title: "Starptautiska vēstures pārbaude",
@@ -59,12 +59,14 @@ export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
       },
       {
         title: "carVertical integrācija",
-        description: "Nobraukuma manipulāciju, bojājumu un arhīva fotogrāfiju pārbaude.",
+        description:
+          "Nobraukuma un bojājumu pārbaude. Lai nodrošinātu konkrētajam reģionam atbilstošākos datus, atskaite var tikt aizstāta ar CARFAX vai citu specializētu datubāzi.",
         icon: "carvertical",
       },
       {
         title: "autoDNA integrācija",
-        description: "Nobraukuma manipulāciju, bojājumu un arhīva fotogrāfiju pārbaude.",
+        description:
+          "Nobraukuma un bojājumu pārbaude. Lai nodrošinātu konkrētajam reģionam atbilstošākos datus, atskaite var tikt aizstāta ar CEBIA vai citu specializētu datubāzi.",
         icon: "autodna",
       },
       {
@@ -114,7 +116,7 @@ const HOME_FEATURE_BREAKDOWN_PACKAGES_EN: HomeFeatureBreakdownPackage[] = [
     id: "audits",
     title: "PROVIN AUDIT",
     goal:
-      "Maximum confidence — or a complete investigation of cars recently imported from abroad. An in-depth vehicle history and risk analysis that combines the leading paid database reports, dealer systems and historical auction portal archives. The audit is built as a full-service solution: it automatically includes the PROVIN MINI check and extends it with information from international paid databases, official dealer systems and European auction photo archives.",
+      "Maximum confidence and a complete investigation of cars imported from abroad. Combines PROVIN MINI with international paid database reports, official dealer system data and auction photo archives, delivering in-depth history, mileage and risk analysis.",
     items: [
       {
         title: "International history check",
@@ -123,12 +125,14 @@ const HOME_FEATURE_BREAKDOWN_PACKAGES_EN: HomeFeatureBreakdownPackage[] = [
       },
       {
         title: "carVertical integration",
-        description: "Checks for mileage manipulation, damage records and archive photos.",
+        description:
+          "Mileage and damage checks. To ensure the most relevant data for the specific region, the report may be substituted with CARFAX or another specialised database.",
         icon: "carvertical",
       },
       {
         title: "autoDNA integration",
-        description: "Checks for mileage manipulation, damage records and archive photos.",
+        description:
+          "Mileage and damage checks. To ensure the most relevant data for the specific region, the report may be substituted with CEBIA or another specialised database.",
         icon: "autodna",
       },
       {
