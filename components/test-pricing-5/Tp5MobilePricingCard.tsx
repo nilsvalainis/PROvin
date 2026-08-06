@@ -9,6 +9,7 @@ import {
   getTp5MobileService,
   getTp5MobileServices,
   getTp5MobileTurnaround,
+  TP5_DEALER_BRAND_ROWS,
   type Tp5MobileFeature,
   type Tp5MobileServiceId,
 } from "@/lib/test-pricing-5-mobile";
@@ -18,7 +19,6 @@ import {
   getTp5UiCopy,
 } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
-import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import { Tp5TurnaroundInfoTip } from "@/components/test-pricing-5/Tp5TurnaroundInfoTip";
 
 const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
@@ -56,25 +56,7 @@ function SampleReportPdfIcon() {
   );
 }
 
-function MobileFeatureRow({
-  feature,
-  dealerBrands,
-  uiCopy,
-}: {
-  feature: Tp5MobileFeature;
-  dealerBrands?: readonly string[];
-  uiCopy: ReturnType<typeof getTp5UiCopy>;
-}) {
-  if (feature.tone === "brands") {
-    return (
-      <li className={styles.featureRowPlain}>
-        <span className={styles.featureBrandsInline}>
-          {dealerBrands ? <Tp5DealerBrandsTip brands={dealerBrands} copy={uiCopy} /> : feature.name}
-        </span>
-      </li>
-    );
-  }
-
+function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
   if (feature.tone === "info") {
     return (
       <li className={styles.featureRowPlain}>
@@ -112,6 +94,22 @@ function MobileFeatureRow({
       </span>
       <span className={styles.featureLabelMuted}>{feature.name}</span>
     </li>
+  );
+}
+
+function DealerBrandBadges() {
+  return (
+    <div className={styles.dealerInlineBrands} aria-label="Atbalstītie ražotāji">
+      {TP5_DEALER_BRAND_ROWS.map((row, rowIndex) => (
+        <div key={rowIndex} className={styles.dealerInlineBrandRow}>
+          {row.map((brand) => (
+            <span key={brand} className={styles.dealerInlineBrandBadge}>
+              {brand}
+            </span>
+          ))}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -221,14 +219,10 @@ export function Tp5MobilePricingCard({
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
           <ul className={styles.featureList}>
             {activeService.features.map((feature) => (
-              <MobileFeatureRow
-                key={`${activeServiceId}-${feature.name}`}
-                feature={feature}
-                dealerBrands={isDealer ? activeService.brands : undefined}
-                uiCopy={uiCopy}
-              />
+              <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
             ))}
           </ul>
+          {isDealer ? <DealerBrandBadges /> : null}
         </div>
 
         <div

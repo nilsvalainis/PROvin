@@ -3,6 +3,7 @@ import {
   getTp5MobileService,
   getTp5MobileServices,
   getTp5MobileTurnaround,
+  TP5_DEALER_BRAND_ROWS,
   TP5_DEALER_BRANDS,
   TP5_MOBILE_CHECKOUT_PLAN,
   TP5_MOBILE_FEATURE_ROW_COUNT,
@@ -20,13 +21,6 @@ const SHARED_COMPARE_ROWS_LV = [
   "Oficiālo dīleru un izsoļu portālu arhīva dati*",
 ];
 
-const DEALER_ROWS_LV = [
-  "Oficiālā servisa un apkopju vēsture",
-  "Odometera rādījumu ieraksti",
-  "Kopsavilkums un komentāri",
-  "Atbalstītie ražotāji",
-];
-
 describe("test-pricing-5 mobile three-tier model", () => {
   it("exposes mini, audits and dealer", () => {
     expect(TP5_MOBILE_SERVICE_ORDER).toEqual(["mini", "audits", "dealer"]);
@@ -36,11 +30,11 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(TP5_MOBILE_CHECKOUT_PLAN.dealer).toBe("dealer");
   });
 
-  it("keeps a five-row checklist on MINI/AUDITS and four on dealer", () => {
+  it("keeps a five-row checklist on MINI/AUDITS and one feature on dealer", () => {
     expect(TP5_MOBILE_FEATURE_ROW_COUNT).toBe(5);
     expect(getTp5MobileService("mini").features).toHaveLength(5);
     expect(getTp5MobileService("audits").features).toHaveLength(5);
-    expect(getTp5MobileService("dealer").features).toHaveLength(4);
+    expect(getTp5MobileService("dealer").features).toHaveLength(1);
   });
 
   it("maps AUDITS and MINI as the same compare stack without flag emojis", () => {
@@ -58,17 +52,20 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(mini.features.some((f) => f.name.includes("CSDD"))).toBe(false);
   });
 
-  it("maps dealer to four rows with inline brands trigger", () => {
+  it("maps dealer to one bullet plus three inline brand rows", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.description).toContain("oficiālo dīleru");
-    expect(dealer.description).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
-    expect(dealer.features.map((f) => f.name)).toEqual(DEALER_ROWS_LV);
-    expect(dealer.features[3]?.tone).toBe("brands");
+    expect(dealer.features.map((f) => f.name)).toEqual(["Odometra rādījumi un apkopju vēsture"]);
+    expect(dealer.features[0]?.included).toBe(true);
     expect(dealer.extraNote).toBeUndefined();
+    expect(TP5_DEALER_BRAND_ROWS).toEqual([
+      ["Mercedes-Benz", "Volvo", "Jaguar", "Land Rover"],
+      ["BMW", "MINI", "Audi", "Volkswagen", "Škoda", "SEAT"],
+      ["Peugeot", "Citroën", "Renault", "Dacia", "Opel", "Smart"],
+    ]);
     expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
     expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-48h");
-    expect(dealer.footnote).toBeUndefined();
     expect(TP5_DEALER_SAMPLE_REPORT_HREF).toBe("/samples/provin-dilera-dati-piemers.pdf");
   });
 

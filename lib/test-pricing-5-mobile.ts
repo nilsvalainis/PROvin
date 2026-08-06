@@ -32,27 +32,17 @@ export type Tp5MobileService = {
   footnote?: string;
 };
 
-/** Merged supported manufacturers (PROVIN + supplier list). */
-export const TP5_DEALER_BRANDS = [
-  "Audi",
-  "BMW",
-  "Citroën",
-  "Dacia",
-  "Jaguar",
-  "Land Rover",
-  "Mercedes-Benz",
-  "MINI",
-  "Opel",
-  "Peugeot",
-  "Renault",
-  "SEAT",
-  "Škoda",
-  "Smart",
-  "Volkswagen",
-  "Volvo",
+/** Merged supported manufacturers — display order for inline badge rows. */
+export const TP5_DEALER_BRAND_ROWS = [
+  ["Mercedes-Benz", "Volvo", "Jaguar", "Land Rover"],
+  ["BMW", "MINI", "Audi", "Volkswagen", "Škoda", "SEAT"],
+  ["Peugeot", "Citroën", "Renault", "Dacia", "Opel", "Smart"],
 ] as const;
 
-/** Card checklist always shows exactly five rows across all tiers. */
+/** Flat brand list (same set as badge rows). */
+export const TP5_DEALER_BRANDS = TP5_DEALER_BRAND_ROWS.flat();
+
+/** Card checklist row count for MINI/AUDITS compare stack. */
 export const TP5_MOBILE_FEATURE_ROW_COUNT = 5;
 
 const AUDITS_FEATURES_LV: Tp5MobileFeature[] = [
@@ -88,29 +78,12 @@ const MINI_FEATURES_EN: Tp5MobileFeature[] = [
 ];
 
 const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
-  { name: "Oficiālā servisa un apkopju vēsture", included: true },
-  { name: "Odometera rādījumu ieraksti", included: true },
-  { name: "Kopsavilkums un komentāri", included: true },
-  {
-    name: "Atbalstītie ražotāji",
-    included: false,
-    tone: "brands",
-  },
+  { name: "Odometra rādījumi un apkopju vēsture", included: true },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
-  { name: "Official service and maintenance history", included: true },
-  { name: "Odometer readings", included: true },
-  { name: "Summary and comments", included: true },
-  {
-    name: "Supported manufacturers",
-    included: false,
-    tone: "brands",
-  },
+  { name: "Odometer readings and service history", included: true },
 ];
-
-const DEALER_BRANDS_HEADING_LV = "Atbalstītie ražotāji";
-const DEALER_BRANDS_HEADING_EN = "Supported manufacturers";
 
 /** Mobile `/test-pricing-5` + home hero — MINI, AUDITS, dealer data. */
 export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
@@ -138,7 +111,6 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     description: "Tiešā piekļuve oficiālo dīleru datiem.",
     features: DEALER_FEATURES_LV,
     brands: TP5_DEALER_BRANDS,
-    brandsHeading: DEALER_BRANDS_HEADING_LV,
     turnaround: "⏱️ Izpilde: 24-48h",
   },
 ];
@@ -168,7 +140,6 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     description: "Direct access to official dealer data.",
     features: DEALER_FEATURES_EN,
     brands: TP5_DEALER_BRANDS,
-    brandsHeading: DEALER_BRANDS_HEADING_EN,
     turnaround: "⏱️ Delivery: 24-48h",
   },
 ];
