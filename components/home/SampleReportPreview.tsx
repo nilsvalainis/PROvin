@@ -36,9 +36,14 @@ function StaticFirstPagePreview({ href, title, previewLabel }: { href: string; t
         if (cancelled) return;
 
         const parent = canvas.parentElement;
-        const cssWidth = Math.max(280, Math.floor(parent?.clientWidth ?? 320));
+        const cs = parent ? getComputedStyle(parent) : null;
+        const padX = cs ? parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) : 0;
+        const padY = cs ? parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) : 0;
+        const cssWidth = Math.max(200, Math.floor((parent?.clientWidth ?? 320) - padX));
+        const cssHeight = Math.max(180, Math.floor((parent?.clientHeight ?? 360) - padY));
         const unscaled = page.getViewport({ scale: 1 });
-        const scale = cssWidth / unscaled.width;
+        /** Fit entire first page inside the frame (contain) — avoids default “zoomed crop”. */
+        const scale = Math.min(cssWidth / unscaled.width, cssHeight / unscaled.height);
         const viewport = page.getViewport({ scale });
 
         const outputScale = Math.min(window.devicePixelRatio || 1, 2);
@@ -81,7 +86,7 @@ function StaticFirstPagePreview({ href, title, previewLabel }: { href: string; t
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none mx-auto block h-auto max-h-full w-full object-contain object-top"
+      className="pointer-events-none mx-auto block h-auto max-h-full w-auto max-w-full"
       aria-hidden
     />
   );
@@ -152,10 +157,10 @@ export function SampleReportPreview({
           ) : null}
         </div>
 
-        <div className="relative h-[min(22rem,48vh)] w-full overflow-hidden overscroll-none bg-zinc-950 sm:h-[min(28rem,52vh)] lg:h-[36rem]">
+        <div className="relative h-[min(24rem,52vh)] w-full overflow-hidden overscroll-none bg-zinc-950 sm:h-[min(30rem,56vh)] lg:h-[36rem]">
           {href ? (
             <>
-              <div className="absolute inset-0 flex items-start justify-center overflow-hidden">
+              <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-2 sm:p-3">
                 <StaticFirstPagePreview href={href} title={title} previewLabel={previewLabel} />
               </div>
               {/* Block pan/zoom/scroll until Pietuvināt. */}
