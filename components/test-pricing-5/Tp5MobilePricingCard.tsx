@@ -67,10 +67,7 @@ function MobileFeatureRow({
 }) {
   if (feature.tone === "brands") {
     return (
-      <li className={styles.featureRow}>
-        <span className={`${FEATURE_MARK_CLASS} text-slate-400/80`} aria-hidden>
-          ℹ
-        </span>
+      <li className={styles.featureRowPlain}>
         <span className={styles.featureBrandsInline}>
           {dealerBrands ? <Tp5DealerBrandsTip brands={dealerBrands} copy={uiCopy} /> : feature.name}
         </span>
@@ -80,10 +77,7 @@ function MobileFeatureRow({
 
   if (feature.tone === "info") {
     return (
-      <li className={styles.featureRow}>
-        <span className={`${FEATURE_MARK_CLASS} text-slate-400/80`} aria-hidden>
-          ℹ
-        </span>
+      <li className={styles.featureRowPlain}>
         <span className={styles.featureLabelInfo}>{feature.name}</span>
       </li>
     );
