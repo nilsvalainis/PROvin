@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { getAzvinAboutCopy } from "@/lib/azvin-about-copy";
-import { AZVIN_DEALER_BRANDS } from "@/lib/azvin-dealer-brands";
 import type { AzvinLocale } from "@/lib/azvin-hero-copy";
 import { readAzvinLocale, subscribeAzvinLocale } from "@/lib/azvin-locale";
+import { TP5_DEALER_BRANDS } from "@/lib/test-pricing-5-mobile";
 import styles from "@/app/[locale]/demo/azvin/azvin.module.css";
 
 export function AzvinAboutSection() {
@@ -53,7 +53,7 @@ export function AzvinAboutSection() {
         <div>
           <h3 className={styles.blockTitle}>{copy.brandsTitle}</h3>
           <ul className={styles.brandChips}>
-            {AZVIN_DEALER_BRANDS.map((brand) => (
+            {TP5_DEALER_BRANDS.map((brand) => (
               <li key={brand} className={styles.brandChip}>
                 {brand}
               </li>

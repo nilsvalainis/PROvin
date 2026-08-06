@@ -14,7 +14,7 @@ const AzvinHero = dynamic(
   {
     loading: () => (
       <div className={styles.page} aria-busy="true" aria-label="Loading…">
-        <div className={styles.heroShell} />
+        <div className={styles.heroLoading} />
       </div>
     ),
   },
