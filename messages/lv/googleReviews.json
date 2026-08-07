@@ -4,6 +4,7 @@
     "kicker": "Atsauksmes Google",
     "viewAll": "Skatīt Google profilā",
     "sourceLabel": "Google",
-    "ratingLine": "{rating}/5 uz Google"
+    "ratingLine": "{rating}/5 uz Google",
+    "trustAside": "Īstas Google atsauksmes — ne reklāmas citāti."
   }
 }
