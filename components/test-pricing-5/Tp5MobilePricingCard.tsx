@@ -271,6 +271,10 @@ export function Tp5MobilePricingCard({
         </div>
       </div>
 
+      {isDealer ? (
+        <p className={styles.dealerRefundBanner}>{uiCopy.dealerRefundBanner}</p>
+      ) : null}
+
       <p className={styles.turnaround}>
         <span>{turnaroundLabel}</span>
         {!isDealer ? (
@@ -285,9 +289,6 @@ export function Tp5MobilePricingCard({
       </p>
 
       <div className={styles.ctaWrap}>
-        {isDealer ? (
-          <p className={styles.dealerRefundBanner}>{uiCopy.dealerRefundBanner}</p>
-        ) : null}
         {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
         <button type="button" className={styles.liquidCta} onClick={onSubmit} disabled={loading}>
           <span className={styles.liquidCtaShimmer} aria-hidden />

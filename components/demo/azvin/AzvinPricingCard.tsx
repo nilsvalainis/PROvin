@@ -238,12 +238,13 @@ export function AzvinPricingCard({
         </div>
       </div>
 
+      {activeService.showRefundBanner ? (
+        <p className={styles.dealerRefundBanner}>{refundBannerText}</p>
+      ) : null}
+
       {turnaroundLabel ? <p className={styles.turnaround}>{turnaroundLabel}</p> : null}
 
       <div className={styles.ctaWrap}>
-        {activeService.showRefundBanner ? (
-          <p className={styles.dealerRefundBanner}>{refundBannerText}</p>
-        ) : null}
         {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
         {demoNote ? <p className={styles.checkoutError} style={{ color: "#93c5fd" }}>{demoNote}</p> : null}
         <button type="button" className={styles.liquidCta} onClick={onSubmit} disabled={loading}>
