@@ -1,6 +1,5 @@
 "use client";
 
-import { LayoutGroup, motion } from "framer-motion";
 import { Globe } from "lucide-react";
 import { type SyntheticEvent, type TouchEvent } from "react";
 import { useLocale } from "next-intl";
@@ -23,8 +22,6 @@ import {
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import { Tp5TurnaroundInfoTip } from "@/components/test-pricing-5/Tp5TurnaroundInfoTip";
-
-const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 
 const FEATURE_MARK_CLASS =
   "inline-flex h-6 w-6 shrink-0 items-center justify-center text-[0.98rem] font-bold leading-none";
@@ -159,8 +156,8 @@ export function Tp5MobilePricingCard({
   onVinChange,
   onListingUrlChange,
   onSubmit,
-  tabLayoutGroupId = "tp5-tabs-mobile",
-  tabPillLayoutId = "tp5-tab-pill-mobile",
+  tabLayoutGroupId: _tabLayoutGroupId = "tp5-tabs-mobile",
+  tabPillLayoutId: _tabPillLayoutId = "tp5-tab-pill-mobile",
   tierMetaDescClassName,
   onSwipeAreaTouchStart,
   onSwipeAreaTouchMove,
@@ -199,41 +196,32 @@ export function Tp5MobilePricingCard({
       onTouchCancel={onSwipeAreaTouchCancel}
     >
       <div className={styles.cardHeader}>
-        <LayoutGroup id={tabLayoutGroupId}>
-          <div
-            className={`${styles.tierSwitcher}${services.length >= 4 ? ` ${styles.tierSwitcherFour}` : ""}`}
-            role="tablist"
-            aria-label={uiCopy.packageTabsAria}
-          >            {services.map((service) => {
-              const active = activeServiceId === service.id;
-              return (
-                <button
-                  key={service.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  aria-label={`${service.title}${uiCopy.packageAriaSuffix}`}
-                  className={styles.tierTabBtn}
-                  onClick={() => setActiveServiceId(service.id)}
+        <div
+          className={`${styles.tierSwitcher}${services.length >= 4 ? ` ${styles.tierSwitcherFour}` : ""}`}
+          role="tablist"
+          aria-label={uiCopy.packageTabsAria}
+        >
+          {services.map((service) => {
+            const active = activeServiceId === service.id;
+            return (
+              <button
+                key={service.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-label={`${service.title}${uiCopy.packageAriaSuffix}`}
+                className={styles.tierTabBtn}
+                onClick={() => setActiveServiceId(service.id)}
+              >
+                <span
+                  className={`${styles.tierTabLabel} ${styles.tierTabLabelCompact} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
                 >
-                  {active ? (
-                    <motion.span
-                      layoutId={tabPillLayoutId}
-                      className={styles.tierTabPill}
-                      transition={TAB_TRANSITION}
-                      aria-hidden
-                    />
-                  ) : null}
-                  <span
-                    className={`${styles.tierTabLabel} ${styles.tierTabLabelCompact} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
-                  >
-                    {service.title}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </LayoutGroup>
+                  {service.title}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         {activeService.description.trim() ? (
           <div className={styles.tierMeta} aria-live="polite">

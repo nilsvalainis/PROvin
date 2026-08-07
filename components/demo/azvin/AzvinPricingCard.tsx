@@ -1,6 +1,5 @@
 "use client";
 
-import { LayoutGroup, motion } from "framer-motion";
 import { Globe } from "lucide-react";
 import { type SyntheticEvent, type TouchEvent, useEffect, useRef, useState } from "react";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
@@ -20,8 +19,6 @@ import {
   TP5_DEALER_BRAND_LOGO_SRC,
   TP5_DEALER_BRAND_ROWS,
 } from "@/lib/test-pricing-5-mobile";
-
-const TAB_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const };
 
 const FEATURE_MARK_CLASS =
   "inline-flex h-6 w-6 shrink-0 items-center justify-center text-[0.98rem] font-bold leading-none";
@@ -215,8 +212,8 @@ export function AzvinPricingCard({
   onVinChange,
   onListingUrlChange,
   onSubmit,
-  tabLayoutGroupId = "azvin-tabs-mobile",
-  tabPillLayoutId = "azvin-tab-pill-mobile",
+  tabLayoutGroupId: _tabLayoutGroupId = "azvin-tabs-mobile",
+  tabPillLayoutId: _tabPillLayoutId = "azvin-tab-pill-mobile",
   onSwipeAreaTouchStart,
   onSwipeAreaTouchMove,
   onSwipeAreaTouchEnd,
@@ -240,38 +237,28 @@ export function AzvinPricingCard({
       onTouchCancel={onSwipeAreaTouchCancel}
     >
       <div className={styles.cardHeader}>
-        <LayoutGroup id={tabLayoutGroupId}>
-          <div className={styles.tierSwitcher} role="tablist" aria-label={uiCopy.packageTabsAria}>
-            {services.map((service) => {
-              const active = activeServiceId === service.id;
-              return (
-                <button
-                  key={service.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  aria-label={`${service.title}${uiCopy.packageAriaSuffix}`}
-                  className={styles.tierTabBtn}
-                  onClick={() => setActiveServiceId(service.id)}
+        <div className={styles.tierSwitcher} role="tablist" aria-label={uiCopy.packageTabsAria}>
+          {services.map((service) => {
+            const active = activeServiceId === service.id;
+            return (
+              <button
+                key={service.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-label={`${service.title}${uiCopy.packageAriaSuffix}`}
+                className={styles.tierTabBtn}
+                onClick={() => setActiveServiceId(service.id)}
+              >
+                <span
+                  className={`${styles.tierTabLabel} ${styles.tierTabLabelCompact} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
                 >
-                  {active ? (
-                    <motion.span
-                      layoutId={tabPillLayoutId}
-                      className={styles.tierTabPill}
-                      transition={TAB_TRANSITION}
-                      aria-hidden
-                    />
-                  ) : null}
-                  <span
-                    className={`${styles.tierTabLabel} ${styles.tierTabLabelCompact} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
-                  >
-                    {service.title}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </LayoutGroup>
+                  {service.title}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         {activeService.description.trim() ? (
           <div className={styles.tierMeta} aria-live="polite">
