@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
   GOOGLE_REVIEWS,
   GOOGLE_REVIEWS_AGGREGATE_RATING,
@@ -37,37 +37,65 @@ function StarRow({ count = 5, size = "md" }: { count?: number; size?: "sm" | "md
   );
 }
 
-function clipQuote(text: string, max = QUOTE_MAX_CHARS): string {
+function clipQuote(text: string, max = QUOTE_MAX_CHARS): { clipped: string; truncated: boolean } {
   const t = text.replace(/\s+/g, " ").trim();
-  if (t.length <= max) return t;
+  if (t.length <= max) return { clipped: t, truncated: false };
   const cut = t.slice(0, max);
   const lastSpace = cut.lastIndexOf(" ");
-  return `${(lastSpace > 72 ? cut.slice(0, lastSpace) : cut).trim()}…`;
+  return {
+    clipped: `${(lastSpace > 72 ? cut.slice(0, lastSpace) : cut).trim()}…`,
+    truncated: true,
+  };
 }
 
 type Props = {
   profileUrl: string;
   ratingLabel: string;
+  readFullLabel: string;
+  closeLabel: string;
 };
 
 /**
  * Desktop: tā pati 7+5 asimetrija kā hero (citāts kreisajā, Google enkurs labajā zem kartītes).
  * Mobile: centrēts stack.
  */
-export function HomeGoogleReviewsFeatured({ profileUrl, ratingLabel }: Props) {
+export function HomeGoogleReviewsFeatured({
+  profileUrl,
+  ratingLabel,
+  readFullLabel,
+  closeLabel,
+}: Props) {
   const reviews = pickFeatured();
   const [index, setIndex] = useState(0);
+  const [openFull, setOpenFull] = useState(false);
+  const titleId = useId();
 
   useEffect(() => {
-    if (reviews.length < 2) return;
+    if (reviews.length < 2 || openFull) return;
     const id = window.setInterval(() => {
       setIndex((i) => (i + 1) % reviews.length);
     }, 7000);
     return () => window.clearInterval(id);
-  }, [reviews.length]);
+  }, [reviews.length, openFull]);
+
+  useEffect(() => {
+    if (!openFull) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenFull(false);
+    };
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [openFull]);
 
   const current = reviews[index] ?? reviews[0];
   if (!current) return null;
+
+  const { clipped, truncated } = clipQuote(current.text);
 
   const dots =
     reviews.length > 1 ? (
@@ -89,7 +117,7 @@ export function HomeGoogleReviewsFeatured({ profileUrl, ratingLabel }: Props) {
   const quoteBlock = (
     <blockquote key={current.id} className="w-full transition-opacity duration-500">
       <p className="line-clamp-3 text-pretty text-[1.2rem] font-medium leading-[1.35] tracking-tight text-white/[0.94] sm:text-[1.4rem] sm:leading-[1.32] lg:text-left lg:text-[1.45rem]">
-        “{clipQuote(current.text)}”
+        “{clipped}”
       </p>
       <footer className="mt-4 flex flex-col gap-1.5 sm:mt-5">
         <cite className="not-italic text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
@@ -99,6 +127,15 @@ export function HomeGoogleReviewsFeatured({ profileUrl, ratingLabel }: Props) {
           <StarRow count={current.rating} size="sm" />
           <span>{current.relativeDateLv}</span>
         </div>
+        {truncated ? (
+          <button
+            type="button"
+            onClick={() => setOpenFull(true)}
+            className="mt-1 self-center text-[11px] font-semibold uppercase tracking-[0.16em] text-provin-accent transition hover:text-white lg:self-start"
+          >
+            {readFullLabel}
+          </button>
+        ) : null}
       </footer>
     </blockquote>
   );
@@ -119,6 +156,55 @@ export function HomeGoogleReviewsFeatured({ profileUrl, ratingLabel }: Props) {
       </a>
     </div>
   );
+
+  const fullDialog = openFull ? (
+    <div
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-4 sm:items-center"
+      role="presentation"
+      onClick={() => setOpenFull(false)}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="max-h-[min(85vh,36rem)] w-full max-w-lg overflow-y-auto border border-white/[0.12] bg-[#0a0c10] p-5 shadow-2xl sm:p-7"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3
+              id={titleId}
+              className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55"
+            >
+              {current.author}
+            </h3>
+            <div className="mt-2 flex items-center gap-2 text-[11px] text-white/35">
+              <StarRow count={current.rating} size="sm" />
+              <span>{current.relativeDateLv}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpenFull(false)}
+            className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45 transition hover:text-white"
+          >
+            {closeLabel}
+          </button>
+        </div>
+        <p className="mt-5 whitespace-pre-line text-pretty text-[1.05rem] leading-[1.55] text-white/[0.92]">
+          “{current.text.trim()}”
+        </p>
+        <a
+          href={profileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-6 inline-flex text-[11px] font-semibold uppercase tracking-[0.16em] text-provin-accent no-underline transition hover:text-white"
+        >
+          Google →
+        </a>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div className="w-full">
@@ -143,6 +229,8 @@ export function HomeGoogleReviewsFeatured({ profileUrl, ratingLabel }: Props) {
           </div>
         </div>
       </div>
+
+      {fullDialog}
     </div>
   );
 }
