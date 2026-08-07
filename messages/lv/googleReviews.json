@@ -4,8 +4,7 @@
     "kicker": "Atsauksmes Google",
     "viewAll": "Skatīt Google profilā",
     "sourceLabel": "Google",
-    "ratingLine": "{rating}/5 uz Google",
-    "readFull": "Lasīt visu",
-    "close": "Aizvērt"
+    "prev": "Iepriekšējā atsauksme",
+    "next": "Nākamā atsauksme"
   }
 }

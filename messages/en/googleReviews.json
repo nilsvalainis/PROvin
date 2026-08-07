@@ -4,8 +4,7 @@
     "kicker": "Reviews on Google",
     "viewAll": "View on Google",
     "sourceLabel": "Google",
-    "ratingLine": "{rating}/5 on Google",
-    "readFull": "Read full",
-    "close": "Close"
+    "prev": "Previous review",
+    "next": "Next review"
   }
 }

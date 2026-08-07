@@ -4,7 +4,10 @@ import { Link } from "@/i18n/navigation";
 
 const HOME_FAQ_LIMIT = 4;
 
-/** Kompakts BUJ — desktopā kreisā (7/12) ass kā hero copy, ne centrēts “otrais hero”. */
+/**
+ * Atsevišķs BUJ bloks (demo / test-pricing lapām).
+ * Sākumlapa: BUJ ir iekšā `HomeGoogleReviews` labajā kolonnā.
+ */
 export async function HomeFaqSection() {
   const tFaq = await getTranslations("Faq");
   const messages = await getMessages();
@@ -31,34 +34,29 @@ export async function HomeFaqSection() {
       className="home-body-ink relative bg-transparent"
       aria-labelledby="home-faq-heading"
     >
-      {/* Šaura atdalošā līnija no atsauksmēm */}
       <div
         className="pointer-events-none h-px w-full bg-gradient-to-r from-transparent via-white/[0.12] to-transparent"
         aria-hidden
       />
 
       <div className="mx-auto w-full max-w-[80rem] px-[max(1rem,env(safe-area-inset-left,0px))] py-8 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:py-10 lg:px-8 lg:pb-12 lg:pt-10">
-        <div className="lg:grid lg:grid-cols-12 lg:gap-16">
-          <div className="mx-auto w-full max-w-[min(36rem,100%)] lg:col-span-7 lg:mx-0 lg:max-w-none">
-            <header className="mb-4 flex items-end justify-between gap-4 border-b border-white/[0.08] pb-3">
-              <h2
-                id="home-faq-heading"
-                className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45"
-              >
-                {tFaq("homeEyebrow")}
-              </h2>
-              <Link
-                href="/biezi-jautajumi"
-                className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-provin-accent no-underline transition hover:text-white"
-              >
-                {tFaq("homeSeeAll")}
-              </Link>
-            </header>
+        <div className="mx-auto w-full max-w-[min(36rem,100%)] lg:mx-0 lg:max-w-[min(40rem,100%)]">
+          <header className="mb-4 flex items-end justify-between gap-4 border-b border-white/[0.08] pb-3">
+            <h2
+              id="home-faq-heading"
+              className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45"
+            >
+              {tFaq("homeEyebrow")}
+            </h2>
+            <Link
+              href="/biezi-jautajumi"
+              className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-provin-accent no-underline transition hover:text-white"
+            >
+              {tFaq("homeSeeAll")}
+            </Link>
+          </header>
 
-            <FaqClient title={tFaq("title")} items={homeItems} tone="dark" embedded compact />
-          </div>
-          {/* Labā kolonna tukša — saglabā hero asimetrijas elpu */}
-          <div className="hidden lg:col-span-5 lg:block" aria-hidden />
+          <FaqClient title={tFaq("title")} items={homeItems} tone="dark" embedded compact />
         </div>
 
         <script
