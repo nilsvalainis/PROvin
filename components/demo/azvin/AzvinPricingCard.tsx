@@ -20,9 +20,6 @@ import {
   TP5_DEALER_BRAND_ROWS,
 } from "@/lib/test-pricing-5-mobile";
 
-const FEATURE_MARK_CLASS =
-  "inline-flex h-6 w-6 shrink-0 items-center justify-center text-[0.98rem] font-bold leading-none";
-
 function SampleReportPdfIcon() {
   return (
     <svg
@@ -71,7 +68,7 @@ function FeatureRow({ feature }: { feature: AzvinMobileFeature }) {
   if (feature.included) {
     return (
       <li className={styles.featureRow}>
-        <span className={`${FEATURE_MARK_CLASS} text-[#2563EB]`} aria-hidden>
+        <span className={`${styles.featureMark} ${styles.featureMarkBlue}`} aria-hidden>
           ✓
         </span>
         <span className={styles.featureLabelActive}>{feature.name}</span>
@@ -81,7 +78,7 @@ function FeatureRow({ feature }: { feature: AzvinMobileFeature }) {
 
   return (
     <li className={styles.featureRow}>
-      <span className={`${FEATURE_MARK_CLASS} text-[#ef4444]`} aria-hidden>
+      <span className={`${styles.featureMark} ${styles.featureMarkCross}`} aria-hidden>
         ✕
       </span>
       <span className={styles.featureLabelMuted}>{feature.name}</span>

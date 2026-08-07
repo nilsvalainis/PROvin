@@ -23,9 +23,6 @@ import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import { Tp5TurnaroundInfoTip } from "@/components/test-pricing-5/Tp5TurnaroundInfoTip";
 
-const FEATURE_MARK_CLASS =
-  "inline-flex h-6 w-6 shrink-0 items-center justify-center text-[0.98rem] font-bold leading-none";
-
 function SampleReportPdfIcon() {
   return (
     <svg
@@ -95,7 +92,7 @@ function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
   if (feature.included) {
     return (
       <li className={styles.featureRow}>
-        <span className={`${FEATURE_MARK_CLASS} text-[#2563EB]`} aria-hidden>
+        <span className={`${styles.featureMark} ${styles.featureMarkBlue}`} aria-hidden>
           ✓
         </span>
         <span className={styles.featureLabelActive}>{feature.name}</span>
@@ -106,7 +103,7 @@ function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
   if (feature.tone === "soft") {
     return (
       <li className={styles.featureRow}>
-        <span className={`${FEATURE_MARK_CLASS} text-white/35`} aria-hidden>
+        <span className={`${styles.featureMark} ${styles.featureMarkSoft}`} aria-hidden>
           —
         </span>
         <span className={styles.featureLabelSoft}>{feature.name}</span>
@@ -116,7 +113,7 @@ function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
 
   return (
     <li className={styles.featureRow}>
-      <span className={`${FEATURE_MARK_CLASS} text-[#ef4444]`} aria-hidden>
+      <span className={`${styles.featureMark} ${styles.featureMarkCross}`} aria-hidden>
         ✕
       </span>
       <span className={styles.featureLabelMuted}>{feature.name}</span>
