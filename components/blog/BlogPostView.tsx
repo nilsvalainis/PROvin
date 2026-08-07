@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { BlogComments } from "@/components/blog/BlogComments";
 import { BlogPostBody } from "@/components/blog/BlogPostBody";
+import { BlogViewTracker } from "@/components/blog/BlogViewTracker";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { Link } from "@/i18n/navigation";
 import type { BlogPost } from "@/lib/blog/types";
@@ -17,6 +18,7 @@ export async function BlogPostView({ post, locale }: Props) {
 
   return (
     <article className="home-body-ink relative scroll-mt-16 bg-transparent px-4 pb-16 pt-10 sm:pb-20 sm:pt-12">
+      <BlogViewTracker slug={post.slug} />
       <div className="demo-design-dir__shell relative mx-auto w-full max-w-[min(100%,80rem)] px-1 sm:px-2">
         <p className="mx-auto max-w-[min(42.5rem,calc(100vw-2rem))]">
           <Link

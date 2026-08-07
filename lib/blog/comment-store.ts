@@ -139,6 +139,11 @@ export async function listAdminBlogComments(slug: string): Promise<BlogCommentAd
   return [...doc.comments].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
+export async function countBlogComments(slug: string): Promise<number> {
+  const doc = await readDoc(slug);
+  return doc.comments.length;
+}
+
 export async function deleteBlogComment(slug: string, commentId: string): Promise<boolean> {
   const s = slug.trim().toLowerCase();
   const id = commentId.trim();
