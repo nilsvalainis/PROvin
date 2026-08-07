@@ -40,6 +40,10 @@ data/iriss-pasutijumi-restore-*/
 # Ģenerēts priekšskatījums (liels fails — nav jākomitē)
 public/mobile-preview.png
 
+# Sociālā banera lokālie artefakti
+social-banner/node_modules/
+social-banner/banner.jpg
+
 # typescript
 next-env.d.ts
 *.tsbuildinfo

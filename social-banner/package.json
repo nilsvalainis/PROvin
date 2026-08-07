@@ -1,0 +1,14 @@
+{
+  "name": "provin-social-banner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PROVIN.LV sociālo tīklu banera ģenerators (1200×630)",
+  "main": "generate.js",
+  "scripts": {
+    "generate": "node generate.js",
+    "install-and-generate": "npm install && node generate.js"
+  },
+  "dependencies": {
+    "puppeteer": "^24.2.0"
+  }
+}
