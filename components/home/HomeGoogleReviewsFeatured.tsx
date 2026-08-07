@@ -10,8 +10,15 @@ import {
 /** Īsie / spēcīgie citāti — editorial pull-quote, ne kartīšu siena. */
 const FEATURED_IDS = ["dzintars-jaunzems", "edgars-sulcs", "andris-ever"] as const;
 
-/** Īss excerpt, lai neaiziet zem karusela punktiem. */
-const QUOTE_MAX_CHARS = 128;
+/** Vienāds excerpt garums karuselī — īsākais featured teksts tiek apgriezts pie ~100. */
+const QUOTE_MAX_CHARS = 100;
+
+/** Fiksēts 3 rindu bloka augstums pēc aktuālajiem font-size / line-height. */
+const QUOTE_BODY_CLASS =
+  "line-clamp-3 min-h-[4.875rem] text-pretty text-[1.2rem] font-medium leading-[1.35] tracking-tight text-white/[0.94] sm:min-h-[5.544rem] sm:text-[1.4rem] sm:leading-[1.32] lg:min-h-[5.742rem] lg:text-left lg:text-[1.45rem]";
+
+/** Kājenes + „Lasīt visu” — vienāda augstuma rezervācija visām kartēm. */
+const QUOTE_FOOTER_CLASS = "mt-4 flex min-h-[5.25rem] flex-col gap-1.5 sm:mt-5";
 
 function pickFeatured(): GoogleReviewEntry[] {
   const byId = new Map(GOOGLE_REVIEWS.map((r) => [r.id, r]));
@@ -43,9 +50,14 @@ function clipQuote(text: string, max = QUOTE_MAX_CHARS): { clipped: string; trun
   const cut = t.slice(0, max);
   const lastSpace = cut.lastIndexOf(" ");
   return {
-    clipped: `${(lastSpace > 72 ? cut.slice(0, lastSpace) : cut).trim()}…`,
+    clipped: `${(lastSpace > 56 ? cut.slice(0, lastSpace) : cut).trim()}…`,
     truncated: true,
   };
+}
+
+function formatCarouselQuote(text: string): { clipped: string; truncated: boolean } {
+  const { clipped, truncated } = clipQuote(text);
+  return { clipped, truncated: truncated || text.replace(/\s+/g, " ").trim().length > clipped.length };
 }
 
 type Props = {
@@ -95,11 +107,11 @@ export function HomeGoogleReviewsFeatured({
   const current = reviews[index] ?? reviews[0];
   if (!current) return null;
 
-  const { clipped, truncated } = clipQuote(current.text);
+  const { clipped, truncated } = formatCarouselQuote(current.text);
 
   const dots =
     reviews.length > 1 ? (
-      <div className="mt-5 flex gap-2 lg:mt-6" aria-hidden>
+      <div className="mt-5 flex h-1.5 gap-2 lg:mt-6" aria-hidden>
         {reviews.map((r, i) => (
           <button
             key={r.id}
@@ -115,27 +127,32 @@ export function HomeGoogleReviewsFeatured({
     ) : null;
 
   const quoteBlock = (
-    <blockquote key={current.id} className="w-full transition-opacity duration-500">
-      <p className="line-clamp-3 text-pretty text-[1.2rem] font-medium leading-[1.35] tracking-tight text-white/[0.94] sm:text-[1.4rem] sm:leading-[1.32] lg:text-left lg:text-[1.45rem]">
-        “{clipped}”
-      </p>
-      <footer className="mt-4 flex flex-col gap-1.5 sm:mt-5">
-        <cite className="not-italic text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
+    <blockquote
+      key={current.id}
+      className="flex w-full min-h-[10.75rem] flex-col transition-opacity duration-500 sm:min-h-[11.5rem] lg:min-h-[11.75rem]"
+    >
+      <p className={QUOTE_BODY_CLASS}>“{clipped}”</p>
+      <footer className={QUOTE_FOOTER_CLASS}>
+        <cite className="min-h-[1rem] not-italic text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
           {current.author}
         </cite>
-        <div className="flex items-center justify-center gap-2 text-[11px] text-white/35 lg:justify-start">
+        <div className="flex min-h-[1rem] items-center justify-center gap-2 text-[11px] text-white/35 lg:justify-start">
           <StarRow count={current.rating} size="sm" />
           <span>{current.relativeDateLv}</span>
         </div>
-        {truncated ? (
-          <button
-            type="button"
-            onClick={() => setOpenFull(true)}
-            className="mt-1 self-center text-[11px] font-semibold uppercase tracking-[0.16em] text-provin-accent transition hover:text-white lg:self-start"
-          >
-            {readFullLabel}
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={() => setOpenFull(true)}
+          aria-hidden={!truncated}
+          tabIndex={truncated ? 0 : -1}
+          className={`mt-1 min-h-[1.25rem] self-center text-[11px] font-semibold uppercase tracking-[0.16em] transition lg:self-start ${
+            truncated
+              ? "text-provin-accent hover:text-white"
+              : "pointer-events-none invisible text-provin-accent"
+          }`}
+        >
+          {readFullLabel}
+        </button>
       </footer>
     </blockquote>
   );
@@ -210,8 +227,10 @@ export function HomeGoogleReviewsFeatured({
     <div className="w-full">
       {/* Mobile / tablet — viena kolonna */}
       <div className="flex flex-col items-center text-center lg:hidden">
-        {quoteBlock}
-        <div className="flex justify-center">{dots}</div>
+        <div className="flex w-full min-h-[13.5rem] flex-col sm:min-h-[14.25rem]">
+          {quoteBlock}
+          <div className="flex justify-center">{dots}</div>
+        </div>
         <div className="mt-8 flex w-full flex-col items-center border-t border-white/[0.08] pt-6">
           {trustRail}
         </div>
@@ -219,7 +238,7 @@ export function HomeGoogleReviewsFeatured({
 
       {/* Desktop — hero 12 kol. / 7+5 */}
       <div className="hidden lg:grid lg:grid-cols-12 lg:items-start lg:gap-16">
-        <div className="min-w-0 lg:col-span-7">
+        <div className="flex min-h-[13.25rem] min-w-0 flex-col lg:col-span-7">
           {quoteBlock}
           {dots}
         </div>
