@@ -1,7 +1,6 @@
 "use client";
 
-import { Globe } from "lucide-react";
-import { type SyntheticEvent, type TouchEvent, useEffect, useRef, useState } from "react";
+import { type SyntheticEvent, type TouchEvent } from "react";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import type { AzvinLocale } from "@/lib/azvin-hero-copy";
 import {
@@ -14,11 +13,7 @@ import {
   AZVIN_DEALER_SAMPLE_REPORT_HREF,
   getAzvinUiCopy,
 } from "@/lib/azvin-ui-copy";
-import {
-  TP5_DEALER_BRAND_DARK_PLATE,
-  TP5_DEALER_BRAND_LOGO_SRC,
-  TP5_DEALER_BRAND_ROWS,
-} from "@/lib/test-pricing-5-mobile";
+import { Tp5DealerInlineBrands } from "@/components/test-pricing-5/Tp5DealerInlineBrands";
 
 function SampleReportPdfIcon() {
   return (
@@ -50,16 +45,22 @@ function SampleReportPdfIcon() {
   );
 }
 
-function HighlightFeature({ feature }: { feature: AzvinMobileFeature }) {
+function DealerFeatureHighlight({
+  feature,
+  brandsAria,
+}: {
+  feature: AzvinMobileFeature;
+  brandsAria: string;
+}) {
   return (
-    <div className="mb-6 flex items-center gap-3.5" role="listitem">
-      <Globe className="h-6 w-6 shrink-0 text-slate-300 stroke-[1.5]" aria-hidden />
-      <div className="min-w-0 flex-1">
-        <p className="m-0 text-[0.92rem] font-semibold leading-snug text-slate-100">{feature.name}</p>
+    <div className={styles.dealerFeatureCenter}>
+      <div>
+        <p className={styles.dealerFeatureTitle}>{feature.name}</p>
         {feature.subtitle ? (
-          <p className="mt-0.5 m-0 text-xs font-normal leading-snug text-slate-400">{feature.subtitle}</p>
+          <p className={styles.dealerFeatureSubtitle}>{feature.subtitle}</p>
         ) : null}
       </div>
+      <Tp5DealerInlineBrands brandsAria={brandsAria} />
     </div>
   );
 }
@@ -83,89 +84,6 @@ function FeatureRow({ feature }: { feature: AzvinMobileFeature }) {
       </span>
       <span className={styles.featureLabelMuted}>{feature.name}</span>
     </li>
-  );
-}
-
-/** PROVIN dealer brand grid — copied 1:1. */
-function DealerBrandBadges({ brandsAria }: { brandsAria: string }) {
-  const [openBrand, setOpenBrand] = useState<string | null>(null);
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const touchMovedRef = useRef(false);
-
-  useEffect(() => {
-    if (!openBrand) return;
-    const onPointerDown = (event: PointerEvent) => {
-      const root = rootRef.current;
-      if (!root || !(event.target instanceof Node)) return;
-      if (!root.contains(event.target)) setOpenBrand(null);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpenBrand(null);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [openBrand]);
-
-  return (
-    <div ref={rootRef} className={styles.dealerInlineBrands} aria-label={brandsAria}>
-      {TP5_DEALER_BRAND_ROWS.flat().map((brand) => {
-        const src = TP5_DEALER_BRAND_LOGO_SRC[brand];
-        const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
-        const open = openBrand === brand;
-        return (
-          <div
-            key={brand}
-            role="button"
-            tabIndex={0}
-            className={`${styles.dealerInlineBrandCell}${open ? ` ${styles.dealerInlineBrandCellOpen}` : ""}`}
-            aria-label={brand}
-            aria-expanded={open}
-            onMouseEnter={() => setOpenBrand(brand)}
-            onMouseLeave={() => setOpenBrand((prev) => (prev === brand ? null : prev))}
-            onFocus={() => setOpenBrand(brand)}
-            onBlur={() => setOpenBrand((prev) => (prev === brand ? null : prev))}
-            onTouchStart={() => {
-              touchMovedRef.current = false;
-            }}
-            onTouchMove={() => {
-              touchMovedRef.current = true;
-            }}
-            onKeyDown={(event) => {
-              if (event.key !== "Enter" && event.key !== " ") return;
-              event.preventDefault();
-              setOpenBrand((prev) => (prev === brand ? null : brand));
-            }}
-            onClick={() => {
-              if (touchMovedRef.current) return;
-              if (
-                typeof window !== "undefined" &&
-                window.matchMedia("(hover: hover) and (pointer: fine)").matches
-              ) {
-                return;
-              }
-              setOpenBrand((prev) => (prev === brand ? null : brand));
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={src}
-              alt=""
-              className={`${styles.dealerInlineBrandLogo}${darkPlate ? ` ${styles.dealerInlineBrandLogoDarkPlate}` : ""}`}
-              loading="lazy"
-              decoding="async"
-              draggable={false}
-            />
-            <span className={styles.dealerInlineBrandTip} role="tooltip">
-              {brand}
-            </span>
-          </div>
-        );
-      })}
-    </div>
   );
 }
 
@@ -268,7 +186,10 @@ export function AzvinPricingCard({
       <div className={styles.featureStack}>
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
           {isDealer && activeService.features[0] ? (
-            <HighlightFeature feature={activeService.features[0]} />
+            <DealerFeatureHighlight
+              feature={activeService.features[0]}
+              brandsAria={uiCopy.dealerBrandsAria}
+            />
           ) : (
             <ul className={styles.featureList}>
               {activeService.features.map((feature) => (
@@ -276,7 +197,6 @@ export function AzvinPricingCard({
               ))}
             </ul>
           )}
-          {isDealer ? <DealerBrandBadges brandsAria={uiCopy.dealerBrandsAria} /> : null}
           {activeService.extraNote ? (
             <p className={styles.featureFootnote}>{activeService.extraNote}</p>
           ) : null}

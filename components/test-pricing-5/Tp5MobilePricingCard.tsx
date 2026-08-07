@@ -1,6 +1,5 @@
 "use client";
 
-import { Globe } from "lucide-react";
 import { type SyntheticEvent, type TouchEvent } from "react";
 import { useLocale } from "next-intl";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
@@ -17,10 +16,9 @@ import {
   TP5_DEALER_SAMPLE_REPORT_HREF,
   TP5_MINI_SAMPLE_REPORT_HREF,
   getTp5UiCopy,
-  type Tp5UiCopy,
 } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
-import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
+import { Tp5DealerInlineBrands } from "@/components/test-pricing-5/Tp5DealerInlineBrands";
 import { Tp5TurnaroundInfoTip } from "@/components/test-pricing-5/Tp5TurnaroundInfoTip";
 
 function SampleReportPdfIcon() {
@@ -55,27 +53,20 @@ function SampleReportPdfIcon() {
 
 function DealerFeatureHighlight({
   feature,
-  brands,
-  uiCopy,
+  brandsAria,
 }: {
   feature: Tp5MobileFeature;
-  brands: readonly string[];
-  uiCopy: Pick<Tp5UiCopy, "dealerBrandsTrigger" | "dealerBrandsAria" | "dealerBrandsClose">;
+  brandsAria: string;
 }) {
   return (
-    <div className="mb-6 flex items-center gap-3.5" role="listitem">
-      <Globe className="h-6 w-6 shrink-0 text-slate-300 stroke-[1.5]" aria-hidden />
-      <div className="min-w-0 flex-1">
-        <p className="m-0 text-[0.92rem] font-semibold leading-snug text-slate-100">{feature.name}</p>
+    <div className={styles.dealerFeatureCenter}>
+      <div>
+        <p className={styles.dealerFeatureTitle}>{feature.name}</p>
         {feature.subtitle ? (
-          <p className="mt-0.5 m-0 text-xs font-normal leading-snug text-slate-400">{feature.subtitle}</p>
-        ) : null}
-        {brands.length > 0 ? (
-          <div className={styles.dealerBrandsUnderSubtitle}>
-            <Tp5DealerBrandsTip brands={brands} copy={uiCopy} />
-          </div>
+          <p className={styles.dealerFeatureSubtitle}>{feature.subtitle}</p>
         ) : null}
       </div>
+      <Tp5DealerInlineBrands brandsAria={brandsAria} />
     </div>
   );
 }
@@ -233,8 +224,7 @@ export function Tp5MobilePricingCard({
           {isDealer && activeService.features[0] ? (
             <DealerFeatureHighlight
               feature={activeService.features[0]}
-              brands={activeService.brands ?? []}
-              uiCopy={uiCopy}
+              brandsAria={uiCopy.dealerBrandsAria}
             />
           ) : (
             <ul className={styles.featureList}>
