@@ -33,7 +33,6 @@ export async function HomeGoogleReviews() {
         <HomeGoogleReviewsFeatured
           profileUrl={profileUrl}
           ratingLabel={t("ratingLine", { rating: GOOGLE_REVIEWS_AGGREGATE_RATING })}
-          trustAside={t("trustAside")}
         />
       </div>
     </section>

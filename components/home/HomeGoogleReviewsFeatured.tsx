@@ -10,6 +10,9 @@ import {
 /** Īsie / spēcīgie citāti — editorial pull-quote, ne kartīšu siena. */
 const FEATURED_IDS = ["dzintars-jaunzems", "edgars-sulcs", "andris-ever"] as const;
 
+/** Īss excerpt, lai neaiziet zem karusela punktiem. */
+const QUOTE_MAX_CHARS = 128;
+
 function pickFeatured(): GoogleReviewEntry[] {
   const byId = new Map(GOOGLE_REVIEWS.map((r) => [r.id, r]));
   const featured = FEATURED_IDS.map((id) => byId.get(id)).filter(
@@ -34,25 +37,24 @@ function StarRow({ count = 5, size = "md" }: { count?: number; size?: "sm" | "md
   );
 }
 
-function clipQuote(text: string, max = 240): string {
+function clipQuote(text: string, max = QUOTE_MAX_CHARS): string {
   const t = text.replace(/\s+/g, " ").trim();
   if (t.length <= max) return t;
   const cut = t.slice(0, max);
   const lastSpace = cut.lastIndexOf(" ");
-  return `${(lastSpace > 120 ? cut.slice(0, lastSpace) : cut).trim()}…`;
+  return `${(lastSpace > 72 ? cut.slice(0, lastSpace) : cut).trim()}…`;
 }
 
 type Props = {
   profileUrl: string;
   ratingLabel: string;
-  trustAside: string;
 };
 
 /**
  * Desktop: tā pati 7+5 asimetrija kā hero (citāts kreisajā, Google enkurs labajā zem kartītes).
  * Mobile: centrēts stack.
  */
-export function HomeGoogleReviewsFeatured({ profileUrl, ratingLabel, trustAside }: Props) {
+export function HomeGoogleReviewsFeatured({ profileUrl, ratingLabel }: Props) {
   const reviews = pickFeatured();
   const [index, setIndex] = useState(0);
 
@@ -67,47 +69,38 @@ export function HomeGoogleReviewsFeatured({ profileUrl, ratingLabel, trustAside 
   const current = reviews[index] ?? reviews[0];
   if (!current) return null;
 
-  const dots = reviews.length > 1 ? (
-    <div className="mt-5 flex gap-2 lg:mt-6" aria-hidden>
-      {reviews.map((r, i) => (
-        <button
-          key={r.id}
-          type="button"
-          onClick={() => setIndex(i)}
-          className={`h-1.5 w-1.5 rounded-full transition ${
-            i === index ? "bg-provin-accent" : "bg-white/25 hover:bg-white/45"
-          }`}
-          aria-label={`Atsauksme ${i + 1}`}
-        />
-      ))}
-    </div>
-  ) : null;
+  const dots =
+    reviews.length > 1 ? (
+      <div className="mt-5 flex gap-2 lg:mt-6" aria-hidden>
+        {reviews.map((r, i) => (
+          <button
+            key={r.id}
+            type="button"
+            onClick={() => setIndex(i)}
+            className={`h-1.5 w-1.5 rounded-full transition ${
+              i === index ? "bg-provin-accent" : "bg-white/25 hover:bg-white/45"
+            }`}
+            aria-label={`Atsauksme ${i + 1}`}
+          />
+        ))}
+      </div>
+    ) : null;
 
   const quoteBlock = (
-    <div className="relative min-h-[9.5rem] w-full sm:min-h-[8.5rem] lg:min-h-[9rem]">
-      {reviews.map((review, i) => (
-        <blockquote
-          key={review.id}
-          className={`absolute inset-x-0 top-0 transition-opacity duration-700 ease-out ${
-            i === index ? "opacity-100" : "pointer-events-none opacity-0"
-          }`}
-          aria-hidden={i !== index}
-        >
-          <p className="text-pretty text-[1.2rem] font-medium leading-[1.35] tracking-tight text-white/[0.94] sm:text-[1.4rem] sm:leading-[1.32] lg:text-[1.45rem]">
-            “{clipQuote(review.text)}”
-          </p>
-          <footer className="mt-4 flex flex-col gap-1.5 sm:mt-5">
-            <cite className="not-italic text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
-              {review.author}
-            </cite>
-            <div className="flex items-center gap-2 text-[11px] text-white/35">
-              <StarRow count={review.rating} size="sm" />
-              <span>{review.relativeDateLv}</span>
-            </div>
-          </footer>
-        </blockquote>
-      ))}
-    </div>
+    <blockquote key={current.id} className="w-full transition-opacity duration-500">
+      <p className="line-clamp-3 text-pretty text-[1.2rem] font-medium leading-[1.35] tracking-tight text-white/[0.94] sm:text-[1.4rem] sm:leading-[1.32] lg:text-left lg:text-[1.45rem]">
+        “{clipQuote(current.text)}”
+      </p>
+      <footer className="mt-4 flex flex-col gap-1.5 sm:mt-5">
+        <cite className="not-italic text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
+          {current.author}
+        </cite>
+        <div className="flex items-center justify-center gap-2 text-[11px] text-white/35 lg:justify-start">
+          <StarRow count={current.rating} size="sm" />
+          <span>{current.relativeDateLv}</span>
+        </div>
+      </footer>
+    </blockquote>
   );
 
   const trustRail = (
@@ -147,9 +140,6 @@ export function HomeGoogleReviewsFeatured({ profileUrl, ratingLabel, trustAside 
         <div className="min-w-0 lg:col-span-5 lg:flex lg:justify-end">
           <div className="w-full max-w-[27.5rem] border-l border-white/[0.08] pl-8 pt-1">
             {trustRail}
-            <p className="mt-5 max-w-[28ch] text-[13px] leading-relaxed text-white/35">
-              {trustAside}
-            </p>
           </div>
         </div>
       </div>
