@@ -1,6 +1,8 @@
 {
   "Faq": {
     "title": "Biežāk uzdotie jautājumi (BUJ)",
+    "homeEyebrow": "BUJ",
+    "homeSeeAll": "Visi →",
     "items": [
       {
         "id": "what-is-provin-audit",

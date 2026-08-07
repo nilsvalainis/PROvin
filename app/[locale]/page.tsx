@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { Footer } from "@/components/Footer";
 import { HomeGoogleReviews } from "@/components/home/HomeGoogleReviews";
-import { ProvinHeroTransitionBanner } from "@/components/pricing/ProvinHeroTransitionBanner";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
@@ -25,11 +24,8 @@ export default function HomePage() {
           <HomePricingHero />
         </Suspense>
 
-        <ProvinHeroTransitionBanner />
-
-        <HomeGoogleReviews />
-
-        <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink scroll-mt-14">
+        <div id="site-content" className="min-w-0 scroll-mt-14 bg-transparent pb-0 text-white home-body-ink">
+          <HomeGoogleReviews />
           <HomeFaqSection />
 
           <section className="demo-design-dir__section bg-transparent pb-0">

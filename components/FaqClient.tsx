@@ -14,6 +14,8 @@ type FaqClientProps = {
    * Der tikai `tone="dark"`.
    */
   embedded?: boolean;
+  /** Blīvāks accordion (sākumlapa). */
+  compact?: boolean;
 };
 
 /** BUJ tekstam viena krāsa — bez PROVIN wordmark krāsu izmaiņām. */
@@ -25,7 +27,13 @@ function FaqAnswer({ text, className }: { text: string; className: string }) {
   return <p className={`${className} whitespace-pre-line`}>{text}</p>;
 }
 
-export function FaqClient({ title, items = [], tone = "dark", embedded = false }: FaqClientProps) {
+export function FaqClient({
+  title,
+  items = [],
+  tone = "dark",
+  embedded = false,
+  compact = false,
+}: FaqClientProps) {
   if (tone === "silver") {
     return (
       <section
@@ -115,11 +123,19 @@ export function FaqClient({ title, items = [], tone = "dark", embedded = false }
   }
 
   const faqItems = items.map((item) => (
-    <div key={item.id} className="demo-design-dir__faq-item">
+    <div key={item.id} className={compact ? "border-b border-white/[0.07] last:border-0" : "demo-design-dir__faq-item"}>
       <details className="group border-0 bg-transparent shadow-none open:bg-transparent">
-        <summary className="flex min-h-11 cursor-pointer list-none items-start justify-between gap-3 px-4 py-4 text-left sm:min-h-0 sm:gap-4 sm:px-5 sm:py-[1.125rem] [&::-webkit-details-marker]:hidden">
+        <summary
+          className={`flex cursor-pointer list-none items-start justify-between gap-3 text-left [&::-webkit-details-marker]:hidden ${
+            compact
+              ? "min-h-0 py-3 sm:py-3.5"
+              : "min-h-11 px-4 py-4 sm:min-h-0 sm:gap-4 sm:px-5 sm:py-[1.125rem]"
+          }`}
+        >
           <span
-            className={`min-w-0 flex-1 text-[15px] font-medium leading-snug tracking-tight sm:text-[16px] sm:leading-snug ${FAQ_TEXT_DARK}`}
+            className={`min-w-0 flex-1 font-medium leading-snug tracking-tight ${FAQ_TEXT_DARK} ${
+              compact ? "text-[14px] sm:text-[15px]" : "text-[15px] sm:text-[16px]"
+            }`}
           >
             {item.q}
           </span>
@@ -131,14 +147,28 @@ export function FaqClient({ title, items = [], tone = "dark", embedded = false }
         </summary>
         <FaqAnswer
           text={item.a}
-          className={`max-w-[65ch] px-4 pb-4 pr-2 text-[14px] font-normal leading-[1.75] sm:px-5 sm:pb-5 sm:pr-6 sm:text-[15px] sm:leading-[1.75] ${FAQ_TEXT_DARK}`}
+          className={`max-w-[65ch] font-normal leading-[1.7] ${FAQ_TEXT_DARK} ${
+            compact
+              ? "pb-3.5 pr-1 text-[13px] sm:text-[14px]"
+              : "px-4 pb-4 pr-2 text-[14px] sm:px-5 sm:pb-5 sm:pr-6 sm:text-[15px] sm:leading-[1.75]"
+          }`}
         />
       </details>
     </div>
   ));
 
   if (embedded) {
-    return <div className="mx-auto flex w-full max-w-[40rem] flex-col gap-3">{faqItems}</div>;
+    return (
+      <div
+        className={
+          compact
+            ? "mx-auto flex w-full flex-col"
+            : "mx-auto flex w-full max-w-[40rem] flex-col gap-3"
+        }
+      >
+        {faqItems}
+      </div>
+    );
   }
 
   return (

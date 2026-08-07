@@ -1,8 +1,9 @@
 {
   "GoogleReviews": {
-    "title": "CLIENT REVIEWS",
+    "title": "Client reviews",
     "kicker": "Reviews on Google",
     "viewAll": "View on Google",
-    "sourceLabel": "Google"
+    "sourceLabel": "Google",
+    "ratingLine": "{rating}/5 on Google"
   }
 }

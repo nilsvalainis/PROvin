@@ -1,18 +1,21 @@
 import { getMessages, getTranslations } from "next-intl/server";
-import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { FaqClient, type FaqItem } from "@/components/FaqClient";
-import { homeEditorialSectionTitleClass } from "@/lib/home-layout";
+import { Link } from "@/i18n/navigation";
 
-/** BUJ — kā demo `band-c` sadaļa ar `Faq` tulkojumiem (bez PROVIN wordmark krāsām). */
+const HOME_FAQ_LIMIT = 4;
+
+/** Kompakts BUJ — tikai top jautājumi; pārējie uz `/biezi-jautajumi`. */
 export async function HomeFaqSection() {
   const tFaq = await getTranslations("Faq");
   const messages = await getMessages();
   const raw = (messages as { Faq?: { items?: FaqItem[] } }).Faq?.items;
-  const items = Array.isArray(raw) ? raw : [];
+  const allItems = Array.isArray(raw) ? raw : [];
+  const homeItems = allItems.slice(0, HOME_FAQ_LIMIT);
+
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: items.map((item) => ({
+    mainEntity: allItems.map((item) => ({
       "@type": "Question",
       name: item.q,
       acceptedAnswer: {
@@ -25,22 +28,31 @@ export async function HomeFaqSection() {
   return (
     <section
       id="biezi-jautajumi"
-      className="demo-design-dir__section home-body-ink py-16 sm:py-20"
+      className="home-body-ink relative bg-transparent px-4 py-10 sm:py-12"
       aria-labelledby="home-faq-heading"
     >
-      <div className="demo-design-dir__shell">
-        <div className="text-center">
-          <h2 id="home-faq-heading" className={homeEditorialSectionTitleClass}>
-            {tFaq("title")}
+      <div className="mx-auto w-full max-w-[min(36rem,calc(100vw-2rem))]">
+        <header className="mb-5 flex items-end justify-between gap-4 border-b border-white/[0.08] pb-3">
+          <h2
+            id="home-faq-heading"
+            className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45"
+          >
+            {tFaq("homeEyebrow")}
           </h2>
-          <div className="mx-auto mt-3 w-full max-w-[min(100%,42rem)] px-1 sm:px-2">
-            <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
-          </div>
-        </div>
-        <div className="mt-10">
-          <FaqClient title={tFaq("title")} items={items} tone="dark" embedded />
-        </div>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+          <Link
+            href="/biezi-jautajumi"
+            className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-provin-accent no-underline transition hover:text-white"
+          >
+            {tFaq("homeSeeAll")}
+          </Link>
+        </header>
+
+        <FaqClient title={tFaq("title")} items={homeItems} tone="dark" embedded compact />
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
       </div>
     </section>
   );

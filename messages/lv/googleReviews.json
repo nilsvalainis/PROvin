@@ -1,8 +1,9 @@
 {
   "GoogleReviews": {
-    "title": "KLIENTU ATSAUKSMES",
+    "title": "Klientu atsauksmes",
     "kicker": "Atsauksmes Google",
     "viewAll": "Skatīt Google profilā",
-    "sourceLabel": "Google"
+    "sourceLabel": "Google",
+    "ratingLine": "{rating}/5 uz Google"
   }
 }
