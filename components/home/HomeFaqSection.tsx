@@ -31,7 +31,13 @@ export async function HomeFaqSection() {
       className="home-body-ink relative bg-transparent"
       aria-labelledby="home-faq-heading"
     >
-      <div className="mx-auto w-full max-w-[80rem] px-[max(1rem,env(safe-area-inset-left,0px))] py-8 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:py-10 lg:px-8 lg:pb-12 lg:pt-4">
+      {/* Šaura atdalošā līnija no atsauksmēm */}
+      <div
+        className="pointer-events-none h-px w-full bg-gradient-to-r from-transparent via-white/[0.12] to-transparent"
+        aria-hidden
+      />
+
+      <div className="mx-auto w-full max-w-[80rem] px-[max(1rem,env(safe-area-inset-left,0px))] py-8 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:py-10 lg:px-8 lg:pb-12 lg:pt-10">
         <div className="lg:grid lg:grid-cols-12 lg:gap-16">
           <div className="mx-auto w-full max-w-[min(36rem,100%)] lg:col-span-7 lg:mx-0 lg:max-w-none">
             <header className="mb-4 flex items-end justify-between gap-4 border-b border-white/[0.08] pb-3">
