@@ -4,10 +4,10 @@ import { routing } from "@/i18n/routing";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 
 /** `localePrefix: "always"` — kanoniskie URL ar `/${locale}` (piem. `/lv/pasutit`). */
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getPublicSiteOrigin().replace(/\/$/, "");
   const lastModified = new Date();
-  const posts = listBlogPosts();
+  const posts = await listBlogPosts();
 
   const entries: MetadataRoute.Sitemap = [];
 

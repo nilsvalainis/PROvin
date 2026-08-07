@@ -11,7 +11,7 @@ export async function BlogIndex({ locale }: Props) {
   const t = await getTranslations("Blogs");
   const tIriss = await getTranslations("Iriss");
   const social = getIrissSocialUrls();
-  const posts = listBlogPosts();
+  const posts = await listBlogPosts();
 
   return (
     <section id="blogs" className="home-body-ink relative scroll-mt-16 bg-transparent px-4 pb-16 pt-10 sm:pb-20 sm:pt-12">

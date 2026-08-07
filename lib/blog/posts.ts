@@ -1,20 +1,22 @@
-import { postMobileDeScam48000 } from "@/lib/blog/posts/mobile-de-scam-48000";
 import type { BlogPost, BlogPostLocale } from "@/lib/blog/types";
+import {
+  getStoredBlogPost,
+  listStoredBlogPosts,
+  normalizeBlogSlug,
+} from "@/lib/blog/post-store";
 import { routing } from "@/i18n/routing";
 
-const ALL_POSTS: readonly BlogPost[] = [postMobileDeScam48000];
-
-export function listBlogPosts(): BlogPost[] {
-  return [...ALL_POSTS].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+export async function listBlogPosts(): Promise<BlogPost[]> {
+  return listStoredBlogPosts();
 }
 
-export function getBlogPost(slug: string): BlogPost | null {
-  const s = slug.trim().toLowerCase();
-  return ALL_POSTS.find((p) => p.slug === s) ?? null;
+export async function getBlogPost(slug: string): Promise<BlogPost | null> {
+  return getStoredBlogPost(slug);
 }
 
-export function getAllBlogSlugs(): string[] {
-  return ALL_POSTS.map((p) => p.slug);
+export async function getAllBlogSlugs(): Promise<string[]> {
+  const posts = await listStoredBlogPosts();
+  return posts.map((p) => p.slug);
 }
 
 export function resolveBlogLocale(
@@ -31,5 +33,7 @@ export function resolveBlogLocale(
 }
 
 export function blogPostHref(slug: string): string {
-  return `/blogs/${slug}`;
+  return `/blogs/${normalizeBlogSlug(slug)}`;
 }
+
+export { normalizeBlogSlug };

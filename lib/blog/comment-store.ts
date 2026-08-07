@@ -4,15 +4,14 @@ import { randomUUID } from "crypto";
 import fs from "fs/promises";
 import path from "path";
 import { get, put } from "@vercel/blob";
-import type { BlogCommentPublic } from "@/lib/blog/types";
+import type { BlogCommentAdmin, BlogCommentPublic } from "@/lib/blog/types";
 
 const RELATIVE_DIR = ".data/blog-comments";
 const BLOB_PREFIX = "blog-comments/";
 
-type StoredComment = BlogCommentPublic & {
-  /** Honeypot / spam — never shown. */
-  hidden?: boolean;
-};
+export type { BlogCommentAdmin };
+
+type StoredComment = BlogCommentAdmin;
 
 type CommentsDoc = {
   slug: string;
@@ -133,6 +132,30 @@ export async function listPublicBlogComments(slug: string): Promise<BlogCommentP
     .filter((c) => !c.hidden)
     .map(({ id, authorName, body, createdAt }) => ({ id, authorName, body, createdAt }))
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+export async function listAdminBlogComments(slug: string): Promise<BlogCommentAdmin[]> {
+  const doc = await readDoc(slug);
+  return [...doc.comments].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+export async function deleteBlogComment(slug: string, commentId: string): Promise<boolean> {
+  const s = slug.trim().toLowerCase();
+  const id = commentId.trim();
+  if (!s || !id) return false;
+  const doc = await readDoc(s);
+  const before = doc.comments.length;
+  doc.comments = doc.comments.filter((c) => c.id !== id);
+  if (doc.comments.length === before) return false;
+  doc.updatedAt = new Date().toISOString();
+  await writeDoc(s, doc);
+  return true;
+}
+
+export async function clearBlogComments(slug: string): Promise<void> {
+  const s = slug.trim().toLowerCase();
+  if (!s) return;
+  await writeDoc(s, emptyDoc(s));
 }
 
 export async function appendBlogComment(input: {

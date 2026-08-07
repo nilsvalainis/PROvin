@@ -1,12 +1,20 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
+
 import { getAllBlogSlugs, getBlogPost, listBlogPosts } from "@/lib/blog/posts";
 
 describe("blog posts", () => {
-  it("lists the mobile.de scam post first", () => {
-    const posts = listBlogPosts();
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it("lists the mobile.de scam post first", async () => {
+    const posts = await listBlogPosts();
     expect(posts.length).toBeGreaterThanOrEqual(1);
     expect(posts[0]?.slug).toBe("krapsanas-shemas-mobile-de-48000");
-    expect(getAllBlogSlugs()).toContain("krapsanas-shemas-mobile-de-48000");
-    expect(getBlogPost("krapsanas-shemas-mobile-de-48000")?.lv.title).toMatch(/48 000/);
+    expect(await getAllBlogSlugs()).toContain("krapsanas-shemas-mobile-de-48000");
+    const post = await getBlogPost("krapsanas-shemas-mobile-de-48000");
+    expect(post?.lv.title).toMatch(/48 000/);
   });
 });

@@ -29,3 +29,7 @@ export type BlogCommentPublic = {
   body: string;
   createdAt: string;
 };
+
+export type BlogCommentAdmin = BlogCommentPublic & {
+  hidden?: boolean;
+};

@@ -16,7 +16,7 @@ function badRequest(message: string, status = 400) {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const slug = (searchParams.get("slug") ?? "").trim().toLowerCase();
-  if (!slug || !getBlogPost(slug)) {
+  if (!slug || !(await getBlogPost(slug))) {
     return badRequest("Unknown post.", 404);
   }
   const comments = await listPublicBlogComments(slug);
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   const authorName = typeof b.authorName === "string" ? b.authorName.trim() : "";
   const text = typeof b.body === "string" ? b.body.trim() : "";
 
-  if (!slug || !getBlogPost(slug)) return badRequest("Unknown post.", 404);
+  if (!slug || !(await getBlogPost(slug))) return badRequest("Unknown post.", 404);
   if (authorName.length < 2) return badRequest("Name is too short.");
   if (authorName.length > 80) return badRequest("Name is too long.");
   if (text.length < 2) return badRequest("Comment is too short.");
