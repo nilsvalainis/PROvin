@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { Footer } from "@/components/Footer";
 import { IrissSection } from "@/components/IrissSection";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
@@ -15,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-/** Par mums — hero-stila chrome (header no layout), bez kājenes. */
+/** Par mums — hero-stila chrome (header no layout) + kājene. Bez kājenes paliek tikai Blogs. */
 export default async function ParMumsPage() {
   return (
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
@@ -25,6 +26,12 @@ export default async function ParMumsPage() {
             <IrissSection editorialColumn />
           </div>
         </section>
+
+        <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink">
+          <section className="demo-design-dir__section bg-transparent pb-0">
+            <Footer />
+          </section>
+        </div>
       </div>
     </div>
   );
