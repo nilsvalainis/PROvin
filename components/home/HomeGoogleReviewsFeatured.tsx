@@ -83,19 +83,14 @@ export function HomeGoogleReviewsFeatured({
 
   const slideControls =
     reviews.length > 1 ? (
-      <div className="mt-5 flex items-center gap-3 lg:mt-6 lg:justify-start">
+      <div className="mt-5 flex items-center gap-4 lg:mt-6 lg:justify-start">
         <button
           type="button"
           onClick={goPrev}
-          className="flex h-8 w-8 items-center justify-center border border-white/15 text-white/55 transition hover:border-white/35 hover:text-white"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40 transition hover:text-white sm:min-h-0 sm:min-w-0"
           aria-label={prevLabel}
         >
-          <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden>
-            <path
-              fill="currentColor"
-              d="M12.707 4.293a1 1 0 0 1 0 1.414L8.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414l-5-5a1 1 0 0 1 0-1.414l5-5a1 1 0 0 1 1.414 0Z"
-            />
-          </svg>
+          ←
         </button>
         <div className="flex h-1.5 gap-2" aria-hidden>
           {reviews.map((r, i) => (
@@ -116,15 +111,10 @@ export function HomeGoogleReviewsFeatured({
         <button
           type="button"
           onClick={goNext}
-          className="flex h-8 w-8 items-center justify-center border border-white/15 text-white/55 transition hover:border-white/35 hover:text-white"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40 transition hover:text-white sm:min-h-0 sm:min-w-0"
           aria-label={nextLabel}
         >
-          <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden>
-            <path
-              fill="currentColor"
-              d="M7.293 4.293a1 1 0 0 1 1.414 0l5 5a1 1 0 0 1 0 1.414l-5 5a1 1 0 0 1-1.414-1.414L11.586 10 7.293 5.707a1 1 0 0 1 0-1.414Z"
-            />
-          </svg>
+          →
         </button>
       </div>
     ) : null;

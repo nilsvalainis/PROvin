@@ -132,14 +132,11 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  border-radius: 18px;
-  padding: 0.75rem;
-  border: 1px solid rgb(255 255 255 / 0.08);
-  background:
-    linear-gradient(145deg, rgb(255 255 255 / 0.05) 0%, rgb(255 255 255 / 0.02) 42%, rgb(255 255 255 / 0.012) 100%);
-  box-shadow:
-    0 12px 28px -16px rgb(0 0 0 / 0.45),
-    0 4px 12px -8px rgb(0 0 0 / 0.35);
+  border-radius: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   /* Keep vertical scroll; leave horizontal gestures to tier swipe handlers. */
   touch-action: pan-y;
 }
@@ -1320,12 +1317,12 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   }
 
   .heroStageDesktop .spatialCard {
-    border-color: rgb(255 255 255 / 0.1);
-    box-shadow:
-      0 25px 50px -12px rgb(0 0 0 / 0.7),
-      0 16px 32px -10px rgb(0 0 0 / 0.55),
-      0 4px 12px -2px rgb(0 0 0 / 0.35),
-      0 0 0 1px rgb(255 255 255 / 0.05);
+    border: 0;
+    border-left: 1px solid rgb(255 255 255 / 0.08);
+    border-radius: 0;
+    padding: 0 0 0 2rem;
+    background: transparent;
+    box-shadow: none;
   }
 
   .tp5DesktopFeatureRow {
@@ -1399,8 +1396,8 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
 
 @media (min-width: 768px) {
   .spatialCard {
-    border-radius: 20px;
-    padding: clamp(0.85rem, 2.8vw, 1.25rem);
+    border-radius: 0;
+    padding: 0;
   }
 
   .featureBreakdownCard {
@@ -1604,11 +1601,13 @@ html[data-site-theme="light"] .tierTabBtn:hover .tierTabLabelInactive {
 }
 
 html[data-site-theme="light"] .spatialCard {
-  border-color: rgb(24 31 42 / 0.1);
-  background: rgb(255 255 255 / 0.88);
-  box-shadow:
-    0 10px 24px -14px rgb(24 31 42 / 0.18),
-    0 4px 10px -8px rgb(24 31 42 / 0.1);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-site-theme="light"] .heroStageDesktop .spatialCard {
+  border-left-color: rgb(24 31 42 / 0.1);
 }
 
 html[data-site-theme="light"] .liquidAccent {
