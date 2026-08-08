@@ -40,7 +40,7 @@ function railIndex(labelKey: SiteRailLabelKey, sections: readonly SiteRailSectio
  * Mobilā / sliežu izvēlne: `href` bez `/lv` — `next-intl` `Link` pats prefiksē (`applyPathnamePrefix`).
  */
 export function buildSiteRailSections(_normalizedPath: string): readonly SiteRailSection[] {
-  /* Secība: Sākums → Pakalpojumi → Par mums → Blogs → Konsultācija (ja publiska) */
+  /* Secība: Sākums → Pakalpojumi → Par PROVIN → Blogs → Konsultācija (ja publiska) */
   const out: SiteRailSection[] = [
     { href: "/", labelKey: "sakums" },
     { href: "/pakalpojumi", labelKey: "pakalpojumi" },

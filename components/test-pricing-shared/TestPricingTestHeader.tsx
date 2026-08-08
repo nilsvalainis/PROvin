@@ -5,7 +5,7 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
-const NAV = [{ href: "#kas-ir-iriss", label: "KAS IR PROVIN?" }] as const;
+const NAV = [{ href: "#kas-ir-iriss", label: "Par PROVIN" }] as const;
 
 export function TestPricingTestHeader() {
   const tHeader = useTranslations("Header");

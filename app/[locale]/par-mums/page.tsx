@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-/** Par mums — hero-stila chrome (header no layout) + kājene. Bez kājenes paliek tikai Blogs. */
+/** Par PROVIN — hero-stila chrome (header no layout) + kājene. Bez kājenes paliek tikai Blogs. */
 export default async function ParMumsPage() {
   return (
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>

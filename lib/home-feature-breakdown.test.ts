@@ -56,7 +56,7 @@ describe("pakalpojumi catalog", () => {
     ]);
   });
 
-  it("keeps Par mums in the site rail as its own page", () => {
+  it("keeps Par PROVIN in the site rail as its own page", () => {
     const sections = buildSiteRailSections("/");
     const keys = sections.map((s) => s.labelKey);
     expect(keys).toContain("pakalpojumi");
