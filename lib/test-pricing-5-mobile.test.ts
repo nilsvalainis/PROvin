@@ -64,8 +64,8 @@ describe("test-pricing-5 mobile three-tier model", () => {
     );
     expect(dealer.extraNote).toBeUndefined();
     expect(TP5_DEALER_BRAND_ROWS).toEqual([
-      ["Mercedes-Benz", "Volvo", "Jaguar", "Land Rover"],
-      ["BMW", "MINI", "Audi", "Volkswagen"],
+      ["Mercedes-Benz", "BMW", "MINI", "Audi"],
+      ["Volkswagen", "Volvo", "Land Rover", "Jaguar"],
       ["Škoda", "SEAT", "Peugeot", "Citroën"],
       ["Renault", "Dacia", "Opel", "Smart"],
     ]);
