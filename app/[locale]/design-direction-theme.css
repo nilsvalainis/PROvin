@@ -10,6 +10,13 @@ body:has(.home-page-canvas-root) {
   background-image: none !important;
 }
 
+@media (max-width: 1023px) {
+  html:has(.home-page-canvas-root),
+  body:has(.home-page-canvas-root) {
+    background-color: #060606;
+  }
+}
+
 /*
  * Sākumlapa: viens nepārtraukts canvas — starpsekcijas caurspīdīgas, bez robežām.
  * Kājene: saglabā savu `.home-footer-scrim` (neapspiest ar display:none).

@@ -25,6 +25,17 @@
   min-height: 100dvh;
 }
 
+/* Telefons / planšete: ~2× tumšāks master canvas (mazāk augšējā “izgaismojuma”). */
+@media (max-width: 1023px) {
+  .pageRoot,
+  .homePageCanvas {
+    background-color: #060606;
+    background-image:
+      radial-gradient(ellipse 130% 72% at 50% -6%, rgb(255 255 255 / 0.024) 0%, transparent 54%),
+      linear-gradient(180deg, #0c0c0c 0%, #090909 16%, #050505 38%, #020202 62%, #000000 100%);
+  }
+}
+
 .pageCanvasTail {
   position: relative;
   background: transparent;
@@ -1318,9 +1329,8 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
 
   .heroStageDesktop .spatialCard {
     border: 0;
-    border-left: 1px solid rgb(255 255 255 / 0.08);
     border-radius: 0;
-    padding: 0 0 0 2rem;
+    padding: 0;
     background: transparent;
     box-shadow: none;
   }
@@ -1604,10 +1614,6 @@ html[data-site-theme="light"] .spatialCard {
   border-color: transparent;
   background: transparent;
   box-shadow: none;
-}
-
-html[data-site-theme="light"] .heroStageDesktop .spatialCard {
-  border-left-color: rgb(24 31 42 / 0.1);
 }
 
 html[data-site-theme="light"] .liquidAccent {
