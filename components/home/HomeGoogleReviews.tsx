@@ -1,14 +1,11 @@
 import { getMessages, getTranslations } from "next-intl/server";
 import { FaqClient, type FaqItem } from "@/components/FaqClient";
 import { HomeGoogleReviewsFeatured } from "@/components/home/HomeGoogleReviewsFeatured";
-import { Link } from "@/i18n/navigation";
 import { getGoogleReviewsProfileUrl } from "@/lib/google-reviews-data";
 
-const HOME_FAQ_LIMIT = 4;
-
 /**
- * Atsauksmes (7) + BUJ (5) — tā pati asimetrija kā hero.
- * Google zvaigžņu vietā labajā pusē: BUJ.
+ * Atsauksmes + pilns BUJ — tā pati asimetrija kā hero (7 / 5).
+ * Google zvaigžņu vietā labajā pusē: visi biežāk uzdotie jautājumi.
  */
 export async function HomeGoogleReviews() {
   const t = await getTranslations("GoogleReviews");
@@ -18,7 +15,6 @@ export async function HomeGoogleReviews() {
 
   const raw = (messages as { Faq?: { items?: FaqItem[] } }).Faq?.items;
   const allItems = Array.isArray(raw) ? raw : [];
-  const homeItems = allItems.slice(0, HOME_FAQ_LIMIT);
 
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -65,21 +61,15 @@ export async function HomeGoogleReviews() {
             aria-labelledby="home-faq-heading"
           >
             <div className="w-full max-w-[27.5rem] lg:ml-auto">
-              <header className="mb-4 flex items-end justify-between gap-4 border-b border-white/[0.08] pb-3">
+              <header className="mb-4 border-b border-white/[0.08] pb-3">
                 <h2
                   id="home-faq-heading"
                   className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45"
                 >
                   {tFaq("homeEyebrow")}
                 </h2>
-                <Link
-                  href="/biezi-jautajumi"
-                  className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-provin-accent no-underline transition hover:text-white"
-                >
-                  {tFaq("homeSeeAll")}
-                </Link>
               </header>
-              <FaqClient title={tFaq("title")} items={homeItems} tone="dark" embedded compact />
+              <FaqClient title={tFaq("title")} items={allItems} tone="dark" embedded compact />
             </div>
           </div>
         </div>

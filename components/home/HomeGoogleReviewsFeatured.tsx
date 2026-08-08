@@ -6,12 +6,12 @@ import {
   type GoogleReviewEntry,
 } from "@/lib/google-reviews-data";
 
-/** Vienāds excerpt garums karuselī. */
-const QUOTE_MAX_CHARS = 100;
+/** Vienāds excerpt garums karuselī — balstīts uz pilnā BUJ kolonnas augstumu. */
+const QUOTE_MAX_CHARS = 240;
 
-/** Fiksēts 3 rindu bloka augstums. */
+/** Fiksēts 6 rindu bloka augstums, lai slide maiņa nelēkā. */
 const QUOTE_BODY_CLASS =
-  "line-clamp-3 min-h-[4.875rem] text-pretty text-[1.2rem] font-medium leading-[1.35] tracking-tight text-white/[0.94] sm:min-h-[5.544rem] sm:text-[1.4rem] sm:leading-[1.32] lg:min-h-[5.742rem] lg:text-left lg:text-[1.45rem]";
+  "line-clamp-6 min-h-[9.72rem] text-pretty text-[1.2rem] font-medium leading-[1.35] tracking-tight text-white/[0.94] sm:min-h-[11.088rem] sm:text-[1.4rem] sm:leading-[1.32] lg:min-h-[11.484rem] lg:text-left lg:text-[1.45rem]";
 
 const QUOTE_FOOTER_CLASS = "mt-4 flex min-h-[5.25rem] flex-col gap-1.5 sm:mt-5";
 
@@ -35,7 +35,8 @@ function clipQuote(text: string, max = QUOTE_MAX_CHARS): string {
   if (t.length <= max) return t;
   const cut = t.slice(0, max);
   const lastSpace = cut.lastIndexOf(" ");
-  return `${(lastSpace > 56 ? cut.slice(0, lastSpace) : cut).trim()}…`;
+  const minKeep = Math.floor(max * 0.55);
+  return `${(lastSpace > minKeep ? cut.slice(0, lastSpace) : cut).trim()}…`;
 }
 
 type Props = {
@@ -120,10 +121,10 @@ export function HomeGoogleReviewsFeatured({
     ) : null;
 
   return (
-    <div className="flex w-full min-h-[13.5rem] flex-col sm:min-h-[14.25rem] lg:min-h-[13.25rem]">
+    <div className="flex w-full min-h-[18.5rem] flex-col sm:min-h-[20rem] lg:min-h-[19.5rem]">
       <blockquote
         key={current.id}
-        className="flex w-full min-h-[10.75rem] flex-col transition-opacity duration-500 sm:min-h-[11.5rem] lg:min-h-[11.75rem]"
+        className="flex w-full min-h-[15.75rem] flex-col transition-opacity duration-500 sm:min-h-[17.25rem] lg:min-h-[17.5rem]"
       >
         <p className={QUOTE_BODY_CLASS}>“{clipped}”</p>
         <footer className={QUOTE_FOOTER_CLASS}>
