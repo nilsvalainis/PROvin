@@ -143,6 +143,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  /* Mobile: rāmis bez fona — karājas uz hero canvas. */
   border-radius: 18px;
   padding: 0.75rem;
   border: 1px solid rgb(255 255 255 / 0.08);
@@ -285,6 +286,7 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  /* Mobile: rāmis bez fona. */
   padding: 0.45rem 0.65rem 0.5rem;
   border-radius: 12px;
   border: 1px solid rgb(255 255 255 / 0.06);
@@ -1328,11 +1330,20 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   }
 
   .heroStageDesktop .spatialCard {
-    border: 1px solid rgb(255 255 255 / 0.1);
-    border-radius: 18px;
-    padding: 0.75rem;
-    background: transparent;
-    box-shadow: none;
+    /* Web: pilnā oriģinālā kartīte (glass + ēna). */
+    border-color: rgb(255 255 255 / 0.1);
+    background:
+      linear-gradient(145deg, rgb(255 255 255 / 0.05) 0%, rgb(255 255 255 / 0.02) 42%, rgb(255 255 255 / 0.012) 100%);
+    box-shadow:
+      0 25px 50px -12px rgb(0 0 0 / 0.7),
+      0 16px 32px -10px rgb(0 0 0 / 0.55),
+      0 4px 12px -2px rgb(0 0 0 / 0.35),
+      0 0 0 1px rgb(255 255 255 / 0.05);
+  }
+
+  .heroStageDesktop .liquidAccent {
+    background: rgb(255 255 255 / 0.03);
+    transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .tp5DesktopFeatureRow {
@@ -1620,6 +1631,19 @@ html[data-site-theme="light"] .liquidAccent {
   border: 1px solid rgb(24 31 42 / 0.08);
   background: transparent;
   box-shadow: none;
+}
+
+@media (min-width: 1024px) {
+  html[data-site-theme="light"] .heroStageDesktop .spatialCard {
+    background: rgb(255 255 255 / 0.88);
+    box-shadow:
+      0 10px 24px -14px rgb(24 31 42 / 0.18),
+      0 4px 10px -8px rgb(24 31 42 / 0.1);
+  }
+
+  html[data-site-theme="light"] .heroStageDesktop .liquidAccent {
+    background: rgb(24 31 42 / 0.03);
+  }
 }
 
 html[data-site-theme="light"] .featureLabelInfo {
