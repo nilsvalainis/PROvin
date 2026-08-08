@@ -328,35 +328,6 @@ export function catalogPackageAnchorId(id: HomeFeatureBreakdownPackageId): strin
   return `pakalpojums-${id}`;
 }
 
-/** Controlled two-line jump-tab labels (avoids uneven 1/2-line wraps). */
-export function catalogPackageNavLines(
-  id: HomeFeatureBreakdownPackageId,
-  locale?: string,
-): readonly [string, string] {
-  if (locale === "en") {
-    switch (id) {
-      case "mini":
-        return ["PROVIN", "MINI"];
-      case "audits":
-        return ["PROVIN", "AUDIT"];
-      case "dealer":
-        return ["DEALER", "DATA"];
-      case "koreaUsa":
-        return ["USA &", "KOREA"];
-    }
-  }
-  switch (id) {
-    case "mini":
-      return ["PROVIN", "MINI"];
-    case "audits":
-      return ["PROVIN", "AUDITS"];
-    case "dealer":
-      return ["DĪLERA", "DATI"];
-    case "koreaUsa":
-      return ["ASV UN", "KOREJA"];
-  }
-}
-
 /** Locale-aware catalog packages; anything other than `en` falls back to Latvian. */
 export function getHomeFeatureBreakdownPackages(locale?: string): HomeFeatureBreakdownPackage[] {
   return locale === "en" ? HOME_FEATURE_BREAKDOWN_PACKAGES_EN : HOME_FEATURE_BREAKDOWN_PACKAGES;

@@ -250,51 +250,6 @@
   color: rgb(228 228 231 / 0.95);
 }
 
-/* Pakalpojumi sticky jump strip — same underline language as hero, clearer as controls. */
-.catalogJumpSwitcher {
-  margin: 0;
-  gap: 0.2rem;
-  border-bottom-color: rgb(255 255 255 / 0.12);
-}
-
-.catalogJumpTab {
-  min-height: 2.85rem;
-  border-radius: 0.35rem 0.35rem 0 0;
-  background: rgb(255 255 255 / 0.03);
-}
-
-.catalogJumpTab:hover {
-  background: rgb(255 255 255 / 0.07);
-}
-
-.catalogJumpTab[aria-current="true"],
-.catalogJumpTab[data-active="true"] {
-  background: rgb(96 165 250 / 0.12);
-}
-
-.catalogJumpLabel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.05rem;
-  min-height: 2.85rem;
-  padding: 0.4rem 0.2rem 0.5rem;
-  font-size: 0.5625rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  line-height: 1.15;
-  text-transform: uppercase;
-}
-
-.catalogJumpLabelLine {
-  display: block;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .tierMeta {
   margin: 0 0 0.55rem;
 }
@@ -1652,19 +1607,6 @@ html[data-site-theme="light"] .tierMetaTitle {
 html[data-site-theme="light"] .tierSwitcher {
   border-bottom-color: rgb(24 31 42 / 0.14);
   background: transparent;
-}
-
-html[data-site-theme="light"] .catalogJumpTab {
-  background: rgb(24 31 42 / 0.04);
-}
-
-html[data-site-theme="light"] .catalogJumpTab:hover {
-  background: rgb(24 31 42 / 0.08);
-}
-
-html[data-site-theme="light"] .catalogJumpTab[aria-current="true"],
-html[data-site-theme="light"] .catalogJumpTab[data-active="true"] {
-  background: rgb(37 99 235 / 0.1);
 }
 
 html[data-site-theme="light"] .tierTabBtn[aria-selected="true"],
