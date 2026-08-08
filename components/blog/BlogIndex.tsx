@@ -24,9 +24,6 @@ export async function BlogIndex({ locale }: Props) {
           <p className="mx-auto mt-4 max-w-[min(100%,40rem)] text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45 sm:mt-5 sm:text-[12px]">
             {tIriss("pageLead")}
           </p>
-          <p className="demo-design-dir__body mx-auto mt-4 max-w-[min(100%,40rem)] text-pretty sm:mt-5">
-            {t("introBody")}
-          </p>
           <div className="mt-6 flex justify-center sm:mt-7">
             <IrissSocialIcons
               tiktok={social.tiktok}
