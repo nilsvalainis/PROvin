@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { useLocale } from "next-intl";
+import { useEffect, useState } from "react";
 import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { SampleReportPreview } from "@/components/home/SampleReportPreview";
 import { Link } from "@/i18n/navigation";
@@ -22,6 +23,7 @@ import {
   catalogPackageAnchorId,
   getCatalogFeatureBreakdownPackages,
   type HomeFeatureBreakdownIcon,
+  type HomeFeatureBreakdownPackageId,
 } from "@/lib/home-feature-breakdown";
 import { homeHeroCheckoutHref } from "@/lib/home-hero-plan";
 import { renderProvinText } from "@/lib/provin-wordmark";
@@ -98,6 +100,55 @@ export function HomeFeatureBreakdown({
   const locale = useLocale();
   const uiCopy = getTp5UiCopy(locale);
   const packages = getCatalogFeatureBreakdownPackages(locale);
+  const [activeId, setActiveId] = useState<HomeFeatureBreakdownPackageId>(
+    packages[0]?.id ?? "mini",
+  );
+
+  useEffect(() => {
+    const syncFromHash = () => {
+      const hash = window.location.hash.replace(/^#/, "");
+      const match = packages.find((pkg) => catalogPackageAnchorId(pkg.id) === hash);
+      if (match) setActiveId(match.id);
+    };
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+    return () => window.removeEventListener("hashchange", syncFromHash);
+  }, [packages]);
+
+  useEffect(() => {
+    const elements = packages
+      .map((pkg) => document.getElementById(catalogPackageAnchorId(pkg.id)))
+      .filter((el): el is HTMLElement => Boolean(el));
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        const top = visible[0]?.target;
+        if (!(top instanceof HTMLElement) || !top.id) return;
+        const match = packages.find((pkg) => catalogPackageAnchorId(pkg.id) === top.id);
+        if (match) setActiveId(match.id);
+      },
+      {
+        /* Highlight the section near the top of the viewport while scrolling. */
+        root: null,
+        rootMargin: "-18% 0px -62% 0px",
+        threshold: [0, 0.2, 0.45],
+      },
+    );
+
+    for (const el of elements) observer.observe(el);
+    return () => observer.disconnect();
+  }, [packages]);
+
+  const switcherClass =
+    packages.length >= 4
+      ? `${tp5Styles.tierSwitcher} ${tp5Styles.tierSwitcherFour}`
+      : packages.length === 2
+        ? `${tp5Styles.tierSwitcher} ${tp5Styles.tierSwitcherTwo}`
+        : tp5Styles.tierSwitcher;
 
   return (
     <section
@@ -113,47 +164,34 @@ export function HomeFeatureBreakdown({
           {uiCopy.catalogHeading}
         </h2>
 
-        <nav
-          aria-label={uiCopy.catalogNavAria}
-          className="sticky top-[2.4rem] z-30 -mx-4 mb-8 border-b border-white/[0.1] bg-[#0d0d0d]/92 px-3 py-1.5 backdrop-blur-md supports-[backdrop-filter]:bg-[#0d0d0d]/78 sm:top-9 sm:-mx-6 sm:mb-10 sm:px-6 sm:py-2 lg:top-11"
-        >
-          {/*
-            Mobile: 4 vienādas kolonnas vienā rindā — simetriski + zems sticky (netraucē tekstu).
-            Desktop: klasiskās underline tabs.
-          */}
-          <ul className="grid grid-cols-4 gap-1 lg:hidden">
-            {packages.map((pkg) => (
-              <li key={`nav-m-${pkg.id}`} className="min-w-0">
+        {/*
+          Same underline tab language as the hero pricing switcher.
+          Not sticky — scrolls away with the page (sticky under MENU was the bug).
+        */}
+        <nav aria-label={uiCopy.catalogNavAria} className="mb-8 sm:mb-10">
+          <div className={switcherClass}>
+            {packages.map((pkg) => {
+              const active = activeId === pkg.id;
+              return (
                 <a
+                  key={`nav-${pkg.id}`}
                   href={`#${catalogPackageAnchorId(pkg.id)}`}
-                  className="flex min-h-[2.35rem] items-center justify-center rounded-sm border border-white/[0.08] bg-white/[0.03] px-0.5 py-1 text-center text-[0.5625rem] font-semibold uppercase leading-[1.15] tracking-[0.06em] text-zinc-400 transition-colors hover:border-[#60a5fa]/50 hover:bg-white/[0.06] hover:text-zinc-100 focus-visible:border-[#60a5fa] focus-visible:text-zinc-100 focus-visible:outline-none sm:min-h-[2.5rem] sm:px-1 sm:text-[0.625rem] sm:tracking-[0.08em]"
+                  aria-current={active ? "true" : undefined}
+                  data-active={active ? "true" : undefined}
+                  className={tp5Styles.tierTabBtn}
+                  onClick={() => setActiveId(pkg.id)}
                 >
-                  {pkg.title}
-                </a>
-              </li>
-            ))}
-          </ul>
-
-          <ul className="hidden items-stretch justify-center lg:flex">
-            {packages.map((pkg, index) => (
-              <li key={`nav-d-${pkg.id}`} className="flex min-w-0 items-stretch">
-                {index > 0 ? (
                   <span
-                    className="mx-1.5 flex select-none items-center self-center px-3 text-[0.65rem] font-light leading-none text-white/25"
-                    aria-hidden
+                    className={`${tp5Styles.tierTabLabel} ${tp5Styles.tierTabLabelCompact} ${
+                      active ? tp5Styles.tierTabLabelActive : tp5Styles.tierTabLabelInactive
+                    }`}
                   >
-                    |
+                    {pkg.title}
                   </span>
-                ) : null}
-                <a
-                  href={`#${catalogPackageAnchorId(pkg.id)}`}
-                  className="-mb-px inline-flex max-w-full items-center justify-center border-b-2 border-transparent px-2 pb-2.5 pt-1 text-center text-[0.75rem] font-semibold uppercase tracking-[0.1em] text-zinc-400 transition-colors hover:border-[#60a5fa] hover:text-zinc-100 focus-visible:border-[#60a5fa] focus-visible:text-zinc-100 focus-visible:outline-none"
-                >
-                  {pkg.title}
                 </a>
-              </li>
-            ))}
-          </ul>
+              );
+            })}
+          </div>
         </nav>
 
         <div className="flex flex-col">
@@ -164,7 +202,7 @@ export function HomeFeatureBreakdown({
               <article
                 key={pkg.id}
                 id={catalogPackageAnchorId(pkg.id)}
-                className="scroll-mt-[6.5rem] border-b border-white/[0.08] py-8 first:pt-0 last:border-b-0 sm:scroll-mt-[7.25rem] sm:py-10 lg:scroll-mt-36 lg:py-12"
+                className="scroll-mt-24 border-b border-white/[0.08] py-8 first:pt-0 last:border-b-0 sm:scroll-mt-28 sm:py-10 lg:scroll-mt-32 lg:py-12"
               >
                 <div className="grid min-w-0 grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(17.5rem,22.5rem)] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:gap-12">
                   <div className="min-w-0">
