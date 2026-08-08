@@ -37,13 +37,21 @@ type Props = {
 
 type PanelPos = { left: number; top: number };
 
-const POS_STORAGE_KEY = "provin-admin-copilot-pos-v1";
-const PANEL_W = 384;
-const PANEL_H = 512;
-const CHIP_W = 256;
+const POS_STORAGE_KEY = "provin-admin-copilot-pos-v2";
+const PANEL_W = 440;
+const PANEL_H = 620;
+const CHIP_W = 272;
 const CHIP_H = 44;
 const MARGIN = 12;
 const SOURCE_TOGGLE_LABELS: Record<CopilotSourceKey, string> = {
+  csdd: SOURCE_BLOCK_LABELS.csdd,
+  autodna: SOURCE_BLOCK_LABELS.autodna,
+  carvertical: SOURCE_BLOCK_LABELS.carvertical,
+  ltab: SOURCE_BLOCK_LABELS.ltab,
+  auto_records: "Dīleris",
+  citi_avoti: "Citi",
+};
+const SOURCE_TOGGLE_FULL_LABELS: Record<CopilotSourceKey, string> = {
   csdd: SOURCE_BLOCK_LABELS.csdd,
   autodna: SOURCE_BLOCK_LABELS.autodna,
   carvertical: SOURCE_BLOCK_LABELS.carvertical,
@@ -155,7 +163,7 @@ export function AdminOrderCopilotPanel({
       id: "welcome",
       role: "system",
       content:
-        "Velc aiz virsraksta. Pievieno vairākus PDF (AutoDNA, CarVertical, LTAB…) un īsu komandu, piem. „izvelc datus”. Pēc sūtīšanas samazinās, kamēr Tu turpini darbu.",
+        "Ieslēdz mērķa avotus, pievieno PDF un īsu komandu (piem. „izvelc datus”). Pēc sūtīšanas logs samazinās — Tu vari turpināt darbu.",
     },
   ]);
   const [draft, setDraft] = useState("");
@@ -505,7 +513,7 @@ export function AdminOrderCopilotPanel({
   const panel = (
     <aside
       data-copilot-panel
-      className={`fixed z-[45] flex h-[min(32rem,calc(100vh-7rem))] w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-white text-[var(--color-apple-text)] shadow-2xl dark:bg-zinc-950 dark:text-zinc-100 ${
+      className={`fixed z-[45] flex h-[min(38.75rem,calc(100vh-5rem))] w-[min(27.5rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border-subtle)] bg-white text-[var(--color-apple-text)] shadow-2xl dark:bg-zinc-950 dark:text-zinc-100 ${
         dragging ? "cursor-grabbing select-none" : ""
       }`}
       style={posStyle}
@@ -513,7 +521,7 @@ export function AdminOrderCopilotPanel({
     >
       <div
         data-copilot-drag
-        className={`flex touch-none items-center justify-between gap-2 border-b border-[var(--admin-border-subtle)] px-2 py-2 ${
+        className={`flex shrink-0 touch-none items-center justify-between gap-2 border-b border-[var(--admin-border-subtle)] bg-emerald-50/70 px-3 py-2.5 dark:bg-emerald-950/30 ${
           dragging ? "cursor-grabbing" : "cursor-grab"
         }`}
         onPointerDown={onDragPointerDown}
@@ -522,12 +530,15 @@ export function AdminOrderCopilotPanel({
         onPointerCancel={onDragPointerUp}
         title="Velc, lai pārvietotu logu"
       >
-        <div className="flex min-w-0 items-center gap-1.5">
-          <GripVertical className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" aria-hidden />
+        <div className="flex min-w-0 items-center gap-2">
+          <GripVertical className="h-4 w-4 shrink-0 text-emerald-800/70 dark:text-emerald-200/70" aria-hidden />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-700 text-white">
+            <Bot className="h-4 w-4" aria-hidden />
+          </div>
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Order Copilot</h2>
+            <h2 className="text-sm font-semibold leading-tight text-[var(--color-apple-text)]">Order Copilot</h2>
             <p className="truncate text-[11px] text-[var(--color-provin-muted)]">
-              {busy ? "Strādā fonā — panelis nebloķē" : "Velc virsrakstu · Chat + PDF"}
+              {busy ? "Strādā fonā — panelis nebloķē" : "Chat + PDF · tikai ieslēgtie avoti"}
             </p>
           </div>
         </div>
@@ -535,7 +546,7 @@ export function AdminOrderCopilotPanel({
           {undoSnapshot ? (
             <button
               type="button"
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-amber-800 hover:bg-amber-50 dark:text-amber-200 dark:hover:bg-amber-950/40"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-amber-800 hover:bg-amber-50 dark:text-amber-200 dark:hover:bg-amber-950/40"
               onClick={undo}
               title="Atsaukt pēdējo aizpildījumu"
             >
@@ -563,19 +574,19 @@ export function AdminOrderCopilotPanel({
         </div>
       </div>
 
-      <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-3 py-3 text-sm">
+      <div ref={listRef} className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-3 py-3 text-sm">
         {messages.map((m) => (
           <div
             key={m.id}
             className={
               m.role === "user"
-                ? "ml-6 rounded-lg bg-emerald-600/90 px-3 py-2 text-white"
+                ? "ml-8 rounded-2xl rounded-br-md bg-emerald-700 px-3 py-2 text-[13px] leading-snug text-white shadow-sm"
                 : m.role === "system"
-                  ? "rounded-lg border border-dashed border-[var(--admin-border-subtle)] px-3 py-2 text-[12px] text-[var(--color-provin-muted)]"
-                  : "mr-4 rounded-lg bg-black/[0.04] px-3 py-2 text-[var(--color-apple-text)] dark:bg-white/10"
+                  ? "rounded-xl border border-dashed border-[var(--admin-border-subtle)] bg-slate-50/80 px-3 py-2 text-[12px] leading-snug text-[var(--color-provin-muted)] dark:bg-white/5"
+                  : "mr-4 rounded-2xl rounded-bl-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-3 py-2 text-[13px] leading-snug text-[var(--color-apple-text)]"
             }
           >
-            <div className="whitespace-pre-wrap">{m.content}</div>
+            <div className="whitespace-pre-wrap break-words">{m.content}</div>
             {m.needsConfirm && m.needsConfirm.length > 0 ? (
               <div className="mt-2 flex flex-wrap gap-2">
                 <button
@@ -591,22 +602,86 @@ export function AdminOrderCopilotPanel({
           </div>
         ))}
         {busy ? (
-          <div className="flex items-center gap-2 text-xs text-[var(--color-provin-muted)]">
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100">
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
             Gemini lasa / aizpilda fonā…
           </div>
         ) : null}
       </div>
 
-      {error ? <p className="px-3 pb-1 text-xs text-red-600 dark:text-red-400">{error}</p> : null}
+      {error ? (
+        <p className="shrink-0 border-t border-red-100 bg-red-50 px-3 py-1.5 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+          {error}
+        </p>
+      ) : null}
 
-      <div className="border-t border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] p-3">
+      <div className="shrink-0 border-t border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-3 pb-3 pt-2.5">
+        <div className="mb-2">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+              Mērķa avoti
+            </p>
+            <p className="text-[10px] text-[var(--color-provin-muted)]">
+              {allowedSources.length}/{COPILOT_SOURCE_KEYS.length} ieslēgti
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {COPILOT_SOURCE_KEYS.map((source) => {
+              const active = allowedSources.includes(source);
+              return (
+                <button
+                  key={source}
+                  type="button"
+                  aria-pressed={active}
+                  disabled={busy || !geminiAllowed}
+                  onClick={() => toggleSource(source)}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
+                    active
+                      ? "border-emerald-400 bg-emerald-600 text-white shadow-sm dark:border-emerald-500 dark:bg-emerald-700"
+                      : "border-[var(--admin-border-subtle)] bg-white text-[var(--color-provin-muted)] hover:border-emerald-300 hover:text-emerald-800 dark:bg-zinc-900 dark:hover:border-emerald-700"
+                  } disabled:opacity-50`}
+                  title={
+                    active
+                      ? `Izslēgt: ${SOURCE_TOGGLE_FULL_LABELS[source]}`
+                      : `Ieslēgt: ${SOURCE_TOGGLE_FULL_LABELS[source]}`
+                  }
+                >
+                  {SOURCE_TOGGLE_LABELS[source]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/pdf,.pdf"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const picked = Array.from(e.target.files ?? []);
+            if (!picked.length) return;
+            setFiles((prev) => {
+              const next = [...prev];
+              for (const f of picked) {
+                if (!/\.pdf$/i.test(f.name)) continue;
+                if (next.some((x) => x.name === f.name && x.size === f.size)) continue;
+                if (next.length >= 8) break;
+                next.push(f);
+              }
+              return next;
+            });
+            e.target.value = "";
+          }}
+        />
+
         {files.length > 0 ? (
-          <ul className="mb-2 max-h-28 space-y-1 overflow-y-auto">
+          <ul className="mb-2 max-h-20 space-y-1 overflow-y-auto">
             {files.map((f, i) => (
               <li
                 key={`${f.name}-${f.size}-${i}`}
-                className="flex items-center justify-between gap-2 rounded-md border border-[var(--admin-border-subtle)] bg-white px-2 py-1 text-xs text-[var(--color-apple-text)] dark:bg-zinc-900 dark:text-zinc-100"
+                className="flex items-center justify-between gap-2 rounded-lg border border-[var(--admin-border-subtle)] bg-white px-2.5 py-1.5 text-xs text-[var(--color-apple-text)] dark:bg-zinc-900 dark:text-zinc-100"
               >
                 <span className="min-w-0 truncate font-medium" title={f.name}>
                   {f.name}
@@ -622,112 +697,63 @@ export function AdminOrderCopilotPanel({
             ))}
           </ul>
         ) : null}
-        <div className="flex items-stretch gap-3">
-          <div className="w-28 shrink-0 rounded-lg border border-[var(--admin-border-subtle)] bg-white/80 p-2 dark:bg-zinc-900">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">Mērķa avoti</p>
-            <div className="space-y-1.5">
-              {COPILOT_SOURCE_KEYS.map((source) => {
-                const active = allowedSources.includes(source);
-                return (
-                  <button
-                    key={source}
-                    type="button"
-                    aria-pressed={active}
-                    disabled={busy || !geminiAllowed}
-                    onClick={() => toggleSource(source)}
-                    className={`w-full rounded-md border px-2 py-1.5 text-left text-[11px] font-medium transition ${
-                      active
-                        ? "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-100"
-                        : "border-[var(--admin-border-subtle)] bg-white text-[var(--color-provin-muted)] hover:bg-black/5 dark:bg-zinc-950 dark:hover:bg-white/10"
-                    } disabled:opacity-50`}
-                    title={active ? "Izslēgt šo avotu" : "Ieslēgt šo avotu"}
-                  >
-                    {SOURCE_TOGGLE_LABELS[source]}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="mt-2 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-              Gemini drīkst rakstīt tikai ieslēgtajos avotos.
-            </p>
-          </div>
 
-          <div className="min-w-0 flex-1">
-            <input
-              ref={fileRef}
-              type="file"
-              accept="application/pdf,.pdf"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                const picked = Array.from(e.target.files ?? []);
-                if (!picked.length) return;
-                setFiles((prev) => {
-                  const next = [...prev];
-                  for (const f of picked) {
-                    if (!/\.pdf$/i.test(f.name)) continue;
-                    if (next.some((x) => x.name === f.name && x.size === f.size)) continue;
-                    if (next.length >= 8) break;
-                    next.push(f);
-                  }
-                  return next;
-                });
-                e.target.value = "";
-              }}
-            />
-            <div className="flex items-end gap-2">
-              <button
-                type="button"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-white text-[var(--color-apple-text)] hover:bg-black/5 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-white/10"
-                title="Pievienot PDF (vairākus)"
-                disabled={busy || !geminiAllowed || files.length >= 8}
-                onClick={() => fileRef.current?.click()}
-              >
-                <FileUp className="h-4 w-4" aria-hidden />
-              </button>
-              <label htmlFor={inputId} className="sr-only">
-                Ziņa Copilot
-              </label>
-              <textarea
-                id={inputId}
-                rows={2}
-                spellCheck={false}
-                autoCorrect="off"
-                autoCapitalize="off"
-                className="min-h-[2.5rem] flex-1 resize-none rounded-lg border border-[var(--admin-border-subtle)] bg-white px-2.5 py-2 text-sm text-[var(--color-apple-text)] outline-none placeholder:text-[var(--color-provin-muted)] focus:border-emerald-600 dark:bg-zinc-900 dark:text-zinc-100"
-                placeholder={
-                  geminiAllowed
-                    ? files.length
-                      ? "Piem. izvelc datus no PDF…"
-                      : "Uzraksti uzdevumu vai pievieno PDF…"
-                    : "Gemini nav pieejams šim pasūtījumam"
-                }
-                value={draft}
-                disabled={busy || !geminiAllowed}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    void send();
-                  }
-                }}
-              />
-              <button
-                type="button"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50"
-                disabled={busy || !geminiAllowed || allowedSources.length === 0 || (!draft.trim() && files.length === 0)}
-                onClick={() => void send()}
-                aria-label="Sūtīt un turpināt darbu"
-                title="Sūtīt — logs samazinās, Tu turpini darbu"
-              >
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </button>
-            </div>
+        <div className="rounded-xl border border-[var(--admin-border-subtle)] bg-white p-2 shadow-sm dark:bg-zinc-900">
+          <label htmlFor={inputId} className="sr-only">
+            Ziņa Copilot
+          </label>
+          <textarea
+            id={inputId}
+            rows={3}
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="off"
+            className="min-h-[4.5rem] w-full resize-none border-0 bg-transparent px-1.5 py-1 text-sm leading-snug text-[var(--color-apple-text)] outline-none placeholder:text-[var(--color-provin-muted)] dark:text-zinc-100"
+            placeholder={
+              geminiAllowed
+                ? files.length
+                  ? "Piem. izvelc datus no PDF…"
+                  : "Uzraksti uzdevumu vai pievieno PDF…"
+                : "Gemini nav pieejams šim pasūtījumam"
+            }
+            value={draft}
+            disabled={busy || !geminiAllowed}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void send();
+              }
+            }}
+          />
+          <div className="mt-1 flex items-center justify-between gap-2 border-t border-[var(--admin-border-subtle)] pt-2">
+            <button
+              type="button"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2.5 text-xs font-medium text-[var(--color-apple-text)] hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+              title="Pievienot PDF (vairākus)"
+              disabled={busy || !geminiAllowed || files.length >= 8}
+              onClick={() => fileRef.current?.click()}
+            >
+              <FileUp className="h-3.5 w-3.5" aria-hidden />
+              PDF{files.length > 0 ? ` (${files.length})` : ""}
+            </button>
+            <button
+              type="button"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-emerald-700 px-3 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+              disabled={busy || !geminiAllowed || allowedSources.length === 0 || (!draft.trim() && files.length === 0)}
+              onClick={() => void send()}
+              aria-label="Sūtīt un turpināt darbu"
+              title="Sūtīt — logs samazinās, Tu turpini darbu"
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+              Sūtīt
+            </button>
           </div>
         </div>
-        <p className="mt-1.5 text-[10px] text-[var(--color-provin-muted)]">
-          {files.length > 0 ? `${files.length}/8 PDF · ` : ""}
-          Aktīvi avoti: {allowedSources.map((source) => SOURCE_TOGGLE_LABELS[source]).join(", ")}
+
+        <p className="mt-2 text-[10px] leading-snug text-[var(--color-provin-muted)]">
+          Gemini raksta tikai ieslēgtajos avotos
+          {files.length > 0 ? ` · ${files.length}/8 PDF` : ""}.
         </p>
       </div>
     </aside>
