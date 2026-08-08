@@ -143,9 +143,9 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  border-radius: 0;
-  padding: 0;
-  border: 0;
+  border-radius: 18px;
+  padding: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.08);
   background: transparent;
   box-shadow: none;
   /* Keep vertical scroll; leave horizontal gestures to tier swipe handlers. */
@@ -285,20 +285,20 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  padding: 0.2rem 0 0.35rem;
-  border-radius: 0;
-  border: 0;
+  padding: 0.45rem 0.65rem 0.5rem;
+  border-radius: 12px;
+  border: 1px solid rgb(255 255 255 / 0.06);
   background: transparent;
   box-shadow: none;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-  transition: none;
+  transition: border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: visible;
 }
 
 .inactiveGroup {
-  padding: 0.2rem 0 0.35rem;
-  border-radius: 0;
+  padding: 0.45rem 0.65rem 0.5rem;
+  border-radius: 14px;
   cursor: pointer;
 }
 
@@ -1328,9 +1328,9 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   }
 
   .heroStageDesktop .spatialCard {
-    border: 0;
-    border-radius: 0;
-    padding: 0;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    border-radius: 18px;
+    padding: 0.75rem;
     background: transparent;
     box-shadow: none;
   }
@@ -1406,8 +1406,8 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
 
 @media (min-width: 768px) {
   .spatialCard {
-    border-radius: 0;
-    padding: 0;
+    border-radius: 20px;
+    padding: clamp(0.85rem, 2.8vw, 1.25rem);
   }
 
   .featureBreakdownCard {
@@ -1453,8 +1453,8 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
 
   .liquidAccent,
   .inactiveGroup {
-    padding: 0.25rem 0 0.4rem;
-    border-radius: 0;
+    padding: 0.55rem 0.75rem 0.65rem;
+    border-radius: 16px;
   }
 
   .featureRow {
@@ -1611,13 +1611,13 @@ html[data-site-theme="light"] .tierTabBtn:hover .tierTabLabelInactive {
 }
 
 html[data-site-theme="light"] .spatialCard {
-  border-color: transparent;
+  border-color: rgb(24 31 42 / 0.1);
   background: transparent;
   box-shadow: none;
 }
 
 html[data-site-theme="light"] .liquidAccent {
-  border: 0;
+  border: 1px solid rgb(24 31 42 / 0.08);
   background: transparent;
   box-shadow: none;
 }
