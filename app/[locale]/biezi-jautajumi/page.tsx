@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { getMessages, getTranslations } from "next-intl/server";
 import { Faq } from "@/components/Faq";
+import { Footer } from "@/components/Footer";
 import { Link } from "@/i18n/navigation";
 import { getPublicSiteOrigin } from "@/lib/site-url";
+import productHeroStyles from "@/app/[locale]/demo/page.module.css";
+import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -40,21 +43,29 @@ export default async function FaqPage({ params }: Props) {
       : null;
 
   return (
-    <>
-      <div className="border-b border-black/[0.06] bg-white px-4 py-4 sm:px-6">
-        <div className="mx-auto max-w-[720px]">
+    <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
+      <div className="demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
+        <div className="mx-auto w-full max-w-[80rem] px-[max(1rem,env(safe-area-inset-left,0px))] pt-6 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:pt-8 lg:px-8">
           <Link
             href="/"
-            className="provin-lift-subtle inline-flex items-center gap-1 rounded-lg border border-transparent px-1 py-1 text-[14px] font-normal text-provin-accent transition hover:underline"
+            className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45 no-underline transition hover:text-provin-accent"
           >
             {t("faqBack")}
           </Link>
         </div>
+
+        {faqLd ? (
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
+        ) : null}
+
+        <Faq tone="dark" />
+
+        <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink">
+          <section className="demo-design-dir__section bg-transparent pb-0">
+            <Footer />
+          </section>
+        </div>
       </div>
-      {faqLd ? (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
-      ) : null}
-      <Faq tone="light" />
-    </>
+    </div>
   );
 }
