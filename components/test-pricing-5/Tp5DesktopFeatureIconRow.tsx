@@ -110,7 +110,7 @@ type Props = {
 
 export function Tp5DesktopFeatureIconRow({ activeServiceId = "audits" }: Props) {
   const locale = useLocale();
-  const features = getTp5DesktopHeroFeatures(locale);
+  const features = getTp5DesktopHeroFeatures(locale, activeServiceId);
   const uiCopy = getTp5UiCopy(locale);
   const showDealerBrands = activeServiceId === "dealer";
 
@@ -157,7 +157,7 @@ export function Tp5DesktopFeatureIconRow({ activeServiceId = "audits" }: Props) 
             </motion.ul>
           ) : (
             <motion.ul
-              key="audit-features"
+              key={`features-${activeServiceId}`}
               className="absolute inset-x-0 top-0 flex w-full list-none items-center justify-between gap-1"
               aria-label={uiCopy.featureIconRowAria}
               initial={{ opacity: 0, y: 8 }}
@@ -168,7 +168,7 @@ export function Tp5DesktopFeatureIconRow({ activeServiceId = "audits" }: Props) 
               {features.map((feature) => {
                 const idlePulse = brandIdleClass(feature.icon);
                 return (
-                  <li key={feature.label} className="flex shrink-0">
+                  <li key={feature.icon} className="flex shrink-0">
                     <button
                       type="button"
                       className={`group relative ${ICON_BTN_FEATURE} ${ICON_BTN_HOVER}${idlePulse ? ` ${idlePulse}` : ""}`}
