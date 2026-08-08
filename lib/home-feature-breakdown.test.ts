@@ -57,8 +57,7 @@ describe("pakalpojumi catalog", () => {
     ]);
   });
 
-  it("uses consistent two-line jump-tab labels", async () => {
-    const { catalogPackageNavLines } = await import("@/lib/home-feature-breakdown");
+  it("uses consistent two-line jump-tab labels", () => {
     for (const id of ["mini", "audits", "dealer", "koreaUsa"] as const) {
       const lines = catalogPackageNavLines(id, "lv");
       expect(lines).toHaveLength(2);
