@@ -18,7 +18,21 @@ type Props = {
 /** lg breakpoint — desktop keeps the original scrollable iframe preview. */
 const DESKTOP_MQ = "(min-width: 1024px)";
 
-/** Defaults to desktop so web never flashes the mobile lock layer. */
+/** Bust CDN/browser cache when page-1 rasters are regenerated. */
+const MOBILE_PAGE1_ASSET_VERSION = "3";
+
+/**
+ * Full first-page raster for mobile.
+ * iOS Safari’s native PDF iframe ignores Fit/page-fit and shows a cropped zoom;
+ * a contain-fitted image shows the whole page at once with original PDF colors.
+ */
+function mobilePreviewImageSrc(pdfHref: string): string | null {
+  const path = pdfHref.split("#")[0] ?? "";
+  if (!path.endsWith(".pdf")) return null;
+  return `${path.replace(/\.pdf$/i, "-page1.webp")}?v=${MOBILE_PAGE1_ASSET_VERSION}`;
+}
+
+/** Defaults to desktop so web never flashes the mobile static image. */
 function useIsDesktopPreview() {
   const [isDesktop, setIsDesktop] = useState(true);
 
@@ -35,9 +49,8 @@ function useIsDesktopPreview() {
 
 /**
  * Desktop/web: scrollable PDF iframe (unchanged).
- * Mobile: native PDF iframe (original report colors / soft shadows — not a harsh raster);
- * pointer-events none so Pakalpojumi page scroll works through the preview;
- * PDF interaction only via „Pietuvināt”.
+ * Mobile: full first page as static image (object-contain — not cropped/zoomed);
+ * touches pass through so Pakalpojumi scrolls; PDF interaction only via „Pietuvināt”.
  */
 export function SampleReportPreview({
   href,
@@ -79,9 +92,7 @@ export function SampleReportPreview({
   };
 
   const desktopPaneSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
-  const mobilePaneSrc = href
-    ? `${href}#page=1&view=FitH&toolbar=0&navpanes=0&scrollbar=0`
-    : null;
+  const mobileImageSrc = href ? mobilePreviewImageSrc(href) : null;
   const lightboxSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
 
   return (
@@ -124,14 +135,16 @@ export function SampleReportPreview({
             )}
           </div>
         ) : (
-          <div className="pointer-events-none relative h-[min(28rem,55vh)] w-full overflow-hidden bg-white sm:h-[min(32rem,58vh)]">
-            {mobilePaneSrc ? (
-              <iframe
-                title={`${title} — ${previewLabel}`}
-                src={mobilePaneSrc}
-                className="pointer-events-none absolute inset-0 h-full w-full border-0 bg-white"
-                loading="lazy"
-                tabIndex={-1}
+          <div className="pointer-events-none relative flex h-[min(28rem,55vh)] w-full items-center justify-center overflow-hidden bg-white p-1.5 sm:h-[min(32rem,58vh)]">
+            {mobileImageSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element -- static PDF page snapshot; avoid next/image crop
+              <img
+                src={mobileImageSrc}
+                alt=""
+                className="max-h-full max-w-full object-contain"
+                draggable={false}
+                loading="eager"
+                decoding="async"
               />
             ) : (
               <div className="flex h-full items-center justify-center bg-zinc-950 px-6 text-center">
