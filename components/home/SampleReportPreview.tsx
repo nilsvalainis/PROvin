@@ -1,8 +1,8 @@
 "use client";
 
-import { Expand, X } from "lucide-react";
+import { Expand } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { createPortal } from "react-dom";
+import { SampleReportLightbox } from "@/components/home/SampleReportLightbox";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 
 type Props = {
@@ -48,8 +48,7 @@ function useIsDesktopPreview() {
 
 /**
  * Desktop/web: scrollable PDF iframe (unchanged).
- * Mobile: full-page PNG (object-contain) — no iOS crop; soft-shadow assets;
- * touches pass through; PDF interaction only via „Pietuvināt”.
+ * Mobile: full-page PNG preview; „Pietuvināt” opens screen-fit lightbox (not zoomed).
  */
 export function SampleReportPreview({
   href,
@@ -61,28 +60,8 @@ export function SampleReportPreview({
   comingSoonLabel,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const isDesktop = useIsDesktopPreview();
   const titleId = useId();
-  const dialogTitleId = useId();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
 
   const openLightbox = () => {
     if (!href) return;
@@ -92,7 +71,6 @@ export function SampleReportPreview({
 
   const desktopPaneSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
   const mobileImageSrc = href ? mobilePreviewImageSrc(href) : null;
-  const lightboxSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
 
   return (
     <>
@@ -154,56 +132,16 @@ export function SampleReportPreview({
         )}
       </div>
 
-      {mounted && open && lightboxSrc
-        ? createPortal(
-            <div
-              className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-3 sm:p-6"
-              role="presentation"
-              onClick={() => setOpen(false)}
-            >
-              <div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby={dialogTitleId}
-                className="flex h-[min(92vh,56rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/15 bg-zinc-950 shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-                  <h2 id={dialogTitleId} className="min-w-0 truncate text-sm font-semibold text-zinc-100">
-                    {title}
-                  </h2>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-md px-2 py-1 text-[0.75rem] font-medium text-[#60a5fa] hover:underline"
-                      onClick={() => recordSampleReportClick()}
-                    >
-                      {openPdfLabel}
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => setOpen(false)}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]/40"
-                      aria-label={closeLabel}
-                    >
-                      <X className="h-4 w-4" aria-hidden />
-                    </button>
-                  </div>
-                </div>
-                <div className="relative min-h-0 flex-1 overflow-auto overscroll-contain bg-zinc-950">
-                  <iframe
-                    title={`${title} — ${previewLabel}`}
-                    src={lightboxSrc}
-                    className="absolute inset-0 h-full w-full border-0"
-                  />
-                </div>
-              </div>
-            </div>,
-            document.body,
-          )
-        : null}
+      {href ? (
+        <SampleReportLightbox
+          open={open}
+          href={href}
+          title={title}
+          closeLabel={closeLabel}
+          openPdfLabel={openPdfLabel}
+          onClose={() => setOpen(false)}
+        />
+      ) : null}
     </>
   );
 }

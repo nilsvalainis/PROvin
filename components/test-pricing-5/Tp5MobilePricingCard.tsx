@@ -1,9 +1,10 @@
 "use client";
 
 import { Globe } from "lucide-react";
-import { type SyntheticEvent, type TouchEvent } from "react";
+import { type SyntheticEvent, type TouchEvent, useState } from "react";
 import { useLocale } from "next-intl";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import { SampleReportLightbox } from "@/components/home/SampleReportLightbox";
 import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout";
 import {
   getTp5HeroTabServices,
@@ -177,6 +178,7 @@ export function Tp5MobilePricingCard({
       : isMini
         ? TP5_MINI_SAMPLE_REPORT_HREF
         : null;
+  const [sampleOpen, setSampleOpen] = useState(false);
   const metaTitle =
     activeServiceId === "dealer"
       ? locale === "en"
@@ -304,20 +306,32 @@ export function Tp5MobilePricingCard({
           <span className={styles.liquidCtaLabel}>{activeService.buttonText}</span>
         </button>
         {sampleReportHref ? (
-          <a
-            href={sampleReportHref}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
             className={styles.sampleReportLink}
-            onClick={() => recordSampleReportClick()}
+            onClick={() => {
+              recordSampleReportClick();
+              setSampleOpen(true);
+            }}
           >
             <SampleReportPdfIcon />
             <span>{uiCopy.sampleReportLink}</span>
-          </a>
+          </button>
         ) : (
           <span className={styles.sampleReportLinkSpacer} aria-hidden />
         )}
       </div>
+
+      {sampleReportHref ? (
+        <SampleReportLightbox
+          open={sampleOpen}
+          href={sampleReportHref}
+          title={activeService.title}
+          closeLabel={uiCopy.sampleReportClose}
+          openPdfLabel={uiCopy.sampleReportLink}
+          onClose={() => setSampleOpen(false)}
+        />
+      ) : null}
     </article>
   );
 }
