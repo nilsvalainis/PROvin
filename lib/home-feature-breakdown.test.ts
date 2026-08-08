@@ -7,6 +7,7 @@ import {
 } from "@/lib/home-hero-plan";
 import {
   catalogPackageAnchorId,
+  catalogPackageNavLines,
   getCatalogFeatureBreakdownPackages,
 } from "@/lib/home-feature-breakdown";
 import { buildSiteRailSections, siteRailRouteActiveIndex } from "@/lib/site-rail-sections";
@@ -54,6 +55,18 @@ describe("pakalpojumi catalog", () => {
       "pakalpojums-dealer",
       "pakalpojums-koreaUsa",
     ]);
+  });
+
+  it("uses consistent two-line jump-tab labels", async () => {
+    const { catalogPackageNavLines } = await import("@/lib/home-feature-breakdown");
+    for (const id of ["mini", "audits", "dealer", "koreaUsa"] as const) {
+      const lines = catalogPackageNavLines(id, "lv");
+      expect(lines).toHaveLength(2);
+      expect(lines[0]?.length).toBeGreaterThan(0);
+      expect(lines[1]?.length).toBeGreaterThan(0);
+    }
+    expect(catalogPackageNavLines("koreaUsa", "lv")).toEqual(["ASV UN", "KOREJA"]);
+    expect(catalogPackageNavLines("dealer", "en")).toEqual(["DEALER", "DATA"]);
   });
 
   it("keeps Par mums in the site rail as its own page", () => {

@@ -24,8 +24,10 @@ export type Tp5UiCopy = {
   breakdownHeading: string;
   /** Visible H1/H2 on `/pakalpojumi`. */
   catalogHeading: string;
-  /** Aria-label for the non-sticky package jump pills on `/pakalpojumi`. */
+  /** Aria-label for the sticky package jump tabs on `/pakalpojumi`. */
   catalogNavAria: string;
+  /** Visible hint above jump tabs — makes section jumping obvious. */
+  catalogNavHint: string;
   /** Small uppercase label above each package goal paragraph. */
   goalLabel: string;
   /** Secondary text link under AUDITS CTA — opens sample PDF. */
@@ -85,6 +87,7 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   breakdownHeading: "PROVIN pakalpojumi",
   catalogHeading: "PAKALPOJUMI",
   catalogNavAria: "Pārlēkt uz pakalpojumu",
+  catalogNavHint: "Lēkt uz sadaļu",
   goalLabel: "MĒRĶIS",
   sampleReportLink: "Skatīt atskaites piemēru (PDF)",
   sampleReportPreviewLabel: "Atskaites piemērs",
@@ -117,6 +120,7 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   breakdownHeading: "PROVIN services",
   catalogHeading: "SERVICES",
   catalogNavAria: "Jump to a service",
+  catalogNavHint: "Jump to section",
   goalLabel: "Purpose",
   sampleReportLink: "View sample report (PDF)",
   sampleReportPreviewLabel: "Sample report",

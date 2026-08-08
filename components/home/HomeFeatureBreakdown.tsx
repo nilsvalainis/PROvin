@@ -21,6 +21,7 @@ import { Link } from "@/i18n/navigation";
 import { homeContentMaxClass, homeDarkProvinWordmarkOptions } from "@/lib/home-layout";
 import {
   catalogPackageAnchorId,
+  catalogPackageNavLines,
   getCatalogFeatureBreakdownPackages,
   type HomeFeatureBreakdownIcon,
   type HomeFeatureBreakdownPackageId,
@@ -143,12 +144,17 @@ export function HomeFeatureBreakdown({
     return () => observer.disconnect();
   }, [packages]);
 
-  const switcherClass =
+  const switcherClass = [
+    tp5Styles.tierSwitcher,
+    tp5Styles.catalogJumpSwitcher,
     packages.length >= 4
-      ? `${tp5Styles.tierSwitcher} ${tp5Styles.tierSwitcherFour}`
+      ? tp5Styles.tierSwitcherFour
       : packages.length === 2
-        ? `${tp5Styles.tierSwitcher} ${tp5Styles.tierSwitcherTwo}`
-        : tp5Styles.tierSwitcher;
+        ? tp5Styles.tierSwitcherTwo
+        : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <section
@@ -165,28 +171,37 @@ export function HomeFeatureBreakdown({
         </h2>
 
         {/*
-          Same underline tab language as the hero pricing switcher.
-          Not sticky — scrolls away with the page (sticky under MENU was the bug).
+          Sticky under MENU. Hero-style underline tabs + chip affordance so
+          jump-to-section is obvious; labels forced to two equal lines.
         */}
-        <nav aria-label={uiCopy.catalogNavAria} className="mb-8 sm:mb-10">
+        <nav
+          aria-label={uiCopy.catalogNavAria}
+          className="sticky top-[2.4rem] z-30 -mx-4 mb-8 border-b border-white/[0.1] bg-[#0d0d0d]/92 px-3 py-2 backdrop-blur-md supports-[backdrop-filter]:bg-[#0d0d0d]/78 sm:top-9 sm:-mx-6 sm:mb-10 sm:px-6 sm:py-2.5 lg:top-11"
+        >
+          <p className="mb-1.5 text-center text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-[#60a5fa]/90">
+            {uiCopy.catalogNavHint}
+          </p>
           <div className={switcherClass}>
             {packages.map((pkg) => {
               const active = activeId === pkg.id;
+              const [line1, line2] = catalogPackageNavLines(pkg.id, locale);
               return (
                 <a
                   key={`nav-${pkg.id}`}
                   href={`#${catalogPackageAnchorId(pkg.id)}`}
                   aria-current={active ? "true" : undefined}
                   data-active={active ? "true" : undefined}
-                  className={tp5Styles.tierTabBtn}
+                  title={`${uiCopy.catalogNavHint}: ${pkg.title}`}
+                  className={`${tp5Styles.tierTabBtn} ${tp5Styles.catalogJumpTab}`}
                   onClick={() => setActiveId(pkg.id)}
                 >
                   <span
-                    className={`${tp5Styles.tierTabLabel} ${tp5Styles.tierTabLabelCompact} ${
+                    className={`${tp5Styles.catalogJumpLabel} ${
                       active ? tp5Styles.tierTabLabelActive : tp5Styles.tierTabLabelInactive
                     }`}
                   >
-                    {pkg.title}
+                    <span className={tp5Styles.catalogJumpLabelLine}>{line1}</span>
+                    <span className={tp5Styles.catalogJumpLabelLine}>{line2}</span>
                   </span>
                 </a>
               );
@@ -202,7 +217,7 @@ export function HomeFeatureBreakdown({
               <article
                 key={pkg.id}
                 id={catalogPackageAnchorId(pkg.id)}
-                className="scroll-mt-24 border-b border-white/[0.08] py-8 first:pt-0 last:border-b-0 sm:scroll-mt-28 sm:py-10 lg:scroll-mt-32 lg:py-12"
+                className="scroll-mt-[7.5rem] border-b border-white/[0.08] py-8 first:pt-0 last:border-b-0 sm:scroll-mt-[8rem] sm:py-10 lg:scroll-mt-36 lg:py-12"
               >
                 <div className="grid min-w-0 grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(17.5rem,22.5rem)] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:gap-12">
                   <div className="min-w-0">
